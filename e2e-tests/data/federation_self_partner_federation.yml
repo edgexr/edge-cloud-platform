@@ -1,16 +1,13 @@
 federations:
 - selfoperatorid: dmuus
-  selfcountrycode: SA
+  selffederationid: dmuus-SA-{{partnertag}}-{{region}}
   federator:
-    operatorid: {{partnertag}}
-    countrycode: {{region}}
+    federationid: {{partnertag}}-{{region}}-dmuus-SA
 - selfoperatorid: enterprise
-  selfcountrycode: SA
+  selffederationid: enterprise-SA-{{partnertag}}-{{region}}
   federator:
-    operatorid: {{partnertag}}
-    countrycode: {{region}}
+    federationid: {{partnertag}}-{{region}}-enterprise-SA
 - selfoperatorid: enterprise
-  selfcountrycode: SB
+  selffederationid: enterprise-SB-{{partnertag}}-{{region}}
   federator:
-    operatorid: {{partnertag}}
-    countrycode: {{region}}
+    federationid: {{partnertag}}-{{region}}-enterprise-SB

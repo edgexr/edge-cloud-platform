@@ -2,7 +2,6 @@ package federation
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -29,88 +28,6 @@ type PartnerApi struct {
 
 func (p *PartnerApi) loggedDB(ctx context.Context) *gorm.DB {
 	return gormlog.LoggedDB(ctx, p.Database)
-}
-
-func LogFilter(req *http.Request, reqBody []byte) []byte {
-	if strings.Contains(req.RequestURI, OperatorPartnerAPI) {
-		var err error
-		switch req.Method {
-		case "POST":
-			obj := OperatorRegistrationRequest{}
-			err = json.Unmarshal(reqBody, &obj)
-			if err == nil {
-				obj.OrigFederationId = ""
-				obj.DestFederationId = ""
-				reqBody, err = json.Marshal(obj)
-			}
-		case "PUT":
-			obj := UpdateMECNetConf{}
-			err = json.Unmarshal(reqBody, &obj)
-			if err == nil {
-				obj.OrigFederationId = ""
-				obj.DestFederationId = ""
-				reqBody, err = json.Marshal(obj)
-			}
-		case "DELETE":
-			obj := FederationRequest{}
-			err = json.Unmarshal(reqBody, &obj)
-			if err == nil {
-				obj.OrigFederationId = ""
-				obj.DestFederationId = ""
-				reqBody, err = json.Marshal(obj)
-			}
-		}
-		if err != nil {
-			reqBody = []byte{}
-		}
-	} else if strings.Contains(req.RequestURI, OperatorZoneAPI) {
-		var err error
-		switch req.Method {
-		case "POST":
-			obj := OperatorZoneRegister{}
-			err = json.Unmarshal(reqBody, &obj)
-			if err == nil {
-				obj.OrigFederationId = ""
-				obj.DestFederationId = ""
-				reqBody, err = json.Marshal(obj)
-			}
-		case "DELETE":
-			obj := ZoneRequest{}
-			err = json.Unmarshal(reqBody, &obj)
-			if err == nil {
-				obj.OrigFederationId = ""
-				obj.DestFederationId = ""
-				reqBody, err = json.Marshal(obj)
-			}
-		}
-		if err != nil {
-			reqBody = []byte{}
-		}
-	} else if strings.Contains(req.RequestURI, OperatorNotifyZoneAPI) {
-		var err error
-		switch req.Method {
-		case "POST":
-			obj := NotifyPartnerOperatorZone{}
-			err = json.Unmarshal(reqBody, &obj)
-			if err == nil {
-				obj.OrigFederationId = ""
-				obj.DestFederationId = ""
-				reqBody, err = json.Marshal(obj)
-			}
-		case "DELETE":
-			obj := ZoneRequest{}
-			err = json.Unmarshal(reqBody, &obj)
-			if err == nil {
-				obj.OrigFederationId = ""
-				obj.DestFederationId = ""
-				reqBody, err = json.Marshal(obj)
-			}
-		}
-		if err != nil {
-			reqBody = []byte{}
-		}
-	}
-	return reqBody
 }
 
 // E/W-BoundInterface APIs for Federation between multiple Operator Platforms (federators)
@@ -154,7 +71,7 @@ func (p *PartnerApi) ValidateAndGetFederatorInfo(ctx context.Context, origKey, d
 	// Hence, MC uses the destination federation key to multiplex federation
 	// requests to appropriate self federator
 	selfFed := ormapi.Federator{
-		FederationKey: destKey,
+		FederationId: destKey,
 	}
 	res := db.Where(&selfFed).First(&selfFed)
 	if res.RecordNotFound() {
@@ -165,12 +82,7 @@ func (p *PartnerApi) ValidateAndGetFederatorInfo(ctx context.Context, origKey, d
 	}
 
 	partnerFed := ormapi.Federation{
-		SelfOperatorId:  selfFed.OperatorId,
-		SelfCountryCode: selfFed.CountryCode,
-		Federator: ormapi.Federator{
-			OperatorId:  origOperatorId,
-			CountryCode: origCountryCode,
-		},
+		SelfFederationId: selfFed.FederationId,
 	}
 	res = db.Where(&partnerFed).First(&partnerFed)
 	if res.RecordNotFound() {
@@ -180,8 +92,8 @@ func (p *PartnerApi) ValidateAndGetFederatorInfo(ctx context.Context, origKey, d
 	if res.Error != nil {
 		return nil, nil, ormutil.DbErr(res.Error)
 	}
-	// validate origin (partner) federationkey/operator/country
-	if partnerFed.FederationKey != origKey {
+	// validate origin (partner) FederationId/operator/country
+	if partnerFed.FederationId != origKey {
 		return nil, nil, fmt.Errorf("Invalid origin federation key")
 	}
 	return &selfFed, &partnerFed, nil
@@ -218,10 +130,8 @@ func (p *PartnerApi) FederationOperatorPartnerCreate(c echo.Context) error {
 	// Get list of zones to be shared with partner federator
 	opShZones := []ormapi.FederatedSelfZone{}
 	lookup := ormapi.FederatedSelfZone{
-		SelfOperatorId:     selfFed.OperatorId,
-		SelfCountryCode:    selfFed.CountryCode,
-		PartnerOperatorId:  partnerFed.OperatorId,
-		PartnerCountryCode: partnerFed.CountryCode,
+		SelfFederationId:    selfFed.FederationId,
+		PartnerFederationId: partnerFed.FederationId,
 	}
 	err = db.Where(&lookup).Find(&opShZones).Error
 	if err != nil {
@@ -229,7 +139,7 @@ func (p *PartnerApi) FederationOperatorPartnerCreate(c echo.Context) error {
 	}
 
 	out := OperatorRegistrationResponse{}
-	out.OrigFederationId = selfFed.FederationKey
+	out.OrigFederationId = selfFed.FederationId
 	out.DestFederationId = opRegReq.OrigFederationId
 	out.OrigOperatorId = selfFed.OperatorId
 	out.PartnerOperatorId = opRegReq.OperatorId
@@ -238,9 +148,7 @@ func (p *PartnerApi) FederationOperatorPartnerCreate(c echo.Context) error {
 	out.LocatorEndPoint = selfFed.LocatorEndPoint
 	for _, opShZone := range opShZones {
 		zoneLookup := ormapi.FederatorZone{
-			ZoneId:      opShZone.ZoneId,
-			OperatorId:  opShZone.SelfOperatorId,
-			CountryCode: opShZone.SelfCountryCode,
+			ZoneId: opShZone.ZoneId,
 		}
 		opZone := ormapi.FederatorZone{}
 		err = db.Where(&zoneLookup).First(&opZone).Error
@@ -350,10 +258,8 @@ func (p *PartnerApi) FederationOperatorPartnerDelete(c echo.Context) error {
 	// Check if all the self zones are deregistered by partner federator
 	db := p.loggedDB(ctx)
 	lookup := ormapi.FederatedSelfZone{
-		SelfOperatorId:     selfFed.OperatorId,
-		SelfCountryCode:    selfFed.CountryCode,
-		PartnerOperatorId:  partnerFed.OperatorId,
-		PartnerCountryCode: partnerFed.CountryCode,
+		SelfFederationId:    selfFed.FederationId,
+		PartnerFederationId: partnerFed.FederationId,
 	}
 	partnerZones := []ormapi.FederatedSelfZone{}
 	err = db.Where(&lookup).Find(&partnerZones).Error
@@ -411,11 +317,9 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 	db := p.loggedDB(ctx)
 	zoneId := opRegReq.Zones[0]
 	lookup := ormapi.FederatedSelfZone{
-		ZoneId:             zoneId,
-		SelfOperatorId:     selfFed.OperatorId,
-		SelfCountryCode:    selfFed.CountryCode,
-		PartnerOperatorId:  partnerFed.OperatorId,
-		PartnerCountryCode: partnerFed.CountryCode,
+		ZoneId:              zoneId,
+		SelfFederationId:    selfFed.FederationId,
+		PartnerFederationId: partnerFed.FederationId,
 	}
 	existingZone := ormapi.FederatedSelfZone{}
 	err = db.Where(&lookup).First(&existingZone).Error
@@ -439,10 +343,10 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 	resp := OperatorZoneRegisterResponse{}
 	resp.LeadOperatorId = selfFed.OperatorId
 	resp.PartnerOperatorId = opRegReq.Operator
-	resp.FederationId = selfFed.FederationKey
+	resp.FederationId = selfFed.FederationId
 	resp.Zone = ZoneRegisterDetails{
 		ZoneId:            zoneId,
-		RegistrationToken: selfFed.FederationKey,
+		RegistrationToken: selfFed.FederationId,
 	}
 	return c.JSON(http.StatusOK, resp)
 }
@@ -479,11 +383,9 @@ func (p *PartnerApi) FederationOperatorZoneDeRegister(c echo.Context) error {
 	db := p.loggedDB(ctx)
 	zoneId := opRegReq.Zone
 	lookup := ormapi.FederatedSelfZone{
-		ZoneId:             zoneId,
-		SelfOperatorId:     selfFed.OperatorId,
-		SelfCountryCode:    selfFed.CountryCode,
-		PartnerOperatorId:  partnerFed.OperatorId,
-		PartnerCountryCode: partnerFed.CountryCode,
+		ZoneId:              zoneId,
+		SelfFederationId:    selfFed.FederationId,
+		PartnerFederationId: partnerFed.FederationId,
 	}
 	existingZone := ormapi.FederatedSelfZone{}
 	err = db.Where(&lookup).First(&existingZone).Error
@@ -544,7 +446,8 @@ func (p *PartnerApi) FederationOperatorZoneShare(c echo.Context) error {
 	zoneId := opZoneShare.PartnerZone.ZoneId
 	zoneObj := ormapi.FederatedPartnerZone{}
 	zoneObj.SelfOperatorId = selfFed.OperatorId
-	zoneObj.SelfCountryCode = selfFed.CountryCode
+	zoneObj.SelfFederationId = selfFed.FederationId
+	zoneObj.PartnerFederationId = partnerFed.FederationId
 	zoneObj.ZoneId = zoneId
 	zoneObj.OperatorId = partnerFed.OperatorId
 	zoneObj.CountryCode = partnerFed.CountryCode
@@ -596,12 +499,10 @@ func (p *PartnerApi) FederationOperatorZoneUnShare(c echo.Context) error {
 	db := p.loggedDB(ctx)
 	zoneId := opZone.Zone
 	lookup := ormapi.FederatedPartnerZone{
-		SelfOperatorId:  selfFed.OperatorId,
-		SelfCountryCode: selfFed.CountryCode,
+		SelfFederationId:    selfFed.FederationId,
+		PartnerFederationId: partnerFed.FederationId,
 		FederatorZone: ormapi.FederatorZone{
-			ZoneId:      zoneId,
-			OperatorId:  partnerFed.OperatorId,
-			CountryCode: partnerFed.CountryCode,
+			ZoneId: zoneId,
 		},
 	}
 	existingZone := ormapi.FederatedPartnerZone{}

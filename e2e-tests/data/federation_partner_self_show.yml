@@ -1,11 +1,12 @@
 federations:
 - id: 1
   selfoperatorid: {{partnertag}}
-  selfcountrycode: {{region}}
+  selffederationid: {{partnertag}}-{{region}}-dmuus-SA
   federator:
     operatorid: dmuus
     countrycode: SA
     federationaddr: "127.0.0.1:9801"
+    federationid: dmuus-SA-{{partnertag}}-{{region}}
     mcc: 456
     mnc:
     - 444
@@ -13,11 +14,12 @@ federations:
     - 666
 - id: 2
   selfoperatorid: {{partnertag}}
-  selfcountrycode: {{region}}
+  selffederationid: {{partnertag}}-{{region}}-enterprise-SA
   federator:
     operatorid: enterprise
     countrycode: SA
     federationaddr: "127.0.0.1:9801"
+    federationid: enterprise-SA-{{partnertag}}-{{region}}
     mcc: 456
     mnc:
     - 444
@@ -25,11 +27,12 @@ federations:
     - 666
 - id: 3
   selfoperatorid: {{partnertag}}
-  selfcountrycode: {{region}}
+  selffederationid: {{partnertag}}-{{region}}-enterprise-SB
   federator:
     operatorid: enterprise
     countrycode: SB 
     federationaddr: "127.0.0.1:9801"
+    federationid: enterprise-SB-{{partnertag}}-{{region}}
     mcc: 789
     mnc:
     - 777

@@ -1,6 +1,25 @@
 federators:
 - operatorid: {{partnertag}}
   countrycode: {{region}}
+  federationid: {{partnertag}}-{{region}}-dmuus-SA
+  federationaddr: {{fedaddr}}
+  mcc: 123
+  mnc:
+  - 111
+  - 222
+  - 333
+- operatorid: {{partnertag}}
+  countrycode: {{region}}
+  federationid: {{partnertag}}-{{region}}-enterprise-SA
+  federationaddr: {{fedaddr}}
+  mcc: 123
+  mnc:
+  - 111
+  - 222
+  - 333
+- operatorid: {{partnertag}}
+  countrycode: {{region}}
+  federationid: {{partnertag}}-{{region}}-enterprise-SB
   federationaddr: {{fedaddr}}
   mcc: 123
   mnc:
