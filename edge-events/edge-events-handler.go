@@ -122,7 +122,8 @@ func (e *EdgeEventsHandlerPlugin) SendAvailableAppInst(ctx context.Context, app 
 						},
 					}
 					// compare new appinst with current appinst to see which is better
-					foundList := dmecommon.SearchAppInsts(ctx, newAppInstCarrier, app, &clientinfo.lastLoc, carrierData, 1)
+					// use client's carrier name to perform the search
+					foundList := dmecommon.SearchAppInsts(ctx, clientinfo.carrier, app, &clientinfo.lastLoc, carrierData, 1)
 					if foundList == nil || len(foundList) != 1 {
 						continue
 					}
