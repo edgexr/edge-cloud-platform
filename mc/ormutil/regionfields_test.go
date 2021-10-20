@@ -23,7 +23,7 @@ func TestGetRegionObjSpecifiedFields(t *testing.T) {
 		},
 		AllowServerless: true,
 		ServerlessConfig: &edgeproto.ServerlessConfig{
-			Vcpus: 0.5,
+			Vcpus: *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
 			Ram:   20,
 		},
 	}
@@ -58,7 +58,7 @@ func TestGetRegionObjSpecifiedFields(t *testing.T) {
 			"InternalPorts":    false,
 			"AutoProvPolicies": []interface{}{},
 			"ServerlessConfig": map[string]interface{}{
-				"Vcpus":       float32(0.5),
+				"Vcpus":       *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
 				"MinReplicas": uint32(0),
 			},
 		},
