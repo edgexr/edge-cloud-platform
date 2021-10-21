@@ -89,6 +89,11 @@ func CompareYamlFiles(compare *util.CompareYaml) bool {
 		}
 		if fileType == "mcdata" {
 			copts = append(copts, edgeproto.IgnoreTaggedFields("nocmp")...)
+			copts = append(copts, cmpopts.IgnoreFields(ormapi.Federator{}, "Revision"))
+			copts = append(copts, cmpopts.IgnoreFields(ormapi.Federation{}, "Revision"))
+			copts = append(copts, cmpopts.IgnoreFields(ormapi.FederatorZone{}, "Revision"))
+			copts = append(copts, cmpopts.IgnoreFields(ormapi.FederatedSelfZone{}, "Revision"))
+			copts = append(copts, cmpopts.IgnoreFields(ormapi.FederatedPartnerZone{}, "Revision"))
 		}
 		if fileType == "mcdata-xind" {
 			// ignore container ids

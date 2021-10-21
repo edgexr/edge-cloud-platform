@@ -21,24 +21,27 @@ type Federator struct {
 	MNC pq.StringArray `gorm:"type:text[]" json:"mnc"`
 	// IP and Port of discovery service URL of operator platform
 	LocatorEndPoint string `json:"locatorendpoint"`
+	// Revision ID to track object changes. We use jaeger traceID for easy debugging
+	// but this can differ with what partner federator uses
+	// read only: true
+	Revision string `json:"revision"`
 }
 
 type Federation struct {
 	// Internal ID to reference a federation
-	// read_only: true
+	// read only: true
 	Id int `gorm:"auto_increment:true; unique; not null"`
 	// Self federation ID
 	SelfFederationId string `gorm:"primary_key; unique" json:"selffederationid"`
-	// Self operator ID, makes rbac easier
-	// read_only: true
+	// Self operator ID
 	SelfOperatorId string `json:"selfoperatorid"`
 	// Partner Federator
 	Federator `json:",inline"`
 	// Partner shares its zones with self federator as part of federation
-	// read_only: true
+	// read only: true
 	PartnerRoleShareZonesWithSelf bool
 	// Partner is allowed access to self federator zones as part of federation
-	// read_only: true
+	// read only: true
 	PartnerRoleAccessToSelfZones bool
 }
 
@@ -63,28 +66,34 @@ type FederatorZone struct {
 	Region string `json:"region"`
 	// List of cloudlets part of this zone
 	Cloudlets pq.StringArray `gorm:"type:text[]" json:"cloudlets"`
+	// Revision ID to track object changes. We use jaeger traceID for easy debugging
+	// but this can differ with what partner federator uses
+	// read only: true
+	Revision string `json:"revision"`
 }
 
 // Information of the partner federator with whom the self federator zone is shared
 type FederatedSelfZone struct {
 	// Globally unique identifier of the federator zone
 	ZoneId string `gorm:"primary_key;type:text REFERENCES federator_zones(zone_id)" json:"zoneid"`
-	// Self operator ID, makes rbac easier
-	// read_only: true
+	// Self operator ID
 	SelfOperatorId string `json:"selfoperatorid"`
 	// Self federation ID
 	SelfFederationId string `gorm:"primary_key" json:"selffederationid"`
 	// Partner federation ID
 	PartnerFederationId string `gorm:"primary_key" json:"partnerfederationid"`
 	// Zone registered by partner federator
-	// read_only: true
+	// read only: true
 	Registered bool
+	// Revision ID to track object changes. We use jaeger traceID for easy debugging
+	// but this can differ with what partner federator uses
+	// read only: true
+	Revision string `json:"revision"`
 }
 
 // Zones shared as part of federation with partner federator
 type FederatedPartnerZone struct {
-	// Self operator ID, makes rbac easier
-	// read_only: true
+	// Self operator ID
 	SelfOperatorId string `json:"selfoperatorid"`
 	// Self federation ID
 	SelfFederationId string `gorm:"primary_key" json:"selffederationid"`
@@ -93,7 +102,7 @@ type FederatedPartnerZone struct {
 	// Partner federator zone
 	FederatorZone `json:",inline"`
 	// Zone registered by self federator
-	// read_only: true
+	// read only: true
 	Registered bool
 }
 

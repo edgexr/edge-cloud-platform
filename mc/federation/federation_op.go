@@ -139,6 +139,7 @@ func (p *PartnerApi) FederationOperatorPartnerCreate(c echo.Context) error {
 	}
 
 	out := OperatorRegistrationResponse{}
+	out.RequestId = opRegReq.RequestId
 	out.OrigFederationId = selfFed.FederationId
 	out.DestFederationId = opRegReq.OrigFederationId
 	out.OrigOperatorId = selfFed.OperatorId
@@ -169,6 +170,7 @@ func (p *PartnerApi) FederationOperatorPartnerCreate(c echo.Context) error {
 
 	// Add federation with partner federator
 	partnerFed.PartnerRoleAccessToSelfZones = true
+	partnerFed.Revision = opRegReq.RequestId
 	if err := db.Save(&partnerFed).Error; err != nil {
 		return ormutil.DbErr(err)
 	}
@@ -221,6 +223,7 @@ func (p *PartnerApi) FederationOperatorPartnerUpdate(c echo.Context) error {
 		return fmt.Errorf("Nothing to update")
 	}
 
+	partnerFed.Revision = opConf.RequestId
 	err = db.Save(partnerFed).Error
 	if err != nil {
 		return ormutil.DbErr(err)
@@ -277,6 +280,7 @@ func (p *PartnerApi) FederationOperatorPartnerDelete(c echo.Context) error {
 
 	// Remove federation with partner federator
 	partnerFed.PartnerRoleAccessToSelfZones = false
+	partnerFed.Revision = opFedReq.RequestId
 	if err = db.Save(&partnerFed).Error; err != nil {
 		return ormutil.DbErr(err)
 	}
@@ -335,12 +339,14 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 			partnerFed.PartnerIdString())
 	}
 	existingZone.Registered = true
+	existingZone.Revision = opRegReq.RequestId
 	if err := db.Save(&existingZone).Error; err != nil {
 		return ormutil.DbErr(err)
 	}
 
 	// Share zone details
 	resp := OperatorZoneRegisterResponse{}
+	resp.RequestId = opRegReq.RequestId
 	resp.LeadOperatorId = selfFed.OperatorId
 	resp.PartnerOperatorId = opRegReq.Operator
 	resp.FederationId = selfFed.FederationId
@@ -405,6 +411,7 @@ func (p *PartnerApi) FederationOperatorZoneDeRegister(c echo.Context) error {
 	//       before the zone is deregistered
 
 	existingZone.Registered = false
+	existingZone.Revision = opRegReq.RequestId
 	if err := db.Save(&existingZone).Error; err != nil {
 		return ormutil.DbErr(err)
 	}
@@ -454,6 +461,7 @@ func (p *PartnerApi) FederationOperatorZoneShare(c echo.Context) error {
 	zoneObj.GeoLocation = opZoneShare.PartnerZone.GeoLocation
 	zoneObj.City = opZoneShare.PartnerZone.City
 	zoneObj.Locality = opZoneShare.PartnerZone.Locality
+	zoneObj.Revision = opZoneShare.RequestId
 	if err := db.Create(&zoneObj).Error; err != nil {
 		if strings.Contains(err.Error(), "pq: duplicate key value violates unique constraint") {
 			return fmt.Errorf("Zone ID %q already exists for partner federator %s", zoneId,
