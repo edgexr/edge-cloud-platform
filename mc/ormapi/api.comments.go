@@ -222,6 +222,7 @@ var FederatorComments = map[string]string{
 	"federationaddr":  `Federation access point address`,
 	"mcc":             `Mobile country code of operator sending the request`,
 	"locatorendpoint": `IP and Port of discovery service URL of operator platform`,
+	"revision":        `Revision ID to track object changes. We use jaeger traceID for easy debugging but this can differ with what partner federator uses`,
 }
 
 var FederationComments = map[string]string{
@@ -231,11 +232,12 @@ var FederationComments = map[string]string{
 	"federator.federationaddr":      `Federation access point address`,
 	"federator.mcc":                 `Mobile country code of operator sending the request`,
 	"federator.locatorendpoint":     `IP and Port of discovery service URL of operator platform`,
-	"id":                            `Internal ID to reference a federation read_only: true`,
+	"federator.revision":            `Revision ID to track object changes. We use jaeger traceID for easy debugging but this can differ with what partner federator uses`,
+	"id":                            `Internal ID to reference a federation`,
 	"selffederationid":              `Self federation ID`,
-	"selfoperatorid":                `Self operator ID, makes rbac easier read_only: true`,
-	"partnerrolesharezoneswithself": `Partner shares its zones with self federator as part of federation read_only: true`,
-	"partnerroleaccesstoselfzones":  `Partner is allowed access to self federator zones as part of federation read_only: true`,
+	"selfoperatorid":                `Self operator ID`,
+	"partnerrolesharezoneswithself": `Partner shares its zones with self federator as part of federation`,
+	"partnerroleaccesstoselfzones":  `Partner is allowed access to self federator zones as part of federation`,
 }
 
 var FederatorZoneComments = map[string]string{
@@ -247,14 +249,16 @@ var FederatorZoneComments = map[string]string{
 	"state":       `Comma seperated list of states under this zone`,
 	"locality":    `Type of locality eg rural, urban etc.`,
 	"region":      `Region in which cloudlets reside`,
+	"revision":    `Revision ID to track object changes. We use jaeger traceID for easy debugging but this can differ with what partner federator uses`,
 }
 
 var FederatedSelfZoneComments = map[string]string{
 	"zoneid":              `Globally unique identifier of the federator zone`,
-	"selfoperatorid":      `Self operator ID, makes rbac easier read_only: true`,
+	"selfoperatorid":      `Self operator ID`,
 	"selffederationid":    `Self federation ID`,
 	"partnerfederationid": `Partner federation ID`,
-	"registered":          `Zone registered by partner federator read_only: true`,
+	"registered":          `Zone registered by partner federator`,
+	"revision":            `Revision ID to track object changes. We use jaeger traceID for easy debugging but this can differ with what partner federator uses`,
 }
 
 var FederatedPartnerZoneComments = map[string]string{
@@ -266,8 +270,9 @@ var FederatedPartnerZoneComments = map[string]string{
 	"federatorzone.state":       `Comma seperated list of states under this zone`,
 	"federatorzone.locality":    `Type of locality eg rural, urban etc.`,
 	"federatorzone.region":      `Region in which cloudlets reside`,
-	"selfoperatorid":            `Self operator ID, makes rbac easier read_only: true`,
+	"federatorzone.revision":    `Revision ID to track object changes. We use jaeger traceID for easy debugging but this can differ with what partner federator uses`,
+	"selfoperatorid":            `Self operator ID`,
 	"selffederationid":          `Self federation ID`,
 	"partnerfederationid":       `Partner federation ID`,
-	"registered":                `Zone registered by self federator read_only: true`,
+	"registered":                `Zone registered by self federator`,
 }
