@@ -236,7 +236,7 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context) (*OPAttr, []Federa
 		fed.countryCode = countryCode
 		fed.tokenAd = tokenAd
 		fed.regions = regions
-		fed.fedAddr = fedAddr
+		fed.fedAddr = "http://" + fedAddr
 
 		// admin allow non-edgebox cloudlets on operator org
 		setOperatorOrgNoEdgeboxOnly(t, mcClient, uri, tokenAd, operatorId)
@@ -248,7 +248,7 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context) (*OPAttr, []Federa
 }
 
 func getFederationAPI(fedAddr, fedApi string) string {
-	return "http://" + fedAddr + fedApi
+	return fedAddr + fedApi
 }
 
 func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr) {
@@ -336,9 +336,11 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr) {
 			out := federation.OperatorZoneRegisterResponse{
 				LeadOperatorId: partnerFed.operatorId,
 				FederationId:   partnerFed.fedId,
-				Zone: federation.ZoneRegisterDetails{
-					ZoneId:            zoneRegReq.Zones[0],
-					RegistrationToken: zoneRegReq.OrigFederationId,
+				Zone: []federation.ZoneRegisterDetails{
+					federation.ZoneRegisterDetails{
+						ZoneId:            zoneRegReq.Zones[0],
+						RegistrationToken: zoneRegReq.OrigFederationId,
+					},
 				},
 			}
 			return httpmock.NewJsonResponse(200, out)
@@ -427,7 +429,7 @@ func TestFederation(t *testing.T) {
 		operatorId:  "partnerOper",
 		countryCode: "EU",
 		fedId:       partnerFedId,
-		fedAddr:     "111.111.111.111",
+		fedAddr:     "http://111.111.111.111",
 	}
 	partnerZones := []federation.ZoneInfo{
 		federation.ZoneInfo{

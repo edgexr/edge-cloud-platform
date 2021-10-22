@@ -298,9 +298,6 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 	if err := c.Bind(&opRegReq); err != nil {
 		return err
 	}
-	if len(opRegReq.Zones) == 0 {
-		return fmt.Errorf("Must specify one zone ID")
-	}
 	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
 		ctx,
 		opRegReq.OrigFederationId,
@@ -319,41 +316,44 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 
 	// Check if zone exists
 	db := p.loggedDB(ctx)
-	zoneId := opRegReq.Zones[0]
-	lookup := ormapi.FederatedSelfZone{
-		ZoneId:              zoneId,
-		SelfFederationId:    selfFed.FederationId,
-		PartnerFederationId: partnerFed.FederationId,
-	}
-	existingZone := ormapi.FederatedSelfZone{}
-	err = db.Where(&lookup).First(&existingZone).Error
-	if err != nil {
-		return ormutil.DbErr(err)
-	}
-	if existingZone.ZoneId == "" {
-		return fmt.Errorf("Zone ID %q not shared with partner federator %s", zoneId,
-			partnerFed.PartnerIdString())
-	}
-	if existingZone.Registered {
-		return fmt.Errorf("Zone ID %q is already registered by partner federator %s", zoneId,
-			partnerFed.PartnerIdString())
-	}
-	existingZone.Registered = true
-	existingZone.Revision = opRegReq.RequestId
-	if err := db.Save(&existingZone).Error; err != nil {
-		return ormutil.DbErr(err)
-	}
+	zoneRegDetails := []ZoneRegisterDetails{}
+	for _, zoneId := range opRegReq.Zones {
+		lookup := ormapi.FederatedSelfZone{
+			ZoneId:              zoneId,
+			SelfFederationId:    selfFed.FederationId,
+			PartnerFederationId: partnerFed.FederationId,
+		}
+		existingZone := ormapi.FederatedSelfZone{}
+		err = db.Where(&lookup).First(&existingZone).Error
+		if err != nil {
+			return ormutil.DbErr(err)
+		}
+		if existingZone.ZoneId == "" {
+			return fmt.Errorf("Zone ID %q not shared with partner federator %s", zoneId,
+				partnerFed.PartnerIdString())
+		}
+		if existingZone.Registered {
+			return fmt.Errorf("Zone ID %q is already registered by partner federator %s", zoneId,
+				partnerFed.PartnerIdString())
+		}
+		existingZone.Registered = true
+		existingZone.Revision = opRegReq.RequestId
+		if err := db.Save(&existingZone).Error; err != nil {
+			return ormutil.DbErr(err)
+		}
+		zoneRegDetails = append(zoneRegDetails, ZoneRegisterDetails{
+			ZoneId:            zoneId,
+			RegistrationToken: selfFed.FederationId,
+		})
 
+	}
 	// Share zone details
 	resp := OperatorZoneRegisterResponse{}
 	resp.RequestId = opRegReq.RequestId
 	resp.LeadOperatorId = selfFed.OperatorId
 	resp.PartnerOperatorId = opRegReq.Operator
 	resp.FederationId = selfFed.FederationId
-	resp.Zone = ZoneRegisterDetails{
-		ZoneId:            zoneId,
-		RegistrationToken: selfFed.FederationId,
-	}
+	resp.Zone = zoneRegDetails
 	return c.JSON(http.StatusOK, resp)
 }
 

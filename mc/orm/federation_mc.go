@@ -17,6 +17,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/tls"
 )
 
 func setForeignKeyConstraint(loggedDb *gorm.DB, fKeyTableName, fKeyFields, refTableName, refFields string) error {
@@ -113,7 +114,14 @@ func sendFederationRequest(method, fedAddr, endpoint string, reqData, replyData 
 	if unitTest {
 		restClient.ForceDefaultTransport = true
 	}
-	requestUrl := fmt.Sprintf("http://%s%s", fedAddr, endpoint)
+	if tls.IsTestTls() {
+		restClient.SkipVerify = true
+	}
+	if !strings.HasPrefix(fedAddr, "http") {
+		fedAddr = "https://" + fedAddr
+	}
+	fedAddr = strings.TrimSuffix(fedAddr, "/")
+	requestUrl := fmt.Sprintf("%s%s", fedAddr, endpoint)
 	status, err := restClient.HttpJsonSend(method, requestUrl, "", reqData, replyData)
 	if err != nil {
 		return err
@@ -1188,7 +1196,7 @@ func RegisterFederation(c echo.Context) error {
 
 	return ormutil.SetReply(c, ormutil.Msg(
 		fmt.Sprintf("Created directed federation with partner federator (%s) successfully",
-			opFed.PartnerIdString())))
+			partnerFed.PartnerIdString())))
 }
 
 // Delete directed federation between self federator and partner federator.
@@ -1278,7 +1286,7 @@ func DeregisterFederation(c echo.Context) error {
 
 	return ormutil.SetReply(c, ormutil.Msg(
 		fmt.Sprintf("Deleted federation with partner federator (%s) successfully",
-			opFed.PartnerIdString())))
+			partnerFed.PartnerIdString())))
 }
 
 func ShowFederation(c echo.Context) error {
