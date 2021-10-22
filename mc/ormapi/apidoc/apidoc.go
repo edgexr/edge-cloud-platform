@@ -170,6 +170,7 @@ func (s *ApiStruct) Visit(node ast.Node) ast.Visitor {
 			switch t.Sel.Name {
 			case "Time":
 			case "ReportSchedule":
+			case "StringArray":
 			default:
 				return nil
 			}

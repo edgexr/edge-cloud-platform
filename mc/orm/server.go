@@ -935,8 +935,11 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		partnerApi.InitAPIs(federationEcho)
 
 		go func() {
-			// TODO mTLS
-			err := federationEcho.Start(config.FederationAddr)
+			if config.ApiTlsCertFile != "" {
+				err = federationEcho.StartTLS(config.FederationAddr, config.ApiTlsCertFile, config.ApiTlsKeyFile)
+			} else {
+				err = federationEcho.Start(config.FederationAddr)
+			}
 			if err != nil && err != http.ErrServerClosed {
 				server.Stop()
 				log.FatalLog("Failed to serve federation", "err", err)

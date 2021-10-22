@@ -57,5 +57,3 @@ tests:
       yaml1: '{{outputdir}}/show-commands.yml'
       yaml2: '{{datadir2}}/mc_user3_data_show.yml'
       filetype: mcdata
-
-  - includefile: federation_partner_setup.yml

@@ -97,7 +97,7 @@ type OperatorZoneRegisterResponse struct {
 	// Federation ID
 	FederationId string `json:"federationId"`
 	// Partner OP zone details
-	Zone ZoneRegisterDetails `json:"zone"`
+	Zone []ZoneRegisterDetails `json:"zone"`
 }
 
 type ZoneRegisterDetails struct {
