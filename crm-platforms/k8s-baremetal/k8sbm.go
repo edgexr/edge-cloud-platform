@@ -103,6 +103,10 @@ func (k *K8sBareMetalPlatform) GatherCloudletInfo(ctx context.Context, info *edg
 	log.SpanLog(ctx, log.DebugLevelInfra, "GatherCloudletInfo")
 	var err error
 	info.Flavors, err = k.GetFlavorList(ctx)
+	if err != nil {
+		return err
+	}
+	info.NodeInfos, err = k.GetNodeInfos(ctx)
 	return err
 }
 

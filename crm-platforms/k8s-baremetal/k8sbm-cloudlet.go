@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/util"
 
@@ -272,4 +273,13 @@ func (k *K8sBareMetalPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.
 		}
 	}
 	return flavors, nil
+}
+
+func (k *K8sBareMetalPlatform) GetNodeInfos(ctx context.Context) ([]*edgeproto.NodeInfo, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetNodeInfos")
+	client, err := k.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: k.commonPf.PlatformConfig.CloudletKey.String(), Type: k8sControlHostNodeType})
+	if err != nil {
+		return nil, err
+	}
+	return k8smgmt.GetNodeInfos(ctx, client, "KUBECONFIG="+k.cloudletKubeConfig)
 }
