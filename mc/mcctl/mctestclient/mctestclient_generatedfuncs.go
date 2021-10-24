@@ -3608,6 +3608,76 @@ func (s *Client) ShowTrustPolicy(uri string, token string, in *ormapi.RegionTrus
 	return out, rundata.RetStatus, rundata.RetError
 }
 
+// Generating group TrustPolicyException
+
+func (s *Client) CreateTrustPolicyException(uri string, token string, in *ormapi.RegionTrustPolicyException) (*edgeproto.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("CreateTrustPolicyException")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) UpdateTrustPolicyException(uri string, token string, in *ormapi.RegionTrustPolicyException) (*edgeproto.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
+	if err != nil {
+		return nil, 0, err
+	}
+	rundata.In = mm
+	var out edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("UpdateTrustPolicyException")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) DeleteTrustPolicyException(uri string, token string, in *ormapi.RegionTrustPolicyException) (*edgeproto.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("DeleteTrustPolicyException")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowTrustPolicyException(uri string, token string, in *ormapi.RegionTrustPolicyException) ([]edgeproto.TrustPolicyException, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []edgeproto.TrustPolicyException
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowTrustPolicyException")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
 // Generating group Usage
 
 func (s *Client) ShowAppUsage(uri string, token string, in *ormapi.RegionAppInstUsage) (*ormapi.AllMetrics, int, error) {

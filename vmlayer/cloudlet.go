@@ -375,6 +375,31 @@ func (v *VMPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgepro
 	return v.VMProvider.ConfigureCloudletSecurityRules(ctx, egressRestricted, TrustPolicy, rootlbClients, ActionUpdate, edgeproto.DummyUpdateCallback)
 }
 
+func (v *VMPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException) error {
+	log.DebugLog(log.DebugLevelInfra, "update VMPlatform TrustPolicyException", "policy", TrustPolicyException)
+
+	rootlbClients, err := v.GetAllRootLBClients(ctx)
+	if err != nil {
+		return fmt.Errorf("Unable to get rootlb clients - %v", err)
+	}
+	// Only create supported, update not allowed.
+	return v.VMProvider.ConfigureTrustPolicyExceptionSecurityRules(ctx, TrustPolicyException, rootlbClients, ActionCreate, edgeproto.DummyUpdateCallback)
+}
+
+func (v *VMPlatform) DeleteTrustPolicyException(ctx context.Context, TrustPolicyExceptionKey *edgeproto.TrustPolicyExceptionKey) error {
+	log.DebugLog(log.DebugLevelInfra, "Delete VMPlatform TrustPolicyException", "policyKey", TrustPolicyExceptionKey)
+
+	rootlbClients, err := v.GetAllRootLBClients(ctx)
+	if err != nil {
+		return fmt.Errorf("Unable to get rootlb clients - %v", err)
+	}
+	// Note when Delete gets called using a task-worker approach, we don't actually have the TrustPolicyException object that was deleted, we only have the key.
+	TrustPolicyException := edgeproto.TrustPolicyException{
+		Key: *TrustPolicyExceptionKey,
+	}
+	return v.VMProvider.ConfigureTrustPolicyExceptionSecurityRules(ctx, &TrustPolicyException, rootlbClients, ActionDelete, edgeproto.DummyUpdateCallback)
+}
+
 func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Deleting cloudlet", "cloudletName", cloudlet.Key.Name)
 

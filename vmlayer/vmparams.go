@@ -581,10 +581,10 @@ func (v *VMPlatform) getVMGroupRequestSpec(ctx context.Context, name string, vms
 }
 
 // GetVMGroupOrchestrationParamsFromTrustPolicy returns an set of orchestration params for just a privacy policy egress rules
-func GetVMGroupOrchestrationParamsFromTrustPolicy(ctx context.Context, name string, privPolicy *edgeproto.TrustPolicy, egressRestricted bool, opts ...SecgrpParamsOp) (*VMGroupOrchestrationParams, error) {
+func GetVMGroupOrchestrationParamsFromTrustPolicy(ctx context.Context, name string, rules []edgeproto.SecurityRule, egressRestricted bool, opts ...SecgrpParamsOp) (*VMGroupOrchestrationParams, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMGroupOrchestrationParamsFromTrustPolicy", "name", name)
 	var vmgp VMGroupOrchestrationParams
-	opts = append(opts, SecGrpWithEgressRules(privPolicy.OutboundSecurityRules, egressRestricted))
+	opts = append(opts, SecGrpWithEgressRules(rules, egressRestricted))
 	externalSecGrp, err := GetSecGrpParams(name, opts...)
 	if err != nil {
 		return nil, err

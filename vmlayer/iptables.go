@@ -77,29 +77,36 @@ func (v *VMPlatform) setupForwardingIptables(ctx context.Context, client ssh.Cli
 	return nil
 }
 
-func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client ssh.Client, sshCidrsAllowed []string, TrustPolicy *edgeproto.TrustPolicy) error {
+// isTrustPolicy true means cloudlet level trustPolicy and false implies TrustPolicyException
+func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client ssh.Client, sshCidrsAllowed []string, isTrustPolicy bool, secGrpName string, rules []edgeproto.SecurityRule) error {
+
+	if isTrustPolicy == true {
+		// The label used for TrustPolicy
+		secGrpName = infracommon.TrustPolicySecGrpNameLabel
+	}
+	// For TrustPolicyException, use parameter secGrpName as the label
 
 	var netRules infracommon.FirewallRules
 	var ppRules infracommon.FirewallRules
 
 	//First create the global rules on this LB
-	log.SpanLog(ctx, log.DebugLevelInfra, "SetupIptablesRulesForRootLB", "TrustPolicy", TrustPolicy)
-	err := v.CommonPf.CreateCloudletFirewallRules(ctx, client)
-	if err != nil {
-		return err
-	}
-
-	// Allow SSH from provided cidrs
-	for _, netCidr := range sshCidrsAllowed {
-		sshIngress := infracommon.FirewallRule{
-			Protocol:     "tcp",
-			RemoteCidr:   netCidr,
-			PortRange:    "22",
-			PortEndpoint: infracommon.DestPort,
+	log.SpanLog(ctx, log.DebugLevelInfra, "SetupIptablesRulesForRootLB", "isTrustPolicy", isTrustPolicy)
+	if isTrustPolicy {
+		err := v.CommonPf.CreateCloudletFirewallRules(ctx, client)
+		if err != nil {
+			return err
 		}
-		netRules.IngressRules = append(netRules.IngressRules, sshIngress)
+		// Allow SSH from provided cidrs
+		for _, netCidr := range sshCidrsAllowed {
+			sshIngress := infracommon.FirewallRule{
+				Protocol:     "tcp",
+				RemoteCidr:   netCidr,
+				PortRange:    "22",
+				PortEndpoint: infracommon.DestPort,
+			}
+			netRules.IngressRules = append(netRules.IngressRules, sshIngress)
+		}
 	}
-
 	// all traffic between the internal networks is allowed
 	internalRoute, err := v.GetInternalNetworkRoute(ctx)
 	if err != nil {
@@ -121,41 +128,39 @@ func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client s
 
 	// optionally add/update/delete Trust Policy
 	allowEgressAll := false
-	if TrustPolicy != nil {
-		// always delete the trust rules first, they will be re-added as required
-		err := infracommon.RemoveTrustPolicyIfExists(ctx, client)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "SetupIpTablesRulesForRootLB removeTrustPolicyIfExists fail", "error", err)
-		}
-		if len(TrustPolicy.OutboundSecurityRules) == 0 {
-			// a privacy policy with no rules means we need to open all egress traffic
-			log.SpanLog(ctx, log.DebugLevelInfra, "SetupIpTablesRulesForRootLB empty OutboundSecRules removeIfExist")
-			allowEgressAll = true
-		}
-		for _, p := range TrustPolicy.OutboundSecurityRules {
-			allowEgressAll = false
-			portRange := fmt.Sprintf("%d", p.PortRangeMin)
-			if p.PortRangeMax != 0 {
-				portRange += fmt.Sprintf(":%d", p.PortRangeMax)
-			}
-			egressRule := infracommon.FirewallRule{
-				Protocol:     p.Protocol,
-				PortRange:    portRange,
-				RemoteCidr:   p.RemoteCidr,
-				PortEndpoint: infracommon.DestPort,
-			}
-			ppRules.EgressRules = append(ppRules.EgressRules, egressRule)
-		}
-	} else {
-		infracommon.RemoveTrustPolicyIfExists(ctx, client)
+	// always delete the trust rules first, they will be re-added as required
+	err = infracommon.RemoveTrustPolicyIfExists(ctx, client, isTrustPolicy, secGrpName)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "SetupIpTablesRulesForRootLB removeTrustPolicyIfExists fail", "error", err)
 	}
+	if len(rules) == 0 {
+		// a privacy policy with no rules means we need to open all egress traffic
+		log.SpanLog(ctx, log.DebugLevelInfra, "SetupIpTablesRulesForRootLB empty OutboundSecRules removeIfExist")
+		allowEgressAll = true
+	}
+	for _, p := range rules {
+		allowEgressAll = false
+		portRange := fmt.Sprintf("%d", p.PortRangeMin)
+		if p.PortRangeMax != 0 {
+			portRange += fmt.Sprintf(":%d", p.PortRangeMax)
+		}
+		egressRule := infracommon.FirewallRule{
+			Protocol:     p.Protocol,
+			PortRange:    portRange,
+			RemoteCidr:   p.RemoteCidr,
+			PortEndpoint: infracommon.DestPort,
+		}
+		ppRules.EgressRules = append(ppRules.EgressRules, egressRule)
+	}
+
 	if allowEgressAll {
 		allowAllEgressRule := infracommon.FirewallRule{
 			RemoteCidr: "0.0.0.0/0",
 		}
 		ppRules.EgressRules = append(ppRules.EgressRules, allowAllEgressRule)
 	}
-	err = infracommon.AddIptablesRules(ctx, client, "trust-policy", &ppRules)
+
+	err = infracommon.AddIptablesRules(ctx, client, secGrpName, &ppRules)
 	if err != nil {
 		return err
 	}

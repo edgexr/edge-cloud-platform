@@ -3294,7 +3294,7 @@ func TestDataConversions(t *testing.T) {
 	obj.App.Key.Organization = "someorg"
 	obj.App.Configs = []*edgeproto.ConfigFile{}
 	obj.App.AutoProvPolicies = []string{}
-	obj.App.RequiredOutboundConnections = []*edgeproto.RemoteConnection{}
+	obj.App.RequiredOutboundConnections = []edgeproto.SecurityRule{}
 	obj.App.Fields = []string{
 		edgeproto.AppFieldKeyOrganization,
 		edgeproto.AppFieldKeyName,
