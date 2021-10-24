@@ -107,6 +107,13 @@ func (m *ManagedK8sPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy 
 	log.DebugLog(log.DebugLevelInfra, "update ManagedK8sPlatform TrustPolicy", "policy", TrustPolicy)
 	return fmt.Errorf("UpdateTrustPolicy not supported on managed k8s platform: %s", m.Type)
 }
+func (m *ManagedK8sPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException) error {
+	return fmt.Errorf("UpdateTrustPolicyException TODO")
+}
+
+func (m *ManagedK8sPlatform) DeleteTrustPolicyException(ctx context.Context, TrustPolicyExceptionKey *edgeproto.TrustPolicyExceptionKey) error {
+	return fmt.Errorf("DeleteTrustPolicyException TODO")
+}
 
 func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteCloudlet", "cloudlet", cloudlet)

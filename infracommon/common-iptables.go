@@ -31,6 +31,8 @@ type PortSourceOrDestChoice string
 const SourcePort PortSourceOrDestChoice = "sport"
 const DestPort PortSourceOrDestChoice = "dport"
 
+const TrustPolicySecGrpNameLabel string = "trust-policy"
+
 type FirewallRule struct {
 	Protocol     string
 	RemoteCidr   string
@@ -413,11 +415,20 @@ func RemoveIngressIptablesRules(ctx context.Context, client ssh.Client, label, c
 	return DeleteIptablesRules(ctx, client, label, fwRules)
 }
 
-func RemoveTrustPolicyIfExists(ctx context.Context, client ssh.Client) error {
+func RemoveTrustPolicyIfExists(ctx context.Context, client ssh.Client, isTrustPolicy bool, secGrpName string) error {
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "removeTrustPolicyIfExists")
-	currentRules, err := getCurrentIptableRulesForLabel(ctx, client, "trust-policy")
+	// For TrustPolicyException, use parameter secGrpName as the label
+	// For TrustPolicy, label used is "trust-policy"
+	if isTrustPolicy {
+		secGrpName = TrustPolicySecGrpNameLabel
+	}
+
+	log.SpanLog(ctx, log.DebugLevelInfra, "removeTrustPolicyIfExists", "label", secGrpName)
+
+	currentRules, err := getCurrentIptableRulesForLabel(ctx, client, secGrpName)
+
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "RemoveTrustPolicyIfExists getCurrentIptableRulesForLabel failed", "err", err)
 		return err
 	}
 	action := InterfaceActionsOp{DeleteIptables: true}

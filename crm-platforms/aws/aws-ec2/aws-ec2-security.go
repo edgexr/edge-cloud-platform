@@ -243,3 +243,7 @@ func (a *AwsEc2Platform) GetIamAccountForImage(ctx context.Context) (string, err
 func (a *AwsEc2Platform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootLbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }
+
+func (a *AwsEc2Platform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+	return fmt.Errorf("Platform not supported for TrustPolicyException SecurityRules")
+}
