@@ -64,7 +64,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		span.SetTag("remote-ip", c.RealIP())
 		span.SetTag("level", "audit")
 		defer span.Finish()
-		ctx := log.ContextWithSpan(context.Background(), span)
+		ctx := log.ContextWithSpan(req.Context(), span)
 		ec := ormutil.NewEchoContext(c, ctx)
 
 		// The error handler injects the error into the response.
@@ -207,7 +207,11 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 				eventErr = he.Internal
 			}
 		}
-		if len(resBody) > 0 {
+		if strings.Contains(req.RequestURI, "/auth/ctrl/RunDebug") {
+			// omit response as it can be quite large when dumping data,
+			// and may also contain sensitive data.
+			response = ""
+		} else if len(resBody) > 0 {
 			// for all responses, if it has a jwt token
 			// remove it before logging
 			if strings.Contains(string(resBody), "token") {
