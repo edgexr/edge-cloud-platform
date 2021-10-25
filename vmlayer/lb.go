@@ -210,7 +210,7 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 }
 
 // AttachAndEnableRootLBInterface attaches the interface and enables it in the OS.  Returns the internal interface name
-func (v *VMPlatform) AttachAndEnableRootLBInterface(ctx context.Context, client ssh.Client, rootLBName string, attachPort bool, subnetName, internalPortName, internalIPAddr string) (string, error) {
+func (v *VMPlatform) AttachAndEnableRootLBInterface(ctx context.Context, client ssh.Client, rootLBName string, attachPort bool, subnetName, internalPortName, internalIPAddr string, vmAction ActionType) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AttachAndEnableRootLBInterface", "rootLBName", rootLBName, "attachPort", attachPort, "subnetName", subnetName, "internalPortName", internalPortName)
 
 	if rootLBName == v.VMProperties.SharedRootLBName {
@@ -221,7 +221,7 @@ func (v *VMPlatform) AttachAndEnableRootLBInterface(ctx context.Context, client 
 	action.CreateIptables = true
 	if attachPort {
 		action.AddInterface = true
-		err := v.VMProvider.AttachPortToServer(ctx, rootLBName, subnetName, internalPortName, internalIPAddr, ActionCreate)
+		err := v.VMProvider.AttachPortToServer(ctx, rootLBName, subnetName, internalPortName, internalIPAddr, vmAction)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "fail to attach port", "err", err)
 			return "", err

@@ -491,6 +491,7 @@ type VMOrchestrationParams struct {
 	CloudConfigParams       VMCloudConfigParams
 	VmAppOsType             edgeproto.VmAppOsType
 	Routes                  map[string][]edgeproto.Route // map of network name to routes
+	ExistingVm              bool
 }
 
 var (

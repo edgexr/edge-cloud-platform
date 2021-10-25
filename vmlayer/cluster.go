@@ -424,7 +424,7 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 			if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED && v.VMProvider.GetInternalPortPolicy() == AttachPortDuringCreate {
 				attachPort = false
 			}
-			_, err = v.AttachAndEnableRootLBInterface(ctx, client, rootLBName, attachPort, subnetName, GetPortName(rootLBName, subnetName), gw)
+			_, err = v.AttachAndEnableRootLBInterface(ctx, client, rootLBName, attachPort, subnetName, GetPortName(rootLBName, subnetName), gw, action)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "AttachAndEnableRootLBInterface failed", "err", err)
 				return err
