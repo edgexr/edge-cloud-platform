@@ -69,8 +69,8 @@ var ApiFields = []string{
 }
 
 var ClientApiAggregationFunctions = map[string]string{
-	"reqs":          "sum(\"reqs\")",
-	"errs":          "sum(\"errs\")",
+	"reqs":          "last(\"reqs\")",
+	"errs":          "last(\"errs\")",
 	"cellID":        "last(\"cellID\")",
 	"foundCloudlet": "last(\"foundCloudlet\")",
 	"foundOperator": "last(\"foundOperator\")",
