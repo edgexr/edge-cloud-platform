@@ -1,13 +1,9 @@
 federations:
 - selfoperatorid: dmuus
-  selffederationid: dmuus-SA-{{partnertag}}-{{region}}
-  federator:
-    federationid: {{partnertag}}-{{region}}-dmuus-SA
+  name: dmuus-SA-{{partnertag}}-{{region}}-fed
+- selfoperatorid: dmuus
+  name: dmuus-SB-{{partnertag}}-{{region}}-fed
 - selfoperatorid: enterprise
-  selffederationid: enterprise-SA-{{partnertag}}-{{region}}
-  federator:
-    federationid: {{partnertag}}-{{region}}-enterprise-SA
+  name: enterprise-SA-{{partnertag}}-{{region}}-fed
 - selfoperatorid: enterprise
-  selffederationid: enterprise-SB-{{partnertag}}-{{region}}
-  federator:
-    federationid: {{partnertag}}-{{region}}-enterprise-SB
+  name: enterprise-SB-{{partnertag}}-{{region}}-fed

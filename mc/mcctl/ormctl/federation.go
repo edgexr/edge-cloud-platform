@@ -31,7 +31,7 @@ func init() {
 			Use:          "update",
 			Short:        "Update Self Federator",
 			SpecialArgs:  &FederatorSpecialArgs,
-			RequiredArgs: "operatorid countrycode federationid",
+			RequiredArgs: "operatorid federationid",
 			OptionalArgs: "mcc mnc locatorendpoint",
 			Comments:     ormapi.FederatorComments,
 			ReqData:      &ormapi.Federator{},
@@ -42,7 +42,7 @@ func init() {
 			Name:         "DeleteSelfFederator",
 			Use:          "delete",
 			Short:        "Delete Self Federator",
-			RequiredArgs: "operatorid countrycode federationid",
+			RequiredArgs: "operatorid federationid",
 			Comments:     ormapi.FederatorComments,
 			ReqData:      &ormapi.Federator{},
 			ReplyData:    &ormapi.Result{},
@@ -52,6 +52,7 @@ func init() {
 			Name:         "ShowSelfFederator",
 			Use:          "show",
 			Short:        "Show Self Federator",
+			SpecialArgs:  &FederatorSpecialArgs,
 			OptionalArgs: strings.Join(append(FederatorRequiredArgs, FederatorOptionalArgs...), " "),
 			Comments:     ormapi.FederatorComments,
 			ReqData:      &ormapi.Federator{},
@@ -150,6 +151,7 @@ func init() {
 			Name:         "ShowFederatedPartnerZone",
 			Use:          "showfederatedpartnerzone",
 			Short:        "Show Federated Partner Zones",
+			SpecialArgs:  &FederatorZoneSpecialArgs,
 			AliasArgs:    strings.Join(FederatorZoneAliasArgs, " "),
 			OptionalArgs: strings.Join(FederatedZoneArgs, " "),
 			Comments:     aliasedComments(ormapi.FederatedPartnerZoneComments, FederatorZoneAliasArgs),
@@ -210,6 +212,7 @@ func init() {
 			Name:         "ShowFederation",
 			Use:          "show",
 			Short:        "Show Federation",
+			SpecialArgs:  &FederatorSpecialArgs,
 			AliasArgs:    strings.Join(FederationAliasArgs, " "),
 			OptionalArgs: strings.Join(append(SelfFederatorArgs, FederationRequiredArgs...), " "),
 			Comments:     aliasedComments(ormapi.FederationComments, FederationAliasArgs),
@@ -229,6 +232,7 @@ var SelfFederatorArgs = []string{
 var FederatorRequiredArgs = []string{
 	"operatorid",
 	"countrycode",
+	"region",
 	"mcc",
 	"mnc",
 }
@@ -239,6 +243,7 @@ var FederatorOptionalArgs = []string{
 }
 
 var FederationRequiredArgs = []string{
+	"name",
 	"operatorid",
 	"countrycode",
 	"federationid",
@@ -247,8 +252,7 @@ var FederationRequiredArgs = []string{
 
 var FederationArgs = []string{
 	"selfoperatorid",
-	"selffederationid",
-	"federationid",
+	"name",
 }
 
 var FederationAliasArgs = []string{
@@ -297,6 +301,5 @@ var FederatorZoneAliasArgs = []string{
 var FederatedZoneArgs = []string{
 	"zoneid",
 	"selfoperatorid",
-	"selffederationid",
-	"partnerfederationid",
+	"federationname",
 }

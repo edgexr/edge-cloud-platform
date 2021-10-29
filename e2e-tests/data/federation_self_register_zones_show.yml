@@ -1,7 +1,6 @@
 federatedpartnerzones:
 - selfoperatorid: dmuus
-  selffederationid: dmuus-SA-partner1-PA
-  partnerfederationid: partner1-PA-dmuus-SA
+  federationname: dmuus-SA-partner1-PA-fed
   federatorzone:
     zoneid: partner1-cloud-1
     operatorid: partner1
@@ -9,44 +8,7 @@ federatedpartnerzones:
     geolocation: 31,-91
   registered: true
 - selfoperatorid: dmuus
-  selffederationid: dmuus-SA-partner1-PA
-  partnerfederationid: partner1-PA-dmuus-SA
-  federatorzone:
-    zoneid: partner1-cloud-2
-    operatorid: partner1
-    countrycode: PA
-    geolocation: 31,-91
-  registered: true
-- selfoperatorid: enterprise
-  selffederationid: enterprise-SA-partner1-PA
-  partnerfederationid: partner1-PA-enterprise-SA
-  federatorzone:
-    zoneid: partner1-cloud-1
-    operatorid: partner1
-    countrycode: PA
-    geolocation: 31,-91
-  registered: true
-- selfoperatorid: enterprise
-  selffederationid: enterprise-SA-partner1-PA
-  partnerfederationid: partner1-PA-enterprise-SA
-  federatorzone:
-    zoneid: partner1-cloud-2
-    operatorid: partner1
-    countrycode: PA
-    geolocation: 31,-91
-  registered: true
-- selfoperatorid: enterprise
-  selffederationid: enterprise-SB-partner1-PA
-  partnerfederationid: partner1-PA-enterprise-SB
-  federatorzone:
-    zoneid: partner1-cloud-1
-    operatorid: partner1
-    countrycode: PA
-    geolocation: 31,-91
-  registered: true
-- selfoperatorid: enterprise
-  selffederationid: enterprise-SB-partner1-PA
-  partnerfederationid: partner1-PA-enterprise-SB
+  federationname: dmuus-SA-partner1-PA-fed
   federatorzone:
     zoneid: partner1-cloud-2
     operatorid: partner1
@@ -54,8 +16,55 @@ federatedpartnerzones:
     geolocation: 31,-91
   registered: true
 - selfoperatorid: dmuus
-  selffederationid: dmuus-SA-partner2-PS
-  partnerfederationid: partner2-PS-dmuus-SA
+  federationname: dmuus-SB-partner1-PA-fed
+  federatorzone:
+    zoneid: partner1-cloud-1
+    operatorid: partner1
+    countrycode: PA
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: dmuus
+  federationname: dmuus-SB-partner1-PA-fed
+  federatorzone:
+    zoneid: partner1-cloud-2
+    operatorid: partner1
+    countrycode: PA
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: enterprise
+  federationname: enterprise-SA-partner1-PA-fed
+  federatorzone:
+    zoneid: partner1-cloud-1
+    operatorid: partner1
+    countrycode: PA
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: enterprise
+  federationname: enterprise-SA-partner1-PA-fed
+  federatorzone:
+    zoneid: partner1-cloud-2
+    operatorid: partner1
+    countrycode: PA
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: enterprise
+  federationname: enterprise-SB-partner1-PA-fed
+  federatorzone:
+    zoneid: partner1-cloud-1
+    operatorid: partner1
+    countrycode: PA
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: enterprise
+  federationname: enterprise-SB-partner1-PA-fed
+  federatorzone:
+    zoneid: partner1-cloud-2
+    operatorid: partner1
+    countrycode: PA
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: dmuus
+  federationname: dmuus-SA-partner2-PS-fed
   federatorzone:
     zoneid: partner2-cloud-1
     operatorid: partner2
@@ -63,8 +72,23 @@ federatedpartnerzones:
     geolocation: 31,-91
   registered: true
 - selfoperatorid: dmuus
-  selffederationid: dmuus-SA-partner2-PS
-  partnerfederationid: partner2-PS-dmuus-SA
+  federationname: dmuus-SA-partner2-PS-fed
+  federatorzone:
+    zoneid: partner2-cloud-2
+    operatorid: partner2
+    countrycode: PS
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: dmuus
+  federationname: dmuus-SB-partner2-PS-fed
+  federatorzone:
+    zoneid: partner2-cloud-1
+    operatorid: partner2
+    countrycode: PS
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: dmuus
+  federationname: dmuus-SB-partner2-PS-fed
   federatorzone:
     zoneid: partner2-cloud-2
     operatorid: partner2
@@ -72,8 +96,7 @@ federatedpartnerzones:
     geolocation: 31,-91
   registered: true
 - selfoperatorid: enterprise
-  selffederationid: enterprise-SA-partner2-PS
-  partnerfederationid: partner2-PS-enterprise-SA
+  federationname: enterprise-SA-partner2-PS-fed
   federatorzone:
     zoneid: partner2-cloud-1
     operatorid: partner2
@@ -81,8 +104,7 @@ federatedpartnerzones:
     geolocation: 31,-91
   registered: true
 - selfoperatorid: enterprise
-  selffederationid: enterprise-SA-partner2-PS
-  partnerfederationid: partner2-PS-enterprise-SA
+  federationname: enterprise-SA-partner2-PS-fed
   federatorzone:
     zoneid: partner2-cloud-2
     operatorid: partner2
@@ -90,8 +112,7 @@ federatedpartnerzones:
     geolocation: 31,-91
   registered: true
 - selfoperatorid: enterprise
-  selffederationid: enterprise-SB-partner2-PS
-  partnerfederationid: partner2-PS-enterprise-SB
+  federationname: enterprise-SB-partner2-PS-fed
   federatorzone:
     zoneid: partner2-cloud-1
     operatorid: partner2
@@ -99,8 +120,7 @@ federatedpartnerzones:
     geolocation: 31,-91
   registered: true
 - selfoperatorid: enterprise
-  selffederationid: enterprise-SB-partner2-PS
-  partnerfederationid: partner2-PS-enterprise-SB
+  federationname: enterprise-SB-partner2-PS-fed
   federatorzone:
     zoneid: partner2-cloud-2
     operatorid: partner2

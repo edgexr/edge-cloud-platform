@@ -1,5 +1,6 @@
 federations:
-- selfoperatorid: dmuus
+- name: dmuus-SA-{{partnertag}}-{{region}}-fed
+  selfoperatorid: dmuus
   selffederationid: dmuus-SA-{{partnertag}}-{{region}}
   federator:
     operatorid: {{partnertag}}
@@ -11,7 +12,21 @@ federations:
     - 111
     - 222
     - 333
-- selfoperatorid: enterprise
+- name: dmuus-SB-{{partnertag}}-{{region}}-fed
+  selfoperatorid: dmuus
+  selffederationid: dmuus-SB-{{partnertag}}-{{region}}
+  federator:
+    operatorid: {{partnertag}}
+    countrycode: {{region}}
+    federationid: {{partnertag}}-{{region}}-dmuus-SB
+    federationaddr: {{fedaddr}}
+    mcc: 123
+    mnc:
+    - 111
+    - 222
+    - 333
+- name: enterprise-SA-{{partnertag}}-{{region}}-fed
+  selfoperatorid: enterprise
   selfcountrycode: SA
   selffederationid: enterprise-SA-{{partnertag}}-{{region}}
   federator:
@@ -24,7 +39,8 @@ federations:
     - 111
     - 222
     - 333
-- selfoperatorid: enterprise
+- name: enterprise-SB-{{partnertag}}-{{region}}-fed
+  selfoperatorid: enterprise
   selfcountrycode: SB
   selffederationid: enterprise-SB-{{partnertag}}-{{region}}
   federator:

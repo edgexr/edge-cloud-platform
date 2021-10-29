@@ -1,8 +1,6 @@
 package ormapi
 
 import (
-	"fmt"
-
 	"github.com/lib/pq"
 )
 
@@ -15,6 +13,8 @@ type Federator struct {
 	CountryCode string `json:"countrycode"`
 	// Federation access point address
 	FederationAddr string `json:"federationaddr"`
+	// Region to which this federator is associated with
+	Region string `json:"region"`
 	// Mobile country code of operator sending the request
 	MCC string `json:"mcc"`
 	// List of mobile network codes of operator sending the request
@@ -28,9 +28,8 @@ type Federator struct {
 }
 
 type Federation struct {
-	// Internal ID to reference a federation
-	// read only: true
-	Id int `gorm:"auto_increment:true; unique; not null"`
+	// Name to uniquely identify a federation
+	Name string `gorm:"unique; not null" json:"name"`
 	// Self federation ID
 	SelfFederationId string `gorm:"primary_key; unique" json:"selffederationid"`
 	// Self operator ID
@@ -78,10 +77,8 @@ type FederatedSelfZone struct {
 	ZoneId string `gorm:"primary_key;type:text REFERENCES federator_zones(zone_id)" json:"zoneid"`
 	// Self operator ID
 	SelfOperatorId string `json:"selfoperatorid"`
-	// Self federation ID
-	SelfFederationId string `gorm:"primary_key" json:"selffederationid"`
-	// Partner federation ID
-	PartnerFederationId string `gorm:"primary_key" json:"partnerfederationid"`
+	// Name of the Federation
+	FederationName string `gorm:"primary_key" json:"federationname"`
 	// Zone registered by partner federator
 	// read only: true
 	Registered bool
@@ -95,56 +92,11 @@ type FederatedSelfZone struct {
 type FederatedPartnerZone struct {
 	// Self operator ID
 	SelfOperatorId string `json:"selfoperatorid"`
-	// Self federation ID
-	SelfFederationId string `gorm:"primary_key" json:"selffederationid"`
-	// Partner federation ID
-	PartnerFederationId string `gorm:"primary_key" json:"partnerfederationid"`
+	// Name of the Federation
+	FederationName string `gorm:"primary_key" json:"federationname"`
 	// Partner federator zone
 	FederatorZone `json:",inline"`
 	// Zone registered by self federator
 	// read only: true
 	Registered bool
-}
-
-func federatorStr(operatorId, countryCode, federationId string) string {
-	if federationId != "" {
-		return fmt.Sprintf("OperatorId:%q/CountryCode:%q/FederationId:%q", operatorId, countryCode, federationId)
-	}
-	return fmt.Sprintf("OperatorId:%q/CountryCode:%q", operatorId, countryCode)
-}
-
-func federationIdStr(federationId string) string {
-	return fmt.Sprintf("FederationId:%q", federationId)
-}
-
-func (s *Federator) IdString() string {
-	return federatorStr(s.OperatorId, s.CountryCode, s.FederationId)
-}
-
-func (s *Federation) SelfIdString() string {
-	return federationIdStr(s.SelfFederationId)
-}
-
-func (s *Federation) PartnerIdString() string {
-	return s.Federator.IdString()
-}
-
-func (s *FederatorZone) IdString() string {
-	return federatorStr(s.OperatorId, s.CountryCode, "")
-}
-
-func (s *FederatedSelfZone) SelfIdString() string {
-	return federationIdStr(s.SelfFederationId)
-}
-
-func (s *FederatedSelfZone) PartnerIdString() string {
-	return federationIdStr(s.PartnerFederationId)
-}
-
-func (s *FederatedPartnerZone) SelfIdString() string {
-	return federationIdStr(s.SelfFederationId)
-}
-
-func (s *FederatedPartnerZone) PartnerIdString() string {
-	return federationIdStr(s.PartnerFederationId)
 }

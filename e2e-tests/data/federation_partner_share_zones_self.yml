@@ -1,28 +1,29 @@
 federatedselfzones:
 # Share with dmuus/SA
 - selfoperatorid: {{partnertag}}
-  selffederationid: {{partnertag}}-{{region}}-dmuus-SA
-  partnerfederationid: dmuus-SA-{{partnertag}}-{{region}}
+  federationname: {{partnertag}}-{{region}}-dmuus-SA-fed
   zoneid: {{partnertag}}-cloud-1
 - selfoperatorid: {{partnertag}}
-  selffederationid: {{partnertag}}-{{region}}-dmuus-SA
-  partnerfederationid: dmuus-SA-{{partnertag}}-{{region}}
+  federationname: {{partnertag}}-{{region}}-dmuus-SA-fed
+  zoneid: {{partnertag}}-cloud-2
+# Share with dmuus/SB
+- selfoperatorid: {{partnertag}}
+  federationname: {{partnertag}}-{{region}}-dmuus-SB-fed
+  zoneid: {{partnertag}}-cloud-1
+- selfoperatorid: {{partnertag}}
+  federationname: {{partnertag}}-{{region}}-dmuus-SB-fed
   zoneid: {{partnertag}}-cloud-2
 # Share with enterprise/SA
 - selfoperatorid: {{partnertag}}
-  selffederationid: {{partnertag}}-{{region}}-enterprise-SA
-  partnerfederationid: enterprise-SA-{{partnertag}}-{{region}}
+  federationname: {{partnertag}}-{{region}}-enterprise-SA-fed
   zoneid: {{partnertag}}-cloud-1
 - selfoperatorid: {{partnertag}}
-  selffederationid: {{partnertag}}-{{region}}-enterprise-SA
-  partnerfederationid: enterprise-SA-{{partnertag}}-{{region}}
+  federationname: {{partnertag}}-{{region}}-enterprise-SA-fed
   zoneid: {{partnertag}}-cloud-2
 # Share with enterprise/SB
 - selfoperatorid: {{partnertag}}
-  selffederationid: {{partnertag}}-{{region}}-enterprise-SB
-  partnerfederationid: enterprise-SB-{{partnertag}}-{{region}}
+  federationname: {{partnertag}}-{{region}}-enterprise-SB-fed
   zoneid: {{partnertag}}-cloud-1
 - selfoperatorid: {{partnertag}}
-  selffederationid: {{partnertag}}-{{region}}-enterprise-SB
-  partnerfederationid: enterprise-SB-{{partnertag}}-{{region}}
+  federationname: {{partnertag}}-{{region}}-enterprise-SB-fed
   zoneid: {{partnertag}}-cloud-2
