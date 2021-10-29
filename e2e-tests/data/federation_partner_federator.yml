@@ -1,6 +1,7 @@
 federators:
 - operatorid: {{partnertag}}
   countrycode: {{region}}
+  region: {{region}}
   federationid: {{partnertag}}-{{region}}-dmuus-SA # Just for testing, in production it will be auto-generated
   mcc: 123
   mnc:
@@ -9,6 +10,16 @@ federators:
   - 333
 - operatorid: {{partnertag}}
   countrycode: {{region}}
+  region: {{region}}
+  federationid: {{partnertag}}-{{region}}-dmuus-SB # Just for testing, in production it will be auto-generated
+  mcc: 123
+  mnc:
+  - 111
+  - 222
+  - 333
+- operatorid: {{partnertag}}
+  countrycode: {{region}}
+  region: {{region}}
   federationid: {{partnertag}}-{{region}}-enterprise-SA # Just for testing, in production it will be auto-generated
   mcc: 123
   mnc:
@@ -17,6 +28,7 @@ federators:
   - 333
 - operatorid: {{partnertag}}
   countrycode: {{region}}
+  region: {{region}}
   federationid: {{partnertag}}-{{region}}-enterprise-SB # Just for testing, in production it will be auto-generated
   mcc: 123
   mnc:

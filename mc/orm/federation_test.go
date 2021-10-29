@@ -60,8 +60,9 @@ type FederatorAttr struct {
 	operatorId  string
 	countryCode string
 	fedId       string
+	fedName     string
 	fedAddr     string
-	regions     []string
+	region      string
 	zones       []federation.ZoneInfo
 }
 
@@ -228,20 +229,20 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context) (*OPAttr, []Federa
 
 	selfFederators := []FederatorAttr{}
 	for _, operatorId := range operatorIds {
-		fed := FederatorAttr{}
 		// create an operator
 		_, _, tokenOper := testCreateUserOrg(t, mcClient, uri, operatorId+"-user", OrgTypeOperator, operatorId)
-		fed.tokenOper = tokenOper
-		fed.operatorId = operatorId
-		fed.countryCode = countryCode
-		fed.tokenAd = tokenAd
-		fed.regions = regions
-		fed.fedAddr = "http://" + fedAddr
-
 		// admin allow non-edgebox cloudlets on operator org
 		setOperatorOrgNoEdgeboxOnly(t, mcClient, uri, tokenAd, operatorId)
-
-		selfFederators = append(selfFederators, fed)
+		for _, region := range regions {
+			fed := FederatorAttr{}
+			fed.tokenOper = tokenOper
+			fed.operatorId = operatorId
+			fed.countryCode = countryCode
+			fed.tokenAd = tokenAd
+			fed.region = region
+			fed.fedAddr = "http://" + fedAddr
+			selfFederators = append(selfFederators, fed)
+		}
 	}
 
 	return &opAttr, selfFederators
@@ -429,6 +430,7 @@ func TestFederation(t *testing.T) {
 		operatorId:  "partnerOper",
 		countryCode: "EU",
 		fedId:       partnerFedId,
+		fedName:     "partnerFed",
 		fedAddr:     "http://111.111.111.111",
 	}
 	partnerZones := []federation.ZoneInfo{
@@ -547,10 +549,9 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 
 		// Verify that registered zones are shown
 		zoneLookup := &ormapi.FederatedSelfZone{
-			SelfOperatorId:      selfFed1.operatorId,
-			SelfFederationId:    selfFed1.fedId,
-			PartnerFederationId: partnerFed.fedId,
-			ZoneId:              sZone.ZoneId,
+			SelfOperatorId: selfFed1.operatorId,
+			FederationName: partnerFed.fedName,
+			ZoneId:         sZone.ZoneId,
 		}
 		selfFed1Zones, status, err := mcClient.ShowFederatedSelfZone(op.uri, selfFed1.tokenOper, zoneLookup)
 		require.Nil(t, err, "show self federator zones")
@@ -582,9 +583,8 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 
 	// verify that selfFed1 added this new zone in its db
 	zoneLookup := &ormapi.FederatedPartnerZone{
-		SelfOperatorId:      selfFed1.operatorId,
-		SelfFederationId:    selfFed1.fedId,
-		PartnerFederationId: partnerFed.fedId,
+		SelfOperatorId: selfFed1.operatorId,
+		FederationName: partnerFed.fedName,
 		FederatorZone: ormapi.FederatorZone{
 			ZoneId: newZone.ZoneId,
 		},
@@ -634,10 +634,9 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 
 		// Verify that zones are deregistered
 		zoneLookup := &ormapi.FederatedSelfZone{
-			SelfOperatorId:      selfFed1.operatorId,
-			SelfFederationId:    selfFed1.fedId,
-			PartnerFederationId: partnerFed.fedId,
-			ZoneId:              sZone.ZoneId,
+			SelfOperatorId: selfFed1.operatorId,
+			FederationName: partnerFed.fedName,
+			ZoneId:         sZone.ZoneId,
 		}
 		selfFed1Zones, status, err := mcClient.ShowFederatedSelfZone(op.uri, selfFed1.tokenOper, zoneLookup)
 		require.Nil(t, err, "show self federator zones")
@@ -682,6 +681,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		fedReq := &ormapi.Federator{
 			OperatorId:  selfFed.operatorId,
 			CountryCode: selfFed.countryCode,
+			Region:      selfFed.region,
 			MCC:         "340",
 			MNC:         []string{"120", "121", "122"},
 		}
@@ -700,11 +700,12 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	}
 
 	selfFed1 := selfFederators[0]
-	selfFed2 := selfFederators[1]
+	selfFed2 := selfFederators[2]
 
 	// selfFed1 creates partner federator obj
 	// ======================================
 	partnerFedReq := &ormapi.Federation{
+		Name:             partnerFed.fedName,
 		SelfOperatorId:   selfFed1.operatorId,
 		SelfFederationId: selfFed1.fedId,
 		Federator: ormapi.Federator{
@@ -718,6 +719,20 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	_, status, err := mcClient.CreateFederation(op.uri, selfFed1.tokenOper, partnerFedReq)
 	require.Nil(t, err, "create federation")
 	require.Equal(t, http.StatusOK, status)
+
+	// Federation creation with same federation ID pair should fail
+	newPartnerFedReq := *partnerFedReq
+	newPartnerFedReq.Name = "testErr"
+	_, _, err = mcClient.CreateFederation(op.uri, selfFed1.tokenOper, &newPartnerFedReq)
+	require.NotNil(t, err, "create federation")
+	require.Contains(t, err.Error(), "same federation id pair")
+
+	// Federation creation with same self federation ID should fail
+	newPartnerFedReq.Name = "testErr"
+	newPartnerFedReq.FederationId = "1234"
+	_, _, err = mcClient.CreateFederation(op.uri, selfFed1.tokenOper, &newPartnerFedReq)
+	require.NotNil(t, err, "create federation")
+	require.Contains(t, err.Error(), "same self federation id")
 
 	// Validate partner federator info
 	federations, status, err := mcClient.ShowFederation(op.uri, selfFed1.tokenOper, partnerFedReq)
@@ -764,6 +779,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	fedLookup := &ormapi.Federator{
 		OperatorId:  selfFed1.operatorId,
 		CountryCode: selfFed1.countryCode,
+		Region:      selfFed1.region,
 	}
 	fedInfo, status, err := mcClient.ShowSelfFederator(op.uri, selfFed1.tokenOper, fedLookup)
 	require.Nil(t, err, "show self federation")
@@ -775,41 +791,39 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Create self federator zones
 	// ===========================
 	for fid, selfFed := range selfFederators {
-		selfFed.zones = []federation.ZoneInfo{}
-		for ii, region := range selfFed.regions {
-			filter := &edgeproto.Cloudlet{
-				Key: edgeproto.CloudletKey{
-					Organization: selfFed.operatorId,
-				},
-			}
-			clList, status, err := ormtestutil.TestShowCloudlet(mcClient, op.uri, selfFed.tokenOper, region, filter)
-			require.Nil(t, err)
-			require.Equal(t, http.StatusOK, status)
-			for jj, cl := range clList {
-				fedZone := &ormapi.FederatorZone{
-					ZoneId:      fmt.Sprintf("op-testzone-%s-%s-%s", selfFed.operatorId, region, cl.Key.Name),
-					OperatorId:  selfFed.operatorId,
-					CountryCode: selfFed.countryCode,
-					GeoLocation: fmt.Sprintf("%d.%d,%d.%d", ii, jj, ii, jj),
-					Region:      region,
-					City:        "New York",
-					State:       "New York",
-					Cloudlets:   []string{cl.Key.Name},
-				}
-				_, status, err = mcClient.CreateSelfFederatorZone(op.uri, selfFed.tokenOper, fedZone)
-				require.Nil(t, err, "create federation zone")
-				require.Equal(t, http.StatusOK, status)
-				fedZoneInfo := federation.ZoneInfo{
-					ZoneId:      fedZone.ZoneId,
-					GeoLocation: fedZone.GeoLocation,
-					City:        fedZone.City,
-					State:       fedZone.State,
-					EdgeCount:   len(fedZone.Cloudlets),
-				}
-				selfFed.zones = append(selfFed.zones, fedZoneInfo)
-			}
+		zones := []federation.ZoneInfo{}
+		filter := &edgeproto.Cloudlet{
+			Key: edgeproto.CloudletKey{
+				Organization: selfFed.operatorId,
+			},
 		}
-		selfFederators[fid].zones = selfFed.zones
+		clList, status, err := ormtestutil.TestShowCloudlet(mcClient, op.uri, selfFed.tokenOper, selfFed.region, filter)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+		for jj, cl := range clList {
+			fedZone := &ormapi.FederatorZone{
+				ZoneId:      fmt.Sprintf("op-testzone-%s-%s-%s", selfFed.operatorId, selfFed.region, cl.Key.Name),
+				OperatorId:  selfFed.operatorId,
+				CountryCode: selfFed.countryCode,
+				GeoLocation: fmt.Sprintf("%d,%d", jj, jj),
+				Region:      selfFed.region,
+				City:        "New York",
+				State:       "New York",
+				Cloudlets:   []string{cl.Key.Name},
+			}
+			_, status, err = mcClient.CreateSelfFederatorZone(op.uri, selfFed.tokenOper, fedZone)
+			require.Nil(t, err, "create federation zone")
+			require.Equal(t, http.StatusOK, status)
+			fedZoneInfo := federation.ZoneInfo{
+				ZoneId:      fedZone.ZoneId,
+				GeoLocation: fedZone.GeoLocation,
+				City:        fedZone.City,
+				State:       fedZone.State,
+				EdgeCount:   len(fedZone.Cloudlets),
+			}
+			zones = append(zones, fedZoneInfo)
+		}
+		selfFederators[fid].zones = zones
 	}
 
 	// Verify that all zones are created
@@ -818,6 +832,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		lookup := &ormapi.FederatorZone{
 			OperatorId:  selfFed.operatorId,
 			CountryCode: selfFed.countryCode,
+			Region:      selfFed.region,
 		}
 		selfFedZones, status, err := mcClient.ShowSelfFederatorZone(op.uri, selfFed.tokenOper, lookup)
 		require.Nil(t, err, "show self federator zones")
@@ -831,10 +846,9 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// ==============================================================================
 	for _, zone := range selfFed1Zones {
 		zoneShReq := &ormapi.FederatedSelfZone{
-			SelfOperatorId:      selfFed1.operatorId,
-			SelfFederationId:    selfFed1.fedId,
-			PartnerFederationId: partnerFed.fedId,
-			ZoneId:              zone.ZoneId,
+			SelfOperatorId: selfFed1.operatorId,
+			FederationName: partnerFed.fedName,
+			ZoneId:         zone.ZoneId,
 		}
 		_, status, err := mcClient.ShareSelfFederatorZone(op.uri, selfFed1.tokenOper, zoneShReq)
 		require.Nil(t, err, "mark zones to be shared with partner federator")
@@ -853,9 +867,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// No partner zones exist as federation is not yet created
 	// =======================================================
 	zoneLookup := &ormapi.FederatedPartnerZone{
-		SelfOperatorId:      selfFed1.operatorId,
-		SelfFederationId:    selfFed1.fedId,
-		PartnerFederationId: partnerFed.fedId,
+		SelfOperatorId: selfFed1.operatorId,
+		FederationName: partnerFed.fedName,
 	}
 	partnerZones, status, err := mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, zoneLookup)
 	require.Nil(t, err, "show partner federator zones")
@@ -865,9 +878,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Register partner zone should fail as federation is not yet created
 	// ==================================================================
 	zoneRegReq := &ormapi.FederatedPartnerZone{
-		SelfOperatorId:      selfFed1.operatorId,
-		SelfFederationId:    selfFed1.fedId,
-		PartnerFederationId: partnerFed.fedId,
+		SelfOperatorId: selfFed1.operatorId,
+		FederationName: partnerFed.fedName,
 		FederatorZone: ormapi.FederatorZone{
 			ZoneId: partnerFed.zones[0].ZoneId,
 		},
@@ -879,11 +891,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Create federation between selfFed1 and partner federator
 	// ========================================================
 	fedReq := &ormapi.Federation{
-		SelfOperatorId:   selfFed1.operatorId,
-		SelfFederationId: selfFed1.fedId,
-		Federator: ormapi.Federator{
-			FederationId: partnerFed.fedId,
-		},
+		SelfOperatorId: selfFed1.operatorId,
+		Name:           partnerFed.fedName,
 	}
 	_, status, err = mcClient.RegisterFederation(op.uri, selfFed1.tokenOper, fedReq)
 	require.Nil(t, err, "register federation")
@@ -913,9 +922,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Partner zones are shared as part of federation create
 	// =====================================================
 	zoneLookup = &ormapi.FederatedPartnerZone{
-		SelfOperatorId:      selfFed1.operatorId,
-		SelfFederationId:    selfFed1.fedId,
-		PartnerFederationId: partnerFed.fedId,
+		SelfOperatorId: selfFed1.operatorId,
+		FederationName: partnerFed.fedName,
 	}
 	partnerZones, status, err = mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, zoneLookup)
 	require.Nil(t, err, "show partner federator zones")
@@ -940,6 +948,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Equal(t, http.StatusOK, status)
 
 		// Verify that registered zones are shown
+		pZone.Revision = "" // for lookup don't use revision
 		partnerZones, status, err = mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, &pZone)
 		require.Nil(t, err, "show partner federator zones")
 		require.Equal(t, http.StatusOK, status)
@@ -960,23 +969,19 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// fail if there are partner zones registered
 	// =================================================================
 	fedReq = &ormapi.Federation{
-		SelfOperatorId:   selfFed1.operatorId,
-		SelfFederationId: selfFed1.fedId,
-		Federator: ormapi.Federator{
-			FederationId: partnerFed.fedId,
-		},
+		SelfOperatorId: selfFed1.operatorId,
+		Name:           partnerFed.fedName,
 	}
 	_, _, err = mcClient.DeregisterFederation(op.uri, selfFed1.tokenOper, fedReq)
 	require.NotNil(t, err, "deregister federation")
-	require.Contains(t, err.Error(), "Please deregister it before removing")
+	require.Contains(t, err.Error(), "Please deregister it before deregistering")
 
 	// Deregister all the partner zones
 	// ================================
 	for _, pZone := range partnerFed.zones {
 		zoneRegReq := &ormapi.FederatedPartnerZone{
-			SelfOperatorId:      selfFed1.operatorId,
-			SelfFederationId:    selfFed1.fedId,
-			PartnerFederationId: partnerFed.fedId,
+			SelfOperatorId: selfFed1.operatorId,
+			FederationName: partnerFed.fedName,
 			FederatorZone: ormapi.FederatorZone{
 				ZoneId: pZone.ZoneId,
 			},
@@ -997,11 +1002,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Delete federation between selfFed1 and partner federator
 	// ========================================================
 	fedReq = &ormapi.Federation{
-		SelfOperatorId:   selfFed1.operatorId,
-		SelfFederationId: selfFed1.fedId,
-		Federator: ormapi.Federator{
-			FederationId: partnerFed.fedId,
-		},
+		SelfOperatorId: selfFed1.operatorId,
+		Name:           partnerFed.fedName,
 	}
 	_, status, err = mcClient.DeregisterFederation(op.uri, selfFed1.tokenOper, fedReq)
 	require.Nil(t, err, "deregister federation")
@@ -1018,9 +1020,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// No partner zones exist as federation is deleted
 	// =======================================================
 	zoneLookup = &ormapi.FederatedPartnerZone{
-		SelfOperatorId:      selfFed1.operatorId,
-		SelfFederationId:    selfFed1.fedId,
-		PartnerFederationId: partnerFed.fedId,
+		SelfOperatorId: selfFed1.operatorId,
+		FederationName: partnerFed.fedName,
 	}
 	partnerZones, status, err = mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, zoneLookup)
 	require.Nil(t, err, "show partner federator zones")
@@ -1041,10 +1042,9 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// ========================
 	for _, zone := range selfFed1Zones {
 		zoneShReq := &ormapi.FederatedSelfZone{
-			SelfOperatorId:      selfFed1.operatorId,
-			SelfFederationId:    selfFed1.fedId,
-			PartnerFederationId: partnerFed.fedId,
-			ZoneId:              zone.ZoneId,
+			SelfOperatorId: selfFed1.operatorId,
+			FederationName: partnerFed.fedName,
+			ZoneId:         zone.ZoneId,
 		}
 		_, status, err := mcClient.UnshareSelfFederatorZone(op.uri, selfFed1.tokenOper, zoneShReq)
 		require.Nil(t, err, "mark zones to be unshared with partner federator")
@@ -1053,9 +1053,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 
 	// No zones are shared
 	zoneShReq := &ormapi.FederatedSelfZone{
-		SelfOperatorId:      selfFed1.operatorId,
-		SelfFederationId:    selfFed1.fedId,
-		PartnerFederationId: partnerFed.fedId,
+		SelfOperatorId: selfFed1.operatorId,
+		FederationName: partnerFed.fedName,
 	}
 	fedSelfZones, status, err := mcClient.ShowFederatedSelfZone(op.uri, selfFed1.tokenOper, zoneShReq)
 	require.Nil(t, err, "show self federated zone")
@@ -1075,7 +1074,9 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 			require.Nil(t, err, "delete self federator zone")
 			require.Equal(t, http.StatusOK, status)
 		}
+	}
 
+	for _, selfFed := range selfFederators {
 		// No zones should exist
 		zoneReq := &ormapi.FederatorZone{
 			OperatorId:  selfFed.operatorId,
@@ -1100,11 +1101,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Delete partner federator obj
 	// ============================
 	partnerFedReq = &ormapi.Federation{
-		SelfOperatorId:   selfFed1.operatorId,
-		SelfFederationId: selfFed1.fedId,
-		Federator: ormapi.Federator{
-			FederationId: partnerFed.fedId,
-		},
+		SelfOperatorId: selfFed1.operatorId,
+		Name:           partnerFed.fedName,
 	}
 	_, status, err = mcClient.DeleteFederation(op.uri, selfFed1.tokenOper, partnerFedReq)
 	require.Nil(t, err, "delete federation")
@@ -1158,7 +1156,7 @@ func StartDB() (*intprocess.Sql, *gorm.DB, error) {
 	return &sql, db, nil
 }
 
-func TestFederationGormObjs(t *testing.T) {
+func TestGormFederationObjs(t *testing.T) {
 	sql, db, err := StartDB()
 	require.Nil(t, err, "start sql db")
 	defer sql.StopLocal()
@@ -1173,7 +1171,10 @@ func TestFederationGormObjs(t *testing.T) {
 		&ormapi.FederatedSelfZone{},
 	}
 
-	db.DropTableIfExists(dbObjs...)
+	// drop based on the order of dependency
+	for ii := len(dbObjs) - 1; ii >= 0; ii-- {
+		db.DropTableIfExists(dbObjs[ii])
+	}
 	db.LogMode(true)
 	db.AutoMigrate(dbObjs...)
 
@@ -1204,6 +1205,7 @@ func TestFederationGormObjs(t *testing.T) {
 		},
 		{
 			obj: &ormapi.Federation{
+				Name:             "fed1",
 				SelfFederationId: "key1",
 				Federator: ormapi.Federator{
 					OperatorId: "VOD", CountryCode: "KR", FederationId: "keyA",
@@ -1214,6 +1216,7 @@ func TestFederationGormObjs(t *testing.T) {
 		},
 		{
 			obj: &ormapi.Federation{
+				Name:             "fed2",
 				SelfFederationId: "key2",
 				Federator: ormapi.Federator{
 					OperatorId: "VOD", CountryCode: "KR", FederationId: "keyB",
@@ -1224,6 +1227,7 @@ func TestFederationGormObjs(t *testing.T) {
 		{
 			// same self federation ID cannot be used with another partner federator
 			obj: &ormapi.Federation{
+				Name:             "fed3",
 				SelfFederationId: "key2",
 				Federator: ormapi.Federator{
 					OperatorId: "VODA", CountryCode: "KR", FederationId: "keyC",
@@ -1234,6 +1238,7 @@ func TestFederationGormObjs(t *testing.T) {
 		{
 			// NOTE: This should fail
 			obj: &ormapi.Federation{
+				Name:             "fedX",
 				SelfFederationId: "keyX",
 				Federator: ormapi.Federator{
 					OperatorId: "VODA", CountryCode: "KR", FederationId: "keyD",
@@ -1267,38 +1272,9 @@ func TestFederationGormObjs(t *testing.T) {
 			pass: true,
 		},
 		{
-			// NOTE: should fail
-			obj: &ormapi.FederatedPartnerZone{
-				SelfFederationId:    "keyX",
-				PartnerFederationId: "keyA",
-				FederatorZone: ormapi.FederatorZone{
-					OperatorId: "VOD", CountryCode: "KR",
-					ZoneId:      "Z4",
-					GeoLocation: "123,321",
-				},
-				Registered: true,
-			},
-			pass: false,
-		},
-		{
-			// NOTE: should fail
-			obj: &ormapi.FederatedPartnerZone{
-				SelfFederationId:    "key2",
-				PartnerFederationId: "keyX",
-				FederatorZone: ormapi.FederatorZone{
-					OperatorId: "VODAF", CountryCode: "KR",
-					ZoneId:      "Z4",
-					GeoLocation: "123,321",
-				},
-				Registered: true,
-			},
-			pass: false,
-		},
-		{
 			// NOTE: should fail, as such federation doesn't exist
 			obj: &ormapi.FederatedPartnerZone{
-				SelfFederationId:    "key1",
-				PartnerFederationId: "keyD",
+				FederationName: "fedX",
 				FederatorZone: ormapi.FederatorZone{
 					OperatorId: "VODA", CountryCode: "KR",
 					ZoneId:      "Z4",
@@ -1310,8 +1286,7 @@ func TestFederationGormObjs(t *testing.T) {
 		},
 		{
 			obj: &ormapi.FederatedPartnerZone{
-				SelfFederationId:    "key1",
-				PartnerFederationId: "keyA",
+				FederationName: "fed1",
 				FederatorZone: ormapi.FederatorZone{
 					OperatorId: "VOD", CountryCode: "KR",
 					ZoneId:      "Z4",

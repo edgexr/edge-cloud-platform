@@ -15,14 +15,14 @@ federatorzones:
   cloudlets:
   - dmuus-cloud-2
 - operatorid: dmuus
-  countrycode: SA
+  countrycode: SB
   zoneid: dmuus-cloud-3
   geolocation: "32,-92"
   region: locala
   cloudlets:
   - dmuus-cloud-3
 - operatorid: dmuus
-  countrycode: SA
+  countrycode: SB
   zoneid: dmuus-cloud-4
   geolocation: "36,-96"
   region: locala

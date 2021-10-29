@@ -1,14 +1,25 @@
 federators:
 - operatorid: dmuus
   countrycode: SA
+  region: local
   federationid: dmuus-SA-{{partnertag}}-{{region}} # Just for testing, in production it will be auto-generated
   mcc: 456 
   mnc:
   - 444
   - 555
   - 666
+- operatorid: dmuus
+  countrycode: SB
+  region: locala
+  federationid: dmuus-SB-{{partnertag}}-{{region}} # Just for testing, in production it will be auto-generated
+  mcc: 789 
+  mnc:
+  - 777
+  - 888
+  - 999
 - operatorid: enterprise
   countrycode: SA
+  region: local
   federationid: enterprise-SA-{{partnertag}}-{{region}} # Just for testing, in production it will be auto-generated
   mcc: 456 
   mnc:
@@ -17,6 +28,7 @@ federators:
   - 666
 - operatorid: enterprise
   countrycode: SB
+  region: locala
   federationid: enterprise-SB-{{partnertag}}-{{region}} # Just for testing, in production it will be auto-generated
   mcc: 789 
   mnc:

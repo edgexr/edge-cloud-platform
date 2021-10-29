@@ -39,13 +39,18 @@ func ParseGeoLocation(geoLoc string) (float64, float64, error) {
 	return lat, long, nil
 }
 
-// NOTE: '.' should be not be allowed as it is used for parse federation ID
-//       from zone ID
-var zoneIdMatch = regexp.MustCompile("^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$")
+var nameMatch = regexp.MustCompile("^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$")
 
 func ValidateZoneId(zoneId string) error {
-	if !zoneIdMatch.MatchString(zoneId) {
-		return fmt.Errorf("Invalid zone ID %q, valid format is %s", zoneId, zoneIdMatch)
+	if !nameMatch.MatchString(zoneId) {
+		return fmt.Errorf("Invalid zone ID %q, valid format is %s", zoneId, nameMatch)
+	}
+	return nil
+}
+
+func ValidateFederationName(name string) error {
+	if !nameMatch.MatchString(name) {
+		return fmt.Errorf("Invalid federation name %q, valid format is %s", name, nameMatch)
 	}
 	return nil
 }
