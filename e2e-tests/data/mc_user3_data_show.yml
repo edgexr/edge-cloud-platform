@@ -262,6 +262,25 @@ regiondata:
       insts:
         ? '{"app_key":{"organization":"user3org","name":"ep1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"enterprise","name":"enterprise-1"},"organization":"user3org"}}'
         : 1
+    clusterrefs:
+    - key:
+        clusterkey:
+          name: SmallCluster
+        cloudletkey:
+          organization: enterprise
+          name: enterprise-1
+        organization: user3org
+      apps:
+      - appkey:
+          organization: MobiledgeX
+          name: MEXPrometheusAppName
+          version: "1.0"
+        vclustername: SmallCluster
+      - appkey:
+          organization: user3org
+          name: ep1
+          version: "1.0"
+        vclustername: SmallCluster
 - region: locala
   appdata:
     flavors:

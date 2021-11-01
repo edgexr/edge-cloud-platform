@@ -156,36 +156,30 @@ var ClusterRefsRequiredArgs = []string{
 	"key.organization",
 }
 var ClusterRefsOptionalArgs = []string{
-	"apps:#.organization",
-	"apps:#.name",
-	"apps:#.version",
-	"usedram",
-	"usedvcores",
-	"useddisk",
+	"apps:#.appkey.organization",
+	"apps:#.appkey.name",
+	"apps:#.appkey.version",
+	"apps:#.vclustername",
 }
 var ClusterRefsAliasArgs = []string{
 	"key.clusterkey.name=clusterrefs.key.clusterkey.name",
 	"key.cloudletkey.organization=clusterrefs.key.cloudletkey.organization",
 	"key.cloudletkey.name=clusterrefs.key.cloudletkey.name",
 	"key.organization=clusterrefs.key.organization",
-	"apps:#.organization=clusterrefs.apps:#.organization",
-	"apps:#.name=clusterrefs.apps:#.name",
-	"apps:#.version=clusterrefs.apps:#.version",
-	"usedram=clusterrefs.usedram",
-	"usedvcores=clusterrefs.usedvcores",
-	"useddisk=clusterrefs.useddisk",
+	"apps:#.appkey.organization=clusterrefs.apps:#.appkey.organization",
+	"apps:#.appkey.name=clusterrefs.apps:#.appkey.name",
+	"apps:#.appkey.version=clusterrefs.apps:#.appkey.version",
+	"apps:#.vclustername=clusterrefs.apps:#.vclustername",
 }
 var ClusterRefsComments = map[string]string{
 	"key.clusterkey.name":          "Cluster name",
 	"key.cloudletkey.organization": "Organization of the cloudlet site",
 	"key.cloudletkey.name":         "Name of the cloudlet",
 	"key.organization":             "Name of Developer organization that this cluster belongs to",
-	"apps:#.organization":          "App developer organization",
-	"apps:#.name":                  "App name",
-	"apps:#.version":               "App version",
-	"usedram":                      "Used RAM in MB",
-	"usedvcores":                   "Used VCPU cores",
-	"useddisk":                     "Used disk in GB",
+	"apps:#.appkey.organization":   "App developer organization",
+	"apps:#.appkey.name":           "App name",
+	"apps:#.appkey.version":        "App version",
+	"apps:#.vclustername":          "Virtual cluster name",
 }
 var ClusterRefsSpecialArgs = map[string]string{}
 var AppInstRefsRequiredArgs = []string{

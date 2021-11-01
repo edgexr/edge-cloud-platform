@@ -85,6 +85,7 @@ func ShowClusterRefs(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterRefs.GetKey().GetTags())
+	span.SetTag("org", in.ClusterRefs.Key.Organization)
 
 	obj := &in.ClusterRefs
 	var authz *AuthzShow

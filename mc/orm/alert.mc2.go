@@ -893,6 +893,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// GpuConfigPropertiesValue: 45.2.2
 	// EnableDefaultServerlessCluster: 46
 	// AllianceOrgs: 47
+	// SingleKubernetesClusterOwner: 48
 	// ```
 	// Security:
 	//   Bearer:
@@ -1682,6 +1683,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// InternalPortToLbIp: 38
 	// InternalPortToLbIpKey: 38.1
 	// InternalPortToLbIpValue: 38.2
+	// DedicatedIp: 39
 	// ```
 	// Security:
 	//   Bearer:
