@@ -20,6 +20,10 @@ var k8sControlHostNodeType = "k8sbmcontrolhost"
 
 var DockerUser string
 
+// The K8sBareMetalPlatform is a single Kubernetes cluster running on
+// bare metal. The Controller will create a single ClusterInst that
+// represents this entire Cloudlet. The ClusterInst may either be multi-tenant,
+// or (TODO) it may be non-MT but dedicated to a single organization.
 type K8sBareMetalPlatform struct {
 	commonPf           infracommon.CommonPlatform
 	caches             *platform.Caches
@@ -34,15 +38,19 @@ func (k *K8sBareMetalPlatform) GetCloudletKubeConfig(cloudletKey *edgeproto.Clou
 }
 
 func (o *K8sBareMetalPlatform) GetFeatures() *platform.Features {
-	// Note: cannot support multi-tenant from Controller because they
-	// underlying bare-metal cluster is already multi-tenant.
 	return &platform.Features{
-		SupportsKubernetesOnly: true,
+		SupportsKubernetesOnly:     true,
+		IsSingleKubernetesCluster:  true,
+		SupportsAppInstDedicatedIP: true,
 	}
 }
 
 func (k *K8sBareMetalPlatform) IsCloudletServicesLocal() bool {
 	return false
+}
+
+func platformName() string {
+	return platform.GetType(edgeproto.PlatformType_PLATFORM_TYPE_K8S_BARE_METAL.String())
 }
 
 func UpdateDockerUser(ctx context.Context, client ssh.Client) error {

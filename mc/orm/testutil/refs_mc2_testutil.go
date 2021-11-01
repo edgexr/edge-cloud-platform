@@ -60,6 +60,7 @@ func TestShowClusterRefs(mcClient *mctestclient.Client, uri, token, region strin
 }
 func TestPermShowClusterRefs(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterRefs)) ([]edgeproto.ClusterRefs, int, error) {
 	in := &edgeproto.ClusterRefs{}
+	in.Key.Organization = org
 	return TestShowClusterRefs(mcClient, uri, token, region, in, modFuncs...)
 }
 

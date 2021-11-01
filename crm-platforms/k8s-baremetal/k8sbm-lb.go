@@ -28,10 +28,10 @@ func (k *K8sBareMetalPlatform) GetSharedLBName(ctx context.Context, key *edgepro
 	return name
 }
 
-func (k *K8sBareMetalPlatform) GetLbNameForCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
+func (k *K8sBareMetalPlatform) GetLbName(ctx context.Context, appInst *edgeproto.AppInst) string {
 	lbName := k.sharedLBName
-	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-		lbName = cloudcommon.GetDedicatedLBFQDN(k.commonPf.PlatformConfig.CloudletKey, &clusterInst.Key.ClusterKey, k.commonPf.PlatformConfig.AppDNSRoot)
+	if appInst.DedicatedIp {
+		return appInst.Uri
 	}
 	return lbName
 }

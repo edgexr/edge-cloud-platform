@@ -25,24 +25,31 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 	case cloudcommon.DeploymentTypeKubernetes:
 		fallthrough
 	case cloudcommon.DeploymentTypeHelm:
-		rootLBName := k.GetLbNameForCluster(ctx, clusterInst)
+		rootLBName := k.GetLbName(ctx, appInst)
 		appWaitChan := make(chan string)
 		client, err := k.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: k.commonPf.PlatformConfig.CloudletKey.String(), Type: k8sControlHostNodeType})
 		if err != nil {
 			return err
 		}
-		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst, k8smgmt.WithVirtualClusterNamespace(k.GetNamespaceNameForCluster(ctx, clusterInst)))
+		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 		if err != nil {
 			return err
 		}
+		if appInst.DedicatedIp {
+			updateCallback(edgeproto.UpdateTask, "Setting up Dedicated AppInst Local Balancer")
+			err := k.SetupLb(ctx, client, rootLBName)
+			if err != nil {
+				return err
+			}
+		}
+
 		updateCallback(edgeproto.UpdateTask, "Setting up registry secret")
-		kconf := k8smgmt.GetKconfName(clusterInst)
 		for _, imagePath := range names.ImagePaths {
 			err = k8smgmt.CreateDeveloperDefinedNamespaces(ctx, client, names)
 			if err != nil {
 				return err
 			}
-			err = infracommon.CreateDockerRegistrySecret(ctx, client, kconf, imagePath, k.commonPf.PlatformConfig.AccessApi, names, nil)
+			err = infracommon.CreateDockerRegistrySecret(ctx, client, k.cloudletKubeConfig, imagePath, k.commonPf.PlatformConfig.AccessApi, names, nil)
 			if err != nil {
 				return err
 			}
@@ -137,7 +144,7 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 	case cloudcommon.DeploymentTypeKubernetes:
 		fallthrough
 	case cloudcommon.DeploymentTypeHelm:
-		rootLBName := k.GetLbNameForCluster(ctx, clusterInst)
+		rootLBName := k.GetLbName(ctx, appInst)
 		client, err := k.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: k.commonPf.PlatformConfig.CloudletKey.String(), Type: k8sControlHostNodeType})
 		if err != nil {
 			return err
@@ -146,7 +153,7 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 		if err != nil {
 			return err
 		}
-		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst, k8smgmt.WithVirtualClusterNamespace(k.GetNamespaceNameForCluster(ctx, clusterInst)))
+		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 		if err != nil {
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
@@ -188,19 +195,37 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 		}
 
 		if deployment == cloudcommon.DeploymentTypeKubernetes {
-			return k8smgmt.DeleteAppInst(ctx, client, names, app, appInst)
+			err = k8smgmt.DeleteAppInst(ctx, client, names, app, appInst)
 		} else {
-			return k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst)
+			err = k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst)
+		}
+		if err != nil {
+			return err
+		}
+		if appInst.DedicatedIp {
+			externalDev := k.GetExternalEthernetInterface()
+			err := k.RemoveIp(ctx, client, lbinfo.ExternalIpAddr, externalDev)
+			if err != nil {
+				return err
+			}
+			err = k.DeleteLbInfo(ctx, client, rootLBName)
+			if err != nil {
+				return err
+			}
+			if err = k.commonPf.DeleteDNSRecords(ctx, rootLBName); err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete DNS record", "fqdn", rootLBName, "err", err)
+			}
 		}
 	default:
 		return fmt.Errorf("unsupported deployment type for BareMetal %s", deployment)
 	}
+	return nil
 }
 
 func (k *K8sBareMetalPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateAppInst", "appInst", appInst)
 
-	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst, k8smgmt.WithVirtualClusterNamespace(k.GetNamespaceNameForCluster(ctx, clusterInst)))
+	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 	if err != nil {
 		return fmt.Errorf("get kube names failed: %s", err)
 	}
@@ -218,7 +243,7 @@ func (k *K8sBareMetalPlatform) GetAppInstRuntime(ctx context.Context, clusterIns
 	if err != nil {
 		return nil, err
 	}
-	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst, k8smgmt.WithVirtualClusterNamespace(k.GetNamespaceNameForCluster(ctx, clusterInst)))
+	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 	if err != nil {
 		return nil, err
 	}
