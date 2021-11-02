@@ -32,7 +32,12 @@ func (v *VSpherePlatform) PrepareRootLB(ctx context.Context, client ssh.Client, 
 	// allow our external vsphere network
 	sshCidrsAllowed := []string{infracommon.RemoteCidrAll}
 	isTrustPolicy := true
-	return v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, isTrustPolicy, infracommon.TrustPolicySecGrpNameLabel, TrustPolicy.OutboundSecurityRules)
+
+	var rules []edgeproto.SecurityRule
+	if TrustPolicy != nil {
+		rules = TrustPolicy.OutboundSecurityRules
+	}
+	return v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, isTrustPolicy, infracommon.TrustPolicySecGrpNameLabel, rules)
 }
 
 func (o *VSpherePlatform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {

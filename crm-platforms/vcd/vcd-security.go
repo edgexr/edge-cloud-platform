@@ -222,7 +222,12 @@ func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, root
 	sshCidrsAllowed := []string{infracommon.RemoteCidrAll}
 	isTrustPolicy := true
 	secGrpName = infracommon.TrustPolicySecGrpNameLabel
-	err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, isTrustPolicy, secGrpName, trustPolicy.OutboundSecurityRules)
+
+	var rules []edgeproto.SecurityRule
+	if trustPolicy != nil {
+		rules = trustPolicy.OutboundSecurityRules
+	}
+	err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, isTrustPolicy, secGrpName, rules)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB SetupIptableRulesForRootLB failed", "rootLBName", rootLBName, "err", err)
 		return err
