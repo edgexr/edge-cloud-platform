@@ -11,6 +11,7 @@
     scope: Platform
   annotations:
     description: Cluster-svc create AppInst failed
+    error: 'CreateAppInst failed: Encountered failures: Create App Inst failed: FAKE_PLATFORM_APPINST_CREATE_FAIL'
     title: ClusterSvcAppInstFailure
   state: firing
   activeat:
