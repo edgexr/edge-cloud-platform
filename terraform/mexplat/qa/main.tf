@@ -117,6 +117,7 @@ module "console" {
     "https-server",
     "console-debug",
     "mc-artifactory",
+    "mc-federation-${var.environ_tag}",
     "mc-ldap-${var.environ_tag}",
     "mc-notify-${var.environ_tag}",
     "jaeger",
@@ -193,6 +194,21 @@ module "fw_vault_gcp" {
   target_tag    = "${var.environ_tag}-vault-hc-and-proxy"
 }
 
+resource "google_compute_firewall" "mc_federation" {
+  name    = "mc-federation-${var.environ_tag}"
+  network = "default"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["30001"]
+  }
+
+  target_tags = ["mc-federation-${var.environ_tag}"]
+  source_ranges = [
+    "0.0.0.0/0",
+  ]
+}
+
 resource "google_compute_firewall" "mc_ldap" {
   name    = "mc-ldap-${var.environ_tag}"
   network = "default"
@@ -265,6 +281,7 @@ module "kafka" {
   tags = [
     "kafka-${var.environ_tag}",
     "kafka-${var.environ_tag}-controllers",
+    "kafka-qa-staging",
   ]
   labels = {
     "environ" = var.environ_tag
