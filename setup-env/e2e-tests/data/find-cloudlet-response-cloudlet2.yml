@@ -13,3 +13,4 @@ ports:
 cloudletlocation:
   latitude: 35
   longitude: -95
+edgeeventscookie: dummy-session-cookie-string
