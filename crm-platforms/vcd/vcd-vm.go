@@ -880,8 +880,8 @@ func (v *VcdPlatform) DeleteVMs(ctx context.Context, vmGroupName string) error {
 		return err
 	} else {
 		if strings.Contains(err.Error(), govcd.ErrorEntityNotFound.Error()) {
-			log.SpanLog(ctx, log.DebugLevelInfra, "VApp already deleted", "vappName", vappName)
-			return nil
+			log.SpanLog(ctx, log.DebugLevelInfra, "VApp not found ", "vappName", vappName)
+			return fmt.Errorf(vmlayer.ServerDoesNotExistError)
 		} else {
 			return fmt.Errorf("Unexpected error in FindVApp - %v", err)
 		}

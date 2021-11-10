@@ -119,13 +119,17 @@ func (v *VSpherePlatform) VmAppChangedCallback(ctx context.Context) {
 
 func (v *VSpherePlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*vmlayer.VMMetrics, error) {
 	log.DebugLog(log.DebugLevelSampled, "GetVMStats")
-	vmName := cloudcommon.GetAppFQN(&key.AppKey)
-	vmMetrics := vmlayer.VMMetrics{}
-
 	cr := MetricsCollectionRequestType{CollectNetworkStats: true, CollectCPUStats: true, CollectMemStats: true}
+	vmMetrics := vmlayer.VMMetrics{}
+	vmName := cloudcommon.GetVMAppFQDN(key, &key.ClusterInstKey.CloudletKey, "")
 	mets, err := v.GetMetrics(ctx, vmName, &cr)
 	if err != nil {
-		return &vmMetrics, err
+		// try old format
+		vmName = cloudcommon.GetAppFQN(&key.AppKey)
+		mets, err = v.GetMetrics(ctx, vmName, &cr)
+		if err != nil {
+			return &vmMetrics, err
+		}
 	}
 	time, err := time.Parse(time.RFC3339, mets.Timestamp)
 	if err != nil {

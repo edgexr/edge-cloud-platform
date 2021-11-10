@@ -12,39 +12,6 @@ regiondata:
             name: autocluster-autoprov
           cloudletkey:
             organization: dmuus
-            name: dmuus-cloud-1
-          organization: MobiledgeX
-      cloudletloc:
-        latitude: 31
-        longitude: -91
-      uri: shared.dmuus-cloud-1.dmuus.mobiledgex.net
-      liveness: Autoprov
-      mappedports:
-      - proto: Tcp
-        internalport: 82
-        publicport: 82
-      flavor:
-        name: x1.small
-      state: Ready
-      createdat:
-        seconds: 1591661539
-        nanos: 376315000
-      powerstate: PowerOn
-      vmflavor: x1.small
-      runtimeinfo:
-        containerids:
-        - appOnClusterNode0
-      realclustername: Reservable1
-    - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovHA
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-autoprov
-          cloudletkey:
-            organization: dmuus
             name: dmuus-cloud-2
           organization: MobiledgeX
       cloudletloc:
@@ -59,12 +26,47 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
-      createdat:
-        seconds: 1591661539
-        nanos: 352091000
-      powerstate: PowerOn
-      vmflavor: x1.small
       runtimeinfo:
         containerids:
         - appOnClusterNode0
+      createdat:
+        seconds: 1636137799
+        nanos: 404193000
+      healthcheck: Ok
+      powerstate: PowerOn
+      vmflavor: x1.small
       realclustername: Reservable2
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: autoprovHA
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: autocluster-autoprov
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-1
+          organization: MobiledgeX
+      cloudletloc:
+        latitude: 31
+        longitude: -91
+      uri: shared.dmuus-cloud-1.dmuus.mobiledgex.net
+      liveness: Autoprov
+      mappedports:
+      - proto: Tcp
+        internalport: 82
+        publicport: 82
+      flavor:
+        name: x1.small
+      state: Ready
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
+      createdat:
+        seconds: 1636137799
+        nanos: 376944000
+      healthcheck: Ok
+      powerstate: PowerOn
+      vmflavor: x1.small
+      realclustername: Reservable1

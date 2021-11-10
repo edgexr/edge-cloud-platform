@@ -53,7 +53,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	if err != nil {
 		return &orchVals, err
 	}
-	objName := cloudcommon.GetAppFQN(&app.Key)
+	objName := cloudcommon.GetVMAppFQDN(&appInst.Key, &appInst.Key.ClusterInstKey.CloudletKey, "")
 	var imageInfo infracommon.ImageInfo
 	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, app.ImagePath)
 	imageInfo.LocalImageName = imageName + "-" + md5Sum
@@ -71,12 +71,10 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	if err != nil {
 		return &orchVals, err
 	}
-
 	err = v.VMProvider.AddImageIfNotPresent(ctx, &imageInfo, updateCallback)
 	if err != nil {
 		return &orchVals, err
 	}
-
 	deploymentVars := crmutil.DeploymentReplaceVars{
 		Deployment: crmutil.CrmReplaceVars{
 			CloudletName: k8smgmt.NormalizeName(appInst.Key.ClusterInstKey.CloudletKey.Name),
@@ -114,11 +112,29 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 		WithSubnetConnection(orchVals.newSubnetName),
 		WithDeploymentManifest(app.DeploymentManifest),
 		WithCommand(app.Command),
-		WithImageFolder(cloudcommon.GetAppFQN(&app.Key)),
+		WithImageFolder(cloudcommon.GetVMAppFQDN(&appInst.Key, &appInst.Key.ClusterInstKey.CloudletKey, "")),
 		WithVmAppOsType(app.VmAppOsType),
 	)
 	if err != nil {
-		return &orchVals, err
+		// try old format
+		appVm, err = v.GetVMRequestSpec(
+			ctx,
+			cloudcommon.VMTypeAppVM,
+			objName,
+			appInst.VmFlavor,
+			imageInfo.LocalImageName,
+			false,
+			WithComputeAvailabilityZone(appInst.AvailabilityZone),
+			WithExternalVolume(appInst.ExternalVolumeSize),
+			WithSubnetConnection(orchVals.newSubnetName),
+			WithDeploymentManifest(app.DeploymentManifest),
+			WithCommand(app.Command),
+			WithImageFolder(cloudcommon.GetAppFQN(&app.Key)),
+			WithVmAppOsType(app.VmAppOsType),
+		)
+		if err != nil {
+			return &orchVals, err
+		}
 	}
 	vms = append(vms, appVm)
 	updateCallback(edgeproto.UpdateTask, "Deploying App")
@@ -316,7 +332,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			return err
 		}
 	case cloudcommon.DeploymentTypeVM:
-		objName := cloudcommon.GetAppFQN(&app.Key)
+		objName := cloudcommon.GetVMAppFQDN(&appInst.Key, &appInst.Key.ClusterInstKey.CloudletKey, "")
 		orchVals, err := v.PerformOrchestrationForVMApp(ctx, app, appInst, updateCallback)
 		if err != nil {
 			return err
@@ -579,11 +595,18 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		}
 
 	case cloudcommon.DeploymentTypeVM:
-		objName := cloudcommon.GetAppFQN(&app.Key)
+		objName := cloudcommon.GetVMAppFQDN(&appInst.Key, &appInst.Key.ClusterInstKey.CloudletKey, "")
 		log.SpanLog(ctx, log.DebugLevelInfra, "Deleting VM", "stackName", objName)
 		err := v.VMProvider.DeleteVMs(ctx, objName)
-		if err != nil {
-			return fmt.Errorf("DeleteVMAppInst error: %v", err)
+		if err != nil && err.Error() == ServerDoesNotExistError {
+			// try old format
+			objName = cloudcommon.GetAppFQN(&app.Key)
+			log.SpanLog(ctx, log.DebugLevelInfra, "Deleting VM failed try old format", "stackName", objName, "error", err)
+			err := v.VMProvider.DeleteVMs(ctx, objName)
+			if err != nil && err.Error() != ServerDoesNotExistError {
+				return fmt.Errorf("DeleteVMAppInst error: %v", err)
+			}
+
 		}
 		lbName := cloudcommon.GetVMAppFQDN(&appInst.Key, &appInst.Key.ClusterInstKey.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
 		clientName := v.GetChefClientName(lbName)
@@ -604,9 +627,13 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 			localImageName = localImageName + "-" + appInst.Flavor.Name
 		}
 		if v.VMProperties.GetVMAppCleanupImageOnDelete() {
-			err = v.VMProvider.DeleteImage(ctx, cloudcommon.GetAppFQN(&app.Key), localImageName)
+			err = v.VMProvider.DeleteImage(ctx, cloudcommon.GetVMAppFQDN(&appInst.Key, &appInst.Key.ClusterInstKey.CloudletKey, ""), localImageName)
 			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete image", "localImageName", localImageName)
+				// try old format
+				err = v.VMProvider.DeleteImage(ctx, cloudcommon.GetAppFQN(&app.Key), localImageName)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete image", "localImageName", localImageName)
+				}
 			}
 		} else {
 			log.SpanLog(ctx, log.DebugLevelInfra, "skipping image cleanup due to MEX_VM_APP_IMAGE_CLEANUP_ON_DELETE setting")

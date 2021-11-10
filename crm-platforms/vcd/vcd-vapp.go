@@ -204,7 +204,10 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 	// If not, ok, its deleted
 	vapp, err = v.FindVApp(ctx, vappName, vcdClient, vdc)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp vapp not found return success", "vapp", vappName)
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp vapp not found", "vapp", vappName)
+		if err.Error() == vmlayer.ServerDoesNotExistError {
+			return err
+		}
 		return nil
 	}
 
@@ -339,6 +342,9 @@ func (v *VcdPlatform) FindVApp(ctx context.Context, vappName string, vcdClient *
 	log.SpanLog(ctx, log.DebugLevelInfra, "FindVApp", "vappName", vappName)
 
 	vapp, err := vdc.GetVAppByName(vappName, true)
+	if err != nil && strings.Contains(err.Error(), "NotFound") {
+		return nil, fmt.Errorf(vmlayer.ServerDoesNotExistError)
+	}
 	return vapp, err
 }
 

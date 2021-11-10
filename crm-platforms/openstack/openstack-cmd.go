@@ -803,13 +803,9 @@ func (s *OpenstackPlatform) deleteHeatStack(ctx context.Context, stackName strin
 	if err != nil {
 		if strings.Contains(StackNotFound, string(out)) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "stack not found", "stackName", stackName)
-			return nil
+			return fmt.Errorf(vmlayer.ServerDoesNotExistError)
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "stack deletion failed", "stackName", stackName, "out", string(out), "err", err)
-		if strings.Contains(string(out), StackNotFound) {
-			log.SpanLog(ctx, log.DebugLevelInfra, "stack already deleted", "stackName", stackName)
-			return nil
-		}
 		return fmt.Errorf("stack deletion failed: %s, %s %v", stackName, out, err)
 	}
 	return nil

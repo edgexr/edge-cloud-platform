@@ -458,13 +458,13 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		for _, nodeName := range nodes {
 			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting PlatformVM %s", nodeName))
 			err = v.VMProvider.DeleteVMs(ctx, nodeName)
-			if err != nil {
+			if err != nil && err.Error() != ServerDoesNotExistError {
 				return fmt.Errorf("DeleteCloudlet error: %v", err)
 			}
 		}
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting RootLB %s", rootLBName))
 		err = v.VMProvider.DeleteVMs(ctx, rootLBName)
-		if err != nil {
+		if err != nil && err.Error() != ServerDoesNotExistError {
 			return fmt.Errorf("DeleteCloudlet error: %v", err)
 		}
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting Cloudlet Security Rules %s", rootLBName))
