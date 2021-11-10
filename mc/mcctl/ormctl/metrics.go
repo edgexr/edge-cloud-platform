@@ -15,7 +15,7 @@ func init() {
 		Use:          "app",
 		Short:        "View App metrics",
 		RequiredArgs: strings.Join(append([]string{"region"}, AppMetricRequiredArgs...), " "),
-		OptionalArgs: strings.Join(AppMetricOptionalArgs, " "),
+		OptionalArgs: strings.Join(append(MetricsCommonArgs, AppMetricOptionalArgs...), " "),
 		AliasArgs:    strings.Join(append(AppMetricAliasArgs, MetricsCommonAliasArgs...), " "),
 		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), AppMetricComments),
 		ReqData:      &ormapi.RegionAppInstMetrics{},
@@ -26,7 +26,7 @@ func init() {
 		Use:          "cluster",
 		Short:        "View ClusterInst metrics",
 		RequiredArgs: strings.Join(append([]string{"region"}, ClusterMetricRequiredArgs...), " "),
-		OptionalArgs: strings.Join(ClusterMetricOptionalArgs, " "),
+		OptionalArgs: strings.Join(append(MetricsCommonArgs, ClusterMetricOptionalArgs...), " "),
 		AliasArgs:    strings.Join(append(ClusterMetricAliasArgs, MetricsCommonAliasArgs...), " "),
 		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), ClusterMetricComments),
 		ReqData:      &ormapi.RegionClusterInstMetrics{},
@@ -37,7 +37,7 @@ func init() {
 		Use:          "cloudlet",
 		Short:        "View Cloudlet metrics",
 		RequiredArgs: strings.Join(append([]string{"region"}, CloudletMetricRequiredArgs...), " "),
-		OptionalArgs: strings.Join(CloudletMetricOptionalArgs, " "),
+		OptionalArgs: strings.Join(append(MetricsCommonArgs, CloudletMetricOptionalArgs...), " "),
 		AliasArgs:    strings.Join(append(CloudletMetricAliasArgs, MetricsCommonAliasArgs...), " "),
 		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), CloudletMetricComments),
 		ReqData:      &ormapi.RegionCloudletMetrics{},
@@ -48,7 +48,7 @@ func init() {
 		Use:          "cloudletusage",
 		Short:        "View Cloudlet usage",
 		RequiredArgs: strings.Join(append([]string{"region"}, CloudletMetricRequiredArgs...), " "),
-		OptionalArgs: strings.Join(CloudletMetricOptionalArgs, " "),
+		OptionalArgs: strings.Join(append(MetricsCommonArgs, CloudletMetricOptionalArgs...), " "),
 		AliasArgs:    strings.Join(append(CloudletMetricAliasArgs, MetricsCommonAliasArgs...), " "),
 		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), CloudletUsageMetricComments),
 		ReqData:      &ormapi.RegionCloudletMetrics{},
@@ -59,7 +59,7 @@ func init() {
 		Use:          "clientapiusage",
 		Short:        "View client API usage",
 		RequiredArgs: strings.Join(append([]string{"region"}, ClientApiUsageMetricRequiredArgs...), " "),
-		OptionalArgs: strings.Join(ClientApiUsageMetricOptionalArgs, " "),
+		OptionalArgs: strings.Join(append(MetricsCommonArgs, ClientApiUsageMetricOptionalArgs...), " "),
 		AliasArgs:    strings.Join(append(ClientApiUsageMetricAliasArgs, MetricsCommonAliasArgs...), " "),
 		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), ClientApiUsageMetricComments),
 		ReqData:      &ormapi.RegionClientApiUsageMetrics{},
@@ -70,7 +70,7 @@ func init() {
 		Use:          "clientappusage",
 		Short:        "View client App usage",
 		RequiredArgs: strings.Join(append([]string{"region"}, ClientAppUsageMetricRequiredArgs...), " "),
-		OptionalArgs: strings.Join(ClientAppUsageMetricOptionalArgs, " "),
+		OptionalArgs: strings.Join(append(MetricsCommonArgs, ClientAppUsageMetricOptionalArgs...), " "),
 		AliasArgs:    strings.Join(append(ClientAppUsageMetricAliasArgs, MetricsCommonAliasArgs...), " "),
 		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), getClientTypeUsageMetricComments("app")),
 		ReqData:      &ormapi.RegionClientAppUsageMetrics{},
@@ -81,7 +81,7 @@ func init() {
 		Use:          "clientcloudletusage",
 		Short:        "View client Cloudlet usage",
 		RequiredArgs: strings.Join(append([]string{"region"}, ClientCloudletUsageMetricRequiredArgs...), " "),
-		OptionalArgs: strings.Join(ClientCloudletUsageMetricOptionalArgs, " "),
+		OptionalArgs: strings.Join(append(MetricsCommonArgs, ClientCloudletUsageMetricOptionalArgs...), " "),
 		AliasArgs:    strings.Join(append(ClientCloudletUsageMetricAliasArgs, MetricsCommonAliasArgs...), " "),
 		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), getClientTypeUsageMetricComments("cloudlet")),
 		ReqData:      &ormapi.RegionClientCloudletUsageMetrics{},
@@ -110,12 +110,6 @@ var AppMetricOptionalArgs = []string{
 	"appinsts:#.cluster-org",
 	"appinsts:#.cloudlet-org",
 	"appinsts:#.cloudlet",
-	"limit",
-	"numsamples",
-	"starttime",
-	"endtime",
-	"startage",
-	"endage",
 }
 
 var AppMetricAliasArgs = []string{
@@ -166,12 +160,6 @@ var ClusterMetricOptionalArgs = []string{
 	"clusterinsts:#.cluster-org",
 	"clusterinsts:#.cloudlet-org",
 	"clusterinsts:#.cloudlet",
-	"limit",
-	"numsamples",
-	"starttime",
-	"endtime",
-	"startage",
-	"endage",
 }
 
 var ClusterMetricAliasArgs = []string{
@@ -206,12 +194,6 @@ var CloudletMetricOptionalArgs = []string{
 	"cloudlet-org",
 	"cloudlets:#.cloudlet-org",
 	"cloudlets:#.cloudlet",
-	"limit",
-	"numsamples",
-	"starttime",
-	"endtime",
-	"startage",
-	"endage",
 }
 
 var CloudletMetricAliasArgs = []string{
@@ -248,12 +230,6 @@ var ClientApiUsageMetricOptionalArgs = []string{
 	"dme-org",
 	"method",
 	"cellid",
-	"limit",
-	"numsamples",
-	"starttime",
-	"endtime",
-	"startage",
-	"endage",
 }
 
 var ClientApiUsageMetricAliasArgs = []string{
@@ -291,12 +267,6 @@ var ClientAppUsageMetricOptionalArgs = []string{
 	"devicemodel",
 	"devicecarrier",
 	"datanetworktype",
-	"limit",
-	"numsamples",
-	"starttime",
-	"endtime",
-	"startage",
-	"endage",
 }
 
 var ClientAppUsageMetricAliasArgs = []string{
@@ -321,17 +291,20 @@ var ClientCloudletUsageMetricOptionalArgs = []string{
 	"devicemodel",
 	"devicecarrier",
 	"datanetworktype",
+}
+
+var ClientCloudletUsageMetricAliasArgs = []string{
+	"cloudlet-org=cloudlet.organization",
+	"cloudlet=cloudlet.name",
+}
+
+var MetricsCommonArgs = []string{
 	"limit",
 	"numsamples",
 	"starttime",
 	"endtime",
 	"startage",
 	"endage",
-}
-
-var ClientCloudletUsageMetricAliasArgs = []string{
-	"cloudlet-org=cloudlet.organization",
-	"cloudlet=cloudlet.name",
 }
 
 var MetricCommentsCommon = map[string]string{
