@@ -169,7 +169,7 @@ func (m *ManagedK8sPlatform) GetContainerCommand(ctx context.Context, clusterIns
 	return k8smgmt.GetContainerCommand(ctx, clusterInst, app, appInst, req)
 }
 
-func (m *ManagedK8sPlatform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (string, error) {
+func (m *ManagedK8sPlatform) GetConsoleUrl(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
 	return "", fmt.Errorf("Unsupported command for platform")
 }
 

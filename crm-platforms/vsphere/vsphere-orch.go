@@ -356,6 +356,7 @@ func (v *VSpherePlatform) DeleteVM(ctx context.Context, vmName string) error {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Error in vm.destroy", "vmName", vmName, "out", string(out), "err", err)
 		if strings.Contains(string(out), "not found") {
 			log.SpanLog(ctx, log.DebugLevelInfra, "VM already gone", "vmName", vmName)
+			return fmt.Errorf(vmlayer.ServerDoesNotExistError)
 		} else {
 			return fmt.Errorf("Error in deleting VM: %s", vmName)
 		}

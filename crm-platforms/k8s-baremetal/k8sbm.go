@@ -174,7 +174,7 @@ func (k *K8sBareMetalPlatform) ListCloudletMgmtNodes(ctx context.Context, cluste
 	return []edgeproto.CloudletMgmtNode{}, nil
 }
 
-func (k *K8sBareMetalPlatform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (string, error) {
+func (k *K8sBareMetalPlatform) GetConsoleUrl(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
 	return "", fmt.Errorf("GetConsoleUrl not supported on BareMetal")
 }
 

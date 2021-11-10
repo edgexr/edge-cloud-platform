@@ -171,9 +171,13 @@ func (s *OpenstackPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppIn
 		return &vmMetrics, fmt.Errorf("Nil App passed")
 	}
 
-	server, err := s.GetActiveServerDetails(ctx, cloudcommon.GetAppFQN(&key.AppKey))
+	server, err := s.GetActiveServerDetails(ctx, cloudcommon.GetVMAppFQDN(key, &key.ClusterInstKey.CloudletKey, ""))
 	if err != nil {
-		return &vmMetrics, err
+		// try old format
+		server, err = s.GetActiveServerDetails(ctx, cloudcommon.GetAppFQN(&key.AppKey))
+		if err != nil {
+			return &vmMetrics, err
+		}
 	}
 
 	// Get a bunch of the results in parallel as it might take a bit of time
