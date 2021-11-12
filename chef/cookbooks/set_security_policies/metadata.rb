@@ -1,0 +1,6 @@
+name 'set_security_policies'
+maintainer 'MobiledgeX Inc.'
+maintainer_email 'mobiledgex.ops@mobiledgex.com'
+description 'Set security policies'
+version '1.0.0'
+chef_version '>= 14.0'
