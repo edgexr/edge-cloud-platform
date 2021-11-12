@@ -33,4 +33,21 @@ vault write auth/approle/role/$REGION.autoprov period="720h" policies="$REGION.a
 vault read auth/approle/role/$REGION.autoprov/role-id
 vault write -f auth/approle/role/$REGION.autoprov/secret-id
 
+# frm approle
+cat > /tmp/frm-pol.hcl <<EOF
+path "auth/approle/login" {
+  capabilities = [ "create", "read" ]
+}
+
+path "pki-regional/issue/$REGION" {
+  capabilities = [ "read", "update" ]
+}
+EOF
+vault policy write $REGION.frm /tmp/frm-pol.hcl
+rm /tmp/frm-pol.hcl
+vault write auth/approle/role/$REGION.frm period="720h" policies="$REGION.frm"
+# get frm app roleID and generate secretID
+vault read auth/approle/role/$REGION.frm/role-id
+vault write -f auth/approle/role/$REGION.frm/secret-id
+
 # Note: Shepherd uses CRM's Vault access creds.

@@ -51,6 +51,7 @@ var NodeRequiredArgs = []string{
 	"type",
 	"cloudlet-org",
 	"cloudlet",
+	"federated-org",
 	"region",
 }
 var NodeOptionalArgs = []string{
@@ -70,6 +71,7 @@ var NodeAliasArgs = []string{
 	"type=node.key.type",
 	"cloudlet-org=node.key.cloudletkey.organization",
 	"cloudlet=node.key.cloudletkey.name",
+	"federated-org=node.key.cloudletkey.federatedorganization",
 	"region=node.key.region",
 	"notifyid=node.notifyid",
 	"buildmaster=node.buildmaster",
@@ -87,6 +89,7 @@ var NodeComments = map[string]string{
 	"type":             "Node type",
 	"cloudlet-org":     "Organization of the cloudlet site",
 	"cloudlet":         "Name of the cloudlet",
+	"federated-org":    "Federated operator organization who shared this cloudlet",
 	"region":           "Region the node is in",
 	"notifyid":         "Id of client assigned by server (internal use only)",
 	"buildmaster":      "Build Master Version",

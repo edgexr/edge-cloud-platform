@@ -18,6 +18,7 @@
       appver: "1.0"
       cloudlet: enterprise-1
       cloudletorg: enterprise
+      federatedorg: ""
       cluster: SmallCluster
       clusterorg: user3org
       duration: 131.484537ms

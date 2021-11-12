@@ -411,6 +411,14 @@ tests:
     yaml2: '{{datadir2}}/federation_self_register_zones_show.yml'
     filetype: mcdata
 
+- name: verify that partner zones are added as cloudlets
+  actions: [mcapi-show]
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_user1_federated_data_show.yml'
+    filetype: mcdata
+
 ###############################################################
 # Deregister Partner zones
 ###############################################################
@@ -432,6 +440,14 @@ tests:
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
     yaml2: '{{datadir2}}/federation_self_deregister_zones_show.yml'
+    filetype: mcdata
+
+- name: verify that partner zones are removed as cloudlets
+  actions: [mcapi-show]
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_user1_data_show.yml'
     filetype: mcdata
 
 ###############################################################

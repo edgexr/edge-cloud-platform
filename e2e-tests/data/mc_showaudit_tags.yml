@@ -36,6 +36,7 @@
     appver: "1.0"
     cloudlet: dmuus-cloud-4
     cloudletorg: dmuus
+    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
 - operationname: /api/v1/auth/ctrl/DeleteAppInst
@@ -60,6 +61,7 @@
     appver: "1.0"
     cloudlet: dmuus-cloud-3
     cloudletorg: dmuus
+    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
 - operationname: /api/v1/auth/ctrl/DeleteApp
@@ -100,6 +102,7 @@
     appver: "1.0"
     cloudlet: dmuus-cloud-2
     cloudletorg: dmuus
+    federatedorg: ""
     cluster: autoclusterAcme
     clusterorg: MobiledgeX
 - operationname: /api/v1/auth/ctrl/DeleteAppInst
@@ -124,6 +127,7 @@
     appver: "1.0"
     cloudlet: dmuus-cloud-2
     cloudletorg: dmuus
+    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
 - operationname: /api/v1/auth/ctrl/DeleteAppInst
@@ -148,6 +152,7 @@
     appver: "1.0"
     cloudlet: dmuus-cloud-1
     cloudletorg: dmuus
+    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
 - operationname: /api/v1/auth/ctrl/CreateAppInst
@@ -170,6 +175,7 @@
     appver: "1.0"
     cloudlet: dmuus-cloud-4
     cloudletorg: dmuus
+    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
 - operationname: /api/v1/auth/ctrl/CreateAppInst
@@ -192,6 +198,7 @@
     appver: "1.0"
     cloudlet: dmuus-cloud-3
     cloudletorg: dmuus
+    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
 - operationname: /api/v1/auth/ctrl/CreateApp

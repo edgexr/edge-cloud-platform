@@ -59,7 +59,7 @@ func start() error {
 	log.SetDebugLevelStrs(*debugLevels)
 	settings = *edgeproto.GetDefaultSettings()
 
-	ctx, span, err := nodeMgr.Init("autoprov", node.CertIssuerRegional, node.WithName(*hostname), node.WithRegion(*region), node.WithVaultConfig(vaultConfig))
+	ctx, span, err := nodeMgr.Init(node.NodeTypeAutoProv, node.CertIssuerRegional, node.WithName(*hostname), node.WithRegion(*region), node.WithVaultConfig(vaultConfig))
 	if err != nil {
 		return err
 	}

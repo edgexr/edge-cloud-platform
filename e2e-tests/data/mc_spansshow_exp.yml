@@ -22,6 +22,7 @@
       cliserv: client
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
+      federatedorg: ""
       lineno: notify/notify_sendrecv.go:330
       objtype: CloudletInfo
       peer: 127.0.0.1:37002
@@ -31,7 +32,7 @@
       lineno: notify/cloudlet.notify.go:610
       keyvalues:
         action: DELETE
-        key: '{dmuus dmuus-cloud-1}'
+        key: '{dmuus dmuus-cloud-1 }'
         modRev: "2889"
         peer: Jon-Mex.lan@127.0.0.1:55002
         peerAddr: 127.0.0.1:37002
@@ -42,7 +43,7 @@
       timestamp: 2021-02-24T18:08:58.720178-08:00
       lineno: notify/notify_customupdate.go:92
       keyvalues:
-        key: '{dmuus dmuus-cloud-1}'
+        key: '{dmuus dmuus-cloud-1 }'
         state: CLOUDLET_STATE_UNKNOWN
 - search:
     match:
@@ -117,17 +118,17 @@
       lineno: dme-common/match-engine.go:703
       keyvalues:
         autoProvStats: '&{[{map[] {0 0}} {map[] {0 0}} {map[] {0 0}} {map[{{AcmeAppCo
-          autoprovapp 1.0} {dmuus dmuus-cloud-2}}:0xc000045390] {0 0}} {map[] {0 0}}
-          {map[] {0 0}} {map[] {0 0}} {map[{{AcmeAppCo autoprovappd 1.0} {dmuus dmuus-cloud-1}}:0xc000603c30]
+          autoprovapp 1.0} {dmuus dmuus-cloud-2 }}:0xc000045390] {0 0}} {map[] {0 0}}
+          {map[] {0 0}} {map[] {0 0}} {map[{{AcmeAppCo autoprovappd 1.0} {dmuus dmuus-cloud-1 }}:0xc000603c30]
           {0 0}} {map[] {0 0}} {map[] {0 0}}] 10 {0 0} 1 0 {Jon-Mex.lan dme {dmuus
-          dmuus-cloud-1} local} 0x58406e0 {{} [0 1 0]} 0xc00012dda0}'
+          dmuus-cloud-1 } local} 0x58406e0 {{} [0 1 0]} 0xc00012dda0}'
         num-potential-policies: "1"
     - msg: autoprovstats increment
       timestamp: 2021-02-24T18:07:33.613024-08:00
       lineno: dme-common/autoprov-stats.go:108
       keyvalues:
-        idx: "3"
-        key: '{{AcmeAppCo autoprovapp 1.0} {dmuus dmuus-cloud-2}}'
+        idx: "7"
+        key: '{{AcmeAppCo autoprovapp 1.0} {dmuus dmuus-cloud-2 }}'
         policy: '&{autoprov1 3 3 map[dmuus:[key:<organization:"dmuus" name:"dmuus-cloud-1"
           > loc:<latitude:31 longitude:-91 >  key:<organization:"dmuus" name:"dmuus-cloud-2"
           > loc:<latitude:35 longitude:-95 > ]]}'
@@ -185,7 +186,7 @@
       timestamp: 2021-02-24T18:06:39.480182-08:00
       lineno: node/accesskey_server.go:124
       keyvalues:
-        CloudletKey: '{dmuus dmuus-cloud-2}'
+        CloudletKey: '{dmuus dmuus-cloud-2 }'
     - msg: upgrade access key
       timestamp: 2021-02-24T18:06:39.480236-08:00
       lineno: controller/cloudletaccess_api.go:52

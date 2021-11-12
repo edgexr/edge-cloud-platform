@@ -101,3 +101,11 @@ type AlertmanagerSidecar struct {
 	TLS            process.TLSCerts
 	cmd            *exec.Cmd
 }
+
+type FRM struct {
+	process.Common     `yaml:",inline"`
+	process.NodeCommon `yaml:",inline"`
+	NotifyAddrs        string
+	Region             string
+	cmd                *exec.Cmd
+}

@@ -106,6 +106,7 @@ var NetworkRequiredArgs = []string{
 	"name",
 }
 var NetworkOptionalArgs = []string{
+	"federated-org",
 	"routes:empty",
 	"routes:#.destinationcidr",
 	"routes:#.nexthopip",
@@ -115,6 +116,7 @@ var NetworkAliasArgs = []string{
 	"fields=network.fields",
 	"cloudlet-org=network.key.cloudletkey.organization",
 	"key.cloudletkey.name=network.key.cloudletkey.name",
+	"federated-org=network.key.cloudletkey.federatedorganization",
 	"name=network.key.name",
 	"routes:empty=network.routes:empty",
 	"routes:#.destinationcidr=network.routes:#.destinationcidr",
@@ -125,6 +127,7 @@ var NetworkComments = map[string]string{
 	"fields":                   "Fields are used for the Update API to specify which fields to apply",
 	"cloudlet-org":             "Organization of the cloudlet site",
 	"key.cloudletkey.name":     "Name of the cloudlet",
+	"federated-org":            "Federated operator organization who shared this cloudlet",
 	"name":                     "Network Name",
 	"routes:empty":             "List of routes, specify routes:empty=true to clear",
 	"routes:#.destinationcidr": "Destination CIDR",

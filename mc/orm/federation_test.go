@@ -41,6 +41,7 @@ var MockESUrl = "http://mock.es"
 
 type CtrlObj struct {
 	addr        string
+	notifyAddr  string
 	dc          *grpc.Server
 	ds          *testutil.DummyServer
 	dcnt        int
@@ -99,6 +100,7 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 	for _, operatorId := range operatorIds {
 		ds.SetDummyOrgObjs(ctx, testutil.Create, operatorId, dcnt)
 	}
+
 	return &CtrlObj{
 		addr:        ctrlAddr,
 		ds:          ds,
@@ -436,14 +438,14 @@ func TestFederation(t *testing.T) {
 	partnerZones := []federation.ZoneInfo{
 		federation.ZoneInfo{
 			ZoneId:      fmt.Sprintf("%s-testzone0", partnerFed.operatorId),
-			GeoLocation: "1.1",
+			GeoLocation: "1.1,2.2",
 			City:        "New York",
 			State:       "New York",
 			EdgeCount:   2,
 		},
 		federation.ZoneInfo{
 			ZoneId:      fmt.Sprintf("%s-testzone1", partnerFed.operatorId),
-			GeoLocation: "2.2",
+			GeoLocation: "2.2,3.3",
 			City:        "Nevada",
 			State:       "Nevada",
 			EdgeCount:   1,
@@ -696,6 +698,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Equal(t, 1, len(fedInfo))
 		require.Equal(t, selfFed.operatorId, fedInfo[0].OperatorId)
 		require.Equal(t, selfFed.countryCode, fedInfo[0].CountryCode)
+		require.Equal(t, pq.StringArray{"120", "121", "122"}, fedInfo[0].MNC)
 		require.NotEmpty(t, fedInfo[0].Revision)
 	}
 
@@ -769,6 +772,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		Namespace: cli.ArgsNamespace,
 		Data:      make(map[string]interface{}),
 	}
+	updateFed.Data["OperatorId"] = selfFed1.operatorId
 	updateFed.Data["FederationId"] = selfFed1.fedId
 	updateFed.Data["MCC"] = "344"
 	_, status, err = mcClient.UpdateSelfFederator(op.uri, selfFed1.tokenOper, updateFed)
@@ -949,13 +953,42 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 
 		// Verify that registered zones are shown
 		pZone.Revision = "" // for lookup don't use revision
-		partnerZones, status, err = mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, &pZone)
+		out, status, err := mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, &pZone)
 		require.Nil(t, err, "show partner federator zones")
 		require.Equal(t, http.StatusOK, status)
-		require.Equal(t, 1, len(partnerZones))
-		require.True(t, partnerZones[0].Registered)
-		require.NotEmpty(t, partnerZones[0].Revision)
+		require.Equal(t, 1, len(out))
+		require.True(t, out[0].Registered)
+		require.NotEmpty(t, out[0].Revision)
+
+		// Verify that registered zone is added as cloudlet
+		clLookup := ormapi.RegionCloudlet{
+			Region: selfFed1.region,
+			Cloudlet: edgeproto.Cloudlet{
+				Key: edgeproto.CloudletKey{
+					Name:                  pZone.ZoneId,
+					Organization:          selfFed1.operatorId,
+					FederatedOrganization: pZone.OperatorId,
+				},
+			},
+		}
+		selfFed1Cls, status, err := mcClient.ShowCloudlet(op.uri, selfFed1.tokenOper, &clLookup)
+		require.Nil(t, err, "show added federator zone as cloudlet")
+		require.Equal(t, http.StatusOK, status)
+		require.Equal(t, 1, len(selfFed1Cls))
 	}
+	clLookup := ormapi.RegionCloudlet{
+		Region: selfFed1.region,
+		Cloudlet: edgeproto.Cloudlet{
+			Key: edgeproto.CloudletKey{
+				FederatedOrganization: partnerFed.operatorId,
+			},
+			PlatformType: edgeproto.PlatformType_PLATFORM_TYPE_FEDERATION,
+		},
+	}
+	selfFed1Cls, status, err := mcClient.ShowCloudlet(op.uri, selfFed1.tokenOper, &clLookup)
+	require.Nil(t, err, "match federation zone list with cloudlets")
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(partnerZones), len(selfFed1Cls))
 
 	// Test federation APIs
 	// ====================
@@ -997,7 +1030,36 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Equal(t, 1, len(partnerZones))
 		require.False(t, partnerZones[0].Registered)
 		require.NotEmpty(t, partnerZones[0].Revision)
+
+		// Verify that deregistered zone is removed as cloudlet
+		clLookup := ormapi.RegionCloudlet{
+			Region: selfFed1.region,
+			Cloudlet: edgeproto.Cloudlet{
+				Key: edgeproto.CloudletKey{
+					Name:                  pZone.ZoneId,
+					Organization:          selfFed1.operatorId,
+					FederatedOrganization: partnerFed.operatorId,
+				},
+			},
+		}
+		selfFed1Cls, status, err := mcClient.ShowCloudlet(op.uri, selfFed1.tokenOper, &clLookup)
+		require.Nil(t, err, "partner zone is removed as cloudlet")
+		require.Equal(t, http.StatusOK, status)
+		require.Equal(t, 0, len(selfFed1Cls))
 	}
+	clLookup = ormapi.RegionCloudlet{
+		Region: selfFed1.region,
+		Cloudlet: edgeproto.Cloudlet{
+			Key: edgeproto.CloudletKey{
+				FederatedOrganization: partnerFed.operatorId,
+			},
+			PlatformType: edgeproto.PlatformType_PLATFORM_TYPE_FEDERATION,
+		},
+	}
+	selfFed1Cls, status, err = mcClient.ShowCloudlet(op.uri, selfFed1.tokenOper, &clLookup)
+	require.Nil(t, err, "no partner zones as cloudlets")
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(selfFed1Cls))
 
 	// Delete federation between selfFed1 and partner federator
 	// ========================================================
@@ -1113,6 +1175,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	for _, selfFed := range selfFederators {
 		fedReq := &ormapi.Federator{
 			FederationId: selfFed.fedId,
+			OperatorId:   selfFed.operatorId,
 		}
 		_, status, err := mcClient.DeleteSelfFederator(op.uri, selfFed.tokenOper, fedReq)
 		require.Nil(t, err, "delete self federator")

@@ -255,3 +255,26 @@ nodes:
     InfraBuildDate:
     InfraBuildHead:
     InfraBuildMaster:
+
+- key:
+    name: frm1
+    type: frm
+    region: local
+  notifyid: 2
+  internalpki: UseVaultPki
+  properties:
+    InfraBuildAuthor:
+    InfraBuildDate:
+    InfraBuildHead:
+    InfraBuildMaster:
+- key:
+    name: frma1
+    type: frm
+    region: locala
+  notifyid: 2
+  internalpki: UseVaultPki
+  properties:
+    InfraBuildAuthor:
+    InfraBuildDate:
+    InfraBuildHead:
+    InfraBuildMaster:

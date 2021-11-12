@@ -63,6 +63,11 @@ requests:
       region: locala
     output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
+      name: frma1
+      type: frm
+      region: locala
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+  - node:
       name: Jon-Mex.lan
       type: crm
       cloudletkey:
@@ -84,6 +89,11 @@ requests:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-2
+      region: local
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+  - node:
+      name: frm1
+      type: frm
       region: local
     output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
