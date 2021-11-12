@@ -7,12 +7,13 @@ name 'base'
 default_source :chef_server, "https://chef.mobiledgex.net/organizations/mobiledgex" 
 
 # run_list: chef-client will run these recipes in the order specified.
-run_list 'recipe[chef_client_updater]', 'recipe[runstatus_handler]', 'recipe[copy_resource_tracker]', 'recipe[upgrade_mobiledgex_package]'
+run_list 'recipe[chef_client_updater]', 'recipe[runstatus_handler]', 'recipe[copy_resource_tracker]', 'recipe[set_security_policies]', 'recipe[upgrade_mobiledgex_package]'
 
 # Specify a custom source for a single cookbook:
 cookbook 'chef_client_updater', '= 3.11.0'
 cookbook 'runstatus_handler', '= 1.0.0'
 cookbook 'copy_resource_tracker', '= 1.0.1'
+cookbook 'set_security_policies', '= 1.0.0'
 cookbook 'upgrade_mobiledgex_package', '= 1.0.14'
 
 # Set chef-client version
