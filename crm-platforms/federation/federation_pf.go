@@ -128,7 +128,7 @@ func (f *FederationPlatform) GetContainerCommand(ctx context.Context, clusterIns
 }
 
 // Get the console URL of the VM app
-func (f *FederationPlatform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (string, error) {
+func (f *FederationPlatform) GetConsoleUrl(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
 	return "", nil
 }
 
