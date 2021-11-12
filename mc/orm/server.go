@@ -829,6 +829,8 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/federation/delete", DeleteFederation)
 	auth.POST("/federation/register", RegisterFederation)
 	auth.POST("/federation/deregister", DeregisterFederation)
+	auth.POST("/federation/partner/setapikey", SetPartnerFederationAPIKey)
+	auth.POST("/federation/self/generateapikey", GenerateSelfFederationAPIKey)
 	auth.POST("/federation/show", ShowFederation)
 	auth.POST("/federation/self/zone/show", ShowFederatedSelfZone)
 	auth.POST("/federation/partner/zone/show", ShowFederatedPartnerZone)
@@ -925,7 +927,8 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		federationEcho := echo.New()
 		federationEcho.HideBanner = true
 		federationEcho.Binder = &CustomBinder{}
-		federationEcho.Use(logger)
+
+		federationEcho.Use(logger, federation.AuthAPIKey)
 		server.federationEcho = federationEcho
 
 		partnerApi := federation.PartnerApi{

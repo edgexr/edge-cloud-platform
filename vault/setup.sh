@@ -65,6 +65,10 @@ path "secret/data/accounts/chargify/*" {
 path "secret/data/kafka/*" {
   capabilities = [ "read" ]
 }
+
+path "secret/data/federation/*" {
+  capabilities = [ "create", "update", "delete", "read" ]
+}
 EOF
 
 vault policy write mcorm /tmp/mcorm-pol.hcl

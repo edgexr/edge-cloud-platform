@@ -13,6 +13,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -937,7 +938,7 @@ func testPasswordStrength(t *testing.T, ctx context.Context, mcClient *mctestcli
 	// Create user in db to simulate old user with existing weak password
 	db := loggedDB(ctx)
 	adminOldPw := "oldpwd1"
-	passhash, salt, iter := NewPasshash(adminOldPw)
+	passhash, salt, iter := ormutil.NewPasshash(adminOldPw)
 	adminOld := ormapi.User{
 		Name:          "oldadmin",
 		Email:         "oldadmin@gmail.com",

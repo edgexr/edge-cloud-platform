@@ -20,7 +20,16 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/tls"
+	"github.com/mobiledgex/edge-cloud/vault"
 )
+
+type ApiKeyData struct {
+	Data string
+}
+
+func getApiKeyVaultPath(fedName string) string {
+	return fmt.Sprintf("secret/data/federation/%s", fedName)
+}
 
 func setForeignKeyConstraint(loggedDb *gorm.DB, fKeyTableName, fKeyFields, refTableName, refFields string) error {
 	cmd := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT self_fk_constraint FOREIGN KEY (%s) "+
@@ -108,10 +117,28 @@ func InitFederationAPIConstraints(loggedDb *gorm.DB) error {
 	return nil
 }
 
-func sendFederationRequest(method, fedAddr, endpoint string, reqData, replyData interface{}) error {
+func sendFederationRequest(method, fedAddr, fedName, apiKey, endpoint string, reqData, replyData interface{}) error {
 	if fedAddr == "" {
 		return fmt.Errorf("Missing partner federation address")
 	}
+	if apiKey == "" {
+		// fetch partner API key from vault
+		if fedName == "" {
+			return fmt.Errorf("Missing partner federation name")
+		}
+		vPath := getApiKeyVaultPath(fedName)
+		var apiKeyData ApiKeyData
+		err := vault.GetData(serverConfig.vaultConfig, vPath, 0, &apiKeyData)
+		if err != nil {
+			return fmt.Errorf("Unable to fetch partner %q API key from vault: %s", fedName, err)
+		}
+		apiKey = apiKeyData.Data
+	}
+
+	if apiKey == "" {
+		return fmt.Errorf("Missing partner federation API key from vault")
+	}
+
 	restClient := &ormclient.Client{}
 	if unitTest {
 		restClient.ForceDefaultTransport = true
@@ -124,7 +151,7 @@ func sendFederationRequest(method, fedAddr, endpoint string, reqData, replyData 
 	}
 	fedAddr = strings.TrimSuffix(fedAddr, "/")
 	requestUrl := fmt.Sprintf("%s%s", fedAddr, endpoint)
-	status, err := restClient.HttpJsonSend(method, requestUrl, "", reqData, replyData)
+	status, err := restClient.HttpJsonSend(method, requestUrl, apiKey, reqData, replyData)
 	if err != nil {
 		return err
 	}
@@ -356,7 +383,7 @@ func UpdateSelfFederator(c echo.Context) error {
 			MNC:              selfFed.MNC,
 			LocatorEndPoint:  selfFed.LocatorEndPoint,
 		}
-		err = sendFederationRequest("PUT", partnerFed.FederationAddr, federation.OperatorPartnerAPI, &opConf, nil)
+		err = sendFederationRequest("PUT", partnerFed.FederationAddr, partnerFed.Name, NoApiKey, federation.OperatorPartnerAPI, &opConf, nil)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "Failed to update partner federator", "federation name", partnerFed.Name, "error", err)
 			errOut = fmt.Sprintf(". But failed to update partner federation %q, err: %v", partnerFed.Name, err)
@@ -509,6 +536,17 @@ func CreateFederation(c echo.Context) error {
 		return err
 	}
 
+	// store partner federator's API key in vault
+	partnerApiKey := opFed.ApiKey
+	opFed.ApiKey = ""
+
+	// auto-create api key
+	apiKey := uuid.New().String()
+	apiKeyHash, apiKeySalt, apiKeyIter := ormutil.NewPasshash(apiKey)
+	opFed.ApiKeyHash = apiKeyHash
+	opFed.Salt = apiKeySalt
+	opFed.Iter = apiKeyIter
+
 	db := loggedDB(ctx)
 	opFed.Revision = log.SpanTraceID(ctx)
 	if err := db.Create(&opFed).Error; err != nil {
@@ -524,7 +562,19 @@ func CreateFederation(c echo.Context) error {
 		return ormutil.DbErr(err)
 	}
 
-	return ormutil.SetReply(c, ormutil.Msg("Created partner federation successfully"))
+	if partnerApiKey != "" {
+		log.SpanLog(ctx, log.DebugLevelApi, "Storing partner federation API key in vault", "federation name", opFed.Name)
+		vPath := getApiKeyVaultPath(opFed.Name)
+		err = vault.PutData(serverConfig.vaultConfig, vPath, &ApiKeyData{Data: partnerApiKey})
+		if err != nil {
+			return fmt.Errorf("Unable to store partner API key in vault: %s", err)
+		}
+	}
+
+	apiKeyOut := ormapi.FederationApiKey{
+		ApiKey: apiKey,
+	}
+	return c.JSON(http.StatusOK, &apiKeyOut)
 }
 
 func DeleteFederation(c echo.Context) error {
@@ -558,7 +608,89 @@ func DeleteFederation(c echo.Context) error {
 		return ormutil.DbErr(err)
 	}
 
+	// Delete partner API key
+	log.SpanLog(ctx, log.DebugLevelApi, "Deleting partner federation API key from vault", "federation name", opFed.Name)
+	client, err := serverConfig.vaultConfig.Login()
+	if err == nil {
+		vault.DeleteKV(client, getApiKeyVaultPath(partnerFed.Name))
+	} else {
+		log.SpanLog(ctx, log.DebugLevelApi, "Failed to login in to vault to delete partner federation API key",
+			"federation name", partnerFed.Name, "err", err)
+	}
+
 	return ormutil.SetReply(c, ormutil.Msg("Deleted partner federator successfully"))
+}
+
+func SetPartnerFederationAPIKey(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	opFed := ormapi.Federation{}
+	if err := c.Bind(&opFed); err != nil {
+		return ormutil.BindErr(err)
+	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, opFed.GetTags())
+	if err := fedAuthorized(ctx, claims.Username, opFed.SelfOperatorId); err != nil {
+		return err
+	}
+	_, _, err = GetFederationByName(ctx, opFed.Name)
+	if err != nil {
+		return err
+	}
+
+	if opFed.ApiKey == "" {
+		return fmt.Errorf("nothing to update")
+	}
+
+	// allow update of API key in case partner federator regenerates it
+	log.SpanLog(ctx, log.DebugLevelApi, "Storing partner federation API key in vault", "federation name", opFed.Name)
+	vPath := getApiKeyVaultPath(opFed.Name)
+	err = vault.PutData(serverConfig.vaultConfig, vPath, &ApiKeyData{Data: opFed.ApiKey})
+	if err != nil {
+		return fmt.Errorf("Unable to store partner API key in vault: %s", err)
+	}
+	return ormutil.SetReply(c, ormutil.Msg("Updated federation attributes"))
+}
+
+func GenerateSelfFederationAPIKey(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	opFed := ormapi.Federation{}
+	if err := c.Bind(&opFed); err != nil {
+		return ormutil.BindErr(err)
+	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, opFed.GetTags())
+	if err := fedAuthorized(ctx, claims.Username, opFed.SelfOperatorId); err != nil {
+		return err
+	}
+	_, partnerFed, err := GetFederationByName(ctx, opFed.Name)
+	if err != nil {
+		return err
+	}
+
+	db := loggedDB(ctx)
+	// generate new api key, this will invalidate old API key
+	apiKey := uuid.New().String()
+	apiKeyHash, apiKeySalt, apiKeyIter := ormutil.NewPasshash(apiKey)
+	partnerFed.ApiKeyHash = apiKeyHash
+	partnerFed.Salt = apiKeySalt
+	partnerFed.Iter = apiKeyIter
+	err = db.Save(&partnerFed).Error
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+
+	apiKeyOut := ormapi.FederationApiKey{
+		ApiKey: apiKey,
+	}
+	return c.JSON(http.StatusOK, &apiKeyOut)
 }
 
 func CreateSelfFederatorZone(c echo.Context) error {
@@ -885,7 +1017,7 @@ func ShareSelfFederatorZone(c echo.Context) error {
 				EdgeCount:   len(existingZone.Cloudlets),
 			},
 		}
-		err = sendFederationRequest("POST", partnerFed.FederationAddr, federation.OperatorNotifyZoneAPI, &opZoneShare, nil)
+		err = sendFederationRequest("POST", partnerFed.FederationAddr, partnerFed.Name, NoApiKey, federation.OperatorNotifyZoneAPI, &opZoneShare, nil)
 		if err != nil {
 			return err
 		}
@@ -981,7 +1113,7 @@ func UnshareSelfFederatorZone(c echo.Context) error {
 			Country:          selfFed.CountryCode,
 			Zone:             existingZone.ZoneId,
 		}
-		err = sendFederationRequest("DELETE", partnerFed.FederationAddr, federation.OperatorNotifyZoneAPI, &opZoneUnShare, nil)
+		err = sendFederationRequest("DELETE", partnerFed.FederationAddr, partnerFed.Name, NoApiKey, federation.OperatorNotifyZoneAPI, &opZoneUnShare, nil)
 		if err != nil {
 			return err
 		}
@@ -1061,7 +1193,7 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 		Zones:            []string{existingZone.ZoneId},
 	}
 	opZoneRes := federation.OperatorZoneRegisterResponse{}
-	err = sendFederationRequest("POST", partnerFed.FederationAddr, federation.OperatorZoneAPI, &opZoneReg, &opZoneRes)
+	err = sendFederationRequest("POST", partnerFed.FederationAddr, partnerFed.Name, NoApiKey, federation.OperatorZoneAPI, &opZoneReg, &opZoneRes)
 	if err != nil {
 		return err
 	}
@@ -1211,7 +1343,7 @@ func DeregisterPartnerFederatorZone(c echo.Context) error {
 		Country:          selfFed.CountryCode,
 		Zone:             existingZone.ZoneId,
 	}
-	err = sendFederationRequest("DELETE", partnerFed.FederationAddr, federation.OperatorZoneAPI, &opZoneReg, nil)
+	err = sendFederationRequest("DELETE", partnerFed.FederationAddr, partnerFed.Name, NoApiKey, federation.OperatorZoneAPI, &opZoneReg, nil)
 	if err != nil {
 		return err
 	}
@@ -1268,7 +1400,7 @@ func RegisterFederation(c echo.Context) error {
 		CountryCode:      selfFed.CountryCode,
 	}
 	opRegRes := federation.OperatorRegistrationResponse{}
-	err = sendFederationRequest("POST", partnerFed.FederationAddr, federation.OperatorPartnerAPI, &opRegReq, &opRegRes)
+	err = sendFederationRequest("POST", partnerFed.FederationAddr, partnerFed.Name, NoApiKey, federation.OperatorPartnerAPI, &opRegReq, &opRegRes)
 	if err != nil {
 		return err
 	}
@@ -1365,7 +1497,7 @@ func DeregisterFederation(c echo.Context) error {
 		Operator:         selfFed.OperatorId,
 		Country:          selfFed.CountryCode,
 	}
-	err = sendFederationRequest("DELETE", partnerFed.FederationAddr, federation.OperatorPartnerAPI, &opFedReq, nil)
+	err = sendFederationRequest("DELETE", partnerFed.FederationAddr, partnerFed.Name, NoApiKey, federation.OperatorPartnerAPI, &opFedReq, nil)
 	if err != nil {
 		return err
 	}
@@ -1416,6 +1548,9 @@ func ShowFederation(c echo.Context) error {
 		if !authz.Ok(fed.SelfOperatorId) {
 			continue
 		}
+		fed.ApiKeyHash = ""
+		fed.Salt = ""
+		fed.Iter = 0
 		out = append(out, fed)
 	}
 	return c.JSON(http.StatusOK, out)

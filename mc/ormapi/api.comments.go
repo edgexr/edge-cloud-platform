@@ -225,6 +225,7 @@ var FederatorComments = map[string]string{
 	"mnc":             `List of mobile network codes of operator sending the request`,
 	"locatorendpoint": `IP and Port of discovery service URL of operator platform`,
 	"revision":        `Revision ID to track object changes. We use jaeger traceID for easy debugging but this can differ with what partner federator uses`,
+	"apikey":          `API Key used for authentication`,
 }
 
 var FederationComments = map[string]string{
@@ -237,6 +238,7 @@ var FederationComments = map[string]string{
 	"federator.mnc":                 `List of mobile network codes of operator sending the request`,
 	"federator.locatorendpoint":     `IP and Port of discovery service URL of operator platform`,
 	"federator.revision":            `Revision ID to track object changes. We use jaeger traceID for easy debugging but this can differ with what partner federator uses`,
+	"federator.apikey":              `API Key used for authentication`,
 	"name":                          `Name to uniquely identify a federation`,
 	"selffederationid":              `Self federation ID`,
 	"selfoperatorid":                `Self operator ID`,

@@ -40,7 +40,7 @@ func InitAdmin(ctx context.Context, superuser, superpass string) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "init admin")
 
 	// create superuser if it doesn't exist
-	passhash, salt, iter := NewPasshash(superpass)
+	passhash, salt, iter := ormutil.NewPasshash(superpass)
 	super := ormapi.User{
 		Name:          superuser,
 		Email:         superuser + "@mobiledgex.net",
@@ -117,7 +117,7 @@ func Login(c echo.Context) error {
 		span.SetTag("username", user.Name)
 		span.SetTag("email", user.Email)
 
-		matches, err := PasswordMatches(login.ApiKey, apiKeyObj.ApiKeyHash, apiKeyObj.Salt, apiKeyObj.Iter)
+		matches, err := ormutil.PasswordMatches(login.ApiKey, apiKeyObj.ApiKeyHash, apiKeyObj.Salt, apiKeyObj.Iter)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "apiKeyId matches err", "err", err)
 		}
@@ -151,7 +151,7 @@ func Login(c echo.Context) error {
 		span.SetTag("username", user.Name)
 		span.SetTag("email", user.Email)
 
-		matches, err := PasswordMatches(login.Password, user.Passhash, user.Salt, user.Iter)
+		matches, err := ormutil.PasswordMatches(login.Password, user.Passhash, user.Salt, user.Iter)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "password matches err", "err", err)
 		}
@@ -364,7 +364,7 @@ func CreateUser(c echo.Context) error {
 	}
 
 	// password should be passed through in Passhash field.
-	user.Passhash, user.Salt, user.Iter = NewPasshash(user.Passhash)
+	user.Passhash, user.Salt, user.Iter = ormutil.NewPasshash(user.Passhash)
 	db := loggedDB(ctx)
 	if err := db.Create(&user).Error; err != nil {
 		//check specifically for duplicate username and/or emails
@@ -699,7 +699,7 @@ func setPassword(c echo.Context, username, password string) error {
 		return err
 	}
 
-	user.Passhash, user.Salt, user.Iter = NewPasshash(password)
+	user.Passhash, user.Salt, user.Iter = ormutil.NewPasshash(password)
 	if err := db.Model(&user).Updates(&user).Error; err != nil {
 		return ormutil.DbErr(err)
 	}
@@ -1122,7 +1122,7 @@ func CreateUserApiKey(c echo.Context) error {
 		return ormutil.DbErr(err)
 	}
 
-	apiKeyHash, apiKeySalt, apiKeyIter := NewPasshash(apiKey)
+	apiKeyHash, apiKeySalt, apiKeyIter := ormutil.NewPasshash(apiKey)
 	apiKeyObj.ApiKeyHash = apiKeyHash
 	apiKeyObj.Salt = apiKeySalt
 	apiKeyObj.Iter = apiKeyIter

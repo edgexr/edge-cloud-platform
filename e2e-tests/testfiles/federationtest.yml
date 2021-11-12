@@ -326,6 +326,24 @@ tests:
       region: "PA"
     filetype: mcdata
 
+- name: set partner1 API key for federations with self federator
+  actions: [mcapi-setfederationapikey]
+  apifile: '{{datadir2}}/federation_self_set_partner_apikey.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+    fedaddr: "127.0.0.1:9808"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: set partner2 API key for federations with self federator
+  actions: [mcapi-setfederationapikey]
+  apifile: '{{datadir2}}/federation_self_set_partner_apikey.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+    fedaddr: "127.0.0.1:9809"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
 ###############################################################
 # Federation Setup
 ###############################################################

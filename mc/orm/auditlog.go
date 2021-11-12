@@ -196,6 +196,18 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			if err != nil {
 				reqBody = []byte{}
 			}
+		} else if strings.Contains(req.RequestURI, "/auth/federation/create") ||
+			strings.Contains(req.RequestURI, "/auth/federation/partner/setapikey") {
+			fedReq := ormapi.Federation{}
+			err := json.Unmarshal(reqBody, &fedReq)
+			if err == nil {
+				// do not log partner federator's API key
+				fedReq.ApiKey = ""
+				reqBody, err = json.Marshal(fedReq)
+			}
+			if err != nil {
+				reqBody = []byte{}
+			}
 		}
 		span.SetTag("request", string(reqBody))
 		eventErr := nexterr
@@ -232,18 +244,35 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 					response = string(resBody)
 				}
 			} else if strings.Contains(string(resBody), "ApiKey") {
-				resp := ormapi.CreateUserApiKey{}
-				err := json.Unmarshal(resBody, &resp)
-				if err == nil {
-					resp.ApiKey = ""
-					updatedResp, err := json.Marshal(&resp)
+				if strings.Contains(req.RequestURI, "/user/create/apikey") {
+					resp := ormapi.CreateUserApiKey{}
+					err := json.Unmarshal(resBody, &resp)
 					if err == nil {
-						response = string(updatedResp)
+						resp.ApiKey = ""
+						updatedResp, err := json.Marshal(&resp)
+						if err == nil {
+							response = string(updatedResp)
+						} else {
+							response = string(resBody)
+						}
 					} else {
 						response = string(resBody)
 					}
-				} else {
-					response = string(resBody)
+				} else if strings.Contains(req.RequestURI, "/federation/self/generateapikey") ||
+					strings.Contains(req.RequestURI, "/federation/create") {
+					resp := ormapi.FederationApiKey{}
+					err := json.Unmarshal(resBody, &resp)
+					if err == nil {
+						resp.ApiKey = ""
+						updatedResp, err := json.Marshal(&resp)
+						if err == nil {
+							response = string(updatedResp)
+						} else {
+							response = string(resBody)
+						}
+					} else {
+						response = string(resBody)
+					}
 				}
 
 			} else {
