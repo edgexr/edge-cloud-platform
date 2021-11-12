@@ -5,6 +5,7 @@
     appver: "1.0"
     cloudlet: {{cloudlet_name}}
     cloudletorg: {{cloudlet_org}}
+    federatedorg: ""
     cluster: {{cluster_name}}
     clusterorg: {{cluster_org}}
     region: local

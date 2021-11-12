@@ -99,6 +99,7 @@
       appver: "1.0"
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
+      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       hostname: Jon-Mex.lan
@@ -118,6 +119,7 @@
       appver: "1.0"
       cloudlet: gcp-cloud-5
       cloudletorg: gcp
+      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       hostname: Jon-Mex.lan
@@ -142,6 +144,7 @@
       appver: "1.0"
       cloudlet: dmuus-cloud-4
       cloudletorg: dmuus
+      federatedorg: ""
       cluster: SmallCluster
       clusterorg: AcmeAppCo
       duration: 123.596186ms
@@ -173,6 +176,7 @@
       appver: "1.0"
       cloudlet: dmuus-cloud-3
       cloudletorg: dmuus
+      federatedorg: ""
       cluster: SmallCluster
       clusterorg: AcmeAppCo
       duration: 133.521257ms
@@ -311,6 +315,7 @@
       appver: "1.0"
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
+      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       hostname: Jon-Mex.lan
@@ -330,6 +335,7 @@
       appver: "1.0"
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
+      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       hostname: Jon-Mex.lan
@@ -350,6 +356,7 @@
       autoprovpolicy: autoprovHA
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
+      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       duration: 334.814153ms
@@ -377,6 +384,7 @@
       appver: "1.0"
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
+      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       hostname: Jon-Mex.lan
@@ -396,6 +404,7 @@
       appver: "1.0"
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
+      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       hostname: Jon-Mex.lan
@@ -416,6 +425,7 @@
       autoprovpolicy: autoprovHA
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
+      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       duration: 334.814153ms
@@ -442,6 +452,7 @@
       appver: "1.0"
       cloudlet: dmuus-cloud-4
       cloudletorg: dmuus
+      federatedorg: ""
       cluster: SmallCluster
       clusterorg: AcmeAppCo
       duration: 100.278371ms
@@ -473,6 +484,7 @@
       appver: "1.0"
       cloudlet: dmuus-cloud-3
       cloudletorg: dmuus
+      federatedorg: ""
       cluster: SmallCluster
       clusterorg: AcmeAppCo
       duration: 105.385154ms
@@ -505,6 +517,7 @@
       appver: "1.0"
       cloudlet: dmuus-cloud-2
       cloudletorg: dmuus
+      federatedorg: ""
       cluster: autoclusterAcme
       clusterorg: MobiledgeX
       hostname: Jon-Mex.lan
@@ -532,6 +545,7 @@
       autoprovpolicy: ""
       cloudlet: dmuus-cloud-2
       cloudletorg: dmuus
+      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       duration: 169.970063ms
@@ -553,6 +567,7 @@
       autoprovpolicy: ""
       cloudlet: dmuus-cloud-2
       cloudletorg: dmuus
+      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       duration: 187.353273ms
@@ -580,6 +595,7 @@
       autoprovpolicy: autoprovHA
       cloudlet: gcp-cloud-5
       cloudletorg: gcp
+      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       duration: 317.624796ms
@@ -601,6 +617,7 @@
       autoprovpolicy: autoprovHA
       cloudlet: azure-cloud-4
       cloudletorg: azure
+      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       duration: 275.444974ms

@@ -109,6 +109,7 @@
   tags:
     cloudlet: dmuus-cloud-4
     cloudletorg: dmuus
+    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
 - operationname: /api/v1/auth/ctrl/DeleteClusterInst
@@ -137,6 +138,7 @@
   tags:
     cloudlet: dmuus-cloud-3
     cloudletorg: dmuus
+    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
 - operationname: /api/v1/auth/ctrl/DeleteApp
@@ -205,5 +207,6 @@
     appver: "1.0"
     cloudlet: dmuus-cloud-4
     cloudletorg: dmuus
+    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo

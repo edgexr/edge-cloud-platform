@@ -139,3 +139,13 @@ requests:
         name: dmuus-cloud-1
       region: local
     output: api,notify,infra,metrics,info,sampled
+  - node:
+      name: frm1
+      type: frm
+      region: local
+    output: api,notify,infra
+  - node:
+      name: frma1
+      type: frm
+      region: locala
+    output: api,notify,infra

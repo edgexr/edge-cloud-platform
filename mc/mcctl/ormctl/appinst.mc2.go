@@ -134,6 +134,7 @@ var CreateAppInstRequiredArgs = []string{
 }
 var CreateAppInstOptionalArgs = []string{
 	"cluster",
+	"federated-org",
 	"cluster-org",
 	"flavor",
 	"crmoverride",
@@ -153,6 +154,7 @@ var DeleteAppInstRequiredArgs = []string{
 }
 var DeleteAppInstOptionalArgs = []string{
 	"cluster",
+	"federated-org",
 	"cluster-org",
 	"flavor",
 	"crmoverride",
@@ -174,6 +176,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"cluster",
 	"cloudlet-org",
 	"cloudlet",
+	"federated-org",
 	"cluster-org",
 	"crmoverride",
 	"forceupdate",
@@ -191,6 +194,7 @@ var UpdateAppInstRequiredArgs = []string{
 }
 var UpdateAppInstOptionalArgs = []string{
 	"cluster",
+	"federated-org",
 	"cluster-org",
 	"crmoverride",
 	"configs:empty",
@@ -234,6 +238,7 @@ var AppInstKeyOptionalArgs = []string{
 	"clusterinstkey.clusterkey.name",
 	"clusterinstkey.cloudletkey.organization",
 	"clusterinstkey.cloudletkey.name",
+	"clusterinstkey.cloudletkey.federatedorganization",
 	"clusterinstkey.organization",
 }
 var AppInstKeyAliasArgs = []string{
@@ -243,16 +248,18 @@ var AppInstKeyAliasArgs = []string{
 	"clusterinstkey.clusterkey.name=appinstkey.clusterinstkey.clusterkey.name",
 	"clusterinstkey.cloudletkey.organization=appinstkey.clusterinstkey.cloudletkey.organization",
 	"clusterinstkey.cloudletkey.name=appinstkey.clusterinstkey.cloudletkey.name",
+	"clusterinstkey.cloudletkey.federatedorganization=appinstkey.clusterinstkey.cloudletkey.federatedorganization",
 	"clusterinstkey.organization=appinstkey.clusterinstkey.organization",
 }
 var AppInstKeyComments = map[string]string{
-	"appkey.organization":                     "App developer organization",
-	"appkey.name":                             "App name",
-	"appkey.version":                          "App version",
-	"clusterinstkey.clusterkey.name":          "Cluster name",
-	"clusterinstkey.cloudletkey.organization": "Organization of the cloudlet site",
-	"clusterinstkey.cloudletkey.name":         "Name of the cloudlet",
-	"clusterinstkey.organization":             "Name of Developer organization that this cluster belongs to",
+	"appkey.organization":                              "App developer organization",
+	"appkey.name":                                      "App name",
+	"appkey.version":                                   "App version",
+	"clusterinstkey.clusterkey.name":                   "Cluster name",
+	"clusterinstkey.cloudletkey.organization":          "Organization of the cloudlet site",
+	"clusterinstkey.cloudletkey.name":                  "Name of the cloudlet",
+	"clusterinstkey.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
+	"clusterinstkey.organization":                      "Name of Developer organization that this cluster belongs to",
 }
 var AppInstKeySpecialArgs = map[string]string{}
 var AppInstRequiredArgs = []string{
@@ -264,6 +271,7 @@ var AppInstRequiredArgs = []string{
 }
 var AppInstOptionalArgs = []string{
 	"cluster",
+	"federated-org",
 	"cluster-org",
 	"flavor",
 	"crmoverride",
@@ -286,6 +294,7 @@ var AppInstAliasArgs = []string{
 	"cluster=appinst.key.clusterinstkey.clusterkey.name",
 	"cloudlet-org=appinst.key.clusterinstkey.cloudletkey.organization",
 	"cloudlet=appinst.key.clusterinstkey.cloudletkey.name",
+	"federated-org=appinst.key.clusterinstkey.cloudletkey.federatedorganization",
 	"cluster-org=appinst.key.clusterinstkey.organization",
 	"cloudletloc.latitude=appinst.cloudletloc.latitude",
 	"cloudletloc.longitude=appinst.cloudletloc.longitude",
@@ -348,6 +357,7 @@ var AppInstComments = map[string]string{
 	"cluster":                        "Cluster name",
 	"cloudlet-org":                   "Organization of the cloudlet site",
 	"cloudlet":                       "Name of the cloudlet",
+	"federated-org":                  "Federated operator organization who shared this cloudlet",
 	"cluster-org":                    "Name of Developer organization that this cluster belongs to",
 	"cloudletloc.latitude":           "Latitude in WGS 84 coordinates",
 	"cloudletloc.longitude":          "Longitude in WGS 84 coordinates",
@@ -406,6 +416,7 @@ var AppInstLatencyRequiredArgs = []string{
 }
 var AppInstLatencyOptionalArgs = []string{
 	"cluster",
+	"federated-org",
 	"cluster-org",
 	"message",
 }
@@ -416,16 +427,18 @@ var AppInstLatencyAliasArgs = []string{
 	"cluster=appinstlatency.key.clusterinstkey.clusterkey.name",
 	"cloudlet-org=appinstlatency.key.clusterinstkey.cloudletkey.organization",
 	"cloudlet=appinstlatency.key.clusterinstkey.cloudletkey.name",
+	"federated-org=appinstlatency.key.clusterinstkey.cloudletkey.federatedorganization",
 	"cluster-org=appinstlatency.key.clusterinstkey.organization",
 	"message=appinstlatency.message",
 }
 var AppInstLatencyComments = map[string]string{
-	"app-org":      "App developer organization",
-	"appname":      "App name",
-	"appvers":      "App version",
-	"cluster":      "Cluster name",
-	"cloudlet-org": "Organization of the cloudlet site",
-	"cloudlet":     "Name of the cloudlet",
-	"cluster-org":  "Name of Developer organization that this cluster belongs to",
+	"app-org":       "App developer organization",
+	"appname":       "App name",
+	"appvers":       "App version",
+	"cluster":       "Cluster name",
+	"cloudlet-org":  "Organization of the cloudlet site",
+	"cloudlet":      "Name of the cloudlet",
+	"federated-org": "Federated operator organization who shared this cloudlet",
+	"cluster-org":   "Name of Developer organization that this cluster belongs to",
 }
 var AppInstLatencySpecialArgs = map[string]string{}

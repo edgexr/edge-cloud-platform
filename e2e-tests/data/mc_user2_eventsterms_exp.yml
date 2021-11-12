@@ -78,6 +78,8 @@
       count: 54
     - key: email
       count: 38
+    - key: federatedorg
+      count: 59
     - key: method
       count: 38
     - key: org

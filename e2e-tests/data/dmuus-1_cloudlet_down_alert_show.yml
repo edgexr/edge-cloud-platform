@@ -19,6 +19,7 @@
     appver: "1.0"
     cloudlet: dmuus-cloud-1
     cloudletorg: dmuus
+    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
     region: local

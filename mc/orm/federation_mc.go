@@ -15,6 +15,8 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	dme_proto "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/tls"
@@ -157,9 +159,9 @@ func GetSelfFederator(ctx context.Context, federationId string) (*ormapi.Federat
 	return &fedObj, nil
 }
 
-func GetFederationById(ctx context.Context, selfFederationId string) (*ormapi.Federation, error) {
+func GetFederationById(ctx context.Context, selfFederationId string) (bool, *ormapi.Federation, error) {
 	if selfFederationId == "" {
-		return nil, fmt.Errorf("Missing self federation ID %q", selfFederationId)
+		return false, nil, fmt.Errorf("Missing self federation ID %q", selfFederationId)
 	}
 
 	db := loggedDB(ctx)
@@ -169,13 +171,13 @@ func GetFederationById(ctx context.Context, selfFederationId string) (*ormapi.Fe
 	partnerFed := ormapi.Federation{}
 	res := db.Where(&partnerLookup).First(&partnerFed)
 	if !res.RecordNotFound() && res.Error != nil {
-		return nil, ormutil.DbErr(res.Error)
+		return false, nil, ormutil.DbErr(res.Error)
 	}
 	if res.RecordNotFound() {
-		return nil, fmt.Errorf("No partner federation exist for %q", selfFederationId)
+		return false, &ormapi.Federation{}, nil
 	}
 
-	return &partnerFed, nil
+	return true, &partnerFed, nil
 }
 
 func GetFederationByName(ctx context.Context, name string) (*ormapi.Federator, *ormapi.Federation, error) {
@@ -220,6 +222,8 @@ func CreateSelfFederator(c echo.Context) error {
 	if err := c.Bind(&opFed); err != nil {
 		return ormutil.BindErr(err)
 	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, opFed.GetTags())
 	// sanity check
 	if opFed.OperatorId == "" {
 		return fmt.Errorf("Missing Operator ID")
@@ -285,13 +289,16 @@ func UpdateSelfFederator(c echo.Context) error {
 	if err := c.Bind(&opFed); err != nil {
 		return ormutil.BindErr(err)
 	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, opFed.GetTags())
 
 	// get self federator information
 	selfFed, err := GetSelfFederator(ctx, opFed.FederationId)
 	if err != nil {
 		return err
 	}
-	if err := fedAuthorized(ctx, claims.Username, selfFed.OperatorId); err != nil {
+	span.SetTag("region", selfFed.Region)
+	if err := fedAuthorized(ctx, claims.Username, opFed.OperatorId); err != nil {
 		return err
 	}
 
@@ -333,12 +340,12 @@ func UpdateSelfFederator(c echo.Context) error {
 	}
 
 	// Notify partner federator who have access to self zones
-	partnerFed, err := GetFederationById(ctx, selfFed.FederationId)
+	partnerFedExists, partnerFed, err := GetFederationById(ctx, selfFed.FederationId)
 	if err != nil {
 		return err
 	}
 	errOut := ""
-	if partnerFed.PartnerRoleAccessToSelfZones {
+	if partnerFedExists && partnerFed.PartnerRoleAccessToSelfZones {
 		opConf := federation.UpdateMECNetConf{
 			RequestId:        selfFed.Revision,
 			OrigFederationId: selfFed.FederationId,
@@ -372,12 +379,15 @@ func DeleteSelfFederator(c echo.Context) error {
 	if err := c.Bind(&opFed); err != nil {
 		return ormutil.BindErr(err)
 	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, opFed.GetTags())
 	// get federator information
 	selfFed, err := GetSelfFederator(ctx, opFed.FederationId)
 	if err != nil {
 		return err
 	}
-	if err := fedAuthorized(ctx, claims.Username, selfFed.OperatorId); err != nil {
+	span.SetTag("region", opFed.Region)
+	if err := fedAuthorized(ctx, claims.Username, opFed.OperatorId); err != nil {
 		return err
 	}
 
@@ -464,6 +474,8 @@ func CreateFederation(c echo.Context) error {
 	if err := c.Bind(&opFed); err != nil {
 		return ormutil.BindErr(err)
 	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, opFed.GetTags())
 	// sanity check
 	if opFed.Name == "" {
 		return fmt.Errorf("Missing federation name")
@@ -488,10 +500,11 @@ func CreateFederation(c echo.Context) error {
 	}
 
 	// validate self federator
-	_, err = GetSelfFederator(ctx, opFed.SelfFederationId)
+	selfFed, err := GetSelfFederator(ctx, opFed.SelfFederationId)
 	if err != nil {
 		return err
 	}
+	span.SetTag("region", selfFed.Region)
 	if err := fedAuthorized(ctx, claims.Username, opFed.SelfOperatorId); err != nil {
 		return err
 	}
@@ -524,6 +537,8 @@ func DeleteFederation(c echo.Context) error {
 	if err := c.Bind(&opFed); err != nil {
 		return ormutil.BindErr(err)
 	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, opFed.GetTags())
 	if err := fedAuthorized(ctx, claims.Username, opFed.SelfOperatorId); err != nil {
 		return err
 	}
@@ -556,6 +571,10 @@ func CreateSelfFederatorZone(c echo.Context) error {
 	if err := c.Bind(&opZone); err != nil {
 		return ormutil.BindErr(err)
 	}
+
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, opZone.GetTags())
+
 	// sanity check
 	if opZone.ZoneId == "" {
 		return fmt.Errorf("Missing zone ID")
@@ -652,6 +671,10 @@ func DeleteSelfFederatorZone(c echo.Context) error {
 	if err := c.Bind(&opZone); err != nil {
 		return ormutil.BindErr(err)
 	}
+
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, opZone.GetTags())
+
 	// sanity check
 	if opZone.ZoneId == "" {
 		return fmt.Errorf("Missing zone ID")
@@ -739,6 +762,7 @@ func ShowFederatedSelfZone(c echo.Context) error {
 	if err := c.Bind(&opZoneReq); err != nil {
 		return ormutil.BindErr(err)
 	}
+
 	authz, err := newShowAuthz(ctx, "", claims.Username, ResourceCloudlets, ActionManage)
 	if err != nil {
 		return err
@@ -801,6 +825,10 @@ func ShareSelfFederatorZone(c echo.Context) error {
 	if err := c.Bind(&shZone); err != nil {
 		return ormutil.BindErr(err)
 	}
+
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, shZone.GetTags())
+
 	// sanity check
 	if shZone.ZoneId == "" {
 		return fmt.Errorf("Must specify the zone which is to be shared")
@@ -890,6 +918,10 @@ func UnshareSelfFederatorZone(c echo.Context) error {
 	if err := c.Bind(&unshZone); err != nil {
 		return ormutil.BindErr(err)
 	}
+
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, unshZone.GetTags())
+
 	// sanity check
 	if unshZone.ZoneId == "" {
 		return fmt.Errorf("Must specify the zone which is to be unshared")
@@ -975,6 +1007,10 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 	if err := c.Bind(&reg); err != nil {
 		return ormutil.BindErr(err)
 	}
+
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, reg.GetTags())
+
 	// sanity check
 	if reg.ZoneId == "" {
 		return fmt.Errorf("Must specify the zone which is to be registered")
@@ -1037,6 +1073,61 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 	if err != nil {
 		return ormutil.DbErr(err)
 	}
+
+	rc := &ormutil.RegionContext{}
+	rc.Username = claims.Username
+	rc.Region = selfFed.Region
+	rc.Database = database
+	cb := func(res *edgeproto.Result) error {
+		log.SpanLog(ctx, log.DebugLevelApi, "add partner zone as cloudlet progress", "progress result", res)
+		return nil
+	}
+	for _, zoneReg := range opZoneRes.Zone {
+		// Store this zone as a cloudlet on the regional controller
+		lat, long, err := fedcommon.ParseGeoLocation(existingZone.GeoLocation)
+		if err != nil {
+			return err
+		}
+		fedCloudlet := edgeproto.Cloudlet{
+			Key: edgeproto.CloudletKey{
+				Name:                  zoneReg.ZoneId,
+				Organization:          selfFed.OperatorId,
+				FederatedOrganization: partnerFed.OperatorId,
+			},
+			Location: dme_proto.Loc{
+				Latitude:  lat,
+				Longitude: long,
+			},
+			PlatformType: edgeproto.PlatformType_PLATFORM_TYPE_FEDERATION,
+			// TODO: This should be removed as a required field
+			NumDynamicIps: int32(10),
+		}
+		if zoneReg.GuaranteedResources.CPU > 0 {
+			fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
+				Name:  cloudcommon.ResourceVcpus,
+				Value: uint64(zoneReg.GuaranteedResources.CPU),
+			})
+		}
+		if zoneReg.GuaranteedResources.RAM > 0 {
+			fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
+				Name:  cloudcommon.ResourceRamMb,
+				Value: uint64(zoneReg.GuaranteedResources.RAM) * 1024,
+			})
+		}
+		if zoneReg.GuaranteedResources.Disk > 0 {
+			fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
+				Name:  cloudcommon.ResourceDisk,
+				Value: uint64(zoneReg.GuaranteedResources.Disk),
+			})
+
+		}
+		log.SpanLog(ctx, log.DebugLevelApi, "add partner zone as cloudlet", "key", fedCloudlet.Key)
+		err = ctrlclient.CreateCloudletStream(ctx, rc, &fedCloudlet, connCache, cb)
+		if err != nil {
+			return err
+		}
+	}
+
 	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Partner federator zone %q registered successfully", existingZone.ZoneId)))
 }
 
@@ -1050,6 +1141,10 @@ func DeregisterPartnerFederatorZone(c echo.Context) error {
 	if err := c.Bind(&reg); err != nil {
 		return ormutil.BindErr(err)
 	}
+
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, reg.GetTags())
+
 	// sanity check
 	if reg.ZoneId == "" {
 		return fmt.Errorf("Must specify the zone which is to be deregistered")
@@ -1080,8 +1175,30 @@ func DeregisterPartnerFederatorZone(c echo.Context) error {
 		return fmt.Errorf("Zone ID %q not found", reg.ZoneId)
 	}
 
-	// TODO: make sure no AppInsts are deployed on the cloudlet
-	//       before the zone is deregistered
+	rc := &ormutil.RegionContext{}
+	rc.Username = claims.Username
+	rc.Region = selfFed.Region
+	rc.Database = database
+	cb := func(res *edgeproto.Result) error {
+		log.SpanLog(ctx, log.DebugLevelApi, "delete partner zone as cloudlet progress", "progress result", res)
+		return nil
+	}
+
+	// Delete the zone added as cloudlet from regional controller.
+	// This also ensures that no AppInsts are deployed on the cloudlet
+	// before the zone is deregistered
+	fedCloudlet := edgeproto.Cloudlet{
+		Key: edgeproto.CloudletKey{
+			Name:                  existingZone.ZoneId,
+			Organization:          existingZone.SelfOperatorId,
+			FederatedOrganization: existingZone.OperatorId,
+		},
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "delete partner zone as cloudlet", "key", fedCloudlet.Key)
+	err = ctrlclient.DeleteCloudletStream(ctx, rc, &fedCloudlet, connCache, cb)
+	if err != nil {
+		return err
+	}
 
 	revision := log.SpanTraceID(ctx)
 
@@ -1122,6 +1239,9 @@ func RegisterFederation(c echo.Context) error {
 	if err := c.Bind(&opFed); err != nil {
 		return ormutil.BindErr(err)
 	}
+
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, opFed.GetTags())
 
 	if err := fedAuthorized(ctx, claims.Username, opFed.SelfOperatorId); err != nil {
 		return err
@@ -1200,6 +1320,9 @@ func DeregisterFederation(c echo.Context) error {
 	if err := c.Bind(&opFed); err != nil {
 		return ormutil.BindErr(err)
 	}
+
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, opFed.GetTags())
 
 	if err := fedAuthorized(ctx, claims.Username, opFed.SelfOperatorId); err != nil {
 		return err

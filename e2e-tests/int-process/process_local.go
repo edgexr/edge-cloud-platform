@@ -420,6 +420,8 @@ type VaultRoles struct {
 type VaultRegionRoles struct {
 	AutoProvRoleID   string `json:"autoprovroleid"`
 	AutoProvSecretID string `json:"autoprovsecretid"`
+	FrmRoleID        string `json:"frmroleid"`
+	FrmSecretID      string `json:"frmsecretid"`
 }
 
 func (s *VaultRoles) GetRegionRoles(region string) *VaultRegionRoles {
@@ -504,6 +506,7 @@ func SetupVault(p *process.Vault, opts ...process.StartOp) (*VaultRoles, error) 
 		}
 		rr := VaultRegionRoles{}
 		p.GetAppRole(region, "autoprov", &rr.AutoProvRoleID, &rr.AutoProvSecretID, &err)
+		p.GetAppRole(region, "frm", &rr.FrmRoleID, &rr.FrmSecretID, &err)
 		roles.RegionRoles[region] = &rr
 	}
 	options := process.StartOptions{}
@@ -702,3 +705,55 @@ func (p *AlertmanagerSidecar) GetExeName() string { return "alertmgr-sidecar" }
 func (p *AlertmanagerSidecar) LookupArgs() string {
 	return fmt.Sprintf("--httpAddr %s --alertmgrAddr %s", p.HttpAddr, p.AlertmgrAddr)
 }
+
+func (p *FRM) StartLocal(logfile string, opts ...process.StartOp) error {
+	args := p.GetNodeMgrArgs()
+	if p.NotifyAddrs != "" {
+		args = append(args, "--notifyAddrs")
+		args = append(args, p.NotifyAddrs)
+	}
+	if p.TLS.ClientCert != "" {
+		args = append(args, "--clientCert")
+		args = append(args, p.TLS.ClientCert)
+	}
+	if p.Region != "" {
+		args = append(args, "--region")
+		args = append(args, p.Region)
+	}
+	args = append(args, "--hostname", p.Name)
+	options := process.StartOptions{}
+	options.ApplyStartOptions(opts...)
+	if options.Debug != "" {
+		args = append(args, "-d")
+		args = append(args, options.Debug)
+	}
+	envs := p.GetEnv()
+	if options.RolesFile != "" {
+		dat, err := ioutil.ReadFile(options.RolesFile)
+		if err != nil {
+			return err
+		}
+		roles := VaultRoles{}
+		err = yaml.Unmarshal(dat, &roles)
+		if err != nil {
+			return err
+		}
+		rr := roles.GetRegionRoles(p.Region)
+		envs = append(envs,
+			fmt.Sprintf("VAULT_ROLE_ID=%s", rr.FrmRoleID),
+			fmt.Sprintf("VAULT_SECRET_ID=%s", rr.FrmSecretID),
+		)
+	}
+
+	var err error
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, envs, logfile)
+	return err
+}
+
+func (p *FRM) StopLocal() {
+	process.StopLocal(p.cmd)
+}
+
+func (p *FRM) GetExeName() string { return "frm" }
+
+func (p *FRM) LookupArgs() string { return p.Name }
