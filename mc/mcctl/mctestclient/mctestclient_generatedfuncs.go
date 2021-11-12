@@ -1911,12 +1911,12 @@ func (s *Client) AccessCloudlet(uri string, token string, in *ormapi.RegionExecR
 
 // Generating group Federation
 
-func (s *Client) CreateFederation(uri string, token string, in *ormapi.Federation) (*ormapi.Result, int, error) {
+func (s *Client) CreateFederation(uri string, token string, in *ormapi.Federation) (*ormapi.FederationApiKey, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
-	var out ormapi.Result
+	var out ormapi.FederationApiKey
 	rundata.Out = &out
 
 	apiCmd := ormctl.MustGetCommand("CreateFederation")
@@ -1936,6 +1936,38 @@ func (s *Client) DeleteFederation(uri string, token string, in *ormapi.Federatio
 	rundata.Out = &out
 
 	apiCmd := ormctl.MustGetCommand("DeleteFederation")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) SetPartnerFederationAPIKey(uri string, token string, in *ormapi.Federation) (*ormapi.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out ormapi.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("SetPartnerFederationAPIKey")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) GenerateSelfFederationAPIKey(uri string, token string, in *ormapi.Federation) (*ormapi.FederationApiKey, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out ormapi.FederationApiKey
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("GenerateSelfFederationAPIKey")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError

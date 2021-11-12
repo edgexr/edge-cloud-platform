@@ -171,8 +171,9 @@ func init() {
 			AliasArgs:    strings.Join(FederationAliasArgs, " "),
 			RequiredArgs: strings.Join(append(SelfFederatorArgs, FederationRequiredArgs...), " "),
 			Comments:     aliasedComments(ormapi.FederationComments, FederationAliasArgs),
+			OptionalArgs: strings.Join(FederationUpdateArgs, " "),
 			ReqData:      &ormapi.Federation{},
-			ReplyData:    &ormapi.Result{},
+			ReplyData:    &ormapi.FederationApiKey{},
 			Path:         "/auth/federation/create",
 		},
 		&ApiCommand{
@@ -185,6 +186,30 @@ func init() {
 			ReqData:      &ormapi.Federation{},
 			ReplyData:    &ormapi.Result{},
 			Path:         "/auth/federation/delete",
+		},
+		&ApiCommand{
+			Name:         "SetPartnerFederationAPIKey",
+			Use:          "setpartnerapikey",
+			Short:        "Set Partner Federation API Key",
+			SpecialArgs:  &FederatorSpecialArgs,
+			AliasArgs:    strings.Join(FederationAliasArgs, " "),
+			RequiredArgs: strings.Join(append(FederationArgs, FederationUpdateArgs...), " "),
+			Comments:     aliasedComments(ormapi.FederationComments, FederationAliasArgs),
+			ReqData:      &ormapi.Federation{},
+			ReplyData:    &ormapi.Result{},
+			Path:         "/auth/federation/partner/setapikey",
+		},
+		&ApiCommand{
+			Name:         "GenerateSelfFederationAPIKey",
+			Use:          "generateselfapikey",
+			Short:        "Generate Self Federation API Key",
+			SpecialArgs:  &FederatorSpecialArgs,
+			AliasArgs:    strings.Join(FederationAliasArgs, " "),
+			RequiredArgs: strings.Join(FederationArgs, " "),
+			Comments:     aliasedComments(ormapi.FederationComments, FederationAliasArgs),
+			ReqData:      &ormapi.Federation{},
+			ReplyData:    &ormapi.FederationApiKey{},
+			Path:         "/auth/federation/self/generateapikey",
 		},
 		&ApiCommand{
 			Name:         "RegisterFederation",
@@ -255,6 +280,10 @@ var FederationArgs = []string{
 	"name",
 }
 
+var FederationUpdateArgs = []string{
+	"apikey",
+}
+
 var FederationAliasArgs = []string{
 	"operatorid=federator.operatorid",
 	"countrycode=federator.countrycode",
@@ -263,6 +292,7 @@ var FederationAliasArgs = []string{
 	"mcc=federator.mcc",
 	"mnc=federator.mnc",
 	"locatorendpoint=federator.locatorendpoint",
+	"apikey=federator.apikey",
 }
 
 var FederatorSpecialArgs = map[string]string{

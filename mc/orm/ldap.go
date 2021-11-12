@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 	ber "github.com/nmcclain/asn1-ber"
@@ -55,7 +56,7 @@ func (s *ldapHandler) Bind(bindDN, bindSimplePw string, conn net.Conn) (ldap.LDA
 			time.Sleep(BadAuthDelay)
 			return ldap.LDAPResultInvalidCredentials, nil
 		}
-		matches, err := PasswordMatches(bindSimplePw, user.Passhash, user.Salt, user.Iter)
+		matches, err := ormutil.PasswordMatches(bindSimplePw, user.Passhash, user.Salt, user.Iter)
 		if err != nil || !matches {
 			time.Sleep(BadAuthDelay)
 			return ldap.LDAPResultInvalidCredentials, err

@@ -466,6 +466,17 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		}
 		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
+	case "setfederationapikey":
+		output := &AllDataOut{}
+		for ii, fd := range data.Federations {
+			if partnerApiKey, found := sharedData[fd.FederationId]; found {
+				fd.ApiKey = partnerApiKey
+			}
+			_, st, err := mcClient.SetPartnerFederationAPIKey(uri, token, &fd)
+			outMcErr(output, fmt.Sprintf("SetPartnerFederationAPIKey[%d]", ii), st, err)
+		}
+		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		errs = output.Errors
 	case "share":
 		fallthrough
 	case "unshare":
@@ -479,12 +490,12 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		errs = output.Errors
 	case "create":
 		output := &AllDataOut{}
-		createMcData(uri, token, tag, data, dataMap, output, &rc)
+		createMcData(uri, token, tag, data, dataMap, sharedData, output, &rc)
 		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "delete":
 		output := &AllDataOut{}
-		deleteMcData(uri, token, tag, data, dataMap, output, &rc)
+		deleteMcData(uri, token, tag, data, dataMap, sharedData, output, &rc)
 		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "add":
@@ -824,7 +835,7 @@ func runRegionDataApi(mcClient *mctestclient.Client, uri, token, tag string, rd 
 	return output
 }
 
-func createMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[string]interface{}, output *AllDataOut, rc *bool) {
+func createMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[string]interface{}, sharedData map[string]string, output *AllDataOut, rc *bool) {
 	for ii, ctrl := range data.Controllers {
 		st, err := mcClient.CreateController(uri, token, &ctrl)
 		outMcErr(output, fmt.Sprintf("CreateController[%d]", ii), st, err)
@@ -895,12 +906,18 @@ func createMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 		outMcErr(output, fmt.Sprintf("CreateSelfFederatorZone[%d]", ii), st, err)
 	}
 	for ii, fd := range data.Federations {
-		_, st, err := mcClient.CreateFederation(uri, token, &fd)
+		if partnerApiKey, found := sharedData[fd.FederationId]; found {
+			fd.ApiKey = partnerApiKey
+		}
+		apiKeyOut, st, err := mcClient.CreateFederation(uri, token, &fd)
+		if err == nil {
+			sharedData[fd.SelfFederationId] = apiKeyOut.ApiKey
+		}
 		outMcErr(output, fmt.Sprintf("CreateFederation[%d]", ii), st, err)
 	}
 }
 
-func deleteMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[string]interface{}, output *AllDataOut, rc *bool) {
+func deleteMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[string]interface{}, sharedData map[string]string, output *AllDataOut, rc *bool) {
 	for ii, ar := range data.AlertReceivers {
 		st, err := mcClient.DeleteAlertReceiver(uri, token, &ar)
 		outMcErr(output, fmt.Sprintf("DeleteAlertReceiver[%d]", ii), st, err)
@@ -957,6 +974,9 @@ func deleteMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 	}
 	for ii, fd := range data.Federations {
 		_, st, err := mcClient.DeleteFederation(uri, token, &fd)
+		if err == nil {
+			delete(sharedData, fd.SelfFederationId)
+		}
 		outMcErr(output, fmt.Sprintf("DeleteFederation[%d]", ii), st, err)
 	}
 	for ii, fd := range data.FederatorZones {

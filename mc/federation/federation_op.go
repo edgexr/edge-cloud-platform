@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
@@ -12,6 +13,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/gormlog"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
+	"github.com/mobiledgex/edge-cloud/log"
 )
 
 const (
@@ -19,6 +21,8 @@ const (
 	OperatorPartnerAPI    = "/operator/partner"
 	OperatorZoneAPI       = "/operator/zone"
 	OperatorNotifyZoneAPI = "/operator/notify/zone"
+
+	BadAuthDelay = 3 * time.Second
 )
 
 type PartnerApi struct {
@@ -49,7 +53,40 @@ func (p *PartnerApi) InitAPIs(e *echo.Echo) {
 	e.DELETE(OperatorNotifyZoneAPI, p.FederationOperatorZoneUnShare)
 }
 
-func (p *PartnerApi) ValidateAndGetFederatorInfo(ctx context.Context, origKey, destKey, origOperatorId, origCountryCode string) (*ormapi.Federator, *ormapi.Federation, error) {
+func AuthAPIKey(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		auth := c.Request().Header.Get(echo.HeaderAuthorization)
+		scheme := "Bearer"
+		l := len(scheme)
+		apiKey := ""
+		if len(auth) > len(scheme) && strings.HasPrefix(auth, scheme) {
+			apiKey = auth[l+1:]
+		}
+		if apiKey == "" {
+			// if no api key found, return a 400 err
+			return &echo.HTTPError{
+				Code:     http.StatusBadRequest,
+				Message:  "no bearer token found",
+				Internal: fmt.Errorf("no token found for Authorization Bearer"),
+			}
+		}
+		c.Set("apikey", apiKey)
+		return next(c)
+	}
+}
+
+func (p *PartnerApi) ValidateAndGetFederatorInfo(c echo.Context, origKey, destKey, origOperatorId, origCountryCode string) (*ormapi.Federator, *ormapi.Federation, error) {
+	apiKeyIntf := c.Get("apikey")
+	ctx := ormutil.GetContext(c)
+	if apiKeyIntf == nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "no apikey found")
+		return nil, nil, echo.ErrUnauthorized
+	}
+	apiKey, ok := apiKeyIntf.(string)
+	if !ok {
+		log.SpanLog(ctx, log.DebugLevelApi, "invalid apikey type")
+		return nil, nil, echo.ErrUnauthorized
+	}
 	// sanity check
 	if origKey == "" {
 		return nil, nil, fmt.Errorf("Missing origin federation key")
@@ -92,6 +129,16 @@ func (p *PartnerApi) ValidateAndGetFederatorInfo(ctx context.Context, origKey, d
 	if res.Error != nil {
 		return nil, nil, ormutil.DbErr(res.Error)
 	}
+	// validate api key
+	matches, err := ormutil.PasswordMatches(apiKey, partnerFed.ApiKeyHash, partnerFed.Salt, partnerFed.Iter)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "apiKeyId matches err", "err", err)
+	}
+	if !matches || err != nil {
+		time.Sleep(BadAuthDelay)
+		return nil, nil, fmt.Errorf("Invalid ApiKey")
+	}
+
 	// validate origin (partner) FederationId/operator/country
 	if partnerFed.FederationId != origKey {
 		return nil, nil, fmt.Errorf("Invalid origin federation key")
@@ -110,7 +157,7 @@ func (p *PartnerApi) FederationOperatorPartnerCreate(c echo.Context) error {
 	}
 
 	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		ctx,
+		c,
 		opRegReq.OrigFederationId,
 		opRegReq.DestFederationId,
 		opRegReq.OperatorId,
@@ -188,7 +235,7 @@ func (p *PartnerApi) FederationOperatorPartnerUpdate(c echo.Context) error {
 	}
 
 	_, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		ctx,
+		c,
 		opConf.OrigFederationId,
 		opConf.DestFederationId,
 		opConf.Operator,
@@ -242,7 +289,7 @@ func (p *PartnerApi) FederationOperatorPartnerDelete(c echo.Context) error {
 	}
 
 	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		ctx,
+		c,
 		opFedReq.OrigFederationId,
 		opFedReq.DestFederationId,
 		opFedReq.Operator,
@@ -297,7 +344,7 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 		return err
 	}
 	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		ctx,
+		c,
 		opRegReq.OrigFederationId,
 		opRegReq.DestFederationId,
 		opRegReq.Operator,
@@ -367,7 +414,7 @@ func (p *PartnerApi) FederationOperatorZoneDeRegister(c echo.Context) error {
 		return fmt.Errorf("Must specify zone ID")
 	}
 	_, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		ctx,
+		c,
 		opRegReq.OrigFederationId,
 		opRegReq.DestFederationId,
 		opRegReq.Operator,
@@ -430,7 +477,7 @@ func (p *PartnerApi) FederationOperatorZoneShare(c echo.Context) error {
 	}
 
 	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		ctx,
+		c,
 		opZoneShare.OrigFederationId,
 		opZoneShare.DestFederationId,
 		opZoneShare.Operator,
@@ -483,7 +530,7 @@ func (p *PartnerApi) FederationOperatorZoneUnShare(c echo.Context) error {
 	}
 
 	_, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		ctx,
+		c,
 		opZone.OrigFederationId,
 		opZone.DestFederationId,
 		opZone.Operator,

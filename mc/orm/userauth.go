@@ -2,9 +2,6 @@ package orm
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,16 +17,11 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
-	"golang.org/x/crypto/pbkdf2"
 )
 
 var PasswordMinLength = 8
 var PasswordMaxLength = 4096
 
-// As computing power grows, we should increase iter and salt bytes
-var PasshashIter = 10000
-var PasshashKeyBytes = 32
-var PasshashSaltBytes = 8
 var BruteForceGuessesPerSecond = 1000000
 
 var JWTShortDuration = 4 * time.Hour
@@ -63,28 +55,6 @@ func ValidPassword(pw string) error {
 	}
 	// Todo: dictionary check; related strings (email, etc) check.
 	return nil
-}
-
-func Passhash(pw, salt []byte, iter int) []byte {
-	return pbkdf2.Key(pw, salt, iter, PasshashKeyBytes, sha256.New)
-}
-
-func NewPasshash(password string) (passhash, salt string, iter int) {
-	saltb := make([]byte, PasshashSaltBytes)
-	rand.Read(saltb)
-	pass := Passhash([]byte(password), saltb, PasshashIter)
-	return base64.StdEncoding.EncodeToString(pass),
-		base64.StdEncoding.EncodeToString(saltb), PasshashIter
-}
-
-func PasswordMatches(password, passhash, salt string, iter int) (bool, error) {
-	sa, err := base64.StdEncoding.DecodeString(salt)
-	if err != nil {
-		return false, err
-	}
-	ph := Passhash([]byte(password), sa, iter)
-	phenc := base64.StdEncoding.EncodeToString(ph)
-	return phenc == passhash, nil
 }
 
 type UserClaims struct {
