@@ -31,6 +31,7 @@ var CreateAutoScalePolicyCmd = &ApiCommand{
 	AliasArgs:    strings.Join(AutoScalePolicyAliasArgs, " "),
 	SpecialArgs:  &AutoScalePolicySpecialArgs,
 	Comments:     addRegionComment(AutoScalePolicyComments),
+	NoConfig:     "DeletePrepare",
 	ReqData:      &ormapi.RegionAutoScalePolicy{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/CreateAutoScalePolicy",
@@ -46,6 +47,7 @@ var DeleteAutoScalePolicyCmd = &ApiCommand{
 	AliasArgs:    strings.Join(AutoScalePolicyAliasArgs, " "),
 	SpecialArgs:  &AutoScalePolicySpecialArgs,
 	Comments:     addRegionComment(AutoScalePolicyComments),
+	NoConfig:     "DeletePrepare",
 	ReqData:      &ormapi.RegionAutoScalePolicy{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/DeleteAutoScalePolicy",
@@ -61,6 +63,7 @@ var UpdateAutoScalePolicyCmd = &ApiCommand{
 	AliasArgs:    strings.Join(AutoScalePolicyAliasArgs, " "),
 	SpecialArgs:  &AutoScalePolicySpecialArgs,
 	Comments:     addRegionComment(AutoScalePolicyComments),
+	NoConfig:     "DeletePrepare",
 	ReqData:      &ormapi.RegionAutoScalePolicy{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/UpdateAutoScalePolicy",
@@ -76,6 +79,7 @@ var ShowAutoScalePolicyCmd = &ApiCommand{
 	AliasArgs:    strings.Join(AutoScalePolicyAliasArgs, " "),
 	SpecialArgs:  &AutoScalePolicySpecialArgs,
 	Comments:     addRegionComment(AutoScalePolicyComments),
+	NoConfig:     "DeletePrepare",
 	ReqData:      &ormapi.RegionAutoScalePolicy{},
 	ReplyData:    &edgeproto.AutoScalePolicy{},
 	Path:         "/auth/ctrl/ShowAutoScalePolicy",
@@ -138,6 +142,7 @@ var AutoScalePolicyAliasArgs = []string{
 	"targetcpu=autoscalepolicy.targetcpu",
 	"targetmem=autoscalepolicy.targetmem",
 	"targetactiveconnections=autoscalepolicy.targetactiveconnections",
+	"deleteprepare=autoscalepolicy.deleteprepare",
 }
 var AutoScalePolicyComments = map[string]string{
 	"fields":                  "Fields are used for the Update API to specify which fields to apply",
@@ -152,6 +157,7 @@ var AutoScalePolicyComments = map[string]string{
 	"targetcpu":               "Target per-node cpu utilization (percentage 1 to 100), 0 means disabled",
 	"targetmem":               "Target per-node memory utilization (percentage 1 to 100), 0 means disabled",
 	"targetactiveconnections": "Target per-node number of active connections, 0 means disabled",
+	"deleteprepare":           "Preparing to be deleted",
 }
 var AutoScalePolicySpecialArgs = map[string]string{
 	"autoscalepolicy.fields": "StringArray",

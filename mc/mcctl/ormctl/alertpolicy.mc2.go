@@ -31,6 +31,7 @@ var CreateAlertPolicyCmd = &ApiCommand{
 	AliasArgs:    strings.Join(AlertPolicyAliasArgs, " "),
 	SpecialArgs:  &AlertPolicySpecialArgs,
 	Comments:     addRegionComment(AlertPolicyComments),
+	NoConfig:     "DeletePrepare",
 	ReqData:      &ormapi.RegionAlertPolicy{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/CreateAlertPolicy",
@@ -46,6 +47,7 @@ var DeleteAlertPolicyCmd = &ApiCommand{
 	AliasArgs:    strings.Join(AlertPolicyAliasArgs, " "),
 	SpecialArgs:  &AlertPolicySpecialArgs,
 	Comments:     addRegionComment(AlertPolicyComments),
+	NoConfig:     "DeletePrepare",
 	ReqData:      &ormapi.RegionAlertPolicy{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/DeleteAlertPolicy",
@@ -61,6 +63,7 @@ var UpdateAlertPolicyCmd = &ApiCommand{
 	AliasArgs:    strings.Join(AlertPolicyAliasArgs, " "),
 	SpecialArgs:  &AlertPolicySpecialArgs,
 	Comments:     addRegionComment(AlertPolicyComments),
+	NoConfig:     "DeletePrepare",
 	ReqData:      &ormapi.RegionAlertPolicy{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/UpdateAlertPolicy",
@@ -76,6 +79,7 @@ var ShowAlertPolicyCmd = &ApiCommand{
 	AliasArgs:    strings.Join(AlertPolicyAliasArgs, " "),
 	SpecialArgs:  &AlertPolicySpecialArgs,
 	Comments:     addRegionComment(AlertPolicyComments),
+	NoConfig:     "DeletePrepare",
 	ReqData:      &ormapi.RegionAlertPolicy{},
 	ReplyData:    &edgeproto.AlertPolicy{},
 	Path:         "/auth/ctrl/ShowAlertPolicy",
@@ -138,6 +142,7 @@ var AlertPolicyAliasArgs = []string{
 	"labels=alertpolicy.labels",
 	"annotations=alertpolicy.annotations",
 	"description=alertpolicy.description",
+	"deleteprepare=alertpolicy.deleteprepare",
 }
 var AlertPolicyComments = map[string]string{
 	"alert-org":          "Name of the organization for the app that this alert can be applied to",
@@ -151,6 +156,7 @@ var AlertPolicyComments = map[string]string{
 	"labels":             "Additional Labels, specify labels:empty=true to clear",
 	"annotations":        "Additional Annotations for extra information about the alert, specify annotations:empty=true to clear",
 	"description":        "Description of the alert policy",
+	"deleteprepare":      "Preparing to be deleted",
 }
 var AlertPolicySpecialArgs = map[string]string{
 	"alertpolicy.annotations": "StringToString",

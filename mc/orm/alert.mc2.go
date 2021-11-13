@@ -117,6 +117,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// AnnotationsKey: 10.1
 	// AnnotationsValue: 10.2
 	// Description: 11
+	// DeletePrepare: 12
 	// ```
 	// Security:
 	//   Bearer:
@@ -242,6 +243,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// OptResMap: 6
 	// OptResMapKey: 6.1
 	// OptResMapValue: 6.2
+	// DeletePrepare: 7
 	// ```
 	// Security:
 	//   Bearer:
@@ -345,6 +347,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// TagsKey: 3.1
 	// TagsValue: 3.2
 	// Azone: 4
+	// DeletePrepare: 5
 	// ```
 	// Security:
 	//   Bearer:
@@ -430,6 +433,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// TargetCpu: 9
 	// TargetMem: 10
 	// TargetActiveConnections: 11
+	// DeletePrepare: 12
 	// ```
 	// Security:
 	//   Bearer:
@@ -482,6 +486,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// OutboundSecurityRulesPortRangeMin: 3.2
 	// OutboundSecurityRulesPortRangeMax: 3.3
 	// OutboundSecurityRulesRemoteCidr: 3.4
+	// DeletePrepare: 4
 	// ```
 	// Security:
 	//   Bearer:
@@ -697,6 +702,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// PropertiesValue: 6.2
 	// State: 7
 	// IgnoreState: 8
+	// DeletePrepare: 9
 	// ```
 	// Security:
 	//   Bearer:
@@ -895,6 +901,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// EnableDefaultServerlessCluster: 46
 	// AllianceOrgs: 47
 	// SingleKubernetesClusterOwner: 48
+	// DeletePrepare: 49
 	// ```
 	// Security:
 	//   Bearer:
@@ -1113,6 +1120,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// UpdatedAt: 5
 	// UpdatedAtSeconds: 5.1
 	// UpdatedAtNanos: 5.2
+	// DeletePrepare: 6
 	// ```
 	// Security:
 	//   Bearer:
@@ -1344,6 +1352,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// ReservationEndedAtNanos: 31.2
 	// MultiTenant: 32
 	// Networks: 33
+	// DeletePrepare: 34
 	// ```
 	// Security:
 	//   Bearer:
@@ -1424,6 +1433,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// MaxInstances: 7
 	// UndeployClientCount: 8
 	// UndeployIntervalCount: 9
+	// DeletePrepare: 10
 	// ```
 	// Security:
 	//   Bearer:
@@ -1557,6 +1567,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// RoutesDestinationCidr: 3.1
 	// RoutesNextHopIp: 3.2
 	// ConnectionType: 4
+	// DeletePrepare: 5
 	// ```
 	// Security:
 	//   Bearer:

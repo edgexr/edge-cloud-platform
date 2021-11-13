@@ -31,6 +31,7 @@ var CreateNetworkCmd = &ApiCommand{
 	AliasArgs:    strings.Join(NetworkAliasArgs, " "),
 	SpecialArgs:  &NetworkSpecialArgs,
 	Comments:     addRegionComment(NetworkComments),
+	NoConfig:     "DeletePrepare",
 	ReqData:      &ormapi.RegionNetwork{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/CreateNetwork",
@@ -47,6 +48,7 @@ var DeleteNetworkCmd = &ApiCommand{
 	AliasArgs:            strings.Join(NetworkAliasArgs, " "),
 	SpecialArgs:          &NetworkSpecialArgs,
 	Comments:             addRegionComment(NetworkComments),
+	NoConfig:             "DeletePrepare",
 	ReqData:              &ormapi.RegionNetwork{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/DeleteNetwork",
@@ -64,6 +66,7 @@ var UpdateNetworkCmd = &ApiCommand{
 	AliasArgs:            strings.Join(NetworkAliasArgs, " "),
 	SpecialArgs:          &NetworkSpecialArgs,
 	Comments:             addRegionComment(NetworkComments),
+	NoConfig:             "DeletePrepare",
 	ReqData:              &ormapi.RegionNetwork{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateNetwork",
@@ -81,6 +84,7 @@ var ShowNetworkCmd = &ApiCommand{
 	AliasArgs:    strings.Join(NetworkAliasArgs, " "),
 	SpecialArgs:  &NetworkSpecialArgs,
 	Comments:     addRegionComment(NetworkComments),
+	NoConfig:     "DeletePrepare",
 	ReqData:      &ormapi.RegionNetwork{},
 	ReplyData:    &edgeproto.Network{},
 	Path:         "/auth/ctrl/ShowNetwork",
@@ -122,6 +126,7 @@ var NetworkAliasArgs = []string{
 	"routes:#.destinationcidr=network.routes:#.destinationcidr",
 	"routes:#.nexthopip=network.routes:#.nexthopip",
 	"connectiontype=network.connectiontype",
+	"deleteprepare=network.deleteprepare",
 }
 var NetworkComments = map[string]string{
 	"fields":                   "Fields are used for the Update API to specify which fields to apply",
@@ -133,6 +138,7 @@ var NetworkComments = map[string]string{
 	"routes:#.destinationcidr": "Destination CIDR",
 	"routes:#.nexthopip":       "Next hop IP",
 	"connectiontype":           "Network connection type, one of Undefined, ConnectToLoadBalancer, ConnectToClusterNodes, ConnectToAll",
+	"deleteprepare":            "Preparing to be deleted",
 }
 var NetworkSpecialArgs = map[string]string{
 	"network.fields": "StringArray",
