@@ -345,6 +345,18 @@ tests:
       yaml2: '{{datadir2}}/emaildata_cloudlet_alert_firing.yml'
       filetype: emaildata
   
+  - name: check that the app on the cloudlet has offline health check
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/cloudlet_alert_appinst_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    retrycount: 5
+    retryintervalsec: 0.2
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/cloudlet_alert_appinst_offline_show.yml'
+      # mcdata-xind keeps health check status
+      filetype: mcdata-xind
+
   - name: start crm on dmuus-cloud-1 cloudlet(ctrl2)
     apifile: "{{datadir2}}/cloudlet_dmuus-cloud-1.yml"
     actions: [start-crm=dmuus-cloud-1 ctrl=ctrl2,sleep=1]
@@ -359,6 +371,18 @@ tests:
       yaml1: '{{outputdir}}/show-commands.yml'
       yaml2: '{{datadir2}}/mcappdata_empty.yml'
       filetype: mcalerts
+
+  - name: check that the app on the cloudlet is back online
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/cloudlet_alert_appinst_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    retrycount: 5
+    retryintervalsec: 0.2
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/cloudlet_alert_appinst_online_show.yml'
+      # mcdata-xind keeps health check status
+      filetype: mcdata-xind
 
   - name: enable resource quotas alerts
     actions: [mcapi-update, mcapi-show]
