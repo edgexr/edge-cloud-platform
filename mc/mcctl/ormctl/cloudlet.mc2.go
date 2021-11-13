@@ -32,7 +32,7 @@ var CreateGPUDriverCmd = &ApiCommand{
 	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
 	SpecialArgs:          &GPUDriverSpecialArgs,
 	Comments:             addRegionComment(GPUDriverComments),
-	NoConfig:             "State,LicenseConfigMd5Sum",
+	NoConfig:             "State,LicenseConfigMd5Sum,DeletePrepare",
 	ReqData:              &ormapi.RegionGPUDriver{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/CreateGPUDriver",
@@ -50,7 +50,7 @@ var DeleteGPUDriverCmd = &ApiCommand{
 	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
 	SpecialArgs:          &GPUDriverSpecialArgs,
 	Comments:             addRegionComment(GPUDriverComments),
-	NoConfig:             "State,LicenseConfigMd5Sum",
+	NoConfig:             "State,LicenseConfigMd5Sum,DeletePrepare",
 	ReqData:              &ormapi.RegionGPUDriver{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/DeleteGPUDriver",
@@ -68,7 +68,7 @@ var UpdateGPUDriverCmd = &ApiCommand{
 	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
 	SpecialArgs:          &GPUDriverSpecialArgs,
 	Comments:             addRegionComment(GPUDriverComments),
-	NoConfig:             "State,LicenseConfigMd5Sum,Builds,Type,IgnoreState",
+	NoConfig:             "State,LicenseConfigMd5Sum,DeletePrepare,Builds,Type,IgnoreState",
 	ReqData:              &ormapi.RegionGPUDriver{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateGPUDriver",
@@ -86,7 +86,7 @@ var ShowGPUDriverCmd = &ApiCommand{
 	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
 	SpecialArgs:          &GPUDriverSpecialArgs,
 	Comments:             addRegionComment(GPUDriverComments),
-	NoConfig:             "State,LicenseConfigMd5Sum",
+	NoConfig:             "State,LicenseConfigMd5Sum,DeletePrepare",
 	ReqData:              &ormapi.RegionGPUDriver{},
 	ReplyData:            &edgeproto.GPUDriver{},
 	Path:                 "/auth/ctrl/ShowGPUDriver",
@@ -211,7 +211,7 @@ var CreateCloudletCmd = &ApiCommand{
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:          &CloudletSpecialArgs,
 	Comments:             addRegionComment(CloudletComments),
-	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,ResTagMap",
+	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,DeletePrepare,ResTagMap",
 	ReqData:              &ormapi.RegionCloudlet{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/CreateCloudlet",
@@ -229,7 +229,7 @@ var DeleteCloudletCmd = &ApiCommand{
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:          &CloudletSpecialArgs,
 	Comments:             addRegionComment(CloudletComments),
-	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,ResTagMap",
+	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,DeletePrepare,ResTagMap",
 	ReqData:              &ormapi.RegionCloudlet{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/DeleteCloudlet",
@@ -247,7 +247,7 @@ var UpdateCloudletCmd = &ApiCommand{
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:          &CloudletSpecialArgs,
 	Comments:             addRegionComment(CloudletComments),
-	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,PlatformType,DeploymentLocal,Flavor,PhysicalName,ContainerVersion,ResTagMap,VmImageVersion,Deployment,InfraApiAccess,InfraConfig,OverridePolicyContainerVersion,VmPool,ResTagMap",
+	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,DeletePrepare,PlatformType,DeploymentLocal,Flavor,PhysicalName,ContainerVersion,ResTagMap,VmImageVersion,Deployment,InfraApiAccess,InfraConfig,OverridePolicyContainerVersion,VmPool,ResTagMap",
 	ReqData:              &ormapi.RegionCloudlet{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateCloudlet",
@@ -265,7 +265,7 @@ var ShowCloudletCmd = &ApiCommand{
 	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:  &CloudletSpecialArgs,
 	Comments:     addRegionComment(CloudletComments),
-	NoConfig:     "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,ResTagMap",
+	NoConfig:     "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,DeletePrepare,ResTagMap",
 	ReqData:      &ormapi.RegionCloudlet{},
 	ReplyData:    &edgeproto.Cloudlet{},
 	Path:         "/auth/ctrl/ShowCloudlet",
@@ -880,6 +880,7 @@ var GPUDriverAliasArgs = []string{
 	"properties=gpudriver.properties",
 	"state=gpudriver.state",
 	"ignorestate=gpudriver.ignorestate",
+	"deleteprepare=gpudriver.deleteprepare",
 }
 var GPUDriverComments = map[string]string{
 	"fields":                   "Fields are used for the Update API to specify which fields to apply",
@@ -898,6 +899,7 @@ var GPUDriverComments = map[string]string{
 	"properties":               "Additional properties associated with GPU driver build For example: license server information, driver release date, etc, specify properties:empty=true to clear",
 	"state":                    "State to figure out if any action on the GPU driver is in-progress",
 	"ignorestate":              "Ignore state will ignore any action in-progress on the GPU driver",
+	"deleteprepare":            "Preparing to be deleted",
 }
 var GPUDriverSpecialArgs = map[string]string{
 	"gpudriver.fields":     "StringArray",
@@ -1055,6 +1057,7 @@ var CloudletAliasArgs = []string{
 	"enabledefaultserverlesscluster=cloudlet.enabledefaultserverlesscluster",
 	"allianceorgs=cloudlet.allianceorgs",
 	"singlekubernetesclusterowner=cloudlet.singlekubernetesclusterowner",
+	"deleteprepare=cloudlet.deleteprepare",
 }
 var CloudletComments = map[string]string{
 	"fields":                              "Fields are used for the Update API to specify which fields to apply",
@@ -1140,6 +1143,7 @@ var CloudletComments = map[string]string{
 	"enabledefaultserverlesscluster":      "Enable experimental default multitenant (serverless) cluster",
 	"allianceorgs":                        "This cloudlet will be treated as directly connected to these additional operator organizations for the purposes of FindCloudlet, specify allianceorgs:empty=true to clear",
 	"singlekubernetesclusterowner":        "For single kubernetes cluster cloudlet platforms, cluster is owned by this organization instead of multi-tenant",
+	"deleteprepare":                       "Preparing to be deleted",
 }
 var CloudletSpecialArgs = map[string]string{
 	"cloudlet.accessvars":           "StringToString",

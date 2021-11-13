@@ -33,7 +33,7 @@ var CreateAutoProvPolicyCmd = &ApiCommand{
 	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
 	SpecialArgs:  &AutoProvPolicySpecialArgs,
 	Comments:     addRegionComment(AutoProvPolicyComments),
-	NoConfig:     "Cloudlets:#.Loc",
+	NoConfig:     "Cloudlets:#.Loc,DeletePrepare",
 	ReqData:      &ormapi.RegionAutoProvPolicy{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/CreateAutoProvPolicy",
@@ -49,7 +49,7 @@ var DeleteAutoProvPolicyCmd = &ApiCommand{
 	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
 	SpecialArgs:  &AutoProvPolicySpecialArgs,
 	Comments:     addRegionComment(AutoProvPolicyComments),
-	NoConfig:     "Cloudlets:#.Loc",
+	NoConfig:     "Cloudlets:#.Loc,DeletePrepare",
 	ReqData:      &ormapi.RegionAutoProvPolicy{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/DeleteAutoProvPolicy",
@@ -65,7 +65,7 @@ var UpdateAutoProvPolicyCmd = &ApiCommand{
 	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
 	SpecialArgs:  &AutoProvPolicySpecialArgs,
 	Comments:     addRegionComment(AutoProvPolicyComments),
-	NoConfig:     "Cloudlets:#.Loc",
+	NoConfig:     "Cloudlets:#.Loc,DeletePrepare",
 	ReqData:      &ormapi.RegionAutoProvPolicy{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/UpdateAutoProvPolicy",
@@ -81,7 +81,7 @@ var ShowAutoProvPolicyCmd = &ApiCommand{
 	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
 	SpecialArgs:  &AutoProvPolicySpecialArgs,
 	Comments:     addRegionComment(AutoProvPolicyComments),
-	NoConfig:     "Cloudlets:#.Loc",
+	NoConfig:     "Cloudlets:#.Loc,DeletePrepare",
 	ReqData:      &ormapi.RegionAutoProvPolicy{},
 	ReplyData:    &edgeproto.AutoProvPolicy{},
 	Path:         "/auth/ctrl/ShowAutoProvPolicy",
@@ -187,6 +187,7 @@ var AutoProvPolicyAliasArgs = []string{
 	"maxinstances=autoprovpolicy.maxinstances",
 	"undeployclientcount=autoprovpolicy.undeployclientcount",
 	"undeployintervalcount=autoprovpolicy.undeployintervalcount",
+	"deleteprepare=autoprovpolicy.deleteprepare",
 }
 var AutoProvPolicyComments = map[string]string{
 	"fields":                                "Fields are used for the Update API to specify which fields to apply",
@@ -209,6 +210,7 @@ var AutoProvPolicyComments = map[string]string{
 	"maxinstances":                          "Maximum number of instances (active or not)",
 	"undeployclientcount":                   "Number of active clients for the undeploy interval below which trigers undeployment, 0 (default) disables auto undeploy",
 	"undeployintervalcount":                 "Number of intervals to check before triggering undeployment",
+	"deleteprepare":                         "Preparing to be deleted",
 }
 var AutoProvPolicySpecialArgs = map[string]string{
 	"autoprovpolicy.fields": "StringArray",
