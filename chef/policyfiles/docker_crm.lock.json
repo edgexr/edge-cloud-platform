@@ -1,5 +1,5 @@
 {
-  "revision_id": "ef48f59339091fe3b431692e15d88f219a9eb87d54b136b6efce833812522167",
+  "revision_id": "ccf0f1297296da773de9ce161269323a83a0868650067cf6d6e59c85e1748106",
   "name": "docker_crm",
   "run_list": [
     "recipe[chef_client_updater::default]",
@@ -8,7 +8,8 @@
     "recipe[setup_infra::default]",
     "recipe[preflight_crm_checks::default]",
     "recipe[run_diagnostics::default]",
-    "recipe[setup_services::docker]"
+    "recipe[setup_services::docker]",
+    "recipe[set_security_policies::default]"
   ],
   "included_policy_locks": [
 
@@ -80,6 +81,17 @@
         "version": "1.0.0"
       }
     },
+    "set_security_policies": {
+      "version": "1.0.0",
+      "identifier": "0f2add5a7ac0b7d5e981770be4f1209096dd6d44",
+      "dotted_decimal_identifier": "4269254844793015.60210912296690929.35805378473284",
+      "cache_key": "set_security_policies-1.0.0",
+      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "version": "1.0.0"
+      }
+    },
     "setup_infra": {
       "version": "1.0.0",
       "identifier": "7ea0f6481eab8d2fd7a2193fb3fc9ddf807788a4",
@@ -140,6 +152,10 @@
         "= 1.0.0"
       ],
       [
+        "set_security_policies",
+        "= 1.0.0"
+      ],
+      [
         "setup_infra",
         "= 1.0.0"
       ],
@@ -165,6 +181,9 @@
 
       ],
       "runstatus_handler (1.0.0)": [
+
+      ],
+      "set_security_policies (1.0.0)": [
 
       ],
       "setup_infra (1.0.0)": [
