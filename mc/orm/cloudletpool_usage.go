@@ -150,7 +150,13 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "usage args", "cluster", clusterUsage, "app", appUsage, "list", cloudletList)
 
 		usage := ormapi.AllMetrics{
-			Data: []ormapi.MetricData{*clusterUsage, *appUsage},
+			Data: []ormapi.MetricData{},
+		}
+		if len(clusterUsage.Series[0].Values) != 0 {
+			usage.Data = append(usage.Data, *clusterUsage)
+		}
+		if len(appUsage.Series[0].Values) != 0 {
+			usage.Data = append(usage.Data, *appUsage)
 		}
 		return ormutil.SetReply(c, &usage)
 	} else {

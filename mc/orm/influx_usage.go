@@ -759,10 +759,11 @@ func GetUsageCommon(c echo.Context) error {
 	} else {
 		return echo.ErrNotFound
 	}
-
-	payload := ormapi.StreamPayload{}
-	payload.Data = &[]ormapi.MetricData{*usage}
-	WriteStream(c, &payload)
-
-	return nil
+	billingusage := ormapi.AllMetrics{
+		Data: []ormapi.MetricData{},
+	}
+	if len(usage.Series[0].Values) != 0 {
+		billingusage.Data = append(billingusage.Data, *usage)
+	}
+	return ormutil.SetReply(c, &billingusage)
 }
