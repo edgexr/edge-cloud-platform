@@ -1,0 +1,43 @@
+regiondata:
+- region: local
+  appdata:
+    appinstances:
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-1
+          organization: AcmeAppCo
+      cloudletloc:
+        latitude: 31
+        longitude: -91
+      uri: smallcluster.dmuus-cloud-1.dmuus.mobiledgex.net
+      liveness: Static
+      mappedports:
+      - proto: Tcp
+        internalport: 80
+        publicport: 80
+      - proto: Tcp
+        internalport: 443
+        publicport: 443
+      - proto: Udp
+        internalport: 10002
+        publicport: 10002
+      flavor:
+        name: x1.small
+      state: Ready
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
+      createdat:
+        seconds: 1636647520
+        nanos: 572063000
+      healthcheck: CloudletOffline
+      powerstate: PowerOn
+      vmflavor: x1.small
