@@ -36,7 +36,7 @@
     tags:
       app: autoprovHA
       cloudlet: dmuus-cloud-1
-- limit: 3
+- limit: 4
   match:
     tags:
       app: someapplication1

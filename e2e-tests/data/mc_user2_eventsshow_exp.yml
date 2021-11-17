@@ -439,7 +439,7 @@
       tags:
         app: someapplication1
         cloudlet: dmuus cloud
-    limit: 3
+    limit: 4
   results:
   - name: /api/v1/auth/ctrl/CreateAppInst
     org:
@@ -525,6 +525,26 @@
       realcluster: reservable0
       spanid: 1cb908c6838a2893
       traceid: 128619e5f4f1976b
+  - name: AutoCluster create
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    timestamp: 2021-11-16T12:41:31.734352-08:00
+    mtags:
+      app: someapplication1
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: dmuus-cloud-2
+      cloudletorg: dmuus
+      cluster: autoclusterAcme
+      clusterorg: MobiledgeX
+      duration: 92.408557ms
+      federatedorg: ""
+      hostname: Jon-Mex.lan
+      lineno: controller/appinst_api.go:996
+      spanid: 146a509830cf662c
+      traceid: 2f1f91be403e8ae6
 - search:
     match:
       tags:
