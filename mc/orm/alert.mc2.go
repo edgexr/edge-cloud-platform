@@ -1219,6 +1219,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// StatusMsgCount: 6.5
 	// StatusMsgs: 6.6
 	// CrmOverride: 7
+	// DeletePrepare: 8
 	// ```
 	// Security:
 	//   Bearer:

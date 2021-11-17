@@ -103,16 +103,16 @@ tests:
 - name: sleep, allow time for metrics to collect
   actions: [sleep=3]
 
-- name: Check client app metrics
-  actions: [mcapi-showclientappmetrics]
-  apifile: '{{datadir2}}/mc_metrics_targets.yml'
-  curuserfile: '{{datadir2}}/mc_admin.yml'
-  retrycount: 30
-  retryintervalsec: 0.5
-  compareyaml:
-    yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mc_clientappmetrics_show.yml'
-    filetype: mcoptmetrics
+#- name: Check client app metrics
+#  actions: [mcapi-showclientappmetrics]
+#  apifile: '{{datadir2}}/mc_metrics_targets.yml'
+#  curuserfile: '{{datadir2}}/mc_admin.yml'
+#  retrycount: 30
+#  retryintervalsec: 0.5
+#  compareyaml:
+#    yaml1: '{{outputdir}}/show-commands.yml'
+#    yaml2: '{{datadir2}}/mc_clientappmetrics_show.yml'
+#    filetype: mcoptmetrics
 
 - name: Check client cloudlet metrics
   actions: [mcapi-showclientcloudletmetrics]
