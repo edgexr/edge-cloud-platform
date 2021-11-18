@@ -32,6 +32,7 @@ import (
 // the 'inner' types.Vdc object.
 //
 var vcdProviderVersion = "-0.1-alpha"
+var VCDVdcCtxKey = "VCDVdcCtxKey"
 
 type VcdPlatform struct {
 	vmProperties *vmlayer.VMProperties
@@ -45,6 +46,7 @@ type VcdPlatform struct {
 }
 
 var DefaultClientRefreshInterval uint64 = 7 * 60 * 60 // 7 hours
+var VCDOrgCtxKey = "VCDOrgCtxKey"
 
 type VcdConfigParams struct {
 	User                  string
@@ -73,6 +75,7 @@ const (
 	IsoMapActionAdd    IsoMapActionType = "add"
 	IsoMapActionDelete IsoMapActionType = "delete"
 	IsoMapActionRead   IsoMapActionType = "read"
+	IsoMapActionDump   IsoMapActionType = "dump"
 )
 
 func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -187,8 +190,17 @@ func (v VcdPlatform) CheckServerReady(ctx context.Context, client ssh.Client, se
 	}
 }
 
-// Retrieve our top level Org object
+// Retrieve our top level Org object. Tries to retrieve the org from context first, if the org is not
+// in context then uses the APIs to retrieve it
 func (v *VcdPlatform) GetOrg(ctx context.Context, vcdClient *govcd.VCDClient) (*govcd.Org, error) {
+	// try to get from context first
+	org, found := ctx.Value(VCDOrgCtxKey).(*govcd.Org)
+	if found {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetOrg found org in context")
+		return org, nil
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetOrg org not in context, doing API query")
+
 	org, err := vcdClient.GetOrgByName(v.Creds.Org)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetOrgByName failed", "org", v.Creds.Org, "err", err)
@@ -197,7 +209,20 @@ func (v *VcdPlatform) GetOrg(ctx context.Context, vcdClient *govcd.VCDClient) (*
 	return org, nil
 }
 
-// Retrieve our refreshed vdc object
+// GetVdcFromContext gets tries to get the VDC from context, otherwise it calls GetVdc to get via APIs
+func (v *VcdPlatform) GetVdcFromContext(ctx context.Context, vcdClient *govcd.VCDClient) (*govcd.Vdc, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetVdcFromContext")
+
+	vdc, found := ctx.Value(VCDVdcCtxKey).(*govcd.Vdc)
+	if found {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetVdc found vdc in context")
+		return vdc, nil
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetVdc vdc not in context, doing API query")
+	return v.GetVdc(ctx, vcdClient)
+}
+
+// Retrieve our refreshed vdc object via APIs
 func (v *VcdPlatform) GetVdc(ctx context.Context, vcdClient *govcd.VCDClient) (*govcd.Vdc, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVdc")
 
@@ -206,13 +231,11 @@ func (v *VcdPlatform) GetVdc(ctx context.Context, vcdClient *govcd.VCDClient) (*
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetVdc GetOrg return error", "vdc", v.Creds.VDC, "org", v.Creds.Org, "err", err)
 		return nil, err
 	}
-
-	vdc, err := org.GetVDCByName(v.Creds.VDC, true)
+	vdc, err := org.GetVDCByName(v.Creds.VDC, false)
 	if err != nil {
 		return nil, err
 	}
 	return vdc, err
-
 }
 
 func (v *VcdPlatform) GetConsoleUrl(ctx context.Context, serverName string) (string, error) {
@@ -281,6 +304,12 @@ func (v *VcdPlatform) GetServerDetail(ctx context.Context, serverName string) (*
 	if err != nil {
 		return nil, fmt.Errorf("GetVdcFailed - %v", err)
 	}
+	return v.GetServerDetailWithVdc(ctx, serverName, vdc, vcdClient)
+}
+
+func (v *VcdPlatform) GetServerDetailWithVdc(ctx context.Context, serverName string, vdc *govcd.Vdc, vcdClient *govcd.VCDClient) (*vmlayer.ServerDetail, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail", "serverName", serverName)
+
 	vm, err := v.FindVMByName(ctx, serverName, vcdClient, vdc)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail not found", "vmname", serverName)

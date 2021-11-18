@@ -234,7 +234,7 @@ func (s *OpenstackPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppIn
 	return &vmMetrics, nil
 }
 
-func (o *OpenstackPlatform) VmAppChangedCallback(ctx context.Context) {
+func (o *OpenstackPlatform) VmAppChangedCallback(ctx context.Context, appInstKey *edgeproto.AppInstKey, newState edgeproto.TrackedState) {
 }
 
 // Given pool ranges return total number of available ip addresses
