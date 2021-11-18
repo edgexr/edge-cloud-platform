@@ -42,7 +42,7 @@ func (s *Platform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (s
 	return shepherd_common.AppMetrics{}, nil
 }
 
-func (s *Platform) VmAppChangedCallback(ctx context.Context) {
+func (s *Platform) VmAppChangedCallback(ctx context.Context, appInstKey *edgeproto.AppInstKey, newState edgeproto.TrackedState) {
 }
 
 func (s *Platform) GetMetricsCollectInterval() time.Duration {

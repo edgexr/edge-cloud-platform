@@ -602,7 +602,7 @@ func (s *VMPoolPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstK
 	return &vmlayer.VMMetrics{}, nil
 }
 
-func (s *VMPoolPlatform) VmAppChangedCallback(ctx context.Context) {
+func (s *VMPoolPlatform) VmAppChangedCallback(ctx context.Context, appInstKey *edgeproto.AppInstKey, newState edgeproto.TrackedState) {
 }
 
 func (s *VMPoolPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.PlatformResources, error) {

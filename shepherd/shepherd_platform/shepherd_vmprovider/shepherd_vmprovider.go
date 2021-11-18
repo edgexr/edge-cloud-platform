@@ -222,8 +222,8 @@ func (s *ShepherdPlatform) GetVmStats(ctx context.Context, key *edgeproto.AppIns
 	return appMetrics, nil
 }
 
-func (s *ShepherdPlatform) VmAppChangedCallback(ctx context.Context) {
-	s.VMPlatform.VMProvider.VmAppChangedCallback(ctx)
+func (s *ShepherdPlatform) VmAppChangedCallback(ctx context.Context, appInstKey *edgeproto.AppInstKey, newState edgeproto.TrackedState) {
+	s.VMPlatform.VMProvider.VmAppChangedCallback(ctx, appInstKey, newState)
 }
 
 func (s *ShepherdPlatform) IsPlatformLocal(ctx context.Context) bool {

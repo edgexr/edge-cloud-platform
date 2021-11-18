@@ -89,7 +89,7 @@ func (s *Platform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (s
 	return shepherd_common.AppMetrics{}, fmt.Errorf("VM on XIND is unsupported")
 }
 
-func (s *Platform) VmAppChangedCallback(ctx context.Context) {
+func (s *Platform) VmAppChangedCallback(ctx context.Context, appInstKey *edgeproto.AppInstKey, newState edgeproto.TrackedState) {
 }
 
 func (s *Platform) IsPlatformLocal(ctx context.Context) bool {

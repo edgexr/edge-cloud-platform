@@ -63,12 +63,17 @@ var VcdProps = map[string]*edgeproto.PropertyInfo{
 	},
 	"VCD_VM_APP_INTERNAL_DHCP_SERVER": {
 		Description: "If \"true\" or \"yes\" sets up an internal DHCP server for VM Apps, otherwise uses VCD server",
-		Value:       "false",
+		Value:       "true",
 		Internal:    true,
 	},
 	"VCD_TEMPLATE_ARTIFACTORY_IMPORT_ENABLED": {
-		Description: "If \"true\" or \"yes\" VCD tempates are stored in Artifactory and imported to VCD.  Otherwise, templates must already exist in the catalog",
+		Description: "If \"true\" or \"yes\" VCD templates are stored in Artifactory and imported to VCD.  Otherwise, templates must already exist in the catalog",
 		Value:       "true",
+	},
+	"VCD_VM_HREF_CACHE_ENABLED": {
+		Description: "If \"true\" or \"yes\" caching of VCD VM HREFs is enabled",
+		Value:       "true",
+		Internal:    true,
 	},
 }
 
@@ -248,6 +253,7 @@ func (v *VcdPlatform) InitApiAccessProperties(ctx context.Context, accessApi pla
 		}
 
 	}
+	v.initDebug(v.vmProperties.CommonPf.PlatformConfig.NodeMgr, stage)
 	return nil
 }
 
@@ -291,5 +297,10 @@ func (v *VcdPlatform) GetLeaseOverride() bool {
 
 func (v *VcdPlatform) GetTemplateArtifactoryImportEnabled() bool {
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("VCD_TEMPLATE_ARTIFACTORY_IMPORT_ENABLED")
+	return strings.ToLower(val) == "true" || strings.ToLower(val) == "yes"
+}
+
+func (v *VcdPlatform) GetHrefCacheEnabled() bool {
+	val, _ := v.vmProperties.CommonPf.Properties.GetValue("VCD_VM_HREF_CACHE_ENABLED")
 	return strings.ToLower(val) == "true" || strings.ToLower(val) == "yes"
 }

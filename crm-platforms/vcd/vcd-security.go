@@ -587,6 +587,20 @@ func (v *VcdPlatform) InitOperationContext(ctx context.Context, operationStage v
 		} else {
 			ctx = context.WithValue(ctx, VCDClientCtxKey, vcdClient)
 			log.SpanLog(ctx, log.DebugLevelInfra, "Updated context with client", "APIVersion", vcdClient.Client.APIVersion, "key", VCDClientCtxKey)
+			// update the org in context
+			org, err := vcdClient.GetOrgByName(v.Creds.Org)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "GetOrgByName failed", "org", v.Creds.Org, "err", err)
+				return ctx, vmlayer.OperationInitFailed, err
+			}
+			ctx = context.WithValue(ctx, VCDOrgCtxKey, org)
+			// update vdc in context
+			vdc, err := org.GetVDCByName(v.Creds.VDC, false)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "GetVdcByName failed", "org", v.Creds.Org, "err", err)
+				return ctx, vmlayer.OperationInitFailed, err
+			}
+			ctx = context.WithValue(ctx, VCDVdcCtxKey, vdc)
 			return ctx, vmlayer.OperationNewlyInitialized, nil
 		}
 	} else {

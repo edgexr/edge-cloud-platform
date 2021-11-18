@@ -25,12 +25,6 @@ type VcdResources struct {
 	VmsUsed uint64
 }
 
-// cachedVdc is used for VM app metrics
-var cachedVdc *govcd.Vdc
-var lastCachedVdcRefreshTime time.Time
-
-var ChangeSinceLastVmAppStats bool
-
 const CurrentVmMetrics string = "application/vnd.vmware.vcloud.metrics.currentUsageSpec+xml"
 
 type GovcdMetric struct {
@@ -81,7 +75,7 @@ func (v *VcdPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edge
 	if vcdClient == nil {
 		return nil, fmt.Errorf(NoVCDClientInContext)
 	}
-	vdc, err := v.GetVdc(ctx, vcdClient)
+	vdc, err := v.GetVdcFromContext(ctx, vcdClient)
 	if err != nil {
 		return nil, err
 	}
@@ -256,35 +250,15 @@ func (v *VcdPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cl
 	return nil
 }
 
-// GetVdcFromCacheForVmStats gets a cached VDC object pointer or get a new one if the cache is stale, i.e.
-// it changed since last accessed or if the cached pointer is older than GetVmAppVdcMaxCacheTime.  This allows
-// the VDC and Org APIs to be done only once per collection interval for all VM Apps.
-func (v *VcdPlatform) GetVdcFromCacheForVmStats(ctx context.Context, vcdClient *govcd.VCDClient) (*govcd.Vdc, error) {
-	m, err := v.GetVmAppStatsVdcMaxCacheTime()
-	if err != nil {
-		return nil, err
+func (v *VcdPlatform) VmAppChangedCallback(ctx context.Context, appInstKey *edgeproto.AppInstKey, newState edgeproto.TrackedState) {
+	log.SpanLog(ctx, log.DebugLevelMetrics, "VmAppChangedCallback", "appInstKey", appInstKey, "newState", newState)
+	if v.GetHrefCacheEnabled() && newState != edgeproto.TrackedState_READY {
+		vmName := cloudcommon.GetVMAppFQDN(appInstKey, &appInstKey.ClusterInstKey.CloudletKey, "")
+		v.DeleteVmHrefFromCache(ctx, vmName)
+		// delete using old format also
+		altVmName := cloudcommon.GetAppFQN(&appInstKey.AppKey)
+		v.DeleteVmHrefFromCache(ctx, altVmName)
 	}
-	maxCacheTime := time.Second * time.Duration(m)
-	elapsed := time.Since(lastCachedVdcRefreshTime)
-	log.SpanLog(ctx, log.DebugLevelMetrics, "GetVdcFromCacheForVmStats", "maxCacheTime", maxCacheTime, "lastCachedVdcRefreshTime", lastCachedVdcRefreshTime, "elapsed", elapsed, "changed", ChangeSinceLastVmAppStats)
-
-	if elapsed < maxCacheTime && cachedVdc != nil && !ChangeSinceLastVmAppStats {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "GetVdcFromCacheForVmStats return cached vdc")
-		return cachedVdc, nil
-	}
-	log.SpanLog(ctx, log.DebugLevelMetrics, "GetVdcFromCacheForVmStats get new VDC")
-	cachedVdc, err = v.GetVdc(ctx, vcdClient)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "GetVdcFromCacheForVmStats failed to get new VDC", "err", err)
-		return nil, fmt.Errorf("GetVdc Failed - %v", err)
-	}
-	ChangeSinceLastVmAppStats = false
-	lastCachedVdcRefreshTime = time.Now()
-	return cachedVdc, nil
-}
-
-func (v *VcdPlatform) VmAppChangedCallback(ctx context.Context) {
-	ChangeSinceLastVmAppStats = true
 }
 
 func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*vmlayer.VMMetrics, error) {
@@ -299,7 +273,7 @@ func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey)
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
 		return nil, fmt.Errorf(NoVCDClientInContext, err)
 	}
-	vdc, err := v.GetVdcFromCacheForVmStats(ctx, vcdClient)
+	vdc, err := v.GetVdcFromContext(ctx, vcdClient)
 	if err != nil {
 		return nil, fmt.Errorf("GetVdcFromCacheForVmStats Failed - %v", err)
 	}

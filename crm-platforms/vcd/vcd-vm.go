@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
@@ -17,34 +18,23 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// VM related operations
+var VmNameToHref map[string]string
+var vcdVmHrefMux sync.Mutex
 
-// Just the vapp name and serverName
-func (v *VcdPlatform) FindVM(ctx context.Context, serverName, vappName string, vcdClient *govcd.VCDClient) (*govcd.VM, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "FindVM", "serverName", serverName, "vappName", vappName)
-
-	vdc, err := v.GetVdc(ctx, vcdClient)
-	if err != nil {
-		return nil, fmt.Errorf("GetVdc Failed - %v", err)
-	}
-	vmRec, err := vdc.QueryVM(vappName, serverName)
-	if err != nil {
-		return nil, err
-	}
-	// alt. Href
-	vapp, err := vdc.GetVAppByName(vappName, true)
-	if err != nil {
-		return nil, err
-	}
-	return vapp.GetVMByName(vmRec.VM.Name, true)
+func init() {
+	VmNameToHref = make(map[string]string)
 }
+
+// VM related operations
 
 // If all you have is the serverName (vmName)
 func (v *VcdPlatform) FindVMByName(ctx context.Context, serverName string, vcdClient *govcd.VCDClient, vdc *govcd.Vdc) (*govcd.VM, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "FindVMByName", "serverName", serverName)
 
-	vm := &govcd.VM{}
-
+	vm := v.FindVMByHrefCache(ctx, serverName, vcdClient)
+	if vm != nil {
+		return vm, nil
+	}
 	vappRefList := vdc.GetVappList()
 	for _, vappRef := range vappRefList {
 
@@ -56,6 +46,8 @@ func (v *VcdPlatform) FindVMByName(ctx context.Context, serverName string, vcdCl
 		vm, err = vapp.GetVMByName(serverName, false)
 		if err == nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "FindVMByName found", "vmName", serverName, "vappName", vapp.VApp.Name, "err", err)
+			// add the href to the cache
+			v.AddVmHrefToCache(ctx, serverName, vm.VM.HREF)
 			return vm, nil
 		}
 	}
@@ -64,7 +56,7 @@ func (v *VcdPlatform) FindVMByName(ctx context.Context, serverName string, vcdCl
 
 // Have vapp obj in hand use this one.
 func (v *VcdPlatform) FindVMInVApp(ctx context.Context, serverName string, vapp govcd.VApp) (*govcd.VM, error) {
-	vm, err := vapp.GetVMByName(serverName, true)
+	vm, err := vapp.GetVMByName(serverName, false)
 	if err != nil {
 		return nil, fmt.Errorf("vm %s not found in vapp %s", serverName, vapp.VApp.Name)
 	}
@@ -1053,7 +1045,7 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 		return nil, fmt.Errorf(NoVCDClientInContext)
 	}
 	// xxx need ContainerInfo as well
-	vdc, err := v.GetVdc(ctx, vcdClient)
+	vdc, err := v.GetVdcFromContext(ctx, vcdClient)
 	if err != nil {
 		return nil, err
 	}
@@ -1103,7 +1095,7 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 			vmlayer.NetworkTypeExternalAdditionalRootLb,
 			vmlayer.NetworkTypeExternalPrimary,
 		}
-		sd, err := v.GetServerDetail(ctx, vm.VM.Name)
+		sd, err := v.GetServerDetailWithVdc(ctx, vm.VM.Name, vdc, vcdClient)
 		if err != nil {
 			return resources, fmt.Errorf("Failed to get server detail - %v", err)
 		}
@@ -1238,5 +1230,65 @@ func (v *VcdPlatform) addNewVMRegenUuid(vapp *govcd.VApp, name string, vappTempl
 	return vcdClient.Client.ExecuteTaskRequestWithApiVersion(apiEndpoint.String(), http.MethodPost,
 		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", vAppComposition,
 		vcdClient.Client.GetSpecificApiVersionOnCondition(">= 33.0", "33.0"))
+}
 
+// GetVmHrefFromCache returns an href if the VM is cached, blank string otherwise
+func (v *VcdPlatform) GetVmHrefFromCache(ctx context.Context, vmName string) string {
+	vcdVmHrefMux.Lock()
+	defer vcdVmHrefMux.Unlock()
+	return VmNameToHref[vmName]
+}
+
+func (v *VcdPlatform) AddVmHrefToCache(ctx context.Context, vmName, href string) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddVmHrefToCache", "vmName", vmName)
+	vcdVmHrefMux.Lock()
+	defer vcdVmHrefMux.Unlock()
+	VmNameToHref[vmName] = href
+}
+
+// DeleteVmHrefFromCache delete the VM->href mapping in the cache if present, does
+// nothing otherwise
+func (v *VcdPlatform) DeleteVmHrefFromCache(ctx context.Context, vmName string) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVmHrefFromCache", "vmName", vmName)
+	vcdVmHrefMux.Lock()
+	defer vcdVmHrefMux.Unlock()
+	delete(VmNameToHref, vmName)
+}
+
+func (v *VcdPlatform) DumpVmHrefCache(ctx context.Context) string {
+	log.SpanLog(ctx, log.DebugLevelInfra, "DumpVmHrefCache")
+	vcdVmHrefMux.Lock()
+	defer vcdVmHrefMux.Unlock()
+
+	out := fmt.Sprintf("VmNameToHref: %v", VmNameToHref)
+	return out
+}
+
+func (v *VcdPlatform) ClearVmHrefCache(ctx context.Context) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ClearVmHrefCache")
+	vcdVmHrefMux.Lock()
+	defer vcdVmHrefMux.Unlock()
+	VmNameToHref = make(map[string]string)
+}
+
+// FindVMByHrefCache returns nil if the cache is not enabled or the vm not found
+func (v *VcdPlatform) FindVMByHrefCache(ctx context.Context, vmName string, vcdClient *govcd.VCDClient) *govcd.VM {
+	log.SpanLog(ctx, log.DebugLevelInfra, "FindVMByHrefCache", "vmName", vmName)
+	if !v.GetHrefCacheEnabled() {
+		return nil
+	}
+	href := v.GetVmHrefFromCache(ctx, vmName)
+	if href == "" {
+		log.SpanLog(ctx, log.DebugLevelInfra, "FindVMByHrefCache href not found in cache", "vmName", vmName)
+		return nil
+	}
+	vm, err := vcdClient.Client.GetVMByHref(href)
+	if err == nil {
+		return vm
+	} else {
+		log.SpanLog(ctx, log.DebugLevelInfra, "FindVMByName could not get VM by href", "err", err)
+		// delete the href from the cache since we could not find anything with it
+		v.DeleteVmHrefFromCache(ctx, vmName)
+	}
+	return nil
 }
