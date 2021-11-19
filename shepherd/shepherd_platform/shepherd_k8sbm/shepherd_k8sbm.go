@@ -29,7 +29,7 @@ type ShepherdPlatform struct {
 
 func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig, platformCaches *platform.Caches) error {
 	s.platformConfig = pc
-	return s.Pf.Init(ctx, pc, caches, nil)
+	return s.Pf.Init(ctx, pc, caches, true, edgeproto.DummyUpdateCallback)
 }
 
 func (s *ShepherdPlatform) SetVMPool(ctx context.Context, vmPool *edgeproto.VMPool) {
