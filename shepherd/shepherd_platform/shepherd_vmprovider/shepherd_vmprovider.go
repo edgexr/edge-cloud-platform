@@ -226,6 +226,11 @@ func (s *ShepherdPlatform) VmAppChangedCallback(ctx context.Context, appInstKey 
 	s.VMPlatform.VMProvider.VmAppChangedCallback(ctx, appInstKey, newState)
 }
 
+func (s *ShepherdPlatform) SetUsageAccessArgs(ctx context.Context, addr string, client ssh.Client) error {
+	// Nothing to do for vmprovider
+	return nil
+}
+
 func (s *ShepherdPlatform) IsPlatformLocal(ctx context.Context) bool {
 	return false
 }

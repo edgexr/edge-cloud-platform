@@ -30,6 +30,8 @@ type Platform interface {
 	GetMetricsCollectInterval() time.Duration
 	// Inform the platform that a VM App was added or deleted
 	VmAppChangedCallback(ctx context.Context, appInstKey *edgeproto.AppInstKey, newState edgeproto.TrackedState)
+	// Set Prometheus address. For platforms that rely on prometheus to gather cloudlet stats
+	SetUsageAccessArgs(ctx context.Context, addr string, client ssh.Client) error
 	// Check if the platform is running locally
 	IsPlatformLocal(ctx context.Context) bool
 }

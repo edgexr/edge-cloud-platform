@@ -81,6 +81,10 @@ func (s *Platform) GetMetricsCollectInterval() time.Duration {
 	return 60
 }
 
+func (s *Platform) SetUsageAccessArgs(ctx context.Context, addr string, client ssh.Client) error {
+	return nil
+}
+
 func (s *Platform) IsPlatformLocal(ctx context.Context) bool {
 	return true
 }
