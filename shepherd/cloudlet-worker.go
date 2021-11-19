@@ -9,6 +9,7 @@ import (
 	"time"
 
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/mobiledgex/edge-cloud-infra/promutils"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -122,7 +123,7 @@ func getCloudletPrometheusStats(ctx context.Context, addr string, client ssh.Cli
 		}
 		q := "max_over_time(envoy_cluster_upstream_cx_active_total:avg{" + strings.Join(tags, ",") + "}[" + fmt.Sprintf("%d", policy.StabilizationWindowSec) + "s])"
 		q = url.QueryEscape(q)
-		resp, err := getPromMetrics(ctx, addr, q, client)
+		resp, err := promutils.GetPromMetrics(ctx, addr, q, client)
 		if err == nil && resp.Status == "success" {
 			for _, metric := range resp.Data.Result {
 				if val, err := strconv.ParseFloat(metric.Values[1].(string), 64); err == nil {

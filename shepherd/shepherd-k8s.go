@@ -51,6 +51,9 @@ func (c *K8sClusterStats) GetAppStats(ctx context.Context) map[shepherd_common.M
 			log.SpanLog(ctx, log.DebugLevelMetrics, "error updating UpdatePrometheusAddr", "err", err)
 			return make(map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics)
 		}
+		// Update platform if it depends on the cluster-level metrics
+		log.DebugLog(log.DebugLevelInfo, "Setting prometheus addr", "addr", c.promAddr)
+		myPlatform.SetUsageAccessArgs(ctx, c.promAddr, c.client)
 	}
 	metrics := collectAppPrometheusMetrics(ctx, c)
 	if metrics == nil {

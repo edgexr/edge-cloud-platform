@@ -123,7 +123,13 @@ func getProxyContainerAndNetworkType(ctx context.Context, scrapePoint ProxyScrap
 	if pfType == "fake" {
 		return "fakeEnvoy", DockerNetworkHost, nil
 	}
-	container := proxy.GetEnvoyContainerName(scrapePoint.App)
+	// for baremetal k8s has a cluster prefix
+	container := ""
+	if pfType == "k8sbaremetal" {
+		container += k8smgmt.GetKconfName(&edgeproto.ClusterInst{Key: scrapePoint.ClusterInstKey})
+	}
+	container += "-" + dockermgmt.GetContainerName(&scrapePoint.Key.AppKey)
+	container = proxy.GetEnvoyContainerName(container)
 	request := fmt.Sprintf("docker exec %s echo hello", container)
 	resp, err := scrapePoint.Client.Output(request)
 	if err != nil && strings.Contains(resp, "No such container") {
