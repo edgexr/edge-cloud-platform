@@ -41,4 +41,6 @@ regiondata:
       disableratelimit: true
       ratelimitmaxtrackedips: 10000
       resourcesnapshotthreadinterval: 10m0s
+      platformhainstancepollinterval: 300ms
+      platformhainstanceactiveexpiretime: 1s
 

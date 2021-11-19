@@ -310,3 +310,5 @@ replace golang.org/x/sys => golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
 replace golang.org/x/time => golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 
 replace github.com/davecgh/go-spew => github.com/davecgh/go-spew v1.1.1
+
+replace github.com/go-redis/redis => github.com/go-redis/redis v6.15.9+incompatible

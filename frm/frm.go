@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	frmnotify "github.com/mobiledgex/edge-cloud-infra/frm/notify"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/redundancy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
@@ -20,6 +21,7 @@ var region = flag.String("region", "local", "region name")
 
 var sigChan chan os.Signal
 var nodeMgr node.NodeMgr
+var haMgr redundancy.HighAvailabilityManager
 var notifyClient *notify.Client
 var controllerData *frmnotify.ControllerData
 
@@ -34,7 +36,7 @@ func main() {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	var err error
-	notifyClient, controllerData, err = frmnotify.SetupFRMNotify(&nodeMgr, *hostname, *region, *notifyAddrs)
+	notifyClient, controllerData, err = frmnotify.SetupFRMNotify(&nodeMgr, &haMgr, *hostname, *region, *notifyAddrs)
 	if err != nil {
 		log.FatalLog(err.Error())
 	}

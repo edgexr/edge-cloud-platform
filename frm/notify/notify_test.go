@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/redundancy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -131,7 +132,9 @@ func TestFRMNotify(t *testing.T) {
 	ctrlMgr.Start("ctrl", notifyAddr, nil)
 
 	var nodeMgr node.NodeMgr
-	notifyClient, controllerData, err := SetupFRMNotify(&nodeMgr, "frm-hostname", "local", notifyAddr)
+	var haMgr redundancy.HighAvailabilityManager
+
+	notifyClient, controllerData, err := SetupFRMNotify(&nodeMgr, &haMgr, "frm-hostname", "local", notifyAddr)
 	require.Nil(t, err)
 	defer func() {
 		nodeMgr.Finish()

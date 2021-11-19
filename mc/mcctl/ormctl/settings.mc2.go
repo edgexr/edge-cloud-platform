@@ -120,6 +120,8 @@ var SettingsOptionalArgs = []string{
 	"disableratelimit",
 	"ratelimitmaxtrackedips",
 	"resourcesnapshotthreadinterval",
+	"platformhainstancepollinterval",
+	"platformhainstanceactiveexpiretime",
 }
 var SettingsAliasArgs = []string{
 	"fields=settings.fields",
@@ -163,6 +165,8 @@ var SettingsAliasArgs = []string{
 	"disableratelimit=settings.disableratelimit",
 	"ratelimitmaxtrackedips=settings.ratelimitmaxtrackedips",
 	"resourcesnapshotthreadinterval=settings.resourcesnapshotthreadinterval",
+	"platformhainstancepollinterval=settings.platformhainstancepollinterval",
+	"platformhainstanceactiveexpiretime=settings.platformhainstanceactiveexpiretime",
 }
 var SettingsComments = map[string]string{
 	"fields":                                                      "Fields are used for the Update API to specify which fields to apply",
@@ -206,6 +210,8 @@ var SettingsComments = map[string]string{
 	"disableratelimit":                                                  "Disable rate limiting for APIs (default is false)",
 	"ratelimitmaxtrackedips":                                            "Maximum number of IPs to track for rate limiting",
 	"resourcesnapshotthreadinterval":                                    "ResourceSnapshot Refresh thread run interval",
+	"platformhainstancepollinterval":                                    "Platform HA instance poll interval",
+	"platformhainstanceactiveexpiretime":                                "Platform HA instance active time",
 }
 var SettingsSpecialArgs = map[string]string{
 	"settings.fields": "StringArray",

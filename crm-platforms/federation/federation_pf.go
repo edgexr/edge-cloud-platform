@@ -27,7 +27,7 @@ func (f *FederationPlatform) GetFeatures() *platform.Features {
 }
 
 // Init is called once during CRM startup.
-func (f *FederationPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
+func (f *FederationPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, platformActive bool, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }
 
@@ -215,4 +215,7 @@ func (f *FederationPlatform) GetRootLBClients(ctx context.Context) (map[string]s
 // Get RootLB Flavor
 func (f *FederationPlatform) GetRootLBFlavor(ctx context.Context) (*edgeproto.Flavor, error) {
 	return &edgeproto.Flavor{}, nil
+}
+
+func (k *FederationPlatform) ActiveChanged(ctx context.Context, platformActive bool) {
 }
