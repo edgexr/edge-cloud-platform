@@ -73,17 +73,10 @@ func (v *VMPlatform) getGPUDriverPackagePath(ctx context.Context, storageClient 
 	return localFilePath, nil
 }
 
-// Fetches driver license config:
-//        * From local cache
-//        * In not in local cache, then fetch from cloud
-func (v *VMPlatform) getGPUDriverLicenseConfigPath(ctx context.Context, storageClient *gcs.GCSClient, driverKey *edgeproto.GPUDriverKey, licenseMd5Sum string) (string, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "getGPUDriverLicenseConfigPath", "driverKey", driverKey)
-	// Look in local cache first
-	if _, err := os.Stat(v.CacheDir); os.IsNotExist(err) {
-		return "", fmt.Errorf("Missing cache dir")
-	}
-	fileName := cloudcommon.GetGPUDriverLicenseStoragePath(driverKey)
-	localFilePath := v.CacheDir + "/" + strings.ReplaceAll(fileName, "/", "_")
+func (v *VMPlatform) downloadGPUDriverLicenseConfig(ctx context.Context, storageClient *gcs.GCSClient, driverPath, licenseMd5Sum string) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "downloadGPUDriverLicenseConfig", "driverPath", driverPath)
+
+	localFilePath := v.CacheDir + "/" + strings.ReplaceAll(driverPath, "/", "_")
 	_, err := os.Stat(localFilePath)
 	if err == nil || !os.IsNotExist(err) {
 		// Verify if license config is valid and not outdated/corrupted
@@ -96,14 +89,40 @@ func (v *VMPlatform) getGPUDriverLicenseConfigPath(ctx context.Context, storageC
 			return localFilePath, nil
 		}
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "GPU driver license not found in local cache/is outdated/corrupted, fetch it from GCS", "fileName", fileName)
-	err = storageClient.DownloadObject(ctx, fileName, localFilePath)
+	log.SpanLog(ctx, log.DebugLevelInfra, "GPU driver license not found in local cache/is outdated/corrupted, fetch it from GCS", "fileName", driverPath)
+	err = storageClient.DownloadObject(ctx, driverPath, localFilePath)
 	if err != nil {
 		if strings.Contains(err.Error(), gcs.NotFoundError) {
 			// license config doesn't exist
 			return "", nil
 		}
-		return "", fmt.Errorf("Failed to download GPU driver license config %s from GCS to %s, %v", fileName, localFilePath, err)
+		return "", fmt.Errorf("Failed to download GPU driver license config %s from GCS to %s, %v", driverPath, localFilePath, err)
+	}
+	return localFilePath, nil
+}
+
+// Fetches driver license config:
+//        * From local cache
+//        * In not in local cache, then fetch from cloud
+func (v *VMPlatform) getGPUDriverLicenseConfigPath(ctx context.Context, storageClient *gcs.GCSClient, driverKey *edgeproto.GPUDriverKey, licenseMd5Sum string) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "getGPUDriverLicenseConfigPath", "driverKey", driverKey)
+	// Look in local cache first
+	if _, err := os.Stat(v.CacheDir); os.IsNotExist(err) {
+		return "", fmt.Errorf("Missing cache dir")
+	}
+	// Use cloudlet specific license config if present
+	fileName := cloudcommon.GetGPUDriverLicenseCloudletStoragePath(driverKey, v.VMProperties.CommonPf.PlatformConfig.CloudletKey.Name)
+	localFilePath, err := v.downloadGPUDriverLicenseConfig(ctx, storageClient, fileName, licenseMd5Sum)
+	if err != nil {
+		return "", err
+	}
+	// Use gpu driver license config
+	if localFilePath == "" {
+		fileName = cloudcommon.GetGPUDriverLicenseStoragePath(driverKey)
+		localFilePath, err = v.downloadGPUDriverLicenseConfig(ctx, storageClient, fileName, licenseMd5Sum)
+		if err != nil {
+			return "", err
+		}
 	}
 	return localFilePath, nil
 }
