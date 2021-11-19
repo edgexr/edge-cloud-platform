@@ -901,6 +901,8 @@ func addControllerApis(method string, group *echo.Group) {
 	// GpuConfigProperties: 45.2
 	// GpuConfigPropertiesKey: 45.2.1
 	// GpuConfigPropertiesValue: 45.2.2
+	// GpuConfigLicenseConfig: 45.3
+	// GpuConfigLicenseConfigMd5Sum: 45.4
 	// EnableDefaultServerlessCluster: 46
 	// AllianceOrgs: 47
 	// SingleKubernetesClusterOwner: 48
