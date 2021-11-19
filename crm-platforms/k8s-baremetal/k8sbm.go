@@ -70,7 +70,7 @@ func UpdateDockerUser(ctx context.Context, client ssh.Client) error {
 	return nil
 }
 
-func (k *K8sBareMetalPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
+func (k *K8sBareMetalPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, platformActive bool, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Init start")
 	k.caches = caches
 	if err := k.commonPf.InitInfraCommon(ctx, platformConfig, k8sbmProps); err != nil {

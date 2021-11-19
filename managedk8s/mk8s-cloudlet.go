@@ -145,3 +145,7 @@ func (v *ManagedK8sPlatform) GetRestrictedCloudletStatus(ctx context.Context, cl
 func (v *ManagedK8sPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
 	return nil, nil
 }
+
+func (m *ManagedK8sPlatform) ActiveChanged(ctx context.Context, platformActive bool) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChanged")
+}

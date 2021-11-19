@@ -74,6 +74,8 @@ regiondata:
       maxnumperipratelimiters: 10000
       resourcesnapshotthreadinterval: 10m0s
       ratelimitmaxtrackedips: 10000
+      platformhainstancepollinterval: 300ms
+      platformhainstanceactiveexpiretime: 1s
     cloudlets:
     - key:
         organization: {{partnertag}}

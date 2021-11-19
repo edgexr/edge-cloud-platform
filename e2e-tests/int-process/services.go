@@ -149,7 +149,7 @@ func StartShepherdService(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfC
 	// for local testing, include debug notify
 	opts = append(opts, process.WithDebug("api,notify,infra,metrics"))
 
-	shepherdProc.AccessKeyFile = cloudcommon.GetLocalAccessKeyFile(cloudlet.Key.Name)
+	shepherdProc.AccessKeyFile = cloudcommon.GetLocalAccessKeyFile(cloudlet.Key.Name, process.HARolePrimary) // TODO Shepherd HA
 
 	err = shepherdProc.StartLocal("/tmp/"+cloudlet.Key.Name+".shepherd.log", opts...)
 	if err != nil {

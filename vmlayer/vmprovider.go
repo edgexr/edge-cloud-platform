@@ -354,7 +354,7 @@ func (v *VMPlatform) crmUpgradeCmd(ctx context.Context, req *edgeproto.DebugRequ
 	return fmt.Sprintf("%v", results)
 }
 
-func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, platformActive bool, updateCallback edgeproto.CacheUpdateCallback) error {
 	var err error
 	log.SpanLog(ctx,
 		log.DebugLevelInfra, "Init VMPlatform",

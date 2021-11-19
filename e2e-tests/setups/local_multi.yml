@@ -12,6 +12,8 @@ tlscerts:
 dockernetworks:
 - name: e2e-logging
   hostname: "127.0.0.1"
+- name: redis-net
+  hostname: "127.0.0.1"
 
 locsims:
 - name: locsim1
@@ -510,6 +512,11 @@ jaegers:
   dockerenvvars:
     ES_SERVER_URLS: http://elasticsearch-e2e:9200
     SPAN_STORAGE_TYPE: elasticsearch
+
+rediscaches:
+- name: redis-e2e
+  dockernetwork: redis-net
+  hostname: "127.0.0.1"
 
 autoprovs:
 - name: autoprov1

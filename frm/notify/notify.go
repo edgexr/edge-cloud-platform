@@ -7,6 +7,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/crmutil"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	pfutils "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/utils"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/redundancy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/notify"
@@ -19,9 +20,9 @@ type ControllerData struct {
 }
 
 // NewControllerData creates a new instance to track data from the controller
-func NewControllerData(pf platform.Platform, nodeMgr *node.NodeMgr) *ControllerData {
+func NewControllerData(pf platform.Platform, nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityManager) *ControllerData {
 	cd := &ControllerData{}
-	cd.ControllerData = crmutil.NewControllerData(pf, &edgeproto.CloudletKey{}, nodeMgr)
+	cd.ControllerData = crmutil.NewControllerData(pf, &edgeproto.CloudletKey{}, nodeMgr, haMgr)
 	return cd
 }
 
@@ -29,7 +30,7 @@ func InitClientNotify(client *notify.Client, nodeMgr *node.NodeMgr, cd *Controll
 	crmutil.InitClientNotify(client, nodeMgr, cd.ControllerData)
 }
 
-func SetupFRMNotify(nodeMgr *node.NodeMgr, hostname, region, notifyAddrs string) (*notify.Client, *ControllerData, error) {
+func SetupFRMNotify(nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityManager, hostname, region, notifyAddrs string) (*notify.Client, *ControllerData, error) {
 	ctx, span, err := nodeMgr.Init(node.NodeTypeFRM, node.CertIssuerRegional,
 		node.WithName(hostname),
 		node.WithRegion(region),
@@ -48,7 +49,7 @@ func SetupFRMNotify(nodeMgr *node.NodeMgr, hostname, region, notifyAddrs string)
 		return nil, nil, err
 	}
 
-	controllerData := NewControllerData(platform, nodeMgr)
+	controllerData := NewControllerData(platform, nodeMgr, haMgr)
 
 	// ctrl notify
 	addrs := strings.Split(notifyAddrs, ",")

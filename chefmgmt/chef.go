@@ -11,6 +11,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/util"
 
 	"github.com/go-chef/chef"
@@ -468,7 +469,7 @@ func GetChefCloudletAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet
 			// present in edge-cloud image itself
 			containerVersion := cloudlet.ContainerVersion
 			cloudlet.ContainerVersion = ""
-			serviceCmdArgs, envVars, err = cloudcommon.GetCRMCmdArgs(cloudlet, pfConfig)
+			serviceCmdArgs, envVars, err = cloudcommon.GetCRMCmdArgs(cloudlet, pfConfig, process.HARolePrimary) // TODO phase 2
 			if err != nil {
 				return nil, err
 			}

@@ -26,9 +26,9 @@ type Platform struct {
 	mux    sync.Mutex
 }
 
-func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, platformActive bool, updateCallback edgeproto.CacheUpdateCallback) error {
 	s.envoys = make(map[edgeproto.AppInstKey]*exec.Cmd)
-	return s.Platform.Init(ctx, platformConfig, caches, updateCallback)
+	return s.Platform.Init(ctx, platformConfig, caches, platformActive, updateCallback)
 }
 
 func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {

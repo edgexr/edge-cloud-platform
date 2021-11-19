@@ -55,6 +55,8 @@ regiondata:
       maxnumperipratelimiters: 10000
       resourcesnapshotthreadinterval: 10m
       ratelimitmaxtrackedips: 10000
+      platformhainstancepollinterval: 300ms
+      platformhainstanceactiveexpiretime: 1s
     flavors:
     - key:
         name: x1.tiny
