@@ -67,7 +67,7 @@ func (e *EdgeboxPlatform) CreateAppInst(ctx context.Context, clusterInst *edgepr
 			if err != nil {
 				return err
 			}
-			err = k8smgmt.CreateDeveloperDefinedNamespaces(ctx, client, names)
+			err = k8smgmt.CreateAllNamespaces(ctx, client, names)
 			if err != nil {
 				return err
 			}
@@ -154,7 +154,7 @@ func (e *EdgeboxPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgepr
 			if err != nil {
 				return err
 			}
-			err = k8smgmt.CreateDeveloperDefinedNamespaces(ctx, client, names)
+			err = k8smgmt.CreateAllNamespaces(ctx, client, names)
 			if err != nil {
 				return err
 			}

@@ -218,7 +218,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if err != nil {
 			return err
 		}
-		err = k8smgmt.CreateDeveloperDefinedNamespaces(ctx, client, names)
+		err = k8smgmt.CreateAllNamespaces(ctx, client, names)
 		if err != nil {
 			return err
 		}
@@ -756,7 +756,7 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			if err != nil {
 				return err
 			}
-			err = k8smgmt.CreateDeveloperDefinedNamespaces(ctx, client, names)
+			err = k8smgmt.CreateAllNamespaces(ctx, client, names)
 			if err != nil {
 				return err
 			}
