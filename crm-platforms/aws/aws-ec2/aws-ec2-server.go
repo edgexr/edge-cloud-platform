@@ -384,7 +384,7 @@ func (a *AwsEc2Platform) DetachPortFromServer(ctx context.Context, serverName, s
 	return fmt.Errorf("DetachPortFromServer not implemented")
 }
 
-func (a *AwsEc2Platform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*vmlayer.VMMetrics, error) {
+func (a *AwsEc2Platform) GetVMStats(ctx context.Context, appInst *edgeproto.AppInst) (*vmlayer.VMMetrics, error) {
 	log.SpanLog(ctx, log.DebugLevelMetrics, "GetVMStats not supported")
 	return &vmlayer.VMMetrics{}, nil
 }

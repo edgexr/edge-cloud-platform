@@ -41,3 +41,4 @@ regiondata:
       healthcheck: CloudletOffline
       powerstate: PowerOn
       vmflavor: x1.small
+      uniqueid: acmeappcosomeapplication110-smallcluster-dmuus-cloud-1-dmuus

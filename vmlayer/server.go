@@ -121,16 +121,7 @@ func (v *VMPlatform) GetConsoleUrl(ctx context.Context, app *edgeproto.App, appI
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeVM:
-
-		objName := cloudcommon.GetVMAppFQDN(&appInst.Key, &appInst.Key.ClusterInstKey.CloudletKey, "")
-
-		url, err := v.VMProvider.GetConsoleUrl(ctx, objName)
-		if err != nil {
-			// try old format
-			objName = cloudcommon.GetAppFQN(&app.Key)
-			return v.VMProvider.GetConsoleUrl(ctx, objName)
-		}
-		return url, err
+		return v.VMProvider.GetConsoleUrl(ctx, appInst.UniqueId)
 	default:
 		return "", fmt.Errorf("unsupported deployment type %s", deployment)
 	}
@@ -151,7 +142,7 @@ func (v *VMPlatform) SetPowerState(ctx context.Context, app *edgeproto.App, appI
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeVM:
-		serverName := cloudcommon.GetVMAppFQDN(&appInst.Key, &appInst.Key.ClusterInstKey.CloudletKey, "")
+		serverName := appInst.UniqueId
 		fqdn := appInst.Uri
 
 		log.SpanLog(ctx, log.DebugLevelInfra, "setting server state", "serverName", serverName, "fqdn", fqdn, "PowerState", PowerState)
@@ -159,12 +150,7 @@ func (v *VMPlatform) SetPowerState(ctx context.Context, app *edgeproto.App, appI
 		updateCallback(edgeproto.UpdateTask, "Verifying AppInst state")
 		serverDetail, err := v.VMProvider.GetServerDetail(ctx, serverName)
 		if err != nil {
-			// try old format
-			serverName = cloudcommon.GetAppFQN(&app.Key)
-			serverDetail, err = v.VMProvider.GetServerDetail(ctx, serverName)
-			if err != nil {
-				return err
-			}
+			return err
 		}
 
 		serverAction := ""

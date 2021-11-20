@@ -1710,6 +1710,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// InternalPortToLbIpKey: 38.1
 	// InternalPortToLbIpValue: 38.2
 	// DedicatedIp: 39
+	// UniqueId: 40
 	// ```
 	// Security:
 	//   Bearer:

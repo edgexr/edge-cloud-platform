@@ -597,7 +597,7 @@ func (o *VMPoolPlatform) SyncVMs(ctx context.Context, vmGroupOrchestrationParams
 	return nil
 }
 
-func (s *VMPoolPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*vmlayer.VMMetrics, error) {
+func (s *VMPoolPlatform) GetVMStats(ctx context.Context, appInst *edgeproto.AppInst) (*vmlayer.VMMetrics, error) {
 	log.SpanLog(ctx, log.DebugLevelMetrics, "GetVMStats not supported")
 	return &vmlayer.VMMetrics{}, nil
 }

@@ -261,7 +261,8 @@ func (v *VcdPlatform) VmAppChangedCallback(ctx context.Context, appInstKey *edge
 	}
 }
 
-func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*vmlayer.VMMetrics, error) {
+func (v *VcdPlatform) GetVMStats(ctx context.Context, appInst *edgeproto.AppInst) (*vmlayer.VMMetrics, error) {
+	key := &appInst.Key
 	log.SpanLog(ctx, log.DebugLevelMetrics, "GetVMStats", "key", key)
 
 	vm := &govcd.VM{}
@@ -279,11 +280,6 @@ func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey)
 	}
 
 	// we need the flavor to do RAM conversion
-	appInst := edgeproto.AppInst{}
-	if !v.caches.AppInstCache.Get(key, &appInst) {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "AppInst not in cache", "key", key)
-		return nil, fmt.Errorf("GetVMStats failed to find appinst in cache for AppInst %s", key)
-	}
 	flavor := edgeproto.Flavor{}
 	flavorKey := edgeproto.FlavorKey{
 		Name: appInst.Flavor.Name,
@@ -292,16 +288,11 @@ func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey)
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Flavor not in cache", "appkey", key, "flavorKey", flavorKey)
 		return nil, fmt.Errorf("GetVMStats failed to find flavor in cache for AppInst %s", key)
 	}
-	vmName := cloudcommon.GetVMAppFQDN(&appInst.Key, &appInst.Key.ClusterInstKey.CloudletKey, "")
+	vmName := appInst.UniqueId
 	vm, err = v.FindVMByName(ctx, vmName, vcdClient, vdc)
 	if err != nil {
-		// try old format
-		vmName = cloudcommon.GetAppFQN(&key.AppKey)
-		vm, err = v.FindVMByName(ctx, vmName, vcdClient, vdc)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "GetVMStats vm not found", "vnname", vmName)
-			return nil, err
-		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "VM not found", "vnname", vmName, "err", err)
+		return nil, err
 	}
 	log.SpanLog(ctx, log.DebugLevelMetrics, "GetVMStats for", "vm", vmName)
 	link := vm.VM.Link.ForType(CurrentVmMetrics, types.RelMetrics)

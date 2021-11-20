@@ -10,7 +10,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
@@ -159,7 +158,7 @@ func (s *OpenstackPlatform) goGetMetricforId(ctx context.Context, id string, mea
 	return waitChan
 }
 
-func (s *OpenstackPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*vmlayer.VMMetrics, error) {
+func (s *OpenstackPlatform) GetVMStats(ctx context.Context, appInst *edgeproto.AppInst) (*vmlayer.VMMetrics, error) {
 	var Cpu, Mem, NetSent, NetRecv OSMetricMeasurement
 	netSentChan := make(chan string)
 	netRecvChan := make(chan string)
@@ -167,17 +166,13 @@ func (s *OpenstackPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppIn
 	// note disk stats are available via disk.device.usage, but they are useless for our purposes, as they do not reflect
 	// OS usage inside the VM, rather the disk metrics measure the size of various VM files on the datastore
 
-	if key == nil {
-		return &vmMetrics, fmt.Errorf("Nil App passed")
+	if appInst == nil {
+		return &vmMetrics, fmt.Errorf("Nil AppInst passed")
 	}
 
-	server, err := s.GetActiveServerDetails(ctx, cloudcommon.GetVMAppFQDN(key, &key.ClusterInstKey.CloudletKey, ""))
+	server, err := s.GetActiveServerDetails(ctx, appInst.UniqueId)
 	if err != nil {
-		// try old format
-		server, err = s.GetActiveServerDetails(ctx, cloudcommon.GetAppFQN(&key.AppKey))
-		if err != nil {
-			return &vmMetrics, err
-		}
+		return &vmMetrics, err
 	}
 
 	// Get a bunch of the results in parallel as it might take a bit of time

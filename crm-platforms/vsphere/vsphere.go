@@ -10,7 +10,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
@@ -117,19 +116,14 @@ func (v *VSpherePlatform) GetResourceID(ctx context.Context, resourceType vmlaye
 func (v *VSpherePlatform) VmAppChangedCallback(ctx context.Context, appInstKey *edgeproto.AppInstKey, newState edgeproto.TrackedState) {
 }
 
-func (v *VSpherePlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*vmlayer.VMMetrics, error) {
+func (v *VSpherePlatform) GetVMStats(ctx context.Context, appInst *edgeproto.AppInst) (*vmlayer.VMMetrics, error) {
 	log.DebugLog(log.DebugLevelSampled, "GetVMStats")
 	cr := MetricsCollectionRequestType{CollectNetworkStats: true, CollectCPUStats: true, CollectMemStats: true}
 	vmMetrics := vmlayer.VMMetrics{}
-	vmName := cloudcommon.GetVMAppFQDN(key, &key.ClusterInstKey.CloudletKey, "")
+	vmName := appInst.UniqueId
 	mets, err := v.GetMetrics(ctx, vmName, &cr)
 	if err != nil {
-		// try old format
-		vmName = cloudcommon.GetAppFQN(&key.AppKey)
-		mets, err = v.GetMetrics(ctx, vmName, &cr)
-		if err != nil {
-			return &vmMetrics, err
-		}
+		return &vmMetrics, err
 	}
 	time, err := time.Parse(time.RFC3339, mets.Timestamp)
 	if err != nil {
