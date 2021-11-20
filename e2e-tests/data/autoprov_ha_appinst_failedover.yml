@@ -35,6 +35,7 @@ regiondata:
         containerids:
         - appOnClusterNode0
       realclustername: Reservable1
+      uniqueid: acmeappcoautoprovha10-autocluster-autoprov-dmuus-cloud-1-dmuus
     - key:
         appkey:
           organization: AcmeAppCo
@@ -69,6 +70,7 @@ regiondata:
         containerids:
         - appOnClusterNode0
       realclustername: Reservable3
+      uniqueid: acmeappcoautoprovha10-autocluster-autoprov-azure-cloud-4-azure
     - key:
         appkey:
           organization: AcmeAppCo
@@ -103,3 +105,4 @@ regiondata:
         containerids:
         - appOnClusterNode0
       realclustername: Reservable4
+      uniqueid: acmeappcoautoprovha10-autocluster-autoprov-gcp-cloud-5-gcp

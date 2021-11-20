@@ -214,7 +214,11 @@ func (s *ShepherdPlatform) GetVmStats(ctx context.Context, key *edgeproto.AppIns
 	if result == vmlayer.OperationNewlyInitialized {
 		defer s.VMPlatform.VMProvider.InitOperationContext(ctx, vmlayer.OperationInitComplete)
 	}
-	vmMetrics, err := s.VMPlatform.VMProvider.GetVMStats(ctx, key)
+	appInst := edgeproto.AppInst{}
+	if !s.VMPlatform.Caches.AppInstCache.Get(key, &appInst) {
+		return appMetrics, key.NotFoundError()
+	}
+	vmMetrics, err := s.VMPlatform.VMProvider.GetVMStats(ctx, &appInst)
 	if err != nil {
 		return appMetrics, err
 	}
