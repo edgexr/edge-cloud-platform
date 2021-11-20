@@ -898,7 +898,10 @@ func createMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 		outMcErr(output, fmt.Sprintf("CreateAlertReceiver[%d]", ii), st, err)
 	}
 	for ii, fd := range data.Federators {
-		_, st, err := mcClient.CreateSelfFederator(uri, token, &fd)
+		fedOut, st, err := mcClient.CreateSelfFederator(uri, token, &fd)
+		if err == nil {
+			sharedData[fd.FederationId] = fedOut.ApiKey
+		}
 		outMcErr(output, fmt.Sprintf("CreateSelfFederator[%d]", ii), st, err)
 	}
 	for ii, fd := range data.FederatorZones {
@@ -909,10 +912,7 @@ func createMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 		if partnerApiKey, found := sharedData[fd.FederationId]; found {
 			fd.ApiKey = partnerApiKey
 		}
-		apiKeyOut, st, err := mcClient.CreateFederation(uri, token, &fd)
-		if err == nil {
-			sharedData[fd.SelfFederationId] = apiKeyOut.ApiKey
-		}
+		_, st, err := mcClient.CreateFederation(uri, token, &fd)
 		outMcErr(output, fmt.Sprintf("CreateFederation[%d]", ii), st, err)
 	}
 }
@@ -1003,12 +1003,22 @@ func manageFederatorZoneData(mode, uri, token, tag string, data *ormapi.AllData,
 		}
 	case "register":
 		for ii, zone := range data.FederatedPartnerZones {
-			_, st, err := mcClient.RegisterPartnerFederatorZone(uri, token, &zone)
+			zoneReq := ormapi.FederatedZoneRegRequest{
+				SelfOperatorId: zone.SelfOperatorId,
+				FederationName: zone.FederationName,
+				Zones:          []string{zone.ZoneId},
+			}
+			_, st, err := mcClient.RegisterPartnerFederatorZone(uri, token, &zoneReq)
 			outMcErr(output, fmt.Sprintf("RegisterPartnerFederatorZone[%d]", ii), st, err)
 		}
 	case "deregister":
 		for ii, zone := range data.FederatedPartnerZones {
-			_, st, err := mcClient.DeRegisterPartnerFederatorZone(uri, token, &zone)
+			zoneReq := ormapi.FederatedZoneRegRequest{
+				SelfOperatorId: zone.SelfOperatorId,
+				FederationName: zone.FederationName,
+				Zones:          []string{zone.ZoneId},
+			}
+			_, st, err := mcClient.DeRegisterPartnerFederatorZone(uri, token, &zoneReq)
 			outMcErr(output, fmt.Sprintf("DeregisterPartnerFederatorZone[%d]", ii), st, err)
 		}
 	}

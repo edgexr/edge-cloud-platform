@@ -138,7 +138,7 @@ type ZoneInfo struct {
 	EdgeCount int `json:"edgeCount"`
 }
 
-type ZoneRequest struct {
+type ZoneSingleRequest struct {
 	// Request id as sent in federation request
 	RequestId string `json:"requestId"`
 	// Globally unique string to identify an operator platform
@@ -147,6 +147,21 @@ type ZoneRequest struct {
 	Country string `json:"country"`
 	// Zone identifier of partner operator
 	Zone string `json:"zone"`
+	// Origin OP federation ID
+	OrigFederationId string `json:"origFederationId"`
+	// Destination OP federation ID
+	DestFederationId string `json:"destFederationId"`
+}
+
+type ZoneMultiRequest struct {
+	// Request id as sent in federation request
+	RequestId string `json:"requestId"`
+	// Globally unique string to identify an operator platform
+	Operator string `json:"operator"`
+	// ISO 3166-1 Alpha-2 code for the country where operator platform is located
+	Country string `json:"country"`
+	// Zone identifier of partner operator
+	Zones []string `json:"zones"`
 	// Origin OP federation ID
 	OrigFederationId string `json:"origFederationId"`
 	// Destination OP federation ID
