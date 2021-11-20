@@ -109,6 +109,14 @@ regiondata:
       deployment: docker
       defaultresourcealertthreshold: 80
       hostcontroller: 127.0.0.1:55081
+      resourcequotas:
+        - name: "RAM"
+          alertthreshold: 50
+        - name: "vCPUs"
+          value: 20
+          alertthreshold: 50
+        - name: "External IPs"
+          alertthreshold: 10
     cloudletinfos:
     - key:
         organization: {{partnertag}}

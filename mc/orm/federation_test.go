@@ -41,6 +41,7 @@ import (
 
 var MockESUrl = "http://mock.es"
 var PartnerApiKey = "dummyKey"
+var ResourceValue = uint64(1030)
 
 type CtrlObj struct {
 	addr        string
@@ -103,6 +104,56 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 	ds.SetDummyObjs(ctx, testutil.Create, "common", dcnt)
 	for _, operatorId := range operatorIds {
 		ds.SetDummyOrgObjs(ctx, testutil.Create, operatorId, dcnt)
+	}
+
+	// Setup resource-quota/infra-max limit for all the cloudlets
+	allCloudletKeys := make(map[edgeproto.CloudletKey]int)
+	clcnt := 0
+	ds.CloudletCache.GetAllKeys(ctx, func(k *edgeproto.CloudletKey, modRev int64) {
+		allCloudletKeys[*k] = clcnt
+		clcnt++
+	})
+	for key, clcnt := range allCloudletKeys {
+		// For some cloudlets set resource-quota and for some infra-max
+		// so that zones can consider infra-max if resource-quota is missing
+		// for calculating upper limit quota
+		if clcnt%2 == 0 {
+			clObj := edgeproto.Cloudlet{}
+			require.True(t, ds.CloudletCache.Get(&key, &clObj))
+			clObj.ResourceQuotas = []edgeproto.ResourceQuota{
+				{
+					Name:  cloudcommon.ResourceRamMb,
+					Value: ResourceValue,
+				},
+				{
+					Name:  cloudcommon.ResourceVcpus,
+					Value: ResourceValue,
+				},
+				{
+					Name:  cloudcommon.ResourceDisk,
+					Value: ResourceValue,
+				},
+			}
+			ds.CloudletCache.Update(ctx, &clObj, 0)
+		} else {
+			clObj := edgeproto.CloudletInfo{}
+			require.True(t, ds.CloudletInfoCache.Get(&key, &clObj))
+			clObj.ResourcesSnapshot.Info = []edgeproto.InfraResource{
+				{
+					Name:          cloudcommon.ResourceRamMb,
+					InfraMaxValue: ResourceValue,
+				},
+				{
+					Name:          cloudcommon.ResourceVcpus,
+					InfraMaxValue: ResourceValue,
+				},
+				{
+					Name:          cloudcommon.ResourceDisk,
+					InfraMaxValue: ResourceValue,
+				},
+			}
+			ds.CloudletInfoCache.Update(ctx, &clObj, 0)
+		}
 	}
 
 	return &CtrlObj{
@@ -398,7 +449,7 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr) {
 				fmt.Printf("failed to read body from request %s: %v\n", req.URL.String(), err)
 				return httpmock.NewStringResponse(400, "failed to read body"), nil
 			}
-			zoneDeRegReq := federation.ZoneRequest{}
+			zoneDeRegReq := federation.ZoneMultiRequest{}
 			err = json.Unmarshal(body, &zoneDeRegReq)
 			if err != nil {
 				fmt.Printf("failed to unmarshal req data %s: %v\n", body, err)
@@ -447,7 +498,7 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr) {
 				fmt.Printf("failed to read body from request %s: %v\n", req.URL.String(), err)
 				return httpmock.NewStringResponse(400, "failed to read body"), nil
 			}
-			inReq := federation.ZoneRequest{}
+			inReq := federation.ZoneSingleRequest{}
 			err = json.Unmarshal(body, &inReq)
 			if err != nil {
 				fmt.Printf("failed to unmarshal req data %s: %v\n", body, err)
@@ -514,7 +565,7 @@ func TestFederation(t *testing.T) {
 	}
 }
 
-func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mctestclient.Client, op *OPAttr, selfFederators []FederatorAttr, partnerFed *FederatorAttr, selfFedApiKey string) {
+func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mctestclient.Client, op *OPAttr, selfFederators []FederatorAttr, partnerFed *FederatorAttr) {
 	selfFed1 := selfFederators[0]
 
 	// Verify that selfFed1 has added partnerFed as partner federator (federation planning)
@@ -538,7 +589,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 		CountryCode:      partnerFed.countryCode,
 	}
 	opRegRes := federation.OperatorRegistrationResponse{}
-	err = sendFederationRequest("POST", selfFed1.fedAddr, partnerFed.fedName, selfFedApiKey, federation.OperatorPartnerAPI, &opRegReq, &opRegRes)
+	err = sendFederationRequest("POST", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorPartnerAPI, &opRegReq, &opRegRes)
 	require.Nil(t, err, "partnerFed adds selfFed1 as partner OP")
 	// verify federation response
 	require.Equal(t, opRegRes.OrigOperatorId, selfFed1.operatorId)
@@ -571,7 +622,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 		Country:          partnerFed.countryCode,
 		MCC:              "999",
 	}
-	err = sendFederationRequest("PUT", selfFed1.fedAddr, partnerFed.fedName, selfFedApiKey, federation.OperatorPartnerAPI, &updateReq, nil)
+	err = sendFederationRequest("PUT", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorPartnerAPI, &updateReq, nil)
 	require.Nil(t, err, "partnerFed updates its attributes and notifies selfFed1 about it")
 
 	// verify that selfFed1 has successfully updated partnerFed's new MCC value
@@ -588,25 +639,38 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 
 	// partnerFed sends registration request for selfFed1 zone
 	// =======================================================
+	regZones := []string{}
 	for _, sZone := range selfFed1.zones {
-		zoneRegReq := federation.OperatorZoneRegister{
-			RequestId:        "r3",
-			OrigFederationId: partnerFed.fedId,
-			DestFederationId: selfFed1.fedId,
-			Operator:         partnerFed.operatorId,
-			Country:          partnerFed.countryCode,
-			Zones:            []string{sZone.ZoneId},
-		}
-		opZoneRes := federation.OperatorZoneRegisterResponse{}
-		err = sendFederationRequest("POST", selfFed1.fedAddr, partnerFed.fedName, selfFedApiKey, federation.OperatorZoneAPI, &zoneRegReq, &opZoneRes)
-		require.Nil(t, err, "partnerFed sends registration request for selfFed1 zone")
-		require.Equal(t, zoneRegReq.RequestId, opZoneRes.RequestId)
+		regZones = append(regZones, sZone.ZoneId)
+	}
+	zoneRegReq := federation.OperatorZoneRegister{
+		RequestId:        "r3",
+		OrigFederationId: partnerFed.fedId,
+		DestFederationId: selfFed1.fedId,
+		Operator:         partnerFed.operatorId,
+		Country:          partnerFed.countryCode,
+		Zones:            regZones,
+	}
+	opZoneRes := federation.OperatorZoneRegisterResponse{}
+	err = sendFederationRequest("POST", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorZoneAPI, &zoneRegReq, &opZoneRes)
+	require.Nil(t, err, "partnerFed sends registration request for selfFed1 zones")
+	require.Equal(t, zoneRegReq.RequestId, opZoneRes.RequestId)
+	require.Equal(t, len(opZoneRes.Zone), len(regZones))
+	for _, resZone := range opZoneRes.Zone {
+		require.Equal(t, resZone.UpperLimitQuota.CPU, int64(ResourceValue))
+		require.Equal(t, resZone.UpperLimitQuota.RAM, int64(ResourceValue)/1024)
+		require.Equal(t, resZone.UpperLimitQuota.Disk, int64(ResourceValue))
+		require.Equal(t, resZone.GuaranteedResources.CPU, int64(ResourceValue))
+		require.Equal(t, resZone.GuaranteedResources.RAM, int64(ResourceValue)/1024)
+		require.Equal(t, resZone.GuaranteedResources.Disk, int64(ResourceValue))
+	}
 
+	for _, regZone := range regZones {
 		// Verify that registered zones are shown
 		zoneLookup := &ormapi.FederatedSelfZone{
 			SelfOperatorId: selfFed1.operatorId,
 			FederationName: partnerFed.fedName,
-			ZoneId:         sZone.ZoneId,
+			ZoneId:         regZone,
 		}
 		selfFed1Zones, status, err := mcClient.ShowFederatedSelfZone(op.uri, selfFed1.tokenOper, zoneLookup)
 		require.Nil(t, err, "show self federator zones")
@@ -633,7 +697,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 		Country:          partnerFed.countryCode,
 		PartnerZone:      newZone,
 	}
-	err = sendFederationRequest("POST", selfFed1.fedAddr, partnerFed.fedName, selfFedApiKey, federation.OperatorNotifyZoneAPI, &zoneNotifyReq, nil)
+	err = sendFederationRequest("POST", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorNotifyZoneAPI, &zoneNotifyReq, nil)
 	require.Nil(t, err, "partnerFed notifies selfFed1 about a new zone")
 
 	// verify that selfFed1 added this new zone in its db
@@ -656,7 +720,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 
 	// partnerFed notifies selfFed1 about a deleted zone
 	// =================================================
-	zoneUnshareReq := federation.ZoneRequest{
+	zoneUnshareReq := federation.ZoneSingleRequest{
 		RequestId:        "r5",
 		OrigFederationId: partnerFed.fedId,
 		DestFederationId: selfFed1.fedId,
@@ -664,7 +728,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 		Country:          partnerFed.countryCode,
 		Zone:             newZone.ZoneId,
 	}
-	err = sendFederationRequest("DELETE", selfFed1.fedAddr, partnerFed.fedName, selfFedApiKey, federation.OperatorNotifyZoneAPI, &zoneUnshareReq, nil)
+	err = sendFederationRequest("DELETE", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorNotifyZoneAPI, &zoneUnshareReq, nil)
 	require.Nil(t, err, "partnerFed notifies selfFed1 about a deleted zone")
 
 	// verify that selfFed1 deleted this zone from its db
@@ -675,23 +739,27 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 
 	// partnerFed sends deregistration request for selfFed1 zone
 	// =========================================================
+	deregZones := []string{}
 	for _, sZone := range selfFed1.zones {
-		zoneDeRegReq := federation.ZoneRequest{
-			RequestId:        "r6",
-			OrigFederationId: partnerFed.fedId,
-			DestFederationId: selfFed1.fedId,
-			Operator:         partnerFed.operatorId,
-			Country:          partnerFed.countryCode,
-			Zone:             sZone.ZoneId,
-		}
-		err = sendFederationRequest("DELETE", selfFed1.fedAddr, partnerFed.fedName, selfFedApiKey, federation.OperatorZoneAPI, &zoneDeRegReq, nil)
-		require.Nil(t, err, "partnerFed sends deregistration request for selfFed1 zone")
+		deregZones = append(deregZones, sZone.ZoneId)
+	}
+	zoneDeRegReq := federation.ZoneMultiRequest{
+		RequestId:        "r6",
+		OrigFederationId: partnerFed.fedId,
+		DestFederationId: selfFed1.fedId,
+		Operator:         partnerFed.operatorId,
+		Country:          partnerFed.countryCode,
+		Zones:            deregZones,
+	}
+	err = sendFederationRequest("DELETE", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorZoneAPI, &zoneDeRegReq, nil)
+	require.Nil(t, err, "partnerFed sends deregistration request for selfFed1 zone")
 
+	for _, deregZone := range deregZones {
 		// Verify that zones are deregistered
 		zoneLookup := &ormapi.FederatedSelfZone{
 			SelfOperatorId: selfFed1.operatorId,
 			FederationName: partnerFed.fedName,
-			ZoneId:         sZone.ZoneId,
+			ZoneId:         deregZone,
 		}
 		selfFed1Zones, status, err := mcClient.ShowFederatedSelfZone(op.uri, selfFed1.tokenOper, zoneLookup)
 		require.Nil(t, err, "show self federator zones")
@@ -710,7 +778,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 		Operator:         partnerFed.operatorId,
 		Country:          partnerFed.countryCode,
 	}
-	err = sendFederationRequest("DELETE", selfFed1.fedAddr, partnerFed.fedName, selfFedApiKey, federation.OperatorPartnerAPI, &opFedReq, nil)
+	err = sendFederationRequest("DELETE", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorPartnerAPI, &opFedReq, nil)
 	require.Nil(t, err, "partnerFed removes selfFed1 as partner OP")
 
 	// verify that partnerFed has successfully removed federation with selfFed1
@@ -744,7 +812,9 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Nil(t, err, "create self federator")
 		require.Equal(t, http.StatusOK, status)
 		require.NotEmpty(t, resp.FederationId)
+		require.NotEmpty(t, resp.ApiKey)
 		selfFederators[ii].fedId = resp.FederationId
+		selfFederators[ii].apiKey = resp.ApiKey
 		fedInfo, status, err := mcClient.ShowSelfFederator(op.uri, selfFed.tokenOper, fedReq)
 		require.Nil(t, err, "show self federator")
 		require.Equal(t, http.StatusOK, status)
@@ -773,10 +843,9 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 			ApiKey:         partnerFed.apiKey,
 		},
 	}
-	apiKeyOut, status, err := mcClient.CreateFederation(op.uri, selfFed1.tokenOper, partnerFedReq)
+	_, status, err := mcClient.CreateFederation(op.uri, selfFed1.tokenOper, partnerFedReq)
 	require.Nil(t, err, "create federation")
 	require.Equal(t, http.StatusOK, status)
-	require.NotEmpty(t, apiKeyOut.ApiKey)
 
 	// Federation creation with same federation ID pair should fail
 	newPartnerFedReq := *partnerFedReq
@@ -937,12 +1006,10 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 
 	// Register partner zone should fail as federation is not yet created
 	// ==================================================================
-	zoneRegReq := &ormapi.FederatedPartnerZone{
+	zoneRegReq := &ormapi.FederatedZoneRegRequest{
 		SelfOperatorId: selfFed1.operatorId,
 		FederationName: partnerFed.fedName,
-		FederatorZone: ormapi.FederatorZone{
-			ZoneId: partnerFed.zones[0].ZoneId,
-		},
+		Zones:          []string{partnerFed.zones[0].ZoneId},
 	}
 	_, _, err = mcClient.RegisterPartnerFederatorZone(op.uri, selfFed1.tokenOper, zoneRegReq)
 	require.NotNil(t, err, "cannot register partner zone as federation does not exist")
@@ -1003,7 +1070,12 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		// not yet registered
 		require.False(t, pZone.Registered)
 
-		_, status, err = mcClient.RegisterPartnerFederatorZone(op.uri, selfFed1.tokenOper, &pZone)
+		pZoneReq := ormapi.FederatedZoneRegRequest{
+			SelfOperatorId: pZone.SelfOperatorId,
+			FederationName: pZone.FederationName,
+			Zones:          []string{pZone.ZoneId},
+		}
+		_, status, err = mcClient.RegisterPartnerFederatorZone(op.uri, selfFed1.tokenOper, &pZoneReq)
 		require.Nil(t, err, "register partner federator zone")
 		require.Equal(t, http.StatusOK, status)
 
@@ -1048,7 +1120,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 
 	// Test federation APIs
 	// ====================
-	testPartnerFederationAPIs(t, ctx, mcClient, op, selfFederators, partnerFed, apiKeyOut.ApiKey)
+	testPartnerFederationAPIs(t, ctx, mcClient, op, selfFederators, partnerFed)
 
 	// --------+
 	// Cleanup |
@@ -1068,19 +1140,24 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Deregister all the partner zones
 	// ================================
 	for _, pZone := range partnerFed.zones {
-		zoneRegReq := &ormapi.FederatedPartnerZone{
+		zoneRegReq := &ormapi.FederatedZoneRegRequest{
 			SelfOperatorId: selfFed1.operatorId,
 			FederationName: partnerFed.fedName,
-			FederatorZone: ormapi.FederatorZone{
-				ZoneId: pZone.ZoneId,
-			},
+			Zones:          []string{pZone.ZoneId},
 		}
 		_, status, err = mcClient.DeRegisterPartnerFederatorZone(op.uri, selfFed1.tokenOper, zoneRegReq)
 		require.Nil(t, err, "deregister partner federator zone")
 		require.Equal(t, http.StatusOK, status)
 
 		// Verify that zones are deregistered
-		partnerZones, status, err = mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, zoneRegReq)
+		zoneRegShowReq := &ormapi.FederatedPartnerZone{
+			SelfOperatorId: selfFed1.operatorId,
+			FederationName: partnerFed.fedName,
+			FederatorZone: ormapi.FederatorZone{
+				ZoneId: pZone.ZoneId,
+			},
+		}
+		partnerZones, status, err = mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, zoneRegShowReq)
 		require.Nil(t, err, "show partner federator zones")
 		require.Equal(t, http.StatusOK, status)
 		require.Equal(t, 1, len(partnerZones))

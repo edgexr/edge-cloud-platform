@@ -1,8 +1,11 @@
 package orm
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	fmt "fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/jinzhu/gorm"
@@ -184,6 +187,62 @@ func RateLimit(next echo.HandlerFunc) echo.HandlerFunc {
 		} else {
 			// use Username if can get claims
 			callerInfo.User = claims.Username
+		}
+
+		// Rate limit
+		if err = rateLimitMgr.Limit(ctx, callerInfo); err != nil {
+			errMsg := fmt.Sprintf("%s is rejected, please retry later.", c.Path())
+			if err != nil {
+				errMsg += fmt.Sprintf(" Error is: %s.", err.Error())
+			}
+			return echo.NewHTTPError(http.StatusTooManyRequests, errMsg)
+
+		}
+		return next(c)
+	}
+}
+
+// Echo middleware function that handles rate limiting for federation APIs
+func FederationRateLimit(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		ctx := ormutil.GetContext(c)
+
+		// Check if rate limiting is disabled, if disabled continue
+		if getDisableRateLimit(ctx) {
+			return next(c)
+		}
+
+		// Get partner's federation ID from request body.
+		reqBody := []byte{}
+		if c.Request().Body != nil { // Read
+			reqBody, _ = ioutil.ReadAll(c.Request().Body)
+		}
+		c.Request().Body = ioutil.NopCloser(bytes.NewBuffer(reqBody)) // Reset
+
+		// All federation APIs must have `origFederationId` field, use that
+		// as username for ratelimitting federation APIs
+		type CommonReq struct {
+			OrigFederationId string `json:"origFederationId"`
+		}
+		origFedId := ""
+		fedIdObj := CommonReq{}
+		err := json.Unmarshal(reqBody, &fedIdObj)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfo, "failed to unmarshal request body to fetch origin federation ID", "req body", string(reqBody), "err", err)
+		} else {
+			origFedId = fedIdObj.OrigFederationId
+		}
+
+		// Create callerInfo
+		callerInfo := &ratelimit.CallerInfo{
+			Api: c.Path(),
+		}
+		if origFedId == "" {
+			// use IP if cannot get partner's federation ID
+			callerInfo.Ip = c.RealIP()
+		} else {
+			// use partner's federation ID as Username
+			callerInfo.User = origFedId
 		}
 
 		// Rate limit

@@ -25,8 +25,14 @@ type Federator struct {
 	// but this can differ with what partner federator uses
 	// read only: true
 	Revision string `json:"revision"`
-	// API Key used for authentication
+	// API Key used for authentication (stored in secure storage)
 	ApiKey string `json:"apikey"`
+	// read only: true
+	ApiKeyHash string `gorm:"not null"`
+	// read only: true
+	Salt string `gorm:"not null"`
+	// read only: true
+	Iter int `gorm:"not null"`
 }
 
 type Federation struct {
@@ -44,12 +50,6 @@ type Federation struct {
 	// Partner is allowed access to self federator zones as part of federation
 	// read only: true
 	PartnerRoleAccessToSelfZones bool
-	// read only: true
-	ApiKeyHash string `gorm:"not null"`
-	// read only: true
-	Salt string `gorm:"not null"`
-	// read only: true
-	Iter int `gorm:"not null"`
 }
 
 // Details of zone owned by a federator. MC defines a zone as a group of cloudlets,
@@ -109,8 +109,14 @@ type FederatedPartnerZone struct {
 	Registered bool
 }
 
-type FederationApiKey struct {
-	ApiKey string `json:"apikey"`
+// Register/Deregister partner zones shared as part of federation
+type FederatedZoneRegRequest struct {
+	// Self operator ID
+	SelfOperatorId string `json:"selfoperatorid"`
+	// Name of the Federation
+	FederationName string `json:"federationname"`
+	// Partner federator zones to be registered/deregistered
+	Zones []string `json:"zones"`
 }
 
 func (f *Federator) GetTags() map[string]string {
@@ -124,6 +130,7 @@ func (f *Federation) GetTags() map[string]string {
 	tags := make(map[string]string)
 	tags["org"] = f.SelfOperatorId
 	tags["federatedorg"] = f.OperatorId
+	tags["federationname"] = f.Name
 	return tags
 }
 
@@ -131,12 +138,15 @@ func (f *FederatorZone) GetTags() map[string]string {
 	tags := make(map[string]string)
 	tags["org"] = f.OperatorId
 	tags["region"] = f.Region
+	tags["zoneid"] = f.ZoneId
 	return tags
 }
 
 func (f *FederatedSelfZone) GetTags() map[string]string {
 	tags := make(map[string]string)
 	tags["org"] = f.SelfOperatorId
+	tags["federationname"] = f.FederationName
+	tags["zoneid"] = f.ZoneId
 	return tags
 }
 
@@ -144,5 +154,14 @@ func (f *FederatedPartnerZone) GetTags() map[string]string {
 	tags := make(map[string]string)
 	tags["org"] = f.SelfOperatorId
 	tags["federatedorg"] = f.OperatorId
+	tags["federationname"] = f.FederationName
+	tags["zoneid"] = f.ZoneId
+	return tags
+}
+
+func (f *FederatedZoneRegRequest) GetTags() map[string]string {
+	tags := make(map[string]string)
+	tags["org"] = f.SelfOperatorId
+	tags["federationname"] = f.FederationName
 	return tags
 }

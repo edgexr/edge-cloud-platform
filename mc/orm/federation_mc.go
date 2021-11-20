@@ -291,6 +291,14 @@ func CreateSelfFederator(c echo.Context) error {
 	}
 	opFed.FederationAddr = serverConfig.FederationAddr
 	opFed.Revision = log.SpanTraceID(ctx)
+
+	// auto-create api key
+	apiKey := uuid.New().String()
+	apiKeyHash, apiKeySalt, apiKeyIter := ormutil.NewPasshash(apiKey)
+	opFed.ApiKeyHash = apiKeyHash
+	opFed.Salt = apiKeySalt
+	opFed.Iter = apiKeyIter
+
 	if err := db.Create(&opFed).Error; err != nil {
 		if strings.Contains(err.Error(), "pq: duplicate key value violates unique constraint") {
 			return fmt.Errorf("Self federator with ID %q already exists", opFed.FederationId)
@@ -300,6 +308,7 @@ func CreateSelfFederator(c echo.Context) error {
 
 	opFedOut := ormapi.Federator{
 		FederationId: opFed.FederationId,
+		ApiKey:       apiKey,
 	}
 	return c.JSON(http.StatusOK, &opFedOut)
 }
@@ -483,9 +492,51 @@ func ShowSelfFederator(c echo.Context) error {
 		if !authz.Ok(fed.OperatorId) {
 			continue
 		}
+		fed.ApiKeyHash = ""
+		fed.Salt = ""
+		fed.Iter = 0
 		out = append(out, fed)
 	}
 	return c.JSON(http.StatusOK, out)
+}
+
+func GenerateSelfFederatorAPIKey(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	opFed := ormapi.Federator{}
+	if err := c.Bind(&opFed); err != nil {
+		return ormutil.BindErr(err)
+	}
+	// get federator information
+	selfFed, err := GetSelfFederator(ctx, opFed.FederationId)
+	if err != nil {
+		return err
+	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, opFed.GetTags())
+	if err := fedAuthorized(ctx, claims.Username, opFed.OperatorId); err != nil {
+		return err
+	}
+
+	db := loggedDB(ctx)
+	// generate new api key, this will invalidate old API key
+	apiKey := uuid.New().String()
+	apiKeyHash, apiKeySalt, apiKeyIter := ormutil.NewPasshash(apiKey)
+	selfFed.ApiKeyHash = apiKeyHash
+	selfFed.Salt = apiKeySalt
+	selfFed.Iter = apiKeyIter
+	err = db.Save(&selfFed).Error
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+
+	apiKeyOut := ormapi.Federator{
+		ApiKey: apiKey,
+	}
+	return c.JSON(http.StatusOK, &apiKeyOut)
 }
 
 // A self federator will create a partner federator. This is done as
@@ -522,6 +573,9 @@ func CreateFederation(c echo.Context) error {
 	if opFed.FederationAddr == "" {
 		return fmt.Errorf("Missing partner federation access address")
 	}
+	if opFed.ApiKey == "" {
+		return fmt.Errorf("Missing partner federation API key")
+	}
 	if err := fedcommon.ValidateFederationName(opFed.Name); err != nil {
 		return err
 	}
@@ -539,13 +593,6 @@ func CreateFederation(c echo.Context) error {
 	// store partner federator's API key in vault
 	partnerApiKey := opFed.ApiKey
 	opFed.ApiKey = ""
-
-	// auto-create api key
-	apiKey := uuid.New().String()
-	apiKeyHash, apiKeySalt, apiKeyIter := ormutil.NewPasshash(apiKey)
-	opFed.ApiKeyHash = apiKeyHash
-	opFed.Salt = apiKeySalt
-	opFed.Iter = apiKeyIter
 
 	db := loggedDB(ctx)
 	opFed.Revision = log.SpanTraceID(ctx)
@@ -571,10 +618,7 @@ func CreateFederation(c echo.Context) error {
 		}
 	}
 
-	apiKeyOut := ormapi.FederationApiKey{
-		ApiKey: apiKey,
-	}
-	return c.JSON(http.StatusOK, &apiKeyOut)
+	return ormutil.SetReply(c, ormutil.Msg("Created partner federation successfully"))
 }
 
 func DeleteFederation(c echo.Context) error {
@@ -618,7 +662,7 @@ func DeleteFederation(c echo.Context) error {
 			"federation name", partnerFed.Name, "err", err)
 	}
 
-	return ormutil.SetReply(c, ormutil.Msg("Deleted partner federator successfully"))
+	return ormutil.SetReply(c, ormutil.Msg("Deleted partner federation successfully"))
 }
 
 func SetPartnerFederationAPIKey(c echo.Context) error {
@@ -653,44 +697,6 @@ func SetPartnerFederationAPIKey(c echo.Context) error {
 		return fmt.Errorf("Unable to store partner API key in vault: %s", err)
 	}
 	return ormutil.SetReply(c, ormutil.Msg("Updated federation attributes"))
-}
-
-func GenerateSelfFederationAPIKey(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
-	claims, err := getClaims(c)
-	if err != nil {
-		return err
-	}
-	opFed := ormapi.Federation{}
-	if err := c.Bind(&opFed); err != nil {
-		return ormutil.BindErr(err)
-	}
-	span := log.SpanFromContext(ctx)
-	log.SetTags(span, opFed.GetTags())
-	if err := fedAuthorized(ctx, claims.Username, opFed.SelfOperatorId); err != nil {
-		return err
-	}
-	_, partnerFed, err := GetFederationByName(ctx, opFed.Name)
-	if err != nil {
-		return err
-	}
-
-	db := loggedDB(ctx)
-	// generate new api key, this will invalidate old API key
-	apiKey := uuid.New().String()
-	apiKeyHash, apiKeySalt, apiKeyIter := ormutil.NewPasshash(apiKey)
-	partnerFed.ApiKeyHash = apiKeyHash
-	partnerFed.Salt = apiKeySalt
-	partnerFed.Iter = apiKeyIter
-	err = db.Save(&partnerFed).Error
-	if err != nil {
-		return ormutil.DbErr(err)
-	}
-
-	apiKeyOut := ormapi.FederationApiKey{
-		ApiKey: apiKey,
-	}
-	return c.JSON(http.StatusOK, &apiKeyOut)
 }
 
 func CreateSelfFederatorZone(c echo.Context) error {
@@ -1105,7 +1111,7 @@ func UnshareSelfFederatorZone(c echo.Context) error {
 	// just add it to the DB (federation planning)
 	if partnerFed.PartnerRoleAccessToSelfZones {
 		// Notify federated partner about deleted zone
-		opZoneUnShare := federation.ZoneRequest{
+		opZoneUnShare := federation.ZoneSingleRequest{
 			RequestId:        revision,
 			OrigFederationId: selfFed.FederationId,
 			DestFederationId: partnerFed.FederationId,
@@ -1135,7 +1141,7 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	reg := ormapi.FederatedPartnerZone{}
+	reg := ormapi.FederatedZoneRegRequest{}
 	if err := c.Bind(&reg); err != nil {
 		return ormutil.BindErr(err)
 	}
@@ -1144,8 +1150,8 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 	log.SetTags(span, reg.GetTags())
 
 	// sanity check
-	if reg.ZoneId == "" {
-		return fmt.Errorf("Must specify the zone which is to be registered")
+	if len(reg.Zones) == 0 {
+		return fmt.Errorf("Must specify the zones to be registered")
 	}
 
 	if err := fedAuthorized(ctx, claims.Username, reg.SelfOperatorId); err != nil {
@@ -1164,21 +1170,28 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 
 	// Check if zone exists
 	db := loggedDB(ctx)
-	existingZone := ormapi.FederatedPartnerZone{}
-	lookup := ormapi.FederatedPartnerZone{
-		FederationName: partnerFed.Name,
-		FederatorZone: ormapi.FederatorZone{
-			OperatorId:  reg.OperatorId,
-			CountryCode: reg.CountryCode,
-			ZoneId:      reg.ZoneId,
-		},
-	}
-	res := db.Where(&lookup).First(&existingZone)
-	if !res.RecordNotFound() && res.Error != nil {
-		return ormutil.DbErr(res.Error)
-	}
-	if res.RecordNotFound() {
-		return fmt.Errorf("Zone ID %q not found", reg.ZoneId)
+	zonesMap := make(map[string]ormapi.FederatedPartnerZone)
+	for _, inZone := range reg.Zones {
+		existingZone := ormapi.FederatedPartnerZone{}
+		lookup := ormapi.FederatedPartnerZone{
+			FederationName: partnerFed.Name,
+			FederatorZone: ormapi.FederatorZone{
+				OperatorId:  partnerFed.OperatorId,
+				CountryCode: partnerFed.CountryCode,
+				ZoneId:      inZone,
+			},
+		}
+		res := db.Where(&lookup).First(&existingZone)
+		if !res.RecordNotFound() && res.Error != nil {
+			return ormutil.DbErr(res.Error)
+		}
+		if res.RecordNotFound() {
+			return fmt.Errorf("Zone ID %q not found", inZone)
+		}
+		if existingZone.Registered {
+			return fmt.Errorf("Zone ID %q is already registered", inZone)
+		}
+		zonesMap[existingZone.ZoneId] = existingZone
 	}
 
 	revision := log.SpanTraceID(ctx)
@@ -1190,7 +1203,7 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 		DestFederationId: partnerFed.FederationId,
 		Operator:         selfFed.OperatorId,
 		Country:          selfFed.CountryCode,
-		Zones:            []string{existingZone.ZoneId},
+		Zones:            reg.Zones,
 	}
 	opZoneRes := federation.OperatorZoneRegisterResponse{}
 	err = sendFederationRequest("POST", partnerFed.FederationAddr, partnerFed.Name, NoApiKey, federation.OperatorZoneAPI, &opZoneReg, &opZoneRes)
@@ -1199,11 +1212,13 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 	}
 
 	// Mark zone as registered in DB
-	existingZone.Revision = revision
-	existingZone.Registered = true
-	err = db.Save(&existingZone).Error
-	if err != nil {
-		return ormutil.DbErr(err)
+	for _, pZone := range zonesMap {
+		pZone.Revision = revision
+		pZone.Registered = true
+		err = db.Save(&pZone).Error
+		if err != nil {
+			return ormutil.DbErr(err)
+		}
 	}
 
 	rc := &ormutil.RegionContext{}
@@ -1215,6 +1230,11 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 		return nil
 	}
 	for _, zoneReg := range opZoneRes.Zone {
+		existingZone, ok := zonesMap[zoneReg.ZoneId]
+		if !ok {
+			log.SpanLog(ctx, log.DebugLevelApi, "missing zone in DB", "zone ID", zoneReg.ZoneId)
+			continue
+		}
 		// Store this zone as a cloudlet on the regional controller
 		lat, long, err := fedcommon.ParseGeoLocation(existingZone.GeoLocation)
 		if err != nil {
@@ -1222,7 +1242,7 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 		}
 		fedCloudlet := edgeproto.Cloudlet{
 			Key: edgeproto.CloudletKey{
-				Name:                  zoneReg.ZoneId,
+				Name:                  existingZone.ZoneId,
 				Organization:          selfFed.OperatorId,
 				FederatedOrganization: partnerFed.OperatorId,
 			},
@@ -1234,24 +1254,23 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 			// TODO: This should be removed as a required field
 			NumDynamicIps: int32(10),
 		}
-		if zoneReg.GuaranteedResources.CPU > 0 {
+		if zoneReg.UpperLimitQuota.CPU > 0 {
 			fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
 				Name:  cloudcommon.ResourceVcpus,
-				Value: uint64(zoneReg.GuaranteedResources.CPU),
+				Value: uint64(zoneReg.UpperLimitQuota.CPU),
 			})
 		}
-		if zoneReg.GuaranteedResources.RAM > 0 {
+		if zoneReg.UpperLimitQuota.RAM > 0 {
 			fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
 				Name:  cloudcommon.ResourceRamMb,
-				Value: uint64(zoneReg.GuaranteedResources.RAM) * 1024,
+				Value: uint64(zoneReg.UpperLimitQuota.RAM) * 1024, // Received RAM is in GBs
 			})
 		}
-		if zoneReg.GuaranteedResources.Disk > 0 {
+		if zoneReg.UpperLimitQuota.Disk > 0 {
 			fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
 				Name:  cloudcommon.ResourceDisk,
-				Value: uint64(zoneReg.GuaranteedResources.Disk),
+				Value: uint64(zoneReg.UpperLimitQuota.Disk),
 			})
-
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "add partner zone as cloudlet", "key", fedCloudlet.Key)
 		err = ctrlclient.CreateCloudletStream(ctx, rc, &fedCloudlet, connCache, cb)
@@ -1260,7 +1279,7 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 		}
 	}
 
-	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Partner federator zone %q registered successfully", existingZone.ZoneId)))
+	return ormutil.SetReply(c, ormutil.Msg("Partner federator zones registered successfully"))
 }
 
 func DeregisterPartnerFederatorZone(c echo.Context) error {
@@ -1269,7 +1288,7 @@ func DeregisterPartnerFederatorZone(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	reg := ormapi.FederatedPartnerZone{}
+	reg := ormapi.FederatedZoneRegRequest{}
 	if err := c.Bind(&reg); err != nil {
 		return ormutil.BindErr(err)
 	}
@@ -1278,8 +1297,8 @@ func DeregisterPartnerFederatorZone(c echo.Context) error {
 	log.SetTags(span, reg.GetTags())
 
 	// sanity check
-	if reg.ZoneId == "" {
-		return fmt.Errorf("Must specify the zone which is to be deregistered")
+	if len(reg.Zones) == 0 {
+		return fmt.Errorf("Must specify zones to be deregistered")
 	}
 
 	if err := fedAuthorized(ctx, claims.Username, reg.SelfOperatorId); err != nil {
@@ -1297,14 +1316,29 @@ func DeregisterPartnerFederatorZone(c echo.Context) error {
 	}
 
 	// Check if zone exists
+	zonesMap := make(map[string]ormapi.FederatedPartnerZone)
 	db := loggedDB(ctx)
-	existingZone := ormapi.FederatedPartnerZone{}
-	res := db.Where(&reg).First(&existingZone)
-	if !res.RecordNotFound() && res.Error != nil {
-		return ormutil.DbErr(res.Error)
-	}
-	if res.RecordNotFound() {
-		return fmt.Errorf("Zone ID %q not found", reg.ZoneId)
+	for _, inZone := range reg.Zones {
+		existingZone := ormapi.FederatedPartnerZone{}
+		lookup := ormapi.FederatedPartnerZone{
+			FederationName: partnerFed.Name,
+			FederatorZone: ormapi.FederatorZone{
+				OperatorId:  partnerFed.OperatorId,
+				CountryCode: partnerFed.CountryCode,
+				ZoneId:      inZone,
+			},
+		}
+		res := db.Where(&lookup).First(&existingZone)
+		if !res.RecordNotFound() && res.Error != nil {
+			return ormutil.DbErr(res.Error)
+		}
+		if res.RecordNotFound() {
+			return fmt.Errorf("Zone ID %q not found", inZone)
+		}
+		if !existingZone.Registered {
+			return fmt.Errorf("Zone ID %q is already deregistered", inZone)
+		}
+		zonesMap[existingZone.ZoneId] = existingZone
 	}
 
 	rc := &ormutil.RegionContext{}
@@ -1319,29 +1353,31 @@ func DeregisterPartnerFederatorZone(c echo.Context) error {
 	// Delete the zone added as cloudlet from regional controller.
 	// This also ensures that no AppInsts are deployed on the cloudlet
 	// before the zone is deregistered
-	fedCloudlet := edgeproto.Cloudlet{
-		Key: edgeproto.CloudletKey{
-			Name:                  existingZone.ZoneId,
-			Organization:          existingZone.SelfOperatorId,
-			FederatedOrganization: existingZone.OperatorId,
-		},
-	}
-	log.SpanLog(ctx, log.DebugLevelApi, "delete partner zone as cloudlet", "key", fedCloudlet.Key)
-	err = ctrlclient.DeleteCloudletStream(ctx, rc, &fedCloudlet, connCache, cb)
-	if err != nil {
-		return err
+	for _, existingZone := range zonesMap {
+		fedCloudlet := edgeproto.Cloudlet{
+			Key: edgeproto.CloudletKey{
+				Name:                  existingZone.ZoneId,
+				Organization:          existingZone.SelfOperatorId,
+				FederatedOrganization: existingZone.OperatorId,
+			},
+		}
+		log.SpanLog(ctx, log.DebugLevelApi, "delete partner zone as cloudlet", "key", fedCloudlet.Key)
+		err = ctrlclient.DeleteCloudletStream(ctx, rc, &fedCloudlet, connCache, cb)
+		if err != nil && !strings.Contains(err.Error(), fedCloudlet.Key.NotFoundError().Error()) {
+			return err
+		}
 	}
 
 	revision := log.SpanTraceID(ctx)
 
 	// Notify federated partner about zone deregistration
-	opZoneReg := federation.ZoneRequest{
+	opZoneReg := federation.ZoneMultiRequest{
 		RequestId:        revision,
 		OrigFederationId: selfFed.FederationId,
 		DestFederationId: partnerFed.FederationId,
 		Operator:         selfFed.OperatorId,
 		Country:          selfFed.CountryCode,
-		Zone:             existingZone.ZoneId,
+		Zones:            reg.Zones,
 	}
 	err = sendFederationRequest("DELETE", partnerFed.FederationAddr, partnerFed.Name, NoApiKey, federation.OperatorZoneAPI, &opZoneReg, nil)
 	if err != nil {
@@ -1349,13 +1385,15 @@ func DeregisterPartnerFederatorZone(c echo.Context) error {
 	}
 
 	// Mark zone as deregistered in DB
-	existingZone.Revision = revision
-	existingZone.Registered = false
-	err = db.Save(&existingZone).Error
-	if err != nil {
-		return ormutil.DbErr(err)
+	for _, existingZone := range zonesMap {
+		existingZone.Revision = revision
+		existingZone.Registered = false
+		err = db.Save(&existingZone).Error
+		if err != nil {
+			return ormutil.DbErr(err)
+		}
 	}
-	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Partner federator zone %q deregistered successfully", existingZone.ZoneId)))
+	return ormutil.SetReply(c, ormutil.Msg("Partner federator zones deregistered successfully"))
 }
 
 // Creates a directed federation between self federator and partner federator.

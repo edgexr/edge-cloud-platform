@@ -9,10 +9,13 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
+	"github.com/lib/pq"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/gormlog"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -43,9 +46,9 @@ func (p *PartnerApi) InitAPIs(e *echo.Echo) {
 	e.PUT(OperatorPartnerAPI, p.FederationOperatorPartnerUpdate)
 	// Remove existing federation with a partner federator
 	e.DELETE(OperatorPartnerAPI, p.FederationOperatorPartnerDelete)
-	// Register a partner federator zone
+	// Partner registers self federator zones
 	e.POST(OperatorZoneAPI, p.FederationOperatorZoneRegister)
-	// Deregister a partner federator zone
+	// Partner deregisters self federator zones
 	e.DELETE(OperatorZoneAPI, p.FederationOperatorZoneDeRegister)
 	// Notify partner federator about a new zone being added
 	e.POST(OperatorNotifyZoneAPI, p.FederationOperatorZoneShare)
@@ -63,11 +66,19 @@ func AuthAPIKey(next echo.HandlerFunc) echo.HandlerFunc {
 			apiKey = auth[l+1:]
 		}
 		if apiKey == "" {
-			// if no api key found, return a 400 err
-			return &echo.HTTPError{
-				Code:     http.StatusBadRequest,
-				Message:  "no bearer token found",
-				Internal: fmt.Errorf("no token found for Authorization Bearer"),
+			// Partner federator is using x-api-key for API key-based auth,
+			// which will be changed in the future to use Authorization header.
+			// So for now, we will support both.
+			auth = c.Request().Header.Get("x-api-key")
+			if len(auth) > 0 {
+				apiKey = auth
+			} else {
+				// if no api key found, return a 400 err
+				return &echo.HTTPError{
+					Code:     http.StatusBadRequest,
+					Message:  "api key not found in bearer token or x-api-key",
+					Internal: fmt.Errorf("api key not found in bearer token or x-api-key"),
+				}
 			}
 		}
 		c.Set("apikey", apiKey)
@@ -130,7 +141,7 @@ func (p *PartnerApi) ValidateAndGetFederatorInfo(c echo.Context, origKey, destKe
 		return nil, nil, ormutil.DbErr(res.Error)
 	}
 	// validate api key
-	matches, err := ormutil.PasswordMatches(apiKey, partnerFed.ApiKeyHash, partnerFed.Salt, partnerFed.Iter)
+	matches, err := ormutil.PasswordMatches(apiKey, selfFed.ApiKeyHash, selfFed.Salt, selfFed.Iter)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "apiKeyId matches err", "err", err)
 	}
@@ -333,6 +344,68 @@ func (p *PartnerApi) FederationOperatorPartnerDelete(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Deleted partner federation successfully"))
 }
 
+func (p *PartnerApi) GetZoneResourcesUpperLimit(ctx context.Context, region, operatorOrg string, cloudlets pq.StringArray) (map[string]uint64, error) {
+	log.SpanLog(ctx, log.DebugLevelApi, "get zone resources upper limit", "org", operatorOrg, "cloudlets", cloudlets)
+	rc := ormutil.RegionContext{
+		Region:    region,
+		SkipAuthz: true,
+		Database:  p.Database,
+	}
+	// get supported resources upper limit values
+	totalRes := map[string]uint64{
+		cloudcommon.ResourceRamMb: 0,
+		cloudcommon.ResourceVcpus: 0,
+		cloudcommon.ResourceDisk:  0,
+	}
+	for _, cloudletName := range cloudlets {
+		cloudletRes := map[string]uint64{
+			cloudcommon.ResourceRamMb: 0,
+			cloudcommon.ResourceVcpus: 0,
+			cloudcommon.ResourceDisk:  0,
+		}
+		cloudletKey := edgeproto.CloudletKey{
+			Name:         string(cloudletName),
+			Organization: operatorOrg,
+		}
+		err := ctrlclient.ShowCloudletStream(
+			ctx, &rc, &edgeproto.Cloudlet{Key: cloudletKey}, p.ConnCache, nil,
+			func(cloudlet *edgeproto.Cloudlet) error {
+				for _, resQuota := range cloudlet.ResourceQuotas {
+					if _, ok := cloudletRes[resQuota.Name]; ok {
+						cloudletRes[resQuota.Name] += resQuota.Value
+					}
+				}
+				return nil
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		// If resource quota is empty, then use infra max value as the
+		// upper limit quota of the cloudlet resources
+		err = ctrlclient.ShowCloudletInfoStream(
+			ctx, &rc, &edgeproto.CloudletInfo{Key: cloudletKey}, p.ConnCache, nil,
+			func(cloudletInfo *edgeproto.CloudletInfo) error {
+				for _, res := range cloudletInfo.ResourcesSnapshot.Info {
+					if val, ok := cloudletRes[res.Name]; ok && val == 0 {
+						cloudletRes[res.Name] += res.InfraMaxValue
+					}
+				}
+				return nil
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range cloudletRes {
+			if _, ok := totalRes[k]; ok {
+				totalRes[k] += v
+			}
+		}
+	}
+	return totalRes, nil
+}
+
 // Remote partner federator sends this request to us to register
 // our zone i.e cloudlet. Once our cloudlet is registered,
 // remote partner federator can then make it accessible to its
@@ -342,6 +415,9 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 	opRegReq := OperatorZoneRegister{}
 	if err := c.Bind(&opRegReq); err != nil {
 		return err
+	}
+	if len(opRegReq.Zones) == 0 {
+		return fmt.Errorf("Must specify zones")
 	}
 	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
 		c,
@@ -380,6 +456,34 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 			return fmt.Errorf("Zone ID %q is already registered by partner federator %s", zoneId,
 				partnerFed.FederationId)
 		}
+
+		zlookup := ormapi.FederatorZone{
+			ZoneId: zoneId,
+		}
+		fedZone := ormapi.FederatorZone{}
+		err = db.Where(&zlookup).First(&fedZone).Error
+		if err != nil {
+			return ormutil.DbErr(err)
+		}
+		if fedZone.ZoneId == "" {
+			return fmt.Errorf("Zone ID %q does not exist", zoneId)
+		}
+		zoneResLimit, err := p.GetZoneResourcesUpperLimit(ctx, fedZone.Region, fedZone.OperatorId, fedZone.Cloudlets)
+		if err != nil {
+			// ignore if failed to find upper limit for now
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to get zone resources upper limit", "zone", fedZone.ZoneId, "err", err)
+		}
+		upperLimitQuota := ZoneResourceInfo{}
+		if val, ok := zoneResLimit[cloudcommon.ResourceVcpus]; ok {
+			upperLimitQuota.CPU = int64(val)
+		}
+		if val, ok := zoneResLimit[cloudcommon.ResourceRamMb]; ok {
+			upperLimitQuota.RAM = int64(val) / 1024 // RAM is in GBs
+		}
+		if val, ok := zoneResLimit[cloudcommon.ResourceDisk]; ok {
+			upperLimitQuota.Disk = int64(val)
+		}
+
 		existingZone.Registered = true
 		existingZone.Revision = opRegReq.RequestId
 		if err := db.Save(&existingZone).Error; err != nil {
@@ -388,8 +492,13 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 		zoneRegDetails = append(zoneRegDetails, ZoneRegisterDetails{
 			ZoneId:            zoneId,
 			RegistrationToken: selfFed.FederationId,
+			UpperLimitQuota:   upperLimitQuota,
+			// Guaranteed resources are the resources that you can most definitely utilize
+			// from an operations standpoint, going beyond the guaranteed resources limit
+			// would likely mean some form of compromise in service uptime.
+			// In our case, upper limit quota is the guaranteed resources
+			GuaranteedResources: upperLimitQuota,
 		})
-
 	}
 	// Share zone details
 	resp := OperatorZoneRegisterResponse{}
@@ -406,12 +515,12 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 // to remote partner federator's developers or subscribers
 func (p *PartnerApi) FederationOperatorZoneDeRegister(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	opRegReq := ZoneRequest{}
+	opRegReq := ZoneMultiRequest{}
 	if err := c.Bind(&opRegReq); err != nil {
 		return err
 	}
-	if opRegReq.Zone == "" {
-		return fmt.Errorf("Must specify zone ID")
+	if len(opRegReq.Zones) == 0 {
+		return fmt.Errorf("Must specify zones")
 	}
 	_, partnerFed, err := p.ValidateAndGetFederatorInfo(
 		c,
@@ -429,37 +538,41 @@ func (p *PartnerApi) FederationOperatorZoneDeRegister(c echo.Context) error {
 			partnerFed.FederationId)
 	}
 
-	// Check if zone exists
 	db := p.loggedDB(ctx)
-	zoneId := opRegReq.Zone
-	lookup := ormapi.FederatedSelfZone{
-		ZoneId:         zoneId,
-		FederationName: partnerFed.Name,
-	}
-	existingZone := ormapi.FederatedSelfZone{}
-	err = db.Where(&lookup).First(&existingZone).Error
-	if err != nil {
-		return ormutil.DbErr(err)
-	}
-	if existingZone.ZoneId == "" {
-		return fmt.Errorf("Zone ID %q not shared with partner federator %s", zoneId,
-			partnerFed.FederationId)
-	}
-	if !existingZone.Registered {
-		return fmt.Errorf("Zone ID %q is not registered by partner federator %s", zoneId,
-			partnerFed.FederationId)
+	zones := []ormapi.FederatedSelfZone{}
+	for _, zoneId := range opRegReq.Zones {
+		lookup := ormapi.FederatedSelfZone{
+			ZoneId:         zoneId,
+			FederationName: partnerFed.Name,
+		}
+		existingZone := ormapi.FederatedSelfZone{}
+		err = db.Where(&lookup).First(&existingZone).Error
+		if err != nil {
+			return ormutil.DbErr(err)
+		}
+		if existingZone.ZoneId == "" {
+			return fmt.Errorf("Zone ID %q not shared with partner federator %s", zoneId,
+				partnerFed.FederationId)
+		}
+		if !existingZone.Registered {
+			return fmt.Errorf("Zone ID %q is not registered by partner federator %s", zoneId,
+				partnerFed.FederationId)
+		}
+		zones = append(zones, existingZone)
 	}
 
 	// TODO: make sure no AppInsts are deployed on the cloudlet
 	//       before the zone is deregistered
 
-	existingZone.Registered = false
-	existingZone.Revision = opRegReq.RequestId
-	if err := db.Save(&existingZone).Error; err != nil {
-		return ormutil.DbErr(err)
+	for _, existingZone := range zones {
+		existingZone.Registered = false
+		existingZone.Revision = opRegReq.RequestId
+		if err := db.Save(&existingZone).Error; err != nil {
+			return ormutil.DbErr(err)
+		}
 	}
 
-	return c.JSON(http.StatusOK, "Zone deregistered successfully")
+	return c.JSON(http.StatusOK, "Zone(s) deregistered successfully")
 }
 
 // Remote partner federator sends this request to us to share its zone.
@@ -520,7 +633,7 @@ func (p *PartnerApi) FederationOperatorZoneShare(c echo.Context) error {
 // one of its zone with us
 func (p *PartnerApi) FederationOperatorZoneUnShare(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	opZone := ZoneRequest{}
+	opZone := ZoneSingleRequest{}
 	if err := c.Bind(&opZone); err != nil {
 		return err
 	}

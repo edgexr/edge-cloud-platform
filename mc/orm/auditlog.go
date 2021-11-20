@@ -258,9 +258,9 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 					} else {
 						response = string(resBody)
 					}
-				} else if strings.Contains(req.RequestURI, "/federation/self/generateapikey") ||
-					strings.Contains(req.RequestURI, "/federation/create") {
-					resp := ormapi.FederationApiKey{}
+				} else if strings.Contains(req.RequestURI, "/federator/self/generateapikey") ||
+					strings.Contains(req.RequestURI, "/federator/create") {
+					resp := ormapi.Federation{}
 					err := json.Unmarshal(resBody, &resp)
 					if err == nil {
 						resp.ApiKey = ""

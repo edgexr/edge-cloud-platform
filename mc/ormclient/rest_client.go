@@ -136,6 +136,7 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{})
 	req.Header.Set("Content-Type", "application/json")
 	if token != "" {
 		req.Header.Add("Authorization", "Bearer "+token)
+		req.Header.Add("x-api-key", token)
 	}
 	tlsConfig := &tls.Config{}
 	if s.SkipVerify {

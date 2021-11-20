@@ -818,6 +818,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/federator/self/update", UpdateSelfFederator)
 	auth.POST("/federator/self/delete", DeleteSelfFederator)
 	auth.POST("/federator/self/show", ShowSelfFederator)
+	auth.POST("/federator/self/generateapikey", GenerateSelfFederatorAPIKey)
 	auth.POST("/federator/self/zone/create", CreateSelfFederatorZone)
 	auth.POST("/federator/self/zone/delete", DeleteSelfFederatorZone)
 	auth.POST("/federator/self/zone/show", ShowSelfFederatorZone)
@@ -830,7 +831,6 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/federation/register", RegisterFederation)
 	auth.POST("/federation/deregister", DeregisterFederation)
 	auth.POST("/federation/partner/setapikey", SetPartnerFederationAPIKey)
-	auth.POST("/federation/self/generateapikey", GenerateSelfFederationAPIKey)
 	auth.POST("/federation/show", ShowFederation)
 	auth.POST("/federation/self/zone/show", ShowFederatedSelfZone)
 	auth.POST("/federation/partner/zone/show", ShowFederatedPartnerZone)
@@ -928,7 +928,8 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		federationEcho.HideBanner = true
 		federationEcho.Binder = &CustomBinder{}
 
-		federationEcho.Use(logger, federation.AuthAPIKey)
+		// RateLimit based on partner's federation ID if present or else use partner's IP
+		federationEcho.Use(logger, federation.AuthAPIKey, FederationRateLimit)
 		server.federationEcho = federationEcho
 
 		partnerApi := federation.PartnerApi{

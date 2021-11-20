@@ -154,6 +154,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 50
+      - name: RAM
+        value: 40960
     - key:
         organization: dmuus
         name: partner1-cloud-2
@@ -175,6 +180,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 20
+      - name: RAM
+        value: 40960
     - key:
         organization: dmuus
         name: partner2-cloud-1
@@ -196,6 +206,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 50
+      - name: RAM
+        value: 40960
     - key:
         organization: dmuus
         name: partner2-cloud-2
@@ -217,6 +232,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 20
+      - name: RAM
+        value: 40960
     - key:
         organization: enterprise
         name: partner1-cloud-1
@@ -238,6 +258,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 50
+      - name: RAM
+        value: 40960
     - key:
         organization: enterprise
         name: partner1-cloud-2
@@ -259,6 +284,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 20
+      - name: RAM
+        value: 40960
     - key:
         organization: enterprise
         name: partner2-cloud-1
@@ -280,6 +310,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 50
+      - name: RAM
+        value: 40960
     - key:
         organization: enterprise
         name: partner2-cloud-2
@@ -301,6 +336,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 20
+      - name: RAM
+        value: 40960
     flavors:
     - key:
         name: x1.small
@@ -715,6 +755,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 50
+      - name: RAM
+        value: 40960
     - key:
         organization: dmuus
         name: partner1-cloud-2
@@ -736,6 +781,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 20
+      - name: RAM
+        value: 40960
     - key:
         organization: dmuus
         name: partner2-cloud-1
@@ -757,6 +807,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 50
+      - name: RAM
+        value: 40960
     - key:
         organization: dmuus
         name: partner2-cloud-2
@@ -778,6 +833,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 20
+      - name: RAM
+        value: 40960
     - key:
         organization: enterprise
         name: partner1-cloud-1
@@ -799,6 +859,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 50
+      - name: RAM
+        value: 40960
     - key:
         organization: enterprise
         name: partner1-cloud-2
@@ -820,6 +885,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 20
+      - name: RAM
+        value: 40960
     - key:
         organization: enterprise
         name: partner2-cloud-1
@@ -841,6 +911,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 50
+      - name: RAM
+        value: 40960
     - key:
         organization: enterprise
         name: partner2-cloud-2
@@ -862,6 +937,11 @@ regiondata:
         -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       defaultresourcealertthreshold: 80
+      resourcequotas:
+      - name: vCPUs
+        value: 20
+      - name: RAM
+        value: 40960
     cloudletinfos:
     - key:
         organization: dmuus
