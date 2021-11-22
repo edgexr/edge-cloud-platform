@@ -1173,7 +1173,7 @@ func showMcClientAppMetrics(uri, token string, targets *MetricTargets, rc *bool)
 		if selector == "latency" {
 			clientAppUsageQuery.LocationTile = targets.LocationTileLatency
 		} else {
-			clientAppUsageQuery.LocationTile = ""
+			clientAppUsageQuery.LocationTile = targets.LocationTileDeviceInfo
 		}
 		clientAppUsageQuery.Selector = selector
 		clientAppUsageMetric, status, err := mcClient.ShowClientAppUsageMetrics(uri, token, &clientAppUsageQuery)
