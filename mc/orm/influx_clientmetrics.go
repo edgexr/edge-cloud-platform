@@ -455,9 +455,7 @@ func validateClientAppUsageMetricReq(req *ormapi.RegionClientAppUsageMetrics, se
 			return fmt.Errorf("DeviceCarrier not allowed for appinst latency metric")
 		}
 	case "deviceinfo":
-		if req.LocationTile != "" {
-			return fmt.Errorf("LocationTile not allowed for appinst deviceinfo metric")
-		}
+		// all options are valid for deviceinfo
 	default:
 		return fmt.Errorf("Provided selector \"%s\" is not valid, must provide only one of \"%s\"", selector, strings.Join(ormapi.ClientAppUsageSelectors, "\", \""))
 	}
