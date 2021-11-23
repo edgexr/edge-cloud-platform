@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -33,8 +34,21 @@ type K8sBareMetalPlatform struct {
 	externalIps        []string
 }
 
+func (k *K8sBareMetalPlatform) GetDefaultCluster(cloudletKey *edgeproto.CloudletKey) *edgeproto.ClusterInst {
+	defCluster := edgeproto.ClusterInst{
+		Key: edgeproto.ClusterInstKey{
+			CloudletKey: *cloudletKey,
+			ClusterKey: edgeproto.ClusterKey{
+				Name: cloudcommon.DefaultClust,
+			},
+		},
+	}
+	return &defCluster
+}
+
+// GetCloudletKubeConfig returns the kconf for the default cluster
 func (k *K8sBareMetalPlatform) GetCloudletKubeConfig(cloudletKey *edgeproto.CloudletKey) string {
-	return fmt.Sprintf("%s-%s", cloudletKey.Name, "cloudlet-kubeconfig")
+	return k8smgmt.GetKconfName(k.GetDefaultCluster(cloudletKey))
 }
 
 func (o *K8sBareMetalPlatform) GetFeatures() *platform.Features {

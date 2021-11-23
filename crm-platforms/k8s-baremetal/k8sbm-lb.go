@@ -22,10 +22,9 @@ type LbInfo struct {
 	LbListenDevName string
 }
 
-func (k *K8sBareMetalPlatform) GetSharedLBName(ctx context.Context, key *edgeproto.CloudletKey) string {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetSharedLBName", "key", key)
-	name := cloudcommon.GetRootLBFQDN(key, k.commonPf.PlatformConfig.AppDNSRoot)
-	return name
+// GetSharedLBName returns the "dedicated" FQDN of the default cluster
+func (k *K8sBareMetalPlatform) GetSharedLBName(ctx context.Context, cloudletKey *edgeproto.CloudletKey) string {
+	return cloudcommon.GetDedicatedLBFQDN(cloudletKey, &k.GetDefaultCluster(cloudletKey).Key.ClusterKey, k.commonPf.PlatformConfig.AppDNSRoot)
 }
 
 func (k *K8sBareMetalPlatform) GetLbName(ctx context.Context, appInst *edgeproto.AppInst) string {
