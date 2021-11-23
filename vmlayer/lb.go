@@ -638,6 +638,24 @@ func (v *VMPlatform) GetAllRootLBClients(ctx context.Context) (map[string]ssh.Cl
 	return rootlbClients, nil
 }
 
+func (v *VMPlatform) GetRootLBClientForClusterInstKey(ctx context.Context, clusterInstKey *edgeproto.ClusterInstKey) (map[string]ssh.Client, error) {
+	rootLBClients := make(map[string]ssh.Client)
+
+	var clusterInst edgeproto.ClusterInst
+	found := v.Caches.ClusterInstCache.Get(clusterInstKey, &clusterInst)
+	if !found {
+		return nil, fmt.Errorf("Unable to get clusterInst %v", clusterInstKey.GetKeyString())
+	}
+	lbName := v.VMProperties.GetRootLBNameForCluster(ctx, &clusterInst)
+	client, err := v.GetClusterPlatformClient(ctx, &clusterInst, cloudcommon.ClientTypeRootLB)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get rootLB client for dedicated cluster", "key", clusterInst.Key, "error", err)
+		return nil, fmt.Errorf("Unable to get client from clusterInst %v", clusterInstKey.GetKeyString())
+	}
+	rootLBClients[lbName] = client
+	return rootLBClients, nil
+}
+
 // GetRootLBClients gets all RootLB Clients for dedicated LBs
 func (v *VMPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
 	if v.Caches == nil {

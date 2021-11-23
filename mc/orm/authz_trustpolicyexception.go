@@ -105,11 +105,6 @@ func authzUpdateTrustPolicyException(ctx context.Context, region, username strin
 		return err
 	}
 
-	if authz.allowAll {
-		// Admin
-		return fmt.Errorf("Admin not allowed to update TrustPolicyException")
-	}
-
 	if _, found := authz.allowedOperOrgs[tpe.Key.CloudletPoolKey.Organization]; found {
 		// Operator
 		if err := authorized(ctx, username, tpe.Key.CloudletPoolKey.Organization, resource, action); err != nil {

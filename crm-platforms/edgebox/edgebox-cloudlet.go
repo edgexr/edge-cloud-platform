@@ -38,12 +38,12 @@ func (e *EdgeboxPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *ed
 	return nil
 }
 
-func (e *EdgeboxPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException) error {
+func (e *EdgeboxPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, clusterInstKey *edgeproto.ClusterInstKey) error {
 	log.DebugLog(log.DebugLevelInfra, "update edgebox TrustPolicyException", "policy", TrustPolicyException)
 	return nil
 }
 
-func (e *EdgeboxPlatform) DeleteTrustPolicyException(ctx context.Context, TrustPolicyExceptionKey *edgeproto.TrustPolicyExceptionKey) error {
+func (e *EdgeboxPlatform) DeleteTrustPolicyException(ctx context.Context, TrustPolicyExceptionKey *edgeproto.TrustPolicyExceptionKey, clusterInstKey *edgeproto.ClusterInstKey) error {
 	log.DebugLog(log.DebugLevelInfra, "delete edgebox TrustPolicyException", "policyKey", TrustPolicyExceptionKey)
 	return nil
 }
