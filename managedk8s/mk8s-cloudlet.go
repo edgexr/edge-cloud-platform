@@ -107,11 +107,11 @@ func (m *ManagedK8sPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy 
 	log.DebugLog(log.DebugLevelInfra, "update ManagedK8sPlatform TrustPolicy", "policy", TrustPolicy)
 	return fmt.Errorf("UpdateTrustPolicy not supported on managed k8s platform: %s", m.Type)
 }
-func (m *ManagedK8sPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException) error {
+func (m *ManagedK8sPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, clusterInstKey *edgeproto.ClusterInstKey) error {
 	return fmt.Errorf("UpdateTrustPolicyException TODO")
 }
 
-func (m *ManagedK8sPlatform) DeleteTrustPolicyException(ctx context.Context, TrustPolicyExceptionKey *edgeproto.TrustPolicyExceptionKey) error {
+func (m *ManagedK8sPlatform) DeleteTrustPolicyException(ctx context.Context, TrustPolicyExceptionKey *edgeproto.TrustPolicyExceptionKey, clusterInstKey *edgeproto.ClusterInstKey) error {
 	return fmt.Errorf("DeleteTrustPolicyException TODO")
 }
 

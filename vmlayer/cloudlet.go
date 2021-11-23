@@ -375,10 +375,10 @@ func (v *VMPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgepro
 	return v.VMProvider.ConfigureCloudletSecurityRules(ctx, egressRestricted, TrustPolicy, rootlbClients, ActionUpdate, edgeproto.DummyUpdateCallback)
 }
 
-func (v *VMPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException) error {
+func (v *VMPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, clusterInstKey *edgeproto.ClusterInstKey) error {
 	log.DebugLog(log.DebugLevelInfra, "update VMPlatform TrustPolicyException", "policy", TrustPolicyException)
 
-	rootlbClients, err := v.GetAllRootLBClients(ctx)
+	rootlbClients, err := v.GetRootLBClientForClusterInstKey(ctx, clusterInstKey)
 	if err != nil {
 		return fmt.Errorf("Unable to get rootlb clients - %v", err)
 	}
@@ -386,10 +386,10 @@ func (v *VMPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicy
 	return v.VMProvider.ConfigureTrustPolicyExceptionSecurityRules(ctx, TrustPolicyException, rootlbClients, ActionCreate, edgeproto.DummyUpdateCallback)
 }
 
-func (v *VMPlatform) DeleteTrustPolicyException(ctx context.Context, TrustPolicyExceptionKey *edgeproto.TrustPolicyExceptionKey) error {
+func (v *VMPlatform) DeleteTrustPolicyException(ctx context.Context, TrustPolicyExceptionKey *edgeproto.TrustPolicyExceptionKey, clusterInstKey *edgeproto.ClusterInstKey) error {
 	log.DebugLog(log.DebugLevelInfra, "Delete VMPlatform TrustPolicyException", "policyKey", TrustPolicyExceptionKey)
 
-	rootlbClients, err := v.GetAllRootLBClients(ctx)
+	rootlbClients, err := v.GetRootLBClientForClusterInstKey(ctx, clusterInstKey)
 	if err != nil {
 		return fmt.Errorf("Unable to get rootlb clients - %v", err)
 	}
