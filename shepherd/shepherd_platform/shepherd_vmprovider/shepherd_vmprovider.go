@@ -54,6 +54,7 @@ func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig
 		return err
 	}
 
+	s.VMPlatform.Caches = platformCaches
 	s.VMPlatform.VMProvider.InitData(ctx, platformCaches)
 	// Override cloudlet internal updated callback so CloudletAccessToken updates from the CRM can be stored
 	platformCaches.CloudletInternalCache.SetUpdatedCb(s.vmProviderCloudletCb)
