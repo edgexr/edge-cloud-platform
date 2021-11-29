@@ -22,7 +22,7 @@
   status: 200
   starttime: "2020-04-22T13:16:44.281831-07:00"
   duration: 2.39ms
-  request: '{"AdminPasswordMinCrackTimeSec":63072000,"DisableRateLimit":true,"MaxMetricsDataPoints":10000,"NotifyEmailAddress":"support@mobiledgex.com","PasswordMinCrackTimeSec":2592000,"RateLimitMaxTrackedIps":10000,"RateLimitMaxTrackedUsers":10000,"SkipVerifyEmail":true,"UserApiKeyCreateLimit":10}'
+  request: '{"AdminPasswordMinCrackTimeSec":63072000,"DisableRateLimit":true,"FailedLoginLockoutThreshold1":3,"FailedLoginLockoutThreshold2":10,"FailedLoginLockoutTimeSec1":60,"FailedLoginLockoutTimeSec2":300,"MaxMetricsDataPoints":10000,"NotifyEmailAddress":"support@mobiledgex.com","PasswordMinCrackTimeSec":2592000,"RateLimitMaxTrackedIps":10000,"RateLimitMaxTrackedUsers":10000,"SkipVerifyEmail":true,"UserApiKeyCreateLimit":10}'
   traceid: 7add8f1b8f2a8aaa
 - operationname: /api/v1/login
   username: mexadmin
@@ -73,7 +73,7 @@
   status: 200
   starttime: "2019-09-26T15:31:35.063628-07:00"
   duration: 4.773ms
-  request: '{"Name":"user3","Email":"user3@enterprise.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":"","Metadata":""}'
+  request: '{"Name":"user3","Email":"user3@enterprise.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":"","Metadata":"","LastLogin":"0001-01-01T00:00:00Z","LastFailedLogin":"0001-01-01T00:00:00Z","FailedLogins":0}'
   response: '{"message":"User deleted"}'
   traceid: 5e2e18be94124fbb
 - operationname: /api/v1/auth/user/delete
@@ -82,6 +82,6 @@
   status: 200
   starttime: "2019-09-26T15:31:35.055474-07:00"
   duration: 4.827ms
-  request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":"","Metadata":""}'
+  request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":"","Metadata":"","LastLogin":"0001-01-01T00:00:00Z","LastFailedLogin":"0001-01-01T00:00:00Z","FailedLogins":0}'
   response: '{"message":"User deleted"}'
   traceid: e04509e7b06b2c5

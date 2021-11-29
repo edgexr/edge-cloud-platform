@@ -6,3 +6,7 @@ maxmetricsdatapoints: 10000
 userapikeycreatelimit: 10
 ratelimitmaxtrackedips: 10000
 ratelimitmaxtrackedusers: 10000
+failedloginlockoutthreshold1: 3
+failedloginlockouttimesec1: 60
+failedloginlockoutthreshold2: 10
+failedloginlockouttimesec2: 300

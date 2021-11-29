@@ -689,6 +689,7 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(users))
 
+	testFailedLoginLockout(t, ctx, uri, token, mcClient)
 	testImagePaths(t, ctx, mcClient, uri, token)
 	testLockedUsers(t, uri, mcClient)
 	testPasswordStrength(t, ctx, mcClient, uri, token)
@@ -1148,4 +1149,179 @@ func getUnitTestClientRuns() []mctestclient.ClientRun {
 	cliClient.RunInline = true
 	cliClient.InjectRequiredArgs = true
 	return []mctestclient.ClientRun{restClient, cliClient}
+}
+
+func testFailedLoginLockout(t *testing.T, ctx context.Context, uri, superTok string, mcClient *mctestclient.Client) {
+	origBadAuthDelay := BadAuthDelay
+	BadAuthDelay = 0
+	defer func() {
+		BadAuthDelay = origBadAuthDelay
+	}()
+
+	testUser := ormapi.User{
+		Name:     "Lockout",
+		Email:    "lockout@gmail.com",
+		Passhash: "lockout-password-blue-dog-cat",
+	}
+	_, status, err := mcClient.CreateUser(uri, &ormapi.CreateUser{User: testUser})
+	require.Nil(t, err, "create user")
+	require.Equal(t, http.StatusOK, status, "create user status")
+
+	// These helper funcs are for actions that are run multiple times
+	expectLoginOk := func() string {
+		token, isAdmin, err := mcClient.DoLogin(uri, testUser.Name, testUser.Passhash, NoOTP, NoApiKeyId, NoApiKey)
+		require.Nil(t, err, "login as testUser")
+		require.False(t, isAdmin)
+		return token
+	}
+	expectLoginFailed := func() {
+		_, _, err = mcClient.DoLogin(uri, testUser.Name, "badpass", NoOTP, NoApiKeyId, NoApiKey)
+		require.NotNil(t, err)
+		require.Contains(t, err.Error(), "Invalid username or password")
+	}
+	expectLoginLockout := func(cnt int, pass string) {
+		_, _, err = mcClient.DoLogin(uri, testUser.Name, pass, NoOTP, NoApiKeyId, NoApiKey)
+		require.NotNil(t, err)
+		errMsg := fmt.Sprintf("Login temporarily disabled due to %d failed login attempts, please try again", cnt)
+		require.Contains(t, err.Error(), errMsg)
+	}
+
+	// check that user login works
+	token := expectLoginOk()
+
+	// trigger threshold1 lockout
+	threshold1 := defaultConfig.FailedLoginLockoutThreshold1
+	for ii := 0; ii < threshold1; ii++ {
+		expectLoginFailed()
+	}
+	// next attempt should be locked out
+	expectLoginLockout(threshold1, "badpass")
+	expectLoginLockout(threshold1, "badpass")
+	// even further attempts with correct password are locked out
+	expectLoginLockout(threshold1, testUser.Passhash)
+	expectLoginLockout(threshold1, testUser.Passhash)
+
+	// configure the threshold1 lockout time to 0,
+	// this effectively disables the threshold1 lockout,
+	// so we can hit and test threshold 2.
+	configReq := &cli.MapData{
+		Namespace: cli.ArgsNamespace,
+		Data:      make(map[string]interface{}),
+	}
+	configReq.Data["failedloginlockouttimesec1"] = 0
+	status, err = mcClient.UpdateConfig(uri, superTok, configReq)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+
+	threshold2 := defaultConfig.FailedLoginLockoutThreshold2
+	for ii := 0; ii < threshold2-threshold1; ii++ {
+		expectLoginFailed()
+	}
+	// login with the correct password is still disabled
+	// next attempt should be locked out
+	expectLoginLockout(threshold2, "badpass")
+	expectLoginLockout(threshold2, "badpass")
+	// even further attempts with correct password are locked out
+	expectLoginLockout(threshold2, testUser.Passhash)
+	expectLoginLockout(threshold2, testUser.Passhash)
+
+	// change threshold2 to a short timeout so we can test it.
+	configReq.Data["failedloginlockouttimesec2"] = 1
+	status, err = mcClient.UpdateConfig(uri, superTok, configReq)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+
+	time.Sleep(time.Second)
+	// login should work now
+	expectLoginOk()
+
+	// change back threshold
+	configReq.Data["failedloginlockouttimesec2"] = 300
+	status, err = mcClient.UpdateConfig(uri, superTok, configReq)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+
+	// user is not locked out because they successfully logged in
+	expectLoginOk()
+
+	// trigger lockout state again
+	for ii := 0; ii < threshold2; ii++ {
+		expectLoginFailed()
+	}
+	// user should be locked out
+	expectLoginLockout(threshold2, testUser.Passhash)
+
+	// user can reset the failed count (as long as they are already logged in)
+	// this can also be done by admin
+	mapData := &cli.MapData{
+		Namespace: cli.ArgsNamespace,
+		Data:      map[string]interface{}{},
+	}
+	mapData.Data["failedlogins"] = 0
+	status, err = mcClient.RestrictedUpdateUser(uri, superTok, mapData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+
+	// user login should now work
+	expectLoginOk()
+
+	// restore modified config
+	BadAuthDelay = 3 * time.Second
+	configReq.Data["failedloginlockouttimesec1"] = defaultConfig.FailedLoginLockoutTimeSec1
+	configReq.Data["failedloginlockouttimesec2"] = defaultConfig.FailedLoginLockoutTimeSec2
+	status, err = mcClient.UpdateConfig(uri, superTok, configReq)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+
+	// check bad config timesec1
+	configReq.Data = map[string]interface{}{
+		"failedloginlockouttimesec1": 1,
+	}
+	_, err = mcClient.UpdateConfig(uri, superTok, configReq)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Failed login lockout time sec 1 of 1s must be greater than or equal to default lockout time of 3s")
+	configReq.Data = map[string]interface{}{
+		"failedloginlockouttimesec1": int64(4294967295454),
+	}
+	_, err = mcClient.UpdateConfig(uri, superTok, configReq)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "cannot be negative")
+	// check bad config timesec2
+	configReq.Data = map[string]interface{}{
+		"failedloginlockouttimesec2": 1,
+	}
+	_, err = mcClient.UpdateConfig(uri, superTok, configReq)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Failed login lockout time sec 2 of 1s must be greater than or equal to lockout time 1 of 1m0s")
+	configReq.Data = map[string]interface{}{
+		"failedloginlockouttimesec2": int64(4294967295454),
+	}
+	_, err = mcClient.UpdateConfig(uri, superTok, configReq)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "cannot be negative")
+	// check bad config threshold1
+	configReq.Data = map[string]interface{}{
+		"failedloginlockoutthreshold1": 0,
+	}
+	_, err = mcClient.UpdateConfig(uri, superTok, configReq)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Failed login lockout threshold 1 cannot be less than or equal to 0")
+	// check bad config threshold2
+	configReq.Data = map[string]interface{}{
+		"failedloginlockoutthreshold2": 0,
+	}
+	_, err = mcClient.UpdateConfig(uri, superTok, configReq)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Failed login lockout threshold 2 cannot be less than or equal to 0")
+	configReq.Data = map[string]interface{}{
+		"failedloginlockoutthreshold2": 1,
+	}
+	_, err = mcClient.UpdateConfig(uri, superTok, configReq)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Failed login lockout threshold 2 of 1 must be greater than threshold 1 of 3")
+
+	// clean up
+	status, err = mcClient.DeleteUser(uri, token, &testUser)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
 }

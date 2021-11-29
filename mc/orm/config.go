@@ -4,6 +4,7 @@ import (
 	"context"
 	fmt "fmt"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -24,6 +25,10 @@ var defaultConfig = ormapi.Config{
 	DisableRateLimit:             false,
 	RateLimitMaxTrackedIps:       10000,
 	RateLimitMaxTrackedUsers:     10000,
+	FailedLoginLockoutThreshold1: 3,
+	FailedLoginLockoutTimeSec1:   60,
+	FailedLoginLockoutThreshold2: 10,
+	FailedLoginLockoutTimeSec2:   300,
 }
 
 func InitConfig(ctx context.Context) error {
@@ -68,6 +73,22 @@ func InitConfig(ctx context.Context) error {
 		config.RateLimitMaxTrackedUsers = defaultConfig.RateLimitMaxTrackedUsers
 		save = true
 	}
+	if config.FailedLoginLockoutThreshold1 == 0 {
+		config.FailedLoginLockoutThreshold1 = defaultConfig.FailedLoginLockoutThreshold1
+		save = true
+	}
+	if config.FailedLoginLockoutTimeSec1 == 0 {
+		config.FailedLoginLockoutTimeSec1 = defaultConfig.FailedLoginLockoutTimeSec1
+		save = true
+	}
+	if config.FailedLoginLockoutThreshold2 == 0 {
+		config.FailedLoginLockoutThreshold2 = defaultConfig.FailedLoginLockoutThreshold2
+		save = true
+	}
+	if config.FailedLoginLockoutTimeSec2 == 0 {
+		config.FailedLoginLockoutTimeSec2 = defaultConfig.FailedLoginLockoutTimeSec2
+		save = true
+	}
 	if save {
 		err = db.Save(&config).Error
 		if err != nil {
@@ -107,6 +128,31 @@ func UpdateConfig(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+	}
+	if config.FailedLoginLockoutThreshold1 <= 0 {
+		return fmt.Errorf("Failed login lockout threshold 1 cannot be less than or equal to 0")
+	}
+	if config.FailedLoginLockoutThreshold2 <= 0 {
+		return fmt.Errorf("Failed login lockout threshold 2 cannot be less than or equal to 0")
+	}
+	if config.FailedLoginLockoutThreshold2 <= config.FailedLoginLockoutThreshold1 {
+		return fmt.Errorf("Failed login lockout threshold 2 of %d must be greater than threshold 1 of %d", config.FailedLoginLockoutThreshold2, config.FailedLoginLockoutThreshold1)
+	}
+	lockoutTime1 := time.Duration(config.FailedLoginLockoutTimeSec1) * time.Second
+	if lockoutTime1 < 0 {
+		// check for duration overflow
+		return fmt.Errorf("Failed login lockout time sec 1 of %s cannot be negative", lockoutTime1.String())
+	}
+	if lockoutTime1 < BadAuthDelay {
+		return fmt.Errorf("Failed login lockout time sec 1 of %s must be greater than or equal to default lockout time of %s", lockoutTime1.String(), BadAuthDelay.String())
+	}
+	lockoutTime2 := time.Duration(config.FailedLoginLockoutTimeSec2) * time.Second
+	if lockoutTime2 < 0 {
+		// check for duration overflow
+		return fmt.Errorf("Failed login lockout time sec 2 of %s cannot be negative", lockoutTime2.String())
+	}
+	if lockoutTime2 < lockoutTime1 {
+		return fmt.Errorf("Failed login lockout time sec 2 of %s must be greater than or equal to lockout time 1 of %s", lockoutTime2.String(), lockoutTime1.String())
 	}
 
 	// Update RateLimitMgr settings
