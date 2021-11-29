@@ -47,6 +47,14 @@ type User struct {
 	TOTPSharedKey string
 	// Metadata
 	Metadata string
+	// Last successful login time
+	// read only: true
+	LastLogin time.Time `json:",omitempty"`
+	// Last failed login time
+	// read only: true
+	LastFailedLogin time.Time `json:",omitempty"`
+	// Number of failed login attempts since last successful login
+	FailedLogins int
 }
 
 type CreateUserApiKey struct {
@@ -215,6 +223,14 @@ type Config struct {
 	RateLimitMaxTrackedIps int
 	// Maximum number of users tracked per API group for rate limiting at MC
 	RateLimitMaxTrackedUsers int
+	// Failed login lockout threshold 1, after this count, lockout time 1 is enabled (default 3)
+	FailedLoginLockoutThreshold1 int
+	// Number of seconds to lock account from logging in after threshold 1 is hit (default 60)
+	FailedLoginLockoutTimeSec1 int
+	// Failed login lockout threshold 2, after this count, lockout time 2 is enabled (default 10)
+	FailedLoginLockoutThreshold2 int
+	// Number of seconds to lock account from logging in after threshold 2 is hit (default 300)
+	FailedLoginLockoutTimeSec2 int
 }
 
 type McRateLimitFlowSettings struct {

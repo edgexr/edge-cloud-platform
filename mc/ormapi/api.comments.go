@@ -3,15 +3,18 @@ package ormapi
 // This is an auto-generated file. DO NOT EDIT directly.
 
 var UserComments = map[string]string{
-	"name":          `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
-	"email":         `User email`,
-	"emailverified": `Email address has been verified`,
-	"familyname":    `Family Name`,
-	"givenname":     `Given Name`,
-	"nickname":      `Nick Name`,
-	"locked":        `Account is locked`,
-	"enabletotp":    `Enable or disable temporary one-time passwords for the account`,
-	"metadata":      `Metadata`,
+	"name":            `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
+	"email":           `User email`,
+	"emailverified":   `Email address has been verified`,
+	"familyname":      `Family Name`,
+	"givenname":       `Given Name`,
+	"nickname":        `Nick Name`,
+	"locked":          `Account is locked`,
+	"enabletotp":      `Enable or disable temporary one-time passwords for the account`,
+	"metadata":        `Metadata`,
+	"lastlogin":       `Last successful login time`,
+	"lastfailedlogin": `Last failed login time`,
+	"failedlogins":    `Number of failed login attempts since last successful login`,
 }
 
 var CreateUserApiKeyComments = map[string]string{
@@ -92,6 +95,10 @@ var ConfigComments = map[string]string{
 	"disableratelimit":             `Toggle to enable and disable MC API rate limiting`,
 	"ratelimitmaxtrackedips":       `Maximum number of IPs tracked per API group for rate limiting at MC`,
 	"ratelimitmaxtrackedusers":     `Maximum number of users tracked per API group for rate limiting at MC`,
+	"failedloginlockoutthreshold1": `Failed login lockout threshold 1, after this count, lockout time 1 is enabled (default 3)`,
+	"failedloginlockouttimesec1":   `Number of seconds to lock account from logging in after threshold 1 is hit (default 60)`,
+	"failedloginlockoutthreshold2": `Failed login lockout threshold 2, after this count, lockout time 2 is enabled (default 10)`,
+	"failedloginlockouttimesec2":   `Number of seconds to lock account from logging in after threshold 2 is hit (default 300)`,
 }
 
 var McRateLimitFlowSettingsComments = map[string]string{
@@ -133,17 +140,20 @@ var RoleComments = map[string]string{
 }
 
 var ShowUserComments = map[string]string{
-	"user.name":          `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
-	"user.email":         `User email`,
-	"user.emailverified": `Email address has been verified`,
-	"user.familyname":    `Family Name`,
-	"user.givenname":     `Given Name`,
-	"user.nickname":      `Nick Name`,
-	"user.locked":        `Account is locked`,
-	"user.enabletotp":    `Enable or disable temporary one-time passwords for the account`,
-	"user.metadata":      `Metadata`,
-	"org":                `Organization name`,
-	"role":               `Role name`,
+	"user.name":            `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
+	"user.email":           `User email`,
+	"user.emailverified":   `Email address has been verified`,
+	"user.familyname":      `Family Name`,
+	"user.givenname":       `Given Name`,
+	"user.nickname":        `Nick Name`,
+	"user.locked":          `Account is locked`,
+	"user.enabletotp":      `Enable or disable temporary one-time passwords for the account`,
+	"user.metadata":        `Metadata`,
+	"user.lastlogin":       `Last successful login time`,
+	"user.lastfailedlogin": `Last failed login time`,
+	"user.failedlogins":    `Number of failed login attempts since last successful login`,
+	"org":                  `Organization name`,
+	"role":                 `Role name`,
 }
 
 var UserLoginComments = map[string]string{
@@ -152,15 +162,18 @@ var UserLoginComments = map[string]string{
 }
 
 var CreateUserComments = map[string]string{
-	"user.name":          `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
-	"user.email":         `User email`,
-	"user.emailverified": `Email address has been verified`,
-	"user.familyname":    `Family Name`,
-	"user.givenname":     `Given Name`,
-	"user.nickname":      `Nick Name`,
-	"user.locked":        `Account is locked`,
-	"user.enabletotp":    `Enable or disable temporary one-time passwords for the account`,
-	"user.metadata":      `Metadata`,
+	"user.name":            `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
+	"user.email":           `User email`,
+	"user.emailverified":   `Email address has been verified`,
+	"user.familyname":      `Family Name`,
+	"user.givenname":       `Given Name`,
+	"user.nickname":        `Nick Name`,
+	"user.locked":          `Account is locked`,
+	"user.enabletotp":      `Enable or disable temporary one-time passwords for the account`,
+	"user.metadata":        `Metadata`,
+	"user.lastlogin":       `Last successful login time`,
+	"user.lastfailedlogin": `Last failed login time`,
+	"user.failedlogins":    `Number of failed login attempts since last successful login`,
 }
 
 var EmailRequestComments = map[string]string{

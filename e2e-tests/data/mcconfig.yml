@@ -7,3 +7,7 @@ userapikeycreatelimit: 10
 disableratelimit: true
 ratelimitmaxtrackedips: 10000
 ratelimitmaxtrackedusers: 10000
+failedloginlockoutthreshold1: 3
+failedloginlockouttimesec1: 60
+failedloginlockoutthreshold2: 10
+failedloginlockouttimesec2: 300

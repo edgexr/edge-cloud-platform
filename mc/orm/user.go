@@ -13,6 +13,7 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
+	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
@@ -92,6 +93,10 @@ func Login(c echo.Context) error {
 	if err := c.Bind(&login); err != nil {
 		return ormutil.BindErr(err)
 	}
+	config, err := getConfig(ctx)
+	if err != nil {
+		return err
+	}
 	db := loggedDB(ctx)
 	user := ormapi.User{}
 	if login.ApiKey != "" || login.ApiKeyId != "" {
@@ -151,14 +156,25 @@ func Login(c echo.Context) error {
 		span.SetTag("username", user.Name)
 		span.SetTag("email", user.Email)
 
+		// check if login is locked due to failed attempt(s)
+		err = checkLoginLocked(&user, config)
+		if err != nil {
+			return err
+		}
 		matches, err := ormutil.PasswordMatches(login.Password, user.Passhash, user.Salt, user.Iter)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "password matches err", "err", err)
 		}
 		if !matches || err != nil {
+			user.FailedLogins += 1
+			user.LastFailedLogin = time.Now()
+			saveUserLogin(ctx, db, &user)
 			time.Sleep(BadAuthDelay)
 			return fmt.Errorf("Invalid username or password")
 		}
+		user.FailedLogins = 0
+		user.LastLogin = time.Now()
+		saveUserLogin(ctx, db, &user)
 	}
 
 	if user.Locked {
@@ -239,6 +255,34 @@ func Login(c echo.Context) error {
 	}
 	c.SetCookie(cookie)
 	return c.JSON(http.StatusOK, ret)
+}
+
+func checkLoginLocked(user *ormapi.User, config *ormapi.Config) error {
+	if user.FailedLogins == 0 {
+		return nil
+	}
+	lockoutDur := time.Duration(0)
+	if user.FailedLogins >= config.FailedLoginLockoutThreshold2 {
+		lockoutDur = time.Duration(config.FailedLoginLockoutTimeSec2) * time.Second
+	} else if user.FailedLogins >= config.FailedLoginLockoutThreshold1 {
+		lockoutDur = time.Duration(config.FailedLoginLockoutTimeSec1) * time.Second
+	} else {
+		lockoutDur = BadAuthDelay
+	}
+	elapsed := time.Since(user.LastFailedLogin)
+
+	if elapsed < lockoutDur {
+		remaining := lockoutDur - elapsed
+		return fmt.Errorf("Login temporarily disabled due to %d failed login attempts, please try again in %s", user.FailedLogins, remaining.String())
+	}
+	return nil
+}
+
+func saveUserLogin(ctx context.Context, db *gorm.DB, user *ormapi.User) {
+	err := db.Save(user).Error
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "save User failed", "err", err)
+	}
 }
 
 func RefreshAuthCookie(c echo.Context) error {
@@ -957,6 +1001,12 @@ func UpdateUser(c echo.Context) error {
 	}
 	if old.PassCrackTimeSec != user.PassCrackTimeSec {
 		return fmt.Errorf("Cannot change passcracktimesec")
+	}
+	if old.LastLogin != user.LastLogin {
+		return fmt.Errorf("Cannot change last login time")
+	}
+	if old.LastFailedLogin != user.LastFailedLogin {
+		return fmt.Errorf("Cannot change last failed login time")
 	}
 
 	// if email changed, need to verify
