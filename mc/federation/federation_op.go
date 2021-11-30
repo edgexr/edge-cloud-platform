@@ -256,11 +256,6 @@ func (p *PartnerApi) FederationOperatorPartnerUpdate(c echo.Context) error {
 		return err
 	}
 
-	if !partnerFed.PartnerRoleAccessToSelfZones {
-		return fmt.Errorf("Federation does not exist with partner federator (id:%q)",
-			partnerFed.FederationId)
-	}
-
 	db := p.loggedDB(ctx)
 	update := false
 	if opConf.MCC != "" {
@@ -615,6 +610,7 @@ func (p *PartnerApi) FederationOperatorZoneShare(c echo.Context) error {
 	zoneObj.CountryCode = partnerFed.CountryCode
 	zoneObj.GeoLocation = opZoneShare.PartnerZone.GeoLocation
 	zoneObj.City = opZoneShare.PartnerZone.City
+	zoneObj.State = opZoneShare.PartnerZone.State
 	zoneObj.Locality = opZoneShare.PartnerZone.Locality
 	zoneObj.Revision = opZoneShare.RequestId
 	if err := db.Create(&zoneObj).Error; err != nil {

@@ -130,6 +130,7 @@ func init() {
 			Name:         "RegisterPartnerFederatorZone",
 			Use:          "register",
 			Short:        "Register Partner Federator Zone",
+			SpecialArgs:  &FederatorZoneRegSpecialArgs,
 			RequiredArgs: strings.Join(FederatedZoneRegArgs, " "),
 			Comments:     ormapi.FederatedZoneRegRequestComments,
 			ReqData:      &ormapi.FederatedZoneRegRequest{},
@@ -140,6 +141,7 @@ func init() {
 			Name:         "DeRegisterPartnerFederatorZone",
 			Use:          "deregister",
 			Short:        "DeRegister Partner Federator Zone",
+			SpecialArgs:  &FederatorZoneRegSpecialArgs,
 			RequiredArgs: strings.Join(FederatedZoneRegArgs, " "),
 			Comments:     ormapi.FederatedZoneRegRequestComments,
 			ReqData:      &ormapi.FederatedZoneRegRequest{},
@@ -300,6 +302,9 @@ var FederationSpecialArgs = map[string]string{
 }
 var FederatorZoneSpecialArgs = map[string]string{
 	"federatorzone.cloudlets": "StringArray",
+}
+var FederatorZoneRegSpecialArgs = map[string]string{
+	"zones": "StringArray",
 }
 
 var FederatorZoneRequiredArgs = []string{

@@ -165,7 +165,7 @@ func fedAuthorized(ctx context.Context, username, operatorId string) error {
 	if operatorId == "" {
 		return fmt.Errorf("Missing self operator ID")
 	}
-	return authorized(ctx, username, operatorId, ResourceCloudlets, ActionManage)
+	return authorized(ctx, username, operatorId, ResourceCloudlets, ActionManage, withRequiresOrg(operatorId))
 }
 
 func GetSelfFederator(ctx context.Context, federationId string) (*ormapi.Federator, error) {
@@ -381,7 +381,9 @@ func UpdateSelfFederator(c echo.Context) error {
 		return err
 	}
 	errOut := ""
-	if partnerFedExists && partnerFed.PartnerRoleAccessToSelfZones {
+	if partnerFedExists &&
+		(partnerFed.PartnerRoleAccessToSelfZones ||
+			partnerFed.PartnerRoleShareZonesWithSelf) {
 		opConf := federation.UpdateMECNetConf{
 			RequestId:        selfFed.Revision,
 			OrigFederationId: selfFed.FederationId,
@@ -783,6 +785,7 @@ func CreateSelfFederatorZone(c echo.Context) error {
 	az.CountryCode = opZone.CountryCode
 	az.ZoneId = opZone.ZoneId
 	az.GeoLocation = opZone.GeoLocation
+	az.City = opZone.City
 	az.State = opZone.State
 	az.Locality = opZone.Locality
 	az.Region = opZone.Region
@@ -994,7 +997,7 @@ func ShareSelfFederatorZone(c echo.Context) error {
 		return ormutil.DbErr(res.Error)
 	}
 	if res.RecordNotFound() {
-		return fmt.Errorf("Zone ID %q not found", shZone.ZoneId)
+		return fmt.Errorf("Zone ID %q not found for operatorID:%q/countrycode:%q", shZone.ZoneId, selfFed.OperatorId, selfFed.CountryCode)
 	}
 
 	// ensure that zone is part of the same region as federator
@@ -1574,6 +1577,7 @@ func ShowFederation(c echo.Context) error {
 	}
 	authz, err := newShowAuthz(ctx, "", claims.Username, ResourceCloudlets, ActionManage)
 	if err != nil {
+		return err
 	}
 	db := loggedDB(ctx)
 	outFeds := []ormapi.Federation{}
