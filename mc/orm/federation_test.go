@@ -420,19 +420,18 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr) {
 				return httpmock.NewStringResponse(400, "failed to read body"), nil
 			}
 
-			if len(zoneRegReq.Zones) != 1 {
-				return httpmock.NewStringResponse(400, "only one zone allowed"), nil
+			zoneRegDetailsOut := []federation.ZoneRegisterDetails{}
+			for _, zoneName := range zoneRegReq.Zones {
+				zoneRegDetailsOut = append(zoneRegDetailsOut, federation.ZoneRegisterDetails{
+					ZoneId:            zoneName,
+					RegistrationToken: zoneRegReq.OrigFederationId,
+				})
 			}
 
 			out := federation.OperatorZoneRegisterResponse{
 				LeadOperatorId: partnerFed.operatorId,
 				FederationId:   partnerFed.fedId,
-				Zone: []federation.ZoneRegisterDetails{
-					federation.ZoneRegisterDetails{
-						ZoneId:            zoneRegReq.Zones[0],
-						RegistrationToken: zoneRegReq.OrigFederationId,
-					},
-				},
+				Zone:           zoneRegDetailsOut,
 			}
 			return httpmock.NewJsonResponse(200, out)
 		},
@@ -1004,9 +1003,20 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(partnerZones))
 
-	// Register partner zone should fail as federation is not yet created
+	// Register partner zone should fail if selfoperatorid is invalid
 	// ==================================================================
 	zoneRegReq := &ormapi.FederatedZoneRegRequest{
+		SelfOperatorId: "invalidOrgName",
+		FederationName: partnerFed.fedName,
+		Zones:          []string{partnerFed.zones[0].ZoneId},
+	}
+	_, _, err = mcClient.RegisterPartnerFederatorZone(op.uri, selfFed1.tokenAd, zoneRegReq)
+	require.NotNil(t, err, "cannot register partner zone as selfoperatorid not found")
+	require.Contains(t, err.Error(), "not found")
+
+	// Register partner zone should fail as federation is not yet created
+	// ==================================================================
+	zoneRegReq = &ormapi.FederatedZoneRegRequest{
 		SelfOperatorId: selfFed1.operatorId,
 		FederationName: partnerFed.fedName,
 		Zones:          []string{partnerFed.zones[0].ZoneId},
@@ -1057,29 +1067,28 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(partnerFed.zones), len(partnerZones))
 	// none of them are registered yet
+	zoneList := []string{}
 	for _, pZone := range partnerZones {
 		require.Equal(t, partnerFed.operatorId, pZone.OperatorId)
 		require.Equal(t, partnerFed.countryCode, pZone.CountryCode)
 		require.False(t, pZone.Registered)
 		require.NotEmpty(t, pZone.Revision)
+		zoneList = append(zoneList, pZone.ZoneId)
 	}
 
 	// Register all the partner zones to be used
 	// =========================================
+	pZoneReq := ormapi.FederatedZoneRegRequest{
+		SelfOperatorId: selfFed1.operatorId,
+		FederationName: partnerFed.fedName,
+		Zones:          zoneList,
+	}
+	_, status, err = mcClient.RegisterPartnerFederatorZone(op.uri, selfFed1.tokenOper, &pZoneReq)
+	require.Nil(t, err, "register partner federator zone")
+	require.Equal(t, http.StatusOK, status)
+
+	// Verify that registered zones are shown
 	for _, pZone := range partnerZones {
-		// not yet registered
-		require.False(t, pZone.Registered)
-
-		pZoneReq := ormapi.FederatedZoneRegRequest{
-			SelfOperatorId: pZone.SelfOperatorId,
-			FederationName: pZone.FederationName,
-			Zones:          []string{pZone.ZoneId},
-		}
-		_, status, err = mcClient.RegisterPartnerFederatorZone(op.uri, selfFed1.tokenOper, &pZoneReq)
-		require.Nil(t, err, "register partner federator zone")
-		require.Equal(t, http.StatusOK, status)
-
-		// Verify that registered zones are shown
 		pZone.Revision = "" // for lookup don't use revision
 		out, status, err := mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, &pZone)
 		require.Nil(t, err, "show partner federator zones")
@@ -1139,16 +1148,20 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 
 	// Deregister all the partner zones
 	// ================================
+	zoneList = []string{}
 	for _, pZone := range partnerFed.zones {
-		zoneRegReq := &ormapi.FederatedZoneRegRequest{
-			SelfOperatorId: selfFed1.operatorId,
-			FederationName: partnerFed.fedName,
-			Zones:          []string{pZone.ZoneId},
-		}
-		_, status, err = mcClient.DeRegisterPartnerFederatorZone(op.uri, selfFed1.tokenOper, zoneRegReq)
-		require.Nil(t, err, "deregister partner federator zone")
-		require.Equal(t, http.StatusOK, status)
+		zoneList = append(zoneList, pZone.ZoneId)
+	}
+	zoneRegReq = &ormapi.FederatedZoneRegRequest{
+		SelfOperatorId: selfFed1.operatorId,
+		FederationName: partnerFed.fedName,
+		Zones:          zoneList,
+	}
+	_, status, err = mcClient.DeRegisterPartnerFederatorZone(op.uri, selfFed1.tokenOper, zoneRegReq)
+	require.Nil(t, err, "deregister partner federator zone")
+	require.Equal(t, http.StatusOK, status)
 
+	for _, pZone := range partnerFed.zones {
 		// Verify that zones are deregistered
 		zoneRegShowReq := &ormapi.FederatedPartnerZone{
 			SelfOperatorId: selfFed1.operatorId,
