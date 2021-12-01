@@ -855,7 +855,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 
 	// Federation creation with same self federation ID should fail
 	newPartnerFedReq.Name = "testErr"
-	newPartnerFedReq.FederationId = "1234"
+	newPartnerFedReq.FederationId = "12345678"
 	_, _, err = mcClient.CreateFederation(op.uri, selfFed1.tokenOper, &newPartnerFedReq)
 	require.NotNil(t, err, "create federation")
 	require.Contains(t, err.Error(), "same self federation id")
