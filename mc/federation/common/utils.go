@@ -43,7 +43,16 @@ var nameMatch = regexp.MustCompile("^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$")
 
 func ValidateZoneId(zoneId string) error {
 	if !nameMatch.MatchString(zoneId) {
-		return fmt.Errorf("Invalid zone ID %q, valid format is %s", zoneId, nameMatch)
+		return fmt.Errorf("Invalid zone ID %q, can only contain alphanumeric, -, _ characters", zoneId)
+	}
+	if strings.HasPrefix(zoneId, "_") {
+		return fmt.Errorf("Invalid zone ID %q, cannot start with _", zoneId)
+	}
+	if strings.HasPrefix(zoneId, "-") {
+		return fmt.Errorf("Invalid zone ID %q, cannot start with -", zoneId)
+	}
+	if len(zoneId) < 8 || len(zoneId) > 32 {
+		return fmt.Errorf("Invalid zone ID %q, valid length is 8 to 32 characters", zoneId)
 	}
 	return nil
 }
@@ -63,4 +72,27 @@ func ValidateCountryCode(countryCode string) error {
 		return nil
 	}
 	return fmt.Errorf("Invalid country code %q. It must be a valid ISO 3166-1 Alpha-2 code for the country", countryCode)
+}
+
+func ValidateFederationId(fedId string) error {
+	if !nameMatch.MatchString(fedId) {
+		return fmt.Errorf("Invalid federation ID %q, can only contain alphanumeric, -, _ characters", fedId)
+	}
+	if strings.HasPrefix(fedId, "_") {
+		return fmt.Errorf("Invalid federation ID %q, cannot start with _", fedId)
+	}
+	if strings.HasPrefix(fedId, "-") {
+		return fmt.Errorf("Invalid federation ID %q, cannot start with -", fedId)
+	}
+	if len(fedId) < 8 || len(fedId) > 128 {
+		return fmt.Errorf("Invalid federation ID %q, valid length is 8 to 128 characters", fedId)
+	}
+	return nil
+}
+
+func ValidateApiKey(apiKey string) error {
+	if len(apiKey) < 8 || len(apiKey) > 128 {
+		return fmt.Errorf("Invalid API key %q, valid length is 8 to 128 characters", apiKey)
+	}
+	return nil
 }
