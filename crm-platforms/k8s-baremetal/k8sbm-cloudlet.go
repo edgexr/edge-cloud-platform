@@ -211,19 +211,20 @@ func (k *K8sBareMetalPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edg
 
 	updateCallback(edgeproto.UpdateTask, "Deleting Shared RootLB")
 	sharedLbName := k.GetSharedLBName(ctx, &cloudlet.Key)
-	lbInfo, err := k.GetLbInfo(ctx, sshClient, sharedLbName)
+	externalDev := k.GetExternalEthernetInterface()
+	addr, err := infracommon.GetIPAddressFromNetplan(ctx, sshClient, sharedLbName)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get shared LB info", "sharedLbName", sharedLbName, "err", err)
+		if strings.Contains(err.Error(), infracommon.NetplanFileNotFound) {
+			log.SpanLog(ctx, log.DebugLevelInfra, "netplan file does not exist", "sharedLbName", sharedLbName)
+		} else {
+			return fmt.Errorf("unexpected error getting ip address from netplan for lb: %s - %v", sharedLbName, err)
+		}
 	} else {
-		externalDev := k.GetExternalEthernetInterface()
-		err = k.RemoveIp(ctx, sshClient, lbInfo.ExternalIpAddr, externalDev)
+		err = k.RemoveIp(ctx, sshClient, addr, externalDev, sharedLbName)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Remove IP Fail", "lbInfo.ExternalIpAddr", lbInfo.ExternalIpAddr)
+			log.SpanLog(ctx, log.DebugLevelInfra, "remove IP failed", "addr", addr, "err", err)
 		}
-		err = k.DeleteLbInfo(ctx, sshClient, sharedLbName)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "error deleting lbinfo", "err", err)
-		}
+		return fmt.Errorf("failed to remove shared LB IP: %s - %v", addr, err)
 	}
 
 	updateCallback(edgeproto.UpdateTask, "Removing platform containers")
@@ -234,18 +235,18 @@ func (k *K8sBareMetalPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edg
 			if strings.Contains(err.Error(), "No such container") {
 				log.SpanLog(ctx, log.DebugLevelInfra, "container does not exist", "plat", p)
 			} else {
-				return fmt.Errorf("Error removing platform service: %s - %s - %v", p, out, err)
+				return fmt.Errorf("error removing platform service: %s - %s - %v", p, out, err)
 			}
 		}
 	}
 	// kill chef add other cleanup
-	out, err := sshClient.Output(fmt.Sprintf("sudo systemctl stop chef-client"))
+	out, err := sshClient.Output("sudo systemctl stop chef-client")
 	log.SpanLog(ctx, log.DebugLevelInfra, "chef stop results", "out", out, "err", err)
-	out, err = sshClient.Output(fmt.Sprintf("sudo systemctl disable chef-client"))
+	out, err = sshClient.Output("sudo systemctl disable chef-client")
 	log.SpanLog(ctx, log.DebugLevelInfra, "chef disable results", "out", out, "err", err)
-	out, err = sshClient.Output(fmt.Sprintf("sudo rm -f /root/accesskey/*"))
+	out, err = sshClient.Output("sudo rm -f /root/accesskey/*")
 	log.SpanLog(ctx, log.DebugLevelInfra, "accesskey rm results", "out", out, "err", err)
-	out, err = sshClient.Output(fmt.Sprintf("sudo rm -f /etc/chef/client.pem"))
+	out, err = sshClient.Output("sudo rm -f /etc/chef/client.pem")
 	log.SpanLog(ctx, log.DebugLevelInfra, "chef pem rm results", "out", out, "err", err)
 	return nil
 }
