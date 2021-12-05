@@ -302,7 +302,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 					Ports:       appInst.MappedPorts,
 					DestIP:      infracommon.DestIPUnspecified,
 				}
-				err = v.VMProperties.CommonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, v.VMProvider.WhitelistSecurityRules, &wlParams, cloudcommon.IPAddrAllInterfaces, masterIP.ExternalAddr, ops, proxy.WithDockerNetwork("host"), proxy.WithMetricIP(infracommon.GetUniqueLoopbackIp(ctx, appInst.MappedPorts)))
+				err = v.VMProperties.CommonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, v.VMProvider.WhitelistSecurityRules, &wlParams, cloudcommon.IPAddrAllInterfaces, masterIP.ExternalAddr, ops, proxy.WithDockerNetwork("host"), proxy.WithMetricEndpoint(infracommon.GetUniqueLoopbackIp(ctx, appInst.MappedPorts)))
 			}
 		}
 
@@ -341,7 +341,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
 		proxyOps = append(proxyOps, proxy.WithDockerNetwork("host"))
-		proxyOps = append(proxyOps, proxy.WithMetricIP(infracommon.GetUniqueLoopbackIp(ctx, appInst.MappedPorts)))
+		proxyOps = append(proxyOps, proxy.WithMetricEndpoint(infracommon.GetUniqueLoopbackIp(ctx, appInst.MappedPorts)))
 
 		getDnsAction := func(svc v1.Service) (*infracommon.DnsSvcAction, error) {
 			action := infracommon.DnsSvcAction{}
@@ -458,7 +458,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		var proxyOps []proxy.Op
 		loopbackIp := infracommon.GetUniqueLoopbackIp(ctx, appInst.MappedPorts)
 		proxyOps = append(proxyOps, proxy.WithDockerNetwork("host"))
-		proxyOps = append(proxyOps, proxy.WithMetricIP(loopbackIp))
+		proxyOps = append(proxyOps, proxy.WithMetricEndpoint(loopbackIp))
 		ops := infracommon.ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true}
 		wlParams := infracommon.WhiteListParams{
 			SecGrpName:  infracommon.GetServerSecurityGroupName(rootLBName),

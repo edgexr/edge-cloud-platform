@@ -22,11 +22,11 @@ func TestNginxStats(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 
 	testScrapePoint := ProxyScrapePoint{
-		App:        "UnitTestApp",
-		Cluster:    "UnitTestCluster",
-		ClusterOrg: "UnitTestDev",
-		Client:     &shepherd_unittest.UTClient{},
-		ListenIP:   cloudcommon.ProxyMetricsDefaultListenIP,
+		App:            "UnitTestApp",
+		Cluster:        "UnitTestCluster",
+		ClusterOrg:     "UnitTestDev",
+		Client:         &shepherd_unittest.UTClient{},
+		ListenEndpoint: cloudcommon.ProxyMetricsDefaultListenIP,
 	}
 
 	fakeNginxTestServer := httptest.NewServer(http.HandlerFunc(nginxHandler))

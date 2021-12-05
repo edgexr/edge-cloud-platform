@@ -120,7 +120,7 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 					DestIP:      ipaddr,
 				}
 				ops := infracommon.ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true, ProxyNamePrefix: k8smgmt.GetKconfName(clusterInst) + "-"}
-				err = k.commonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, k.WhitelistSecurityRules, &wlParams, ipaddr, "", ops, proxy.WithDockerNetwork("host"), proxy.WithDockerUser(DockerUser), proxy.WithMetricIP(infracommon.GetUniqueLoopbackIp(ctx, appInst.MappedPorts)))
+				err = k.commonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, k.WhitelistSecurityRules, &wlParams, ipaddr, "", ops, proxy.WithDockerNetwork("host"), proxy.WithDockerUser(DockerUser), proxy.WithMetricEndpoint(cloudcommon.ProxyMetricsListenUDS))
 			}
 		}
 
