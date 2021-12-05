@@ -58,13 +58,13 @@ func startServer() *httptest.Server {
 func TestEnvoyStats(t *testing.T) {
 
 	testScrapePoint := ProxyScrapePoint{
-		App:        "UnitTestApp",
-		Cluster:    "UnitTestCluster",
-		ClusterOrg: "UnitTestDev",
-		TcpPorts:   []int32{1234, 4321},
-		UdpPorts:   []int32{5678, 8765},
-		Client:     &shepherd_unittest.UTClient{},
-		ListenIP:   cloudcommon.ProxyMetricsDefaultListenIP,
+		App:            "UnitTestApp",
+		Cluster:        "UnitTestCluster",
+		ClusterOrg:     "UnitTestDev",
+		TcpPorts:       []int32{1234, 4321},
+		UdpPorts:       []int32{5678, 8765},
+		Client:         &shepherd_unittest.UTClient{},
+		ListenEndpoint: cloudcommon.ProxyMetricsDefaultListenIP,
 	}
 	ctx := setupLog()
 	fakeEnvoyTestServer := startServer()
