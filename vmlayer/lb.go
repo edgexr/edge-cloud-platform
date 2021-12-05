@@ -126,8 +126,8 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 		}
 		// keep going on delete
 	}
-	netplanEnabled := ServerIsNetplanEnabled(ctx, client)
-	filename, fileMatch, contents := GetNetworkFileDetailsForIP(ctx, internalPortName, internalIfname, internalIP.InternalAddr, netplanEnabled)
+	netplanEnabled := infracommon.ServerIsNetplanEnabled(ctx, client)
+	filename, fileMatch, contents := infracommon.GenerateNetworkFileDetailsForIP(ctx, internalPortName, internalIfname, internalIP.InternalAddr, 24, netplanEnabled)
 	if action.AddInterface {
 		// cleanup any interfaces files that may be sitting around with our new interface, perhaps from some old failure
 		cmd := fmt.Sprintf("grep -l ' %s ' %s", fileMatch, internalIfname)

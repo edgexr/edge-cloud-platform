@@ -54,7 +54,7 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 				return err
 			}
 		}
-		lbinfo, err := k.GetLbInfo(ctx, client, rootLBName)
+		ipaddr, err := infracommon.GetIPAddressFromNetplan(ctx, client, rootLBName)
 		if err != nil {
 			return err
 		}
@@ -103,7 +103,7 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 				action := infracommon.DnsSvcAction{}
 				action.PatchKube = false
 				action.PatchIP = ""
-				action.ExternalIP = lbinfo.ExternalIpAddr
+				action.ExternalIP = ipaddr
 				return &action, nil
 			}
 			// If this is all internal ports, all we need is patch of kube service
@@ -117,10 +117,10 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 					Label:       infracommon.GetAppWhitelistRulesLabel(app),
 					AllowedCIDR: infracommon.GetAllowedClientCIDR(),
 					Ports:       appInst.MappedPorts,
-					DestIP:      lbinfo.ExternalIpAddr,
+					DestIP:      ipaddr,
 				}
 				ops := infracommon.ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true, ProxyNamePrefix: k8smgmt.GetKconfName(clusterInst) + "-"}
-				err = k.commonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, k.WhitelistSecurityRules, &wlParams, lbinfo.ExternalIpAddr, "", ops, proxy.WithDockerNetwork("host"), proxy.WithDockerUser(DockerUser), proxy.WithMetricIP(infracommon.GetUniqueLoopbackIp(ctx, appInst.MappedPorts)))
+				err = k.commonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, k.WhitelistSecurityRules, &wlParams, ipaddr, "", ops, proxy.WithDockerNetwork("host"), proxy.WithDockerUser(DockerUser), proxy.WithMetricIP(infracommon.GetUniqueLoopbackIp(ctx, appInst.MappedPorts)))
 			}
 		}
 
@@ -142,14 +142,12 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
-		fallthrough
-	case cloudcommon.DeploymentTypeHelm:
 		rootLBName := k.GetLbName(ctx, appInst)
 		client, err := k.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: k.commonPf.PlatformConfig.CloudletKey.String(), Type: k8sControlHostNodeType})
 		if err != nil {
 			return err
 		}
-		lbinfo, err := k.GetLbInfo(ctx, client, rootLBName)
+		ipaddr, err := infracommon.GetIPAddressFromNetplan(ctx, client, rootLBName)
 		if err != nil {
 			return err
 		}
@@ -177,7 +175,7 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 			Label:       infracommon.GetAppWhitelistRulesLabel(app),
 			AllowedCIDR: infracommon.GetAllowedClientCIDR(),
 			Ports:       appInst.MappedPorts,
-			DestIP:      lbinfo.ExternalIpAddr,
+			DestIP:      ipaddr,
 		}
 		if err := k.commonPf.DeleteProxySecurityGroupRules(ctx, client, containerName, k.RemoveWhitelistSecurityRules, &wlParams); err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete security rules", "name", names.AppName, "rootlb", rootLBName, "error", err)
@@ -204,11 +202,7 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 		}
 		if appInst.DedicatedIp {
 			externalDev := k.GetExternalEthernetInterface()
-			err := k.RemoveIp(ctx, client, lbinfo.ExternalIpAddr, externalDev)
-			if err != nil {
-				return err
-			}
-			err = k.DeleteLbInfo(ctx, client, rootLBName)
+			err := k.RemoveIp(ctx, client, ipaddr, externalDev, rootLBName)
 			if err != nil {
 				return err
 			}
