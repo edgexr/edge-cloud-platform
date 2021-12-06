@@ -3,13 +3,11 @@ registerclientrequest:
   appname: someapplication1
   appvers: "1.0"
   authtoken: "GENTOKEN:authtoken_private.pem"
-  cellid: 1234
 findcloudletrequest:
   carriername: dmuus
   gpslocation:
     latitude: 31.00
     longitude: -91.00
-  cellid: 1234
 clientedgeevent:
   eventtype: EVENT_INIT_CONNECTION
   deviceinfostatic:

@@ -8,13 +8,11 @@
   values:
   - - "1"
   - - "0"
-  - - "1234"
   - - dmuus-cloud-1
   - - dmuus
   columns:
   - reqs
   - errs
-  - cellID
   - foundCloudlet
   - foundOperator
 - name: dme-api
@@ -27,12 +25,10 @@
   values:
   - - "1"
   - - "0"
-  - - "0"
   - - ""
   - - ""
   columns:
   - reqs
   - errs
-  - cellID
   - foundCloudlet
   - foundOperator

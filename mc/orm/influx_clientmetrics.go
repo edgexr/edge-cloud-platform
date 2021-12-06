@@ -4,7 +4,6 @@ import (
 	"bytes"
 	fmt "fmt"
 	"regexp"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -37,7 +36,6 @@ type influxClientMetricsQueryArgs struct {
 	AppOrg       string
 	// ClientApi metric query args
 	Method           string
-	CellId           string
 	FoundCloudlet    string
 	FoundCloudletOrg string
 	// ClientAppUsage and ClientCloudletUsage metric query args
@@ -63,7 +61,6 @@ var ClientApiUsageTags = []string{
 var ApiFields = []string{
 	"\"reqs\"",
 	"\"errs\"",
-	"\"cellID\"",
 	"\"foundCloudlet\"",
 	"\"foundOperator\"",
 }
@@ -71,7 +68,6 @@ var ApiFields = []string{
 var ClientApiAggregationFunctions = map[string]string{
 	"reqs":          "last(\"reqs\")",
 	"errs":          "last(\"errs\")",
-	"cellID":        "last(\"cellID\")",
 	"foundCloudlet": "last(\"foundCloudlet\")",
 	"foundOperator": "last(\"foundOperator\")",
 }
@@ -155,7 +151,6 @@ var devInfluxClientMetricsDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
 	`{{if .CloudletList}} AND ({{.CloudletList}}){{end}}` +
 	`{{if .CloudletOrg}} AND "cloudletorg"='{{.CloudletOrg}}'{{end}}` +
 	`{{if .Method}} AND "method"='{{.Method}}'{{end}}` +
-	`{{if .CellId}} AND "cellID"='{{.CellId}}'{{end}}` +
 	`{{if .DeviceCarrier}} AND "devicecarrier"='{{.DeviceCarrier}}'{{end}}` +
 	`{{if .DataNetworkType}} AND "datanetworktype"='{{.DataNetworkType}}'{{end}}` +
 	`{{if .DeviceOs}} AND "deviceos"='{{.DeviceOs}}'{{end}}` +
@@ -246,9 +241,6 @@ func ClientApiUsageMetricsQuery(obj *ormapi.RegionClientApiUsageMetrics, cloudle
 	} else {
 		arg.OrgField = CLIENT_FOUND_CLOUDLET_ORG_FIELD
 		arg.ApiCallerOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
-	}
-	if obj.CellId != 0 {
-		arg.CellId = strconv.FormatUint(uint64(obj.CellId), 10)
 	}
 	// set MetricsCommonQueryArgs
 	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, devInfluxClientMetricsDBTemplate, &obj.MetricsCommon, definition.String(), 0) // TODO: PULL MIN from settings

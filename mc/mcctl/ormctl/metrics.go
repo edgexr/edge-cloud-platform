@@ -229,7 +229,6 @@ var ClientApiUsageMetricOptionalArgs = []string{
 	"dme-cloudlet",
 	"dme-org",
 	"method",
-	"cellid",
 }
 
 var ClientApiUsageMetricAliasArgs = []string{
@@ -244,7 +243,6 @@ var ClientApiUsageMetricAliasArgs = []string{
 
 var ClientApiUsageMetricComments = map[string]string{
 	"method":       "Api call method, one of: FindCloudlet, PlatformFindCloudlet, RegisterClient, VerifyLocation",
-	"cellid":       "Cell tower Id(experimental)",
 	"selector":     "Comma separated list of metrics to view. Currently only \"api\" is supported.",
 	"dme-cloudlet": "Cloudlet name where DME is running",
 	"dme-org":      "Operator org where DME is running",

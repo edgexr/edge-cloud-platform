@@ -10,12 +10,12 @@ import (
 )
 
 var (
-	testApiUsageQuerySampled = `SELECT last("reqs") AS "reqs",last("errs") AS "errs",last("cellID") AS "cellID",last("foundCloudlet") AS "foundCloudlet",last("foundOperator") AS "foundOperator" from "dme-api" WHERE ` +
+	testApiUsageQuerySampled = `SELECT last("reqs") AS "reqs",last("errs") AS "errs",last("foundCloudlet") AS "foundCloudlet",last("foundOperator") AS "foundOperator" from "dme-api" WHERE ` +
 		`"apporg"='testOrg1' AND "app"='testApp1' AND "ver"='1.0' AND "method"='RegisterClient' AND "foundCloudlet"='testCloudlet1' ` +
 		`AND time >= '2019-12-31T13:01:00Z' AND time <= '2020-01-01T01:01:00Z' ` +
 		`group by time(12h0m0s),"apporg","app","ver","cloudletorg","cloudlet","dmeId","method" order by time desc ` +
 		`limit 1`
-	testApiUsageQuerNonSampledLast = `SELECT "reqs","errs","cellID","foundCloudlet","foundOperator" from "dme-api" ` +
+	testApiUsageQuerNonSampledLast = `SELECT "reqs","errs","foundCloudlet","foundOperator" from "dme-api" ` +
 		`WHERE "apporg"='testOrg1' AND "app"='testApp1' AND "ver"='1.0' AND "method"='RegisterClient' AND "foundCloudlet"='testCloudlet1' ` +
 		`group by "apporg","app","ver","cloudletorg","cloudlet","dmeId","method" order by time desc ` +
 		`limit 1`
