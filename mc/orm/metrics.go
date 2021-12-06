@@ -34,10 +34,12 @@ var (
 )
 
 type MetricsObject interface {
+	InitObject(ctx context.Context, rc *InfluxDBContext) error
 	GetType() string
 	GetRegion() string
-	// Get Selectors either gives a single selector, or a list of all, if "*" is passed in
+	// Get Selectors either gives a single selector, a list if several are passed, or all if "*" is passed in
 	GetSelectors() []string
+	GetMeasurementString(selector string) string
 	GetObjCount() int
 	GetMetricsCommon() *ormapi.MetricsCommon
 	ValidateSelector() error
@@ -46,11 +48,22 @@ type MetricsObject interface {
 	CheckPermissionsAndGetCloudletList(ctx context.Context, username string) ([]string, error)
 	GetQueryFilter(cloudletList []string) string
 	GetGroupFields() string
-	GetGroupQuery(cloudletList []string, settings *edgeproto.Settings) string
+	GetGroupQuery(cloudletList []string) string
 }
 
 type appInstMetrics struct {
 	*ormapi.RegionAppInstMetrics
+	settings *edgeproto.Settings
+}
+
+func (m *appInstMetrics) InitObject(ctx context.Context, rc *InfluxDBContext) error {
+	settings, err := getSettings(ctx, rc)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to get metrics settings for region %v - error is %s", rc.region, err.Error())
+		return err
+	}
+	m.settings = settings
+	return nil
 }
 
 func (m *appInstMetrics) GetType() string {
@@ -61,7 +74,11 @@ func (m *appInstMetrics) GetSelectors() []string {
 	if m.Selector == "*" {
 		return ormapi.AppSelectors
 	}
-	return []string{m.Selector}
+	return strings.Split(m.Selector, ",")
+}
+
+func (m *appInstMetrics) GetMeasurementString(selector string) string {
+	return getMeasurementString(selector, m.GetType())
 }
 
 func (m *appInstMetrics) GetRegion() string {
@@ -162,12 +179,23 @@ func (m *appInstMetrics) GetQueryFilter(cloudletList []string) string {
 	return filterStr
 }
 
-func (m *appInstMetrics) GetGroupQuery(cloudletList []string, settings *edgeproto.Settings) string {
-	return GetDeveloperGroupQuery(m, cloudletList, settings)
+func (m *appInstMetrics) GetGroupQuery(cloudletList []string) string {
+	return GetDeveloperGroupQuery(m, cloudletList, m.settings)
 }
 
 type clusterInstMetrics struct {
 	*ormapi.RegionClusterInstMetrics
+	settings *edgeproto.Settings
+}
+
+func (m *clusterInstMetrics) InitObject(ctx context.Context, rc *InfluxDBContext) error {
+	settings, err := getSettings(ctx, rc)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to get metrics settings for region %v - error is %s", rc.region, err.Error())
+		return err
+	}
+	m.settings = settings
+	return nil
 }
 
 func (m *clusterInstMetrics) GetType() string {
@@ -198,7 +226,11 @@ func (m *clusterInstMetrics) GetSelectors() []string {
 	if m.Selector == "*" {
 		return ormapi.ClusterSelectors
 	}
-	return []string{m.Selector}
+	return strings.Split(m.Selector, ",")
+}
+
+func (m *clusterInstMetrics) GetMeasurementString(selector string) string {
+	return getMeasurementString(selector, m.GetType())
 }
 
 func (m *clusterInstMetrics) ValidateObjects() error {
@@ -271,12 +303,23 @@ func (m *clusterInstMetrics) GetQueryFilter(cloudletList []string) string {
 	return filterStr
 }
 
-func (m *clusterInstMetrics) GetGroupQuery(cloudletList []string, settings *edgeproto.Settings) string {
-	return GetDeveloperGroupQuery(m, cloudletList, settings)
+func (m *clusterInstMetrics) GetGroupQuery(cloudletList []string) string {
+	return GetDeveloperGroupQuery(m, cloudletList, m.settings)
 }
 
 type cloudletMetrics struct {
 	*ormapi.RegionCloudletMetrics
+	settings *edgeproto.Settings
+}
+
+func (m *cloudletMetrics) InitObject(ctx context.Context, rc *InfluxDBContext) error {
+	settings, err := getSettings(ctx, rc)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to get metrics settings for region %v - error is %s", rc.region, err.Error())
+		return err
+	}
+	m.settings = settings
+	return nil
 }
 
 func (m *cloudletMetrics) GetType() string {
@@ -287,7 +330,11 @@ func (m *cloudletMetrics) GetSelectors() []string {
 	if m.Selector == "*" {
 		return ormapi.CloudletSelectors
 	}
-	return []string{m.Selector}
+	return strings.Split(m.Selector, ",")
+}
+
+func (m *cloudletMetrics) GetMeasurementString(selector string) string {
+	return getMeasurementString(selector, m.GetType())
 }
 
 func (m *cloudletMetrics) GetRegion() string {
@@ -361,8 +408,66 @@ func (m *cloudletMetrics) GetQueryFilter(cloudletList []string) string {
 	return filterStr
 }
 
-func (m *cloudletMetrics) GetGroupQuery(cloudletList []string, settings *edgeproto.Settings) string {
-	return GetDeveloperGroupQuery(m, cloudletList, settings)
+func (m *cloudletMetrics) GetGroupQuery(cloudletList []string) string {
+	return GetDeveloperGroupQuery(m, cloudletList, m.settings)
+}
+
+// "inherit" from cloudletMetrics - most of the validation, getters are the same
+type cloudletUsageMetrics struct {
+	cloudletMetrics
+	platformTypes map[string]struct{}
+}
+
+func (m *cloudletUsageMetrics) InitObject(ctx context.Context, rc *InfluxDBContext) error {
+	err := m.cloudletMetrics.InitObject(ctx, rc)
+	if err != nil {
+		return err
+	}
+	// Platform type is required for cloudlet resource usage
+	if m.Selector == "resourceusage" {
+		m.platformTypes, err = getCloudletPlatformTypes(ctx, rc.claims.Username, m.Region, m.Cloudlets)
+		if err != nil {
+			return err
+		}
+	}
+	return m.cloudletMetrics.InitObject(ctx, rc)
+}
+
+func (m *cloudletUsageMetrics) ValidateSelector() error {
+	return validateSelectorString(m.Selector, m.GetType())
+}
+
+func (m *cloudletUsageMetrics) GetType() string {
+	return CLOUDLETUSAGE
+}
+
+func (m *cloudletUsageMetrics) GetSelectors() []string {
+	if m.Selector == "*" {
+		return ormapi.CloudletUsageSelectors
+	}
+	return strings.Split(m.Selector, ",")
+}
+
+func (m *cloudletUsageMetrics) GetGroupQuery(cloudletList []string) string {
+	return GetDeveloperGroupQuery(m, cloudletList, m.settings)
+}
+
+func (m *cloudletUsageMetrics) GetMeasurementString(selector string) string {
+	measurements := []string{}
+	if selector == "resourceusage" {
+		for platformType := range m.platformTypes {
+			measurements = append(measurements, fmt.Sprintf("%s-resource-usage", platformType))
+		}
+	} else if m.Selector == "flavorusage" {
+		measurements = append(measurements, "cloudlet-flavor-usage")
+	} else {
+		measurements = append(measurements, selector)
+	}
+	return strings.Join(measurements, ",")
+}
+
+func (m *cloudletUsageMetrics) GetDbNames() []string {
+	return []string{cloudcommon.CloudletResourceUsageDbName}
 }
 
 func init() {
@@ -395,11 +500,10 @@ func ShowMetricsCommon(c echo.Context, in MetricsObject) error {
 	if err != nil {
 		return err
 	}
-	settings, err := getSettings(ctx, rc)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to get metrics settings for region %v - error is %s", rc.region, err.Error())
+	if err := in.InitObject(ctx, rc); err != nil {
+		return err
 	}
-	cmd := in.GetGroupQuery(cloudletList, settings)
+	cmd := in.GetGroupQuery(cloudletList)
 	err = influxStream(ctx, rc, in.GetDbNames(), cmd, func(res interface{}) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
@@ -411,29 +515,31 @@ func ShowMetricsCommon(c echo.Context, in MetricsObject) error {
 	return nil
 }
 
-// handle cluster metrics
+// handle cloudlet usage metrics
+func GetCloudletUsageMetrics(c echo.Context, in *ormapi.RegionCloudletMetrics) error {
+	return ShowMetricsCommon(c, &cloudletUsageMetrics{cloudletMetrics{RegionCloudletMetrics: in}, nil})
+}
+
+// handle cloudlet metrics
 func GetCloudletMetrics(c echo.Context, in *ormapi.RegionCloudletMetrics) error {
-	ShowMetricsCommon(c, &cloudletMetrics{RegionCloudletMetrics: in})
-	return nil
+	return ShowMetricsCommon(c, &cloudletMetrics{RegionCloudletMetrics: in})
 }
 
 // handle cluster metrics
 func GetClusterMetrics(c echo.Context, in *ormapi.RegionClusterInstMetrics) error {
-	ShowMetricsCommon(c, &clusterInstMetrics{RegionClusterInstMetrics: in})
-	return nil
+	return ShowMetricsCommon(c, &clusterInstMetrics{RegionClusterInstMetrics: in})
 }
 
 // handle app metrics
 func GetAppMetrics(c echo.Context, in *ormapi.RegionAppInstMetrics) error {
-	ShowMetricsCommon(c, &appInstMetrics{RegionAppInstMetrics: in})
-	return nil
+	return ShowMetricsCommon(c, &appInstMetrics{RegionAppInstMetrics: in})
 }
 
 func getMetricsTemplateArgs(obj MetricsObject, timeDef string, selector string, cloudletList []string) influxQueryArgs {
 	selectorFunction := getFuncForSelector(selector, timeDef)
 	args := influxQueryArgs{
 		Selector:    getSelectorForMeasurement(selector, selectorFunction, obj.GetType()),
-		Measurement: getMeasurementString(selector, obj.GetType()),
+		Measurement: obj.GetMeasurementString(selector),
 		QueryFilter: obj.GetQueryFilter(cloudletList),
 		GroupFields: obj.GetGroupFields(),
 	}
@@ -478,6 +584,10 @@ func getFuncForSelector(selector, timeDefinition string) string {
 		fallthrough
 	case "utilization":
 		fallthrough
+	case "resourceusage":
+		fallthrough
+	case "flavorusage":
+		fallthrough
 	case "ipusage":
 		return "last"
 	default:
@@ -487,7 +597,7 @@ func getFuncForSelector(selector, timeDefinition string) string {
 
 func getSelectorForMeasurement(selector, function, metricType string) string {
 	var fields []string
-
+	// TODO - this should be consolidated with getFieldsSlice()
 	switch selector {
 	case "cpu":
 		fields = CpuFields
@@ -515,6 +625,10 @@ func getSelectorForMeasurement(selector, function, metricType string) string {
 		fields = UtilizationFields
 	case "ipusage":
 		fields = IpUsageFields
+	case "resourceusage":
+		fields = ResourceUsageFields
+	case "flavorusage":
+		fields = FlavorUsageFields
 	default:
 		// if it's one of the unsupported selectors just return it back
 		return selector

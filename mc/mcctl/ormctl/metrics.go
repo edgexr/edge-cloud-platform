@@ -50,7 +50,7 @@ func init() {
 		RequiredArgs: strings.Join(append([]string{"region"}, CloudletMetricRequiredArgs...), " "),
 		OptionalArgs: strings.Join(append(MetricsCommonArgs, CloudletMetricOptionalArgs...), " "),
 		AliasArgs:    strings.Join(append(CloudletMetricAliasArgs, MetricsCommonAliasArgs...), " "),
-		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), CloudletUsageMetricComments),
+		Comments:     mergeMetricComments(CloudletMetricComments, mergeMetricComments(addRegionComment(MetricCommentsCommon), CloudletUsageMetricComments)),
 		ReqData:      &ormapi.RegionCloudletMetrics{},
 		ReplyData:    &ormapi.AllMetrics{},
 		Path:         "/auth/metrics/cloudlet/usage",
