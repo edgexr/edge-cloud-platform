@@ -848,7 +848,7 @@ func GetCloudletResourceUsageData(ctx context.Context, username string, report *
 	}
 	rc.region = in.Region
 
-	platformTypes, err := getCloudletPlatformTypes(ctx, username, report.Region, &in.Cloudlet)
+	platformTypes, err := getCloudletPlatformTypes(ctx, username, report.Region, []edgeproto.CloudletKey{in.Cloudlet})
 	if err != nil {
 		return nil, err
 	}

@@ -254,6 +254,73 @@ var (
 			},
 		},
 	}
+
+	testSingleCloudletUsageQueryDefTime = "SELECT last(vcpusUsed) as vcpusUsed,last(ramUsed) as ramUsed,last(instancesUsed) as instancesUsed,last(gpusUsed) as gpusUsed,last(externalIpsUsed) as externalIpsUsed,last(floatingIpsUsed) as floatingIpsUsed " +
+		"FROM \"unittest-resource-usage\" WHERE (" +
+		testSingleCloudletFilter + ") " +
+		"AND time >= '2019-12-31T13:01:00Z' AND time <= '2020-01-01T01:01:00Z' " +
+		"group by time(7m12s),cloudlet,cloudletorg fill(previous) order by time desc " +
+		"limit 100"
+	testSingleCloudletUsageQueryLastPoint = "SELECT vcpusUsed,ramUsed,instancesUsed,gpusUsed,externalIpsUsed,floatingIpsUsed " +
+		"FROM \"unittest-resource-usage\" WHERE (" +
+		testSingleCloudletFilter + ") " +
+		"group by cloudlet,cloudletorg fill(previous) order by time desc " +
+		"limit 1"
+	testSingleCloudletUsageWildcardSelector = "SELECT vcpusUsed,ramUsed,instancesUsed,gpusUsed,externalIpsUsed,floatingIpsUsed " +
+		"FROM \"unittest-resource-usage\" WHERE (" +
+		testSingleCloudletFilter + ") " +
+		"group by cloudlet,cloudletorg fill(previous) order by time desc limit 1;" +
+		"SELECT flavor,count " +
+		"FROM \"flavorusage\" WHERE (" +
+		testSingleCloudletFilter + ") " +
+		"group by cloudlet,cloudletorg fill(previous) order by time desc limit 1"
+	testSingleCloudletUsage = cloudletUsageMetrics{
+		cloudletMetrics: cloudletMetrics{
+			RegionCloudletMetrics: &ormapi.RegionCloudletMetrics{
+				Region: "test",
+				Cloudlets: []edgeproto.CloudletKey{
+					edgeproto.CloudletKey{
+						Name:         "testCloudlet1",
+						Organization: "testCloudletOrg1",
+					},
+				},
+			},
+		},
+		platformTypes: map[string]struct{}{
+			"unittest": struct{}{},
+		},
+	}
+
+	testCloudletsUsageQueryDefTime = "SELECT last(flavor) as flavor,last(count) as count " +
+		"FROM \"cloudlet-flavor-usage\" WHERE (" +
+		testCloudletsFilter + ") " +
+		"AND time >= '2019-12-31T13:01:00Z' AND time <= '2020-01-01T01:01:00Z' " +
+		"group by time(7m12s),cloudlet,cloudletorg fill(previous) order by time desc " +
+		"limit 100"
+	testCloudletsUsageQueryLastPoint = "SELECT flavor,count " +
+		"FROM \"cloudlet-flavor-usage\" WHERE (" +
+		testCloudletsFilter + ") " +
+		"group by cloudlet,cloudletorg fill(previous) order by time desc " +
+		"limit 1"
+	testCloudletsUsage = cloudletUsageMetrics{
+		cloudletMetrics: cloudletMetrics{
+			RegionCloudletMetrics: &ormapi.RegionCloudletMetrics{
+				Region: "test",
+				Cloudlets: []edgeproto.CloudletKey{
+					edgeproto.CloudletKey{
+						Name:         "testCloudlet1",
+						Organization: "testCloudletOrg1",
+					},
+					edgeproto.CloudletKey{
+						Organization: "testCloudletOrg2",
+					},
+				},
+			},
+		},
+		platformTypes: map[string]struct{}{
+			"unittest": struct{}{},
+		},
+	}
 )
 
 func getCloudletsFromAppInsts(apps *ormapi.RegionAppInstMetrics) []string {
@@ -270,6 +337,67 @@ func getCloudletsFromClusterInsts(apps *ormapi.RegionClusterInstMetrics) []strin
 		cloudlets = append(cloudlets, cluster.CloudletKey.Name)
 	}
 	return cloudlets
+}
+
+func TestGetInfluxCloudletUsageMetricsQueryCmd(t *testing.T) {
+	maxEntriesFromInfluxDb = 100
+	// Single Cloudlets, default time interval
+	testSingleCloudletUsage.EndTime = time.Date(2020, 1, 1, 1, 1, 0, 0, time.UTC)
+	testSingleCloudletUsage.Selector = "resourceusage"
+	err := validateMetricsCommon(&testSingleCloudletUsage.MetricsCommon)
+	require.Nil(t, err)
+	timeDef := getTimeDefinition(testSingleCloudletUsage.GetMetricsCommon(), 0)
+	args := getMetricsTemplateArgs(&testSingleCloudletUsage, timeDef, "resourceusage", nil)
+	fillMetricsCommonQueryArgs(&args.metricsCommonQueryArgs, metricsGroupQueryTemplate, &testSingleCloudletUsage.MetricsCommon, timeDef, 0)
+	query := getInfluxMetricsQueryCmd(&args, metricsGroupQueryTemplate)
+	require.Equal(t, testSingleCloudletUsageQueryDefTime, query)
+	// Single Cloudlet, just one last data points
+	testSingleCloudletUsage.EndTime = time.Time{}
+	testSingleCloudletUsage.StartTime = time.Time{}
+	testSingleCloudletUsage.NumSamples = 0
+	testSingleCloudletUsage.Limit = 1
+	testSingleCloudletUsage.Selector = "resourceusage"
+	err = validateMetricsCommon(&testSingleCloudletUsage.MetricsCommon)
+	require.Nil(t, err)
+	timeDef = getTimeDefinition(testSingleCloudletUsage.GetMetricsCommon(), 0)
+	args = getMetricsTemplateArgs(&testSingleCloudletUsage, timeDef, "resourceusage", nil)
+	fillMetricsCommonQueryArgs(&args.metricsCommonQueryArgs, metricsGroupQueryTemplate, &testSingleCloudletUsage.MetricsCommon, timeDef, 0)
+	query = getInfluxMetricsQueryCmd(&args, metricsGroupQueryTemplate)
+	require.Equal(t, testSingleCloudletUsageQueryLastPoint, query)
+	// Multiple Cloudlets, default time interval
+	testCloudletsUsage.EndTime = time.Date(2020, 1, 1, 1, 1, 0, 0, time.UTC)
+	testCloudletsUsage.StartTime = time.Time{}
+	testCloudletsUsage.Limit = 0
+	testCloudletsUsage.NumSamples = 0
+	testCloudletsUsage.Selector = "flavorusage"
+	err = validateMetricsCommon(&testCloudletsUsage.MetricsCommon)
+	require.Nil(t, err)
+	timeDef = getTimeDefinition(testCloudletsUsage.GetMetricsCommon(), 0)
+	args = getMetricsTemplateArgs(&testCloudletsUsage, timeDef, "flavorusage", nil)
+	fillMetricsCommonQueryArgs(&args.metricsCommonQueryArgs, metricsGroupQueryTemplate, &testCloudletsUsage.MetricsCommon, timeDef, 0)
+	query = getInfluxMetricsQueryCmd(&args, metricsGroupQueryTemplate)
+	require.Equal(t, testCloudletsUsageQueryDefTime, query)
+	// Multiple Cloudlets, just one last data points
+	testCloudletsUsage.EndTime = time.Time{}
+	testCloudletsUsage.StartTime = time.Time{}
+	testCloudletsUsage.Limit = 1
+	testCloudletsUsage.NumSamples = 0
+	testCloudletsUsage.Selector = "flavorusage"
+	err = validateMetricsCommon(&testCloudletsUsage.MetricsCommon)
+	require.Nil(t, err)
+	timeDef = getTimeDefinition(testCloudletsUsage.GetMetricsCommon(), 0)
+	args = getMetricsTemplateArgs(&testCloudletsUsage, timeDef, "flavorusage", nil)
+	fillMetricsCommonQueryArgs(&args.metricsCommonQueryArgs, metricsGroupQueryTemplate, &testCloudletsUsage.MetricsCommon, timeDef, 0)
+	query = getInfluxMetricsQueryCmd(&args, metricsGroupQueryTemplate)
+	require.Equal(t, testCloudletsUsageQueryLastPoint, query)
+	// Test wildcard selector, single cloudlet
+	testSingleCloudletUsage.EndTime = time.Time{}
+	testSingleCloudletUsage.StartTime = time.Time{}
+	testSingleCloudletUsage.NumSamples = 0
+	testSingleCloudletUsage.Limit = 1
+	testSingleCloudletUsage.Selector = "*"
+	query = testSingleCloudletUsage.GetGroupQuery([]string{})
+	require.Equal(t, testSingleCloudletUsageWildcardSelector, query)
 }
 
 func TestGetInfluxCloudletMetricsQueryCmd(t *testing.T) {
@@ -316,20 +444,20 @@ func TestGetInfluxCloudletMetricsQueryCmd(t *testing.T) {
 	testCloudlets.Limit = 1
 	testCloudlets.NumSamples = 0
 	testCloudlets.Selector = "network"
-	err = validateMetricsCommon(&testSingleCloudlet.MetricsCommon)
+	err = validateMetricsCommon(&testCloudlets.MetricsCommon)
 	require.Nil(t, err)
 	timeDef = getTimeDefinition(testCloudlets.GetMetricsCommon(), 0)
 	args = getMetricsTemplateArgs(&testCloudlets, timeDef, "network", nil)
 	fillMetricsCommonQueryArgs(&args.metricsCommonQueryArgs, metricsGroupQueryTemplate, &testCloudlets.MetricsCommon, timeDef, 0)
 	query = getInfluxMetricsQueryCmd(&args, metricsGroupQueryTemplate)
 	require.Equal(t, testCloudletsQueryLastPoint, query)
-	// Test wildcard selector, single app
+	// Test wildcard selector, single cloudlet
 	testSingleCloudlet.EndTime = time.Time{}
 	testSingleCloudlet.StartTime = time.Time{}
 	testSingleCloudlet.NumSamples = 0
 	testSingleCloudlet.Limit = 1
 	testSingleCloudlet.Selector = "*"
-	query = testSingleCloudlet.GetGroupQuery([]string{}, nil)
+	query = testSingleCloudlet.GetGroupQuery([]string{})
 	require.Equal(t, testSingleCloudletWildcardSelector, query)
 }
 
@@ -390,7 +518,7 @@ func TestGetInfluxClusterMetricsQueryCmd(t *testing.T) {
 	testSingleCluster.NumSamples = 0
 	testSingleCluster.Limit = 1
 	testSingleCluster.Selector = "*"
-	query = testSingleCluster.GetGroupQuery([]string{"testCloudlet1"}, nil)
+	query = testSingleCluster.GetGroupQuery([]string{"testCloudlet1"})
 	require.Equal(t, testSingleClusterWildcardSelector, query)
 }
 
@@ -451,7 +579,7 @@ func TestGetInfluxAppMetricsQueryCmd(t *testing.T) {
 	testSingleApp.NumSamples = 0
 	testSingleApp.Limit = 1
 	testSingleApp.Selector = "*"
-	query = testSingleApp.GetGroupQuery([]string{"testCloudlet1"}, nil)
+	query = testSingleApp.GetGroupQuery([]string{"testCloudlet1"})
 	require.Equal(t, testSingleAppWildcardSelector, query)
 }
 
@@ -470,10 +598,17 @@ func TestGetClusterInstQueryFilter(t *testing.T) {
 }
 
 func TestGetCloudletInstQueryFilter(t *testing.T) {
-	// Tests single cluster string
+	// Tests single cloudlet string
 	require.Equal(t, testSingleCloudletFilter, testSingleCloudlet.GetQueryFilter(nil))
-	// Test query for multiple clusters
+	// Test query for multiple cloudlets
 	require.Equal(t, testCloudletsFilter, testCloudlets.GetQueryFilter(nil))
+}
+
+func TestGetCloudletUsageInstQueryFilter(t *testing.T) {
+	// Tests single cloudlet string - should be the same as for cloudlet metrics
+	require.Equal(t, testSingleCloudletFilter, testSingleCloudletUsage.GetQueryFilter(nil))
+	// Test query for multiple cloudlets - should be the same as for cloudlet metrics
+	require.Equal(t, testCloudletsFilter, testCloudletsUsage.GetQueryFilter(nil))
 }
 
 func TestGetFuncForSelector(t *testing.T) {

@@ -172,7 +172,12 @@ var IpUsageFields = []string{
 }
 
 var ResourceUsageFields = []string{
-	"*",
+	"vcpusUsed",
+	"ramUsed",
+	"instancesUsed",
+	"gpusUsed",
+	"externalIpsUsed",
+	"floatingIpsUsed",
 }
 
 var FlavorUsageFields = []string{
@@ -626,22 +631,24 @@ func getFieldsSlice(selector, measurementType string) []string {
 	return fields
 }
 
-func getCloudletPlatformTypes(ctx context.Context, username, region string, key *edgeproto.CloudletKey) (map[string]struct{}, error) {
+func getCloudletPlatformTypes(ctx context.Context, username, region string, keys []edgeproto.CloudletKey) (map[string]struct{}, error) {
 	platformTypes := make(map[string]struct{})
 	rc := &ormutil.RegionContext{}
 	rc.Username = username
 	rc.Region = region
 	rc.Database = database
-	obj := edgeproto.Cloudlet{
-		Key: *key,
-	}
-	err := ctrlclient.ShowCloudletStream(ctx, rc, &obj, connCache, nil, func(res *edgeproto.Cloudlet) error {
-		pfType := pf.GetType(res.PlatformType.String())
-		platformTypes[pfType] = struct{}{}
-		return nil
-	})
-	if err != nil {
-		return nil, err
+	for ii := range keys {
+		obj := edgeproto.Cloudlet{
+			Key: keys[ii],
+		}
+		err := ctrlclient.ShowCloudletStream(ctx, rc, &obj, connCache, nil, func(res *edgeproto.Cloudlet) error {
+			pfType := pf.GetType(res.PlatformType.String())
+			platformTypes[pfType] = struct{}{}
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 	if len(platformTypes) == 0 {
 		return nil, fmt.Errorf("Cloudlet does not exist")
@@ -834,16 +841,8 @@ func GetMetricsCommon(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		// Operator name has to be specified
-		if in.Cloudlet.Organization == "" {
-			return fmt.Errorf("Cloudlet details must be present")
-		}
 		// validate all the passed in arguments
 		if err = util.ValidateNames(in.Cloudlet.GetTags()); err != nil {
-			return err
-		}
-
-		if err = validateSelectorString(in.Selector, CLOUDLETUSAGE); err != nil {
 			return err
 		}
 
@@ -853,6 +852,20 @@ func GetMetricsCommon(c echo.Context) error {
 		rc.region = in.Region
 		org = in.Cloudlet.Organization
 
+		// New metrics api request
+		if len(in.Cloudlets) > 0 {
+			return GetCloudletUsageMetrics(c, &in)
+		}
+
+		// Operator name has to be specified
+		if in.Cloudlet.Organization == "" {
+			return fmt.Errorf("Cloudlet details must be present")
+		}
+
+		if err = validateSelectorString(in.Selector, CLOUDLETUSAGE); err != nil {
+			return err
+		}
+
 		// Check the operator against who is logged in
 		if err := authorized(ctx, rc.claims.Username, org, ResourceCloudletAnalytics, ActionView); err != nil {
 			return err
@@ -861,7 +874,7 @@ func GetMetricsCommon(c echo.Context) error {
 		// Platform type is required for cloudlet resource usage
 		platformTypes := make(map[string]struct{})
 		if in.Selector == "resourceusage" {
-			platformTypes, err = getCloudletPlatformTypes(ctx, claims.Username, in.Region, &in.Cloudlet)
+			platformTypes, err = getCloudletPlatformTypes(ctx, claims.Username, in.Region, []edgeproto.CloudletKey{in.Cloudlet})
 			if err != nil {
 				return err
 			}
