@@ -7,12 +7,6 @@ controllers:
   address: 127.0.0.1:55011
   notifyaddr: 127.0.0.1:37011
   influxdb: http://127.0.0.1:8087
-orgs:
-- name: user3org
-  type: developer
-  address: enterprise headquarters
-  phone: 123-123-1234
-  parent: user3org
 billingorgs:
 - name: user3org
   type: self
@@ -23,9 +17,15 @@ billingorgs:
   city: Gainesville
   country: US
   state: FL
-  postalcode: 32604
+  postalcode: "32604"
   phone: 123-123-1234
   children: user3org
+orgs:
+- name: user3org
+  type: developer
+  address: enterprise headquarters
+  phone: 123-123-1234
+  parent: user3org
 roles:
 - org: user3org
   username: mexadmin
@@ -53,25 +53,40 @@ cloudletpoolaccessresponses:
   cloudletpool: enterprise-pool
   cloudletpoolorg: enterprise
   decision: accept
-
 regiondata:
 - region: local
   appdata:
-    cloudlets:
+    flavors:
     - key:
-        organization: enterprise
-        name: enterprise-1
-      location:
-        latitude: 31
-        longitude: -91
-      ipsupport: Dynamic
-      numdynamicips: 254
-      state: Ready
+        name: x1.medium
+      ram: 4096
+      vcpus: 4
+      disk: 4
+    - key:
+        name: x1.small
+      ram: 2048
+      vcpus: 2
+      disk: 2
+    - key:
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
+    cloudlets:
     - key:
         organization: azure
         name: azure-cloud-4
       location:
         latitude: 32
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+    - key:
+        organization: enterprise
+        name: enterprise-1
+      location:
+        latitude: 31
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
@@ -104,22 +119,6 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-    flavors:
-    - key:
-        name: x1.tiny
-      ram: 1024
-      vcpus: 1
-      disk: 1
-    - key:
-        name: x1.small
-      ram: 2048
-      vcpus: 2
-      disk: 2
-    - key:
-        name: x1.medium
-      ram: 4096
-      vcpus: 4
-      disk: 4
     clusterinsts:
     - key:
         clusterkey:
@@ -146,7 +145,6 @@ regiondata:
       imagepath: registry.mobiledgex.net/user3org/ep1:1.0
       imagetype: Docker
       accessports: tcp:80,tcp:443,udp:10002
-      accesstype: LoadBalancer
       defaultflavor:
         name: x1.small
       deployment: kubernetes
@@ -216,6 +214,7 @@ regiondata:
                 - containerPort: 10002
                   protocol: UDP
       deploymentgenerator: kubernetes-basic
+      accesstype: LoadBalancer
     appinstances:
     - key:
         appkey:
@@ -247,13 +246,13 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
-      powerstate: PowerOn
-      createdat:
-        seconds: 1569534854
-        nanos: 528573000
       runtimeinfo:
         containerids:
         - appOnClusterNode0
+      createdat:
+        seconds: 1569534854
+        nanos: 528573000
+      powerstate: PowerOn
       uniqueid: user3orgep110-smallcluster-enterprise-1-enterprise
     appinstrefs:
     - key:
@@ -286,20 +285,20 @@ regiondata:
   appdata:
     flavors:
     - key:
-        name: x1.tiny
-      ram: 1024
-      vcpus: 1
-      disk: 1
+        name: x1.medium
+      ram: 4096
+      vcpus: 4
+      disk: 4
     - key:
         name: x1.small
       ram: 2048
       vcpus: 2
       disk: 2
     - key:
-        name: x1.medium
-      ram: 4096
-      vcpus: 4
-      disk: 4
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
     cloudlets:
     - key:
         organization: enterprise
@@ -319,7 +318,6 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: Fake
     - key:
         organization: dmuus
         name: dmuus-cloud-4

@@ -16,7 +16,7 @@ regiondata:
       ipaccess: Dedicated
       allocatedip: dynamic
       nodeflavor: x1.small
-      masterflavor: x1.small
+      masternodeflavor: x1.small
       deployment: kubernetes
       nummasters: 1
       numnodes: {{numnodes}}

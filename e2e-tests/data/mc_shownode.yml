@@ -1,10 +1,7 @@
 nodes:
 - key:
-    type: notifyroot
-  internalpki: UseVaultPki
-
-- key:
-    type: mc
+    type: autoprov
+    region: local
   internalpki: UseVaultPki
   properties:
     InfraBuildAuthor:
@@ -12,7 +9,8 @@ nodes:
     InfraBuildHead:
     InfraBuildMaster:
 - key:
-    type: mc
+    type: autoprov
+    region: locala
   internalpki: UseVaultPki
   properties:
     InfraBuildAuthor:
@@ -21,6 +19,43 @@ nodes:
     InfraBuildMaster:
 
 - key:
+    type: cluster-svc
+    region: local
+  internalpki: UseVaultPki
+  properties:
+    InfraClusterSvcBuildAuthor:
+    InfraClusterSvcBuildDate:
+    InfraClusterSvcBuildHead:
+    InfraClusterSvcBuildMaster:
+- key:
+    type: cluster-svc
+    region: local
+  internalpki: UseVaultPki
+  properties:
+    InfraClusterSvcBuildAuthor:
+    InfraClusterSvcBuildDate:
+    InfraClusterSvcBuildHead:
+    InfraClusterSvcBuildMaster:
+- key:
+    type: cluster-svc
+    region: locala
+  internalpki: UseVaultPki
+  properties:
+    InfraClusterSvcBuildAuthor:
+    InfraClusterSvcBuildDate:
+    InfraClusterSvcBuildHead:
+    InfraClusterSvcBuildMaster:
+- key:
+    type: cluster-svc
+    region: locala
+  internalpki: UseVaultPki
+  properties:
+    InfraClusterSvcBuildAuthor:
+    InfraClusterSvcBuildDate:
+    InfraClusterSvcBuildHead:
+    InfraClusterSvcBuildMaster:
+
+- key:
     type: controller
     region: local
   containerversion: "2019-10-24"
@@ -51,100 +86,6 @@ nodes:
   containerversion: "2019-10-24"
   internalpki: UseVaultPki
 
-- key:
-    type: dme
-    region: local
-    cloudletkey:
-      organization: dmuus
-      name: dmuus-cloud-1
-  internalpki: UseVaultPki
-  properties:
-    EdgeEventsBuildAuthor:
-    EdgeEventsBuildDate:
-    EdgeEventsBuildHead:
-    EdgeEventsBuildMaster:
-    GDDTOperatorBuildAuthor:
-    GDDTOperatorBuildDate:
-    GDDTOperatorBuildHead:
-    GDDTOperatorBuildMaster:
-- key:
-    type: dme
-    region: local
-    cloudletkey:
-      organization: dmuus
-      name: dmuus-cloud-2
-  internalpki: UseVaultPki
-  properties:
-    EdgeEventsBuildAuthor:
-    EdgeEventsBuildDate:
-    EdgeEventsBuildHead:
-    EdgeEventsBuildMaster:
-    GDDTOperatorBuildAuthor:
-    GDDTOperatorBuildDate:
-    GDDTOperatorBuildHead:
-    GDDTOperatorBuildMaster:
-- key:
-    type: dme
-    region: locala
-    cloudletkey:
-      organization: dmuus
-      name: dmuus-cloud-3
-  internalpki: UseVaultPki
-  properties:
-    EdgeEventsBuildAuthor:
-    EdgeEventsBuildDate:
-    EdgeEventsBuildHead:
-    EdgeEventsBuildMaster:
-    GDDTOperatorBuildAuthor:
-    GDDTOperatorBuildDate:
-    GDDTOperatorBuildHead:
-    GDDTOperatorBuildMaster:
-- key:
-    type: dme
-    region: locala
-    cloudletkey:
-      organization: dmuus
-      name: dmuus-cloud-4
-  internalpki: UseVaultPki
-  properties:
-    EdgeEventsBuildAuthor:
-    EdgeEventsBuildDate:
-    EdgeEventsBuildHead:
-    EdgeEventsBuildMaster:
-    GDDTOperatorBuildAuthor:
-    GDDTOperatorBuildDate:
-    GDDTOperatorBuildHead:
-    GDDTOperatorBuildMaster:
-
-- key:
-    type: crm
-    region: local
-    cloudletkey:
-      organization: enterprise
-      name: enterprise-1
-  containerversion: "2019-10-24"
-  internalpki: useAccessKey,UseVaultPki
-- key:
-    type: crm
-    region: local
-    cloudletkey:
-      organization: dmuus
-      name: dmuus-cloud-1
-  containerversion: "2019-10-24"
-  internalpki: useAccessKey,UseVaultPki
-  properties:
-    FakeInfraBuildAuthor:
-    FakeInfraBuildDate:
-    FakeInfraBuildHead:
-    FakeInfraBuildMaster:
-- key:
-    type: crm
-    region: local
-    cloudletkey:
-      organization: dmuus
-      name: dmuus-cloud-2
-  containerversion: "2019-10-24"
-  internalpki: useAccessKey,UseVaultPki
 - key:
     type: crm
     region: local
@@ -157,11 +98,47 @@ nodes:
     type: crm
     region: local
     cloudletkey:
+      organization: enterprise
+      name: enterprise-1
+  containerversion: "2019-10-24"
+  internalpki: useAccessKey,UseVaultPki
+- key:
+    type: crm
+    region: locala
+    cloudletkey:
+      organization: enterprise
+      name: enterprise-2
+  containerversion: "2019-10-24"
+  internalpki: useAccessKey,UseVaultPki
+- key:
+    type: crm
+    region: local
+    cloudletkey:
       organization: gcp
       name: gcp-cloud-5
   containerversion: "2019-10-24"
   internalpki: useAccessKey,UseVaultPki
-
+- key:
+    type: crm
+    region: local
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-1
+  containerversion: "2019-10-24"
+  internalpki: useAccessKey,UseVaultPki
+  properties:
+    FakeInfraBuildAuthor:
+    FakeInfraBuildDate:
+    FakeInfraBuildHead:
+    FakeInfraBuildMaster:
+- key:
+    type: crm
+    region: local
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-2
+  containerversion: "2019-10-24"
+  internalpki: useAccessKey,UseVaultPki
 - key:
     type: crm
     region: locala
@@ -178,83 +155,71 @@ nodes:
       name: dmuus-cloud-4
   containerversion: "2019-10-24"
   internalpki: useAccessKey,UseVaultPki
-- key:
-    type: crm
-    region: locala
-    cloudletkey:
-      organization: enterprise
-      name: enterprise-2
-  containerversion: "2019-10-24"
-  internalpki: useAccessKey,UseVaultPki
 
 - key:
-    type: shepherd
+    type: dme
     region: local
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
-  internalpki: useAccessKey,UseVaultPki
+  internalpki: UseVaultPki
   properties:
-    InfraBuildAuthor:
-    InfraBuildDate:
-    InfraBuildHead:
-    InfraBuildMaster:
-
+    EdgeEventsBuildAuthor:
+    EdgeEventsBuildDate:
+    EdgeEventsBuildHead:
+    EdgeEventsBuildMaster:
+    GDDTOperatorBuildAuthor:
+    GDDTOperatorBuildDate:
+    GDDTOperatorBuildHead:
+    GDDTOperatorBuildMaster:
 - key:
-    type: cluster-svc
+    type: dme
     region: local
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-2
   internalpki: UseVaultPki
   properties:
-    InfraClusterSvcBuildAuthor:
-    InfraClusterSvcBuildDate:
-    InfraClusterSvcBuildHead:
-    InfraClusterSvcBuildMaster:
+    EdgeEventsBuildAuthor:
+    EdgeEventsBuildDate:
+    EdgeEventsBuildHead:
+    EdgeEventsBuildMaster:
+    GDDTOperatorBuildAuthor:
+    GDDTOperatorBuildDate:
+    GDDTOperatorBuildHead:
+    GDDTOperatorBuildMaster:
 - key:
-    type: cluster-svc
-    region: local
-  internalpki: UseVaultPki
-  properties:
-    InfraClusterSvcBuildAuthor:
-    InfraClusterSvcBuildDate:
-    InfraClusterSvcBuildHead:
-    InfraClusterSvcBuildMaster:
-- key:
-    type: cluster-svc
+    type: dme
     region: locala
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-3
   internalpki: UseVaultPki
   properties:
-    InfraClusterSvcBuildAuthor:
-    InfraClusterSvcBuildDate:
-    InfraClusterSvcBuildHead:
-    InfraClusterSvcBuildMaster:
+    EdgeEventsBuildAuthor:
+    EdgeEventsBuildDate:
+    EdgeEventsBuildHead:
+    EdgeEventsBuildMaster:
+    GDDTOperatorBuildAuthor:
+    GDDTOperatorBuildDate:
+    GDDTOperatorBuildHead:
+    GDDTOperatorBuildMaster:
 - key:
-    type: cluster-svc
+    type: dme
     region: locala
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-4
   internalpki: UseVaultPki
   properties:
-    InfraClusterSvcBuildAuthor:
-    InfraClusterSvcBuildDate:
-    InfraClusterSvcBuildHead:
-    InfraClusterSvcBuildMaster:
-
-- key:
-    type: autoprov
-    region: local
-  internalpki: UseVaultPki
-  properties:
-    InfraBuildAuthor:
-    InfraBuildDate:
-    InfraBuildHead:
-    InfraBuildMaster:
-- key:
-    type: autoprov
-    region: locala
-  internalpki: UseVaultPki
-  properties:
-    InfraBuildAuthor:
-    InfraBuildDate:
-    InfraBuildHead:
-    InfraBuildMaster:
+    EdgeEventsBuildAuthor:
+    EdgeEventsBuildDate:
+    EdgeEventsBuildHead:
+    EdgeEventsBuildMaster:
+    GDDTOperatorBuildAuthor:
+    GDDTOperatorBuildDate:
+    GDDTOperatorBuildHead:
+    GDDTOperatorBuildMaster:
 
 - key:
     name: frm1
@@ -273,6 +238,40 @@ nodes:
     region: locala
   notifyid: 2
   internalpki: UseVaultPki
+  properties:
+    InfraBuildAuthor:
+    InfraBuildDate:
+    InfraBuildHead:
+    InfraBuildMaster:
+
+- key:
+    type: mc
+  internalpki: UseVaultPki
+  properties:
+    InfraBuildAuthor:
+    InfraBuildDate:
+    InfraBuildHead:
+    InfraBuildMaster:
+- key:
+    type: mc
+  internalpki: UseVaultPki
+  properties:
+    InfraBuildAuthor:
+    InfraBuildDate:
+    InfraBuildHead:
+    InfraBuildMaster:
+
+- key:
+    type: notifyroot
+  internalpki: UseVaultPki
+
+- key:
+    type: shepherd
+    region: local
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-1
+  internalpki: useAccessKey,UseVaultPki
   properties:
     InfraBuildAuthor:
     InfraBuildDate:

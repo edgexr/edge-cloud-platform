@@ -322,6 +322,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	if api == "show" {
 		var showData *ormapi.AllData
 		showData = showMcData(uri, token, tag, &rc)
+		showData.Sort()
 		util.PrintToYamlFile("show-commands.yml", outputDir, showData, true)
 		*retry = true
 		return rc
@@ -511,6 +512,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		dataOut, errs := showMcDataFiltered(uri, token, tag, data, &rc)
 		// write both files so we don't accidentally pick up older results
 		if errs == nil || len(errs) == 0 {
+			dataOut.Sort()
 			util.PrintToYamlFile("show-commands.yml", outputDir, dataOut, true)
 			util.PrintToYamlFile("api-output.yml", outputDir, "", true)
 		} else {
@@ -1655,6 +1657,7 @@ func runMcShowNode(uri, curUserFile, outputDir string, vars, sharedData map[stri
 
 	appdata := edgeproto.NodeData{}
 	appdata.Nodes = nodes
+	appdata.Sort()
 	util.PrintToYamlFile("show-commands.yml", outputDir, appdata, true)
 	return rc
 }
@@ -1735,6 +1738,7 @@ func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 			output.Requests = append(output.Requests, replies)
 		}
 	}
+	output.Sort()
 	util.PrintToYamlFile("api-output.yml", outputDir, output, true)
 	return rc
 }
@@ -1778,6 +1782,7 @@ func showMcAlertReceivers(uri, curUserFile, outputDir string, vars, sharedData m
 	showData.AlertReceivers, status, err = mcClient.ShowAlertReceiver(uri, token, &ormapi.AlertReceiver{})
 	checkMcErr("ShowAlertReceiver", status, err, &rc)
 
+	showData.Sort()
 	util.PrintToYamlFile("show-commands.yml", outputDir, showData, true)
 	return rc
 }

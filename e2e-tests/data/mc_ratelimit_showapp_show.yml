@@ -12,8 +12,6 @@ regiondata:
       accesstype: AccessTypeLoadBalancer
       defaultflavor:
         name: x1.small
-      cluster:
-        name: SmallCluster
       authpublickey: |
         -----BEGIN PUBLIC KEY-----
         MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij
@@ -92,4 +90,3 @@ regiondata:
                   protocol: UDP
       deploymentgenerator: kubernetes-basic
       androidpackagename: com.acme.someapplication1
-      permitsplatformapps: true
