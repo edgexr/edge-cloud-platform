@@ -42,11 +42,8 @@ regiondata:
       accessports: tcp:7777
       defaultflavor:
         name: x1.small
-      cluster:
-        name: AppCluster
       deployment: kubernetes
       androidpackagename: com.mobiledgex.sdkdemo
-      permitsplatformapps: true
     - key:
         organization: DevOrg
         name: Face Detection Demo
@@ -57,11 +54,8 @@ regiondata:
       skiphcports: tcp:8008
       defaultflavor:
         name: x1.small
-      cluster:
-        name: AppCluster
       deployment: kubernetes
       androidpackagename: com.mobiledgex.facedemo
-      permitsplatformapps: true
       configs:
       - kind: envVarsYaml
         config: |

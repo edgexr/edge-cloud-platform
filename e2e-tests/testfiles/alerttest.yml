@@ -60,13 +60,13 @@ tests:
       filetype: mcdata
 
   - name: make sure no user alerts are defined
-    actions: [mcapi-showfiltered]
+    actions: [mcapi-showalerts]
     apifile: '{{datadir2}}/user2_alerts_filter.yml'
     curuserfile: '{{datadir2}}/mc_user2.yml'
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
       yaml2: '{{datadir2}}/useralert_alert_empty.yml'
-      filetype: mcdata
+      filetype: mcalerts
 
   - name: create a new user-defined alert
     actions: [mcapi-create]
@@ -118,7 +118,7 @@ tests:
     retryintervalsec: 0.5
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/mcappdata_empty.yml'
+      yaml2: '{{datadir2}}/useralert_alert_empty.yml'
       filetype: mcalerts
 
   - name: verify that email notification about an alert resolution was sent
@@ -141,13 +141,13 @@ tests:
     curuserfile: '{{datadir2}}/mc_user2.yml'
 
   - name: make sure no user alerts are defined
-    actions: [mcapi-showfiltered]
+    actions: [mcapi-showalerts]
     apifile: '{{datadir2}}/user2_alerts_filter.yml'
     curuserfile: '{{datadir2}}/mc_user2.yml'
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
       yaml2: '{{datadir2}}/useralert_alert_empty.yml'
-      filetype: mcdata
+      filetype: mcalerts
 
   - name: delete all emails and verify that mailbox is empty
     actions: [email-deleteall, email-check]

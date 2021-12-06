@@ -12,41 +12,6 @@ regiondata:
             name: autocluster-autoprov
           cloudletkey:
             organization: dmuus
-            name: dmuus-cloud-2
-          organization: MobiledgeX
-      cloudletloc:
-        latitude: 35
-        longitude: -95
-      uri: shared.dmuus-cloud-2.dmuus.mobiledgex.net
-      liveness: Autoprov
-      mappedports:
-      - proto: Tcp
-        internalport: 82
-        publicport: 82
-      flavor:
-        name: x1.small
-      state: Ready
-      runtimeinfo:
-        containerids:
-        - appOnClusterNode0
-      createdat:
-        seconds: 1636137799
-        nanos: 404193000
-      healthcheck: Ok
-      powerstate: PowerOn
-      vmflavor: x1.small
-      realclustername: Reservable2
-      uniqueid: acmeappcoautoprovha10-autocluster-autoprov-dmuus-cloud-2-dmuus
-    - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovHA
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-autoprov
-          cloudletkey:
-            organization: dmuus
             name: dmuus-cloud-1
           organization: MobiledgeX
       cloudletloc:
@@ -72,3 +37,38 @@ regiondata:
       vmflavor: x1.small
       realclustername: Reservable1
       uniqueid: acmeappcoautoprovha10-autocluster-autoprov-dmuus-cloud-1-dmuus
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: autoprovHA
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: autocluster-autoprov
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-2
+          organization: MobiledgeX
+      cloudletloc:
+        latitude: 35
+        longitude: -95
+      uri: shared.dmuus-cloud-2.dmuus.mobiledgex.net
+      liveness: Autoprov
+      mappedports:
+      - proto: Tcp
+        internalport: 82
+        publicport: 82
+      flavor:
+        name: x1.small
+      state: Ready
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
+      createdat:
+        seconds: 1636137799
+        nanos: 404193000
+      healthcheck: Ok
+      powerstate: PowerOn
+      vmflavor: x1.small
+      realclustername: Reservable2
+      uniqueid: acmeappcoautoprovha10-autocluster-autoprov-dmuus-cloud-2-dmuus

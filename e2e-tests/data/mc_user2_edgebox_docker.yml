@@ -46,7 +46,6 @@ regiondata:
         name: AppCluster
       deployment: docker
       androidpackagename: com.mobiledgex.sdkdemo
-      permitsplatformapps: true
     - key:
         organization: DevOrg
         name: Face Detection Demo
@@ -61,7 +60,6 @@ regiondata:
         name: AppCluster
       deployment: docker
       androidpackagename: com.mobiledgex.facedemo
-      permitsplatformapps: true
       configs:
       - kind: envVarsYaml
         config: |

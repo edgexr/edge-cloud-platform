@@ -11,6 +11,41 @@ regiondata:
           clusterkey:
             name: autocluster-autoprov
           cloudletkey:
+            organization: azure
+            name: azure-cloud-4
+          organization: MobiledgeX
+      cloudletloc:
+        latitude: 32
+        longitude: -91
+      uri: acmeappcoautoprovha10.reservable3.azure-cloud-4.azure.mobiledgex.net
+      liveness: Autoprov
+      mappedports:
+      - proto: Tcp
+        internalport: 82
+        publicport: 82
+        fqdnprefix: autoprovha10-tcp.
+      flavor:
+        name: x1.small
+      state: Ready
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
+      createdat:
+        seconds: 1592262055
+        nanos: 628000000
+      powerstate: PowerOn
+      vmflavor: x1.small
+      realclustername: Reservable3
+      uniqueid: acmeappcoautoprovha10-autocluster-autoprov-azure-cloud-4-azure
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: autoprovHA
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: autocluster-autoprov
+          cloudletkey:
             organization: dmuus
             name: dmuus-cloud-1
           organization: MobiledgeX
@@ -26,14 +61,14 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
       createdat:
         seconds: 1592262054
         nanos: 484967000
       powerstate: PowerOn
       vmflavor: x1.small
-      runtimeinfo:
-        containerids:
-        - appOnClusterNode0
       realclustername: Reservable1
       uniqueid: acmeappcoautoprovha10-autocluster-autoprov-dmuus-cloud-1-dmuus
     - key:
@@ -60,48 +95,13 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
       createdat:
         seconds: 1592262054
         nanos: 635702000
       powerstate: PowerOn
       vmflavor: x1.small
-      runtimeinfo:
-        containerids:
-        - appOnClusterNode0
       realclustername: Reservable2
       uniqueid: acmeappcoautoprovha10-autocluster-autoprov-dmuus-cloud-2-dmuus
-    - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovHA
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-autoprov
-          cloudletkey:
-            organization: azure
-            name: azure-cloud-4
-          organization: MobiledgeX
-      cloudletloc:
-        latitude: 32
-        longitude: -91
-      uri: acmeappcoautoprovha10.reservable3.azure-cloud-4.azure.mobiledgex.net
-      liveness: Autoprov
-      mappedports:
-      - proto: Tcp
-        internalport: 82
-        publicport: 82
-        fqdnprefix: autoprovha10-tcp.
-      flavor:
-        name: x1.small
-      state: Ready
-      createdat:
-        seconds: 1592262055
-        nanos: 628000000
-      powerstate: PowerOn
-      vmflavor: x1.small
-      runtimeinfo:
-        containerids:
-        - appOnClusterNode0
-      realclustername: Reservable3
-      uniqueid: acmeappcoautoprovha10-autocluster-autoprov-azure-cloud-4-azure

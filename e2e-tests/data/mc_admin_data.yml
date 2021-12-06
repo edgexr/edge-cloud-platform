@@ -1,13 +1,25 @@
 controllers:
 - region: local
-  address: "127.0.0.1:55001"
-  notifyaddr: "127.0.0.1:37001"
-  influxdb: "http://127.0.0.1:8086"
+  address: 127.0.0.1:55001
+  notifyaddr: 127.0.0.1:37001
+  influxdb: http://127.0.0.1:8086
 - region: locala
-  address: "127.0.0.1:55011"
-  notifyaddr: "127.0.0.1:37011"
-  influxdb: "http://127.0.0.1:8087"
-
+  address: 127.0.0.1:55011
+  notifyaddr: 127.0.0.1:37011
+  influxdb: http://127.0.0.1:8087
+billingorgs:
+- name: user3org
+  type: self
+  firstname: user3
+  lastname: dev
+  email: john@enterprise.com
+  address: enterprise hq
+  city: Gainesville
+  country: US
+  state: FL
+  postalcode: "32604"
+  phone: 123-123-1234
+  children: user3org
 orgs:
 - name: MobiledgeX
   type: developer
@@ -19,29 +31,29 @@ orgs:
   address: enterprise headquarters
   phone: 123-123-1234
   parent: user3org
-
-billingorgs:
-- name: user3org
-  type: self
-  firstname: user3
-  lastname: dev
-  email: john@enterprise.com
-  address: enterprise hq
-  city: Gainesville
-  country: US
-  state: FL
-  postalcode: 32604
-  phone: 123-123-1234
-  children: user3org
-
 roles:
 - org: user3org
-  role: DeveloperManager
   username: user3
-
+  role: DeveloperManager
 regiondata:
 - region: local
   appdata:
+    flavors:
+    - key:
+        name: x1.medium
+      ram: 4096
+      vcpus: 4
+      disk: 4
+    - key:
+        name: x1.small
+      ram: 2048
+      vcpus: 2
+      disk: 2
+    - key:
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
     settings:
       shepherdmetricscollectioninterval: 1s
       shepherdalertevaluationinterval: 1s
@@ -57,52 +69,51 @@ regiondata:
       createclusterinsttimeout: 3s
       updateclusterinsttimeout: 2s
       deleteclusterinsttimeout: 2s
-      createcloudlettimeout: 10s
-      updatecloudlettimeout: 2s
-      updatetrustpolicytimeout: 5s
       masternodeflavor: x1.small
       maxtrackeddmeclients: 100
-      chefclientinterval: 10m
+      chefclientinterval: 10m0s
+      influxdbmetricsretention: 672h0m0s
       cloudletmaintenancetimeout: 2s
       updatevmpooltimeout: 20m0s
+      updatetrustpolicytimeout: 5s
       dmeapimetricscollectioninterval: 1s
-      influxdbmetricsretention: 672h0m0s
-      cleanupreservableautoclusteridletime: 30m
-      influxdbcloudletusagemetricsretention: 8760h0m0s
-      appinstclientcleanupinterval: 24h
-      locationtilesidelengthkm: 2
       edgeeventsmetricscollectioninterval: 1s
-      influxdbedgeeventsmetricsretention: 672h0m0s
-      influxdbdownsampledmetricsretention: 672h0m0s
+      cleanupreservableautoclusteridletime: 30m0s
+      influxdbcloudletusagemetricsretention: 8760h0m0s
+      createcloudlettimeout: 10s
+      updatecloudlettimeout: 2s
+      locationtilesidelengthkm: 2
       edgeeventsmetricscontinuousqueriescollectionintervals:
       - interval: 2s
+      influxdbdownsampledmetricsretention: 672h0m0s
+      influxdbedgeeventsmetricsretention: 672h0m0s
+      appinstclientcleanupinterval: 24h0m0s
       clusterautoscaleaveragingdurationsec: 1
       clusterautoscaleretrydelay: 1s
       alertpolicymintriggertime: 1s
       disableratelimit: true
       ratelimitmaxtrackedips: 10000
-      resourcesnapshotthreadinterval: 10m
+      resourcesnapshotthreadinterval: 10m0s
       platformhainstancepollinterval: 300ms
       platformhainstanceactiveexpiretime: 1s
-    flavors:
-    - key:
-        name: x1.tiny
-      ram: 1024
-      vcpus: 1
-      disk: 1
-    - key:
-        name: x1.small
-      ram: 2048
-      vcpus: 2
-      disk: 2
-    - key:
-        name: x1.medium
-      ram: 4096
-      vcpus: 4
-      disk: 4
-
 - region: locala
   appdata:
+    flavors:
+    - key:
+        name: x1.medium
+      ram: 4096
+      vcpus: 4
+      disk: 4
+    - key:
+        name: x1.small
+      ram: 2048
+      vcpus: 2
+      disk: 2
+    - key:
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
     settings:
       shepherdmetricscollectioninterval: 1s
       shepherdalertevaluationinterval: 1s
@@ -118,46 +129,30 @@ regiondata:
       createclusterinsttimeout: 3s
       updateclusterinsttimeout: 2s
       deleteclusterinsttimeout: 2s
-      createcloudlettimeout: 10s
-      updatecloudlettimeout: 2s
-      updatetrustpolicytimeout: 5s
       masternodeflavor: x1.small
       maxtrackeddmeclients: 100
-      chefclientinterval: 10m
+      chefclientinterval: 10m0s
+      influxdbmetricsretention: 672h0m0s
       cloudletmaintenancetimeout: 2s
       updatevmpooltimeout: 20m0s
+      updatetrustpolicytimeout: 5s
       dmeapimetricscollectioninterval: 1s
-      influxdbmetricsretention: 672h0m0s
-      cleanupreservableautoclusteridletime: 30m
-      influxdbcloudletusagemetricsretention: 8760h0m0s
-      appinstclientcleanupinterval: 24h
-      locationtilesidelengthkm: 2
       edgeeventsmetricscollectioninterval: 1s
-      influxdbedgeeventsmetricsretention: 672h0m0s
-      influxdbdownsampledmetricsretention: 672h0m0s
+      cleanupreservableautoclusteridletime: 30m0s
+      influxdbcloudletusagemetricsretention: 8760h0m0s
+      createcloudlettimeout: 10s
+      updatecloudlettimeout: 2s
+      locationtilesidelengthkm: 2
       edgeeventsmetricscontinuousqueriescollectionintervals:
       - interval: 2s
+      influxdbdownsampledmetricsretention: 672h0m0s
+      influxdbedgeeventsmetricsretention: 672h0m0s
+      appinstclientcleanupinterval: 24h0m0s
       clusterautoscaleaveragingdurationsec: 1
       clusterautoscaleretrydelay: 1s
       alertpolicymintriggertime: 1s
       disableratelimit: true
       ratelimitmaxtrackedips: 10000
-      resourcesnapshotthreadinterval: 10m
+      resourcesnapshotthreadinterval: 10m0s
       platformhainstancepollinterval: 300ms
       platformhainstanceactiveexpiretime: 1s
-    flavors:
-    - key:
-        name: x1.tiny
-      ram: 1024
-      vcpus: 1
-      disk: 1
-    - key:
-        name: x1.small
-      ram: 2048
-      vcpus: 2
-      disk: 2
-    - key:
-        name: x1.medium
-      ram: 4096
-      vcpus: 4
-      disk: 4

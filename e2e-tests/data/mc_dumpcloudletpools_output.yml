@@ -1,16 +1,34 @@
 requests:
 - - node:
       name: Jon-Mex.lan
-      type: notifyroot
-    output: '{}'
+      type: autoprov
+      region: local
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
-      name: mc2
-      type: mc
-    output: '{"local":{"cloudletpools":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}},"locala":{"cloudletpools":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}}}'
+      name: Jon-Mex.lan
+      type: autoprov
+      region: locala
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
-      name: mc1
-      type: mc
-    output: '{"local":{"cloudletpools":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}},"locala":{"cloudletpools":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}}}'
+      name: cluster-svc1
+      type: cluster-svc
+      region: local
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+  - node:
+      name: cluster-svc2
+      type: cluster-svc
+      region: local
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+  - node:
+      name: cluster-svca1
+      type: cluster-svc
+      region: locala
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+  - node:
+      name: cluster-svca2
+      type: cluster-svc
+      region: locala
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
       name: Jon-Mex.lan@127.0.0.1:55001
       type: controller
@@ -33,40 +51,12 @@ requests:
     output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
       name: Jon-Mex.lan
-      type: autoprov
-      region: local
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
-  - node:
-      name: cluster-svc2
-      type: cluster-svc
-      region: local
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
-  - node:
-      name: Jon-Mex.lan
       type: crm
       cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-4
-      region: locala
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
-  - node:
-      name: Jon-Mex.lan
-      type: crm
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-3
-      region: locala
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
-  - node:
-      name: cluster-svca1
-      type: cluster-svc
-      region: locala
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
-  - node:
-      name: frma1
-      type: frm
-      region: locala
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+        organization: azure
+        name: azure-cloud-4
+      region: local
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
       name: Jon-Mex.lan
       type: crm
@@ -77,25 +67,12 @@ requests:
     output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
       name: Jon-Mex.lan
-      type: dme
+      type: crm
       cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-1
-      region: local
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
-  - node:
-      name: Jon-Mex.lan
-      type: dme
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-2
-      region: local
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
-  - node:
-      name: frm1
-      type: frm
-      region: local
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+        organization: enterprise
+        name: enterprise-2
+      region: locala
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
       name: Jon-Mex.lan
       type: crm
@@ -105,11 +82,6 @@ requests:
       region: local
     output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
-      name: cluster-svc1
-      type: cluster-svc
-      region: local
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
-  - node:
       name: Jon-Mex.lan
       type: crm
       cloudletkey:
@@ -129,23 +101,34 @@ requests:
       name: Jon-Mex.lan
       type: crm
       cloudletkey:
-        organization: azure
-        name: azure-cloud-4
-      region: local
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
-  - node:
-      name: cluster-svca2
-      type: cluster-svc
+        organization: dmuus
+        name: dmuus-cloud-3
       region: locala
     output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
       name: Jon-Mex.lan
       type: crm
       cloudletkey:
-        organization: enterprise
-        name: enterprise-2
+        organization: dmuus
+        name: dmuus-cloud-4
       region: locala
     output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+  - node:
+      name: Jon-Mex.lan
+      type: dme
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-1
+      region: local
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+  - node:
+      name: Jon-Mex.lan
+      type: dme
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-2
+      region: local
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
       name: Jon-Mex.lan
       type: dme
@@ -163,6 +146,28 @@ requests:
       region: locala
     output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
+      name: frm1
+      type: frm
+      region: local
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+  - node:
+      name: frma1
+      type: frm
+      region: locala
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+  - node:
+      name: mc1
+      type: mc
+    output: '{"local":{"cloudletpools":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}},"locala":{"cloudletpools":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}}}'
+  - node:
+      name: mc2
+      type: mc
+    output: '{"local":{"cloudletpools":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}},"locala":{"cloudletpools":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}}}'
+  - node:
+      name: Jon-Mex.lan
+      type: notifyroot
+    output: '{}'
+  - node:
       name: Jon-Mex.lan
       type: shepherd
       cloudletkey:
@@ -170,8 +175,3 @@ requests:
         name: dmuus-cloud-1
       region: local
     output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
-  - node:
-      name: Jon-Mex.lan
-      type: autoprov
-      region: locala
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'

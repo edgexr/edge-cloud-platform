@@ -27,7 +27,6 @@ federations:
     - 333
 - name: enterprise-SA-{{partnertag}}-{{region}}-fed
   selfoperatorid: enterprise
-  selfcountrycode: SA
   selffederationid: enterprise-SA-{{partnertag}}-{{region}}
   federator:
     operatorid: {{partnertag}}
@@ -41,7 +40,6 @@ federations:
     - 333
 - name: enterprise-SB-{{partnertag}}-{{region}}-fed
   selfoperatorid: enterprise
-  selfcountrycode: SB
   selffederationid: enterprise-SB-{{partnertag}}-{{region}}
   federator:
     operatorid: {{partnertag}}

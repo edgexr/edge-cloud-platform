@@ -1,6 +1,7 @@
 package ormapi
 
 import (
+	"sort"
 	"strings"
 	"time"
 
@@ -706,4 +707,61 @@ func GetInfoFromReportFileName(fileName string) (string, string) {
 		return parts[0], parts[1]
 	}
 	return "", ""
+}
+
+func (s *AlertReceiver) GetKeyString() string {
+	return s.Region + "," + s.Type + "," + s.Name
+}
+
+func (s *Role) GetKeyString() string {
+	return s.Username + "," + s.Org + "," + s.Role
+}
+
+func (s *OrgCloudletPool) GetKeyString() string {
+	return s.Region + "," + s.Org + "," + s.CloudletPoolOrg + "," + s.CloudletPool + "," + s.Type
+}
+
+func (s *AllData) Sort() {
+	sort.Slice(s.Controllers, func(i, j int) bool {
+		return s.Controllers[i].Region < s.Controllers[j].Region
+	})
+	sort.Slice(s.BillingOrgs, func(i, j int) bool {
+		return s.BillingOrgs[i].Name < s.BillingOrgs[j].Name
+	})
+	sort.Slice(s.AlertReceivers, func(i, j int) bool {
+		return s.AlertReceivers[i].GetKeyString() < s.AlertReceivers[j].GetKeyString()
+	})
+	sort.Slice(s.Orgs, func(i, j int) bool {
+		return s.Orgs[i].Name < s.Orgs[j].Name
+	})
+	sort.Slice(s.Roles, func(i, j int) bool {
+		return s.Roles[i].GetKeyString() < s.Roles[j].GetKeyString()
+	})
+	sort.Slice(s.CloudletPoolAccessInvitations, func(i, j int) bool {
+		return s.CloudletPoolAccessInvitations[i].GetKeyString() < s.CloudletPoolAccessInvitations[j].GetKeyString()
+	})
+	sort.Slice(s.CloudletPoolAccessResponses, func(i, j int) bool {
+		return s.CloudletPoolAccessResponses[i].GetKeyString() < s.CloudletPoolAccessResponses[j].GetKeyString()
+	})
+	sort.Slice(s.RegionData, func(i, j int) bool {
+		return s.RegionData[i].Region < s.RegionData[j].Region
+	})
+	for ii := range s.RegionData {
+		s.RegionData[ii].AppData.Sort()
+	}
+	sort.Slice(s.Federators, func(i, j int) bool {
+		return s.Federators[i].FederationId < s.Federators[j].FederationId
+	})
+	sort.Slice(s.FederatorZones, func(i, j int) bool {
+		return s.FederatorZones[i].ZoneId < s.FederatorZones[j].ZoneId
+	})
+	sort.Slice(s.Federations, func(i, j int) bool {
+		return s.Federations[i].Name < s.Federations[j].Name
+	})
+	sort.Slice(s.FederatedSelfZones, func(i, j int) bool {
+		return s.FederatedSelfZones[i].ZoneId < s.FederatedSelfZones[j].ZoneId
+	})
+	sort.Slice(s.FederatedPartnerZones, func(i, j int) bool {
+		return s.FederatedPartnerZones[i].FederatorZone.ZoneId < s.FederatedPartnerZones[j].FederatorZone.ZoneId
+	})
 }

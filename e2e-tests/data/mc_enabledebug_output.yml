@@ -1,13 +1,28 @@
 requests:
 - - node:
-      type: notifyroot
-    output: api,notify,events
+      type: autoprov
+      region: local
+    output: api,notify,metrics,sampled,events
   - node:
-      type: mc
-    output: api,notify,metrics,info,events
+      type: autoprov
+      region: locala
+    output: api,notify,metrics,sampled,events
   - node:
-      type: mc
-    output: api,notify,metrics,info,events
+      type: cluster-svc
+      region: local
+    output: etcd,api,notify,infra,metrics,events
+  - node:
+      type: cluster-svc
+      region: local
+    output: etcd,api,notify,infra,metrics,events
+  - node:
+      type: cluster-svc
+      region: locala
+    output: etcd,api,notify,infra,metrics,events
+  - node:
+      type: cluster-svc
+      region: locala
+    output: etcd,api,notify,infra,metrics,events
   - node:
       type: controller
       region: local
@@ -24,55 +39,6 @@ requests:
       type: controller
       region: locala
     output: etcd,api,notify,infra,metrics,upgrade,events
-  - node:
-      type: dme
-      region: local
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-1
-    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled,events
-  - node:
-      type: dme
-      region: local
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-2
-    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled,events
-  - node:
-      type: dme
-      region: locala
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-3
-    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled,events
-  - node:
-      type: dme
-      region: locala
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-4
-    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled,events
-  - node:
-      type: crm
-      region: local
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-1
-    output: api,notify,infra,metrics,upgrade,info,sampled
-  - node:
-      type: crm
-      region: local
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-2
-    output: api,notify,infra,metrics,upgrade,info,sampled
-  - node:
-      type: crm
-      region: local
-      cloudletkey:
-        organization: enterprise
-        name: enterprise-1
-    output: api,notify,infra,metrics,upgrade,info,sampled
   - node:
       type: crm
       region: local
@@ -84,8 +50,8 @@ requests:
       type: crm
       region: local
       cloudletkey:
-        organization: gcp
-        name: gcp-cloud-5
+        organization: enterprise
+        name: enterprise-1
     output: api,notify,infra,metrics,upgrade,info,sampled
   - node:
       type: crm
@@ -93,6 +59,27 @@ requests:
       cloudletkey:
         organization: enterprise
         name: enterprise-2
+    output: api,notify,infra,metrics,upgrade,info,sampled
+  - node:
+      type: crm
+      region: local
+      cloudletkey:
+        organization: gcp
+        name: gcp-cloud-5
+    output: api,notify,infra,metrics,upgrade,info,sampled
+  - node:
+      type: crm
+      region: local
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-1
+    output: api,notify,infra,metrics,upgrade,info,sampled
+  - node:
+      type: crm
+      region: local
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-2
     output: api,notify,infra,metrics,upgrade,info,sampled
   - node:
       type: crm
@@ -109,36 +96,33 @@ requests:
         name: dmuus-cloud-4
     output: api,notify,infra,metrics,upgrade,info,sampled
   - node:
-      type: cluster-svc
+      type: dme
       region: local
-    output: etcd,api,notify,infra,metrics,events
-  - node:
-      type: cluster-svc
-      region: local
-    output: etcd,api,notify,infra,metrics,events
-  - node:
-      type: cluster-svc
-      region: locala
-    output: etcd,api,notify,infra,metrics,events
-  - node:
-      type: cluster-svc
-      region: locala
-    output: etcd,api,notify,infra,metrics,events
-  - node:
-      type: autoprov
-      region: local
-    output: api,notify,metrics,sampled,events
-  - node:
-      type: autoprov
-      region: locala
-    output: api,notify,metrics,sampled,events
-  - node:
-      type: shepherd
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-1
+    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled,events
+  - node:
+      type: dme
       region: local
-    output: api,notify,infra,metrics,info,sampled
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-2
+    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled,events
+  - node:
+      type: dme
+      region: locala
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-3
+    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled,events
+  - node:
+      type: dme
+      region: locala
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-4
+    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled,events
   - node:
       name: frm1
       type: frm
@@ -149,3 +133,19 @@ requests:
       type: frm
       region: locala
     output: api,notify,infra
+  - node:
+      type: mc
+    output: api,notify,metrics,info,events
+  - node:
+      type: mc
+    output: api,notify,metrics,info,events
+  - node:
+      type: notifyroot
+    output: api,notify,events
+  - node:
+      type: shepherd
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-1
+      region: local
+    output: api,notify,infra,metrics,info,sampled

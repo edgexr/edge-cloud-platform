@@ -15,6 +15,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
 	edgetestutil "github.com/mobiledgex/edge-cloud/testutil"
+	"github.com/mobiledgex/yaml/v2"
 )
 
 // go-cmp Options
@@ -64,7 +65,7 @@ func CmpSortOrgs(a ormapi.Organization, b ormapi.Organization) bool {
 //compares two yaml files for equivalence
 //TODO need to handle different types of interfaces besides appdata, currently using
 //that to sort
-func CompareYamlFiles(compare *util.CompareYaml) bool {
+func CompareYamlFiles(name string, compare *util.CompareYaml) bool {
 	firstYamlFile := compare.Yaml1
 	secondYamlFile := compare.Yaml2
 	fileType := compare.FileType
@@ -101,8 +102,6 @@ func CompareYamlFiles(compare *util.CompareYaml) bool {
 			// ignore local hostname based data
 			copts = append(copts, cmpopts.IgnoreFields(edgeproto.CloudletInfo{}, "Controller"))
 		}
-		copts = append(copts, edgeproto.CmpSortSlices()...)
-		copts = append(copts, cmpopts.SortSlices(CmpSortOrgs))
 
 		y1 = a1
 		y2 = a2
@@ -477,11 +476,16 @@ func CompareYamlFiles(compare *util.CompareYaml) bool {
 		y1 = a1
 		y2 = a2
 	} else {
-		return util.CompareYamlFiles(compare)
+		return util.CompareYamlFiles(name, compare)
 	}
 
 	util.PrintStepBanner("running compareYamlFiles")
-	log.Printf("Comparing yamls: %v  %v\n", firstYamlFile, secondYamlFile)
+	compareInfo, err := yaml.Marshal(compare)
+	if err != nil {
+		log.Printf("Failed to marshal compare info, %v\n", err)
+		return false
+	}
+	log.Printf("Comparing for %s:\n%s", name, string(compareInfo))
 
 	if err1 != nil {
 		log.Printf("Error in reading yaml file %v -- %v\n", firstYamlFile, err1)
