@@ -483,13 +483,24 @@ func SetupVault(p *process.Vault, opts ...process.StartOp) (*VaultRoles, error) 
 	p.PutSecret("", "mcorm", mcormSecret+"-old", &err)
 	p.PutSecret("", "mcorm", mcormSecret, &err)
 
-	// Setup up dummy key to be used with local chef server to provision cloudlets
+	// Set up dummy key to be used with local chef server to provision cloudlets
 	chefApiKeyPath := "/tmp/dummyChefApiKey.json"
 	err = GetDummyPrivateKey(chefApiKeyPath)
 	if err != nil {
 		return &roles, err
 	}
 	p.Run("vault", fmt.Sprintf("kv put %s @%s", "/secret/accounts/chef", chefApiKeyPath), &err)
+	if err != nil {
+		return &roles, err
+	}
+
+	// Set up dummy API key to be used to call the GDDT QOS Priority Sessions API.
+	fileName := gopath + "/src/github.com/mobiledgex/edge-cloud-infra/e2e-tests/data/gddt_qos_session_api_key.txt"
+	// The vault path for "kv put" omits the /data portion.
+	// To read this key with vault.GetData(), use path=/secret/data/accounts/gddt/sessionsapi
+	path := "/secret/accounts/gddt/sessionsapi"
+	p.Run("vault", fmt.Sprintf("kv put %s @%s", path, fileName), &err)
+	log.Printf("PutQosApiKeyToVault at path %s, err=%s", path, err)
 	if err != nil {
 		return &roles, err
 	}

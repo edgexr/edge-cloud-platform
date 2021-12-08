@@ -77,7 +77,7 @@ func (e *EdgeEventsHandlerPlugin) addNewCloudletToServerEdgeEvent(ctx context.Co
 	// Look for a new cloudlet if the appinst is not usable
 	newCloudlet := new(dme.FindCloudletReply)
 	var err error
-	err = dmecommon.FindCloudlet(ctx, &appInstKey.AppKey, clientinfo.carrier, &clientinfo.lastLoc, newCloudlet, e.EdgeEventsCookieExpiration)
+	err, _ = dmecommon.FindCloudlet(ctx, &appInstKey.AppKey, clientinfo.carrier, &clientinfo.lastLoc, newCloudlet, e.EdgeEventsCookieExpiration)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Current appinst is unusable. Unable to find alternate cloudlet", "err", err)
 		err = fmt.Errorf("Current appinst is unusable. Unable to find alternate cloudlet doing FindCloudlet - error is %s", err.Error())

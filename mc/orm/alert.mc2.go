@@ -588,6 +588,8 @@ func addControllerApis(method string, group *echo.Group) {
 	// ServerlessConfigMinReplicas: 40.3
 	// VmAppOsType: 41
 	// AlertPolicies: 42
+	// QosSessionProfile: 43
+	// QosSessionDuration: 44
 	// ```
 	// Security:
 	//   Bearer:
