@@ -72,6 +72,12 @@
       keyvalues:
         cookie: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MTQzMDUyNTEsImlhdCI6MTYxNDIxODg1MSwia2V5Ijp7InBlZXJpcCI6IjEyNy4wLjAuMSIsIm9yZ25hbWUiOiJBY21lQXBwQ28iLCJhcHBuYW1lIjoiYXV0b3Byb3ZhcHAiLCJhcHB2ZXJzIjoiMS4wIiwidW5pcXVlaWR0eXBlIjoiZG1lLWtzdWlkIiwidW5pcXVlaWQiOiIxb3hDU0FsRW9uQ056Rk9PVmNGaFAyelEwYnkiLCJraWQiOjJ9fQ.RB5Gg9e170BmjdaK8BZRdScrKI-ZcHOohnY4Qaiavs9sIMxPQSJVARuK1RNk34DmzEIDu0pLbqyt9E1qemPNsw
         expires: "1614305251"
+    - msg: req tags
+      timestamp: 2021-12-06T16:47:36.605363-06:00
+      lineno: dme-server/dme-main.go:97
+      keyvalues:
+        ip_user_equipment: ""
+        req.Tags: map[]
     - msg: findCloudlet
       timestamp: 2021-02-24T18:07:33.612734-08:00
       lineno: dme-common/match-engine.go:923
