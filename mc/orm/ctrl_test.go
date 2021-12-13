@@ -681,6 +681,43 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	permTestVMPool(t, mcClient, uri, tokenOper, tokenOper2, ctrl.Region, org3, org4, dcnt)
 	permTestTrustPolicy(t, mcClient, uri, tokenOper, tokenOper2, ctrl.Region, org3, org4, dcnt)
 
+	{
+		// TrustPolicyException authz tests good/bad perm, Create/Update/Show/Delete TPE
+		region := ctrl.Region
+
+		badPermTestTrustPolicyException(t, mcClient, uri, tokenDev, region, org2)
+		badPermTestTrustPolicyException(t, mcClient, uri, tokenDev2, region, org1)
+		badPermTestShowTrustPolicyException(t, mcClient, uri, tokenDev, region, org2)
+		badPermTestShowTrustPolicyException(t, mcClient, uri, tokenDev2, region, org1)
+
+		token := tokenDev2
+		org := org2
+
+		in := &edgeproto.TrustPolicyException{}
+		in.Key.AppKey.Organization = org
+		_, status, err := ormtestutil.TestCreateTrustPolicyException(mcClient, uri, token, region, in)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+
+		in = &edgeproto.TrustPolicyException{}
+		in.Key.AppKey.Organization = org
+		in.OutboundSecurityRules = []edgeproto.SecurityRule{}
+		in.Fields = []string{
+			edgeproto.TrustPolicyExceptionFieldOutboundSecurityRules,
+			edgeproto.TrustPolicyExceptionFieldKeyAppKeyOrganization,
+		}
+		_, status, err = ormtestutil.TestUpdateTrustPolicyException(mcClient, uri, token, region, in)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+
+		goodPermTestShowTrustPolicyException(t, mcClient, uri, token, region, org, 1)
+		goodPermDeleteTrustPolicyException(t, mcClient, uri, token, region, org)
+		goodPermTestShowTrustPolicyException(t, mcClient, uri, token, region, org, 0)
+		badRegionCreateTrustPolicyException(t, mcClient, uri, token, org)
+		badRegionUpdateTrustPolicyException(t, mcClient, uri, token, org)
+		badRegionDeleteTrustPolicyException(t, mcClient, uri, token, org)
+	}
+
 	// test developers can modify their own objs but not each other's
 	// tests also that developers can create AppInsts/ClusterInsts on tc3.
 	permTestApp(t, mcClient, uri, tokenDev, tokenDev2, ctrl.Region,
