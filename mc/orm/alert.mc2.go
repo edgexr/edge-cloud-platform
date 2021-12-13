@@ -1698,7 +1698,6 @@ func addControllerApis(method string, group *echo.Group) {
 	// ConfigsKind: 27.1
 	// ConfigsConfig: 27.2
 	// HealthCheck: 29
-	// PrivacyPolicy: 30
 	// PowerState: 31
 	// ExternalVolumeSize: 32
 	// AvailabilityZone: 33
