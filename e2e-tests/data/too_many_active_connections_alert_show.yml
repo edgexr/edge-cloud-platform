@@ -17,7 +17,4 @@
     description: Too many connections at the same time
     title: UserDefinedAlert1
   state: firing
-  activeat:
-    seconds: 1625943334
-    nanos: 527423538
   value: 101

@@ -2,71 +2,50 @@
   username: user2
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-08-11T09:36:04.320621-07:00"
-  duration: 12.441ms
   request: '{"username":"user2","password":"","totp":"","apikeyid":"","apikey":""}'
   response: '{"token":""}'
-  traceid: 230c2137535baf7c
 - operationname: /api/v1/usercreate
   username: user2
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-08-11T09:36:04.249624-07:00"
-  duration: 13.074ms
   request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":"","Metadata":"","LastLogin":"0001-01-01T00:00:00Z","LastFailedLogin":"0001-01-01T00:00:00Z","FailedLogins":0,"verify":{"email":"","operatingsystem":"","browser":"","callbackurl":"","clientip":""}}'
   response: '{"Message":"user created","TOTPSharedKey":"","TOTPQRImage":null}'
-  traceid: 24625321e53de041
 - operationname: /api/v1/login
   username: user2
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-08-11T09:36:02.92884-07:00"
-  duration: 11.782ms
   request: '{"username":"user2","password":"","totp":"","apikeyid":"","apikey":""}'
   response: '{"token":""}'
-  traceid: 635be073ef98bea
 - operationname: /api/v1/auth/org/delete
   username: user2
   org: platos
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-08-11T09:36:02.911463-07:00"
-  duration: 5.704ms
   request: '{"Name":"platos","Type":"developer","Address":"1 Samstreet, platos Town,
     South Korea","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
   response: '{"message":"Organization deleted"}'
-  traceid: 7531b8302d84aba7
 - operationname: /api/v1/auth/org/delete
   username: user2
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-08-11T09:36:02.901987-07:00"
-  duration: 5.632ms
   request: '{"Name":"AcmeAppCo","Type":"developer","Address":"123 Maple Street, Gainesville,
     FL 32604","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
   response: '{"message":"Organization deleted"}'
-  traceid: 70aa9663b5c13c3
 - operationname: /api/v1/auth/billingorg/delete
   username: user2
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-07-01T03:02:11.782055-07:00"
-  duration: 14.966ms
   request: '{"Name":"AcmeAppCo","Type":"self","FirstName":"john","LastName":"acme","Email":"john@acme.com","Address":"123
     Maple Street","City":"Gainesville","Country":"US","State":"FL","PostalCode":"32604","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
   response: '{"message":"Billing Organization deleted"}'
-  traceid: 397a58cc5045994e
 - operationname: /api/v1/auth/ctrl/DeleteAutoProvPolicy
   username: user2
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-12-18T13:42:42.48365-08:00"
-  duration: 18.759ms
   request: '{"Region":"locala","AutoProvPolicy":{"key":{"organization":"AcmeAppCo","name":"autoprov1"},"deploy_client_count":3,"deploy_interval_count":3,"cloudlets":[{"key":{"organization":"dmuus","name":"dmuus-cloud-3"},"loc":{}},{"key":{"organization":"dmuus","name":"dmuus-cloud-4"},"loc":{}}],"undeploy_client_count":1,"undeploy_interval_count":3}}'
   response: '{}'
-  traceid: 7af113ec2d0b698c
   tags:
     policy: autoprov1
     policyorg: AcmeAppCo
@@ -75,11 +54,8 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-10-23T17:33:40.487278-07:00"
-  duration: 14.316ms
   request: '{"Region":"locala","AutoScalePolicy":{"key":{"organization":"AcmeAppCo","name":"scale1"},"min_nodes":1,"max_nodes":3,"scale_up_cpu_thresh":85,"scale_down_cpu_thresh":20,"trigger_time_sec":60}}'
   response: '{}'
-  traceid: 382475ae5bd5fddb
   tags:
     policy: scale1
     policyorg: AcmeAppCo
@@ -88,8 +64,6 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2021-02-10T12:05:53.486112+05:30"
-  duration: 558.604ms
   request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"ip_access":"Shared","num_masters":1,"num_nodes":1,"status":{},"resources":{"vms":null},"created_at":{},"updated_at":{},"reservation_ended_at":{}}}'
   response: |
     {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
@@ -105,20 +79,17 @@
     {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted ClusterInst successfully"}}
-  traceid: 6f2774fcff15f68b
   tags:
     cloudlet: dmuus-cloud-4
     cloudletorg: dmuus
-    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
+    federatedorg: ""
 - operationname: /api/v1/auth/ctrl/DeleteClusterInst
   username: user2
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2021-02-10T12:05:52.94094+05:30"
-  duration: 536.967ms
   request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"ip_access":"Dedicated","num_masters":1,"num_nodes":1,"status":{},"auto_scale_policy":"scale1","resources":{"vms":null},"created_at":{},"updated_at":{},"reservation_ended_at":{}}}'
   response: |
     {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
@@ -134,23 +105,19 @@
     {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted ClusterInst successfully"}}
-  traceid: 02f258206fd55963
   tags:
     cloudlet: dmuus-cloud-3
     cloudletorg: dmuus
-    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
+    federatedorg: ""
 - operationname: /api/v1/auth/ctrl/DeleteApp
   username: user2
   org: platos
   clientip: 127.0.0.1
   status: 200
-  starttime: "2021-02-10T12:05:52.805455+05:30"
-  duration: 130.043ms
   request: '{"Region":"locala","App":{"key":{"organization":"platos","name":"platosEnablingLayer","version":"1.0"},"image_path":"registry.mobiledgex.net/platos/dummyvalue","image_type":"Docker","access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","created_at":{},"updated_at":{},"required_outbound_connections":null}}'
   response: '{}'
-  traceid: 482ec67b592ceb06
   tags:
     app: platosEnablingLayer
     apporg: platos
@@ -160,11 +127,8 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2021-02-10T12:05:52.698593+05:30"
-  duration: 101.213ms
   request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"autoprovapp","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:81","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprov1"],"created_at":{},"updated_at":{},"required_outbound_connections":null}}'
   response: '{}'
-  traceid: 506a126c237e5a63
   tags:
     app: autoprovapp
     apporg: AcmeAppCo
@@ -174,13 +138,10 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2021-02-10T12:05:52.590559+05:30"
-  duration: 102.574ms
   request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:80,tcp:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
     PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
     PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1","created_at":{},"updated_at":{},"required_outbound_connections":null}}'
   response: '{}'
-  traceid: 27a0241311b6035d
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -190,8 +151,6 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2021-02-10T12:05:52.349687+05:30"
-  duration: 235.139ms
   request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Deleting"}}
@@ -200,13 +159,12 @@
     {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
-  traceid: 6279c7e49050b25f
   tags:
     app: someapplication1
     apporg: AcmeAppCo
     appver: "1.0"
     cloudlet: dmuus-cloud-4
     cloudletorg: dmuus
-    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
+    federatedorg: ""

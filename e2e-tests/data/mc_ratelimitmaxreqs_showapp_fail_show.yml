@@ -1,2 +1,3 @@
 - desc: AppApi[0]
-  msg: '/api/v1/auth/ctrl/ShowApp is rejected, please retry later. Error is: Exceeded limit of 1, retry again in'
+  msg: '/api/v1/auth/ctrl/ShowApp is rejected, please retry later. Error is: Exceeded
+    limit of 1, retry again in .'

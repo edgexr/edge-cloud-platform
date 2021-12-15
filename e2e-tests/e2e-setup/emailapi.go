@@ -111,6 +111,7 @@ func RunEmailAPI(api, apiFile, outputDir string) error {
 				log.Printf("email unmarshal error: %v\n", err)
 				return err
 			}
+			cmpFilterEmailData(emails)
 			// marshal back
 			ymlOut, err := yaml.Marshal(&emails)
 			if err != nil {

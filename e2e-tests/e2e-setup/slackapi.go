@@ -74,6 +74,7 @@ func RunSlackAPI(api, apiFile, outputDir string) error {
 				log.Printf("slack message unmarshal error: %v\n", err)
 				return err
 			}
+			cmpFilterSlackData(msgs)
 			// marshal back
 			ymlOut, err := yaml.Marshal(&msgs)
 			if err != nil {

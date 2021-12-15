@@ -1,0 +1,41 @@
+federators:
+- federationid: partner1-PA-enterprise-SA
+  operatorid: partner1
+  countrycode: PA
+  federationaddr: 127.0.0.1:9808
+  region: PA
+  mcc: "123"
+  mnc:
+  - "111"
+  - "222"
+  - "333"
+- federationid: partner1-PA-enterprise-SB
+  operatorid: partner1
+  countrycode: PA
+  federationaddr: 127.0.0.1:9808
+  region: PA
+  mcc: "123"
+  mnc:
+  - "111"
+  - "222"
+  - "333"
+- federationid: partner1-PA-dmuus-SA
+  operatorid: partner1
+  countrycode: PA
+  federationaddr: 127.0.0.1:9808
+  region: PA
+  mcc: "123"
+  mnc:
+  - "111"
+  - "222"
+  - "333"
+- federationid: partner1-PA-dmuus-SB
+  operatorid: partner1
+  countrycode: PA
+  federationaddr: 127.0.0.1:9808
+  region: PA
+  mcc: "123"
+  mnc:
+  - "111"
+  - "222"
+  - "333"

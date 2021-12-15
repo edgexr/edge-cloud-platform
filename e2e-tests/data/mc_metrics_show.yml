@@ -1,3 +1,33 @@
+- name: appinst-cpu
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+  values:
+    cpu: 0
+- name: appinst-disk
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+  values:
+    disk: 73728
+- name: appinst-mem
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+  values:
+    mem: 3.756834298e+09
 - name: appinst-network
   tags:
     app: someapplication1
@@ -9,85 +39,55 @@
   values:
     recvBytes: 0
     sendBytes: 0
-- name: appinst-mem
+- name: cluster-cpu
   tags:
-    app: someapplication1
     cloudlet: dmuus-cloud-1
-    cluster: SmallCluster
-    apporg: AcmeAppCo
-    clusterorg: AcmeAppCo
     cloudletorg: dmuus
-  values:
-    mem: 3.756834298e+09
-- name: appinst-disk
-  tags:
-    app: someapplication1
-    cloudlet: dmuus-cloud-1
     cluster: SmallCluster
-    apporg: AcmeAppCo
     clusterorg: AcmeAppCo
-    cloudletorg: dmuus
-  values:
-    disk: 73728
-- name: appinst-cpu
-  tags:
-    app: someapplication1
-    cloudlet: dmuus-cloud-1
-    cluster: SmallCluster
-    apporg: AcmeAppCo
-    clusterorg: AcmeAppCo
-    cloudletorg: dmuus
   values:
     cpu: 0
+- name: cluster-disk
+  tags:
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+  values:
+    disk: 42.1
+- name: cluster-mem
+  tags:
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+  values:
+    mem: 75
+- name: cluster-network
+  tags:
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+  values:
+    recvBytes: 0
+    sendBytes: 0
+- name: cluster-tcp
+  tags:
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+  values:
+    tcpConns: 100
+    tcpRetrans: 200
 - name: cluster-udp
   tags:
     cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
     cluster: SmallCluster
     clusterorg: AcmeAppCo
-    cloudletorg: dmuus
   values:
     udpRecv: 400
     udpRecvErr: 500
     udpSent: 300
-- name: cluster-tcp
-  tags:
-    cloudlet: dmuus-cloud-1
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
-    cloudletorg: dmuus
-  values:
-    tcpConns: 100
-    tcpRetrans: 200
-- name: cluster-network
-  tags:
-    cloudlet: dmuus-cloud-1
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
-    cloudletorg: dmuus
-  values:
-    recvBytes: 0
-    sendBytes: 0
-- name: cluster-mem
-  tags:
-    cloudlet: dmuus-cloud-1
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
-    cloudletorg: dmuus
-  values:
-    mem: 75
-- name: cluster-disk
-  tags:
-    cloudlet: dmuus-cloud-1
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
-    cloudletorg: dmuus
-  values:
-    disk: 42.1
-- name: cluster-cpu
-  tags:
-    cloudlet: dmuus-cloud-1
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
-    cloudletorg: dmuus
-  values:
-    cpu: 0

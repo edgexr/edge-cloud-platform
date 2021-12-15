@@ -12,16 +12,16 @@ regiondata:
       numdynamicips: 254
       state: Ready
       platformtype: Fakeinfra
-      notifysrvaddr: 127.0.0.1:51001
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-1
       envvar:
-        foo: bar
-        FAKE_VCPUS_MAX: "500"
         FAKE_RAM_MAX: "409600"
+        FAKE_VCPUS_MAX: "500"
+        foo: bar
       containerversion: "2019-10-24"
       deployment: docker
+      trustpolicystate: NotPresent
       resourcequotas:
       - name: RAM
         alertthreshold: 100
@@ -29,3 +29,4 @@ regiondata:
         alertthreshold: 100
       - name: External IPs
         alertthreshold: 100
+      defaultresourcealertthreshold: 80

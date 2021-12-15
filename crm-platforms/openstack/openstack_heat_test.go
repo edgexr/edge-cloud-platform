@@ -104,7 +104,7 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 		Yaml2:    expectedResultsFile,
 		FileType: "heat-test",
 	}
-	compareResult := e2esetup.CompareYamlFiles("heat compare", &compare)
+	compareResult := e2esetup.CompareYamlFiles("heat compare", []string{}, &compare)
 	log.SpanLog(ctx, log.DebugLevelInfra, "yaml compare result", "compareResult", compareResult)
 
 	require.Equal(t, compareResult, true)

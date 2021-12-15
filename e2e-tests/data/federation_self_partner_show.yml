@@ -1,30 +1,4 @@
 federations:
-- name: dmuus-SA-partner1-PA-fed
-  selffederationid: dmuus-SA-partner1-PA
-  selfoperatorid: dmuus
-  federator:
-    federationid: partner1-PA-dmuus-SA
-    operatorid: partner1
-    countrycode: PA
-    federationaddr: 127.0.0.1:9808
-    mcc: "123"
-    mnc:
-    - "111"
-    - "222"
-    - "333"
-- name: dmuus-SB-partner1-PA-fed
-  selffederationid: dmuus-SB-partner1-PA
-  selfoperatorid: dmuus
-  federator:
-    federationid: partner1-PA-dmuus-SB
-    operatorid: partner1
-    countrycode: PA
-    federationaddr: 127.0.0.1:9808
-    mcc: "123"
-    mnc:
-    - "111"
-    - "222"
-    - "333"
 - name: enterprise-SA-partner1-PA-fed
   selffederationid: enterprise-SA-partner1-PA
   selfoperatorid: enterprise
@@ -38,11 +12,50 @@ federations:
     - "111"
     - "222"
     - "333"
+- name: enterprise-SA-partner2-PS-fed
+  selffederationid: enterprise-SA-partner2-PS
+  selfoperatorid: enterprise
+  federator:
+    federationid: partner2-PS-enterprise-SA
+    operatorid: partner2
+    countrycode: PS
+    federationaddr: 127.0.0.1:9809
+    mcc: "123"
+    mnc:
+    - "111"
+    - "222"
+    - "333"
 - name: enterprise-SB-partner1-PA-fed
   selffederationid: enterprise-SB-partner1-PA
   selfoperatorid: enterprise
   federator:
     federationid: partner1-PA-enterprise-SB
+    operatorid: partner1
+    countrycode: PA
+    federationaddr: 127.0.0.1:9808
+    mcc: "123"
+    mnc:
+    - "111"
+    - "222"
+    - "333"
+- name: enterprise-SB-partner2-PS-fed
+  selffederationid: enterprise-SB-partner2-PS
+  selfoperatorid: enterprise
+  federator:
+    federationid: partner2-PS-enterprise-SB
+    operatorid: partner2
+    countrycode: PS
+    federationaddr: 127.0.0.1:9809
+    mcc: "123"
+    mnc:
+    - "111"
+    - "222"
+    - "333"
+- name: dmuus-SA-partner1-PA-fed
+  selffederationid: dmuus-SA-partner1-PA
+  selfoperatorid: dmuus
+  federator:
+    federationid: partner1-PA-dmuus-SA
     operatorid: partner1
     countrycode: PA
     federationaddr: 127.0.0.1:9808
@@ -64,37 +77,24 @@ federations:
     - "111"
     - "222"
     - "333"
+- name: dmuus-SB-partner1-PA-fed
+  selffederationid: dmuus-SB-partner1-PA
+  selfoperatorid: dmuus
+  federator:
+    federationid: partner1-PA-dmuus-SB
+    operatorid: partner1
+    countrycode: PA
+    federationaddr: 127.0.0.1:9808
+    mcc: "123"
+    mnc:
+    - "111"
+    - "222"
+    - "333"
 - name: dmuus-SB-partner2-PS-fed
   selffederationid: dmuus-SB-partner2-PS
   selfoperatorid: dmuus
   federator:
     federationid: partner2-PS-dmuus-SB
-    operatorid: partner2
-    countrycode: PS
-    federationaddr: 127.0.0.1:9809
-    mcc: "123"
-    mnc:
-    - "111"
-    - "222"
-    - "333"
-- name: enterprise-SA-partner2-PS-fed
-  selffederationid: enterprise-SA-partner2-PS
-  selfoperatorid: enterprise
-  federator:
-    federationid: partner2-PS-enterprise-SA
-    operatorid: partner2
-    countrycode: PS
-    federationaddr: 127.0.0.1:9809
-    mcc: "123"
-    mnc:
-    - "111"
-    - "222"
-    - "333"
-- name: enterprise-SB-partner2-PS-fed
-  selffederationid: enterprise-SB-partner2-PS
-  selfoperatorid: enterprise
-  federator:
-    federationid: partner2-PS-enterprise-SB
     operatorid: partner2
     countrycode: PS
     federationaddr: 127.0.0.1:9809

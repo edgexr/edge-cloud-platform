@@ -6,42 +6,29 @@
       - notify-recv edgeproto.CloudletInfo
       logvalues:
       - '*dmuus-cloud-1*'
-    timerange:
-      endtime: 2021-02-24T18:09:03.371972-08:00
     limit: 1
   results:
-  - traceid: 77aa48a7ae3f2da1
-    spanid: 0edbf691ea685479
-    service: autoprov
+  - service: autoprov
     operation: notify-recv edgeproto.CloudletInfo
-    starttime: 2021-02-24T18:08:58.720029-08:00
-    duration: 173µs
-    hostname: Jon-Mex.lan
     tags:
       action: DELETE
       cliserv: client
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
       federatedorg: ""
-      lineno: notify/notify_sendrecv.go:330
+      lineno: null
       objtype: CloudletInfo
-      peer: 127.0.0.1:37002
+      peer: null
     logs:
     - msg: client recv CloudletInfo
-      timestamp: 2021-02-24T18:08:58.720111-08:00
-      lineno: notify/cloudlet.notify.go:610
       keyvalues:
         action: DELETE
         key: '{dmuus dmuus-cloud-1 }'
-        modRev: "2889"
-        peer: Jon-Mex.lan@127.0.0.1:55002
-        peerAddr: 127.0.0.1:37002
+        modRev: null
+        peer: null
+        peerAddr: null
     - msg: cache delete
-      timestamp: 2021-02-24T18:08:58.720152-08:00
-      lineno: edgeproto/cloudlet.pb.go:8208
     - msg: CloudletInfo RecvHook
-      timestamp: 2021-02-24T18:08:58.720178-08:00
-      lineno: notify/notify_customupdate.go:92
       keyvalues:
         key: '{dmuus dmuus-cloud-1 }'
         state: CLOUDLET_STATE_UNKNOWN
@@ -52,55 +39,36 @@
       logvalues:
       - '*dmuus-cloud-1*'
       - autoprovapp
-    timerange:
-      endtime: 2021-02-24T18:09:03.371972-08:00
     limit: 1
   results:
-  - traceid: 4a17a07ba04845d1
-    spanid: 4a17a07ba04845d1
-    service: dme-server
+  - service: dme-server
     operation: FindCloudlet
-    starttime: 2021-02-24T18:07:33.61253-08:00
-    duration: 617µs
-    hostname: Jon-Mex.lan
     tags:
-      lineno: log/spangrpc.go:37
+      lineno: null
     logs:
     - msg: verified cookie
-      timestamp: 2021-02-24T18:07:33.612671-08:00
-      lineno: dme-common/cookie.go:84
       keyvalues:
-        cookie: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MTQzMDUyNTEsImlhdCI6MTYxNDIxODg1MSwia2V5Ijp7InBlZXJpcCI6IjEyNy4wLjAuMSIsIm9yZ25hbWUiOiJBY21lQXBwQ28iLCJhcHBuYW1lIjoiYXV0b3Byb3ZhcHAiLCJhcHB2ZXJzIjoiMS4wIiwidW5pcXVlaWR0eXBlIjoiZG1lLWtzdWlkIiwidW5pcXVlaWQiOiIxb3hDU0FsRW9uQ056Rk9PVmNGaFAyelEwYnkiLCJraWQiOjJ9fQ.RB5Gg9e170BmjdaK8BZRdScrKI-ZcHOohnY4Qaiavs9sIMxPQSJVARuK1RNk34DmzEIDu0pLbqyt9E1qemPNsw
-        expires: "1614305251"
+        cookie: null
+        expires: null
     - msg: req tags
-      timestamp: 2021-12-06T16:47:36.605363-06:00
-      lineno: dme-server/dme-main.go:97
       keyvalues:
         ip_user_equipment: ""
         req.Tags: map[]
     - msg: findCloudlet
-      timestamp: 2021-02-24T18:07:33.612734-08:00
-      lineno: dme-common/match-engine.go:923
       keyvalues:
         app: autoprovapp
         carrier: dmuus
         developer: AcmeAppCo
         version: "1.0"
     - msg: Find Closest
-      timestamp: 2021-02-24T18:07:33.612768-08:00
-      lineno: dme-common/match-engine.go:644
       keyvalues:
         appkey: 'organization:"AcmeAppCo" name:"autoprovapp" version:"1.0" '
         carrierName: dmuus
         loc: '{36 -96 0 0 0 0 0 <nil> {} [] 0}'
     - msg: search AutoProvPolicy
-      timestamp: 2021-02-24T18:07:33.612794-08:00
-      lineno: dme-common/match-engine.go:674
       keyvalues:
         found: "0"
     - msg: search AutoProvPolicy list
-      timestamp: 2021-02-24T18:07:33.612832-08:00
-      lineno: dme-common/match-engine.go:823
       keyvalues:
         carrier: dmuus
         list: '[key:<organization:"dmuus" name:"dmuus-cloud-1" > loc:<latitude:31 longitude:-91
@@ -108,8 +76,6 @@
           > ]'
         policy: autoprov1
     - msg: search policySearch result
-      timestamp: 2021-02-24T18:07:33.612925-08:00
-      lineno: dme-common/match-engine.go:627
       keyvalues:
         distance: "143.3826521"
         freeInst: "true"
@@ -120,29 +86,19 @@
           > loc:<latitude:35 longitude:-95 > ]]}'
         potentialType: ""
     - msg: search AutoProvPolicy result
-      timestamp: 2021-02-24T18:07:33.612978-08:00
-      lineno: dme-common/match-engine.go:703
       keyvalues:
-        autoProvStats: '&{[{map[] {0 0}} {map[] {0 0}} {map[] {0 0}} {map[{{AcmeAppCo
-          autoprovapp 1.0} {dmuus dmuus-cloud-2 }}:0xc000045390] {0 0}} {map[] {0 0}}
-          {map[] {0 0}} {map[] {0 0}} {map[{{AcmeAppCo autoprovappd 1.0} {dmuus dmuus-cloud-1 }}:0xc000603c30]
-          {0 0}} {map[] {0 0}} {map[] {0 0}}] 10 {0 0} 1 0 {Jon-Mex.lan dme {dmuus
-          dmuus-cloud-1 } local} 0x58406e0 {{} [0 1 0]} 0xc00012dda0}'
+        autoProvStats: null
         num-potential-policies: "1"
     - msg: autoprovstats increment
-      timestamp: 2021-02-24T18:07:33.613024-08:00
-      lineno: dme-common/autoprov-stats.go:108
       keyvalues:
         idx: "7"
         key: '{{AcmeAppCo autoprovapp 1.0} {dmuus dmuus-cloud-2 }}'
         policy: '&{autoprov1 3 3 map[dmuus:[key:<organization:"dmuus" name:"dmuus-cloud-1"
           > loc:<latitude:31 longitude:-91 >  key:<organization:"dmuus" name:"dmuus-cloud-2"
           > loc:<latitude:35 longitude:-95 > ]]}'
-        stats count: "18"
-        stats last count: "15"
+        stats count: null
+        stats last count: null
     - msg: potential best cloudlet
-      timestamp: 2021-02-24T18:07:33.613073-08:00
-      lineno: dme-common/match-engine.go:706
       keyvalues:
         app: autoprovapp
         carrier: dmuus
@@ -154,11 +110,7 @@
           > loc:<latitude:31 longitude:-91 >  key:<organization:"dmuus" name:"dmuus-cloud-2"
           > loc:<latitude:35 longitude:-95 > ]]}'
     - msg: findCloudlet returning FIND_NOTFOUND
-      timestamp: 2021-02-24T18:07:33.6131-08:00
-      lineno: dme-common/match-engine.go:947
     - msg: FindCloudlet returns
-      timestamp: 2021-02-24T18:07:33.613125-08:00
-      lineno: dme-server/dme-main.go:102
       keyvalues:
         error: <nil>
         reply: 'status:FIND_NOTFOUND cloudlet_location:<> '
@@ -170,57 +122,28 @@
       - verified access key
       logvalues:
       - '*dmuus-cloud-2*'
-    timerange:
-      endtime: 2021-02-24T18:09:03.371972-08:00
     limit: 1
   results:
-  - traceid: 4a536ae5dd76638e
-    spanid: 4a536ae5dd76638e
-    service: controller
+  - service: controller
     operation: UpgradeAccessKey
-    starttime: 2021-02-24T18:06:39.479755-08:00
-    duration: 16.06ms
-    hostname: Jon-Mex.lan
     tags:
-      client: 127.0.0.1:60620
-      lineno: log/spangrpc.go:37
+      client: null
+      lineno: null
     logs:
     - msg: stream requiring access key
-      timestamp: 2021-02-24T18:06:39.479832-08:00
-      lineno: node/accesskey_server.go:171
     - msg: verified access key
-      timestamp: 2021-02-24T18:06:39.480182-08:00
-      lineno: node/accesskey_server.go:124
       keyvalues:
         CloudletKey: '{dmuus dmuus-cloud-2 }'
     - msg: upgrade access key
-      timestamp: 2021-02-24T18:06:39.480236-08:00
-      lineno: controller/cloudletaccess_api.go:52
     - msg: generating new access key
-      timestamp: 2021-02-24T18:06:39.480275-08:00
-      lineno: node/accesskey_server.go:266
     - msg: sending new access key
-      timestamp: 2021-02-24T18:06:39.480439-08:00
-      lineno: node/accesskey_server.go:272
     - msg: waiting for ack
-      timestamp: 2021-02-24T18:06:39.480485-08:00
-      lineno: node/accesskey_server.go:280
     - msg: ack received, committing new key
-      timestamp: 2021-02-24T18:06:39.482464-08:00
-      lineno: node/accesskey_server.go:287
     - msg: commit upgraded key
-      timestamp: 2021-02-24T18:06:39.483531-08:00
-      lineno: controller/cloudletaccess_api.go:63
     - msg: apply stm
-      timestamp: 2021-02-24T18:06:39.49453-08:00
-      lineno: controller/etcd.go:321
       keyvalues:
-        resp: '&{cluster_id:13201632400377916755 member_id:6785106251988844251 revision:1511
-          raft_term:2  true [response_put:<header:<revision:1511 > >  response_put:<header:<revision:1511
-          > > ]}'
-        rev: "1511"
+        resp: null
+        rev: null
     - msg: finished
-      timestamp: 2021-02-24T18:06:39.495774-08:00
-      lineno: cloudcommon/audit.go:71
       keyvalues:
         err: <nil>

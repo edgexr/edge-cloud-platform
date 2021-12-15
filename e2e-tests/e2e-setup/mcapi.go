@@ -128,6 +128,7 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 		}
 		users, status, err := mcClient.ShowUser(uri, token, filter)
 		checkMcErr("ShowUser", status, err, &rc)
+		cmpFilterUsers(users)
 		util.PrintToYamlFile("show-commands.yml", outputDir, users, true)
 		return rc
 	}
@@ -217,18 +218,21 @@ func runMcRateLimit(api, uri, apiFile, curUserFile, outputDir string, mods []str
 		filter := &ormapi.McRateLimitSettings{}
 		settings, st, err := mcClient.ShowRateLimitSettingsMc(uri, token, filter)
 		checkMcErr("ShowRateLimitSettingsMc", st, err, &rc)
+		cmpFilterRateLimit(settings)
 		util.PrintToYamlFile("show-commands.yml", outputDir, settings, true)
 		return rc
 	} else if api == "mcratelimitflowshow" {
 		filter := &ormapi.McRateLimitFlowSettings{}
 		settings, st, err := mcClient.ShowFlowRateLimitSettingsMc(uri, token, filter)
 		checkMcErr("ShowFlowRateLimitSettingsMc", st, err, &rc)
+		cmpFilterRateLimitFlow(settings)
 		util.PrintToYamlFile("show-commands.yml", outputDir, settings, true)
 		return rc
 	} else if api == "mcratelimitmaxreqsshow" {
 		filter := &ormapi.McRateLimitMaxReqsSettings{}
 		settings, st, err := mcClient.ShowMaxReqsRateLimitSettingsMc(uri, token, filter)
 		checkMcErr("ShowMaxReqsRateLimitSettingsMc", st, err, &rc)
+		cmpFilterRateLimitMaxReqs(settings)
 		util.PrintToYamlFile("show-commands.yml", outputDir, settings, true)
 		return rc
 	}
@@ -322,7 +326,11 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	if api == "show" {
 		var showData *ormapi.AllData
 		showData = showMcData(uri, token, tag, &rc)
-		showData.Sort()
+		if tag == "" {
+			cmpFilterAllData(showData)
+		} else if tag == "noignore" {
+			cmpFilterAllDataNoIgnore(showData)
+		}
 		util.PrintToYamlFile("show-commands.yml", outputDir, showData, true)
 		*retry = true
 		return rc
@@ -359,6 +367,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 				time.Sleep(100 * time.Millisecond)
 			}
 		}
+		cmpFilterMetrics(*parsedMetrics)
 		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
 		*retry = true
 		return rc
@@ -370,6 +379,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		var parsedMetrics *[]OptimizedMetricsCompare
 		showClientApiMetrics = showMcClientApiMetrics(uri, token, targets, &rc)
 		parsedMetrics = parseOptimizedMetrics(showClientApiMetrics)
+		cmpFilterApiMetricData(*parsedMetrics)
 		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
 		*retry = true
 		return rc
@@ -381,6 +391,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		var parsedMetrics *[]OptimizedMetricsCompare
 		showClientAppMetrics = showMcClientAppMetrics(uri, token, targets, &rc)
 		parsedMetrics = parseOptimizedMetrics(showClientAppMetrics)
+		cmpFilterApiMetricData(*parsedMetrics)
 		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
 		*retry = true
 		return rc
@@ -392,6 +403,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		var parsedMetrics *[]OptimizedMetricsCompare
 		showClientCloudletMetrics = showMcClientCloudletMetrics(uri, token, targets, &rc)
 		parsedMetrics = parseOptimizedMetrics(showClientCloudletMetrics)
+		cmpFilterApiMetricData(*parsedMetrics)
 		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
 		*retry = true
 		return rc
@@ -401,7 +413,11 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		var filter ormapi.Federator
 		selfFederators, status, err := mcClient.ShowSelfFederator(uri, token, &filter)
 		checkMcErr("ShowSelfFederator", status, err, &rc)
-		util.PrintToYamlFile("show-commands.yml", outputDir, &ormapi.AllData{Federators: selfFederators}, true)
+		showData := ormapi.AllData{
+			Federators: selfFederators,
+		}
+		cmpFilterAllData(&showData)
+		util.PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
 		*retry = true
 		return rc
 	}
@@ -410,7 +426,11 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		var filter ormapi.FederatorZone
 		selfFederatorZones, status, err := mcClient.ShowSelfFederatorZone(uri, token, &filter)
 		checkMcErr("ShowSelfFederatorZone", status, err, &rc)
-		util.PrintToYamlFile("show-commands.yml", outputDir, &ormapi.AllData{FederatorZones: selfFederatorZones}, true)
+		showData := ormapi.AllData{
+			FederatorZones: selfFederatorZones,
+		}
+		cmpFilterAllData(&showData)
+		util.PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
 		*retry = true
 		return rc
 	}
@@ -419,7 +439,11 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		var filter ormapi.Federation
 		federations, status, err := mcClient.ShowFederation(uri, token, &filter)
 		checkMcErr("ShowFederation", status, err, &rc)
-		util.PrintToYamlFile("show-commands.yml", outputDir, &ormapi.AllData{Federations: federations}, true)
+		showData := ormapi.AllData{
+			Federations: federations,
+		}
+		cmpFilterAllData(&showData)
+		util.PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
 		*retry = true
 		return rc
 	}
@@ -428,7 +452,11 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		var filter ormapi.FederatedSelfZone
 		federatedSelfZones, status, err := mcClient.ShowFederatedSelfZone(uri, token, &filter)
 		checkMcErr("ShowFederatedSelfZone", status, err, &rc)
-		util.PrintToYamlFile("show-commands.yml", outputDir, &ormapi.AllData{FederatedSelfZones: federatedSelfZones}, true)
+		showData := ormapi.AllData{
+			FederatedSelfZones: federatedSelfZones,
+		}
+		cmpFilterAllData(&showData)
+		util.PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
 		*retry = true
 		return rc
 	}
@@ -437,7 +465,11 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		var filter ormapi.FederatedPartnerZone
 		federatedPartnerZones, status, err := mcClient.ShowFederatedPartnerZone(uri, token, &filter)
 		checkMcErr("ShowFederatedPartnerZone", status, err, &rc)
-		util.PrintToYamlFile("show-commands.yml", outputDir, &ormapi.AllData{FederatedPartnerZones: federatedPartnerZones}, true)
+		showData := ormapi.AllData{
+			FederatedPartnerZones: federatedPartnerZones,
+		}
+		cmpFilterAllData(&showData)
+		util.PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
 		*retry = true
 		return rc
 	}
@@ -510,6 +542,12 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		errs = output.Errors
 	case "showfiltered":
 		dataOut, errs := showMcDataFiltered(uri, token, tag, data, &rc)
+		if tag == "" {
+			cmpFilterAllData(dataOut)
+		} else if tag == "noignore" {
+			cmpFilterAllDataNoIgnore(dataOut)
+		}
+		cmpFilterErrs(errs)
 		// write both files so we don't accidentally pick up older results
 		if errs == nil || len(errs) == 0 {
 			dataOut.Sort()
@@ -1343,10 +1381,12 @@ func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 	case "auditorg":
 		resp, status, err := mcClient.ShowAuditOrg(uri, token, &query)
 		checkMcErr("ShowAuditOrg", status, err, &rc)
+		cmpFilterAudit(resp)
 		util.PrintToYamlFile("show-commands.yml", outputDir, resp, true)
 	case "auditself":
 		resp, status, err := mcClient.ShowAuditSelf(uri, token, &query)
 		checkMcErr("ShowAuditSelf", status, err, &rc)
+		cmpFilterAudit(resp)
 		util.PrintToYamlFile("show-commands.yml", outputDir, resp, true)
 	}
 	*retry = true
@@ -1414,6 +1454,7 @@ func runMcEvents(api, uri, apiFile, curUserFile, outputDir string, mods []string
 				Results: resp,
 			})
 		}
+		cmpFilterEventData(results)
 		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
 	case "eventsfind":
 		var results []EventSearch
@@ -1442,6 +1483,7 @@ func runMcEvents(api, uri, apiFile, curUserFile, outputDir string, mods []string
 				Terms:  resp,
 			})
 		}
+		cmpFilterEventTerms(results)
 		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
 	default:
 		log.Printf("invalid mcapi action %s\n", api)
@@ -1524,6 +1566,7 @@ func runMcSpans(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 				Results: resp,
 			})
 		}
+		cmpFilterSpans(results)
 		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
 	case "spansshowverbose":
 		var results []SpanSearchVerbose
@@ -1558,6 +1601,7 @@ func runMcSpans(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 				Terms:  resp,
 			})
 		}
+		cmpFilterSpanTerms(results)
 		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
 	default:
 		log.Printf("invalid mcapi action %s\n", api)
@@ -1657,7 +1701,7 @@ func runMcShowNode(uri, curUserFile, outputDir string, vars, sharedData map[stri
 
 	appdata := edgeproto.NodeData{}
 	appdata.Nodes = nodes
-	appdata.Sort()
+	util.FilterNodeData(&appdata)
 	util.PrintToYamlFile("show-commands.yml", outputDir, appdata, true)
 	return rc
 }
@@ -1739,6 +1783,15 @@ func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 		}
 	}
 	output.Sort()
+	clearTags := map[string]struct{}{
+		"nocmp":     struct{}{},
+		"timestamp": struct{}{},
+	}
+	for ii := range output.Requests {
+		for jj := range output.Requests[ii] {
+			output.Requests[ii][jj].ClearTagged(clearTags)
+		}
+	}
 	util.PrintToYamlFile("api-output.yml", outputDir, output, true)
 	return rc
 }
@@ -1764,6 +1817,7 @@ func showMcAlerts(uri, apiFile, curUserFile, outputDir string, vars, sharedData 
 	alerts, status, err := mcClient.ShowAlert(uri, token, &filter)
 	checkMcErr("ShowAlert", status, err, &rc)
 
+	util.FilterAlerts(alerts)
 	util.PrintToYamlFile("show-commands.yml", outputDir, alerts, true)
 	return rc
 }
@@ -1782,7 +1836,7 @@ func showMcAlertReceivers(uri, curUserFile, outputDir string, vars, sharedData m
 	showData.AlertReceivers, status, err = mcClient.ShowAlertReceiver(uri, token, &ormapi.AlertReceiver{})
 	checkMcErr("ShowAlertReceiver", status, err, &rc)
 
-	showData.Sort()
+	cmpFilterAllData(&showData)
 	util.PrintToYamlFile("show-commands.yml", outputDir, showData, true)
 	return rc
 }

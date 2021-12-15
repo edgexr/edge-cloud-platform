@@ -2,8 +2,6 @@
     match:
       names:
       - /api/v1/auth/ctrl/CreateAppInst
-    timerange:
-      starttime: 2020-11-30T17:13:38.621037-08:00
     limit: 3
   results:
   - name: /api/v1/auth/ctrl/CreateAppInst
@@ -11,31 +9,26 @@
     - user3org
     - enterprise
     type: audit
-    timestamp: 2020-11-30T17:14:08.237541-08:00
     mtags:
       app: ep1
       apporg: user3org
       appver: "1.0"
       cloudlet: enterprise-1
       cloudletorg: enterprise
-      federatedorg: ""
       cluster: SmallCluster
       clusterorg: user3org
-      duration: 131.484537ms
+      duration: ""
       email: user3@enterprise.com
-      hostname: Jon-Mex.lan
-      lineno: orm/auditlog.go:239
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       method: POST
       org: user3org
       region: local
       remote-ip: 127.0.0.1
-      request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"user3org","name":"ep1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"enterprise","name":"enterprise-1"},"organization":"user3org"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
-      response: |
-        {"data":{"message":"Creating"}}
-        {"data":{"message":"Creating App Inst"}}
-        {"data":{"message":"Ready"}}
-        {"data":{"message":"Created AppInst successfully"}}
-      spanid: 2289eaa29feaeeb4
+      request: ""
+      response: ""
+      spanid: ""
       status: "200"
-      traceid: 2289eaa29feaeeb4
+      traceid: ""
       username: user3

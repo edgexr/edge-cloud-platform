@@ -1,0 +1,41 @@
+federators:
+- federationid: partner2-PS-enterprise-SA
+  operatorid: partner2
+  countrycode: PS
+  federationaddr: 127.0.0.1:9809
+  region: PS
+  mcc: "123"
+  mnc:
+  - "111"
+  - "222"
+  - "333"
+- federationid: partner2-PS-enterprise-SB
+  operatorid: partner2
+  countrycode: PS
+  federationaddr: 127.0.0.1:9809
+  region: PS
+  mcc: "123"
+  mnc:
+  - "111"
+  - "222"
+  - "333"
+- federationid: partner2-PS-dmuus-SA
+  operatorid: partner2
+  countrycode: PS
+  federationaddr: 127.0.0.1:9809
+  region: PS
+  mcc: "123"
+  mnc:
+  - "111"
+  - "222"
+  - "333"
+- federationid: partner2-PS-dmuus-SB
+  operatorid: partner2
+  countrycode: PS
+  federationaddr: 127.0.0.1:9809
+  region: PS
+  mcc: "123"
+  mnc:
+  - "111"
+  - "222"
+  - "333"

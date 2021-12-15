@@ -2,86 +2,56 @@
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-09-26T15:31:35.18021-07:00"
-  duration: 8.795ms
   request: '{"username":"mexadmin","password":"","totp":"","apikeyid":"","apikey":""}'
   response: '{"admin":true,"token":""}'
-  traceid: 6c427d0d953b4ca3
 - operationname: /api/v1/login
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-09-26T15:31:35.071965-07:00"
-  duration: 8.68ms
   request: '{"username":"mexadmin","password":"","totp":"","apikeyid":"","apikey":""}'
   response: '{"admin":true,"token":""}'
-  traceid: 1014cbe2417a52e8
 - operationname: /api/v1/auth/config/update
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-04-22T13:16:44.281831-07:00"
-  duration: 2.39ms
   request: '{"AdminPasswordMinCrackTimeSec":63072000,"DisableRateLimit":true,"FailedLoginLockoutThreshold1":3,"FailedLoginLockoutThreshold2":10,"FailedLoginLockoutTimeSec1":60,"FailedLoginLockoutTimeSec2":300,"MaxMetricsDataPoints":10000,"NotifyEmailAddress":"support@mobiledgex.com","PasswordMinCrackTimeSec":2592000,"RateLimitMaxTrackedIps":10000,"RateLimitMaxTrackedUsers":10000,"SkipVerifyEmail":true,"UserApiKeyCreateLimit":10}'
-  traceid: 7add8f1b8f2a8aaa
 - operationname: /api/v1/login
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-04-22T13:16:44.267852-07:00"
-  duration: 9.85ms
   request: '{"username":"mexadmin","password":"","totp":"","apikeyid":"","apikey":""}'
   response: '{"admin":true,"token":""}'
-  traceid: 3e7b42b8da07e1bf
 - operationname: /api/v1/login
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-04-22T13:16:44.216712-07:00"
-  duration: 9.499ms
   request: '{"username":"mexadmin","password":"","totp":"","apikeyid":"","apikey":""}'
   response: '{"admin":true,"token":""}'
-  traceid: d5bf5b9951f8654
 - operationname: /api/v1/auth/config/reset
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-04-22T13:16:44.210925-07:00"
-  duration: 1.928ms
-  traceid: 7d6b14707b14cf4d
 - operationname: /api/v1/login
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-04-22T13:16:44.196441-07:00"
-  duration: 10.276ms
   request: '{"username":"mexadmin","password":"","totp":"","apikeyid":"","apikey":""}'
   response: '{"admin":true,"token":""}'
-  traceid: 6952d4a12820c6cc
 - operationname: /api/v1/login
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-04-22T13:16:44.141164-07:00"
-  duration: 10.69ms
   request: '{"username":"mexadmin","password":"","totp":"","apikeyid":"","apikey":""}'
   response: '{"admin":true,"token":""}'
-  traceid: 78f8789d037bc23f
 - operationname: /api/v1/auth/user/delete
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-09-26T15:31:35.063628-07:00"
-  duration: 4.773ms
   request: '{"Name":"user3","Email":"user3@enterprise.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":"","Metadata":"","LastLogin":"0001-01-01T00:00:00Z","LastFailedLogin":"0001-01-01T00:00:00Z","FailedLogins":0}'
   response: '{"message":"User deleted"}'
-  traceid: 5e2e18be94124fbb
 - operationname: /api/v1/auth/user/delete
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-09-26T15:31:35.055474-07:00"
-  duration: 4.827ms
   request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":"","Metadata":"","LastLogin":"0001-01-01T00:00:00Z","LastFailedLogin":"0001-01-01T00:00:00Z","FailedLogins":0}'
   response: '{"message":"User deleted"}'
-  traceid: e04509e7b06b2c5

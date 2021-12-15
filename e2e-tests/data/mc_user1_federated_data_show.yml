@@ -77,10 +77,13 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
+      state: Ready
       flavor:
         name: DefaultPlatformFlavor
       physicalname: azure-cloud-4
       containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
     - key:
         organization: enterprise
@@ -91,11 +94,12 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      notifysrvaddr: 127.0.0.1:51006
       flavor:
         name: x1.small
       physicalname: enterprise-1
       containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
     - key:
         organization: enterprise
@@ -112,10 +116,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-1
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEAX3wZA2HZmOwTbi9Pu/0RLJtQZaVEHHf4D1QbyHoJ4yo=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -138,10 +138,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-2
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEA5LWF2BqLploZHoO38k7ZOKQPL5ebfeSqPWRu4gkVIq4=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -164,10 +160,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-1
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEAG1VP1ei7SWYE3N0dc6OhaB3oNkoPrXzVVh+ur7v08zo=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -190,10 +182,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-2
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEAUwmfO4D8EHrDUyIAbzrv1B4LELlCO7kbD0NsgACVaPQ=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -209,10 +197,13 @@ regiondata:
         longitude: -95
       ipsupport: Dynamic
       numdynamicips: 254
+      state: Ready
       flavor:
         name: DefaultPlatformFlavor
       physicalname: gcp-cloud-5
       containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
     - key:
         organization: dmuus
@@ -229,10 +220,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-1
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEA5ub49szaBEKCl6xH+VP+wE5dXeAEPIPDcd2P94FAJlg=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -255,10 +242,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-2
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEA1gdq2iPy52Dq7gR1IHAE85M7M40xdoY5PO4FASEf6H0=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -281,10 +264,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-1
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEAAiadmUxCW3S2tpqRwazc4uLQ1GEnf1FciD3ww7tRKSw=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -307,10 +286,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-2
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEAKyKekn4wJKU686IgouGtgZTJcWAp5DcjkqQH2tyhFyM=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -326,8 +301,8 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
+      state: Ready
       platformtype: Fakeinfra
-      notifysrvaddr: 127.0.0.1:51001
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-1
@@ -336,6 +311,8 @@ regiondata:
         FAKE_VCPUS_MAX: "500"
         foo: bar
       containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
       resourcequotas:
       - name: RAM
         alertthreshold: 50
@@ -353,17 +330,19 @@ regiondata:
         longitude: -95
       ipsupport: Dynamic
       numdynamicips: 254
+      state: Ready
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-2
       containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
     cloudletinfos:
     - key:
         organization: azure
         name: azure-cloud-4
       state: Ready
-      notifyid: 3
       osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
@@ -376,9 +355,6 @@ regiondata:
         vcpus: 2
         ram: 4096
         disk: 40
-      status:
-        tasknumber: 3
-        taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
       resourcessnapshot:
@@ -408,11 +384,11 @@ regiondata:
           inframaxvalue: 30
         - name: Instances
           value: 2
+      trustpolicystate: NotPresent
     - key:
         organization: enterprise
         name: enterprise-1
       state: Ready
-      notifyid: 6
       osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
@@ -425,9 +401,6 @@ regiondata:
         vcpus: 2
         ram: 4096
         disk: 40
-      status:
-        tasknumber: 3
-        taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
       resourcessnapshot:
@@ -457,39 +430,31 @@ regiondata:
           inframaxvalue: 30
         - name: Instances
           value: 2
+      trustpolicystate: NotPresent
     - key:
         organization: enterprise
         name: partner1-cloud-1
         federatedorganization: partner1
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: enterprise
         name: partner1-cloud-2
         federatedorganization: partner1
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: enterprise
         name: partner2-cloud-1
         federatedorganization: partner2
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: enterprise
         name: partner2-cloud-2
         federatedorganization: partner2
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: gcp
         name: gcp-cloud-5
       state: Ready
-      notifyid: 4
       osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
@@ -502,9 +467,6 @@ regiondata:
         vcpus: 2
         ram: 4096
         disk: 40
-      status:
-        tasknumber: 3
-        taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
       resourcessnapshot:
@@ -534,39 +496,31 @@ regiondata:
           inframaxvalue: 30
         - name: Instances
           value: 2
+      trustpolicystate: NotPresent
     - key:
         organization: dmuus
         name: partner1-cloud-1
         federatedorganization: partner1
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: dmuus
         name: partner1-cloud-2
         federatedorganization: partner1
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: dmuus
         name: partner2-cloud-1
         federatedorganization: partner2
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: dmuus
         name: partner2-cloud-2
         federatedorganization: partner2
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: dmuus
         name: dmuus-cloud-1
       state: Ready
-      notifyid: 1
       osmaxram: 409600
       osmaxvcores: 500
       osmaxvolgb: 5000
@@ -579,9 +533,6 @@ regiondata:
         vcpus: 2
         ram: 4096
         disk: 40
-      status:
-        tasknumber: 3
-        taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
       resourcessnapshot:
@@ -611,11 +562,11 @@ regiondata:
           inframaxvalue: 30
         - name: Instances
           value: 2
+      trustpolicystate: NotPresent
     - key:
         organization: dmuus
         name: dmuus-cloud-2
       state: Ready
-      notifyid: 2
       osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
@@ -628,9 +579,6 @@ regiondata:
         vcpus: 2
         ram: 4096
         disk: 40
-      status:
-        tasknumber: 3
-        taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
       resourcessnapshot:
@@ -660,6 +608,7 @@ regiondata:
           inframaxvalue: 30
         - name: Instances
           value: 2
+      trustpolicystate: NotPresent
     cloudletpools:
     - key:
         organization: enterprise
@@ -697,11 +646,13 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      notifysrvaddr: 127.0.0.1:51016
       flavor:
         name: x1.small
       physicalname: enterprise-2
       containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
+      defaultresourcealertthreshold: 80
     - key:
         organization: enterprise
         name: partner1-cloud-1
@@ -717,10 +668,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-1
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEAX3wZA2HZmOwTbi9Pu/0RLJtQZaVEHHf4D1QbyHoJ4yo=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -743,10 +690,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-2
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEA5LWF2BqLploZHoO38k7ZOKQPL5ebfeSqPWRu4gkVIq4=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -769,10 +712,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-1
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEAG1VP1ei7SWYE3N0dc6OhaB3oNkoPrXzVVh+ur7v08zo=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -795,10 +734,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-2
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEAUwmfO4D8EHrDUyIAbzrv1B4LELlCO7kbD0NsgACVaPQ=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -821,10 +756,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-1
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEA5ub49szaBEKCl6xH+VP+wE5dXeAEPIPDcd2P94FAJlg=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -847,10 +778,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-2
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEA1gdq2iPy52Dq7gR1IHAE85M7M40xdoY5PO4FASEf6H0=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -873,10 +800,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-1
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEAAiadmUxCW3S2tpqRwazc4uLQ1GEnf1FciD3ww7tRKSw=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -899,10 +822,6 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-2
       deployment: docker
-      crmaccesspublickey: |
-        -----BEGIN PUBLIC KEY-----
-        MCowBQYDK2VwAyEAKyKekn4wJKU686IgouGtgZTJcWAp5DcjkqQH2tyhFyM=
-        -----END PUBLIC KEY-----
       crmaccesskeyupgraderequired: true
       resourcequotas:
       - name: vCPUs
@@ -919,11 +838,13 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      notifysrvaddr: 127.0.0.1:51017
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-3
       containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
+      defaultresourcealertthreshold: 80
     - key:
         organization: dmuus
         name: dmuus-cloud-4
@@ -933,17 +854,18 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      notifysrvaddr: 127.0.0.1:51018
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-4
       containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
+      defaultresourcealertthreshold: 80
     cloudletinfos:
     - key:
         organization: enterprise
         name: enterprise-2
       state: Ready
-      notifyid: 3
       osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
@@ -956,9 +878,6 @@ regiondata:
         vcpus: 2
         ram: 4096
         disk: 40
-      status:
-        tasknumber: 3
-        taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
       resourcessnapshot:
@@ -988,67 +907,51 @@ regiondata:
           inframaxvalue: 30
         - name: Instances
           value: 2
+      trustpolicystate: NotPresent
     - key:
         organization: enterprise
         name: partner1-cloud-1
         federatedorganization: partner1
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: enterprise
         name: partner1-cloud-2
         federatedorganization: partner1
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: enterprise
         name: partner2-cloud-1
         federatedorganization: partner2
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: enterprise
         name: partner2-cloud-2
         federatedorganization: partner2
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: dmuus
         name: partner1-cloud-1
         federatedorganization: partner1
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: dmuus
         name: partner1-cloud-2
         federatedorganization: partner1
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: dmuus
         name: partner2-cloud-1
         federatedorganization: partner2
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: dmuus
         name: partner2-cloud-2
         federatedorganization: partner2
       state: Ready
-      notifyid: 5
-      compatibilityversion: 2
     - key:
         organization: dmuus
         name: dmuus-cloud-3
       state: Ready
-      notifyid: 2
       osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
@@ -1061,9 +964,6 @@ regiondata:
         vcpus: 2
         ram: 4096
         disk: 40
-      status:
-        tasknumber: 3
-        taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
       resourcessnapshot:
@@ -1093,11 +993,11 @@ regiondata:
           inframaxvalue: 30
         - name: Instances
           value: 2
+      trustpolicystate: NotPresent
     - key:
         organization: dmuus
         name: dmuus-cloud-4
       state: Ready
-      notifyid: 3
       osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
@@ -1110,9 +1010,6 @@ regiondata:
         vcpus: 2
         ram: 4096
         disk: 40
-      status:
-        tasknumber: 3
-        taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
       resourcessnapshot:
@@ -1142,6 +1039,7 @@ regiondata:
           inframaxvalue: 30
         - name: Instances
           value: 2
+      trustpolicystate: NotPresent
     cloudletpools:
     - key:
         organization: enterprise

@@ -1,37 +1,37 @@
 federatedselfzones:
-- zoneid: dmuus-cloud-1
-  selfoperatorid: dmuus
-  federationname: dmuus-SA-partner1-PA-fed
-- zoneid: dmuus-cloud-2
-  selfoperatorid: dmuus
-  federationname: dmuus-SA-partner1-PA-fed
-- zoneid: dmuus-cloud-3
-  selfoperatorid: dmuus
-  federationname: dmuus-SB-partner1-PA-fed
-- zoneid: dmuus-cloud-4
-  selfoperatorid: dmuus
-  federationname: dmuus-SB-partner1-PA-fed
 - zoneid: enterprise-1
   selfoperatorid: enterprise
   federationname: enterprise-SA-partner1-PA-fed
-- zoneid: enterprise-2
-  selfoperatorid: enterprise
-  federationname: enterprise-SB-partner1-PA-fed
-- zoneid: dmuus-cloud-1
-  selfoperatorid: dmuus
-  federationname: dmuus-SA-partner2-PS-fed
-- zoneid: dmuus-cloud-2
-  selfoperatorid: dmuus
-  federationname: dmuus-SA-partner2-PS-fed
-- zoneid: dmuus-cloud-3
-  selfoperatorid: dmuus
-  federationname: dmuus-SB-partner2-PS-fed
-- zoneid: dmuus-cloud-4
-  selfoperatorid: dmuus
-  federationname: dmuus-SB-partner2-PS-fed
 - zoneid: enterprise-1
   selfoperatorid: enterprise
   federationname: enterprise-SA-partner2-PS-fed
 - zoneid: enterprise-2
   selfoperatorid: enterprise
+  federationname: enterprise-SB-partner1-PA-fed
+- zoneid: enterprise-2
+  selfoperatorid: enterprise
   federationname: enterprise-SB-partner2-PS-fed
+- zoneid: dmuus-cloud-1
+  selfoperatorid: dmuus
+  federationname: dmuus-SA-partner1-PA-fed
+- zoneid: dmuus-cloud-1
+  selfoperatorid: dmuus
+  federationname: dmuus-SA-partner2-PS-fed
+- zoneid: dmuus-cloud-2
+  selfoperatorid: dmuus
+  federationname: dmuus-SA-partner1-PA-fed
+- zoneid: dmuus-cloud-2
+  selfoperatorid: dmuus
+  federationname: dmuus-SA-partner2-PS-fed
+- zoneid: dmuus-cloud-3
+  selfoperatorid: dmuus
+  federationname: dmuus-SB-partner1-PA-fed
+- zoneid: dmuus-cloud-3
+  selfoperatorid: dmuus
+  federationname: dmuus-SB-partner2-PS-fed
+- zoneid: dmuus-cloud-4
+  selfoperatorid: dmuus
+  federationname: dmuus-SB-partner1-PA-fed
+- zoneid: dmuus-cloud-4
+  selfoperatorid: dmuus
+  federationname: dmuus-SB-partner2-PS-fed

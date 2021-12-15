@@ -1,4 +1,35 @@
+- name: device-metric
+  tags:
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    devicecarrier: dmuus
+    devicemodel: SM-G920F
+    deviceos: Android
+    locationtile: -94.987424,34.982364_-95.005390,35.000452_2
+  values:
+  - - "1"
+  columns:
+  - numsessions
 - name: latency-metric
+  tags:
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    datanetworktype: 5G
+    devicecarrier: dmuus
+    locationtile: -90.998922,30.984896_-91.016888,31.002985_2
+  values:
+  - - "4"
+  - - "1"
+  - - "0"
+  - - "0"
+  - - "0"
+  - - "0"
+  - - "5.33"
+  - - "1.12"
+  - - "3.3768000000000002"
+  - - "2.7265312"
+  - - "1.6512211238958883"
+  - - "5"
   columns:
   - 0s
   - 5ms
@@ -12,34 +43,3 @@
   - variance
   - stddev
   - numsamples
-  tags:
-    cloudlet: dmuus-cloud-1
-    cloudletorg: dmuus
-    devicecarrier: dmuus
-    locationtile: -90.998922,30.984896_-91.016888,31.002985_2
-    datanetworktype: 5G
-  values:
-  - - 4
-  - - 1
-  - - 0
-  - - 0
-  - - 0
-  - - 0
-  - - 5.33
-  - - 1.12
-  - - 3.3768000000000002
-  - - 2.7265312
-  - - 1.6512211238958883
-  - - 5
-- name: device-metric
-  columns:
-  - numsessions
-  tags:
-    cloudlet: dmuus-cloud-1
-    cloudletorg: dmuus
-    devicecarrier: dmuus
-    devicemodel: SM-G920F
-    deviceos: Android
-    locationtile: -94.987424,34.982364_-95.005390,35.000452_2
-  values:
-  - - 1

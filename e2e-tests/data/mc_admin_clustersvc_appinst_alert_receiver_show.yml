@@ -1,6 +1,6 @@
 alertreceivers:
-- name: {{alert_receiver_name}}
+- name: emailClusterInstPlatformAlertReceiver
   type: email
-  severity: {{severity}}
+  severity: error
   user: mexadmin
   email: ops@mobiledgex.net

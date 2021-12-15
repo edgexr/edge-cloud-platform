@@ -2,12 +2,11 @@ package e2esetup
 
 import (
 	"fmt"
-	"log"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
@@ -15,7 +14,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
 	edgetestutil "github.com/mobiledgex/edge-cloud/testutil"
-	"github.com/mobiledgex/yaml/v2"
 )
 
 // go-cmp Options
@@ -63,446 +61,73 @@ func CmpSortOrgs(a ormapi.Organization, b ormapi.Organization) bool {
 }
 
 //compares two yaml files for equivalence
-//TODO need to handle different types of interfaces besides appdata, currently using
-//that to sort
-func CompareYamlFiles(name string, compare *util.CompareYaml) bool {
-	firstYamlFile := compare.Yaml1
-	secondYamlFile := compare.Yaml2
-	fileType := compare.FileType
+func CompareYamlFiles(name string, actions []string, compare *util.CompareYaml) bool {
+	return util.CompareYamlFiles(name, actions, compare)
+}
 
-	var err1 error
-	var err2 error
-	var y1 interface{}
-	var y2 interface{}
-	copts := []cmp.Option{}
-	yaml1Ops, yaml2Ops := compare.GetReadYamlOps()
+func cmpFilterAllData(data *ormapi.AllData) {
+	tx := util.NewTransformer()
+	tx.AddSetZeroType(time.Time{}, dmeproto.Timestamp{})
+	tx.AddSetZeroTypeField(ormapi.Federator{}, "Revision")
+	tx.AddSetZeroTypeField(ormapi.Federation{}, "Revision")
+	tx.AddSetZeroTypeField(ormapi.FederatorZone{}, "Revision")
+	tx.AddSetZeroTypeField(ormapi.FederatedSelfZone{}, "Revision")
+	tx.AddSetZeroTypeField(ormapi.FederatedPartnerZone{}, "Revision")
+	tx.Apply(data)
 
-	if fileType == "mcdata" || fileType == "mcdata-xind" {
-		var a1 ormapi.AllData
-		var a2 ormapi.AllData
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
-
-		copts = []cmp.Option{
-			cmpopts.IgnoreTypes(time.Time{}, dmeproto.Timestamp{}),
-			IgnoreAdminRole,
-		}
-		if fileType == "mcdata" {
-			copts = append(copts, edgeproto.IgnoreTaggedFields("nocmp")...)
-			copts = append(copts, cmpopts.IgnoreFields(ormapi.Federator{}, "Revision"))
-			copts = append(copts, cmpopts.IgnoreFields(ormapi.Federation{}, "Revision"))
-			copts = append(copts, cmpopts.IgnoreFields(ormapi.FederatorZone{}, "Revision"))
-			copts = append(copts, cmpopts.IgnoreFields(ormapi.FederatedSelfZone{}, "Revision"))
-			copts = append(copts, cmpopts.IgnoreFields(ormapi.FederatedPartnerZone{}, "Revision"))
-		}
-		if fileType == "mcdata-xind" {
-			// ignore container ids
-			copts = append(copts, cmpopts.IgnoreFields(edgeproto.AppInstRuntime{}, "ContainerIds"))
-			// ignore local hostname based data
-			copts = append(copts, cmpopts.IgnoreFields(edgeproto.CloudletInfo{}, "Controller"))
-		}
-
-		y1 = a1
-		y2 = a2
-	} else if fileType == "mcusers" {
-		// remove roles
-		var a1 []ormapi.User
-		var a2 []ormapi.User
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
-
-		copts = []cmp.Option{
-			cmpopts.IgnoreTypes(time.Time{}),
-			IgnoreAdminUser,
-		}
-		y1 = a1
-		y2 = a2
-	} else if fileType == "mcalerts" {
-		// sort alerts
-		var a1 []edgeproto.Alert
-		var a2 []edgeproto.Alert
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
-		// If this is an empty file, treat it as an empty list
-		if a1 == nil {
-			a1 = []edgeproto.Alert{}
-		}
-		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
-		// If this is an empty file, treat it as an empty list
-		if a2 == nil {
-			a2 = []edgeproto.Alert{}
-		}
-
-		copts = []cmp.Option{
-			cmpopts.IgnoreTypes(time.Time{}, dmeproto.Timestamp{}),
-			cmpopts.SortSlices(func(a edgeproto.Alert, b edgeproto.Alert) bool {
-				return a.GetKey().GetKeyString() < b.GetKey().GetKeyString()
-			}),
-		}
-		copts = append(copts, edgeproto.IgnoreAlertFields("nocmp"))
-		y1 = a1
-		y2 = a2
-	} else if fileType == "mcaudit" {
-		var a1 []ormapi.AuditResponse
-		var a2 []ormapi.AuditResponse
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
-
-		copts = []cmp.Option{
-			cmpopts.IgnoreFields(ormapi.AuditResponse{}, "StartTime", "Duration", "TraceID"),
-		}
-		y1 = a1
-		y2 = a2
-	} else if fileType == "mcevents" {
-		var a1 []EventSearch
-		var a2 []EventSearch
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
-
-		copts = []cmp.Option{
-			cmpopts.IgnoreFields(node.EventData{}, "Timestamp", "Error"),
-			cmpopts.IgnoreFields(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge"),
-		}
-		cmpFilterEventData(a1)
-		cmpFilterEventData(a2)
-
-		y1 = a1
-		y2 = a2
-	} else if fileType == "mceventterms" {
-		var a1 []EventTerms
-		var a2 []EventTerms
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
-
-		cmpFilterEventTerms(a1)
-		cmpFilterEventTerms(a2)
-
-		copts = []cmp.Option{
-			cmpopts.IgnoreFields(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge"),
-			cmpopts.IgnoreFields(node.AggrVal{}, "DocCount"),
-			cmpopts.IgnoreSliceElements(func(aggr node.AggrVal) bool {
-				// no websocket equivalent so leads to
-				// different results for EventTerms for cli vs api
-				return aggr.Key == "/api/v1/auth/ctrl/AccessCloudlet"
-			}),
-		}
-		y1 = a1
-		y2 = a2
-	} else if fileType == "mcspanterms" {
-		var a1 []SpanTerms
-		var a2 []SpanTerms
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
-
-		cmpFilterSpanTerms(a1)
-		cmpFilterSpanTerms(a2)
-
-		copts = []cmp.Option{
-			cmpopts.IgnoreFields(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge"),
-			cmpopts.IgnoreFields(node.AggrVal{}, "DocCount"),
-			// Ignore messages and tags because they will change often.
-			// Hostnames will depend on local machine name so have to
-			// ignore those too.
-			cmpopts.IgnoreFields(node.SpanTerms{}, "Msgs", "Tags", "Hostnames"),
-		}
-		y1 = a1
-		y2 = a2
-	} else if fileType == "mcspans" {
-		var a1 []SpanSearch
-		var a2 []SpanSearch
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
-
-		cmpFilterSpans(a1)
-		cmpFilterSpans(a2)
-
-		copts = []cmp.Option{
-			cmpopts.IgnoreFields(node.SpanOutCondensed{}, "StartTime", "Duration", "TraceID", "SpanID", "Hostname"),
-			cmpopts.IgnoreFields(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge"),
-			cmpopts.IgnoreFields(node.SpanLogOut{}, "Timestamp", "Lineno"),
-		}
-
-		y1 = a1
-		y2 = a2
-	} else if fileType == "mcmetrics" {
-		var a1 []MetricsCompare
-		var a2 []MetricsCompare
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
-
-		sort.Slice(a1, func(i, j int) bool {
-			return a1[i].Name < a1[j].Name
-		})
-		sort.Slice(a2, func(i, j int) bool {
-			return a2[i].Name < a2[j].Name
-		})
-
-		y1 = a1
-		y2 = a2
-	} else if fileType == "mcapimetrics" {
-		var a1 []OptimizedMetricsCompare
-		var a2 []OptimizedMetricsCompare
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
-
-		sort.Slice(a1, func(i, j int) bool {
-			return a1[i].Name < a1[j].Name
-		})
-		sort.Slice(a2, func(i, j int) bool {
-			return a2[i].Name < a2[j].Name
-		})
-
-		cmpFilterApiMetricData(a1)
-		cmpFilterApiMetricData(a2)
-
-		y1 = a1
-		y2 = a2
-	} else if fileType == "mcoptmetrics" {
-		var a1 []OptimizedMetricsCompare
-		var a2 []OptimizedMetricsCompare
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
-
-		sort.Slice(a1, func(i, j int) bool {
-			return a1[i].Name < a1[j].Name
-		})
-		sort.Slice(a2, func(i, j int) bool {
-			return a2[i].Name < a2[j].Name
-		})
-
-		y1 = a1
-		y2 = a2
-	} else if fileType == "emaildata" {
-		// sort email headers
-		var a1 []MailDevEmail
-		var a2 []MailDevEmail
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
-		// If this is an empty file, treat it as an empty list
-		if a1 == nil {
-			a1 = []MailDevEmail{}
-		}
-		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
-		// If this is an empty file, treat it as an empty list
-		if a2 == nil {
-			a2 = []MailDevEmail{}
-		}
-		sort.Slice(a1, func(i, j int) bool {
-			if a1[i].Text == a1[j].Text {
-				return a1[i].Headers.Subject < a1[j].Headers.Subject
-			}
-			return a1[i].Text < a1[j].Text
-		})
-		sort.Slice(a2, func(i, j int) bool {
-			if a2[i].Text == a2[j].Text {
-				return a2[i].Headers.Subject < a2[j].Headers.Subject
-			}
-			return a2[i].Text < a2[j].Text
-		})
-
-		y1 = a1
-		y2 = a2
-	} else if fileType == "slackdata" {
-		// sort email headers
-		var a1 []TestSlackMsg
-		var a2 []TestSlackMsg
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
-		// If this is an empty file, treat it as an empty list
-		if a1 == nil {
-			a1 = []TestSlackMsg{}
-		}
-		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
-		// If this is an empty file, treat it as an empty list
-		if a2 == nil {
-			a2 = []TestSlackMsg{}
-		}
-		sort.Slice(a1, func(i, j int) bool {
-			if len(a1[i].Attachments) < 1 {
-				return false
-			}
-			if len(a1[j].Attachments) < 1 {
-				return true
-			}
-			return a1[i].Attachments[0].Title < a1[j].Attachments[0].Title
-		})
-		sort.Slice(a2, func(i, j int) bool {
-			if len(a2[i].Attachments) < 1 {
-				return false
-			}
-			if len(a2[j].Attachments) < 1 {
-				return true
-			}
-			return a2[i].Attachments[0].Title < a2[j].Attachments[0].Title
-		})
-
-		y1 = a1
-		y2 = a2
-	} else if fileType == "pagerdutydata" {
-		// sort email headers
-		var a1 []TestPagerDutyEvent
-		var a2 []TestPagerDutyEvent
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
-		// If this is an empty file, treat it as an empty list
-		if a1 == nil {
-			a1 = []TestPagerDutyEvent{}
-		}
-		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
-		// If this is an empty file, treat it as an empty list
-		if a2 == nil {
-			a2 = []TestPagerDutyEvent{}
-		}
-		sort.Slice(a1, func(i, j int) bool {
-			return a1[i].Payload.Summary < a1[j].Payload.Summary
-		})
-		sort.Slice(a2, func(i, j int) bool {
-			return a2[i].Payload.Summary < a2[j].Payload.Summary
-		})
-
-		y1 = a1
-		y2 = a2
-	} else if fileType == "mcstream" {
-		var a1 AllStreamOutData
-		var a2 AllStreamOutData
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
-		copts = []cmp.Option{
-			cmpopts.IgnoreTypes(time.Time{}, dmeproto.Timestamp{}),
-			IgnoreAdminRole,
-		}
-		copts = append(copts, edgeproto.IgnoreTaggedFields("nocmp")...)
-		copts = append(copts, edgeproto.CmpSortSlices()...)
-		copts = append(copts, cmpopts.SortSlices(CmpSortOrgs))
-
-		y1 = a1
-		y2 = a2
-	} else if fileType == "mcratelimit" {
-		var a1 []ormapi.McRateLimitSettings
-		var a2 []ormapi.McRateLimitSettings
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
-
-		sort.Slice(a1, func(i, j int) bool {
-			if a1[i].ApiName != a1[j].ApiName {
-				return a1[i].ApiName < a1[j].ApiName
-			}
-			return a1[i].RateLimitTarget < a1[j].RateLimitTarget
-		})
-		sort.Slice(a2, func(i, j int) bool {
-			if a2[i].ApiName != a2[j].ApiName {
-				return a2[i].ApiName < a2[j].ApiName
-			}
-			return a2[i].RateLimitTarget < a2[j].RateLimitTarget
-		})
-
-		y1 = a1
-		y2 = a2
-	} else if fileType == "mcratelimitflow" {
-		var a1 []ormapi.McRateLimitFlowSettings
-		var a2 []ormapi.McRateLimitFlowSettings
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
-
-		sort.Slice(a1, func(i, j int) bool {
-			if a1[i].ApiName != a1[j].ApiName {
-				return a1[i].ApiName < a1[j].ApiName
-			}
-			return a1[i].RateLimitTarget < a1[j].RateLimitTarget
-		})
-		sort.Slice(a2, func(i, j int) bool {
-			if a2[i].ApiName != a2[j].ApiName {
-				return a2[i].ApiName < a2[j].ApiName
-			}
-			return a2[i].RateLimitTarget < a2[j].RateLimitTarget
-		})
-
-		y1 = a1
-		y2 = a2
-	} else if fileType == "mcratelimitmaxreqs" {
-		var a1 []ormapi.McRateLimitMaxReqsSettings
-		var a2 []ormapi.McRateLimitMaxReqsSettings
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
-
-		sort.Slice(a1, func(i, j int) bool {
-			if a1[i].ApiName != a1[j].ApiName {
-				return a1[i].ApiName < a1[j].ApiName
-			}
-			return a1[i].RateLimitTarget < a1[j].RateLimitTarget
-		})
-		sort.Slice(a2, func(i, j int) bool {
-			if a2[i].ApiName != a2[j].ApiName {
-				return a2[i].ApiName < a2[j].ApiName
-			}
-			return a2[i].RateLimitTarget < a2[j].RateLimitTarget
-		})
-
-		y1 = a1
-		y2 = a2
-	} else if fileType == "errs" {
-		var a1 []edgetestutil.Err
-		var a2 []edgetestutil.Err
-
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
-
-		sort.Slice(a1, func(i, j int) bool {
-			return a1[i].Desc < a1[j].Desc
-		})
-		sort.Slice(a2, func(i, j int) bool {
-			return a2[i].Desc < a2[j].Desc
-		})
-
-		if err := cmpFilterErrsData(a1, a2); err != nil {
-			log.Printf("Error filtering error data %v", err)
-			return false
-		}
-
-		y1 = a1
-		y2 = a2
-	} else {
-		return util.CompareYamlFiles(name, compare)
+	clearTags := map[string]struct{}{
+		"nocmp":     struct{}{},
+		"timestamp": struct{}{},
 	}
+	for ii := range data.RegionData {
+		data.RegionData[ii].AppData.ClearTagged(clearTags)
+	}
+	data.Sort()
+}
 
-	util.PrintStepBanner("running compareYamlFiles")
-	compareInfo, err := yaml.Marshal(compare)
-	if err != nil {
-		log.Printf("Failed to marshal compare info, %v\n", err)
-		return false
-	}
-	log.Printf("Comparing for %s:\n%s", name, string(compareInfo))
+func cmpFilterAllDataNoIgnore(data *ormapi.AllData) {
+	tx := util.NewTransformer()
+	tx.AddSetZeroType(time.Time{}, dmeproto.Timestamp{})
+	tx.AddSetZeroTypeField(edgeproto.AppInstRuntime{}, "ContainerIds")
+	tx.AddSetZeroTypeField(edgeproto.CloudletInfo{}, "Controller")
+	tx.Apply(data)
+	data.Sort()
+}
 
-	if err1 != nil {
-		log.Printf("Error in reading yaml file %v -- %v\n", firstYamlFile, err1)
-		return false
-	}
-	if err2 != nil {
-		log.Printf("Error in reading yaml file %v -- %v\n", secondYamlFile, err2)
-		return false
-	}
+func cmpFilterUsers(data []ormapi.User) {
+	tx := util.NewTransformer()
+	tx.AddSetZeroType(time.Time{})
+	tx.Apply(data)
+}
 
-	if !cmp.Equal(y1, y2, copts...) {
-		log.Println("Comparison fail")
-		log.Printf(cmp.Diff(y1, y2, copts...))
-		return false
+func cmpFilterAudit(data []ormapi.AuditResponse) {
+	tx := util.NewTransformer()
+	tx.AddSetZeroTypeField(ormapi.AuditResponse{}, "StartTime", "Duration", "TraceID")
+	tx.Apply(data)
+}
+
+func cmpFilterMetrics(data []MetricsCompare) {
+	sort.Slice(data, func(i, j int) bool {
+		return data[i].Name < data[j].Name
+	})
+}
+
+type errReplace struct {
+	re   *regexp.Regexp
+	repl string
+}
+
+func cmpFilterErrs(data []edgetestutil.Err) {
+	// remove random data from errors
+	replacers := []errReplace{{
+		re:   regexp.MustCompile("(, retry again in )([0-9.]+s)"),
+		repl: "$1",
+	}}
+	for ii := range data {
+		for ee := range replacers {
+			data[ii].Msg = replacers[ee].re.ReplaceAllString(data[ii].Msg, replacers[ee].repl)
+		}
 	}
-	log.Println("Comparison success")
-	return true
 }
 
 func cmpFilterErrsData(errActual []edgetestutil.Err, errExpected []edgetestutil.Err) error {
@@ -520,6 +145,10 @@ func cmpFilterErrsData(errActual []edgetestutil.Err, errExpected []edgetestutil.
 }
 
 func cmpFilterEventData(data []EventSearch) {
+	tx := util.NewTransformer()
+	tx.AddSetZeroTypeField(node.EventData{}, "Timestamp", "Error")
+	tx.AddSetZeroTypeField(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge")
+	tx.Apply(data)
 	for ii := 0; ii < len(data); ii++ {
 		for jj := 0; jj < len(data[ii].Results); jj++ {
 			event := &data[ii].Results[jj]
@@ -540,6 +169,11 @@ func cmpFilterEventData(data []EventSearch) {
 }
 
 func cmpFilterSpans(data []SpanSearch) {
+	tx := util.NewTransformer()
+	tx.AddSetZeroTypeField(node.SpanOutCondensed{}, "StartTime", "Duration", "TraceID", "SpanID", "Hostname")
+	tx.AddSetZeroTypeField(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge")
+	tx.AddSetZeroTypeField(node.SpanLogOut{}, "Timestamp", "Lineno")
+	tx.Apply(data)
 	for ii := 0; ii < len(data); ii++ {
 		for jj := 0; jj < len(data[ii].Results); jj++ {
 			out := data[ii].Results[jj]
@@ -565,6 +199,9 @@ func cmpFilterSpans(data []SpanSearch) {
 
 // filter out number of requests and errors as it changes with every loop
 func cmpFilterApiMetricData(data []OptimizedMetricsCompare) {
+	sort.Slice(data, func(i, j int) bool {
+		return data[i].Name < data[j].Name
+	})
 	for ii := 0; ii < len(data); ii++ {
 		for i := range data[ii].Values {
 			if len(data[ii].Columns) < i+1 || data[ii].Columns[i] == "reqs" || data[ii].Columns[i] == "errs" {
@@ -574,6 +211,60 @@ func cmpFilterApiMetricData(data []OptimizedMetricsCompare) {
 			}
 		}
 	}
+}
+
+func cmpFilterEmailData(data []MailDevEmail) {
+	sort.Slice(data, func(i, j int) bool {
+		if data[i].Text == data[j].Text {
+			return data[i].Headers.Subject < data[j].Headers.Subject
+		}
+		return data[i].Text < data[j].Text
+	})
+}
+
+func cmpFilterSlackData(data []TestSlackMsg) {
+	sort.Slice(data, func(i, j int) bool {
+		if len(data[i].Attachments) < 1 {
+			return false
+		}
+		if len(data[j].Attachments) < 1 {
+			return true
+		}
+		return data[i].Attachments[0].Title < data[j].Attachments[0].Title
+	})
+}
+
+func cmpFilterPagerDutyData(data []TestPagerDutyEvent) {
+	sort.Slice(data, func(i, j int) bool {
+		return data[i].Payload.Summary < data[j].Payload.Summary
+	})
+}
+
+func cmpFilterRateLimit(data []ormapi.McRateLimitSettings) {
+	sort.Slice(data, func(i, j int) bool {
+		if data[i].ApiName != data[j].ApiName {
+			return data[i].ApiName < data[j].ApiName
+		}
+		return data[i].RateLimitTarget < data[j].RateLimitTarget
+	})
+}
+
+func cmpFilterRateLimitFlow(data []ormapi.McRateLimitFlowSettings) {
+	sort.Slice(data, func(i, j int) bool {
+		if data[i].ApiName != data[j].ApiName {
+			return data[i].ApiName < data[j].ApiName
+		}
+		return data[i].RateLimitTarget < data[j].RateLimitTarget
+	})
+}
+
+func cmpFilterRateLimitMaxReqs(data []ormapi.McRateLimitMaxReqsSettings) {
+	sort.Slice(data, func(i, j int) bool {
+		if data[i].ApiName != data[j].ApiName {
+			return data[i].ApiName < data[j].ApiName
+		}
+		return data[i].RateLimitTarget < data[j].RateLimitTarget
+	})
 }
 
 // This nils out map value so we can check that keys match
@@ -602,11 +293,16 @@ func (s sortAggrVals) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s sortAggrVals) Less(i, j int) bool { return s[i].Key < s[j].Key }
 
 func cmpFilterEventTerms(data []EventTerms) {
+	tx := util.NewTransformer()
+	tx.AddSetZeroTypeField(node.AggrVal{}, "DocCount")
+	tx.AddSetZeroTypeField(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge")
+	tx.Apply(data)
 	for ii := 0; ii < len(data); ii++ {
 		terms := data[ii].Terms
 		if terms == nil {
 			continue
 		}
+		newNames := []node.AggrVal{}
 		for jj := 0; jj < len(terms.Names); jj++ {
 			// cli runs /ws version of RunCommand which makes
 			// it impossible to get the same results from both
@@ -617,7 +313,14 @@ func cmpFilterEventTerms(data []EventTerms) {
 			if terms.Names[jj].Key == "/ws/api/v1/auth/ctrl/ShowLogs" {
 				terms.Names[jj].Key = "/api/v1/auth/ctrl/ShowLogs"
 			}
+			// no websocket equivalent so leads to
+			// different results for EventTerms for cli vs api
+			if terms.Names[jj].Key == "/api/v1/auth/ctrl/AccessCloudlet" {
+				continue
+			}
+			newNames = append(newNames, terms.Names[jj])
 		}
+		terms.Names = newNames
 		// output order depends on counts, which may
 		// change over time or due to retries.
 		// Since we're ignoring counts, change order to alphabetical.
@@ -630,6 +333,14 @@ func cmpFilterEventTerms(data []EventTerms) {
 }
 
 func cmpFilterSpanTerms(data []SpanTerms) {
+	tx := util.NewTransformer()
+	tx.AddSetZeroTypeField(node.AggrVal{}, "DocCount")
+	tx.AddSetZeroTypeField(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge")
+	// Ignore messages and tags because they will change often.
+	// Hostnames will depend on local machine name so have to
+	// ignore those too.
+	tx.AddSetZeroTypeField(node.SpanTerms{}, "Msgs", "Tags", "Hostnames")
+	tx.Apply(data)
 	for ii := 0; ii < len(data); ii++ {
 		terms := data[ii].Terms
 		if terms == nil {

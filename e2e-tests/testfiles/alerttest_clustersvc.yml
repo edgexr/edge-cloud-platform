@@ -15,7 +15,7 @@ tests:
   actions: [email-deleteall, email-check]
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_list.yml'
     filetype: emaildata
 
 # Admin creates an alert receiver 
@@ -80,11 +80,6 @@ tests:
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
     yaml2: '{{datadir2}}/clustersvc_appinst_fail_alerts_show.yml'
-    yaml2vars:
-      cloudlet_name: dmuus-cloud-13
-      cloudlet_org: dmuus
-      cluster_name: dmuusSmallCluster
-      cluster_org: AcmeAppCo
     filetype: mcalerts
 
 # As a developer (user2), "show alert" - should be empty
@@ -96,7 +91,7 @@ tests:
   retryintervalsec: 1
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_list.yml'
     filetype: mcalerts
 
 # user2 (developer) deletes cluster
@@ -117,7 +112,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_list.yml'
     filetype: mcalerts
 
 # check for resolution email here, after cluster deletion
@@ -157,7 +152,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 # user1 (operator) deletes cloudlet
@@ -174,7 +169,7 @@ tests:
   actions: [email-deleteall, email-check]
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_list.yml'
     filetype: emaildata
 
 #  It would be good to also test alert resolution as well.

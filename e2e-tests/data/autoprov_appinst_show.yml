@@ -26,14 +26,12 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
-      powerstate: PowerOn
-      createdat:
-        seconds: 1576628584
-        nanos: 73154000
-      vmflavor: x1.small
       runtimeinfo:
         containerids:
         - appOnClusterNode0
+      healthcheck: Ok
+      powerstate: PowerOn
+      vmflavor: x1.small
       realclustername: Reservable2
       uniqueid: acmeappcoautoprovapp10-autocluster-autoprov-dmuus-cloud-2-dmuus
     - key:
@@ -60,9 +58,7 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
-      createdat:
-        seconds: 1587747310
-        nanos: 358952000
+      healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
       realclustername: ReservableD

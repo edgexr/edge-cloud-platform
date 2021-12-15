@@ -9,7 +9,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_default_user.yml'
     filetype: mcusers
 
 - name: verify no provisioned data to start
@@ -28,7 +28,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mc_admin_data.yml'
+    yaml2: '{{datadir2}}/mc_admin_data_show.yml'
     filetype: mcdata
 
 - name: user1 creates operators
@@ -64,12 +64,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_init_data.yml'
-    yaml2vars:
-      partnertag: "partner1"
-      region: "PA"
-      ctrlapiaddr: "127.0.0.1:55081"
-      ctrlnotifyaddr: "127.0.0.1:37081"
+    yaml2: '{{datadir2}}/federation_init_data_partner1.yml'
     filetype: mcdata
 
 - name: admin marks operator orgs an non-edgebox only
@@ -88,12 +83,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_data_show.yml'
-    yaml2vars:
-      partnertag: "partner1"
-      region: "PA"
-      ctrlapiaddr: "127.0.0.1:55081"
-      ctrlnotifyaddr: "127.0.0.1:37081"
+    yaml2: '{{datadir2}}/federation_show_partner1.yml'
     filetype: mcdata
 
 - name: setup federation partner2
@@ -107,12 +97,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_init_data.yml'
-    yaml2vars:
-      partnertag: "partner2"
-      region: "PS"
-      ctrlapiaddr: "127.0.0.1:55091"
-      ctrlnotifyaddr: "127.0.0.1:37091"
+    yaml2: '{{datadir2}}/federation_init_data_partner2.yml'
     filetype: mcdata
 
 - name: admin marks operator orgs an non-edgebox only
@@ -131,12 +116,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_data_show.yml'
-    yaml2vars:
-      partnertag: "partner2"
-      region: "PS"
-      ctrlapiaddr: "127.0.0.1:55091"
-      ctrlnotifyaddr: "127.0.0.1:37091"
+    yaml2: '{{datadir2}}/federation_show_partner2.yml'
     filetype: mcdata
 
 ###############################################################
@@ -171,11 +151,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_partner_federator_show.yml'
-    yaml2vars:
-      fedaddr: "127.0.0.1:9808"
-      partnertag: "partner1"
-      region: "PA"
+    yaml2: '{{datadir2}}/federation_partner_federator_show1.yml'
     filetype: mcdata
 
 - name: setup partner2 federator
@@ -187,11 +163,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_partner_federator_show.yml'
-    yaml2vars:
-      partnertag: "partner2"
-      region: "PS"
-      fedaddr: "127.0.0.1:9809"
+    yaml2: '{{datadir2}}/federation_partner_federator_show2.yml'
     filetype: mcdata
 
 ###############################################################
@@ -215,10 +187,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_partner_zones.yml'
-    yaml2vars:
-      partnertag: "partner1"
-      region: "PA"
+    yaml2: '{{datadir2}}/federation_partner_zones_show1.yml'
     filetype: mcdata
 
 - name: setup partner2 federator zones
@@ -230,10 +199,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_partner_zones.yml'
-    yaml2vars:
-      partnertag: "partner2"
-      region: "PS"
+    yaml2: '{{datadir2}}/federation_partner_zones_show2.yml'
     filetype: mcdata
 
 ###############################################################
@@ -290,10 +256,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_partner_self_show.yml'
-    yaml2vars:
-      partnertag: "partner1"
-      region: "PA"
+    yaml2: '{{datadir2}}/federation_partner_self_show1.yml'
     filetype: mcdata
 
 - name: partner2 creates self federation
@@ -305,10 +268,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_partner_self_show.yml'
-    yaml2vars:
-      partnertag: "partner2"
-      region: "PS"
+    yaml2: '{{datadir2}}/federation_partner_self_show2.yml'
     filetype: mcdata
 
 - name: partner1 marks zones to be shared with self federator
@@ -320,10 +280,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_partner_share_zones_self.yml'
-    yaml2vars:
-      partnertag: "partner1"
-      region: "PA"
+    yaml2: '{{datadir2}}/federation_partner_share_zones_self1.yml'
     filetype: mcdata
 
 - name: set partner1 API key for federations with self federator
@@ -352,7 +309,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 - name: self federator registers federation with partner1
@@ -392,10 +349,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_partner_share_zones_self.yml'
-    yaml2vars:
-      partnertag: "partner2"
-      region: "PS"
+    yaml2: '{{datadir2}}/federation_partner_share_zones_self2.yml'
     filetype: mcdata
 
 - name: partner2 zones are now added
@@ -480,7 +434,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 - name: only partner1 zones exists now
@@ -516,7 +470,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 ###############################################################
@@ -531,7 +485,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 ###############################################################
@@ -546,7 +500,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 - name: partner2 deletes self federator
@@ -558,7 +512,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 - name: self federator unshares zones with partner1
@@ -578,7 +532,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 - name: self federators deletes partner1 federator
@@ -600,7 +554,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 ###############################################################
@@ -615,7 +569,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 - name: delete partner2 federator zones
@@ -627,7 +581,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 - name: delete self federator zones
@@ -636,7 +590,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 ###############################################################
@@ -651,7 +605,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 - name: delete partner2 federator
@@ -663,7 +617,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 - name: delete self federator created for federation with partner2
@@ -683,7 +637,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
 ###############################################################

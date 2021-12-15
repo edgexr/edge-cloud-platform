@@ -6,8 +6,8 @@
     cloudletorg: dmuus
     method: FindCloudlet
   values:
-  - - "1"
-  - - "0"
+  - - ""
+  - - ""
   - - dmuus-cloud-1
   - - dmuus
   columns:
@@ -23,8 +23,8 @@
     cloudletorg: dmuus
     method: RegisterClient
   values:
-  - - "1"
-  - - "0"
+  - - ""
+  - - ""
   - - ""
   - - ""
   columns:

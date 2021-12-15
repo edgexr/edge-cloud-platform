@@ -32,12 +32,6 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
-      runtimeinfo:
-        containerids:
-        - appOnClusterNode0
-      createdat:
-        seconds: 1636647520
-        nanos: 572063000
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small

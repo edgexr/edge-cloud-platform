@@ -1,0 +1,15 @@
+federatorzones:
+- zoneid: partner2-cloud-1
+  operatorid: partner2
+  countrycode: PS
+  geolocation: 31,-91
+  region: PS
+  cloudlets:
+  - partner2-cloud-1
+- zoneid: partner2-cloud-2
+  operatorid: partner2
+  countrycode: PS
+  geolocation: 31,-91
+  region: PS
+  cloudlets:
+  - partner2-cloud-2

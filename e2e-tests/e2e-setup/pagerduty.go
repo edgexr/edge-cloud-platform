@@ -69,6 +69,7 @@ func RunPagerDutyAPI(api, apiFile, outputDir string) error {
 				log.Printf("pagerduty event unmarshal error: %v\n", err)
 				return err
 			}
+			cmpFilterPagerDutyData(msgs)
 			// marshal back
 			ymlOut, err := yaml.Marshal(&msgs)
 			if err != nil {

@@ -1,9 +1,9 @@
 controllers:
-- region: {{region}}
-  address: {{ctrlapiaddr}}
-  notifyaddr: {{ctrlnotifyaddr}}
+- region: PS
+  address: 127.0.0.1:55091
+  notifyaddr: 127.0.0.1:37091
 orgs:
-- name: {{partnertag}}
+- name: partner2
   type: operator
   address: mobiledgex
   phone: 123-123-1234
@@ -11,11 +11,11 @@ orgs:
 roles:
 - username: mexadmin
   role: AdminManager
-- org: {{partnertag}}
+- org: partner2
   username: mexadmin
   role: OperatorManager
 regiondata:
-- region: {{region}}
+- region: PS
   appdata:
     flavors:
     - key:
@@ -71,14 +71,14 @@ regiondata:
       clusterautoscaleretrydelay: 1s
       alertpolicymintriggertime: 1s
       disableratelimit: true
-      resourcesnapshotthreadinterval: 10m0s
       ratelimitmaxtrackedips: 10000
+      resourcesnapshotthreadinterval: 10m0s
       platformhainstancepollinterval: 300ms
       platformhainstanceactiveexpiretime: 1s
     cloudlets:
     - key:
-        organization: {{partnertag}}
-        name: {{partnertag}}-cloud-1
+        organization: partner2
+        name: partner2-cloud-1
       location:
         latitude: 31
         longitude: -91
@@ -87,14 +87,14 @@ regiondata:
       state: Ready
       flavor:
         name: DefaultPlatformFlavor
-      physicalname: {{partnertag}}-cloud-1
+      physicalname: partner2-cloud-1
       containerversion: "2019-10-24"
       deployment: docker
+      trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
-      hostcontroller: 127.0.0.1:55081
     - key:
-        organization: {{partnertag}}
-        name: {{partnertag}}-cloud-2
+        organization: partner2
+        name: partner2-cloud-2
       location:
         latitude: 81
         longitude: -11
@@ -103,25 +103,24 @@ regiondata:
       state: Ready
       flavor:
         name: DefaultPlatformFlavor
-      physicalname: {{partnertag}}-cloud-2
+      physicalname: partner2-cloud-2
       containerversion: "2019-10-24"
       deployment: docker
-      defaultresourcealertthreshold: 80
-      hostcontroller: 127.0.0.1:55081
+      trustpolicystate: NotPresent
       resourcequotas:
-        - name: "RAM"
-          alertthreshold: 50
-        - name: "vCPUs"
-          value: 20
-          alertthreshold: 50
-        - name: "External IPs"
-          alertthreshold: 10
+      - name: RAM
+        alertthreshold: 50
+      - name: vCPUs
+        value: 20
+        alertthreshold: 50
+      - name: External IPs
+        alertthreshold: 10
+      defaultresourcealertthreshold: 80
     cloudletinfos:
     - key:
-        organization: {{partnertag}}
-        name: {{partnertag}}-cloud-1
+        organization: partner2
+        name: partner2-cloud-1
       state: Ready
-      notifyid: 2
       osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
@@ -163,12 +162,11 @@ regiondata:
           inframaxvalue: 30
         - name: Instances
           value: 2
-      compatibilityversion: 2
+      trustpolicystate: NotPresent
     - key:
-        organization: {{partnertag}}
-        name: {{partnertag}}-cloud-2
+        organization: partner2
+        name: partner2-cloud-2
       state: Ready
-      notifyid: 3
       osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
@@ -210,4 +208,4 @@ regiondata:
           inframaxvalue: 30
         - name: Instances
           value: 2
-      compatibilityversion: 2
+      trustpolicystate: NotPresent

@@ -14,8 +14,3 @@
     description: Application server port is not responding
     title: AppInstDown
   state: firing
-  activeat:
-    seconds: 1614751440
-    nanos: 399557679
-  notifyid: 3
-  controller: Ashishs-MacBook-Pro-2.local@127.0.0.1:55001

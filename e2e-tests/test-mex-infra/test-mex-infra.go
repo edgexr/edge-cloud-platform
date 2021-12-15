@@ -117,7 +117,7 @@ func main() {
 			break
 		}
 		if spec.CompareYaml.Yaml1 != "" && spec.CompareYaml.Yaml2 != "" {
-			pass := e2esetup.CompareYamlFiles(spec.Name, &spec.CompareYaml)
+			pass := e2esetup.CompareYamlFiles(spec.Name, spec.Actions, &spec.CompareYaml)
 			if !pass {
 				tryErrs = append(tryErrs, "compare yaml failed")
 			}
