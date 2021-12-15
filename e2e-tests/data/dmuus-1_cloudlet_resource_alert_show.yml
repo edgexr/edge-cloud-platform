@@ -4,28 +4,11 @@
     cloudletorg: dmuus
     region: local
     scope: Cloudlet
-    warning: More than 50% of vCPUs is used by the cloudlet
+    warning: More than 10% of External IPs is used by the cloudlet
   annotations:
-    description: More than 50% of vCPUs is used by the cloudlet
+    description: More than 10% of External IPs is used by the cloudlet
     title: CloudletResourceUsage
   state: firing
-  activeat:
-    seconds: 1614751830
-    nanos: 96535000
-- labels:
-    alertname: CloudletResourceUsage
-    cloudlet: dmuus-cloud-1
-    cloudletorg: dmuus
-    region: local
-    scope: Cloudlet
-    warning: 'More than 50% of RAM is used on the infra managed by the cloudlet'
-  annotations:
-    description: 'More than 50% of RAM is used on the infra managed by the cloudlet'
-    title: CloudletResourceUsage
-  state: firing
-  activeat:
-    seconds: 1614751830
-    nanos: 96537000
 - labels:
     alertname: CloudletResourceUsage
     cloudlet: dmuus-cloud-1
@@ -37,20 +20,25 @@
     description: More than 50% of RAM is used by the cloudlet
     title: CloudletResourceUsage
   state: firing
-  activeat:
-    seconds: 1614751830
-    nanos: 96530000
 - labels:
     alertname: CloudletResourceUsage
     cloudlet: dmuus-cloud-1
     cloudletorg: dmuus
     region: local
     scope: Cloudlet
-    warning: More than 10% of External IPs is used by the cloudlet
+    warning: More than 50% of RAM is used on the infra managed by the cloudlet
   annotations:
-    description: More than 10% of External IPs is used by the cloudlet
+    description: More than 50% of RAM is used on the infra managed by the cloudlet
     title: CloudletResourceUsage
   state: firing
-  activeat:
-    seconds: 1624464693
-    nanos: 844407000
+- labels:
+    alertname: CloudletResourceUsage
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    region: local
+    scope: Cloudlet
+    warning: More than 50% of vCPUs is used by the cloudlet
+  annotations:
+    description: More than 50% of vCPUs is used by the cloudlet
+    title: CloudletResourceUsage
+  state: firing

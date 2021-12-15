@@ -1,207 +1,106 @@
 - terms:
     names:
-    - key: cluster-svc create AppInst
-      count: 78
-    - key: /api/v1/login
-      count: 58
-    - key: Reserve ClusterInst
-      count: 13
-    - key: AutoProv create AppInst
-      count: 12
-    - key: Free ClusterInst reservation
-      count: 12
-    - key: /api/v1/auth/ctrl/CreateApp
-      count: 10
-    - key: /api/v1/auth/ctrl/CreateClusterInst
-      count: 10
-    - key: /api/v1/auth/ctrl/CreateCloudlet
-      count: 8
-    - key: /api/v1/auth/org/create
-      count: 8
-    - key: Cloudlet online
-      count: 8
-    - key: ClusterAutoScale ClusterInst
-      count: 8
-    - key: crm start
-      count: 8
-    - key: /api/v1/auth/org/delete
-      count: 7
-    - key: /api/v1/auth/ctrl/CreateAppInst
-      count: 6
-    - key: /api/v1/auth/ctrl/CreateFlavor
-      count: 6
-    - key: /api/v1/auth/ctrl/UpdateSettings
-      count: 6
-    - key: /api/v1/auth/ctrl/CreateAutoProvPolicy
-      count: 4
-    - key: /api/v1/auth/ctrl/UpdateCloudlet
-      count: 4
-    - key: /api/v1/auth/restricted/org/update
-      count: 4
-    - key: AutoProv delete AppInst
-      count: 4
-    - key: cluster-svc create App
-      count: 4
-    - key: /api/v1/auth/events/terms
-      count: 3
     - key: /api/v1/auth/billingorg/create
-      count: 2
-    - key: /api/v1/auth/cloudletpoolaccessresponse/create
-      count: 2
     - key: /api/v1/auth/cloudletpoolaccessinvitation/create
-      count: 2
-    - key: /api/v1/auth/controller/create
-      count: 2
-    - key: /api/v1/auth/ctrl/CreateAutoScalePolicy
-      count: 2
-    - key: /api/v1/auth/ctrl/CreateCloudletPool
-      count: 2
-    - key: /api/v1/auth/ctrl/CreateOperatorCode
-      count: 2
-    - key: /api/v1/auth/ctrl/DeleteApp
-      count: 2
-    - key: /api/v1/auth/ctrl/DeleteAppInst
-      count: 2
-    - key: /api/v1/auth/ctrl/DeleteAutoProvPolicy
-      count: 2
-    - key: /api/v1/auth/ctrl/RemoveAutoProvPolicyCloudlet
-      count: 2
-    - key: Cloudlet maintenance done
-      count: 2
-    - key: Cloudlet maintenance start
-      count: 2
-    - key: /api/v1/auth/ctrl/AccessCloudlet
-      count: 1
-    - key: /api/v1/auth/ctrl/RunCommand
-      count: 1
-    - key: /api/v1/auth/ctrl/RunDebug
-      count: 1
-    - key: /api/v1/auth/ctrl/ShowLogs
-      count: 1
-    - key: /api/v1/auth/role/adduser
-      count: 1
-    - key: AutoCluster create
-      count: 1
-    - key: shepherd start
-      count: 1
-    - key: /api/v1/auth/ctrl/ShowApp
-      count: 1
+    - key: /api/v1/auth/cloudletpoolaccessresponse/create
     - key: /api/v1/auth/config/update
-      count: 2
+    - key: /api/v1/auth/controller/create
+    - key: /api/v1/auth/ctrl/CreateApp
+    - key: /api/v1/auth/ctrl/CreateAppInst
+    - key: /api/v1/auth/ctrl/CreateAutoProvPolicy
+    - key: /api/v1/auth/ctrl/CreateAutoScalePolicy
+    - key: /api/v1/auth/ctrl/CreateCloudlet
+    - key: /api/v1/auth/ctrl/CreateCloudletPool
+    - key: /api/v1/auth/ctrl/CreateClusterInst
+    - key: /api/v1/auth/ctrl/CreateFlavor
+    - key: /api/v1/auth/ctrl/CreateOperatorCode
+    - key: /api/v1/auth/ctrl/DeleteApp
+    - key: /api/v1/auth/ctrl/DeleteAppInst
+    - key: /api/v1/auth/ctrl/DeleteAutoProvPolicy
+    - key: /api/v1/auth/ctrl/RemoveAutoProvPolicyCloudlet
+    - key: /api/v1/auth/ctrl/RunCommand
+    - key: /api/v1/auth/ctrl/RunDebug
+    - key: /api/v1/auth/ctrl/ShowApp
+    - key: /api/v1/auth/ctrl/ShowLogs
+    - key: /api/v1/auth/ctrl/UpdateCloudlet
+    - key: /api/v1/auth/ctrl/UpdateSettings
+    - key: /api/v1/auth/events/terms
+    - key: /api/v1/auth/org/create
+    - key: /api/v1/auth/org/delete
     - key: /api/v1/auth/ratelimitsettingsmc/createflow
-      count: 1
     - key: /api/v1/auth/ratelimitsettingsmc/createmaxreqs
-      count: 1
     - key: /api/v1/auth/ratelimitsettingsmc/deleteflow
-      count: 1
     - key: /api/v1/auth/ratelimitsettingsmc/deletemaxreqs
-      count: 1
     - key: /api/v1/auth/ratelimitsettingsmc/updateflow
-      count: 1
+    - key: /api/v1/auth/restricted/org/update
+    - key: /api/v1/auth/role/adduser
+    - key: /api/v1/login
+    - key: AutoCluster create
+    - key: AutoProv create AppInst
+    - key: AutoProv delete AppInst
+    - key: Cloudlet maintenance done
+    - key: Cloudlet maintenance start
+    - key: Cloudlet online
+    - key: ClusterAutoScale ClusterInst
+    - key: Free ClusterInst reservation
+    - key: Reserve ClusterInst
+    - key: cluster-svc create App
+    - key: cluster-svc create AppInst
+    - key: crm start
+    - key: shepherd start
     orgs:
-    - key: MobiledgeX
-      count: 89
-    - count: 88
+    - {}
     - key: AcmeAppCo
-      count: 76
-    - key: dmuus
-      count: 20
-    - key: enterprise
-      count: 18
-    - key: user3org
-      count: 7
+    - key: MobiledgeX
     - key: platos
-      count: 4
     - key: azure
-      count: 4
+    - key: enterprise
     - key: gcp
-      count: 4
+    - key: dmuus
+    - key: user3org
     types:
     - key: audit
-      count: 155
     - key: event
-      count: 145
     regions:
     - key: local
-      count: 130
     - key: locala
-      count: 15
     tagkeys:
-    - key: hostname
-      count: 300
-    - key: lineno
-      count: 300
-    - key: spanid
-      count: 300
-    - key: traceid
-      count: 300
-    - key: duration
-      count: 254
-    - key: cloudlet
-      count: 171
-    - key: cloudletorg
-      count: 171
-    - key: email
-      count: 155
-    - key: federatedorg
-      count: 179
-    - key: method
-      count: 155
-    - key: remote-ip
-      count: 155
-    - key: request
-      count: 155
-    - key: response
-      count: 155
-    - key: status
-      count: 155
-    - key: username
-      count: 155
     - key: app
-      count: 144
     - key: apporg
-      count: 144
     - key: appver
-      count: 144
-    - key: cluster
-      count: 138
-    - key: clusterorg
-      count: 138
-    - key: org
-      count: 76
-    - key: region
-      count: 72
-    - key: realcluster
-      count: 25
     - key: autoprovpolicy
-      count: 16
-    - key: reason
-      count: 16
-    - key: policy
-      count: 10
-    - key: policyorg
-      count: 10
-    - key: node
-      count: 9
-    - key: noderegion
-      count: 9
-    - key: nodetype
-      count: 9
-    - key: state
-      count: 8
-    - key: version
-      count: 8
-    - key: new nodecount
-      count: 8
-    - key: flavor
-      count: 6
-    - key: maintenance-state
-      count: 4
     - key: billing org
-      count: 2
+    - key: cloudlet
+    - key: cloudletorg
     - key: cloudletpool
-      count: 2
     - key: cloudletpoolorg
-      count: 2
+    - key: cluster
+    - key: clusterorg
+    - key: duration
+    - key: email
+    - key: federatedorg
+    - key: flavor
+    - key: hostname
+    - key: lineno
+    - key: maintenance-state
+    - key: method
+    - key: new nodecount
+    - key: node
+    - key: noderegion
+    - key: nodetype
     - key: operatorcode
-      count: 2
+    - key: org
+    - key: policy
+    - key: policyorg
+    - key: realcluster
+    - key: reason
+    - key: region
+    - key: remote-ip
+    - key: request
+    - key: response
+    - key: spanid
+    - key: state
+    - key: status
+    - key: traceid
+    - key: username
+    - key: version

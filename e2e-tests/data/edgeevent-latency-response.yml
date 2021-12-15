@@ -1,4 +1,4 @@
-eventtype: EventLatencyProcessed
+eventtype: LatencyProcessed
 statistics:
   avg: 3.3768000000000002
   min: 1.12
@@ -6,6 +6,4 @@ statistics:
   stddev: 1.6512211238958883
   variance: 2.7265312
   numsamples: 5
-  timestamp:
-    seconds: 1602710086
-    nanos: 364548000
+  timestamp: {}

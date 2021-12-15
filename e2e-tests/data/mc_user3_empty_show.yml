@@ -71,6 +71,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
     - key:
         organization: gcp
         name: gcp-cloud-5
@@ -80,6 +81,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
     - key:
         organization: dmuus
         name: dmuus-cloud-1
@@ -90,6 +92,7 @@ regiondata:
       numdynamicips: 254
       state: Ready
       platformtype: Fakeinfra
+      trustpolicystate: NotPresent
     - key:
         organization: dmuus
         name: dmuus-cloud-2
@@ -99,6 +102,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
 - region: locala
   appdata:
     flavors:
@@ -127,6 +131,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
     - key:
         organization: dmuus
         name: dmuus-cloud-4
@@ -136,3 +141,4 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent

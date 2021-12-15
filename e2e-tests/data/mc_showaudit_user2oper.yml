@@ -3,54 +3,46 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-11-18T14:14:08.729736+05:30"
-  duration: 211.346ms
   request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 67ffe890f1dc64a1
   tags:
     app: someapplication1
     apporg: AcmeAppCo
     appver: "1.0"
     cloudlet: dmuus-cloud-4
     cloudletorg: dmuus
-    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
+    federatedorg: ""
 - operationname: /api/v1/auth/ctrl/CreateAppInst
   username: user2
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-11-18T14:14:08.537564+05:30"
-  duration: 187.617ms
   request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 7302549cebe7a8ab
   tags:
     app: someapplication1
     apporg: AcmeAppCo
     appver: "1.0"
     cloudlet: dmuus-cloud-3
     cloudletorg: dmuus
-    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
+    federatedorg: ""
 - operationname: /api/v1/auth/ctrl/CreateAppInst
   username: user2
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2021-02-08T13:41:41.202711-08:00"
-  duration: 803.881ms
   request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autoclusterAcme"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"MobiledgeX"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating new auto-cluster named reservable0 to deploy AppInst"}}
@@ -65,115 +57,100 @@
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 6ea2b2d7aaf812ec
   tags:
     app: someapplication1
     apporg: AcmeAppCo
     appver: "1.0"
     cloudlet: dmuus-cloud-2
     cloudletorg: dmuus
-    federatedorg: ""
     cluster: autoclusterAcme
     clusterorg: MobiledgeX
+    federatedorg: ""
 - operationname: /api/v1/auth/ctrl/CreateAppInst
   username: user2
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-11-18T14:14:07.357929+05:30"
-  duration: 187.794ms
   request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 28431982c431cd0f
   tags:
     app: someapplication1
     apporg: AcmeAppCo
     appver: "1.0"
     cloudlet: dmuus-cloud-2
     cloudletorg: dmuus
-    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
+    federatedorg: ""
 - operationname: /api/v1/auth/ctrl/CreateAppInst
   username: user2
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-11-18T14:14:07.148856+05:30"
-  duration: 204.147ms
   request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"},"organization":"AcmeAppCo"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 56e40d08f0f90301
   tags:
     app: someapplication1
     apporg: AcmeAppCo
     appver: "1.0"
     cloudlet: dmuus-cloud-1
     cloudletorg: dmuus
-    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
+    federatedorg: ""
 - operationname: /api/v1/auth/ctrl/CreateAppInst
   username: user2
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-11-18T14:12:28.010289+05:30"
-  duration: 310.461ms
   request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 0442775c1f984b58
   tags:
     app: someapplication1
     apporg: AcmeAppCo
     appver: "1.0"
     cloudlet: dmuus-cloud-4
     cloudletorg: dmuus
-    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
+    federatedorg: ""
 - operationname: /api/v1/auth/ctrl/CreateAppInst
   username: user2
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-11-18T14:12:27.786346+05:30"
-  duration: 218.796ms
   request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 62b93a611b0673e4
   tags:
     app: someapplication1
     apporg: AcmeAppCo
     appver: "1.0"
     cloudlet: dmuus-cloud-3
     cloudletorg: dmuus
-    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
+    federatedorg: ""
 - operationname: /api/v1/auth/ctrl/CreateAppInst
   username: user2
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2021-02-08T13:39:14.046143-08:00"
-  duration: 1.043076s
   request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autoclusterAcme"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"MobiledgeX"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating new auto-cluster named reservable0 to deploy AppInst"}}
@@ -188,59 +165,52 @@
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 26eef3d63afaf3c1
   tags:
     app: someapplication1
     apporg: AcmeAppCo
     appver: "1.0"
     cloudlet: dmuus-cloud-2
     cloudletorg: dmuus
-    federatedorg: ""
     cluster: autoclusterAcme
     clusterorg: MobiledgeX
+    federatedorg: ""
 - operationname: /api/v1/auth/ctrl/CreateAppInst
   username: user2
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-11-18T14:12:26.107459+05:30"
-  duration: 270.086ms
   request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 4fa16bdd4d93ce02
   tags:
     app: someapplication1
     apporg: AcmeAppCo
     appver: "1.0"
     cloudlet: dmuus-cloud-2
     cloudletorg: dmuus
-    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
+    federatedorg: ""
 - operationname: /api/v1/auth/ctrl/CreateAppInst
   username: user2
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-11-18T14:12:25.852887+05:30"
-  duration: 249.433ms
   request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"},"organization":"AcmeAppCo"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 413695193cb83952
   tags:
     app: someapplication1
     apporg: AcmeAppCo
     appver: "1.0"
     cloudlet: dmuus-cloud-1
     cloudletorg: dmuus
-    federatedorg: ""
     cluster: SmallCluster
     clusterorg: AcmeAppCo
+    federatedorg: ""

@@ -30,9 +30,7 @@ regiondata:
       runtimeinfo:
         containerids:
         - appOnClusterNode0
-      createdat:
-        seconds: 1591723327
-        nanos: 84689000
+      healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
       realclustername: Reservable3
@@ -65,9 +63,7 @@ regiondata:
       runtimeinfo:
         containerids:
         - appOnClusterNode0
-      createdat:
-        seconds: 1592262339
-        nanos: 24456000
+      healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
       realclustername: Reservable4
@@ -99,9 +95,7 @@ regiondata:
       runtimeinfo:
         containerids:
         - appOnClusterNode0
-      createdat:
-        seconds: 1591661539
-        nanos: 376315000
+      healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
       realclustername: Reservable1

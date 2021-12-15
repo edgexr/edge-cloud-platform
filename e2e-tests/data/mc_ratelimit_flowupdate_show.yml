@@ -1,3 +1,24 @@
+- apiname: /api/v1/auth/ctrl/ShowApp
+  ratelimittarget: AllRequests
+  flowsettings:
+    showappallreqs1:
+      flowalgorithm: TokenBucketAlgorithm
+      reqspersecond: 1
+      burstsize: 1
+- apiname: /api/v1/usercreate
+  ratelimittarget: AllRequests
+  flowsettings:
+    usercreateallreqs1:
+      flowalgorithm: TokenBucketAlgorithm
+      reqspersecond: 100
+      burstsize: 5
+- apiname: /api/v1/usercreate
+  ratelimittarget: PerIp
+  flowsettings:
+    usercreateperip1:
+      flowalgorithm: TokenBucketAlgorithm
+      reqspersecond: 2
+      burstsize: 2
 - apiname: Global
   ratelimittarget: AllRequests
   flowsettings:
@@ -19,24 +40,3 @@
       flowalgorithm: TokenBucketAlgorithm
       reqspersecond: 1000
       burstsize: 100
-- apiname: /api/v1/usercreate
-  ratelimittarget: AllRequests
-  flowsettings:
-    usercreateallreqs1:
-      flowalgorithm: TokenBucketAlgorithm
-      reqspersecond: 100
-      burstsize: 5
-- apiname: /api/v1/usercreate
-  ratelimittarget: PerIp
-  flowsettings:
-    usercreateperip1:
-      flowalgorithm: TokenBucketAlgorithm
-      reqspersecond: 2
-      burstsize: 2
-- apiname: /api/v1/auth/ctrl/ShowApp
-  ratelimittarget: AllRequests
-  flowsettings:
-    showappallreqs1:
-      flowalgorithm: TokenBucketAlgorithm
-      reqspersecond: 1
-      burstsize: 1

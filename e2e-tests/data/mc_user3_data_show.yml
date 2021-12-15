@@ -82,6 +82,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
     - key:
         organization: enterprise
         name: enterprise-1
@@ -91,6 +92,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
     - key:
         organization: gcp
         name: gcp-cloud-5
@@ -100,6 +102,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
     - key:
         organization: dmuus
         name: dmuus-cloud-1
@@ -110,6 +113,7 @@ regiondata:
       numdynamicips: 254
       state: Ready
       platformtype: Fakeinfra
+      trustpolicystate: NotPresent
     - key:
         organization: dmuus
         name: dmuus-cloud-2
@@ -119,6 +123,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
     clusterinsts:
     - key:
         clusterkey:
@@ -132,11 +137,25 @@ regiondata:
       liveness: Static
       state: Ready
       ipaccess: Dedicated
-      allocatedip: dynamic
       nodeflavor: x1.small
       deployment: kubernetes
       nummasters: 1
       numnodes: 1
+      masternodeflavor: x1.small
+      resources:
+        vms:
+        - name: fake-master-1-enterprise-1-smallcluster-user3org
+          type: cluster-master
+          status: ACTIVE
+          infraflavor: x1.small
+        - name: fake-node-1-enterprise-1-smallcluster-user3org
+          type: cluster-k8s-node
+          status: ACTIVE
+          infraflavor: x1.small
+        - name: smallcluster.enterprise-1.enterprise.fake.net
+          type: rootlb
+          status: ACTIVE
+          infraflavor: x1.small
     apps:
     - key:
         organization: user3org
@@ -152,9 +171,9 @@ regiondata:
         apiVersion: v1
         kind: Service
         metadata:
-          name: ep1-tcp
+          name: ep110-tcp
           labels:
-            run: ep1
+            run: ep11.0
         spec:
           type: LoadBalancer
           ports:
@@ -167,14 +186,14 @@ regiondata:
             port: 443
             targetPort: 443
           selector:
-            run: ep1
+            run: ep11.0
         ---
         apiVersion: v1
         kind: Service
         metadata:
-          name: ep1-udp
+          name: ep110-udp
           labels:
-            run: ep1
+            run: ep11.0
         spec:
           type: LoadBalancer
           ports:
@@ -183,28 +202,29 @@ regiondata:
             port: 10002
             targetPort: 10002
           selector:
-            run: ep1
+            run: ep11.0
         ---
         apiVersion: apps/v1
         kind: Deployment
         metadata:
-          name: ep1-deployment
+          name: ep110-deployment
         spec:
           replicas: 1
           selector:
             matchLabels:
-              run: ep1
+              run: ep11.0
           template:
             metadata:
               labels:
-                run: ep1
+                run: ep11.0
+                mexDeployGen: kubernetes-basic
             spec:
               volumes:
               imagePullSecrets:
               - name: registry.mobiledgex.net
               containers:
-              - name: ep1
-                image: registry.mobiledgex.net/mobiledgex_AcmeAppCo/ep1:1.0
+              - name: ep110
+                image: registry.mobiledgex.net/user3org/ep1:1.0
                 imagePullPolicy: Always
                 ports:
                 - containerPort: 80
@@ -249,10 +269,9 @@ regiondata:
       runtimeinfo:
         containerids:
         - appOnClusterNode0
-      createdat:
-        seconds: 1569534854
-        nanos: 528573000
+      healthcheck: Ok
       powerstate: PowerOn
+      vmflavor: x1.small
       uniqueid: user3orgep110-smallcluster-enterprise-1-enterprise
     appinstrefs:
     - key:
@@ -309,6 +328,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
     - key:
         organization: dmuus
         name: dmuus-cloud-3
@@ -318,6 +338,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
     - key:
         organization: dmuus
         name: dmuus-cloud-4
@@ -327,3 +348,4 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent

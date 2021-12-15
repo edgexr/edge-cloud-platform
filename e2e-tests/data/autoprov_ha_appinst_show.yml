@@ -29,9 +29,6 @@ regiondata:
       runtimeinfo:
         containerids:
         - appOnClusterNode0
-      createdat:
-        seconds: 1636137799
-        nanos: 376944000
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
@@ -64,9 +61,6 @@ regiondata:
       runtimeinfo:
         containerids:
         - appOnClusterNode0
-      createdat:
-        seconds: 1636137799
-        nanos: 404193000
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small

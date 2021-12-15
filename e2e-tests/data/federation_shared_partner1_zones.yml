@@ -7,6 +7,27 @@ federatedpartnerzones:
     countrycode: PA
     geolocation: 31,-91
 - selfoperatorid: dmuus
+  federationname: dmuus-SB-partner1-PA-fed
+  federatorzone:
+    zoneid: partner1-cloud-1
+    operatorid: partner1
+    countrycode: PA
+    geolocation: 31,-91
+- selfoperatorid: enterprise
+  federationname: enterprise-SA-partner1-PA-fed
+  federatorzone:
+    zoneid: partner1-cloud-1
+    operatorid: partner1
+    countrycode: PA
+    geolocation: 31,-91
+- selfoperatorid: enterprise
+  federationname: enterprise-SB-partner1-PA-fed
+  federatorzone:
+    zoneid: partner1-cloud-1
+    operatorid: partner1
+    countrycode: PA
+    geolocation: 31,-91
+- selfoperatorid: dmuus
   federationname: dmuus-SA-partner1-PA-fed
   federatorzone:
     zoneid: partner1-cloud-2
@@ -16,13 +37,6 @@ federatedpartnerzones:
 - selfoperatorid: dmuus
   federationname: dmuus-SB-partner1-PA-fed
   federatorzone:
-    zoneid: partner1-cloud-1
-    operatorid: partner1
-    countrycode: PA
-    geolocation: 31,-91
-- selfoperatorid: dmuus
-  federationname: dmuus-SB-partner1-PA-fed
-  federatorzone:
     zoneid: partner1-cloud-2
     operatorid: partner1
     countrycode: PA
@@ -30,21 +44,7 @@ federatedpartnerzones:
 - selfoperatorid: enterprise
   federationname: enterprise-SA-partner1-PA-fed
   federatorzone:
-    zoneid: partner1-cloud-1
-    operatorid: partner1
-    countrycode: PA
-    geolocation: 31,-91
-- selfoperatorid: enterprise
-  federationname: enterprise-SA-partner1-PA-fed
-  federatorzone:
     zoneid: partner1-cloud-2
-    operatorid: partner1
-    countrycode: PA
-    geolocation: 31,-91
-- selfoperatorid: enterprise
-  federationname: enterprise-SB-partner1-PA-fed
-  federatorzone:
-    zoneid: partner1-cloud-1
     operatorid: partner1
     countrycode: PA
     geolocation: 31,-91

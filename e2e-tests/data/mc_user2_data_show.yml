@@ -66,6 +66,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
     - key:
         organization: gcp
         name: gcp-cloud-5
@@ -75,6 +76,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
     - key:
         organization: dmuus
         name: dmuus-cloud-1
@@ -85,6 +87,7 @@ regiondata:
       numdynamicips: 254
       state: Ready
       platformtype: Fakeinfra
+      trustpolicystate: NotPresent
     - key:
         organization: dmuus
         name: dmuus-cloud-2
@@ -94,6 +97,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
     autoprovpolicies:
     - key:
         organization: AcmeAppCo
@@ -136,13 +140,26 @@ regiondata:
       liveness: Static
       state: Ready
       ipaccess: Dedicated
-      allocatedip: dynamic
       nodeflavor: x1.small
       deployment: kubernetes
       nummasters: 1
       numnodes: 1
       autoscalepolicy: scale1
       masternodeflavor: x1.small
+      resources:
+        vms:
+        - name: fake-master-1-dmuus-cloud-1-smallcluster-acmeappco
+          type: cluster-master
+          status: ACTIVE
+          infraflavor: x1.small
+        - name: fake-node-1-dmuus-cloud-1-smallcluster-acmeappco
+          type: cluster-k8s-node
+          status: ACTIVE
+          infraflavor: x1.small
+        - name: smallcluster.dmuus-cloud-1.dmuus.fake.net
+          type: rootlb
+          status: ACTIVE
+          infraflavor: x1.small
     - key:
         clusterkey:
           name: SmallCluster
@@ -160,6 +177,16 @@ regiondata:
       nummasters: 1
       numnodes: 1
       masternodeflavor: x1.small
+      resources:
+        vms:
+        - name: fake-master-1-dmuus-cloud-2-smallcluster-acmeappco
+          type: cluster-master
+          status: ACTIVE
+          infraflavor: x1.small
+        - name: fake-node-1-dmuus-cloud-2-smallcluster-acmeappco
+          type: cluster-k8s-node
+          status: ACTIVE
+          infraflavor: x1.small
     apps:
     - key:
         organization: AcmeAppCo
@@ -175,9 +202,9 @@ regiondata:
         apiVersion: v1
         kind: Service
         metadata:
-          name: autoprovapp-tcp
+          name: autoprovapp10-tcp
           labels:
-            run: autoprovapp
+            run: autoprovapp1.0
         spec:
           type: LoadBalancer
           ports:
@@ -186,28 +213,29 @@ regiondata:
             port: 81
             targetPort: 81
           selector:
-            run: autoprovapp
+            run: autoprovapp1.0
         ---
         apiVersion: apps/v1
         kind: Deployment
         metadata:
-          name: autoprovapp-deployment
+          name: autoprovapp10-deployment
         spec:
           replicas: 1
           selector:
             matchLabels:
-              run: autoprovapp
+              run: autoprovapp1.0
           template:
             metadata:
               labels:
-                run: autoprovapp
+                run: autoprovapp1.0
+                mexDeployGen: kubernetes-basic
             spec:
               volumes:
               imagePullSecrets:
               - name: registry.mobiledgex.net
               containers:
-              - name: autoprovapp
-                image: registry.mobiledgex.net/mobiledgex_AcmeAppCo/someapplication1:1.0
+              - name: autoprovapp10
+                image: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
                 imagePullPolicy: Always
                 ports:
                 - containerPort: 81
@@ -253,9 +281,9 @@ regiondata:
         apiVersion: v1
         kind: Service
         metadata:
-          name: someapplication1-tcp
+          name: someapplication110-tcp
           labels:
-            run: someapplication1
+            run: someapplication11.0
         spec:
           type: LoadBalancer
           ports:
@@ -268,14 +296,14 @@ regiondata:
             port: 443
             targetPort: 443
           selector:
-            run: someapplication1
+            run: someapplication11.0
         ---
         apiVersion: v1
         kind: Service
         metadata:
-          name: someapplication1-udp
+          name: someapplication110-udp
           labels:
-            run: someapplication1
+            run: someapplication11.0
         spec:
           type: LoadBalancer
           ports:
@@ -284,28 +312,29 @@ regiondata:
             port: 10002
             targetPort: 10002
           selector:
-            run: someapplication1
+            run: someapplication11.0
         ---
         apiVersion: apps/v1
         kind: Deployment
         metadata:
-          name: someapplication1-deployment
+          name: someapplication110-deployment
         spec:
+          replicas: 1
           selector:
             matchLabels:
-              run: someapplication1
-          replicas: 1
+              run: someapplication11.0
           template:
             metadata:
               labels:
-                run: someapplication1
+                run: someapplication11.0
+                mexDeployGen: kubernetes-basic
             spec:
               volumes:
               imagePullSecrets:
-              - name: mexregistrysecret
+              - name: registry.mobiledgex.net
               containers:
-              - name: someapplication1
-                image: mobiledgex_AcmeAppCo/someapplication1:1.0
+              - name: someapplication110
+                image: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
                 imagePullPolicy: Always
                 ports:
                 - containerPort: 80
@@ -331,9 +360,9 @@ regiondata:
         apiVersion: v1
         kind: Service
         metadata:
-          name: platosenablinglayer-tcp
+          name: platosenablinglayer10-tcp
           labels:
-            run: platosenablinglayer
+            run: platosenablinglayer1.0
         spec:
           type: LoadBalancer
           ports:
@@ -342,28 +371,29 @@ regiondata:
             port: 64000
             targetPort: 64000
           selector:
-            run: platosenablinglayer
+            run: platosenablinglayer1.0
         ---
         apiVersion: apps/v1
         kind: Deployment
         metadata:
-          name: platosenablinglayer-deployment
+          name: platosenablinglayer10-deployment
         spec:
+          replicas: 1
           selector:
             matchLabels:
-              run: platosenablinglayer
-          replicas: 1
+              run: platosenablinglayer1.0
           template:
             metadata:
               labels:
-                run: platosenablinglayer
+                run: platosenablinglayer1.0
+                mexDeployGen: kubernetes-basic
             spec:
               volumes:
               imagePullSecrets:
-              - name: mexregistrysecret
+              - name: registry.mobiledgex.net
               containers:
-              - name: platosenablinglayer
-                image: dummyvalue
+              - name: platosenablinglayer10
+                image: registry.mobiledgex.net/platos/dummyvalue
                 imagePullPolicy: Always
                 ports:
                 - containerPort: 64000
@@ -404,7 +434,9 @@ regiondata:
       runtimeinfo:
         containerids:
         - appOnClusterNode0
+      healthcheck: Ok
       powerstate: PowerOn
+      vmflavor: x1.small
       uniqueid: acmeappcosomeapplication110-smallcluster-dmuus-cloud-1-dmuus
     - key:
         appkey:
@@ -439,7 +471,9 @@ regiondata:
       runtimeinfo:
         containerids:
         - appOnClusterNode0
+      healthcheck: Ok
       powerstate: PowerOn
+      vmflavor: x1.small
       uniqueid: acmeappcosomeapplication110-smallcluster-dmuus-cloud-2-dmuus
     - key:
         appkey:
@@ -474,7 +508,9 @@ regiondata:
       runtimeinfo:
         containerids:
         - appOnClusterNode0
+      healthcheck: Ok
       powerstate: PowerOn
+      vmflavor: x1.small
       realclustername: reservable0
       uniqueid: acmeappcosomeapplication110-autoclusteracme-dmuus-cloud-2-dmuus
     appinstrefs:
@@ -566,6 +602,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
     - key:
         organization: dmuus
         name: dmuus-cloud-4
@@ -575,6 +612,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      trustpolicystate: NotPresent
     autoprovpolicies:
     - key:
         organization: AcmeAppCo
@@ -618,13 +656,26 @@ regiondata:
       liveness: Static
       state: Ready
       ipaccess: Dedicated
-      allocatedip: dynamic
       nodeflavor: x1.small
       deployment: kubernetes
       nummasters: 1
       numnodes: 1
       autoscalepolicy: scale1
       masternodeflavor: x1.small
+      resources:
+        vms:
+        - name: fake-master-1-dmuus-cloud-3-smallcluster-acmeappco
+          type: cluster-master
+          status: ACTIVE
+          infraflavor: x1.small
+        - name: fake-node-1-dmuus-cloud-3-smallcluster-acmeappco
+          type: cluster-k8s-node
+          status: ACTIVE
+          infraflavor: x1.small
+        - name: smallcluster.dmuus-cloud-3.dmuus.fake.net
+          type: rootlb
+          status: ACTIVE
+          infraflavor: x1.small
     - key:
         clusterkey:
           name: SmallCluster
@@ -642,6 +693,16 @@ regiondata:
       nummasters: 1
       numnodes: 1
       masternodeflavor: x1.small
+      resources:
+        vms:
+        - name: fake-master-1-dmuus-cloud-4-smallcluster-acmeappco
+          type: cluster-master
+          status: ACTIVE
+          infraflavor: x1.small
+        - name: fake-node-1-dmuus-cloud-4-smallcluster-acmeappco
+          type: cluster-k8s-node
+          status: ACTIVE
+          infraflavor: x1.small
     apps:
     - key:
         organization: AcmeAppCo
@@ -657,9 +718,9 @@ regiondata:
         apiVersion: v1
         kind: Service
         metadata:
-          name: autoprovapp-tcp
+          name: autoprovapp10-tcp
           labels:
-            run: autoprovapp
+            run: autoprovapp1.0
         spec:
           type: LoadBalancer
           ports:
@@ -668,27 +729,28 @@ regiondata:
             port: 81
             targetPort: 81
           selector:
-            run: autoprovapp
+            run: autoprovapp1.0
         ---
         apiVersion: apps/v1
         kind: Deployment
         metadata:
-          name: autoprovapp-deployment
+          name: autoprovapp10-deployment
         spec:
           replicas: 1
           selector:
             matchLabels:
-              run: autoprovapp
+              run: autoprovapp1.0
           template:
             metadata:
               labels:
-                run: autoprovapp
+                run: autoprovapp1.0
+                mexDeployGen: kubernetes-basic
             spec:
               volumes:
               imagePullSecrets:
               - name: registry.mobiledgex.net
               containers:
-              - name: autoprovapp
+              - name: autoprovapp10
                 image: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
                 imagePullPolicy: Always
                 ports:
@@ -722,9 +784,9 @@ regiondata:
         apiVersion: v1
         kind: Service
         metadata:
-          name: someapplication1-tcp
+          name: someapplication110-tcp
           labels:
-            run: someapplication1
+            run: someapplication11.0
         spec:
           type: LoadBalancer
           ports:
@@ -737,14 +799,14 @@ regiondata:
             port: 443
             targetPort: 443
           selector:
-            run: someapplication1
+            run: someapplication11.0
         ---
         apiVersion: v1
         kind: Service
         metadata:
-          name: someapplication1-udp
+          name: someapplication110-udp
           labels:
-            run: someapplication1
+            run: someapplication11.0
         spec:
           type: LoadBalancer
           ports:
@@ -753,27 +815,28 @@ regiondata:
             port: 10002
             targetPort: 10002
           selector:
-            run: someapplication1
+            run: someapplication11.0
         ---
         apiVersion: apps/v1
         kind: Deployment
         metadata:
-          name: someapplication1-deployment
+          name: someapplication110-deployment
         spec:
           replicas: 1
           selector:
             matchLabels:
-              run: someapplication1
+              run: someapplication11.0
           template:
             metadata:
               labels:
-                run: someapplication1
+                run: someapplication11.0
+                mexDeployGen: kubernetes-basic
             spec:
               volumes:
               imagePullSecrets:
               - name: registry.mobiledgex.net
               containers:
-              - name: someapplication1
+              - name: someapplication110
                 image: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
                 imagePullPolicy: Always
                 ports:
@@ -800,9 +863,9 @@ regiondata:
         apiVersion: v1
         kind: Service
         metadata:
-          name: platosenablinglayer-tcp
+          name: platosenablinglayer10-tcp
           labels:
-            run: platosenablinglayer
+            run: platosenablinglayer1.0
         spec:
           type: LoadBalancer
           ports:
@@ -811,27 +874,28 @@ regiondata:
             port: 64000
             targetPort: 64000
           selector:
-            run: platosenablinglayer
+            run: platosenablinglayer1.0
         ---
         apiVersion: apps/v1
         kind: Deployment
         metadata:
-          name: platosenablinglayer-deployment
+          name: platosenablinglayer10-deployment
         spec:
           replicas: 1
           selector:
             matchLabels:
-              run: platosenablinglayer
+              run: platosenablinglayer1.0
           template:
             metadata:
               labels:
-                run: platosenablinglayer
+                run: platosenablinglayer1.0
+                mexDeployGen: kubernetes-basic
             spec:
               volumes:
               imagePullSecrets:
               - name: registry.mobiledgex.net
               containers:
-              - name: platosenablinglayer
+              - name: platosenablinglayer10
                 image: registry.mobiledgex.net/platos/dummyvalue
                 imagePullPolicy: Always
                 ports:
@@ -873,9 +937,7 @@ regiondata:
       runtimeinfo:
         containerids:
         - appOnClusterNode0
-      createdat:
-        seconds: 1584553776
-        nanos: 473764000
+      healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
       uniqueid: acmeappcosomeapplication110-smallcluster-dmuus-cloud-3-dmuus
@@ -912,9 +974,7 @@ regiondata:
       runtimeinfo:
         containerids:
         - appOnClusterNode0
-      createdat:
-        seconds: 1584553776
-        nanos: 585740000
+      healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
       uniqueid: acmeappcosomeapplication110-smallcluster-dmuus-cloud-4-dmuus

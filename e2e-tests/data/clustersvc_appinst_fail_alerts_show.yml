@@ -3,11 +3,11 @@
     app: MEXPrometheusAppName
     apporg: MobiledgeX
     appver: "1.0"
-    cloudlet: {{cloudlet_name}}
-    cloudletorg: {{cloudlet_org}}
+    cloudlet: dmuus-cloud-13
+    cloudletorg: dmuus
+    cluster: dmuusSmallCluster
+    clusterorg: AcmeAppCo
     federatedorg: ""
-    cluster: {{cluster_name}}
-    clusterorg: {{cluster_org}}
     region: local
     scope: Platform
   annotations:
@@ -15,8 +15,3 @@
     error: 'CreateAppInst failed: Encountered failures: Create App Inst failed: FAKE_PLATFORM_APPINST_CREATE_FAIL'
     title: ClusterSvcAppInstFailure
   state: firing
-  activeat:
-    seconds: 1626180851
-    nanos: 993740000
-  notifyid: 1
-

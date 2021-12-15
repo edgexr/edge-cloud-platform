@@ -3,56 +3,45 @@
       failed: true
     notmatch:
       names:
-      - "*/auth/ctrl/RunCommand"
-      - "*/auth/ctrl/ShowLogs"
+      - '*/auth/ctrl/RunCommand'
+      - '*/auth/ctrl/ShowLogs'
     limit: 3
   results:
   - name: /api/v1/auth/org/delete
     org:
     - platos
     type: audit
-    timestamp: 2020-09-09T17:10:52.693266-07:00
-    error: '{"message":"Organization platos in use or check failed: region local:
-      in use by some App; region locala: in use by some Appff"}'
     mtags:
-      duration: 12.540161ms
+      duration: ""
       email: mexadmin@mobiledgex.net
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:206
+      hostname: ""
+      lineno: ""
       method: POST
       org: platos
       remote-ip: 127.0.0.1
-      request: '{"name":"platos","type":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
-      response: '{"message":"Organization platos in use or check failed: region local:
-        in use by some App; region locala: in use by some App"}'
-      spanid: 48396b1484074331
+      request: ""
+      response: ""
+      spanid: ""
       status: "400"
-      traceid: 48396b1484074331
+      traceid: ""
       username: mexadmin
   - name: /api/v1/auth/org/delete
     org:
     - AcmeAppCo
     type: audit
-    timestamp: 2020-09-09T17:10:52.307068-07:00
-    error: '{"message":"Organization AcmeAppCo in use or check failed: region local:
-      in use by some App, AppInst, AutoProvPolicy, AutoScalePolicy, ClusterInst; region
-      locala: in use by some App, AppInst, AutoProvPolicy, AutoScalePolicy, ClusterInst"}'
     mtags:
-      duration: 13.75029ms
+      duration: ""
       email: mexadmin@mobiledgex.net
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:206
+      hostname: ""
+      lineno: ""
       method: POST
       org: AcmeAppCo
       remote-ip: 127.0.0.1
-      request: '{"Name":"AcmeAppCo","Type":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
-      response: '{"message":"Organization AcmeAppCo in use or check failed: region
-        local: in use by some App, AppInst, AutoProvPolicy, AutoScalePolicy, ClusterInst;
-        region locala: in use by some App, AppInst, AutoProvPolicy, AutoScalePolicy,
-        ClusterInst"}'
-      spanid: 24ef78435d0ebe4f
+      request: ""
+      response: ""
+      spanid: ""
       status: "400"
-      traceid: 24ef78435d0ebe4f
+      traceid: ""
       username: mexadmin
 - search:
     match:
@@ -69,64 +58,61 @@
     org:
     - AcmeAppCo
     type: audit
-    timestamp: 2020-09-04T17:15:29.881577-07:00
     mtags:
-      duration: 21.649591ms
+      duration: ""
       email: user2@email.com
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:199
+      hostname: ""
+      lineno: ""
       method: POST
       org: AcmeAppCo
       policy: autoprovHA
       policyorg: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
-      request: '{"Region":"local","AutoProvPolicy":{"key":{"organization":"AcmeAppCo","name":"autoprovHA"},"cloudlets":[{"key":{"organization":"dmuus","name":"dmuus-cloud-1"},"loc":{}},{"key":{"organization":"dmuus","name":"dmuus-cloud-2"},"loc":{}},{"key":{"organization":"azure","name":"azure-cloud-4"},"loc":{}},{"key":{"organization":"gcp","name":"gcp-cloud-5"},"loc":{}}],"min_active_instances":2,"max_instances":4}}'
-      response: '{}'
-      spanid: 44b06f07458463ce
+      request: ""
+      response: ""
+      spanid: ""
       status: "200"
-      traceid: 44b06f07458463ce
+      traceid: ""
       username: user2
   - name: Free ClusterInst reservation
     org:
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2021-01-27T23:46:20.985201-08:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
-      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
-      hostname: Jon-Mex.lan
-      lineno: node/events.go:240
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       realcluster: Reservable1
-      spanid: 4b37d6245c9ad68c
-      traceid: 6904103d6fed794c
+      spanid: ""
+      traceid: ""
   - name: Free ClusterInst reservation
     org:
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2021-01-27T23:46:20.758169-08:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: gcp-cloud-5
       cloudletorg: gcp
-      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
-      hostname: Jon-Mex.lan
-      lineno: node/events.go:240
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       realcluster: Reservable4
-      spanid: 4b37d6245c9ad68c
-      traceid: 6904103d6fed794c
+      spanid: ""
+      traceid: ""
 - search:
     match:
       tags:
@@ -137,90 +123,77 @@
     org:
     - AcmeAppCo
     type: audit
-    timestamp: 2020-09-04T17:14:40.219345-07:00
     mtags:
       app: someapplication1
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-4
       cloudletorg: dmuus
-      federatedorg: ""
       cluster: SmallCluster
       clusterorg: AcmeAppCo
-      duration: 123.596186ms
+      duration: ""
       email: user2@email.com
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:199
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       method: POST
       org: AcmeAppCo
       region: locala
       remote-ip: 127.0.0.1
-      request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"resources":{"vms":null}}}'
-      response: |
-        {"data":{"message":"Creating"}}
-        {"data":{"message":"Creating App Inst"}}
-        {"data":{"message":"Ready"}}
-        {"data":{"message":"Created AppInst successfully"}}
-      spanid: 7b604591ea1eade7
+      request: ""
+      response: ""
+      spanid: ""
       status: "200"
-      traceid: 7b604591ea1eade7
+      traceid: ""
       username: user2
   - name: /api/v1/auth/ctrl/CreateAppInst
     org:
     - AcmeAppCo
     type: audit
-    timestamp: 2020-09-04T17:14:39.945511-07:00
     mtags:
       app: someapplication1
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-3
       cloudletorg: dmuus
-      federatedorg: ""
       cluster: SmallCluster
       clusterorg: AcmeAppCo
-      duration: 133.521257ms
+      duration: ""
       email: user2@email.com
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:199
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       method: POST
       org: AcmeAppCo
       region: locala
       remote-ip: 127.0.0.1
-      request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"resources":{"vms":null}}}'
-      response: |
-        {"data":{"message":"Creating"}}
-        {"data":{"message":"Creating App Inst"}}
-        {"data":{"message":"Ready"}}
-        {"data":{"message":"Created AppInst successfully"}}
-      spanid: 6fa4e717f2ee45a4
+      request: ""
+      response: ""
+      spanid: ""
       status: "200"
-      traceid: 6fa4e717f2ee45a4
+      traceid: ""
       username: user2
   - name: /api/v1/auth/ctrl/CreateApp
     org:
     - AcmeAppCo
     type: audit
-    timestamp: 2020-09-04T17:14:38.909215-07:00
     mtags:
       app: someapplication1
       apporg: AcmeAppCo
       appver: "1.0"
-      duration: 175.814126ms
+      duration: ""
       email: user2@email.com
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:199
+      hostname: ""
+      lineno: ""
       method: POST
       org: AcmeAppCo
       region: locala
       remote-ip: 127.0.0.1
-      request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:80,tcp:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
-        PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
-        PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1"}}'
-      response: '{}'
-      spanid: 2290bb28f5289123
+      request: ""
+      response: ""
+      spanid: ""
       status: "200"
-      traceid: 2290bb28f5289123
+      traceid: ""
       username: user2
 - search:
     match:
@@ -232,70 +205,67 @@
     org:
     - AcmeAppCo
     type: audit
-    timestamp: 2020-09-04T17:15:26.470698-07:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
       appver: "1.0"
-      duration: 149.618098ms
+      duration: ""
       email: user2@email.com
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:199
+      hostname: ""
+      lineno: ""
       method: POST
       org: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
-      request: '{"Region":"local","App":{"key":{"organization":"AcmeAppCo","name":"autoprovHA","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:82","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprovHA"]}}'
-      response: '{}'
-      spanid: 20c7c1f2a300135d
+      request: ""
+      response: ""
+      spanid: ""
       status: "200"
-      traceid: 20c7c1f2a300135d
+      traceid: ""
       username: user2
   - name: /api/v1/auth/ctrl/CreateApp
     org:
     - AcmeAppCo
     type: audit
-    timestamp: 2020-09-04T17:15:07.366876-07:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
       appver: "1.0"
-      duration: 185.472442ms
+      duration: ""
       email: user2@email.com
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:199
+      hostname: ""
+      lineno: ""
       method: POST
       org: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
-      request: '{"Region":"local","App":{"key":{"organization":"AcmeAppCo","name":"autoprovHA","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:82","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprovHA"]}}'
-      response: '{}'
-      spanid: 668c49ef5bff7d5e
+      request: ""
+      response: ""
+      spanid: ""
       status: "200"
-      traceid: 668c49ef5bff7d5e
+      traceid: ""
       username: user2
   - name: /api/v1/auth/ctrl/CreateApp
     org:
     - platos
     type: audit
-    timestamp: 2020-09-04T17:14:39.858191-07:00
     mtags:
       app: platosEnablingLayer
       apporg: platos
       appver: "1.0"
-      duration: 40.321091ms
+      duration: ""
       email: user2@email.com
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:199
+      hostname: ""
+      lineno: ""
       method: POST
       org: platos
       region: locala
       remote-ip: 127.0.0.1
-      request: '{"Region":"locala","App":{"key":{"organization":"platos","name":"platosEnablingLayer","version":"1.0"},"image_path":"registry.mobiledgex.net/platos/dummyvalue","image_type":"Docker","access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes"}}'
-      response: '{}'
-      spanid: 5c969d1e7e50802f
+      request: ""
+      response: ""
+      spanid: ""
       status: "200"
-      traceid: 5c969d1e7e50802f
+      traceid: ""
       username: user2
 - search:
     match:
@@ -308,47 +278,44 @@
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2021-01-27T23:46:20.985201-08:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
-      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
-      hostname: Jon-Mex.lan
-      lineno: node/events.go:240
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       realcluster: Reservable1
-      spanid: 4b37d6245c9ad68c
-      traceid: 6904103d6fed794c
+      spanid: ""
+      traceid: ""
   - name: Reserve ClusterInst
     org:
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2021-01-27T23:46:14.752921-08:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
-      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
-      hostname: Jon-Mex.lan
-      lineno: node/events.go:240
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       realcluster: Reservable1
-      spanid: 7d2a760782b64664
-      traceid: 67c92dafc7864e9e
+      spanid: ""
+      traceid: ""
   - name: AutoProv create AppInst
     org:
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2020-09-04T17:15:26.627815-07:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
@@ -356,15 +323,15 @@
       autoprovpolicy: autoprovHA
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
-      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
-      duration: 334.814153ms
-      hostname: Jon-Mex
-      lineno: autoprov/autoprov_deploy.go:44
+      duration: ""
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       reason: minmax
-      spanid: 5f2c99bf7b83b6a0
-      traceid: 20c7c1f2a300135d
+      spanid: ""
+      traceid: ""
 - search:
     match:
       tags:
@@ -377,47 +344,44 @@
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2021-01-27T23:46:20.985201-08:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
-      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
-      hostname: Jon-Mex.lan
-      lineno: node/events.go:240
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       realcluster: Reservable1
-      spanid: 4b37d6245c9ad68c
-      traceid: 6904103d6fed794c
+      spanid: ""
+      traceid: ""
   - name: Reserve ClusterInst
     org:
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2021-01-27T23:46:14.752921-08:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
-      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
-      hostname: Jon-Mex.lan
-      lineno: node/events.go:240
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       realcluster: Reservable1
-      spanid: 7d2a760782b64664
-      traceid: 67c92dafc7864e9e
+      spanid: ""
+      traceid: ""
   - name: AutoProv create AppInst
     org:
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2020-09-04T17:15:26.627815-07:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
@@ -425,15 +389,15 @@
       autoprovpolicy: autoprovHA
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
-      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
-      duration: 334.814153ms
-      hostname: Jon-Mex
-      lineno: autoprov/autoprov_deploy.go:44
+      duration: ""
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       reason: minmax
-      spanid: 5f2c99bf7b83b6a0
-      traceid: 20c7c1f2a300135d
+      spanid: ""
+      traceid: ""
 - search:
     match:
       tags:
@@ -445,92 +409,80 @@
     org:
     - AcmeAppCo
     type: audit
-    timestamp: 2020-09-08T10:25:09.917215-07:00
     mtags:
       app: someapplication1
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-4
       cloudletorg: dmuus
-      federatedorg: ""
       cluster: SmallCluster
       clusterorg: AcmeAppCo
-      duration: 100.278371ms
+      duration: ""
       email: user2@email.com
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:199
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       method: POST
       org: AcmeAppCo
       region: locala
       remote-ip: 127.0.0.1
-      request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"resources":{"vms":null}}}'
-      response: |
-        {"data":{"message":"Creating"}}
-        {"data":{"message":"Creating App Inst"}}
-        {"data":{"message":"Ready"}}
-        {"data":{"message":"Created AppInst successfully"}}
-      spanid: 396b747caef9a4d8
+      request: ""
+      response: ""
+      spanid: ""
       status: "200"
-      traceid: 396b747caef9a4d8
+      traceid: ""
       username: user2
   - name: /api/v1/auth/ctrl/CreateAppInst
     org:
     - AcmeAppCo
     type: audit
-    timestamp: 2020-09-08T10:25:09.741157-07:00
     mtags:
       app: someapplication1
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-3
       cloudletorg: dmuus
-      federatedorg: ""
       cluster: SmallCluster
       clusterorg: AcmeAppCo
-      duration: 105.385154ms
+      duration: ""
       email: user2@email.com
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:199
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       method: POST
       org: AcmeAppCo
       region: locala
       remote-ip: 127.0.0.1
-      request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"resources":{"vms":null}}}'
-      response: |
-        {"data":{"message":"Creating"}}
-        {"data":{"message":"Creating App Inst"}}
-        {"data":{"message":"Ready"}}
-        {"data":{"message":"Created AppInst successfully"}}
-      spanid: 5642eddf217e3dc7
+      request: ""
+      response: ""
+      spanid: ""
       status: "200"
-      traceid: 5642eddf217e3dc7
+      traceid: ""
       username: user2
   - name: Reserve ClusterInst
     org:
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2021-02-08T13:23:57.143302-08:00
     mtags:
       app: someapplication1
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-2
       cloudletorg: dmuus
-      federatedorg: ""
       cluster: autoclusterAcme
       clusterorg: MobiledgeX
-      hostname: Jon-Mex.lan
-      lineno: node/events.go:240
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       realcluster: reservable0
-      spanid: 1cb908c6838a2893
-      traceid: 128619e5f4f1976b
+      spanid: ""
+      traceid: ""
   - name: AutoCluster create
     org:
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2021-11-16T12:41:31.734352-08:00
     mtags:
       app: someapplication1
       apporg: AcmeAppCo
@@ -539,12 +491,12 @@
       cloudletorg: dmuus
       cluster: autoclusterAcme
       clusterorg: MobiledgeX
-      duration: 92.408557ms
+      duration: ""
       federatedorg: ""
-      hostname: Jon-Mex.lan
-      lineno: controller/appinst_api.go:996
-      spanid: 146a509830cf662c
-      traceid: 2f1f91be403e8ae6
+      hostname: ""
+      lineno: ""
+      spanid: ""
+      traceid: ""
 - search:
     match:
       tags:
@@ -557,7 +509,6 @@
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2020-09-04T17:15:28.390621-07:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
@@ -565,21 +516,20 @@
       autoprovpolicy: ""
       cloudlet: dmuus-cloud-2
       cloudletorg: dmuus
-      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
-      duration: 169.970063ms
-      hostname: Jon-Mex
-      lineno: autoprov/autoprov_deploy.go:44
+      duration: ""
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       reason: orphaned
-      spanid: 4171815fd35fd0d0
-      traceid: 1e693893ca472c76
+      spanid: ""
+      traceid: ""
   - name: AutoProv delete AppInst
     org:
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2020-09-04T17:15:09.631348-07:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
@@ -587,15 +537,15 @@
       autoprovpolicy: ""
       cloudlet: dmuus-cloud-2
       cloudletorg: dmuus
-      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
-      duration: 187.353273ms
-      hostname: Jon-Mex
-      lineno: autoprov/autoprov_deploy.go:44
+      duration: ""
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       reason: orphaned
-      spanid: 525436a42e0e53ea
-      traceid: 250d2f2f17a10de0
+      spanid: ""
+      traceid: ""
 - search:
     match:
       names:
@@ -607,7 +557,6 @@
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2020-09-08T12:53:55.16642-07:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
@@ -615,21 +564,20 @@
       autoprovpolicy: autoprovHA
       cloudlet: gcp-cloud-5
       cloudletorg: gcp
-      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
-      duration: 317.624796ms
-      hostname: Jon-Mex
-      lineno: autoprov/autoprov_deploy.go:44
+      duration: ""
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       reason: minmax
-      spanid: 2a8c310b1992e050
-      traceid: 890f00f09475317
+      spanid: ""
+      traceid: ""
   - name: AutoProv create AppInst
     org:
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2020-09-08T12:53:53.521235-07:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
@@ -637,15 +585,15 @@
       autoprovpolicy: autoprovHA
       cloudlet: azure-cloud-4
       cloudletorg: azure
-      federatedorg: ""
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
-      duration: 275.444974ms
-      hostname: Jon-Mex
-      lineno: autoprov/autoprov_deploy.go:44
+      duration: ""
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
       reason: minmax
-      spanid: 83ccf4386f3fe69
-      traceid: 42ed335c25b9159a
+      spanid: ""
+      traceid: ""
 - search:
     match:
       types:
@@ -656,66 +604,63 @@
     org:
     - AcmeAppCo
     type: audit
-    timestamp: 2020-09-04T17:15:29.881577-07:00
     mtags:
-      duration: 21.649591ms
+      duration: ""
       email: user2@email.com
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:199
+      hostname: ""
+      lineno: ""
       method: POST
       org: AcmeAppCo
       policy: autoprovHA
       policyorg: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
-      request: '{"Region":"local","AutoProvPolicy":{"key":{"organization":"AcmeAppCo","name":"autoprovHA"},"cloudlets":[{"key":{"organization":"dmuus","name":"dmuus-cloud-1"},"loc":{}},{"key":{"organization":"dmuus","name":"dmuus-cloud-2"},"loc":{}},{"key":{"organization":"azure","name":"azure-cloud-4"},"loc":{}},{"key":{"organization":"gcp","name":"gcp-cloud-5"},"loc":{}}],"min_active_instances":2,"max_instances":4}}'
-      response: '{}'
-      spanid: 44b06f07458463ce
+      request: ""
+      response: ""
+      spanid: ""
       status: "200"
-      traceid: 44b06f07458463ce
+      traceid: ""
       username: user2
   - name: /api/v1/auth/ctrl/DeleteApp
     org:
     - AcmeAppCo
     type: audit
-    timestamp: 2020-09-04T17:15:29.610307-07:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
       appver: "1.0"
-      duration: 237.310628ms
+      duration: ""
       email: user2@email.com
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:199
+      hostname: ""
+      lineno: ""
       method: POST
       org: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
-      request: '{"Region":"local","App":{"key":{"organization":"AcmeAppCo","name":"autoprovHA","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:82","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprovHA"]}}'
-      response: '{}'
-      spanid: 64077fc143d6f50f
+      request: ""
+      response: ""
+      spanid: ""
       status: "200"
-      traceid: 64077fc143d6f50f
+      traceid: ""
       username: user2
   - name: /api/v1/auth/ctrl/RemoveAutoProvPolicyCloudlet
     org:
     - AcmeAppCo
     type: audit
-    timestamp: 2020-09-04T17:15:28.364116-07:00
     mtags:
-      duration: 26.236295ms
+      duration: ""
       email: user2@email.com
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:199
+      hostname: ""
+      lineno: ""
       method: POST
       org: AcmeAppCo
       policy: autoprovHA
       policyorg: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
-      request: '{"Region":"local","AutoProvPolicyCloudlet":{"key":{"organization":"AcmeAppCo","name":"autoprovHA"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"}}}'
-      response: '{}'
-      spanid: 1e693893ca472c76
+      request: ""
+      response: ""
+      spanid: ""
       status: "200"
-      traceid: 1e693893ca472c76
+      traceid: ""
       username: user2

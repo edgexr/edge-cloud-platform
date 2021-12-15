@@ -1,0 +1,78 @@
+controllers:
+- region: PS
+  address: 127.0.0.1:55091
+  notifyaddr: 127.0.0.1:37091
+orgs:
+- name: partner2
+  type: operator
+  address: mobiledgex
+  phone: 123-123-1234
+  publicimages: true
+  edgeboxonly: true
+roles:
+- username: mexadmin
+  role: AdminManager
+- org: partner2
+  username: mexadmin
+  role: OperatorManager
+regiondata:
+- region: PS
+  appdata:
+    flavors:
+    - key:
+        name: x1.medium
+      ram: 4096
+      vcpus: 4
+      disk: 4
+    - key:
+        name: x1.small
+      ram: 2048
+      vcpus: 2
+      disk: 2
+    - key:
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
+    settings:
+      shepherdmetricscollectioninterval: 1s
+      shepherdalertevaluationinterval: 1s
+      shepherdmetricsscrapeinterval: 1s
+      shepherdhealthcheckretries: 3
+      shepherdhealthcheckinterval: 5s
+      autodeployintervalsec: 300
+      autodeployoffsetsec: 0.3
+      autodeploymaxintervals: 10
+      createappinsttimeout: 3s
+      updateappinsttimeout: 2s
+      deleteappinsttimeout: 2s
+      createclusterinsttimeout: 3s
+      updateclusterinsttimeout: 2s
+      deleteclusterinsttimeout: 2s
+      masternodeflavor: x1.small
+      maxtrackeddmeclients: 100
+      chefclientinterval: 10m0s
+      influxdbmetricsretention: 672h0m0s
+      cloudletmaintenancetimeout: 2s
+      updatevmpooltimeout: 20m0s
+      updatetrustpolicytimeout: 5s
+      dmeapimetricscollectioninterval: 1s
+      edgeeventsmetricscollectioninterval: 1s
+      cleanupreservableautoclusteridletime: 30m0s
+      influxdbcloudletusagemetricsretention: 8760h0m0s
+      createcloudlettimeout: 10s
+      updatecloudlettimeout: 2s
+      locationtilesidelengthkm: 2
+      edgeeventsmetricscontinuousqueriescollectionintervals:
+      - interval: 2s
+      influxdbdownsampledmetricsretention: 672h0m0s
+      influxdbedgeeventsmetricsretention: 672h0m0s
+      appinstclientcleanupinterval: 24h0m0s
+      clusterautoscaleaveragingdurationsec: 1
+      clusterautoscaleretrydelay: 1s
+      alertpolicymintriggertime: 1s
+      disableratelimit: true
+      ratelimitmaxtrackedips: 10000
+      resourcesnapshotthreadinterval: 10m0s
+      platformhainstancepollinterval: 300ms
+      platformhainstanceactiveexpiretime: 1s

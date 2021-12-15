@@ -1,0 +1,25 @@
+federatedselfzones:
+- zoneid: partner1-cloud-1
+  selfoperatorid: partner1
+  federationname: partner1-PA-dmuus-SA-fed
+- zoneid: partner1-cloud-1
+  selfoperatorid: partner1
+  federationname: partner1-PA-dmuus-SB-fed
+- zoneid: partner1-cloud-1
+  selfoperatorid: partner1
+  federationname: partner1-PA-enterprise-SA-fed
+- zoneid: partner1-cloud-1
+  selfoperatorid: partner1
+  federationname: partner1-PA-enterprise-SB-fed
+- zoneid: partner1-cloud-2
+  selfoperatorid: partner1
+  federationname: partner1-PA-dmuus-SA-fed
+- zoneid: partner1-cloud-2
+  selfoperatorid: partner1
+  federationname: partner1-PA-dmuus-SB-fed
+- zoneid: partner1-cloud-2
+  selfoperatorid: partner1
+  federationname: partner1-PA-enterprise-SA-fed
+- zoneid: partner1-cloud-2
+  selfoperatorid: partner1
+  federationname: partner1-PA-enterprise-SB-fed

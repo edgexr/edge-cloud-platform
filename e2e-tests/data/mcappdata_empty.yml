@@ -1,0 +1,3 @@
+roles:
+- username: mexadmin
+  role: AdminManager

@@ -1,0 +1,40 @@
+regiondata:
+- region: local
+  appdata:
+    clusterinsts:
+    - key:
+        clusterkey:
+          name: SmallCluster
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-1
+        organization: AcmeAppCo
+      flavor:
+        name: x1.small
+      liveness: Static
+      state: Ready
+      ipaccess: Dedicated
+      nodeflavor: x1.small
+      deployment: kubernetes
+      nummasters: 1
+      numnodes: 2
+      autoscalepolicy: scale1
+      masternodeflavor: x1.small
+      resources:
+        vms:
+        - name: fake-master-1-dmuus-cloud-1-smallcluster-acmeappco
+          type: cluster-master
+          status: ACTIVE
+          infraflavor: x1.small
+        - name: fake-node-1-dmuus-cloud-1-smallcluster-acmeappco
+          type: cluster-k8s-node
+          status: ACTIVE
+          infraflavor: x1.small
+        - name: smallcluster.dmuus-cloud-1.dmuus.fake.net
+          type: rootlb
+          status: ACTIVE
+          infraflavor: x1.small
+        - name: fake-node-2-dmuus-cloud-1-smallcluster-acmeappco
+          type: cluster-k8s-node
+          status: ACTIVE
+          infraflavor: x1.small

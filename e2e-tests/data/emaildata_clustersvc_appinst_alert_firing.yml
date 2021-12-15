@@ -1,7 +1,9 @@
-- text: "\nMobiledX Monitoring System: 1 alert for \n  alertname={{alert_name}}\n\n
-    \ app=MEXPrometheusAppName\n\n  apporg=MobiledgeX\n\n  appver=1.0\n\n  cloudlet={{cloudlet_name}}\n\n  cloudletorg={{cloudlet_org}}\n\n  cluster={{cluster_name}}\n\n  clusterorg={{cluster_org}}\n\n  region={{region}}\n\n  scope={{scope}}\n\n
-    \ severity={{severity}}\n\n\n  [1] Firing\n\n\n"
+- text: "\nMobiledX Monitoring System: 1 alert for \n  alertname=ClusterSvcAppInstFailure\n\n
+    \ app=MEXPrometheusAppName\n\n  apporg=MobiledgeX\n\n  appver=1.0\n\n  cloudlet=dmuus-cloud-13\n\n
+    \ cloudletorg=dmuus\n\n  cluster=dmuusSmallCluster\n\n  clusterorg=AcmeAppCo\n\n
+    \ region=local\n\n  scope=Platform\n\n  severity=error\n\n\n  [1] Firing\n\n\n"
   headers:
-    subject: '[FIRING:1] Alert for {{alert_receiver_name}}: ClusterSvcAppInstFailure Application: MEXPrometheusAppName Version: 1.0'
+    subject: '[FIRING:1] Alert for emailClusterInstPlatformAlertReceiver: ClusterSvcAppInstFailure
+      Application: MEXPrometheusAppName Version: 1.0'
     to: ops@mobiledgex.net
     from: alerts@mobiledgex.com
