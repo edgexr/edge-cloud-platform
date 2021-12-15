@@ -29,4 +29,3 @@ cloudlets:
       publicport: 444
       tls: true
     orgname: AcmeAppCo
-    edgeeventscookie: ***REMOVED***

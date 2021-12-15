@@ -29,7 +29,6 @@ cloudlets:
       publicport: 444
       tls: true
     orgname: AcmeAppCo
-    edgeeventscookie: ***REMOVED***
 - carriername: dmuus
   cloudletname: dmuus-cloud-2
   gpslocation:
@@ -59,4 +58,3 @@ cloudlets:
       publicport: 444
       tls: true
     orgname: AcmeAppCo
-    edgeeventscookie: ***REMOVED***

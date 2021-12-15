@@ -1,4 +1,4 @@
-status: FindFound
+status: Found
 fqdn: reservablecluster2.dmuus-cloud-2.dmuus.localtest.net
 ports:
 - proto: Tcp
@@ -13,4 +13,3 @@ ports:
 cloudletlocation:
   latitude: 35
   longitude: -95
-edgeeventscookie: dummy-session-cookie-string
