@@ -30,10 +30,6 @@ regiondata:
           type: cluster-k8s-node
           status: ACTIVE
           infraflavor: x1.small
-        - name: smallcluster.dmuus-cloud-1.dmuus.fake.net
-          type: rootlb
-          status: ACTIVE
-          infraflavor: x1.small
         - name: fake-node-2-dmuus-cloud-1-smallcluster-acmeappco
           type: cluster-k8s-node
           status: ACTIVE
@@ -44,5 +40,9 @@ regiondata:
           infraflavor: x1.small
         - name: fake-node-4-dmuus-cloud-1-smallcluster-acmeappco
           type: cluster-k8s-node
+          status: ACTIVE
+          infraflavor: x1.small
+        - name: smallcluster.dmuus-cloud-1.dmuus.fake.net
+          type: rootlb
           status: ACTIVE
           infraflavor: x1.small
