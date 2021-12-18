@@ -17,20 +17,21 @@ import (
 )
 
 type VMProperties struct {
-	CommonPf                   infracommon.CommonPlatform
-	SharedRootLBName           string
-	Domain                     VMDomain
-	PlatformSecgrpName         string
-	CloudletSecgrpName         string
-	IptablesBasedFirewall      bool
-	Upgrade                    bool
-	UseSecgrpForInternalSubnet bool
-	RequiresWhitelistOwnIp     bool
-	RunLbDhcpServerForVmApps   bool
-	AppendFlavorToVmAppImage   bool
-	ValidateExternalIPMapping  bool
-	CloudletAccessToken        string
-	NumCleanupRetries          int
+	CommonPf                          infracommon.CommonPlatform
+	SharedRootLBName                  string
+	Domain                            VMDomain
+	PlatformSecgrpName                string
+	CloudletSecgrpName                string
+	IptablesBasedFirewall             bool
+	Upgrade                           bool
+	UseSecgrpForInternalSubnet        bool
+	RequiresWhitelistOwnIp            bool
+	RunLbDhcpServerForVmApps          bool
+	AppendFlavorToVmAppImage          bool
+	ValidateExternalIPMapping         bool
+	CloudletAccessToken               string
+	NumCleanupRetries                 int
+	UsesCommonSharedInternalLBNetwork bool
 }
 
 const MEX_ROOTLB_FLAVOR_NAME = "mex-rootlb-flavor"

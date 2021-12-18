@@ -37,7 +37,7 @@ func (v *VSpherePlatform) PrepareRootLB(ctx context.Context, client ssh.Client, 
 	if TrustPolicy != nil {
 		rules = TrustPolicy.OutboundSecurityRules
 	}
-	return v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, isTrustPolicy, infracommon.TrustPolicySecGrpNameLabel, rules)
+	return v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, isTrustPolicy, infracommon.TrustPolicySecGrpNameLabel, rules, false)
 }
 
 func (o *VSpherePlatform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {

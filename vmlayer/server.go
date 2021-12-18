@@ -85,20 +85,36 @@ func (v *VMPlatform) GetIPFromServerName(ctx context.Context, networkName, subne
 func GetIPFromServerDetails(ctx context.Context, networkName string, portName string, sd *ServerDetail) (*ServerIP, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetIPFromServerDetails", "server", sd.Name, "networkName", networkName, "portName", portName, "serverDetail", sd)
 	var sipPtr *ServerIP
-	found := false
+	netFound := false
+	portFound := false
 	for i, s := range sd.Addresses {
-		if (networkName != "" && s.Network == networkName) || (portName != "" && s.PortName == portName) {
-			if found {
+		// with the new common shared network in some platforms (currently VCD) combined with preexisting legacy pre-common networks there is a chance
+		// for multiple ips to be found, once with the port and once with the network. If this happens, give preference networks found via the port name
+		// which is more specific
+		if networkName != "" && s.Network == networkName {
+			if netFound {
+				log.SpanLog(ctx, log.DebugLevelInfra, "Error: GetIPFromServerDetails found multiple matches via network", "networkName", networkName, "portName", portName, "serverDetail", sd)
+				return nil, fmt.Errorf("Multiple IP addresses found for server: %s on same network: %s", sd.Name, networkName)
+			}
+			netFound = true
+			if portFound {
+				log.SpanLog(ctx, log.DebugLevelInfra, "prioritizing IP address previously found via port", "networkName", networkName, "portName", portName, "serverDetail", sd)
+			} else {
+				sipPtr = &sd.Addresses[i]
+			}
+		}
+		if portName != "" && s.PortName == portName {
+			if portFound {
 				// this indicates we passed in multiple parameters that found an IP.  For example, an external network name plus an internal port name
-				log.SpanLog(ctx, log.DebugLevelInfra, "Error: GetIPFromServerDetails found multiple matches", "networkName", networkName, "portName", portName, "serverDetail", sd)
-				return nil, fmt.Errorf("Multiple IP addresses found for server: %s network: %s portName: %s", sd.Name, networkName, portName)
+				log.SpanLog(ctx, log.DebugLevelInfra, "Error: GetIPFromServerDetails found multiple matches via port", "networkName", networkName, "portName", portName, "serverDetail", sd)
+				return nil, fmt.Errorf("Multiple IP addresses found for server: %s on same port: %s", sd.Name, portName)
 			}
 			log.SpanLog(ctx, log.DebugLevelInfra, "GetIPFromServerDetails found match", "serverAddress", s)
-			found = true
+			portFound = true
 			sipPtr = &sd.Addresses[i]
 		}
 	}
-	if found {
+	if portFound || netFound {
 		return sipPtr, nil
 	}
 	return nil, fmt.Errorf(ServerIPNotFound+" for server: %s on network: %s port: %s", sd.Name, networkName, portName)

@@ -32,7 +32,7 @@ func TestRMAllVAppFromVdc(t *testing.T) {
 		}
 		for _, resents := range vdc.Vdc.ResourceEntities {
 			for _, resent := range resents.ResourceEntity {
-				if resent.Type == "application/vnd.vmware.vcloud.vApp+xml" {
+				if resent.Type == VappResourceXmlType {
 					vappHREF, err := url.Parse(resent.HREF)
 					if err != nil {
 						fmt.Printf("Error url.parse %s\n", err.Error())

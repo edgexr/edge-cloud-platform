@@ -78,7 +78,7 @@ func (v *VMPlatform) setupForwardingIptables(ctx context.Context, client ssh.Cli
 }
 
 // isTrustPolicy true means cloudlet level trustPolicy and false implies TrustPolicyException
-func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client ssh.Client, sshCidrsAllowed []string, isTrustPolicy bool, secGrpName string, rules []edgeproto.SecurityRule) error {
+func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client ssh.Client, sshCidrsAllowed []string, isTrustPolicy bool, secGrpName string, rules []edgeproto.SecurityRule, commonSharedAccess bool) error {
 
 	if isTrustPolicy == true {
 		// The label used for TrustPolicy
@@ -108,7 +108,7 @@ func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client s
 		}
 	}
 	// all traffic between the internal networks is allowed
-	internalRoute, err := v.GetInternalNetworkRoute(ctx)
+	internalRoute, err := v.GetInternalNetworkRoute(ctx, commonSharedAccess)
 	if err != nil {
 		return err
 	}
