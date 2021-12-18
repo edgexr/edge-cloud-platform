@@ -191,7 +191,7 @@ func testGetOrg(t *testing.T, cli *govcd.VCDClient, orgName string) (org *govcd.
 func testGetAllVAppsForVdc(t *testing.T, vdc *govcd.Vdc) {
 	for _, r := range vdc.Vdc.ResourceEntities {
 		for _, res := range r.ResourceEntity {
-			if res.Type == "application/vnd.vmware.vcloud.vApp+xml" {
+			if res.Type == VappResourceXmlType {
 				vapp, err := vdc.GetVAppByName(res.Name, true)
 				if err != nil {
 					fmt.Printf("\n Error GetVAppbyName for %s err: %s\n", res.Name, err.Error())

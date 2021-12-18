@@ -401,39 +401,47 @@ func (v *VMPlatform) createClusterInternal(ctx context.Context, rootLBName strin
 	return v.setupClusterRootLBAndNodes(ctx, rootLBName, clusterInst, updateCallback, start, timeout, vmgp, ActionCreate)
 }
 
+func (vp *VMProperties) GetSharedCommonSubnetName() string {
+	return vp.SharedRootLBName + "-common-internal"
+}
+
 func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, start time.Time, timeout time.Duration, vmgp *VMGroupOrchestrationParams, action ActionType) (reterr error) {
 	client, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
 		return fmt.Errorf("can't get rootLB client, %v", err)
 	}
 
-	if v.VMProperties.GetCloudletExternalRouter() == NoExternalRouter {
-		if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes ||
-			(clusterInst.Deployment == cloudcommon.DeploymentTypeDocker) {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Need to attach internal interface on rootlb", "IpAccess", clusterInst.IpAccess, "deployment", clusterInst.Deployment)
+	if action == ActionCreate {
+		if v.VMProperties.GetCloudletExternalRouter() == NoExternalRouter {
+			if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes ||
+				(clusterInst.Deployment == cloudcommon.DeploymentTypeDocker) {
+				log.SpanLog(ctx, log.DebugLevelInfra, "Need to attach internal interface on rootlb", "IpAccess", clusterInst.IpAccess, "deployment", clusterInst.Deployment)
 
-			// after vm creation, the orchestrator will update some fields in the group params including gateway IP.
-			// this IP is used on the rootLB to server as the GW for this new subnet
-			subnetName := GetClusterSubnetName(ctx, clusterInst)
-			gw, err := v.GetSubnetGatewayFromVMGroupParms(ctx, subnetName, vmgp)
-			if err != nil {
-				return err
-			}
-
-			attachPort := true
-			if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED && v.VMProvider.GetInternalPortPolicy() == AttachPortDuringCreate {
-				attachPort = false
-			}
-			_, err = v.AttachAndEnableRootLBInterface(ctx, client, rootLBName, attachPort, subnetName, GetPortName(rootLBName, subnetName), gw, action)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "AttachAndEnableRootLBInterface failed", "err", err)
-				return err
+				// after vm creation, the orchestrator will update some fields in the group params including gateway IP.
+				// this IP is used on the rootLB to server as the GW for this new subnet
+				subnetName := GetClusterSubnetName(ctx, clusterInst)
+				gw, err := v.GetSubnetGatewayFromVMGroupParms(ctx, subnetName, vmgp)
+				if err != nil {
+					return err
+				}
+				if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED && v.VMProperties.UsesCommonSharedInternalLBNetwork {
+					subnetName = v.VMProperties.GetSharedCommonSubnetName()
+				}
+				attachPort := true
+				if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED && v.VMProvider.GetInternalPortPolicy() == AttachPortDuringCreate {
+					attachPort = false
+				}
+				_, err = v.AttachAndEnableRootLBInterface(ctx, client, rootLBName, attachPort, subnetName, GetPortName(rootLBName, subnetName), gw, action)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "AttachAndEnableRootLBInterface failed", "err", err)
+					return err
+				}
+			} else {
+				log.SpanLog(ctx, log.DebugLevelInfra, "No internal interface on rootlb", "IpAccess", clusterInst.IpAccess, "deployment", clusterInst.Deployment)
 			}
 		} else {
-			log.SpanLog(ctx, log.DebugLevelInfra, "No internal interface on rootlb", "IpAccess", clusterInst.IpAccess, "deployment", clusterInst.Deployment)
+			log.SpanLog(ctx, log.DebugLevelInfra, "External router in use, no internal interface for rootlb")
 		}
-	} else {
-		log.SpanLog(ctx, log.DebugLevelInfra, "External router in use, no internal interface for rootlb")
 	}
 
 	// the root LB was created as part of cluster creation, but it needs to be prepped

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
@@ -13,6 +14,9 @@ import (
 
 // NetworkTypeVLAN is an OpenStack provider network type
 const NetworkTypeVLAN string = "vlan"
+
+// CommonInternalCIDRDefault is default if the platform uses a common internal network between the shared LB and all clusters
+const CommonInternalCIDRDefault = "10.201.0.0/16"
 
 // ServerIP is an IP address for a given network on a port.  In the case of floating IPs, there are both
 // internal and external addresses which are associated via NAT.   In the non floating case, the external and internal are the same
@@ -31,29 +35,33 @@ type RouterDetail struct {
 }
 
 type NetSpecInfo struct {
-	CIDR                  string
-	NetworkType           string
-	NetworkAddress        string
-	NetmaskBits           string
-	Octets                []string
-	MasterIPLastOctet     string
-	DelimiterOctet        int // this is the X
-	FloatingIPNet         string
-	FloatingIPSubnet      string
-	FloatingIPExternalNet string
-	VnicType              string
-	RouterGatewayIP       string
+	CIDR                          string
+	NetworkType                   string
+	NetworkAddress                string
+	NetmaskBits                   string
+	Octets                        []string
+	MasterIPLastOctet             string
+	DelimiterOctet                int // this is the X
+	FloatingIPNet                 string
+	FloatingIPSubnet              string
+	FloatingIPExternalNet         string
+	VnicType                      string
+	RouterGatewayIP               string
+	CommonInternalCIDR            string
+	CommonInternalNetworkAddress  string
+	CommonInternalNetworkMaskBits int
 }
 
 var SupportedSchemes = map[string]string{
-	"name":             "Deprecated",
-	"cidr":             "XXX.XXX.XXX.XXX/XX",
-	"floatingipnet":    "Floating IP Network Name",
-	"floatingipsubnet": "Floating IP Subnet Name",
-	"floatingipextnet": "Floating IP External Network Name",
-	"vnictype":         "VNIC Type",
-	"routergateway":    "Router Gateway IP",
-	"networktype":      "Network Type: " + NetworkTypeVLAN,
+	"name":              "Deprecated",
+	"cidr":              "XXX.XXX.XXX.XXX/XX",
+	"floatingipnet":     "Floating IP Network Name",
+	"floatingipsubnet":  "Floating IP Subnet Name",
+	"floatingipextnet":  "Floating IP External Network Name",
+	"vnictype":          "VNIC Type",
+	"routergateway":     "Router Gateway IP",
+	"networktype":       "Network Type: " + NetworkTypeVLAN,
+	"commoninternalnet": "XXX.XXX.XXX.XXX/XX",
 }
 
 func GetSupportedSchemesStr() string {
@@ -102,6 +110,8 @@ func ParseNetSpec(ctx context.Context, netSpec string) (*NetSpecInfo, error) {
 			ni.RouterGatewayIP = v
 		case "networktype":
 			ni.NetworkType = v
+		case "commoninternalnet":
+			ni.CommonInternalCIDR = v
 		default:
 			return nil, fmt.Errorf("unknown netspec item key: %s", k)
 		}
@@ -115,7 +125,23 @@ func ParseNetSpec(ctx context.Context, netSpec string) (*NetSpecInfo, error) {
 	}
 	ni.NetworkAddress = sits[0]
 	ni.NetmaskBits = sits[1]
-
+	if ni.CommonInternalCIDR == "" {
+		ni.CommonInternalCIDR = CommonInternalCIDRDefault
+	}
+	cids := strings.Split(ni.CommonInternalCIDR, "/")
+	if len(cids) < 2 {
+		return nil, fmt.Errorf("invalid common internal CIDR, no net mask")
+	}
+	ni.CommonInternalNetworkAddress = cids[0]
+	b, err := strconv.ParseInt(cids[1], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid CommonInternalNetworkMaskBits - %v", err)
+	}
+	ni.CommonInternalNetworkMaskBits = int(b)
+	// currently only support /16
+	if ni.CommonInternalNetworkMaskBits != 16 {
+		return nil, fmt.Errorf("CommonInternalNetworkMaskBits must be 16")
+	}
 	ni.Octets = strings.Split(ni.NetworkAddress, ".")
 	for i, it := range ni.Octets {
 		if it == "X" {
@@ -188,7 +214,9 @@ func (vp *VMProperties) AddRouteToServer(ctx context.Context, client ssh.Client,
 	return nil
 }
 
-func (v *VMProperties) GetInternalNetworkRoute(ctx context.Context) (string, error) {
+func (v *VMProperties) GetInternalNetworkRoute(ctx context.Context, commonSharedNetwork bool) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetInternalNetworkRoute", "commonSharedNetwork", commonSharedNetwork)
+
 	netSpec, err := ParseNetSpec(ctx, v.GetCloudletNetworkScheme())
 	if err != nil {
 		return "", err
@@ -197,6 +225,9 @@ func (v *VMProperties) GetInternalNetworkRoute(ctx context.Context) (string, err
 	// Only the 3rd octet is supported for delimiter so the route is always /16
 	netaddr := strings.ToUpper(netSpec.NetworkAddress)
 	netaddr = strings.Replace(netaddr, "X", "0", 1)
+	if commonSharedNetwork {
+		netaddr = netSpec.CommonInternalNetworkAddress
+	}
 	return netaddr + "/16", nil
 }
 
@@ -209,4 +240,31 @@ func MaskLenToMask(maskLen string) (string, error) {
 		return "", err
 	}
 	return ipnet.IP.String(), nil
+}
+
+// GetLastHostAddressForCidr requires either 8,16 or 24 bit mask
+func GetLastHostAddressForCidr(cidr string) (string, error) {
+	cs := strings.Split(cidr, "/")
+	if len(cs) != 2 {
+		return "", fmt.Errorf("invalid cidr - %s", cidr)
+	}
+	net := cs[0]
+	nets := strings.Split(net, ".")
+	if len(nets) != 4 {
+		return "", fmt.Errorf("invalid network address - %s", net)
+	}
+	mask := cs[1]
+	switch mask {
+	case "8":
+		cs[1] = "255"
+		fallthrough
+	case "16":
+		cs[2] = "255"
+		fallthrough
+	case "24":
+		cs[3] = "254"
+	default:
+		return "", fmt.Errorf("invalid mask bit len - %s", mask)
+	}
+	return strings.Join(cs, "."), nil
 }

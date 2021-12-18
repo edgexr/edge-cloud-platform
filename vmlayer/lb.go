@@ -152,11 +152,19 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 
 		// now bring the new internal interface up.
 		var ipcmds []string
+		maskLen := 24
+		if v.VMProperties.UsesCommonSharedInternalLBNetwork && serverDetails.Name == v.VMProperties.SharedRootLBName {
+			ni, err := ParseNetSpec(ctx, v.VMProperties.GetCloudletNetworkScheme())
+			if err != nil {
+				return "", err
+			}
+			maskLen = ni.CommonInternalNetworkMaskBits
+		}
 		linkCmd := fmt.Sprintf("sudo ip link set dev %s up", internalIfname)
 		ipcmds = append(ipcmds, linkCmd)
 		flushCmd := fmt.Sprintf("sudo ip addr flush %s", internalIfname)
 		ipcmds = append(ipcmds, flushCmd)
-		addrCmd := fmt.Sprintf("sudo ip addr add %s/24 dev %s", internalIP.InternalAddr, internalIfname)
+		addrCmd := fmt.Sprintf("sudo ip addr add %s/%d dev %s", internalIP.InternalAddr, maskLen, internalIfname)
 		ipcmds = append(ipcmds, addrCmd)
 		for _, c := range ipcmds {
 			log.SpanLog(ctx, log.DebugLevelInfra, "bringing up interface", "internalIfname", internalIfname, "cmd", c)
@@ -211,7 +219,7 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 
 // AttachAndEnableRootLBInterface attaches the interface and enables it in the OS.  Returns the internal interface name
 func (v *VMPlatform) AttachAndEnableRootLBInterface(ctx context.Context, client ssh.Client, rootLBName string, attachPort bool, subnetName, internalPortName, internalIPAddr string, vmAction ActionType) (string, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AttachAndEnableRootLBInterface", "rootLBName", rootLBName, "attachPort", attachPort, "subnetName", subnetName, "internalPortName", internalPortName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "AttachAndEnableRootLBInterface", "rootLBName", rootLBName, "attachPort", attachPort, "subnetName", subnetName, "internalPortName", internalPortName, "internalIPAddr", internalIPAddr)
 
 	if rootLBName == v.VMProperties.SharedRootLBName {
 		sharedRootLBPortLock.Lock()
@@ -534,7 +542,8 @@ func (v *VMPlatform) SetupRootLB(
 			return fmt.Errorf("cannot copy resource-tracker to rootLb %v", err)
 		}
 	}
-	route, err := v.VMProperties.GetInternalNetworkRoute(ctx)
+	commonSharedAccess := rootLBName == v.VMProperties.SharedRootLBName && v.VMProperties.UsesCommonSharedInternalLBNetwork
+	route, err := v.VMProperties.GetInternalNetworkRoute(ctx, commonSharedAccess)
 	if err != nil {
 		return err
 	}

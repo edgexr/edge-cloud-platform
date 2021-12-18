@@ -227,7 +227,8 @@ func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, root
 	if trustPolicy != nil {
 		rules = trustPolicy.OutboundSecurityRules
 	}
-	err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, isTrustPolicy, secGrpName, rules)
+	commonSharedAccess := rootLBName == v.vmProperties.SharedRootLBName
+	err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, isTrustPolicy, secGrpName, rules, commonSharedAccess)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB SetupIptableRulesForRootLB failed", "rootLBName", rootLBName, "err", err)
 		return err
@@ -490,7 +491,7 @@ func (v *VcdPlatform) configureVCDSecurityRulesCommon(ctx context.Context, egres
 				err = fmt.Errorf("nil ssh client for rootlb: %s", clientName)
 			} else {
 				log.SpanLog(ctx, log.DebugLevelInfra, "configure rules for LB", "clientName", clientName)
-				err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, sshClient, sshCidrsAllowed, isTrustPolicy, secGrpName, rules)
+				err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, sshClient, sshCidrsAllowed, isTrustPolicy, secGrpName, rules, clientName == v.vmProperties.PlatformSecgrpName)
 			}
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "configureVCDSecurityRulesCommon failed", "clientName", clientName, "sshClient", sshClient, "error", err)
