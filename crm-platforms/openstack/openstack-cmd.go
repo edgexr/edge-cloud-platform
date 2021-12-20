@@ -873,6 +873,32 @@ func (s *OpenstackPlatform) OSGetLimits(ctx context.Context, info *edgeproto.Clo
 	return nil
 }
 
+// GetNumberOfFloatingIps returns allocated,used
+func (s *OpenstackPlatform) GetNumberOfFloatingIps(ctx context.Context) (int, int, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetNumberOfFloatingIps")
+	ns := s.VMProperties.GetCloudletNetworkScheme()
+	nspec, err := vmlayer.ParseNetSpec(ctx, ns)
+	if err != nil {
+		return 0, 0, err
+	}
+	if nspec.FloatingIPExternalNet == "" {
+		log.SpanLog(ctx, log.DebugLevelInfra, "no external floating ip external network")
+		return 0, 0, nil
+	}
+	fipList, err := s.ListFloatingIPs(ctx, nspec.FloatingIPExternalNet)
+	if err != nil {
+		return 0, 0, err
+	}
+	allocated := len(fipList)
+	used := 0
+	for _, f := range fipList {
+		if f.Port != "" {
+			used++
+		}
+	}
+	return allocated, used, nil
+}
+
 func (s *OpenstackPlatform) OSGetAllLimits(ctx context.Context) ([]OSLimit, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetLimits (Openstack) - Resources info and usage")
 	var limits []OSLimit
@@ -885,6 +911,22 @@ func (s *OpenstackPlatform) OSGetAllLimits(ctx context.Context) ([]OSLimit, erro
 	if err != nil {
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
+	}
+	// openstack has a bug in which maxTotalFloatingIps is always at 10 regardless of the actual quota and totalFloatingIpsUsed
+	// always reads 0. Also, since we assume the floating IPs are pre-allocated the number in the pool is really
+	// the restriction, not the quota.
+	fipsAllocated, fipsUsed, err := s.GetNumberOfFloatingIps(ctx)
+	if err != nil {
+		return nil, err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "substituting number of floating ips", "allocated", fipsAllocated, "used", fipsUsed)
+
+	for i, l := range limits {
+		if l.Name == "maxTotalFloatingIps" {
+			limits[i].Value = fipsAllocated
+		} else if l.Name == "totalFloatingIpsUsed" {
+			limits[i].Value = fipsUsed
+		}
 	}
 	return limits, nil
 }
