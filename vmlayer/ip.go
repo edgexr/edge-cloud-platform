@@ -256,15 +256,15 @@ func GetLastHostAddressForCidr(cidr string) (string, error) {
 	mask := cs[1]
 	switch mask {
 	case "8":
-		cs[1] = "255"
+		nets[1] = "255"
 		fallthrough
 	case "16":
-		cs[2] = "255"
+		nets[2] = "255"
 		fallthrough
 	case "24":
-		cs[3] = "254"
+		nets[3] = "254"
 	default:
 		return "", fmt.Errorf("invalid mask bit len - %s", mask)
 	}
-	return strings.Join(cs, "."), nil
+	return strings.Join(nets, "."), nil
 }
