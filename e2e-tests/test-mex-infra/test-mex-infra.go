@@ -104,15 +104,22 @@ func main() {
 			util.PrintStepBanner("running action: " + a + retry.Tries())
 			actionretry := false
 			errs := e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods, config.Vars, sharedData, &actionretry)
-			tryErrs = append(tryErrs, errs...)
 			ranTest = true
-			if *stopOnFail && len(errs) > 0 && !actionretry {
-				errors = append(errors, tryErrs...)
-				break
+			if len(errs) > 0 {
+				if actionretry {
+					// potential errors that may be ignored after retry
+					tryErrs = append(tryErrs, errs...)
+				} else {
+					// no retry for action, so register errs as final errors
+					errors = append(errors, errs...)
+					if *stopOnFail {
+						break
+					}
+				}
 			}
 			retry.SetActionRetry(ii, actionretry)
 		}
-		if len(errors) > 0 {
+		if *stopOnFail && len(errors) > 0 {
 			// stopOnFail case
 			break
 		}
