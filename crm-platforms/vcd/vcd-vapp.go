@@ -26,17 +26,12 @@ const VappResourceXmlType = "application/vnd.vmware.vcloud.vApp+xml"
 
 // Compose a new vapp from the given template, using vmgrp orch params
 // Creates one or more vms.
-func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTemplate, vmgp *vmlayer.VMGroupOrchestrationParams, description string, vcdClient *govcd.VCDClient, updateCallback edgeproto.CacheUpdateCallback) (*govcd.VApp, error) {
+func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTemplate, vmgp *vmlayer.VMGroupOrchestrationParams, description string, vcdClient *govcd.VCDClient, vdc *govcd.Vdc, updateCallback edgeproto.CacheUpdateCallback) (*govcd.VApp, error) {
 
 	var vapp *govcd.VApp
 	var err error
 
 	numVMs := len(vmgp.VMs)
-
-	vdc, err := v.GetVdc(ctx, vcdClient)
-	if err != nil {
-		return nil, err
-	}
 	storRef := types.Reference{}
 	// Nil ref wins default storage policy
 	createStart := time.Now()
@@ -103,7 +98,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	updateCallback(edgeproto.UpdateTask, "Updating vApp Ports")
 	updatePortsStart := time.Now()
 	// Get the VApp network(s) in place.
-	netMap, err := v.AddPortsToVapp(ctx, vapp, *vmgp, updateCallback, vcdClient)
+	err = v.AddPortsToVapp(ctx, vapp, vmgp, updateCallback, vcdClient, vdc)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp failed", "VAppName", vmgp.GroupName, "error", err)
 		return nil, err
@@ -125,6 +120,10 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed adding VMs for ", "GroupName", vmgp.GroupName, "count", numVMs)
 	addVMStart := time.Now()
 
+	netMap, err := v.getVappNetworkInfoMap(ctx, vapp, vmgp, vcdClient, vdc, vmlayer.ActionCreate)
+	if err != nil {
+		return nil, err
+	}
 	vmsToCustomize, err := v.AddVMsToVApp(ctx, vapp, vmgp, vappTmpl, netMap, vdc, vcdClient, updateCallback)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp AddVMsToVApp failed", "error", err)
