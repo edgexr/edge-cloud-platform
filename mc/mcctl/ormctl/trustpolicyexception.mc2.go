@@ -42,8 +42,8 @@ var UpdateTrustPolicyExceptionCmd = &ApiCommand{
 	Name:         "UpdateTrustPolicyException",
 	Use:          "update",
 	Short:        "Update a Trust Policy Exception, by Operator Organization",
-	RequiredArgs: "region " + strings.Join(TrustPolicyExceptionRequiredArgs, " "),
-	OptionalArgs: strings.Join(TrustPolicyExceptionOptionalArgs, " "),
+	RequiredArgs: "region " + strings.Join(UpdateTrustPolicyExceptionRequiredArgs, " "),
+	OptionalArgs: strings.Join(UpdateTrustPolicyExceptionOptionalArgs, " "),
 	AliasArgs:    strings.Join(TrustPolicyExceptionAliasArgs, " "),
 	SpecialArgs:  &TrustPolicyExceptionSpecialArgs,
 	Comments:     addRegionComment(TrustPolicyExceptionComments),
@@ -106,6 +106,22 @@ var CreateTrustPolicyExceptionRequiredArgs = []string{
 	"name",
 }
 var CreateTrustPolicyExceptionOptionalArgs = []string{
+	"outboundsecurityrules:#.protocol",
+	"outboundsecurityrules:#.portrangemin",
+	"outboundsecurityrules:#.portrangemax",
+	"outboundsecurityrules:#.remotecidr",
+}
+var UpdateTrustPolicyExceptionRequiredArgs = []string{
+	"app-org",
+	"app-name",
+	"app-ver",
+	"cloudletpool-org",
+	"cloudletpool-name",
+	"name",
+	"state",
+}
+var UpdateTrustPolicyExceptionOptionalArgs = []string{
+	"outboundsecurityrules:empty",
 	"outboundsecurityrules:#.protocol",
 	"outboundsecurityrules:#.portrangemin",
 	"outboundsecurityrules:#.portrangemax",

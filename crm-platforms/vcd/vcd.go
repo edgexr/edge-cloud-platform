@@ -316,34 +316,6 @@ func (v *VcdPlatform) GetServerDetailWithVdc(ctx context.Context, serverName str
 	return &detail, nil
 }
 
-func (v *VcdPlatform) GetVappToNetworkMap(ctx context.Context, vcdClient *govcd.VCDClient) (VAppMap, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetVappToNetworkMap")
-
-	vappMap := make(VAppMap)
-	vdc, err := v.GetVdc(ctx, vcdClient)
-	if err != nil {
-		return vappMap, err
-	}
-
-	for _, r := range vdc.Vdc.ResourceEntities {
-		for _, res := range r.ResourceEntity {
-			if res.Type == VappResourceXmlType {
-				vapp, err := vdc.GetVAppByName(res.Name, true)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "GetVappByName", "Vapp", res.Name, "error", err)
-					return vappMap, err
-				} else {
-					log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVappsByIntAddr found vapp", "vapp", res.Name)
-					for _, n := range vapp.VApp.NetworkConfigSection.NetworkNames() {
-						vappMap[n] = vapp
-					}
-				}
-			}
-		}
-	}
-	return vappMap, nil
-}
-
 func (v *VcdPlatform) GetApiEndpointAddr(ctx context.Context) (string, error) {
 
 	url := v.GetVcdUrl()

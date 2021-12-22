@@ -166,3 +166,21 @@ func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client s
 	}
 	return infracommon.AddDefaultIptablesRules(ctx, client)
 }
+
+// GetBootCommandsForInterClusterIptables generates a list of commands that can be used to block all traffic from a specified CIDR
+// with exceptions for an allowed range and a gateway.
+func GetBootCommandsForInterClusterIptables(ctx context.Context, allowedCidr, blockedCidr, gateway string) ([]string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetBootCommandsForInterClusterIptables", "allowedCidr", allowedCidr, "blockedCidr", blockedCidr, "gateway", gateway)
+	var commands []string
+	rules := []string{
+		fmt.Sprintf("INPUT -s %s -j ACCEPT", allowedCidr),
+		fmt.Sprintf("INPUT -s %s/32 -j ACCEPT", gateway),
+		fmt.Sprintf("INPUT -s %s -j DROP", blockedCidr),
+	}
+	for _, r := range rules {
+		// add rule only if it does not exist
+		commands = append(commands, "iptables -C "+r+"|| iptables -A "+r)
+	}
+	commands = append(commands, "iptables-save > /etc/iptables/rules.v4")
+	return commands, nil
+}
