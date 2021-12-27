@@ -119,10 +119,6 @@ func authzUpdateTrustPolicyException(ctx context.Context, region, username strin
 				return fmt.Errorf("Operator can update only state field")
 			}
 		}
-		if tpe.State != edgeproto.TrustPolicyExceptionState_TRUST_POLICY_EXCEPTION_STATE_ACTIVE &&
-			tpe.State != edgeproto.TrustPolicyExceptionState_TRUST_POLICY_EXCEPTION_STATE_REJECTED {
-			return fmt.Errorf("User not allowed to update TrustPolicyException state to %s", tpe.State.String())
-		}
 		return nil
 	}
 
