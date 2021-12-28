@@ -1192,6 +1192,9 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 	db := loggedDB(ctx)
 	zonesMap := make(map[string]ormapi.FederatedPartnerZone)
 	for _, inZone := range reg.Zones {
+		if inZone == "" {
+			return fmt.Errorf("Invalid zone ID %q specified", inZone)
+		}
 		existingZone := ormapi.FederatedPartnerZone{}
 		lookup := ormapi.FederatedPartnerZone{
 			FederationName: partnerFed.Name,
