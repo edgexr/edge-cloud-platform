@@ -22,7 +22,7 @@ func ParseGeoLocation(geoLoc string) (float64, float64, error) {
 	latStr, longStr := strings.TrimSpace(loc[0]), strings.TrimSpace(loc[1])
 	lat, err := strconv.ParseFloat(latStr, 64)
 	if err != nil {
-		return lat, long, err
+		return lat, long, fmt.Errorf("Invalid latitude %q, must be a valid decimal number", latStr)
 	}
 	if !valid.IsLatitude(latStr) {
 		return lat, long, fmt.Errorf("Invalid latitude: %s", latStr)
@@ -30,7 +30,7 @@ func ParseGeoLocation(geoLoc string) (float64, float64, error) {
 
 	long, err = strconv.ParseFloat(longStr, 64)
 	if err != nil {
-		return lat, long, err
+		return lat, long, fmt.Errorf("Invalid longitude %q, must be a valid decimal number", longStr)
 	}
 	if !valid.IsLongitude(longStr) {
 		return lat, long, fmt.Errorf("Invalid longitude: %s", longStr)
