@@ -1,6 +1,7 @@
 controllers:
 - region: local
   address: 127.0.0.1:55001
+  dnsregion: local
 orgs:
 - name: DevOrg
   type: developer

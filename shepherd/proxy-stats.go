@@ -193,7 +193,7 @@ func initClient(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppI
 	// record last connection attempt
 	scrapePoint.LastConnectAttempt = time.Now()
 	if app.Deployment == cloudcommon.DeploymentTypeVM && app.AccessType != edgeproto.AccessType_ACCESS_TYPE_DIRECT {
-		scrapePoint.Client, err = myPlatform.GetVmAppRootLbClient(ctx, &appInst.Key)
+		scrapePoint.Client, err = myPlatform.GetVmAppRootLbClient(ctx, appInst)
 		if err != nil {
 			// If we cannot get a platform client no point in trying to get metrics
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire platform client", "VmApp", appInst.Key, "error", err)

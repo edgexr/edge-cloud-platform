@@ -81,6 +81,7 @@ var ControllerComments = map[string]string{
 	"address":    `Controller API address or URL`,
 	"notifyaddr": `Controller notify address or URL`,
 	"influxdb":   `InfluxDB address`,
+	"dnsregion":  `DNS segment id for the region`,
 }
 
 var ConfigComments = map[string]string{

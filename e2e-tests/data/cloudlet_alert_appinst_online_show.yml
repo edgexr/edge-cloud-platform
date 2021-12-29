@@ -17,7 +17,7 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: smallcluster.dmuus-cloud-1.dmuus.mobiledgex.net
+      uri: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.mobiledgex.net
       liveness: Static
       mappedports:
       - proto: Tcp
@@ -36,3 +36,4 @@ regiondata:
       powerstate: PowerOn
       vmflavor: x1.small
       uniqueid: acmeappcosomeapplication110-smallcluster-dmuus-cloud-1-dmuus
+      dnslabel: someapplication110-acmeappco

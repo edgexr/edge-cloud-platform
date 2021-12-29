@@ -10,7 +10,6 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
@@ -162,7 +161,7 @@ func (s *ShepherdPlatform) GetClusterPlatformClient(ctx context.Context, cluster
 	return client, nil
 }
 
-func (s *ShepherdPlatform) GetVmAppRootLbClient(ctx context.Context, app *edgeproto.AppInstKey) (ssh.Client, error) {
+func (s *ShepherdPlatform) GetVmAppRootLbClient(ctx context.Context, appInst *edgeproto.AppInst) (ssh.Client, error) {
 	var err error
 	var result vmlayer.OperationInitResult
 	ctx, result, err = s.VMPlatform.VMProvider.InitOperationContext(ctx, vmlayer.OperationInitStart)
@@ -172,7 +171,7 @@ func (s *ShepherdPlatform) GetVmAppRootLbClient(ctx context.Context, app *edgepr
 	if result == vmlayer.OperationNewlyInitialized {
 		defer s.VMPlatform.VMProvider.InitOperationContext(ctx, vmlayer.OperationInitComplete)
 	}
-	rootLBName := cloudcommon.GetVMAppFQDN(app, s.VMPlatform.VMProperties.CommonPf.PlatformConfig.CloudletKey, s.VMPlatform.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
+	rootLBName := appInst.Uri
 	client, err := s.VMPlatform.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: rootLBName}, pc.WithCachedIp(false))
 	if err != nil {
 		return nil, err
@@ -227,8 +226,8 @@ func (s *ShepherdPlatform) GetVmStats(ctx context.Context, key *edgeproto.AppIns
 	return appMetrics, nil
 }
 
-func (s *ShepherdPlatform) VmAppChangedCallback(ctx context.Context, appInstKey *edgeproto.AppInstKey, newState edgeproto.TrackedState) {
-	s.VMPlatform.VMProvider.VmAppChangedCallback(ctx, appInstKey, newState)
+func (s *ShepherdPlatform) VmAppChangedCallback(ctx context.Context, appInst *edgeproto.AppInst, newState edgeproto.TrackedState) {
+	s.VMPlatform.VMProvider.VmAppChangedCallback(ctx, appInst, newState)
 }
 
 func (s *ShepherdPlatform) SetUsageAccessArgs(ctx context.Context, addr string, client ssh.Client) error {

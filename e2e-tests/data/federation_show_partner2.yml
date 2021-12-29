@@ -2,6 +2,7 @@ controllers:
 - region: PS
   address: 127.0.0.1:55091
   notifyaddr: 127.0.0.1:37091
+  dnsregion: ps
 orgs:
 - name: partner2
   type: operator
@@ -92,6 +93,8 @@ regiondata:
       deployment: docker
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
+      dnslabel: partner2-cloud-1-partner2
+      rootlbfqdn: shared.partner2-cloud-1-partner2.ps.mobiledgex.net
     - key:
         organization: partner2
         name: partner2-cloud-2
@@ -116,6 +119,8 @@ regiondata:
       - name: External IPs
         alertthreshold: 10
       defaultresourcealertthreshold: 80
+      dnslabel: partner2-cloud-2-partner2
+      rootlbfqdn: shared.partner2-cloud-2-partner2.ps.mobiledgex.net
     cloudletinfos:
     - key:
         organization: partner2

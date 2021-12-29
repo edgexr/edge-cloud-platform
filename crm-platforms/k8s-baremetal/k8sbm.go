@@ -95,7 +95,7 @@ func (k *K8sBareMetalPlatform) Init(ctx context.Context, platformConfig *platfor
 		return err
 	}
 	k.externalIps = externalIps
-	k.sharedLBName = k.GetSharedLBName(ctx, platformConfig.CloudletKey)
+	k.sharedLBName = platformConfig.RootLBFQDN
 	k.cloudletKubeConfig = k.GetCloudletKubeConfig(platformConfig.CloudletKey)
 
 	if !platformConfig.TestMode {
@@ -174,7 +174,7 @@ func (k *K8sBareMetalPlatform) GetNodePlatformClient(ctx context.Context, node *
 	}
 	nodeName := node.Name
 	if nodeName == "" && node.Type == cloudcommon.CloudletNodeSharedRootLB {
-		nodeName = k.GetSharedLBName(ctx, k.commonPf.PlatformConfig.CloudletKey)
+		nodeName = k.commonPf.PlatformConfig.RootLBFQDN
 	}
 	if nodeName == "" {
 		return nil, fmt.Errorf("cannot GetNodePlatformClient, must specify node name")

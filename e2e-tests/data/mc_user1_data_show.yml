@@ -3,10 +3,12 @@ controllers:
   address: 127.0.0.1:55001
   notifyaddr: 127.0.0.1:37001
   influxdb: http://127.0.0.1:8086
+  dnsregion: local
 - region: locala
   address: 127.0.0.1:55011
   notifyaddr: 127.0.0.1:37011
   influxdb: http://127.0.0.1:8087
+  dnsregion: locala
 orgs:
 - name: azure
   type: operator
@@ -85,6 +87,8 @@ regiondata:
       deployment: docker
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
+      dnslabel: azure-cloud-4-azure
+      rootlbfqdn: shared.azure-cloud-4-azure.local.mobiledgex.net
     - key:
         organization: enterprise
         name: enterprise-1
@@ -101,6 +105,8 @@ regiondata:
       deployment: docker
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
+      dnslabel: enterprise-1-enterprise
+      rootlbfqdn: shared.enterprise-1-enterprise.local.mobiledgex.net
     - key:
         organization: gcp
         name: gcp-cloud-5
@@ -117,6 +123,8 @@ regiondata:
       deployment: docker
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
+      dnslabel: gcp-cloud-5-gcp
+      rootlbfqdn: shared.gcp-cloud-5-gcp.local.mobiledgex.net
     - key:
         organization: dmuus
         name: dmuus-cloud-1
@@ -146,6 +154,8 @@ regiondata:
       - name: External IPs
         alertthreshold: 10
       defaultresourcealertthreshold: 80
+      dnslabel: dmuus-cloud-1-dmuus
+      rootlbfqdn: shared.dmuus-cloud-1-dmuus.local.mobiledgex.net
     - key:
         organization: dmuus
         name: dmuus-cloud-2
@@ -162,6 +172,8 @@ regiondata:
       deployment: docker
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
+      dnslabel: dmuus-cloud-2-dmuus
+      rootlbfqdn: shared.dmuus-cloud-2-dmuus.local.mobiledgex.net
     cloudletinfos:
     - key:
         organization: azure
@@ -437,6 +449,8 @@ regiondata:
       deployment: docker
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
+      dnslabel: enterprise-2-enterprise
+      rootlbfqdn: shared.enterprise-2-enterprise.locala.mobiledgex.net
     - key:
         organization: dmuus
         name: dmuus-cloud-3
@@ -453,6 +467,8 @@ regiondata:
       deployment: docker
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
+      dnslabel: dmuus-cloud-3-dmuus
+      rootlbfqdn: shared.dmuus-cloud-3-dmuus.locala.mobiledgex.net
     - key:
         organization: dmuus
         name: dmuus-cloud-4
@@ -469,6 +485,8 @@ regiondata:
       deployment: docker
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
+      dnslabel: dmuus-cloud-4-dmuus
+      rootlbfqdn: shared.dmuus-cloud-4-dmuus.locala.mobiledgex.net
     cloudletinfos:
     - key:
         organization: enterprise

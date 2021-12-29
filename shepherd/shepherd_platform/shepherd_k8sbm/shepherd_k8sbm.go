@@ -49,7 +49,7 @@ func (s *ShepherdPlatform) GetClusterPlatformClient(ctx context.Context, cluster
 	return s.Pf.GetClusterPlatformClient(ctx, clusterInst, clientType)
 }
 
-func (s *ShepherdPlatform) GetVmAppRootLbClient(ctx context.Context, app *edgeproto.AppInstKey) (ssh.Client, error) {
+func (s *ShepherdPlatform) GetVmAppRootLbClient(ctx context.Context, appInst *edgeproto.AppInst) (ssh.Client, error) {
 	log.SpanLog(ctx, log.DebugLevelInfo, "VMs are unsupported on k8sbm")
 	return nil, fmt.Errorf("VMs are unsupported on k8sbm")
 }
@@ -171,7 +171,7 @@ func (s *ShepherdPlatform) GetVmStats(ctx context.Context, key *edgeproto.AppIns
 	return shepherd_common.AppMetrics{}, fmt.Errorf("VMs are unsupported for bare metals k8s")
 }
 
-func (s *ShepherdPlatform) VmAppChangedCallback(ctx context.Context, appInstKey *edgeproto.AppInstKey, newState edgeproto.TrackedState) {
+func (s *ShepherdPlatform) VmAppChangedCallback(ctx context.Context, appInst *edgeproto.AppInst, newState edgeproto.TrackedState) {
 }
 
 func (s *ShepherdPlatform) SetUsageAccessArgs(ctx context.Context, addr string, client ssh.Client) error {

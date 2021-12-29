@@ -2,6 +2,7 @@ controllers:
 - region: PA
   address: 127.0.0.1:55081
   notifyaddr: 127.0.0.1:37081
+  dnsregion: pa
 orgs:
 - name: partner1
   type: operator

@@ -194,8 +194,13 @@ type Controller struct {
 	// Controller notify address or URL
 	NotifyAddr string `gorm:"type:text"`
 	// InfluxDB address
-	InfluxDB  string    `gorm:"type:text"`
+	InfluxDB string `gorm:"type:text"`
+	// Unique DNS label for the region
+	// read only: true
+	DnsRegion string `gorm:"unique;not null"`
+	// read only: true
 	CreatedAt time.Time `json:",omitempty"`
+	// read only: true
 	UpdatedAt time.Time `json:",omitempty"`
 }
 

@@ -2,6 +2,7 @@ controllers:
 - region: {{region}}
   address: {{ctrlapiaddr}}
   notifyaddr: {{ctrlnotifyaddr}}
+  dnsregion: {{dnsregion}}
 
 orgs:
 - name: {{partnertag}}

@@ -17,7 +17,7 @@ regiondata:
       cloudletloc:
         latitude: 35
         longitude: -95
-      uri: shared.dmuus-cloud-2.dmuus.mobiledgex.net
+      uri: shared.dmuus-cloud-2-dmuus.local.mobiledgex.net
       liveness: Autoprov
       mappedports:
       - proto: Tcp
@@ -34,6 +34,7 @@ regiondata:
       vmflavor: x1.small
       realclustername: Reservable2
       uniqueid: acmeappcoautoprovapp10-autocluster-autoprov-dmuus-cloud-2-dmuus
+      dnslabel: autoprovapp10-acmeappco
     - key:
         appkey:
           organization: AcmeAppCo
@@ -49,7 +50,7 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: reservabled.dmuus-cloud-1.dmuus.mobiledgex.net
+      uri: reservabled-mobiledgex.dmuus-cloud-1-dmuus.local.mobiledgex.net
       liveness: Autoprov
       mappedports:
       - proto: Tcp
@@ -63,3 +64,4 @@ regiondata:
       vmflavor: x1.small
       realclustername: ReservableD
       uniqueid: acmeappcoautoprovappd10-autocluster-autoprov-dmuus-cloud-1-dmuus
+      dnslabel: autoprovappd10-acmeappco

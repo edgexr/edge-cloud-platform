@@ -31,3 +31,5 @@ regiondata:
       - name: External IPs
         alertthreshold: 100
       defaultresourcealertthreshold: 80
+      dnslabel: dmuus-cloud-1-dmuus
+      rootlbfqdn: shared.dmuus-cloud-1-dmuus.local.mobiledgex.net
