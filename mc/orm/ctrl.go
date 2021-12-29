@@ -10,9 +10,11 @@ import (
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/tls"
+	"github.com/mobiledgex/edge-cloud/util"
 	"google.golang.org/grpc"
 )
 
@@ -179,6 +181,7 @@ func CreateController(c echo.Context) error {
 	if err := c.Bind(&ctrl); err != nil {
 		return ormutil.BindErr(err)
 	}
+
 	err = CreateControllerObj(ctx, claims, &ctrl)
 	if err != nil {
 		return err
@@ -196,9 +199,17 @@ func CreateControllerObj(ctx context.Context, claims *UserClaims, ctrl *ormapi.C
 	if err := authorized(ctx, claims.Username, "", ResourceControllers, ActionManage); err != nil {
 		return err
 	}
+	ctrl.DnsRegion = util.DNSSanitize(ctrl.Region)
+	if len(ctrl.DnsRegion) > cloudcommon.DnsRegionLabelMaxLen {
+		return fmt.Errorf("DNS sanitized region label %q derived from the region name %q must be less than %d characters", ctrl.DnsRegion, ctrl.Region, cloudcommon.DnsRegionLabelMaxLen)
+	}
+
 	db := loggedDB(ctx)
 	err := db.Create(ctrl).Error
 	if err != nil {
+		if strings.Contains(err.Error(), "pq: duplicate key value violates unique constraint \"dns_region\"") {
+			return fmt.Errorf("DNS sanitized region name %q conflicts with an existing DNS region name, please choose a different region name", ctrl.DnsRegion)
+		}
 		return ormutil.DbErr(err)
 	}
 	return nil

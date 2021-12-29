@@ -14,6 +14,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/gormlog"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 	"github.com/mobiledgex/edge-cloud/util/tasks"
 )
 
@@ -67,8 +68,14 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 			return
 		}
 
+		err := upgradeCustom(ctx, db)
+		if err != nil {
+			initDone <- err
+			return
+		}
+
 		// create or update tables
-		err := db.AutoMigrate(
+		err = db.AutoMigrate(
 			&ormapi.User{},
 			&ormapi.Organization{},
 			&ormapi.Controller{},
@@ -427,4 +434,49 @@ func getPostgresEmptyVal(dataType string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("unrecognized type %s", dataType)
+}
+
+// custom upgrades that can't be done via AutoMigrate
+func upgradeCustom(ctx context.Context, db *gorm.DB) error {
+	// add unique not null DnsRegion column to controllers
+	cmd := `ALTER TABLE IF EXISTS "controllers" ADD IF NOT EXISTS "dns_region" text NOT NULL DEFAULT ''`
+	res := db.Exec(cmd)
+	if res.Error != nil {
+		return res.Error
+	}
+	// change value to unique, desired values
+	ctrls := []ormapi.Controller{}
+	err := db.Find(&ctrls).Error
+	updateControllers := true
+	if err != nil && strings.Contains(err.Error(), `relation "controllers" does not exist`) {
+		err = nil
+		updateControllers = false
+	}
+	if err != nil {
+		return err
+	}
+	if updateControllers {
+		dnsRegions := make(map[string]*ormapi.Controller)
+
+		for _, ctrl := range ctrls {
+			if ctrl.DnsRegion == "" {
+				ctrl.DnsRegion = util.DNSSanitize(ctrl.Region)
+				if conflict, found := dnsRegions[ctrl.DnsRegion]; found {
+					return fmt.Errorf("dns region name conflict, regions %s and %s both dns sanitizes to %s, please fix region names", conflict.Region, ctrl.Region, ctrl.DnsRegion)
+				}
+				err = db.Save(&ctrl).Error
+				if err != nil {
+					return err
+				}
+			}
+			dnsRegions[ctrl.DnsRegion] = &ctrl
+		}
+		// add unique constraint
+		cmd = `ALTER TABLE IF EXISTS "controllers" ADD UNIQUE ("dns_region")`
+		res = db.Exec(cmd)
+		if res.Error != nil {
+			return res.Error
+		}
+	}
+	return nil
 }

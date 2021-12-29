@@ -343,6 +343,7 @@ var AppInstAliasArgs = []string{
 	"internalporttolbip=appinst.internalporttolbip",
 	"dedicatedip=appinst.dedicatedip",
 	"uniqueid=appinst.uniqueid",
+	"dnslabel=appinst.dnslabel",
 }
 var AppInstComments = map[string]string{
 	"fields":                         "Fields are used for the Update API to specify which fields to apply",
@@ -394,6 +395,7 @@ var AppInstComments = map[string]string{
 	"internalporttolbip":             "mapping of ports to load balancer IPs, specify internalporttolbip:empty=true to clear",
 	"dedicatedip":                    "Dedicated IP assigns an IP for this AppInst but requires platform support",
 	"uniqueid":                       "A unique id for the AppInst within the region to be used by platforms",
+	"dnslabel":                       "DNS label that is unique within the cloudlet and among other AppInsts/ClusterInsts",
 }
 var AppInstSpecialArgs = map[string]string{
 	"appinst.errors":                   "StringArray",

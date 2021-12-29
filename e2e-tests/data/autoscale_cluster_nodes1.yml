@@ -30,7 +30,9 @@ regiondata:
           type: cluster-k8s-node
           status: ACTIVE
           infraflavor: x1.small
-        - name: smallcluster.dmuus-cloud-1.dmuus.fake.net
+        - name: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.mobiledgex.net
           type: rootlb
           status: ACTIVE
           infraflavor: x1.small
+      dnslabel: smallcluster-acmeappco
+      fqdn: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.mobiledgex.net

@@ -88,7 +88,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	var vms []*VMRequestSpec
 	orchVals.externalServerName = objName
 
-	orchVals.lbName = cloudcommon.GetVMAppFQDN(&appInst.Key, &appInst.Key.ClusterInstKey.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
+	orchVals.lbName = appInst.Uri
 	orchVals.externalServerName = orchVals.lbName
 	orchVals.newSubnetName = objName + "-subnet"
 	tags := v.GetChefClusterTags(appInst.ClusterInstKey(), cloudcommon.VMTypeRootLB)
@@ -583,7 +583,7 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if err != nil && err.Error() != ServerDoesNotExistError {
 			return fmt.Errorf("DeleteVMAppInst error: %v", err)
 		}
-		lbName := cloudcommon.GetVMAppFQDN(&appInst.Key, &appInst.Key.ClusterInstKey.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
+		lbName := appInst.Uri
 		clientName := v.GetChefClientName(lbName)
 		err = chefmgmt.ChefClientDelete(ctx, chefClient, clientName)
 		if err != nil {

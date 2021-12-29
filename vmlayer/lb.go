@@ -267,13 +267,6 @@ func (v *VMPlatform) GetRootLBName(key *edgeproto.CloudletKey) string {
 	return v.VMProvider.NameSanitize(name)
 }
 
-// GetRootLBFQDN gets the FQDN for the shared root LB. It uses the new
-// name format, even for existing rootLB VMs.
-func (v *VMPlatform) GetRootLBFQDN(key *edgeproto.CloudletKey) string {
-	name := cloudcommon.GetRootLBFQDN(key, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
-	return v.VMProvider.NameSanitize(name)
-}
-
 // DetachAndDisableRootLBInterface performs some cleanup when deleting the rootLB port.
 func (v *VMPlatform) DetachAndDisableRootLBInterface(ctx context.Context, client ssh.Client, rootLBName string, subnetName, internalPortName, internalIPAddr string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DetachAndDisableRootLBInterface", "rootLBName", rootLBName, "subnetName", subnetName, "internalPortName", internalPortName)
@@ -713,7 +706,11 @@ func (v *VMPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Clien
 		if _, ok := apps[k.AppKey]; !ok {
 			continue
 		}
-		lbName := cloudcommon.GetVMAppFQDN(&k, &k.ClusterInstKey.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
+		appInst := edgeproto.AppInst{}
+		if !v.Caches.AppInstCache.Get(&k, &appInst) {
+			continue
+		}
+		lbName := appInst.Uri
 		client, err := v.GetSSHClientForServer(ctx, lbName, v.VMProperties.GetCloudletExternalNetwork())
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to get rootLB client for VM app instance", "key", k, "error", err)

@@ -16,6 +16,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	vcdtypes "github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -250,15 +251,22 @@ func (v *VcdPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cl
 	return nil
 }
 
-func (v *VcdPlatform) VmAppChangedCallback(ctx context.Context, appInstKey *edgeproto.AppInstKey, newState edgeproto.TrackedState) {
-	log.SpanLog(ctx, log.DebugLevelMetrics, "VmAppChangedCallback", "appInstKey", appInstKey, "newState", newState)
+func (v *VcdPlatform) VmAppChangedCallback(ctx context.Context, appInst *edgeproto.AppInst, newState edgeproto.TrackedState) {
+	log.SpanLog(ctx, log.DebugLevelMetrics, "VmAppChangedCallback", "appInstKey", appInst.Key, "newState", newState)
 	if v.GetHrefCacheEnabled() && newState != edgeproto.TrackedState_READY {
-		vmName := cloudcommon.GetVMAppFQDN(appInstKey, &appInstKey.ClusterInstKey.CloudletKey, "")
+		vmName := appInst.Uri
 		v.DeleteVmHrefFromCache(ctx, vmName)
 		// delete using old format also
-		altVmName := cloudcommon.GetAppFQN(&appInstKey.AppKey)
+		altVmName := oldGetAppFQN(&appInst.Key.AppKey)
 		v.DeleteVmHrefFromCache(ctx, altVmName)
 	}
+}
+
+func oldGetAppFQN(key *edgeproto.AppKey) string {
+	app := util.DNSSanitize(key.Name)
+	dev := util.DNSSanitize(key.Organization)
+	ver := util.DNSSanitize(key.Version)
+	return fmt.Sprintf("%s%s%s", dev, app, ver)
 }
 
 func (v *VcdPlatform) GetVMStats(ctx context.Context, appInst *edgeproto.AppInst) (*vmlayer.VMMetrics, error) {

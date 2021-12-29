@@ -2,6 +2,7 @@ controllers:
 - region: PA
   address: 127.0.0.1:55081
   notifyaddr: 127.0.0.1:37081
+  dnsregion: pa
 orgs:
 - name: partner1
   type: operator
@@ -92,6 +93,8 @@ regiondata:
       deployment: docker
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
+      dnslabel: partner1-cloud-1-partner1
+      rootlbfqdn: shared.partner1-cloud-1-partner1.pa.mobiledgex.net
     - key:
         organization: partner1
         name: partner1-cloud-2
@@ -116,6 +119,8 @@ regiondata:
       - name: External IPs
         alertthreshold: 10
       defaultresourcealertthreshold: 80
+      dnslabel: partner1-cloud-2-partner1
+      rootlbfqdn: shared.partner1-cloud-2-partner1.pa.mobiledgex.net
     cloudletinfos:
     - key:
         organization: partner1

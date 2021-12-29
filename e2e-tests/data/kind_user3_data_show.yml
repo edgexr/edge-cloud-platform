@@ -5,12 +5,14 @@ controllers:
   influxdb: http://127.0.0.1:8086
   createdat: 2021-04-15T18:08:45.161569-07:00
   updatedat: 2021-04-15T18:08:45.161569-07:00
+  dnsregion: local
 - region: locala
   address: 127.0.0.1:55011
   notifyaddr: 127.0.0.1:37011
   influxdb: http://127.0.0.1:8087
   createdat: 2021-04-15T18:08:45.169829-07:00
   updatedat: 2021-04-15T18:08:45.169829-07:00
+  dnsregion: locala
 billingorgs:
 - name: user3org
   type: self
@@ -72,6 +74,8 @@ regiondata:
       state: Ready
       platformtype: Kindinfra
       trustpolicystate: NotPresent
+      dnslabel: kind-cloud-1-dmuus
+      rootlbfqdn: shared.kind-cloud-1-dmuus.local.mobiledgex.net
     autoprovpolicies:
     - key:
         organization: user3org
@@ -166,7 +170,7 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: shared.kind-cloud-1.dmuus.mobiledgex.net
+      uri: shared.kind-cloud-1-dmuus.local.mobiledgex.net
       liveness: Autoprov
       mappedports:
       - proto: Tcp
@@ -185,6 +189,7 @@ regiondata:
       powerstate: PowerOn
       vmflavor: x1.tiny
       realclustername: defaultmtclust
+      dnslabel: someappuser310-user3org
     appinstrefs:
     - key:
         organization: user3org

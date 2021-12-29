@@ -2881,6 +2881,16 @@ type User struct {
 	Iter     int    `gorm:"not null"`
 }
 
+// Used to test addition of new DnsRegion unique not null column
+type Controller struct {
+	Region     string    `gorm:"primary_key"`
+	Address    string    `gorm:"unique;not null"`
+	NotifyAddr string    `gorm:"type:text"`
+	InfluxDB   string    `gorm:"type:text"`
+	CreatedAt  time.Time `json:",omitempty"`
+	UpdatedAt  time.Time `json:",omitempty"`
+}
+
 func TestUpgrade(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelApi)
 	log.InitTracer(nil)
@@ -2942,14 +2952,20 @@ func TestUpgrade(t *testing.T) {
 	database = initdb
 
 	db := loggedDB(ctx)
-	err = db.AutoMigrate(&ormapi.Organization{}, &ormapi.Controller{}, &OrgCloudletPool{}, &User{}).Error
+	err = db.AutoMigrate(&ormapi.Organization{}, &Controller{}, &OrgCloudletPool{}, &User{}).Error
 	require.Nil(t, err)
 	// add old data
-	ctrl := ormapi.Controller{
+	ctrl := Controller{
 		Region:  "USA",
 		Address: ctrlAddr,
 	}
 	err = db.Create(&ctrl).Error
+	require.Nil(t, err)
+	ctrl2 := Controller{
+		Region:  "EU",
+		Address: "127.0.0.1:9999", // not used
+	}
+	err = db.Create(&ctrl2).Error
 	require.Nil(t, err)
 
 	addOld := addOldTestOrgCloudletPool
@@ -3103,6 +3119,19 @@ func TestUpgrade(t *testing.T) {
 
 	// check that users don't have any null values anymore
 	require.Equal(t, 0, getUsersNullCount(t, ctx))
+
+	// check upgraded controllers
+	checkCtrls := []ormapi.Controller{}
+	err = db.Find(&checkCtrls).Error
+	require.Nil(t, err)
+	for _, checkCtrl := range checkCtrls {
+		if checkCtrl.Region == ctrl.Region {
+			require.Equal(t, "usa", checkCtrl.DnsRegion)
+		} else if checkCtrl.Region == ctrl2.Region {
+			require.Equal(t, "eu", checkCtrl.DnsRegion)
+		}
+	}
+	require.Equal(t, 2, len(checkCtrls))
 }
 
 func getUsersNullCount(t *testing.T, ctx context.Context) int {

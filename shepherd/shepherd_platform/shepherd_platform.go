@@ -21,7 +21,7 @@ type Platform interface {
 	// Gets a platform client to be able to run commands against (mainly for curling the prometheuses)
 	GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error)
 	// Gets a rootLb ssh client for VM apps
-	GetVmAppRootLbClient(ctx context.Context, app *edgeproto.AppInstKey) (ssh.Client, error)
+	GetVmAppRootLbClient(ctx context.Context, appInst *edgeproto.AppInst) (ssh.Client, error)
 	// Gets cloudlet-level metrics. This is platform-dependent, hence the common interfcae
 	GetPlatformStats(ctx context.Context) (shepherd_common.CloudletMetrics, error)
 	// Get VM metrics - this is really a set of AppMetrics
@@ -29,7 +29,7 @@ type Platform interface {
 	// Get Platform Specific collection time. If the platform doesn't have periodic collection, it will return 0
 	GetMetricsCollectInterval() time.Duration
 	// Inform the platform that a VM App was added or deleted
-	VmAppChangedCallback(ctx context.Context, appInstKey *edgeproto.AppInstKey, newState edgeproto.TrackedState)
+	VmAppChangedCallback(ctx context.Context, appInst *edgeproto.AppInst, newState edgeproto.TrackedState)
 	// Set Prometheus address. For platforms that rely on prometheus to gather cloudlet stats
 	SetUsageAccessArgs(ctx context.Context, addr string, client ssh.Client) error
 	// Check if the platform is running locally

@@ -2,6 +2,7 @@ controllers:
 - region: PS
   address: 127.0.0.1:55091
   notifyaddr: 127.0.0.1:37091
+  dnsregion: ps
 orgs:
 - name: partner2
   type: operator

@@ -72,7 +72,7 @@ type VMProvider interface {
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource
 	GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error
 	InternalCloudletUpdatedCallback(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal)
-	VmAppChangedCallback(ctx context.Context, appInstKey *edgeproto.AppInstKey, newState edgeproto.TrackedState)
+	VmAppChangedCallback(ctx context.Context, appInst *edgeproto.AppInst, newState edgeproto.TrackedState)
 	GetGPUSetupStage(ctx context.Context) GPUSetupStage
 }
 
@@ -211,7 +211,7 @@ func (v *VMPlatform) GetClusterPlatformClientInternal(ctx context.Context, clust
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterPlatformClientInternal", "clientType", clientType, "IpAccess", clusterInst.IpAccess)
 	rootLBName := v.VMProperties.SharedRootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-		rootLBName = cloudcommon.GetDedicatedLBFQDN(v.VMProperties.CommonPf.PlatformConfig.CloudletKey, &clusterInst.Key.ClusterKey, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
+		rootLBName = clusterInst.Fqdn
 	}
 	client, err := v.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: rootLBName}, ops...)
 	if err != nil {
@@ -274,14 +274,14 @@ func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []e
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
 				Type: cloudcommon.CloudletNodeDedicatedRootLB,
-				Name: cloudcommon.GetDedicatedLBFQDN(v.VMProperties.CommonPf.PlatformConfig.CloudletKey, &clusterInst.Key.ClusterKey, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot),
+				Name: clusterInst.Fqdn,
 			})
 		}
 	}
 	for _, vmAppInst := range vmAppInsts {
 		mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
 			Type: cloudcommon.CloudletNodeDedicatedRootLB,
-			Name: cloudcommon.GetVMAppFQDN(&vmAppInst.Key, &vmAppInst.Key.ClusterInstKey.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot),
+			Name: vmAppInst.Uri,
 		})
 	}
 	return mgmt_nodes, nil
@@ -478,7 +478,7 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "calling SetupRootLB")
 	updateCallback(edgeproto.UpdateTask, "Setting up RootLB")
-	rootLBFQDN := v.GetRootLBFQDN(v.VMProperties.CommonPf.PlatformConfig.CloudletKey)
+	rootLBFQDN := platformConfig.RootLBFQDN
 	err = v.SetupRootLB(ctx, v.VMProperties.SharedRootLBName, rootLBFQDN, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, nil, updateCallback)
 	if err != nil {
 		return err
