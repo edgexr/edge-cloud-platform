@@ -1991,7 +1991,7 @@ func (s *Client) DeregisterFederation(uri string, token string, in *ormapi.Feder
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowFederation(uri string, token string, in *ormapi.Federation) ([]ormapi.Federation, int, error) {
+func (s *Client) ShowFederation(uri string, token string, in *cli.MapData) ([]ormapi.Federation, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -2057,7 +2057,7 @@ func (s *Client) DeleteSelfFederator(uri string, token string, in *ormapi.Federa
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowSelfFederator(uri string, token string, in *ormapi.Federator) ([]ormapi.Federator, int, error) {
+func (s *Client) ShowSelfFederator(uri string, token string, in *cli.MapData) ([]ormapi.Federator, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -2123,7 +2123,7 @@ func (s *Client) DeleteSelfFederatorZone(uri string, token string, in *ormapi.Fe
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowSelfFederatorZone(uri string, token string, in *ormapi.FederatorZone) ([]ormapi.FederatorZone, int, error) {
+func (s *Client) ShowSelfFederatorZone(uri string, token string, in *cli.MapData) ([]ormapi.FederatorZone, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -2203,7 +2203,7 @@ func (s *Client) DeRegisterPartnerFederatorZone(uri string, token string, in *or
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowFederatedSelfZone(uri string, token string, in *ormapi.FederatedSelfZone) ([]ormapi.FederatedSelfZone, int, error) {
+func (s *Client) ShowFederatedSelfZone(uri string, token string, in *cli.MapData) ([]ormapi.FederatedSelfZone, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -2219,7 +2219,7 @@ func (s *Client) ShowFederatedSelfZone(uri string, token string, in *ormapi.Fede
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowFederatedPartnerZone(uri string, token string, in *ormapi.FederatedPartnerZone) ([]ormapi.FederatedPartnerZone, int, error) {
+func (s *Client) ShowFederatedPartnerZone(uri string, token string, in *cli.MapData) ([]ormapi.FederatedPartnerZone, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token

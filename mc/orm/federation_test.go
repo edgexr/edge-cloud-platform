@@ -569,11 +569,14 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 
 	// Verify that selfFed1 has added partnerFed as partner federator (federation planning)
 	// ====================================================================================
-	fedLookup := &ormapi.Federation{
-		SelfOperatorId:   selfFed1.operatorId,
-		SelfFederationId: selfFed1.fedId,
+	showFedn := &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"SelfOperatorId":   selfFed1.operatorId,
+			"SelfFederationId": selfFed1.fedId,
+		},
 	}
-	fedInfo, status, err := mcClient.ShowFederation(op.uri, selfFed1.tokenOper, fedLookup)
+	fedInfo, status, err := mcClient.ShowFederation(op.uri, selfFed1.tokenOper, showFedn)
 	require.Nil(t, err, "show federator")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(fedInfo))
@@ -599,11 +602,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 	require.Equal(t, opRegReq.RequestId, opRegRes.RequestId)
 
 	// Verify federation is setup in DB
-	federationReq := &ormapi.Federation{
-		SelfOperatorId:   selfFed1.operatorId,
-		SelfFederationId: selfFed1.fedId,
-	}
-	federations, status, err := mcClient.ShowFederation(op.uri, selfFed1.tokenOper, federationReq)
+	federations, status, err := mcClient.ShowFederation(op.uri, selfFed1.tokenOper, showFedn)
 	require.Nil(t, err, "show federations")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(federations), "federation exists")
@@ -625,11 +624,14 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 	require.Nil(t, err, "partnerFed updates its attributes and notifies selfFed1 about it")
 
 	// verify that selfFed1 has successfully updated partnerFed's new MCC value
-	fedLookup = &ormapi.Federation{
-		SelfOperatorId:   selfFed1.operatorId,
-		SelfFederationId: selfFed1.fedId,
+	showFedn = &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"SelfOperatorId":   selfFed1.operatorId,
+			"SelfFederationId": selfFed1.fedId,
+		},
 	}
-	fedInfo, status, err = mcClient.ShowFederation(op.uri, selfFed1.tokenOper, fedLookup)
+	fedInfo, status, err = mcClient.ShowFederation(op.uri, selfFed1.tokenOper, showFedn)
 	require.Nil(t, err, "show federator")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(fedInfo), "federator exists")
@@ -666,12 +668,15 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 
 	for _, regZone := range regZones {
 		// Verify that registered zones are shown
-		zoneLookup := &ormapi.FederatedSelfZone{
-			SelfOperatorId: selfFed1.operatorId,
-			FederationName: partnerFed.fedName,
-			ZoneId:         regZone,
+		showFedSelfZone := &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data: map[string]interface{}{
+				"SelfOperatorId": selfFed1.operatorId,
+				"FederationName": partnerFed.fedName,
+				"ZoneId":         regZone,
+			},
 		}
-		selfFed1Zones, status, err := mcClient.ShowFederatedSelfZone(op.uri, selfFed1.tokenOper, zoneLookup)
+		selfFed1Zones, status, err := mcClient.ShowFederatedSelfZone(op.uri, selfFed1.tokenOper, showFedSelfZone)
 		require.Nil(t, err, "show self federator zones")
 		require.Equal(t, http.StatusOK, status)
 		require.Equal(t, 1, len(selfFed1Zones))
@@ -700,14 +705,17 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 	require.Nil(t, err, "partnerFed notifies selfFed1 about a new zone")
 
 	// verify that selfFed1 added this new zone in its db
-	zoneLookup := &ormapi.FederatedPartnerZone{
-		SelfOperatorId: selfFed1.operatorId,
-		FederationName: partnerFed.fedName,
-		FederatorZone: ormapi.FederatorZone{
-			ZoneId: newZone.ZoneId,
+	showFedPartnerZone := &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"SelfOperatorId": selfFed1.operatorId,
+			"FederationName": partnerFed.fedName,
+			"FederatorZone": map[string]interface{}{
+				"ZoneId": newZone.ZoneId,
+			},
 		},
 	}
-	pZones, status, err := mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, zoneLookup)
+	pZones, status, err := mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, showFedPartnerZone)
 	require.Nil(t, err, "show federator zones")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(pZones))
@@ -731,7 +739,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 	require.Nil(t, err, "partnerFed notifies selfFed1 about a deleted zone")
 
 	// verify that selfFed1 deleted this zone from its db
-	pZones, status, err = mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, zoneLookup)
+	pZones, status, err = mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, showFedPartnerZone)
 	require.Nil(t, err, "show federator zones")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(pZones))
@@ -755,12 +763,15 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 
 	for _, deregZone := range deregZones {
 		// Verify that zones are deregistered
-		zoneLookup := &ormapi.FederatedSelfZone{
-			SelfOperatorId: selfFed1.operatorId,
-			FederationName: partnerFed.fedName,
-			ZoneId:         deregZone,
+		showFedSelfZone := &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data: map[string]interface{}{
+				"SelfOperatorId": selfFed1.operatorId,
+				"FederationName": partnerFed.fedName,
+				"ZoneId":         deregZone,
+			},
 		}
-		selfFed1Zones, status, err := mcClient.ShowFederatedSelfZone(op.uri, selfFed1.tokenOper, zoneLookup)
+		selfFed1Zones, status, err := mcClient.ShowFederatedSelfZone(op.uri, selfFed1.tokenOper, showFedSelfZone)
 		require.Nil(t, err, "show self federator zones")
 		require.Equal(t, http.StatusOK, status)
 		require.Equal(t, 1, len(selfFed1Zones))
@@ -781,11 +792,14 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 	require.Nil(t, err, "partnerFed removes selfFed1 as partner OP")
 
 	// verify that partnerFed has successfully removed federation with selfFed1
-	federationReq = &ormapi.Federation{
-		SelfOperatorId:   selfFed1.operatorId,
-		SelfFederationId: selfFed1.fedId,
+	showFedn = &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"SelfOperatorId":   selfFed1.operatorId,
+			"SelfFederationId": selfFed1.fedId,
+		},
 	}
-	federations, status, err = mcClient.ShowFederation(op.uri, selfFed1.tokenOper, federationReq)
+	federations, status, err = mcClient.ShowFederation(op.uri, selfFed1.tokenOper, showFedn)
 	require.Nil(t, err, "show federations")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(federations), "federation exists")
@@ -814,7 +828,17 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.NotEmpty(t, resp.ApiKey)
 		selfFederators[ii].fedId = resp.FederationId
 		selfFederators[ii].apiKey = resp.ApiKey
-		fedInfo, status, err := mcClient.ShowSelfFederator(op.uri, selfFed.tokenOper, fedReq)
+
+		showFed := &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data: map[string]interface{}{
+				"Region":       selfFed.region,
+				"OperatorId":   selfFed.operatorId,
+				"CountryCode":  selfFed.countryCode,
+				"FederationId": resp.FederationId,
+			},
+		}
+		fedInfo, status, err := mcClient.ShowSelfFederator(op.uri, selfFed.tokenOper, showFed)
 		require.Nil(t, err, "show self federator")
 		require.Equal(t, http.StatusOK, status)
 		require.Equal(t, 1, len(fedInfo))
@@ -861,8 +885,15 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Contains(t, err.Error(), "same self federation id")
 
 	// Validate partner federator info
-	partnerFedReq.ApiKey = ""
-	federations, status, err := mcClient.ShowFederation(op.uri, selfFed1.tokenOper, partnerFedReq)
+	showFedn := &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"Name":             partnerFed.fedName,
+			"SelfOperatorId":   selfFed1.operatorId,
+			"SelfFederationId": selfFed1.fedId,
+		},
+	}
+	federations, status, err := mcClient.ShowFederation(op.uri, selfFed1.tokenOper, showFedn)
 	require.Nil(t, err, "show partner federation")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(federations))
@@ -877,15 +908,18 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 
 	// selfFed2 should not be able to see selfFed1's partner
 	// =====================================================
-	federations, status, err = mcClient.ShowFederation(op.uri, selfFed2.tokenOper, partnerFedReq)
+	federations, status, err = mcClient.ShowFederation(op.uri, selfFed2.tokenOper, showFedn)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(federations))
-	partnerFedLookup := &ormapi.Federation{
-		SelfOperatorId:   selfFed2.operatorId,
-		SelfFederationId: selfFed2.fedId,
+	showFedn = &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"SelfOperatorId":   selfFed2.operatorId,
+			"SelfFederationId": selfFed2.fedId,
+		},
 	}
-	federations, status, err = mcClient.ShowFederation(op.uri, selfFed2.tokenOper, partnerFedLookup)
+	federations, status, err = mcClient.ShowFederation(op.uri, selfFed2.tokenOper, showFedn)
 	require.Nil(t, err, "show partner federator")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(federations))
@@ -904,12 +938,15 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Equal(t, http.StatusOK, status)
 
 	// Show federator info
-	fedLookup := &ormapi.Federator{
-		OperatorId:  selfFed1.operatorId,
-		CountryCode: selfFed1.countryCode,
-		Region:      selfFed1.region,
+	showFed := &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"OperatorId":  selfFed1.operatorId,
+			"CountryCode": selfFed1.countryCode,
+			"Region":      selfFed1.region,
+		},
 	}
-	fedInfo, status, err := mcClient.ShowSelfFederator(op.uri, selfFed1.tokenOper, fedLookup)
+	fedInfo, status, err := mcClient.ShowSelfFederator(op.uri, selfFed1.tokenOper, showFed)
 	require.Nil(t, err, "show self federation")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(fedInfo), "one entry")
@@ -957,12 +994,15 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Verify that all zones are created
 	// =================================
 	for _, selfFed := range selfFederators {
-		lookup := &ormapi.FederatorZone{
-			OperatorId:  selfFed.operatorId,
-			CountryCode: selfFed.countryCode,
-			Region:      selfFed.region,
+		showSelfZone := &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data: map[string]interface{}{
+				"OperatorId":  selfFed.operatorId,
+				"CountryCode": selfFed.countryCode,
+				"Region":      selfFed.region,
+			},
 		}
-		selfFedZones, status, err := mcClient.ShowSelfFederatorZone(op.uri, selfFed.tokenOper, lookup)
+		selfFedZones, status, err := mcClient.ShowSelfFederatorZone(op.uri, selfFed.tokenOper, showSelfZone)
 		require.Nil(t, err, "show self federator zones")
 		require.Equal(t, http.StatusOK, status)
 		require.Equal(t, len(selfFed.zones), len(selfFedZones), "self federator zones match")
@@ -983,7 +1023,15 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Equal(t, http.StatusOK, status)
 
 		// All zones are marked to be shared with partner federator
-		selfFedZones, status, err := mcClient.ShowFederatedSelfZone(op.uri, selfFed1.tokenOper, zoneShReq)
+		showFedSelfZone := &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data: map[string]interface{}{
+				"SelfOperatorId": selfFed1.operatorId,
+				"FederationName": partnerFed.fedName,
+				"ZoneId":         zone.ZoneId,
+			},
+		}
+		selfFedZones, status, err := mcClient.ShowFederatedSelfZone(op.uri, selfFed1.tokenOper, showFedSelfZone)
 		require.Nil(t, err, "show shared self federator zones")
 		require.Equal(t, http.StatusOK, status)
 		require.Equal(t, 1, len(selfFedZones))
@@ -994,11 +1042,14 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 
 	// No partner zones exist as federation is not yet created
 	// =======================================================
-	zoneLookup := &ormapi.FederatedPartnerZone{
-		SelfOperatorId: selfFed1.operatorId,
-		FederationName: partnerFed.fedName,
+	showFedPartnerZone := &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"SelfOperatorId": selfFed1.operatorId,
+			"FederationName": partnerFed.fedName,
+		},
 	}
-	partnerZones, status, err := mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, zoneLookup)
+	partnerZones, status, err := mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, showFedPartnerZone)
 	require.Nil(t, err, "show partner federator zones")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(partnerZones))
@@ -1036,7 +1087,14 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Equal(t, http.StatusOK, status)
 
 	// Verify federation is created
-	federations, status, err = mcClient.ShowFederation(op.uri, selfFed1.tokenOper, fedReq)
+	showFedn = &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"SelfOperatorId": selfFed1.operatorId,
+			"Name":           partnerFed.fedName,
+		},
+	}
+	federations, status, err = mcClient.ShowFederation(op.uri, selfFed1.tokenOper, showFedn)
 	require.Nil(t, err, "show federations")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(federations), "federation exists")
@@ -1051,18 +1109,31 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 			FederationId: partnerFed.fedId,
 		},
 	}
-	federations, status, err = mcClient.ShowFederation(op.uri, selfFed2.tokenOper, fedReq)
+	showFedn = &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"SelfOperatorId":   selfFed1.operatorId,
+			"SelfFederationId": selfFed2.fedId,
+			"Federator": map[string]interface{}{
+				"FederationId": partnerFed.fedId,
+			},
+		},
+	}
+	federations, status, err = mcClient.ShowFederation(op.uri, selfFed2.tokenOper, showFedn)
 	require.Nil(t, err, "show federations")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(federations), "federation does not exist")
 
 	// Partner zones are shared as part of federation create
 	// =====================================================
-	zoneLookup = &ormapi.FederatedPartnerZone{
-		SelfOperatorId: selfFed1.operatorId,
-		FederationName: partnerFed.fedName,
+	showFedPartnerZone = &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"SelfOperatorId": selfFed1.operatorId,
+			"FederationName": partnerFed.fedName,
+		},
 	}
-	partnerZones, status, err = mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, zoneLookup)
+	partnerZones, status, err = mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, showFedPartnerZone)
 	require.Nil(t, err, "show partner federator zones")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(partnerFed.zones), len(partnerZones))
@@ -1089,8 +1160,17 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 
 	// Verify that registered zones are shown
 	for _, pZone := range partnerZones {
-		pZone.Revision = "" // for lookup don't use revision
-		out, status, err := mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, &pZone)
+		showFedPartnerZone = &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data: map[string]interface{}{
+				"SelfOperatorId": selfFed1.operatorId,
+				"FederationName": partnerFed.fedName,
+				"FederatorZone": map[string]interface{}{
+					"ZoneId": pZone.ZoneId,
+				},
+			},
+		}
+		out, status, err := mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, showFedPartnerZone)
 		require.Nil(t, err, "show partner federator zones")
 		require.Equal(t, http.StatusOK, status)
 		require.Equal(t, 1, len(out))
@@ -1163,14 +1243,17 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 
 	for _, pZone := range partnerFed.zones {
 		// Verify that zones are deregistered
-		zoneRegShowReq := &ormapi.FederatedPartnerZone{
-			SelfOperatorId: selfFed1.operatorId,
-			FederationName: partnerFed.fedName,
-			FederatorZone: ormapi.FederatorZone{
-				ZoneId: pZone.ZoneId,
+		showFedPartnerZone = &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data: map[string]interface{}{
+				"SelfOperatorId": selfFed1.operatorId,
+				"FederationName": partnerFed.fedName,
+				"FederatorZone": map[string]interface{}{
+					"ZoneId": pZone.ZoneId,
+				},
 			},
 		}
-		partnerZones, status, err = mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, zoneRegShowReq)
+		partnerZones, status, err = mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, showFedPartnerZone)
 		require.Nil(t, err, "show partner federator zones")
 		require.Equal(t, http.StatusOK, status)
 		require.Equal(t, 1, len(partnerZones))
@@ -1218,7 +1301,14 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Equal(t, http.StatusOK, status)
 
 	// Verify federation is deleted
-	federations, status, err = mcClient.ShowFederation(op.uri, selfFed1.tokenOper, fedReq)
+	showFedn = &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"SelfOperatorId": selfFed1.operatorId,
+			"Name":           partnerFed.fedName,
+		},
+	}
+	federations, status, err = mcClient.ShowFederation(op.uri, selfFed1.tokenOper, showFedn)
 	require.Nil(t, err, "show federations")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(federations), "federator exists")
@@ -1227,11 +1317,14 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 
 	// No partner zones exist as federation is deleted
 	// =======================================================
-	zoneLookup = &ormapi.FederatedPartnerZone{
-		SelfOperatorId: selfFed1.operatorId,
-		FederationName: partnerFed.fedName,
+	showFedPartnerZone = &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"SelfOperatorId": selfFed1.operatorId,
+			"FederationName": partnerFed.fedName,
+		},
 	}
-	partnerZones, status, err = mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, zoneLookup)
+	partnerZones, status, err = mcClient.ShowFederatedPartnerZone(op.uri, selfFed1.tokenOper, showFedPartnerZone)
 	require.Nil(t, err, "show partner federator zones")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(partnerZones))
@@ -1260,11 +1353,14 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	}
 
 	// No zones are shared
-	zoneShReq := &ormapi.FederatedSelfZone{
-		SelfOperatorId: selfFed1.operatorId,
-		FederationName: partnerFed.fedName,
+	showFedSelfZone := &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"SelfOperatorId": selfFed1.operatorId,
+			"FederationName": partnerFed.fedName,
+		},
 	}
-	fedSelfZones, status, err := mcClient.ShowFederatedSelfZone(op.uri, selfFed1.tokenOper, zoneShReq)
+	fedSelfZones, status, err := mcClient.ShowFederatedSelfZone(op.uri, selfFed1.tokenOper, showFedSelfZone)
 	require.Nil(t, err, "show self federated zone")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(fedSelfZones), status)
@@ -1286,11 +1382,14 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 
 	for _, selfFed := range selfFederators {
 		// No zones should exist
-		zoneReq := &ormapi.FederatorZone{
-			OperatorId:  selfFed.operatorId,
-			CountryCode: selfFed.countryCode,
+		showSelfZone := &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data: map[string]interface{}{
+				"OperatorId":  selfFed.operatorId,
+				"CountryCode": selfFed.countryCode,
+			},
 		}
-		fedZones, status, err := mcClient.ShowSelfFederatorZone(op.uri, selfFed.tokenOper, zoneReq)
+		fedZones, status, err := mcClient.ShowSelfFederatorZone(op.uri, selfFed.tokenOper, showSelfZone)
 		require.Nil(t, err, "show self federator zones")
 		require.Equal(t, http.StatusOK, status)
 		require.Equal(t, 0, len(fedZones))

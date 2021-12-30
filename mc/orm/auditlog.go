@@ -203,6 +203,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			if err == nil {
 				// do not log partner federator's API key
 				fedReq.ApiKey = ""
+				fedReq.ApiKeyHash = ""
 				reqBody, err = json.Marshal(fedReq)
 			}
 			if err != nil {
