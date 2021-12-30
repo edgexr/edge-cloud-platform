@@ -183,9 +183,15 @@ func (k *K8sBareMetalPlatform) GetNodePlatformClient(ctx context.Context, node *
 	return k.commonPf.GetSSHClientFromIPAddr(ctx, controlIp, ops...)
 }
 
-// TODO
 func (k *K8sBareMetalPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst, vmAppInsts []edgeproto.AppInst) ([]edgeproto.CloudletMgmtNode, error) {
-	return []edgeproto.CloudletMgmtNode{}, nil
+	log.SpanLog(ctx, log.DebugLevelInfra, "ListCloudletMgmtNodes", "clusterInsts", clusterInsts, "vmAppInsts", vmAppInsts)
+	mgmt_nodes := []edgeproto.CloudletMgmtNode{
+		{
+			Type: "platformhost",
+			Name: k.commonPf.PlatformConfig.CloudletKey.String(),
+		},
+	}
+	return mgmt_nodes, nil
 }
 
 func (k *K8sBareMetalPlatform) GetConsoleUrl(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
