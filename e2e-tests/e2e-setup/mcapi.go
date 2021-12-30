@@ -410,8 +410,11 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	}
 
 	if api == "showselffederators" {
-		var filter ormapi.Federator
-		selfFederators, status, err := mcClient.ShowSelfFederator(uri, token, &filter)
+		showFilter := &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data:      map[string]interface{}{},
+		}
+		selfFederators, status, err := mcClient.ShowSelfFederator(uri, token, showFilter)
 		checkMcErr("ShowSelfFederator", status, err, &rc)
 		showData := ormapi.AllData{
 			Federators: selfFederators,
@@ -423,8 +426,11 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	}
 
 	if api == "showselffederatorzones" {
-		var filter ormapi.FederatorZone
-		selfFederatorZones, status, err := mcClient.ShowSelfFederatorZone(uri, token, &filter)
+		showFilter := &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data:      map[string]interface{}{},
+		}
+		selfFederatorZones, status, err := mcClient.ShowSelfFederatorZone(uri, token, showFilter)
 		checkMcErr("ShowSelfFederatorZone", status, err, &rc)
 		showData := ormapi.AllData{
 			FederatorZones: selfFederatorZones,
@@ -436,8 +442,11 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	}
 
 	if api == "showfederations" {
-		var filter ormapi.Federation
-		federations, status, err := mcClient.ShowFederation(uri, token, &filter)
+		showFilter := &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data:      map[string]interface{}{},
+		}
+		federations, status, err := mcClient.ShowFederation(uri, token, showFilter)
 		checkMcErr("ShowFederation", status, err, &rc)
 		showData := ormapi.AllData{
 			Federations: federations,
@@ -449,8 +458,11 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	}
 
 	if api == "showfederatedselfzones" {
-		var filter ormapi.FederatedSelfZone
-		federatedSelfZones, status, err := mcClient.ShowFederatedSelfZone(uri, token, &filter)
+		showFilter := &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data:      map[string]interface{}{},
+		}
+		federatedSelfZones, status, err := mcClient.ShowFederatedSelfZone(uri, token, showFilter)
 		checkMcErr("ShowFederatedSelfZone", status, err, &rc)
 		showData := ormapi.AllData{
 			FederatedSelfZones: federatedSelfZones,
@@ -462,8 +474,11 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	}
 
 	if api == "showfederatedpartnerzones" {
-		var filter ormapi.FederatedPartnerZone
-		federatedPartnerZones, status, err := mcClient.ShowFederatedPartnerZone(uri, token, &filter)
+		showFilter := &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data:      map[string]interface{}{},
+		}
+		federatedPartnerZones, status, err := mcClient.ShowFederatedPartnerZone(uri, token, showFilter)
 		checkMcErr("ShowFederatedPartnerZone", status, err, &rc)
 		showData := ormapi.AllData{
 			FederatedPartnerZones: federatedPartnerZones,
