@@ -37,7 +37,9 @@ var MEXPrometheusAutoScaleT = `additionalPrometheusRules:
     - expr: max_over_time(total_worker_node_cpu_utilisation[[.StabilizationSec]])
       record: 'stabilized_max_total_worker_node_cpu_utilisation'
 
-    - expr: avg_over_time(instance:node_memory_utilisation:ratio[[.AveragingSec]])
+    - expr: 'instance:node_memory_utilisation:ratio * on(namespace, pod) group_left(node) node_namespace_pod:kube_pod_info:'
+      record: 'node:node_memory_utilisation:ratio'
+    - expr: sum by (node) (avg_over_time(node:node_memory_utilisation:ratio[[.AveragingSec]]))
       record: 'node_memory_utilisation:ratio:avg'
     - expr: sum(node_memory_utilisation:ratio:avg unless (kube_node_spec_taint{effect="NoSchedule"} * on(node) kube_node_spec_taint))
       record: 'total_worker_node_mem_utilisation'

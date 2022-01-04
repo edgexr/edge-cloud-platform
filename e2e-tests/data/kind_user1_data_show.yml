@@ -3,10 +3,12 @@ controllers:
   address: 127.0.0.1:55001
   notifyaddr: 127.0.0.1:37001
   influxdb: http://127.0.0.1:8086
+  dnsregion: local
 - region: locala
   address: 127.0.0.1:55011
   notifyaddr: 127.0.0.1:37011
   influxdb: http://127.0.0.1:8087
+  dnsregion: locala
 orgs:
 - name: azure
   type: operator
@@ -65,6 +67,7 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
+      state: Ready
       platformtype: Kindinfra
       flavor:
         name: DefaultPlatformFlavor
@@ -72,6 +75,8 @@ regiondata:
       envvar:
         foo: bar
       containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
       resourcequotas:
       - name: RAM
         alertthreshold: 50
@@ -80,36 +85,35 @@ regiondata:
         alertthreshold: 50
       defaultresourcealertthreshold: 80
       enabledefaultserverlesscluster: true
+      dnslabel: kind-cloud-1-dmuus
+      rootlbfqdn: shared.kind-cloud-1-dmuus.local.mobiledgex.net
     cloudletinfos:
     - key:
         organization: dmuus
         name: kind-cloud-1
       state: Ready
-      notifyid: 3
-      controller: Jon-Mex.lan@127.0.0.1:55001
       osmaxram: 81920
       osmaxvcores: 100
       osmaxvolgb: 500
       flavors:
-      - name: x1.tiny
-        vcpus: 1
-        ram: 1024
-        disk: 1
-      - name: x1.small
-        vcpus: 2
-        ram: 2048
-        disk: 2
       - name: x1.medium
         vcpus: 4
         ram: 4096
         disk: 4
+      - name: x1.small
+        vcpus: 2
+        ram: 2048
+        disk: 2
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 1
       containerversion: "2019-10-24"
       controllercachereceived: true
       resourcessnapshot:
         platformvms:
         - name: local-mac
       trustpolicystate: NotPresent
-      compatibilityversion: 1
 - region: locala
   appdata:
     flavors:
