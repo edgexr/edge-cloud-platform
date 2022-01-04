@@ -129,7 +129,9 @@ func TestAutoScaleT(t *testing.T) {
     - expr: max_over_time(total_worker_node_cpu_utilisation[120s])
       record: 'stabilized_max_total_worker_node_cpu_utilisation'
 
-    - expr: avg_over_time(instance:node_memory_utilisation:ratio[60s])
+    - expr: 'instance:node_memory_utilisation:ratio * on(namespace, pod) group_left(node) node_namespace_pod:kube_pod_info:'
+      record: 'node:node_memory_utilisation:ratio'
+    - expr: sum by (node) (avg_over_time(node:node_memory_utilisation:ratio[60s]))
       record: 'node_memory_utilisation:ratio:avg'
     - expr: sum(node_memory_utilisation:ratio:avg unless (kube_node_spec_taint{effect="NoSchedule"} * on(node) kube_node_spec_taint))
       record: 'total_worker_node_mem_utilisation'
@@ -157,7 +159,9 @@ func TestAutoScaleT(t *testing.T) {
     - expr: max_over_time(total_worker_node_cpu_utilisation[300s])
       record: 'stabilized_max_total_worker_node_cpu_utilisation'
 
-    - expr: avg_over_time(instance:node_memory_utilisation:ratio[30s])
+    - expr: 'instance:node_memory_utilisation:ratio * on(namespace, pod) group_left(node) node_namespace_pod:kube_pod_info:'
+      record: 'node:node_memory_utilisation:ratio'
+    - expr: sum by (node) (avg_over_time(node:node_memory_utilisation:ratio[30s]))
       record: 'node_memory_utilisation:ratio:avg'
     - expr: sum(node_memory_utilisation:ratio:avg unless (kube_node_spec_taint{effect="NoSchedule"} * on(node) kube_node_spec_taint))
       record: 'total_worker_node_mem_utilisation'

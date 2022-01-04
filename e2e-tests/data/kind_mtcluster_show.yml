@@ -19,8 +19,6 @@ regiondata:
       nummasters: 1
       numnodes: 3
       masternodeflavor: x1.small
-      createdat:
-        seconds: 1618351730
-        nanos: 933380000
       multitenant: true
-      autoscalepolicy: defaultmtclust
+      dnslabel: defaultmtclust-mobiledgex
+      fqdn: defaultmtclust-mobiledgex.kind-cloud-1-dmuus.local.mobiledgex.net

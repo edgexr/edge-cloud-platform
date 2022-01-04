@@ -63,8 +63,6 @@ regiondata:
       state: Ready
       platformtype: Kindinfra
       trustpolicystate: NotPresent
-      dnslabel: kind-cloud-1-dmuus
-      rootlbfqdn: shared.kind-cloud-1-dmuus.local.mobiledgex.net
     apps:
     - key:
         organization: AcmeAppCo
@@ -106,6 +104,7 @@ regiondata:
             metadata:
               labels:
                 run: someapplication11.0
+                mexDeployGen: kubernetes-basic
             spec:
               volumes:
               imagePullSecrets:
@@ -120,9 +119,6 @@ regiondata:
       deploymentgenerator: kubernetes-basic
       androidpackagename: com.acme.someapplication1
       accesstype: LoadBalancer
-      createdat:
-        seconds: 1618357221
-        nanos: 126849000
       allowserverless: true
       serverlessconfig:
         vcpus: "0.2"
@@ -153,16 +149,11 @@ regiondata:
       flavor:
         name: x1.tiny
       state: Ready
-      runtimeinfo:
-        containerids:
-        - someapplication110-deployment-5b498bc48c-fxc42
-      createdat:
-        seconds: 1618357221
-        nanos: 212998000
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.tiny
       realclustername: defaultmtclust
+      uniqueid: acmeappcosomeapplication110-autocluster-someapp1-kind-cloud-1-dmuus
       dnslabel: someapplication110-acmeappco
     appinstrefs:
     - key:
