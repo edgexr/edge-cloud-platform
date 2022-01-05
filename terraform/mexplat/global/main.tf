@@ -105,3 +105,34 @@ resource "google_compute_firewall" "stun_turn" {
   source_ranges = ["0.0.0.0/0"]
 }
 
+# Firewall rule to restrict SSH access
+resource "google_compute_firewall" "restricted_ssh" {
+  name        = "restricted-ssh"
+  description = "SSH access restricted"
+  network     = "default"
+  priority    = 1000
+
+  deny {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  target_tags   = ["restricted-ssh"]
+  source_ranges = ["0.0.0.0/0"]
+}
+
+# Firewall rule to allow IAP access to SSH
+resource "google_compute_firewall" "iap_ssh" {
+  name        = "iap-ssh"
+  description = "IAP access to SSH"
+  network     = "default"
+  priority    = 999
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  target_tags   = ["iap-ssh"]
+  source_ranges = ["35.235.240.0/20"]
+}
