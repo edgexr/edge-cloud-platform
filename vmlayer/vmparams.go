@@ -916,9 +916,15 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 		}
 		for netName, netType := range extNets {
 			portName := GetPortName(vm.Name, netName)
+			useCloudletSecgrpForExtPort := false
 			if spec.NewSecgrpName == "" {
-				return nil, fmt.Errorf("external network specified with no security group: %s", vm.Name)
+				if netType == NetworkTypeExternalPrimary {
+					return nil, fmt.Errorf("primary external network specified with no security group: %s", vm.Name)
+				} else {
+					useCloudletSecgrpForExtPort = true
+				}
 			}
+
 			isAdditionalExternal := netType != NetworkTypeExternalPrimary
 			var externalport PortOrchestrationParams
 			if vmgp.Netspec.FloatingIPNet != "" {
@@ -954,10 +960,12 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 					IsAdditionalExternalNetwork: isAdditionalExternal,
 				}
 			}
-			externalport.SecurityGroups = []ResourceReference{
-				NewResourceReference(spec.NewSecgrpName, spec.NewSecgrpName, false),
+			if spec.NewSecgrpName != "" {
+				externalport.SecurityGroups = []ResourceReference{
+					NewResourceReference(spec.NewSecgrpName, spec.NewSecgrpName, false),
+				}
 			}
-			if !spec.SkipDefaultSecGrp {
+			if useCloudletSecgrpForExtPort || !spec.SkipDefaultSecGrp {
 				externalport.SecurityGroups = append(externalport.SecurityGroups, NewResourceReference(cloudletSecGrpID, cloudletSecGrpID, true))
 			}
 			newPorts = append(newPorts, externalport)

@@ -188,7 +188,7 @@ func (k *K8sBareMetalPlatform) ListCloudletMgmtNodes(ctx context.Context, cluste
 	mgmt_nodes := []edgeproto.CloudletMgmtNode{
 		{
 			Type: "platformhost",
-			Name: k.commonPf.PlatformConfig.CloudletKey.String(),
+			Name: k.commonPf.PlatformConfig.CloudletKey.Name,
 		},
 	}
 	return mgmt_nodes, nil
