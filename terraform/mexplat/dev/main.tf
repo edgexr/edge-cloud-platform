@@ -52,7 +52,11 @@ module "gitlab" {
     "stun-turn",
     "vault-ac",
     "sinatra",
+    "iap-ssh",
+    "restricted-ssh",
+    "restricted-ssh-overrides",
     module.fw_vault_gcp.target_tag,
+    module.teleport_firewall.target_tag,
   ]
   labels = {
     "environ" = var.environ_tag
@@ -95,22 +99,23 @@ module "console" {
   instance_size  = "custom-1-7680-ext"
   zone           = var.gcp_zone
   boot_disk_size = 100
-  tags = [
+  tags = concat([
     "http-server",
     "https-server",
     "console-debug",
     "mc-artifactory",
-    "mc-federation-${var.environ_tag}",
-    "mc-ldap-${var.environ_tag}",
-    "mc-notify-${var.environ_tag}",
     "jaeger",
     "alt-https",
     "vault-ac",
     "notifyroot",
     "alertmanager",
     "vault-ac",
+    "iap-ssh",
+    "restricted-ssh",
+    "restricted-ssh-overrides",
     module.fw_vault_gcp.target_tag,
-  ]
+    module.teleport_firewall.target_tag,
+  ], module.mc_firewall.target_tags)
   labels = {
     "environ" = var.environ_tag
     "console" = "true"
@@ -129,7 +134,11 @@ module "vault_b" {
   boot_disk_size = 20
   tags = [
     "vault-ac",
+    "iap-ssh",
+    "restricted-ssh",
+    "restricted-ssh-overrides",
     module.fw_vault_gcp.target_tag,
+    module.teleport_firewall.target_tag,
   ]
   labels = {
     "environ" = var.environ_tag
@@ -198,63 +207,19 @@ module "fw_vault_gcp" {
   target_tag    = "${var.environ_tag}-vault-hc-and-proxy"
 }
 
-resource "google_compute_firewall" "mc_federation" {
-  name    = "mc-federation-${var.environ_tag}"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["30001"]
-  }
-
-  target_tags = ["mc-federation-${var.environ_tag}"]
-  source_ranges = [
-    "0.0.0.0/0",
-  ]
+module "mc_firewall" {
+  source      = "../../modules/fw_mc_gcp"
+  environ_tag = var.environ_tag
+  gitlab_ip   = module.gitlab.external_ip
 }
 
-resource "google_compute_firewall" "mc_ldap" {
-  name    = "mc-ldap-${var.environ_tag}"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["9389"]
-  }
-
-  target_tags = ["mc-ldap-${var.environ_tag}"]
-  source_ranges = [
-    "${module.gitlab.external_ip}/32",
-  ]
+module "postgres_firewall" {
+  source      = "../../modules/fw_postgres_gcp"
+  environ_tag = var.environ_tag
+  console_ip  = module.console.external_ip
 }
 
-resource "google_compute_firewall" "mc_notify" {
-  name    = "mc-notify-${var.environ_tag}"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["52001"]
-  }
-
-  target_tags = ["mc-notify-${var.environ_tag}"]
-  source_ranges = [
-    "0.0.0.0/0",
-  ]
+module "teleport_firewall" {
+  source      = "../../modules/fw_teleport_node_gcp"
+  environ_tag = var.environ_tag
 }
-
-resource "google_compute_firewall" "postgres" {
-  name    = "postgres-${var.environ_tag}"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["5432"]
-  }
-
-  target_tags = ["postgres-${var.environ_tag}"]
-  source_ranges = [
-    "${module.console.external_ip}/32",
-  ]
-}
-
