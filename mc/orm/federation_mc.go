@@ -453,20 +453,6 @@ func DeleteSelfFederator(c echo.Context) error {
 		return fmt.Errorf("Failed to delete self federator. Please delete existing federation %q", partnerFed.Name)
 	}
 
-	// Ensure that no self zone exists for this federator
-	zoneLookup := ormapi.FederatorZone{
-		OperatorId:  selfFed.OperatorId,
-		CountryCode: selfFed.CountryCode,
-	}
-	selfZones := []ormapi.FederatorZone{}
-	res = db.Where(&zoneLookup).Find(&selfZones)
-	if !res.RecordNotFound() && res.Error != nil {
-		return ormutil.DbErr(res.Error)
-	}
-	if len(selfZones) > 0 {
-		// This will ensure that no self zones are used by any developer or partner federators
-		return fmt.Errorf("Please delete all the associated zones before deleting the federator")
-	}
 	if err := db.Delete(&selfFed).Error; err != nil {
 		return ormutil.DbErr(err)
 	}
