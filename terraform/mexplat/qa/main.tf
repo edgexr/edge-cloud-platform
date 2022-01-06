@@ -239,6 +239,7 @@ module "kafka" {
     "kafka-${var.environ_tag}-controllers",
     "kafka-qa-staging",
     module.kafka_firewall.target_tag,
+    module.teleport_firewall.target_tag,
   ]
   labels = {
     "environ" = var.environ_tag
