@@ -99,8 +99,8 @@ func init() {
 
 var CreateTrustPolicyExceptionRequiredArgs = []string{
 	"app-org",
-	"app-name",
-	"app-ver",
+	"appname",
+	"appvers",
 	"cloudletpool-org",
 	"cloudletpool-name",
 	"name",
@@ -113,8 +113,8 @@ var CreateTrustPolicyExceptionOptionalArgs = []string{
 }
 var DeleteTrustPolicyExceptionRequiredArgs = []string{
 	"app-org",
-	"app-name",
-	"app-ver",
+	"appname",
+	"appvers",
 	"cloudletpool-org",
 	"cloudletpool-name",
 	"name",
@@ -127,8 +127,8 @@ var DeleteTrustPolicyExceptionOptionalArgs = []string{
 }
 var TrustPolicyExceptionRequiredArgs = []string{
 	"app-org",
-	"app-name",
-	"app-ver",
+	"appname",
+	"appvers",
 	"cloudletpool-org",
 	"cloudletpool-name",
 	"name",
@@ -144,8 +144,8 @@ var TrustPolicyExceptionOptionalArgs = []string{
 var TrustPolicyExceptionAliasArgs = []string{
 	"fields=trustpolicyexception.fields",
 	"app-org=trustpolicyexception.key.appkey.organization",
-	"app-name=trustpolicyexception.key.appkey.name",
-	"app-ver=trustpolicyexception.key.appkey.version",
+	"appname=trustpolicyexception.key.appkey.name",
+	"appvers=trustpolicyexception.key.appkey.version",
 	"cloudletpool-org=trustpolicyexception.key.cloudletpoolkey.organization",
 	"cloudletpool-name=trustpolicyexception.key.cloudletpoolkey.name",
 	"name=trustpolicyexception.key.name",
@@ -159,8 +159,8 @@ var TrustPolicyExceptionAliasArgs = []string{
 var TrustPolicyExceptionComments = map[string]string{
 	"fields":                               "Fields are used for the Update API to specify which fields to apply",
 	"app-org":                              "App developer organization",
-	"app-name":                             "App name",
-	"app-ver":                              "App version",
+	"appname":                              "App name",
+	"appvers":                              "App version",
 	"cloudletpool-org":                     "Name of the organization this pool belongs to",
 	"cloudletpool-name":                    "CloudletPool Name",
 	"name":                                 "TrustPolicyExceptionKey name",
