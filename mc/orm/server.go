@@ -1204,7 +1204,12 @@ func BindJson(js []byte, i interface{}) error {
 	switch e := err.(type) {
 	case *json.UnmarshalTypeError:
 		errType, help, _ := cli.GetParseHelp(e.Type)
-		err = fmt.Errorf("Unmarshal error: expected %v, but got %v for field %q at offset %v%s", errType, e.Value, e.Field, e.Offset, help)
+		// offset may be unspecified for custom unmarshaling errors
+		offsetStr := ""
+		if e.Offset != 0 {
+			offsetStr = fmt.Sprintf(" at offset %d", e.Offset)
+		}
+		err = fmt.Errorf("Unmarshal error: expected %v, but got %v for field %q%s%s", errType, e.Value, e.Field, offsetStr, help)
 	case *json.SyntaxError:
 		err = fmt.Errorf("Syntax error at offset %v, %v", e.Offset, e.Error())
 	case *time.ParseError:
@@ -1214,9 +1219,6 @@ func BindJson(js []byte, i interface{}) error {
 		}
 		errType, help, _ := cli.GetParseHelp(reflect.TypeOf(time.Time{}))
 		err = fmt.Errorf("Unmarshal %s %q failed%s", errType, val, help)
-	case *edgeproto.DurationParseError:
-		errType, help, _ := cli.GetParseHelp(reflect.TypeOf(time.Duration(0)))
-		err = fmt.Errorf("Unmarshal %s %q failed%s", errType, e.Value, help)
 	}
 	return fmt.Errorf("Invalid JSON data: %v", err)
 }
