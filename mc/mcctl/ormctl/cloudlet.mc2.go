@@ -415,8 +415,8 @@ var ShowFlavorsForCloudletCmd = &ApiCommand{
 	Name:                 "ShowFlavorsForCloudlet",
 	Use:                  "showflavorsfor",
 	Short:                "Find all meta flavors viable on cloudlet",
-	RequiredArgs:         "region " + strings.Join(CloudletKeyRequiredArgs, " "),
-	OptionalArgs:         strings.Join(CloudletKeyOptionalArgs, " "),
+	RequiredArgs:         "region " + strings.Join(ShowFlavorsForCloudletRequiredArgs, " "),
+	OptionalArgs:         strings.Join(ShowFlavorsForCloudletOptionalArgs, " "),
 	AliasArgs:            strings.Join(CloudletKeyAliasArgs, " "),
 	SpecialArgs:          &CloudletKeySpecialArgs,
 	Comments:             addRegionComment(CloudletKeyComments),
@@ -720,6 +720,12 @@ var GetCloudletResourceUsageRequiredArgs = []string{
 var GetCloudletResourceUsageOptionalArgs = []string{
 	"federated-org",
 	"infrausage",
+}
+var ShowFlavorsForCloudletRequiredArgs = []string{}
+var ShowFlavorsForCloudletOptionalArgs = []string{
+	"cloudlet-org",
+	"cloudlet",
+	"federator-org",
 }
 
 var ShowCloudletInfoCmd = &ApiCommand{
