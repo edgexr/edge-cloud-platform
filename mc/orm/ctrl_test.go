@@ -370,8 +370,6 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	}()
 	require.Equal(t, dcnt, len(ds.FlavorCache.Objs))
 
-	testMCParseJSONErrors(t, ctx, mcClient, uri, token)
-
 	// number of org objects total of each type (sum of above)
 	count := 4 * dcnt
 
@@ -3592,56 +3590,95 @@ func TestDataConversions(t *testing.T) {
 	require.Nil(t, err)
 }
 
-func testMCParseJSONErrors(t *testing.T, ctx context.Context, mcClient *mctestclient.Client, uri, token string) {
-	res := edgeproto.Result{}
-	restClient, ok := mcClient.ClientRun.(*ormclient.Client)
-	if !ok {
-		return
-	}
-	// parse int failure
-	js := `{"AppInst":{"cluster_inst_key":{"cloudlet_key":{"name":"cloudlet1625766808-699615","organization":"dmuus"}}},"Limit":"x","Region":"US","Selector":"api"}`
-	status, err := restClient.PostJson(uri+"/auth/metrics/clientapiusage", token, js, &res)
-	require.NotNil(t, err)
-	require.Equal(t, http.StatusBadRequest, status)
-	require.Equal(t, "Invalid JSON data: Unmarshal error: expected int, but got string for field \"Limit\" at offset 119", err.Error())
-
-	// parse time.Duration
-	js = `{"AppInst":{"cluster_inst_key":{"cloudlet_key":{"name":"cloudlet1625766808-699615","organization":"dmuus"}}},"startage":"x","Region":"US","Selector":"api"}`
-	status, err = restClient.PostJson(uri+"/auth/metrics/clientapiusage", token, js, &res)
-	require.NotNil(t, err)
-	require.Equal(t, http.StatusBadRequest, status)
-	require.Equal(t, "Invalid JSON data: Unmarshal duration \"x\" failed, valid values are 300ms, 1s, 1.5h, 2h45m, etc", err.Error())
-
-	// parse time.Time
-	js = `{"AppInst":{"cluster_inst_key":{"cloudlet_key":{"name":"cloudlet1625766808-699615","organization":"dmuus"}}},"starttime":"x","Region":"US","Selector":"api"}`
-	status, err = restClient.PostJson(uri+"/auth/metrics/clientapiusage", token, js, &res)
-	require.NotNil(t, err)
-	require.Equal(t, http.StatusBadRequest, status)
-	require.Equal(t, `Invalid JSON data: Unmarshal time "x" failed, valid values are RFC3339 format, i.e. "2006-01-02T15:04:05Z07:00"`, err.Error())
-
-	// parse bad syntax
-	js = `{"Cloudlet":{"organization":"dmuus"},"Last":","Region":"US","Selector":"utilization"}`
-	status, err = restClient.PostJson(uri+"/auth/metrics/cloudlet", token, js, &res)
-	require.NotNil(t, err)
-	require.Equal(t, http.StatusBadRequest, status)
-	require.Equal(t, "Invalid JSON data: Syntax error at offset 47, invalid character 'R' after object key:value pair", err.Error())
-
-	// test bool on CustomBinder
-	js = `{"skipverifyemail":"ff"}`
-	status, err = restClient.PostJson(uri+"/auth/config/update", token, js, &res)
-	require.NotNil(t, err)
-	require.Equal(t, http.StatusBadRequest, status)
-	require.Equal(t, "Invalid JSON data: Unmarshal error: expected bool, but got string for field \"SkipVerifyEmail\" at offset 23, valid values are true, false", err.Error())
-
-	// test duration on auto-generted code
-	js = `{"startage":"2xs"}`
-	status, err = restClient.PostJson(uri+"/auth/events/show", token, js, &res)
-	require.NotNil(t, err)
-	require.Equal(t, http.StatusBadRequest, status)
-	require.Equal(t, "Invalid JSON data: Unmarshal duration \"2xs\" failed, valid values are 300ms, 1s, 1.5h, 2h45m, etc", err.Error())
+type testJsonError struct {
+	Desc        string
+	InputObj    interface{}
+	InputJson   string
+	ExpectedErr string
 }
 
-// This is like the testMCParseJSONErrors test above, but the invalid formats
+func getTestJsonInputData() []testJsonError {
+	return []testJsonError{{
+		Desc:        "parse int failure",
+		InputObj:    &ormapi.RegionClientApiUsageMetrics{},
+		InputJson:   `{"AppInst":{"cluster_inst_key":{"cloudlet_key":{"name":"cloudlet1625766808-699615","organization":"dmuus"}}},"Limit":"x","Region":"US","Selector":"api"}`,
+		ExpectedErr: `Invalid JSON data: Unmarshal error: expected int, but got string for field "Limit" at offset 119`,
+	}, {
+		Desc:        "parse time.Duration",
+		InputObj:    &ormapi.RegionClientApiUsageMetrics{},
+		InputJson:   `{"AppInst":{"cluster_inst_key":{"cloudlet_key":{"name":"cloudlet1625766808-699615","organization":"dmuus"}}},"startage":"x","Region":"US","Selector":"api"}`,
+		ExpectedErr: `Invalid JSON data: Unmarshal error: expected duration, but got string x for field "startage", valid values are 300ms, 1s, 1.5h, 2h45m, etc`,
+	}, {
+		Desc:        "parse time.Time",
+		InputObj:    &ormapi.RegionClientApiUsageMetrics{},
+		InputJson:   `{"AppInst":{"cluster_inst_key":{"cloudlet_key":{"name":"cloudlet1625766808-699615","organization":"dmuus"}}},"starttime":"x","Region":"US","Selector":"api"}`,
+		ExpectedErr: `Invalid JSON data: Unmarshal time "x" failed, valid values are RFC3339 format, i.e. "2006-01-02T15:04:05Z07:00"`,
+	}, {
+		Desc:        "parse bad syntax",
+		InputObj:    &ormapi.RegionCloudlet{},
+		InputJson:   `{"Cloudlet":{"organization":"dmuus"},"Last":","Region":"US","Selector":"utilization"}`,
+		ExpectedErr: "Invalid JSON data: Syntax error at offset 47, invalid character 'R' after object key:value pair",
+	}, {
+		Desc:        "test bool on CustomBinder",
+		InputObj:    &ormapi.Config{},
+		InputJson:   `{"skipverifyemail":"ff"}`,
+		ExpectedErr: `Invalid JSON data: Unmarshal error: expected bool, but got string for field "SkipVerifyEmail" at offset 23, valid values are true, false`,
+	}, {
+		Desc:        "test duration on auto-generted code",
+		InputObj:    &node.EventSearch{},
+		InputJson:   `{"startage":"2xs"}`,
+		ExpectedErr: `Invalid JSON data: Unmarshal error: expected duration, but got string 2xs for field "startage", valid values are 300ms, 1s, 1.5h, 2h45m, etc`,
+	}, {
+		Desc:        "vpcus custom unsigned decimal",
+		InputObj:    &ormapi.RegionApp{},
+		InputJson:   `{"App":{"allow_serverless":true,"default_flavor":{"name":"x1.medium"},"image_path":"docker","image_type":1,"key":{"name":"app1635445756-9768332","organization":"automation_dev_org","version":"1.0"},"serverless_config":{"min_replicas":1,"ram":1,"vcpus":-1}},"Region":"local"}`,
+		ExpectedErr: `Invalid JSON data: Unmarshal error: expected unsigned decimal, but got value -1 for field "App.serverless_config.vcpus"`,
+	}, {
+		Desc:        "uint32 bad value",
+		InputObj:    &ormapi.RegionApp{},
+		InputJson:   `{"App":{"allow_serverless":true,"default_flavor":{"name":"x1.medium"},"image_path":"docker","image_type":1,"key":{"name":"app1635445756-9768332","organization":"automation_dev_org","version":"1.0"},"serverless_config":{"min_replicas":-1,"ram":1,"vcpus":1}},"Region":"local"}`,
+		ExpectedErr: `Invalid JSON data: Unmarshal error: expected uint32, but got number -1 for field "App.serverless_config.min_replicas" at offset 236`,
+	}, {
+		Desc:        "uint64 bad value",
+		InputObj:    &ormapi.RegionApp{},
+		InputJson:   `{"App":{"allow_serverless":true,"default_flavor":{"name":"x1.medium"},"image_path":"docker","image_type":1,"key":{"name":"app1635445756-9768332","organization":"automation_dev_org","version":"1.0"},"serverless_config":{"min_replicas":1,"ram":-1,"vcpus":1}},"Region":"local"}`,
+		ExpectedErr: `Invalid JSON data: Unmarshal error: expected uint64, but got number -1 for field "App.serverless_config.ram" at offset 244`,
+	}, {
+		Desc:        "enum bad string value",
+		InputObj:    &ormapi.RegionApp{},
+		InputJson:   `{"App":{"allow_serverless":true,"default_flavor":{"name":"x1.medium"},"image_path":"docker","image_type":"foo","key":{"name":"app1635445756-9768332","organization":"automation_dev_org","version":"1.0"},"serverless_config":{"min_replicas":1,"ram":1,"vcpus":1}},"Region":"local"}`,
+		ExpectedErr: `Invalid JSON data: Unmarshal error: expected ImageType, but got string foo for field "App.image_type", valid values are one of Unknown, Docker, Qcow, Helm, Ovf, or 0, 1, 2, 3, 4`,
+	}, {
+		Desc:        "enum bad int value",
+		InputObj:    &ormapi.RegionApp{},
+		InputJson:   `{"App":{"allow_serverless":true,"default_flavor":{"name":"x1.medium"},"image_path":"docker","image_type":-1,"key":{"name":"app1635445756-9768332","organization":"automation_dev_org","version":"1.0"},"serverless_config":{"min_replicas":1,"ram":1,"vcpus":1}},"Region":"local"}`,
+		ExpectedErr: `Invalid JSON data: Unmarshal error: expected ImageType, but got value -1 for field "App.image_type", valid values are one of Unknown, Docker, Qcow, Helm, Ovf, or 0, 1, 2, 3, 4`,
+	}, {
+		Desc:        "dme enum bad string value",
+		InputObj:    &ormapi.RegionCloudlet{},
+		InputJson:   `{"Cloudlet":{"key":{"name":"cl1","organization":"org1"},"location":{"latitude":1,"longitude":1},"maintenance_state":-1,"num_dynamic_ips":0},"Region":"US"}`,
+		ExpectedErr: `Invalid JSON data: Unmarshal error: expected MaintenanceState, but got value -1 for field "Cloudlet.maintenance_state", valid values are one of NormalOperation, MaintenanceStart, FailoverRequested, FailoverDone, FailoverError, MaintenanceStartNoFailover, CrmRequested, CrmUnderMaintenance, CrmError, NormalOperationInit, UnderMaintenance, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 31`,
+	}, {
+		Desc:        "dme enum bad string value",
+		InputObj:    &ormapi.RegionCloudlet{},
+		InputJson:   `{"Cloudlet":{"key":{"name":"cl1","organization":"org1"},"location":{"latitude":1,"longitude":1},"ip_support":"-1","num_dynamic_ips":0},"Region":"US"}`,
+		ExpectedErr: `Invalid JSON data: Unmarshal error: expected IpSupport, but got string -1 for field "Cloudlet.ip_support", valid values are one of Unknown, Static, Dynamic, or 0, 1, 2`,
+	}}
+}
+
+func TestParseJsonErrors(t *testing.T) {
+	for _, test := range getTestJsonInputData() {
+		err := BindJson([]byte(test.InputJson), test.InputObj)
+		if test.ExpectedErr == "" {
+			require.Nil(t, err, test.Desc)
+		} else {
+			require.NotNil(t, err, test.Desc)
+			require.Equal(t, test.ExpectedErr, err.Error(), test.Desc)
+		}
+	}
+}
+
+// This is like the TestParseJsonErrors test above, but the invalid formats
 // are caught by the args parser. No MC is needed here.
 func TestMcctlParseErrors(t *testing.T) {
 	args := []string{}
@@ -3705,4 +3742,32 @@ func TestMcctlParseErrors(t *testing.T) {
 	out, err = mcctlTest()
 	require.NotNil(t, err)
 	require.Equal(t, "Error: parsing arg \"updatevmpooltimeout=x\" failed: unable to parse \"x\" as duration: invalid format, valid values are 300ms, 1s, 1.5h, 2h45m, etc\n", out)
+
+	// test bad int enum
+	args = []string{
+		"cloudlet", "create", "region=US",
+		"cloudlet=sdfdfd",
+		"cloudlet-org=dmuus",
+		"location.longitude=1",
+		"location.latitude=1",
+		"numdynamicips=1",
+		"ipsupport=-1",
+	}
+	out, err = mcctlTest()
+	require.NotNil(t, err)
+	require.Equal(t, "Error: parsing arg \"ipsupport=-1\" failed: unable to parse \"-1\" as IpSupport: invalid format, valid values are one of Unknown, Static, Dynamic, or 0, 1, 2\n", out)
+
+	// test bad string enum
+	args = []string{
+		"cloudlet", "create", "region=US",
+		"cloudlet=sdfdfd",
+		"cloudlet-org=dmuus",
+		"location.longitude=1",
+		"location.latitude=1",
+		"numdynamicips=1",
+		"ipsupport=Foo",
+	}
+	out, err = mcctlTest()
+	require.NotNil(t, err)
+	require.Equal(t, "Error: parsing arg \"ipsupport=Foo\" failed: unable to parse \"Foo\" as IpSupport: invalid format, valid values are one of Unknown, Static, Dynamic, or 0, 1, 2\n", out)
 }
