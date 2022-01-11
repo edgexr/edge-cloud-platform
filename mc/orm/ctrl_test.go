@@ -3771,3 +3771,23 @@ func TestMcctlParseErrors(t *testing.T) {
 	require.NotNil(t, err)
 	require.Equal(t, "Error: parsing arg \"ipsupport=Foo\" failed: unable to parse \"Foo\" as IpSupport: invalid format, valid values are one of Unknown, Static, Dynamic, or 0, 1, 2\n", out)
 }
+
+func TestUpdateCopyInFields(t *testing.T) {
+	// Vcpus is an object with multiple fields, but in JSON only a
+	// single vcpus field is specified.
+	dat := `{"App":{"allow_serverless":true,"key":{"name":"andytls12","organization":"automation_dev_org","version":"1.0"},"serverless_config":{"vcpus":5}},"Region":"US"}`
+	buf := &ormapi.RegionApp{}
+	err := BindJson([]byte(dat), buf)
+	require.Nil(t, err)
+
+	err = ormutil.SetRegionObjFields([]byte(dat), buf)
+	require.Nil(t, err)
+	require.Equal(t, []string{"2.1", "2.2", "2.3", "39", "40.1"}, buf.App.Fields)
+
+	// Ensure that copy in correctly copies the vcpus
+	app := edgeproto.App{}
+	app.CopyInFields(&buf.App)
+	require.Equal(t, true, app.AllowServerless)
+	require.NotNil(t, app.ServerlessConfig)
+	require.Equal(t, edgeproto.NewUdec64(5, 0), &app.ServerlessConfig.Vcpus)
+}
