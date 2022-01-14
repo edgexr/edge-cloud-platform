@@ -69,6 +69,10 @@ doc:
 	make -f proto.make
 	swagger generate spec -i ./doc/init.json -o ./doc/apidocs.swagger.json --scan-models
 
+third_party:
+	parsedeps --gennotice ../edge-cloud/cloud-resource-manager/cmd/crmserver/ ../edge-cloud/d-match-engine/dme-server ./plugin/platform/ ./plugin/edgeevents ./shepherd ./shepherd/shepherd_platform > THIRD-PARTY-NOTICES
+
+
 .PHONY: doc
 
 #
