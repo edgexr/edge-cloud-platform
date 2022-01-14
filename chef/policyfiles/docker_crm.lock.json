@@ -1,5 +1,5 @@
 {
-  "revision_id": "ccf0f1297296da773de9ce161269323a83a0868650067cf6d6e59c85e1748106",
+  "revision_id": "2664d64932e434b37569f2ce58aa39b56490a581286385319379f23443bfa786",
   "name": "docker_crm",
   "run_list": [
     "recipe[chef_client_updater::default]",
@@ -9,7 +9,8 @@
     "recipe[preflight_crm_checks::default]",
     "recipe[run_diagnostics::default]",
     "recipe[setup_services::docker]",
-    "recipe[set_security_policies::default]"
+    "recipe[set_security_policies::default]",
+    "recipe[copy_third_party_notice::default]"
   ],
   "included_policy_locks": [
 
@@ -24,6 +25,17 @@
       "source_options": {
         "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
         "version": "3.11.0"
+      }
+    },
+    "copy_third_party_notice": {
+      "version": "1.0.1",
+      "identifier": "87e3723e3d733b552e558fdb8376e9a73092908f",
+      "dotted_decimal_identifier": "38249201665930043.23976318041031542.256904283721871",
+      "cache_key": "copy_third_party_notice-1.0.1",
+      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "version": "1.0.1"
       }
     },
     "docker": {
@@ -132,6 +144,10 @@
         "= 3.11.0"
       ],
       [
+        "copy_third_party_notice",
+        "= 1.0.1"
+      ],
+      [
         "docker",
         "= 7.7.0"
       ],
@@ -166,6 +182,9 @@
     ],
     "dependencies": {
       "chef_client_updater (3.11.0)": [
+
+      ],
+      "copy_third_party_notice (1.0.1)": [
 
       ],
       "docker (7.7.0)": [
