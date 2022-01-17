@@ -135,10 +135,10 @@ module "chef" {
 
   instance_name  = var.chef_instance_name
   environ_tag    = var.environ_tag
-  instance_size  = "n1-standard-4"
+  instance_size  = "n1-standard-8"
   zone           = var.chef_zone
   boot_image     = "ubuntu-1604-xenial-v20200407"
-  boot_disk_size = 300
+  boot_disk_size = 1200
   tags           = ["mexplat-internal", "http-server", "https-server"]
   labels = {
     "owner" = "ops"
@@ -227,4 +227,26 @@ module "teleport_dns" {
   source   = "../modules/cloudflare_record"
   hostname = var.teleport_domain_name
   ip       = module.teleport.external_ip
+}
+
+module "trivy" {
+  source = "../modules/vm_gcp"
+
+  instance_name       = var.trivy_instance_name
+  environ_tag         = var.environ_tag
+  zone                = var.trivy_zone
+  boot_image          = "ubuntu-os-cloud/ubuntu-2004-lts"
+  boot_disk_size      = 1024
+  tags                = [
+    "mexplat-internal",
+  ]
+  labels = {
+    "owner" = "ops"
+  }
+}
+
+module "trivy_dns" {
+  source   = "../modules/cloudflare_record"
+  hostname = var.trivy_domain_name
+  ip       = module.trivy.external_ip
 }
