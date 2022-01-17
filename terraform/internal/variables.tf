@@ -146,3 +146,15 @@ variable "teleport_instance_name" {
 variable "teleport_zone" {
   default = "us-central1-a"
 }
+
+variable "trivy_domain_name" {
+  default = "trivy.mobiledgex.net"
+}
+
+variable "trivy_instance_name" {
+  default = "trivy"
+}
+
+variable "trivy_zone" {
+  default = "us-central1-a"
+}
