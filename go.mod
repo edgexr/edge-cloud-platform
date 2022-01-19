@@ -312,3 +312,9 @@ replace golang.org/x/time => golang.org/x/time v0.0.0-20200630173020-3af7569d3a1
 replace github.com/davecgh/go-spew => github.com/davecgh/go-spew v1.1.1
 
 replace github.com/go-redis/redis => github.com/go-redis/redis v6.15.9+incompatible
+
+replace github.com/agnivade/levenshtein => github.com/agnivade/levenshtein v1.0.1
+
+replace github.com/test-go/testify => github.com/test-go/testify v1.1.4
+
+replace golang.org/x/tools => golang.org/x/tools v0.0.0-20200603131246-cc40288be839
