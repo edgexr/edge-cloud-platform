@@ -838,5 +838,16 @@ func (v *VMPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletP
 }
 
 func (v *VMPlatform) ActiveChanged(ctx context.Context, platformActive bool) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChanged")
+	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChanged", "platformActive", platformActive)
+	if !platformActive {
+		// unexpected as this is not currently supported
+		log.SpanLog(ctx, log.DebugLevelInfra, "platform unexpectedly transitioned to inactive")
+		return
+	}
+	ctx, _, err := v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to init context for cleanup", "err", err)
+		return
+	}
+	infracommon.HandlePlatformSwitchToActive(ctx, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.Caches, v.cleanupClusterInst, v.cleanupAppInst)
 }

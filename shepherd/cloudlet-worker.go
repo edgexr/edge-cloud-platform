@@ -43,6 +43,10 @@ func CloudletScraper(done chan bool) {
 			span := log.StartSpan(log.DebugLevelSampled, "send-cloudlet-metric")
 			log.SetTags(span, cloudletKey.GetTags())
 			ctx := log.ContextWithSpan(context.Background(), span)
+			if !shepherd_common.ShepherdPlatformActive {
+				log.SpanLog(ctx, log.DebugLevelMetrics, "skiping cloudlet metrics as shepherd is not active")
+				continue
+			}
 			// if nothing has changed since the last collection, used cached stats up until MaxCachedPlatformStatsTime
 			elapsed := time.Since(LastPlatformCollectionTime)
 			if ChangeSinceLastPlatformStats || elapsed > maxCacheTime {
@@ -76,20 +80,25 @@ func CloudletPrometheusScraper(done chan bool) {
 		select {
 		case <-time.After(settings.ShepherdMetricsCollectionInterval.TimeDuration()):
 			//TODO  - cloudletEnvoyStats, err := getEnvoyStats
+
 			aspan := log.StartSpan(log.DebugLevelMetrics, "send-cloudlet-alerts")
 			log.SetTags(aspan, cloudletKey.GetTags())
 			actx := log.ContextWithSpan(context.Background(), aspan)
-			// platform client is a local ssh
-			client := &pc.LocalClient{}
-			alerts, err := getPromAlerts(actx, CloudletPrometheusAddr, client)
-			if err != nil {
-				log.SpanLog(actx, log.DebugLevelMetrics, "Could not collect alerts",
-					"prometheus port", intprocess.CloudletPrometheusPort, "err", err)
+			if shepherd_common.ShepherdPlatformActive {
+				// platform client is a local ssh
+				client := &pc.LocalClient{}
+				alerts, err := getPromAlerts(actx, CloudletPrometheusAddr, client)
+				if err != nil {
+					log.SpanLog(actx, log.DebugLevelMetrics, "Could not collect alerts",
+						"prometheus port", intprocess.CloudletPrometheusPort, "err", err)
+				}
+				// key is nil, since we just check against the predefined set of rules
+				UpdateAlerts(actx, alerts, nil, pruneCloudletForeignAlerts)
+				// query stats
+				getCloudletPrometheusStats(actx, CloudletPrometheusAddr, client)
+			} else {
+				log.SpanLog(actx, log.DebugLevelMetrics, "skipping cloudlet alerts due as shepherd is not active")
 			}
-			// key is nil, since we just check against the predefined set of rules
-			UpdateAlerts(actx, alerts, nil, pruneCloudletForeignAlerts)
-			// query stats
-			getCloudletPrometheusStats(actx, CloudletPrometheusAddr, client)
 			aspan.Finish()
 		case <-done:
 			// process killed/interrupted, so quit
