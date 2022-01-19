@@ -18,6 +18,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vsphere"
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	platform "github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_fake"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_k8sbm"
@@ -32,6 +33,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
 	"github.com/mobiledgex/edge-cloud/tls"
@@ -52,7 +54,7 @@ var promTargetsFile = flag.String("targetsFile", "/tmp/prom_targets.json", "Prom
 var appDNSRoot = flag.String("appDNSRoot", "mobiledgex.net", "App domain name root")
 var chefServerPath = flag.String("chefServerPath", "", "Chef server path")
 var promScrapeInterval = flag.Duration("promScrapeInterval", defaultScrapeInterval, "Prometheus Scraping Interval")
-
+var haRole = flag.String("HARole", string(process.HARolePrimary), "HARole") // for info purposes and to distinguish nodes when running debug commands
 var metricsScrapingInterval time.Duration
 
 var defaultPrometheusPort = cloudcommon.PrometheusPort
@@ -429,8 +431,19 @@ func start() {
 	settings = *edgeproto.GetDefaultSettings()
 
 	cloudcommon.ParseMyCloudletKey(false, cloudletKeyStr, &cloudletKey)
-
-	ctx, span, err := nodeMgr.Init("shepherd", node.CertIssuerRegionalCloudlet, node.WithCloudletKey(&cloudletKey), node.WithRegion(*region), node.WithParentSpan(*parentSpan))
+	nodeOps := []node.NodeOp{
+		node.WithCloudletKey(&cloudletKey),
+		node.WithRegion(*region),
+		node.WithParentSpan(*parentSpan),
+	}
+	if *haRole == string(process.HARoleSecondary) {
+		nodeOps = append(nodeOps, node.WithHARole(process.HARoleSecondary))
+	} else if *haRole == string(process.HARolePrimary) {
+		nodeOps = append(nodeOps, node.WithHARole(process.HARolePrimary))
+	} else {
+		log.FatalLog("invalid HA Role")
+	}
+	ctx, span, err := nodeMgr.Init("shepherd", node.CertIssuerRegionalCloudlet, nodeOps...)
 	if err != nil {
 		log.FatalLog(err.Error())
 	}
@@ -592,6 +605,8 @@ func start() {
 	// get access to infra properties
 	infraProps.Init()
 	infraProps.SetPropsFromVars(ctx, cloudlet.EnvVar)
+	// assume the unit is active which may be overridden in the platform init
+	shepherd_common.ShepherdPlatformActive = true
 	err = myPlatform.Init(ctx, &pc, &caches)
 	if err != nil {
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)

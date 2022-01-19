@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
@@ -11,7 +12,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/redundancy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
@@ -86,6 +87,7 @@ type VMPlatform struct {
 	GPUConfig    edgeproto.GPUConfig
 	CacheDir     string
 	infracommon.CommonEmbedded
+	HAManager *redundancy.HighAvailabilityManager
 }
 
 // VMMetrics contains stats and timestamp
@@ -354,7 +356,7 @@ func (v *VMPlatform) crmUpgradeCmd(ctx context.Context, req *edgeproto.DebugRequ
 	return fmt.Sprintf("%v", results)
 }
 
-func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, platformActive bool, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	var err error
 	log.SpanLog(ctx,
 		log.DebugLevelInfra, "Init VMPlatform",
@@ -369,6 +371,7 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		Key:   *platformConfig.CloudletKey,
 		Props: make(map[string]string),
 	}
+	cloudletInternal.Props[infracommon.CloudletPlatformActive] = fmt.Sprintf("%t", haMgr.PlatformInstanceActive)
 	caches.CloudletInternalCache.Update(ctx, &cloudletInternal, 0)
 	v.Caches = caches
 	v.VMProperties.Domain = VMDomainCompute
@@ -379,6 +382,7 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	if _, err := os.Stat(v.CacheDir); os.IsNotExist(err) {
 		return fmt.Errorf("CacheDir doesn't exist, please create one")
 	}
+	v.HAManager = haMgr
 
 	if !platformConfig.TestMode {
 		err := v.VMProperties.CommonPf.InitCloudletSSHKeys(ctx, platformConfig.AccessApi)
@@ -400,10 +404,35 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		return err
 	}
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "doing init provider")
+	cloudlet := edgeproto.Cloudlet{}
+	cloudetFound := caches.CloudletCache.Get(v.VMProperties.CommonPf.PlatformConfig.CloudletKey, &cloudlet)
+	if !cloudetFound {
+		return fmt.Errorf("unable to init platform due to cloudlet cache not found for cloudlet key - %s", v.VMProperties.CommonPf.PlatformConfig.CloudletKey)
+	}
+
+	// wait for either this instance to be active or the cloudlet to become ready
+	for {
+		if haMgr.PlatformInstanceActive {
+			log.SpanLog(ctx, log.DebugLevelInfra, "platform instance is active, continue init")
+			break
+		}
+		var cloudlet edgeproto.Cloudlet
+		cloudletFound := caches.CloudletCache.Get(v.VMProperties.CommonPf.PlatformConfig.CloudletKey, &cloudlet)
+		if !cloudletFound {
+			return fmt.Errorf("unable to find cloudlet from cache")
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "unit is standby, waiting for cloudlet to be active", "state", cloudlet.State)
+		if cloudlet.State == edgeproto.TrackedState_READY {
+			log.SpanLog(ctx, log.DebugLevelInfra, "cloudlet active, skipping rest of init for standby CRM")
+			return nil
+		}
+		time.Sleep(time.Second * 5)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "doing init provider for active CRM")
 	if err := v.VMProvider.InitProvider(ctx, caches, ProviderInitPlatformStartCrm, updateCallback); err != nil {
 		return err
 	}
+
 	var result OperationInitResult
 	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
@@ -484,17 +513,6 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "ok, SetupRootLB")
-
-	// deletes exisitng l7 proxies for backwards compatibility, since we got rid of http. can be removed later
-	client, err := v.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: v.VMProperties.SharedRootLBName}, pc.WithCachedIp(true))
-	if err != nil {
-		return err
-	}
-	updateCallback(edgeproto.UpdateTask, "Setting up Proxy")
-	err = proxy.InitL7Proxy(ctx, client, proxy.WithDockerNetwork("host"))
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

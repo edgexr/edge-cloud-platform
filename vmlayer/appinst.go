@@ -27,11 +27,13 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-var MaxDockerSeedWait = 1 * time.Minute
-
-var qcowConvertTimeout = 15 * time.Minute
-
-var FileDownloadDir = "/var/tmp/"
+const (
+	MaxDockerSeedWait                   = 1 * time.Minute
+	qcowConvertTimeout                  = 15 * time.Minute
+	FileDownloadDir                     = "/var/tmp/"
+	cleanupNonVMAppinstRetryWaitSeconds = 10
+	cleanupVMAppinstRetryWaitSeconds    = 60
+)
 
 type ProxyDnsSecOpts struct {
 	AddProxy              bool
@@ -478,7 +480,33 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 	return err
 }
 
-func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VMPlatform) cleanupAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "cleanupAppInst", "appinst", appInst)
+
+	var err error
+	retryTimeout := cleanupNonVMAppinstRetryWaitSeconds
+	if app.Deployment == cloudcommon.DeploymentTypeVM {
+		retryTimeout = cleanupVMAppinstRetryWaitSeconds
+	}
+	for tryNum := 0; tryNum <= v.VMProperties.NumCleanupRetries; tryNum++ {
+		err = v.cleanupAppInstInternal(ctx, clusterInst, app, appInst, updateCallback)
+		if err == nil {
+			return nil
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to cleanup appinst", "appInst", appInst, "tryNum", tryNum, "retries", v.VMProperties.NumCleanupRetries, "err", err)
+		if tryNum < v.VMProperties.NumCleanupRetries {
+			log.SpanLog(ctx, log.DebugLevelInfra, "sleeping and retrying cleanup", "retryTimeout", retryTimeout)
+			time.Sleep(time.Second * time.Duration(retryTimeout))
+			updateCallback(edgeproto.UpdateTask, "Retrying cleanup")
+		}
+	}
+	v.VMProperties.CommonPf.PlatformConfig.NodeMgr.Event(ctx, "Failed to clean up appInst", app.Key.Organization, appInst.Key.GetTags(), err)
+	return fmt.Errorf("Failed to cleanup appinst - %v", err)
+}
+
+func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "cleanupAppInstInternal", "appinst", appInst)
+
 	chefClient := v.VMProperties.GetChefClient()
 	if chefClient == nil {
 		return fmt.Errorf("Chef client is not initialized")
@@ -678,6 +706,11 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		return fmt.Errorf("unsupported deployment type %s", deployment)
 	}
 
+}
+
+func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteAppInst", "appInst", appInst)
+	return v.cleanupAppInst(ctx, clusterInst, app, appInst, updateCallback)
 }
 
 func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {

@@ -22,11 +22,11 @@ import (
 const (
 	MexSubnetPrefix = "mex-k8s-subnet-"
 
-	ActionAdd                 = "add"
-	ActionRemove              = "remove"
-	ActionNone                = "none"
-	cleanupRetryWaitSeconds   = 30
-	updateClusterSetupMaxTime = time.Minute * 15
+	ActionAdd                      = "add"
+	ActionRemove                   = "remove"
+	ActionNone                     = "none"
+	cleanupClusterRetryWaitSeconds = 60
+	updateClusterSetupMaxTime      = time.Minute * 15
 )
 
 //ClusterNodeFlavor contains details of flavor for the node
@@ -361,6 +361,29 @@ func (v *VMPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgepro
 	return v.createClusterInternal(ctx, lbName, imgName, clusterInst, updateCallback, timeout)
 }
 
+func (v *VMPlatform) cleanupClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "cleanupClusterInst", "clusterInst", clusterInst)
+
+	updateCallback(edgeproto.UpdateTask, "Cleaning up cluster instance")
+	rootLBName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
+	// try at least one cleanup attempt, plus the number of retries specified by the provider
+	var err error
+	for tryNum := 0; tryNum <= v.VMProperties.NumCleanupRetries; tryNum++ {
+		err = v.deleteCluster(ctx, rootLBName, clusterInst, updateCallback)
+		if err == nil {
+			return nil
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to cleanup cluster", "clusterInst", clusterInst, "tryNum", tryNum, "retries", v.VMProperties.NumCleanupRetries, "err", err)
+		if tryNum < v.VMProperties.NumCleanupRetries {
+			log.SpanLog(ctx, log.DebugLevelInfra, "sleeping and retrying cleanup", "cleanupRetryWaitSeconds", cleanupClusterRetryWaitSeconds)
+			time.Sleep(time.Second * cleanupClusterRetryWaitSeconds)
+			updateCallback(edgeproto.UpdateTask, "Retrying cleanup")
+		}
+	}
+	v.VMProperties.CommonPf.PlatformConfig.NodeMgr.Event(ctx, "Failed to clean up cluster", clusterInst.Key.Organization, clusterInst.Key.GetTags(), err)
+	return fmt.Errorf("Failed to cleanup cluster - %v", err)
+}
+
 func (v *VMPlatform) createClusterInternal(ctx context.Context, rootLBName string, imgName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (reterr error) {
 	// clean-up func
 	defer func() {
@@ -369,20 +392,9 @@ func (v *VMPlatform) createClusterInternal(ctx context.Context, rootLBName strin
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "error in CreateCluster", "err", reterr)
 		if !clusterInst.SkipCrmCleanupOnFailure {
-			updateCallback(edgeproto.UpdateTask, "Cleaning up cluster due to errors")
-			// try at least one cleanup attempt, plus the number of retries specified by the provider
-			for tryNum := 0; tryNum <= v.VMProperties.NumCleanupRetries; tryNum++ {
-				delerr := v.deleteCluster(ctx, rootLBName, clusterInst, updateCallback)
-				if delerr != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "failed to cleanup cluster", "clusterInst", clusterInst, "tryNum", tryNum, "retries", v.VMProperties.NumCleanupRetries, "delerr", delerr)
-					if tryNum < v.VMProperties.NumCleanupRetries {
-						log.SpanLog(ctx, log.DebugLevelInfra, "sleeping and retrying cleanup", "cleanupRetryWaitSeconds", cleanupRetryWaitSeconds)
-						time.Sleep(time.Second * cleanupRetryWaitSeconds)
-						updateCallback(edgeproto.UpdateTask, "Retrying cleanup")
-					}
-				} else {
-					break
-				}
+			delerr := v.cleanupClusterInst(ctx, clusterInst, updateCallback)
+			if delerr != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "cleanupCluster failed", "err", delerr)
 			}
 		} else {
 			log.SpanLog(ctx, log.DebugLevelInfra, "skipping cleanup on failure")

@@ -164,3 +164,5 @@ type StatsOp func(opts *StatsOptions)
 func WithAutoScaleStats() StatsOp {
 	return func(opts *StatsOptions) { opts.GetAutoScaleStats = true }
 }
+
+var ShepherdPlatformActive bool

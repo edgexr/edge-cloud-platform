@@ -3,9 +3,11 @@ package shepherd_vmprovider
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
@@ -32,10 +34,31 @@ type ShepherdPlatform struct {
 	appDNSRoot      string
 }
 
-func (s *ShepherdPlatform) vmProviderCloudletCb(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "vmProviderCloudletCb")
-	s.VMPlatform.VMProvider.InternalCloudletUpdatedCallback(ctx, old, new)
+func (s *ShepherdPlatform) setPlatformActiveFromCloudletInfo(ctx context.Context, cloudletInternal *edgeproto.CloudletInternal) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "getPlatformActiveFromCloudletInfo", "cloudletInternal", cloudletInternal)
+	activeStr, ok := cloudletInternal.Props[infracommon.CloudletPlatformActive]
+	if !ok {
+		return nil
+	}
+	active, err := strconv.ParseBool(activeStr)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "unable to parse CloudletPlatformActive as bool", "activeStr", activeStr, "err", err)
+		return fmt.Errorf("unable to parse CloudletPlatformActive as bool")
+	} else {
+		log.ForceLogSpan(log.SpanFromContext(ctx))
+		log.SpanLog(ctx, log.DebugLevelInfra, "ShepherdPlatformActive", "active", active)
+		shepherd_common.ShepherdPlatformActive = active
+	}
+	return nil
+}
 
+func (s *ShepherdPlatform) vmProviderCloudletCb(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "vmProviderCloudletCb", "new cloudlet internal", new)
+	err := s.setPlatformActiveFromCloudletInfo(ctx, new)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "setPlatformActiveFromCloudletInfo returned error", "err", err)
+	}
+	s.VMPlatform.VMProvider.InternalCloudletUpdatedCallback(ctx, old, new)
 }
 
 func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig, platformCaches *platform.Caches) error {
@@ -105,6 +128,16 @@ func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig
 	}
 	s.collectInterval = time.Minute * time.Duration(intervalMins)
 	log.SpanLog(ctx, log.DebugLevelInfra, "init shepherd done", "rootLB", s.rootLbName, "physicalName", pc.PhysicalName, "VM App collect interval", s.collectInterval)
+
+	var cloudletInternal edgeproto.CloudletInternal
+	if !platformCaches.CloudletInternalCache.Get(pc.CloudletKey, &cloudletInternal) {
+		log.SpanLog(ctx, log.DebugLevelInfra, "cloudletInternal not found", "key", pc.CloudletKey)
+	} else {
+		err = s.setPlatformActiveFromCloudletInfo(ctx, &cloudletInternal)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -185,7 +218,12 @@ func (s *ShepherdPlatform) GetVmAppRootLbClient(ctx context.Context, appInst *ed
 
 func (s *ShepherdPlatform) GetPlatformStats(ctx context.Context) (shepherd_common.CloudletMetrics, error) {
 	var err error
+
 	cloudletMetric := shepherd_common.CloudletMetrics{}
+	if !shepherd_common.ShepherdPlatformActive {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "skipping GetPlatformStats for inactive platform")
+		return cloudletMetric, nil
+	}
 	var result vmlayer.OperationInitResult
 	ctx, result, err = s.VMPlatform.VMProvider.InitOperationContext(ctx, vmlayer.OperationInitStart)
 	if err != nil {
@@ -206,6 +244,10 @@ func (s *ShepherdPlatform) GetPlatformStats(ctx context.Context) (shepherd_commo
 func (s *ShepherdPlatform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (shepherd_common.AppMetrics, error) {
 	var err error
 	appMetrics := shepherd_common.AppMetrics{}
+	if !shepherd_common.ShepherdPlatformActive {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "skipping GetVmStats for inactive platform")
+		return appMetrics, nil
+	}
 	var result vmlayer.OperationInitResult
 	ctx, result, err = s.VMPlatform.VMProvider.InitOperationContext(ctx, vmlayer.OperationInitStart)
 	if err != nil {
