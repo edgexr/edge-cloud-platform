@@ -273,7 +273,7 @@ func checkLoginLocked(user *ormapi.User, config *ormapi.Config) error {
 
 	if elapsed < lockoutDur {
 		remaining := lockoutDur - elapsed
-		return fmt.Errorf("Login temporarily disabled due to %d failed login attempts, please try again in %s", user.FailedLogins, remaining.String())
+		return fmt.Errorf("Login temporarily disabled due to %d failed login attempts, please try again in %s", user.FailedLogins, remaining.Round(time.Second).String())
 	}
 	return nil
 }
