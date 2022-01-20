@@ -1046,7 +1046,7 @@ func UpdateUser(c echo.Context) error {
 
 	err = db.Save(user).Error
 	if err != nil {
-		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"email_pkey") {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"users_email_key\"") {
 			return fmt.Errorf("Email %s already in use", user.Email)
 		}
 		return ormutil.DbErr(err)
