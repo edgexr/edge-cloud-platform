@@ -278,6 +278,17 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusBadRequest, status)
 
+	// update user check email already exists error message
+	mapData.Data = map[string]interface{}{
+		"User": map[string]interface{}{
+			"Name":  "MisterY",
+			"Email": "misterx@gmail.com",
+		},
+	}
+	_, status, err = mcClient.UpdateUser(uri, tokenMisterY, mapData)
+	require.NotNil(t, err)
+	require.Equal(t, "Email misterx@gmail.com already in use", err.Error())
+
 	// create an Organization
 	org2 := ormapi.Organization{
 		Type:         "developer",
