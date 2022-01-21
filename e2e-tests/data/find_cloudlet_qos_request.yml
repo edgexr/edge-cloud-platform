@@ -1,0 +1,13 @@
+registerclientrequest:
+  orgname: AcmeAppCo
+  appname: qosapplication
+  appvers: "1.0"
+  authtoken: "GENTOKEN:authtoken_private.pem"
+  uniqueidtype: E2E-test-uuid
+  uniqueid: "456"
+findcloudletrequest:
+  carriername: 31026
+  gpslocation:
+    latitude: 31.00
+    longitude: -91.00
+  tags: {"ip_user_equipment": "172.24.8.2"}

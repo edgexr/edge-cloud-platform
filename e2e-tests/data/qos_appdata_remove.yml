@@ -1,0 +1,86 @@
+flavors:
+- key:
+    name: x1.small
+  ram: 2048
+  vcpus: 2
+  disk: 2
+
+clusterinsts:
+- key:
+    clusterkey:
+      name: SmallCluster
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-2
+    organization: AcmeAppCo
+  flavor:
+    name: x1.small
+  liveness: Static
+  ipaccess: Dedicated
+  nummasters: 1
+  numnodes: 2
+  networks:
+  - net2
+
+operatorcodes:
+- code: 31026
+  organization: dmuus
+
+networks:
+- key:
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-2
+    name: net2
+  routes:
+  - destinationcidr: 10.55.0.0/16
+    nexthopip: 10.55.0.1
+  connectiontype: ConnectToLoadBalancer
+
+cloudlets:
+- key:
+    organization: dmuus
+    name: dmuus-cloud-2
+  location:
+    latitude: 35
+    longitude: -95
+  ipsupport: Dynamic
+  numdynamicips: 254
+  platformtype: Fake
+
+apps:
+- key:
+    organization: AcmeAppCo
+    name: qosapplication
+    version: "1.0"
+  imagepath: registry.mobiledgex.net/mobiledgex_AcmeAppCo/qosapplication:1.0
+  imagetype: Docker
+  deployment: "kubernetes"
+  defaultflavor:
+    name: x1.small
+  accessports: "tcp:80,tcp:443,udp:10002,tcp:81:tls,tcp:444:tls"
+  officialfqdn: qosapplication.acmeappco.com
+  androidpackagename: com.acme.qosapplication
+  qossessionprofile: QOS_THROUGHPUT_DOWN_M
+  qossessionduration: 5m0s
+  authpublickey: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END PUBLIC KEY-----\n"
+
+appinstances:
+- key:
+    appkey:
+      organization: AcmeAppCo
+      name: qosapplication
+      version: "1.0"
+    clusterinstkey:
+      clusterkey:
+        name: SmallCluster
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-2
+      organization: AcmeAppCo
+  cloudletloc:
+    latitude: 35
+    longitude: -95
+  liveness: Static
+  flavor:
+    name: x1.small

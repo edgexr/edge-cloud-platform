@@ -109,3 +109,9 @@ type FRM struct {
 	Region             string
 	cmd                *exec.Cmd
 }
+
+type QosSesSrvSim struct {
+	process.Common `yaml:",inline"`
+	Port           int
+	cmd            *exec.Cmd
+}

@@ -768,3 +768,21 @@ func (p *FRM) StopLocal() {
 func (p *FRM) GetExeName() string { return "frm" }
 
 func (p *FRM) LookupArgs() string { return p.Name }
+
+//DT QOS Sessions API server simulator
+func (p *QosSesSrvSim) StartLocal(logfile string, opts ...process.StartOp) error {
+	args := []string{"-port", fmt.Sprintf("%d", p.Port)}
+	var err error
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	return err
+}
+
+func (p *QosSesSrvSim) StopLocal() {
+	process.StopLocal(p.cmd)
+}
+
+func (p *QosSesSrvSim) GetExeName() string { return "sessions-srv-sim" }
+
+func (p *QosSesSrvSim) LookupArgs() string {
+	return fmt.Sprintf("-port %d", p.Port)
+}
