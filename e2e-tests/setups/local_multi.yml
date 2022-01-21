@@ -12,8 +12,6 @@ tlscerts:
 dockernetworks:
 - name: e2e-logging
   hostname: "127.0.0.1"
-- name: redis-net
-  hostname: "127.0.0.1"
 
 locsims:
 - name: locsim1
@@ -108,6 +106,53 @@ etcds:
   initialcluster: "etcd-partner2=http://127.0.0.1:30091"
   hostname: "127.0.0.1"
 
+rediscaches:
+# redis HA for ctrl1/ctrl2
+- name: redis1
+  type: master
+  port: 16379
+  hostname: "127.0.0.1"
+- name: redis2
+  type: slave
+  masterport: 16379
+  port: 16380
+  hostname: "127.0.0.1"
+- name: redis3
+  type: slave
+  masterport: 16379
+  port: 16381
+  hostname: "127.0.0.1"
+- name: redis-sentinel1
+  type: sentinel
+  masterport: 16379
+  port: 36379
+  hostname: "127.0.0.1"
+- name: redis-sentinel2
+  type: sentinel
+  masterport: 16379
+  port: 36380
+  hostname: "127.0.0.1"
+- name: redis-sentinel3
+  type: sentinel
+  masterport: 16379
+  port: 36381
+  hostname: "127.0.0.1"
+# standalone redis for ctrla1/ctrla2
+- name: redisa1
+  type: master
+  port: 36382
+  hostname: "127.0.0.1"
+# standalone redis for ctrl-partner1
+- name: redis-partner1
+  type: master
+  port: 36383
+  hostname: "127.0.0.1"
+# standalone redis for ctrl-partner2
+- name: redis-partner2
+  type: master
+  port: 36384
+  hostname: "127.0.0.1"
+
 controllers:
 - name: ctrl1
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
@@ -115,6 +160,7 @@ controllers:
   httpaddr: "0.0.0.0:36001"
   notifyaddr: "127.0.0.1:37001"
   vaultaddr: "http://127.0.0.1:8200"
+  redissentineladdrs: "127.0.0.1:36379,127.0.0.1:36380,127.0.0.1:36381"
   hostname: "127.0.0.1"
   versiontag: "2019-10-24"
   testmode: true
@@ -135,6 +181,7 @@ controllers:
   httpaddr: "0.0.0.0:36002"
   notifyaddr: "127.0.0.1:37002"
   vaultaddr: "http://127.0.0.1:8200"
+  redissentineladdrs: "127.0.0.1:36379,127.0.0.1:36380,127.0.0.1:36381"
   hostname: "127.0.0.1"
   versiontag: "2019-10-24"
   testmode: true
@@ -155,6 +202,7 @@ controllers:
   httpaddr: "0.0.0.0:36011"
   notifyaddr: "127.0.0.1:37011"
   vaultaddr: "http://127.0.0.1:8200"
+  redisstandaloneaddr: "127.0.0.1:36382"
   hostname: "127.0.0.1"
   versiontag: "2019-10-24"
   testmode: true
@@ -177,6 +225,7 @@ controllers:
   httpaddr: "0.0.0.0:36012"
   notifyaddr: "127.0.0.1:37012"
   vaultaddr: "http://127.0.0.1:8200"
+  redisstandaloneaddr: "127.0.0.1:36382"
   hostname: "127.0.0.1"
   versiontag: "2019-10-24"
   testmode: true
@@ -199,6 +248,7 @@ controllers:
   httpaddr: "0.0.0.0:36081"
   notifyaddr: "127.0.0.1:37081"
   vaultaddr: "http://127.0.0.1:8200"
+  redisstandaloneaddr: "127.0.0.1:36383"
   hostname: "127.0.0.1"
   versiontag: "2019-10-24"
   testmode: true
@@ -217,6 +267,7 @@ controllers:
   httpaddr: "0.0.0.0:36091"
   notifyaddr: "127.0.0.1:37091"
   vaultaddr: "http://127.0.0.1:8200"
+  redisstandaloneaddr: "127.0.0.1:36384"
   hostname: "127.0.0.1"
   versiontag: "2019-10-24"
   testmode: true
@@ -523,11 +574,6 @@ jaegers:
   dockerenvvars:
     ES_SERVER_URLS: http://elasticsearch-e2e:9200
     SPAN_STORAGE_TYPE: elasticsearch
-
-rediscaches:
-- name: redis-e2e
-  dockernetwork: redis-net
-  hostname: "127.0.0.1"
 
 autoprovs:
 - name: autoprov1

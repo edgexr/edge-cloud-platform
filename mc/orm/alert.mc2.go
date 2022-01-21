@@ -813,13 +813,6 @@ func addControllerApis(method string, group *echo.Group) {
 	// TimeLimitsUpdateAppInstTimeout: 9.5
 	// TimeLimitsDeleteAppInstTimeout: 9.6
 	// Errors: 10
-	// Status: 11
-	// StatusTaskNumber: 11.1
-	// StatusMaxTasks: 11.2
-	// StatusTaskName: 11.3
-	// StatusStepName: 11.4
-	// StatusMsgCount: 11.5
-	// StatusMsgs: 11.6
 	// State: 12
 	// CrmOverride: 13
 	// DeploymentLocal: 14
@@ -1224,13 +1217,6 @@ func addControllerApis(method string, group *echo.Group) {
 	// VmsFlavorPropMapValue: 3.7.5.2
 	// State: 4
 	// Errors: 5
-	// Status: 6
-	// StatusTaskNumber: 6.1
-	// StatusMaxTasks: 6.2
-	// StatusTaskName: 6.3
-	// StatusStepName: 6.4
-	// StatusMsgCount: 6.5
-	// StatusMsgs: 6.6
 	// CrmOverride: 7
 	// DeletePrepare: 8
 	// ```
@@ -1323,13 +1309,6 @@ func addControllerApis(method string, group *echo.Group) {
 	// Deployment: 15
 	// NumMasters: 13
 	// NumNodes: 14
-	// Status: 16
-	// StatusTaskNumber: 16.1
-	// StatusMaxTasks: 16.2
-	// StatusTaskName: 16.3
-	// StatusStepName: 16.4
-	// StatusMsgCount: 16.5
-	// StatusMsgs: 16.6
 	// ExternalVolumeSize: 17
 	// AutoScalePolicy: 18
 	// AvailabilityZone: 19
@@ -1688,13 +1667,6 @@ func addControllerApis(method string, group *echo.Group) {
 	// CreatedAtSeconds: 21.1
 	// CreatedAtNanos: 21.2
 	// AutoClusterIpAccess: 22
-	// Status: 23
-	// StatusTaskNumber: 23.1
-	// StatusMaxTasks: 23.2
-	// StatusTaskName: 23.3
-	// StatusStepName: 23.4
-	// StatusMsgCount: 23.5
-	// StatusMsgs: 23.6
 	// Revision: 24
 	// ForceUpdate: 25
 	// UpdateMultiple: 26

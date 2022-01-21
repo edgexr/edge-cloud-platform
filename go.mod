@@ -54,7 +54,7 @@ require (
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/shirou/gopsutil v2.20.4+incompatible
 	github.com/spf13/cobra v0.0.5
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	github.com/test-go/testify v1.1.4
 	github.com/tmc/scp v0.0.0-20170824174625-f7b48647feef
 	github.com/trustelem/zxcvbn v1.0.1
@@ -181,7 +181,7 @@ replace github.com/spf13/cobra => github.com/spf13/cobra v0.0.5
 
 replace github.com/spf13/pflag => github.com/spf13/pflag v1.0.5
 
-replace github.com/stretchr/testify => github.com/stretchr/testify v1.6.1
+replace github.com/stretchr/testify => github.com/stretchr/testify v1.7.0
 
 replace github.com/tmc/grpc-websocket-proxy => github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5
 
@@ -318,3 +318,11 @@ replace github.com/agnivade/levenshtein => github.com/agnivade/levenshtein v1.0.
 replace github.com/test-go/testify => github.com/test-go/testify v1.1.4
 
 replace golang.org/x/tools => golang.org/x/tools v0.0.0-20200603131246-cc40288be839
+
+replace github.com/Bose/minisentinel => github.com/Bose/minisentinel v0.0.0-20200130220412-917c5a9223bb
+
+replace github.com/alicebob/miniredis/v2 => github.com/alicebob/miniredis/v2 v2.18.0
+
+replace github.com/gomodule/redigo => github.com/gomodule/redigo v1.8.8
+
+replace github.com/yuin/gopher-lua => github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
