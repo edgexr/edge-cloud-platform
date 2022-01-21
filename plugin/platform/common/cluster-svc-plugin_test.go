@@ -2,7 +2,6 @@ package common
 
 import (
 	"context"
-	"io/ioutil"
 	"testing"
 
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -178,8 +177,6 @@ func testClusterRulesT(t *testing.T, ctx context.Context, clusterInst *edgeproto
 	configs, err := clusterSvc.GetAppInstConfigs(ctx, clusterInst, &appInst, policy, settings, alerts)
 	require.Nil(t, err)
 	require.Equal(t, 2, len(configs))
-	ioutil.WriteFile("foo", []byte(configs[0].Config), 0644)
 	require.Equal(t, expectedAutoProvRules, configs[0].Config)
-	ioutil.WriteFile("bar", []byte(configs[1].Config), 0644)
 	require.Equal(t, expectedAlertPoliciesRules, configs[1].Config)
 }

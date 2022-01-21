@@ -95,10 +95,6 @@ func (s *TestClient) StreamAppInst(ctx context.Context, in *edgeproto.AppInstKey
 	return out, err
 }
 
-func (s *TestClient) StreamLocalMsgs(ctx context.Context, in *edgeproto.AppInstKey) ([]edgeproto.Result, error) {
-	return nil, nil
-}
-
 func (s *TestClient) StreamCloudlet(ctx context.Context, in *edgeproto.CloudletKey) ([]edgeproto.Result, error) {
 	inR := &ormapi.RegionCloudletKey{
 		Region:      s.Region,
