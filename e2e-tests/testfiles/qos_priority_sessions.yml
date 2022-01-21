@@ -1,0 +1,56 @@
+##
+description: executes matching engine request for find_cloudlet, then verifies that priority_session_id is included in the response.
+
+tests:
+
+- name: Add qosapplication app and appinst
+  apifile: "{{datadir2}}/qos_appdata_add.yml"
+  actions: [ctrlapi-create,ctrlapi-show]
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir2}}/qos_appdata_show.yml"
+    filetype: appdata
+
+- name: Verify qos_profile_name is included in response
+  apifile: "{{datadir2}}/find_cloudlet_qos_request.yml"
+  actions: [dmeapi-findcloudletandverifyqos]
+  compareyaml:
+    yaml1: "{{outputdir}}/findcloudletandverifyqos.yml"
+    yaml2: "{{datadir2}}/find_cloudlet_qos_response_throughput_m.yml"
+    filetype: findcloudlet
+
+- name: Verify priority_session_id is the same as previous run
+  apifile: "{{datadir2}}/find_cloudlet_qos_request.yml"
+  actions: [dmeapi-findcloudletandverifyqos]
+  compareyaml:
+    yaml1: "{{outputdir}}/findcloudletandverifyqos.yml"
+    yaml2: "{{datadir2}}/find_cloudlet_qos_response_throughput_m.yml"
+    filetype: findcloudlet
+
+- name: Update App QOS profile name
+  apifile: "{{datadir2}}/app_update_qos_profile.yml"
+  actions: [ctrlapi-update]
+
+- name: Verify priority_session_id is different from previous run
+  apifile: "{{datadir2}}/find_cloudlet_qos_request.yml"
+  actions: [dmeapi-findcloudletandverifyqos]
+  compareyaml:
+    yaml1: "{{outputdir}}/findcloudletandverifyqos.yml"
+    yaml2: "{{datadir2}}/find_cloudlet_qos_response_low_latency.yml"
+    filetype: findcloudlet
+
+- name: Exclude ip_user_equipment and verify no tags in response
+  apifile: "{{datadir2}}/find_cloudlet_qos_request_no_user_ip.yml"
+  actions: [dmeapi-findcloudletandverifyqos]
+  compareyaml:
+    yaml1: "{{outputdir}}/findcloudletandverifyqos.yml"
+    yaml2: "{{datadir2}}/find_cloudlet_qos_response_no_user_ip.yml"
+    filetype: findcloudlet
+
+- name: Remove qosapplication app and appinst
+  apifile: "{{datadir2}}/qos_appdata_remove.yml"
+  actions: [ctrlapi-delete,ctrlapi-show]
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir2}}/qos_appdata_empty.yml"
+    filetype: appdata

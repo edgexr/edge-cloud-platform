@@ -28,6 +28,11 @@ toksims:
   port: 9999
   hostname: "127.0.0.1"
 
+qossessims:
+- name: qossessim1
+  port: 8081
+  hostname: "127.0.0.1"
+
 vaults:
 - name: vault
   hostname: "127.0.0.1"
@@ -303,6 +308,7 @@ dmes:
   notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
   locverurl: "{{locverurl}}"
   toksrvurl: "{{toksrvurl}}"
+  qossesaddr: "http://localhost:8081"
   carrier: GDDT
   cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-1"}'
   vaultaddr: "http://127.0.0.1:8200"
@@ -315,6 +321,7 @@ dmes:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
     E2ETEST_NORANDOM: true
+    E2ETEST_QOS_SIM: true
 
 - name: dme2
   apiaddr: "0.0.0.0:50052"

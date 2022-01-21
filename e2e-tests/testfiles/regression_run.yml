@@ -19,4 +19,5 @@ tests:
     loops: 2
   - includefile: fetchlogs.yml
   - includefile: federationtest.yml
+  - includefile: qos_priority_sessions.yml
   - includefile: {{edge-cloud-testfiles}}/stop_cleanup.yml

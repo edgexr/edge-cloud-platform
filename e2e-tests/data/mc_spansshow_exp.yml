@@ -52,7 +52,6 @@
         expires: null
     - msg: req tags
       keyvalues:
-        ip_user_equipment: ""
         req.Tags: map[]
     - msg: findCloudlet
       keyvalues:
