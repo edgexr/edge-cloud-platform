@@ -152,6 +152,11 @@ rediscaches:
   type: master
   port: 36384
   hostname: "127.0.0.1"
+# redis standalone for crm
+- name: redis-standalone
+  type: master
+  port: 6379
+  hostname: "127.0.0.1"
 
 controllers:
 - name: ctrl1
