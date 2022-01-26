@@ -3441,7 +3441,6 @@ func TestDataConversions(t *testing.T) {
 		"numdynamicips=0",
 		"envvar:empty=true",
 		"accessvars:empty=true",
-		"restagmap:empty=true",
 		"resourcequotas:empty=true"}
 	obj1 := ormapi.RegionCloudlet{}
 	obj1.Region = "local"
@@ -3449,7 +3448,6 @@ func TestDataConversions(t *testing.T) {
 	obj1.Cloudlet.Key.Organization = "dmuus"
 	obj1.Cloudlet.EnvVar = make(map[string]string)
 	obj1.Cloudlet.AccessVars = make(map[string]string)
-	obj1.Cloudlet.ResTagMap = make(map[string]*edgeproto.ResTagTableKey)
 	obj1.Cloudlet.ResourceQuotas = []edgeproto.ResourceQuota{}
 	obj1.Cloudlet.Fields = []string{
 		edgeproto.CloudletFieldKeyName,
@@ -3457,7 +3455,6 @@ func TestDataConversions(t *testing.T) {
 		edgeproto.CloudletFieldNumDynamicIps,
 		edgeproto.CloudletFieldEnvVar,
 		edgeproto.CloudletFieldAccessVars,
-		edgeproto.CloudletFieldResTagMap,
 		edgeproto.CloudletFieldResourceQuotas,
 	}
 	setupExpected(&obj1)

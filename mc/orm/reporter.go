@@ -20,6 +20,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
+	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/gcs"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -1109,7 +1110,7 @@ func GetCloudletAlerts(ctx context.Context, username string, report *ormapi.Gene
 		},
 	}
 	err := ctrlclient.ShowAlertStream(ctx, rc, obj, connCache, nil, func(alert *edgeproto.Alert) error {
-		alertTime := cloudcommon.TimestampToTime(alert.ActiveAt).In(report.StartTime.Location())
+		alertTime := dme.TimestampToTime(alert.ActiveAt).In(report.StartTime.Location())
 		if !inTimeSpan(report.StartTime, report.EndTime, alertTime) {
 			return nil
 		}

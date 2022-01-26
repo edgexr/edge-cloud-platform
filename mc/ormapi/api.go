@@ -164,6 +164,7 @@ type BillingOrganization struct {
 	CreatedAt time.Time `json:",omitempty"`
 	// read only: true
 	UpdatedAt time.Time `json:",omitempty"`
+	// Delete of this BillingOrganization is in progress
 	// read only: true
 	DeleteInProgress bool `json:",omitempty"`
 }
@@ -332,7 +333,8 @@ type Role struct {
 type OrgCloudlet struct {
 	// Region name
 	Region string `json:"region,omitempty"`
-	Org    string `form:"org" json:"org"`
+	// Org that has permissions for cloudlets
+	Org string `form:"org" json:"org"`
 }
 
 type ShowUser struct {
@@ -395,6 +397,7 @@ type AuditResponse struct {
 // verification email. It contains the information need to send
 // some kind of email to the user.
 type EmailRequest struct {
+	// User's email address
 	// read only: true
 	Email string `form:"email" json:"email"`
 	// read only: true
@@ -487,9 +490,9 @@ type RegionData struct {
 type MetricsCommon struct {
 	edgeproto.TimeRange `json:",inline"`
 	// Display X samples spaced out evenly over start and end times
-	NumSamples          int `json:",omitempty"`
+	NumSamples int `json:",omitempty"`
 	// Display the last X metrics
-	Limit               int `json:",omitempty"`
+	Limit int `json:",omitempty"`
 }
 
 // Metrics data
@@ -510,7 +513,7 @@ type MetricSeries struct {
 
 type RegionAppInstMetrics struct {
 	// Region name
-	Region        string
+	Region string
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
 	Selector      string
 	AppInst       edgeproto.AppInstKey   `json:",omitempty"`
@@ -529,9 +532,9 @@ type RegionCustomAppMetrics struct {
 
 type RegionClusterInstMetrics struct {
 	// Region name
-	Region        string
-	ClusterInst   edgeproto.ClusterInstKey   `json:",omitempty"`
-	ClusterInsts  []edgeproto.ClusterInstKey `json:",omitempty"`
+	Region       string
+	ClusterInst  edgeproto.ClusterInstKey   `json:",omitempty"`
+	ClusterInsts []edgeproto.ClusterInstKey `json:",omitempty"`
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
 	Selector      string
 	MetricsCommon `json:",inline"`
@@ -539,9 +542,9 @@ type RegionClusterInstMetrics struct {
 
 type RegionCloudletMetrics struct {
 	// Region name
-	Region        string
-	Cloudlet      edgeproto.CloudletKey   `json:",omitempty"`
-	Cloudlets     []edgeproto.CloudletKey `json:",omitempty"`
+	Region    string
+	Cloudlet  edgeproto.CloudletKey   `json:",omitempty"`
+	Cloudlets []edgeproto.CloudletKey `json:",omitempty"`
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
 	Selector      string
 	PlatformType  string
@@ -550,65 +553,65 @@ type RegionCloudletMetrics struct {
 
 type RegionClientApiUsageMetrics struct {
 	// Region name
-	Region         string
-	AppInst        edgeproto.AppInstKey
+	Region  string
+	AppInst edgeproto.AppInstKey
 	// API call method, one of: FindCloudlet, PlatformFindCloudlet, RegisterClient, VerifyLocation
-	Method         string `json:",omitempty"`
+	Method string `json:",omitempty"`
 	// Cloudlet name where DME is running
-	DmeCloudlet    string `json:",omitempty"`
+	DmeCloudlet string `json:",omitempty"`
 	// Operator organization where DME is running
 	DmeCloudletOrg string `json:",omitempty"`
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
-	Selector       string
-	MetricsCommon  `json:",inline"`
+	Selector      string
+	MetricsCommon `json:",inline"`
 }
 
 type RegionClientAppUsageMetrics struct {
 	// Region name
-	Region          string
-	AppInst         edgeproto.AppInstKey
+	Region  string
+	AppInst edgeproto.AppInstKey
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
-	Selector        string
+	Selector string
 	// Device carrier. Can be used for selectors: latency, deviceinfo
-	DeviceCarrier   string `json:",omitempty"`
+	DeviceCarrier string `json:",omitempty"`
 	// Data network type used by client device. Can be used for selectors: latency
 	DataNetworkType string `json:",omitempty"`
 	// Device model. Can be used for selectors: deviceinfo
-	DeviceModel     string `json:",omitempty"`
+	DeviceModel string `json:",omitempty"`
 	// Device operating system. Can be used for selectors: deviceinfo
-	DeviceOs        string `json:",omitempty"`
-	SignalStrength  string `json:",omitempty"`
+	DeviceOs       string `json:",omitempty"`
+	SignalStrength string `json:",omitempty"`
 	// Provides the range of GPS coordinates for the location tile/square.
 	// Format is: 'LocationUnderLongitude,LocationUnderLatitude_LocationOverLongitude,LocationOverLatitude_LocationTileLength'.
 	// LocationUnder are the GPS coordinates of the corner closest to (0,0) of the location tile.
 	// LocationOver are the GPS coordinates of the corner farthest from (0,0) of the location tile.
 	// LocationTileLength is the length (in kilometers) of one side of the location tile square
-	LocationTile    string `json:",omitempty"`
-	MetricsCommon   `json:",inline"`
+	LocationTile  string `json:",omitempty"`
+	MetricsCommon `json:",inline"`
 }
 
 type RegionClientCloudletUsageMetrics struct {
 	// Region name
-	Region          string
-	Cloudlet        edgeproto.CloudletKey
+	Region   string
+	Cloudlet edgeproto.CloudletKey
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
-	Selector        string
+	Selector string
 	// Device carrier. Can be used for selectors: latency, deviceinfo
-	DeviceCarrier   string `json:",omitempty"`
+	DeviceCarrier string `json:",omitempty"`
 	// Data network type used by client device. Can be used for selectors: latency
 	DataNetworkType string `json:",omitempty"`
 	// Device model. Can be used for selectors: deviceinfo
-	DeviceModel     string `json:",omitempty"`
+	DeviceModel string `json:",omitempty"`
 	// Device operating system. Can be used for selectors: deviceinfo
-	DeviceOs        string `json:",omitempty"`
-	SignalStrength  string `json:",omitempty"`
+	DeviceOs       string `json:",omitempty"`
+	SignalStrength string `json:",omitempty"`
 	// Provides the range of GPS coordinates for the location tile/square.
 	// Format is: 'LocationUnderLongitude,LocationUnderLatitude_LocationOverLongitude,LocationOverLatitude_LocationTileLength'.
 	// LocationUnder are the GPS coordinates of the corner closest to (0,0) of the location tile.
 	// LocationOver are the GPS coordinates of the corner farthest from (0,0) of the location tile.
 	// LocationTileLength is the length (in kilometers) of one side of the location tile square
-	LocationTile    string `json:",omitempty"`
-	MetricsCommon   `json:",inline"`
+	LocationTile  string `json:",omitempty"`
+	MetricsCommon `json:",inline"`
 }
 
 type RegionAppInstEvents struct {
@@ -634,14 +637,14 @@ type RegionCloudletEvents struct {
 
 type RegionAppInstUsage struct {
 	// Region name
-	Region    string
-	AppInst   edgeproto.AppInstKey
+	Region  string
+	AppInst edgeproto.AppInstKey
 	// Time to start displaying stats from
 	StartTime time.Time `json:",omitempty"`
 	// Time up to which to display stats
-	EndTime   time.Time `json:",omitempty"`
+	EndTime time.Time `json:",omitempty"`
 	// Show only VM-based apps
-	VmOnly    bool      `json:",omitempty"`
+	VmOnly bool `json:",omitempty"`
 }
 
 type RegionClusterInstUsage struct {
@@ -649,21 +652,21 @@ type RegionClusterInstUsage struct {
 	Region      string
 	ClusterInst edgeproto.ClusterInstKey
 	// Time to start displaying stats from
-	StartTime   time.Time `json:",omitempty"`
+	StartTime time.Time `json:",omitempty"`
 	// Time up to which to display stats
-	EndTime     time.Time `json:",omitempty"`
+	EndTime time.Time `json:",omitempty"`
 }
 
 type RegionCloudletPoolUsage struct {
 	// Region name
-	Region         string
-	CloudletPool   edgeproto.CloudletPoolKey
+	Region       string
+	CloudletPool edgeproto.CloudletPoolKey
 	// Time to start displaying stats from
-	StartTime      time.Time `json:",omitempty"`
+	StartTime time.Time `json:",omitempty"`
 	// Time up to which to display stats
-	EndTime        time.Time `json:",omitempty"`
+	EndTime time.Time `json:",omitempty"`
 	// Show only VM-based apps
-	ShowVmAppsOnly bool      `json:",omitempty"`
+	ShowVmAppsOnly bool `json:",omitempty"`
 }
 
 type RegionCloudletPoolUsageRegister struct {

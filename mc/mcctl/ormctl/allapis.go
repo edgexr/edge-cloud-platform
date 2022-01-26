@@ -119,7 +119,6 @@ func aliasedComments(comments map[string]string, aliases []string) map[string]st
 	}
 	for k, v := range comments {
 		if alias, found := lookup[k]; found {
-			delete(comments, k)
 			aliasedComments[alias] = v
 		} else {
 			aliasedComments[k] = v
@@ -131,4 +130,26 @@ func aliasedComments(comments map[string]string, aliases []string) map[string]st
 func addRegionComment(comments map[string]string) map[string]string {
 	comments["region"] = "Region name"
 	return comments
+}
+
+func (s *ApiCommand) Validate() error {
+	// make sure all arguments have valid help comment
+	args := []string{}
+	if str := strings.TrimSpace(s.RequiredArgs); str != "" {
+		args = append(args, strings.Split(str, " ")...)
+	}
+	if str := strings.TrimSpace(s.OptionalArgs); str != "" {
+		args = append(args, strings.Split(str, " ")...)
+	}
+	missingComments := []string{}
+	for _, arg := range args {
+		_, found := s.Comments[arg]
+		if !found {
+			missingComments = append(missingComments, arg)
+		}
+	}
+	if len(missingComments) > 0 {
+		return fmt.Errorf("Error, no comment found for command %s args %v, comments are %v, aliases are %v", s.Name, missingComments, s.Comments, s.AliasArgs)
+	}
+	return nil
 }

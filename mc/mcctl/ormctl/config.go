@@ -11,7 +11,8 @@ func init() {
 		Name:         "UpdateConfig",
 		Use:          "update",
 		Short:        "Update master controller global configuration",
-		OptionalArgs: "locknewaccounts notifyemailaddress, skipverifyemail, maxmetricsdatapoints, passwordmincracktimesec, adminpasswordmincracktimesec userapikeycreatelimit billingenable disableratelimit maxnumperipratelimiters maxnumperuserratelimiters failedloginlockoutthreshold1 failedloginlockouttimesec1 failedloginlockoutthreshold2 failedloginlockouttimesec2",
+		OptionalArgs: "locknewaccounts notifyemailaddress skipverifyemail maxmetricsdatapoints passwordmincracktimesec adminpasswordmincracktimesec userapikeycreatelimit billingenable disableratelimit ratelimitmaxtrackedips ratelimitmaxtrackedusers failedloginlockoutthreshold1 failedloginlockouttimesec1 failedloginlockoutthreshold2 failedloginlockouttimesec2",
+		Comments:     ormapi.ConfigComments,
 		ReqData:      &ormapi.Config{},
 		Path:         "/auth/config/update",
 	}, &ApiCommand{
