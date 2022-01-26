@@ -8,7 +8,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/promutils"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
@@ -45,7 +45,7 @@ func getPromAlerts(ctx context.Context, addr string, client ssh.Client) ([]edgep
 		alert.State = pa.State
 		alert.Value = float64(pa.Value)
 		if pa.ActiveAt != nil {
-			alert.ActiveAt = cloudcommon.TimeToTimestamp(*pa.ActiveAt)
+			alert.ActiveAt = dme.TimeToTimestamp(*pa.ActiveAt)
 		}
 		alerts = append(alerts, alert)
 	}

@@ -71,18 +71,21 @@ func init() {
 		Name:         "ResendVerify",
 		Short:        "Request that the user verification email be resent",
 		RequiredArgs: "email",
+		Comments:     ormapi.EmailRequestComments,
 		ReqData:      &ormapi.EmailRequest{},
 		Path:         "/resendverify",
 	}, &ApiCommand{
 		Name:         "VerifyEmail",
 		Short:        "Verify a user's email account from the token in the email",
 		RequiredArgs: "token",
+		Comments:     ormapi.TokenComments,
 		ReqData:      &ormapi.Token{},
 		Path:         "/verifyemail",
 	}, &ApiCommand{
 		Name:         "PasswordResetRequest",
 		Short:        "Request a password reset email to be sent to the user's email",
 		RequiredArgs: "email",
+		Comments:     ormapi.EmailRequestComments,
 		ReqData:      &ormapi.EmailRequest{},
 		Path:         "/passwordresetrequest",
 	}, &ApiCommand{
@@ -90,6 +93,7 @@ func init() {
 		Use:            "passwordreset",
 		Short:          "Reset the password using the token from the password reset email",
 		RequiredArgs:   "token",
+		Comments:       ormapi.PasswordResetComments,
 		PasswordArg:    "password",
 		VerifyPassword: true,
 		ReqData:        &ormapi.PasswordReset{},
@@ -140,11 +144,19 @@ func init() {
 		Name:         "Login",
 		Short:        "Login using account credentials",
 		OptionalArgs: "name totp apikeyid apikey",
+		Comments:     LoginComments,
 		ReqData:      &ormapi.UserLogin{},
 		ReplyData:    &map[string]interface{}{},
 		Path:         "/login",
 	}
 	AllApis.AddCommand(cmd)
+}
+
+var LoginComments = map[string]string{
+	"name":     "User's name",
+	"totp":     "Temporary one-time password, if 2-factor auth is enabled",
+	"apikeyid": "API key ID if authenticating via API key instead of user name",
+	"apikey":   "API key value if authenticating via API key instead of user name",
 }
 
 var EmbeddedUserAliasArgs = []string{

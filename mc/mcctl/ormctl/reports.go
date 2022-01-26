@@ -64,7 +64,7 @@ func init() {
 		OptionalArgs: "reporter",
 		ReqData:      &ormapi.DownloadReport{},
 		ReplyData:    &[]string{},
-		Comments:     ormapi.GenerateReportComments,
+		Comments:     ormapi.DownloadReportComments,
 		Path:         "/auth/report/show",
 	}, &ApiCommand{
 		Name:         "DownloadReport",

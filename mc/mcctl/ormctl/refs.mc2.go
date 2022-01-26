@@ -102,12 +102,8 @@ var CloudletRefsRequiredArgs = []string{
 	"key.federatedorganization",
 }
 var CloudletRefsOptionalArgs = []string{
-	"rootlbports:#.key",
-	"rootlbports:#.value",
 	"useddynamicips",
 	"usedstaticips",
-	"optresusedmap:#.key",
-	"optresusedmap:#.value",
 	"reservedautoclusterids",
 	"clusterinsts:#.clusterkey.name",
 	"clusterinsts:#.organization",
@@ -121,12 +117,8 @@ var CloudletRefsAliasArgs = []string{
 	"key.organization=cloudletrefs.key.organization",
 	"key.name=cloudletrefs.key.name",
 	"key.federatedorganization=cloudletrefs.key.federatedorganization",
-	"rootlbports:#.key=cloudletrefs.rootlbports:#.key",
-	"rootlbports:#.value=cloudletrefs.rootlbports:#.value",
 	"useddynamicips=cloudletrefs.useddynamicips",
 	"usedstaticips=cloudletrefs.usedstaticips",
-	"optresusedmap:#.key=cloudletrefs.optresusedmap:#.key",
-	"optresusedmap:#.value=cloudletrefs.optresusedmap:#.value",
 	"reservedautoclusterids=cloudletrefs.reservedautoclusterids",
 	"clusterinsts:#.clusterkey.name=cloudletrefs.clusterinsts:#.clusterkey.name",
 	"clusterinsts:#.organization=cloudletrefs.clusterinsts:#.organization",
@@ -193,20 +185,11 @@ var AppInstRefsRequiredArgs = []string{
 	"key.name",
 	"key.version",
 }
-var AppInstRefsOptionalArgs = []string{
-	"insts:#.key",
-	"insts:#.value",
-	"deleterequestedinsts:#.key",
-	"deleterequestedinsts:#.value",
-}
+var AppInstRefsOptionalArgs = []string{}
 var AppInstRefsAliasArgs = []string{
 	"key.organization=appinstrefs.key.organization",
 	"key.name=appinstrefs.key.name",
 	"key.version=appinstrefs.key.version",
-	"insts:#.key=appinstrefs.insts:#.key",
-	"insts:#.value=appinstrefs.insts:#.value",
-	"deleterequestedinsts:#.key=appinstrefs.deleterequestedinsts:#.key",
-	"deleterequestedinsts:#.value=appinstrefs.deleterequestedinsts:#.value",
 }
 var AppInstRefsComments = map[string]string{
 	"key.organization": "App developer organization",

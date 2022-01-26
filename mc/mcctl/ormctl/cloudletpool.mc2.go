@@ -156,10 +156,8 @@ var CloudletPoolAliasArgs = []string{
 	"org=cloudletpool.key.organization",
 	"name=cloudletpool.key.name",
 	"cloudlets=cloudletpool.cloudlets",
-	"createdat.seconds=cloudletpool.createdat.seconds",
-	"createdat.nanos=cloudletpool.createdat.nanos",
-	"updatedat.seconds=cloudletpool.updatedat.seconds",
-	"updatedat.nanos=cloudletpool.updatedat.nanos",
+	"createdat=cloudletpool.createdat",
+	"updatedat=cloudletpool.updatedat",
 	"deleteprepare=cloudletpool.deleteprepare",
 }
 var CloudletPoolComments = map[string]string{
@@ -167,6 +165,8 @@ var CloudletPoolComments = map[string]string{
 	"org":           "Name of the organization this pool belongs to",
 	"name":          "CloudletPool Name",
 	"cloudlets":     "Cloudlets part of the pool, specify cloudlets:empty=true to clear",
+	"createdat":     "Created at time",
+	"updatedat":     "Updated at time",
 	"deleteprepare": "Preparing to be deleted",
 }
 var CloudletPoolSpecialArgs = map[string]string{

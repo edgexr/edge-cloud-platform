@@ -1,6 +1,8 @@
 package ormctl
 
 import (
+	"strings"
+
 	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 )
@@ -31,8 +33,8 @@ func init() {
 		Use:          "addchild",
 		Short:        "Add an organization as a child of a billing organization",
 		RequiredArgs: "name child",
-		AliasArgs:    "child=children",
-		Comments:     ormapi.BillingOrganizationComments,
+		AliasArgs:    strings.Join(BillingOrgAliasArgs, " "),
+		Comments:     aliasedComments(ormapi.BillingOrganizationComments, BillingOrgAliasArgs),
 		ReqData:      &ormapi.BillingOrganization{},
 		Path:         "/auth/billingorg/addchild",
 	}, &ApiCommand{
@@ -40,8 +42,8 @@ func init() {
 		Use:          "removechild",
 		Short:        "Remove an organization from a billing organization",
 		RequiredArgs: "name child",
-		AliasArgs:    "child=children",
-		Comments:     ormapi.BillingOrganizationComments,
+		AliasArgs:    strings.Join(BillingOrgAliasArgs, " "),
+		Comments:     aliasedComments(ormapi.BillingOrganizationComments, BillingOrgAliasArgs),
 		ReqData:      &ormapi.BillingOrganization{},
 		Path:         "/auth/billingorg/removechild",
 	}, &ApiCommand{
@@ -97,6 +99,10 @@ func init() {
 		Path:         "/auth/billingorg/invoice",
 	}}
 	AllApis.AddGroup(BillingOrgGroup, "Manage billing organizations", cmds)
+}
+
+var BillingOrgAliasArgs = []string{
+	"child=children",
 }
 
 var CreateBillingOrgComments = map[string]string{

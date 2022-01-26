@@ -64,7 +64,7 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"ip_access":"Shared","num_masters":1,"num_nodes":1,"resources":{"vms":null},"created_at":{},"updated_at":{},"reservation_ended_at":{}}}'
+  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"ip_access":"Shared","num_masters":1,"num_nodes":1,"resources":{"vms":null},"created_at":"","updated_at":"","reservation_ended_at":""}}'
   response: |
     {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
     {"data":{"message":"Deleting"}}
@@ -90,7 +90,7 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"ip_access":"Dedicated","num_masters":1,"num_nodes":1,"auto_scale_policy":"scale1","resources":{"vms":null},"created_at":{},"updated_at":{},"reservation_ended_at":{}}}'
+  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"ip_access":"Dedicated","num_masters":1,"num_nodes":1,"auto_scale_policy":"scale1","resources":{"vms":null},"created_at":"","updated_at":"","reservation_ended_at":""}}'
   response: |
     {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
     {"data":{"message":"Deleting"}}
@@ -116,7 +116,7 @@
   org: platos
   clientip: 127.0.0.1
   status: 200
-  request: '{"Region":"locala","App":{"key":{"organization":"platos","name":"platosEnablingLayer","version":"1.0"},"image_path":"registry.mobiledgex.net/platos/dummyvalue","image_type":"Docker","access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","created_at":{},"updated_at":{},"required_outbound_connections":null}}'
+  request: '{"Region":"locala","App":{"key":{"organization":"platos","name":"platosEnablingLayer","version":"1.0"},"image_path":"registry.mobiledgex.net/platos/dummyvalue","image_type":"Docker","access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","created_at":"","updated_at":"","required_outbound_connections":null}}'
   response: '{}'
   tags:
     app: platosEnablingLayer
@@ -127,7 +127,7 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"autoprovapp","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:81","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprov1"],"created_at":{},"updated_at":{},"required_outbound_connections":null}}'
+  request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"autoprovapp","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:81","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprov1"],"created_at":"","updated_at":"","required_outbound_connections":null}}'
   response: '{}'
   tags:
     app: autoprovapp
@@ -140,7 +140,7 @@
   status: 200
   request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:80,tcp:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
     PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
-    PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1","created_at":{},"updated_at":{},"required_outbound_connections":null}}'
+    PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1","created_at":"","updated_at":"","required_outbound_connections":null}}'
   response: '{}'
   tags:
     app: someapplication1
@@ -151,7 +151,7 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"updated_at":{}}}'
+  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":"","updated_at":""}}'
   response: |
     {"data":{"message":"Deleting"}}
     {"data":{"message":"First Delete Task"}}
