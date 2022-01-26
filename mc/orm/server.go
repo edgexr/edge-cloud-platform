@@ -569,6 +569,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/billingorg/deletepaymentprofile", DeletePaymentInfo)
 
 	auth.POST("/controller/create", CreateController)
+	auth.POST("/controller/update", UpdateController)
 	auth.POST("/controller/delete", DeleteController)
 	auth.POST("/controller/show", ShowController)
 	auth.POST("/gitlab/resync", GitlabResync)
@@ -619,6 +620,8 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	//   403: forbidden
 	//   404: notFound
 	auth.POST("/metrics/app", GetMetricsCommon)
+
+	auth.POST("/metrics/app/v2", GetAppMetricsV2)
 
 	// swagger:route POST /auth/metrics/cluster DeveloperMetrics ClusterMetrics
 	// Cluster related metrics.

@@ -1,0 +1,12 @@
+- name: connections
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+    region: local
+  values:
+    connections: 150

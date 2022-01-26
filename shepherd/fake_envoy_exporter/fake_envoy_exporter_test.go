@@ -40,6 +40,45 @@ func TestExporter(t *testing.T) {
 
 	ensureMeas(t, client, `envoy_cluster_upstream_cx_active{envoy_cluster_name="testclust"} 11`)
 }
+func TestExporterPortArg(t *testing.T) {
+	*sockFile = "/tmp/fake_envoy_exporter_unit_test"
+	portFlags = append(portFlags, "80")
+
+	ch := make(chan bool, 0)
+	run(ch)
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", *sockFile)
+			},
+		},
+	}
+
+	ensureMeas(t, client, `envoy_cluster_upstream_cx_active{envoy_cluster_name="backend80"} 50`)
+
+	// update measure
+	params := url.Values{}
+	params.Set("measure", `envoy_cluster_upstream_cx_active{envoy_cluster_name="backend80"}`)
+	params.Set("val", "11")
+	resp, err := client.PostForm("http://unix/setval", params)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+
+	ensureMeas(t, client, `envoy_cluster_upstream_cx_active{envoy_cluster_name="backend80"} 11`)
+
+	// clear measure
+	params = url.Values{}
+	params.Set("measure", `envoy_cluster_upstream_cx_active{envoy_cluster_name="backend80"}`)
+	params.Set("val", "0")
+	resp, err = client.PostForm("http://unix/setval", params)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+
+	ensureMeas(t, client, `envoy_cluster_upstream_cx_active{envoy_cluster_name="backend80"} 0`)
+}
 
 func ensureMeas(t *testing.T, client *http.Client, meas string) {
 	resp, err := client.Get("http://unix/stats/prometheus")

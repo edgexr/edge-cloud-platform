@@ -9,6 +9,7 @@
     clusterorg: AcmeAppCo
     env: testing
     job: MobiledgeX Monitoring
+    port: "80"
     region: local
     scope: Application
     severity: warning

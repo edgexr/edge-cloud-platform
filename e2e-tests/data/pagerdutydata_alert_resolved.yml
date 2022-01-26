@@ -18,6 +18,7 @@
          cloudletorg = dmuus
          cluster = SmallCluster
          clusterorg = AcmeAppCo
+         port = 80
          region = local
          scope = Application
          severity = error
@@ -49,6 +50,7 @@
          cloudletorg = dmuus
          cluster = SmallCluster
          clusterorg = AcmeAppCo
+         port = 80
          region = local
          scope = Application
          severity = error

@@ -82,6 +82,7 @@ var ControllerComments = map[string]string{
 	"notifyaddr": `Controller notify address or URL`,
 	"influxdb":   `InfluxDB address`,
 	"dnsregion":  `Unique DNS label for the region`,
+	"thanosmetrics": `Thanos Query URL`,
 }
 
 var ConfigComments = map[string]string{

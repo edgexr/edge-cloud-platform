@@ -55,6 +55,8 @@ var appDNSRoot = flag.String("appDNSRoot", "mobiledgex.net", "App domain name ro
 var chefServerPath = flag.String("chefServerPath", "", "Chef server path")
 var promScrapeInterval = flag.Duration("promScrapeInterval", defaultScrapeInterval, "Prometheus Scraping Interval")
 var haRole = flag.String("HARole", string(process.HARolePrimary), "HARole") // for info purposes and to distinguish nodes when running debug commands
+var thanosRecvAddr = flag.String("thanosRecvAddr", "", "Address of thanos receive API endpoint including port")
+
 var metricsScrapingInterval time.Duration
 
 var defaultPrometheusPort = cloudcommon.PrometheusPort
@@ -281,7 +283,7 @@ func settingsCb(ctx context.Context, _ *edgeproto.Settings, new *edgeproto.Setti
 	}
 	if old.ShepherdAlertEvaluationInterval != new.ShepherdAlertEvaluationInterval || scrapeChanged {
 		// re-write Cloudlet Prometheus config and reload
-		err := intprocess.WriteCloudletPromConfig(ctx, &metricsScrapingInterval, (*time.Duration)(&new.ShepherdAlertEvaluationInterval))
+		err := intprocess.WriteCloudletPromConfig(ctx, *thanosRecvAddr, &metricsScrapingInterval, (*time.Duration)(&new.ShepherdAlertEvaluationInterval))
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelNotify, "Failed to write cloudlet prometheus config", "err", err)
 		} else {

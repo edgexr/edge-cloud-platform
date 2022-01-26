@@ -43,7 +43,7 @@ func TestClientApiUsageMetricsQuery(t *testing.T) {
 	// sampled query
 	testRegionClientApiUsage.EndTime = time.Date(2020, 1, 1, 1, 1, 0, 0, time.UTC)
 	testRegionClientApiUsage.NumSamples = 1
-	err := validateMetricsCommon(&testRegionClientApiUsage.MetricsCommon)
+	err := validateAndResolveInfluxMetricsCommon(&testRegionClientApiUsage.MetricsCommon)
 	require.Nil(t, err)
 	require.Equal(t, testApiUsageQuerySampled, ClientApiUsageMetricsQuery(&testRegionClientApiUsage, []string{}, nil))
 
@@ -52,7 +52,7 @@ func TestClientApiUsageMetricsQuery(t *testing.T) {
 	testRegionClientApiUsage.StartTime = time.Time{}
 	testRegionClientApiUsage.NumSamples = 0
 	testRegionClientApiUsage.Limit = 1
-	err = validateMetricsCommon(&testRegionClientApiUsage.MetricsCommon)
+	err = validateAndResolveInfluxMetricsCommon(&testRegionClientApiUsage.MetricsCommon)
 	require.Nil(t, err)
 	require.Equal(t, testApiUsageQuerNonSampledLast, ClientApiUsageMetricsQuery(&testRegionClientApiUsage, []string{}, nil))
 

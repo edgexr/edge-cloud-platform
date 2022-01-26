@@ -243,7 +243,7 @@ func ClientApiUsageMetricsQuery(obj *ormapi.RegionClientApiUsageMetrics, cloudle
 		arg.ApiCallerOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
 	}
 	// set MetricsCommonQueryArgs
-	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, devInfluxClientMetricsDBTemplate, &obj.MetricsCommon, definition.String(), 0) // TODO: PULL MIN from settings
+	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, definition.String(), 0) // TODO: PULL MIN from settings
 	return getInfluxClientMetricsQueryCmd(&arg, devInfluxClientMetricsDBTemplate)
 }
 
@@ -284,7 +284,7 @@ func ClientAppUsageMetricsQuery(obj *ormapi.RegionClientAppUsageMetrics, cloudle
 		arg.AppOrg = obj.AppInst.AppKey.Organization
 	}
 	// set MetricsCommonQueryArgs
-	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, devInfluxClientMetricsDBTemplate, &obj.MetricsCommon, definition.String(), 0) // TODO: PULL MIN from settings
+	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, definition.String(), 0) // TODO: PULL MIN from settings
 	return getInfluxClientMetricsQueryCmd(&arg, devInfluxClientMetricsDBTemplate), db
 }
 
@@ -312,7 +312,7 @@ func ClientCloudletUsageMetricsQuery(obj *ormapi.RegionClientCloudletUsageMetric
 		TagSet:          getTagSet(CLIENT_CLOUDLETUSAGE, obj.Selector),
 	}
 	// set MetricsCommonQueryArgs
-	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, devInfluxClientMetricsDBTemplate, &obj.MetricsCommon, definition.String(), 0) // TODO: PULL MIN from settings
+	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, definition.String(), 0) // TODO: PULL MIN from settings
 	return getInfluxClientMetricsQueryCmd(&arg, operatorInfluxClientMetricsDBTemplate), db
 }
 

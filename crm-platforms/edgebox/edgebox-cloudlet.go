@@ -55,7 +55,9 @@ func (e *EdgeboxPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeprot
 		return err
 	}
 	updateCallback(edgeproto.UpdateTask, "Stopping Cloudlet Monitoring")
-	intprocess.StartCloudletPrometheus(ctx, cloudlet, edgeproto.GetDefaultSettings())
+	if err := intprocess.StopCloudletPrometheus(ctx); err != nil {
+		return err
+	}
 	updateCallback(edgeproto.UpdateTask, "Stopping Shepherd")
 	return intprocess.StopShepherdService(ctx, cloudlet)
 }

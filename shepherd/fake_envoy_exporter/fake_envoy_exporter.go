@@ -20,6 +20,19 @@ import (
 // To set a measure, use
 // curl --unix-socket <sockfile> --data-urlencode 'measure=envoy_cluster_upstream_cx_actve{envoy_cluster_name="myclust"}' --data-urlencode 'val=10' http:/sock/setval
 
+type arrayFlags []string
+
+func (i *arrayFlags) String() string {
+	return fmt.Sprintf("%s", strings.Join(*i, " "))
+}
+
+func (i *arrayFlags) Set(value string) error {
+	*i = append(*i, value)
+	return nil
+}
+
+var portFlags arrayFlags
+
 var sockFile = flag.String("sockfile", "", "unix domain socket file to listen on")
 var cluster = flag.String("cluster", "", "cluster name")
 
@@ -27,6 +40,7 @@ var stats []stat
 var measures map[string]*measure
 
 func main() {
+	flag.Var(&portFlags, "port", "App port to create metrics for.")
 	flag.Parse()
 	ch := make(chan bool, 0)
 	run(ch)
@@ -40,15 +54,23 @@ func run(ch chan bool) {
 	if err := os.RemoveAll(*sockFile); err != nil {
 		baselog.Fatal(err)
 	}
-	if *cluster == "" {
-		baselog.Fatal("please specify cluster name")
-	}
 
 	measures = make(map[string]*measure)
 
-	replaceTags := make(map[string]string)
-	replaceTags["envoy_cluster_name"] = `"` + *cluster + `"`
+	replaceTags := make(map[string][]string)
+	if len(portFlags) > 0 {
+		backendPorts := []string{}
 
+		for ii := range portFlags {
+			backendPorts = append(backendPorts, "\"backend"+portFlags[ii]+`"`)
+		}
+		replaceTags["envoy_cluster_name"] = backendPorts
+	} else {
+		if *cluster == "" {
+			baselog.Fatal("cluster required if ports are not specified")
+		}
+		replaceTags["envoy_cluster_name"] = []string{`"` + *cluster + `"`}
+	}
 	stats = parseSampleStats(sampleOutput, replaceTags)
 
 	lis, err := net.Listen("unix", *sockFile)
@@ -100,7 +122,7 @@ type stat interface {
 	String() string
 }
 
-func parseSampleStats(dat string, replaceTags map[string]string) []stat {
+func parseSampleStats(dat string, replaceTags map[string][]string) []stat {
 	stats := []stat{}
 
 	scanner := bufio.NewScanner(strings.NewReader(dat))
@@ -115,12 +137,14 @@ func parseSampleStats(dat string, replaceTags map[string]string) []stat {
 		if strings.HasPrefix(line, "# TYPE") {
 			stats = append(stats, newHeader(line))
 		} else {
-			m, err := newMeasure(line, replaceTags)
+			ms, err := newMeasures(line, replaceTags)
 			if err != nil {
 				baselog.Fatalf("failed to parse: %s, at line %v", err, lineno)
 			}
-			stats = append(stats, m)
-			measures[m.name] = m
+			for ii := range ms {
+				stats = append(stats, ms[ii])
+				measures[ms[ii].name] = ms[ii]
+			}
 		}
 	}
 	return stats
@@ -144,9 +168,13 @@ type measure struct {
 	val  string
 }
 
-func newMeasure(line string, replaceTags map[string]string) (*measure, error) {
+// NOTE: We assume that there is only one tag to be replaces
+// 	otherwise it gets complicated
+func newMeasures(line string, replaceTags map[string][]string) ([]*measure, error) {
 	// in order to replace tags, we need to parse the line
 	// line looks like name{key="val",...} val
+	foundTags := map[string][]string{}
+	measures := []*measure{}
 	m := measure{}
 	nameval := strings.Split(line, " ")
 	if len(nameval) != 2 {
@@ -168,14 +196,34 @@ func newMeasure(line string, replaceTags map[string]string) (*measure, error) {
 			if len(kv) != 2 {
 				return nil, fmt.Errorf("failed to split key value into 2, %s", kvstr)
 			}
+			// if this is one of the tags we want to replace, keep a list of the replacements
 			if v, found := replaceTags[kv[0]]; found {
-				kv[1] = v
+				foundTags[kv[0]] = v
+			} else {
+				newTags = append(newTags, kv[0]+"="+kv[1])
 			}
-			newTags = append(newTags, kv[0]+"="+kv[1])
 		}
 	}
-	m.name = name + "{" + strings.Join(newTags, ",") + "}"
-	return &m, nil
+	if len(foundTags) > 1 {
+		return nil, fmt.Errorf("Only a single tag replacement is supported")
+	}
+	if len(foundTags) == 1 {
+		for tag, vals := range foundTags {
+			for ii := range vals {
+				newTags = append(newTags, tag+"="+vals[ii])
+				m := measure{}
+				m.val = nameval[1]
+				m.name = name + "{" + strings.Join(newTags, ",") + "}"
+				measures = append(measures, &m)
+				// now remove the last element of newTags for the next loop
+				newTags = newTags[:len(newTags)-1]
+			}
+		}
+	} else {
+		m.name = name + "{" + strings.Join(newTags, ",") + "}"
+		measures = append(measures, &m)
+	}
+	return measures, nil
 }
 
 func (s *measure) String() string {

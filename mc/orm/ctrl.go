@@ -3,6 +3,7 @@ package orm
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"sync"
 	"time"
@@ -80,6 +81,17 @@ func (s *ConnCache) Cleanup() {
 			delete(s.used, region)
 		}
 	}
+}
+
+func (s *ConnCache) DeleteRegion(region string) {
+	s.Lock()
+	defer s.Unlock()
+	conn, found := s.cache[region]
+	if found {
+		conn.Close()
+		delete(s.cache, region)
+	}
+	delete(s.used, region)
 }
 
 func (s *ConnCache) Start() {
@@ -170,6 +182,19 @@ func getControllerObj(ctx context.Context, region string) (*ormapi.Controller, e
 	return &ctrl, nil
 }
 
+func validateControllerObj(ctrl *ormapi.Controller) error {
+	if ctrl.Region == "" {
+		return fmt.Errorf("Controller Region not specified")
+	}
+	if ctrl.Address == "" {
+		return fmt.Errorf("Controller Address not specified")
+	}
+	if len(ctrl.DnsRegion) > cloudcommon.DnsRegionLabelMaxLen {
+		return fmt.Errorf("DNS sanitized region label %q derived from the region name %q must be less than %d characters", ctrl.DnsRegion, ctrl.Region, cloudcommon.DnsRegionLabelMaxLen)
+	}
+	return nil
+}
+
 func CreateController(c echo.Context) error {
 	claims, err := getClaims(c)
 	if err != nil {
@@ -190,20 +215,14 @@ func CreateController(c echo.Context) error {
 }
 
 func CreateControllerObj(ctx context.Context, claims *UserClaims, ctrl *ormapi.Controller) error {
-	if ctrl.Region == "" {
-		return fmt.Errorf("Controller Region not specified")
+	ctrl.DnsRegion = util.DNSSanitize(ctrl.Region)
+	if err := validateControllerObj(ctrl); err != nil {
+		return err
 	}
-	if ctrl.Address == "" {
-		return fmt.Errorf("Controller Address not specified")
-	}
+
 	if err := authorized(ctx, claims.Username, "", ResourceControllers, ActionManage); err != nil {
 		return err
 	}
-	ctrl.DnsRegion = util.DNSSanitize(ctrl.Region)
-	if len(ctrl.DnsRegion) > cloudcommon.DnsRegionLabelMaxLen {
-		return fmt.Errorf("DNS sanitized region label %q derived from the region name %q must be less than %d characters", ctrl.DnsRegion, ctrl.Region, cloudcommon.DnsRegionLabelMaxLen)
-	}
-
 	db := loggedDB(ctx)
 	err := db.Create(ctrl).Error
 	if err != nil {
@@ -248,6 +267,67 @@ func DeleteControllerObj(ctx context.Context, claims *UserClaims, ctrl *ormapi.C
 		return ormutil.DbErr(err)
 	}
 	return nil
+}
+
+func UpdateController(c echo.Context) error {
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	ctx := ormutil.GetContext(c)
+
+	// modified fields.
+	body, err := ioutil.ReadAll(c.Request().Body)
+	in := ormapi.Controller{}
+	if err := BindJson(body, &in); err != nil {
+		return ormutil.BindErr(err)
+	}
+	if in.Region == "" {
+		return fmt.Errorf("Controller Region not specified")
+	}
+
+	if err := authorized(ctx, claims.Username, "", ResourceControllers, ActionManage); err != nil {
+		return err
+	}
+
+	ctrl, err := getControllerObj(ctx, in.Region)
+	if err != nil {
+		return err
+	}
+	oldRegion := ctrl.Region
+	oldAddress := ctrl.Address
+	oldInfluxDb := ctrl.InfluxDB
+
+	// apply specified fields
+	if err := BindJson(body, &ctrl); err != nil {
+		return ormutil.BindErr(err)
+	}
+
+	if ctrl.Region != oldRegion {
+		return fmt.Errorf("Region cannot be changed")
+	}
+
+	ctrl.DnsRegion = util.DNSSanitize(ctrl.Region)
+	if err := validateControllerObj(ctrl); err != nil {
+		return err
+	}
+
+	// If we are updating Address, we need to invalidate the cache
+	if ctrl.Address != oldAddress {
+		connCache.Cleanup()
+	}
+
+	// If we are updating InfluxDB address we need to invalidate connection cache
+	if ctrl.InfluxDB != oldInfluxDb {
+		influxDbConnCache.DeleteClient(ctrl.Region)
+	}
+
+	db := loggedDB(ctx)
+	err = db.Save(ctrl).Error
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+	return ormutil.SetReply(c, ormutil.Msg("Controller updated"))
 }
 
 func ShowController(c echo.Context) error {

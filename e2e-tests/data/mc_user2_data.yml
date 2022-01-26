@@ -152,7 +152,7 @@ regiondata:
       stabilizationwindowsec: 2
       targetcpu: 0.7
       targetmem: 0.7
-      targetactiveconnections: 100
+      targetactiveconnections: 200
 
     autoprovpolicies:
     - key:
