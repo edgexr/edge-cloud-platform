@@ -42,25 +42,27 @@ func getTimeDefinitionDuration(obj *ormapi.MetricsCommon, minTimeWindow time.Dur
 	return timeWindow
 }
 
-func validateMetricsCommon(obj *ormapi.MetricsCommon) error {
-	// return error if both Limit and NumSamples are set
-	if obj.Limit != 0 && obj.NumSamples != 0 {
-		return fmt.Errorf("Only one of Limit or NumSamples can be specified")
-	}
+func validateAndResolveInfluxMetricsCommon(obj *ormapi.MetricsCommon) error {
+	return validateAndResolveMetricsCommon(obj, true)
+}
 
-	// return error if Limit is a negative value
-	if obj.Limit < 0 {
-		return fmt.Errorf("Limit cannot be negative")
-	}
+func validateAndResolvePrometheusMetricsCommon(obj *ormapi.MetricsCommon) error {
+	return validateAndResolveMetricsCommon(obj, false)
+}
 
-	// return error if NumSamples is a negative value
-	if obj.NumSamples < 0 {
-		return fmt.Errorf("NumSamples cannot be negative")
+func validateAndResolveMetricsCommon(obj *ormapi.MetricsCommon, setLimit bool) error {
+	if err := validateMetricsCommon(obj); err != nil {
+		return err
 	}
+	return resolveMetricsCommon(obj, setLimit)
+}
 
+func resolveMetricsCommon(obj *ormapi.MetricsCommon, setLimit bool) error {
 	// populate one of Last or NumSamples if neither are set
+	// which one gets set depends on whether this is influxDb request, or not
 	if obj.Limit == 0 && obj.NumSamples == 0 {
-		if obj.StartTime.IsZero() && obj.EndTime.IsZero() {
+		if setLimit &&
+			obj.StartTime.IsZero() && obj.EndTime.IsZero() {
 			// fallback to Limit if nothing is in MetricsCommon is set
 			obj.Limit = maxEntriesFromInfluxDb
 		} else {
@@ -78,6 +80,25 @@ func validateMetricsCommon(obj *ormapi.MetricsCommon) error {
 	// resolve and fill in time fields
 	if err := obj.Resolve(FallbackTimeRange); err != nil {
 		return err
+	}
+	return nil
+
+}
+
+func validateMetricsCommon(obj *ormapi.MetricsCommon) error {
+	// return error if both Limit and NumSamples are set
+	if obj.Limit != 0 && obj.NumSamples != 0 {
+		return fmt.Errorf("Only one of Limit or NumSamples can be specified")
+	}
+
+	// return error if Limit is a negative value
+	if obj.Limit < 0 {
+		return fmt.Errorf("Limit cannot be negative")
+	}
+
+	// return error if NumSamples is a negative value
+	if obj.NumSamples < 0 {
+		return fmt.Errorf("NumSamples cannot be negative")
 	}
 	return nil
 }

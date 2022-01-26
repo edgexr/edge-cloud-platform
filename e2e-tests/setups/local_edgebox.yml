@@ -71,7 +71,8 @@ controllers:
   hostname: "127.0.0.1"
   testmode: false
   checkpointinterval: 3m
-  requirenotifyaccesskey: true
+  accessapiaddr: "127.0.0.1:41001"
+  thanosrecvaddr: "host.docker.internal:10908"
   envvars:
     E2ETEST_TLS: true
 
@@ -204,3 +205,20 @@ maildevs:
   hostname: "127.0.0.1"
   uiport: 1080
   mailport: 1025
+
+thanosqueries:
+- name: thanosQuery
+  hostname: "127.0.0.1"
+  region: local
+  httpport: 29090
+  stores:
+  # below store is to connect thanos receives defined below
+  - "host.docker.internal:10907"
+
+thanosreceives:
+- name: thanosRecv
+  hostname: "127.0.0.1"
+  region: local
+  httpport: 10909
+  grpcport: 10907
+  remotewriteport: 10908 

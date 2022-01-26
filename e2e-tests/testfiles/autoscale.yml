@@ -18,30 +18,31 @@ tests:
     yaml2: '{{datadir2}}/autoscale_cluster_nodes1.yml'
     filetype: mcdata
 
-- name: initial state - check number of active connections is 50
+- name: initial state - check number of active connections is 150
   actions: [cmds]
   apifile: '{{datadir2}}/autoscale_prom_check_active'
   retrycount: 12
   retryintervalsec: 0.4
   compareyaml:
     yaml1: '{{outputdir}}/cmds-output'
-    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp50'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp150'
     filetype: raw
 
-- name: set active connections to 200 to trigger scale up
+- name: set active connections on port 80 to 200 to trigger scale up
   actions: [cmds]
   apifilevars:
     activeconns: "200"
+    port: "80"
   apifile: '{{datadir2}}/autoscale_prom_set_active'
 
-- name: check number of active connections is 200
+- name: check number of active connections total is 300
   actions: [cmds]
   apifile: '{{datadir2}}/autoscale_prom_check_active'
   retrycount: 12
   retryintervalsec: 0.4
   compareyaml:
     yaml1: '{{outputdir}}/cmds-output'
-    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp200'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp300'
     filetype: raw
 
 - name: check that autoscaled cluster has numnodes 2
@@ -55,20 +56,21 @@ tests:
     yaml2: '{{datadir2}}/autoscale_cluster_nodes2.yml'
     filetype: mcdata
 
-- name: set active connections to 400 to trigger scale up
+- name: set active connections on port 80 to 600 to trigger scale up
   actions: [cmds]
   apifilevars:
-    activeconns: "400"
+    activeconns: "600"
+    port: "80"
   apifile: '{{datadir2}}/autoscale_prom_set_active'
 
-- name: check number of active connections is 400
+- name: check number of active connections is 700
   actions: [cmds]
   apifile: '{{datadir2}}/autoscale_prom_check_active'
   retrycount: 12
   retryintervalsec: 0.4
   compareyaml:
     yaml1: '{{outputdir}}/cmds-output'
-    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp400'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp700'
     filetype: raw
 
 - name: check that autoscaled cluster has numnodes 4
@@ -86,16 +88,17 @@ tests:
   actions: [cmds]
   apifilevars:
     activeconns: "300"
+    port: "80"
   apifile: '{{datadir2}}/autoscale_prom_set_active'
 
-- name: check number of active connections is 300
+- name: check number of total active connections is 400
   actions: [cmds]
   apifile: '{{datadir2}}/autoscale_prom_check_active'
   retrycount: 12
   retryintervalsec: 0.4
   compareyaml:
     yaml1: '{{outputdir}}/cmds-output'
-    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp300'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp400'
     filetype: raw
 
 - name: check that autoscaled cluster has numnodes 3
@@ -109,20 +112,21 @@ tests:
     yaml2: '{{datadir2}}/autoscale_cluster_nodes3.yml'
     filetype: mcdata
 
-- name: finished - set active connections back to 50
+- name: finished - set active connections for port 80 back to 50
   actions: [cmds]
   apifilevars:
     activeconns: "50"
+    port: "80"
   apifile: '{{datadir2}}/autoscale_prom_set_active'
 
-- name: finished - check number of active connections is 50
+- name: finished - check number of total active connections is 150
   actions: [cmds]
   apifile: '{{datadir2}}/autoscale_prom_check_active'
   retrycount: 12
   retryintervalsec: 0.4
   compareyaml:
     yaml1: '{{outputdir}}/cmds-output'
-    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp50'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp150'
     filetype: raw
 
 - name: check that autoscaled cluster has numnodes 1

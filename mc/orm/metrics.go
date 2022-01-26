@@ -57,7 +57,7 @@ type appInstMetrics struct {
 }
 
 func (m *appInstMetrics) InitObject(ctx context.Context, rc *InfluxDBContext) error {
-	settings, err := getSettings(ctx, rc)
+	settings, err := getSettings(ctx, rc.region)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to get metrics settings for region %v - error is %s", rc.region, err.Error())
 		return err
@@ -189,7 +189,7 @@ type clusterInstMetrics struct {
 }
 
 func (m *clusterInstMetrics) InitObject(ctx context.Context, rc *InfluxDBContext) error {
-	settings, err := getSettings(ctx, rc)
+	settings, err := getSettings(ctx, rc.region)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to get metrics settings for region %v - error is %s", rc.region, err.Error())
 		return err
@@ -313,7 +313,7 @@ type cloudletMetrics struct {
 }
 
 func (m *cloudletMetrics) InitObject(ctx context.Context, rc *InfluxDBContext) error {
-	settings, err := getSettings(ctx, rc)
+	settings, err := getSettings(ctx, rc.region)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to get metrics settings for region %v - error is %s", rc.region, err.Error())
 		return err
@@ -556,7 +556,7 @@ func GetDeveloperGroupQuery(obj MetricsObject, cloudletList []string, settings *
 	dbQueries := []string{}
 	for _, selector := range obj.GetSelectors() {
 		args := getMetricsTemplateArgs(obj, timeDef, selector, cloudletList)
-		fillMetricsCommonQueryArgs(&args.metricsCommonQueryArgs, metricsGroupQueryTemplate, obj.GetMetricsCommon(), timeDef, minTimeDef)
+		fillMetricsCommonQueryArgs(&args.metricsCommonQueryArgs, obj.GetMetricsCommon(), timeDef, minTimeDef)
 		dbQueries = append(dbQueries, getInfluxMetricsQueryCmd(&args, metricsGroupQueryTemplate))
 	}
 	return strings.Join(dbQueries, ";")

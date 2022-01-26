@@ -210,7 +210,7 @@ func (e *EdgeEventsHandlerPlugin) ProcessLatencySamples(ctx context.Context, app
 }
 
 // Send a ServerEdgeEvent with Latency Request Event to all clients connected to specified AppInst (and also have an initiated persistent connection)
-// When client recieves this event, it will measure latency from itself to appinst and back.
+// When client receives this event, it will measure latency from itself to appinst and back.
 // Client will then send those latency samples back to be processed in the HandleLatencySamples function
 // Finally, DME will send the processed latency samples in the form of dme.Latency struct (with calculated avg, min, max, stddev) back to client
 func (e *EdgeEventsHandlerPlugin) SendLatencyRequestEdgeEvent(ctx context.Context, appInstKey edgeproto.AppInstKey) {

@@ -1618,6 +1618,17 @@ func (s *Client) CreateController(uri string, token string, in *ormapi.Controlle
 	return rundata.RetStatus, rundata.RetError
 }
 
+func (s *Client) UpdateController(uri string, token string, in *cli.MapData) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+
+	apiCmd := ormctl.MustGetCommand("UpdateController")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
 func (s *Client) DeleteController(uri string, token string, in *ormapi.Controller) (int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
@@ -2562,6 +2573,22 @@ func (s *Client) ShowClientCloudletUsageMetrics(uri string, token string, in *or
 	rundata.Out = &out
 
 	apiCmd := ormctl.MustGetCommand("ShowClientCloudletUsageMetrics")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowAppV2Metrics(uri string, token string, in *ormapi.RegionCustomAppMetrics) (*ormapi.AllMetrics, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out ormapi.AllMetrics
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowAppV2Metrics")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError

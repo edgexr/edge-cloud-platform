@@ -223,6 +223,10 @@ func TestController(t *testing.T) {
 	}))
 	defer influxServer.Close()
 
+	// run a dummy http server to mimic thanos
+	thanosQuery := StartUnitTestThanosQueryResponder()
+	defer thanosQuery.Close()
+
 	// run dummy controller - this always returns success
 	// to all APIs directed to it, and does not actually
 	// create or delete objects. We are mocking it out
@@ -259,11 +263,11 @@ func TestController(t *testing.T) {
 	require.Nil(t, err, "server online")
 
 	for _, clientRun := range getUnitTestClientRuns() {
-		testControllerClientRun(t, ctx, clientRun, uri, addr, ctrlAddr, ctrlAddr2, influxServer, ds, &sds, de)
+		testControllerClientRun(t, ctx, clientRun, uri, addr, ctrlAddr, ctrlAddr2, influxServer, thanosQuery, ds, &sds, de)
 	}
 }
 
-func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctestclient.ClientRun, uri, addr, ctrlAddr, ctrlAddr2 string, influxServer *httptest.Server, ds *testutil.DummyServer, sds *StreamDummyServer, de *nodetest.DummyEventsES) {
+func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctestclient.ClientRun, uri, addr, ctrlAddr, ctrlAddr2 string, influxServer *httptest.Server, thanosQuery *httptest.Server, ds *testutil.DummyServer, sds *StreamDummyServer, de *nodetest.DummyEventsES) {
 	mcClient := mctestclient.NewClient(clientRun)
 
 	// login as super user
@@ -298,6 +302,50 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	require.Equal(t, 1, len(ctrls))
 	require.Equal(t, ctrl.Region, ctrls[0].Region)
 	require.Equal(t, ctrl.Address, ctrls[0].Address)
+
+	// update controller tests
+	dat := cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"Region": "",
+		},
+	}
+	status, err = mcClient.UpdateController(uri, token, &dat)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Controller Region not specified")
+	require.Equal(t, http.StatusBadRequest, status)
+
+	dat = cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"Region":  "USA",
+			"Address": "",
+		},
+	}
+	status, err = mcClient.UpdateController(uri, token, &dat)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Controller Address not specified")
+	require.Equal(t, http.StatusBadRequest, status)
+
+	dat = cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"Region":        "USA",
+			"Address":       ctrlAddr,
+			"ThanosMetrics": thanosQuery.URL,
+		},
+	}
+	status, err = mcClient.UpdateController(uri, token, &dat)
+	require.Nil(t, err, "update controller")
+	require.Equal(t, http.StatusOK, status)
+	ctrls, status, err = mcClient.ShowController(uri, token, ClientNoShowFilter)
+	require.Nil(t, err, "show controllers")
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 1, len(ctrls))
+	require.Equal(t, ctrl.Region, ctrls[0].Region)
+	require.Equal(t, ctrl.Address, ctrls[0].Address)
+	require.Equal(t, thanosQuery.URL, ctrls[0].ThanosMetrics)
+
 	// test show controller filtering
 	showController := &cli.MapData{
 		Namespace: cli.StructNamespace,
@@ -386,6 +434,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	badPermTestCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, org1, nil)
 	badPermTestMetrics(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
 	badPermTestEvents(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
+	badPermTestCustomMetrics(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
 	badPermTestAlertReceivers(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
 	// add new users to orgs
 	testAddUserRole(t, mcClient, uri, tokenDev, org1, "DeveloperContributor", dev3.Name, Success)
@@ -735,6 +784,8 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	goodPermTestMetrics(t, mcClient, uri, tokenDev3, tokenOper3, ctrl.Region, org1, org3)
 	goodPermTestEvents(t, mcClient, uri, tokenDev3, tokenOper3, ctrl.Region, org1, org3)
 	testInvalidOrgForCloudletUsage(t, mcClient, uri, tokenAd, ctrl.Region, org1)
+	goodPermTestCustomMetrics(t, mcClient, uri, tokenDev3, tokenOper3, ctrl.Region, org1, org3)
+	adminPermTestCustomMetrics(t, mcClient, uri, tokenAd, ctrl.Region, org3)
 
 	// test users with different roles
 	goodPermTestCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, org3, nil, ccount)
@@ -2881,12 +2932,13 @@ type User struct {
 
 // Used to test addition of new DnsRegion unique not null column
 type Controller struct {
-	Region     string    `gorm:"primary_key"`
-	Address    string    `gorm:"unique;not null"`
-	NotifyAddr string    `gorm:"type:text"`
-	InfluxDB   string    `gorm:"type:text"`
-	CreatedAt  time.Time `json:",omitempty"`
-	UpdatedAt  time.Time `json:",omitempty"`
+	Region        string    `gorm:"primary_key"`
+	Address       string    `gorm:"unique;not null"`
+	NotifyAddr    string    `gorm:"type:text"`
+	InfluxDB      string    `gorm:"type:text"`
+	ThanosMetrics string    `gorm:"type:text"`
+	CreatedAt     time.Time `json:",omitempty"`
+	UpdatedAt     time.Time `json:",omitempty"`
 }
 
 func TestUpgrade(t *testing.T) {

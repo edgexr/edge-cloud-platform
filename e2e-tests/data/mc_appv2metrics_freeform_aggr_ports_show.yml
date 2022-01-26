@@ -1,0 +1,12 @@
+- name: custom_metric
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+    region: local
+  values:
+    custom_metric: 150

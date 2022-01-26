@@ -2,6 +2,7 @@ controllers:
 - region: local
   address: 127.0.0.1:55001
   influxdb: http://127.0.0.1:8086
+  thanosmetrics: http://127.0.0.1:29090
 regiondata:
 - region: local
   appdata:

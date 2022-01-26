@@ -82,6 +82,8 @@ type DeploymentData struct {
 	Alertmanagers       []*intprocess.Alertmanager        `yaml:"alertmanagers"`
 	Maildevs            []*intprocess.Maildev             `yaml:"maildevs"`
 	AlertmgrSidecars    []*intprocess.AlertmanagerSidecar `yaml:"alertmanagersidecars"`
+	ThanosQueries       []*intprocess.ThanosQuery         `yaml:"thanosqueries"`
+	ThanosReceives      []*intprocess.ThanosReceive       `yaml:"thanosreceives"`
 	Qossessims          []*intprocess.QosSesSrvSim        `yaml:"qossessims"`
 }
 
@@ -213,6 +215,12 @@ func GetAllProcesses() []process.Process {
 		all = append(all, p)
 	}
 	for _, p := range Deployment.Maildevs {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.ThanosQueries {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.ThanosReceives {
 		all = append(all, p)
 	}
 	for _, p := range Deployment.Qossessims {
@@ -379,6 +387,16 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 		}
 	}
 	for _, p := range Deployment.Maildevs {
+		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.ThanosQueries {
+		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.ThanosReceives {
 		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}

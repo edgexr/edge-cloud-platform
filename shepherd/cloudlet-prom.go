@@ -98,7 +98,7 @@ func init() {
 }
 
 func updateCloudletPrometheusConfig(ctx context.Context, promScrapeInterval *time.Duration, alertEvalInterval *edgeproto.Duration) error {
-	err := intprocess.WriteCloudletPromConfig(ctx, &metricsScrapingInterval, (*time.Duration)(&settings.ShepherdAlertEvaluationInterval))
+	err := intprocess.WriteCloudletPromConfig(ctx, *thanosRecvAddr, &metricsScrapingInterval, (*time.Duration)(&settings.ShepherdAlertEvaluationInterval))
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to write cloudlet prometheus config", "err", err)
 		return err

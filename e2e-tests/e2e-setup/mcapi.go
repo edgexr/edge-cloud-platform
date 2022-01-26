@@ -489,6 +489,23 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		return rc
 	}
 
+	if strings.HasPrefix(api, "showcustommetrics") {
+		query := readMcCustomMetricTargetsFile(apiFile, vars)
+		metrics, status, err := mcClient.ShowAppV2Metrics(uri, token, query)
+		checkMcErr("ShowAppV2Metrics", status, err, &rc)
+		if !rc {
+			return rc
+		}
+		// convert showMetrics into something yml compatible
+		parsedMetrics := removeTimestampFromPromData(metrics)
+		if parsedMetrics != nil {
+			cmpFilterMetrics(*parsedMetrics)
+			util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		}
+		*retry = true
+		return rc
+	}
+
 	if apiFile == "" {
 		log.Println("Error: Cannot run MC data APIs without API file")
 		return false
@@ -694,6 +711,18 @@ func readMCMetricTargetsFile(file string, vars map[string]string) *MetricTargets
 		}
 	}
 	return &targets
+}
+
+func readMcCustomMetricTargetsFile(file string, vars map[string]string) *ormapi.RegionCustomAppMetrics {
+	filter := ormapi.RegionCustomAppMetrics{}
+	err := util.ReadYamlFile(file, &filter, util.WithVars(vars), util.ValidateReplacedVars())
+	if err != nil {
+		if !util.IsYamlOk(err, "mcdata") {
+			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", file)
+			os.Exit(1)
+		}
+	}
+	return &filter
 }
 
 func loginCurUser(uri, curUserFile string, vars, sharedData map[string]string) (string, bool) {
@@ -1624,6 +1653,35 @@ func runMcSpans(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 	}
 	*retry = true
 	return rc
+}
+
+// Get a comparable metrics data type
+func removeTimestampFromPromData(allMetrics *ormapi.AllMetrics) *[]MetricsCompare {
+	result := make([]MetricsCompare, 0)
+	for _, data := range allMetrics.Data {
+		for _, series := range data.Series {
+			measurement := MetricsCompare{Name: series.Name, Tags: make(map[string]string), Values: make(map[string]float64)}
+			// prometheus returns two values - first is measurement and second is a timestamp(remove it)
+			if len(series.Values) != 1 {
+				return nil
+			}
+			// copy tags
+			for k, v := range series.Tags {
+				measurement.Tags[k] = v
+			}
+
+			// add the first value
+			val := series.Values[0][0]
+			if floatVal, ok := val.(float64); ok {
+				measurement.Values[series.Name] = floatVal
+				// if its an int cast it to a float to make comparing easier
+			} else if intVal, ok := val.(int); ok {
+				measurement.Values[series.Name] = float64(intVal)
+			}
+			result = append(result, measurement)
+		}
+	}
+	return &result
 }
 
 func parseMetrics(allMetrics *ormapi.AllMetrics) *[]MetricsCompare {

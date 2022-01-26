@@ -51,6 +51,8 @@ const (
 
 	PromQAutoScaleCpuTotalU = "stabilized_max_total_worker_node_cpu_utilisation"
 	PromQAutoScaleMemTotalU = "stabilized_max_total_worker_node_mem_utilisation"
+
+	PromQConnections = "envoy_cluster_upstream_cx_active"
 )
 
 // Url-encoded strings, so we don't have to encode them every time

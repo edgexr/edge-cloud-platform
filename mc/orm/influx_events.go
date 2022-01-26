@@ -67,7 +67,7 @@ func AppInstEventsQuery(obj *ormapi.RegionAppInstEvents, cloudletList []string) 
 		arg.ApiCallerOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
 		arg.AppOrg = obj.AppInst.AppKey.Organization
 	}
-	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, devInfluxDBTemplate, &obj.MetricsCommon, "", 0)
+	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, "", 0)
 	return getInfluxMetricsQueryCmd(&arg, devInfluxDBTemplate)
 }
 
@@ -88,7 +88,7 @@ func ClusterEventsQuery(obj *ormapi.RegionClusterInstEvents, cloudletList []stri
 		arg.ApiCallerOrg = obj.ClusterInst.CloudletKey.Organization
 		arg.ClusterOrg = obj.ClusterInst.Organization
 	}
-	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, devInfluxDBTemplate, &obj.MetricsCommon, "", 0)
+	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, "", 0)
 	return getInfluxMetricsQueryCmd(&arg, devInfluxDBTemplate)
 }
 
@@ -102,7 +102,7 @@ func CloudletEventsQuery(obj *ormapi.RegionCloudletEvents) string {
 		CloudletName: obj.Cloudlet.Name,
 		CloudletOrg:  obj.Cloudlet.Organization,
 	}
-	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, operatorInfluxDBTemplate, &obj.MetricsCommon, "", 0)
+	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, "", 0)
 	return getInfluxMetricsQueryCmd(&arg, operatorInfluxDBTemplate)
 }
 

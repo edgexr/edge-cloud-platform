@@ -1,0 +1,84 @@
+##
+description: Monitoring API tests
+
+tests:
+
+## Test connection metrics show
+- name: test appinst connections metrics for user2 app
+  actions: [mcapi-showcustommetrics]
+  apifile: '{{datadir2}}/mc_appv2_metrics_target.yml'
+  apifilevars:
+    measurement: connections
+    port: ""
+    aggr-function: ""
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_appv2metrics_connections_all_ports_show.yml'
+    filetype: mcmetrics
+
+- name: test appinst connections metrics(filter for a port)
+  actions: [mcapi-showcustommetrics]
+  apifile: '{{datadir2}}/mc_appv2_metrics_target.yml'
+  apifilevars:
+    measurement: connections
+    port: "80"
+    aggr-function: ""
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_appv2metrics_connections_single_ports_show.yml'
+    filetype: mcmetrics
+
+- name: test appinst connections metrics(aggregation over all ports)
+  actions: [mcapi-showcustommetrics]
+  apifile: '{{datadir2}}/mc_appv2_metrics_target.yml'
+  apifilevars:
+    measurement: connections
+    aggr-function: sum
+    port: ""
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_appv2metrics_connections_aggr_ports_show.yml'
+    filetype: mcmetrics
+
+## Test free-form query api
+- name: test appinst free-form query for user2 app(as admin), no filter
+  actions: [mcapi-showcustommetrics]
+  apifile: '{{datadir2}}/mc_appv2_metrics_target.yml'
+  apifilevars:
+    measurement: envoy_cluster_upstream_cx_active
+    aggr-function: ""
+    port: ""
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_appv2metrics_freeform_all_ports_show.yml'
+    filetype: mcmetrics
+
+- name: test appinst free-form query for user2 app(as admin), filter for a port
+  actions: [mcapi-showcustommetrics]
+  apifile: '{{datadir2}}/mc_appv2_metrics_target.yml'
+  apifilevars:
+    measurement: "envoy_cluster_upstream_cx_active{port=\"80\"}"
+    aggr-function: ""
+    port: ""
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_appv2metrics_freeform_single_ports_show.yml'
+    filetype: mcmetrics
+
+- name: test appinst free-form query for user2 app(as admin), aggregate over all ports
+  actions: [mcapi-showcustommetrics]
+  apifile: '{{datadir2}}/mc_appv2_metrics_target.yml'
+  apifilevars:
+    measurement: "sum by(app,appver,apporg,cluster,clusterorg,cloudlet,cloudletorg,region)(envoy_cluster_upstream_cx_active{})"
+    aggr-function: ""
+    port: ""
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_appv2metrics_freeform_aggr_ports_show.yml'
+    filetype: mcmetrics

@@ -1,5 +1,5 @@
-- labels:
-    alertname: AppInstDown
+- name: custom_metric
+  tags:
     app: someapplication1
     apporg: AcmeAppCo
     appver: "1.0"
@@ -9,9 +9,5 @@
     clusterorg: AcmeAppCo
     port: "80"
     region: local
-    scope: Application
-    status: "2"
-  annotations:
-    description: Application server port is not responding
-    title: AppInstDown
-  state: firing
+  values:
+    custom_metric: 50

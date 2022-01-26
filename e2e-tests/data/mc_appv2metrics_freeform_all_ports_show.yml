@@ -1,0 +1,39 @@
+- name: custom_metric
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+    port: "80"
+    region: local
+  values:
+    custom_metric: 50
+- name: custom_metric
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+    port: "443"
+    region: local
+  values:
+    custom_metric: 50
+- name: custom_metric
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+    port: "10002"
+    region: local
+  values:
+    custom_metric: 50

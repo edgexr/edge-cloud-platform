@@ -195,6 +195,8 @@ type Controller struct {
 	NotifyAddr string `gorm:"type:text"`
 	// InfluxDB address
 	InfluxDB string `gorm:"type:text"`
+	// Thanos Query URL
+	ThanosMetrics string `gorm:"type:text"`
 	// Unique DNS label for the region
 	// read only: true
 	DnsRegion string `gorm:"unique;not null"`
@@ -513,6 +515,15 @@ type RegionAppInstMetrics struct {
 	Selector      string
 	AppInst       edgeproto.AppInstKey   `json:",omitempty"`
 	AppInsts      []edgeproto.AppInstKey `json:",omitempty"`
+	MetricsCommon `json:",inline"`
+}
+
+type RegionCustomAppMetrics struct {
+	Region        string
+	Measurement   string
+	AppInst       edgeproto.AppInstKey `json:",omitempty"`
+	Port          string               `json:",omitempty"`
+	AggrFunction  string               `json:",omitempty"`
 	MetricsCommon `json:",inline"`
 }
 

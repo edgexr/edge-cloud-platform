@@ -3,6 +3,7 @@ controllers:
   address: 127.0.0.1:55001
   notifyaddr: 127.0.0.1:37001
   influxdb: http://127.0.0.1:8086
+  thanosmetrics: http://127.0.0.1:29090
   dnsregion: local
 - region: locala
   address: 127.0.0.1:55011
@@ -128,7 +129,7 @@ regiondata:
       minnodes: 1
       maxnodes: 5
       stabilizationwindowsec: 2
-      targetactiveconnections: 100
+      targetactiveconnections: 200
     clusterinsts:
     - key:
         clusterkey:

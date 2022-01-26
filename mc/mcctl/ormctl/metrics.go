@@ -87,8 +87,56 @@ func init() {
 		ReqData:      &ormapi.RegionClientCloudletUsageMetrics{},
 		ReplyData:    &ormapi.AllMetrics{},
 		Path:         "/auth/metrics/clientcloudletusage",
+	}, &ApiCommand{
+		Name:         "ShowAppV2Metrics",
+		Use:          "appv2",
+		Short:        "View App metrics(v2 format)",
+		RequiredArgs: strings.Join(append([]string{"region"}, AppMetricV2RequiredArgs...), " "),
+		OptionalArgs: strings.Join(append(MetricV2CommonArgs, AppMetricV2OptionalArgs...), " "),
+		AliasArgs:    strings.Join(append(AppMetricAliasArgs, MetricsCommonAliasArgs...), " "),
+		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), AppMetricV2Comments),
+		ReqData:      &ormapi.RegionCustomAppMetrics{},
+		ReplyData:    &ormapi.AllMetrics{},
+		Path:         "/auth/metrics/app/v2",
 	}}
 	AllApis.AddGroup(MetricsGroup, "View metrics", cmds)
+}
+
+var AppMetricV2OptionalArgs = []string{
+	"appname",
+	"app-org",
+	"appvers",
+	"cluster",
+	"cluster-org",
+	"cloudlet",
+	"cloudlet-org",
+	"port",
+	"aggr-function",
+}
+
+var AppMetricV2Comments = map[string]string{
+	"app-org":       "Organization or Company name of the App(Deprecated)",
+	"appname":       "App name",
+	"appvers":       "App version",
+	"cluster":       "Cluster name",
+	"cloudlet-org":  "Company or Organization name of the cloudlet",
+	"cloudlet":      "Name of the cloudlet",
+	"cluster-org":   "Organization or Company Name that a Cluster is used by",
+	"measurement":   "Measurement to view. Available measurements: \"connections\"",
+	"port":          "Port for which to show the data(valid for \"connections\" measurement)",
+	"aggr-function": "Aggregate function. \"sum\" - will add all connections together across all ports",
+}
+
+var AppMetricV2RequiredArgs = []string{
+	"measurement",
+}
+
+var MetricV2CommonArgs = []string{
+	"numsamples",
+	"starttime",
+	"endtime",
+	"startage",
+	"endage",
 }
 
 var AppMetricRequiredArgs = []string{
@@ -127,6 +175,7 @@ var AppMetricAliasArgs = []string{
 	"appinsts:#.cluster-org=appinsts:#.clusterinstkey.organization",
 	"appinsts:#.cloudlet-org=appinsts:#.clusterinstkey.cloudletkey.organization",
 	"appinsts:#.cloudlet=appinsts:#.clusterinstkey.cloudletkey.name",
+	"aggr-function=aggrfunction",
 }
 
 var AppMetricComments = map[string]string{
