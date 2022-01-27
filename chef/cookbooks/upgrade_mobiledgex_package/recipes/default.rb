@@ -32,7 +32,7 @@ if node.normal['tags'].include?('vmtype/rootlb')
       action :create
     end
     apt_repository 'bionic' do
-      uri 'https://apt.mobiledgex.net/cirrus/2021-10-05'
+      uri 'https://apt.mobiledgex.net/cirrus/2022-01-26'
       distribution 'bionic'
       components ['main']
     end
