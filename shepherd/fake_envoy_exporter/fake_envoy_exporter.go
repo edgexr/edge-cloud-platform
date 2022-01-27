@@ -34,7 +34,6 @@ func (i *arrayFlags) Set(value string) error {
 var portFlags arrayFlags
 
 var sockFile = flag.String("sockfile", "", "unix domain socket file to listen on")
-var cluster = flag.String("cluster", "", "cluster name")
 
 var stats []stat
 var measures map[string]*measure
@@ -66,10 +65,7 @@ func run(ch chan bool) {
 		}
 		replaceTags["envoy_cluster_name"] = backendPorts
 	} else {
-		if *cluster == "" {
-			baselog.Fatal("cluster required if ports are not specified")
-		}
-		replaceTags["envoy_cluster_name"] = []string{`"` + *cluster + `"`}
+		baselog.Fatal("at lease one port needs to be specified")
 	}
 	stats = parseSampleStats(sampleOutput, replaceTags)
 
