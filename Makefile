@@ -69,6 +69,13 @@ doc:
 	make -f proto.make
 	swagger generate spec -i ./doc/init.json -o ./doc/apidocs.swagger.json --scan-models
 
+doc-local-server:
+	docker run --rm -p 1081:80 \
+		-v "$(shell pwd)/doc/apidocs.swagger.json:/usr/share/nginx/html/swagger.json" \
+		-e SPEC_URL=swagger.json \
+		-e REDOC_OPTIONS='sort-props-alphabetically=\"true\"' \
+		redocly/redoc:v2.0.0-rc.23
+
 third_party:
 	parsedeps --gennotice ../edge-cloud/cloud-resource-manager/cmd/crmserver/ ../edge-cloud/d-match-engine/dme-server ./plugin/platform/ ./plugin/edgeevents ./shepherd ./shepherd/shepherd_platform > THIRD-PARTY-NOTICES
 

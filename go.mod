@@ -16,6 +16,8 @@ require (
 	github.com/go-chef/chef v0.23.1
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-openapi/errors v0.19.7
+	github.com/go-openapi/loads v0.19.5
+	github.com/go-openapi/spec v0.19.8
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/go-openapi/swag v0.19.9
 	github.com/go-openapi/validate v0.19.11
