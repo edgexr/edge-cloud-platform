@@ -21,3 +21,5 @@ ports:
 cloudletlocation:
   latitude: 35
   longitude: -95
+qosresult: SessionFailed
+qoserrormsg: ip_user_equipment value not found in tags
