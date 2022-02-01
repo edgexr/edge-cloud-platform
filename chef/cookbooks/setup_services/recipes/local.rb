@@ -1,16 +1,16 @@
 require 'json'
 
-services = Hash["crmserver" => crmserver_cmd, "shepherd" => shepherd_cmd]
-services.each { |service,service_cmd|
+services = Hash['crmserver' => crmserver_cmd, 'shepherd' => shepherd_cmd]
+services.each do |service, service_cmd|
   cKey = JSON.parse(node[service]['args']['cloudletKey'])
-  cKeyStr = cKey["name"] + "." + cKey["organization"]
+  cKeyStr = cKey['name'] + '.' + cKey['organization']
 
   Chef::Log.info("Starting #{service} #{cKey}")
   envvars = {}
-  node[service]['env'].each { |envvar|
+  node[service]['env'].each do |envvar|
     keyval = envvar.split('=')
     envvars[keyval[0]] = keyval[1]
-  }
+  end
   Chef::Log.info("Using envvars #{envvars}")
 
   cmd = service_cmd
@@ -20,4 +20,4 @@ services.each { |service,service_cmd|
     EOH
     environment envvars
   end
-}
+end

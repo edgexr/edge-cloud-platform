@@ -1,44 +1,100 @@
+<% unless @headlessSvcs.nil? %>
+<% @headlessSvcs.each do|svc, svc_attrs| %>
+apiVersion: v1
+kind: Service
+metadata:
+  name: <%= svc_attrs[:serviceName] %>
+  labels:
+    app: <%= svc_attrs[:appSelector] %>
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  <% svc_attrs[:ports].each do|port, port_attrs| %>
+  - name:  <%= port_attrs[:protocol].downcase %>-<%= port_attrs[:portNum] %> 
+    protocol: <%= port_attrs[:protocol] %>
+    port: <%= port_attrs[:portNum] %>
+    targetPort: <%= port_attrs[:portNum] %>
+  <% end %>
+  selector:
+    app: <%= svc_attrs[:appSelector] %>
+---
+<% end %>
+<% end %>
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: crm-services
+  name: <%= @deploymentName %>
   labels:
-    app: crm-services
+    app: <%= @deploymentName %>
+    version: <%= @version %>
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: crm-services
+      app: <%= @deploymentName %>
   template:
     metadata:
       labels:
-        app: crm-services
+        app: <%= @deploymentName %>
+        version: <%= @version %>
     spec:
+       <% if @harole != "simplex" %>
+       nodeSelector:
+         harole: <%= @harole %> 
+       <% end %>
+       volumes:
+       <% @hostvols.each do |vol, vol_attrs| %>
+       - name: <%= vol_attrs[:name] %>
+         hostPath: 
+            path: <%= vol_attrs[:hostPath] %>
+       <% end %>
+       <% @configmaps.each do|cm, cm_attrs| %>
+       - name: <%= cm_attrs[:name] %>
+         configMap:
+           name: <%= cm_attrs[:configMap] %>
+           items: 
+            - key: <%= cm_attrs[:key] %>
+              path: <%= cm_attrs[:path] %>
+       <% end %>
+       dnsConfig:
+         nameservers:
+          - 1.1.1.1
+          - 1.0.0.1
+       imagePullSecrets:
+        - name: mexreg-secret
        containers:
        <% @services.each do |service, service_attrs| %>
        - name: <%= service %>
-         image: <%= node['edgeCloudImage'] %>:<%= node['edgeCloudVersion'] %>
+         image: <%= service_attrs[:image] %>
          imagePullPolicy: Always
          resources:
            requests:
              cpu: 10m
+         <% unless service_attrs[:cmd].nil? %>
          command:
-         <% cmdArgs = service_attrs[:cmd].split(" ")
-              cmd = cmdArgs.shift() %>
-          - <%= cmd %>
+           - <%= service_attrs[:cmd] %>
+         <% end %>
+         <% unless service_attrs[:cmdargs].nil? %> 
          args:
-         <% cmdArgs.each do |args| %>
-          - <%= args %>
+         <% service_attrs[:cmdargs].each do|arg| %>
+          - <%= arg %>
+         <% end %>
          <% end %>
          env:
+         <% unless service_attrs[:env].nil? %>
          <% service_attrs[:env].each do |envVar|
               key, val = envVar.split('=') %>
           - name: "<%= key %>"
             value: "<%= val %>"
          <% end %>
+         <% end %>
+         <% unless service_attrs[:volumeMounts].nil? %>
+         volumeMounts:
+         <% service_attrs[:volumeMounts].each do |vol, vol_attrs| %>
+            - name: <%= vol_attrs[:name] %> 
+              mountPath: <%= vol_attrs[:mountPath] %>
+         <% end %>
+         <% end %>
        <% end %>
-       dnsConfig:
-         nameservers:
-          - 1.1.1.1
-       imagePullSecrets:
-        - name: mexreg-secret

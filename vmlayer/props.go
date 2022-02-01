@@ -175,6 +175,11 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 		Description: "Start and end value of MetalLB IP range third octet, (start-end). Set to NONE to disable MetalLB",
 		Value:       "200-250",
 	},
+	"MEX_ENABLE_ANTI_AFFINITY": {
+		Name:        "Enable Anti-Affinity Rules",
+		Description: "Enable Anti-Affinity rules where applicable for H/A (yes or no). Set to \"no\" for environments with limited hosts",
+		Value:       "yes",
+	},
 }
 
 func GetSupportedRouterTypes() string {
@@ -413,6 +418,11 @@ func (vp *VMProperties) GetMetalLBIp3rdOctetRange() (uint64, uint64, error) {
 		return 0, 0, fmt.Errorf("Invalid MetalLB range in MEX_METALLB_OCTET3_RANGE")
 	}
 	return start, end, nil
+}
+
+func (vp *VMProperties) GetEnableAntiAffinity() bool {
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_ENABLE_ANTI_AFFINITY")
+	return value == "yes"
 }
 
 // GetMetalLBIp3rdOctetRangeFromMasterIp gives an IP range on the same subnet as the master IP

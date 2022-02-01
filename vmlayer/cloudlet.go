@@ -3,7 +3,6 @@ package vmlayer
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
@@ -56,17 +55,21 @@ func (v *VMPlatform) GetPlatformSubnetName(key *edgeproto.CloudletKey) string {
 	return "mex-k8s-subnet-" + v.GetPlatformVMName(key)
 }
 
-func (v *VMPlatform) GetPlatformNodes(cloudlet *edgeproto.Cloudlet) []string {
-	nodes := []string{}
+func (v *VMPlatform) GetPlatformNodes(cloudlet *edgeproto.Cloudlet) []chefmgmt.ChefNodeInfo {
+	nodes := []chefmgmt.ChefNodeInfo{}
 	platformVMName := v.GetPlatformVMName(&cloudlet.Key)
 	if cloudlet.Deployment == cloudcommon.DeploymentTypeDocker {
-		nodes = append(nodes, platformVMName)
+		nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: platformVMName, NodeType: cloudcommon.VMTypePlatform})
 	} else {
 		masterNode := platformVMName + "-master"
-		nodes = append(nodes, masterNode)
+		nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: masterNode, NodeType: cloudcommon.VMTypePlatformClusterMaster, Policy: chefmgmt.ChefPolicyK8s})
 		for nn := uint32(1); nn <= chefmgmt.K8sWorkerNodeCount; nn++ {
 			workerNode := fmt.Sprintf("%s-node-%d", platformVMName, nn)
-			nodes = append(nodes, workerNode)
+			if nn == 1 {
+				nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: workerNode, NodeType: cloudcommon.VMTypePlatformClusterPrimaryNode, Policy: chefmgmt.ChefPolicyBase})
+			} else {
+				nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: workerNode, NodeType: cloudcommon.VMTypePlatformClusterSecondaryNode, Policy: chefmgmt.ChefPolicyBase})
+			}
 		}
 	}
 	return nodes
@@ -117,13 +120,11 @@ func (v *VMPlatform) GetCloudletImageToUse(ctx context.Context, updateCallback e
 func (v *VMPlatform) SetupPlatformVM(ctx context.Context, accessApi platform.AccessApi, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SetupPlatformVM", "cloudlet", cloudlet)
 
-	platformVmName := v.GetPlatformVMName(&cloudlet.Key)
+	platformVmGroupName := v.GetPlatformVMName(&cloudlet.Key)
 	_, err := v.GetCloudletImageToUse(ctx, updateCallback)
 	if err != nil {
 		return err
 	}
-
-	updateCallback(edgeproto.UpdateTask, "Deploying Platform VM")
 
 	vms, err := v.getCloudletVMsSpec(ctx, accessApi, cloudlet, pfConfig, pfFlavor, updateCallback)
 	if err != nil {
@@ -131,18 +132,22 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, accessApi platform.Acc
 	}
 
 	if cloudlet.Deployment == cloudcommon.DeploymentTypeDocker {
+		updateCallback(edgeproto.UpdateTask, "Deploying Platform VM")
+
 		_, err = v.OrchestrateVMsFromVMSpec(
 			ctx,
-			platformVmName,
+			platformVmGroupName,
 			vms,
 			ActionCreate,
 			updateCallback,
-			WithNewSecurityGroup(infracommon.GetServerSecurityGroupName(platformVmName)),
+			WithNewSecurityGroup(infracommon.GetServerSecurityGroupName(platformVmGroupName)),
 			WithAccessPorts("tcp:22", infracommon.RemoteCidrAll),
 			WithSkipDefaultSecGrp(true),
 			WithInitOrchestrator(true),
 		)
 	} else {
+		updateCallback(edgeproto.UpdateTask, "Deploying Platform Cluster")
+
 		subnetName := v.GetPlatformSubnetName(&cloudlet.Key)
 		skipInfraSpecificCheck := false
 		if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
@@ -152,17 +157,18 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, accessApi platform.Acc
 		}
 		_, err = v.OrchestrateVMsFromVMSpec(
 			ctx,
-			platformVmName,
+			platformVmGroupName,
 			vms,
 			ActionCreate,
 			updateCallback,
-			WithNewSecurityGroup(infracommon.GetServerSecurityGroupName(platformVmName)),
+			WithNewSecurityGroup(infracommon.GetServerSecurityGroupName(platformVmGroupName)),
 			WithAccessPorts("tcp:22", infracommon.RemoteCidrAll),
 			WithSkipDefaultSecGrp(true),
 			WithNewSubnet(subnetName),
 			WithSkipSubnetGateway(true),
 			WithSkipInfraSpecificCheck(skipInfraSpecificCheck),
 			WithInitOrchestrator(true),
+			WithAntiAffinity(cloudlet.PlatformHighAvailability),
 		)
 	}
 	if err != nil {
@@ -284,10 +290,7 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	if err != nil {
 		return cloudletResourcesCreated, err
 	}
-	chefAttributes, err := chefmgmt.GetChefPlatformAttributes(ctx, cloudlet, pfConfig, cloudcommon.VMTypePlatform, chefApi)
-	if err != nil {
-		return cloudletResourcesCreated, err
-	}
+	nodes := v.GetPlatformNodes(cloudlet)
 
 	chefClient := v.VMProperties.GetChefClient()
 	if chefClient == nil {
@@ -300,9 +303,12 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	}
 	cloudlet.ChefClientKey = make(map[string]string)
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
-		nodes := v.GetPlatformNodes(cloudlet)
-		for _, nodeName := range nodes {
-			clientName := v.GetChefClientName(nodeName)
+		for nn, node := range nodes {
+			chefAttributes, err := chefmgmt.GetChefPlatformAttributes(ctx, cloudlet, pfConfig, &nodes[nn], chefApi, nodes)
+			if err != nil {
+				return cloudletResourcesCreated, err
+			}
+			clientName := v.GetChefClientName(node.NodeName)
 			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Creating chef client %s with cloudlet attributes", clientName))
 			chefParams := v.GetServerChefParams(clientName, "", chefPolicy, chefAttributes)
 			clientKey, err := chefmgmt.ChefClientCreate(ctx, chefClient, chefParams)
@@ -454,16 +460,14 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 
 	rootLBName := v.GetRootLBName(&cloudlet.Key)
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
-		nodes := v.GetPlatformNodes(cloudlet)
-		for _, nodeName := range nodes {
-			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting PlatformVM %s", nodeName))
-			err = v.VMProvider.DeleteVMs(ctx, nodeName)
-			if err != nil && err.Error() != ServerDoesNotExistError {
-				return fmt.Errorf("DeleteCloudlet error: %v", err)
-			}
-		}
+		vmGroupName := v.GetPlatformVMName(&cloudlet.Key)
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting RootLB %s", rootLBName))
 		err = v.VMProvider.DeleteVMs(ctx, rootLBName)
+		if err != nil && err.Error() != ServerDoesNotExistError {
+			return fmt.Errorf("DeleteCloudlet error: %v", err)
+		}
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting Platform VMs %s", vmGroupName))
+		err = v.VMProvider.DeleteVMs(ctx, vmGroupName)
 		if err != nil && err.Error() != ServerDoesNotExistError {
 			return fmt.Errorf("DeleteCloudlet error: %v", err)
 		}
@@ -484,8 +488,8 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	}
 
 	nodes := v.GetPlatformNodes(cloudlet)
-	for _, nodeName := range nodes {
-		clientName := v.GetChefClientName(nodeName)
+	for _, node := range nodes {
+		clientName := v.GetChefClientName(node.NodeName)
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting %s client from Chef Server", clientName))
 		err = chefmgmt.ChefClientDelete(ctx, chefClient, clientName)
 		if err != nil {
@@ -653,17 +657,19 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 	if err != nil {
 		return nil, err
 	}
-	chefAttributes, err := chefmgmt.GetChefPlatformAttributes(ctx, cloudlet, pfConfig, cloudcommon.VMTypePlatform, chefApi)
+	nodes := v.GetPlatformNodes(cloudlet)
+	if len(nodes) == 0{
+		return nil, fmt.Errorf("no platform nodes")
+	}
+	chefAttributes, err := chefmgmt.GetChefPlatformAttributes(ctx, cloudlet, pfConfig, &nodes[0], chefApi, nodes)
 	if err != nil {
 		return nil, err
 	}
 	if cloudlet.ChefClientKey == nil {
 		return nil, fmt.Errorf("missing chef client key")
 	}
-
-	nodes := v.GetPlatformNodes(cloudlet)
-	for _, nodeName := range nodes {
-		clientName := v.GetChefClientName(nodeName)
+	for _, node := range nodes {
+		clientName := v.GetChefClientName(node.NodeName)
 		if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
 			cloudlet.ChefClientKey[clientName] = ""
 		}
@@ -694,39 +700,30 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 		}
 		vms = append(vms, platvm)
 	} else {
-		for _, nodeName := range nodes {
-			clientName := v.GetChefClientName(nodeName)
-			var vmSpec *VMRequestSpec
-			if strings.HasSuffix(nodeName, "-master") {
-				masterAttributes := chefAttributes
-				masterAttributes["tags"] = chefmgmt.GetChefCloudletTags(cloudlet, pfConfig, cloudcommon.VMTypePlatformClusterMaster)
-				chefParams := v.GetServerChefParams(clientName, cloudlet.ChefClientKey[clientName], chefmgmt.ChefPolicyK8s, chefAttributes)
-				vmSpec, err = v.GetVMRequestSpec(
-					ctx,
-					cloudcommon.VMTypeClusterMaster,
-					nodeName,
-					flavorName,
-					pfImageName,
-					true, //connect external
-					WithSubnetConnection(subnetName),
-					WithChefParams(chefParams),
-					WithAccessKey(pfConfig.CrmAccessPrivateKey),
-				)
-			} else {
-				nodeAttributes := make(map[string]interface{})
-				nodeAttributes["tags"] = chefmgmt.GetChefCloudletTags(cloudlet, pfConfig, cloudcommon.VMTypePlatformClusterNode)
-				chefParams := v.GetServerChefParams(clientName, cloudlet.ChefClientKey[clientName], chefmgmt.ChefPolicyK8s, nodeAttributes)
-				vmSpec, err = v.GetVMRequestSpec(ctx,
-					cloudcommon.VMTypeClusterK8sNode,
-					nodeName,
-					flavorName,
-					pfImageName,
-					true, //connect external
-					WithSubnetConnection(subnetName),
-					WithChefParams(chefParams),
-					WithAccessKey(pfConfig.CrmAccessPrivateKey),
-				)
+		for _, node := range nodes {
+			clientName := v.GetChefClientName(node.NodeName)
+			masterAttributes := chefAttributes
+			policy := chefmgmt.ChefPolicyK8s
+			if node.NodeType != cloudcommon.VMTypePlatformClusterMaster {
+				policy = chefmgmt.ChefPolicyBase
 			}
+			masterAttributes["tags"] = chefmgmt.GetChefCloudletTags(cloudlet, pfConfig, node.NodeType)
+			chefParams := v.GetServerChefParams(clientName, cloudlet.ChefClientKey[clientName], policy, chefAttributes)
+			ak := pfConfig.CrmAccessPrivateKey
+			if node.NodeType == cloudcommon.VMTypePlatformClusterSecondaryNode {
+				ak = pfConfig.SecondaryCrmAccessPrivateKey
+			}
+			vmSpec, err := v.GetVMRequestSpec(
+				ctx,
+				node.NodeType,
+				node.NodeName,
+				flavorName,
+				pfImageName,
+				true, //connect external
+				WithSubnetConnection(subnetName),
+				WithChefParams(chefParams),
+				WithAccessKey(ak),
+			)
 			if err != nil {
 				return nil, err
 			}

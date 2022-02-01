@@ -171,6 +171,7 @@ func GetPlatformConfig(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Platfor
 		AppDNSRoot:          pfConfig.AppDnsRoot,
 		DeploymentTag:       pfConfig.DeploymentTag,
 		AccessApi:           accessApi,
+		ChefServerPath:      pfConfig.ChefServerPath,
 	}
 	return &platCfg
 }
