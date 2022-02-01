@@ -24,10 +24,11 @@ func (o *OpenstackPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) 
 
 func (o *OpenstackPlatform) GetFeatures() *platform.Features {
 	return &platform.Features{
-		SupportsMultiTenantCluster: true,
-		SupportsSharedVolume:       true,
-		SupportsTrustPolicy:        true,
-		SupportsAdditionalNetworks: true,
+		SupportsMultiTenantCluster:       true,
+		SupportsSharedVolume:             true,
+		SupportsTrustPolicy:              true,
+		SupportsAdditionalNetworks:       true,
+		SupportsPlatformHighAvailability: true,
 	}
 }
 

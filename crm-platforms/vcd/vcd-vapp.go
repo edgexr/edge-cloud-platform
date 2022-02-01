@@ -135,6 +135,30 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Add VMs to VApp time %s",
 			cloudcommon.FormatDuration(time.Since(addVMStart), 2)))
 	}
+
+	// even if anti affinity is not enabled in the cloudlet, create the rule but disable it. This allows
+	// us to test the creation and deletion of anti affinity rules in a host limited environment
+	if vmgp.AntiAffinitySpecified {
+		var vmReferences []*types.Reference
+		for _, vm := range vmsToCustomize {
+			vmReferences = append(vmReferences, &types.Reference{HREF: vm.VM.HREF})
+		}
+		aRuleDef := types.VmAffinityRule{
+			Name: vmgp.GroupName + "-anti-affinity", Polarity: types.PolarityAntiAffinity,
+			IsEnabled:   TakeBoolPointer(vmgp.AntiAffinityEnabledInCloudlet),
+			IsMandatory: TakeBoolPointer(false),
+			VmReferences: []*types.VMs{
+				{
+					VMReference: vmReferences,
+				},
+			}}
+		log.SpanLog(ctx, log.DebugLevelInfra, "creating anti affinity rule", "def", aRuleDef)
+		_, err = vdc.CreateVmAffinityRule(&aRuleDef)
+		if err != nil {
+			return nil, fmt.Errorf("Error creating anti affinity rule - %v", err)
+		}
+	}
+
 	updateCallback(edgeproto.UpdateTask, "Powering on VMs")
 	powerOnStart := time.Now()
 	err = v.powerOnVmsAndForceCustomization(ctx, vmsToCustomize)
@@ -196,14 +220,24 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 
 	// are we being asked to delete vm or vapp (do we ever get asked to delete a single VM?)
 	vappName := vapp.VApp.Name
-
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp", "name", vappName)
+
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
 		return fmt.Errorf("GetVdc Failed - %v", err)
 	}
-	// At this point the vapp has to exist as we have already retrieved the name from it
-
+	affinityRule, err := vdc.GetVmAffinityRuleById(vappName + "-anti-affinity")
+	if err != nil {
+		if !govcd.ContainsNotFound(err) {
+			return fmt.Errorf("error finding affinity rule for vapp - %v", err)
+		}
+	} else {
+		log.SpanLog(ctx, log.DebugLevelInfra, "deleting affinity rule for vapp")
+		err = affinityRule.Delete()
+		if err != nil {
+			return fmt.Errorf("error deleting affinity rule for vapp - %v", err)
+		}
+	}
 	// cleanup VM HREF cache
 	if v.GetHrefCacheEnabled() {
 		for _, vm := range vapp.VApp.Children.VM {

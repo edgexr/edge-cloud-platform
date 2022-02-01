@@ -33,6 +33,14 @@ parameters:
 {{- end}}
 
 resources:
+    {{- if and .AntiAffinitySpecified .AntiAffinityEnabledInCloudlet}}
+    affinity_group:
+        type: OS::Nova::ServerGroup
+        properties:
+            name: {{.GroupName}}
+            policies: [anti-affinity]
+    {{- end}}
+
     {{- range .Subnets}}
     {{.Name}}:
         type: OS::Neutron::Subnet
@@ -141,6 +149,10 @@ resources:
         type: OS::Nova::Server
         properties:
             name: {{.Name}}
+            {{- if and $.AntiAffinitySpecified $.AntiAffinityEnabledInCloudlet}}
+            scheduler_hints:
+                group: {get_resource: affinity_group}
+            {{- end}}
             networks:
                 {{- range .Ports}}
                 {{- if .Preexisting}}

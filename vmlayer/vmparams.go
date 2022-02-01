@@ -242,20 +242,22 @@ func WithVmAppOsType(osType edgeproto.VmAppOsType) VMReqOp {
 
 // VMGroupRequestSpec is used to specify a set of VMs to be created.  It is used as input to create VMGroupOrchestrationParams
 type VMGroupRequestSpec struct {
-	GroupName              string
-	VMs                    []*VMRequestSpec
-	NewSubnetName          string
-	NewSecgrpName          string
-	AccessPorts            string
-	AccessCidr             string
-	TrustPolicy            *edgeproto.TrustPolicy
-	SkipDefaultSecGrp      bool
-	SkipSubnetGateway      bool
-	SkipInfraSpecificCheck bool
-	InitOrchestrator       bool
-	Domain                 string
-	ChefUpdateInfo         map[string]string
-	SkipCleanupOnFailure   bool
+	GroupName                     string
+	VMs                           []*VMRequestSpec
+	NewSubnetName                 string
+	NewSecgrpName                 string
+	AccessPorts                   string
+	AccessCidr                    string
+	TrustPolicy                   *edgeproto.TrustPolicy
+	SkipDefaultSecGrp             bool
+	SkipSubnetGateway             bool
+	SkipInfraSpecificCheck        bool
+	InitOrchestrator              bool
+	Domain                        string
+	ChefUpdateInfo                map[string]string
+	SkipCleanupOnFailure          bool
+	AntiAffinity                  bool
+	AntiAffinityEnabledInCloudlet bool
 }
 
 type VMGroupReqOp func(vmp *VMGroupRequestSpec) error
@@ -318,6 +320,12 @@ func WithChefUpdateInfo(updateInfo map[string]string) VMGroupReqOp {
 func WithSkipCleanupOnFailure(skip bool) VMGroupReqOp {
 	return func(s *VMGroupRequestSpec) error {
 		s.SkipCleanupOnFailure = skip
+		return nil
+	}
+}
+func WithAntiAffinity(anti bool) VMGroupReqOp {
+	return func(s *VMGroupRequestSpec) error {
+		s.AntiAffinity = anti
 		return nil
 	}
 }
@@ -520,21 +528,23 @@ func (v *VMPlatform) GetServerChefParams(nodeName, clientKey string, policyName 
 
 // VMGroupOrchestrationParams contains all the details used by the orchestator to create a set of associated VMs
 type VMGroupOrchestrationParams struct {
-	GroupName              string
-	Subnets                []SubnetOrchestrationParams
-	Ports                  []PortOrchestrationParams
-	RouterInterfaces       []RouterInterfaceOrchestrationParams
-	VMs                    []VMOrchestrationParams
-	FloatingIPs            []FloatingIPOrchestrationParams
-	SecurityGroups         []SecurityGroupOrchestrationParams
-	Netspec                *NetSpecInfo
-	Tags                   []TagOrchestrationParams
-	SkipInfraSpecificCheck bool
-	SkipSubnetGateway      bool
-	InitOrchestrator       bool
-	ChefUpdateInfo         map[string]string
-	ConnectsToSharedRootLB bool
-	SkipCleanupOnFailure   bool
+	GroupName                     string
+	Subnets                       []SubnetOrchestrationParams
+	Ports                         []PortOrchestrationParams
+	RouterInterfaces              []RouterInterfaceOrchestrationParams
+	VMs                           []VMOrchestrationParams
+	FloatingIPs                   []FloatingIPOrchestrationParams
+	SecurityGroups                []SecurityGroupOrchestrationParams
+	Netspec                       *NetSpecInfo
+	Tags                          []TagOrchestrationParams
+	SkipInfraSpecificCheck        bool
+	SkipSubnetGateway             bool
+	InitOrchestrator              bool
+	ChefUpdateInfo                map[string]string
+	ConnectsToSharedRootLB        bool
+	SkipCleanupOnFailure          bool
+	AntiAffinitySpecified         bool
+	AntiAffinityEnabledInCloudlet bool
 }
 
 // connectsToSharedRootLB detects if the request spec is connecting to a shared rootLb.  To determine
@@ -605,7 +615,9 @@ func (v *VMPlatform) GetVMGroupOrchestrationParamsFromVMSpec(ctx context.Context
 func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Context, spec *VMGroupRequestSpec) (*VMGroupOrchestrationParams, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "getVMGroupOrchestrationParamsFromGroupSpec", "spec", spec)
 
-	vmgp := VMGroupOrchestrationParams{GroupName: spec.GroupName, InitOrchestrator: spec.InitOrchestrator, SkipCleanupOnFailure: spec.SkipCleanupOnFailure}
+	vmgp := VMGroupOrchestrationParams{GroupName: spec.GroupName, InitOrchestrator: spec.InitOrchestrator, SkipCleanupOnFailure: spec.SkipCleanupOnFailure, AntiAffinitySpecified: spec.AntiAffinity}
+	vmgp.AntiAffinityEnabledInCloudlet = v.VMProperties.GetEnableAntiAffinity()
+
 	internalNetName := v.VMProperties.GetCloudletMexNetwork()
 	internalNetId := v.VMProvider.NameSanitize(internalNetName)
 	externalNetName := v.VMProperties.GetCloudletExternalNetwork()
@@ -619,6 +631,9 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 	vmDns := strings.Split(v.VMProperties.GetCloudletDNS(), ",")
 	if len(vmDns) > 2 {
 		return nil, fmt.Errorf("Too many DNS servers specified in MEX_DNS")
+	}
+	if spec.AntiAffinity && len(spec.VMs) < 2 {
+		return nil, fmt.Errorf("Anti affinity cannot be specified with less than 2 VMs")
 	}
 
 	subnetDns := []string{}
@@ -821,6 +836,8 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 				newPorts = append(newPorts, internalPort)
 			}
 
+		case cloudcommon.VMTypePlatformClusterMaster:
+			fallthrough
 		case cloudcommon.VMTypeClusterMaster:
 			role = RoleMaster
 			if vm.ConnectToSubnet != "" {
@@ -853,11 +870,15 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 			}
 		case cloudcommon.VMTypeClusterDockerNode:
 			fallthrough
+		case cloudcommon.VMTypePlatformClusterPrimaryNode:
+			fallthrough
+		case cloudcommon.VMTypePlatformClusterSecondaryNode:
+			fallthrough
 		case cloudcommon.VMTypeClusterK8sNode:
-			if vm.Type == cloudcommon.VMTypeClusterK8sNode {
-				role = RoleK8sNode
-			} else {
+			if vm.Type == cloudcommon.VMTypeClusterDockerNode {
 				role = RoleDockerNode
+			} else {
+				role = RoleK8sNode
 			}
 			if vm.ConnectToSubnet != "" {
 				// connect via internal network to LB

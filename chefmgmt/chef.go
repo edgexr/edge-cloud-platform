@@ -12,6 +12,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/integration/process"
+	"github.com/mobiledgex/edge-cloud/rediscache"
 	"github.com/mobiledgex/edge-cloud/util"
 
 	"github.com/go-chef/chef"
@@ -36,6 +37,8 @@ const (
 	ServiceTypeCloudletPrometheus = intprocess.PrometheusContainer
 	K8sMasterNodeCount            = 1
 	K8sWorkerNodeCount            = 2
+	CRMRedisImage                 = "docker.io/bitnami/redis"
+	CRMRedisVersion               = "6.2.6-debian-10-r103"
 )
 
 var PlatformServices = []string{
@@ -90,6 +93,12 @@ type ChefStatusInfo struct {
 type ChefApiAccess struct {
 	ApiEndpoint string
 	ApiGateway  string
+}
+
+type ChefNodeInfo struct {
+	NodeName string
+	NodeType string
+	Policy   string
 }
 
 const (
@@ -432,6 +441,14 @@ func GetChefCloudletAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet
 
 	if cloudlet.Deployment == cloudcommon.DeploymentTypeKubernetes {
 		chefAttributes["k8sNodeCount"] = K8sMasterNodeCount + K8sWorkerNodeCount
+		if cloudlet.PlatformHighAvailability {
+			// orchestration of platform services are done via the master, the arguments passed in individual nodes are not used. Redis
+			// configuration therefore is done at the cloudlet level not the node level
+			chefAttributes["redisServiceName"] = rediscache.RedisHeadlessService
+			chefAttributes["redisServicePort"] = rediscache.RedisStandalonePort
+			chefAttributes["redisImage"] = CRMRedisImage
+			chefAttributes["redisVersion"] = CRMRedisVersion
+		}
 	}
 	chefAttributes["edgeCloudImage"] = pfConfig.ContainerRegistryPath
 	chefAttributes["edgeCloudVersion"] = cloudlet.ContainerVersion
@@ -469,9 +486,14 @@ func GetChefCloudletAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet
 			// present in edge-cloud image itself
 			containerVersion := cloudlet.ContainerVersion
 			cloudlet.ContainerVersion = ""
-			serviceCmdArgs, envVars, err = cloudcommon.GetCRMCmdArgs(cloudlet, pfConfig, process.HARolePrimary) // TODO phase 2
+			// The HA role is not relevant here as chef will install both primary and secondary CRMs if HA is enabled and
+			// change the HArole as required
+			serviceCmdArgs, envVars, err = cloudcommon.GetCRMCmdArgs(cloudlet, pfConfig, process.HARolePrimary)
 			if err != nil {
 				return nil, err
+			}
+			if cloudlet.PlatformHighAvailability {
+				serviceCmdArgs = append(serviceCmdArgs, "--redisStandaloneAddr", rediscache.RedisCloudletStandaloneAddr)
 			}
 			cloudlet.ContainerVersion = containerVersion
 		case ServiceTypeCloudletPrometheus:
@@ -506,12 +528,15 @@ func GetChefCloudletAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet
 	return chefAttributes, nil
 }
 
-func GetChefPlatformAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, serverType string, apiAccess *ChefApiAccess) (map[string]interface{}, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetChefPlatformAttributes", "region", pfConfig.Region, "cloudletKey", cloudlet.Key, "PhysicalName", cloudlet.PhysicalName)
+func GetChefPlatformAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, nodeInfo *ChefNodeInfo, apiAccess *ChefApiAccess, cloudletNodes []ChefNodeInfo) (map[string]interface{}, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetChefPlatformAttributes", "region", pfConfig.Region, "nodeInfo", nodeInfo, "cloudletKey", cloudlet.Key, "PhysicalName", cloudlet.PhysicalName)
 
-	chefAttributes, err := GetChefCloudletAttributes(ctx, cloudlet, pfConfig, serverType)
+	chefAttributes, err := GetChefCloudletAttributes(ctx, cloudlet, pfConfig, nodeInfo.NodeType)
 	if err != nil {
 		return nil, err
+	}
+	if nodeInfo.Policy == ChefPolicyBase {
+		return chefAttributes, nil
 	}
 
 	if apiAccess.ApiEndpoint != "" {
@@ -533,6 +558,9 @@ func GetChefPlatformAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet
 		if apiAccess.ApiGateway != "" {
 			chefAttributes["infraApiGw"] = apiAccess.ApiGateway
 		}
+	}
+	for _, node := range cloudletNodes {
+		chefAttributes[node.NodeType] = node.NodeName
 	}
 	return chefAttributes, nil
 }
