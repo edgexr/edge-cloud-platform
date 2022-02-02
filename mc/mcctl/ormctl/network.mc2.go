@@ -106,7 +106,7 @@ func init() {
 
 var NetworkRequiredArgs = []string{
 	"cloudlet-org",
-	"key.cloudletkey.name",
+	"cloudlet",
 	"name",
 }
 var NetworkOptionalArgs = []string{
@@ -119,7 +119,7 @@ var NetworkOptionalArgs = []string{
 var NetworkAliasArgs = []string{
 	"fields=network.fields",
 	"cloudlet-org=network.key.cloudletkey.organization",
-	"key.cloudletkey.name=network.key.cloudletkey.name",
+	"cloudlet=network.key.cloudletkey.name",
 	"federated-org=network.key.cloudletkey.federatedorganization",
 	"name=network.key.name",
 	"routes:empty=network.routes:empty",
@@ -131,7 +131,7 @@ var NetworkAliasArgs = []string{
 var NetworkComments = map[string]string{
 	"fields":                   "Fields are used for the Update API to specify which fields to apply",
 	"cloudlet-org":             "Organization of the cloudlet site",
-	"key.cloudletkey.name":     "Name of the cloudlet",
+	"cloudlet":                 "Name of the cloudlet",
 	"federated-org":            "Federated operator organization who shared this cloudlet",
 	"name":                     "Network Name",
 	"routes:empty":             "List of routes, specify routes:empty=true to clear",
