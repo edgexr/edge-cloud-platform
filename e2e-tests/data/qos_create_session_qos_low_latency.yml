@@ -1,0 +1,13 @@
+registerclientrequest:
+  orgname: AcmeAppCo
+  appname: qosapplication
+  appvers: "1.0"
+  authtoken: "GENTOKEN:authtoken_private.pem"
+  uniqueidtype: E2E-test-uuid
+  uniqueid: "456"
+qosprioritysessioncreaterequest:
+  profile: QOS_LOW_LATENCY
+  sessionduration: 300
+  ipuserequipment: 172.24.8.2
+  ipapplicationserver: 127.0.0.1
+  portapplicationserver: 8008

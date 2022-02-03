@@ -47,6 +47,70 @@ tests:
     yaml2: "{{datadir2}}/find_cloudlet_qos_response_no_user_ip.yml"
     filetype: findcloudlet
 
+- name: Create and verify QOS priority session QOS_LOW_LATENCY
+  apifile: "{{datadir2}}/qos_create_session_qos_low_latency.yml"
+  actions: [dmeapi-createqossession]
+  compareyaml:
+    yaml1: "{{outputdir}}/createqossession.yml"
+    yaml2: "{{datadir2}}/qos_create_session_response_qos_low_latency.yml"
+    filetype: createqossession
+
+- name: Create and verify QOS priority session QOS_THROUGHPUT_DOWN_S
+  apifile: "{{datadir2}}/qos_create_session_qos_throughput_down_s.yml"
+  actions: [dmeapi-createqossession]
+  compareyaml:
+    yaml1: "{{outputdir}}/createqossession.yml"
+    yaml2: "{{datadir2}}/qos_create_session_response_qos_throughput_down_s.yml"
+    filetype: createqossession
+
+- name: Create and verify QOS priority session QOS_THROUGHPUT_DOWN_M
+  apifile: "{{datadir2}}/qos_create_session_qos_throughput_down_m.yml"
+  actions: [dmeapi-createqossession]
+  compareyaml:
+    yaml1: "{{outputdir}}/createqossession.yml"
+    yaml2: "{{datadir2}}/qos_create_session_response_qos_throughput_down_m.yml"
+    filetype: createqossession
+
+- name: Create and verify QOS priority session QOS_THROUGHPUT_DOWN_L
+  apifile: "{{datadir2}}/qos_create_session_qos_throughput_down_l.yml"
+  actions: [dmeapi-createqossession]
+  compareyaml:
+    yaml1: "{{outputdir}}/createqossession.yml"
+    yaml2: "{{datadir2}}/qos_create_session_response_qos_throughput_down_l.yml"
+    filetype: createqossession
+
+- name: Create QOS session same profile, SessionId is reused
+  apifile: "{{datadir2}}/qos_create_session_qos_throughput_down_l.yml"
+  actions: [dmeapi-createqossession]
+  compareyaml:
+    yaml1: "{{outputdir}}/createqossession.yml"
+    yaml2: "{{datadir2}}/qos_create_session_response_qos_reuse_200.yml"
+    filetype: createqossession
+
+- name: Create QOS session diff profile, new SessionId is created
+  apifile: "{{datadir2}}/qos_create_session_qos_throughput_down_s.yml"
+  actions: [dmeapi-createqossession]
+  compareyaml:
+    yaml1: "{{outputdir}}/createqossession.yml"
+    yaml2: "{{datadir2}}/qos_create_session_response_qos_throughput_down_s.yml"
+    filetype: createqossession
+
+- name: Delete previously created QOS session
+  apifile: "{{datadir2}}/qos_delete_previous_session.yml"
+  actions: [dmeapi-deleteqossession]
+  compareyaml:
+    yaml1: "{{outputdir}}/deleteqossession.yml"
+    yaml2: "{{datadir2}}/qos_delete_previous_session_response.yml"
+    filetype: deleteqossession
+
+- name: Delete unknown QOS session
+  apifile: "{{datadir2}}/qos_delete_unknown_session.yml"
+  actions: [dmeapi-deleteqossession]
+  compareyaml:
+    yaml1: "{{outputdir}}/deleteqossession.yml"
+    yaml2: "{{datadir2}}/qos_delete_unknown_session_response.yml"
+    filetype: deleteqossession
+
 - name: Remove qosapplication app and appinst
   apifile: "{{datadir2}}/qos_appdata_remove.yml"
   actions: [ctrlapi-delete,ctrlapi-show]

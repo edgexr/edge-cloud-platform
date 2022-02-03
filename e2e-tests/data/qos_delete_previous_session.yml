@@ -1,0 +1,9 @@
+registerclientrequest:
+  orgname: AcmeAppCo
+  appname: qosapplication
+  appvers: "1.0"
+  authtoken: "GENTOKEN:authtoken_private.pem"
+  uniqueidtype: E2E-test-uuid
+  uniqueid: "456"
+qosprioritysessiondeleterequest:
+  profile: QOS_THROUGHPUT_DOWN_L

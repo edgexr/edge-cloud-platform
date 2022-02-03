@@ -1,0 +1,4 @@
+sessionduration: 300
+profile: LowLatency
+sessionid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+httpstatus: 201
