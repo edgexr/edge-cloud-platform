@@ -28,7 +28,7 @@ func (o *OpenstackPlatform) GetFeatures() *platform.Features {
 		SupportsSharedVolume:             true,
 		SupportsTrustPolicy:              true,
 		SupportsAdditionalNetworks:       true,
-		SupportsPlatformHighAvailability: true,
+		SupportsPlatformHighAvailabilityOnK8s: true,
 	}
 }
 
