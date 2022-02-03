@@ -5,6 +5,7 @@ go 1.15
 require (
 	cloud.google.com/go v0.39.0
 	github.com/AsGz/geo v0.0.0-20170331085501-324ae0e80045
+	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
 	github.com/atlassian/go-artifactory/v2 v2.3.0
@@ -13,8 +14,7 @@ require (
 	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dlclark/regexp2 v1.4.0 // indirect
-	github.com/go-chef/chef v0.23.1
-	github.com/go-ole/go-ole v1.2.4 // indirect
+	github.com/go-chef/chef v0.24.3
 	github.com/go-openapi/errors v0.19.7
 	github.com/go-openapi/loads v0.19.5
 	github.com/go-openapi/spec v0.19.8
@@ -23,7 +23,7 @@ require (
 	github.com/go-openapi/validate v0.19.11
 	github.com/gogo/googleapis v1.1.0
 	github.com/gogo/protobuf v1.3.1
-	github.com/google/go-cmp v0.4.0
+	github.com/google/go-cmp v0.5.6
 	github.com/google/uuid v1.1.1
 	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/gorilla/mux v1.7.4
@@ -55,7 +55,8 @@ require (
 	github.com/prometheus/client_golang v1.6.0
 	github.com/prometheus/common v0.10.0
 	github.com/ryanuber/go-glob v1.0.0 // indirect
-	github.com/shirou/gopsutil v2.20.4+incompatible
+	github.com/shirou/gopsutil v2.20.9+incompatible
+	github.com/shirou/gopsutil/v3 v3.21.12 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/test-go/testify v1.1.4
@@ -66,6 +67,7 @@ require (
 	github.com/xanzy/go-gitlab v0.16.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/net v0.0.0-20201010224723-4f7140c49acb
+	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 	google.golang.org/api v0.14.0
 	google.golang.org/grpc v1.29.1
 	gopkg.in/ldap.v3 v3.0.3
@@ -96,7 +98,7 @@ replace github.com/NYTimes/gziphandler => github.com/NYTimes/gziphandler v1.1.1
 
 replace github.com/Nvveen/Gotty => github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5
 
-replace github.com/OneOfOne/xxhash => github.com/OneOfOne/xxhash v1.2.5
+replace github.com/OneOfOne/xxhash => github.com/OneOfOne/xxhash v1.2.8
 
 replace github.com/SAP/go-hdb => github.com/SAP/go-hdb v0.14.1
 
@@ -107,8 +109,6 @@ replace github.com/armon/go-radix => github.com/armon/go-radix v1.0.0
 replace github.com/bitly/go-hostpool => github.com/bitly/go-hostpool v0.0.0-20171023180738-a3a6125de932
 
 replace github.com/bmizerany/assert => github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
-
-replace github.com/cespare/xxhash => github.com/cespare/xxhash v1.1.0
 
 replace github.com/codeskyblue/go-sh => github.com/codeskyblue/go-sh v0.0.0-20170112005953-b097669b1569
 
@@ -290,7 +290,7 @@ replace github.com/creack/pty => github.com/creack/pty v1.1.10
 
 replace github.com/jarcoal/httpmock => github.com/jarcoal/httpmock v1.0.6
 
-replace github.com/go-chef/chef => github.com/go-chef/chef v0.23.1
+replace github.com/go-chef/chef => github.com/go-chef/chef v0.24.3
 
 replace github.com/hashicorp/vault/api => github.com/hashicorp/vault/api v1.0.5-0.20200317185738-82f498082f02
 
@@ -308,7 +308,7 @@ replace golang.org/x/oauth2 => golang.org/x/oauth2 v0.0.0-20190604053449-0f29369
 
 replace github.com/Shopify/sarama => github.com/Shopify/sarama v1.22.2-0.20190604114437-cd910a683f9f
 
-replace golang.org/x/sys => golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
+replace golang.org/x/sys => golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
 
 replace golang.org/x/time => golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 
@@ -329,3 +329,5 @@ replace github.com/alicebob/miniredis/v2 => github.com/alicebob/miniredis/v2 v2.
 replace github.com/gomodule/redigo => github.com/gomodule/redigo v1.8.8
 
 replace github.com/yuin/gopher-lua => github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
+
+replace github.com/cespare/xxhash/v2 => github.com/cespare/xxhash/v2 v2.1.2
