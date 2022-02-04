@@ -29,9 +29,10 @@ type swaggerCreateCloudletPool struct {
 }
 
 type RegionCloudletPool struct {
-	// required: true
 	// Region name
-	Region       string
+	// required: true
+	Region string
+	// CloudletPool in region
 	CloudletPool edgeproto.CloudletPool
 }
 
@@ -83,9 +84,10 @@ type swaggerAddCloudletPoolMember struct {
 }
 
 type RegionCloudletPoolMember struct {
-	// required: true
 	// Region name
-	Region             string
+	// required: true
+	Region string
+	// CloudletPoolMember in region
 	CloudletPoolMember edgeproto.CloudletPoolMember
 }
 

@@ -28,9 +28,10 @@ type swaggerStreamAppInst struct {
 }
 
 type RegionAppInstKey struct {
-	// required: true
 	// Region name
-	Region     string
+	// required: true
+	Region string
+	// AppInstKey in region
 	AppInstKey edgeproto.AppInstKey
 }
 
@@ -54,9 +55,10 @@ type swaggerStreamClusterInst struct {
 }
 
 type RegionClusterInstKey struct {
-	// required: true
 	// Region name
-	Region         string
+	// required: true
+	Region string
+	// ClusterInstKey in region
 	ClusterInstKey edgeproto.ClusterInstKey
 }
 
@@ -87,9 +89,10 @@ type swaggerStreamGPUDriver struct {
 }
 
 type RegionGPUDriverKey struct {
-	// required: true
 	// Region name
-	Region       string
+	// required: true
+	Region string
+	// GPUDriverKey in region
 	GPUDriverKey edgeproto.GPUDriverKey
 }
 

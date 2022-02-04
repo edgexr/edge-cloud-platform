@@ -29,9 +29,10 @@ type swaggerCreateAppInst struct {
 }
 
 type RegionAppInst struct {
-	// required: true
 	// Region name
-	Region  string
+	// required: true
+	Region string
+	// AppInst in region
 	AppInst edgeproto.AppInst
 }
 
@@ -90,9 +91,10 @@ type swaggerRequestAppInstLatency struct {
 }
 
 type RegionAppInstLatency struct {
-	// required: true
 	// Region name
-	Region         string
+	// required: true
+	Region string
+	// AppInstLatency in region
 	AppInstLatency edgeproto.AppInstLatency
 }
 

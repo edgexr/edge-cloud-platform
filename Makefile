@@ -67,7 +67,9 @@ $(APICOMMENTS): ./mc/ormapi/apidoc/apidoc.go ./mc/ormapi/api.go ./mc/ormapi/fede
 doc:
 	go install ./protoc-gen-mc2
 	make -f proto.make
+	go install ./doc/swaggerfix
 	swagger generate spec -i ./doc/init.json -o ./doc/apidocs.swagger.json --scan-models
+	swaggerfix ./doc/apidocs.swagger.json
 
 doc-local-server:
 	docker run --rm -p 1081:80 \

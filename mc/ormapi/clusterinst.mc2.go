@@ -29,9 +29,10 @@ type swaggerCreateClusterInst struct {
 }
 
 type RegionClusterInst struct {
-	// required: true
 	// Region name
-	Region      string
+	// required: true
+	Region string
+	// ClusterInst in region
 	ClusterInst edgeproto.ClusterInst
 }
 
@@ -83,9 +84,10 @@ type swaggerDeleteIdleReservableClusterInsts struct {
 }
 
 type RegionIdleReservableClusterInsts struct {
-	// required: true
 	// Region name
-	Region                     string
+	// required: true
+	Region string
+	// IdleReservableClusterInsts in region
 	IdleReservableClusterInsts edgeproto.IdleReservableClusterInsts
 }
 

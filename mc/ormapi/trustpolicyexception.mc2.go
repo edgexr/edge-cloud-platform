@@ -28,9 +28,10 @@ type swaggerCreateTrustPolicyException struct {
 }
 
 type RegionTrustPolicyException struct {
-	// required: true
 	// Region name
-	Region               string
+	// required: true
+	Region string
+	// TrustPolicyException in region
 	TrustPolicyException edgeproto.TrustPolicyException
 }
 

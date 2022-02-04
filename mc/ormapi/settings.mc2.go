@@ -28,9 +28,10 @@ type swaggerUpdateSettings struct {
 }
 
 type RegionSettings struct {
-	// required: true
 	// Region name
-	Region   string
+	// required: true
+	Region string
+	// Settings in region
 	Settings edgeproto.Settings
 }
 

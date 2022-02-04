@@ -29,9 +29,10 @@ type swaggerCreateGPUDriver struct {
 }
 
 type RegionGPUDriver struct {
-	// required: true
 	// Region name
-	Region    string
+	// required: true
+	Region string
+	// GPUDriver in region
 	GPUDriver edgeproto.GPUDriver
 }
 
@@ -83,9 +84,10 @@ type swaggerAddGPUDriverBuild struct {
 }
 
 type RegionGPUDriverBuildMember struct {
-	// required: true
 	// Region name
-	Region               string
+	// required: true
+	Region string
+	// GPUDriverBuildMember in region
 	GPUDriverBuildMember edgeproto.GPUDriverBuildMember
 }
 
@@ -123,9 +125,10 @@ type swaggerCreateCloudlet struct {
 }
 
 type RegionCloudlet struct {
-	// required: true
 	// Region name
-	Region   string
+	// required: true
+	Region string
+	// Cloudlet in region
 	Cloudlet edgeproto.Cloudlet
 }
 
@@ -177,9 +180,10 @@ type swaggerGetCloudletManifest struct {
 }
 
 type RegionCloudletKey struct {
-	// required: true
 	// Region name
-	Region      string
+	// required: true
+	Region string
+	// CloudletKey in region
 	CloudletKey edgeproto.CloudletKey
 }
 
@@ -203,9 +207,10 @@ type swaggerGetCloudletProps struct {
 }
 
 type RegionCloudletProps struct {
-	// required: true
 	// Region name
-	Region        string
+	// required: true
+	Region string
+	// CloudletProps in region
 	CloudletProps edgeproto.CloudletProps
 }
 
@@ -229,9 +234,10 @@ type swaggerGetCloudletResourceQuotaProps struct {
 }
 
 type RegionCloudletResourceQuotaProps struct {
-	// required: true
 	// Region name
-	Region                     string
+	// required: true
+	Region string
+	// CloudletResourceQuotaProps in region
 	CloudletResourceQuotaProps edgeproto.CloudletResourceQuotaProps
 }
 
@@ -255,9 +261,10 @@ type swaggerGetCloudletResourceUsage struct {
 }
 
 type RegionCloudletResourceUsage struct {
-	// required: true
 	// Region name
-	Region                string
+	// required: true
+	Region string
+	// CloudletResourceUsage in region
 	CloudletResourceUsage edgeproto.CloudletResourceUsage
 }
 
@@ -281,9 +288,10 @@ type swaggerAddCloudletResMapping struct {
 }
 
 type RegionCloudletResMap struct {
-	// required: true
 	// Region name
-	Region         string
+	// required: true
+	Region string
+	// CloudletResMap in region
 	CloudletResMap edgeproto.CloudletResMap
 }
 
@@ -314,9 +322,10 @@ type swaggerAddCloudletAllianceOrg struct {
 }
 
 type RegionCloudletAllianceOrg struct {
-	// required: true
 	// Region name
-	Region              string
+	// required: true
+	Region string
+	// CloudletAllianceOrg in region
 	CloudletAllianceOrg edgeproto.CloudletAllianceOrg
 }
 
@@ -347,9 +356,10 @@ type swaggerFindFlavorMatch struct {
 }
 
 type RegionFlavorMatch struct {
-	// required: true
 	// Region name
-	Region      string
+	// required: true
+	Region string
+	// FlavorMatch in region
 	FlavorMatch edgeproto.FlavorMatch
 }
 
@@ -401,9 +411,10 @@ type swaggerShowCloudletInfo struct {
 }
 
 type RegionCloudletInfo struct {
-	// required: true
 	// Region name
-	Region       string
+	// required: true
+	Region string
+	// CloudletInfo in region
 	CloudletInfo edgeproto.CloudletInfo
 }
 

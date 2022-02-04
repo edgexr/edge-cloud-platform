@@ -28,9 +28,10 @@ type swaggerCreateAlertPolicy struct {
 }
 
 type RegionAlertPolicy struct {
-	// required: true
 	// Region name
-	Region      string
+	// required: true
+	Region string
+	// AlertPolicy in region
 	AlertPolicy edgeproto.AlertPolicy
 }
 

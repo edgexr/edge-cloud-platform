@@ -28,10 +28,11 @@ type swaggerShowNode struct {
 }
 
 type RegionNode struct {
-	// required: true
 	// Region name
+	// required: true
 	Region string
-	Node   edgeproto.Node
+	// Node in region
+	Node edgeproto.Node
 }
 
 func (s *RegionNode) GetRegion() string {

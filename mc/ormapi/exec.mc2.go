@@ -27,9 +27,10 @@ type swaggerRunCommand struct {
 }
 
 type RegionExecRequest struct {
-	// required: true
 	// Region name
-	Region      string
+	// required: true
+	Region string
+	// ExecRequest in region
 	ExecRequest edgeproto.ExecRequest
 }
 

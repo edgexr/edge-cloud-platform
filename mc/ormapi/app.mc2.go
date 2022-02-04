@@ -29,10 +29,11 @@ type swaggerCreateApp struct {
 }
 
 type RegionApp struct {
-	// required: true
 	// Region name
+	// required: true
 	Region string
-	App    edgeproto.App
+	// App in region
+	App edgeproto.App
 }
 
 func (s *RegionApp) GetRegion() string {
@@ -83,9 +84,10 @@ type swaggerAddAppAutoProvPolicy struct {
 }
 
 type RegionAppAutoProvPolicy struct {
-	// required: true
 	// Region name
-	Region            string
+	// required: true
+	Region string
+	// AppAutoProvPolicy in region
 	AppAutoProvPolicy edgeproto.AppAutoProvPolicy
 }
 
@@ -116,9 +118,10 @@ type swaggerAddAppAlertPolicy struct {
 }
 
 type RegionAppAlertPolicy struct {
-	// required: true
 	// Region name
-	Region         string
+	// required: true
+	Region string
+	// AppAlertPolicy in region
 	AppAlertPolicy edgeproto.AppAlertPolicy
 }
 
@@ -149,9 +152,10 @@ type swaggerShowCloudletsForAppDeployment struct {
 }
 
 type RegionDeploymentCloudletRequest struct {
-	// required: true
 	// Region name
-	Region                    string
+	// required: true
+	Region string
+	// DeploymentCloudletRequest in region
 	DeploymentCloudletRequest edgeproto.DeploymentCloudletRequest
 }
 

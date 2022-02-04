@@ -29,9 +29,10 @@ type swaggerInjectDevice struct {
 }
 
 type RegionDevice struct {
-	// required: true
 	// Region name
+	// required: true
 	Region string
+	// Device in region
 	Device edgeproto.Device
 }
 
@@ -76,9 +77,10 @@ type swaggerShowDeviceReport struct {
 }
 
 type RegionDeviceReport struct {
-	// required: true
 	// Region name
-	Region       string
+	// required: true
+	Region string
+	// DeviceReport in region
 	DeviceReport edgeproto.DeviceReport
 }
 

@@ -28,9 +28,10 @@ type swaggerCreateAutoScalePolicy struct {
 }
 
 type RegionAutoScalePolicy struct {
-	// required: true
 	// Region name
-	Region          string
+	// required: true
+	Region string
+	// AutoScalePolicy in region
 	AutoScalePolicy edgeproto.AutoScalePolicy
 }
 
