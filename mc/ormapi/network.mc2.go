@@ -28,9 +28,10 @@ type swaggerCreateNetwork struct {
 }
 
 type RegionNetwork struct {
-	// required: true
 	// Region name
-	Region  string
+	// required: true
+	Region string
+	// Network in region
 	Network edgeproto.Network
 }
 

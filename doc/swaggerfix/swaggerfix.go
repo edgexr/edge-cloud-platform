@@ -79,35 +79,56 @@ func (s *Validator) validatePaths(sw *spec.Swagger) {
 		for _, field := range strings.Split(api.NoConfig, ",") {
 			noconfig[fieldPrefix+field] = struct{}{}
 		}
-		s.validateOperation(api, noconfig, "GET", pathItem.Get)
-		s.validateOperation(api, noconfig, "PUT", pathItem.Put)
-		s.validateOperation(api, noconfig, "POST", pathItem.Post)
-		s.validateOperation(api, noconfig, "DELETE", pathItem.Delete)
-		s.validateOperation(api, noconfig, "OPTIONS", pathItem.Options)
-		s.validateOperation(api, noconfig, "HEAD", pathItem.Head)
-		s.validateOperation(api, noconfig, "PATCH", pathItem.Patch)
+		aliases := make(map[string]string)
+		for _, alias := range strings.Fields(api.AliasArgs) {
+			ar := strings.SplitN(alias, "=", 2)
+			if len(ar) != 2 {
+				continue
+			}
+			aliases[ar[0]] = ar[1]
+		}
+		configLC := make(map[string]struct{})
+		for _, arg := range append(strings.Fields(api.RequiredArgs), strings.Fields(api.OptionalArgs)...) {
+			if a, ok := aliases[arg]; ok {
+				arg = a
+			}
+			configLC[arg] = struct{}{}
+		}
+
+		s.validateOperation(api, noconfig, configLC, "GET", pathItem.Get)
+		s.validateOperation(api, noconfig, configLC, "PUT", pathItem.Put)
+		s.validateOperation(api, noconfig, configLC, "POST", pathItem.Post)
+		s.validateOperation(api, noconfig, configLC, "DELETE", pathItem.Delete)
+		s.validateOperation(api, noconfig, configLC, "OPTIONS", pathItem.Options)
+		s.validateOperation(api, noconfig, configLC, "HEAD", pathItem.Head)
+		s.validateOperation(api, noconfig, configLC, "PATCH", pathItem.Patch)
 		newPaths[apiPath] = pathItem
 	}
 	// put back paths if modified
 	sw.Paths.Paths = newPaths
 }
 
-func (s *Validator) validateOperation(api *ormctl.ApiCommand, noconfig map[string]struct{}, opName string, op *spec.Operation) {
+func (s *Validator) validateOperation(api *ormctl.ApiCommand, noconfig, configLC map[string]struct{}, opName string, op *spec.Operation) {
 	if op == nil {
 		return
 	}
-	if op.Description == "" {
+	if op.Description == "" && op.Summary == "" {
 		s.addOperationDescMissing(api.Path, opName)
+	}
+	if op.Summary != "" {
+		// remove trailing period from summary
+		op.Summary = strings.TrimSpace(op.Summary)
+		op.Summary = strings.TrimSuffix(op.Summary, ".")
 	}
 	for _, param := range op.Parameters {
 		if param.Schema == nil {
 			continue
 		}
-		s.validateSchema(api, noconfig, []string{}, param.Schema)
+		s.validateSchema(api, noconfig, configLC, []string{}, param.Schema)
 	}
 }
 
-func (s *Validator) validateSchema(api *ormctl.ApiCommand, noconfig map[string]struct{}, parents []string, schema *spec.Schema) {
+func (s *Validator) validateSchema(api *ormctl.ApiCommand, noconfig, configLC map[string]struct{}, parents []string, schema *spec.Schema) {
 	for propName, propSchema := range schema.Properties {
 		name, found := propSchema.Extensions.GetString("x-go-name")
 		if !found {
@@ -119,11 +140,18 @@ func (s *Validator) validateSchema(api *ormctl.ApiCommand, noconfig map[string]s
 			delete(schema.Properties, propName)
 			continue
 		}
+		if len(propSchema.Properties) == 0 {
+			// remove field if not required or optional arg
+			if _, found := configLC[strings.ToLower(hierName)]; !found {
+				delete(schema.Properties, propName)
+				continue
+			}
+		}
 		// make sure field has description for documentation
 		if propSchema.Description == "" {
 			s.addSchemaDescMissing(api, parents, name)
 		}
-		s.validateSchema(api, noconfig, append(parents, name), &propSchema)
+		s.validateSchema(api, noconfig, configLC, append(parents, name), &propSchema)
 		// in case propSchema was modified, add it back
 		schema.Properties[propName] = propSchema
 	}
@@ -151,7 +179,7 @@ func (s *Validator) PrintFailures() {
 			descMissing = append(descMissing, missing)
 		}
 		sort.Strings(descMissing)
-		fmt.Printf("The following objects are missing a description, which requires a comment on the field or api:\n")
+		fmt.Printf("The following objects are missing a description or summary, which requires a comment on the field or api:\n")
 		for _, missing := range descMissing {
 			fmt.Println("  " + missing)
 		}

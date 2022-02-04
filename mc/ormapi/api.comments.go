@@ -167,6 +167,9 @@ var ShowUserComments = map[string]string{
 var UserLoginComments = map[string]string{
 	"username": `User's name or email address`,
 	"password": `User's password`,
+	"totp":     `Temporary one-time password if 2-factor authentication is enabled`,
+	"apikeyid": `API key ID if logging in using API key`,
+	"apikey":   `API key if logging in using API key`,
 }
 
 var CreateUserComments = map[string]string{
@@ -182,6 +185,8 @@ var CreateUserComments = map[string]string{
 	"user.lastlogin":       `Last successful login time`,
 	"user.lastfailedlogin": `Last failed login time`,
 	"user.failedlogins":    `Number of failed login attempts since last successful login`,
+	"verify.email":         `User's email address`,
+	"verify.callbackurl":   `Callback URL to verify user email`,
 }
 
 var EmailRequestComments = map[string]string{

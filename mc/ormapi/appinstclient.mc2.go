@@ -29,9 +29,10 @@ type swaggerShowAppInstClient struct {
 }
 
 type RegionAppInstClientKey struct {
-	// required: true
 	// Region name
-	Region           string
+	// required: true
+	Region string
+	// AppInstClientKey in region
 	AppInstClientKey edgeproto.AppInstClientKey
 }
 

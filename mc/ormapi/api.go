@@ -352,10 +352,13 @@ type UserLogin struct {
 	// User's password
 	// required: true
 	Password string `form:"password" json:"password"`
+	// Temporary one-time password if 2-factor authentication is enabled
 	// read only: true
 	TOTP string `form:"totp" json:"totp"`
+	// API key ID if logging in using API key
 	// read only: true
 	ApiKeyId string `form:"apikeyid" json:"apikeyid"`
+	// API key if logging in using API key
 	// read only: true
 	ApiKey string `form:"apikey" json:"apikey"`
 }
@@ -365,7 +368,8 @@ type NewPassword struct {
 }
 
 type CreateUser struct {
-	User   `json:",inline"`
+	User `json:",inline"`
+	// Client information to include in verification email request, used mainly by Web UI client
 	Verify EmailRequest `json:"verify"` // for verifying email
 }
 
@@ -515,8 +519,10 @@ type RegionAppInstMetrics struct {
 	// Region name
 	Region string
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
-	Selector      string
-	AppInst       edgeproto.AppInstKey   `json:",omitempty"`
+	Selector string
+	// Application instance to filter for metrics
+	AppInst edgeproto.AppInstKey `json:",omitempty"`
+	// Application instances to filter for metrics
 	AppInsts      []edgeproto.AppInstKey `json:",omitempty"`
 	MetricsCommon `json:",inline"`
 }
@@ -532,8 +538,10 @@ type RegionCustomAppMetrics struct {
 
 type RegionClusterInstMetrics struct {
 	// Region name
-	Region       string
-	ClusterInst  edgeproto.ClusterInstKey   `json:",omitempty"`
+	Region string
+	// Cluster instance key for metrics
+	ClusterInst edgeproto.ClusterInstKey `json:",omitempty"`
+	// Cluster instance keys for metrics
 	ClusterInsts []edgeproto.ClusterInstKey `json:",omitempty"`
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
 	Selector      string
@@ -542,8 +550,10 @@ type RegionClusterInstMetrics struct {
 
 type RegionCloudletMetrics struct {
 	// Region name
-	Region    string
-	Cloudlet  edgeproto.CloudletKey   `json:",omitempty"`
+	Region string
+	// Cloudlet key for metrics
+	Cloudlet edgeproto.CloudletKey `json:",omitempty"`
+	// Cloudlet keys for metrics
 	Cloudlets []edgeproto.CloudletKey `json:",omitempty"`
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
 	Selector      string
@@ -553,7 +563,8 @@ type RegionCloudletMetrics struct {
 
 type RegionClientApiUsageMetrics struct {
 	// Region name
-	Region  string
+	Region string
+	// Application instance key for usage
 	AppInst edgeproto.AppInstKey
 	// API call method, one of: FindCloudlet, PlatformFindCloudlet, RegisterClient, VerifyLocation
 	Method string `json:",omitempty"`
@@ -568,7 +579,8 @@ type RegionClientApiUsageMetrics struct {
 
 type RegionClientAppUsageMetrics struct {
 	// Region name
-	Region  string
+	Region string
+	// Application instance key for usage
 	AppInst edgeproto.AppInstKey
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
 	Selector string
@@ -592,7 +604,8 @@ type RegionClientAppUsageMetrics struct {
 
 type RegionClientCloudletUsageMetrics struct {
 	// Region name
-	Region   string
+	Region string
+	// Cloudlet key for metrics
 	Cloudlet edgeproto.CloudletKey
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
 	Selector string
@@ -616,28 +629,32 @@ type RegionClientCloudletUsageMetrics struct {
 
 type RegionAppInstEvents struct {
 	// Region name
-	Region        string
+	Region string
+	// Application instance key for events
 	AppInst       edgeproto.AppInstKey
 	MetricsCommon `json:",inline"`
 }
 
 type RegionClusterInstEvents struct {
 	// Region name
-	Region        string
+	Region string
+	// Cluster instance key for events
 	ClusterInst   edgeproto.ClusterInstKey
 	MetricsCommon `json:",inline"`
 }
 
 type RegionCloudletEvents struct {
 	// Region name
-	Region        string
+	Region string
+	// Cloudlet key for events
 	Cloudlet      edgeproto.CloudletKey
 	MetricsCommon `json:",inline"`
 }
 
 type RegionAppInstUsage struct {
 	// Region name
-	Region  string
+	Region string
+	// Application instance key for usage
 	AppInst edgeproto.AppInstKey
 	// Time to start displaying stats from
 	StartTime time.Time `json:",omitempty"`
@@ -649,7 +666,8 @@ type RegionAppInstUsage struct {
 
 type RegionClusterInstUsage struct {
 	// Region name
-	Region      string
+	Region string
+	// Cluster instances key for usage
 	ClusterInst edgeproto.ClusterInstKey
 	// Time to start displaying stats from
 	StartTime time.Time `json:",omitempty"`
@@ -659,7 +677,8 @@ type RegionClusterInstUsage struct {
 
 type RegionCloudletPoolUsage struct {
 	// Region name
-	Region       string
+	Region string
+	// Cloudlet pool key for usage
 	CloudletPool edgeproto.CloudletPoolKey
 	// Time to start displaying stats from
 	StartTime time.Time `json:",omitempty"`

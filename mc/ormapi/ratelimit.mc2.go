@@ -28,9 +28,10 @@ type swaggerShowRateLimitSettings struct {
 }
 
 type RegionRateLimitSettings struct {
-	// required: true
 	// Region name
-	Region            string
+	// required: true
+	Region string
+	// RateLimitSettings in region
 	RateLimitSettings edgeproto.RateLimitSettings
 }
 
@@ -54,9 +55,10 @@ type swaggerCreateFlowRateLimitSettings struct {
 }
 
 type RegionFlowRateLimitSettings struct {
-	// required: true
 	// Region name
-	Region                string
+	// required: true
+	Region string
+	// FlowRateLimitSettings in region
 	FlowRateLimitSettings edgeproto.FlowRateLimitSettings
 }
 
@@ -108,9 +110,10 @@ type swaggerCreateMaxReqsRateLimitSettings struct {
 }
 
 type RegionMaxReqsRateLimitSettings struct {
-	// required: true
 	// Region name
-	Region                   string
+	// required: true
+	Region string
+	// MaxReqsRateLimitSettings in region
 	MaxReqsRateLimitSettings edgeproto.MaxReqsRateLimitSettings
 }
 

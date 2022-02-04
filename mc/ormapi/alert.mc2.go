@@ -29,10 +29,11 @@ type swaggerShowAlert struct {
 }
 
 type RegionAlert struct {
-	// required: true
 	// Region name
+	// required: true
 	Region string
-	Alert  edgeproto.Alert
+	// Alert in region
+	Alert edgeproto.Alert
 }
 
 func (s *RegionAlert) GetRegion() string {

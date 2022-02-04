@@ -28,9 +28,10 @@ type swaggerEnableDebugLevels struct {
 }
 
 type RegionDebugRequest struct {
-	// required: true
 	// Region name
-	Region       string
+	// required: true
+	Region string
+	// DebugRequest in region
 	DebugRequest edgeproto.DebugRequest
 }
 

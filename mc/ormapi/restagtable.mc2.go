@@ -28,9 +28,10 @@ type swaggerCreateResTagTable struct {
 }
 
 type RegionResTagTable struct {
-	// required: true
 	// Region name
-	Region      string
+	// required: true
+	Region string
+	// ResTagTable in region
 	ResTagTable edgeproto.ResTagTable
 }
 
@@ -96,9 +97,10 @@ type swaggerGetResTagTable struct {
 }
 
 type RegionResTagTableKey struct {
-	// required: true
 	// Region name
-	Region         string
+	// required: true
+	Region string
+	// ResTagTableKey in region
 	ResTagTableKey edgeproto.ResTagTableKey
 }
 

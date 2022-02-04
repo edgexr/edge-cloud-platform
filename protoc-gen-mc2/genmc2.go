@@ -540,9 +540,10 @@ type swagger{{.MethodName}} struct {
 {{- if .GenStruct}}
 
 type Region{{.InName}} struct {
-        // required: true
 	// Region name
+        // required: true
 	Region string
+	// {{.InName}} in region
 	{{.InName}} edgeproto.{{.InName}}
 }
 
