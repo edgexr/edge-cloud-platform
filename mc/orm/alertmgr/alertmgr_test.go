@@ -147,7 +147,7 @@ func TestAlertMgrServer(t *testing.T) {
 		require.Equal(t, "testcloudlet", val)
 		val, found = alert.Labels[cloudcommon.AlertHealthCheckStatus]
 		require.True(t, found)
-		require.Equal(t, dme.HealthCheck_CamelName[int32(dme.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE)], val)
+		require.Equal(t, dme.HealthCheck_CamelName[int32(dme.HealthCheck_HEALTH_CHECK_ROOTLB_OFFLINE)], val)
 		region, ok := alert.Labels["region"]
 		require.True(t, ok)
 		if ok {

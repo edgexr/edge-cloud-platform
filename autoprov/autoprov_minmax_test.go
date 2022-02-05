@@ -288,7 +288,7 @@ func TestAppChecker(t *testing.T) {
 	// simulate AppInst health check failure,
 	// this should create another inst
 	insts := pt1.getAppInsts(&app.Key)
-	insts[0].HealthCheck = dme.HealthCheck_HEALTH_CHECK_FAIL_SERVER_FAIL
+	insts[0].HealthCheck = dme.HealthCheck_HEALTH_CHECK_SERVER_FAIL
 	dc.updateAppInst(ctx, &insts[0])
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances)+1)
@@ -298,7 +298,7 @@ func TestAppChecker(t *testing.T) {
 	// this one should not trigger another create because
 	// it would violate the max
 	require.Equal(t, pt1.policy.MaxInstances, pt1.policy.MinActiveInstances+1)
-	insts[1].HealthCheck = dme.HealthCheck_HEALTH_CHECK_FAIL_SERVER_FAIL
+	insts[1].HealthCheck = dme.HealthCheck_HEALTH_CHECK_SERVER_FAIL
 	dc.updateAppInst(ctx, &insts[1])
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances)+1)

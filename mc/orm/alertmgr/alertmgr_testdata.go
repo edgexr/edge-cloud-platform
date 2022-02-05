@@ -32,7 +32,7 @@ var testAlerts = []edgeproto.Alert{
 			edgeproto.AppKeyTagVersion:         "1.0",
 			edgeproto.CloudletKeyTagName:       "testcloudlet",
 			cloudcommon.AlertSeverityLabel:     cloudcommon.AlertSeverityError,
-			cloudcommon.AlertHealthCheckStatus: strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE)),
+			cloudcommon.AlertHealthCheckStatus: strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_ROOTLB_OFFLINE)),
 		},
 	},
 	edgeproto.Alert{ //testAlerts[0], but in a different region
@@ -44,7 +44,7 @@ var testAlerts = []edgeproto.Alert{
 			edgeproto.AppKeyTagVersion:         "1.0",
 			edgeproto.CloudletKeyTagName:       "testcloudlet",
 			cloudcommon.AlertSeverityLabel:     cloudcommon.AlertSeverityError,
-			cloudcommon.AlertHealthCheckStatus: strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE)),
+			cloudcommon.AlertHealthCheckStatus: strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_ROOTLB_OFFLINE)),
 		},
 	},
 	edgeproto.Alert{ // AlertAutoUndeploy alert

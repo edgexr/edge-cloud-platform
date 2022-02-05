@@ -492,6 +492,12 @@ func ShowMetricsCommon(c echo.Context, in MetricsObject) error {
 	if in.GetObjCount() == 0 {
 		return fmt.Errorf("At least one %s org has to be specified", in.GetType())
 	}
+
+	// Validate objects
+	if err := in.ValidateObjects(); err != nil {
+		return err
+	}
+
 	rc.region = in.GetRegion()
 	if err = in.ValidateSelector(); err != nil {
 		return err
