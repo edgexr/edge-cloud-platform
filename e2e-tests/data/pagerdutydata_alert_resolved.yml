@@ -22,7 +22,7 @@
          region = local
          scope = Application
          severity = error
-         status = HealthCheckFailServerFail
+         status = HealthCheckServerFail
       numfiring: "1"
       numresolved: "0"
   client: MobiledgeX Monitoring
@@ -54,7 +54,7 @@
          region = local
          scope = Application
          severity = error
-         status = HealthCheckFailServerFail
+         status = HealthCheckServerFail
   client: MobiledgeX Monitoring
   clienturl: |
     https://console.mobiledgex.net

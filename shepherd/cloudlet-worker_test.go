@@ -54,7 +54,7 @@ var failAlerts = `{
 			"` + edgeproto.CloudletKeyTagOrganization + `": "` + shepherd_test.TestCloudletKey.Organization + `",
 			"` + edgeproto.ClusterKeyTagName + `": "` + shepherd_test.TestClusterKey.Name + `",
 			"` + edgeproto.ClusterInstKeyTagOrganization + `": "` + shepherd_test.TestClusterInstKey.Organization + `",
-			"` + cloudcommon.AlertHealthCheckStatus + `": "` + strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE)) + `",
+			"` + cloudcommon.AlertHealthCheckStatus + `": "` + strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_ROOTLB_OFFLINE)) + `",
 			"instance": "host.docker.internal:9091",
 			"job": "envoy_targets"
 		  },
@@ -72,7 +72,7 @@ var failAlerts = `{
 			"` + edgeproto.CloudletKeyTagOrganization + `": "` + shepherd_test.TestCloudletKey.Organization + `",
 			"` + edgeproto.ClusterKeyTagName + `": "` + shepherd_test.TestClusterKey.Name + `",
 			"` + edgeproto.ClusterInstKeyTagOrganization + `": "` + shepherd_test.TestClusterInstKey.Organization + `",
-			"` + cloudcommon.AlertHealthCheckStatus + `": "` + strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_FAIL_SERVER_FAIL)) + `",
+			"` + cloudcommon.AlertHealthCheckStatus + `": "` + strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_SERVER_FAIL)) + `",
 			"envoy_cluster_name": "backend7777",
 			"instance": "host.docker.internal:9091",
 			"job": "envoy_targets"
