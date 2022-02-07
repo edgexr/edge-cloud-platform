@@ -50,41 +50,41 @@ func init() {
 }
 
 var AppInstClientKeyRequiredArgs = []string{
-	"app-org",
+	"apporg",
 }
 var AppInstClientKeyOptionalArgs = []string{
 	"appname",
 	"appvers",
 	"cluster",
-	"cloudlet-org",
+	"cloudletorg",
 	"cloudlet",
-	"federated-org",
-	"cluster-org",
+	"federatedorg",
+	"clusterorg",
 	"uniqueid",
 	"uniqueidtype",
 }
 var AppInstClientKeyAliasArgs = []string{
-	"app-org=appinstclientkey.appinstkey.appkey.organization",
+	"apporg=appinstclientkey.appinstkey.appkey.organization",
 	"appname=appinstclientkey.appinstkey.appkey.name",
 	"appvers=appinstclientkey.appinstkey.appkey.version",
 	"cluster=appinstclientkey.appinstkey.clusterinstkey.clusterkey.name",
-	"cloudlet-org=appinstclientkey.appinstkey.clusterinstkey.cloudletkey.organization",
+	"cloudletorg=appinstclientkey.appinstkey.clusterinstkey.cloudletkey.organization",
 	"cloudlet=appinstclientkey.appinstkey.clusterinstkey.cloudletkey.name",
-	"federated-org=appinstclientkey.appinstkey.clusterinstkey.cloudletkey.federatedorganization",
-	"cluster-org=appinstclientkey.appinstkey.clusterinstkey.organization",
+	"federatedorg=appinstclientkey.appinstkey.clusterinstkey.cloudletkey.federatedorganization",
+	"clusterorg=appinstclientkey.appinstkey.clusterinstkey.organization",
 	"uniqueid=appinstclientkey.uniqueid",
 	"uniqueidtype=appinstclientkey.uniqueidtype",
 }
 var AppInstClientKeyComments = map[string]string{
-	"app-org":       "App developer organization",
-	"appname":       "App name",
-	"appvers":       "App version",
-	"cluster":       "Cluster name",
-	"cloudlet-org":  "Organization of the cloudlet site",
-	"cloudlet":      "Name of the cloudlet",
-	"federated-org": "Federated operator organization who shared this cloudlet",
-	"cluster-org":   "Name of Developer organization that this cluster belongs to",
-	"uniqueid":      "AppInstClient Unique Id",
-	"uniqueidtype":  "AppInstClient Unique Id Type",
+	"apporg":       "App developer organization",
+	"appname":      "App name",
+	"appvers":      "App version",
+	"cluster":      "Cluster name",
+	"cloudletorg":  "Organization of the cloudlet site",
+	"cloudlet":     "Name of the cloudlet",
+	"federatedorg": "Federated operator organization who shared this cloudlet",
+	"clusterorg":   "Name of Developer organization that this cluster belongs to",
+	"uniqueid":     "AppInstClient Unique Id",
+	"uniqueidtype": "AppInstClient Unique Id Type",
 }
 var AppInstClientKeySpecialArgs = map[string]string{}

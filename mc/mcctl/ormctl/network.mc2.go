@@ -105,12 +105,12 @@ func init() {
 }
 
 var NetworkRequiredArgs = []string{
-	"cloudlet-org",
+	"cloudletorg",
 	"cloudlet",
 	"name",
 }
 var NetworkOptionalArgs = []string{
-	"federated-org",
+	"federatedorg",
 	"routes:empty",
 	"routes:#.destinationcidr",
 	"routes:#.nexthopip",
@@ -118,9 +118,9 @@ var NetworkOptionalArgs = []string{
 }
 var NetworkAliasArgs = []string{
 	"fields=network.fields",
-	"cloudlet-org=network.key.cloudletkey.organization",
+	"cloudletorg=network.key.cloudletkey.organization",
 	"cloudlet=network.key.cloudletkey.name",
-	"federated-org=network.key.cloudletkey.federatedorganization",
+	"federatedorg=network.key.cloudletkey.federatedorganization",
 	"name=network.key.name",
 	"routes:empty=network.routes:empty",
 	"routes:#.destinationcidr=network.routes:#.destinationcidr",
@@ -130,9 +130,9 @@ var NetworkAliasArgs = []string{
 }
 var NetworkComments = map[string]string{
 	"fields":                   "Fields are used for the Update API to specify which fields to apply",
-	"cloudlet-org":             "Organization of the cloudlet site",
+	"cloudletorg":              "Organization of the cloudlet site",
 	"cloudlet":                 "Name of the cloudlet",
-	"federated-org":            "Federated operator organization who shared this cloudlet",
+	"federatedorg":             "Federated operator organization who shared this cloudlet",
 	"name":                     "Network Name",
 	"routes:empty":             "List of routes, specify routes:empty=true to clear",
 	"routes:#.destinationcidr": "Destination CIDR",

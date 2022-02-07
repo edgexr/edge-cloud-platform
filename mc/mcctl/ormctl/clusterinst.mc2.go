@@ -124,12 +124,12 @@ func init() {
 
 var UpdateClusterInstRequiredArgs = []string{
 	"cluster",
-	"cloudlet-org",
+	"cloudletorg",
 	"cloudlet",
-	"cluster-org",
+	"clusterorg",
 }
 var UpdateClusterInstOptionalArgs = []string{
-	"federated-org",
+	"federatedorg",
 	"crmoverride",
 	"numnodes",
 	"autoscalepolicy",
@@ -161,12 +161,12 @@ var ClusterInstKeyComments = map[string]string{
 var ClusterInstKeySpecialArgs = map[string]string{}
 var ClusterInstRequiredArgs = []string{
 	"cluster",
-	"cloudlet-org",
+	"cloudletorg",
 	"cloudlet",
-	"cluster-org",
+	"clusterorg",
 }
 var ClusterInstOptionalArgs = []string{
-	"federated-org",
+	"federatedorg",
 	"flavor",
 	"crmoverride",
 	"ipaccess",
@@ -184,10 +184,10 @@ var ClusterInstOptionalArgs = []string{
 var ClusterInstAliasArgs = []string{
 	"fields=clusterinst.fields",
 	"cluster=clusterinst.key.clusterkey.name",
-	"cloudlet-org=clusterinst.key.cloudletkey.organization",
+	"cloudletorg=clusterinst.key.cloudletkey.organization",
 	"cloudlet=clusterinst.key.cloudletkey.name",
-	"federated-org=clusterinst.key.cloudletkey.federatedorganization",
-	"cluster-org=clusterinst.key.organization",
+	"federatedorg=clusterinst.key.cloudletkey.federatedorganization",
+	"clusterorg=clusterinst.key.organization",
 	"flavor=clusterinst.flavor.name",
 	"liveness=clusterinst.liveness",
 	"auto=clusterinst.auto",
@@ -236,10 +236,10 @@ var ClusterInstAliasArgs = []string{
 var ClusterInstComments = map[string]string{
 	"fields":                            "Fields are used for the Update API to specify which fields to apply",
 	"cluster":                           "Cluster name",
-	"cloudlet-org":                      "Organization of the cloudlet site",
+	"cloudletorg":                       "Organization of the cloudlet site",
 	"cloudlet":                          "Name of the cloudlet",
-	"federated-org":                     "Federated operator organization who shared this cloudlet",
-	"cluster-org":                       "Name of Developer organization that this cluster belongs to",
+	"federatedorg":                      "Federated operator organization who shared this cloudlet",
+	"clusterorg":                        "Name of Developer organization that this cluster belongs to",
 	"flavor":                            "Flavor name",
 	"liveness":                          "Liveness of instance (see Liveness), one of Unknown, Static, Dynamic, Autoprov",
 	"auto":                              "Auto is set to true when automatically created by back-end (internal use only)",

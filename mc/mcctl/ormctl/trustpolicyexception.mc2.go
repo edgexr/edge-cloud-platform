@@ -98,11 +98,11 @@ func init() {
 }
 
 var CreateTrustPolicyExceptionRequiredArgs = []string{
-	"app-org",
+	"apporg",
 	"appname",
 	"appvers",
-	"cloudletpool-org",
-	"cloudletpool-name",
+	"cloudletpoolorg",
+	"cloudletpoolname",
 	"name",
 }
 var CreateTrustPolicyExceptionOptionalArgs = []string{
@@ -112,11 +112,11 @@ var CreateTrustPolicyExceptionOptionalArgs = []string{
 	"outboundsecurityrules:#.remotecidr",
 }
 var DeleteTrustPolicyExceptionRequiredArgs = []string{
-	"app-org",
+	"apporg",
 	"appname",
 	"appvers",
-	"cloudletpool-org",
-	"cloudletpool-name",
+	"cloudletpoolorg",
+	"cloudletpoolname",
 	"name",
 }
 var DeleteTrustPolicyExceptionOptionalArgs = []string{
@@ -126,11 +126,11 @@ var DeleteTrustPolicyExceptionOptionalArgs = []string{
 	"outboundsecurityrules:#.remotecidr",
 }
 var TrustPolicyExceptionRequiredArgs = []string{
-	"app-org",
+	"apporg",
 	"appname",
 	"appvers",
-	"cloudletpool-org",
-	"cloudletpool-name",
+	"cloudletpoolorg",
+	"cloudletpoolname",
 	"name",
 }
 var TrustPolicyExceptionOptionalArgs = []string{
@@ -143,11 +143,11 @@ var TrustPolicyExceptionOptionalArgs = []string{
 }
 var TrustPolicyExceptionAliasArgs = []string{
 	"fields=trustpolicyexception.fields",
-	"app-org=trustpolicyexception.key.appkey.organization",
+	"apporg=trustpolicyexception.key.appkey.organization",
 	"appname=trustpolicyexception.key.appkey.name",
 	"appvers=trustpolicyexception.key.appkey.version",
-	"cloudletpool-org=trustpolicyexception.key.cloudletpoolkey.organization",
-	"cloudletpool-name=trustpolicyexception.key.cloudletpoolkey.name",
+	"cloudletpoolorg=trustpolicyexception.key.cloudletpoolkey.organization",
+	"cloudletpoolname=trustpolicyexception.key.cloudletpoolkey.name",
 	"name=trustpolicyexception.key.name",
 	"state=trustpolicyexception.state",
 	"outboundsecurityrules:empty=trustpolicyexception.outboundsecurityrules:empty",
@@ -158,11 +158,11 @@ var TrustPolicyExceptionAliasArgs = []string{
 }
 var TrustPolicyExceptionComments = map[string]string{
 	"fields":                               "Fields are used for the Update API to specify which fields to apply",
-	"app-org":                              "App developer organization",
+	"apporg":                               "App developer organization",
 	"appname":                              "App name",
 	"appvers":                              "App version",
-	"cloudletpool-org":                     "Name of the organization this pool belongs to",
-	"cloudletpool-name":                    "CloudletPool Name",
+	"cloudletpoolorg":                      "Name of the organization this pool belongs to",
+	"cloudletpoolname":                     "CloudletPool Name",
 	"name":                                 "TrustPolicyExceptionKey name",
 	"state":                                "State of the exception within the approval process, one of Unknown, ApprovalRequested, Active, Rejected",
 	"outboundsecurityrules:empty":          "List of outbound security rules for whitelisting traffic, specify outboundsecurityrules:empty=true to clear",
