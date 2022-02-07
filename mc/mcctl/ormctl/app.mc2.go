@@ -184,7 +184,7 @@ func init() {
 }
 
 var AppRequiredArgs = []string{
-	"app-org",
+	"apporg",
 	"appname",
 	"appvers",
 }
@@ -229,7 +229,7 @@ var AppOptionalArgs = []string{
 }
 var AppAliasArgs = []string{
 	"fields=app.fields",
-	"app-org=app.key.organization",
+	"apporg=app.key.organization",
 	"appname=app.key.name",
 	"appvers=app.key.version",
 	"imagepath=app.imagepath",
@@ -277,7 +277,7 @@ var AppAliasArgs = []string{
 }
 var AppComments = map[string]string{
 	"fields":                                 "Fields are used for the Update API to specify which fields to apply",
-	"app-org":                                "App developer organization",
+	"apporg":                                 "App developer organization",
 	"appname":                                "App name",
 	"appvers":                                "App version",
 	"imagepath":                              "URI of where image resides",
@@ -329,43 +329,43 @@ var AppSpecialArgs = map[string]string{
 	"app.fields":           "StringArray",
 }
 var AppAutoProvPolicyRequiredArgs = []string{
-	"app-org",
+	"apporg",
 	"appname",
 	"appvers",
 	"autoprovpolicy",
 }
 var AppAutoProvPolicyOptionalArgs = []string{}
 var AppAutoProvPolicyAliasArgs = []string{
-	"app-org=appautoprovpolicy.appkey.organization",
+	"apporg=appautoprovpolicy.appkey.organization",
 	"appname=appautoprovpolicy.appkey.name",
 	"appvers=appautoprovpolicy.appkey.version",
 	"autoprovpolicy=appautoprovpolicy.autoprovpolicy",
 }
 var AppAutoProvPolicyComments = map[string]string{
-	"app-org":        "App developer organization",
+	"apporg":         "App developer organization",
 	"appname":        "App name",
 	"appvers":        "App version",
 	"autoprovpolicy": "Auto provisioning policy name",
 }
 var AppAutoProvPolicySpecialArgs = map[string]string{}
 var AppAlertPolicyRequiredArgs = []string{
-	"app-org",
+	"apporg",
 	"appname",
 	"appvers",
-	"alertpolicy-name",
+	"alertpolicyname",
 }
 var AppAlertPolicyOptionalArgs = []string{}
 var AppAlertPolicyAliasArgs = []string{
-	"app-org=appalertpolicy.appkey.organization",
+	"apporg=appalertpolicy.appkey.organization",
 	"appname=appalertpolicy.appkey.name",
 	"appvers=appalertpolicy.appkey.version",
-	"alertpolicy-name=appalertpolicy.alertpolicy",
+	"alertpolicyname=appalertpolicy.alertpolicy",
 }
 var AppAlertPolicyComments = map[string]string{
-	"app-org":          "App developer organization",
-	"appname":          "App name",
-	"appvers":          "App version",
-	"alertpolicy-name": "Alert name",
+	"apporg":          "App developer organization",
+	"appname":         "App name",
+	"appvers":         "App version",
+	"alertpolicyname": "Alert name",
 }
 var AppAlertPolicySpecialArgs = map[string]string{}
 var DeploymentCloudletRequestRequiredArgs = []string{}

@@ -134,7 +134,7 @@ func init() {
 }
 
 var CreateAutoProvPolicyRequiredArgs = []string{
-	"app-org",
+	"apporg",
 	"name",
 }
 var CreateAutoProvPolicyOptionalArgs = []string{
@@ -149,7 +149,7 @@ var CreateAutoProvPolicyOptionalArgs = []string{
 	"undeployintervalcount",
 }
 var AutoProvPolicyRequiredArgs = []string{
-	"app-org",
+	"apporg",
 	"name",
 }
 var AutoProvPolicyOptionalArgs = []string{
@@ -166,7 +166,7 @@ var AutoProvPolicyOptionalArgs = []string{
 }
 var AutoProvPolicyAliasArgs = []string{
 	"fields=autoprovpolicy.fields",
-	"app-org=autoprovpolicy.key.organization",
+	"apporg=autoprovpolicy.key.organization",
 	"name=autoprovpolicy.key.name",
 	"deployclientcount=autoprovpolicy.deployclientcount",
 	"deployintervalcount=autoprovpolicy.deployintervalcount",
@@ -190,7 +190,7 @@ var AutoProvPolicyAliasArgs = []string{
 }
 var AutoProvPolicyComments = map[string]string{
 	"fields":                                "Fields are used for the Update API to specify which fields to apply",
-	"app-org":                               "Name of the organization for the cluster that this policy will apply to",
+	"apporg":                                "Name of the organization for the cluster that this policy will apply to",
 	"name":                                  "Policy name",
 	"deployclientcount":                     "Minimum number of clients within the auto deploy interval to trigger deployment",
 	"deployintervalcount":                   "Number of intervals to check before triggering deployment",
@@ -216,26 +216,26 @@ var AutoProvPolicySpecialArgs = map[string]string{
 	"autoprovpolicy.fields": "StringArray",
 }
 var AutoProvPolicyCloudletRequiredArgs = []string{
-	"app-org",
+	"apporg",
 	"name",
 }
 var AutoProvPolicyCloudletOptionalArgs = []string{
-	"cloudlet-org",
+	"cloudletorg",
 	"cloudlet",
-	"federated-org",
+	"federatedorg",
 }
 var AutoProvPolicyCloudletAliasArgs = []string{
-	"app-org=autoprovpolicycloudlet.key.organization",
+	"apporg=autoprovpolicycloudlet.key.organization",
 	"name=autoprovpolicycloudlet.key.name",
-	"cloudlet-org=autoprovpolicycloudlet.cloudletkey.organization",
+	"cloudletorg=autoprovpolicycloudlet.cloudletkey.organization",
 	"cloudlet=autoprovpolicycloudlet.cloudletkey.name",
-	"federated-org=autoprovpolicycloudlet.cloudletkey.federatedorganization",
+	"federatedorg=autoprovpolicycloudlet.cloudletkey.federatedorganization",
 }
 var AutoProvPolicyCloudletComments = map[string]string{
-	"app-org":       "Name of the organization for the cluster that this policy will apply to",
-	"name":          "Policy name",
-	"cloudlet-org":  "Organization of the cloudlet site",
-	"cloudlet":      "Name of the cloudlet",
-	"federated-org": "Federated operator organization who shared this cloudlet",
+	"apporg":       "Name of the organization for the cluster that this policy will apply to",
+	"name":         "Policy name",
+	"cloudletorg":  "Organization of the cloudlet site",
+	"cloudlet":     "Name of the cloudlet",
+	"federatedorg": "Federated operator organization who shared this cloudlet",
 }
 var AutoProvPolicyCloudletSpecialArgs = map[string]string{}

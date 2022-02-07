@@ -100,7 +100,7 @@ func init() {
 }
 
 var CreateAutoScalePolicyRequiredArgs = []string{
-	"cluster-org",
+	"clusterorg",
 	"name",
 	"minnodes",
 	"maxnodes",
@@ -115,7 +115,7 @@ var CreateAutoScalePolicyOptionalArgs = []string{
 	"targetactiveconnections",
 }
 var AutoScalePolicyRequiredArgs = []string{
-	"cluster-org",
+	"clusterorg",
 	"name",
 }
 var AutoScalePolicyOptionalArgs = []string{
@@ -131,7 +131,7 @@ var AutoScalePolicyOptionalArgs = []string{
 }
 var AutoScalePolicyAliasArgs = []string{
 	"fields=autoscalepolicy.fields",
-	"cluster-org=autoscalepolicy.key.organization",
+	"clusterorg=autoscalepolicy.key.organization",
 	"name=autoscalepolicy.key.name",
 	"minnodes=autoscalepolicy.minnodes",
 	"maxnodes=autoscalepolicy.maxnodes",
@@ -146,7 +146,7 @@ var AutoScalePolicyAliasArgs = []string{
 }
 var AutoScalePolicyComments = map[string]string{
 	"fields":                  "Fields are used for the Update API to specify which fields to apply",
-	"cluster-org":             "Name of the organization for the cluster that this policy will apply to",
+	"clusterorg":              "Name of the organization for the cluster that this policy will apply to",
 	"name":                    "Policy name",
 	"minnodes":                "Minimum number of cluster nodes",
 	"maxnodes":                "Maximum number of cluster nodes",

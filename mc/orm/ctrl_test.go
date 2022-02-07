@@ -2042,14 +2042,14 @@ func operatorBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clien
 
 	// Test Billing Events
 	// ===================
-	// Operator cannot query app billing events without passing cloudlet-org or app-org
+	// Operator cannot query app billing events without passing cloudletorg or apporg
 	appEventsData := &ormapi.RegionAppInstEvents{}
 	appEventsData.Region = region
 	appEventsData.AppInst = edgeproto.AppInstKey{}
 	_, status, err = mcClient.ShowAppEvents(uri, tokenOper, appEventsData)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Must provide either App organization or Cloudlet organization")
-	// Operator cannot view app billing events by just passing app-org, it must specify cloudlet-org
+	// Operator cannot view app billing events by just passing apporg, it must specify cloudletorg
 	appEventsData.AppInst.AppKey.Organization = poolDevOrg
 	appEventsData.AppInst.ClusterInstKey.CloudletKey.Organization = ""
 	_, status, err = mcClient.ShowAppEvents(uri, tokenOper, appEventsData)
@@ -2067,14 +2067,14 @@ func operatorBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clien
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 
-	// Operator cannot query cluster billing events without passing cloudlet-org or cluster-org
+	// Operator cannot query cluster billing events without passing cloudletorg or clusterorg
 	clusterEventsData := &ormapi.RegionClusterInstEvents{}
 	clusterEventsData.Region = region
 	clusterEventsData.ClusterInst = edgeproto.ClusterInstKey{}
 	_, status, err = mcClient.ShowClusterEvents(uri, tokenOper, clusterEventsData)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Must provide either Cluster organization or Cloudlet organization")
-	// Operator cannot view cluster billing events by just passing app-org, it must specify cloudlet-org
+	// Operator cannot view cluster billing events by just passing apporg, it must specify cloudletorg
 	clusterEventsData.ClusterInst.Organization = poolDevOrg
 	clusterEventsData.ClusterInst.CloudletKey.Organization = ""
 	_, status, err = mcClient.ShowClusterEvents(uri, tokenOper, clusterEventsData)
@@ -2091,7 +2091,7 @@ func operatorBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clien
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 
-	// Operator cannot query cloudlet billing events without passing cloudlet-org
+	// Operator cannot query cloudlet billing events without passing cloudletorg
 	cloudletEventsData := &ormapi.RegionCloudletEvents{}
 	cloudletEventsData.Region = region
 	cloudletEventsData.Cloudlet = edgeproto.CloudletKey{}
@@ -2106,7 +2106,7 @@ func operatorBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clien
 
 	// Test Metrics
 	// ===================
-	// Operator cannot query app metrics without passing cloudlet-org or app-org
+	// Operator cannot query app metrics without passing cloudletorg or apporg
 	appMetricsData := &ormapi.RegionAppInstMetrics{}
 	appMetricsData.Region = region
 	appMetricsData.Selector = "cpu"
@@ -2114,7 +2114,7 @@ func operatorBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clien
 	_, status, err = mcClient.ShowAppMetrics(uri, tokenOper, appMetricsData)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Must provide either App organization or Cloudlet organization")
-	// Operator cannot view app metrics by just passing app-org, it must specify cloudlet-org
+	// Operator cannot view app metrics by just passing apporg, it must specify cloudletorg
 	appMetricsData.AppInst.AppKey.Organization = poolDevOrg
 	appMetricsData.AppInst.ClusterInstKey.CloudletKey.Organization = ""
 	_, status, err = mcClient.ShowAppMetrics(uri, tokenOper, appMetricsData)
@@ -2132,7 +2132,7 @@ func operatorBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clien
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 
-	// Operator cannot query cluster metrics without passing cloudlet-org or cluster-org
+	// Operator cannot query cluster metrics without passing cloudletorg or clusterorg
 	clusterMetricsData := &ormapi.RegionClusterInstMetrics{}
 	clusterMetricsData.Region = region
 	clusterMetricsData.Selector = "cpu"
@@ -2140,7 +2140,7 @@ func operatorBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clien
 	_, status, err = mcClient.ShowClusterMetrics(uri, tokenOper, clusterMetricsData)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Must provide either Cluster organization or Cloudlet organization")
-	// Operator cannot view cluster metrics by just passing app-org, it must specify cloudlet-org
+	// Operator cannot view cluster metrics by just passing apporg, it must specify cloudletorg
 	clusterMetricsData.ClusterInst.Organization = poolDevOrg
 	clusterMetricsData.ClusterInst.CloudletKey.Organization = ""
 	_, status, err = mcClient.ShowClusterMetrics(uri, tokenOper, clusterMetricsData)
@@ -2157,7 +2157,7 @@ func operatorBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clien
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 
-	// Operator cannot query cloudlet metrics without passing cloudlet-org
+	// Operator cannot query cloudlet metrics without passing cloudletorg
 	cloudletMetricsData := &ormapi.RegionCloudletMetrics{}
 	cloudletMetricsData.Region = region
 	cloudletMetricsData.Selector = "network"
@@ -2173,7 +2173,7 @@ func operatorBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clien
 
 	// Test Usage
 	// ===================
-	// Operator cannot query app usage without passing cloudlet-org or app-org
+	// Operator cannot query app usage without passing cloudletorg or apporg
 	appUsageData := &ormapi.RegionAppInstUsage{}
 	appUsageData.Region = region
 	appUsageData.StartTime = time.Now().Add(-1 * time.Hour)
@@ -2182,7 +2182,7 @@ func operatorBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clien
 	_, status, err = mcClient.ShowAppUsage(uri, tokenOper, appUsageData)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Must provide either App organization or Cloudlet organization")
-	// Operator cannot view app usage by just passing app-org, it must specify cloudlet-org
+	// Operator cannot view app usage by just passing apporg, it must specify cloudletorg
 	appUsageData.AppInst.AppKey.Organization = poolDevOrg
 	appUsageData.AppInst.ClusterInstKey.CloudletKey.Organization = ""
 	_, status, err = mcClient.ShowAppUsage(uri, tokenOper, appUsageData)
@@ -2200,7 +2200,7 @@ func operatorBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clien
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 
-	// Operator cannot query cluster usage without passing cloudlet-org or cluster-org
+	// Operator cannot query cluster usage without passing cloudletorg or clusterorg
 	clusterUsageData := &ormapi.RegionClusterInstUsage{}
 	clusterUsageData.Region = region
 	clusterUsageData.StartTime = time.Now().Add(-1 * time.Hour)
@@ -2209,7 +2209,7 @@ func operatorBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clien
 	_, status, err = mcClient.ShowClusterUsage(uri, tokenOper, clusterUsageData)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Must provide either Cluster organization or Cloudlet organization")
-	// Operator cannot view cluster usage by just passing app-org, it must specify cloudlet-org
+	// Operator cannot view cluster usage by just passing apporg, it must specify cloudletorg
 	clusterUsageData.ClusterInst.Organization = poolDevOrg
 	clusterUsageData.ClusterInst.CloudletKey.Organization = ""
 	_, status, err = mcClient.ShowClusterUsage(uri, tokenOper, clusterUsageData)
@@ -2226,7 +2226,7 @@ func operatorBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clien
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 
-	// Operator cannot query cloudlet usage without passing cloudlet-org
+	// Operator cannot query cloudlet usage without passing cloudletorg
 	cloudletPoolUsageData := &ormapi.RegionCloudletPoolUsage{}
 	cloudletPoolUsageData.Region = region
 	cloudletPoolUsageData.StartTime = time.Now().Add(-1 * time.Hour)
@@ -2256,7 +2256,7 @@ func developerGoodPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Cli
 
 	// Test Billing Events
 	// ===================
-	// Developer can query app billing events by just passing app-org along with region
+	// Developer can query app billing events by just passing apporg along with region
 	appEventsData := &ormapi.RegionAppInstEvents{}
 	appEventsData.Region = region
 	appEventsData.AppInst = edgeproto.AppInstKey{}
@@ -2273,7 +2273,7 @@ func developerGoodPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Cli
 	require.NotNil(t, list)
 	require.Greater(t, len(list.Data), 0)
 
-	// Developer can query cluster billing events by just passing cluster-org along with region
+	// Developer can query cluster billing events by just passing clusterorg along with region
 	clusterEventsData := &ormapi.RegionClusterInstEvents{}
 	clusterEventsData.Region = region
 	clusterEventsData.ClusterInst = edgeproto.ClusterInstKey{}
@@ -2292,7 +2292,7 @@ func developerGoodPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Cli
 
 	// Test Metrics
 	// ===================
-	// Developer can query app metrics by just passing app-org along with region
+	// Developer can query app metrics by just passing apporg along with region
 	appMetricsData := &ormapi.RegionAppInstMetrics{}
 	appMetricsData.Region = region
 	appMetricsData.Selector = "cpu"
@@ -2310,7 +2310,7 @@ func developerGoodPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Cli
 	require.NotNil(t, list)
 	require.Greater(t, len(list.Data), 0)
 
-	// Developer can query cluster metrics by just passing cluster-org along with region
+	// Developer can query cluster metrics by just passing clusterorg along with region
 	clusterMetricsData := &ormapi.RegionClusterInstMetrics{}
 	clusterMetricsData.Region = region
 	clusterMetricsData.Selector = "cpu"
@@ -2330,7 +2330,7 @@ func developerGoodPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Cli
 
 	// Test Usage
 	// ===================
-	// Developer can query app usage by just passing app-org along with region
+	// Developer can query app usage by just passing apporg along with region
 	appUsageData := &ormapi.RegionAppInstUsage{}
 	appUsageData.Region = region
 	appUsageData.StartTime = time.Now().Add(-1 * time.Hour)
@@ -2349,7 +2349,7 @@ func developerGoodPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Cli
 	require.NotNil(t, list)
 	require.Greater(t, len(list.Data), 0)
 
-	// Developer can query cluster usage by just passing cluster-org along with region
+	// Developer can query cluster usage by just passing clusterorg along with region
 	clusterUsageData := &ormapi.RegionClusterInstUsage{}
 	clusterUsageData.Region = region
 	clusterUsageData.StartTime = time.Now().Add(-1 * time.Hour)
@@ -2391,7 +2391,7 @@ func developerBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clie
 
 	// Test Billing Events
 	// ===================
-	// Developer cannot query app billing events by just not passing app-org along with region
+	// Developer cannot query app billing events by just not passing apporg along with region
 	appEventsData := &ormapi.RegionAppInstEvents{}
 	appEventsData.Region = region
 	appEventsData.AppInst = edgeproto.AppInstKey{}
@@ -2407,7 +2407,7 @@ func developerBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clie
 		require.Equal(t, http.StatusForbidden, status)
 	}
 
-	// Developer cannot query cluster billing events by just not passing cluster-org along with region
+	// Developer cannot query cluster billing events by just not passing clusterorg along with region
 	clusterEventsData := &ormapi.RegionClusterInstEvents{}
 	clusterEventsData.Region = region
 	clusterEventsData.ClusterInst = edgeproto.ClusterInstKey{}
@@ -2433,7 +2433,7 @@ func developerBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clie
 
 	// Test Metrics
 	// ===================
-	// Developer cannot query app metrics by just not passing app-org along with region
+	// Developer cannot query app metrics by just not passing apporg along with region
 	appMetricsData := &ormapi.RegionAppInstMetrics{}
 	appMetricsData.Region = region
 	appMetricsData.Selector = "cpu"
@@ -2450,7 +2450,7 @@ func developerBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clie
 		require.Equal(t, http.StatusForbidden, status)
 	}
 
-	// Developer cannot query cluster metrics by just not passing cluster-org along with region
+	// Developer cannot query cluster metrics by just not passing clusterorg along with region
 	clusterMetricsData := &ormapi.RegionClusterInstMetrics{}
 	clusterMetricsData.Region = region
 	clusterMetricsData.Selector = "cpu"
@@ -2478,7 +2478,7 @@ func developerBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clie
 
 	// Test Usage
 	// ===================
-	// Developer cannot query app usage by just not passing app-org along with region
+	// Developer cannot query app usage by just not passing apporg along with region
 	appUsageData := &ormapi.RegionAppInstUsage{}
 	appUsageData.Region = region
 	appUsageData.StartTime = time.Now().Add(-1 * time.Hour)
@@ -2496,7 +2496,7 @@ func developerBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Clie
 		require.Equal(t, http.StatusForbidden, status)
 	}
 
-	// Developer cannot query cluster usage by just not passing cluster-org along with region
+	// Developer cannot query cluster usage by just not passing clusterorg along with region
 	clusterUsageData := &ormapi.RegionClusterInstUsage{}
 	clusterUsageData.Region = region
 	clusterUsageData.StartTime = time.Now().Add(-1 * time.Hour)
@@ -3395,7 +3395,7 @@ func TestDataConversions(t *testing.T) {
 	args = []string{
 		"app", "update",
 		"region=local",
-		"app-org=someorg",
+		"apporg=someorg",
 		"appname=foo",
 		"appvers=1.0",
 		`accessports=""`,
@@ -3437,7 +3437,7 @@ func TestDataConversions(t *testing.T) {
 		"cloudlet", "update",
 		"region=local",
 		"cloudlet=dmuus-cloud-1",
-		"cloudlet-org=dmuus",
+		"cloudletorg=dmuus",
 		"numdynamicips=0",
 		"envvar:empty=true",
 		"accessvars:empty=true",
@@ -3469,7 +3469,7 @@ func TestDataConversions(t *testing.T) {
 		"cloudlet", "update",
 		"region=local",
 		"cloudlet=dmuus-cloud-1",
-		"cloudlet-org=dmuus",
+		"cloudletorg=dmuus",
 		"resourcequotas:0.name=RAM",
 		"resourcequotas:0.alertthreshold=50",
 		"resourcequotas:1.name=vCPUs",
@@ -3535,7 +3535,7 @@ func TestDataConversions(t *testing.T) {
 	args = []string{
 		"trustpolicy", "update",
 		"region=local",
-		"cloudlet-org=org",
+		"cloudletorg=org",
 		"name=foo",
 		"outboundsecurityrules:empty=true"}
 	obj3 := ormapi.RegionTrustPolicy{}
@@ -3752,7 +3752,7 @@ func TestMcctlParseErrors(t *testing.T) {
 	// test invalid key
 	args = []string{
 		"autoprovpolicy", "create", "region=EU",
-		"app-org=testmonitor",
+		"apporg=testmonitor",
 		"name=policy",
 		"minactiveinstances=1",
 		"cloudlets:.key.organization=GDDT",
@@ -3796,7 +3796,7 @@ func TestMcctlParseErrors(t *testing.T) {
 	args = []string{
 		"cloudlet", "create", "region=US",
 		"cloudlet=sdfdfd",
-		"cloudlet-org=dmuus",
+		"cloudletorg=dmuus",
 		"location.longitude=1",
 		"location.latitude=1",
 		"numdynamicips=1",
@@ -3810,7 +3810,7 @@ func TestMcctlParseErrors(t *testing.T) {
 	args = []string{
 		"cloudlet", "create", "region=US",
 		"cloudlet=sdfdfd",
-		"cloudlet-org=dmuus",
+		"cloudletorg=dmuus",
 		"location.longitude=1",
 		"location.latitude=1",
 		"numdynamicips=1",
