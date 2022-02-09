@@ -423,12 +423,10 @@ func (m *cloudletUsageMetrics) InitObject(ctx context.Context, rc *InfluxDBConte
 	if err != nil {
 		return err
 	}
-	// Platform type is required for cloudlet resource usage
-	if m.Selector == "resourceusage" {
-		m.platformTypes, err = getCloudletPlatformTypes(ctx, rc.claims.Username, m.Region, m.Cloudlets)
-		if err != nil {
-			return err
-		}
+	// Platform type is required for cloudlet resource usage, but for consistency check for all selectors
+	m.platformTypes, err = getCloudletPlatformTypes(ctx, rc.claims.Username, m.Region, m.Cloudlets)
+	if err != nil {
+		return err
 	}
 	return m.cloudletMetrics.InitObject(ctx, rc)
 }
