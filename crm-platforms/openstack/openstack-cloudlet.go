@@ -260,8 +260,7 @@ func getOpenstackResources(cloudlet *edgeproto.Cloudlet, resources []edgeproto.V
 	for _, vmRes := range resources {
 		// Number of Instances = Number of resources
 		oRes.InstancesUsed += 1
-		if floatingIp && vmRes.Type == cloudcommon.VMTypeRootLB ||
-			(vmRes.Type == cloudcommon.VMTypeAppVM && vmRes.AppAccessType == edgeproto.AccessType_ACCESS_TYPE_DIRECT) {
+		if floatingIp && vmRes.Type == cloudcommon.VMTypeRootLB {
 			// Number of floating IPs = NetworkScheme==FloatingIP && Number of external facing resources
 			oRes.FloatingIPsUsed += 1
 		}

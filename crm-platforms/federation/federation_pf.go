@@ -7,7 +7,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/redundancy"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -68,14 +67,7 @@ func (f *FederationPlatform) GetClusterAdditionalResources(ctx context.Context, 
 func (f *FederationPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletResourceQuotaProps")
 
-	return &edgeproto.CloudletResourceQuotaProps{
-		Properties: []edgeproto.InfraResource{
-			{
-				Name:        cloudcommon.ResourceDisk,
-				Description: cloudcommon.ResourceQuotaDesc[cloudcommon.ResourceDisk],
-			},
-		},
-	}, nil
+	return &edgeproto.CloudletResourceQuotaProps{}, nil
 }
 
 // Get cluster additional resource metric

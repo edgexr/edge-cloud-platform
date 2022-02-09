@@ -74,7 +74,7 @@ func (m *ManagedK8sPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	}
 	err = m.CommonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, infracommon.NoDnsOverride, getDnsAction)
 	if err != nil {
-		return nil
+		return err
 	}
 	return nil
 }

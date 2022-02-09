@@ -1303,7 +1303,7 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 		}
 		if zoneReg.UpperLimitQuota.Disk > 0 {
 			fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
-				Name:  cloudcommon.ResourceDisk,
+				Name:  cloudcommon.ResourceDiskGb,
 				Value: uint64(zoneReg.UpperLimitQuota.Disk),
 			})
 		}

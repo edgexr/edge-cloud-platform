@@ -130,7 +130,7 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 					Value: ResourceValue,
 				},
 				{
-					Name:  cloudcommon.ResourceDisk,
+					Name:  cloudcommon.ResourceDiskGb,
 					Value: ResourceValue,
 				},
 			}
@@ -148,7 +148,7 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 					InfraMaxValue: ResourceValue,
 				},
 				{
-					Name:          cloudcommon.ResourceDisk,
+					Name:          cloudcommon.ResourceDiskGb,
 					InfraMaxValue: ResourceValue,
 				},
 			}

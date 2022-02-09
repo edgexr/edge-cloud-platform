@@ -348,15 +348,15 @@ func (p *PartnerApi) GetZoneResourcesUpperLimit(ctx context.Context, region, ope
 	}
 	// get supported resources upper limit values
 	totalRes := map[string]uint64{
-		cloudcommon.ResourceRamMb: 0,
-		cloudcommon.ResourceVcpus: 0,
-		cloudcommon.ResourceDisk:  0,
+		cloudcommon.ResourceRamMb:  0,
+		cloudcommon.ResourceVcpus:  0,
+		cloudcommon.ResourceDiskGb: 0,
 	}
 	for _, cloudletName := range cloudlets {
 		cloudletRes := map[string]uint64{
-			cloudcommon.ResourceRamMb: 0,
-			cloudcommon.ResourceVcpus: 0,
-			cloudcommon.ResourceDisk:  0,
+			cloudcommon.ResourceRamMb:  0,
+			cloudcommon.ResourceVcpus:  0,
+			cloudcommon.ResourceDiskGb: 0,
 		}
 		cloudletKey := edgeproto.CloudletKey{
 			Name:         string(cloudletName),
@@ -475,7 +475,7 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 		if val, ok := zoneResLimit[cloudcommon.ResourceRamMb]; ok {
 			upperLimitQuota.RAM = int64(val) / 1024 // RAM is in GBs
 		}
-		if val, ok := zoneResLimit[cloudcommon.ResourceDisk]; ok {
+		if val, ok := zoneResLimit[cloudcommon.ResourceDiskGb]; ok {
 			upperLimitQuota.Disk = int64(val)
 		}
 

@@ -101,14 +101,25 @@ func (m *ManagedK8sPlatform) deleteClusterInstInternal(ctx context.Context, clus
 	return m.Provider.RunClusterDeleteCommand(ctx, clusterName)
 }
 
-func (s *ManagedK8sPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (m *ManagedK8sPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("Update cluster inst not implemented")
 }
 
-func (e *ManagedK8sPlatform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.InfraResourcesSnapshot, error) {
-	return nil, fmt.Errorf("GetCloudletInfraResources not implemented for managed k8s")
+func (m *ManagedK8sPlatform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.InfraResourcesSnapshot, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletInfraResources")
+	var resources edgeproto.InfraResourcesSnapshot
+	// NOTE: resource.PlatformVms will be empty. Because for a managed K8s
+	//       platform there are no platform VM resources as
+	//       we don't run CRM/RootLB VMs on those platforms
+	resourcesInfo, err := m.Provider.GetCloudletInfraResourcesInfo(ctx)
+	if err == nil {
+		resources.Info = resourcesInfo
+	} else {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get cloudlet infra resources info", "err", err)
+	}
+	return &resources, nil
 }
 
-func (e *ManagedK8sPlatform) GetClusterInfraResources(ctx context.Context, clusterKey *edgeproto.ClusterInstKey) (*edgeproto.InfraResources, error) {
+func (m *ManagedK8sPlatform) GetClusterInfraResources(ctx context.Context, clusterKey *edgeproto.ClusterInstKey) (*edgeproto.InfraResources, error) {
 	return nil, fmt.Errorf("GetClusterInfraResources not implemented for managed k8s")
 }

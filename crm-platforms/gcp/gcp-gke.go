@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -66,4 +67,21 @@ func (g *GCPPlatform) GetCredentials(ctx context.Context, clusterName string) er
 		return fmt.Errorf("Error in GetCredential: %s - %v", string(out), err)
 	}
 	return nil
+}
+
+func (g *GCPPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {
+	return []edgeproto.InfraResource{}, nil
+}
+
+// called by controller, make sure it doesn't make any calls to infra API
+func (g *GCPPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
+	return nil
+}
+
+func (g *GCPPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
+	return nil
+}
+
+func (g *GCPPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
+	return &edgeproto.CloudletResourceQuotaProps{}, nil
 }
