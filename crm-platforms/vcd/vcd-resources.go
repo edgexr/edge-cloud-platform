@@ -60,7 +60,7 @@ func (v *VcdPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.Pla
 		case cloudcommon.ResourceExternalIPs:
 			resources.Ipv4Max = r.InfraMaxValue
 			resources.Ipv4Used = r.Value
-		case cloudcommon.ResourceDisk:
+		case cloudcommon.ResourceDiskGb:
 			resources.DiskMax = r.InfraMaxValue
 			resources.DiskUsed = r.Value
 		}
@@ -170,7 +170,7 @@ func (v *VcdPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edge
 		Value:         uint64(len(vmlist)),
 	})
 	resInfo = append(resInfo, edgeproto.InfraResource{
-		Name:          cloudcommon.ResourceDisk,
+		Name:          cloudcommon.ResourceDiskGb,
 		InfraMaxValue: uint64(storageLimit),
 		Value:         uint64(storageUsed),
 	})

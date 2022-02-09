@@ -22,6 +22,12 @@ var AWSProps = map[string]*edgeproto.PropertyInfo{
 		Description: "AWS Region",
 		Mandatory:   true,
 	},
+	// override default for flavor match pattern
+	"FLAVOR_MATCH_PATTERN": &edgeproto.PropertyInfo{
+		Name:        "Flavor Match Pattern",
+		Description: "Flavors matching this pattern will be used by Cloudlet to bringup VMs",
+		Value:       "^[acdhimrtz]\\d+", // Defaults to all standard flavors
+	},
 	// override default for router
 	"MEX_ROUTER": {
 		Name:        "External Router Type",
@@ -80,8 +86,14 @@ func (a *AwsGenericPlatform) GetAwsOutpostFlavors() string {
 	val, _ := a.Properties.GetValue("AWS_OUTPOST_FLAVORS")
 	return val
 }
+
 func (a *AwsGenericPlatform) GetAwsUserArn() string {
 	val, _ := a.Properties.GetValue("AWS_USER_ARN")
+	return val
+}
+
+func (a *AwsGenericPlatform) GetAwsFlavorMatchPattern() string {
+	val, _ := a.Properties.GetValue("FLAVOR_MATCH_PATTERN")
 	return val
 }
 
