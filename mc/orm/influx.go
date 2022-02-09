@@ -636,19 +636,22 @@ func getCloudletPlatformTypes(ctx context.Context, username, region string, keys
 	rc.Username = username
 	rc.Region = region
 	rc.Database = database
-	for ii := range keys {
-		obj := edgeproto.Cloudlet{
-			Key: keys[ii],
+
+	err := ctrlclient.ShowCloudletStream(ctx, rc, &edgeproto.Cloudlet{}, connCache, nil, func(res *edgeproto.Cloudlet) error {
+		// only process the passed in cloudlets
+		for ii := range keys {
+			if !res.Key.Matches(&keys[ii], edgeproto.MatchFilter()) {
+				return nil
+			}
 		}
-		err := ctrlclient.ShowCloudletStream(ctx, rc, &obj, connCache, nil, func(res *edgeproto.Cloudlet) error {
-			pfType := pf.GetType(res.PlatformType.String())
-			platformTypes[pfType] = struct{}{}
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
+		pfType := pf.GetType(res.PlatformType.String())
+		platformTypes[pfType] = struct{}{}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
+
 	if len(platformTypes) == 0 {
 		return nil, fmt.Errorf("Cloudlet does not exist")
 	}
@@ -870,13 +873,10 @@ func GetMetricsCommon(c echo.Context) error {
 			return err
 		}
 
-		// Platform type is required for cloudlet resource usage
-		platformTypes := make(map[string]struct{})
-		if in.Selector == "resourceusage" {
-			platformTypes, err = getCloudletPlatformTypes(ctx, claims.Username, in.Region, []edgeproto.CloudletKey{in.Cloudlet})
-			if err != nil {
-				return err
-			}
+		// Platform type is required for cloudlet resource usage, but for consistency check for all selectors
+		platformTypes, err := getCloudletPlatformTypes(ctx, claims.Username, in.Region, []edgeproto.CloudletKey{in.Cloudlet})
+		if err != nil {
+			return err
 		}
 		cmd = CloudletUsageMetricsQuery(&in, platformTypes)
 
