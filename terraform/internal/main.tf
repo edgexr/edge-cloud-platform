@@ -250,3 +250,28 @@ module "trivy_dns" {
   hostname = var.trivy_domain_name
   ip       = module.trivy.external_ip
 }
+
+resource "google_compute_address" "gvm" {
+  name = var.gvm_static_address_name
+}
+
+module "gvm" {
+  source = "../modules/vm_gcp"
+
+  instance_name       = var.gvm_instance_name
+  environ_tag         = var.environ_tag
+  zone                = var.gvm_zone
+  boot_image          = "ubuntu-os-cloud/ubuntu-2004-focal-v20210720"
+  boot_disk_size      = 100
+  tags                = ["mexplat-internal", "http-server", "https-server"]
+  labels = {
+    "owner" = "ops"
+  }
+  nat_ip = "${google_compute_address.gvm.address}"
+}
+
+module "gvm_dns" {
+  source   = "../modules/cloudflare_record"
+  hostname = var.gvm_domain_name
+  ip       = module.gvm.external_ip
+}
