@@ -404,7 +404,7 @@ func getClientTypeUsageMetricComments(typ string) map[string]string {
 
 	switch typ {
 	case "app":
-		locationtileSelectorPermission = fmt.Sprintf(baseSelectorPermission, "latency")
+		locationtileSelectorPermission = fmt.Sprintf(baseSelectorPermission, "latency, deviceinfo")
 		deviceosSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
 		devicemodelSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
 		devicecarrierSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
