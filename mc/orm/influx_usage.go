@@ -17,6 +17,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 )
 
 var AppCheckpointFields = []string{
@@ -700,6 +701,10 @@ func GetUsageCommon(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		// validate all the passed in arguments
+		if err = util.ValidateNames(in.AppInst.GetTags()); err != nil {
+			return err
+		}
 
 		// start and end times must be specified
 		if in.StartTime.IsZero() || in.EndTime.IsZero() {
@@ -729,6 +734,10 @@ func GetUsageCommon(c echo.Context) error {
 		in := ormapi.RegionClusterInstUsage{}
 		_, err := ReadConn(c, &in)
 		if err != nil {
+			return err
+		}
+		// validate all the passed in arguments
+		if err = util.ValidateNames(in.ClusterInst.GetTags()); err != nil {
 			return err
 		}
 
