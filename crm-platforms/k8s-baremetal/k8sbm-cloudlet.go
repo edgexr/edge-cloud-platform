@@ -229,8 +229,8 @@ func (k *K8sBareMetalPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edg
 		err = k.RemoveIp(ctx, sshClient, addr, externalDev, sharedLbName)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "remove IP failed", "addr", addr, "err", err)
+			return fmt.Errorf("failed to remove shared LB IP: %s - %v", addr, err)
 		}
-		return fmt.Errorf("failed to remove shared LB IP: %s - %v", addr, err)
 	}
 
 	updateCallback(edgeproto.UpdateTask, "Removing platform containers")
