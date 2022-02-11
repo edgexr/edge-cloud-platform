@@ -10,15 +10,17 @@ import (
 	edgecli "github.com/mobiledgex/edge-cloud/edgectl/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // We don't use the auto-generated Command because the client
 // must use websocket connection
 
-func (s *RootCommand) getExecCmd(name string) *cobra.Command {
+func (s *RootCommand) getExecCmd(name string, addFlagsFunc func(*pflag.FlagSet)) *cobra.Command {
 	apiCmd := ormctl.MustGetCommand(name)
 	cliCmd := s.ConvertCmd(apiCmd)
 	cliCmd.Run = s.runExecRequest(apiCmd.Path)
+	cliCmd.AddFlagsFunc = addFlagsFunc
 	return cliCmd.GenCmd()
 }
 
@@ -48,6 +50,10 @@ func (s *RootCommand) runExecRequest(path string) func(c *cli.Command, args []st
 			}
 			return &reply, nil
 		}
-		return edgecli.RunEdgeTurn(&req.ExecRequest, exchangeFunc)
+		options := &edgecli.ExecOptions{
+			Stdin: cli.Interactive,
+			Tty:   cli.Tty,
+		}
+		return edgecli.RunEdgeTurn(&req.ExecRequest, options, exchangeFunc)
 	}
 }
