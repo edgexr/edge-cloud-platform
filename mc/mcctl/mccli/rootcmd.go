@@ -79,9 +79,9 @@ func GetRootCommand() *RootCommand {
 		rc.getCmdGroup(ormctl.AppInstRefsGroup),
 		rc.getCmdGroup(ormctl.AppInstLatencyGroup),
 		rc.getCmdGroup(ormctl.TrustPolicyExceptionGroup),
-		rc.getExecCmd("RunCommandCli"),
-		rc.getExecCmd("RunConsole"),
-		rc.getExecCmd("ShowLogsCli"),
+		rc.getExecCmd("RunCommandCli", cli.AddTtyFlags),
+		rc.getExecCmd("RunConsole", cli.NoFlags),
+		rc.getExecCmd("ShowLogsCli", cli.NoFlags),
 	}
 	adminCommands := []*cobra.Command{
 		rc.getCmdGroup(ormctl.ControllerGroup),
@@ -94,7 +94,7 @@ func GetRootCommand() *RootCommand {
 		rc.getCmdGroup(ormctl.DeviceGroup),
 		rc.getCmdGroup(ormctl.ClusterRefsGroup),
 		rc.getCmdGroup(ormctl.RepositoryGroup),
-		rc.getExecCmd("AccessCloudletCli"),
+		rc.getExecCmd("AccessCloudletCli", cli.AddTtyFlags),
 		rc.getCmdGroup(ormctl.SpansGroup),
 		rc.getCmd("RestrictedUpdateUser"),
 		rc.getCmd("RestrictedUpdateOrg"),

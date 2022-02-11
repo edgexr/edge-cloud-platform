@@ -57,6 +57,7 @@ require (
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/shirou/gopsutil v2.20.4+incompatible
 	github.com/spf13/cobra v0.0.5
+	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/test-go/testify v1.1.4
 	github.com/tmc/scp v0.0.0-20170824174625-f7b48647feef
