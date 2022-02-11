@@ -11,6 +11,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 )
 
 func generateCloudletList(cloudletList []string) string {
@@ -99,6 +100,11 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		// validate all the passed in arguments
+		if err = util.ValidateNames(in.CloudletPool.GetTags()); err != nil {
+			return err
+		}
+
 		// Operator and cloudletpool name has to be specified
 		if in.CloudletPool.Organization == "" || in.CloudletPool.Name == "" {
 			return fmt.Errorf("CloudletPool details must be present")

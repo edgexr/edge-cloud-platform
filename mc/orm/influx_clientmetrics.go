@@ -137,7 +137,7 @@ const (
 	CLIENT_APPUSAGE                 = "clientappusage"
 	CLIENT_CLOUDLETUSAGE            = "clientcloudletusage"
 	CLIENT_APP_ORG_FIELD            = "apporg"
-	CLIENT_CLOUDLET_ORG_FIELD       = "cloudlet"
+	CLIENT_CLOUDLET_ORG_FIELD       = "cloudletorg"
 	CLIENT_FOUND_CLOUDLET_ORG_FIELD = "foundOperator"
 )
 
