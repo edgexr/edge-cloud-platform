@@ -192,7 +192,7 @@ var DebugRequestComments = map[string]string{
 	"cloudlet":                               "Name of the cloudlet",
 	"node.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
 	"region":                                 "Region the node is in",
-	"levels":                                 "Comma separated list of debug level names: etcd,api,notify,dmereq,locapi,infra,metrics,upgrade,info,sampled",
+	"levels":                                 "Comma separated list of debug level names: etcd,api,notify,dmereq,locapi,infra,metrics,upgrade,info,sampled,fedapi",
 	"cmd":                                    "Debug command (use help to see available commands)",
 	"pretty":                                 "if possible, make output pretty",
 	"id":                                     "Id used internally",

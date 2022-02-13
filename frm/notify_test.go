@@ -1,4 +1,4 @@
-package notify
+package main
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/redundancy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
 	"github.com/stretchr/testify/require"
@@ -134,7 +135,18 @@ func TestFRMNotify(t *testing.T) {
 	var nodeMgr node.NodeMgr
 	var haMgr redundancy.HighAvailabilityManager
 
-	notifyClient, controllerData, err := SetupFRMNotify(&nodeMgr, &haMgr, "frm-hostname", "local", notifyAddr)
+	nodeOps := []node.NodeOp{
+		node.WithName(*hostname),
+		node.WithNoUpdateMyNode(),
+		node.WithRegion(*region),
+		node.WithHARole(process.HARolePrimary),
+	}
+	ctx, span, err := nodeMgr.Init(node.NodeTypeFRM, node.CertIssuerRegional, nodeOps...)
+	require.Nil(t, err)
+	defer span.Finish()
+
+	haMgr.HARole = string(process.HARolePrimary)
+	notifyClient, controllerData, err := InitFRM(ctx, &nodeMgr, &haMgr, "frm-hostname", "local", "dummy.net", notifyAddr)
 	require.Nil(t, err)
 	defer func() {
 		nodeMgr.Finish()

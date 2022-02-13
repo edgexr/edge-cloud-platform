@@ -7,27 +7,32 @@ import (
 	"os/signal"
 	"syscall"
 
-	frmnotify "github.com/mobiledgex/edge-cloud-infra/frm/notify"
+	"github.com/mobiledgex/edge-cloud-infra/version"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/redundancy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
+	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
+	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 var notifyAddrs = flag.String("notifyAddrs", "127.0.0.1:50001", "Comma separated list of controller notify listener addresses")
 var hostname = flag.String("hostname", "", "Unique hostname")
 var debugLevels = flag.String("d", "", fmt.Sprintf("Comma separated list of %v", log.DebugLevelStrings))
 var region = flag.String("region", "local", "region name")
+var appDNSRoot = flag.String("appDNSRoot", "mobiledgex.net", "App domain name root")
 
 var sigChan chan os.Signal
 var nodeMgr node.NodeMgr
 var haMgr redundancy.HighAvailabilityManager
 var notifyClient *notify.Client
-var controllerData *frmnotify.ControllerData
+var controllerData *ControllerData
+var vaultConfig *vault.Config
 
 func main() {
 	nodeMgr.InitFlags()
 	nodeMgr.AccessKeyClient.InitFlags()
+	haMgr.InitFlags()
 	flag.Parse()
 
 	log.SetDebugLevelStrs(*debugLevels)
@@ -35,10 +40,27 @@ func main() {
 	sigChan = make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	var err error
-	notifyClient, controllerData, err = frmnotify.SetupFRMNotify(&nodeMgr, &haMgr, *hostname, *region, *notifyAddrs)
+	nodeOps := []node.NodeOp{
+		node.WithName(*hostname),
+		node.WithNoUpdateMyNode(),
+		node.WithRegion(*region),
+		node.WithVaultConfig(vaultConfig),
+	}
+	if haMgr.HARole == string(process.HARoleSecondary) {
+		nodeOps = append(nodeOps, node.WithHARole(process.HARoleSecondary))
+	} else {
+		nodeOps = append(nodeOps, node.WithHARole(process.HARolePrimary))
+	}
+	ctx, span, err := nodeMgr.Init(node.NodeTypeFRM, node.CertIssuerRegional, nodeOps...)
 	if err != nil {
 		log.FatalLog(err.Error())
+	}
+	defer span.Finish()
+	nodeMgr.UpdateNodeProps(ctx, version.InfraBuildProps("Infra"))
+
+	notifyClient, controllerData, err = InitFRM(ctx, &nodeMgr, &haMgr, *hostname, *region, *appDNSRoot, *notifyAddrs)
+	if err != nil {
+		log.FatalLog("Failed to init frm", "err", err)
 	}
 	defer nodeMgr.Finish()
 	defer notifyClient.Stop()

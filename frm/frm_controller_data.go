@@ -1,15 +1,18 @@
-package notify
+package main
 
 import (
+	"context"
+	"fmt"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud-infra/version"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/accessapi"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/crmutil"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
+	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	pfutils "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/utils"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/redundancy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
 	"github.com/mobiledgex/edge-cloud/tls"
 )
@@ -20,9 +23,9 @@ type ControllerData struct {
 }
 
 // NewControllerData creates a new instance to track data from the controller
-func NewControllerData(pf platform.Platform, nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityManager) *ControllerData {
+func NewControllerData(plat pf.Platform, nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityManager) *ControllerData {
 	cd := &ControllerData{}
-	cd.ControllerData = crmutil.NewControllerData(pf, &edgeproto.CloudletKey{}, nodeMgr, haMgr)
+	cd.ControllerData = crmutil.NewControllerData(plat, &edgeproto.CloudletKey{}, nodeMgr, haMgr)
 	return cd
 }
 
@@ -30,17 +33,7 @@ func InitClientNotify(client *notify.Client, nodeMgr *node.NodeMgr, cd *Controll
 	crmutil.InitClientNotify(client, nodeMgr, cd.ControllerData)
 }
 
-func SetupFRMNotify(nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityManager, hostname, region, notifyAddrs string) (*notify.Client, *ControllerData, error) {
-	ctx, span, err := nodeMgr.Init(node.NodeTypeFRM, node.CertIssuerRegional,
-		node.WithName(hostname),
-		node.WithRegion(region),
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer span.Finish()
-	nodeMgr.UpdateNodeProps(ctx, version.InfraBuildProps("Infra"))
-
+func InitFRM(ctx context.Context, nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityManager, hostname, region, appDNSRoot, notifyAddrs string) (*notify.Client, *ControllerData, error) {
 	// Load platform implementation.
 	platform, err := pfutils.GetPlatform(ctx,
 		edgeproto.PlatformType_PLATFORM_TYPE_FEDERATION.String(),
@@ -50,6 +43,17 @@ func SetupFRMNotify(nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityMan
 	}
 
 	controllerData := NewControllerData(platform, nodeMgr, haMgr)
+
+	pc := pf.PlatformConfig{
+		Region:        region,
+		NodeMgr:       nodeMgr,
+		DeploymentTag: nodeMgr.DeploymentTag,
+		AppDNSRoot:    appDNSRoot,
+		AccessApi:     accessapi.NewVaultGlobalClient(nodeMgr.VaultConfig),
+	}
+	caches := controllerData.GetCaches()
+	noopCb := func(updateType edgeproto.CacheUpdateType, value string) {}
+	err = platform.Init(ctx, &pc, caches, haMgr, noopCb)
 
 	// ctrl notify
 	addrs := strings.Split(notifyAddrs, ",")
@@ -66,6 +70,23 @@ func SetupFRMNotify(nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityMan
 	notifyClient.SetFilterByFederatedCloudlet()
 	InitClientNotify(notifyClient, nodeMgr, controllerData)
 	notifyClient.Start()
+
+	haKey := fmt.Sprintf("nodeType: %s", node.NodeTypeFRM)
+	haEnabled, err := controllerData.InitHAManager(ctx, haMgr, haKey)
+	if err != nil {
+		if err != nil {
+			log.FatalLog(err.Error())
+		}
+	}
+	if haEnabled {
+		log.SpanLog(ctx, log.DebugLevelInfra, "HA enabled", "role", haMgr.HARole)
+		if haMgr.PlatformInstanceActive {
+			log.SpanLog(ctx, log.DebugLevelInfra, "HA instance is active", "role", haMgr.HARole)
+		} else {
+			log.SpanLog(ctx, log.DebugLevelInfra, "HA instance is not active", "role", haMgr.HARole)
+		}
+		controllerData.StartHAManagerActiveCheck(ctx, haMgr)
+	}
 
 	return notifyClient, controllerData, nil
 }

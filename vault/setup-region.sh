@@ -39,6 +39,14 @@ path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
 
+path "secret/data/cloudlet/*" {
+  capabilities = [ "read" ]
+}
+
+path "secret/data/federation/*" {
+  capabilities = [ "read" ]
+}
+
 path "pki-regional/issue/$REGION" {
   capabilities = [ "read", "update" ]
 }

@@ -132,6 +132,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-1-enterprise
       rootlbfqdn: shared.partner1-cloud-1-enterprise.local.mobiledgex.net
+      federationconfig:
+        federationname: enterprise-SA-partner1-PA-fed
+        selffederationid: enterprise-SA-partner1-PA
+        partnerfederationid: partner1-PA-enterprise-SA
+        zonecountrycode: PA
+        partnerfederationaddr: 127.0.0.1:9808
     - key:
         organization: enterprise
         name: partner1-cloud-2
@@ -156,6 +162,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-2-enterprise
       rootlbfqdn: shared.partner1-cloud-2-enterprise.local.mobiledgex.net
+      federationconfig:
+        federationname: enterprise-SA-partner1-PA-fed
+        selffederationid: enterprise-SA-partner1-PA
+        partnerfederationid: partner1-PA-enterprise-SA
+        zonecountrycode: PA
+        partnerfederationaddr: 127.0.0.1:9808
     - key:
         organization: enterprise
         name: partner2-cloud-1
@@ -180,6 +192,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-1-enterprise
       rootlbfqdn: shared.partner2-cloud-1-enterprise.local.mobiledgex.net
+      federationconfig:
+        federationname: enterprise-SA-partner2-PS-fed
+        selffederationid: enterprise-SA-partner2-PS
+        partnerfederationid: partner2-PS-enterprise-SA
+        zonecountrycode: PS
+        partnerfederationaddr: 127.0.0.1:9809
     - key:
         organization: enterprise
         name: partner2-cloud-2
@@ -204,6 +222,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-2-enterprise
       rootlbfqdn: shared.partner2-cloud-2-enterprise.local.mobiledgex.net
+      federationconfig:
+        federationname: enterprise-SA-partner2-PS-fed
+        selffederationid: enterprise-SA-partner2-PS
+        partnerfederationid: partner2-PS-enterprise-SA
+        zonecountrycode: PS
+        partnerfederationaddr: 127.0.0.1:9809
     - key:
         organization: gcp
         name: gcp-cloud-5
@@ -246,6 +270,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-1-dmuus
       rootlbfqdn: shared.partner1-cloud-1-dmuus.local.mobiledgex.net
+      federationconfig:
+        federationname: dmuus-SA-partner1-PA-fed
+        selffederationid: dmuus-SA-partner1-PA
+        partnerfederationid: partner1-PA-dmuus-SA
+        zonecountrycode: PA
+        partnerfederationaddr: 127.0.0.1:9808
     - key:
         organization: dmuus
         name: partner1-cloud-2
@@ -270,6 +300,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-2-dmuus
       rootlbfqdn: shared.partner1-cloud-2-dmuus.local.mobiledgex.net
+      federationconfig:
+        federationname: dmuus-SA-partner1-PA-fed
+        selffederationid: dmuus-SA-partner1-PA
+        partnerfederationid: partner1-PA-dmuus-SA
+        zonecountrycode: PA
+        partnerfederationaddr: 127.0.0.1:9808
     - key:
         organization: dmuus
         name: partner2-cloud-1
@@ -294,6 +330,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-1-dmuus
       rootlbfqdn: shared.partner2-cloud-1-dmuus.local.mobiledgex.net
+      federationconfig:
+        federationname: dmuus-SA-partner2-PS-fed
+        selffederationid: dmuus-SA-partner2-PS
+        partnerfederationid: partner2-PS-dmuus-SA
+        zonecountrycode: PS
+        partnerfederationaddr: 127.0.0.1:9809
     - key:
         organization: dmuus
         name: partner2-cloud-2
@@ -318,6 +360,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-2-dmuus
       rootlbfqdn: shared.partner2-cloud-2-dmuus.local.mobiledgex.net
+      federationconfig:
+        federationname: dmuus-SA-partner2-PS-fed
+        selffederationid: dmuus-SA-partner2-PS
+        partnerfederationid: partner2-PS-dmuus-SA
+        zonecountrycode: PS
+        partnerfederationaddr: 127.0.0.1:9809
     - key:
         organization: dmuus
         name: dmuus-cloud-1
@@ -708,6 +756,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-1-enterprise
       rootlbfqdn: shared.partner1-cloud-1-enterprise.locala.mobiledgex.net
+      federationconfig:
+        federationname: enterprise-SB-partner1-PA-fed
+        selffederationid: enterprise-SB-partner1-PA
+        partnerfederationid: partner1-PA-enterprise-SB
+        zonecountrycode: PA
+        partnerfederationaddr: 127.0.0.1:9808
     - key:
         organization: enterprise
         name: partner1-cloud-2
@@ -732,6 +786,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-2-enterprise
       rootlbfqdn: shared.partner1-cloud-2-enterprise.locala.mobiledgex.net
+      federationconfig:
+        federationname: enterprise-SB-partner1-PA-fed
+        selffederationid: enterprise-SB-partner1-PA
+        partnerfederationid: partner1-PA-enterprise-SB
+        zonecountrycode: PA
+        partnerfederationaddr: 127.0.0.1:9808
     - key:
         organization: enterprise
         name: partner2-cloud-1
@@ -756,6 +816,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-1-enterprise
       rootlbfqdn: shared.partner2-cloud-1-enterprise.locala.mobiledgex.net
+      federationconfig:
+        federationname: enterprise-SB-partner2-PS-fed
+        selffederationid: enterprise-SB-partner2-PS
+        partnerfederationid: partner2-PS-enterprise-SB
+        zonecountrycode: PS
+        partnerfederationaddr: 127.0.0.1:9809
     - key:
         organization: enterprise
         name: partner2-cloud-2
@@ -780,6 +846,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-2-enterprise
       rootlbfqdn: shared.partner2-cloud-2-enterprise.locala.mobiledgex.net
+      federationconfig:
+        federationname: enterprise-SB-partner2-PS-fed
+        selffederationid: enterprise-SB-partner2-PS
+        partnerfederationid: partner2-PS-enterprise-SB
+        zonecountrycode: PS
+        partnerfederationaddr: 127.0.0.1:9809
     - key:
         organization: dmuus
         name: partner1-cloud-1
@@ -804,6 +876,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-1-dmuus
       rootlbfqdn: shared.partner1-cloud-1-dmuus.locala.mobiledgex.net
+      federationconfig:
+        federationname: dmuus-SB-partner1-PA-fed
+        selffederationid: dmuus-SB-partner1-PA
+        partnerfederationid: partner1-PA-dmuus-SB
+        zonecountrycode: PA
+        partnerfederationaddr: 127.0.0.1:9808
     - key:
         organization: dmuus
         name: partner1-cloud-2
@@ -828,6 +906,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-2-dmuus
       rootlbfqdn: shared.partner1-cloud-2-dmuus.locala.mobiledgex.net
+      federationconfig:
+        federationname: dmuus-SB-partner1-PA-fed
+        selffederationid: dmuus-SB-partner1-PA
+        partnerfederationid: partner1-PA-dmuus-SB
+        zonecountrycode: PA
+        partnerfederationaddr: 127.0.0.1:9808
     - key:
         organization: dmuus
         name: partner2-cloud-1
@@ -852,6 +936,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-1-dmuus
       rootlbfqdn: shared.partner2-cloud-1-dmuus.locala.mobiledgex.net
+      federationconfig:
+        federationname: dmuus-SB-partner2-PS-fed
+        selffederationid: dmuus-SB-partner2-PS
+        partnerfederationid: partner2-PS-dmuus-SB
+        zonecountrycode: PS
+        partnerfederationaddr: 127.0.0.1:9809
     - key:
         organization: dmuus
         name: partner2-cloud-2
@@ -876,6 +966,12 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-2-dmuus
       rootlbfqdn: shared.partner2-cloud-2-dmuus.locala.mobiledgex.net
+      federationconfig:
+        federationname: dmuus-SB-partner2-PS-fed
+        selffederationid: dmuus-SB-partner2-PS
+        partnerfederationid: partner2-PS-dmuus-SB
+        zonecountrycode: PS
+        partnerfederationaddr: 127.0.0.1:9809
     - key:
         organization: dmuus
         name: dmuus-cloud-3
