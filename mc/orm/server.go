@@ -27,6 +27,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud-infra/version"
 	"github.com/mobiledgex/edge-cloud/cli"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/accessapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/ratelimit"
@@ -115,6 +116,7 @@ var nodeMgr *node.NodeMgr
 var AlertManagerServer *alertmgr.AlertMgrServer
 var allRegionCaches AllRegionCaches
 var connCache *ConnCache
+var fedClient *federation.FederationClient
 
 var unitTestNodeMgrOps []node.NodeOp
 var rateLimitMgr *ratelimit.RateLimitManager
@@ -277,6 +279,11 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	err = enforcer.Init(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("enforcer init failed, %v", err)
+	}
+
+	fedClient, err = federation.NewClient(accessapi.NewVaultGlobalClient(config.vaultConfig))
+	if err != nil {
+		log.FatalLog("Failed to setup federation client", "err", err)
 	}
 
 	server.initDataDone = make(chan error, 1)

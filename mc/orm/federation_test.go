@@ -228,6 +228,9 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context) (*OPAttr, []Federa
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
 
+	// set unit test flag
+	fedClient.UnitTest = true
+
 	Jwks.Init(config.vaultConfig, "region", "mcorm")
 	Jwks.Meta.CurrentVersion = 1
 	Jwks.Keys[1] = &vault.JWK{
@@ -591,7 +594,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 		CountryCode:      partnerFed.countryCode,
 	}
 	opRegRes := federation.OperatorRegistrationResponse{}
-	err = sendFederationRequest("POST", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorPartnerAPI, &opRegReq, &opRegRes)
+	err = fedClient.SendRequest(ctx, "POST", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorPartnerAPI, &opRegReq, &opRegRes)
 	require.Nil(t, err, "partnerFed adds selfFed1 as partner OP")
 	// verify federation response
 	require.Equal(t, opRegRes.OrigOperatorId, selfFed1.operatorId)
@@ -620,7 +623,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 		Country:          partnerFed.countryCode,
 		MCC:              "999",
 	}
-	err = sendFederationRequest("PUT", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorPartnerAPI, &updateReq, nil)
+	err = fedClient.SendRequest(ctx, "PUT", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorPartnerAPI, &updateReq, nil)
 	require.Nil(t, err, "partnerFed updates its attributes and notifies selfFed1 about it")
 
 	// verify that selfFed1 has successfully updated partnerFed's new MCC value
@@ -653,7 +656,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 		Zones:            regZones,
 	}
 	opZoneRes := federation.OperatorZoneRegisterResponse{}
-	err = sendFederationRequest("POST", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorZoneAPI, &zoneRegReq, &opZoneRes)
+	err = fedClient.SendRequest(ctx, "POST", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorZoneAPI, &zoneRegReq, &opZoneRes)
 	require.Nil(t, err, "partnerFed sends registration request for selfFed1 zones")
 	require.Equal(t, zoneRegReq.RequestId, opZoneRes.RequestId)
 	require.Equal(t, len(opZoneRes.Zone), len(regZones))
@@ -701,7 +704,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 		Country:          partnerFed.countryCode,
 		PartnerZone:      newZone,
 	}
-	err = sendFederationRequest("POST", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorNotifyZoneAPI, &zoneNotifyReq, nil)
+	err = fedClient.SendRequest(ctx, "POST", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorNotifyZoneAPI, &zoneNotifyReq, nil)
 	require.Nil(t, err, "partnerFed notifies selfFed1 about a new zone")
 
 	// verify that selfFed1 added this new zone in its db
@@ -735,7 +738,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 		Country:          partnerFed.countryCode,
 		Zone:             newZone.ZoneId,
 	}
-	err = sendFederationRequest("DELETE", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorNotifyZoneAPI, &zoneUnshareReq, nil)
+	err = fedClient.SendRequest(ctx, "DELETE", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorNotifyZoneAPI, &zoneUnshareReq, nil)
 	require.Nil(t, err, "partnerFed notifies selfFed1 about a deleted zone")
 
 	// verify that selfFed1 deleted this zone from its db
@@ -758,7 +761,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 		Country:          partnerFed.countryCode,
 		Zones:            deregZones,
 	}
-	err = sendFederationRequest("DELETE", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorZoneAPI, &zoneDeRegReq, nil)
+	err = fedClient.SendRequest(ctx, "DELETE", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorZoneAPI, &zoneDeRegReq, nil)
 	require.Nil(t, err, "partnerFed sends deregistration request for selfFed1 zone")
 
 	for _, deregZone := range deregZones {
@@ -788,7 +791,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 		Operator:         partnerFed.operatorId,
 		Country:          partnerFed.countryCode,
 	}
-	err = sendFederationRequest("DELETE", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorPartnerAPI, &opFedReq, nil)
+	err = fedClient.SendRequest(ctx, "DELETE", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorPartnerAPI, &opFedReq, nil)
 	require.Nil(t, err, "partnerFed removes selfFed1 as partner OP")
 
 	// verify that partnerFed has successfully removed federation with selfFed1

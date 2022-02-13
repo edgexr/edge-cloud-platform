@@ -25,7 +25,13 @@ const (
 	OperatorZoneAPI       = "/operator/zone"
 	OperatorNotifyZoneAPI = "/operator/notify/zone"
 
-	BadAuthDelay = 3 * time.Second
+	// App management APIs
+	OperatorAppOnboardingAPI      = "/operator/application/onboarding"
+	OperatorAppProvisionAPI       = "/operator/application/provision"
+	OperatorAppProvisionStatusAPI = "/operator/application/provisionstatus"
+
+	BadAuthDelay   = 3 * time.Second
+	AllAppsVersion = "1.0"
 )
 
 type PartnerApi struct {
@@ -54,6 +60,16 @@ func (p *PartnerApi) InitAPIs(e *echo.Echo) {
 	e.POST(OperatorNotifyZoneAPI, p.FederationOperatorZoneShare)
 	// Notify partner federator about a zone being unshared
 	e.DELETE(OperatorNotifyZoneAPI, p.FederationOperatorZoneUnShare)
+	// Onboarding application on partner federator zone
+	e.POST(OperatorAppOnboardingAPI, p.FederationAppOnboarding)
+	// Get application onboarding status on partner federator zone
+	e.GET(OperatorAppOnboardingAPI, p.FederationAppOnboardingStatus)
+	// Deboarding application on partner federator zone
+	e.DELETE(OperatorAppOnboardingAPI, p.FederationAppDeboarding)
+	// Provisioning application on partner federator zone
+	e.POST(OperatorAppProvisionAPI, p.FederationAppProvision)
+	// Deprovisioning application on partner federator zone
+	e.DELETE(OperatorAppProvisionAPI, p.FederationAppDeprovision)
 }
 
 func AuthAPIKey(next echo.HandlerFunc) echo.HandlerFunc {
@@ -86,7 +102,7 @@ func AuthAPIKey(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func (p *PartnerApi) ValidateAndGetFederatorInfo(c echo.Context, origKey, destKey, origOperatorId, origCountryCode string) (*ormapi.Federator, *ormapi.Federation, error) {
+func (p *PartnerApi) ValidateAndGetFederatorInfo(c echo.Context, origKey, destKey, origOperatorId string) (*ormapi.Federator, *ormapi.Federation, error) {
 	apiKeyIntf := c.Get("apikey")
 	ctx := ormutil.GetContext(c)
 	if apiKeyIntf == nil {
@@ -107,9 +123,6 @@ func (p *PartnerApi) ValidateAndGetFederatorInfo(c echo.Context, origKey, destKe
 	}
 	if origOperatorId == "" {
 		return nil, nil, fmt.Errorf("Missing origin Operator ID")
-	}
-	if origCountryCode == "" {
-		return nil, nil, fmt.Errorf("Missing origin country code")
 	}
 	db := p.loggedDB(ctx)
 
@@ -150,7 +163,7 @@ func (p *PartnerApi) ValidateAndGetFederatorInfo(c echo.Context, origKey, destKe
 		return nil, nil, fmt.Errorf("Invalid ApiKey")
 	}
 
-	// validate origin (partner) FederationId/operator/country
+	// validate origin (partner) federation ID
 	if partnerFed.FederationId != origKey {
 		return nil, nil, fmt.Errorf("Invalid origin federation key")
 	}
@@ -172,7 +185,6 @@ func (p *PartnerApi) FederationOperatorPartnerCreate(c echo.Context) error {
 		opRegReq.OrigFederationId,
 		opRegReq.DestFederationId,
 		opRegReq.OperatorId,
-		opRegReq.CountryCode,
 	)
 	if err != nil {
 		return err
@@ -250,7 +262,6 @@ func (p *PartnerApi) FederationOperatorPartnerUpdate(c echo.Context) error {
 		opConf.OrigFederationId,
 		opConf.DestFederationId,
 		opConf.Operator,
-		opConf.Country,
 	)
 	if err != nil {
 		return err
@@ -299,7 +310,6 @@ func (p *PartnerApi) FederationOperatorPartnerDelete(c echo.Context) error {
 		opFedReq.OrigFederationId,
 		opFedReq.DestFederationId,
 		opFedReq.Operator,
-		opFedReq.Country,
 	)
 	if err != nil {
 		return err
@@ -419,7 +429,6 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 		opRegReq.OrigFederationId,
 		opRegReq.DestFederationId,
 		opRegReq.Operator,
-		opRegReq.Country,
 	)
 	if err != nil {
 		return err
@@ -522,7 +531,6 @@ func (p *PartnerApi) FederationOperatorZoneDeRegister(c echo.Context) error {
 		opRegReq.OrigFederationId,
 		opRegReq.DestFederationId,
 		opRegReq.Operator,
-		opRegReq.Country,
 	)
 	if err != nil {
 		return err
@@ -589,7 +597,6 @@ func (p *PartnerApi) FederationOperatorZoneShare(c echo.Context) error {
 		opZoneShare.OrigFederationId,
 		opZoneShare.DestFederationId,
 		opZoneShare.Operator,
-		opZoneShare.Country,
 	)
 	if err != nil {
 		return err
@@ -643,7 +650,6 @@ func (p *PartnerApi) FederationOperatorZoneUnShare(c echo.Context) error {
 		opZone.OrigFederationId,
 		opZone.DestFederationId,
 		opZone.Operator,
-		opZone.Country,
 	)
 	if err != nil {
 		return err
@@ -687,4 +693,424 @@ func (p *PartnerApi) FederationOperatorZoneUnShare(c echo.Context) error {
 	}
 
 	return ormutil.SetReply(c, ormutil.Msg("Removed zone successfully"))
+}
+
+// Remote partner federator sends this request to us to onboarding application
+func (p *PartnerApi) FederationAppOnboarding(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	appObReq := AppOnboardingRequest{}
+	if err := c.Bind(&appObReq); err != nil {
+		return err
+	}
+
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation app onboarding", "request", appObReq)
+	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
+		c,
+		appObReq.LeadFederationId,
+		appObReq.PartnerFederationId,
+		appObReq.LeadOperatorId,
+	)
+	if err != nil {
+		return err
+	}
+
+	if !partnerFed.PartnerRoleShareZonesWithSelf {
+		return fmt.Errorf("No federation with partner federator (%s) to manage application",
+			partnerFed.FederationId)
+	}
+
+	rc := ormutil.RegionContext{
+		Region:    selfFed.Region,
+		SkipAuthz: true,
+		Database:  p.Database,
+	}
+
+	if appObReq.AppId == "" {
+		return fmt.Errorf("Missing application ID")
+	}
+
+	if len(appObReq.Specification.ComponentDetails) == 0 {
+		return fmt.Errorf("Missing component details")
+	}
+
+	if len(appObReq.Specification.ComponentDetails) > 1 {
+		return fmt.Errorf("Only one component detail is supported, more than one specified")
+	}
+
+	if len(appObReq.Specification.ComponentDetails[0].Components) == 0 {
+		return fmt.Errorf("Missing components")
+	}
+
+	if len(appObReq.Specification.ComponentDetails[0].Components) > 1 {
+		return fmt.Errorf("Only one component is supported, more than one specified")
+	}
+
+	if len(appObReq.Regions) == 0 {
+		return fmt.Errorf("Missing region")
+	}
+
+	if len(appObReq.Regions) > 1 {
+		return fmt.Errorf("Only one region is supported, more than one specified")
+	}
+
+	resRequirements := appObReq.Specification.ComponentDetails[0].Components[0].ComputeResourceRequirements
+	if resRequirements.ResourceProfileId == "" {
+		return fmt.Errorf("Missing compute resource requirements profile ID")
+	}
+
+	ports := []string{}
+	for _, intf := range appObReq.Specification.ComponentDetails[0].Components[0].ExposedInterfaces {
+		proto := strings.ToLower(intf.Protocol)
+		port := intf.Port
+		ports = append(ports, fmt.Sprintf("%s:%s", proto, port))
+	}
+
+	// Create App
+	appIn := edgeproto.App{
+		Key: edgeproto.AppKey{
+			Organization: "", // TODO
+			Name:         appObReq.AppId,
+			Version:      AllAppsVersion,
+		},
+		ImagePath:   appObReq.Specification.ComponentDetails[0].Components[0].ComponentSource.Path,
+		ImageType:   edgeproto.ImageType_IMAGE_TYPE_DOCKER,
+		Deployment:  cloudcommon.DeploymentTypeKubernetes,
+		AccessPorts: strings.Join(ports, ","),
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation creating app", "app", appIn)
+	_, err = ctrlclient.CreateAppObj(ctx, &rc, &appIn, p.ConnCache)
+	if err != nil {
+		return err
+	}
+
+	// Create ClusterInst
+	clusterInstIn := edgeproto.ClusterInst{
+		Key: edgeproto.ClusterInstKey{
+			ClusterKey: edgeproto.ClusterKey{
+				Name: appObReq.AppId,
+			},
+			CloudletKey: edgeproto.CloudletKey{
+				Name:         appObReq.Regions[0].Zone,
+				Organization: appObReq.Regions[0].Operator,
+			},
+			Organization: "", // TODO
+		},
+		Flavor: edgeproto.FlavorKey{
+			Name: resRequirements.ResourceProfileId,
+		},
+		IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
+		Deployment: cloudcommon.DeploymentTypeKubernetes,
+		NumNodes:   1, // Not specified, hence default to 1
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation creating clusterinst", "clusterinst", clusterInstIn)
+	err = ctrlclient.CreateClusterInstStream(
+		ctx, &rc, &clusterInstIn, p.ConnCache,
+		func(res *edgeproto.Result) error {
+			log.SpanLog(ctx, log.DebugLevelApi, "Federation clusterinst creation status", "clusterinst key", clusterInstIn.Key, "result", res)
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	appObResp := AppOnboardingResponse{
+		CreatedAt: ormapi.TimeToStr(time.Now()),
+		AppId:     appObReq.AppId,
+		RequestId: appObReq.RequestId,
+	}
+	return ormutil.SetReply(c, &appObResp)
+}
+
+// Remote partner federator sends this request to us to get application onboarding status
+func (p *PartnerApi) FederationAppOnboardingStatus(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	appObStatusReq := AppDeploymentStatusRequest{}
+	if err := c.Bind(&appObStatusReq); err != nil {
+		return err
+	}
+
+	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
+		c,
+		appObStatusReq.LeadFederationId,
+		appObStatusReq.PartnerFederationId,
+		appObStatusReq.Operator,
+	)
+	if err != nil {
+		return err
+	}
+
+	if !partnerFed.PartnerRoleShareZonesWithSelf {
+		return fmt.Errorf("No federation with partner federator (%s) to manage application",
+			partnerFed.FederationId)
+	}
+
+	rc := ormutil.RegionContext{
+		Region:    selfFed.Region,
+		SkipAuthz: true,
+		Database:  p.Database,
+	}
+
+	// TODO If app & clusterInst exists, then just return status as ONBOARDED, else return failed
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation show app", "app", appObStatusReq.AppId)
+	appKey := edgeproto.AppKey{
+		Organization: "", // TODO
+		Name:         appObStatusReq.AppId,
+		Version:      AllAppsVersion,
+	}
+	appFound := false
+	err = ctrlclient.ShowAppStream(
+		ctx, &rc, &edgeproto.App{Key: appKey}, p.ConnCache, nil,
+		func(app *edgeproto.App) error {
+			if app != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "Federation show app found", "app", app)
+				appFound = true
+			}
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation show clusterInst", "clusterInst", appObStatusReq.AppId)
+	clusterInstKey := edgeproto.ClusterInstKey{
+		ClusterKey: edgeproto.ClusterKey{
+			Name: appObStatusReq.AppId,
+		},
+		Organization: "", // TODO
+	}
+	clusterInstFound := false
+	err = ctrlclient.ShowClusterInstStream(
+		ctx, &rc, &edgeproto.ClusterInst{Key: clusterInstKey}, p.ConnCache, nil,
+		func(clusterInst *edgeproto.ClusterInst) error {
+			if clusterInst != nil {
+				clusterInstFound = true
+				log.SpanLog(ctx, log.DebugLevelApi, "Federation show clusterInst found", "clusterInst", clusterInst)
+			}
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	status := OnboardingState_FAILED
+	if appFound && clusterInstFound {
+		status = OnboardingState_ONBOARDED
+	}
+
+	appObStatusResp := AppOnboardingStatusResponse{
+		RequestId:      appObStatusReq.RequestId,
+		LeadOperatorId: appObStatusReq.Operator,
+		FederationId:   appObStatusReq.LeadFederationId,
+		AppId:          appObStatusReq.AppId,
+		OnboardStatus: []ZoneOnboardStatus{
+			ZoneOnboardStatus{
+				ZoneId: "",
+				Status: status,
+			},
+		},
+	}
+	return ormutil.SetReply(c, &appObStatusResp)
+}
+
+// Remote partner federator sends this request to us to deboard application
+func (p *PartnerApi) FederationAppDeboarding(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	appDeboardReq := AppDeboardingRequest{}
+	if err := c.Bind(&appDeboardReq); err != nil {
+		return err
+	}
+
+	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
+		c,
+		appDeboardReq.LeadFederationId,
+		appDeboardReq.PartnerFederationId,
+		appDeboardReq.LeadOperatorId,
+	)
+	if err != nil {
+		return err
+	}
+
+	if !partnerFed.PartnerRoleShareZonesWithSelf {
+		return fmt.Errorf("No federation with partner federator (%s) to manage application",
+			partnerFed.FederationId)
+	}
+
+	rc := ormutil.RegionContext{
+		Region:    selfFed.Region,
+		SkipAuthz: true,
+		Database:  p.Database,
+	}
+
+	// Fetch zone details
+	db := p.loggedDB(ctx)
+	lookup := ormapi.FederatorZone{
+		ZoneId: appDeboardReq.Zone,
+	}
+	zoneInfo := ormapi.FederatorZone{}
+	res := db.Where(&lookup).First(&zoneInfo)
+	if !res.RecordNotFound() && err != nil {
+		return ormutil.DbErr(err)
+	}
+
+	// Delete ClusterInst
+	clusterInstKey := edgeproto.ClusterInstKey{
+		ClusterKey: edgeproto.ClusterKey{
+			Name: appDeboardReq.AppId,
+		},
+		CloudletKey: edgeproto.CloudletKey{
+			Name:         appDeboardReq.Zone,
+			Organization: zoneInfo.OperatorId,
+		},
+		Organization: "", // TODO
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation delete clusterInst", "clusterInst", clusterInstKey)
+	err = ctrlclient.DeleteClusterInstStream(
+		ctx, &rc, &edgeproto.ClusterInst{Key: clusterInstKey}, p.ConnCache,
+		func(res *edgeproto.Result) error {
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	// Delete App
+	appKey := edgeproto.AppKey{
+		Organization: "", // TODO
+		Name:         appDeboardReq.AppId,
+		Version:      AllAppsVersion,
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation delete app", "app", appKey)
+	_, err = ctrlclient.DeleteAppObj(ctx, &rc, &edgeproto.App{Key: appKey}, p.ConnCache)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *PartnerApi) FederationAppProvision(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	appProvReq := AppProvisionRequest{}
+	if err := c.Bind(&appProvReq); err != nil {
+		return err
+	}
+
+	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
+		c,
+		appProvReq.LeadFederationId,
+		appProvReq.PartnerFederationId,
+		appProvReq.AppProvData.Region.Operator,
+	)
+	if err != nil {
+		return err
+	}
+
+	if !partnerFed.PartnerRoleShareZonesWithSelf {
+		return fmt.Errorf("No federation with partner federator (%s) to manage application",
+			partnerFed.FederationId)
+	}
+
+	rc := ormutil.RegionContext{
+		Region:    selfFed.Region,
+		SkipAuthz: true,
+		Database:  p.Database,
+	}
+
+	// Create AppInst
+	appInstIn := edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			AppKey: edgeproto.AppKey{
+				Organization: "", // TODO
+				Name:         appProvReq.AppProvData.AppId,
+				Version:      AllAppsVersion,
+			},
+			ClusterInstKey: edgeproto.VirtualClusterInstKey{
+				ClusterKey: edgeproto.ClusterKey{
+					Name: appProvReq.AppProvData.AppId,
+				},
+				CloudletKey: edgeproto.CloudletKey{
+					Name:         appProvReq.AppProvData.Region.Zone,
+					Organization: appProvReq.AppProvData.Region.Operator,
+				},
+				Organization: "", // TODO
+			},
+		},
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation create appinst", "appInst", appInstIn)
+	err = ctrlclient.CreateAppInstStream(
+		ctx, &rc, &appInstIn, p.ConnCache,
+		func(res *edgeproto.Result) error {
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *PartnerApi) FederationAppDeprovision(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	appDeprovReq := AppDeprovisionRequest{}
+	if err := c.Bind(&appDeprovReq); err != nil {
+		return err
+	}
+
+	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
+		c,
+		appDeprovReq.LeadFederationId,
+		appDeprovReq.PartnerFederationId,
+		appDeprovReq.AppDeprovData.Region.Operator,
+	)
+	if err != nil {
+		return err
+	}
+
+	if !partnerFed.PartnerRoleShareZonesWithSelf {
+		return fmt.Errorf("No federation with partner federator (%s) to manage application",
+			partnerFed.FederationId)
+	}
+
+	rc := ormutil.RegionContext{
+		Region:    selfFed.Region,
+		SkipAuthz: true,
+		Database:  p.Database,
+	}
+
+	// Delete AppInst
+	appInstIn := edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			AppKey: edgeproto.AppKey{
+				Organization: "", // TODO
+				Name:         appDeprovReq.AppDeprovData.AppId,
+				Version:      AllAppsVersion,
+			},
+			ClusterInstKey: edgeproto.VirtualClusterInstKey{
+				ClusterKey: edgeproto.ClusterKey{
+					Name: appDeprovReq.AppDeprovData.AppId,
+				},
+				CloudletKey: edgeproto.CloudletKey{
+					Name:         appDeprovReq.AppDeprovData.Region.Zone,
+					Organization: appDeprovReq.AppDeprovData.Region.Operator,
+				},
+				Organization: "", // TODO
+			},
+		},
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation delete appinst", "appInst", appInstIn)
+	err = ctrlclient.DeleteAppInstStream(
+		ctx, &rc, &appInstIn, p.ConnCache,
+		func(res *edgeproto.Result) error {
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
