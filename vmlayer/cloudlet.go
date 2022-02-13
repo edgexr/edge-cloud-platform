@@ -66,9 +66,9 @@ func (v *VMPlatform) GetPlatformNodes(cloudlet *edgeproto.Cloudlet) []chefmgmt.C
 		for nn := uint32(1); nn <= chefmgmt.K8sWorkerNodeCount; nn++ {
 			workerNode := fmt.Sprintf("%s-node-%d", platformVMName, nn)
 			if nn == 1 {
-				nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: workerNode, NodeType: cloudcommon.VMTypePlatformClusterPrimaryNode, Policy: chefmgmt.ChefPolicyBase})
+				nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: workerNode, NodeType: cloudcommon.VMTypePlatformClusterPrimaryNode, Policy: chefmgmt.ChefPolicyK8sWorker})
 			} else {
-				nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: workerNode, NodeType: cloudcommon.VMTypePlatformClusterSecondaryNode, Policy: chefmgmt.ChefPolicyBase})
+				nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: workerNode, NodeType: cloudcommon.VMTypePlatformClusterSecondaryNode, Policy: chefmgmt.ChefPolicyK8sWorker})
 			}
 		}
 	}
@@ -297,10 +297,6 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		return cloudletResourcesCreated, fmt.Errorf("Chef client is not initialized")
 	}
 
-	chefPolicy := chefmgmt.ChefPolicyDocker
-	if cloudlet.Deployment == cloudcommon.DeploymentTypeKubernetes {
-		chefPolicy = chefmgmt.ChefPolicyK8s
-	}
 	cloudlet.ChefClientKey = make(map[string]string)
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
 		for nn, node := range nodes {
@@ -310,7 +306,7 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 			}
 			clientName := v.GetChefClientName(node.NodeName)
 			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Creating chef client %s with cloudlet attributes", clientName))
-			chefParams := v.GetServerChefParams(clientName, "", chefPolicy, chefAttributes)
+			chefParams := v.GetServerChefParams(clientName, "", node.Policy, chefAttributes)
 			clientKey, err := chefmgmt.ChefClientCreate(ctx, chefClient, chefParams)
 			if err != nil {
 				return cloudletResourcesCreated, err
@@ -658,7 +654,7 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 		return nil, err
 	}
 	nodes := v.GetPlatformNodes(cloudlet)
-	if len(nodes) == 0{
+	if len(nodes) == 0 {
 		return nil, fmt.Errorf("no platform nodes")
 	}
 	chefAttributes, err := chefmgmt.GetChefPlatformAttributes(ctx, cloudlet, pfConfig, &nodes[0], chefApi, nodes)
@@ -703,12 +699,8 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 		for _, node := range nodes {
 			clientName := v.GetChefClientName(node.NodeName)
 			masterAttributes := chefAttributes
-			policy := chefmgmt.ChefPolicyK8s
-			if node.NodeType != cloudcommon.VMTypePlatformClusterMaster {
-				policy = chefmgmt.ChefPolicyBase
-			}
 			masterAttributes["tags"] = chefmgmt.GetChefCloudletTags(cloudlet, pfConfig, node.NodeType)
-			chefParams := v.GetServerChefParams(clientName, cloudlet.ChefClientKey[clientName], policy, chefAttributes)
+			chefParams := v.GetServerChefParams(clientName, cloudlet.ChefClientKey[clientName], node.Policy, chefAttributes)
 			ak := pfConfig.CrmAccessPrivateKey
 			if node.NodeType == cloudcommon.VMTypePlatformClusterSecondaryNode {
 				ak = pfConfig.SecondaryCrmAccessPrivateKey
