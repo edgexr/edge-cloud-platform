@@ -3,6 +3,7 @@ package federation
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -23,12 +24,6 @@ import (
 
 const (
 	AppDeploymentTimeout = 20 * time.Minute
-
-	AppArtifactIdKey        = "APP_ARTIFACT_ID"
-	AppResourceProfileIdKey = "APP_RESOURCE_PROFILE_ID"
-
-	DefaultAppArtifactId        = "ART-0001"
-	DefaultAppResourceProfileId = "c5.2xlarge"
 )
 
 // NOTE: This object is shared by all FRM-based cloudlets and hence it can't
@@ -46,7 +41,10 @@ func (f *FederationPlatform) GetVersionProperties() map[string]string {
 
 // Get platform features
 func (f *FederationPlatform) GetFeatures() *platform.Features {
-	return &platform.Features{}
+	return &platform.Features{
+		SupportsKubernetesOnly:        true,
+		KubernetesRequiresWorkerNodes: true,
+	}
 }
 
 // Get federation config for cloudlet
@@ -124,6 +122,76 @@ func (f *FederationPlatform) GetClusterInfraResources(ctx context.Context, clust
 	return &edgeproto.InfraResources{}, nil
 }
 
+// TODO: Following will be removed once the partner operator
+//       does the required changes
+// XXX === Start of changes ===
+const (
+	AppArtifactIdKey        = "APP_ARTIFACT_ID"
+	AppResourceProfileIdKey = "APP_RESOURCE_PROFILE_ID"
+	AppManagementAPIVersion = "APP_MANAGEMENT_API_VERSION"
+
+	DefaultAppArtifactId           = "ART-0001"
+	DefaultAppResourceProfileId    = "c5.2xlarge"
+	DefaultAppManagementAPIVersion = "v2"
+)
+
+// Federation config for App deployment
+type AppFederationConfig struct {
+	ArtifactId        string
+	ResourceProfileId string
+	ClientId          string
+}
+
+func GetAppFederationConfigs(ctx context.Context, appId string, fedAddr *string, cfgs []*edgeproto.ConfigFile) (*AppFederationConfig, error) {
+	artifactId := DefaultAppArtifactId
+	resourceProfileId := DefaultAppResourceProfileId
+	appMgmtApiVers := DefaultAppManagementAPIVersion
+	var appVars []v1.EnvVar
+	for _, v := range cfgs {
+		if v.Kind == edgeproto.AppConfigEnvYaml {
+			err := yaml.Unmarshal([]byte(v.Config), &appVars)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "cannot unmarshal app config env var",
+					"appId", appId, "kind", v.Kind, "config", v.Config, "error", err)
+				return nil, fmt.Errorf("cannot unmarshal app config env vars: %s,  %v", v.Config, err)
+			}
+			for _, appVar := range appVars {
+				switch appVar.Name {
+				case AppArtifactIdKey:
+					artifactId = appVar.Value
+				case AppResourceProfileIdKey:
+					resourceProfileId = appVar.Value
+				case AppManagementAPIVersion:
+					appMgmtApiVers = appVar.Value
+				}
+			}
+		}
+	}
+
+	if appMgmtApiVers != "" {
+		urlParts, err := url.Parse(*fedAddr)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to parse federation addr", "addr", *fedAddr, "err", err)
+			// ignore
+		} else {
+			urlParts.Path = "/" + appMgmtApiVers
+			*fedAddr = urlParts.String()
+			log.SpanLog(ctx, log.DebugLevelInfra, "new app mgmt federation addr", "newAddr", *fedAddr)
+		}
+	}
+
+	outCfg := AppFederationConfig{
+		ArtifactId:        artifactId,
+		ResourceProfileId: resourceProfileId,
+		ClientId:          "dummy",
+	}
+
+	log.SpanLog(ctx, log.DebugLevelInfra, "app federation config", "appId", appId, "config", outCfg, "fedAddr", *fedAddr)
+	return &outCfg, nil
+}
+
+// XXX === End of changes ===
+
 // Create an appInst on a cluster
 func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	if app.Deployment != cloudcommon.DeploymentTypeKubernetes {
@@ -139,35 +207,15 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 		Zone:     appInst.Key.ClusterInstKey.CloudletKey.Name,
 		Operator: appInst.Key.ClusterInstKey.CloudletKey.FederatedOrganization,
 	}
-	appId := appInst.UniqueId
+	appId := appInst.DnsLabel
 
 	// TODO: These are hardcoded for now as the partner operator has not implemented
 	//       the required functionality for this. For customization, fetch config from
 	//       app.Configs
-	artifactId := DefaultAppArtifactId
-	resourceProfileId := DefaultAppResourceProfileId
-	repo := "docker"
-	clientId := "dummy"
-	var appVars []v1.EnvVar
-	for _, v := range app.Configs {
-		if v.Kind == edgeproto.AppConfigEnvYaml {
-			err = yaml.Unmarshal([]byte(v.Config), &appVars)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "cannot unmarshal app config env var",
-					"appId", appId, "kind", v.Kind, "config", v.Config, "error", err)
-				return fmt.Errorf("cannot unmarshal app config env vars: %s,  %v", v.Config, err)
-			}
-			for _, appVar := range appVars {
-				switch appVar.Name {
-				case AppArtifactIdKey:
-					artifactId = appVar.Value
-				case AppResourceProfileIdKey:
-					resourceProfileId = appVar.Value
-				}
-			}
-		}
+	appCfg, err := GetAppFederationConfigs(ctx, appId, &fedConfig.PartnerFederationAddr, app.Configs)
+	if err != nil {
+		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "using app config", "appId", appId, "artifactId", artifactId, "resourceProfileId", resourceProfileId)
 
 	exposedIntfs := []federation.AppExposedInterface{}
 	for _, port := range appInst.MappedPorts {
@@ -200,7 +248,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 		PartnerFederationId: fedConfig.PartnerFederationId,
 		AppId:               appId,
 		AppType:             federation.AppType_SERVER,
-		ArtifactId:          artifactId,
+		ArtifactId:          appCfg.ArtifactId,
 		AppName:             app.Key.Name,
 		Provisioning:        federation.AppProvisioningState_ENABLED,
 		Regions:             []federation.AppRegion{appRegion},
@@ -211,13 +259,13 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 						federation.AppComponent{
 							VirtualizationMode: federation.VirtualizationType_KUBERNETES,
 							ComponentSource: federation.AppComponentSource{
-								Repo:        repo,
+								Repo:        cloudcommon.DeploymentTypeDocker,
 								CodeArchive: "true",
 								Path:        app.ImagePath,
 							},
 							ExposedInterfaces: exposedIntfs,
 							ComputeResourceRequirements: federation.AppComputeResourceRequirement{
-								ResourceProfileId: resourceProfileId,
+								ResourceProfileId: appCfg.ResourceProfileId,
 							},
 						},
 					},
@@ -299,7 +347,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 			AppId:    appId,
 			Version:  app.Key.Version,
 			Region:   appRegion,
-			ClientId: clientId,
+			ClientId: appCfg.ClientId,
 		},
 	}
 	err = f.fedClient.SendRequest(ctx, "POST",
@@ -311,7 +359,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	}
 
 	// Wait for app provision status to be ready
-	updateCallback(edgeproto.UpdateTask, "Wait for application to be provisioned")
+	updateCallback(edgeproto.UpdateTask, "Waiting for application to be provisioned")
 	start = time.Now()
 	for {
 		time.Sleep(10 * time.Second)
@@ -377,11 +425,19 @@ func (f *FederationPlatform) DeleteAppInst(ctx context.Context, clusterInst *edg
 		return err
 	}
 	revision := log.SpanTraceID(ctx)
-	appId := appInst.UniqueId
+	appId := appInst.DnsLabel
 	appRegion := federation.AppRegion{
 		Country:  fedConfig.ZoneCountryCode,
 		Zone:     appInst.Key.ClusterInstKey.CloudletKey.Name,
 		Operator: appInst.Key.ClusterInstKey.CloudletKey.FederatedOrganization,
+	}
+
+	// TODO: These are hardcoded for now as the partner operator has not implemented
+	//       the required functionality for this. For customization, fetch config from
+	//       app.Configs
+	_, err = GetAppFederationConfigs(ctx, appId, &fedConfig.PartnerFederationAddr, app.Configs)
+	if err != nil {
+		return err
 	}
 
 	// App deprovisioning
