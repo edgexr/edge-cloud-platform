@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -13,16 +14,32 @@ import (
 	"github.com/go-openapi/spec"
 	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/ormctl"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	yaml "github.com/mobiledgex/yaml/v2"
 )
 
+var customDescriptions = flag.String("custom", "", "custom data in yaml file")
+
 func main() {
-	fileName := os.Args[1]
+	flag.Parse()
+	args := flag.Args()
+	if len(args) < 1 {
+		log.Fatal("Please specify swagger.json filename")
+	}
+	fileName := args[0]
 	doc, err := loads.Spec(fileName)
 	if err != nil {
 		log.Fatal(err)
 	}
+	// read custom descriptions
+	custom, err := readCustom(*customDescriptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// validate and modify data
 	v := NewValidator()
+	v.custom = custom
 	v.Validate(doc)
+	// write out data
 	out, err := json.MarshalIndent(v.sw, "", "  ")
 	if err != nil {
 		log.Fatal(err)
@@ -38,6 +55,7 @@ type Validator struct {
 	descMissing map[string]struct{}
 	apiCommands map[string]*ormctl.ApiCommand // key is path
 	sw          *spec.Swagger
+	custom      *Custom
 }
 
 func NewValidator() *Validator {
@@ -112,6 +130,13 @@ func (s *Validator) validateOperation(api *ormctl.ApiCommand, noconfig, configLC
 	if op == nil {
 		return
 	}
+	if s.custom != nil && s.custom.Paths != nil {
+		if path, ok := s.custom.Paths[api.Path]; ok {
+			if path.Description != "" {
+				op.Description = path.Description
+			}
+		}
+	}
 	if op.Description == "" && op.Summary == "" {
 		s.addOperationDescMissing(api.Path, opName)
 	}
@@ -137,12 +162,15 @@ func (s *Validator) validateSchema(api *ormctl.ApiCommand, noconfig, configLC ma
 		// remove noconfig fields from API spec
 		hierName := strings.Join(append(parents, name), ".")
 		if _, found := noconfig[hierName]; found {
+			fmt.Printf("Deleting noconfig field %s.%s\n", api.Name, hierName)
 			delete(schema.Properties, propName)
 			continue
 		}
+		s.validateSchema(api, noconfig, configLC, append(parents, name), &propSchema)
 		if len(propSchema.Properties) == 0 {
 			// remove field if not required or optional arg
 			if _, found := configLC[strings.ToLower(hierName)]; !found {
+				fmt.Printf("Deleting unspecified field %s.%s\n", api.Name, hierName)
 				delete(schema.Properties, propName)
 				continue
 			}
@@ -151,7 +179,6 @@ func (s *Validator) validateSchema(api *ormctl.ApiCommand, noconfig, configLC ma
 		if propSchema.Description == "" {
 			s.addSchemaDescMissing(api, parents, name)
 		}
-		s.validateSchema(api, noconfig, configLC, append(parents, name), &propSchema)
 		// in case propSchema was modified, add it back
 		schema.Properties[propName] = propSchema
 	}
@@ -184,4 +211,28 @@ func (s *Validator) PrintFailures() {
 			fmt.Println("  " + missing)
 		}
 	}
+}
+
+type Custom struct {
+	Paths map[string]Path
+}
+
+type Path struct {
+	Description string
+}
+
+func readCustom(fileName string) (*Custom, error) {
+	custom := Custom{}
+	if fileName == "" {
+		return &custom, nil
+	}
+	out, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return nil, err
+	}
+	err = yaml.Unmarshal(out, &custom)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to unmarshal custom yaml from %s, %s", fileName, err)
+	}
+	return &custom, nil
 }

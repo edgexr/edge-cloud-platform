@@ -353,13 +353,10 @@ type UserLogin struct {
 	// required: true
 	Password string `form:"password" json:"password"`
 	// Temporary one-time password if 2-factor authentication is enabled
-	// read only: true
 	TOTP string `form:"totp" json:"totp"`
 	// API key ID if logging in using API key
-	// read only: true
 	ApiKeyId string `form:"apikeyid" json:"apikeyid"`
 	// API key if logging in using API key
-	// read only: true
 	ApiKey string `form:"apikey" json:"apikey"`
 }
 

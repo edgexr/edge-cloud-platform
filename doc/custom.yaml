@@ -1,0 +1,8 @@
+paths:
+  /login:
+    description: |
+      Log in to the MC to acquire a temporary bearer token for access to other APIs.
+      Authentication can be via a username and password, or an API key ID and API key if created. If two-factor authentication (2FA) is enabled on the account, an additional temporary one-time password (TOTP) from a mobile authenticator will also be required.
+  /dummy-path:
+    description: |
+      Custom dummy description using Github flavored markdown.
