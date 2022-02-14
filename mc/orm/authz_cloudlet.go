@@ -261,6 +261,9 @@ func authzCreateCloudlet(ctx context.Context, region, username string, obj *edge
 		}
 		ops = append(ops, withReferenceOrg(org, OrgTypeOperator))
 	}
+	if obj.SingleKubernetesClusterOwner != "" {
+		ops = append(ops, withReferenceOrg(obj.SingleKubernetesClusterOwner, OrgTypeAny))
+	}
 	if obj.PlatformType != edgeproto.PlatformType_PLATFORM_TYPE_EDGEBOX {
 		ops = append(ops, withNoEdgeboxOnly())
 	}

@@ -24,6 +24,7 @@ import (
 var OrgTypeAdmin = "admin"
 var OrgTypeDeveloper = "developer"
 var OrgTypeOperator = "operator"
+var OrgTypeAny = ""
 
 type UpdateType int
 
