@@ -1,5 +1,5 @@
 provider "azurerm" {
-  version = "~> 2.39.0"
+  version = "~> 2.96"
 
   client_id       = var.azure_terraform_service_principal_id
   client_secret   = var.azure_terraform_service_principal_secret
@@ -8,7 +8,7 @@ provider "azurerm" {
 }
 
 provider "google" {
-  version = "=2.5.1"
+  version = "~> 4.10"
 
   project = var.gcp_project
   zone    = var.gcp_zone
@@ -135,4 +135,25 @@ resource "google_compute_firewall" "iap_ssh" {
 
   target_tags   = ["iap-ssh"]
   source_ranges = ["35.235.240.0/20"]
+}
+
+# IPs allowed direct SSH access to VMs
+resource "google_compute_firewall" "restricted_ssh_overrides" {
+  name        = "restricted-ssh-overrides"
+  description = "List of IPs to allow direct SSH access to VMs with restricted SSH access. Primarily used for Ansible deployments."
+  network     = "default"
+  priority    = 998
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  target_tags   = ["restricted-ssh-overrides"]
+  source_ranges = [
+    "35.203.128.221/32",  # nightly.mobiledgex.net
+    "40.122.108.233/32",  # jenkinsslave1
+    "82.217.131.26/32",   # venky
+    "47.186.99.201/32",   # leon
+  ]
 }
