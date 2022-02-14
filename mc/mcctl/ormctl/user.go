@@ -143,7 +143,8 @@ func init() {
 	cmd = &ApiCommand{
 		Name:         "Login",
 		Short:        "Login using account credentials",
-		OptionalArgs: "name totp apikeyid apikey",
+		OptionalArgs: "name password totp apikeyid apikey",
+		AliasArgs:    "name=username",
 		Comments:     LoginComments,
 		ReqData:      &ormapi.UserLogin{},
 		ReplyData:    &map[string]interface{}{},
@@ -154,6 +155,7 @@ func init() {
 
 var LoginComments = map[string]string{
 	"name":     "User's name",
+	"password": "User's password",
 	"totp":     "Temporary one-time password, if 2-factor auth is enabled",
 	"apikeyid": "API key ID if authenticating via API key instead of user name",
 	"apikey":   "API key value if authenticating via API key instead of user name",

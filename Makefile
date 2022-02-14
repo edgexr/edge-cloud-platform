@@ -69,7 +69,7 @@ doc:
 	make -f proto.make
 	go install ./doc/swaggerfix
 	swagger generate spec -i ./doc/init.json -o ./doc/apidocs.swagger.json --scan-models
-	swaggerfix ./doc/apidocs.swagger.json
+	swaggerfix --custom ./doc/custom.yaml ./doc/apidocs.swagger.json
 
 doc-local-server:
 	docker run --rm -p 1081:80 \
