@@ -719,6 +719,9 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	badPermTestCloudletAllianceOrg(t, mcClient, uri, tokenDev, ctrl.Region, org3)
 	badPermTestCloudletAllianceOrg(t, mcClient, uri, tokenDev2, ctrl.Region, org3)
 
+	// test for non-existing reference orgs
+	badPermTestReferenceOrg(t, mcClient, uri, tokenOper, ctrl.Region, org3)
+
 	// test operators can modify their own objs but not each other's
 	badPermTestCloudlet(t, mcClient, uri, tokenOper, ctrl.Region, org4, nil)
 	badPermTestCloudlet(t, mcClient, uri, tokenOper2, ctrl.Region, org3, nil)
@@ -1833,6 +1836,30 @@ func badPermTestNonExistent(t *testing.T, mcClient *mctestclient.Client, uri, to
 	badPermCreateTrustPolicy(t, mcClient, uri, token, region, neOrg)
 	badPermCreateCloudletPool(t, mcClient, uri, token, region, neOrg)
 	badPermCreateResTagTable(t, mcClient, uri, token, region, neOrg)
+}
+
+// Test that we get org not found error for referenced orgs
+func badPermTestReferenceOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, region, operOrg string) {
+	regCloudlet := ormapi.RegionCloudlet{
+		Region: region,
+		Cloudlet: edgeproto.Cloudlet{
+			Key: edgeproto.CloudletKey{
+				Name:         "clx",
+				Organization: operOrg,
+			},
+			PlatformType: edgeproto.PlatformType_PLATFORM_TYPE_FAKE,
+		},
+	}
+	regCloudlet.Cloudlet.AllianceOrgs = []string{"no-such-org"}
+	_, _, err := mcClient.CreateCloudlet(uri, token, &regCloudlet)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Org no-such-org not found")
+
+	regCloudlet.Cloudlet.AllianceOrgs = nil
+	regCloudlet.Cloudlet.SingleKubernetesClusterOwner = "no-such-org"
+	_, _, err = mcClient.CreateCloudlet(uri, token, &regCloudlet)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Org no-such-org not found")
 }
 
 func badPermTestAutoProvPolicy400(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicy)) {

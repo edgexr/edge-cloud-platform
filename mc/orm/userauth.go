@@ -261,7 +261,7 @@ func authorized(ctx context.Context, sub, org, obj, act string, ops ...authOp) e
 // If not present, hides not found error with Forbidden to prevent
 // fishing for org names.
 func checkRequiresOrg(ctx context.Context, org, resource string, admin, noEdgeboxOnly bool) error {
-	orgType := ""
+	orgType := OrgTypeAny
 	if _, ok := DeveloperResourcesMap[resource]; ok {
 		orgType = OrgTypeDeveloper
 	} else if _, ok := OperatorResourcesMap[resource]; ok {
@@ -309,7 +309,7 @@ func checkReferenceOrg(ctx context.Context, org, orgType string) (*ormapi.Organi
 		return lookup, fmt.Errorf("Operation not allowed for org %s with delete in progress", org)
 	}
 	// see if resource is only for a specific type of org
-	if orgType != "" && lookup.Type != orgType {
+	if orgType != OrgTypeAny && lookup.Type != orgType {
 		return lookup, fmt.Errorf("Operation only allowed for organizations of type %s", orgType)
 	}
 	return lookup, nil
