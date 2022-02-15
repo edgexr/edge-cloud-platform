@@ -2959,13 +2959,12 @@ type User struct {
 
 // Used to test addition of new DnsRegion unique not null column
 type Controller struct {
-	Region        string    `gorm:"primary_key"`
-	Address       string    `gorm:"unique;not null"`
-	NotifyAddr    string    `gorm:"type:text"`
-	InfluxDB      string    `gorm:"type:text"`
-	ThanosMetrics string    `gorm:"type:text"`
-	CreatedAt     time.Time `json:",omitempty"`
-	UpdatedAt     time.Time `json:",omitempty"`
+	Region     string    `gorm:"primary_key"`
+	Address    string    `gorm:"unique;not null"`
+	NotifyAddr string    `gorm:"type:text"`
+	InfluxDB   string    `gorm:"type:text"`
+	CreatedAt  time.Time `json:",omitempty"`
+	UpdatedAt  time.Time `json:",omitempty"`
 }
 
 func TestUpgrade(t *testing.T) {

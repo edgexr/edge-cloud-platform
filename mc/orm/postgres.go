@@ -444,6 +444,7 @@ func upgradeCustom(ctx context.Context, db *gorm.DB) error {
 	if res.Error != nil {
 		return res.Error
 	}
+
 	// change value to unique, desired values
 	ctrls := []ormapi.Controller{}
 	err := db.Find(&ctrls).Error
@@ -464,9 +465,10 @@ func upgradeCustom(ctx context.Context, db *gorm.DB) error {
 				if conflict, found := dnsRegions[ctrl.DnsRegion]; found {
 					return fmt.Errorf("dns region name conflict, regions %s and %s both dns sanitizes to %s, please fix region names", conflict.Region, ctrl.Region, ctrl.DnsRegion)
 				}
-				err = db.Save(&ctrl).Error
-				if err != nil {
-					return err
+				cmd := fmt.Sprintf(`UPDATE "controllers" SET "dns_region" = '%s' WHERE "region" = '%s'`, ctrl.DnsRegion, ctrl.Region)
+				res := db.Exec(cmd)
+				if res.Error != nil {
+					return res.Error
 				}
 			}
 			dnsRegions[ctrl.DnsRegion] = &ctrl
