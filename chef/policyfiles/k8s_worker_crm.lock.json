@@ -1,11 +1,12 @@
 {
-  "revision_id": "4dd70876a9fb39a82d9d8f1a815a049c65fd4c0330c28f86274b995c599e7351",
+  "revision_id": "f8f662383c872ea207ebb90b09647a0281b0f9410812bfac5b6d286366403e59",
   "name": "k8s_worker_crm",
   "run_list": [
     "recipe[chef_client_updater::default]",
     "recipe[runstatus_handler::default]",
     "recipe[setup_infra::default]",
     "recipe[preflight_crm_checks::default]",
+    "recipe[setup_services::k8s-worker]",
     "recipe[chef_client_updater::default]",
     "recipe[set_security_policies::default]"
   ],
@@ -22,6 +23,17 @@
       "source_options": {
         "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
         "version": "3.11.0"
+      }
+    },
+    "docker": {
+      "version": "7.7.0",
+      "identifier": "92b1f2d7956d1e2b98474380795df3e7545f3758",
+      "dotted_decimal_identifier": "41291003156851998.12270855841151325.268174878521176",
+      "cache_key": "docker-7.7.0",
+      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "version": "7.7.0"
       }
     },
     "preflight_crm_checks": {
@@ -67,6 +79,17 @@
         "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
         "version": "1.0.0"
       }
+    },
+    "setup_services": {
+      "version": "1.3.4",
+      "identifier": "f8186f427a7cb4e7afcb4cb1f208c014fd84dda9",
+      "dotted_decimal_identifier": "69832660360002740.65214007320113672.211196385222057",
+      "cache_key": "setup_services-1.3.4",
+      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "version": "1.3.4"
+      }
     }
   },
   "default_attributes": {
@@ -84,6 +107,10 @@
         "= 3.11.0"
       ],
       [
+        "docker",
+        "= 7.7.0"
+      ],
+      [
         "preflight_crm_checks",
         "= 1.0.0"
       ],
@@ -98,10 +125,17 @@
       [
         "setup_infra",
         "= 1.0.0"
+      ],
+      [
+        "setup_services",
+        "= 1.3.4"
       ]
     ],
     "dependencies": {
       "chef_client_updater (3.11.0)": [
+
+      ],
+      "docker (7.7.0)": [
 
       ],
       "preflight_crm_checks (1.0.0)": [
@@ -115,6 +149,12 @@
       ],
       "setup_infra (1.0.0)": [
 
+      ],
+      "setup_services (1.3.4)": [
+        [
+          "docker",
+          ">= 0.0.0"
+        ]
       ]
     }
   }
