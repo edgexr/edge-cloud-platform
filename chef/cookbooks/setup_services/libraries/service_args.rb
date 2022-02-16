@@ -100,9 +100,13 @@ class Chef
       crmargs
     end
 
-    def get_shep_args
+    def get_shep_args(harole)
       shepargs = shepherd_cmd.split(' ')
       shepargs.shift()
+      if harole != ''
+        shepargs.append('--HARole')
+        shepargs.append(harole)
+      end
       shepargs
     end
 
@@ -120,26 +124,31 @@ class Chef
                                      cache_vol: { name: 'cache-vol', mountPath: '/root/crm_cache' } },
         },
         shepherd: { cmd: 'shepherd',
-                    cmdargs: get_shep_args,
+                    cmdargs: get_shep_args(harole),
                     env: node['shepherd']['env'],
                     image: node['edgeCloudImage'] + ':' + node['edgeCloudVersion'],
-                    volumeMounts: { accesskey_vol: { name: 'accesskey-vol', mountPath: '/root/accesskey' } },
+                    volumeMounts: { accesskey_vol: { name: 'accesskey-vol', mountPath: '/root/accesskey' },
+                                    prom_cfg_vol: { name: 'prom-cfg-vol', mountPath: '/etc/prometheus' },
+                                    prom_tmp_vol: { name: 'prom-tmp-vol', mountPath: '/tmp' } },
         },
         cloudletprometheus: { cmdargs: get_prom_args,
                               env: node['cloudletPrometheus']['env'],
                               image: 'docker.mobiledgex.net/mobiledgex/mobiledgex_public/' + node['prometheusImage'] + ':' + node['prometheusVersion'],
-                              volumeMounts: { prom_vol: { name: 'prom-config', mountPath: '/etc/prometheus' } },
+                              volumeMounts: { prom_cfg_vol: { name: 'prom-cfg-vol', mountPath: '/etc/prometheus' },
+                                              prom_tmp_vol: { name: 'prom-tmp-vol', mountPath: '/tmp' } },
         },
       }
     end
 
     def get_hostvols_vars
       { accesskey_vol: { name: 'accesskey-vol', hostPath: '/root/accesskey' },
-        cache_vol:     { name: 'cache-vol',     hostPath: '/root/crm_cache' } }
+        cache_vol:     { name: 'cache-vol',     hostPath: '/root/crm_cache' },
+        prom_cfg_vol:     { name: 'prom-cfg-vol',     hostPath: '/home/ubuntu/prometheus-vols/cfg' },
+        prom_tmp_vol:     { name: 'prom-tmp-vol',     hostPath: '/home/ubuntu/prometheus-vols/tmp' } }
     end
 
     def get_configmap_vars
-      { prom_config: { name: 'prom-config', configMap: 'prom-cm', key: 'prometheus.yml', path: 'prometheus.yml' } }
+      {}
     end
   end
 end

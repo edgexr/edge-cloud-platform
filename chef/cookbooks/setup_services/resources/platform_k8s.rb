@@ -6,7 +6,7 @@ action :prep_cluster do
   execute("wait-k8s-cluster, looking for #{node['k8sNodeCount']} nodes") do
     action :run
     retries 30
-    retry_delay 10
+    retry_delay 15
     command "kubectl get nodes --kubeconfig=/home/ubuntu/.kube/config| grep ' Ready' | wc -l | grep -w #{node['k8sNodeCount']}"
     returns 0
   end
@@ -98,23 +98,6 @@ action :deploy_simplex_platform do
 end # deploy-simplex-platform
 
 action :deploy_ha_platform do
-  cookbook_file 'home/ubuntu/prometheus.yml' do
-    source 'prometheus.yml'
-    owner 'ubuntu'
-    group 'ubuntu'
-    mode '0644'
-    action :create_if_missing
-  end
-
-  execute('create-prometheus-configmap') do
-    Chef::Log.info('create prometheus configmap')
-    action :run
-    command 'kubectl create configmap prom-cm --from-file prometheus.yml=/home/ubuntu/prometheus.yml --kubeconfig=/home/ubuntu/.kube/config'
-    retries 2
-    retry_delay 2
-    returns 0
-    ignore_failure true
-  end
 
   # to affect a switchover, delete the primary deployment and re-create
   execute('delete-primary') do
@@ -133,7 +116,7 @@ action :deploy_ha_platform do
     Chef::Log.info('Wait for primary platform pod to come up')
     action :run
     retries 30
-    retry_delay 10
+    retry_delay 15
     command 'kubectl get pods -l app=platform-primary -l version=' + node['edgeCloudVersion'] + ' --kubeconfig=/home/ubuntu/.kube/config| grep Running'
     returns 0
   end

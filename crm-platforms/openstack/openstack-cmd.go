@@ -801,7 +801,7 @@ func (s *OpenstackPlatform) deleteHeatStack(ctx context.Context, stackName strin
 	log.SpanLog(ctx, log.DebugLevelInfra, "delete heat stack", "stackName", stackName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "delete", stackName)
 	if err != nil {
-		if strings.Contains(StackNotFound, string(out)) {
+		if strings.Contains(string(out), StackNotFound) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "stack not found", "stackName", stackName)
 			return fmt.Errorf(vmlayer.ServerDoesNotExistError)
 		}
