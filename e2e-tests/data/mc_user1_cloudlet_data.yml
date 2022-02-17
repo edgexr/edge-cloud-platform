@@ -82,7 +82,8 @@ regiondata:
         name: enterprise-pool
         organization: enterprise
       cloudlets:
-      - enterprise-1
+      - organization: enterprise
+        name: enterprise-1
     cloudletinfos:
     - key:
         organization: enterprise
@@ -144,7 +145,8 @@ regiondata:
         name: enterprise-pool
         organization: enterprise
       cloudlets:
-      - enterprise-2
+      - organization: enterprise
+        name: enterprise-2
     cloudletinfos:
     - key:
         organization: enterprise

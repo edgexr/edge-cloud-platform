@@ -1015,11 +1015,11 @@ func isDeveloperAuthorized(ctx context.Context, username string, devOrgsPruned [
 }
 
 // helper function to convert keys in a map to a list
-func getListFromMap(mapIn map[string]struct{}) []string {
+func getListFromMap(mapIn map[edgeproto.CloudletKey]struct{}) []string {
 	// collect all the list and return it
 	listOut := []string{}
 	for k, _ := range mapIn {
-		listOut = append(listOut, k)
+		listOut = append(listOut, k.Name)
 	}
 	return listOut
 }
@@ -1038,7 +1038,7 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 	regionRc.Username = username
 	regionRc.Region = region
 	regionRc.Database = database
-	uniqueCloudlets := make(map[string]struct{})
+	uniqueCloudlets := make(map[edgeproto.CloudletKey]struct{})
 	devOrgPermOk := false
 	operOrgPermOk := false
 	devOrgs := []string{}
@@ -1057,7 +1057,7 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 	// append to the list the specified cloudlets
 	for _, cloudletKey := range cloudletKeys {
 		if cloudletKey.Name != "" {
-			uniqueCloudlets[cloudletKey.Name] = struct{}{}
+			uniqueCloudlets[cloudletKey] = struct{}{}
 		}
 		if cloudletKey.Organization != "" {
 			cloudletOrgs[cloudletKey.Organization] = struct{}{}

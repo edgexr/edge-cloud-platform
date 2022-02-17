@@ -123,7 +123,7 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 		cloudletList := []string{}
 		err = ctrlclient.ShowCloudletPoolStream(ctx, regionRc, &cloudletpoolQuery, connCache, nil, func(pool *edgeproto.CloudletPool) error {
 			for _, cloudlet := range pool.Cloudlets {
-				cloudletList = append(cloudletList, cloudlet)
+				cloudletList = append(cloudletList, cloudlet.Name)
 			}
 			return nil
 		})

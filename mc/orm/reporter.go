@@ -801,12 +801,12 @@ func GetCloudletPoolSummaryData(ctx context.Context, username string, report *or
 	poolKey := edgeproto.CloudletPoolKey{Organization: report.Org}
 	poolCloudlets := make(map[string][]string)
 	err = ctrlclient.ShowCloudletPoolStream(ctx, &rc, &edgeproto.CloudletPool{Key: poolKey}, connCache, nil, func(pool *edgeproto.CloudletPool) error {
-		for _, name := range pool.Cloudlets {
+		for _, clKey := range pool.Cloudlets {
 			if cloudlets, ok := poolCloudlets[pool.Key.Name]; ok {
-				cloudlets = append(cloudlets, name)
+				cloudlets = append(cloudlets, clKey.Name)
 				poolCloudlets[pool.Key.Name] = cloudlets
 			} else {
-				poolCloudlets[pool.Key.Name] = []string{name}
+				poolCloudlets[pool.Key.Name] = []string{clKey.Name}
 			}
 		}
 		return nil

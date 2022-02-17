@@ -50,12 +50,12 @@ func authzCreateCloudletPool(ctx context.Context, region, username string, obj *
 }
 
 func authzAddCloudletPoolMember(ctx context.Context, region, username string, obj *edgeproto.CloudletPoolMember, resource, action string) error {
-	if !util.ValidName(obj.CloudletName) {
+	if !util.ValidName(obj.Cloudlet.Name) {
 		return fmt.Errorf("Invalid Cloudlet name")
 	}
 	pool := &edgeproto.CloudletPool{}
 	pool.Key = obj.Key
-	pool.Cloudlets = []string{obj.CloudletName}
+	pool.Cloudlets = []edgeproto.CloudletKey{obj.Cloudlet}
 	return authzUpdateCloudletPool(ctx, region, username, pool, resource, action)
 }
 
@@ -93,13 +93,9 @@ func authzCloudletPoolMembers(ctx context.Context, region, username string, pool
 	rc.Region = region
 	rc.Database = database
 	rc.SkipAuthz = true
-	for _, cloudletName := range pool.Cloudlets {
-		if !util.ValidName(cloudletName) {
-			return fmt.Errorf("Invalid Cloudlet name %q", cloudletName)
-		}
-		key := edgeproto.CloudletKey{
-			Name:         cloudletName,
-			Organization: pool.Key.Organization,
+	for _, key := range pool.Cloudlets {
+		if !util.ValidName(key.Name) {
+			return fmt.Errorf("Invalid Cloudlet name %q", key.Name)
 		}
 		invalidOrgs := []string{}
 		err := ctrlclient.GetOrganizationsOnCloudletStream(ctx, &rc, &key, connCache, func(org *edgeproto.Organization) error {

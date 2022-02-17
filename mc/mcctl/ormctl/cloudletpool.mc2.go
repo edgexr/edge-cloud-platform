@@ -32,7 +32,7 @@ var CreateCloudletPoolCmd = &ApiCommand{
 	AliasArgs:    strings.Join(CloudletPoolAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolSpecialArgs,
 	Comments:     addRegionComment(CloudletPoolComments),
-	NoConfig:     "Members,CreatedAt,UpdatedAt,DeletePrepare",
+	NoConfig:     "Members,CreatedAt,UpdatedAt,DeletePrepare,Cloudlets:#.Organization",
 	ReqData:      &ormapi.RegionCloudletPool{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/CreateCloudletPool",
@@ -48,7 +48,7 @@ var DeleteCloudletPoolCmd = &ApiCommand{
 	AliasArgs:    strings.Join(CloudletPoolAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolSpecialArgs,
 	Comments:     addRegionComment(CloudletPoolComments),
-	NoConfig:     "Members,CreatedAt,UpdatedAt,DeletePrepare",
+	NoConfig:     "Members,CreatedAt,UpdatedAt,DeletePrepare,Cloudlets:#.Organization",
 	ReqData:      &ormapi.RegionCloudletPool{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/DeleteCloudletPool",
@@ -64,7 +64,7 @@ var UpdateCloudletPoolCmd = &ApiCommand{
 	AliasArgs:    strings.Join(CloudletPoolAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolSpecialArgs,
 	Comments:     addRegionComment(CloudletPoolComments),
-	NoConfig:     "Members,CreatedAt,UpdatedAt,DeletePrepare",
+	NoConfig:     "Members,CreatedAt,UpdatedAt,DeletePrepare,Cloudlets:#.Organization",
 	ReqData:      &ormapi.RegionCloudletPool{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/UpdateCloudletPool",
@@ -80,7 +80,7 @@ var ShowCloudletPoolCmd = &ApiCommand{
 	AliasArgs:    strings.Join(CloudletPoolAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolSpecialArgs,
 	Comments:     addRegionComment(CloudletPoolComments),
-	NoConfig:     "Members,CreatedAt,UpdatedAt,DeletePrepare",
+	NoConfig:     "Members,CreatedAt,UpdatedAt,DeletePrepare,Cloudlets:#.Organization",
 	ReqData:      &ormapi.RegionCloudletPool{},
 	ReplyData:    &edgeproto.CloudletPool{},
 	Path:         "/auth/ctrl/ShowCloudletPool",
@@ -97,6 +97,7 @@ var AddCloudletPoolMemberCmd = &ApiCommand{
 	AliasArgs:    strings.Join(CloudletPoolMemberAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolMemberSpecialArgs,
 	Comments:     addRegionComment(CloudletPoolMemberComments),
+	NoConfig:     "Cloudlet.Organization",
 	ReqData:      &ormapi.RegionCloudletPoolMember{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/AddCloudletPoolMember",
@@ -112,6 +113,7 @@ var RemoveCloudletPoolMemberCmd = &ApiCommand{
 	AliasArgs:    strings.Join(CloudletPoolMemberAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolMemberSpecialArgs,
 	Comments:     addRegionComment(CloudletPoolMemberComments),
+	NoConfig:     "Cloudlet.Organization",
 	ReqData:      &ormapi.RegionCloudletPoolMember{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/RemoveCloudletPoolMember",
@@ -137,41 +139,52 @@ var AddCloudletPoolMemberRequiredArgs = []string{
 	"pool",
 	"cloudlet",
 }
-var AddCloudletPoolMemberOptionalArgs = []string{}
+var AddCloudletPoolMemberOptionalArgs = []string{
+	"federatedorg",
+}
 var RemoveCloudletPoolMemberRequiredArgs = []string{
 	"org",
 	"pool",
 	"cloudlet",
 }
-var RemoveCloudletPoolMemberOptionalArgs = []string{}
+var RemoveCloudletPoolMemberOptionalArgs = []string{
+	"federatedorg",
+}
 var CloudletPoolRequiredArgs = []string{
 	"org",
 	"name",
 }
 var CloudletPoolOptionalArgs = []string{
-	"cloudlets",
+	"cloudlets:empty",
+	"cloudlets:#.name",
+	"cloudlets:#.federatedorganization",
 }
 var CloudletPoolAliasArgs = []string{
 	"fields=cloudletpool.fields",
 	"org=cloudletpool.key.organization",
 	"name=cloudletpool.key.name",
-	"cloudlets=cloudletpool.cloudlets",
+	"cloudlets:empty=cloudletpool.cloudlets:empty",
+	"cloudlets:#.organization=cloudletpool.cloudlets:#.organization",
+	"cloudlets:#.name=cloudletpool.cloudlets:#.name",
+	"cloudlets:#.federatedorganization=cloudletpool.cloudlets:#.federatedorganization",
 	"createdat=cloudletpool.createdat",
 	"updatedat=cloudletpool.updatedat",
 	"deleteprepare=cloudletpool.deleteprepare",
 }
 var CloudletPoolComments = map[string]string{
-	"fields":        "Fields are used for the Update API to specify which fields to apply",
-	"org":           "Name of the organization this pool belongs to",
-	"name":          "CloudletPool Name",
-	"cloudlets":     "Cloudlets part of the pool, specify cloudlets:empty=true to clear",
-	"createdat":     "Created at time",
-	"updatedat":     "Updated at time",
-	"deleteprepare": "Preparing to be deleted",
+	"fields":                            "Fields are used for the Update API to specify which fields to apply",
+	"org":                               "Name of the organization this pool belongs to",
+	"name":                              "CloudletPool Name",
+	"cloudlets:empty":                   "Cloudlets part of the pool, specify cloudlets:empty=true to clear",
+	"cloudlets:#.organization":          "Organization of the cloudlet site",
+	"cloudlets:#.name":                  "Name of the cloudlet",
+	"cloudlets:#.federatedorganization": "Federated operator organization who shared this cloudlet",
+	"createdat":                         "Created at time",
+	"updatedat":                         "Updated at time",
+	"deleteprepare":                     "Preparing to be deleted",
 }
 var CloudletPoolSpecialArgs = map[string]string{
-	"cloudletpool.cloudlets": "StringArray",
-	"cloudletpool.fields":    "StringArray",
+	"cloudletpool.fields": "StringArray",
 }
 var CloudletPoolMemberRequiredArgs = []string{
 	"org",
@@ -179,15 +192,20 @@ var CloudletPoolMemberRequiredArgs = []string{
 }
 var CloudletPoolMemberOptionalArgs = []string{
 	"cloudlet",
+	"federatedorg",
 }
 var CloudletPoolMemberAliasArgs = []string{
 	"org=cloudletpoolmember.key.organization",
 	"pool=cloudletpoolmember.key.name",
-	"cloudlet=cloudletpoolmember.cloudletname",
+	"cloudlet.organization=cloudletpoolmember.cloudlet.organization",
+	"cloudlet=cloudletpoolmember.cloudlet.name",
+	"federatedorg=cloudletpoolmember.cloudlet.federatedorganization",
 }
 var CloudletPoolMemberComments = map[string]string{
-	"org":      "Name of the organization this pool belongs to",
-	"pool":     "CloudletPool Name",
-	"cloudlet": "Cloudlet name",
+	"org":                   "Name of the organization this pool belongs to",
+	"pool":                  "CloudletPool Name",
+	"cloudlet.organization": "Organization of the cloudlet site",
+	"cloudlet":              "Name of the cloudlet",
+	"federatedorg":          "Federated operator organization who shared this cloudlet",
 }
 var CloudletPoolMemberSpecialArgs = map[string]string{}
