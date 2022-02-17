@@ -71,8 +71,8 @@ func CollectBillingUsage(collectInterval time.Duration) {
 func recordRegionUsage(ctx context.Context, region string, start, end time.Time) {
 	poolMap := make(map[string]string)
 	err := ctrlclient.ShowCloudletPoolStream(ctx, &ormutil.RegionContext{SkipAuthz: true, Region: region, Database: database}, &edgeproto.CloudletPool{}, connCache, nil, func(pool *edgeproto.CloudletPool) error {
-		for _, cloudName := range pool.Cloudlets {
-			poolMap[cloudName] = pool.Key.Organization
+		for _, clKey := range pool.Cloudlets {
+			poolMap[clKey.Name] = pool.Key.Organization
 		}
 		return nil
 	})

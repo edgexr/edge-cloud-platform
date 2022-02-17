@@ -900,7 +900,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 					Name:         "orgspool",
 					Organization: org3,
 				},
-				Cloudlets: []string{cloudletName},
+				Cloudlets: []edgeproto.CloudletKey{cloudletKey},
 			},
 		}
 		_, status, err = mcClient.CreateCloudletPool(uri, tokenOper, &badpool)
@@ -924,8 +924,8 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		member := ormapi.RegionCloudletPoolMember{
 			Region: ctrl.Region,
 			CloudletPoolMember: edgeproto.CloudletPoolMember{
-				Key:          pool.CloudletPool.Key,
-				CloudletName: cloudletName,
+				Key:      pool.CloudletPool.Key,
+				Cloudlet: cloudletKey,
 			},
 		}
 		_, status, err = mcClient.AddCloudletPoolMember(uri, tokenOper, &member)
@@ -961,7 +961,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		require.Equal(t, http.StatusOK, status)
 
 		// negative test - add without cloudlet specified
-		member.CloudletPoolMember.CloudletName = ""
+		member.CloudletPoolMember.Cloudlet.Name = ""
 		_, status, err = mcClient.AddCloudletPoolMember(uri, tokenOper, &member)
 		require.NotNil(t, err)
 		require.Equal(t, "Invalid Cloudlet name", err.Error())
@@ -1047,7 +1047,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		CloudletPoolMember: edgeproto.CloudletPoolMember{},
 	}
 	member.CloudletPoolMember.Key = pool.CloudletPool.Key
-	member.CloudletPoolMember.CloudletName = tc3.Name
+	member.CloudletPoolMember.Cloudlet = *tc3
 	_, status, err = mcClient.AddCloudletPoolMember(uri, tokenOper, &member)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)

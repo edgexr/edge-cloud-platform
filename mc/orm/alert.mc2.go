@@ -1127,6 +1127,9 @@ func addControllerApis(method string, group *echo.Group) {
 	// KeyOrganization: 2.1
 	// KeyName: 2.2
 	// Cloudlets: 3
+	// CloudletsOrganization: 3.1
+	// CloudletsName: 3.2
+	// CloudletsFederatedOrganization: 3.3
 	// CreatedAt: 4
 	// CreatedAtSeconds: 4.1
 	// CreatedAtNanos: 4.2
