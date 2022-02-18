@@ -260,8 +260,11 @@ func CreateSelfFederator(c echo.Context) error {
 	}
 
 	opFedOut := ormapi.Federator{
-		FederationId: opFed.FederationId,
-		ApiKey:       apiKey,
+		OperatorId:     opFed.OperatorId,
+		CountryCode:    opFed.CountryCode,
+		FederationId:   opFed.FederationId,
+		FederationAddr: opFed.FederationAddr,
+		ApiKey:         apiKey,
 	}
 	return c.JSON(http.StatusOK, &opFedOut)
 }
