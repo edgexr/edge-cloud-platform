@@ -27,9 +27,17 @@ type Platform struct {
 	mux    sync.Mutex
 }
 
-func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	s.envoys = make(map[edgeproto.AppInstKey]*exec.Cmd)
-	return s.Platform.Init(ctx, platformConfig, caches, haMgr, updateCallback)
+	return s.Platform.InitCommon(ctx, platformConfig, caches, haMgr, updateCallback)
+}
+
+func (s *Platform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	return s.Platform.InitHAConditional(ctx, platformConfig, updateCallback)
+}
+
+func (s *Platform) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {
+	return "fakeinfra-1.0"
 }
 
 func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {

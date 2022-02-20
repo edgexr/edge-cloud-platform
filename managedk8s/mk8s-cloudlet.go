@@ -26,8 +26,8 @@ func (m *ManagedK8sPlatform) DeleteCloudletAccessVars(ctx context.Context, cloud
 	return nil
 }
 
-func (m *ManagedK8sPlatform) SyncControllerCache(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SyncControllerCache", "cloudletState", cloudletState)
+func (m *ManagedK8sPlatform) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "PerformUpgrades", "cloudletState", cloudletState)
 	return nil
 }
 

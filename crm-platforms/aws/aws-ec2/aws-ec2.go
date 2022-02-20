@@ -57,14 +57,14 @@ func (a *AwsEc2Platform) InitApiAccessProperties(ctx context.Context, accessApi 
 		return err
 	}
 
-	if stage == vmlayer.ProviderInitPlatformStartCrm || stage == vmlayer.ProviderInitPlatformStartShepherd || stage == vmlayer.ProviderInitCreateCloudletDirect || stage == vmlayer.ProviderInitDeleteCloudlet {
+	if stage == vmlayer.ProviderInitPlatformStartCrmConditional || stage == vmlayer.ProviderInitPlatformStartShepherd || stage == vmlayer.ProviderInitCreateCloudletDirect || stage == vmlayer.ProviderInitDeleteCloudlet {
 		err = a.awsGenPf.GetAwsSessionToken(ctx, a.VMProperties.CommonPf.PlatformConfig.AccessApi)
 		if err != nil {
 			return err
 		}
 	}
 	// renew the session periodically only for starting the platform
-	if stage == vmlayer.ProviderInitPlatformStartCrm || stage == vmlayer.ProviderInitPlatformStartShepherd {
+	if stage == vmlayer.ProviderInitPlatformStartCrmConditional || stage == vmlayer.ProviderInitPlatformStartShepherd {
 		go a.awsGenPf.RefreshAwsSessionToken(a.VMProperties.CommonPf.PlatformConfig)
 	}
 

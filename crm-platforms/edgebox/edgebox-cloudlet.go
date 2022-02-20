@@ -72,8 +72,8 @@ func (e *EdgeboxPlatform) DeleteCloudletAccessVars(ctx context.Context, cloudlet
 	return nil
 }
 
-func (e *EdgeboxPlatform) SyncControllerCache(ctx context.Context, caches *pf.Caches, cloudletState dme.CloudletState) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SyncControllerCache", "cloudletState", cloudletState)
+func (e *EdgeboxPlatform) PerformUpgrades(ctx context.Context, caches *pf.Caches, cloudletState dme.CloudletState) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "PerformUpgrades", "cloudletState", cloudletState)
 	return nil
 }
 

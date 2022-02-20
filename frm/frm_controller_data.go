@@ -53,7 +53,13 @@ func InitFRM(ctx context.Context, nodeMgr *node.NodeMgr, haMgr *redundancy.HighA
 	}
 	caches := controllerData.GetCaches()
 	noopCb := func(updateType edgeproto.CacheUpdateType, value string) {}
-	err = platform.Init(ctx, &pc, caches, haMgr, noopCb)
+	err = platform.InitCommon(ctx, &pc, caches, haMgr, noopCb)
+	if err == nil {
+		err = platform.InitHAConditional(ctx, &pc, noopCb)
+	}
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// ctrl notify
 	addrs := strings.Split(notifyAddrs, ",")
