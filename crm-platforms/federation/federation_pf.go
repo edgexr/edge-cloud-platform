@@ -60,7 +60,7 @@ func (f *FederationPlatform) GetFederationConfig(ctx context.Context, cloudletKe
 }
 
 // Init is called once during FRM startup.
-func (f *FederationPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
+func (f *FederationPlatform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	client, err := federation.NewClient(platformConfig.AccessApi)
 	if err != nil {
 		return err
@@ -71,6 +71,15 @@ func (f *FederationPlatform) Init(ctx context.Context, platformConfig *platform.
 		PlatformConfig: platformConfig,
 	}
 	return nil
+}
+
+// InitHAConditional is optional init steps for the active unit, if applicable
+func (f *FederationPlatform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	return nil
+}
+
+func (f *FederationPlatform) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {
+	return "federation-1.0"
 }
 
 // Gather information about the cloudlet platform.
@@ -568,7 +577,7 @@ func (f *FederationPlatform) DeleteCloudletAccessVars(ctx context.Context, cloud
 }
 
 // Sync data with controller
-func (f *FederationPlatform) SyncControllerCache(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
+func (f *FederationPlatform) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
 	return nil
 }
 

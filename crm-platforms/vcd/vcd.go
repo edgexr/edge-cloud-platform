@@ -77,7 +77,7 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 		return err
 	}
 
-	if stage == vmlayer.ProviderInitPlatformStartCrm {
+	if stage == vmlayer.ProviderInitPlatformStartCrmConditional {
 
 		mexInternalNetRange, err = v.getMexInternalNetRange(ctx)
 		if err != nil {

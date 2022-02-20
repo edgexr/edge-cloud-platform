@@ -233,7 +233,7 @@ func (v *VcdPlatform) InitApiAccessProperties(ctx context.Context, accessApi pla
 	if v.GetVcdOauthSgwUrl() != "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Need to get oauth token", "Stage", stage)
 		switch stage {
-		case vmlayer.ProviderInitPlatformStartCrm:
+		case vmlayer.ProviderInitPlatformStartCrmConditional:
 			fallthrough
 		case vmlayer.ProviderInitCreateCloudletDirect:
 			fallthrough
@@ -242,7 +242,7 @@ func (v *VcdPlatform) InitApiAccessProperties(ctx context.Context, accessApi pla
 			if err != nil {
 				return fmt.Errorf("UpdateOauthToken failed - %v", err)
 			}
-			if stage == vmlayer.ProviderInitPlatformStartCrm {
+			if stage == vmlayer.ProviderInitPlatformStartCrmConditional {
 				go v.RefreshOauthTokenPeriodic(ctx, v.Creds)
 			}
 		case vmlayer.ProviderInitPlatformStartShepherd:

@@ -24,19 +24,21 @@ func (o *OpenstackPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) 
 
 func (o *OpenstackPlatform) GetFeatures() *platform.Features {
 	return &platform.Features{
-		SupportsMultiTenantCluster:       true,
-		SupportsSharedVolume:             true,
-		SupportsTrustPolicy:              true,
-		SupportsAdditionalNetworks:       true,
+		SupportsMultiTenantCluster:            true,
+		SupportsSharedVolume:                  true,
+		SupportsTrustPolicy:                   true,
+		SupportsAdditionalNetworks:            true,
 		SupportsPlatformHighAvailabilityOnK8s: true,
 	}
 }
 
 func (o *OpenstackPlatform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
 	o.InitResourceReservations(ctx)
-	if stage == vmlayer.ProviderInitPlatformStartCrm {
+	if stage == vmlayer.ProviderInitPlatformStartCrmConditional || stage == vmlayer.ProviderInitPlatformStartCrmCommon {
 		o.initDebug(o.VMProperties.CommonPf.PlatformConfig.NodeMgr)
-		return o.PrepNetwork(ctx, updateCallback)
+		if stage == vmlayer.ProviderInitPlatformStartCrmConditional {
+			return o.PrepNetwork(ctx, updateCallback)
+		}
 	}
 	return nil
 }

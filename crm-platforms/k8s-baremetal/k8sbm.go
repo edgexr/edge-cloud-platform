@@ -85,7 +85,7 @@ func UpdateDockerUser(ctx context.Context, client ssh.Client) error {
 	return nil
 }
 
-func (k *K8sBareMetalPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
+func (k *K8sBareMetalPlatform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Init start")
 	k.caches = caches
 	if err := k.commonPf.InitInfraCommon(ctx, platformConfig, k8sbmProps); err != nil {
@@ -120,6 +120,14 @@ func (k *K8sBareMetalPlatform) Init(ctx context.Context, platformConfig *platfor
 		return err
 	}
 	return nil
+}
+
+func (k *K8sBareMetalPlatform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	return nil
+}
+
+func (k *K8sBareMetalPlatform) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {
+	return "k8s-baremetal-1.0"
 }
 
 func (k *K8sBareMetalPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
@@ -222,8 +230,8 @@ func (k *K8sBareMetalPlatform) runDebug(ctx context.Context, req *edgeproto.Debu
 	return "runDebug TODO on bare metal"
 }
 
-func (k *K8sBareMetalPlatform) SyncControllerCache(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SyncControllerCache", "state", cloudletState)
+func (k *K8sBareMetalPlatform) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "PerformUpgrades", "state", cloudletState)
 	return nil
 }
 
