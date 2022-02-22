@@ -264,13 +264,28 @@ func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []e
 	log.SpanLog(ctx, log.DebugLevelInfra, "ListCloudletMgmtNodes", "clusterInsts", clusterInsts, "vmAppInsts", vmAppInsts)
 	mgmt_nodes := []edgeproto.CloudletMgmtNode{
 		edgeproto.CloudletMgmtNode{
-			Type: "platformvm",
-			Name: v.GetPlatformVMName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey),
-		},
-		edgeproto.CloudletMgmtNode{
 			Type: cloudcommon.CloudletNodeSharedRootLB,
 			Name: v.VMProperties.SharedRootLBName,
 		},
+	}
+	var cloudlet edgeproto.Cloudlet
+	if !v.Caches.CloudletCache.Get(v.VMProperties.CommonPf.PlatformConfig.CloudletKey, &cloudlet) {
+		return mgmt_nodes, fmt.Errorf("unable to find cloudlet key in cache")
+	}
+	if cloudlet.Deployment == cloudcommon.DeploymentTypeKubernetes {
+		nodes := v.GetPlatformNodes(&cloudlet)
+		for _, n := range nodes {
+			mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
+				Type: n.NodeType,
+				Name: n.NodeName,
+			})
+			log.SpanLog(ctx, log.DebugLevelInfra, "added mgmt node", "name", n.NodeName, "type", n.NodeType)
+		}
+	} else {
+		mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
+			Type: "platformvm",
+			Name: v.GetPlatformVMName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey),
+		})
 	}
 	for _, clusterInst := range clusterInsts {
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
