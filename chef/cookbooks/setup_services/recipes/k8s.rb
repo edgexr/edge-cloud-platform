@@ -34,6 +34,7 @@ template '/home/ubuntu/k8s-deployment-redis.yaml' do
          },
     },
     hostvols: {},
+    tolerations: { master_taint_tol: { key: 'node-role.kubernetes.io/master', effect: 'NoSchedule' } },
     configmaps: {}
   )
   only_if { node.attribute?(:redisServiceName) }

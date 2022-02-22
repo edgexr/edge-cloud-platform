@@ -50,6 +50,14 @@ spec:
          hostPath: 
             path: <%= vol_attrs[:hostPath] %>
        <% end %>
+       <% unless @tolerations.nil? %>
+       tolerations:
+       <% @tolerations.each do |tol, tol_attrs| %>
+        - key: "<% tol_attrs[:key] %>"
+          operator: "Exists"
+          effect: "<% tol_attrs[:key] %>"
+       <% end %>
+       <% end %>
        <% @configmaps.each do|cm, cm_attrs| %>
        - name: <%= cm_attrs[:name] %>
          configMap:
