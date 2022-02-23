@@ -1,11 +1,12 @@
 {
-  "revision_id": "07799a5cee7c13c91bfd18c69a83c48ac2a7a7a58bc02d925c169360b7fa22e2",
+  "revision_id": "dfe8cc13f36ccb4b51f64f5b51cb6a9be7b496b0c95d0af5b2574c73f14f3911",
   "name": "base",
   "run_list": [
     "recipe[chef_client_updater::default]",
     "recipe[runstatus_handler::default]",
     "recipe[copy_resource_tracker::default]",
     "recipe[set_security_policies::default]",
+    "recipe[setup_teleport::default]",
     "recipe[upgrade_mobiledgex_package::default]"
   ],
   "included_policy_locks": [
@@ -56,10 +57,21 @@
         "version": "1.0.0"
       }
     },
+    "setup_teleport": {
+      "version": "1.1.0",
+      "identifier": "30d6ee9312a2a3be676ba1ea5b1b3372276e4118",
+      "dotted_decimal_identifier": "13747119040144035.53593957550676763.56565380825368",
+      "cache_key": "setup_teleport-1.1.0",
+      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "version": "1.1.0"
+      }
+    },
     "upgrade_mobiledgex_package": {
       "version": "1.0.14",
-      "identifier": "1e3c3f8f78defea83a7b92af5b953aa3497415bf",
-      "dotted_decimal_identifier": "8510492988989182.47352098503744405.64472986424767",
+      "identifier": "5de421f85e51ef4fed825cd758a4097347f0dc00",
+      "dotted_decimal_identifier": "26428007386075631.22497667319290020.10390732856320",
       "cache_key": "upgrade_mobiledgex_package-1.0.14",
       "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
       "source_options": {
@@ -70,7 +82,7 @@
   },
   "default_attributes": {
     "chef_client_updater": {
-      "version": "17.2.29"
+      "version": "17.6.18"
     }
   },
   "override_attributes": {
@@ -95,6 +107,10 @@
         "= 1.0.0"
       ],
       [
+        "setup_teleport",
+        "= 1.1.0"
+      ],
+      [
         "upgrade_mobiledgex_package",
         "= 1.0.14"
       ]
@@ -110,6 +126,9 @@
 
       ],
       "set_security_policies (1.0.0)": [
+
+      ],
+      "setup_teleport (1.1.0)": [
 
       ],
       "upgrade_mobiledgex_package (1.0.14)": [

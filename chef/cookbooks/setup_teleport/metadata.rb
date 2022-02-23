@@ -1,0 +1,5 @@
+name 'setup_teleport'
+maintainer 'MobiledgeX Inc.'
+maintainer_email 'mobiledgex.ops@mobiledgex.com'
+description 'Setup VM as a teleport node'
+version '1.1.0'
