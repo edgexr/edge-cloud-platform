@@ -1160,6 +1160,9 @@ func CreateUserApiKey(c echo.Context) error {
 			return fmt.Errorf("Invalid permission specified: [%s:%s], valid permissions (resource:action) are %v", perm.Resource, perm.Action, validPerms)
 		}
 		addPolicy(ctx, &policyErr, apiKeyRole, perm.Resource, perm.Action)
+		if perm.Action == ActionManage {
+			addPolicy(ctx, &policyErr, apiKeyRole, perm.Resource, ActionView)
+		}
 	}
 	if policyErr != nil {
 		cleanupPoliciesOnErr()
@@ -1201,6 +1204,9 @@ func DeleteUserApiKey(c echo.Context) error {
 	lookup := ormapi.CreateUserApiKey{}
 	if err := c.Bind(&lookup); err != nil {
 		return ormutil.BindErr(err)
+	}
+	if lookup.Id == "" {
+		return fmt.Errorf("Missing API key ID")
 	}
 	apiKeyObj := ormapi.UserApiKey{Id: lookup.Id}
 	err = db.Where(&apiKeyObj).First(&apiKeyObj).Error
@@ -1251,7 +1257,11 @@ func ShowUserApiKey(c echo.Context) error {
 		}
 	} else {
 		apiKeyObj := ormapi.UserApiKey{Id: filter.Id}
-		err := db.Where(&apiKeyObj).First(&apiKeyObj).Error
+		res := db.Where(&apiKeyObj).First(&apiKeyObj)
+		if res.RecordNotFound() {
+			return fmt.Errorf("API key ID not found")
+		}
+		err := res.Error
 		if err != nil {
 			return ormutil.DbErr(err)
 		}
