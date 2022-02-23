@@ -726,14 +726,26 @@ func CreateSelfFederatorZone(c echo.Context) error {
 	if _, _, err := fedcommon.ParseGeoLocation(opZone.GeoLocation); err != nil {
 		return err
 	}
+	if _, err := getControllerObj(ctx, opZone.Region); err != nil {
+		return err
+	}
+	if err := fedcommon.ValidateCountryCode(opZone.CountryCode); err != nil {
+		return err
+	}
 	if err := fedAuthorized(ctx, claims.Username, opZone.OperatorId); err != nil {
 		return err
 	}
+	// ensure that operator ID is a valid operator org
+	org, err := orgExists(ctx, opZone.OperatorId)
+	if err != nil {
+		return fmt.Errorf("Invalid operator ID specified")
+	}
+	if org.Type != OrgTypeOperator {
+		return fmt.Errorf("Invalid operator ID, must be a valid operator org")
+	}
 	db := loggedDB(ctx)
 	lookup := ormapi.FederatorZone{
-		OperatorId:  opZone.OperatorId,
-		CountryCode: opZone.CountryCode,
-		ZoneId:      opZone.ZoneId,
+		ZoneId: opZone.ZoneId,
 	}
 	existingFed := ormapi.FederatorZone{}
 	res := db.Where(&lookup).First(&existingFed)

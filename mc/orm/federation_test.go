@@ -983,6 +983,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 
 	// Create self federator zones
 	// ===========================
+	clList := []edgeproto.Cloudlet{}
 	for fid, selfFed := range selfFederators {
 		zones := []federation.ZoneInfo{}
 		filter := &edgeproto.Cloudlet{
@@ -990,7 +991,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 				Organization: selfFed.operatorId,
 			},
 		}
-		clList, status, err := ormtestutil.TestShowCloudlet(mcClient, op.uri, selfFed.tokenOper, selfFed.region, filter)
+		clList, status, err = ormtestutil.TestShowCloudlet(mcClient, op.uri, selfFed.tokenOper, selfFed.region, filter)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 		for jj, cl := range clList {
@@ -1018,6 +1019,31 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		}
 		selfFederators[fid].zones = zones
 	}
+
+	// Negative tests
+	// ==============
+	testZone := &ormapi.FederatorZone{
+		ZoneId:      "testZone",
+		OperatorId:  selfFed1.operatorId,
+		CountryCode: selfFed1.countryCode,
+		Region:      selfFed1.region,
+		Cloudlets:   []string{clList[0].Key.Name},
+		GeoLocation: "1.1,1.1",
+	}
+
+	// invalid region
+	invalidZone := *testZone
+	invalidZone.Region = "ABCD"
+	_, status, err = mcClient.CreateSelfFederatorZone(op.uri, selfFederators[0].tokenOper, &invalidZone)
+	require.NotNil(t, err, "create federation zone fails")
+	require.Contains(t, err.Error(), "Region \"ABCD\" not found")
+
+	// invalid country code
+	invalidZone = *testZone
+	invalidZone.CountryCode = "ABCD"
+	_, status, err = mcClient.CreateSelfFederatorZone(op.uri, selfFederators[0].tokenOper, &invalidZone)
+	require.NotNil(t, err, "create federation zone fails")
+	require.Contains(t, err.Error(), "Invalid country code")
 
 	// Verify that all zones are created
 	// =================================
