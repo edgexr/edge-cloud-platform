@@ -535,7 +535,7 @@ func TestFederation(t *testing.T) {
 	partnerFedId := uuid.New().String()
 	partnerFed := &FederatorAttr{
 		operatorId:  "partnerOper",
-		countryCode: "EU",
+		countryCode: "ES",
 		fedId:       partnerFedId,
 		fedName:     "partnerFed",
 		fedAddr:     "http://111.111.111.111",
@@ -854,6 +854,11 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	selfFed1 := selfFederators[0]
 	selfFed2 := selfFederators[2]
 
+	// Test org is inuse check
+	err := orgInUseByFederatorCheck(ctx, selfFed1.operatorId)
+	require.NotNil(t, err, "org in use by federator")
+	require.Contains(t, err.Error(), "in use by federator")
+
 	// selfFed1 creates partner federator obj
 	// ======================================
 	partnerFedReq := &ormapi.Federation{
@@ -881,11 +886,31 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Contains(t, err.Error(), "same federation id pair")
 
 	// Federation creation with same self federation ID should fail
+	newPartnerFedReq = *partnerFedReq
 	newPartnerFedReq.Name = "testErr"
 	newPartnerFedReq.FederationId = "12345678"
 	_, _, err = mcClient.CreateFederation(op.uri, selfFed1.tokenOper, &newPartnerFedReq)
 	require.NotNil(t, err, "create federation")
 	require.Contains(t, err.Error(), "same self federation id")
+
+	// Federation creation with same partner federation ID should fail
+	newPartnerFedReq = *partnerFedReq
+	newPartnerFedReq.Name = "testErr"
+	newPartnerFedReq.SelfOperatorId = selfFed2.operatorId
+	newPartnerFedReq.SelfFederationId = selfFed2.fedId
+	_, _, err = mcClient.CreateFederation(op.uri, selfFed2.tokenOper, &newPartnerFedReq)
+	require.NotNil(t, err, "create federation")
+	require.Contains(t, err.Error(), "same federation id")
+
+	// Federation with invalid partner country code should fail
+	newPartnerFedReq = *partnerFedReq
+	newPartnerFedReq.Name = "testErr"
+	newPartnerFedReq.SelfFederationId = selfFed2.fedId
+	newPartnerFedReq.FederationId = "87654321"
+	newPartnerFedReq.CountryCode = "USA"
+	_, _, err = mcClient.CreateFederation(op.uri, selfFed1.tokenOper, &newPartnerFedReq)
+	require.NotNil(t, err, "create federation")
+	require.Contains(t, err.Error(), "Invalid country code")
 
 	// Validate partner federator info
 	showFedn := &cli.MapData{
