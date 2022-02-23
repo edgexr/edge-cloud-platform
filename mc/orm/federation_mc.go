@@ -50,6 +50,13 @@ func InitFederationAPIConstraints(loggedDb *gorm.DB) error {
 		return err
 	}
 
+	// Add unique constraint for partner federation ID
+	cmd := `ALTER TABLE IF EXISTS "federations" ADD UNIQUE ("federation_id")`
+	err = loggedDb.Exec(cmd).Error
+	if err != nil {
+		return err
+	}
+
 	// Federator's OperatorId references Organization's Name
 	scope = loggedDb.Unscoped().NewScope(&ormapi.Federator{})
 	fKeyTableName = scope.TableName()
@@ -457,6 +464,24 @@ func ShowSelfFederator(c echo.Context) error {
 	return c.JSON(http.StatusOK, out)
 }
 
+func orgInUseByFederatorCheck(ctx context.Context, orgName string) error {
+	db := loggedDB(ctx)
+
+	lookup := ormapi.Federator{
+		OperatorId: orgName,
+	}
+	out := []ormapi.Federator{}
+	res := db.Where(&lookup).Find(&out)
+	if !res.RecordNotFound() && res.Error != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "failed to get federator details", "err", res.Error)
+		return res.Error
+	}
+	if res.RecordNotFound() || len(out) == 0 {
+		return nil
+	}
+	return fmt.Errorf("Organization is in use by federator")
+}
+
 func GenerateSelfFederatorAPIKey(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
@@ -539,6 +564,9 @@ func CreateFederation(c echo.Context) error {
 	if err := fedcommon.ValidateFederationId(opFed.FederationId); err != nil {
 		return err
 	}
+	if err := fedcommon.ValidateCountryCode(opFed.CountryCode); err != nil {
+		return err
+	}
 
 	// validate self federator
 	selfFed, err := GetSelfFederator(ctx, opFed.SelfOperatorId, opFed.SelfFederationId)
@@ -563,6 +591,9 @@ func CreateFederation(c echo.Context) error {
 			}
 			if strings.Contains(err.Error(), "federations_name_key") {
 				return fmt.Errorf("Partner federation %q already exists", opFed.Name)
+			}
+			if strings.Contains(err.Error(), "\"federations_federation_id_key\"") {
+				return fmt.Errorf("Partner federation with same federation id %q already exists", opFed.FederationId)
 			}
 			return fmt.Errorf("Partner federation with same federation id pair already exists")
 		}

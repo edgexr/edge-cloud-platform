@@ -175,6 +175,16 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 		return err
 	}
 
+	// check for if org is in use by federator
+	err = orgInUseByFederatorCheck(ctx, org.Name)
+	if err != nil {
+		undoerr := markOrgForDelete(db, org.Name, !doMark)
+		if undoerr != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "undo mark org for delete", "undoerr", undoerr)
+		}
+		return err
+	}
+
 	// check to see if this org has a billingOrg attached
 	if orgCheck.Parent != "" {
 		undoerr := markOrgForDelete(db, org.Name, !doMark)
