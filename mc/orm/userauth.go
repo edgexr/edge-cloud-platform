@@ -249,7 +249,7 @@ func authorized(ctx context.Context, sub, org, obj, act string, ops ...authOp) e
 			if refOrg.org == "" {
 				continue
 			}
-			if _, err := checkReferenceOrg(ctx, refOrg.org, refOrg.orgType); err != nil {
+			if _, err := checkReferenceOrg(ctx, refOrg.org, refOrg.orgDesc, refOrg.orgType); err != nil {
 				return err
 			}
 		}
@@ -267,7 +267,7 @@ func checkRequiresOrg(ctx context.Context, org, resource string, admin, noEdgebo
 	} else if _, ok := OperatorResourcesMap[resource]; ok {
 		orgType = OrgTypeOperator
 	}
-	lookup, err := checkReferenceOrg(ctx, org, orgType)
+	lookup, err := checkReferenceOrg(ctx, org, "", orgType)
 	if err != nil {
 		if _, ok := err.(OrgLookupError); ok && !admin {
 			// prevent bad actors from fishing for org names
@@ -291,14 +291,19 @@ func (e OrgLookupError) Error() string {
 }
 
 // Returns error if referenced org is not found or invalid.
-func checkReferenceOrg(ctx context.Context, org, orgType string) (*ormapi.Organization, error) {
+func checkReferenceOrg(ctx context.Context, org, orgDesc, orgType string) (*ormapi.Organization, error) {
 	// make sure org actually exists, and is not in the
 	// process of being deleted.
 	lookup, err := orgExists(ctx, org)
+	if orgDesc != "" {
+		orgDesc += " "
+	}
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "org exists check failed", "err", err)
 		if !strings.Contains(err.Error(), "not found") {
-			err = fmt.Errorf("Org %s lookup failed: %v", org, err)
+			err = fmt.Errorf("%sorg %s lookup failed: %v", orgDesc, org, err)
+		} else {
+			err = fmt.Errorf("%sorg %s not found", orgDesc, org)
 		}
 		lookupErr := OrgLookupError{
 			Err: err,
@@ -306,11 +311,11 @@ func checkReferenceOrg(ctx context.Context, org, orgType string) (*ormapi.Organi
 		return nil, lookupErr
 	}
 	if lookup.DeleteInProgress {
-		return lookup, fmt.Errorf("Operation not allowed for org %s with delete in progress", org)
+		return lookup, fmt.Errorf("Operation not allowed for %sorg %s with delete in progress", orgDesc, org)
 	}
 	// see if resource is only for a specific type of org
 	if orgType != OrgTypeAny && lookup.Type != orgType {
-		return lookup, fmt.Errorf("Operation only allowed for organizations of type %s", orgType)
+		return lookup, fmt.Errorf("Operation for %sorg %s only allowed for orgs of type %s", orgDesc, org, orgType)
 	}
 	return lookup, nil
 }
@@ -327,6 +332,7 @@ type authOptions struct {
 type refOrg struct {
 	org     string
 	orgType string
+	orgDesc string
 }
 
 type authOp func(opts *authOptions)
@@ -339,11 +345,12 @@ func withRequiresOrg(org string) authOp {
 	return func(opts *authOptions) { opts.requiresOrg = org }
 }
 
-func withReferenceOrg(org, orgType string) authOp {
+func withReferenceOrg(org, orgDesc, orgType string) authOp {
 	return func(opts *authOptions) {
 		ro := refOrg{
 			org:     org,
 			orgType: orgType,
+			orgDesc: orgDesc,
 		}
 		opts.refOrgs = append(opts.refOrgs, ro)
 	}
