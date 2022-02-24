@@ -1853,13 +1853,18 @@ func badPermTestReferenceOrg(t *testing.T, mcClient *mctestclient.Client, uri, t
 	regCloudlet.Cloudlet.AllianceOrgs = []string{"no-such-org"}
 	_, _, err := mcClient.CreateCloudlet(uri, token, &regCloudlet)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Org no-such-org not found")
+	require.Contains(t, err.Error(), "Alliance org no-such-org not found")
 
 	regCloudlet.Cloudlet.AllianceOrgs = nil
 	regCloudlet.Cloudlet.SingleKubernetesClusterOwner = "no-such-org"
 	_, _, err = mcClient.CreateCloudlet(uri, token, &regCloudlet)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Org no-such-org not found")
+	require.Contains(t, err.Error(), "Single kubernetes cluster owner org no-such-org not found")
+
+	regCloudlet.Cloudlet.SingleKubernetesClusterOwner = operOrg
+	_, _, err = mcClient.CreateCloudlet(uri, token, &regCloudlet)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Operation for single kubernetes cluster owner org org3 only allowed for orgs of type developer")
 }
 
 func badPermTestAutoProvPolicy400(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
