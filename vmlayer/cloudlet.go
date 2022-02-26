@@ -271,6 +271,17 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	v.Caches = caches
 	v.GPUConfig = cloudlet.GpuConfig
 
+	chefApi, err := v.GetChefPlatformApiAccess(ctx, cloudlet)
+	if err != nil {
+		return cloudletResourcesCreated, err
+	}
+	nodes := v.GetPlatformNodes(cloudlet)
+
+	chefClient := v.VMProperties.GetChefClient()
+	if chefClient == nil {
+		return cloudletResourcesCreated, fmt.Errorf("Chef client is not initialized")
+	}
+
 	err = v.VMProvider.InitProvider(ctx, caches, stage, updateCallback)
 	if err != nil {
 		return cloudletResourcesCreated, err
@@ -285,16 +296,6 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	}
 	if result == OperationNewlyInitialized {
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
-	}
-	chefApi, err := v.GetChefPlatformApiAccess(ctx, cloudlet)
-	if err != nil {
-		return cloudletResourcesCreated, err
-	}
-	nodes := v.GetPlatformNodes(cloudlet)
-
-	chefClient := v.VMProperties.GetChefClient()
-	if chefClient == nil {
-		return cloudletResourcesCreated, fmt.Errorf("Chef client is not initialized")
 	}
 
 	cloudlet.ChefClientKey = make(map[string]string)
