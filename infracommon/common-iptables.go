@@ -177,13 +177,14 @@ func getIpTablesEntriesForRule(ctx context.Context, direction string, label stri
 	if rule.PortRange != "" && rule.PortRange != "0" {
 		portStr = "--" + string(rule.PortEndpoint) + " " + rule.PortRange
 	}
+	protostr := ""
+	if rule.Protocol != "" {
+		rule.Protocol = strings.ToLower(rule.Protocol)
+		protostr = fmt.Sprintf("-p %s -m %s", rule.Protocol, rule.Protocol)
+	}
 	icmpType := ""
 	if rule.Protocol == "icmp" {
 		icmpType = " --icmp-type any"
-	}
-	protostr := ""
-	if rule.Protocol != "" {
-		protostr = fmt.Sprintf("-p %s -m %s", rule.Protocol, rule.Protocol)
 	}
 	ifstr := ""
 	if rule.InterfaceIn != "" {

@@ -77,14 +77,24 @@ func (v *VMPlatform) setupForwardingIptables(ctx context.Context, client ssh.Cli
 	return nil
 }
 
+// iptable is case sensitive and does not like upper case for some options
+// convert protocol to lower case
+func fixupSecurityRules(ctx context.Context, rules []edgeproto.SecurityRule) {
+	for i, o := range rules {
+		rules[i].Protocol = strings.ToLower(o.Protocol)
+	}
+}
+
 // isTrustPolicy true means cloudlet level trustPolicy and false implies TrustPolicyException
 func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client ssh.Client, sshCidrsAllowed []string, isTrustPolicy bool, secGrpName string, rules []edgeproto.SecurityRule, commonSharedAccess bool) error {
 
 	if isTrustPolicy == true {
 		// The label used for TrustPolicy
 		secGrpName = infracommon.TrustPolicySecGrpNameLabel
+	} else {
+		// For TrustPolicyException, use input parameter secGrpName as the label
 	}
-	// For TrustPolicyException, use parameter secGrpName as the label
+	fixupSecurityRules(ctx, rules)
 
 	var netRules infracommon.FirewallRules
 	var ppRules infracommon.FirewallRules
