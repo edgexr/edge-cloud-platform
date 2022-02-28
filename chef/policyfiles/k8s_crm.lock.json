@@ -1,5 +1,5 @@
 {
-  "revision_id": "5e4ebebd00526e9be32705e8360f5dc063531242d098f02ecb54ba5da4a14738",
+  "revision_id": "046571d0a779937c226204ea0ac741b1385a3837fece19f3579230079da90fbb",
   "name": "k8s_crm",
   "run_list": [
     "recipe[chef_client_updater::default]",
@@ -141,7 +141,7 @@
   },
   "default_attributes": {
     "chef_client_updater": {
-      "version": "17.2.29"
+      "version": "17.6.18"
     }
   },
   "override_attributes": {

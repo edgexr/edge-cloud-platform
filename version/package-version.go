@@ -1,3 +1,3 @@
 package version
 
-var MobiledgeXPackageVersion = "4.8.1"
+var MobiledgeXPackageVersion = "4.9.0"

@@ -1,5 +1,5 @@
 {
-  "revision_id": "9cfffacd8c4dd8d61c80cddaf91d3a9de430e2176c055387bbb13c2087208c6f",
+  "revision_id": "8d41f3e3e7ea13e0f3c8a06c222d9e668a22ec0ddcbde32adb56afa5db633298",
   "name": "docker_crm",
   "run_list": [
     "recipe[chef_client_updater::default]",
@@ -141,7 +141,7 @@
   },
   "default_attributes": {
     "chef_client_updater": {
-      "version": "17.2.29"
+      "version": "17.6.18"
     }
   },
   "override_attributes": {
