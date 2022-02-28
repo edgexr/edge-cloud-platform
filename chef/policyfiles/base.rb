@@ -18,4 +18,6 @@ cookbook 'setup_teleport', '= 1.1.0'
 cookbook 'upgrade_mobiledgex_package', '= 1.0.14'
 
 # Set chef-client version
+# IMP: Version of chef client here needs to match the version in the base image.
+#      See "openstack-tenant/packages/mobiledgex/dependencies"
 default['chef_client_updater']['version'] = '17.6.18'
