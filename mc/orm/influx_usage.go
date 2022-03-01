@@ -166,7 +166,7 @@ func fillUsageTimeAndGetCmd(q *influxQueryArgs, tmpl *template.Template, start *
 	return buf.String()
 }
 
-func GetClusterUsage(event *client.Response, checkpoint *client.Response, start, end time.Time, region string) (*ormapi.MetricData, error) {
+func GetClusterUsage(ctx context.Context, event *client.Response, checkpoint *client.Response, start, end time.Time, region string) (*ormapi.MetricData, error) {
 	series := ormapi.MetricSeries{
 		Name:    usageTypeCluster,
 		Values:  make([][]interface{}, 0),
@@ -207,7 +207,13 @@ func GetClusterUsage(event *client.Response, checkpoint *client.Response, start,
 			cloudletorg := fmt.Sprintf("%v", values[4])
 			flavor := fmt.Sprintf("%v", values[5])
 			status := fmt.Sprintf("%v", values[6])
-			nodecount, err := values[7].(json.Number).Int64()
+			var nodecount int64
+			if values[7] == nil {
+				log.SpanLog(ctx, log.DebugLevelInfo, "Invalid data entry - nodecount is nil", "values", values)
+				nodecount = 0
+			} else {
+				nodecount, err = values[7].(json.Number).Int64()
+			}
 			if err != nil {
 				return nil, fmt.Errorf("Error trying to convert nodecount to int: %s", err)
 			}
@@ -252,7 +258,13 @@ func GetClusterUsage(event *client.Response, checkpoint *client.Response, start,
 			flavor := fmt.Sprintf("%v", values[5])
 			event := fmt.Sprintf("%v", values[6])
 			status := fmt.Sprintf("%v", values[7])
-			nodecount, err := values[8].(json.Number).Int64()
+			var nodecount int64
+			if values[8] == nil {
+				log.SpanLog(ctx, log.DebugLevelInfo, "Invalid data entry - nodecount is nil", "values", values)
+				nodecount = 0
+			} else {
+				nodecount, err = values[8].(json.Number).Int64()
+			}
 			if err != nil {
 				return nil, fmt.Errorf("Error trying to convert nodecount to int: %s", err)
 			}
@@ -761,7 +773,7 @@ func GetUsageCommon(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		usage, err = GetClusterUsage(eventResp, checkResp, in.StartTime, in.EndTime, in.Region)
+		usage, err = GetClusterUsage(ctx, eventResp, checkResp, in.StartTime, in.EndTime, in.Region)
 		if err != nil {
 			return err
 		}
