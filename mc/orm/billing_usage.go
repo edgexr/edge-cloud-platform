@@ -113,7 +113,7 @@ func recordRegionUsage(ctx context.Context, region string, start, end time.Time)
 		log.SpanLog(ctx, log.DebugLevelInfo, "Error gathering cluster usage for billing", "region", region, "err", err)
 		return
 	}
-	clusterUsage, err := GetClusterUsage(eventResp, checkResp, clusterIn.StartTime, clusterIn.EndTime, clusterIn.Region)
+	clusterUsage, err := GetClusterUsage(ctx, eventResp, checkResp, clusterIn.StartTime, clusterIn.EndTime, clusterIn.Region)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Error parsing cluster usage for billing", "region", region, "err", err)
 		return

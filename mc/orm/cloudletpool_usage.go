@@ -137,7 +137,7 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 		if err != nil {
 			return fmt.Errorf("Error retrieving usage records: %v", err)
 		}
-		clusterUsage, err := GetClusterUsage(eventResp, checkResp, in.StartTime, in.EndTime, in.Region)
+		clusterUsage, err := GetClusterUsage(ctx, eventResp, checkResp, in.StartTime, in.EndTime, in.Region)
 		if err != nil {
 			return fmt.Errorf("Error calculating usage records: %v", err)
 		}
