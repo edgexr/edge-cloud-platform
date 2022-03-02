@@ -15,7 +15,7 @@ cookbook 'runstatus_handler', '= 1.0.0'
 cookbook 'copy_resource_tracker', '= 1.0.1'
 cookbook 'set_security_policies', '= 1.0.0'
 cookbook 'setup_teleport', '= 1.1.0'
-cookbook 'upgrade_mobiledgex_package', '= 1.0.14'
+cookbook 'upgrade_mobiledgex_package', '= 1.0.15'
 
 # Set chef-client version
 # IMP: Version of chef client here needs to match the version in the base image.
