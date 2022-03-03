@@ -47,6 +47,9 @@ func searchEvents(c echo.Context, searchFunc func(context.Context, *node.EventSe
 			search.AllowedOrgs = append(search.AllowedOrgs, k)
 		}
 	}
+	if len(allowedOrgs) == 0 {
+		return echo.ErrForbidden
+	}
 
 	events, err := searchFunc(ctx, &search)
 	if err != nil {
@@ -74,6 +77,9 @@ func EventTerms(c echo.Context) error {
 	allowedOrgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceUsers, ActionView)
 	if err != nil {
 		return err
+	}
+	if len(allowedOrgs) == 0 {
+		return echo.ErrForbidden
 	}
 	if _, found := allowedOrgs[""]; !found {
 		// non-admin, enforce allowed orgs in search

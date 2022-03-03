@@ -632,6 +632,9 @@ func ShowUser(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	if len(authOrgs) == 0 {
+		return echo.ErrForbidden
+	}
 	_, admin := authOrgs[""]
 	_, orgFound := authOrgs[filterOrg]
 	if filterOrg != "" && !admin && !orgFound {
