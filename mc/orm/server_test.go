@@ -411,6 +411,47 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	testUpdateOrgFail(t, mcClient, uri, tokenMisterX, org2.Name)
 	testUpdateOrgFail(t, mcClient, uri, tokenMisterY, org1.Name)
 
+	// users cannot change certain fields on orgs
+	orgDat := &cli.MapData{
+		Namespace: cli.StructNamespace,
+	}
+	orgDat.Data = map[string]interface{}{
+		"Name":   org1.Name,
+		"Parent": "foo",
+	}
+	status, err = mcClient.UpdateOrg(uri, tokenMisterX, orgDat)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Cannot update parent")
+	orgDat.Data = map[string]interface{}{
+		"Name":        org1.Name,
+		"EdgeboxOnly": true,
+	}
+	status, err = mcClient.UpdateOrg(uri, tokenMisterX, orgDat)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Cannot update edgeboxonly")
+
+	// admin can update parent
+	orgDat.Data = map[string]interface{}{
+		"Name":   org1.Name,
+		"Parent": "foo",
+	}
+	status, err = mcClient.RestrictedUpdateOrg(uri, tokenAdmin, orgDat)
+	require.Nil(t, err)
+	orgDat.Data = map[string]interface{}{
+		"Name": org1.Name,
+	}
+	orgs, status, err = mcClient.ShowOrg(uri, tokenAdmin, orgDat)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 1, len(orgs))
+	require.Equal(t, "foo", orgs[0].Parent)
+	orgDat.Data = map[string]interface{}{
+		"Name":   org1.Name,
+		"Parent": "",
+	}
+	status, err = mcClient.RestrictedUpdateOrg(uri, tokenAdmin, orgDat)
+	require.Nil(t, err)
+
 	// check role assignments as mister x
 	roleAssignments, status, err = mcClient.ShowRoleAssignment(uri, tokenMisterX, ClientNoShowFilter)
 	require.Nil(t, err)
