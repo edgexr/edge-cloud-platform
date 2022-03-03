@@ -519,6 +519,9 @@ func ShowBillingOrgObj(ctx context.Context, claims *UserClaims) ([]ormapi.Billin
 	if err != nil {
 		return nil, err
 	}
+	if len(authOrgs) == 0 {
+		return nil, echo.ErrForbidden
+	}
 	_, isAdmin := authOrgs[""]
 	if isAdmin {
 		// super user, show all orgs
@@ -570,6 +573,9 @@ func ShowAccountInfoObj(ctx context.Context, claims *UserClaims) ([]ormapi.Accou
 	authOrgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceBilling, ActionManage)
 	if err != nil {
 		return nil, err
+	}
+	if len(authOrgs) == 0 {
+		return nil, echo.ErrForbidden
 	}
 	_, isAdmin := authOrgs[""]
 	if isAdmin {

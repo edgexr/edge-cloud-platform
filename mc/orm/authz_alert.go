@@ -3,6 +3,7 @@ package orm
 import (
 	"context"
 
+	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 )
@@ -16,6 +17,9 @@ func newShowAlertAuthz(ctx context.Context, region, username, resource, action s
 	orgs, err := enforcer.GetAuthorizedOrgs(ctx, username, resource, action)
 	if err != nil {
 		return nil, err
+	}
+	if len(orgs) == 0 {
+		return nil, echo.ErrForbidden
 	}
 	authz := AuthzAlert{
 		orgs: orgs,
