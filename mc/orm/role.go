@@ -641,7 +641,7 @@ func ShowUserRoleObj(ctx context.Context, username string, filter map[string]int
 	return roles, nil
 }
 
-func SyncAccessCheck(c echo.Context) error {
+func AdminAccessCheck(c echo.Context) error {
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
