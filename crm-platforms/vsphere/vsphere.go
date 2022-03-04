@@ -233,3 +233,7 @@ func (s *VSpherePlatform) CheckServerReady(ctx context.Context, client ssh.Clien
 	log.SpanLog(ctx, log.DebugLevelInfra, "CheckServerReady Mobiledgex service status", "serverName", serverName, "out", out, "err", err)
 	return err
 }
+
+func (s VSpherePlatform) ActiveChanged(ctx context.Context, platformActive bool) error {
+	return nil
+}

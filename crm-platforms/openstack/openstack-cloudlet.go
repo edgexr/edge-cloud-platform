@@ -317,3 +317,7 @@ func (p *OpenstackPlatform) InternalCloudletUpdatedCallback(ctx context.Context,
 func (p *OpenstackPlatform) GetGPUSetupStage(ctx context.Context) vmlayer.GPUSetupStage {
 	return vmlayer.ClusterInstStage
 }
+
+func (o OpenstackPlatform) ActiveChanged(ctx context.Context, platformActive bool) error {
+	return nil
+}

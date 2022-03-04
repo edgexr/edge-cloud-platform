@@ -13,6 +13,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/mobiledgex/edge-cloud/vmspec"
+
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
@@ -237,7 +238,7 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	// Source OpenRC file to access openstack API endpoint
 	updateCallback(edgeproto.UpdateTask, "Sourcing access variables")
 	log.SpanLog(ctx, log.DebugLevelInfra, "Sourcing access variables", "region", pfConfig.Region, "cloudletKey", cloudlet.Key, "PhysicalName", cloudlet.PhysicalName)
-	err = v.VMProvider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar, stage)
+	err = v.VMProvider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar)
 	if err != nil {
 		return cloudletResourcesCreated, err
 	}
@@ -271,6 +272,11 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	v.Caches = caches
 	v.GPUConfig = cloudlet.GpuConfig
 
+	err = v.VMProvider.InitProvider(ctx, caches, stage, updateCallback)
+	if err != nil {
+		return cloudletResourcesCreated, err
+	}
+
 	var result OperationInitResult
 	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
@@ -278,11 +284,6 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	}
 	if result == OperationNewlyInitialized {
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
-	}
-
-	err = v.VMProvider.InitProvider(ctx, caches, stage, updateCallback)
-	if err != nil {
-		return cloudletResourcesCreated, err
 	}
 
 	chefApi, err := v.GetChefPlatformApiAccess(ctx, cloudlet)
@@ -428,7 +429,7 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	v.VMProvider.InitData(ctx, caches)
 
 	// Source OpenRC file to access openstack API endpoint
-	err = v.VMProvider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar, ProviderInitDeleteCloudlet)
+	err = v.VMProvider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar)
 	if err != nil {
 		// ignore this error, as no creation would've happened on infra, so nothing to delete
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to source platform variables", "cloudletName", cloudlet.Key.Name, "err", err)
@@ -748,7 +749,7 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 
 	v.VMProvider.InitData(ctx, caches)
 
-	err = v.VMProvider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar, ProviderInitGetVmSpec)
+	err = v.VMProvider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar)
 	if err != nil {
 		return nil, err
 	}
@@ -832,17 +833,23 @@ func (v *VMPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletP
 	return &props, nil
 }
 
-func (v *VMPlatform) ActiveChanged(ctx context.Context, platformActive bool) {
+func (v *VMPlatform) ActiveChanged(ctx context.Context, platformActive bool) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChanged", "platformActive", platformActive)
 	if !platformActive {
 		// unexpected as this is not currently supported
 		log.SpanLog(ctx, log.DebugLevelInfra, "platform unexpectedly transitioned to inactive")
-		return
+		return fmt.Errorf("platform unexpectedly transitioned to inactive")
 	}
-	ctx, _, err := v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	var err error
+	err = v.VMProvider.ActiveChanged(ctx, platformActive)
+	if err != nil {
+		log.FatalLog("Error in provider ActiveChanged - %v", err)
+	}
+	ctx, _, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to init context for cleanup", "err", err)
-		return
+		return err
 	}
 	infracommon.HandlePlatformSwitchToActive(ctx, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.Caches, v.cleanupClusterInst, v.cleanupAppInst)
+	return nil
 }

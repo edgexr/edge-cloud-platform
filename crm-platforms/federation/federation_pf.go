@@ -631,5 +631,6 @@ func (f *FederationPlatform) GetRootLBFlavor(ctx context.Context) (*edgeproto.Fl
 	return &edgeproto.Flavor{}, nil
 }
 
-func (k *FederationPlatform) ActiveChanged(ctx context.Context, platformActive bool) {
+func (k *FederationPlatform) ActiveChanged(ctx context.Context, platformActive bool) error{
+	return nil
 }

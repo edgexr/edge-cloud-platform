@@ -46,7 +46,7 @@ type VMProvider interface {
 	RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error
 	GetResourceID(ctx context.Context, resourceType ResourceType, resourceName string) (string, error)
 	GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string
-	InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string, stage ProviderInitStage) error
+	InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error
 	GetApiEndpointAddr(ctx context.Context) (string, error)
 	GetExternalGateway(ctx context.Context, extNetName string) (string, error)
 	SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error
@@ -74,6 +74,7 @@ type VMProvider interface {
 	InternalCloudletUpdatedCallback(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal)
 	VmAppChangedCallback(ctx context.Context, appInst *edgeproto.AppInst, newState edgeproto.TrackedState)
 	GetGPUSetupStage(ctx context.Context) GPUSetupStage
+	ActiveChanged(ctx context.Context, platformActive bool) error
 }
 
 // VMPlatform contains the needed by all VM based platforms
@@ -408,7 +409,7 @@ func (v *VMPlatform) InitCommon(ctx context.Context, platformConfig *platform.Pl
 	v.VMProvider.InitData(ctx, caches)
 
 	updateCallback(edgeproto.UpdateTask, "Fetching API access credentials")
-	if err = v.VMProvider.InitApiAccessProperties(ctx, platformConfig.AccessApi, platformConfig.EnvVars, ProviderInitPlatformStartCrmCommon); err != nil {
+	if err = v.VMProvider.InitApiAccessProperties(ctx, platformConfig.AccessApi, platformConfig.EnvVars); err != nil {
 		return err
 	}
 	v.FlavorList, err = v.VMProvider.GetFlavorList(ctx)
@@ -424,7 +425,11 @@ func (v *VMPlatform) InitCommon(ctx context.Context, platformConfig *platform.Pl
 }
 
 func (v *VMPlatform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "InitHAConditional")
 
+	if err := v.VMProvider.InitProvider(ctx, v.Caches, ProviderInitPlatformStartCrmConditional, updateCallback); err != nil {
+		return err
+	}
 	var result OperationInitResult
 	ctx, result, err := v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {

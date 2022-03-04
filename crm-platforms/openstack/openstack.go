@@ -6,6 +6,8 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/mobiledgex/edge-cloud/log"
+
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -33,12 +35,12 @@ func (o *OpenstackPlatform) GetFeatures() *platform.Features {
 }
 
 func (o *OpenstackPlatform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider", "stage", stage)
 	o.InitResourceReservations(ctx)
-	if stage == vmlayer.ProviderInitPlatformStartCrmConditional || stage == vmlayer.ProviderInitPlatformStartCrmCommon {
+	if stage == vmlayer.ProviderInitPlatformStartCrmCommon {
 		o.initDebug(o.VMProperties.CommonPf.PlatformConfig.NodeMgr)
-		if stage == vmlayer.ProviderInitPlatformStartCrmConditional {
-			return o.PrepNetwork(ctx, updateCallback)
-		}
+	} else if stage == vmlayer.ProviderInitPlatformStartCrmConditional {
+		return o.PrepNetwork(ctx, updateCallback)
 	}
 	return nil
 }
