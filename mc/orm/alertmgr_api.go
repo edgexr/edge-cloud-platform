@@ -163,6 +163,12 @@ func DeleteAlertReceiver(c echo.Context) error {
 			ResourceUsers, ActionManage); err != nil {
 			return err
 		}
+
+		// also check that the user specified is is part of the org
+		if err := authorized(ctx, in.User, org, ResourceAlert, ActionView); err != nil {
+			return err
+		}
+
 	} else {
 		in.User = claims.Username
 	}

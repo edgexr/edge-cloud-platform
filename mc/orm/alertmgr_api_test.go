@@ -83,6 +83,21 @@ func testDeleteAlertReceiver(mcClient *mctestclient.Client, uri, token, region, 
 
 }
 
+func testDeleteAlertReceiverWithClusterOrg(mcClient *mctestclient.Client, uri, token, region, org, name, rType, severity, username string) (int, error) {
+	in := &edgeproto.AppInstKey{}
+	in.ClusterInstKey.Organization = org
+	dat := &ormapi.AlertReceiver{}
+	dat.Severity = severity
+	dat.Type = rType
+	dat.Name = name
+	dat.AppInst = *in
+	dat.User = username
+
+	status, err := mcClient.DeleteAlertReceiver(uri, token, dat)
+	return status, err
+
+}
+
 func badPermTestAlertReceivers(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
 	status, err := testCreateAlertReceiver(mcClient, uri, token, region, org, "testAlert", "email", "error", "", "", nil, nil)
 	require.NotNil(t, err)
@@ -135,6 +150,10 @@ func userPermTestAlertReceivers(t *testing.T, mcClient *mctestclient.Client, uri
 	require.Equal(t, http.StatusForbidden, status)
 	// Developer cannot delete other user's receiver
 	status, err = testDeleteAlertReceiver(mcClient, uri, devToken, region, devOrg, "mgrReceiver", "email", "error", devMgr)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+	// user cannot delete receiver from another org
+	status, err = testDeleteAlertReceiverWithClusterOrg(mcClient, uri, devMgrToken, region, devOrg, "mgrReceiver", "email", "error", "otheruser")
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 	// Manager can delete other user's receiver
