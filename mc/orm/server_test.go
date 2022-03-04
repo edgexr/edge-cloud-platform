@@ -17,6 +17,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/pquerna/otp/totp"
@@ -52,6 +53,9 @@ func TestServer(t *testing.T) {
 		UsageCheckpointInterval: "MONTH",
 		BillingPlatform:         billing.BillingTypeFake,
 		DeploymentTag:           "local",
+		NodeMgr: &node.NodeMgr{
+			InternalDomain: "mobiledgex.net",
+		},
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
@@ -451,6 +455,23 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	}
 	status, err = mcClient.RestrictedUpdateOrg(uri, tokenAdmin, orgDat)
 	require.Nil(t, err)
+
+	// callback url is validated as part of password reset request
+	emailReq := ormapi.EmailRequest{
+		Email:           user1.Email,
+		OperatingSystem: "linux",
+		CallbackURL:     "invalid.com/verify",
+	}
+	_, err = mcClient.PasswordResetRequest(uri, &emailReq)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Invalid callback URL domain")
+
+	emailReq.CallbackURL = "https://mobiledgex.net/verify"
+	_, err = mcClient.PasswordResetRequest(uri, &emailReq)
+	require.NotNil(t, err)
+	// This requires email server to be configured, hence we just verify
+	// that invalid callback url error is not seen
+	require.NotContains(t, err.Error(), "Invalid callback URL domain")
 
 	// check role assignments as mister x
 	roleAssignments, status, err = mcClient.ShowRoleAssignment(uri, tokenMisterX, ClientNoShowFilter)
