@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	math "math"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -422,6 +423,9 @@ func CreateUser(c echo.Context) error {
 		return ormutil.DbErr(err)
 	}
 	createuser.Verify.Email = user.Email
+	if err := ValidateCallbackURL(createuser.Verify.CallbackURL); err != nil {
+		return err
+	}
 	err = sendVerifyEmail(ctx, user.Name, &createuser.Verify)
 	if err != nil {
 		db.Delete(&user)
@@ -459,6 +463,9 @@ func ResendVerify(c echo.Context) error {
 		return ormutil.BindErr(err)
 	}
 	if err := ValidEmailRequest(c, &req); err != nil {
+		return err
+	}
+	if err := ValidateCallbackURL(req.CallbackURL); err != nil {
 		return err
 	}
 	return sendVerifyEmail(ctx, "MobiledgeX user", &req)
@@ -776,6 +783,24 @@ func checkPasswordStrength(ctx context.Context, user *ormapi.User, config *ormap
 	return nil
 }
 
+func ValidateCallbackURL(urlString string) error {
+	domainName := serverConfig.NodeMgr.InternalDomain
+	if urlString == "" || domainName == "" {
+		return nil
+	}
+	if !strings.HasPrefix(urlString, "http") {
+		urlString = "http://" + urlString
+	}
+	u, err := url.Parse(urlString)
+	if err != nil {
+		return fmt.Errorf("Invalid callback URL %s, %v", urlString, err)
+	}
+	if !strings.HasSuffix(u.Hostname(), domainName) {
+		return fmt.Errorf("Invalid callback URL domain, must be %s", domainName)
+	}
+	return nil
+}
+
 func PasswordResetRequest(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
 	req := ormapi.EmailRequest{}
@@ -783,6 +808,9 @@ func PasswordResetRequest(c echo.Context) error {
 		return ormutil.BindErr(err)
 	}
 	if err := ValidEmailRequest(c, &req); err != nil {
+		return err
+	}
+	if err := ValidateCallbackURL(req.CallbackURL); err != nil {
 		return err
 	}
 	noreply, err := getNoreply(ctx)
@@ -1056,6 +1084,9 @@ func UpdateUser(c echo.Context) error {
 	}
 
 	if sendVerify {
+		if err := ValidateCallbackURL(cuser.Verify.CallbackURL); err != nil {
+			return err
+		}
 		err = sendVerifyEmail(ctx, user.Name, &cuser.Verify)
 		if err != nil {
 			undoErr := db.Save(&old).Error
