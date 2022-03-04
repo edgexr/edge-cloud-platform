@@ -255,7 +255,7 @@ func (s *AppStoreSync) syncGroupMembers(ctx context.Context, allOrgs map[string]
 }
 
 func GitlabResync(c echo.Context) error {
-	err := SyncAccessCheck(c)
+	err := AdminAccessCheck(c)
 	if err != nil {
 		return err
 	}
