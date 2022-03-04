@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -223,43 +222,14 @@ func (v *VcdPlatform) GetVmAppInternalDhcpServer() bool {
 }
 
 // start fetching access  bits from vault
-func (v *VcdPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string, stage vmlayer.ProviderInitStage) error {
+func (v *VcdPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "InitApiAccessProperties", "Stage", stage)
+	log.SpanLog(ctx, log.DebugLevelInfra, "InitApiAccessProperties")
 	err := v.GetVcdVars(ctx, accessApi)
 	if err != nil {
 		return err
 	}
-	if v.GetVcdOauthSgwUrl() != "" {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Need to get oauth token", "Stage", stage)
-		switch stage {
-		case vmlayer.ProviderInitPlatformStartCrmConditional:
-			fallthrough
-		case vmlayer.ProviderInitCreateCloudletDirect:
-			fallthrough
-		case vmlayer.ProviderInitDeleteCloudlet:
-			err := v.UpdateOauthToken(ctx, v.Creds)
-			if err != nil {
-				return fmt.Errorf("UpdateOauthToken failed - %v", err)
-			}
-			if stage == vmlayer.ProviderInitPlatformStartCrmConditional {
-				go v.RefreshOauthTokenPeriodic(ctx, v.Creds)
-			}
-		case vmlayer.ProviderInitPlatformStartShepherd:
-			err := v.WaitForOauthTokenViaNotify(ctx, v.vmProperties.CommonPf.PlatformConfig.CloudletKey)
-			if err != nil {
-				return err
-			}
-		}
 
-	}
-	v.initDebug(v.vmProperties.CommonPf.PlatformConfig.NodeMgr, stage)
-	return nil
-}
-
-func (v *VcdPlatform) SetProviderSpecificProps(ctx context.Context) error {
-
-	// Put template selection bits here
 	return nil
 }
 

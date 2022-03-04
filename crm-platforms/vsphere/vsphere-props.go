@@ -115,7 +115,7 @@ func (v *VSpherePlatform) GetVsphereVars(ctx context.Context, accessApi platform
 	return nil
 }
 
-func (v *VSpherePlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string, stage vmlayer.ProviderInitStage) error {
+func (v *VSpherePlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {
 	err := v.GetVsphereVars(ctx, accessApi)
 	if err != nil {
 		return err

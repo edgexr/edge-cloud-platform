@@ -112,3 +112,7 @@ func (o *VMPoolPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, r
 	// nothing to do
 	return nil
 }
+
+func (v VMPoolPlatform) ActiveChanged(ctx context.Context, platformActive bool) error {
+	return nil
+}

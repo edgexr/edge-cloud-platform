@@ -123,6 +123,7 @@ func (s *EdgeboxPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.
 	return s.generic.GetRootLBClients(ctx)
 }
 
-func (s *EdgeboxPlatform) ActiveChanged(ctx context.Context, platformActive bool) {
+func (s *EdgeboxPlatform) ActiveChanged(ctx context.Context, platformActive bool) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChanged")
+	return nil
 }

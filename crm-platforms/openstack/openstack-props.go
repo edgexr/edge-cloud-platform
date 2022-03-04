@@ -45,7 +45,7 @@ func (o *OpenstackPlatform) GetProviderSpecificProps(ctx context.Context) (map[s
 	return OpenstackProps, nil
 }
 
-func (o *OpenstackPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string, stage vmlayer.ProviderInitStage) error {
+func (o *OpenstackPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {
 	err := o.GetOpenRCVars(ctx, accessApi)
 	if err != nil {
 		return err

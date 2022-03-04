@@ -240,9 +240,11 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 	}
 	// cleanup VM HREF cache
 	if v.GetHrefCacheEnabled() {
-		for _, vm := range vapp.VApp.Children.VM {
-			// delete from cache
-			v.DeleteVmHrefFromCache(ctx, vm.Name)
+		if vapp.VApp != nil && vapp.VApp.Children != nil && vapp.VApp.Children.VM != nil {
+			for _, vm := range vapp.VApp.Children.VM {
+				// delete from cache
+				v.DeleteVmHrefFromCache(ctx, vm.Name)
+			}
 		}
 	}
 

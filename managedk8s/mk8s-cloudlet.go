@@ -146,6 +146,7 @@ func (v *ManagedK8sPlatform) GetRootLBClients(ctx context.Context) (map[string]s
 	return nil, nil
 }
 
-func (m *ManagedK8sPlatform) ActiveChanged(ctx context.Context, platformActive bool) {
+func (m *ManagedK8sPlatform) ActiveChanged(ctx context.Context, platformActive bool) error{
 	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChanged")
+	return nil
 }

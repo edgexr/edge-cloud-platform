@@ -72,13 +72,10 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 	v.Verbose = v.GetVcdVerbose()
 	v.InitData(ctx, caches)
 
-	err := v.SetProviderSpecificProps(ctx)
-	if err != nil {
-		return err
-	}
-
-	if stage == vmlayer.ProviderInitPlatformStartCrmConditional {
-
+	switch stage {
+	case vmlayer.ProviderInitPlatformStartCrmConditional:
+		// note on CRM startup the Oauth Init is done in ActiveChanged
+		var err error
 		mexInternalNetRange, err = v.getMexInternalNetRange(ctx)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider NetRange failed", "stage", stage, "err", err)
@@ -87,7 +84,7 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider", "mexInternalNetRange", mexInternalNetRange)
 
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider update isonet metadata", "stage", stage)
-		err := v.UpdateLegacyIsoNetMetaData(ctx)
+		err = v.UpdateLegacyIsoNetMetaData(ctx)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider UpdateLegacyIsoNetMetaData failed", "error", err)
 			return err
@@ -101,6 +98,36 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 				return err
 			}
 		}
+
+	case vmlayer.ProviderInitCreateCloudletDirect:
+		fallthrough
+	case vmlayer.ProviderInitDeleteCloudlet:
+		// update the token but no refresh needed
+		if v.GetVcdOauthSgwUrl() != "" {
+			err := v.UpdateOauthToken(ctx, v.Creds)
+			if err != nil {
+				return fmt.Errorf("UpdateOauthToken failed - %v", err)
+			}
+		}
+	case vmlayer.ProviderInitPlatformStartShepherd:
+		err := v.WaitForOauthTokenViaNotify(ctx, v.vmProperties.CommonPf.PlatformConfig.CloudletKey)
+		if err != nil {
+			return err
+		}
+	}
+	v.initDebug(v.vmProperties.CommonPf.PlatformConfig.NodeMgr, stage)
+	return nil
+}
+
+func (v *VcdPlatform) ActiveChanged(ctx context.Context, platformActive bool) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChanged")
+	// update the oauth token and start refresh but do nothing else
+	if v.GetVcdOauthSgwUrl() != "" {
+		err := v.UpdateOauthToken(ctx, v.Creds)
+		if err != nil {
+			return fmt.Errorf("UpdateOauthToken failed - %v", err)
+		}
+		go v.RefreshOauthTokenPeriodic(ctx, v.Creds)
 	}
 	return nil
 }

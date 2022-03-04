@@ -22,7 +22,7 @@ func (o *VMPoolPlatform) GetProviderSpecificProps(ctx context.Context) (map[stri
 	return VMPoolProps, nil
 }
 
-func (o *VMPoolPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string, stage vmlayer.ProviderInitStage) error {
+func (o *VMPoolPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {
 	return nil
 }
 
