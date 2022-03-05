@@ -330,3 +330,5 @@ replace github.com/alicebob/miniredis/v2 => github.com/alicebob/miniredis/v2 v2.
 replace github.com/gomodule/redigo => github.com/gomodule/redigo v1.8.8
 
 replace github.com/yuin/gopher-lua => github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
+
+replace github.com/kballard/go-shellquote => github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
