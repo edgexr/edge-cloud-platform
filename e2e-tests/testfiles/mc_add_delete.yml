@@ -54,6 +54,15 @@ tests:
     yaml2: '{{datadir2}}/mc_user1_data_show.yml'
     filetype: mcdata
 
+- name: verify admin-only fields are present
+  actions: [mcapi-show]
+  apifile: '{{datadir2}}/mc_user1_cloudlet_data.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_admin_all_data_show.yml'
+    filetype: mcdata
+
 - name: verify that cloudlet Prometheus rules and targets are empty
   actions: [cmds]
   apifile: "{{datadir2}}/prom_check_empty"

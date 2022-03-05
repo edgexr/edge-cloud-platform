@@ -493,6 +493,11 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		Key: org3Cloudlet.Key,
 	}
 	org3CloudletInfo.ContainerVersion = "xyz"
+	org3CloudletInfo.ResourcesSnapshot = edgeproto.InfraResourcesSnapshot{
+		PlatformVms: []edgeproto.VmInfo{
+			{Name: "test"},
+		},
+	}
 	ds.CloudletInfoCache.Update(ctx, &org3CloudletInfo, 0)
 	tc3 := &org3Cloudlet.Key
 
@@ -671,6 +676,10 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	testShowOrgCloudlet(t, mcClient, uri, tokenOper, OrgTypeOperator, ctrl.Region, org3, ccount, org3)
 	testShowOrgCloudlet(t, mcClient, uri, tokenDev, OrgTypeDeveloper, ctrl.Region, org1, ccount, org3)
 	testShowOrgCloudlet(t, mcClient, uri, tokenAd, OrgTypeAdmin, ctrl.Region, org3, ccount, org3)
+	// validate that cloudlet info is filtered based on user role
+	testShowCloudletInfoFilter(t, mcClient, uri, tokenAd, OrgTypeAdmin, ctrl.Region, org1, dcnt)
+	testShowCloudletInfoFilter(t, mcClient, uri, tokenDev, OrgTypeDeveloper, ctrl.Region, org1, dcnt)
+	testShowCloudletInfoFilter(t, mcClient, uri, tokenOper, OrgTypeOperator, ctrl.Region, org3, dcnt+1)
 	// no permissions outside of own org for ShowOrgCloudlet
 	// (nothing to do with cloudlet pools, just checking API access)
 	badPermShowOrgCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, org2)
@@ -1801,11 +1810,47 @@ func testShowOrgCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token
 		for _, clInfo := range infolist {
 			if orgType == OrgTypeDeveloper && org == matchOrg {
 				require.Empty(t, clInfo.ContainerVersion, "user is not authorized to see additional cloudlet info details")
+				require.Empty(t, clInfo.ResourcesSnapshot, "user is not authorized to see additional cloudlet info details")
 				continue
 			}
 			if org == clInfo.Key.Organization {
 				require.NotEmpty(t, clInfo.ContainerVersion, "user is authorized to see additional cloudlet info details")
+				if orgType == OrgTypeOperator {
+					require.Empty(t, clInfo.ResourcesSnapshot, "user is not authorized to see internal-use only cloudlet info details")
+				}
+				if orgType == OrgTypeAdmin {
+					require.NotEmpty(t, clInfo.ResourcesSnapshot, "admin is authorized to see internal-use only cloudlet info details")
+				}
 			}
+		}
+	}
+}
+
+func testShowCloudletInfoFilter(t *testing.T, mcClient *mctestclient.Client, uri, token, orgType, region, org string, showcount int) {
+	rcInfo := ormapi.RegionCloudletInfo{}
+	rcInfo.Region = region
+	rcInfo.CloudletInfo = edgeproto.CloudletInfo{
+		Key: edgeproto.CloudletKey{
+			Organization: org,
+		},
+	}
+	infolist, infostatus, err := mcClient.ShowCloudletInfo(uri, token, &rcInfo)
+	if orgType == OrgTypeDeveloper {
+		require.NotNil(t, err, "cannot perform show cloudletinfo")
+		require.Equal(t, http.StatusForbidden, infostatus)
+		return
+	} else {
+		require.Nil(t, err, "show cloudletinfo")
+		require.Equal(t, http.StatusOK, infostatus)
+		require.Equal(t, showcount, len(infolist))
+	}
+	for _, clInfo := range infolist {
+		require.NotEmpty(t, clInfo.ContainerVersion, "user is authorized to see additional cloudlet info details")
+		if orgType == OrgTypeOperator {
+			require.Empty(t, clInfo.ResourcesSnapshot, "user is not authorized to see internal-use only cloudlet info details")
+		}
+		if orgType == OrgTypeAdmin {
+			require.NotEmpty(t, clInfo.ResourcesSnapshot, "admin is authorized to see internal-use only cloudlet info details")
 		}
 	}
 }

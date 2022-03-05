@@ -537,7 +537,12 @@ func GenerateAccessKeyObj(ctx context.Context, rc *ormutil.RegionContext, obj *e
 	return api.GenerateAccessKey(ctx, obj)
 }
 
-func ShowCloudletInfoStream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.CloudletInfo, connObj ClientConnMgr, authz authzShow, cb func(res *edgeproto.CloudletInfo) error) error {
+type ShowCloudletInfoAuthz interface {
+	Ok(obj *edgeproto.CloudletInfo) (bool, bool)
+	Filter(obj *edgeproto.CloudletInfo)
+}
+
+func ShowCloudletInfoStream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.CloudletInfo, connObj ClientConnMgr, authz ShowCloudletInfoAuthz, cb func(res *edgeproto.CloudletInfo) error) error {
 	conn, err := connObj.GetRegionConn(ctx, rc.Region)
 	if err != nil {
 		return err
@@ -560,8 +565,12 @@ func ShowCloudletInfoStream(ctx context.Context, rc *ormutil.RegionContext, obj 
 		}
 		if !rc.SkipAuthz {
 			if authz != nil {
-				if !authz.Ok(res.Key.Organization) {
+				authzOk, filterOutput := authz.Ok(res)
+				if !authzOk {
 					continue
+				}
+				if filterOutput {
+					authz.Filter(res)
 				}
 			}
 		}

@@ -318,3 +318,32 @@ func authzGetGPUDriverBuildURL(ctx context.Context, region, username string, obj
 	}
 	return nil
 }
+
+type AuthzCloudletInfoShow struct {
+	authzShow AuthzShow
+}
+
+func newShowCloudletInfoAuthz(ctx context.Context, region, username string, resource, action string) (ctrlclient.ShowCloudletInfoAuthz, error) {
+	authzShow, err := newShowAuthz(ctx, region, username, resource, action)
+	if err != nil {
+		return nil, err
+	}
+	return &AuthzCloudletInfoShow{
+		authzShow: *authzShow,
+	}, nil
+}
+
+func (s *AuthzCloudletInfoShow) Ok(obj *edgeproto.CloudletInfo) (bool, bool) {
+	filterOutput := true
+	if s.authzShow.allowAll {
+		// do not filter output for admin
+		filterOutput = false
+	}
+	return s.authzShow.Ok(obj.Key.Organization), filterOutput
+}
+
+func (s *AuthzCloudletInfoShow) Filter(obj *edgeproto.CloudletInfo) {
+	// ResourcesSnapshot is used for internal resource tracking and
+	// is not meant for operator user
+	obj.ResourcesSnapshot = edgeproto.InfraResourcesSnapshot{}
+}
