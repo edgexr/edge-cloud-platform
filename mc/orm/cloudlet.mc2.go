@@ -1083,9 +1083,9 @@ func ShowCloudletInfo(c echo.Context) error {
 	span.SetTag("org", in.CloudletInfo.Key.Organization)
 
 	obj := &in.CloudletInfo
-	var authz *AuthzShow
+	var authz ctrlclient.ShowCloudletInfoAuthz
 	if !rc.SkipAuthz {
-		authz, err = newShowAuthz(ctx, rc.Region, rc.Username, ResourceCloudletAnalytics, ActionView)
+		authz, err = newShowCloudletInfoAuthz(ctx, rc.Region, rc.Username, ResourceCloudletAnalytics, ActionView)
 		if err != nil {
 			return err
 		}
