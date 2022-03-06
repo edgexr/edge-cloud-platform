@@ -111,9 +111,6 @@ regiondata:
         disk: 1
       containerversion: "2019-10-24"
       controllercachereceived: true
-      resourcessnapshot:
-        platformvms:
-        - name: local-mac
       trustpolicystate: NotPresent
 - region: locala
   appdata:

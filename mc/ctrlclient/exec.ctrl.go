@@ -23,6 +23,9 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func RunCommandObj(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.ExecRequest, connObj ClientConnMgr) (*edgeproto.ExecRequest, error) {
+	if err := RunCommandValidateInput(ctx, rc, obj); err != nil {
+		return nil, err
+	}
 	conn, err := connObj.GetRegionConn(ctx, rc.Region)
 	if err != nil {
 		return nil, err
