@@ -13,7 +13,7 @@ run_list 'chef_client_updater::default', 'recipe[runstatus_handler]', 'recipe[se
 cookbook 'runstatus_handler', '= 1.0.0'
 cookbook 'setup_infra', '= 1.0.0'
 cookbook 'preflight_crm_checks', '= 1.0.0'
-cookbook 'setup_services', '= 1.3.4'
+cookbook 'setup_services', '= 1.3.7'
 cookbook 'chef_client_updater', '= 3.11.0'
 cookbook 'set_security_policies', '= 1.0.0'
 cookbook 'setup_teleport', '= 1.1.0'

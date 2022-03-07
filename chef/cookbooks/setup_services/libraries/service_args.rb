@@ -74,6 +74,7 @@ class Chef
         'deploymentTag' => true,
         'accessKeyFile' => true,
         'accessApiAddr' => true,
+        'thanosRecvAddr' => true,
       }
       extract_cmd('shepherd', argsmap, false, false)
     end
@@ -149,6 +150,17 @@ class Chef
 
     def get_configmap_vars
       {}
+    end
+
+    def get_thanos_remote_write_addr
+      region = node.normal['crmserver']['args']['region'].downcase
+      deploymentTag = node.normal['crmserver']['args']['deploymentTag'].downcase
+      if deploymentTag == "main"
+        cmd = region + ".thanos-recv.mobiledgex.net"
+      else
+        cmd = region + "-" + deploymentTag + ".thanos-recv.mobiledgex.net"
+      end
+      cmd
     end
   end
 end
