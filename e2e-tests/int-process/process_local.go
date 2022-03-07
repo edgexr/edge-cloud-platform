@@ -776,7 +776,7 @@ func (p *ThanosQuery) StartLocal(logfile string, opts ...process.StartOp) error 
 	args := p.GetRunArgs()
 	args = append(args,
 		"-p", fmt.Sprintf("%d:%d", p.HttpPort, p.HttpPort),
-		"quay.io/thanos/thanos:v0.20.0",
+		"quay.io/thanos/thanos:v0.21.0",
 		"query",
 		"--http-address",
 		fmt.Sprintf(":%d", p.HttpPort),
@@ -795,7 +795,7 @@ func (p *ThanosReceive) StartLocal(logfile string, opts ...process.StartOp) erro
 	args = append(args,
 		"-p", fmt.Sprintf("%d:%d", p.GrpcPort, p.GrpcPort),
 		"-p", fmt.Sprintf("%d:%d", p.RemoteWritePort, p.RemoteWritePort),
-		"quay.io/thanos/thanos:v0.20.0",
+		"quay.io/thanos/thanos:v0.21.0",
 		"receive",
 		"--label",
 		fmt.Sprintf("region=\"%s\"", p.Region),

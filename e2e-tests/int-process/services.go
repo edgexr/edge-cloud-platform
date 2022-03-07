@@ -47,7 +47,7 @@ scrape_configs:
       action: labeldrop
 {{- if .RemoteWriteAddr}}
 remote_write:
-- url: http://{{.RemoteWriteAddr}}/api/v1/receive
+- url: {{.RemoteWriteAddr}}/api/v1/receive
 {{- end}}
 `
 
