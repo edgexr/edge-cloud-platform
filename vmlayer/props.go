@@ -31,6 +31,7 @@ type VMProperties struct {
 	CloudletAccessToken               string
 	NumCleanupRetries                 int
 	UsesCommonSharedInternalLBNetwork bool
+	PlatformExternalNetwork           string
 }
 
 const MEX_ROOTLB_FLAVOR_NAME = "mex-rootlb-flavor"
@@ -272,6 +273,9 @@ func (vp *VMProperties) GetNetworksByType(ctx context.Context, netTypes []Networ
 		case NetworkTypeExternalAdditionalPlatform:
 			for _, n := range vp.GetCloudletAdditionalPlatformNetworks() {
 				nets[n] = NetworkTypeExternalAdditionalPlatform
+			}
+			if vp.PlatformExternalNetwork != "" {
+				nets[vp.PlatformExternalNetwork] = NetworkTypeExternalAdditionalPlatform
 			}
 		case NetworkTypeInternalPrivate:
 			fallthrough

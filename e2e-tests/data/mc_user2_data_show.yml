@@ -160,7 +160,7 @@ regiondata:
           status: ACTIVE
           infraflavor: x1.small
         - name: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.mobiledgex.net
-          type: rootlb
+          type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
       dnslabel: smallcluster-acmeappco
@@ -683,7 +683,7 @@ regiondata:
           status: ACTIVE
           infraflavor: x1.small
         - name: smallcluster-acmeappco.dmuus-cloud-3-dmuus.locala.mobiledgex.net
-          type: rootlb
+          type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
       dnslabel: smallcluster-acmeappco

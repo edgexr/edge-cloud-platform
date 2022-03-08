@@ -85,20 +85,23 @@ type PortResourceReference struct {
 	PortGroup   string
 }
 
-func GetVmTypeForRole(role string) string {
+func (v *VMProperties) GetVmTypeForVmNameAndRole(vmname, role string) string {
 	switch role {
 	case string(RoleAgent):
-		return cloudcommon.VMTypeRootLB
+		if v.SharedRootLBName == vmname {
+			return cloudcommon.NodeTypeSharedRootLB
+		}
+		return cloudcommon.NodeTypeDedicatedRootLB
 	case string(RoleMaster):
-		return cloudcommon.VMTypeClusterMaster
+		return cloudcommon.NodeTypeClusterMaster
 	case string(RoleK8sNode):
-		return cloudcommon.VMTypeClusterK8sNode
+		return cloudcommon.NodeTypeClusterK8sNode
 	case string(RoleDockerNode):
-		return cloudcommon.VMTypeClusterDockerNode
+		return cloudcommon.NodeTypeClusterDockerNode
 	case string(RoleVMApplication):
-		return cloudcommon.VMTypeAppVM
+		return cloudcommon.NodeTypeAppVM
 	case string(RoleVMPlatform):
-		return cloudcommon.VMTypePlatform
+		return cloudcommon.NodeTypePlatformVM
 	}
 	return "unknown"
 }
@@ -554,7 +557,7 @@ func (v *VMPlatform) connectsToSharedRootLB(ctx context.Context, groupSpec *VMGr
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "connectsToSharedRootLB", "Name", groupSpec.GroupName)
 	for _, vm := range groupSpec.VMs {
-		if vm.Type == cloudcommon.VMTypeRootLB && vm.CreatePortsOnly {
+		if vm.Type == cloudcommon.NodeTypeSharedRootLB && vm.CreatePortsOnly {
 			log.SpanLog(ctx, log.DebugLevelInfra, "found shared rootlb ports", "GroupName", groupSpec.GroupName)
 			return true
 		}
@@ -723,7 +726,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 	}
 	vmAppSubnet := false
 	for _, vm := range spec.VMs {
-		if vm.Type == cloudcommon.VMTypeAppVM {
+		if vm.Type == cloudcommon.NodeTypeAppVM {
 			vmAppSubnet = true
 			break
 		}
@@ -779,9 +782,11 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 			connectToPreexistingSubnet = true
 		}
 		switch vm.Type {
-		case cloudcommon.VMTypePlatform:
+		case cloudcommon.NodeTypePlatformVM:
 			fallthrough
-		case cloudcommon.VMTypeRootLB:
+		case cloudcommon.NodeTypeSharedRootLB:
+			fallthrough
+		case cloudcommon.NodeTypeDedicatedRootLB:
 			role = RoleAgent
 			// do not attach the port to the VM if the policy is to do it after creation
 			skipAttachVM := true
@@ -813,7 +818,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 				newPorts = append(newPorts, internalPort)
 			}
 
-		case cloudcommon.VMTypeAppVM:
+		case cloudcommon.NodeTypeAppVM:
 			role = RoleVMApplication
 			if vm.ConnectToSubnet != "" {
 				// connect via internal network to LB
@@ -836,9 +841,9 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 				newPorts = append(newPorts, internalPort)
 			}
 
-		case cloudcommon.VMTypePlatformClusterMaster:
+		case cloudcommon.NodeTypePlatformClusterMaster:
 			fallthrough
-		case cloudcommon.VMTypeClusterMaster:
+		case cloudcommon.NodeTypeClusterMaster:
 			role = RoleMaster
 			if vm.ConnectToSubnet != "" {
 				// connect via internal network to LB
@@ -868,14 +873,14 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 			} else {
 				return nil, fmt.Errorf("k8s master not specified to be connected to internal network")
 			}
-		case cloudcommon.VMTypeClusterDockerNode:
+		case cloudcommon.NodeTypeClusterDockerNode:
 			fallthrough
-		case cloudcommon.VMTypePlatformClusterPrimaryNode:
+		case cloudcommon.NodeTypePlatformClusterPrimaryNode:
 			fallthrough
-		case cloudcommon.VMTypePlatformClusterSecondaryNode:
+		case cloudcommon.NodeTypePlatformClusterSecondaryNode:
 			fallthrough
-		case cloudcommon.VMTypeClusterK8sNode:
-			if vm.Type == cloudcommon.VMTypeClusterDockerNode {
+		case cloudcommon.NodeTypeClusterK8sNode:
+			if vm.Type == cloudcommon.NodeTypeClusterDockerNode {
 				role = RoleDockerNode
 			} else {
 				role = RoleK8sNode
@@ -1088,7 +1093,7 @@ func (v *VMPlatform) OrchestrateVMsFromVMSpec(ctx context.Context, name string, 
 	switch action {
 	case ActionCreate:
 		for _, vm := range vms {
-			if vm.CreatePortsOnly || vm.Type == cloudcommon.VMTypeAppVM {
+			if vm.CreatePortsOnly || vm.Type == cloudcommon.NodeTypeAppVM {
 				continue
 			}
 			if vm.ChefParams == nil {
@@ -1104,7 +1109,7 @@ func (v *VMPlatform) OrchestrateVMsFromVMSpec(ctx context.Context, name string, 
 	case ActionUpdate:
 		if gp.ChefUpdateInfo != nil {
 			for _, vm := range vms {
-				if vm.CreatePortsOnly || vm.Type == cloudcommon.VMTypeAppVM {
+				if vm.CreatePortsOnly || vm.Type == cloudcommon.NodeTypeAppVM {
 					continue
 				}
 				actionType, ok := gp.ChefUpdateInfo[vm.Name]

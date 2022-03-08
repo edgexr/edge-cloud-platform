@@ -727,7 +727,7 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 	newSubnetName := GetClusterSubnetName(ctx, clusterInst)
 
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-		tags := v.GetChefClusterTags(&clusterInst.Key, cloudcommon.VMTypeRootLB)
+		tags := v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeDedicatedRootLB)
 		rootlb, err := v.GetVMSpecForRootLB(ctx, v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst), newSubnetName, tags, lbNets, lbRoutes, updateCallback)
 		if err != nil {
 			return vms, newSubnetName, newSecgrpName, err
@@ -741,7 +741,7 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 		// via shared rootlb
 		if v.VMProperties.GetCloudletExternalRouter() == NoExternalRouter {
 			// If no router in use, create ports on the existing shared rootLB
-			rootlb, err := v.GetVMSpecForRootLBPorts(ctx, v.VMProperties.SharedRootLBName, newSubnetName)
+			rootlb, err := v.GetVMSpecForSharedRootLBPorts(ctx, v.VMProperties.SharedRootLBName, newSubnetName)
 			if err != nil {
 				return vms, newSubnetName, newSecgrpName, err
 			}
@@ -749,12 +749,12 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 		}
 	}
 	chefAttributes := make(map[string]interface{})
-	chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.VMTypeClusterDockerNode)
+	chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeClusterDockerNode)
 	clientName := v.GetChefClientName(dockerVmName)
 	chefParams := v.GetServerChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 	dockervm, err := v.GetVMRequestSpec(
 		ctx,
-		cloudcommon.VMTypeClusterDockerNode,
+		cloudcommon.NodeTypeClusterDockerNode,
 		dockerVmName,
 		clusterInst.NodeFlavor,
 		imgName,
@@ -821,7 +821,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		var rootlb *VMRequestSpec
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			// dedicated for docker means the docker VM acts as its own rootLB
-			tags := v.GetChefClusterTags(&clusterInst.Key, cloudcommon.VMTypeRootLB)
+			tags := v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeDedicatedRootLB)
 			rootlb, err = v.GetVMSpecForRootLB(ctx, v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst), newSubnetName, tags, lbNets, lbRoutes, updateCallback)
 			if err != nil {
 				return nil, err
@@ -830,7 +830,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 			newSecgrpName = infracommon.GetServerSecurityGroupName(rootlb.Name)
 		} else if v.VMProperties.GetCloudletExternalRouter() == NoExternalRouter {
 			// If no router in use, create ports on the existing shared rootLB
-			rootlb, err = v.GetVMSpecForRootLBPorts(ctx, v.VMProperties.SharedRootLBName, newSubnetName)
+			rootlb, err = v.GetVMSpecForSharedRootLBPorts(ctx, v.VMProperties.SharedRootLBName, newSubnetName)
 			if err != nil {
 				return nil, err
 			}
@@ -838,7 +838,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		}
 
 		chefAttributes := make(map[string]interface{})
-		chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.VMTypeClusterMaster)
+		chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeClusterMaster)
 
 		clientName := v.GetChefClientName(GetClusterMasterName(ctx, clusterInst))
 		chefParams := v.GetServerChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
@@ -853,7 +853,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 			masterAZ = clusterInst.AvailabilityZone
 		}
 		master, err := v.GetVMRequestSpec(ctx,
-			cloudcommon.VMTypeClusterMaster,
+			cloudcommon.NodeTypeClusterMaster,
 			GetClusterMasterName(ctx, clusterInst),
 			masterFlavor,
 			pfImage,
@@ -870,12 +870,12 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		vms = append(vms, master)
 
 		chefAttributes = make(map[string]interface{})
-		chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.VMTypeClusterK8sNode)
+		chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeClusterK8sNode)
 		for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
 			clientName := v.GetChefClientName(GetClusterNodeName(ctx, clusterInst, nn))
 			chefParams := v.GetServerChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 			node, err := v.GetVMRequestSpec(ctx,
-				cloudcommon.VMTypeClusterK8sNode,
+				cloudcommon.NodeTypeClusterK8sNode,
 				GetClusterNodeName(ctx, clusterInst, nn),
 				clusterInst.NodeFlavor,
 				pfImage,

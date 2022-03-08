@@ -155,13 +155,6 @@ func (k *K8sBareMetalPlatform) GetClusterAdditionalResources(ctx context.Context
 
 // TODO
 func (k *K8sBareMetalPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
-	externalIpsUsed := uint64(0)
-	for _, vmRes := range resources {
-		if vmRes.Type == cloudcommon.VMTypeRootLB {
-			externalIpsUsed += 1
-		}
-	}
-	resMetric.AddIntVal(cloudcommon.ResourceMetricExternalIPs, externalIpsUsed)
 	return nil
 }
 
@@ -182,7 +175,7 @@ func (k *K8sBareMetalPlatform) GetNodePlatformClient(ctx context.Context, node *
 		return nil, fmt.Errorf("cannot GetNodePlatformClient, as node details are empty")
 	}
 	nodeName := node.Name
-	if nodeName == "" && node.Type == cloudcommon.CloudletNodeSharedRootLB {
+	if nodeName == "" && node.Type == cloudcommon.NodeTypeSharedRootLB {
 		nodeName = k.commonPf.PlatformConfig.RootLBFQDN
 	}
 	if nodeName == "" {

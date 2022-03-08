@@ -156,7 +156,7 @@ regiondata:
           status: ACTIVE
           infraflavor: x1.small
         - name: smallcluster-user3org.enterprise-1-enterprise.local.mobiledgex.net
-          type: rootlb
+          type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
       dnslabel: smallcluster-user3org

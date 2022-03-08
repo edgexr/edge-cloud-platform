@@ -273,13 +273,13 @@ regiondata:
       resourcessnapshot:
         platformvms:
         - name: fake-platform-vm
-          type: platform
+          type: platformvm
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
-          type: rootlb
+          type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
@@ -319,13 +319,13 @@ regiondata:
       resourcessnapshot:
         platformvms:
         - name: fake-platform-vm
-          type: platform
+          type: platformvm
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
-          type: rootlb
+          type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
@@ -365,13 +365,13 @@ regiondata:
       resourcessnapshot:
         platformvms:
         - name: fake-platform-vm
-          type: platform
+          type: platformvm
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
-          type: rootlb
+          type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
@@ -411,13 +411,13 @@ regiondata:
       resourcessnapshot:
         platformvms:
         - name: fake-platform-vm
-          type: platform
+          type: platformvm
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
-          type: rootlb
+          type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
@@ -457,13 +457,13 @@ regiondata:
       resourcessnapshot:
         platformvms:
         - name: fake-platform-vm
-          type: platform
+          type: platformvm
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
-          type: rootlb
+          type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
@@ -629,13 +629,13 @@ regiondata:
       resourcessnapshot:
         platformvms:
         - name: fake-platform-vm
-          type: platform
+          type: platformvm
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
-          type: rootlb
+          type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
@@ -675,13 +675,13 @@ regiondata:
       resourcessnapshot:
         platformvms:
         - name: fake-platform-vm
-          type: platform
+          type: platformvm
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
-          type: rootlb
+          type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
@@ -721,13 +721,13 @@ regiondata:
       resourcessnapshot:
         platformvms:
         - name: fake-platform-vm
-          type: platform
+          type: platformvm
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
-          type: rootlb
+          type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
           ipaddresses:
