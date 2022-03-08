@@ -2580,6 +2580,8 @@ func (s *Client) ShowClientCloudletUsageMetrics(uri string, token string, in *or
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
+// Generating group MetricsV2
+
 func (s *Client) ShowAppV2Metrics(uri string, token string, in *ormapi.RegionCustomAppMetrics) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri

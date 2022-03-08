@@ -119,6 +119,7 @@ func GetRootCommand() *RootCommand {
 		rc.getCmdGroup(ormctl.AuditGroup),           // deprecated
 		rc.getCmdGroup(ormctl.AllDataGroup),         // deprecated
 		rc.getCmdGroup(ormctl.ReportDataGroup),      // for testingonly
+		rc.getCmdGroup(ormctl.MetricsV2Group),       // api is hidden for now
 	}
 
 	rootCmd.AddCommand(managementCommands...)
