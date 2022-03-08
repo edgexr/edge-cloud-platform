@@ -344,6 +344,13 @@ func ShowController(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	if err := authorized(ctx, claims.Username, "", ResourceControllers, ActionView); err != nil {
+		// non-admins can only see the region
+		for ii, ctrl := range ctrls {
+			ctrls[ii] = ormapi.Controller{}
+			ctrls[ii].Region = ctrl.Region
+		}
+	}
 	return ormutil.SetReply(c, ctrls)
 }
 
