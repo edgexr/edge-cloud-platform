@@ -75,11 +75,15 @@ func GenerateWSAuthToken(c echo.Context) error {
 		return err
 	}
 	ctx := ormutil.GetContext(c)
+	config, err := getConfig(ctx)
+	if err != nil {
+		return err
+	}
 
 	claims.StandardClaims.IssuedAt = time.Now().Unix()
 	// Set short expiry as it is intended to be used immediately
 	// by the client for connection to Websocket API endpoint
-	claims.StandardClaims.ExpiresAt = time.Now().Add(JWTWSAuthDuration).Unix()
+	claims.StandardClaims.ExpiresAt = time.Now().Add(config.WebsocketTokenValidDuration.TimeDuration()).Unix()
 	cookie, err := Jwks.GenerateCookie(claims)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie", "err", err)
@@ -245,7 +249,7 @@ func Login(c echo.Context) error {
 		}
 	}
 
-	cookie, err := GenerateCookie(&user, login.ApiKeyId, serverConfig.DomainName)
+	cookie, err := GenerateCookie(&user, login.ApiKeyId, serverConfig.DomainName, config)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie", "err", err)
 		return fmt.Errorf("Failed to generate cookie")

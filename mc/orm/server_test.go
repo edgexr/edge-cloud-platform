@@ -1393,6 +1393,33 @@ func testFailedLoginLockout(t *testing.T, ctx context.Context, uri, superTok str
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Failed login lockout threshold 2 of 1 must be greater than threshold 1 of 3")
 
+	// test login valid duration
+	// change duration to 0, must be done directly to bypass check
+	config, err := getConfig(ctx)
+	require.Nil(t, err)
+	config.UserLoginTokenValidDuration = 0
+	db := loggedDB(ctx)
+	err = db.Save(config).Error
+	require.Nil(t, err)
+	// get new token
+	token = expectLoginOk()
+	// token should be expired already
+	time.Sleep(time.Second)
+	_, status, err = mcClient.CurrentUser(uri, token)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Token is expired")
+	// change it back
+	configReq.Data = map[string]interface{}{
+		"userlogintokenvalidduration": defaultConfig.UserLoginTokenValidDuration.TimeDuration().String(),
+	}
+	_, err = mcClient.UpdateConfig(uri, superTok, configReq)
+	require.Nil(t, err)
+	token = expectLoginOk()
+	// token should be valid
+	_, status, err = mcClient.CurrentUser(uri, token)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+
 	// clean up
 	status, err = mcClient.DeleteUser(uri, token, &testUser)
 	require.Nil(t, err)

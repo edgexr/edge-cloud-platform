@@ -2857,7 +2857,7 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 	_, err = Jwks.VerifyCookie(apiKeyLoginToken, &claims)
 	require.Nil(t, err, "parse token")
 	delta := claims.ExpiresAt - claims.IssuedAt
-	require.Equal(t, delta, int64(JWTShortDuration.Seconds()), "match short expiration time")
+	require.Equal(t, delta, int64((4 * time.Hour).Seconds()), "match short expiration time")
 
 	// user should not be able to create/delete/show apikey
 	userApiKeyObj.Permissions = []ormapi.RolePerm{
