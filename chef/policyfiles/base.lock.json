@@ -1,5 +1,5 @@
 {
-  "revision_id": "0ce5e5e34d535dc22639931f06524ee10e6230c89954999b541a6711e5dce631",
+  "revision_id": "560ae3c39ae58008ecb9e14b8209a6166cd323691d0b1e22fb78c5a67f8ef32d",
   "name": "base",
   "run_list": [
     "recipe[chef_client_updater::default]",
@@ -69,18 +69,22 @@
       }
     },
     "upgrade_mobiledgex_package": {
-      "version": "1.0.15",
-      "identifier": "b5ae8320c4ee65c879f760551b6dbeb34b37d6f1",
-      "dotted_decimal_identifier": "51138848998354533.56429098722204525.209677270374129",
-      "cache_key": "upgrade_mobiledgex_package-1.0.15",
+      "version": "1.1.0",
+      "identifier": "43b28a7e3b47dbc674ba267d88e05b5e3580a328",
+      "dotted_decimal_identifier": "19055131332659163.55860388247210208.100460182676264",
+      "cache_key": "upgrade_mobiledgex_package-1.1.0",
       "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
       "source_options": {
         "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
-        "version": "1.0.15"
+        "version": "1.1.0"
       }
     }
   },
   "default_attributes": {
+    "upgrade_mobiledgex_package": {
+      "repo": "https://apt.mobiledgex.net/cirrus/2022-02-25"
+    },
+    "mobiledgeXPackageVersion": "4.9.0",
     "chef_client_updater": {
       "version": "17.6.18"
     }
@@ -112,7 +116,7 @@
       ],
       [
         "upgrade_mobiledgex_package",
-        "= 1.0.15"
+        "= 1.1.0"
       ]
     ],
     "dependencies": {
@@ -131,7 +135,7 @@
       "setup_teleport (1.1.0)": [
 
       ],
-      "upgrade_mobiledgex_package (1.0.15)": [
+      "upgrade_mobiledgex_package (1.1.0)": [
 
       ]
     }

@@ -1,17 +1,7 @@
-# MobiledgeX package version
-defaultMobiledgeXPackageVersion = '4.7.0'
+default['upgrade_mobiledgex_package']['cert_validation'] = true
 
-node.default["aptCertValidation"] = false
-if node.attribute?("mobiledgeXPackageVersion")
-  curSemver = Gem::Version.new(node["mobiledgeXPackageVersion"])
-  certValSemver = Gem::Version.new("4.7.0")
-  if curSemver >= certValSemver
-    node.default["aptCertValidation"] = true
-  end
-end
-
-if node.normal['tags'].include?('vmtype/rootlb')
-  if !node.attribute?("mobiledgeXPackageVersion") || node.normal["mobiledgeXPackageVersion"] != defaultMobiledgeXPackageVersion
-    node.normal["mobiledgeXPackageVersion"] = defaultMobiledgeXPackageVersion
-  end
+curSemver = Gem::Version.new(node['mobiledgeXPackageVersion'])
+certValSemver = Gem::Version.new("4.7.0")
+if curSemver < certValSemver
+  default['upgrade_mobiledgex_package']['cert_validation'] = false
 end
