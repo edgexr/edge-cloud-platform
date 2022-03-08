@@ -10,3 +10,6 @@ failedloginlockoutthreshold1: 3
 failedloginlockouttimesec1: 60
 failedloginlockoutthreshold2: 10
 failedloginlockouttimesec2: 300
+userlogintokenvalidduration: 24h0m0s
+apikeylogintokenvalidduration: 4h0m0s
+websockettokenvalidduration: 2m0s

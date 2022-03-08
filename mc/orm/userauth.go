@@ -24,9 +24,6 @@ var PasswordMaxLength = 4096
 
 var BruteForceGuessesPerSecond = 1000000
 
-var JWTShortDuration = 4 * time.Hour
-var JWTWSAuthDuration = 2 * time.Minute
-
 var Jwks vault.JWKS
 var NoUserClaims *UserClaims = nil
 
@@ -91,12 +88,12 @@ func NewHTTPAuthCookie(token string, expires int64, domain string) *http.Cookie 
 	}
 }
 
-func GenerateCookie(user *ormapi.User, apiKeyId, domain string) (*http.Cookie, error) {
+func GenerateCookie(user *ormapi.User, apiKeyId, domain string, config *ormapi.Config) (*http.Cookie, error) {
 	claims := UserClaims{
 		StandardClaims: jwt.StandardClaims{
 			IssuedAt: time.Now().Unix(),
 			// 1 day expiration for now
-			ExpiresAt: time.Now().AddDate(0, 0, 1).Unix(),
+			ExpiresAt: time.Now().Add(config.UserLoginTokenValidDuration.TimeDuration()).Unix(),
 		},
 		Username: user.Name,
 		Email:    user.Email,
@@ -109,7 +106,7 @@ func GenerateCookie(user *ormapi.User, apiKeyId, domain string) (*http.Cookie, e
 		// rather than on user name
 		claims.Username = apiKeyId
 		// shorter expiration time if apiKeyId is specified
-		claims.ExpiresAt = time.Now().Add(JWTShortDuration).Unix()
+		claims.ExpiresAt = time.Now().Add(config.ApiKeyLoginTokenValidDuration.TimeDuration()).Unix()
 		claims.AuthType = ApiKeyAuth
 		claims.ApiKeyUsername = user.Name
 	} else {

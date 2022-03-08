@@ -26,7 +26,7 @@
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  request: '{"AdminPasswordMinCrackTimeSec":63072000,"DisableRateLimit":true,"FailedLoginLockoutThreshold1":3,"FailedLoginLockoutThreshold2":10,"FailedLoginLockoutTimeSec1":60,"FailedLoginLockoutTimeSec2":300,"MaxMetricsDataPoints":10000,"NotifyEmailAddress":"support@mobiledgex.com","PasswordMinCrackTimeSec":2592000,"RateLimitMaxTrackedIps":10000,"RateLimitMaxTrackedUsers":10000,"SkipVerifyEmail":true,"UserApiKeyCreateLimit":10}'
+  request: '{"AdminPasswordMinCrackTimeSec":63072000,"ApiKeyLoginTokenValidDuration":"4h0m0s","DisableRateLimit":true,"FailedLoginLockoutThreshold1":3,"FailedLoginLockoutThreshold2":10,"FailedLoginLockoutTimeSec1":60,"FailedLoginLockoutTimeSec2":300,"MaxMetricsDataPoints":10000,"NotifyEmailAddress":"support@mobiledgex.com","PasswordMinCrackTimeSec":2592000,"RateLimitMaxTrackedIps":10000,"RateLimitMaxTrackedUsers":10000,"SkipVerifyEmail":true,"UserApiKeyCreateLimit":10,"UserLoginTokenValidDuration":"24h0m0s","WebsocketTokenValidDuration":"2m0s"}'
 - operationname: /api/v1/login
   username: mexadmin
   clientip: 127.0.0.1

@@ -240,6 +240,12 @@ type Config struct {
 	FailedLoginLockoutThreshold2 int
 	// Number of seconds to lock account from logging in after threshold 2 is hit (default 300)
 	FailedLoginLockoutTimeSec2 int
+	// User login token valid duration (in format 2h30m10s, default 24h)
+	UserLoginTokenValidDuration edgeproto.Duration
+	// API key login token valid duration (in format 2h30m10s, default 4h)
+	ApiKeyLoginTokenValidDuration edgeproto.Duration
+	// Websocket auth token valid duration (in format 2h30m10s, default 2m)
+	WebsocketTokenValidDuration edgeproto.Duration
 }
 
 type McRateLimitFlowSettings struct {

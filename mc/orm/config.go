@@ -9,26 +9,30 @@ import (
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
 // Password crack times are estimates of how long it would take to brute
 // force crack the password offline.
 var defaultConfig = ormapi.Config{
-	ID:                           1,
-	NotifyEmailAddress:           "support@mobiledgex.com",
-	PasswordMinCrackTimeSec:      30 * 86400,      // 30 days
-	AdminPasswordMinCrackTimeSec: 2 * 365 * 86400, // 2 years
-	MaxMetricsDataPoints:         10000,
-	UserApiKeyCreateLimit:        10,
-	BillingEnable:                false, // TODO: eventually set the default to true?
-	DisableRateLimit:             false,
-	RateLimitMaxTrackedIps:       10000,
-	RateLimitMaxTrackedUsers:     10000,
-	FailedLoginLockoutThreshold1: 3,
-	FailedLoginLockoutTimeSec1:   60,
-	FailedLoginLockoutThreshold2: 10,
-	FailedLoginLockoutTimeSec2:   300,
+	ID:                            1,
+	NotifyEmailAddress:            "support@mobiledgex.com",
+	PasswordMinCrackTimeSec:       30 * 86400,      // 30 days
+	AdminPasswordMinCrackTimeSec:  2 * 365 * 86400, // 2 years
+	MaxMetricsDataPoints:          10000,
+	UserApiKeyCreateLimit:         10,
+	BillingEnable:                 false, // TODO: eventually set the default to true?
+	DisableRateLimit:              false,
+	RateLimitMaxTrackedIps:        10000,
+	RateLimitMaxTrackedUsers:      10000,
+	FailedLoginLockoutThreshold1:  3,
+	FailedLoginLockoutTimeSec1:    60,
+	FailedLoginLockoutThreshold2:  10,
+	FailedLoginLockoutTimeSec2:    300,
+	UserLoginTokenValidDuration:   edgeproto.Duration(24 * time.Hour),
+	ApiKeyLoginTokenValidDuration: edgeproto.Duration(4 * time.Hour),
+	WebsocketTokenValidDuration:   edgeproto.Duration(2 * time.Minute),
 }
 
 func InitConfig(ctx context.Context) error {
@@ -89,12 +93,26 @@ func InitConfig(ctx context.Context) error {
 		config.FailedLoginLockoutTimeSec2 = defaultConfig.FailedLoginLockoutTimeSec2
 		save = true
 	}
+	if config.UserLoginTokenValidDuration == 0 {
+		config.UserLoginTokenValidDuration = defaultConfig.UserLoginTokenValidDuration
+		save = true
+	}
+	if config.ApiKeyLoginTokenValidDuration == 0 {
+		config.ApiKeyLoginTokenValidDuration = defaultConfig.ApiKeyLoginTokenValidDuration
+		save = true
+	}
+	if config.WebsocketTokenValidDuration == 0 {
+		config.WebsocketTokenValidDuration = defaultConfig.WebsocketTokenValidDuration
+		save = true
+	}
+
 	if save {
 		err = db.Save(&config).Error
 		if err != nil {
 			return err
 		}
 	}
+
 	log.SpanLog(ctx, log.DebugLevelApi, "using config", "config", config)
 	return nil
 }
@@ -153,6 +171,10 @@ func UpdateConfig(c echo.Context) error {
 	}
 	if lockoutTime2 < lockoutTime1 {
 		return fmt.Errorf("Failed login lockout time sec 2 of %s must be greater than or equal to lockout time 1 of %s", lockoutTime2.String(), lockoutTime1.String())
+	}
+	if config.UserLoginTokenValidDuration.TimeDuration() < 3*time.Minute {
+		// avoid setting duration so low that we can't log in and change it back
+		return fmt.Errorf("User login token valid duration cannot be less than 3 minutes")
 	}
 
 	// Update RateLimitMgr settings
