@@ -27,7 +27,7 @@ var subnetName = "subnet-test"
 var vms = []*vmlayer.VMRequestSpec{
 	{
 		Name:                    "rootlb-xyz",
-		Type:                    cloudcommon.VMTypeRootLB,
+		Type:                    cloudcommon.NodeTypeDedicatedRootLB,
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",
@@ -37,7 +37,7 @@ var vms = []*vmlayer.VMRequestSpec{
 	},
 	{
 		Name:                    "master-xyz",
-		Type:                    cloudcommon.VMTypeClusterMaster,
+		Type:                    cloudcommon.NodeTypeClusterMaster,
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",
@@ -47,7 +47,7 @@ var vms = []*vmlayer.VMRequestSpec{
 	},
 	{
 		Name:                    "node1-xyz",
-		Type:                    cloudcommon.VMTypeClusterK8sNode,
+		Type:                    cloudcommon.NodeTypeClusterK8sNode,
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",
@@ -55,7 +55,7 @@ var vms = []*vmlayer.VMRequestSpec{
 	},
 	{
 		Name:                    "node2-xyz",
-		Type:                    cloudcommon.VMTypeClusterK8sNode,
+		Type:                    cloudcommon.NodeTypeClusterK8sNode,
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",
@@ -63,7 +63,7 @@ var vms = []*vmlayer.VMRequestSpec{
 	},
 	{
 		Name:                    "app-vm",
-		Type:                    cloudcommon.VMTypeAppVM,
+		Type:                    cloudcommon.NodeTypeAppVM,
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",

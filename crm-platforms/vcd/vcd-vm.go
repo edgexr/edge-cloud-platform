@@ -453,7 +453,7 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 			}
 		}
 
-		vmType := string(vmlayer.GetVmTypeForRole(string(vmparams.Role)))
+		vmType := v.vmProperties.GetVmTypeForVmNameAndRole(vmName, string(vmRole))
 		ncs := &types.NetworkConnectionSection{}
 		// check to see if this vm is already present
 		vm, err := vapp.GetVMByName(vmName, false)
@@ -517,7 +517,7 @@ func (v *VcdPlatform) AddVMsToExistingVApp(ctx context.Context, vapp *govcd.VApp
 	for n, vmparams := range vmgp.VMs {
 		vmName := vmparams.Name
 		vmRole := vmparams.Role
-		vmType := string(vmlayer.GetVmTypeForRole(string(vmparams.Role)))
+		vmType := v.vmProperties.GetVmTypeForVmNameAndRole(vmName, string(vmRole))
 		ncs := &types.NetworkConnectionSection{}
 		// check to see if this vm is already present
 		if vmparams.ExistingVm {
@@ -1037,7 +1037,7 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 		vminfo := edgeproto.VmInfo{
 			Name:        vm.VM.Name,
 			InfraFlavor: flavor,
-			Type:        string(vmlayer.GetVmTypeForRole(role)),
+			Type: v.vmProperties.GetVmTypeForVmNameAndRole(vm.VM.Name, role),
 		}
 		netTypes := []vmlayer.NetworkType{
 			vmlayer.NetworkTypeExternalAdditionalPlatform,
@@ -1072,7 +1072,7 @@ func (v *VcdPlatform) AddMetadataToVM(ctx context.Context, vm *govcd.VM, vmparam
 
 	addStart := time.Now()
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddMetadataToVm", "vm", vm.VM.Name)
-	vmType := string(vmlayer.GetVmTypeForRole(string(vmparams.Role)))
+	vmType := v.vmProperties.GetVmTypeForVmNameAndRole(vmparams.Name, string(vmparams.Role))
 	task, err := vm.AddMetadata("vmType", vmType)
 	if err != nil {
 		return err

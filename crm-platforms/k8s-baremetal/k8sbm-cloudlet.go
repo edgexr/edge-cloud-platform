@@ -94,7 +94,7 @@ func (k *K8sBareMetalPlatform) CreateCloudlet(ctx context.Context, cloudlet *edg
 	// TODO, we should switch bare metal k8s to use k8s chef policy
 	nodeInfo := chefmgmt.ChefNodeInfo{
 		NodeName: "baremetal-controller",
-		NodeType: cloudcommon.VMTypePlatform,
+		NodeType: cloudcommon.NodeTypePlatformHost,
 		Policy:   chefmgmt.ChefPolicyDocker,
 	}
 	chefAttributes, err := chefmgmt.GetChefPlatformAttributes(ctx, cloudlet, pfConfig, &nodeInfo, &chefApi, nil)

@@ -57,7 +57,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	// save orig tmplate name
 	vmtmpl.Name = vmparams.Name
 	vmRole := vmparams.Role
-	vmType := string(vmlayer.GetVmTypeForRole(string(vmparams.Role)))
+	vmType := v.vmProperties.GetVmTypeForVmNameAndRole(vmparams.Name, string(vmRole))
 
 	networks := []*types.OrgVDCNetwork{}
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp compose vApp", "name", vappName, "vmRole", vmRole, "vmType", vmType)

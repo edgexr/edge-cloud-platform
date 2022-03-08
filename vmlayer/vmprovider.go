@@ -240,13 +240,19 @@ func (v *VMPlatform) GetNodePlatformClient(ctx context.Context, node *edgeproto.
 		return nil, fmt.Errorf("cannot GetNodePlatformClient, as node details are empty")
 	}
 	nodeName := node.Name
-	if nodeName == "" && node.Type == cloudcommon.CloudletNodeSharedRootLB {
+	if nodeName == "" && node.Type == cloudcommon.NodeTypeSharedRootLB {
 		nodeName = v.VMProperties.SharedRootLBName
 	}
 	if nodeName == "" {
 		return nil, fmt.Errorf("cannot GetNodePlatformClient, must specify node name")
 	}
-	if v.VMProperties.GetCloudletExternalNetwork() == "" {
+	var extNetName string
+	if cloudcommon.IsPlatformNode(node.Type) && v.VMProperties.PlatformExternalNetwork != "" {
+		extNetName = v.VMProperties.PlatformExternalNetwork
+	} else {
+		extNetName = v.VMProperties.GetCloudletExternalNetwork()
+	}
+	if extNetName == "" {
 		return nil, fmt.Errorf("GetNodePlatformClient, missing external network in platform config")
 	}
 	var err error
@@ -258,14 +264,14 @@ func (v *VMPlatform) GetNodePlatformClient(ctx context.Context, node *edgeproto.
 	if result == OperationNewlyInitialized {
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	}
-	return v.GetSSHClientForServer(ctx, nodeName, v.VMProperties.GetCloudletExternalNetwork(), ops...)
+	return v.GetSSHClientForServer(ctx, nodeName, extNetName, ops...)
 }
 
 func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst, vmAppInsts []edgeproto.AppInst) ([]edgeproto.CloudletMgmtNode, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ListCloudletMgmtNodes", "clusterInsts", clusterInsts, "vmAppInsts", vmAppInsts)
 	mgmt_nodes := []edgeproto.CloudletMgmtNode{
 		edgeproto.CloudletMgmtNode{
-			Type: cloudcommon.CloudletNodeSharedRootLB,
+			Type: cloudcommon.NodeTypeSharedRootLB,
 			Name: v.VMProperties.SharedRootLBName,
 		},
 	}
@@ -284,21 +290,21 @@ func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []e
 		}
 	} else {
 		mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
-			Type: "platformvm",
+			Type: cloudcommon.NodeTypePlatformVM,
 			Name: v.GetPlatformVMName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey),
 		})
 	}
 	for _, clusterInst := range clusterInsts {
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
-				Type: cloudcommon.CloudletNodeDedicatedRootLB,
+				Type: cloudcommon.NodeTypeDedicatedRootLB,
 				Name: clusterInst.Fqdn,
 			})
 		}
 	}
 	for _, vmAppInst := range vmAppInsts {
 		mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
-			Type: cloudcommon.CloudletNodeDedicatedRootLB,
+			Type: cloudcommon.NodeTypeDedicatedRootLB,
 			Name: vmAppInst.Uri,
 		})
 	}
@@ -417,6 +423,12 @@ func (v *VMPlatform) InitCommon(ctx context.Context, platformConfig *platform.Pl
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetFlavorList failed", "err", err)
 		return err
 	}
+	var cloudlet edgeproto.Cloudlet
+	if !v.Caches.CloudletCache.Get(v.VMProperties.CommonPf.PlatformConfig.CloudletKey, &cloudlet) {
+		return fmt.Errorf("unable to find cloudlet key in cache")
+	}
+	v.VMProperties.PlatformExternalNetwork = cloudlet.InfraConfig.ExternalNetworkName
+
 	if err = v.VMProvider.InitProvider(ctx, caches, ProviderInitPlatformStartCrmCommon, updateCallback); err != nil {
 		return err
 	}
@@ -551,8 +563,8 @@ func (v *VMPlatform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.
 	var resources edgeproto.InfraResourcesSnapshot
 	platResources, err := v.VMProvider.GetServerGroupResources(ctx, v.GetPlatformVMName(&v.VMProperties.CommonPf.PlatformConfig.NodeMgr.MyNode.Key.CloudletKey))
 	if err == nil {
-		for ii, _ := range platResources.Vms {
-			platResources.Vms[ii].Type = cloudcommon.VMTypePlatform
+		for ii := range platResources.Vms {
+			platResources.Vms[ii].Type = cloudcommon.NodeTypePlatformVM
 		}
 		resources.PlatformVms = append(resources.PlatformVms, platResources.Vms...)
 	} else {

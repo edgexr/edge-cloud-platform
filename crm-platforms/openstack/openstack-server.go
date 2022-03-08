@@ -432,7 +432,7 @@ func (o *OpenstackPlatform) GetServerGroupResources(ctx context.Context, name st
 				}
 			}
 		}
-		vmInfo.Type = string(vmlayer.GetVmTypeForRole(role))
+		vmInfo.Type = string(o.VMProperties.GetVmTypeForVmNameAndRole(vmNameStr, role))
 		resources.Vms = append(resources.Vms, vmInfo)
 	}
 	return &resources, nil

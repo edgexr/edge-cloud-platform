@@ -372,8 +372,12 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 	for c, n := range cloudletAddNets {
 		addNets[c] = n
 	}
+	nodeType := cloudcommon.NodeTypeDedicatedRootLB
+	if rootLbName == v.VMProperties.SharedRootLBName {
+		nodeType = cloudcommon.NodeTypeSharedRootLB
+	}
 	return v.GetVMRequestSpec(ctx,
-		cloudcommon.VMTypeRootLB,
+		nodeType,
 		rootLbName,
 		spec.FlavorName,
 		imageName,
@@ -385,11 +389,11 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 		WithRoutes(addRoutes))
 }
 
-// GetVMSpecForRootLBPorts get a vmspec for the purpose of creating new ports to the specified subnet
-func (v *VMPlatform) GetVMSpecForRootLBPorts(ctx context.Context, rootLbName string, subnet string) (*VMRequestSpec, error) {
+// GetVMSpecForSharedRootLBPorts get a vmspec for the purpose of creating new ports to the specified subnet
+func (v *VMPlatform) GetVMSpecForSharedRootLBPorts(ctx context.Context, rootLbName string, subnet string) (*VMRequestSpec, error) {
 	rootlb, err := v.GetVMRequestSpec(
 		ctx,
-		cloudcommon.VMTypeRootLB,
+		cloudcommon.NodeTypeSharedRootLB,
 		rootLbName,
 		"dummyflavor",
 		"dummyimage",
@@ -614,7 +618,7 @@ func GetChefRootLBTags(platformConfig *platform.PlatformConfig) []string {
 		"region/" + platformConfig.Region,
 		"cloudlet/" + platformConfig.CloudletKey.Name,
 		"cloudletorg/" + platformConfig.CloudletKey.Organization,
-		"vmtype/" + cloudcommon.VMTypeRootLB,
+		"vmtype/" + cloudcommon.NodeTypeSharedRootLB,
 	}
 }
 

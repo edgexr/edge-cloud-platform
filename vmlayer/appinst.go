@@ -93,7 +93,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	orchVals.lbName = appInst.Uri
 	orchVals.externalServerName = orchVals.lbName
 	orchVals.newSubnetName = objName + "-subnet"
-	tags := v.GetChefClusterTags(appInst.ClusterInstKey(), cloudcommon.VMTypeRootLB)
+	tags := v.GetChefClusterTags(appInst.ClusterInstKey(), cloudcommon.NodeTypeDedicatedRootLB)
 	nets := make(map[string]NetworkType)
 	routes := make(map[string][]edgeproto.Route)
 	lbVm, err := v.GetVMSpecForRootLB(ctx, orchVals.lbName, orchVals.newSubnetName, tags, nets, routes, updateCallback)
@@ -104,7 +104,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 
 	appVm, err := v.GetVMRequestSpec(
 		ctx,
-		cloudcommon.VMTypeAppVM,
+		cloudcommon.NodeTypeAppVM,
 		objName,
 		appInst.VmFlavor,
 		imageInfo.LocalImageName,
