@@ -7,7 +7,10 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 )
 
-const MetricsGroup = "Metrics"
+const (
+	MetricsGroup   = "Metrics"
+	MetricsV2Group = "MetricsV2"
+)
 
 func init() {
 	cmds := []*ApiCommand{&ApiCommand{
@@ -87,7 +90,10 @@ func init() {
 		ReqData:      &ormapi.RegionClientCloudletUsageMetrics{},
 		ReplyData:    &ormapi.AllMetrics{},
 		Path:         "/auth/metrics/clientcloudletusage",
-	}, &ApiCommand{
+	}}
+	AllApis.AddGroup(MetricsGroup, "View metrics", cmds)
+
+	cmds = []*ApiCommand{&ApiCommand{
 		Name:         "ShowAppV2Metrics",
 		Use:          "appv2",
 		Short:        "View App metrics(v2 format)",
@@ -99,7 +105,7 @@ func init() {
 		ReplyData:    &ormapi.AllMetrics{},
 		Path:         "/auth/metrics/app/v2",
 	}}
-	AllApis.AddGroup(MetricsGroup, "View metrics", cmds)
+	AllApis.AddGroup(MetricsV2Group, "View metrics v2 api", cmds)
 }
 
 var AppMetricV2OptionalArgs = []string{
