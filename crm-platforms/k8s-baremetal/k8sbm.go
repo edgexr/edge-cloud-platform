@@ -175,7 +175,7 @@ func (k *K8sBareMetalPlatform) GetNodePlatformClient(ctx context.Context, node *
 		return nil, fmt.Errorf("cannot GetNodePlatformClient, as node details are empty")
 	}
 	nodeName := node.Name
-	if nodeName == "" && node.Type == cloudcommon.NodeTypeSharedRootLB {
+	if nodeName == "" && node.Type == cloudcommon.NodeTypeSharedRootLB.String() {
 		nodeName = k.commonPf.PlatformConfig.RootLBFQDN
 	}
 	if nodeName == "" {

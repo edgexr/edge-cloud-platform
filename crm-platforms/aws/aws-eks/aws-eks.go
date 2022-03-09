@@ -257,7 +257,7 @@ func getAwsEksResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, resou
 			networkLBs++
 			continue
 		}
-		if vmRes.Type != cloudcommon.NodeTypeClusterK8sNode {
+		if vmRes.Type != cloudcommon.NodeTypeK8sClusterNode.String() {
 			continue
 		}
 		k8sNodeCount++

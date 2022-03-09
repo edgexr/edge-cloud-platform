@@ -85,7 +85,7 @@ type PortResourceReference struct {
 	PortGroup   string
 }
 
-func (v *VMProperties) GetVmTypeForVmNameAndRole(vmname, role string) string {
+func (v *VMProperties) GetNodeTypeForVmNameAndRole(vmname, role string) cloudcommon.NodeType {
 	switch role {
 	case string(RoleAgent):
 		if v.SharedRootLBName == vmname {
@@ -93,17 +93,17 @@ func (v *VMProperties) GetVmTypeForVmNameAndRole(vmname, role string) string {
 		}
 		return cloudcommon.NodeTypeDedicatedRootLB
 	case string(RoleMaster):
-		return cloudcommon.NodeTypeClusterMaster
+		return cloudcommon.NodeTypeK8sClusterMaster
 	case string(RoleK8sNode):
-		return cloudcommon.NodeTypeClusterK8sNode
+		return cloudcommon.NodeTypeK8sClusterNode
 	case string(RoleDockerNode):
-		return cloudcommon.NodeTypeClusterDockerNode
+		return cloudcommon.NodeTypeDockerClusterNode
 	case string(RoleVMApplication):
 		return cloudcommon.NodeTypeAppVM
 	case string(RoleVMPlatform):
 		return cloudcommon.NodeTypePlatformVM
 	}
-	return "unknown"
+	return -1
 }
 
 func GetPortName(vmname, netname string) string {
@@ -121,7 +121,7 @@ func NewPortResourceReference(name string, id string, netid, subnetid string, pr
 // VMRequestSpec has the infromation which the caller needs to provide when creating a VM.
 type VMRequestSpec struct {
 	Name                    string
-	Type                    string
+	Type                    cloudcommon.NodeType
 	FlavorName              string
 	ImageName               string
 	ImageFolder             string
@@ -567,7 +567,7 @@ func (v *VMPlatform) connectsToSharedRootLB(ctx context.Context, groupSpec *VMGr
 
 }
 
-func (v *VMPlatform) GetVMRequestSpec(ctx context.Context, vmtype string, serverName, flavorName string, imageName string, connectExternal bool, opts ...VMReqOp) (*VMRequestSpec, error) {
+func (v *VMPlatform) GetVMRequestSpec(ctx context.Context, nodeType cloudcommon.NodeType, serverName, flavorName string, imageName string, connectExternal bool, opts ...VMReqOp) (*VMRequestSpec, error) {
 	var vrs VMRequestSpec
 	for _, op := range opts {
 		if err := op(&vrs); err != nil {
@@ -575,7 +575,7 @@ func (v *VMPlatform) GetVMRequestSpec(ctx context.Context, vmtype string, server
 		}
 	}
 	vrs.Name = serverName
-	vrs.Type = vmtype
+	vrs.Type = nodeType
 	vrs.FlavorName = flavorName
 	vrs.ImageName = imageName
 	vrs.ConnectToExternalNet = connectExternal
@@ -841,9 +841,9 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 				newPorts = append(newPorts, internalPort)
 			}
 
-		case cloudcommon.NodeTypePlatformClusterMaster:
+		case cloudcommon.NodeTypePlatformK8sClusterMaster:
 			fallthrough
-		case cloudcommon.NodeTypeClusterMaster:
+		case cloudcommon.NodeTypeK8sClusterMaster:
 			role = RoleMaster
 			if vm.ConnectToSubnet != "" {
 				// connect via internal network to LB
@@ -873,14 +873,14 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 			} else {
 				return nil, fmt.Errorf("k8s master not specified to be connected to internal network")
 			}
-		case cloudcommon.NodeTypeClusterDockerNode:
+		case cloudcommon.NodeTypeDockerClusterNode:
 			fallthrough
-		case cloudcommon.NodeTypePlatformClusterPrimaryNode:
+		case cloudcommon.NodeTypePlatformK8sClusterPrimaryNode:
 			fallthrough
-		case cloudcommon.NodeTypePlatformClusterSecondaryNode:
+		case cloudcommon.NodeTypePlatformK8sClusterSecondaryNode:
 			fallthrough
-		case cloudcommon.NodeTypeClusterK8sNode:
-			if vm.Type == cloudcommon.NodeTypeClusterDockerNode {
+		case cloudcommon.NodeTypeK8sClusterNode:
+			if vm.Type == cloudcommon.NodeTypeDockerClusterNode {
 				role = RoleDockerNode
 			} else {
 				role = RoleK8sNode

@@ -703,7 +703,7 @@ func (v *VMPlatform) isClusterReady(ctx context.Context, clusterInst *edgeproto.
 	return true, readyCount, nil
 }
 
-func (v *VMPlatform) GetChefClusterTags(key *edgeproto.ClusterInstKey, vmType string) []string {
+func (v *VMPlatform) GetChefClusterTags(key *edgeproto.ClusterInstKey, nodeType cloudcommon.NodeType) []string {
 	region := v.VMProperties.GetRegion()
 	deploymentTag := v.VMProperties.GetDeploymentTag()
 	return []string{
@@ -713,7 +713,7 @@ func (v *VMPlatform) GetChefClusterTags(key *edgeproto.ClusterInstKey, vmType st
 		"cloudlet/" + key.CloudletKey.Name,
 		"cloudletorg/" + key.CloudletKey.Organization,
 		"region/" + region,
-		"vmtype/" + string(vmType),
+		"nodetype/" + nodeType.String(),
 	}
 }
 
@@ -749,12 +749,12 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 		}
 	}
 	chefAttributes := make(map[string]interface{})
-	chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeClusterDockerNode)
+	chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeDockerClusterNode)
 	clientName := v.GetChefClientName(dockerVmName)
 	chefParams := v.GetServerChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 	dockervm, err := v.GetVMRequestSpec(
 		ctx,
-		cloudcommon.NodeTypeClusterDockerNode,
+		cloudcommon.NodeTypeDockerClusterNode,
 		dockerVmName,
 		clusterInst.NodeFlavor,
 		imgName,
@@ -838,7 +838,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		}
 
 		chefAttributes := make(map[string]interface{})
-		chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeClusterMaster)
+		chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeK8sClusterMaster)
 
 		clientName := v.GetChefClientName(GetClusterMasterName(ctx, clusterInst))
 		chefParams := v.GetServerChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
@@ -853,7 +853,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 			masterAZ = clusterInst.AvailabilityZone
 		}
 		master, err := v.GetVMRequestSpec(ctx,
-			cloudcommon.NodeTypeClusterMaster,
+			cloudcommon.NodeTypeK8sClusterMaster,
 			GetClusterMasterName(ctx, clusterInst),
 			masterFlavor,
 			pfImage,
@@ -870,12 +870,12 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		vms = append(vms, master)
 
 		chefAttributes = make(map[string]interface{})
-		chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeClusterK8sNode)
+		chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeK8sClusterNode)
 		for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
 			clientName := v.GetChefClientName(GetClusterNodeName(ctx, clusterInst, nn))
 			chefParams := v.GetServerChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 			node, err := v.GetVMRequestSpec(ctx,
-				cloudcommon.NodeTypeClusterK8sNode,
+				cloudcommon.NodeTypeK8sClusterNode,
 				GetClusterNodeName(ctx, clusterInst, nn),
 				clusterInst.NodeFlavor,
 				pfImage,
