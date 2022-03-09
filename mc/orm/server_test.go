@@ -767,6 +767,7 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	testLockedUsers(t, uri, mcClient)
 	testPasswordStrength(t, ctx, mcClient, uri, token)
 	testEdgeboxOnlyOrgs(t, uri, mcClient)
+	testConfigUpgrade(t, ctx)
 }
 
 func waitServerOnline(addr string) error {
@@ -1424,4 +1425,36 @@ func testFailedLoginLockout(t *testing.T, ctx context.Context, uri, superTok str
 	status, err = mcClient.DeleteUser(uri, token, &testUser)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func testConfigUpgrade(t *testing.T, ctx context.Context) {
+	db := loggedDB(ctx)
+	// Remove existing config
+	err := db.DropTable(ormapi.Config{}).Error
+	require.Nil(t, err, "drop existing configs table")
+
+	// Add old version of config
+	oldCfgCmd := "CREATE TABLE configs(id INT PRIMARY KEY NOT NULL);"
+	err = db.Exec(oldCfgCmd).Error
+	require.Nil(t, err, "create old version of configs table")
+
+	insertCmd := fmt.Sprintf("INSERT INTO configs(id) VALUES (%d);", defaultConfig.ID)
+	err = db.Exec(insertCmd).Error
+	require.Nil(t, err, "create old version of configs table")
+
+	// upgrade configs table
+	err = db.AutoMigrate(&ormapi.Config{}).Error
+	require.Nil(t, err, "Upgrade configs table")
+
+	// Upgrade to new config data, default values should be picked from defaultConfig
+	err = InitConfig(ctx)
+	require.Nil(t, err)
+
+	// Verify new config has values from defaultConfig
+	config, err := getConfig(ctx)
+	require.Nil(t, err, "get latest config")
+	// Ignore disableRateLimit as the default is set to true for unit-test,
+	// but the upgrade will not set the default value for it
+	config.DisableRateLimit = defaultConfig.DisableRateLimit
+	require.Equal(t, defaultConfig, *config)
 }

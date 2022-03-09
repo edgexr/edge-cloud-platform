@@ -46,6 +46,7 @@ func InitConfig(ctx context.Context) error {
 		return err
 	}
 
+	config = ormapi.Config{ID: config.ID}
 	err = db.First(&config).Error
 	if err != nil {
 		return err
@@ -103,6 +104,10 @@ func InitConfig(ctx context.Context) error {
 	}
 	if config.WebsocketTokenValidDuration == 0 {
 		config.WebsocketTokenValidDuration = defaultConfig.WebsocketTokenValidDuration
+		save = true
+	}
+	if config.NotifyEmailAddress == "" {
+		config.NotifyEmailAddress = defaultConfig.NotifyEmailAddress
 		save = true
 	}
 
