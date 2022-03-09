@@ -97,7 +97,7 @@ type ChefApiAccess struct {
 
 type ChefNodeInfo struct {
 	NodeName string
-	NodeType string
+	NodeType cloudcommon.NodeType
 	Policy   string
 }
 
@@ -435,17 +435,17 @@ func GetChefRunStatus(ctx context.Context, chefClient *chef.Client, clientName s
 	return nil
 }
 
-func GetChefCloudletTags(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, serverType string) []string {
+func GetChefCloudletTags(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, nodeType cloudcommon.NodeType) []string {
 	return []string{
 		"deploytag/" + pfConfig.DeploymentTag,
 		"region/" + pfConfig.Region,
 		"cloudlet/" + cloudlet.Key.Name,
 		"cloudletorg/" + cloudlet.Key.Organization,
-		"vmtype/" + serverType,
+		"nodetype/" + nodeType.String(),
 	}
 }
 
-func GetChefCloudletAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, serverType string) (map[string]interface{}, error) {
+func GetChefCloudletAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, nodeType cloudcommon.NodeType) (map[string]interface{}, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetChefCloudletAttributes", "region", pfConfig.Region, "cloudletKey", cloudlet.Key)
 
 	chefAttributes := make(map[string]interface{})
@@ -468,7 +468,7 @@ func GetChefCloudletAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet
 	}
 	chefAttributes["notifyAddrs"] = pfConfig.NotifyCtrlAddrs
 
-	chefAttributes["tags"] = GetChefCloudletTags(cloudlet, pfConfig, serverType)
+	chefAttributes["tags"] = GetChefCloudletTags(cloudlet, pfConfig, nodeType)
 
 	chefAttributes["mobiledgeXPackageVersion"] = version.MobiledgeXPackageVersion
 
@@ -571,7 +571,7 @@ func GetChefPlatformAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet
 		}
 	}
 	for _, node := range cloudletNodes {
-		chefAttributes[node.NodeType] = node.NodeName
+		chefAttributes[node.NodeType.String()] = node.NodeName
 	}
 	return chefAttributes, nil
 }

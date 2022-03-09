@@ -37,7 +37,7 @@ var vms = []*vmlayer.VMRequestSpec{
 	},
 	{
 		Name:                    "master-xyz",
-		Type:                    cloudcommon.NodeTypeClusterMaster,
+		Type:                    cloudcommon.NodeTypeK8sClusterMaster,
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",
@@ -47,7 +47,7 @@ var vms = []*vmlayer.VMRequestSpec{
 	},
 	{
 		Name:                    "node1-xyz",
-		Type:                    cloudcommon.NodeTypeClusterK8sNode,
+		Type:                    cloudcommon.NodeTypeK8sClusterNode,
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",
@@ -55,7 +55,7 @@ var vms = []*vmlayer.VMRequestSpec{
 	},
 	{
 		Name:                    "node2-xyz",
-		Type:                    cloudcommon.NodeTypeClusterK8sNode,
+		Type:                    cloudcommon.NodeTypeK8sClusterNode,
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",

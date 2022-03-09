@@ -63,13 +63,13 @@ func (v *VMPlatform) GetPlatformNodes(cloudlet *edgeproto.Cloudlet) []chefmgmt.C
 		nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: platformVMName, NodeType: cloudcommon.NodeTypePlatformVM})
 	} else {
 		masterNode := platformVMName + "-master"
-		nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: masterNode, NodeType: cloudcommon.NodeTypePlatformClusterMaster, Policy: chefmgmt.ChefPolicyK8s})
+		nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: masterNode, NodeType: cloudcommon.NodeTypePlatformK8sClusterMaster, Policy: chefmgmt.ChefPolicyK8s})
 		for nn := uint32(1); nn <= chefmgmt.K8sWorkerNodeCount; nn++ {
 			workerNode := fmt.Sprintf("%s-node-%d", platformVMName, nn)
 			if nn == 1 {
-				nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: workerNode, NodeType: cloudcommon.NodeTypePlatformClusterPrimaryNode, Policy: chefmgmt.ChefPolicyK8sWorker})
+				nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: workerNode, NodeType: cloudcommon.NodeTypePlatformK8sClusterPrimaryNode, Policy: chefmgmt.ChefPolicyK8sWorker})
 			} else {
-				nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: workerNode, NodeType: cloudcommon.NodeTypePlatformClusterSecondaryNode, Policy: chefmgmt.ChefPolicyK8sWorker})
+				nodes = append(nodes, chefmgmt.ChefNodeInfo{NodeName: workerNode, NodeType: cloudcommon.NodeTypePlatformK8sClusterSecondaryNode, Policy: chefmgmt.ChefPolicyK8sWorker})
 			}
 		}
 	}
@@ -709,7 +709,7 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 			masterAttributes["tags"] = chefmgmt.GetChefCloudletTags(cloudlet, pfConfig, node.NodeType)
 			chefParams := v.GetServerChefParams(clientName, cloudlet.ChefClientKey[clientName], node.Policy, chefAttributes)
 			ak := pfConfig.CrmAccessPrivateKey
-			if node.NodeType == cloudcommon.NodeTypePlatformClusterSecondaryNode {
+			if node.NodeType == cloudcommon.NodeTypePlatformK8sClusterSecondaryNode {
 				ak = pfConfig.SecondaryCrmAccessPrivateKey
 			}
 			vmSpec, err := v.GetVMRequestSpec(

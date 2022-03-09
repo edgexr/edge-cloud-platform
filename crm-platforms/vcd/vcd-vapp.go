@@ -57,10 +57,9 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	// save orig tmplate name
 	vmtmpl.Name = vmparams.Name
 	vmRole := vmparams.Role
-	vmType := v.vmProperties.GetVmTypeForVmNameAndRole(vmparams.Name, string(vmRole))
 
 	networks := []*types.OrgVDCNetwork{}
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp compose vApp", "name", vappName, "vmRole", vmRole, "vmType", vmType)
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp compose vApp", "name", vappName, "vmRole", vmRole)
 
 	description = description + vcdProviderVersion
 	composeStart := time.Now()
@@ -103,7 +102,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 		log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp failed", "VAppName", vmgp.GroupName, "error", err)
 		return nil, err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVapp added ports", "vmRole", vmRole, "vmType", vmType)
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVapp added ports", "vmRole", vmRole)
 
 	vmtmplName := vapp.VApp.Children.VM[0].Name
 	_, err = vapp.GetVMByName(vmtmplName, false)

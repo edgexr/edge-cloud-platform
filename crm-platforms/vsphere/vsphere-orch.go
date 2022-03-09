@@ -643,7 +643,7 @@ func (v *VSpherePlatform) GetServerGroupResources(ctx context.Context, name stri
 		vminfo := edgeproto.VmInfo{
 			Name:        vmDomainTagContents.Vmname,
 			InfraFlavor: vmDomainTagContents.Flavor,
-			Type:        string(v.vmProperties.GetVmTypeForVmNameAndRole(vmDomainTagContents.Vmname, vmDomainTagContents.Role)),
+			Type:        string(v.vmProperties.GetNodeTypeForVmNameAndRole(vmDomainTagContents.Vmname, vmDomainTagContents.Role).String()),
 		}
 		ips, ok := vmips[vmDomainTagContents.Vmname]
 		if ok {

@@ -139,11 +139,11 @@ regiondata:
       resources:
         vms:
         - name: fake-master-1-enterprise-1-smallcluster-user3org
-          type: cluster-master
+          type: k8s-cluster-master
           status: ACTIVE
           infraflavor: x1.small
         - name: fake-node-1-enterprise-1-smallcluster-user3org
-          type: cluster-k8s-node
+          type: k8s-cluster-node
           status: ACTIVE
           infraflavor: x1.small
         - name: smallcluster-user3org.enterprise-1-enterprise.local.mobiledgex.net

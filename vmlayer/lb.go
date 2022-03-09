@@ -618,7 +618,7 @@ func GetChefRootLBTags(platformConfig *platform.PlatformConfig) []string {
 		"region/" + platformConfig.Region,
 		"cloudlet/" + platformConfig.CloudletKey.Name,
 		"cloudletorg/" + platformConfig.CloudletKey.Organization,
-		"vmtype/" + cloudcommon.NodeTypeSharedRootLB,
+		"nodetype/" + cloudcommon.NodeTypeSharedRootLB.String(),
 	}
 }
 

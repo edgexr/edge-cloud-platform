@@ -240,7 +240,7 @@ func (v *VMPlatform) GetNodePlatformClient(ctx context.Context, node *edgeproto.
 		return nil, fmt.Errorf("cannot GetNodePlatformClient, as node details are empty")
 	}
 	nodeName := node.Name
-	if nodeName == "" && node.Type == cloudcommon.NodeTypeSharedRootLB {
+	if nodeName == "" && node.Type == cloudcommon.NodeTypeSharedRootLB.String() {
 		nodeName = v.VMProperties.SharedRootLBName
 	}
 	if nodeName == "" {
@@ -271,7 +271,7 @@ func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []e
 	log.SpanLog(ctx, log.DebugLevelInfra, "ListCloudletMgmtNodes", "clusterInsts", clusterInsts, "vmAppInsts", vmAppInsts)
 	mgmt_nodes := []edgeproto.CloudletMgmtNode{
 		edgeproto.CloudletMgmtNode{
-			Type: cloudcommon.NodeTypeSharedRootLB,
+			Type: cloudcommon.NodeTypeSharedRootLB.String(),
 			Name: v.VMProperties.SharedRootLBName,
 		},
 	}
@@ -283,28 +283,28 @@ func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []e
 		nodes := v.GetPlatformNodes(&cloudlet)
 		for _, n := range nodes {
 			mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
-				Type: n.NodeType,
+				Type: n.NodeType.String(),
 				Name: n.NodeName,
 			})
 			log.SpanLog(ctx, log.DebugLevelInfra, "added mgmt node", "name", n.NodeName, "type", n.NodeType)
 		}
 	} else {
 		mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
-			Type: cloudcommon.NodeTypePlatformVM,
+			Type: cloudcommon.NodeTypePlatformVM.String(),
 			Name: v.GetPlatformVMName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey),
 		})
 	}
 	for _, clusterInst := range clusterInsts {
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
-				Type: cloudcommon.NodeTypeDedicatedRootLB,
+				Type: cloudcommon.NodeTypeDedicatedRootLB.String(),
 				Name: clusterInst.Fqdn,
 			})
 		}
 	}
 	for _, vmAppInst := range vmAppInsts {
 		mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
-			Type: cloudcommon.NodeTypeDedicatedRootLB,
+			Type: cloudcommon.NodeTypeDedicatedRootLB.String(),
 			Name: vmAppInst.Uri,
 		})
 	}
@@ -564,7 +564,7 @@ func (v *VMPlatform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.
 	platResources, err := v.VMProvider.GetServerGroupResources(ctx, v.GetPlatformVMName(&v.VMProperties.CommonPf.PlatformConfig.NodeMgr.MyNode.Key.CloudletKey))
 	if err == nil {
 		for ii := range platResources.Vms {
-			platResources.Vms[ii].Type = cloudcommon.NodeTypePlatformVM
+			platResources.Vms[ii].Type = cloudcommon.NodeTypePlatformVM.String()
 		}
 		resources.PlatformVms = append(resources.PlatformVms, platResources.Vms...)
 	} else {
