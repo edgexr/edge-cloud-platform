@@ -148,7 +148,6 @@ func TestAppStoreApi(t *testing.T) {
 		BillingPlatform:         billing.BillingTypeFake,
 		DeploymentTag:           "local",
 	}
-
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
 	defer server.Stop()
@@ -169,16 +168,17 @@ func TestAppStoreApi(t *testing.T) {
 	tokenAdmin, _, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass, NoOTP, NoApiKeyId, NoApiKey)
 	require.Nil(t, err, "login as superuser")
 
-	// Before Artifactory/Gitlab are hooked into mock, create "missing" data
-	// so it doesn't automatically get populated into Art/Gitlab
-	for _, v := range missingEntries {
-		mcClientCreate(t, v, mcClient, uri)
-	}
-
 	// mock artifactory
 	rtf := NewArtifactoryMock(artifactoryAddr)
 	// mock gitlab
 	gm := NewGitlabMock(gitlabAddr)
+
+	// create "missing" data in MC but not in Art/Gitlab
+	for _, v := range missingEntries {
+		mcClientCreate(t, v, mcClient, uri)
+	}
+	rtf.initData()
+	gm.initData()
 
 	// Create new users & orgs from MC
 	for _, v := range testEntries {
@@ -198,10 +198,13 @@ func TestAppStoreApi(t *testing.T) {
 		gitlabCreateGroup(ctx, &org)
 		for user, userType := range v.Users {
 			userObj := ormapi.User{
-				Name: user,
+				Name:  user,
+				Email: user + "@email.com",
 			}
-			artifactoryCreateUser(ctx, &userObj)
-			gitlabCreateLDAPUser(ctx, &userObj)
+			err := artifactoryCreateLDAPUser(ctx, &userObj)
+			require.Nil(t, err)
+			err = gitlabCreateLDAPUser(ctx, &userObj)
+			require.Nil(t, err)
 
 			roleArg := ormapi.Role{
 				Username: user,

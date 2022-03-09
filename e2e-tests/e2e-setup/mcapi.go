@@ -147,7 +147,9 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 			}
 			resp, status, err := mcClient.CreateUser(uri, &createUser)
 			checkMcErr("CreateUser", status, err, &rc)
-			sharedData[user.Name] = resp.TOTPSharedKey
+			if resp != nil {
+				sharedData[user.Name] = resp.TOTPSharedKey
+			}
 		}
 	case "deleteusers":
 		token, ok := loginCurUser(uri, curUserFile, vars, sharedData)

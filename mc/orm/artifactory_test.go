@@ -30,13 +30,16 @@ const (
 func NewArtifactoryMock(addr string) *ArtifactoryMock {
 	rtf := ArtifactoryMock{}
 	rtf.addr = addr
-	rtf.userStore = make(map[string]*v1.User)
-	rtf.groupStore = make(map[string]*v1.Group)
-	rtf.repoStore = make(map[string]*v1.LocalRepository)
-	rtf.permStore = make(map[string]*v1.PermissionTargets)
-
+	rtf.initData()
 	rtf.registerMockResponders()
 	return &rtf
+}
+
+func (s *ArtifactoryMock) initData() {
+	s.userStore = make(map[string]*v1.User)
+	s.groupStore = make(map[string]*v1.Group)
+	s.repoStore = make(map[string]*v1.LocalRepository)
+	s.permStore = make(map[string]*v1.PermissionTargets)
 }
 
 func (s *ArtifactoryMock) getApiPath(api string) string {
