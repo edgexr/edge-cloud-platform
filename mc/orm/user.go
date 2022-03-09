@@ -436,8 +436,17 @@ func CreateUser(c echo.Context) error {
 		return err
 	}
 
-	gitlabCreateLDAPUser(ctx, &user)
-	artifactoryCreateUser(ctx, &user)
+	err = gitlabCreateLDAPUser(ctx, &user)
+	if err != nil {
+		db.Delete(&user)
+		return err
+	}
+	err = artifactoryCreateLDAPUser(ctx, &user)
+	if err != nil {
+		gitlabDeleteLDAPUser(ctx, user.Name)
+		db.Delete(&user)
+		return err
+	}
 
 	if user.Locked {
 		msg := fmt.Sprintf("Locked account created for user %s, email %s", user.Name, user.Email)
@@ -587,7 +596,7 @@ func DeleteUser(c echo.Context) error {
 		return ormutil.DbErr(err)
 	}
 	gitlabDeleteLDAPUser(ctx, user.Name)
-	artifactoryDeleteUser(ctx, user.Name)
+	artifactoryDeleteLDAPUser(ctx, user.Name)
 
 	return c.JSON(http.StatusOK, ormutil.Msg("user deleted"))
 }

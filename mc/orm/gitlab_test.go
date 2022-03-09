@@ -27,13 +27,7 @@ type GitlabMock struct {
 func NewGitlabMock(addr string) *GitlabMock {
 	gm := GitlabMock{}
 	gm.addr = addr + "/api/v4"
-	gm.users = make(map[int]*gitlab.User)
-	gm.groups = make(map[int]*gitlab.Group)
-	gm.groupMembers = make(map[int][]gitlab.GroupMember)
-	gm.projects = make(map[int]*gitlab.Project)
-	gm.nextUserID = 1
-	gm.nextGroupID = 1
-	gm.nextProjectID = 1
+	gm.initData()
 
 	gm.registerCreateUser()
 	gm.registerDeleteUser()
@@ -52,6 +46,16 @@ func NewGitlabMock(addr string) *GitlabMock {
 	gm.registerSetCustomGroupAttribute()
 	gm.registerGetCustomGroupAttribute()
 	return &gm
+}
+
+func (s *GitlabMock) initData() {
+	s.users = make(map[int]*gitlab.User)
+	s.groups = make(map[int]*gitlab.Group)
+	s.groupMembers = make(map[int][]gitlab.GroupMember)
+	s.projects = make(map[int]*gitlab.Project)
+	s.nextUserID = 1
+	s.nextGroupID = 1
+	s.nextProjectID = 1
 }
 
 func (s *GitlabMock) verify(t *testing.T, v entry, objType string) {
@@ -125,6 +129,14 @@ func (s *GitlabMock) registerCreateUser() {
 			if err != nil {
 				return s.fail(req, err)
 			}
+			for _, u := range s.users {
+				if u.Name == *opt.Name {
+					return s.replyMessage(req, 409, "Username has already been taken")
+				}
+				if u.Email == *opt.Email {
+					return s.replyMessage(req, 409, "Email has already been taken")
+				}
+			}
 			user := gitlab.User{
 				ID: s.nextUserID,
 			}
@@ -146,6 +158,9 @@ func (s *GitlabMock) registerCreateUser() {
 				ids := make([]*gitlab.UserIdentity, 0)
 				ids = append(ids, &identity)
 				user.Identities = ids
+			}
+			if opt.Provider != nil {
+				user.Provider = *opt.Provider
 			}
 			s.users[user.ID] = &user
 			log.DebugLog(log.DebugLevelApi, "gitlab mock created user", "user", user)
@@ -174,11 +189,26 @@ func (s *GitlabMock) registerListUsers() {
 	u := fmt.Sprintf("%s/users", s.addr)
 	httpmock.RegisterResponder("GET", u,
 		func(req *http.Request) (*http.Response, error) {
-			username, filter := req.URL.Query()["username"]
+			queries := req.URL.Query()
+			username, filter := queries["username"]
+			provider, hasProvider := queries["provider"]
+
 			retUsers := make([]*gitlab.User, 0)
 			for _, user := range s.users {
 				if filter && len(username) > 0 && user.Username != username[0] {
 					continue
+				}
+				if hasProvider && len(provider) > 0 {
+					providerFound := false
+					for _, id := range user.Identities {
+						if id.Provider == provider[0] {
+							providerFound = true
+							break
+						}
+					}
+					if !providerFound {
+						continue
+					}
 				}
 				retUsers = append(retUsers, user)
 			}
@@ -479,4 +509,17 @@ func (s *GitlabMock) fail(req *http.Request, err error) (*http.Response, error) 
 	resp, err := httpmock.NewStringResponse(500, err.Error()), nil
 	resp.Request = req
 	return resp, err
+}
+
+func (s *GitlabMock) replyMessage(req *http.Request, code int, message string) (*http.Response, error) {
+	// gitlab error handling assumes req is filled into resp,
+	// which only happens in the go http client-side code which
+	// is bypassed by the mock code. If it's not filled in,
+	// converting error to string will crash.
+	m := map[string]string{
+		"message": message,
+	}
+	resp, _ := httpmock.NewJsonResponse(code, m)
+	resp.Request = req
+	return resp, nil
 }
