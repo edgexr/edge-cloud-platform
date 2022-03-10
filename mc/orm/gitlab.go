@@ -69,7 +69,7 @@ func gitlabCreateLDAPUser(ctx context.Context, user *ormapi.User) error {
 		CanCreateGroup:   &_false,
 	}
 	_, resp, err := gitlabClient.Users.CreateUser(&opts)
-	if err == nil && resp.StatusCode != http.StatusOK {
+	if err == nil && resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		if resp.StatusCode == http.StatusConflict {
 			// user already exists
 			err = fmt.Errorf("gitlab create user failed, user already exists")
