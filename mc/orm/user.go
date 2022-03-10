@@ -1260,6 +1260,9 @@ func DeleteUserApiKey(c echo.Context) error {
 	if err != nil {
 		return ormutil.DbErr(err)
 	}
+	if apiKeyObj.Username != claims.Username {
+		return ormutil.NewHTTPError(http.StatusForbidden, "Cannot delete other user's API key")
+	}
 	apiKeyRole := getApiKeyRoleName(apiKeyObj.Id)
 	err = enforcer.RemovePolicy(ctx, apiKeyRole)
 	if err != nil {
