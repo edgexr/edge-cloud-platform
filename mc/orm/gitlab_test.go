@@ -164,7 +164,7 @@ func (s *GitlabMock) registerCreateUser() {
 			}
 			s.users[user.ID] = &user
 			log.DebugLog(log.DebugLevelApi, "gitlab mock created user", "user", user)
-			return httpmock.NewJsonResponse(200, user)
+			return httpmock.NewJsonResponse(201, user)
 		},
 	)
 }
