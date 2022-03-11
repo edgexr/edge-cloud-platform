@@ -207,6 +207,15 @@ tests:
     yaml2: '{{datadir2}}/mc_user1_eventsshow_exp.yml'
     filetype: mcevents
 
+- name: user2 can see AcmeAppCo events
+  actions: [mcapi-eventsshow]
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  apifile: '{{datadir2}}/mc_user2_orgeventsshow.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_user2_orgeventsshow_exp.yml'
+    filetype: mcevents
+
 - includefile: mc_debugtest.yml
 
 - name: Check AppInst, ClusterInst, and Cloudlet events
@@ -298,6 +307,38 @@ tests:
     yaml1: '{{outputdir}}/show-commands.yml'
     yaml2: '{{datadir2}}/mc_flavors.yml'
     filetype: mcdata
+
+- name: user2 recreates AcmeAppCo, verify it is there
+  actions: [mcapi-create, mcapi-show]
+  apifile: '{{datadir2}}/mc_user2_org.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_user2_org_show.yml'
+    filetype: mcdata
+
+- name: user2 cannot see deleted AcmeAppCo events (no info leak)
+  actions: [mcapi-eventsshow]
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  apifile: '{{datadir2}}/mc_user2_orgeventsshow.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_user2_orgeventsshow_empty.yml'
+    filetype: mcevents
+
+- name: user2 delete AcmeAppCo org
+  actions: [mcapi-delete]
+  apifile: '{{datadir2}}/mc_user2_org.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+
+- name: admin can see deleted AcmeAppCo events
+  actions: [mcapi-eventsshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  apifile: '{{datadir2}}/mc_user2_orgeventsshow.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_admin_orgeventsshow_exp.yml'
+    filetype: mcevents
 
 - name: admin delete controllers, flavors, verify it is empty
   actions: [mcapi-delete, mcapi-show]

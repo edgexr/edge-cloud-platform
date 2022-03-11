@@ -32,3 +32,8 @@
       status: "200"
       traceid: ""
       username: user3
+- search:
+    match:
+      tags:
+        username: user2
+    limit: 3

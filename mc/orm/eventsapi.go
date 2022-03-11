@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 )
@@ -55,7 +56,41 @@ func searchEvents(c echo.Context, searchFunc func(context.Context, *node.EventSe
 	if err != nil {
 		return ormutil.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
+	isAdmin, err := isUserAdmin(ctx, claims.Username)
+	if err != nil {
+		return err
+	}
+	if !isAdmin {
+		orgs, err := GetAllOrgs(ctx)
+		if err != nil {
+			return err
+		}
+		events = filterEvents(events, orgs)
+	}
 	return c.JSON(http.StatusOK, events)
+}
+
+// Filter out events from before the org was created.
+// This prevents seeing events from a previous org of the same name.
+func filterEvents(events []node.EventData, orgs map[string]*ormapi.Organization) []node.EventData {
+	filteredEvents := []node.EventData{}
+	for _, event := range events {
+		var createdAt time.Time
+		for _, orgName := range event.Org {
+			org, ok := orgs[orgName]
+			if !ok {
+				continue
+			}
+			if createdAt.IsZero() || org.CreatedAt.Before(createdAt) {
+				createdAt = org.CreatedAt
+			}
+		}
+		if createdAt.IsZero() || event.Timestamp.Before(createdAt) {
+			continue
+		}
+		filteredEvents = append(filteredEvents, event)
+	}
+	return filteredEvents
 }
 
 func EventTerms(c echo.Context) error {

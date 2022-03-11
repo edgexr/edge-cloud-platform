@@ -2,3 +2,7 @@
   match:
     names:
     - /api/v1/auth/ctrl/CreateAppInst
+- limit: 3
+  match:
+    tags:
+      username: user2
