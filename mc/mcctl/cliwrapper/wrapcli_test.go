@@ -30,15 +30,9 @@ func TestObjToArgs(t *testing.T) {
 			Email:    "user2@email.com",
 			Passhash: "user2password",
 		},
-		Verify: ormapi.EmailRequest{
-			OperatingSystem: "mac osx",
-			CallbackURL:     "http://foo",
-			ClientIP:        "10.10.10.10",
-		},
 	}
 	args = []string{"user.name=user2", "user.email=user2@email.com",
-		"user.passhash=user2password", "verify.operatingsystem=\"mac osx\"",
-		"verify.callbackurl=http://foo", "verify.clientip=10.10.10.10"}
+		"user.passhash=user2password"}
 	testObjToArgs(t, obj, args)
 
 	obj = nil

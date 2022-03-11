@@ -28,19 +28,21 @@ func TestLDAPServer(t *testing.T) {
 	defaultConfig.DisableRateLimit = true
 
 	config := ServerConfig{
-		ServAddr:                addr,
-		SqlAddr:                 "127.0.0.1:5445",
-		RunLocal:                true,
-		InitLocal:               true,
-		IgnoreEnv:               true,
-		LDAPAddr:                "127.0.0.1:9389",
-		SkipVerifyEmail:         true,
-		vaultConfig:             vaultConfig,
-		LDAPUsername:            "gitlab",
-		LDAPPassword:            "gitlab",
-		UsageCheckpointInterval: "MONTH",
-		BillingPlatform:         billing.BillingTypeFake,
-		DeploymentTag:           "local",
+		ServAddr:                 addr,
+		SqlAddr:                  "127.0.0.1:5445",
+		RunLocal:                 true,
+		InitLocal:                true,
+		IgnoreEnv:                true,
+		LDAPAddr:                 "127.0.0.1:9389",
+		vaultConfig:              vaultConfig,
+		LDAPUsername:             "gitlab",
+		LDAPPassword:             "gitlab",
+		UsageCheckpointInterval:  "MONTH",
+		BillingPlatform:          billing.BillingTypeFake,
+		DeploymentTag:            "local",
+		PublicAddr:               "http://mc.mobiledgex.net",
+		PasswordResetConsolePath: "#/passwordreset",
+		VerifyEmailConsolePath:   "#/verify",
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")

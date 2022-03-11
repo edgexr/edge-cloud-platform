@@ -40,6 +40,7 @@ require (
 	github.com/labstack/echo v0.0.0-20180911044237-1abaa3049251
 	github.com/lib/pq v1.5.2
 	github.com/miekg/dns v1.1.27
+	github.com/mileusna/useragent v1.0.2
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.3.2
 	github.com/mobiledgex/edge-cloud v1.0.1

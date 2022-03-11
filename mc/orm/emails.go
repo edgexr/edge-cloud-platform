@@ -15,6 +15,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 	"github.com/mobiledgex/edge-cloud/vault"
@@ -53,6 +54,38 @@ type emailTmplArg struct {
 	OS      string
 	Browser string
 	IP      string
+	MCAddr  string
+}
+
+// Use global variable to store func so that for unit-testing we
+// can mock the sendEmail functionality. Look at MockSendMail obj
+var sendMailFunc = sendEmail
+
+type MockSendMail struct {
+	From    *emailAccount
+	To      string
+	Message string
+}
+
+func (m *MockSendMail) Start() {
+	sendMailFunc = m.SendEmail
+}
+
+func (m *MockSendMail) Stop() {
+	sendMailFunc = sendEmail
+}
+
+func (m *MockSendMail) Reset() {
+	m.From = nil
+	m.To = ""
+	m.Message = ""
+}
+
+func (m *MockSendMail) SendEmail(from *emailAccount, to string, contents *bytes.Buffer) error {
+	m.From = from
+	m.To = to
+	m.Message = string(contents.Bytes())
+	return nil
 }
 
 var passwordResetT = `From: {{.From}}
@@ -68,7 +101,11 @@ Reset your password: {{.URL}}
 {{- else}}
 Copy and paste to set your password:
 
+{{ if .MCAddr}}
+mcctl --addr {{.MCAddr}} user passwordreset token={{.Token}}
+{{- else}}
 mcctl user passwordreset token={{.Token}}
+{{- end}}
 {{- end}}
 
 For security, this request was received from a {{.OS}} device using {{.Browser}} with IP {{.IP}}. If you did not request this password reset, please ignore this email or contact MobiledgeX support for assistance.
@@ -125,7 +162,7 @@ func sendNotify(ctx context.Context, to, subject, message string) error {
 	if err := notifyTmpl.Execute(&buf, &arg); err != nil {
 		return err
 	}
-	return sendEmail(noreply, to, &buf)
+	return sendMailFunc(noreply, to, &buf)
 }
 
 var welcomeT = `From: {{.From}}
@@ -141,7 +178,11 @@ Click to verify: {{.URL}}
 {{ else}}
 Copy and paste to verify your email:
 
+{{ if .MCAddr}}
+mcctl --addr {{.MCAddr}} user verifyemail token={{.Token}}
+{{ else}}
 mcctl user verifyemail token={{.Token}}
+{{- end}}
 {{- end}}
 
 For security, this request was received for {{.Email}} from a {{.OS}} device using {{.Browser}} with IP {{.IP}}. If you are not expecting this email, please ignore this email or contact MobiledgeX support for assistance.
@@ -150,7 +191,8 @@ Thanks!
 MobiledgeX Team
 `
 
-func sendVerifyEmail(ctx context.Context, username string, req *ormapi.EmailRequest) error {
+func sendVerifyEmail(c echo.Context, username string, req *ormapi.EmailRequest) error {
+	ctx := ormutil.GetContext(c)
 	if getSkipVerifyEmail(ctx, nil) {
 		return nil
 	}
@@ -172,18 +214,20 @@ func sendVerifyEmail(ctx context.Context, username string, req *ormapi.EmailRequ
 		return err
 	}
 
+	clientIP, browser, os := GetClientDetailsFromRequestHeaders(c)
 	arg := emailTmplArg{
 		From:    noreply.Email,
 		To:      req.Email,
 		Name:    username,
 		Email:   req.Email,
 		Token:   cookie,
-		OS:      req.OperatingSystem,
-		Browser: req.Browser,
-		IP:      req.ClientIP,
+		OS:      os,
+		Browser: browser,
+		IP:      clientIP,
+		MCAddr:  serverConfig.PublicAddr,
 	}
-	if req.CallbackURL != "" {
-		arg.URL = req.CallbackURL + "?token=" + cookie
+	if serverConfig.ConsoleAddr != "" && serverConfig.VerifyEmailConsolePath != "" {
+		arg.URL = serverConfig.ConsoleAddr + serverConfig.VerifyEmailConsolePath + "?token=" + cookie
 	}
 	buf := bytes.Buffer{}
 	if err := welcomeTmpl.Execute(&buf, &arg); err != nil {
@@ -191,7 +235,7 @@ func sendVerifyEmail(ctx context.Context, username string, req *ormapi.EmailRequ
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "send verify email",
 		"from", noreply.Email, "to", req.Email)
-	return sendEmail(noreply, req.Email, &buf)
+	return sendMailFunc(noreply, req.Email, &buf)
 }
 
 type emailAccount struct {
@@ -264,15 +308,6 @@ func ValidEmailRequest(c echo.Context, e *ormapi.EmailRequest) error {
 	if !util.ValidEmail(e.Email) {
 		return fmt.Errorf("Invalid email address")
 	}
-	if e.ClientIP == "" {
-		e.ClientIP = c.RealIP()
-	}
-	if e.OperatingSystem == "" {
-		e.OperatingSystem = "unspecified OS"
-	}
-	if e.Browser == "" {
-		e.Browser = "unspecified browser"
-	}
 	return nil
 }
 
@@ -318,7 +353,7 @@ func sendAddedEmail(ctx context.Context, admin, name, email, org, role string) e
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "send added email",
 		"from", noreply.Email, "to", email)
-	return sendEmail(noreply, email, &buf)
+	return sendMailFunc(noreply, email, &buf)
 }
 
 func getSkipVerifyEmail(ctx context.Context, config *ormapi.Config) bool {
@@ -380,7 +415,7 @@ func sendOTPEmail(ctx context.Context, username, email, totp, totpExpTime string
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "send otp email",
 		"from", noreply.Email, "to", email)
-	return sendEmail(noreply, email, &buf)
+	return sendMailFunc(noreply, email, &buf)
 }
 
 type operatorReportTmplArg struct {
@@ -462,5 +497,5 @@ func sendOperatorReportEmail(ctx context.Context, username, email, reporterName 
 
 	log.SpanLog(ctx, log.DebugLevelApi, "send operator report email",
 		"from", noreply.Email, "to", email, "report file", pdfFileName)
-	return sendEmail(noreply, email, &buf)
+	return sendMailFunc(noreply, email, &buf)
 }

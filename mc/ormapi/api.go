@@ -401,20 +401,11 @@ type AuditResponse struct {
 }
 
 // Email request is used for password reset and to resend welcome
-// verification email. It contains the information need to send
-// some kind of email to the user.
+// verification email.
 type EmailRequest struct {
 	// User's email address
 	// read only: true
 	Email string `form:"email" json:"email"`
-	// read only: true
-	OperatingSystem string `form:"operatingsystem" json:"operatingsystem"`
-	// read only: true
-	Browser string `form:"browser" json:"browser"`
-	// Callback URL to verify user email
-	CallbackURL string `form:"callbackurl" json:"callbackurl"`
-	// read only: true
-	ClientIP string `form:"clientip" json:"clientip"`
 }
 
 type PasswordReset struct {

@@ -61,41 +61,45 @@ type Server struct {
 }
 
 type ServerConfig struct {
-	ServAddr                string
-	SqlAddr                 string
-	VaultAddr               string
-	FederationAddr          string
-	RunLocal                bool
-	InitLocal               bool
-	SqlDataDir              string
-	IgnoreEnv               bool
-	ApiTlsCertFile          string
-	ApiTlsKeyFile           string
-	LocalVault              bool
-	LDAPAddr                string
-	LDAPUsername            string
-	LDAPPassword            string
-	GitlabAddr              string
-	ArtifactoryAddr         string
-	PingInterval            time.Duration
-	SkipVerifyEmail         bool
-	JaegerAddr              string
-	vaultConfig             *vault.Config
-	SkipOriginCheck         bool
-	Hostname                string
-	NotifyAddrs             string
-	NotifySrvAddr           string
-	NodeMgr                 *node.NodeMgr
-	BillingPlatform         string
-	BillingService          billing.BillingService
-	AlertCache              *edgeproto.AlertCache
-	AlertMgrAddr            string
-	AlertmgrResolveTimout   time.Duration
-	UsageCheckpointInterval string
-	DomainName              string
-	StaticDir               string
-	DeploymentTag           string
-	ControllerNotifyPort    string
+	ServAddr                 string
+	SqlAddr                  string
+	VaultAddr                string
+	FederationAddr           string
+	PublicAddr               string
+	RunLocal                 bool
+	InitLocal                bool
+	SqlDataDir               string
+	IgnoreEnv                bool
+	ApiTlsCertFile           string
+	ApiTlsKeyFile            string
+	LocalVault               bool
+	LDAPAddr                 string
+	LDAPUsername             string
+	LDAPPassword             string
+	GitlabAddr               string
+	ArtifactoryAddr          string
+	PingInterval             time.Duration
+	SkipVerifyEmail          bool
+	JaegerAddr               string
+	vaultConfig              *vault.Config
+	SkipOriginCheck          bool
+	Hostname                 string
+	NotifyAddrs              string
+	NotifySrvAddr            string
+	NodeMgr                  *node.NodeMgr
+	BillingPlatform          string
+	BillingService           billing.BillingService
+	AlertCache               *edgeproto.AlertCache
+	AlertMgrAddr             string
+	AlertmgrResolveTimout    time.Duration
+	UsageCheckpointInterval  string
+	DomainName               string
+	StaticDir                string
+	DeploymentTag            string
+	ControllerNotifyPort     string
+	ConsoleAddr              string
+	PasswordResetConsolePath string
+	VerifyEmailConsolePath   string
 }
 
 var DefaultDBUser = "mcuser"
@@ -162,6 +166,31 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 
 	if config.DeploymentTag == "" {
 		return nil, fmt.Errorf("Missing deployment tag")
+	}
+
+	if config.ConsoleAddr != "" {
+		if !strings.HasPrefix(config.ConsoleAddr, "http") {
+			// assume this to be HTTPS
+			config.ConsoleAddr = "https://" + config.ConsoleAddr
+		}
+		// For uniformity, sanitize the console addr path to end with /
+		if !strings.HasSuffix(config.ConsoleAddr, "/") {
+			config.ConsoleAddr = config.ConsoleAddr + "/"
+		}
+	}
+	if config.PublicAddr != "" {
+		if !strings.HasPrefix(config.PublicAddr, "http") {
+			// assume this to be HTTPS
+			config.ConsoleAddr = "https://" + config.ConsoleAddr
+		}
+	}
+
+	// For uniformity, sanitize the console URL paths to not start with /
+	if config.PasswordResetConsolePath != "" {
+		config.PasswordResetConsolePath = strings.TrimPrefix(config.PasswordResetConsolePath, "/")
+	}
+	if config.VerifyEmailConsolePath != "" {
+		config.VerifyEmailConsolePath = strings.TrimPrefix(config.VerifyEmailConsolePath, "/")
 	}
 
 	ops := []node.NodeOp{
