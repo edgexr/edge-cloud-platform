@@ -1161,9 +1161,12 @@ func CreateUserApiKey(c echo.Context) error {
 	// verify that specified org exists
 	org := ormapi.Organization{}
 	org.Name = apiKeyObj.Org
-	err = db.Where(&org).First(&org).Error
-	if err != nil {
-		return ormutil.DbErr(err)
+	res := db.Where(&org).First(&org)
+	if res.RecordNotFound() {
+		return fmt.Errorf("Invalid org specified")
+	}
+	if res.Error != nil {
+		return ormutil.DbErr(res.Error)
 	}
 
 	lookupOrg := apiKeyObj.Org
@@ -1256,9 +1259,12 @@ func DeleteUserApiKey(c echo.Context) error {
 		return fmt.Errorf("Missing API key ID")
 	}
 	apiKeyObj := ormapi.UserApiKey{Id: lookup.Id}
-	err = db.Where(&apiKeyObj).First(&apiKeyObj).Error
-	if err != nil {
-		return ormutil.DbErr(err)
+	res := db.Where(&apiKeyObj).First(&apiKeyObj)
+	if res.RecordNotFound() {
+		return fmt.Errorf("API key ID not found")
+	}
+	if res.Error != nil {
+		return ormutil.DbErr(res.Error)
 	}
 	if apiKeyObj.Username != claims.Username {
 		return ormutil.NewHTTPError(http.StatusForbidden, "Cannot delete other user's API key")
