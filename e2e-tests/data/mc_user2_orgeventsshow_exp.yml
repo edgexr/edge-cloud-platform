@@ -1,0 +1,65 @@
+- search:
+    match:
+      orgs:
+      - AcmeAppCo
+    limit: 3
+  results:
+  - name: /api/v1/auth/ctrl/DeleteAutoProvPolicy
+    org:
+    - AcmeAppCo
+    type: audit
+    mtags:
+      duration: ""
+      email: user2@email.com
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: AcmeAppCo
+      policy: autoprovHA
+      policyorg: AcmeAppCo
+      region: local
+      remote-ip: 127.0.0.1
+      request: ""
+      response: ""
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user2
+  - name: Free ClusterInst reservation
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: dmuus-cloud-1
+      cloudletorg: dmuus
+      cluster: autocluster-autoprov
+      clusterorg: MobiledgeX
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
+      realcluster: Reservable1
+      spanid: ""
+      traceid: ""
+  - name: Free ClusterInst reservation
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: gcp-cloud-5
+      cloudletorg: gcp
+      cluster: autocluster-autoprov
+      clusterorg: MobiledgeX
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
+      realcluster: Reservable4
+      spanid: ""
+      traceid: ""

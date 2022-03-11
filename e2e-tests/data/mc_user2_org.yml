@@ -1,0 +1,5 @@
+orgs:
+- name: AcmeAppCo
+  type: developer
+  address: 123 Maple Street, Gainesville, FL 32604
+  phone: 123-123-1234

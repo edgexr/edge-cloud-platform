@@ -104,6 +104,12 @@ func cmpFilterAudit(data []ormapi.AuditResponse) {
 	tx := util.NewTransformer()
 	tx.AddSetZeroTypeField(ormapi.AuditResponse{}, "StartTime", "Duration", "TraceID")
 	tx.Apply(data)
+	for ii := range data {
+		if data[ii].OperationName == "/api/v1/auth/events/show" {
+			// ignore starttime in request which changes each run
+			data[ii].Request = ""
+		}
+	}
 }
 
 func cmpFilterMetrics(data []MetricsCompare) {

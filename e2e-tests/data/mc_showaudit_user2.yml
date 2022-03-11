@@ -10,6 +10,45 @@
   status: 200
   request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":"","Metadata":"","LastLogin":"0001-01-01T00:00:00Z","LastFailedLogin":"0001-01-01T00:00:00Z","FailedLogins":0,"verify":{"email":""}}'
   response: '{"Message":"user created","TOTPSharedKey":"","TOTPQRImage":null}'
+- operationname: /api/v1/auth/org/delete
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  request: '{"Name":"AcmeAppCo","Type":"developer","Address":"123 Maple Street, Gainesville,
+    FL 32604","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
+  response: '{"message":"Organization deleted"}'
+- operationname: /api/v1/login
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  request: '{"username":"user2","password":"","totp":"","apikeyid":"","apikey":""}'
+  response: '{"token":""}'
+- operationname: /api/v1/auth/events/show
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  response: '[]'
+- operationname: /api/v1/login
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  request: '{"username":"user2","password":"","totp":"","apikeyid":"","apikey":""}'
+  response: '{"token":""}'
+- operationname: /api/v1/auth/org/create
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  request: '{"Name":"AcmeAppCo","Type":"developer","Address":"123 Maple Street, Gainesville,
+    FL 32604","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
+  response: '{"message":"Organization created"}'
+- operationname: /api/v1/login
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  request: '{"username":"user2","password":"","totp":"","apikeyid":"","apikey":""}'
+  response: '{"token":""}'
 - operationname: /api/v1/login
   username: user2
   clientip: 127.0.0.1
@@ -59,112 +98,3 @@
   tags:
     policy: scale1
     policyorg: AcmeAppCo
-- operationname: /api/v1/auth/ctrl/DeleteClusterInst
-  username: user2
-  org: AcmeAppCo
-  clientip: 127.0.0.1
-  status: 200
-  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"ip_access":"Shared","num_masters":1,"num_nodes":1,"resources":{"vms":null},"created_at":"","updated_at":"","reservation_ended_at":""}}'
-  response: |
-    {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
-    {"data":{"message":"Deleting"}}
-    {"data":{"message":"First Delete Task"}}
-    {"data":{"message":"Second Delete Task"}}
-    {"data":{"message":"DeleteDone"}}
-    {"data":{"message":"NotPresent"}}
-    {"data":{"message":"Deleted AppInst successfully"}}
-    {"data":{"message":"Deleting"}}
-    {"data":{"message":"First Delete Task"}}
-    {"data":{"message":"Second Delete Task"}}
-    {"data":{"message":"DeleteDone"}}
-    {"data":{"message":"NotPresent"}}
-    {"data":{"message":"Deleted ClusterInst successfully"}}
-  tags:
-    cloudlet: dmuus-cloud-4
-    cloudletorg: dmuus
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
-    federatedorg: ""
-- operationname: /api/v1/auth/ctrl/DeleteClusterInst
-  username: user2
-  org: AcmeAppCo
-  clientip: 127.0.0.1
-  status: 200
-  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"ip_access":"Dedicated","num_masters":1,"num_nodes":1,"auto_scale_policy":"scale1","resources":{"vms":null},"created_at":"","updated_at":"","reservation_ended_at":""}}'
-  response: |
-    {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
-    {"data":{"message":"Deleting"}}
-    {"data":{"message":"First Delete Task"}}
-    {"data":{"message":"Second Delete Task"}}
-    {"data":{"message":"DeleteDone"}}
-    {"data":{"message":"NotPresent"}}
-    {"data":{"message":"Deleted AppInst successfully"}}
-    {"data":{"message":"Deleting"}}
-    {"data":{"message":"First Delete Task"}}
-    {"data":{"message":"Second Delete Task"}}
-    {"data":{"message":"DeleteDone"}}
-    {"data":{"message":"NotPresent"}}
-    {"data":{"message":"Deleted ClusterInst successfully"}}
-  tags:
-    cloudlet: dmuus-cloud-3
-    cloudletorg: dmuus
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
-    federatedorg: ""
-- operationname: /api/v1/auth/ctrl/DeleteApp
-  username: user2
-  org: platos
-  clientip: 127.0.0.1
-  status: 200
-  request: '{"Region":"locala","App":{"key":{"organization":"platos","name":"platosEnablingLayer","version":"1.0"},"image_path":"registry.mobiledgex.net/platos/dummyvalue","image_type":"Docker","access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","created_at":"","updated_at":"","required_outbound_connections":null}}'
-  response: '{}'
-  tags:
-    app: platosEnablingLayer
-    apporg: platos
-    appver: "1.0"
-- operationname: /api/v1/auth/ctrl/DeleteApp
-  username: user2
-  org: AcmeAppCo
-  clientip: 127.0.0.1
-  status: 200
-  request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"autoprovapp","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:81","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprov1"],"created_at":"","updated_at":"","required_outbound_connections":null}}'
-  response: '{}'
-  tags:
-    app: autoprovapp
-    apporg: AcmeAppCo
-    appver: "1.0"
-- operationname: /api/v1/auth/ctrl/DeleteApp
-  username: user2
-  org: AcmeAppCo
-  clientip: 127.0.0.1
-  status: 200
-  request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:80,tcp:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
-    PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
-    PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1","created_at":"","updated_at":"","required_outbound_connections":null}}'
-  response: '{}'
-  tags:
-    app: someapplication1
-    apporg: AcmeAppCo
-    appver: "1.0"
-- operationname: /api/v1/auth/ctrl/DeleteAppInst
-  username: user2
-  org: AcmeAppCo
-  clientip: 127.0.0.1
-  status: 200
-  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":"","updated_at":""}}'
-  response: |
-    {"data":{"message":"Deleting"}}
-    {"data":{"message":"First Delete Task"}}
-    {"data":{"message":"Second Delete Task"}}
-    {"data":{"message":"DeleteDone"}}
-    {"data":{"message":"NotPresent"}}
-    {"data":{"message":"Deleted AppInst successfully"}}
-  tags:
-    app: someapplication1
-    apporg: AcmeAppCo
-    appver: "1.0"
-    cloudlet: dmuus-cloud-4
-    cloudletorg: dmuus
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
-    federatedorg: ""
