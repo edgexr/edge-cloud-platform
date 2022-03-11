@@ -33,6 +33,7 @@ var skipOriginCheck = flag.Bool("skipOriginCheck", false, "skip origin check con
 var notifyAddrs = flag.String("notifyAddrs", "", "Parent notify listener addresses")
 var notifySrvAddr = flag.String("notifySrvAddr", "127.0.0.1:52001", "Notify listener address")
 var alertMgrAddr = flag.String("alertMgrApiAddr", "http://127.0.0.1:9094", "Global Alertmanager api address")
+var publicAddr = flag.String("publicAddr", "http://127.0.0.1:9900", "Public facing address/hostname of MC")
 
 var alertMgrResolveTimeout = flag.Duration("alertResolveTimeout", 3*time.Minute, "Alertmanager alert Resolution timeout")
 var hostname = flag.String("hostname", "", "Unique hostname")
@@ -41,6 +42,12 @@ var usageCollectionInterval = flag.Duration("usageCollectionInterval", -1*time.S
 var usageCheckpointInterval = flag.String("usageCheckpointInterval", "MONTH", "Checkpointing interval(must be same as controller's checkpointInterval)")
 var staticDir = flag.String("staticDir", "/", "Path to static data")
 var controllerNotifyPort = flag.String("controllerNotifyPort", "50001", "Controller notify listener port to connect to")
+
+// Following URL paths are UI console paths which will be used to send
+// appropriate links to user's email for actions like password-reset, email-verification
+var consoleAddr = flag.String("consoleAddr", "", "Address of the UI console using MC")
+var passwordResetConsolePath = flag.String("passwordResetConsolePath", "#/passwordreset", "Console URL path to perform password reset action by end-user")
+var verifyEmailConsolePath = flag.String("verifyEmailConsolePath", "#/verify", "Console URL path to perform email verification action by end-user")
 
 var sigChan chan os.Signal
 var nodeMgr node.NodeMgr
@@ -55,35 +62,39 @@ func main() {
 	sigChan = make(chan os.Signal, 1)
 
 	config := orm.ServerConfig{
-		ServAddr:                *addr,
-		SqlAddr:                 *sqlAddr,
-		VaultAddr:               nodeMgr.VaultAddr,
-		FederationAddr:          *federationAddr,
-		RunLocal:                *localSql,
-		InitLocal:               *initSql,
-		LocalVault:              *localVault,
-		ApiTlsCertFile:          *apiTlsCertFile,
-		ApiTlsKeyFile:           *apiTlsKeyFile,
-		LDAPAddr:                *ldapAddr,
-		GitlabAddr:              *gitlabAddr,
-		ArtifactoryAddr:         *artifactoryAddr,
-		PingInterval:            *pingInterval,
-		SkipVerifyEmail:         *skipVerifyEmail,
-		JaegerAddr:              *jaegerAddr,
-		SkipOriginCheck:         *skipOriginCheck,
-		Hostname:                *hostname,
-		NotifyAddrs:             *notifyAddrs,
-		NotifySrvAddr:           *notifySrvAddr,
-		NodeMgr:                 &nodeMgr,
-		BillingPlatform:         *billingPlatform,
-		AlertMgrAddr:            *alertMgrAddr,
-		AlertCache:              &alertCache,
-		AlertmgrResolveTimout:   *alertMgrResolveTimeout,
-		UsageCheckpointInterval: *usageCheckpointInterval,
-		DomainName:              nodeMgr.CommonName(),
-		StaticDir:               *staticDir,
-		DeploymentTag:           nodeMgr.DeploymentTag,
-		ControllerNotifyPort:    *controllerNotifyPort,
+		ServAddr:                 *addr,
+		SqlAddr:                  *sqlAddr,
+		VaultAddr:                nodeMgr.VaultAddr,
+		FederationAddr:           *federationAddr,
+		RunLocal:                 *localSql,
+		InitLocal:                *initSql,
+		LocalVault:               *localVault,
+		ApiTlsCertFile:           *apiTlsCertFile,
+		ApiTlsKeyFile:            *apiTlsKeyFile,
+		LDAPAddr:                 *ldapAddr,
+		GitlabAddr:               *gitlabAddr,
+		ArtifactoryAddr:          *artifactoryAddr,
+		PingInterval:             *pingInterval,
+		SkipVerifyEmail:          *skipVerifyEmail,
+		JaegerAddr:               *jaegerAddr,
+		SkipOriginCheck:          *skipOriginCheck,
+		Hostname:                 *hostname,
+		NotifyAddrs:              *notifyAddrs,
+		NotifySrvAddr:            *notifySrvAddr,
+		NodeMgr:                  &nodeMgr,
+		BillingPlatform:          *billingPlatform,
+		AlertMgrAddr:             *alertMgrAddr,
+		AlertCache:               &alertCache,
+		AlertmgrResolveTimout:    *alertMgrResolveTimeout,
+		UsageCheckpointInterval:  *usageCheckpointInterval,
+		DomainName:               nodeMgr.CommonName(),
+		StaticDir:                *staticDir,
+		DeploymentTag:            nodeMgr.DeploymentTag,
+		ControllerNotifyPort:     *controllerNotifyPort,
+		PublicAddr:               *publicAddr,
+		ConsoleAddr:              *consoleAddr,
+		PasswordResetConsolePath: *passwordResetConsolePath,
+		VerifyEmailConsolePath:   *verifyEmailConsolePath,
 	}
 	server, err := orm.RunServer(&config)
 	if err != nil {

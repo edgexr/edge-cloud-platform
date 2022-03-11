@@ -17,7 +17,6 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
-	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/pquerna/otp/totp"
@@ -43,19 +42,18 @@ func TestServer(t *testing.T) {
 	BadAuthDelay = time.Millisecond
 
 	config := ServerConfig{
-		ServAddr:                addr,
-		SqlAddr:                 "127.0.0.1:5445",
-		RunLocal:                true,
-		InitLocal:               true,
-		IgnoreEnv:               true,
-		SkipVerifyEmail:         true,
-		vaultConfig:             vaultConfig,
-		UsageCheckpointInterval: "MONTH",
-		BillingPlatform:         billing.BillingTypeFake,
-		DeploymentTag:           "local",
-		NodeMgr: &node.NodeMgr{
-			InternalDomain: "mobiledgex.net",
-		},
+		ServAddr:                 addr,
+		SqlAddr:                  "127.0.0.1:5445",
+		RunLocal:                 true,
+		InitLocal:                true,
+		IgnoreEnv:                true,
+		vaultConfig:              vaultConfig,
+		UsageCheckpointInterval:  "MONTH",
+		BillingPlatform:          billing.BillingTypeFake,
+		DeploymentTag:            "local",
+		PublicAddr:               "http://mc.mobiledgex.net",
+		PasswordResetConsolePath: "#/passwordreset",
+		VerifyEmailConsolePath:   "#/verify",
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
@@ -74,6 +72,48 @@ func TestServer(t *testing.T) {
 	for _, clientRun := range getUnitTestClientRuns() {
 		testServerClientRun(t, ctx, clientRun, uri)
 	}
+}
+
+func getVerificationTokenFromEmail(msg string) (string, error) {
+	parts := strings.Split(msg, "token=")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("Invalid email message, missing `token=` string")
+	}
+
+	out := strings.Split(parts[1], "\n")
+	if len(out) == 0 {
+		return "", fmt.Errorf("Invalid email message, missing verification link")
+	}
+	return strings.TrimSpace(out[0]), nil
+}
+
+func mcClientCreateUserWithMockMail(mcClient *mctestclient.Client, uri string, createUser *ormapi.CreateUser) (*ormapi.UserResponse, string, int, error) {
+	mockMail := MockSendMail{}
+	mockMail.Start()
+	defer mockMail.Stop()
+	resp, status, err := mcClient.CreateUser(uri, createUser)
+	return resp, mockMail.Message, status, err
+}
+
+func mcClientUpdateUserWithMockMail(mcClient *mctestclient.Client, uri string, token string, in *cli.MapData) (*ormapi.UserResponse, string, int, error) {
+	mockMail := MockSendMail{}
+	mockMail.Start()
+	defer mockMail.Stop()
+	resp, status, err := mcClient.UpdateUser(uri, token, in)
+	return resp, mockMail.Message, status, err
+}
+
+func userVerifyEmail(mcClient *mctestclient.Client, t *testing.T, uri string, mailMsg string) {
+	// verify that link to verify email is correct
+	matchStr := "mcctl --addr http://mc.mobiledgex.net user verifyemail token="
+	if serverConfig.ConsoleAddr != "" {
+		matchStr = fmt.Sprintf("Click to verify: %s#/verify?token", serverConfig.ConsoleAddr)
+	}
+	require.Contains(t, mailMsg, matchStr)
+	verifyToken, err := getVerificationTokenFromEmail(mailMsg)
+	require.Nil(t, err, "get verification token from email")
+	_, err = mcClient.VerifyEmail(uri, &ormapi.Token{Token: verifyToken})
+	require.Nil(t, err, "user email verified")
 }
 
 func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclient.ClientRun, uri string) {
@@ -154,9 +194,10 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 		Email:    "misterx@gmail.com",
 		Passhash: "misterx-password-super",
 	}
-	resp, status, err := mcClient.CreateUser(uri, &ormapi.CreateUser{User: user1})
+	resp, mailMsg, status, err := mcClientCreateUserWithMockMail(mcClient, uri, &ormapi.CreateUser{User: user1})
 	require.Nil(t, err, "create user")
 	require.Equal(t, http.StatusOK, status, "create user status")
+	userVerifyEmail(mcClient, t, uri, mailMsg)
 	// login as new user1, should work as 2fa is not enabled
 	tokenMisterX, isAdmin, err := mcClient.DoLogin(uri, user1.Name, user1.Passhash, NoOTP, NoApiKeyId, NoApiKey)
 	require.Nil(t, err, "login as user1 with no 2fa")
@@ -216,7 +257,7 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 		Passhash:   "misterX-password-long-super-tough-crazy-difficult",
 		EnableTOTP: true,
 	}
-	_, status, err = mcClient.CreateUser(uri, &ormapi.CreateUser{User: userX})
+	_, _, status, err = mcClientCreateUserWithMockMail(mcClient, uri, &ormapi.CreateUser{User: userX})
 	require.NotNil(t, err, "cannot create user with same name as org")
 
 	// create new user2
@@ -227,9 +268,10 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 		EnableTOTP: true,
 		Metadata:   "{timezone:PST,theme:Dark}",
 	}
-	resp, status, err = mcClient.CreateUser(uri, &ormapi.CreateUser{User: user2})
+	resp, mailMsg, status, err = mcClientCreateUserWithMockMail(mcClient, uri, &ormapi.CreateUser{User: user2})
 	require.Nil(t, err, "create user")
 	require.Equal(t, http.StatusOK, status, "create user status")
+	userVerifyEmail(mcClient, t, uri, mailMsg)
 	// login as new user2
 	otp, err = totp.GenerateCode(resp.TOTPSharedKey, time.Now())
 	require.Nil(t, err, "generate otp")
@@ -244,7 +286,7 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 		Passhash:   "mistery-password",
 		EnableTOTP: true,
 	}
-	_, status, err = mcClient.CreateUser(uri, &ormapi.CreateUser{User: user2ci})
+	_, _, status, err = mcClientCreateUserWithMockMail(mcClient, uri, &ormapi.CreateUser{User: user2ci})
 	require.NotNil(t, err, "create duplicate user (case-insensitive)")
 	require.Equal(t, http.StatusBadRequest, status, "create dup user")
 
@@ -260,10 +302,14 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 			"Nickname": updateNewNickname,
 			"Metadata": updateNewMetadata,
 		},
+		"Verify": map[string]interface{}{
+			"Email": updateNewEmail,
+		},
 	}
-	_, status, err = mcClient.UpdateUser(uri, tokenMisterY, mapData)
+	_, mailMsg, status, err = mcClientUpdateUserWithMockMail(mcClient, uri, tokenMisterY, mapData)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+	userVerifyEmail(mcClient, t, uri, mailMsg)
 	checkUser, status, err := mcClient.CurrentUser(uri, tokenMisterY)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -271,6 +317,7 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	require.Equal(t, updateNewPicture, checkUser.Picture)
 	require.Equal(t, updateNewNickname, checkUser.Nickname)
 	require.Equal(t, updateNewMetadata, checkUser.Metadata)
+	require.True(t, checkUser.EmailVerified) // since email is verified
 
 	// update user: disallowed fields
 	mapData.Data = map[string]interface{}{
@@ -286,6 +333,9 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	mapData.Data = map[string]interface{}{
 		"User": map[string]interface{}{
 			"Name":  "MisterY",
+			"Email": "misterx@gmail.com",
+		},
+		"Verify": map[string]interface{}{
 			"Email": "misterx@gmail.com",
 		},
 	}
@@ -324,9 +374,10 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 		Passhash:   "admin-password-long-super-tough-crazy-difficult",
 		EnableTOTP: true,
 	}
-	resp, status, err = mcClient.CreateUser(uri, &ormapi.CreateUser{User: admin})
+	resp, mailMsg, status, err = mcClientCreateUserWithMockMail(mcClient, uri, &ormapi.CreateUser{User: admin})
 	require.Nil(t, err, "create admin user")
 	require.Equal(t, http.StatusOK, status, "create admin user status")
+	userVerifyEmail(mcClient, t, uri, mailMsg)
 	// add admin user as admin role
 	roleArg := ormapi.Role{
 		Username: admin.Name,
@@ -457,21 +508,32 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	require.Nil(t, err)
 
 	// callback url is validated as part of password reset request
+	m := MockSendMail{}
+	m.Start()
+	defer m.Stop()
 	emailReq := ormapi.EmailRequest{
-		Email:           user1.Email,
-		OperatingSystem: "linux",
-		CallbackURL:     "invalid.com/verify",
+		Email: user1.Email,
 	}
+	// without consoleaddr, this will send mcctl as part of email
 	_, err = mcClient.PasswordResetRequest(uri, &emailReq)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Invalid callback URL domain")
+	require.Nil(t, err)
+	// verify that password reset link is correct
+	require.Contains(t, m.Message, "mcctl --addr http://mc.mobiledgex.net user passwordreset token=")
+	m.Reset()
 
-	emailReq.CallbackURL = "https://mobiledgex.net/verify"
+	// with consoleaddr set, this will send console URL as part of email
+	serverConfig.ConsoleAddr = "http://console-test.mobiledgex.net/"
 	_, err = mcClient.PasswordResetRequest(uri, &emailReq)
-	require.NotNil(t, err)
-	// This requires email server to be configured, hence we just verify
-	// that invalid callback url error is not seen
-	require.NotContains(t, err.Error(), "Invalid callback URL domain")
+	require.Nil(t, err)
+	// verify that password reset link is correct
+	require.Contains(t, m.Message, "Reset your password: http://console-test.mobiledgex.net/#/passwordreset?token")
+	m.Reset()
+	serverConfig.ConsoleAddr = ""
+
+	_, err = mcClient.ResendVerify(uri, &emailReq)
+	require.Nil(t, err)
+	// verify that password reset link is correct
+	require.Contains(t, m.Message, "mcctl --addr http://mc.mobiledgex.net user verifyemail token=")
 
 	// check role assignments as mister x
 	roleAssignments, status, err = mcClient.ShowRoleAssignment(uri, tokenMisterX, ClientNoShowFilter)
@@ -589,8 +651,8 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 2, len(users))
-	require.Equal(t, DefaultSuperuser, users[0].Name)
-	require.Equal(t, admin.Name, users[1].Name)
+	require.Equal(t, admin.Name, users[0].Name)
+	require.Equal(t, DefaultSuperuser, users[1].Name)
 	showUser.Data = map[string]interface{}{
 		"Role": RoleDeveloperManager,
 	}
@@ -598,9 +660,9 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 3, len(users))
-	require.Equal(t, user1.Name, users[0].Name)
-	require.Equal(t, user2.Name, users[1].Name)
-	require.Equal(t, admin.Name, users[2].Name)
+	require.Equal(t, admin.Name, users[0].Name)
+	require.Equal(t, user1.Name, users[1].Name)
+	require.Equal(t, user2.Name, users[2].Name)
 	// check show with invalid field name
 	showUser.Data = map[string]interface{}{
 		"BadField": "val",
@@ -815,9 +877,10 @@ func testLockedUsers(t *testing.T, uri string, mcClient *mctestclient.Client) {
 		Passhash:   "user1-password-super-long-crazy-hard-difficult",
 		EnableTOTP: true,
 	}
-	resp, status, err := mcClient.CreateUser(uri, &ormapi.CreateUser{User: user1})
+	resp, mailMsg, status, err := mcClientCreateUserWithMockMail(mcClient, uri, &ormapi.CreateUser{User: user1})
 	require.Nil(t, err, "create user")
 	require.Equal(t, http.StatusOK, status, "create user status")
+	require.Contains(t, mailMsg, "Locked account created")
 	// login as new user1
 	otp, err := totp.GenerateCode(resp.TOTPSharedKey, time.Now())
 	require.Nil(t, err, "generate otp")
@@ -832,6 +895,7 @@ func testLockedUsers(t *testing.T, uri string, mcClient *mctestclient.Client) {
 	}
 	userReq.Data["email"] = user1.Email
 	userReq.Data["locked"] = false
+	userReq.Data["emailverified"] = true
 	status, err = mcClient.RestrictedUpdateUser(uri, superTok, userReq)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -849,9 +913,10 @@ func testLockedUsers(t *testing.T, uri string, mcClient *mctestclient.Client) {
 		Passhash:   "user2-password-super-long-crazy-hard-difficult",
 		EnableTOTP: true,
 	}
-	resp, status, err = mcClient.CreateUser(uri, &ormapi.CreateUser{User: user2})
+	resp, mailMsg, status, err = mcClientCreateUserWithMockMail(mcClient, uri, &ormapi.CreateUser{User: user2})
 	require.Nil(t, err, "create user")
 	require.Equal(t, http.StatusOK, status, "create user status")
+	require.Contains(t, mailMsg, "Locked account created")
 	// login as new user2
 	otp, err = totp.GenerateCode(resp.TOTPSharedKey, time.Now())
 	require.Nil(t, err, "generate otp")
@@ -889,9 +954,10 @@ func testLockedUsers(t *testing.T, uri string, mcClient *mctestclient.Client) {
 	status, err = mcClient.DeleteUser(uri, superTok, &user2)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	resp, status, err = mcClient.CreateUser(uri, &ormapi.CreateUser{User: user2})
+	resp, mailMsg, status, err = mcClientCreateUserWithMockMail(mcClient, uri, &ormapi.CreateUser{User: user2})
 	require.Nil(t, err, "create user")
 	require.Equal(t, http.StatusOK, status, "create user status")
+	userVerifyEmail(mcClient, t, uri, mailMsg)
 	// login as new user2
 	otp, err = totp.GenerateCode(resp.TOTPSharedKey, time.Now())
 	require.Nil(t, err, "generate otp")
@@ -1045,7 +1111,7 @@ func testPasswordStrength(t *testing.T, ctx context.Context, mcClient *mctestcli
 		Passhash:   "admin123",
 		EnableTOTP: true,
 	}
-	_, status, err := mcClient.CreateUser(uri, &ormapi.CreateUser{User: userBad})
+	_, _, _, err = mcClientCreateUserWithMockMail(mcClient, uri, &ormapi.CreateUser{User: userBad})
 	require.NotNil(t, err, "bad user password")
 	require.Contains(t, err.Error(), "Password too weak")
 
@@ -1056,9 +1122,10 @@ func testPasswordStrength(t *testing.T, ctx context.Context, mcClient *mctestcli
 		Passhash:   "misterx-password-supe",
 		EnableTOTP: true,
 	}
-	resp, status, err := mcClient.CreateUser(uri, &ormapi.CreateUser{User: user1})
+	resp, mailMsg, status, err := mcClientCreateUserWithMockMail(mcClient, uri, &ormapi.CreateUser{User: user1})
 	require.Nil(t, err, "create user")
 	require.Equal(t, http.StatusOK, status, "create user status")
+	userVerifyEmail(mcClient, t, uri, mailMsg)
 	// login as new user1
 	otp, err = totp.GenerateCode(resp.TOTPSharedKey, time.Now())
 	require.Nil(t, err, "generate otp")
@@ -1161,9 +1228,10 @@ func testEdgeboxOnlyOrgs(t *testing.T, uri string, mcClient *mctestclient.Client
 		Email:    "user@gmail.com",
 		Passhash: "user-password-super-long-crazy-hard-difficult",
 	}
-	_, status, err := mcClient.CreateUser(uri, &ormapi.CreateUser{User: user})
+	_, mailMsg, status, err := mcClientCreateUserWithMockMail(mcClient, uri, &ormapi.CreateUser{User: user})
 	require.Nil(t, err, "create user")
 	require.Equal(t, http.StatusOK, status, "create user status")
+	userVerifyEmail(mcClient, t, uri, mailMsg)
 
 	// login as non-admin user
 	userTok, _, err := mcClient.DoLogin(uri, user.Name, user.Passhash, NoOTP, NoApiKeyId, NoApiKey)
@@ -1237,9 +1305,10 @@ func testFailedLoginLockout(t *testing.T, ctx context.Context, uri, superTok str
 		Email:    "lockout@gmail.com",
 		Passhash: "lockout-password-blue-dog-cat",
 	}
-	_, status, err := mcClient.CreateUser(uri, &ormapi.CreateUser{User: testUser})
+	_, mailMsg, status, err := mcClientCreateUserWithMockMail(mcClient, uri, &ormapi.CreateUser{User: testUser})
 	require.Nil(t, err, "create user")
 	require.Equal(t, http.StatusOK, status, "create user status")
+	userVerifyEmail(mcClient, t, uri, mailMsg)
 
 	// These helper funcs are for actions that are run multiple times
 	expectLoginOk := func() string {

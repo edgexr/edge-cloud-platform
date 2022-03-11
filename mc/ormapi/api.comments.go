@@ -186,12 +186,10 @@ var CreateUserComments = map[string]string{
 	"user.lastfailedlogin": `Last failed login time`,
 	"user.failedlogins":    `Number of failed login attempts since last successful login`,
 	"verify.email":         `User's email address`,
-	"verify.callbackurl":   `Callback URL to verify user email`,
 }
 
 var EmailRequestComments = map[string]string{
-	"email":       `User's email address`,
-	"callbackurl": `Callback URL to verify user email`,
+	"email": `User's email address`,
 }
 
 var PasswordResetComments = map[string]string{

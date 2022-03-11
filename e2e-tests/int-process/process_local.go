@@ -497,6 +497,11 @@ func SetupVault(p *process.Vault, opts ...process.StartOp) (*VaultRoles, error) 
 		return &roles, err
 	}
 
+	p.Run("vault", fmt.Sprintf("kv put /secret/accounts/noreplyemail Email=dummy@email.com"), &err)
+	if err != nil {
+		return &roles, err
+	}
+
 	// Set up dummy API key to be used to call the GDDT QOS Priority Sessions API.
 	fileName := gopath + "/src/github.com/mobiledgex/edge-cloud-infra/e2e-tests/data/gddt_qos_session_api_key.txt"
 	// The vault path for "kv put" omits the /data portion.
