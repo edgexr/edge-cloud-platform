@@ -135,6 +135,15 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 		Description: "Override DNS server IP(s), e.g. \"8.8.8.8\" or \"1.1.1.1,8.8.8.8\"",
 		Value:       "1.1.1.1,1.0.0.1",
 	},
+	"MEX_CLOUDLET_FIREWALL_WHITELIST_EGRESS": {
+		Name:        "Cloudlet Firewall Whitelist Egress",
+		Description: "Firewall rule to whitelist egress traffic",
+		Value:       "protocol=tcp,portrange=1:65535,remotecidr=0.0.0.0/0;protocol=udp,portrange=1:65535,remotecidr=0.0.0.0/0;protocol=icmp,remotecidr=0.0.0.0/0",
+	},
+	"MEX_CLOUDLET_FIREWALL_WHITELIST_INGRESS": {
+		Name:        "Cloudlet Firewall Whitelist Ingress",
+		Description: "Firewall rule to whitelist ingress traffic",
+	},
 	"MEX_ADDITIONAL_PLATFORM_NETWORKS": {
 		Name:        "Additional Platform Networks",
 		Description: "Optional comma separated list of networks to add to platform VM",
