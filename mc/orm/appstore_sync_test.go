@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -174,6 +175,56 @@ func TestAppStoreApi(t *testing.T) {
 	rtf := NewArtifactoryMock(artifactoryAddr)
 	// mock gitlab
 	gm := NewGitlabMock(gitlabAddr)
+
+	// basic direct api tests
+	for user, _ := range testEntries[0].Users {
+		userObj := ormapi.User{
+			Name:  user,
+			Email: user + "@email.com",
+		}
+		// gitlab create user
+		err := gitlabCreateLDAPUser(ctx, &userObj)
+		require.Nil(t, err, user)
+		// check that we can get user
+		gitlabUser, err := gitlabGetLDAPUser(user)
+		require.Nil(t, err, user)
+		require.Equal(t, user, gitlabUser.Name)
+		// create again should fail
+		err = gitlabCreateLDAPUser(ctx, &userObj)
+		require.NotNil(t, err, user)
+		// delete user
+		err = gitlabDeleteLDAPUser(ctx, user)
+		require.Nil(t, err, user)
+		// user should not exist
+		_, err = gitlabGetLDAPUser(user)
+		require.NotNil(t, err, user)
+		// delete again should fail
+		err = gitlabDeleteLDAPUser(ctx, user)
+		require.NotNil(t, err, user)
+
+		// artifactory create user
+		err = artifactoryCreateLDAPUser(ctx, &userObj)
+		require.Nil(t, err, user)
+		// check that we can get user
+		artUsers, err := artifactoryListUsers(ctx)
+		require.Nil(t, err, user)
+		_, found := artUsers[strings.ToLower(user)]
+		require.True(t, found, user)
+		// create again should fail
+		err = artifactoryCreateLDAPUser(ctx, &userObj)
+		require.NotNil(t, err, user)
+		// delete user
+		err = artifactoryDeleteLDAPUser(ctx, user)
+		require.Nil(t, err, user)
+		// user should not exist
+		artUsers, err = artifactoryListUsers(ctx)
+		require.Nil(t, err, user)
+		_, found = artUsers[strings.ToLower(user)]
+		require.False(t, found, user)
+		// delete again should fail
+		err = artifactoryDeleteLDAPUser(ctx, user)
+		require.NotNil(t, err, user)
+	}
 
 	// create "missing" data in MC but not in Art/Gitlab
 	for _, v := range missingEntries {

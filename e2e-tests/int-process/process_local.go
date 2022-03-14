@@ -53,6 +53,10 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "--ldapAddr")
 		args = append(args, p.LdapAddr)
 	}
+	if p.GitlabAddr != "" {
+		args = append(args, "--gitlabAddr")
+		args = append(args, p.GitlabAddr)
+	}
 	if p.NotifySrvAddr != "" {
 		args = append(args, "--notifySrvAddr")
 		args = append(args, p.NotifySrvAddr)
