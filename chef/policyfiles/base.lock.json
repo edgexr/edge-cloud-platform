@@ -1,5 +1,5 @@
 {
-  "revision_id": "e04d1778bc1bfd9ac8eb0966ad75b788ecccf55506bcd01f71eb1a4b9a074343",
+  "revision_id": "e8a4d28aca634f3363b894266c26f4301d96c7b4713f7030e0706c27644e7420",
   "name": "base",
   "run_list": [
     "recipe[chef_client_updater::default]",
@@ -84,7 +84,7 @@
     "upgrade_mobiledgex_package": {
       "repo": "https://apt.mobiledgex.net/cirrus/2022-02-25"
     },
-    "mobiledgeXPackageVersion": "4.9.1",
+    "mobiledgeXPackageVersion": "4.9.2",
     "chef_client_updater": {
       "version": "17.6.18"
     }

@@ -44,7 +44,7 @@ const MINIMUM_VCPUS uint64 = 2
 var ImageFormatQcow2 = "qcow2"
 var ImageFormatVmdk = "vmdk"
 
-var MEXInfraVersion = "4.9.1"
+var MEXInfraVersion = "4.9.2"
 var ImageNamePrefix = "mobiledgex-v"
 var DefaultOSImageName = ImageNamePrefix + MEXInfraVersion
 
