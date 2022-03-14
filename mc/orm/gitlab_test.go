@@ -150,6 +150,9 @@ func (s *GitlabMock) registerCreateUser() {
 			if opt.Email != nil {
 				user.Email = *opt.Email
 			}
+			// gitlab does not set the provider in the user.Provider
+			// field, it is set with the Identities.Provider field.
+			// Leave user.Provider blank.
 			if opt.Provider != nil && opt.ExternUID != nil {
 				identity := gitlab.UserIdentity{
 					Provider:  *opt.Provider,
@@ -158,9 +161,6 @@ func (s *GitlabMock) registerCreateUser() {
 				ids := make([]*gitlab.UserIdentity, 0)
 				ids = append(ids, &identity)
 				user.Identities = ids
-			}
-			if opt.Provider != nil {
-				user.Provider = *opt.Provider
 			}
 			s.users[user.ID] = &user
 			log.DebugLog(log.DebugLevelApi, "gitlab mock created user", "user", user)

@@ -15,6 +15,7 @@ type MC struct {
 	NotifyAddrs             string
 	RolesFile               string
 	LdapAddr                string
+	GitlabAddr              string
 	NotifySrvAddr           string
 	ConsoleProxyAddr        string
 	AlertResolveTimeout     string

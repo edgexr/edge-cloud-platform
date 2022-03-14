@@ -93,9 +93,6 @@ func gitlabDeleteLDAPUser(ctx context.Context, username string) (reterr error) {
 		gitlabSync.NeedsSync()
 		return fmt.Errorf("failed to get LDAP user: %s", err)
 	}
-	if user.Provider != LDAPProvider {
-		return fmt.Errorf("user is not an LDAP user")
-	}
 	_, err = gitlabClient.Users.DeleteUser(user.ID)
 	if err != nil {
 		gitlabSync.NeedsSync()
@@ -302,9 +299,9 @@ func gitlabGetLDAPUser(username string) (*gitlab.User, error) {
 	if gitlabClient == nil {
 		return &gitlab.User{}, nil
 	}
+	// Note: if provider is specified, externalUID must also be specified.
 	opts := gitlab.ListUsersOptions{
 		Username: &username,
-		Provider: &LDAPProvider,
 	}
 	users, _, err := gitlabClient.Users.ListUsers(&opts)
 	if err != nil {
@@ -315,6 +312,9 @@ func gitlabGetLDAPUser(username string) (*gitlab.User, error) {
 	}
 	if len(users) > 1 {
 		return nil, fmt.Errorf("Gitlab more than one user with name %s", username)
+	}
+	if users[0].Identities == nil || len(users[0].Identities) == 0 || users[0].Identities[0].Provider != LDAPProvider {
+		return nil, fmt.Errorf("LDAP User %s not found", username)
 	}
 	return users[0], nil
 }
