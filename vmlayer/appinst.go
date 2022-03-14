@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/codeskyblue/go-sh"
@@ -33,6 +34,7 @@ const (
 	FileDownloadDir                     = "/var/tmp/"
 	cleanupNonVMAppinstRetryWaitSeconds = 10
 	cleanupVMAppinstRetryWaitSeconds    = 60
+	maxWaitImageDownloadInProgress      = 60 * time.Minute // this timeout is very long because it should never happen
 )
 
 type ProxyDnsSecOpts struct {
@@ -46,6 +48,13 @@ type vmAppOrchValues struct {
 	externalServerName string
 	vmgp               *VMGroupOrchestrationParams
 	newSubnetName      string
+}
+
+var imageLock sync.Mutex
+var imageDownloadsInProgress map[string]bool
+
+func init() {
+	imageDownloadsInProgress = make(map[string]bool)
 }
 
 func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) (*vmAppOrchValues, error) {
@@ -73,7 +82,16 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	if err != nil {
 		return &orchVals, err
 	}
-	err = v.VMProvider.AddImageIfNotPresent(ctx, &imageInfo, updateCallback)
+	// only one thread should be downloading any given image at once.
+	reserved := reserveImageDownloadInProgress(ctx, imageInfo.LocalImageName)
+	if reserved {
+		err = v.VMProvider.AddImageIfNotPresent(ctx, &imageInfo, updateCallback)
+		clearImageDownloadInProgress(ctx, imageInfo.LocalImageName)
+	} else {
+		// download already in progress by another thread, wait for it to finish
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Waiting for download of %s", imageInfo.LocalImageName))
+		err = waitForImageDownloadInProgress(ctx, imageInfo.LocalImageName)
+	}
 	if err != nil {
 		return &orchVals, err
 	}
@@ -899,4 +917,49 @@ func ConvertQcowToVmdk(ctx context.Context, sourceFile string, size uint64) (str
 		return "", errors.New(convertErr)
 	}
 	return destFile, nil
+}
+
+// reserveImageDownloadInProgress returns true if there was not already a download happening. If so
+// the caller must call clearImageDownloadInProgress when done
+func reserveImageDownloadInProgress(ctx context.Context, imageName string) bool {
+	log.SpanLog(ctx, log.DebugLevelInfra, "reserveImageDownloadInProgress", "imageName", imageName)
+	imageLock.Lock()
+	defer imageLock.Unlock()
+	if imageDownloadsInProgress[imageName] {
+		log.SpanLog(ctx, log.DebugLevelInfra, "download already in progress", "imageName", imageName)
+		return false
+	}
+	imageDownloadsInProgress[imageName] = true
+	return true
+}
+
+func isImageDownloadInProgress(ctx context.Context, imageName string) bool {
+	imageLock.Lock()
+	defer imageLock.Unlock()
+	return imageDownloadsInProgress[imageName]
+}
+
+func clearImageDownloadInProgress(ctx context.Context, imageName string) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "clearImageDownloadInProgress", "imageName", imageName)
+	imageLock.Lock()
+	defer imageLock.Unlock()
+	delete(imageDownloadsInProgress, imageName)
+}
+
+func waitForImageDownloadInProgress(ctx context.Context, imageName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "waitForImageDownloadInProgress", "imageName", imageName)
+	startTime := time.Now()
+	for {
+		log.SpanLog(ctx, log.DebugLevelInfra, "waiting to recheck isImageDownloadInProgress")
+		time.Sleep(time.Second * 10)
+		if !isImageDownloadInProgress(ctx, imageName) {
+			return nil
+		}
+		elapsed := time.Since(startTime)
+		log.SpanLog(ctx, log.DebugLevelInfra, "waiting for download", "imageName", imageName, "elapsed", elapsed, "timeout", maxWaitImageDownloadInProgress)
+		if elapsed > maxWaitImageDownloadInProgress {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Error: waitForImageDownloadInProgress timed out", "imageName", imageName)
+			return fmt.Errorf("waiting for downloading in progress timed out")
+		}
+	}
 }
