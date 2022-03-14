@@ -16,6 +16,7 @@ import (
 )
 
 const ResourceNotFound string = "Could not find resource"
+const DuplicateResourceFound string = "More than one resource exists"
 const StackNotFound string = "Stack not found"
 
 func (s *OpenstackPlatform) TimedOpenStackCommand(ctx context.Context, name string, a ...string) ([]byte, error) {
@@ -1054,20 +1055,80 @@ func (o *OpenstackPlatform) GetCloudletImageSuffix(ctx context.Context) string {
 	return ".qcow2"
 }
 
+// RemoveDuplicateImages is called when more than one image is found with the same name. This can happen in rare
+// situations in which the an app was created twice at the same time on the same cloudlet (no longer possible due as this
+// condition is now checked in PerformOrchestrationForVMApp), or if there are 2 cloudlets using the same openstack
+// tenant (still possible in labs and PoC deployments)
+// Cleanup logic is as follows:
+// - The first "active" image found is retained
+// - All images not in "active" state are removed. This could result in no images at all being left but at least
+//   this is a recoverable situation
+func (o *OpenstackPlatform) RemoveDuplicateImages(ctx context.Context, imageName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveDuplicateImages", "imageName", imageName)
+
+	imageIdsToDelete := []string{}
+	imageToKeep := ""
+	imageList, err := o.ListImages(ctx)
+	if err != nil {
+		return nil
+	}
+	for _, img := range imageList {
+		if img.Name != imageName {
+			continue
+		}
+		if img.Status != "active" {
+			// delete images not active. If one is uploading, that process will just fail
+			imageIdsToDelete = append(imageIdsToDelete, img.ID)
+		} else {
+			if imageToKeep == "" {
+				imageToKeep = img.ID
+			} else {
+				// already have one good image, delete this one
+				imageIdsToDelete = append(imageIdsToDelete, img.ID)
+			}
+		}
+	}
+	if imageToKeep == "" {
+		return fmt.Errorf("no active image found for %s among duplicates, please try again", imageName)
+	}
+	for _, id := range imageIdsToDelete {
+		err = o.DeleteImage(ctx, "", id)
+		if err != nil {
+			return fmt.Errorf("error deleting image id %s - %v", id, err)
+		}
+	}
+	return nil
+}
+
 func (o *OpenstackPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infracommon.ImageInfo, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddImageIfNotPresent", "imageInfo", imageInfo)
 
-	imageDetail, err := o.GetImageDetail(ctx, imageInfo.LocalImageName)
 	createImage := false
+	imageFound := false
+	imageDetail, err := o.GetImageDetail(ctx, imageInfo.LocalImageName)
 	if err != nil {
 		if strings.Contains(err.Error(), ResourceNotFound) {
 			// Add image to Glance
 			log.SpanLog(ctx, log.DebugLevelInfra, "image is not present in glance, add image")
 			createImage = true
+		} else if strings.Contains(err.Error(), DuplicateResourceFound) {
+			err = o.RemoveDuplicateImages(ctx, imageInfo.LocalImageName)
+			if err != nil {
+				return err
+			}
+			// now that we have deleted all duplicates, get the image detail again
+			imageDetail, err = o.GetImageDetail(ctx, imageInfo.LocalImageName)
+			if err != nil {
+				return err
+			}
+			imageFound = true
 		} else {
 			return err
 		}
 	} else {
+		imageFound = true
+	}
+	if imageFound {
 		if imageDetail.Status != "active" {
 			return fmt.Errorf("image in store %s is not active", imageInfo.LocalImageName)
 		}
