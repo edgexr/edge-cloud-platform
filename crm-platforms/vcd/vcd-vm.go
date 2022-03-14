@@ -1013,7 +1013,7 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 	for _, cvm := range vapp.VApp.Children.VM {
 		flavor := ""
 		role := ""
-		vm, err := vapp.GetVMByName(cvm.Name, true)
+		vm, err := vapp.GetVMByName(cvm.Name, false)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Warn GetVMByName: vm not found in vapp ", "vapp", vappName, "cvm", cvm)
 			return resources, fmt.Errorf("Warn GetVMByName: vm %s not found in vapp", cvm.Name)
@@ -1031,11 +1031,16 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 				role = md.TypedValue.Value
 			}
 		}
-
+		vmstat, err := v.GetVmStatus(ctx, vm, NoRefresh)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "error getting VM status", "err", err)
+			vmstat = "unknown"
+		}
 		vminfo := edgeproto.VmInfo{
 			Name:        vm.VM.Name,
 			InfraFlavor: flavor,
 			Type:        v.vmProperties.GetNodeTypeForVmNameAndRole(vm.VM.Name, role).String(),
+			Status:      vmstat,
 		}
 		netTypes := []vmlayer.NetworkType{
 			vmlayer.NetworkTypeExternalAdditionalPlatform,
