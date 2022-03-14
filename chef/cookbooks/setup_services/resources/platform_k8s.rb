@@ -32,8 +32,8 @@ action :prep_cluster do
     action :run
     retries 2
     retry_delay 2
-    Chef::Log.info("Setting label platform-cluster-master for #{node['platform-cluster-master']} ")
-    command "kubectl label nodes #{node['platform-cluster-master'].downcase} harole=master --kubeconfig=/home/ubuntu/.kube/config"
+    Chef::Log.info("Setting label platform-k8s-cluster-master for #{node['platform-k8s-cluster-master']} ")
+    command "kubectl label nodes #{node['platform-k8s-cluster-master'].downcase} harole=master --kubeconfig=/home/ubuntu/.kube/config"
     returns 0
     ignore_failure true
   end
@@ -42,8 +42,8 @@ action :prep_cluster do
     action :run
     retries 2
     retry_delay 2
-    Chef::Log.info("Setting label platform-cluster-primary-node for #{node['platform-cluster-primary-node']} ")
-    command "kubectl label nodes #{node['platform-cluster-primary-node'].downcase} harole=primary --kubeconfig=/home/ubuntu/.kube/config"
+    Chef::Log.info("Setting label platform-k8s-cluster-primary-node for #{node['platform-k8s-cluster-primary-node']} ")
+    command "kubectl label nodes #{node['platform-k8s-cluster-primary-node'].downcase} harole=primary --kubeconfig=/home/ubuntu/.kube/config"
     returns 0
     ignore_failure true
   end
@@ -52,8 +52,8 @@ action :prep_cluster do
     action :run
     retries 2
     retry_delay 2
-    Chef::Log.info("Setting label platform-cluster-secondary-node for #{node['platform-cluster-secondary-node']} ")
-    command "kubectl label nodes #{node['platform-cluster-secondary-node'].downcase} harole=secondary --kubeconfig=/home/ubuntu/.kube/config"
+    Chef::Log.info("Setting label platform-k8s-cluster-secondary-node for #{node['platform-k8s-cluster-secondary-node']} ")
+    command "kubectl label nodes #{node['platform-k8s-cluster-secondary-node'].downcase} harole=secondary --kubeconfig=/home/ubuntu/.kube/config"
     returns 0
     ignore_failure true
   end

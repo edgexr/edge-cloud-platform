@@ -53,9 +53,9 @@ spec:
        <% unless @tolerations.nil? %>
        tolerations:
        <% @tolerations.each do |tol, tol_attrs| %>
-        - key: "<% tol_attrs[:key] %>"
+        - key: "<%= tol_attrs[:key] %>"
           operator: "Exists"
-          effect: "<% tol_attrs[:key] %>"
+          effect: "<%= tol_attrs[:effect] %>"
        <% end %>
        <% end %>
        <% @configmaps.each do|cm, cm_attrs| %>
