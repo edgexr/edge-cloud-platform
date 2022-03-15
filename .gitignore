@@ -92,3 +92,6 @@ mc/orm/testAlertMgrConfig.yml
 *.auto.tfvars.json
 
 version/version.go
+
+# redis
+dump.rdb
