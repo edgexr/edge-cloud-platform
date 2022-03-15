@@ -1146,6 +1146,19 @@ func (s *Server) websocketUpgrade(next echo.HandlerFunc) echo.HandlerFunc {
 		// as we plan to call this directly from React (browser)
 		isAuth, err := AuthWSCookie(c, ws)
 		if !isAuth {
+			if err != nil {
+				code, res := getErrorResult(err)
+				wsPayload := ormapi.WSStreamPayload{
+					Code: code,
+					Data: res,
+				}
+				writeErr := writeWS(c, ws, &wsPayload)
+				if writeErr != nil {
+					ctx := ormutil.GetContext(c)
+					log.SpanLog(ctx, log.DebugLevelApi, "Failed to write error to websocket stream", "err", err, "writeErr", writeErr)
+				}
+			}
+			ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			return err
 		}
 

@@ -1498,6 +1498,13 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		// the callback func is only called when data is read back.
 		// Test Websocket connection
 		wsuri := "ws://" + addr + "/ws/api/v1"
+		// validate the error is received with appropriate error code on invalid token
+		status, err = restClient.PostJsonStreamOut(wsuri+"/auth/ctrl/CreateClusterInst",
+			"invalidToken", &dat, &wsOut, func() {
+			})
+		require.NotNil(t, err, "invalid token error")
+		require.Equal(t, http.StatusBadRequest, status)
+		require.Equal(t, "Invalid or expired jwt", err.Error())
 		status, err = restClient.PostJsonStreamOut(wsuri+"/auth/ctrl/CreateClusterInst",
 			token, &dat, &wsOut, func() {
 				// got a result, trigger next result
