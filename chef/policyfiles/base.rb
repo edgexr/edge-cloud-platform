@@ -15,7 +15,7 @@ cookbook 'runstatus_handler', '= 1.0.0'
 cookbook 'copy_resource_tracker', '= 1.0.1'
 cookbook 'set_security_policies', '= 1.0.0'
 cookbook 'setup_teleport', '= 1.1.0'
-cookbook 'upgrade_mobiledgex_package', '= 1.1.0'
+cookbook 'upgrade_mobiledgex_package', '= 1.1.1'
 
 default['upgrade_mobiledgex_package']['repo'] = "https://apt.mobiledgex.net/cirrus/2022-02-25"
 default['mobiledgeXPackageVersion'] = '4.9.2'
