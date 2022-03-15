@@ -203,14 +203,17 @@ func (v *VcdPlatform) PopulateOrgLoginCredsFromVcdVars(ctx context.Context) erro
 func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, rootLBName string, secGrpName string, trustPolicy *edgeproto.TrustPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB", "rootLBName", rootLBName)
 	iptblStart := time.Now()
-
+	isTrustPolicy := false
 	// Check if we have any trust policy, and use it if so
 	tp, err := v.GetCloudletTrustPolicy(ctx)
 	if tp == nil || err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB no TrustPolicy")
 	} else {
-		log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB have TrustPolicy")
+		log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB have TrustPolicy", "trustPolicy", tp)
 		trustPolicy = tp
+		if tp.Key.Name != "" {
+			isTrustPolicy = true
+		}
 	}
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
@@ -220,11 +223,11 @@ func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, root
 	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB", "rootLBName", rootLBName)
 	// configure iptables based security
 	sshCidrsAllowed := []string{infracommon.RemoteCidrAll}
-	isTrustPolicy := true
+
 	secGrpName = infracommon.TrustPolicySecGrpNameLabel
 
 	var rules []edgeproto.SecurityRule
-	if trustPolicy != nil {
+	if isTrustPolicy {
 		rules = trustPolicy.OutboundSecurityRules
 	}
 	commonSharedAccess := rootLBName == v.vmProperties.SharedRootLBName
@@ -534,9 +537,12 @@ func (v *VcdPlatform) configureVCDSecurityRulesCommon(ctx context.Context, egres
 }
 
 func (v *VcdPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootlbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
-	isTrustPolicy := true
+	isTrustPolicy := false
+	if TrustPolicy != nil && TrustPolicy.Key.Name != "" {
+		isTrustPolicy = true
+	}
 	secGrpName := v.vmProperties.CloudletSecgrpName
-	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules", "egressRestricted", egressRestricted, "TrustPolicy", TrustPolicy, "action", action)
+	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules", "egressRestricted", egressRestricted, "TrustPolicy", TrustPolicy, "action", action, "secGrpName", secGrpName)
 
 	return v.configureVCDSecurityRulesCommon(ctx, egressRestricted, isTrustPolicy, secGrpName, TrustPolicy.OutboundSecurityRules, rootlbClients, action, updateCallback)
 }

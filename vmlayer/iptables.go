@@ -85,10 +85,22 @@ func fixupSecurityRules(ctx context.Context, rules []edgeproto.SecurityRule) {
 	}
 }
 
+func (v *VMProperties) cleanupRules(ctx context.Context, client ssh.Client) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "cleanupRules", "secGrpName", v.CloudletSecgrpName)
+
+	// Delete cloudlet-wide rules if any
+	err := v.CommonPf.DeleteIptableRulesForCloudletWideLabel(ctx, client)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteIptableRulesForCloudletWideLabel() failed", "err", err)
+	}
+
+	infracommon.RemoveTrustPolicyIfExists(ctx, client, false, v.CloudletSecgrpName)
+}
+
 // isTrustPolicy true means cloudlet level trustPolicy and false implies TrustPolicyException
 func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client ssh.Client, sshCidrsAllowed []string, isTrustPolicy bool, secGrpName string, rules []edgeproto.SecurityRule, commonSharedAccess bool) error {
 
-	if isTrustPolicy == true {
+	if isTrustPolicy {
 		// The label used for TrustPolicy
 		secGrpName = infracommon.TrustPolicySecGrpNameLabel
 	} else {
@@ -100,12 +112,9 @@ func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client s
 	var ppRules infracommon.FirewallRules
 
 	//First create the global rules on this LB
-	log.SpanLog(ctx, log.DebugLevelInfra, "SetupIptablesRulesForRootLB", "isTrustPolicy", isTrustPolicy)
+	log.SpanLog(ctx, log.DebugLevelInfra, "SetupIptablesRulesForRootLB", "isTrustPolicy", isTrustPolicy, "secGrpName", secGrpName)
 	if isTrustPolicy {
-		err := v.CommonPf.CreateCloudletFirewallRules(ctx, client)
-		if err != nil {
-			return err
-		}
+		v.cleanupRules(ctx, client)
 		// Allow SSH from provided cidrs
 		for _, netCidr := range sshCidrsAllowed {
 			sshIngress := infracommon.FirewallRule{
@@ -143,7 +152,7 @@ func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client s
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "SetupIpTablesRulesForRootLB removeTrustPolicyIfExists fail", "error", err)
 	}
-	if len(rules) == 0 {
+	if isTrustPolicy == false && len(rules) == 0 {
 		// a privacy policy with no rules means we need to open all egress traffic
 		log.SpanLog(ctx, log.DebugLevelInfra, "SetupIpTablesRulesForRootLB empty OutboundSecRules removeIfExist")
 		allowEgressAll = true
