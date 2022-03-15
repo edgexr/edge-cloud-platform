@@ -50,7 +50,6 @@ regiondata:
         organization: mexdev
         name: chef-test-1
       state: Ready
-      controller: Ashishs-MacBook-Pro-2.local@192.168.0.102:55001
       osmaxram: 500
       osmaxvcores: 50
       osmaxvolgb: 5000

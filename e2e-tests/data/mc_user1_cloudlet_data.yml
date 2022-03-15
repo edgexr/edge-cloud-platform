@@ -89,7 +89,6 @@ regiondata:
         organization: enterprise
         name: enterprise-1
       notifyid: 0
-      controller: MCHU-MAC.local@127.0.0.1:55001
       osmaxram: 500
       osmaxvcores: 50
       osmaxvolgb: 5000
@@ -152,7 +151,6 @@ regiondata:
         organization: enterprise
         name: enterprise-2
       notifyid: 0
-      controller: MCHU-MAC.local@127.0.0.1:55001
       osmaxram: 500
       osmaxvcores: 50
       osmaxvolgb: 5000
