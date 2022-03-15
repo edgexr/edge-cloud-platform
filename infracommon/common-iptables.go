@@ -428,6 +428,8 @@ func RemoveIngressIptablesRules(ctx context.Context, client ssh.Client, label, c
 
 func RemoveTrustPolicyIfExists(ctx context.Context, client ssh.Client, isTrustPolicy bool, secGrpName string) error {
 
+	log.SpanLog(ctx, log.DebugLevelInfra, "removeTrustPolicyIfExists", "isTrustPolicy", isTrustPolicy, "label", secGrpName)
+
 	// For TrustPolicyException, use parameter secGrpName as the label
 	// For TrustPolicy, label used is "trust-policy"
 	if isTrustPolicy {
@@ -442,6 +444,10 @@ func RemoveTrustPolicyIfExists(ctx context.Context, client ssh.Client, isTrustPo
 		log.SpanLog(ctx, log.DebugLevelInfra, "RemoveTrustPolicyIfExists getCurrentIptableRulesForLabel failed", "err", err)
 		return err
 	}
+	if len(currentRules) == 0 {
+		log.SpanLog(ctx, log.DebugLevelInfra, "removeTrustPolicyIfExists no rules for", "label", secGrpName)
+		return nil
+	}
 	action := InterfaceActionsOp{DeleteIptables: true}
 	for _, rule := range currentRules {
 		delCmd := strings.Replace(rule, "-A", "-D", 1)
@@ -454,6 +460,5 @@ func RemoveTrustPolicyIfExists(ctx context.Context, client ssh.Client, isTrustPo
 			log.SpanLog(ctx, log.DebugLevelInfra, "removed trust-policy", "rule", rule)
 		}
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "removed existing trust-policy from", "ssh.Client", client)
 	return nil
 }

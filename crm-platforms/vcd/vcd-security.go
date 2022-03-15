@@ -204,6 +204,8 @@ func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, root
 	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB", "rootLBName", rootLBName)
 	iptblStart := time.Now()
 	isTrustPolicy := false
+	egressRestricted := false
+
 	// Check if we have any trust policy, and use it if so
 	tp, err := v.GetCloudletTrustPolicy(ctx)
 	if tp == nil || err != nil {
@@ -213,6 +215,7 @@ func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, root
 		trustPolicy = tp
 		if tp.Key.Name != "" {
 			isTrustPolicy = true
+			egressRestricted = true
 		}
 	}
 	vcdClient := v.GetVcdClientFromContext(ctx)
@@ -231,7 +234,7 @@ func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, root
 		rules = trustPolicy.OutboundSecurityRules
 	}
 	commonSharedAccess := rootLBName == v.vmProperties.SharedRootLBName
-	err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, isTrustPolicy, secGrpName, rules, commonSharedAccess)
+	err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, egressRestricted, isTrustPolicy, secGrpName, rules, commonSharedAccess)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB SetupIptableRulesForRootLB failed", "rootLBName", rootLBName, "err", err)
 		return err
@@ -494,7 +497,7 @@ func (v *VcdPlatform) configureVCDSecurityRulesCommon(ctx context.Context, egres
 				err = fmt.Errorf("nil ssh client for rootlb: %s", clientName)
 			} else {
 				log.SpanLog(ctx, log.DebugLevelInfra, "configure rules for LB", "clientName", clientName)
-				err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, sshClient, sshCidrsAllowed, isTrustPolicy, secGrpName, rules, clientName == v.vmProperties.PlatformSecgrpName)
+				err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, sshClient, sshCidrsAllowed, egressRestricted, isTrustPolicy, secGrpName, rules, clientName == v.vmProperties.PlatformSecgrpName)
 			}
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "configureVCDSecurityRulesCommon failed", "clientName", clientName, "sshClient", sshClient, "error", err)
@@ -541,10 +544,14 @@ func (v *VcdPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egress
 	if TrustPolicy != nil && TrustPolicy.Key.Name != "" {
 		isTrustPolicy = true
 	}
+	var rules []edgeproto.SecurityRule
+	if TrustPolicy != nil {
+		rules = TrustPolicy.OutboundSecurityRules
+	}
 	secGrpName := v.vmProperties.CloudletSecgrpName
 	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules", "egressRestricted", egressRestricted, "TrustPolicy", TrustPolicy, "action", action, "secGrpName", secGrpName)
 
-	return v.configureVCDSecurityRulesCommon(ctx, egressRestricted, isTrustPolicy, secGrpName, TrustPolicy.OutboundSecurityRules, rootlbClients, action, updateCallback)
+	return v.configureVCDSecurityRulesCommon(ctx, egressRestricted, isTrustPolicy, secGrpName, rules, rootlbClients, action, updateCallback)
 }
 
 func (v *VcdPlatform) getTrustPolicyExceptionSecurityGroupName(tpeKey *edgeproto.TrustPolicyExceptionKey) string {
@@ -556,7 +563,7 @@ func (v *VcdPlatform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Con
 	secGrpName := v.getTrustPolicyExceptionSecurityGroupName(&TrustPolicyException.Key)
 	// Cloudlet level isTrustPolicy is false implies TrustPolicyException is true
 	isTrustPolicy := false
-	egressRestricted := false
+	egressRestricted := true
 	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureTrustPolicyExceptionSecurityRules", "egressRestricted", egressRestricted, "TrustPolicyException", TrustPolicyException, "action", action)
 
 	return v.configureVCDSecurityRulesCommon(ctx, egressRestricted, isTrustPolicy, secGrpName, TrustPolicyException.OutboundSecurityRules, rootLbClients, action, updateCallback)
