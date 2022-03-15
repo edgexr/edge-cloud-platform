@@ -57,7 +57,6 @@ func main() {
 	nodeMgr.InitFlags()
 	flag.Parse()
 	log.SetDebugLevelStrs(*debugLevels)
-	defer nodeMgr.Finish()
 
 	sigChan = make(chan os.Signal, 1)
 
