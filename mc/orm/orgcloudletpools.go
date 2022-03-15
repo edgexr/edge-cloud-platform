@@ -452,6 +452,8 @@ func ShowOrgCloudletInfo(c echo.Context) error {
 				// operator user
 				if !authzCloudlet.admin {
 					CloudletInfo.ResourcesSnapshot = edgeproto.InfraResourcesSnapshot{}
+					// Do not show controller pod's address to non-admin users
+					CloudletInfo.Controller = ""
 				}
 			}
 			show = append(show, CloudletInfo)

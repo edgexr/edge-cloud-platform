@@ -495,6 +495,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		Key: org3Cloudlet.Key,
 	}
 	org3CloudletInfo.ContainerVersion = "xyz"
+	org3CloudletInfo.Controller = "ctrl.local"
 	org3CloudletInfo.ResourcesSnapshot = edgeproto.InfraResourcesSnapshot{
 		PlatformVms: []edgeproto.VmInfo{
 			{Name: "test"},
@@ -1810,15 +1811,18 @@ func testShowOrgCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token
 			if orgType == OrgTypeDeveloper && org == matchOrg {
 				require.Empty(t, clInfo.ContainerVersion, "user is not authorized to see additional cloudlet info details")
 				require.Empty(t, clInfo.ResourcesSnapshot, "user is not authorized to see additional cloudlet info details")
+				require.Empty(t, clInfo.Controller, "user is not authorized to see additional cloudlet info details")
 				continue
 			}
 			if org == clInfo.Key.Organization {
 				require.NotEmpty(t, clInfo.ContainerVersion, "user is authorized to see additional cloudlet info details")
 				if orgType == OrgTypeOperator {
 					require.Empty(t, clInfo.ResourcesSnapshot, "user is not authorized to see internal-use only cloudlet info details")
+					require.Empty(t, clInfo.Controller, "user is not authorized to see internal-use only cloudlet info details")
 				}
 				if orgType == OrgTypeAdmin {
 					require.NotEmpty(t, clInfo.ResourcesSnapshot, "admin is authorized to see internal-use only cloudlet info details")
+					require.NotEmpty(t, clInfo.Controller, "admin is authorized to see internal-use only cloudlet info details")
 				}
 			}
 		}
