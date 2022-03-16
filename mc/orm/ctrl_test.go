@@ -3018,8 +3018,13 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 	require.Equal(t, http.StatusForbidden, status)
 	require.Contains(t, err.Error(), "Cannot delete other user's API key")
 
+	// admin should be able to delete other user's api key id
+	status, err = mcClient.DeleteUserApiKey(uri, token, &apiKeys[0])
+	require.Nil(t, err, "delete other user's api key id by admin")
+	require.Equal(t, http.StatusOK, status)
+
 	// delete all the api keys
-	for _, apiKeyObj := range apiKeys {
+	for _, apiKeyObj := range apiKeys[1:] {
 		status, err = mcClient.DeleteUserApiKey(uri, token1, &apiKeyObj)
 		require.Nil(t, err, "delete user api key")
 		require.Equal(t, http.StatusOK, status)
