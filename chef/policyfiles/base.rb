@@ -17,8 +17,8 @@ cookbook 'set_security_policies', '= 1.0.0'
 cookbook 'setup_teleport', '= 1.1.0'
 cookbook 'upgrade_mobiledgex_package', '= 1.1.1'
 
-default['upgrade_mobiledgex_package']['repo'] = "https://apt.mobiledgex.net/cirrus/2022-02-25"
-default['mobiledgeXPackageVersion'] = '4.9.2'
+default['upgrade_mobiledgex_package']['repo'] = "https://apt.mobiledgex.net/cirrus/2022-03-16"
+default['mobiledgeXPackageVersion'] = '4.10.0'
 
 # Set chef-client version
 # IMP: Version of chef client here needs to match the version in the base image.
