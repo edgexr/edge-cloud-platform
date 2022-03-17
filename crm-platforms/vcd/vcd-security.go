@@ -201,9 +201,10 @@ func (v *VcdPlatform) PopulateOrgLoginCredsFromVcdVars(ctx context.Context) erro
 }
 
 func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, rootLBName string, secGrpName string, trustPolicy *edgeproto.TrustPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB", "rootLBName", rootLBName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB", "rootLBName", rootLBName, "secGrpName", secGrpName)
 	iptblStart := time.Now()
-	isTrustPolicy := false
+	egressRestricted := false
+
 	// Check if we have any trust policy, and use it if so
 	tp, err := v.GetCloudletTrustPolicy(ctx)
 	if tp == nil || err != nil {
@@ -211,27 +212,22 @@ func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, root
 	} else {
 		log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB have TrustPolicy", "trustPolicy", tp)
 		trustPolicy = tp
-		if tp.Key.Name != "" {
-			isTrustPolicy = true
-		}
 	}
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
 		return fmt.Errorf(NoVCDClientInContext)
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB", "rootLBName", rootLBName)
 	// configure iptables based security
 	sshCidrsAllowed := []string{infracommon.RemoteCidrAll}
 
-	secGrpName = infracommon.TrustPolicySecGrpNameLabel
-
 	var rules []edgeproto.SecurityRule
-	if isTrustPolicy {
+	if tp != nil && tp.Key.Name != "" {
+		egressRestricted = true
 		rules = trustPolicy.OutboundSecurityRules
 	}
 	commonSharedAccess := rootLBName == v.vmProperties.SharedRootLBName
-	err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, isTrustPolicy, secGrpName, rules, commonSharedAccess)
+	err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, egressRestricted, secGrpName, rules, commonSharedAccess)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB SetupIptableRulesForRootLB failed", "rootLBName", rootLBName, "err", err)
 		return err
@@ -475,18 +471,13 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 }
 
 // Common code to configure security rules for a TrustPolicy or TrustPolicyException
-// For a TrustPolicy isTrustPolicy should be true and false means a TrustPolicyException
-func (v *VcdPlatform) configureVCDSecurityRulesCommon(ctx context.Context, egressRestricted bool, isTrustPolicy bool, secGrpName string, rules []edgeproto.SecurityRule, rootlbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VcdPlatform) configureVCDSecurityRulesCommon(ctx context.Context, egressRestricted bool, secGrpName string, sshCidrsAllowed []string, rules []edgeproto.SecurityRule, rootlbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 
 	errMap := make(map[string]error)
-	if isTrustPolicy {
-		updateCallback(edgeproto.UpdateTask, "Configuring Cloudlet Security Rules for TrustPolicy")
-	} else {
-		updateCallback(edgeproto.UpdateTask, "Configuring Cloudlet Security Rules for TrustPolicyException")
-	}
+	updateCallback(edgeproto.UpdateTask, "Configuring Cloudlet Security Rules")
+	log.SpanLog(ctx, log.DebugLevelInfra, "configureVCDSecurityRulesCommon", "action", action, "egressRestricted", egressRestricted, "Cloudlet secgrp name", secGrpName)
+
 	if action == vmlayer.ActionCreate || action == vmlayer.ActionUpdate {
-		log.SpanLog(ctx, log.DebugLevelInfra, "configureVCDSecurityRulesCommon", "action", action, "Cloudlet secgrp name", secGrpName)
-		sshCidrsAllowed := []string{infracommon.RemoteCidrAll}
 		for clientName, sshClient := range rootlbClients {
 			var err error
 			if sshClient == nil {
@@ -494,7 +485,7 @@ func (v *VcdPlatform) configureVCDSecurityRulesCommon(ctx context.Context, egres
 				err = fmt.Errorf("nil ssh client for rootlb: %s", clientName)
 			} else {
 				log.SpanLog(ctx, log.DebugLevelInfra, "configure rules for LB", "clientName", clientName)
-				err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, sshClient, sshCidrsAllowed, isTrustPolicy, secGrpName, rules, clientName == v.vmProperties.PlatformSecgrpName)
+				err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, sshClient, sshCidrsAllowed, egressRestricted, secGrpName, rules, clientName == v.vmProperties.PlatformSecgrpName)
 			}
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "configureVCDSecurityRulesCommon failed", "clientName", clientName, "sshClient", sshClient, "error", err)
@@ -526,9 +517,9 @@ func (v *VcdPlatform) configureVCDSecurityRulesCommon(ctx context.Context, egres
 				err = fmt.Errorf("nil ssh client for rootlb: %s", clientName)
 				continue
 			}
-			err = infracommon.RemoveTrustPolicyIfExists(ctx, sshClient, isTrustPolicy, secGrpName)
+			err = infracommon.RemoveRulesForLabel(ctx, sshClient, secGrpName)
 			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "configureVCDSecurityRulesCommon RemoveTrustPolicyIfExists fail", "error", err)
+				log.SpanLog(ctx, log.DebugLevelInfra, "configureVCDSecurityRulesCommon RemoveRulesForLabel fail", "error", err)
 			}
 		}
 	}
@@ -537,14 +528,15 @@ func (v *VcdPlatform) configureVCDSecurityRulesCommon(ctx context.Context, egres
 }
 
 func (v *VcdPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootlbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
-	isTrustPolicy := false
-	if TrustPolicy != nil && TrustPolicy.Key.Name != "" {
-		isTrustPolicy = true
-	}
-	secGrpName := v.vmProperties.CloudletSecgrpName
-	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules", "egressRestricted", egressRestricted, "TrustPolicy", TrustPolicy, "action", action, "secGrpName", secGrpName)
 
-	return v.configureVCDSecurityRulesCommon(ctx, egressRestricted, isTrustPolicy, secGrpName, TrustPolicy.OutboundSecurityRules, rootlbClients, action, updateCallback)
+	var rules []edgeproto.SecurityRule
+	if TrustPolicy != nil {
+		rules = TrustPolicy.OutboundSecurityRules
+	}
+	secGrpName := infracommon.TrustPolicySecGrpNameLabel
+	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules", "egressRestricted", egressRestricted, "TrustPolicy", TrustPolicy, "action", action, "secGrpName", secGrpName)
+	sshCidrsAllowed := []string{infracommon.RemoteCidrAll}
+	return v.configureVCDSecurityRulesCommon(ctx, egressRestricted, secGrpName, sshCidrsAllowed, rules, rootlbClients, action, updateCallback)
 }
 
 func (v *VcdPlatform) getTrustPolicyExceptionSecurityGroupName(tpeKey *edgeproto.TrustPolicyExceptionKey) string {
@@ -554,12 +546,10 @@ func (v *VcdPlatform) getTrustPolicyExceptionSecurityGroupName(tpeKey *edgeproto
 
 func (v *VcdPlatform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	secGrpName := v.getTrustPolicyExceptionSecurityGroupName(&TrustPolicyException.Key)
-	// Cloudlet level isTrustPolicy is false implies TrustPolicyException is true
-	isTrustPolicy := false
-	egressRestricted := false
-	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureTrustPolicyExceptionSecurityRules", "egressRestricted", egressRestricted, "TrustPolicyException", TrustPolicyException, "action", action)
-
-	return v.configureVCDSecurityRulesCommon(ctx, egressRestricted, isTrustPolicy, secGrpName, TrustPolicyException.OutboundSecurityRules, rootLbClients, action, updateCallback)
+	egressRestricted := true
+	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureTrustPolicyExceptionSecurityRules", "egressRestricted", egressRestricted, "TrustPolicyException", TrustPolicyException, "action", action, "secGrpName", secGrpName)
+	sshCidrsAllowed := []string{}
+	return v.configureVCDSecurityRulesCommon(ctx, egressRestricted, secGrpName, sshCidrsAllowed, TrustPolicyException.OutboundSecurityRules, rootLbClients, action, updateCallback)
 }
 
 // GetVcdClientFromContext returns a client object if one exists, otherwise nil
