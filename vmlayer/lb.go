@@ -627,6 +627,7 @@ func (v *VMPlatform) GetAllRootLBClients(ctx context.Context) (map[string]ssh.Cl
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetAllRootLBClients")
 	rootlbClients, err := v.GetRootLBClients(ctx)
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "error getting dedicated client", "err", err)
 		return nil, fmt.Errorf("Unable to get dedicated rootlb Clients - %v", err)
 	}
 	// GetRootLBClients gets only the dedicated rootlbs.  We need the shared one also
@@ -636,6 +637,7 @@ func (v *VMPlatform) GetAllRootLBClients(ctx context.Context) (map[string]ssh.Cl
 			// this can happen on startup
 			log.SpanLog(ctx, log.DebugLevelInfra, "shared rootlb does not exist")
 		} else {
+			log.SpanLog(ctx, log.DebugLevelInfra, "error getting sharedlb client", "err", err)
 			return nil, fmt.Errorf("Unable to get shared rootlb Client - %v", err)
 		}
 	} else {
@@ -666,6 +668,13 @@ func (v *VMPlatform) GetRootLBClientForClusterInstKey(ctx context.Context, clust
 func (v *VMPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
 	if v.Caches == nil {
 		return nil, fmt.Errorf("caches is nil")
+	}
+	ctx, result, err := v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	if err != nil {
+		return nil, err
+	}
+	if result == OperationNewlyInitialized {
+		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	}
 	rootLBClients := make(map[string]ssh.Client)
 	clusterInstKeys := []edgeproto.ClusterInstKey{}
