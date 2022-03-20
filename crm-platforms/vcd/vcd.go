@@ -115,9 +115,11 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 			}
 		}
 	case vmlayer.ProviderInitPlatformStartShepherd:
-		err := v.WaitForOauthTokenViaNotify(ctx, v.vmProperties.CommonPf.PlatformConfig.CloudletKey)
-		if err != nil {
-			return err
+		if v.GetVcdOauthSgwUrl() != "" {
+			err := v.WaitForOauthTokenViaNotify(ctx, v.vmProperties.CommonPf.PlatformConfig.CloudletKey)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	v.initDebug(v.vmProperties.CommonPf.PlatformConfig.NodeMgr, stage)
