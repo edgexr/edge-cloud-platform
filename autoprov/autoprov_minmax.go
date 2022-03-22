@@ -466,7 +466,14 @@ func (s *AppChecker) checkPolicy(ctx context.Context, app *edgeproto.App, pname 
 		} else {
 			for appInstKey, _ := range insts {
 				totalCount++
-				if s.appInstOnline(&appInstKey) {
+				// Also assume AppInsts coming online can be
+				// counted as online. This prevents non-deterministic
+				// behavior for which cloudlets end up with
+				// the AppInst created on them. It could
+				// potentially cause problems if AppInsts are
+				// stuck in a going-online transitional state,
+				// however.
+				if s.appInstOnlineOrGoingOnline(ctx, &appInstKey) {
 					onlineCount++
 				}
 				if s.isAutoProvInst(&appInstKey) {
@@ -541,6 +548,7 @@ func (s *AppChecker) checkPolicy(ctx context.Context, app *edgeproto.App, pname 
 						req.addCompleted(str)
 					}
 				} else if ignoreDeployError(inst.Key, err) {
+					log.SpanLog(ctx, log.DebugLevelMetrics, "auto-prov ignore deploy error", "workerNum", workerNum, "attempt", attempt, "err", err)
 					err = nil
 				} else {
 					str := fmt.Sprintf("Failed to create AppInst %s to meet policy %s min constraint %d: %s", inst.Key.GetKeyString(), pname, policy.MinActiveInstances, err)
@@ -616,20 +624,26 @@ func (s *AppChecker) sortPotentialCreate(ctx context.Context, potential []*poten
 	return potential
 }
 
-func (s *AppChecker) appInstOnline(key *edgeproto.AppInstKey) bool {
+func (s *AppChecker) appInstOnlineOrGoingOnline(ctx context.Context, key *edgeproto.AppInstKey) (retval bool) {
 	cloudletInfo := edgeproto.CloudletInfo{}
-	if !s.caches.cloudletInfoCache.Get(&key.ClusterInstKey.CloudletKey, &cloudletInfo) {
-		return false
-	}
 	cloudlet := edgeproto.Cloudlet{}
-	if !s.caches.cloudletCache.Get(&key.ClusterInstKey.CloudletKey, &cloudlet) {
-		return false
-	}
 	appInst := edgeproto.AppInst{}
-	if !s.caches.appInstCache.Get(key, &appInst) {
+	defer func() {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline", "cloudletInfo.State", cloudletInfo.State, "cloudlet.State", cloudlet.State, "appInst.State", appInst.State, "retval", retval)
+	}()
+	if !s.caches.cloudletInfoCache.Get(&key.ClusterInstKey.CloudletKey, &cloudletInfo) {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline CloudletInfo not found", "key", key.ClusterInstKey.CloudletKey)
 		return false
 	}
-	return cloudcommon.AutoProvAppInstOnline(&appInst, &cloudletInfo, &cloudlet)
+	if !s.caches.cloudletCache.Get(&key.ClusterInstKey.CloudletKey, &cloudlet) {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline Cloudlet not found", "key", key.ClusterInstKey.CloudletKey)
+		return false
+	}
+	if !s.caches.appInstCache.Get(key, &appInst) {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline AppInst not found", "key", key)
+		return false
+	}
+	return cloudcommon.AutoProvAppInstOnline(&appInst, &cloudletInfo, &cloudlet) || cloudcommon.AutoProvAppInstGoingOnline(&appInst, &cloudletInfo, &cloudlet)
 }
 
 func (s *AppChecker) cloudletOnline(key *edgeproto.CloudletKey) bool {

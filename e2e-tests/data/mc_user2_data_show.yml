@@ -548,13 +548,13 @@ regiondata:
         organization: AcmeAppCo
       apps:
       - appkey:
-          organization: MobiledgeX
-          name: MEXPrometheusAppName
+          organization: AcmeAppCo
+          name: someapplication1
           version: "1.0"
         vclustername: SmallCluster
       - appkey:
-          organization: AcmeAppCo
-          name: someapplication1
+          organization: MobiledgeX
+          name: MEXPrometheusAppName
           version: "1.0"
         vclustername: SmallCluster
     - key:
@@ -566,13 +566,13 @@ regiondata:
         organization: AcmeAppCo
       apps:
       - appkey:
-          organization: MobiledgeX
-          name: MEXPrometheusAppName
+          organization: AcmeAppCo
+          name: someapplication1
           version: "1.0"
         vclustername: SmallCluster
       - appkey:
-          organization: AcmeAppCo
-          name: someapplication1
+          organization: MobiledgeX
+          name: MEXPrometheusAppName
           version: "1.0"
         vclustername: SmallCluster
 - region: locala
@@ -1013,13 +1013,13 @@ regiondata:
         organization: AcmeAppCo
       apps:
       - appkey:
-          organization: MobiledgeX
-          name: MEXPrometheusAppName
+          organization: AcmeAppCo
+          name: someapplication1
           version: "1.0"
         vclustername: SmallCluster
       - appkey:
-          organization: AcmeAppCo
-          name: someapplication1
+          organization: MobiledgeX
+          name: MEXPrometheusAppName
           version: "1.0"
         vclustername: SmallCluster
     - key:
@@ -1031,12 +1031,12 @@ regiondata:
         organization: AcmeAppCo
       apps:
       - appkey:
-          organization: MobiledgeX
-          name: MEXPrometheusAppName
+          organization: AcmeAppCo
+          name: someapplication1
           version: "1.0"
         vclustername: SmallCluster
       - appkey:
-          organization: AcmeAppCo
-          name: someapplication1
+          organization: MobiledgeX
+          name: MEXPrometheusAppName
           version: "1.0"
         vclustername: SmallCluster

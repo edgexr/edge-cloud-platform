@@ -435,13 +435,13 @@ clusterrefs:
     organization: AcmeAppCo
   apps:
   - appkey:
-      organization: MobiledgeX
-      name: MEXPrometheusAppName
+      organization: AcmeAppCo
+      name: qosapplication
       version: "1.0"
     vclustername: SmallCluster
   - appkey:
-      organization: AcmeAppCo
-      name: qosapplication
+      organization: MobiledgeX
+      name: MEXPrometheusAppName
       version: "1.0"
     vclustername: SmallCluster
 flowratelimitsettings:
