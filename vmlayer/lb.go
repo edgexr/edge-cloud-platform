@@ -587,7 +587,12 @@ func (v *VMPlatform) SetupRootLB(
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "DNS A record activated", "name", rootLBName)
 	// perform provider specific prep of the rootLB
-	return v.VMProvider.PrepareRootLB(ctx, client, rootLBName, infracommon.GetServerSecurityGroupName(rootLBName), TrustPolicy, updateCallback)
+	secGrpName := infracommon.GetServerSecurityGroupName(rootLBName)
+	if v.VMProperties.IptablesBasedFirewall {
+		// when using iptables for firewall, we use a common secgrp for cloudlet-wide and per-LB
+		secGrpName = infracommon.TrustPolicySecGrpNameLabel
+	}
+	return v.VMProvider.PrepareRootLB(ctx, client, rootLBName, secGrpName, TrustPolicy, updateCallback)
 }
 
 // This function copies resource-tracker from crm to rootLb - we need this to provide docker metrics
