@@ -1,9 +1,11 @@
 package ormctl
 
 import (
+	fmt "fmt"
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
+	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/jaeger/plugin/storage/es/spanstore/dbmodel"
 )
 
@@ -96,6 +98,8 @@ func init() {
 	}}
 	AllApis.AddGroup(SpansGroup, "Search spans", cmds)
 }
+
+var tagsComment = fmt.Sprintf("key=value tag, may be specified multiple times, key may include %s", strings.Join(edgeproto.AllKeyTags, ", "))
 
 var EventsOptionalArgs = []string{
 	"name",

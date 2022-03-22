@@ -470,55 +470,6 @@ func (s *Client) ShowAppInstRefs(uri string, token string, in *ormapi.RegionAppI
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-// Generating group Audit
-
-func (s *Client) ShowAuditSelf(uri string, token string, in *ormapi.AuditQuery) ([]ormapi.AuditResponse, int, error) {
-	rundata := RunData{}
-	rundata.Uri = uri
-	rundata.Token = token
-	rundata.In = in
-	var out []ormapi.AuditResponse
-	rundata.Out = &out
-
-	apiCmd := ormctl.MustGetCommand("ShowAuditSelf")
-	s.ClientRun.Run(apiCmd, &rundata)
-	if rundata.RetError != nil {
-		return nil, rundata.RetStatus, rundata.RetError
-	}
-	return out, rundata.RetStatus, rundata.RetError
-}
-
-func (s *Client) ShowAuditOrg(uri string, token string, in *ormapi.AuditQuery) ([]ormapi.AuditResponse, int, error) {
-	rundata := RunData{}
-	rundata.Uri = uri
-	rundata.Token = token
-	rundata.In = in
-	var out []ormapi.AuditResponse
-	rundata.Out = &out
-
-	apiCmd := ormctl.MustGetCommand("ShowAuditOrg")
-	s.ClientRun.Run(apiCmd, &rundata)
-	if rundata.RetError != nil {
-		return nil, rundata.RetStatus, rundata.RetError
-	}
-	return out, rundata.RetStatus, rundata.RetError
-}
-
-func (s *Client) ShowAuditOperations(uri string, token string) ([]string, int, error) {
-	rundata := RunData{}
-	rundata.Uri = uri
-	rundata.Token = token
-	var out []string
-	rundata.Out = &out
-
-	apiCmd := ormctl.MustGetCommand("ShowAuditOperations")
-	s.ClientRun.Run(apiCmd, &rundata)
-	if rundata.RetError != nil {
-		return nil, rundata.RetStatus, rundata.RetError
-	}
-	return out, rundata.RetStatus, rundata.RetError
-}
-
 // Generating group AutoProvPolicy
 
 func (s *Client) CreateAutoProvPolicy(uri string, token string, in *ormapi.RegionAutoProvPolicy) (*edgeproto.Result, int, error) {

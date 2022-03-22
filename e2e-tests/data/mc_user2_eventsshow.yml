@@ -54,3 +54,7 @@
   match:
     types:
     - audit
+- limit: 3
+  match:
+    tags:
+      username: user2

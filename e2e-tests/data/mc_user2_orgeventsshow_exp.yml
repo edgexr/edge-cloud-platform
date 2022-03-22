@@ -19,8 +19,8 @@
       policyorg: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
-      request: ""
-      response: ""
+      request: '{"AutoProvPolicy":{"cloudlets":[{"key":{"name":"dmuus-cloud-1","organization":"dmuus"}},{"key":{"name":"dmuus-cloud-2","organization":"dmuus"}},{"key":{"name":"azure-cloud-4","organization":"azure"}},{"key":{"name":"gcp-cloud-5","organization":"gcp"}}],"key":{"name":"autoprovHA","organization":"AcmeAppCo"},"max_instances":4,"min_active_instances":2},"Region":"local"}'
+      response: '{}'
       spanid: ""
       status: "200"
       traceid: ""
