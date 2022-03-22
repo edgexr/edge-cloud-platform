@@ -85,14 +85,16 @@ var rootLbScrapeInterval time.Duration
 var rootLbMetricsPushInterval time.Duration
 var rootLbMetricsLastPushedLock sync.Mutex
 var rootLbMetricsLastPushed time.Time
+var metricsSendFunc func(ctx context.Context, metric *edgeproto.Metric) bool
 
-func InitProxyScraper(scrapeInterval, pushInterval time.Duration) {
+func InitProxyScraper(scrapeInterval, pushInterval time.Duration, send func(ctx context.Context, metric *edgeproto.Metric) bool) {
 	ProxyMap = make(map[string]ProxyScrapePoint)
 	rootLbScrapeInterval = scrapeInterval
 	rootLbMetricsLastPushedLock.Lock()
 	defer rootLbMetricsLastPushedLock.Unlock()
 	rootLbMetricsLastPushed = time.Now()
 	rootLbMetricsPushInterval = pushInterval
+	metricsSendFunc = send
 }
 
 // NOTE: This function is almost identical to ClusterWorker:UpdateIntervals()
@@ -399,34 +401,65 @@ func ProxyScraper(done chan bool) {
 			if !shepherd_common.ShepherdPlatformActive {
 				continue
 			}
-			scrapePoints := copyMapValues()
-			for _, v := range scrapePoints {
-				if !clientReady(v) {
-					if shouldUpdateFailedClient(&v) {
-						// Update this in the background
-						go updateProxyScrapeClient(v.Key)
+			// Since we push for every scrape point in a loop, break here
+			if checkAndSetLastPushLbMetrics(time.Now()) {
+				scrapePoints := copyMapValues()
+				// collect cluster-level net stats as well
+				clusterStats := map[edgeproto.ClusterInstKey]shepherd_common.ClusterNetMetrics{}
+				for _, v := range scrapePoints {
+					if !clientReady(v) {
+						if shouldUpdateFailedClient(&v) {
+							// Update this in the background
+							go updateProxyScrapeClient(v.Key)
+						}
+						// no need to actually collect metrics
+						continue
 					}
-					// no need to actually collect metrics
-					continue
-				}
-				span := log.StartSpan(log.DebugLevelSampled, "send-metric")
-				log.SetTags(span, cloudletKey.GetTags())
-				span.SetTag("cluster", v.Cluster)
-				ctx := log.ContextWithSpan(context.Background(), span)
+					span := log.StartSpan(log.DebugLevelSampled, "send-metric")
+					log.SetTags(span, cloudletKey.GetTags())
+					span.SetTag("cluster", v.Cluster)
+					ctx := log.ContextWithSpan(context.Background(), span)
 
-				metrics, err := QueryProxy(ctx, &v)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelMetrics, "Error retrieving proxy metrics", "appinst", v.App, "error", err.Error())
-				} else if checkAndSetLastPushLbMetrics(time.Now()) {
-					log.SpanLog(ctx, log.DebugLevelInfo, "Pushing proxy metrics")
-					// send to crm->controller->influx
-					influxData := MarshallTcpProxyMetric(v, metrics)
-					influxData = append(influxData, MarshallUdpProxyMetric(v, metrics)...)
-					for _, datapoint := range influxData {
-						MetricSender.Update(context.Background(), datapoint)
+					metrics, err := QueryProxy(ctx, &v)
+					if err != nil {
+						log.SpanLog(ctx, log.DebugLevelMetrics, "Error retrieving proxy metrics", "appinst", v.App, "error", err.Error())
+					} else {
+						log.SpanLog(ctx, log.DebugLevelInfo, "Pushing proxy metrics")
+						// send to crm->controller->influx
+						influxData, totalSentTcp, totalRecvdTcp := MarshallTcpProxyMetric(v, metrics)
+						influxDataUdp, totalSentUdp, totalRecvdUdp := MarshallUdpProxyMetric(v, metrics)
+						influxData = append(influxData, influxDataUdp...)
+						// add total network activity data for the app
+						now, _ := types.TimestampProto(time.Now())
+						influxData = append(influxData,
+							MarshalAppInstNetMetric(v, now, totalRecvdTcp+totalRecvdUdp, totalSentTcp+totalSentUdp))
+						log.SpanLog(ctx, log.DebugLevelInfo, "Pushing app network stats", "app", v.Key, "stats", influxData[len(influxData)-1])
+						log.DebugLog(log.DebugLevelInfo, "Pushing app network stats", "app", v.Key, "stats", influxData[len(influxData)-1])
+						for _, datapoint := range influxData {
+							metricsSendFunc(context.Background(), datapoint)
+						}
+						// update cluster stats
+						if stat, found := clusterStats[v.ClusterInstKey]; found {
+							stat.NetSent += totalSentTcp + totalSentUdp
+							stat.NetRecv += totalRecvdTcp + totalRecvdUdp
+							clusterStats[v.ClusterInstKey] = stat
+						} else {
+							clusterStats[v.ClusterInstKey] = shepherd_common.ClusterNetMetrics{
+								NetTS:   now,
+								NetSent: totalSentTcp + totalSentUdp,
+								NetRecv: totalRecvdTcp + totalRecvdUdp,
+							}
+						}
 					}
+					span.Finish()
 				}
-				span.Finish()
+
+				// send cluster network stats
+				for k, stat := range clusterStats {
+					log.DebugLog(log.DebugLevelInfo, "Pushing cluster network stats", "cluster", k, "stats", stat)
+					metricsSendFunc(context.Background(), getNetClusterMetric(&k, stat))
+				}
+
 			}
 		case <-done:
 			// process killed/interrupted, so quit
@@ -595,24 +628,6 @@ func parseEnvoyResp(ctx context.Context, resp string) map[string]string {
 	return newMap
 }
 
-// converts envoy cluster ouptut into a map
-// Example of cluster output string: backend8008::10.192.1.2:8008::health_flags::healthy
-func parseEnvoyClusterResp(ctx context.Context, resp string) map[string]string {
-	lines := strings.Split(resp, "\n")
-	newMap := make(map[string]string)
-	for _, line := range lines {
-		items := strings.Split(line, "::")
-		cnt := len(items)
-		// at least 3
-		if cnt < 3 {
-			continue
-		}
-		// First is unique with respect to port, next to last is the keyname and last is value
-		newMap[items[0]+"::"+items[cnt-2]] = items[cnt-1]
-	}
-	return newMap
-}
-
 // this function only retrieves stats from envoy that are expected to be int values
 func getUIntStat(respMap map[string]string, statName string) (uint64, error) {
 	stat, exists := respMap[statName]
@@ -743,56 +758,93 @@ func parseNginxResp(resp string, metrics *shepherd_common.ProxyMetrics) error {
 	return nil
 }
 
-func MarshallTcpProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.ProxyMetrics) []*edgeproto.Metric {
+func getNetClusterMetric(key *edgeproto.ClusterInstKey, stat shepherd_common.ClusterNetMetrics) *edgeproto.Metric {
+	metric := edgeproto.Metric{}
+	metric.Name = "cluster-network"
+	metric.Timestamp = *stat.NetTS
+	metric.AddTag("cloudletorg", key.CloudletKey.Organization)
+	metric.AddTag("cloudlet", key.CloudletKey.Name)
+	metric.AddTag("cluster", key.ClusterKey.Name)
+	metric.AddTag("clusterorg", key.Organization)
+
+	// add values
+	metric.AddIntVal("sendBytes", stat.NetSent)
+	metric.AddIntVal("recvBytes", stat.NetRecv)
+	return &metric
+}
+
+func getAppMetricFromTags(scrapePoint ProxyScrapePoint, name string, ts *types.Timestamp) *edgeproto.Metric {
+	var err error
+
+	metric := edgeproto.Metric{}
+	metric.Name = name
+	if ts == nil {
+		ts, err = types.TimestampProto(time.Now())
+		if err != nil {
+			return nil
+		}
+	}
+	metric.Timestamp = *ts
+	metric.AddTag("cloudletorg", cloudletKey.Organization)
+	metric.AddTag("cloudlet", cloudletKey.Name)
+	metric.AddTag("cluster", scrapePoint.Cluster)
+	metric.AddTag("clusterorg", scrapePoint.ClusterOrg)
+	metric.AddTag("apporg", scrapePoint.Key.AppKey.Organization)
+	metric.AddTag("app", util.DNSSanitize(scrapePoint.Key.AppKey.Name))
+	metric.AddTag("ver", util.DNSSanitize(scrapePoint.Key.AppKey.Version))
+	return &metric
+}
+
+func MarshalAppInstNetMetric(scrapePoint ProxyScrapePoint, ts *types.Timestamp, totalRecvd, totalSent uint64) *edgeproto.Metric {
+	metric := getAppMetricFromTags(scrapePoint, "appinst-network", ts)
+	metric.AddIntVal("sendBytes", totalSent)
+	metric.AddIntVal("recvBytes", totalRecvd)
+	return metric
+}
+
+func MarshallTcpProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.ProxyMetrics) ([]*edgeproto.Metric, uint64, uint64) {
+	// collect totals for appinst net stats
+	totalSent := uint64(0)
+	totalRecvd := uint64(0)
+
 	if data.Nginx {
-		return []*edgeproto.Metric{MarshallNginxMetric(scrapePoint, data)}
+		return []*edgeproto.Metric{MarshallNginxMetric(scrapePoint, data)}, 0, 0
 	}
 	metricList := make([]*edgeproto.Metric, 0)
 	for _, port := range scrapePoint.TcpPorts {
-		metric := edgeproto.Metric{}
-		metric.Name = "appinst-connections"
-		metric.Timestamp = *data.Ts
-		metric.AddTag("cloudletorg", cloudletKey.Organization)
-		metric.AddTag("cloudlet", cloudletKey.Name)
-		metric.AddTag("cluster", scrapePoint.Cluster)
-		metric.AddTag("clusterorg", scrapePoint.ClusterOrg)
-		metric.AddTag("apporg", scrapePoint.Key.AppKey.Organization)
-		metric.AddTag("app", util.DNSSanitize(scrapePoint.Key.AppKey.Name))
-		metric.AddTag("ver", util.DNSSanitize(scrapePoint.Key.AppKey.Version))
+		metric := getAppMetricFromTags(scrapePoint, "appinst-connections", data.Ts)
 		metric.AddTag("port", fmt.Sprintf("%d", port))
 
 		metric.AddIntVal("active", data.EnvoyTcpStats[port].ActiveConn)
 		metric.AddIntVal("accepts", data.EnvoyTcpStats[port].Accepts)
 		metric.AddIntVal("handled", data.EnvoyTcpStats[port].HandledConn)
 		metric.AddIntVal("bytesSent", data.EnvoyTcpStats[port].BytesSent)
+		totalSent += data.EnvoyTcpStats[port].BytesSent
 		metric.AddIntVal("bytesRecvd", data.EnvoyTcpStats[port].BytesRecvd)
-
+		totalRecvd += data.EnvoyTcpStats[port].BytesRecvd
 		//session time historgram
 		for k, v := range data.EnvoyTcpStats[port].SessionTime {
 			metric.AddDoubleVal(k, v)
 		}
-		metricList = append(metricList, &metric)
+		metricList = append(metricList, metric)
 	}
-	return metricList
+	return metricList, totalSent, totalRecvd
 }
 
-func MarshallUdpProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.ProxyMetrics) []*edgeproto.Metric {
+func MarshallUdpProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.ProxyMetrics) ([]*edgeproto.Metric, uint64, uint64) {
+	// collect totals for appinst net stats
+	totalSent := uint64(0)
+	totalRecvd := uint64(0)
+
 	metricList := make([]*edgeproto.Metric, 0)
 	for _, port := range scrapePoint.UdpPorts {
-		metric := edgeproto.Metric{}
-		metric.Name = "appinst-udp"
-		metric.Timestamp = *data.Ts
-		metric.AddTag("cloudletorg", cloudletKey.Organization)
-		metric.AddTag("cloudlet", cloudletKey.Name)
-		metric.AddTag("cluster", scrapePoint.Cluster)
-		metric.AddTag("clusterorg", scrapePoint.ClusterOrg)
-		metric.AddTag("apporg", scrapePoint.Key.AppKey.Organization)
-		metric.AddTag("app", util.DNSSanitize(scrapePoint.Key.AppKey.Name))
-		metric.AddTag("ver", util.DNSSanitize(scrapePoint.Key.AppKey.Version))
+		metric := getAppMetricFromTags(scrapePoint, "appinst-udp", data.Ts)
 		metric.AddTag("port", fmt.Sprintf("%d", port))
 
 		metric.AddIntVal("bytesSent", data.EnvoyUdpStats[port].SentBytes)
+		totalSent += data.EnvoyUdpStats[port].SentBytes
 		metric.AddIntVal("bytesRecvd", data.EnvoyUdpStats[port].RecvBytes)
+		totalRecvd += data.EnvoyUdpStats[port].RecvBytes
 		metric.AddIntVal("datagramsSent", data.EnvoyUdpStats[port].SentDatagrams)
 		metric.AddIntVal("datagramsRecvd", data.EnvoyUdpStats[port].RecvDatagrams)
 		metric.AddIntVal("sentErrs", data.EnvoyUdpStats[port].SentErrs)
@@ -800,9 +852,9 @@ func MarshallUdpProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.
 		metric.AddIntVal("overflow", data.EnvoyUdpStats[port].Overflow)
 		metric.AddIntVal("missed", data.EnvoyUdpStats[port].Missed)
 
-		metricList = append(metricList, &metric)
+		metricList = append(metricList, metric)
 	}
-	return metricList
+	return metricList, totalSent, totalRecvd
 }
 
 func MarshallNginxMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.ProxyMetrics) *edgeproto.Metric {
@@ -829,4 +881,62 @@ func RemoveShepherdMetrics(data *shepherd_common.ProxyMetrics) {
 	data.ActiveConn = data.ActiveConn - 1
 	data.Accepts = data.Accepts - data.Requests
 	data.HandledConn = data.HandledConn - data.Requests
+}
+
+func ProxyAppInstNetMeticToStat(metric *edgeproto.Metric) (*edgeproto.AppInstKey, *shepherd_common.ClusterNetMetrics) {
+	key := edgeproto.AppInstKey{}
+	stat := shepherd_common.ClusterNetMetrics{}
+	for _, tag := range metric.Tags {
+		switch tag.Name {
+		case "apporg":
+			key.AppKey.Organization = tag.Val
+		case "app":
+			key.AppKey.Name = tag.Val
+		case "ver":
+			key.AppKey.Version = tag.Val
+		case "cluster":
+			key.ClusterInstKey.CloudletKey.Name = tag.Val
+		case "clusterorg":
+			key.ClusterInstKey.Organization = tag.Val
+		case "cloudlet":
+			key.ClusterInstKey.CloudletKey.Name = tag.Val
+		case "cloudletorg":
+			key.ClusterInstKey.CloudletKey.Organization = tag.Val
+		}
+	}
+	for _, val := range metric.Vals {
+		switch val.Name {
+		case "recvBytes":
+			stat.NetRecv = val.GetIval()
+		case "sendBytes":
+			stat.NetSent = val.GetIval()
+		}
+	}
+	return &key, &stat
+}
+
+func ProxyClusterNetMeticToStat(metric *edgeproto.Metric) (*edgeproto.ClusterInstKey, *shepherd_common.ClusterNetMetrics) {
+	key := edgeproto.ClusterInstKey{}
+	stat := shepherd_common.ClusterNetMetrics{}
+	for _, tag := range metric.Tags {
+		switch tag.Name {
+		case "cluster":
+			key.ClusterKey.Name = tag.Val
+		case "clusterorg":
+			key.Organization = tag.Val
+		case "cloudlet":
+			key.CloudletKey.Name = tag.Val
+		case "cloudletorg":
+			key.CloudletKey.Organization = tag.Val
+		}
+	}
+	for _, val := range metric.Vals {
+		switch val.Name {
+		case "recvBytes":
+			stat.NetRecv = val.GetIval()
+		case "sendBytes":
+			stat.NetSent = val.GetIval()
+		}
+	}
+	return &key, &stat
 }

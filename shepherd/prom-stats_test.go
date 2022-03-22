@@ -340,7 +340,7 @@ func TestProxyScraperTimers(t *testing.T) {
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
-	InitProxyScraper(time.Second, time.Second)
+	InitProxyScraper(time.Second, time.Second, nil)
 	require.True(t, checkAndSetLastPushLbMetrics(time.Now().Add(time.Second)))
 	updateProxyScraperIntervals(ctx, 2*time.Minute, time.Minute)
 	require.Equal(t, rootLbScrapeInterval, rootLbMetricsPushInterval)
@@ -402,15 +402,11 @@ func TestPromStats(t *testing.T) {
 		require.Equal(t, float64(5.0), stat.Cpu)
 		require.Equal(t, uint64(100000000), stat.Mem)
 		require.Equal(t, uint64(300000000), stat.Disk)
-		require.Equal(t, uint64(111111), stat.NetSent)
-		require.Equal(t, uint64(222222), stat.NetRecv)
 	}
 	// Check ClusterStats
 	require.Equal(t, float64(10.01), clusterMetrics.Cpu)
 	require.Equal(t, float64(99.99), clusterMetrics.Mem)
 	require.Equal(t, float64(50.0), clusterMetrics.Disk)
-	require.Equal(t, uint64(11111), clusterMetrics.NetSent)
-	require.Equal(t, uint64(22222), clusterMetrics.NetRecv)
 	// Check Alerts - should not return pending alert
 	require.Equal(t, len(expectedTestAlerts)-1, len(alerts))
 	for ii := 0; ii < len(alerts); ii++ {

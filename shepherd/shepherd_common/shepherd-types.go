@@ -38,12 +38,6 @@ type AppMetrics struct {
 	// Disk is bytes used
 	Disk   uint64
 	DiskTS *types.Timestamp
-	// NetSent is bytes/second average
-	NetSent   uint64
-	NetSentTS *types.Timestamp
-	// NetRecv is bytes/second average
-	NetRecv   uint64
-	NetRecvTS *types.Timestamp
 }
 
 type ClusterMetrics struct {
@@ -53,10 +47,6 @@ type ClusterMetrics struct {
 	MemTS        *types.Timestamp
 	Disk         float64
 	DiskTS       *types.Timestamp
-	NetSent      uint64
-	NetSentTS    *types.Timestamp
-	NetRecv      uint64
-	NetRecvTS    *types.Timestamp
 	TcpConns     uint64
 	TcpConnsTS   *types.Timestamp
 	TcpRetrans   uint64
@@ -69,6 +59,12 @@ type ClusterMetrics struct {
 	UdpRecvErrTS *types.Timestamp
 	AutoScaleCpu float64
 	AutoScaleMem float64
+}
+
+type ClusterNetMetrics struct {
+	NetTS   *types.Timestamp
+	NetSent uint64
+	NetRecv uint64
 }
 
 // This structure represents cloudlet utilization stats

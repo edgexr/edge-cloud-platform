@@ -614,7 +614,7 @@ func start() {
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
 	}
 	// LB metrics are not supported in fake mode
-	InitProxyScraper(metricsScrapingInterval, settings.ShepherdMetricsCollectionInterval.TimeDuration())
+	InitProxyScraper(metricsScrapingInterval, settings.ShepherdMetricsCollectionInterval.TimeDuration(), MetricSender.Update)
 	if pf.GetType(*platformName) != "fake" {
 		StartProxyScraper(stopCh)
 	}

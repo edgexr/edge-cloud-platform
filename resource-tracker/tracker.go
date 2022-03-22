@@ -41,13 +41,6 @@ func main() {
 		fmt.Printf("Unable to get disk information - %s\n", err.Error())
 		return
 	}
-	// We currently aggregate all the nics, but in reality we want to only track external interface
-	if n, err := net.IOCounters(false); err == nil {
-		result.NetSent = n[0].BytesSent
-		result.NetRecv = n[0].BytesRecv
-	} else {
-		return
-	}
 	// Collect proto-specific metrics
 	if proto, err := net.ProtoCounters([]string{"tcp", "udp"}); err == nil {
 		for _, s := range proto {

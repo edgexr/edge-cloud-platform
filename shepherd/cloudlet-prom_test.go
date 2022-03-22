@@ -46,7 +46,7 @@ func TestCloudletPrometheusFuncs(t *testing.T) {
 	// test targets file
 	*promTargetsFile = "/tmp/testTargets.json"
 	myPlatform = &shepherd_unittest.Platform{}
-	InitProxyScraper(time.Second, time.Second)
+	InitProxyScraper(time.Second, time.Second, nil)
 	edgeproto.InitAppInstCache(&AppInstCache)
 	edgeproto.InitAppCache(&AppCache)
 	edgeproto.InitClusterInstCache(&ClusterInstCache)

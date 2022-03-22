@@ -77,8 +77,6 @@ var testDockerClusterData = shepherd_common.ClusterMetrics{
 	Cpu:        10.10101010,
 	Mem:        11.111111,
 	Disk:       12.12121212,
-	NetSent:    1313131313,
-	NetRecv:    1414141414,
 	TcpConns:   1515,
 	TcpRetrans: 16,
 	UdpSent:    1717,
@@ -174,9 +172,6 @@ func TestDockerStats(t *testing.T) {
 		assert.Equal(t, float64(1.11/2), stat.Cpu)
 		assert.Equal(t, uint64(11649679), stat.Mem)
 		assert.Equal(t, uint64(1*1024), stat.Disk)
-		// this comes from testNetData
-		assert.Equal(t, uint64(514882026), stat.NetSent)
-		assert.Equal(t, uint64(448842077), stat.NetRecv)
 		assert.NotNil(t, stat.CpuTS, "CPU timestamp")
 	}
 	testAppKey.Pod = k8smgmt.NormalizeName("DockerApp2")
@@ -190,9 +185,6 @@ func TestDockerStats(t *testing.T) {
 		assert.Equal(t, float64(2.1)+float64(2.2), stat.Cpu)
 		assert.Equal(t, uint64(22240296+23299358), stat.Mem)
 		assert.Equal(t, uint64(2*1024*1024+3*1024*1024*1024), stat.Disk)
-		// Net is double counted, since we return the same data for both
-		assert.Equal(t, uint64(514882026*2), stat.NetSent)
-		assert.Equal(t, uint64(448842077*2), stat.NetRecv)
 		assert.NotNil(t, stat.CpuTS, "CPU timestamp")
 	}
 
@@ -201,8 +193,6 @@ func TestDockerStats(t *testing.T) {
 	assert.NotNil(t, clusterMetrics.CpuTS, "CPU timestamp for cluster")
 	assert.Equal(t, testDockerClusterData.Mem, clusterMetrics.Mem)
 	assert.Equal(t, testDockerClusterData.Disk, clusterMetrics.Disk)
-	assert.Equal(t, testDockerClusterData.NetSent, clusterMetrics.NetSent)
-	assert.Equal(t, testDockerClusterData.NetRecv, clusterMetrics.NetRecv)
 	assert.Equal(t, testDockerClusterData.TcpConns, clusterMetrics.TcpConns)
 	assert.Equal(t, testDockerClusterData.TcpRetrans, clusterMetrics.TcpRetrans)
 	assert.Equal(t, testDockerClusterData.UdpSent, clusterMetrics.UdpSent)
