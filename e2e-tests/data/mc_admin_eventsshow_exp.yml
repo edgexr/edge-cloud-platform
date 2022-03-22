@@ -1,0 +1,494 @@
+- search:
+    match:
+      types:
+      - event
+    notmatch:
+      names:
+      - cluster-svc create AppInst
+    limit: 5
+  results:
+  - name: Free ClusterInst reservation
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: dmuus-cloud-1
+      cloudletorg: dmuus
+      cluster: autocluster-autoprov
+      clusterorg: MobiledgeX
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
+      realcluster: Reservable1
+      spanid: ""
+      traceid: ""
+  - name: Free ClusterInst reservation
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: gcp-cloud-5
+      cloudletorg: gcp
+      cluster: autocluster-autoprov
+      clusterorg: MobiledgeX
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
+      realcluster: Reservable4
+      spanid: ""
+      traceid: ""
+  - name: Free ClusterInst reservation
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: azure-cloud-4
+      cloudletorg: azure
+      cluster: autocluster-autoprov
+      clusterorg: MobiledgeX
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
+      realcluster: Reservable3
+      spanid: ""
+      traceid: ""
+  - name: Cloudlet maintenance done
+    org:
+    - dmuus
+    type: event
+    region: local
+    mtags:
+      cloudlet: dmuus-cloud-1
+      cloudletorg: dmuus
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
+      maintenance-state: NORMAL_OPERATION
+      spanid: ""
+      traceid: ""
+  - name: Reserve ClusterInst
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: gcp-cloud-5
+      cloudletorg: gcp
+      cluster: autocluster-autoprov
+      clusterorg: MobiledgeX
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
+      realcluster: Reservable4
+      spanid: ""
+      traceid: ""
+- search:
+    match:
+      types:
+      - audit
+    notmatch:
+      names:
+      - /api/v1/auth/events/show
+      - /api/v1/auth/events/terms
+    limit: 5
+  results:
+  - name: /api/v1/login
+    org:
+    - ""
+    type: audit
+    mtags:
+      duration: ""
+      email: user2@email.com
+      hostname: ""
+      lineno: ""
+      method: POST
+      remote-ip: 127.0.0.1
+      request: '{"username":"user2"}'
+      response: '{"token":""}'
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user2
+  - name: /api/v1/auth/ctrl/DeleteAutoProvPolicy
+    org:
+    - AcmeAppCo
+    type: audit
+    mtags:
+      duration: ""
+      email: user2@email.com
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: AcmeAppCo
+      policy: autoprovHA
+      policyorg: AcmeAppCo
+      region: local
+      remote-ip: 127.0.0.1
+      request: '{"AutoProvPolicy":{"cloudlets":[{"key":{"name":"dmuus-cloud-1","organization":"dmuus"}},{"key":{"name":"dmuus-cloud-2","organization":"dmuus"}},{"key":{"name":"azure-cloud-4","organization":"azure"}},{"key":{"name":"gcp-cloud-5","organization":"gcp"}}],"key":{"name":"autoprovHA","organization":"AcmeAppCo"},"max_instances":4,"min_active_instances":2},"Region":"local"}'
+      response: '{}'
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user2
+  - name: /api/v1/auth/ctrl/DeleteApp
+    org:
+    - AcmeAppCo
+    type: audit
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      duration: ""
+      email: user2@email.com
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: AcmeAppCo
+      region: local
+      remote-ip: 127.0.0.1
+      request: '{"App":{"access_ports":"tcp:82","auto_prov_policies":["autoprovHA"],"default_flavor":{"name":"x1.small"},"deployment":"kubernetes","image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","key":{"name":"autoprovHA","organization":"AcmeAppCo","version":"1.0"}},"Region":"local"}'
+      response: '{}'
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user2
+  - name: /api/v1/login
+    org:
+    - ""
+    type: audit
+    mtags:
+      duration: ""
+      email: user2@email.com
+      hostname: ""
+      lineno: ""
+      method: POST
+      remote-ip: 127.0.0.1
+      request: '{"username":"user2"}'
+      response: '{"token":""}'
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user2
+  - name: /api/v1/login
+    org:
+    - ""
+    type: audit
+    mtags:
+      duration: ""
+      email: user1@email.com
+      hostname: ""
+      lineno: ""
+      method: POST
+      remote-ip: 127.0.0.1
+      request: '{"username":"user1"}'
+      response: '{"token":""}'
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user1
+- search:
+    match:
+      failed: true
+    limit: 3
+  results:
+  - name: /api/v1/auth/org/delete
+    org:
+    - platos
+    type: audit
+    mtags:
+      duration: ""
+      email: mexadmin@mobiledgex.net
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: platos
+      remote-ip: 127.0.0.1
+      request: '{"Name":"platos"}'
+      response: '{"message":"Organization platos in use or check failed: region local:
+        in use by some App; region locala: in use by some App"}'
+      spanid: ""
+      status: "400"
+      traceid: ""
+      username: mexadmin
+  - name: /api/v1/auth/org/delete
+    org:
+    - gcp
+    type: audit
+    mtags:
+      duration: ""
+      email: mexadmin@mobiledgex.net
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: gcp
+      remote-ip: 127.0.0.1
+      request: '{"Name":"gcp"}'
+      response: '{"message":"Organization gcp in use or check failed: region local:
+        in use by some AppInst, Cloudlet, ClusterInst"}'
+      spanid: ""
+      status: "400"
+      traceid: ""
+      username: mexadmin
+  - name: /api/v1/auth/org/delete
+    org:
+    - azure
+    type: audit
+    mtags:
+      duration: ""
+      email: mexadmin@mobiledgex.net
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: azure
+      remote-ip: 127.0.0.1
+      request: '{"Name":"azure"}'
+      response: '{"message":"Organization azure in use or check failed: region local:
+        in use by some AppInst, Cloudlet, ClusterInst"}'
+      spanid: ""
+      status: "400"
+      traceid: ""
+      username: mexadmin
+- search:
+    match:
+      orgs:
+      - AcmeAppCo
+    limit: 3
+  results:
+  - name: /api/v1/auth/ctrl/DeleteAutoProvPolicy
+    org:
+    - AcmeAppCo
+    type: audit
+    mtags:
+      duration: ""
+      email: user2@email.com
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: AcmeAppCo
+      policy: autoprovHA
+      policyorg: AcmeAppCo
+      region: local
+      remote-ip: 127.0.0.1
+      request: '{"AutoProvPolicy":{"cloudlets":[{"key":{"name":"dmuus-cloud-1","organization":"dmuus"}},{"key":{"name":"dmuus-cloud-2","organization":"dmuus"}},{"key":{"name":"azure-cloud-4","organization":"azure"}},{"key":{"name":"gcp-cloud-5","organization":"gcp"}}],"key":{"name":"autoprovHA","organization":"AcmeAppCo"},"max_instances":4,"min_active_instances":2},"Region":"local"}'
+      response: '{}'
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user2
+  - name: Free ClusterInst reservation
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: dmuus-cloud-1
+      cloudletorg: dmuus
+      cluster: autocluster-autoprov
+      clusterorg: MobiledgeX
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
+      realcluster: Reservable1
+      spanid: ""
+      traceid: ""
+  - name: Free ClusterInst reservation
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: gcp-cloud-5
+      cloudletorg: gcp
+      cluster: autocluster-autoprov
+      clusterorg: MobiledgeX
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
+      realcluster: Reservable4
+      spanid: ""
+      traceid: ""
+- search:
+    match:
+      tags:
+        app: someapplication1
+    limit: 3
+  results:
+  - name: /api/v1/auth/ctrl/CreateAppInst
+    org:
+    - AcmeAppCo
+    type: audit
+    mtags:
+      app: someapplication1
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: dmuus-cloud-4
+      cloudletorg: dmuus
+      cluster: SmallCluster
+      clusterorg: AcmeAppCo
+      duration: ""
+      email: user2@email.com
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: AcmeAppCo
+      region: locala
+      remote-ip: 127.0.0.1
+      request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"someapplication1","organization":"AcmeAppCo","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"dmuus-cloud-4","organization":"dmuus"},"cluster_key":{"name":"SmallCluster"},"organization":"AcmeAppCo"}}},"Region":"locala"}'
+      response: |
+        {"data":{"message":"Creating"}}
+        {"data":{"message":"Creating App Inst"}}
+        {"data":{"message":"Ready"}}
+        {"data":{"message":"Created AppInst successfully"}}
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user2
+  - name: /api/v1/auth/ctrl/CreateAppInst
+    org:
+    - AcmeAppCo
+    type: audit
+    mtags:
+      app: someapplication1
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: dmuus-cloud-3
+      cloudletorg: dmuus
+      cluster: SmallCluster
+      clusterorg: AcmeAppCo
+      duration: ""
+      email: user2@email.com
+      federatedorg: ""
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: AcmeAppCo
+      region: locala
+      remote-ip: 127.0.0.1
+      request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"someapplication1","organization":"AcmeAppCo","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"dmuus-cloud-3","organization":"dmuus"},"cluster_key":{"name":"SmallCluster"},"organization":"AcmeAppCo"}}},"Region":"locala"}'
+      response: |
+        {"data":{"message":"Creating"}}
+        {"data":{"message":"Creating App Inst"}}
+        {"data":{"message":"Ready"}}
+        {"data":{"message":"Created AppInst successfully"}}
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user2
+  - name: /api/v1/auth/ctrl/CreateApp
+    org:
+    - AcmeAppCo
+    type: audit
+    mtags:
+      app: someapplication1
+      apporg: AcmeAppCo
+      appver: "1.0"
+      duration: ""
+      email: user2@email.com
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: AcmeAppCo
+      region: locala
+      remote-ip: 127.0.0.1
+      request: '{"App":{"access_ports":"tcp:80,tcp:443,udp:10002","android_package_name":"com.acme.someapplication1","auth_public_key":"-----BEGIN
+        PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
+        PUBLIC KEY-----\n","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","key":{"name":"someapplication1","organization":"AcmeAppCo","version":"1.0"}},"Region":"locala"}'
+      response: '{}'
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user2
+- search:
+    match:
+      names:
+      - /api/v1/auth/ctrl/CreateApp
+    limit: 3
+  results:
+  - name: /api/v1/auth/ctrl/CreateApp
+    org:
+    - AcmeAppCo
+    type: audit
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      duration: ""
+      email: user2@email.com
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: AcmeAppCo
+      region: local
+      remote-ip: 127.0.0.1
+      request: '{"App":{"access_ports":"tcp:82","auto_prov_policies":["autoprovHA"],"default_flavor":{"name":"x1.small"},"deployment":"kubernetes","image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","key":{"name":"autoprovHA","organization":"AcmeAppCo","version":"1.0"}},"Region":"local"}'
+      response: '{}'
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user2
+  - name: /api/v1/auth/ctrl/CreateApp
+    org:
+    - AcmeAppCo
+    type: audit
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      duration: ""
+      email: user2@email.com
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: AcmeAppCo
+      region: local
+      remote-ip: 127.0.0.1
+      request: '{"App":{"access_ports":"tcp:82","auto_prov_policies":["autoprovHA"],"default_flavor":{"name":"x1.small"},"deployment":"kubernetes","image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","key":{"name":"autoprovHA","organization":"AcmeAppCo","version":"1.0"}},"Region":"local"}'
+      response: '{}'
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user2
+  - name: /api/v1/auth/ctrl/CreateApp
+    org:
+    - user3org
+    type: audit
+    mtags:
+      app: ep1
+      apporg: user3org
+      appver: "1.0"
+      duration: ""
+      email: user3@enterprise.com
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: user3org
+      region: local
+      remote-ip: 127.0.0.1
+      request: '{"App":{"access_ports":"tcp:80,tcp:443,udp:10002","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","image_path":"registry.mobiledgex.net/user3org/ep1:1.0","image_type":"Docker","key":{"name":"ep1","organization":"user3org","version":"1.0"}},"Region":"local"}'
+      response: '{}'
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user3
