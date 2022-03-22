@@ -78,6 +78,9 @@ func ignoreDeployError(key edgeproto.AppInstKey, err error) bool {
 	if err == nil {
 		return true
 	}
+	if cloudcommon.IsAppInstBeingCreatedError(err) || cloudcommon.IsAppInstBeingDeletedError(err) {
+		return true
+	}
 	if strings.Contains(err.Error(), key.ExistsError().Error()) ||
 		strings.Contains(err.Error(), cloudcommon.AutoProvMinAlreadyMetError.Error()) ||
 		strings.Contains(err.Error(), "AppInst against App which is being deleted") {
