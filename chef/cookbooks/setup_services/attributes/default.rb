@@ -37,11 +37,32 @@ services.each { |service|
     end
   end
 
-  # Set commercialCerts attribute for all the services
+  # Set commercialCerts attribute for crmserver
   if service == "crmserver"
     unless node.normal[service]['args'].any? { |s| s.include?('commercialCerts') }
       Chef::Log.info("Setting commericalCerts flag for #{service}...")
       node.normal[service]['args']['commercialCerts'] = ""
+    end
+  end
+
+  # Set MEX_RELEASE_VERSION attribute for crmserver
+  if service == "crmserver" && node.normal[service]['env'] != nil
+    releaseMaps = data_bag_item('mex_releases', node['edgeCloudVersion'])
+    if releaseMaps != nil
+      releaseVers = "#{releaseMaps['release']}"
+      if releaseVers != nil
+        envVar = "MEX_RELEASE_VERSION=#{releaseVers}"
+        unless node.normal[service]['env'].any? { |v| v =~ /MEX_RELEASE_VERSION=/ }
+          Chef::Log.info("Setting #{envVar} env var for #{service}...")
+          node.normal[service]['env'] << envVar
+        else
+          unless node.normal[service]['env'].any? { |v| v == envVar }
+            Chef::Log.info("Updating #{envVar} env var for #{service}...")
+            node.normal[service]['env'].delete_if { |v| v =~ /MEX_RELEASE_VERSION=/ }
+            node.normal[service]['env'] << envVar
+          end
+        end
+      end
     end
   end
 }
