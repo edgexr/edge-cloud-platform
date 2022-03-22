@@ -65,12 +65,10 @@ func RunMcAPI(api, mcname, apiFile string, apiFileVars map[string]string, curUse
 
 	if strings.HasSuffix(api, "users") {
 		return runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
-	} else if strings.HasPrefix(api, "audit") {
-		return runMcAudit(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, retry)
 	} else if strings.HasPrefix(api, "config") {
 		return runMcConfig(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
 	} else if strings.HasPrefix(api, "events") {
-		return runMcEvents(api, uri, apiFile, curUserFile, outputDir, mods, vars, retry)
+		return runMcEvents(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, retry)
 	} else if strings.HasPrefix(api, "spans") {
 		return runMcSpans(api, uri, apiFile, curUserFile, outputDir, mods, vars, retry)
 	} else if api == "runcommand" {
@@ -1342,17 +1340,20 @@ func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, 
 
 var eventsStartTimeFile = "events-starttime"
 
-func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, retry *bool) bool {
-	var err error
-	log.Printf("Running %s MC audit APIs for %s %v\n", api, apiFile, mods)
+func getTokenFile(username, outputDir string) string {
+	return outputDir + "/" + username + ".token"
+}
+
+func runMcEvents(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string, sharedData map[string]string, retry *bool) bool {
+	log.Printf("Running %s MC events APIs for %s %v\n", api, apiFile, mods)
 
 	if apiFile == "" {
-		log.Println("Error: Cannot run MC audit APIs without API file")
+		log.Println("Error: Cannot run MC events APIs without API file")
 		return false
 	}
 
 	rc := true
-	if api == "auditsetup" {
+	if api == "eventssetup" {
 		// because the login command is recorded in the audit logs,
 		// having to log in to switch between admin and user2 ends
 		// up affecting the audit logs that we're trying to validate.
@@ -1360,6 +1361,7 @@ func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 		// be used later.
 		users := readUsersFiles(apiFile, vars)
 		for _, user := range users {
+			var err error
 			otp := ""
 			otpKey, ok := sharedData[user.Name]
 			if !ok {
@@ -1402,57 +1404,7 @@ func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 
 		return rc
 	}
-	users := readUsersFiles(curUserFile, vars)
-	if len(users) == 0 {
-		log.Printf("no user to run MC audit api\n")
-		return false
-	}
-	fname := getTokenFile(users[0].Name, outputDir)
-	out, err := ioutil.ReadFile(fname)
-	if err != nil {
-		log.Printf("Read token file %s failed, %v\n", fname, err)
-		return false
-	}
-	token := string(out)
 
-	query := ormapi.AuditQuery{}
-	err = util.ReadYamlFile(apiFile, &query, util.WithVars(vars), util.ValidateReplacedVars())
-	if err != nil {
-		if !util.IsYamlOk(err, "mcaudit") {
-			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", apiFile)
-			os.Exit(1)
-		}
-	}
-	switch api {
-	case "auditorg":
-		resp, status, err := mcClient.ShowAuditOrg(uri, token, &query)
-		checkMcErr("ShowAuditOrg", status, err, &rc)
-		cmpFilterAudit(resp)
-		util.PrintToYamlFile("show-commands.yml", outputDir, resp, true)
-	case "auditself":
-		resp, status, err := mcClient.ShowAuditSelf(uri, token, &query)
-		checkMcErr("ShowAuditSelf", status, err, &rc)
-		cmpFilterAudit(resp)
-		util.PrintToYamlFile("show-commands.yml", outputDir, resp, true)
-	}
-	*retry = true
-	return rc
-}
-
-func getTokenFile(username, outputDir string) string {
-	return outputDir + "/" + username + ".token"
-}
-
-func runMcEvents(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string, retry *bool) bool {
-	log.Printf("Running %s MC events APIs for %s %v\n", api, apiFile, mods)
-
-	if apiFile == "" {
-		log.Println("Error: Cannot run MC audit APIs without API file")
-		return false
-	}
-
-	rc := true
-	// this uses the same "auditsetup" that audit uses
 	users := readUsersFiles(curUserFile, vars)
 	if len(users) == 0 {
 		log.Printf("no user to run MC audit api\n")

@@ -1,7 +1,9 @@
 package e2esetup
 
 import (
+	"encoding/json"
 	"fmt"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -100,18 +102,6 @@ func cmpFilterUsers(data []ormapi.User) {
 	tx.Apply(data)
 }
 
-func cmpFilterAudit(data []ormapi.AuditResponse) {
-	tx := util.NewTransformer()
-	tx.AddSetZeroTypeField(ormapi.AuditResponse{}, "StartTime", "Duration", "TraceID")
-	tx.Apply(data)
-	for ii := range data {
-		if data[ii].OperationName == "/api/v1/auth/events/show" {
-			// ignore starttime in request which changes each run
-			data[ii].Request = ""
-		}
-	}
-}
-
 func cmpFilterMetrics(data []MetricsCompare) {
 	sort.Slice(data, func(i, j int) bool {
 		return data[i].Name < data[j].Name
@@ -159,18 +149,74 @@ func cmpFilterEventData(data []EventSearch) {
 		for jj := 0; jj < len(data[ii].Results); jj++ {
 			event := &data[ii].Results[jj]
 			// Delete incomparable data from tags/data.
-			// Unfortunately request cannot be compared
-			// because the json generated from cli comes
-			// from a map, and from api comes from a struct,
-			// and end up being formatted differently.
 			ignoreMapStringVal(event.Mtags, "duration")
 			ignoreMapStringVal(event.Mtags, "traceid")
 			ignoreMapStringVal(event.Mtags, "spanid")
 			ignoreMapStringVal(event.Mtags, "hostname")
 			ignoreMapStringVal(event.Mtags, "lineno")
-			ignoreMapStringVal(event.Mtags, "request")
-			ignoreMapStringVal(event.Mtags, "response")
+			// The request json data needs to be sorted,
+			// because the json in the api comes from the struct,
+			// and the json from the cli comes from a map,
+			// so fields appear in different order.
+			if req, ok := event.Mtags["request"]; ok && req != "" {
+				m := map[string]interface{}{}
+				err := json.Unmarshal([]byte(req), &m)
+				if err == nil {
+					// Some empty fields show up when
+					// marshaling from structs, but not
+					// when building json map from cli args,
+					// so remove any empty fields.
+					omitEmptyJson(m)
+					reqSorted, err := json.Marshal(m)
+					if err == nil {
+						event.Mtags["request"] = string(reqSorted)
+					}
+				}
+			}
 		}
+	}
+}
+
+func omitEmptyJson(val interface{}) interface{} {
+	if val == nil {
+		return nil
+	} else if m, ok := val.(map[string]interface{}); ok {
+		for k, v := range m {
+			newV := omitEmptyJson(v)
+			if newV == nil {
+				delete(m, k)
+				continue
+			}
+			m[k] = newV
+		}
+		if len(m) == 0 {
+			return nil
+		}
+		return m
+	} else if arr, ok := val.([]interface{}); ok {
+		newArr := make([]interface{}, 0)
+		for _, sub := range arr {
+			newSub := omitEmptyJson(sub)
+			if newSub == nil {
+				continue
+			}
+			newArr = append(newArr, newSub)
+		}
+		return newArr
+	} else if str, ok := val.(string); ok {
+		if str == "" {
+			return nil
+		}
+		// check if it's time string at 0
+		if t, err := time.Parse(time.RFC3339, str); err == nil && t.IsZero() {
+			return nil
+		}
+		return str
+	} else {
+		if reflect.ValueOf(val).IsZero() {
+			return nil
+		}
+		return val
 	}
 }
 

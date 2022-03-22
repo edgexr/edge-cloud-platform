@@ -16,8 +16,8 @@
       method: POST
       org: AcmeAppCo
       remote-ip: 127.0.0.1
-      request: ""
-      response: ""
+      request: '{"Address":"123 Maple Street, Gainesville, FL 32604","Name":"AcmeAppCo","Phone":"123-123-1234","Type":"developer"}'
+      response: '{"message":"Organization deleted"}'
       spanid: ""
       status: "200"
       traceid: ""
@@ -34,8 +34,8 @@
       method: POST
       org: AcmeAppCo
       remote-ip: 127.0.0.1
-      request: ""
-      response: ""
+      request: '{"Address":"123 Maple Street, Gainesville, FL 32604","Name":"AcmeAppCo","Phone":"123-123-1234","Type":"developer"}'
+      response: '{"message":"Organization created"}'
       spanid: ""
       status: "200"
       traceid: ""
@@ -52,8 +52,8 @@
       method: POST
       org: AcmeAppCo
       remote-ip: 127.0.0.1
-      request: ""
-      response: ""
+      request: '{"Address":"123 Maple Street, Gainesville, FL 32604","Name":"AcmeAppCo","Phone":"123-123-1234","Type":"developer"}'
+      response: '{"message":"Organization deleted"}'
       spanid: ""
       status: "200"
       traceid: ""

@@ -15,5 +15,5 @@ tests:
   apifile: '{{datadir2}}/mc_user1.yml,{{datadir2}}/mc_user2.yml,{{datadir2}}/mc_user3.yml'
 
 - name: setup user tokens to avoid extra login audit logs
-  actions: [mcapi-auditsetup]
+  actions: [mcapi-eventssetup]
   apifile: '{{datadir2}}/mc_admin.yml,{{datadir2}}/mc_user2.yml,{{datadir2}}/mc_user1.yml,{{datadir2}}/mc_user3.yml'
