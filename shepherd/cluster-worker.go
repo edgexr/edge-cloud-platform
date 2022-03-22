@@ -275,24 +275,14 @@ func (p *ClusterWorker) MarshalClusterMetrics(cm *shepherd_common.ClusterMetrics
 		cm.DiskTS = nil
 	}
 
-	if cm.NetSentTS != nil && cm.NetRecvTS != nil {
-		//for measurements with multiple values just pick one timestamp to use
-		metric = newMetric(p.clusterInstKey, p.reservedBy, "cluster-network", nil, cm.NetSentTS)
-		metric.AddIntVal("sendBytes", cm.NetSent)
-		metric.AddIntVal("recvBytes", cm.NetRecv)
-		metrics = append(metrics, metric)
-	}
-	cm.NetSentTS = nil
-	cm.NetRecvTS = nil
-
 	if cm.TcpConnsTS != nil && cm.TcpRetransTS != nil {
 		metric = newMetric(p.clusterInstKey, p.reservedBy, "cluster-tcp", nil, cm.TcpConnsTS)
 		metric.AddIntVal("tcpConns", cm.TcpConns)
 		metric.AddIntVal("tcpRetrans", cm.TcpRetrans)
 		metrics = append(metrics, metric)
 	}
-	cm.NetSentTS = nil
-	cm.NetRecvTS = nil
+	cm.TcpConnsTS = nil
+	cm.TcpRetransTS = nil
 
 	if cm.UdpSentTS != nil && cm.UdpRecvTS != nil && cm.UdpRecvErrTS != nil {
 		metric = newMetric(p.clusterInstKey, p.reservedBy, "cluster-udp", nil, cm.UdpSentTS)
@@ -337,16 +327,6 @@ func MarshalAppMetrics(key *shepherd_common.MetricAppInstKey, stat *shepherd_com
 		metrics = append(metrics, metric)
 		stat.DiskTS = nil
 	}
-
-	if stat.NetSentTS != nil && stat.NetRecvTS != nil {
-		//for measurements with multiple values just pick one timestamp to use
-		metric = newMetric(key.ClusterInstKey, reservedBy, "appinst-network", key, stat.NetSentTS)
-		metric.AddIntVal("sendBytes", stat.NetSent)
-		metric.AddIntVal("recvBytes", stat.NetRecv)
-		metrics = append(metrics, metric)
-	}
-	stat.NetSentTS = nil
-	stat.NetRecvTS = nil
 
 	return metrics
 }

@@ -28,17 +28,6 @@
     clusterorg: AcmeAppCo
   values:
     mem: 3.756834298e+09
-- name: appinst-network
-  tags:
-    app: someapplication1
-    apporg: AcmeAppCo
-    cloudlet: dmuus-cloud-1
-    cloudletorg: dmuus
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
-  values:
-    recvBytes: 0
-    sendBytes: 0
 - name: cluster-cpu
   tags:
     cloudlet: dmuus-cloud-1
@@ -63,15 +52,6 @@
     clusterorg: AcmeAppCo
   values:
     mem: 75
-- name: cluster-network
-  tags:
-    cloudlet: dmuus-cloud-1
-    cloudletorg: dmuus
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
-  values:
-    recvBytes: 0
-    sendBytes: 0
 - name: cluster-tcp
   tags:
     cloudlet: dmuus-cloud-1

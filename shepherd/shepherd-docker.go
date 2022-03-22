@@ -378,7 +378,7 @@ func (c *DockerClusterStats) collectDockerAppMetrics(ctx context.Context, p *Doc
 		}
 		// TODO EDGECLOUD-1316 - if found that means there are several containers with this app
 		// Add the stats from all
-		stat.CpuTS, stat.MemTS, stat.DiskTS, stat.NetSentTS, stat.NetRecvTS = ts, ts, ts, ts, ts
+		stat.CpuTS, stat.MemTS, stat.DiskTS = ts, ts, ts
 		// cpu is in the form "0.00%" - remove the % at the end and cast to float
 		cpu, err := parsePercentStr(containerStats.Cpu)
 		if err != nil {
@@ -401,34 +401,6 @@ func (c *DockerClusterStats) collectDockerAppMetrics(ctx context.Context, p *Doc
 		if diskAndLabelsFound {
 			stat.Disk += containerDiskAndLabels.Disk
 		}
-
-		// NET data in docker stats only counts docker0 interface,
-		// so for host networking it's always going to be zero - use proc data instead
-		pid, err := c.clusterClient.Output("docker inspect -f '{{ .State.Pid }}' " + containerStats.Id)
-		if err != nil {
-			errstr := fmt.Sprintf("Failed to get pid for cid <%s> on LB VM", containerStats.Id)
-			log.SpanLog(ctx, log.DebugLevelMetrics, errstr, "err", err.Error(), "output", pid)
-		} else {
-			netdata, err := c.clusterClient.Output("cat /proc/" + pid + "/net/dev | grep ens")
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to get net stats", "err", err.Error(),
-					"pid", pid, "cid", containerStats.Id, "output", netdata)
-			} else {
-				netIO, err := parseNetData(netdata)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to parse Network usage", "App", appKey,
-						"stats", containerStats, "err", err, "netdata", netdata)
-				} else {
-					if len(netIO) > 1 {
-						// TODO EDGECLOUD-1316 - add stats for all containers together
-						stat.NetRecv += netIO[0]
-						stat.NetSent += netIO[1]
-					} else {
-						log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to parse network data", "netio", netIO)
-					}
-				}
-			}
-		}
 	}
 
 	return appStatsMap
@@ -447,7 +419,7 @@ func collectDockerClusterMetrics(ctx context.Context, p *DockerClusterStats) err
 	}
 	// set timestamps to current time
 	p.CpuTS, _ = types.TimestampProto(time.Now())
-	p.MemTS, p.DiskTS, p.NetSentTS, p.NetRecvTS, p.TcpConnsTS, p.TcpRetransTS, p.UdpSentTS, p.UdpRecvTS, p.UdpRecvErrTS = p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS
+	p.MemTS, p.DiskTS, p.TcpConnsTS, p.TcpRetransTS, p.UdpSentTS, p.UdpRecvTS, p.UdpRecvErrTS = p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS
 	return nil
 }
 

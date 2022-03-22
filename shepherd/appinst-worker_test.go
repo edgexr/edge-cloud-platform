@@ -14,11 +14,9 @@ import (
 )
 
 var testVmAppData = shepherd_common.AppMetrics{
-	Cpu:     11.11,
-	Mem:     1212,
-	Disk:    1313,
-	NetSent: 1414,
-	NetRecv: 1515,
+	Cpu:  11.11,
+	Mem:  1212,
+	Disk: 1313,
 }
 
 func TestVmStats(t *testing.T) {
@@ -63,8 +61,6 @@ func TestVmStats(t *testing.T) {
 		assert.Equal(t, float64(11.11), appsMetrics.Cpu)
 		assert.Equal(t, uint64(1212), appsMetrics.Mem)
 		assert.Equal(t, uint64(1313), appsMetrics.Disk)
-		assert.Equal(t, uint64(1414), appsMetrics.NetSent)
-		assert.Equal(t, uint64(1515), appsMetrics.NetRecv)
 		assert.NotNil(t, appsMetrics.CpuTS, "CPU timestamp")
 	}
 }

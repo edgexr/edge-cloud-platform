@@ -1,15 +1,64 @@
 package main
 
 import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_unittest"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/testutil"
 	"github.com/stretchr/testify/require"
 )
+
+var testEnvoyProxyData = `cluster.backend443.upstream_cx_active: 10
+cluster.backend443.upstream_cx_total: 15
+cluster.backend443.upstream_cx_connect_fail: 0
+cluster.backend443.upstream_cx_tx_bytes_total: 1000
+cluster.backend443.upstream_cx_rx_bytes_total: 100
+cluster.backend443.upstream_cx_length_ms: No recorded values
+cluster.backend10002.upstream_cx_active: 7
+cluster.backend10002.upstream_cx_total: 10
+cluster.backend10002.upstream_cx_connect_fail: 1
+cluster.backend10002.upstream_cx_tx_bytes_total: 2000
+cluster.backend10002.upstream_cx_rx_bytes_total: 200
+cluster.backend10002.upstream_cx_length_ms: P0(nan,2) P25(nan,5.1) P50(nan,11) P75(nan,105) P90(nan,182) P95(nan,186) P99(nan,189.2) P99.5(nan,189.6) P99.9(nan,189.92) P100(nan,190)
+cluster.udp_backend10002.upstream_cx_tx_bytes_total: 100
+cluster.udp_backend10002.upstream_cx_rx_bytes_total: 50
+cluster.udp_backend10002.udp.sess_tx_datagrams: 3
+cluster.udp_backend10002.udp.sess_rx_datagrams: 4
+cluster.udp_backend10002.udp.sess_tx_errors: 5
+cluster.udp_backend10002.udp.sess_rx_errors: 6
+cluster.udp_backend10002.upstream_cx_overflow: 7
+cluster.udp_backend10002.upstream_cx_none_healthy: 8
+cluster.backend80.upstream_cx_active: 10
+cluster.backend80.upstream_cx_total: 15
+cluster.backend80.upstream_cx_connect_fail: 0
+cluster.backend80.upstream_cx_tx_bytes_total: 3000
+cluster.backend80.upstream_cx_rx_bytes_total: 300
+cluster.backend80.upstream_cx_length_ms: No recorded values
+cluster.backend65535.upstream_cx_active: 7
+cluster.backend65535.upstream_cx_total: 10
+cluster.backend65535.upstream_cx_connect_fail: 1
+cluster.backend65535.upstream_cx_tx_bytes_total: 4000
+cluster.backend65535.upstream_cx_rx_bytes_total: 400
+cluster.backend65535.upstream_cx_length_ms: P0(nan,2) P25(nan,5.1) P50(nan,11) P75(nan,105) P90(nan,182) P95(nan,186) P99(nan,189.2) P99.5(nan,189.6) P99.9(nan,189.92) P100(nan,190)
+cluster.udp_backend8001.upstream_cx_tx_bytes_total: 1
+cluster.udp_backend8001.upstream_cx_rx_bytes_total: 2
+cluster.udp_backend8001.udp.sess_tx_datagrams: 200
+cluster.udp_backend8001.udp.sess_rx_datagrams: 60
+cluster.udp_backend8001.udp.sess_tx_errors: 5
+cluster.udp_backend8001.udp.sess_rx_errors: 6
+cluster.udp_backend8001.upstream_cx_overflow: 7
+cluster.udp_backend8001.upstream_cx_none_healthy: 8`
 
 // Test the types of appInstances that will create a scrapePoint
 func TestCollectProxyStats(t *testing.T) {
@@ -17,7 +66,9 @@ func TestCollectProxyStats(t *testing.T) {
 	ctx := setupLog()
 	defer log.FinishTracer()
 	myPlatform = &shepherd_unittest.Platform{}
-	InitProxyScraper(time.Second, time.Second)
+	db := testProxyMetricsdb{}
+	db.Init()
+	InitProxyScraper(time.Second, time.Second, db.Update)
 	edgeproto.InitAppInstCache(&AppInstCache)
 	edgeproto.InitAppCache(&AppCache)
 	edgeproto.InitClusterInstCache(&ClusterInstCache)
@@ -151,4 +202,103 @@ func TestCollectProxyStats(t *testing.T) {
 	target = CollectProxyStats(ctx, &appInst)
 	require.NotEmpty(t, target)
 	require.NotNil(t, ProxyMap[target].Client)
+
+	// Add a second appinst to the same cluster to test cluster net stats
+	appInst = testutil.AppInstData[7]
+	// set mapped ports and state
+	app = edgeproto.App{}
+	found = AppCache.Get(&appInst.Key.AppKey, &app)
+	if !found {
+		require.Fail(t, "Could not find app for appinst")
+	}
+	ports, _ = edgeproto.ParseAppPorts(app.AccessPorts)
+	appInst.MappedPorts = ports
+	appInst.State = edgeproto.TrackedState_READY
+	// scrape point should still be created
+	target = CollectProxyStats(ctx, &appInst)
+	require.NotEmpty(t, target)
+	require.NotNil(t, ProxyMap[target].Client)
+
+	// test ProxyScraper
+	testProxyScraper(ctx, &db, t)
+}
+
+// Test ProxyScraper thread
+func testProxyScraper(ctx context.Context, db *testProxyMetricsdb, t *testing.T) {
+	// start a handler for envoy stats requests
+	testEnvoyStatsEndpointServer := httptest.NewServer(http.HandlerFunc(envoyProxyHandler))
+	envoyUnitTestPort, _ := strconv.ParseInt(strings.Split(testEnvoyStatsEndpointServer.URL, ":")[2], 10, 32)
+	cloudcommon.ProxyMetricsPort = int32(envoyUnitTestPort)
+
+	defer testEnvoyStatsEndpointServer.Close()
+
+	// enable scraping
+	shepherd_common.ShepherdPlatformActive = true
+	StartProxyScraper(db.done)
+	// Wait for some stats to be collected
+	db.WaitForClusterMetrics(ctx)
+	// Verify collected stats
+	require.Equal(t, 2, len(db.appStats))
+	for k, v := range db.appStats {
+		if k.AppKey == testutil.AppInstData[7].Key.AppKey {
+			require.Equal(t, 3050, v.NetSent)
+			require.Equal(t, 400, v.NetRecv)
+		} else if k.AppKey == testutil.AppInstData[0].Key.AppKey {
+			require.Equal(t, 7002, v.NetSent)
+			require.Equal(t, 701, v.NetRecv)
+		}
+	}
+	require.Equal(t, 1, len(db.clusterStats))
+	stat, found := db.clusterStats[testutil.ClusterInstData[0].Key]
+	require.True(t, found)
+	require.Equal(t, uint64(1101), stat.NetRecv)
+	require.Equal(t, uint64(10052), stat.NetSent)
+}
+
+func envoyProxyHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.String() == "/stats" {
+		w.Write([]byte(testEnvoyProxyData))
+	}
+}
+
+type testProxyMetricsdb struct {
+	appStats     map[edgeproto.AppInstKey]shepherd_common.ClusterNetMetrics
+	clusterStats map[edgeproto.ClusterInstKey]shepherd_common.ClusterNetMetrics
+	mux          sync.Mutex
+	done         chan bool
+}
+
+func (n *testProxyMetricsdb) Init() {
+	n.appStats = make(map[edgeproto.AppInstKey]shepherd_common.ClusterNetMetrics)
+	n.clusterStats = make(map[edgeproto.ClusterInstKey]shepherd_common.ClusterNetMetrics)
+	n.done = make(chan bool, 1)
+}
+
+func (n *testProxyMetricsdb) Update(ctx context.Context, metric *edgeproto.Metric) bool {
+	n.mux.Lock()
+	if metric.Name == "appinst-network" {
+		key, stat := ProxyAppInstNetMeticToStat(metric)
+		if key != nil {
+			n.appStats[*key] = *stat
+		}
+	} else if metric.Name == "cluster-network" {
+		key, stat := ProxyClusterNetMeticToStat(metric)
+		if key != nil && stat != nil {
+			n.clusterStats[*key] = *stat
+			// got cluster stats - just wait for a first net stats
+			close(n.done)
+		}
+	}
+	// ignore other metrics
+	n.mux.Unlock()
+	return true
+}
+
+func (n *testProxyMetricsdb) WaitForClusterMetrics(ctx context.Context) {
+	select {
+	case <-time.After(20 * time.Second):
+		log.DebugLog(log.DebugLevelInfo, "Timeout while waiting for metrics")
+	case <-n.done:
+		log.DebugLog(log.DebugLevelInfo, "Got cluster metrics")
+	}
 }

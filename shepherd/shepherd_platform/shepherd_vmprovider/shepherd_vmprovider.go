@@ -267,7 +267,13 @@ func (s *ShepherdPlatform) GetVmStats(ctx context.Context, key *edgeproto.AppIns
 	if err != nil {
 		return appMetrics, err
 	}
-	appMetrics = shepherd_common.AppMetrics(*vmMetrics)
+	appMetrics = shepherd_common.AppMetrics{}
+	appMetrics.Cpu = vmMetrics.Cpu
+	appMetrics.CpuTS = vmMetrics.CpuTS
+	appMetrics.Mem = vmMetrics.Mem
+	appMetrics.MemTS = vmMetrics.MemTS
+	appMetrics.Disk = vmMetrics.Disk
+	appMetrics.DiskTS = vmMetrics.DiskTS
 	return appMetrics, nil
 }
 

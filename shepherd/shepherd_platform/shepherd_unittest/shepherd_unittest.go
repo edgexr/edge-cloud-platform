@@ -70,7 +70,7 @@ func (s *Platform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (s
 		return metrics, err
 	}
 	ts, _ := types.TimestampProto(time.Now())
-	metrics.CpuTS, metrics.MemTS, metrics.DiskTS, metrics.NetSentTS, metrics.NetRecvTS = ts, ts, ts, ts, ts
+	metrics.CpuTS, metrics.MemTS, metrics.DiskTS = ts, ts, ts
 	return metrics, nil
 }
 

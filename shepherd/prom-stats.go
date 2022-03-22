@@ -119,38 +119,6 @@ func collectAppPrometheusMetrics(ctx context.Context, p *K8sClusterStats) map[sh
 			}
 		}
 	}
-	// Get Pod NetRecv bytes rate averaged over 1m
-	resp, err = promutils.GetPromMetrics(ctx, p.promAddr, promutils.PromQNetRecvRateUrlEncoded, p.client)
-	if err == nil && resp.Status == "success" {
-		for _, metric := range resp.Data.Result {
-			// skip system pods
-			if metric.Labels.App == "" {
-				continue
-			}
-			stat := getAppMetricFromPrometheusData(p, appStatsMap, &metric)
-			stat.NetRecvTS = promutils.ParseTime(metric.Values[0].(float64))
-			//copy only if we can parse the value
-			if val, err := strconv.ParseFloat(metric.Values[1].(string), 64); err == nil {
-				stat.NetRecv = uint64(val)
-			}
-		}
-	}
-	// Get Pod NetRecv bytes rate averaged over 1m
-	resp, err = promutils.GetPromMetrics(ctx, p.promAddr, promutils.PromQNetSentRateUrlEncoded, p.client)
-	if err == nil && resp.Status == "success" {
-		for _, metric := range resp.Data.Result {
-			// skip system pods
-			if metric.Labels.App == "" {
-				continue
-			}
-			stat := getAppMetricFromPrometheusData(p, appStatsMap, &metric)
-			//copy only if we can parse the value
-			stat.NetSentTS = promutils.ParseTime(metric.Values[0].(float64))
-			if val, err := strconv.ParseFloat(metric.Values[1].(string), 64); err == nil {
-				stat.NetSent = uint64(val)
-			}
-		}
-	}
 	return appStatsMap
 }
 
@@ -189,32 +157,6 @@ func collectClusterPrometheusMetrics(ctx context.Context, p *K8sClusterStats) er
 			//copy only if we can parse the value
 			if val, err := strconv.ParseFloat(metric.Values[1].(string), 64); err == nil {
 				p.Disk = val
-				// We should have only one value here
-				break
-			}
-		}
-	}
-	// Get Cluster NetRecv bytes rate averaged over 1m
-	resp, err = promutils.GetPromMetrics(ctx, p.promAddr, promutils.PromQRecvBytesRateClustUrlEncoded, p.client)
-	if err == nil && resp.Status == "success" {
-		for _, metric := range resp.Data.Result {
-			p.NetRecvTS = promutils.ParseTime(metric.Values[0].(float64))
-			//copy only if we can parse the value
-			if val, err := strconv.ParseFloat(metric.Values[1].(string), 64); err == nil {
-				p.NetRecv = uint64(val)
-				// We should have only one value here
-				break
-			}
-		}
-	}
-	// Get Cluster NetSent bytes rate averaged over 1m
-	resp, err = promutils.GetPromMetrics(ctx, p.promAddr, promutils.PromQSentBytesRateClustUrlEncoded, p.client)
-	if err == nil && resp.Status == "success" {
-		for _, metric := range resp.Data.Result {
-			p.NetSentTS = promutils.ParseTime(metric.Values[0].(float64))
-			//copy only if we can parse the value
-			if val, err := strconv.ParseFloat(metric.Values[1].(string), 64); err == nil {
-				p.NetSent = uint64(val)
 				// We should have only one value here
 				break
 			}
