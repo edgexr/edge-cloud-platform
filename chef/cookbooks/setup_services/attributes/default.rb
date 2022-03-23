@@ -66,3 +66,20 @@ services.each { |service|
     end
   end
 }
+
+# Set /var/tmp volume mount for cloudletPrometheus service
+service = "cloudletPrometheus"
+oldTmpMnt = "/tmp:/tmp"
+varTmpMnt = "/var/tmp:/var/tmp"
+unless node.normal[service]['volume'].any? { |s| s.include?(varTmpMnt) }
+  Chef::Log.info("Setting #{varTmpMnt} volume mount for #{service}...")
+  node.normal[service]['volume'].delete_if { |s| s.include?(oldTmpMnt) }
+  node.normal[service]['volume'] << varTmpMnt
+end
+oldPromMnt = "/tmp/prometheus.yml:/etc/prometheus/prometheus.yml"
+promMnt = "/var/tmp/prometheus.yml:/etc/prometheus/prometheus.yml"
+unless node.normal[service]['volume'].any? { |s| s.include?(promMnt) }
+  Chef::Log.info("Setting #{promMnt} volume mount for #{service}...")
+  node.normal[service]['volume'].delete_if { |s| s.include?(oldPromMnt) }
+  node.normal[service]['volume'] << promMnt
+end

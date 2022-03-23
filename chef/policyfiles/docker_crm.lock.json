@@ -1,5 +1,5 @@
 {
-  "revision_id": "9df3acd2c318299f91ff030622ea58827e971a5ac9172fab4be0454cd5d4d83c",
+  "revision_id": "c2cdf8928c9e6aaf8b78dcfbb65b745a4dff9113c14427d4dc24c2169d99874b",
   "name": "docker_crm",
   "run_list": [
     "recipe[chef_client_updater::default]",
@@ -117,14 +117,14 @@
       }
     },
     "setup_services": {
-      "version": "1.3.9",
-      "identifier": "6d2e860d15e4f141bc980b448a7575990855a24a",
-      "dotted_decimal_identifier": "30731925741495537.18503234696284789.129300130275914",
-      "cache_key": "setup_services-1.3.9",
+      "version": "1.3.10",
+      "identifier": "0598cb42121399e7db3e86c9f0bea7f513569c5c",
+      "dotted_decimal_identifier": "1575373637817241.65261781215998142.184671033269340",
+      "cache_key": "setup_services-1.3.10",
       "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
       "source_options": {
         "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
-        "version": "1.3.9"
+        "version": "1.3.10"
       }
     },
     "setup_teleport": {
@@ -189,7 +189,7 @@
       ],
       [
         "setup_services",
-        "= 1.3.9"
+        "= 1.3.10"
       ],
       [
         "setup_teleport",
@@ -224,7 +224,7 @@
       "setup_infra (1.0.0)": [
 
       ],
-      "setup_services (1.3.9)": [
+      "setup_services (1.3.10)": [
         [
           "docker",
           ">= 0.0.0"

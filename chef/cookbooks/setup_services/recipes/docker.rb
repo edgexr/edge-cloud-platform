@@ -107,7 +107,7 @@ docker_container "shepherd" do
 end
 
 remote_write = get_thanos_remote_write_addr
-template '/tmp/prometheus.yml' do
+template '/var/tmp/prometheus.yml' do
   source 'prometheus.erb'
   variables(
     remote_write_addr: remote_write
