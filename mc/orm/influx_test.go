@@ -72,18 +72,18 @@ func testPermShowClientMetrics(mcClient *mctestclient.Client, uri, token, region
 	return mcClient.ShowClientApiUsageMetrics(uri, token, dat)
 }
 
-func testPermShowCloudletUsage(mcClient *mctestclient.Client, uri, token, region, org, selector string, data *edgeproto.CloudletKey) (*ormapi.AllMetrics, int, error) {
-	in := &edgeproto.CloudletKey{}
+func testPermShowCloudletUsage(mcClient *mctestclient.Client, uri, token, region, org, selector string, data []edgeproto.CloudletKey) (*ormapi.AllMetrics, int, error) {
+	dat := &ormapi.RegionCloudletMetrics{}
 	if data != nil {
-		in = data
+		dat.Cloudlets = data
 	} else {
+		in := &edgeproto.CloudletKey{}
 		in.Name = "testcloudlet"
 		in.Organization = org
+		dat.Cloudlet = *in
 	}
-	dat := &ormapi.RegionCloudletMetrics{}
 	dat.Region = region
 	dat.Selector = selector
-	dat.Cloudlet = *in
 	return mcClient.ShowCloudletUsage(uri, token, dat)
 }
 
@@ -266,11 +266,21 @@ func goodPermTestMetrics(t *testing.T, mcClient *mctestclient.Client, uri, devTo
 
 func testInvalidOrgForCloudletUsage(t *testing.T, mcClient *mctestclient.Client, uri, adminToken, region, operOrg string) {
 	// bad cloudlet name check
-	invalidCloudlet := edgeproto.CloudletKey{Organization: "InvalidCloudletOrg"}
-	_, status, err := testPermShowCloudletUsage(mcClient, uri, adminToken, region, operOrg, "resourceusage", &invalidCloudlet)
+	invalidCloudlet := []edgeproto.CloudletKey{{Organization: "InvalidCloudletOrg"}}
+	_, status, err := testPermShowCloudletUsage(mcClient, uri, adminToken, region, operOrg, "resourceusage", invalidCloudlet)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Cloudlet does not exist")
 	require.Equal(t, http.StatusBadRequest, status)
+}
+
+func testMultipleOrgsForCloudletUsage(t *testing.T, mcClient *mctestclient.Client, uri, adminToken, region, operOrg1, operOrg2 string) {
+	// bad cloudlet name check
+	cloudlets := []edgeproto.CloudletKey{
+		{Organization: operOrg1},
+		{Organization: operOrg1}}
+	_, status, err := testPermShowCloudletUsage(mcClient, uri, adminToken, region, "", "resourceusage", cloudlets)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
 }
 
 func TestIsMeasurementOutputEmpty(t *testing.T) {

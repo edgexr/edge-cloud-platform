@@ -799,6 +799,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	goodPermTestMetrics(t, mcClient, uri, tokenDev3, tokenOper3, ctrl.Region, org1, org3)
 	goodPermTestEvents(t, mcClient, uri, tokenDev3, tokenOper3, ctrl.Region, org1, org3)
 	testInvalidOrgForCloudletUsage(t, mcClient, uri, tokenAd, ctrl.Region, org1)
+	testMultipleOrgsForCloudletUsage(t, mcClient, uri, tokenAd, ctrl.Region, org1, org3)
 	goodPermTestCustomMetrics(t, mcClient, uri, tokenDev3, tokenOper3, ctrl.Region, org1, org3)
 	adminPermTestCustomMetrics(t, mcClient, uri, tokenAd, ctrl.Region, org3)
 

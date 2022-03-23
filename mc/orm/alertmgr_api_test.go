@@ -105,11 +105,13 @@ func badPermTestAlertReceivers(t *testing.T, mcClient *mctestclient.Client, uri,
 	status, err = testDeleteAlertReceiver(mcClient, uri, token, region, org, "testAlert", "email", "error", "")
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
-	list, status, err := testShowAlertReceiver(mcClient, uri, token, region, org, "testAlert", "")
-	// we don't take the filter for the show command, so return is just an empty list
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 0, len(list))
+	_, status, err = testShowAlertReceiver(mcClient, uri, token, region, org, "testAlert", "")
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+	// test with no org - should return forbidden in either case
+	_, status, err = testShowAlertReceiver(mcClient, uri, token, region, org, "testAlert", "")
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
 }
 
 func userPermTestAlertReceivers(t *testing.T, mcClient *mctestclient.Client, uri, devMgr, devMgrToken, dev, devToken, region, devOrg, operOrg string) {

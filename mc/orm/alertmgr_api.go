@@ -210,9 +210,20 @@ func ShowAlertReceiver(c echo.Context) error {
 		return fmt.Errorf("Slack URL is not specifiable as a filter")
 	}
 
+	allowedOrgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceAlert, ActionView)
+	isAdmin := false
+	if err != nil {
+		return err
+	}
+	// check for a user with no orgs
+	if len(allowedOrgs) == 0 {
+		return echo.ErrForbidden
+	}
+	if _, found := allowedOrgs[""]; found {
+		isAdmin = true
+	}
 	// Admin users can specify a user, or see all the receivers
-	adminUser, _ := isUserAdmin(ctx, claims.Username)
-	if !adminUser {
+	if !isAdmin {
 		// If a user is a user-management role for the org in the filter allow user to be specified
 		if filter.User != "" && filter.User != claims.Username {
 			filterOrg := getOrgForReceiver(&filter)
@@ -233,7 +244,7 @@ func ShowAlertReceiver(c echo.Context) error {
 	}
 	for ii := range receivers {
 		org := getOrgForReceiver(&receivers[ii])
-		if err := authorized(ctx, claims.Username, org, ResourceAlert, ActionView); err == nil {
+		if _, found := allowedOrgs[org]; found || isAdmin {
 			alertRecs = append(alertRecs, receivers[ii])
 		}
 	}

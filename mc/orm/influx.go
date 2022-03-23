@@ -639,10 +639,16 @@ func getCloudletPlatformTypes(ctx context.Context, username, region string, keys
 
 	err := ctrlclient.ShowCloudletStream(ctx, rc, &edgeproto.Cloudlet{}, connCache, nil, func(res *edgeproto.Cloudlet) error {
 		// only process the passed in cloudlets
+		foundMatch := false
 		for ii := range keys {
-			if !res.Key.Matches(&keys[ii], edgeproto.MatchFilter()) {
-				return nil
+			if res.Key.Matches(&keys[ii], edgeproto.MatchFilter()) {
+				foundMatch = true
+				break
 			}
+		}
+		// no match found - continue looking
+		if foundMatch == false {
+			return nil
 		}
 		pfType := pf.GetType(res.PlatformType.String())
 		platformTypes[pfType] = struct{}{}
