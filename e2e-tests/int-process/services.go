@@ -197,7 +197,7 @@ func StopFakeEnvoyExporters(ctx context.Context) error {
 }
 
 func GetCloudletPrometheusConfigHostFilePath() string {
-	return "/tmp/prometheus.yml"
+	return "/var/tmp/prometheus.yml"
 }
 
 // command line options for prometheus container
@@ -224,7 +224,7 @@ func GetCloudletPrometheusDockerArgs(cloudlet *edgeproto.Cloudlet, cfgFile strin
 		"--label", "cloudlet=" + cloudletName,
 		"--label", "cloudletorg=" + cloudletOrg,
 		"--publish", CloudletPrometheusPort + ":" + CloudletPrometheusPort, // container interface
-		"--volume", "/tmp:/tmp",
+		"--volume", "/var/tmp:/var/tmp",
 		"--volume", cfgFile + ":/etc/prometheus/prometheus.yml",
 	}
 }

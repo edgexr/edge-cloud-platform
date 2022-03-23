@@ -19,8 +19,8 @@ jsonattrs: |
       ],
       "publish": "9092:9092",
       "volume": [
-        "/tmp/prometheus.yml:/etc/prometheus/prometheus.yml",
-        "/tmp:/tmp"
+        "/var/tmp/prometheus.yml:/etc/prometheus/prometheus.yml",
+        "/var/tmp:/var/tmp"
       ]
     },
     "crmserver": {
