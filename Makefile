@@ -79,8 +79,7 @@ doc-local-server:
 		redocly/redoc:v2.0.0-rc.23
 
 third_party:
-	parsedeps --gennotice ../edge-cloud/cloud-resource-manager/cmd/crmserver/ ../edge-cloud/d-match-engine/dme-server ./plugin/platform/ ./plugin/edgeevents ./shepherd ./shepherd/shepherd_platform > THIRD-PARTY-NOTICES
-
+	parsedeps --gennotice ../edge-cloud/cloud-resource-manager/cmd/crmserver/ ../edge-cloud/controller ../edge-cloud/d-match-engine/dme-server ../edge-cloud/cluster-svc ../edge-cloud/edgeturn ../edge-cloud/notifyroot ./plugin/platform/ ./plugin/edgeevents ./shepherd ./shepherd/shepherd_platform ./mc ./alertmgr-sidecar ./autoprov > THIRD-PARTY-NOTICES
 
 .PHONY: doc
 
