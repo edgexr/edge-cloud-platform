@@ -141,45 +141,6 @@ func (s *Client) ShowAlertReceiver(uri string, token string, in *ormapi.AlertRec
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-// Generating group AllData
-
-func (s *Client) CreateAllData(uri string, token string, in *ormapi.AllData) (int, error) {
-	rundata := RunData{}
-	rundata.Uri = uri
-	rundata.Token = token
-	rundata.In = in
-
-	apiCmd := ormctl.MustGetCommand("CreateAllData")
-	s.ClientRun.Run(apiCmd, &rundata)
-	return rundata.RetStatus, rundata.RetError
-}
-
-func (s *Client) DeleteAllData(uri string, token string, in *ormapi.AllData) (int, error) {
-	rundata := RunData{}
-	rundata.Uri = uri
-	rundata.Token = token
-	rundata.In = in
-
-	apiCmd := ormctl.MustGetCommand("DeleteAllData")
-	s.ClientRun.Run(apiCmd, &rundata)
-	return rundata.RetStatus, rundata.RetError
-}
-
-func (s *Client) ShowAllData(uri string, token string) (*ormapi.AllData, int, error) {
-	rundata := RunData{}
-	rundata.Uri = uri
-	rundata.Token = token
-	var out ormapi.AllData
-	rundata.Out = &out
-
-	apiCmd := ormctl.MustGetCommand("ShowAllData")
-	s.ClientRun.Run(apiCmd, &rundata)
-	if rundata.RetError != nil {
-		return nil, rundata.RetStatus, rundata.RetError
-	}
-	return &out, rundata.RetStatus, rundata.RetError
-}
-
 // Generating group App
 
 func (s *Client) CreateApp(uri string, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error) {

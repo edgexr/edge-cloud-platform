@@ -116,7 +116,6 @@ func GetRootCommand() *RootCommand {
 		rc.getCmdGroup(ormctl.OrgCloudletGroup),     // for UI only
 		rc.getCmdGroup(ormctl.OrgCloudletInfoGroup), // for UI only
 		rc.getCmdGroup(ormctl.StreamObjGroup),       // for UI only
-		rc.getCmdGroup(ormctl.AllDataGroup),         // deprecated
 		rc.getCmdGroup(ormctl.ReportDataGroup),      // for testingonly
 		rc.getCmdGroup(ormctl.MetricsV2Group),       // api is hidden for now
 	}
