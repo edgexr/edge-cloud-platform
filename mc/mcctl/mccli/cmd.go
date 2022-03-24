@@ -195,6 +195,7 @@ func (s *RootCommand) ConvertCmd(api *ormctl.ApiCommand) *cli.Command {
 		ReqData:              api.ReqData,
 		ReplyData:            api.ReplyData,
 		PasswordArg:          api.PasswordArg,
+		CurrentPasswordArg:   api.CurrentPasswordArg,
 		VerifyPassword:       api.VerifyPassword,
 		StreamOut:            api.StreamOut,
 		StreamOutIncremental: api.StreamOutIncremental,
