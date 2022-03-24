@@ -340,11 +340,26 @@ func ShowController(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	restrictData := true
+	if err := authorized(ctx, claims.Username, "", ResourceControllers, ActionView); err == nil {
+		// admin
+		restrictData = false
+	}
+	if restrictData {
+		// only allow filtering by region to avoid leaking values of
+		// other fields.
+		for key, _ := range filter {
+			if key != "region" {
+				delete(filter, key)
+			}
+		}
+	}
+
 	ctrls, err := ShowControllerObj(ctx, claims, filter)
 	if err != nil {
 		return err
 	}
-	if err := authorized(ctx, claims.Username, "", ResourceControllers, ActionView); err != nil {
+	if restrictData {
 		// non-admins can only see the region
 		for ii, ctrl := range ctrls {
 			ctrls[ii] = ormapi.Controller{}
