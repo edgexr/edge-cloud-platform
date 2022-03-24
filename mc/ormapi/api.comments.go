@@ -172,6 +172,11 @@ var UserLoginComments = map[string]string{
 	"apikey":   `API key if logging in using API key`,
 }
 
+var NewPasswordComments = map[string]string{
+	"currentpassword": `User's current password`,
+	"password":        `User's new password`,
+}
+
 var CreateUserComments = map[string]string{
 	"user.name":            `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
 	"user.email":           `User email`,

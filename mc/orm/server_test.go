@@ -1134,12 +1134,18 @@ func testPasswordStrength(t *testing.T, ctx context.Context, mcClient *mctestcli
 
 	// change user password
 	newPass := &ormapi.NewPassword{
-		Password: user1.Passhash + "1",
+		Password:        user1.Passhash + "1",
+		CurrentPassword: "invalid_password",
 	}
+	status, err = mcClient.NewPassword(uri, tokenMisterX, newPass)
+	require.NotNil(t, err, "new password change should fail as current password is invalid")
+	require.Contains(t, err.Error(), "Invalid current password")
+	newPass.CurrentPassword = user1.Passhash
 	status, err = mcClient.NewPassword(uri, tokenMisterX, newPass)
 	require.Nil(t, err, "new password")
 	require.Equal(t, http.StatusOK, status, "new password status")
 	// fail password change if new password is too weak
+	newPass.CurrentPassword = newPass.Password
 	newPass.Password = "weakweak"
 	status, err = mcClient.NewPassword(uri, tokenMisterX, newPass)
 	require.NotNil(t, err, "new password")

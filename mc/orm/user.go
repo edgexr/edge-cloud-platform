@@ -736,6 +736,37 @@ func NewPassword(c echo.Context) error {
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)
 	}
+	if in.CurrentPassword == "" {
+		return fmt.Errorf("Please specify current password")
+	}
+	if in.Password == "" {
+		return fmt.Errorf("Please specify new password")
+	}
+	ctx := ormutil.GetContext(c)
+	db := loggedDB(ctx)
+	user := ormapi.User{}
+	lookup := ormapi.User{Name: claims.Username}
+	res := db.Where(&lookup).First(&user)
+	err = res.Error
+	if err != nil {
+		// Not possible as user is already logged in, still check the error case
+		log.SpanLog(ctx, log.DebugLevelApi, "user lookup failed", "lookup", lookup, "err", err)
+		time.Sleep(BadAuthDelay)
+		return fmt.Errorf("Invalid user")
+	}
+	// Validate current password along with the new password. This check protects against account compromise
+	// via password changes by attackers who gain physical control of a workstation with an active session.
+	// When this control is missing, it can also exacerbate the impact of any cross-site request forgery
+	// vulnerabilities by enabling direct account compromise attacks.
+	matches, err := ormutil.PasswordMatches(in.CurrentPassword, user.Passhash, user.Salt, user.Iter)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "current password matches err", "err", err)
+	}
+	if !matches || err != nil {
+		// Since user is already logged in, do not store failed attempt details
+		time.Sleep(BadAuthDelay)
+		return fmt.Errorf("Invalid current password")
+	}
 	return setPassword(c, claims.Username, in.Password)
 }
 

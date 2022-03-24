@@ -367,6 +367,11 @@ type UserLogin struct {
 }
 
 type NewPassword struct {
+	// User's current password
+	// required: true
+	CurrentPassword string `form:"password" json:"currentpassword"`
+	// User's new password
+	// required: true
 	Password string `form:"password" json:"password"`
 }
 
