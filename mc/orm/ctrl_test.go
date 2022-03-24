@@ -465,9 +465,37 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	ctrls, status, err = mcClient.ShowController(uri, tokenDev, ClientNoShowFilter)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(ctrls))
+	require.Equal(t, "", ctrls[0].Address)
+	require.Equal(t, "", ctrls[0].NotifyAddr)
+	require.Equal(t, "", ctrls[0].InfluxDB)
+	require.Equal(t, "", ctrls[0].ThanosMetrics)
+	require.Equal(t, time.Time{}, ctrls[0].CreatedAt)
+	require.Equal(t, time.Time{}, ctrls[0].UpdatedAt)
 	ctrls, status, err = mcClient.ShowController(uri, tokenOper, ClientNoShowFilter)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(ctrls))
+	// create extra dummy controller
+	ctrlExtra := ormapi.Controller{
+		Region:  "Extra",
+		Address: "extraAddr",
+	}
+	status, err = mcClient.CreateController(uri, token, &ctrlExtra)
+	require.Nil(t, err, "create controller")
+	require.Equal(t, http.StatusOK, status)
+	// make sure user cannot filter by address
+	showController = &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"Address": ctrlExtra.Address,
+		},
+	}
+	ctrls, status, err = mcClient.ShowController(uri, tokenDev, showController)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 2, len(ctrls))
+	// clean up extra controller
+	status, err = mcClient.DeleteController(uri, token, &ctrlExtra)
+	require.Nil(t, err, "delete controller")
+	require.Equal(t, http.StatusOK, status)
 
 	// create targetCloudlet in dummy controller
 	// cloudlet defaults to "public"

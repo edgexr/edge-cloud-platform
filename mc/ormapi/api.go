@@ -191,16 +191,16 @@ type Controller struct {
 	// Controller region name
 	Region string `gorm:"primary_key"`
 	// Controller API address or URL
-	Address string `gorm:"unique;not null"`
+	Address string `gorm:"unique;not null" json:",omitempty"`
 	// Controller notify address or URL
-	NotifyAddr string `gorm:"type:text"`
+	NotifyAddr string `gorm:"type:text" json:",omitempty"`
 	// InfluxDB address
-	InfluxDB string `gorm:"type:text"`
+	InfluxDB string `gorm:"type:text" json:",omitempty"`
 	// Thanos Query URL
-	ThanosMetrics string `gorm:"type:text"`
+	ThanosMetrics string `gorm:"type:text" json:",omitempty"`
 	// Unique DNS label for the region
 	// read only: true
-	DnsRegion string `gorm:"unique;not null"`
+	DnsRegion string `gorm:"unique;not null" json:",omitempty"`
 	// read only: true
 	CreatedAt time.Time `json:",omitempty"`
 	// read only: true
