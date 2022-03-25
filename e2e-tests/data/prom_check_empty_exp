@@ -5,7 +5,7 @@ ran: curl -s http://127.0.0.1:9092/api/v1/rules | jq . | grep -v valuation
     "groups": [
       {
         "name": "StaticRules",
-        "file": "/tmp/rulefile_healthcheck.yml",
+        "file": "/var/tmp/rulefile_healthcheck.yml",
         "rules": [
           {
             "state": "inactive",

@@ -5,7 +5,7 @@ ran: curl -s http://127.0.0.1:9092/api/v1/rules | jq . | grep -v valuation
     "groups": [
       {
         "name": "autoprov-feature",
-        "file": "/tmp/rulefile_autoprovappd.yml",
+        "file": "/var/tmp/rulefile_autoprovappd.yml",
         "rules": [
           {
             "state": "inactive",
@@ -23,7 +23,7 @@ ran: curl -s http://127.0.0.1:9092/api/v1/rules | jq . | grep -v valuation
       },
       {
         "name": "StaticRules",
-        "file": "/tmp/rulefile_healthcheck.yml",
+        "file": "/var/tmp/rulefile_healthcheck.yml",
         "rules": [
           {
             "state": "inactive",
@@ -82,7 +82,7 @@ ran: curl -s http://127.0.0.1:9092/api/v1/targets | jq '.data.activeTargets[] | 
 {
   "discoveredLabels": {
     "__address__": "host.docker.internal:9091",
-    "__meta_filepath": "/tmp/prom_targets.json",
+    "__meta_filepath": "/var/tmp/prom_targets.json",
     "__metrics_path__": "/metrics/autoprovappd-autocluster-autoprov-AcmeAppCo-1.0",
     "__scheme__": "http",
     "app": "autoprovappd",

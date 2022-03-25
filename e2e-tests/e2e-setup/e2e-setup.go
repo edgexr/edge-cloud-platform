@@ -411,11 +411,11 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 
 // Clean up leftover files
 func CleanupTmpFiles(ctx context.Context) error {
-	filesToRemove, err := filepath.Glob("/tmp/rulefile_*")
+	filesToRemove, err := filepath.Glob("/var/tmp/rulefile_*")
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	configFiles := []string{"/tmp/prom_targets.json", "/tmp/prometheus.yml", "/var/tmp/prometheus.yml", "/tmp/alertmanager.yml"}
+	configFiles := []string{"/var/tmp/prom_targets.json", "/var/tmp/prometheus.yml", "/tmp/alertmanager.yml"}
 	filesToRemove = append(filesToRemove, configFiles...)
 	for ii := range filesToRemove {
 		err = os.Remove(filesToRemove[ii])

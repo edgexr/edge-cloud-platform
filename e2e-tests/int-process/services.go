@@ -31,13 +31,13 @@ const (
 var prometheusConfig = `global:
   evaluation_interval: {{.EvalInterval}}
 rule_files:
-- "/tmp/` + PrometheusRulesPrefix + `*"
+- "/var/tmp/` + PrometheusRulesPrefix + `*"
 scrape_configs:
 - job_name: MobiledgeX Monitoring
   scrape_interval: {{.ScrapeInterval}}
   file_sd_configs:
   - files:
-    - '/tmp/prom_targets.json'
+    - '/var/tmp/prom_targets.json'
   metric_relabel_configs:
     - source_labels: [envoy_cluster_name]
       target_label: port
