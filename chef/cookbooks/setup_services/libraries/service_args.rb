@@ -49,6 +49,7 @@ class Chef
         'accessApiAddr' => true,
         'cacheDir' => true,
         'redisStandaloneAddr' => true,
+        'appDNSRoot' => true,
       }
       extract_cmd('crmserver', argsmap, false, false)
     end
@@ -75,6 +76,7 @@ class Chef
         'accessKeyFile' => true,
         'accessApiAddr' => true,
         'thanosRecvAddr' => true,
+        'appDNSRoot' => true,
       }
       extract_cmd('shepherd', argsmap, false, false)
     end

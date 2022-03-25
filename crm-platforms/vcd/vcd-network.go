@@ -747,7 +747,7 @@ func (v *VcdPlatform) CreateInternalNetworkForNewVm(ctx context.Context, vapp *g
 		NetMask:          "255.255.255.0",
 		DNS1:             dns1,
 		DNS2:             dns2,
-		DNSSuffix:        "mobiledgex.net",
+		DNSSuffix:        v.vmProperties.CommonPf.GetCloudletDNSZone(),
 		VappFenceEnabled: TakeBoolPointer(true),
 	}
 	if ipAllocation == VappNetIpAllocationDhcp {
@@ -1131,7 +1131,7 @@ func (v *VcdPlatform) AddCommonSharedNetToVapp(ctx context.Context, vapp *govcd.
 			netmask       = InternalSharedCommonSubnetMask
 			dns1          = "1.1.1.1"
 			dns2          = "8.8.8.8"
-			dnsSuffix     = "mobiledgex.net"
+			dnsSuffix     = v.vmProperties.CommonPf.GetCloudletDNSZone()
 			description   = "mex vdc common sharedLB subnet"
 			networkConfig = types.OrgVDCNetwork{
 				Xmlns:       types.XMLNamespaceVCloud,
