@@ -282,7 +282,7 @@ func getAppInstRulesFileName(key edgeproto.AppInstKey) string {
 }
 
 func getPrometheusFileName(name string) string {
-	return "/tmp/" + intprocess.PrometheusRulesPrefix + name + ".yml"
+	return "/var/tmp/" + intprocess.PrometheusRulesPrefix + name + ".yml"
 }
 
 func writeCloudletPrometheusBaseRules(ctx context.Context, settings *edgeproto.Settings) error {

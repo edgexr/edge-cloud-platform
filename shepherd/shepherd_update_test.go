@@ -96,13 +96,13 @@ func TestShepherdUpdate(t *testing.T) {
 	expected := `global:
   evaluation_interval: 3s
 rule_files:
-- "/tmp/rulefile_*"
+- "/var/tmp/rulefile_*"
 scrape_configs:
 - job_name: MobiledgeX Monitoring
   scrape_interval: 1s
   file_sd_configs:
   - files:
-    - '/tmp/prom_targets.json'
+    - '/var/tmp/prom_targets.json'
   metric_relabel_configs:
     - source_labels: [envoy_cluster_name]
       target_label: port
@@ -164,13 +164,13 @@ scrape_configs:
 	expected = `global:
   evaluation_interval: 5s
 rule_files:
-- "/tmp/rulefile_*"
+- "/var/tmp/rulefile_*"
 scrape_configs:
 - job_name: MobiledgeX Monitoring
   scrape_interval: 1s
   file_sd_configs:
   - files:
-    - '/tmp/prom_targets.json'
+    - '/var/tmp/prom_targets.json'
   metric_relabel_configs:
     - source_labels: [envoy_cluster_name]
       target_label: port
