@@ -47,8 +47,9 @@ services.each { |service|
 
   # Set MEX_RELEASE_VERSION attribute for crmserver
   if service == "crmserver" && node.normal[service]['env'] != nil
-    releaseMaps = data_bag_item('mex_releases', node['edgeCloudVersion'])
-    if releaseMaps != nil
+    mexReleases = data_bag('mex_releases')
+    if mexReleases.include?(node['edgeCloudVersion'])
+      releaseMaps = data_bag_item('mex_releases', node['edgeCloudVersion'])
       releaseVers = "#{releaseMaps['release']}"
       if releaseVers != nil
         envVar = "MEX_RELEASE_VERSION=#{releaseVers}"
@@ -64,6 +65,16 @@ services.each { |service|
         end
       end
     end
+  end
+
+  # Set appDNSRoot attribute for all the services
+  appDNSRoot = "mobiledgex.net"
+  if deployTag == "qa" || deployTag == "dev"
+    appDNSRoot = "mobiledgex-#{deployTag}.net"
+  end
+  unless node.normal[service]['args']['appDNSRoot'] == appDNSRoot
+    Chef::Log.info("Setting appDNSRoot for #{service} to #{appDNSRoot}...")
+    node.normal[service]['args']['appDNSRoot'] = appDNSRoot
   end
 }
 
