@@ -7,6 +7,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/access"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
 	"github.com/mobiledgex/edge-cloud/log"
+	ssh "github.com/mobiledgex/golang-ssh"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/crmutil"
@@ -16,6 +17,17 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	v1 "k8s.io/api/core/v1"
 )
+
+func (k *K8sBareMetalPlatform) GetClusterMasterNodeIp(ctx context.Context, client ssh.Client, kconfName string) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterMasterNodeIp", "kconfName", kconfName)
+	cmd := fmt.Sprintf("KUBECONFIG=%s kubectl get nodes --selector=node-role.kubernetes.io/master -o jsonpath='{$.items[*].status.addresses[?(@.type==\"InternalIP\")].address}'", kconfName)
+	ipaddr, err := client.Output(cmd)
+	if err != nil {
+		return "", err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterMasterNodeIp", "ipaddr", ipaddr)
+	return ipaddr, nil
+}
 
 func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAppInst", "appInst", appInst)
@@ -58,8 +70,15 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 		if err != nil {
 			return err
 		}
+
+		kconfName := k8smgmt.GetKconfName(clusterInst)
+		masterNodeIpAddr, err := k.GetClusterMasterNodeIp(ctx, client, kconfName)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterMasterNodeIp failed", "kconfName", kconfName, "err", err)
+		}
 		deploymentVars := crmutil.DeploymentReplaceVars{
 			Deployment: crmutil.CrmReplaceVars{
+				ClusterIp:    masterNodeIpAddr,
 				CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
 				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
 				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
