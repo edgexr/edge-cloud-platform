@@ -152,6 +152,7 @@ resource "google_compute_firewall" "restricted_ssh_overrides" {
   target_tags   = ["restricted-ssh-overrides"]
   source_ranges = [
     "35.203.128.221/32",  # nightly.mobiledgex.net
+    "35.232.79.183",      # ansible
     "40.122.108.233/32",  # jenkinsslave1
     "82.217.131.26/32",   # venky
     "47.186.99.201/32",   # leon

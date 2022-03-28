@@ -190,3 +190,7 @@ build-edgebox:
 
 clean-edgebox:
 	rm -rf edgebox_bin
+
+build-ansible:
+	docker buildx build --load \
+		-t deploy -f docker/Dockerfile.ansible ./ansible
