@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strconv"
 	"strings"
 	"sync"
 	"text/template"
@@ -60,7 +59,7 @@ var promHealthCheckAlerts = `groups:
     expr: up == 0
     for: 15s
     labels:
-      ` + cloudcommon.AlertHealthCheckStatus + ": " + strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_ROOTLB_OFFLINE)) + `
+      ` + cloudcommon.AlertHealthCheckStatus + ": %s" + `
       ` + cloudcommon.AlertScopeTypeTag + ": " + cloudcommon.AlertScopeApp + `
     annotations:
       ` + cloudcommon.AlertAnnotationTitle + ": " + cloudcommon.AlertAppInstDown + `
@@ -68,7 +67,7 @@ var promHealthCheckAlerts = `groups:
   - alert: ` + cloudcommon.AlertAppInstDown + `
     expr: envoy_cluster_health_check_healthy == 0
     labels:
-      ` + cloudcommon.AlertHealthCheckStatus + ": " + strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_SERVER_FAIL)) + `
+      ` + cloudcommon.AlertHealthCheckStatus + ": %s" + `
       ` + cloudcommon.AlertScopeTypeTag + ": " + cloudcommon.AlertScopeApp + `
     annotations:
       ` + cloudcommon.AlertAnnotationTitle + ": " + cloudcommon.AlertAppInstDown + `
@@ -287,7 +286,15 @@ func getPrometheusFileName(name string) string {
 
 func writeCloudletPrometheusBaseRules(ctx context.Context, settings *edgeproto.Settings) error {
 	healthCheckFile := getPrometheusFileName(HealthCheckRulesPrefix)
-	rules := fmt.Sprintf(promHealthCheckAlerts, settings.ClusterAutoScaleAveragingDurationSec)
+	serverFailHc, ok := dme.HealthCheck_CamelName[int32(dme.HealthCheck_HEALTH_CHECK_SERVER_FAIL)]
+	if !ok {
+		return fmt.Errorf("Failed to write prometheus rules - server health check code not found")
+	}
+	rootLbHc, ok := dme.HealthCheck_CamelName[int32(dme.HealthCheck_HEALTH_CHECK_ROOTLB_OFFLINE)]
+	if !ok {
+		return fmt.Errorf("Failed to write prometheus rules - rootLb health check code not found")
+	}
+	rules := fmt.Sprintf(promHealthCheckAlerts, rootLbHc, serverFailHc, settings.ClusterAutoScaleAveragingDurationSec)
 	err := writeCloudletPrometheusAlerts(ctx, healthCheckFile, []byte(rules))
 	if err != nil {
 		return fmt.Errorf("Failed to write prometheus rules to %s, err: %s",
