@@ -10,7 +10,7 @@
     port: "80"
     region: local
     scope: Application
-    status: "2"
+    status: HealthCheckServerFail
   annotations:
     description: Application server port is not responding
     title: AppInstDown

@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"sync"
 	"text/template"
@@ -153,14 +152,6 @@ func (s *AlertMgrServer) alertsToOpenAPIAlerts(alerts []*edgeproto.Alert) models
 			// drop labels we don't want to expose to the end-users
 			if cloudcommon.IsLabelInternal(k) {
 				continue
-			}
-			// Convert appInst status to a human-understandable format
-			if k == cloudcommon.AlertHealthCheckStatus {
-				if tmp, err := strconv.ParseInt(v, 10, 32); err == nil {
-					if _, ok := dme.HealthCheck_CamelName[int32(tmp)]; ok {
-						v = dme.HealthCheck_CamelName[int32(tmp)]
-					}
-				}
 			}
 			labels[k] = v
 		}
