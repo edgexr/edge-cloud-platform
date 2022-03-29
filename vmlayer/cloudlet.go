@@ -853,3 +853,7 @@ func (v *VMPlatform) ActiveChanged(ctx context.Context, platformActive bool) err
 	infracommon.HandlePlatformSwitchToActive(ctx, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.Caches, v.cleanupClusterInst, v.cleanupAppInst)
 	return nil
 }
+
+func (v *VMPlatform) NameSanitize(name string) string {
+	return v.VMProvider.NameSanitize(name)
+}

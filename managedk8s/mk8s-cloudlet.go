@@ -146,7 +146,11 @@ func (v *ManagedK8sPlatform) GetRootLBClients(ctx context.Context) (map[string]s
 	return nil, nil
 }
 
-func (m *ManagedK8sPlatform) ActiveChanged(ctx context.Context, platformActive bool) error{
+func (m *ManagedK8sPlatform) ActiveChanged(ctx context.Context, platformActive bool) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChanged")
 	return nil
+}
+
+func (m *ManagedK8sPlatform) NameSanitize(name string) string {
+	return m.Provider.NameSanitize(name)
 }

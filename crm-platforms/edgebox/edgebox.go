@@ -127,3 +127,7 @@ func (s *EdgeboxPlatform) ActiveChanged(ctx context.Context, platformActive bool
 	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChanged")
 	return nil
 }
+
+func (s *EdgeboxPlatform) NameSanitize(name string) string {
+	return s.generic.NameSanitize(name)
+}

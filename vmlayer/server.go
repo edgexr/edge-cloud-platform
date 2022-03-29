@@ -160,7 +160,6 @@ func (v *VMPlatform) SetPowerState(ctx context.Context, app *edgeproto.App, appI
 	case cloudcommon.DeploymentTypeVM:
 		serverName := appInst.UniqueId
 		fqdn := appInst.Uri
-
 		log.SpanLog(ctx, log.DebugLevelInfra, "setting server state", "serverName", serverName, "fqdn", fqdn, "PowerState", PowerState)
 
 		updateCallback(edgeproto.UpdateTask, "Verifying AppInst state")

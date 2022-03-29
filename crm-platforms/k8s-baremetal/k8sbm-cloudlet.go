@@ -303,3 +303,7 @@ func (k *K8sBareMetalPlatform) ActiveChanged(ctx context.Context, platformActive
 	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChanged")
 	return nil
 }
+
+func (k *K8sBareMetalPlatform) NameSanitize(name string) string {
+	return name
+}
