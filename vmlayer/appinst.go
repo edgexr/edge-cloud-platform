@@ -64,7 +64,8 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	if err != nil {
 		return &orchVals, err
 	}
-	objName := appInst.UniqueId
+	appVmName := appInst.UniqueId
+	groupName := appInst.UniqueId
 	var imageInfo infracommon.ImageInfo
 	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, app.ImagePath)
 	imageInfo.LocalImageName = imageName + "-" + md5Sum
@@ -76,7 +77,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	imageInfo.OsType = app.VmAppOsType
 	imageInfo.ImagePath = app.ImagePath
 	imageInfo.ImageType = app.ImageType
-	imageInfo.VmName = objName
+	imageInfo.VmName = appVmName
 	imageInfo.Flavor = appInst.Flavor.Name
 	imageInfo.ImageCategory = infracommon.ImageCategoryVmApp
 	if err != nil {
@@ -106,11 +107,11 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
 
 	var vms []*VMRequestSpec
-	orchVals.externalServerName = objName
+	orchVals.externalServerName = appVmName
 
 	orchVals.lbName = appInst.Uri
 	orchVals.externalServerName = orchVals.lbName
-	orchVals.newSubnetName = objName + "-subnet"
+	orchVals.newSubnetName = appVmName + "-subnet"
 	tags := v.GetChefClusterTags(appInst.ClusterInstKey(), cloudcommon.NodeTypeDedicatedRootLB)
 	nets := make(map[string]NetworkType)
 	routes := make(map[string][]edgeproto.Route)
@@ -123,7 +124,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	appVm, err := v.GetVMRequestSpec(
 		ctx,
 		cloudcommon.NodeTypeAppVM,
-		objName,
+		appVmName,
 		appInst.VmFlavor,
 		imageInfo.LocalImageName,
 		false,
@@ -132,7 +133,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 		WithSubnetConnection(orchVals.newSubnetName),
 		WithDeploymentManifest(app.DeploymentManifest),
 		WithCommand(app.Command),
-		WithImageFolder(appInst.UniqueId),
+		WithImageFolder(appVmName),
 		WithVmAppOsType(app.VmAppOsType),
 	)
 	if err != nil {
@@ -140,7 +141,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	}
 	vms = append(vms, appVm)
 	updateCallback(edgeproto.UpdateTask, "Deploying App")
-	vmgp, err := v.OrchestrateVMsFromVMSpec(ctx, objName, vms, ActionCreate, updateCallback, WithNewSubnet(orchVals.newSubnetName),
+	vmgp, err := v.OrchestrateVMsFromVMSpec(ctx, groupName, vms, ActionCreate, updateCallback, WithNewSubnet(orchVals.newSubnetName),
 		WithAccessPorts(app.AccessPorts, infracommon.RemoteCidrAll),
 		WithNewSecurityGroup(infracommon.GetServerSecurityGroupName(orchVals.externalServerName)),
 	)
@@ -334,6 +335,10 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			return err
 		}
 	case cloudcommon.DeploymentTypeVM:
+		if v.VMProvider.NameSanitize(appInst.UniqueId) != appInst.UniqueId {
+			// id must be sanitized by controller first
+			return fmt.Errorf("non sanitized app unique id provided: %s", appInst.UniqueId)
+		}
 		objName := appInst.UniqueId
 		orchVals, err := v.PerformOrchestrationForVMApp(ctx, app, appInst, updateCallback)
 		if err != nil {
@@ -647,10 +652,11 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 		if v.VMProperties.AppendFlavorToVmAppImage {
 			localImageName = localImageName + "-" + appInst.Flavor.Name
 		}
+		imageName := appInst.UniqueId
 		if v.VMProperties.GetVMAppCleanupImageOnDelete() {
-			err = v.VMProvider.DeleteImage(ctx, appInst.UniqueId, localImageName)
+			err = v.VMProvider.DeleteImage(ctx, imageName, localImageName)
 			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete image", "folder", appInst.UniqueId, "localImageName", localImageName)
+				log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete image", "folder", imageName, "localImageName", localImageName)
 			}
 		} else {
 			log.SpanLog(ctx, log.DebugLevelInfra, "skipping image cleanup due to MEX_VM_APP_IMAGE_CLEANUP_ON_DELETE setting")
