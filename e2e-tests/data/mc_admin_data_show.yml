@@ -107,6 +107,11 @@ regiondata:
       resourcesnapshotthreadinterval: 10m0s
       platformhainstancepollinterval: 300ms
       platformhainstanceactiveexpiretime: 1s
+    gpudrivers:
+    - key:
+        name: gpu-driver-global
+      storagebucketname: mobiledgex-dev-gpu-drivers
+      licenseconfigstoragepath: local/MobiledgeX/gpu-driver-global/licenseconfig/license.conf
 - region: locala
   appdata:
     flavors:

@@ -13,6 +13,7 @@
     - key: /api/v1/auth/ctrl/CreateCloudletPool
     - key: /api/v1/auth/ctrl/CreateClusterInst
     - key: /api/v1/auth/ctrl/CreateFlavor
+    - key: /api/v1/auth/ctrl/CreateGPUDriver
     - key: /api/v1/auth/ctrl/CreateOperatorCode
     - key: /api/v1/auth/ctrl/DeleteApp
     - key: /api/v1/auth/ctrl/DeleteAppInst
@@ -80,6 +81,8 @@
     - key: email
     - key: federatedorg
     - key: flavor
+    - key: gpudriver
+    - key: gpudriverorg
     - key: hostname
     - key: lineno
     - key: maintenance-state

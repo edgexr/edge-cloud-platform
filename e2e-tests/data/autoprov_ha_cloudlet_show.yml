@@ -30,5 +30,10 @@ regiondata:
       - name: External IPs
         alertthreshold: 100
       defaultresourcealertthreshold: 80
+      gpuconfig:
+        driver:
+          name: gpu-driver-dmuus-1
+          organization: dmuus
       dnslabel: dmuus-cloud-1-dmuus
       rootlbfqdn: shared.dmuus-cloud-1-dmuus.local.mobiledgex.net
+      licenseconfigstoragepath: local/dmuus/gpu-driver-dmuus-1/cloudlet/licenseconfig/dmuus-cloud-1/license.conf

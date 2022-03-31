@@ -29,6 +29,9 @@ regiondata:
       ram: 1024
       vcpus: 1
       disk: 1
+    gpudrivers:
+    - key:
+        name: gpu-driver-global
 - region: locala
   appdata:
     flavors:
