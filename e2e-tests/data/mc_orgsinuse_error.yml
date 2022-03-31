@@ -2,8 +2,8 @@ errors:
 - desc: DeleteOrg[0]
   status: 400
   err: 'Organization dmuus in use or check failed: region local: in use by some AppInst,
-    Cloudlet, ClusterInst, OperatorCode; region locala: in use by some AppInst, Cloudlet,
-    ClusterInst, OperatorCode'
+    Cloudlet, ClusterInst, GPUDriver, OperatorCode; region locala: in use by some
+    AppInst, Cloudlet, ClusterInst, OperatorCode'
 - desc: DeleteOrg[1]
   status: 400
   err: 'Organization AcmeAppCo in use or check failed: region local: in use by some

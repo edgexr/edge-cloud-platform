@@ -147,6 +147,16 @@ regiondata:
     operatorcodes:
     - code: "31026"
       organization: dmuus
+    gpudrivers:
+    - key:
+        name: gpu-driver-global
+      storagebucketname: mobiledgex-dev-gpu-drivers
+      licenseconfigstoragepath: local/MobiledgeX/gpu-driver-global/licenseconfig/license.conf
+    - key:
+        name: gpu-driver-dmuus-1
+        organization: dmuus
+      storagebucketname: mobiledgex-dev-gpu-drivers
+      licenseconfigstoragepath: local/dmuus/gpu-driver-dmuus-1/licenseconfig/license.conf
     cloudlets:
     - key:
         organization: azure
@@ -164,8 +174,12 @@ regiondata:
       deployment: docker
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
+      gpuconfig:
+        driver:
+          name: gpu-driver-global
       dnslabel: azure-cloud-4-azure
       rootlbfqdn: shared.azure-cloud-4-azure.local.mobiledgex.net
+      licenseconfigstoragepath: local/MobiledgeX/gpu-driver-global/cloudlet/licenseconfig/azure/azure-cloud-4/license.conf
     - key:
         organization: enterprise
         name: enterprise-1
@@ -231,8 +245,13 @@ regiondata:
       - name: External IPs
         alertthreshold: 10
       defaultresourcealertthreshold: 80
+      gpuconfig:
+        driver:
+          name: gpu-driver-dmuus-1
+          organization: dmuus
       dnslabel: dmuus-cloud-1-dmuus
       rootlbfqdn: shared.dmuus-cloud-1-dmuus.local.mobiledgex.net
+      licenseconfigstoragepath: local/dmuus/gpu-driver-dmuus-1/cloudlet/licenseconfig/dmuus-cloud-1/license.conf
     - key:
         organization: dmuus
         name: dmuus-cloud-2

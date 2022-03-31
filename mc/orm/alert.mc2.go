@@ -699,6 +699,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// BuildsKernelVersion: 3.5
 	// BuildsHypervisorInfo: 3.6
 	// BuildsMd5Sum: 3.7
+	// BuildsStoragePath: 3.8
 	// LicenseConfig: 4
 	// LicenseConfigMd5Sum: 5
 	// Properties: 6
@@ -707,6 +708,8 @@ func addControllerApis(method string, group *echo.Group) {
 	// State: 7
 	// IgnoreState: 8
 	// DeletePrepare: 9
+	// StorageBucketName: 10
+	// LicenseConfigStoragePath: 11
 	// ```
 	// Security:
 	//   Bearer:
@@ -915,6 +918,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// FederationConfigPartnerFederationId: 56.3
 	// FederationConfigZoneCountryCode: 56.4
 	// FederationConfigPartnerFederationAddr: 56.5
+	// LicenseConfigStoragePath: 57
 	// ```
 	// Security:
 	//   Bearer:

@@ -41,6 +41,9 @@ roles:
 regiondata:
 - region: local
   appdata:
+    gpudrivers:
+    - key:
+        name: gpu-driver-global
     flavors:
     - key:
         name: x1.medium

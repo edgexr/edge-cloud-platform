@@ -66,6 +66,9 @@ regiondata:
       ram: 1024
       vcpus: 1
       disk: 1
+    gpudrivers:
+    - key:
+        name: gpu-driver-global
     cloudlets:
     - key:
         organization: azure
@@ -77,6 +80,9 @@ regiondata:
       numdynamicips: 254
       state: Ready
       trustpolicystate: NotPresent
+      gpuconfig:
+        driver:
+          name: gpu-driver-global
     - key:
         organization: enterprise
         name: enterprise-1
@@ -108,6 +114,10 @@ regiondata:
       state: Ready
       platformtype: Fakeinfra
       trustpolicystate: NotPresent
+      gpuconfig:
+        driver:
+          name: gpu-driver-dmuus-1
+          organization: dmuus
     - key:
         organization: dmuus
         name: dmuus-cloud-2
