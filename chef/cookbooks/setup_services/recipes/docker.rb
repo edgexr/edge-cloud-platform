@@ -102,7 +102,7 @@ docker_container "shepherd" do
   network_mode 'host'
   restart_policy 'unless-stopped'
   env node['shepherd']['env']
-  volumes ['/tmp:/tmp', '/root/accesskey:/root/accesskey']
+  volumes ['/var/tmp:/var/tmp', '/root/accesskey:/root/accesskey']
   command cmd
 end
 
