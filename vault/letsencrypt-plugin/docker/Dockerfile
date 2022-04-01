@@ -3,18 +3,14 @@ FROM ruby:2.6
 RUN apt-get update -qq && apt-get install -y \
 	build-essential \
 	cron \
-	python3-acme \
-	python3-certbot \
-	python3-mock \
-	python3-openssl \
 	python3-pip \
-	python3-pkg-resources \
-	python3-pyparsing \
-	python3-zope.interface \
-	python3-certbot-nginx \
-	python3-certbot-dns-cloudflare \
 	supervisor
-RUN pip3 install certbot-dns-nsone
+
+RUN pip install -U pip && pip3 install \
+	certbot \
+	certbot-nginx \
+	certbot-dns-cloudflare \
+	certbot-dns-nsone
 
 ENV APP_HOME /app
 RUN mkdir $APP_HOME

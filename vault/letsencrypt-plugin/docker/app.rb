@@ -5,7 +5,7 @@ require 'open3'
 require 'openssl'
 require 'sinatra'
 
-VALID_DOMAIN = ENV["DOMAIN"] || "mobiledgex.net"
+VALID_DOMAINS = ENV["DOMAINS"] || "mobiledgex.net"
 NS1_DOMAINS = ENV["NS1_DOMAINS"] || "global.dme.mobiledgex.net"
 OPS_EMAIL = ENV["OPS_EMAIL"] || "mobiledgex.ops@mobiledgex.com"
 PRODUCTION = ENV["LETSENCRYPT_ENV"] == "production" ? true : false
@@ -23,6 +23,7 @@ dns_provider_args = {
 }
 
 ns1_domains = NS1_DOMAINS.split(',').map{|d| d.downcase}
+valid_domains = VALID_DOMAINS.split(',').map{|d| d.downcase}
 
 get "/cert/:domain" do
   content_type :json
@@ -31,7 +32,7 @@ get "/cert/:domain" do
 
   ns1_list = []
   domains.each do |domain|
-    if not domain.end_with? VALID_DOMAIN
+    if not valid_domains.any? {|suffix| domain.end_with? suffix}
       status 401
       body "Invalid domain: #{domain}"
       return
