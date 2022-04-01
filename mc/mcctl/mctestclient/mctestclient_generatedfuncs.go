@@ -1062,6 +1062,22 @@ func (s *Client) GenerateAccessKey(uri string, token string, in *ormapi.RegionCl
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
+func (s *Client) GetCloudletGPUDriverLicenseConfig(uri string, token string, in *ormapi.RegionCloudletKey) (*edgeproto.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("GetCloudletGPUDriverLicenseConfig")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
 // Generating group CloudletInfo
 
 func (s *Client) ShowCloudletInfo(uri string, token string, in *ormapi.RegionCloudletInfo) ([]edgeproto.CloudletInfo, int, error) {
@@ -2371,6 +2387,22 @@ func (s *Client) GetGPUDriverBuildURL(uri string, token string, in *ormapi.Regio
 	rundata.Out = &out
 
 	apiCmd := ormctl.MustGetCommand("GetGPUDriverBuildURL")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) GetGPUDriverLicenseConfig(uri string, token string, in *ormapi.RegionGPUDriverKey) (*edgeproto.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("GetGPUDriverLicenseConfig")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError

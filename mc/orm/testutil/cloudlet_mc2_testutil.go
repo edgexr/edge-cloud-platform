@@ -130,6 +130,21 @@ func TestPermGetGPUDriverBuildURL(mcClient *mctestclient.Client, uri, token, reg
 	return TestGetGPUDriverBuildURL(mcClient, uri, token, region, in, modFuncs...)
 }
 
+func TestGetGPUDriverLicenseConfig(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.GPUDriverKey, modFuncs ...func(*edgeproto.GPUDriverKey)) (*edgeproto.Result, int, error) {
+	dat := &ormapi.RegionGPUDriverKey{}
+	dat.Region = region
+	dat.GPUDriverKey = *in
+	for _, fn := range modFuncs {
+		fn(&dat.GPUDriverKey)
+	}
+	return mcClient.GetGPUDriverLicenseConfig(uri, token, dat)
+}
+func TestPermGetGPUDriverLicenseConfig(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverKey)) (*edgeproto.Result, int, error) {
+	in := &edgeproto.GPUDriverKey{}
+	in.Organization = org
+	return TestGetGPUDriverLicenseConfig(mcClient, uri, token, region, in, modFuncs...)
+}
+
 func (s *TestClient) CreateGPUDriver(ctx context.Context, in *edgeproto.GPUDriver) ([]edgeproto.Result, error) {
 	inR := &ormapi.RegionGPUDriver{
 		Region:    s.Region,
@@ -208,6 +223,18 @@ func (s *TestClient) GetGPUDriverBuildURL(ctx context.Context, in *edgeproto.GPU
 		GPUDriverBuildMember: *in,
 	}
 	out, status, err := s.McClient.GetGPUDriverBuildURL(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) GetGPUDriverLicenseConfig(ctx context.Context, in *edgeproto.GPUDriverKey) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionGPUDriverKey{
+		Region:       s.Region,
+		GPUDriverKey: *in,
+	}
+	out, status, err := s.McClient.GetGPUDriverLicenseConfig(s.Uri, s.Token, inR)
 	if err == nil && status != 200 {
 		err = fmt.Errorf("status: %d\n", status)
 	}
@@ -481,6 +508,21 @@ func TestPermGenerateAccessKey(mcClient *mctestclient.Client, uri, token, region
 	return TestGenerateAccessKey(mcClient, uri, token, region, in, modFuncs...)
 }
 
+func TestGetCloudletGPUDriverLicenseConfig(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.Result, int, error) {
+	dat := &ormapi.RegionCloudletKey{}
+	dat.Region = region
+	dat.CloudletKey = *in
+	for _, fn := range modFuncs {
+		fn(&dat.CloudletKey)
+	}
+	return mcClient.GetCloudletGPUDriverLicenseConfig(uri, token, dat)
+}
+func TestPermGetCloudletGPUDriverLicenseConfig(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.Result, int, error) {
+	in := &edgeproto.CloudletKey{}
+	in.Organization = org
+	return TestGetCloudletGPUDriverLicenseConfig(mcClient, uri, token, region, in, modFuncs...)
+}
+
 func (s *TestClient) CreateCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Result, error) {
 	inR := &ormapi.RegionCloudlet{
 		Region:   s.Region,
@@ -611,6 +653,18 @@ func (s *TestClient) GenerateAccessKey(ctx context.Context, in *edgeproto.Cloudl
 		CloudletKey: *in,
 	}
 	out, status, err := s.McClient.GenerateAccessKey(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) GetCloudletGPUDriverLicenseConfig(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionCloudletKey{
+		Region:      s.Region,
+		CloudletKey: *in,
+	}
+	out, status, err := s.McClient.GetCloudletGPUDriverLicenseConfig(s.Uri, s.Token, inR)
 	if err == nil && status != 200 {
 		err = fmt.Errorf("status: %d\n", status)
 	}
