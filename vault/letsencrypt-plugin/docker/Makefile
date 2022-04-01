@@ -1,7 +1,7 @@
 TAG ?= $(shell date +'%Y-%m-%d')
 
 IMAGE = mobiledgex/certgen
-REGISTRY = registry.mobiledgex.net:5000
+REGISTRY = harbor.mobiledgex.net
 
 build:
 	docker build -t $(IMAGE):$(TAG) .
