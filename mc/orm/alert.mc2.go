@@ -763,6 +763,17 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/GetGPUDriverBuildURL", GetGPUDriverBuildURL)
+	// swagger:route POST /auth/ctrl/GetGPUDriverLicenseConfig GPUDriverKey GetGPUDriverLicenseConfig
+	// Get GPU Driver License Config.
+	//  Returns the license config specific to GPU driver
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/GetGPUDriverLicenseConfig", GetGPUDriverLicenseConfig)
 	// swagger:route POST /auth/ctrl/CreateCloudlet Cloudlet CreateCloudlet
 	// Create Cloudlet.
 	//  Sets up Cloudlet services on the Operators compute resources, and integrated as part of MobiledgeX edge resource portfolio. These resources are managed from the Edge Controller.
@@ -1073,6 +1084,17 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/GenerateAccessKey", GenerateAccessKey)
+	// swagger:route POST /auth/ctrl/GetCloudletGPUDriverLicenseConfig CloudletKey GetCloudletGPUDriverLicenseConfig
+	// Get Cloudlet Specific GPU Driver License Config.
+	//  Returns the license config associated with the cloudlet
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/GetCloudletGPUDriverLicenseConfig", GetCloudletGPUDriverLicenseConfig)
 	// swagger:route POST /auth/ctrl/ShowCloudletInfo CloudletInfo ShowCloudletInfo
 	// Show CloudletInfos.
 	// Security:

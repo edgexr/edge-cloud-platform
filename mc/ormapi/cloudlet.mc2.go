@@ -117,6 +117,33 @@ type swaggerGetGPUDriverBuildURL struct {
 	Body RegionGPUDriverBuildMember
 }
 
+// Request summary for GetGPUDriverLicenseConfig
+// swagger:parameters GetGPUDriverLicenseConfig
+type swaggerGetGPUDriverLicenseConfig struct {
+	// in: body
+	Body RegionGPUDriverKey
+}
+
+type RegionGPUDriverKey struct {
+	// Region name
+	// required: true
+	Region string
+	// GPUDriverKey in region
+	GPUDriverKey edgeproto.GPUDriverKey
+}
+
+func (s *RegionGPUDriverKey) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionGPUDriverKey) GetObj() interface{} {
+	return &s.GPUDriverKey
+}
+
+func (s *RegionGPUDriverKey) GetObjName() string {
+	return "GPUDriverKey"
+}
+
 // Request summary for CreateCloudlet
 // swagger:parameters CreateCloudlet
 type swaggerCreateCloudlet struct {
@@ -399,6 +426,13 @@ type swaggerRevokeAccessKey struct {
 // Request summary for GenerateAccessKey
 // swagger:parameters GenerateAccessKey
 type swaggerGenerateAccessKey struct {
+	// in: body
+	Body RegionCloudletKey
+}
+
+// Request summary for GetCloudletGPUDriverLicenseConfig
+// swagger:parameters GetCloudletGPUDriverLicenseConfig
+type swaggerGetCloudletGPUDriverLicenseConfig struct {
 	// in: body
 	Body RegionCloudletKey
 }

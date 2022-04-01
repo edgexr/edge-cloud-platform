@@ -257,6 +257,39 @@ func badRegionGetGPUDriverBuildURL(t *testing.T, mcClient *mctestclient.Client, 
 	_ = out
 }
 
+var _ = edgeproto.GetFields
+
+func badPermGetGPUDriverLicenseConfig(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	_, status, err := testutil.TestPermGetGPUDriverLicenseConfig(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badGetGPUDriverLicenseConfig(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	_, st, err := testutil.TestPermGetGPUDriverLicenseConfig(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
+func goodPermGetGPUDriverLicenseConfig(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	_, status, err := testutil.TestPermGetGPUDriverLicenseConfig(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionGetGPUDriverLicenseConfig(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	out, status, err := testutil.TestPermGetGPUDriverLicenseConfig(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
 func badPermTestGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriver)) {
@@ -337,6 +370,30 @@ func permTestGPUDriverBuildMember(t *testing.T, mcClient *mctestclient.Client, u
 	badPermTestGPUDriverBuildMember(t, mcClient, uri, token2, region, org1, modFuncs...)
 	goodPermTestGPUDriverBuildMember(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
 	goodPermTestGPUDriverBuildMember(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestGPUDriverApiGPUDriverKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	badPermGetGPUDriverLicenseConfig(t, mcClient, uri, token, region, org, modFuncs...)
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestGPUDriverApiGPUDriverKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	goodPermGetGPUDriverLicenseConfig(t, mcClient, uri, token, region, org, modFuncs...)
+	// make sure region check works
+	badRegionGetGPUDriverLicenseConfig(t, mcClient, uri, token, org, modFuncs...)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestGPUDriverApiGPUDriverKey(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	badPermTestGPUDriverApiGPUDriverKey(t, mcClient, uri, token1, region, org2, modFuncs...)
+	badPermTestGPUDriverApiGPUDriverKey(t, mcClient, uri, token2, region, org1, modFuncs...)
+	goodPermTestGPUDriverApiGPUDriverKey(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestGPUDriverApiGPUDriverKey(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }
 
 var _ = edgeproto.GetFields
@@ -900,6 +957,39 @@ func badRegionGenerateAccessKey(t *testing.T, mcClient *mctestclient.Client, uri
 	_ = out
 }
 
+var _ = edgeproto.GetFields
+
+func badPermGetCloudletGPUDriverLicenseConfig(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
+	_, status, err := testutil.TestPermGetCloudletGPUDriverLicenseConfig(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badGetCloudletGPUDriverLicenseConfig(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.CloudletKey)) {
+	_, st, err := testutil.TestPermGetCloudletGPUDriverLicenseConfig(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
+func goodPermGetCloudletGPUDriverLicenseConfig(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
+	_, status, err := testutil.TestPermGetCloudletGPUDriverLicenseConfig(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionGetCloudletGPUDriverLicenseConfig(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
+	out, status, err := testutil.TestPermGetCloudletGPUDriverLicenseConfig(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
 func badPermTestCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) {
@@ -987,6 +1077,7 @@ func badPermTestCloudletApiCloudletKey(t *testing.T, mcClient *mctestclient.Clie
 	badPermGetOrganizationsOnCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
 	badPermRevokeAccessKey(t, mcClient, uri, token, region, org, modFuncs...)
 	badPermGenerateAccessKey(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermGetCloudletGPUDriverLicenseConfig(t, mcClient, uri, token, region, org, modFuncs...)
 }
 
 // This tests the user can modify the object because the obj belongs to
@@ -997,12 +1088,14 @@ func goodPermTestCloudletApiCloudletKey(t *testing.T, mcClient *mctestclient.Cli
 	goodPermGetOrganizationsOnCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
 	goodPermRevokeAccessKey(t, mcClient, uri, token, region, org, modFuncs...)
 	goodPermGenerateAccessKey(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermGetCloudletGPUDriverLicenseConfig(t, mcClient, uri, token, region, org, modFuncs...)
 	// make sure region check works
 	badRegionGetCloudletManifest(t, mcClient, uri, token, org, modFuncs...)
 	badRegionShowFlavorsForCloudlet(t, mcClient, uri, token, org, modFuncs...)
 	badRegionGetOrganizationsOnCloudlet(t, mcClient, uri, token, org, modFuncs...)
 	badRegionRevokeAccessKey(t, mcClient, uri, token, org, modFuncs...)
 	badRegionGenerateAccessKey(t, mcClient, uri, token, org, modFuncs...)
+	badRegionGetCloudletGPUDriverLicenseConfig(t, mcClient, uri, token, org, modFuncs...)
 }
 
 // Test permissions for user with token1 who should have permissions for

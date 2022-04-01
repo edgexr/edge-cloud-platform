@@ -87,23 +87,3 @@ type swaggerStreamGPUDriver struct {
 	// in: body
 	Body RegionGPUDriverKey
 }
-
-type RegionGPUDriverKey struct {
-	// Region name
-	// required: true
-	Region string
-	// GPUDriverKey in region
-	GPUDriverKey edgeproto.GPUDriverKey
-}
-
-func (s *RegionGPUDriverKey) GetRegion() string {
-	return s.Region
-}
-
-func (s *RegionGPUDriverKey) GetObj() interface{} {
-	return &s.GPUDriverKey
-}
-
-func (s *RegionGPUDriverKey) GetObjName() string {
-	return "GPUDriverKey"
-}

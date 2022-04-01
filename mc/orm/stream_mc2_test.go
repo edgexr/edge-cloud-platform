@@ -231,13 +231,13 @@ func permTestClusterInstKey(t *testing.T, mcClient *mctestclient.Client, uri, to
 
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
-func badPermTestGPUDriverKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+func badPermTestStreamObjApiGPUDriverKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverKey)) {
 	badPermStreamGPUDriver(t, mcClient, uri, token, region, org, modFuncs...)
 }
 
 // This tests the user can modify the object because the obj belongs to
 // an organization that the user has permissions for.
-func goodPermTestGPUDriverKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+func goodPermTestStreamObjApiGPUDriverKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.GPUDriverKey)) {
 	goodPermStreamGPUDriver(t, mcClient, uri, token, region, org, modFuncs...)
 	// make sure region check works
 	badRegionStreamGPUDriver(t, mcClient, uri, token, org, modFuncs...)
@@ -246,9 +246,9 @@ func goodPermTestGPUDriverKey(t *testing.T, mcClient *mctestclient.Client, uri, 
 // Test permissions for user with token1 who should have permissions for
 // modifying obj1, and user with token2 who should have permissions for obj2.
 // They should not have permissions to modify each other's objects.
-func permTestGPUDriverKey(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.GPUDriverKey)) {
-	badPermTestGPUDriverKey(t, mcClient, uri, token1, region, org2, modFuncs...)
-	badPermTestGPUDriverKey(t, mcClient, uri, token2, region, org1, modFuncs...)
-	goodPermTestGPUDriverKey(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
-	goodPermTestGPUDriverKey(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+func permTestStreamObjApiGPUDriverKey(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	badPermTestStreamObjApiGPUDriverKey(t, mcClient, uri, token1, region, org2, modFuncs...)
+	badPermTestStreamObjApiGPUDriverKey(t, mcClient, uri, token2, region, org1, modFuncs...)
+	goodPermTestStreamObjApiGPUDriverKey(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestStreamObjApiGPUDriverKey(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

@@ -226,6 +226,17 @@ func GetGPUDriverBuildURLObj(ctx context.Context, rc *ormutil.RegionContext, obj
 	return api.GetGPUDriverBuildURL(ctx, obj)
 }
 
+func GetGPUDriverLicenseConfigObj(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.GPUDriverKey, connObj ClientConnMgr) (*edgeproto.Result, error) {
+	conn, err := connObj.GetRegionConn(ctx, rc.Region)
+	if err != nil {
+		return nil, err
+	}
+	api := edgeproto.NewGPUDriverApiClient(conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
+	return api.GetGPUDriverLicenseConfig(ctx, obj)
+}
+
 func CreateCloudletStream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.Cloudlet, connObj ClientConnMgr, cb func(res *edgeproto.Result) error) error {
 	conn, err := connObj.GetRegionConn(ctx, rc.Region)
 	if err != nil {
@@ -535,6 +546,17 @@ func GenerateAccessKeyObj(ctx context.Context, rc *ormutil.RegionContext, obj *e
 	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
 	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.GenerateAccessKey(ctx, obj)
+}
+
+func GetCloudletGPUDriverLicenseConfigObj(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.CloudletKey, connObj ClientConnMgr) (*edgeproto.Result, error) {
+	conn, err := connObj.GetRegionConn(ctx, rc.Region)
+	if err != nil {
+		return nil, err
+	}
+	api := edgeproto.NewCloudletApiClient(conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
+	return api.GetCloudletGPUDriverLicenseConfig(ctx, obj)
 }
 
 type ShowCloudletInfoAuthz interface {

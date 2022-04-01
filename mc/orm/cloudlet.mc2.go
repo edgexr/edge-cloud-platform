@@ -338,6 +338,45 @@ func GetGPUDriverBuildURL(c echo.Context) error {
 	return ormutil.SetReply(c, resp)
 }
 
+func GetGPUDriverLicenseConfig(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	rc := &ormutil.RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.Username = claims.Username
+
+	in := ormapi.RegionGPUDriverKey{}
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
+	}
+	rc.Region = in.Region
+	rc.Database = database
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	span.SetTag("org", in.GPUDriverKey.Organization)
+
+	obj := &in.GPUDriverKey
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Organization,
+			ResourceCloudletAnalytics, ActionView); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlclient.GetGPUDriverLicenseConfigObj(ctx, rc, obj, connCache)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			err = fmt.Errorf("%s", st.Message())
+		}
+		return err
+	}
+	return ormutil.SetReply(c, resp)
+}
+
 func CreateCloudlet(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
@@ -1052,6 +1091,45 @@ func GenerateAccessKey(c echo.Context) error {
 	}
 
 	resp, err := ctrlclient.GenerateAccessKeyObj(ctx, rc, obj, connCache)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			err = fmt.Errorf("%s", st.Message())
+		}
+		return err
+	}
+	return ormutil.SetReply(c, resp)
+}
+
+func GetCloudletGPUDriverLicenseConfig(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	rc := &ormutil.RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.Username = claims.Username
+
+	in := ormapi.RegionCloudletKey{}
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
+	}
+	rc.Region = in.Region
+	rc.Database = database
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	span.SetTag("org", in.CloudletKey.Organization)
+
+	obj := &in.CloudletKey
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Organization,
+			ResourceCloudletAnalytics, ActionView); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlclient.GetCloudletGPUDriverLicenseConfigObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
