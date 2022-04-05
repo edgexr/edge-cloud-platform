@@ -198,7 +198,7 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 		accessKey, ok := vmAccessKeys[vm.InternalName]
 		if ok && accessKey != "" {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Setting up access key file", "vm", vm.Name)
-			err = pc.CreateDir(ctx, client, "/root/accesskey", pc.Overwrite)
+			err = pc.CreateDir(ctx, client, "/root/accesskey", pc.Overwrite, pc.SudoOn)
 			if err != nil {
 				return fmt.Errorf("Failed to created /root/accesskey directory, %v", err)
 			}
