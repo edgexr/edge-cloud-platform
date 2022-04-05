@@ -129,7 +129,7 @@ func ConfigureMetalLb(ctx context.Context, client ssh.Client, clusterInst *edgep
 		return err
 	}
 	dir := k8smgmt.GetNormalizedClusterName(clusterInst)
-	err = pc.CreateDir(ctx, client, dir, pc.NoOverwrite)
+	err = pc.CreateDir(ctx, client, dir, pc.NoOverwrite, pc.NoSudo)
 	if err != nil {
 		return err
 	}
