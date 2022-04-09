@@ -2,6 +2,7 @@ package ormutil
 
 import (
 	"context"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/jinzhu/gorm"
@@ -24,22 +25,32 @@ type EchoContext struct {
 	ws         *websocket.Conn
 	wsRequest  []byte
 	wsResponse []string
+	eventStart time.Time
 }
 
-func NewEchoContext(c echo.Context, ctx context.Context) *EchoContext {
+func NewEchoContext(c echo.Context, ctx context.Context, eventStart time.Time) *EchoContext {
 	ec := EchoContext{
-		Context: c,
-		ctx:     ctx,
+		Context:    c,
+		ctx:        ctx,
+		eventStart: eventStart,
 	}
 	return &ec
 }
 
-func GetContext(c echo.Context) context.Context {
+func getEchoContext(c echo.Context) *EchoContext {
 	ec, ok := c.(*EchoContext)
 	if !ok {
 		panic("auditlog.go logger func should have wrapped echo.Context with EchoContext")
 	}
-	return ec.ctx
+	return ec
+}
+
+func GetContext(c echo.Context) context.Context {
+	return getEchoContext(c).ctx
+}
+
+func GetEventStart(c echo.Context) time.Time {
+	return getEchoContext(c).eventStart
 }
 
 func SetWs(c echo.Context, ws *websocket.Conn) {

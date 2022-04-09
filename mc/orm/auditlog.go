@@ -61,7 +61,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		span.SetTag("level", "audit")
 		defer span.Finish()
 		ctx := log.ContextWithSpan(req.Context(), span)
-		ec := ormutil.NewEchoContext(c, ctx)
+		ec := ormutil.NewEchoContext(c, ctx, eventStart)
 
 		// The error handler injects the error into the response.
 		// This audit log needs the error to log it, but does not

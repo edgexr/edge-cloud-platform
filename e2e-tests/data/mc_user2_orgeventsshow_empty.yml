@@ -3,3 +3,22 @@
       orgs:
       - AcmeAppCo
     limit: 3
+  results:
+  - name: /api/v1/auth/org/create
+    org:
+    - AcmeAppCo
+    type: audit
+    mtags:
+      duration: ""
+      email: user2@email.com
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: AcmeAppCo
+      remote-ip: 127.0.0.1
+      request: '{"Address":"123 Maple Street, Gainesville, FL 32604","Name":"AcmeAppCo","Phone":"123-123-1234","Type":"developer"}'
+      response: '{"message":"Organization created"}'
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user2
