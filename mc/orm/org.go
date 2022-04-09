@@ -45,6 +45,9 @@ func CreateOrg(c echo.Context) error {
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", org.Name)
+	// make sure createdAt is the same as event start, so that
+	// it will show up in event show api.
+	org.CreatedAt = ormutil.GetEventStart(c)
 
 	err = CreateOrgObj(ctx, claims, &org)
 	if err != nil {
