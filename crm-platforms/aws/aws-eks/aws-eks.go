@@ -71,7 +71,7 @@ func (a *AwsEksPlatform) RunClusterDeleteCommand(ctx context.Context, clusterNam
 // GetCredentials retrieves kubeconfig credentials from AWS
 func (a *AwsEksPlatform) GetCredentials(ctx context.Context, clusterName string) error {
 	log.DebugLog(log.DebugLevelInfra, "GetCredentials", "clusterName:", clusterName)
-	out, err := infracommon.Sh(a.awsGenPf.AccountAccessVars).Command("eksctl", "utils", "write-kubeconfig", clusterName).CombinedOutput()
+	out, err := infracommon.Sh(a.awsGenPf.AccountAccessVars).Command("eksctl", "utils", "write-kubeconfig", "--cluster", clusterName).CombinedOutput()
 	if err != nil {
 		log.DebugLog(log.DebugLevelInfra, "Error in write-kubeconfig", "out", string(out), "err", err)
 		return fmt.Errorf("Error in write-kubeconfig: %s - %v", string(out), err)
@@ -112,6 +112,7 @@ func (a *AwsEksPlatform) getClusterList(ctx context.Context) ([]awsgen.AWSCluste
 		"eksctl", "get", "cluster",
 		"--region", region,
 		"--output", "json",
+		"--verbose", "0",
 	).CombinedOutput()
 	if err != nil {
 		log.DebugLog(log.DebugLevelInfra, "Failed to get eks cluster list", "out", string(out), "err", err)
@@ -133,6 +134,7 @@ func (a *AwsEksPlatform) getClusterNodeGroupList(ctx context.Context, clusterNam
 		"--cluster", clusterName,
 		"--region", region,
 		"--output", "json",
+		"--verbose", "0",
 	).CombinedOutput()
 	if err != nil {
 		log.DebugLog(log.DebugLevelInfra, "Failed to get eks cluster list", "out", string(out), "err", err)
