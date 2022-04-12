@@ -61,6 +61,11 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		span.SetTag("level", "audit")
 		defer span.Finish()
 		ctx := log.ContextWithSpan(req.Context(), span)
+		// postgres saves time in microseconds, while ElasticSearch
+		// saves them in nanoseconds. In order to compare them for
+		// event filtering by org createdat time, truncate timestamp
+		// to microseconds.
+		eventStart = eventStart.Truncate(time.Microsecond)
 		ec := ormutil.NewEchoContext(c, ctx, eventStart)
 
 		// The error handler injects the error into the response.
