@@ -58,3 +58,7 @@
   match:
     tags:
       username: user2
+- limit: 3
+  match:
+    names:
+    - /api/v1/auth/org/create
