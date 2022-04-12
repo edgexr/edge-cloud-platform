@@ -81,6 +81,10 @@ doc-local-server:
 third_party:
 	parsedeps --gennotice ../edge-cloud/cloud-resource-manager/cmd/crmserver/ ../edge-cloud/controller ../edge-cloud/d-match-engine/dme-server ../edge-cloud/cluster-svc ../edge-cloud/edgeturn ../edge-cloud/notifyroot ./plugin/platform/ ./plugin/edgeevents ./shepherd ./shepherd/shepherd_platform ./mc ./alertmgr-sidecar ./autoprov > THIRD-PARTY-NOTICES
 
+# adds license header to all files, see https://github.com/google/addlicense
+addlicense:
+	addlicense -c "MobiledgeX, Inc" -l apache .
+
 .PHONY: doc
 
 #
