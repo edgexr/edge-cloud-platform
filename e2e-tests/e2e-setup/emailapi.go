@@ -133,9 +133,9 @@ func RunEmailAPI(api, apiFile, outputDir string) error {
 				return err
 			}
 			if ii == 0 {
-				util.PrintToFile("show-commands.yml", outputDir, string(ymlOut), true)
+				util.PrintToFile("show-commands.yml", outputDir, util.PatchLicense(string(ymlOut)), true)
 			} else {
-				util.PrintToFile("show-commands.yml", outputDir, string(ymlOut), false)
+				util.PrintToFile("show-commands.yml", outputDir, util.PatchLicense(string(ymlOut)), false)
 			}
 		}
 	case "deleteall":
