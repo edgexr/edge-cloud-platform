@@ -1,0 +1,192 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/* dtag.qos.predictive
+ *
+ * This is the protobuf/grpc protocol description of the API between the
+ * MNO/SCM backend and the DT Data Analytics Engine for the
+ * Predictive QoS system.
+ */
+
+syntax = "proto3";
+
+// parameters for code generation
+option java_multiple_files = true;
+option java_package = "dtag.qos.predictive";
+option java_outer_classname = "QQoS";
+
+package queryqos;
+
+service QueryQoS {
+    rpc QueryQoSKPI (QoSKPIRequest) returns (stream QoSKPIResponse) {
+    }
+    rpc QueryQoSKPIClassifier (QoSKPIRequest) returns (stream QoSKPIClassificationResponse) {
+    }
+}
+
+// Request sent by the client
+// contains:
+// - the ID of the request
+// - the list of the grids, together with the timestamp for which the KPIs will be predicted
+
+message QoSKPIRequest {
+    // set by the client (the Unix timestamp when the initial
+    // request was in the client, in microseconds) and the
+    // server attaches it to each response
+    int64 requestid = 1;
+    // The list of the position-timestamp pairs requested
+    repeated PositionKpiRequest requests = 2;
+    // client's device LTE category number
+    int32 ltecategory = 4;
+    // Band list used by the client
+    BandSelection bandselection = 5;
+}
+
+// Json structure sent by the client which contains the list of supported band values
+
+message BandSelection {
+    // Radio Access Technologies
+    repeated string RAT2G = 1;
+    repeated string RAT3G = 2;
+    repeated string RAT4G = 3;
+    repeated string RAT5G = 4;
+}
+
+// Response object
+// contains the calculated KPIs at the given grid
+// (represented with lat/long coordinates) at the given timestamp.
+// a QoSKPIResponse contains a list of this result object
+message PositionKpiResult {
+
+    // as set by the client, must be unique within one QoSKPIRequest
+    int64 positionid = 1;
+
+    // Mbit/s
+    float dluserthroughput_min = 2;
+    float dluserthroughput_avg = 3;
+    float dluserthroughput_max = 4;
+
+    // Mbit/s
+    float uluserthroughput_min = 5;
+    float uluserthroughput_avg = 6;
+    float uluserthroughput_max = 7;
+
+    // ms
+    float latency_min = 8;
+    float latency_avg = 9;
+    float latency_max = 10;
+}
+
+// Response object
+// contains the calculated KPIs at the given grid
+// (represented with lat/long coordinates) at the given timestamp.
+// a QoSKPIClassificationResponse contains a list of this result object
+message PositionKpiClassificationResult {
+
+    // as set by the client, must be unique within one QoSKPIRequest
+    int64 positionid = 1;
+
+    int32 dluserthroughput_class = 2;
+
+    int32 uluserthroughput_class = 3;
+
+    int32 latency_class = 4;
+}
+
+// Request sent by the client for a given grid and a given timestamp
+// a QoSKPIRequest contains a list of this objects
+message PositionKpiRequest {
+
+    // as set by the client, must be unique within one QoSKPIRequest
+    int64 positionid = 1;
+
+    // as decimal degree, i.e.: 48.1855141 , 11.5613505
+    // in wsg84 coordinate system
+    // minus number represent south / west coordinate
+    float latitude = 2;
+    float longitude = 3;
+
+    // UNIX timestamp for which the prediction has to be calculated,in secs
+    int64 timestamp = 5;
+    // altitude above ground level, in meters
+    float altitude = 6;
+}
+
+// Response to QoSKPIRequest
+// contains:
+//  - the ID of the request
+// (which was set by the client with the initial request)
+//  - the list of the KPI results for each requested object.
+
+// This response is sent periodically by the server as a server stream.
+// The positions with the already passed timestamps are omitted from the
+// renewal responses, and when all of the timestamps are passed, the server
+// closes the stream for this request
+message QoSKPIResponse {
+    // set by the client
+    //(the Unix timestamp when the initial request was in the client, in microseconds)
+    // and the server attaches it to each response
+    int64 requestid = 1;
+    repeated PositionKpiResult results = 2;
+}
+
+// Response to QoSKPIRequest
+// contains:
+//  - the ID of the request
+// (which was set by the client with the initial request)
+//  - the list of the KPI results for each requested object.
+
+// This response is sent periodically by the server as a server stream.
+// The positions with the already passed timestamps are omitted from the
+// renewal responses, and when all of the timestamps are passed, the server
+// closes the stream for this request
+message QoSKPIClassificationResponse {
+    // set by the client
+    //(the Unix timestamp when the initial request was in the client, in microseconds)
+    // and the server attaches it to each response
+    int64 requestid = 1;
+    repeated PositionKpiClassificationResult results = 2;
+}
+
+//----------------------------------------------------------------------------//
+
+// Simple health status service
+service Health {
+    rpc Check (HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// Health Check Request
+// Used for verifying the service status
+message HealthCheckRequest {
+    string service = 1;
+}
+
+// Health Check Response
+//   - UNKOWN       - an internal error - the actual reason is specified in the error message
+//   - SERVING      - service is up and running
+//   - NOT_SERVING  - an internal error, when the API frontend is up but cannot provide the actual results
+message HealthCheckResponse {
+    enum ServingStatus {
+        UNKNOWN = 0;
+        SERVING = 1;
+        NOT_SERVING = 2;
+    }
+    ServingStatus status = 1;
+
+    // similar to http status codes
+    int32 errorcode = 2;
+
+    // prediction model version used for predicting the response values
+    string modelversion = 3;
+}
