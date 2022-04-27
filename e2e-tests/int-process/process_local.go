@@ -171,7 +171,7 @@ func (p *Sql) StartLocal(logfile string, opts ...process.StartOp) error {
 	}
 
 	args := []string{"-D", p.DataDir, "start"}
-	options := []string{}
+	options := []string{"-F -k /tmp"}
 	addr := []string{}
 	if p.HttpAddr != "" {
 		addr = strings.Split(p.HttpAddr, ":")
