@@ -21,10 +21,10 @@ import (
 	"testing"
 	"time"
 
-	dmecommon "github.com/mobiledgex/edge-cloud/d-match-engine/dme-common"
-	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
+	dmecommon "github.com/edgexr/edge-cloud/d-match-engine/dme-common"
+	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/log"
 	"github.com/stretchr/testify/require"
 )
 

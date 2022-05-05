@@ -5,13 +5,13 @@ package ormctl
 
 import (
 	fmt "fmt"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
+	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
+	_ "github.com/edgexr/edge-cloud/protogen"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
 	"strings"
 )

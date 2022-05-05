@@ -19,9 +19,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/ormctl"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
-	"github.com/mobiledgex/edge-cloud/cli"
+	"github.com/edgexr/edge-cloud-infra/mc/mcctl/ormctl"
+	"github.com/edgexr/edge-cloud-infra/mc/ormclient"
+	"github.com/edgexr/edge-cloud/cli"
 	"github.com/spf13/cobra"
 )
 

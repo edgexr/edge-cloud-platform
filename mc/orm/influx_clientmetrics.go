@@ -22,12 +22,12 @@ import (
 	"text/template"
 	"time"
 
-	influxq "github.com/mobiledgex/edge-cloud/controller/influxq_client"
+	influxq "github.com/edgexr/edge-cloud/controller/influxq_client"
 
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
-	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud/cloudcommon"
+	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/log"
 )
 
 var devInfluxClientMetricsDBTemplate *template.Template

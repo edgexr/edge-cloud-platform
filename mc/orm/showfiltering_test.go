@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/jinzhu/gorm"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
 	"github.com/stretchr/testify/require"
 )
 

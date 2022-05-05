@@ -20,7 +20,7 @@ import (
 	"log"
 	"os/exec"
 
-	"github.com/mobiledgex/edge-cloud/setup-env/util"
+	"github.com/edgexr/edge-cloud/setup-env/util"
 	"github.com/mobiledgex/yaml/v2"
 )
 

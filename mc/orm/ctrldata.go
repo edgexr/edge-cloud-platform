@@ -20,11 +20,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
-	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/notify"
-	edgetls "github.com/mobiledgex/edge-cloud/tls"
+	"github.com/edgexr/edge-cloud/cloudcommon/node"
+	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/notify"
+	edgetls "github.com/edgexr/edge-cloud/tls"
 )
 
 // Manage cached regional data
