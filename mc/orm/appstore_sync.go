@@ -18,7 +18,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/log"
 )
 
 // Gitlab's groups and group members are a duplicate of the Organizations

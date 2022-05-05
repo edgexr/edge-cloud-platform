@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vcd"
+	"github.com/edgexr/edge-cloud-infra/crm-platforms/vcd"
 )
 
 var (

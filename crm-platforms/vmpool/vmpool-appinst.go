@@ -17,9 +17,9 @@ package vmpool
 import (
 	"context"
 
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-infra/infracommon"
+	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/log"
 )
 
 func (o *VMPoolPlatform) GetConsoleUrl(ctx context.Context, serverName string) (string, error) {

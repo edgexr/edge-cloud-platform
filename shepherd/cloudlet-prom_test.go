@@ -24,9 +24,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_unittest"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-infra/shepherd/shepherd_platform/shepherd_unittest"
+	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/log"
 	"github.com/stretchr/testify/assert"
 )
 

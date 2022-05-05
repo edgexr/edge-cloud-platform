@@ -23,13 +23,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/mobiledgex/edge-cloud-infra/version"
-	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/notify"
-	"github.com/mobiledgex/edge-cloud/tls"
-	"github.com/mobiledgex/edge-cloud/vault"
+	"github.com/edgexr/edge-cloud-infra/version"
+	"github.com/edgexr/edge-cloud/cloudcommon/node"
+	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/notify"
+	"github.com/edgexr/edge-cloud/tls"
+	"github.com/edgexr/edge-cloud/vault"
 	"google.golang.org/grpc"
 )
 

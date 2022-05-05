@@ -17,8 +17,8 @@ package vmpool
 import (
 	"context"
 
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-infra/infracommon"
+	"github.com/edgexr/edge-cloud/log"
 
 	ssh "github.com/mobiledgex/golang-ssh"
 )

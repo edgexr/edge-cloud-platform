@@ -14,7 +14,7 @@
 
 package mctestclient
 
-import "github.com/mobiledgex/edge-cloud-infra/mc/mcctl/ormctl"
+import "github.com/edgexr/edge-cloud-infra/mc/mcctl/ormctl"
 
 type ClientRun interface {
 	Run(apiCmd *ormctl.ApiCommand, runData *RunData)

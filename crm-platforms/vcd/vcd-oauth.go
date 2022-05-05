@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
-	"github.com/mobiledgex/edge-cloud/vault"
+	"github.com/edgexr/edge-cloud-infra/infracommon"
+	"github.com/edgexr/edge-cloud/vault"
 )
 
 type TokenResponse struct {

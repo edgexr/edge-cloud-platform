@@ -17,9 +17,9 @@ package main
 import (
 	"context"
 
-	"github.com/mobiledgex/edge-cloud/d-match-engine/operator"
-	"github.com/mobiledgex/edge-cloud/d-match-engine/operator/defaultoperator"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/d-match-engine/operator"
+	"github.com/edgexr/edge-cloud/d-match-engine/operator/defaultoperator"
+	"github.com/edgexr/edge-cloud/log"
 )
 
 func GetOperatorApiGw(ctx context.Context, operatorName string) (operator.OperatorApiGw, error) {

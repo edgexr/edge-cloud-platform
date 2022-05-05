@@ -21,9 +21,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/mobiledgex/edge-cloud-infra/billing"
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud-infra/billing"
+	"github.com/edgexr/edge-cloud-infra/infracommon"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
 )
 
 type invoiceResp struct {

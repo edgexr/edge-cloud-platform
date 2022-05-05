@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"strings"
 
-	awsgen "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-generic"
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
-	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
-	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
+	awsgen "github.com/edgexr/edge-cloud-infra/crm-platforms/aws/aws-generic"
+	"github.com/edgexr/edge-cloud-infra/infracommon"
+	"github.com/edgexr/edge-cloud-infra/vmlayer"
+	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 

@@ -24,8 +24,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	"github.com/mobiledgex/edge-cloud/gensupport"
-	"github.com/mobiledgex/edge-cloud/protogen"
+	"github.com/edgexr/edge-cloud/gensupport"
+	"github.com/edgexr/edge-cloud/protogen"
 )
 
 type GenMC2 struct {
@@ -112,28 +112,28 @@ func (g *GenMC2) GenerateImports(file *generator.FileDescriptor) {
 		g.PrintImport("", "github.com/stretchr/testify/require")
 	}
 	if g.importLog {
-		g.PrintImport("", "github.com/mobiledgex/edge-cloud/log")
+		g.PrintImport("", "github.com/edgexr/edge-cloud/log")
 	}
 	if g.importMctestclient {
-		g.PrintImport("", "github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient")
+		g.PrintImport("", "github.com/edgexr/edge-cloud-infra/mc/mcctl/mctestclient")
 	}
 	if g.importOrmapi {
-		g.PrintImport("", "github.com/mobiledgex/edge-cloud-infra/mc/ormapi")
+		g.PrintImport("", "github.com/edgexr/edge-cloud-infra/mc/ormapi")
 	}
 	if g.importOrmtestutil {
-		g.PrintImport("", "github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil")
+		g.PrintImport("", "github.com/edgexr/edge-cloud-infra/mc/orm/testutil")
 	}
 	if g.importCli {
-		g.PrintImport("", "github.com/mobiledgex/edge-cloud/cli")
+		g.PrintImport("", "github.com/edgexr/edge-cloud/cli")
 	}
 	if g.importGrpcStatus {
 		g.PrintImport("", "google.golang.org/grpc/status")
 	}
 	if g.importOrmutil {
-		g.PrintImport("", "github.com/mobiledgex/edge-cloud-infra/mc/ormutil")
+		g.PrintImport("", "github.com/edgexr/edge-cloud-infra/mc/ormutil")
 	}
 	if g.importCtrlClient {
-		g.PrintImport("", "github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient")
+		g.PrintImport("", "github.com/edgexr/edge-cloud-infra/mc/ctrlclient")
 	}
 }
 

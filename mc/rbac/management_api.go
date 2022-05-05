@@ -17,7 +17,7 @@ package rbac
 import (
 	"context"
 
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
 )
 
 func (e *Enforcer) AddPolicy(ctx context.Context, params ...string) error {

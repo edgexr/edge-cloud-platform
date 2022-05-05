@@ -20,7 +20,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/log"
 )
 
 func ExecTemplate(templateName, templateString string, templateData interface{}) (*bytes.Buffer, error) {
