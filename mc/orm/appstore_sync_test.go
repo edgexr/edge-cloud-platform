@@ -25,11 +25,11 @@ import (
 	"time"
 
 	"github.com/jarcoal/httpmock"
-	"github.com/mobiledgex/edge-cloud-infra/billing"
-	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-infra/billing"
+	"github.com/edgexr/edge-cloud-infra/mc/mcctl/mctestclient"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud-infra/mc/ormclient"
+	"github.com/edgexr/edge-cloud/log"
 	"github.com/stretchr/testify/require"
 )
 

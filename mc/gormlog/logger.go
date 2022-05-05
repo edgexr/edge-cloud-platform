@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/jinzhu/gorm"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/log"
 )
 
 var DoNotLogFields = map[string]struct{}{

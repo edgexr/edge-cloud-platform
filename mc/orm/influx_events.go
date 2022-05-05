@@ -19,12 +19,12 @@ import (
 	"strings"
 
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud-infra/mc/ormutil"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/k8smgmt"
+	"github.com/edgexr/edge-cloud/cloudcommon"
+	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/util"
 )
 
 var clusterEventFields = []string{

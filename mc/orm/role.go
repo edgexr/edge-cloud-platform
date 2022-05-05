@@ -22,10 +22,10 @@ import (
 	"strings"
 
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
-	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud-infra/mc/ormutil"
+	"github.com/edgexr/edge-cloud-infra/mc/rbac"
+	"github.com/edgexr/edge-cloud/log"
 )
 
 const ActionView = "view"

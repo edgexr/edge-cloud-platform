@@ -24,12 +24,12 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
-	dmeproto "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/setup-env/util"
-	edgetestutil "github.com/mobiledgex/edge-cloud/testutil"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud/cloudcommon/node"
+	dmeproto "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/setup-env/util"
+	edgetestutil "github.com/edgexr/edge-cloud/testutil"
 )
 
 // go-cmp Options

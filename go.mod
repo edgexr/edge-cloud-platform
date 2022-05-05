@@ -1,4 +1,4 @@
-module github.com/mobiledgex/edge-cloud-infra
+module github.com/edgexr/edge-cloud-infra
 
 go 1.15
 
@@ -13,6 +13,7 @@ require (
 	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dlclark/regexp2 v1.4.0 // indirect
+	github.com/edgexr/edge-cloud v0.0.0-00010101000000-000000000000
 	github.com/go-chef/chef v0.23.1
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-openapi/errors v0.19.7
@@ -43,7 +44,6 @@ require (
 	github.com/mileusna/useragent v1.0.2
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.3.2
-	github.com/mobiledgex/edge-cloud v1.0.1
 	github.com/mobiledgex/golang-ssh v0.0.10
 	github.com/mobiledgex/jaeger v1.13.1
 	github.com/mobiledgex/yaml/v2 v2.2.5
@@ -79,7 +79,7 @@ require (
 	k8s.io/client-go v0.17.3
 )
 
-replace github.com/mobiledgex/edge-cloud => ../edge-cloud
+replace github.com/edgexr/edge-cloud => ../edge-cloud
 
 replace (
 	github.com/Sirupsen/logrus => github.com/Sirupsen/logrus v1.6.0

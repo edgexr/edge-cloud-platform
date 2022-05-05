@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-infra/vmlayer"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud/edgeproto"
 )
 
 var VSphereProps = map[string]*edgeproto.PropertyInfo{

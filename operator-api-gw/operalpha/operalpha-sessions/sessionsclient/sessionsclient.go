@@ -24,9 +24,9 @@ import (
 	"net/http"
 	"strings"
 
-	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
-	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vault"
+	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/vault"
 )
 
 func GetApiKeyFromVault(ctx context.Context, vaultConfig *vault.Config) (string, error) {

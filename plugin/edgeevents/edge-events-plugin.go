@@ -18,10 +18,10 @@ import (
 	"context"
 	"time"
 
-	edgeevents "github.com/mobiledgex/edge-cloud-infra/edge-events"
-	dmecommon "github.com/mobiledgex/edge-cloud/d-match-engine/dme-common"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
+	edgeevents "github.com/edgexr/edge-cloud-infra/edge-events"
+	dmecommon "github.com/edgexr/edge-cloud/d-match-engine/dme-common"
+	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/log"
 )
 
 func GetEdgeEventsHandler(ctx context.Context, edgeEventsCookieExpiration time.Duration) (dmecommon.EdgeEventsHandler, error) {

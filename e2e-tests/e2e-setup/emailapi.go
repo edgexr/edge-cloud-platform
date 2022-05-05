@@ -20,8 +20,8 @@ import (
 	"log"
 	"os/exec"
 
-	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
-	"github.com/mobiledgex/edge-cloud/setup-env/util"
+	intprocess "github.com/edgexr/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/edgexr/edge-cloud/setup-env/util"
 	"github.com/mobiledgex/yaml/v2"
 )
 

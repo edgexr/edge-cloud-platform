@@ -17,9 +17,9 @@ package ctrlclient
 import (
 	"context"
 
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
-	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-infra/mc/ormutil"
+	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/util"
 )
 
 func RunCommandValidateInput(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.ExecRequest) error {

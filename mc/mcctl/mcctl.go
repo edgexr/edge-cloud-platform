@@ -17,7 +17,7 @@ package main
 import (
 	"os"
 
-	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mccli"
+	"github.com/edgexr/edge-cloud-infra/mc/mcctl/mccli"
 )
 
 func main() {

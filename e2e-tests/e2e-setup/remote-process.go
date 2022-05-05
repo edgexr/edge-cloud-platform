@@ -21,8 +21,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud/integration/process"
-	setupmex "github.com/mobiledgex/edge-cloud/setup-env/setup-mex"
+	"github.com/edgexr/edge-cloud/integration/process"
+	setupmex "github.com/edgexr/edge-cloud/setup-env/setup-mex"
 )
 
 //when first creating a cluster, it may take a while for the load balancer to get an IP. Usually
@@ -39,7 +39,7 @@ func getAnsibleHome() string {
 	if goPath == "" {
 		log.Fatalf("GOPATH not set")
 	}
-	return goPath + "/src/github.com/mobiledgex/edge-cloud-infra/ansible"
+	return goPath + "/src/github.com/edgexr/edge-cloud-infra/ansible"
 }
 
 func getExternalApiAddress(internalApiAddr string, externalHost string) string {

@@ -6,13 +6,13 @@ package ctrlclient
 import (
 	"context"
 	fmt "fmt"
+	"github.com/edgexr/edge-cloud-infra/mc/ormutil"
+	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/log"
+	_ "github.com/edgexr/edge-cloud/protogen"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
-	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
-	_ "github.com/mobiledgex/edge-cloud/protogen"
 	"io"
 	math "math"
 )

@@ -29,7 +29,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	sesclient "github.com/mobiledgex/edge-cloud-infra/operator-api-gw/operalpha/operalpha-sessions/sessionsclient"
+	sesclient "github.com/edgexr/edge-cloud-infra/operator-api-gw/operalpha/operalpha-sessions/sessionsclient"
 )
 
 var (
