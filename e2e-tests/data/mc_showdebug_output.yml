@@ -63,27 +63,6 @@ requests:
   - node:
       type: crm
       cloudletkey:
-        organization: enterprise
-        name: enterprise-1
-      region: local
-    output: api,notify,infra,info
-  - node:
-      type: crm
-      cloudletkey:
-        organization: enterprise
-        name: enterprise-2
-      region: locala
-    output: api,notify,infra,info
-  - node:
-      type: crm
-      cloudletkey:
-        organization: gcp
-        name: gcp-cloud-5
-      region: local
-    output: api,notify,infra,info
-  - node:
-      type: crm
-      cloudletkey:
         organization: dmuus
         name: dmuus-cloud-1
       region: local
@@ -108,6 +87,27 @@ requests:
         organization: dmuus
         name: dmuus-cloud-4
       region: locala
+    output: api,notify,infra,info
+  - node:
+      type: crm
+      cloudletkey:
+        organization: enterprise
+        name: enterprise-1
+      region: local
+    output: api,notify,infra,info
+  - node:
+      type: crm
+      cloudletkey:
+        organization: enterprise
+        name: enterprise-2
+      region: locala
+    output: api,notify,infra,info
+  - node:
+      type: crm
+      cloudletkey:
+        organization: gcp
+        name: gcp-cloud-5
+      region: local
     output: api,notify,infra,info
   - node:
       type: dme

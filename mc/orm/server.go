@@ -220,6 +220,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	defer span.Finish()
 	defer func() {
 		if reterr != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "server failed", "err", reterr)
 			server.Stop()
 		}
 	}()
