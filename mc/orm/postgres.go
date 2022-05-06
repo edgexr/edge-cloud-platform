@@ -25,11 +25,11 @@ import (
 	_ "github.com/labstack/echo"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
-	"github.com/mobiledgex/edge-cloud-infra/mc/gormlog"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/util"
-	"github.com/mobiledgex/edge-cloud/util/tasks"
+	"github.com/edgexr/edge-cloud-infra/mc/gormlog"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud/util/tasks"
 )
 
 var retryInterval = 10 * time.Second

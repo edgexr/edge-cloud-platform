@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
+	"github.com/edgexr/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/mem"

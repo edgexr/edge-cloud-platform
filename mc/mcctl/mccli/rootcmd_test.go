@@ -17,7 +17,7 @@ package mccli
 import (
 	"testing"
 
-	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/ormctl"
+	"github.com/edgexr/edge-cloud-infra/mc/mcctl/ormctl"
 	"github.com/test-go/testify/assert"
 )
 

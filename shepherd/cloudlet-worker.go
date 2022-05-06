@@ -22,12 +22,12 @@ import (
 	"strings"
 	"time"
 
-	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
-	"github.com/mobiledgex/edge-cloud-infra/promutils"
-	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
+	intprocess "github.com/edgexr/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/edgexr/edge-cloud-infra/promutils"
+	"github.com/edgexr/edge-cloud-infra/shepherd/shepherd_common"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform/pc"
+	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 

@@ -15,7 +15,7 @@
 package ormctl
 
 import (
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
 )
 
 const ControllerGroup = "Controller"
