@@ -112,7 +112,7 @@ tests:
 
   - name: verify that email notification about an alert was sent to both admin and user2
     actions: [email-check]
-    retrycount: 10
+    retrycount: 20
     retryintervalsec: 0.5
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
@@ -139,7 +139,7 @@ tests:
 
   - name: verify that email notification about an alert resolution was sent
     actions: [email-check]
-    retrycount: 10
+    retrycount: 20
     retryintervalsec: 0.5
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
@@ -205,7 +205,7 @@ tests:
 
   - name: verify that email notification about an alert was sent
     actions: [email-check]
-    retrycount: 10
+    retrycount: 20
     retryintervalsec: 0.5
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
@@ -251,7 +251,7 @@ tests:
 
   - name: verify that email notification about an alert resolution was sent
     actions: [email-check]
-    retrycount: 10
+    retrycount: 20
     retryintervalsec: 0.5
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
@@ -354,7 +354,7 @@ tests:
 
   - name: verify that email notification about the cloudlet alert was sent
     actions: [email-check]
-    retrycount: 10
+    retrycount: 20
     retryintervalsec: 0.5
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
@@ -418,7 +418,7 @@ tests:
 
   - name: verify that email notification about the cloudlet alert was sent
     actions: [email-check]
-    retrycount: 10
+    retrycount: 20
     retryintervalsec: 0.5
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
@@ -432,7 +432,7 @@ tests:
 
   - name: verify that email notification about the cloudlet alert resolution was sent
     actions: [email-check]
-    retrycount: 10
+    retrycount: 20
     retryintervalsec: 0.5
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'

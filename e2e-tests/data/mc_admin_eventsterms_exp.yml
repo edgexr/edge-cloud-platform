@@ -67,11 +67,11 @@
     - {}
     - key: AcmeAppCo
     - key: MobiledgeX
-    - key: platos
     - key: azure
+    - key: dmuus
     - key: enterprise
     - key: gcp
-    - key: dmuus
+    - key: platos
     - key: user3org
     types:
     - key: audit

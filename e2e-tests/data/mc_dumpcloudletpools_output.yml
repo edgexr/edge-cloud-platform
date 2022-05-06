@@ -63,27 +63,6 @@ requests:
   - node:
       type: crm
       cloudletkey:
-        organization: enterprise
-        name: enterprise-1
-      region: local
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
-  - node:
-      type: crm
-      cloudletkey:
-        organization: enterprise
-        name: enterprise-2
-      region: locala
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
-  - node:
-      type: crm
-      cloudletkey:
-        organization: gcp
-        name: gcp-cloud-5
-      region: local
-    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
-  - node:
-      type: crm
-      cloudletkey:
         organization: dmuus
         name: dmuus-cloud-1
       region: local
@@ -109,6 +88,27 @@ requests:
         name: dmuus-cloud-4
       region: locala
     output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+  - node:
+      type: crm
+      cloudletkey:
+        organization: enterprise
+        name: enterprise-1
+      region: local
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+  - node:
+      type: crm
+      cloudletkey:
+        organization: enterprise
+        name: enterprise-2
+      region: locala
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+  - node:
+      type: crm
+      cloudletkey:
+        organization: gcp
+        name: gcp-cloud-5
+      region: local
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
       type: dme
       cloudletkey:

@@ -13,20 +13,6 @@
 # limitations under the License.
 
 federatorzones:
-- zoneid: enterprise-1
-  operatorid: enterprise
-  countrycode: SA
-  geolocation: 31,-91
-  region: local
-  cloudlets:
-  - enterprise-1
-- zoneid: enterprise-2
-  operatorid: enterprise
-  countrycode: SB
-  geolocation: 31,-91
-  region: locala
-  cloudlets:
-  - enterprise-2
 - zoneid: dmuus-cloud-1
   operatorid: dmuus
   countrycode: SA
@@ -55,3 +41,17 @@ federatorzones:
   region: locala
   cloudlets:
   - dmuus-cloud-4
+- zoneid: enterprise-1
+  operatorid: enterprise
+  countrycode: SA
+  geolocation: 31,-91
+  region: local
+  cloudlets:
+  - enterprise-1
+- zoneid: enterprise-2
+  operatorid: enterprise
+  countrycode: SB
+  geolocation: 31,-91
+  region: locala
+  cloudlets:
+  - enterprise-2

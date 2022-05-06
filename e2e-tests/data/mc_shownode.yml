@@ -108,30 +108,6 @@ nodes:
 - key:
     type: crm
     cloudletkey:
-      organization: enterprise
-      name: enterprise-1
-    region: local
-  containerversion: "2019-10-24"
-  internalpki: useAccessKey,UseVaultPki
-- key:
-    type: crm
-    cloudletkey:
-      organization: enterprise
-      name: enterprise-2
-    region: locala
-  containerversion: "2019-10-24"
-  internalpki: useAccessKey,UseVaultPki
-- key:
-    type: crm
-    cloudletkey:
-      organization: gcp
-      name: gcp-cloud-5
-    region: local
-  containerversion: "2019-10-24"
-  internalpki: useAccessKey,UseVaultPki
-- key:
-    type: crm
-    cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
     region: local
@@ -167,6 +143,30 @@ nodes:
   containerversion: "2019-10-24"
   internalpki: useAccessKey,UseVaultPki
 - key:
+    type: crm
+    cloudletkey:
+      organization: enterprise
+      name: enterprise-1
+    region: local
+  containerversion: "2019-10-24"
+  internalpki: useAccessKey,UseVaultPki
+- key:
+    type: crm
+    cloudletkey:
+      organization: enterprise
+      name: enterprise-2
+    region: locala
+  containerversion: "2019-10-24"
+  internalpki: useAccessKey,UseVaultPki
+- key:
+    type: crm
+    cloudletkey:
+      organization: gcp
+      name: gcp-cloud-5
+    region: local
+  containerversion: "2019-10-24"
+  internalpki: useAccessKey,UseVaultPki
+- key:
     type: dme
     cloudletkey:
       organization: dmuus
@@ -178,10 +178,10 @@ nodes:
     EdgeEventsBuildDate: ""
     EdgeEventsBuildHead: ""
     EdgeEventsBuildMaster: ""
-    GDDTOperatorBuildAuthor: ""
-    GDDTOperatorBuildDate: ""
-    GDDTOperatorBuildHead: ""
-    GDDTOperatorBuildMaster: ""
+    OPERALPHAOperatorBuildAuthor: ""
+    OPERALPHAOperatorBuildDate: ""
+    OPERALPHAOperatorBuildHead: ""
+    OPERALPHAOperatorBuildMaster: ""
 - key:
     type: dme
     cloudletkey:
@@ -194,10 +194,10 @@ nodes:
     EdgeEventsBuildDate: ""
     EdgeEventsBuildHead: ""
     EdgeEventsBuildMaster: ""
-    GDDTOperatorBuildAuthor: ""
-    GDDTOperatorBuildDate: ""
-    GDDTOperatorBuildHead: ""
-    GDDTOperatorBuildMaster: ""
+    OPERALPHAOperatorBuildAuthor: ""
+    OPERALPHAOperatorBuildDate: ""
+    OPERALPHAOperatorBuildHead: ""
+    OPERALPHAOperatorBuildMaster: ""
 - key:
     type: dme
     cloudletkey:
@@ -210,10 +210,10 @@ nodes:
     EdgeEventsBuildDate: ""
     EdgeEventsBuildHead: ""
     EdgeEventsBuildMaster: ""
-    GDDTOperatorBuildAuthor: ""
-    GDDTOperatorBuildDate: ""
-    GDDTOperatorBuildHead: ""
-    GDDTOperatorBuildMaster: ""
+    OPERALPHAOperatorBuildAuthor: ""
+    OPERALPHAOperatorBuildDate: ""
+    OPERALPHAOperatorBuildHead: ""
+    OPERALPHAOperatorBuildMaster: ""
 - key:
     type: dme
     cloudletkey:
@@ -226,10 +226,10 @@ nodes:
     EdgeEventsBuildDate: ""
     EdgeEventsBuildHead: ""
     EdgeEventsBuildMaster: ""
-    GDDTOperatorBuildAuthor: ""
-    GDDTOperatorBuildDate: ""
-    GDDTOperatorBuildHead: ""
-    GDDTOperatorBuildMaster: ""
+    OPERALPHAOperatorBuildAuthor: ""
+    OPERALPHAOperatorBuildDate: ""
+    OPERALPHAOperatorBuildHead: ""
+    OPERALPHAOperatorBuildMaster: ""
 - key:
     type: frm
     region: local

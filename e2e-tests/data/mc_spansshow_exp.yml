@@ -84,9 +84,9 @@
     - msg: search AutoProvPolicy list
       keyvalues:
         carrier: dmuus
-        list: '[key:<organization:"dmuus" name:"dmuus-cloud-1" > loc:<latitude:31 longitude:-91
-          >  key:<organization:"dmuus" name:"dmuus-cloud-2" > loc:<latitude:35 longitude:-95
-          > ]'
+        list: '[key:<organization:"dmuus" name:"dmuus-cloud-1" > loc:<latitude:31
+          longitude:-91 >  key:<organization:"dmuus" name:"dmuus-cloud-2" > loc:<latitude:35
+          longitude:-95 > ]'
         policy: autoprov1
     - msg: search policySearch result
       keyvalues:
@@ -104,7 +104,7 @@
         num-potential-policies: "1"
     - msg: autoprovstats increment
       keyvalues:
-        idx: "7"
+        idx: "8"
         key: '{{AcmeAppCo autoprovapp 1.0} {dmuus dmuus-cloud-2 }}'
         policy: '&{autoprov1 3 3 map[dmuus:[key:<organization:"dmuus" name:"dmuus-cloud-1"
           > loc:<latitude:31 longitude:-91 >  key:<organization:"dmuus" name:"dmuus-cloud-2"
