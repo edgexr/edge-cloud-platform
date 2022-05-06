@@ -1444,10 +1444,10 @@ func (p *DockerGeneric) GetRunArgs() []string {
 	args := []string{
 		"run", "--rm", "--name", p.Name,
 	}
-	if runtime.GOOS != "darwin" {
-		// For Linux, "host.docker.internal" host name doesn't work from inside docker container
-		// Use "--add-host" to add this mapping, only works if Docker version >= 20.04
-		args = append(args, "--add-host", "host.docker.internal:host-gateway")
+	var err error
+	args, err = AddHostDockerInternal(args)
+	if err != nil {
+		panic(err)
 	}
 	for k, v := range p.DockerEnvVars {
 		args = append(args, "-e", fmt.Sprintf("%s=%s", k, v))
@@ -1477,6 +1477,27 @@ func (p *DockerGeneric) LookupArgs() string { return p.Name }
 func (p *DockerGeneric) SetCmd(cmd *exec.Cmd) { p.cmd = cmd }
 
 func (p *DockerGeneric) GetCmd() *exec.Cmd { return p.cmd }
+
+// OS-specific function to add host.docker.internal mapping if needed,
+// so that process from inside container can reach service running outside container.
+func AddHostDockerInternal(args []string) ([]string, error) {
+	out, err := exec.Command("uname", "-r").CombinedOutput()
+	if err != nil {
+		return args, fmt.Errorf("Unable to determine OS release, %s, %v", string(out), err)
+	}
+	kernelRelease := strings.TrimSpace(string(out))
+	if strings.Contains(kernelRelease, "microsoft") && strings.Contains(kernelRelease, "WSL") {
+		// get wsl ip
+		out, err = exec.Command("sh", "-c", `ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'`).CombinedOutput()
+		if err != nil {
+			return args, fmt.Errorf("Unable to determine WSL ip address, %s, %v", string(out), err)
+		}
+		ip := strings.TrimSpace(string(out))
+		// remap host.docker.internal to wsl ip instead of windows ip
+		args = append(args, "--add-host", "host.docker.internal:"+ip)
+	}
+	return args, nil
+}
 
 func (p *ElasticSearch) StartLocal(logfile string, opts ...StartOp) error {
 	switch p.Type {
