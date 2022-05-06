@@ -1,0 +1,1 @@
+curl -s http://localhost:9092/api/v1/alerts | jq '.data.alerts[] | select(.labels.alertname == "AutoProvUndeploy") | del(.activeAt)'

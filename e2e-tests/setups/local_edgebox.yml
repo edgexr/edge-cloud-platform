@@ -1,0 +1,238 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+vars:
+  - locverurl: "http://127.0.0.1:8888/verifyLocation" 
+  - toksrvurl: "http://127.0.0.1:9999/its?followURL%3Dhttps://dme.mobiledgex.net/verifyLoc" 
+
+locsims:
+- name: locsim1
+  port: 8888
+  locfile: "{{datadir}}/locsim.yml"
+  geofile: "{{datadir}}/geocode.dat"
+  country: US
+  hostname: "127.0.0.1"
+
+toksims:
+- name: toksim1
+  port: 9999
+  hostname: "127.0.0.1"
+
+vaults:
+- name: vault
+  hostname: "127.0.0.1"
+
+influxs:
+- name: influx1
+  datadir: /var/tmp/edge-cloud-local-influx/influx1
+  httpaddr: "127.0.0.1:8086"
+  hostname: "127.0.0.1"
+  auth:
+    user: "root"
+    pass: "root"
+
+etcds:
+- name: etcd1
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd1
+  peeraddrs: "http://127.0.0.1:30011"
+  clientaddrs: "http://127.0.0.1:30001"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+- name: etcd2
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd2
+  peeraddrs: "http://127.0.0.1:30012"
+  clientaddrs: "http://127.0.0.1:30002"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+- name: etcd3
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd3
+  peeraddrs: "http://127.0.0.1:30013"
+  clientaddrs: "http://127.0.0.1:30003"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+rediscaches:
+- name: redis1
+  type: master
+  port: 6379
+  hostname: "127.0.0.1"
+
+controllers:
+- name: ctrl1
+  etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
+  apiaddr: "0.0.0.0:55001"
+  httpaddr: "0.0.0.0:36001"
+  notifyaddr: "127.0.0.1:37001"
+  usevaultpki: true
+  notifyparentaddrs: "127.0.0.1:52001"
+  notifyrootaddrs: "127.0.0.1:53001"
+  vaultaddr: "http://127.0.0.1:8200"
+  edgeturnaddr: "127.0.0.1:8080"
+  redisstandaloneaddr: "127.0.0.1:6379"
+  hostname: "127.0.0.1"
+  testmode: false
+  checkpointinterval: 3m
+  accessapiaddr: "127.0.0.1:41001"
+  thanosrecvaddr: "host.docker.internal:10908"
+  envvars:
+    E2ETEST_TLS: true
+
+
+dmes:
+- name: dme1
+  apiaddr: "0.0.0.0:50051"
+  httpaddr: "0.0.0.0:38001"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  usevaultpki: true
+  locverurl: "{{locverurl}}"
+  toksrvurl: "{{toksrvurl}}"
+  carrier: GDDT
+  cloudletkey: '{"organization":"mexdev","name":"mexdev-cloud-1"}'
+  vaultaddr: "http://127.0.0.1:8200"
+  cookieexpr: "24h"
+  hostname: "127.0.0.1"
+  envvars:
+    E2ETEST_TLS: true
+    PUBLIC_ENDPOINT_TLS: false
+
+clustersvcs:
+- name: cluster-svc1
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  usevaultpki: true
+  vaultaddr: "http://127.0.0.1:8200"
+  ctrladdrs: "127.0.0.1:55001"
+  pluginrequired: true
+  promports: "tcp:9090"
+  interval: "5s"
+  hostname: "127.0.0.1"
+  envvars:
+    E2ETEST_TLS: true
+
+mcs:
+- name: mc1
+  addr: "127.0.0.1:9900"
+  sqladdr: "127.0.0.1:5432"
+  vaultaddr: "http://127.0.0.1:8200"
+  notifysrvaddr: "127.0.0.1:52001"
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  billingplatform: fake
+  usagecollectioninterval: 3m
+  usagecheckpointinterval: 5m
+  alertmgrapiaddr: "https://127.0.0.1:9094"
+  apitlscert: "{{tlsoutdir}}/mex-server.crt"
+  apitlskey: "{{tlsoutdir}}/mex-server.key"
+  deploymenttag: "dev"
+  envvars:
+    E2ETEST_TLS: true
+
+edgeturns:
+- name: edgeturn
+  region: local
+  hostname: "127.0.0.1"
+  testmode: true
+  usevaultpki: true
+  vaultaddr: "http://127.0.0.1:8200"
+  listenaddr: "127.0.0.1:8080"
+  proxyaddr: "127.0.0.1:8443"
+
+sqls:
+- name: sql1
+  datadir: /var/tmp/edge-cloud-local-sql/sql1
+  httpaddr: "127.0.0.1:5432"
+  username: mcuser
+  dbname: mcdb
+  hostname: "127.0.0.1"
+
+traefiks:
+- name: traefik-e2e
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    serverkey: "{{tlsoutdir}}/mex-server.key"
+    cacert: "{{tlsoutdir}}/mex-ca.crt"
+  hostname: "127.0.0.1"
+
+jaegers:
+- name: jaeger-e2e
+  hostname: "127.0.0.1"
+
+autoprovs:
+- name: autoprov1
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  usevaultpki: true
+  vaultaddr: "http://127.0.0.1:8200"
+  ctrladdrs: "127.0.0.1:55001"
+  hostname: "127.0.0.1"
+  envvars:
+    E2ETEST_TLS: true
+
+notifyroots:
+- name: notifyroot
+  hostname: "127.0.0.1"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+
+alertmanagers:
+- name: alertmanager
+  configfile: "{{datadir2}}/alertmanager.yml"
+  templatefile: "{{datadir2}}/alertmanager.tmpl"
+  port: 9093
+  hostname: "127.0.0.1"
+
+alertmanagersidecars:
+- name: alertmgrsidecar
+  alertmgraddr: "http://127.0.0.1:9093"
+  # config is copied by the alertmanager startup from datadir to /tmp
+  configfile: "/tmp/alertmanager.yml"
+  httpaddr: "127.0.0.1:9094"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    serverkey: "{{tlsoutdir}}/mex-server.key"
+    cacert: "/tmp/vault_pki/global.cert.pem"
+  localtest: true
+  hostname: "127.0.0.1"
+  envvars:
+    ALERTMANAGER_SMTP_EMAIL: mexadmin@mobiledgex.com
+    ALERTMANAGER_SMTP_USER: mexadmin@mobiledgex.com
+    ALERTMANAGER_SMTP_TOKEN: mexadmin123
+    ALERTMANAGER_SMTP_SERVER: host.docker.internal
+    ALERTMANAGER_SMTP_SERVER_PORT: 1025
+    # maildev does not support STARTTLS protocol, so disable encryption for local testing
+    ALERTMANAGER_SMTP_SERVER_TLS: false
+    ALERTMANAGER_RESOLVE_TIMEOUT: "3m"
+
+maildevs:
+- name: maildev
+  hostname: "127.0.0.1"
+  uiport: 1080
+  mailport: 1025
+
+thanosqueries:
+- name: thanosQuery
+  hostname: "127.0.0.1"
+  region: local
+  httpport: 29090
+  stores:
+  # below store is to connect thanos receives defined below
+  - "host.docker.internal:10907"
+
+thanosreceives:
+- name: thanosRecv
+  hostname: "127.0.0.1"
+  region: local
+  httpport: 10909
+  grpcport: 10907
+  remotewriteport: 10908 

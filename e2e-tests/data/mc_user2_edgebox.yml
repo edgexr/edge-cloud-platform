@@ -1,0 +1,118 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+orgs:
+- name: DevOrg
+  type: developer
+  address: 123 Maple Street, Gainesville, FL 32604
+  phone: 123-123-1234
+
+billingorgs:
+- name: DevOrg
+  type: self
+  firstname: john
+  lastname: acme
+  email: john@acme.com
+  address: 123 Maple Street
+  city: Gainesville
+  country: US
+  state: FL
+  postalcode: 32604
+  phone: 123-123-1234
+
+regiondata:
+- region: local
+  appdata:
+    clusterinsts:
+    - key:
+        clusterkey:
+          name: AppCluster
+        cloudletkey:
+          organization: mexdev
+          name: localtest
+        organization: DevOrg
+      flavor:
+        name: x1.medium
+      nummasters: 1
+      numnodes: 3
+      autoscalepolicy: scale1
+    apps:
+    - key:
+        organization: DevOrg
+        name: DevOrg SDK Demo
+        version: "1.0"
+      imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/mobiledgexsdkdemo
+      imagetype: Docker
+      accessports: tcp:7777
+      defaultflavor:
+        name: x1.small
+      deployment: kubernetes
+      androidpackagename: com.mobiledgex.sdkdemo
+    - key:
+        organization: DevOrg
+        name: Face Detection Demo
+        version: "1.0"
+      imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/facedetection
+      imagetype: Docker
+      accessports: tcp:8008
+      skiphcports: tcp:8008
+      defaultflavor:
+        name: x1.small
+      deployment: kubernetes
+      androidpackagename: com.mobiledgex.facedemo
+      configs:
+      - kind: envVarsYaml
+        config: |
+          - name: SOME_ENV1
+            value: value1
+          - name: CrmValue
+            value: [[ .Deployment.ClusterIp ]]
+          - name: SOME_ENV2
+            valueFrom:
+              configMapKeyRef:
+                key: CloudletName
+                name: mexcluster-info 
+                optional: true
+    appinstances:
+    - key:
+        appkey:
+          organization: DevOrg
+          name: DevOrg SDK Demo
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: AppCluster
+          cloudletkey:
+            organization: mexdev
+            name: localtest
+    - key:
+        appkey:
+          organization: DevOrg
+          name: Face Detection Demo
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: AppCluster
+          cloudletkey:
+            organization: mexdev
+            name: localtest
+    autoscalepolicies:
+    - key:
+        organization: DevOrg
+        name: scale1
+      minnodes: 1
+      maxnodes: 3
+      scaleupcputhresh: 85
+      scaledowncputhresh: 50
+      triggertimesec: 60

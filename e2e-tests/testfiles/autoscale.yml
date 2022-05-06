@@ -1,0 +1,161 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+##
+description: run auto-scale tests. Assumes edge-cloud data already present
+
+tests:
+- name: disable resource quotas by setting max threshold value
+  actions: [mcapi-update, mcapi-show]
+  apifile: '{{datadir2}}/mc_cloudlet_no_resource_quotas.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: initial state - check that autoscaled cluster has numnodes 1
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/autoscale_cluster.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  retrycount: 12
+  retryintervalsec: 0.5
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/autoscale_cluster_nodes1.yml'
+    filetype: mcdata
+
+- name: initial state - check number of active connections is 150
+  actions: [cmds]
+  apifile: '{{datadir2}}/autoscale_prom_check_active'
+  retrycount: 12
+  retryintervalsec: 0.4
+  compareyaml:
+    yaml1: '{{outputdir}}/cmds-output'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp150'
+    filetype: raw
+
+- name: set active connections on port 80 to 200 to trigger scale up
+  actions: [cmds]
+  apifilevars:
+    activeconns: "200"
+    port: "80"
+  apifile: '{{datadir2}}/autoscale_prom_set_active'
+
+- name: check number of active connections total is 300
+  actions: [cmds]
+  apifile: '{{datadir2}}/autoscale_prom_check_active'
+  retrycount: 12
+  retryintervalsec: 0.4
+  compareyaml:
+    yaml1: '{{outputdir}}/cmds-output'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp300'
+    filetype: raw
+
+- name: check that autoscaled cluster has numnodes 2
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/autoscale_cluster.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  retrycount: 12
+  retryintervalsec: 0.5
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/autoscale_cluster_nodes2.yml'
+    filetype: mcdata
+
+- name: set active connections on port 80 to 600 to trigger scale up
+  actions: [cmds]
+  apifilevars:
+    activeconns: "600"
+    port: "80"
+  apifile: '{{datadir2}}/autoscale_prom_set_active'
+
+- name: check number of active connections is 700
+  actions: [cmds]
+  apifile: '{{datadir2}}/autoscale_prom_check_active'
+  retrycount: 12
+  retryintervalsec: 0.4
+  compareyaml:
+    yaml1: '{{outputdir}}/cmds-output'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp700'
+    filetype: raw
+
+- name: check that autoscaled cluster has numnodes 4
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/autoscale_cluster.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  retrycount: 12
+  retryintervalsec: 0.5
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/autoscale_cluster_nodes4.yml'
+    filetype: mcdata
+
+- name: set active connections to 300 to trigger scale down
+  actions: [cmds]
+  apifilevars:
+    activeconns: "300"
+    port: "80"
+  apifile: '{{datadir2}}/autoscale_prom_set_active'
+
+- name: check number of total active connections is 400
+  actions: [cmds]
+  apifile: '{{datadir2}}/autoscale_prom_check_active'
+  retrycount: 12
+  retryintervalsec: 0.4
+  compareyaml:
+    yaml1: '{{outputdir}}/cmds-output'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp400'
+    filetype: raw
+
+- name: check that autoscaled cluster has numnodes 2
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/autoscale_cluster.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  retrycount: 12
+  retryintervalsec: 0.5
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/autoscale_cluster_nodes2.yml'
+    filetype: mcdata
+
+- name: finished - set active connections for port 80 back to 50
+  actions: [cmds]
+  apifilevars:
+    activeconns: "50"
+    port: "80"
+  apifile: '{{datadir2}}/autoscale_prom_set_active'
+
+- name: finished - check number of total active connections is 150
+  actions: [cmds]
+  apifile: '{{datadir2}}/autoscale_prom_check_active'
+  retrycount: 12
+  retryintervalsec: 0.4
+  compareyaml:
+    yaml1: '{{outputdir}}/cmds-output'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp150'
+    filetype: raw
+
+- name: check that autoscaled cluster has numnodes 1
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/autoscale_cluster.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  retrycount: 12
+  retryintervalsec: 0.5
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/autoscale_cluster_nodes1.yml'
+    filetype: mcdata
+
+- name: enable resource quotas
+  actions: [mcapi-update, mcapi-show]
+  apifile: '{{datadir2}}/mc_cloudlet_resource_quotas.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+

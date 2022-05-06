@@ -1,0 +1,128 @@
+{
+  "revision_id": "13bb66feefbf19a7f03ae55a5388dca67623d0094052ac0f78ce6c791f41c968",
+  "name": "local_crm",
+  "run_list": [
+    "recipe[runstatus_handler::default]",
+    "recipe[setup_infra::default]",
+    "recipe[preflight_crm_checks::default]",
+    "recipe[setup_services::docker]"
+  ],
+  "named_run_lists": {
+    "local": [
+      "recipe[runstatus_handler::default]",
+      "recipe[setup_infra::default]",
+      "recipe[preflight_crm_checks::default]",
+      "recipe[setup_services::local]"
+    ]
+  },
+  "included_policy_locks": [
+
+  ],
+  "cookbook_locks": {
+    "docker": {
+      "version": "6.0.3",
+      "identifier": "6008032447fab3b9506abaab9d3ad808ea988d01",
+      "dotted_decimal_identifier": "27030407350844083.52161290020035898.237532807204097",
+      "cache_key": "docker-6.0.3",
+      "origin": "http://127.0.0.1:8889/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "http://127.0.0.1:8889/organizations/mobiledgex",
+        "version": "6.0.3"
+      }
+    },
+    "preflight_crm_checks": {
+      "version": "1.0.0",
+      "identifier": "2e3458d2ab0f35f4885fdc601925deee7ad54912",
+      "dotted_decimal_identifier": "13005405024882485.68829839617956133.245115844380946",
+      "cache_key": "preflight_crm_checks-1.0.0",
+      "origin": "http://127.0.0.1:8889/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "http://127.0.0.1:8889/organizations/mobiledgex",
+        "version": "1.0.0"
+      }
+    },
+    "runstatus_handler": {
+      "version": "1.0.0",
+      "identifier": "779bf5d49799fcf3e2e455abc0232abd5a792470",
+      "dotted_decimal_identifier": "33667002364566012.68647889658429475.46992755074160",
+      "cache_key": "runstatus_handler-1.0.0",
+      "origin": "http://127.0.0.1:8889/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "http://127.0.0.1:8889/organizations/mobiledgex",
+        "version": "1.0.0"
+      }
+    },
+    "setup_infra": {
+      "version": "1.0.0",
+      "identifier": "7ea0f6481eab8d2fd7a2193fb3fc9ddf807788a4",
+      "dotted_decimal_identifier": "35642826697911181.13466415113679868.173583258585252",
+      "cache_key": "setup_infra-1.0.0",
+      "origin": "http://127.0.0.1:8889/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "http://127.0.0.1:8889/organizations/mobiledgex",
+        "version": "1.0.0"
+      }
+    },
+    "setup_services": {
+      "version": "1.0.10",
+      "identifier": "f0ad5c19b02b3165a356b3f96cd6f210905d1592",
+      "dotted_decimal_identifier": "67744605490129713.28608565429759190.266152955418002",
+      "cache_key": "setup_services-1.0.10",
+      "origin": "http://127.0.0.1:8889/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "http://127.0.0.1:8889/organizations/mobiledgex",
+        "version": "1.0.10"
+      }
+    }
+  },
+  "default_attributes": {
+
+  },
+  "override_attributes": {
+
+  },
+  "solution_dependencies": {
+    "Policyfile": [
+      [
+        "docker",
+        "= 6.0.3"
+      ],
+      [
+        "preflight_crm_checks",
+        "= 1.0.0"
+      ],
+      [
+        "runstatus_handler",
+        "= 1.0.0"
+      ],
+      [
+        "setup_infra",
+        "= 1.0.0"
+      ],
+      [
+        "setup_services",
+        "= 1.0.10"
+      ]
+    ],
+    "dependencies": {
+      "docker (6.0.3)": [
+
+      ],
+      "preflight_crm_checks (1.0.0)": [
+
+      ],
+      "runstatus_handler (1.0.0)": [
+
+      ],
+      "setup_infra (1.0.0)": [
+
+      ],
+      "setup_services (1.0.10)": [
+        [
+          "docker",
+          ">= 0.0.0"
+        ]
+      ]
+    }
+  }
+}

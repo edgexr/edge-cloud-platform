@@ -1,0 +1,5 @@
+FROM python:3
+
+ADD server_docker.py /
+
+ENTRYPOINT ["./server_docker.py"]

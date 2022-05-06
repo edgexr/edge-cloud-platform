@@ -59,43 +59,33 @@ cat > /tmp/controller-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
-
 path "secret/data/registry/*" {
   capabilities = [ "read" ]
 }
-
 path "secret/data/$REGION/cloudlet/*" {
   capabilities = [ "create", "update", "delete", "read" ]
 }
-
 path "secret/data/cloudlet/*" {
   capabilities = [ "read" ]
 }
-
 path "secret/data/$REGION/accounts/*" {
   capabilities = [ "read" ]
 }
-
 path "secret/data/accounts/chef" {
   capabilities = [ "read" ]
 }
-
 path "secret/data/accounts/gcs" {
   capabilities = [ "read" ]
 }
-
 path "pki-regional/issue/$REGION" {
   capabilities = [ "read", "update" ]
 }
-
 path "pki-regional-cloudlet/issue/$REGION" {
   capabilities = [ "read", "update" ]
 }
-
 path "ssh/sign/machine" {
   capabilities = [ "create", "update" ]
 }
-
 path "secret/data/kafka/$REGION/*" {
   capabilities = [ "create", "update", "delete", "read" ]
 }
@@ -112,28 +102,22 @@ cat > /tmp/dme-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
-
 path "$REGION/jwtkeys/data/dme" {
   capabilities = [ "read" ]
 }
-
 path "$REGION/jwtkeys/metadata/dme" {
   capabilities = [ "read" ]
 }
-
 # Allow access to certs (including access to cert creation)
 path "certs/*" {
   capabilities = ["read"]
 }
-
 path "pki-regional/issue/$REGION" {
   capabilities = [ "read", "update" ]
 }
-
 path "pki-regional-cloudlet/issue/$REGION" {
   capabilities = [ "read", "update" ]
 }
-
 path "/secret/data/accounts/gddt/*" {
     capabilities = [ "read" ]
 }
@@ -150,7 +134,6 @@ cat > /tmp/cluster-svc-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
-
 path "pki-regional/issue/$REGION" {
   capabilities = [ "read", "update" ]
 }
@@ -167,11 +150,9 @@ cat > /tmp/rotator-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
-
 path "$REGION/jwtkeys/data/*" {
   capabilities = [ "create", "update", "read" ]
 }
-
 path "$REGION/jwtkeys/metadata/*" {
   capabilities = [ "read" ]
 }
@@ -202,7 +183,6 @@ cat > /tmp/edgeturn-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
-
 path "pki-regional/issue/$REGION" {
   capabilities = [ "read", "update" ]
 }
@@ -213,3 +193,47 @@ vault write auth/approle/role/$REGION.edgeturn period="720h" policies="$REGION.e
 # get edgeturn app roleID and generate secretID
 vault read auth/approle/role/$REGION.edgeturn/role-id
 vault write -f auth/approle/role/$REGION.edgeturn/secret-id
+
+# autoprov approle
+# Just need access to influx db credentials
+cat > /tmp/autoprov-pol.hcl <<EOF
+path "auth/approle/login" {
+  capabilities = [ "create", "read" ]
+}
+path "secret/data/+/accounts/influxdb" {
+  capabilities = [ "read" ]
+}
+path "pki-regional/issue/$REGION" {
+  capabilities = [ "read", "update" ]
+}
+EOF
+vault policy write $REGION.autoprov /tmp/autoprov-pol.hcl
+rm /tmp/autoprov-pol.hcl
+vault write auth/approle/role/$REGION.autoprov period="720h" policies="$REGION.autoprov"
+# get autoprov app roleID and generate secretID
+vault read auth/approle/role/$REGION.autoprov/role-id
+vault write -f auth/approle/role/$REGION.autoprov/secret-id
+
+# frm approle
+cat > /tmp/frm-pol.hcl <<EOF
+path "auth/approle/login" {
+  capabilities = [ "create", "read" ]
+}
+path "secret/data/cloudlet/*" {
+  capabilities = [ "read" ]
+}
+path "secret/data/federation/*" {
+  capabilities = [ "read" ]
+}
+path "pki-regional/issue/$REGION" {
+  capabilities = [ "read", "update" ]
+}
+EOF
+vault policy write $REGION.frm /tmp/frm-pol.hcl
+rm /tmp/frm-pol.hcl
+vault write auth/approle/role/$REGION.frm period="720h" policies="$REGION.frm"
+# get frm app roleID and generate secretID
+vault read auth/approle/role/$REGION.frm/role-id
+vault write -f auth/approle/role/$REGION.frm/secret-id
+
+# Note: Shepherd uses CRM's Vault access creds.
