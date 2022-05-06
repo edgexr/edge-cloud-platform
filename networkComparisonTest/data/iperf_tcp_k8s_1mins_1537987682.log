@@ -1,0 +1,7 @@
+------------------------------------------------------------
+Client connecting to 23.99.250.40, TCP port 2011
+TCP window size:  416 KByte (WARNING: requested 10.0 MByte)
+------------------------------------------------------------
+[  3] local 10.10.0.11 port 40774 connected with 23.99.250.40 port 2011
+[ ID] Interval       Transfer     Bandwidth
+[  3]  0.0-60.4 sec   203 MBytes  28.2 Mbits/sec

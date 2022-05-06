@@ -1,0 +1,129 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+vaults:
+- name: vault
+  hostname: "127.0.0.1"
+
+chefserver:
+- name: chefserver
+  hostname: "127.0.0.1"
+  port: 8889
+
+etcds:
+- name: etcd1
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd1
+  peeraddrs: "http://127.0.0.1:30011"
+  clientaddrs: "http://127.0.0.1:30001"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+- name: etcd2
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd2
+  peeraddrs: "http://127.0.0.1:30012"
+  clientaddrs: "http://127.0.0.1:30002"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+- name: etcd3
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd3
+  peeraddrs: "http://127.0.0.1:30013"
+  clientaddrs: "http://127.0.0.1:30003"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+rediscaches:
+- name: redis1
+  type: master
+  port: 6379
+  hostname: "127.0.0.1"
+
+controllers:
+- name: ctrl1
+  etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
+  apiaddr: "0.0.0.0:55001"
+  httpaddr: "0.0.0.0:36001"
+  notifyaddr: "127.0.0.1:37001"
+  usevaultpki: true
+  notifyparentaddrs: "127.0.0.1:52001"
+  notifyrootaddrs: "127.0.0.1:53001"
+  vaultaddr: "http://127.0.0.1:8200"
+  redisstandaloneaddr: "127.0.0.1:6379"
+  hostname: "127.0.0.1"
+  testmode: true
+  deploymenttag: "local"
+  chefserverpath: "http://127.0.0.1:8889/organizations/mobiledgex"
+
+mcs:
+- name: mc1
+  addr: "127.0.0.1:9900"
+  sqladdr: "127.0.0.1:5432"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+  notifysrvaddr: "127.0.0.1:52001"
+  hostname: "127.0.0.1"
+  apitlscert: "{{tlsoutdir}}/mex-server.crt"
+  apitlskey: "{{tlsoutdir}}/mex-server.key"
+  deploymenttag: "local"
+  envvars:
+    E2ETEST_TLS: true
+
+sqls:
+- name: sql1
+  datadir: /var/tmp/edge-cloud-local-sql/sql1
+  httpaddr: "127.0.0.1:5432"
+  username: mcuser
+  dbname: mcdb
+  hostname: "127.0.0.1"
+
+notifyroots:
+- name: notifyroot
+  hostname: "127.0.0.1"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+
+alertmanagers:
+- name: alertmanager
+  configfile: "{{datadir2}}/alertmanager.yml"
+  templatefile: "{{datadir2}}/alertmanager.tmpl"
+  port: 9093
+  hostname: "127.0.0.1"
+
+alertmanagersidecars:
+- name: alertmgrsidecar
+  alertmgraddr: "http://127.0.0.1:9093"
+  # config is copied by the alertmanager startup from datadir to /tmp
+  configfile: "/tmp/alertmanager.yml"
+  httpaddr: "127.0.0.1:9094"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    serverkey: "{{tlsoutdir}}/mex-server.key"
+    cacert: "/tmp/vault_pki/global.cert.pem"
+  localtest: true
+  hostname: "127.0.0.1"
+  envvars:
+    ALERTMANAGER_SMTP_EMAIL: mexadmin@mobiledgex.com
+    ALERTMANAGER_SMTP_USER: mexadmin@mobiledgex.com
+    ALERTMANAGER_SMTP_TOKEN: mexadmin123
+    ALERTMANAGER_SMTP_SERVER: host.docker.internal
+    ALERTMANAGER_SMTP_SERVER_PORT: 1025
+    # maildev does not support STARTTLS protocol, so disable encryption for local testing
+    ALERTMANAGER_SMTP_SERVER_TLS: false
+    ALERTMANAGER_RESOLVE_TIMEOUT: "3m"
+
+maildevs:
+- name: maildev
+  hostname: "127.0.0.1"
+  uiport: 1080
+  mailport: 1025

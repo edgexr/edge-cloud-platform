@@ -1,4 +1,4 @@
-module github.com/edgexr/edge-cloud
+module github.com/edgexr/edge-cloud-platform
 
 go 1.15
 
@@ -97,6 +97,59 @@ require (
 	github.com/segmentio/ksuid v1.0.2
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
+	github.com/AsGz/geo v0.0.0-20170331085501-324ae0e80045
+	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
+	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
+	github.com/atlassian/go-artifactory/v2 v2.3.0
+	github.com/cloudflare/cloudflare-go v0.13.4
+	github.com/codeskyblue/go-sh v0.0.0-20170112005953-b097669b1569
+	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/dlclark/regexp2 v1.4.0 // indirect
+	github.com/edgexr/edge-cloud v0.0.0-00010101000000-000000000000
+	github.com/go-chef/chef v0.23.1
+	github.com/go-ole/go-ole v1.2.4 // indirect
+	github.com/go-openapi/errors v0.19.7
+	github.com/go-openapi/loads v0.19.5
+	github.com/go-openapi/spec v0.19.8
+	github.com/go-openapi/strfmt v0.19.5
+	github.com/go-openapi/swag v0.19.9
+	github.com/go-openapi/validate v0.19.11
+	github.com/gogo/googleapis v1.1.0
+	github.com/gogo/protobuf v1.3.1
+	github.com/google/go-cmp v0.4.0
+	github.com/google/uuid v1.1.1
+	github.com/googleapis/gnostic v0.3.1 // indirect
+	github.com/gorilla/mux v1.7.4
+	github.com/gorilla/websocket v1.4.1
+	github.com/hashicorp/go-plugin v1.0.1 // indirect
+	github.com/imdario/mergo v0.3.7 // indirect
+	github.com/influxdata/influxdb v1.7.7
+	github.com/jaegertracing/jaeger v1.21.0
+	github.com/jarcoal/httpmock v1.0.6
+	github.com/jinzhu/gorm v1.9.10
+	github.com/jpillora/backoff v1.0.0 // indirect
+	github.com/jung-kurt/gofpdf v1.16.2
+	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
+	github.com/labstack/echo v0.0.0-20180911044237-1abaa3049251
+	github.com/lib/pq v1.5.2
+	github.com/miekg/dns v1.1.27
+	github.com/mileusna/useragent v1.0.2
+	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
+	github.com/mitchellh/mapstructure v1.3.2
+	github.com/mobiledgex/golang-ssh v0.0.10
+	github.com/mobiledgex/jaeger v1.13.1
+	github.com/mobiledgex/yaml/v2 v2.2.5
+	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
+	github.com/nmcclain/asn1-ber v0.0.0-20170104154839-2661553a0484
+	github.com/nmcclain/ldap v0.0.0-20160601145537-6e14e8271933
+	github.com/opentracing/opentracing-go v1.1.0
+	github.com/pkg/errors v0.9.1
+	github.com/pquerna/otp v1.2.1-0.20191009055518-468c2dd2b58d
+	github.com/prometheus/client_golang v1.6.0
+	github.com/prometheus/common v0.10.0
+	github.com/ryanuber/go-glob v1.0.0 // indirect
+	github.com/shirou/gopsutil v2.20.4+incompatible
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
@@ -128,8 +181,25 @@ require (
 	k8s.io/apimachinery v0.17.3
 	k8s.io/cli-runtime v0.0.0-20190313123343-44a48934c135
 	k8s.io/client-go v0.17.3
+	github.com/tmc/scp v0.0.0-20170824174625-f7b48647feef
+	github.com/trustelem/zxcvbn v1.0.1
+	github.com/vmware/go-vcloud-director/v2 v2.11.0
+	github.com/wcharczuk/go-chart/v2 v2.1.0
+	github.com/xanzy/go-gitlab v0.16.0
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/net v0.0.0-20201010224723-4f7140c49acb
+	google.golang.org/api v0.14.0
+	google.golang.org/grpc v1.29.1
+	gopkg.in/ldap.v3 v3.0.3
+	gopkg.in/yaml.v2 v2.3.0
+	gortc.io/stun v1.21.0
 )
 
 replace github.com/mitchellh/mapstructure => github.com/mobiledgex/mapstructure v1.2.4-0.20200429201435-a2efef9031f5
 
-replace github.com/Sirupsen/logrus v1.6.0 => github.com/sirupsen/logrus v1.6.0
+replace (
+	github.com/Sirupsen/logrus => github.com/Sirupsen/logrus v1.6.0
+	github.com/Sirupsen/logrus v1.6.0 => github.com/sirupsen/logrus v1.6.0
+)
+
+replace github.com/vmware/go-vcloud-director/v2 v2.11.0 => github.com/mobiledgex/go-vcloud-director/v2 v2.11.0-241.2

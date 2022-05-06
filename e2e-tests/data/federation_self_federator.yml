@@ -1,0 +1,51 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+federators:
+- operatorid: dmuus
+  countrycode: SA
+  region: local
+  federationid: dmuus-SA-{{partnertag}}-{{region}} # Just for testing, in production it will be auto-generated
+  mcc: 456 
+  mnc:
+  - 444
+  - 555
+  - 666
+- operatorid: dmuus
+  countrycode: SB
+  region: locala
+  federationid: dmuus-SB-{{partnertag}}-{{region}} # Just for testing, in production it will be auto-generated
+  mcc: 789 
+  mnc:
+  - 777
+  - 888
+  - 999
+- operatorid: enterprise
+  countrycode: SA
+  region: local
+  federationid: enterprise-SA-{{partnertag}}-{{region}} # Just for testing, in production it will be auto-generated
+  mcc: 456 
+  mnc:
+  - 444
+  - 555
+  - 666
+- operatorid: enterprise
+  countrycode: SB
+  region: locala
+  federationid: enterprise-SB-{{partnertag}}-{{region}} # Just for testing, in production it will be auto-generated
+  mcc: 789 
+  mnc:
+  - 777
+  - 888
+  - 999

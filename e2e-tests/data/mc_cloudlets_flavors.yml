@@ -1,0 +1,92 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+controllers:
+- region: local
+  address: 127.0.0.1:55001
+  influxdb: http://127.0.0.1:8086
+  thanosmetrics: http://127.0.0.1:29090
+regiondata:
+- region: local
+  appdata:
+    cloudlets:
+    - key:
+        organization: dmuus
+        name: dmuus-cloud-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+      platformtype: Fakeinfra
+      deploymentlocal: false
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: dmuus-cloud-1
+    - key:
+        organization: dmuus
+        name: dmuus-cloud-2
+      location:
+        latitude: 35
+        longitude: -95
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+      deploymentlocal: false
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: dmuus-cloud-2
+    - key:
+        organization: azure
+        name: azure-cloud-4
+      location:
+        latitude: 32
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+      deploymentlocal: false
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: azure-cloud-4
+    - key:
+        organization: gcp
+        name: gcp-cloud-5
+      location:
+        latitude: 36
+        longitude: -95
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+      deploymentlocal: false
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: gcp-cloud-5
+    flavors:
+    - key:
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
+    - key:
+        name: x1.small
+      ram: 2048
+      vcpus: 2
+      disk: 2
+    - key:
+        name: x1.medium
+      ram: 4096
+      vcpus: 4
+      disk: 4

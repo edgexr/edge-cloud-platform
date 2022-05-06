@@ -1,0 +1,49 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+##
+##
+
+tests:
+
+- name: start 
+  actions: [start]
+
+- name: admin setup config so users can be created
+  actions: [mcapi-configupdate,mcapi-configshow]
+  apifile: '{{datadir2}}/mcconfig.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcconfig.yml'
+    filetype: mcconfig
+
+- name: admin create controllers, flavors
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_admin_data_edgebox.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+- name: create users
+  actions: [mcapi-createusers]
+  apifile: '{{datadir2}}/mc_user1.yml,{{datadir2}}/mc_user2.yml'
+
+- name: user1 creates operator/cloudlets
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_user1_edgebox.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: user2 creates apps
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_user2_edgebox.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'

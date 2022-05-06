@@ -1,0 +1,74 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- routingkey: "01234567890123456789012345678901"
+  eventaction: trigger
+  payload:
+    summary: 'Alert for pagerdutyAppAlertReceiver: AppInstDown Application: someapplication1
+      Version: 1.0'
+    source: MobiledgeX Monitoring
+    severity: error
+    customdetails:
+      firing: |
+        AppInstDown - Application server port is not responding
+        Started at: time-to-test
+        Labels:
+         alertname = AppInstDown
+         app = someapplication1
+         apporg = AcmeAppCo
+         appver = 1.0
+         cloudlet = dmuus-cloud-1
+         cloudletorg = dmuus
+         cluster = SmallCluster
+         clusterorg = AcmeAppCo
+         port = 80
+         region = local
+         scope = Application
+         severity = error
+         status = HealthCheckServerFail
+      numfiring: "1"
+      numresolved: "0"
+  client: MobiledgeX Monitoring
+  clienturl: |
+    https://console.mobiledgex.net
+- routingkey: "01234567890123456789012345678901"
+  eventaction: resolve
+  payload:
+    summary: 'Alert for pagerdutyAppAlertReceiver: AppInstDown Application: someapplication1
+      Version: 1.0'
+    source: MobiledgeX Monitoring
+    severity: error
+    customdetails:
+      numfiring: "0"
+      numresolved: "1"
+      resolved: |
+        AppInstDown - Application server port is not responding
+        Started at: time-to-test
+        Labels:
+         alertname = AppInstDown
+         app = someapplication1
+         apporg = AcmeAppCo
+         appver = 1.0
+         cloudlet = dmuus-cloud-1
+         cloudletorg = dmuus
+         cluster = SmallCluster
+         clusterorg = AcmeAppCo
+         port = 80
+         region = local
+         scope = Application
+         severity = error
+         status = HealthCheckServerFail
+  client: MobiledgeX Monitoring
+  clienturl: |
+    https://console.mobiledgex.net

@@ -1,0 +1,7 @@
+------------------------------------------------------------
+Client connecting to 40.113.219.126, TCP port 2013
+TCP window size:  416 KByte (WARNING: requested 10.0 MByte)
+------------------------------------------------------------
+[  3] local 10.10.0.11 port 59168 connected with 40.113.219.126 port 2013
+[ ID] Interval       Transfer     Bandwidth
+[  3]  0.0-600.0 sec  2.29 GBytes  32.7 Mbits/sec

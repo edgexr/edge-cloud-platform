@@ -1,0 +1,73 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+##
+##
+description: Deploys and starts a system. Does not stop or cleanup
+
+tests:
+  - includefile: {{edge-cloud-testfiles}}/stop_cleanup.yml
+  - includefile: deploy_start.yml
+  - includefile: mc_setup_users.yml
+
+  - name: admin creates controllers, flavors, sets up enterprise; verify it is there
+    actions: [mcapi-create, mcapi-show]
+    apifile: '{{datadir2}}/mc_admin_data.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mc_admin_data_show.yml'
+      filetype: mcdata
+
+  - name: user1 creates operators
+    actions: [mcapi-create]
+    apifile: '{{datadir2}}/mc_user1_org_data.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+
+  - name: admin marks operator orgs an non-edgebox only
+    actions: [mcapi-restrictedupdateorg]
+    apifile: '{{datadir2}}/mc_user1_org_update.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+
+  - name: user1 creates cloudlets; verify it is there
+    actions: [mcapi-create, mcapi-show]
+    apifile: '{{datadir2}}/mc_user1_cloudlet_data.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mc_user1_data_show.yml'
+      filetype: mcdata
+
+  - name: user2 creates apps; verify it is there
+    actions: [mcapi-create, mcapi-show]
+    apifile: '{{datadir2}}/mc_user2_data.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mc_user2_data_show.yml'
+      filetype: mcdata
+
+  - name: admin creates reservable clusterinst on user1 cloudlet
+    actions: [mcapi-create]
+    apifile: '{{datadir2}}/mc_admin_reservable.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+
+  - name: enterprise user3 creates apps; verify it is there
+    actions: [mcapi-create, mcapi-show]
+    apifile: '{{datadir2}}/mc_user3_data.yml'
+    curuserfile: '{{datadir2}}/mc_user3.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mc_user3_data_show.yml'
+      filetype: mcdata
