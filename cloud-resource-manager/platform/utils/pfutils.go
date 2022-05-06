@@ -21,14 +21,14 @@ import (
 	"plugin"
 	"strings"
 
-	pf "github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform/dind"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform/fake"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform/kind"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/util"
+	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/dind"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/fake"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/kind"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/util"
 )
 
 var solib = ""

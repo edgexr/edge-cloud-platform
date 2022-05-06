@@ -17,9 +17,9 @@ package orm
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-infra/mc/ctrlclient"
-	"github.com/edgexr/edge-cloud-infra/mc/ormutil"
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/mc/ctrlclient"
+	"github.com/edgexr/edge-cloud-platform/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 // AuthzTrustPolicy allows a user to see a trust policy only if

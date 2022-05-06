@@ -23,11 +23,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud-infra/mc/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud-infra/promutils"
-	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/mc/mcctl/mctestclient"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/promutils"
+	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/stretchr/testify/require"
 )

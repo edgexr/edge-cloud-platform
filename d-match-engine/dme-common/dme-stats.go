@@ -21,11 +21,11 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	grpcstats "github.com/edgexr/edge-cloud/metrics/grpc"
-	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	grpcstats "github.com/edgexr/edge-cloud-platform/metrics/grpc"
+	"github.com/edgexr/edge-cloud-platform/util"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )

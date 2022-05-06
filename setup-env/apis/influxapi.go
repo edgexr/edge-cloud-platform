@@ -20,7 +20,7 @@ import (
 	"os"
 
 	"github.com/influxdata/influxdb/client/v2"
-	"github.com/edgexr/edge-cloud/setup-env/util"
+	"github.com/edgexr/edge-cloud-platform/setup-env/util"
 	"gopkg.in/yaml.v2"
 )
 

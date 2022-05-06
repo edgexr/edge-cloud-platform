@@ -25,9 +25,9 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/jaegertracing/jaeger/plugin/storage/es/spanstore/dbmodel"
 	"github.com/mitchellh/mapstructure"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/util"
 )
 
 type SpanMatch struct {

@@ -24,13 +24,13 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/k8smgmt"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud/deploygen"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/deploygen"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/util"
 	appsv1 "k8s.io/api/apps/v1"
 )
 

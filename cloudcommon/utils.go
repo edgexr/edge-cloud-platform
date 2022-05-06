@@ -28,7 +28,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 type SessionInfo struct {

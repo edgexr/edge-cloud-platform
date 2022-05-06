@@ -14,7 +14,7 @@
 
 package testgen
 
-import "github.com/edgexr/edge-cloud/edgeproto"
+import "github.com/edgexr/edge-cloud-platform/edgeproto"
 
 func MakeFieldMap(fields []string) map[string]struct{} {
 	return edgeproto.MakeFieldMap(fields)

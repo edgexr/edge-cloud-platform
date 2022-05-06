@@ -15,13 +15,13 @@
 package mctestclient
 
 import (
-	"github.com/edgexr/edge-cloud-infra/billing"
-	"github.com/edgexr/edge-cloud-infra/mc/mcctl/ormctl"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud-infra/mc/ormutil"
-	"github.com/edgexr/edge-cloud/cli"
-	"github.com/edgexr/edge-cloud/cloudcommon/node"
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/billing"
+	"github.com/edgexr/edge-cloud-platform/cli"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/mc/mcctl/ormctl"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/mc/ormutil"
 	"github.com/mobiledgex/jaeger/plugin/storage/es/spanstore/dbmodel"
 )
 

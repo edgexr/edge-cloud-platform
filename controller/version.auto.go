@@ -5,7 +5,7 @@ package main
 
 import (
 	fmt "fmt"
-	_ "github.com/edgexr/edge-cloud/protogen"
+	_ "github.com/edgexr/edge-cloud-platform/protogen"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	math "math"

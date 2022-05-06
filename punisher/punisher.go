@@ -24,10 +24,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-infra/mc/mcctl/mccli"
-	"github.com/edgexr/edge-cloud-infra/mc/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud-infra/mc/ormclient"
+	"github.com/edgexr/edge-cloud-platform/mc/mcctl/mccli"
+	"github.com/edgexr/edge-cloud-platform/mc/mcctl/mctestclient"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/mc/ormclient"
 )
 
 var numThreads = flag.Int("numthreads", 2, "number of threads")

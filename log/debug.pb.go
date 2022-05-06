@@ -6,7 +6,7 @@ package log
 import (
 	"encoding/json"
 	fmt "fmt"
-	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-platform/util"
 	proto "github.com/gogo/protobuf/proto"
 	math "math"
 	reflect "reflect"

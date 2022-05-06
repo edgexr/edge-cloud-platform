@@ -15,8 +15,8 @@
 package mctestclient
 
 import (
-	"github.com/edgexr/edge-cloud-infra/mc/mcctl/ormctl"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/mc/mcctl/ormctl"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
 )
 
 func (s *Client) DoLogin(uri, user, pass, otp, apikeyid, apikey string) (string, bool, error) {

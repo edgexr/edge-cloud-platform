@@ -20,13 +20,13 @@ import (
 	"strconv"
 	"time"
 
-	k8sbm "github.com/edgexr/edge-cloud-infra/crm-platforms/k8s-baremetal"
-	"github.com/edgexr/edge-cloud-infra/infracommon"
-	"github.com/edgexr/edge-cloud-infra/promutils"
-	"github.com/edgexr/edge-cloud-infra/shepherd/shepherd_common"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	k8sbm "github.com/edgexr/edge-cloud-platform/crm-platforms/k8s-baremetal"
+	"github.com/edgexr/edge-cloud-platform/infracommon"
+	"github.com/edgexr/edge-cloud-platform/promutils"
+	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_common"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 

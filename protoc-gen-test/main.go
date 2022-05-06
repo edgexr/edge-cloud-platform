@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/edgexr/edge-cloud/gensupport"
+import "github.com/edgexr/edge-cloud-platform/gensupport"
 
 func main() {
 	testcud := TestCud{}

@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/edgexr/edge-cloud-infra/promutils"
-	"github.com/edgexr/edge-cloud-infra/shepherd/shepherd_common"
-	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/promutils"
+	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_common"
+	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 

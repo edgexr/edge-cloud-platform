@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
 	"github.com/stretchr/testify/require"
 )
 

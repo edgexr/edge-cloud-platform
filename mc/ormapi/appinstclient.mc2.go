@@ -5,9 +5,9 @@ package ormapi
 
 import (
 	fmt "fmt"
-	_ "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
-	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
-	_ "github.com/edgexr/edge-cloud/protogen"
+	_ "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
+	_ "github.com/edgexr/edge-cloud-platform/protogen"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"

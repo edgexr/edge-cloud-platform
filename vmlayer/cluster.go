@@ -22,14 +22,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud-infra/chefmgmt"
-	"github.com/edgexr/edge-cloud-infra/infracommon"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/crmutil"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/k8smgmt"
-	proxycerts "github.com/edgexr/edge-cloud/cloud-resource-manager/proxy/certs"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/chefmgmt"
+	"github.com/edgexr/edge-cloud-platform/infracommon"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/crmutil"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/k8smgmt"
+	proxycerts "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/proxy/certs"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 

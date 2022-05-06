@@ -5,12 +5,12 @@ package orm
 
 import (
 	fmt "fmt"
-	"github.com/edgexr/edge-cloud-infra/mc/ctrlclient"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud-infra/mc/ormutil"
-	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
-	_ "github.com/edgexr/edge-cloud/protogen"
+	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/mc/ctrlclient"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/mc/ormutil"
+	_ "github.com/edgexr/edge-cloud-platform/protogen"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"

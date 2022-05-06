@@ -18,7 +18,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 	"google.golang.org/grpc"
 )
 

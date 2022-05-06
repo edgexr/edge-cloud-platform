@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/vault/api"
-	"github.com/edgexr/edge-cloud/env"
+	"github.com/edgexr/edge-cloud-platform/env"
 )
 
 type Config struct {

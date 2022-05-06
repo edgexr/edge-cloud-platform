@@ -21,10 +21,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud-infra/billing"
-	"github.com/edgexr/edge-cloud-infra/infracommon"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/billing"
+	"github.com/edgexr/edge-cloud-platform/infracommon"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 var dedicatedLB = "dedicatedLB"

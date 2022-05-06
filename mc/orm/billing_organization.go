@@ -23,12 +23,12 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
-	"github.com/edgexr/edge-cloud-infra/billing"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud-infra/mc/ormutil"
-	"github.com/edgexr/edge-cloud-infra/mc/rbac"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/billing"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/mc/rbac"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 var deleteTypeChild = "child"

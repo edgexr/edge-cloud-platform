@@ -5,9 +5,9 @@ package ormctl
 
 import (
 	fmt "fmt"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
-	_ "github.com/edgexr/edge-cloud/protogen"
+	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	_ "github.com/edgexr/edge-cloud-platform/protogen"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"

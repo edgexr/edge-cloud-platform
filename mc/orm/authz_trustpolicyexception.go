@@ -19,8 +19,8 @@ import (
 	fmt "fmt"
 
 	"github.com/labstack/echo"
-	"github.com/edgexr/edge-cloud-infra/mc/ctrlclient"
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/mc/ctrlclient"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 type AuthzOrgTpe struct {

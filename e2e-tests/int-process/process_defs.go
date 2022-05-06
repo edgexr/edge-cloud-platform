@@ -17,7 +17,7 @@ package intprocess
 import (
 	"os/exec"
 
-	"github.com/edgexr/edge-cloud/integration/process"
+	"github.com/edgexr/edge-cloud-platform/integration/process"
 )
 
 type MC struct {

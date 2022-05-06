@@ -19,8 +19,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 	v1 "k8s.io/api/core/v1"
 )

@@ -20,10 +20,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-infra/mc/ormclient"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/tls"
+	"github.com/edgexr/edge-cloud-platform/mc/ormclient"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/tls"
 )
 
 const (

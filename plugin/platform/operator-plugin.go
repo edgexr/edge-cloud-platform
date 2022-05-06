@@ -17,10 +17,10 @@ package main
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-infra/operator-api-gw/operalpha"
-	"github.com/edgexr/edge-cloud/d-match-engine/operator"
-	"github.com/edgexr/edge-cloud/d-match-engine/operator/defaultoperator"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/operator-api-gw/operalpha"
+	"github.com/edgexr/edge-cloud-platform/d-match-engine/operator"
+	"github.com/edgexr/edge-cloud-platform/d-match-engine/operator/defaultoperator"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 func GetOperatorApiGw(ctx context.Context, operatorName string) (operator.OperatorApiGw, error) {

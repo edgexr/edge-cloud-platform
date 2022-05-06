@@ -26,10 +26,10 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
-	dmeproto "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
-	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/util"
+	dmeproto "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/util"
 	"golang.org/x/crypto/ssh/terminal"
 )
 

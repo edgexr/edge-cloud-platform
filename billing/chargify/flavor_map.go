@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 var dmeApiCode = "dmeapi"

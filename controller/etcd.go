@@ -27,9 +27,9 @@ import (
 	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/objstore"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/objstore"
 	"github.com/opentracing/opentracing-go"
 )
 

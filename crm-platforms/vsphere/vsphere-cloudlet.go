@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/edgexr/edge-cloud-infra/infracommon"
-	"github.com/edgexr/edge-cloud-infra/vmlayer"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform/pc"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/vault"
+	"github.com/edgexr/edge-cloud-platform/infracommon"
+	"github.com/edgexr/edge-cloud-platform/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/vault"
 )
 
 var clusterLock sync.Mutex

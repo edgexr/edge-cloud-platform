@@ -25,13 +25,13 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud-infra/mc/ormutil"
-	"github.com/edgexr/edge-cloud-infra/mc/rbac"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/cloudcommon/node"
-	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/mc/rbac"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
+	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 // Organization Type names for ORM database

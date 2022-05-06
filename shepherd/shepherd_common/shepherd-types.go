@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 const ShepherdSshConnectTimeout = time.Second * 3

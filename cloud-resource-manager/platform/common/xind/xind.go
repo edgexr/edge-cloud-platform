@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform/pc"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/vault"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 

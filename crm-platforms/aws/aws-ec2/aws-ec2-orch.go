@@ -22,9 +22,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-infra/vmlayer"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 var orchVmLock sync.Mutex

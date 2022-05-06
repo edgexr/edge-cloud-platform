@@ -23,16 +23,16 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	locclient "github.com/edgexr/edge-cloud-infra/operator-api-gw/operalpha/operalpha-loc/locclient"
-	qosclient "github.com/edgexr/edge-cloud-infra/operator-api-gw/operalpha/operalpha-qos/qosclient"
-	sessionsclient "github.com/edgexr/edge-cloud-infra/operator-api-gw/operalpha/operalpha-sessions/sessionsclient"
-	"github.com/edgexr/edge-cloud-infra/version"
-	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
-	operator "github.com/edgexr/edge-cloud/d-match-engine/operator"
-	simulatedloc "github.com/edgexr/edge-cloud/d-match-engine/operator/defaultoperator/simulated-location"
-	simulatedqos "github.com/edgexr/edge-cloud/d-match-engine/operator/defaultoperator/simulated-qos"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/vault"
+	locclient "github.com/edgexr/edge-cloud-platform/operator-api-gw/operalpha/operalpha-loc/locclient"
+	qosclient "github.com/edgexr/edge-cloud-platform/operator-api-gw/operalpha/operalpha-qos/qosclient"
+	sessionsclient "github.com/edgexr/edge-cloud-platform/operator-api-gw/operalpha/operalpha-sessions/sessionsclient"
+	"github.com/edgexr/edge-cloud-platform/version"
+	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	operator "github.com/edgexr/edge-cloud-platform/d-match-engine/operator"
+	simulatedloc "github.com/edgexr/edge-cloud-platform/d-match-engine/operator/defaultoperator/simulated-location"
+	simulatedqos "github.com/edgexr/edge-cloud-platform/d-match-engine/operator/defaultoperator/simulated-qos"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/vault"
 )
 
 var QosClientCert = "qosclient.crt"
@@ -115,7 +115,7 @@ func (o *OperatorApiGw) GetQOSPositionKPI(mreq *dme.QosPositionRequest, getQosSv
 }
 
 func (*OperatorApiGw) GetVersionProperties() map[string]string {
-	return version.InfraBuildProps("OPERALPHAOperator")
+	return version.BuildProps("OPERALPHAOperator")
 }
 
 func (o *OperatorApiGw) SetQosSessionsApiKey(key string) {

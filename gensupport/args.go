@@ -22,9 +22,9 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	"github.com/edgexr/edge-cloud/edgeprotogen"
-	"github.com/edgexr/edge-cloud/protogen"
-	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-platform/edgeprotogen"
+	"github.com/edgexr/edge-cloud-platform/protogen"
+	"github.com/edgexr/edge-cloud-platform/util"
 )
 
 type Arg struct {

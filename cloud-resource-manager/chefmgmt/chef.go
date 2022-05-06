@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/vault"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/vault"
 )
 
 type ChefAuthKey struct {

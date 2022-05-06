@@ -17,8 +17,8 @@ package notify
 import (
 	"sync"
 
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/objstore"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/objstore"
 )
 
 // Notify workers spawn go threads to deal with changes that take time,

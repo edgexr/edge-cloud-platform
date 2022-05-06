@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 // Data saved to persistent sql db, also used for API calls

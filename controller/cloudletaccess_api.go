@@ -19,11 +19,11 @@ import (
 	"fmt"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/accessapi"
-	"github.com/edgexr/edge-cloud/cloudcommon/node"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/integration/process"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/accessapi"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 // Issue certificate to RegionalCloudlet service.

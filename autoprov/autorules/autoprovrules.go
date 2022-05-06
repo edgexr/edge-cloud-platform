@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/prommgmt"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/prommgmt"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 	"github.com/prometheus/common/model"
 )
 

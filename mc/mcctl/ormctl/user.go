@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
 )
 
 const UserGroup = "User"

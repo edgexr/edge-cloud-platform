@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	fmt "fmt"
-	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-platform/util"
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	io "io"

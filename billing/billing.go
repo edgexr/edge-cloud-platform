@@ -18,9 +18,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/vault"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/vault"
 )
 
 const CUSTOMER_TYPE_PARENT = "parent"

@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 

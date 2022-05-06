@@ -20,18 +20,18 @@ import (
 	"strings"
 	"time"
 
-	intprocess "github.com/edgexr/edge-cloud-infra/e2e-tests/int-process"
-	"github.com/edgexr/edge-cloud-infra/version"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/integration/process"
-	"github.com/edgexr/edge-cloud/rediscache"
-	"github.com/edgexr/edge-cloud/util"
+	intprocess "github.com/edgexr/edge-cloud-platform/e2e-tests/int-process"
+	"github.com/edgexr/edge-cloud-platform/version"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/rediscache"
+	"github.com/edgexr/edge-cloud-platform/util"
 
 	"github.com/go-chef/chef"
 	"github.com/mitchellh/mapstructure"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 const (

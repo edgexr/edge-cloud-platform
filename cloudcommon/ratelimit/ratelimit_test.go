@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

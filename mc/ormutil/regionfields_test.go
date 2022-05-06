@@ -17,8 +17,8 @@ package ormutil
 import (
 	"testing"
 
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 	"github.com/stretchr/testify/require"
 )
 
