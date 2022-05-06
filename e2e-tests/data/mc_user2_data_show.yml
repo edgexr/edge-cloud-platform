@@ -82,16 +82,6 @@ regiondata:
         driver:
           name: gpu-driver-global
     - key:
-        organization: gcp
-        name: gcp-cloud-5
-      location:
-        latitude: 36
-        longitude: -95
-      ipsupport: Dynamic
-      numdynamicips: 254
-      state: Ready
-      trustpolicystate: NotPresent
-    - key:
         organization: dmuus
         name: dmuus-cloud-1
       location:
@@ -111,6 +101,16 @@ regiondata:
         name: dmuus-cloud-2
       location:
         latitude: 35
+        longitude: -95
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+      trustpolicystate: NotPresent
+    - key:
+        organization: gcp
+        name: gcp-cloud-5
+      location:
+        latitude: 36
         longitude: -95
       ipsupport: Dynamic
       numdynamicips: 254

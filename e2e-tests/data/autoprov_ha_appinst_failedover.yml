@@ -59,6 +59,39 @@ regiondata:
           clusterkey:
             name: autocluster-autoprov
           cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-1
+          organization: MobiledgeX
+      cloudletloc:
+        latitude: 31
+        longitude: -91
+      uri: shared.dmuus-cloud-1-dmuus.local.mobiledgex.net
+      liveness: Autoprov
+      mappedports:
+      - proto: Tcp
+        internalport: 82
+        publicport: 82
+      flavor:
+        name: x1.small
+      state: Ready
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
+      healthcheck: Ok
+      powerstate: PowerOn
+      vmflavor: x1.small
+      realclustername: Reservable1
+      uniqueid: acmeappcoautoprovha10-autocluster-autoprov-dmuus-cloud-1-dmuus
+      dnslabel: autoprovha10-acmeappco
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: autoprovHA
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: autocluster-autoprov
+          cloudletkey:
             organization: gcp
             name: gcp-cloud-5
           organization: MobiledgeX
@@ -83,37 +116,4 @@ regiondata:
       vmflavor: x1.small
       realclustername: Reservable4
       uniqueid: acmeappcoautoprovha10-autocluster-autoprov-gcp-cloud-5-gcp
-      dnslabel: autoprovha10-acmeappco
-    - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovHA
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-autoprov
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-1
-          organization: MobiledgeX
-      cloudletloc:
-        latitude: 31
-        longitude: -91
-      uri: shared.dmuus-cloud-1-dmuus.local.mobiledgex.net
-      liveness: Autoprov
-      mappedports:
-      - proto: Tcp
-        internalport: 82
-        publicport: 82
-      flavor:
-        name: x1.small
-      state: Ready
-      runtimeinfo:
-        containerids:
-        - appOnClusterNode0
-      healthcheck: Ok
-      powerstate: PowerOn
-      vmflavor: x1.small
-      realclustername: Reservable1
-      uniqueid: acmeappcoautoprovha10-autocluster-autoprov-dmuus-cloud-1-dmuus
       dnslabel: autoprovha10-acmeappco
