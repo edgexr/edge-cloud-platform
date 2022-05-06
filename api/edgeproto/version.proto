@@ -17,7 +17,7 @@
 syntax = "proto3";
 package edgeproto;
 
-import "github.com/edgexr/edge-cloud-platform/protogen/protogen.proto";
+import "github.com/edgexr/edge-cloud-platform/tools/protogen/protogen.proto";
 import "gogoproto/gogo.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;

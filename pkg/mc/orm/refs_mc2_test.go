@@ -5,10 +5,10 @@ package orm
 
 import (
 	fmt "fmt"
-	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/mc/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-platform/mc/orm/testutil"
-	_ "github.com/edgexr/edge-cloud-platform/protogen"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/testutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
+	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/require"

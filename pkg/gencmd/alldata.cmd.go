@@ -5,10 +5,10 @@ package gencmd
 
 import (
 	fmt "fmt"
+	distributed_match_engine "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/cli"
-	distributed_match_engine "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
-	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
-	_ "github.com/edgexr/edge-cloud-platform/protogen"
+	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	google_protobuf "github.com/gogo/protobuf/types"

@@ -19,12 +19,12 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/edgexr/edge-cloud-platform/tools/edgeprotogen"
+	"github.com/edgexr/edge-cloud-platform/tools/protogen"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	"github.com/edgexr/edge-cloud-platform/edgeprotogen"
-	"github.com/edgexr/edge-cloud-platform/protogen"
-	"github.com/edgexr/edge-cloud-platform/util"
 )
 
 type Arg struct {

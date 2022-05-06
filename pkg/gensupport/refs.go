@@ -17,10 +17,10 @@ package gensupport
 import (
 	"strings"
 
+	"github.com/edgexr/edge-cloud-platform/tools/protogen"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	"github.com/edgexr/edge-cloud-platform/protogen"
 )
 
 // Handle references between protobuffer objects (Messages).
