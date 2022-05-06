@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 
+	"github.com/edgexr/edge-cloud-infra/operator-api-gw/operalpha"
 	"github.com/edgexr/edge-cloud/d-match-engine/operator"
 	"github.com/edgexr/edge-cloud/d-match-engine/operator/defaultoperator"
 	"github.com/edgexr/edge-cloud/log"
@@ -27,6 +28,10 @@ func GetOperatorApiGw(ctx context.Context, operatorName string) (operator.Operat
 
 	var outApiGw operator.OperatorApiGw
 	switch operatorName {
+	case "gddt":
+		fallthrough
+	case "GDDT":
+		outApiGw = &operalpha.OperatorApiGw{}
 	default:
 		outApiGw = &defaultoperator.OperatorApiGw{}
 	}

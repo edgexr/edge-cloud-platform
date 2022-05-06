@@ -102,14 +102,14 @@
       app: autoprovHA
       apporg: AcmeAppCo
       appver: "1.0"
-      cloudlet: dmuus-cloud-1
-      cloudletorg: dmuus
+      cloudlet: gcp-cloud-5
+      cloudletorg: gcp
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       federatedorg: ""
       hostname: ""
       lineno: ""
-      realcluster: Reservable1
+      realcluster: Reservable4
       spanid: ""
       traceid: ""
   - name: Free ClusterInst reservation
@@ -121,14 +121,14 @@
       app: autoprovHA
       apporg: AcmeAppCo
       appver: "1.0"
-      cloudlet: gcp-cloud-5
-      cloudletorg: gcp
+      cloudlet: dmuus-cloud-1
+      cloudletorg: dmuus
       cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       federatedorg: ""
       hostname: ""
       lineno: ""
-      realcluster: Reservable4
+      realcluster: Reservable1
       spanid: ""
       traceid: ""
 - search:
