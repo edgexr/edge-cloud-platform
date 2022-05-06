@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
-	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud-infra/mc/ormutil"
+	"github.com/edgexr/edge-cloud/cloudcommon/node"
 )
 
 func ShowEvents(c echo.Context) error {

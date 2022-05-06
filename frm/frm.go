@@ -21,13 +21,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/mobiledgex/edge-cloud-infra/version"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/redundancy"
-	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
-	"github.com/mobiledgex/edge-cloud/integration/process"
-	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/notify"
-	"github.com/mobiledgex/edge-cloud/vault"
+	"github.com/edgexr/edge-cloud-infra/version"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/redundancy"
+	"github.com/edgexr/edge-cloud/cloudcommon/node"
+	"github.com/edgexr/edge-cloud/integration/process"
+	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/notify"
+	"github.com/edgexr/edge-cloud/vault"
 )
 
 var notifyAddrs = flag.String("notifyAddrs", "127.0.0.1:50001", "Comma separated list of controller notify listener addresses")

@@ -23,9 +23,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/billing"
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud-infra/billing"
+	"github.com/edgexr/edge-cloud-infra/infracommon"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
 )
 
 var customerEndpoint = "/customers"

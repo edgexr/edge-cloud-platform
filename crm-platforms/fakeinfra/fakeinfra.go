@@ -22,17 +22,17 @@ import (
 	"sync"
 	"time"
 
-	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
-	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
-	"github.com/mobiledgex/edge-cloud-infra/version"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/fake"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/redundancy"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/integration/process"
-	"github.com/mobiledgex/edge-cloud/log"
+	intprocess "github.com/edgexr/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/edgexr/edge-cloud-infra/shepherd/shepherd_common"
+	"github.com/edgexr/edge-cloud-infra/version"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
+	pf "github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform/fake"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/redundancy"
+	"github.com/edgexr/edge-cloud/cloudcommon"
+	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/integration/process"
+	"github.com/edgexr/edge-cloud/log"
 )
 
 type Platform struct {

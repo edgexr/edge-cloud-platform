@@ -22,11 +22,11 @@ import (
 	"strings"
 
 	"github.com/codeskyblue/go-sh"
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-infra/infracommon"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform/pc"
+	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 

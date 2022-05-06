@@ -14,7 +14,7 @@
 
 package testutil
 
-import "github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
+import "github.com/edgexr/edge-cloud-infra/mc/mcctl/mctestclient"
 
 // TestClient implements the edge-cloud testutil.Client interface
 // so that infra can use the same generated testutil funcs as edge-cloud.

@@ -15,8 +15,8 @@
 package doc
 
 import (
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud/cloudcommon/node"
 )
 
 // swagger:parameters Login

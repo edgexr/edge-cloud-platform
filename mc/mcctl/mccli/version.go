@@ -17,8 +17,8 @@ package mccli
 import (
 	"fmt"
 
-	"github.com/mobiledgex/edge-cloud/cli"
-	"github.com/mobiledgex/edge-cloud/version"
+	"github.com/edgexr/edge-cloud/cli"
+	"github.com/edgexr/edge-cloud/version"
 	"github.com/spf13/cobra"
 )
 

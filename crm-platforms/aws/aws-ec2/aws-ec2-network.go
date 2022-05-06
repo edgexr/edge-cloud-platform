@@ -21,9 +21,9 @@ import (
 	"strings"
 	"time"
 
-	awsgen "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-generic"
-	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
-	"github.com/mobiledgex/edge-cloud/log"
+	awsgen "github.com/edgexr/edge-cloud-infra/crm-platforms/aws/aws-generic"
+	"github.com/edgexr/edge-cloud-infra/vmlayer"
+	"github.com/edgexr/edge-cloud/log"
 )
 
 const FreeInternalSubnetType string = "free-internal"

@@ -17,9 +17,9 @@ package operalpha
 import (
 	"testing"
 
-	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
-	operator "github.com/mobiledgex/edge-cloud/d-match-engine/operator"
-	"github.com/mobiledgex/edge-cloud/log"
+	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
+	operator "github.com/edgexr/edge-cloud/d-match-engine/operator"
+	"github.com/edgexr/edge-cloud/log"
 	"github.com/test-go/testify/require"
 	"golang.org/x/net/context"
 )

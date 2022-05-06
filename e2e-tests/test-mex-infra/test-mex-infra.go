@@ -23,11 +23,11 @@ import (
 	"os"
 	"strings"
 
-	e2esetup "github.com/mobiledgex/edge-cloud-infra/e2e-tests/e2e-setup"
-	log "github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/setup-env/e2e-tests/e2eapi"
-	setupmex "github.com/mobiledgex/edge-cloud/setup-env/setup-mex"
-	"github.com/mobiledgex/edge-cloud/setup-env/util"
+	e2esetup "github.com/edgexr/edge-cloud-infra/e2e-tests/e2e-setup"
+	log "github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/setup-env/e2e-tests/e2eapi"
+	setupmex "github.com/edgexr/edge-cloud/setup-env/setup-mex"
+	"github.com/edgexr/edge-cloud/setup-env/util"
 )
 
 var (

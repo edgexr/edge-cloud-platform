@@ -43,7 +43,7 @@ APICOMMENTS = ./mc/ormapi/api.comments.go
 
 build-internal: build-vers $(APICOMMENTS)
 	go install ./fixmod
-	fixmod -srcRepo ../edge-cloud -keep github.com/mobiledgex/edge-cloud
+	fixmod -srcRepo ../edge-cloud -keep github.com/edgexr/edge-cloud
 	go install ./protoc-gen-mc2
 	make -f proto.make
 	make -C vault/letsencrypt-plugin letsencrypt/version.go
@@ -83,7 +83,7 @@ third_party:
 
 # adds license header to all files, see https://github.com/google/addlicense
 addlicense:
-	addlicense -c "MobiledgeX, Inc" -l apache .
+	addlicense -c "EdgeXR, Inc" -l apache .
 
 .PHONY: doc
 

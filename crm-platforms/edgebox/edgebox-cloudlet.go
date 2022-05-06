@@ -17,14 +17,14 @@ package edgebox
 import (
 	"context"
 
-	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/fakeinfra"
-	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vault"
+	"github.com/edgexr/edge-cloud-infra/crm-platforms/fakeinfra"
+	intprocess "github.com/edgexr/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
+	pf "github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
+	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/vault"
 )
 
 func (e *EdgeboxPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {

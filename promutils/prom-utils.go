@@ -24,8 +24,8 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/cloudcommon"
+	"github.com/edgexr/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 

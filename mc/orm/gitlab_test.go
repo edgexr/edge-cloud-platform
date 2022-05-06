@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/jarcoal/httpmock"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/log"
 	"github.com/stretchr/testify/require"
 	gitlab "github.com/xanzy/go-gitlab"
 )

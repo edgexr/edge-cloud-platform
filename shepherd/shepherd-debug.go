@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
-	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-infra/shepherd/shepherd_common"
+	"github.com/edgexr/edge-cloud/cloudcommon/node"
+	"github.com/edgexr/edge-cloud/edgeproto"
 )
 
 const defaultScrapeInterval = 15 * time.Second

@@ -18,15 +18,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/access"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
-	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/access"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/dockermgmt"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/proxy"
+	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/k8smgmt"
+	"github.com/edgexr/edge-cloud/edgeproto"
 
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
