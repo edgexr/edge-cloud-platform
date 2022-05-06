@@ -18,11 +18,11 @@ import (
 	fmt "fmt"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-infra/mc/mcctl/ormctl"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud/cli"
-	edgecli "github.com/edgexr/edge-cloud/edgectl/cli"
-	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/mc/mcctl/ormctl"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/cli"
+	edgecli "github.com/edgexr/edge-cloud-platform/edgectl/cli"
+	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

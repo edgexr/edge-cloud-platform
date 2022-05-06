@@ -26,7 +26,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/edgexr/edge-cloud-infra/crm-platforms/vcd"
+	"github.com/edgexr/edge-cloud-platform/crm-platforms/vcd"
 )
 
 var currTokenNum uint32 = 1

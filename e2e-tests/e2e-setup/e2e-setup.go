@@ -26,14 +26,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	intprocess "github.com/edgexr/edge-cloud-infra/e2e-tests/int-process"
-	"github.com/edgexr/edge-cloud/cloudcommon/node"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/integration/process"
-	"github.com/edgexr/edge-cloud/setup-env/apis"
-	"github.com/edgexr/edge-cloud/setup-env/e2e-tests/e2eapi"
-	setupmex "github.com/edgexr/edge-cloud/setup-env/setup-mex"
-	"github.com/edgexr/edge-cloud/setup-env/util"
+	intprocess "github.com/edgexr/edge-cloud-platform/e2e-tests/int-process"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/setup-env/apis"
+	"github.com/edgexr/edge-cloud-platform/setup-env/e2e-tests/e2eapi"
+	setupmex "github.com/edgexr/edge-cloud-platform/setup-env/setup-mex"
+	"github.com/edgexr/edge-cloud-platform/setup-env/util"
 	"github.com/mobiledgex/jaeger/plugin/storage/es/spanstore/dbmodel"
 )
 

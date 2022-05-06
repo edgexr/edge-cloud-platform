@@ -29,16 +29,16 @@ import (
 
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"github.com/labstack/echo"
-	"github.com/edgexr/edge-cloud-infra/mc/ctrlclient"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud-infra/mc/ormutil"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/cloudcommon/node"
-	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/gcs"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-platform/mc/ctrlclient"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
+	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/gcs"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/util"
 )
 
 var (

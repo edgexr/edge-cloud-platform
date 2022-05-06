@@ -21,10 +21,10 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	influxq "github.com/edgexr/edge-cloud/controller/influxq_client"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	influxq "github.com/edgexr/edge-cloud-platform/controller/influxq_client"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 type SettingsApi struct {

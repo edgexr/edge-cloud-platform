@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/k8smgmt"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 	v1 "k8s.io/api/core/v1"
 )

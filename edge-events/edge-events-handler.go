@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/edgexr/edge-cloud-infra/version"
-	dmecommon "github.com/edgexr/edge-cloud/d-match-engine/dme-common"
-	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
-	grpcstats "github.com/edgexr/edge-cloud/metrics/grpc"
-	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-platform/version"
+	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
+	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
+	grpcstats "github.com/edgexr/edge-cloud-platform/metrics/grpc"
+	"github.com/edgexr/edge-cloud-platform/util"
 )
 
 // Implements dmecommon.EdgeEventsHandler interface
@@ -333,5 +333,5 @@ func (e *EdgeEventsHandlerPlugin) SendEdgeEventToClient(ctx context.Context, ser
 }
 
 func (e *EdgeEventsHandlerPlugin) GetVersionProperties() map[string]string {
-	return version.InfraBuildProps("EdgeEvents")
+	return version.BuildProps("EdgeEvents")
 }

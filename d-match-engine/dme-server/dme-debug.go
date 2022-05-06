@@ -20,9 +20,9 @@ import (
 	"fmt"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/edgexr/edge-cloud/cloudcommon/node"
-	dmecommon "github.com/edgexr/edge-cloud/d-match-engine/dme-common"
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
+	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 func InitDebug(nodeMgr *node.NodeMgr) {

@@ -19,11 +19,11 @@ import (
 	"encoding/json"
 
 	"github.com/cloudflare/cloudflare-go"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/chefmgmt"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/cloudcommon/node"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/vault"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/chefmgmt"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/vault"
 )
 
 // AccessData types

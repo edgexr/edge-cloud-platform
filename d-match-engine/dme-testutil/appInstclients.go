@@ -15,7 +15,7 @@
 package dmetest
 
 import (
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 // AppInstClients - test the Clients

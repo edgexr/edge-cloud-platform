@@ -17,7 +17,7 @@ package edgeproto
 import (
 	fmt "fmt"
 
-	"github.com/edgexr/edge-cloud/objstore"
+	"github.com/edgexr/edge-cloud-platform/objstore"
 )
 
 var OperatorCodeKeyTag = "operatorcode"

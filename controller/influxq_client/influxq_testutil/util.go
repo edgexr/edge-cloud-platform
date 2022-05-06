@@ -19,8 +19,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/edgexr/edge-cloud/integration/process"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/log"
 	"github.com/stretchr/testify/require"
 )
 

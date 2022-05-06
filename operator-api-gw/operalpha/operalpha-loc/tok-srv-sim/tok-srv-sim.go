@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"strings"
 
-    "github.com/edgexr/edge-cloud-infra/operator-api-gw/operalpha/operalpha-loc/util"
+    "github.com/edgexr/edge-cloud-platform/operator-api-gw/operalpha/operalpha-loc/util"
 )
 
 var (

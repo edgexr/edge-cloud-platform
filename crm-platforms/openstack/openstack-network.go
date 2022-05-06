@@ -21,9 +21,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-infra/vmlayer"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 //GetExternalGateway retrieves Gateway IP from the external network information. It first gets external

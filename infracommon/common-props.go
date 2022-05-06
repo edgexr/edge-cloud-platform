@@ -23,8 +23,8 @@ import (
 	"sync"
 
 	sh "github.com/codeskyblue/go-sh"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 // Default CloudletVM/Registry paths should only be used for local testing.

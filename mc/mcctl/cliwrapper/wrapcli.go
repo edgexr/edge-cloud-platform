@@ -27,11 +27,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-infra/mc/mcctl/mccli"
-	"github.com/edgexr/edge-cloud-infra/mc/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-infra/mc/mcctl/ormctl"
-	"github.com/edgexr/edge-cloud/cli"
-	edgelog "github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/mc/mcctl/mccli"
+	"github.com/edgexr/edge-cloud-platform/mc/mcctl/mctestclient"
+	"github.com/edgexr/edge-cloud-platform/mc/mcctl/ormctl"
+	"github.com/edgexr/edge-cloud-platform/cli"
+	edgelog "github.com/edgexr/edge-cloud-platform/log"
 	"github.com/spf13/cobra"
 )
 

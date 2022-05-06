@@ -21,14 +21,14 @@ import (
 	"time"
 
 	cloudflare "github.com/cloudflare/cloudflare-go"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/chefmgmt"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform/pc"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/redundancy"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/cloudcommon/node"
-	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/vault"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/chefmgmt"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/redundancy"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
+	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 

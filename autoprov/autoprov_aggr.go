@@ -21,12 +21,12 @@ import (
 	"time"
 
 	influxdb "github.com/influxdata/influxdb/client/v2"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/cloudcommon/influxsup"
-	influxq "github.com/edgexr/edge-cloud/controller/influxq_client"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/influxsup"
+	influxq "github.com/edgexr/edge-cloud-platform/controller/influxq_client"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/util"
 )
 
 // AutoProvAggr aggregates auto-provisioning stats pulled from influxdb,

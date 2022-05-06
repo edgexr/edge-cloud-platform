@@ -15,9 +15,9 @@
 package dmetest
 
 import (
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 type App struct {

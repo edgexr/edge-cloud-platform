@@ -21,12 +21,12 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/edgexr/edge-cloud-infra/promutils"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/prommgmt"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-platform/promutils"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/prommgmt"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/util"
 	"github.com/prometheus/common/model"
 )
 

@@ -6,7 +6,7 @@ package edgeproto
 import (
 	"encoding/json"
 	fmt "fmt"
-	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-platform/util"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	io "io"

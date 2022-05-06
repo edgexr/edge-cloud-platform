@@ -21,9 +21,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/edgexr/edge-cloud-infra/billing"
-	"github.com/edgexr/edge-cloud-infra/infracommon"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/billing"
+	"github.com/edgexr/edge-cloud-platform/infracommon"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
 )
 
 var showProfilesEndpoint = "/payment_profiles.json"

@@ -15,9 +15,9 @@
 package shepherd_common
 
 import (
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/proxy"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/proxy"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 func GetProxyKey(appInstKey *edgeproto.AppInstKey) string {

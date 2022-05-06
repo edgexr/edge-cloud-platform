@@ -30,12 +30,12 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/mitchellh/mapstructure"
-	"github.com/edgexr/edge-cloud-infra/mc/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-infra/mc/mcctl/ormctl"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud/cli"
-	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/mc/mcctl/mctestclient"
+	"github.com/edgexr/edge-cloud-platform/mc/mcctl/ormctl"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/cli"
+	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 type Client struct {

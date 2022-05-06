@@ -22,8 +22,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 // VMCreationSpec includes the flavor and other aspects needed to instantiate a VM

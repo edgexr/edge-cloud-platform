@@ -21,18 +21,18 @@ import (
 	"time"
 
 	"github.com/jarcoal/httpmock"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 
 	//	open_api_models "github.com/prometheus/alertmanager/api/v2/models"
 	// TODO - below is to replace the above for right now - once we update go and modules we can use prometheus directly
 
 	// alertmanager_config "github.com/prometheus/alertmanager/config"
 	// TODO - below is to replace the above for right now - once we update go and modules we can use prometheus directly
-	alertmanager_config "github.com/edgexr/edge-cloud-infra/mc/orm/alertmgr/prometheus_structs/config"
+	alertmanager_config "github.com/edgexr/edge-cloud-platform/mc/orm/alertmgr/prometheus_structs/config"
 
 	//	"github.com/prometheus/common/model"
 	// TODO - below is to replace the above for right now - once we update go and modules we can use prometheus directly

@@ -24,7 +24,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 // Fake envoy exporter serves prometheus stats as if it were an Envoy

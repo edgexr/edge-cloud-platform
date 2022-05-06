@@ -25,8 +25,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/objstore"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/objstore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

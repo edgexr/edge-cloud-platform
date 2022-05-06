@@ -22,8 +22,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/edgexr/edge-cloud-infra/vmlayer"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 const TagFieldGroup = "group"

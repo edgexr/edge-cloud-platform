@@ -17,8 +17,8 @@ package ormctl
 import (
 	"strings"
 
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
 )
 
 var AlertReceiverAliasArgs = []string{

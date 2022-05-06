@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	fmt "fmt"
-	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-platform/util"
 	_ "github.com/gogo/googleapis/google/api"
 	proto "github.com/gogo/protobuf/proto"
 	grpc "google.golang.org/grpc"

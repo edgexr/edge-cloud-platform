@@ -20,8 +20,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	"github.com/edgexr/edge-cloud/gensupport"
-	"github.com/edgexr/edge-cloud/protogen"
+	"github.com/edgexr/edge-cloud-platform/gensupport"
+	"github.com/edgexr/edge-cloud-platform/protogen"
 )
 
 type ControllerGen struct {

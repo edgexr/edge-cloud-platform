@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/jarcoal/httpmock"
-	"github.com/edgexr/edge-cloud/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
 )
 
 // This captures events meant to be sent to elastic search.

@@ -18,7 +18,7 @@ import (
 	fmt "fmt"
 	"strings"
 
-	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-platform/util"
 )
 
 // ApiCommand defines the client interaction with the API. It is very

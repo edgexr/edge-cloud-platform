@@ -18,8 +18,8 @@ import (
 	"context"
 
 	"github.com/labstack/echo"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/log"
 	gitlab "github.com/xanzy/go-gitlab"
 )
 

@@ -6,8 +6,8 @@ package gencmd
 import (
 	"context"
 	fmt "fmt"
-	"github.com/edgexr/edge-cloud/cli"
-	distributed_match_engine "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/cli"
+	distributed_match_engine "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
 	_ "github.com/gogo/googleapis/google/api"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/spf13/cobra"

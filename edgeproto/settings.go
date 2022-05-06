@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/edgexr/edge-cloud/objstore"
+	"github.com/edgexr/edge-cloud-platform/objstore"
 )
 
 type SettingsKey string

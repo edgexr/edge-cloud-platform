@@ -21,13 +21,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/edgexr/edge-cloud-infra/version"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/redundancy"
-	"github.com/edgexr/edge-cloud/cloudcommon/node"
-	"github.com/edgexr/edge-cloud/integration/process"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/notify"
-	"github.com/edgexr/edge-cloud/vault"
+	"github.com/edgexr/edge-cloud-platform/version"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/redundancy"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/notify"
+	"github.com/edgexr/edge-cloud-platform/vault"
 )
 
 var notifyAddrs = flag.String("notifyAddrs", "127.0.0.1:50001", "Comma separated list of controller notify listener addresses")
@@ -70,7 +70,7 @@ func main() {
 		log.FatalLog(err.Error())
 	}
 	defer span.Finish()
-	nodeMgr.UpdateNodeProps(ctx, version.InfraBuildProps("Infra"))
+	nodeMgr.UpdateNodeProps(ctx, version.BuildProps("Infra"))
 
 	notifyClient, controllerData, err = InitFRM(ctx, &nodeMgr, &haMgr, *hostname, *region, *appDNSRoot, *notifyAddrs)
 	if err != nil {

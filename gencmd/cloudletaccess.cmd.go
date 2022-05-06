@@ -6,8 +6,8 @@ package gencmd
 import (
 	"context"
 	fmt "fmt"
-	"github.com/edgexr/edge-cloud/cli"
-	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/cli"
+	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/spf13/cobra"

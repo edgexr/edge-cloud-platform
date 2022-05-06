@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud-infra/vmlayer"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 var VMPoolProps = map[string]*edgeproto.PropertyInfo{

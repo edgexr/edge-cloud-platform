@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 // Struct with information used to create Continuous Query

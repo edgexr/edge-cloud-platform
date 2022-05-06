@@ -19,16 +19,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/accessapi"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/crmutil"
-	pf "github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
-	pfutils "github.com/edgexr/edge-cloud/cloud-resource-manager/platform/utils"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/redundancy"
-	"github.com/edgexr/edge-cloud/cloudcommon/node"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/notify"
-	"github.com/edgexr/edge-cloud/tls"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/accessapi"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/crmutil"
+	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	pfutils "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/utils"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/redundancy"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/notify"
+	"github.com/edgexr/edge-cloud-platform/tls"
 )
 
 // ControllerData contains cache data for controller

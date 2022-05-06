@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/log"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
 

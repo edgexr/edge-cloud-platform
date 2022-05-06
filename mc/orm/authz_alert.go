@@ -18,8 +18,8 @@ import (
 	"context"
 
 	"github.com/labstack/echo"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 type AuthzAlert struct {
