@@ -1,0 +1,82 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// AppInstClient proto
+
+syntax = "proto3";
+package edgeproto;
+
+import "google/api/annotations.proto";
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+import "github.com/edgexr/edge-cloud/d-match-engine/dme-proto/loc.proto";
+import "appinst.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+message AppInstClientKey {
+  // AppInst Key
+  AppInstKey app_inst_key = 1 [(protogen.keytag) = "appinstkey", (gogoproto.nullable) = false];
+  // AppInstClient Unique Id
+  string unique_id = 2 [(protogen.keytag) = "uniqueid"];
+  // AppInstClient Unique Id Type
+  string unique_id_type = 3 [(protogen.keytag) = "uniqueidtype"];
+
+//  AppInstClientLookupKey key = 1 [(gogoproto.nullable) = false];
+
+  option (protogen.obj_and_key) = true;
+  option (protogen.notify_message) = true;
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.notify_cache) = true;
+  option (protogen.not_required) = "AppInstKey.AppKey.Name,AppInstKey.AppKey.Version,AppInstKey.ClusterInstKey.ClusterKey.Name,AppInstKey.ClusterInstKey.Organization,AppInstKey.ClusterInstKey.CloudletKey.Name,AppInstKey.ClusterInstKey.CloudletKey.Organization,AppInstKey.ClusterInstKey.CloudletKey.FederatedOrganization,UniqueId,UniqueIdType";
+  option (protogen.alias) = "uniqueid=UniqueId,uniqueidtype=UniqueIdType,appname=AppInstKey.AppKey.Name,appvers=AppInstKey.AppKey.Version,apporg=AppInstKey.AppKey.Organization,cluster=AppInstKey.ClusterInstKey.ClusterKey.Name,clusterorg=AppInstKey.ClusterInstKey.Organization,cloudlet=AppInstKey.ClusterInstKey.CloudletKey.Name,cloudletorg=AppInstKey.ClusterInstKey.CloudletKey.Organization,federatedorg=AppInstKey.ClusterInstKey.CloudletKey.FederatedOrganization";
+  option (protogen.uses_org) = "none";
+  option (gogoproto.gostring) = true;
+  option (protogen.ignore_refers_to) = true;
+}
+
+
+// Client is an AppInst client that called FindCloudlet DME Api
+message AppInstClient {
+  // Fields are used for the Update API to specify which fields to apply
+  repeated string fields = 1;
+  // Unique identifier key
+  AppInstClientKey client_key = 2 [(gogoproto.nullable) = false];
+  // Location of the Client
+  distributed_match_engine.Loc location = 3 [(gogoproto.nullable) = false, (protogen.hidetag) = "nocmp"];
+  // Id of client assigned by server (internal use only)
+  int64 notify_id = 4 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+
+  option (protogen.notify_message) = true;
+  option (protogen.notify_print_send_recv) = false;
+}
+
+service AppInstClientApi {
+  // Show application instance clients.
+  rpc ShowAppInstClient(AppInstClientKey) returns (stream AppInstClient) {
+    option (google.api.http) = {
+      post: "/show/appinstclient"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceAppAnalytics,ActionView,AppInstKey.AppKey.Organization";
+    option (protogen.non_standard_show) = true;
+  }
+  // This is used unternally to forward AppInstClients to other Controllers
+  rpc StreamAppInstClientsLocal(AppInstClientKey) returns (stream AppInstClient) {}
+}

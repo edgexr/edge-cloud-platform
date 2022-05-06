@@ -1,0 +1,152 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// InfraResources defines resources used within the cloudlet infrastructure
+
+syntax = "proto3";
+package edgeproto;
+
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+import "gogoproto/gogo.proto";
+import "cluster.proto";
+import "decimal.proto";
+import "app.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// ContainerInfo
+//
+// ContainerInfo is infomation about containers running on a VM, 
+message ContainerInfo{
+  // Name of the container 
+  string name = 1;
+  // Type can be docker or kubernetes
+  string type = 2;
+  // Runtime status of the container
+  string status = 3;
+  // IP within the CNI and is applicable to kubernetes only
+  string clusterip = 4;
+  // Restart count, applicable to kubernetes only
+  int64 restarts = 5;
+}
+
+// IpAddr is an address for a VM which may have an external and
+// internal component.  Internal and external is with respect to the VM
+// and are are often the same unless a natted or floating IP is used.  If 
+// internalIP is not reported it is the same as the ExternalIP.
+message IpAddr{
+  // External IP address
+  string externalIp = 1;
+  // Internal IP address
+  string internalIp = 2;
+}
+
+// VmInfo
+//
+// VmInfo is information about Virtual Machine resources. 
+message VmInfo{
+  // Virtual machine name
+  string name = 1;
+  // Type can be platformvm, platform-cluster-master, platform-cluster-primary-node, platform-cluster-secondary-node, sharedrootlb, dedicatedrootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm
+  string type = 2;
+  // Runtime status of the VM
+  string status = 3;
+  // Flavor allocated within the cloudlet infrastructure, distinct from the control plane flavor
+  string infraFlavor = 4;
+  // IP addresses allocated to the VM
+  repeated IpAddr ipaddresses = 5 [(gogoproto.nullable) = false];
+  // Information about containers running in the VM
+  repeated ContainerInfo containers = 6;
+}
+
+// InfraResource
+//
+// InfraResource is information about cloudlet infra resource.
+message InfraResource {
+  // Resource name
+  string name = 1;
+  // Resource value
+  uint64 value = 2;
+  // Resource infra max value
+  uint64 infra_max_value = 3;
+  // Resource quota max value
+  uint64 quota_max_value = 4;
+  // Resource description
+  string description = 5;
+  // Resource units
+  string units = 6;
+  // Generate alert when more than threshold percentage of resource is used
+  int32 alert_threshold = 7;
+}
+
+// NodeInfo
+//
+// NodeInfo is information about a Kubernetes node
+message NodeInfo {
+  // Node name
+  string name = 1;
+  // Maximum allocatable resources on the node (capacity - overhead)
+  map<string, Udec64> allocatable = 2;
+  // Capacity of underlying resources on the node
+  map<string, Udec64> capacity = 3;
+}
+
+// ClusterInst Ref Key
+//
+// ClusterInstRefKey is cluster instance key without cloudlet key.
+message ClusterInstRefKey {
+  // Name of Cluster
+  ClusterKey cluster_key = 1 [(gogoproto.nullable) = false];
+  // Name of Developer organization that this cluster belongs to
+  string organization = 2 [(protogen.keytag) = "clusterreforg"];
+  option (protogen.obj_key) = true;
+}
+
+// AppInst Ref Key
+//
+// AppInstRefKey is app instance key without cloudlet key.
+message AppInstRefKey {
+  // App key
+  AppKey app_key = 1 [(gogoproto.nullable) = false];
+  // Cluster instance on which this is instantiated
+  ClusterInstRefKey cluster_inst_key = 2 [(gogoproto.nullable) = false];
+  option (protogen.obj_key) = true;
+}
+
+// InfraResources
+//
+// InfraResources is infomation about infrastructure resources.
+message InfraResources {
+  // Virtual machine resources info
+  repeated VmInfo vms = 1 [(gogoproto.nullable) = false];
+}
+
+
+// InfraResourcesSnapshot
+//
+// InfraResourcesSnapshot is snapshot of information about cloudlet infra resources.
+message InfraResourcesSnapshot {
+  // Virtual machine resources info
+  repeated VmInfo platform_vms = 1 [(gogoproto.nullable) = false];
+  // Infra Resource information
+  repeated InfraResource info = 2 [(gogoproto.nullable) = false];
+  // List of clusterinsts this resources snapshot represent
+  repeated ClusterInstRefKey cluster_insts = 3 [(gogoproto.nullable) = false];
+  // List of vm appinsts this resources snapshot represent
+  repeated AppInstRefKey vm_app_insts = 4 [(gogoproto.nullable) = false];
+  // List of k8s appinsts this resources snapshot represent
+  repeated AppInstRefKey k8s_app_insts = 5 [(gogoproto.nullable) = false];
+}

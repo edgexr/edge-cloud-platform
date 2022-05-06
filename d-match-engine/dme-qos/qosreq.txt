@@ -1,0 +1,20 @@
+{"session_cookie": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NjY0MTg0NzcsImlhdCI6MTU2NjMzMjA3Nywia2V5Ijp7InBlZXJpcCI6IjEyNy4wLjAuMSIsImRldm5hbWUiOiJTYW1zdW5nIiwiYXBwbmFtZSI6IlNhbXN1bmdFbmFibGluZ0xheWVyIiwiYXBwdmVycyI6IjEuMCIsImtpZCI6Nn19.wv3fxGV_GVHRD0NrTPRSUTPdNVL0j59EOpq6jabX0nWRywtGcNTiFwCiH_7wLUmMZkg4z2O7ldPYzbAt305IGA",
+	"positions": [
+		{
+			"positionid": 1,
+			"gps_location": {
+				"latitude": 50.11,
+				"longitude": 8.5821
+			}
+		},
+		{
+			"positionid": 2,
+			"gps_location": {
+				"latitude": 50.111,
+				"longitude": 9
+			}
+		}
+	],
+        "band_selection": {"rat_2g":["800", "900"]}
+
+}

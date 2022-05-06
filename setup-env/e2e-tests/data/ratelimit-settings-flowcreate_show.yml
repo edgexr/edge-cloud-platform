@@ -1,0 +1,69 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+settings:
+- key:
+    apiname: FindCloudlet
+    apiendpointtype: Dme
+    ratelimittarget: AllRequests
+  flowsettings:
+    fcallreqs1:
+      flowalgorithm: TokenBucketAlgorithm
+      reqspersecond: 100
+      burstsize: 5
+- key:
+    apiname: Global
+    apiendpointtype: Dme
+    ratelimittarget: AllRequests
+  flowsettings:
+    dmeglobalallreqs1:
+      flowalgorithm: TokenBucketAlgorithm
+      reqspersecond: 25000
+      burstsize: 250
+- key:
+    apiname: Global
+    apiendpointtype: Dme
+    ratelimittarget: PerIp
+  flowsettings:
+    dmeglobalperip1:
+      flowalgorithm: TokenBucketAlgorithm
+      reqspersecond: 10000
+      burstsize: 100
+- key:
+    apiname: PersistentConnection
+    apiendpointtype: Dme
+    ratelimittarget: AllRequests
+  flowsettings:
+    persistentconnectionallreqs1:
+      flowalgorithm: TokenBucketAlgorithm
+      reqspersecond: 100
+      burstsize: 10
+- key:
+    apiname: VerifyLocation
+    apiendpointtype: Dme
+    ratelimittarget: AllRequests
+  flowsettings:
+    verifylocallreqs1:
+      flowalgorithm: TokenBucketAlgorithm
+      reqspersecond: 5000
+      burstsize: 50
+- key:
+    apiname: VerifyLocation
+    apiendpointtype: Dme
+    ratelimittarget: PerIp
+  flowsettings:
+    verifylocperip1:
+      flowalgorithm: TokenBucketAlgorithm
+      reqspersecond: 1000
+      burstsize: 25

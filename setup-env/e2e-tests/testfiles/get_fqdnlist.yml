@@ -1,0 +1,49 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+##
+##
+
+tests:
+
+- name: stop cluster-svc instances
+  actions: [stop=cluster-svc1, stop=cluster-svc2]
+
+- name: create and verify provisioning for 2 apps, 10 instances
+  actions: [ctrlapi-create,ctrlapi-show]
+  apifile: "{{datadir}}/appdata_10.yml"
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/show10.yml"
+    filetype: appdata
+
+- name: get fqdnlist
+  actions: [dmeapi-getfqdnlist] 
+  apifile: "{{datadir}}/get_fqdnlist_platos.yml"
+  compareyaml:
+     yaml1: "{{outputdir}}/getfqdnlist.yml"
+     yaml2: "{{datadir}}/get_fqdnlist_result.yml"
+     filetype: getfqdnlist
+
+ 
+- name: delete provisioning, verify it is empty
+  actions: [ctrlapi-delete,ctrlapi-show]
+  apifile: "{{datadir}}/appdata_10.yml"
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/appdata_empty.yml"
+    filetype: appdata
+
+- name: start cluster-svc instances
+  actions: [start=cluster-svc1, start=cluster-svc2]

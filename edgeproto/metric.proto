@@ -1,0 +1,62 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Generic metric data
+
+syntax = "proto3";
+package edgeproto;
+
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+import "gogoproto/gogo.proto";
+//import "result.proto";
+import "google/protobuf/timestamp.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// MetricTag is used as a tag or label to look up the metric, beyond just the name of the metric.
+message MetricTag {
+  // Metric tag name
+  string name = 1;
+  // Metric tag value
+  string val = 2;
+}
+
+// MetricVal is a value associated with the metric.
+message MetricVal {
+  // Name of the value
+  string name = 1;
+  // Value of the Value.
+  oneof value {
+    double dval = 2;
+    uint64 ival = 3;
+    bool bval = 4;
+    string sval = 5;
+  }
+}
+
+// Metric is an entry/point in a time series of values for Analytics/Billing.
+message Metric {
+  // Metric name
+  string name = 1;
+  // Timestamp when the metric was captured
+  google.protobuf.Timestamp timestamp = 2 [(gogoproto.nullable) = false];
+  // Tags associated with the metric for searching/filtering
+  repeated MetricTag tags = 3;
+  // Values associated with the metric
+  repeated MetricVal vals = 4;
+  option (protogen.notify_message) = true;
+  option (protogen.notify_print_send_recv) = false;
+}

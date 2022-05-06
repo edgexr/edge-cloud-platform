@@ -1,0 +1,156 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+package edgeproto;
+
+import "result.proto";
+import "google/api/annotations.proto";
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// Global settings
+message Settings {
+  // Fields are used for the Update API to specify which fields to apply
+  repeated string fields = 1;
+  // Shepherd metrics collection interval for k8s and docker appInstances (duration)
+  int64 shepherd_metrics_collection_interval = 2 [(gogoproto.casttype) = "Duration"];
+  // Shepherd alert evaluation interval for k8s and docker appInstances (duration)
+  int64 shepherd_alert_evaluation_interval = 20 [(gogoproto.casttype) = "Duration"];
+  // Shepherd metrics scraping interval (how often metrics are pulled by prometheus, vs pushed to Controller by Shepherd collection)
+  int64 shepherd_metrics_scrape_interval = 40 [(gogoproto.casttype) = "Duration"];
+  // Number of times Shepherd Health Check fails before we mark appInst down
+  int32 shepherd_health_check_retries = 3;
+  // Health Checking probing frequency (duration)
+  int64 shepherd_health_check_interval = 4 [(gogoproto.casttype) = "Duration"];
+  // Auto Provisioning Stats push and analysis interval (seconds)
+  double auto_deploy_interval_sec = 5;
+  // Auto Provisioning analysis offset from interval (seconds)
+  double auto_deploy_offset_sec = 6;
+  // Auto Provisioning Policy max allowed intervals
+  uint32 auto_deploy_max_intervals = 7;
+  // Create AppInst timeout (duration)
+  int64 create_app_inst_timeout = 8 [(gogoproto.casttype) = "Duration"];
+  // Update AppInst timeout (duration)
+  int64 update_app_inst_timeout = 9 [(gogoproto.casttype) = "Duration"];
+  // Delete AppInst timeout (duration)
+  int64 delete_app_inst_timeout = 10 [(gogoproto.casttype) = "Duration"];
+  // Create ClusterInst timeout (duration)
+  int64 create_cluster_inst_timeout = 11 [(gogoproto.casttype) = "Duration"];
+  // Update ClusterInst timeout (duration)
+  int64 update_cluster_inst_timeout = 12 [(gogoproto.casttype) = "Duration"];
+  // Delete ClusterInst timeout (duration)
+  int64 delete_cluster_inst_timeout = 13 [(gogoproto.casttype) = "Duration"];
+  // Default flavor for k8s master VM and > 0  workers
+  string master_node_flavor = 14;
+  // (removed) Max IP Port range when using a load balancer
+  reserved "load_balancer_max_port_range";
+  reserved 15;
+  // Max DME clients to be tracked at the same time.
+  int32 max_tracked_dme_clients = 16;
+  // Default chef client interval (duration)
+  int32 chef_client_interval = 17 [(gogoproto.casttype) = "Duration"];
+  // Default influxDB metrics retention policy (duration)
+  int64 influx_db_metrics_retention = 18 [(gogoproto.casttype) = "Duration"];
+  // Default Cloudlet Maintenance timeout (used twice for AutoProv and Cloudlet)
+  int32 cloudlet_maintenance_timeout = 19 [(gogoproto.casttype) = "Duration"];
+  // Update VM pool timeout (duration)
+  int64 update_vm_pool_timeout = 21 [(gogoproto.casttype) = "Duration"];
+  // Update Trust Policy timeout (duration)
+  int64 update_trust_policy_timeout = 22 [(gogoproto.casttype) = "Duration"];
+  // Metrics collection interval for DME API counts (duration)
+  int64 dme_api_metrics_collection_interval = 23 [(gogoproto.casttype) = "Duration"];
+  // Collection interval for edgeevents metrics (latency, device, and custom)
+  int64 edge_events_metrics_collection_interval = 24 [(gogoproto.casttype) = "Duration"];
+  // Idle reservable ClusterInst clean up time
+  int64 cleanup_reservable_auto_cluster_idletime = 25 [(gogoproto.casttype) = "Duration"];
+  // Default influxDB cloudlet usage metrics retention policy (duration)
+  int64 influx_db_cloudlet_usage_metrics_retention = 26 [(gogoproto.casttype) = "Duration"];
+  // Create Cloudlet timeout (duration)
+  int64 create_cloudlet_timeout = 27 [(gogoproto.casttype) = "Duration"];
+  // Update Cloudlet timeout (duration)
+  int64 update_cloudlet_timeout = 28 [(gogoproto.casttype) = "Duration"];
+  // Length of location tiles side for latency metrics (km)
+  int64 location_tile_side_length_km = 29;
+  // List of collection intervals for Continuous Queries for EdgeEvents metrics
+  repeated CollectionInterval edge_events_metrics_continuous_queries_collection_intervals = 30;
+  // Default retention policy for downsampled influx db (duration)
+  int64 influx_db_downsampled_metrics_retention = 31 [(gogoproto.casttype) = "Duration"];
+  // Default retention policy for edgeevents metrics influx db (duration)
+  int64 influx_db_edge_events_metrics_retention = 32 [(gogoproto.casttype) = "Duration"];
+  // AppInstClient cleanup thread run interval
+  int64 appinst_client_cleanup_interval = 33 [(gogoproto.casttype) = "Duration"];
+  // Cluster auto scale averaging duration for stats to avoid spikes (seconds), avoid setting below 30s or it will not capture any measurements to average
+  int64 cluster_auto_scale_averaging_duration_sec = 34;
+  // Cluster auto scale retry delay if scaling failed
+  int64 cluster_auto_scale_retry_delay = 35 [(gogoproto.casttype) = "Duration"];
+  // Minimmum trigger time for alert policies
+  int64 alert_policy_min_trigger_time = 36 [(gogoproto.casttype) = "Duration"];
+  // Disable rate limiting for APIs (default is false)
+  bool disable_rate_limit = 37;
+  // Maximum number of IPs to track for rate limiting
+  int64 rate_limit_max_tracked_ips = 39;
+  // ResourceSnapshot Refresh thread run interval
+  int64 resource_snapshot_thread_interval = 41 [(gogoproto.casttype) = "Duration"];
+  // Platform HA instance poll interval
+  int64 platform_ha_instance_poll_interval = 42 [(gogoproto.casttype) = "Duration"];
+    // Platform HA instance active time
+  int64 platform_ha_instance_active_expire_time = 43 [(gogoproto.casttype) = "Duration"];
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.notify_cache) = true;
+  option (protogen.custom_key_type) = "SettingsKey";
+  option (protogen.singular_data) = true;
+  option (protogen.uses_org) = "none";
+}
+
+// Collection interval for Influxdb (Specifically used for cq intervals, because cannot gogoproto.casttype to Duration for repeated fields otherwise)
+message CollectionInterval {
+  // Collection interval for Influxdb (Specifically used for continuous query intervals) (Data from old continuous queries will be inaccessible if intervals are updated)
+  int64 interval = 1 [(gogoproto.casttype) = "Duration"];
+  // Retention duration for Influxdb interval (0 uses default retention policy)
+  int64 retention = 2 [(gogoproto.casttype) = "Duration"];
+}
+
+service SettingsApi {
+  // Update settings
+  rpc UpdateSettings(Settings) returns (Result) {
+    option (google.api.http) = {
+      post: "/update/settings"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceConfig,ActionManage,";
+  }
+  // Reset all settings to their defaults
+  rpc ResetSettings(Settings) returns (Result) {
+    option (google.api.http) = {
+      post: "/reset/settings"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceConfig,ActionManage,";
+  }
+  // Show settings
+  rpc ShowSettings(Settings) returns (Settings) {
+    option (google.api.http) = {
+      post: "/show/settings"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceConfig,ActionView,";
+  }
+}

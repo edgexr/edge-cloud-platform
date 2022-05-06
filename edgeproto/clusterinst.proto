@@ -1,0 +1,235 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// ClusterInst defines a kubernetes cluster on a particular Cloudlet
+
+syntax = "proto3";
+package edgeproto;
+
+import "google/api/annotations.proto";
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+import "result.proto";
+import "flavor.proto";
+import "cluster.proto";
+import "cloudletkey.proto";
+import "common.proto";
+import "infraresources.proto";
+import "gogoproto/gogo.proto";
+import "github.com/edgexr/edge-cloud/d-match-engine/dme-proto/loc.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// Cluster Instance unique key
+//
+// ClusterInstKey uniquely identifies a Cluster Instance (ClusterInst) or Cluster Instance state (ClusterInstInfo).
+message ClusterInstKey {
+  // Name of Cluster
+  ClusterKey cluster_key = 1 [(gogoproto.nullable) = false];
+  // Name of Cloudlet on which the Cluster is instantiated
+  CloudletKey cloudlet_key = 2 [(gogoproto.nullable) = false, (protogen.refers_to) = "Cloudlet"];
+  // Name of Developer organization that this cluster belongs to
+  string organization = 3 [(protogen.keytag) = "clusterorg"];
+  option (protogen.generate_matches) = true;
+  option (protogen.obj_key) = true;
+  option (gogoproto.gostring) = true;
+}
+
+// Cluster Instance
+//
+// ClusterInst is an instance of a Cluster on a Cloudlet. 
+// It is defined by a Cluster, Cloudlet, and Developer key. 
+message ClusterInst {
+  // Fields are used for the Update API to specify which fields to apply
+  repeated string fields = 1;
+  // Unique key
+  // required: true
+  ClusterInstKey key = 2 [(gogoproto.nullable) = false];
+  // Flavor of the k8s node 
+  FlavorKey flavor = 3 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.refers_to) = "Flavor"];
+  // Liveness of instance (see Liveness)
+  Liveness liveness = 9 [(protogen.backend) = true];
+  // Auto is set to true when automatically created by back-end (internal use only)
+  bool auto = 10 [(protogen.backend) = true];
+  // State of the cluster instance
+  TrackedState state = 4 [(protogen.backend) = true];
+  // Any errors trying to create, update, or delete the ClusterInst on the Cloudlet.
+  repeated string errors = 5 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Override actions to CRM
+  CRMOverride crm_override = 6;
+  // IP access type (RootLB Type)
+  IpAccess ip_access = 7 [(protogen.backend) = true];
+  // Allocated IP for dedicated access
+  string allocated_ip = 8 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Cloudlet specific node flavor
+  string node_flavor = 11 [(protogen.backend) = true];
+  // Deployment type (kubernetes or docker)
+  string deployment = 15 [(protogen.backend) = true];
+  // Number of k8s masters (In case of docker deployment, this field is not required)
+  uint32 num_masters = 13;
+  // Number of k8s nodes (In case of docker deployment, this field is not required)
+  uint32 num_nodes = 14;
+  // StatusInfo (16) (Deprecated) status is used to reflect progress of creation or other events
+
+  // Size of external volume to be attached to nodes.  This is for the root partition
+  uint64 external_volume_size = 17 [(protogen.backend) = true];
+  // Auto scale policy name
+  string auto_scale_policy = 18 [(protogen.refers_to) = "AutoScalePolicy"];
+  // Optional Resource AZ if any
+  string availability_zone = 19;
+  // Optional resource specific image to launch
+  string image_name = 20  [(protogen.backend) = true];
+  // If ClusterInst is reservable
+  bool reservable = 21;
+  // For reservable MobiledgeX ClusterInsts, the current developer tenant
+  string reserved_by = 22 [(protogen.backend) = true];
+  // Size of an optional shared volume to be mounted on the master
+  uint64 shared_volume_size = 23;
+  // Generic flavor for k8s master VM when worker nodes > 0
+  string master_node_flavor = 25 [(protogen.backend) = true];
+  // Prevents cleanup of resources on failure within CRM, used for diagnostic purposes
+  bool skip_crm_cleanup_on_failure = 26;
+  // Optional Resources required by OS flavor if any
+  string opt_res = 27 [(protogen.backend) = true];
+  // Resources used by cluster
+  InfraResources resources = 28 [(protogen.backend) = true, (gogoproto.nullable) = false];
+  // Created at time
+  distributed_match_engine.Timestamp created_at = 29 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.hidetag) = "timestamp"];
+  // Updated at time
+  distributed_match_engine.Timestamp updated_at = 30 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.hidetag) = "timestamp"];
+  // For reservable ClusterInsts, when the last reservation ended
+  distributed_match_engine.Timestamp reservation_ended_at = 31 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.hidetag) = "timestamp"];
+  // Multi-tenant kubernetes cluster
+  bool multi_tenant = 32;
+  // networks to connect to
+  repeated string networks = 33 [(protogen.refers_to) = "Network"];
+  // Preparing to be deleted
+  bool delete_prepare = 34 [(protogen.backend) = true]; 
+  // DNS label that is unique within the cloudlet and among other AppInsts/ClusterInsts
+  string dns_label = 35 [(protogen.backend) = true];
+  // FQDN is a globally unique DNS id for the ClusterInst
+  string fqdn = 36 [(protogen.backend) = true];
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cud_test) = true;
+  option (protogen.generate_cud_streamout) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.generate_stream_key) = true;
+  option (protogen.notify_cache) = true;
+  option (protogen.notify_custom_update) = true;
+  option (protogen.notify_filter_cloudlet_key) = true;
+  option (protogen.noconfig) = "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes,ReservationEndedAt,DeletePrepare,DnsLabel,Fqdn";
+  option (protogen.not_required) = "Key.CloudletKey.FederatedOrganization";
+  option (protogen.alias) = "cluster=Key.ClusterKey.Name,cloudlet=Key.CloudletKey.Name,cloudletorg=Key.CloudletKey.Organization,federatedorg=Key.CloudletKey.FederatedOrganization,clusterorg=Key.Organization,flavor=Flavor.Name";
+  option (protogen.mc2_target_cloudlet) = "Key.CloudletKey";
+  option (protogen.uses_org) = "custom";
+}
+
+// Parameters for selecting reservable ClusterInsts to delete
+message IdleReservableClusterInsts {
+  // Idle time (duration)
+  int64 idle_time = 1 [(gogoproto.casttype) = "Duration"];
+  option (protogen.singular_data) = true;
+  option (protogen.uses_org) = "none";
+}
+
+service ClusterInstApi {
+  // Create Cluster Instance. Creates an instance of a Cluster on a Cloudlet,
+  // defined by a Cluster Key and a Cloudlet Key. ClusterInst is a collection of
+  // compute resources on a Cloudlet on which AppInsts are deployed.
+  rpc CreateClusterInst(ClusterInst) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/create/clusterinst"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.Organization";
+    option (protogen.mc2_custom_authz) = true;
+  }
+  // Delete Cluster Instance. Deletes an instance of a Cluster deployed on a Cloudlet.
+  rpc DeleteClusterInst(ClusterInst) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/delete/clusterinst"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.Organization";
+  }
+  // Update Cluster Instance. Updates an instance of a Cluster deployed on a Cloudlet.
+  rpc UpdateClusterInst(ClusterInst) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/update/clusterinst"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.Organization";
+    option (protogen.method_noconfig) = "Flavor,NumMasters,AvailabilityZone,Reservable,SharedVolumeSize,IpAccess,Deployment,ImageName,Networks";
+  }
+  // Show Cluster Instances. Lists all the cluster instances managed by Edge Controller.
+  rpc ShowClusterInst(ClusterInst) returns (stream ClusterInst) {
+    option (google.api.http) = {
+      post: "/show/clusterinst"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionView,Key.Organization";
+    option (protogen.mc2_custom_authz) = true;
+  }
+  // Cleanup Reservable Cluster Instances. Deletes reservable cluster instances that are not in use.
+  rpc DeleteIdleReservableClusterInsts(IdleReservableClusterInsts) returns (Result) {
+    option (google.api.http) = {
+      post: "/delete/idlereservableclusterinsts"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,";
+  }
+}
+
+// ClusterInstInfo provides information from the Cloudlet Resource Manager about the state of the ClusterInst on the Cloudlet. Whereas the ClusterInst defines the intent of instantiating a Cluster on a Cloudlet, the ClusterInstInfo defines the current state of trying to apply that intent on the physical resources of the Cloudlet.
+message ClusterInstInfo {
+  // Fields are used for the Update API to specify which fields to apply
+  repeated string fields = 1;
+  // Unique identifier key
+  ClusterInstKey key = 2 [(gogoproto.nullable) = false];
+  // Id of client assigned by server (internal use only)
+  int64 notify_id = 3 [(protogen.hidetag) = "nocmp"];
+  // State of the cluster instance
+  TrackedState state = 4;
+  // Any errors trying to create, update, or delete the ClusterInst on the Cloudlet.
+  repeated string errors = 5;
+  // status is used to reflect progress of creation or other events
+  StatusInfo status = 6 [(protogen.backend) = true, (gogoproto.nullable) = false];
+  // Resources allocated to this cluster
+  InfraResources resources = 7 [(protogen.backend) = true, (gogoproto.nullable) = false];
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.generate_show_test) = true;
+  option (protogen.parent_obj_name) = "ClusterInst";
+  option (protogen.generate_wait_for_state) = "TrackedState";
+  option (protogen.notify_cache) = true;
+  option (protogen.notify_flush) = true;
+  option (protogen.uses_org) = "none";
+  option (protogen.ignore_refers_to) = true;
+}
+
+service ClusterInstInfoApi {
+  // Show Cluster instances state.
+  rpc ShowClusterInstInfo(ClusterInstInfo) returns (stream ClusterInstInfo) {
+    option (google.api.http) = {
+      post: "/show/clusterinstinfo"
+      body: "*"
+    };
+  }
+}

@@ -1,0 +1,69 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// version definitions
+
+syntax = "proto3";
+package edgeproto;
+
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// Below enum lists hashes as well as corresponding versions
+enum VersionHash {
+  HASH_d41d8cd98f00b204e9800998ecf8427e = 0;
+  //interim versions deleted
+  HASH_d4ca5418a77d22d968ce7a2afc549dfe = 9;
+  HASH_7848d42e3a2eaf36e53bbd3af581b13a = 10;
+  HASH_f31b7a9d7e06f72107e0ab13c708704e = 11;
+  HASH_03fad51f0343d41f617329151f474d2b = 12;
+  HASH_7d32a983fafc3da768e045b1dc4d5f50 = 13;
+  HASH_747c14bdfe2043f09d251568e4a722c6 = 14;
+  HASH_c7fb20f545a5bc9869b00bb770753c31 = 15;
+  HASH_83cd5c44b5c7387ebf7d055e7345ab42 = 16;
+  HASH_d8a4e697d0d693479cfd9c1c523d7e06 = 17;
+  HASH_e8360aa30f234ecefdfdb9fb2dc79c20 = 18;
+  HASH_c53c7840d242efc7209549a36fcf9e04 = 19;
+  HASH_1a57396698c4ade15f0579c9f5714cd6 = 20 [(protogen.upgrade_func) = "CheckForHttpPorts"];
+  HASH_71c580746ee2a6b7d1a4182b3a54407a = 21 [(protogen.upgrade_func) = "PruneplatosPlatformDevices"];
+  HASH_a18636af1f4272c38ca72881b2a8bcea = 22 [(protogen.upgrade_func) = "SetTrusted"];
+  HASH_efbddcee4ba444e3656f64e430a5e3be = 23; // Add VirtualClusterInstKey
+  HASH_c2c322505017054033953f6104002bf5 = 24 [(protogen.upgrade_func) = "CloudletResourceUpgradeFunc"];
+  HASH_facc3c3c9c76463c8d8b3c874ce43487 = 25;
+  HASH_8ba950479a03ab77edfad426ea53c173 = 26;
+  HASH_f4eb139f7a8373a484ab9749eadc31f5 = 27;
+  HASH_09fae4d440aa06acb9664167d2e1f036 = 28;
+  HASH_8c5a9c29caff4ace0a23a9dab9a15bf7 = 29;
+  HASH_b7c6a74ce2f30b3bda179e00617459cf = 30 [(protogen.upgrade_func) = "AppInstRefsDR"];
+  HASH_911d86a4eb2bbfbff1173ffbdd197a8c = 31;
+  HASH_99349a696d0b5872542f81b4b0b4788e = 32;
+  HASH_264850a5c1f7a054b4de1a87e5d28dcc = 33 [(protogen.upgrade_func) = "TrustPolicyExceptionUpgradeFunc"];
+  HASH_748b47eaf414b0f2c15e4c6a9298b5f1 = 34 [(protogen.upgrade_func) = "AddClusterRefs"];
+  HASH_1480647750f7638ff5494c0e715bb98c = 35;
+  HASH_208a22352e46f6bbe34f3b72aaf99ee5 = 36 [(protogen.upgrade_func) = "AddAppInstUniqueId"];
+  HASH_6f8f268d3945699608651e1a8bb38e5e = 37;
+  HASH_2dfdb2ed2cf52241b2b3db1d39e11bc6 = 38 [(protogen.upgrade_func) = "AddDnsLabels"];
+  HASH_6585ad5e26ee92a955abd26c38067065 = 39 [(protogen.upgrade_func) = "AddCloudletKeyToCloudletPool"];
+  HASH_4ddeb801651b2acb84f5d182e445fce1 = 40 [(protogen.upgrade_func) = "AddSetupSpecificAppDNSRootForCloudlets"];
+  HASH_156def83eec72a44248fabd79199efbe = 41;
+  HASH_636a7d17efd0532933313e27e6de0a5b = 42;
+  HASH_0a418578eee77cabd2b8e1dd1fa64dbe = 43;
+  HASH_93e8b0c0bb73ce790ebcd69d8437539c = 44 [(protogen.upgrade_func) = "AddGPUDriverStoragePaths"];
+  option (protogen.version_hash) = true;
+  option (protogen.version_hash_salt) = "8";
+}

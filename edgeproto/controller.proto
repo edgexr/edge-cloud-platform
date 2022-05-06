@@ -1,0 +1,65 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Controllers
+
+syntax = "proto3";
+package edgeproto;
+
+import "google/api/annotations.proto";
+import "gogoproto/gogo.proto";
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// ControllerKey uniquely defines a Controller
+message ControllerKey {
+  // external API address
+  string addr = 1 [(protogen.keytag) = "controlleraddr"];
+  option (protogen.generate_matches) = true;
+  option (protogen.obj_key) = true;
+  option (gogoproto.gostring) = true;
+}
+
+// A Controller is a service that manages the edge-cloud data and controls other edge-cloud micro-services.
+message Controller {
+  // Fields are used for the Update API to specify which fields to apply
+  repeated string fields = 1;
+  // Unique identifier key
+  ControllerKey key = 2 [(gogoproto.nullable) = false];
+  // Build Master Version
+  string build_master = 4 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Build Head Version
+  string build_head = 5 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Build Author
+  string build_author = 6 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Hostname
+  string hostname = 7 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.uses_org) = "none";
+}
+
+service ControllerApi {
+  // Show Controllers
+  rpc ShowController(Controller) returns (stream Controller) {
+    option (google.api.http) = {
+      post: "/show/controller"
+      body: "*"
+    };
+  }
+}

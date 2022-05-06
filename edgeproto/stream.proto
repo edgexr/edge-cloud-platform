@@ -1,0 +1,89 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Stream proto
+
+syntax = "proto3";
+package edgeproto;
+
+import "result.proto";
+import "appinst.proto";
+import "clusterinst.proto";
+import "cloudletkey.proto";
+import "cloudlet.proto";
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+import "google/api/annotations.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// Stream State
+//
+// Indicates if stream has started/ended or in a bad shape
+//
+// 0: `STREAM_UNKNOWN`
+// 1: `STREAM_START`
+// 2: `STREAM_STOP`
+// 3: `STREAM_ERROR`
+enum StreamState {
+  // Stream state is unknown
+  STREAM_UNKNOWN = 0;
+  // Stream has started
+  STREAM_START = 1;
+  // Stream has stopped
+  STREAM_STOP = 2;
+  // Stream is in error state
+  STREAM_ERROR = 3;
+}
+
+service StreamObjApi {
+  // Stream Application Instance current progress
+  rpc StreamAppInst(AppInstKey) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/stream/appinst"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceAppInsts,ActionView,AppKey.Organization";
+  }
+  // Stream Cluster Instance current progress
+  rpc StreamClusterInst(ClusterInstKey) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/stream/clusterinst"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionView,Organization";
+  }
+  // Stream Cloudlet current progress
+  rpc StreamCloudlet(CloudletKey) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/stream/cloudlet"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Organization";
+  }
+  // Stream GPU driver current progress
+  rpc StreamGPUDriver(GPUDriverKey) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/stream/gpudriver"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceCloudletAnalytics,ActionView,Organization";
+  }
+}
