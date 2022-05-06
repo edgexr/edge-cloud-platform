@@ -1,8 +1,0 @@
-[Unit]
-Description=Mobiledgex init service
-
-[Service]
-ExecStart=/usr/local/bin/mobiledgex-init.sh
-
-[Install]
-WantedBy=default.target
