@@ -36,3 +36,4 @@ cloud-resource-manager/cmd/crmserver/envoy/*
 controller/.influxdb/*
 controller/envoy/*
 dump.rdb
+tls/out
