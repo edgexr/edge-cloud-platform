@@ -18,11 +18,11 @@ import (
 	"context"
 	"fmt"
 
-	awsgen "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-generic"
-	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
+	awsgen "github.com/edgexr/edge-cloud-infra/crm-platforms/aws/aws-generic"
+	"github.com/edgexr/edge-cloud-infra/vmlayer"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/log"
 )
 
 type AwsEc2Platform struct {

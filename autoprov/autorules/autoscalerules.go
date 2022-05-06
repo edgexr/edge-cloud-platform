@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud/edgeproto"
 )
 
 // If an auto-scale profile is set, we add measurements to track cpu and memory

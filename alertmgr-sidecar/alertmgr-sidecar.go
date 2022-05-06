@@ -20,8 +20,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/mobiledgex/edge-cloud-infra/mc/orm/alertmgr"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-infra/mc/orm/alertmgr"
+	"github.com/edgexr/edge-cloud/log"
 )
 
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))

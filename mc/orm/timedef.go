@@ -18,7 +18,7 @@ import (
 	fmt "fmt"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
 )
 
 const (

@@ -29,7 +29,7 @@ import grpc "google.golang.org/grpc"
 
 import binary "encoding/binary"
 
-import "github.com/mobiledgex/edge-cloud/util"
+import "github.com/edgexr/edge-cloud/util"
 import "errors"
 import "strconv"
 import "encoding/json"

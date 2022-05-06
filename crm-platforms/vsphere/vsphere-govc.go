@@ -24,9 +24,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
-	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-infra/infracommon"
+	"github.com/edgexr/edge-cloud-infra/vmlayer"
+	"github.com/edgexr/edge-cloud/log"
 )
 
 var maxGuestWait = time.Minute * 2

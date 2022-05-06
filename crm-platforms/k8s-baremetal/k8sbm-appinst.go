@@ -18,17 +18,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/access"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/access"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/dockermgmt"
+	"github.com/edgexr/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/crmutil"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-infra/infracommon"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/crmutil"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/k8smgmt"
+	"github.com/edgexr/edge-cloud/cloud-resource-manager/proxy"
+	"github.com/edgexr/edge-cloud/cloudcommon"
+	"github.com/edgexr/edge-cloud/edgeproto"
 	v1 "k8s.io/api/core/v1"
 )
 

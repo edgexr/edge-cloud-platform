@@ -17,10 +17,10 @@ package common
 import (
 	"context"
 
-	"github.com/mobiledgex/edge-cloud-infra/alerts"
-	"github.com/mobiledgex/edge-cloud-infra/autoprov/autorules"
-	"github.com/mobiledgex/edge-cloud-infra/version"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-infra/alerts"
+	"github.com/edgexr/edge-cloud-infra/autoprov/autorules"
+	"github.com/edgexr/edge-cloud-infra/version"
+	"github.com/edgexr/edge-cloud/edgeproto"
 )
 
 type ClusterSvc struct{}

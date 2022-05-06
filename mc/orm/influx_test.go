@@ -21,9 +21,9 @@ import (
 
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/influxdata/influxdb/models"
-	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-infra/mc/mcctl/mctestclient"
+	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
+	"github.com/edgexr/edge-cloud/edgeproto"
 	"github.com/stretchr/testify/require"
 )
 

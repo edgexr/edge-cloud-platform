@@ -22,9 +22,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_unittest"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
-	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-infra/shepherd/shepherd_platform/shepherd_unittest"
+	"github.com/edgexr/edge-cloud/cloudcommon"
+	"github.com/edgexr/edge-cloud/log"
 	"github.com/stretchr/testify/assert"
 )
 
