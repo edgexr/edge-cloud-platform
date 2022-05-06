@@ -37,6 +37,7 @@ build: check-vers
 	make -C edgeproto
 	make -C testgen
 	make -C d-match-engine
+	(cd tls; ./gen-test-certs.sh)
 	go build ./...
 	go vet ./...
 
