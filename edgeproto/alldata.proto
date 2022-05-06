@@ -1,0 +1,75 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+package edgeproto;
+
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+import "settings.proto";
+import "flavor.proto";
+import "operatorcode.proto";
+import "restagtable.proto";
+import "cloudlet.proto";
+import "cloudletpool.proto";
+import "vmpool.proto";
+import "autoprovpolicy.proto";
+import "autoscalepolicy.proto";
+import "trustpolicy.proto";
+import "trustpolicyexception.proto";
+import "network.proto";
+import "clusterinst.proto";
+import "app.proto";
+import "appinst.proto";
+import "refs.proto";
+import "alertpolicy.proto";
+import "ratelimit.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// AllData contains all data that may be used for declarative
+// create/delete, or as input for e2e tests.
+// The order of fields here is important, as objects will be
+// created in the order they are specified here, and deleted
+// in the opposite order. The field ID (number) doesn't matter.
+message AllData {
+  repeated Flavor flavors = 2 [(gogoproto.nullable) = false];
+  Settings settings = 1;
+  repeated OperatorCode operator_codes = 4 [(gogoproto.nullable) = false];
+  repeated ResTagTable res_tag_tables = 6 [(gogoproto.nullable) = false];
+  repeated TrustPolicy trust_policies = 14 [(gogoproto.nullable) = false];
+  repeated GPUDriver gpu_drivers = 21 [(gogoproto.nullable) = false];
+  repeated Cloudlet cloudlets = 7 [(gogoproto.nullable) = false];
+  repeated CloudletInfo cloudlet_infos = 8 [(gogoproto.nullable) = false];
+  repeated CloudletPool cloudlet_pools = 9 [(gogoproto.nullable) = false];
+  repeated Network networks = 25 [(gogoproto.nullable) = false];
+  repeated AutoProvPolicy auto_prov_policies = 11 [(gogoproto.nullable) = false];
+  repeated AutoProvPolicyCloudlet auto_prov_policy_cloudlets = 12 [(gogoproto.nullable) = false];
+  repeated AutoScalePolicy auto_scale_policies = 13 [(gogoproto.nullable) = false];
+  IdleReservableClusterInsts idle_reservable_cluster_insts = 20;
+  repeated ClusterInst cluster_insts = 15 [(gogoproto.nullable) = false];
+  repeated App apps = 16 [(gogoproto.nullable) = false];
+  repeated AppInst app_instances = 17 [(gogoproto.nullable) = false];
+  repeated AppInstRefs app_inst_refs = 18 [(gogoproto.nullable) = false];
+  repeated ClusterRefs cluster_refs = 27 [(gogoproto.nullable) = false];
+  repeated VMPool vm_pools = 19 [(gogoproto.nullable) = false];
+  repeated AlertPolicy alert_policies = 22 [(gogoproto.nullable) = false];
+  repeated FlowRateLimitSettings flow_rate_limit_settings = 23 [(gogoproto.nullable) = false];
+  repeated MaxReqsRateLimitSettings max_reqs_rate_limit_settings = 24 [(gogoproto.nullable) = false];
+  repeated TrustPolicyException trust_policy_exceptions = 26 [(gogoproto.nullable) = false];
+  option (protogen.e2edata) = true;
+  option (protogen.generate_copy_in_fields) = false;
+}

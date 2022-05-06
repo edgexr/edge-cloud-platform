@@ -1,0 +1,73 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+etcds:
+- name: etcd1
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd1
+  peeraddrs: http://192.168.56.101:30011
+  clientaddrs: http://192.168.56.101:30001
+  initialcluster: etcd1=http://192.168.56.101:30011,etcd2=http://192.168.56.102:30012,etcd3=http://192.168.56.103:30013
+  hostname: 192.168.56.101
+
+- name: etcd2
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd2
+  peeraddrs: http://192.168.56.102:30012
+  clientaddrs: http://192.168.56.102:30002
+  initialcluster: etcd1=http://192.168.56.101:30011,etcd2=http://192.168.56.102:30012,etcd3=http://192.168.56.103:30013
+  hostname: 192.168.56.102
+
+- name: etcd3
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd3
+  peeraddrs: http://192.168.56.103:30013
+  clientaddrs: http://192.168.56.103:30003
+  initialcluster: etcd1=http://192.168.56.101:30011,etcd2=http://192.168.56.102:30012,etcd3=http://192.168.56.103:30013
+  hostname: 192.168.56.103
+
+controllers:
+- name: ctrl1
+  etcdaddrs: http://192.168.56.101:30001,http://192.168.56.102:30002,http://192.168.56.103:30003
+  apiaddr: 192.168.56.101:55001
+  httpaddr: 192.168.56.101:36001
+  notifyaddr: 192.168.56.101:37001
+  hostname: 192.168.56.101
+
+- name: ctrl2
+  etcdaddrs: http://192.168.56.101:30001,http://192.168.56.102:30002,http://192.168.56.103:30003
+  apiaddr: 192.168.56.102:55001
+  httpaddr: 192.168.56.102:36001
+  notifyaddr: 192.168.56.102:37001
+  hostname: 192.168.56.102
+
+- name: ctrl3
+  etcdaddrs: http://192.168.56.101:30001,http://192.168.56.102:30002,http://192.168.56.103:30003
+  apiaddr: 192.168.56.103:55001
+  httpaddr: 192.168.56.103:36001
+  notifyaddr: 192.168.56.103:37001
+  hostname: 192.168.56.103
+
+
+dmes:
+- name: dme1
+  apiaddr: 192.168.56.102:50051
+  notifyaddrs: 192.168.56.101:37001
+  cloudletkey: '{"operator_key":{"name":"UFGT Inc."},"name":"San Jose Site"}'
+  hostname: 192.168.56.102
+
+  
+crms:
+- name: crm1
+  apiaddr: 192.168.56.103:55091
+  notifyaddrs: 192.168.56.101:37001
+  cloudletkey: '{"operator_key":{"name":"UFGT Inc."},"name":"San Jose Site"}'
+  hostname: 192.168.56.103

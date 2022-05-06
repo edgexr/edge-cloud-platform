@@ -1,0 +1,124 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+// A Flavor defines the resources assigned to a Kubernetes cluster.
+// Note that these are NOT openstack VM flavors, although some parts
+// of it may translate to openstack flavors.
+
+syntax = "proto3";
+package edgeproto;
+
+import "google/api/annotations.proto";
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+import "result.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// Flavor
+//
+// FlavorKey uniquely identifies a Flavor.
+message FlavorKey {
+  // Flavor name
+  string name = 1 [(protogen.keytag) = "flavor"];
+  option (protogen.generate_matches) = true;
+  option (protogen.obj_key) = true;
+  option (gogoproto.gostring) = true;
+}
+
+//Flavors define the compute, memory, and storage capacity of computing instances. 
+//To put it simply, a flavor is an available hardware configuration for a server. 
+//It defines the size of a virtual server that can be launched.
+message Flavor {
+  // Fields are used for the Update API to specify which fields to apply
+  repeated string fields = 1;
+  // Unique key for the new flavor.
+  FlavorKey key = 2 [(gogoproto.nullable) = false];
+  // RAM in megabytes
+  uint64 ram = 3;
+  // Number of virtual CPUs
+  uint64 vcpus = 4;
+  // Amount of disk space in gigabytes
+  uint64 disk = 5;
+  // Optional Resources request, key = gpu
+  // form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1
+  map<string, string> opt_res_map = 6;
+  // Preparing to be deleted
+  bool delete_prepare = 7 [(protogen.backend) = true]; 
+
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cud_test) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.notify_cache) = true;
+  option (protogen.alias) = "name=Key.Name";
+  option (protogen.uses_org) = "none";
+  option (protogen.noconfig) = "DeletePrepare";
+}
+
+service FlavorApi {
+  // Create a Flavor
+  rpc CreateFlavor(Flavor) returns (Result) {
+    option (google.api.http) = {
+      post: "/create/flavor"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceFlavors,ActionManage,";
+    option (protogen.method_also_required) = "Ram,Vcpus,Disk";
+  }
+  // Delete a Flavor
+  rpc DeleteFlavor(Flavor) returns (Result) {
+      option (google.api.http) = {
+      post: "/delete/flavor"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceFlavors,ActionManage,";
+  }
+  // Update a Flavor
+  rpc UpdateFlavor(Flavor) returns (Result) {
+      option (google.api.http) = {
+      post: "/update/flavor"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceFlavors,ActionManage,";
+  }
+  // Show Flavors
+  rpc ShowFlavor(Flavor) returns (stream Flavor) {
+      option (google.api.http) = {
+      post: "/show/flavor"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceFlavors,ActionView,skipenforce";
+  }
+
+  // Add Optional Resource
+  rpc AddFlavorRes(Flavor) returns (Result) {
+      option (google.api.http) = {
+      post: "/addres/flavor"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceFlavors,ActionManage,";
+  }
+  // Remove Optional Resource
+  rpc RemoveFlavorRes(Flavor) returns (Result) {
+      option (google.api.http) = {
+      post: "/removeres/flavor"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceFlavors,ActionManage,";
+  }
+}

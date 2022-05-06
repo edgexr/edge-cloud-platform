@@ -1,0 +1,85 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+description: Deploys and starts a system, adds provisioning and compares to expected value.  Then restarts everything and compares again
+
+tests:
+
+- name: create provisioning
+  actions: [ctrlapi-create]
+  apifile: "{{datadir}}/appdata.yml"
+
+- name: Show provisioning
+  actions: [ctrlapi-show]
+
+- name: compare results of show provisioning
+  compareyaml: 
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/appdata_show.yml"
+    filetype: appdata
+
+- name: show provisioning from ctrl2 and compare
+  actions: [ctrlapi-show=ctrl2]
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/appdata_show.yml"
+    filetype: appdata
+
+- name: stop both controllers
+  actions: [stop=ctrl1,stop=ctrl2]
+
+- name: stop and start etcd1
+  actions: [stop=etcd1,start=etcd1]
+
+- name: stop and start etcd2
+  actions: [stop=etcd2,start=etcd2]
+
+- name: stop and start etcd3
+  actions: [stop=etcd3,start=etcd3]
+
+- name: start both controllers
+  actions: [start=ctrl1,start=ctrl2]
+
+- name: verify services are running
+  actions: [status]
+
+- name: show provisioning again and compare results 
+  actions: [ctrlapi-show]
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/appdata_show.yml"
+    filetype: appdata
+
+- name: stop ctrl2 
+  actions: [stop=ctrl2]
+
+- name: verify CRMs are ready after reconnecting to ctrl1
+  actions: [status=allcrms]
+
+- name: delete provisioning
+  actions: [ctrlapi-delete]
+  apifile: "{{datadir}}/appdata.yml"
+
+- name: start ctrl2
+  actions: [start=ctrl2]
+
+- name: verify CRMs are ready
+  actions: [status=allcrms]
+
+- name: show ctrl1 provisioning, verify it is empty
+  actions: [ctrlapi-show=ctrl1]
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/appdata_empty.yml"
+    filetype: appdata

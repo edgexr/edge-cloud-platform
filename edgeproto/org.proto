@@ -1,0 +1,49 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Organization proto
+
+syntax = "proto3";
+package edgeproto;
+
+import "result.proto";
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+import "google/api/annotations.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+message Organization {
+  // Organization name
+  string name = 1;
+}
+
+service OrganizationApi {
+  // Check if an Organization is in use.
+  rpc OrganizationInUse(Organization) returns (Result) {
+    option (google.api.http) = {
+      post: "/inuse/organization"
+      body: "*"
+    };
+  }
+  option (protogen.dummy_server) = true;
+}
+
+message OrganizationData {
+  repeated Organization orgs = 1 [(gogoproto.nullable) = false];
+  option (protogen.e2edata) = true;
+  option (protogen.generate_copy_in_fields) = false;
+}

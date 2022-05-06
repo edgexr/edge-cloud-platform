@@ -1,0 +1,109 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// User-defined alerts
+
+syntax = "proto3";
+package edgeproto;
+
+import "google/api/annotations.proto";
+import "result.proto";
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+message AlertPolicyKey {
+  // Name of the organization for the app that this alert can be applied to
+  string organization = 1 [(protogen.keytag) = "alertorg"];
+  // Alert Policy name
+  string name = 2 [(protogen.keytag) = "alert"];
+  option (protogen.generate_matches) = true;
+  option (protogen.obj_key) = true;
+  option (gogoproto.gostring) = true;
+}
+
+message AlertPolicy {
+  repeated string fields = 1;
+  // Unique identifier key
+  AlertPolicyKey key = 2 [(gogoproto.nullable) = false];
+  // Container or pod CPU utilization rate(percentage) across all nodes. Valid values 1-100
+  uint32 cpu_utilization_limit = 3;
+  // Container or pod memory utilization rate(percentage) across all nodes. Valid values 1-100
+  uint32 mem_utilization_limit = 4;
+  // Container or pod disk utilization rate(percentage) across all nodes. Valid values 1-100
+  uint32 disk_utilization_limit = 5;
+  // Active Connections alert threshold. Valid values 1-4294967295
+  uint32 active_conn_limit = 6;
+  // Alert severity level - one of "info", "warning", "error"
+  string severity = 7;
+  // Duration for which alert interval is active (max 72 hours)
+  int64 trigger_time = 8 [(gogoproto.casttype) = "Duration"];
+  // Additional Labels
+  map <string, string> labels = 9;
+  // Additional Annotations for extra information about the alert
+  map <string, string> annotations = 10;
+  // Description of the alert policy
+  string description = 11;
+  // Preparing to be deleted
+  bool delete_prepare = 12 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"]; 
+  
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cud_test) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.notify_cache) = true;
+  option (protogen.alias) = "name=Key.Name,alertorg=Key.Organization,cpuutilization=CpuUtilizationLimit,memutilization=MemUtilizationLimit,diskutilization=DiskUtilizationLimit,activeconnections=ActiveConnLimit,triggertime=TriggerTime";
+  option (protogen.uses_org) = "key=Organization";
+  option (protogen.noconfig) = "DeletePrepare";
+}
+
+service AlertPolicyApi {
+  // Create an Alert Policy
+  rpc CreateAlertPolicy(AlertPolicy) returns (Result) {
+    option (google.api.http) = {
+      post: "/create/alertpolicy"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceDeveloperPolicy,ActionManage,Key.Organization";
+    option (protogen.method_also_required) = "Severity";
+    option (protogen.mc2_api_requires_org) = "Key.Organization";
+  }
+  // Delete an Alert Policy
+  rpc DeleteAlertPolicy(AlertPolicy) returns (Result) {
+    option (google.api.http) = {
+      post: "/delete/alertpolicy"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceDeveloperPolicy,ActionManage,Key.Organization";
+  }
+  // Update an Alert Policy
+  rpc UpdateAlertPolicy(AlertPolicy) returns (Result) {
+    option (google.api.http) = {
+      post: "/update/alertpolicy"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceDeveloperPolicy,ActionManage,Key.Organization";
+  }
+  // Show Alert Policies. Any fields specified will be used to filter results.
+  rpc ShowAlertPolicy(AlertPolicy) returns (stream AlertPolicy) {
+    option (google.api.http) = {
+      post: "/show/alertpolicy"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceDeveloperPolicy,ActionView,Key.Organization";
+  }
+}

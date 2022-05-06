@@ -1,0 +1,44 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// CloudletKey proto
+
+syntax = "proto3";
+package edgeproto;
+
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// CloudletKey uniquely identifies a Cloudlet.
+message CloudletKey {
+  // Organization of the cloudlet site
+  string organization = 1 [(protogen.keytag) = "cloudletorg"];
+  // Name of the cloudlet
+  string name = 2 [(protogen.keytag) = "cloudlet"];
+  // Federated operator organization who shared this cloudlet
+  string federated_organization = 3 [(protogen.keytag) = "federatedorg"];
+
+  option (protogen.generate_matches) = true;
+  option (protogen.obj_key) = true;
+  option (gogoproto.gostring) = true;
+  option (protogen.also_required) = "Name,Organization";
+  option (protogen.alias) = "cloudlet=Name,cloudletorg=Organization,federatororg=FederatedOrganization";
+  option (protogen.custom_key_type) = "CloudletKey";
+  option (protogen.generate_show_test) = true; 
+  option (protogen.uses_org) = "none";
+}

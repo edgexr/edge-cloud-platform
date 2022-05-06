@@ -1,0 +1,119 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+skipmethods:
+  ShowAppInstInfo:
+  ShowAppInstMetrics:
+  ShowCloudletInfo:
+  InjectCloudletInfo:
+  EvictCloudletInfo:
+  ShowCloudletMetrics:
+  ShowClusterInstInfo:
+  ShowController:
+  ShowNode:
+  ShowNodeLocal:
+  RunCommand:
+  SendLocalRequest:
+  StreamNotice:
+  ShowCloudletRefs:
+  ShowClusterRefs:
+  CreateCloudletPool:
+  DeleteCloudletPool:
+  ShowCloudletPool:
+  CreateCloudletPoolMember:
+  DeleteCloudletPoolMember:
+  ShowCloudletPoolMember:
+  ShowPoolsForCloudlet:
+  ShowCloudletsForPool:
+  AddCloudletPoolMember:
+  RemoveCloudletPoolMember:
+  ShowCloudletPoolMember:
+  CreateResTagTable:
+  DeleteResTagTable:
+  UpdateResTagTable:
+  ShowResTagTable:
+  AddResTag:
+  RemoveResTag:
+  GetResTagTable:
+  AddCloudletResMapping:
+  RemoveCloudletResMapping:
+  FindFlavorMatch:
+  AddFlavorRes:
+  RemoveFlavorRes:
+  CreateAutoScalePolicy:
+  DeleteAutoScalePolicy:
+  UpdateAutoScalePolicy:
+  ShowAutoScalePolicy:
+  ShowAlert:
+  AddCloudletResMapping:
+  RemoveCloudletResMapping:
+  RefreshAppInst:
+  CreateOperatorCode:
+  DeleteOperatorCode:
+  ShowOperatorCode:
+skipfields:
+  App:
+    fields:
+    auth_public_key:
+    annotations:
+    deployment_generator:
+    permits_platform_apps:
+    del_opt:
+    android_package_name:
+    configs:
+    internal_ports:
+    revision:
+    md5sum:
+  AppInst:
+    fields:
+    cloudlet_loc:
+    liveness:
+    mapped_ports:
+    errors:
+    crm_override:
+    runtime_info:
+    auto_cluster_ip_access:
+    state:
+    revision:
+    force_update:
+    update_multiple:
+  Cloudlet:
+    fields:
+    time_limits:
+    notify_srv_addr:
+    physical_name:
+    flavor:
+    env_var:
+    version:
+    config:
+    res_tag_map:
+    deployment_local:
+  ClusterInst:
+    fields:
+    liveness:
+    auto:
+    state:
+    errors:
+    crm_override:
+    allocated_ip:
+    auto_scale_policy:
+    availability_zone:
+    external_volume_size:
+  Developer:
+    fields:
+  Flavor:
+    fields:
+    opt_res_map:
+  Operator:
+    fields:
