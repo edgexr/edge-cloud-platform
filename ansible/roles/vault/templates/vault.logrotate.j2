@@ -1,0 +1,13 @@
+{{ vault_audit_log }}
+{
+        rotate 8
+        weekly
+        missingok
+        notifempty
+        compress
+        delaycompress
+        sharedscripts
+        postrotate
+                /bin/systemctl reload vault 2>&1 || true
+        endscript
+}

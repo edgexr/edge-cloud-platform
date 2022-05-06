@@ -1,7 +1,7 @@
 pipeline {
     options {
         skipDefaultCheckout true
-        timeout(time: 30, unit: 'MINUTES')
+        timeout(time: 60, unit: 'MINUTES')
     }
     agent { label 'cicd' }
     environment {
@@ -10,8 +10,12 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                dir(path: 'go/src/github.com/mobiledgex/edge-cloud') {
+                dir(path: 'go/src/github.com/mobiledgex/edge-cloud-infra') {
                     checkout scm
+                }
+                dir(path: 'go/src/github.com/mobiledgex/edge-cloud') {
+                    git credentialsId: 'jenkins-checkouts',
+                        url: 'https://github.com/mobiledgex/edge-cloud.git'
                 }
                 dir(path: 'go/src/github.com/mobiledgex/edge-proto') {
                     git credentialsId: 'jenkins-checkouts',
@@ -21,25 +25,33 @@ pipeline {
         }
         stage('Match branches') {
             steps {
-                dir(path: 'go/src/github.com/mobiledgex/edge-cloud') {
+                dir(path: 'go/src/github.com/mobiledgex/edge-cloud-infra') {
                     sh label: 'make edge-cloud-version-set', script: '''#!/bin/bash
 export PATH=$PATH:/usr/local/go/bin:$WORKSPACE/go/bin:$HOME/go/bin
 export GOPATH=$WORKSPACE/go
 
 PR=$( git rev-parse --abbrev-ref HEAD | cut -d- -f2 )
-PR_URL="https://api.github.com/repos/mobiledgex/edge-cloud/pulls/${PR}"
-EC_BRANCH=$( curl -sf -u "$GITHUB_CREDS_USR:$GITHUB_CREDS_PSW" "$PR_URL" \
+PR_URL="https://api.github.com/repos/mobiledgex/edge-cloud-infra/pulls/${PR}"
+INFRA_BRANCH=$( curl -sf -u "$GITHUB_CREDS_USR:$GITHUB_CREDS_PSW" "$PR_URL" \
                 | jq -r '.head.ref // empty' )
-if [[ -z "$EC_BRANCH" ]]; then
+if [[ -z "$INFRA_BRANCH" ]]; then
     echo "Failed to determine PR branch" >&2
     exit 2
 fi
-echo "Edge-cloud branch: $EC_BRANCH"
+echo "Infra branch: $INFRA_BRANCH"
 
-PROTO_BRANCH=$( git -C ../edge-proto branch -a | awk -v "BR=remotes/origin/${EC_BRANCH}" '$NF == BR' )
+EC_BRANCH=$( git -C ../edge-cloud branch -a | awk -v "BR=remotes/origin/${INFRA_BRANCH}" '$NF == BR' )
+if [[ -n "$EC_BRANCH" ]]; then
+    echo "Checking out matching edge-cloud branch: ${INFRA_BRANCH}"
+    git -C ../edge-cloud checkout origin/${INFRA_BRANCH} || exit 2
+else
+    echo "Building with edge-cloud master branch"
+fi
+
+PROTO_BRANCH=$( git -C ../edge-proto branch -a | awk -v "BR=remotes/origin/${INFRA_BRANCH}" '$NF == BR' )
 if [[ -n "$PROTO_BRANCH" ]]; then
-    echo "Checking out matching edge-proto branch: ${EC_BRANCH}"
-    git -C ../edge-proto checkout origin/${EC_BRANCH} || exit 2
+    echo "Checking out matching edge-proto branch: ${INFRA_BRANCH}"
+    git -C ../edge-proto checkout origin/${INFRA_BRANCH} || exit 2
 else
     echo "Building with edge-proto master branch"
 fi
@@ -58,6 +70,9 @@ make clean
                 }
                 dir(path: 'go/src/github.com/mobiledgex/edge-cloud') {
                     sh label: 'git clean edge-cloud', script: 'git clean -f -d -x'
+                }
+                dir(path: 'go/src/github.com/mobiledgex/edge-cloud-infra') {
+                    sh label: 'git clean edge-cloud-infra', script: 'git clean -f -d -x'
                 }
             }
         }
@@ -86,7 +101,7 @@ export GOPATH=$WORKSPACE/go
 make tools
                     '''
                 }
-                dir(path: 'go/src/github.com/mobiledgex/edge-cloud') {
+                dir(path: 'go/src/github.com/mobiledgex/edge-cloud-infra') {
                     sh label: 'make', script: '''#!/bin/bash
 export PATH=$PATH:/usr/local/go/bin:$WORKSPACE/go/bin:$HOME/go/bin
 export GOPATH=$WORKSPACE/go
@@ -98,17 +113,17 @@ make
         stage('Test') {
             options {
                 lock('testbed')
-                timeout(time: 20, unit: 'MINUTES')
+                timeout(time: 40, unit: 'MINUTES')
             }
             steps {
                 retry(2) {
                     sleep 10
-                    dir(path: 'go/src/github.com/mobiledgex/edge-cloud') {
+                    dir(path: 'go/src/github.com/mobiledgex/edge-cloud-infra') {
                         sh label: 'unit tests', script: '''#!/bin/bash
 export PATH=$PATH:/usr/local/go/bin:$WORKSPACE/go/bin:$HOME/go/bin:/usr/lib/postgresql/10/bin
 export GOPATH=$WORKSPACE/go
 export GO111MODULE=on
-UNIT_TEST_LOG=/tmp/edge-cloud-unit-test.${BUILD_TAG}.log make unit-test
+UNIT_TEST_LOG=/tmp/edge-cloud-infra-unit-test.${BUILD_TAG}.log make unit-test
                         '''
                     }
                 }
@@ -122,7 +137,7 @@ UNIT_TEST_LOG=/tmp/edge-cloud-unit-test.${BUILD_TAG}.log make unit-test
             steps {
                 slackSend color: 'good',
                           channel: '#ci-cd',
-                          message: "<${env.CHANGE_URL}|Pull request PR-${env.CHANGE_ID}> ready for review: (${env.CHANGE_AUTHOR} \"${env.CHANGE_TITLE}\")"
+                          message: "<${env.CHANGE_URL}|Infra Pull request PR-${env.CHANGE_ID}> ready for review: (${env.CHANGE_AUTHOR} \"${env.CHANGE_TITLE}\")"
             }
         }
     }

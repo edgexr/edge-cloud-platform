@@ -1,0 +1,130 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- set_fact:
+    regions: "{{ hostvars['localhost']['regions'] }}"
+
+- import_role:
+    name: azure-aks
+    tasks_from: platform-regions-load
+
+- set_fact:
+    source_ips: []
+
+# This fetches the egress IPs for services in the region kubernetes clusters
+# and stores them in the "source_ips" variable
+- include_role:
+    name: kafka
+    tasks_from: loadbalancer-ips
+  vars:
+    k8s_cluster_name: "{{ item.name }}"
+    region: "{{ item.region }}"
+    resource_group: "{{ item.resource_group }}"
+  loop: "{{ platform_regions }}"
+
+- import_role:
+    name: vault
+    tasks_from: load-token
+  delegate_to: localhost
+
+- name: Get service key to manage firewall
+  vault_api:
+    api: "gcp/key/{{ vault_gcp_firewall_manage_roleset }}"
+    vault_addr: "{{ vault_address }}"
+    vault_token: "{{ vault_token }}"
+  register: firewall_manage_service_key
+
+- set_fact:
+    gcp_service_key: "{{ firewall_manage_service_key.meta.response.data.private_key_data | b64decode }}"
+
+- name: Set up kafka access firewall in GCP
+  gcp_compute_firewall:
+    name: "kafka-{{ deploy_environ }}-controllers"
+    project: "{{ gcp_project }}"
+    auth_kind: serviceaccount
+    service_account_contents: "{{ gcp_service_key }}"
+    allowed:
+      - ip_protocol: tcp
+        ports:
+          - '9092'
+          - '9093'
+    source_ranges: "{{ source_ips }}"
+    target_tags:
+      - "kafka-{{ deploy_environ }}-controllers"
+  delegate_to: localhost
+
+- import_role:
+    name: docker
+  tags: setup
+
+- import_role:
+    name: web
+    tasks_from: certs
+  vars:
+    cert_domains: [ "{{ inventory_hostname }}" ]
+    post_renewal_hooks:
+      - hook_name: regen-kafka-keystore
+        hook_content: |-
+          #!/bin/bash
+          cd ~ansible
+          {{ keystore_gen_path }}
+          docker-compose restart
+
+- name: Install dependencies
+  apt:
+    name: "{{ item }}"
+  loop:
+    - openjdk-8-jdk
+  become: yes
+
+- name: Set up secrets directory
+  file:
+    path: "{{ kafka_secrets_base }}"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: 0700
+  become: yes
+
+- block:
+
+  - name: Install keystore generator
+    template:
+      src: keystore-gen.sh.j2
+      dest: "{{ keystore_gen_path }}"
+      owner: root
+      group: root
+      mode: 0744
+
+  - name: Generate keystore
+    command: "{{ keystore_gen_path }}"
+    args:
+      creates: "{{ keystore_file }}"
+
+  vars:
+    - keystore_file: "{{ kafka_secrets_base }}/{{ keystore_filename }}"
+    - creds_file: "{{ kafka_secrets_base }}/{{ creds_filename }}"
+  become: yes
+
+- name: Install docker-compose config
+  template:
+    src: docker-compose.yml.j2
+    dest: docker-compose.yml
+  notify: Restart Kafka
+
+- name: Start kafka
+  docker_compose:
+    project_src: .
+    build: no

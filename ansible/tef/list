@@ -1,0 +1,51 @@
+[all:vars]
+deploy_environ=tef
+ubuntu_release=bionic
+monitor_version=latest
+deploy_target="mexplat-{{ deploy_environ }}"
+operator_key=GDDT
+dme_carrier=GDDT
+locver_url="http://mexdemo.locsim.mobiledgex.net:8888/verifyLocation"
+toksrv_url="http://mexdemo.tok.mobiledgex.net:9999/its?followURL=https://dme.mobiledgex.net/verifyLoc"
+postgres_hostname=postgres-tef.mobiledgex.net
+vault_vm_hostname=vault-tef.mobiledgex.net
+vault_ha_domain=vault-tef.mobiledgex.net
+vault_port=443
+vault_firewall_setup=no
+gitlab_vm_hostname=gitlab-tef.mobiledgex.net
+crm_vm_hostname=crm-tef.mobiledgex.net
+mc_vm_hostname=mc-tef.mobiledgex.net
+letsencrypt_env=production
+console_vm_hostname=console-tef.mobiledgex.net
+gitlab_email_enabled=false
+gitlab_docker_hostname="docker-{{ deploy_environ }}.mobiledgex.net"
+azure_volume_storage_class=managed-premium
+influxdb_volume_size=5Gi
+apidocs_domain=api-tef.mobiledgex.net
+console_prod=yes
+app_dns_root="mobiledgex.net"
+
+[notifyroot]
+notifyroot-tef.mobiledgex.net
+
+[platform]
+localhost	ansible_connection=local
+
+[crms]
+crm-tef.mobiledgex.net
+
+[gitlab]
+gitlab-tef.mobiledgex.net
+
+[postgres]
+postgres-tef.mobiledgex.net
+
+[console]
+console-tef.mobiledgex.net
+
+[vault]
+vault-tef-a.mobiledgex.net
+vault-tef-b.mobiledgex.net
+
+[jaeger]
+jaeger-tef.mobiledgex.net es_instance=tef

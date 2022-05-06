@@ -1,0 +1,24 @@
+architecture: replication
+auth:
+  enabled: false
+  sentinel: false
+
+master:
+  persistence:
+    enabled: true
+    storageClass: "{{ redis_volume_storage_class }}"
+    size: "{{ redis_volume_size }}"
+
+replica:
+  replicaCount: 3
+  persistence:
+    enabled: true
+    storageClass: "{{ redis_volume_storage_class }}"
+    size: "{{ redis_volume_size }}"
+
+sentinel:
+  enabled: true
+  quorum: 2
+
+metrics:
+  enabled: true

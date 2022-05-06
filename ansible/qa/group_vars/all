@@ -1,0 +1,49 @@
+mc_artifactory_address: https://mexqa.jfrog.io/artifactory
+jaeger_hostname: jaeger-{{ deploy_environ }}.mobiledgex.net
+jaeger_endpoint: "https://{{ jaeger_hostname }}:14268/api/traces"
+console_vnc_hostname: console-qa-vnc.mobiledgex.net
+notifyroot_hostname: notifyroot-qa.mobiledgex.net
+vault_address: https://vault-qa.mobiledgex.net
+esproxy_address: https://events-qa.es.mobiledgex.net/
+qos_sessions_api_address: http://mexdemo.locsim.mobiledgex.net:8081
+vault_ha_zones:
+  us: us-west2-a
+  eu: europe-west3-a
+
+vault_github_teams:
+  - name: edge-cloud-development-team
+    policies:
+      - logins.read.v1
+      - ssh-ansible-user.sign.v1
+      - ssh-machine.sign.v1
+      - ssh-user.sign.v1
+
+vault_github_users:
+  - userid: andya072071
+    role: admin
+  - userid: angshuman2508
+    role: editor
+  - userid: bibingeorge1986
+    role: cloudlet_admin
+  - userid: dunkletx
+    role: admin
+  - userid: venkytv
+    role: admin
+
+crm_instances:
+
+  - cloudlet_name: automationAzureCentralCloudlet
+    operator_key: azure
+    crm_name: azure_central
+    platform: PLATFORM_TYPE_AZURE
+    azure_instance: centralus
+    controller_region: US
+    notify_srv_port: 51091
+
+  - cloudlet_name: automationGcpCentralCloudlet
+    operator_key: gcp
+    crm_name: gcp_central
+    platform: PLATFORM_TYPE_GCP
+    gcp_zone: us-central1-a
+    controller_region: US
+    notify_srv_port: 51092

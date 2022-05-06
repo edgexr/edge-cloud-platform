@@ -1,0 +1,3 @@
+Command-line interface for CRI-compatible container runtimes
+ Used to inspect and debug container runtimes and applications
+ on a Kubernetes node.

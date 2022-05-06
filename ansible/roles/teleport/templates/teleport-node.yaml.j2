@@ -1,0 +1,13 @@
+teleport:
+  auth_token: {{ teleport_node_token }}
+  ca_pin: {{ teleport_ca_pin }}
+  auth_servers:
+  - {{ teleport_auth_server }}:3025
+ssh_service:
+  enabled: true
+  labels:
+    env: {{ deploy_environ }}
+auth_service:
+  enabled: false
+proxy_service:
+  enabled: false

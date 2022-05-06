@@ -1,0 +1,306 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+orgs:
+- name: AcmeAppCo
+  type: developer
+  address: 123 Maple Street, Gainesville, FL 32604
+  phone: 123-123-1234
+- name: platos
+  type: developer
+  address: 1 Samstreet, platos Town, South Korea
+  phone: 123-123-1234
+
+billingorgs:
+- name: AcmeAppCo
+  type: self
+  firstname: john
+  lastname: acme
+  email: john@acme.com
+  address: 123 Maple Street
+  city: Gainesville
+  country: US
+  state: FL
+  postalcode: 32604
+  phone: 123-123-1234
+
+regiondata:
+- region: local
+  appdata:
+    clusterinsts:
+    - key:
+        clusterkey:
+          name: SmallCluster
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-1
+        organization: AcmeAppCo
+      flavor:
+        name: x1.small
+      ipaccess: Dedicated
+      nummasters: 1
+      numnodes: 1
+      autoscalepolicy: scale1
+    - key:
+        clusterkey:
+          name: SmallCluster
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-2
+        organization: AcmeAppCo
+      flavor:
+        name: x1.small
+      ipaccess: Shared
+      nummasters: 1
+      numnodes: 1
+
+    apps:
+    - key:
+        organization: AcmeAppCo
+        name: someapplication1
+        version: "1.0"
+      imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
+      imagetype: Docker
+      deployment: "kubernetes"
+      defaultflavor:
+        name: x1.small
+      accessports: "tcp:80,tcp:443,udp:10002"
+      androidpackagename: com.acme.someapplication1
+      authpublickey: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END PUBLIC KEY-----\n"
+    - key:
+        organization: AcmeAppCo
+        name: autoprovapp
+        version: "1.0"
+      imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
+      imagetype: Docker
+      deployment: "kubernetes"
+      defaultflavor:
+        name: x1.small
+      accessports: "tcp:81"
+      autoprovpolicies:
+      - autoprov1
+    - key:
+        organization: AcmeAppCo
+        name: autoprovappd
+        version: "1.0"
+      imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
+      imagetype: Docker
+      deployment: docker
+      defaultflavor:
+        name: x1.small
+      accessports: "tcp:81"
+      autoprovpolicies:
+      - autoprov1
+    - key:
+        organization: platos
+        name: platosEnablingLayer
+        version: "1.0"
+      imagepath: registry.mobiledgex.net/platos/dummyvalue
+      imagetype: Docker
+      deployment: "kubernetes"
+      defaultflavor:
+        name: x1.small
+      accessports: "tcp:64000"
+
+    appinstances:
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-1
+          organization: AcmeAppCo
+      flavor:
+        name: x1.small
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-2
+          organization: AcmeAppCo
+      flavor:
+        name: x1.small
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: autoclusterAcme
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-2
+          organization: MobiledgeX
+      flavor:
+        name: x1.small
+
+    autoscalepolicies:
+    - key:
+        organization: AcmeAppCo
+        name: scale1
+      minnodes: 1
+      maxnodes: 5
+      stabilizationwindowsec: 2
+      targetcpu: 0.7
+      targetmem: 0.7
+      targetactiveconnections: 200
+
+    autoprovpolicies:
+    - key:
+        name: autoprov1
+        organization: AcmeAppCo
+      deployclientcount: 3
+      deployintervalcount: 3
+      undeployclientcount: 1
+      undeployintervalcount: 3
+      cloudlets:
+      - key:
+          organization: dmuus
+          name: dmuus-cloud-1
+      - key:
+          organization: dmuus
+          name: dmuus-cloud-2
+
+- region: locala
+  appdata:
+    clusterinsts:
+    - key:
+        clusterkey:
+          name: SmallCluster
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-3
+        organization: AcmeAppCo
+      flavor:
+        name: x1.small
+      ipaccess: Dedicated
+      nummasters: 1
+      numnodes: 1
+      autoscalepolicy: scale1
+    - key:
+        clusterkey:
+          name: SmallCluster
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-4
+        organization: AcmeAppCo
+      flavor:
+        name: x1.small
+      ipaccess: Shared
+      nummasters: 1
+      numnodes: 1
+
+    apps:
+    - key:
+        organization: AcmeAppCo
+        name: someapplication1
+        version: "1.0"
+      imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
+      imagetype: Docker
+      deployment: "kubernetes"
+      defaultflavor:
+        name: x1.small
+      accessports: "tcp:80,tcp:443,udp:10002"
+      androidpackagename: com.acme.someapplication1
+      authpublickey: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END PUBLIC KEY-----\n"
+    - key:
+        organization: AcmeAppCo
+        name: autoprovapp
+        version: "1.0"
+      imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
+      imagetype: Docker
+      deployment: "kubernetes"
+      defaultflavor:
+        name: x1.small
+      accessports: "tcp:81"
+      autoprovpolicies:
+      - autoprov1
+    - key:
+        organization: platos
+        name: platosEnablingLayer
+        version: "1.0"
+      imagepath: registry.mobiledgex.net/platos/dummyvalue
+      imagetype: Docker
+      deployment: "kubernetes"
+      defaultflavor:
+        name: x1.small
+      accessports: "tcp:64000"
+
+    appinstances:
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-3
+          organization: AcmeAppCo
+      flavor:
+        name: x1.small
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-4
+          organization: AcmeAppCo
+      flavor:
+        name: x1.small
+
+    autoscalepolicies:
+    - key:
+        organization: AcmeAppCo
+        name: scale1
+      minnodes: 1
+      maxnodes: 3
+      scaleupcputhresh: 85
+      scaledowncputhresh: 20
+      triggertimesec: 60
+
+    autoprovpolicies:
+    - key:
+        name: autoprov1
+        organization: AcmeAppCo
+      deployclientcount: 3
+      deployintervalcount: 3
+      undeployclientcount: 1
+      undeployintervalcount: 3
+      cloudlets:
+      - key:
+          organization: dmuus
+          name: dmuus-cloud-3
+      - key:
+          organization: dmuus
+          name: dmuus-cloud-4

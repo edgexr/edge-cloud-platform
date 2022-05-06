@@ -1,0 +1,12 @@
+docker.io/jimmidyson/configmap-reload:v0.3.0
+jettech/kube-webhook-certgen:v1.0.0
+quay.io/coreos/kube-state-metrics:v1.9.7
+quay.io/coreos/prometheus-config-reloader:v0.38.1
+quay.io/coreos/prometheus-operator:v0.38.1
+quay.io/prometheus/node-exporter:v1.0.1
+quay.io/prometheus/prometheus:v2.18.2
+squareup/ghostunnel:v1.5.2
+weaveworks/weave-kube:2.8.1
+weaveworks/weave-npc:2.8.1
+quay.io/metallb/controller:v0.10.2
+quay.io/metallb/speaker:v0.10.2

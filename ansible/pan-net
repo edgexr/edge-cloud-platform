@@ -1,0 +1,6 @@
+[all:vars]
+controller_hostname=mexdemo.ctrl.mobiledgex.net
+controller_notify_port=37001
+
+[crmgws]
+pan-gw

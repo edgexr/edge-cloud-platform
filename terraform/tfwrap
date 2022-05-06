@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+
+import argparse
+from distutils.version import LooseVersion
+import json
+import os
+import requests
+import subprocess
+import sys
+import tempfile
+
+DEF_VAULT = os.environ.get("VAULT_ADDR",
+                           "https://vault-main.mobiledgex.net")
+DEF_TERRAFORM_BIN = os.environ.get("TERRAFORM", "terraform")
+TERRAFORM_MIN_VERS = "v0.12"
+
+class Vault:
+    def __init__(self, addr):
+        self.addr = addr
+        self._token = None
+
+    @property
+    def token(self):
+        if not self._token:
+            t = os.environ.get("VAULT_TOKEN")
+            if not t:
+                try:
+                    with open(os.path.expanduser("~/.vault-token")) as f:
+                        t = f.read().strip()
+                except Exception:
+                    pass
+            if not t:
+                raise Exception("Unable to find vault token")
+
+            # Check if token is valid
+            r = self.get("auth/token/lookup-self", token=t)
+            if r.status_code != requests.codes.ok:
+                raise Exception("Invalid or expired token")
+
+            self._token = t
+
+        return self._token
+
+    def get(self, path, token=None, success_codes=[requests.codes.ok]):
+        # Use Vault KV style paths for lookups
+        t = path.split("/", 2)
+        if t[0] == "secret" and t[1] != "data":
+            t.insert(1, "data")
+            path = "/".join(t)
+
+        if not token:
+            token = self.token
+
+        url = f"{self.addr}/v1/{path}"
+        r = requests.get(url, headers={"X-Vault-Token": token})
+        if r.status_code not in success_codes:
+            raise Exception(f"Failed to look up {url}: {r.text}")
+
+        return r
+
+def validate_terraform(args):
+    p = subprocess.Popen([ args.terraform, "version" ],
+                         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                         universal_newlines=True)
+    out, err = p.communicate()
+    vers = out.splitlines()[0].split()[-1]
+    if LooseVersion(vers) < LooseVersion(TERRAFORM_MIN_VERS):
+        raise Exception(f"Terraform version less than {TERRAFORM_MIN_VERS}: {args.terraform}=={vers}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("-V", "--vault", help="Address of the vault to use",
+                        default=DEF_VAULT)
+    parser.add_argument("-T", "--terraform", help="Terraform path",
+                        default=DEF_TERRAFORM_BIN)
+    parser.add_argument("-d", "--debug", help="Print debug messages",
+                        action="store_true")
+    parser.add_argument("operation", help="Terraform operation")
+    parser.add_argument("args", nargs="*", help="Terraform args")
+    args = parser.parse_args()
+
+    vault = Vault(args.vault)
+    validate_terraform(args)
+
+    tfvars = {}
+    
+    az = vault.get("secret/ansible/common/accounts/azure").json()["data"]["data"]
+    for p in ("subscription_id",
+              "tenant_id",
+              "terraform_service_principal_id",
+              "terraform_service_principal_secret"):
+        tfvars[f"TF_VAR_azure_{p}"] = az[p]
+
+    az_storage = vault.get("secret/ansible/common/accounts/azure_terraform").json()["data"]["data"]
+
+    cf = vault.get("secret/ansible/common/accounts/cloudflare").json()["data"]["data"]
+    tfvars["TF_VAR_cloudflare_account_email"] = cf["user"]
+    tfvars["TF_VAR_cloudflare_account_api_token"] = cf["pass"]
+
+    gcp = vault.get("secret/ansible/common/accounts/gcp_terraform").json()["data"]["data"]
+
+    command = [ args.terraform, args.operation ] + args.args
+
+    if args.debug:
+        print(json.dumps(tfvars, indent=4, sort_keys=True), file=sys.stderr)
+        print(command, file=sys.stderr)
+
+    env = os.environ.copy()
+    for v in tfvars:
+        env[v] = tfvars[v]
+    env["ARM_ACCESS_KEY"] = az_storage["access_key"]
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        gcp_creds = os.path.join(tmpdir, "gcp_creds.json")
+        with open(gcp_creds, "w") as f:
+            f.write(json.dumps(gcp))
+        env["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_creds
+
+        subprocess.check_call(command, env=env)

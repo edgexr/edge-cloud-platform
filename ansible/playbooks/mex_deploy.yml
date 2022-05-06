@@ -1,0 +1,80 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: setup remote dir
+  gather_facts: no
+  user: ubuntu
+  become: yes
+  hosts: mexservers
+  vars_files:
+    - mex_vars.yml
+ 
+  tasks:
+  - name: create remote log dir 
+    file:
+       state: directory
+       path: "{{ remote_log_path }}"
+
+- name: install etcd to remote etcd nodes
+  gather_facts: yes
+  user: ubuntu
+  become: yes
+  hosts: etcd
+
+  vars_files:
+  - mex_vars.yml
+
+  vars:
+     ##todo we should derive the os here, but this is only for ubuntu currently anyway
+     etcd_version_os: "etcd-{{ etcd_version }}-linux-amd64"
+     etcd_tarfile: "{{ etcd_version_os }}.tar.gz"
+
+  tasks:
+  - name: install etcd via package manager for non ubuntu
+    package:
+       name: etcd
+       state: latest
+    when: ansible_distribution != "Ubuntu"
+
+  - name: download etcd via wget for ubuntu
+    get_url:
+       url: "{{ etcd_url }}/{{ etcd_version }}/{{ etcd_tarfile }}"
+       dest: /tmp
+    when: ansible_distribution == "Ubuntu"
+
+  - name: untar etcd package
+    unarchive:
+       src: "/tmp/{{ etcd_tarfile }}"
+       dest: /tmp
+       remote_src: yes
+    when: ansible_distribution == "Ubuntu"
+
+
+  - name: move the etcd file to bin dir
+    command: "mv /tmp/{{ etcd_version_os }}/etcd {{ remote_bin_path }}"
+    when: ansible_distribution == "Ubuntu"
+
+  - name: cleanup tarfile
+    file:
+       path: "/tmp/{{ etcd_tarfile }}"
+       state: absent
+    when: ansible_distribution == "Ubuntu"
+
+  - name: cleanup tar temp dir
+    file:
+       path: "/tmp/{{ etcd_version }}"
+       state: absent
+    when: ansible_distribution == "Ubuntu"
+
+  

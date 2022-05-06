@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ influxdb_name }}
+  labels:
+    task: monitoring
+    k8s-app: influxdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      task: monitoring
+      k8s-app: influxdb
+  strategy:
+    type: Recreate
+    rollingUpdate: null
+  template:
+    metadata:
+      labels:
+        task: monitoring
+        k8s-app: influxdb
+    spec:
+
+      containers:
+      - name: influxdb
+        image: influxdb:{{ influxdb_version }}
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "1Gi"
+          limits:
+            cpu: "200m"
+            memory: "2Gi"
+        volumeMounts:
+        - mountPath: /var/lib/influxdb
+          name: influxdb-storage
+        - mountPath: /etc/influxdb
+          name: influxdb-conf
+          readOnly: true
+        - name: tls
+          mountPath: /tls
+          readOnly: true
+        env:
+        - name: INFLUXDB_ADMIN_USER
+          value: {{ influxdb_user }}
+        - name: INFLUXDB_ADMIN_PASSWORD
+          value: {{ influxdb_password }}
+
+        livenessProbe:
+          exec:
+            command:
+              - "/bin/bash"
+              - "-ec"
+              - |
+                EXP_DATE=$( openssl s_client -connect {{ influxdb_dns }}.{{ cloudflare_zone }}:8086 -servername {{ influxdb_dns }}.{{ cloudflare_zone }} </dev/null 2>/dev/null \
+                  | openssl x509 -noout -dates \
+                  | grep '^notAfter' \
+                  | cut -d= -f2- )
+                EXP_EPOCH=$( date --date="$EXP_DATE" +'%s' )
+                NOW_EPOCH=$( date +'%s' )
+                EXP_DAYS=$(( ( EXP_EPOCH - NOW_EPOCH ) / 60 / 60 / 24 ))
+                if [ "$EXP_DAYS" -lt 28 ]; then
+                  echo "Cert expiry in $EXP_DAYS days" >&2
+                  exit 2
+                fi
+                exit 0
+          periodSeconds: 28800
+          timeoutSeconds: 180
+          initialDelaySeconds: 900
+
+      volumes:
+      - name: influxdb-storage
+        persistentVolumeClaim:
+          claimName: {{ influxdb_volume_name }}
+      - name: influxdb-conf
+        configMap:
+          name: influxdb-conf
+          items:
+          - key: influxdb.conf
+            path: influxdb.conf
+      - name: tls
+        secret:
+          secretName: {{ cert_secret_name }}

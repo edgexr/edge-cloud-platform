@@ -1,0 +1,37 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- debug:
+    msg: "Need to validate artifactory: {{ artifactory_host }}"
+
+- docker_container_info:
+    name: artifactory
+  register: artifactory_docker
+  delegate_to: "{{ artifactory_host }}"
+
+- assert:
+    that:
+      - artifactory_docker.exists
+
+- name: Get Artifactory version
+  set_fact:
+    current_artifactory_version: "{{ image.split(':')[-1] }}"
+  vars:
+    image: "{{ artifactory_docker.container['Config']['Image'] }}"
+
+- name: Verify Artifactory version
+  assert:
+    that:
+      - artifactory_version == current_artifactory_version
+    fail_msg: "Artifactory version in {{ artifactory_host }} needs to be {{ artifactory_version }}"

@@ -1,0 +1,141 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: get etcd logs
+  gather_facts: no
+  user: ubuntu
+  become: yes
+  hosts: etcds
+
+  vars_files:
+  - mex_vars.yml
+  - "{{ setupfile }}"
+
+  tasks:
+
+  - name: fetch etcd logs
+    fetch:
+      src:  "{{ remote_log_path }}/{{ item.name }}.log"
+      dest: "{{ local_log_path }}/{{ inventory_hostname}}.{{ item.name }}.log"
+      flat: yes
+    when: item.hostname == inventory_hostname
+    with_items:
+       -  "{{ etcds }}"
+
+
+- name: get controller logs
+  gather_facts: no
+  user: ubuntu
+  become: yes
+  hosts: controllers
+
+  vars_files:
+  - mex_vars.yml
+  - "{{ setupfile }}"
+
+  tasks:
+
+  - name: fetch controller logs
+    fetch:
+      src:  "{{ remote_log_path }}/{{ item.name }}.log"
+      dest: "{{ local_log_path }}/{{ inventory_hostname}}.{{ item.name }}.log"
+      flat: yes
+    when: item.hostname == inventory_hostname
+    with_items:
+       -  "{{ controllers }}"
+
+- name: get crm logs
+  gather_facts: no
+  user: ubuntu
+  become: yes
+  hosts: crms
+
+  vars_files:
+  - mex_vars.yml
+  - "{{ setupfile }}"
+
+  tasks:
+
+  - name: fetch crm logs
+    fetch:
+      src:  "{{ remote_log_path }}/{{ item.name }}.log"
+      dest: "{{ local_log_path }}/{{ inventory_hostname}}.{{ item.name }}.log"
+      flat: yes
+    when: item.hostname == inventory_hostname
+    with_items:
+       -  "{{ crms }}"
+
+- name: get dme logs
+  gather_facts: no
+  user: ubuntu
+  become: yes
+  hosts: dmes
+
+  vars_files:
+  - mex_vars.yml
+  - "{{ setupfile }}"
+
+  tasks:
+
+  - name: fetch dme logs
+    fetch:
+      src:  "{{ remote_log_path }}/{{ item.name }}.log"
+      dest: "{{ local_log_path }}/{{ inventory_hostname}}.{{ item.name }}.log"
+      flat: yes
+    when: item.hostname == inventory_hostname
+    with_items:
+       -  "{{ dmes }}"
+
+
+- name: get locsim logs
+  gather_facts: no
+  user: ubuntu
+  become: yes
+  hosts: locapisims
+
+  vars_files:
+  - mex_vars.yml
+  - "{{ setupfile }}"
+
+  tasks:
+  - name: fetch locsim logs
+    fetch:
+      src:  "{{ remote_log_path }}/{{ item.name }}.log"
+      dest: "{{ local_log_path }}/{{ inventory_hostname}}.{{ item.name }}.log"
+      flat: yes
+    when: item.hostname == inventory_hostname
+    with_items:
+       -  "{{ locapisims }}"
+
+
+- name: get toksim logs
+  gather_facts: no
+  user: ubuntu
+  become: yes
+  hosts: toksrvsims
+
+  vars_files:
+  - mex_vars.yml
+  - "{{ setupfile }}"
+
+  tasks:
+  - name: fetch toksim logs
+    fetch:
+      src:  "{{ remote_log_path }}/{{ item.name }}.log"
+      dest: "{{ local_log_path }}/{{ inventory_hostname}}.{{ item.name }}.log"
+      flat: yes
+    when: item.hostname == inventory_hostname
+    with_items:
+       -  "{{ toksrvsims }}"
+

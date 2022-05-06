@@ -1,0 +1,12 @@
+vouch:
+  domains:
+  - mobiledgex.com
+  - mobiledgex.net
+  
+oauth:
+  provider: google
+  client_id: {{ vouch_google_client_id }}
+  client_secret: {{ vouch_google_client_secret }}
+  callback_urls: 
+    - https://{{ inventory_hostname }}/auth
+  preferredDomain: mobiledgex.com

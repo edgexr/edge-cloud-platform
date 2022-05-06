@@ -1,0 +1,23 @@
+dbrp "telegraf"."autogen"
+
+var name = 'ElasticSearch Status Alert'
+
+var period = 5m
+
+var alert_interval = 6h
+
+var data = batch
+    |query(''' SELECT LAST(status) AS status FROM "telegraf"."autogen"."elasticsearch_cluster_health" ''')
+        .period(period)
+        .every(period)
+        .groupBy('name')
+
+var alert = data
+    |alert()
+        .id(name + ':{{.Group}}')
+        .message('{{ .ID }}: Status is {{ .Level }}')
+        .warn(lambda: "status" == 'yellow')
+        .crit(lambda: "status" == 'red')
+        .stateChangesOnly(alert_interval)
+        .pagerDuty2()
+        .slack()

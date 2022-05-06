@@ -1,0 +1,29 @@
+#!/bin/bash
+
+{% if swagger_gen_run_once %}
+TAG="{{ edge_cloud_version }}"
+{% else %}
+TAG=$( date +'%Y-%m-%d' )
+{% endif %}
+
+EDGECLOUD="{{ mex_docker_registry }}/mobiledgex/edge-cloud:$TAG"
+APIDOCS_MASSAGE="{{ apidocs_script_dir }}/apidocs-massage.py"
+AKRAINO_POSTPROCESS="{{ apidocs_script_dir }}/akraino-postprocess.py"
+
+sudo docker run --rm "$EDGECLOUD" version >/dev/null
+if [[ $? -ne 0 ]]; then
+	echo "Docker build not found: $EDGECLOUD" >&2
+	exit 2
+fi
+
+download_doc() {
+	local doctype="$1"; shift
+	sudo docker run --rm "$EDGECLOUD" dump-docs "$doctype" \
+		| ${APIDOCS_MASSAGE} -v "$TAG" \
+		| ${AKRAINO_POSTPROCESS} "$@" >"{{ swagger_base_dir }}/${doctype}.swagger.json"
+}
+
+download_doc client --description "Click [here](/mc) for the Edge Orchestration API."
+download_doc mc \
+	--title "Edge Orchestration APIs" \
+	--description "Click [here](/device) for the Device API."

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ influxdb_volume_name }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: {{ azure_volume_storage_class }}
+  resources:
+    requests:
+      storage: {{ cluster_influxdb_volume_size }}

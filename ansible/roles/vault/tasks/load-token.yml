@@ -1,0 +1,48 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- name: Look for vault token in environment
+  set_fact:
+    vault_token: "{{ lookup('env', 'VAULT_TOKEN') or 'UNSET' }}"
+  when: (vault_token is not defined) or (not vault_token)
+
+- name: Get vault token using ansible role
+  block:
+    - name: Log in with Ansible role/secret
+      uri:
+        url: "{{ vault_address }}/v1/auth/approle/login"
+        method: POST
+        body_format: json
+        body:
+          role_id: "{{ lookup('env', 'VAULT_ROLE_ID') }}"
+          secret_id: "{{ lookup('env', 'VAULT_SECRET_ID') }}"
+        return_content: yes
+      register: result
+
+    - name: Set vault token
+      set_fact:
+        vault_token: "{{ result.json.auth.client_token }}"
+  when:
+    - vault_token == 'UNSET'
+
+- name: Look up token
+  set_fact:
+    vault_token_lookup: "{{ query('vault_token', vault_token) }}"
+
+- name: Print token details
+  debug:
+    msg: "Vault token: {{ vault_token_lookup.data.display_name }} (\"{{ token_name }}\")"
+  vars:
+    token_name: "{% if vault_token_lookup.data.meta %}{% if 'role_name' in vault_token_lookup.data.meta %}{{ vault_token_lookup.data.meta.role_name }}{% elif 'username' in vault_token_lookup.data.meta %}{{ vault_token_lookup.data.meta.username }}{% endif %}{% else %}{{ vault_token_lookup.data.path }}{% endif %}"

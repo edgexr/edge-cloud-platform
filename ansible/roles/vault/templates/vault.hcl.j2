@@ -1,0 +1,29 @@
+ui = false
+api_addr = "https://{{ inventory_hostname }}:{{ vault_ha_instance_port }}"
+cluster_addr = "https://{{ inventory_hostname }}:{{ vault_cluster_port }}"
+listener "tcp" {
+  address = "0.0.0.0:{{ vault_ha_instance_port }}"
+  cluster_address  = "0.0.0.0:{{ vault_cluster_port }}"
+  tls_disable = 0
+  tls_cert_file = "/etc/letsencrypt/live/{{ inventory_hostname }}/fullchain.pem"
+  tls_key_file = "/etc/letsencrypt/live/{{ inventory_hostname }}/privkey.pem"
+  tls_cipher_suites = "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+  x_forwarded_for_authorized_addrs = "35.191.0.0/16,130.211.0.0/22"
+  x_forwarded_for_reject_not_authorized = "false"
+  x_forwarded_for_reject_not_present = "false"
+  x_forwarded_for_hop_skips = "1"
+}
+storage "raft" {
+  path    = "{{ vault_data_directory }}"
+  node_id = "{{ inventory_hostname_short }}"
+{% for node in other_vaults %}
+  retry_join {
+    leader_api_addr = "https://{{ node }}:8200"
+  }
+{% endfor %}
+}
+plugin_directory = "{{ vault_plugin_directory }}"
+telemetry {
+  dogstatsd_addr   = "localhost:8125"
+  disable_hostname = true
+}

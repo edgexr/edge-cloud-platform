@@ -1,0 +1,33 @@
+import json
+import requests
+
+matching_engine = "https://wifi.dme.mobiledgex.net:38001"
+
+register_response = requests.post(
+    matching_engine + "/v1/registerclient",
+    json={
+        "app_name": "MobiledgeX SDK Demo",
+        "app_vers": "2.0",
+        "org_name": "MobiledgeX",
+        "ver": 1,
+    }).json()
+
+session_cookie = register_response["session_cookie"]
+token_server = register_response["token_server_uri"]
+token_response = requests.get(token_server, allow_redirects=False)
+token = token_response.headers["Location"].split("dt-id=")[1]
+
+verifylocation_response = requests.post(
+    matching_engine + "/v1/verifylocation",
+    json={
+        "session_cookie": session_cookie,
+        "carrier_name": "GDDT",
+        "gps_location": {
+            "latitude": 48.0,
+            "longitude": 11.0,
+        },
+        "verify_loc_token": token,
+        "ver": 1,
+    }).json()
+
+print(json.dumps(verifylocation_response, indent=4))

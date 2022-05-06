@@ -1,0 +1,64 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- debug:
+    msg: "Backing up etcd data from cluster '{{ k8s_cluster_name }}' (region: '{{ region }}')"
+
+- name: Retrieve kube config
+  import_role:
+    name: load-vault-creds
+    tasks_from: kubeconfig
+
+- name: Create temporary kubeconfig file
+  tempfile:
+    state: file
+    suffix: .kubeconfig
+  register: kubeconfig_file
+  changed_when: false
+  check_mode: no
+
+- name: Store kubeconfig data in file
+  copy:
+    content: "{{ kubeconfig }}"
+    dest: "{{ kubeconfig_file.path }}"
+  changed_when: false
+  check_mode: no
+
+- import_role:
+    name: controller
+    tasks_from: etcd-backup
+
+- block:
+  - name: Copy compact script to host
+    copy:
+      src: etcd-compact.sh
+      dest: /tmp/etcd-compact.sh
+    register: compact_script
+
+  - name: Copy compact script to etcd pod
+    command: "kubectl --kubeconfig {{ kubeconfig_file.path }} cp {{ compact_script.dest }} mex-etcd-0:{{ etcd_compact_script_path }}"
+    changed_when: false
+
+  - name: Compact etcd database
+    command: "kubectl --kubeconfig {{ kubeconfig_file.path }} exec mex-etcd-0 -- sh {{ etcd_compact_script_path }}"
+    register: compact_out
+
+  - debug:
+      msg: "{{ compact_out.stdout }}"
+
+  - debug:
+      msg: "STDERR: {{ compact_out.stderr }}"
+
+  when: etcd_compact_after_backup|bool

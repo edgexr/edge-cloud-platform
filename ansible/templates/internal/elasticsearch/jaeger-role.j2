@@ -1,0 +1,35 @@
+{
+    "applications": [],
+    "cluster": [
+        "manage",
+        "monitor"
+    ],
+    "indices": [
+        {
+        "allow_restricted_indices": false,
+        "field_security": {
+            "grant": [
+            "*"
+            ]
+        },
+        "names": [
+            "jaeger-*",
+            "*-jaeger-*",
+            "events-*"
+        ],
+        "privileges": [
+            "create",
+            "create_index",
+            "write",
+            "read",
+            "monitor",
+            "delete_index"
+        ]
+        }
+    ],
+    "metadata": {},
+    "run_as": [],
+    "transient_metadata": {
+        "enabled": true
+    }
+}

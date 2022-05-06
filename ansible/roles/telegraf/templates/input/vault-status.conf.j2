@@ -1,0 +1,6 @@
+[[inputs.exec]]
+  commands = [
+    "{{ vault_status_monitor_plugin }} {{ vault_ha_instance_port }}"
+  ]
+  timeout = "5s"
+  data_format = "influx"

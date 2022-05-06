@@ -1,0 +1,21 @@
+version: 0.1
+storage:
+  gcs:
+    bucket: {{ gitlab_gcp_storage_bucket }}
+    keyfile: {{ gcp_service_account_path }}
+    chunksize: 5242880
+  delete:
+    enabled: false
+  maintenance:
+    readonly:
+      enabled: true
+http:
+  addr: 0.0.0.0:5000
+  host: https://{{ inventory_hostname }}
+  tls:
+    certificate: {{ cert_dir }}/live/{{ inventory_hostname }}/fullchain.pem
+    key: {{ cert_dir }}/live/{{ inventory_hostname }}/privkey.pem
+auth:
+  htpasswd:
+    realm: Registry Realm
+    path: {{ htpasswd_file }}

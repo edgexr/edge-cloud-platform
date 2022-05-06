@@ -1,0 +1,29 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Compute Docker Config
+  set_fact:
+    docker_config: '{"auths":{"{{ mex_docker_registry }}":{"username":"{{ mex_docker_username }}","password":"{{ mex_docker_password }}"}}}'
+
+- name: Deploy Mex Secrets
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    state: present
+    definition: "{{ lookup('template', 'mexplat/mex-secret.yml') }}"
+
+- name: Set up RBAC
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    state: present
+    definition: "{{ lookup('template', 'mexplat/rbac.yml') }}"

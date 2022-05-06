@@ -1,0 +1,274 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- name: Load cloudflare creds
+  import_role:
+    name: load-vault-creds
+    tasks_from: cloudflare
+  tags: certgen
+
+- name: Create groups
+  group:
+    name: "{{ vault_group }}"
+  become: yes
+  tags: setup
+
+- name: Create vault user account
+  user:
+    name: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    system: yes
+    shell: /sbin/nologin
+    createhome: no
+  become: yes
+  tags: setup
+
+- name: Install vault dependencies
+  apt:
+    name:
+      - unzip
+  become: yes
+  tags: setup
+
+- name: "Download vault {{ vault_version }}"
+  get_url:
+    url: "https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_amd64.zip"
+    dest: "{{ ansible_env.HOME }}/vault_{{ vault_version }}_linux_amd64.zip"
+    checksum: "{{ vault_checksum }}"
+  register: vault_download
+  tags: setup
+
+- name: Extract vault
+  unarchive:
+    src: "{{ vault_download.dest }}"
+    dest: "{{ vault_path }}"
+    remote_src: yes
+  become: yes
+  tags: setup
+
+- name: Grant IPC lock capability
+  capabilities:
+    path: "{{ vault_path }}/vault"
+    capability: cap_ipc_lock+ep
+  become: yes
+  tags: setup
+
+- name: Grant privileged port access
+  capabilities:
+    path: "{{ vault_path }}/vault"
+    capability: cap_net_bind_service+ep
+  become: yes
+  tags: setup
+  when: vault_ha_instance_port < 1024
+
+- name: Set up vault data dir
+  file:
+    path: "{{ vault_data_directory }}"
+    state: directory
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    mode: 0700
+  become: yes
+
+# Get a list of other vault nodes in the HA setup
+- set_fact:
+    other_vaults: []
+- set_fact:
+    other_vaults: "{{ other_vaults }} + [ '{{ item }}' ]"
+  with_inventory_hostnames:
+    - vault
+  when: inventory_hostname != item
+
+- name: Install vault config file
+  template:
+    src: vault.hcl.j2
+    dest: "{{ vault_conf }}"
+    backup: yes
+  become: yes
+  notify: Reload vault
+
+- name: Create vault audit log
+  file:
+    path: "{{ vault_audit_log }}"
+    state: touch
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    mode: 0600
+  changed_when: False
+  become: yes
+
+- name: Set up vault audit log rotation
+  template:
+    src: vault.logrotate.j2
+    dest: "{{ vault_logrotate_path }}"
+  become: yes
+
+- name: Set up vault plugin directory
+  file:
+    path: "{{ vault_plugin_directory }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  become: yes
+  tags: setup
+
+- name: Look up Artifactory token in vault
+  set_fact:
+    vault_lookup: "{{ lookup('vault', vault_artifactory_token_path) }}"
+
+- set_fact:
+    artifactory_token: "{{ vault_lookup.artifactory.data.token }}"
+
+- name: Download letsencrypt plugin
+  get_url:
+    url: "{{ vault_letsencrypt_plugin }}"
+    dest: "{{ vault_plugin_directory }}/letsencrypt-plugin"
+    checksum: "sha256:{{ vault_letsencrypt_plugin_sha256sum }}"
+    headers:
+      Authorization: "Bearer {{ artifactory_token }}"
+  register: vault_letsencrypt_plugin_download
+  become: yes
+  notify:
+    - Vault letencrypt plugin register prompt
+
+- name: Set letsencrypt plugin permissions
+  file:
+    path: "{{ vault_letsencrypt_plugin_download.dest }}"
+    owner: root
+    group: root
+    mode: 0555
+  become: yes
+
+- name: Grant IPC lock capability to letsencrypt plugin
+  capabilities:
+    path: "{{ vault_letsencrypt_plugin_download.dest }}"
+    capability: cap_ipc_lock+ep
+  become: yes
+
+- set_fact:
+    le_env: "{{ letsencrypt_env | default('staging') }}"
+  tags: certgen
+
+- name: Lookup up NS1 apikey in vault
+  set_fact:
+    vault_lookup: "{{ lookup('vault', vault_ns1_apikey_path) }}"
+  tags: certgen
+
+- set_fact:
+    ns1_apikey: "{{ vault_lookup.ns1.data.apikey }}"
+  tags: certgen
+
+- name: "Deploy certgen service ({{ le_env }})"
+  docker_container:
+    name: certgen
+    image: "{{ certgen_image }}:{{ certgen_image_version }}"
+    restart_policy: unless-stopped
+    ports:
+      - "127.0.0.1:{{ certgen_port }}:4567"
+    volumes:
+      - "{{ certgen_volume }}:/etc/letsencrypt"
+    env:
+      RAILS_ENV: production
+      RACK_ENV: production
+      LETSENCRYPT_ENV: "{{ le_env }}"
+      CF_USER: "{{ cloudflare_account_email }}"
+      CF_APIKEY: "{{ cloudflare_account_api_token }}"
+      DOMAINS: "{{ cloudflare_zone }},{{ app_dns_root }}"
+      NS1_APIKEY: "{{ ns1_apikey }}"
+  tags: certgen
+
+- name: Set default cert ACLs
+  acl:
+    path: "{{ item }}"
+    entity: "{{ vault_user }}"
+    etype: user
+    permissions: r
+    default: yes
+    state: present
+  become: yes
+  with_items:
+    - "/etc/letsencrypt/live/{{ inventory_hostname }}"
+    - "/etc/letsencrypt/archive/{{ inventory_hostname }}"
+  tags: setup
+
+- name: Allow vault permission to its certs
+  acl:
+    path: "{{ item }}"
+    entity: "{{ vault_user }}"
+    etype: user
+    permissions: r
+    recursive: yes
+    state: present
+  become: yes
+  with_items:
+    - "/etc/letsencrypt/live/{{ inventory_hostname }}"
+    - "/etc/letsencrypt/archive/{{ inventory_hostname }}"
+  tags: setup
+
+- name: Allow vault permission to its cert directories
+  acl:
+    path: "{{ item }}"
+    entity: "{{ vault_user }}"
+    etype: user
+    permissions: rx
+    state: present
+  become: yes
+  with_items:
+    - /etc/letsencrypt/live
+    - "/etc/letsencrypt/live/{{ inventory_hostname }}"
+    - /etc/letsencrypt/archive
+    - "/etc/letsencrypt/archive/{{ inventory_hostname }}"
+  tags: setup
+
+- name: Install systemd service file
+  template:
+    src: vault.service.j2
+    dest: "/etc/systemd/system/vault.service"
+    mode: 0644
+  become: yes
+
+- pause:
+    prompt: "Shut down the vault instance now. Continue when done."
+
+- name: Start vault service
+  systemd:
+    name: vault
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  become: yes
+
+- name: Check if vault is initialized
+  uri:
+    url: "https://{{ inventory_hostname }}:{{ vault_ha_instance_port }}/v1/sys/init"
+    return_content: yes
+    status_code: 200
+    body_format: json
+  register: result
+
+- debug:
+    msg: "Vault needs to be initialized"
+  when:
+    - not ansible_check_mode
+    - not result.json.initialized
+  changed_when: true
+  notify: Vault initialization prompt
+
+- include_role:
+    role: vault
+    tasks_from: loadbalancer
+  tags:
+    - loadbalancer

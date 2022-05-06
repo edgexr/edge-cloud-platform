@@ -1,0 +1,74 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- debug:
+    msg: |
+      Restore etcd from backup in cluster '{{ k8s_cluster_name }}' (region: '{{ region }}')
+      Backup old database: {{ backup_old_db | bool }}
+
+- pause:
+
+- name: Retrieve kube config
+  import_role:
+    name: load-vault-creds
+    tasks_from: kubeconfig
+
+- name: Create temporary kubeconfig file
+  tempfile:
+    state: file
+    suffix: .kubeconfig
+  register: kubeconfig_file
+  changed_when: false
+  check_mode: no
+
+- name: Store kubeconfig data in file
+  copy:
+    content: "{{ kubeconfig }}"
+    dest: "{{ kubeconfig_file.path }}"
+  changed_when: false
+  check_mode: no
+
+- name: Bring down the etcd cluster
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    name: "{{ etcd_cluster_name }}"
+    kind: StatefulSet
+    api_version: apps/v1
+    state: absent
+
+- name: Wait for etcd cluster to come down
+  k8s_info:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    kind: StatefulSet
+    name: "{{ etcd_cluster_name }}"
+    api_version: apps/v1
+  register: etcd_sts_facts
+  until: etcd_sts_facts.resources|length == 0
+  retries: 30
+  delay: 10
+
+- include_role:
+    name: etcd
+    tasks_from: restore_etcd_instance
+  loop: "{{ range(3) | list }}"
+  loop_control:
+    index_var: etcd_index
+
+- debug:
+    msg: |
+      Should be all set now.
+      Run the standard platform deployment playbook to bring up etcd.

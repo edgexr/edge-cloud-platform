@@ -1,0 +1,64 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: setup iptables for openstack access
+  gather_facts: no
+  user: ubuntu
+  become: yes
+  hosts: crmos
+
+  tasks:
+  - name: flush iptables filter
+    iptables:
+      chain: "{{ item }}"
+      flush: yes
+    with_items:  [ 'INPUT', 'FORWARD', 'OUTPUT' ]
+
+  - name: flush iptables nat
+    iptables:
+      table: nat
+      chain: '{{ item }}'
+      flush: yes
+    with_items: [ 'INPUT', 'OUTPUT', 'PREROUTING', 'POSTROUTING' ]
+
+  - name: accept input iptables chain
+    iptables:
+      chain: INPUT
+      in_interface: "{{ ingress_interface }}"
+      jump: ACCEPT
+
+  - name: accept forward iptables chain
+    iptables:
+      chain: FORWARD
+      jump: ACCEPT
+
+  - name: create iptables nat rules
+    iptables: 
+      table: nat
+      chain: PREROUTING
+      to_destination: "{{ openstack_ip }}"
+      in_interface: "{{ ingress_interface }}"
+      protocol: tcp
+      match: tcp
+      destination_port: "{{ item }}"
+      jump: DNAT
+    with_items: "{{ openstack_ports }}"
+  
+  - name: create iptables masquerade rule
+    iptables:
+      table: nat
+      chain: POSTROUTING
+      out_interface: "{{ egress_interface }}"
+      jump: MASQUERADE
+

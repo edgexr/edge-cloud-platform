@@ -1,0 +1,425 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- name: Ensure edge cloud version is set
+  hosts:
+    - crms
+    - mc
+  gather_facts: no
+  tasks:
+    - assert:
+        that: edge_cloud_version is defined
+
+- name: Ensure that console version is set
+  hosts:
+    - console
+  gather_facts: no
+  tasks:
+    - block:
+      - set_fact:
+          github_user: "{{ lookup('env', 'GITHUB_USER') }}"
+        when: github_user is not defined or not github_user
+
+      - set_fact:
+          github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"
+        when: github_token is not defined or not github_token
+
+      - set_fact:
+          console_version_not_provided: true
+        when: console_version is not defined
+
+      - name: Get latest edge-cloud-ui release from Github
+        set_fact:
+          console_version: "{{ lookup('github_release', 'mobiledgex/edge-cloud-ui', branch='master', github_user=github_user, github_token=github_token) }}"
+        when: console_version_not_provided | default(false)
+
+      - assert:
+          that:
+            - console_version is defined
+
+      - pause:
+          prompt: "Installing the latest console release: {{ console_version }}"
+          seconds: 30
+        when: console_version_not_provided | default(false)
+
+      tags: console
+
+- name: Check gitlab version
+  hosts:
+    - gitlab
+  gather_facts: no
+  tasks:
+    - import_role:
+        name: gitlab
+        tasks_from: version-check
+
+- name: Set up vault auth, policies, and roles
+  import_playbook: vault-setup.yml
+  tags: vault-setup
+
+- name: Harden system
+  import_playbook: harden.yml
+
+- hosts: platform
+  tasks:
+    - import_role:
+        name: vault
+        tasks_from: load-token
+      delegate_to: localhost
+
+    - name: Load registry docker creds
+      import_role:
+        name: load-vault-creds
+        tasks_from: mex_docker
+
+    - name: Check if edge-cloud Image is Available
+      uri:
+        url: "https://{{ mex_docker_registry }}/v2/mobiledgex/edge-cloud/tags/list"
+        url_username: "{{ mex_docker_username }}"
+        url_password: "{{ mex_docker_password }}"
+        force_basic_auth: yes
+        return_content: yes
+        status_code: 200
+        body_format: json
+      register: response
+      check_mode: no
+
+    - name: Notify upgrade start on slack
+      slack:
+        token: "{{ slack_token }}"
+        channel: "{{ slack_channel }}"
+        msg: "Mexplat \"{{ deploy_environ }}\" setup being upgraded to version {{ edge_cloud_version }} by {{ ansible_user }}"
+      delegate_to: localhost
+      when:
+        - not ansible_check_mode
+      tags: notify
+
+    - name: Set up GCP buckets
+      import_role:
+        name: gcp-buckets
+        tasks_from: create
+      vars:
+        buckets:
+          - "{{ gcs_gpu_drivers_bucket }}"
+          - "{{ gcs_operator_reports_bucket }}"
+
+    - import_role:
+        name: azure-aks
+        tasks_from: platform-regions-load
+
+    - set_fact:
+        dme_details: []
+
+    - include_role:
+        name: mexplat_k8s
+      vars:
+        k8s_cluster_name: "{{ item.name }}"
+        region: "{{ item.region }}"
+        latitude: "{{ item.latitude }}"
+        longitude: "{{ item.longitude }}"
+        resource_group: "{{ item.resource_group }}"
+        dme_aliases: "{{ item.global_dme_aliases }}"
+        kubernetes_version: "{{ item.kubernetes_version }}"
+        cluster_influxdb_volume_size: "{{ item.influxdb_volume_size }}"
+      with_items: "{{ platform_regions }}"
+
+    - debug: var=dme_details
+      tags: [ 'never', 'debug' ]
+
+    - import_role:
+        name: ns1
+        tasks_from: global-dme
+
+- hosts: gitlab
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+    - import_role:
+        name: teleport
+        tasks_from: node
+    - name: Update Gitlab GPG key
+      apt_key:
+        url: https://packages.gitlab.com/gpg.key
+        state: present
+      become: yes
+    - import_role:
+        name: telegraf
+      tags: monitoring
+    - import_role:
+        name: docker
+      tags: setup
+    - import_role:
+        name: gitlab
+      tags: setup
+
+- hosts: postgres
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+    - import_role:
+        name: teleport
+        tasks_from: node
+    - import_role:
+        name: load-vault-creds
+        tasks_from: mc
+    - import_role:
+        name: postgres
+      vars:
+        postgres_db_accounts:
+          - db: "{{ mc_postgres_db }}"
+            username: "{{ mc_postgres_username }}"
+            password: "{{ mc_postgres_password }}"
+
+- hosts: crms
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+    - import_role:
+        name: vault
+        tasks_from: load-token
+      delegate_to: localhost
+    - import_role:
+        name: teleport
+        tasks_from: node
+    - import_role:
+        name: telegraf
+      tags: monitoring
+    - import_role:
+        name: docker
+      tags: setup
+    - include_role:
+        name: crm
+      loop: "{{ crm_instances }}"
+      loop_control:
+        index_var: crm_index
+    - include_role:
+        name: shepherd
+      loop: "{{ crm_instances }}"
+      loop_control:
+        index_var: crm_index
+
+- hosts: stun
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+    - import_role:
+        name: teleport
+        tasks_from: node
+    - import_role:
+        name: telegraf
+      tags: monitoring
+    - import_role:
+        name: coturn
+
+- hosts: alertmanager
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+    - import_role:
+        name: teleport
+        tasks_from: node
+    - import_role:
+        name: docker
+      tags: setup
+    - import_role:
+        name: alertmanager
+      tags: alertmanager
+
+- hosts: console
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+    - import_role:
+        name: vault
+        tasks_from: load-token
+      delegate_to: localhost
+    - import_role:
+        name: teleport
+        tasks_from: node
+    - name: Install kafkacat
+      apt:
+        name: kafkacat
+        state: present
+        update_cache: yes
+      become: yes
+    - import_role:
+        name: telegraf
+      vars:
+        telegraf_additional_config:
+          - input/nginx.conf.j2
+      tags: [ 'monitoring', 'setup' ]
+    - import_role:
+        name: web
+      vars:
+        nginx_config_template: "templates/mexplat/console-nginx-config.j2"
+        cert_domains: [ "{{ inventory_hostname }}", "{{ console_vnc_hostname }}" ]
+      when: skip_console_setup is not defined or not skip_console_setup
+      tags: setup
+    - import_role:
+        name: docker
+      tags: setup
+    - import_role:
+        name: console
+      tags: console
+    - import_role:
+        name: mc
+      tags: mc
+
+- hosts: notifyroot
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+    - import_role:
+        name: vault
+        tasks_from: load-token
+      delegate_to: localhost
+    - import_role:
+        name: teleport
+        tasks_from: node
+    - import_role:
+        name: telegraf
+      tags: [ 'monitoring', 'setup' ]
+    - import_role:
+        name: notifyroot
+
+- hosts: registry_replicas
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+    - import_role:
+        name: telegraf
+      tags: monitoring
+    - import_role:
+        name: registry_replica
+
+- hosts: platform
+  tasks:
+    - name: Notify upgrade completion on slack
+      slack:
+        token: "{{ slack_token }}"
+        channel: "{{ slack_channel }}"
+        msg: "Mexplat \"{{ deploy_environ }}\" setup successfully upgraded to version {{ edge_cloud_version }} by {{ ansible_user }}"
+      when:
+        - not ansible_check_mode
+      tags: notify
+
+- hosts: jaeger
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+
+    - import_role:
+        name: teleport
+        tasks_from: node
+
+    - import_role:
+        name: telegraf
+      vars:
+        telegraf_additional_config:
+          - input/jaeger-metrics.conf.j2
+      tags:
+        - monitoring
+        - setup
+
+    - import_role:
+        name: docker
+      tags: setup
+
+    - import_role:
+        name: jaeger
+
+- hosts: esproxy
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+
+    - import_role:
+        name: teleport
+        tasks_from: node
+
+    - import_role:
+        name: telegraf
+      tags:
+        - monitoring
+        - setup
+
+    - import_role:
+        name: esproxy
+
+- hosts: kafka
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+      tags: setup
+
+    - import_role:
+        name: teleport
+        tasks_from: node
+
+    - import_role:
+        name: telegraf
+      tags:
+        - monitoring
+        - setup
+
+    - import_role:
+        name: kafka

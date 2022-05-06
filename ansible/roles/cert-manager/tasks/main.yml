@@ -1,0 +1,76 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Set up namespace
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    name: "{{ namespace }}"
+    kind: Namespace
+
+- name: Disable resource validation in namespace
+  command: "kubectl --kubeconfig {{ kubeconfig_file.path }} label namespace {{ namespace }} cert-manager.io/disable-validation=true"
+  register: result
+  changed_when: no
+  failed_when:
+    - result.rc != 0
+    - '"already has a value (true)" not in result.stderr'
+
+- set_fact:
+    cert_manager_manifest: cert-manager-legacy.yaml
+  when: kubernetes_version is version('1.15', '<')
+
+- set_fact:
+    cert_manager_manifest: cert-manager.yaml
+  when: cert_manager_manifest is not defined or not cert_manager_manifest
+
+- name: "Install cert-manager {{ cert_manager_version }}"
+  command: "kubectl --kubeconfig {{ kubeconfig_file.path }} apply -f https://github.com/jetstack/cert-manager/releases/download/{{ cert_manager_version }}/{{ cert_manager_manifest }} --validate=false"
+  changed_when: no
+
+- set_fact:
+    acme_url: "https://acme{{ ( use_letsencrypt_staging is defined and use_letsencrypt_staging ) | ternary('-staging', '') }}-v02.api.letsencrypt.org/directory"
+
+- name: Load cloudflare creds
+  import_role:
+    name: load-vault-creds
+    tasks_from: cloudflare
+
+- name: Set up cloudflare secret
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    definition: "{{ lookup('template', 'cloudflare-apikey-secret.yaml.j2') }}"
+    namespace: "{{ namespace }}"
+    state: present
+
+- name: Set up the letsencrypt dns01 issuer
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    definition: "{{ lookup('template', 'letsencrypt-dns01.yaml.j2') }}"
+    namespace: default
+    state: present
+  register: dns01_issuer
+  retries: 30
+  delay: 10
+  until: dns01_issuer is not failed
+
+- name: Set up the letsencrypt http01 issuer
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    definition: "{{ lookup('template', 'letsencrypt-http01.yaml.j2') }}"
+    namespace: default
+    state: present
+  register: http01_issuer
+  retries: 30
+  delay: 10
+  until: http01_issuer is not failed

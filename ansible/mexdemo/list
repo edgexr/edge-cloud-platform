@@ -1,0 +1,35 @@
+[all:vars]
+deploy_environ=mexdemo
+ubuntu_release=bionic
+monitor_version=latest
+deploy_target="mexplat-{{ deploy_environ }}"
+deployment_tag_override=main
+operator_key=GDDT
+dme_carrier=GDDT
+locver_url="http://mexdemo.locsim.mobiledgex.net:8888/verifyLocation"
+toksrv_url="http://mexdemo.tok.mobiledgex.net:9999/its?followURL=https://dme.mobiledgex.net/verifyLoc"
+global_dme_dns=wifi.dme
+ns1_global_dme_dns="{{ deploy_environ }}"
+postgres_hostname=postgres.mobiledgex.net
+vault_vm_hostname=vault-main.mobiledgex.net
+vault_port=443
+gitlab_vm_hostname=container-registry.mobiledgex.net
+crm_vm_hostname=crm.mobiledgex.net
+mc_vm_hostname=mc.mobiledgex.net
+console_vm_hostname=console.mobiledgex.net
+gitlab_email_enabled=false
+gitlab_docker_hostname="docker.mobiledgex.net"
+azure_volume_storage_class=managed-premium
+influxdb_volume_size=10Gi
+console_prod=yes
+events_elasticsearch_cleanup_age=92
+etcd_compact_after_backup=true
+
+[platform]
+localhost	ansible_connection=local
+
+[swagger]
+swagger.mobiledgex.net
+
+[akraino]
+api.akraino.org

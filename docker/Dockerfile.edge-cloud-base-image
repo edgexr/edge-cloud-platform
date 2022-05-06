@@ -1,0 +1,85 @@
+################################################################################
+# Stage 1: Build python packages using pip
+################################################################################
+
+FROM ubuntu:18.04 AS python
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+	apt-transport-https \
+	ca-certificates \
+	cpio \
+	python \
+	python2.7 \
+	python3.6 \
+	python-pip
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+RUN find /usr/local/bin /usr/bin/python* /usr/lib/python* /usr/local/lib/python* \
+	| cpio -pdm /python
+
+################################################################################
+# Stage 2: Build rest of the base image and copy python modules from stage 1
+################################################################################
+
+FROM ubuntu:18.04
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+	apt-transport-https \
+	ca-certificates \
+	curl \
+	dirmngr \
+	openssh-client \
+	openssh-server \
+	openssh-sftp-server \
+	software-properties-common \
+	systemd \
+	tzdata \
+	unzip \
+	vim-tiny \
+	wget \
+	jq
+
+# Turn off auto-upgrades
+RUN sed -i 's/"1"/"0"/' /etc/apt/apt.conf.d/20auto-upgrades
+
+RUN echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ bionic main" >/etc/apt/sources.list.d/azure-cli.list
+RUN echo "deb http://packages.cloud.google.com/apt cloud-sdk-bionic main" >/etc/apt/sources.list.d/google-cloud-sdk.list
+RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc \
+	| gpg --dearmor >/etc/apt/trusted.gpg.d/microsoft.asc.gpg
+RUN curl -sL https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+	| apt-key add -
+RUN echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" >/etc/apt/sources.list.d/kubernetes.list
+
+RUN apt-get update && apt-get install -y \
+	azure-cli=2.34.1-1~bionic \
+	google-cloud-sdk=267.0.0-0 \
+	kubectl=1.16.2-00 \
+	qemu-utils
+
+COPY --from=python /python/ /
+
+## GOVC
+RUN curl -sL https://github.com/vmware/govmomi/releases/download/v0.23.0/govc_linux_amd64.gz \
+	| gunzip >/usr/local/bin/govc \
+	&& chmod ug+rx /usr/local/bin/govc
+
+## VCD CLI
+RUN curl -sL -u apt:mobiledgex -O "https://artifactory.mobiledgex.net:443/artifactory/downloads/vcd/vcd-cli_24.0.1-1_amd64.deb" \
+  && dpkg -i vcd-cli_24.0.1-1_amd64.deb \
+  && export LC_ALL=C.UTF-8 \
+  && export LANG=C.UTF-8
+
+## AWS CLI 
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+	&& unzip awscliv2.zip \
+	&& ./aws/install \
+	&& rm -f awscliv2.zip
+
+## AWS EKSCTL
+RUN curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz" | tar xz -C /tmp \
+	&& mv /tmp/eksctl /usr/local/bin
+
+COPY edge-cloud-base-image.root/_ssh /root/.ssh

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+LE_CERT="{{ cert_wildcard_domain }}"
+SYNC_DIR="{{ es_conf_dir }}/{{ cert_sync_dir }}"
+
+mkdir -p "$SYNC_DIR"
+cp /etc/letsencrypt/live/${LE_CERT}/* ${SYNC_DIR}
+chmod a+r ${SYNC_DIR}/*

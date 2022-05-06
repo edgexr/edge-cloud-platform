@@ -1,0 +1,50 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- import_role:
+    name: web
+    tasks_from: certs
+  vars:
+    cert_domains: [ "{{ inventory_hostname }}" ]
+    post_renewal_hooks:
+      - hook_name: chef-cert-reload
+        hook_content: |-
+          #!/bin/bash
+          chef-server-ctl restart nginx
+  tags: setup
+
+- name: Download chef package
+  get_url:
+    url: "{{ chef_package }}"
+    dest: "{{ ansible_env.HOME }}/chef.deb"
+    checksum: "{{ chef_package_checksum }}"
+  register: chef_download
+  tags: setup
+
+- name: Install chef
+  apt: deb="{{ ansible_env.HOME }}/chef.deb"
+  become: yes
+  when: chef_download.changed|bool
+
+- name: Set up server config
+  template:
+    src: chef-server.rb.j2
+    dest: /etc/opscode/chef-server.rb
+    backup: yes
+  become: yes
+
+- name: Reconfigure chef
+  command: chef-server-ctl reconfigure --chef-license=accept
+  become: yes

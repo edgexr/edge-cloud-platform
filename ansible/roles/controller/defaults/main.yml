@@ -1,0 +1,22 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+artifactory_fqdn: https://artifactory.mobiledgex.net/artifactory/
+cloudlet_registry_path: registry.mobiledgex.net:5000/mobiledgex/edge-cloud-crm
+cloudlet_vm_path: "https://artifactory.mobiledgex.net/artifactory/baseimages"
+controller_replicas: 3
+controller_cpu_request: 200m
+controller_cpu_limit: 400m
+controller_memory_request: 500 MB
+controller_memory_limit: 2 GB

@@ -1,0 +1,71 @@
+ansible_python_interpreter: python3
+vm_ssh_user: ubuntu
+vm_ssh_pub_key_file: "{{ lookup('env','HOME') }}/.mobiledgex/id_rsa_mex.pub"
+platform_k8s_pool_size: 3
+platform_k8s_pool_size_max: 5
+platform_k8s_vm_size: Standard_D2s_v3
+mex_docker_registry: harbor.mobiledgex.net
+mex_registry_project: mobiledgex
+edge_cloud_image: "{{ mex_docker_registry }}/{{ mex_registry_project }}/edge-cloud"
+monitor_image: "{{ mex_docker_registry }}/{{ mex_registry_project }}/monitor"
+mex_ops_email: mobiledgex.ops@mobiledgex.com
+cloudflare_zone: mobiledgex.net
+global_dme_suffix: ".global.dme.{{ cloudflare_zone }}"
+artifactory_address: https://artifactory.mobiledgex.net/artifactory
+gitlab_config_path: /etc/gitlab/gitlab.rb
+etcd_opetator_crd: etcdclusters.etcd.database.coreos.com
+mc_api_port: 9900
+mc_ldap_port: 9389
+mc_vnc_port: 6080
+mc_notify_srv_port: 52001
+mc_federation_port: 30001
+notifyroot_port: 53001
+controller_notify_port: 37001
+alertmanager_port: 9094
+postgres_server: postgres.mobiledgex.net:5432
+influxdb_name: monitoring-influxdb
+etcd_cluster_name: mex-etcd
+etcd_cluster_client: "{{ etcd_cluster_name }}-client"
+etcd_replica_num: 3
+etcd_data_volume_path: /var/etcd/data
+etcd_data_dir: "{{ etcd_data_volume_path }}/default.etcd"
+artifactory_etcd_backup_repo: build-artifacts/etcd-backup
+slack_token: "T97USPYUX/BJ8AEDGF4/k2d1GNETqaMqRxGyXNbr8nFq"
+slack_channel: "#devops"
+vault_telegraf_creds_path: "secret/ansible/common/accounts/telegraf"
+vault_filebeat_creds_path: "secret/ansible/common/accounts/filebeat/vault"
+vault_artifactory_token_path: "secret/ansible/common/accounts/artifactory"
+vault_ns1_apikey_path: "secret/ansible/common/accounts/ns1"
+vault_influxdb_creds_path: "secret/ansible/internal/accounts/influxdb"
+vault_mex_ca_cert_path: secret/ansible/common/certs/mex-ca
+vault_root_ca_cert_path: secret/certs/root-ca
+mc_creds_vault_path: "secret/ansible/{{ deploy_environ }}/accounts/mc"
+vouch_hostname: vouch.mobiledgex.net
+influxdb_vm_hostname: influxdb.internal.mobiledgex.net
+artifactory_version: 7.19.12
+mex_ca_cert_dir: /etc/ssl/local
+mex_ca_cert_der: "{{ mex_ca_cert_dir }}/mex-ca.der"
+mex_ca_cert_pem: "{{ mex_ca_cert_dir }}/mex-ca.crt"
+vault_ha_instance_port: 8200
+vault_cluster_port: 8201
+gcp_project: still-entity-201400
+apidocs_domain: api.mobiledgex.net
+ns1_zone: global.dme.mobiledgex.net
+letsencrypt_path: certs
+letsencrypt_backend: letsencrypt-certs
+alertmanager_sidecar_port: 9094
+events_elasticsearch_url: https://3dd88757c3df44ac8960e53fc6a9a2d5.us-central1.gcp.cloud.es.io:9243
+vault_gcp_bucket_create_roleset: "{{ deploy_environ }}-bucket-create"
+vault_gcp_firewall_manage_roleset: "{{ deploy_environ }}-firewall-manage"
+vault_gcp_role_create_roleset: "{{ deploy_environ }}-role-create"
+gcp_bucket_create_role: "vault_{{ deploy_environ }}_bucket_create"
+gcp_bucket_use_role: "vault_{{ deploy_environ }}_bucket_use"
+gcp_firewall_manage_role: "vault_{{ deploy_environ }}_firewall_manage"
+gcp_role_create_role: "vault_{{ deploy_environ }}_role_create"
+gcs_gpu_drivers_bucket: "mobiledgex-{{ deploy_environ }}-gpu-drivers"
+gcs_operator_reports_bucket: "mobiledgex-{{ deploy_environ }}-operator-reports"
+azure_subscription_id: 902e8722-dc5f-469e-b218-da958e7e25e5
+azure_tenant_id: db34cd14-6d12-4321-a216-95ad400502dc
+azure_vault_app_client_id: removed
+nginx_ssl_ciphers: "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256"
+teleport_auth_server: teleport.mobiledgex.net

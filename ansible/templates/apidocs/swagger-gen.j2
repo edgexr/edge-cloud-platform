@@ -1,0 +1,43 @@
+#!/bin/bash
+
+{% if swagger_gen_run_once %}
+TAG="{{ edge_cloud_version }}"
+{% else %}
+TAG=$( date +'%Y-%m-%d' )
+{% endif %}
+
+EDGECLOUD="{{ mex_docker_registry }}/mobiledgex/edge-cloud:$TAG"
+APIDOCS_MASSAGE="{{ apidocs_script_dir }}/apidocs-massage.py"
+ARTF_TOKEN="{{ artifactory_apidocs_token }}"
+
+sudo docker run --rm "$EDGECLOUD" version >/dev/null
+if [[ $? -ne 0 ]]; then
+	echo "Docker build not found: $EDGECLOUD" >&2
+	exit 2
+fi
+
+download_doc() {
+	local doctype="$1"; shift
+	sudo docker run --rm "$EDGECLOUD" dump-docs "$doctype" \
+		| ${APIDOCS_MASSAGE} -v "$TAG" --logo "{{ logo_url }}" \
+			--environ "{{ deploy_environ }}" "$@" \
+			>"{{ swagger_base_dir }}/${doctype}.swagger.json"
+}
+
+download_doxygen_doc() {
+	local repo="$1"; shift
+	curl -sf -H "Authorization: Bearer $ARTF_TOKEN" \
+		"https://artifactory.mobiledgex.net/artifactory/apidocs/${repo}/${TAG}/html.zip" \
+		>"/tmp/html.zip"
+	mkdir -p "{{ swagger_base_dir }}/${repo}"
+	cd "{{ swagger_base_dir }}/${repo}"
+	rm -rf html
+	unzip /tmp/html.zip >/dev/null
+}
+
+download_doc external
+download_doc internal
+download_doc client --host "{{ dme_api_host }}" --samples "{{ swagger_base_dir }}/code-samples"
+download_doc mc --host "{{ console_vm_hostname }}"
+
+download_doxygen_doc edge-cloud-sdk-csharp

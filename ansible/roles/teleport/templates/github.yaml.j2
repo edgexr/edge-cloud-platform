@@ -1,0 +1,58 @@
+kind: github
+version: v3
+metadata:
+  # connector name that will be used with `tsh --auth=github login`
+  name: github
+
+spec:
+
+  # Client ID of Github OAuth app
+  client_id: {{ client_id }}
+
+  # Client secret of Github OAuth app
+  client_secret: {{ client_secret }}
+
+  # Connector display name that will be shown on web UI login screen
+  display: Github
+
+  # Callback URL that will be called after successful authentication
+  redirect_url: https://{{ inventory_hostname }}/v1/webapi/github/callback
+
+  # Mapping of org/team memberships onto allowed logins and roles
+  teams_to_logins:
+
+    - organization: mobiledgex
+      team: teleport-admin
+      logins:
+        - admin
+
+    - organization: mobiledgex
+      team: teleport-audit
+      logins:
+        - audit-access
+
+    - organization: mobiledgex
+      team: teleport-ops
+      logins:
+        - ops
+        - tefmgr
+
+    - organization: mobiledgex
+      team: infra-dev
+      logins:
+        - infra-dev
+
+    - organization: mobiledgex
+      team: infra-qa
+      logins:
+        - infra-qa
+
+    - organization: mobiledgex
+      team: infra-stage
+      logins:
+        - infra-stage
+
+    - organization: mobiledgex
+      team: infra-main
+      logins:
+        - infra-main

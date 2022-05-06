@@ -1,0 +1,15 @@
+import json
+import requests
+
+matching_engine = "https://wifi.dme.mobiledgex.net:38001"
+
+register_response = requests.post(
+    matching_engine + "/v1/registerclient",
+    json={
+        "app_name": "MobiledgeX SDK Demo",
+        "app_vers": "2.0",
+        "org_name": "MobiledgeX",
+        "ver": 1,
+    }).json()
+
+print(json.dumps(register_response, indent=4))

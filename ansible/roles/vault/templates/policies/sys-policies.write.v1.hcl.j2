@@ -1,0 +1,7 @@
+path "sys/policies/acl" {
+  capabilities = [ "list" ]
+}
+
+path "sys/policies/acl/*" {
+  capabilities = [ "create", "update", "delete", "read" ]
+}

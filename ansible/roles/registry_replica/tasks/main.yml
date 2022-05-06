@@ -1,0 +1,116 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- import_role:
+    name: web
+    tasks_from: certs
+  vars:
+    cert_domains: [ "{{ inventory_hostname }}" ]
+    post_renewal_hooks:
+      - hook_name: registry_replica_restart
+        hook_content: "{{ lookup('template', 'registry_replica_restart.hook.j2') }}"
+
+- import_role:
+    name: docker
+
+- name: Install passlib
+  apt:
+    name: python3-passlib
+    state: present
+  become: yes
+  register: passlib_install
+
+- name: Set up config directory
+  file:
+    path: "{{ registry_confdir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0700
+  become: yes
+
+- name: Load registry docker creds
+  import_role:
+    name: load-vault-creds
+    tasks_from: mex_docker
+
+- name: Verify htpasswd file
+  command: "docker run -v {{ htpasswd_file }}:{{ htpasswd_file }} --entrypoint htpasswd registry:2 -vb {{ htpasswd_file }} {{ mex_docker_username }} {{ mex_docker_password }}"
+  register: htpasswd_verify
+  failed_when:
+    - htpasswd_verify.rc != 0
+    - "'password verification failed' not in htpasswd_verify.stderr"
+  changed_when: no
+
+- name: Update docker registry htpasswd file
+  block:
+  - name: Generate htpasswd data
+    command: "docker run --entrypoint htpasswd registry:2 -Bbn {{ mex_docker_username }} {{ mex_docker_password }}"
+    register: htpasswd_data
+  - name: Generate htpasswd file
+    copy:
+      dest: "{{ htpasswd_file }}"
+      content: "{{ htpasswd_data.stdout }}\n"
+      owner: root
+      group: root
+      mode: 0400
+    become: yes
+    notify:
+      - Restart registry replica
+  when: htpasswd_verify.rc != 0
+
+- name: Set up docker registry config
+  template:
+    src: docker-registry-config.yml.j2
+    dest: "{{ docker_config_path }}"
+    owner: root
+    group: root
+    mode: 0400
+  become: yes
+  notify:
+    - Restart registry replica
+
+- name: Retrieve GCP service account from vault
+  set_fact:
+    vault_lookup: "{{ lookup('vault', path) }}"
+  vars:
+    path: "secret/ansible/{{ deploy_environ }}/gcp-registry-reader-service-account:service_account"
+  register: result
+  retries: 6
+  delay: 10
+  until: result is not failed
+
+- name: Set up GCP service account credentials
+  copy:
+    dest: "{{ gcp_service_account_path }}"
+    content: "{{ vault_lookup.service_account.data }}"
+    owner: root
+    group: root
+    mode: 0400
+  become: yes
+
+- name: Start the registry replica
+  docker_container:
+    name: "{{ docker_container_name }}"
+    image: registry:2
+    volumes:
+      - "{{ docker_config_path }}:/etc/docker/registry/config.yml"
+      - "{{ htpasswd_file }}:{{ htpasswd_file }}"
+      - "{{ gcp_service_account_path }}:{{ gcp_service_account_path }}"
+      - "{{ cert_dir }}/live:{{ cert_dir }}/live"
+      - "{{ cert_dir }}/archive:{{ cert_dir }}/archive"
+    ports:
+      - "443:5000"
+    restart_policy: unless-stopped
+  become: yes

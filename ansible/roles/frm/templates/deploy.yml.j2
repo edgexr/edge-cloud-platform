@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frm
+  labels:
+    app: frm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frm
+  template:
+    metadata:
+      labels:
+        app: frm
+    spec:
+      containers:
+      - name: frm
+        image: "{{ edge_cloud_image }}-frm:{{ edge_cloud_version }}"
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "100Mi"
+          limits:
+            cpu: "100m"
+            memory: "200Mi"
+        command:
+         - "frm"
+         - "--notifyAddrs"
+         - "{{ controller_hostname }}:{{ controller_notify_port }}"
+         - "--region"
+         - "{{ region }}"
+         - "--vaultAddr"
+         - "https://{{ vault_vm_hostname }}:{{ vault_port }}"
+         - "--useVaultPki"
+         - "--deploymentTag"
+         - "{{ deployment_tag_override | default(deploy_environ) }}"
+         - "--appDNSRoot"
+         - "{{ app_dns_root }}"
+         - "-d"
+         - "infra,notify,api"
+        env:
+         - name: JAEGER_ENDPOINT
+           value: "{{ jaeger_endpoint }}"
+         - name: JAEGER_TAGS
+           value: "environ={{ deploy_environ }},version={{ edge_cloud_version }}"
+         - name: VAULT_ROLE_ID
+           value: "{{ frm_role.role_id }}"
+         - name: VAULT_SECRET_ID
+           value: "{{ frm_role.secret_id }}"
+         - name: ES_SERVER_URLS
+           value: "{{ esproxy_address }}"
+      imagePullSecrets:
+       - name: mexreg-secret 

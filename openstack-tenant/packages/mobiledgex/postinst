@@ -1,0 +1,9 @@
+#!/bin/bash
+chown root:root \
+	/etc/mobiledgex/install-k8s-master.sh \
+	/etc/mobiledgex/install-k8s-node.sh \
+	/etc/mobiledgex/cleanup-vm.sh \
+	/etc/systemd/system/mobiledgex.service \
+	/usr/local/bin/mobiledgex-init.sh \
+	/etc/mobiledgex/setup-chef.sh \
+	/etc/mobiledgex/get-flavor.sh

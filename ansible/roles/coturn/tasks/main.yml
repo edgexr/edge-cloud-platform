@@ -1,0 +1,43 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- set_fact:
+    portlist:
+      - "{{ stun_port }}:3478"
+      - "{{ stun_port }}:3478/udp"
+
+- set_fact:
+    portlist: "{{ portlist }} + [ '{{ item }}:{{ item }}/udp' ]"
+  with_sequence: start={{ min_port|int }} end={{ max_port|int }}
+  no_log: true
+
+- name: Deploy the coturn server
+  docker_container:
+    name: "{{ coturn_instance_name }}"
+    image: "instrumentisto/coturn:{{ coturn_version }}"
+    ports: "{{ portlist }}"
+    restart_policy: unless-stopped
+    command:
+      - "-n"
+      - "--log-file=stdout"
+      - "--min-port={{ min_port }}"
+      - "--max-port={{ max_port }}"
+      - "--lt-cred-mech"
+      - "--fingerprint"
+      - "--no-multicast-peers"
+      - "--no-cli"
+      - "--external-ip=$(detect-external-ip)"
+      - "--user={{ stun_user | default('fake') }}:{{ stun_password | default('fake') }}"
+      - "--realm=mobiledgex.net"

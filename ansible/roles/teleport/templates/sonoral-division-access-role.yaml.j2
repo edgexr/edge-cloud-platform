@@ -1,0 +1,10 @@
+kind: role
+version: v4
+metadata:
+  name: sonoral-{{ division }}
+spec:
+  allow:
+    logins:
+      - ubuntu
+    node_labels:
+      operator: sonoral-{{ division }}

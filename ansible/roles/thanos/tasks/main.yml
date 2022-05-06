@@ -1,0 +1,87 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- set_fact:
+    thanos_dns: "{{ region | lower }}.thanos"
+  when: ( deploy_environ == 'main' ) or ( deploy_environ == 'prod' )
+
+- set_fact:
+    thanos_dns: "{{ region | lower }}-{{ deploy_environ }}.thanos"
+  when:
+    - deploy_environ != 'main'
+    - deploy_environ != 'prod'
+
+- name: Compute thanos query FQDN
+  set_fact:
+    thanos_fqdn: "{{ thanos_dns }}.{{ cloudflare_zone }}"
+
+- name: Compute thanos receiver FQDN
+  set_fact:
+    thanos_recv_fqdn: "{{ thanos_dns }}-recv.{{ cloudflare_zone }}"
+
+- name: Set thanos recv k8s dns entry
+  set_fact:
+    thanos_recv_service_addr: "{{ thanos_recv_svc_name }}.default.svc.cluster.local"
+
+- name: Deploy thanos
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    state: present
+    definition: "{{ lookup('template', 'deploy.yml.j2') }}"
+
+- name: Deploy thanos services
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    state: present
+    definition: "{{ lookup('template', 'svc.yml.j2') }}"
+
+- name: Load cloudflare creds
+  import_role:
+    name: load-vault-creds
+    tasks_from: cloudflare
+
+- name: Update thanos DNS
+  cloudflare_dns:
+    zone: "{{ cloudflare_zone }}"
+    record: "{{ thanos_fqdn }}"
+    value: "{{ ingress_ip }}"
+    type: A
+    state: present
+    solo: true
+    account_email: "{{ cloudflare_account_email }}"
+    account_api_token: "{{ cloudflare_account_api_token }}"
+
+- name: Update thanos recvr DNS
+  cloudflare_dns:
+    zone: "{{ cloudflare_zone }}"
+    record: "{{ thanos_recv_fqdn }}"
+    value: "{{ ingress_ip }}"
+    type: A
+    state: present
+    solo: true
+    account_email: "{{ cloudflare_account_email }}"
+    account_api_token: "{{ cloudflare_account_api_token }}"
+
+- name: Look up console IP to whitelist
+  set_fact:
+    console_ip: "{{ lookup('dig', console_vm_hostname) }}"
+
+- name: Set up ingress
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    state: present
+    definition: "{{ lookup('template', 'ingress.yml.j2') }}"

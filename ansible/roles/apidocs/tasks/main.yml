@@ -1,0 +1,73 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- name: Install apidocs scripts
+  copy:
+    src: "{{ item }}"
+    dest: "{{ apidocs_script_dir }}"
+    mode: 0555
+  become: yes
+  loop: "{{ apidocs_scripts }}"
+
+- name: Install swagger generation script
+  template:
+    src: "{{ swagger_gen_script_template }}"
+    dest: "{{ swagger_gen_script }}"
+    mode: 0555
+  become: yes
+
+- name: Make the base directory
+  file:
+    path: "{{ swagger_base_dir }}"
+    state: directory
+
+- name: Install the code samples
+  copy:
+    src: "apidocs/{{ deploy_environ }}/code-samples"
+    dest: "{{ swagger_base_dir }}"
+  when: upload_code_samples|bool
+
+- name: Upload the logo
+  copy:
+    src: apidocs/logo.svg
+    dest: "{{ swagger_base_dir }}"
+  when: upload_logo|bool
+
+- name: Launch the Redoc UI containers
+  docker_container:
+    name: "redoc-{{ item.name }}-{{ deploy_environ }}"
+    image: "redocly/redoc:{{ redoc_version }}"
+    restart_policy: unless-stopped
+    ports:
+      - "127.0.0.1:{{ item.port }}:80"
+    env:
+      SPEC_URL: "/swagger/{{ deploy_environ }}/{{ item.name }}.swagger.json"
+      PAGE_TITLE: "{{ item.title }}"
+      PAGE_FAVICON: "{{ favicon }}"
+      REDOC_OPTIONS: 'sort-props-alphabetically="true"'
+    timeout: 180
+  loop: "{{ containers }}"
+
+- name: Install the swagger update cronjob
+  cron:
+    name: Swagger update
+    minute: 0
+    hour: 14
+    job: "{{ swagger_gen_script }} >>{{ ansible_env.HOME }}/{{ swagger_gen_script | basename }}.log 2>&1"
+  when: not swagger_gen_run_once
+
+- name: Run the swagger update job
+  command: "{{ swagger_gen_script }}"
+  when: swagger_gen_run_once

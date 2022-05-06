@@ -1,0 +1,7 @@
+path "auth/github/config" {
+  capabilities = [ "create", "update", "read" ]
+}
+
+path "auth/github/map/teams/*" {
+  capabilities = [ "create", "update", "read" ]
+}

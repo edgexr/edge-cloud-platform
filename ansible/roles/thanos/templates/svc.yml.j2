@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: thanosquery
+  name: thanosquery
+  namespace: default
+spec:
+  ports:
+   - port: {{ thanos_query_port }}
+     name: http
+     protocol: TCP
+     targetPort: {{ thanos_query_port }}
+  selector:
+    app: thanosquery
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: thanosrecv
+  name: {{ thanos_recv_svc_name }}
+  namespace: default
+spec:
+  ports:
+   - port: {{ thanos_recv_grpc_port }}
+     name: grpc
+     protocol: TCP
+     targetPort: {{ thanos_recv_grpc_port }}
+   - port: {{ thanos_recv_remote_write_port }}
+     name: remotewrite
+     protocol: TCP
+     targetPort: {{ thanos_recv_remote_write_port }}
+  selector:
+    app: thanosrecv

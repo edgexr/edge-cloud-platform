@@ -1,0 +1,36 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- set_fact:
+    region_code: "{{ region.region }}"
+    region_prefix: "{{ region.region | lower }}"
+
+- name: "Install {{ region_code }} policies"
+  vault_policy:
+    name: "{{ item | basename | regex_replace('\\.hcl(\\.j2)?$', '') | regex_replace('_region', region_prefix) }}"
+    content: "{{ lookup('template', item) }}"
+  loop:
+    - policies/_region.accounts.read.v1.hcl.j2
+    - policies/_region.accounts.write.v1.hcl.j2
+    - policies/_region.cloudlets.read.v1.hcl.j2
+    - policies/_region.cloudlets.write.v1.hcl.j2
+    - policies/_region.cloudlets.delete.v1.hcl.j2
+    - policies/_region.dme-jwtkeys.read.v1.hcl.j2
+    - policies/_region.dme-jwtkeys.write.v1.hcl.j2
+    - policies/_region.influxdb.read.v1.hcl.j2
+    - policies/_region.influxdb.write.v1.hcl.j2
+    - policies/_region.kafka.read.v1.hcl.j2
+    - policies/_region.kafka.write.v1.hcl.j2
+    - policies/_region.pki-regional-cloudlet.issue.v1.hcl.j2
+    - policies/_region.pki-regional.issue.v1.hcl.j2

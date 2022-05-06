@@ -1,0 +1,41 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Fetch notifyroot vault role
+  set_fact:
+    notifyroot_role: "{{ lookup('approle', 'notifyroot.v1') }}"
+
+- name: Deploy the notifyroot service
+  docker_container:
+    name: notifyroot
+    image: "{{ edge_cloud_image }}-notifyroot:{{ edge_cloud_version }}"
+    restart_policy: unless-stopped
+    network_mode: host
+    entrypoint: notifyroot
+    command:
+      - "--commonName"
+      - "{{ inventory_hostname }}"
+      - "--notifyAddr"
+      - "0.0.0.0:{{ notifyroot_port }}"
+      - "--vaultAddr"
+      - "https://{{ vault_vm_hostname }}:{{ vault_port }}"
+      - "--useVaultPki"
+      - "--deploymentTag"
+      - "{{ deployment_tag_override | default(deploy_environ) }}"
+    env:
+      JAEGER_ENDPOINT: "{{ jaeger_endpoint }}"
+      JAEGER_TAGS: "environ={{ deploy_environ }},version={{ edge_cloud_version }}"
+      VAULT_ROLE_ID: "{{ notifyroot_role.role_id }}"
+      VAULT_SECRET_ID: "{{ notifyroot_role.secret_id }}"
+      ES_SERVER_URLS: "{{ esproxy_address }}"

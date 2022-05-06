@@ -1,0 +1,74 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Check if EtcdCluster objects are present
+  k8s_info:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    api_version: etcd.database.coreos.com/v1beta2
+    kind: EtcdCluster
+  register: etcd_cluster_facts
+
+- name: Check if Etcd StatefulSet is present
+  k8s_info:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    kind: StatefulSet
+    name: "{{ etcd_cluster_name }}"
+    api_version: apps/v1
+  register: etcd_sts_facts
+
+- name: Check if Etcd persistent volume claims are present
+  k8s_info:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    kind: PersistentVolumeClaim
+    label_selectors:
+      - "component = {{ etcd_cluster_name }}"
+  register: etcd_pvc_facts
+
+- assert:
+    that: etcd_cluster_facts.resources|length < 1 or
+          etcd_sts_facts.resources|length == 1 or
+          etcd_pvc_facts.resources|length == etcd_replica_num
+    fail_msg: "PVCs for {{ etcd_cluster_name }} not present; Etcd migration not done?"
+
+- name: Deploy etcd service
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    definition: "{{ lookup('template', 'mex-etcd-svc.yml') }}"
+
+- name: Deploy etcd stateful set
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    definition: "{{ lookup('template', 'mex-etcd.yml') }}"
+
+- name: Deploy etcd client service
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    definition: "{{ lookup('template', 'mex-etcd-client.yml') }}"
+
+- k8s_info:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    kind: StatefulSet
+    name: "{{ etcd_cluster_name }}"
+    api_version: apps/v1
+  register: etcd_sts_facts
+  until: etcd_sts_facts.get("resources", []) and etcd_sts_facts.resources[0].get("status", {}).get("readyReplicas", 0) == etcd_replica_num
+  retries: 30
+  delay: 10

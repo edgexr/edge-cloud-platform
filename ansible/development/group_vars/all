@@ -1,0 +1,45 @@
+jaeger_hostname: jaeger-dev.mobiledgex.net
+jaeger_endpoint: "https://{{ jaeger_hostname }}:14268/api/traces"
+console_vnc_hostname: console-dev-vnc.mobiledgex.net
+notifyroot_hostname: notifyroot-dev.mobiledgex.net
+vault_address: https://vault-dev.mobiledgex.net
+esproxy_address: https://events-dev.es.mobiledgex.net/
+vault_ha_zones:
+  us: us-west2-a
+  eu: europe-west3-a
+
+vault_github_teams:
+  - name: edge-cloud-development-team
+    policies:
+      - ansible.read.v1
+      - approle-accessors.write.v1
+      - auth-approle.destroy.v1
+      - auth-approle.write.v1
+      - certs.read.v1
+      - cloudlets.read.v1
+      - chef.read.v1
+      - influxdb.read.v1
+      - logins.read.v1
+      - mexenv.read.v1
+      - registry.read.v1
+      - ssh-ansible-user.sign.v1
+      - ssh-machine.sign.v1
+      - ssh-user.sign.v1
+      - sys-auth.read.v1
+      - sys-policies.read.v1
+
+vault_github_users:
+  - userid: bibingeorge1986
+    role: cloudlet_admin
+  - userid: gainsley
+    role: admin
+  - userid: jlmorris3827
+    role: admin
+  - userid: venkytv
+    role: admin
+  - userid: angshuman2508
+    role: admin
+  - userid: ashxjain
+    role: admin
+  - userid: mwilliams-mex
+    role: admin

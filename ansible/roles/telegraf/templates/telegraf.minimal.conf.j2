@@ -1,0 +1,30 @@
+# Telegraf Configuration
+########################################
+## MAINTAINED BY ANSIBLE              ##
+## MANUAL CHANGES WILL BE OVERWRITTEN ##
+########################################
+
+[global_tags]
+  environ = "{{ deploy_environ }}"
+{% for tag, value in tags.iteritems %}
+  {{ tag }} = "{{ value }}"
+{% endfor %}
+
+[agent]
+  interval = "{{ interval | default('10s') }}"
+  round_interval = true
+  metric_batch_size = 1000
+  metric_buffer_limit = 10000
+  collection_jitter = "0s"
+  flush_interval = "{{ flush_interval | default('10s') }}"
+  flush_jitter = "0s"
+  precision = ""
+  hostname = ""
+  omit_hostname = {{ omit_hostname | default('false') }}
+
+[[outputs.influxdb]]
+  urls = ["https://influxdb.internal.mobiledgex.net:8086"]
+  database = "{{ database | default('telegraf') }}"
+  skip_database_creation = true
+  username = "{{ telegraf_user }}"
+  password = "{{ telegraf_password }}"

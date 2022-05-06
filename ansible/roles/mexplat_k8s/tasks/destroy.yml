@@ -1,0 +1,77 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- import_role:
+    name: mexplat_k8s
+    tasks_from: load-kubeconfig
+
+- debug:
+    msg: "Destroying services in cluster '{{ k8s_cluster_name }}' (setup: '{{ deploy_environ }}', region: '{{ region }}')"
+
+- name: "Confirm {{ deploy_environ }} {{ region }} region destruction"
+  pause:
+
+- import_role:
+    name: influxdb
+    tasks_from: destroy
+
+- name: Destroying controller
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    kind: Deployment
+    name: "{{ deployment }}"
+    state: absent
+  loop:
+    - controller
+  loop_control:
+    loop_var: deployment
+
+- name: Backing up etcd
+  import_role:
+    name: etcd_backup_k8s
+
+- name: Destroying etcd
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    kind: StatefulSet
+    name: "{{ etcd_cluster_name }}"
+    state: absent
+    wait: yes
+
+- name: Deleting persistent volumes of etcd
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    kind: PersistentVolumeClaim
+    name: "data-{{ etcd_cluster_name }}-{{ etcd_index }}"
+    state: absent
+  loop: "{{ range(3) | list }}"
+  loop_control:
+    loop_var: etcd_instance
+    index_var: etcd_index
+
+- name: Wait until volumes have been deleted
+  k8s_info:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    kind: PersistentVolumeClaim
+    label_selectors:
+      - component = mex-etcd
+  register: etcd_sts_facts
+  until: etcd_sts_facts.get("resources", [])|length == 0
+  retries: 30
+  delay: 10

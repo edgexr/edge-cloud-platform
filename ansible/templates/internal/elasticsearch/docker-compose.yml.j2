@@ -1,0 +1,82 @@
+version: '2.2'
+
+services:
+  es01:
+    container_name: es01
+    image: docker.elastic.co/elasticsearch/elasticsearch:{{ elasticsearch_version }}
+    restart: always
+    environment:
+      - node.name=es01
+      - discovery.seed_hosts=es01,es02
+      - cluster.initial_master_nodes=es01,es02
+      - ELASTIC_PASSWORD={{ es_root_pass }}
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+      - xpack.license.self_generated.type=basic 
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.http.ssl.key={{ es_certs_dir }}/privkey.pem
+      - xpack.security.http.ssl.certificate={{ es_certs_dir }}/fullchain.pem
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.verification_mode=certificate 
+      - xpack.security.transport.ssl.certificate={{ es_certs_dir }}/fullchain.pem
+      - xpack.security.transport.ssl.key={{ es_certs_dir }}/privkey.pem
+    volumes:
+      - data01:/usr/share/elasticsearch/data
+      - "{{ es_conf_dir }}/{{ cert_sync_dir }}:{{ es_certs_dir }}"
+    ports:
+      - 9200:9200
+    networks:
+      - net
+
+  es02:
+    container_name: es02
+    image: docker.elastic.co/elasticsearch/elasticsearch:{{ elasticsearch_version }}
+    restart: always
+    environment:
+      - node.name=es02
+      - discovery.seed_hosts=es01,es02
+      - cluster.initial_master_nodes=es01,es02
+      - ELASTIC_PASSWORD={{ es_root_pass }}
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+      - xpack.license.self_generated.type=basic
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.http.ssl.key={{ es_certs_dir }}/privkey.pem
+      - xpack.security.http.ssl.certificate={{ es_certs_dir }}/fullchain.pem
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.verification_mode=certificate 
+      - xpack.security.transport.ssl.certificate={{ es_certs_dir }}/fullchain.pem
+      - xpack.security.transport.ssl.key={{ es_certs_dir }}/privkey.pem
+    volumes:
+      - data02:/usr/share/elasticsearch/data
+      - "{{ es_conf_dir }}/{{ cert_sync_dir }}:{{ es_certs_dir }}"
+    networks:
+      - net
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:{{ elasticsearch_version }}
+    restart: always
+    environment:
+      - SERVER_PORT=5601
+      - SERVER_HOST="0.0.0.0"
+      - SERVER_NAME="{{ inventory_hostname }}"
+      - ELASTICSEARCH_HOSTS="https://{{ inventory_hostname }}:9200"
+      - ELASTICSEARCH_USERNAME="{{ es_root_user }}"
+      - ELASTICSEARCH_PASSWORD="{{ es_root_pass }}"
+      - SERVER_SSL_ENABLED=true
+      - SERVER_SSL_CERTIFICATE={{ es_certs_dir }}/fullchain.pem
+      - SERVER_SSL_KEY={{ es_certs_dir }}/privkey.pem
+    volumes:
+      - "{{ es_conf_dir }}/{{ cert_sync_dir }}:{{ es_certs_dir }}"
+    ports:
+      - 5601:5601
+    networks:
+      - net
+
+volumes:
+  data01:
+  data02:
+
+networks:
+  net:

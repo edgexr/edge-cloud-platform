@@ -1,0 +1,173 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- import_role:
+    name: influxdb
+    tasks_from: dns
+
+- set_fact:
+    influxdb_dns: "{{ region | lower }}.influxdb"
+  when: ( deploy_environ == 'main' ) or ( deploy_environ == 'prod' )
+
+- set_fact:
+    influxdb_dns: "{{ region | lower }}-{{ deploy_environ }}.influxdb"
+  when:
+    - deploy_environ != 'main'
+    - deploy_environ != 'prod'
+
+- set_fact:
+    cert_name: "{{ influxdb_dns | replace('.', '-') }}"
+    cert_secret_name: "{{ influxdb_dns | replace('.', '-') }}-tls"
+
+- name: Generate InfluxDB cert manifest
+  template:
+    src: mexplat/tls-cert.yaml.j2
+    dest: "{{ tls_cert_manifest }}"
+  vars:
+    name: "{{ cert_name }}"
+    secret_name: "{{ cert_secret_name }}"
+    fqdn: "{{ influxdb_dns }}.{{ cloudflare_zone }}"
+  check_mode: no
+
+- name: "Generate InfluxDB cert for domain: {{ influxdb_dns }}"
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    src: "{{ tls_cert_manifest }}"
+    state: present
+
+- name: Wait for cert to be issued
+  command: "kubectl --kubeconfig {{ kubeconfig_file.path }} describe cert {{ cert_name }}"
+  register: describe_cert_command
+  retries: 60
+  delay: 5
+  until: "'Certificate is up to date and has not expired' in describe_cert_command.stdout"
+  changed_when: false
+  check_mode: no
+
+- name: Look up influxdb credentials in vault
+  set_fact:
+    vault_lookup: "{{ lookup('vault', influxdb_path) }}"
+  vars:
+    influxdb_path: "secret/{{ region }}/accounts/influxdb"
+
+- set_fact:
+    influxdb_user: "{{ vault_lookup.influxdb.data.user }}"
+    influxdb_password: "{{ vault_lookup.influxdb.data.pass }}"
+    influxdb_config: "{{ lookup('template', 'influxdb-config.yaml.j2') }}"
+
+- name: Check configmap
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    definition: "{{ influxdb_config }}"
+  register: influxdb_configmap
+  check_mode: yes
+
+- block:
+  # Config map has been modified; check if the change is the index-version, in
+  # which case, abort as this needs a manual migration
+  - set_fact:
+      index_version_param: 'index-version = "{{ index_version }}"'
+
+  - name: 'Make sure the index-version is already "{{ index_version }}"'
+    assert:
+      that: ('diff' not in influxdb_configmap ) or
+            (index_version_param in influxdb_configmap.diff.before.data['influxdb.conf'])
+      fail_msg: 'Needs manual migration to change index version to "{{ index_version }}"'
+
+  - name: Set up configmap
+    k8s:
+      kubeconfig: "{{ kubeconfig_file.path }}"
+      namespace: default
+      definition: "{{ influxdb_config }}"
+    notify:
+      - Restart InfluxDB
+      - Wait for InfluxDB restart to complete
+
+  when: influxdb_configmap.changed
+
+- name: "Check data volume ({{ cluster_influxdb_volume_size }})"
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    definition: "{{ lookup('template', 'influxdb-volume.yml.j2') }}"
+  check_mode: yes
+  register: pvc
+
+- name: Ensure PVC does not need resizing
+  assert:
+    that:
+      - pvc.method == "create" or not pvc.changed
+    fail_msg: "PVC needs resizing: {{ influxdb_volume_name }}: {{ cluster_influxdb_volume_size }}"
+
+- name: "Create data volume ({{ cluster_influxdb_volume_size }})"
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    definition: "{{ lookup('template', 'influxdb-volume.yml.j2') }}"
+  when: pvc.method == "create"
+
+- name: "Deploy InfluxDB v{{ influxdb_version }}"
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    definition: "{{ lookup('template', 'influxdb.yml.j2') }}"
+    wait: yes
+
+- import_role:
+    name: influxdb
+    tasks_from: svc
+
+- k8s_info:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    kind: Service
+    name: "{{ influxdb_name }}"
+    namespace: default
+  register: influxdb_facts
+  retries: 24
+  delay: 5
+  until: influxdb_facts.resources[0].status.loadBalancer.ingress[0].ip is defined
+
+- set_fact:
+    influxdb_ip: "{{ influxdb_facts.resources[0].status.loadBalancer.ingress[0].ip }}"
+
+- name: Load cloudflare creds
+  import_role:
+    name: load-vault-creds
+    tasks_from: cloudflare
+
+- name: Update InfluxDB DNS
+  cloudflare_dns:
+    zone: "{{ cloudflare_zone }}"
+    record: "{{ influxdb_dns }}"
+    value: "{{ influxdb_ip }}"
+    type: A
+    state: present
+    solo: true
+    account_email: "{{ cloudflare_account_email }}"
+    account_api_token: "{{ cloudflare_account_api_token }}"
+
+- name: Load artifactory publish key from vault
+  import_role:
+    name: load-vault-creds
+    tasks_from: artifactory-publish
+
+- name: Set up backup cronjob
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    definition: "{{ lookup('template', 'influxdb-backup.yml.j2') }}"
+
+- meta: flush_handlers

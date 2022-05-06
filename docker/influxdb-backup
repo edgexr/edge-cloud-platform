@@ -1,0 +1,36 @@
+#!/bin/bash
+
+BACKUPDIR=/tmp/influxdb-backup
+TIMESTAMP="$( date +'%Y-%m-%d-%H%M%S' )"
+LOCALBACKUP="${BACKUPDIR}-${TIMESTAMP}"
+TARBALL="${LOCALBACKUP}.tar"
+
+SETUP="$1"
+REGION="$2"
+
+set -e
+
+POD=$( kubectl get pods \
+	--selector=k8s-app=influxdb \
+	--field-selector status.phase=Running \
+	--output='jsonpath={.items[*].metadata.name}' )
+
+echo "Backing up influxdb"
+kubectl exec "$POD" -- rm -rf "$BACKUPDIR"
+kubectl exec "$POD" -- influxd backup -portable "$BACKUPDIR"
+kubectl cp "${POD}:${BACKUPDIR}" "$LOCALBACKUP"
+kubectl exec "$POD" -- rm -rf "$BACKUPDIR"
+
+echo "Bundling backup"
+cd $( dirname "$LOCALBACKUP" )
+tar cf "$TARBALL" $( basename "$LOCALBACKUP" )
+
+echo "Uploading backup"
+REPOPATH="influxdb-backup/${SETUP}/${REGION}/${TIMESTAMP%-*-*}/$( basename ${TARBALL} )"
+SHASUM=$( sha1sum "$TARBALL" | awk '{print $1}' )
+MD5SUM=$( md5sum "$TARBALL" | awk '{print $1}' )
+curl -H "X-JFrog-Art-Api:${ARTIFACTORY_APIKEY}" \
+     -H "X-Checksum-MD5:${MD5SUM}" \
+     -H "X-Checksum-Sha1:${SHASUM}" \
+     -T "$TARBALL" \
+     "https://artifactory.mobiledgex.net/artifactory/build-artifacts/${REPOPATH}"

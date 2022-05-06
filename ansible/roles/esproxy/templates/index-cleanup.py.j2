@@ -1,0 +1,40 @@
+#!/usr/bin/python3
+
+from datetime import datetime, timedelta
+import logging
+import json
+import os
+import requests
+
+loglevel = logging.DEBUG if os.environ.get("DEBUG") == "true" else logging.INFO
+
+logging.basicConfig(format="%(asctime)s [%(levelname)s] %(msg)s", level=loglevel)
+
+ES = "{{ events_elasticsearch_url }}"
+ENVIRON = "{{ deploy_environ }}"
+APIKEY = "{{ esproxy_cleanup_apikey }}"
+CLEANUP_AGE = {{ events_elasticsearch_cleanup_age }}
+
+headers = {
+    "Authorization": "ApiKey {0}".format(APIKEY),
+}
+
+index_pattern = f"events-log-{ENVIRON}"
+indexes_url = f"{ES}/{index_pattern}-*"
+
+r = requests.get(indexes_url, headers=headers)
+if r.status_code != requests.codes.ok:
+    raise Exception(f"Failed to get index list: {r.status_code} {r.text}")
+
+limit = (datetime.today() - timedelta(days=CLEANUP_AGE)).strftime("%Y-%m")
+oldest_index = f"{index_pattern}-{limit}"
+logging.debug(f"Deleting indexes older than {oldest_index}: {CLEANUP_AGE} days")
+
+indexes = r.json().keys()
+delete = [ x for x in indexes if x < oldest_index ]
+
+for index in delete:
+    logging.info(f"Deleting index: {index}")
+    r = requests.delete(f"{ES}/{index}?master_timeout=60s", headers=headers)
+    if r.status_code != requests.codes.ok:
+        raise Exception(f"Failed to delete index: {index}: {r.status_code} {r.text}")

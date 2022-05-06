@@ -1,0 +1,84 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- name: Add teleport GPG key
+  apt_key:
+    url: https://deb.releases.teleport.dev/teleport-pubkey.asc
+    state: present
+  become: yes
+  tags: setup
+
+- name: Add teleport APT repo
+  apt_repository:
+    repo: deb https://deb.releases.teleport.dev/ stable main
+    state: present
+  become: yes
+  tags: setup
+
+- name: Install teleport
+  apt:
+    name: teleport
+    state: present
+    update_cache: yes
+  become: yes
+  notify: Restart teleport
+  tags: setup
+
+- name: Gather package facts
+  package_facts:
+    manager: auto
+  tags: setup
+
+- set_fact:
+    teleport_current_version: "{{ ansible_facts.packages['teleport'][0]['version'] }}"
+  tags: setup
+
+- debug:
+    msg: "Teleport version: {{ teleport_current_version }}"
+  tags: setup
+
+- name: "Ensure teleport version is at least {{ teleport_minimum_version }}"
+  apt:
+    name: teleport
+    state: latest
+  become: yes
+  notify: Restart teleport
+  when: teleport_current_version is version(teleport_minimum_version, '<')
+  tags: setup
+
+- name: Install config file
+  template:
+    src: "{{ teleport_config_template }}"
+    dest: "{{ teleport_config }}"
+    mode: 0400
+    force: "{{ force_config_update }}"
+  become: yes
+  notify: Restart teleport
+  tags: setup
+
+- name: Install systemd service
+  template:
+    src: teleport.service.j2
+    dest: /etc/systemd/system/teleport.service
+  become: yes
+  tags: setup
+
+- name: Start the teleport service
+  systemd:
+    name: teleport
+    enabled: yes
+    state: started
+  become: yes
+  tags: setup

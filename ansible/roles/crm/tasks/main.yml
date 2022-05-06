@@ -1,0 +1,145 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- debug: var=item
+
+- import_role:
+    name: load-vault-creds
+    tasks_from: mexenv
+
+- azure_rm_aks_info:
+    tags:
+      - "Environment:mexplat-{{ deploy_environ }}"
+      - "Region:{{ item.controller_region }}"
+  check_mode: no
+  delegate_to: localhost
+  register: aks_facts
+
+- set_fact:
+    controller_name: "{{ aks_facts['aks'][0]['name'] }}"
+    api_port: "{{ api_port_start + crm_index }}"
+    notify_srv_port: "{{ notify_srv_port_start + crm_index }}"
+
+- assert:
+    that:
+      - item.cloudlet_name is defined
+
+# Compute CRM name
+
+- set_fact:
+    crm_name: "{{ item.crm_name }}"
+  when: item.crm_name is defined
+
+- set_fact:
+    crm_name: "crm-{{ item.cloudlet_name }}"
+  when:
+    - item.crm_name is not defined
+
+- debug:
+    msg: |
+      Deploying {{ crm_name }}
+       - cloudlet name: {{ item.cloudlet_name }}
+       - controller name: {{ controller_name }}
+       - notify srv port: {{ item.notify_srv_port | default(notify_srv_port) }}
+
+- name: Fetch CRM vault role
+  set_fact:
+    crm_role: "{{ lookup('approle', crm_role_name, id=crm_name) }}"
+  vars:
+    crm_role_name: "{{ item.controller_region | lower }}.crm.v1"
+
+- name: Compute CRM command line
+  set_fact:
+    crm_args:
+      - crmserver
+      - "--accessApiAddr"
+      - "{{ controller_name }}.ctrl.{{ cloudflare_zone }}:41001"
+      - "--notifySrvAddr"
+      - "0.0.0.0:{{ item.notify_srv_port | default(notify_srv_port) }}"
+      - "--cloudletKey"
+      - "{\\\"organization\\\":\\\"{{ item.operator_key | mandatory }}\\\",\\\"name\\\":\\\"{{ item.cloudlet_name }}\\\"}"
+      - "--region"
+      - "{{ item.controller_region }}"
+      - "--vaultAddr"
+      - "https://{{ vault_vm_hostname }}:{{ vault_port }}"
+      - "--useVaultPki"
+      - "--notifyAddrs"
+      - "{{ controller_name }}.ctrl.{{ cloudflare_zone }}:{{ controller_notify_port }}"
+      - "--deploymentTag"
+      - "{{ deployment_tag_override | default(deploy_environ) }}"
+      - "-d"
+      - "api,notify,infra"
+
+- name: Add openstack parameters
+  set_fact:
+    crm_args: "{{ crm_args + [ '--physicalName', item.openstack_instance ] }}"
+  when: item.openstack_instance is defined and item.openstack_instance
+
+- name: Compute CRM common environment
+  set_fact:
+    crm_env:
+      PLATFORM: "{{ item.platform | default('PLATFORM_TYPE_OPENSTACK') }}"
+      MEX_EXT_NETWORK: "{{ item.mex_ext_network | default(mex_ext_network) }}"
+      VAULT_ROLE_ID: "{{ crm_role.role_id }}"
+      VAULT_SECRET_ID: "{{ crm_role.secret_id }}"
+      MEX_SECURITY_GROUP: "{{ item.mex_security_group | default(mex_security_group) }}"
+      JAEGER_ENDPOINT: "{{ jaeger_endpoint }}"
+      JAEGER_TAGS: "crm={{ crm_name }},cloudlet={{ item.cloudlet_name }},operator={{ item.operator_key }},environ={{ deploy_environ }},version={{ edge_cloud_version }}"
+      ES_SERVER_URLS: "{{ esproxy_address }}"
+
+- name: Add azure environment variables
+  block:
+    - set_fact:
+        crm_env_azure:
+          MEX_AZURE_LOCATION: "{{ item.azure_instance }}"
+          MEX_AZURE_USER: "{{ mexenv.MEX_AZURE_USER }}"
+          MEX_AZURE_PASS: "{{ mexenv.MEX_AZURE_PASS }}"
+          MEXENV_URL: "https://{{ vault_vm_hostname}}:{{ vault_port }}/v1/secret/data/cloudlet/openstack/mexenv.json"
+    - set_fact:
+        crm_env: "{{ crm_env | combine(crm_env_azure) }}"
+  when: item.azure_instance is defined and item.azure_instance
+
+- name: Add GCP environment variables
+  block:
+    - set_fact:
+        crm_env_gcp:
+          MEX_GCP_PROJECT: "{{ gcp_project }}"
+          MEX_GCP_ZONE: "{{ item.gcp_zone }}"
+          MEXENV_URL: "https://{{ vault_vm_hostname}}:{{ vault_port }}/v1/secret/data/cloudlet/openstack/mexenv.json"
+    - set_fact:
+        crm_env: "{{ crm_env | combine(crm_env_gcp) }}"
+  when: item.gcp_zone is defined and item.gcp_zone
+
+- name: Deploy the CRM
+  docker_container:
+    name: "{{ crm_name }}"
+    image: "{{ edge_cloud_image }}:{{ edge_cloud_version }}"
+    network_mode: host
+    restart_policy: unless-stopped
+    command: "{{ crm_args }}"
+    env: "{{ crm_env }}"
+    volumes:
+      - "{{ crm_name }}-accesskey:/root/accesskey"
+
+- name: Verify that the notify srv port is accessible
+  wait_for:
+    host: "{{ (ansible_ssh_host|default(ansible_host))|default(inventory_hostname) }}"
+    port: "{{ item.notify_srv_port | default(notify_srv_port) }}"
+    timeout: 180
+  vars:
+    ansible_connection: local
+
+- name: Clean up old images
+  command: docker system prune --all --force
+  changed_when: false

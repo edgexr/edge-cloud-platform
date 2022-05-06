@@ -1,0 +1,2 @@
+token_digest = Gitlab::CryptoHelper.sha256 '{{ mc_gitlab_token }}'
+PersonalAccessToken.create!(name: 'mc', scopes: [:api], user: User.where(id: 1).first, token_digest: token_digest)

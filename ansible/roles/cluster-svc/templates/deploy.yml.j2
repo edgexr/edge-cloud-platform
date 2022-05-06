@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-svc
+  labels:
+    app: cluster-svc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cluster-svc
+  template:
+    metadata:
+      labels:
+        app: cluster-svc
+    spec:
+      containers:
+      - name: cluster-svc
+        image: "{{ edge_cloud_image }}-cluster-svc:{{ edge_cloud_version }}"
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "100Mi"
+          limits:
+            cpu: "100m"
+            memory: "200Mi"
+        command:
+         - "cluster-svc"
+         - "--notifyAddrs"
+         - "{{ controller_hostname }}:{{ controller_notify_port }}"
+         - "--ctrlAddrs"
+         - "{{ controller_hostname }}:55001"
+         - "--region"
+         - "{{ region }}"
+         - "--vaultAddr"
+         - "https://{{ vault_vm_hostname }}:{{ vault_port }}"
+         - "--useVaultPki"
+         - "--deploymentTag"
+         - "{{ deployment_tag_override | default(deploy_environ) }}"
+         - "--d"
+         - "infra,notify,api"
+         - "--scrapeInterval"
+         - "5s"
+         - "pluginRequired"
+        env:
+         - name: JAEGER_ENDPOINT
+           value: "{{ jaeger_endpoint }}"
+         - name: JAEGER_TAGS
+           value: "environ={{ deploy_environ }},version={{ edge_cloud_version }}"
+         - name: VAULT_ROLE_ID
+           value: "{{ cluster_svc_role.role_id }}"
+         - name: VAULT_SECRET_ID
+           value: "{{ cluster_svc_role.secret_id }}"
+         - name: ES_SERVER_URLS
+           value: "{{ esproxy_address }}"
+      imagePullSecrets:
+       - name: mexreg-secret 

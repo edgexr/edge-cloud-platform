@@ -1,0 +1,104 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- hosts: localhost
+  gather_facts: no
+  vars:
+    security_group_name: vm-scanner-sg
+    vm_scanner_host: gvm.mobiledgex.net
+
+  tasks:
+    - name: Look up VM scanner host IP
+      set_fact:
+        access_remote_ip: "{{ lookup('dig', vm_scanner_host) }}"
+
+    - name: "Create security group: {{ security_group_name }}"
+      openstack.cloud.security_group:
+        name: "{{ security_group_name }}"
+        description: "Security group for VM image scanning"
+        state: present
+
+    - name: "Create security group rules for remote IP: {{ access_remote_ip }}"
+      openstack.cloud.security_group_rule:
+        security_group: "{{ security_group_name }}"
+        protocol: "{{ item.proto }}"
+        port_range_min: "{{ item.port_min }}"
+        port_range_max: "{{ item.port_max }}"
+        direction: "{{ item.dir }}"
+        remote_ip_prefix: "{{ access_remote_ip }}/32"
+      loop:
+        - {"dir": "egress",  "proto": "tcp",  "port_min":  1, "port_max": 65525}
+        - {"dir": "egress",  "proto": "udp",  "port_min":  1, "port_max": 65525}
+        - {"dir": "egress",  "proto": "icmp", "port_min": -1, "port_max":    -1}
+        - {"dir": "ingress", "proto": "tcp",  "port_min":  1, "port_max": 65525}
+        - {"dir": "ingress", "proto": "udp",  "port_min":  1, "port_max": 65525}
+        - {"dir": "ingress", "proto": "icmp", "port_min": -1, "port_max":    -1}
+      register: sg_rules
+
+    - name: Remove default egress rules
+      openstack.cloud.security_group_rule:
+        security_group: "{{ security_group_name }}"
+        direction: egress
+        ethertype: "{{ item }}"
+        state: absent
+      loop:
+        - IPv4
+        - IPv6
+
+- hosts: gvm
+  tasks:
+    - import_role:
+        name: telegraf
+      tags:
+        - monitoring
+        - setup
+
+    - import_role:
+        name: docker
+      vars:
+        docker_skip_registry_login: yes
+
+    - name: Install gvm-tools
+      pip:
+        name: gvm-tools
+      become: yes
+
+    - name: Load GVM creds
+      import_role:
+        name: load-vault-creds
+        tasks_from: gvm
+
+    - name: Install GVM script wrapper
+      template:
+        src: internal/gvm/gvm-script-wrapper
+        dest: /usr/local/bin/
+        owner: gvm
+        group: gvm
+        mode: "0500"
+      become: yes
+
+    - name: Install GVM scripts
+      copy:
+        src: "{{ item }}"
+        dest: /usr/local/bin/
+        owner: root
+        group: root
+        mode: "0444"
+        backup: yes
+      loop:
+        - internal/gvm/scan-report.py
+        - internal/gvm/scan-status.py
+        - internal/gvm/scan-system.py
+      become: yes

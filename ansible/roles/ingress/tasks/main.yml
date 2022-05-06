@@ -1,0 +1,76 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Make sure all nodes are labelled as Linux
+  command: "kubectl --kubeconfig {{ kubeconfig_file.path }} label node --all kubernetes.io/os=linux"
+  register: result
+  changed_when: no
+  failed_when:
+    - result.rc != 0
+    - '"already has a value (linux)" not in result.stderr'
+
+- set_fact:
+    mandatory_manifest: "https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.1/deploy/static/provider/cloud/deploy.yaml"
+    cloud_manifest: "https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.1/deploy/static/provider/cloud/deploy.yaml"
+
+# TODO: Get rid of this once all clusters are migrated to 1.19+
+- set_fact:
+    mandatory_manifest: "https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/mandatory.yaml"
+    cloud_manifest: "https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/provider/cloud-generic.yaml"
+  when: kubernetes_version is version('1.19', '<')
+
+- name: "Set up nginx ingress controller"
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    definition: "{{ lookup('url', manifest, split_lines=False) }}"
+  loop:
+    - "{{ mandatory_manifest }}"
+    - "{{ cloud_manifest }}"
+  loop_control:
+    loop_var: manifest
+
+- k8s_info:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    kind: Service
+    name: ingress-nginx
+    namespace: ingress-nginx
+  register: ingress_nginx_facts
+  retries: 24
+  delay: 5
+  until: ingress_nginx_facts.resources[0].status.loadBalancer.ingress[0].ip is defined
+
+- set_fact:
+    ingress_ip: "{{ ingress_nginx_facts.resources[0].status.loadBalancer.ingress[0].ip }}"
+
+- name: Update main configmap
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: ingress-nginx
+    state: present
+    definition: "{{ lookup('template', 'configmap.yml') }}"
+
+- name: Update TCP proxy configmap
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: ingress-nginx
+    state: present
+    definition: "{{ lookup('template', 'tcp-configmap.yml') }}"
+
+- name: Update TCP proxy service
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: ingress-nginx
+    state: present
+    definition: "{{ lookup('template', 'tcp-service.yml') }}"

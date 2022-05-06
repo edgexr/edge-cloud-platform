@@ -1,0 +1,26 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: influxdb-backup
+spec:
+  schedule: "{{ influxdb_backup_schedule }}"
+  suspend: {{ influxdb_backup_disabled }}
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup
+            image: {{ mex_docker_registry }}/mobiledgex/influxdb-backup:{{ influxdb_backup_version }}
+            args:
+            - /bin/sh
+            - -c
+            - /usr/local/bin/influxdb-backup {{ deploy_environ }} {{ region }}
+            env:
+              - name: ARTIFACTORY_APIKEY
+                value: {{ artifactory_publish_api_key }}
+          restartPolicy: OnFailure
+          imagePullSecrets:
+           - name: mexreg-secret

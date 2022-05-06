@@ -1,0 +1,52 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+  
+  - gopath: "{{ lookup('env', 'GOPATH') }}"
+  - tlsoutdir: "{{ gopath }}/src/github.com/mobiledgex/edge-cloud/tls/out"
+  - server_to_path:
+      Linux_x86_64: "{{ gopath }}/bin/linux_amd64"
+      Linux_aarch64: "{{ gopath }}/bin/linux_arm64"
+      Darwin_x86_64: "{{ gopath }}/bin"
+  - mex_docker_reg_pass: sandhill
+  - kubeadm_dind_image_tag: 596f7d093470c1dc3a3e4466bcdfb34438a99b90-v1.13
+  - crmserver_remote_svc:  "/etc/systemd/system/crmserver.service"
+  - servertype: "{{ ansible_system }}_{{ ansible_architecture }}"
+  - local_binpath: "{{ server_to_path[servertype] }}"
+  - linux_plugin_file: "binfiles/platforms.so"
+  - linux_crm_bin: "binfiles/crmserver"
+  - remote_plugin_path: "/plugins"
+  - remote_plugin_file: "{{ remote_plugin_path }}/platforms.so"
+  - controller_bin: "{{ local_binpath }}/controller"
+  - crm_bin: "{{ local_binpath }}/crmserver" 
+  - dme_bin: "{{ local_binpath }}/dme-server"
+  - locsim_bin: "{{ local_binpath }}/loc-api-sim"
+  - toksim_bin: "{{ local_binpath }}/tok-srv-sim"
+  - remote_bin_path: /usr/local/bin
+  - controller_remote_bin: "{{ remote_bin_path }}/controller"
+  - crm_remote_bin: "{{ remote_bin_path }}/crmserver"  
+  - dme_remote_bin: "{{ remote_bin_path }}/dme-server"
+  - locsim_remote_bin: "{{ remote_bin_path }}/loc-api-sim"
+  - locsim_data_file: locsim.yml
+  - locsim_remote_data_dir: /var/tmp
+  - locsim_remote_data_file: "{{ locsim_remote_data_dir }}/{{ locsim_data_file }}"
+  - toksim_remote_bin: "{{ remote_bin_path }}/tok-srv-sim"
+  - remote_log_path: /var/log/mex
+  - remote_tls_path: /root/tls
+  - mex_path: /root/.mobiledgex
+  - setupfile: setup.yml
+  - etcd_url: https://github.com/coreos/etcd/releases/download
+  - etcd_version: v3.3.8
+  - crm_vault_role_id: e017fc39-dff7-adc3-364f-bb8e04805454
+  - crm_vault_secret_id: ***REMOVED***

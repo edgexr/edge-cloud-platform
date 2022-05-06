@@ -1,0 +1,61 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- name: Load azure creds from vault
+  import_role:
+    name: load-vault-creds
+    tasks_from: azure
+
+- name: "Create resource group \"{{ platform_region.resource_group }}\" in \"{{ platform_region.location }}\""
+  azure_rm_resourcegroup:
+    name: "{{ platform_region.resource_group }}"
+    location: "{{ platform_region.location }}"
+
+- name: "Create kubernetes cluster \"{{ platform_region.name }}\""
+  azure_rm_aks:
+    name: "{{ platform_region.name }}"
+    location: "{{ platform_region.location }}"
+    resource_group: "{{ platform_region.resource_group }}"
+    kubernetes_version: "{{ platform_region.kubernetes_version }}"
+    dns_prefix: "{{ platform_region.dns_prefix }}"
+    linux_profile:
+      admin_username: "{{ vm_ssh_user }}"
+      ssh_key: "{{ azure_ssh_key_pub }}\n"
+    service_principal:
+      client_id: "{{ azure_terraform_service_principal_id }}"
+      client_secret: "{{ azure_terraform_service_principal_secret }}"
+    agent_pool_profiles:
+      - name: agentpool
+        count: "{{ platform_k8s_pool_size }}"
+        vm_size: "{{ platform_k8s_vm_size }}"
+        enable_auto_scaling: True
+        type: VirtualMachineScaleSets
+        min_count: "{{ platform_k8s_pool_size }}"
+        max_count: "{{ platform_k8s_pool_size_max }}"
+    tags:
+      Environment: "mexplat-{{ deploy_environ }}"
+      Region: "{{ platform_region.region }}"
+
+- name: Dump debug data
+  block:
+  - name: Load kubernetes facts
+    azure_rm_aks_facts:
+      name: "{{ platform_region.name }}"
+      resource_group: "{{ platform_region.resource_group }}"
+      show_kubeconfig: admin
+    register: aks_facts
+    check_mode: no
+  - debug: var=aks_facts
+  tags: [ 'never', 'debug' ]

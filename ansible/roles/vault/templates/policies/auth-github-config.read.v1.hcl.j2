@@ -1,0 +1,11 @@
+path "auth/github/config" {
+  capabilities = [ "read" ]
+}
+
+path "auth/github/map/teams/*" {
+  capabilities = [ "read" ]
+}
+
+path "auth/github/map/users/*" {
+  capabilities = [ "read" ]
+}

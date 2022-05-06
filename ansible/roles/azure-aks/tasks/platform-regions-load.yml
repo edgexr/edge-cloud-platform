@@ -1,0 +1,56 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- set_fact:
+    platform_regions: >
+      {{ platform_regions | default([]) + 
+      [ {
+          'name': pr.name,
+          'location': pr.location,
+          'region': pr.region,
+          'latitude': pr.latitude,
+          'longitude': pr.longitude,
+          'dns_prefix': dns_pref,
+          'resource_group': rg,
+          'kubernetes_version': kver,
+          'global_dme_aliases': gdme,
+          'influxdb_volume_size': influxpvc
+      } ] }}
+  vars:
+    rg: "{{ pr.azure_resource_group_name | default(pr.name + '-rg') }}"
+    kver: "{{ pr.kubernetes_version | default(kubernetes_version) }}"
+    dns_pref: "{{ pr.dns_prefix | default(pr.name) }}"
+    gdme: "{{ pr.global_dme_aliases | default([]) | map('regex_replace', '$', global_dme_suffix) | list }}"
+    influxpvc: "{{ pr.influxdb_volume_size | default(influxdb_volume_size) }}"
+  loop: "{{ regions }}"
+  loop_control:
+    loop_var: pr
+
+- assert:
+    that:
+      - pr.name != ""
+      - pr.location != ""
+      - pr.region != ""
+      - pr.latitude != ""
+      - pr.longitude != ""
+      - pr.dns_prefix != ""
+      - pr.resource_group != ""
+      - pr.kubernetes_version != ""
+      - pr.influxdb_volume_size != ""
+  loop: "{{ platform_regions }}"
+  loop_control:
+    loop_var: pr
+
+- debug: var=platform_regions
+  tags: [ 'never', 'debug' ]

@@ -1,0 +1,7 @@
+path "secret/data/cloudlet/aws/credentials" {
+  capabilities = [ "read" ]
+}
+
+path "totp/code/aws-*" {
+  capabilities = [ "read" ]
+}

@@ -1,0 +1,3 @@
+#!/bin/bash
+exec /usr/local/bin/gvm-script --gmp-username "{{ gvm_username }}" --gmp-password "{{ gvm_password }}" \
+        socket --socketpath /opt/gvm/run/gvm/gvmd.sock "$@"

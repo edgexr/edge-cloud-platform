@@ -1,0 +1,91 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Add postgres GPG key
+  apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+  become: yes
+
+- name: Add postgres apt repository
+  apt_repository:
+    repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ ubuntu_release }}-pgdg main"
+  become: yes
+
+- name: Install postgres
+  apt:
+    name:
+      - "postgresql-{{ postgres_version }}"
+      - "postgresql-contrib-{{ postgres_version }}"
+      - libpq-dev
+      - python3-psycopg2
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Allow remote access
+  lineinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
+    regexp: '^listen_addresses\s*='
+    line: "listen_addresses = '*'"
+  become: yes
+  notify:
+    - Restart postgres
+
+- name: Allow remote client authentication
+  blockinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    block: |
+      host    all             all             0.0.0.0/0               md5
+  become: yes
+  notify:
+    - Restart postgres
+
+- name: Create databases
+  postgresql_db:
+    name: "{{ item.db }}"
+  become: yes
+  become_user: postgres
+  with_items: "{{ postgres_db_accounts }}"
+  no_log: true
+
+- name: Create users
+  postgresql_user:
+    db: "{{ item.db }}"
+    name: "{{ item.username }}"
+    password: "{{ item.password }}"
+    priv: ALL
+  become: yes
+  become_user: postgres
+  with_items: "{{ postgres_db_accounts }}"
+  no_log: true
+
+- name: Add extensions
+  postgresql_ext:
+    db: "{{ item.db }}"
+    name: citext
+  become: yes
+  become_user: postgres
+  with_items: "{{ postgres_db_accounts }}"
+  no_log: true
+
+- name: Remove unnecessary privileges
+  postgresql_user:
+    name: "{{ item.username }}"
+    role_attr_flags: NOSUPERUSER,NOCREATEDB
+  become: yes
+  become_user: postgres
+  with_items: "{{ postgres_db_accounts }}"
+  no_log: true

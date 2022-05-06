@@ -1,0 +1,31 @@
+jaeger_hostname: jaeger-tef.mobiledgex.net
+jaeger_endpoint: "https://{{ jaeger_hostname }}:14268/api/traces"
+console_vnc_hostname: console-tef-vnc.mobiledgex.net
+notifyroot_hostname: notifyroot-tef.mobiledgex.net
+vault_address: https://vault-tef.mobiledgex.net
+vault_ha_zones:
+  us: us-central1-a
+  eu: europe-west1-c
+
+vault_github_teams:
+  - name: edge-cloud-development-team
+    policies:
+      - default
+
+vault_github_users:
+  - userid: andya072071
+    role: editor
+  - userid: angshuman2508
+    role: editor
+  - userid: bibingeorge1986
+    role: admin
+  - userid: gainsley
+    role: admin
+  - userid: jlmorris3827
+    role: admin
+  - userid: LeonAdams
+    role: editor
+  - userid: venkytv
+    role: admin
+
+crm_instances: []

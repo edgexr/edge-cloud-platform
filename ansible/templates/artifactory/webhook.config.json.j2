@@ -1,0 +1,17 @@
+{
+  "webhooks": {
+     "slack": {
+        "url": "{{ slack_support_webhook }}",
+        "events": [
+          "storage.afterCreate",
+          "storage.afterDelete"
+        ],
+        "repositories": [
+          "^repo-"
+        ],
+        "format": "slack"
+     }
+  },
+  "debug": true,
+  "timeout": 15000
+}

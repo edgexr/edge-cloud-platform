@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edgeturn
+  labels:
+    app: edgeturn
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: edgeturn
+  template:
+    metadata:
+      labels:
+        app: edgeturn
+    spec:
+      containers:
+      - name: edgeturn
+        image: "{{ edge_cloud_image }}-edgeturn:{{ edge_cloud_version }}"
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "100Mi"
+          limits:
+            cpu: "100m"
+            memory: "200Mi"
+        command:
+         - "edgeturn"
+         - "--commonName"
+         - "{{ edgeturn_fqdn }}"
+         - "--region"
+         - "{{ region }}"
+         - "--listenAddr"
+         - "0.0.0.0:6080"
+         - "--proxyAddr"
+         - "0.0.0.0:8443"
+         - "--consoleAddr"
+         - "https://{{ console_vm_hostname }}"
+         - "--vaultAddr"
+         - "https://{{ vault_vm_hostname }}:{{ vault_port }}"
+         - "--useVaultPki"
+         - "--deploymentTag"
+         - "{{ deployment_tag_override | default(deploy_environ) }}"
+         - "-d"
+         - "api,notify"
+        env:
+         - name: VAULT_ROLE_ID
+           value: "{{ edgeturn_role.role_id }}"
+         - name: VAULT_SECRET_ID
+           value: "{{ edgeturn_role.secret_id }}"
+         - name: JAEGER_ENDPOINT
+           value: "{{ jaeger_endpoint }}"
+         - name: JAEGER_TAGS
+           value: "environ={{ deploy_environ }},region={{ region }},version={{ edge_cloud_version }}"
+         - name: ES_SERVER_URLS
+           value: "{{ esproxy_address }}"
+
+      imagePullSecrets:
+       - name: mexreg-secret
+

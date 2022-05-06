@@ -1,0 +1,64 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- name: Load esproxy creds
+  import_role:
+    name: load-vault-creds
+    tasks_from: esproxy
+
+- name: Load CA certs
+  import_role:
+    name: vault
+    tasks_from: ca-certs
+  tags: setup
+
+- name: Set up reverse proxy
+  import_role:
+    name: web
+  vars:
+    nginx_config_template: nginx-config.j2
+    nginx_config_filename: esproxy
+    cert_domains:
+      - "{{ inventory_hostname }}"
+  tags: setup
+
+- name: Copy CA cert
+  copy:
+    dest: "{{ mex_ca_cert_path }}"
+    content: "{{ ca_certs | join('\n') }}"
+    backup: yes
+  become: yes
+  tags: setup
+
+- name: Load esproxy cleanup creds
+  import_role:
+    name: load-vault-creds
+    tasks_from:  esproxy_cleanup
+
+- name: Install index cleanup cron script
+  template:
+    src: index-cleanup.py.j2
+    dest: "{{ index_cleanup_script }}"
+    mode: 0500
+  become: yes
+
+- name: Install index cleanup cronjob
+  cron:
+    name: Events index cleanup
+    minute: "2"
+    hour: "2"
+    user: root
+    job: '{{ index_cleanup_script }} >>/var/log/index-cleanup.log'
+  become: yes

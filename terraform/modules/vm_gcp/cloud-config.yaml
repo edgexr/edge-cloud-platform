@@ -1,0 +1,30 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#cloud-config
+# vim: syntax=yaml
+
+users:
+  - name: ${ansible_ssh_user}
+    gecos: Ansible
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+    shell: /bin/bash
+
+bootcmd:
+  - curl https://vault-${environ_tag}.mobiledgex.net/v1/ssh-ansible/public_key >/etc/ssh/trusted-user-ca-keys.pem
+  - cloud-init-per once ssh-users-ca echo "TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem" >> /etc/ssh/sshd_config
+
+runcmd:
+  - systemctl reload ssh

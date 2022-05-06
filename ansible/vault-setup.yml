@@ -1,0 +1,510 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- hosts: localhost
+  gather_facts: no
+  tasks:
+    - import_role:
+        name: vault
+        tasks_from: load-token
+      tags:
+        - setup
+        - pki
+
+- hosts: localhost
+  gather_facts: no
+  vars:
+    github_org: mobiledgex
+    github_token_ttl: 3600 # seconds
+    ldap_token_ttl: 900 # seconds
+    ca_ttl: "{{ 60 * 60 * 24 * 365 * 20 }}"    # 20 years
+    pki_global: pki-global
+    pki_regional: pki-regional
+    pki_regional_cloudlet: pki-regional-cloudlet
+  module_defaults:
+    vault_policy:
+      vault_addr: "{{ vault_address }}"
+      vault_token: "{{ vault_token }}"
+    vault_role:
+      vault_addr: "{{ vault_address }}"
+      vault_token: "{{ vault_token }}"
+    vault_api:
+      vault_addr: "{{ vault_address }}"
+      vault_token: "{{ vault_token }}"
+    vault_pki:
+      vault_addr: "{{ vault_address }}"
+      vault_token: "{{ vault_token }}"
+    vault_pki_role:
+      vault_addr: "{{ vault_address }}"
+      vault_token: "{{ vault_token }}"
+    vault_gcp_roleset:
+      vault_addr: "{{ vault_address }}"
+      vault_token: "{{ vault_token }}"
+      project: "{{ gcp_project }}"
+    vault_azure_role:
+      vault_addr: "{{ vault_address }}"
+      vault_token: "{{ vault_token }}"
+
+  tasks:
+
+    - name: Get a list of enabled secret engines
+      vault_api:
+        api: sys/mounts
+      register: secret_engines
+      changed_when: no
+      tags: setup
+
+    - name: Get a list of enabled auth methods
+      vault_api:
+        api: sys/auth
+      register: auth_methods
+      changed_when: no
+      tags: setup
+
+    - name: Set up the SSH secrets engine
+      include_role:
+        name: vault
+        tasks_from: ssh-secret-engine
+
+    - name: Enable the TOTP secrets engine
+      vault_api:
+        api: sys/mounts/totp
+        method: POST
+        data:
+          type: totp
+        success_code: 204
+      when: '"totp/" not in secret_engines.meta.response'
+      notify: Vault TOTP setup prompt
+
+    - name: Enable the transit secrets engine
+      vault_api:
+        api: sys/mounts/transit
+        method: POST
+        data:
+          type: transit
+        success_code: 204
+      when: '"transit/" not in secret_engines.meta.response'
+
+    - name: Fetch list of transit keys
+      vault_api:
+        api: transit/keys
+        method: LIST
+        success_code: [200, 404]
+      register: keys_resp
+
+    - set_fact:
+        transit_engine_keys: "{{ keys_resp.meta.response.data['keys'] | default([]) }}"
+
+    - name: Create etcd-backup transit key
+      vault_api:
+        api: transit/keys/etcd-backup
+        method: POST
+        success_code: 204
+      when: '"etcd-backup" not in transit_engine_keys'
+
+    - name: Enable the GCP secrets engine
+      vault_api:
+        api: sys/mounts/gcp
+        method: POST
+        data:
+          type: gcp
+          config:
+            default_lease_ttl: 1m
+            max_lease_ttl: 1h
+        success_code: 204
+      when: '"gcp/" not in secret_engines.meta.response'
+      register: gcp_secrets_engine
+
+    - name: Check if GCP engine is configured
+      vault_api:
+        api: gcp/config
+        success_code:
+          - 200
+          - 404
+      register: gcp_config
+
+    - block:
+        - pause:
+            prompt: |
+              Configure the GCP secrets engine:
+                - Create a GCP service account with the "Vault GCP Role" custom role
+                - Generate a key for the service account and add it to vault:
+                    $ vault write gcp/config credentials=@the-key.json
+
+              Hit <Enter> when done.
+
+        - name: Ensure that the GCP engine is now configured
+          vault_api:
+            api: gcp/config
+            success_code:
+              - 200
+
+        - debug:
+            msg: |
+              Note that a newly created service account can take several minutes
+              before it is fully active in Google Cloud.
+
+      when: '"data" not in gcp_config.meta.response'
+
+    - name: Set up roleset for creating roles
+      vault_gcp_roleset:
+        name: "{{ vault_gcp_role_create_roleset }}"
+        bindings:
+          - resource: "//cloudresourcemanager.googleapis.com/projects/{{ gcp_project }}"
+            roles:
+              - roles/iam.roleAdmin
+
+    - name: Get service key for creating roles
+      vault_api:
+        api: "gcp/key/{{ vault_gcp_role_create_roleset }}"
+      register: role_create_service_key
+
+    - set_fact:
+        gcp_service_key: "{{ role_create_service_key.meta.response.data.private_key_data | b64decode }}"
+
+    - name: "Set up GCP role for bucket creation: {{ gcp_bucket_create_role }}"
+      gcp_iam_role:
+        name: "{{ gcp_bucket_create_role }}"
+        title: "{{ deploy_environ | title }} role for creating GCS buckets"
+        description: "Ansible-managed custom role for creating GCS buckets"
+        included_permissions:
+          - storage.buckets.create
+          - storage.buckets.get
+          - storage.buckets.list
+        project: "{{ gcp_project }}"
+        auth_kind: serviceaccount
+        service_account_contents: "{{ gcp_service_key }}"
+        state: present
+
+    - name: "Set up GCP role for bucket usage: {{ gcp_bucket_use_role }}"
+      gcp_iam_role:
+        name: "{{ gcp_bucket_use_role }}"
+        title: "{{ deploy_environ | title }} role for using GCS buckets"
+        description: "Ansible-managed custom role for using GCS buckets"
+        included_permissions:
+          - storage.objects.create
+          - storage.objects.delete
+          - storage.objects.get
+          - storage.objects.list
+          - storage.objects.update
+        project: "{{ gcp_project }}"
+        auth_kind: serviceaccount
+        service_account_contents: "{{ gcp_service_key }}"
+        state: present
+
+    - name: Set up vault service account roleset for creating storage buckets
+      vault_gcp_roleset:
+        name: "{{ vault_gcp_bucket_create_roleset }}"
+        secret_type: service_account_key
+        bindings:
+          - resource: "//cloudresourcemanager.googleapis.com/projects/{{ gcp_project }}"
+            roles:
+              - "projects/{{ gcp_project }}/roles/{{ gcp_bucket_create_role }}"
+
+    - name: Set up GCP buckets
+      import_role:
+        name: gcp-buckets
+        tasks_from: create
+      vars:
+        buckets:
+          - "{{ gcs_gpu_drivers_bucket }}"
+          - "{{ gcs_operator_reports_bucket }}"
+
+    - name: Set up vault rolesets for bucket access
+      vault_gcp_roleset:
+        name: "{{ bucket }}-access"
+        project: "{{ gcp_project }}"
+        secret_type: access_token
+        bindings:
+          - resource: "buckets/{{ bucket }}"
+            roles:
+              - "projects/{{ gcp_project }}/roles/{{ gcp_bucket_use_role }}"
+        vault_addr: "{{ vault_address }}"
+        vault_token: "{{ vault_token }}"
+      loop:
+        - "{{ gcs_gpu_drivers_bucket }}"
+        - "{{ gcs_operator_reports_bucket }}"
+      loop_control:
+        loop_var: bucket
+
+    - name: "Set up GCP role for firewall management: {{ gcp_firewall_manage_role }}"
+      gcp_iam_role:
+        name: "{{ gcp_firewall_manage_role }}"
+        title: "{{ deploy_environ | title }} role for managing firewalls"
+        description: "Ansible-managed custom role for managing firewalls"
+        included_permissions:
+          - compute.firewalls.create
+          - compute.firewalls.get
+          - compute.firewalls.update
+          - compute.networks.updatePolicy
+        project: "{{ gcp_project }}"
+        auth_kind: serviceaccount
+        service_account_contents: "{{ gcp_service_key }}"
+        state: present
+
+    - name: Set up vault rolesets for firewall management
+      vault_gcp_roleset:
+        name: "{{ vault_gcp_firewall_manage_roleset }}"
+        project: "{{ gcp_project }}"
+        secret_type: service_account_key
+        bindings:
+          - resource: "//cloudresourcemanager.googleapis.com/projects/{{ gcp_project }}"
+            roles:
+              - "projects/{{ gcp_project }}/roles/{{ gcp_firewall_manage_role }}"
+        vault_addr: "{{ vault_address }}"
+        vault_token: "{{ vault_token }}"
+
+    - name: Check if Azure engine is configured
+      vault_api:
+        api: azure/config
+        success_code:
+          - 200
+          - 403
+          - 404
+      register: azure_config
+
+    - block:
+        - pause:
+            prompt: |
+              Configure the Azure secrets engine:
+                - Navigate to the "vault" app "Certificates & secrets" page in Azure
+                    https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/Credentials/appId/{{ azure_vault_app_client_id }}/isMSAApp/
+                - Add a client secret for "vault-{{ deploy_environ }}"
+                - Enable the Azure secrets engine in vault:
+                    vault secrets enable azure
+                - Configure it with the client ID and secret for "vault-{{ deploy_environ }}"
+                    vault write azure/config \
+                      subscription_id={{ azure_subscription_id }} \
+                      tenant_id={{ azure_tenant_id }} \
+                      client_id={{ azure_vault_app_client_id }} \
+                      client_secret=$AZURE_CLIENT_SECRET
+
+              Hit <Enter> when done.
+
+        - name: Ensure that the Azure engine is now configured
+          vault_api:
+            api: azure/config
+            success_code:
+              - 200
+
+      when: '"data" not in azure_config.meta.response'
+
+    - import_role:
+        name: vault
+        tasks_from: azure-roles
+
+    - name: Enable KV secrets engines
+      include_role:
+        name: vault
+        tasks_from: kv-secret-engine
+      loop:
+        - path: secret
+          config:
+            default_lease_ttl: 768h
+            max_lease_ttl: 768h
+        - path: jwtkeys
+          kv_config:
+            max_versions: 2
+      loop_control:
+        loop_var: secret_engine
+
+    - set_fact:
+        region_jwtkeys: "{{ region_jwtkeys|default([]) + [{'path': item.region + '/jwtkeys', 'kv_config': {'max_versions': 2}}] }}"
+      with_items: "{{ regions }}"
+
+    - name: Enable region-specific JWT keys engines
+      include_role:
+        name: vault
+        tasks_from: kv-secret-engine
+      loop: "{{ region_jwtkeys }}"
+      loop_control:
+        loop_var: secret_engine
+
+    - name: Enable AppRole auth
+      vault_api:
+        api: sys/auth/approle
+        method: POST
+        data:
+          type: approle
+          description: AppRole auth method
+        success_code: 204
+      when:
+        - "'approle/' not in auth_methods.meta.response"
+      tags: setup
+
+    - name: Enable Github auth
+      vault_api:
+        api: sys/auth/github
+        method: POST
+        data:
+          type: github
+          description: Log in with Github
+        success_code: 204
+      when:
+        - "'github/' not in auth_methods.meta.response"
+      tags: setup
+
+    - name: Check Github auth config
+      vault_api:
+        api: auth/github/config
+      register: result
+      changed_when: no
+      ignore_errors: yes
+      tags: setup
+
+    - name: Configure Github auth
+      vault_api:
+        api: auth/github/config
+        method: POST
+        data:
+          organization: "{{ github_org }}"
+          ttl: "{{ github_token_ttl }}s"
+          max_ttl: "{{ github_token_ttl }}s"
+        success_code: 204
+      when: ("meta" not in result) or
+            (result.meta.response.data.organization != github_org) or
+            (result.meta.response.data.ttl != github_token_ttl) or
+            (result.meta.response.data.max_ttl != github_token_ttl)
+      tags: setup
+
+    - include_role:
+        name: vault
+        tasks_from: github-teams
+      loop: "{{ vault_github_teams }}"
+      loop_control:
+        loop_var: team
+      tags: setup
+
+    - include_role:
+        name: vault
+        tasks_from: github-users
+      loop: "{{ vault_github_users }}"
+      loop_control:
+        loop_var: user
+      tags: setup
+
+    - name: Disable LDAP auth
+      vault_api:
+        api: sys/auth/ldap
+        method: DELETE
+        success_code: 204
+      when:
+        - "'ldap/' in auth_methods.meta.response"
+      tags: setup
+
+    - import_role:
+        name: vault
+        tasks_from: policies
+      tags:
+        - policies
+        - setup
+
+    - import_role:
+        name: vault
+        tasks_from: roles
+      tags:
+        - roles
+        - setup
+
+    - name: Set up PKI
+      block:
+
+      - name: Enable root CA
+        vault_pki:
+          path: pki
+          max_lease_ttl: "{{ ca_ttl }}"
+
+      - name: Get root CA cert
+        vault_api:
+          api: pki/ca/pem
+          success_code:
+            - 200
+            - 204
+          raw_response: yes
+        register: result
+
+      - name: Set up the root cert
+        block:
+
+        - name: Generate root cert
+          vault_api:
+            api: pki/root/generate/internal
+            method: POST
+            data:
+              common_name: root
+              ou: "{{ deploy_environ }}"
+              ttl: "{{ ca_ttl }}"
+          when: offline_root_cert is not defined or not offline_root_cert
+
+        - name: Wait for intermediate CA certificate to be set up
+          pause:
+            prompt: |
+              Please set up the intermediate CA certificate.
+              Refer to mgmt/vault/root-ca/README.md for details.
+          when: offline_root_cert is defined and offline_root_cert
+
+        - name: Check for root CA cert
+          vault_api:
+            api: pki/ca/pem
+            raw_response: yes
+
+        when: result.meta.response == ""
+
+      - include_role:
+          name: vault
+          tasks_from: intermediate-ca
+        loop:
+          - "{{ pki_global }}"
+          - "{{ pki_regional }}"
+          - "{{ pki_regional_cloudlet }}"
+        loop_control:
+          loop_var: pki_name
+
+      - name: "Create PKI role for {{ pki_global }}"
+        vault_pki_role:
+          path: "{{ pki_global }}"
+          rolename: default
+          allowed_domains: "{{ cloudflare_zone }}"
+          allowed_uri_sans: "region://none"
+
+      - include_role:
+          name: vault
+          tasks_from: pki-region-roles
+        loop: "{{ regions }}"
+        loop_control:
+          loop_var: region
+
+      tags: pki
+
+    - import_role:
+        name: vault
+        tasks_from: cert-plugin
+      tags:
+        - setup
+
+  handlers:
+    - name: Vault TOTP setup prompt
+      debug:
+        msg: |
+          Set up TOTP:
+            $ vault write totp/keys/baseimage \
+                generate=true \
+                issuer="vault-{{ deploy_environ }}" \
+                account_name=root@mobiledgex.net
+          And then, store the TOTP secret from the URL above in the vault:
+            $ vault kv put secret/accounts/baseimage/totp-key \
+                value="<the-secret>"
+          And if you haven't already, the base image root password:
+            $ vault kv put secret/accounts/baseimage/password \
+                value="<the-root-password>"

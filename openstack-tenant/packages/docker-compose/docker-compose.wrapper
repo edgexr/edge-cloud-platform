@@ -1,0 +1,2 @@
+#!/bin/sh
+TMPDIR=/var/tmp exec /usr/local/lib/docker-compose "$@"

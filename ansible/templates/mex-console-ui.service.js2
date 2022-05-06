@@ -1,0 +1,13 @@
+[Unit]
+Description=Mex Console UI
+Requires=mex-console-server.service
+After=mex-console-server.service
+
+[Service]
+WorkingDirectory={{install_dir}}
+User=ansible
+Type=simple
+ExecStart=/usr/bin/npm start
+
+[Install]
+WantedBy=multi-user.target

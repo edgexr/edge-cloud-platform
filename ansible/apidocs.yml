@@ -1,0 +1,123 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- hosts: swagger
+
+  tasks:
+
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+
+    - import_role:
+        name: docker
+      tags: setup
+
+    - import_role:
+        name: web
+      tags: setup
+      vars:
+        nginx_config_template: apidocs/swagger-nginx-config.j2
+        nginx_config_filename: swagger
+        cert_domains: [ "{{ inventory_hostname }}" ]
+
+    - import_role:
+        name: web
+      tags: setup
+      vars:
+        nginx_config_template: apidocs/api-nginx-config.j2
+        nginx_config_filename: api
+        cert_domains: [ "{{ apidocs_domain }}" ]
+
+    - name: Load cloudflare creds
+      import_role:
+        name: load-vault-creds
+        tasks_from: cloudflare
+      tags: setup
+
+    - name: "Set up DNS CNAME for {{ apidocs_domain }}"
+      cloudflare_dns:
+        zone: "{{ cloudflare_zone }}"
+        record: "{{ apidocs_domain }}"
+        value: "{{ inventory_hostname }}"
+        type: CNAME
+        state: present
+        solo: true
+        account_email: "{{ cloudflare_account_email }}"
+        account_api_token: "{{ cloudflare_account_api_token }}"
+      tags: setup
+
+    - name: Load artifactory token
+      import_role:
+        name: load-vault-creds
+        tasks_from: artifactory-apidocs
+
+    - include_role:
+        name: apidocs
+      vars:
+        containers:
+          - { name: "external", port: 9090, title: "MobiledgeX API" }
+          - { name: "client", port: 9091, title: "MobiledgeX Client API" }
+          - { name: "internal", port: 9092, title: "MobiledgeX Internal API" }
+          - { name: "mc", port: 9094, title: "MobiledgeX Orchestration API" }
+        apidocs_scripts:
+          - apidocs/apidocs-massage.py
+        swagger_gen_script_template: apidocs/swagger-gen.j2
+        swagger_gen_run_once: yes
+        dme_api_host: wifi.dme.mobiledgex.net:38001
+      when: ( deploy_environ == 'mexdemo' ) or ( deploy_environ == 'prod' )
+
+    - include_role:
+        name: apidocs
+      vars:
+        containers:
+          - { name: "external", port: 9190, title: "MobiledgeX API" }
+          - { name: "client", port: 9191, title: "MobiledgeX Client API" }
+          - { name: "internal", port: 9192, title: "MobiledgeX Internal API" }
+          - { name: "mc", port: 9194, title: "MobiledgeX Orchestration API" }
+        apidocs_scripts:
+          - apidocs/apidocs-massage.py
+        swagger_gen_script_template: apidocs/swagger-gen.j2
+        swagger_gen_run_once: no
+        dme_api_host: eu-stage.dme.mobiledgex.net:38001
+      when: deploy_environ == 'stage'
+
+- hosts: akraino
+
+  tasks:
+
+    - import_role:
+        name: docker
+      tags: setup
+
+    - import_role:
+        name: web
+      vars:
+        nginx_config_template: apidocs/akraino-nginx-config.j2
+      tags: setup
+
+    - import_role:
+        name: apidocs
+      vars:
+        upload_logo: false
+        upload_code_samples: false
+        favicon: "/swagger/favicon.ico"
+        containers:
+          - { name: "client", port: 9091, title: "Client API" }
+          - { name: "mc", port: 9094, title: "Orchestration API" }
+        apidocs_scripts:
+          - apidocs/apidocs-massage.py
+          - apidocs/akraino-postprocess.py
+        swagger_gen_script_template: apidocs/akraino-swagger.cron.j2
+        swagger_gen_run_once: yes

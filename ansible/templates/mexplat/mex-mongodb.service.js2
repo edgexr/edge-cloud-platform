@@ -1,0 +1,12 @@
+[Unit]
+Description=Mex Console MongoDB
+After=network.target
+
+[Service]
+WorkingDirectory={{install_dir}}/server
+User=ansible
+Type=simple
+ExecStart=/usr/bin/mongod --dbpath {{mongodb_path}}
+
+[Install]
+WantedBy=multi-user.target

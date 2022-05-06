@@ -1,0 +1,15 @@
+REGCLIENT=$( curl -s -X POST https://wifi.dme.mobiledgex.net:38001/v1/registerclient \
+        -d '{"app_name": "MobiledgeX SDK Demo", "app_vers": "2.0", "org_name": "MobiledgeX"}' )
+
+SESSCOOKIE=$( echo "$REGCLIENT" | jq -r .session_cookie )
+TOKSRV=$( echo "$REGCLIENT" | jq -r .token_server_uri )
+TOKEN=$( curl -si "$TOKSRV" | grep "^Location: " | cut -d= -f2- | tr -dc '[[:print:]]' )
+
+curl -s -X POST https://wifi.dme.mobiledgex.net:38001/v1/verifylocation \
+        -d '{
+                "session_cookie": "'${SESSCOOKIE}'",
+                "carrier_name": "GDDT",
+                "gps_location": {"latitude": 48.0, "longitude": 11.0},
+                "verify_loc_token": "'${TOKEN}'",
+                "ver": 1
+        }'

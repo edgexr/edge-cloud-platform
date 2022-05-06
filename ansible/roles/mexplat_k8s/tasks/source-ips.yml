@@ -1,0 +1,54 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- import_role:
+    name: mexplat_k8s
+    tasks_from: load-kubeconfig
+
+- set_fact:
+    mexplat_k8s_source_ips: []
+
+- name: Fetch kubernetes ingress details
+  k8s_info:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    kind: Ingress
+    api_version: extensions/v1beta1
+  register: ingress
+
+- set_fact:
+    mexplat_k8s_source_ips: "{{ mexplat_k8s_source_ips + [ k8s_ingress.ip ] }}"
+  loop: "{{ ingress.resources[0].status.loadBalancer.ingress }}"
+  loop_control:
+    loop_var: k8s_ingress
+
+- name: Fetch kubernetes service details
+  k8s_info:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    kind: Service
+    api_version: v1
+  register: k8s_services
+
+- set_fact:
+    mexplat_k8s_source_ips: "{{ mexplat_k8s_source_ips + [ k8s_service.status.loadBalancer.ingress[0].ip ] }}"
+  when: '"loadBalancer" in k8s_service.status and "ingress" in k8s_service.status.loadBalancer'
+  loop: "{{ k8s_services.resources }}"
+  loop_control:
+    loop_var: k8s_service
+  no_log: True
+
+- set_fact:
+    mexplat_k8s_source_ips: "{{ mexplat_k8s_source_ips | sort }}"

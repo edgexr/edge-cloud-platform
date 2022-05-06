@@ -1,0 +1,14 @@
+[Unit]
+Description=Mex Console UI
+Requires=mex-console-server.service
+After=mex-console-server.service
+
+[Service]
+Environment="NODE_OPTIONS=--max-old-space-size=3072"
+WorkingDirectory={{install_dir}}
+User=ansible
+Type=simple
+ExecStart=/usr/bin/npm start
+
+[Install]
+WantedBy=multi-user.target

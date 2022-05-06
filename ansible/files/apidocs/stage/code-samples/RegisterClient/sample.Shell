@@ -1,0 +1,7 @@
+curl -s -X POST https://eu-stage.dme.mobiledgex.net:38001/v1/registerclient \
+        -d '{
+                "app_name": "MobiledgeX SDK Demo",
+                "app_vers": "2.0",
+                "org_name": "MobiledgeX",
+                "ver": 1
+        }'

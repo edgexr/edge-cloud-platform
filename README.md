@@ -14,6 +14,12 @@ The Edge-Cloud Platform is a set of services that allow for distributed and secu
 
 - The **EdgeTurn** service is much like a TURN server, providing secure console and shell access to virtual machines and containers deployed on cloudlets.
 
+- The **Master Controller** provides user management, RBAC, and region management. The Controller's APIs are exposed with authorization based on permissions by organization, and support for multiple regions.
+
+- **Shepherd** deploys alongside the CRM (Cloudlet Resource Manager) on cloudlet infrastructure for advanced metrics and alerts.
+
+- The **AutoProv** service monitors auto-provision policies and automatically deploys and undeploys application instances based on client demand.
+
 ## Checking Out Code and Building
 
 Please see [Getting Started](https://mobiledgex.atlassian.net/wiki/spaces/SWDEV/pages/22478869/Getting+Started).
@@ -47,3 +53,23 @@ make test-kind-start
 # stop processes
 make test-kind-stop
 ```
+# Edge-Cloud Infrastructure Platform Code
+
+Infrastructure specific code is packaged under a plugin to allow for new infrastructures to be supported without needing to modify the edge-cloud platform code.
+
+## Currently supported infrastructures are:
+
+### VM-Based:
+
+- Openstack
+- VMWare VSphere
+- VMWare Cloud Director (VCD)
+- VMPool (a bunch of VMs)
+- Amazon Web Services (AWS) EC2
+
+### Kubernetes Based:
+
+- Amazon Web Services (AWS) EKS
+- Google Cloud Platform (GCP) GKE
+- K8S Bare Metal (primarily but not limited to Google Anthos)
+- Microsoft Azure Kubernetes Service (AKS)

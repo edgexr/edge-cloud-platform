@@ -1,0 +1,17 @@
+kind: role
+version: v4
+metadata:
+  name: audit-access
+spec:
+  allow:
+    rules:
+    - resources:
+      - session
+      verbs:
+      - list
+      - read
+    - resources:
+      - event
+      verbs:
+      - list
+      - read

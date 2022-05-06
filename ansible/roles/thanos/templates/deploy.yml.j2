@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanosquery
+  labels:
+    app: thanosquery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanosquery
+  template:
+    metadata:
+      labels:
+        app: thanosquery
+    spec:
+      containers:
+      - name: thanosquery
+        image: "quay.io/thanos/thanos:v0.21.0"
+        imagePullPolicy: Always
+        args:
+        - query
+        - --http-address=:{{ thanos_query_port }}
+        - --store={{ thanos_recv_service_addr }}:{{ thanos_recv_grpc_port }}
+        ports:
+        - name: http
+          containerPort: {{ thanos_query_port }}
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "100Mi"
+          limits:
+            cpu: "100m"
+            memory: "200Mi"
+        env:
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanosrecv
+  labels:
+    app: thanosrecv
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanosrecv
+  template:
+    metadata:
+      labels:
+        app: thanosrecv
+    spec:
+      containers:
+      - name: thanosrecv
+        image: "quay.io/thanos/thanos:v0.21.0"
+        imagePullPolicy: Always
+        args:
+        - receive
+        - --label=region="{{ region }}"
+        - --grpc-address=:{{ thanos_recv_grpc_port }}
+        - --remote-write.address=:{{ thanos_recv_remote_write_port }}
+        ports:
+        - name: remote-write
+          containerPort: {{ thanos_recv_remote_write_port }}
+        - name: grpc
+          containerPort: {{ thanos_recv_grpc_port }}
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "100Mi"
+          limits:
+            cpu: "100m"
+            memory: "200Mi"
+        env:

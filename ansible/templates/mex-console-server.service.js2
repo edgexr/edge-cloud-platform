@@ -1,0 +1,13 @@
+[Unit]
+Description=Mex Console Server
+Requires=mex-mongodb.service
+After=mex-mongodb.service
+
+[Service]
+WorkingDirectory={{install_dir}}/server
+User=ansible
+Type=simple
+ExecStart=/usr/bin/npm run start_server 127.0.0.1 13030
+
+[Install]
+WantedBy=multi-user.target

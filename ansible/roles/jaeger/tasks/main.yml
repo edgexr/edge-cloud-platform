@@ -1,0 +1,144 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- name: Load CA certs
+  import_role:
+    name: vault
+    tasks_from: ca-certs
+  tags: setup
+
+- name: Set up reverse proxy
+  import_role:
+    name: web
+  vars:
+    nginx_config_template: "internal/jaeger/nginx-config.j2"
+    cert_domains: [ "*.{{ cloudflare_zone }}" ]
+    cert_name: "{{ inventory_hostname }}"
+  tags: setup
+
+- name: Copy CA cert
+  copy:
+    dest: "{{ mex_ca_cert_path }}"
+    content: "{{ ca_certs | join('\n') }}"
+    backup: yes
+  become: yes
+  tags: setup
+  notify: Restart nginx
+
+- name: Deploy all-in-one jaeger
+  block:
+
+    - name: Create local storage directory
+      file:
+        path: "{{ jaeger_local_storage_dir }}"
+        state: directory
+      become: yes
+
+    - name: Start all-in-one jaeger
+      docker_container:
+        name: jaeger
+        image: "{{ jaeger_image }}"
+        restart_policy: unless-stopped
+        env:
+          SPAN_STORAGE_TYPE: badger
+          BADGER_EPHEMERAL: "false"
+          BADGER_DIRECTORY_VALUE: /badger/data
+          BADGER_DIRECTORY_KEY: /badger/key
+          BADGER_TRUNCATE: "true"
+        volumes:
+          - "{{ jaeger_local_storage_dir }}:/badger"
+        ports:
+          - 127.0.0.1:24268:14268
+          - 127.0.0.1:26686:16686
+          - 127.0.0.1:14269:14269
+
+  when:
+    - es_instance is not defined
+
+- name: Deploy jaeger components
+  block:
+    - name: Compute vault path for creds
+      set_fact:
+        vault_es_path: "secret/ansible/internal/accounts/elasticsearch/{{ es_instance }}:jaeger"
+
+    - name: Look up elasticsearch credentials in vault
+      set_fact:
+        vault_lookup: "{{ lookup('vault', vault_es_path) }}"
+
+    - set_fact:
+        jaeger_es_url: "{{ vault_lookup.jaeger.data.url }}"
+        jaeger_es_user: "{{ vault_lookup.jaeger.data.user }}"
+        jaeger_es_pass: "{{ vault_lookup.jaeger.data.pass }}"
+
+    - name: Deploy jaeger collector
+      docker_container:
+        name: jaeger-collector
+        image: "jaegertracing/jaeger-collector:{{ jaeger_version }}"
+        restart_policy: unless-stopped
+        ports:
+          - 127.0.0.1:24268:14268
+          - 127.0.0.1:14269:14269
+        env:
+          SPAN_STORAGE_TYPE: elasticsearch
+          ES_SERVER_URLS: "{{ jaeger_es_url }}"
+          ES_INDEX_PREFIX: "{{ es_index_prefix | default('main') }}"
+          ES_USERNAME: "{{ jaeger_es_user }}"
+          ES_PASSWORD: "{{ jaeger_es_pass }}"
+          ES_MAX_SPAN_AGE: "720h"
+          ES_NUM_SHARDS: 2
+
+    - name: Deploy jaeger query
+      docker_container:
+        name: jaeger-query
+        image: "jaegertracing/jaeger-query:{{ jaeger_version }}"
+        restart_policy: unless-stopped
+        ports:
+          - 127.0.0.1:26686:16686
+          - 127.0.0.1:16687:16687
+        env:
+          SPAN_STORAGE_TYPE: elasticsearch
+          ES_SERVER_URLS: "{{ jaeger_es_url }}"
+          ES_INDEX_PREFIX: "{{ es_index_prefix | default('main') }}"
+          ES_USERNAME: "{{ jaeger_es_user }}"
+          ES_PASSWORD: "{{ jaeger_es_pass }}"
+          ES_MAX_SPAN_AGE: "720h"
+          ES_NUM_SHARDS: 2
+
+    - name: Install dependencies
+      apt:
+        name:
+          - moreutils
+        state: present
+        update_cache: yes
+      become: yes
+
+    - name: Install index cleaner cronjob
+      cron:
+        name: Elasticsearch index cleanup
+        minute: 0
+        hour: 8
+        user: root
+        job: 'docker run --rm
+            -e "ES_USERNAME={{ jaeger_es_user }}"
+            -e "ES_PASSWORD={{ jaeger_es_pass }}"
+            -e ES_TLS=true
+            {{ jaeger_index_cleaner_image }}
+            {{ jaeger_index_cleanup_days }}
+            "{{ jaeger_es_url }}"
+            | ts >>"{{ jaeger_index_cleanup_log }}"'
+      become: yes
+
+  when:
+    - es_instance is defined

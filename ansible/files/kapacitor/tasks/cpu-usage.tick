@@ -1,0 +1,75 @@
+dbrp "telegraf"."autogen"
+
+var name = 'CPU Usage Alert'
+
+var db = 'telegraf'
+
+var rp = 'autogen'
+
+var info = 70
+
+var warn = 80
+
+var crit = 90
+
+var infoSig = 4
+
+var warnSig = 5
+
+var critSig = 6
+
+var period = 1h
+
+var every = 1h
+
+var idVar = name + ':{{.Group}}'
+
+var idTag = 'alertID'
+
+var outputDB = 'chronograf'
+
+var outputRP = 'autogen'
+
+var outputMeasurement = 'alerts'
+
+var triggerType = 'threshold'
+
+// Dataframe
+var data = batch
+    |query(''' SELECT mean("usage_idle") AS "mean_usage_idle" FROM "telegraf"."autogen"."cpu" ''')
+        .period(period)
+        .every(every)
+        .groupBy('host')
+    |eval(lambda: 100.0 - "mean_usage_idle")
+        .as('used')
+    |mean('used')
+        .as('stat')
+
+// Thresholds
+var trigger = data
+    |eval(lambda: sigma("stat"))
+        .as('sigma')
+        .keep()
+    |eval(lambda: floor("stat" * 100.0) / 100.0)
+        .as('stat_round')
+        .keep()
+    |alert()
+        .id(idVar)
+        .message(' {{ .ID }} is {{.Level}}: {{ index .Fields "stat_round" }}% mean CPU usage')
+        .info(lambda: "stat" > info)
+        .warn(lambda: "stat" > warn)
+        .crit(lambda: "stat" > crit)
+        .pagerDuty2()
+        .slack()
+
+trigger
+    |eval(lambda: float("stat"))
+        .as('used')
+        .keep()
+    |influxDBOut()
+        .create()
+        .database(outputDB)
+        .retentionPolicy(outputRP)
+        .measurement(outputMeasurement)
+        .tag('alertName', name)
+        .tag('triggerType', triggerType)

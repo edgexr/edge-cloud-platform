@@ -1,0 +1,407 @@
+hostname = "{{ influxdb_vm_hostname }}"
+data_dir = "/var/lib/kapacitor"
+skip-config-overrides = false
+default-retention-policy = ""
+
+[alert]
+  persist-topics = true
+
+[http]
+  bind-address = "localhost:9092"
+  auth-enabled = false
+  log-enabled = true
+  write-tracing = false
+  pprof-enabled = false
+  https-enabled = true
+  https-certificate = "/etc/letsencrypt/live/{{ influxdb_vm_hostname }}/fullchain.pem"
+  https-private-key = "/etc/letsencrypt/live/{{ influxdb_vm_hostname }}/privkey.pem"
+  shutdown-timeout = "30s"
+  shared-secret = ""
+
+[replay]
+  dir = "/var/lib/kapacitor/replay"
+
+[storage]
+  boltdb = "/var/lib/kapacitor/kapacitor.db"
+
+[task]
+  dir = "/var/lib/kapacitor/tasks"
+  snapshot-interval = "1m0s"
+
+[load]
+  enabled = true
+  dir = "{{ kapacitor_load_dir }}"
+
+[[influxdb]]
+  enabled = true
+  name = "{{ influxdb_vm_hostname }}"
+  default = true
+  urls = ["https://{{ influxdb_vm_hostname }}:8086"]
+  username = "{{ influxdb_user }}"
+  password = "{{ influxdb_password }}"
+  ssl-ca = ""
+  ssl-cert = ""
+  ssl-key = ""
+  insecure-skip-verify = false
+  timeout = "0s"
+  disable-subscriptions = false
+  subscription-protocol = "https"
+  subscription-mode = "cluster"
+  kapacitor-hostname = ""
+  http-port = 0
+  udp-bind = ""
+  udp-buffer = 1000
+  udp-read-buffer = 0
+  startup-timeout = "5m0s"
+  subscriptions-sync-interval = "1m0s"
+  [influxdb.subscriptions]
+  [influxdb.excluded-subscriptions]
+    _kapacitor = ["autogen"]
+
+[logging]
+  file = "/var/log/kapacitor/kapacitor.log"
+  level = "INFO"
+
+[config-override]
+  enabled = true
+
+[tls]
+  min-version = ""
+  max-version = ""
+
+[collectd]
+  enabled = false
+  bind-address = ":25826"
+  database = "collectd"
+  retention-policy = ""
+  batch-size = 1000
+  batch-pending = 5
+  batch-timeout = "10s"
+  read-buffer = 0
+  typesdb = "/usr/share/collectd/types.db"
+
+[opentsdb]
+  enabled = false
+  bind-address = ":4242"
+  database = "opentsdb"
+  retention-policy = ""
+  consistency-level = "one"
+  tls-enabled = false
+  certificate = "/etc/ssl/influxdb.pem"
+  batch-size = 1000
+  batch-pending = 5
+  batch-timeout = "1s"
+  log-point-errors = true
+
+[alerta]
+  enabled = false
+  url = ""
+  insecure-skip-verify = false
+  token = ""
+  token-prefix = "Bearer"
+  environment = ""
+  origin = "kapacitor"
+  timeout = "0s"
+
+[hipchat]
+  enabled = false
+  url = ""
+  token = ""
+  room = ""
+  global = false
+  state-changes-only = false
+
+[[kafka]]
+  enabled = false
+  id = "localhost"
+  brokers = []
+  timeout = "10s"
+  batch-size = 100
+  batch-timeout = "1s"
+  use-ssl = false
+  ssl-ca = ""
+  ssl-cert = ""
+  ssl-key = ""
+  insecure-skip-verify = false
+
+[[mqtt]]
+  enabled = false
+  name = "localhost"
+  default = true
+  url = "tcp://localhost:1883"
+  ssl-ca = ""
+  ssl-cert = ""
+  ssl-key = ""
+  insecure-skip-verify = false
+  client-id = ""
+  username = ""
+  password = ""
+
+[opsgenie]
+  enabled = false
+  api-key = ""
+  url = "https://api.opsgenie.com/v1/json/alert"
+  recovery_url = "https://api.opsgenie.com/v1/json/alert/note"
+  global = false
+
+[opsgenie2]
+  enabled = false
+  api-key = ""
+  url = "https://api.opsgenie.com/v2/alerts"
+  recovery_action = "notes"
+  global = false
+
+[pagerduty]
+  enabled = false
+  url = "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
+  service-key = ""
+  global = false
+
+[pagerduty2]
+  enabled = false
+  url = "https://events.pagerduty.com/v2/enqueue"
+  routing-key = ""
+  global = false
+
+[pushover]
+  enabled = false
+  token = ""
+  user-key = ""
+  url = "https://api.pushover.net/1/messages.json"
+
+[[httppost]]
+  endpoint = "example"
+  url = "http://example.com"
+  alert-template = ""
+  alert-template-file = ""
+  row-template = ""
+  row-template-file = ""
+  [httppost.basic-auth]
+    username = ""
+    password = ""
+
+[smtp]
+  enabled = false
+  host = "localhost"
+  port = 25
+  username = ""
+  password = ""
+  no-verify = false
+  global = false
+  state-changes-only = false
+  from = ""
+  idle-timeout = "30s"
+
+[snmptrap]
+  enabled = false
+  addr = "localhost:162"
+  community = "kapacitor"
+  retries = 1
+
+[sensu]
+  enabled = false
+  addr = "sensu-client:3030"
+  source = "Kapacitor"
+
+[[slack]]
+  enabled = false
+  default = true
+  workspace = ""
+  url = ""
+  channel = ""
+  username = ""
+  icon-emoji = ""
+  global = false
+  state-changes-only = false
+  ssl-ca = ""
+  ssl-cert = ""
+  ssl-key = ""
+  insecure-skip-verify = false
+
+[talk]
+  enabled = false
+  url = "https://jianliao.com/v2/services/webhook/uuid"
+  author_name = "Kapacitor"
+
+[telegram]
+  enabled = false
+  url = "https://api.telegram.org/bot"
+  token = ""
+  chat-id = ""
+  parse-mode = ""
+  disable-web-page-preview = false
+  disable-notification = false
+  global = false
+  state-changes-only = false
+
+[victorops]
+  enabled = false
+  api-key = ""
+  routing-key = ""
+  url = "https://alert.victorops.com/integrations/generic/20131114/alert"
+  global = false
+  json-data = false
+
+[[scraper]]
+  enabled = false
+  name = "myscraper"
+  type = "prometheus"
+  db = "prometheus_raw"
+  rp = "autogen"
+  scheme = "http"
+  metrics-path = "/metrics"
+  scrape-interval = "1m0s"
+  scrape-timeout = "10s"
+  username = ""
+  password = ""
+  ssl-ca = ""
+  ssl-cert = ""
+  ssl-key = ""
+  ssl-server-name = ""
+  insecure-skip-verify = false
+  bearer-token = ""
+  discoverer-id = ""
+  discoverer-service = ""
+
+[[azure]]
+  enabled = false
+  id = "myazure"
+  port = 80
+  subscription-id = ""
+  tenant-id = ""
+  client-id = ""
+  client-secret = ""
+  refresh-interval = "5m0s"
+
+[[consul]]
+  enabled = false
+  id = "myconsul"
+  address = "127.0.0.1:8500"
+  token = ""
+  datacenter = ""
+  tag-separator = ","
+  scheme = "http"
+  username = ""
+  password = ""
+  ssl-ca = ""
+  ssl-cert = ""
+  ssl-key = ""
+  ssl-server-name = ""
+  insecure-skip-verify = false
+
+[[dns]]
+  enabled = false
+  id = "mydns"
+  refresh-interval = "30s"
+  type = "SRV"
+  port = 80
+
+[[ec2]]
+  enabled = false
+  id = "myec2"
+  region = "us-east-1"
+  access-key = ""
+  secret-key = ""
+  profile = ""
+  refresh-interval = "1m0s"
+  port = 80
+
+[[file-discovery]]
+  enabled = false
+  id = "myfile"
+  files = []
+  refresh-interval = "5m0s"
+
+[[gce]]
+  enabled = false
+  id = "mygce"
+  project = ""
+  zone = ""
+  filter = ""
+  refresh-interval = "1m0s"
+  port = 80
+  tag-separator = ","
+
+[[marathon]]
+  enabled = false
+  id = "mymarathon"
+  timeout = "30s"
+  refresh-interval = "30s"
+  bearer-token = ""
+  ssl-ca = ""
+  ssl-cert = ""
+  ssl-key = ""
+  ssl-server-name = ""
+  insecure-skip-verify = false
+
+[[nerve]]
+  enabled = false
+  id = "mynerve"
+  timeout = "10s"
+
+[[serverset]]
+  enabled = false
+  id = "myserverset"
+  timeout = "10s"
+
+[[static-discovery]]
+  enabled = false
+  id = "mystatic"
+  targets = ["localhost:9100"]
+
+[[triton]]
+  enabled = false
+  id = "mytriton"
+  account = ""
+  dns-suffix = ""
+  endpoint = ""
+  port = 9163
+  refresh-interval = "1m0s"
+  version = 1
+  ssl-ca = ""
+  ssl-cert = ""
+  ssl-key = ""
+  ssl-server-name = ""
+  insecure-skip-verify = false
+
+[[kubernetes]]
+  enabled = false
+  id = ""
+  in-cluster = false
+  token = ""
+  ca-path = ""
+  namespace = ""
+  resource = ""
+
+[[swarm]]
+  enabled = false
+  id = ""
+  servers = ["http://localhost:2376"]
+  ssl-ca = ""
+  ssl-cert = ""
+  ssl-key = ""
+  insecure-skip-verify = false
+
+[reporting]
+  enabled = false
+  url = "https://usage.influxdata.com"
+
+[stats]
+  enabled = true
+  stats-interval = "10s"
+  database = "_kapacitor"
+  retention-policy = "autogen"
+  timing-sample-rate = 0.1
+  timing-movavg-size = 1000
+
+[udf]
+  [udf.functions]
+
+{% raw %}
+[deadman]
+  interval = "10s"
+  threshold = 0.0
+  id = "node 'NODE_NAME' in task '{{ .TaskName }}'"
+  message = "{{ .ID }} is {{ if eq .Level \"OK\" }}alive{{ else }}dead{{ end }}: {{ index .Fields \"collected\" | printf \"%0.3f\" }} points/INTERVAL."
+  global = false
+{% endraw %}

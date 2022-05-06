@@ -1,0 +1,41 @@
+jaeger_hostname: jaeger-stage.mobiledgex.net
+jaeger_endpoint: "https://{{ jaeger_hostname }}:14268/api/traces"
+console_vnc_hostname: console-stage-vnc.mobiledgex.net
+notifyroot_hostname: notifyroot-stage.mobiledgex.net
+vault_address: https://vault-stage.mobiledgex.net
+esproxy_address: https://events-stage.es.mobiledgex.net/
+vault_ha_zones:
+  us: us-west2-a
+  eu: europe-west3-a
+
+vault_ldap_groups:
+  - name: EdgeBox
+    role: edgebox_user
+
+vault_github_teams:
+  - name: edge-cloud-development-team
+    policies:
+      - logins.read.v1
+      - ssh-ansible-user.sign.v1
+      - ssh-machine.sign.v1
+      - ssh-user.sign.v1
+
+vault_github_users:
+  - userid: anand12gupta
+    role: edgebox_user
+  - userid: bibingeorge1986
+    role: cloudlet_admin
+  - userid: franklin-huang-mobiledgex
+    role: edgebox_user
+  - userid: gainsley
+    role: admin
+  - userid: jlmorris3827
+    role: admin
+  - userid: mwilliams-mex
+    role: cloudlet_admin
+  - userid: venkytv
+    role: admin
+  - userid: ashxjain
+    role: admin
+
+crm_instances: []

@@ -1,0 +1,80 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- name: Install nginx
+  apt:
+    name: nginx
+    state: present
+  become: yes
+
+- set_fact:
+    nginx_installed: true
+
+- name: Fetch default interface IP
+  shell: "ip route get 1.1.1.1 | sed -n 's/.* src \\([^ ]*\\).*$/\\1/p'"
+  register: def_intf_ip_cmd
+
+- set_fact:
+    default_interface_ip: "{{ def_intf_ip_cmd.stdout }}"
+
+- name: Install nginx config
+  template:
+    src: "{{ nginx_config_template }}"
+    dest: "/etc/nginx/sites-available/{{ nginx_config_filename }}"
+    mode: 0644
+    backup: yes
+  become: yes
+  when: nginx_config_template is defined
+  notify:
+    - Restart nginx
+
+- name: Enable nginx config
+  file:
+    src: "/etc/nginx/sites-available/{{ nginx_config_filename }}"
+    dest: "/etc/nginx/sites-enabled/{{ nginx_config_filename }}"
+    state: link
+  become: yes
+  notify:
+    - Restart nginx
+
+- name: Disable server tokens
+  lineinfile:
+    path: /etc/nginx/nginx.conf
+    regexp: "^\\s*#\\s*server_tokens off;"
+    line: "	server_tokens off;"
+  become: yes
+  notify:
+    - Restart nginx
+
+- name: Allow telegraf access to logs
+  acl:
+    path: /var/log/nginx/access.log
+    entity: telegraf
+    etype: group
+    permissions: r
+    state: present
+  become: yes
+
+- name: Set up logrotate
+  copy:
+    src: logrotate.conf
+    dest: /etc/logrotate.d/nginx
+    mode: 0644
+  become: yes
+
+- import_tasks: certs.yml
+  when: cert_domains is defined and cert_domains|length > 0
+
+- meta: flush_handlers

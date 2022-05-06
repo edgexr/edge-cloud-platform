@@ -1,0 +1,10 @@
+kind: role
+version: v4
+metadata:
+  name: tefmgr
+spec:
+  allow:
+    logins:
+    - {{ tef_mgr }}
+    node_labels:
+      env: bastion

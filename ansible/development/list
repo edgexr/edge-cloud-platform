@@ -1,0 +1,60 @@
+[all:vars]
+deploy_environ=dev
+ubuntu_release=bionic
+monitor_version=latest
+deploy_target="mexplat-{{ deploy_environ }}"
+operator_key=GDDT
+openstack_instance=buckhorn
+dme_carrier=GDDT
+locver_url="http://mexdemo.locsim.mobiledgex.net:8888/verifyLocation"
+toksrv_url="http://mexdemo.tok.mobiledgex.net:9999/its?followURL=https://dme.mobiledgex.net/verifyLoc"
+vault_vm_hostname=vault-dev.mobiledgex.net
+vault_port=443
+postgres_hostname=postgres-dev.mobiledgex.net
+gitlab_vm_hostname=gitlab-dev.mobiledgex.net
+crm_vm_hostname=crm-dev.mobiledgex.net
+mc_vm_hostname=mc-dev.mobiledgex.net
+console_vm_hostname=console-dev.mobiledgex.net
+gitlab_email_enabled=false
+gitlab_slack_notifications=false
+gitlab_docker_hostname="docker-{{ deploy_environ }}.mobiledgex.net"
+azure_volume_storage_class=default
+influxdb_volume_size=2Gi
+vault_ha_domain="vault-{{ deploy_environ }}.mobiledgex.net"
+console_prod=no
+alertmanager_hostname=alertmanager-{{ deploy_environ }}.mobiledgex.net
+influxdb_backup_disabled=true
+etcd_quota_backend="150 MB"
+etcd_auto_compaction_retention=2
+letsencrypt_env=staging
+federated_mc=true
+app_dns_root="mobiledgex-{{ deploy_environ }}.net"
+
+[notifyroot]
+notifyroot-dev.mobiledgex.net
+
+[platform]
+localhost	ansible_connection=local
+
+[gitlab]
+gitlab-dev.mobiledgex.net
+
+[postgres]
+postgres-dev.mobiledgex.net
+
+[vault]
+vault-dev-a.mobiledgex.net
+vault-dev-b.mobiledgex.net
+vault-dev-c.mobiledgex.net
+
+[console]
+console-dev.mobiledgex.net
+
+[jaeger]
+jaeger-dev.mobiledgex.net	nginx_config_filename=jaeger jaeger_ui_port=8443
+
+[alertmanager]
+alertmanager-dev.mobiledgex.net
+
+[esproxy]
+events-dev.es.mobiledgex.net

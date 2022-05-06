@@ -1,0 +1,962 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- hosts: influxdb
+  vars:
+    chronograf_google_creds_path: "secret/ansible/{{ deploy_environ }}/accounts/chronograf_google"
+    influxdb_conf_file: /etc/influxdb/influxdb.conf
+    ansible_managed_header: "MANAGED BY ANSIBLE"
+    chronograf_version: 1.8.5
+    chronograf_checksum: "sha256:fb52a9bc691949ce9131574586bb69d3422d5c64085a77923da26f78bc57387f"
+    chronograf_canned_path: /usr/share/chronograf/canned
+    kapacitor_version: 1.5.4-1
+    kapacitor_checksum: "md5:fcb4b7ee7a9be484f0d0a73a61795a29"
+    kapacitor_conf_file: /etc/kapacitor/kapacitor.conf
+    kapacitor_load_dir: /etc/kapacitor/load
+
+  tasks:
+
+    - import_role:
+        name: ntp
+      tags: setup
+
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+
+    - name: Add InfluxDB GPG key
+      apt_key:
+        url: https://repos.influxdata.com/influxdb.key
+      become: yes
+      tags: setup
+
+    - name: Add InfluxDB repo
+      apt_repository:
+        repo: "deb https://repos.influxdata.com/ubuntu {{ ubuntu_release }} stable"
+      become: yes
+      tags: setup
+
+    - name: Install InfluxDB
+      apt:
+        name: influxdb
+        update_cache: yes
+      become: yes
+      tags: setup
+
+    - name: "Download Kapacitor v{{ kapacitor_version }}"
+      get_url:
+        url: "https://dl.influxdata.com/kapacitor/releases/kapacitor_{{ kapacitor_version }}_amd64.deb"
+        dest: "{{ ansible_env.HOME }}/kapacitor_{{ kapacitor_version }}_amd64.deb"
+        checksum: "{{ kapacitor_checksum }}"
+      register: kapacitor_download
+      tags: setup
+
+    - name: Install Kapacitor
+      apt:
+        deb: "{{ kapacitor_download.dest }}"
+      become: yes
+      tags: setup
+
+    - name: "Download Chronograf v{{ chronograf_version }}"
+      get_url:
+        url: "https://dl.influxdata.com/chronograf/releases/chronograf_{{ chronograf_version }}_amd64.deb"
+        dest: "{{ ansible_env.HOME }}/chronograf_{{ chronograf_version }}_amd64.deb"
+        checksum: "{{ chronograf_checksum }}"
+      register: chronograf_download
+      tags: setup
+
+    - name: Install Chronograf
+      apt:
+        deb: "{{ chronograf_download.dest }}"
+      become: yes
+      tags: setup
+
+    - name: Set up certs
+      import_role:
+        name: web
+      vars:
+        nginx_config_template: "internal/chronograf/nginx-config.j2"
+        cert_domains: [ "{{ influxdb_vm_hostname }}" ]
+        post_renewal_hooks:
+          - hook_name: influxdb_restart
+            hook_content: "{{ lookup('template', 'internal/influxdb_restart.hook.j2') }}"
+      tags: setup
+
+    - include_role:
+        name: cert_access
+      vars:
+        cert_hostname: "{{ influxdb_vm_hostname }}"
+      loop:
+        - influxdb
+        - kapacitor
+        - chronograf
+      loop_control:
+        loop_var: cert_user
+      tags: setup
+
+    - name: Install pip
+      apt:
+        name: python3-pip
+        state: present
+      become: yes
+      tags: setup
+
+    - name: Install influxdb python module
+      pip:
+        name: influxdb
+      become: yes
+      tags: setup
+
+    - name: Look up credentials in vault
+      set_fact:
+        vault_lookup: "{{ lookup('vault', vault_influxdb_creds_path, chronograf_google_creds_path) }}"
+
+    - set_fact:
+        influxdb_user: "{{ vault_lookup.influxdb.data.user }}"
+        influxdb_password: "{{ vault_lookup.influxdb.data.pass }}"
+        influxdb_creds_version: "{{ vault_lookup.influxdb.metadata.version }}"
+        influxdb_old_user: "{{ vault_lookup.influxdb.data.user }}"
+        influxdb_old_password: "{{ vault_lookup.influxdb.data.pass }}"
+        chronograf_google_client_id: "{{ vault_lookup.chronograf_google.data.client_id }}"
+        chronograf_google_client_secret: "{{ vault_lookup.chronograf_google.data.client_secret }}"
+        chronograf_google_token_secret: "{{ vault_lookup.chronograf_google.data.token_secret }}"
+
+    - block:
+      - set_fact:
+          vault_lookup: "{{ lookup('vault', old_version) }}"
+        vars:
+          old_version: "{{ vault_influxdb_creds_path }}@{{ influxdb_creds_version|int - 1 }}"
+
+      - set_fact:
+          influxdb_old_user: "{{ vault_lookup.influxdb.data.user }}"
+          influxdb_old_password: "{{ vault_lookup.influxdb.data.pass }}"
+      when: influxdb_creds_version|int > 1
+
+    - name: Check if initial setup is complete
+      lineinfile:
+        path: "{{ influxdb_conf_file }}"
+        regexp: "{{ ansible_managed_header }}"
+        state: absent
+      check_mode: yes
+      register: setup_complete_header
+
+    - block:
+
+      - name: Copy initial config
+        template:
+          src: internal/influxdb.conf.j2
+          dest: "{{ influxdb_conf_file }}"
+        vars:
+          ansible_header: "TEMPORARY"
+          influxdb_auth_enabled: "false"
+        become: yes
+
+      - name: Ensure InfluxDB is running
+        systemd:
+          name: influxdb
+          enabled: yes
+          state: restarted
+        become: yes
+
+      - name: Set up admin account
+        influxdb_user:
+          hostname: "{{ influxdb_vm_hostname }}"
+          ssl: yes
+          user_name: "{{ influxdb_user }}"
+          user_password: "{{ influxdb_password }}"
+          admin: yes
+
+      when: not setup_complete_header.found
+
+    - name: Set up InfluxDB config
+      template:
+        src: internal/influxdb.conf.j2
+        dest: "{{ influxdb_conf_file }}"
+      become: yes
+      notify:
+        - Restart InfluxDB
+
+    - meta: flush_handlers
+
+    - name: Set up admin account
+      influxdb_user:
+        hostname: "{{ influxdb_vm_hostname }}"
+        ssl: yes
+        user_name: "{{ influxdb_user }}"
+        user_password: "{{ influxdb_password }}"
+        login_username: "{{ influxdb_user }}"
+        login_password: "{{ influxdb_password }}"
+        admin: yes
+      ignore_errors: yes
+      register: influx_admin_account
+
+    - name: Admin password change
+      influxdb_user:
+        hostname: "{{ influxdb_vm_hostname }}"
+        ssl: yes
+        user_name: "{{ influxdb_user }}"
+        user_password: "{{ influxdb_password }}"
+        login_username: "{{ influxdb_old_user }}"
+        login_password: "{{ influxdb_old_password }}"
+        admin: yes
+      when:
+        - influx_admin_account.failed is defined
+        - 'influx_admin_account.failed | bool'
+        - '"authorization failed" in influx_admin_account.msg'
+
+    - name: Set up databases
+      influxdb_database:
+        hostname: "{{ influxdb_vm_hostname }}"
+        ssl: yes
+        database_name: "{{ item }}"
+        state: present
+        username: "{{ influxdb_user }}"
+        password: "{{ influxdb_password }}"
+      loop:
+        - jenkins
+
+    - name: Set up Kapacitor config
+      template:
+        src: internal/kapacitor.conf.j2
+        dest: "{{ kapacitor_conf_file }}"
+      become: yes
+
+    - name: Ensure Kapacitor is running
+      systemd:
+        name: kapacitor
+        enabled: yes
+        state: started
+      become: yes
+
+    - name: Copy kapacitor tasks
+      copy:
+        src: "files/kapacitor/tasks/{{ taskfile }}"
+        dest: "{{ kapacitor_load_dir }}/tasks/"
+      loop:
+        - cloudflare-dns-entries.tick
+        - cpu-usage.tick
+        - disk-usage.tick
+        - elasticsearch-status.tick
+        - etcd-db.tick
+        - memory-usage.tick
+        - vault-seal-status.tick
+      loop_control:
+        loop_var: taskfile
+      notify:
+        - Reload Kapacitor
+      tags: kapacitor-tasks
+
+    - name: Set up Chronograf environment
+      template:
+        src: "internal/chronograf/environment.j2"
+        dest: /etc/default/chronograf
+      become: yes
+      notify:
+        - Restart Chronograf
+
+    - name: Install Chronograf sources
+      template:
+        src: "internal/chronograf/{{ chronograf_conf }}.j2"
+        dest: "{{ chronograf_canned_path }}/{{ chronograf_conf }}"
+        owner: chronograf
+        group: chronograf
+        mode: 0400
+      become: yes
+      loop:
+        - influxdb.src
+        - kapacitor.kap
+      loop_control:
+        loop_var: chronograf_conf
+      notify:
+        - Restart Chronograf
+
+    - meta: end_play
+
+  handlers:
+    - name: Restart InfluxDB
+      systemd:
+        name: influxdb
+        enabled: yes
+        state: restarted
+        daemon_reload: yes
+      become: yes
+
+    - name: Restart Chronograf
+      systemd:
+        name: chronograf
+        enabled: yes
+        state: restarted
+        daemon_reload: yes
+      become: yes
+
+    - name: Reload Kapacitor
+      command: pkill -HUP kapacitord
+      become: yes
+
+- hosts: vouch
+  vars:
+    vouch_image: "voucher/vouch-proxy:0.6.6"
+    vouch_google_creds_path: "secret/ansible/{{ deploy_environ }}/accounts/vouch_google"
+    vouch_conf_file: "/etc/vouch/config.yml"
+    vouch_data_dir: "/var/vouch"
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+    - import_role:
+        name: telegraf
+      tags:
+        - monitoring
+        - setup
+    - import_role:
+        name: docker
+      tags: setup
+    - import_role:
+        name: web
+      vars:
+        nginx_config_template: "internal/vouch/nginx-config.j2"
+        nginx_config_filename: "vouch"
+        cert_domains: [ "{{ inventory_hostname }}" ]
+      tags: setup
+
+    - name: Make vouch directories
+      file:
+        path: "{{ dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: 0700
+      become: yes
+      loop:
+        - "{{ vouch_conf_file | dirname }}"
+        - "{{ vouch_data_dir }}"
+      loop_control:
+        loop_var: dir
+
+    - name: Look up credentials in vault
+      set_fact:
+        vault_lookup: "{{ lookup('vault', vouch_google_creds_path) }}"
+    - set_fact:
+        vouch_google_client_id: "{{ vault_lookup.vouch_google.data.client_id }}"
+        vouch_google_client_secret: "{{ vault_lookup.vouch_google.data.client_secret }}"
+
+    - name: Install vouch config
+      template:
+        src: "internal/vouch/config.yml.j2"
+        dest: "{{ vouch_conf_file }}"
+        owner: root
+        group: root
+        mode: 0400
+      become: yes
+
+    - name: Deploy vouch
+      docker_container:
+        name: vouch
+        image: "{{ vouch_image }}"
+        restart_policy: unless-stopped
+        ports:
+          - "127.0.0.1:9090:9090"
+        volumes:
+          - "{{ vouch_conf_file | dirname }}:/config"
+          - "{{ vouch_data_dir }}:/data"
+
+- hosts: elasticsearch
+  vars:
+    elasticsearch_version: 7.4.0 
+    cert_sync_script: /usr/local/bin/es-cert-sync.sh
+    es_conf_dir: /etc/es
+    cert_sync_dir: certs
+    es_certs_dir: /usr/share/elasticsearch/config/certificates/es
+    kibana_conf: /etc/kibana.yml
+
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+    - import_role:
+        name: telegraf
+      tags:
+        - monitoring
+        - setup
+
+    - import_role:
+        name: docker
+      tags: setup
+
+    - set_fact:
+        es_domain: "*.{{ cert_wildcard_domain }}"
+      tags: setup
+
+    - import_role:
+        name: web
+        tasks_from: certs
+      vars:
+        cert_domains: [ "{{ es_domain }}" ]
+        post_renewal_hooks:
+          - hook_name: es-cert-sync
+            hook_content: |-
+              #!/bin/bash
+              exec {{ cert_sync_script }}
+      tags: setup
+
+    - name: Install pip
+      apt:
+        name: python3-pip
+        state: present
+      become: yes
+      tags: setup
+
+    - name: Install docker-compose python module
+      pip:
+        name: docker-compose
+      become: yes
+      tags: setup
+
+    - name: Bump up virtual memory map counts
+      sysctl:
+        name: vm.max_map_count
+        value: 262144
+        sysctl_set: yes
+      become: yes
+      tags: setup
+
+    - name: Compute vault path for creds
+      set_fact:
+        vault_es_path: "secret/ansible/internal/accounts/elasticsearch/{{ es_instance | default('main') }}:es"
+
+    - name: Look up elasticsearch credentials in vault
+      set_fact:
+        vault_lookup: "{{ lookup('vault', vault_es_path) }}"
+
+    - set_fact:
+        es_url: "{{ vault_lookup.es.data.url }}"
+        es_jaeger_user: "{{ vault_lookup.es.data.user }}"
+        es_jaeger_pass: "{{ vault_lookup.es.data.pass }}"
+        es_root_user: "{{ vault_lookup.es.data.root_user }}"
+        es_root_pass: "{{ vault_lookup.es.data.root_pass }}"
+
+    - name: Set up the config dir
+      file:
+        path: "{{ es_conf_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: 0700
+      become: yes
+      tags: setup
+
+    - name: Install the cert sync script
+      template:
+        src: internal/elasticsearch/es-cert-sync.sh.j2
+        dest: "{{ cert_sync_script }}"
+        owner: root
+        group: root
+        mode: 0755
+      become: yes
+      register: script
+
+    - name: Run the cert sync script
+      command: "{{ cert_sync_script }}"
+      become: yes
+      when: script.changed
+
+    - name: Install the docker compose manifest
+      template:
+        src: internal/elasticsearch/docker-compose.yml.j2
+        dest: "{{ es_conf_dir }}/docker-compose.yml"
+      become: yes
+
+    - name: Start the elasticsearch services
+      docker_compose:
+        project_name: es
+        project_src: "{{ es_conf_dir }}"
+      become: yes
+      register: compose
+
+    - name: Wait for cluster to come up
+      uri:
+        url: "https://{{ inventory_hostname }}:9200/_cat/health"
+        user: "{{ es_root_user }}"
+        password: "{{ es_root_pass }}"
+        force_basic_auth: yes
+        return_content: yes
+      delegate_to: localhost
+      check_mode: no
+      register: result
+      until: '"docker-cluster green" in result.content'
+      retries: 20
+      delay: 15
+
+    - debug: var=result.content
+
+    - name: Add the jaeger role
+      uri:
+        url: "https://{{ inventory_hostname }}:9200/_security/role/{{ es_jaeger_user }}"
+        method: POST
+        user: "{{ es_root_user }}"
+        password: "{{ es_root_pass }}"
+        force_basic_auth: yes
+        body: "{{ lookup('template', 'internal/elasticsearch/jaeger-role.j2') }}"
+        body_format: json
+        status_code: 200
+      delegate_to: localhost
+
+    - name: Add the jaeger user
+      uri:
+        url: "https://{{ inventory_hostname }}:9200/_security/user/{{ es_jaeger_user }}"
+        method: POST
+        user: "{{ es_root_user }}"
+        password: "{{ es_root_pass }}"
+        force_basic_auth: yes
+        body: "{{ lookup('template', 'internal/elasticsearch/jaeger-user.j2') }}"
+        body_format: json
+        status_code: 200
+      delegate_to: localhost
+
+- hosts: slack
+  vars:
+    slack_org_mgmt_image: "{{ mex_docker_registry }}/mobiledgex/slack-org-mgmt:1.2.4"
+    slack_org_mgmt_log: slack-org-mgmt.log
+    skipped_channel_file: "{{ ansible_env.HOME }}/skipped-channels.txt"
+    support_users:
+      - thomas.vits.external@mobiledgex.com
+      - vasanth.mohan@mobiledgex.com
+      - wonho.park@mobiledgex.com
+
+  tasks:
+
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+
+    - import_role:
+        name: telegraf
+      tags:
+        - monitoring
+        - setup
+
+    - import_role:
+        name: docker
+      tags: setup
+
+    - import_role:
+        name: load-vault-creds
+        tasks_from: slack_org_mgmt
+
+    - name: Create skipped channels list
+      copy:
+        content: ""
+        dest: "{{ skipped_channel_file }}"
+        force: no
+
+    - name: Install Slack org mgmt cronjob
+      cron:
+        name: Slack org mgmt
+        minute: "*/2"
+        job: 'docker run --rm
+            -e SLACK_TOKEN="{{ slack_token }}"
+            -e SLACK_LEGACY_TOKEN="{{ slack_legacy_token }}"
+            -e MC_USER="{{ mc_user }}"
+            -e MC_PASS="{{ mc_pass }}"
+            -e LOG_WEBHOOK="{{ slack_webhook }}"
+            -v "{{ skipped_channel_file }}:/skipped-channels.txt"
+            "{{ slack_org_mgmt_image }}" --skip-channels /skipped-channels.txt --support {{ support_users|join(" ") }}
+            >>~/{{ slack_org_mgmt_log }} 2>&1'
+
+- hosts: apt
+  vars:
+    aptly_dir: /var/aptly
+    apt_user: apt
+    apt_pass: mobiledgex
+    htpasswd_file: /etc/nginx/htpasswd
+
+  tasks:
+
+    - import_role:
+        name: ntp
+      tags: setup
+
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+
+    - import_role:
+        name: telegraf
+      tags:
+        - monitoring
+        - setup
+
+    - name: Install packages
+      apt:
+        name:
+          - aptly
+          - apache2-utils
+        update_cache: yes
+      become: yes
+      tags: setup
+
+    - name: Generate htpasswd file
+      command: "htpasswd -bc {{ htpasswd_file }} {{ apt_user }} {{ apt_pass }}"
+      args:
+        creates: "{{ htpasswd_file }}"
+      become: yes
+
+    - import_role:
+        name: web
+      vars:
+        nginx_config_template: "internal/apt/nginx-config.j2"
+        cert_domains: [ "{{ inventory_hostname }}" ]
+      tags: setup
+
+    - name: Add aptly GPG key
+      apt_key:
+        keyserver: pool.sks-keyservers.net
+        id: ED75B5A4483DA07C
+      become: yes
+      tags: setup
+
+    - name: Add aptly repo
+      apt_repository:
+        repo: "deb http://repo.aptly.info/ squeeze main"
+      become: yes
+      tags: setup
+
+    - name: Set up aptly publish directory
+      file:
+        name: "{{ aptly_dir }}/public"
+        state: directory
+        owner: ansible
+        group: ansible
+      become: yes
+
+    - name: Copy the GPG batch file
+      template:
+        src: templates/internal/apt/gpg-key.batch.j2
+        dest: "{{ aptly_dir }}/gpg-key.batch"
+        mode: 0444
+
+    - name: Generate GPG key
+      command: "gpg --batch --gen-key {{ aptly_dir }}/gpg-key.batch"
+      args:
+        creates: ~/.gnupg/trustdb.gpg
+
+    - name: Generate GPG signing public key
+      command: "gpg --export --armor {{ mex_ops_email }}"
+      changed_when: false
+      register: pubkey
+
+    - name: Publish GPG signing public key
+      copy:
+        content: "{{ pubkey.stdout }}"
+        dest: "{{ aptly_dir }}/public/gpg.key"
+
+    - name: Install aptly config
+      template:
+        src: templates/internal/apt/aptly.conf.j2
+        dest: /etc/aptly.conf
+        mode: 0444
+      become: yes
+
+- hosts: backups
+  vars:
+    gcp_service_account_path: "/etc/gcp-backup-service-principal.json"
+    backups_docker: backups_registry
+    htpasswd_file: /etc/htpasswd
+    backup_cron: /usr/local/bin/backup.cron
+    backup_log: /var/log/backup.log
+
+  tasks:
+
+    - import_role:
+        name: ntp
+      tags: setup
+
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+
+    - import_role:
+        name: docker
+      vars:
+        docker_skip_registry_login: yes
+      tags: setup
+
+    - import_role:
+        name: web
+        tasks_from: certs
+      vars:
+        cert_domains: [ "{{ inventory_hostname }}" ]
+        post_renewal_hooks:
+          - hook_name: docker_restart
+            hook_content: "{{ lookup('template', 'backups/docker_restart.hook.j2') }}"
+      tags: setup
+
+    - name: Install depedencies
+      apt:
+        name:
+          - apache2-utils
+          - duplicity
+          - python-pip
+      become: yes
+      tags: setup
+
+    - name: Install pip components
+      pip:
+        name:
+          - azure-storage==0.20.0
+        executable: pip2
+      become: yes
+      tags: setup
+
+    - name: Retrieve GCP service account from vault
+      set_fact:
+        vault_lookup: "{{ lookup('vault', path) }}"
+      vars:
+        path: "secret/ansible/{{ deploy_environ }}/accounts/gcp-backup-service-principal.json:service_account"
+      register: result
+      retries: 6
+      delay: 10
+      until: result is not failed
+      tags: setup
+
+    - name: Set up GCP service account credentials
+      copy:
+        dest: "{{ gcp_service_account_path }}"
+        content: "{{ vault_lookup.service_account.data }}"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: 0400
+      become: yes
+      tags: setup
+
+    - name: Register gsutil
+      command: "gcloud auth activate-service-account --key-file={{ gcp_service_account_path }}"
+      environment:
+        PATH: "/usr/bin:/bin:/snap/bin"
+      tags: setup
+
+    - name: Get backups creds
+      set_fact:
+        vault_lookup: "{{ lookup('vault', 'secret/registry/backups.mobiledgex.net:creds') }}"
+
+    - set_fact:
+        docker_user: "{{ vault_lookup.creds.data.username }}"
+        docker_pass: "{{ vault_lookup.creds.data.password }}"
+
+    - name: Generate htpasswd file
+      command: "htpasswd -Bbc {{ htpasswd_file }} {{ docker_user }} {{ docker_pass }}"
+      args:
+        creates: "{{ htpasswd_file }}"
+      become: yes
+
+    - name: Set up the backup docker registry
+      docker_container:
+        name: "{{ backups_docker }}"
+        image: registry:2
+        restart_policy: unless-stopped
+        volumes:
+          - "{{ htpasswd_file }}:{{ htpasswd_file }}"
+          - "{{ ansible_env.HOME }}/gitlab-registry:/var/lib/registry:ro"
+          - "/etc/letsencrypt/live/{{ inventory_hostname }}:/certs:ro"
+          - "/etc/letsencrypt/archive/{{ inventory_hostname }}:/archive/{{ inventory_hostname }}:ro"
+        env:
+          REGISTRY_AUTH: htpasswd
+          REGISTRY_AUTH_HTPASSWD_REALM: "Registry Realm"
+          REGISTRY_AUTH_HTPASSWD_PATH: "{{ htpasswd_file }}"
+          REGISTRY_HTTP_TLS_CERTIFICATE: /certs/fullchain.pem
+          REGISTRY_HTTP_TLS_KEY: /certs/privkey.pem
+        ports:
+          - "5000:5000"
+
+    - name: Fetch the Slack webhook
+      set_fact:
+        vault_lookup: "{{ lookup('vault', 'secret/ansible/common/accounts/slack_webhooks/support') }}"
+
+    - set_fact:
+        slack_webhook: "{{ vault_lookup.support.data.url }}"
+
+    - name: Copy cron script
+      template:
+        src: backups/backup.cron
+        dest: "{{ backup_cron }}"
+        mode: "0555"
+      become: yes
+
+    - name: Set up the log file
+      copy:
+        content: ""
+        dest: "{{ backup_log }}"
+        force: no
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0600"
+      become: yes
+
+    - name: Install the backup cronjob
+      cron:
+        name: Backup
+        minute: "25"
+        hour: "6"
+        job: "{{ backup_cron }}"
+
+    - name: Set up log rotation
+      template:
+        src: backups/logrotate.conf.j2
+        dest: /etc/logrotate.d/backups
+      become: yes
+
+- hosts: chef
+
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+    - import_role:
+        name: chef
+
+- hosts: monitor
+
+  vars:
+    grafana_image: grafana/grafana:7.1.5
+    volumes:
+      - /etc/grafana
+      - /var/lib/grafana
+      - /var/log/grafana
+    grafana_google_creds_path: "secret/ansible/{{ deploy_environ }}/accounts/grafana_google"
+
+  tasks:
+
+    - import_role:
+        name: ntp
+      tags: setup
+
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+
+    - import_role:
+        name: telegraf
+      tags:
+        - monitoring
+        - setup
+
+    - import_role:
+        name: docker
+      tags: setup
+
+    - import_role:
+        name: web
+      vars:
+        nginx_config_template: "internal/monitor/nginx-config.j2"
+        cert_domains: [ "{{ inventory_hostname }}" ]
+      tags: setup
+
+    - name: Create grafana directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: 472
+        group: 472
+        mode: 0700
+      become: yes
+      loop: "{{ volumes }}"
+
+    - name: Look up credentials in vault
+      set_fact:
+        vault_lookup: "{{ lookup('vault', grafana_google_creds_path) }}"
+
+    - set_fact:
+        grafana_google_client_id: "{{ vault_lookup.grafana_google.data.client_id }}"
+        grafana_google_client_secret: "{{ vault_lookup.grafana_google.data.client_secret }}"
+
+    - name: Deploy grafana
+      docker_container:
+        name: grafana
+        image: "{{ grafana_image }}"
+        restart_policy: unless-stopped
+        env:
+          GF_DEFAULT_INSTANCE_NAME: "{{ inventory_hostname }}"
+          GF_SERVER_DOMAIN: "{{ inventory_hostname }}"
+          GF_SERVER_ROOT_URL: "https://{{ inventory_hostname }}/"
+          GF_AUTH_GOOGLE_ENABLED: "true"
+          GF_AUTH_GOOGLE_CLIENT_ID: "{{ grafana_google_client_id }}"
+          GF_AUTH_GOOGLE_CLIENT_SECRET: "{{ grafana_google_client_secret }}"
+          GF_AUTH_GOOGLE_SCOPES: https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email
+          GF_AUTH_GOOGLE_AUTH_URL: https://accounts.google.com/o/oauth2/auth
+          GF_AUTH_GOOGLE_TOKEN_URL: https://accounts.google.com/o/oauth2/token
+          GF_AUTH_GOOGLE_ALLOWED_DOMAINS: mobiledgex.com
+          GF_AUTH_GOOGLE_ALLOW_SIGN_UP: "true"
+
+        ports:
+          - "127.0.0.1:3000:3000"
+        volumes: "{{ volumes | zip(volumes) | map('join', ':') | list }}"
+
+- hosts: teleport
+  vars_prompt:
+    - name: ansible_become_pass
+      prompt: Sudo password for ansible account
+      private: yes
+
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+
+    - import_role:
+        name: telegraf
+      tags:
+        - monitoring
+        - setup
+
+    - import_role:
+        name: teleport
+
+- hosts: trivy
+  tasks:
+    - import_role:
+        name: ntp
+      tags: setup
+
+    - import_role:
+        name: vault
+        tasks_from: vault-ssh
+
+    - import_role:
+        name: telegraf
+      tags:
+        - monitoring
+        - setup
+
+    - import_role:
+        name: docker
+      vars:
+        docker_skip_registry_login: true
+      tags: setup
+
+    - import_role:
+        name: trivy

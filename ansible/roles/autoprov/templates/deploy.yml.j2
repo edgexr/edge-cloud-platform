@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autoprov
+  labels:
+    app: autoprov
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: autoprov
+  template:
+    metadata:
+      labels:
+        app: autoprov
+    spec:
+      containers:
+      - name: autoprov
+        image: "{{ edge_cloud_image }}-autoprov:{{ edge_cloud_version }}"
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "100Mi"
+          limits:
+            cpu: "100m"
+            memory: "200Mi"
+        command:
+         - "autoprov"
+         - "--ctrlAddrs"
+         - "{{ controller_hostname }}:55001"
+         - "-influxAddr"
+         - "https://{{ influxdb_dns }}.{{ cloudflare_zone }}:8086"
+         - "--notifyAddrs"
+         - "{{ controller_hostname }}:{{ controller_notify_port }}"
+         - "--region"
+         - "{{ region }}"
+         - "--vaultAddr"
+         - "https://{{ vault_vm_hostname }}:{{ vault_port }}"
+         - "--useVaultPki"
+         - "--deploymentTag"
+         - "{{ deployment_tag_override | default(deploy_environ) }}"
+         - "-d"
+         - "infra,notify,api"
+        env:
+         - name: JAEGER_ENDPOINT
+           value: "{{ jaeger_endpoint }}"
+         - name: JAEGER_TAGS
+           value: "environ={{ deploy_environ }},version={{ edge_cloud_version }}"
+         - name: VAULT_ROLE_ID
+           value: "{{ autoprov_role.role_id }}"
+         - name: VAULT_SECRET_ID
+           value: "{{ autoprov_role.secret_id }}"
+         - name: ES_SERVER_URLS
+           value: "{{ esproxy_address }}"
+      imagePullSecrets:
+       - name: mexreg-secret 

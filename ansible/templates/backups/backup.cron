@@ -1,0 +1,36 @@
+#!/bin/bash
+PATH="/usr/bin:/bin:$HOME/google-cloud-sdk/bin:/snap/bin"; export PATH
+
+LOG="{{ backup_log }}"
+exec >>"$LOG" 2>&1
+
+slack_notify() {
+	local _msg
+	curl -X POST -H 'Content-type: application/json' \
+		--data "{\"text\": \"${_msg}\"}" \
+		{{ slack_webhook }}
+}
+trap 'slack_notify "Error performing backup: $( hostname )"' ERR
+
+backup() {
+        local _bucket
+        _bucket="$1"; shift
+        echo
+        echo "[$(date)] Backing up $_bucket (options: \"$*\")"
+        mkdir -p "$HOME/$_bucket"
+        gsutil -m rsync -d -r "$@" "gs://$_bucket/" "$HOME/$_bucket/"
+}
+
+echo
+echo "=========== $( date ) BACKUP BEGIN ==========="
+echo
+START=$( date +'%s' )
+
+backup gitlab-registry
+backup mex-vault-main -x '^sys/expire'
+
+echo
+echo "=========== $( date ) BACKUP DONE ==========="
+END=$( date +'%s' )
+
+slack_notify "Backup took $(( ( END - START ) % 60 )) minutes: $( hostname )"

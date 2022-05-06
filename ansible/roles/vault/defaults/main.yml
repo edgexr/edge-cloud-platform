@@ -1,0 +1,112 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+vault_version: 1.5.5
+vault_checksum: sha256:2a6958e6c8d6566d8d529fe5ef9378534903305d0f00744d526232d1c860e1ed
+vault_letsencrypt_plugin: "{{ artifactory_address }}/binaries/vault-letsencrypt-plugin/1.1/letsencrypt-plugin"
+vault_letsencrypt_plugin_sha256sum: e111a2db44059d0e460178ec25eaab72c7b44667d5a0f89fcae18d37ad86155d
+certgen_image_version: 2022-04-01
+app_dns_root: mobiledgex.net
+
+vault_github_teams:
+  - name: edge-cloud-development-team
+    policies:
+      - logins.read.v1
+      - ssh-user.sign.v1
+
+vault_ldap_groups: []
+
+vault_user_roles:
+
+  viewer: &vault_user_role_viewer
+    - auth-approle.read.v1
+    - aws-auth.read.v1
+    - azure-auth.read.v1
+    - azure-config.read.v1
+    - azure-roles.read.v1
+    - baseimage-password.read.v1
+    - baseimage-totp.read.v1
+    - cloudlets.read.v1
+    - chef.read.v1
+    - gcp-auth.read.v1
+    - gcp-config.read.v1
+    - gcp-rolesets.read.v1
+    - influxdb.read.v1
+    - mexenv.read.v1
+    - noreplyemail.read.v1
+    - pki-global-config.read.v1
+    - pki-global-roles.read.v1
+    - pki-regional-cloudlet-config.read.v1
+    - pki-regional-cloudlet-roles.read.v1
+    - pki-regional-config.read.v1
+    - pki-regional-roles.read.v1
+    - pki-root-config.read.v1
+    - registry.read.v1
+    - root-ca.read.v1
+    - ssh-ansible-user.read.v1
+    - ssh-ansible-user.sign.v1
+    - ssh-ansible.read.v1
+    - ssh-machine.read.v1
+    - ssh-user.read.v1
+    - ssh-user.sign.v1
+    - sys-auth.read.v1
+    - sys-mounts.read.v1
+    - sys-plugins-catalog.read.v1
+    - sys-plugins-certs-config.read.v1
+    - sys-policies.read.v1
+
+  deployer: &vault_user_role_deployer
+    - *vault_user_role_viewer
+    - ansible.read.v1
+    - azure-aks-creds.read.v1
+    - edge-cloud-registry.read.v1
+    - gcp-bucket-create-key.read.v1
+    - gcp-firewall-manage-key.read.v1
+    - gcp-role-create-key.read.v1
+    - transit-etcd-backup.decrypt.v1
+    - transit-etcd-backup.encrypt.v1
+    - transit-keys.list.v1
+
+  editor: &vault_user_role_editor
+    - *vault_user_role_deployer
+    - approle-accessors.write.v1
+    - auth-approle.write.v1
+    - auth-approle.destroy.v1
+    - auth-github-config.read.v1
+    - certs.read.v1
+    - cloudlets.write.v1
+
+  admin:
+    - *vault_user_role_editor
+    - baseimage-totp-key.read.v1
+    - sys-auth.write.v1
+    - sys-policies.write.v1
+
+  edgebox_user:
+    - certs.read.v1
+    - mexenv.read.v1
+    - registry.read.v1
+
+  cloudlet_admin:
+    - baseimage-password.read.v1
+    - baseimage-totp.read.v1
+    - certs.read.v1
+    - cloudlets.write.v1
+    - gcp-auth.read.v1
+    - influxdb.read.v1
+    - mexenv.read.v1
+    - registry.read.v1
+    - ssh-user.sign.v1
+    - teleport-node-token.read.v1

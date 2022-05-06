@@ -1,0 +1,29 @@
+[Unit]
+Description=Tool for managing secrets
+Documentation=https://vaultproject.io/docs/
+After=network.target
+ConditionFileNotEmpty={{ vault_conf }}
+
+[Service]
+User={{ vault_user }}
+Group={{ vault_group }}
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+SecureBits=keep-caps
+AmbientCapabilities=CAP_IPC_LOCK{% if vault_ha_instance_port < 1024 %} CAP_NET_BIND_SERVICE{% endif %}
+
+Capabilities=CAP_IPC_LOCK+ep{% if vault_ha_instance_port < 1024 %} CAP_NET_BIND_SERVICE+ep{% endif %}
+
+CapabilityBoundingSet=CAP_SYSLOG CAP_IPC_LOCK{% if vault_ha_instance_port < 1024 %} CAP_NET_BIND_SERVICE{% endif %}
+
+NoNewPrivileges=yes
+Environment=GOOGLE_APPLICATION_CREDENTIALS={{ storage_service_account_key }}
+ExecStart={{ vault_path }}/vault server -config={{ vault_conf }}
+ExecReload=/bin/kill --signal HUP $MAINPID
+KillMode=process
+KillSignal=SIGINT
+
+[Install]
+WantedBy=multi-user.target

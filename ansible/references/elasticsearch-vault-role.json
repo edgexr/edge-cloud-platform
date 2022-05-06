@@ -1,0 +1,35 @@
+{
+  "vault": {
+    "applications": [],
+    "transient_metadata": {
+      "enabled": true
+    },
+    "run_as": [],
+    "cluster": [
+      "monitor",
+      "manage_ilm",
+      "manage_ml",
+      "manage_index_templates"
+    ],
+    "indices": [
+      {
+        "privileges": [
+          "manage",
+          "read",
+          "index"
+        ],
+        "field_security": {
+          "except": [],
+          "grant": [
+            "*"
+          ]
+        },
+        "allow_restricted_indices": false,
+        "names": [
+          "vault*"
+        ]
+      }
+    ],
+    "metadata": {}
+  }
+}

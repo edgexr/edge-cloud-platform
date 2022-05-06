@@ -1,0 +1,35 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: start cloudlet
+  gather_facts: yes
+  user: ubuntu
+  become: yes
+  hosts: mexservers
+  vars_files:
+    - mex_vars.yml
+ 
+  tasks:
+
+  - name: show CRM startup variables
+    debug:
+       var: crm
+
+  - name: start up crmserver process
+    shell: "nohup {{ crm_remote_bin }} --apiAddr 0.0.0.0:37001 --notifyAddrs {{ crm.ctrladdr }} --cloudletKey '{{ crm.cloudletkey }}' --tls {{ remote_tls_path }}/mex-server.crt  --d api,notify,mexos > {{ remote_log_path }}/{{ crm.name }}.log 2>&1 &"
+    environment:
+      CLOUDLET_KIND: dind
+      NETWORK_SCHEME: publicip
+      MEXENV_URL: https://vault.mobiledgex.net/v1/secret/data/cloudlet/openstack/mexenv.json
+

@@ -1,0 +1,54 @@
+dbrp "cloudflare"."autogen"
+
+var name = 'Cloudflare DNS Entries'
+
+var info = 2500
+
+var warn = 3000
+
+var crit = 3250
+
+var period = 60m
+
+var every = 60m
+
+var outputDB = 'chronograf'
+
+var outputRP = 'autogen'
+
+var outputMeasurement = 'alerts'
+
+var triggerType = 'threshold'
+
+// Dataframe
+var data = batch
+    |query('''SELECT last("value") AS "nrecs" FROM "cloudflare"."autogen"."num_records" ''')
+        .period(period)
+        .every(every)
+
+// Thresholds
+var alert = data
+    |alert()
+        .id(name)
+        .message('{{ .Level }}: {{ .ID }}: {{ index .Fields "nrecs" }} records')
+        .info(lambda: "nrecs" > info)
+        .warn(lambda: "nrecs" > warn)
+        .crit(lambda: "nrecs" > crit)
+        .pagerDuty2()
+        .slack()
+        .channel('#alerts')
+
+alert
+    |eval(lambda: int("nrecs"))
+        .as('nrecs')
+        .keep()
+    |influxDBOut()
+        .create()
+        .database(outputDB)
+        .retentionPolicy(outputRP)
+        .measurement(outputMeasurement)
+        .tag('alertName', name)
+        .tag('triggerType', triggerType)
+
+alert
+    |httpOut('output')

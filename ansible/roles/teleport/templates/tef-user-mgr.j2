@@ -1,0 +1,67 @@
+#!/bin/bash
+PATH='/usr/bin:/bin:/usr/local/bin'; export PATH
+
+USAGE="usage: $( basename $0 ) <command>
+
+  add <user> <org> [<org>...]  Add Sonoral user account to orgs
+  ls                           List Sonoral user accounts
+  rm <user>                    Remove Sonoral user account
+"
+
+add_user() {
+    if [[ $# -lt 2 ]]; then
+        echo "usage: $( basename $0 ) $COMM <user> <org> [<org>...]" >&2
+        exit 1
+    fi
+
+    username="$1"; shift
+    roles=
+
+    for org in "$@"; do
+        d="$( echo "$org" | tr 'A-Z' 'a-z' | sed 's/^sonoral-//' )"
+        case "$d" in
+            sonoral|{{ sonoral_divisions|map('lower')|join('|') }}) true ;;
+            *) echo "error: unknown org: $org" >&2; exit 1 ;;
+        esac
+        rolename="$d"
+        [[ "$rolename" != sonoral ]] && rolename="sonoral-${rolename}"
+
+        roles="${roles},${rolename}"
+    done
+
+    # Strip leading comma
+    roles="${roles#,}"
+
+    tctl users add "$username" --roles="$roles"
+}
+
+ls_users() {
+    [[ -n "$1" ]] && userfilt="^$1\$" || userfilt='.'
+    # Print header and lines with "sonoral" in the roles column
+    tctl users ls | awk -v user="$userfilt" 'NR < 3 || ( $1 ~ user && $2 ~ "sonoral" )'
+}
+
+rm_user() {
+    username="$1"
+    if [[ -z "$username" ]]; then
+        echo "usage: $( basename $0 ) $COMM <user>" >&2
+        exit 1
+    fi
+
+    # Match username with "sonoral" in the roles column
+    tefuser=$( tctl users ls | awk -v tefuser="$username" '$1 == tefuser && $2 ~ "sonoral" {print $1}' )
+    if [[ "$username" != "$tefuser" ]]; then
+        echo "error: user not found: $username" >&2
+        exit 2
+    fi
+
+    tctl users rm "$username"
+}
+
+COMM="$1"; shift
+case "$COMM" in
+    add|create)         add_user "$@" ;;
+    rm|remove|delete)   rm_user "$1" ;;
+    ls|list)            ls_users "$1" ;;
+    *)                  echo "$USAGE" >&2; exit 1 ;;
+esac

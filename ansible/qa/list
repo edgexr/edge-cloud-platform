@@ -1,0 +1,66 @@
+[all:vars]
+deploy_environ=qa
+ubuntu_release=bionic
+gitlab_vm_hostname=gitlab-{{ deploy_environ }}.mobiledgex.net
+gitlab_email_enabled=false
+gitlab_slack_notifications=false
+gitlab_docker_hostname="docker-{{ deploy_environ }}.mobiledgex.net"
+mc_vm_hostname=mc-{{ deploy_environ}}.mobiledgex.net
+crm_vm_hostname=crm-{{ deploy_environ }}.mobiledgex.net
+console_vm_hostname=console-{{ deploy_environ }}.mobiledgex.net
+postgres_hostname=postgres-{{ deploy_environ }}.mobiledgex.net
+azure_volume_storage_class=default
+influxdb_volume_size=10Gi
+vault_vm_hostname=vault-{{ deploy_environ }}.mobiledgex.net
+vault_ha_domain="vault-{{ deploy_environ }}.mobiledgex.net"
+vault_port=443
+monitor_version=latest
+letsencrypt_env=production
+locver_url="http://mexdemo.locsim.mobiledgex.net:8889/verifyLocation"
+toksrv_url="http://mexdemo.tok.mobiledgex.net:9999/its?followURL=https://dme.mobiledgex.net/verifyLoc"
+dme_carrier=GDDT
+operator_key=GDDT
+deploy_target="mexplat-{{ deploy_environ }}"
+console_prod=no
+alertmanager_hostname=alertmanager-{{ deploy_environ }}.mobiledgex.net
+influxdb_backup_disabled=true
+etcd_quota_backend="150 MB"
+etcd_auto_compaction_retention=2
+billing_platform=chargify
+federated_mc=true
+app_dns_root="mobiledgex-{{ deploy_environ }}.net"
+
+[notifyroot]
+notifyroot-qa.mobiledgex.net
+
+[platform]
+localhost	ansible_connection=local
+
+[crms]
+crm-qa.mobiledgex.net
+
+[gitlab]
+gitlab-qa.mobiledgex.net
+
+[postgres]
+postgres-qa.mobiledgex.net
+
+[console]
+console-qa.mobiledgex.net
+
+[vault]
+vault-qa-a.mobiledgex.net
+vault-qa-b.mobiledgex.net
+vault-qa-c.mobiledgex.net
+
+[jaeger]
+jaeger-qa.mobiledgex.net	nginx_config_filename=jaeger jaeger_ui_port=8443
+
+[alertmanager]
+alertmanager-qa.mobiledgex.net
+
+[esproxy]
+events-qa.es.mobiledgex.net
+
+[kafka]
+kafka-qa.mobiledgex.net

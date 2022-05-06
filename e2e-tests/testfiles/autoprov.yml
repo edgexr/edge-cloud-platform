@@ -1,0 +1,230 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+##
+description: run auto-prov test. Assumes edge-cloud objects already present
+
+tests:
+  - name: disable resource quotas alerts by setting max threshold value
+    actions: [mcapi-update, mcapi-show]
+    apifile: '{{datadir2}}/mc_cloudlet_no_resource_quotas.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+
+  - name: set autodeployinterval setting fast for testing
+    actions: [mcapi-update]
+    apifile: '{{datadir2}}/autoprov_settings.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+
+  - name: check autodeploy settings
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_settings.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_settings_exp.yml'
+      filetype: mcdata
+
+  - name: sleep, allow time for dme to update from settings (its asynchronous)
+    actions: [sleep=2]
+
+  - name: find cloudlet for auto-prov app (3 intervals of 3 counts each)
+    apifile: "{{datadir2}}/find_cloudlet_ap.yml"
+    actions: [dmeapi-findcloudlet]
+
+  - name: find cloudlet for auto-prov docker app  (3 intervals of 3 counts each)
+    apifile: "{{datadir2}}/find_cloudlet_apd.yml"
+    actions: [dmeapi-findcloudlet]
+
+  - name: sleep, allow extra time for auto-prov to create AppInst
+    actions: [sleep=1]
+
+  - name: check that AppInsts were auto-provisioned
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_appinst.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_appinst_show.yml'
+      filetype: mcdata
+
+  - name: check that Prometheus rules and targets are configured
+    actions: [cmds]
+    apifile: "{{datadir2}}/autoprov_prom_check"
+    retrycount: 30
+    retryintervalsec: 0.2
+    compareyaml:
+      yaml1: '{{outputdir}}/cmds-output'
+      yaml2: '{{datadir2}}/autoprov_prom_check_exp'
+      filetype: raw
+
+  - name: check that Prometheus active connections is 50
+    actions: [cmds]
+    apifile: "{{datadir2}}/autoprov_prom_check_active"
+    retrycount: 40
+    retryintervalsec: 0.4
+    compareyaml:
+      yaml1: '{{outputdir}}/cmds-output'
+      yaml2: '{{datadir2}}/autoprov_prom_check_active_exp'
+      filetype: raw
+
+  - name: set active connections to 0 to trigger undeploy on autoprovappd
+    actions: [cmds]
+    apifile: "{{datadir2}}/autoprov_clearactive"
+
+  - name: check that Prometheus active connections is 0
+    actions: [cmds]
+    apifile: "{{datadir2}}/autoprov_prom_check_active"
+    retrycount: 12
+    retryintervalsec: 0.4
+    compareyaml:
+      yaml1: '{{outputdir}}/cmds-output'
+      yaml2: '{{datadir2}}/autoprov_prom_check_active_exp2'
+      filetype: raw
+
+    # check prometheus directly since shepherd skips pending alerts,
+    # and the firing alert is handled immediately by AutoProv, so is only
+    # present for a very short time.
+  - name: check undeploy alerts
+    actions: [cmds]
+    apifile: '{{datadir2}}/autoprov_prom_alert_check'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+    retrycount: 15
+    retryintervalsec: 0.2
+    compareyaml:
+      yaml1: '{{outputdir}}/cmds-output'
+      yaml2: '{{datadir2}}/autoprov_prom_alert_check_exp'
+      filetype: raw
+
+  - name: User should not see the internal Alerts
+    actions: [mcapi-showalerts]
+    apifile: '{{datadir2}}/show_local_region.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    retrycount: 15
+    retryintervalsec: 0.2
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mc_empty_list.yml'
+      filetype: mcalerts
+
+  - name: sleep, allow alerts to go active and delete autoprovappd
+    actions: [sleep=3]
+
+  - name: delete autoprovapp, which will not auto-undeploy because its on non-fakeinfra cloudlet
+    actions: [mcapi-delete]
+    apifile: '{{datadir2}}/autoprov_appinst_fake.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+
+  - name: check that both auto-prov insts are gone
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_appinst.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_appinst_empty.yml'
+      filetype: mcdata
+
+  - name: restore autodeployinterval setting
+    actions: [mcapi-update]
+    apifile: '{{datadir2}}/autoprov_settings_restore.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+
+  - name: check autodeploy settings
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_settings.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_settings_restored_exp.yml'
+      filetype: mcdata
+
+  - name: create auto-prov HA app and policy, will trigger auto-deployment
+    actions: [mcapi-create]
+    apifile: '{{datadir2}}/autoprov_ha_app.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+
+  - name: check that HA AppInsts were created
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_ha_appinst_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    retrycount: 5
+    retryintervalsec: 0.2
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_ha_appinst_show.yml'
+      filetype: mcdata
+
+  - name: put Cloudlet into maintenance, will trigger create of another AppInst
+    actions: [mcapi-update]
+    apifile: '{{datadir2}}/autoprov_ha_cloudlet_maintenance.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+
+  - name: verify Cloudlet is in maintenance
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_ha_cloudlet_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_ha_cloudlet_maintenance_show.yml'
+      filetype: mcdata
+
+  - name: check that another AppInst was created
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_ha_appinst_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_ha_appinst_maintenance.yml'
+      filetype: mcdata
+
+  - name: remove Cloudlet from policy, will trigger failover and orphaned cleanup
+    actions: [mcapi-remove]
+    apifile: '{{datadir2}}/autoprov_ha_policycloudlet.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+
+  - name: check that HA AppInsts were failed over
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_ha_appinst_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_ha_appinst_failedover.yml'
+      filetype: mcdata
+
+  - name: undo Cloudlet maintenance
+    actions: [mcapi-update]
+    apifile: '{{datadir2}}/autoprov_ha_cloudlet_normalop.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+
+  - name: verify Cloudlet is not in maintenance
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_ha_cloudlet_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_ha_cloudlet_show.yml'
+      filetype: mcdata
+
+  - name: delete auto-prov HA app and policy
+    actions: [mcapi-delete]
+    apifile: '{{datadir2}}/autoprov_ha_app.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+
+  - name: check that HA AppInsts were deleted
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_ha_appinst_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_ha_appinst_empty.yml'
+      filetype: mcdata

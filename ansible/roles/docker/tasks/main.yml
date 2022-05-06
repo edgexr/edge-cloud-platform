@@ -1,0 +1,96 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Enable IPv4 forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    state: present
+  become: yes
+
+- name: Add docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+  become: yes
+  when: docker_skip_install is undefined or not docker_skip_install
+
+- name: Add docker apt repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ubuntu_release }} stable"
+  become: yes
+  when: docker_skip_install is undefined or not docker_skip_install
+
+- name: Install docker
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - docker-ce
+    state: present
+    update_cache: yes
+  become: yes
+  when: docker_skip_install is undefined or not docker_skip_install
+
+- name: Add ansible to docker group
+  user:
+    name: "{{ lookup('config', 'DEFAULT_REMOTE_USER') }}"
+    groups: docker
+    append: yes
+  become: yes
+
+- name: Reset SSH connection to load new user group
+  meta: reset_connection
+
+- name: Install pip
+  apt:
+    name: python3-pip
+    state: present
+  become: yes
+
+- name: Update pip
+  command: pip3 install --upgrade pip
+  become: yes
+  changed_when: no
+
+- name: Pip install docker
+  pip:
+    name: docker
+  become: yes
+
+- name: Pip install docker-compose
+  pip:
+    name: docker-compose
+  become: yes
+
+- name: Set up cronjob to prune old docker images
+  cron:
+    name: Docker prune
+    minute: "0"
+    hour: "2"
+    job: docker system prune -f >/dev/null
+
+- name: Load registry docker creds
+  import_role:
+    name: load-vault-creds
+    tasks_from: mex_docker
+
+- name: Log in to Docker Registry
+  docker_login:
+    registry: "{{ mex_docker_registry }}"
+    username: "{{ mex_docker_username }}"
+    password: "{{ mex_docker_password }}"
+  when: docker_skip_registry_login is undefined or not docker_skip_registry_login

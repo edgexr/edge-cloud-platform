@@ -1,0 +1,119 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- hosts: artifactory
+  vars:
+    docker_skip_registry_login: true
+    data_directory: /var/opt/jfrog/artifactory
+    artifactory_docker_userid: 1030
+    vault_slack_webhook_path: secret/ansible/common/accounts/slack_webhooks/support
+
+  tasks:
+    - import_role:
+        name: telegraf
+      tags:
+        - monitoring
+        - setup
+
+    - include_role: name="docker"
+      tags: setup
+
+    - block:
+
+      - file:
+          path: "{{ data_directory }}"
+          state: directory
+          owner: "{{ artifactory_docker_userid }}"
+          group: root
+          mode: 0755
+        become: yes
+
+      - import_role:
+          name: web
+        vars:
+          nginx_config_template: "templates/nginx-artifactory.j2"
+          cert_domains: [ "{{ inventory_hostname }}" ]
+
+      when: artifactory_preconfigured is not defined or not artifactory_preconfigured
+      tags: setup
+
+    - name: Get mex CA cert
+      set_fact:
+        vault_lookup: "{{ lookup('vault', ca_path) }}"
+      vars:
+        ca_path: "{{ vault_mex_ca_cert_path }}:ca"
+
+    - set_fact:
+        max_ca_cert: "{{ vault_lookup.ca.data.der_base64 | b64decode }}"
+
+    - name: Create the CA cert directory
+      file:
+        path: "{{ mex_ca_cert_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+      become: yes
+
+    - name: Install the CA cert
+      copy:
+        content: "{{ max_ca_cert }}"
+        dest: "{{ mex_ca_cert_der }}"
+      become: yes
+
+    - name: "Installing Artifactory version {{ artifactory_version }}"
+      docker_container:
+        name: artifactory
+        image: "docker.bintray.io/jfrog/artifactory-pro:{{ artifactory_version }}"
+        restart_policy: unless-stopped
+        ports:
+          - "127.0.0.1:9091:8081"
+          - "127.0.0.1:9092:8082"
+        volumes:
+          - "{{ data_directory }}:{{ data_directory }}"
+          - "{{ mex_ca_cert_dir }}:/artifactory_extra_certs"
+      become: yes
+
+    - block:
+
+      - name: Get Slack webhook URL from vault
+        set_fact:
+          vault_lookup: "{{ lookup('vault', vault_slack_webhook_path) }}"
+
+      - set_fact:
+          slack_support_webhook: "{{ vault_lookup.support.data.url }}"
+
+      - name: Install webhook
+        copy:
+          src: files/artifactory/webhook.groovy
+          dest: "{{ data_directory }}/etc/plugins/webhook.groovy"
+          owner: ansible
+          group: ansible
+          mode: '0444'
+        become: yes
+
+      - name: Install webhook config
+        template:
+          src: templates/artifactory/webhook.config.json.j2
+          dest: "{{ data_directory }}/etc/plugins/webhook.config.json"
+          owner: ansible
+          group: ansible
+          mode: '0444'
+        become: yes
+
+      when: install_webhook|default(false)
+
+    - debug:
+        msg: "REMEMBER to test and validate the MC LDAP connection"

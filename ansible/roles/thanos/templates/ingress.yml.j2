@@ -1,0 +1,48 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: thanosquery-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "1800"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "1800"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      server_tokens off;
+    cert-manager.io/cluster-issuer: "letsencrypt-dns01"
+    nginx.ingress.kubernetes.io/whitelist-source-range: "{{ console_ip }}/32"
+spec:
+  tls:
+  - hosts:
+      - "{{ thanos_fqdn }}"
+    secretName: thanosquery-tls
+  rules:
+  - host: "{{ thanos_fqdn }}"
+    http:
+      paths:
+      - backend:
+          serviceName: thanosquery
+          servicePort: {{ thanos_query_port }}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: thanosrecv-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "1800"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "1800"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      server_tokens off;
+    cert-manager.io/cluster-issuer: "letsencrypt-dns01"
+spec:
+  tls:
+  - hosts:
+      - "{{ thanos_recv_fqdn }}"
+    secretName: thanosrecv-tls
+  rules:
+  - host: "{{ thanos_recv_fqdn }}"
+    http:
+      paths:
+      - backend:
+          serviceName: thanosrecv
+          servicePort: {{ thanos_recv_remote_write_port }}

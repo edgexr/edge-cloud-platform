@@ -1,0 +1,40 @@
+version: '2'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:{{ kafka_version }}
+    restart: unless-stopped
+    ports:
+      - 22181:2181
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-log:/var/lib/zookeeper/log
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+  
+  kafka:
+    image: confluentinc/cp-kafka:{{ kafka_version }}
+    depends_on:
+      - zookeeper
+    restart: unless-stopped
+    ports:
+      - 9092:9092
+      - 9093:9093
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+      - {{ kafka_secrets_base }}:{{ kafka_secrets_base }}
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://{{ inventory_hostname }}:9092,SSL://{{ inventory_hostname }}:9093,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,SSL:SSL
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_HOST
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_SSL_KEYSTORE_FILENAME: {{ keystore_filename }}
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: {{ creds_filename }}
+      KAFKA_SSL_KEY_CREDENTIALS: {{ creds_filename }}
+
+volumes:
+  kafka-data:
+  zookeeper-data:
+  zookeeper-log:

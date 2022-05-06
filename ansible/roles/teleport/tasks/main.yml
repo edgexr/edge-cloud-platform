@@ -1,0 +1,180 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- name: Install teleport
+  import_role:
+    name: teleport
+    tasks_from: install
+  vars:
+    teleport_config_template: teleport.yaml.j2
+    sonoral_divisions:
+      - Brazil
+      - GCTIO
+      - Germany
+
+- name: Create teleport config dir
+  file:
+    path: /etc/teleport
+    state: directory
+    owner: root
+    group: root
+    mode: 0700
+  become: yes
+  register: teleport_config_dir
+  tags: config
+
+- name: Load github credentials
+  import_role:
+    name: load-vault-creds
+    tasks_from: teleport-github
+  tags: config
+
+- name: Install github auth config
+  template:
+    src: github.yaml.j2
+    dest: "{{ teleport_config_dir.path }}/github.yaml"
+    mode: 0400
+  become: yes
+  notify: Import github auth
+  tags: config
+
+- name: Install infra access roles
+  include_role:
+    name: teleport
+    tasks_from: roles
+  loop: "{{ setups.keys() }}"
+  loop_control:
+    loop_var: environ
+  tags: config
+
+- name: Set up audit-access role
+  template:
+    src: audit-access-role.yaml.j2
+    dest: "{{ teleport_config_dir.path }}/audit-access-role.yaml"
+  become: yes
+  register: audit_role
+  tags: config
+
+- name: Apply audit-access role
+  command: "tctl create -f {{ audit_role.dest }}"
+  become: yes
+  when: audit_role is changed
+  tags: config
+
+- name: Set up Ops access role
+  template:
+    src: ops-access-role.yaml.j2
+    dest: "{{ teleport_config_dir.path }}/ops-access-role.yaml"
+  become: yes
+  register: ops_role
+
+- name: Apply Ops access role
+  command: "tctl create -f {{ ops_role.dest }}"
+  become: yes
+  when: ops_role is changed
+
+- name: Set up Sonoral access role
+  template:
+    src: sonoral-access-role.yaml.j2
+    dest: "{{ teleport_config_dir.path }}/sonoral-access-role.yaml"
+  become: yes
+  register: sonoral_role
+  tags: config
+
+- name: Apply Sonoral access role
+  command: "tctl create -f {{ sonoral_role.dest }}"
+  become: yes
+  when: sonoral_role is changed
+  tags: config
+
+- include_role:
+    name: teleport
+    tasks_from: sonoral-division.yml
+  loop: "{{ sonoral_divisions|map('lower') }}"
+  loop_control:
+    loop_var: division
+
+- name: Set up tefmgr access role
+  template:
+    src: tefmgr-access-role.yaml.j2
+    dest: "{{ teleport_config_dir.path }}/tefmgr-access-role.yaml"
+  become: yes
+  register: tefmgr_role
+  tags: config
+
+- name: Apply tefmgr access role
+  command: "tctl create -f {{ tefmgr_role.dest }}"
+  become: yes
+  when: tefmgr_role is changed
+  tags: config
+
+- name: Set up directory for vault roles
+  file:
+    path: /etc/vault_roles
+    owner: root
+    group: root
+    mode: "0600"
+    state: directory
+  become: yes
+  register: vault_roles_dir
+
+- name: Set up kubernetes config publish script
+  copy:
+    src: kubeconfigs-publish.py
+    dest: "{{ kubeconfig_publish }}"
+    mode: "0500"
+  become: yes
+
+- name: Set up node token publish script
+  copy:
+    src: node-token-publish.py
+    dest: "{{ node_token_publish }}"
+    mode: "0500"
+  become: yes
+
+- name: Set up automation credentials publish jobs
+  include_role:
+    name: teleport
+    tasks_from: automation_creds
+  loop: "{{ setups | dict2items }}"
+  loop_control:
+    loop_var: setup
+
+- name: "Create {{ tef_mgr_group }} group"
+  group:
+    name: "{{ tef_mgr_group }}"
+  become: yes
+
+- name: "Create {{ tef_mgr }} user"
+  user:
+    name: "{{ tef_mgr }}"
+    comment: "TEF manager"
+    group: "{{ tef_mgr_group }}"
+    shell: /bin/bash
+  become: yes
+
+- name: Set up Sonoral user management script
+  template:
+    src: tef-user-mgr.j2
+    dest: "{{ tef_user_mgr }}"
+    mode: "0500"
+  become: yes
+
+- name: Grant sudo access to Sonoral user management script
+  template:
+    src: tef-user-mgr-sudoers.j2
+    dest: /etc/sudoers.d/tef_mgr
+    mode: "0440"
+  become: yes

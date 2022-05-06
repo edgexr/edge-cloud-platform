@@ -1,0 +1,7 @@
+path "secret/data/{{ region_code }}/cloudlet/*" {
+  capabilities = [ "create", "update", "delete", "read" ]
+}
+
+path "secret/metadata/{{ region_code }}/cloudlet/*" {
+  capabilities = [ "delete" ]
+}

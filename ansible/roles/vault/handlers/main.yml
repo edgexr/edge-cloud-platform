@@ -1,0 +1,58 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- name: Delete key tempfile
+  file:
+    path: "{{ key_tempfile.path }}"
+    state: absent
+
+- name: Reload vault
+  systemd:
+    name: vault
+    daemon_reload: yes
+    enabled: yes
+    state: reloaded
+  become: yes
+
+- name: Vault initialization prompt
+  debug:
+    msg: |
+      Initialize vault using the command:
+      VAULT_ADDR=https://{{ inventory_hostname }}:{{ vault_ha_instance_port }} vault operator init -key-shares=5 -key-threshold=3 -format json
+
+- name: Vault letencrypt plugin register prompt
+  debug:
+    msg: |
+      Run the following for this vault to register the letsencrypt plugin:
+      $ vault secrets disable certs || true
+      $ vault write sys/plugins/catalog/letsencrypt-certs \
+          sha_256="{{ vault_letsencrypt_plugin_sha256sum }}" \
+          command=letsencrypt-plugin \
+          env="CERTGEN_PORT={{ certgen_port }}"
+      $ vault secrets enable -path=certs -plugin-name=letsencrypt-certs plugin
+
+- name: Reload letsencrypt backend
+  vault_api:
+    api: sys/plugins/reload/backend
+    method: PUT
+    data:
+      plugin: "{{ letsencrypt_backend }}"
+    success_code: 204
+
+- name: Restart sshd
+  service:
+    name: ssh
+    state: restarted
+  become: yes

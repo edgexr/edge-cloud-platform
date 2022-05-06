@@ -1,0 +1,37 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- set_fact:
+    etcd_env_tag: "{{ deploy_environ }}-{{ region }}"
+
+- name: Look up credentials in vault
+  set_fact:
+    vault_lookup: "{{ lookup('vault', vault_influxdb_creds_path) }}"
+
+- set_fact:
+    influxdb_user: "{{ vault_lookup.influxdb.data.user }}"
+    influxdb_password: "{{ vault_lookup.influxdb.data.pass }}"
+
+- name: Set up configmap
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    definition: "{{ lookup('template', 'telegraf-config.yaml.j2') }}"
+
+- name: "Set up Telegraf v{{ telegraf_image_tag }}"
+  k8s:
+    kubeconfig: "{{ kubeconfig_file.path }}"
+    namespace: default
+    definition: "{{ lookup('template', 'telegraf-deploy.yaml.j2') }}"

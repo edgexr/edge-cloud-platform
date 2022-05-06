@@ -1,0 +1,185 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Set up the GCP loadbalancers
+  block:
+
+  - name: Compute lb component names
+    set_fact:
+      vault_healthcheck_firewall: "vault-{{ deploy_environ }}-fw-hc-and-proxy"
+      vault_healthcheck: "vault-{{ deploy_environ }}-healthcheck"
+      vault_backend_service: "vault-{{ deploy_environ }}-backend-service"
+      vault_url_map: "vault-{{ deploy_environ }}-url-map"
+      vault_lb_name: "vault-{{ deploy_environ }}-lb"
+      vault_cert_name: "vault-{{ deploy_environ }}-cert"
+      vault_ssl_policy: "vault-{{ deploy_environ }}-ssl-policy"
+      vault_https_proxy: "vault-{{ deploy_environ }}-proxy"
+      vault_forwarding_rule: "vault-{{ deploy_environ }}-fw-rule"
+
+  - name: Set up loadbalancer instance groups
+    include_role:
+      role: vault
+      tasks_from: loadbalancer-instance-group
+    loop: "{{ vault_ha_zones | dict2items(key_name='zone_name', value_name='zone_region') }}"
+
+  - name: Reserve an external IP
+    gcp_compute_global_address:
+      name: "vault-{{ deploy_environ }}"
+      description: "HA Vault external address for the {{ deploy_environ }} setup"
+      ip_version: IPV4
+      project: "{{ gcp_project }}"
+      auth_kind: serviceaccount
+      service_account_file: "{{ gcp_creds_file }}"
+    register: vault_ip
+
+  - name: Set up health check
+    gcp_compute_https_health_check:
+      name: "{{ vault_healthcheck }}"
+      port: "{{ vault_ha_instance_port }}"
+      request_path: /v1/sys/health
+      project: "{{ gcp_project }}"
+      auth_kind: serviceaccount
+      service_account_file: "{{ gcp_creds_file }}"
+    register: health_check
+
+  - name: Check backend service
+    gcp_compute_backend_service_facts:
+      filters:
+        - "name = {{ vault_backend_service }}"
+      project: "{{ gcp_project }}"
+      auth_kind: serviceaccount
+      service_account_file: "{{ gcp_creds_file }}"
+    register: be_get
+
+  - set_fact:
+      backend_srv: "{{ be_get['resources'][0] }}"
+    when:
+      - "be_get['resources']|length > 0"
+
+  - block:
+
+    - name: Set up backend service
+      gcp_compute_backend_service:
+        name: "{{ vault_backend_service }}"
+        protocol: HTTPS
+        health_checks:
+          - "{{ health_check.selfLink }}"
+        backends: "{{ instance_groups }}"
+        project: "{{ gcp_project }}"
+        auth_kind: serviceaccount
+        service_account_file: "{{ gcp_creds_file }}"
+      register: backend_srv
+
+    rescue:
+
+    - name: Retrieve backend service
+      gcp_compute_backend_service_facts:
+        filters:
+          - "name = {{ vault_backend_service }}"
+        project: "{{ gcp_project }}"
+        auth_kind: serviceaccount
+        service_account_file: "{{ gcp_creds_file }}"
+      register: be_get
+
+    - set_fact:
+        backend_srv: "{{ be_get['resources'][0] }}"
+
+  - assert:
+      that:
+        - backend_srv.name == vault_backend_service
+
+  - name: Set up URL map
+    gcp_compute_url_map:
+      name: "{{ vault_url_map }}"
+      default_service: "{{ backend_srv }}"
+      project: "{{ gcp_project }}"
+      auth_kind: serviceaccount
+      service_account_file: "{{ gcp_creds_file }}"
+    register: url_map
+
+  - name: Check SSL cert
+    gcp_compute_ssl_certificate_facts:
+      filters:
+        - "name = {{ vault_cert_name }}"
+      project: "{{ gcp_project }}"
+      auth_kind: serviceaccount
+      service_account_file: "{{ gcp_creds_file }}"
+    register: vault_cert
+
+  - name: Create SSL cert
+    command: "gcloud beta compute ssl-certificates create {{ vault_cert_name }} --domains {{ vault_ha_domain }} --global"
+    register: cert_create
+    when:
+      - "vault_cert['resources']|length < 1"
+
+  - name: Check SSL cert
+    gcp_compute_ssl_certificate_facts:
+      filters:
+        - "name = {{ vault_cert_name }}"
+      project: "{{ gcp_project }}"
+      auth_kind: serviceaccount
+      service_account_file: "{{ gcp_creds_file }}"
+    register: vault_cert
+
+  - name: Create SSL policy
+    gcp_compute_ssl_policy:
+      name: "{{ vault_ssl_policy }}"
+      min_tls_version: TLS_1_2
+      profile: RESTRICTED
+      project: "{{ gcp_project }}"
+      auth_kind: serviceaccount
+      service_account_file: "{{ gcp_creds_file }}"
+    register: ssl_policy
+
+  - name: Create HTTPS proxy
+    gcp_compute_target_https_proxy:
+      name: "{{ vault_https_proxy }}"
+      ssl_certificates:
+        - "{{ vault_cert['resources'][0] }}"
+      ssl_policy: "{{ ssl_policy }}"
+      url_map: "{{ url_map }}"
+      project: "{{ gcp_project }}"
+      auth_kind: serviceaccount
+      service_account_file: "{{ gcp_creds_file }}"
+    register: target_https_proxy
+
+  - name: Create forwarding rule
+    gcp_compute_global_forwarding_rule:
+      name: "{{ vault_forwarding_rule }}"
+      ip_address: "{{ vault_ip.address }}"
+      ip_protocol: TCP
+      port_range: 443-443
+      target: "{{ target_https_proxy.selfLink }}"
+      project: "{{ gcp_project }}"
+      auth_kind: serviceaccount
+      service_account_file: "{{ gcp_creds_file }}"
+
+  - pause:
+      prompt: "Set DNS \"{{ vault_ha_domain }}\" to {{ vault_ip.address }}?"
+
+  - name: "Update vault LB DNS: {{ vault_ha_domain }}"
+    cloudflare_dns:
+      zone: "{{ cloudflare_zone }}"
+      record: "{{ vault_ha_domain }}"
+      value: "{{ vault_ip.address }}"
+      type: A
+      state: present
+      solo: true
+      account_email: "{{ cloudflare_account_email }}"
+      account_api_token: "{{ cloudflare_account_api_token }}"
+
+  run_once: true
+  delegate_to: localhost
+  tags:
+    - loadbalancer

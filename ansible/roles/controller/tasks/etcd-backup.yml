@@ -1,0 +1,162 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Get mex-etcd pod
+  command: "kubectl --kubeconfig {{ kubeconfig_file.path }} get pods --selector=etcd_cluster={{ etcd_cluster_name }} -o jsonpath={.items[*].metadata.name}"
+  register: mex_etcd_pod_json
+  check_mode: no
+  changed_when: false
+
+- set_fact:
+    mex_etcd_pod: "{{ mex_etcd_pod_json.stdout.split(' ') | first }}"
+  check_mode: no
+  changed_when: false
+
+- name: Back up etcd data
+  block:
+
+  - name: Load artifactory publish key from vault
+    import_role:
+      name: load-vault-creds
+      tasks_from: artifactory-publish
+
+  - name: Clean out any old backups
+    command: "kubectl --kubeconfig {{ kubeconfig_file.path }} exec {{ mex_etcd_pod }} -- rm -f {{ etcd_backup_file }}"
+    changed_when: false
+
+  - name: Backup etcd database
+    command: "kubectl --kubeconfig {{ kubeconfig_file.path }} exec {{ mex_etcd_pod }} -- env ETCDCTL_API=3 etcdctl snapshot save {{ etcd_backup_file }}"
+    changed_when: false
+
+  # Work around this bug: https://github.com/kubernetes/kubernetes/issues/78211
+  - set_fact:
+      tempfile_path: /private/tmp
+    when: ansible_distribution == "MacOSX"
+
+  - set_fact:
+      tempfile_path: /tmp
+    when: tempfile_path is not defined
+
+  - name: Create temporary file for etcd backup download
+    tempfile:
+      path: "{{ tempfile_path }}"
+      state: file
+      suffix: .db
+    register: etcd_backup_local_file
+    changed_when: false
+    check_mode: no
+
+  - name: Create temporary file for encryption key
+    tempfile:
+      path: "{{ tempfile_path }}"
+      state: file
+      suffix: .json
+    register: etcd_backup_enc_key_file
+    changed_when: false
+    check_mode: no
+
+  - name: Download etcd database
+    command: "kubectl --kubeconfig {{ kubeconfig_file.path }} cp {{ mex_etcd_pod }}:{{ etcd_backup_file }} {{ etcd_backup_local_file.path }}"
+    changed_when: false
+    register: result
+    retries: 3
+    delay: 10
+    until: result is not failed
+
+  - stat:
+      path: "{{ etcd_backup_local_file.path }}"
+    register: etcd_backup_local_file_st
+
+  - name: Verify etcd backup size
+    assert:
+      that: etcd_backup_local_file_st.stat.size > 0
+    when: not ansible_check_mode
+
+  - name: Generate encryption key
+    set_fact:
+      etcd_backup_enc_key: "{{ lookup('community.general.random_string', length=80) }}"
+
+  - import_role:
+      name: vault
+      tasks_from: load-token
+
+  - name: Encrypt encryption key
+    vault_api:
+      vault_addr: "{{ vault_address }}"
+      vault_token: "{{ vault_token }}"
+      api: transit/encrypt/etcd-backup
+      method: POST
+      data:
+        plaintext: "{{ etcd_backup_enc_key | b64encode }}"
+    register: enc_enc_key
+
+  - name: Write encrypted encryption key to metadata file
+    copy:
+      dest: "{{ etcd_backup_enc_key_file.path }}"
+      content: "{{ enc_enc_key.meta.response.data | combine({ 'original_sha1sum': etcd_backup_local_file_st.stat.checksum }) }}"
+
+  - name: Stat metadata file
+    stat:
+      path: "{{ etcd_backup_enc_key_file.path }}"
+      get_checksum: true
+      checksum_algorithm: sha1
+    register: enc_key_st
+
+  - name: Encrypt backup
+    command:
+      argv:
+        - gpg
+        - --batch
+        - --passphrase
+        - "{{ etcd_backup_enc_key }}"
+        - --symmetric
+        - "{{ etcd_backup_local_file.path }}"
+
+  - name: Compute name of encrypted backup
+    set_fact:
+      encrypted_backup_path: "{{ etcd_backup_local_file.path }}.gpg"
+
+  - name: Stat encrypted backup
+    stat:
+      path: "{{ encrypted_backup_path }}"
+      get_checksum: true
+      checksum_algorithm: sha1
+    register: enc_bkp_st
+
+  - name: Delete original backup
+    file:
+      path: "{{ etcd_backup_local_file.path }}"
+      state: absent
+
+  - name: Compute upload params
+    set_fact:
+      artf_base: "{{ artifactory_address }}/build-artifacts/etcd-backup/{{ deploy_environ }}/{{ k8s_cluster_name }}/{{ ansible_date_time.year }}-{{ ansible_date_time.month }}"
+      backup_prefix: "etcd-backup-{{ ansible_date_time.iso8601 }}"
+
+  - name: Archive files to Artifactory
+    uri:
+      url: "{{ artf_base }}/{{ backup_prefix }}.{{ upload.suffix }}"
+      src: "{{ upload.file.path }}"
+      method: PUT
+      headers:
+        X-JFrog-Art-Api: "{{ artifactory_publish_api_key }}"
+        X-Checksum-Sha1: "{{ upload.file.checksum }}"
+      status_code: 201
+    loop:
+      - { "file": "{{ enc_key_st.stat }}", "suffix": "json" }
+      - { "file": "{{ enc_bkp_st.stat }}", "suffix": "db.gpg" }
+    loop_control:
+      loop_var: upload
+
+  when: mex_etcd_pod|length > 0

@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: {{ name }}
+spec:
+  commonName: {{ fqdn }}
+  dnsNames:
+  - {{ fqdn }}
+  secretName: {{ secret_name }}
+  issuerRef:
+    name: letsencrypt-dns01
+    kind: ClusterIssuer

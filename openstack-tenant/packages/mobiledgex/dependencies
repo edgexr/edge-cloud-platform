@@ -1,0 +1,26 @@
+chef                            =17.6.18-1
+crictl                          =1.16.1
+curl                            >=7.58.0-2ubuntu3.8
+docker-ce                       =5:20.10.13~3-0~ubuntu-bionic
+docker-compose                  =1.24.1-mobiledgex1
+libpam-google-authenticator     =20170702-1
+helm                            =3.4.2
+iptables-persistent             >=1.0.4+nmu2ubuntu1
+ipvsadm                         >=1:1.28-3ubuntu0.18.04.1
+jq                              >=1.5+dfsg-2
+# NOTE: If changing kubernetes, or helm package versions, also fix
+#       the list of docker images to be cached in
+#       ../packer/docker-image-cache.txt
+kubeadm                         =1.18.20-00
+kubectl                         =1.18.20-00
+kubelet                         =1.18.20-00
+linux-image-virtual             =4.15.0.171.160
+nfs-kernel-server               =1:1.3.4-2.1ubuntu5.5
+nvidia-container-runtime        =3.8.1-1
+nvidia-container-toolkit        =1.8.1-1
+open-vm-tools                   >=2:11.0.5-4ubuntu0.18.04.1
+parseovf                        >=0.2
+python3-deepmerge               >=0.3.0
+python3-distutils               >=3.6.9-1~18.04
+python3-netifaces               >=0.10.9-0.2
+unzip                           >=6.0-21ubuntu1

@@ -1,0 +1,36 @@
+dbrp "etcd"."autogen"
+
+var name = 'Etcd DB Size'
+
+var info = 70
+
+var warn = 80
+
+var crit = 90
+
+var period = 15m
+
+var every = 15m
+
+var triggerType = 'threshold'
+
+// Dataframe
+var data = batch
+    |query(''' select last("gauge") as "value" from "etcd"."autogen"."etcd_debugging_mvcc_db_total_size_in_bytes" ''')
+        .period(period)
+        .every(every)
+        .groupBy('env')
+    |eval(lambda: int("value") / 1024 / 1024)
+        .as('dbsize')
+        .keep()
+
+// Thresholds
+var alert = data
+    |alert()
+        .id(name)
+        .info(lambda: "dbsize" > info)
+        .warn(lambda: "dbsize" > warn)
+        .crit(lambda: "dbsize" > crit)
+        .message('{{ .Level }}: Etcd DB Size: {{ index .Tags "env" }}: {{ index .Fields "dbsize" }} MB')
+        .pagerDuty2()
+        .slack()

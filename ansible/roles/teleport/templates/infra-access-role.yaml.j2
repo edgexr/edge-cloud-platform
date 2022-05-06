@@ -1,0 +1,13 @@
+kind: role
+version: v4
+metadata:
+  name: infra-{{ environ }}
+spec:
+  allow:
+    logins:
+      - ansible
+    node_labels:
+      env: {{ environ }}
+    kubernetes_groups: ["system:masters"]
+    kubernetes_labels:
+      env: {{ environ }}

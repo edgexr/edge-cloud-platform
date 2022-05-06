@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ etcd_restore_job_name }}
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels:
+        job-type: {{ etcd_restore_job_name }}
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: {{ etcd_restore_job_name }}
+        image: ubuntu
+        volumeMounts:
+        - name: data
+          mountPath: /var/etcd/data
+        command:
+          - "/bin/sh"
+          - "-ecx"
+          - |
+            SNAP=snap.db
+            mkdir -p /var/etcd/data
+            cd /var/etcd/data
+            {% if not backup_old_db | bool %}rm -rf *;{% endif %}
+            rm -f "$SNAP"
+            apt update
+            apt install -y wget
+            wget --header 'Authorization: Bearer {{ artifactory_token }}' -O "$SNAP" "{{ snapshot_url }}"
+            SNAP_SHA1SUM=$( sha1sum "$SNAP" | awk '{print $1}' )
+            if [ "$SNAP_SHA1SUM" != "{{ snapshot_sha1sum }}" ]; then
+              echo "Snapshot download error; SHA1 mismatch: $SNAP_SHA1SUM != $SHA1SUM" >&2
+              exit 2
+            fi
+
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: data-{{ etcd_cluster_name }}-{{ etcd_index }}

@@ -1,0 +1,18 @@
+{
+  "azure_subscription_id": "{{ azure_subscription_id }}",
+  "azure_tenant_id" : "{{ azure_tenant_id }}",
+  "azure_terraform_service_principal_id": "{{ azure_terraform_service_principal_id }}",
+  "azure_terraform_service_principal_secret": "{{ azure_terraform_service_principal_secret }}",
+  "cloudflare_account_api_token": "{{ cloudflare_account_api_token }}",
+  "cloudflare_account_email": "{{ cloudflare_account_email }}",
+  "cloudflare_zone": "{{ cloudflare_zone }}",
+{% if console_vm_hostname is defined %}  "console_domain_name": "{{ console_vm_hostname }}",{{ "\n" }}{% endif %}
+{% if crm_vm_hostname is defined %}  "crm_vm_domain_name": "{{ crm_vm_hostname }}",{{ "\n" }}{% endif %}
+{% if gitlab_docker_hostname is defined %}  "gitlab_docker_domain_name": "{{ gitlab_docker_hostname }}",{{ "\n" }}{% endif %}
+{% if gitlab_vm_hostname is defined %}  "gitlab_domain_name": "{{ gitlab_vm_hostname }}",{{ "\n" }}{% endif %}
+{% if vault_vm_hostname is defined %}  "vault_vm_domain_name": "{{ vault_vm_hostname }}",{{ "\n" }}{% endif %}
+{% if postgres_hostname is defined %}  "postgres_domain_name": "{{ postgres_hostname }}",{{ "\n" }}{% endif %}
+{% if console_vnc_hostname is defined %}  "console_vnc_domain_name": "{{ console_vnc_hostname }}",{{ "\n" }}{% endif %}
+{% if notifyroot_hostname is defined %}  "notifyroot_domain_name": "{{ notifyroot_hostname }}",{{ "\n" }}{% endif %}
+  "__terraform_vars_done": true
+}

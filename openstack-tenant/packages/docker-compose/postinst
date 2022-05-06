@@ -1,0 +1,4 @@
+#!/bin/bash
+chown root:root \
+	/usr/local/bin/docker-compose \
+	/usr/local/lib/docker-compose

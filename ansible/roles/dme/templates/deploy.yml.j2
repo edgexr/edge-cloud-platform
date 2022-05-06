@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dme
+  labels:
+    app: dme
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dme
+  template:
+    metadata:
+      labels:
+        app: dme
+    spec:
+      containers:
+      - name: dme
+        image: "{{ edge_cloud_image }}-dme:{{ edge_cloud_version }}"
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "{{ dme_cpu_request }}"
+            memory: "{{ dme_memory_request | human_to_bytes }}"
+          limits:
+            cpu: "{{ dme_cpu_limit }}"
+            memory: "{{ dme_memory_limit | human_to_bytes }}"
+        command:
+         - "dme-server"
+         - "--commonName"
+         - "{{ dme_dns }}.{{ cloudflare_zone }}"
+         - "--region"
+         - "{{ region }}"
+         - "--apiAddr"
+         - "0.0.0.0:50051"
+         - "--httpAddr"
+         - "0.0.0.0:38001"
+         - "--notifyAddrs"
+         - "{{ controller_hostname }}:{{ controller_notify_port }}"
+         - "--vaultAddr"
+         - "{{ vault_address }}"
+         - "--useVaultPki"
+         - "--deploymentTag"
+         - "{{ deployment_tag_override | default(deploy_environ) }}"
+         - "--locverurl"
+         - "{{ locver_url }}"
+         - "--carrier"
+         - "{{ dme_carrier }}"
+         - "--cloudletKey"
+         - '{"organization":"{{ operator_key }}","name":"{{ deploy_target }}-cloudlet"}'
+         - "--toksrvurl"
+         - "{{ toksrv_url }}"
+         {% if qos_sessions_api_address is defined and qos_sessions_api_address -%}
+         - "-qossesaddr"
+         - "{{ qos_sessions_api_address }}"
+         {% endif -%}
+         - "-d"
+         - "locapi,dmedb,dmereq,notify"
+        env:
+         - name: LOCAPI_USER
+           value: "{{ locapi_user }}"
+         - name: LOCAPI_PASSWD
+           value: "{{ locapi_passwd }}"
+         - name: VAULT_ROLE_ID
+           value: "{{ dme_role.role_id }}"
+         - name: VAULT_SECRET_ID
+           value: "{{ dme_role.secret_id }}"
+         - name: JAEGER_ENDPOINT
+           value: "{{ jaeger_endpoint }}"
+         - name: JAEGER_TAGS
+           value: "environ={{ deploy_environ }},region={{ region }},version={{ edge_cloud_version }}"
+         - name: ES_SERVER_URLS
+           value: "{{ esproxy_address }}"
+
+      imagePullSecrets:
+       - name: mexreg-secret

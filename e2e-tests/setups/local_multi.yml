@@ -1,0 +1,714 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+vars:
+  - locverurl: "http://127.0.0.1:8888/verifyLocation" 
+  - toksrvurl: "http://127.0.0.1:9999/its?followURL=https://dme.mobiledgex.net/verifyLoc"
+  - alertmgrresolvetimeout: 3s
+
+tlscerts:
+- commonname: localserver
+  ips:
+    - 127.0.0.1
+    - 0.0.0.0
+
+dockernetworks:
+- name: e2e-logging
+  hostname: "127.0.0.1"
+
+locsims:
+- name: locsim1
+  port: 8888
+  locfile: "{{datadir}}/locsim.yml"
+  geofile: "{{datadir}}/geocode.dat"
+  country: US
+  hostname: "127.0.0.1"
+
+toksims:
+- name: toksim1
+  port: 9999
+  hostname: "127.0.0.1"
+
+qossessims:
+- name: qossessim1
+  port: 8083
+  hostname: "127.0.0.1"
+
+vaults:
+- name: vault
+  hostname: "127.0.0.1"
+  regions: local,locala,PA,PS
+
+influxs:
+- name: influx1
+  datadir: /var/tmp/edge-cloud-local-influx/influx1
+  httpaddr: "127.0.0.1:8086"
+  bindaddr: "127.0.0.1:8088"
+  hostname: "127.0.0.1"
+
+- name: influxa1
+  datadir: /var/tmp/edge-cloud-local-influx/influx2
+  httpaddr: "127.0.0.1:8087"
+  bindaddr: "127.0.0.1:8089"
+  hostname: "127.0.0.1"
+
+etcds:
+- name: etcd1
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd1
+  peeraddrs: "http://127.0.0.1:30011"
+  clientaddrs: "http://127.0.0.1:30001"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+- name: etcd2
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd2
+  peeraddrs: "http://127.0.0.1:30012"
+  clientaddrs: "http://127.0.0.1:30002"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+- name: etcd3
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd3
+  peeraddrs: "http://127.0.0.1:30013"
+  clientaddrs: "http://127.0.0.1:30003"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+- name: etcda1
+  datadir: /var/tmp/edge-cloud-local-etcd/etcda1
+  peeraddrs: "http://127.0.0.1:30021"
+  clientaddrs: "http://127.0.0.1:30031"
+  initialcluster: "etcda1=http://127.0.0.1:30021,etcda2=http://127.0.0.1:30022,etcda3=http://127.0.0.1:30023"
+  hostname: "127.0.0.1"
+
+- name: etcda2
+  datadir: /var/tmp/edge-cloud-local-etcd/etcda2
+  peeraddrs: "http://127.0.0.1:30022"
+  clientaddrs: "http://127.0.0.1:30032"
+  initialcluster: "etcda1=http://127.0.0.1:30021,etcda2=http://127.0.0.1:30022,etcda3=http://127.0.0.1:30023"
+  hostname: "127.0.0.1"
+
+- name: etcda3
+  datadir: /var/tmp/edge-cloud-local-etcd/etcda3
+  peeraddrs: "http://127.0.0.1:30023"
+  clientaddrs: "http://127.0.0.1:30033"
+  initialcluster: "etcda1=http://127.0.0.1:30021,etcda2=http://127.0.0.1:30022,etcda3=http://127.0.0.1:30023"
+  hostname: "127.0.0.1"
+
+- name: etcd-partner1
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd-partner1
+  peeraddrs: "http://127.0.0.1:30081"
+  clientaddrs: "http://127.0.0.1:30008"
+  initialcluster: "etcd-partner1=http://127.0.0.1:30081"
+  hostname: "127.0.0.1"
+
+- name: etcd-partner2
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd-partner2
+  peeraddrs: "http://127.0.0.1:30091"
+  clientaddrs: "http://127.0.0.1:30009"
+  initialcluster: "etcd-partner2=http://127.0.0.1:30091"
+  hostname: "127.0.0.1"
+
+rediscaches:
+# redis HA for ctrl1/ctrl2
+- name: redis1
+  type: master
+  port: 16379
+  hostname: "127.0.0.1"
+- name: redis2
+  type: slave
+  masterport: 16379
+  port: 16380
+  hostname: "127.0.0.1"
+- name: redis3
+  type: slave
+  masterport: 16379
+  port: 16381
+  hostname: "127.0.0.1"
+- name: redis-sentinel1
+  type: sentinel
+  masterport: 16379
+  port: 36379
+  hostname: "127.0.0.1"
+- name: redis-sentinel2
+  type: sentinel
+  masterport: 16379
+  port: 36380
+  hostname: "127.0.0.1"
+- name: redis-sentinel3
+  type: sentinel
+  masterport: 16379
+  port: 36381
+  hostname: "127.0.0.1"
+# standalone redis for ctrla1/ctrla2
+- name: redisa1
+  type: master
+  port: 36382
+  hostname: "127.0.0.1"
+# standalone redis for ctrl-partner1
+- name: redis-partner1
+  type: master
+  port: 36383
+  hostname: "127.0.0.1"
+# standalone redis for ctrl-partner2
+- name: redis-partner2
+  type: master
+  port: 36384
+  hostname: "127.0.0.1"
+# redis standalone for crm
+- name: redis-standalone
+  type: master
+  port: 6379
+  hostname: "127.0.0.1"
+
+controllers:
+- name: ctrl1
+  etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
+  apiaddr: "127.0.0.1:55001"
+  httpaddr: "0.0.0.0:36001"
+  notifyaddr: "127.0.0.1:37001"
+  vaultaddr: "http://127.0.0.1:8200"
+  redissentineladdrs: "127.0.0.1:36379,127.0.0.1:36380,127.0.0.1:36381"
+  hostname: "127.0.0.1"
+  versiontag: "2019-10-24"
+  testmode: true
+  notifyparentaddrs: "127.0.0.1:52001"
+  notifyrootaddrs: "127.0.0.1:53001"
+  usevaultpki: true
+  edgeturnaddr: "127.0.0.1:8081"
+  appdnsroot: mobiledgex.net
+  deploymenttag: dev
+  accessapiaddr: "127.0.0.1:41001"
+  thanosrecvaddr: "http://host.docker.internal:10908"
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+- name: ctrl2
+  etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
+  apiaddr: "127.0.0.1:55002"
+  httpaddr: "0.0.0.0:36002"
+  notifyaddr: "127.0.0.1:37002"
+  vaultaddr: "http://127.0.0.1:8200"
+  redissentineladdrs: "127.0.0.1:36379,127.0.0.1:36380,127.0.0.1:36381"
+  hostname: "127.0.0.1"
+  versiontag: "2019-10-24"
+  testmode: true
+  notifyparentaddrs: "127.0.0.1:52002"
+  notifyrootaddrs: "127.0.0.1:53001"
+  usevaultpki: true
+  edgeturnaddr: "127.0.0.1:8081"
+  appdnsroot: mobiledgex.net
+  deploymenttag: dev
+  accessapiaddr: "127.0.0.1:41002"
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+- name: ctrla1
+  etcdaddrs: "http://127.0.0.1:30031,http://127.0.0.1:30032,http://127.0.0.1:30033"
+  apiaddr: "127.0.0.1:55011"
+  httpaddr: "0.0.0.0:36011"
+  notifyaddr: "127.0.0.1:37011"
+  vaultaddr: "http://127.0.0.1:8200"
+  redisstandaloneaddr: "127.0.0.1:36382"
+  hostname: "127.0.0.1"
+  versiontag: "2019-10-24"
+  testmode: true
+  notifyparentaddrs: "127.0.0.1:52001"
+  notifyrootaddrs: "127.0.0.1:53001"
+  region: locala
+  usevaultpki: true
+  edgeturnaddr: "127.0.0.1:8082"
+  appdnsroot: mobiledgex.net
+  deploymenttag: dev
+  influxaddr: "http://127.0.0.1:8087"
+  accessapiaddr: "127.0.0.1:41011"
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+- name: ctrla2
+  etcdaddrs: "http://127.0.0.1:30031,http://127.0.0.1:30032,http://127.0.0.1:30033"
+  apiaddr: "127.0.0.1:55012"
+  httpaddr: "0.0.0.0:36012"
+  notifyaddr: "127.0.0.1:37012"
+  vaultaddr: "http://127.0.0.1:8200"
+  redisstandaloneaddr: "127.0.0.1:36382"
+  hostname: "127.0.0.1"
+  versiontag: "2019-10-24"
+  testmode: true
+  notifyparentaddrs: "127.0.0.1:52002"
+  notifyrootaddrs: "127.0.0.1:53001"
+  region: locala
+  usevaultpki: true
+  edgeturnaddr: "127.0.0.1:8082"
+  appdnsroot: mobiledgex.net
+  deploymenttag: dev
+  influxaddr: "http://127.0.0.1:8087"
+  accessapiaddr: "127.0.0.1:41012"
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+- name: ctrl-partner1
+  etcdaddrs: "http://127.0.0.1:30008"
+  apiaddr: "127.0.0.1:55081"
+  httpaddr: "0.0.0.0:36081"
+  notifyaddr: "127.0.0.1:37081"
+  vaultaddr: "http://127.0.0.1:8200"
+  redisstandaloneaddr: "127.0.0.1:36383"
+  hostname: "127.0.0.1"
+  versiontag: "2019-10-24"
+  testmode: true
+  region: "PA"
+  usevaultpki: true
+  appdnsroot: mobiledgex.net
+  deploymenttag: dev
+  accessapiaddr: "127.0.0.1:41081"
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+- name: ctrl-partner2
+  etcdaddrs: "http://127.0.0.1:30009"
+  apiaddr: "127.0.0.1:55091"
+  httpaddr: "0.0.0.0:36091"
+  notifyaddr: "127.0.0.1:37091"
+  vaultaddr: "http://127.0.0.1:8200"
+  redisstandaloneaddr: "127.0.0.1:36384"
+  hostname: "127.0.0.1"
+  versiontag: "2019-10-24"
+  testmode: true
+  region: "PS"
+  usevaultpki: true
+  appdnsroot: mobiledgex.net
+  deploymenttag: dev
+  accessapiaddr: "127.0.0.1:41091"
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+frms:
+- name: frm1
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  hostname: "127.0.0.1"
+  deploymenttag: dev
+  region: local
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+- name: frma1
+  notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
+  hostname: "127.0.0.1"
+  deploymenttag: dev
+  region: locala
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+clustersvcs:
+- name: cluster-svc1
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  ctrladdrs: "127.0.0.1:55001"
+  vaultaddr: "http://127.0.0.1:8200"
+  pluginrequired: true
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+- name: cluster-svc2
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  ctrladdrs: "127.0.0.1:55002"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+- name: cluster-svca1
+  notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
+  ctrladdrs: "127.0.0.1:55011"
+  vaultaddr: "http://127.0.0.1:8200"
+  pluginrequired: true
+  usevaultpki: true
+  region: locala
+  hostname: "127.0.0.1"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+- name: cluster-svca2
+  notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
+  ctrladdrs: "127.0.0.1:55012"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+  region: locala
+  hostname: "127.0.0.1"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+dmes:
+- name: dme1
+  apiaddr: "0.0.0.0:50051"
+  httpaddr: "0.0.0.0:38001"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  locverurl: "{{locverurl}}"
+  toksrvurl: "{{toksrvurl}}"
+  qossesaddr: "http://localhost:8083"
+  carrier: GDDT
+  cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-1"}'
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  deploymenttag: dev
+  envvars:
+    LOCAPI_USER: mexserver
+    LOCAPI_PASSWD: eC2835!
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+    E2ETEST_NORANDOM: true
+    E2ETEST_QOS_SIM: true
+
+- name: dme2
+  apiaddr: "0.0.0.0:50052"
+  httpaddr: "0.0.0.0:38002"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  locverurl: "{{locverurl}}"
+  toksrvurl: "{{toksrvurl}}"
+  carrier: GDDT
+  cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-2"}'
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  deploymenttag: dev
+  envvars:
+    LOCAPI_USER: mexserver
+    LOCAPI_PASSWD: eC2835!
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+    E2ETEST_NORANDOM: true
+
+- name: dmea1
+  apiaddr: "0.0.0.0:50061"
+  httpaddr: "0.0.0.0:38011"
+  notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
+  locverurl: "{{locverurl}}"
+  toksrvurl: "{{toksrvurl}}"
+  carrier: GDDT
+  cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-3"}'
+  vaultaddr: "http://127.0.0.1:8200"
+  region: locala
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  deploymenttag: dev
+  envvars:
+    LOCAPI_USER: mexserver
+    LOCAPI_PASSWD: eC2835!
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+    E2ETEST_NORANDOM: true
+
+- name: dmea2
+  apiaddr: "0.0.0.0:50062"
+  httpaddr: "0.0.0.0:38012"
+  notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
+  locverurl: "{{locverurl}}"
+  toksrvurl: "{{toksrvurl}}"
+  carrier: GDDT
+  cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-4"}'
+  vaultaddr: "http://127.0.0.1:8200"
+  region: locala
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  deploymenttag: dev
+  envvars:
+    LOCAPI_USER: mexserver
+    LOCAPI_PASSWD: eC2835!
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+    E2ETEST_NORANDOM: true
+
+mcs:
+- name: mc1
+  addr: "127.0.0.1:9900"
+  sqladdr: "127.0.0.1:5432"
+  vaultaddr: "http://127.0.0.1:8200"
+  notifyaddrs: "127.0.0.1:53001"
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  ldapaddr: "127.0.0.1:9389"
+  federationaddr: "127.0.0.1:9801"
+  notifysrvaddr: "127.0.0.1:52001"
+  consoleproxyaddr: "127.0.0.1:6080"
+  alertresolvetimeout: "{{alertmgrresolvetimeout}}"
+  alertmgrapiaddr: "https://127.0.0.1:9094"
+  apitlscert: "{{tlsoutdir}}/test-server.crt"
+  apitlskey: "{{tlsoutdir}}/test-server.key"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+  staticdir: "{{staticdir}}"
+
+- name: mc2
+  addr: "127.0.0.1:9901"
+  sqladdr: "127.0.0.1:5432"
+  vaultaddr: "http://127.0.0.1:8200"
+  notifyaddrs: "127.0.0.1:53001"
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  ldapaddr: "127.0.0.1:9390"
+  federationaddr: "127.0.0.1:9802"
+  notifysrvaddr: "127.0.0.1:52002"
+  consoleproxyaddr: "127.0.0.1:6081"
+  alertmgrapiaddr: "https://127.0.0.1:9094"
+  alertresolvetimeout: "{{alertmgrresolvetimeout}}"
+  apitlscert: "{{tlsoutdir}}/test-server.crt"
+  apitlskey: "{{tlsoutdir}}/test-server.key"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+  staticdir: "{{staticdir}}"
+
+- name: mc-partner1
+  addr: "127.0.0.1:9908"
+  sqladdr: "127.0.0.1:5438"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  ldapaddr: "127.0.0.1:9889"
+  federationaddr: "127.0.0.1:9808"
+  notifysrvaddr: "127.0.0.1:52081"
+  apitlscert: "{{tlsoutdir}}/test-server.crt"
+  apitlskey: "{{tlsoutdir}}/test-server.key"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+  staticdir: "{{staticdir}}"
+
+- name: mc-partner2
+  addr: "127.0.0.1:9909"
+  sqladdr: "127.0.0.1:5439"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  ldapaddr: "127.0.0.1:9989"
+  federationaddr: "127.0.0.1:9809"
+  notifysrvaddr: "127.0.0.1:52091"
+  apitlscert: "{{tlsoutdir}}/test-server.crt"
+  apitlskey: "{{tlsoutdir}}/test-server.key"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+  staticdir: "{{staticdir}}"
+
+sqls:
+- name: sql1
+  datadir: /var/tmp/edge-cloud-local-sql/sql1
+  httpaddr: "127.0.0.1:5432"
+  username: mcuser
+  dbname: mcdb
+  hostname: "127.0.0.1"
+- name: sql-partner1
+  datadir: /var/tmp/edge-cloud-local-sql/sql-partner1
+  httpaddr: "127.0.0.1:5438"
+  username: mcuser
+  dbname: mcdb
+  hostname: "127.0.0.1"
+- name: sql-partner2
+  datadir: /var/tmp/edge-cloud-local-sql/sql-partner2
+  httpaddr: "127.0.0.1:5439"
+  username: mcuser
+  dbname: mcdb
+  hostname: "127.0.0.1"
+
+elasticsearchs:
+- name: elasticsearch-e2e
+  hostname: "127.0.0.1"
+  dockernetwork: e2e-logging
+- name: kibana-e2e
+  type: kibana
+  dockernetwork: e2e-logging
+  hostname: "127.0.0.1"
+  dockerenvvars:
+    ELASTICSEARCH_HOSTS: http://elasticsearch-e2e:9200
+
+nginxproxys:
+- name: es-proxy
+  dockernetwork: e2e-logging
+  tls:
+    servercert: "{{tlsoutdir}}/test-server.crt"
+    serverkey: "{{tlsoutdir}}/test-server.key"
+  servers:
+  - servername: es-proxy
+    tlsport: 9201
+    target: http://elasticsearch-e2e:9200
+  hostname: "127.0.0.1"
+- name: jaeger-proxy
+  dockernetwork: e2e-logging
+  tls:
+    servercert: "{{tlsoutdir}}/test-server.crt"
+    serverkey: "{{tlsoutdir}}/test-server.key"
+  servers:
+  - servername: jaeger-ui
+    port: 16687
+    tlsport: 16686
+    target: http://jaeger-e2e:16686
+  - servername: jaeger-collector
+    tlsport: 14268
+    target: http://jaeger-e2e:14268
+  hostname: "127.0.0.1"
+
+jaegers:
+- name: jaeger-e2e
+  hostname: "127.0.0.1"
+  dockernetwork: e2e-logging
+  dockerenvvars:
+    ES_SERVER_URLS: http://elasticsearch-e2e:9200
+    SPAN_STORAGE_TYPE: elasticsearch
+
+autoprovs:
+- name: autoprov1
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  ctrladdrs: "127.0.0.1:55001"
+  vaultaddr: "http://127.0.0.1:8200"
+  influxaddr: "http://127.0.0.1:8086"
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+- name: autoprova1
+  notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
+  ctrladdrs: "127.0.0.1:55011"
+  vaultaddr: "http://127.0.0.1:8200"
+  influxaddr: "http://127.0.0.1:8087"
+  region: locala
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+prometheus:
+- name: prom-e2e
+  hostname: "127.0.0.1"
+  port: 9090
+
+httpservers:
+- name: PromExporterSlackServer
+  promdatafile: "{{datadir2}}/mc_metrics.yml"
+  port: 9100
+  hostname: "127.0.0.1"
+
+notifyroots:
+- name: notifyroot
+  hostname: "127.0.0.1"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+  deploymenttag: dev
+
+edgeturns:
+- name: edgeturn
+  region: local
+  hostname: "127.0.0.1"
+  testmode: true
+  usevaultpki: true
+  vaultaddr: "http://127.0.0.1:8200"
+  listenaddr: "127.0.0.1:8081"
+  proxyaddr: "127.0.0.1:8443"
+  deploymenttag: dev
+
+- name: edgeturna
+  region: locala
+  hostname: "127.0.0.1"
+  testmode: true
+  usevaultpki: true
+  vaultaddr: "http://127.0.0.1:8200"
+  listenaddr: "127.0.0.1:8082"
+  proxyaddr: "127.0.0.1:9443"
+  deploymenttag: dev
+
+alertmanagers:
+- name: alertmanager
+  configfile: "{{datadir2}}/alertmanager.yml"
+  templatefile: "{{datadir2}}/alertmanager.tmpl"
+  port: 9093
+  hostname: "127.0.0.1"
+
+alertmanagersidecars:
+- name: alertmgrsidecar
+  alertmgraddr: "http://127.0.0.1:9093"
+  # config is copied by the alertmanager startup from datadir to /tmp
+  configfile: "/tmp/alertmanager.yml"
+  httpaddr: "127.0.0.1:9094"
+  tls:
+    servercert: "{{tlsoutdir}}/test-server.crt"
+    serverkey: "{{tlsoutdir}}/test-server.key"
+    cacert: "/tmp/vault_pki/global.cert.pem"
+  localtest: true
+  hostname: "127.0.0.1"
+  envvars:
+    ALERTMANAGER_SMTP_EMAIL: alerts@mobiledgex.com
+    ALERTMANAGER_SMTP_USER: alerts@mobiledgex.com
+    ALERTMANAGER_SMTP_TOKEN: test123
+    ALERTMANAGER_SMTP_SERVER: host.docker.internal
+    ALERTMANAGER_SMTP_SERVER_PORT: 1025
+    # maildev does not support STARTTLS protocol, so disable encryption for local testing
+    ALERTMANAGER_SMTP_SERVER_TLS: false
+    ALERTMANAGER_RESOLVE_TIMEOUT: "{{alertmgrresolvetimeout}}"
+    ALERTMANAGER_PAGERDUTY_URL: "http://host.docker.internal:9100/pagerduty/event"
+
+maildevs:
+- name: maildev
+  hostname: "127.0.0.1"
+  uiport: 1080
+  mailport: 1025
+
+thanosqueries:
+- name: thanosQuery
+  hostname: "127.0.0.1"
+  region: local
+  httpport: 29090
+  stores:
+  # below store is to connect thanos receives defined below
+  - "host.docker.internal:10907"
+
+thanosreceives:
+- name: thanosRecv
+  hostname: "127.0.0.1"
+  region: local
+  httpport: 10909
+  grpcport: 10907
+  remotewriteport: 10908

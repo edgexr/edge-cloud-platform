@@ -1,0 +1,7 @@
+path "auth/approle/role" {
+  capabilities = [ "list" ]
+}
+
+path "auth/approle/role/*" {
+  capabilities = [ "create", "update", "delete", "read" ]
+}

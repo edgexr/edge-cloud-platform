@@ -1,0 +1,87 @@
+{
+    "variables": {
+	"ARTIFACTORY_USER": "packer",
+	"TAG": "master",
+	"FLAVOR": "m4.small",
+	"VAULT": "main",
+	"APT_USER": "apt",
+	"APT_PASS": "mobiledgex",
+	"ROOT_PASS": "",
+	"DEBUG_ROOT_PASS": "",
+	"GRUB_PW_HASH": "",
+	"TOTP_KEY": "",
+	"ARTIFACTORY_ARTIFACTS_TAG": "",
+	"APT_REPO": ""
+    },
+    "builders": [{
+	"name": "prod",
+	"type": "openstack",
+	"flavor": "{{ user `FLAVOR` }}",
+	"ssh_username": "ubuntu",
+	"region": "RegionOne",
+	"image_name": "{{ user `OUTPUT_IMAGE_NAME` }}",
+	"source_image": "{{ user `SRC_IMG` }}",
+	"networks": "{{ user `NETWORK` }}",
+	"security_groups": [ "default" ],
+	"metadata": { "git_tag": "{{ user `GITTAG` }}" }
+    }, {
+	"name": "debug",
+	"type": "openstack",
+	"flavor": "{{ user `FLAVOR` }}",
+	"ssh_username": "ubuntu",
+	"region": "RegionOne",
+	"image_name": "{{ user `OUTPUT_IMAGE_NAME` }}-dbg",
+	"source_image": "{{ user `SRC_IMG` }}",
+	"networks": "{{ user `NETWORK` }}",
+	"security_groups": [ "default" ],
+	"metadata": { "git_tag": "{{ user `GITTAG` }}" }
+    }],
+    "provisioners": [
+	{
+	    "type": "file",
+	    "source": "pkg-cleanup.txt",
+	    "destination": "/tmp/pkg-cleanup.txt"
+	},
+	{
+	    "type": "file",
+	    "source": "docker-image-cache.txt",
+	    "destination": "/tmp/docker-image-cache.txt"
+	},
+	{
+	    "type": "shell",
+	    "script": "setup.sh",
+	    "environment_vars": [
+		"ARTIFACTORY_CREDS={{ user `ARTIFACTORY_USER` }}:{{ user `ARTIFACTORY_APIKEY` }}",
+		"TAG={{ user `TAG` }}",
+		"MEX_BUILD={{ user `MEX_BUILD` }}",
+		"FLAVOR={{ user `FLAVOR` }}",
+		"VAULT={{ user `VAULT` }}",
+		"APT_USER={{ user `APT_USER` }}",
+		"APT_PASS={{ user `APT_PASS` }}",
+		"ROOT_PASS={{ user `ROOT_PASS` }}",
+		"DEBUG_ROOT_PASS={{ user `DEBUG_ROOT_PASS` }}",
+		"GRUB_PW_HASH={{ user `GRUB_PW_HASH` }}",
+		"TOTP_KEY={{ user `TOTP_KEY` }}",
+		"ARTIFACTORY_ARTIFACTS_TAG={{ user `ARTIFACTORY_ARTIFACTS_TAG` }}",
+		"APT_REPO={{ user `APT_REPO` }}",
+		"SRC_IMG={{ user `SRC_IMG` }}",
+		"SRC_IMG_CHECKSUM={{ user `SRC_IMG_CHECKSUM` }}"
+	    ]
+	},
+	{
+	    "type": "shell",
+	    "script": "harden.sh"
+	},
+	{
+	    "type": "shell",
+	    "script": "reboot.sh",
+	    "expect_disconnect": true
+	},
+	{
+	    "type": "shell",
+	    "script": "cleanup.sh",
+	    "remote_folder": "/var/tmp",
+	    "pause_before": "10s"
+	}   
+    ]
+}

@@ -1,0 +1,8 @@
+[[inputs.prometheus]]
+{% if es_instance is defined %}
+  # Metrics endpoints for collector and query
+  urls = [ "http://127.0.0.1:14269/metrics", "http://127.0.0.1:16687/metrics" ]
+{% else %}
+  # Metrics endpoint for all-in-one jaeger
+  urls = [ "http://127.0.0.1:14269/metrics" ]
+{% endif %}

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: edgeturn
+  name: edgeturn
+  namespace: default
+spec:
+  ports:
+   - port: 443
+     name: https
+     protocol: TCP
+     targetPort: 8443
+   - port: 6080
+     name: crm
+     protocol: TCP
+     targetPort: 6080
+  selector:
+    app: edgeturn

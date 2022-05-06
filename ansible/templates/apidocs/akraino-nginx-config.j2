@@ -1,0 +1,52 @@
+server {
+	root /var/www/html;
+	index index.html index.htm index.nginx-debian.html;
+
+	server_name api.akraino.org;
+
+        location / {
+                include /etc/nginx/proxy_params;
+                proxy_pass              http://localhost:9094;
+                proxy_read_timeout      90s;
+        }
+
+        location /mc/ {
+                include /etc/nginx/proxy_params;
+                proxy_pass              http://localhost:9094/;
+                proxy_read_timeout      90s;
+        }
+
+        location /device/ {
+                include /etc/nginx/proxy_params;
+                proxy_pass              http://localhost:9091/;
+                proxy_read_timeout      90s;
+        }
+
+        location /swagger {
+                root /var;
+                autoindex on;
+        }
+
+    listen [::]:443 ssl ipv6only=on; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/api.akraino.org/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/api.akraino.org/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+
+server {
+    if ($host = api.akraino.org) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+	listen 80 default_server;
+	listen [::]:80 default_server;
+
+	server_name api.akraino.org;
+    return 404; # managed by Certbot
+
+
+}

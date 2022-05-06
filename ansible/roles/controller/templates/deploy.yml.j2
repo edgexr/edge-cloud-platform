@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller
+  labels:
+    app: controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: controller
+  template:
+    metadata:
+      labels:
+        app: controller
+    spec:
+      containers:
+      - name: controller
+        image: "{{ edge_cloud_image }}:{{ edge_cloud_version }}"
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "{{ controller_cpu_request }}"
+            memory: "{{ controller_memory_request | human_to_bytes }}"
+          limits:
+            cpu: "{{ controller_cpu_limit }}"
+            memory: "{{ controller_memory_limit | human_to_bytes }}"
+        command:
+         - "controller"
+         - "--commonName"
+         - "{{ controller_hostname }}"
+         - "--region"
+         - "{{ region }}"
+         - "--apiAddr"
+         - "0.0.0.0:55001"
+         - "--httpAddr"
+         - "0.0.0.0:36001"
+         - "--notifyAddr"
+         - "0.0.0.0:{{ controller_notify_port }}"
+         - "--notifyParentAddrs"
+         - "{{ console_vm_hostname }}:{{ mc_notify_srv_port }}"
+         - "--notifyRootAddrs"
+         - "{{ notifyroot_hostname }}:{{ notifyroot_port }}"
+         - "--accessApiAddr"
+         - "0.0.0.0:41001"
+         - "--appDNSRoot"
+         - "{{ app_dns_root }}"
+         - "--etcdUrls"  
+         - "{{ etcd_cluster_client }}:2379"
+         - "--redisMasterName"
+         - "{{ redis_master_name }}"
+         - "--redisSentinelAddrs"
+         - "{{ redis_sentinel_endpoint }}"
+         - "--edgeTurnAddr"
+         - "{{ edgeturn_fqdn }}:6080"
+         - "--vaultAddr"
+         - "https://{{ vault_vm_hostname }}:{{ vault_port }}"
+         - "--useVaultPki"
+         - "--influxAddr"
+         - "https://{{ influxdb_dns }}.{{ cloudflare_zone }}:8086"
+         - "--registryFQDN"
+         - "{{ gitlab_docker_hostname }}"
+         - "--artifactoryFQDN"
+         - "{{ artifactory_fqdn }}"
+         - "--cloudletRegistryPath"
+         - "{{ cloudlet_registry_path }}"
+         - "-cloudletVMImagePath"
+         - "{{ cloudlet_vm_path }}"
+         - "--versionTag"
+         - "{{ edge_cloud_version }}"
+         - "--publicAddr"
+         - "{{ controller_hostname }}"
+         - "--deploymentTag"
+         - "{{ deployment_tag_override | default(deploy_environ) }}"
+         - "--autoUpgrade"
+         - "--thanosRecvAddr"
+         - "https://{{ thanos_recv_fqdn }}"
+         - "-d"
+         - "etcd,api,notify,upgrade,infra"
+        env:
+         - name: VAULT_ROLE_ID
+           value: "{{ controller_role.role_id }}"
+         - name: VAULT_SECRET_ID
+           value: "{{ controller_role.secret_id }}"
+         - name: VAULT_CRM_ROLE_ID
+           value: "{{ crm_role.role_id }}"
+         - name: VAULT_CRM_SECRET_ID
+           value: "{{ crm_role.secret_id }}"
+         - name: JAEGER_ENDPOINT
+           value: "{{ jaeger_endpoint }}"
+         - name: JAEGER_TAGS
+           value: "environ={{ deploy_environ }},region={{ region }},version={{ edge_cloud_version }}"
+         - name: ES_SERVER_URLS
+           value: "{{ esproxy_address }}"
+
+      imagePullSecrets:
+       - name: mexreg-secret 
+

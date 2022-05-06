@@ -1,0 +1,123 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- debug:
+    msg: "Install global roles"
+
+- name: ansible.v1 role
+  vault_role:
+    name: ansible.v1
+    policies:
+      - ansible.read.v1
+      - approle.login.v1
+      - approle-accessors.write.v1
+      - auth-approle.write.v1
+      - auth-approle.destroy.v1
+      - auth-github-config.read.v1
+      - azure-aks-creds.read.v1
+      - azure-config.read.v1
+      - azure-roles.read.v1
+      - certs.read.v1
+      - chef.read.v1
+      - edge-cloud-registry.read.v1
+      - gcp-bucket-create-key.read.v1
+      - gcp-config.read.v1
+      - gcp-firewall-manage-key.read.v1
+      - gcp-role-create-key.read.v1
+      - gcp-rolesets.read.v1
+      - influxdb.read.v1
+      - influxdb-internal.read.v1
+      - mexenv.read.v1
+      - noreplyemail.read.v1
+      - pki-global-config.read.v1
+      - pki-global-roles.read.v1
+      - pki-regional-cloudlet-config.read.v1
+      - pki-regional-cloudlet-roles.read.v1
+      - pki-regional-config.read.v1
+      - pki-regional-roles.read.v1
+      - pki-root-config.read.v1
+      - registry.read.v1
+      - root-ca.read.v1
+      - ssh-ansible-user.read.v1
+      - ssh-ansible.read.v1
+      - ssh-ansible.sign.v1
+      - ssh-machine.read.v1
+      - ssh-user.read.v1
+      - sys-auth.read.v1
+      - sys-mounts.read.v1
+      - sys-plugins-catalog.read.v1
+      - sys-plugins-certs-config.read.v1
+      - sys-policies.read.v1
+      - transit-etcd-backup.encrypt.v1
+      - transit-keys.list.v1
+    token_type: batch
+    token_ttl: 5400   # seconds = 90 minutes
+
+- name: mcorm.v1 role
+  vault_role:
+    name: mcorm.v1
+    policies:
+      - approle.login.v1
+      - chargify.read.v1
+      - federation.write.v1
+      - gcs.read.v1
+      - gcp-operator-reports-bucket-access-token.read.v1
+      - influxdb.read.v1
+      - kafka.read.v1
+      - mcorm-jwtkeys.read.v1
+      - noreplyemail.read.v1
+      - pki-global.issue.v1
+      - registry.read.v1
+    token_type: batch
+
+- name: mexenv.v1 role
+  vault_role:
+    name: mexenv.v1
+    policies:
+      - approle.login.v1
+      - mexenv.read.v1
+    token_type: batch
+
+- name: notifyroot.v1 role
+  vault_role:
+    name: notifyroot.v1
+    policies:
+      - approle.login.v1
+      - pki-global.issue.v1
+
+- name: pki-tidy.v1 role
+  vault_role:
+    name: pki-tidy.v1
+    policies:
+      - pki-tidy.v1
+
+- name: snapshot.v1 role
+  vault_role:
+    name: snapshot.v1
+    policies:
+      - sys-storage-raft-snapshot.read.v1
+
+- name: teleport.v1 role
+  vault_role:
+    name: teleport.v1
+    policies:
+      - kubeconfigs.write.v1
+      - teleport-node-token.write.v1
+
+- include_role:
+    name: vault
+    tasks_from: region-roles
+  loop: "{{ regions }}"
+  loop_control:
+    loop_var: region

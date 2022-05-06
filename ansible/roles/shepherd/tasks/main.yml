@@ -1,0 +1,117 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- debug: var=item
+
+- azure_rm_aks_info:
+    tags:
+      - "Environment:mexplat-{{ deploy_environ }}"
+      - "Region:{{ item.controller_region }}"
+  check_mode: no
+  delegate_to: localhost
+  register: aks_facts
+
+- set_fact:
+    controller_name: "{{ aks_facts['aks'][0]['name'] }}"
+
+- assert:
+    that:
+      - item.cloudlet_name is defined
+
+### TODO remove after move shepherd to notify framework - EDGECLOUD-951
+- set_fact:
+    influxdb_dns: "{{ item.controller_region | lower }}.influxdb"
+  when: ( deploy_environ == 'main' ) or ( deploy_environ == 'prod' )
+
+- set_fact:
+    influxdb_dns: "{{ item.controller_region | lower }}-{{ deploy_environ }}.influxdb"
+  when:
+    - deploy_environ != 'main'
+    - deploy_environ != 'prod'
+###
+- set_fact:
+    notify_port: "{{ notify_port_start + crm_index }}"
+
+# Compute Shepherd and CRM names
+- set_fact:
+    crm_name: "{{ item.crm_name }}"
+  when: item.crm_name is defined
+
+- set_fact:
+    crm_name: "crm-{{ item.cloudlet_name }}"
+  when:
+    - item.crm_name is not defined
+
+- set_fact:
+    shepherd_name: "{{ item.shepherd_name }}"
+  when: item.shepherd_name is defined
+
+- set_fact:
+    shepherd_name: "shepherd-{{ item.cloudlet_name }}"
+  when:
+    - item.shepherd_name is not defined
+
+- debug:
+    msg: "Deploying {{ shepherd_name }} (cloudlet name: {{ item.cloudlet_name }})"
+
+- name: Fetch shepherd vault role
+  set_fact:
+    crm_role: "{{ lookup('approle', crm_role_name, id=shepherd_name) }}"
+  vars:
+    crm_role_name: "{{ item.controller_region | lower }}.crm.v1"
+
+- name: Compute shepherd command line
+  set_fact:
+    shepherd_args:
+      - shepherd
+      - "--accessApiAddr"
+      - "{{ controller_name }}.ctrl.{{ cloudflare_zone }}:41001"
+      # notifyAddr is localhost because use use host networking for docker containers
+      - "--notifyAddrs"
+      - "localhost:{{ item.notify_srv_port | default(notify_port) }}"
+      - "--platform"
+      - "{{ item.platform | default('PLATFORM_TYPE_OPENSTACK') }}"
+      - "--vaultAddr"
+      - "https://{{ vault_vm_hostname }}:{{ vault_port }}"
+      - "--useVaultPki"
+      - "--cloudletKey"
+      - "{\\\"organization\\\":\\\"{{ item.operator_key | mandatory }}\\\",\\\"name\\\":\\\"{{ item.cloudlet_name }}\\\"}"
+      - "--region"
+      - "{{ item.controller_region }}"
+      - "--deploymentTag"
+      - "{{ deployment_tag_override | default(deploy_environ) }}"
+      - "-d"
+      - "api,notify,infra,metrics"
+
+- name: Add openstack parameters
+  set_fact:
+    shepherd_args: "{{ shepherd_args + [ '--physicalName', item.openstack_instance ] }}"
+  when: item.openstack_instance is defined and item.openstack_instance
+
+- name: Deploy the shepherd
+  docker_container:
+    name: "{{ shepherd_name }}"
+    image: "{{ edge_cloud_image }}:{{ edge_cloud_version }}"
+    network_mode: host
+    restart_policy: unless-stopped
+    command: "{{ shepherd_args }}"
+    env:
+      VAULT_ROLE_ID: "{{ crm_role.role_id }}"
+      VAULT_SECRET_ID: "{{ crm_role.secret_id }}"
+      JAEGER_ENDPOINT: "{{ jaeger_endpoint }}"
+      JAEGER_TAGS: "shepherd={{ shepherd_name }},cloudlet={{ item.cloudlet_name }},operator={{ item.operator_key }},environ={{ deploy_environ }},version={{ edge_cloud_version }}"
+      ES_SERVER_URLS: "{{ esproxy_address }}"
+    volumes:
+      - "{{ shepherd_name }}-accesskey:/root/accesskey"
+

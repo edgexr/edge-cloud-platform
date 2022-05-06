@@ -1,0 +1,65 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- set_fact:
+    cert_plugin_setup_reqd: yes
+
+- name: Load plugin catalog
+  vault_api:
+    api: sys/plugins/catalog
+  register: plugins
+
+- name: Ensure cert plugin exists
+  block:
+
+    - name: Check cert plugin config
+      vault_api:
+        api: "sys/plugins/catalog/secret/{{ letsencrypt_backend }}"
+      register: cert_plugin_config
+
+    - set_fact:
+        cert_plugin_setup_reqd: no
+      vars:
+        vault_letsencrypt_plugin_basename: "{{ vault_letsencrypt_plugin | basename }}"
+      when:
+        - cert_plugin_config.meta.response.data.command == vault_letsencrypt_plugin_basename
+        - cert_plugin_config.meta.response.data.sha256 == vault_letsencrypt_plugin_sha256sum
+
+  when: letsencrypt_backend in plugins.meta.response.data.secret
+
+- name: Configure the letsencrypt plugin
+  vault_api:
+    api: "sys/plugins/catalog/secret/{{ letsencrypt_backend }}"
+    method: PUT
+    data:
+      command: "{{ vault_letsencrypt_plugin | basename }}"
+      sha256: "{{ vault_letsencrypt_plugin_sha256sum }}"
+      env: "CERTGEN_PORT={{ certgen_port }}"
+    success_code: 204
+  notify:
+    - Reload letsencrypt backend
+  when: cert_plugin_setup_reqd|bool
+
+- name: Enable the letsencrypt plugin
+  vault_api:
+    api: "sys/mounts/{{ letsencrypt_path }}"
+    method: POST
+    data:
+      type: "{{ letsencrypt_backend }}"
+    success_code: 204
+  vars:
+    engine_path: "{{ letsencrypt_path }}/"
+  notify:
+    - Reload letsencrypt backend
+  when: engine_path not in secret_engines.meta.response

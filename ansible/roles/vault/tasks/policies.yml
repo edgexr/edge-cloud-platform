@@ -1,0 +1,104 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Install global policies
+  vault_policy:
+    name: "{{ item | basename | regex_replace('\\.hcl(\\.j2)?$', '')}}"
+    content: "{{ lookup('template', item) }}"
+  loop:
+    - policies/ansible.read.v1.hcl.j2
+    - policies/approle.login.v1.hcl.j2
+    - policies/approle-accessors.read.v1.hcl.j2
+    - policies/approle-accessors.write.v1.hcl.j2
+    - policies/auth-approle.read.v1.hcl.j2
+    - policies/auth-approle.write.v1.hcl.j2
+    - policies/auth-approle.destroy.v1.hcl.j2
+    - policies/auth-github-config.read.v1.hcl.j2
+    - policies/auth-github-config.write.v1.hcl.j2
+    - policies/aws-auth.read.v1.hcl.j2
+    - policies/azure-aks-creds.read.v1.hcl.j2
+    - policies/azure-auth.read.v1.hcl.j2
+    - policies/azure-config.read.v1.hcl.j2
+    - policies/azure-roles.read.v1.hcl.j2
+    - policies/baseimage-password.read.v1.hcl.j2
+    - policies/baseimage-totp-key.read.v1.hcl.j2
+    - policies/baseimage-totp.read.v1.hcl.j2
+    - policies/certs.read.v1.hcl.j2
+    - policies/chargify.read.v1.hcl.j2
+    - policies/chef.read.v1.hcl.j2
+    - policies/cloudlets.read.v1.hcl.j2
+    - policies/cloudlets.write.v1.hcl.j2
+    - policies/edge-cloud-registry.read.v1.hcl.j2
+    - policies/federation.write.v1.hcl.j2
+    - policies/federation.read.v1.hcl.j2
+    - policies/gcs.read.v1.hcl.j2
+    - policies/gcp-auth.read.v1.hcl.j2
+    - policies/gcp-bucket-create-key.read.v1.hcl.j2
+    - policies/gcp-config.read.v1.hcl.j2
+    - policies/gcp-firewall-manage-key.read.v1.hcl.j2
+    - policies/gcp-gpu-drivers-bucket-access-token.read.v1.hcl.j2
+    - policies/gcp-operator-reports-bucket-access-token.read.v1.hcl.j2
+    - policies/gcp-role-create-key.read.v1.hcl.j2
+    - policies/gcp-rolesets.read.v1.hcl.j2
+    - policies/influxdb.read.v1.hcl.j2
+    - policies/influxdb-internal.read.v1.hcl.j2
+    - policies/kafka.read.v1.hcl.j2
+    - policies/kubeconfigs.write.v1.hcl.j2
+    - policies/logins.read.v1.hcl.j2
+    - policies/mcorm-jwtkeys.read.v1.hcl.j2
+    - policies/mcorm-jwtkeys.write.v1.hcl.j2
+    - policies/mex-ssh-key.read.v1.hcl.j2
+    - policies/mexenv.read.v1.hcl.j2
+    - policies/noreplyemail.read.v1.hcl.j2
+    - policies/pki-global.issue.v1.hcl.j2
+    - policies/pki-global-config.read.v1.hcl.j2
+    - policies/pki-global-roles.read.v1.hcl.j2
+    - policies/pki-regional-cloudlet-config.read.v1.hcl.j2
+    - policies/pki-regional-cloudlet-roles.read.v1.hcl.j2
+    - policies/pki-regional-config.read.v1.hcl.j2
+    - policies/pki-regional-roles.read.v1.hcl.j2
+    - policies/pki-root-config.read.v1.hcl.j2
+    - policies/pki-tidy.v1.hcl.j2
+    - policies/registry.read.v1.hcl.j2
+    - policies/root-ca.read.v1.hcl.j2
+    - policies/sessionsapi.read.v1.hcl.j2
+    - policies/ssh-ansible-user.read.v1.hcl.j2
+    - policies/ssh-ansible-user.sign.v1.hcl.j2
+    - policies/ssh-ansible.read.v1.hcl.j2
+    - policies/ssh-ansible.sign.v1.hcl.j2
+    - policies/ssh-machine.read.v1.hcl.j2
+    - policies/ssh-machine.sign.v1.hcl.j2
+    - policies/ssh-user.read.v1.hcl.j2
+    - policies/ssh-user.sign.v1.hcl.j2
+    - policies/sys-auth.read.v1.hcl.j2
+    - policies/sys-auth.write.v1.hcl.j2
+    - policies/sys-mounts.read.v1.hcl.j2
+    - policies/sys-plugins-catalog.read.v1.hcl.j2
+    - policies/sys-plugins-certs-config.read.v1.hcl.j2
+    - policies/sys-policies.read.v1.hcl.j2
+    - policies/sys-policies.write.v1.hcl.j2
+    - policies/sys-storage-raft-snapshot.read.v1.hcl.j2
+    - policies/teleport-node-token.read.v1.hcl.j2
+    - policies/teleport-node-token.write.v1.hcl.j2
+    - policies/transit-etcd-backup.decrypt.v1.hcl.j2
+    - policies/transit-etcd-backup.encrypt.v1.hcl.j2
+    - policies/transit-keys.list.v1.hcl.j2
+    - policies/ui-access.v1.hcl.j2
+
+- include_role:
+    name: vault
+    tasks_from: region-policies
+  loop: "{{ regions }}"
+  loop_control:
+    loop_var: region

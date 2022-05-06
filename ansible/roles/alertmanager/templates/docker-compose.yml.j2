@@ -1,0 +1,56 @@
+version: '2.2'
+
+services:
+  alertmanager:
+    container_name: {{ alertmanager_container }}
+    image: {{ alertmanager_image }}
+    restart: always
+    command:
+      - "--web.listen-address=:{{ alertmanager_port }}"
+      - "--config.file={{ alertmanager_config_path }}/{{ alertmanager_config_file}}"
+      - "--log.level=debug"
+    volumes:
+      - {{ alertmanager_config_path }}:{{ alertmanager_config_path }}
+      - {{ alertmanager_config_path }}/{{ alertmanager_template_file }}:/etc/alertmanager/templates/alertmanager.tmpl
+    networks:
+      - alertmgrnet
+
+  alertmgr-sidecar:
+    container_name: {{ sidecar_container }}
+    image: {{ edge_cloud_image }}-alertmgr-sidecar:{{ edge_cloud_version }}
+    restart: always
+    entrypoint: alertmgr-sidecar
+    command:
+      - "--httpAddr"
+      - "0.0.0.0:9094"
+      - "--alertmgrAddr"
+      - "http://alertmanager:{{ alertmanager_port }}"
+      - "--configFile"
+      - "{{ alertmanager_config_path }}/{{ alertmanager_config_file }}"
+      - "--tlsCert"
+      - "{{ letsencrypt_root }}/{{ alertmanager_hostname }}/fullchain.pem"
+      - "--tlsCertKey"
+      - "{{ letsencrypt_root }}/{{ alertmanager_hostname }}/privkey.pem"
+      - "--tlsClientCert"
+      - "{{ alertmanager_config_path }}/mex-ca.crt"
+    environment:
+      - JAEGER_ENDPOINT={{ jaeger_endpoint }}
+      - JAEGER_TAGS=environ={{ deploy_environ }},version={{ edge_cloud_version }}
+      - ALERTMANAGER_SMTP_EMAIL={{ alertmanager_smtp_email }}
+      - ALERTMANAGER_SMTP_USER={{ alertmanager_smtp_user }}
+      - ALERTMANAGER_SMTP_TOKEN={{ alertmanager_smtp_token }}
+      - ALERTMANAGER_SMTP_SERVER={{ alertmanager_smtp_server }}
+      - ALERTMANAGER_SMTP_SERVER_PORT={{ alertmanager_smtp_server_port }}
+      - ALERTMANAGER_RESOLVE_TIMEOUT={{ alertmanager_resolve_timeout  }}
+    volumes:
+      - {{ alertmanager_config_path }}:{{ alertmanager_config_path }}
+      - {{ letsencrypt_root }}/{{ alertmanager_hostname }}/privkey.pem:{{ letsencrypt_root }}/{{ alertmanager_hostname }}/privkey.pem
+      - {{ letsencrypt_root }}/{{ alertmanager_hostname }}/fullchain.pem:{{ letsencrypt_root }}/{{ alertmanager_hostname }}/fullchain.pem
+      - {{ letsencrypt_base }}/archive/{{ alertmanager_hostname }}:{{ letsencrypt_base }}/archive/{{ alertmanager_hostname }}
+    ports:
+      - 9094:9094
+    networks:
+      - alertmgrnet
+
+networks:
+  alertmgrnet:

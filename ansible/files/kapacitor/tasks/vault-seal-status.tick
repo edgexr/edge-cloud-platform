@@ -1,0 +1,22 @@
+dbrp "telegraf"."autogen"
+
+var name = 'Vault Seal Status Alert'
+
+var period = 1m
+
+var alert_interval = 15m
+
+var data = batch
+    |query(''' SELECT LAST(sealed) AS is_sealed FROM "telegraf"."autogen"."vault_status" ''')
+        .period(period)
+        .every(period)
+        .groupBy('host', 'environ')
+
+var alert = data
+    |alert()
+        .id('vault-{{ index .Tags "environ" }}/{{ index .Tags "host" }}')
+        .message('{{ .ID }}: Seal status is {{ .Level }}')
+        .crit(lambda: "is_sealed")
+        .stateChangesOnly(alert_interval)
+        .pagerDuty2()
+        .slack()

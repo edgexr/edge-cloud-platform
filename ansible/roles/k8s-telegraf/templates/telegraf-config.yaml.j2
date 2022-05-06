@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telegraf-conf
+data:
+  telegraf.conf: |
+    [global_tags]
+      env = "{{ etcd_env_tag }}"
+
+    [agent]
+      interval = "30s"
+      round_interval = true
+      metric_batch_size = 1000
+      metric_buffer_limit = 10000
+      collection_jitter = "0s"
+      flush_interval = "30s"
+      flush_jitter = "0s"
+      precision = ""
+      omit_hostname = true
+
+    [[outputs.influxdb]]
+      urls = ["https://{{ influxdb_vm_hostname }}:8086"]
+      database = "etcd"
+      skip_database_creation = true
+      username = "{{ influxdb_user }}"
+      password = "{{ influxdb_password }}"
+
+    [[inputs.prometheus]]
+        urls = ["http://{{ etcd_cluster_client }}:2379/metrics"]

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-{{ etcd_cluster_name }}-{{ etcd_index }}
+  labels:
+    component: "{{ etcd_cluster_name }}"
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  storageClassName: {{ etcd_volume_storage_class }}
+  resources:
+    requests:
+      storage: 1Gi

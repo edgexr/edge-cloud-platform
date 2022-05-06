@@ -1,0 +1,11 @@
+{
+  "azure_subscription_id": "{{ azure_subscription_id }}",
+  "azure_tenant_id" : "{{ azure_tenant_id }}",
+  "azure_terraform_service_principal_id": "{{ azure_terraform_service_principal_id }}",
+  "azure_terraform_service_principal_secret": "{{ azure_terraform_service_principal_secret }}",
+  "cloudflare_account_api_token": "{{ cloudflare_account_api_token }}",
+  "cloudflare_account_email": "{{ cloudflare_account_email }}",
+  "cloudflare_zone": "{{ cloudflare_zone }}",
+{% if influxdb_vm_hostname is defined %}  "influxdb_vm_hostname": "{{ influxdb_vm_hostname }}",{{ "\n" }}{% endif %}
+  "__terraform_vars_done": true
+}

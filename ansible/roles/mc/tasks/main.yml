@@ -1,0 +1,150 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Validate Artifactory
+  include_role:
+    name: mc
+    tasks_from: validate-artifactory
+  loop: "{{ groups['artifactory'] | default([]) }}"
+  loop_control:
+    loop_var: artifactory_host
+
+- import_role:
+    name: load-vault-creds
+    tasks_from: mc
+
+- import_role:
+    name: load-vault-creds
+    tasks_from: mc_ldap
+
+- name: Look up gitlab apikey in vault
+  set_fact:
+    vault_lookup: "{{ lookup('vault', gitlab_path) }}"
+  vars:
+    gitlab_path: "secret/registry/{{ gitlab_vm_hostname }}:token"
+
+- set_fact:
+    mc_gitlab_token: "{{ vault_lookup.token.data.apikey }}"
+
+- name: Fetch MC vault role
+  set_fact:
+    mc_role: "{{ lookup('approle', 'mcorm.v1') }}"
+
+- name: Compute mc command line
+  set_fact:
+    mc_args:
+      - "-commonName"
+      - "{{ inventory_hostname }}"
+      - "-addr"
+      - "0.0.0.0:{{ mc_api_port }}"
+      - "-notifyAddrs"
+      - "{{ notifyroot_hostname }}:{{ notifyroot_port }}"
+      - "-notifySrvAddr"
+      - "0.0.0.0:{{ mc_notify_srv_port }}"
+      - "-controllerNotifyPort"
+      - "{{ controller_notify_port }}"
+      - "-sqlAddr"
+      - "{{ postgres_hostname }}:5432"
+      - "-vaultAddr"
+      - "{{ vault_address }}"
+      - "-useVaultPki"
+      - "-gitlabAddr"
+      - "https://{{ gitlab_vm_hostname }}"
+      - "-ldapAddr"
+      - "0.0.0.0:{{ mc_ldap_port }}"
+      - "-billingPlatform"
+      - "{{ billing_platform }}"
+      - "-alertMgrApiAddr"
+      - "https://{{ alertmanager_hostname }}:{{ alertmanager_sidecar_port }}"
+      - "-jaegerAddr"
+      - "{{ jaeger_hostname }}:16686"
+      - "-publicAddr"
+      - "https://{{ inventory_hostname }}"
+      - "-consoleAddr"
+      - "https://{{ inventory_hostname }}"
+      - "-deploymentTag"
+      - "{{ deployment_tag_override | default(deploy_environ) }}"
+      - "-d"
+      - "api"
+
+- name: Add artifactory address
+  set_fact:
+    mc_args: "{{ mc_args + [ '-artifactoryAddr', mc_artifactory_address ] }}"
+  when: mc_artifactory_address is defined
+
+- name: Compute MC name
+  set_fact:
+    mc_name: "{{ mc_vm_hostname.split('.')[0]|lower }}"
+
+- name: Set docker container ports
+  set_fact:
+    mc_port_maps:
+      - "127.0.0.1:{{ mc_api_port }}:{{ mc_api_port }}"
+      - "127.0.0.1:19389:{{ mc_ldap_port }}"
+      - "127.0.0.1:{{ mc_vnc_port }}:{{ mc_vnc_port }}"
+      - "{{ mc_notify_srv_port }}:{{ mc_notify_srv_port }}"
+
+- block:
+
+    - name: Add federation address
+      set_fact:
+        mc_args: "{{ mc_args + [ '-federationAddr', '0.0.0.0:' + mc_federation_port|string ] }}"
+
+    - set_fact:
+        fed_api_port_map: "127.0.0.1:{{ mc_federation_port }}:{{ mc_federation_port }}"
+
+    - name: Set up port map for federation API
+      set_fact:
+        mc_port_maps: "{{ mc_port_maps + [ fed_api_port_map ] }}"
+
+  when: federated_mc|bool
+
+- name: Deploy the MC
+  docker_container:
+    name: "{{ mc_name }}"
+    image: "{{ edge_cloud_image }}-mc:{{ edge_cloud_version }}"
+    restart_policy: unless-stopped
+    entrypoint: mc
+    command: "{{ mc_args }}"
+    ports: "{{ mc_port_maps }}"
+    env:
+      db_name: "{{ mc_postgres_db }}"
+      db_username: "{{ mc_postgres_username }}"
+      db_password: "{{ mc_postgres_password }}"
+      superuser: "{{ mc_superuser }}"
+      superpass: "{{ mc_default_superuser_password }}"
+      VAULT_ROLE_ID: "{{ mc_role.role_id }}"
+      VAULT_SECRET_ID: "{{ mc_role.secret_id }}"
+      gitlab_token: "{{ mc_gitlab_token }}"
+      JAEGER_ENDPOINT: "{{ jaeger_endpoint }}"
+      JAEGER_TAGS: "mc={{ mc_name }},environ={{ deploy_environ }},version={{ edge_cloud_version }}"
+      LDAP_USERNAME: "{{ mc_ldap_username }}"
+      LDAP_PASSWORD: "{{ mc_ldap_password }}"
+      ES_SERVER_URLS: "{{ esproxy_address }}"
+
+- name: Set up the nginx reverse proxy
+  blockinfile:
+    path: /etc/nginx/nginx.conf
+    block: |
+      stream {
+          server {
+              # LDAPS terminates here
+              listen {{ mc_ldap_port }} ssl;
+              proxy_pass 127.0.0.1:19389;
+              ssl_certificate  {{ letsencrypt_root }}/{{ console_vm_hostname }}/fullchain.pem;
+              ssl_certificate_key {{ letsencrypt_root }}/{{ console_vm_hostname }}/privkey.pem;
+          }
+      }
+  become: yes
+  notify: Restart nginx for LDAPS

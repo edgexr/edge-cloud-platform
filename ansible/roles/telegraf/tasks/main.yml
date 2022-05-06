@@ -1,0 +1,72 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Add influxdb apt key
+  apt_key:
+    url: https://repos.influxdata.com/influxdb.key
+    state: present
+  become: yes
+  tags:
+    - setup
+
+- name: Add influxdb apt repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://repos.influxdata.com/ubuntu {{ ubuntu_release }} stable"
+  become: yes
+  tags:
+    - setup
+
+- name: Install telegraf
+  apt:
+    name: telegraf
+    state: present
+    update_cache: yes
+  become: yes
+  tags:
+    - setup
+
+- name: Look up telegraf credentials in vault
+  set_fact:
+    vault_lookup: "{{ lookup('vault', vault_telegraf_creds_path) }}"
+
+- set_fact:
+    telegraf_user: "{{ vault_lookup.telegraf.data.user }}"
+    telegraf_password: "{{ vault_lookup.telegraf.data.pass }}"
+
+- name: Install telegraf config
+  template:
+    src: telegraf.conf.j2
+    dest: "{{ telegraf_config_path }}"
+    owner: telegraf
+    group: root
+    mode: 0400
+  become: yes
+  notify:
+    - Restart telegraf
+
+- name: Install additional telegraf configs
+  template:
+    src: "{{ additional_conf_file }}"
+    dest: "{{ telegraf_additional_config_path }}/{{ additional_conf_file | basename | regex_replace('\\.j2$', '') }}"
+    owner: telegraf
+    group: root
+    mode: 0400
+  become: yes
+  notify:
+    - Restart telegraf
+  loop: "{{ telegraf_additional_config }}"
+  loop_control:
+    loop_var: additional_conf_file
+
+- meta: flush_handlers

@@ -1,0 +1,62 @@
+server {
+	listen 443 ssl;
+	listen [::]:443 ssl;
+        server_name {{ inventory_hostname }};
+        ssl_certificate {{ letsencrypt_root }}/{{ inventory_hostname }}/fullchain.pem;
+        ssl_certificate_key {{ letsencrypt_root }}/{{ inventory_hostname }}/privkey.pem;
+        ssl_session_cache shared:le_nginx_SSL:1m;
+        ssl_session_cache shared:le_nginx_SSL:1m;
+	ssl_protocols TLSv1.2;
+	ssl_prefer_server_ciphers on;
+	ssl_ciphers '{{ nginx_ssl_ciphers }}';
+
+	add_header 'Cache-Control' 'no-cache, no-store, must-revalidate' always;
+	add_header 'X-Frame-Options' 'sameorigin' always;
+	add_header 'X-Content-Type-Options' 'nosniff' always;
+	add_header 'Strict-Transport-Security' 'max-age=31536000; includeSubDomains; preload' always;
+	add_header 'Content-Security-Policy' "object-src 'none'" always;
+	add_header 'Expect-CT' 'max-age=86400, enforce' always;
+	add_header 'X-XSS-Protection' '1; mode=block' always;
+	add_header 'Referrer-Policy' 'strict-origin' always;
+	add_header 'Feature-Policy' "microphone 'none'; camera 'none'" always;
+	add_header 'X-Permitted-Cross-Domain-Policies' 'none' always;
+
+        location / {
+                include /etc/nginx/proxy_params;
+                proxy_pass              http://localhost:9191;
+                proxy_read_timeout      90s;
+        }
+
+        location /oper/ {
+                include /etc/nginx/proxy_params;
+                proxy_pass              http://localhost:9190/;
+                proxy_read_timeout      90s;
+        }
+
+        location /mc/ {
+                include /etc/nginx/proxy_params;
+                proxy_pass              http://localhost:9194/;
+                proxy_read_timeout      90s;
+        }
+
+        location /diff {
+                root /var/www/swagger;
+                index index.html;
+        }
+
+        location /swagger {
+                root /var;
+                autoindex on;
+        }
+}
+
+server {
+	if ($host = {{ inventory_hostname }}) {
+		return 301 https://$host$request_uri;
+	}
+
+	listen 80;
+	listen [::]:80;
+        server_name {{ inventory_hostname }};
+	return 404;
+}

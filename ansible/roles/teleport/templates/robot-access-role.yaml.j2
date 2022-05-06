@@ -1,0 +1,21 @@
+kind: role
+version: v4
+metadata:
+  name: robot-{{ environ }}
+spec:
+  allow:
+    # This field is used for SSH logins. This needs to be set
+    # to a non-empty value to work around a Teleport bug.
+    logins:
+      - nobody
+    kubernetes_groups: ["system:masters"]
+    kubernetes_labels:
+      env: {{ environ }}
+---
+kind: user
+version: v2
+metadata:
+  name: ansible-{{ environ }}
+spec:
+  roles:
+    - robot-{{ environ }}
