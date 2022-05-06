@@ -6,9 +6,9 @@ package gencmd
 import (
 	"context"
 	fmt "fmt"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/cli"
-	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
-	_ "github.com/edgexr/edge-cloud-platform/protogen"
+	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"

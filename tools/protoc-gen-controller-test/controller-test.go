@@ -17,11 +17,11 @@ package main
 import (
 	"text/template"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/gensupport"
+	"github.com/edgexr/edge-cloud-platform/tools/protogen"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	"github.com/edgexr/edge-cloud-platform/gensupport"
-	"github.com/edgexr/edge-cloud-platform/protogen"
 )
 
 type ControllerTest struct {
@@ -70,10 +70,10 @@ func (s *ControllerTest) GenerateImports(file *generator.FileDescriptor) {
 		s.PrintImport("", "testing")
 	}
 	if s.importEdgeproto {
-		s.PrintImport("", "github.com/edgexr/edge-cloud-platform/edgeproto")
+		s.PrintImport("", "github.com/edgexr/edge-cloud-platform/api/edgeproto")
 	}
 	if s.importObjstore {
-		s.PrintImport("", "github.com/edgexr/edge-cloud-platform/objstore")
+		s.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/objstore")
 	}
 	if s.importRequire {
 		s.PrintImport("", "github.com/stretchr/testify/require")
@@ -82,7 +82,7 @@ func (s *ControllerTest) GenerateImports(file *generator.FileDescriptor) {
 		s.PrintImport("", "github.com/coreos/etcd/clientv3/concurrency")
 	}
 	if s.importTestutil {
-		s.PrintImport("", "github.com/edgexr/edge-cloud-platform/testutil")
+		s.PrintImport("", "github.com/edgexr/edge-cloud-platform/test/testutil")
 	}
 }
 

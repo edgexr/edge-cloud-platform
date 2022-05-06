@@ -1,6 +1,8 @@
 # Makefile
 
-APIS		= $(shell go list -f '{{ .Dir }}' -m github.com/gogo/googleapis)
+#PROTOC		= $(shell which protoc)
+#GOGOFAST	= $(shell which protoc-gen-gogofast)
 
 build:
-	protoc -I. -I${APIS} --gogofast_out=Mgoogle/protobuf/descriptor.proto=github.com/gogo/protobuf/protoc-gen-gogo/descriptor:. *.proto
+	protoc -I. --gogofast_out=Mgoogle/protobuf/descriptor.proto=github.com/gogo/protobuf/protoc-gen-gogo/descriptor:. *.proto
+

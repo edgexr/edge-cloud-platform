@@ -6,9 +6,9 @@ package main
 import (
 	fmt "fmt"
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/objstore"
-	_ "github.com/edgexr/edge-cloud-platform/protogen"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	math "math"

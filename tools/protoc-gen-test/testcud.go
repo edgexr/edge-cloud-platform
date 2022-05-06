@@ -20,11 +20,11 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/gensupport"
+	"github.com/edgexr/edge-cloud-platform/tools/protogen"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	"github.com/edgexr/edge-cloud-platform/gensupport"
-	"github.com/edgexr/edge-cloud-platform/protogen"
 )
 
 type TestCud struct {
@@ -517,13 +517,13 @@ func (t *TestCud) GenerateImports(file *generator.FileDescriptor) {
 		t.PrintImport("", "github.com/stretchr/testify/require")
 	}
 	if t.importLog {
-		t.PrintImport("", "github.com/edgexr/edge-cloud-platform/log")
+		t.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/log")
 	}
 	if t.importCli {
-		t.PrintImport("", "github.com/edgexr/edge-cloud-platform/cli")
+		t.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/cli")
 	}
 	if t.importWrapper {
-		t.PrintImport("", "github.com/edgexr/edge-cloud-platform/edgectl/wrapper")
+		t.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/edgectl/wrapper")
 	}
 }
 

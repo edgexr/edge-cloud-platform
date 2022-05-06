@@ -18,10 +18,10 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/gensupport"
+	"github.com/edgexr/edge-cloud-platform/tools/protogen"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	"github.com/edgexr/edge-cloud-platform/gensupport"
-	"github.com/edgexr/edge-cloud-platform/protogen"
 	"github.com/spf13/cobra"
 )
 

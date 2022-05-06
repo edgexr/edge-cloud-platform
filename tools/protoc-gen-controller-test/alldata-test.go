@@ -15,9 +15,9 @@
 package main
 
 import (
+	"github.com/edgexr/edge-cloud-platform/pkg/gensupport"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	"github.com/edgexr/edge-cloud-platform/gensupport"
 )
 
 var AllDataName = "AllData"

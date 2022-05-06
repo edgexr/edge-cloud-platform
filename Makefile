@@ -25,28 +25,26 @@ APICOMMENTS = ./mc/ormapi/api.comments.go
 
 build: check-vers
 	make -f Makefile.tools
-	make -C protogen
-	make -C edgeprotogen
-	make -C ./protoc-gen-gomex
-	go install ./protoc-gen-test
-	go install ./protoc-gen-notify
-	go install ./protoc-gen-controller
-	go install ./protoc-gen-controller-test
-	go install ./protoc-gen-mc2
-	make -C ./protoc-gen-cmd
-	make -C ./log
-	make -C d-match-engine/dme-proto
-	make -C edgeproto
-	make -C testgen
-	make -C d-match-engine
-	make -f proto.make
-	make -C vault/letsencrypt-plugin letsencrypt/version.go
-	(cd tls; ./gen-test-certs.sh)
-	go install ./mc/mcctl/genmctestclient
-	genmctestclient > ./mc/mcctl/mctestclient/mctestclient_generatedfuncs.go
+	make -C tools/protogen
+	make -C tools/edgeprotogen
+	go install ./tools/protoc-gen-gomex
+	go install ./tools/protoc-gen-test
+	go install ./tools/protoc-gen-cmd
+	go install ./tools/protoc-gen-notify
+	go install ./tools/protoc-gen-controller
+	go install ./tools/protoc-gen-controller-test
+	go install ./tools/protoc-gen-mc2
+	make -C pkg/log
+	make -C api/dme-proto
+	make -C api/edgeproto
+	make -C test/testgen
+	make -C pkg/vault/letsencrypt-plugin letsencrypt/version.go
+	(cd pkg/tls; ./gen-test-certs.sh)
+	go install ./pkg/mcctl/genmctestclient
+	genmctestclient > ./pkg/mcctl/mctestclient/mctestclient_generatedfuncs.go
 	go build ./...
-	go build -buildmode=plugin -o ${GOPATH}/plugins/platforms.so plugin/platform/*.go
-	go build -buildmode=plugin -o ${GOPATH}/plugins/edgeevents.so plugin/edgeevents/*.go
+	go build -buildmode=plugin -o ${GOPATH}/plugins/platforms.so pkg/plugin/platform/*.go
+	go build -buildmode=plugin -o ${GOPATH}/plugins/edgeevents.so pkg/plugin/edgeevents/*.go
 	go vet ./...
 
 build-linux:
@@ -59,12 +57,12 @@ build-docker:
 		--build-arg BUILD_TAG="$(shell git describe --always --dirty=+), $(shell date +'%Y-%m-%d'), ${TAG}" \
 		--build-arg EDGE_CLOUD_BASE_IMAGE=$(EDGE_CLOUD_BASE_IMAGE) \
 		--build-arg REGISTRY=$(REGISTRY) \
-		-t $(REGISTRY)/edge-cloud:$(TAG) -f docker/Dockerfile.edge-cloud ..
+		-t $(REGISTRY)/edge-cloud:$(TAG) -f build/docker/Dockerfile.edge-cloud ..
 	for COMP in alertmgr-sidecar autoprov cluster-svc controller crm dme edgeturn frm mc notifyroot; do \
 		docker buildx build --push -t $(REGISTRY)/edge-cloud-$$COMP:$(TAG) \
 			--build-arg ALLINONE=$(REGISTRY)/edge-cloud:$(TAG) \
 			--build-arg EDGE_CLOUD_BASE_IMAGE=$(EDGE_CLOUD_BASE_IMAGE) \
-			-f docker/Dockerfile.$$COMP docker || exit 1; \
+			-f build/docker/Dockerfile.$$COMP docker || exit 1; \
 	done
 
 build-nightly: REGISTRY = harbor.mobiledgex.net/mobiledgex
@@ -103,11 +101,11 @@ doc-local-server:
 		redocly/redoc:v2.0.0-rc.23
 
 third_party:
-	parsedeps --gennotice ./cloud-resource-manager/cmd/crmserver ./controller ./d-match-engine/dme-server ./cluster-svc ./edgeturn ./notifyroot ./plugin/platform/ ./plugin/edgeevents ./shepherd ./shepherd/shepherd_platform ./mc ./alertmgr-sidecar ./autoprov> THIRD-PARTY-NOTICES
+	parsedeps --gennotice ./cmd/crmserver ./cmd/controller ./cmd/dme-server ./cmd/cluster-svc ./cmd/edgeturn ./cmd/notifyroot ./pkg/plugin/platform/ ./pkg/plugin/edgeevents ./cmd/shepherd ./pkg/shepherd_platform ./cmd/mc ./cmd/alertmgr-sidecar ./cmd/autoprov> THIRD-PARTY-NOTICES
 
-$(APICOMMENTS): ./mc/ormapi/apidoc/apidoc.go ./mc/ormapi/api.go ./mc/ormapi/federation_api.go
-	go install ./mc/ormapi/apidoc
-	apidoc --apiFile ./mc/ormapi/api.go --apiFile ./mc/ormapi/federation_api.go --outFile ./mc/ormapi/api.comments.go
+$(APICOMMENTS): ./tools/apidoc/apidoc.go ./api/ormapi/api.go ./api/ormapi/federation_api.go
+	go install ./tools/apidoc
+	apidoc --apiFile ./api/ormapi/api.go --apiFile ./api/ormapi/federation_api.go --outFile ./api/ormapi/api.comments.go
 
 # adds license header to all files, see https://github.com/google/addlicense
 addlicense:
