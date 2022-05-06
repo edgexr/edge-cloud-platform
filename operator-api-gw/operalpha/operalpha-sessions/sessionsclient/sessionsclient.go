@@ -30,7 +30,7 @@ import (
 )
 
 func GetApiKeyFromVault(ctx context.Context, vaultConfig *vault.Config) (string, error) {
-	apiKeyPath := "/secret/data/accounts/operalpha/sessionsapi"
+	apiKeyPath := "/secret/data/accounts/gddt/sessionsapi"
 	log.SpanLog(ctx, log.DebugLevelDmereq, "GetApiKeyFromVault", "vaultAddr", vaultConfig.Addr, "apiKeyPath", apiKeyPath)
 	type ApiKeyData struct {
 		Data string

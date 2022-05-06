@@ -22,7 +22,6 @@ import (
 	"html/template"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -255,17 +254,17 @@ func StartCloudletPrometheus(ctx context.Context, remoteWriteAddr string, cloudl
 
 	// local container specific options
 	args = append([]string{"run", "--rm"}, args...)
-	if runtime.GOOS != "darwin" {
-		// For Linux, "host.docker.internal" host name doesn't work from inside docker container
-		// Use "--add-host" to add this mapping, only works if Docker version >= 20.04
-		args = append(args, "--add-host", "host.docker.internal:host-gateway")
+	var err error
+	args, err = process.AddHostDockerInternal(args)
+	if err != nil {
+		return err
 	}
 	// set name and image path
 	promImage := PrometheusImagePath + ":" + PrometheusImageVersion
 	args = append(args, []string{"--name", PrometheusContainer, promImage}...)
 	args = append(args, cmdOpts...)
 
-	_, err := process.StartLocal(PrometheusContainer, "docker", args, nil, "/tmp/cloudlet_prometheus.log")
+	_, err = process.StartLocal(PrometheusContainer, "docker", args, nil, "/tmp/cloudlet_prometheus.log")
 	if err != nil {
 		return err
 	}

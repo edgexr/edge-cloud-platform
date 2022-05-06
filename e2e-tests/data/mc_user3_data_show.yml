@@ -98,26 +98,6 @@ regiondata:
         driver:
           name: gpu-driver-global
     - key:
-        organization: enterprise
-        name: enterprise-1
-      location:
-        latitude: 31
-        longitude: -91
-      ipsupport: Dynamic
-      numdynamicips: 254
-      state: Ready
-      trustpolicystate: NotPresent
-    - key:
-        organization: gcp
-        name: gcp-cloud-5
-      location:
-        latitude: 36
-        longitude: -95
-      ipsupport: Dynamic
-      numdynamicips: 254
-      state: Ready
-      trustpolicystate: NotPresent
-    - key:
         organization: dmuus
         name: dmuus-cloud-1
       location:
@@ -137,6 +117,26 @@ regiondata:
         name: dmuus-cloud-2
       location:
         latitude: 35
+        longitude: -95
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+      trustpolicystate: NotPresent
+    - key:
+        organization: enterprise
+        name: enterprise-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+      trustpolicystate: NotPresent
+    - key:
+        organization: gcp
+        name: gcp-cloud-5
+      location:
+        latitude: 36
         longitude: -95
       ipsupport: Dynamic
       numdynamicips: 254
@@ -341,16 +341,6 @@ regiondata:
       disk: 1
     cloudlets:
     - key:
-        organization: enterprise
-        name: enterprise-2
-      location:
-        latitude: 31
-        longitude: -91
-      ipsupport: Dynamic
-      numdynamicips: 254
-      state: Ready
-      trustpolicystate: NotPresent
-    - key:
         organization: dmuus
         name: dmuus-cloud-3
       location:
@@ -366,6 +356,16 @@ regiondata:
       location:
         latitude: 36
         longitude: -96
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+      trustpolicystate: NotPresent
+    - key:
+        organization: enterprise
+        name: enterprise-2
+      location:
+        latitude: 31
+        longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready

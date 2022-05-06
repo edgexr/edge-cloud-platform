@@ -20,6 +20,10 @@ orgs:
   type: operator
   address: amazon jungle
   phone: 123-123-1234
+- name: dmuus
+  type: operator
+  address: dmuus headquarters
+  phone: 123-123-1234
 - name: enterprise
   type: operator
   address: enterprise headquarters
@@ -28,21 +32,17 @@ orgs:
   type: operator
   address: mountain view
   phone: 123-123-1234
-- name: dmuus
-  type: operator
-  address: dmuus headquarters
-  phone: 123-123-1234
 roles:
 - org: azure
+  username: user1
+  role: OperatorManager
+- org: dmuus
   username: user1
   role: OperatorManager
 - org: enterprise
   username: user1
   role: OperatorManager
 - org: gcp
-  username: user1
-  role: OperatorManager
-- org: dmuus
   username: user1
   role: OperatorManager
 cloudletpoolaccessinvitations:
@@ -78,10 +78,10 @@ regiondata:
       organization: dmuus
     gpudrivers:
     - key:
-        name: gpu-driver-global
-    - key:
         name: gpu-driver-dmuus-1
         organization: dmuus
+    - key:
+        name: gpu-driver-global
     cloudlets:
     - key:
         organization: azure
@@ -105,42 +105,6 @@ regiondata:
       dnslabel: azure-cloud-4-azure
       rootlbfqdn: shared.azure-cloud-4-azure.local.mobiledgex.net
       licenseconfigstoragepath: local/MobiledgeX/gpu-driver-global/cloudlet/licenseconfig/azure/azure-cloud-4/license.conf
-    - key:
-        organization: enterprise
-        name: enterprise-1
-      location:
-        latitude: 31
-        longitude: -91
-      ipsupport: Dynamic
-      numdynamicips: 254
-      state: Ready
-      flavor:
-        name: x1.small
-      physicalname: enterprise-1
-      containerversion: "2019-10-24"
-      deployment: docker
-      trustpolicystate: NotPresent
-      defaultresourcealertthreshold: 80
-      dnslabel: enterprise-1-enterprise
-      rootlbfqdn: shared.enterprise-1-enterprise.local.mobiledgex.net
-    - key:
-        organization: gcp
-        name: gcp-cloud-5
-      location:
-        latitude: 36
-        longitude: -95
-      ipsupport: Dynamic
-      numdynamicips: 254
-      state: Ready
-      flavor:
-        name: DefaultPlatformFlavor
-      physicalname: gcp-cloud-5
-      containerversion: "2019-10-24"
-      deployment: docker
-      trustpolicystate: NotPresent
-      defaultresourcealertthreshold: 80
-      dnslabel: gcp-cloud-5-gcp
-      rootlbfqdn: shared.gcp-cloud-5-gcp.local.mobiledgex.net
     - key:
         organization: dmuus
         name: dmuus-cloud-1
@@ -195,48 +159,46 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: dmuus-cloud-2-dmuus
       rootlbfqdn: shared.dmuus-cloud-2-dmuus.local.mobiledgex.net
+    - key:
+        organization: enterprise
+        name: enterprise-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+      flavor:
+        name: x1.small
+      physicalname: enterprise-1
+      containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
+      defaultresourcealertthreshold: 80
+      dnslabel: enterprise-1-enterprise
+      rootlbfqdn: shared.enterprise-1-enterprise.local.mobiledgex.net
+    - key:
+        organization: gcp
+        name: gcp-cloud-5
+      location:
+        latitude: 36
+        longitude: -95
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: gcp-cloud-5
+      containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
+      defaultresourcealertthreshold: 80
+      dnslabel: gcp-cloud-5-gcp
+      rootlbfqdn: shared.gcp-cloud-5-gcp.local.mobiledgex.net
     cloudletinfos:
     - key:
         organization: azure
         name: azure-cloud-4
-      state: Ready
-      osmaxram: 40960
-      osmaxvcores: 50
-      osmaxvolgb: 5000
-      flavors:
-      - name: x1.tiny
-        vcpus: 1
-        ram: 1024
-        disk: 20
-      - name: x1.small
-        vcpus: 2
-        ram: 4096
-        disk: 40
-      containerversion: "2019-10-24"
-      controllercachereceived: true
-      trustpolicystate: NotPresent
-    - key:
-        organization: enterprise
-        name: enterprise-1
-      state: Ready
-      osmaxram: 40960
-      osmaxvcores: 50
-      osmaxvolgb: 5000
-      flavors:
-      - name: x1.tiny
-        vcpus: 1
-        ram: 1024
-        disk: 20
-      - name: x1.small
-        vcpus: 2
-        ram: 4096
-        disk: 40
-      containerversion: "2019-10-24"
-      controllercachereceived: true
-      trustpolicystate: NotPresent
-    - key:
-        organization: gcp
-        name: gcp-cloud-5
       state: Ready
       osmaxram: 40960
       osmaxvcores: 50
@@ -291,6 +253,44 @@ regiondata:
       containerversion: "2019-10-24"
       controllercachereceived: true
       trustpolicystate: NotPresent
+    - key:
+        organization: enterprise
+        name: enterprise-1
+      state: Ready
+      osmaxram: 40960
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+      containerversion: "2019-10-24"
+      controllercachereceived: true
+      trustpolicystate: NotPresent
+    - key:
+        organization: gcp
+        name: gcp-cloud-5
+      state: Ready
+      osmaxram: 40960
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+      containerversion: "2019-10-24"
+      controllercachereceived: true
+      trustpolicystate: NotPresent
     cloudletpools:
     - key:
         organization: enterprise
@@ -320,24 +320,6 @@ regiondata:
     - code: "31026"
       organization: dmuus
     cloudlets:
-    - key:
-        organization: enterprise
-        name: enterprise-2
-      location:
-        latitude: 31
-        longitude: -91
-      ipsupport: Dynamic
-      numdynamicips: 254
-      state: Ready
-      flavor:
-        name: x1.small
-      physicalname: enterprise-2
-      containerversion: "2019-10-24"
-      deployment: docker
-      trustpolicystate: NotPresent
-      defaultresourcealertthreshold: 80
-      dnslabel: enterprise-2-enterprise
-      rootlbfqdn: shared.enterprise-2-enterprise.locala.mobiledgex.net
     - key:
         organization: dmuus
         name: dmuus-cloud-3
@@ -374,26 +356,25 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: dmuus-cloud-4-dmuus
       rootlbfqdn: shared.dmuus-cloud-4-dmuus.locala.mobiledgex.net
-    cloudletinfos:
     - key:
         organization: enterprise
         name: enterprise-2
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 254
       state: Ready
-      osmaxram: 40960
-      osmaxvcores: 50
-      osmaxvolgb: 5000
-      flavors:
-      - name: x1.tiny
-        vcpus: 1
-        ram: 1024
-        disk: 20
-      - name: x1.small
-        vcpus: 2
-        ram: 4096
-        disk: 40
+      flavor:
+        name: x1.small
+      physicalname: enterprise-2
       containerversion: "2019-10-24"
-      controllercachereceived: true
+      deployment: docker
       trustpolicystate: NotPresent
+      defaultresourcealertthreshold: 80
+      dnslabel: enterprise-2-enterprise
+      rootlbfqdn: shared.enterprise-2-enterprise.locala.mobiledgex.net
+    cloudletinfos:
     - key:
         organization: dmuus
         name: dmuus-cloud-3
@@ -416,6 +397,25 @@ regiondata:
     - key:
         organization: dmuus
         name: dmuus-cloud-4
+      state: Ready
+      osmaxram: 40960
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+      containerversion: "2019-10-24"
+      controllercachereceived: true
+      trustpolicystate: NotPresent
+    - key:
+        organization: enterprise
+        name: enterprise-2
       state: Ready
       osmaxram: 40960
       osmaxvcores: 50
