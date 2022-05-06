@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud/util"
+	"github.com/edgexr/edge-cloud-platform/util"
 	"github.com/stretchr/testify/require"
 )
 

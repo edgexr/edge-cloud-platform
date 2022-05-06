@@ -20,14 +20,14 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/edgexr/edge-cloud-infra/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/vmlayer"
 
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/vault"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )

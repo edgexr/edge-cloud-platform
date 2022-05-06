@@ -17,10 +17,10 @@ package common
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-infra/alerts"
-	"github.com/edgexr/edge-cloud-infra/autoprov/autorules"
-	"github.com/edgexr/edge-cloud-infra/version"
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/alerts"
+	"github.com/edgexr/edge-cloud-platform/autoprov/autorules"
+	"github.com/edgexr/edge-cloud-platform/version"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 type ClusterSvc struct{}
@@ -54,5 +54,5 @@ func (s *ClusterSvc) GetAppInstConfigs(ctx context.Context, clusterInst *edgepro
 }
 
 func (s *ClusterSvc) GetVersionProperties() map[string]string {
-	return version.InfraBuildProps("InfraClusterSvc")
+	return version.BuildProps("InfraClusterSvc")
 }

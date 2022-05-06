@@ -22,17 +22,17 @@ import (
 	"sync"
 	"time"
 
-	intprocess "github.com/edgexr/edge-cloud-infra/e2e-tests/int-process"
-	"github.com/edgexr/edge-cloud-infra/shepherd/shepherd_common"
-	"github.com/edgexr/edge-cloud-infra/version"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
-	pf "github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform/fake"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/redundancy"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/integration/process"
-	"github.com/edgexr/edge-cloud/log"
+	intprocess "github.com/edgexr/edge-cloud-platform/e2e-tests/int-process"
+	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_common"
+	"github.com/edgexr/edge-cloud-platform/version"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/fake"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/redundancy"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 type Platform struct {
@@ -174,5 +174,5 @@ func (s *Platform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletPro
 }
 
 func (s *Platform) GetVersionProperties() map[string]string {
-	return version.InfraBuildProps("FakeInfra")
+	return version.BuildProps("FakeInfra")
 }

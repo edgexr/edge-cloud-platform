@@ -21,9 +21,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/edgexr/edge-cloud/cli"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/testutil"
+	"github.com/edgexr/edge-cloud-platform/cli"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/testutil"
 	yaml "github.com/mobiledgex/yaml/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

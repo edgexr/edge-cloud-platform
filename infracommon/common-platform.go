@@ -25,11 +25,11 @@ import (
 	"strings"
 
 	"github.com/go-chef/chef"
-	"github.com/edgexr/edge-cloud-infra/chefmgmt"
-	"github.com/edgexr/edge-cloud-infra/version"
-	pf "github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/chefmgmt"
+	"github.com/edgexr/edge-cloud-platform/version"
+	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 type CommonPlatform struct {
@@ -193,5 +193,5 @@ func GetPlatformConfig(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Platfor
 type CommonEmbedded struct{}
 
 func (c *CommonEmbedded) GetVersionProperties() map[string]string {
-	return version.InfraBuildProps("Platform")
+	return version.BuildProps("Platform")
 }

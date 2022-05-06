@@ -27,11 +27,11 @@ import (
 
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"github.com/influxdata/influxdb/models"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/notify"
-	"github.com/edgexr/edge-cloud/testutil"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/notify"
+	"github.com/edgexr/edge-cloud-platform/testutil"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )

@@ -17,12 +17,12 @@ package kindinfra
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-infra/crm-platforms/fakeinfra"
-	intprocess "github.com/edgexr/edge-cloud-infra/e2e-tests/int-process"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
-	pf "github.com/edgexr/edge-cloud/cloud-resource-manager/platform"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/platform/kind"
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/crm-platforms/fakeinfra"
+	intprocess "github.com/edgexr/edge-cloud-platform/e2e-tests/int-process"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/kind"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 // Kind platform with multi-tenant cluster support.

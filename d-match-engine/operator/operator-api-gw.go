@@ -17,7 +17,7 @@ package operator
 import (
 	"context"
 
-	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
 )
 
 type OperatorApiGwServers struct {

@@ -29,20 +29,20 @@ import (
 	"time"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	dme "github.com/edgexr/edge-cloud/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 	"github.com/mobiledgex/yaml/v2"
 
 	//"github.com/prometheus/alertmanager/api/v2/models"
 	// TODO - below is to replace the above for right now - once we update go and modules we can use prometheus directly
-	models "github.com/edgexr/edge-cloud-infra/mc/orm/alertmgr/prometheus_structs/models"
+	models "github.com/edgexr/edge-cloud-platform/mc/orm/alertmgr/prometheus_structs/models"
 
 	//	alertmanager_config "github.com/prometheus/alertmanager/config"
 	// TODO - below is to replace the above for right now - once we update go and modules we can use prometheus directly
-	alertmanager_config "github.com/edgexr/edge-cloud-infra/mc/orm/alertmgr/prometheus_structs/config"
+	alertmanager_config "github.com/edgexr/edge-cloud-platform/mc/orm/alertmgr/prometheus_structs/config"
 )
 
 // Default alertmanager configuration

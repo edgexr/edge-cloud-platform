@@ -17,7 +17,7 @@ package vmlayer
 import (
 	"fmt"
 
-	"github.com/edgexr/edge-cloud-infra/infracommon"
+	"github.com/edgexr/edge-cloud-platform/infracommon"
 )
 
 var VmCloudConfig = `#cloud-config

@@ -5,7 +5,7 @@ package gencmd
 
 import (
 	fmt "fmt"
-	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
+	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"

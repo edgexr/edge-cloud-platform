@@ -15,7 +15,7 @@
 package testutil
 
 import (
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 type AllDataStreamOut struct {

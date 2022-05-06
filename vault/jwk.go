@@ -22,7 +22,7 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/mitchellh/mapstructure"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 // JWKS is a set of JWT keys to support rotating keys.

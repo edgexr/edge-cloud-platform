@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/edgexr/edge-cloud/edgeproto"
+import "github.com/edgexr/edge-cloud-platform/edgeproto"
 
 // Generic caller context
 

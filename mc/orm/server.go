@@ -30,27 +30,27 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	"github.com/lib/pq"
-	"github.com/edgexr/edge-cloud-infra/billing"
-	"github.com/edgexr/edge-cloud-infra/billing/chargify"
-	"github.com/edgexr/edge-cloud-infra/billing/fakebilling"
-	intprocess "github.com/edgexr/edge-cloud-infra/e2e-tests/int-process"
-	"github.com/edgexr/edge-cloud-infra/mc/federation"
-	"github.com/edgexr/edge-cloud-infra/mc/orm/alertmgr"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud-infra/mc/ormutil"
-	"github.com/edgexr/edge-cloud-infra/mc/rbac"
-	"github.com/edgexr/edge-cloud-infra/version"
-	"github.com/edgexr/edge-cloud/cli"
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/accessapi"
-	"github.com/edgexr/edge-cloud/cloudcommon"
-	"github.com/edgexr/edge-cloud/cloudcommon/node"
-	"github.com/edgexr/edge-cloud/cloudcommon/ratelimit"
-	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/integration/process"
-	"github.com/edgexr/edge-cloud/log"
-	"github.com/edgexr/edge-cloud/notify"
-	edgetls "github.com/edgexr/edge-cloud/tls"
-	"github.com/edgexr/edge-cloud/vault"
+	"github.com/edgexr/edge-cloud-platform/billing"
+	"github.com/edgexr/edge-cloud-platform/billing/chargify"
+	"github.com/edgexr/edge-cloud-platform/billing/fakebilling"
+	intprocess "github.com/edgexr/edge-cloud-platform/e2e-tests/int-process"
+	"github.com/edgexr/edge-cloud-platform/mc/federation"
+	"github.com/edgexr/edge-cloud-platform/mc/orm/alertmgr"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/mc/rbac"
+	"github.com/edgexr/edge-cloud-platform/version"
+	"github.com/edgexr/edge-cloud-platform/cli"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/accessapi"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/ratelimit"
+	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/notify"
+	edgetls "github.com/edgexr/edge-cloud-platform/tls"
+	"github.com/edgexr/edge-cloud-platform/vault"
 	"github.com/nmcclain/ldap"
 	gitlab "github.com/xanzy/go-gitlab"
 )
@@ -224,7 +224,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 			server.Stop()
 		}
 	}()
-	nodeMgr.UpdateNodeProps(ctx, version.InfraBuildProps("Infra"))
+	nodeMgr.UpdateNodeProps(ctx, version.BuildProps("Infra"))
 
 	if config.LocalVault {
 		vaultProc := process.Vault{

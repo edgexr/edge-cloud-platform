@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
-	"github.com/edgexr/edge-cloud/gensupport"
+	"github.com/edgexr/edge-cloud-platform/gensupport"
 )
 
 type addRefsApiArgs struct {

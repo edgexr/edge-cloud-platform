@@ -24,9 +24,9 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/influxdata/influxdb/client/v2"
-	"github.com/edgexr/edge-cloud/cloudcommon/influxsup"
-	"github.com/edgexr/edge-cloud/edgeproto"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/cloudcommon/influxsup"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 // Each write to the Influx DB is an HTTP Post method.

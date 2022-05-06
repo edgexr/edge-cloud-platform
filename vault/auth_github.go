@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/vault/api"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 type GithubAuth struct {

@@ -20,8 +20,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud/cli"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/cli"
 )
 
 // Convert a regionObj to a generic map[string]interface{}, including only

@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/log"
 	"golang.org/x/time/rate"
 )
 

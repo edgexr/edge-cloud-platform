@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud/cloud-resource-manager/crmutil"
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/crmutil"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 func (v *VMPlatform) ConfigureCloudletSecurityRules(ctx context.Context, action ActionType) error {

@@ -16,7 +16,7 @@ package main
 
 import (
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/edgexr/edge-cloud/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/edgeproto"
 )
 
 type ClusterRefsApi struct {

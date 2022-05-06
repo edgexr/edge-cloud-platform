@@ -15,9 +15,9 @@ import (
 	"strings"
 
 	"github.com/jinzhu/gorm"
-	"github.com/edgexr/edge-cloud-infra/mc/gormlog"
-	"github.com/edgexr/edge-cloud-infra/mc/ormapi"
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/mc/gormlog"
+	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 type Adapter struct {

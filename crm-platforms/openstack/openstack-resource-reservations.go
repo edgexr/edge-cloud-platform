@@ -20,7 +20,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/edgexr/edge-cloud/log"
+	"github.com/edgexr/edge-cloud-platform/log"
 )
 
 var resourceLock sync.Mutex
