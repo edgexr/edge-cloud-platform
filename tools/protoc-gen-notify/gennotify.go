@@ -17,11 +17,11 @@ package main
 import (
 	"html/template"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/gensupport"
+	"github.com/edgexr/edge-cloud-platform/tools/protogen"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	"github.com/edgexr/edge-cloud-platform/gensupport"
-	"github.com/edgexr/edge-cloud-platform/protogen"
 )
 
 type GenNotify struct {
@@ -50,7 +50,7 @@ func (g *GenNotify) GenerateImports(file *generator.FileDescriptor) {
 	}
 	g.PrintImport("", "github.com/gogo/protobuf/types")
 	if g.importLog {
-		g.PrintImport("", "github.com/edgexr/edge-cloud-platform/log")
+		g.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/log")
 	}
 	if g.importContext {
 		g.PrintImport("", "context")

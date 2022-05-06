@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mexgen
+package main
 
 import (
 	"bytes"
@@ -26,13 +26,13 @@ import (
 	"text/template"
 	"unicode"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/gensupport"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/edgexr/edge-cloud-platform/tools/protogen"
 	"github.com/gogo/protobuf/gogoproto"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	"github.com/edgexr/edge-cloud-platform/gensupport"
-	"github.com/edgexr/edge-cloud-platform/protogen"
-	"github.com/edgexr/edge-cloud-platform/util"
 )
 
 func RegisterMex() {
@@ -153,14 +153,14 @@ func (m *mex) GenerateImports(file *generator.FileDescriptor) {
 	}
 	if hasGenerateCud {
 		m.gen.PrintImport("", "encoding/json")
-		m.gen.PrintImport("", "github.com/edgexr/edge-cloud-platform/objstore")
+		m.gen.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/objstore")
 		m.gen.PrintImport("", "github.com/coreos/etcd/clientv3/concurrency")
 	}
 	if m.importUtil {
-		m.gen.PrintImport("", "github.com/edgexr/edge-cloud-platform/util")
+		m.gen.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/util")
 	}
 	if m.importLog {
-		m.gen.PrintImport("", "github.com/edgexr/edge-cloud-platform/log")
+		m.gen.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/log")
 	}
 	if m.importStrings {
 		m.gen.PrintImport("strings", "strings")
@@ -2177,6 +2177,10 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 			ObjAndKey: gensupport.GetObjAndKey(message),
 			KeyType:   keyType,
 		}
+		if m.refData == nil {
+			panic("empty ref data")
+		}
+		_ = len(m.refData.RefTos)
 		if refToGroup, ok := m.refData.RefTos[*message.Name]; ok {
 			for _, byObjField := range refToGroup.Bys {
 				name := byObjField.By.Type + strings.Replace(byObjField.Field.HierName, ".", "", -1)

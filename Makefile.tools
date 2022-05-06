@@ -6,8 +6,6 @@ GOGOPROTO	= $(shell GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/gogo/pr
 GRPCGATEWAY	= $(shell GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/grpc-ecosystem/grpc-gateway)
 
 all:
-	go install ${PROTOBUF}/protoc-gen-go
-	go install ${GOGOPROTO}/protoc-gen-gogo
 	go install ${GOGOPROTO}/protoc-gen-gogofast
 	go install ${GRPCGATEWAY}/protoc-gen-grpc-gateway
 ifneq ($(DOCKER_BUILD),yes)

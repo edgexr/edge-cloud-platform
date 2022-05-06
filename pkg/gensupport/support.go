@@ -28,6 +28,8 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/edgexr/edge-cloud-platform/tools/edgeprotogen"
+	"github.com/edgexr/edge-cloud-platform/tools/protogen"
 	"github.com/gogo/protobuf/gogoproto"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
@@ -35,8 +37,6 @@ import (
 	plugin "github.com/gogo/protobuf/protoc-gen-gogo/plugin"
 	"github.com/gogo/protobuf/vanity"
 	"github.com/gogo/protobuf/vanity/command"
-	"github.com/edgexr/edge-cloud-platform/edgeprotogen"
-	"github.com/edgexr/edge-cloud-platform/protogen"
 )
 
 const AutoGenComment = "// Auto-generated code: DO NOT EDIT"

@@ -18,8 +18,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/gensupport"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
-	"github.com/edgexr/edge-cloud-platform/gensupport"
 )
 
 type addRefsApiArgs struct {
