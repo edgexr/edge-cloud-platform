@@ -1,0 +1,101 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package cli
+
+import (
+	"fmt"
+	"testing"
+
+	edgeproto "github.com/edgexr/edge-cloud/edgeproto"
+	yaml "github.com/mobiledgex/yaml/v2"
+	"github.com/stretchr/testify/require"
+)
+
+func TestGetSpecifiedFields(t *testing.T) {
+	// test App args, make sure false value still sets field
+	testGetFieldsArgs(t, &edgeproto.App{},
+		[]string{"key.name=foo", "key.version=1", "command=foo", "internalports=false", "officialfqdn=ff"},
+		[]string{"2.2", "2.3", "13", "23", "25"})
+	// test App args, make sure empty string value still sets field
+	testGetFieldsArgs(t, &edgeproto.App{},
+		[]string{"key.organization=atlantic", `key.name="Pillimo Go!"`, "imagetype=Docker", `accessports=""`, "defaultflavor.name=x1.small"},
+		[]string{"2.1", "2.2", "5", "7", "9.1"})
+
+	dat := `
+key:
+  organization: AcmeAppCo
+  name: someapplication1
+  version: "1.0"
+imagepath: registry.mobiledgex.net/mobiledgex_AcmeAppCo/someapplication1:1.0
+imagetype: Docker
+deployment: ""
+defaultflavor:
+  name: x1.small
+accessports: "tcp:80,http:443,udp:10002"
+officialfqdn: someapplication1.acmeappco.com
+androidpackagename: com.acme.someapplication1
+authpublickey: "-----BEGIN PUBLIC KEY-----\nsomekey\n-----END PUBLIC KEY-----\n"
+`
+	testGetFieldsYaml(t, &edgeproto.App{}, dat,
+		[]string{"2.1", "2.2", "2.3", "4", "5", "15", "9.1", "7", "25", "18", "12"})
+
+	// Test json namespace with special map[string]string that is
+	// represented by map[string]interface{}, which is the same structs.
+	jsData := &MapData{
+		Namespace: JsonNamespace,
+		Data: map[string]interface{}{
+			"env_var": map[string]interface{}{
+				"key": "val",
+				"k2":  "v2",
+			},
+		},
+	}
+	fields := GetSpecifiedFields(jsData, &edgeproto.Cloudlet{})
+	require.ElementsMatch(t, []string{"19"}, fields)
+}
+
+func testGetFieldsArgs(t *testing.T, obj interface{}, args []string, expected []string) {
+	// test GetSpecifiedFields
+	input := Input{
+		DecodeHook: edgeproto.EnumDecodeHook,
+	}
+	dat, err := input.ParseArgs(args, obj)
+	require.Nil(t, err, "parse args %v", args)
+	fmt.Printf("argsmap: %v\n", dat)
+
+	fields := GetSpecifiedFields(dat, obj)
+	require.ElementsMatch(t, expected, fields, "fields list should match")
+
+	// test GetSpecifiedFieldsData (kind of the opposite of above)
+	dmap, err := GetStructMap(obj, WithStructMapFieldFlags(expected))
+	require.Nil(t, err, "GetStructMap fields %v", expected)
+	genArgs, err := MarshalArgs(dmap, nil, nil)
+	require.Nil(t, err, "MarshalArgs for %v", dmap)
+	require.ElementsMatch(t, args, genArgs, "args should match")
+}
+
+func testGetFieldsYaml(t *testing.T, obj interface{}, data string, expected []string) {
+	in := make(map[string]interface{})
+	err := yaml.Unmarshal([]byte(data), &in)
+	require.Nil(t, err, "unmarshal yaml data %s", data)
+	fmt.Printf("yamlmap: %v\n", in)
+
+	inMap := &MapData{
+		Namespace: YamlNamespace,
+		Data:      in,
+	}
+	fields := GetSpecifiedFields(inMap, obj)
+	require.ElementsMatch(t, expected, fields, "fields list should match")
+}

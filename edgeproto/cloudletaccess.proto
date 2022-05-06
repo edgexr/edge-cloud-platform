@@ -1,0 +1,94 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+syntax = "proto3";
+package edgeproto;
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// This is an internal regional API for cloudlet-based services
+
+// IssueCertRequest asks for a TLS certificate from Vault
+message IssueCertRequest {
+  // Certificate common name
+  string common_name = 1;
+}
+
+message IssueCertReply {
+  // Public certificate in PEM format
+  string public_cert_pem = 1;
+  // Private key in PEM format
+  string private_key_pem = 2;
+}
+
+message GetCasRequest {
+  // Issuer
+  string issuer = 1;
+}
+
+message GetCasReply {
+  // CA chain in PEM format
+  string ca_chain_pem = 1;
+}
+
+message UpgradeAccessKeyClientMsg {
+  // Message type
+  string msg = 1;
+  // Client node type
+  bool verify_only = 2;
+  // Optional HA role, defaults to HARolePrimary
+  string ha_role = 3;
+}
+
+message UpgradeAccessKeyServerMsg {
+  // Message type
+  string msg = 1;
+  // New Access key in PEM format (may be blank)
+  string crm_private_access_key = 2;
+}
+
+message AccessDataRequest {
+  // Data type
+  string type = 1;
+  // Any request data (type specific)
+  bytes data = 2;
+}
+
+message AccessDataReply {
+  // Reply data (type specific)
+  bytes data = 1;
+}
+
+// Services that require an AccessKey to use.
+// Note that all APIs authenticate by including a signed cloudlet key,
+// so all APIs here already intrinsically have the cloudlet key parameter.
+service CloudletAccessApi {
+  // Issue certificate
+  rpc IssueCert(IssueCertRequest) returns (IssueCertReply);
+  // Get Cerficiate Authority public certs
+  rpc GetCas(GetCasRequest) returns (GetCasReply);
+  // GetAccessData generically gets access/secrets data based on type
+  rpc GetAccessData(AccessDataRequest) returns (AccessDataReply);
+}
+
+// Services to manage the access key
+service CloudletAccessKeyApi {
+  // Upgrade AccessKey for existing Vault-CRM, or one-time key
+  rpc UpgradeAccessKey(stream UpgradeAccessKeyClientMsg) returns (stream UpgradeAccessKeyServerMsg);
+}

@@ -1,0 +1,152 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+vars:
+  - locverurl: "http://127.0.0.1:8888/verifyLocation" 
+  - toksrvurl: "http://127.0.0.1:9999/its?followURL%3Dhttps://dme.mobiledgex.net/verifyLoc" 
+
+locsims:
+- name: locsim1
+  port: 8888
+  locfile: "{{datadir}}/locsim.yml"
+  geofile: "{{datadir}}/geocode.dat"
+  country: US
+  hostname: "127.0.0.1"
+
+toksims:
+- name: toksim1
+  port: 9999
+  hostname: "127.0.0.1"
+
+etcds:
+- name: etcd1
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd1
+  peeraddrs: "http://127.0.0.1:30011"
+  clientaddrs: "http://127.0.0.1:30001"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+- name: etcd2
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd2
+  peeraddrs: "http://127.0.0.1:30012"
+  clientaddrs: "http://127.0.0.1:30002"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+- name: etcd3
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd3
+  peeraddrs: "http://127.0.0.1:30013"
+  clientaddrs: "http://127.0.0.1:30003"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+controllers:
+- name: ctrl1
+  etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
+  apiaddr: "0.0.0.0:55001"
+  httpaddr: "0.0.0.0:36001"
+  notifyaddr: "127.0.0.1:37001"
+  shorttimeouts: true
+  hostname: "127.0.0.1"
+
+- name: ctrl2
+  etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
+  apiaddr: "0.0.0.0:55002"
+  httpaddr: "0.0.0.0:36002"
+  notifyaddr: "127.0.0.1:37002"
+  shorttimeouts: true
+  hostname: "127.0.0.1"
+
+
+dmes:
+- name: dme1
+  apiaddr: "0.0.0.0:50051"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  locverurl: "{{locverurl}}"
+  toksrvurl: "{{toksrvurl}}"
+  carrier: GDDT
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-1"}'
+  hostname: "127.0.0.1"
+
+- name: dme2
+  apiaddr: "0.0.0.0:50052"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  locverurl: "{{locverurl}}"
+  toksrvurl: "{{toksrvurl}}"
+  carrier: GDDT
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-2"}'
+  hostname: "127.0.0.1"
+
+  
+crms:
+- name: crm1
+  apiaddr: "0.0.0.0:55091"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-1"}'
+  hostname: "127.0.0.1"
+
+- name: crm2
+  apiaddr: "0.0.0.0:55092"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-2"}'
+  hostname: "127.0.0.1"
+
+- name: crm3
+  apiaddr: "0.0.0.0:55093"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-3"}'
+  hostname: "127.0.0.1"
+
+- name: crm4
+  apiaddr: "0.0.0.0:55094"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-4"}'
+  hostname: "127.0.0.1"
+
+- name: crm5
+  apiaddr: "0.0.0.0:55095"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-5"}'
+  hostname: "127.0.0.1"
+
+- name: crm6
+  apiaddr: "0.0.0.0:55096"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-6"}'
+  hostname: "127.0.0.1"
+
+- name: crm7
+  apiaddr: "0.0.0.0:55097"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-7"}'
+  hostname: "127.0.0.1"
+
+- name: crm8
+  apiaddr: "0.0.0.0:55098"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-8"}'
+  hostname: "127.0.0.1"
+
+- name: crm9
+  apiaddr: "0.0.0.0:55099"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-9"}'
+  hostname: "127.0.0.1"
+
+- name: crm10
+  apiaddr: "0.0.0.0:55100"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-10"}'
+  hostname: "127.0.0.1"
+

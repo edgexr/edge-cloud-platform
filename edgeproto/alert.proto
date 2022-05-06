@@ -1,0 +1,71 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Alert proto
+
+syntax = "proto3";
+package edgeproto;
+
+import "google/api/annotations.proto";
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+import "github.com/edgexr/edge-cloud/d-match-engine/dme-proto/loc.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// Although in Prometheus, labels and annotations are an array of Label,
+// we can't do that here and generate map-style json because protobuffers
+// does not provide a way to specify an array like "[]Label" as a custom
+// type "Labels". Gogoprotobuf allows custom types but does not replace
+// the array (ends up as "[]Labels" instead of "Labels"). So instead our
+// internal format uses maps.
+
+message Alert {
+  // Labels uniquely define the alert
+  map <string, string> labels = 1;
+  // Annotations are extra information about the alert
+  map <string, string> annotations = 2;
+  // State of the alert
+  string state = 3;
+  // When alert became active
+  distributed_match_engine.Timestamp active_at = 4 [(gogoproto.nullable) = false, (protogen.hidetag) = "timestamp"];
+  // Any value associated with alert
+  double value = 5;
+  // Id of client assigned by server (internal use only)
+  int64 notify_id = 6 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Connected controller unique id
+  string controller = 7 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.generate_show_test) = true;
+  option (protogen.notify_cache) = true;
+  option (protogen.notify_flush) = true;
+  option (protogen.custom_key_type) = "AlertKey";
+  option (protogen.uses_org) = "none";
+}
+
+service AlertApi {
+  // Show alerts
+  rpc ShowAlert(Alert) returns (stream Alert) {
+    option (google.api.http) = {
+      post: "/show/alert"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceAlert,ActionView,";
+    option (protogen.mc2_custom_authz) = true;
+  }
+}

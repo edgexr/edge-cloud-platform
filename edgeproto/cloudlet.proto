@@ -1,0 +1,976 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Cloudlet proto
+
+syntax = "proto3";
+package edgeproto;
+
+import "google/api/annotations.proto";
+import "github.com/edgexr/edge-cloud/protogen/protogen.proto";
+import "cloudletkey.proto";
+import "flavor.proto";
+import "result.proto";
+import "restagtable.proto";
+import "common.proto";
+import "infraresources.proto";
+import "org.proto";
+import "github.com/edgexr/edge-cloud/d-match-engine/dme-proto/loc.proto";
+import "gogoproto/gogo.proto";
+import "github.com/edgexr/edge-cloud/d-match-engine/dme-proto/appcommon.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// Operation time limits
+//
+// Time limits for cloudlet create, update and delete operations
+message OperationTimeLimits{
+    // Override default max time to create a cluster instance (duration)
+    int64 create_cluster_inst_timeout = 1 [(gogoproto.casttype) = "Duration"];
+    // Override default max time to update a cluster instance (duration)
+    int64 update_cluster_inst_timeout = 2 [(gogoproto.casttype) = "Duration"];
+    // Override default max time to delete a cluster instance (duration)
+    int64 delete_cluster_inst_timeout = 3 [(gogoproto.casttype) = "Duration"];
+    // Override default max time to create an app instance (duration)
+    int64 create_app_inst_timeout = 4 [(gogoproto.casttype) = "Duration"];
+    // Override default max time to update an app instance (duration)
+    int64 update_app_inst_timeout = 5 [(gogoproto.casttype) = "Duration"];
+    // Override default max time to delete an app instance (duration)
+    int64 delete_app_inst_timeout = 6 [(gogoproto.casttype) = "Duration"];
+}
+
+// CloudletInternal is for data exchanged only between CRM and Shepherd and never the controller 
+message CloudletInternal {
+  // Fields are used for the Update API to specify which fields to apply.
+  repeated string fields = 1;
+  // Resource cloudlet key
+  CloudletKey key = 2 [(gogoproto.nullable) = false];
+  // Map of key value pairs for data exchanged between components
+  map<string, string> props = 3;
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.uses_org) = "key=Organization";
+  option (protogen.notify_cache) = true;
+}
+
+//
+// Platform specific configuration required for Cloudlet management
+message PlatformConfig {
+  // Path to Docker registry holding edge-cloud image
+  string container_registry_path = 1;
+  // Path to platform base image
+  string cloudlet_vm_image_path = 2;
+  // Address of controller notify port (can be multiple of these)
+  string notify_ctrl_addrs = 3 [(protogen.hidetag) = "nocmp"];
+  // Vault address (4) deprecated, platform no longer has direct access to vault.
+
+  // TLS cert file
+  string tls_cert_file = 5;
+  // TLS key file
+  string tls_key_file = 20;
+  // TLS ca file
+  string tls_ca_file = 21;
+  // Environment variables
+  map<string, string> env_var = 6;
+  // Tag of edge-cloud image
+  string platform_tag = 8 [(protogen.hidetag) = "nocmp"];
+  // Internal Test flag
+  bool test_mode = 9;
+  // Span string
+  string span = 10 [(protogen.hidetag) = "nocmp"];
+  // Internal cleanup flag
+  bool cleanup_mode = 11;
+  // Region
+  string region = 12;
+  // Get certs from vault or generate your own for the root load balancer
+  bool commercial_certs = 13;
+  // Use Vault certs and CAs for internal TLS communication
+  bool use_vault_pki = 14;
+  // App domain name root
+  string app_dns_root = 16;
+  // Path to Chef Server
+  string chef_server_path = 17;
+  // Chef client interval
+  int32 chef_client_interval = 18 [(gogoproto.casttype) = "Duration"];
+  // Deployment Tag
+  string deployment_tag = 19;
+  // crm access private key
+  string crm_access_private_key = 22 [(protogen.hidetag) = "nocmp"];
+  // controller access API address
+  string access_api_addr = 23 [(protogen.hidetag) = "nocmp"];
+  // cache dir
+  string cache_dir = 24;
+  // secondary crm access private key
+  string secondary_crm_access_private_key = 25 [(protogen.hidetag) = "nocmp"];
+  // Thanos Receive remote write address
+  string thanos_recv_addr = 26;
+}
+
+// Federation config associated with the cloudlet
+message FederationConfig {
+  // Federation name
+  string federation_name = 1;
+  // Self federation ID
+  string self_federation_id = 2;
+  // Partner federation ID
+  string partner_federation_id = 3;
+  // Cloudlet zone country code
+  string zone_country_code = 4;
+  // Partner federation address
+  string partner_federation_addr = 5;
+}
+
+// Platform Type
+//
+// PlatformType is the supported list of cloudlet types
+//
+// 0: `PLATFORM_TYPE_FAKE`
+// 1: `PLATFORM_TYPE_DIND`
+// 2: `PLATFORM_TYPE_OPENSTACK`
+// 3: `PLATFORM_TYPE_AZURE`
+// 4: `PLATFORM_TYPE_GCP`
+// 5: `PLATFORM_TYPE_EDGEBOX`
+// 6: `PLATFORM_TYPE_FAKEINFRA`
+// 7: `PLATFORM_TYPE_VSPHERE`
+// 8: `PLATFORM_TYPE_AWS_EKS`
+// 9: `PLATFORM_TYPE_VM_POOL`
+// 10: `PLATFORM_TYPE_AWS_EC2`
+// 11: `PLATFORM_TYPE_VCD`
+// 12: `PLATFORM_TYPE_K8S_BARE_METAL`
+// 13: `PLATFORM_TYPE_KIND`
+// 14: `PLATFORM_TYPE_KINDINFRA`
+// 15: `PLATFORM_TYPE_FAKE_SINGLE_CLUSTER`
+// 16: `PLATFORM_TYPE_FEDERATION`
+// 17: `PLATFORM_TYPE_FAKE_VM_POOL`
+enum PlatformType {
+  // Fake Cloudlet
+  PLATFORM_TYPE_FAKE = 0;
+  // DIND Cloudlet
+  PLATFORM_TYPE_DIND = 1;
+  // Openstack Cloudlet
+  PLATFORM_TYPE_OPENSTACK = 2;
+  // Azure Cloudlet
+  PLATFORM_TYPE_AZURE = 3;
+  // GCP Cloudlet
+  PLATFORM_TYPE_GCP = 4;
+  // Edgebox Cloudlet
+  PLATFORM_TYPE_EDGEBOX = 5;
+  // Fake Infra Cloudlet
+  PLATFORM_TYPE_FAKEINFRA = 6;
+  // VMWare VSphere (ESXi)
+  PLATFORM_TYPE_VSPHERE = 7;
+  // AWS EKS Cloudlet
+  PLATFORM_TYPE_AWS_EKS = 8;
+  // VM Pool Cloudlet
+  PLATFORM_TYPE_VM_POOL = 9;
+  // AWS EC2 VM Cloudlet
+  PLATFORM_TYPE_AWS_EC2 = 10;
+  // VMWare vCloud Director Cloudlet
+  PLATFORM_TYPE_VCD = 11;
+  // Kubebetes on bare metal
+  PLATFORM_TYPE_K8S_BARE_METAL = 12;
+  // KIND Cloudlet
+  PLATFORM_TYPE_KIND = 13;
+  // KIND Infra Cloudlet
+  PLATFORM_TYPE_KINDINFRA = 14;
+  // Fake Single Cluster Cloudlet
+  PLATFORM_TYPE_FAKE_SINGLE_CLUSTER = 15;
+  // Cloudlet shared as part of federation
+  PLATFORM_TYPE_FEDERATION  = 16;
+  // Fake VM Pool Cloudlet
+  PLATFORM_TYPE_FAKE_VM_POOL = 17;
+}
+
+// Optional resource input consists of a resource specifier and clouldkey name
+message CloudletResMap {
+  // Resource cloudlet key
+  CloudletKey key = 1[(gogoproto.nullable) = false, (protogen.refers_to) = "Cloudlet"];
+  // Resource mapping info
+  map<string, string> mapping = 2 [(protogen.refers_to) = "ResTagTable"];
+  option (protogen.alias) = "cloudlet=Key.Name,cloudletorg=Key.Organization,federatedorg=Key.FederatedOrganization";
+  option (protogen.not_required) = "Key.FederatedOrganization";
+  option (protogen.also_required) = "Mapping";
+}
+
+// Infra API Access
+//
+// InfraApiAccess is the type of access available to Infra API endpoint
+//
+// 0: `DIRECT_ACCESS`
+// 1: `RESTRICTED_ACCESS`
+enum InfraApiAccess {
+	// Infra API endpoint is accessible from public network
+	DIRECT_ACCESS = 0;
+	// Infra API endpoint is not accessible from public network
+	RESTRICTED_ACCESS = 1;
+}
+
+// Infra specific configuration used for Cloudlet deployments
+message InfraConfig {
+  // Infra specific external network name
+  string external_network_name = 1;
+  // Infra specific flavor name
+  string flavor_name = 2;
+}
+
+// Resource Quota
+message ResourceQuota {
+  // Resource name on which to set quota
+  string name = 1;
+  // Quota value of the resource
+  uint64 value = 2;
+  // Generate alert when more than threshold percentage of resource is used
+  int32 alert_threshold = 3;
+}
+
+// Operating System Type
+//
+// OSType is the type of the Operator System
+//
+//  0: `Linux`
+//  1: `Windows`
+// 20: `Others`
+enum OSType {
+  // Linux Operating System
+  LINUX = 0;
+  // Windows Operating System
+  WINDOWS = 1;
+  // Other Operating Systems
+  OTHERS = 20;
+}
+
+// GPU Driver Key
+//
+// GPUDriverKey uniquely identifies a GPU driver
+message GPUDriverKey {
+  // Name of the driver
+  string name = 1 [(protogen.keytag) = "gpudriver"];
+  // Organization to which the driver belongs to
+  string organization = 2 [(protogen.keytag) = "gpudriverorg"];
+  option (protogen.generate_matches) = true;
+  option (protogen.obj_key) = true;
+  option (gogoproto.gostring) = true;
+}
+
+message GPUDriverBuild {
+  // Unique identifier key
+  string name = 1;
+  // Path where the driver package is located, if it is authenticated path,
+  // then credentials must be passed as part of URL (one-time download path)
+  string driver_path = 2;
+  // Optional credentials (username:password) to access driver path
+  string driver_path_creds = 3;
+  // Operator System supported by GPU driver build
+  OSType operating_system = 4;
+  // Kernel Version supported by GPU driver build
+  string kernel_version = 5;
+  // Info on hypervisor supported by vGPU driver
+  string hypervisor_info = 6;
+  // Driver package md5sum to ensure package is not corrupted
+  string md5sum = 7;
+  // GPU driver build storage path
+  string storage_path = 8 [(protogen.backend) = true];
+  option (protogen.noconfig) = "StoragePath";
+}
+
+message GPUDriverBuildMember {
+  // Unique identifier key
+  GPUDriverKey key = 1 [(gogoproto.nullable) = false];
+  // GPU driver build
+  GPUDriverBuild build = 2 [(gogoproto.nullable) = false];
+  // Ignore state will ignore any action in-progress on the GPU driver
+  bool ignore_state = 3;
+  option (protogen.alias) = "gpudrivername=Key.Name,gpudriverorg=Key.Organization";
+  option (protogen.uses_org) = "key=Organization";
+}
+
+message GPUDriverBuildURL {
+  // Build URL path
+  string build_url_path = 1;
+  // Build URL path validity
+  int64 validity = 2 [(gogoproto.casttype) = "Duration"];
+}
+
+message GPUDriver {
+  // Fields are used for the Update API to specify which fields to apply
+  repeated string fields = 1;
+  // Unique identifier key
+  GPUDriverKey key = 2 [(gogoproto.nullable) = false];
+  // List of GPU driver build
+  repeated GPUDriverBuild builds = 3 [(gogoproto.nullable) = false];
+  // License config to setup license (will be stored in secure storage)
+  string license_config = 4;
+  // License config md5sum, to ensure integrity of license config
+  string license_config_md5sum = 5;
+  // Additional properties associated with GPU driver build
+  // For example: license server information, driver release date, etc
+  map<string, string> properties = 6;
+  // State to figure out if any action on the GPU driver is in-progress
+  string state = 7;
+  // Ignore state will ignore any action in-progress on the GPU driver
+  bool ignore_state = 8;
+  // Preparing to be deleted
+  bool delete_prepare = 9 [(protogen.backend) = true]; 
+  // GPU driver storage bucket name
+  string storage_bucket_name = 10 [(protogen.backend) = true];
+  // GPU driver license config storage path
+  string license_config_storage_path = 11 [(protogen.backend) = true];
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cud_test) = true;
+  option (protogen.generate_cud_streamout) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.generate_stream_key) = true;
+  option (protogen.notify_cache) = true;
+  option (protogen.notify_custom_update) = true;
+  option (protogen.alias) = "gpudrivername=Key.Name,gpudriverorg=Key.Organization";
+  option (protogen.uses_org) = "key=Organization";
+  option (protogen.noconfig) = "State,LicenseConfigMd5Sum,DeletePrepare,StorageBucketName,LicenseConfigStoragePath";
+  option (protogen.not_required) = "Key.Organization";
+  option (protogen.controller_api_struct) = "gpuDriverApi";
+}
+
+service GPUDriverApi {
+  // Create GPU Driver. Creates GPU driver with all the config
+  // required to install it.
+  rpc CreateGPUDriver(GPUDriver) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/create/gpudriver"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+    option (protogen.mc2_api_requires_org) = "Key.Organization";
+  }
+  // Delete GPU Driver. Deletes GPU driver given that it is not
+  // used by any cloudlet.
+  rpc DeleteGPUDriver(GPUDriver) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/delete/gpudriver"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+  }
+  // Update GPU Driver. Updates GPU driver config.
+  rpc UpdateGPUDriver(GPUDriver) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/update/gpudriver"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+    option (protogen.method_noconfig) = "Builds,Type,IgnoreState";
+  }
+  // Show GPU Drivers. Lists all the MobiledgeX created GPU drivers and operator
+  // created GPU drivers.
+  rpc ShowGPUDriver(GPUDriver) returns (stream GPUDriver) {
+    option (google.api.http) = {
+      post: "/show/gpudriver"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
+    option (protogen.mc2_custom_authz) = true;
+  }
+
+  // Add GPU Driver Build. Adds new build to GPU driver.
+  rpc AddGPUDriverBuild(GPUDriverBuildMember) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/add/gpudriverbuild"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+    option (protogen.method_also_required) = "Build.Name,Build.DriverPath,Build.Md5Sum,Build.OperatingSystem";
+  }
+  // Remove GPU Driver Build. Removes build from GPU driver.
+  rpc RemoveGPUDriverBuild(GPUDriverBuildMember) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/remove/gpudriverbuild"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+    option (protogen.method_also_required) = "Build.Name";
+    option (protogen.method_noconfig) = "Build.DriverPath,Build.OperatingSystem,Build.KernelVersion,Build.HypervisorInfo";
+  }
+  // Get GPU Driver Build URL. Returns a time-limited signed URL to download GPU driver.
+  rpc GetGPUDriverBuildURL(GPUDriverBuildMember) returns (GPUDriverBuildURL) {
+    option (google.api.http) = {
+      post: "/get/gpudriverbuildurl"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
+    option (protogen.method_also_required) = "Build.Name";
+    option (protogen.method_noconfig) = "Build.DriverPath,Build.OperatingSystem,Build.KernelVersion,Build.HypervisorInfo,Build.DriverPathCreds,Build.Md5Sum";
+    option (protogen.mc2_custom_authz) = true;
+  }
+  // Get GPU Driver License Config. Returns the license config specific to GPU driver
+  rpc GetGPUDriverLicenseConfig(GPUDriverKey) returns (Result) {
+    option (google.api.http) = {
+      post: "/get/gpudriverlicenseconfig"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudletAnalytics,ActionView,Organization";
+  }
+}
+
+message GPUConfig {
+  // GPU driver key
+  GPUDriverKey driver = 1 [(gogoproto.nullable) = false, (protogen.refers_to) = "GPUDriver"];
+  // Properties to identify specifics of GPU
+  map<string, string> properties = 2;
+  // Cloudlet specific license config to setup license (will be stored in secure storage)
+  string license_config = 3;
+  // Cloudlet specific license config md5sum, to ensure integrity of license config
+  string license_config_md5sum = 4;
+  option (protogen.noconfig) = "LicenseConfigMd5Sum";
+}
+
+// Cloudlet
+//
+// A Cloudlet is a set of compute resources at a particular location, provided by an Operator. 
+message Cloudlet {
+  // Fields are used for the Update API to specify which fields to apply
+  repeated string fields = 1;
+  // Unique identifier key
+  // required: true
+  CloudletKey key = 2 [(gogoproto.nullable) = false];
+  // Location of the Cloudlet site
+  distributed_match_engine.Loc location = 5 [(gogoproto.nullable) = false];
+  // Type of IP support provided by Cloudlet (see IpSupport)
+  IpSupport ip_support = 6;
+  // List of static IPs for static IP support
+  string static_ips = 7;
+  // Number of dynamic IPs available for dynamic IP support
+  int32 num_dynamic_ips = 8;
+  // time limits which override global settings if non-zero
+  OperationTimeLimits time_limits = 9 [(gogoproto.nullable) = false];
+  // Any errors trying to create, update, or delete the Cloudlet.
+  repeated string errors = 10 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // StatusInfo (11) (Deprecated) status is used to reflect progress of creation or other events
+
+  // Current state of the cloudlet
+  TrackedState state = 12 [(protogen.backend) = true];
+  // Override actions to CRM
+  CRMOverride crm_override = 13 [(protogen.backend) = true];
+  // Deploy cloudlet services locally
+  bool deployment_local = 14 [(protogen.backend) = true];
+  // Platform type
+  PlatformType platform_type = 15;
+  // Address for the CRM notify listener to run on
+  string notify_srv_addr = 16 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Min system resource requirements for platform
+  FlavorKey flavor = 17 [(gogoproto.nullable) = false, (protogen.refers_to) = "Flavor"];
+  // Physical infrastructure cloudlet name
+  string physical_name = 18;
+  // Single Key-Value pair of env var to be passed to CRM
+  map<string, string> env_var = 19;
+  // Cloudlet container version 
+  string container_version = 20;
+  // Platform Config Info
+  PlatformConfig config = 21 [(gogoproto.nullable) = false, (protogen.backend) = true];
+  // Optional resource to restagtbl key map key values = [gpu, nas, nic]
+  map<string, edgeproto.ResTagTableKey> res_tag_map = 22 [(protogen.backend) = true, (protogen.refers_to) = "ResTagTable"];
+  // Variables required to access cloudlet
+  map<string, string> access_vars = 23;
+  // MobiledgeX baseimage version where CRM services reside
+  string vm_image_version = 24;
+  // Deployment type to bring up CRM services (docker, kubernetes)
+  string deployment = 26;
+  // Infra Access Type is the type of access available to Infra API Endpoint
+  InfraApiAccess infra_api_access = 27;
+  // Infra specific config
+  InfraConfig infra_config = 28 [(gogoproto.nullable) = false];
+  // Chef client key
+  map<string, string> chef_client_key = 29 [(protogen.backend) = true];
+  // State for maintenance
+  distributed_match_engine.MaintenanceState maintenance_state = 30;
+  // Override container version from policy file
+  bool override_policy_container_version = 31;
+  // VM Pool
+  string vm_pool = 32 [(protogen.refers_to) = "VMPool"];
+  // CRM access public key
+  string crm_access_public_key = 33 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // CRM access key upgrade required
+  bool crm_access_key_upgrade_required = 34 [(protogen.backend) = true];
+  // Created at time
+  distributed_match_engine.Timestamp created_at = 35 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.hidetag) = "timestamp"];
+  // Updated at time
+  distributed_match_engine.Timestamp updated_at = 36 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.hidetag) = "timestamp"];
+  // Optional Trust Policy
+  string trust_policy = 37 [(protogen.refers_to) = "TrustPolicy"];
+  // State of trust policy
+  TrackedState trust_policy_state = 38 [(protogen.backend) = true];
+  // Resource quotas
+  repeated ResourceQuota resource_quotas = 39 [(gogoproto.nullable) = false];
+  // Default resource alert threshold percentage
+  int32 default_resource_alert_threshold = 40;
+  // Address of the controller hosting the cloudlet services if it is running locally
+  string HostController = 41 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Operator provided kafka cluster endpoint to push events to
+  string kafka_cluster = 42;
+  // Username for kafka SASL/PLAIN authentification, stored securely in secret storage and never visible externally
+  string kafka_user = 43;
+  // Password for kafka SASL/PLAIN authentification, stored securely in secret storage and never visible externally
+  string kafka_password = 44;
+  // GPU Configuration associated with cloudlet
+  GPUConfig gpu_config = 45 [(gogoproto.nullable) = false];
+  // Enable experimental default multitenant (serverless) cluster
+  bool enable_default_serverless_cluster = 46;
+  // This cloudlet will be treated as directly connected to these additional operator organizations for the purposes of FindCloudlet
+  repeated string alliance_orgs = 47;
+  // For single kubernetes cluster cloudlet platforms, cluster is owned by this organization instead of multi-tenant
+  string single_kubernetes_cluster_owner = 48;
+  // Preparing to be deleted
+  bool delete_prepare = 49 [(protogen.backend) = true]; 
+  // Enable platform H/A
+  bool platform_high_availability = 50;
+  // CRM secondary access public key for H/A
+  string secondary_crm_access_public_key = 51 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // CRM secondary access key upgrade required for H/A
+  bool secondary_crm_access_key_upgrade_required = 52 [(protogen.backend) = true];
+  // Address for the secondary CRM notify listener to run on
+  string secondary_notify_srv_addr = 53 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // DNS label that is unique within the region
+  string dns_label = 54 [(protogen.backend) = true];
+  // Root LB FQDN which is globally unique
+  string root_lb_fqdn = 55 [(protogen.backend) = true];
+  // Federation config for a federated cloudlet
+  FederationConfig federation_config = 56 [(gogoproto.nullable) = false, (protogen.backend) = true];
+  // GPU driver license config storage path
+  string license_config_storage_path = 57 [(protogen.backend) = true];
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cud_test) = true;
+  option (protogen.generate_cud_streamout) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.generate_stream_key) = true;
+  option (protogen.notify_cache) = true;
+  option (protogen.notify_custom_update) = true;
+  option (protogen.notify_recv_hook) = true;
+  option (protogen.noconfig) = "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Config,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,SecondaryCrmAccessPublicKey,SecondaryCrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,DeletePrepare,GpuConfig.LicenseConfigMd5Sum,DnsLabel,RootLbFqdn,FederationConfig,LicenseConfigStoragePath";
+  option (protogen.alias) = "cloudlet=Key.Name,cloudletorg=Key.Organization,federatedorg=Key.FederatedOrganization";
+  option (protogen.not_required) = "Key.FederatedOrganization";
+  option (protogen.mc2_target_cloudlet) = "Key";
+  option (protogen.uses_org) = "key=Organization";
+}
+
+message FlavorMatch {
+  // Cloudlet ctx
+  CloudletKey key = 1 [(gogoproto.nullable) = false];
+  // Flavor name to lookup
+  string flavor_name = 3;
+  // availability zone for optional resources if any
+  string availability_zone = 4;
+  option (protogen.also_required) = "FlavorName";
+  option (protogen.alias) = "cloudlet=Key.Name,cloudletorg=Key.Organization,flavor=FlavorName,federatedorg=Key.FederatedOrganization";
+  option (protogen.not_required) = "Key.FederatedOrganization";
+}
+
+message CloudletManifest {
+  // Manifest to bringup cloudlet VM and services.
+  string manifest = 2;
+}
+
+message PropertyInfo {
+  // Name of the property
+  string name = 1;
+  // Description of the property
+  string description = 2;
+  // Default value of the property
+  string value = 3;
+  // Is the property a secret value, will be hidden
+  bool secret = 4;
+  // Is the property mandatory
+  bool mandatory = 5;
+  // Is the property internal, not to be set by Operator
+  bool internal = 6;
+}
+
+// Infra properties used to set up cloudlet
+message CloudletProps {
+  // Platform type
+  PlatformType platform_type = 1;
+  // Single Key-Value pair of env var to be passed to CRM
+  map<string, PropertyInfo> properties = 2;
+  // Organization
+  string organization = 3;
+}
+
+message CloudletResourceQuotaProps {
+  // Platform type
+  PlatformType platform_type = 1;
+  // Cloudlet resource properties
+  repeated InfraResource properties = 2 [(gogoproto.nullable) = false];
+  // Organization
+  string organization = 3;
+}
+
+message CloudletResourceUsage {
+  // Cloudlet Key
+  CloudletKey key = 1 [(gogoproto.nullable) = false];
+  // Show Infra based usage
+  bool infra_usage = 2;
+  // Infra Resource information
+  repeated InfraResource info = 3 [(gogoproto.nullable) = false];
+  option (protogen.alias) = "cloudlet=Key.Name,cloudletorg=Key.Organization,federatedorg=Key.FederatedOrganization";
+  option (protogen.not_required) = "Key.FederatedOrganization";
+}
+
+message CloudletAllianceOrg {
+  // Cloudlet Key
+  CloudletKey key = 1 [(gogoproto.nullable) = false];
+  // Alliance organization
+  string organization = 2;
+  option (protogen.also_required) = "Organization";
+  option (protogen.alias) = "cloudlet=Key.Name,cloudletorg=Key.Organization,allianceorg=organization,federatedorg=Key.FederatedOrganization";
+  option (protogen.not_required) = "Key.FederatedOrganization";
+}
+
+service CloudletApi {
+  // Create Cloudlet. Sets up Cloudlet services on the Operator's compute resources,
+  // and integrated as part of MobiledgeX edge resource portfolio.
+  // These resources are managed from the Edge Controller.
+  rpc CreateCloudlet(Cloudlet) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/create/cloudlet"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+    option (protogen.method_also_required) = "NumDynamicIps,Location.Latitude,Location.Longitude";
+    option (protogen.mc2_api_requires_org) = "Key.Organization";
+    option (protogen.method_noconfig) = "ResTagMap";
+    option (protogen.mc2_custom_authz) = true;
+  }
+  // Delete Cloudlet. Removes the Cloudlet services where they are no longer managed
+  // from the Edge Controller.
+  rpc DeleteCloudlet(Cloudlet) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/delete/cloudet"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+    option (protogen.method_noconfig) = "ResTagMap";
+  }
+  // Update Cloudlet. Updates the Cloudlet configuration and manages the upgrade of Cloudlet services.
+  rpc UpdateCloudlet(Cloudlet) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/update/cloudlet"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+    option (protogen.method_noconfig) = "PlatformType,DeploymentLocal,Flavor,PhysicalName,ContainerVersion,ResTagMap,VmImageVersion,Deployment,InfraApiAccess,InfraConfig,OverridePolicyContainerVersion,VmPool,ResTagMap";
+    option (protogen.mc2_custom_authz) = true;
+  }
+  // Show Cloudlets. Lists all the cloudlets managed from Edge Controller.
+  rpc ShowCloudlet(Cloudlet) returns (stream Cloudlet) {
+    option (google.api.http) = {
+      post: "/show/cloudlet"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,";
+    option (protogen.mc2_custom_authz) = true;
+    option (protogen.method_noconfig) = "ResTagMap";
+  }
+  // Get Cloudlet Manifest. Shows deployment manifest required to setup cloudlet
+  rpc GetCloudletManifest(CloudletKey) returns (CloudletManifest) {
+    option (google.api.http) = {
+      post: "/get/cloudlet/manifest"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Organization";
+  }
+  // Get Cloudlet Properties. Shows all the infra properties used to setup cloudlet
+  rpc GetCloudletProps(CloudletProps) returns (CloudletProps) {
+    option (google.api.http) = {
+      post: "/get/cloudlet/props"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudletAnalytics,ActionView,Organization";
+    option (protogen.method_noconfig) = "Properties";
+    option (protogen.method_also_required) = "PlatformType";
+  }
+  // Get Cloudlet Resource Quota Properties. Shows all the resource quota properties of the cloudlet
+  rpc GetCloudletResourceQuotaProps(CloudletResourceQuotaProps) returns (CloudletResourceQuotaProps) {
+    option (google.api.http) = {
+      post: "/get/cloudlet/resource/props"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudletAnalytics,ActionView,Organization";
+    option (protogen.method_noconfig) = "Properties";
+    option (protogen.method_also_required) = "PlatformType";
+  }
+  // Get Cloudlet resource information. Shows cloudlet resources used and their limits
+  rpc GetCloudletResourceUsage(CloudletResourceUsage) returns (CloudletResourceUsage) {
+    option (google.api.http) = {
+      post: "/get/cloudlet/resource/usage"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
+    option (protogen.method_noconfig) = "Info";
+  }
+
+  // Add Optional Resource tag table
+  rpc AddCloudletResMapping(CloudletResMap) returns (Result) {
+    option (google.api.http) = {
+      post: "/addmapping/cloudlet"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+  }
+  // Remove Optional Resource tag table
+  rpc RemoveCloudletResMapping(CloudletResMap) returns (Result) {
+    option (google.api.http) = {
+      post: "/rmmapping/cloudlet"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+  }
+
+  // Add alliance organization to the cloudlet
+  rpc AddCloudletAllianceOrg(CloudletAllianceOrg) returns (Result) {
+    option (google.api.http) = {
+      post: "/addallianceorg/cloudlet"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+    option (protogen.mc2_custom_authz) = true;
+  }
+  // Remove alliance organization from the cloudlet
+  rpc RemoveCloudletAllianceOrg(CloudletAllianceOrg) returns (Result) {
+    option (google.api.http) = {
+      post: "/rmallianceorg/cloudlet"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+  }
+
+  // Discover if flavor produces a matching platform flavor
+  rpc FindFlavorMatch(FlavorMatch) returns (FlavorMatch) {
+    option (google.api.http) = {
+      post: "/findmapping/cloudlet"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
+  }
+  // Find all meta flavors viable on cloudlet
+  rpc ShowFlavorsForCloudlet(CloudletKey) returns (stream FlavorKey) {
+    option(google.api.http) = {
+      post: "/showmapping/cloudletflavors"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,";
+    option (protogen.mc2_custom_authz) = true;
+    option (protogen.non_standard_show) = true;
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.method_not_required) = "Organization,Name,FederatedOrganization";
+  }
+  // Get organizations of ClusterInsts and AppInsts on cloudlet
+  rpc GetOrganizationsOnCloudlet(CloudletKey) returns (stream Organization) {
+    option(google.api.http) = {
+      post: "/get/cloudlet/organizations"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Organization";
+    option (protogen.stream_out_incremental) = true;
+  }
+
+  // Revoke crm access key
+  rpc RevokeAccessKey(CloudletKey) returns (Result) {
+    option (google.api.http) = {
+      post: "/revoke/cloudletaccesskey"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Organization";
+  }
+  // Generate new crm access key
+  rpc GenerateAccessKey(CloudletKey) returns (Result) {
+    option (google.api.http) = {
+      post: "/generate/cloudletaccesskey"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Organization";
+  }
+
+  // Get Cloudlet Specific GPU Driver License Config. Returns the license config associated with the cloudlet
+  rpc GetCloudletGPUDriverLicenseConfig(CloudletKey) returns (Result) {
+    option (google.api.http) = {
+      post: "/get/cloudlet/gpudriverlicenseconfig"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudletAnalytics,ActionView,Organization";
+  }
+
+  // This is used internally to forward requests to other Controllers
+  rpc PlatformDeleteCloudlet(Cloudlet) returns (stream Result) {}
+}
+
+// Flavor details from the Cloudlet
+message FlavorInfo {
+  // Name of the flavor on the Cloudlet
+  string name = 1;
+  // Number of VCPU cores on the Cloudlet
+  uint64 vcpus = 2;
+  // Ram in MB on the Cloudlet
+  uint64 ram = 3;
+  // Amount of disk in GB on the Cloudlet
+  uint64 disk = 4;
+  // OS Flavor Properties, if any
+  map<string,string> prop_map = 5 [(protogen.backend) = true];
+}
+
+message OSAZone {
+  // OpenStack availability zone name
+  string name   = 1;
+  // OpenStack availability zone status
+  string status = 2;
+}
+
+message OSImage {
+  // image name
+  string name = 1;
+  // optional tags present on image
+  string tags = 2;
+  // image properties/metadata
+  string properties = 3;
+  // format qcow2, img, etc
+  string disk_format = 4;
+}
+
+// CloudletInfo provides information from the Cloudlet Resource Manager about the state of the Cloudlet.
+message CloudletInfo {
+  // Fields are used for the Update API to specify which fields to apply
+  repeated string fields = 1;
+  // Unique identifier key
+  CloudletKey key = 2 [(gogoproto.nullable) = false];
+  // State of cloudlet
+  distributed_match_engine.CloudletState state = 3;
+  // Id of client assigned by server (internal use only)
+  int64 notify_id = 4 [(protogen.hidetag) = "nocmp"];
+  // Connected controller unique id
+  string controller = 5 [(protogen.hidetag) = "nocmp"];
+  // Maximum Ram in MB on the Cloudlet
+  uint64 os_max_ram = 6;
+  // Maximum number of VCPU cores on the Cloudlet
+  uint64 os_max_vcores = 7;
+  // Maximum amount of disk in GB on the Cloudlet
+  uint64 os_max_vol_gb = 8;
+  // Any errors encountered while making changes to the Cloudlet
+  repeated string errors = 9;
+  // Supported flavors by the Cloudlet
+  repeated FlavorInfo flavors = 10;
+  // status is used to reflect progress of creation or other events
+  StatusInfo status = 11 [(gogoproto.nullable) = false, (protogen.hidetag) = "nocmp", (protogen.redis_only) = true];
+  // Cloudlet container version
+  string container_version = 12;
+  // Availability Zones if any
+  repeated OSAZone availability_zones = 13;
+  // Local Images availble to cloudlet
+  repeated OSImage os_images = 14;
+  // Indicates all controller data has been sent to CRM
+  bool controller_cache_received = 15;
+  // State for maintenance
+  distributed_match_engine.MaintenanceState maintenance_state = 16;
+  // Snapshot of resources used by cloudlet
+  InfraResourcesSnapshot resources_snapshot = 17 [(protogen.backend) = true, (gogoproto.nullable) = false];
+  // Trust Policy State
+  TrackedState trust_policy_state = 18;
+  // Version for compatibility tracking
+  uint32 compatibility_version = 19 [(protogen.hidetag) = "nocmp"];
+  // Cloudlet properties
+  map<string,string> properties = 20;
+  // Cluster node info for serverless platforms (k8s multi-tenant cluster)
+  repeated NodeInfo node_infos = 21;
+  // Active HA instance
+  string active_crm_instance = 22;
+  // Denotes if info was reported by inactive
+  bool standby_crm = 23;
+  // Cloudlet release version
+  string release_version = 24;
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.generate_show_test) = true;
+  option (protogen.parent_obj_name) = "Cloudlet";
+  option (protogen.generate_wait_for_state) = "CloudletState";
+  option (protogen.notify_cache) = true;
+  option (protogen.notify_flush) = true;
+  option (protogen.notify_recv_hook) = true;
+  option (protogen.alias) = "cloudlet=Key.Name,cloudletorg=Key.Organization,federatedorg=Key.FederatedOrganization";
+  option (protogen.not_required) = "Key.FederatedOrganization";
+  option (protogen.uses_org) = "none";
+  option (protogen.noconfig) = "Status";
+}
+
+service CloudletInfoApi {
+  // Show CloudletInfos
+  rpc ShowCloudletInfo(CloudletInfo) returns (stream CloudletInfo) {
+    option (google.api.http) = {
+      post: "/show/cloudletinfo"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudletAnalytics,ActionView,Key.Organization";
+    option (protogen.mc2_custom_authz) = true;
+  }
+  // Inject (create) a CloudletInfo for regression testing
+  rpc InjectCloudletInfo(CloudletInfo) returns (Result) {
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+  }
+  // Evict (delete) a CloudletInfo for regression testing
+  rpc EvictCloudletInfo(CloudletInfo) returns (Result) {
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+  }
+}
+
+// (TODO) CloudletMetrics provide metrics collected about the Cloudlet. They are sent to a metrics collector for analytics. They are not stored in the persistent distributed database, but are stored as a time series in some other database or files.
+message CloudletMetrics {
+  // what goes here?
+  uint64 foo = 5;
+}
+
+service CloudletMetricsApi {
+  // Show Cloudlet metrics
+  rpc ShowCloudletMetrics(CloudletMetrics) returns (stream CloudletMetrics) {
+    option (google.api.http) = {
+      post: "/show/cloudletmetrics"
+      body: "*"
+    };
+  }
+}
+
+// Report Schedule
+//
+// ReportSchedule is the interval for which report is to be generated
+//
+// 0: `EveryWeek`
+// 1: `Every15Days`
+// 3: `EveryMonth`
+enum ReportSchedule {
+  // Every Week
+  EveryWeek = 0;
+  // Every 15 Days
+  Every15Days = 1;
+  // (Deprecated) Every 30 Days
+  // Every Month
+  EveryMonth = 3;
+  option (protogen.common_prefix) = ""; // avoid dropping "Every"
+}

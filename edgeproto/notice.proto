@@ -1,0 +1,65 @@
+// Copyright 2022 MobiledgeX, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Notice is the message used by the notify protocol to communicate and coordinate internally between different Mobiledgex services. For details on the notify protocol, see the "MEX Cloud Service Interactions" confluence article.
+// In general, the protocol is used to synchronize state from one service to another. The protocol is fairly symmetric, with different state being synchronized both from server to client and client to server.
+syntax = "proto3";
+package edgeproto;
+
+import "google/protobuf/any.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// NoticeAction denotes what kind of action this notification is for.
+enum NoticeAction {
+  // No action
+  NONE = 0;
+  // Update the object  
+  UPDATE = 1;
+  // Delete the object
+  DELETE = 2;
+  // Version exchange negotitation message
+  VERSION = 3;
+  // Initial send all finished message
+  SENDALL_END = 4;
+}
+
+message Notice {
+  // Action to perform
+  NoticeAction action = 1;
+  // Protocol version supported by sender
+  uint32 version = 2;
+  // Data
+  google.protobuf.Any any = 3 [(gogoproto.nullable) = false];
+  // Wanted Objects
+  repeated string want_objs = 4;
+  // Filter by cloudlet key
+  bool filter_cloudlet_key = 5;
+  // Opentracing span
+  string span = 6;
+  // Database revision for which object was last modified
+  int64 mod_rev = 7;
+  // Extra tags
+  map<string, string> tags = 8;
+  // Filter by federated cloudlet
+  bool filter_federated_cloudlet = 9;
+}
+
+service NotifyApi {
+  // Bidrectional stream for exchanging data between controller and DME/CRM
+  rpc StreamNotice(stream Notice) returns (stream Notice) {}
+}

@@ -1,0 +1,78 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+##
+##
+description: adds and deletes multiple times 
+
+tests:
+
+- name: verify provisioning is empty to start
+  actions: [ctrlapi-show]
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/appdata_empty.yml"
+    filetype: appdata
+
+- name: Add and show provisioning and verify it is there
+  apifile: "{{datadir}}/appdata.yml"
+  actions: [ctrlapi-create,ctrlapi-show]
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/appdata_show.yml"
+    filetype: appdata
+
+- name: Update provisioning to App
+  apifile: "{{datadir}}/app_update.yml"
+  actions: [ctrlapi-update]
+
+- name: Refresh provisioning to single AppInst
+  apifile: "{{datadir}}/appinst_refresh.yml"
+  actions: [ctrlapi-refresh,ctrlapi-show]
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/appdata_show_after_refresh.yml"
+    filetype: appdata
+
+- name: Refresh provisioning to all AppInsts
+  apifile: "{{datadir}}/appinst_refresh_all.yml"
+  actions: [ctrlapi-refresh,ctrlapi-show]
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/appdata_show_after_refresh_all.yml"
+    filetype: appdata
+
+- name: Update cluster instance
+  apifile: "{{datadir}}/cluster_update.yml"
+  actions: [ctrlapi-update,ctrlapi-show]
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/appdata_show_after_cluster_update.yml"
+    filetype: appdata
+
+- name: Verify stream data
+  apifile: "{{datadir}}/update_appdata.yml"
+  actions: [ctrlapi-stream]
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/update_appdata_stream.yml"
+    filetype: appstream
+
+- name: delete provisioning, verify it is empty
+  actions: [ctrlapi-delete,ctrlapi-show]
+  apifile: "{{datadir}}/appdata.yml"
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/appdata_empty.yml"
+    filetype: appdata
