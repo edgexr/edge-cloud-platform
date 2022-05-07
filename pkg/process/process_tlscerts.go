@@ -12,26 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Run redis as a child process for testing
+package process
 
-package main
+type TLSCerts struct {
+	ServerCert string
+	ServerKey  string
+	CACert     string
+	ClientCert string
+	ApiCert    string
+	ApiKey     string
+}
 
-import (
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
-)
-
-func StartLocalRedisServer(opts ...process.StartOp) (*process.RedisCache, error) {
-	redis := &process.RedisCache{
-		Common: process.Common{
-			Name: "redis-local",
-		},
-		Type: "master",
+func (s *TLSCerts) AddInternalPkiArgs(args []string) []string {
+	if s.ServerCert != "" {
+		args = append(args, "--itlsCert", s.ServerCert)
 	}
-	log.InfoLog("Starting local redis")
-	err := redis.StartLocal("", opts...)
-	if err != nil {
-		return nil, err
+	if s.ServerKey != "" {
+		args = append(args, "--itlsKey", s.ServerKey)
 	}
-	return redis, nil
+	if s.CACert != "" {
+		args = append(args, "--itlsCA", s.CACert)
+	}
+	return args
 }

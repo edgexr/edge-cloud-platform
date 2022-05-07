@@ -20,12 +20,12 @@ import (
 	"strings"
 	"time"
 
-	intprocess "github.com/edgexr/edge-cloud-platform/e2e-tests/int-process"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/version"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 

@@ -12,26 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Run redis as a child process for testing
-
-package main
+package process
 
 import (
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"fmt"
+	"os/exec"
 )
 
-func StartLocalRedisServer(opts ...process.StartOp) (*process.RedisCache, error) {
-	redis := &process.RedisCache{
-		Common: process.Common{
-			Name: "redis-local",
-		},
-		Type: "master",
-	}
-	log.InfoLog("Starting local redis")
-	err := redis.StartLocal("", opts...)
-	if err != nil {
-		return nil, err
-	}
-	return redis, nil
+type QosSesSrvSim struct {
+	Common `yaml:",inline"`
+	Port   int
+	cmd    *exec.Cmd
+}
+
+func (p *QosSesSrvSim) StartLocal(logfile string, opts ...StartOp) error {
+	args := []string{"-port", fmt.Sprintf("%d", p.Port)}
+	var err error
+	p.cmd, err = StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	return err
+}
+
+func (p *QosSesSrvSim) StopLocal() {
+	StopLocal(p.cmd)
+}
+
+func (p *QosSesSrvSim) GetExeName() string { return "sessions-srv-sim" }
+
+func (p *QosSesSrvSim) LookupArgs() string {
+	return fmt.Sprintf("-port %d", p.Port)
 }

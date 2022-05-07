@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
