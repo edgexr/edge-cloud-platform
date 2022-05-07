@@ -20,9 +20,9 @@ import (
 	"net"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/infracommon"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/dind"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/dind"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"

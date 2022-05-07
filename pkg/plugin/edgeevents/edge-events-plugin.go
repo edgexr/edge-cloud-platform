@@ -18,8 +18,8 @@ import (
 	"context"
 	"time"
 
-	edgeevents "github.com/edgexr/edge-cloud-platform/edge-events"
-	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
+	edgeevents "github.com/edgexr/edge-cloud-platform/pkg/edge-events"
+	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )

@@ -21,8 +21,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/edgexr/edge-cloud-platform/promutils"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/prommgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
+	"github.com/edgexr/edge-cloud-platform/pkg/prommgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"

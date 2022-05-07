@@ -104,7 +104,7 @@ func (g *GenCmd) GenerateImports(file *generator.FileDescriptor) {
 		g.PrintImport("", "errors")
 	}
 	if g.importCli {
-		g.PrintImport("", "github.com/edgexr/edge-cloud-platform/cli")
+		g.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/cli")
 	}
 	if g.importStatus {
 		g.PrintImport("", "google.golang.org/grpc/status")

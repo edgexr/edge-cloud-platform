@@ -20,8 +20,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/infracommon"
-	operalphaproto "github.com/edgexr/edge-cloud-platform/operator-api-gw/operalpha/proto"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	operalphaproto "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/proto"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"

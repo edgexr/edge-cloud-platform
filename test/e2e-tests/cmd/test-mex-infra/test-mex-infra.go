@@ -23,11 +23,11 @@ import (
 	"os"
 	"strings"
 
-	e2esetup "github.com/edgexr/edge-cloud-platform/e2e-tests/e2e-setup"
+	e2esetup "github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	log "github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/setup-env/e2e-tests/e2eapi"
-	setupmex "github.com/edgexr/edge-cloud-platform/setup-env/setup-mex"
-	"github.com/edgexr/edge-cloud-platform/setup-env/util"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
+	setupmex "github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 )
 
 var (

@@ -22,7 +22,7 @@ import (
 	"syscall"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/version"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/redundancy"
+	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"

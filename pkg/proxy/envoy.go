@@ -21,8 +21,8 @@ import (
 	"html/template"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/dockermgmt"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"

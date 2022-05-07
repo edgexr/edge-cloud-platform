@@ -22,7 +22,7 @@ import (
 	"text/template"
 	"time"
 
-	influxq "github.com/edgexr/edge-cloud-platform/controller/influxq_client"
+	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"

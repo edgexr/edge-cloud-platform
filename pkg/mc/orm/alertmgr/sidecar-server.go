@@ -41,7 +41,7 @@ import (
 	//	alertmanager_config "github.com/prometheus/alertmanager/config"
 	// TODO - below is to replace the above for right now - once we update go and modules we can use prometheus directly
 
-	alertmanager_config "github.com/edgexr/edge-cloud-platform/mc/orm/alertmgr/prometheus_structs/config"
+	alertmanager_config "github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr/prometheus_structs/config"
 )
 
 // Alertmanager config file lock

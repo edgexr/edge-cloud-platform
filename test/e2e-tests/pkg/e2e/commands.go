@@ -24,7 +24,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/setup-env/util"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 )
 
 func RunCommands(apiFile string, apiFileVars map[string]string, outputDir string, retry *bool) bool {

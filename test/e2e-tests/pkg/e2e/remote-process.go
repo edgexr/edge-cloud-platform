@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	setupmex "github.com/edgexr/edge-cloud-platform/setup-env/setup-mex"
+	setupmex "github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 )
 
 //when first creating a cluster, it may take a while for the load balancer to get an IP. Usually

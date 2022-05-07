@@ -17,9 +17,9 @@ package kind
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/common/xind"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/redundancy"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/xind"
+	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 

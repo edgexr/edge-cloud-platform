@@ -20,8 +20,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/mc/ormclient"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 )

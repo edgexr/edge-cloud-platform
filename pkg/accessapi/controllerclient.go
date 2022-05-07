@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 
 	"github.com/cloudflare/cloudflare-go"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/chefmgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"

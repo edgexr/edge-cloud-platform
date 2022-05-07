@@ -17,7 +17,7 @@ package xind
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"

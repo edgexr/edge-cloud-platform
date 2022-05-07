@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 )
 
 // Convert a regionObj to a generic map[string]interface{}, including only

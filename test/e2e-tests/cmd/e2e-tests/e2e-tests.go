@@ -30,8 +30,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/setup-env/e2e-tests/e2eapi"
-	"github.com/edgexr/edge-cloud-platform/setup-env/util"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 )
 
 var (

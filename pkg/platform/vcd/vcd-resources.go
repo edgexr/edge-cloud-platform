@@ -24,8 +24,8 @@ import (
 	"time"
 
 	prototypes "github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/infracommon"
-	"github.com/edgexr/edge-cloud-platform/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"

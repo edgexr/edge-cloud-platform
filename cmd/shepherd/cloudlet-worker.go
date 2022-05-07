@@ -23,9 +23,9 @@ import (
 	"time"
 
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/promutils"
-	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/mobiledgex/golang-ssh"

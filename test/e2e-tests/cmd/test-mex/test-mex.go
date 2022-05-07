@@ -27,9 +27,9 @@ import (
 	"strings"
 
 	log "github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/setup-env/e2e-tests/e2eapi"
-	setupmex "github.com/edgexr/edge-cloud-platform/setup-env/setup-mex"
-	"github.com/edgexr/edge-cloud-platform/setup-env/util"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
+	setupmex "github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 )
 
 var actionList = fmt.Sprintf("%v", reflect.ValueOf(actionChoices).MapKeys())

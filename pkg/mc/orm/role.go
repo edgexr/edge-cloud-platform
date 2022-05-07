@@ -23,8 +23,8 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/mc/rbac"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 

@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_platform/shepherd_unittest"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_unittest"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"

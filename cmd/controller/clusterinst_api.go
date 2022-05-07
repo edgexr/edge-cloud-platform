@@ -24,9 +24,9 @@ import (
 
 	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
-	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
-	pfutils "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/utils"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
+	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"

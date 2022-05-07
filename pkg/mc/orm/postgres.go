@@ -25,7 +25,7 @@ import (
 	_ "github.com/labstack/echo"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
-	"github.com/edgexr/edge-cloud-platform/mc/gormlog"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/gormlog"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"

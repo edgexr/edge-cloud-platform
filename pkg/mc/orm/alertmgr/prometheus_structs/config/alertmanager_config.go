@@ -24,8 +24,8 @@ import (
 	"strings"
 	"time"
 
-	commoncfg "github.com/edgexr/edge-cloud-platform/mc/orm/alertmgr/prometheus_structs/commoncfg"
-	model "github.com/edgexr/edge-cloud-platform/mc/orm/alertmgr/prometheus_structs/model"
+	commoncfg "github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr/prometheus_structs/commoncfg"
+	model "github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr/prometheus_structs/model"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )

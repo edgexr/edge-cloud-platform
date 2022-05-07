@@ -30,13 +30,13 @@ import (
 	"time"
 
 	sh "github.com/codeskyblue/go-sh"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/common/xind"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/kind"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/xind"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/kind"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/setup-env/apis"
-	"github.com/edgexr/edge-cloud-platform/setup-env/util"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 
 	uutil "github.com/edgexr/edge-cloud-platform/pkg/util"
 	yaml "gopkg.in/yaml.v2"

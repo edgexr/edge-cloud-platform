@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"

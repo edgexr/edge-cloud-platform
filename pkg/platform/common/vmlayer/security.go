@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/crmutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 

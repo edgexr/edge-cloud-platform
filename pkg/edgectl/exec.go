@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud-platform/cli"
-	edgecli "github.com/edgexr/edge-cloud-platform/edgectl/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/cli"
+	edgecli "github.com/edgexr/edge-cloud-platform/pkg/edgectl/cli"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"google.golang.org/grpc"
 )

@@ -21,7 +21,7 @@ import (
 	"os/exec"
 
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/setup-env/util"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	"github.com/mobiledgex/yaml/v2"
 )
 

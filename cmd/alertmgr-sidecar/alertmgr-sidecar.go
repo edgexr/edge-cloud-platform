@@ -20,7 +20,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/edgexr/edge-cloud-platform/mc/orm/alertmgr"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 

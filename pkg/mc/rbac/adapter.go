@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	"github.com/jinzhu/gorm"
-	"github.com/edgexr/edge-cloud-platform/mc/gormlog"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/gormlog"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )

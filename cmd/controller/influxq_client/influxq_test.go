@@ -24,7 +24,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/controller/influxq_client/influxq_testutil"
+	"github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client/influxq_testutil"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/stretchr/testify/assert"

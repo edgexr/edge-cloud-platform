@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"strings"
 
-	awsgen "github.com/edgexr/edge-cloud-platform/crm-platforms/aws/aws-generic"
-	"github.com/edgexr/edge-cloud-platform/infracommon"
-	"github.com/edgexr/edge-cloud-platform/vmlayer"
+	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"

@@ -21,7 +21,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/vmspec"
+	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 	context "golang.org/x/net/context"
 )
 
