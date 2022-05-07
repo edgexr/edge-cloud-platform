@@ -26,13 +26,13 @@ import (
 	"github.com/edgexr/edge-cloud-platform/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/mc/federation"
 	fedcommon "github.com/edgexr/edge-cloud-platform/mc/federation/common"
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/mc/ormutil"
 	fedmgmt "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/federationmgmt"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
-	dme_proto "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	dme_proto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 func setForeignKeyConstraint(loggedDb *gorm.DB, fKeyTableName, fKeyFields, refTableName, refFields string) error {

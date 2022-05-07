@@ -20,10 +20,10 @@ import (
 
 	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/accessapi"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/integration/process"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 // Issue certificate to RegionalCloudlet service.

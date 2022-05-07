@@ -22,8 +22,8 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/mc/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/mc/orm/alertmgr"
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/stretchr/testify/require"
 )
 

@@ -21,10 +21,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/log"
-	"github.com/edgexr/edge-cloud-platform/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	ber "github.com/nmcclain/asn1-ber"
 	"github.com/nmcclain/ldap"
 )

@@ -15,7 +15,7 @@
 package openstack
 
 import (
-	"github.com/edgexr/edge-cloud-platform/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 type OSLimit struct {

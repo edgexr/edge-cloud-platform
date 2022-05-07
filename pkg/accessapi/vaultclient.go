@@ -25,11 +25,11 @@ import (
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/cloudflaremgmt"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/federationmgmt"
 	pfutils "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/utils"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/gcs"
-	"github.com/edgexr/edge-cloud-platform/vault"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 // This is a global in order to cache it across all platforms in the Controller.

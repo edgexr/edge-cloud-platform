@@ -18,8 +18,8 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/mc/ormutil"
-	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/util"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 func RunCommandValidateInput(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.ExecRequest) error {

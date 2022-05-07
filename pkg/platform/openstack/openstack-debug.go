@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 func (o *OpenstackPlatform) initDebug(nodeMgr *node.NodeMgr) {

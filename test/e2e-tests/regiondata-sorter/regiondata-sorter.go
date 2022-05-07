@@ -20,7 +20,7 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	yaml "github.com/mobiledgex/yaml/v2"
 )
 

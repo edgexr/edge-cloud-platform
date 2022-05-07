@@ -24,12 +24,12 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/edgexr/edge-cloud-platform/mc/ctrlclient"
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
-	"github.com/edgexr/edge-cloud-platform/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 var tableUniqueConstraintRE = regexp.MustCompile("CREATE UNIQUE INDEX (.+?) ON (.+?) USING btree \\((.+?)\\)")

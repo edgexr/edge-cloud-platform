@@ -17,7 +17,7 @@ package alerts
 import (
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/testutil"
 	"github.com/stretchr/testify/require"
 )

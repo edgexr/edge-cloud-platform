@@ -31,14 +31,14 @@ import (
 	"github.com/edgexr/edge-cloud-platform/mc/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/mc/orm"
 	"github.com/edgexr/edge-cloud-platform/mc/orm/testutil"
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/cli"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/setup-env/util"
 	edgetestutil "github.com/edgexr/edge-cloud-platform/testutil"
-	uutil "github.com/edgexr/edge-cloud-platform/util"
+	uutil "github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/pquerna/otp/totp"
 )
 

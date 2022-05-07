@@ -20,9 +20,9 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/edgexr/edge-cloud-platform/billing"
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
-	"github.com/edgexr/edge-cloud-platform/vault"
+	"github.com/edgexr/edge-cloud-platform/pkg/billing"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 type BillingService struct{}

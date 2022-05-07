@@ -27,7 +27,7 @@ import (
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/spec"
 	"github.com/edgexr/edge-cloud-platform/mc/mcctl/ormctl"
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	yaml "github.com/mobiledgex/yaml/v2"
 )
 

@@ -20,7 +20,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/common/xind"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/redundancy"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 type Platform struct {

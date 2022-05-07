@@ -31,7 +31,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/mc/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/mc/mcctl/ormctl"
 	"github.com/edgexr/edge-cloud-platform/cli"
-	edgelog "github.com/edgexr/edge-cloud-platform/log"
+	edgelog "github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/spf13/cobra"
 )
 

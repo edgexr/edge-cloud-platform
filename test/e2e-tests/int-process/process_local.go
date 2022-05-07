@@ -490,7 +490,7 @@ func SetupVault(p *process.Vault, opts ...process.StartOp) (*VaultRoles, error) 
 
 	// run global setup script
 	gopath := os.Getenv("GOPATH")
-	setup := gopath + "/src/github.com/edgexr/edge-cloud-platform/vault/setup.sh"
+	setup := gopath + "/src/github.com/edgexr/edge-cloud-platform/pkg/vault/setup.sh"
 	out := p.Run("/bin/sh", setup, &err)
 	if err != nil {
 		fmt.Println(out)
@@ -535,7 +535,7 @@ func SetupVault(p *process.Vault, opts ...process.StartOp) (*VaultRoles, error) 
 		p.Regions = "local"
 	}
 	for _, region := range strings.Split(p.Regions, ",") {
-		setup := gopath + "/src/github.com/edgexr/edge-cloud-platform/vault/setup-region.sh " + region
+		setup := gopath + "/src/github.com/edgexr/edge-cloud-platform/pkg/vault/setup-region.sh " + region
 		out := p.Run("/bin/sh", setup, &err)
 		if err != nil {
 			fmt.Println(out)

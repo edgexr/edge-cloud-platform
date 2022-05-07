@@ -21,10 +21,10 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/influxdata/influxdb/client/v2"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon/influxsup"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/influxsup"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 func (q *InfluxQ) PushAutoProvCounts(ctx context.Context, msg *edgeproto.AutoProvCounts) error {

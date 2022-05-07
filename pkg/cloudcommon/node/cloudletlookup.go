@@ -15,7 +15,7 @@
 package node
 
 import (
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 const NoRegion = ""

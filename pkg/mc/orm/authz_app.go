@@ -20,8 +20,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 func authzCreateApp(ctx context.Context, region, username string, obj *edgeproto.App, resource, action string) error {

@@ -20,7 +20,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/edgexr/edge-cloud-platform/mc/ctrlclient"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 type AuthzOrgTpe struct {

@@ -27,11 +27,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
-	dmeproto "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/setup-env/util"
-	edgeutil "github.com/edgexr/edge-cloud-platform/util"
+	edgeutil "github.com/edgexr/edge-cloud-platform/pkg/util"
 	yaml "github.com/mobiledgex/yaml/v2"
 	"google.golang.org/grpc"
 )

@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/cli"
-	"github.com/edgexr/edge-cloud-platform/version"
+	"github.com/edgexr/edge-cloud-platform/pkg/version"
 	"github.com/spf13/cobra"
 )
 

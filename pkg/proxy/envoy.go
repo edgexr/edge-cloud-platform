@@ -23,10 +23,10 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/dockermgmt"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
-	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 

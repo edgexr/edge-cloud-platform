@@ -22,7 +22,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
 	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/kind"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 // Kind platform with multi-tenant cluster support.

@@ -32,10 +32,10 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/edgexr/edge-cloud-platform/mc/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/mc/mcctl/ormctl"
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/cli"
-	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 type Client struct {

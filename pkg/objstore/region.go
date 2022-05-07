@@ -24,7 +24,7 @@
 
 package objstore
 
-import "github.com/edgexr/edge-cloud-platform/log"
+import "github.com/edgexr/edge-cloud-platform/pkg/log"
 
 var (
 	myRegion uint32 = 0

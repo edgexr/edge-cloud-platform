@@ -15,8 +15,8 @@
 package ormctl
 
 import (
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
-	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 const (

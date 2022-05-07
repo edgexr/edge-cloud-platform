@@ -14,7 +14,7 @@
 
 package dmetest
 
-import dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+import dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 
 type FindCloudletRR struct {
 	Reg            dme.RegisterClientRequest

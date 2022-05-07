@@ -25,7 +25,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 func basicAuth(username, password string) string {

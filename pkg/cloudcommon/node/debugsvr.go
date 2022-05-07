@@ -17,7 +17,7 @@ package node
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"google.golang.org/grpc"
 )
 

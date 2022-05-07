@@ -19,7 +19,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/edgexr/edge-cloud-platform/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 func ValidName(name string) error {

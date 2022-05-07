@@ -26,7 +26,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/infracommon"
 	"github.com/edgexr/edge-cloud-platform/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 var maxGuestWait = time.Minute * 2

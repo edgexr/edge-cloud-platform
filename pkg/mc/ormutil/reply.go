@@ -20,8 +20,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo"
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
-	"github.com/edgexr/edge-cloud-platform/util"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 // HTTPError that bundles code with the error message.
