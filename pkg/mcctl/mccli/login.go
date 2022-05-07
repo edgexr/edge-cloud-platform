@@ -20,7 +20,7 @@ import (
 	"os"
 
 	"github.com/edgexr/edge-cloud-platform/mc/mcctl/ormctl"
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/cli"
 	"github.com/spf13/cobra"
 )

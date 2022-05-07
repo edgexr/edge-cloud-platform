@@ -17,8 +17,8 @@ package simulatedqos
 // Provides simulated results for QOS Positioning
 
 import (
-	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 
 	"math/rand"
 	"time"

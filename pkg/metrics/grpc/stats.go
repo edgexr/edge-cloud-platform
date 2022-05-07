@@ -17,7 +17,7 @@ package grpcstats
 import (
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 type LatencyMetric struct {

@@ -15,7 +15,7 @@
 package doc
 
 import (
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 )
 
 // Swagger wrapper for MC responses

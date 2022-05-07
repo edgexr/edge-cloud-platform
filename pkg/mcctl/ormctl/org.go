@@ -15,7 +15,7 @@
 package ormctl
 
 import (
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 )
 
 const OrgGroup = "Org"

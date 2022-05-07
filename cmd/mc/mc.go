@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/mc/orm"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 var addr = flag.String("addr", "127.0.0.1:9900", "REST listener address")

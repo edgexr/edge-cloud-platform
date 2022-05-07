@@ -24,7 +24,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/vault"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 type BillingService struct{}

@@ -26,10 +26,10 @@ import (
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 	"github.com/edgexr/edge-cloud-platform/mc/gormlog"
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
-	"github.com/edgexr/edge-cloud-platform/log"
-	"github.com/edgexr/edge-cloud-platform/util"
-	"github.com/edgexr/edge-cloud-platform/util/tasks"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 )
 
 var retryInterval = 10 * time.Second

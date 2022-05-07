@@ -20,7 +20,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/operator-api-gw/operalpha"
 	"github.com/edgexr/edge-cloud-platform/d-match-engine/operator"
 	"github.com/edgexr/edge-cloud-platform/d-match-engine/operator/defaultoperator"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 func GetOperatorApiGw(ctx context.Context, operatorName string) (operator.OperatorApiGw, error) {

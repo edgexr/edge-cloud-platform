@@ -18,10 +18,10 @@ import (
 	"testing"
 	"time"
 
-	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	dmetest "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-testutil"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 )

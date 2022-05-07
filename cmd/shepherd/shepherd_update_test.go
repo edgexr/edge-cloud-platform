@@ -24,11 +24,11 @@ import (
 
 	intprocess "github.com/edgexr/edge-cloud-platform/e2e-tests/int-process"
 	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_test"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
-	"github.com/edgexr/edge-cloud-platform/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )

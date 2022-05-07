@@ -26,7 +26,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/mc/mcctl/mccli"
 	"github.com/edgexr/edge-cloud-platform/mc/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/mc/ormclient"
 )
 

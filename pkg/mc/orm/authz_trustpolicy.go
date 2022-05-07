@@ -19,7 +19,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 // AuthzTrustPolicy allows a user to see a trust policy only if

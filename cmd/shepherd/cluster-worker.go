@@ -26,9 +26,9 @@ import (
 	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_common"
 	platform "github.com/edgexr/edge-cloud-platform/shepherd/shepherd_platform"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 

@@ -33,12 +33,12 @@ import (
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/common/xind"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/kind"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/integration/process"
 	"github.com/edgexr/edge-cloud-platform/setup-env/apis"
 	"github.com/edgexr/edge-cloud-platform/setup-env/util"
 
-	uutil "github.com/edgexr/edge-cloud-platform/util"
+	uutil "github.com/edgexr/edge-cloud-platform/pkg/util"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -179,7 +179,7 @@ func ReadSetupFile(setupfile string, deployment interface{}, vars map[string]str
 			fmt.Fprintf(os.Stderr, "GOPATH not set, cannot calculate tlsoutdir")
 			return false
 		}
-		tlsDir = goPath + "/src/github.com/edgexr/edge-cloud-platform/tls"
+		tlsDir = goPath + "/src/github.com/edgexr/edge-cloud-platform/pkg/tls"
 		tlsOutDir = tlsDir + "/out"
 		vars["tlsoutdir"] = tlsOutDir
 	}

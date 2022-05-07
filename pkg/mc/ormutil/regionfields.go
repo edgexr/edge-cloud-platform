@@ -20,7 +20,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/cli"
 )
 

@@ -26,10 +26,10 @@ import (
 
 	"github.com/go-chef/chef"
 	"github.com/edgexr/edge-cloud-platform/chefmgmt"
-	"github.com/edgexr/edge-cloud-platform/version"
+	"github.com/edgexr/edge-cloud-platform/pkg/version"
 	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 type CommonPlatform struct {

@@ -19,10 +19,10 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/mc/mcctl/ormctl"
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/cli"
 	edgecli "github.com/edgexr/edge-cloud-platform/edgectl/cli"
-	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

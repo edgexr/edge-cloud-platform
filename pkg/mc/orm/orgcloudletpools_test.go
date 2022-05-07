@@ -18,7 +18,7 @@ import (
 	fmt "fmt"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/stretchr/testify/require"
 )
 

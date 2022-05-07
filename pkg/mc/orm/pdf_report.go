@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"github.com/jung-kurt/gofpdf"
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
-	"github.com/edgexr/edge-cloud-platform/util"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/wcharczuk/go-chart/v2"
 )
 

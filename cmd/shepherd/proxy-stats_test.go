@@ -26,9 +26,9 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_common"
 	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_platform/shepherd_unittest"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/testutil"
 	"github.com/stretchr/testify/require"
 )

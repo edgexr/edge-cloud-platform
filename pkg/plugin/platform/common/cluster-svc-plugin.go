@@ -19,8 +19,8 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/alerts"
 	"github.com/edgexr/edge-cloud-platform/autoprov/autorules"
-	"github.com/edgexr/edge-cloud-platform/version"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/version"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 type ClusterSvc struct{}

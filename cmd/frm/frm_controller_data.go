@@ -24,11 +24,11 @@ import (
 	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/redundancy"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
-	"github.com/edgexr/edge-cloud-platform/notify"
-	"github.com/edgexr/edge-cloud-platform/tls"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 )
 
 // ControllerData contains cache data for controller

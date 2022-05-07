@@ -18,8 +18,8 @@ import (
 	fmt "fmt"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
-	edgeproto "github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/mobiledgex/jaeger/plugin/storage/es/spanstore/dbmodel"
 )
 

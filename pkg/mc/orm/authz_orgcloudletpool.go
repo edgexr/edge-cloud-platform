@@ -18,7 +18,7 @@ import (
 	"context"
 
 	"github.com/labstack/echo"
-	"github.com/edgexr/edge-cloud-platform/mc/ormapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 )
 
 type AuthzOrgCloudletPool struct {

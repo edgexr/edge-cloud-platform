@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/infracommon"
-	"github.com/edgexr/edge-cloud-platform/vault"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 type TokenResponse struct {

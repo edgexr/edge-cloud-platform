@@ -18,7 +18,7 @@ import (
 	"log"
 	"time"
 
-	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )

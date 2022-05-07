@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/version"
+	"github.com/edgexr/edge-cloud-platform/pkg/version"
 	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
-	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	grpcstats "github.com/edgexr/edge-cloud-platform/metrics/grpc"
-	"github.com/edgexr/edge-cloud-platform/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 // Implements dmecommon.EdgeEventsHandler interface

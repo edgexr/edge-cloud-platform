@@ -18,7 +18,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 type OrganizationApi struct {

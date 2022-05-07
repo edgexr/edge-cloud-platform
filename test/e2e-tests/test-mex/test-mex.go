@@ -26,7 +26,7 @@ import (
 	"reflect"
 	"strings"
 
-	log "github.com/edgexr/edge-cloud-platform/log"
+	log "github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/setup-env/e2e-tests/e2eapi"
 	setupmex "github.com/edgexr/edge-cloud-platform/setup-env/setup-mex"
 	"github.com/edgexr/edge-cloud-platform/setup-env/util"

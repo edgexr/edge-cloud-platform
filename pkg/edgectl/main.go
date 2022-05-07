@@ -19,10 +19,10 @@ import (
 	"os"
 
 	"github.com/edgexr/edge-cloud-platform/cli"
-	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/gencmd"
-	"github.com/edgexr/edge-cloud-platform/tls"
+	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )

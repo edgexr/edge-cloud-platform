@@ -17,9 +17,9 @@ package main
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 type AppInstLatencyApi struct {

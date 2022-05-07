@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	e2esetup "github.com/edgexr/edge-cloud-platform/e2e-tests/e2e-setup"
-	log "github.com/edgexr/edge-cloud-platform/log"
+	log "github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/setup-env/e2e-tests/e2eapi"
 	setupmex "github.com/edgexr/edge-cloud-platform/setup-env/setup-mex"
 	"github.com/edgexr/edge-cloud-platform/setup-env/util"

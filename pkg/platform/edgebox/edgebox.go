@@ -24,10 +24,10 @@ import (
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/dind"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/redundancy"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
-	"github.com/edgexr/edge-cloud-platform/vault"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
