@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	intprocess "github.com/edgexr/edge-cloud-platform/e2e-tests/int-process"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_common"
 	"github.com/edgexr/edge-cloud-platform/pkg/version"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
@@ -31,7 +31,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 

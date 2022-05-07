@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	intprocess "github.com/edgexr/edge-cloud-platform/e2e-tests/int-process"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/promutils"
 	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_common"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/pc"

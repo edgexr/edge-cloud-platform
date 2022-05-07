@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	intprocess "github.com/edgexr/edge-cloud-platform/e2e-tests/int-process"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/mc/mcctl/cliwrapper"
 	"github.com/edgexr/edge-cloud-platform/mc/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/mc/orm"

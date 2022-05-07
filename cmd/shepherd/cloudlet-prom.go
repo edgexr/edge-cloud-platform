@@ -31,7 +31,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/alerts"
 	"github.com/edgexr/edge-cloud-platform/autoprov/autorules"
-	intprocess "github.com/edgexr/edge-cloud-platform/e2e-tests/int-process"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_common"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/k8smgmt"
 	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
