@@ -14,9 +14,9 @@ TESTGEN		= $(shell which protoc-gen-test)
 CTRLGEN		= $(shell which protoc-gen-controller)
 CTRLTESTGEN	= $(shell which protoc-gen-controller-test)
 MC2GEN		= $(shell which protoc-gen-mc2)
-EDGEPROTODIR	= $(PROJECT)/tools/edgeprotogen
+EDGEPROTOGENDIR	= $(PROJECT)/tools/edgeprotogen
 PROTOGENDIR	= $(PROJECT)/tools/protogen
-INCLUDE		= -I. -I${GW} -I${APIS} -I${GOGO} -I${GOPATH} -I${EDGEPROTODIR} -I${PROTOGENDIR}
+INCLUDE		= -I. -I${GW} -I${APIS} -I${GOGO} -I${GOPATH} -I${EDGEPROTOGENDIR} -I${PROTOGENDIR}
 BUILTIN		= Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types,Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api,Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgogoproto/gogo.proto=github.com/gogo/protobuf/gogoproto
 
 NOTIFYDIR	= ../../pkg/notify
