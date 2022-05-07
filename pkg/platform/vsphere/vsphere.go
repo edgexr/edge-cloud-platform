@@ -22,8 +22,8 @@ import (
 	"unicode"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/mobiledgex/golang-ssh"

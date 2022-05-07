@@ -22,7 +22,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/edgexr/edge-cloud-platform/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 

@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/mobiledgex/golang-ssh"

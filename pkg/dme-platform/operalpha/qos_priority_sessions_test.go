@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	operator "github.com/edgexr/edge-cloud-platform/d-match-engine/operator"
+	operator "github.com/edgexr/edge-cloud-platform/pkg/dme-platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/test-go/testify/require"
 	"golang.org/x/net/context"

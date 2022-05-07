@@ -20,7 +20,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	grpcstats "github.com/edgexr/edge-cloud-platform/metrics/grpc"
+	grpcstats "github.com/edgexr/edge-cloud-platform/pkg/metrics/grpc"
 )
 
 // Filled in by DME. Added to EdgeEventStatCall to update stats

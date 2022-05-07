@@ -27,8 +27,8 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 
-	"github.com/edgexr/edge-cloud-platform/operator-api-gw/operalpha/operalpha-loc/util"
-	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
+	"github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/operalpha-loc/util"
+	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 )
 

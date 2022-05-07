@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	awsgen "github.com/edgexr/edge-cloud-platform/crm-platforms/aws/aws-generic"
-	"github.com/edgexr/edge-cloud-platform/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )

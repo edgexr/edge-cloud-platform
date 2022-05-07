@@ -25,9 +25,9 @@ import (
 	"strings"
 
 	"github.com/go-chef/chef"
-	"github.com/edgexr/edge-cloud-platform/chefmgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/version"
-	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )

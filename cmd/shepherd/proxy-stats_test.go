@@ -24,12 +24,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_platform/shepherd_unittest"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_unittest"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/testutil"
+	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
 

@@ -18,12 +18,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/access"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/dockermgmt"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/proxy"
+	"github.com/edgexr/edge-cloud-platform/pkg/access"
+	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/proxy"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/log"

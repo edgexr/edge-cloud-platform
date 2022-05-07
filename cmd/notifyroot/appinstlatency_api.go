@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
+	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 

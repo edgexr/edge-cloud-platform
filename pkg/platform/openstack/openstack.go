@@ -22,8 +22,8 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 
-	"github.com/edgexr/edge-cloud-platform/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	ssh "github.com/mobiledgex/golang-ssh"
 )

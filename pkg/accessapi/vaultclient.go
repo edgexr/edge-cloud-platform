@@ -21,14 +21,14 @@ import (
 	"strings"
 
 	"github.com/cloudflare/cloudflare-go"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/chefmgmt"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/cloudflaremgmt"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/federationmgmt"
-	pfutils "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/utils"
+	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudflaremgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
+	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/gcs"
+	"github.com/edgexr/edge-cloud-platform/pkg/gcs"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 

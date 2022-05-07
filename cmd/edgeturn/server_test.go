@@ -30,7 +30,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/setup-env/util"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/stretchr/testify/require"
 	"github.com/xtaci/smux"

@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/codeskyblue/go-sh"
-	"github.com/edgexr/edge-cloud-platform/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"

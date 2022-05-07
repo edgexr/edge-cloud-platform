@@ -7,7 +7,7 @@ import (
 	"context"
 	fmt "fmt"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/spf13/cobra"

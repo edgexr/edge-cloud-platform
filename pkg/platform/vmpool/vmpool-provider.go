@@ -21,9 +21,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/chefmgmt"
-	"github.com/edgexr/edge-cloud-platform/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"

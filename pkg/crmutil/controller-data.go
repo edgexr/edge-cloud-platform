@@ -23,9 +23,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/redundancy"
+	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"

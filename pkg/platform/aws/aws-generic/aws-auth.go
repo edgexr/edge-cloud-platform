@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
-	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"

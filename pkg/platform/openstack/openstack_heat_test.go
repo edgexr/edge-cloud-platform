@@ -22,16 +22,16 @@ import (
 
 	yaml "github.com/mobiledgex/yaml/v2"
 
-	"github.com/edgexr/edge-cloud-platform/chefmgmt"
-	e2esetup "github.com/edgexr/edge-cloud-platform/e2e-tests/e2e-setup"
-	"github.com/edgexr/edge-cloud-platform/infracommon"
-	"github.com/edgexr/edge-cloud-platform/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/accessapi"
-	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
+	e2esetup "github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
+	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/setup-env/util"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/stretchr/testify/require"
 )
