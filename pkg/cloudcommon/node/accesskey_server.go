@@ -28,7 +28,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"golang.org/x/crypto/ed25519"

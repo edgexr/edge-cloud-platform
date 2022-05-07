@@ -34,7 +34,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/kind"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/setup-env/apis"
 	"github.com/edgexr/edge-cloud-platform/setup-env/util"
 

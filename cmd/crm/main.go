@@ -28,7 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/accessapi"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/crmutil"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/redundancy"
-	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 
 	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/utils"

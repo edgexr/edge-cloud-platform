@@ -27,7 +27,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/edgectl/wrapper"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/setup-env/util"
 	"github.com/edgexr/edge-cloud-platform/testutil"

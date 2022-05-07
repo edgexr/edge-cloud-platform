@@ -41,7 +41,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/testutil"
 	yaml "github.com/mobiledgex/yaml/v2"
 	"google.golang.org/grpc"

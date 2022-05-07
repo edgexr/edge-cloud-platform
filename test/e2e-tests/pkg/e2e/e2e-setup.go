@@ -26,10 +26,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	intprocess "github.com/edgexr/edge-cloud-platform/e2e-tests/int-process"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/integration/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/setup-env/apis"
 	"github.com/edgexr/edge-cloud-platform/setup-env/e2e-tests/e2eapi"
 	setupmex "github.com/edgexr/edge-cloud-platform/setup-env/setup-mex"
