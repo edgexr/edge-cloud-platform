@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	awsgen "github.com/edgexr/edge-cloud-platform/crm-platforms/aws/aws-generic"
-	"github.com/edgexr/edge-cloud-platform/vmlayer"
+	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 

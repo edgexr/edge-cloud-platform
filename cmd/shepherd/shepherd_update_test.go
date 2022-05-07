@@ -23,7 +23,7 @@ import (
 	"time"
 
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_test"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_test"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"

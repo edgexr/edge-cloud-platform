@@ -21,7 +21,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/mc/orm"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"

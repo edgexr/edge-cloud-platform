@@ -14,7 +14,7 @@
 
 package fake
 
-import "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+import "github.com/edgexr/edge-cloud-platform/pkg/platform"
 
 type PlatformSingleCluster struct {
 	Platform

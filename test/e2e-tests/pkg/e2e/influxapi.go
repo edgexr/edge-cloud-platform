@@ -20,7 +20,7 @@ import (
 	"os"
 
 	"github.com/influxdata/influxdb/client/v2"
-	"github.com/edgexr/edge-cloud-platform/setup-env/util"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	"gopkg.in/yaml.v2"
 )
 

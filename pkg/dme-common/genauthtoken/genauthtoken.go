@@ -20,7 +20,7 @@ import (
 	"os"
 	"time"
 
-	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
+	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 )
 
 var (

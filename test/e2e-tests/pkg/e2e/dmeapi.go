@@ -28,9 +28,9 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
+	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/setup-env/util"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	edgeutil "github.com/edgexr/edge-cloud-platform/pkg/util"
 	yaml "github.com/mobiledgex/yaml/v2"
 	"google.golang.org/grpc"

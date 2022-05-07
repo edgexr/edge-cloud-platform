@@ -17,8 +17,8 @@ package common
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/alerts"
-	"github.com/edgexr/edge-cloud-platform/autoprov/autorules"
+	"github.com/edgexr/edge-cloud-platform/pkg/alerts"
+	"github.com/edgexr/edge-cloud-platform/pkg/autorules"
 	"github.com/edgexr/edge-cloud-platform/pkg/version"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )

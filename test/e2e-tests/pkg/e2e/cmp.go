@@ -28,8 +28,8 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/setup-env/util"
-	edgetestutil "github.com/edgexr/edge-cloud-platform/testutil"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
+	edgetestutil "github.com/edgexr/edge-cloud-platform/test/testutil"
 )
 
 // go-cmp Options

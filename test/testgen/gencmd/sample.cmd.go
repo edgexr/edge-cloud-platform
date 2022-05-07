@@ -7,7 +7,7 @@ import (
 	"context"
 	fmt "fmt"
 	_ "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	testgen "github.com/edgexr/edge-cloud-platform/test/testgen"
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/protobuf/gogoproto"

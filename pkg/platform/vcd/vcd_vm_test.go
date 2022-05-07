@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 	"github.com/stretchr/testify/require"

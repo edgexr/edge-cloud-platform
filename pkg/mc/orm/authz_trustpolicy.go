@@ -17,8 +17,8 @@ package orm
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/mc/ctrlclient"
-	"github.com/edgexr/edge-cloud-platform/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 

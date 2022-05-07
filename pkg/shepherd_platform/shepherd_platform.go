@@ -18,8 +18,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	ssh "github.com/mobiledgex/golang-ssh"
 )

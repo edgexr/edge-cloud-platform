@@ -27,11 +27,11 @@ import (
 	"time"
 
 	"github.com/AsGz/geo/georeverse"
-	locclient "github.com/edgexr/edge-cloud-platform/operator-api-gw/operalpha/operalpha-loc/locclient"
-	locutil "github.com/edgexr/edge-cloud-platform/operator-api-gw/operalpha/operalpha-loc/util"
-	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
+	locclient "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/operalpha-loc/locclient"
+	locutil "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/operalpha-loc/util"
+	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/setup-env/util"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	yaml "github.com/mobiledgex/yaml/v2"
 )
 

@@ -15,7 +15,7 @@
 package simulatedlocation
 
 import (
-	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
+	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )

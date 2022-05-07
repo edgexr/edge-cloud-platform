@@ -25,7 +25,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/edgexr/edge-cloud-platform/setup-env/util"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 )
 
 // This starts and stops ShowAppInstClient apis

@@ -20,11 +20,11 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/version"
-	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
+	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	grpcstats "github.com/edgexr/edge-cloud-platform/metrics/grpc"
+	grpcstats "github.com/edgexr/edge-cloud-platform/pkg/metrics/grpc"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 

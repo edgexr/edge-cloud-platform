@@ -14,7 +14,7 @@
 
 package e2esetup
 
-import "github.com/edgexr/edge-cloud-platform/setup-env/util"
+import "github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 
 type TestSpec struct {
 	Name             string            `json:"name" yaml:"name"`

@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/crm-platforms/vcd"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/vcd"
 )
 
 var (

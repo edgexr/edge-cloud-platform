@@ -19,8 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_common"
-	platform "github.com/edgexr/edge-cloud-platform/shepherd/shepherd_platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
+	platform "github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"

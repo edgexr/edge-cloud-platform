@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/edgexr/edge-cloud-platform/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/gencmd"
+	"github.com/edgexr/edge-cloud-platform/pkg/gencmd"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"

@@ -17,10 +17,10 @@ package edgebox
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/crm-platforms/fakeinfra"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/fakeinfra"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
-	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"

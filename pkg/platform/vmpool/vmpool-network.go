@@ -20,7 +20,7 @@ import (
 
 	ssh "github.com/mobiledgex/golang-ssh"
 
-	"github.com/edgexr/edge-cloud-platform/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 

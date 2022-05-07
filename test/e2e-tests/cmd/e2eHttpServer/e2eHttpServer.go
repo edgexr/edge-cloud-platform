@@ -25,7 +25,7 @@ import (
 	"strings"
 	"text/template"
 
-	e2esetup "github.com/edgexr/edge-cloud-platform/e2e-tests/e2e-setup"
+	e2esetup "github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	"gopkg.in/yaml.v2"
 )
 
