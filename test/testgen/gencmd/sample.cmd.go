@@ -6,10 +6,10 @@ package gencmd
 import (
 	"context"
 	fmt "fmt"
+	_ "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/cli"
-	_ "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
-	_ "github.com/edgexr/edge-cloud-platform/protogen"
-	testgen "github.com/edgexr/edge-cloud-platform/testgen"
+	testgen "github.com/edgexr/edge-cloud-platform/test/testgen"
+	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/spf13/cobra"
