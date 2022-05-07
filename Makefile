@@ -11,10 +11,7 @@ all: build install
 
 linux: build-linux install-linux
 
-build-vers:
-	(cd version; ./version.sh)
-
-check-vers: build-vers
+check-vers:
 	@if test $(GOVERS) != go1.15; then \
 		echo "Go version is $(GOVERS)"; \
 		echo "See https://mobiledgex.atlassian.net/wiki/spaces/SWDEV/pages/307986555/Upgrade+to+go+1.12"; \
@@ -23,17 +20,36 @@ check-vers: build-vers
 
 APICOMMENTS = ./mc/ormapi/api.comments.go
 
+# go install always copies over the executable, even if nothing changed,
+# which causes the protobuf compiles rules to run every time, since they depend on
+# the protoc-gen-xxx tools. To avoid this, manually diff to see if the generator
+# should be installed.
+TOOLSDIR	= $(GOPATH)/bin
+define install-protoc-gen =
+	$(eval EXE = $(shell basename $(1)))
+	GOBIN=/tmp go install $(1)
+	@diff /tmp/$(EXE) $(TOOLSDIR)/$(EXE) && rm /tmp/$(EXE) || mv /tmp/$(EXE) $(TOOLSDIR)/$(EXE)
+endef
+
+GOGOPROTO	= $(shell GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/gogo/protobuf)
+GRPCGATEWAY	= $(shell GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/grpc-ecosystem/grpc-gateway)
+
 build: check-vers
-	make -f Makefile.tools
+	(cd pkg/version; ./version.sh)
+	$(call install-protoc-gen,$(GOGOPROTO)/protoc-gen-gogofast)
+	$(call install-protoc-gen,$(GRPCGATEWAY)/protoc-gen-grpc-gateway)
 	make -C tools/protogen
 	make -C tools/edgeprotogen
-	go install ./tools/protoc-gen-gomex
-	go install ./tools/protoc-gen-test
-	go install ./tools/protoc-gen-cmd
-	go install ./tools/protoc-gen-notify
-	go install ./tools/protoc-gen-controller
-	go install ./tools/protoc-gen-controller-test
-	go install ./tools/protoc-gen-mc2
+	$(call install-protoc-gen,./tools/protoc-gen-gomex)
+	$(call install-protoc-gen,./tools/protoc-gen-test)
+	$(call install-protoc-gen,./tools/protoc-gen-cmd)
+	$(call install-protoc-gen,./tools/protoc-gen-notify)
+	$(call install-protoc-gen,./tools/protoc-gen-controller)
+	$(call install-protoc-gen,./tools/protoc-gen-controller-test)
+	$(call install-protoc-gen,./tools/protoc-gen-mc2)
+ifneq ($(DOCKER_BUILD),yes)
+	$(call install-protoc-gen,$(GRPCGATEWAY)/protoc-gen-swagger)
+endif
 	make -C pkg/log
 	make -C api/dme-proto
 	make -C api/edgeproto
@@ -263,5 +279,5 @@ build-ansible:
 	docker buildx build --load \
 		-t deploy -f docker/Dockerfile.ansible ./ansible
 
-clean: build-vers
+clean: check-vers
 	go clean ./...
