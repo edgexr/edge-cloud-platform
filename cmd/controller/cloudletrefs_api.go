@@ -17,7 +17,7 @@ package main
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 type CloudletRefsApi struct {

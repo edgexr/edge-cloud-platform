@@ -22,9 +22,9 @@ import (
 	"time"
 
 	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
-	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/stretchr/testify/require"
 )
 

@@ -23,13 +23,13 @@ import (
 
 	"github.com/coreos/etcd/clientv3/concurrency"
 	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	influxq "github.com/edgexr/edge-cloud-platform/controller/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/controller/influxq_client/influxq_testutil"
-	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/integration/process"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/testutil"
 	"github.com/stretchr/testify/require"
 )

@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/cli"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/gencmd"
 )
 

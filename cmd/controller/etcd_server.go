@@ -22,7 +22,7 @@ import (
 	"runtime"
 
 	"github.com/edgexr/edge-cloud-platform/integration/process"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 const EtcdLocalData string = "etcdLocal_data"

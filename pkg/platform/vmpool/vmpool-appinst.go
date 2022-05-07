@@ -18,8 +18,8 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/infracommon"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 func (o *VMPoolPlatform) GetConsoleUrl(ctx context.Context, serverName string) (string, error) {

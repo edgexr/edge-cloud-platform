@@ -23,9 +23,9 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/log"
-	"github.com/edgexr/edge-cloud-platform/vault"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

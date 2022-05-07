@@ -19,8 +19,8 @@ import (
 
 	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
 	dmetest "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-testutil"
-	"github.com/edgexr/edge-cloud-platform/log"
-	"github.com/edgexr/edge-cloud-platform/vault"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"

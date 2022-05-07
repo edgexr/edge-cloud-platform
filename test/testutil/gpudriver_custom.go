@@ -17,7 +17,7 @@ package testutil
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 func (s *DummyServer) AddGPUDriverBuild(in *edgeproto.GPUDriverBuildMember, cb edgeproto.GPUDriverApi_AddGPUDriverBuildServer) error {

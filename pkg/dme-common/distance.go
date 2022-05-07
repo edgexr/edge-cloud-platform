@@ -17,7 +17,7 @@ package dmecommon
 import (
 	"math"
 
-	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 )
 
 //These are the possible values returned by GDDT in the non-error case.

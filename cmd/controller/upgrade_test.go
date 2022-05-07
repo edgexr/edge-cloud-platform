@@ -24,9 +24,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/log"
-	"github.com/edgexr/edge-cloud-platform/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/stretchr/testify/require"
 )
 

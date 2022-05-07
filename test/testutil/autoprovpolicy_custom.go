@@ -17,7 +17,7 @@ package testutil
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 func (s *DummyServer) AddAutoProvPolicyCloudlet(ctx context.Context, cloudlet *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {

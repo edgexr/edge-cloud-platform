@@ -19,9 +19,9 @@ import (
 	"strconv"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 // Functions to manage unique DNS labels.

@@ -17,7 +17,7 @@ package dmecommon
 import (
 	"reflect"
 
-	log "github.com/edgexr/edge-cloud-platform/log"
+	log "github.com/edgexr/edge-cloud-platform/pkg/log"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )

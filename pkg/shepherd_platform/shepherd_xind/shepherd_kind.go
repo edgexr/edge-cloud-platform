@@ -23,7 +23,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/shepherd/shepherd_common"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform/common/xind"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	ssh "github.com/mobiledgex/golang-ssh"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"

@@ -30,7 +30,7 @@ import (
 	locclient "github.com/edgexr/edge-cloud-platform/operator-api-gw/operalpha/operalpha-loc/locclient"
 	locutil "github.com/edgexr/edge-cloud-platform/operator-api-gw/operalpha/operalpha-loc/util"
 	dmecommon "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-common"
-	dme "github.com/edgexr/edge-cloud-platform/d-match-engine/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/setup-env/util"
 	yaml "github.com/mobiledgex/yaml/v2"
 )

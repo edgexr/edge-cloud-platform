@@ -28,11 +28,11 @@ import (
 	"github.com/edgexr/edge-cloud-platform/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/cloud-resource-manager/accessapi"
 	pf "github.com/edgexr/edge-cloud-platform/cloud-resource-manager/platform"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/setup-env/util"
-	"github.com/edgexr/edge-cloud-platform/vault"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/stretchr/testify/require"
 )
 

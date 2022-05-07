@@ -19,8 +19,8 @@ import (
 	fmt "fmt"
 	"sort"
 
-	"github.com/edgexr/edge-cloud-platform/log"
-	"github.com/edgexr/edge-cloud-platform/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 )
 
 type AlertKey string

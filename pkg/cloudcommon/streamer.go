@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 var streamCleanupInterval = 10 * time.Minute

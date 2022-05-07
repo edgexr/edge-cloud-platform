@@ -14,7 +14,7 @@
 
 package ratelimit
 
-import "github.com/edgexr/edge-cloud-platform/edgeproto"
+import "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 
 // Convert db-based objects to user-based objects
 func DbToUserSettings(fsettings []*edgeproto.FlowRateLimitSettings, msettings []*edgeproto.MaxReqsRateLimitSettings) []*edgeproto.RateLimitSettings {

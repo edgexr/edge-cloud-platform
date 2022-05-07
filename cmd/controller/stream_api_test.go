@@ -21,9 +21,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
-	"github.com/edgexr/edge-cloud-platform/rediscache"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/testutil"
 	"github.com/stretchr/testify/require"
 )

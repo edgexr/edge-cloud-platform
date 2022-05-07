@@ -24,8 +24,8 @@ import (
 	awsgen "github.com/edgexr/edge-cloud-platform/crm-platforms/aws/aws-generic"
 	"github.com/edgexr/edge-cloud-platform/infracommon"
 	"github.com/edgexr/edge-cloud-platform/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 

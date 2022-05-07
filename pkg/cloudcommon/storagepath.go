@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 type StoragePath struct {

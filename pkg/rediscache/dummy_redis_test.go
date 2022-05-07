@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
-	"github.com/edgexr/edge-cloud-platform/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/stretchr/testify/require"
 )
 

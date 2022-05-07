@@ -26,8 +26,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/vault"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 	"google.golang.org/api/iterator"

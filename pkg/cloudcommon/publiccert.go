@@ -17,8 +17,8 @@ package cloudcommon
 import (
 	"context"
 
-	edgetls "github.com/edgexr/edge-cloud-platform/tls"
-	"github.com/edgexr/edge-cloud-platform/vault"
+	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 // GetPublicCertApi abstracts the way the public cert is retrieved.

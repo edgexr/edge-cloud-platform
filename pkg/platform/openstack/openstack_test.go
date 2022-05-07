@@ -19,8 +19,8 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/stretchr/testify/require"
 )
 
