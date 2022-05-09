@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util
+package e2e
 
 import (
 	"bytes"
@@ -28,35 +28,24 @@ import (
 	"net/http/cookiejar"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"reflect"
 	"regexp"
 	"sort"
 	"strings"
 	"time"
 
+	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
 	influxclient "github.com/influxdata/influxdb/client/v2"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	yaml "github.com/mobiledgex/yaml/v2"
 	"google.golang.org/grpc"
 )
-
-type TestSpec struct {
-	Name             string            `json:"name" yaml:"name"`
-	ApiType          string            `json:"api" yaml:"api"`
-	ApiFile          string            `json:"apifile" yaml:"apifile"`
-	ApiFileVars      map[string]string `json:"apifilevars" yaml:"apifilevars"`
-	Actions          []string          `json:"actions" yaml:"actions"`
-	RetryCount       int               `json:"retrycount" yaml:"retrycount"`
-	RetryIntervalSec float64           `json:"retryintervalsec" yaml:"retryintervalsec"`
-	CompareYaml      CompareYaml       `json:"compareyaml" yaml:"compareyaml"`
-}
 
 type CompareYaml struct {
 	Yaml1    string `json:"yaml1" yaml:"yaml1"`
@@ -109,6 +98,10 @@ type K8CopyFile struct {
 	Dest    string
 }
 
+// Note: Any services that are declared in the Deployment
+// but are actually instantiated by the K8S scripts must
+// have a non-local hostname defined, otherwise they will be
+// treated as a local service.
 type K8sDeploymentStep struct {
 	File        string
 	Description string
@@ -123,25 +116,42 @@ type TLSCertInfo struct {
 }
 
 type DeploymentData struct {
-	TLSCerts       []*TLSCertInfo           `yaml:"tlscerts"`
-	DockerNetworks []*process.DockerNetwork `yaml:"dockernetworks"`
-	Locsims        []*process.LocApiSim     `yaml:"locsims"`
-	Toksims        []*process.TokSrvSim     `yaml:"toksims"`
-	Vaults         []*process.Vault         `yaml:"vaults"`
-	Etcds          []*process.Etcd          `yaml:"etcds"`
-	Controllers    []*process.Controller    `yaml:"controllers"`
-	Dmes           []*process.Dme           `yaml:"dmes"`
-	SampleApps     []*process.SampleApp     `yaml:"sampleapps"`
-	Influxs        []*process.Influx        `yaml:"influxs"`
-	ClusterSvcs    []*process.ClusterSvc    `yaml:"clustersvcs"`
-	Crms           []*process.Crm           `yaml:"crms"`
-	Jaegers        []*process.Jaeger        `yaml:"jaegers"`
-	Traefiks       []*process.Traefik       `yaml:"traefiks"`
-	NginxProxys    []*process.NginxProxy    `yaml:"nginxproxys"`
-	NotifyRoots    []*process.NotifyRoot    `yaml:"notifyroots"`
-	EdgeTurns      []*process.EdgeTurn      `yaml:"edgeturns"`
-	ElasticSearchs []*process.ElasticSearch `yaml:"elasticsearchs"`
-	RedisCaches    []*process.RedisCache    `yaml:"rediscaches"`
+	TLSCerts         []*TLSCertInfo                    `yaml:"tlscerts"`
+	DockerNetworks   []*process.DockerNetwork          `yaml:"dockernetworks"`
+	Locsims          []*process.LocApiSim              `yaml:"locsims"`
+	Toksims          []*process.TokSrvSim              `yaml:"toksims"`
+	Vaults           []*process.Vault                  `yaml:"vaults"`
+	Etcds            []*process.Etcd                   `yaml:"etcds"`
+	Controllers      []*process.Controller             `yaml:"controllers"`
+	Dmes             []*process.Dme                    `yaml:"dmes"`
+	SampleApps       []*process.SampleApp              `yaml:"sampleapps"`
+	Influxs          []*process.Influx                 `yaml:"influxs"`
+	ClusterSvcs      []*process.ClusterSvc             `yaml:"clustersvcs"`
+	Crms             []*process.Crm                    `yaml:"crms"`
+	Jaegers          []*process.Jaeger                 `yaml:"jaegers"`
+	Traefiks         []*process.Traefik                `yaml:"traefiks"`
+	NginxProxys      []*process.NginxProxy             `yaml:"nginxproxys"`
+	NotifyRoots      []*process.NotifyRoot             `yaml:"notifyroots"`
+	EdgeTurns        []*process.EdgeTurn               `yaml:"edgeturns"`
+	ElasticSearchs   []*process.ElasticSearch          `yaml:"elasticsearchs"`
+	RedisCaches      []*process.RedisCache             `yaml:"rediscaches"`
+	Cluster          ClusterInfo                       `yaml:"cluster"`
+	K8sDeployment    []*K8sDeploymentStep              `yaml:"k8s-deployment"`
+	Mcs              []*intprocess.MC                  `yaml:"mcs"`
+	Sqls             []*intprocess.Sql                 `yaml:"sqls"`
+	Frms             []*intprocess.FRM                 `yaml:"frms"`
+	Shepherds        []*intprocess.Shepherd            `yaml:"shepherds"`
+	AutoProvs        []*intprocess.AutoProv            `yaml:"autoprovs"`
+	Cloudflare       CloudflareDNS                     `yaml:"cloudflare"`
+	Prometheus       []*intprocess.PromE2e             `yaml:"prometheus"`
+	HttpServers      []*intprocess.HttpServer          `yaml:"httpservers"`
+	ChefServers      []*intprocess.ChefServer          `yaml:"chefserver"`
+	Alertmanagers    []*intprocess.Alertmanager        `yaml:"alertmanagers"`
+	Maildevs         []*intprocess.Maildev             `yaml:"maildevs"`
+	AlertmgrSidecars []*intprocess.AlertmanagerSidecar `yaml:"alertmanagersidecars"`
+	ThanosQueries    []*intprocess.ThanosQuery         `yaml:"thanosqueries"`
+	ThanosReceives   []*intprocess.ThanosReceive       `yaml:"thanosreceives"`
+	Qossessims       []*intprocess.QosSesSrvSim        `yaml:"qossessims"`
 }
 
 type errorReply struct {
@@ -198,6 +208,48 @@ func GetAllProcesses() []process.Process {
 		all = append(all, p)
 	}
 	for _, p := range Deployment.RedisCaches {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.Sqls {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.Alertmanagers {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.AlertmgrSidecars {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.Mcs {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.Frms {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.Shepherds {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.AutoProvs {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.Prometheus {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.HttpServers {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.ChefServers {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.Maildevs {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.ThanosQueries {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.ThanosReceives {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.Qossessims {
 		all = append(all, p)
 	}
 	return all
@@ -548,51 +600,6 @@ func ValidateReplacedVars() ReadYamlOp {
 	return func(opts *ReadYamlOptions) {
 		opts.validateReplacedVars = true
 	}
-}
-
-//compares two yaml files for equivalence
-//TODO need to handle different types of interfaces besides appdata, currently using
-//that to sort
-func CompareYamlFiles(name string, actions []string, compare *CompareYaml) bool {
-	PrintStepBanner("running compareYamlFiles")
-
-	compareInfo, err := yaml.Marshal(compare)
-	if err != nil {
-		log.Printf("Failed to marshal compare info, %v\n", err)
-		return false
-	}
-	log.Printf("Name: %s", name)
-	log.Printf("Actions: %s\n%s", strings.Join(actions, ", "), string(compareInfo))
-
-	// figure out which file is the expected data based on the path
-	// ignore comments
-	diffArgs := []string{"-au", "-I", "# .*"}
-	expectedFile := ""
-	if strings.Contains(compare.Yaml1, "github.com/mobiledgex/") {
-		diffArgs = append(diffArgs, compare.Yaml1, compare.Yaml2)
-		expectedFile = compare.Yaml1
-	} else {
-		diffArgs = append(diffArgs, compare.Yaml2, compare.Yaml1)
-		expectedFile = compare.Yaml2
-	}
-	runDir := filepath.Dir(expectedFile)
-	diffFile := expectedFile + ".patch"
-
-	cmd := exec.Command("diff", diffArgs...)
-	cmd.Dir = runDir
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		log.Println("Comparison fail")
-		log.Print(string(out))
-		err := ioutil.WriteFile(diffFile, out, 0644)
-		if err != nil {
-			log.Printf("Failed to write diff output to %s: %v", diffFile, err)
-		}
-		return false
-	}
-	os.Remove(diffFile)
-	log.Println("Comparison success")
-	return true
 }
 
 func ControllerCLI(ctrl *process.Controller, args ...string) ([]byte, error) {

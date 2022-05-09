@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apis
+package e2e
 
 // interacts with the DME APIs for use by the e2e test tool
 
@@ -27,10 +27,9 @@ import (
 	"strings"
 	"time"
 
+	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
-	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	edgeutil "github.com/edgexr/edge-cloud-platform/pkg/util"
 	yaml "github.com/mobiledgex/yaml/v2"
 	"google.golang.org/grpc"
@@ -89,7 +88,7 @@ func NewdmeRestClient(client *http.Client, httpAddr string) dmeproto.MatchEngine
 
 func (c *dmeRestClient) RegisterClient(ctx context.Context, in *dmeproto.RegisterClientRequest, opts ...grpc.CallOption) (*dmeproto.RegisterClientReply, error) {
 	out := new(dmeproto.RegisterClientReply)
-	err := util.CallRESTPost("https://"+c.addr+"/v1/registerclient",
+	err := CallRESTPost("https://"+c.addr+"/v1/registerclient",
 		c.client, in, out)
 	if err != nil {
 		log.Printf("Register rest API failed\n")
@@ -99,7 +98,7 @@ func (c *dmeRestClient) RegisterClient(ctx context.Context, in *dmeproto.Registe
 }
 func (c *dmeRestClient) FindCloudlet(ctx context.Context, in *dmeproto.FindCloudletRequest, opts ...grpc.CallOption) (*dmeproto.FindCloudletReply, error) {
 	out := new(dmeproto.FindCloudletReply)
-	err := util.CallRESTPost("https://"+c.addr+"/v1/findcloudlet",
+	err := CallRESTPost("https://"+c.addr+"/v1/findcloudlet",
 		c.client, in, out)
 	if err != nil {
 		log.Printf("findcloudlet rest API failed\n")
@@ -110,7 +109,7 @@ func (c *dmeRestClient) FindCloudlet(ctx context.Context, in *dmeproto.FindCloud
 
 func (c *dmeRestClient) PlatformFindCloudlet(ctx context.Context, in *dmeproto.PlatformFindCloudletRequest, opts ...grpc.CallOption) (*dmeproto.FindCloudletReply, error) {
 	out := new(dmeproto.FindCloudletReply)
-	err := util.CallRESTPost("https://"+c.addr+"/v1/platformfindcloudlet",
+	err := CallRESTPost("https://"+c.addr+"/v1/platformfindcloudlet",
 		c.client, in, out)
 	if err != nil {
 		log.Printf("findcloudlet rest API failed\n")
@@ -122,7 +121,7 @@ func (c *dmeRestClient) PlatformFindCloudlet(ctx context.Context, in *dmeproto.P
 func (c *dmeRestClient) QosPrioritySessionCreate(ctx context.Context, in *dmeproto.QosPrioritySessionCreateRequest, opts ...grpc.CallOption) (*dmeproto.QosPrioritySessionReply, error) {
 	log.Printf("QosPrioritySessionCreate. in=%v, opts=%v", in, opts)
 	out := new(dmeproto.QosPrioritySessionReply)
-	err := util.CallRESTPost("https://"+c.addr+"/v1/qosprioritysessioncreate",
+	err := CallRESTPost("https://"+c.addr+"/v1/qosprioritysessioncreate",
 		c.client, in, out)
 	if err != nil {
 		log.Printf("qosprioritysessioncreate rest API failed\n")
@@ -134,7 +133,7 @@ func (c *dmeRestClient) QosPrioritySessionCreate(ctx context.Context, in *dmepro
 func (c *dmeRestClient) QosPrioritySessionDelete(ctx context.Context, in *dmeproto.QosPrioritySessionDeleteRequest, opts ...grpc.CallOption) (*dmeproto.QosPrioritySessionDeleteReply, error) {
 	log.Printf("QosPrioritySessionDelete. in=%v, opts=%v", in, opts)
 	out := new(dmeproto.QosPrioritySessionDeleteReply)
-	err := util.CallRESTPost("https://"+c.addr+"/v1/qosprioritysessiondelete",
+	err := CallRESTPost("https://"+c.addr+"/v1/qosprioritysessiondelete",
 		c.client, in, out)
 	if err != nil {
 		log.Printf("qosprioritysessiondelete rest API failed\n")
@@ -145,7 +144,7 @@ func (c *dmeRestClient) QosPrioritySessionDelete(ctx context.Context, in *dmepro
 
 func (c *dmeRestClient) VerifyLocation(ctx context.Context, in *dmeproto.VerifyLocationRequest, opts ...grpc.CallOption) (*dmeproto.VerifyLocationReply, error) {
 	out := new(dmeproto.VerifyLocationReply)
-	err := util.CallRESTPost("https://"+c.addr+"/v1/verifylocation",
+	err := CallRESTPost("https://"+c.addr+"/v1/verifylocation",
 		c.client, in, out)
 	if err != nil {
 		log.Printf("verifylocation rest API failed\n")
@@ -156,7 +155,7 @@ func (c *dmeRestClient) VerifyLocation(ctx context.Context, in *dmeproto.VerifyL
 
 func (c *dmeRestClient) GetLocation(ctx context.Context, in *dmeproto.GetLocationRequest, opts ...grpc.CallOption) (*dmeproto.GetLocationReply, error) {
 	out := new(dmeproto.GetLocationReply)
-	err := util.CallRESTPost("https://"+c.addr+"/v1/getlocation",
+	err := CallRESTPost("https://"+c.addr+"/v1/getlocation",
 		c.client, in, out)
 	if err != nil {
 		log.Printf("getlocation rest API failed\n")
@@ -171,7 +170,7 @@ func (c *dmeRestClient) GetQosPositionKpi(ctx context.Context, in *dmeproto.QosP
 
 func (c *dmeRestClient) AddUserToGroup(ctx context.Context, in *dmeproto.DynamicLocGroupRequest, opts ...grpc.CallOption) (*dmeproto.DynamicLocGroupReply, error) {
 	out := new(dmeproto.DynamicLocGroupReply)
-	err := util.CallRESTPost("https://"+c.addr+"/v1/addusertogroup",
+	err := CallRESTPost("https://"+c.addr+"/v1/addusertogroup",
 		c.client, in, out)
 	if err != nil {
 		log.Printf("addusertogroup rest API failed\n")
@@ -182,7 +181,7 @@ func (c *dmeRestClient) AddUserToGroup(ctx context.Context, in *dmeproto.Dynamic
 
 func (c *dmeRestClient) GetFqdnList(ctx context.Context, in *dmeproto.FqdnListRequest, opts ...grpc.CallOption) (*dmeproto.FqdnListReply, error) {
 	out := new(dmeproto.FqdnListReply)
-	err := util.CallRESTPost("https://"+c.addr+"/v1/getfqdnlist",
+	err := CallRESTPost("https://"+c.addr+"/v1/getfqdnlist",
 		c.client, in, out)
 	if err != nil {
 		log.Printf("getfqdnlist rest API failed\n")
@@ -193,7 +192,7 @@ func (c *dmeRestClient) GetFqdnList(ctx context.Context, in *dmeproto.FqdnListRe
 
 func (c *dmeRestClient) GetAppInstList(ctx context.Context, in *dmeproto.AppInstListRequest, opts ...grpc.CallOption) (*dmeproto.AppInstListReply, error) {
 	out := new(dmeproto.AppInstListReply)
-	err := util.CallRESTPost("https://"+c.addr+"/v1/getappinstlist",
+	err := CallRESTPost("https://"+c.addr+"/v1/getappinstlist",
 		c.client, in, out)
 	if err != nil {
 		log.Printf("getappinstlist rest API failed\n")
@@ -204,7 +203,7 @@ func (c *dmeRestClient) GetAppInstList(ctx context.Context, in *dmeproto.AppInst
 
 func (c *dmeRestClient) GetAppOfficialFqdn(ctx context.Context, in *dmeproto.AppOfficialFqdnRequest, opts ...grpc.CallOption) (*dmeproto.AppOfficialFqdnReply, error) {
 	out := new(dmeproto.AppOfficialFqdnReply)
-	err := util.CallRESTPost("https://"+c.addr+"/v1/getappofficialfqdn",
+	err := CallRESTPost("https://"+c.addr+"/v1/getappofficialfqdn",
 		c.client, in, out)
 	if err != nil {
 		log.Printf("getappofficialfqdn rest API failed\n")
@@ -218,16 +217,16 @@ func (c *dmeRestClient) StreamEdgeEvent(ctx context.Context, opts ...grpc.CallOp
 }
 
 func readDMEApiFile(apifile string, apiFileVars map[string]string) {
-	err := util.ReadYamlFile(apifile, &apiRequests, util.WithVars(apiFileVars), util.ValidateReplacedVars())
-	if err != nil && !util.IsYamlOk(err, "dmeapi") {
+	err := ReadYamlFile(apifile, &apiRequests, WithVars(apiFileVars), ValidateReplacedVars())
+	if err != nil && !IsYamlOk(err, "dmeapi") {
 		// old yaml files are not arrayed dmeApiRequests
 		apiRequest := dmeApiRequest{}
 		apiRequests = append(apiRequests, &apiRequest)
-		err = util.ReadYamlFile(apifile, &apiRequest, util.ValidateReplacedVars())
+		err = ReadYamlFile(apifile, &apiRequest, ValidateReplacedVars())
 		singleRequest = true
 	}
 	if err != nil {
-		if !util.IsYamlOk(err, "dmeapi") {
+		if !IsYamlOk(err, "dmeapi") {
 			fmt.Fprintf(os.Stderr, "Error in unmarshal for file %s", apifile)
 			os.Exit(1)
 		}
@@ -235,7 +234,7 @@ func readDMEApiFile(apifile string, apiFileVars map[string]string) {
 }
 
 func readMatchEngineStatus(filename string, mes *registration) {
-	util.ReadYamlFile(filename, &mes)
+	ReadYamlFile(filename, &mes)
 }
 
 func RunDmeAPI(api string, procname string, apiFile string, apiFileVars map[string]string, apiType string, outputDir string) bool {
@@ -248,7 +247,7 @@ func RunDmeAPI(api string, procname string, apiFile string, apiFileVars map[stri
 
 	readDMEApiFile(apiFile, apiFileVars)
 
-	dme := util.GetDme(procname)
+	dme := GetDme(procname)
 	var client dmeproto.MatchEngineApiClient
 
 	if apiType == "rest" {
@@ -306,7 +305,7 @@ func RunDmeAPI(api string, procname string, apiFile string, apiFileVars map[stri
 		fmt.Printf("Error: Unable to marshal %s reply: %v\n", api, ymlerror)
 		return false
 	}
-	util.PrintToFile(api+".yml", outputDir, util.PatchLicense(string(out)), true)
+	PrintToFile(api+".yml", outputDir, PatchLicense(string(out)), true)
 	return true
 }
 
@@ -344,7 +343,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 				fmt.Printf("Error: Unable to marshal %s reply: %v\n", api, ymlerror)
 				return false, nil
 			}
-			util.PrintToFile("register.yml", outputDir, util.PatchLicense(string(out)), true)
+			PrintToFile("register.yml", outputDir, PatchLicense(string(out)), true)
 			readMatchEngineStatus(outputDir+"/register.yml", &registerStatus)
 		}
 		sessionCookie = registerStatus.Reply.SessionCookie
@@ -353,7 +352,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 		// If StreamEdgeEvent, we need the edgeeventscookie from FindCloudletReply as well
 		if api == "edgeeventinit" || api == "edgeeventlatency" || api == "edgeeventnewcloudlet" {
 			var findCloudlet findcloudlet
-			err := util.ReadYamlFile(outputDir+"/edgeeventfindcloudlet.yml", &findCloudlet)
+			err := ReadYamlFile(outputDir+"/edgeeventfindcloudlet.yml", &findCloudlet)
 			if err != nil || findCloudlet.Req.CarrierName != apiRequest.Fcreq.CarrierName ||
 				findCloudlet.Req.GpsLocation.Latitude != apiRequest.Fcreq.GpsLocation.Latitude ||
 				findCloudlet.Req.GpsLocation.Longitude != apiRequest.Fcreq.GpsLocation.Longitude ||
@@ -369,8 +368,8 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 					fmt.Printf("Error: Unable to marshal %s reply: %v\n", api, ymlerror)
 					return false, nil
 				}
-				util.PrintToFile("edgeeventfindcloudlet.yml", outputDir, util.PatchLicense(string(out)), true)
-				util.ReadYamlFile(outputDir+"/edgeeventfindcloudlet.yml", &findCloudlet)
+				PrintToFile("edgeeventfindcloudlet.yml", outputDir, PatchLicense(string(out)), true)
+				ReadYamlFile(outputDir+"/edgeeventfindcloudlet.yml", &findCloudlet)
 			}
 			eeCookie = findCloudlet.Reply.EdgeEventsCookie
 			log.Printf("Using eeCookie: %s\n", eeCookie)
@@ -381,7 +380,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 	case "platformfindcloudlet":
 		log.Printf("reading AppOfficialFqdn response to get token for platformfindcloudlet")
 		var fqdnreply dmeproto.AppOfficialFqdnReply
-		err := util.ReadYamlFile(outputDir+"/getappofficialfqdn.yml", &fqdnreply)
+		err := ReadYamlFile(outputDir+"/getappofficialfqdn.yml", &fqdnreply)
 		if err != nil {
 			log.Printf("error reading AppOfficialFqdn response - %v", err)
 			return false, nil
@@ -417,7 +416,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 					sort.Slice(reply.Ports, func(i, j int) bool {
 						return reply.Ports[i].InternalPort < reply.Ports[j].InternalPort
 					})
-					util.FilterFindCloudletReply(reply)
+					FilterFindCloudletReply(reply)
 				}
 				dmereply = reply
 				dmeerror = err
@@ -458,7 +457,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 					if err == nil && reply.Tags != nil {
 						// It exists, so read in values from previous run.
 						var replyPrev *dmeproto.FindCloudletReply
-						err = util.ReadYamlFile(filename, &replyPrev)
+						err = ReadYamlFile(filename, &replyPrev)
 						if err == nil {
 							log.Printf("Previous findcloudletreply: %v", replyPrev)
 							log.Printf("old: %s, %s. new: %s, %s", replyPrev.Tags[cloudcommon.TagQosProfileName],
@@ -492,13 +491,13 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 						log.Printf("%s doesn't exist. First run.", filename)
 					}
 					// Whether first or subsequent run, save unfiltered output to be checked against on next run.
-					util.PrintToYamlFile(api+"unfiltered.yml", outputDir, reply, true)
+					PrintToYamlFile(api+"unfiltered.yml", outputDir, reply, true)
 				}
 				if reply != nil && filterOutput {
 					sort.Slice(reply.Ports, func(i, j int) bool {
 						return reply.Ports[i].InternalPort < reply.Ports[j].InternalPort
 					})
-					util.FilterFindCloudletReply(reply)
+					FilterFindCloudletReply(reply)
 				}
 				dmereply = reply
 				dmeerror = err
@@ -525,7 +524,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 			if err == nil {
 				// It exists, so read in values from previous run.
 				var replyPrev *dmeproto.QosPrioritySessionReply
-				err = util.ReadYamlFile(filename, &replyPrev)
+				err = ReadYamlFile(filename, &replyPrev)
 				if err == nil {
 					log.Printf("Previous QosPrioritySessionReply: %v.", replyPrev)
 					log.Printf("old: %s, %s. new: %s, %s", replyPrev.Profile, replyPrev.SessionId, reply.Profile, reply.SessionId)
@@ -557,8 +556,8 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 				log.Printf("%s doesn't exist. First run.", filename)
 			}
 			// Whether first or subsequent run, save unfiltered output to be checked against on next run.
-			util.PrintToYamlFile(api+"unfiltered.yml", outputDir, reply, true)
-			util.FilterQosPrioritySessionReply(reply)
+			PrintToYamlFile(api+"unfiltered.yml", outputDir, reply, true)
+			FilterQosPrioritySessionReply(reply)
 		} else {
 			log.Printf("client.QosPrioritySessionCreate call failed. err=%v", err)
 		}
@@ -578,7 +577,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 			if err == nil {
 				// It exists, so read in values from previous run.
 				var replyPrev *dmeproto.QosPrioritySessionReply
-				err = util.ReadYamlFile(filename, &replyPrev)
+				err = ReadYamlFile(filename, &replyPrev)
 				if err == nil {
 					log.Printf("Previous QosPrioritySessionReply: %v. SessionId=%s", replyPrev, replyPrev.SessionId)
 					prevSessionId = replyPrev.SessionId
@@ -667,7 +666,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 					return c.Appinstances[i].AppName < c.Appinstances[j].AppName
 				})
 			}
-			util.FilterAppInstEdgeEventsCookies(mel)
+			FilterAppInstEdgeEventsCookies(mel)
 		}
 		dmereply = mel
 		dmeerror = err
@@ -697,7 +696,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 		if err == nil {
 			reply, err := resp.Recv()
 			if err == nil {
-				util.FilterQosPositionKpiReply(reply)
+				FilterQosPositionKpiReply(reply)
 				dmereply = reply
 			}
 		}
@@ -716,7 +715,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 				dmeerror = err
 				break
 			}
-			util.FilterServerEdgeEvent(reply)
+			FilterServerEdgeEvent(reply)
 			dmereply = reply
 			// Terminate persistent connection
 			terminateEvent := new(dmeproto.ClientEdgeEvent)
@@ -767,7 +766,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 				dmeerror = err
 				break
 			}
-			util.FilterServerEdgeEvent(reply)
+			FilterServerEdgeEvent(reply)
 			dmereply = reply
 			// Terminate persistent connection
 			terminateEvent := new(dmeproto.ClientEdgeEvent)
@@ -804,7 +803,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 				dmeerror = err
 				break
 			}
-			util.FilterServerEdgeEvent(reply)
+			FilterServerEdgeEvent(reply)
 			dmereply = reply
 			// Terminate persistent connection
 			terminateEvent := new(dmeproto.ClientEdgeEvent)

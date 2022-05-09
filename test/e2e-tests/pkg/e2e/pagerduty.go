@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package e2esetup
+package e2e
 
 import (
 	"encoding/json"
@@ -20,7 +20,6 @@ import (
 	"log"
 	"os/exec"
 
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	"github.com/mobiledgex/yaml/v2"
 )
 
@@ -55,7 +54,7 @@ type TestPagerDutyEvent struct {
 func RunPagerDutyAPI(api, apiFile, outputDir string) error {
 	servers := make([]E2eServerName, 0)
 	if apiFile != "" {
-		err := util.ReadYamlFile(apiFile, &servers)
+		err := ReadYamlFile(apiFile, &servers)
 		if err != nil {
 			log.Printf("Unable to read api file: %s [%s]\n", apiFile, err.Error())
 			return err
@@ -91,9 +90,9 @@ func RunPagerDutyAPI(api, apiFile, outputDir string) error {
 				return err
 			}
 			if ii == 0 {
-				util.PrintToFile("show-commands.yml", outputDir, util.PatchLicense(string(ymlOut)), true)
+				PrintToFile("show-commands.yml", outputDir, PatchLicense(string(ymlOut)), true)
 			} else {
-				util.PrintToFile("show-commands.yml", outputDir, util.PatchLicense(string(ymlOut)), false)
+				PrintToFile("show-commands.yml", outputDir, PatchLicense(string(ymlOut)), false)
 			}
 		}
 	case "deleteall":

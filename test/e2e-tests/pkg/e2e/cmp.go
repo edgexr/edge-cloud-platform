@@ -12,25 +12,75 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package e2esetup
+package e2e
 
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	edgetestutil "github.com/edgexr/edge-cloud-platform/test/testutil"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	yaml "github.com/mobiledgex/yaml/v2"
 )
+
+//compares two yaml files for equivalence
+//TODO need to handle different types of interfaces besides appdata, currently using
+//that to sort
+func CompareYamlFiles(name string, actions []string, compare *CompareYaml) bool {
+	PrintStepBanner("running compareYamlFiles")
+
+	compareInfo, err := yaml.Marshal(compare)
+	if err != nil {
+		log.Printf("Failed to marshal compare info, %v\n", err)
+		return false
+	}
+	log.Printf("Name: %s", name)
+	log.Printf("Actions: %s\n%s", strings.Join(actions, ", "), string(compareInfo))
+
+	// figure out which file is the expected data based on the path
+	// ignore comments
+	diffArgs := []string{"-au", "-I", "# .*"}
+	expectedFile := ""
+	if strings.Contains(compare.Yaml1, "github.com/mobiledgex/") {
+		diffArgs = append(diffArgs, compare.Yaml1, compare.Yaml2)
+		expectedFile = compare.Yaml1
+	} else {
+		diffArgs = append(diffArgs, compare.Yaml2, compare.Yaml1)
+		expectedFile = compare.Yaml2
+	}
+	runDir := filepath.Dir(expectedFile)
+	diffFile := expectedFile + ".patch"
+
+	cmd := exec.Command("diff", diffArgs...)
+	cmd.Dir = runDir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Println("Comparison fail")
+		log.Print(string(out))
+		err := ioutil.WriteFile(diffFile, out, 0644)
+		if err != nil {
+			log.Printf("Failed to write diff output to %s: %v", diffFile, err)
+		}
+		return false
+	}
+	os.Remove(diffFile)
+	log.Println("Comparison success")
+	return true
+}
 
 // go-cmp Options
 var IgnoreAdminRole = cmpopts.AcyclicTransformer("removeAdminRole", func(roles []ormapi.Role) []ormapi.Role {
@@ -76,13 +126,8 @@ func CmpSortOrgs(a ormapi.Organization, b ormapi.Organization) bool {
 	return a.Name < b.Name
 }
 
-//compares two yaml files for equivalence
-func CompareYamlFiles(name string, actions []string, compare *util.CompareYaml) bool {
-	return util.CompareYamlFiles(name, actions, compare)
-}
-
 func cmpFilterAllData(data *ormapi.AllData) {
-	tx := util.NewTransformer()
+	tx := NewTransformer()
 	tx.AddSetZeroType(time.Time{}, dmeproto.Timestamp{})
 	tx.AddSetZeroTypeField(ormapi.Federator{}, "Revision")
 	tx.AddSetZeroTypeField(ormapi.Federation{}, "Revision")
@@ -102,7 +147,7 @@ func cmpFilterAllData(data *ormapi.AllData) {
 }
 
 func cmpFilterAllDataNoIgnore(data *ormapi.AllData) {
-	tx := util.NewTransformer()
+	tx := NewTransformer()
 	tx.AddSetZeroType(time.Time{}, dmeproto.Timestamp{})
 	tx.AddSetZeroTypeField(edgeproto.AppInstRuntime{}, "ContainerIds")
 	tx.AddSetZeroTypeField(edgeproto.CloudletInfo{}, "Controller")
@@ -111,7 +156,7 @@ func cmpFilterAllDataNoIgnore(data *ormapi.AllData) {
 }
 
 func cmpFilterUsers(data []ormapi.User) {
-	tx := util.NewTransformer()
+	tx := NewTransformer()
 	tx.AddSetZeroType(time.Time{})
 	tx.Apply(data)
 }
@@ -155,7 +200,7 @@ func cmpFilterErrsData(errActual []edgetestutil.Err, errExpected []edgetestutil.
 }
 
 func cmpFilterEventData(data []EventSearch) {
-	tx := util.NewTransformer()
+	tx := NewTransformer()
 	tx.AddSetZeroTypeField(node.EventData{}, "Timestamp", "Error")
 	tx.AddSetZeroTypeField(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge")
 	tx.Apply(data)
@@ -235,7 +280,7 @@ func omitEmptyJson(val interface{}) interface{} {
 }
 
 func cmpFilterSpans(data []SpanSearch) {
-	tx := util.NewTransformer()
+	tx := NewTransformer()
 	tx.AddSetZeroTypeField(node.SpanOutCondensed{}, "StartTime", "Duration", "TraceID", "SpanID", "Hostname")
 	tx.AddSetZeroTypeField(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge")
 	tx.AddSetZeroTypeField(node.SpanLogOut{}, "Timestamp", "Lineno")
@@ -359,7 +404,7 @@ func (s sortAggrVals) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s sortAggrVals) Less(i, j int) bool { return s[i].Key < s[j].Key }
 
 func cmpFilterEventTerms(data []EventTerms) {
-	tx := util.NewTransformer()
+	tx := NewTransformer()
 	tx.AddSetZeroTypeField(node.AggrVal{}, "DocCount")
 	tx.AddSetZeroTypeField(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge")
 	tx.Apply(data)
@@ -399,7 +444,7 @@ func cmpFilterEventTerms(data []EventTerms) {
 }
 
 func cmpFilterSpanTerms(data []SpanTerms) {
-	tx := util.NewTransformer()
+	tx := NewTransformer()
 	tx.AddSetZeroTypeField(node.AggrVal{}, "DocCount")
 	tx.AddSetZeroTypeField(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge")
 	// Ignore messages and tags because they will change often.

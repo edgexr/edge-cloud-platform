@@ -27,11 +27,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
+	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 	"github.com/xtaci/smux"
 )
@@ -229,7 +229,7 @@ func testEdgeTurnConsole(t *testing.T, isTLS bool) {
 	require.Nil(t, err, "setup smux server")
 	go setupConsoleStream(sess, initURL.Host, isTLS)
 
-	contents, err := util.ReadConsoleURL("https://127.0.0.1:8443/edgeconsole?edgetoken="+sessInfo.Token, nil)
+	contents, err := e2e.ReadConsoleURL("https://127.0.0.1:8443/edgeconsole?edgetoken="+sessInfo.Token, nil)
 	require.Nil(t, err)
 	require.Equal(t, string(contents), "Console Content\n")
 }

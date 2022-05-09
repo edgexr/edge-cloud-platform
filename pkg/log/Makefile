@@ -6,4 +6,3 @@ BUILTIN		= Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoog
 
 build:
 	protoc ${INCLUDE} --gomex_out=plugins=grpc+mex,${BUILTIN}:. *.proto
-	protoc ${INCLUDE} --cmd_out=${BUILTIN}:../gencmd *.proto

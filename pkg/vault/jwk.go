@@ -21,8 +21,8 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/mitchellh/mapstructure"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/mitchellh/mapstructure"
 )
 
 // JWKS is a set of JWT keys to support rotating keys.
@@ -93,7 +93,7 @@ func (s *JWKS) GoUpdate(callerDone chan struct{}, updateDone chan struct{}) {
 				refreshDelay = s.RefreshDelay
 			}
 
-			err := s.updateKeys()
+			err := s.UpdateKeys()
 			if updateDone != nil {
 				close(updateDone)
 				updateDone = nil
@@ -116,7 +116,7 @@ func (s *JWKS) GetKey(version int) (string, bool) {
 	if version > s.Meta.CurrentVersion {
 		// New secret may have been pushed to Vault and used
 		// by another instance. See if we can grab it as well.
-		err := s.updateKeys()
+		err := s.UpdateKeys()
 		if err != nil {
 			return "", false
 		}
@@ -130,13 +130,20 @@ func (s *JWKS) GetKey(version int) (string, bool) {
 	return jwk.Secret, true
 }
 
+// For testing or debug only
+func (s *JWKS) SetLastUpdateAttempt(t time.Time) {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	s.lastUpdateAttempt = t
+}
+
 // KVJWK represents the kv data in vault returned by a specific version request
 type KVJWK struct {
 	Meta KVMeta `mapstructure:"metadata"`
 	Data JWK    `mapstructure:"data"`
 }
 
-func (s *JWKS) updateKeys() error {
+func (s *JWKS) UpdateKeys() error {
 	s.Mux.Lock()
 	if time.Since(s.lastUpdateAttempt) < JwkUpdateDelay {
 		// avoid constant attempts

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package setupmex
+package e2e
 
-// consists of utilities used to deploy, start, stop MEX processes either locally or remotely via Ansible.
+// consists of utilities used to deploy, start, stop processes locally.
 
 import (
 	"context"
@@ -23,6 +23,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -30,15 +31,13 @@ import (
 	"time"
 
 	sh "github.com/codeskyblue/go-sh"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/xind"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/kind"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 
-	uutil "github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -106,21 +105,21 @@ func WaitForProcesses(processName string, procs []process.Process) bool {
 		return false
 	}
 	log.Println("Wait for processes to respond to APIs")
-	c := make(chan util.ReturnCodeWithText)
+	c := make(chan ReturnCodeWithText)
 	count := 0
-	for _, ctrl := range util.Deployment.Controllers {
+	for _, ctrl := range Deployment.Controllers {
 		if processName != "" && processName != ctrl.Name {
 			continue
 		}
 		count++
-		go util.ConnectController(ctrl, c)
+		go ConnectController(ctrl, c)
 	}
-	for _, dme := range util.Deployment.Dmes {
+	for _, dme := range Deployment.Dmes {
 		if processName != "" && processName != dme.Name {
 			continue
 		}
 		count++
-		go util.ConnectDme(dme, c)
+		go ConnectDme(dme, c)
 	}
 	allpass := true
 	for i := 0; i < count; i++ {
@@ -169,7 +168,7 @@ func getLogFile(procname string, outputDir string) string {
 func ReadSetupFile(setupfile string, deployment interface{}, vars map[string]string) bool {
 	//the setup file has a vars section with replacement variables.  ingest the file once
 	//to get these variables, and then ingest again to parse the setup data with the variables
-	var setupVars util.SetupVariables
+	var setupVars SetupVariables
 
 	_, exist := vars["tlsoutdir"]
 	if !exist {
@@ -187,7 +186,7 @@ func ReadSetupFile(setupfile string, deployment interface{}, vars map[string]str
 	setupdir := filepath.Dir(setupfile)
 	vars["setupdir"] = setupdir
 
-	util.ReadYamlFile(setupfile, &setupVars)
+	ReadYamlFile(setupfile, &setupVars)
 
 	for _, repl := range setupVars.Vars {
 		for varname, value := range repl {
@@ -198,11 +197,11 @@ func ReadSetupFile(setupfile string, deployment interface{}, vars map[string]str
 	files = append(files, setupVars.Includes...)
 
 	for _, filename := range files {
-		err := util.ReadYamlFile(filename, deployment,
-			util.WithVars(vars),
-			util.ValidateReplacedVars())
+		err := ReadYamlFile(filename, deployment,
+			WithVars(vars),
+			ValidateReplacedVars())
 		if err != nil {
-			if !util.IsYamlOk(err, "setup") {
+			if !IsYamlOk(err, "setup") {
 				fmt.Fprintf(os.Stderr, "One or more fatal unmarshal errors in %s", setupfile)
 				return false
 			}
@@ -211,8 +210,8 @@ func ReadSetupFile(setupfile string, deployment interface{}, vars map[string]str
 	//equals sign is not well handled in yaml so it is url encoded and changed after loading
 	//for some reason, this only happens when the yaml is read as ProcessData and not
 	//as a generic interface.  TODO: further study on this.
-	for i, _ := range util.Deployment.Dmes {
-		util.Deployment.Dmes[i].TokSrvUrl = strings.Replace(util.Deployment.Dmes[i].TokSrvUrl, "%3D", "=", -1)
+	for i, _ := range Deployment.Dmes {
+		Deployment.Dmes[i].TokSrvUrl = strings.Replace(Deployment.Dmes[i].TokSrvUrl, "%3D", "=", -1)
 	}
 	return true
 }
@@ -350,7 +349,7 @@ func CleanupKIND(ctx context.Context) error {
 }
 
 func StopProcesses(processName string, allprocs []process.Process) bool {
-	util.PrintStepBanner("stopping processes " + processName)
+	PrintStepBanner("stopping processes " + processName)
 	maxWait := time.Second * 15
 	c := make(chan string)
 	count := 0
@@ -380,11 +379,11 @@ func StopProcesses(processName string, allprocs []process.Process) bool {
 
 	if processName == "" {
 		// doing full clean up
-		for _, p := range util.Deployment.Etcds {
+		for _, p := range Deployment.Etcds {
 			log.Printf("cleaning etcd %+v", p)
 			p.ResetData()
 		}
-		for _, dn := range util.Deployment.DockerNetworks {
+		for _, dn := range Deployment.DockerNetworks {
 			log.Printf("Removing docker network %+v\n", dn)
 			if err := dn.Delete(); err != nil {
 				log.Printf("%s\n", err)
@@ -418,7 +417,7 @@ func StageYamlFile(filename string, directory string, contents interface{}) bool
 
 func StageLocDbFile(srcFile string, destDir string) {
 	var locdb interface{}
-	yerr := util.ReadYamlFile(srcFile, &locdb)
+	yerr := ReadYamlFile(srcFile, &locdb)
 	if yerr != nil {
 		fmt.Fprintf(os.Stderr, "Error reading location file %s -- %v\n", srcFile, yerr)
 	}
@@ -429,7 +428,7 @@ func StageLocDbFile(srcFile string, destDir string) {
 
 // CleanupTLSCerts . Deletes certs for a CN
 func CleanupTLSCerts() error {
-	for _, t := range util.Deployment.TLSCerts {
+	for _, t := range Deployment.TLSCerts {
 		patt := tlsOutDir + "/" + t.CommonName + ".*"
 		log.Printf("Removing [%s]\n", patt)
 
@@ -450,7 +449,7 @@ func CleanupTLSCerts() error {
 // do this programmatically but certstrap has some dependency problems that require manual package workarounds
 // and so will use the command for now so as not to break builds.
 func GenerateTLSCerts() error {
-	for _, t := range util.Deployment.TLSCerts {
+	for _, t := range Deployment.TLSCerts {
 
 		var cmdargs = []string{"--depot-path", tlsOutDir, "request-cert", "--passphrase", "", "--common-name", t.CommonName}
 		if len(t.DNSNames) > 0 {
@@ -507,7 +506,7 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 		outputDir = "."
 	}
 	rolesfile := outputDir + "/roles.yaml"
-	util.PrintStepBanner("starting local processes")
+	PrintStepBanner("starting local processes")
 
 	opts := []process.StartOp{}
 	if processName == "" {
@@ -518,7 +517,7 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 		opts = append(opts, process.WithExtraArgs(args))
 	}
 
-	for _, dn := range util.Deployment.DockerNetworks {
+	for _, dn := range Deployment.DockerNetworks {
 		if processName != "" && dn.Name != processName {
 			continue
 		}
@@ -530,82 +529,82 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.Influxs {
+	for _, p := range Deployment.Influxs {
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.Vaults {
+	for _, p := range Deployment.Vaults {
 		opts = append(opts, process.WithRolesFile(rolesfile))
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.Etcds {
+	for _, p := range Deployment.Etcds {
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.ElasticSearchs {
+	for _, p := range Deployment.ElasticSearchs {
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.Jaegers {
+	for _, p := range Deployment.Jaegers {
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.Traefiks {
+	for _, p := range Deployment.Traefiks {
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.NginxProxys {
+	for _, p := range Deployment.NginxProxys {
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.NotifyRoots {
+	for _, p := range Deployment.NotifyRoots {
 		opts = append(opts, process.WithDebug("api,notify,events"))
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.EdgeTurns {
+	for _, p := range Deployment.EdgeTurns {
 		opts = append(opts, process.WithRolesFile(rolesfile))
 		opts = append(opts, process.WithDebug("api,notify"))
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.Controllers {
+	for _, p := range Deployment.Controllers {
 		opts = append(opts, process.WithDebug("etcd,api,notify,metrics,infra,events"))
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.Dmes {
+	for _, p := range Deployment.Dmes {
 		opts = append(opts, process.WithRolesFile(rolesfile))
 		opts = append(opts, process.WithDebug("locapi,dmedb,dmereq,notify,metrics,events"))
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.ClusterSvcs {
+	for _, p := range Deployment.ClusterSvcs {
 		opts = append(opts, process.WithRolesFile(rolesfile))
 		opts = append(opts, process.WithDebug("notify,infra,api,events"))
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.Crms {
+	for _, p := range Deployment.Crms {
 		opts = append(opts, process.WithDebug("notify,infra,api,events"))
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.Locsims {
+	for _, p := range Deployment.Locsims {
 		if processName != "" && processName != p.Name {
 			continue
 		}
@@ -623,17 +622,100 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 
 		}
 	}
-	for _, p := range util.Deployment.Toksims {
+	for _, p := range Deployment.Toksims {
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.SampleApps {
+	for _, p := range Deployment.SampleApps {
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
-	for _, p := range util.Deployment.RedisCaches {
+	for _, p := range Deployment.RedisCaches {
+		if !StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.Sqls {
+		opts := append(opts, process.WithCleanStartup())
+		if !StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.Alertmanagers {
+		opts := append(opts, process.WithCleanStartup())
+		if !StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.AlertmgrSidecars {
+		opts = append(opts, process.WithDebug("api,notify,metrics,events"))
+		if !StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.Mcs {
+		opts = append(opts, process.WithRolesFile(rolesfile))
+		opts = append(opts, process.WithDebug("api,metrics,events,notify"))
+		if !StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.Frms {
+		opts = append(opts, process.WithRolesFile(rolesfile))
+		opts = append(opts, process.WithDebug("api,infra,notify"))
+		if !StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.Shepherds {
+		opts = append(opts, process.WithRolesFile(rolesfile))
+		opts = append(opts, process.WithDebug("metrics,events"))
+		if !StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.AutoProvs {
+		opts = append(opts, process.WithRolesFile(rolesfile))
+		opts = append(opts, process.WithDebug("api,notify,metrics,events"))
+		if !StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.Prometheus {
+		opts := append(opts, process.WithCleanStartup())
+		if !StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.HttpServers {
+		opts := append(opts, process.WithCleanStartup())
+		if !StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.ChefServers {
+		if !StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.Maildevs {
+		if !StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.ThanosQueries {
+		if !StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.ThanosReceives {
+		if !StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.Qossessims {
 		if !StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
@@ -642,7 +724,7 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 }
 
 func Cleanup(ctx context.Context) error {
-	err := cloudcommon.StopCRMService(ctx, nil, process.HARolePrimary)
+	err := process.StopCRMService(ctx, nil, process.HARolePrimary)
 	if err != nil {
 		return err
 	}
@@ -661,15 +743,58 @@ func Cleanup(ctx context.Context) error {
 	return CleanupLocalProxies()
 }
 
-func RunAction(ctx context.Context, actionSpec, outputDir string, spec *util.TestSpec, mods []string, vars map[string]string, retry *bool) []string {
+// Clean up leftover files
+func CleanupTmpFiles(ctx context.Context) error {
+	filesToRemove, err := filepath.Glob("/var/tmp/rulefile_*")
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	configFiles := []string{"/var/tmp/prom_targets.json", "/var/tmp/prometheus.yml", "/tmp/alertmanager.yml"}
+	filesToRemove = append(filesToRemove, configFiles...)
+	for ii := range filesToRemove {
+		err = os.Remove(filesToRemove[ii])
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+	}
+	return nil
+}
+
+func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestConfig, spec *TestSpec, mods []string, vars map[string]string, sharedData map[string]string, retry *bool) []string {
 	var actionArgs []string
 
 	act, actionParam := GetActionParam(actionSpec)
 	action, actionSubtype := GetActionSubtype(act)
-	vars = uutil.AddMaps(vars, spec.ApiFileVars)
+	vars = util.AddMaps(vars, spec.ApiFileVars)
 
 	errors := []string{}
+
+	if action == "status" ||
+		action == "ctrlapi" ||
+		action == "dmeapi" ||
+		action == "mcapi" {
+		if !UpdateAPIAddrs() {
+			errors = append(errors, "update API addrs failed")
+		}
+	}
+
 	switch action {
+	case "deploy":
+		err := CreateCloudflareRecords()
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+		if Deployment.Cluster.MexManifest != "" {
+			dir := path.Dir(config.SetupFile)
+			err := DeployK8sServices(dir)
+			if err != nil {
+				errors = append(errors, err.Error())
+			}
+		} else {
+			if !DeployProcesses() {
+				errors = append(errors, "deploy failed")
+			}
+		}
 	case "gencerts":
 		err := GenerateTLSCerts()
 		if err != nil {
@@ -682,7 +807,7 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, spec *util.Tes
 		}
 	case "start":
 		startFailed := false
-		allprocs := util.GetAllProcesses()
+		allprocs := GetAllProcesses()
 		if actionSubtype == "argument" {
 			// extract the action param and action args
 			actionArgs = GetActionArgs(actionParam)
@@ -700,7 +825,7 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, spec *util.Tes
 			}
 			log.Printf("Starting CRM %s connected to ctrl %s\n", actionParam, ctrlName)
 			// read the apifile and start crm with the details
-			err := apis.StartCrmsLocal(ctx, actionParam, ctrlName, spec.ApiFile, spec.ApiFileVars, outputDir)
+			err := StartCrmsLocal(ctx, actionParam, ctrlName, spec.ApiFile, spec.ApiFileVars, outputDir)
 			if err != nil {
 				errors = append(errors, err.Error())
 			}
@@ -717,11 +842,15 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, spec *util.Tes
 			break
 
 		}
-		if !WaitForProcesses(actionParam, allprocs) {
-			errors = append(errors, "wait for process failed")
+		if !UpdateAPIAddrs() {
+			errors = append(errors, "update API addrs failed")
+		} else {
+			if !WaitForProcesses(actionParam, allprocs) {
+				errors = append(errors, "wait for process failed")
+			}
 		}
 	case "status":
-		if !WaitForProcesses(actionParam, util.GetAllProcesses()) {
+		if !WaitForProcesses(actionParam, GetAllProcesses()) {
 			errors = append(errors, "wait for process failed")
 		}
 	case "stop":
@@ -737,52 +866,118 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, spec *util.Tes
 			if rolearg != "" {
 				haRole = process.HARole(rolearg)
 			}
-			if err := apis.StopCrmsLocal(ctx, actionParam, spec.ApiFile, spec.ApiFileVars, haRole); err != nil {
+			if err := StopCrmsLocal(ctx, actionParam, spec.ApiFile, spec.ApiFileVars, haRole); err != nil {
 				errors = append(errors, err.Error())
 			}
 		} else {
-			allprocs := util.GetAllProcesses()
+			allprocs := GetAllProcesses()
 			if !StopProcesses(actionParam, allprocs) {
 				errors = append(errors, "stop failed")
 			}
+			if !StopRemoteProcesses(actionParam) {
+				errors = append(errors, "stop remote failed")
+			}
 		}
 	case "ctrlapi":
-		if !apis.RunControllerAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir, mods, retry) {
+		if !RunControllerAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir, mods, retry) {
 			log.Printf("Unable to run api for %s-%s, %v\n", action, actionSubtype, mods)
 			errors = append(errors, "controller api failed")
 		}
 	case "clientshow":
-		if !apis.RunAppInstClientAPI(actionSubtype, actionParam, spec.ApiFile, outputDir) {
+		if !RunAppInstClientAPI(actionSubtype, actionParam, spec.ApiFile, outputDir) {
 			log.Printf("Unable to run ShowAppInstClient api for %s, %v\n", action, mods)
 			errors = append(errors, "ShowAppInstClient api failed")
 		}
 	case "exec":
-		if !apis.RunCommandAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir) {
+		if !RunCommandAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir) {
 			log.Printf("Unable to run RunCommand api for %s, %v\n", action, mods)
 			errors = append(errors, "controller RunCommand api failed")
 		}
 	case "dmeapi":
-		if !apis.RunDmeAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, spec.ApiType, outputDir) {
+		if !RunDmeAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, spec.ApiType, outputDir) {
 			log.Printf("Unable to run api for %s\n", action)
 			errors = append(errors, "dme api failed")
 		}
 	case "influxapi":
-		if !apis.RunInfluxAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir) {
+		if !RunInfluxAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir) {
 			log.Printf("Unable to run influx api for %s\n", action)
 			errors = append(errors, "influx api failed")
 		}
 	case "cmds":
-		if !apis.RunCommands(spec.ApiFile, spec.ApiFileVars, outputDir, retry) {
+		if !RunCommands(spec.ApiFile, spec.ApiFileVars, outputDir, retry) {
 			log.Printf("Unable to run commands for %s\n", action)
 			errors = append(errors, "commands failed")
 		}
 	case "script":
-		if !apis.RunScript(spec.ApiFile, outputDir, retry) {
+		if !RunScript(spec.ApiFile, outputDir, retry) {
 			log.Printf("Unable to run script for %s\n", action)
 			errors = append(errors, "script failed")
 		}
+	case "mcapi":
+		if !RunMcAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, spec.CurUserFile, outputDir, mods, vars, sharedData, retry) {
+			log.Printf("Unable to run api for %s\n", action)
+			errors = append(errors, "MC api failed")
+		}
 	case "cleanup":
-		err := Cleanup(ctx)
+		err := DeleteCloudfareRecords()
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+		if Deployment.Cluster.MexManifest != "" {
+			dir := path.Dir(config.SetupFile)
+			err := DeleteK8sServices(dir)
+			if err != nil {
+				errors = append(errors, err.Error())
+			}
+		} else {
+			if !CleanupRemoteProcesses() {
+				errors = append(errors, "cleanup failed")
+			}
+		}
+		err = process.StopShepherdService(ctx, nil)
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+		err = process.StopCloudletPrometheus(ctx)
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+		err = CleanupTmpFiles(ctx)
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+		err = process.StopFakeEnvoyExporters(ctx)
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+		err = Cleanup(ctx)
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+	case "fetchlogs":
+		if !FetchRemoteLogs(outputDir) {
+			errors = append(errors, "fetch failed")
+		}
+	case "runchefclient":
+		err := RunChefClient(spec.ApiFile, vars)
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+	case "email":
+		*retry = true
+		err := RunEmailAPI(actionSubtype, spec.ApiFile, outputDir)
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+	case "slack":
+		*retry = true
+		err := RunSlackAPI(actionSubtype, spec.ApiFile, outputDir)
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+	case "pagerduty":
+		*retry = true
+		err := RunPagerDutyAPI(actionSubtype, spec.ApiFile, outputDir)
 		if err != nil {
 			errors = append(errors, err.Error())
 		}

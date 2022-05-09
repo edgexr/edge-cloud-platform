@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package e2esetup
+package e2e
 
 import (
 	"context"
@@ -26,19 +26,18 @@ import (
 	"strings"
 	"time"
 
-	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/cliwrapper"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/testutil"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/testutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/cliwrapper"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	edgetestutil "github.com/edgexr/edge-cloud-platform/test/testutil"
-	uutil "github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/pquerna/otp/totp"
 )
 
@@ -61,7 +60,7 @@ func RunMcAPI(api, mcname, apiFile string, apiFileVars map[string]string, curUse
 	uri := "https://" + mc.Addr + "/api/v1"
 	log.Printf("Using MC %s at %s", mc.Name, uri)
 
-	vars = uutil.AddMaps(vars, apiFileVars)
+	vars = util.AddMaps(vars, apiFileVars)
 
 	var clientRun mctestclient.ClientRun
 	if hasMod("cli", mods) {
@@ -112,7 +111,7 @@ func RunMcAPI(api, mcname, apiFile string, apiFileVars map[string]string, curUse
 	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, retry)
 }
 
-func getMC(name string) *intprocess.MC {
+func getMC(name string) *process.MC {
 	if name == "" {
 		return Deployment.Mcs[0]
 	}
@@ -141,7 +140,7 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 		users, status, err := mcClient.ShowUser(uri, token, filter)
 		checkMcErr("ShowUser", status, err, &rc)
 		cmpFilterUsers(users)
-		util.PrintToYamlFile("show-commands.yml", outputDir, users, true)
+		PrintToYamlFile("show-commands.yml", outputDir, users, true)
 		return rc
 	}
 
@@ -190,7 +189,7 @@ func runMcConfig(api, uri, apiFile, curUserFile, outputDir string, mods []string
 	case "configshow":
 		config, st, err := mcClient.ShowConfig(uri, token)
 		checkMcErr("ShowConfig", st, err, &rc)
-		util.PrintToYamlFile("show-commands.yml", outputDir, config, true)
+		PrintToYamlFile("show-commands.yml", outputDir, config, true)
 	case "configreset":
 		st, err := mcClient.ResetConfig(uri, token)
 		checkMcErr("ResetConfig", st, err, &rc)
@@ -200,8 +199,8 @@ func runMcConfig(api, uri, apiFile, curUserFile, outputDir string, mods []string
 			return false
 		}
 		data := make(map[string]interface{})
-		err := util.ReadYamlFile(apiFile, &data, util.WithVars(vars), util.ValidateReplacedVars())
-		if err != nil && !util.IsYamlOk(err, "config") {
+		err := ReadYamlFile(apiFile, &data, WithVars(vars), ValidateReplacedVars())
+		if err != nil && !IsYamlOk(err, "config") {
 			log.Printf("error in unmarshal ormapi.Config for %s: %v\n", apiFile, err)
 			return false
 		}
@@ -233,21 +232,21 @@ func runMcRateLimit(api, uri, apiFile, curUserFile, outputDir string, mods []str
 		settings, st, err := mcClient.ShowRateLimitSettingsMc(uri, token, filter)
 		checkMcErr("ShowRateLimitSettingsMc", st, err, &rc)
 		cmpFilterRateLimit(settings)
-		util.PrintToYamlFile("show-commands.yml", outputDir, settings, true)
+		PrintToYamlFile("show-commands.yml", outputDir, settings, true)
 		return rc
 	} else if api == "mcratelimitflowshow" {
 		filter := &ormapi.McRateLimitFlowSettings{}
 		settings, st, err := mcClient.ShowFlowRateLimitSettingsMc(uri, token, filter)
 		checkMcErr("ShowFlowRateLimitSettingsMc", st, err, &rc)
 		cmpFilterRateLimitFlow(settings)
-		util.PrintToYamlFile("show-commands.yml", outputDir, settings, true)
+		PrintToYamlFile("show-commands.yml", outputDir, settings, true)
 		return rc
 	} else if api == "mcratelimitmaxreqsshow" {
 		filter := &ormapi.McRateLimitMaxReqsSettings{}
 		settings, st, err := mcClient.ShowMaxReqsRateLimitSettingsMc(uri, token, filter)
 		checkMcErr("ShowMaxReqsRateLimitSettingsMc", st, err, &rc)
 		cmpFilterRateLimitMaxReqs(settings)
-		util.PrintToYamlFile("show-commands.yml", outputDir, settings, true)
+		PrintToYamlFile("show-commands.yml", outputDir, settings, true)
 		return rc
 	}
 
@@ -261,8 +260,8 @@ func runMcRateLimit(api, uri, apiFile, curUserFile, outputDir string, mods []str
 		fallthrough
 	case "mcratelimitflowdelete":
 		in := &ormapi.McRateLimitFlowSettings{}
-		err := util.ReadYamlFile(apiFile, in, util.WithVars(vars), util.ValidateReplacedVars())
-		if err != nil && !util.IsYamlOk(err, "mcratelimitflowsettings") {
+		err := ReadYamlFile(apiFile, in, WithVars(vars), ValidateReplacedVars())
+		if err != nil && !IsYamlOk(err, "mcratelimitflowsettings") {
 			log.Printf("error in unmarshal ormapi.McRateLimitFlowSettings for %s: %v\n", apiFile, err)
 			return false
 		}
@@ -278,8 +277,8 @@ func runMcRateLimit(api, uri, apiFile, curUserFile, outputDir string, mods []str
 		fallthrough
 	case "mcratelimitmaxreqsdelete":
 		in := &ormapi.McRateLimitMaxReqsSettings{}
-		err := util.ReadYamlFile(apiFile, in, util.WithVars(vars), util.ValidateReplacedVars())
-		if err != nil && !util.IsYamlOk(err, "mcratelimitmaxreqssettings") {
+		err := ReadYamlFile(apiFile, in, WithVars(vars), ValidateReplacedVars())
+		if err != nil && !IsYamlOk(err, "mcratelimitmaxreqssettings") {
 			log.Printf("error in unmarshal ormapi.McRateLimitMaxReqsSettings for %s: %v\n", apiFile, err)
 			return false
 		}
@@ -295,20 +294,20 @@ func runMcRateLimit(api, uri, apiFile, curUserFile, outputDir string, mods []str
 		fallthrough
 	case "mcratelimitmaxreqsupdate":
 		data := make(map[string]interface{})
-		err := util.ReadYamlFile(apiFile, data, util.WithVars(vars), util.ValidateReplacedVars())
+		err := ReadYamlFile(apiFile, data, WithVars(vars), ValidateReplacedVars())
 		mdata := &cli.MapData{
 			Namespace: cli.ArgsNamespace,
 			Data:      data,
 		}
 		if api == "mcratelimitflowupdate" {
-			if err != nil && !util.IsYamlOk(err, "mcratelimitflowsettings") {
+			if err != nil && !IsYamlOk(err, "mcratelimitflowsettings") {
 				log.Printf("error in unmarshal ormapi.McRateLimitFlowSettings for %s: %v\n", apiFile, err)
 				return false
 			}
 			st, err := mcClient.UpdateFlowRateLimitSettingsMc(uri, token, mdata)
 			checkMcErr("UpdateFlowRateLimitSettingsMc", st, err, &rc)
 		} else {
-			if err != nil && !util.IsYamlOk(err, "mcratelimitmaxreqssettings") {
+			if err != nil && !IsYamlOk(err, "mcratelimitmaxreqssettings") {
 				log.Printf("error in unmarshal ormapi.McRateLimitMaxReqsSettings for %s: %v\n", apiFile, err)
 				return false
 			}
@@ -345,7 +344,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		} else if tag == "noignore" {
 			cmpFilterAllDataNoIgnore(showData)
 		}
-		util.PrintToYamlFile("show-commands.yml", outputDir, showData, true)
+		PrintToYamlFile("show-commands.yml", outputDir, showData, true)
 		*retry = true
 		return rc
 	}
@@ -357,7 +356,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		showEvents = showMcEvents(uri, token, targets, &rc)
 		// convert showMetrics into something yml compatible
 		parsedMetrics = parseMetrics(showEvents)
-		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
 		*retry = true
 		return rc
 	}
@@ -382,7 +381,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 			}
 		}
 		cmpFilterMetrics(*parsedMetrics)
-		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
 		*retry = true
 		return rc
 	}
@@ -394,7 +393,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		showClientApiMetrics = showMcClientApiMetrics(uri, token, targets, &rc)
 		parsedMetrics = parseOptimizedMetrics(showClientApiMetrics)
 		cmpFilterApiMetricData(*parsedMetrics)
-		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
 		*retry = true
 		return rc
 	}
@@ -406,7 +405,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		showClientAppMetrics = showMcClientAppMetrics(uri, token, targets, &rc)
 		parsedMetrics = parseOptimizedMetrics(showClientAppMetrics)
 		cmpFilterApiMetricData(*parsedMetrics)
-		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
 		*retry = true
 		return rc
 	}
@@ -418,7 +417,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		showClientCloudletMetrics = showMcClientCloudletMetrics(uri, token, targets, &rc)
 		parsedMetrics = parseOptimizedMetrics(showClientCloudletMetrics)
 		cmpFilterApiMetricData(*parsedMetrics)
-		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
 		*retry = true
 		return rc
 	}
@@ -434,7 +433,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 			Federators: selfFederators,
 		}
 		cmpFilterAllData(&showData)
-		util.PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
+		PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
 		*retry = true
 		return rc
 	}
@@ -450,7 +449,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 			FederatorZones: selfFederatorZones,
 		}
 		cmpFilterAllData(&showData)
-		util.PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
+		PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
 		*retry = true
 		return rc
 	}
@@ -466,7 +465,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 			Federations: federations,
 		}
 		cmpFilterAllData(&showData)
-		util.PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
+		PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
 		*retry = true
 		return rc
 	}
@@ -482,7 +481,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 			FederatedSelfZones: federatedSelfZones,
 		}
 		cmpFilterAllData(&showData)
-		util.PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
+		PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
 		*retry = true
 		return rc
 	}
@@ -498,7 +497,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 			FederatedPartnerZones: federatedPartnerZones,
 		}
 		cmpFilterAllData(&showData)
-		util.PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
+		PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
 		*retry = true
 		return rc
 	}
@@ -514,7 +513,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		parsedMetrics := removeTimestampFromPromData(metrics)
 		if parsedMetrics != nil {
 			cmpFilterMetrics(*parsedMetrics)
-			util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+			PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
 		}
 		*retry = true
 		return rc
@@ -535,7 +534,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 			_, st, err := mcClient.RegisterFederation(uri, token, &fd)
 			outMcErr(output, fmt.Sprintf("RegisterFederation[%d]", ii), st, err)
 		}
-		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "deregisterfederation":
 		output := &AllDataOut{}
@@ -543,7 +542,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 			_, st, err := mcClient.DeregisterFederation(uri, token, &fd)
 			outMcErr(output, fmt.Sprintf("DeregisterFederation[%d]", ii), st, err)
 		}
-		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "setfederationapikey":
 		output := &AllDataOut{}
@@ -554,7 +553,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 			_, st, err := mcClient.SetPartnerFederationAPIKey(uri, token, &fd)
 			outMcErr(output, fmt.Sprintf("SetPartnerFederationAPIKey[%d]", ii), st, err)
 		}
-		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "share":
 		fallthrough
@@ -565,17 +564,17 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	case "deregister":
 		output := &AllDataOut{}
 		manageFederatorZoneData(api, uri, token, tag, data, dataMap, output, &rc)
-		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "create":
 		output := &AllDataOut{}
 		createMcData(uri, token, tag, data, dataMap, sharedData, output, &rc)
-		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "delete":
 		output := &AllDataOut{}
 		deleteMcData(uri, token, tag, data, dataMap, sharedData, output, &rc)
-		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "add":
 		fallthrough
@@ -584,7 +583,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	case "update":
 		output := &AllDataOut{}
 		updateMcData(api, uri, token, tag, data, dataMap, output, &rc)
-		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "showfiltered":
 		dataOut, errs := showMcDataFiltered(uri, token, tag, data, &rc)
@@ -597,18 +596,18 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		// write both files so we don't accidentally pick up older results
 		if errs == nil || len(errs) == 0 {
 			dataOut.Sort()
-			util.PrintToYamlFile("show-commands.yml", outputDir, dataOut, true)
-			util.PrintToYamlFile("api-output.yml", outputDir, "", true)
+			PrintToYamlFile("show-commands.yml", outputDir, dataOut, true)
+			PrintToYamlFile("api-output.yml", outputDir, "", true)
 		} else {
-			util.PrintToYamlFile("api-output.yml", outputDir, errs, true)
-			util.PrintToYamlFile("show-commands.yml", outputDir, "", true)
+			PrintToYamlFile("api-output.yml", outputDir, errs, true)
+			PrintToYamlFile("show-commands.yml", outputDir, "", true)
 		}
 		if tag != "expecterr" {
 			*retry = true
 		}
 	case "stream":
 		dataOut := streamMcData(uri, token, tag, data, &rc)
-		util.PrintToYamlFile("show-commands.yml", outputDir, dataOut, true)
+		PrintToYamlFile("show-commands.yml", outputDir, dataOut, true)
 	case "restrictedupdateorg":
 		val, ok := dataMap["orgs"]
 		if !ok {
@@ -661,9 +660,9 @@ func readUsersFiles(file string, vars map[string]string) []ormapi.User {
 	files := strings.Split(file, ",")
 	for _, file := range files {
 		fileusers := []ormapi.User{}
-		err := util.ReadYamlFile(file, &fileusers, util.WithVars(vars), util.ValidateReplacedVars())
+		err := ReadYamlFile(file, &fileusers, WithVars(vars), ValidateReplacedVars())
 		if err != nil {
-			if !util.IsYamlOk(err, "mcusers") {
+			if !IsYamlOk(err, "mcusers") {
 				fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", file)
 				os.Exit(1)
 			}
@@ -675,9 +674,9 @@ func readUsersFiles(file string, vars map[string]string) []ormapi.User {
 
 func readMCDataFile(file string, vars map[string]string) *ormapi.AllData {
 	data := ormapi.AllData{}
-	err := util.ReadYamlFile(file, &data, util.WithVars(vars), util.ValidateReplacedVars())
+	err := ReadYamlFile(file, &data, WithVars(vars), ValidateReplacedVars())
 	if err != nil {
-		if !util.IsYamlOk(err, "mcdata") {
+		if !IsYamlOk(err, "mcdata") {
 			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", file)
 			os.Exit(1)
 		}
@@ -687,9 +686,9 @@ func readMCDataFile(file string, vars map[string]string) *ormapi.AllData {
 
 func readMCDataFileMap(file string, vars map[string]string) map[string]interface{} {
 	dataMap := make(map[string]interface{})
-	err := util.ReadYamlFile(file, &dataMap, util.WithVars(vars), util.ValidateReplacedVars())
+	err := ReadYamlFile(file, &dataMap, WithVars(vars), ValidateReplacedVars())
 	if err != nil {
-		if !util.IsYamlOk(err, "mcdata") {
+		if !IsYamlOk(err, "mcdata") {
 			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", file)
 			os.Exit(1)
 		}
@@ -717,9 +716,9 @@ func getRegionDataMap(dataMap map[string]interface{}, index int) interface{} {
 
 func readMCMetricTargetsFile(file string, vars map[string]string) *MetricTargets {
 	targets := MetricTargets{}
-	err := util.ReadYamlFile(file, &targets, util.WithVars(vars), util.ValidateReplacedVars())
+	err := ReadYamlFile(file, &targets, WithVars(vars), ValidateReplacedVars())
 	if err != nil {
-		if !util.IsYamlOk(err, "mcdata") {
+		if !IsYamlOk(err, "mcdata") {
 			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", file)
 			os.Exit(1)
 		}
@@ -729,9 +728,9 @@ func readMCMetricTargetsFile(file string, vars map[string]string) *MetricTargets
 
 func readMcCustomMetricTargetsFile(file string, vars map[string]string) *ormapi.RegionCustomAppMetrics {
 	filter := ormapi.RegionCustomAppMetrics{}
-	err := util.ReadYamlFile(file, &filter, util.WithVars(vars), util.ValidateReplacedVars())
+	err := ReadYamlFile(file, &filter, WithVars(vars), ValidateReplacedVars())
 	if err != nil {
-		if !util.IsYamlOk(err, "mcdata") {
+		if !IsYamlOk(err, "mcdata") {
 			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", file)
 			os.Exit(1)
 		}
@@ -1304,7 +1303,7 @@ func showMcClientCloudletMetrics(uri, token string, targets *MetricTargets, rc *
 	return &allMetrics
 }
 
-type runCommandData struct {
+type runCommandMCData struct {
 	Request        ormapi.RegionExecRequest
 	ExpectedOutput string
 }
@@ -1315,8 +1314,8 @@ func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, 
 		return false
 	}
 
-	data := runCommandData{}
-	err := util.ReadYamlFile(apiFile, &data, util.WithVars(vars), util.ValidateReplacedVars())
+	data := runCommandMCData{}
+	err := ReadYamlFile(apiFile, &data, WithVars(vars), ValidateReplacedVars())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error in unmarshal for file %s, %v\n", apiFile, err)
 		return false
@@ -1445,9 +1444,9 @@ func runMcEvents(api, uri, apiFile, curUserFile, outputDir string, mods []string
 	}
 
 	query := []node.EventSearch{}
-	err = util.ReadYamlFile(apiFile, &query, util.WithVars(vars), util.ValidateReplacedVars())
+	err = ReadYamlFile(apiFile, &query, WithVars(vars), ValidateReplacedVars())
 	if err != nil {
-		if !util.IsYamlOk(err, "events") {
+		if !IsYamlOk(err, "events") {
 			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", apiFile)
 			os.Exit(1)
 		}
@@ -1467,7 +1466,7 @@ func runMcEvents(api, uri, apiFile, curUserFile, outputDir string, mods []string
 			})
 		}
 		cmpFilterEventData(results)
-		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
+		PrintToYamlFile("show-commands.yml", outputDir, results, true)
 	case "eventsfind":
 		var results []EventSearch
 		for _, q := range query {
@@ -1481,7 +1480,7 @@ func runMcEvents(api, uri, apiFile, curUserFile, outputDir string, mods []string
 				Results: resp,
 			})
 		}
-		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
+		PrintToYamlFile("show-commands.yml", outputDir, results, true)
 	case "eventsterms":
 		var results []EventTerms
 		for _, q := range query {
@@ -1496,7 +1495,7 @@ func runMcEvents(api, uri, apiFile, curUserFile, outputDir string, mods []string
 			})
 		}
 		cmpFilterEventTerms(results)
-		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
+		PrintToYamlFile("show-commands.yml", outputDir, results, true)
 	default:
 		log.Printf("invalid mcapi action %s\n", api)
 		return false
@@ -1557,9 +1556,9 @@ func runMcSpans(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 	}
 
 	query := []node.SpanSearch{}
-	err = util.ReadYamlFile(apiFile, &query, util.WithVars(vars), util.ValidateReplacedVars())
+	err = ReadYamlFile(apiFile, &query, WithVars(vars), ValidateReplacedVars())
 	if err != nil {
-		if !util.IsYamlOk(err, "spans") {
+		if !IsYamlOk(err, "spans") {
 			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", apiFile)
 			os.Exit(1)
 		}
@@ -1579,7 +1578,7 @@ func runMcSpans(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 			})
 		}
 		cmpFilterSpans(results)
-		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
+		PrintToYamlFile("show-commands.yml", outputDir, results, true)
 	case "spansshowverbose":
 		var results []SpanSearchVerbose
 		for _, q := range query {
@@ -1593,7 +1592,7 @@ func runMcSpans(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 				Results: resp,
 			})
 		}
-		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
+		PrintToYamlFile("show-commands.yml", outputDir, results, true)
 	case "spansterms":
 		// There are no tests for span terms in e2e because the
 		// span results varies from run-to-run. This may be because of
@@ -1614,7 +1613,7 @@ func runMcSpans(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 			})
 		}
 		cmpFilterSpanTerms(results)
-		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
+		PrintToYamlFile("show-commands.yml", outputDir, results, true)
 	default:
 		log.Printf("invalid mcapi action %s\n", api)
 		return false
@@ -1742,8 +1741,8 @@ func runMcShowNode(uri, curUserFile, outputDir string, vars, sharedData map[stri
 
 	appdata := edgeproto.NodeData{}
 	appdata.Nodes = nodes
-	util.FilterNodeData(&appdata)
-	util.PrintToYamlFile("show-commands.yml", outputDir, appdata, true)
+	FilterNodeData(&appdata)
+	PrintToYamlFile("show-commands.yml", outputDir, appdata, true)
 	return rc
 }
 
@@ -1754,7 +1753,7 @@ func runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir string, mods
 		return false
 	}
 	userDefAlerts := []ormapi.RegionAppAlertPolicy{}
-	err := util.ReadYamlFile(apiFile, &userDefAlerts, util.WithVars(vars), util.ValidateReplacedVars())
+	err := ReadYamlFile(apiFile, &userDefAlerts, WithVars(vars), ValidateReplacedVars())
 	if err != nil {
 		log.Printf("error in unmarshal for file %s, %v\n", apiFile, err)
 		return false
@@ -1763,7 +1762,7 @@ func runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir string, mods
 	for _, alert := range userDefAlerts {
 		log.Printf("Processing userapp alert %v\n", alert)
 		output, status, err := apiFunc(uri, token, &alert)
-		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		PrintToYamlFile("api-output.yml", outputDir, output, true)
 		checkMcErr("AddAppUserDefinedAlert", status, err, &rc)
 	}
 	return rc
@@ -1791,7 +1790,7 @@ func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 		return false
 	}
 	data := edgeproto.DebugData{}
-	err := util.ReadYamlFile(apiFile, &data, util.WithVars(vars), util.ValidateReplacedVars())
+	err := ReadYamlFile(apiFile, &data, WithVars(vars), ValidateReplacedVars())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error in unmarshal for file %s, %v\n", apiFile, err)
 		os.Exit(1)
@@ -1833,7 +1832,7 @@ func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 			output.Requests[ii][jj].ClearTagged(clearTags)
 		}
 	}
-	util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+	PrintToYamlFile("api-output.yml", outputDir, output, true)
 	return rc
 }
 
@@ -1849,7 +1848,7 @@ func showMcAlerts(uri, apiFile, curUserFile, outputDir string, vars, sharedData 
 		return false
 	}
 	filter := ormapi.RegionAlert{}
-	err := util.ReadYamlFile(apiFile, &filter, util.WithVars(vars), util.ValidateReplacedVars())
+	err := ReadYamlFile(apiFile, &filter, WithVars(vars), ValidateReplacedVars())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error in unmarshal for file %s, %v\n", apiFile, err)
 		os.Exit(1)
@@ -1858,8 +1857,8 @@ func showMcAlerts(uri, apiFile, curUserFile, outputDir string, vars, sharedData 
 	alerts, status, err := mcClient.ShowAlert(uri, token, &filter)
 	checkMcErr("ShowAlert", status, err, &rc)
 
-	util.FilterAlerts(alerts)
-	util.PrintToYamlFile("show-commands.yml", outputDir, alerts, true)
+	FilterAlerts(alerts)
+	PrintToYamlFile("show-commands.yml", outputDir, alerts, true)
 	return rc
 }
 
@@ -1878,7 +1877,7 @@ func showMcAlertReceivers(uri, curUserFile, outputDir string, vars, sharedData m
 	checkMcErr("ShowAlertReceiver", status, err, &rc)
 
 	cmpFilterAllData(&showData)
-	util.PrintToYamlFile("show-commands.yml", outputDir, showData, true)
+	PrintToYamlFile("show-commands.yml", outputDir, showData, true)
 	return rc
 }
 

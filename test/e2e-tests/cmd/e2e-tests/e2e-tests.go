@@ -31,7 +31,6 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 )
 
 var (
@@ -77,7 +76,7 @@ type e2e_tests struct {
 var testsToRun e2e_tests
 var e2eHome string
 var configStr string
-var testConfig e2eapi.TestConfig
+var testConfig e2e.TestConfig
 var defaultProgram string
 
 func printUsage() {
@@ -104,12 +103,12 @@ func validateArgs() {
 		fmt.Println("Argument -setupfile <file> is required")
 		errorFound = true
 	}
-	if err := e2eapi.ReadVarsFile(*varsFile, testConfig.Vars); err != nil {
+	if err := e2e.ReadVarsFile(*varsFile, testConfig.Vars); err != nil {
 		fmt.Printf("failed to read yaml vars file %s, %v\n", *varsFile, err)
 		errorFound = true
 	}
 	testConfig.SetupFile = *setupFile
-	*outputDir = util.CreateOutputDir(!*notimestamp, *outputDir, commandName+".log")
+	*outputDir = e2e.CreateOutputDir(!*notimestamp, *outputDir, commandName+".log")
 	testConfig.Vars["outputdir"] = *outputDir
 	dataDir, found := testConfig.Vars["datadir"]
 	if !found {
@@ -138,7 +137,7 @@ func validateArgs() {
 }
 
 func readYamlFile(fileName string, tests interface{}) bool {
-	err := util.ReadYamlFile(fileName, tests, util.WithVars(testConfig.Vars), util.ValidateReplacedVars())
+	err := e2e.ReadYamlFile(fileName, tests, e2e.WithVars(testConfig.Vars), e2e.ValidateReplacedVars())
 	if err != nil {
 		log.Fatalf("*** Error in reading test file: %v - err: %v\n", *testFile, err)
 	}

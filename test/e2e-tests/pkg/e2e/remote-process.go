@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package e2esetup
+package e2e
 
 import (
 	"fmt"
@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	setupmex "github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 )
 
 //when first creating a cluster, it may take a while for the load balancer to get an IP. Usually
@@ -135,7 +134,7 @@ func runPlaybook(playbook string, evars []string, procNamefilter string) bool {
 	invFile, found := createAnsibleInventoryFile(procNamefilter)
 	ansHome := getAnsibleHome()
 
-	if !setupmex.StageYamlFile("setup.yml", ansHome+"/playbooks", &Deployment) {
+	if !StageYamlFile("setup.yml", ansHome+"/playbooks", &Deployment) {
 		return false
 	}
 
@@ -198,7 +197,7 @@ func createAnsibleInventoryFile(procNameFilter string) (string, bool) {
 		if procNameFilter != "" && procNameFilter != p.GetName() {
 			continue
 		}
-		if p.GetHostname() == "" || setupmex.IsLocalIP(p.GetHostname()) {
+		if p.GetHostname() == "" || IsLocalIP(p.GetHostname()) {
 			continue
 		}
 
@@ -214,7 +213,7 @@ func createAnsibleInventoryFile(procNameFilter string) (string, bool) {
 		// type-specific stuff
 		if locsim, ok := p.(*process.LocApiSim); ok {
 			if locsim.Locfile != "" {
-				setupmex.StageLocDbFile(locsim.Locfile, ansHome+"/playbooks")
+				StageLocDbFile(locsim.Locfile, ansHome+"/playbooks")
 			}
 		}
 	}
@@ -266,7 +265,7 @@ func StopRemoteProcesses(processName string) bool {
 
 	if processName != "" {
 		p := GetProcessByName(processName)
-		if setupmex.IsLocalIP(p.GetHostname()) {
+		if IsLocalIP(p.GetHostname()) {
 			log.Printf("process %v is not remote\n", processName)
 			return true
 		}

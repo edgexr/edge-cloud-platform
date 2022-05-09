@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apis
+package e2e
 
 import (
 	"fmt"
@@ -20,7 +20,6 @@ import (
 	"os"
 
 	"github.com/influxdata/influxdb/client/v2"
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	"gopkg.in/yaml.v2"
 )
 
@@ -38,13 +37,13 @@ func RunInfluxAPI(api, influxname, apiFile string, apiFileVars map[string]string
 	}
 
 	data := influxData{}
-	err := util.ReadYamlFile(apiFile, &data, util.WithVars(apiFileVars))
+	err := ReadYamlFile(apiFile, &data, WithVars(apiFileVars))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error in unmarshal for file %s", apiFile)
 		os.Exit(1)
 	}
 
-	proc := util.GetInflux(influxname)
+	proc := GetInflux(influxname)
 	cl, err := proc.GetClient()
 	if err != nil {
 		log.Printf("failed to create new influx client, process %v, %v\n", proc, err)
@@ -59,13 +58,13 @@ func RunInfluxAPI(api, influxname, apiFile string, apiFileVars map[string]string
 		log.Printf("failed to query influxdb, cmd %s, db %s, err %v\n", data.Cmd, data.Database, err)
 		return false
 	}
-	util.FilterInfluxTime(resp.Results)
+	FilterInfluxTime(resp.Results)
 	out, err := yaml.Marshal(resp.Results)
 	if err != nil {
 		log.Printf("failed to marshal influx query result, %v, %v\n", resp.Results, err)
 		return false
 	}
 	truncate := true
-	util.PrintToFile("show-commands.yml", outputDir, util.PatchLicense(string(out)), truncate)
+	PrintToFile("show-commands.yml", outputDir, PatchLicense(string(out)), truncate)
 	return true
 }
