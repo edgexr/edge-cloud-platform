@@ -27,11 +27,10 @@ import (
 	"time"
 
 	"github.com/AsGz/geo/georeverse"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	locclient "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/operalpha-loc/locclient"
 	locutil "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/operalpha-loc/util"
-	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	yaml "github.com/mobiledgex/yaml/v2"
 )
 
@@ -240,12 +239,16 @@ func findLocForIP(ipaddr string) (dme.Loc, error) {
 }
 
 func readLocationFile() {
-	locations = make(map[string]dme.Loc)
-	err := util.ReadYamlFile(*locdbfile, &locations)
+	dat, err := ioutil.ReadFile(*locdbfile)
 	if err != nil {
 		log.Printf("unable to read yaml location file %v\n", err)
+	} else {
+		locations = make(map[string]dme.Loc)
+		err = yaml.UnmarshalStrict(dat, &locations)
+		if err != nil {
+			log.Printf("unable to unmarshal location file %v\n", err)
+		}
 	}
-
 }
 
 func run() {

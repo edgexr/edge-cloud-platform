@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package e2esetup
-
-import "github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
+package e2e
 
 type TestSpec struct {
 	Name             string            `json:"name" yaml:"name"`
@@ -25,5 +23,5 @@ type TestSpec struct {
 	RetryCount       int               `json:"retrycount" yaml:"retrycount"`
 	RetryIntervalSec float64           `json:"retryintervalsec" yaml:"retryintervalsec"`
 	CurUserFile      string            `json:"curuserfile" yaml:"curuserfile"`
-	CompareYaml      util.CompareYaml  `json:"compareyaml" yaml:"compareyaml"`
+	CompareYaml      CompareYaml       `json:"compareyaml" yaml:"compareyaml"`
 }

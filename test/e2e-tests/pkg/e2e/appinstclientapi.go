@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apis
+package e2e
 
 // interacts with the controller APIs for use by the e2e test tool
 
@@ -24,8 +24,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 )
 
 // This starts and stops ShowAppInstClient apis
@@ -33,13 +31,13 @@ func RunAppInstClientAPI(api string, workerId string, apiFile string, outputDir 
 	outputFile := outputDir + "/" + "show-appinstclients-" + workerId + ".yml"
 	pidFile := "showAppInstClient" + workerId + ".pid"
 	if api == "start" {
-		err := ioutil.WriteFile(outputFile, []byte(util.LicenseTxt), 0644)
+		err := ioutil.WriteFile(outputFile, []byte(LicenseTxt), 0644)
 		if err != nil {
 			log.Printf("Error - failed to write file: %s, %v\n", outputFile, err)
 			return false
 		}
 
-		ctrl := util.GetController("")
+		ctrl := GetController("")
 		args := []string{"edgectl"}
 		tlsFile := ctrl.GetTlsFile()
 		if tlsFile != "" {
@@ -62,7 +60,7 @@ func RunAppInstClientAPI(api string, workerId string, apiFile string, outputDir 
 		}
 		// record pid in a file
 		pid := fmt.Sprintf("%d", cmd.Process.Pid)
-		util.PrintToFile(pidFile, outputDir, pid, true)
+		PrintToFile(pidFile, outputDir, pid, true)
 	} else if api == "stop" {
 		dat, err := ioutil.ReadFile(outputDir + "/" + pidFile)
 		if err != nil {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apis
+package e2e
 
 // interacts with the controller APIs for use by the e2e test tool
 
@@ -24,14 +24,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/edgectl/wrapper"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/edgectl/wrapper"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
-	uutil "github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 var appData edgeproto.AllData
@@ -46,10 +44,10 @@ type runCommandData struct {
 }
 
 func readAppDataFile(file string, vars map[string]string) {
-	vars = uutil.AddMaps(util.DeploymentReplacementVars, vars)
-	err := util.ReadYamlFile(file, &appData, util.WithVars(vars), util.ValidateReplacedVars())
+	vars = util.AddMaps(DeploymentReplacementVars, vars)
+	err := ReadYamlFile(file, &appData, WithVars(vars), ValidateReplacedVars())
 	if err != nil {
-		if !util.IsYamlOk(err, "appdata") {
+		if !IsYamlOk(err, "appdata") {
 			fmt.Fprintf(os.Stderr, "Error in unmarshal for file %s", file)
 			os.Exit(1)
 		}
@@ -57,10 +55,10 @@ func readAppDataFile(file string, vars map[string]string) {
 }
 
 func readAppDataFileGeneric(file string, vars map[string]string) {
-	vars = uutil.AddMaps(util.DeploymentReplacementVars, vars)
-	err := util.ReadYamlFile(file, &appDataMap, util.WithVars(vars), util.ValidateReplacedVars())
+	vars = util.AddMaps(DeploymentReplacementVars, vars)
+	err := ReadYamlFile(file, &appDataMap, WithVars(vars), ValidateReplacedVars())
 	if err != nil {
-		if !util.IsYamlOk(err, "appdata") {
+		if !IsYamlOk(err, "appdata") {
 			fmt.Fprintf(os.Stderr, "Error in unmarshal for file %s", file)
 			os.Exit(1)
 		}
@@ -85,7 +83,7 @@ func RunControllerAPI(api string, ctrlname string, apiFile string, apiFileVars m
 		tag = apiParams[1]
 	}
 
-	ctrl := util.GetController(ctrlname)
+	ctrl := GetController(ctrlname)
 	var client testutil.Client
 	if runCLI {
 		args := []string{"--output-stream=false", "--silence-usage"}
@@ -136,10 +134,10 @@ func RunControllerAPI(api string, ctrlname string, apiFile string, apiFileVars m
 		if api == "shownohide" {
 			// preserve most of the nocmp fields
 			delete(clearTags, "nocmp")
-			util.FilterCloudletInfoNocmp(output)
+			FilterCloudletInfoNocmp(output)
 		}
 		output.ClearTagged(clearTags)
-		util.PrintToYamlFile("show-commands.yml", outputDir, output, true)
+		PrintToYamlFile("show-commands.yml", outputDir, output, true)
 		// Some objects are generated asynchronously in response to
 		// other objects being created. For example, Prometheus metric
 		// AppInst is created after a cluster create. Because its run
@@ -152,8 +150,8 @@ func RunControllerAPI(api string, ctrlname string, apiFile string, apiFileVars m
 		output := &edgeproto.NodeData{}
 		run.Mode = "show"
 		testutil.RunNodeDataShowApis(run, filter, output)
-		util.FilterNodeData(output)
-		util.PrintToYamlFile("show-commands.yml", outputDir, &output, true)
+		FilterNodeData(output)
+		PrintToYamlFile("show-commands.yml", outputDir, &output, true)
 	} else if strings.HasPrefix(api, "debug") {
 		runDebug(run, api, apiFile, apiFileVars, outputDir)
 	} else if api == "deviceshow" {
@@ -162,22 +160,22 @@ func RunControllerAPI(api string, ctrlname string, apiFile string, apiFileVars m
 		run.DeviceApi(nil, nil, &output.Devices)
 		output.Sort()
 		output.ClearTagged(clearTags)
-		util.PrintToYamlFile("show-commands.yml", outputDir, &output, true)
+		PrintToYamlFile("show-commands.yml", outputDir, &output, true)
 	} else if api == "ratelimitshow" {
 		output := &edgeproto.RateLimitSettingsData{}
 		run.Mode = "show"
 		run.RateLimitSettingsApi(nil, nil, &output.Settings)
 		output.Sort()
 		output.ClearTagged(clearTags)
-		util.PrintToYamlFile("show-commands.yml", outputDir, &output, true)
+		PrintToYamlFile("show-commands.yml", outputDir, &output, true)
 	} else if strings.HasPrefix(api, "organization") {
 		runOrg(run, api, apiFile, apiFileVars, outputDir)
 	} else if api == "showalerts" {
 		output := []edgeproto.Alert{}
 		run.Mode = "show"
 		run.AlertApi(nil, nil, &output)
-		util.FilterAlerts(output)
-		util.PrintToYamlFile("show-alerts.yml", outputDir, output, true)
+		FilterAlerts(output)
+		PrintToYamlFile("show-alerts.yml", outputDir, output, true)
 		*retry = true
 	} else {
 		if apiFile == "" {
@@ -197,8 +195,8 @@ func RunControllerAPI(api string, ctrlname string, apiFile string, apiFileVars m
 			testutil.RunAllDataReverseApis(run, &appData, appDataMap, output, testutil.NoApiCallback)
 			// remove results for AppInst/ClusterInst/Cloudlet because
 			// they are non-deterministic
-			util.FilterAppDataOutputStatus(output)
-			util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+			FilterAppDataOutputStatus(output)
+			PrintToYamlFile("api-output.yml", outputDir, output, true)
 		case "create":
 			fallthrough
 		case "add":
@@ -208,18 +206,18 @@ func RunControllerAPI(api string, ctrlname string, apiFile string, apiFileVars m
 		case "update":
 			output := &testutil.AllDataOut{}
 			testutil.RunAllDataApis(run, &appData, appDataMap, output, testutil.NoApiCallback)
-			util.FilterAppDataOutputStatus(output)
-			util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+			FilterAppDataOutputStatus(output)
+			PrintToYamlFile("api-output.yml", outputDir, output, true)
 		case "stream":
 			output := &testutil.AllDataStreamOut{}
 			testutil.RunAllDataStreamApis(run, &appData, output)
-			util.PrintToYamlFile("show-commands.yml", outputDir, output, true)
+			PrintToYamlFile("show-commands.yml", outputDir, output, true)
 		case "showfiltered":
 			output := &edgeproto.AllData{}
 			testutil.RunAllDataShowApis(run, &appData, output)
 			output.Sort()
 			output.ClearTagged(clearTags)
-			util.PrintToYamlFile("show-commands.yml", outputDir, output, true)
+			PrintToYamlFile("show-commands.yml", outputDir, output, true)
 			*retry = true
 		default:
 			log.Printf("Error: unsupported controller API %s\n", api)
@@ -233,14 +231,14 @@ func RunControllerAPI(api string, ctrlname string, apiFile string, apiFileVars m
 func RunCommandAPI(api string, ctrlname string, apiFile string, apiFileVars map[string]string, outputDir string) bool {
 	log.Printf("Exec %s using %s\n", api, apiFile)
 
-	ctrl := util.GetController(ctrlname)
+	ctrl := GetController(ctrlname)
 
 	data := runCommandData{}
 	if apiFile == "" {
 		log.Printf("Error: Cannot exec %s API without API file\n", api)
 		return false
 	}
-	err := util.ReadYamlFile(apiFile, &data, util.WithVars(apiFileVars))
+	err := ReadYamlFile(apiFile, &data, WithVars(apiFileVars))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error in unmarshal for file %s, %v\n", apiFile, err)
 		return false
@@ -291,7 +289,7 @@ func RunCommandAPI(api string, ctrlname string, apiFile string, apiFileVars map[
 			args = append(args, "nodename=\""+req.Cmd.CloudletMgmtNode.Name+"\"")
 		}
 	}
-	out, err := util.ControllerCLI(ctrl, args...)
+	out, err := ControllerCLI(ctrl, args...)
 	if err != nil {
 		log.Printf("Error running exec %s API %v\n", api, err)
 		return false
@@ -304,7 +302,7 @@ func RunCommandAPI(api string, ctrlname string, apiFile string, apiFileVars map[
 			return false
 		}
 	} else {
-		content, err := util.ReadConsoleURL(actual, nil)
+		content, err := ReadConsoleURL(actual, nil)
 		if err != nil {
 			log.Printf("Error fetching contents from %s for %s API %v\n", actual, api, err)
 			return false
@@ -326,7 +324,7 @@ func StartCrmsLocal(ctx context.Context, physicalName string, ctrlName string, a
 	}
 	readAppDataFile(apiFile, apiFileVars)
 
-	ctrl := util.GetController(ctrlName)
+	ctrl := GetController(ctrlName)
 	if ctrl == nil {
 		log.Printf("Error: Cannot find controller %s", ctrlName)
 		return fmt.Errorf("Error: Cannot find controller %s", ctrlName)
@@ -369,13 +367,13 @@ func StartCrmsLocal(ctx context.Context, physicalName string, ctrlName string, a
 		if c.PlatformHighAvailability {
 			redisCfg.StandaloneAddr = rediscache.DefaultRedisStandaloneAddr
 		}
-		if err := cloudcommon.StartCRMService(ctx, &c, &pfConfig, process.HARolePrimary, &redisCfg); err != nil {
+		if err := process.StartCRMService(ctx, &c, &pfConfig, process.HARolePrimary, &redisCfg); err != nil {
 			return err
 		}
 		if c.PlatformHighAvailability {
 			// wait briefly before starting the secondary for unit test consistency
 			time.Sleep(time.Second * 1)
-			if err := cloudcommon.StartCRMService(ctx, &c, &pfConfig, process.HARoleSecondary, &redisCfg); err != nil {
+			if err := process.StartCRMService(ctx, &c, &pfConfig, process.HARoleSecondary, &redisCfg); err != nil {
 				return err
 			}
 		}
@@ -392,7 +390,7 @@ func StopCrmsLocal(ctx context.Context, physicalName string, apiFile string, api
 	readAppDataFile(apiFile, apiFileVars)
 
 	for _, c := range appData.Cloudlets {
-		if err := cloudcommon.StopCRMService(ctx, &c, HARole); err != nil {
+		if err := process.StopCRMService(ctx, &c, HARole); err != nil {
 			return err
 		}
 	}
@@ -407,7 +405,7 @@ func runDebug(run *testutil.Run, api, apiFile string, apiFileVars map[string]str
 		*run.Rc = false
 		return
 	}
-	err := util.ReadYamlFile(apiFile, &data, util.WithVars(apiFileVars))
+	err := ReadYamlFile(apiFile, &data, WithVars(apiFileVars))
 	if err != nil {
 		log.Printf("Error in unmarshal for file %s, %v\n", apiFile, err)
 		os.Exit(1)
@@ -439,7 +437,7 @@ func runDebug(run *testutil.Run, api, apiFile string, apiFileVars map[string]str
 			output.Requests[ii][jj].ClearTagged(clearTags)
 		}
 	}
-	util.PrintToYamlFile("api-output.yml", outputDir, &output, true)
+	PrintToYamlFile("api-output.yml", outputDir, &output, true)
 }
 
 func runOrg(run *testutil.Run, api, apiFile string, apiFileVars map[string]string, outputDir string) {
@@ -450,7 +448,7 @@ func runOrg(run *testutil.Run, api, apiFile string, apiFileVars map[string]strin
 		*run.Rc = false
 		return
 	}
-	err := util.ReadYamlFile(apiFile, &data, util.WithVars(apiFileVars))
+	err := ReadYamlFile(apiFile, &data, WithVars(apiFileVars))
 	if err != nil {
 		log.Printf("Error in unmarshal for file %s, %v\n", apiFile, err)
 		os.Exit(1)
@@ -458,5 +456,5 @@ func runOrg(run *testutil.Run, api, apiFile string, apiFileVars map[string]strin
 
 	output := testutil.OrganizationDataOut{}
 	testutil.RunOrganizationDataApis(run, &data, make(map[string]interface{}), &output, testutil.NoApiCallback)
-	util.PrintToYamlFile("api-output.yml", outputDir, &output, true)
+	PrintToYamlFile("api-output.yml", outputDir, &output, true)
 }

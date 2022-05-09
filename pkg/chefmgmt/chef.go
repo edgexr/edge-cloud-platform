@@ -20,18 +20,18 @@ import (
 	"strings"
 	"time"
 
-	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/version"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/version"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/go-chef/chef"
 	"github.com/mitchellh/mapstructure"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 const (
@@ -74,11 +74,6 @@ type ServerChefParams struct {
 	Attributes  map[string]interface{}
 	PolicyName  string
 	PolicyGroup string
-}
-
-type ChefAuthKey struct {
-	ApiKey        string `json:"apikey"`
-	ValidationKey string `json:"validationkey"`
 }
 
 type ChefResource struct {
@@ -513,7 +508,7 @@ func GetChefCloudletAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet
 			cloudlet.ContainerVersion = ""
 			// The HA role is not relevant here as chef will install both primary and secondary CRMs if HA is enabled and
 			// change the HArole as required
-			serviceCmdArgs, envVars, err = cloudcommon.GetCRMCmdArgs(cloudlet, pfConfig, process.HARolePrimary)
+			serviceCmdArgs, envVars, err = process.GetCRMCmdArgs(cloudlet, pfConfig, process.HARolePrimary)
 			if err != nil {
 				return nil, err
 			}

@@ -23,10 +23,7 @@ import (
 	"os"
 	"strings"
 
-	e2esetup "github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	log "github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
-	setupmex "github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 )
 
@@ -55,10 +52,10 @@ func main() {
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
-	util.SetLogFormat()
+	e2e.SetLogFormat()
 
-	config := e2eapi.TestConfig{}
-	spec := e2esetup.TestSpec{}
+	config := e2e.TestConfig{}
+	spec := e2e.TestSpec{}
 	mods := []string{}
 
 	err := json.Unmarshal([]byte(*configStr), &config)
@@ -80,18 +77,17 @@ func main() {
 	errors := []string{}
 	outputDir = config.Vars["outputdir"]
 	if outputDir != "" {
-		outputDir = util.CreateOutputDir(false, outputDir, commandName+".log")
+		outputDir = e2e.CreateOutputDir(false, outputDir, commandName+".log")
 	}
 
 	if config.SetupFile != "" {
-		if !setupmex.ReadSetupFile(config.SetupFile, &e2esetup.Deployment, config.Vars) {
+		if !e2e.ReadSetupFile(config.SetupFile, &e2e.Deployment, config.Vars) {
 			os.Exit(1)
 		}
-		util.Deployment = e2esetup.Deployment.DeploymentData
-		util.DeploymentReplacementVars = config.Vars
+		e2e.DeploymentReplacementVars = config.Vars
 	}
 
-	retry := setupmex.NewRetry(spec.RetryCount, spec.RetryIntervalSec, len(spec.Actions))
+	retry := e2e.NewRetry(spec.RetryCount, spec.RetryIntervalSec, len(spec.Actions))
 	ranTest := false
 
 	// Load from file
@@ -114,10 +110,10 @@ func main() {
 			if !retry.ShouldRunAction(ii) {
 				continue
 			}
-			util.PrintStepBanner("name: " + spec.Name)
-			util.PrintStepBanner("running action: " + a + retry.Tries())
+			e2e.PrintStepBanner("name: " + spec.Name)
+			e2e.PrintStepBanner("running action: " + a + retry.Tries())
 			actionretry := false
-			errs := e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods, config.Vars, sharedData, &actionretry)
+			errs := e2e.RunAction(ctx, a, outputDir, &config, &spec, mods, config.Vars, sharedData, &actionretry)
 			ranTest = true
 			if len(errs) > 0 {
 				if actionretry {
@@ -138,7 +134,7 @@ func main() {
 			break
 		}
 		if spec.CompareYaml.Yaml1 != "" && spec.CompareYaml.Yaml2 != "" {
-			pass := e2esetup.CompareYamlFiles(spec.Name, spec.Actions, &spec.CompareYaml)
+			pass := e2e.CompareYamlFiles(spec.Name, spec.Actions, &spec.CompareYaml)
 			if !pass {
 				tryErrs = append(tryErrs, "compare yaml failed")
 			}

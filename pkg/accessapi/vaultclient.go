@@ -21,14 +21,14 @@ import (
 	"strings"
 
 	"github.com/cloudflare/cloudflare-go"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudflaremgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
-	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/chefauth"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudflaremgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/gcs"
+	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
@@ -104,9 +104,9 @@ func (s *VaultClient) GetOldSSHKey(ctx context.Context) (*vault.MEXKey, error) {
 	return key, nil
 }
 
-func (s *VaultClient) GetChefAuthKey(ctx context.Context) (*chefmgmt.ChefAuthKey, error) {
+func (s *VaultClient) GetChefAuthKey(ctx context.Context) (*chefauth.ChefAuthKey, error) {
 	// TODO: maintain a Cloudlet-specific API key
-	auth, err := chefmgmt.GetChefAuthKeys(ctx, s.vaultConfig)
+	auth, err := chefauth.GetChefAuthKeys(ctx, s.vaultConfig)
 	if err != nil {
 		return nil, err
 	}

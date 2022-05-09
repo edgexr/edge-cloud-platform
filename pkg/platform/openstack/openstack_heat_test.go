@@ -22,17 +22,16 @@ import (
 
 	yaml "github.com/mobiledgex/yaml/v2"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
-	e2esetup "github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
-	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	"github.com/stretchr/testify/require"
 )
 
@@ -113,12 +112,12 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 
 	generatedFile := vmgp.GroupName + "-heat.yaml"
 	expectedResultsFile := vmgp.GroupName + "-heat-expected.yaml"
-	compare := util.CompareYaml{
+	compare := e2e.CompareYaml{
 		Yaml1:    generatedFile,
 		Yaml2:    expectedResultsFile,
 		FileType: "heat-test",
 	}
-	compareResult := e2esetup.CompareYamlFiles("heat compare", []string{}, &compare)
+	compareResult := e2e.CompareYamlFiles("heat compare", []string{}, &compare)
 	log.SpanLog(ctx, log.DebugLevelInfra, "yaml compare result", "compareResult", compareResult)
 
 	require.Equal(t, compareResult, true)

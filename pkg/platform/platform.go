@@ -21,13 +21,13 @@ import (
 	"time"
 
 	cloudflare "github.com/cloudflare/cloudflare-go"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/chefauth"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
@@ -209,7 +209,7 @@ type AccessApi interface {
 	SignSSHKey(ctx context.Context, publicKey string) (string, error)
 	GetSSHPublicKey(ctx context.Context) (string, error)
 	GetOldSSHKey(ctx context.Context) (*vault.MEXKey, error)
-	GetChefAuthKey(ctx context.Context) (*chefmgmt.ChefAuthKey, error)
+	GetChefAuthKey(ctx context.Context) (*chefauth.ChefAuthKey, error)
 	CreateOrUpdateDNSRecord(ctx context.Context, zone, name, rtype, content string, ttl int, proxy bool) error
 	GetDNSRecords(ctx context.Context, zone, fqdn string) ([]cloudflare.DNSRecord, error)
 	DeleteDNSRecord(ctx context.Context, zone, recordID string) error

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apis
+package e2e
 
 import (
 	"bytes"
@@ -23,8 +23,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 )
 
 func RunCommands(apiFile string, apiFileVars map[string]string, outputDir string, retry *bool) bool {
@@ -34,7 +32,7 @@ func RunCommands(apiFile string, apiFileVars map[string]string, outputDir string
 		return false
 	}
 
-	dat, err := util.ReadFile(apiFile, apiFileVars)
+	dat, err := ReadFile(apiFile, apiFileVars)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to read file %s: %s\n", apiFile, err)
 		return false

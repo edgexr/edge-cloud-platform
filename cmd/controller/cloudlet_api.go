@@ -27,19 +27,19 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/gogo/protobuf/types"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
+	"github.com/gogo/protobuf/types"
 )
 
 type CloudletApi struct {
@@ -746,7 +746,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 
 	if in.DeploymentLocal {
 		updatecb.cb(edgeproto.UpdateTask, "Starting CRMServer")
-		err = cloudcommon.StartCRMService(ctx, in, pfConfig, process.HARolePrimary, nil)
+		err = process.StartCRMService(ctx, in, pfConfig, process.HARolePrimary, nil)
 	} else {
 		// Some platform types require caches
 		caches := s.getCaches(ctx, &vmPool)
@@ -799,7 +799,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	}
 	// Wait for CRM to connect to controller
 	go func() {
-		err := cloudcommon.CrmServiceWait(in.Key)
+		err := process.CrmServiceWait(in.Key)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "failed to cleanup crm service", "err", err)
 		}
@@ -1482,7 +1482,7 @@ func (s *CloudletApi) PlatformDeleteCloudlet(in *edgeproto.Cloudlet, cb edgeprot
 	}
 	if in.DeploymentLocal {
 		updatecb.cb(edgeproto.UpdateTask, "Stopping CRMServer")
-		return cloudcommon.StopCRMService(ctx, in, process.HARoleAll)
+		return process.StopCRMService(ctx, in, process.HARoleAll)
 	}
 
 	// Some platform types require caches
