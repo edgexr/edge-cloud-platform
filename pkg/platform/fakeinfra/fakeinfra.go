@@ -22,17 +22,16 @@ import (
 	"sync"
 	"time"
 
-	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/pkg/version"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/fake"
-	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
+	"github.com/edgexr/edge-cloud-platform/pkg/version"
 )
 
 type Platform struct {
@@ -112,9 +111,9 @@ func ShepherdStartup(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig
 	select {
 	case <-fatal:
 		out := ""
-		out, err = cloudcommon.GetCloudletLog(ctx, &cloudlet.Key)
+		out, err = process.GetCloudletLog(ctx, &cloudlet.Key)
 		if err != nil || out == "" {
-			out = fmt.Sprintf("Please look at %s for more details", cloudcommon.GetCloudletLogFile(cloudlet.Key.Name+".shepherd"))
+			out = fmt.Sprintf("Please look at %s for more details", process.GetCloudletLogFile(cloudlet.Key.Name+".shepherd"))
 		} else {
 			out = fmt.Sprintf("Failure: %s", out)
 		}

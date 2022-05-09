@@ -26,16 +26,16 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/jarcoal/httpmock"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
+	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -340,11 +340,11 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 		require.Nil(t, err, "stream cloudlet")
 	}()
 
-	err = cloudcommon.StartCRMService(ctx, &cloudlet, pfConfig, process.HARolePrimary, nil)
+	err = process.StartCRMService(ctx, &cloudlet, pfConfig, process.HARolePrimary, nil)
 	require.Nil(t, err, "start cloudlet")
 	defer func() {
 		// Delete CRM
-		err = cloudcommon.StopCRMService(ctx, &cloudlet, process.HARolePrimary)
+		err = process.StopCRMService(ctx, &cloudlet, process.HARolePrimary)
 		require.Nil(t, err, "stop cloudlet")
 	}()
 

@@ -202,6 +202,12 @@ func (p *Vault) StartLocal(logfile string, opts ...StartOp) error {
 		}
 
 	}
+	_, err = SetupVault(p, WithRolesFile(options.RolesFile))
+	if err != nil {
+		log.Printf("Failed to setup vault, %v\n", err)
+		p.StopLocal()
+		return err
+	}
 	return err
 }
 
