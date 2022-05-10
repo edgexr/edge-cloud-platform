@@ -7,14 +7,13 @@ require (
 	github.com/AsGz/geo v0.0.0-20170331085501-324ae0e80045
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/Bose/minisentinel v0.0.0-20200130220412-917c5a9223bb
-	github.com/OneOfOne/xxhash v1.2.5 // indirect
 	github.com/Shopify/sarama v1.22.2-0.20190604114437-cd910a683f9f
 	github.com/Sirupsen/logrus v1.6.0 // indirect
 	github.com/agnivade/levenshtein v1.0.1
 	github.com/alicebob/miniredis/v2 v2.18.0
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
 	github.com/atlassian/go-artifactory/v2 v2.3.0
-	github.com/cespare/xxhash v1.1.0
+	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/cloudflare/cloudflare-go v0.13.4
 	github.com/codegangsta/inject v0.0.0-20150114235600-33e0aa1cb7c0 // indirect
 	github.com/codeskyblue/go-sh v0.0.0-20170112005953-b097669b1569
