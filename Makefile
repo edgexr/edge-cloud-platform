@@ -12,7 +12,7 @@ all: build install
 linux: build-linux install-linux
 
 check-vers:
-	@if test $(GOVERS) != go1.15; then \
+	@if test $(GOVERS) != go1.18; then \
 		echo "Go version is $(GOVERS)"; \
 		echo "See https://mobiledgex.atlassian.net/wiki/spaces/SWDEV/pages/307986555/Upgrade+to+go+1.12"; \
 		exit 2; \
@@ -20,36 +20,22 @@ check-vers:
 
 APICOMMENTS = ./mc/ormapi/api.comments.go
 
-# go install always copies over the executable, even if nothing changed,
-# which causes the protobuf compiles rules to run every time, since they depend on
-# the protoc-gen-xxx tools. To avoid this, manually diff to see if the generator
-# should be installed.
-TOOLSDIR	= $(GOPATH)/bin
-define install-protoc-gen =
-	$(eval EXE = $(shell basename $(1)))
-	GOBIN=/tmp go install $(1)
-	@diff /tmp/$(EXE) $(TOOLSDIR)/$(EXE) && rm /tmp/$(EXE) || mv /tmp/$(EXE) $(TOOLSDIR)/$(EXE)
-endef
-
-GOGOPROTO	= $(shell GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/gogo/protobuf)
-GRPCGATEWAY	= $(shell GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/grpc-ecosystem/grpc-gateway)
-
 build: check-vers
 	(cd pkg/version; ./version.sh)
-	$(call install-protoc-gen,$(GOGOPROTO)/protoc-gen-gogofast)
-	$(call install-protoc-gen,$(GRPCGATEWAY)/protoc-gen-grpc-gateway)
+	go install \
+		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway \
+		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger \
+		github.com/gogo/protobuf/protoc-gen-gogofast
 	make -C tools/protogen
 	make -C tools/edgeprotogen
-	$(call install-protoc-gen,./tools/protoc-gen-gomex)
-	$(call install-protoc-gen,./tools/protoc-gen-test)
-	$(call install-protoc-gen,./tools/protoc-gen-cmd)
-	$(call install-protoc-gen,./tools/protoc-gen-notify)
-	$(call install-protoc-gen,./tools/protoc-gen-controller)
-	$(call install-protoc-gen,./tools/protoc-gen-controller-test)
-	$(call install-protoc-gen,./tools/protoc-gen-mc2)
-ifneq ($(DOCKER_BUILD),yes)
-	$(call install-protoc-gen,$(GRPCGATEWAY)/protoc-gen-swagger)
-endif
+	go install \
+		./tools/protoc-gen-gomex \
+		./tools/protoc-gen-test \
+		./tools/protoc-gen-cmd \
+		./tools/protoc-gen-notify \
+		./tools/protoc-gen-controller \
+		./tools/protoc-gen-controller-test \
+		./tools/protoc-gen-mc2
 	make -C pkg/log
 	make -C api/dme-proto
 	make -C api/edgeproto
