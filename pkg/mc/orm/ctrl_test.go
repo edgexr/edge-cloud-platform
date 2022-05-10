@@ -31,26 +31,26 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jarcoal/httpmock"
-	"github.com/mitchellh/mapstructure"
-	"github.com/edgexr/edge-cloud-platform/pkg/billing"
-	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/cliwrapper"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mccli"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
-	ormtestutil "github.com/edgexr/edge-cloud-platform/pkg/mc/orm/testutil"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/nodetest"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/test/testutil"
+	ormtestutil "github.com/edgexr/edge-cloud-platform/pkg/mc/orm/testutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/cliwrapper"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mccli"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	"github.com/edgexr/edge-cloud-platform/test/testutil"
+	"github.com/jarcoal/httpmock"
+	"github.com/mitchellh/mapstructure"
 	"github.com/pquerna/otp/totp"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -3830,7 +3830,7 @@ func getTestJsonInputData() []testJsonError {
 		Desc:        "parse int failure",
 		InputObj:    &ormapi.RegionClientApiUsageMetrics{},
 		InputJson:   `{"AppInst":{"cluster_inst_key":{"cloudlet_key":{"name":"cloudlet1625766808-699615","organization":"dmuus"}}},"Limit":"x","Region":"US","Selector":"api"}`,
-		ExpectedErr: `Invalid JSON data: Unmarshal error: expected int, but got string for field "Limit" at offset 119`,
+		ExpectedErr: `Invalid JSON data: Unmarshal error: expected int, but got string for field "Limit" at offset 120`,
 	}, {
 		Desc:        "parse time.Duration",
 		InputObj:    &ormapi.RegionClientApiUsageMetrics{},
@@ -3845,7 +3845,7 @@ func getTestJsonInputData() []testJsonError {
 		Desc:        "parse bad syntax",
 		InputObj:    &ormapi.RegionCloudlet{},
 		InputJson:   `{"Cloudlet":{"organization":"dmuus"},"Last":","Region":"US","Selector":"utilization"}`,
-		ExpectedErr: "Invalid JSON data: Syntax error at offset 47, invalid character 'R' after object key:value pair",
+		ExpectedErr: "Invalid JSON data: Syntax error at offset 48, invalid character 'R' after object key:value pair",
 	}, {
 		Desc:        "test bool on CustomBinder",
 		InputObj:    &ormapi.Config{},

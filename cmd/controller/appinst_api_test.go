@@ -24,15 +24,15 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
-	"github.com/edgexr/edge-cloud-platform/test/testutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -1150,8 +1150,8 @@ func testAppInstId(t *testing.T, ctx context.Context, apis *AllApis) {
 	cl1.Key.ClusterKey.Name = app1.Key.Name + app1.Key.Version
 	cl1.Key.Organization = app1.Key.Organization
 
-	expId0 := "atlanticincapp110-pillimos-sanjosesite-attinc"
-	expId1 := "atlanticincapp110-pillimos-sanjosesite-attinc-1"
+	expId0 := "atlanticincapp110-pillimos-sanjosesite-ufgtinc"
+	expId1 := "atlanticincapp110-pillimos-sanjosesite-ufgtinc-1"
 
 	dnsLabel0 := "app110-atlanticinc"
 	dnsLabel1 := "app110-atlanticinc1"

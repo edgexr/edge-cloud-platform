@@ -26,31 +26,31 @@ import (
 	"strings"
 	"time"
 
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/billing"
+	"github.com/edgexr/edge-cloud-platform/pkg/billing/chargify"
+	"github.com/edgexr/edge-cloud-platform/pkg/billing/fakebilling"
+	"github.com/edgexr/edge-cloud-platform/pkg/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/ratelimit"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
+	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
+	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	"github.com/edgexr/edge-cloud-platform/pkg/version"
 	"github.com/gorilla/websocket"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	"github.com/lib/pq"
-	"github.com/edgexr/edge-cloud-platform/pkg/billing"
-	"github.com/edgexr/edge-cloud-platform/pkg/billing/chargify"
-	"github.com/edgexr/edge-cloud-platform/pkg/billing/fakebilling"
-	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
-	"github.com/edgexr/edge-cloud-platform/pkg/version"
-	"github.com/edgexr/edge-cloud-platform/pkg/cli"
-	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/ratelimit"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/notify"
-	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/nmcclain/ldap"
 	gitlab "github.com/xanzy/go-gitlab"
 )
@@ -233,11 +233,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 			},
 			DmeSecret: "123456",
 		}
-		_, err := vaultProc.StartLocalRoles()
-		if err != nil {
-			return nil, err
-		}
-		roles, err := intprocess.SetupVault(&vaultProc)
+		roles, err := vaultProc.StartLocalRoles()
 		if err != nil {
 			return nil, err
 		}
@@ -1071,7 +1067,7 @@ func (s *Server) Stop() {
 	if s.federationEcho != nil {
 		s.federationEcho.Close()
 	}
-	if connCache != nil {
+	if connCache != nil && connCache.stopCleanup != nil {
 		connCache.Finish()
 	}
 	if s.database != nil {
