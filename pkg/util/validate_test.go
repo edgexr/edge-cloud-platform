@@ -168,7 +168,7 @@ func TestHeatSanitize(t *testing.T) {
 		{"foo.bar-baz_", "foo.bar-baz_"},
 		{"foo bar&baz,blah,!no", "foobarbazblahno"},
 		{"00foo", "a00foo"},
-		{"0jon ber,lin&", "a0jonbeacon"},
+		{"0jon bea,con&", "a0jonbeacon"},
 		{string(longstring), string(longstring[:254])},
 	}
 	for _, test := range tests {

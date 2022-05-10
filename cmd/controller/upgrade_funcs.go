@@ -23,9 +23,9 @@ import (
 	strings "strings"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	distributed_match_engine "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
@@ -71,8 +71,8 @@ func CheckForHttpPorts(ctx context.Context, objStore objstore.KVStore, allApis *
 
 var PlatosEnablingLayer = "PlatosEnablingLayer"
 
-func PruneplatosPlatformDevices(ctx context.Context, objStore objstore.KVStore, allApis *AllApis) error {
-	log.SpanLog(ctx, log.DebugLevelUpgrade, "PruneplatosPlatformDevices")
+func PrunePlatosPlatformDevices(ctx context.Context, objStore objstore.KVStore, allApis *AllApis) error {
+	log.SpanLog(ctx, log.DebugLevelUpgrade, "PrunePlatosPlatformDevices")
 	keystr := fmt.Sprintf("%s/", objstore.DbKeyPrefixString("Device"))
 	err := objStore.List(keystr, func(key, val []byte, rev, modRev int64) error {
 		var device edgeproto.Device

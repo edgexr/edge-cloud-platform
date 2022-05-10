@@ -19,8 +19,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,17 +35,17 @@ func StartInfluxd(t *testing.T) *process.Influx {
 	dir, err := os.Getwd()
 	require.Nil(t, err)
 
-	parts := strings.Split(dir, "github.com/mobiledgex/")
+	parts := strings.Split(dir, "github.com/edgexr/")
 	require.Equal(t, 2, len(parts), "expect two parts to %v for %s", parts, dir)
 
 	p := &process.Influx{}
 	p.Common.Name = "influx-test"
 	// addresses are hard-coded per package
 	switch parts[1] {
-	case "edge-cloud/controller":
+	case "edge-cloud-platform/cmd/controller":
 		p.HttpAddr = "127.0.0.1:8186"
 		p.BindAddr = "127.0.0.1:8187"
-	case "edge-cloud/controller/influxq_client":
+	case "edge-cloud-platform/cmd/controller/influxq_client":
 		p.HttpAddr = "127.0.0.1:8188"
 		p.BindAddr = "127.0.0.1:8189"
 	default:

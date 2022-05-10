@@ -22,14 +22,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labstack/echo"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/labstack/echo"
 	"google.golang.org/grpc"
 )
 
@@ -124,8 +124,9 @@ func (s *ConnCache) Start() {
 }
 
 func (s *ConnCache) Finish() {
-	close(s.stopCleanup)
 	s.Lock()
+	close(s.stopCleanup)
+	s.stopCleanup = nil
 	for region, conn := range s.cache {
 		conn.Close()
 		delete(s.cache, region)
