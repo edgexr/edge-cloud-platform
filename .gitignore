@@ -1,7 +1,6 @@
 *~
 .vscode
 *.kubeconfig
-setup-env/ansible/playbooks/setup.yml
 pkg/notify/*.notify.go
 test/testutil/*_testutil.go
 *.postgres
@@ -10,54 +9,33 @@ link-gogo-protobuf
 link-grpc-gateway
 pkg/version/version.go
 api/dme-proto/*.proto
-cloudcommon/node/vault.log
-cloudcommon/node/vault_pki
-cloudcommon/node/roles.yaml
+pkg/cloudcommon/node/vault.log
+pkg/cloudcommon/node/vault_pki
+pkg/cloudcommon/node/roles.yaml
 tools/edgeprotogen/edgeprotogen.proto
 tools/edgeprotogen/edgeprotogen.pb.go
-vault/*.csr
-vault/*.pem
-vault/vault.log
-vault/vault_pki
-vault/roles.yaml
-envoy/certs/envoyTlsCerts.key
-envoy/certs/envoyTlsCerts.crt
-controller/envoy/certs/envoyTlsCerts.crt
-controller/data_test.json
-controller/etcdLocal_data/*
-controller/influxdb.log
-controller/influxq_client/.influxdb
-controller/influxq_client/influxdb.log
-cloud-resource-manager/cmd/crmserver/envoy/*
-controller/.influxdb/*
-controller/envoy/*
-dump.rdb
+pkg/vault/vault.log
+pkg/vault/vault_pki
+pkg/vault/roles.yaml
+cmd/crm/envoy
+cmd/controller/envoy
+cmd/controller/data_test.json
+cmd/controller/etcdLocal_data/*
+cmd/controller/influxdb.log
+cmd/controller/influxq_client/.influxdb
+cmd/controller/influxq_client/influxdb.log
+cmd/controller/.influxdb/*
 pkg/tls/out
 
-openstack-tenant/agent/build
-mc/mcctl/mcctl
-mc/orm/dump.sql
-mc/orm/*.csr
-mc/orm/*.pem
-mc/orm/vault.log
-mc/orm/roles.yaml
-*rbac.conf
-mc/rbac.conf
+pkg/mc/orm/dump.sql
+pkg/mc/orm/vault.log
+pkg/mc/orm/vault_pki
+pkg/mc/orm/roles.yaml
 *.postgres*
 ansible.auto.tfvars
 .terraform.init.done
 pkg/vault/letsencrypt-plugin/letsencrypt/version.go
 /edgebox_bin
-mgmt/vault/root-ca/openssl.cnf
-mgmt/vault/root-ca/intermediate/openssl.cnf
-mgmt/vault/root-ca/*.old
-mgmt/vault/root-ca/index.txt*
-mgmt/vault/root-ca/serial
-mgmt/vault/root-ca/intermediate/index.txt*
-mgmt/vault/root-ca/intermediate/serial
-
-ansible/mex_inventory
-ansible/playbooks/setup.yml
 
 e2e-tests/chef/chef_guid
 e2e-tests/chef/syntaxcache
@@ -68,8 +46,8 @@ envoy/certs/envoyTlsCerts.crt
 plugin/platform/common/foo
 
 # unit-test file
-mc/orm/alertmgr/testAlertMgrConfig.yml
-mc/orm/testAlertMgrConfig.yml
+pkg/mc/orm/alertmgr/testAlertMgrConfig.yml
+pkg/mc/orm/testAlertMgrConfig.yml
 
 # terraform vars
 *.auto.tfvars

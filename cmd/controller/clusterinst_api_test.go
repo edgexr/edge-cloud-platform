@@ -22,14 +22,14 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
-	"github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client/influxq_testutil"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
+	"github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client/influxq_testutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -150,6 +150,8 @@ func TestClusterInstApi(t *testing.T) {
 	msgs = GetClusterInstStreamMsgs(t, ctx, &obj.Key, apis, Pass)
 	require.Greater(t, len(msgs), 0, "some progress messages")
 
+	obj = testutil.ClusterInstData[0]
+	checkClusterInstState(t, ctx, commonApi, &obj, edgeproto.TrackedState_NOT_PRESENT)
 	// override CRM error
 	responder.SetSimulateClusterCreateFailure(true)
 	responder.SetSimulateClusterDeleteFailure(true)
@@ -160,22 +162,26 @@ func TestClusterInstApi(t *testing.T) {
 	// progress message should exist
 	msgs = GetClusterInstStreamMsgs(t, ctx, &obj.Key, apis, Pass)
 	require.Greater(t, len(msgs), 0, "some progress messages")
+	checkClusterInstState(t, ctx, commonApi, &obj, edgeproto.TrackedState_READY)
 	obj = testutil.ClusterInstData[0]
 	obj.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM_ERRORS
 	err = apis.clusterInstApi.DeleteClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err, "override crm error")
 	// progress message should not exist
 	GetClusterInstStreamMsgs(t, ctx, &obj.Key, apis, Fail)
+	checkClusterInstState(t, ctx, commonApi, &obj, edgeproto.TrackedState_NOT_PRESENT)
 
 	// ignore CRM
 	obj = testutil.ClusterInstData[0]
 	obj.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
 	err = apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err, "ignore crm")
+	checkClusterInstState(t, ctx, commonApi, &obj, edgeproto.TrackedState_READY)
 	obj = testutil.ClusterInstData[0]
 	obj.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
 	err = apis.clusterInstApi.DeleteClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err, "ignore crm")
+	checkClusterInstState(t, ctx, commonApi, &obj, edgeproto.TrackedState_NOT_PRESENT)
 
 	// inavailability of matching node flavor
 	obj = testutil.ClusterInstData[0]

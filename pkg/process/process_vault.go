@@ -93,6 +93,7 @@ func (p *Vault) StartLocal(logfile string, opts ...StartOp) error {
 	if p.DmeSecret == "" {
 		p.DmeSecret = "dme-secret"
 	}
+	mcormSecret := "mc-secret"
 
 	args := []string{"server", "-dev"}
 	if p.ListenAddr == "" {
@@ -140,10 +141,48 @@ func (p *Vault) StartLocal(logfile string, opts ...StartOp) error {
 	setup := gopath + "/src/github.com/edgexr/edge-cloud-platform/pkg/vault/setup.sh"
 	out := p.Run("/bin/sh", setup, &err)
 	fmt.Println(out)
+	if err != nil {
+		p.StopLocal()
+		return err
+	}
 	// get roleIDs and secretIDs
 	vroles := VaultRoles{}
 	vroles.RegionRoles = make(map[string]*VaultRegionRoles)
 	p.GetAppRole("", "notifyroot", &vroles.NotifyRootRoleID, &vroles.NotifyRootSecretID, &err)
+	p.GetAppRole("", "mcorm", &vroles.MCRoleID, &vroles.MCSecretID, &err)
+	p.GetAppRole("", "rotator", &vroles.RotatorRoleID, &vroles.RotatorSecretID, &err)
+	p.PutSecret("", "mcorm", mcormSecret+"-old", &err)
+	p.PutSecret("", "mcorm", mcormSecret, &err)
+
+	// Set up dummy key to be used with local chef server to provision cloudlets
+	chefApiKeyPath := "/tmp/dummyChefApiKey.json"
+	err = GetDummyPrivateKey(chefApiKeyPath)
+	if err != nil {
+		p.StopLocal()
+		return err
+	}
+	p.Run("vault", fmt.Sprintf("kv put %s @%s", "/secret/accounts/chef", chefApiKeyPath), &err)
+	if err != nil {
+		p.StopLocal()
+		return err
+	}
+	p.Run("vault", fmt.Sprintf("kv put /secret/accounts/noreplyemail Email=dummy@email.com"), &err)
+	if err != nil {
+		p.StopLocal()
+		return err
+	}
+
+	// Set up dummy API key to be used to call the GDDT QOS Priority Sessions API.
+	fileName := gopath + "/src/github.com/edgexr/edge-cloud-platform/test/e2e-tests/data/gddt_qos_session_api_key.txt"
+	// The vault path for "kv put" omits the /data portion.
+	// To read this key with vault.GetData(), use path=/secret/data/accounts/gddt/sessionsapi
+	path := "/secret/accounts/gddt/sessionsapi"
+	p.Run("vault", fmt.Sprintf("kv put %s @%s", path, fileName), &err)
+	log.Printf("PutQosApiKeyToVault at path %s, err=%s", path, err)
+	if err != nil {
+		p.StopLocal()
+		return err
+	}
 
 	if p.Regions == "" {
 		p.Regions = "local"
@@ -162,6 +201,8 @@ func (p *Vault) StartLocal(logfile string, opts ...StartOp) error {
 		p.GetAppRole(region, "controller", &roles.CtrlRoleID, &roles.CtrlSecretID, &err)
 		p.GetAppRole(region, "cluster-svc", &roles.ClusterSvcRoleID, &roles.ClusterSvcSecretID, &err)
 		p.GetAppRole(region, "edgeturn", &roles.EdgeTurnRoleID, &roles.EdgeTurnSecretID, &err)
+		p.GetAppRole(region, "autoprov", &roles.AutoProvRoleID, &roles.AutoProvSecretID, &err)
+		p.GetAppRole(region, "frm", &roles.FrmRoleID, &roles.FrmSecretID, &err)
 		p.PutSecret(region, "dme", p.DmeSecret+"-old", &err)
 		p.PutSecret(region, "dme", p.DmeSecret, &err)
 		vroles.RegionRoles[region] = &roles
@@ -202,13 +243,7 @@ func (p *Vault) StartLocal(logfile string, opts ...StartOp) error {
 		}
 
 	}
-	_, err = SetupVault(p, WithRolesFile(options.RolesFile))
-	if err != nil {
-		log.Printf("Failed to setup vault, %v\n", err)
-		p.StopLocal()
-		return err
-	}
-	return err
+	return nil
 }
 
 func (p *Vault) StopLocal() {
@@ -312,84 +347,6 @@ func (p *Vault) StartLocalRoles() (*VaultRoles, error) {
 		return nil, err
 	}
 	return &roles, nil
-}
-
-// Vault is already started by edge-cloud setup file.
-func SetupVault(p *Vault, opts ...StartOp) (*VaultRoles, error) {
-	var err error
-	mcormSecret := "mc-secret"
-
-	// run global setup script
-	gopath := os.Getenv("GOPATH")
-	setup := gopath + "/src/github.com/edgexr/edge-cloud-platform/pkg/vault/setup.sh"
-	out := p.Run("/bin/sh", setup, &err)
-	if err != nil {
-		fmt.Println(out)
-		return nil, err
-	}
-	// get roleIDs and secretIDs
-	roles := VaultRoles{}
-	roles.RegionRoles = make(map[string]*VaultRegionRoles)
-	p.GetAppRole("", "mcorm", &roles.MCRoleID, &roles.MCSecretID, &err)
-	p.GetAppRole("", "rotator", &roles.RotatorRoleID, &roles.RotatorSecretID, &err)
-	p.PutSecret("", "mcorm", mcormSecret+"-old", &err)
-	p.PutSecret("", "mcorm", mcormSecret, &err)
-
-	// Set up dummy key to be used with local chef server to provision cloudlets
-	chefApiKeyPath := "/tmp/dummyChefApiKey.json"
-	err = GetDummyPrivateKey(chefApiKeyPath)
-	if err != nil {
-		return &roles, err
-	}
-	p.Run("vault", fmt.Sprintf("kv put %s @%s", "/secret/accounts/chef", chefApiKeyPath), &err)
-	if err != nil {
-		return &roles, err
-	}
-
-	p.Run("vault", fmt.Sprintf("kv put /secret/accounts/noreplyemail Email=dummy@email.com"), &err)
-	if err != nil {
-		return &roles, err
-	}
-
-	// Set up dummy API key to be used to call the GDDT QOS Priority Sessions API.
-	fileName := gopath + "/src/github.com/edgexr/edge-cloud-platform/e2e-tests/data/gddt_qos_session_api_key.txt"
-	// The vault path for "kv put" omits the /data portion.
-	// To read this key with vault.GetData(), use path=/secret/data/accounts/gddt/sessionsapi
-	path := "/secret/accounts/gddt/sessionsapi"
-	p.Run("vault", fmt.Sprintf("kv put %s @%s", path, fileName), &err)
-	log.Printf("PutQosApiKeyToVault at path %s, err=%s", path, err)
-	if err != nil {
-		return &roles, err
-	}
-
-	if p.Regions == "" {
-		p.Regions = "local"
-	}
-	for _, region := range strings.Split(p.Regions, ",") {
-		setup := gopath + "/src/github.com/edgexr/edge-cloud-platform/pkg/vault/setup-region.sh " + region
-		out := p.Run("/bin/sh", setup, &err)
-		if err != nil {
-			fmt.Println(out)
-			return nil, err
-		}
-		rr := VaultRegionRoles{}
-		p.GetAppRole(region, "autoprov", &rr.AutoProvRoleID, &rr.AutoProvSecretID, &err)
-		p.GetAppRole(region, "frm", &rr.FrmRoleID, &rr.FrmSecretID, &err)
-		roles.RegionRoles[region] = &rr
-	}
-	options := StartOptions{}
-	options.ApplyStartOptions(opts...)
-	if options.RolesFile != "" {
-		roleYaml, err := yaml.Marshal(&roles)
-		if err != nil {
-			return &roles, err
-		}
-		err = ioutil.WriteFile(options.RolesFile, roleYaml, 0644)
-		if err != nil {
-			return &roles, err
-		}
-	}
-	return &roles, err
 }
 
 func GetDummyPrivateKey(fileName string) error {
