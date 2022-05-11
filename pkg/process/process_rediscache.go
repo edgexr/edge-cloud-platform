@@ -167,5 +167,5 @@ func (p *RedisCache) ResetData(logfile string) error {
 
 func (p *RedisCache) GetBindAddrs() []string {
 	p.setBindPort()
-	return []string{fmt.Sprintf(":%d", p.Port)}
+	return []string{fmt.Sprintf(":%s", p.Port)}
 }
