@@ -114,10 +114,10 @@ func (p *NginxProxy) GetBindAddrs() []string {
 	addrs := []string{}
 	for _, server := range p.Servers {
 		if server.Port != "" {
-			addrs = append(addrs, fmt.Sprintf(":%d", server.Port))
+			addrs = append(addrs, fmt.Sprintf(":%s", server.Port))
 		}
 		if server.TlsPort != "" {
-			addrs = append(addrs, fmt.Sprintf(":%d", server.TlsPort))
+			addrs = append(addrs, fmt.Sprintf(":%s", server.TlsPort))
 		}
 	}
 	return addrs

@@ -174,9 +174,9 @@ func (p *MC) LookupArgs() string { return "--addr " + p.Addr }
 
 func (p *MC) GetBindAddrs() []string {
 	return []string{
-		fmt.Sprintf(":%d", p.Addr),
-		fmt.Sprintf(":%d", p.FederationAddr),
-		fmt.Sprintf(":%d", p.NotifySrvAddr),
-		fmt.Sprintf(":%d", p.LdapAddr),
+		fmt.Sprintf(":%s", p.Addr),
+		fmt.Sprintf(":%s", p.FederationAddr),
+		fmt.Sprintf(":%s", p.NotifySrvAddr),
+		fmt.Sprintf(":%s", p.LdapAddr),
 	}
 }
