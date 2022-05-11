@@ -67,6 +67,10 @@ func (p *Controller) StartLocal(logfile string, opts ...StartOp) error {
 		args = append(args, "--httpAddr")
 		args = append(args, p.HttpAddr)
 	}
+	if p.AccessApiAddr != "" {
+		args = append(args, "--accessApiAddr")
+		args = append(args, p.AccessApiAddr)
+	}
 	if p.InfluxAddr != "" {
 		args = append(args, "--influxAddr")
 		args = append(args, p.InfluxAddr)
@@ -162,6 +166,15 @@ func (p *Controller) StopLocal() {
 func (p *Controller) GetExeName() string { return "controller" }
 
 func (p *Controller) LookupArgs() string { return "--apiAddr " + p.ApiAddr }
+
+func (p *Controller) GetBindAddrs() []string {
+	return []string{
+		p.ApiAddr,
+		p.HttpAddr,
+		p.NotifyAddr,
+		p.AccessApiAddr,
+	}
+}
 
 func connectAPIImpl(timeout time.Duration, apiaddr string, tlsConfig *tls.Config) (*grpc.ClientConn, error) {
 	// Wait for service to be ready to connect.

@@ -41,3 +41,7 @@ func (p *QosSesSrvSim) GetExeName() string { return "sessions-srv-sim" }
 func (p *QosSesSrvSim) LookupArgs() string {
 	return fmt.Sprintf("-port %d", p.Port)
 }
+
+func (p *QosSesSrvSim) GetBindAddrs() []string {
+	return []string{fmt.Sprintf(":%d", p.Port)}
+}

@@ -84,3 +84,5 @@ func (p *AutoProv) StopLocal() {
 func (p *AutoProv) GetExeName() string { return "autoprov" }
 
 func (p *AutoProv) LookupArgs() string { return "" }
+
+func (p *AutoProv) GetBindAddrs() []string { return []string{} }

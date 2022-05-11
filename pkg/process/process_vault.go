@@ -254,6 +254,13 @@ func (p *Vault) GetExeName() string { return "vault" }
 
 func (p *Vault) LookupArgs() string { return "" }
 
+func (p *Vault) GetBindAddrs() []string {
+	if p.ListenAddr == "" {
+		p.ListenAddr = defaultVaultAddress
+	}
+	return []string{p.ListenAddr}
+}
+
 func (p *Vault) GetAppRole(region, name string, roleID, secretID *string, err *error) {
 	if *err != nil {
 		return
