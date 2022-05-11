@@ -121,7 +121,7 @@ func (p *Dme) StopLocal() {
 	StopLocal(p.cmd)
 }
 
-func (p *Dme) GetExeName() string { return "dme-server" }
+func (p *Dme) GetExeName() string { return "dme" }
 
 func (p *Dme) LookupArgs() string { return "--apiAddr " + p.ApiAddr }
 
@@ -155,6 +155,10 @@ func (p *Dme) getTlsConfig(addr string) *tls.Config {
 	} else {
 		return nil
 	}
+}
+
+func (p *Dme) GetBindAddrs() []string {
+	return []string{p.ApiAddr, p.HttpAddr}
 }
 
 func getRestClientImpl(timeout time.Duration, addr string, tlsConfig *tls.Config) (*http.Client, error) {

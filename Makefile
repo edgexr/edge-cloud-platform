@@ -160,56 +160,59 @@ unit-test:
 		grep "FAIL\tgithub.com" $(UNIT_TEST_LOG))
 
 test:
-	e2e-tests -testfile ./e2e-tests/testfiles/regression_run.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml
-	make -C ../edge-cloud test
+	e2e-tests -testfile ./test/e2e-tests/testfiles/regression_run.yml -setupfile ./test/e2e-tests/setups/local_multi.yml -varsfile ./test/e2e-tests/vars.yml
 
 test-debug:
-	e2e-tests -testfile ./e2e-tests/testfiles/regression_run.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
-	make -C ../edge-cloud test-debug
+	e2e-tests -testfile ./test/e2e-tests/testfiles/regression_run.yml -setupfile ./test/e2e-tests/setups/local_multi.yml -varsfile ./test/e2e-tests/vars.yml -stop -notimestamp
 
 # start/restart local processes to run individual python or other tests against
 test-start:
-	e2e-tests -testfile ./e2e-tests/testfiles/deploy_start_create.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
+	e2e-tests -testfile ./test/e2e-tests/testfiles/deploy_start_create.yml -setupfile ./test/e2e-tests/setups/local_multi.yml -varsfile ./test/e2e-tests/vars.yml -stop -notimestamp
 
 # restart process, clean data
 test-reset:
-	e2e-tests -testfile ../edge-cloud/setup-env/e2e-tests/testfiles/deploy_reset_create.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
+	e2e-tests -testfile ./test/test/e2e-tests/testfiles/deploy_reset_create.yml -setupfile ./test/e2e-tests/setups/local_multi.yml -varsfile ./test/e2e-tests/vars.yml -stop -notimestamp
 
 test-stop:
-	e2e-tests -testfile ./e2e-tests/testfiles/stop_cleanup.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -notimestamp
+	e2e-tests -testfile ./test/e2e-tests/testfiles/stop_cleanup.yml -setupfile ./test/e2e-tests/setups/local_multi.yml -varsfile ./test/e2e-tests/vars.yml -notimestamp
 
 # QA testing - manual
 test-robot-start:
-	e2e-tests -testfile ./e2e-tests/testfiles/deploy_start_create_automation.yml -setupfile ./e2e-tests/setups/local_multi_automation.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
+	e2e-tests -testfile ./test/e2e-tests/testfiles/deploy_start_create_automation.yml -setupfile ./test/e2e-tests/setups/local_multi_automation.yml -varsfile ./test/e2e-tests/vars.yml -stop -notimestamp
 
 test-robot-stop:
-	e2e-tests -testfile ./e2e-tests/testfiles/stop_cleanup.yml -setupfile ./e2e-tests/setups/local_multi_automation.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
+	e2e-tests -testfile ./test/e2e-tests/testfiles/stop_cleanup.yml -setupfile ./test/e2e-tests/setups/local_multi_automation.yml -varsfile ./test/e2e-tests/vars.yml -stop -notimestamp
 
 # Kind local k8s testing
 kind-test-start:
-	e2e-tests -testfile ./e2e-tests/testfiles/kind_deploy_start_create.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
+	e2e-tests -testfile ./test/e2e-tests/testfiles/kind_deploy_start_create.yml -setupfile ./test/e2e-tests/setups/local_multi.yml -varsfile ./test/e2e-tests/vars.yml -stop -notimestamp
 
 kind-test-stop:
-	e2e-tests -testfile ./e2e-tests/testfiles/stop_cleanup.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -notimestamp
+	e2e-tests -testfile ./test/e2e-tests/testfiles/stop_cleanup.yml -setupfile ./test/e2e-tests/setups/local_multi.yml -varsfile ./test/e2e-tests/vars.yml -notimestamp
 
 ## note: edgebox requires make install-dind from edge-cloud to be run once
 edgebox-start:
-	e2e-tests -testfile ./e2e-tests/testfiles/deploy_start_create_edgebox.yml -setupfile ./e2e-tests/setups/local_edgebox.yml -varsfile ./e2e-tests/vars.yml -notimestamp -stop
+	e2e-tests -testfile ./test/e2e-tests/testfiles/deploy_start_create_edgebox.yml -setupfile ./test/e2e-tests/setups/local_edgebox.yml -varsfile ./test/e2e-tests/vars.yml -notimestamp -stop
 
 edgebox-stop:
-	e2e-tests -testfile ./e2e-tests/testfiles/delete_edgebox_stop_cleanup.yml -setupfile ./e2e-tests/setups/local_edgebox.yml -varsfile ./e2e-tests/vars.yml -notimestamp
+	e2e-tests -testfile ./test/e2e-tests/testfiles/delete_edgebox_stop_cleanup.yml -setupfile ./test/e2e-tests/setups/local_edgebox.yml -varsfile ./test/e2e-tests/vars.yml -notimestamp
 
 chef-start:
-	e2e-tests -testfile ./e2e-tests/testfiles/deploy_start_create_chef.yml -setupfile ./e2e-tests/setups/local_chef.yml -varsfile ./e2e-tests/vars.yml -notimestamp -stop
+	e2e-tests -testfile ./test/e2e-tests/testfiles/deploy_start_create_chef.yml -setupfile ./test/e2e-tests/setups/local_chef.yml -varsfile ./test/e2e-tests/vars.yml -notimestamp -stop
 
 chef-stop:
-	e2e-tests -testfile ./e2e-tests/testfiles/delete_chef_stop_cleanup.yml -setupfile ./e2e-tests/setups/local_chef.yml -varsfile ./e2e-tests/vars.yml -notimestamp
+	e2e-tests -testfile ./test/e2e-tests/testfiles/delete_chef_stop_cleanup.yml -setupfile ./test/e2e-tests/setups/local_chef.yml -varsfile ./test/e2e-tests/vars.yml -notimestamp
 
 edgebox-docker-start:
-	e2e-tests -testfile ./e2e-tests/testfiles/deploy_start_create_edgebox_docker.yml -setupfile ./e2e-tests/setups/local_edgebox.yml -varsfile ./e2e-tests/vars.yml -notimestamp -stop
+	e2e-tests -testfile ./test/e2e-tests/testfiles/deploy_start_create_edgebox_docker.yml -setupfile ./test/e2e-tests/setups/local_edgebox.yml -varsfile ./test/e2e-tests/vars.yml -notimestamp -stop
 
 edgebox-docker-stop:
-	e2e-tests -testfile ./e2e-tests/testfiles/delete_edgebox_docker_stop_cleanup.yml -setupfile ./e2e-tests/setups/local_edgebox.yml -varsfile ./e2e-tests/vars.yml -notimestamp
+	e2e-tests -testfile ./test/e2e-tests/testfiles/delete_edgebox_docker_stop_cleanup.yml -setupfile ./test/e2e-tests/setups/local_edgebox.yml -varsfile ./test/e2e-tests/vars.yml -notimestamp
+
+# for rebuilding just the e2e tools
+test-tools:
+	go install ./test/e2e-tests/cmd/e2e-tests \
+		./test/e2e-tests/cmd/test-mex-infra
 
 #test:
 #	e2e-tests -testfile ./setup-env/e2e-tests/testfiles/regression_group.yml -setupfile ./setup-env/e2e-tests/setups/local_multi.yml

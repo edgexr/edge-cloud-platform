@@ -204,3 +204,13 @@ func (p *Influx) GetClient() (influxclient.Client, error) {
 	}
 	return influxsup.GetClient(httpaddr, p.Auth.User, p.Auth.Pass)
 }
+
+func (p *Influx) GetBindAddrs() []string {
+	if p.HttpAddr == "" {
+		p.HttpAddr = DefaultHttpAddr
+	}
+	if p.BindAddr == "" {
+		p.BindAddr = DefaultBindAddr
+	}
+	return []string{p.HttpAddr, p.BindAddr}
+}

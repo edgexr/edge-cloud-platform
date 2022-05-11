@@ -58,3 +58,7 @@ func (p *ChefServer) StopLocal() {
 func (p *ChefServer) GetExeName() string { return "chef-zero" }
 
 func (p *ChefServer) LookupArgs() string { return fmt.Sprintf("--port %d --multi-org", p.Port) }
+
+func (p *ChefServer) GetBindAddrs() []string {
+	return []string{fmt.Sprintf(":%d", p.Port), ":8889"}
+}

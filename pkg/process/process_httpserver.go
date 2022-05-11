@@ -43,3 +43,7 @@ func (p *HttpServer) StopLocal() {
 func (p *HttpServer) GetExeName() string { return "e2eHttpServer" }
 
 func (p *HttpServer) LookupArgs() string { return "" }
+
+func (p *HttpServer) GetBindAddrs() []string {
+	return []string{fmt.Sprintf(":%d", p.Port)}
+}

@@ -38,7 +38,7 @@ func getAnsibleHome() string {
 	if goPath == "" {
 		log.Fatalf("GOPATH not set")
 	}
-	return goPath + "/src/github.com/edgexr/edge-cloud-platform/ansible"
+	return goPath + "/src/github.com/edgexr/edge-cloud-platform/deploy/ansible"
 }
 
 func getExternalApiAddress(internalApiAddr string, externalHost string) string {

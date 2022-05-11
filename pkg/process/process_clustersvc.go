@@ -109,3 +109,5 @@ func (p *ClusterSvc) StopLocal() {
 func (p *ClusterSvc) GetExeName() string { return "cluster-svc" }
 
 func (p *ClusterSvc) LookupArgs() string { return p.Name }
+
+func (p *ClusterSvc) GetBindAddrs() []string { return []string{} }

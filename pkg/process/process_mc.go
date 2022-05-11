@@ -171,3 +171,12 @@ func (p *MC) StopLocal() {
 func (p *MC) GetExeName() string { return "mc" }
 
 func (p *MC) LookupArgs() string { return "--addr " + p.Addr }
+
+func (p *MC) GetBindAddrs() []string {
+	return []string{
+		fmt.Sprintf(":%d", p.Addr),
+		fmt.Sprintf(":%d", p.FederationAddr),
+		fmt.Sprintf(":%d", p.NotifySrvAddr),
+		fmt.Sprintf(":%d", p.LdapAddr),
+	}
+}

@@ -110,6 +110,19 @@ func (p *NginxProxy) StartLocal(logfile string, opts ...StartOp) error {
 	return err
 }
 
+func (p *NginxProxy) GetBindAddrs() []string {
+	addrs := []string{}
+	for _, server := range p.Servers {
+		if server.Port != "" {
+			addrs = append(addrs, fmt.Sprintf(":%d", server.Port))
+		}
+		if server.TlsPort != "" {
+			addrs = append(addrs, fmt.Sprintf(":%d", server.TlsPort))
+		}
+	}
+	return addrs
+}
+
 var nginxProxyConfig = `
 events {
   worker_connections 128;

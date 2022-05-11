@@ -55,7 +55,7 @@
       - autoprovapp
     limit: 1
   results:
-  - service: dme-server
+  - service: dme
     operation: FindCloudlet
     tags:
       lineno: null

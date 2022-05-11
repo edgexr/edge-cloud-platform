@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-datadir: $GOPATH/src/github.com/mobiledgex/edge-cloud/setup-env/e2e-tests/data
-datadir2: $GOPATH/src/github.com/mobiledgex/edge-cloud-infra/e2e-tests/data
-edge-cloud-testfiles: $GOPATH/src/github.com/mobiledgex/edge-cloud/setup-env/e2e-tests/testfiles
-chefdir: $GOPATH/src/github.com/mobiledgex/edge-cloud-infra/e2e-tests/chef
+datadir: $GOPATH/src/github.com/edgexr/edge-cloud-platform/test/e2e-tests/data-regional
+datadir2: $GOPATH/src/github.com/edgexr/edge-cloud-platform/test/e2e-tests/data
+edge-cloud-testfiles: $GOPATH/src/github.com/edgexr/edge-cloud-platform/test/e2e-tests/testfiles
+chefdir: $GOPATH/src/github.com/edgexr/edge-cloud-platform/test/e2e-tests/chef
 default-program: test-mex-infra
-staticdir: $GOPATH/src/github.com/mobiledgex/edge-cloud-infra/static
+staticdir: $GOPATH/src/github.com/edgexr/edge-cloud-infra/static

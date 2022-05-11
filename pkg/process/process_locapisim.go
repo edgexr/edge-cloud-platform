@@ -54,3 +54,7 @@ func (p *LocApiSim) GetExeName() string { return "loc-api-sim" }
 func (p *LocApiSim) LookupArgs() string {
 	return fmt.Sprintf("-port %d", p.Port)
 }
+
+func (p *LocApiSim) GetBindAddrs() []string {
+	return []string{fmt.Sprintf(":%d", p.Port)}
+}

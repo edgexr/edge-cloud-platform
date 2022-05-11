@@ -116,6 +116,7 @@ type TLSCertInfo struct {
 }
 
 type DeploymentData struct {
+	Vars             SetupVariables                    `yaml:",inline"`
 	TLSCerts         []*TLSCertInfo                    `yaml:"tlscerts"`
 	DockerNetworks   []*process.DockerNetwork          `yaml:"dockernetworks"`
 	Locsims          []*process.LocApiSim              `yaml:"locsims"`

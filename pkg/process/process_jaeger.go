@@ -96,3 +96,7 @@ func (p *Jaeger) StartLocalNoTraefik(logfile string, opts ...StartOp) error {
 	}
 	return err
 }
+
+func (p *Jaeger) GetBindAddrs() []string {
+	return []string{":16686", ":14268"}
+}

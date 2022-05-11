@@ -33,3 +33,10 @@ func (p *Maildev) StartLocal(logfile string, opts ...StartOp) error {
 	p.SetCmd(cmd)
 	return err
 }
+
+func (p *Maildev) GetBindAddrs() []string {
+	return []string{
+		fmt.Sprintf(":%d", p.UiPort),
+		fmt.Sprintf(":%d", p.MailPort),
+	}
+}

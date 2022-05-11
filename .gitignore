@@ -44,6 +44,8 @@ e2e-tests/chef/syntaxcache
 envoy/certs/envoyTlsCerts.key
 envoy/certs/envoyTlsCerts.crt
 plugin/platform/common/foo
+deploy/ansible/mex_inventory
+deploy/ansible/playbooks/setup.yml
 
 # unit-test file
 pkg/mc/orm/alertmgr/testAlertMgrConfig.yml

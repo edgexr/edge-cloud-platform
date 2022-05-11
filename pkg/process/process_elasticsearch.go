@@ -76,6 +76,15 @@ func (p *ElasticSearch) StartElasticSearch(logfile string, opts ...StartOp) erro
 	return err
 }
 
+func (p *ElasticSearch) GetBindAddrs() []string {
+	switch p.Type {
+	case "kibana":
+		return []string{":5601"}
+	default:
+		return []string{":9200", ":9300"}
+	}
+}
+
 func (p *ElasticSearch) StartKibana(logfile string, opts ...StartOp) error {
 	args := p.GetRunArgs()
 	args = append(args,
