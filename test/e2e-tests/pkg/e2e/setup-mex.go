@@ -201,10 +201,10 @@ func ReadSetupFile(setupfile string, deployment interface{}, vars map[string]str
 			WithVars(vars),
 			ValidateReplacedVars())
 		if err != nil {
-			if !IsYamlOk(err, "setup") {
-				fmt.Fprintf(os.Stderr, "One or more fatal unmarshal errors in %s", setupfile)
-				return false
-			}
+			//if !IsYamlOk(err, "setup") {
+			fmt.Fprintf(os.Stderr, "One or more fatal unmarshal errors in %s: %s", setupfile, err)
+			return false
+			//}
 		}
 	}
 	//equals sign is not well handled in yaml so it is url encoded and changed after loading
@@ -482,12 +482,16 @@ func GenerateTLSCerts() error {
 	return nil
 }
 
-func StartLocal(processName, outputDir string, p process.Process, opts ...process.StartOp) bool {
+func StartLocal(processName, outputDir string, p process.Process, portsInUse map[string]string, opts ...process.StartOp) bool {
 	if processName != "" && processName != p.GetName() {
 		return true
 	}
 	if !IsLocalIP(p.GetHostname()) {
 		return true
+	}
+	if err := process.CheckBindOk(portsInUse, p.GetBindAddrs()); err != nil {
+		log.Printf("%s: %s\n", p.GetName(), err)
+		return false
 	}
 	typ := process.GetTypeString(p)
 	log.Printf("Starting %s %s+v\n", typ, p)
@@ -516,6 +520,11 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 	if len(args) > 0 {
 		opts = append(opts, process.WithExtraArgs(args))
 	}
+	portsInUse, err := process.GetPortsInUse()
+	if err != nil {
+		log.Printf("Failed to get ports in use: %s\n", err)
+		return false
+	}
 
 	for _, dn := range Deployment.DockerNetworks {
 		if processName != "" && dn.Name != processName {
@@ -530,77 +539,77 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 		}
 	}
 	for _, p := range Deployment.Influxs {
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Vaults {
 		opts = append(opts, process.WithRolesFile(rolesfile))
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Etcds {
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.ElasticSearchs {
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Jaegers {
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Traefiks {
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.NginxProxys {
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.NotifyRoots {
 		opts = append(opts, process.WithDebug("api,notify,events"))
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.EdgeTurns {
 		opts = append(opts, process.WithRolesFile(rolesfile))
 		opts = append(opts, process.WithDebug("api,notify"))
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Controllers {
 		opts = append(opts, process.WithDebug("etcd,api,notify,metrics,infra,events"))
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Dmes {
 		opts = append(opts, process.WithRolesFile(rolesfile))
 		opts = append(opts, process.WithDebug("locapi,dmedb,dmereq,notify,metrics,events"))
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.ClusterSvcs {
 		opts = append(opts, process.WithRolesFile(rolesfile))
 		opts = append(opts, process.WithDebug("notify,infra,api,events"))
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Crms {
 		opts = append(opts, process.WithDebug("notify,infra,api,events"))
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
@@ -623,100 +632,100 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 		}
 	}
 	for _, p := range Deployment.Toksims {
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.SampleApps {
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.RedisCaches {
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Sqls {
 		opts := append(opts, process.WithCleanStartup())
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Alertmanagers {
 		opts := append(opts, process.WithCleanStartup())
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.AlertmgrSidecars {
 		opts = append(opts, process.WithDebug("api,notify,metrics,events"))
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Mcs {
 		opts = append(opts, process.WithRolesFile(rolesfile))
 		opts = append(opts, process.WithDebug("api,metrics,events,notify"))
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Frms {
 		opts = append(opts, process.WithRolesFile(rolesfile))
 		opts = append(opts, process.WithDebug("api,infra,notify"))
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Shepherds {
 		opts = append(opts, process.WithRolesFile(rolesfile))
 		opts = append(opts, process.WithDebug("metrics,events"))
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.AutoProvs {
 		opts = append(opts, process.WithRolesFile(rolesfile))
 		opts = append(opts, process.WithDebug("api,notify,metrics,events"))
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Prometheus {
 		opts := append(opts, process.WithCleanStartup())
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.HttpServers {
 		opts := append(opts, process.WithCleanStartup())
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.ChefServers {
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Maildevs {
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.ThanosQueries {
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.ThanosReceives {
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Qossessims {
-		if !StartLocal(processName, outputDir, p, opts...) {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
 			return false
 		}
 	}

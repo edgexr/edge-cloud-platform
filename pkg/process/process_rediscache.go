@@ -61,13 +61,12 @@ func (p *RedisCache) StartLocal(logfile string, opts ...StartOp) error {
 
 	args := []string{}
 
+	p.setBindPort()
+
 	switch p.Type {
 	case "master":
 		fallthrough
 	case "slave":
-		if p.Port == "" {
-			p.Port = LocalRedisPort
-		}
 		configFileReqd := true
 		if p.Port == LocalRedisPort && options.NoConfig {
 			configFileReqd = false
@@ -89,9 +88,6 @@ func (p *RedisCache) StartLocal(logfile string, opts ...StartOp) error {
 			args = append(args, cfgFile)
 		}
 	case "sentinel":
-		if p.Port == "" {
-			p.Port = LocalRedisSentinelPort
-		}
 		if p.MasterPort == "" {
 			p.MasterPort = LocalRedisPort
 		}
@@ -138,6 +134,21 @@ func (p *RedisCache) StartLocal(logfile string, opts ...StartOp) error {
 	return nil
 }
 
+func (p *RedisCache) setBindPort() {
+	switch p.Type {
+	case "master":
+		fallthrough
+	case "slave":
+		if p.Port == "" {
+			p.Port = LocalRedisPort
+		}
+	case "sentinel":
+		if p.Port == "" {
+			p.Port = LocalRedisSentinelPort
+		}
+	}
+}
+
 func (p *RedisCache) StopLocal() {
 	StopLocal(p.cmd)
 }
@@ -152,4 +163,9 @@ func (p *RedisCache) ResetData(logfile string) error {
 	cfgFile := fmt.Sprintf("%s/%s.conf", path.Dir(logfile), p.Name)
 	os.Remove(cfgFile)
 	return nil
+}
+
+func (p *RedisCache) GetBindAddrs() []string {
+	p.setBindPort()
+	return []string{fmt.Sprintf(":%d", p.Port)}
 }

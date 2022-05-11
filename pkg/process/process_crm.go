@@ -140,7 +140,7 @@ func (p *Crm) Wait() error {
 	return nil
 }
 
-func (p *Crm) GetExeName() string { return "crmserver" }
+func (p *Crm) GetExeName() string { return "crm" }
 
 func (p *Crm) LookupArgs() string {
 	retval := "--cloudletKey " + p.CloudletKey
@@ -163,4 +163,8 @@ func (p *Crm) String(opts ...StartOp) string {
 		}
 	}
 	return cmd_str
+}
+
+func (p *Crm) GetBindAddrs() []string {
+	return []string{p.NotifySrvAddr}
 }

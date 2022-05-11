@@ -49,6 +49,10 @@ func (p *ThanosQuery) StartLocal(logfile string, opts ...StartOp) error {
 	return err
 }
 
+func (p *ThanosQuery) GetBindAddrs() []string {
+	return []string{fmt.Sprintf(":%d", p.HttpPort)}
+}
+
 func (p *ThanosReceive) StartLocal(logfile string, opts ...StartOp) error {
 	args := p.GetRunArgs()
 	args = append(args,
@@ -67,4 +71,11 @@ func (p *ThanosReceive) StartLocal(logfile string, opts ...StartOp) error {
 	cmd, err := StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
 	p.SetCmd(cmd)
 	return err
+}
+
+func (p *ThanosReceive) GetBindAddrs() []string {
+	return []string{
+		fmt.Sprintf(":%d", p.GrpcPort),
+		fmt.Sprintf(":%d", p.RemoteWritePort),
+	}
 }

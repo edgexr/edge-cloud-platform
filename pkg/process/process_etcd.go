@@ -98,6 +98,13 @@ func (p *Etcd) GetExeName() string { return "etcd" }
 
 func (p *Etcd) LookupArgs() string { return "--name " + p.Name }
 
+func (p *Etcd) GetBindAddrs() []string {
+	addrs := []string{}
+	addrs = append(addrs, strings.Split(p.PeerAddrs, ",")...)
+	addrs = append(addrs, strings.Split(p.ClientAddrs, ",")...)
+	return addrs
+}
+
 func (p *Etcd) ResetData() error {
 	return os.RemoveAll(p.DataDir)
 }

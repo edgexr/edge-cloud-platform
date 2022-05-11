@@ -81,3 +81,5 @@ func (p *FRM) StopLocal() {
 func (p *FRM) GetExeName() string { return "frm" }
 
 func (p *FRM) LookupArgs() string { return p.Name }
+
+func (p *FRM) GetBindAddrs() []string { return []string{} }

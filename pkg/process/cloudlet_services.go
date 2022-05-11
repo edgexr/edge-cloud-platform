@@ -244,7 +244,7 @@ func StopCRMService(ctx context.Context, cloudlet *edgeproto.Cloudlet, haRole HA
 	maxwait := 10 * time.Millisecond
 
 	c := make(chan string)
-	go KillProcessesByName("crmserver", maxwait, args, c)
+	go KillProcessesByName("crm", maxwait, args, c)
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "stopped crmserver", "msg", <-c)
 

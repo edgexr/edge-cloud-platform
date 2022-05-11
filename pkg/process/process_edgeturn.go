@@ -83,3 +83,7 @@ func (p *EdgeTurn) StopLocal() {
 func (p *EdgeTurn) GetExeName() string { return "edgeturn" }
 
 func (p *EdgeTurn) LookupArgs() string { return "" }
+
+func (p *EdgeTurn) GetBindAddrs() []string {
+	return []string{p.ListenAddr, p.ProxyAddr}
+}

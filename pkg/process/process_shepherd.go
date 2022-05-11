@@ -119,6 +119,8 @@ func (p *Shepherd) GetExeName() string { return "shepherd" }
 
 func (p *Shepherd) LookupArgs() string { return "--cloudletKey " + p.CloudletKey }
 
+func (p *Shepherd) GetBindAddrs() []string { return []string{} }
+
 func (p *Shepherd) Wait() {
 	p.cmd.Wait()
 }

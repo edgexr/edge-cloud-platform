@@ -25,6 +25,7 @@ import (
 type NotifyRoot struct {
 	Common     `yaml:",inline"`
 	NodeCommon `yaml:",inline"`
+	NotifyAddr string
 	cmd        *exec.Cmd
 }
 
@@ -36,6 +37,9 @@ func (p *NotifyRoot) StartLocal(logfile string, opts ...StartOp) error {
 	if options.Debug != "" {
 		args = append(args, "-d")
 		args = append(args, options.Debug)
+	}
+	if p.NotifyAddr != "" {
+		args = append(args, "--notifyAddr", p.NotifyAddr)
 	}
 	envs := p.GetEnv()
 	if options.RolesFile != "" {
@@ -66,3 +70,7 @@ func (p *NotifyRoot) StopLocal() {
 func (p *NotifyRoot) GetExeName() string { return "notifyroot" }
 
 func (p *NotifyRoot) LookupArgs() string { return "" }
+
+func (p *NotifyRoot) GetBindAddrs() []string {
+	return []string{p.NotifyAddr}
+}

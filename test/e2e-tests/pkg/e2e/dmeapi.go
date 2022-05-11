@@ -599,7 +599,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 		var expirySeconds int64 = 600
 		if strings.Contains(apiRequest.Rcreq.AuthToken, "GENTOKEN:") {
 			goPath := os.Getenv("GOPATH")
-			datadir := goPath + "/" + "src/github.com/edgexr/edge-cloud-platform/setup-env/e2e-tests/data"
+			datadir := goPath + "/" + "src/github.com/edgexr/edge-cloud-platform/test/e2e-tests/data-regional"
 			privKeyFile := datadir + "/" + strings.Split(apiRequest.Rcreq.AuthToken, ":")[1]
 			expTime := time.Now().Add(time.Duration(expirySeconds) * time.Second).Unix()
 			token, err := dmecommon.GenerateAuthToken(privKeyFile, apiRequest.Rcreq.OrgName,

@@ -46,3 +46,7 @@ func (p *TokSrvSim) GetExeName() string { return "tok-srv-sim" }
 func (p *TokSrvSim) LookupArgs() string {
 	return fmt.Sprintf("-port %d", p.Port)
 }
+
+func (p *TokSrvSim) GetBindAddrs() []string {
+	return []string{fmt.Sprintf(":%d", p.Port)}
+}

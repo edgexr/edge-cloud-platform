@@ -137,6 +137,10 @@ func (p *Sql) GetExeName() string { return "postgres" }
 
 func (p *Sql) LookupArgs() string { return "" }
 
+func (p *Sql) GetBindAddrs() []string {
+	return []string{p.HttpAddr}
+}
+
 func (p *Sql) InitDataDir() error {
 	err := os.RemoveAll(p.DataDir)
 	if err != nil {

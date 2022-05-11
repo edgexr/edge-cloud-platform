@@ -45,3 +45,7 @@ func (p *SampleApp) GetExeName() string { return p.Exename }
 func (p *SampleApp) LookupArgs() string {
 	return strings.Join(p.Args, " ")
 }
+
+func (p *SampleApp) GetBindAddrs() []string {
+	return []string{}
+}

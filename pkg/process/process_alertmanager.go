@@ -62,3 +62,7 @@ func (p *Alertmanager) StartLocal(logfile string, opts ...StartOp) error {
 	p.SetCmd(cmd)
 	return err
 }
+
+func (p *Alertmanager) GetBindAddrs() []string {
+	return []string{fmt.Sprintf(":%d", p.Port)}
+}

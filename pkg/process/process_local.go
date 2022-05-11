@@ -122,3 +122,60 @@ func NewColorWriter(name string) *ColorWriter {
 	}
 	return &writer
 }
+
+// Get ports in use by the OS. Key is port, val is description of process.
+// This pretty much ignores the discrepancy between ipv4 and ipv6,
+// because this is only for local listeners which are all ipv4 right now.
+func GetPortsInUse() (map[string]string, error) {
+	usedAddrs := map[string]string{}
+	out, err := exec.Command("netstat", "-tulpn").CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("%s, %s", string(out), err)
+	}
+	for _, line := range strings.Split(string(out), "\n") {
+		parts := strings.Split(line, " ")
+		if len(parts) < 7 {
+			continue
+		}
+		if parts[0] != "tcp" {
+			continue
+		}
+		_, port := SplitAddr(parts[3])
+		usedAddrs[port] = fmt.Sprintf("%s (%s)", parts[6], parts[3])
+	}
+	return usedAddrs, nil
+}
+
+func CheckBindOk(portsInUse map[string]string, addrs []string) error {
+	// Check against ports we want to bind to
+	conflicts := []string{}
+	for _, addr := range addrs {
+		addr = strings.TrimPrefix(addr, "https://")
+		addr = strings.TrimPrefix(addr, "http://")
+		if addr == "" || addr == ":" {
+			continue
+		}
+		_, port := SplitAddr(addr)
+		if port == "" {
+			conflicts = append(conflicts, fmt.Sprintf("no port specified in addr %s", addr))
+			continue
+		}
+		if proc, found := portsInUse[port]; found {
+			conflicts = append(conflicts, fmt.Sprintf("port %s(%s) in use by %s", port, addr, proc))
+		}
+	}
+	if len(conflicts) > 0 {
+		return fmt.Errorf("CheckBind: %s", strings.Join(conflicts, ", "))
+	}
+	return nil
+}
+
+// Splits an address into host/ip and port.
+func SplitAddr(addr string) (string, string) {
+	idx := strings.LastIndex(addr, ":")
+	if idx == -1 {
+		// no port info
+		return addr, ""
+	}
+	return addr[0:idx], addr[idx+1:]
+}

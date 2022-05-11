@@ -30,22 +30,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
+	"github.com/go-redis/redis"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	yaml "github.com/mobiledgex/yaml/v2"
 	"google.golang.org/grpc"
 )
@@ -419,6 +419,7 @@ func startServices() error {
 	}
 	services.publicCertManager.StartRefresh()
 	// Start access server
+	log.SpanLog(ctx, log.DebugLevelApi, "AccessKeyServer listen", "addr", *accessApiAddr)
 	err = services.accessKeyGrpcServer.Start(*accessApiAddr, allApis.cloudletApi.accessKeyServer, accessServerTlsConfig, func(accessServer *grpc.Server) {
 		edgeproto.RegisterCloudletAccessApiServer(accessServer, allApis.cloudletApi)
 		edgeproto.RegisterCloudletAccessKeyApiServer(accessServer, allApis.cloudletApi)

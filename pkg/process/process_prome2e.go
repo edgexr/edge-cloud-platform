@@ -45,6 +45,10 @@ func (p *PromE2e) StartLocal(logfile string, opts ...StartOp) error {
 	return err
 }
 
+func (p *PromE2e) GetBindAddrs() []string {
+	return []string{fmt.Sprintf(":%d", p.Port)}
+}
+
 func imageFound(name string) bool {
 	listCmd := exec.Command("docker", "images")
 	output, err := listCmd.Output()

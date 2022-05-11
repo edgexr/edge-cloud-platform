@@ -42,6 +42,8 @@ type Process interface {
 	GetExeName() string
 	// Get lookup args that can be used to find the local process using pgrep
 	LookupArgs() string
+	// Get Addresses that process binds to
+	GetBindAddrs() []string
 }
 
 type ProcessInfo struct {

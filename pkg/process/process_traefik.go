@@ -124,6 +124,10 @@ func (p *Traefik) GetExeName() string { return "docker" }
 
 func (p *Traefik) LookupArgs() string { return p.Name }
 
+func (p *Traefik) GetBindAddrs() []string {
+	return []string{":8080", ":14268", ":16686", ":16687"}
+}
+
 type TraefikStaticArgs struct {
 	DynFile string
 }
