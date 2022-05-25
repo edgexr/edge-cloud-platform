@@ -162,6 +162,7 @@ func (p *RedisCache) LookupArgs() string {
 func (p *RedisCache) ResetData(logfile string) error {
 	cfgFile := fmt.Sprintf("%s/%s.conf", path.Dir(logfile), p.Name)
 	os.Remove(cfgFile)
+	os.Remove("dump.rdb")
 	return nil
 }
 
