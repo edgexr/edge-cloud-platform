@@ -942,7 +942,7 @@ type Cloudlet struct {
 	ResTagMap map[string]*ResTagTableKey `protobuf:"bytes,22,rep,name=res_tag_map,json=resTagMap,proto3" json:"res_tag_map,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Variables required to access cloudlet
 	AccessVars map[string]string `protobuf:"bytes,23,rep,name=access_vars,json=accessVars,proto3" json:"access_vars,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// MobiledgeX baseimage version where CRM services reside
+	// EdgeCloud baseimage version where CRM services reside
 	VmImageVersion string `protobuf:"bytes,24,opt,name=vm_image_version,json=vmImageVersion,proto3" json:"vm_image_version,omitempty"`
 	// Deployment type to bring up CRM services (docker, kubernetes)
 	Deployment string `protobuf:"bytes,26,opt,name=deployment,proto3" json:"deployment,omitempty"`
@@ -2052,7 +2052,7 @@ type GPUDriverApiClient interface {
 	DeleteGPUDriver(ctx context.Context, in *GPUDriver, opts ...grpc.CallOption) (GPUDriverApi_DeleteGPUDriverClient, error)
 	// Update GPU Driver. Updates GPU driver config.
 	UpdateGPUDriver(ctx context.Context, in *GPUDriver, opts ...grpc.CallOption) (GPUDriverApi_UpdateGPUDriverClient, error)
-	// Show GPU Drivers. Lists all the MobiledgeX created GPU drivers and operator
+	// Show GPU Drivers. Lists all the EdgeCloud created GPU drivers and operator
 	// created GPU drivers.
 	ShowGPUDriver(ctx context.Context, in *GPUDriver, opts ...grpc.CallOption) (GPUDriverApi_ShowGPUDriverClient, error)
 	// Add GPU Driver Build. Adds new build to GPU driver.
@@ -2293,7 +2293,7 @@ type GPUDriverApiServer interface {
 	DeleteGPUDriver(*GPUDriver, GPUDriverApi_DeleteGPUDriverServer) error
 	// Update GPU Driver. Updates GPU driver config.
 	UpdateGPUDriver(*GPUDriver, GPUDriverApi_UpdateGPUDriverServer) error
-	// Show GPU Drivers. Lists all the MobiledgeX created GPU drivers and operator
+	// Show GPU Drivers. Lists all the EdgeCloud created GPU drivers and operator
 	// created GPU drivers.
 	ShowGPUDriver(*GPUDriver, GPUDriverApi_ShowGPUDriverServer) error
 	// Add GPU Driver Build. Adds new build to GPU driver.
@@ -2554,7 +2554,7 @@ var _GPUDriverApi_serviceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type CloudletApiClient interface {
 	// Create Cloudlet. Sets up Cloudlet services on the Operator's compute resources,
-	// and integrated as part of MobiledgeX edge resource portfolio.
+	// and integrated as part of EdgeCloud edge resource portfolio.
 	// These resources are managed from the Edge Controller.
 	CreateCloudlet(ctx context.Context, in *Cloudlet, opts ...grpc.CallOption) (CloudletApi_CreateCloudletClient, error)
 	// Delete Cloudlet. Removes the Cloudlet services where they are no longer managed
@@ -2939,7 +2939,7 @@ func (x *cloudletApiPlatformDeleteCloudletClient) Recv() (*Result, error) {
 // CloudletApiServer is the server API for CloudletApi service.
 type CloudletApiServer interface {
 	// Create Cloudlet. Sets up Cloudlet services on the Operator's compute resources,
-	// and integrated as part of MobiledgeX edge resource portfolio.
+	// and integrated as part of EdgeCloud edge resource portfolio.
 	// These resources are managed from the Edge Controller.
 	CreateCloudlet(*Cloudlet, CloudletApi_CreateCloudletServer) error
 	// Delete Cloudlet. Removes the Cloudlet services where they are no longer managed

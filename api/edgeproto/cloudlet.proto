@@ -376,7 +376,7 @@ service GPUDriverApi {
     option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
     option (protogen.method_noconfig) = "Builds,Type,IgnoreState";
   }
-  // Show GPU Drivers. Lists all the MobiledgeX created GPU drivers and operator
+  // Show GPU Drivers. Lists all the EdgeCloud created GPU drivers and operator
   // created GPU drivers.
   rpc ShowGPUDriver(GPUDriver) returns (stream GPUDriver) {
     option (google.api.http) = {
@@ -489,7 +489,7 @@ message Cloudlet {
   map<string, edgeproto.ResTagTableKey> res_tag_map = 22 [(protogen.backend) = true, (protogen.refers_to) = "ResTagTable"];
   // Variables required to access cloudlet
   map<string, string> access_vars = 23;
-  // MobiledgeX baseimage version where CRM services reside
+  // EdgeCloud baseimage version where CRM services reside
   string vm_image_version = 24;
   // Deployment type to bring up CRM services (docker, kubernetes)
   string deployment = 26;
@@ -645,7 +645,7 @@ message CloudletAllianceOrg {
 
 service CloudletApi {
   // Create Cloudlet. Sets up Cloudlet services on the Operator's compute resources,
-  // and integrated as part of MobiledgeX edge resource portfolio.
+  // and integrated as part of EdgeCloud edge resource portfolio.
   // These resources are managed from the Edge Controller.
   rpc CreateCloudlet(Cloudlet) returns (stream Result) {
     option (google.api.http) = {

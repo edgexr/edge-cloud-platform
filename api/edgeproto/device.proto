@@ -40,7 +40,7 @@ message DeviceReport {
   option (protogen.generate_cud) = true;
 }
 
-// DeviceKey is an identifier for a given device on the MobiledgeX platform
+// DeviceKey is an identifier for a given device on the EdgeCloud platform
 // It is defined by a unique id and unique id type
 // And example of such a device is a MEL device that hosts several applications
 message DeviceKey {
@@ -53,7 +53,7 @@ message DeviceKey {
   option (gogoproto.gostring) = true;
 }
 
-// Device represents a device on the MobiledgeX platform
+// Device represents a device on the EdgeCloud platform
 // We record when this device first showed up on our platform
 message Device {
   repeated string fields = 1;

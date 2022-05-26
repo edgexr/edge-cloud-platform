@@ -24,13 +24,13 @@ func TestAlertKey(t *testing.T) {
 	m := map[string]string{
 		"cloudlet":  "localtest",
 		"cluster":   "AppCluster",
-		"dev":       "MobiledgeX",
+		"dev":       "DevX",
 		"alertname": "DeadMansSwitch",
-		"operator":  "mexdev",
+		"operator":  "OperX",
 		"severity":  "none",
 	}
 	key := MapKey(m)
-	expectedKey := `{"alertname":"DeadMansSwitch","cloudlet":"localtest","cluster":"AppCluster","dev":"MobiledgeX","operator":"mexdev","severity":"none"}`
+	expectedKey := `{"alertname":"DeadMansSwitch","cloudlet":"localtest","cluster":"AppCluster","dev":"DevX","operator":"OperX","severity":"none"}`
 	require.Equal(t, expectedKey, key)
 
 	a := Alert{}

@@ -19,11 +19,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/gogo/protobuf/types"
 )
 
 var FlavorData = []edgeproto.Flavor{
@@ -212,7 +212,7 @@ var AppData = []edgeproto.App{
 	},
 	edgeproto.App{ // 9
 		Key: edgeproto.AppKey{
-			Organization: cloudcommon.OrganizationMobiledgeX,
+			Organization: edgeproto.OrganizationEdgeCloud,
 			Name:         "AutoDeleteApp",
 			Version:      "1.0.0",
 		},
@@ -266,9 +266,9 @@ var AppData = []edgeproto.App{
 		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
 		DefaultFlavor: FlavorData[0].Key,
 	},
-	edgeproto.App{ // 13 - MobiledgeX app
+	edgeproto.App{ // 13 - EdgeCloud app
 		Key: edgeproto.AppKey{
-			Organization: cloudcommon.OrganizationMobiledgeX,
+			Organization: edgeproto.OrganizationEdgeCloud,
 			Name:         "SampleApp",
 			Version:      "1.0.0",
 		},
@@ -529,7 +529,7 @@ var ClusterInstData = []edgeproto.ClusterInst{
 		Key: edgeproto.ClusterInstKey{
 			ClusterKey:   ClusterKeys[4],
 			CloudletKey:  cloudletData[0].Key,
-			Organization: cloudcommon.OrganizationMobiledgeX,
+			Organization: edgeproto.OrganizationEdgeCloud,
 		},
 		Flavor:     FlavorData[0].Key,
 		IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
@@ -541,7 +541,7 @@ var ClusterInstData = []edgeproto.ClusterInst{
 		Key: edgeproto.ClusterInstKey{
 			ClusterKey:   ClusterKeys[5], // multi-tenant cluster
 			CloudletKey:  cloudletData[0].Key,
-			Organization: cloudcommon.OrganizationMobiledgeX,
+			Organization: edgeproto.OrganizationEdgeCloud,
 		},
 		Flavor:           FlavorData[0].Key,
 		IpAccess:         edgeproto.IpAccess_IP_ACCESS_SHARED,
@@ -572,7 +572,7 @@ var ClusterInstAutoData = []edgeproto.ClusterInst{
 				Name: "reservable0",
 			},
 			CloudletKey:  cloudletData[1].Key,
-			Organization: cloudcommon.OrganizationMobiledgeX,
+			Organization: edgeproto.OrganizationEdgeCloud,
 		},
 		Flavor:     FlavorData[0].Key,
 		NumMasters: 1,
@@ -589,7 +589,7 @@ var ClusterInstAutoData = []edgeproto.ClusterInst{
 				Name: "reservable0",
 			},
 			CloudletKey:  cloudletData[2].Key,
-			Organization: cloudcommon.OrganizationMobiledgeX,
+			Organization: edgeproto.OrganizationEdgeCloud,
 		},
 		Flavor:     FlavorData[1].Key,
 		NumMasters: 1,
@@ -606,7 +606,7 @@ var ClusterInstAutoData = []edgeproto.ClusterInst{
 				Name: "reservable1",
 			},
 			CloudletKey:  cloudletData[2].Key,
-			Organization: cloudcommon.OrganizationMobiledgeX,
+			Organization: edgeproto.OrganizationEdgeCloud,
 		},
 		Flavor:     FlavorData[1].Key,
 		NumMasters: 1,
@@ -623,7 +623,7 @@ var ClusterInstAutoData = []edgeproto.ClusterInst{
 				Name: "reservable0",
 			},
 			CloudletKey:  cloudletData[3].Key,
-			Organization: cloudcommon.OrganizationMobiledgeX,
+			Organization: edgeproto.OrganizationEdgeCloud,
 		},
 		Flavor:     FlavorData[0].Key,
 		NumMasters: 1,
@@ -631,7 +631,7 @@ var ClusterInstAutoData = []edgeproto.ClusterInst{
 		State:      edgeproto.TrackedState_READY,
 		Auto:       true,
 		Reservable: true,
-		ReservedBy: "MobiledgeX",
+		ReservedBy: edgeproto.OrganizationEdgeCloud,
 	},
 }
 var AppInstData = []edgeproto.AppInst{
@@ -725,9 +725,9 @@ var AppInstData = []edgeproto.AppInst{
 		},
 		CloudletLoc: cloudletData[1].Location,
 	},
-	edgeproto.AppInst{ // 12 - deploy MobiledgeX app to reservable autocluster
+	edgeproto.AppInst{ // 12 - deploy EdgeCloud app to reservable autocluster
 		Key: edgeproto.AppInstKey{
-			AppKey:         AppData[13].Key, // mobiledgex sample app
+			AppKey:         AppData[13].Key, // edgecloud sample app
 			ClusterInstKey: *ClusterInstAutoData[3].Key.Virtual(util.K8SSanitize("autocluster" + AppData[13].Key.Name)),
 		},
 		CloudletLoc: cloudletData[3].Location,

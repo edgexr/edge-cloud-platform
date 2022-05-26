@@ -38,7 +38,7 @@ func TestGetNetworkPolicy(t *testing.T) {
 	app.AllowServerless = true
 	ci := edgeproto.ClusterInst{}
 	ci.Key.ClusterKey.Name = cloudcommon.DefaultMultiTenantCluster
-	ci.Key.Organization = cloudcommon.OrganizationMobiledgeX
+	ci.Key.Organization = edgeproto.OrganizationEdgeCloud
 	ci.Key.CloudletKey.Name = "cloudlet1"
 	ci.Key.CloudletKey.Organization = "operorg"
 	appInst := edgeproto.AppInst{}

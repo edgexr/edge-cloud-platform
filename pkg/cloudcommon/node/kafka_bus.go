@@ -23,7 +23,6 @@ import (
 	"sync"
 
 	"github.com/Shopify/sarama"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -114,7 +113,7 @@ func (s *NodeMgr) kafkaSend(ctx context.Context, event EventData, keyTags map[st
 		if eventorg == orgName {
 			allowed = true
 		}
-		if eventorg != orgName && eventorg != cloudcommon.OrganizationMobiledgeX {
+		if eventorg != orgName && eventorg != edgeproto.OrganizationEdgeCloud {
 			topic = topic_prefix_developer + "-" + cloudletName
 		}
 	}

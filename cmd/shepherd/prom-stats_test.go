@@ -200,7 +200,7 @@ var (
 		Key: edgeproto.AppKey{
 			Name:         cloudcommon.MEXPrometheusAppName,
 			Version:      "1.0",
-			Organization: cloudcommon.OrganizationMobiledgeX,
+			Organization: edgeproto.OrganizationEdgeCloud,
 		},
 		Deployment: cloudcommon.DeploymentTypeHelm,
 	}

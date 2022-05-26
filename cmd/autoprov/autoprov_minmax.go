@@ -554,7 +554,7 @@ func (s *AppChecker) checkPolicy(ctx context.Context, app *edgeproto.App, pname 
 				inst.Key.AppKey = app.Key
 				inst.Key.ClusterInstKey.CloudletKey = site.cloudletKey
 				inst.Key.ClusterInstKey.ClusterKey.Name = cloudcommon.AutoProvClusterName
-				inst.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
+				inst.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
 				err := goAppInstApi(ctx, &inst, cloudcommon.Create, cloudcommon.AutoProvReasonMinMax, pname)
 				if err == nil {
 					str := fmt.Sprintf("Created AppInst %s to meet policy %s min constraint %d", inst.Key.GetKeyString(), pname, policy.MinActiveInstances)

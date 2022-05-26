@@ -473,7 +473,7 @@ func (s *autoProvPolicyTest) goDoAppInsts(t *testing.T, ctx context.Context, app
 			inst.Key.AppKey = app.Key
 			inst.Key.ClusterInstKey.CloudletKey = s.cloudlets[ii].Key
 			inst.Key.ClusterInstKey.ClusterKey.Name = cloudcommon.AutoClusterPrefix + strconv.Itoa(ii)
-			inst.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
+			inst.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
 			var err error
 			if action == cloudcommon.Create {
 				err = s.apis.appInstApi.CreateAppInst(&inst, testutil.NewCudStreamoutAppInst(ctx))
@@ -495,7 +495,7 @@ func (s *autoProvPolicyTest) expectAppInsts(t *testing.T, ctx context.Context, a
 		instKey.AppKey = app.Key
 		instKey.ClusterInstKey.CloudletKey = s.cloudlets[ii].Key
 		instKey.ClusterInstKey.ClusterKey.Name = cloudcommon.AutoClusterPrefix + strconv.Itoa(ii)
-		instKey.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
+		instKey.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
 		if s.apis.appInstApi.cache.HasKey(&instKey) {
 			actual++
 		}

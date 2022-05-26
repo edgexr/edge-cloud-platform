@@ -84,7 +84,7 @@ func (m *DeviceReport) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeviceReport proto.InternalMessageInfo
 
-// DeviceKey is an identifier for a given device on the MobiledgeX platform
+// DeviceKey is an identifier for a given device on the EdgeCloud platform
 // It is defined by a unique id and unique id type
 // And example of such a device is a MEL device that hosts several applications
 type DeviceKey struct {
@@ -127,7 +127,7 @@ func (m *DeviceKey) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeviceKey proto.InternalMessageInfo
 
-// Device represents a device on the MobiledgeX platform
+// Device represents a device on the EdgeCloud platform
 // We record when this device first showed up on our platform
 type Device struct {
 	Fields []string `protobuf:"bytes,1,rep,name=fields,proto3" json:"fields,omitempty"`
