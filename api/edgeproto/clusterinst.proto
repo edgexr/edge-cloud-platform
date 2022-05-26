@@ -93,7 +93,7 @@ message ClusterInst {
   string image_name = 20  [(protogen.backend) = true];
   // If ClusterInst is reservable
   bool reservable = 21;
-  // For reservable MobiledgeX ClusterInsts, the current developer tenant
+  // For reservable EdgeCloud ClusterInsts, the current developer tenant
   string reserved_by = 22 [(protogen.backend) = true];
   // Size of an optional shared volume to be mounted on the master
   uint64 shared_volume_size = 23;

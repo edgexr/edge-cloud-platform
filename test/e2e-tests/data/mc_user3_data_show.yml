@@ -312,7 +312,7 @@ regiondata:
         organization: user3org
       apps:
       - appkey:
-          organization: MobiledgeX
+          organization: edgecloudorg
           name: MEXPrometheusAppName
           version: "1.0"
         vclustername: SmallCluster

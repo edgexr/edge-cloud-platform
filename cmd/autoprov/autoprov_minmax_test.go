@@ -552,7 +552,7 @@ func TestAppChecker(t *testing.T) {
 	// make sure they don't get deleted (edgecloud-3053)
 	app2 := edgeproto.App{}
 	app2.Key.Name = "app2"
-	app2.Key.Organization = cloudcommon.OrganizationMobiledgeX
+	app2.Key.Organization = edgeproto.OrganizationEdgeCloud
 	cacheData.appCache.Update(ctx, &app2, 0)
 
 	refs2 := edgeproto.AppInstRefs{}
@@ -562,7 +562,7 @@ func TestAppChecker(t *testing.T) {
 
 	insts = pt1.getAppInsts(&app2.Key)
 	for _, inst := range insts {
-		inst.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
+		inst.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
 		dc.updateAppInst(ctx, &inst)
 	}
 	minmax.CheckApp(ctx, app.Key)
@@ -695,7 +695,7 @@ func makePolicyTest(name string, count uint32, caches *CacheData) *policyTest {
 		s.cloudletInfos[ii].State = dme.CloudletState_CLOUDLET_STATE_READY
 		s.clusterInsts[ii].Key.CloudletKey = s.cloudlets[ii].Key
 		s.clusterInsts[ii].Reservable = true
-		s.clusterInsts[ii].Key.Organization = cloudcommon.OrganizationMobiledgeX
+		s.clusterInsts[ii].Key.Organization = edgeproto.OrganizationEdgeCloud
 		s.policy.Cloudlets = append(s.policy.Cloudlets,
 			&edgeproto.AutoProvCloudlet{Key: s.cloudlets[ii].Key})
 	}

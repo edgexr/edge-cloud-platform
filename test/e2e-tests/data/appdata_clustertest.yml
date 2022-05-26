@@ -28,7 +28,7 @@ clusterinsts:
     cloudletkey:
       organization: GDDT
       name: jlmcloudlet
-    organization: MobiledgeX
+    organization: edgecloudorg
   flavor:
     name: x1.medium
   nummasters: 1 
@@ -37,7 +37,7 @@ clusterinsts:
 
 apps:
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: "MobiledgeX SDK Demo"
     version: "1.0"
   imagepath: docker.mobiledgex.net/mobiledgex/images/mobiledgexsdkdemo

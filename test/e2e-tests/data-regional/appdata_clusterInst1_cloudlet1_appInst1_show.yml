@@ -254,7 +254,7 @@ apps:
   deploymentgenerator: kubernetes-basic
   accesstype: LoadBalancer
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MEXPrometheusAppName
     version: "1.0"
   imagepath: https://prometheus-community.github.io/helm-charts:prometheus-community/kube-prometheus-stack
@@ -351,7 +351,7 @@ appinstances:
   dnslabel: someapplication110-acmeappco
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     clusterinstkey:
@@ -386,7 +386,7 @@ appinstrefs:
     ? '{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"},"organization":"AcmeAppCo"}}'
     : 1
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MEXPrometheusAppName
     version: "1.0"
   insts:
@@ -407,7 +407,7 @@ clusterrefs:
       version: "1.0"
     vclustername: SmallCluster
   - appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     vclustername: SmallCluster

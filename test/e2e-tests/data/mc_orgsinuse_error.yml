@@ -30,8 +30,8 @@ errors:
     CloudletPool'
 - desc: DeleteOrg[3]
   status: 400
-  err: 'Organization MobiledgeX in use or check failed: region local: in use by some
-    App, AppInst, ClusterInst; region locala: in use by some App, AppInst'
+  err: 'Organization edgecloudorg in use or check failed: region local: in use by
+    some App, AppInst, ClusterInst; region locala: in use by some App, AppInst'
 - desc: DeleteOrg[4]
   status: 400
   err: 'Organization azure in use or check failed: region local: in use by some AppInst,

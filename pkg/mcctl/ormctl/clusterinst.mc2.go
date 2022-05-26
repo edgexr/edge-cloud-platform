@@ -257,7 +257,7 @@ var ClusterInstComments = map[string]string{
 	"availabilityzone":                  "Optional Resource AZ if any",
 	"imagename":                         "Optional resource specific image to launch",
 	"reservable":                        "If ClusterInst is reservable",
-	"reservedby":                        "For reservable MobiledgeX ClusterInsts, the current developer tenant",
+	"reservedby":                        "For reservable EdgeCloud ClusterInsts, the current developer tenant",
 	"sharedvolumesize":                  "Size of an optional shared volume to be mounted on the master",
 	"masternodeflavor":                  "Generic flavor for k8s master VM when worker nodes > 0",
 	"skipcrmcleanuponfailure":           "Prevents cleanup of resources on failure within CRM, used for diagnostic purposes",

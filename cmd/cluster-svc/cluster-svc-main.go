@@ -106,7 +106,7 @@ var MEXPrometheusAppVer = "1.0"
 var MEXPrometheusAppKey = edgeproto.AppKey{
 	Name:         MEXPrometheusAppName,
 	Version:      MEXPrometheusAppVer,
-	Organization: cloudcommon.OrganizationMobiledgeX,
+	Organization: edgeproto.OrganizationEdgeCloud,
 }
 
 // Define prometheus operator App.
@@ -153,7 +153,7 @@ var NFSAutoProvAppVers = "1.0"
 var NFSAutoProvAppKey = edgeproto.AppKey{
 	Name:         NFSAutoProvisionAppName,
 	Version:      NFSAutoProvAppVers,
-	Organization: cloudcommon.OrganizationMobiledgeX,
+	Organization: edgeproto.OrganizationEdgeCloud,
 }
 
 var NFSAutoProvisionApp = edgeproto.App{

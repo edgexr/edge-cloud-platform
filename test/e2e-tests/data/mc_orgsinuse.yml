@@ -16,7 +16,7 @@ orgs:
 - name: dmuus
 - name: AcmeAppCo
 - name: enterprise
-- name: MobiledgeX
+- name: edgecloudorg
 - name: azure
 - name: gcp
 - name: platos

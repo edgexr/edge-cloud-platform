@@ -22,16 +22,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/billing"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/cliwrapper"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/billing"
+	"github.com/edgexr/edge-cloud-platform/pkg/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
-	"github.com/edgexr/edge-cloud-platform/pkg/cli"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/cliwrapper"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/pquerna/otp/totp"
 	"github.com/stretchr/testify/require"
@@ -409,7 +409,7 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 
 	orgMex := ormapi.Organization{
 		Type: "developer",
-		Name: cloudcommon.OrganizationMobiledgeX,
+		Name: edgeproto.OrganizationEdgeCloud,
 	}
 	_, err = mcClient.CreateOrg(uri, tokenMisterX, &orgMex)
 	require.NotNil(t, err, "create reserved mobiledgex org")

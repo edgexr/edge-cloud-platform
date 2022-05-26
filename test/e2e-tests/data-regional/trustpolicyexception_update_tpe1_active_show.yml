@@ -238,7 +238,7 @@ apps:
   accesstype: LoadBalancer
   trusted: true
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MEXPrometheusAppName
     version: "1.0"
   imagepath: https://prometheus-community.github.io/helm-charts:prometheus-community/kube-prometheus-stack
@@ -329,7 +329,7 @@ appinstances:
   dnslabel: vrmax100-Untomt
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     clusterinstkey:
@@ -364,7 +364,7 @@ appinstrefs:
     ? '{"app_key":{"organization":"Untomt","name":"VRmax","version":"1.0.0"},"cluster_inst_key":{"cluster_key":{"name":"Untomt-cluster-22"},"cloudlet_key":{"organization":"dmuus","name":"cloudlet2"},"organization":"Untomt"}}'
     : 1
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MEXPrometheusAppName
     version: "1.0"
   insts:
@@ -385,7 +385,7 @@ clusterrefs:
       version: 1.0.0
     vclustername: Untomt-cluster-22
   - appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     vclustername: Untomt-cluster-22

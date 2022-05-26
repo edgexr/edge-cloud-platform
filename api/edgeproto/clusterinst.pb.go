@@ -131,7 +131,7 @@ type ClusterInst struct {
 	ImageName string `protobuf:"bytes,20,opt,name=image_name,json=imageName,proto3" json:"image_name,omitempty"`
 	// If ClusterInst is reservable
 	Reservable bool `protobuf:"varint,21,opt,name=reservable,proto3" json:"reservable,omitempty"`
-	// For reservable MobiledgeX ClusterInsts, the current developer tenant
+	// For reservable EdgeCloud ClusterInsts, the current developer tenant
 	ReservedBy string `protobuf:"bytes,22,opt,name=reserved_by,json=reservedBy,proto3" json:"reserved_by,omitempty"`
 	// Size of an optional shared volume to be mounted on the master
 	SharedVolumeSize uint64 `protobuf:"varint,23,opt,name=shared_volume_size,json=sharedVolumeSize,proto3" json:"shared_volume_size,omitempty"`

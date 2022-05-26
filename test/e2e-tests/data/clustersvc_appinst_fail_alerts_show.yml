@@ -15,7 +15,7 @@
 - labels:
     alertname: ClusterSvcAppInstFailure
     app: MEXPrometheusAppName
-    apporg: MobiledgeX
+    apporg: edgecloudorg
     appver: "1.0"
     cloudlet: dmuus-cloud-13
     cloudletorg: dmuus

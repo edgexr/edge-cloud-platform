@@ -222,7 +222,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-1
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 1
@@ -238,7 +238,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-1
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 1
@@ -254,7 +254,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-2
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 2
@@ -270,7 +270,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-2
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 2
@@ -286,7 +286,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-3
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 3
@@ -302,7 +302,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-3
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 3
@@ -318,7 +318,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-4
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 4
@@ -334,7 +334,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-4
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 4
@@ -350,7 +350,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-5
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 5
@@ -366,7 +366,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-5
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 5
@@ -382,7 +382,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-6
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 6
@@ -398,7 +398,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-6
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 6
@@ -414,7 +414,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-7
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 7
@@ -430,7 +430,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-7
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 7
@@ -446,7 +446,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-8
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 8
@@ -462,7 +462,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-8
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 8
@@ -478,7 +478,7 @@ appinstances:
       cloudletkey:
         organization: azure
         name: azure-cloud-9
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 9
@@ -494,7 +494,7 @@ appinstances:
       cloudletkey:
         organization: azure
         name: azure-cloud-9
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 9
@@ -510,7 +510,7 @@ appinstances:
       cloudletkey:
         organization: gcp
         name: gcp-cloud-10
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 10
@@ -526,7 +526,7 @@ appinstances:
       cloudletkey:
         organization: gcp
         name: gcp-cloud-10
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 1
     longitude: 10

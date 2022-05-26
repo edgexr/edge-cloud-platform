@@ -26,7 +26,7 @@ import (
 
 func (k *K8sBareMetalPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterInst")
-	if clusterInst.Key.ClusterKey.Name == cloudcommon.DefaultMultiTenantCluster && clusterInst.Key.Organization == cloudcommon.OrganizationMobiledgeX {
+	if clusterInst.Key.ClusterKey.Name == cloudcommon.DefaultMultiTenantCluster && clusterInst.Key.Organization == edgeproto.OrganizationEdgeCloud {
 		// The cluster that represents this Cloudlet's cluster.
 		// This is a no-op as the cluster already exists.
 		return nil

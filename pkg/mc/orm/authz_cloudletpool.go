@@ -20,11 +20,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
@@ -113,7 +112,7 @@ func authzCloudletPoolMembers(ctx context.Context, region, username string, pool
 		}
 		invalidOrgs := []string{}
 		err := ctrlclient.GetOrganizationsOnCloudletStream(ctx, &rc, &key, connCache, func(org *edgeproto.Organization) error {
-			if org.Name == cloudcommon.OrganizationMobiledgeX {
+			if org.Name == edgeproto.OrganizationEdgeCloud {
 				return nil
 			}
 			if _, found := allowedOrgs[org.Name]; found {

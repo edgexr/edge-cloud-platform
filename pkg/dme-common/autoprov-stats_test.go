@@ -18,7 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -84,7 +83,7 @@ func TestAutoProvStats(t *testing.T) {
 					Name: "clust",
 				},
 				CloudletKey:  cl.Key,
-				Organization: cloudcommon.OrganizationMobiledgeX,
+				Organization: edgeproto.OrganizationEdgeCloud,
 			},
 			Reservable: true,
 		}

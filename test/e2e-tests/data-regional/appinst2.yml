@@ -24,7 +24,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-2
-      organization: MobiledgeX
+      organization: edgecloudorg
 - key:
     appkey:
       organization: AcmeAppCo
@@ -36,4 +36,4 @@ appinstances:
       cloudletkey:
         organization: att
         name: att-cloud-1
-      organization: MobiledgeX
+      organization: edgecloudorg

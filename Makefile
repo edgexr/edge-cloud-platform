@@ -159,7 +159,7 @@ unit-test:
 		grep -A2 "FATAL" $(UNIT_TEST_LOG)) && \
 		grep "FAIL\tgithub.com" $(UNIT_TEST_LOG))
 
-test:
+test-all:
 	e2e-tests -testfile ./test/e2e-tests/testfiles/regression_run.yml -setupfile ./test/e2e-tests/setups/local_multi.yml -varsfile ./test/e2e-tests/vars.yml
 
 test-debug:

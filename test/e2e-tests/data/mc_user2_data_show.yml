@@ -510,7 +510,7 @@ regiondata:
           cloudletkey:
             organization: dmuus
             name: dmuus-cloud-2
-          organization: MobiledgeX
+          organization: edgecloudorg
       cloudletloc:
         latitude: 35
         longitude: -95
@@ -556,7 +556,7 @@ regiondata:
         : 1
         ? '{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}}'
         : 1
-        ? '{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autoclusterAcme"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"MobiledgeX"}}'
+        ? '{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autoclusterAcme"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"edgecloudorg"}}'
         : 1
     - key:
         organization: platos
@@ -577,7 +577,7 @@ regiondata:
           version: "1.0"
         vclustername: SmallCluster
       - appkey:
-          organization: MobiledgeX
+          organization: edgecloudorg
           name: MEXPrometheusAppName
           version: "1.0"
         vclustername: SmallCluster
@@ -595,7 +595,7 @@ regiondata:
           version: "1.0"
         vclustername: SmallCluster
       - appkey:
-          organization: MobiledgeX
+          organization: edgecloudorg
           name: MEXPrometheusAppName
           version: "1.0"
         vclustername: SmallCluster
@@ -1042,7 +1042,7 @@ regiondata:
           version: "1.0"
         vclustername: SmallCluster
       - appkey:
-          organization: MobiledgeX
+          organization: edgecloudorg
           name: MEXPrometheusAppName
           version: "1.0"
         vclustername: SmallCluster
@@ -1060,7 +1060,7 @@ regiondata:
           version: "1.0"
         vclustername: SmallCluster
       - appkey:
-          organization: MobiledgeX
+          organization: edgecloudorg
           name: MEXPrometheusAppName
           version: "1.0"
         vclustername: SmallCluster

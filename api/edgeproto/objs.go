@@ -23,13 +23,13 @@ import (
 	strings "strings"
 	"time"
 
-	"github.com/go-redis/redis"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/go-redis/redis"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	context "golang.org/x/net/context"
 )
 
@@ -1073,6 +1073,10 @@ func CmpSortSlices() []cmp.Option {
 	return opts
 }
 
+var OrganizationPlatos = "platos"
+var OrganizationEdgeCloud = "edgecloudorg"
+var OrganizationEdgeBox = "EdgeBox"
+
 func GetOrg(obj interface{}) string {
 	switch v := obj.(type) {
 	case *OperatorCode:
@@ -1086,7 +1090,7 @@ func GetOrg(obj interface{}) string {
 	case *AppInst:
 		return v.Key.AppKey.Organization
 	default:
-		return "mobiledgex"
+		return OrganizationEdgeCloud
 	}
 }
 

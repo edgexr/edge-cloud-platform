@@ -41,7 +41,7 @@ func CreateClusterUsageRecord(ctx context.Context, cluster *edgeproto.ClusterIns
 	selectors := []string{"\"event\"", "\"status\""}
 	reservedByOption := ""
 	org := cluster.Key.Organization
-	if cluster.Key.Organization == cloudcommon.OrganizationMobiledgeX && cluster.ReservedBy != "" {
+	if cluster.Key.Organization == edgeproto.OrganizationEdgeCloud && cluster.ReservedBy != "" {
 		reservedByOption = fmt.Sprintf(`AND "reservedBy"='%s' `, cluster.ReservedBy)
 		org = cluster.ReservedBy
 	}
@@ -101,7 +101,7 @@ func createClusterUsageMetric(cluster *edgeproto.ClusterInst, startTime, endTime
 	metric.AddStringVal("start", startUTC.Format(time.RFC3339))
 	metric.AddStringVal("end", endUTC.Format(time.RFC3339))
 	metric.AddDoubleVal("uptime", runTime.Seconds())
-	if cluster.ReservedBy != "" && cluster.Key.Organization == cloudcommon.OrganizationMobiledgeX {
+	if cluster.ReservedBy != "" && cluster.Key.Organization == edgeproto.OrganizationEdgeCloud {
 		metric.AddTag("org", cluster.ReservedBy)
 	} else {
 		metric.AddTag("org", cluster.Key.Organization)

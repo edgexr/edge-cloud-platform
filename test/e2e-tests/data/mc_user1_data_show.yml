@@ -104,7 +104,7 @@ regiondata:
           name: gpu-driver-global
       dnslabel: azure-cloud-4-azure
       rootlbfqdn: shared.azure-cloud-4-azure.local.mobiledgex.net
-      licenseconfigstoragepath: local/MobiledgeX/gpu-driver-global/cloudlet/licenseconfig/azure/azure-cloud-4/license.conf
+      licenseconfigstoragepath: local/edgecloudorg/gpu-driver-global/cloudlet/licenseconfig/azure/azure-cloud-4/license.conf
     - key:
         organization: dmuus
         name: dmuus-cloud-1

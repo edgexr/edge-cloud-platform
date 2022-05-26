@@ -38,9 +38,9 @@ billingorgs:
   phone: 123-123-1234
   children: user3org
 orgs:
-- name: MobiledgeX
+- name: edgecloudorg
   type: developer
-  address: mobiledgex
+  address: edgecloud
   phone: 123-123-1234
   publicimages: true
 - name: user3org
@@ -51,7 +51,7 @@ orgs:
 roles:
 - username: mexadmin
   role: AdminManager
-- org: MobiledgeX
+- org: edgecloudorg
   username: mexadmin
   role: DeveloperManager
 - org: user3org
@@ -125,7 +125,7 @@ regiondata:
     - key:
         name: gpu-driver-global
       storagebucketname: mobiledgex-dev-gpu-drivers
-      licenseconfigstoragepath: local/MobiledgeX/gpu-driver-global/licenseconfig/license.conf
+      licenseconfigstoragepath: local/edgecloudorg/gpu-driver-global/licenseconfig/license.conf
 - region: locala
   appdata:
     flavors:

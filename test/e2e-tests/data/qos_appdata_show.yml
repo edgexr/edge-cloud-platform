@@ -292,7 +292,7 @@ apps:
   qossessionprofile: ThroughputDownM
   qossessionduration: 5m0s
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MEXPrometheusAppName
     version: "1.0"
   imagepath: https://prometheus-community.github.io/helm-charts:prometheus-community/kube-prometheus-stack
@@ -398,7 +398,7 @@ appinstances:
   dnslabel: qosapplication10-acmeappco
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     clusterinstkey:
@@ -422,8 +422,8 @@ appinstances:
   healthcheck: Ok
   powerstate: PowerOn
   vmflavor: x1.small
-  uniqueid: mobiledgexmexprometheusappname10-smallcluster-dmuus-cloud-2-dmuus
-  dnslabel: mexprometheusappname10-mobiledgex
+  uniqueid: edgecloudorgmexprometheusappname10-smallcluster-dmuus-cloud-2-dmuus
+  dnslabel: mexprometheusappname10-edgecloudorg
 appinstrefs:
 - key:
     organization: AcmeAppCo
@@ -433,11 +433,11 @@ appinstrefs:
     ? '{"app_key":{"organization":"AcmeAppCo","name":"qosapplication","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}}'
     : 1
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MEXPrometheusAppName
     version: "1.0"
   insts:
-    ? '{"app_key":{"organization":"MobiledgeX","name":"MEXPrometheusAppName","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}}'
+    ? '{"app_key":{"organization":"edgecloudorg","name":"MEXPrometheusAppName","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}}'
     : 1
 clusterrefs:
 - key:
@@ -454,7 +454,7 @@ clusterrefs:
       version: "1.0"
     vclustername: SmallCluster
   - appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     vclustername: SmallCluster

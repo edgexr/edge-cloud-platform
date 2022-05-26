@@ -22,7 +22,7 @@ regiondata:
         cloudletkey:
           organization: dmuus
           name: kind-cloud-1
-        organization: MobiledgeX
+        organization: edgecloudorg
       flavor:
         name: x1.medium
       liveness: Static

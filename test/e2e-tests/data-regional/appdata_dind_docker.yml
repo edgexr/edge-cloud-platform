@@ -45,7 +45,7 @@ clusterinsts:
     cloudletkey:
       organization: mexdev
       name: localtest
-    organization: MobiledgeX
+    organization: edgecloudorg
   deployment: docker
   ipaccess: Shared
   flavor:
@@ -53,7 +53,7 @@ clusterinsts:
   liveness: Static
 apps:
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MobiledgeX SDK Demo
     version: "1.0"
   imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/mobiledgexsdkdemo
@@ -64,7 +64,7 @@ apps:
   deployment: docker
   androidpackagename: com.mobiledgex.sdkdemo
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: Face Detection Demo
     version: "1.0"
   imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/facedetection
@@ -88,7 +88,7 @@ apps:
 appinstances:
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MobiledgeX SDK Demo
       version: "1.0"
     clusterinstkey:
@@ -97,10 +97,10 @@ appinstances:
       cloudletkey:
         organization: mexdev
         name: localtest
-      organization: MobiledgeX
+      organization: edgecloudorg
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: Face Detection Demo
       version: "1.0"
     clusterinstkey:
@@ -109,4 +109,4 @@ appinstances:
       cloudletkey:
         organization: mexdev
         name: localtest
-      organization: MobiledgeX
+      organization: edgecloudorg

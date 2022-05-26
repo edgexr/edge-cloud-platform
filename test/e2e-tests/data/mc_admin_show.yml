@@ -363,7 +363,7 @@ regiondata:
       deploymentgenerator: kubernetes-basic
       androidpackagename: com.acme.someapplication1
     - key:
-        organization: MobiledgeX
+        organization: edgecloudorg
         name: MEXPrometheusAppName
         version: "1.0"
       imagepath: https://prometheus-community.github.io/helm-charts:prometheus-community/kube-prometheus-stack
@@ -616,7 +616,7 @@ regiondata:
       powerstate: PowerOn
     - key:
         appkey:
-          organization: MobiledgeX
+          organization: edgecloudorg
           name: MEXPrometheusAppName
           version: "1.0"
         clusterinstkey:
@@ -643,7 +643,7 @@ regiondata:
       powerstate: PowerOn
     - key:
         appkey:
-          organization: MobiledgeX
+          organization: edgecloudorg
           name: MEXPrometheusAppName
           version: "1.0"
         clusterinstkey:
@@ -710,7 +710,7 @@ regiondata:
       powerstate: PowerOn
     - key:
         appkey:
-          organization: MobiledgeX
+          organization: edgecloudorg
           name: MEXPrometheusAppName
           version: "1.0"
         clusterinstkey:

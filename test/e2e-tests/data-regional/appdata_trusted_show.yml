@@ -421,7 +421,7 @@ apps:
   - protocol: ICMP
     remotecidr: 8.8.8.8/24
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MEXPrometheusAppName
     version: "1.0"
   imagepath: https://prometheus-community.github.io/helm-charts:prometheus-community/kube-prometheus-stack
@@ -546,7 +546,7 @@ appinstances:
   dnslabel: trustedapp10-acmeappco
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     clusterinstkey:
@@ -574,7 +574,7 @@ appinstances:
   dnslabel: mexprometheusappname10-mobiledgex
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     clusterinstkey:
@@ -616,7 +616,7 @@ appinstrefs:
     ? '{"app_key":{"organization":"AcmeAppCo","name":"trustedapp","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"cluster1"},"cloudlet_key":{"organization":"dmuus","name":"cloudlet1"},"organization":"AcmeAppCo"}}'
     : 1
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MEXPrometheusAppName
     version: "1.0"
   insts:
@@ -639,7 +639,7 @@ clusterrefs:
       version: "1.0"
     vclustername: cluster1
   - appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     vclustername: cluster1
@@ -657,7 +657,7 @@ clusterrefs:
       version: "1.0"
     vclustername: cluster2
   - appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     vclustername: cluster2
