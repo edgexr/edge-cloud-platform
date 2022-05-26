@@ -213,7 +213,7 @@ func TestClusterInstApi(t *testing.T) {
 	appinstTest.Key.AppKey = targetApp.Key
 	appinstTest.Key.ClusterInstKey.CloudletKey = targetCloudletKey
 	appinstTest.Key.ClusterInstKey.ClusterKey.Name = "autoclustertest"
-	appinstTest.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
+	appinstTest.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
 	err = apis.appInstApi.CreateAppInst(&appinstTest, testutil.NewCudStreamoutAppInst(ctx))
 	require.NotNil(t, err)
 	// 3. Ensure no reservable clusterinst exist on the target cloudlet
@@ -360,7 +360,7 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 	appinstBad.Key.AppKey = testutil.AppData[12].Key
 	appinstBad.Key.ClusterInstKey.CloudletKey = testutil.CloudletData()[0].Key
 	appinstBad.Key.ClusterInstKey.ClusterKey.Name = "autoclusterBad"
-	appinstBad.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
+	appinstBad.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
 	err = apis.appInstApi.CreateAppInst(&appinstBad, streamOut)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "No cluster required for App deployment type vm")
@@ -385,7 +385,7 @@ func checkReservedBy(t *testing.T, ctx context.Context, api *testutil.ClusterIns
 	require.True(t, found, "get ClusterInst")
 	require.True(t, cinst.Reservable)
 	require.Equal(t, expected, cinst.ReservedBy)
-	require.Equal(t, cloudcommon.OrganizationMobiledgeX, cinst.Key.Organization)
+	require.Equal(t, edgeproto.OrganizationEdgeCloud, cinst.Key.Organization)
 }
 
 // Test that Crm Override for Delete ClusterInst overrides any failures

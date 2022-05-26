@@ -61,7 +61,7 @@ cloudletinfos:
     clusterinsts:
     - clusterkey:
         name: ReservableCluster2
-      organization: MobiledgeX
+      organization: edgecloudorg
     - clusterkey:
         name: SmallCluster
       organization: AcmeAppCo

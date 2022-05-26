@@ -169,7 +169,7 @@ regiondata:
           cloudletkey:
             organization: dmuus
             name: kind-cloud-1
-          organization: MobiledgeX
+          organization: edgecloudorg
       cloudletloc:
         latitude: 31
         longitude: -91

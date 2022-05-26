@@ -320,7 +320,7 @@ apps:
     portrangemax: 2222
     remotecidr: 35.247.68.151/24
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MEXPrometheusAppName
     version: "1.0"
   imagepath: https://prometheus-community.github.io/helm-charts:prometheus-community/kube-prometheus-stack
@@ -379,7 +379,7 @@ apps:
 appinstances:
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     clusterinstkey:
@@ -411,7 +411,7 @@ appinstrefs:
     name: trustedapp
     version: "1.0"
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MEXPrometheusAppName
     version: "1.0"
   insts:
@@ -427,7 +427,7 @@ clusterrefs:
     organization: AcmeAppCo
   apps:
   - appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     vclustername: cluster1

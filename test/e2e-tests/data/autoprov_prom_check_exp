@@ -91,7 +91,7 @@ ran: curl -s http://127.0.0.1:9092/api/v1/targets | jq '.data.activeTargets[] | 
     "cloudlet": "dmuus-cloud-1",
     "cloudletorg": "dmuus",
     "cluster": "autocluster-autoprov",
-    "clusterorg": "MobiledgeX",
+    "clusterorg": "edgecloudorg",
     "job": "MobiledgeX Monitoring"
   },
   "labels": {
@@ -101,7 +101,7 @@ ran: curl -s http://127.0.0.1:9092/api/v1/targets | jq '.data.activeTargets[] | 
     "cloudlet": "dmuus-cloud-1",
     "cloudletorg": "dmuus",
     "cluster": "autocluster-autoprov",
-    "clusterorg": "MobiledgeX",
+    "clusterorg": "edgecloudorg",
     "instance": "host.docker.internal:9091",
     "job": "MobiledgeX Monitoring"
   },

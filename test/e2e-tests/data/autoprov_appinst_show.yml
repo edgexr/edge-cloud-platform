@@ -27,7 +27,7 @@ regiondata:
           cloudletkey:
             organization: dmuus
             name: dmuus-cloud-2
-          organization: MobiledgeX
+          organization: edgecloudorg
       cloudletloc:
         latitude: 35
         longitude: -95
@@ -60,11 +60,11 @@ regiondata:
           cloudletkey:
             organization: dmuus
             name: dmuus-cloud-1
-          organization: MobiledgeX
+          organization: edgecloudorg
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: reservabled-mobiledgex.dmuus-cloud-1-dmuus.local.mobiledgex.net
+      uri: reservabled-edgecloudorg.dmuus-cloud-1-dmuus.local.mobiledgex.net
       liveness: Autoprov
       mappedports:
       - proto: Tcp

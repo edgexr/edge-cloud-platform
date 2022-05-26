@@ -334,7 +334,7 @@ var NvidiaGPUOperatorApp = edgeproto.App{
 	Key: edgeproto.AppKey{
 		Name:         "nvidia-gpu-operator",
 		Version:      "v1.7.0",
-		Organization: cloudcommon.OrganizationMobiledgeX,
+		Organization: edgeproto.OrganizationEdgeCloud,
 	},
 	ImagePath:     "https://nvidia.github.io/gpu-operator:nvidia/gpu-operator",
 	Deployment:    cloudcommon.DeploymentTypeHelm,

@@ -22,7 +22,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-const spanKey = "mobiledgex-spankey"
+const spanKey = "edgecloud-spankey"
 
 func UnaryClientTraceGrpc(ctx context.Context, method string, req, resp interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 	val := SpanToString(ctx)

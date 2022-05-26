@@ -80,7 +80,7 @@ var UpdateGPUDriverCmd = &ApiCommand{
 var ShowGPUDriverCmd = &ApiCommand{
 	Name:                 "ShowGPUDriver",
 	Use:                  "show",
-	Short:                "Show GPU Drivers. Lists all the MobiledgeX created GPU drivers and operator created GPU drivers.",
+	Short:                "Show GPU Drivers. Lists all the EdgeCloud created GPU drivers and operator created GPU drivers.",
 	RequiredArgs:         "region",
 	OptionalArgs:         strings.Join(append(GPUDriverRequiredArgs, GPUDriverOptionalArgs...), " "),
 	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
@@ -224,7 +224,7 @@ var GetGPUDriverBuildURLOptionalArgs = []string{
 var CreateCloudletCmd = &ApiCommand{
 	Name:                 "CreateCloudlet",
 	Use:                  "create",
-	Short:                "Create Cloudlet. Sets up Cloudlet services on the Operators compute resources, and integrated as part of MobiledgeX edge resource portfolio. These resources are managed from the Edge Controller.",
+	Short:                "Create Cloudlet. Sets up Cloudlet services on the Operators compute resources, and integrated as part of EdgeCloud edge resource portfolio. These resources are managed from the Edge Controller.",
 	RequiredArgs:         "region " + strings.Join(CreateCloudletRequiredArgs, " "),
 	OptionalArgs:         strings.Join(CreateCloudletOptionalArgs, " "),
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
@@ -1180,7 +1180,7 @@ var CloudletComments = map[string]string{
 	"config.secondarycrmaccessprivatekey":    "secondary crm access private key",
 	"config.thanosrecvaddr":                  "Thanos Receive remote write address",
 	"accessvars":                             "Variables required to access cloudlet, specify accessvars:empty=true to clear",
-	"vmimageversion":                         "MobiledgeX baseimage version where CRM services reside",
+	"vmimageversion":                         "EdgeCloud baseimage version where CRM services reside",
 	"deployment":                             "Deployment type to bring up CRM services (docker, kubernetes)",
 	"infraapiaccess":                         "Infra Access Type is the type of access available to Infra API Endpoint, one of DirectAccess, RestrictedAccess",
 	"infraconfig.externalnetworkname":        "Infra specific external network name",

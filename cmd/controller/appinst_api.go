@@ -476,7 +476,7 @@ func SetAppInstKeyDefaults(ctx context.Context, key *edgeproto.AppInstKey, apis 
 
 	if key.ClusterInstKey.Organization == "" && autoCluster {
 		// reservable cluster org is MobiledgeX
-		key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
+		key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
 		setClusterOrg = true
 		// for deprecated auto cluster, cluster org is app org
 		info := edgeproto.CloudletInfo{}
@@ -494,7 +494,7 @@ func SetAppInstKeyDefaults(ctx context.Context, key *edgeproto.AppInstKey, apis 
 			if cloudlet.SingleKubernetesClusterOwner != "" {
 				key.ClusterInstKey.Organization = cloudlet.SingleKubernetesClusterOwner
 			} else {
-				key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
+				key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
 			}
 		}
 	}
@@ -721,8 +721,8 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				if !app.AllowServerless {
 					return fmt.Errorf("Target cloudlet platform only supports serverless Apps")
 				}
-				if in.Key.ClusterInstKey.Organization != cloudcommon.OrganizationMobiledgeX {
-					return fmt.Errorf("ClusterInst organization must be set to %s", cloudcommon.OrganizationMobiledgeX)
+				if in.Key.ClusterInstKey.Organization != edgeproto.OrganizationEdgeCloud {
+					return fmt.Errorf("ClusterInst organization must be set to %s", edgeproto.OrganizationEdgeCloud)
 				}
 				key := in.ClusterInstKey()
 				clusterInst := edgeproto.ClusterInst{}
@@ -752,8 +752,8 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			if autoClusterType != DeprecatedAutoCluster {
 				// reservable and multi-tenant ClusterInsts are
 				// always owned by the system
-				if in.Key.ClusterInstKey.Organization != cloudcommon.OrganizationMobiledgeX {
-					return fmt.Errorf("ClusterInst organization must be %s for autoclusters", cloudcommon.OrganizationMobiledgeX)
+				if in.Key.ClusterInstKey.Organization != edgeproto.OrganizationEdgeCloud {
+					return fmt.Errorf("ClusterInst organization must be %s for autoclusters", edgeproto.OrganizationEdgeCloud)
 				}
 			}
 			if err := validateAutoDeployApp(stm, &app); err != nil {

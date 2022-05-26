@@ -855,14 +855,14 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 	if in.Key.ClusterKey.Name == "" {
 		return fmt.Errorf("Cluster name cannot be empty")
 	}
-	if in.Reservable && in.Key.Organization != cloudcommon.OrganizationMobiledgeX {
-		return fmt.Errorf("Only %s ClusterInsts may be reservable", cloudcommon.OrganizationMobiledgeX)
+	if in.Reservable && in.Key.Organization != edgeproto.OrganizationEdgeCloud {
+		return fmt.Errorf("Only %s ClusterInsts may be reservable", edgeproto.OrganizationEdgeCloud)
 	}
 	if in.Reservable {
 		in.ReservationEndedAt = dme.TimeToTimestamp(time.Now())
 	}
-	if in.MultiTenant && in.Key.Organization != cloudcommon.OrganizationMobiledgeX {
-		return fmt.Errorf("Only %s ClusterInsts may be multi-tenant", cloudcommon.OrganizationMobiledgeX)
+	if in.MultiTenant && in.Key.Organization != edgeproto.OrganizationEdgeCloud {
+		return fmt.Errorf("Only %s ClusterInsts may be multi-tenant", edgeproto.OrganizationEdgeCloud)
 	}
 
 	// validate deployment
@@ -1859,7 +1859,7 @@ func (s *ClusterInstApi) createDefaultMultiTenantCluster(ctx context.Context, cl
 		// default autoscale policy
 		// TODO: make these settings configurable
 		policy := edgeproto.AutoScalePolicy{}
-		policy.Key.Organization = cloudcommon.OrganizationMobiledgeX
+		policy.Key.Organization = edgeproto.OrganizationEdgeCloud
 		policy.Key.Name = cloudcommon.DefaultMultiTenantCluster
 		policy.TargetCpu = 70
 		policy.TargetMem = 80
@@ -1919,13 +1919,13 @@ func getDefaultMTClustKey(cloudletKey edgeproto.CloudletKey) *edgeproto.ClusterI
 		ClusterKey: edgeproto.ClusterKey{
 			Name: cloudcommon.DefaultMultiTenantCluster,
 		},
-		Organization: cloudcommon.OrganizationMobiledgeX,
+		Organization: edgeproto.OrganizationEdgeCloud,
 	}
 }
 
 func getDefaultClustKey(cloudletKey edgeproto.CloudletKey, ownerOrg string) *edgeproto.ClusterInstKey {
 	if ownerOrg == "" {
-		ownerOrg = cloudcommon.OrganizationMobiledgeX
+		ownerOrg = edgeproto.OrganizationEdgeCloud
 	}
 	return &edgeproto.ClusterInstKey{
 		CloudletKey: cloudletKey,

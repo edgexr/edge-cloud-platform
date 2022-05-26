@@ -35,7 +35,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/nodetest"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -867,7 +866,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		// developers can create against MobiledgeX ClusterInsts
 		// (reservable or multitenant).
 		appinst.Key.AppKey.Organization = org1
-		appinst.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
+		appinst.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
 		_, status, err = ormtestutil.TestCreateAppInst(mcClient, uri, tokenDev, ctrl.Region, &appinst)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
@@ -876,8 +875,8 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		require.Equal(t, http.StatusOK, status)
 		// Only admin can create MobiledgeX sidecar apps, since other
 		// developers won't have App rbac perms for org MobiledgeX.
-		testCreateOrg(t, mcClient, uri, tokenAd, OrgTypeDeveloper, cloudcommon.OrganizationMobiledgeX)
-		appinst.Key.AppKey.Organization = cloudcommon.OrganizationMobiledgeX
+		testCreateOrg(t, mcClient, uri, tokenAd, OrgTypeDeveloper, edgeproto.OrganizationEdgeCloud)
+		appinst.Key.AppKey.Organization = edgeproto.OrganizationEdgeCloud
 		appinst.Key.ClusterInstKey.Organization = org2
 		_, status, err = ormtestutil.TestCreateAppInst(mcClient, uri, tokenAd, ctrl.Region, &appinst)
 		require.Nil(t, err)
@@ -886,7 +885,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 		// clean up org
-		testDeleteOrg(t, mcClient, uri, tokenAd, cloudcommon.OrganizationMobiledgeX)
+		testDeleteOrg(t, mcClient, uri, tokenAd, edgeproto.OrganizationEdgeCloud)
 	}
 
 	{ // test cloudlet list for metrics

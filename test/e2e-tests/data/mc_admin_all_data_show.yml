@@ -38,11 +38,6 @@ billingorgs:
   phone: 123-123-1234
   children: user3org
 orgs:
-- name: MobiledgeX
-  type: developer
-  address: mobiledgex
-  phone: 123-123-1234
-  publicimages: true
 - name: azure
   type: operator
   address: amazon jungle
@@ -51,6 +46,11 @@ orgs:
   type: operator
   address: dmuus headquarters
   phone: 123-123-1234
+- name: edgecloudorg
+  type: developer
+  address: edgecloud
+  phone: 123-123-1234
+  publicimages: true
 - name: enterprise
   type: operator
   address: enterprise headquarters
@@ -67,7 +67,7 @@ orgs:
 roles:
 - username: mexadmin
   role: AdminManager
-- org: MobiledgeX
+- org: edgecloudorg
   username: mexadmin
   role: DeveloperManager
 - org: user3org
@@ -170,7 +170,7 @@ regiondata:
     - key:
         name: gpu-driver-global
       storagebucketname: mobiledgex-dev-gpu-drivers
-      licenseconfigstoragepath: local/MobiledgeX/gpu-driver-global/licenseconfig/license.conf
+      licenseconfigstoragepath: local/edgecloudorg/gpu-driver-global/licenseconfig/license.conf
     cloudlets:
     - key:
         organization: azure
@@ -193,7 +193,7 @@ regiondata:
           name: gpu-driver-global
       dnslabel: azure-cloud-4-azure
       rootlbfqdn: shared.azure-cloud-4-azure.local.mobiledgex.net
-      licenseconfigstoragepath: local/MobiledgeX/gpu-driver-global/cloudlet/licenseconfig/azure/azure-cloud-4/license.conf
+      licenseconfigstoragepath: local/edgecloudorg/gpu-driver-global/cloudlet/licenseconfig/azure/azure-cloud-4/license.conf
     - key:
         organization: dmuus
         name: dmuus-cloud-1

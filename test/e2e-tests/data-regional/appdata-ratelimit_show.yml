@@ -686,7 +686,7 @@ apps:
   deployment: vm
   accesstype: LoadBalancer
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MEXPrometheusAppName
     version: "1.0"
   imagepath: https://prometheus-community.github.io/helm-charts:prometheus-community/kube-prometheus-stack
@@ -743,7 +743,7 @@ apps:
   accesstype: LoadBalancer
   trusted: true
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: NFSAutoProvision
     version: "1.0"
   imagepath: https://charts.helm.sh/stable:stable/nfs-client-provisioner
@@ -1043,7 +1043,7 @@ appinstances:
   dnslabel: vmapp210-acmeappco1
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     clusterinstkey:
@@ -1071,7 +1071,7 @@ appinstances:
   dnslabel: mexprometheusappname10-mobiledgex
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     clusterinstkey:
@@ -1099,7 +1099,7 @@ appinstances:
   dnslabel: mexprometheusappname10-mobiledgex
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: NFSAutoProvision
       version: "1.0"
     clusterinstkey:
@@ -1160,7 +1160,7 @@ appinstrefs:
     ? '{"app_key":{"organization":"AcmeAppCo1","name":"vmapp2","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"defaultclust"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo1"}}'
     : 1
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MEXPrometheusAppName
     version: "1.0"
   insts:
@@ -1169,7 +1169,7 @@ appinstrefs:
     ? '{"app_key":{"organization":"MobiledgeX","name":"MEXPrometheusAppName","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}}'
     : 1
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: NFSAutoProvision
     version: "1.0"
   insts:
@@ -1204,12 +1204,12 @@ clusterrefs:
       version: "1.0"
     vclustername: SmallCluster
   - appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     vclustername: SmallCluster
   - appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: NFSAutoProvision
       version: "1.0"
     vclustername: SmallCluster
@@ -1227,7 +1227,7 @@ clusterrefs:
       version: "1.0"
     vclustername: SmallCluster
   - appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     vclustername: SmallCluster

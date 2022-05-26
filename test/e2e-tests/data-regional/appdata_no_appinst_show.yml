@@ -351,7 +351,7 @@ cloudletinfos:
     clusterinsts:
     - clusterkey:
         name: ReservableCluster
-      organization: MobiledgeX
+      organization: edgecloudorg
     - clusterkey:
         name: SmallCluster
       organization: AcmeAppCo
@@ -404,7 +404,7 @@ cloudletinfos:
     clusterinsts:
     - clusterkey:
         name: ReservableCluster2
-      organization: MobiledgeX
+      organization: edgecloudorg
     - clusterkey:
         name: SmallCluster
       organization: AcmeAppCo
@@ -447,7 +447,7 @@ clusterinsts:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
-    organization: MobiledgeX
+    organization: edgecloudorg
   flavor:
     name: x1.small
   liveness: Static
@@ -481,7 +481,7 @@ clusterinsts:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-2
-    organization: MobiledgeX
+    organization: edgecloudorg
   flavor:
     name: x1.small
   liveness: Static
@@ -775,7 +775,7 @@ apps:
   officialfqdn: someapplication1.acmeappco.com
   accesstype: LoadBalancer
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MEXPrometheusAppName
     version: "1.0"
   imagepath: https://prometheus-community.github.io/helm-charts:prometheus-community/kube-prometheus-stack
@@ -888,7 +888,7 @@ apps:
 appinstances:
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     clusterinstkey:
@@ -897,7 +897,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-1
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 31
     longitude: -91
@@ -916,7 +916,7 @@ appinstances:
   dnslabel: mexprometheusappname10-mobiledgex1
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     clusterinstkey:
@@ -925,7 +925,7 @@ appinstances:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-2
-      organization: MobiledgeX
+      organization: edgecloudorg
   cloudletloc:
     latitude: 35
     longitude: -95
@@ -944,7 +944,7 @@ appinstances:
   dnslabel: mexprometheusappname10-mobiledgex1
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     clusterinstkey:
@@ -972,7 +972,7 @@ appinstances:
   dnslabel: mexprometheusappname10-mobiledgex
 - key:
     appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     clusterinstkey:
@@ -1012,7 +1012,7 @@ appinstrefs:
     name: someapplication1
     version: "1.0"
 - key:
-    organization: MobiledgeX
+    organization: edgecloudorg
     name: MEXPrometheusAppName
     version: "1.0"
   insts:
@@ -1035,10 +1035,10 @@ clusterrefs:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
-    organization: MobiledgeX
+    organization: edgecloudorg
   apps:
   - appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     vclustername: ReservableCluster
@@ -1048,10 +1048,10 @@ clusterrefs:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-2
-    organization: MobiledgeX
+    organization: edgecloudorg
   apps:
   - appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     vclustername: ReservableCluster2
@@ -1064,7 +1064,7 @@ clusterrefs:
     organization: AcmeAppCo
   apps:
   - appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     vclustername: SmallCluster
@@ -1077,7 +1077,7 @@ clusterrefs:
     organization: AcmeAppCo
   apps:
   - appkey:
-      organization: MobiledgeX
+      organization: edgecloudorg
       name: MEXPrometheusAppName
       version: "1.0"
     vclustername: SmallCluster

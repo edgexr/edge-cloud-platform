@@ -18,12 +18,11 @@ import (
 	"context"
 	fmt "fmt"
 
-	"github.com/labstack/echo"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/labstack/echo"
 )
 
 // AuthzCloudlet provides an efficient way to check if the user
@@ -334,7 +333,7 @@ func authzCreateAppInst(ctx context.Context, region, username string, obj *edgep
 		// Sidecar apps may have MobiledgeX organization, or
 		// target ClusterInst may be MobiledgeX reservable/multitenant.
 		// So one of the orgs must be MobiledgeX to pass RBAC.
-		if obj.Key.AppKey.Organization != cloudcommon.OrganizationMobiledgeX && obj.Key.ClusterInstKey.Organization != cloudcommon.OrganizationMobiledgeX {
+		if obj.Key.AppKey.Organization != edgeproto.OrganizationEdgeCloud && obj.Key.ClusterInstKey.Organization != edgeproto.OrganizationEdgeCloud {
 			return echo.ErrForbidden
 		}
 	}

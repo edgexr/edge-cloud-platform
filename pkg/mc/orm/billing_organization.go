@@ -21,14 +21,14 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/jinzhu/gorm"
-	"github.com/labstack/echo"
-	"github.com/edgexr/edge-cloud-platform/pkg/billing"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/billing"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/jinzhu/gorm"
+	"github.com/labstack/echo"
 )
 
 var deleteTypeChild = "child"
@@ -844,7 +844,7 @@ func isBillable(ctx context.Context, orgName string) bool {
 	if !billingEnabled(ctx) {
 		return true
 	}
-	if strings.ToLower(orgName) == strings.ToLower(cloudcommon.OrganizationMobiledgeX) || strings.ToLower(orgName) == strings.ToLower(cloudcommon.OrganizationEdgeBox) {
+	if strings.ToLower(orgName) == strings.ToLower(edgeproto.OrganizationEdgeCloud) || strings.ToLower(orgName) == strings.ToLower(edgeproto.OrganizationEdgeBox) {
 		return true
 	}
 	org, _ := orgExists(ctx, orgName)

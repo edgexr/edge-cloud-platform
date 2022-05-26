@@ -153,7 +153,7 @@ regiondata:
           cloudletkey:
             organization: dmuus
             name: dmuus-cloud-2
-          organization: MobiledgeX
+          organization: edgecloudorg
       flavor:
         name: x1.small
 

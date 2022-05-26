@@ -66,9 +66,9 @@
     orgs:
     - {}
     - key: AcmeAppCo
-    - key: MobiledgeX
     - key: azure
     - key: dmuus
+    - key: edgecloudorg
     - key: enterprise
     - key: gcp
     - key: platos

@@ -477,7 +477,7 @@ func TestAutoClusterInst(t *testing.T) {
 	mtBad.Key.Organization = "foo"
 	err := apis.clusterInstApi.CreateClusterInst(&mtBad, testutil.NewCudStreamoutClusterInst(ctx))
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Only MobiledgeX ClusterInsts may be multi-tenant")
+	require.Contains(t, err.Error(), "Only edgecloudorg ClusterInsts may be multi-tenant")
 	// bad deployment type
 	mtBad = mt
 	mtBad.Deployment = cloudcommon.DeploymentTypeDocker
@@ -495,7 +495,7 @@ func TestAutoClusterInst(t *testing.T) {
 		key := &edgeproto.ClusterInstKey{}
 		key.ClusterKey.Name = cloudcommon.ReservableClusterPrefix + id
 		key.CloudletKey = cloudletKey
-		key.Organization = cloudcommon.OrganizationMobiledgeX
+		key.Organization = edgeproto.OrganizationEdgeCloud
 		// look up reserved ClusterInst
 		clusterInst := edgeproto.ClusterInst{}
 		actualFound := apis.clusterInstApi.Get(key, &clusterInst)
@@ -529,7 +529,7 @@ func TestAutoClusterInst(t *testing.T) {
 	deleteAutoClusterAppInst := func(copy edgeproto.AppInst, id string) {
 		// delete appinst
 		copy.Key.ClusterInstKey.ClusterKey.Name = cloudcommon.AutoClusterPrefix + id
-		copy.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
+		copy.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
 		err := apis.appInstApi.DeleteAppInst(&copy, testutil.NewCudStreamoutAppInst(ctx))
 		require.Nil(t, err, "delete app inst")
 		checkReserved(copy.Key.ClusterInstKey.CloudletKey, true, id, "")
@@ -620,7 +620,7 @@ func testDeprecatedAutoCluster(t *testing.T, ctx context.Context, apis *AllApis)
 		if !strings.HasPrefix(obj.Key.ClusterInstKey.ClusterKey.Name, cloudcommon.AutoClusterPrefix) {
 			continue
 		}
-		// there is one App that has dev org as MobiledgeX, which matches
+		// there is one App that has dev org as edgecloudorg, which matches
 		// the Reservable auto-cluster's org, so skip it.
 		if obj.Key.AppKey.Organization == obj.Key.ClusterInstKey.Organization {
 			continue
@@ -795,7 +795,7 @@ func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *
 					Name: util.K8SSanitize(cloudcommon.AutoClusterPrefix + "override-clust"),
 				},
 				CloudletKey:  testutil.CloudletData()[1].Key,
-				Organization: cloudcommon.OrganizationMobiledgeX,
+				Organization: edgeproto.OrganizationEdgeCloud,
 			},
 		},
 	}
@@ -893,7 +893,7 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 		State:                dme.CloudletState_CLOUDLET_STATE_READY,
 		CompatibilityVersion: 2, // cloudcommon.GetCRMCompatibilityVersion()
 	}
-	mtOrg := cloudcommon.OrganizationMobiledgeX
+	mtOrg := edgeproto.OrganizationEdgeCloud
 	stOrg := testutil.AppInstData[0].Key.AppKey.Organization
 
 	cloudletST := cloudletMT
@@ -964,7 +964,7 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 	}, {
 		"MT bad cluster org",
 		0, &cloudletMT, "clust", "foo", "", notDedicatedIp, "",
-		"ClusterInst organization must be set to MobiledgeX",
+		"ClusterInst organization must be set to edgecloudorg",
 	}, {
 		"MT bad real cluster name",
 		0, &cloudletMT, "autocluster", mtOrg, "foo", notDedicatedIp, "",

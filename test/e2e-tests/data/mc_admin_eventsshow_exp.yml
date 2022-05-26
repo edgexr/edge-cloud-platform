@@ -33,7 +33,7 @@
       cloudlet: gcp-cloud-5
       cloudletorg: gcp
       cluster: autocluster-autoprov
-      clusterorg: MobiledgeX
+      clusterorg: edgecloudorg
       federatedorg: ""
       hostname: ""
       lineno: ""
@@ -52,7 +52,7 @@
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
       cluster: autocluster-autoprov
-      clusterorg: MobiledgeX
+      clusterorg: edgecloudorg
       federatedorg: ""
       hostname: ""
       lineno: ""
@@ -71,7 +71,7 @@
       cloudlet: azure-cloud-4
       cloudletorg: azure
       cluster: autocluster-autoprov
-      clusterorg: MobiledgeX
+      clusterorg: edgecloudorg
       federatedorg: ""
       hostname: ""
       lineno: ""
@@ -104,7 +104,7 @@
       cloudlet: gcp-cloud-5
       cloudletorg: gcp
       cluster: autocluster-autoprov
-      clusterorg: MobiledgeX
+      clusterorg: edgecloudorg
       federatedorg: ""
       hostname: ""
       lineno: ""
@@ -316,7 +316,7 @@
       cloudlet: gcp-cloud-5
       cloudletorg: gcp
       cluster: autocluster-autoprov
-      clusterorg: MobiledgeX
+      clusterorg: edgecloudorg
       federatedorg: ""
       hostname: ""
       lineno: ""
@@ -335,7 +335,7 @@
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
       cluster: autocluster-autoprov
-      clusterorg: MobiledgeX
+      clusterorg: edgecloudorg
       federatedorg: ""
       hostname: ""
       lineno: ""

@@ -31,10 +31,6 @@ var OperatorGCP = "gcp"
 var OperatorAzure = "azure"
 var OperatorAWS = "aws"
 
-var Organizationplatos = "platos"
-var OrganizationMobiledgeX = "MobiledgeX"
-var OrganizationEdgeBox = "EdgeBox"
-
 const DefaultClust string = "defaultclust"
 const DefaultMultiTenantCluster string = "defaultmtclust"
 
@@ -196,7 +192,7 @@ const EnvoyImageDigest = "sha256:2b07bb8dd35c2a4bb273652b62e85b0bd27d12da94fa110
 // PlatformApps is the set of all special "platform" developers.   Key
 // is DeveloperName:AppName.  Currently only platos's Enabling layer is included.
 var platformApps = map[string]bool{
-	Organizationplatos + ":" + PlatosEnablingLayer: true,
+	edgeproto.OrganizationPlatos + ":" + PlatosEnablingLayer: true,
 }
 
 // IsPlatformApp true if the developer/app combo is a platform app
@@ -301,7 +297,7 @@ func IsClusterInstReqd(app *edgeproto.App) bool {
 }
 
 func IsSideCarApp(app *edgeproto.App) bool {
-	if app.Key.Organization == OrganizationMobiledgeX && app.DelOpt == edgeproto.DeleteType_AUTO_DELETE {
+	if app.Key.Organization == edgeproto.OrganizationEdgeCloud && app.DelOpt == edgeproto.DeleteType_AUTO_DELETE {
 		return true
 	}
 	return false
@@ -309,7 +305,7 @@ func IsSideCarApp(app *edgeproto.App) bool {
 
 func GetSideCarAppFilter() *edgeproto.App {
 	return &edgeproto.App{
-		Key:    edgeproto.AppKey{Organization: OrganizationMobiledgeX},
+		Key:    edgeproto.AppKey{Organization: edgeproto.OrganizationEdgeCloud},
 		DelOpt: edgeproto.DeleteType_AUTO_DELETE,
 	}
 }
@@ -359,7 +355,7 @@ func GetGPUDriverBucketName(deploymentTag string) string {
 func GetGPUDriverStoragePath(key *edgeproto.GPUDriverKey, region string) (string, error) {
 	orgName := key.Organization
 	if key.Organization == "" {
-		orgName = OrganizationMobiledgeX
+		orgName = edgeproto.OrganizationEdgeCloud
 	}
 	sPath := StoragePath{}
 	err := sPath.AppendPaths(region, orgName, key.Name)

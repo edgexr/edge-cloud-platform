@@ -1059,7 +1059,7 @@ func (s *searchAppInst) searchPolicy(ctx context.Context, key *edgeproto.AppKey,
 			ClusterKey: edgeproto.ClusterKey{
 				Name: cloudcommon.AutoProvClusterName,
 			},
-			Organization: cloudcommon.OrganizationMobiledgeX,
+			Organization: edgeproto.OrganizationEdgeCloud,
 		}
 		if potential.freeInst && !freeInst {
 			// prefer free reservable ClusterInst over autocluster

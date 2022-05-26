@@ -96,7 +96,7 @@ clusterinsts:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
-    organization: MobiledgeX
+    organization: edgecloudorg
   flavor:
     name: x1.small
   liveness: Static
@@ -110,7 +110,7 @@ clusterinsts:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-2
-    organization: MobiledgeX
+    organization: edgecloudorg
   flavor:
     name: x1.small
   liveness: Static

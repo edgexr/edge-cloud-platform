@@ -721,7 +721,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/UpdateGPUDriver", UpdateGPUDriver)
 	// swagger:route POST /auth/ctrl/ShowGPUDriver GPUDriver ShowGPUDriver
 	// Show GPU Drivers.
-	//  Lists all the MobiledgeX created GPU drivers and operator created GPU drivers.
+	//  Lists all the EdgeCloud created GPU drivers and operator created GPU drivers.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -776,7 +776,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/GetGPUDriverLicenseConfig", GetGPUDriverLicenseConfig)
 	// swagger:route POST /auth/ctrl/CreateCloudlet Cloudlet CreateCloudlet
 	// Create Cloudlet.
-	//  Sets up Cloudlet services on the Operators compute resources, and integrated as part of MobiledgeX edge resource portfolio. These resources are managed from the Edge Controller.
+	//  Sets up Cloudlet services on the Operators compute resources, and integrated as part of EdgeCloud edge resource portfolio. These resources are managed from the Edge Controller.
 	// Security:
 	//   Bearer:
 	// responses:

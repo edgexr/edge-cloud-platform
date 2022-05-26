@@ -61,7 +61,7 @@ regiondata:
           cloudletkey:
             organization: dmuus
             name: dmuus-cloud-2
-          organization: MobiledgeX
+          organization: edgecloudorg
       msgs:
       - message: Creating new auto-cluster named reservable0 to deploy AppInst
       - message: Defaulting IpAccess to IpAccessShared for deployment kubernetes

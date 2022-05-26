@@ -23,15 +23,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jinzhu/gorm"
-	"github.com/labstack/echo"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/jinzhu/gorm"
+	"github.com/labstack/echo"
 )
 
 // Organization Type names for ORM database
@@ -92,7 +91,7 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 	} else {
 		return fmt.Errorf("Organization type must be %s, or %s", OrgTypeDeveloper, OrgTypeOperator)
 	}
-	if strings.ToLower(org.Name) == strings.ToLower(cloudcommon.OrganizationMobiledgeX) || strings.ToLower(org.Name) == strings.ToLower(cloudcommon.OrganizationEdgeBox) {
+	if strings.ToLower(org.Name) == strings.ToLower(edgeproto.OrganizationEdgeCloud) || strings.ToLower(org.Name) == strings.ToLower(edgeproto.OrganizationEdgeBox) {
 		if err := authorized(ctx, claims.Username, "", ResourceUsers, ActionManage); err != nil {
 			return fmt.Errorf("Not authorized to create reserved org %s", org.Name)
 		}
