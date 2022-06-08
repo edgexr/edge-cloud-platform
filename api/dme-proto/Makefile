@@ -11,11 +11,11 @@ EDGEPROTOGENDIR	= $(PROJECT)/tools/edgeprotogen
 INCLUDE		= -I. -I${GW} -I${APIS} -I${GOPATH} -I${EDGEPROTOGENDIR}
 BUILTIN		= Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types,Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api,Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor
 DMEDIR		= ${GOPATH}/src/github.com/edgexr/edge-proto/dme
-PROTOS		= *.proto
+PROTOS		= app-client.proto appcommon.proto dynamic-location-group.proto loc.proto
 
 CMDDIR		= ../../pkg/gencmd
 
-build:
+build: $(PROTOS)
 	protoc ${INCLUDE} --gomex_out=plugins=grpc+mex,${BUILTIN}:. $(PROTOS)
 	protoc ${INCLUDE} --grpc-gateway_out=${BUILTIN}:. $(PROTOS)
 	protoc ${INCLUDE} --cmd_out=${BUILTIN}:${CMDDIR} $(PROTOS)
