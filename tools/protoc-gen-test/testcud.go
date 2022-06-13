@@ -129,7 +129,6 @@ type CudStreamout{{.Name}} struct {
 }
 
 func (x *CudStreamout{{.Name}}) Send(res *{{.Pkg}}.Result) error {
-	fmt.Println(res)
 	return nil
 }
 
@@ -148,14 +147,13 @@ func {{.Name}}ReadResultStream(stream ResultStream, err error) error {
 		return err
 	}
 	for {
-		res, err := stream.Recv()
+		_, err := stream.Recv()
 		if err == io.EOF {
 			return nil
 		}
 		if err != nil {
 			return err
 		}
-		fmt.Println(res)
 	}
 }
 

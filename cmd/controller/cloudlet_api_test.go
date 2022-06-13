@@ -30,7 +30,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
@@ -137,22 +136,8 @@ func (e *EventMock) verifyEvent(t *testing.T, name string, tags []node.EventTag)
 }
 
 func TestCloudletApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi | log.DebugLevelNotify | log.DebugLevelEvents)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
-
-	dummy := dummyEtcd{}
-	dummy.Start()
-	defer dummy.Stop()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	// mock http to redirect requests
 	httpmock.Activate()
@@ -942,21 +927,8 @@ func testAllianceOrgs(t *testing.T, ctx context.Context, apis *AllApis) {
 }
 
 func TestShowCloudletsAppDeploy(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
-
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	cAppApi := testutil.NewInternalAppApi(apis.appApi)
 
@@ -1029,7 +1001,6 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 	require.Nil(t, err, "ShowCloudletsForAppDeployment")
 	require.Equal(t, 1, len(show.Data), "ShowCloudletsForAppDeployment DryRun=True")
 	// TODO: Increase cloudlets refs such that San Jose can no longer support the App deployment
-	dummy.Stop()
 }
 
 func testCloudletDnsLabel(t *testing.T, ctx context.Context, apis *AllApis) {

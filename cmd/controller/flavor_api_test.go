@@ -20,31 +20,16 @@ import (
 
 	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestFlavorApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
-
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	testutil.InternalFlavorTest(t, "cud", apis.flavorApi, testutil.FlavorData)
 	testMasterFlavor(t, ctx, apis)
-	dummy.Stop()
 }
 
 func testMasterFlavor(t *testing.T, ctx context.Context, apis *AllApis) {

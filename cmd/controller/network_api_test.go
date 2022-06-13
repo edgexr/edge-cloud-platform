@@ -19,25 +19,13 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNetworkApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
-	dummy := dummyEtcd{}
-	dummy.Start()
-	defer dummy.Stop()
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData)
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData)
@@ -49,7 +37,6 @@ func TestNetworkApi(t *testing.T) {
 	expectCreateNetworkError(t, ctx, apis, &testutil.NetworkErrorData[0], "Invalid route destination cidr")
 	expectCreateNetworkError(t, ctx, apis, &testutil.NetworkErrorData[1], "Invalid next hop")
 	expectCreateNetworkError(t, ctx, apis, &testutil.NetworkErrorData[2], "Invalid connection type")
-
 }
 
 func expectCreateNetworkError(t *testing.T, ctx context.Context, apis *AllApis, in *edgeproto.Network, msg string) {

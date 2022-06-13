@@ -19,26 +19,13 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTrustPolicyExceptionApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
-
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	dummyResponder := DummyInfoResponder{
 		AppInstCache:        &apis.appInstApi.cache,
@@ -229,8 +216,6 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 		testutil.TrustPolicyExceptionErrorData[3].Key.AppKey.NotFoundError().Error())
 	expectCreatePolicyExceptionError(t, ctx, apis, &testutil.TrustPolicyExceptionErrorData[4],
 		testutil.TrustPolicyExceptionErrorData[4].Key.CloudletPoolKey.NotFoundError().Error())
-
-	dummy.Stop()
 }
 
 func expectCreatePolicyExceptionError(t *testing.T, ctx context.Context, apis *AllApis, in *edgeproto.TrustPolicyException, msg string) {

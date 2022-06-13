@@ -18,33 +18,20 @@ import (
 	"context"
 	"testing"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAppApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
 	cplookup := &node.CloudletPoolCache{}
 	cplookup.Init()
 	nodeMgr.CloudletPoolLookup = cplookup
-
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	// cannot create apps without developer
 	for _, obj := range testutil.AppData {
@@ -380,8 +367,6 @@ func TestAppApi(t *testing.T) {
 		_, err = apis.appApi.DeleteApp(ctx, &rpApp)
 		require.Nil(t, err)
 	}
-
-	dummy.Stop()
 }
 
 var testInvalidUrlHelmCfg = "http://invalidUrl"

@@ -65,7 +65,7 @@ func StartSpan(lvl uint64, operationName string, opts ...opentracing.StartSpanOp
 				// always log
 				ext.SamplingPriority.Set(ospan, 1)
 			}
-		} else if DebugLevelInfo&lvl != 0 || debugLevel&lvl != 0 {
+		} else if (DebugLevelInfo&lvl != 0 && !suppressInfo) || debugLevel&lvl != 0 {
 			// always log (note DebugLevelInfo is always logged)
 			ext.SamplingPriority.Set(ospan, 1)
 		} else {

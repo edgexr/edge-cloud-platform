@@ -29,15 +29,14 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/edgexr/edge-cloud-platform/test/testutil/testservices"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	yaml "gopkg.in/yaml.v2"
 )
 
 func getGrpcClient(t *testing.T) (*grpc.ClientConn, error) {
@@ -45,16 +44,14 @@ func getGrpcClient(t *testing.T) (*grpc.ClientConn, error) {
 	return grpc.Dial("127.0.0.1:55001", grpc.WithInsecure())
 }
 
+// This is a mini integration test, redundant with e2e tests
 func TestController(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelNotify | log.DebugLevelApi | log.DebugLevelUpgrade)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
+	testutil.IntegrationTest(t)
 	flag.Parse() // set defaults
 	*localEtcd = true
 	*initLocalEtcd = true
 
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, _ := testinit(t, WithNoApis())
 	defer testfinish(testSvcs)
 
 	redisCfg.SentinelAddrs = testSvcs.DummyRedisSrv.GetSentinelAddr()
@@ -223,119 +220,6 @@ func TestDataGen(t *testing.T) {
 	out.Close()
 }
 
-func TestEdgeCloudBug26(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelNotify)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	flag.Parse()
-	testSvcs := testinit(ctx, t)
-	defer testfinish(testSvcs)
-	// avoid dummy influxQs created by testinit() since we're calling startServices
-	services = Services{}
-
-	*localEtcd = true
-	*initLocalEtcd = true
-
-	redisCfg.SentinelAddrs = testSvcs.DummyRedisSrv.GetSentinelAddr()
-
-	influxUsageUnitTestSetup(t)
-	defer influxUsageUnitTestStop()
-
-	err := startServices()
-	defer stopServices()
-	require.Nil(t, err, "start")
-	apis := services.allApis
-
-	reduceInfoTimeouts(t, ctx, apis)
-
-	conn, err := getGrpcClient(t)
-	require.Nil(t, err, "grcp client")
-	defer conn.Close()
-
-	appClient := edgeproto.NewAppApiClient(conn)
-	cloudletClient := edgeproto.NewCloudletApiClient(conn)
-	appInstClient := edgeproto.NewAppInstApiClient(conn)
-	flavorClient := edgeproto.NewFlavorApiClient(conn)
-
-	yamlData := `
-cloudlets:
-- key:
-    operatorkey:
-      name: DMUUS
-    name: cloud2
-  ipsupport: IpSupportDynamic
-  numdynamicips: 100
-
-flavors:
-- key:
-    name: m1.small
-  ram: 1024
-  vcpus: 1
-  disk: 1
-apps:
-- key:
-    organization: AcmeAppCo
-    name: someApplication
-    version: 1.0
-  defaultflavor:
-    name: m1.small
-  imagetype: ImageTypeDocker
-  accessports: "tcp:80,tcp:443,udp:10002"
-  ipaccess: IpAccessShared
-appinstances:
-- key:
-    appkey:
-      organization: AcmeAppCo
-      name: someApplication
-      version: 1.0
-    cloudletkey:
-      organization: DMUUS
-      name: cloud2
-    id: 99
-  liveness: 1
-  port: 8080
-  ip: [10,100,10,4]
-cloudletinfos:
-- key:
-    organization: DMUUS
-    name: cloud2
-  state: CloudletStateReady
-  osmaxram: 65536
-  osmaxvcores: 16
-  osmaxvolgb: 500
-  rootlbfqdn: mexlb.cloud2.dmuus.mobiledgex.net
-`
-	data := edgeproto.AllData{}
-	err = yaml.Unmarshal([]byte(yamlData), &data)
-	require.Nil(t, err, "unmarshal data")
-
-	_, err = flavorClient.CreateFlavor(ctx, &data.Flavors[0])
-	require.Nil(t, err, "create flavor")
-	_, err = appClient.CreateApp(ctx, &data.Apps[0])
-	require.Nil(t, err, "create app")
-	_, err = cloudletClient.CreateCloudlet(ctx, &data.Cloudlets[0])
-	require.Nil(t, err, "create cloudlet")
-	insertCloudletInfo(ctx, apis, data.CloudletInfos)
-
-	show := testutil.ShowApp{}
-	show.Init()
-	filterNone := edgeproto.App{}
-	stream, err := appClient.ShowApp(ctx, &filterNone)
-	show.ReadStream(stream, err)
-	require.Nil(t, err, "show data")
-	require.Equal(t, 1, len(show.Data), "show app count")
-
-	_, err = appInstClient.CreateAppInst(ctx, &data.AppInstances[0])
-	require.Nil(t, err, "create app inst")
-
-	show.Init()
-	stream, err = appClient.ShowApp(ctx, &filterNone)
-	show.ReadStream(stream, err)
-	require.Nil(t, err, "show data")
-	require.Equal(t, 1, len(show.Data), "show app count after creating app inst")
-}
-
 func WaitForCloudletInfo(apis *AllApis, count int) {
 	for i := 0; i < 10; i++ {
 		if len(apis.cloudletInfoApi.cache.Objs) == count {
@@ -422,11 +306,7 @@ func WaitForAlerts(t *testing.T, apis *AllApis, count int) {
 
 func TestControllerRace(t *testing.T) {
 	t.Skip("Skip races test until we can fix too many operations in etcd transaction error for ClusterInst delete test")
-	log.SetDebugLevel(log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, _ := testinit(t, WithNoApis())
 	defer testfinish(testSvcs)
 
 	etcdLocal, err := StartLocalEtcdServer(process.WithCleanStartup())

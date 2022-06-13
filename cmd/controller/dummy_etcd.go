@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math"
 	"math/rand"
 	"strings"
@@ -200,7 +199,7 @@ func (e *dummyEtcd) Sync(ctx context.Context, prefix string, cb objstore.SyncCb)
 	cb(ctx, &data)
 	for key, dd := range e.db {
 		if strings.HasPrefix(key, prefix) {
-			log.DebugLog(log.DebugLevelEtcd, "sync list data", "key", key, "val", dd.val, "rev", e.rev)
+			log.SpanLog(ctx, log.DebugLevelEtcd, "sync list data", "key", key, "val", dd.val, "rev", e.rev)
 			data.Action = objstore.SyncList
 			data.Key = []byte(key)
 			data.Value = []byte(dd.val)
@@ -295,8 +294,7 @@ func (e *dummyEtcd) commit(ctx context.Context, stm *dummySTM) (int64, error) {
 			modRev = dd.modRev
 		}
 		if modRev != resp.modRev {
-			fmt.Printf("rset modRev mismatch %s e.modRev %d resp.modRev %d\n",
-				key, modRev, resp.modRev)
+			log.SpanLog(ctx, log.DebugLevelEtcd, "rset modRev mismatch", "key", key, "modRev", modRev, "resp.modRev", resp.modRev)
 			return 0, errors.New("rset rev mismatch")
 		}
 		if resp.rev < rev {
@@ -315,8 +313,7 @@ func (e *dummyEtcd) commit(ctx context.Context, stm *dummySTM) (int64, error) {
 			wrev = dd.modRev
 		}
 		if wrev > rev {
-			fmt.Printf("wset rev mismatch %s rev %d wrev %d\n",
-				key, rev, wrev)
+			log.SpanLog(ctx, log.DebugLevelEtcd, "wset rev mismatch", "key", key, "rev", rev, "wrev", wrev)
 			return 0, errors.New("wset rev mismatch")
 		}
 	}
@@ -327,7 +324,7 @@ func (e *dummyEtcd) commit(ctx context.Context, stm *dummySTM) (int64, error) {
 		if val == "" {
 			// delete
 			delete(e.db, key)
-			log.DebugLog(log.DebugLevelEtcd, "Delete",
+			log.SpanLog(ctx, log.DebugLevelEtcd, "Delete",
 				"key", key, "rev", e.rev)
 			e.triggerWatcher(ctx, objstore.SyncDelete, key, "", e.rev)
 		} else {
@@ -339,7 +336,7 @@ func (e *dummyEtcd) commit(ctx context.Context, stm *dummySTM) (int64, error) {
 			dd.val = val
 			dd.vers++
 			dd.modRev = e.rev
-			log.DebugLog(log.DebugLevelEtcd, "Commit", "key", key,
+			log.SpanLog(ctx, log.DebugLevelEtcd, "Commit", "key", key,
 				"val", val, "ver", dd.vers, "rev", e.rev)
 			e.triggerWatcher(ctx, objstore.SyncUpdate, key, val, e.rev)
 		}

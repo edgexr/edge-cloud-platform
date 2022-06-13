@@ -47,9 +47,12 @@ func testCalls(t *testing.T, objStore objstore.KVStore) {
 	var expRev int64 = 1
 	var rev int64
 	var err error
-	ctx := context.Background()
 
-	syncCheck := NewSyncCheck(t, objStore)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	syncCheck := NewSyncCheck(t, ctx, objStore)
 	defer syncCheck.Stop()
 
 	// check what happens if no put is called
@@ -321,7 +324,7 @@ func testCalls(t *testing.T, objStore objstore.KVStore) {
 }
 
 func TestEtcdDummy(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd)
+	log.SetTestDebugLevels(*debugLevels, log.DebugLevelEtcd)
 	dummy := dummyEtcd{}
 	dummy.Start()
 	testCalls(t, &dummy)
@@ -336,11 +339,11 @@ type SyncCheck struct {
 	rev        int64
 }
 
-func NewSyncCheck(t *testing.T, objstore objstore.KVStore) *SyncCheck {
+func NewSyncCheck(t *testing.T, ctx context.Context, objstore objstore.KVStore) *SyncCheck {
 	sy := SyncCheck{}
 	sy.kv = make(map[string]string)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	sy.syncCancel = cancel
 	go func() {
 		err := objstore.Sync(ctx, "", sy.Cb)
@@ -356,7 +359,7 @@ func (s *SyncCheck) Stop() {
 func (s *SyncCheck) Cb(ctx context.Context, data *objstore.SyncCbData) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	log.InfoLog("sync check cb", "action", objstore.SyncActionStrs[data.Action], "key", string(data.Key), "val", string(data.Value), "rev", data.Rev)
+	log.DebugLog(log.DebugLevelInfo, "sync check cb", "action", objstore.SyncActionStrs[data.Action], "key", string(data.Key), "val", string(data.Value), "rev", data.Rev)
 	switch data.Action {
 	case objstore.SyncUpdate:
 		s.kv[string(data.Key)] = string(data.Value)
@@ -387,7 +390,7 @@ func (s *SyncCheck) WaitRev(rev int64) {
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
-	log.InfoLog("Wait rev timed out", "rev", rev)
+	log.DebugLog(log.DebugLevelInfo, "Wait rev timed out", "rev", rev)
 }
 
 func (s *SyncCheck) Expect(t *testing.T, key, val string, rev int64) {
@@ -412,8 +415,8 @@ func (s *SyncCheck) ExpectNil(t *testing.T, key string, rev int64) {
 func (s *SyncCheck) Dump() {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	log.InfoLog("sync check rev", "rev", s.rev)
+	log.DebugLog(log.DebugLevelEtcd, "sync check rev", "rev", s.rev)
 	for key, val := range s.kv {
-		log.InfoLog("sync check kv", "key", key, "val", val)
+		log.DebugLog(log.DebugLevelEtcd, "sync check kv", "key", key, "val", val)
 	}
 }

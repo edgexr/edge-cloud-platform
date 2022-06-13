@@ -17,6 +17,7 @@
 package log
 
 import (
+	"os"
 	"strings"
 	"sync"
 
@@ -27,6 +28,7 @@ var slogger *zap.SugaredLogger
 var debugLevel uint64
 var mux sync.Mutex
 var spanlogger *zap.Logger
+var suppressInfo bool
 
 func init() {
 	logger, _ := zap.NewDevelopment(zap.AddCallerSkip(1))
@@ -43,7 +45,7 @@ func init() {
 
 // Deprecated: you should use SpanLog instead.
 func DebugLog(lvl uint64, msg string, keysAndValues ...interface{}) {
-	if debugLevel&lvl == 0 && lvl != DebugLevelInfo {
+	if debugLevel&lvl == 0 && (lvl != DebugLevelInfo || suppressInfo) {
 		return
 	}
 	slogger.Infow(msg, keysAndValues...)
@@ -112,6 +114,10 @@ func GetDebugLevel() uint64 {
 	return debugLevel
 }
 
+func SuppressInfo(suppress bool) {
+	suppressInfo = suppress
+}
+
 func SetDebugLevelEnum(val DebugLevel) {
 	SetDebugLevel(enumToBit(val))
 }
@@ -144,7 +150,7 @@ func SetDebugLevelStrs(list string) {
 		val, ok := stringToDebugLevel(str)
 		if ok {
 			SetDebugLevelEnum(val)
-		} 
+		}
 	}
 }
 
@@ -176,4 +182,18 @@ func GetDebugLevelStrs() string {
 		}
 	}
 	return strings.Join(lvls, ",")
+}
+
+// SetTestDebugLevels defaults to no printing for unit tests,
+// but can be overridden by passing in cmdLevels via command
+// line switch if present, or setting "debug" env var to true.
+func SetTestDebugLevels(cmdLevels string, debugLevels uint64) {
+	if cmdLevels != "" {
+		SetDebugLevelStrs(cmdLevels)
+	} else if os.Getenv("debug") != "" {
+		SetDebugLevel(debugLevels)
+	} else {
+		ClearDebugLevel(GetDebugLevel())
+		SuppressInfo(true)
+	}
 }

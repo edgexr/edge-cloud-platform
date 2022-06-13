@@ -15,35 +15,19 @@
 package main
 
 import (
-	"context"
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestResTagTableApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	objstore.InitRegion(1)
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
 
 	tMode := true
 	testMode = &tMode
-
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	testutil.InternalResTagTableTest(t, "cud", apis.resTagTableApi, testutil.ResTagTableData)
 	testutil.InternalResTagTableTest(t, "show", apis.resTagTableApi, testutil.ResTagTableData)
@@ -154,5 +138,4 @@ func TestResTagTableApi(t *testing.T) {
 	tbl1, err = apis.resTagTableApi.GetResTagTable(ctx, &tbl.Key)
 	require.Nil(t, err, "GgetResTagTable")
 	require.Equal(t, "gpu_zone", tbl1.Azone, "UpdateResTagTable")
-
 }

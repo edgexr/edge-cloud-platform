@@ -57,7 +57,7 @@ type CudStreamoutGPUDriver struct {
 }
 
 func (x *CudStreamoutGPUDriver) Send(res *edgeproto.Result) error {
-	fmt.Println(res)
+	//fmt.Println(res)
 	return nil
 }
 
@@ -76,14 +76,14 @@ func GPUDriverReadResultStream(stream ResultStream, err error) error {
 		return err
 	}
 	for {
-		res, err := stream.Recv()
+		_, err := stream.Recv()
 		if err == io.EOF {
 			return nil
 		}
 		if err != nil {
 			return err
 		}
-		fmt.Println(res)
+		//fmt.Println(res)
 	}
 }
 
@@ -430,7 +430,7 @@ type CudStreamoutCloudlet struct {
 }
 
 func (x *CudStreamoutCloudlet) Send(res *edgeproto.Result) error {
-	fmt.Println(res)
+	//fmt.Println(res)
 	return nil
 }
 
@@ -449,14 +449,14 @@ func CloudletReadResultStream(stream ResultStream, err error) error {
 		return err
 	}
 	for {
-		res, err := stream.Recv()
+		_, err := stream.Recv()
 		if err == io.EOF {
 			return nil
 		}
 		if err != nil {
 			return err
 		}
-		fmt.Println(res)
+		//fmt.Println(res)
 	}
 }
 

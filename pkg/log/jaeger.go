@@ -94,7 +94,7 @@ func InitTracer(tlsConfig *tls.Config) {
 
 	// Create tracer
 	t, closer, err := cfg.NewTracer(
-		config.Logger(logger),
+		config.Logger(&basicLogger{}),
 		config.Reporter(reporter),
 		config.MaxTagValueLength(4096),
 	)
@@ -171,4 +171,14 @@ func NewSpanFromString(lvl uint64, val, spanName string) opentracing.Span {
 		}
 	}
 	return StartSpan(lvl, spanName, linenoOpt)
+}
+
+type basicLogger struct{}
+
+func (s *basicLogger) Error(msg string) {
+	WarnLog(msg)
+}
+
+func (s *basicLogger) Infof(msg string, args ...interface{}) {
+	DebugLog(DebugLevelInfo, msg, args...)
 }

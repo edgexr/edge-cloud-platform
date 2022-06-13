@@ -19,36 +19,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
-	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAlertApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
-
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	for _, alert := range testutil.AlertData {
 		apis.alertApi.Update(ctx, &alert, 0)
@@ -93,26 +80,12 @@ func TestAlertApi(t *testing.T) {
 	cloudletCount, totalCount = getAlertsCount()
 	require.Equal(t, cloudletCount, 0, "cloudlet alerts should not exist")
 	require.Equal(t, totalCount, expectedTotalCount, "expected alerts should exist")
-
-	dummy.Stop()
 }
 
 func TestAppInstDownAlert(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 	dummyResponder := DummyInfoResponder{
 		AppInstCache:        &apis.appInstApi.cache,
 		ClusterInstCache:    &apis.clusterInstApi.cache,
@@ -167,18 +140,20 @@ func TestAppInstDownAlert(t *testing.T) {
 			require.Equal(t, dme.HealthCheck_HEALTH_CHECK_OK, appinst.HealthCheck)
 		}
 	}
-
-	dummy.Stop()
 }
 
 type testServices struct {
 	DummyRedisSrv *rediscache.DummyRedis
 	RedisLocalSrv *process.RedisCache
+	apis          *AllApis
+	dummyEtcd     dummyEtcd
+	sync          *Sync
 }
 
 type TestOptions struct {
 	// Start local redis server
 	LocalRedis bool
+	NoApis     bool
 }
 
 type TestOp func(op *TestOptions)
@@ -187,12 +162,21 @@ func WithLocalRedis() TestOp {
 	return func(op *TestOptions) { op.LocalRedis = true }
 }
 
+func WithNoApis() TestOp {
+	return func(op *TestOptions) { op.NoApis = true }
+}
+
 // Set up globals for API unit tests
-func testinit(ctx context.Context, t *testing.T, opts ...TestOp) *testServices {
+func testinit(t *testing.T, opts ...TestOp) (context.Context, *testServices, *AllApis) {
 	options := TestOptions{}
 	for _, op := range opts {
 		op(&options)
 	}
+	log.SetTestDebugLevels(*debugLevels, log.DebugLevelEtcd|log.DebugLevelApi|log.DebugLevelEvents)
+	log.InitTracer(nil)
+	ctx := log.StartTestSpan(context.Background())
+
+	options.LocalRedis = false
 	svcs := &testServices{}
 	objstore.InitRegion(1)
 	tMode := true
@@ -231,11 +215,20 @@ func testinit(ctx context.Context, t *testing.T, opts ...TestOp) *testServices {
 		redisClient, err = rediscache.NewClient(ctx, &redisCfg)
 		require.Nil(t, err, "setup redis client")
 	}
-
-	return svcs
+	if !options.NoApis {
+		svcs.dummyEtcd.Start()
+		svcs.sync = InitSync(&svcs.dummyEtcd)
+		svcs.apis = NewAllApis(svcs.sync)
+		svcs.sync.Start()
+	}
+	return ctx, svcs, svcs.apis
 }
 
 func testfinish(s *testServices) {
+	if s.sync != nil {
+		s.sync.Done()
+		s.dummyEtcd.Stop()
+	}
 	if redisClient != nil {
 		redisClient.Close()
 		redisClient = nil
@@ -248,5 +241,6 @@ func testfinish(s *testServices) {
 		s.RedisLocalSrv.StopLocal()
 		s.RedisLocalSrv = nil
 	}
+	log.FinishTracer()
 	services = Services{}
 }

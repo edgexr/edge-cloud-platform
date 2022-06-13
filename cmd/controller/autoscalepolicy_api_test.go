@@ -19,26 +19,13 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAutoScalePolicyApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
-
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	testutil.InternalAutoScalePolicyTest(t, "cud", apis.autoScalePolicyApi, testutil.AutoScalePolicyData)
 
@@ -69,8 +56,6 @@ func TestAutoScalePolicyApi(t *testing.T) {
 	p.ScaleUpCpuThresh = 50
 	p.ScaleDownCpuThresh = 60
 	expectBadAutoScaleCreate(t, ctx, apis, &p, "Scale down cpu threshold must be less than scale up")
-
-	dummy.Stop()
 }
 
 func expectBadAutoScaleCreate(t *testing.T, ctx context.Context, apis *AllApis, in *edgeproto.AutoScalePolicy, msg string) {

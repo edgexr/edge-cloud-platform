@@ -19,34 +19,19 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTrustPolicyApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
-
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	testutil.InternalTrustPolicyTest(t, "cud", apis.trustPolicyApi, testutil.TrustPolicyData)
 	// error cases
 	expectCreatePolicyError(t, ctx, apis, &testutil.TrustPolicyErrorData[0], "cannot be higher than max")
 	expectCreatePolicyError(t, ctx, apis, &testutil.TrustPolicyErrorData[1], "invalid CIDR")
 	expectCreatePolicyError(t, ctx, apis, &testutil.TrustPolicyErrorData[2], "Invalid min port: 0")
-
-	dummy.Stop()
 }
 
 func expectCreatePolicyError(t *testing.T, ctx context.Context, apis *AllApis, in *edgeproto.TrustPolicy, msg string) {

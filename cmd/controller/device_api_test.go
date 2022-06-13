@@ -15,7 +15,6 @@
 package main
 
 import (
-	"context"
 	"time"
 
 	"testing"
@@ -27,21 +26,8 @@ import (
 )
 
 func TestDeviceApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
-
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	log.SpanLog(ctx, log.DebugLevelApi, "Starting tests")
 	// Test Update of the platform device
@@ -93,6 +79,4 @@ func TestDeviceApi(t *testing.T) {
 		apis.deviceApi.InjectDevice(ctx, &obj)
 	}
 	testutil.InternalDeviceTest(t, "show", apis.deviceApi, testutil.PlarformDeviceClientData)
-
-	dummy.Stop()
 }

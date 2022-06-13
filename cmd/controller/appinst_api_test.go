@@ -99,21 +99,9 @@ func GetCloudletStreamMsgs(t *testing.T, ctx context.Context, key *edgeproto.Clo
 }
 
 func TestAppInstApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
-	dummy.Start()
-	defer dummy.Stop()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 	responder := &DummyInfoResponder{
 		AppInstCache:        &apis.appInstApi.cache,
 		ClusterInstCache:    &apis.clusterInstApi.cache,
@@ -436,20 +424,9 @@ func ClientAppInstCachedFieldsTest(t *testing.T, ctx context.Context, appApi edg
 }
 
 func TestAutoClusterInst(t *testing.T) {
-	log.InitTracer(nil)
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 	dummyResponder := &DummyInfoResponder{
 		AppInstCache:        &apis.appInstApi.cache,
 		ClusterInstCache:    &apis.clusterInstApi.cache,
@@ -601,7 +578,6 @@ func TestAutoClusterInst(t *testing.T) {
 	require.Nil(t, err)
 
 	testDeprecatedAutoCluster(t, ctx, apis)
-	dummy.Stop()
 }
 
 func testDeprecatedAutoCluster(t *testing.T, ctx context.Context, apis *AllApis) {

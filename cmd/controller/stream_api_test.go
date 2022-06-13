@@ -22,27 +22,25 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestStreamObjs(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-
-	// Test with dummy server
-	testSvcs := testinit(ctx, t)
-	testStreamObjsWithServer(t, ctx)
-	testfinish(testSvcs)
-
-	// Test with local server
-	testSvcs = testinit(ctx, t, WithLocalRedis())
-	testStreamObjsWithServer(t, ctx)
-	testfinish(testSvcs)
+	t.Run("test-stream-objs-dummy-server", func(t *testing.T) {
+		// Test with dummy server
+		ctx, testSvcs, _ := testinit(t, WithNoApis())
+		defer testfinish(testSvcs)
+		testStreamObjsWithServer(t, ctx)
+	})
+	t.Run("test-stream-objs-local-server", func(t *testing.T) {
+		testutil.IntegrationTest(t)
+		// Test with local server
+		ctx, testSvcs, _ := testinit(t, WithLocalRedis(), WithNoApis())
+		defer testfinish(testSvcs)
+		testStreamObjsWithServer(t, ctx)
+	})
 }
 
 func testStreamObjsWithServer(t *testing.T, ctx context.Context) {

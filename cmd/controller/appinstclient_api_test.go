@@ -18,9 +18,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/assert"
@@ -50,23 +49,11 @@ func (x *ShowAppInstClient) Context() context.Context {
 }
 
 func TestAppInstClientApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
 	cplookup := &node.CloudletPoolCache{}
 	cplookup.Init()
 	nodeMgr.CloudletPoolLookup = cplookup
-
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	// Init settings default
 	err := apis.settingsApi.initDefaults(ctx)
@@ -144,6 +131,4 @@ func TestAppInstClientApi(t *testing.T) {
 	// Delete channel 2 - verify that count is 0
 	count = apis.appInstClientApi.ClearRecvChan(ctx, &testutil.AppInstClientKeyData[0], ch12)
 	assert.Equal(t, 0, count)
-
-	dummy.Stop()
 }

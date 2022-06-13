@@ -35,20 +35,8 @@ import (
 )
 
 func TestClusterInstApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi | log.DebugLevelNotify)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
-
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	responder := &DummyInfoResponder{
 		AppInstCache:        &apis.appInstApi.cache,
@@ -230,8 +218,6 @@ func TestClusterInstApi(t *testing.T) {
 
 	testClusterInstResourceUsage(t, ctx, apis)
 	testClusterInstGPUFlavor(t, ctx, apis)
-
-	dummy.Stop()
 }
 
 func reduceInfoTimeouts(t *testing.T, ctx context.Context, apis *AllApis) {
@@ -913,20 +899,8 @@ func TestInflux(t *testing.T) {
 }
 
 func TestDefaultMTCluster(t *testing.T) {
-	log.InitTracer(nil)
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
-
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	dummyResponder := &DummyInfoResponder{
 		AppInstCache:        &apis.appInstApi.cache,

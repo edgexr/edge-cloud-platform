@@ -16,11 +16,19 @@ package testutil
 
 import (
 	"log"
+	"os"
 	"sort"
 	"strings"
+	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 )
+
+func IntegrationTest(t *testing.T) {
+	if os.Getenv("integration") == "" {
+		t.Skip("Run go test with env var \"integration=true\" to enable this test")
+	}
+}
 
 //based on the api some errors will be converted to no error
 func ignoreExpectedErrors(api string, key objstore.ObjKey, err error) error {

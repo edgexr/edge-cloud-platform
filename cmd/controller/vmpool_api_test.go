@@ -19,33 +19,22 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestVMPoolApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi | log.DebugLevelNotify)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	testSvcs := testinit(ctx, t)
+	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
-
-	dummy := dummyEtcd{}
-	dummy.Start()
-
-	sync := InitSync(&dummy)
-	apis := NewAllApis(sync)
-	sync.Start()
-	defer sync.Done()
 
 	testutil.InternalVMPoolTest(t, "cud", apis.vmPoolApi, testutil.VMPoolData)
 
-	testAddRemoveVM(t, ctx, apis)
-	testUpdateVMPool(t, ctx, apis)
-
-	dummy.Stop()
+	t.Run("test-add-remove-vms", func(t *testing.T) {
+		testAddRemoveVM(t, ctx, apis)
+	})
+	t.Run("test-update-vmpool", func(t *testing.T) {
+		testUpdateVMPool(t, ctx, apis)
+	})
 }
 
 func testAddRemoveVM(t *testing.T, ctx context.Context, apis *AllApis) {
@@ -192,7 +181,8 @@ func testUpdateVMPool(t *testing.T, ctx context.Context, apis *AllApis) {
 	vmp := testutil.VMPoolData[0]
 	cl.VmPool = vmp.Key.Name
 	cl.PlatformType = edgeproto.PlatformType_PLATFORM_TYPE_FAKE_VM_POOL
-	err := apis.cloudletApi.CreateCloudlet(&cl, testutil.NewCudStreamoutCloudlet(ctx))
+	clCopy := cl
+	err := apis.cloudletApi.CreateCloudlet(&clCopy, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
 
 	// test adding vm to the pool
