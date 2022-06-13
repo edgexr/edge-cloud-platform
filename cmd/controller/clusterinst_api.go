@@ -23,16 +23,16 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/gogo/protobuf/types"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
+	"github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
 )
 
@@ -1605,9 +1605,6 @@ func ignoreCRMTransient(cctx *CallContext) bool {
 func (s *ClusterInstApi) UpdateFromInfo(ctx context.Context, in *edgeproto.ClusterInstInfo) {
 	log.SpanLog(ctx, log.DebugLevelApi, "update ClusterInst", "key", in.Key, "state", in.State, "status", in.Status, "resources", in.Resources)
 
-	// publish the received info object on redis
-	s.all.streamObjApi.UpdateStatus(ctx, in, &in.State, nil, in.Key.StreamKey())
-
 	s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		saveInst := false
 		inst := edgeproto.ClusterInst{}
@@ -1638,6 +1635,10 @@ func (s *ClusterInstApi) UpdateFromInfo(ctx context.Context, in *edgeproto.Clust
 		}
 		return nil
 	})
+	// publish the received info object on redis
+	// (must happen after updating etcd, see AppInst UpdateFromInfo comment)
+	s.all.streamObjApi.UpdateStatus(ctx, in, &in.State, nil, in.Key.StreamKey())
+
 	if in.State == edgeproto.TrackedState_DELETE_DONE {
 		s.DeleteFromInfo(ctx, in)
 		// update stream message about deletion of main object
