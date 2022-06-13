@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -27,15 +26,14 @@ import (
 	"github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client/influxq_testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestInfluxQ(t *testing.T) {
-	if os.Getenv("integration") == "" {
-		t.Skip("Run go test with env var \"integration=true\" to enable this test")
-	}
+	testutil.IntegrationTest(t)
 	log.SetDebugLevel(log.DebugLevelMetrics)
 	log.InitTracer(nil)
 	defer log.FinishTracer()

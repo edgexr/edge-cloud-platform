@@ -176,7 +176,6 @@ func testinit(t *testing.T, opts ...TestOp) (context.Context, *testServices, *Al
 	log.InitTracer(nil)
 	ctx := log.StartTestSpan(context.Background())
 
-	options.LocalRedis = false
 	svcs := &testServices{}
 	objstore.InitRegion(1)
 	tMode := true

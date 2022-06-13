@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/assert"
@@ -51,9 +50,6 @@ func (x *ShowAppInstClient) Context() context.Context {
 func TestAppInstClientApi(t *testing.T) {
 	ctx, testSvcs, apis := testinit(t)
 	defer testfinish(testSvcs)
-	cplookup := &node.CloudletPoolCache{}
-	cplookup.Init()
-	nodeMgr.CloudletPoolLookup = cplookup
 
 	// Init settings default
 	err := apis.settingsApi.initDefaults(ctx)
