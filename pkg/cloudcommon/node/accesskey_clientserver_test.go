@@ -26,11 +26,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/vault/api"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/hashicorp/vault/api"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
@@ -130,12 +130,14 @@ func TestAccessClientServer(t *testing.T) {
 	var state connectivity.State
 	for ii := 0; ii < 100; ii++ {
 		state = clientConn.GetState()
-		if state == connectivity.Ready {
+		if state == connectivity.Ready || state == connectivity.Idle {
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	require.Equal(t, connectivity.Ready, state)
+	if state != connectivity.Ready && state != connectivity.Idle {
+		require.True(t, false, "grpc client conn state should be idle(%d) or ready(%d), but is (%d)", connectivity.Idle, connectivity.Ready, state)
+	}
 	EchoApisTest(t, ctx, clientConn, "")
 	clientConn.Close()
 
@@ -302,7 +304,9 @@ func EchoApisTestCheckErr(t *testing.T, err error, errMsg string) {
 	}
 }
 
-type EchoServer struct{}
+type EchoServer struct {
+	echo.UnimplementedEchoServer
+}
 
 func (s *EchoServer) UnaryEcho(ctx context.Context, req *echo.EchoRequest) (*echo.EchoResponse, error) {
 	return &echo.EchoResponse{}, nil
