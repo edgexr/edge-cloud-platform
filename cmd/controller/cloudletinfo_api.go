@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
@@ -75,9 +75,6 @@ func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo
 		return
 	}
 
-	// publish the received info object on redis
-	s.all.streamObjApi.UpdateStatus(ctx, in, nil, &in.State, in.Key.StreamKey())
-
 	in.Fields = edgeproto.CloudletInfoAllFields
 	in.Controller = ControllerId
 	changedToOnline := false
@@ -98,6 +95,10 @@ func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo
 		}
 		return nil
 	})
+
+	// publish the received info object on redis
+	// must be done after updating etcd, see AppInst UpdateFromInfo comment
+	s.all.streamObjApi.UpdateStatus(ctx, in, nil, &in.State, in.Key.StreamKey())
 
 	cloudlet := edgeproto.Cloudlet{}
 	if !s.all.cloudletApi.cache.Get(&in.Key, &cloudlet) {
