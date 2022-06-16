@@ -18,7 +18,7 @@ require (
 	github.com/creack/pty v1.1.10
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v0.0.0-20171126034257-17e75f6184bc
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/elastic/go-elasticsearch/v7 v7.5.0
 	github.com/go-chef/chef v0.23.1
 	github.com/go-openapi/errors v0.19.7
@@ -92,6 +92,8 @@ require (
 	k8s.io/cli-runtime v0.0.0-20190313123343-44a48934c135
 	k8s.io/client-go v0.17.3
 )
+
+require github.com/golang-jwt/jwt/v4 v4.4.1
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect

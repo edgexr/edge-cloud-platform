@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
