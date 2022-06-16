@@ -44,7 +44,7 @@ jsonattrs: |
         "cloudletKey": "{\"organization\":\"mexdev\",\"name\":\"chef-test-1\"}",
         "d": "api,infra,notify,info",
         "deploymentTag": "local",
-        "notifyAddrs": "127.0.0.1:37001",
+        "notifyAddrs": "127.0.0.1:27001",
         "notifySrvAddr": "127.0.0.1:51099",
         "platform": "PLATFORM_TYPE_FAKEINFRA",
         "region": "local",
@@ -56,7 +56,7 @@ jsonattrs: |
         "VAULT_SECRET_ID=removed"
       ]
     },
-    "notifyAddrs": "127.0.0.1:37001",
+    "notifyAddrs": "127.0.0.1:27001",
     "prometheusImage": "prom/prometheus",
     "prometheusVersion": "latest",
     "shepherd": {

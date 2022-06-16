@@ -54,7 +54,7 @@ controllers:
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
   apiaddr: "0.0.0.0:55001"
   httpaddr: "0.0.0.0:36001"
-  notifyaddr: "127.0.0.1:37001"
+  notifyaddr: "127.0.0.1:27001"
   usevaultpki: true
   notifyparentaddrs: "127.0.0.1:52001"
   notifyrootaddrs: "127.0.0.1:53001"

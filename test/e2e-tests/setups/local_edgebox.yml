@@ -75,7 +75,7 @@ controllers:
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
   apiaddr: "0.0.0.0:55001"
   httpaddr: "0.0.0.0:36001"
-  notifyaddr: "127.0.0.1:37001"
+  notifyaddr: "127.0.0.1:27001"
   usevaultpki: true
   notifyparentaddrs: "127.0.0.1:52001"
   notifyrootaddrs: "127.0.0.1:53001"
@@ -95,7 +95,7 @@ dmes:
 - name: dme1
   apiaddr: "0.0.0.0:50051"
   httpaddr: "0.0.0.0:38001"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   usevaultpki: true
   locverurl: "{{locverurl}}"
   toksrvurl: "{{toksrvurl}}"
@@ -110,10 +110,10 @@ dmes:
 
 clustersvcs:
 - name: cluster-svc1
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   usevaultpki: true
   vaultaddr: "http://127.0.0.1:8200"
-  ctrladdrs: "127.0.0.1:55001"
+  ctrladdrs: "127.0.0.1:5501"
   pluginrequired: true
   promports: "tcp:9090"
   interval: "5s"
@@ -171,10 +171,10 @@ jaegers:
 
 autoprovs:
 - name: autoprov1
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   usevaultpki: true
   vaultaddr: "http://127.0.0.1:8200"
-  ctrladdrs: "127.0.0.1:55001"
+  ctrladdrs: "127.0.0.1:5501"
   hostname: "127.0.0.1"
   envvars:
     E2ETEST_TLS: true

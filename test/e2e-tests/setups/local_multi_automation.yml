@@ -72,7 +72,7 @@ controllers:
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
   apiaddr: "0.0.0.0:55001"
   httpaddr: "0.0.0.0:36001"
-  notifyaddr: "127.0.0.1:37001"
+  notifyaddr: "127.0.0.1:27001"
   tls:
      servercert: "{{tlsoutdir}}/mex-server.crt"
      clientcert: "{{tlsoutdir}}/mex-client.crt"
@@ -84,7 +84,7 @@ controllers:
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
   apiaddr: "0.0.0.0:55002"
   httpaddr: "0.0.0.0:36002"
-  notifyaddr: "127.0.0.1:37002"
+  notifyaddr: "127.0.0.1:27002"
   tls:
      servercert: "{{tlsoutdir}}/mex-server.crt"
      clientcert: "{{tlsoutdir}}/mex-client.crt"
@@ -97,7 +97,7 @@ dmes:
 - name: dme1
   apiaddr: "0.0.0.0:50051"
   httpaddr: "0.0.0.0:38001"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   locverurl: "{{locverurl}}"
   toksrvurl: "{{toksrvurl}}"
   carrier: GDDT
@@ -113,7 +113,7 @@ dmes:
 crms:
 - name: crm1
   apiaddr: "0.0.0.0:55091"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"dmuus","name":"tmocloud-1"}'
   platform: fakecloudlet
   tls:
@@ -123,7 +123,7 @@ crms:
 
 - name: crm2
   apiaddr: "0.0.0.0:55092"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"dmuus","name":"tmocloud-2"}'
   platform: fakecloudlet
   tls:
@@ -133,7 +133,7 @@ crms:
 
 - name: crm3
   apiaddr: "0.0.0.0:55093"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"dmuus","name":"tmocloud-3"}'
   platform: fakecloudlet
   tls:
@@ -143,7 +143,7 @@ crms:
 
 - name: crm4
   apiaddr: "0.0.0.0:55094"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"dmuus","name":"tmocloud-4"}'
   platform: fakecloudlet
   tls:
@@ -153,7 +153,7 @@ crms:
 
 - name: crm5
   apiaddr: "0.0.0.0:55095"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"dmuus","name":"tmocloud-5"}'
   platform: fakecloudlet
   tls:
@@ -163,7 +163,7 @@ crms:
 
 - name: crm6
   apiaddr: "0.0.0.0:55096"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"dmuus","name":"tmocloud-6"}'
   platform: fakecloudlet
   tls:
@@ -173,7 +173,7 @@ crms:
 
 - name: crm7
   apiaddr: "0.0.0.0:55097"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"dmuus","name":"tmocloud-7"}'
   platform: fakecloudlet
   tls:
@@ -183,7 +183,7 @@ crms:
 
 - name: crm8
   apiaddr: "0.0.0.0:55098"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"dmuus","name":"tmocloud-8"}'
   platform: fakecloudlet
   tls:
@@ -193,7 +193,7 @@ crms:
 
 - name: crm9
   apiaddr: "0.0.0.0:55099"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"dmuus","name":"tmocloud-9"}'
   platform: fakecloudlet
   tls:
@@ -203,7 +203,7 @@ crms:
 
 - name: crm10
   apiaddr: "0.0.0.0:55100"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"dmuus","name":"tmocloud-10"}'
   platform: fakecloudlet
   tls:
@@ -213,7 +213,7 @@ crms:
 
 - name: crm11
   apiaddr: "0.0.0.0:55101"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"azure","name":"azurecloud-1"}'
   platform: fakecloudlet
   tls:
@@ -223,7 +223,7 @@ crms:
 
 - name: crm12
   apiaddr: "0.0.0.0:55102"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"gcp","name":"gcpcloud-1"}'
   platform: fakecloudlet
   tls:
@@ -233,7 +233,7 @@ crms:
 
 - name: crm13
   apiaddr: "0.0.0.0:55103"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"att","name":"attcloud-1"}'
   platform: fakecloudlet
   tls:
@@ -266,15 +266,15 @@ sqls:
 
 clustersvcs:
 - name: cluster-svc1
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
-  ctrladdrs: "127.0.0.1:55001"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
+  ctrladdrs: "127.0.0.1:5501"
   tls:
      servercert: "{{tlsoutdir}}/mex-server.crt"
      clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 - name: cluster-svc2
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   ctrladdrs: "127.0.0.1:55002"
   tls:
      servercert: "{{tlsoutdir}}/mex-server.crt"
@@ -295,8 +295,8 @@ jaegers:
 
 autoprovs:
 - name: autoprov1
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
-  ctrladdrs: "127.0.0.1:55001"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
+  ctrladdrs: "127.0.0.1:5501"
   vaultaddr: "http://127.0.0.1:8200"
   influxaddr: "http://127.0.0.1:8086"
   shorttimeouts: true

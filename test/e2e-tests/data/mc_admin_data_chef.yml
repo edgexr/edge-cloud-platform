@@ -21,7 +21,7 @@ orgs:
 
 controllers:
 - region: local
-  address: "127.0.0.1:55001"
+  address: "127.0.0.1:5501"
 
 regiondata:
 - region: local
