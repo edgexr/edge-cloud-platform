@@ -23,7 +23,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
