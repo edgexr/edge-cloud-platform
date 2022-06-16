@@ -61,13 +61,13 @@ controllers:
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
   apiaddr: "0.0.0.0:55001"
   httpaddr: "0.0.0.0:36001"
-  notifyaddr: "127.0.0.1:37001"
+  notifyaddr: "127.0.0.1:27001"
   hostname: "127.0.0.1"
 
 dmes:
 - name: dme1
   apiaddr: "0.0.0.0:50051"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   locverurl: "{{locverurl}}"
   toksrvurl: "{{toksrvurl}}"
   carrier: GDDT
@@ -78,7 +78,7 @@ dmes:
 crms:
 - name: crm1
   apiaddr: "0.0.0.0:55091"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-1"}'
   hostname: "127.0.0.1"
 

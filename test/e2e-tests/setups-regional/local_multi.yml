@@ -58,9 +58,9 @@ etcds:
 controllers:
 - name: ctrl1
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
-  apiaddr: "127.0.0.1:55001"
+  apiaddr: "127.0.0.1:5501"
   httpaddr: "0.0.0.0:36001"
-  notifyaddr: "127.0.0.1:37001"
+  notifyaddr: "127.0.0.1:27001"
   vaultaddr: "http://127.0.0.1:8200"
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
@@ -84,7 +84,7 @@ controllers:
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
   apiaddr: "127.0.0.1:55002"
   httpaddr: "0.0.0.0:36002"
-  notifyaddr: "127.0.0.1:37002"
+  notifyaddr: "127.0.0.1:27002"
   vaultaddr: "http://127.0.0.1:8200"
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
@@ -106,8 +106,8 @@ controllers:
 
 clustersvcs:
 - name: cluster-svc1
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
-  ctrladdrs: "127.0.0.1:55001"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
+  ctrladdrs: "127.0.0.1:5501"
   vaultaddr: "http://127.0.0.1:8200"
   usevaultpki: true
   tls:
@@ -120,7 +120,7 @@ clustersvcs:
     E2ETEST_TLS: true
 
 - name: cluster-svc2
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   ctrladdrs: "127.0.0.1:55002"
   vaultaddr: "http://127.0.0.1:8200"
   usevaultpki: true
@@ -137,7 +137,7 @@ dmes:
 - name: dme1
   apiaddr: "0.0.0.0:50051"
   httpaddr: "0.0.0.0:38001"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-1"}'
   vaultaddr: "http://127.0.0.1:8200"
   usevaultpki: true
@@ -153,7 +153,7 @@ dmes:
 - name: dme2
   apiaddr: "0.0.0.0:50052"
   httpaddr: "0.0.0.0:38002"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-2"}'
   vaultaddr: "http://127.0.0.1:8200"
   usevaultpki: true

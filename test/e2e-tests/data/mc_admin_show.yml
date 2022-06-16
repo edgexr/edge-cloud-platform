@@ -14,7 +14,7 @@
 
 controllers:
 - region: local
-  address: 127.0.0.1:55001
+  address: 127.0.0.1:5501
   influxdb: http://127.0.0.1:8086
   thanosmetrics: http://127.0.0.1:29090
   createdat: 2019-11-20T15:21:55.068829-08:00

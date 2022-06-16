@@ -74,8 +74,8 @@ tests:
     partnertag: "partner1"
     region: "PA"
     dnsregion: "pa"
-    ctrlapiaddr: "127.0.0.1:55081"
-    ctrlnotifyaddr: "127.0.0.1:37081"
+    ctrlapiaddr: "127.0.0.1:5581"
+    ctrlnotifyaddr: "127.0.0.1:27081"
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
@@ -108,8 +108,8 @@ tests:
     partnertag: "partner2"
     region: "PS"
     dnsregion: "ps"
-    ctrlapiaddr: "127.0.0.1:55091"
-    ctrlnotifyaddr: "127.0.0.1:37091"
+    ctrlapiaddr: "127.0.0.1:5591"
+    ctrlnotifyaddr: "127.0.0.1:27091"
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
@@ -674,8 +674,8 @@ tests:
     partnertag: "partner1"
     region: "PA"
     dnsregion: "pa"
-    ctrlapiaddr: "127.0.0.1:55081"
-    ctrlnotifyaddr: "127.0.0.1:37081"
+    ctrlapiaddr: "127.0.0.1:5581"
+    ctrlnotifyaddr: "127.0.0.1:27081"
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
@@ -697,8 +697,8 @@ tests:
     partnertag: "partner2"
     region: "PS"
     dnsregion: "ps"
-    ctrlapiaddr: "127.0.0.1:55081"
-    ctrlnotifyaddr: "127.0.0.1:37081"
+    ctrlapiaddr: "127.0.0.1:5581"
+    ctrlnotifyaddr: "127.0.0.1:27081"
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
