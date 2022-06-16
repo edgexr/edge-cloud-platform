@@ -72,7 +72,7 @@ controllers:
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
   apiaddr: "0.0.0.0:55001"
   httpaddr: "0.0.0.0:36001"
-  notifyaddr: "127.0.0.1:37001"
+  notifyaddr: "127.0.0.1:27001"
   influxaddr: "https://127.0.0.1:8086"
   vaultaddr: "http://127.0.0.1:8200"
   redisstandaloneaddr: "127.0.0.1:6379"
@@ -91,7 +91,7 @@ dmes:
 - name: dme1
   apiaddr: "0.0.0.0:50051"
   httpaddr: "0.0.0.0:38001"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   locverurl: "{{locverurl}}"
   toksrvurl: "{{toksrvurl}}"
   carrier: GDDT
@@ -109,8 +109,8 @@ dmes:
 
 clustersvcs:
 - name: cluster-svc1
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
-  ctrladdrs: "127.0.0.1:55001"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
+  ctrladdrs: "127.0.0.1:5501"
   vaultaddr: "http://127.0.0.1:8200"
   usevaultcerts: true
   tls:

@@ -56,7 +56,7 @@ controllers:
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
   apiaddr: "0.0.0.0:55001"
   httpaddr: "0.0.0.0:36001"
-  notifyaddr: "127.0.0.1:37001"
+  notifyaddr: "127.0.0.1:27001"
   shorttimeouts: true
   hostname: "127.0.0.1"
 
@@ -64,7 +64,7 @@ controllers:
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
   apiaddr: "0.0.0.0:55002"
   httpaddr: "0.0.0.0:36002"
-  notifyaddr: "127.0.0.1:37002"
+  notifyaddr: "127.0.0.1:27002"
   shorttimeouts: true
   hostname: "127.0.0.1"
 
@@ -72,7 +72,7 @@ controllers:
 dmes:
 - name: dme1
   apiaddr: "0.0.0.0:50051"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   locverurl: "{{locverurl}}"
   toksrvurl: "{{toksrvurl}}"
   carrier: GDDT
@@ -81,7 +81,7 @@ dmes:
 
 - name: dme2
   apiaddr: "0.0.0.0:50052"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   locverurl: "{{locverurl}}"
   toksrvurl: "{{toksrvurl}}"
   carrier: GDDT
@@ -92,61 +92,61 @@ dmes:
 crms:
 - name: crm1
   apiaddr: "0.0.0.0:55091"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-1"}'
   hostname: "127.0.0.1"
 
 - name: crm2
   apiaddr: "0.0.0.0:55092"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-2"}'
   hostname: "127.0.0.1"
 
 - name: crm3
   apiaddr: "0.0.0.0:55093"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-3"}'
   hostname: "127.0.0.1"
 
 - name: crm4
   apiaddr: "0.0.0.0:55094"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-4"}'
   hostname: "127.0.0.1"
 
 - name: crm5
   apiaddr: "0.0.0.0:55095"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-5"}'
   hostname: "127.0.0.1"
 
 - name: crm6
   apiaddr: "0.0.0.0:55096"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-6"}'
   hostname: "127.0.0.1"
 
 - name: crm7
   apiaddr: "0.0.0.0:55097"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-7"}'
   hostname: "127.0.0.1"
 
 - name: crm8
   apiaddr: "0.0.0.0:55098"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-8"}'
   hostname: "127.0.0.1"
 
 - name: crm9
   apiaddr: "0.0.0.0:55099"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-9"}'
   hostname: "127.0.0.1"
 
 - name: crm10
   apiaddr: "0.0.0.0:55100"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-10"}'
   hostname: "127.0.0.1"
 

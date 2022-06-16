@@ -92,7 +92,7 @@ cloudlets:
   deployment: docker
   trustpolicystate: NotPresent
   defaultresourcealertthreshold: 80
-  hostcontroller: 127.0.0.1:55001
+  hostcontroller: 127.0.0.1:5501
   secondarynotifysrvaddr: 127.0.0.1:0
   dnslabel: dmuus-cloud-1-dmuus
   rootlbfqdn: shared.dmuus-cloud-1-dmuus.local.localtest.net
@@ -113,7 +113,7 @@ cloudlets:
   deployment: docker
   trustpolicystate: NotPresent
   defaultresourcealertthreshold: 80
-  hostcontroller: 127.0.0.1:55001
+  hostcontroller: 127.0.0.1:5501
   secondarynotifysrvaddr: 127.0.0.1:0
   dnslabel: dmuus-cloud-2-dmuus
   rootlbfqdn: shared.dmuus-cloud-2-dmuus.local.localtest.net
