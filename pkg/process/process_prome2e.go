@@ -29,11 +29,11 @@ type PromE2e struct {
 func (p *PromE2e) StartLocal(logfile string, opts ...StartOp) error {
 	// if the image doesn't exist, build it
 	if !imageFound(p.Name) {
-		directory := os.Getenv("GOPATH") + "/src/github.com/edgexr/edge-cloud-platform/shepherd/e2eHttpServer"
+		directory := os.Getenv("GOPATH") + "/src/github.com/edgexr/edge-cloud-platform/test/e2e-tests/cmd/e2eHttpServer"
 		builder := exec.Command("docker", "build", "-t", p.Name, directory)
-		err := builder.Run()
+		out, err := builder.CombinedOutput()
 		if err != nil {
-			return fmt.Errorf("Failed to build docker image for e2e prometheus: %v", err)
+			return fmt.Errorf("Failed to build docker image for e2e prometheus: %s, %v", string(out), err)
 		}
 	}
 	args := p.GetRunArgs()
