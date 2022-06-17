@@ -34,11 +34,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
+	"github.com/gorilla/websocket"
 	"github.com/segmentio/ksuid"
 	"github.com/xtaci/smux"
 )
@@ -553,7 +553,8 @@ func setupProxyServer(started chan bool) error {
 	var err error
 	if *testMode {
 		// In test mode, setup HTTP server with TLS
-		tlsConfig, err := edgetls.GetLocalTLSConfig()
+		var tlsConfig *tls.Config
+		tlsConfig, err = edgetls.GetLocalTLSConfig()
 		if err != nil {
 			return fmt.Errorf("unable to fetch tls local server config, %v", err)
 		}
