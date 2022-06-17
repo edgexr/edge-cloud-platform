@@ -29,14 +29,14 @@ import (
 	"testing"
 	"time"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/examples/features/proto/echo"
@@ -70,7 +70,7 @@ func TestInternalPki(t *testing.T) {
 			Name: "vault",
 		},
 		Regions:    "us,eu",
-		ListenAddr: "http://127.0.0.1:8200",
+		ListenAddr: "http://127.0.0.1:8201",
 	}
 	vroles, err := vp.StartLocalRoles()
 	require.Nil(t, err, "start local vault")
