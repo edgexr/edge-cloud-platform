@@ -80,14 +80,13 @@ func TestController(t *testing.T) {
 	defer vaultServer.Close()
 
 	// mock http to redirect requests
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
+	mockTransport := httpmock.NewMockTransport()
 	// any requests that don't have a registered URL will be fetched normally
-	httpmock.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
-	testAlertMgrAddr, err := InitAlertmgrMock()
+	mockTransport.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
+	testAlertMgrAddr, err := InitAlertmgrMock(mockTransport)
 	require.Nil(t, err)
 	de := &nodetest.DummyEventsES{}
-	de.InitHttpMock(mockESUrl)
+	de.InitHttpMock(mockESUrl, mockTransport)
 
 	defaultConfig.DisableRateLimit = true
 
@@ -109,7 +108,7 @@ func TestController(t *testing.T) {
 		VerifyEmailConsolePath:   "#/verify",
 	}
 	unitTestNodeMgrOps = []node.NodeOp{
-		node.WithESUrls(mockESUrl),
+		node.WithESUrls(mockESUrl), node.WithTestTransport(mockTransport),
 	}
 	defer func() {
 		unitTestNodeMgrOps = []node.NodeOp{}
@@ -277,7 +276,7 @@ func TestController(t *testing.T) {
 	err = server.WaitUntilReady()
 	require.Nil(t, err, "server online")
 
-	for _, clientRun := range getUnitTestClientRuns() {
+	for _, clientRun := range getUnitTestClientRuns(mockTransport) {
 		testControllerClientRun(t, ctx, clientRun, uri, addr, ctrlAddr, ctrlAddr2, influxServer, thanosQuery, ds, &sds, de)
 	}
 }
@@ -3458,9 +3457,6 @@ func testDeleteBillingOrg(t *testing.T, mcClient *mctestclient.Client, uri, toke
 }
 
 func TestDataConversions(t *testing.T) {
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
-
 	var args []string
 	var expectedObj ormapi.RegionObjWithFields
 	var err error
@@ -3486,7 +3482,8 @@ func TestDataConversions(t *testing.T) {
 	// a map that is used to calculate the field flags, if they weren't
 	// set by the sender.
 	// We then check that data matches what is expected.
-	httpmock.RegisterResponder("POST", "=~^"+uri+`/.*\z`,
+	mockTransport := httpmock.NewMockTransport()
+	mockTransport.RegisterResponder("POST", "=~^"+uri+`/.*\z`,
 		func(req *http.Request) (*http.Response, error) {
 			// create buffer of expected type to unmarshal json
 			objType := reflect.TypeOf(expectedObj)
@@ -3529,14 +3526,14 @@ func TestDataConversions(t *testing.T) {
 	// This is core of the mcctl program.
 	// This tests args -> json
 	mcctl := mccli.GetRootCommand()
-	mcctl.ForceDefaultTransport(true) // needed for httpmock to work
+	mcctl.SetTestTransport(mockTransport)
 	mcctl.EnablePrintTransformations()
 	argsCommon := []string{"--addr", uri, "--skipverify"}
 
 	// Rest client.
 	// This tests obj -> json
 	restc := &ormclient.Client{}
-	restc.ForceDefaultTransport = true // needed for httpmock to work
+	restc.TestTransport = mockTransport
 	restc.EnablePrintTransformations()
 	restClient := mctestclient.NewClient(restc)
 
@@ -3547,7 +3544,7 @@ func TestDataConversions(t *testing.T) {
 	cliwrap := cliwrapper.NewClient()
 	cliwrap.SilenceUsage = true
 	cliwrap.RunInline = true
-	cliwrap.ForceDefaultTransport(true) // needed for httpmock
+	cliwrap.SetTestTransport(mockTransport)
 	cliwrap.EnablePrintTransformations()
 	cliClient := mctestclient.NewClient(cliwrap)
 
@@ -3773,8 +3770,8 @@ func TestDataConversions(t *testing.T) {
 
 	var expectedObj2 interface{}
 
-	httpmock.Reset()
-	httpmock.RegisterResponder("POST", "=~^"+uri+`/.*\z`,
+	mockTransport.Reset()
+	mockTransport.RegisterResponder("POST", "=~^"+uri+`/.*\z`,
 		func(req *http.Request) (*http.Response, error) {
 			// create buffer of expected type
 			objType := reflect.TypeOf(expectedObj2)

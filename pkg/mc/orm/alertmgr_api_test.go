@@ -20,27 +20,28 @@ import (
 	"os"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
+	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/require"
 )
 
-func InitAlertmgrMock() (string, error) {
-	testAlertMgrAddr := "http://dummyalertmgr.mobiledgex.net:9093"
+func InitAlertmgrMock(mockTransport *httpmock.MockTransport) (string, error) {
+	testAlertMgrAddr := "http://dummyalertmgr.edgecloud.net:9093"
 	testAlertMgrConfig := "testAlertMgrConfig.yml"
 	// start with clean configFile
 	err := os.Remove(testAlertMgrConfig)
 	if err != nil && !os.IsNotExist(err) {
 		return "", err
 	}
-	if fakeAlertmanager := alertmgr.NewAlertmanagerMock(testAlertMgrAddr, testAlertMgrConfig); fakeAlertmanager == nil {
+	if fakeAlertmanager := alertmgr.NewAlertmanagerMock(testAlertMgrAddr, testAlertMgrConfig, mockTransport); fakeAlertmanager == nil {
 		return "", fmt.Errorf("Failed to start alertmanager")
 	}
 
 	// Start up a sidecar server on an available port
-	sidecarServer, err := alertmgr.NewSidecarServer(testAlertMgrAddr, testAlertMgrConfig, ":0", &alertmgr.TestInitInfo, "", "", "", false)
+	sidecarServer, err := alertmgr.NewSidecarServer(testAlertMgrAddr, testAlertMgrConfig, ":0", &alertmgr.TestInitInfo, "", "", "", false, mockTransport)
 	if err != nil {
 		return "", err
 	}

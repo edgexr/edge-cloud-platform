@@ -28,14 +28,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/websocket"
-	"github.com/mitchellh/mapstructure"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
+	"github.com/gorilla/websocket"
+	"github.com/mitchellh/mapstructure"
 )
 
 type Client struct {
@@ -45,8 +45,8 @@ type Client struct {
 	// some stream messages have been received before signaling to the
 	// sender that it's ok to generate an error.
 	MidstreamFailChs map[string]chan bool
-	// Force default transport (allows for http mocking for unit tests)
-	ForceDefaultTransport bool
+	// Test transport for mocking unit tests
+	TestTransport http.RoundTripper
 	// Print input data transformations
 	PrintTransformations bool
 }
@@ -161,8 +161,8 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{})
 		TLSClientConfig: tlsConfig,
 		Proxy:           http.ProxyFromEnvironment,
 	}
-	if s.ForceDefaultTransport {
-		tr = http.DefaultTransport
+	if s.TestTransport != nil {
+		tr = s.TestTransport
 	}
 	if s.Debug {
 		curlcmd := fmt.Sprintf(`curl -X %s "%s" -H "Content-Type: application/json"`, method, uri)

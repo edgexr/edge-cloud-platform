@@ -18,16 +18,17 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
 	"sync"
 
-	"github.com/elastic/go-elasticsearch/v7"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/pkg/version"
+	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
 )
@@ -71,6 +72,7 @@ type NodeMgr struct {
 	accessApiConn      *grpc.ClientConn // here so crm and cloudlet-dme can close it
 	CloudletPoolLookup CloudletPoolLookup
 	CloudletLookup     CloudletLookup
+	testTransport      http.RoundTripper // for unit tests
 
 	unitTestMode bool
 }
@@ -122,6 +124,7 @@ func (s *NodeMgr) Init(nodeType, tlsClientIssuer string, ops ...NodeOp) (context
 	s.tlsClientIssuer = tlsClientIssuer
 	s.CloudletPoolLookup = opts.cloudletPoolLookup
 	s.CloudletLookup = opts.cloudletLookup
+	s.testTransport = opts.testTransport
 	if err := s.AccessKeyClient.init(initCtx, nodeType, tlsClientIssuer, opts.cloudletKey, s.DeploymentTag, opts.haRole); err != nil {
 		log.SpanLog(initCtx, log.DebugLevelInfo, "access key client init failed", "err", err)
 		return initCtx, nil, err
@@ -250,6 +253,7 @@ type NodeOptions struct {
 	cloudletPoolLookup CloudletPoolLookup
 	cloudletLookup     CloudletLookup
 	haRole             process.HARole
+	testTransport      http.RoundTripper
 }
 
 type CloudletInPoolFunc func(region, key edgeproto.CloudletKey) bool
@@ -298,6 +302,10 @@ func WithCloudletLookup(cloudletLookup CloudletLookup) NodeOp {
 
 func WithHARole(haRole process.HARole) NodeOp {
 	return func(opts *NodeOptions) { opts.haRole = haRole }
+}
+
+func WithTestTransport(tr http.RoundTripper) NodeOp {
+	return func(opts *NodeOptions) { opts.testTransport = tr }
 }
 
 func (s *NodeMgr) UpdateMyNode(ctx context.Context) {

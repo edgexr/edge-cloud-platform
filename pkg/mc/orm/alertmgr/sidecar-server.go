@@ -77,9 +77,10 @@ type SidecarServer struct {
 	serverCert         string
 	certKey            string
 	insecureTls        bool
+	alertMgrClient     Client
 }
 
-func NewSidecarServer(target, path, apiAddr string, initInfo *AlertmgrInitInfo, tlsClient string, tlsServer string, tlsKey string, insecureTls bool) (*SidecarServer, error) {
+func NewSidecarServer(target, path, apiAddr string, initInfo *AlertmgrInitInfo, tlsClient string, tlsServer string, tlsKey string, insecureTls bool, alertMgrTransport http.RoundTripper) (*SidecarServer, error) {
 	server := &SidecarServer{
 		alertMgrAddr:       target,
 		alertMgrConfigPath: path,
@@ -88,6 +89,10 @@ func NewSidecarServer(target, path, apiAddr string, initInfo *AlertmgrInitInfo, 
 		serverCert:         tlsServer,
 		certKey:            tlsKey,
 		insecureTls:        insecureTls,
+		alertMgrClient: Client{
+			addr:          target,
+			testTransport: alertMgrTransport,
+		},
 	}
 	if err := server.initAlertmanager(initInfo); err != nil {
 		return nil, err
@@ -169,6 +174,9 @@ func (s *SidecarServer) proxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	proxy := httputil.NewSingleHostReverseProxy(url)
+	if s.alertMgrClient.testTransport != nil {
+		proxy.Transport = s.alertMgrClient.testTransport
+	}
 
 	r.URL.Host = url.Host
 	r.URL.Scheme = url.Scheme
@@ -327,7 +335,7 @@ func (s *SidecarServer) alertReceiver(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 	// trigger reload of the config
-	res, err := alertMgrApi(ctx, s.alertMgrAddr, "POST", ReloadConfigApi, "", nil, nil)
+	res, err := s.alertMgrClient.alertMgrApi(ctx, "POST", ReloadConfigApi, "", nil)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to reload alertmanager config", "err", err, "result", res)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -349,7 +357,7 @@ func (s *SidecarServer) initAlertmanager(initInfo *AlertmgrInitInfo) error {
 
 	// wait for alertmanager to be up first
 	for ii := 0; ii < 10; ii++ {
-		_, err = alertMgrApi(ctx, s.alertMgrAddr, "GET", "", "", nil, nil)
+		_, err = s.alertMgrClient.alertMgrApi(ctx, "GET", "", "", nil)
 		if err == nil {
 			break
 		}
@@ -360,7 +368,7 @@ func (s *SidecarServer) initAlertmanager(initInfo *AlertmgrInitInfo) error {
 		return err
 	}
 	// Connected to alertmanager - trigger a reload to make sure latest config changes were picked up
-	res, err := alertMgrApi(ctx, s.alertMgrAddr, "POST", ReloadConfigApi, "", nil, nil)
+	res, err := s.alertMgrClient.alertMgrApi(ctx, "POST", ReloadConfigApi, "", nil)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to reload alertmanager config", "err", err, "result", res)
 		return err

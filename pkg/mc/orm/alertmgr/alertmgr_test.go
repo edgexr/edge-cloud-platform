@@ -16,16 +16,18 @@ package alertmgr
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/jarcoal/httpmock"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/jarcoal/httpmock"
 
 	//	open_api_models "github.com/prometheus/alertmanager/api/v2/models"
 	// TODO - below is to replace the above for right now - once we update go and modules we can use prometheus directly
@@ -45,41 +47,41 @@ func TestAlertMgrServer(t *testing.T) {
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 	// mock http to redirect requests
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
+	mockTransport := httpmock.NewMockTransport()
 	// any requests that don't have a registered URL will be fetched normally
-	httpmock.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
+	mockTransport.RegisterNoResponder(http.DefaultTransport.RoundTrip)
 
-	testAlertMgrAddr := "http://dummyalertmgr.mobiledgex.net:9093"
+	testAlertMgrAddr := "http://dummyalertmgr.edgecloud.net:9093"
 	testAlertMgrConfig := "testAlertMgrConfig.yml"
 	// start with clean configFile
 	err := os.Remove(testAlertMgrConfig)
 	if err != nil && !os.IsNotExist(err) {
 		require.Fail(t, "cannot remove alertmanager config file", err)
 	}
-	fakeAlertmanager := NewAlertmanagerMock(testAlertMgrAddr, testAlertMgrConfig)
+	fakeAlertmanager := NewAlertmanagerMock(testAlertMgrAddr, testAlertMgrConfig, mockTransport)
 	require.NotNil(t, fakeAlertmanager)
 	// Empty file - should have nothing
 	fakeAlertmanager.verifyAlertCnt(t, 0)
 	fakeAlertmanager.verifyReceiversCnt(t, 0)
 
 	// Start up a sidecar server on an available port
-	sidecarServer, err := NewSidecarServer(testAlertMgrAddr, testAlertMgrConfig, ":0", &TestInitInfo, "", "", "", false)
+	sidecarServer, err := NewSidecarServer(testAlertMgrAddr, testAlertMgrConfig, ":0", &TestInitInfo, "", "", "", false, mockTransport)
 	require.Nil(t, err)
 	err = sidecarServer.Run()
 	require.Nil(t, err)
 	sidecarServerAddr := sidecarServer.GetApiAddr()
+	fmt.Printf("sidecarServerAddr is %s\n", sidecarServerAddr)
 
 	// Create a connection to fake alertmanager
 	var testAlertCache edgeproto.AlertCache
 	edgeproto.InitAlertCache(&testAlertCache)
 	alertRefreshInterval = 100 * time.Millisecond
-	testAlertMgrServer, err := NewAlertMgrServer(sidecarServerAddr, nil, &testAlertCache, 2*time.Minute)
+	testAlertMgrServer, err := NewAlertMgrServer(sidecarServerAddr, nil, &testAlertCache, 2*time.Minute, nil)
 	require.Nil(t, err)
 	require.NotNil(t, testAlertMgrServer)
 	require.Equal(t, 1, fakeAlertmanager.ConfigReloads)
 	// start another test alertMgrServer to test multiple inits
-	testAlertMgrServer2, err := NewAlertMgrServer(sidecarServerAddr, nil, &testAlertCache, 2*time.Minute)
+	testAlertMgrServer2, err := NewAlertMgrServer(sidecarServerAddr, nil, &testAlertCache, 2*time.Minute, nil)
 	require.Nil(t, err)
 	require.NotNil(t, testAlertMgrServer2)
 	// config is already set up, don't need to reload

@@ -27,11 +27,12 @@ import (
 )
 
 type ArtifactoryMock struct {
-	addr       string
-	userStore  map[string]*v1.User
-	groupStore map[string]*v1.Group
-	repoStore  map[string]*v1.LocalRepository
-	permStore  map[string]*v1.PermissionTargets
+	addr          string
+	userStore     map[string]*v1.User
+	groupStore    map[string]*v1.Group
+	repoStore     map[string]*v1.LocalRepository
+	permStore     map[string]*v1.PermissionTargets
+	mockTransport *httpmock.MockTransport
 }
 
 const (
@@ -41,9 +42,10 @@ const (
 	permApi  string = "api/security/permissions"
 )
 
-func NewArtifactoryMock(addr string) *ArtifactoryMock {
+func NewArtifactoryMock(addr string, tr *httpmock.MockTransport) *ArtifactoryMock {
 	rtf := ArtifactoryMock{}
 	rtf.addr = addr
+	rtf.mockTransport = tr
 	rtf.initData()
 	rtf.registerMockResponders()
 	return &rtf
@@ -65,7 +67,7 @@ func (s *ArtifactoryMock) getApiPathArg(api string) string {
 }
 
 func (s *ArtifactoryMock) registerCreateUser() {
-	httpmock.RegisterResponder("PUT", s.getApiPathArg(userApi),
+	s.mockTransport.RegisterResponder("PUT", s.getApiPathArg(userApi),
 		func(req *http.Request) (*http.Response, error) {
 			rtfUser := v1.User{}
 			err := json.NewDecoder(req.Body).Decode(&rtfUser)
@@ -85,7 +87,7 @@ func (s *ArtifactoryMock) registerCreateUser() {
 }
 
 func (s *ArtifactoryMock) registerDeleteUser() {
-	httpmock.RegisterResponder("DELETE", s.getApiPathArg(userApi),
+	s.mockTransport.RegisterResponder("DELETE", s.getApiPathArg(userApi),
 		func(req *http.Request) (*http.Response, error) {
 			username := strings.ToLower(httpmock.MustGetSubmatch(req, 1))
 			if _, ok := s.userStore[username]; ok {
@@ -98,7 +100,7 @@ func (s *ArtifactoryMock) registerDeleteUser() {
 }
 
 func (s *ArtifactoryMock) registerCreateGroup() {
-	httpmock.RegisterResponder("PUT", s.getApiPathArg(groupApi),
+	s.mockTransport.RegisterResponder("PUT", s.getApiPathArg(groupApi),
 		func(req *http.Request) (*http.Response, error) {
 			rtfGroup := v1.Group{}
 			err := json.NewDecoder(req.Body).Decode(&rtfGroup)
@@ -113,7 +115,7 @@ func (s *ArtifactoryMock) registerCreateGroup() {
 }
 
 func (s *ArtifactoryMock) registerDeleteGroup() {
-	httpmock.RegisterResponder("DELETE", s.getApiPathArg(groupApi),
+	s.mockTransport.RegisterResponder("DELETE", s.getApiPathArg(groupApi),
 		func(req *http.Request) (*http.Response, error) {
 			groupName := httpmock.MustGetSubmatch(req, 1)
 			if _, ok := s.groupStore[groupName]; ok {
@@ -126,7 +128,7 @@ func (s *ArtifactoryMock) registerDeleteGroup() {
 }
 
 func (s *ArtifactoryMock) registerCreateRepo() {
-	httpmock.RegisterResponder("PUT", s.getApiPathArg(repoApi),
+	s.mockTransport.RegisterResponder("PUT", s.getApiPathArg(repoApi),
 		func(req *http.Request) (*http.Response, error) {
 			rtfRepo := v1.LocalRepository{}
 			err := json.NewDecoder(req.Body).Decode(&rtfRepo)
@@ -141,7 +143,7 @@ func (s *ArtifactoryMock) registerCreateRepo() {
 }
 
 func (s *ArtifactoryMock) registerDeleteRepo() {
-	httpmock.RegisterResponder("DELETE", s.getApiPathArg(repoApi),
+	s.mockTransport.RegisterResponder("DELETE", s.getApiPathArg(repoApi),
 		func(req *http.Request) (*http.Response, error) {
 			repoName := httpmock.MustGetSubmatch(req, 1)
 			if _, ok := s.repoStore[repoName]; ok {
@@ -154,7 +156,7 @@ func (s *ArtifactoryMock) registerDeleteRepo() {
 }
 
 func (s *ArtifactoryMock) registerCreatePerm() {
-	httpmock.RegisterResponder("PUT", s.getApiPathArg(permApi),
+	s.mockTransport.RegisterResponder("PUT", s.getApiPathArg(permApi),
 		func(req *http.Request) (*http.Response, error) {
 			rtfPerm := v1.PermissionTargets{}
 			err := json.NewDecoder(req.Body).Decode(&rtfPerm)
@@ -169,7 +171,7 @@ func (s *ArtifactoryMock) registerCreatePerm() {
 }
 
 func (s *ArtifactoryMock) registerDeletePerm() {
-	httpmock.RegisterResponder("DELETE", s.getApiPathArg(permApi),
+	s.mockTransport.RegisterResponder("DELETE", s.getApiPathArg(permApi),
 		func(req *http.Request) (*http.Response, error) {
 			permName := httpmock.MustGetSubmatch(req, 1)
 			if _, ok := s.permStore[permName]; ok {
@@ -182,7 +184,7 @@ func (s *ArtifactoryMock) registerDeletePerm() {
 }
 
 func (s *ArtifactoryMock) registerGetUser() {
-	httpmock.RegisterResponder("GET", s.getApiPathArg(userApi),
+	s.mockTransport.RegisterResponder("GET", s.getApiPathArg(userApi),
 		func(req *http.Request) (*http.Response, error) {
 			userName := httpmock.MustGetSubmatch(req, 1)
 			if rtfUser, ok := s.userStore[strings.ToLower(userName)]; ok {
@@ -194,7 +196,7 @@ func (s *ArtifactoryMock) registerGetUser() {
 }
 
 func (s *ArtifactoryMock) registerGetUsers() {
-	httpmock.RegisterResponder("GET", s.getApiPath(userApi),
+	s.mockTransport.RegisterResponder("GET", s.getApiPath(userApi),
 		func(req *http.Request) (*http.Response, error) {
 			users := []v1.UserDetails{}
 			for _, v := range s.userStore {
@@ -212,7 +214,7 @@ func (s *ArtifactoryMock) registerGetUsers() {
 }
 
 func (s *ArtifactoryMock) registerGetGroups() {
-	httpmock.RegisterResponder("GET", s.getApiPath(groupApi),
+	s.mockTransport.RegisterResponder("GET", s.getApiPath(groupApi),
 		func(req *http.Request) (*http.Response, error) {
 			groups := []v1.GroupDetails{}
 			for _, v := range s.groupStore {
@@ -229,7 +231,7 @@ func (s *ArtifactoryMock) registerGetGroups() {
 }
 
 func (s *ArtifactoryMock) registerGetRepos() {
-	httpmock.RegisterResponder("GET", s.getApiPath(repoApi),
+	s.mockTransport.RegisterResponder("GET", s.getApiPath(repoApi),
 		func(req *http.Request) (*http.Response, error) {
 			repos := []v1.RepositoryDetails{}
 			repoType := "local"
@@ -248,7 +250,7 @@ func (s *ArtifactoryMock) registerGetRepos() {
 }
 
 func (s *ArtifactoryMock) registerGetPerms() {
-	httpmock.RegisterResponder("GET", s.getApiPath(permApi),
+	s.mockTransport.RegisterResponder("GET", s.getApiPath(permApi),
 		func(req *http.Request) (*http.Response, error) {
 			perms := []v1.PermissionTargetsDetails{}
 			for _, v := range s.permStore {
@@ -265,7 +267,7 @@ func (s *ArtifactoryMock) registerGetPerms() {
 }
 
 func (s *ArtifactoryMock) registerUpdateUser() {
-	httpmock.RegisterResponder("POST", s.getApiPathArg(userApi),
+	s.mockTransport.RegisterResponder("POST", s.getApiPathArg(userApi),
 		func(req *http.Request) (*http.Response, error) {
 			userName := httpmock.MustGetSubmatch(req, 1)
 			updateUser := v1.User{}
