@@ -16,7 +16,6 @@ package alertmgr
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"testing"
@@ -70,7 +69,6 @@ func TestAlertMgrServer(t *testing.T) {
 	err = sidecarServer.Run()
 	require.Nil(t, err)
 	sidecarServerAddr := sidecarServer.GetApiAddr()
-	fmt.Printf("sidecarServerAddr is %s\n", sidecarServerAddr)
 
 	// Create a connection to fake alertmanager
 	var testAlertCache edgeproto.AlertCache
