@@ -23,8 +23,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jarcoal/httpmock"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/jarcoal/httpmock"
 )
 
 // This captures events meant to be sent to elastic search.
@@ -39,16 +39,16 @@ type DummyEventsES struct {
 // This assumes httpmock has already been initialized via:
 // httpmock.Activate()
 // defer httpmock.DeactiveAndReset()
-func (s *DummyEventsES) InitHttpMock(addr string) {
+func (s *DummyEventsES) InitHttpMock(addr string, mockTransport *httpmock.MockTransport) {
 	s.Events = make([]*node.EventData, 0)
 
 	matchAll := "=~" + addr + `/.*\z`
 	// regexp match POST events
-	httpmock.RegisterResponder("POST", matchAll, s.Handle)
+	mockTransport.RegisterResponder("POST", matchAll, s.Handle)
 	// ignore searches
-	httpmock.RegisterResponder("GET", matchAll, s.HandleIgnore)
+	mockTransport.RegisterResponder("GET", matchAll, s.HandleIgnore)
 	// ignore PUT index template
-	httpmock.RegisterResponder("PUT", matchAll, s.HandleIgnore)
+	mockTransport.RegisterResponder("PUT", matchAll, s.HandleIgnore)
 }
 
 func (s *DummyEventsES) Handle(req *http.Request) (*http.Response, error) {

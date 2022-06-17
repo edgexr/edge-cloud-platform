@@ -27,11 +27,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/mitchellh/mapstructure"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -253,6 +253,9 @@ func (s *NodeMgr) initEvents(ctx context.Context, opts *NodeOptions) error {
 			TLSClientConfig: tlsConfig,
 		}
 		config.Transport = &transport
+	}
+	if s.testTransport != nil {
+		config.Transport = s.testTransport
 	}
 
 	s.ESClient, err = elasticsearch.NewClient(config)

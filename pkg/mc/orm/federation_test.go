@@ -27,28 +27,28 @@ import (
 	"testing"
 	"time"
 
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/billing"
+	"github.com/edgexr/edge-cloud-platform/pkg/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/nodetest"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
+	ormtestutil "github.com/edgexr/edge-cloud-platform/pkg/mc/orm/testutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/google/uuid"
 	"github.com/jarcoal/httpmock"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/labstack/echo"
 	"github.com/lib/pq"
-	"github.com/edgexr/edge-cloud-platform/pkg/billing"
-	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
-	ormtestutil "github.com/edgexr/edge-cloud-platform/pkg/mc/orm/testutil"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
-	"github.com/edgexr/edge-cloud-platform/pkg/cli"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/nodetest"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/test/testutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -188,14 +188,12 @@ func (c *CtrlObj) Cleanup(ctx context.Context) {
 	c.dc.Stop()
 }
 
-func SetupOperatorPlatform(t *testing.T, ctx context.Context) (*OPAttr, []FederatorAttr) {
-	// any requests that don't have a registered URL will be fetched normally
+func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *httpmock.MockTransport) (*OPAttr, []FederatorAttr) {
 	mockESUrl := "http://mock.es"
-	httpmock.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
-	testAlertMgrAddr, err := InitAlertmgrMock()
+	testAlertMgrAddr, err := InitAlertmgrMock(mockTransport)
 	require.Nil(t, err)
 	de := &nodetest.DummyEventsES{}
-	de.InitHttpMock(mockESUrl)
+	de.InitHttpMock(mockESUrl, mockTransport)
 
 	// run a dummy http server to mimic influxdb
 	// this will reply with empty json to everything
@@ -233,6 +231,7 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context) (*OPAttr, []Federa
 		PublicAddr:               "http://mc.mobiledgex.net",
 		PasswordResetConsolePath: "#/passwordreset",
 		VerifyEmailConsolePath:   "#/verify",
+		testTransport:            mockTransport,
 	}
 	unitTestNodeMgrOps = []node.NodeOp{
 		node.WithESUrls(MockESUrl),
@@ -244,8 +243,8 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context) (*OPAttr, []Federa
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
 
-	// set unit test flag
-	fedClient.UnitTest = true
+	// set test transport to use httpmock
+	fedClient.TestTransport = mockTransport
 
 	Jwks.Init(config.vaultConfig, "region", "mcorm")
 	Jwks.Meta.CurrentVersion = 1
@@ -325,7 +324,7 @@ func getFederationAPI(fedAddr, fedApi string) string {
 	return fedAddr + fedApi
 }
 
-func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr) {
+func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr, mockTransport *httpmock.MockTransport) {
 	valApiKey := func(req *http.Request) error {
 		auth := req.Header.Get(echo.HeaderAuthorization)
 		scheme := "Bearer"
@@ -342,7 +341,7 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr) {
 		}
 		return nil
 	}
-	httpmock.RegisterResponder("POST", getFederationAPI(partnerFed.fedAddr, federation.OperatorPartnerAPI),
+	mockTransport.RegisterResponder("POST", getFederationAPI(partnerFed.fedAddr, federation.OperatorPartnerAPI),
 		func(req *http.Request) (*http.Response, error) {
 			err := valApiKey(req)
 			if err != nil {
@@ -374,7 +373,7 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr) {
 		},
 	)
 
-	httpmock.RegisterResponder("PUT", getFederationAPI(partnerFed.fedAddr, federation.OperatorPartnerAPI),
+	mockTransport.RegisterResponder("PUT", getFederationAPI(partnerFed.fedAddr, federation.OperatorPartnerAPI),
 		func(req *http.Request) (*http.Response, error) {
 			err := valApiKey(req)
 			if err != nil {
@@ -397,7 +396,7 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr) {
 		},
 	)
 
-	httpmock.RegisterResponder("DELETE", getFederationAPI(partnerFed.fedAddr, federation.OperatorPartnerAPI),
+	mockTransport.RegisterResponder("DELETE", getFederationAPI(partnerFed.fedAddr, federation.OperatorPartnerAPI),
 		func(req *http.Request) (*http.Response, error) {
 			err := valApiKey(req)
 			if err != nil {
@@ -420,7 +419,7 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr) {
 		},
 	)
 
-	httpmock.RegisterResponder("POST", getFederationAPI(partnerFed.fedAddr, federation.OperatorZoneAPI),
+	mockTransport.RegisterResponder("POST", getFederationAPI(partnerFed.fedAddr, federation.OperatorZoneAPI),
 		func(req *http.Request) (*http.Response, error) {
 			err := valApiKey(req)
 			if err != nil {
@@ -455,7 +454,7 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr) {
 			return httpmock.NewJsonResponse(200, out)
 		},
 	)
-	httpmock.RegisterResponder("DELETE", getFederationAPI(partnerFed.fedAddr, federation.OperatorZoneAPI),
+	mockTransport.RegisterResponder("DELETE", getFederationAPI(partnerFed.fedAddr, federation.OperatorZoneAPI),
 		func(req *http.Request) (*http.Response, error) {
 			err := valApiKey(req)
 			if err != nil {
@@ -478,7 +477,7 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr) {
 		},
 	)
 
-	httpmock.RegisterResponder("POST", getFederationAPI(partnerFed.fedAddr, federation.OperatorNotifyZoneAPI),
+	mockTransport.RegisterResponder("POST", getFederationAPI(partnerFed.fedAddr, federation.OperatorNotifyZoneAPI),
 		func(req *http.Request) (*http.Response, error) {
 			err := valApiKey(req)
 			if err != nil {
@@ -504,7 +503,7 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr) {
 			return httpmock.NewStringResponse(200, "Added zone successfully"), nil
 		},
 	)
-	httpmock.RegisterResponder("DELETE", getFederationAPI(partnerFed.fedAddr, federation.OperatorNotifyZoneAPI),
+	mockTransport.RegisterResponder("DELETE", getFederationAPI(partnerFed.fedAddr, federation.OperatorNotifyZoneAPI),
 		func(req *http.Request) (*http.Response, error) {
 			err := valApiKey(req)
 			if err != nil {
@@ -540,11 +539,12 @@ func TestFederation(t *testing.T) {
 
 	unitTest = true
 
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
+	mockTransport := httpmock.NewMockTransport()
+	// any requests that don't have a registered URL will be fetched normally
+	mockTransport.RegisterNoResponder(http.DefaultTransport.RoundTrip)
 
 	// Setup Operator Platform (MC - Self federator)
-	op, selfFederators := SetupOperatorPlatform(t, ctx)
+	op, selfFederators := SetupOperatorPlatform(t, ctx, mockTransport)
 	defer op.CleanupOperatorPlatform(ctx)
 
 	// Setup partner federator
@@ -576,9 +576,9 @@ func TestFederation(t *testing.T) {
 	partnerFed.zones = partnerZones
 
 	// Register mock federation APIs
-	registerFederationAPIs(t, partnerFed)
+	registerFederationAPIs(t, partnerFed, mockTransport)
 
-	for _, clientRun := range getUnitTestClientRuns() {
+	for _, clientRun := range getUnitTestClientRuns(mockTransport) {
 		testFederationInterconnect(t, ctx, clientRun, op, selfFederators, partnerFed)
 	}
 }

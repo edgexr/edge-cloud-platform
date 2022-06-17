@@ -33,7 +33,6 @@ import (
 	"github.com/hashicorp/vault/api"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/examples/features/proto/echo"
 )
@@ -127,17 +126,18 @@ func TestAccessClientServer(t *testing.T) {
 	dc.Stop()
 	dc.Start(ctx, addr)
 	// wait for reconnect to complete
-	var state connectivity.State
+	cl := echo.NewEchoClient(clientConn)
 	for ii := 0; ii < 100; ii++ {
-		state = clientConn.GetState()
-		if state == connectivity.Ready || state == connectivity.Idle {
+		sspan, cctx := log.ChildSpan(ctx, log.DebugLevelApi, "unary-request")
+		_, err = cl.UnaryEcho(cctx, &echo.EchoRequest{})
+		sspan.Finish()
+		if err == nil {
 			break
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 	}
-	if state != connectivity.Ready && state != connectivity.Idle {
-		require.True(t, false, "grpc client conn state should be idle(%d) or ready(%d), but is (%d)", connectivity.Idle, connectivity.Ready, state)
-	}
+	require.Nil(t, err, "client reconnect check")
+
 	EchoApisTest(t, ctx, clientConn, "")
 	clientConn.Close()
 

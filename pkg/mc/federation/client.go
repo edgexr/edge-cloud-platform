@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 )
 
@@ -31,8 +31,8 @@ const (
 )
 
 type FederationClient struct {
-	AccessApi platform.AccessApi
-	UnitTest  bool
+	AccessApi     platform.AccessApi
+	TestTransport http.RoundTripper
 }
 
 func NewClient(accessApi platform.AccessApi) (*FederationClient, error) {
@@ -62,8 +62,8 @@ func (c *FederationClient) SendRequest(ctx context.Context, method, fedAddr, fed
 	}
 
 	restClient := &ormclient.Client{}
-	if c.UnitTest {
-		restClient.ForceDefaultTransport = true
+	if c.TestTransport != nil {
+		restClient.TestTransport = c.TestTransport
 	}
 	if tls.IsTestTls() {
 		restClient.SkipVerify = true

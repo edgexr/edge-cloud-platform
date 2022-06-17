@@ -22,12 +22,12 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/go-openapi/strfmt"
-	"github.com/jarcoal/httpmock"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/go-openapi/strfmt"
+	"github.com/jarcoal/httpmock"
 
 	//	open_api_models "github.com/prometheus/alertmanager/api/v2/models"
 	// TODO - below is to replace the above for right now - once we update go and modules we can use prometheus directly
@@ -57,13 +57,15 @@ type AlertmanagerMock struct {
 	SilencesPosts   int
 	SilencesDeletes int
 	ConfigReloads   int
+	tr              *httpmock.MockTransport
 }
 
-func NewAlertmanagerMock(addr string, cfg string) *AlertmanagerMock {
+func NewAlertmanagerMock(addr string, cfg string, tr *httpmock.MockTransport) *AlertmanagerMock {
 	alertMgr := AlertmanagerMock{}
 	alertMgr.addr = addr
 	alertMgr.alerts = make(map[string]model.Alert)
 	alertMgr.configFile = cfg
+	alertMgr.tr = tr
 	if err := alertMgr.readConfig(); err != nil {
 		fmt.Printf("Error reading config file, %v\n", err)
 		return nil
@@ -106,12 +108,12 @@ func (s *AlertmanagerMock) registerMockResponders() {
 }
 
 func (s *AlertmanagerMock) registerBaseUrl() {
-	httpmock.RegisterResponder("GET", s.addr+"/",
+	s.tr.RegisterResponder("GET", s.addr+"/",
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewStringResponse(200, "Success"), nil
 		},
 	)
-	httpmock.RegisterResponder("GET", s.addr,
+	s.tr.RegisterResponder("GET", s.addr,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewStringResponse(200, "Success"), nil
 		},
@@ -119,7 +121,7 @@ func (s *AlertmanagerMock) registerBaseUrl() {
 }
 
 func (s *AlertmanagerMock) registerConfigReload() {
-	httpmock.RegisterResponder("POST", s.addr+ReloadConfigApi,
+	s.tr.RegisterResponder("POST", s.addr+ReloadConfigApi,
 		func(req *http.Request) (*http.Response, error) {
 			err := s.readConfig()
 			s.ConfigReloads++
@@ -132,7 +134,7 @@ func (s *AlertmanagerMock) registerConfigReload() {
 }
 
 func (s *AlertmanagerMock) registerCreateAlerts() {
-	httpmock.RegisterResponder("POST", s.addr+AlertApi,
+	s.tr.RegisterResponder("POST", s.addr+AlertApi,
 		func(req *http.Request) (*http.Response, error) {
 			alerts := []model.Alert{}
 			err := json.NewDecoder(req.Body).Decode(&alerts)
@@ -154,7 +156,7 @@ func (s *AlertmanagerMock) registerCreateAlerts() {
 }
 
 func (s *AlertmanagerMock) registerGetAlerts() {
-	httpmock.RegisterResponder("GET", s.addr+AlertApi,
+	s.tr.RegisterResponder("GET", s.addr+AlertApi,
 		func(req *http.Request) (*http.Response, error) {
 			alerts := open_api_models.GettableAlerts{}
 			for _, alert := range s.alerts {
@@ -186,7 +188,7 @@ func (s *AlertmanagerMock) registerGetAlerts() {
 }
 
 func (s *AlertmanagerMock) registerCreateSilences() {
-	httpmock.RegisterResponder("POST", s.addr+SilenceApi,
+	s.tr.RegisterResponder("POST", s.addr+SilenceApi,
 		func(req *http.Request) (*http.Response, error) {
 			// TODO
 			s.SilencesPosts++
@@ -196,7 +198,7 @@ func (s *AlertmanagerMock) registerCreateSilences() {
 }
 
 func (s *AlertmanagerMock) registerDeleteSilences() {
-	httpmock.RegisterResponder("DELETE", s.addr+SilenceApi,
+	s.tr.RegisterResponder("DELETE", s.addr+SilenceApi,
 		func(req *http.Request) (*http.Response, error) {
 			// TODO
 			s.SilencesDeletes++
@@ -206,7 +208,7 @@ func (s *AlertmanagerMock) registerDeleteSilences() {
 }
 
 func (s *AlertmanagerMock) registerGetSilences() {
-	httpmock.RegisterResponder("GET", s.addr+SilenceApi,
+	s.tr.RegisterResponder("GET", s.addr+SilenceApi,
 		func(req *http.Request) (*http.Response, error) {
 			// TODO
 			s.SilencesGets++
@@ -216,7 +218,7 @@ func (s *AlertmanagerMock) registerGetSilences() {
 }
 
 func (s *AlertmanagerMock) registerGetReceivers() {
-	httpmock.RegisterResponder("GET", s.addr+ReceiverApi,
+	s.tr.RegisterResponder("GET", s.addr+ReceiverApi,
 		func(req *http.Request) (*http.Response, error) {
 			names := []string{}
 			for _, receiver := range s.receivers {
