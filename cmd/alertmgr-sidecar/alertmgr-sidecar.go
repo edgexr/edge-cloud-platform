@@ -20,8 +20,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr"
 )
 
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
@@ -79,7 +79,7 @@ func main() {
 	}
 
 	SidecarServer, err := alertmgr.NewSidecarServer(*alertmanagerAddr, *alertmanagerConfigFile,
-		*httpAddr, config, *clientCert, *tlsCert, *tlsCertKey, *localTest)
+		*httpAddr, config, *clientCert, *tlsCert, *tlsCertKey, *localTest, nil)
 	if err != nil {
 		log.FatalLog("Unable to init alertmgr sidecar", "err", err)
 	}

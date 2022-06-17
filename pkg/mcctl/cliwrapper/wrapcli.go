@@ -27,11 +27,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/cli"
+	edgelog "github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mccli"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
-	"github.com/edgexr/edge-cloud-platform/pkg/cli"
-	edgelog "github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/spf13/cobra"
 )
 
@@ -58,8 +58,8 @@ func NewClient() *Client {
 	return s
 }
 
-func (s *Client) ForceDefaultTransport(enable bool) {
-	s.rootCmd.ForceDefaultTransport(enable)
+func (s *Client) SetTestTransport(tr http.RoundTripper) {
+	s.rootCmd.SetTestTransport(tr)
 }
 
 func (s *Client) EnablePrintTransformations() {

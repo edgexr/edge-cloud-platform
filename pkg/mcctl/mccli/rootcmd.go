@@ -17,11 +17,12 @@ package mccli
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
 	"github.com/spf13/cobra"
 )
 
@@ -207,9 +208,9 @@ func printCommandGroup(out io.Writer, desc string, pad int, cmds []*cobra.Comman
 	}
 }
 
-// For unit-testing, force default transport to allow http requests to be mocked
-func (s *RootCommand) ForceDefaultTransport(enable bool) {
-	s.client.ForceDefaultTransport = enable
+// For unit-testing, set transport to allow http requests to be mocked
+func (s *RootCommand) SetTestTransport(tr http.RoundTripper) {
+	s.client.TestTransport = tr
 }
 
 func (s *RootCommand) EnablePrintTransformations() {

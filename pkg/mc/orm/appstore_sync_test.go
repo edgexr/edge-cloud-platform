@@ -24,12 +24,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jarcoal/httpmock"
-	"github.com/edgexr/edge-cloud-platform/pkg/billing"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
+	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -138,10 +138,9 @@ func TestAppStoreApi(t *testing.T) {
 	os.Setenv("gitlab_token", gitlabApiKey)
 
 	// mock http to redirect requests
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
+	mockTransport := httpmock.NewMockTransport()
 	// any requests that don't have a registered URL will be fetched normally
-	httpmock.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
+	mockTransport.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
 
 	// master controller
 	addr := "127.0.0.1:9999"
@@ -164,6 +163,7 @@ func TestAppStoreApi(t *testing.T) {
 		PublicAddr:               "http://mc.mobiledgex.net",
 		PasswordResetConsolePath: "#/passwordreset",
 		VerifyEmailConsolePath:   "#/verify",
+		testTransport:            mockTransport,
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
@@ -179,16 +179,18 @@ func TestAppStoreApi(t *testing.T) {
 	err = server.WaitUntilReady()
 	require.Nil(t, err, "server online")
 
-	mcClient := mctestclient.NewClient(&ormclient.Client{})
+	mcClient := mctestclient.NewClient(&ormclient.Client{
+		TestTransport: mockTransport,
+	})
 
 	// login as super user
 	tokenAdmin, _, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass, NoOTP, NoApiKeyId, NoApiKey)
 	require.Nil(t, err, "login as superuser")
 
 	// mock artifactory
-	rtf := NewArtifactoryMock(artifactoryAddr)
+	rtf := NewArtifactoryMock(artifactoryAddr, mockTransport)
 	// mock gitlab
-	gm := NewGitlabMock(gitlabAddr)
+	gm := NewGitlabMock(gitlabAddr, mockTransport)
 
 	// basic direct api tests
 	for user, _ := range testEntries[0].Users {

@@ -114,6 +114,7 @@ type ServerConfig struct {
 	ConsoleAddr              string
 	PasswordResetConsolePath string
 	VerifyEmailConsolePath   string
+	testTransport            http.RoundTripper // for unit-tests
 }
 
 var DefaultDBUser = "mcuser"
@@ -278,7 +279,13 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		log.InfoLog("Note: No gitlab_token env var found")
 	}
 	if config.GitlabAddr != "" {
-		gitlabClient = gitlab.NewClient(nil, gitlabToken)
+		var httpClient *http.Client
+		if config.testTransport != nil {
+			httpClient = &http.Client{
+				Transport: config.testTransport,
+			}
+		}
+		gitlabClient = gitlab.NewClient(httpClient, gitlabToken)
 		if err = gitlabClient.SetBaseURL(config.GitlabAddr); err != nil {
 			return nil, fmt.Errorf("Gitlab client set base URL to %s, %s",
 				config.GitlabAddr, err.Error())
@@ -340,7 +347,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 			return nil, fmt.Errorf("Unable to get a client tls config, %s", err.Error())
 		}
 		AlertManagerServer, err = alertmgr.NewAlertMgrServer(config.AlertMgrAddr, tlsConfig,
-			config.AlertCache, config.AlertmgrResolveTimout)
+			config.AlertCache, config.AlertmgrResolveTimout, config.testTransport)
 		if err != nil {
 			// TODO - this needs to be a fatal failure when we add alertmanager deployment to the ansible scripts
 			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to start alertmanager server", "error", err)

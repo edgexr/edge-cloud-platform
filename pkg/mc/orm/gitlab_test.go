@@ -21,8 +21,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jarcoal/httpmock"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/require"
 	gitlab "github.com/xanzy/go-gitlab"
 )
@@ -36,11 +36,13 @@ type GitlabMock struct {
 	nextUserID    int
 	nextGroupID   int
 	nextProjectID int
+	mockTransport *httpmock.MockTransport
 }
 
-func NewGitlabMock(addr string) *GitlabMock {
+func NewGitlabMock(addr string, tr *httpmock.MockTransport) *GitlabMock {
 	gm := GitlabMock{}
 	gm.addr = addr + "/api/v4"
+	gm.mockTransport = tr
 	gm.initData()
 
 	gm.registerCreateUser()
@@ -136,7 +138,7 @@ func (s *GitlabMock) verifyEmpty(t *testing.T) {
 
 func (s *GitlabMock) registerCreateUser() {
 	u := fmt.Sprintf("%s/users", s.addr)
-	httpmock.RegisterResponder("POST", u,
+	s.mockTransport.RegisterResponder("POST", u,
 		func(req *http.Request) (*http.Response, error) {
 			opt := gitlab.CreateUserOptions{}
 			err := json.NewDecoder(req.Body).Decode(&opt)
@@ -185,7 +187,7 @@ func (s *GitlabMock) registerCreateUser() {
 
 func (s *GitlabMock) registerDeleteUser() {
 	u := fmt.Sprintf(`=~^%s/users/(\d+)\z`, s.addr)
-	httpmock.RegisterResponder("DELETE", u,
+	s.mockTransport.RegisterResponder("DELETE", u,
 		func(req *http.Request) (*http.Response, error) {
 			userID := int(httpmock.MustGetSubmatchAsInt(req, 1))
 			user, found := s.users[userID]
@@ -201,7 +203,7 @@ func (s *GitlabMock) registerDeleteUser() {
 
 func (s *GitlabMock) registerListUsers() {
 	u := fmt.Sprintf("%s/users", s.addr)
-	httpmock.RegisterResponder("GET", u,
+	s.mockTransport.RegisterResponder("GET", u,
 		func(req *http.Request) (*http.Response, error) {
 			queries := req.URL.Query()
 			username, filter := queries["username"]
@@ -233,7 +235,7 @@ func (s *GitlabMock) registerListUsers() {
 
 func (s *GitlabMock) registerCreateGroup() {
 	u := fmt.Sprintf("%s/groups", s.addr)
-	httpmock.RegisterResponder("POST", u,
+	s.mockTransport.RegisterResponder("POST", u,
 		func(req *http.Request) (*http.Response, error) {
 			opt := gitlab.CreateGroupOptions{}
 			err := json.NewDecoder(req.Body).Decode(&opt)
@@ -263,7 +265,7 @@ func (s *GitlabMock) registerCreateGroup() {
 
 func (s *GitlabMock) registerDeleteGroup() {
 	u := fmt.Sprintf(`=~^%s/groups/(.+?)\z`, s.addr)
-	httpmock.RegisterResponder("DELETE", u,
+	s.mockTransport.RegisterResponder("DELETE", u,
 		func(req *http.Request) (*http.Response, error) {
 			groupNameOrID := httpmock.MustGetSubmatch(req, 1)
 			group := s.getGroup(groupNameOrID)
@@ -288,7 +290,7 @@ func (s *GitlabMock) registerDeleteGroup() {
 
 func (s *GitlabMock) registerListGroups() {
 	u := fmt.Sprintf("%s/groups", s.addr)
-	httpmock.RegisterResponder("GET", u,
+	s.mockTransport.RegisterResponder("GET", u,
 		func(req *http.Request) (*http.Response, error) {
 			retGroups := make([]*gitlab.Group, 0)
 			for _, group := range s.groups {
@@ -301,7 +303,7 @@ func (s *GitlabMock) registerListGroups() {
 
 func (s *GitlabMock) registerAddGroupMember() {
 	u := fmt.Sprintf(`=~^%s/groups/(.+?)/members\z`, s.addr)
-	httpmock.RegisterResponder("POST", u,
+	s.mockTransport.RegisterResponder("POST", u,
 		func(req *http.Request) (*http.Response, error) {
 			groupNameOrID := httpmock.MustGetSubmatch(req, 1)
 			group := s.getGroup(groupNameOrID)
@@ -348,7 +350,7 @@ func (s *GitlabMock) registerAddGroupMember() {
 
 func (s *GitlabMock) registerRemoveGroupMember() {
 	u := fmt.Sprintf(`=~^%s/groups/(.+?)/members/(\d+)\z`, s.addr)
-	httpmock.RegisterResponder("DELETE", u,
+	s.mockTransport.RegisterResponder("DELETE", u,
 		func(req *http.Request) (*http.Response, error) {
 			groupNameOrID := httpmock.MustGetSubmatch(req, 1)
 			group := s.getGroup(groupNameOrID)
@@ -373,7 +375,7 @@ func (s *GitlabMock) registerRemoveGroupMember() {
 
 func (s *GitlabMock) registerListGroupMembers() {
 	u := fmt.Sprintf(`=~^%s/groups/(.+?)/members`, s.addr)
-	httpmock.RegisterResponder("GET", u,
+	s.mockTransport.RegisterResponder("GET", u,
 		func(req *http.Request) (*http.Response, error) {
 			groupNameOrID := httpmock.MustGetSubmatch(req, 1)
 			group := s.getGroup(groupNameOrID)
@@ -389,7 +391,7 @@ func (s *GitlabMock) registerListGroupMembers() {
 
 func (s *GitlabMock) registerCreateProject() {
 	u := fmt.Sprintf("%s/projects", s.addr)
-	httpmock.RegisterResponder("POST", u,
+	s.mockTransport.RegisterResponder("POST", u,
 		func(req *http.Request) (*http.Response, error) {
 			opt := gitlab.CreateProjectOptions{}
 			err := json.NewDecoder(req.Body).Decode(&opt)
@@ -428,7 +430,7 @@ func (s *GitlabMock) registerCreateProject() {
 
 func (s *GitlabMock) registerSetCustomGroupAttribute() {
 	u := fmt.Sprintf(`=~^%s/groups/(\d+)/custom_attributes/(.+)\z`, s.addr)
-	httpmock.RegisterResponder("PUT", u,
+	s.mockTransport.RegisterResponder("PUT", u,
 		func(req *http.Request) (*http.Response, error) {
 			groupID := int(httpmock.MustGetSubmatchAsInt(req, 1))
 			key := httpmock.MustGetSubmatch(req, 2)
@@ -454,7 +456,7 @@ func (s *GitlabMock) registerSetCustomGroupAttribute() {
 
 func (s *GitlabMock) registerGetCustomGroupAttribute() {
 	u := fmt.Sprintf(`=~^%s/groups/(\d+)/custom_attributes/(.+)\z`, s.addr)
-	httpmock.RegisterResponder("GET", u,
+	s.mockTransport.RegisterResponder("GET", u,
 		func(req *http.Request) (*http.Response, error) {
 			groupID := int(httpmock.MustGetSubmatchAsInt(req, 1))
 			key := httpmock.MustGetSubmatch(req, 2)

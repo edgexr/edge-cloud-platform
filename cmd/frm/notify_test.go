@@ -18,12 +18,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/stretchr/testify/require"
 )
 
@@ -143,7 +143,7 @@ func TestFRMNotify(t *testing.T) {
 	ctrlHandler := notify.NewDummyHandler()
 	ctrlMgr := notify.ServerMgr{}
 	ctrlHandler.RegisterServer(&ctrlMgr)
-	notifyAddr := "127.0.0.1:61245"
+	notifyAddr := "127.0.0.1:21245"
 	ctrlMgr.Start("ctrl", notifyAddr, nil)
 
 	var nodeMgr node.NodeMgr

@@ -28,12 +28,12 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/go-openapi/strfmt"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/go-openapi/strfmt"
 	"github.com/mobiledgex/yaml/v2"
 
 	//"github.com/prometheus/alertmanager/api/v2/models"
@@ -60,6 +60,7 @@ type AlertMgrServer struct {
 	TlsConfig             *tls.Config
 	waitGrp               sync.WaitGroup
 	stop                  chan struct{}
+	client                Client
 }
 
 // TODO - use version to track where this alert came from
@@ -75,15 +76,20 @@ func getAlertRefreshRate(resolveTimeout time.Duration) time.Duration {
 	return resolveTimeout / 3
 }
 
-func NewAlertMgrServer(alertMgrAddr string, tlsConfig *tls.Config,
-	alertCache *edgeproto.AlertCache, resolveTimeout time.Duration) (*AlertMgrServer, error) {
+func NewAlertMgrServer(alertMgrAddr string, tlsConfig *tls.Config, alertCache *edgeproto.AlertCache, resolveTimeout time.Duration, testTransport http.RoundTripper) (*AlertMgrServer, error) {
 	var err error
 	server := AlertMgrServer{
 		AlertMrgAddr:          alertMgrAddr,
 		AlertCache:            alertCache,
 		AlertResolutionTimout: resolveTimeout,
 		TlsConfig:             tlsConfig,
+		client: Client{
+			addr:          alertMgrAddr,
+			tlsConfig:     tlsConfig,
+			testTransport: testTransport,
+		},
 	}
+
 	span := log.StartSpan(log.DebugLevelApi|log.DebugLevelInfo, "AlertMgrServer")
 	defer span.Finish()
 	ctx := log.ContextWithSpan(context.Background(), span)
@@ -91,7 +97,7 @@ func NewAlertMgrServer(alertMgrAddr string, tlsConfig *tls.Config,
 	server.AlertRefreshInterval = getAlertRefreshRate(resolveTimeout)
 	// We might need to wait for alertmanager to be up first
 	for ii := 0; ii < 10; ii++ {
-		_, err = alertMgrApi(ctx, server.AlertMrgAddr, "GET", "", "", nil, server.TlsConfig)
+		_, err = server.client.alertMgrApi(ctx, "GET", "", "", nil)
 		if err == nil {
 			break
 		}
@@ -216,7 +222,7 @@ func alertManagerAlertsToEdgeprotoAlerts(openAPIAlerts models.GettableAlerts) []
 
 // Show all alerts in the alertmgr
 func (s *AlertMgrServer) ShowAlerts(ctx context.Context, filter *edgeproto.Alert) ([]edgeproto.Alert, error) {
-	data, err := alertMgrApi(ctx, s.AlertMrgAddr, "GET", AlertApi, "", nil, s.TlsConfig)
+	data, err := s.client.alertMgrApi(ctx, "GET", AlertApi, "", nil)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Unable to GET Alerts", "err", err, "filter", filter)
 		return nil, err
@@ -239,7 +245,7 @@ func (s *AlertMgrServer) AddAlerts(ctx context.Context, alerts ...*edgeproto.Ale
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to marshal alerts", "err", err, "alerts", alerts)
 		return err
 	}
-	res, err := alertMgrApi(ctx, s.AlertMrgAddr, "POST", AlertApi, "", data, s.TlsConfig)
+	res, err := s.client.alertMgrApi(ctx, "POST", AlertApi, "", data)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to add alerts", "err", err, "res", res)
 	}
@@ -450,7 +456,7 @@ func (s *AlertMgrServer) CreateReceiver(ctx context.Context, receiver *ormapi.Al
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to get marshal sidecar Receiver Config info", "err", err, "cfg", sidecarRec)
 		return err
 	}
-	res, err := alertMgrApi(ctx, s.AlertMrgAddr, "POST", mobiledgeXReceiverApi, "", data, s.TlsConfig)
+	res, err := s.client.alertMgrApi(ctx, "POST", mobiledgeXReceiverApi, "", data)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to create alertmanager receiver", "err", err, "res", res)
 		return err
@@ -466,7 +472,7 @@ func (s *AlertMgrServer) DeleteReceiver(ctx context.Context, receiver *ormapi.Al
 
 	// We create one entry per receiver, to make it simpler
 	receiverName := getAlertmgrReceiverName(receiver)
-	res, err := alertMgrApi(ctx, s.AlertMrgAddr, "DELETE", mobiledgeXReceiverApi+"/"+receiverName, "", nil, s.TlsConfig)
+	res, err := s.client.alertMgrApi(ctx, "DELETE", mobiledgeXReceiverApi+"/"+receiverName, "", nil)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to delete alertmanager receiver", "err", err, "res", res)
 		return err
@@ -526,7 +532,7 @@ func (s *AlertMgrServer) ShowReceivers(ctx context.Context, filter *ormapi.Alert
 		// Add Filter with a name
 		apiUrl = mobiledgeXReceiverApi + "/" + filter.Name
 	}
-	data, err := alertMgrApi(ctx, s.AlertMrgAddr, "GET", apiUrl, "", nil, s.TlsConfig)
+	data, err := s.client.alertMgrApi(ctx, "GET", apiUrl, "", nil)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Unable to GET Alert Receivers", "err", err)
 		return nil, err
@@ -600,11 +606,17 @@ func (s *AlertMgrServer) ShowReceivers(ctx context.Context, filter *ormapi.Alert
 	return alertReceivers, nil
 }
 
+type Client struct {
+	addr          string
+	tlsConfig     *tls.Config
+	testTransport http.RoundTripper
+}
+
 // Common function to send an api call to alertmanager
-func alertMgrApi(ctx context.Context, addr, method, api, options string, payload []byte, tlsConfig *tls.Config) ([]byte, error) {
+func (s *Client) alertMgrApi(ctx context.Context, method, api, options string, payload []byte) ([]byte, error) {
 	var client *http.Client
 
-	apiUrl := addr + api
+	apiUrl := s.addr + api
 	if options != "" {
 		apiUrl += "?" + options
 	}
@@ -616,19 +628,22 @@ func alertMgrApi(ctx context.Context, addr, method, api, options string, payload
 	if urlObj.Scheme == "http" {
 		client = http.DefaultClient
 	} else if urlObj.Scheme == "https" {
-		if tlsConfig == nil {
+		if s.tlsConfig == nil {
 			client = http.DefaultClient
 		} else {
-			log.SpanLog(ctx, log.DebugLevelInfo, "Tls client config", "addr", addr, "tls certs", tlsConfig.Certificates)
+			log.SpanLog(ctx, log.DebugLevelInfo, "Tls client config", "addr", s.addr)
 			client = &http.Client{
 				Transport: &http.Transport{
-					TLSClientConfig: tlsConfig,
+					TLSClientConfig: s.tlsConfig,
 				},
 			}
 		}
 	} else {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Unsupported schema", "err", err, "url", apiUrl)
 		return nil, err
+	}
+	if s.testTransport != nil {
+		client.Transport = s.testTransport
 	}
 	req, err := http.NewRequest(method, apiUrl, bytes.NewReader(payload))
 	if err != nil {

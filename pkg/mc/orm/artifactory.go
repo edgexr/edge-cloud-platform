@@ -68,6 +68,9 @@ func artifactoryClient(ctx context.Context) (*artifactory.Artifactory, error) {
 	tp := transport.ApiKeyAuth{
 		ApiKey: rtfAuth.ApiKey,
 	}
+	if serverConfig != nil {
+		tp.Transport = serverConfig.testTransport
+	}
 	client, err := artifactory.NewClient(serverConfig.ArtifactoryAddr, tp.Client())
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to connect to artifactory", "addr",

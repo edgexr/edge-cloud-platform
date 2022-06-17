@@ -67,10 +67,10 @@ func NewEventMock(addr string) *EventMock {
 	return &event
 }
 
-func (e *EventMock) registerResponders(t *testing.T) {
+func (e *EventMock) registerResponders(t *testing.T, mockTransport *httpmock.MockTransport) {
 	// register mock responders
 	api := fmt.Sprintf("%s/_template/events-log", e.addr)
-	httpmock.RegisterResponder("PUT", api,
+	mockTransport.RegisterResponder("PUT", api,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewStringResponse(200, "Success"), nil
 		},
@@ -86,7 +86,7 @@ func (e *EventMock) registerResponders(t *testing.T) {
 	}
 
 	api = fmt.Sprintf("=~%s/events-log-.*/_doc", e.addr)
-	httpmock.RegisterResponder("POST", api,
+	mockTransport.RegisterResponder("POST", api,
 		func(req *http.Request) (*http.Response, error) {
 			data, _ := ioutil.ReadAll(req.Body)
 			recordEvent(data)
@@ -94,7 +94,7 @@ func (e *EventMock) registerResponders(t *testing.T) {
 		},
 	)
 	api = fmt.Sprintf("=~%s/.*/_bulk", e.addr)
-	httpmock.RegisterResponder("POST", api,
+	mockTransport.RegisterResponder("POST", api,
 		func(req *http.Request) (*http.Response, error) {
 			data, _ := ioutil.ReadAll(req.Body)
 			lines := strings.Split(string(data), "\n")
@@ -155,19 +155,18 @@ func TestCloudletApi(t *testing.T) {
 	defer sync.Done()
 
 	// mock http to redirect requests
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
+	mockTransport := httpmock.NewMockTransport()
 	// any requests that don't have a registered URL will be fetched normally
-	httpmock.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
+	mockTransport.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
 
 	esURL := "http://dummy-es"
 	eMock = NewEventMock(esURL)
-	eMock.registerResponders(t)
+	eMock.registerResponders(t, mockTransport)
 
 	// setup nodeMgr for events
 	nodeMgr = node.NodeMgr{}
 	ctx, _, err := nodeMgr.Init(node.NodeTypeController, "", node.WithRegion("unit-test"),
-		node.WithESUrls(esURL))
+		node.WithESUrls(esURL), node.WithTestTransport(mockTransport))
 	require.Nil(t, err)
 	require.NotNil(t, nodeMgr.ESClient)
 	defer nodeMgr.Finish()

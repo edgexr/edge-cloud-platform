@@ -83,7 +83,7 @@ func TestServer(t *testing.T) {
 	err = server.WaitUntilReady()
 	require.Nil(t, err, "server online")
 
-	for _, clientRun := range getUnitTestClientRuns() {
+	for _, clientRun := range getUnitTestClientRuns(nil) {
 		testServerClientRun(t, ctx, clientRun, uri)
 	}
 }
@@ -1301,15 +1301,17 @@ func testEdgeboxOnlyOrgs(t *testing.T, uri string, mcClient *mctestclient.Client
 	testDeleteUser(t, mcClient, uri, userTok, user.Name)
 }
 
-func getUnitTestClientRuns() []mctestclient.ClientRun {
-	restClient := &ormclient.Client{
-		ForceDefaultTransport: true,
-	}
+func getUnitTestClientRuns(trans http.RoundTripper) []mctestclient.ClientRun {
+	restClient := &ormclient.Client{}
 	cliClient := cliwrapper.NewClient()
 	cliClient.DebugLog = true
 	cliClient.SilenceUsage = true
 	cliClient.RunInline = true
 	cliClient.InjectRequiredArgs = true
+	if trans != nil {
+		restClient.TestTransport = trans
+		cliClient.SetTestTransport(trans)
+	}
 	return []mctestclient.ClientRun{restClient, cliClient}
 }
 
