@@ -464,28 +464,6 @@
       username: user2
   - name: /api/v1/auth/ctrl/CreateApp
     org:
-    - AcmeAppCo
-    type: audit
-    mtags:
-      app: autoprovHA
-      apporg: AcmeAppCo
-      appver: "1.0"
-      duration: ""
-      email: user2@email.com
-      hostname: ""
-      lineno: ""
-      method: POST
-      org: AcmeAppCo
-      region: local
-      remote-ip: 127.0.0.1
-      request: '{"App":{"access_ports":"tcp:82","auto_prov_policies":["autoprovHA"],"default_flavor":{"name":"x1.small"},"deployment":"kubernetes","image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","key":{"name":"autoprovHA","organization":"AcmeAppCo","version":"1.0"}},"Region":"local"}'
-      response: '{}'
-      spanid: ""
-      status: "200"
-      traceid: ""
-      username: user2
-  - name: /api/v1/auth/ctrl/CreateApp
-    org:
     - user3org
     type: audit
     mtags:
@@ -506,3 +484,25 @@
       status: "200"
       traceid: ""
       username: user3
+  - name: /api/v1/auth/ctrl/CreateApp
+    org:
+    - platos
+    type: audit
+    mtags:
+      app: platosEnablingLayer
+      apporg: platos
+      appver: "1.0"
+      duration: ""
+      email: user2@email.com
+      hostname: ""
+      lineno: ""
+      method: POST
+      org: platos
+      region: locala
+      remote-ip: 127.0.0.1
+      request: '{"App":{"access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","image_path":"registry.mobiledgex.net/platos/dummyvalue","image_type":"Docker","key":{"name":"platosEnablingLayer","organization":"platos","version":"1.0"}},"Region":"locala"}'
+      response: '{}'
+      spanid: ""
+      status: "200"
+      traceid: ""
+      username: user2
