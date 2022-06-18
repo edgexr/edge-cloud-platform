@@ -181,8 +181,6 @@ tests:
 - includefile: autoscale.yml
 
 - includefile: autoprov.yml
-- includefile: autoprov.yml
-  extratest: true
 
 - name: user2 check event terms
   actions: [mcapi-eventsterms]
