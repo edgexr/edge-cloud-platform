@@ -16,16 +16,18 @@ tests:
   - includefile: {{edge-cloud-testfiles}}/stop_cleanup.yml
   - includefile: deploy_start.yml
   - includefile: mc_add_delete.yml
-    loops: 2
+  - includefile: mc_add_delete.yml
+    extratest: true
   - includefile: mc_spans_setendtime.yml
   - includefile: mc_spans.yml
   - includefile: mc_spans.yml
     mods: [cli]
   - includefile: mc_add_delete.yml
     mods: [cli]
-    loops: 2
+    extratest: true
   - includefile: verify_loc.yml
-    loops: 2
+  - includefile: verify_loc.yml
+    extratest: true
   - includefile: fetchlogs.yml
   - includefile: federationtest.yml
   - includefile: qos_priority_sessions.yml

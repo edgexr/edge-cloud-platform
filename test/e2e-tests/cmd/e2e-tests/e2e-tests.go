@@ -42,6 +42,7 @@ var (
 	stopOnFail  *bool
 	verbose     *bool
 	notimestamp *bool
+	runextra    *bool
 	failedTests = make(map[string]int)
 )
 
@@ -56,6 +57,7 @@ func init() {
 	stopOnFail = flag.Bool("stop", false, "stop on failures")
 	verbose = flag.Bool("verbose", false, "prints full output screen")
 	notimestamp = flag.Bool("notimestamp", false, "no timestamp on outputdir, logs will be appended to by subsequent runs")
+	runextra = flag.Bool("extra", false, "run extra tests (may take much longer)")
 }
 
 // a list of tests, which may include another file which has tests.  Looping can
@@ -65,6 +67,7 @@ type e2e_test struct {
 	IncludeFile string   `yaml:"includefile"`
 	Mods        []string `yaml:"mods"`
 	Loops       int      `yaml:"loops"`
+	ExtraTest   bool     `yaml:"extratest"`
 }
 
 type e2e_tests struct {
@@ -159,6 +162,8 @@ func runTests(dirName, fileName, progName string, depth int, mods []string) (int
 	numFailed := 0
 	numTestsRun := 0
 
+	runStart := time.Now()
+
 	if fileName[0] == '/' {
 		// absolute path
 		dirName = path.Dir(fileName)
@@ -169,6 +174,10 @@ func runTests(dirName, fileName, progName string, depth int, mods []string) (int
 	for i := 0; i < depth; i++ {
 		indentstr = indentstr + " - "
 	}
+	defer func() {
+		f := indentstr + fileName
+		fmt.Printf("%-30s %-66s %s\n", f, "done", time.Since(runStart))
+	}()
 	var testsToRun e2e_tests
 	if !readYamlFile(dirName+"/"+fileName, &testsToRun) {
 		log.Printf("\n** unable to read yaml file %s\n", fileName)
@@ -224,6 +233,10 @@ func runTests(dirName, fileName, progName string, depth int, mods []string) (int
 			}
 			fmt.Printf("%-30s %-60s ", f, namestr+loopStr)
 			if t.IncludeFile != "" {
+				if t.ExtraTest && !*runextra {
+					fmt.Println()
+					continue
+				}
 				if depth >= 10 {
 					//avoid an infinite recusive loop in which a testfile contains itself
 					log.Fatalf("excessive include depth %d, possible loop: %s", depth, fileName)
@@ -266,6 +279,7 @@ func runTests(dirName, fileName, progName string, depth int, mods []string) (int
 			if *stopOnFail {
 				args = append(args, "-stop")
 			}
+			startT := time.Now()
 			cmd := exec.Command(progName, args...)
 			var out bytes.Buffer
 			var stderr bytes.Buffer
@@ -275,14 +289,15 @@ func runTests(dirName, fileName, progName string, depth int, mods []string) (int
 			if *verbose {
 				fmt.Println(out.String())
 			}
+			took := time.Since(startT).String()
 			if err == nil {
-				fmt.Println("PASS")
+				fmt.Printf("PASS  %s\n", took)
 				numPassed += 1
 			} else {
 				if stderr.Len() > 0 {
 					ioutil.WriteFile("/tmp/fail-output"+strconv.Itoa(cmd.Process.Pid), stderr.Bytes(), 0666)
 				}
-				fmt.Printf("FAIL: %s\n", stderr.String())
+				fmt.Printf("FAIL: %s %s\n", took, stderr.String())
 				numFailed += 1
 				_, ok := failedTests[fileName+":"+t.Name]
 				if !ok {
