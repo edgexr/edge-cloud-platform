@@ -564,13 +564,11 @@ func startServices() error {
 	services.httpServer = httpServer
 
 	// start the checkpointer
-	checkpointer := NewCheckpointer(services.events, allApis.clusterInstApi)
-	err = checkpointer.Init()
+	err = checkInterval()
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfo, "Error setting up checkpoints", "err", err)
 		return err
 	}
-	services.checkpointer = checkpointer
+	services.checkpointer = NewCheckpointer(services.events, allApis.clusterInstApi)
 	services.checkpointer.Start()
 
 	log.SpanLog(ctx, log.DebugLevelInfo, "Ready")
