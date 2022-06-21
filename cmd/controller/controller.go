@@ -43,7 +43,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	yaml "github.com/mobiledgex/yaml/v2"
@@ -240,7 +240,7 @@ func startServices() error {
 		return err
 	}
 
-	if err := rediscache.IsServerReady(redisClient, rediscache.MaxRedisWait); err != nil {
+	if err := rediscache.IsServerReady(ctx, redisClient, rediscache.MaxRedisWait); err != nil {
 		return err
 	}
 

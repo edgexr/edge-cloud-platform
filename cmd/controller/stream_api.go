@@ -21,12 +21,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-redis/redis"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
+	"github.com/go-redis/redis/v8"
 	grpc "google.golang.org/grpc"
 )
 
@@ -81,7 +81,7 @@ func addMsgToRedisStream(ctx context.Context, streamKey string, streamMsg map[st
 		Stream: streamKey,
 		Values: streamMsg,
 	}
-	_, err := redisClient.XAdd(&xaddArgs).Result()
+	_, err := redisClient.XAdd(ctx, &xaddArgs).Result()
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "Failed to add message to stream", "key", streamKey, "err", err)
 		return err
@@ -109,8 +109,8 @@ func (s *CbWrapper) Send(res *edgeproto.Result) error {
 	return nil
 }
 
-func (s *StreamObjApi) StreamMsgs(streamKey string, cb edgeproto.StreamObjApi_StreamAppInstServer) error {
-	out, err := redisClient.Exists(streamKey).Result()
+func (s *StreamObjApi) StreamMsgs(ctx context.Context, streamKey string, cb edgeproto.StreamObjApi_StreamAppInstServer) error {
+	out, err := redisClient.Exists(ctx, streamKey).Result()
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func (s *StreamObjApi) StreamMsgs(streamKey string, cb edgeproto.StreamObjApi_St
 		return fmt.Errorf("Stream %s does not exist", streamKey)
 	}
 
-	streamMsgs, err := redisClient.XRange(streamKey, rediscache.RedisSmallestId, rediscache.RedisGreatestId).Result()
+	streamMsgs, err := redisClient.XRange(ctx, streamKey, rediscache.RedisSmallestId, rediscache.RedisGreatestId).Result()
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func (s *StreamObjApi) StreamMsgs(streamKey string, cb edgeproto.StreamObjApi_St
 			Count:   1,
 			Block:   readTimeout,
 		}
-		sMsg, err := redisClient.XRead(&xreadArgs).Result()
+		sMsg, err := redisClient.XRead(ctx, &xreadArgs).Result()
 		if err != nil {
 			if err == redis.Nil {
 				// timed out
@@ -262,7 +262,7 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 	//   is in progress
 	txf := func(tx *redis.Tx) error {
 		// Get the current value or zero.
-		out, err := tx.Exists(streamKey).Result()
+		out, err := tx.Exists(ctx, streamKey).Result()
 		if err != nil && err != redis.Nil {
 			return err
 		}
@@ -277,7 +277,7 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 		} else if out == 1 {
 			// check last message on the existing stream to
 			// figure out if stream should be cleared or not
-			streamMsgs, err := redisClient.XRange(streamKey,
+			streamMsgs, err := redisClient.XRange(ctx, streamKey,
 				rediscache.RedisSmallestId, rediscache.RedisGreatestId).Result()
 			if err != nil {
 				return err
@@ -303,10 +303,10 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 			cleanupOldStream = false
 		}
 		// Operation is commited only if the watched keys remain unchanged.
-		_, err = tx.TxPipelined(func(pipe redis.Pipeliner) error {
+		_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
 			if newStream {
 				if cleanupOldStream {
-					_, err := pipe.Del(streamKey).Result()
+					_, err := pipe.Del(ctx, streamKey).Result()
 					if err != nil {
 						return err
 					}
@@ -317,7 +317,7 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 						StreamMsgTypeSOM: "",
 					},
 				}
-				_, err := pipe.XAdd(&xaddArgs).Result()
+				_, err := pipe.XAdd(ctx, &xaddArgs).Result()
 				if err != nil {
 					return err
 				}
@@ -330,7 +330,7 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 
 	// Retry if the key has been changed.
 	for i := 0; i < rediscache.RedisTxMaxRetries; i++ {
-		err := redisClient.Watch(txf, streamKey)
+		err := redisClient.Watch(ctx, txf, streamKey)
 		if err == nil {
 			// Success.
 			break
@@ -349,10 +349,10 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 	// Note that this method does not wait on a response from redis, so the
 	// subscription may not be active immediately. To force the connection to wait,
 	// we call the Receive() method on the returned *PubSub
-	pubsub := redisClient.Subscribe(streamKey)
+	pubsub := redisClient.Subscribe(ctx, streamKey)
 
 	// Wait for confirmation that subscription is created before publishing anything.
-	_, err := pubsub.Receive()
+	_, err := pubsub.Receive(ctx)
 	if err != nil {
 		return nil, nil, fmt.Errorf("Failed to subscribe to stream %s, %v", streamKey, err)
 	}
@@ -414,7 +414,7 @@ func (s *StreamObjApi) stopStream(ctx context.Context, cctx *CallContext, stream
 		streamSendObj.crmPubSub.Close()
 	}
 	if cleanupStream {
-		_, err := redisClient.Del(streamKey).Result()
+		_, err := redisClient.Del(ctx, streamKey).Result()
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "Failed to cleanup redis stream", "key", streamKey, "err", err)
 		}
@@ -430,7 +430,7 @@ func (s *StreamObjApi) UpdateStatus(ctx context.Context, obj interface{}, state 
 		log.SpanLog(ctx, log.DebugLevelApi, "Failed to marshal json object", "obj", obj, "err", err)
 		return
 	}
-	_, err = redisClient.Publish(streamKey, string(inObj)).Result()
+	_, err = redisClient.Publish(ctx, streamKey, string(inObj)).Result()
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "Failed to publish message on redis channel", "key", streamKey, "err", err)
 	}
@@ -452,7 +452,7 @@ func (s *StreamObjApi) UpdateStatus(ctx context.Context, obj interface{}, state 
 	}
 	if infoDone {
 		streamClosed := false
-		streamMsgs, err := redisClient.XRange(streamKey, rediscache.RedisSmallestId, rediscache.RedisGreatestId).Result()
+		streamMsgs, err := redisClient.XRange(ctx, streamKey, rediscache.RedisSmallestId, rediscache.RedisGreatestId).Result()
 		if err == nil && len(streamMsgs) > 0 {
 			for msgType, _ := range streamMsgs[len(streamMsgs)-1].Values {
 				switch msgType {

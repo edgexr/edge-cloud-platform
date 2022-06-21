@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-redis/redis"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
+	"github.com/go-redis/redis/v8"
 	yaml "github.com/mobiledgex/yaml/v2"
 )
 
@@ -107,7 +107,7 @@ func (s *HighAvailabilityManager) Init(ctx context.Context, nodeGroupKey string,
 }
 
 func (s *HighAvailabilityManager) pingRedis(ctx context.Context, genLog bool) error {
-	pong, err := s.redisClient.Ping().Result()
+	pong, err := s.redisClient.Ping(ctx).Result()
 	if genLog {
 		log.SpanLog(ctx, log.DebugLevelInfra, "redis ping done", "pong", pong, "err", err)
 	}
@@ -125,7 +125,7 @@ func (s *HighAvailabilityManager) connectRedis(ctx context.Context) error {
 		return err
 	}
 
-	err = rediscache.IsServerReady(s.redisClient, rediscache.MaxRedisWait)
+	err = rediscache.IsServerReady(ctx, s.redisClient, rediscache.MaxRedisWait)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "pingRedis failed", "err", err)
 		return err
@@ -155,7 +155,7 @@ func (s *HighAvailabilityManager) tryActive(ctx context.Context) (bool, error) {
 			return true, nil
 		}
 	}
-	v, err := s.redisClient.SetNX(s.nodeGroupKey, s.HARole, s.activeDuration).Result()
+	v, err := s.redisClient.SetNX(ctx, s.nodeGroupKey, s.HARole, s.activeDuration).Result()
 	if err != nil {
 		// don't log this if the redis is already down because it result in excessive logs
 		if !s.RedisConnectionFailed {
@@ -167,13 +167,13 @@ func (s *HighAvailabilityManager) tryActive(ctx context.Context) (bool, error) {
 }
 
 func (s *HighAvailabilityManager) SetValue(ctx context.Context, key string, value string, expiration time.Duration) error {
-	result, err := s.redisClient.Set(key, value, expiration).Result()
+	result, err := s.redisClient.Set(ctx, key, value, expiration).Result()
 	log.SpanLog(ctx, log.DebugLevelInfra, "SetValue Done", "expiration", expiration, "result", result, "err", err)
 	return err
 }
 
 func (s *HighAvailabilityManager) GetValue(ctx context.Context, key string) (string, error) {
-	val, err := s.redisClient.Get(key).Result()
+	val, err := s.redisClient.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return "", nil
@@ -186,7 +186,7 @@ func (s *HighAvailabilityManager) GetValue(ctx context.Context, key string) (str
 
 func (s *HighAvailabilityManager) CheckActive(ctx context.Context) (bool, error) {
 
-	v, err := s.redisClient.Get(s.nodeGroupKey).Result()
+	v, err := s.redisClient.Get(ctx, s.nodeGroupKey).Result()
 	if err != nil {
 		if err == redis.Nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "CheckActive - key does not exist -- neither unit is active")
@@ -201,7 +201,7 @@ func (s *HighAvailabilityManager) CheckActive(ctx context.Context) (bool, error)
 }
 
 func (s *HighAvailabilityManager) BumpActiveExpire(ctx context.Context) error {
-	v, err := s.redisClient.Set(s.nodeGroupKey, s.HARole, s.activeDuration).Result()
+	v, err := s.redisClient.Set(ctx, s.nodeGroupKey, s.HARole, s.activeDuration).Result()
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "BumpActiveExpire error", "key", s.nodeGroupKey, "v", v, "err", err)
 		return err
