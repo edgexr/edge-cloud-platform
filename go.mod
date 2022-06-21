@@ -27,7 +27,6 @@ require (
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/go-openapi/swag v0.19.9
 	github.com/go-openapi/validate v0.19.11
-	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/gogo/gateway v1.0.0
 	github.com/gogo/googleapis v1.1.0
 	github.com/gogo/protobuf v1.3.1
@@ -77,14 +76,14 @@ require (
 	github.com/xtaci/smux v1.3.6
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
-	golang.org/x/net v0.0.0-20201010224723-4f7140c49acb
+	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	golang.org/x/tools v0.0.0-20200603131246-cc40288be839
 	google.golang.org/api v0.14.0
 	google.golang.org/grpc v1.29.1
 	gopkg.in/ldap.v3 v3.0.3
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v2 v2.4.0
 	gortc.io/stun v1.21.0
 	//	k8s.io/api v0.0.0-20180516102522-184e700b32b7
 	k8s.io/api v0.17.3
@@ -93,7 +92,10 @@ require (
 	k8s.io/client-go v0.17.3
 )
 
-require github.com/golang-jwt/jwt/v4 v4.4.1
+require (
+	github.com/go-redis/redis/v8 v8.11.5
+	github.com/golang-jwt/jwt/v4 v4.4.1
+)
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
@@ -110,6 +112,7 @@ require (
 	github.com/codegangsta/inject v0.0.0-20150114235600-33e0aa1cb7c0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20190905012053-7920e8ef8898 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/eapache/go-resiliency v1.2.0 // indirect
@@ -178,8 +181,8 @@ require (
 	go.uber.org/atomic v1.6.0 // indirect
 	go.uber.org/multierr v1.5.0 // indirect
 	golang.org/x/image v0.0.0-20200927104501-e162460cd6b5 // indirect
-	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f // indirect
-	golang.org/x/text v0.3.4 // indirect
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
+	golang.org/x/text v0.3.6 // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	google.golang.org/appengine v1.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20200305110556-506484158171 // indirect

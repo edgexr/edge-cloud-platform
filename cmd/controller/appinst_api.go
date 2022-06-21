@@ -341,7 +341,7 @@ func (s *AppInstApi) stopAppInstStream(ctx context.Context, cctx *CallContext, k
 func (s *StreamObjApi) StreamAppInst(key *edgeproto.AppInstKey, cb edgeproto.StreamObjApi_StreamAppInstServer) error {
 	// populate the clusterinst developer from the app developer if not already present
 	SetAppInstKeyDefaults(cb.Context(), key, s.all)
-	return s.StreamMsgs(key.StreamKey(), cb)
+	return s.StreamMsgs(cb.Context(), key.StreamKey(), cb)
 }
 
 func (s *AppInstApi) checkForAppinstCollisions(ctx context.Context, key *edgeproto.AppInstKey) error {

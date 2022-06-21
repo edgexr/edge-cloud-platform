@@ -374,7 +374,7 @@ func TestAppInstApi(t *testing.T) {
 	}
 	testutil.InternalAppInstRefsTest(t, "show", apis.appInstRefsApi, []edgeproto.AppInstRefs{})
 	// ensure that no open channels exist and all stream channels were cleaned up
-	chs, err := redisClient.PubSubChannels("*").Result()
+	chs, err := redisClient.PubSubChannels(ctx, "*").Result()
 	require.Nil(t, err, "get pubsub channels")
 	require.Equal(t, 0, len(chs), "all chans are cleaned up")
 }
