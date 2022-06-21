@@ -54,6 +54,7 @@ type Checkpointer struct {
 	influxEvents   *influxq.InfluxQ
 	periodicTask   *tasks.PeriodicTask
 	clusterInstApi *ClusterInstApi
+	initUsageDone  bool
 }
 
 func NewCheckpointer(events *influxq.InfluxQ, clusterInstApi *ClusterInstApi) *Checkpointer {
@@ -65,10 +66,7 @@ func NewCheckpointer(events *influxq.InfluxQ, clusterInstApi *ClusterInstApi) *C
 	return &c
 }
 
-func (s *Checkpointer) Init() error {
-	if err := checkInterval(); err != nil {
-		return err
-	}
+func (s *Checkpointer) initUsage() error {
 	// set the first NextCheckpoint,
 	NextCheckpoint = getNextCheckpoint(time.Now())
 	//set PrevCheckpoint, should not necessarily start at InfluxMinimumTimestamp if controller was restarted halway through operation
@@ -138,16 +136,21 @@ func (s *Checkpointer) StartSpan() opentracing.Span {
 }
 
 func (s *Checkpointer) Run(ctx context.Context) {
-	s.clusterInstApi.Run(ctx)
-}
+	if !s.initUsageDone {
+		err := s.initUsage()
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfo, "Error setting up checkpoints", "err", err)
+			return
+		}
+		s.initUsageDone = true
+	}
 
-func (s *ClusterInstApi) Run(ctx context.Context) {
 	checkpointTime := NextCheckpoint
-	err := s.CreateClusterCheckpoint(ctx, checkpointTime)
+	err := s.clusterInstApi.CreateClusterCheckpoint(ctx, checkpointTime)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "Could not create cluster checkpoint", "time", checkpointTime, "err", err)
 	}
-	err = s.all.appApi.CreateAppCheckpoint(ctx, checkpointTime)
+	err = s.clusterInstApi.all.appApi.CreateAppCheckpoint(ctx, checkpointTime)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "Could not create app checkpoint", "time", checkpointTime, "err", err)
 	}
