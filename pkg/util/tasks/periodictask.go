@@ -9,24 +9,9 @@ import (
 	"github.com/opentracing/opentracing-go"
 )
 
-// PeriodicTask is a task that continuously runs at a set time
-// interval. This is a controller for a persistent go routine
-// that runs a task periodically or on demand.
-type PeriodicTaskable interface {
-	// Task function to run
-	Run(ctx context.Context)
-	// Interval between runs (changes do not apply until the next iteration)
-	GetInterval() time.Duration
-	// Starts a span for the task
-	StartSpan() opentracing.Span
-}
-
-// Cancels the periodic task after it's been started
-//type CancelPeriodicTask func()
-
-// Allows to wakeup the task and run it immediately
-//type WakeupPeriodicTask func()
-
+// PeriodicTask is a task manager that controls a go routine
+// which periodically runs some task function. The task can be
+// run on demand, or the manager can be stopped and restarted.
 type PeriodicTask struct {
 	task    PeriodicTaskable
 	running bool
@@ -34,6 +19,18 @@ type PeriodicTask struct {
 	wakeup  chan bool
 	mux     sync.Mutex
 	wait    sync.WaitGroup
+}
+
+// PeriodicTaskable is a task that continuously runs at a set time
+// interval. This informs the PeriodicTask when to run again, and
+// what the span context should be for each run.
+type PeriodicTaskable interface {
+	// Task function to run
+	Run(ctx context.Context)
+	// Interval between runs (changes do not apply until the next iteration)
+	GetInterval() time.Duration
+	// Starts a span for the task
+	StartSpan() opentracing.Span
 }
 
 func NewPeriodicTask(task PeriodicTaskable) *PeriodicTask {
@@ -81,45 +78,10 @@ func (s *PeriodicTask) Stop() {
 	s.running = false
 }
 
+// Wakeup causes the task to be run immediately
 func (s *PeriodicTask) Wakeup() {
 	select {
 	case s.wakeup <- true:
 	default:
 	}
 }
-
-/*
-func RunPeriodicTask(p PeriodicTask) (CancelPeriodicTask, WakeupPeriodicTask) {
-	stop := make(chan struct{})
-	trigger := make(chan bool, 1)
-	wait := sync.WaitGroup{}
-	cancel := func() {
-		close(stop)
-		wait.Wait()
-	}
-	wakeup := func() {
-		select {
-		case trigger <- true:
-		default:
-		}
-	}
-	wait.Add(1)
-	go func() {
-		defer wait.Done()
-		for {
-			interval := p.GetInterval()
-			select {
-			case <-trigger:
-			case <-time.After(interval):
-			case <-stop:
-				return
-			}
-			span := p.StartSpan()
-			ctx := log.ContextWithSpan(context.Background(), span)
-			p.Run(ctx)
-			span.Finish()
-		}
-	}()
-	return cancel, wakeup
-}
-*/
