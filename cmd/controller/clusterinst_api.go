@@ -236,7 +236,7 @@ func (s *ClusterInstApi) stopClusterInstStream(ctx context.Context, cctx *CallCo
 }
 
 func (s *StreamObjApi) StreamClusterInst(key *edgeproto.ClusterInstKey, cb edgeproto.StreamObjApi_StreamClusterInstServer) error {
-	return s.StreamMsgs(key.StreamKey(), cb)
+	return s.StreamMsgs(cb.Context(), key.StreamKey(), cb)
 }
 
 func (s *ClusterInstApi) CreateClusterInst(in *edgeproto.ClusterInst, cb edgeproto.ClusterInstApi_CreateClusterInstServer) error {

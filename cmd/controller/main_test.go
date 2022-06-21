@@ -29,9 +29,9 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/edgexr/edge-cloud-platform/test/testutil/testservices"
 	"github.com/stretchr/testify/assert"
@@ -61,6 +61,8 @@ func TestController(t *testing.T) {
 
 	// avoid dummy influxQs created by testinit() since we're calling startServices
 	services = Services{}
+	// close redis client since it will get overwritten by startServices()
+	redisClient.Close()
 
 	leaseTimeoutSec = 3
 	syncLeaseDataRetry = 0

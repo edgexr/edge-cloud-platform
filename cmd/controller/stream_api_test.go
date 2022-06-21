@@ -83,7 +83,7 @@ func testStreamObjsWithServer(t *testing.T, ctx context.Context) {
 	}
 
 	// Ensure that stream is cleaned up
-	out, err := redisClient.Exists(streamKey).Result()
+	out, err := redisClient.Exists(ctx, streamKey).Result()
 	require.Nil(t, err, "check if stream exists")
 	require.Equal(t, int64(0), out, "stream should not exist")
 
@@ -121,11 +121,11 @@ func testStreamObjsWithServer(t *testing.T, ctx context.Context) {
 	}
 	wg.Wait()
 
-	out, err = redisClient.Exists(streamKey).Result()
+	out, err = redisClient.Exists(ctx, streamKey).Result()
 	require.Nil(t, err, "check if stream exists")
 	require.Equal(t, int64(1), out, "stream should exist")
 
-	streamMsgs, err := redisClient.XRange(streamKey, rediscache.RedisSmallestId, rediscache.RedisGreatestId).Result()
+	streamMsgs, err := redisClient.XRange(ctx, streamKey, rediscache.RedisSmallestId, rediscache.RedisGreatestId).Result()
 	require.Nil(t, err, "get stream messages")
 	// [SOM + EOM/Error] per thread
 	require.Equal(t, 2*numThreads, len(streamMsgs), "check if correct number of stream messages exists")
@@ -148,7 +148,7 @@ func testStreamObjsWithServer(t *testing.T, ctx context.Context) {
 	}
 
 	// Cleanup stream
-	keysRem, err := redisClient.Del(streamKey).Result()
+	keysRem, err := redisClient.Del(ctx, streamKey).Result()
 	require.Nil(t, err, "delete stream")
 	require.Equal(t, int64(1), keysRem, "stream deleted")
 }
