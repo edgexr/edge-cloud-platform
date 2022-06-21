@@ -332,11 +332,11 @@ func dumpStackTrace(ctx context.Context, req *edgeproto.DebugRequest) string {
 		}
 	}
 	buf := make([]byte, bufSizeKb*1024)
-	runtime.Stack(buf, true)
+	len := runtime.Stack(buf, true)
 	if printToLog {
-		fmt.Println(string(buf))
+		fmt.Println(string(buf[:len]))
 	}
-	return string(buf)
+	return string(buf[:len])
 }
 
 type NotifyState struct {

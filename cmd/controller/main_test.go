@@ -67,8 +67,11 @@ func TestController(t *testing.T) {
 	leaseTimeoutSec = 3
 	syncLeaseDataRetry = 0
 
-	influxUsageUnitTestSetup(t)
+	*influxAddr = influxUsageUnitTestSetup(t)
 	defer influxUsageUnitTestStop()
+	defer func() {
+		*influxAddr = ""
+	}()
 
 	err := startServices()
 	defer stopServices()
@@ -241,8 +244,11 @@ func TestEdgeCloudBug26(t *testing.T) {
 
 	redisCfg.SentinelAddrs = testSvcs.DummyRedisSrv.GetSentinelAddr()
 
-	influxUsageUnitTestSetup(t)
+	*influxAddr = influxUsageUnitTestSetup(t)
 	defer influxUsageUnitTestStop()
+	defer func() {
+		*influxAddr = ""
+	}()
 
 	err := startServices()
 	defer stopServices()

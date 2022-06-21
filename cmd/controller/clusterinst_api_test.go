@@ -876,7 +876,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 
 var testInfluxProc *process.Influx
 
-func influxUsageUnitTestSetup(t *testing.T) {
+func influxUsageUnitTestSetup(t *testing.T) string {
 	testInfluxProc = influxq_testutil.StartInfluxd(t)
 
 	q := influxq.NewInfluxQ(cloudcommon.EventsDbName, "", "")
@@ -884,21 +884,18 @@ func influxUsageUnitTestSetup(t *testing.T) {
 	if err != nil {
 		influxUsageUnitTestStop()
 	}
+	defer q.Stop()
 	require.Nil(t, err, "new influx q")
-	services.events = q
 
 	connected := q.WaitConnected()
 	if !connected {
 		influxUsageUnitTestStop()
 	}
 	require.True(t, connected)
+	return "http://" + testInfluxProc.HttpAddr
 }
 
 func influxUsageUnitTestStop() {
-	if services.events != nil {
-		services.events.Stop()
-		services.events = nil
-	}
 	if testInfluxProc != nil {
 		testInfluxProc.StopLocal()
 		testInfluxProc = nil

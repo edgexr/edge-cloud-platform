@@ -33,6 +33,7 @@ import (
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/gogo/protobuf/types"
+	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
 )
 
@@ -1787,15 +1788,22 @@ func (d *DummyStreamout) Send(res *edgeproto.Result) error {
 	return nil
 }
 
-func (s *ClusterInstApi) cleanupThread() {
-	for {
-		idletime := s.all.settingsApi.Get().CleanupReservableAutoClusterIdletime.TimeDuration()
-		time.Sleep(idletime / 5)
-		span := log.StartSpan(log.DebugLevelApi, "ClusterInst cleanup thread")
-		ctx := log.ContextWithSpan(context.Background(), span)
-		s.cleanupIdleReservableAutoClusters(ctx, idletime)
-		span.Finish()
-	}
+type PeriodicReservableClusterInstCleanup struct {
+	clusterInstApi *ClusterInstApi
+}
+
+func (s *PeriodicReservableClusterInstCleanup) GetInterval() time.Duration {
+	idletime := s.clusterInstApi.all.settingsApi.Get().CleanupReservableAutoClusterIdletime.TimeDuration()
+	return idletime / 5
+}
+
+func (s *PeriodicReservableClusterInstCleanup) StartSpan() opentracing.Span {
+	return log.StartSpan(log.DebugLevelApi, "reservable ClusterInst periodic cleanup thread")
+}
+
+func (s *PeriodicReservableClusterInstCleanup) Run(ctx context.Context) {
+	idletime := s.clusterInstApi.all.settingsApi.Get().CleanupReservableAutoClusterIdletime.TimeDuration()
+	s.clusterInstApi.cleanupIdleReservableAutoClusters(ctx, idletime)
 }
 
 func (s *ClusterInstApi) DeleteIdleReservableClusterInsts(ctx context.Context, in *edgeproto.IdleReservableClusterInsts) (*edgeproto.Result, error) {
