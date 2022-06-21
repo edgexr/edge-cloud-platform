@@ -77,6 +77,10 @@ func (e *EtcdClient) CheckConnected(tries int, retryTime time.Duration) error {
 	return err
 }
 
+func (e *EtcdClient) Close() {
+	e.client.Close()
+}
+
 // create fails if key already exists
 func (e *EtcdClient) Create(ctx context.Context, key, val string) (int64, error) {
 	if e.client == nil {
@@ -281,14 +285,22 @@ func (e *EtcdClient) Sync(ctx context.Context, key string, cb objstore.SyncCb) e
 		err = nil
 		ch := e.client.Watch(ctx, key, clientv3.WithPrefix(), clientv3.WithRev(watchRev))
 		for {
-			resp, ok := <-ch
-			if !ok {
-				// channel closed
+			var resp clientv3.WatchResponse
+			select {
+			case r, ok := <-ch:
+				if !ok {
+					// channel closed
+					done = true
+				} else if r.Err() != nil {
+					err = resp.Err()
+					done = true
+				} else {
+					resp = r
+				}
+			case <-ctx.Done():
 				done = true
-				break
 			}
-			if resp.Err() != nil {
-				err = resp.Err()
+			if done {
 				break
 			}
 			span := e.spanForRev(resp.Header.Revision, "etcd-watch")
@@ -319,6 +331,8 @@ func (e *EtcdClient) Sync(ctx context.Context, key string, cb objstore.SyncCb) e
 			// history does not exist. Grab all the keys
 			// regardless of revision and then run the
 			// watch again on the latest revision
+			err = nil
+			done = false
 			refresh = true
 		} else if err != nil {
 			return err

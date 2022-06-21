@@ -19,10 +19,12 @@ import (
 	"fmt"
 	"time"
 
-	client "github.com/influxdata/influxdb/client/v2"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
+	client "github.com/influxdata/influxdb/client/v2"
 	"github.com/opentracing/opentracing-go"
 )
 
@@ -48,12 +50,30 @@ var CreateCheckpointInfluxQueryTemplate = `SELECT %s from "%s" WHERE time >= '%s
 
 var interval time.Duration
 
-func InitUsage() error {
+type Checkpointer struct {
+	influxEvents   *influxq.InfluxQ
+	periodicTask   *tasks.PeriodicTask
+	clusterInstApi *ClusterInstApi
+}
+
+func NewCheckpointer(events *influxq.InfluxQ, clusterInstApi *ClusterInstApi) *Checkpointer {
+	c := Checkpointer{
+		influxEvents:   events,
+		clusterInstApi: clusterInstApi,
+	}
+	c.periodicTask = tasks.NewPeriodicTask(&c)
+	return &c
+}
+
+func (s *Checkpointer) Init() error {
+	if err := checkInterval(); err != nil {
+		return err
+	}
 	// set the first NextCheckpoint,
 	NextCheckpoint = getNextCheckpoint(time.Now())
 	//set PrevCheckpoint, should not necessarily start at InfluxMinimumTimestamp if controller was restarted halway through operation
 	influxQuery := fmt.Sprintf(`SELECT * from "%s" WHERE "checkpoint"='CHECKPOINT' order by time desc limit 1`, cloudcommon.ClusterInstCheckpoints)
-	checkpoint, err := services.events.QueryDB(influxQuery)
+	checkpoint, err := s.influxEvents.QueryDB(influxQuery)
 	if err != nil {
 		return fmt.Errorf("Unable to query influx: %v", err)
 	}
@@ -98,32 +118,42 @@ func getNextCheckpoint(t time.Time) time.Time {
 	return time.Date(y, m+1, 1, 0, 0, 0, 0, time.UTC)
 }
 
-func (s *ClusterInstApi) runCheckpoints(ctx context.Context) {
-	checkpointSpan := log.StartSpan(log.DebugLevelInfo, "Checkpointing thread", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
-	defer checkpointSpan.Finish()
-	err := InitUsage()
+func (s *Checkpointer) Start() {
+	s.periodicTask.Start()
+}
+
+func (s *Checkpointer) Stop() {
+	s.periodicTask.Stop()
+}
+
+func (s *Checkpointer) GetInterval() time.Duration {
+	// add 2 seconds to the checkpoint bc this was actually going into
+	// the case 1 second before NextCheckpoint,
+	// resulting in creating a checkpoint for the future, which is not allowed
+	return NextCheckpoint.Add(time.Second * 2).Sub(time.Now())
+}
+
+func (s *Checkpointer) StartSpan() opentracing.Span {
+	return log.StartSpan(log.DebugLevelApi, "Checkpointing thread")
+}
+
+func (s *Checkpointer) Run(ctx context.Context) {
+	s.clusterInstApi.Run(ctx)
+}
+
+func (s *ClusterInstApi) Run(ctx context.Context) {
+	checkpointTime := NextCheckpoint
+	err := s.CreateClusterCheckpoint(ctx, checkpointTime)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfo, "Error setting up checkpoints", "err", err)
+		log.SpanLog(ctx, log.DebugLevelApi, "Could not create cluster checkpoint", "time", checkpointTime, "err", err)
 	}
-	for {
-		select {
-		// add 2 seconds to the checkpoint bc this was actually going into the case 1 second before NextCheckpoint,
-		// resulting in creating a checkpoint for the future, which is not allowed
-		case <-time.After(NextCheckpoint.Add(time.Second * 2).Sub(time.Now())):
-			checkpointTime := NextCheckpoint
-			err = s.CreateClusterCheckpoint(ctx, checkpointTime)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfo, "Could not create cluster checkpoint", "time", checkpointTime, "err", err)
-			}
-			err = s.all.appApi.CreateAppCheckpoint(ctx, checkpointTime)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfo, "Could not create app checkpoint", "time", checkpointTime, "err", err)
-			}
-			// this must be AFTER the checkpoint is created, see the comments about race conditions above GetClusterCheckpoint
-			PrevCheckpoint = NextCheckpoint
-			NextCheckpoint = getNextCheckpoint(NextCheckpoint)
-		}
+	err = s.all.appApi.CreateAppCheckpoint(ctx, checkpointTime)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "Could not create app checkpoint", "time", checkpointTime, "err", err)
 	}
+	// this must be AFTER the checkpoint is created, see the comments about race conditions above GetClusterCheckpoint
+	PrevCheckpoint = NextCheckpoint
+	NextCheckpoint = getNextCheckpoint(NextCheckpoint)
 }
 
 // checks the output of the influx log query and checks to see if it is empty(first return value) and if it is not empty then the format is what we expect(second return value)

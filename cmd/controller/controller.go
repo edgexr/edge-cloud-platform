@@ -28,6 +28,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -41,6 +42,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 	"github.com/go-redis/redis/v8"
@@ -104,22 +106,26 @@ var redisCfg rediscache.RedisConfig
 var redisClient *redis.Client
 
 type Services struct {
-	etcdLocal                 *process.Etcd
-	sync                      *Sync
-	influxQ                   *influxq.InfluxQ
-	events                    *influxq.InfluxQ
-	edgeEventsInfluxQ         *influxq.InfluxQ
-	cloudletResourcesInfluxQ  *influxq.InfluxQ
-	downsampledMetricsInfluxQ *influxq.InfluxQ
-	notifyServerMgr           bool
-	grpcServer                *grpc.Server
-	httpServer                *http.Server
-	notifyClient              *notify.Client
-	accessKeyGrpcServer       node.AccessKeyGrpcServer
-	listeners                 []net.Listener
-	publicCertManager         *node.PublicCertManager
-	stopInitCC                chan bool
-	allApis                   *AllApis
+	etcdLocal                  *process.Etcd
+	objStore                   *EtcdClient
+	sync                       *Sync
+	influxQ                    *influxq.InfluxQ
+	events                     *influxq.InfluxQ
+	edgeEventsInfluxQ          *influxq.InfluxQ
+	cloudletResourcesInfluxQ   *influxq.InfluxQ
+	downsampledMetricsInfluxQ  *influxq.InfluxQ
+	notifyServerMgr            bool
+	grpcServer                 *grpc.Server
+	httpServer                 *http.Server
+	notifyClient               *notify.Client
+	accessKeyGrpcServer        node.AccessKeyGrpcServer
+	listeners                  []net.Listener
+	publicCertManager          *node.PublicCertManager
+	stopInitCC                 chan bool
+	waitGroup                  sync.WaitGroup
+	allApis                    *AllApis
+	periodicClusterInstCleanup *tasks.PeriodicTask
+	checkpointer               *Checkpointer
 }
 
 func main() {
@@ -230,6 +236,7 @@ func startServices() error {
 	if err != nil {
 		return fmt.Errorf("Failed to initialize Object Store, %v", err)
 	}
+	services.objStore = objStore
 	err = objStore.CheckConnected(50, 20*time.Millisecond)
 	if err != nil {
 		return fmt.Errorf("Failed to connect to etcd servers, %v", err)
@@ -282,8 +289,13 @@ func startServices() error {
 	if err != nil {
 		return fmt.Errorf("Failed to init settings, %v", err)
 	}
+
 	// cleanup thread must start after settings are loaded
-	go allApis.clusterInstApi.cleanupThread()
+	clusterInstCleanupTaskable := &PeriodicReservableClusterInstCleanup{
+		clusterInstApi: allApis.clusterInstApi,
+	}
+	services.periodicClusterInstCleanup = tasks.NewPeriodicTask(clusterInstCleanupTaskable)
+	services.periodicClusterInstCleanup.Start()
 
 	err = allApis.flowRateLimitSettingsApi.initDefaultRateLimitSettings(ctx)
 	if err != nil {
@@ -351,6 +363,7 @@ func startServices() error {
 
 	// create continuous queries for edgeevents metrics
 	services.stopInitCC = make(chan bool)
+	services.waitGroup.Add(1)
 	go initContinuousQueries(allApis)
 
 	InitNotify(influxQ, edgeEventsInfluxQ, allApis.appInstClientApi, allApis)
@@ -551,17 +564,26 @@ func startServices() error {
 	services.httpServer = httpServer
 
 	// start the checkpointer
-	err = checkInterval()
+	checkpointer := NewCheckpointer(services.events, allApis.clusterInstApi)
+	err = checkpointer.Init()
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Error setting up checkpoints", "err", err)
 		return err
 	}
-	go allApis.clusterInstApi.runCheckpoints(ctx)
+	services.checkpointer = checkpointer
+	services.checkpointer.Start()
 
 	log.SpanLog(ctx, log.DebugLevelInfo, "Ready")
 	return nil
 }
 
 func stopServices() {
+	if services.checkpointer != nil {
+		services.checkpointer.Stop()
+	}
+	if services.periodicClusterInstCleanup != nil {
+		services.periodicClusterInstCleanup.Stop()
+	}
 	if services.httpServer != nil {
 		services.httpServer.Shutdown(context.Background())
 	}
@@ -602,6 +624,9 @@ func stopServices() {
 	if services.sync != nil {
 		services.sync.Done()
 	}
+	if services.objStore != nil {
+		services.objStore.Close()
+	}
 	if services.etcdLocal != nil {
 		services.etcdLocal.StopLocal()
 	}
@@ -613,6 +638,7 @@ func stopServices() {
 		redisClient.Close()
 		redisClient = nil
 	}
+	services.waitGroup.Wait()
 	services = Services{}
 }
 
@@ -871,4 +897,5 @@ func initContinuousQueries(allApis *AllApis) {
 			done = true
 		}
 	}
+	services.waitGroup.Done()
 }

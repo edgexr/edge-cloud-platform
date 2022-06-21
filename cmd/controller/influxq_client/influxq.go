@@ -22,11 +22,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/influxsup"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/gogo/protobuf/types"
 	"github.com/influxdata/influxdb/client/v2"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/influxsup"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 // Each write to the Influx DB is an HTTP Post method.
@@ -134,8 +134,11 @@ func (q *InfluxQ) initDB() error {
 
 func (q *InfluxQ) RunPush() {
 	for !q.done {
-		if err := q.initDB(); err != nil {
-			time.Sleep(InfluxQReconnectDelay)
+		if err := q.initDB(); !q.done && err != nil {
+			select {
+			case <-q.doPush:
+			case <-time.After(InfluxQReconnectDelay):
+			}
 			continue
 		}
 		select {
