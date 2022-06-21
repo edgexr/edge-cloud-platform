@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/go-redis/redis/v8"
 )
 
 const (
@@ -111,11 +111,11 @@ func NewClient(ctx context.Context, cfg *RedisConfig) (*redis.Client, error) {
 	return client, nil
 }
 
-func IsServerReady(client *redis.Client, timeout time.Duration) error {
+func IsServerReady(ctx context.Context, client *redis.Client, timeout time.Duration) error {
 	start := time.Now()
 	var err error
 	for {
-		_, err = client.Ping().Result()
+		_, err = client.Ping(ctx).Result()
 		if err == nil {
 			return nil
 		}

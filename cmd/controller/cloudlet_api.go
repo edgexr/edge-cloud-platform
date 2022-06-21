@@ -229,7 +229,7 @@ func (s *StreamObjApi) StreamCloudlet(key *edgeproto.CloudletKey, cb edgeproto.S
 		cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS ||
 		(cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS && cloudlet.State != edgeproto.TrackedState_READY) {
 		// If restricted scenario, then stream msgs only if either cloudlet obj was not created successfully or it is updating
-		return s.StreamMsgs(key.StreamKey(), cb)
+		return s.StreamMsgs(ctx, key.StreamKey(), cb)
 	}
 	cloudletInfo := edgeproto.CloudletInfo{}
 	if s.all.cloudletInfoApi.cache.Get(key, &cloudletInfo) {

@@ -161,7 +161,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.`,
 }, {
 	licname: BSD2ClauseLicense,
 	text: `
-Copyright (c) 2013 The github.com/go-redis/redis Authors.
+Copyright (c) 2013 The github.com/go-redis/redis/v8 Authors.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
