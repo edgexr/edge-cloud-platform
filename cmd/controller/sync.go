@@ -139,6 +139,8 @@ func (s *Sync) syncCb(ctx context.Context, data *objstore.SyncCbData) {
 	case objstore.SyncList:
 		fallthrough
 	case objstore.SyncUpdate:
+		fallthrough
+	case objstore.SyncDelete:
 		if cache, found := s.GetCache(ctx, data.Key); found {
 			// To guarantee that objects are sent via notify
 			// in the correct order, we need to sort all object
@@ -148,16 +150,13 @@ func (s *Sync) syncCb(ctx context.Context, data *objstore.SyncCbData) {
 		}
 		if !data.MoreEvents {
 			for _, d := range s.batch {
-				d.cache.SyncUpdate(ctx, d.data.Key, d.data.Value, d.data.Rev, d.data.ModRev)
+				if d.data.Action == objstore.SyncUpdate || d.data.Action == objstore.SyncList {
+					d.cache.SyncUpdate(ctx, d.data.Key, d.data.Value, d.data.Rev, d.data.ModRev)
+				} else if d.data.Action == objstore.SyncDelete {
+					d.cache.SyncDelete(ctx, d.data.Key, d.data.Rev, d.data.ModRev)
+				}
 			}
 			s.batch = nil
-			s.rev = data.Rev
-		}
-	case objstore.SyncDelete:
-		if cache, found := s.GetCache(ctx, data.Key); found {
-			cache.SyncDelete(ctx, data.Key, data.Rev, data.ModRev)
-		}
-		if !data.MoreEvents {
 			s.rev = data.Rev
 		}
 	}
