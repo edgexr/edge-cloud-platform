@@ -6584,10 +6584,7 @@ func (m *VirtualClusterInstKey) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppinst
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppinst
 			}
 			if (iNdEx + skippy) > l {
@@ -6703,10 +6700,7 @@ func (m *AppInstKey) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppinst
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppinst
 			}
 			if (iNdEx + skippy) > l {
@@ -7561,7 +7555,7 @@ func (m *AppInst) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppinst
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -7662,10 +7656,7 @@ func (m *AppInst) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppinst
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppinst
 			}
 			if (iNdEx + skippy) > l {
@@ -7747,10 +7738,7 @@ func (m *AppInstRuntime) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppinst
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppinst
 			}
 			if (iNdEx + skippy) > l {
@@ -8052,10 +8040,7 @@ func (m *AppInstInfo) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppinst
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppinst
 			}
 			if (iNdEx + skippy) > l {
@@ -8124,10 +8109,7 @@ func (m *AppInstMetrics) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppinst
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppinst
 			}
 			if (iNdEx + skippy) > l {
@@ -8243,10 +8225,7 @@ func (m *AppInstLookup) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppinst
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppinst
 			}
 			if (iNdEx + skippy) > l {
@@ -8362,10 +8341,7 @@ func (m *AppInstLookup2) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppinst
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppinst
 			}
 			if (iNdEx + skippy) > l {
@@ -8448,10 +8424,7 @@ func (m *AppInstLatency) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppinst
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppinst
 			}
 			if (iNdEx + skippy) > l {

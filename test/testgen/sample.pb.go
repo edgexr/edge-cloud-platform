@@ -3836,10 +3836,7 @@ func (m *NestedMessage) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthSample
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthSample
 			}
 			if (iNdEx + skippy) > l {
@@ -3977,10 +3974,7 @@ func (m *IncludeMessage) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthSample
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthSample
 			}
 			if (iNdEx + skippy) > l {
@@ -4097,10 +4091,7 @@ func (m *IncludeFields) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthSample
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthSample
 			}
 			if (iNdEx + skippy) > l {
@@ -5225,7 +5216,7 @@ func (m *TestGen) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthSample
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -5340,7 +5331,7 @@ func (m *TestGen) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthSample
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -5389,10 +5380,7 @@ func (m *TestGen) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthSample
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthSample
 			}
 			if (iNdEx + skippy) > l {
@@ -5494,10 +5482,7 @@ func (m *TestGen_InnerMessage) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthSample
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthSample
 			}
 			if (iNdEx + skippy) > l {

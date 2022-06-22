@@ -1556,10 +1556,7 @@ func (m *AppPort) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppcommon
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppcommon
 			}
 			if (iNdEx + skippy) > l {
@@ -1674,10 +1671,7 @@ func (m *DeviceInfoStatic) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppcommon
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppcommon
 			}
 			if (iNdEx + skippy) > l {
@@ -1811,10 +1805,7 @@ func (m *DeviceInfoDynamic) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppcommon
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppcommon
 			}
 			if (iNdEx + skippy) > l {
