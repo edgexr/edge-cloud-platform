@@ -74,6 +74,22 @@ func (p *Etcd) StartLocal(logfile string, opts ...StartOp) error {
 		p.DataDir = dir + "/" + base
 		log.Printf("Using ramdisk for etcd %s storage: %s\n", p.Name, p.DataDir)
 	}
+	if runtime.GOOS == "linux" {
+		// if ramdisk exists, use it.
+		homedir := os.Getenv("HOME")
+		dir := homedir + "/" + RamDisk
+		_, err := exec.Command("bash", "-c", fmt.Sprintf("mount | grep %s | grep tmpfs", dir)).CombinedOutput()
+		if err == nil {
+			base := filepath.Base(p.DataDir)
+			p.DataDir = dir + "/" + base
+		} else if etcdRamDiskSizeG != "" {
+			// treat is as required, as we can get etcd mvcc failures
+			// which can then cause unit-test/e2e test failures.
+			err = fmt.Errorf("Ramdisk required by env var %s, create via: mkdir -p %s; sudo mount -t tmpfs -o size=%sg tmpfs %s", EtcdRamDiskSizeVar, dir, etcdRamDiskSizeG, dir)
+			log.Printf("%s\n", err)
+			return err
+		}
+	}
 
 	options := StartOptions{}
 	options.ApplyStartOptions(opts...)
