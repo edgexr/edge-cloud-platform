@@ -16561,10 +16561,7 @@ func (m *OperationTimeLimits) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -16789,7 +16786,7 @@ func (m *CloudletInternal) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthCloudlet
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -16806,10 +16803,7 @@ func (m *CloudletInternal) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -17097,7 +17091,7 @@ func (m *PlatformConfig) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthCloudlet
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -17629,10 +17623,7 @@ func (m *PlatformConfig) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -17842,10 +17833,7 @@ func (m *FederationConfig) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -18038,7 +18026,7 @@ func (m *CloudletResMap) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthCloudlet
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -18055,10 +18043,7 @@ func (m *CloudletResMap) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -18172,10 +18157,7 @@ func (m *InfraConfig) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -18295,10 +18277,7 @@ func (m *ResourceQuota) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -18412,10 +18391,7 @@ func (m *GPUDriverKey) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -18708,10 +18684,7 @@ func (m *GPUDriverBuild) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -18847,10 +18820,7 @@ func (m *GPUDriverBuildMember) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -18951,10 +18921,7 @@ func (m *GPUDriverBuildURL) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -19277,7 +19244,7 @@ func (m *GPUDriver) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthCloudlet
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -19430,10 +19397,7 @@ func (m *GPUDriver) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -19626,7 +19590,7 @@ func (m *GPUConfig) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthCloudlet
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -19707,10 +19671,7 @@ func (m *GPUConfig) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -20277,7 +20238,7 @@ func (m *Cloudlet) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthCloudlet
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -20471,7 +20432,7 @@ func (m *Cloudlet) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthCloudlet
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -20598,7 +20559,7 @@ func (m *Cloudlet) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthCloudlet
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -20841,7 +20802,7 @@ func (m *Cloudlet) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthCloudlet
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -21649,10 +21610,7 @@ func (m *Cloudlet) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -21799,10 +21757,7 @@ func (m *FlavorMatch) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -21884,10 +21839,7 @@ func (m *CloudletManifest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -22093,10 +22045,7 @@ func (m *PropertyInfo) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -22277,7 +22226,7 @@ func (m *CloudletProps) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthCloudlet
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -22326,10 +22275,7 @@ func (m *CloudletProps) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -22464,10 +22410,7 @@ func (m *CloudletResourceQuotaProps) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -22604,10 +22547,7 @@ func (m *CloudletResourceUsage) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -22722,10 +22662,7 @@ func (m *CloudletAllianceOrg) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -22974,7 +22911,7 @@ func (m *FlavorInfo) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthCloudlet
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -22991,10 +22928,7 @@ func (m *FlavorInfo) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -23108,10 +23042,7 @@ func (m *OSAZone) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -23289,10 +23220,7 @@ func (m *OSImage) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -23953,7 +23881,7 @@ func (m *CloudletInfo) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthCloudlet
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -24088,10 +24016,7 @@ func (m *CloudletInfo) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {
@@ -24160,10 +24085,7 @@ func (m *CloudletMetrics) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudlet
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudlet
 			}
 			if (iNdEx + skippy) > l {

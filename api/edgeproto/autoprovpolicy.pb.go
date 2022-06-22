@@ -3826,10 +3826,7 @@ func (m *AutoProvPolicy) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAutoprovpolicy
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAutoprovpolicy
 			}
 			if (iNdEx + skippy) > l {
@@ -3945,10 +3942,7 @@ func (m *AutoProvCloudlet) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAutoprovpolicy
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAutoprovpolicy
 			}
 			if (iNdEx + skippy) > l {
@@ -4136,10 +4130,7 @@ func (m *AutoProvCount) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAutoprovpolicy
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAutoprovpolicy
 			}
 			if (iNdEx + skippy) > l {
@@ -4288,10 +4279,7 @@ func (m *AutoProvCounts) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAutoprovpolicy
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAutoprovpolicy
 			}
 			if (iNdEx + skippy) > l {
@@ -4407,10 +4395,7 @@ func (m *AutoProvPolicyCloudlet) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAutoprovpolicy
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAutoprovpolicy
 			}
 			if (iNdEx + skippy) > l {
@@ -4627,10 +4612,7 @@ func (m *AutoProvInfo) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAutoprovpolicy
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAutoprovpolicy
 			}
 			if (iNdEx + skippy) > l {

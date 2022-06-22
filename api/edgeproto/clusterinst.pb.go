@@ -4885,10 +4885,7 @@ func (m *ClusterInstKey) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthClusterinst
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthClusterinst
 			}
 			if (iNdEx + skippy) > l {
@@ -5836,10 +5833,7 @@ func (m *ClusterInst) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthClusterinst
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthClusterinst
 			}
 			if (iNdEx + skippy) > l {
@@ -5908,10 +5902,7 @@ func (m *IdleReservableClusterInsts) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthClusterinst
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthClusterinst
 			}
 			if (iNdEx + skippy) > l {
@@ -6162,10 +6153,7 @@ func (m *ClusterInstInfo) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthClusterinst
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthClusterinst
 			}
 			if (iNdEx + skippy) > l {
