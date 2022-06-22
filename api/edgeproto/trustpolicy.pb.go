@@ -1638,10 +1638,7 @@ func (m *SecurityRule) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthTrustpolicy
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthTrustpolicy
 			}
 			if (iNdEx + skippy) > l {
@@ -1810,10 +1807,7 @@ func (m *TrustPolicy) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthTrustpolicy
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthTrustpolicy
 			}
 			if (iNdEx + skippy) > l {

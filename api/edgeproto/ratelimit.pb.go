@@ -4541,10 +4541,7 @@ func (m *FlowSettings) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthRatelimit
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthRatelimit
 			}
 			if (iNdEx + skippy) > l {
@@ -4659,10 +4656,7 @@ func (m *FlowRateLimitSettingsKey) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthRatelimit
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthRatelimit
 			}
 			if (iNdEx + skippy) > l {
@@ -4810,10 +4804,7 @@ func (m *FlowRateLimitSettings) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthRatelimit
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthRatelimit
 			}
 			if (iNdEx + skippy) > l {
@@ -4920,10 +4911,7 @@ func (m *MaxReqsSettings) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthRatelimit
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthRatelimit
 			}
 			if (iNdEx + skippy) > l {
@@ -5038,10 +5026,7 @@ func (m *MaxReqsRateLimitSettingsKey) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthRatelimit
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthRatelimit
 			}
 			if (iNdEx + skippy) > l {
@@ -5189,10 +5174,7 @@ func (m *MaxReqsRateLimitSettings) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthRatelimit
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthRatelimit
 			}
 			if (iNdEx + skippy) > l {
@@ -5312,10 +5294,7 @@ func (m *RateLimitSettingsKey) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthRatelimit
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthRatelimit
 			}
 			if (iNdEx + skippy) > l {
@@ -5510,7 +5489,7 @@ func (m *RateLimitSettings) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthRatelimit
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -5639,7 +5618,7 @@ func (m *RateLimitSettings) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthRatelimit
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -5656,10 +5635,7 @@ func (m *RateLimitSettings) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthRatelimit
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthRatelimit
 			}
 			if (iNdEx + skippy) > l {
@@ -5743,10 +5719,7 @@ func (m *RateLimitSettingsData) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthRatelimit
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthRatelimit
 			}
 			if (iNdEx + skippy) > l {

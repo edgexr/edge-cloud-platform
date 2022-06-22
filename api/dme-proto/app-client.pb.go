@@ -12305,7 +12305,7 @@ func (m *RegisterClientRequest) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -12322,10 +12322,7 @@ func (m *RegisterClientRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -12652,7 +12649,7 @@ func (m *RegisterClientReply) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -12669,10 +12666,7 @@ func (m *RegisterClientReply) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -12952,7 +12946,7 @@ func (m *FindCloudletRequest) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -12969,10 +12963,7 @@ func (m *FindCloudletRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -13248,7 +13239,7 @@ func (m *PlatformFindCloudletRequest) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -13265,10 +13256,7 @@ func (m *PlatformFindCloudletRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -13652,7 +13640,7 @@ func (m *FindCloudletReply) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -13669,10 +13657,7 @@ func (m *FindCloudletReply) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -14152,7 +14137,7 @@ func (m *QosPrioritySessionCreateRequest) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -14169,10 +14154,7 @@ func (m *QosPrioritySessionCreateRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -14479,7 +14461,7 @@ func (m *QosPrioritySessionReply) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -14496,10 +14478,7 @@ func (m *QosPrioritySessionReply) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -14762,7 +14741,7 @@ func (m *QosPrioritySessionDeleteRequest) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -14779,10 +14758,7 @@ func (m *QosPrioritySessionDeleteRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -14981,7 +14957,7 @@ func (m *QosPrioritySessionDeleteReply) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -14998,10 +14974,7 @@ func (m *QosPrioritySessionDeleteReply) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -15313,7 +15286,7 @@ func (m *VerifyLocationRequest) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -15330,10 +15303,7 @@ func (m *VerifyLocationRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -15562,7 +15532,7 @@ func (m *VerifyLocationReply) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -15579,10 +15549,7 @@ func (m *VerifyLocationReply) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -15826,7 +15793,7 @@ func (m *GetLocationRequest) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -15843,10 +15810,7 @@ func (m *GetLocationRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -16132,7 +16096,7 @@ func (m *GetLocationReply) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -16149,10 +16113,7 @@ func (m *GetLocationReply) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -16451,7 +16412,7 @@ func (m *AppInstListRequest) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -16468,10 +16429,7 @@ func (m *AppInstListRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -16716,10 +16674,7 @@ func (m *Appinstance) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -16915,10 +16870,7 @@ func (m *CloudletLocation) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -17151,7 +17103,7 @@ func (m *AppInstListReply) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -17168,10 +17120,7 @@ func (m *AppInstListReply) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -17383,7 +17332,7 @@ func (m *FqdnListRequest) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -17400,10 +17349,7 @@ func (m *FqdnListRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -17614,10 +17560,7 @@ func (m *AppFqdn) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -17850,7 +17793,7 @@ func (m *FqdnListReply) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -17867,10 +17810,7 @@ func (m *FqdnListReply) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -18118,7 +18058,7 @@ func (m *AppOfficialFqdnRequest) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -18135,10 +18075,7 @@ func (m *AppOfficialFqdnRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -18435,7 +18372,7 @@ func (m *AppOfficialFqdnReply) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -18452,10 +18389,7 @@ func (m *AppOfficialFqdnReply) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -18737,7 +18671,7 @@ func (m *DynamicLocGroupRequest) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -18754,10 +18688,7 @@ func (m *DynamicLocGroupRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -19007,7 +18938,7 @@ func (m *DynamicLocGroupReply) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -19024,10 +18955,7 @@ func (m *DynamicLocGroupReply) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -19133,10 +19061,7 @@ func (m *QosPosition) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -19315,10 +19240,7 @@ func (m *BandSelection) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -19619,7 +19541,7 @@ func (m *QosPositionRequest) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -19636,10 +19558,7 @@ func (m *QosPositionRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -19844,10 +19763,7 @@ func (m *QosPositionKpiResult) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -20080,7 +19996,7 @@ func (m *QosPositionKpiReply) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -20097,10 +20013,7 @@ func (m *QosPositionKpiReply) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -20518,7 +20431,7 @@ func (m *ClientEdgeEvent) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -20535,10 +20448,7 @@ func (m *ClientEdgeEvent) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
@@ -20879,7 +20789,7 @@ func (m *ServerEdgeEvent) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthAppClient
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -20896,10 +20806,7 @@ func (m *ServerEdgeEvent) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthAppClient
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthAppClient
 			}
 			if (iNdEx + skippy) > l {
