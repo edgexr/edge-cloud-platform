@@ -2115,10 +2115,7 @@ func (m *CloudletPoolKey) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudletpool
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudletpool
 			}
 			if (iNdEx + skippy) > l {
@@ -2353,10 +2350,7 @@ func (m *CloudletPool) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudletpool
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudletpool
 			}
 			if (iNdEx + skippy) > l {
@@ -2472,10 +2466,7 @@ func (m *CloudletPoolMember) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudletpool
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudletpool
 			}
 			if (iNdEx + skippy) > l {

@@ -1673,10 +1673,7 @@ func (m *FlavorKey) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthFlavor
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthFlavor
 			}
 			if (iNdEx + skippy) > l {
@@ -1958,7 +1955,7 @@ func (m *Flavor) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthFlavor
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -1995,10 +1992,7 @@ func (m *Flavor) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthFlavor
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthFlavor
 			}
 			if (iNdEx + skippy) > l {

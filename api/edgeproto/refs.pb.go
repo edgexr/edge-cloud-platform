@@ -3676,10 +3676,7 @@ func (m *VMResource) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthRefs
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthRefs
 			}
 			if (iNdEx + skippy) > l {
@@ -3844,7 +3841,7 @@ func (m *CloudletRefs) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthRefs
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -4008,7 +4005,7 @@ func (m *CloudletRefs) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthRefs
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -4137,10 +4134,7 @@ func (m *CloudletRefs) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthRefs
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthRefs
 			}
 			if (iNdEx + skippy) > l {
@@ -4255,10 +4249,7 @@ func (m *ClusterRefsAppInstKey) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthRefs
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthRefs
 			}
 			if (iNdEx + skippy) > l {
@@ -4375,10 +4366,7 @@ func (m *ClusterRefs) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthRefs
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthRefs
 			}
 			if (iNdEx + skippy) > l {
@@ -4557,7 +4545,7 @@ func (m *AppInstRefs) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthRefs
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -4670,7 +4658,7 @@ func (m *AppInstRefs) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthRefs
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -4687,10 +4675,7 @@ func (m *AppInstRefs) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthRefs
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthRefs
 			}
 			if (iNdEx + skippy) > l {

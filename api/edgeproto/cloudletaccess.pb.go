@@ -1349,10 +1349,7 @@ func (m *IssueCertRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudletaccess
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudletaccess
 			}
 			if (iNdEx + skippy) > l {
@@ -1466,10 +1463,7 @@ func (m *IssueCertReply) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudletaccess
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudletaccess
 			}
 			if (iNdEx + skippy) > l {
@@ -1551,10 +1545,7 @@ func (m *GetCasRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudletaccess
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudletaccess
 			}
 			if (iNdEx + skippy) > l {
@@ -1636,10 +1627,7 @@ func (m *GetCasReply) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudletaccess
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudletaccess
 			}
 			if (iNdEx + skippy) > l {
@@ -1773,10 +1761,7 @@ func (m *UpgradeAccessKeyClientMsg) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudletaccess
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudletaccess
 			}
 			if (iNdEx + skippy) > l {
@@ -1890,10 +1875,7 @@ func (m *UpgradeAccessKeyServerMsg) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudletaccess
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudletaccess
 			}
 			if (iNdEx + skippy) > l {
@@ -2009,10 +1991,7 @@ func (m *AccessDataRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudletaccess
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudletaccess
 			}
 			if (iNdEx + skippy) > l {
@@ -2096,10 +2075,7 @@ func (m *AccessDataReply) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthCloudletaccess
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthCloudletaccess
 			}
 			if (iNdEx + skippy) > l {

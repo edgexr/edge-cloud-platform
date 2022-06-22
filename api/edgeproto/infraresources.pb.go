@@ -2095,10 +2095,7 @@ func (m *ContainerInfo) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthInfraresources
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthInfraresources
 			}
 			if (iNdEx + skippy) > l {
@@ -2212,10 +2209,7 @@ func (m *IpAddr) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthInfraresources
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthInfraresources
 			}
 			if (iNdEx + skippy) > l {
@@ -2461,10 +2455,7 @@ func (m *VmInfo) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthInfraresources
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthInfraresources
 			}
 			if (iNdEx + skippy) > l {
@@ -2686,10 +2677,7 @@ func (m *InfraResource) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthInfraresources
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthInfraresources
 			}
 			if (iNdEx + skippy) > l {
@@ -2883,7 +2871,7 @@ func (m *NodeInfo) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthInfraresources
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -3012,7 +3000,7 @@ func (m *NodeInfo) Unmarshal(dAtA []byte) error {
 					if err != nil {
 						return err
 					}
-					if skippy < 0 {
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
 						return ErrInvalidLengthInfraresources
 					}
 					if (iNdEx + skippy) > postIndex {
@@ -3029,10 +3017,7 @@ func (m *NodeInfo) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthInfraresources
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthInfraresources
 			}
 			if (iNdEx + skippy) > l {
@@ -3147,10 +3132,7 @@ func (m *ClusterInstRefKey) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthInfraresources
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthInfraresources
 			}
 			if (iNdEx + skippy) > l {
@@ -3266,10 +3248,7 @@ func (m *AppInstRefKey) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthInfraresources
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthInfraresources
 			}
 			if (iNdEx + skippy) > l {
@@ -3353,10 +3332,7 @@ func (m *InfraResources) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthInfraresources
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthInfraresources
 			}
 			if (iNdEx + skippy) > l {
@@ -3576,10 +3552,7 @@ func (m *InfraResourcesSnapshot) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthInfraresources
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthInfraresources
 			}
 			if (iNdEx + skippy) > l {
