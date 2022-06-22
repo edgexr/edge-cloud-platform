@@ -46,13 +46,47 @@ func getGrpcClient(t *testing.T) (*grpc.ClientConn, error) {
 }
 
 func TestController(t *testing.T) {
+	// for stress or leakage testing, bump up numTests
+	numTests := 1
+	for i := 0; i < numTests; i++ {
+		testC(t)
+	}
+}
+
+func testC(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelNotify | log.DebugLevelApi | log.DebugLevelUpgrade)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 	flag.Parse() // set defaults
-	*localEtcd = true
-	*initLocalEtcd = true
+
+	// Using one or more clusters is primarily for stress testing.
+	// It is recommended that a ramdisk be used to avoid etcd errors
+	// slow disk response.
+	useCluster := false
+	useTwoClusters := false
+	if useCluster || useTwoClusters {
+		etcds, etcdAddrs, err := StartLocalEtcdCluster("local", 3, 3100, process.WithCleanStartup())
+		require.Nil(t, err)
+		*etcdUrls = etcdAddrs
+		defer func() {
+			for _, e := range etcds {
+				e.StopLocal()
+			}
+		}()
+	} else if useTwoClusters {
+		cluster2, _, err := StartLocalEtcdCluster("local2", 3, 3300, process.WithCleanStartup())
+		require.Nil(t, err)
+		defer func() {
+			for _, e := range cluster2 {
+				e.StopLocal()
+			}
+		}()
+	} else {
+		// single etcd instance
+		*localEtcd = true
+		*initLocalEtcd = true
+	}
 
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
