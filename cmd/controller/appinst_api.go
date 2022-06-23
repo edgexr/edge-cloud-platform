@@ -721,7 +721,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				if !app.AllowServerless {
 					return fmt.Errorf("Target cloudlet platform only supports serverless Apps")
 				}
-				if in.Key.ClusterInstKey.Organization != edgeproto.OrganizationEdgeCloud {
+				if !edgeproto.IsEdgeCloudOrg(in.Key.ClusterInstKey.Organization) {
 					return fmt.Errorf("ClusterInst organization must be set to %s", edgeproto.OrganizationEdgeCloud)
 				}
 				key := in.ClusterInstKey()
@@ -752,7 +752,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			if autoClusterType != DeprecatedAutoCluster {
 				// reservable and multi-tenant ClusterInsts are
 				// always owned by the system
-				if in.Key.ClusterInstKey.Organization != edgeproto.OrganizationEdgeCloud {
+				if !edgeproto.IsEdgeCloudOrg(in.Key.ClusterInstKey.Organization) {
 					return fmt.Errorf("ClusterInst organization must be %s for autoclusters", edgeproto.OrganizationEdgeCloud)
 				}
 			}
