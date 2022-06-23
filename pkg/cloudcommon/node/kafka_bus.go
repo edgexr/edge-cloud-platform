@@ -113,7 +113,7 @@ func (s *NodeMgr) kafkaSend(ctx context.Context, event EventData, keyTags map[st
 		if eventorg == orgName {
 			allowed = true
 		}
-		if eventorg != orgName && eventorg != edgeproto.OrganizationEdgeCloud {
+		if eventorg != orgName && !edgeproto.IsEdgeCloudOrg(eventorg) {
 			topic = topic_prefix_developer + "-" + cloudletName
 		}
 	}

@@ -91,7 +91,7 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 	} else {
 		return fmt.Errorf("Organization type must be %s, or %s", OrgTypeDeveloper, OrgTypeOperator)
 	}
-	if strings.ToLower(org.Name) == strings.ToLower(edgeproto.OrganizationEdgeCloud) || strings.ToLower(org.Name) == strings.ToLower(edgeproto.OrganizationEdgeBox) {
+	if edgeproto.IsEdgeCloudOrgLC(org.Name) || strings.ToLower(org.Name) == strings.ToLower(edgeproto.OrganizationEdgeBox) {
 		if err := authorized(ctx, claims.Username, "", ResourceUsers, ActionManage); err != nil {
 			return fmt.Errorf("Not authorized to create reserved org %s", org.Name)
 		}

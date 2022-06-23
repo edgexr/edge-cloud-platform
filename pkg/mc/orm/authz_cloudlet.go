@@ -330,10 +330,10 @@ func authzCreateAppInst(ctx context.Context, region, username string, obj *edgep
 	// concerned about RBAC permissions, so only ensures that different
 	// organizations are not encroaching on each other.
 	if obj.Key.AppKey.Organization != obj.Key.ClusterInstKey.Organization && obj.Key.ClusterInstKey.Organization != "" {
-		// Sidecar apps may have MobiledgeX organization, or
-		// target ClusterInst may be MobiledgeX reservable/multitenant.
-		// So one of the orgs must be MobiledgeX to pass RBAC.
-		if obj.Key.AppKey.Organization != edgeproto.OrganizationEdgeCloud && obj.Key.ClusterInstKey.Organization != edgeproto.OrganizationEdgeCloud {
+		// Sidecar apps may have EdgeCloud organization, or
+		// target ClusterInst may be EdgeCloud reservable/multitenant.
+		// So one of the orgs must be EdgeCloud to pass RBAC.
+		if !edgeproto.IsEdgeCloudOrg(obj.Key.AppKey.Organization) && !edgeproto.IsEdgeCloudOrg(obj.Key.ClusterInstKey.Organization) {
 			return echo.ErrForbidden
 		}
 	}

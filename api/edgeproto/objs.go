@@ -1075,7 +1075,19 @@ func CmpSortSlices() []cmp.Option {
 
 var OrganizationPlatos = "platos"
 var OrganizationEdgeCloud = "edgecloudorg"
+var OrganizationEdgeCloudOld = "MobiledgeX"
 var OrganizationEdgeBox = "EdgeBox"
+
+func IsEdgeCloudOrg(s string) bool {
+	// support backwards compatibility for old name
+	return s == OrganizationEdgeCloud || s == OrganizationEdgeCloudOld
+}
+
+func IsEdgeCloudOrgLC(s string) bool {
+	s = strings.ToLower(s)
+	// support backwards compatibility for old name
+	return s == strings.ToLower(OrganizationEdgeCloud) || s == strings.ToLower(OrganizationEdgeCloudOld)
+}
 
 func GetOrg(obj interface{}) string {
 	switch v := obj.(type) {

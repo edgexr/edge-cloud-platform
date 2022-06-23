@@ -297,7 +297,7 @@ func IsClusterInstReqd(app *edgeproto.App) bool {
 }
 
 func IsSideCarApp(app *edgeproto.App) bool {
-	if app.Key.Organization == edgeproto.OrganizationEdgeCloud && app.DelOpt == edgeproto.DeleteType_AUTO_DELETE {
+	if edgeproto.IsEdgeCloudOrg(app.Key.Organization) && app.DelOpt == edgeproto.DeleteType_AUTO_DELETE {
 		return true
 	}
 	return false
