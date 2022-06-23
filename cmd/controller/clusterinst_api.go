@@ -856,13 +856,13 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 	if in.Key.ClusterKey.Name == "" {
 		return fmt.Errorf("Cluster name cannot be empty")
 	}
-	if in.Reservable && in.Key.Organization != edgeproto.OrganizationEdgeCloud {
+	if in.Reservable && !edgeproto.IsEdgeCloudOrg(in.Key.Organization) {
 		return fmt.Errorf("Only %s ClusterInsts may be reservable", edgeproto.OrganizationEdgeCloud)
 	}
 	if in.Reservable {
 		in.ReservationEndedAt = dme.TimeToTimestamp(time.Now())
 	}
-	if in.MultiTenant && in.Key.Organization != edgeproto.OrganizationEdgeCloud {
+	if in.MultiTenant && !edgeproto.IsEdgeCloudOrg(in.Key.Organization) {
 		return fmt.Errorf("Only %s ClusterInsts may be multi-tenant", edgeproto.OrganizationEdgeCloud)
 	}
 

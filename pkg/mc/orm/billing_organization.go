@@ -844,7 +844,7 @@ func isBillable(ctx context.Context, orgName string) bool {
 	if !billingEnabled(ctx) {
 		return true
 	}
-	if strings.ToLower(orgName) == strings.ToLower(edgeproto.OrganizationEdgeCloud) || strings.ToLower(orgName) == strings.ToLower(edgeproto.OrganizationEdgeBox) {
+	if edgeproto.IsEdgeCloudOrgLC(orgName) || strings.ToLower(orgName) == strings.ToLower(edgeproto.OrganizationEdgeBox) {
 		return true
 	}
 	org, _ := orgExists(ctx, orgName)

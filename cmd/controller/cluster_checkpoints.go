@@ -20,10 +20,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/gogo/protobuf/types"
 )
 
 type ClusterCheckpoint struct {
@@ -41,7 +41,7 @@ func CreateClusterUsageRecord(ctx context.Context, cluster *edgeproto.ClusterIns
 	selectors := []string{"\"event\"", "\"status\""}
 	reservedByOption := ""
 	org := cluster.Key.Organization
-	if cluster.Key.Organization == edgeproto.OrganizationEdgeCloud && cluster.ReservedBy != "" {
+	if edgeproto.IsEdgeCloudOrg(cluster.Key.Organization) && cluster.ReservedBy != "" {
 		reservedByOption = fmt.Sprintf(`AND "reservedBy"='%s' `, cluster.ReservedBy)
 		org = cluster.ReservedBy
 	}
@@ -101,7 +101,7 @@ func createClusterUsageMetric(cluster *edgeproto.ClusterInst, startTime, endTime
 	metric.AddStringVal("start", startUTC.Format(time.RFC3339))
 	metric.AddStringVal("end", endUTC.Format(time.RFC3339))
 	metric.AddDoubleVal("uptime", runTime.Seconds())
-	if cluster.ReservedBy != "" && cluster.Key.Organization == edgeproto.OrganizationEdgeCloud {
+	if cluster.ReservedBy != "" && edgeproto.IsEdgeCloudOrg(cluster.Key.Organization) {
 		metric.AddTag("org", cluster.ReservedBy)
 	} else {
 		metric.AddTag("org", cluster.Key.Organization)
