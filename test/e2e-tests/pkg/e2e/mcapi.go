@@ -342,10 +342,6 @@ func runRateLimit(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		output.Sort()
 		PrintToYamlFile("show-commands.yml", outputDir, output, true)
 		return rc
-	} else if api == "ratelimitshowflow" {
-		// TODO
-	} else if api == "ratelimitshowmaxreqs" {
-		// TODO
 	}
 	return rc
 }
