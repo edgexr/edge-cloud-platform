@@ -112,7 +112,7 @@ func authzCloudletPoolMembers(ctx context.Context, region, username string, pool
 		}
 		invalidOrgs := []string{}
 		err := ctrlclient.GetOrganizationsOnCloudletStream(ctx, &rc, &key, connCache, func(org *edgeproto.Organization) error {
-			if org.Name == edgeproto.OrganizationEdgeCloud {
+			if edgeproto.IsEdgeCloudOrg(org.Name) {
 				return nil
 			}
 			if _, found := allowedOrgs[org.Name]; found {
