@@ -273,6 +273,8 @@ tests:
 
 - includefile: metricstest.yml
 
+- includefile: region_ratelimittest.yml
+
 # Note that once user2's org is deleted, they have no orgs so cannot see any cloudlets
 - name: user2 deletes apps; verify it is empty
   actions: [mcapi-delete, mcapi-show]
