@@ -29,10 +29,6 @@ type LocApiSim struct {
 }
 
 func (p *LocApiSim) StartLocal(logfile string, opts ...StartOp) error {
-	if p.Locfile != "" {
-
-	}
-
 	args := []string{"-port", fmt.Sprintf("%d", p.Port), "-file", p.Locfile}
 	if p.Geofile != "" {
 		args = append(args, "-geo", p.Geofile)
