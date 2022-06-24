@@ -1,0 +1,145 @@
+
+description: test regional (dme) rate limiters
+
+tests:
+
+- name: enable region ratelimits
+  actions: [mcapi-update]
+  apifile: '{{datadir2}}/region_ratelimit_settings.yml'
+  apifilevars:
+    disable: "false"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+- name: Show default RateLimitSettings
+  actions: [mcapi-ratelimitshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  apifilevars:
+    region: local
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/ratelimit-settings-default_show.yml"
+    filetype: ratelimitsettings
+
+- name: Create FlowRateLimitSettings for FindCloudlet
+  apifile: "{{datadir2}}/ratelimit-settings-flowcreate.yml"
+  actions: [mcapi-create,mcapi-ratelimitshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  apifilevars:
+    region: local
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/ratelimit-settings-flowcreate_show.yml"
+    filetype: ratelimitsettings
+
+- name: Update FlowRateLimitSettings (1 req/sec and 1 burstsize)
+  apifile: "{{datadir2}}/ratelimit-settings-flowupdate.yml"
+  actions: [mcapi-update,mcapi-ratelimitshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  apifilevars:
+    region: local
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/ratelimit-settings-flowupdate_show.yml"
+    filetype: ratelimitsettings
+
+- name: FindCloudlet1 FlowRateLimit (will be successful)
+  apifile: "{{datadir2}}/find_cloudlet_app1.yml"
+  actions: [dmeapi-findcloudlet]
+  compareyaml:
+    yaml1: "{{outputdir}}/findcloudlet.yml"
+    yaml2: "{{datadir2}}/find-cloudlet-response.yml"
+    filetype: findcloudlet
+
+- name: FindCloudlet2 FlowRateLimit (will be rejected)
+  apifile: "{{datadir2}}/find_cloudlet_app1_flowratelimit.yml"
+  actions: [dmeapi-findcloudlet]
+
+- name: sleep, allow time token bucket to refill
+  actions: [sleep=2]
+
+- name: FindCloudlet3 FlowRateLimit (will be successful)
+  apifile: "{{datadir2}}/find_cloudlet_app1.yml"
+  actions: [dmeapi-findcloudlet]
+  compareyaml:
+    yaml1: "{{outputdir}}/findcloudlet.yml"
+    yaml2: "{{datadir2}}/find-cloudlet-response.yml"
+    filetype: findcloudlet
+
+- name: Delete FlowRateLimitSettings for FindCloudlet
+  apifile: "{{datadir2}}/ratelimit-settings-flowdelete.yml"
+  actions: [mcapi-delete,mcapi-ratelimitshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  apifilevars:
+    region: local
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/ratelimit-settings-default_show.yml"
+    filetype: ratelimitsettings
+
+- name: FindCloudlet FlowRateLimit removed (will be successful)
+  apifile: "{{datadir2}}/find_cloudlet_app1.yml"
+  actions: [dmeapi-findcloudlet]
+  compareyaml:
+    yaml1: "{{outputdir}}/findcloudlet.yml"
+    yaml2: "{{datadir2}}/find-cloudlet-response.yml"
+    filetype: findcloudlet
+
+- name: FindCloudlet2 FlowRateLimit removed (will still be successful after deleting flow settings)
+  apifile: "{{datadir2}}/find_cloudlet_app1.yml"
+  actions: [dmeapi-findcloudlet]
+  compareyaml:
+    yaml1: "{{outputdir}}/findcloudlet.yml"
+    yaml2: "{{datadir2}}/find-cloudlet-response.yml"
+    filetype: findcloudlet
+
+- name: Create MaxReqsRateLimitSettings for FindCloudlet
+  apifile: "{{datadir2}}/ratelimit-settings-maxreqscreate.yml"
+  actions: [mcapi-create,mcapi-ratelimitshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  apifilevars:
+    region: local
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/ratelimit-settings-maxreqscreate_show.yml"
+    filetype: ratelimitsettings
+
+- name: FindCloudlet1 MaxReqsRateLimit (will be successful)
+  apifile: "{{datadir2}}/find_cloudlet_app1.yml"
+  actions: [dmeapi-findcloudlet]
+  compareyaml:
+    yaml1: "{{outputdir}}/findcloudlet.yml"
+    yaml2: "{{datadir2}}/find-cloudlet-response.yml"
+    filetype: findcloudlet
+
+- name: FindCloudlet2 MaxReqsRateLimit (will be rejected)
+  apifile: "{{datadir2}}/find_cloudlet_app1_maxreqsratelimit.yml"
+  actions: [dmeapi-findcloudlet]
+
+- name: sleep, allow time for fixed window to reset
+  actions: [sleep=3]
+
+- name: FindCloudlet3 MaxReqsRateLimit (will be successful)
+  apifile: "{{datadir2}}/find_cloudlet_app1.yml"
+  actions: [dmeapi-findcloudlet]
+  compareyaml:
+    yaml1: "{{outputdir}}/findcloudlet.yml"
+    yaml2: "{{datadir2}}/find-cloudlet-response.yml"
+    filetype: findcloudlet
+
+- name: Delete MaxReqsRateLimitSettings for FindCloudlet
+  apifile: "{{datadir2}}/ratelimit-settings-maxreqsdelete.yml"
+  actions: [mcapi-delete,mcapi-ratelimitshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  apifilevars:
+    region: local
+  compareyaml:
+    yaml1: "{{outputdir}}/show-commands.yml"
+    yaml2: "{{datadir}}/ratelimit-settings-default_show.yml"
+    filetype: ratelimitsettings
+
+- name: disable region ratelimits
+  actions: [mcapi-update]
+  apifile: '{{datadir2}}/region_ratelimit_settings.yml'
+  apifilevars:
+    disable: "true"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
