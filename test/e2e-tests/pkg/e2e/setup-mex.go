@@ -30,6 +30,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	sh "github.com/codeskyblue/go-sh"
@@ -507,6 +508,16 @@ func StartLocal(processName, outputDir string, p process.Process, portsInUse map
 	return true
 }
 
+func StartLocalPar(processName, outputDir string, p process.Process, portsInUse map[string]string, wg *sync.WaitGroup, failed *bool, opts ...process.StartOp) {
+	wg.Add(1)
+	go func() {
+		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
+			*failed = true
+		}
+		wg.Done()
+	}()
+}
+
 func StartProcesses(processName string, args []string, outputDir string) bool {
 	if outputDir == "" {
 		outputDir = "."
@@ -540,196 +551,112 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 			return false
 		}
 	}
+	wg := sync.WaitGroup{}
+	failed := false
 	for _, p := range Deployment.Influxs {
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
+	vaultOpts := append(opts, process.WithRolesFile(rolesfile))
 	for _, p := range Deployment.Vaults {
-		opts = append(opts, process.WithRolesFile(rolesfile))
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, vaultOpts...)
 	}
 	for _, p := range Deployment.Etcds {
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	for _, p := range Deployment.ElasticSearchs {
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	for _, p := range Deployment.Jaegers {
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
-	}
-	for _, p := range Deployment.Traefiks {
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
-	}
-	for _, p := range Deployment.NginxProxys {
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
-	}
-	for _, p := range Deployment.NotifyRoots {
-		opts = append(opts, process.WithDebug("api,notify,events"))
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
-	}
-	for _, p := range Deployment.EdgeTurns {
-		opts = append(opts, process.WithRolesFile(rolesfile))
-		opts = append(opts, process.WithDebug("api,notify"))
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
-	}
-	for _, p := range Deployment.Controllers {
-		opts = append(opts, process.WithDebug("etcd,api,notify,metrics,infra,events"))
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
-	}
-	for _, p := range Deployment.Dmes {
-		opts = append(opts, process.WithRolesFile(rolesfile))
-		opts = append(opts, process.WithDebug("locapi,dmedb,dmereq,notify,metrics,events"))
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
-	}
-	for _, p := range Deployment.ClusterSvcs {
-		opts = append(opts, process.WithRolesFile(rolesfile))
-		opts = append(opts, process.WithDebug("notify,infra,api,events"))
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
-	}
-	for _, p := range Deployment.Crms {
-		opts = append(opts, process.WithDebug("notify,infra,api,events"))
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
-	}
-	for _, p := range Deployment.Locsims {
-		if processName != "" && processName != p.Name {
-			continue
-		}
-		if IsLocalIP(p.Hostname) {
-			log.Printf("Starting LocSim %+v\n", p)
-			if p.Locfile != "" {
-				StageLocDbFile(p.Locfile, "/var/tmp")
-			}
-			logfile := getLogFile(p.Name, outputDir)
-			err := p.StartLocal(logfile)
-			if err != nil {
-				log.Printf("Error on LocSim startup: %v", err)
-				return false
-			}
-
-		}
-	}
-	for _, p := range Deployment.Toksims {
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
-	}
-	for _, p := range Deployment.SampleApps {
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	for _, p := range Deployment.RedisCaches {
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	for _, p := range Deployment.Sqls {
-		opts := append(opts, process.WithCleanStartup())
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
+	}
+	// wait for databases
+	wg.Wait()
+	if failed {
+		return false
+	}
+	opts = append(opts, process.WithRolesFile(rolesfile))
+
+	for _, p := range Deployment.Traefiks {
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
+	}
+	for _, p := range Deployment.NginxProxys {
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
+	}
+	for _, p := range Deployment.NotifyRoots {
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("api,notify,events"))...)
+	}
+	for _, p := range Deployment.EdgeTurns {
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("api,notify"))...)
+	}
+	for _, p := range Deployment.Controllers {
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("etcd,api,notify,metrics,infra,events"))...)
+	}
+	for _, p := range Deployment.Dmes {
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithRolesFile(rolesfile), process.WithDebug("locapi,dmedb,dmereq,notify,metrics,events"))...)
+	}
+	for _, p := range Deployment.ClusterSvcs {
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("notify,infra,api,events"))...)
+	}
+	for _, p := range Deployment.Crms {
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("notify,infra,api,events"))...)
+	}
+	for _, p := range Deployment.Locsims {
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
+	}
+	for _, p := range Deployment.Toksims {
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
+	}
+	for _, p := range Deployment.SampleApps {
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	for _, p := range Deployment.Alertmanagers {
-		opts := append(opts, process.WithCleanStartup())
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	for _, p := range Deployment.AlertmgrSidecars {
-		opts = append(opts, process.WithDebug("api,notify,metrics,events"))
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("api,notify,metrics,events"))...)
 	}
 	for _, p := range Deployment.Mcs {
-		opts = append(opts, process.WithRolesFile(rolesfile))
-		opts = append(opts, process.WithDebug("api,metrics,events,notify"))
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("api,metrics,events,notify"))...)
 	}
 	for _, p := range Deployment.Frms {
-		opts = append(opts, process.WithRolesFile(rolesfile))
-		opts = append(opts, process.WithDebug("api,infra,notify"))
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("api,infra,notify"))...)
 	}
 	for _, p := range Deployment.Shepherds {
-		opts = append(opts, process.WithRolesFile(rolesfile))
-		opts = append(opts, process.WithDebug("metrics,events"))
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("metrics,events"))...)
 	}
 	for _, p := range Deployment.AutoProvs {
-		opts = append(opts, process.WithRolesFile(rolesfile))
-		opts = append(opts, process.WithDebug("api,notify,metrics,events"))
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("api,notify,metrics,events"))...)
 	}
 	for _, p := range Deployment.Prometheus {
-		opts := append(opts, process.WithCleanStartup())
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	for _, p := range Deployment.HttpServers {
-		opts := append(opts, process.WithCleanStartup())
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	for _, p := range Deployment.ChefServers {
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	for _, p := range Deployment.Maildevs {
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	for _, p := range Deployment.ThanosQueries {
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	for _, p := range Deployment.ThanosReceives {
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	for _, p := range Deployment.Qossessims {
-		if !StartLocal(processName, outputDir, p, portsInUse, opts...) {
-			return false
-		}
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
+	}
+	wg.Wait()
+	if failed {
+		return false
 	}
 	return true
 }
