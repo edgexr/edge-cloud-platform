@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -30,6 +31,7 @@ import (
 	"strings"
 	"time"
 
+	edgelog "github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 )
 
@@ -81,6 +83,9 @@ var e2eHome string
 var configStr string
 var testConfig e2e.TestConfig
 var defaultProgram string
+var logFile *os.File
+var stdout *os.File
+var stderr *os.File
 
 func printUsage() {
 	fmt.Println("\nUsage: \n" + commandName + " [options]\n\noptions:")
@@ -107,11 +112,11 @@ func validateArgs() {
 		errorFound = true
 	}
 	if err := e2e.ReadVarsFile(*varsFile, testConfig.Vars); err != nil {
-		fmt.Printf("failed to read yaml vars file %s, %v\n", *varsFile, err)
+		fmt.Fprintf(stdout, "failed to read yaml vars file %s, %v\n", *varsFile, err)
 		errorFound = true
 	}
 	testConfig.SetupFile = *setupFile
-	*outputDir = e2e.CreateOutputDir(!*notimestamp, *outputDir, commandName+".log")
+	*outputDir, logFile = e2e.CreateOutputDir(!*notimestamp, *outputDir, commandName+".log")
 	testConfig.Vars["outputdir"] = *outputDir
 	dataDir, found := testConfig.Vars["datadir"]
 	if !found {
@@ -128,7 +133,7 @@ func validateArgs() {
 
 	configBytes, err := json.Marshal(&testConfig)
 	if err != nil {
-		fmt.Printf("failed to marshal TestConfig, %v\n", err)
+		fmt.Fprintf(stdout, "failed to marshal TestConfig, %v\n", err)
 		errorFound = true
 	}
 	configStr = string(configBytes)
@@ -157,7 +162,17 @@ func parseTest(testinfo map[string]interface{}, test *e2e_test) error {
 	return json.Unmarshal(spec, test)
 }
 
-func runTests(dirName, fileName, progName string, depth int, mods []string) (int, int, int) {
+func parseTestSpec(testinfo map[string]interface{}, s *e2e.TestSpec) error {
+	// we could use mapstructure here but it's easy to just
+	// convert map to json and then unmarshal json.
+	spec, err := json.Marshal(testinfo)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(spec, s)
+}
+
+func runTests(ctx context.Context, dirName, fileName, progName string, depth int, mods []string) (int, int, int) {
 	numPassed := 0
 	numFailed := 0
 	numTestsRun := 0
@@ -176,18 +191,15 @@ func runTests(dirName, fileName, progName string, depth int, mods []string) (int
 	}
 	defer func() {
 		f := indentstr + fileName
-		fmt.Printf("%-30s %-66s %s\n", f, "done", time.Since(runStart))
+		fmt.Fprintf(stdout, "%-30s %-66s %s\n", f, "done", time.Since(runStart))
 	}()
 	var testsToRun e2e_tests
 	if !readYamlFile(dirName+"/"+fileName, &testsToRun) {
-		log.Printf("\n** unable to read yaml file %s\n", fileName)
+		fmt.Fprintf(stdout, "\n** unable to read yaml file %s\n", fileName)
 		return 0, 0, 0
 	}
 	if testsToRun.Program != "" {
 		progName = testsToRun.Program
-	}
-	if progName == "" {
-		progName = "test-mex"
 	}
 
 	//if no loop count specified, run once
@@ -196,7 +208,7 @@ func runTests(dirName, fileName, progName string, depth int, mods []string) (int
 		t := e2e_test{}
 		err := parseTest(testinfo, &t)
 		if err != nil {
-			log.Printf("\nfailed to parse test %v, %v\n", testinfo, err)
+			fmt.Fprintf(stdout, "\nfailed to parse test %v, %v\n", testinfo, err)
 			numTestsRun++
 			numFailed++
 			if *stopOnFail {
@@ -231,18 +243,18 @@ func runTests(dirName, fileName, progName string, depth int, mods []string) (int
 			if len(f) > 30 {
 				f = f[0:27] + "..."
 			}
-			fmt.Printf("%-30s %-60s ", f, namestr+loopStr)
+			fmt.Fprintf(stdout, "%-30s %-60s ", f, namestr+loopStr)
 			if t.IncludeFile != "" {
 				if t.ExtraTest && !*runextra {
-					fmt.Println()
+					fmt.Fprintln(stdout)
 					continue
 				}
 				if depth >= 10 {
 					//avoid an infinite recusive loop in which a testfile contains itself
 					log.Fatalf("excessive include depth %d, possible loop: %s", depth, fileName)
 				}
-				fmt.Println()
-				nr, np, nf := runTests(dirName, t.IncludeFile, progName, depth+1, append(mods, t.Mods...))
+				fmt.Fprintln(stdout)
+				nr, np, nf := runTests(ctx, dirName, t.IncludeFile, progName, depth+1, append(mods, t.Mods...))
 				numTestsRun += nr
 				numPassed += np
 				numFailed += nf
@@ -251,53 +263,64 @@ func runTests(dirName, fileName, progName string, depth int, mods []string) (int
 				}
 				continue
 			}
-			testSpec, err := json.Marshal(testinfo)
-			if err != nil {
-				fmt.Printf("FAIL: cannot marshal test info %v, %v\n", err, testinfo)
-				numTestsRun++
-				numFailed++
-				if *stopOnFail {
-					return numTestsRun, numPassed, numFailed
-				}
-				continue
-			}
-			modsSpec, err := json.Marshal(mods)
-			if err != nil {
-				fmt.Printf("FAIL: cannot marshal mods %v, %v\n", err, mods)
-				numTestsRun++
-				numFailed++
-				if *stopOnFail {
-					return numTestsRun, numPassed, numFailed
-				}
-				continue
-			}
-			args := []string{
-				"-testConfig", configStr,
-				"-testSpec", string(testSpec),
-				"-mods", string(modsSpec),
-			}
-			if *stopOnFail {
-				args = append(args, "-stop")
-			}
 			startT := time.Now()
-			cmd := exec.Command(progName, args...)
-			var out bytes.Buffer
-			var stderr bytes.Buffer
-			cmd.Stdout = &out
-			cmd.Stderr = &stderr
-			err = cmd.Run()
-			if *verbose {
-				fmt.Println(out.String())
+			var runerr error
+			if progName != "" {
+				testSpec, err := json.Marshal(testinfo)
+				if err != nil {
+					fmt.Fprintf(stdout, "FAIL: cannot marshal test info %v, %v\n", err, testinfo)
+					numTestsRun++
+					numFailed++
+					if *stopOnFail {
+						return numTestsRun, numPassed, numFailed
+					}
+					continue
+				}
+				modsSpec, err := json.Marshal(mods)
+				if err != nil {
+					fmt.Fprintf(stdout, "FAIL: cannot marshal mods %v, %v\n", err, mods)
+					numTestsRun++
+					numFailed++
+					if *stopOnFail {
+						return numTestsRun, numPassed, numFailed
+					}
+					continue
+				}
+				args := []string{
+					"-testConfig", configStr,
+					"-testSpec", string(testSpec),
+					"-mods", string(modsSpec),
+				}
+				if *stopOnFail {
+					args = append(args, "-stop")
+				}
+				cmd := exec.Command(progName, args...)
+				var out bytes.Buffer
+				var stderr bytes.Buffer
+				cmd.Stdout = &out
+				cmd.Stderr = &stderr
+				runerr = cmd.Run()
+				if *verbose {
+					fmt.Fprintln(stdout, out.String())
+				}
+				if stderr.Len() > 0 {
+					ioutil.WriteFile("/tmp/fail-output"+strconv.Itoa(cmd.Process.Pid), stderr.Bytes(), 0666)
+					runerr = fmt.Errorf("%s\n%s", stderr.String(), runerr)
+				}
+			} else {
+				testSpec := &e2e.TestSpec{}
+				if err := parseTestSpec(testinfo, testSpec); err != nil {
+					fmt.Fprintf(stdout, "FAIL: %s\n", err)
+					continue
+				}
+				runerr = e2e.RunTestSpec(ctx, &testConfig, testSpec, mods, *stopOnFail)
 			}
 			took := time.Since(startT).String()
 			if err == nil {
-				fmt.Printf("PASS  %s\n", took)
+				fmt.Fprintf(stdout, "PASS  %s\n", took)
 				numPassed += 1
 			} else {
-				if stderr.Len() > 0 {
-					ioutil.WriteFile("/tmp/fail-output"+strconv.Itoa(cmd.Process.Pid), stderr.Bytes(), 0666)
-				}
-				fmt.Printf("FAIL: %s %s\n", took, stderr.String())
+				fmt.Fprintf(stdout, "FAIL: %s %s\n", took, err)
 				numFailed += 1
 				_, ok := failedTests[fileName+":"+t.Name]
 				if !ok {
@@ -306,7 +329,7 @@ func runTests(dirName, fileName, progName string, depth int, mods []string) (int
 				failedTests[fileName+":"+t.Name] += 1
 
 				if *stopOnFail {
-					fmt.Printf("*** STOPPING ON FAILURE due to --stop option\n")
+					fmt.Fprintf(stdout, "*** STOPPING ON FAILURE due to --stop option\n")
 					return numTestsRun, numPassed, numFailed
 				}
 			}
@@ -314,7 +337,7 @@ func runTests(dirName, fileName, progName string, depth int, mods []string) (int
 		}
 	}
 	if *verbose {
-		fmt.Printf("\n\n*** Summary of testfile %s Tests Run: %d Passed: %d Failed: %d -- Logs in %s\n", fileName, numTestsRun, numPassed, numFailed, *outputDir)
+		fmt.Fprintf(stdout, "\n\n*** Summary of testfile %s Tests Run: %d Passed: %d Failed: %d -- Logs in %s\n", fileName, numTestsRun, numPassed, numFailed, *outputDir)
 	}
 	return numTestsRun, numPassed, numFailed
 
@@ -322,21 +345,33 @@ func runTests(dirName, fileName, progName string, depth int, mods []string) (int
 
 func main() {
 	validateArgs()
+	defer logFile.Close()
 
-	fmt.Printf("\n%-30s %-60s Result\n", "Testfile", "Test")
-	fmt.Printf("-----------------------------------------------------------------------------------------------------\n")
+	stdout = os.Stdout
+	stderr = os.Stderr
+	os.Stdout = logFile
+	os.Stderr = logFile
+
+	fmt.Fprintf(stdout, "\n%-30s %-60s Result\n", "Testfile", "Test")
+	fmt.Fprintf(stdout, "-----------------------------------------------------------------------------------------------------\n")
 	if *testFile != "" {
+		edgelog.SetupLoggers(logFile.Name())
+		edgelog.InitTracer(nil)
+		defer edgelog.FinishTracer()
+		ctx := edgelog.StartTestSpan(context.Background())
+		e2e.SetLogFormat()
+
 		dirName := path.Dir(*testFile)
 		fileName := path.Base(*testFile)
 		start := time.Now()
-		totalRun, totalPassed, totalFailed := runTests(dirName, fileName, defaultProgram, 0, []string{})
-		fmt.Printf("\nTotal Run: %d, passed: %d, failed: %d, took: %s\n", totalRun, totalPassed, totalFailed, time.Since(start).String())
+		totalRun, totalPassed, totalFailed := runTests(ctx, dirName, fileName, defaultProgram, 0, []string{})
+		fmt.Fprintf(stdout, "\nTotal Run: %d, passed: %d, failed: %d, took: %s\n", totalRun, totalPassed, totalFailed, time.Since(start).String())
 		if totalFailed > 0 {
-			fmt.Printf("Failed Tests: ")
+			fmt.Fprintf(stdout, "Failed Tests: ")
 			for t, f := range failedTests {
-				fmt.Printf("  %s: failures %d\n", t, f)
+				fmt.Fprintf(stdout, "  %s: failures %d\n", t, f)
 			}
-			fmt.Printf("Logs in %s\n", *outputDir)
+			fmt.Fprintf(stdout, "Logs in %s\n", *outputDir)
 			os.Exit(1)
 		}
 	}

@@ -16,5 +16,6 @@ datadir: $GOPATH/src/github.com/edgexr/edge-cloud-platform/test/e2e-tests/data-r
 datadir2: $GOPATH/src/github.com/edgexr/edge-cloud-platform/test/e2e-tests/data
 edge-cloud-testfiles: $GOPATH/src/github.com/edgexr/edge-cloud-platform/test/e2e-tests/testfiles
 chefdir: $GOPATH/src/github.com/edgexr/edge-cloud-platform/test/e2e-tests/chef
-default-program: test-mex-infra
 staticdir: $GOPATH/src/github.com/edgexr/edge-cloud-infra/static
+# set default-program to an external program to run customized tests
+#default-program: test-mex-infra
