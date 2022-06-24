@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -493,7 +492,7 @@ func PrintToYamlFile(fname, outputDir string, data interface{}, truncate bool) {
 
 //creates an output directory with an optional timestamp.  Server log files, output from APIs, and
 //output from the script itself will all go there if specified
-func CreateOutputDir(useTimestamp bool, outputDir string, logFileName string) string {
+func CreateOutputDir(useTimestamp bool, outputDir string, logFileName string) (string, *os.File) {
 	if useTimestamp {
 		startTimestamp := time.Now().Format("2006-01-02T150405")
 		outputDir = outputDir + "/" + startTimestamp
@@ -510,10 +509,8 @@ func CreateOutputDir(useTimestamp bool, outputDir string, logFileName string) st
 	if err != nil {
 		log.Fatalf("Error creating logfile %s\n", logName)
 	}
-	//log to both stdout and logfile
-	mw := io.MultiWriter(os.Stdout, logFile)
-	log.SetOutput(mw)
-	return outputDir
+	log.SetOutput(logFile)
+	return outputDir, logFile
 }
 
 type ReadYamlOptions struct {
@@ -934,7 +931,7 @@ func (s *Transformer) applyRecurse(v reflect.Value) {
 			if !subv.CanSet() {
 				newSubv := reflect.New(subv.Type()).Elem()
 				if !newSubv.CanSet() {
-					fmt.Printf("subvSettable %v:%v cannot set\n", iter.Key(), subv.Type())
+					log.Printf("subvSettable %v:%v cannot set\n", iter.Key(), subv.Type())
 					continue
 				}
 				newSubv.Set(subv)

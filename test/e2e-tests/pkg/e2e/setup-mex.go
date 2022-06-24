@@ -18,6 +18,8 @@ package e2e
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -776,14 +778,14 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 	action, actionSubtype := GetActionSubtype(act)
 	vars = util.AddMaps(vars, spec.ApiFileVars)
 
-	errors := []string{}
+	errs := []string{}
 
 	if action == "status" ||
 		action == "ctrlapi" ||
 		action == "dmeapi" ||
 		action == "mcapi" {
 		if !UpdateAPIAddrs() {
-			errors = append(errors, "update API addrs failed")
+			errs = append(errs, "update API addrs failed")
 		}
 	}
 
@@ -791,28 +793,28 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 	case "deploy":
 		err := CreateCloudflareRecords()
 		if err != nil {
-			errors = append(errors, err.Error())
+			errs = append(errs, err.Error())
 		}
 		if Deployment.Cluster.MexManifest != "" {
 			dir := path.Dir(config.SetupFile)
 			err := DeployK8sServices(dir)
 			if err != nil {
-				errors = append(errors, err.Error())
+				errs = append(errs, err.Error())
 			}
 		} else {
 			if !DeployProcesses() {
-				errors = append(errors, "deploy failed")
+				errs = append(errs, "deploy failed")
 			}
 		}
 	case "gencerts":
 		err := GenerateTLSCerts()
 		if err != nil {
-			errors = append(errors, err.Error())
+			errs = append(errs, err.Error())
 		}
 	case "cleancerts":
 		err := CleanupTLSCerts()
 		if err != nil {
-			errors = append(errors, err.Error())
+			errs = append(errs, err.Error())
 		}
 	case "start":
 		startFailed := false
@@ -836,31 +838,31 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 			// read the apifile and start crm with the details
 			err := StartCrmsLocal(ctx, actionParam, ctrlName, spec.ApiFile, spec.ApiFileVars, outputDir)
 			if err != nil {
-				errors = append(errors, err.Error())
+				errs = append(errs, err.Error())
 			}
 			break
 		}
 		if !StartProcesses(actionParam, actionArgs, outputDir) {
 			startFailed = true
-			errors = append(errors, "start failed")
+			errs = append(errs, "start failed")
 		}
 		if startFailed {
 			if !StopProcesses(actionParam, allprocs) {
-				errors = append(errors, "stop failed")
+				errs = append(errs, "stop failed")
 			}
 			break
 
 		}
 		if !UpdateAPIAddrs() {
-			errors = append(errors, "update API addrs failed")
+			errs = append(errs, "update API addrs failed")
 		} else {
 			if !WaitForProcesses(actionParam, allprocs) {
-				errors = append(errors, "wait for process failed")
+				errs = append(errs, "wait for process failed")
 			}
 		}
 	case "status":
 		if !WaitForProcesses(actionParam, GetAllProcesses()) {
-			errors = append(errors, "wait for process failed")
+			errs = append(errs, "wait for process failed")
 		}
 	case "stop":
 		if actionSubtype == "argument" {
@@ -876,131 +878,131 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 				haRole = process.HARole(rolearg)
 			}
 			if err := StopCrmsLocal(ctx, actionParam, spec.ApiFile, spec.ApiFileVars, haRole); err != nil {
-				errors = append(errors, err.Error())
+				errs = append(errs, err.Error())
 			}
 		} else {
 			allprocs := GetAllProcesses()
 			if !StopProcesses(actionParam, allprocs) {
-				errors = append(errors, "stop failed")
+				errs = append(errs, "stop failed")
 			}
 			if !StopRemoteProcesses(actionParam) {
-				errors = append(errors, "stop remote failed")
+				errs = append(errs, "stop remote failed")
 			}
 		}
 	case "ctrlapi":
 		if !RunControllerAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir, mods, retry) {
 			log.Printf("Unable to run api for %s-%s, %v\n", action, actionSubtype, mods)
-			errors = append(errors, "controller api failed")
+			errs = append(errs, "controller api failed")
 		}
 	case "clientshow":
 		if !RunAppInstClientAPI(actionSubtype, actionParam, spec.ApiFile, outputDir) {
 			log.Printf("Unable to run ShowAppInstClient api for %s, %v\n", action, mods)
-			errors = append(errors, "ShowAppInstClient api failed")
+			errs = append(errs, "ShowAppInstClient api failed")
 		}
 	case "exec":
 		if !RunCommandAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir) {
 			log.Printf("Unable to run RunCommand api for %s, %v\n", action, mods)
-			errors = append(errors, "controller RunCommand api failed")
+			errs = append(errs, "controller RunCommand api failed")
 		}
 	case "dmeapi":
 		if !RunDmeAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, spec.ApiType, outputDir) {
 			log.Printf("Unable to run api for %s\n", action)
-			errors = append(errors, "dme api failed")
+			errs = append(errs, "dme api failed")
 		}
 	case "influxapi":
 		if !RunInfluxAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir) {
 			log.Printf("Unable to run influx api for %s\n", action)
-			errors = append(errors, "influx api failed")
+			errs = append(errs, "influx api failed")
 		}
 	case "cmds":
 		if !RunCommands(spec.ApiFile, spec.ApiFileVars, outputDir, retry) {
 			log.Printf("Unable to run commands for %s\n", action)
-			errors = append(errors, "commands failed")
+			errs = append(errs, "commands failed")
 		}
 	case "script":
 		if !RunScript(spec.ApiFile, outputDir, retry) {
 			log.Printf("Unable to run script for %s\n", action)
-			errors = append(errors, "script failed")
+			errs = append(errs, "script failed")
 		}
 	case "mcapi":
 		if !RunMcAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, spec.CurUserFile, outputDir, mods, vars, sharedData, retry) {
 			log.Printf("Unable to run api for %s\n", action)
-			errors = append(errors, "MC api failed")
+			errs = append(errs, "MC api failed")
 		}
 	case "cleanup":
 		err := DeleteCloudfareRecords()
 		if err != nil {
-			errors = append(errors, err.Error())
+			errs = append(errs, err.Error())
 		}
 		if Deployment.Cluster.MexManifest != "" {
 			dir := path.Dir(config.SetupFile)
 			err := DeleteK8sServices(dir)
 			if err != nil {
-				errors = append(errors, err.Error())
+				errs = append(errs, err.Error())
 			}
 		} else {
 			if !CleanupRemoteProcesses() {
-				errors = append(errors, "cleanup failed")
+				errs = append(errs, "cleanup failed")
 			}
 		}
 		err = process.StopShepherdService(ctx, nil)
 		if err != nil {
-			errors = append(errors, err.Error())
+			errs = append(errs, err.Error())
 		}
 		err = process.StopCloudletPrometheus(ctx)
 		if err != nil {
-			errors = append(errors, err.Error())
+			errs = append(errs, err.Error())
 		}
 		err = CleanupTmpFiles(ctx)
 		if err != nil {
-			errors = append(errors, err.Error())
+			errs = append(errs, err.Error())
 		}
 		err = process.StopFakeEnvoyExporters(ctx)
 		if err != nil {
-			errors = append(errors, err.Error())
+			errs = append(errs, err.Error())
 		}
 		err = Cleanup(ctx)
 		if err != nil {
-			errors = append(errors, err.Error())
+			errs = append(errs, err.Error())
 		}
 	case "fetchlogs":
 		if !FetchRemoteLogs(outputDir) {
-			errors = append(errors, "fetch failed")
+			errs = append(errs, "fetch failed")
 		}
 	case "runchefclient":
 		err := RunChefClient(spec.ApiFile, vars)
 		if err != nil {
-			errors = append(errors, err.Error())
+			errs = append(errs, err.Error())
 		}
 	case "email":
 		*retry = true
 		err := RunEmailAPI(actionSubtype, spec.ApiFile, outputDir)
 		if err != nil {
-			errors = append(errors, err.Error())
+			errs = append(errs, err.Error())
 		}
 	case "slack":
 		*retry = true
 		err := RunSlackAPI(actionSubtype, spec.ApiFile, outputDir)
 		if err != nil {
-			errors = append(errors, err.Error())
+			errs = append(errs, err.Error())
 		}
 	case "pagerduty":
 		*retry = true
 		err := RunPagerDutyAPI(actionSubtype, spec.ApiFile, outputDir)
 		if err != nil {
-			errors = append(errors, err.Error())
+			errs = append(errs, err.Error())
 		}
 	case "sleep":
 		t, err := strconv.ParseFloat(actionParam, 64)
 		if err == nil {
 			time.Sleep(time.Second * time.Duration(t))
 		} else {
-			errors = append(errors, fmt.Sprintf("Error in parsing sleeptime: %v", err))
+			errs = append(errs, fmt.Sprintf("Error in parsing sleeptime: %v", err))
 		}
 	default:
-		errors = append(errors, fmt.Sprintf("invalid action %s", action))
+		errs = append(errs, fmt.Sprintf("invalid action %s", action))
 	}
-	return errors
+	return errs
 }
 
 type Retry struct {
@@ -1066,4 +1068,105 @@ func (r *Retry) Done() bool {
 	r.Try++
 	time.Sleep(r.Interval)
 	return false
+}
+
+func RunTestSpec(ctx context.Context, config *TestConfig, spec *TestSpec, mods []string, stopOnFail bool) error {
+	errs := []string{}
+	outputDir := config.Vars["outputdir"]
+	sharedDataPath := outputDir + "/shared_data.json"
+
+	if config.SetupFile != "" {
+		if !ReadSetupFile(config.SetupFile, &Deployment, config.Vars) {
+			return fmt.Errorf("Failed to read setup file")
+		}
+		DeploymentReplacementVars = config.Vars
+	}
+
+	retry := NewRetry(spec.RetryCount, spec.RetryIntervalSec, len(spec.Actions))
+	ranTest := false
+
+	// Load from file
+	sharedData := make(map[string]string)
+	plan, err := ioutil.ReadFile(sharedDataPath)
+	if err != nil {
+		// ignore
+		log.Printf("error reading shared data file %s, err: %v\n", sharedDataPath, err)
+	} else {
+		err = json.Unmarshal(plan, &sharedData)
+		if err != nil {
+			// ignore
+			log.Printf("failed to marshal shared data, err: %v\n", err)
+		}
+	}
+
+	for {
+		tryErrs := []string{}
+		for ii, a := range spec.Actions {
+			if !retry.ShouldRunAction(ii) {
+				continue
+			}
+			PrintStepBanner("name: " + spec.Name)
+			PrintStepBanner("running action: " + a + retry.Tries())
+			actionretry := false
+			errs := RunAction(ctx, a, outputDir, config, spec, mods, config.Vars, sharedData, &actionretry)
+			ranTest = true
+			if len(errs) > 0 {
+				if actionretry {
+					// potential errs that may be ignored after retry
+					tryErrs = append(tryErrs, errs...)
+				} else {
+					// no retry for action, so register errs as final errs
+					errs = append(errs, errs...)
+					if stopOnFail {
+						break
+					}
+				}
+			}
+			retry.SetActionRetry(ii, actionretry)
+		}
+		if stopOnFail && len(errs) > 0 {
+			// stopOnFail case
+			break
+		}
+		if spec.CompareYaml.Yaml1 != "" && spec.CompareYaml.Yaml2 != "" {
+			pass := CompareYamlFiles(spec.Name, spec.Actions, &spec.CompareYaml)
+			if !pass {
+				tryErrs = append(tryErrs, "compare yaml failed")
+			}
+			ranTest = true
+		}
+		if len(tryErrs) == 0 || retry.Done() {
+			errs = append(errs, tryErrs...)
+			break
+		}
+		log.Printf("encountered failures, will retry:\n")
+		for _, e := range tryErrs {
+			log.Printf("- %s\n", e)
+		}
+		log.Printf("")
+	}
+	if !ranTest {
+		errs = append(errs, "no test content")
+	}
+
+	if len(sharedData) > 0 {
+		dataStr, err := json.Marshal(sharedData)
+		if err != nil {
+			// ignore
+			log.Printf("error in json marshal of shared data, err: %v\n", err)
+		} else {
+			err = ioutil.WriteFile(sharedDataPath, []byte(dataStr), 0644)
+			if err != nil {
+				// ignore
+				log.Printf("error writing shared data file, err: %v\n", err)
+			}
+		}
+	}
+
+	log.Printf("\nNum Errs found: %d, Results in: %s\n", len(errs), outputDir)
+	if len(errs) > 0 {
+		errstring := strings.Join(errs, ",")
+		return errors.New(errstring)
+	}
+	return nil
 }

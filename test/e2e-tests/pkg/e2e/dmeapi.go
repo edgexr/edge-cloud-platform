@@ -73,9 +73,6 @@ type findcloudlet struct {
 	At    time.Time                    `yaml:"at"`
 }
 
-var apiRequests []*dmeApiRequest
-var singleRequest bool
-
 // REST client implementation of MatchEngineApiClient interface
 type dmeRestClient struct {
 	client *http.Client
@@ -216,25 +213,34 @@ func (c *dmeRestClient) StreamEdgeEvent(ctx context.Context, opts ...grpc.CallOp
 	return nil, fmt.Errorf("StreamEdgeEvent not supported yet in E2E via REST")
 }
 
-func readDMEApiFile(apifile string, apiFileVars map[string]string) {
+func readDMEApiFile(apifile string, apiFileVars map[string]string) ([]*dmeApiRequest, bool, error) {
+	apiRequests := []*dmeApiRequest{}
+	singleRequest := false
+
 	err := ReadYamlFile(apifile, &apiRequests, WithVars(apiFileVars), ValidateReplacedVars())
 	if err != nil && !IsYamlOk(err, "dmeapi") {
 		// old yaml files are not arrayed dmeApiRequests
 		apiRequest := dmeApiRequest{}
 		apiRequests = append(apiRequests, &apiRequest)
 		err = ReadYamlFile(apifile, &apiRequest, ValidateReplacedVars())
-		singleRequest = true
+		if err == nil {
+			apiRequests = []*dmeApiRequest{
+				&apiRequest,
+			}
+			singleRequest = true
+		}
 	}
 	if err != nil {
 		if !IsYamlOk(err, "dmeapi") {
-			fmt.Fprintf(os.Stderr, "Error in unmarshal for file %s", apifile)
-			os.Exit(1)
+			log.Printf("Error in unmarshal for file %s", apifile)
+			return nil, false, err
 		}
 	}
+	return apiRequests, singleRequest, nil
 }
 
-func readMatchEngineStatus(filename string, mes *registration) {
-	ReadYamlFile(filename, &mes)
+func readMatchEngineStatus(filename string, mes *registration) error {
+	return ReadYamlFile(filename, &mes)
 }
 
 func RunDmeAPI(api string, procname string, apiFile string, apiFileVars map[string]string, apiType string, outputDir string) bool {
@@ -245,7 +251,10 @@ func RunDmeAPI(api string, procname string, apiFile string, apiFileVars map[stri
 	log.Printf("RunDmeAPI for api %s, %s, %s\n", api, apiFile, apiType)
 	apiConnectTimeout := 5 * time.Second
 
-	readDMEApiFile(apiFile, apiFileVars)
+	apiRequests, singleRequest, err := readDMEApiFile(apiFile, apiFileVars)
+	if err != nil {
+		log.Printf("Read dme apifile failed: %s\n", err)
+	}
 
 	dme := GetDme(procname)
 	var client dmeproto.MatchEngineApiClient
@@ -302,7 +311,7 @@ func RunDmeAPI(api string, procname string, apiFile string, apiFileVars map[stri
 		out, ymlerror = yaml.Marshal(replies)
 	}
 	if ymlerror != nil {
-		fmt.Printf("Error: Unable to marshal %s reply: %v\n", api, ymlerror)
+		log.Printf("Error: Unable to marshal %s reply: %v\n", api, ymlerror)
 		return false
 	}
 	PrintToFile(api+".yml", outputDir, PatchLicense(string(out)), true)
@@ -327,8 +336,8 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 	if api != "register" {
 		//read the results from the last register so we can get the cookie.
 		//if the current app is different, re-register
-		readMatchEngineStatus(outputDir+"/register.yml", &registerStatus)
-		if apiRequest.Rcreq.AppName != "" &&
+		err := readMatchEngineStatus(outputDir+"/register.yml", &registerStatus)
+		if err != nil || apiRequest.Rcreq.AppName != "" &&
 			(registerStatus.Req.OrgName != apiRequest.Rcreq.OrgName ||
 				registerStatus.Req.AppName != apiRequest.Rcreq.AppName ||
 				registerStatus.Req.AppVers != apiRequest.Rcreq.AppVers ||
@@ -340,11 +349,15 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 			}
 			out, ymlerror := yaml.Marshal(reply)
 			if ymlerror != nil {
-				fmt.Printf("Error: Unable to marshal %s reply: %v\n", api, ymlerror)
+				log.Printf("Error: Unable to marshal %s reply: %v\n", api, ymlerror)
 				return false, nil
 			}
 			PrintToFile("register.yml", outputDir, PatchLicense(string(out)), true)
-			readMatchEngineStatus(outputDir+"/register.yml", &registerStatus)
+			err = readMatchEngineStatus(outputDir+"/register.yml", &registerStatus)
+			if err != nil {
+				log.Printf("Error reading device registration: %s\n", err)
+				return false, nil
+			}
 		}
 		sessionCookie = registerStatus.Reply.SessionCookie
 		log.Printf("Using session cookie: %s\n", sessionCookie)
@@ -365,7 +378,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 				}
 				out, ymlerror := yaml.Marshal(reply)
 				if ymlerror != nil {
-					fmt.Printf("Error: Unable to marshal %s reply: %v\n", api, ymlerror)
+					log.Printf("Error: Unable to marshal %s reply: %v\n", api, ymlerror)
 					return false, nil
 				}
 				PrintToFile("edgeeventfindcloudlet.yml", outputDir, PatchLicense(string(out)), true)
