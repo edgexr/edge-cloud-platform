@@ -152,8 +152,10 @@ func main() {
 	validateArgs(&config, &spec)
 
 	errors := []string{}
+	var logFile *os.File
 	if outputDir != "" {
-		outputDir = e2e.CreateOutputDir(false, outputDir, commandName+".log")
+		outputDir, logFile = e2e.CreateOutputDir(false, outputDir, commandName+".log")
+		defer logFile.Close()
 	}
 
 	if config.SetupFile != "" {

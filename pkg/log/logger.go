@@ -29,14 +29,27 @@ var mux sync.Mutex
 var spanlogger *zap.Logger
 
 func init() {
-	logger, _ := zap.NewDevelopment(zap.AddCallerSkip(1))
+	SetupLoggers("")
+}
+
+// SetupLoggers allows for overriding default loggers, primarily for e2e tests.
+// Must be called before InitTracer().
+func SetupLoggers(logFile string) {
+	cfg := zap.NewDevelopmentConfig()
+	if logFile != "" {
+		cfg.OutputPaths = []string{logFile}
+	}
+	logger, _ := cfg.Build(zap.AddCallerSkip(1))
 	defer logger.Sync()
 	slogger = logger.Sugar()
 
 	// logger that does not log caller, optimization for
 	// span logging to local disk since caller is derived by spanlog.
-	cfg := zap.NewDevelopmentConfig()
+	cfg = zap.NewDevelopmentConfig()
 	cfg.DisableCaller = true
+	if logFile != "" {
+		cfg.OutputPaths = []string{logFile}
+	}
 	spanlogger, _ = cfg.Build()
 	defer spanlogger.Sync()
 }
@@ -144,7 +157,7 @@ func SetDebugLevelStrs(list string) {
 		val, ok := stringToDebugLevel(str)
 		if ok {
 			SetDebugLevelEnum(val)
-		} 
+		}
 	}
 }
 
