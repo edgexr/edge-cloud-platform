@@ -106,6 +106,8 @@ func RunMcAPI(api, mcname, apiFile string, apiFileVars map[string]string, curUse
 		return runMcRemoveUserAlertFromApp(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
 	} else if strings.HasPrefix(api, "mcratelimit") {
 		return runMcRateLimit(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
+	} else if strings.HasPrefix(api, "ratelimit") {
+		return runRateLimit(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
 	}
 
 	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, retry)
@@ -314,6 +316,32 @@ func runMcRateLimit(api, uri, apiFile, curUserFile, outputDir string, mods []str
 			st, err := mcClient.UpdateMaxReqsRateLimitSettingsMc(uri, token, mdata)
 			checkMcErr("UpdateMaxReqsRateLimitSettingsMc", st, err, &rc)
 		}
+	}
+	return rc
+}
+
+func runRateLimit(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {
+	log.Printf("Applying Controller ratelimit via APIs for %s\n", apiFile)
+	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
+	if !rc {
+		return false
+	}
+	if api == "ratelimitshow" {
+		region, ok := vars["region"]
+		if !ok {
+			log.Printf("ratelimitshow requires \"region\" apifilevar in yaml testfile")
+			return false
+		}
+		filter := &ormapi.RegionRateLimitSettings{
+			Region: region,
+		}
+		settings, st, err := mcClient.ShowRateLimitSettings(uri, token, filter)
+		checkMcErr("ShowRateLimitSettings", st, err, &rc)
+		output := edgeproto.RateLimitSettingsData{}
+		output.Settings = settings
+		output.Sort()
+		PrintToYamlFile("show-commands.yml", outputDir, output, true)
+		return rc
 	}
 	return rc
 }
