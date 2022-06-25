@@ -37,7 +37,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	yaml "gopkg.in/yaml.v2"
 )
 
 func getGrpcClient(t *testing.T) (*grpc.ClientConn, error) {
@@ -100,12 +99,6 @@ func testC(t *testing.T) {
 
 	leaseTimeoutSec = 3
 	syncLeaseDataRetry = 0
-
-	*influxAddr = influxUsageUnitTestSetup(t)
-	defer influxUsageUnitTestStop()
-	defer func() {
-		*influxAddr = ""
-	}()
 
 	err := startServices()
 	defer stopServices()
@@ -260,122 +253,6 @@ func TestDataGen(t *testing.T) {
 		out.WriteString("\n")
 	}
 	out.Close()
-}
-
-func TestEdgeCloudBug26(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelNotify)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	flag.Parse()
-	testSvcs := testinit(ctx, t)
-	defer testfinish(testSvcs)
-	// avoid dummy influxQs created by testinit() since we're calling startServices
-	services = Services{}
-
-	*localEtcd = true
-	*initLocalEtcd = true
-
-	redisCfg.SentinelAddrs = testSvcs.DummyRedisSrv.GetSentinelAddr()
-
-	*influxAddr = influxUsageUnitTestSetup(t)
-	defer influxUsageUnitTestStop()
-	defer func() {
-		*influxAddr = ""
-	}()
-
-	err := startServices()
-	defer stopServices()
-	require.Nil(t, err, "start")
-	apis := services.allApis
-
-	reduceInfoTimeouts(t, ctx, apis)
-
-	conn, err := getGrpcClient(t)
-	require.Nil(t, err, "grcp client")
-	defer conn.Close()
-
-	appClient := edgeproto.NewAppApiClient(conn)
-	cloudletClient := edgeproto.NewCloudletApiClient(conn)
-	appInstClient := edgeproto.NewAppInstApiClient(conn)
-	flavorClient := edgeproto.NewFlavorApiClient(conn)
-
-	yamlData := `
-cloudlets:
-- key:
-    operatorkey:
-      name: DMUUS
-    name: cloud2
-  ipsupport: IpSupportDynamic
-  numdynamicips: 100
-
-flavors:
-- key:
-    name: m1.small
-  ram: 1024
-  vcpus: 1
-  disk: 1
-apps:
-- key:
-    organization: AcmeAppCo
-    name: someApplication
-    version: 1.0
-  defaultflavor:
-    name: m1.small
-  imagetype: ImageTypeDocker
-  accessports: "tcp:80,tcp:443,udp:10002"
-  ipaccess: IpAccessShared
-appinstances:
-- key:
-    appkey:
-      organization: AcmeAppCo
-      name: someApplication
-      version: 1.0
-    cloudletkey:
-      organization: DMUUS
-      name: cloud2
-    id: 99
-  liveness: 1
-  port: 8080
-  ip: [10,100,10,4]
-cloudletinfos:
-- key:
-    organization: DMUUS
-    name: cloud2
-  state: CloudletStateReady
-  osmaxram: 65536
-  osmaxvcores: 16
-  osmaxvolgb: 500
-  rootlbfqdn: mexlb.cloud2.dmuus.mobiledgex.net
-`
-	data := edgeproto.AllData{}
-	err = yaml.Unmarshal([]byte(yamlData), &data)
-	require.Nil(t, err, "unmarshal data")
-
-	_, err = flavorClient.CreateFlavor(ctx, &data.Flavors[0])
-	require.Nil(t, err, "create flavor")
-	_, err = appClient.CreateApp(ctx, &data.Apps[0])
-	require.Nil(t, err, "create app")
-	_, err = cloudletClient.CreateCloudlet(ctx, &data.Cloudlets[0])
-	require.Nil(t, err, "create cloudlet")
-	insertCloudletInfo(ctx, apis, data.CloudletInfos)
-
-	show := testutil.ShowApp{}
-	show.Init()
-	filterNone := edgeproto.App{}
-	stream, err := appClient.ShowApp(ctx, &filterNone)
-	show.ReadStream(stream, err)
-	require.Nil(t, err, "show data")
-	require.Equal(t, 1, len(show.Data), "show app count")
-
-	_, err = appInstClient.CreateAppInst(ctx, &data.AppInstances[0])
-	require.Nil(t, err, "create app inst")
-
-	show.Init()
-	stream, err = appClient.ShowApp(ctx, &filterNone)
-	show.ReadStream(stream, err)
-	require.Nil(t, err, "show data")
-	require.Equal(t, 1, len(show.Data), "show app count after creating app inst")
 }
 
 func WaitForCloudletInfo(apis *AllApis, count int) {

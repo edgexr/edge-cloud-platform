@@ -902,13 +902,6 @@ func influxUsageUnitTestStop() {
 	}
 }
 
-func TestInflux(t *testing.T) {
-	p := influxq_testutil.StartInfluxd(t)
-	p.StopLocal()
-	p = influxq_testutil.StartInfluxd(t)
-	p.StopLocal()
-}
-
 func TestDefaultMTCluster(t *testing.T) {
 	log.InitTracer(nil)
 	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
