@@ -82,30 +82,30 @@ func TestNotifyTree(t *testing.T) {
 
 	// crms need to send cloudletInfo up to trigger sending of
 	// data down.
-	low21.handler.CloudletInfoCache.Update(ctx, &testutil.CloudletInfoData[0], 0)
-	low22.handler.CloudletInfoCache.Update(ctx, &testutil.CloudletInfoData[1], 0)
+	low21.handler.CloudletInfoCache.Update(ctx, &testutil.CloudletInfoData()[0], 0)
+	low22.handler.CloudletInfoCache.Update(ctx, &testutil.CloudletInfoData()[1], 0)
 
 	// Add data to top server
-	top.handler.FlavorCache.Update(ctx, &testutil.FlavorData[0], 0)
-	top.handler.FlavorCache.Update(ctx, &testutil.FlavorData[1], 0)
-	top.handler.FlavorCache.Update(ctx, &testutil.FlavorData[2], 0)
+	top.handler.FlavorCache.Update(ctx, &testutil.FlavorData()[0], 0)
+	top.handler.FlavorCache.Update(ctx, &testutil.FlavorData()[1], 0)
+	top.handler.FlavorCache.Update(ctx, &testutil.FlavorData()[2], 0)
 
 	// set ClusterInst and AppInst state to CREATE_REQUESTED so they get
 	// sent to the CRM.
-	for ii, _ := range testutil.ClusterInstData {
-		testutil.ClusterInstData[ii].State = edgeproto.TrackedState_CREATE_REQUESTED
-		top.handler.ClusterInstCache.Update(ctx, &testutil.ClusterInstData[ii], 0)
+	for ii, _ := range testutil.ClusterInstData() {
+		testutil.ClusterInstData()[ii].State = edgeproto.TrackedState_CREATE_REQUESTED
+		top.handler.ClusterInstCache.Update(ctx, &testutil.ClusterInstData()[ii], 0)
 	}
-	for ii, _ := range testutil.AppInstData {
-		testutil.AppInstData[ii].State = edgeproto.TrackedState_CREATE_REQUESTED
-		top.handler.AppInstCache.Update(ctx, &testutil.AppInstData[ii], 0)
+	for ii, _ := range testutil.AppInstData() {
+		testutil.AppInstData()[ii].State = edgeproto.TrackedState_CREATE_REQUESTED
+		top.handler.AppInstCache.Update(ctx, &testutil.AppInstData()[ii], 0)
 	}
 	cloudletData := testutil.CloudletData()
 	top.handler.CloudletCache.Update(ctx, &cloudletData[0], 0)
 	top.handler.CloudletCache.Update(ctx, &cloudletData[1], 0)
 	// dmes should get all app insts but no cloudlets
 	for _, n := range dmes {
-		checkClientCache(t, n, 0, 0, len(testutil.AppInstData), 0)
+		checkClientCache(t, n, 0, 0, len(testutil.AppInstData()), 0)
 	}
 	// crms at all levels get all flavors
 	// mid level gets the appInsts and clusterInsts for all below it.
@@ -116,10 +116,10 @@ func TestNotifyTree(t *testing.T) {
 	checkCache(t, mid1, FreeReservableClusterInstType, 1)
 
 	// Add info objs to low nodes
-	low11.handler.AppInstInfoCache.Update(ctx, &testutil.AppInstInfoData[0], 0)
-	low12.handler.AppInstInfoCache.Update(ctx, &testutil.AppInstInfoData[1], 0)
-	low21.handler.AppInstInfoCache.Update(ctx, &testutil.AppInstInfoData[2], 0)
-	low22.handler.AppInstInfoCache.Update(ctx, &testutil.AppInstInfoData[3], 0)
+	low11.handler.AppInstInfoCache.Update(ctx, &testutil.AppInstInfoData()[0], 0)
+	low12.handler.AppInstInfoCache.Update(ctx, &testutil.AppInstInfoData()[1], 0)
+	low21.handler.AppInstInfoCache.Update(ctx, &testutil.AppInstInfoData()[2], 0)
+	low22.handler.AppInstInfoCache.Update(ctx, &testutil.AppInstInfoData()[3], 0)
 	// dme mid should get 0 because it doesn't want infos
 	// crm mid should get 2, 1 from each crm low
 	mid1.handler.WaitForAppInstInfo(0)
@@ -143,9 +143,9 @@ func TestNotifyTree(t *testing.T) {
 	checkCache(t, low12, AlertType, 0)
 	checkCache(t, low21, AlertType, 0)
 	checkCache(t, low22, AlertType, 0)
-	low21.handler.AlertCache.Update(ctx, &testutil.AlertData[0], 0)
-	low21.handler.AlertCache.Update(ctx, &testutil.AlertData[1], 0)
-	low22.handler.AlertCache.Update(ctx, &testutil.AlertData[2], 0)
+	low21.handler.AlertCache.Update(ctx, &testutil.AlertData()[0], 0)
+	low21.handler.AlertCache.Update(ctx, &testutil.AlertData()[1], 0)
+	low22.handler.AlertCache.Update(ctx, &testutil.AlertData()[2], 0)
 	checkCache(t, top, AlertType, 3)
 	checkCache(t, mid1, AlertType, 0)
 	checkCache(t, mid2, AlertType, 3)
@@ -164,18 +164,18 @@ func TestNotifyTree(t *testing.T) {
 	require.Equal(t, 1, len(mid2.handler.AppInstInfoCache.Objs), "AppInstInfos")
 	require.Equal(t, 1, len(mid2.handler.CloudletInfoCache.Objs), "CloudletInfos")
 	require.Equal(t, 0, len(mid1.handler.CloudletInfoCache.Objs), "CloudletInfos")
-	_, found = mid2.handler.AppInstInfoCache.Objs[testutil.AppInstInfoData[2].Key]
+	_, found = mid2.handler.AppInstInfoCache.Objs[testutil.AppInstInfoData()[2].Key]
 	require.False(t, found, "disconnected AppInstInfo")
-	_, found = mid2.handler.CloudletInfoCache.Objs[testutil.CloudletInfoData[0].Key]
+	_, found = mid2.handler.CloudletInfoCache.Objs[testutil.CloudletInfoData()[0].Key]
 	require.False(t, found, "disconnected CloudletInfo")
 
 	top.handler.WaitForAppInstInfo(1)
 	top.handler.WaitForCloudletInfo(1)
 	require.Equal(t, 1, len(top.handler.AppInstInfoCache.Objs), "AppInstInfos")
 	require.Equal(t, 1, len(top.handler.CloudletInfoCache.Objs), "CloudletInfos")
-	_, found = top.handler.AppInstInfoCache.Objs[testutil.AppInstInfoData[2].Key]
+	_, found = top.handler.AppInstInfoCache.Objs[testutil.AppInstInfoData()[2].Key]
 	require.False(t, found, "disconnected AppInstInfo")
-	_, found = top.handler.CloudletInfoCache.Objs[testutil.CloudletInfoData[0].Key]
+	_, found = top.handler.CloudletInfoCache.Objs[testutil.CloudletInfoData()[0].Key]
 	require.False(t, found, "disconnected CloudletInfo")
 
 	checkCache(t, top, AlertType, 1)
@@ -192,16 +192,16 @@ func TestNotifyTree(t *testing.T) {
 	fmt.Println("========== cleanup")
 
 	// Delete objects to make sure deletes propagate and are applied
-	for ii, _ := range testutil.AppInstData {
-		top.handler.AppInstCache.Delete(ctx, &testutil.AppInstData[ii], 0)
+	for ii, _ := range testutil.AppInstData() {
+		top.handler.AppInstCache.Delete(ctx, &testutil.AppInstData()[ii], 0)
 	}
-	for ii, _ := range testutil.ClusterInstData {
-		log.SpanLog(ctx, log.DebugLevelNotify, "deleting ClusterInst", "key", testutil.ClusterInstData[ii].Key)
-		top.handler.ClusterInstCache.Delete(ctx, &testutil.ClusterInstData[ii], 0)
+	for ii, _ := range testutil.ClusterInstData() {
+		log.SpanLog(ctx, log.DebugLevelNotify, "deleting ClusterInst", "key", testutil.ClusterInstData()[ii].Key)
+		top.handler.ClusterInstCache.Delete(ctx, &testutil.ClusterInstData()[ii], 0)
 	}
-	top.handler.FlavorCache.Delete(ctx, &testutil.FlavorData[0], 0)
-	top.handler.FlavorCache.Delete(ctx, &testutil.FlavorData[1], 0)
-	top.handler.FlavorCache.Delete(ctx, &testutil.FlavorData[2], 0)
+	top.handler.FlavorCache.Delete(ctx, &testutil.FlavorData()[0], 0)
+	top.handler.FlavorCache.Delete(ctx, &testutil.FlavorData()[1], 0)
+	top.handler.FlavorCache.Delete(ctx, &testutil.FlavorData()[2], 0)
 	top.handler.CloudletCache.Delete(ctx, &cloudletData[0], 0)
 	top.handler.CloudletCache.Delete(ctx, &cloudletData[1], 0)
 	checkClientCache(t, mid2, 0, 0, 0, 0)

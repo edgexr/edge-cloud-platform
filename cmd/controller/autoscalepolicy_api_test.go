@@ -40,7 +40,7 @@ func TestAutoScalePolicyApi(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
-	testutil.InternalAutoScalePolicyTest(t, "cud", apis.autoScalePolicyApi, testutil.AutoScalePolicyData)
+	testutil.InternalAutoScalePolicyTest(t, "cud", apis.autoScalePolicyApi, testutil.AutoScalePolicyData())
 
 	policy := edgeproto.AutoScalePolicy{}
 	policy.Key.Name = "auto-scale-policy-name"

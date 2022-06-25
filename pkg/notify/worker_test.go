@@ -32,21 +32,21 @@ func TestWorker(t *testing.T) {
 	mgr.SetChangedCb(TypeClusterInst, edgeproto.ClusterInstGenericNotifyCb(changes.clusterInstChanged))
 
 	// spawn a task. It will wait since go channel is empty.
-	mgr.AppInstChanged(&testutil.AppInstData[0].Key, &testutil.AppInstData[0])
+	mgr.AppInstChanged(&testutil.AppInstData()[0].Key, &testutil.AppInstData()[0])
 	assert.Equal(t, 1, len(mgr.workers))
 	<-changes.appInstWorkStarted
 	assert.Equal(t, 1, len(changes.curAppInst))
 	assert.Equal(t, 0, changes.appInstChanges)
-	checkCurAppInst(t, changes, &testutil.AppInstData[0].Key, &testutil.AppInstData[0])
+	checkCurAppInst(t, changes, &testutil.AppInstData()[0].Key, &testutil.AppInstData()[0])
 
 	// create another two tasks with the same key. Because it's the same
 	// key, they will get absorbed behind the current blocked task.
-	mgr.AppInstChanged(&testutil.AppInstData[0].Key, &testutil.AppInstData[1])
-	mgr.AppInstChanged(&testutil.AppInstData[0].Key, &testutil.AppInstData[2])
+	mgr.AppInstChanged(&testutil.AppInstData()[0].Key, &testutil.AppInstData()[1])
+	mgr.AppInstChanged(&testutil.AppInstData()[0].Key, &testutil.AppInstData()[2])
 	assert.Equal(t, 1, len(mgr.workers))
 	assert.Equal(t, 1, len(changes.curAppInst))
 	assert.Equal(t, 0, changes.appInstChanges)
-	checkCurAppInst(t, changes, &testutil.AppInstData[0].Key, &testutil.AppInstData[0])
+	checkCurAppInst(t, changes, &testutil.AppInstData()[0].Key, &testutil.AppInstData()[0])
 
 	// trigger first task to finish. Another task will be run because
 	// changes were queued.
@@ -57,7 +57,7 @@ func TestWorker(t *testing.T) {
 	assert.Equal(t, 1, len(changes.curAppInst))
 	assert.Equal(t, 1, changes.appInstChanges)
 	// key is same, but old should be first old after blocked task
-	checkCurAppInst(t, changes, &testutil.AppInstData[0].Key, &testutil.AppInstData[1])
+	checkCurAppInst(t, changes, &testutil.AppInstData()[0].Key, &testutil.AppInstData()[1])
 
 	// trigger task to finish. Because two tasks were absorbed into one
 	// change, no more work is needed.
@@ -72,8 +72,8 @@ func TestWorker(t *testing.T) {
 	changes.appInstChanges = 0
 
 	// Now add multiple keys. They should run in parallel (two workers)
-	mgr.AppInstChanged(&testutil.AppInstData[0].Key, &testutil.AppInstData[0])
-	mgr.AppInstChanged(&testutil.AppInstData[1].Key, &testutil.AppInstData[1])
+	mgr.AppInstChanged(&testutil.AppInstData()[0].Key, &testutil.AppInstData()[0])
+	mgr.AppInstChanged(&testutil.AppInstData()[1].Key, &testutil.AppInstData()[1])
 	<-changes.appInstWorkStarted
 	<-changes.appInstWorkStarted
 	assert.Equal(t, 2, len(mgr.workers))
@@ -93,24 +93,24 @@ func TestWorker(t *testing.T) {
 	assert.Equal(t, 2, changes.appInstChanges)
 
 	// Add multiple of single key
-	mgr.ClusterInstChanged(&testutil.ClusterInstData[0].Key, &testutil.ClusterInstData[0])
+	mgr.ClusterInstChanged(&testutil.ClusterInstData()[0].Key, &testutil.ClusterInstData()[0])
 	// wait until first thread is spawned
 	<-changes.clusterInstWorkStarted
-	mgr.ClusterInstChanged(&testutil.ClusterInstData[0].Key, &testutil.ClusterInstData[3])
-	mgr.ClusterInstChanged(&testutil.ClusterInstData[0].Key, &testutil.ClusterInstData[1])
-	mgr.ClusterInstChanged(&testutil.ClusterInstData[0].Key, &testutil.ClusterInstData[2])
+	mgr.ClusterInstChanged(&testutil.ClusterInstData()[0].Key, &testutil.ClusterInstData()[3])
+	mgr.ClusterInstChanged(&testutil.ClusterInstData()[0].Key, &testutil.ClusterInstData()[1])
+	mgr.ClusterInstChanged(&testutil.ClusterInstData()[0].Key, &testutil.ClusterInstData()[2])
 	// Add multiple keys
-	mgr.ClusterInstChanged(&testutil.ClusterInstData[1].Key, &testutil.ClusterInstData[1])
-	mgr.ClusterInstChanged(&testutil.ClusterInstData[2].Key, &testutil.ClusterInstData[2])
+	mgr.ClusterInstChanged(&testutil.ClusterInstData()[1].Key, &testutil.ClusterInstData()[1])
+	mgr.ClusterInstChanged(&testutil.ClusterInstData()[2].Key, &testutil.ClusterInstData()[2])
 	// There should be 3 threads
 	assert.Equal(t, 3, len(mgr.workers))
 	<-changes.clusterInstWorkStarted
 	<-changes.clusterInstWorkStarted
 	assert.Equal(t, 3, len(changes.curClusterInst))
 	assert.Equal(t, 0, changes.clusterInstChanges)
-	checkCurClusterInst(t, changes, &testutil.ClusterInstData[0].Key, &testutil.ClusterInstData[0])
-	checkCurClusterInst(t, changes, &testutil.ClusterInstData[1].Key, &testutil.ClusterInstData[1])
-	checkCurClusterInst(t, changes, &testutil.ClusterInstData[2].Key, &testutil.ClusterInstData[2])
+	checkCurClusterInst(t, changes, &testutil.ClusterInstData()[0].Key, &testutil.ClusterInstData()[0])
+	checkCurClusterInst(t, changes, &testutil.ClusterInstData()[1].Key, &testutil.ClusterInstData()[1])
+	checkCurClusterInst(t, changes, &testutil.ClusterInstData()[2].Key, &testutil.ClusterInstData()[2])
 	// Trigger all three. Note that multiple changes are behind the
 	// first key, so it will run again. So there will be a total of four
 	// callbacks called.

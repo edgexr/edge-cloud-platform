@@ -49,23 +49,23 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 	dummyResponder.InitDummyInfoResponder()
 
 	// create supporting data
-	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData)
-	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData)
-	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData)
+	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
+	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
+	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, testutil.CloudletData())
-	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData)
-	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData)
-	testutil.InternalAutoScalePolicyCreate(t, apis.autoScalePolicyApi, testutil.AutoScalePolicyData)
-	testutil.InternalAppCreate(t, apis.appApi, testutil.AppData)
-	testutil.InternalClusterInstCreate(t, apis.clusterInstApi, testutil.ClusterInstData)
-	testutil.InternalAppInstCreate(t, apis.appInstApi, testutil.AppInstData)
-	testutil.InternalCloudletPoolTest(t, "cud", apis.cloudletPoolApi, testutil.CloudletPoolData)
+	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
+	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
+	testutil.InternalAutoScalePolicyCreate(t, apis.autoScalePolicyApi, testutil.AutoScalePolicyData())
+	testutil.InternalAppCreate(t, apis.appApi, testutil.AppData())
+	testutil.InternalClusterInstCreate(t, apis.clusterInstApi, testutil.ClusterInstData())
+	testutil.InternalAppInstCreate(t, apis.appInstApi, testutil.AppInstData())
+	testutil.InternalCloudletPoolTest(t, "cud", apis.cloudletPoolApi, testutil.CloudletPoolData())
 
 	// CUD for Trust Policy Exception
-	testutil.InternalTrustPolicyExceptionTest(t, "cud", apis.trustPolicyExceptionApi, testutil.TrustPolicyExceptionData)
+	testutil.InternalTrustPolicyExceptionTest(t, "cud", apis.trustPolicyExceptionApi, testutil.TrustPolicyExceptionData())
 
 	// Basic error case - when TPE already exists
-	_, err := apis.trustPolicyExceptionApi.CreateTrustPolicyException(ctx, &testutil.TrustPolicyExceptionData[0])
+	_, err := apis.trustPolicyExceptionApi.CreateTrustPolicyException(ctx, &testutil.TrustPolicyExceptionData()[0])
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), " already exists")
 
@@ -73,12 +73,12 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 	tpeDataFail := edgeproto.TrustPolicyException{
 		Key: edgeproto.TrustPolicyExceptionKey{
 			AppKey: edgeproto.AppKey{
-				Organization: testutil.DevData[0],
+				Organization: testutil.DevData()[0],
 				Name:         "Pillimo Go!",
 				Version:      "1.0.1",
 			},
 			CloudletPoolKey: edgeproto.CloudletPoolKey{
-				Organization: testutil.OperatorData[2],
+				Organization: testutil.OperatorData()[2],
 				Name:         "test-and-dev",
 			},
 			Name: "someapp-tpe2",
@@ -101,12 +101,12 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 	tpeDataFail2 := edgeproto.TrustPolicyException{
 		Key: edgeproto.TrustPolicyExceptionKey{
 			AppKey: edgeproto.AppKey{
-				Organization: testutil.DevData[0],
+				Organization: testutil.DevData()[0],
 				Name:         "Pillimo Go!",
 				Version:      "1.0.0",
 			},
 			CloudletPoolKey: edgeproto.CloudletPoolKey{
-				Organization: testutil.OperatorData[2],
+				Organization: testutil.OperatorData()[2],
 				Name:         "test-and-dev",
 			},
 			Name: "someapp-tpe2",
@@ -120,12 +120,12 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 	tpeData := edgeproto.TrustPolicyException{
 		Key: edgeproto.TrustPolicyExceptionKey{
 			AppKey: edgeproto.AppKey{
-				Organization: testutil.DevData[0],
+				Organization: testutil.DevData()[0],
 				Name:         "Pillimo Go!",
 				Version:      "1.0.0",
 			},
 			CloudletPoolKey: edgeproto.CloudletPoolKey{
-				Organization: testutil.OperatorData[2],
+				Organization: testutil.OperatorData()[2],
 				Name:         "test-and-dev",
 			},
 			Name: "someapp-tpe2",
@@ -191,7 +191,7 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 	require.Equal(t, err.Error(), strAppOrgErr)
 
 	// State related tests - end, restore everything
-	tpeData.Key.AppKey.Organization = testutil.DevData[0]
+	tpeData.Key.AppKey.Organization = testutil.DevData()[0]
 	tpeData.Fields = []string{}
 	// test that TPE create when specified CloudletPool does not exist, fails
 	tpeData.Key.CloudletPoolKey.Organization = "Mission Mars"
@@ -199,20 +199,20 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), tpeData.Key.CloudletPoolKey.NotFoundError().Error())
 	// Restore tpeData Key to original values
-	tpeData.Key.CloudletPoolKey.Organization = testutil.OperatorData[2]
+	tpeData.Key.CloudletPoolKey.Organization = testutil.OperatorData()[2]
 
 	// test that TPE create when specified App does not exist, fails
-	tpeData.Key.AppKey.Organization = testutil.DevData[2]
+	tpeData.Key.AppKey.Organization = testutil.DevData()[2]
 	_, err = apis.trustPolicyExceptionApi.CreateTrustPolicyException(ctx, &tpeData)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), tpeData.Key.AppKey.NotFoundError().Error())
 	// Restore tpeData Key to original values
-	tpeData.Key.AppKey.Organization = testutil.DevData[0]
+	tpeData.Key.AppKey.Organization = testutil.DevData()[0]
 
-	testutil.InternalAppInstDelete(t, apis.appInstApi, testutil.AppInstData)
+	testutil.InternalAppInstDelete(t, apis.appInstApi, testutil.AppInstData())
 
 	// test that App delete fails if TPE exists that refers to it
-	app0 := testutil.AppData[0]
+	app0 := testutil.AppData()[0]
 	_, err = apis.appApi.DeleteApp(ctx, &app0)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Application in use by Trust Policy Exception")
@@ -222,13 +222,13 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 	require.Nil(t, err)
 
 	// error cases for Create Trust Policy Exception
-	expectCreatePolicyExceptionError(t, ctx, apis, &testutil.TrustPolicyExceptionErrorData[0], "cannot be higher than max")
-	expectCreatePolicyExceptionError(t, ctx, apis, &testutil.TrustPolicyExceptionErrorData[1], "invalid CIDR")
-	expectCreatePolicyExceptionError(t, ctx, apis, &testutil.TrustPolicyExceptionErrorData[2], "Invalid min port")
-	expectCreatePolicyExceptionError(t, ctx, apis, &testutil.TrustPolicyExceptionErrorData[3],
-		testutil.TrustPolicyExceptionErrorData[3].Key.AppKey.NotFoundError().Error())
-	expectCreatePolicyExceptionError(t, ctx, apis, &testutil.TrustPolicyExceptionErrorData[4],
-		testutil.TrustPolicyExceptionErrorData[4].Key.CloudletPoolKey.NotFoundError().Error())
+	expectCreatePolicyExceptionError(t, ctx, apis, &testutil.TrustPolicyExceptionErrorData()[0], "cannot be higher than max")
+	expectCreatePolicyExceptionError(t, ctx, apis, &testutil.TrustPolicyExceptionErrorData()[1], "invalid CIDR")
+	expectCreatePolicyExceptionError(t, ctx, apis, &testutil.TrustPolicyExceptionErrorData()[2], "Invalid min port")
+	expectCreatePolicyExceptionError(t, ctx, apis, &testutil.TrustPolicyExceptionErrorData()[3],
+		testutil.TrustPolicyExceptionErrorData()[3].Key.AppKey.NotFoundError().Error())
+	expectCreatePolicyExceptionError(t, ctx, apis, &testutil.TrustPolicyExceptionErrorData()[4],
+		testutil.TrustPolicyExceptionErrorData()[4].Key.CloudletPoolKey.NotFoundError().Error())
 
 	dummy.Stop()
 }

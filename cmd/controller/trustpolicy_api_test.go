@@ -40,11 +40,11 @@ func TestTrustPolicyApi(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
-	testutil.InternalTrustPolicyTest(t, "cud", apis.trustPolicyApi, testutil.TrustPolicyData)
+	testutil.InternalTrustPolicyTest(t, "cud", apis.trustPolicyApi, testutil.TrustPolicyData())
 	// error cases
-	expectCreatePolicyError(t, ctx, apis, &testutil.TrustPolicyErrorData[0], "cannot be higher than max")
-	expectCreatePolicyError(t, ctx, apis, &testutil.TrustPolicyErrorData[1], "invalid CIDR")
-	expectCreatePolicyError(t, ctx, apis, &testutil.TrustPolicyErrorData[2], "Invalid min port: 0")
+	expectCreatePolicyError(t, ctx, apis, &testutil.TrustPolicyErrorData()[0], "cannot be higher than max")
+	expectCreatePolicyError(t, ctx, apis, &testutil.TrustPolicyErrorData()[1], "invalid CIDR")
+	expectCreatePolicyError(t, ctx, apis, &testutil.TrustPolicyErrorData()[2], "Invalid min port: 0")
 
 	dummy.Stop()
 }

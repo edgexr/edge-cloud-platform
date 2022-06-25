@@ -57,15 +57,15 @@ func TestAutoProvPolicyApi(t *testing.T) {
 	reduceInfoTimeouts(t, ctx, apis)
 
 	cloudletData := testutil.CloudletData()
-	testutil.InternalAutoProvPolicyTest(t, "cud", apis.autoProvPolicyApi, testutil.AutoProvPolicyData)
-	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData)
-	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData)
-	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData)
+	testutil.InternalAutoProvPolicyTest(t, "cud", apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
+	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
+	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
+	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, cloudletData)
 
 	// test adding cloudlet to policy
 	pc := edgeproto.AutoProvPolicyCloudlet{}
-	pc.Key = testutil.AutoProvPolicyData[0].Key
+	pc.Key = testutil.AutoProvPolicyData()[0].Key
 	pc.CloudletKey = cloudletData[0].Key
 
 	_, err := apis.autoProvPolicyApi.AddAutoProvPolicyCloudlet(ctx, &pc)
@@ -78,7 +78,7 @@ func TestAutoProvPolicyApi(t *testing.T) {
 
 	// test adding another cloudlet to policy
 	pc2 := edgeproto.AutoProvPolicyCloudlet{}
-	pc2.Key = testutil.AutoProvPolicyData[0].Key
+	pc2.Key = testutil.AutoProvPolicyData()[0].Key
 	pc2.CloudletKey = cloudletData[1].Key
 
 	_, err = apis.autoProvPolicyApi.AddAutoProvPolicyCloudlet(ctx, &pc2)
@@ -128,13 +128,13 @@ func TestAutoProvPolicyApi(t *testing.T) {
 
 func addRemoveAutoProvPolicy(t *testing.T, ctx context.Context, apis *AllApis) {
 	// add app with multiple policies
-	app := testutil.AppData[11]
+	app := testutil.AppData()[11]
 	require.True(t, len(app.AutoProvPolicies) > 1)
 	_, err := apis.appApi.CreateApp(ctx, &app)
 	require.Nil(t, err)
 
 	// new policy (copy)
-	ap := testutil.AutoProvPolicyData[3]
+	ap := testutil.AutoProvPolicyData()[3]
 	ap.Key.Name = "test-policy"
 	_, err = apis.autoProvPolicyApi.CreateAutoProvPolicy(ctx, &ap)
 	require.Nil(t, err)
@@ -180,7 +180,7 @@ func addRemoveAutoProvPolicy(t *testing.T, ctx context.Context, apis *AllApis) {
 
 func testApiChecks(t *testing.T, ctx context.Context, apis *AllApis) {
 	var err error
-	flavor := testutil.FlavorData[3]
+	flavor := testutil.FlavorData()[3]
 	app := edgeproto.App{}
 	app.Key.Name = "checkDemand"
 	app.Key.Organization = "org"

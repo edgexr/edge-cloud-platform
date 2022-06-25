@@ -30,7 +30,7 @@ func TestClusterAutoScaler(t *testing.T) {
 	defer log.FinishTracer()
 	log.SetDebugLevel(log.DebugLevelMetrics | log.DebugLevelApi)
 
-	cluster := testutil.ClusterInstData[2]
+	cluster := testutil.ClusterInstData()[2]
 	policy := edgeproto.AutoScalePolicy{}
 	policy.Key.Name = "test-policy"
 	policy.Key.Organization = cluster.Key.Organization

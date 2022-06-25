@@ -173,9 +173,9 @@ func TestCloudletApi(t *testing.T) {
 
 	// create flavors
 	cloudletData := testutil.CloudletData()
-	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData)
-	testutil.InternalGPUDriverTest(t, "cud", apis.gpuDriverApi, testutil.GPUDriverData)
-	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData)
+	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
+	testutil.InternalGPUDriverTest(t, "cud", apis.gpuDriverApi, testutil.GPUDriverData())
+	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
 	testutil.InternalCloudletTest(t, "cud", apis.cloudletApi, cloudletData)
 
 	// test invalid location values
@@ -539,16 +539,16 @@ func testResMapKeysApi(t *testing.T, ctx context.Context, cl *edgeproto.Cloudlet
 	// setup the test map using the test_data objects
 	// The AddCloudResMapKey is setup to accept multiple res tbl keys at once
 	// but we're doing it one by one.
-
-	resmap.Mapping[strings.ToLower(edgeproto.OptResNames_name[0])] = testutil.Restblkeys[0].Name
+	restblkeys := testutil.Restblkeys()
+	resmap.Mapping[strings.ToLower(edgeproto.OptResNames_name[0])] = restblkeys[0].Name
 	_, err := apis.cloudletApi.AddCloudletResMapping(ctx, &resmap)
 	require.Nil(t, err, "AddCloudletResMapKey")
 
-	resmap.Mapping[strings.ToLower(edgeproto.OptResNames_name[1])] = testutil.Restblkeys[1].Name
+	resmap.Mapping[strings.ToLower(edgeproto.OptResNames_name[1])] = restblkeys[1].Name
 	_, err = apis.cloudletApi.AddCloudletResMapping(ctx, &resmap)
 	require.Nil(t, err, "AddCloudletResMapKey")
 
-	resmap.Mapping[strings.ToLower(edgeproto.OptResNames_name[2])] = testutil.Restblkeys[2].Name
+	resmap.Mapping[strings.ToLower(edgeproto.OptResNames_name[2])] = restblkeys[2].Name
 	_, err = apis.cloudletApi.AddCloudletResMapping(ctx, &resmap)
 	require.Nil(t, err, "AddCloudletResMapKey")
 
@@ -563,21 +563,21 @@ func testResMapKeysApi(t *testing.T, ctx context.Context, cl *edgeproto.Cloudlet
 
 	// what's in our testcl? Check the resource map
 	tkey := testcl.ResTagMap[strings.ToLower(edgeproto.OptResNames_name[0])]
-	require.Equal(t, testutil.Restblkeys[0].Name, tkey.Name, "AddCloudletResMapKey")
+	require.Equal(t, testutil.Restblkeys()[0].Name, tkey.Name, "AddCloudletResMapKey")
 	tkey = testcl.ResTagMap[strings.ToLower(edgeproto.OptResNames_name[1])]
-	require.Equal(t, testutil.Restblkeys[1].Name, tkey.Name, "AddCloudletResMapKey")
+	require.Equal(t, testutil.Restblkeys()[1].Name, tkey.Name, "AddCloudletResMapKey")
 	tkey = testcl.ResTagMap[strings.ToLower(edgeproto.OptResNames_name[2])]
-	require.Equal(t, testutil.Restblkeys[2].Name, tkey.Name, "AddCloudletResMapKey")
+	require.Equal(t, testutil.Restblkeys()[2].Name, tkey.Name, "AddCloudletResMapKey")
 
 	// and the actual keys should match as well
-	require.Equal(t, testutil.Restblkeys[0], *testcl.ResTagMap[testutil.Restblkeys[0].Name], "AddCloudletResMapKey")
-	require.Equal(t, testutil.Restblkeys[1], *testcl.ResTagMap[testutil.Restblkeys[1].Name], "AddCloudletResMapKey")
-	require.Equal(t, testutil.Restblkeys[2], *testcl.ResTagMap[testutil.Restblkeys[2].Name], "AddCloudletResMapKey")
+	require.Equal(t, testutil.Restblkeys()[0], *testcl.ResTagMap[testutil.Restblkeys()[0].Name], "AddCloudletResMapKey")
+	require.Equal(t, testutil.Restblkeys()[1], *testcl.ResTagMap[testutil.Restblkeys()[1].Name], "AddCloudletResMapKey")
+	require.Equal(t, testutil.Restblkeys()[2], *testcl.ResTagMap[testutil.Restblkeys()[2].Name], "AddCloudletResMapKey")
 
 	resmap1 := edgeproto.CloudletResMap{}
 	resmap1.Mapping = make(map[string]string)
-	resmap1.Mapping[strings.ToLower(edgeproto.OptResNames_name[2])] = testutil.Restblkeys[2].Name
-	resmap1.Mapping[strings.ToLower(edgeproto.OptResNames_name[1])] = testutil.Restblkeys[1].Name
+	resmap1.Mapping[strings.ToLower(edgeproto.OptResNames_name[2])] = testutil.Restblkeys()[2].Name
+	resmap1.Mapping[strings.ToLower(edgeproto.OptResNames_name[1])] = testutil.Restblkeys()[1].Name
 	resmap1.Key = cl.Key
 
 	_, err = apis.cloudletApi.RemoveCloudletResMapping(ctx, &resmap1)
@@ -600,7 +600,7 @@ func testResMapKeysApi(t *testing.T, ctx context.Context, cl *edgeproto.Cloudlet
 	// and check the maps len = 1
 	require.Equal(t, 1, len(rmcl.ResTagMap), "RemoveCloudletResMapKey")
 	// and might as well check the key "gpu" exists
-	_, ok := rmcl.ResTagMap[testutil.Restblkeys[0].Name]
+	_, ok := rmcl.ResTagMap[testutil.Restblkeys()[0].Name]
 	require.Equal(t, true, ok, "RemoveCloudletResMapKey")
 }
 
@@ -615,7 +615,7 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 	// is to take our meta-flavor resourse request object, and return, for this
 	// operator/cloudlet the closest matching available flavor to use in the eventual
 	// launch of a suitable image.
-	var cli edgeproto.CloudletInfo = testutil.CloudletInfoData[0]
+	var cli edgeproto.CloudletInfo = testutil.CloudletInfoData()[0]
 
 	if cl.ResTagMap == nil {
 		cl.ResTagMap = make(map[string]*edgeproto.ResTagTableKey)
@@ -855,7 +855,7 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 }
 
 func testShowFlavorsForCloudlet(t *testing.T, ctx context.Context, apis *AllApis) {
-	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData)
+	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 	// Use a clouldet with no ResourceTagMap
 	cCldApi := testutil.NewInternalCloudletApi(apis.cloudletApi)
 	cld := testutil.CloudletData()[1]
@@ -962,21 +962,21 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 	show := testutil.ShowCloudletsForAppDeployment{}
 	show.Init()
 
-	app := testutil.AppData[2]
+	app := testutil.AppData()[2]
 	request := edgeproto.DeploymentCloudletRequest{
 		App:          &app,
 		DryRunDeploy: false,
 	}
-	app.DefaultFlavor = testutil.FlavorData[0].Key // x1.tiny
+	app.DefaultFlavor = testutil.FlavorData()[0].Key // x1.tiny
 	app.Deployment = cloudcommon.DeploymentTypeVM
 	filter := request
 
 	// test data
-	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData)
-	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData)
-	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData)
+	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
+	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
+	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, testutil.CloudletData())
-	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData)
+	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 
 	// without a responder, clusterInst create waits forever
 	dummyResponder := DummyInfoResponder{
@@ -991,10 +991,10 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 
 	// either create the policy expected by one of all cloudlets, or remove that bit of config, or
 	// just don't create that specific cloudlet. #1 create the policy.
-	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData)
-	testutil.InternalAutoScalePolicyCreate(t, apis.autoScalePolicyApi, testutil.AutoScalePolicyData)
+	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
+	testutil.InternalAutoScalePolicyCreate(t, apis.autoScalePolicyApi, testutil.AutoScalePolicyData())
 
-	for _, obj := range testutil.ClusterInstData {
+	for _, obj := range testutil.ClusterInstData() {
 		err := apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 		require.Nil(t, err, "Create ClusterInst")
 	}
@@ -1010,13 +1010,13 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 	// increase the flavor size, and expect fewer cloudlet matches
 	// TODO: create sets of OS flavors to attach to our CloudletInfo objs  as substitues for whats there in test_data.go
 	// for more complex matching.
-	app.DefaultFlavor = testutil.FlavorData[2].Key // 3 = x1.large 4 = x1.tiny.gpu 2 = x1.medium
+	app.DefaultFlavor = testutil.FlavorData()[2].Key // 3 = x1.large 4 = x1.tiny.gpu 2 = x1.medium
 	err = cAppApi.ShowCloudletsForAppDeployment(ctx, &filter, &show)
 	require.Nil(t, err, "ShowCloudletsForAppDeployment")
 	require.Equal(t, 3, len(show.Data), "SHowCloudletsForAppDeployment")
 
 	show.Init()
-	app.DefaultFlavor = testutil.FlavorData[3].Key // 3 = x1.large 4 = x1.tiny.gpu 2 = x1.medium
+	app.DefaultFlavor = testutil.FlavorData()[3].Key // 3 = x1.large 4 = x1.tiny.gpu 2 = x1.medium
 	err = cAppApi.ShowCloudletsForAppDeployment(ctx, &filter, &show)
 	require.Nil(t, err, "ShowCloudletsForAppDeployment")
 	require.Equal(t, 1, len(show.Data), "SHowCloudletsForAppDeployment")
