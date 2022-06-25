@@ -50,20 +50,21 @@ func TestAlertApi(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
-	for _, alert := range testutil.AlertData {
+	alertData := testutil.AlertData()
+	for _, alert := range alertData {
 		apis.alertApi.Update(ctx, &alert, 0)
 	}
-	testutil.InternalAlertTest(t, "show", apis.alertApi, testutil.AlertData)
+	testutil.InternalAlertTest(t, "show", apis.alertApi, alertData)
 
 	cloudletData := testutil.CloudletData()
-	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData)
-	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData)
-	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData)
+	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
+	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
+	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, cloudletData)
 	testCloudlet := cloudletData[0]
 	testCloudlet.Key.Name = "testcloudlet"
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, []edgeproto.Cloudlet{testCloudlet})
-	testCloudletInfo := testutil.CloudletInfoData[0]
+	testCloudletInfo := testutil.CloudletInfoData()[0]
 	testCloudletInfo.Key.Name = testCloudlet.Key.Name
 	insertCloudletInfo(ctx, apis, []edgeproto.CloudletInfo{testCloudletInfo})
 	getAlertsCount := func() (int, int) {
@@ -122,34 +123,33 @@ func TestAppInstDownAlert(t *testing.T) {
 	dummyResponder.InitDummyInfoResponder()
 
 	// create supporting data
-	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData)
-	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData)
-	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData)
+	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
+	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
+	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, testutil.CloudletData())
-	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData)
-	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData)
-	testutil.InternalAutoScalePolicyCreate(t, apis.autoScalePolicyApi, testutil.AutoScalePolicyData)
-	testutil.InternalAppCreate(t, apis.appApi, testutil.AppData)
-	testutil.InternalClusterInstCreate(t, apis.clusterInstApi, testutil.ClusterInstData)
-	testutil.InternalAppInstCreate(t, apis.appInstApi, testutil.AppInstData)
+	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
+	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
+	testutil.InternalAutoScalePolicyCreate(t, apis.autoScalePolicyApi, testutil.AutoScalePolicyData())
+	testutil.InternalAppCreate(t, apis.appApi, testutil.AppData())
+	testutil.InternalClusterInstCreate(t, apis.clusterInstApi, testutil.ClusterInstData())
+	testutil.InternalAppInstCreate(t, apis.appInstApi, testutil.AppInstData())
 	// Create a reservable clusterInst
-	cinst := testutil.ClusterInstData[7]
+	cinst := testutil.ClusterInstData()[7]
 	streamOut := testutil.NewCudStreamoutAppInst(ctx)
 	appinst := edgeproto.AppInst{}
-	appinst.Key.AppKey = testutil.AppData[0].Key
+	appinst.Key.AppKey = testutil.AppData()[0].Key
 	appinst.Key.ClusterInstKey = *cinst.Key.Virtual("")
 	err := apis.appInstApi.CreateAppInst(&appinst, streamOut)
 	require.Nil(t, err, "create AppInst")
 	// Inject AppInst info check that all appInsts are Healthy
-	for ii, _ := range testutil.AppInstInfoData {
-		in := &testutil.AppInstInfoData[ii]
-		apis.appInstInfoApi.Update(ctx, in, 0)
+	for _, in := range testutil.AppInstInfoData() {
+		apis.appInstInfoApi.Update(ctx, &in, 0)
 	}
 	for _, val := range apis.appInstApi.cache.Objs {
 		require.Equal(t, dme.HealthCheck_HEALTH_CHECK_OK, val.Obj.HealthCheck)
 	}
 	// Trigger Alerts
-	for _, alert := range testutil.AlertData {
+	for _, alert := range testutil.AlertData() {
 		apis.alertApi.Update(ctx, &alert, 0)
 	}
 	// Check reservable cluster

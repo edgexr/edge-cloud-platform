@@ -47,9 +47,9 @@ func TestAddRefsChecks(t *testing.T) {
 type AddRefsDataGen struct{}
 
 func (s *AddRefsDataGen) GetAddAppAlertPolicyTestObj() (*edgeproto.AppAlertPolicy, *testSupportData) {
-	app := testutil.AppData[0]
+	app := testutil.AppData()[0]
 	app.AlertPolicies = nil
-	alertPolicy := testutil.AlertPolicyData[0]
+	alertPolicy := testutil.AlertPolicyData()[0]
 
 	testObj := edgeproto.AppAlertPolicy{
 		AppKey:      app.Key,
@@ -62,10 +62,10 @@ func (s *AddRefsDataGen) GetAddAppAlertPolicyTestObj() (*edgeproto.AppAlertPolic
 }
 
 func (s *AddRefsDataGen) GetAddAppAutoProvPolicyTestObj() (*edgeproto.AppAutoProvPolicy, *testSupportData) {
-	app := testutil.AppData[0]
+	app := testutil.AppData()[0]
 	app.Deployment = cloudcommon.DeploymentTypeKubernetes
 	app.AutoProvPolicies = nil
-	autoProvPolicy := testutil.AutoProvPolicyData[0]
+	autoProvPolicy := testutil.AutoProvPolicyData()[0]
 
 	testObj := edgeproto.AppAutoProvPolicy{
 		AppKey:         app.Key,
@@ -79,7 +79,7 @@ func (s *AddRefsDataGen) GetAddAppAutoProvPolicyTestObj() (*edgeproto.AppAutoPro
 
 func (s *AddRefsDataGen) GetAddAutoProvPolicyCloudletTestObj() (*edgeproto.AutoProvPolicyCloudlet, *testSupportData) {
 	cloudlet := testutil.CloudletData()[0]
-	autoProvPolicy := testutil.AutoProvPolicyData[0]
+	autoProvPolicy := testutil.AutoProvPolicyData()[0]
 	autoProvPolicy.Cloudlets = nil
 
 	testObj := edgeproto.AutoProvPolicyCloudlet{
@@ -94,7 +94,7 @@ func (s *AddRefsDataGen) GetAddAutoProvPolicyCloudletTestObj() (*edgeproto.AutoP
 
 func (s *AddRefsDataGen) GetAddCloudletPoolMemberTestObj() (*edgeproto.CloudletPoolMember, *testSupportData) {
 	cloudlet := testutil.CloudletData()[0]
-	cloudletPool := testutil.CloudletPoolData[0]
+	cloudletPool := testutil.CloudletPoolData()[0]
 	cloudletPool.Key.Organization = cloudlet.Key.Organization
 	cloudletPool.Cloudlets = nil
 
@@ -111,7 +111,7 @@ func (s *AddRefsDataGen) GetAddCloudletPoolMemberTestObj() (*edgeproto.CloudletP
 func (s *AddRefsDataGen) GetAddCloudletResMappingTestObj() (*edgeproto.CloudletResMap, *testSupportData) {
 	cloudlet := testutil.CloudletData()[0]
 	cloudlet.ResTagMap = nil
-	resTagTable := testutil.ResTagTableData[0]
+	resTagTable := testutil.ResTagTableData()[0]
 
 	testObj := edgeproto.CloudletResMap{
 		Key: cloudlet.Key,
@@ -126,11 +126,11 @@ func (s *AddRefsDataGen) GetAddCloudletResMappingTestObj() (*edgeproto.CloudletR
 }
 
 func (s *AddRefsDataGen) GetCreateAppTestObj() (*edgeproto.App, *testSupportData) {
-	flavor := testutil.FlavorData[0]
-	autoProvPolicy := testutil.AutoProvPolicyData[0]
-	alertPolicy := testutil.AlertPolicyData[0]
+	flavor := testutil.FlavorData()[0]
+	autoProvPolicy := testutil.AutoProvPolicyData()[0]
+	alertPolicy := testutil.AlertPolicyData()[0]
 
-	app := testutil.AppData[0]
+	app := testutil.AppData()[0]
 	app.DefaultFlavor = flavor.Key
 	app.AutoProvPolicies = []string{autoProvPolicy.Key.Name}
 	app.AlertPolicies = []string{alertPolicy.Key.Name}
@@ -143,15 +143,15 @@ func (s *AddRefsDataGen) GetCreateAppTestObj() (*edgeproto.App, *testSupportData
 }
 
 func (s *AddRefsDataGen) GetCreateAppInstTestObj() (*edgeproto.AppInst, *testSupportData) {
-	app := testutil.AppData[0]
+	app := testutil.AppData()[0]
 	cloudlet := testutil.CloudletData()[0]
-	cloudletInfo := testutil.CloudletInfoData[0]
-	clusterInst := testutil.ClusterInstData[0]
+	cloudletInfo := testutil.CloudletInfoData()[0]
+	clusterInst := testutil.ClusterInstData()[0]
 	clusterInst.Key.CloudletKey = cloudlet.Key
 	clusterInst.State = edgeproto.TrackedState_READY
-	flavor := testutil.FlavorData[0]
+	flavor := testutil.FlavorData()[0]
 
-	appInst := testutil.AppInstData[0]
+	appInst := testutil.AppInstData()[0]
 	appInst.Key.AppKey = app.Key
 	appInst.Key.ClusterInstKey = *clusterInst.Key.Virtual("")
 	appInst.Flavor = flavor.Key
@@ -169,7 +169,7 @@ func (s *AddRefsDataGen) GetCreateAppInstTestObj() (*edgeproto.AppInst, *testSup
 func (s *AddRefsDataGen) GetCreateAutoProvPolicyTestObj() (*edgeproto.AutoProvPolicy, *testSupportData) {
 	cloudlet := testutil.CloudletData()[0]
 
-	autoProvPolicy := testutil.AutoProvPolicyData[0]
+	autoProvPolicy := testutil.AutoProvPolicyData()[0]
 	autoProvPolicy.Cloudlets = []*edgeproto.AutoProvCloudlet{
 		&edgeproto.AutoProvCloudlet{
 			Key: cloudlet.Key,
@@ -186,14 +186,14 @@ func (s *AddRefsDataGen) GetCreateCloudletTestObj() (*edgeproto.Cloudlet, *testS
 	// allow special characters in org name.
 	cloudlet := testutil.CloudletData()[2]
 
-	flavor := testutil.FlavorData[0]
-	resTagTable := testutil.ResTagTableData[0]
+	flavor := testutil.FlavorData()[0]
+	resTagTable := testutil.ResTagTableData()[0]
 	resTagTable.Key.Organization = cloudlet.Key.Organization
-	trustPolicy := testutil.TrustPolicyData[0]
+	trustPolicy := testutil.TrustPolicyData()[0]
 	trustPolicy.Key.Organization = cloudlet.Key.Organization
-	gpuDriver := testutil.GPUDriverData[0]
+	gpuDriver := testutil.GPUDriverData()[0]
 	gpuDriver.Key.Organization = cloudlet.Key.Organization
-	vmpool := testutil.VMPoolData[0]
+	vmpool := testutil.VMPoolData()[0]
 	vmpool.Key.Organization = cloudlet.Key.Organization
 
 	cloudlet.Flavor = flavor.Key
@@ -216,7 +216,7 @@ func (s *AddRefsDataGen) GetCreateCloudletTestObj() (*edgeproto.Cloudlet, *testS
 func (s *AddRefsDataGen) GetCreateCloudletPoolTestObj() (*edgeproto.CloudletPool, *testSupportData) {
 	cloudlet := testutil.CloudletData()[0]
 
-	cloudletPool := testutil.CloudletPoolData[0]
+	cloudletPool := testutil.CloudletPoolData()[0]
 	cloudletPool.Key.Organization = cloudlet.Key.Organization
 	cloudletPool.Cloudlets = []edgeproto.CloudletKey{cloudlet.Key}
 
@@ -227,13 +227,13 @@ func (s *AddRefsDataGen) GetCreateCloudletPoolTestObj() (*edgeproto.CloudletPool
 
 func (s *AddRefsDataGen) GetCreateClusterInstTestObj() (*edgeproto.ClusterInst, *testSupportData) {
 	cloudlet := testutil.CloudletData()[0]
-	cloudletInfo := testutil.CloudletInfoData[0]
-	flavor := testutil.FlavorData[0]
-	autoScalePolicy := testutil.AutoScalePolicyData[0]
-	network := testutil.NetworkData[0]
+	cloudletInfo := testutil.CloudletInfoData()[0]
+	flavor := testutil.FlavorData()[0]
+	autoScalePolicy := testutil.AutoScalePolicyData()[0]
+	network := testutil.NetworkData()[0]
 	network.Key.CloudletKey = cloudlet.Key
 
-	clusterInst := testutil.ClusterInstData[0]
+	clusterInst := testutil.ClusterInstData()[0]
 	clusterInst.Key.CloudletKey = cloudlet.Key
 	clusterInst.Flavor = flavor.Key
 	clusterInst.AutoScalePolicy = autoScalePolicy.Key.Name
@@ -254,7 +254,7 @@ func (s *AddRefsDataGen) GetCreateClusterInstTestObj() (*edgeproto.ClusterInst, 
 func (s *AddRefsDataGen) GetCreateNetworkTestObj() (*edgeproto.Network, *testSupportData) {
 	cloudlet := testutil.CloudletData()[0]
 
-	network := testutil.NetworkData[0]
+	network := testutil.NetworkData()[0]
 	network.Key.CloudletKey = cloudlet.Key
 
 	supportData := &testSupportData{}
@@ -263,10 +263,10 @@ func (s *AddRefsDataGen) GetCreateNetworkTestObj() (*edgeproto.Network, *testSup
 }
 
 func (s *AddRefsDataGen) GetCreateTrustPolicyExceptionTestObj() (*edgeproto.TrustPolicyException, *testSupportData) {
-	cloudletPool := testutil.CloudletPoolData[0]
-	app := testutil.AppData[0]
+	cloudletPool := testutil.CloudletPoolData()[0]
+	app := testutil.AppData()[0]
 
-	tpe := testutil.TrustPolicyExceptionData[0]
+	tpe := testutil.TrustPolicyExceptionData()[0]
 	tpe.Key.AppKey = app.Key
 	tpe.Key.CloudletPoolKey = cloudletPool.Key
 
@@ -337,7 +337,7 @@ func (s *AddRefsDataGen) GetUpdateCloudletTestObj() (*edgeproto.Cloudlet, *testS
 	updatable.GpuConfig.Driver = edgeproto.GPUDriverKey{}
 
 	supportData.Cloudlets = []edgeproto.Cloudlet{updatable}
-	supportData.CloudletInfos = []edgeproto.CloudletInfo{testutil.CloudletInfoData[2]}
+	supportData.CloudletInfos = []edgeproto.CloudletInfo{testutil.CloudletInfoData()[2]}
 
 	testObj.Fields = []string{
 		edgeproto.CloudletFieldTrustPolicy,

@@ -42,7 +42,7 @@ func TestFlavorApi(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
-	testutil.InternalFlavorTest(t, "cud", apis.flavorApi, testutil.FlavorData)
+	testutil.InternalFlavorTest(t, "cud", apis.flavorApi, testutil.FlavorData())
 	testMasterFlavor(t, ctx, apis)
 	dummy.Stop()
 }
@@ -63,7 +63,7 @@ func testMasterFlavor(t *testing.T, ctx context.Context, apis *AllApis) {
 	// ensure the master node default flavor is created, using the default value
 	// of settings.MasterNodeFlavor
 	cl := testutil.CloudletData()[1]
-	var cli edgeproto.CloudletInfo = testutil.CloudletInfoData[0]
+	var cli edgeproto.CloudletInfo = testutil.CloudletInfoData()[0]
 	settings := apis.settingsApi.Get()
 	masterFlavor := edgeproto.Flavor{}
 	flavorKey := edgeproto.FlavorKey{}

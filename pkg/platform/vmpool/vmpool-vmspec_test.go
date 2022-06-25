@@ -70,7 +70,7 @@ func TestVMSpec(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 
 	// Define VM Pool
-	vmPool := testutil.VMPoolData[0]
+	vmPool := testutil.VMPoolData()[0]
 	group1 := "testvmpoolvms1"
 	group2 := "testvmpoolvms2"
 

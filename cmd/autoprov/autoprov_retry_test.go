@@ -32,7 +32,7 @@ func TestRetry(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 
 	retry := newRetryTracker()
-	key := testutil.AppInstData[0].Key
+	key := testutil.AppInstData()[0].Key
 
 	// no error should not register a retry
 	retry.registerDeployResult(ctx, key, nil)

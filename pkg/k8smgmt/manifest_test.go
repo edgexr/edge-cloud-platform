@@ -44,7 +44,7 @@ func TestEnvVars(t *testing.T) {
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
-	app := &testutil.AppData[0]
+	app := &testutil.AppData()[0]
 	app.Deployment = cloudcommon.DeploymentTypeKubernetes
 	app.DeploymentGenerator = ""
 	config := &edgeproto.ConfigFile{
@@ -61,7 +61,7 @@ func TestEnvVars(t *testing.T) {
 
 	names := &KubeNames{}
 
-	defaultFlavor := testutil.FlavorData[0]
+	defaultFlavor := testutil.FlavorData()[0]
 
 	authApi := &cloudcommon.DummyRegistryAuthApi{}
 	// Test Deployment manifest with inline EnvVars
@@ -83,7 +83,7 @@ func TestEnvVars(t *testing.T) {
 		Ram:         20,
 		MinReplicas: 2,
 	}
-	gpuFlavor := testutil.FlavorData[4]
+	gpuFlavor := testutil.FlavorData()[4]
 	merged, err := MergeEnvVars(ctx, authApi, app, baseMf, nil, names, &gpuFlavor)
 	require.Nil(t, err)
 	require.Equal(t, expectedFullManifest, merged)
@@ -454,10 +454,10 @@ func TestImagePullSecrets(t *testing.T) {
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
-	app := &testutil.AppData[1]
+	app := &testutil.AppData()[1]
 	app.ImagePath = "docker-test.mobiledgex.net/atlanticinc/images/pillimogo12:1.0.1"
-	clusterInst := &testutil.ClusterInstData[0]
-	appInst := &testutil.AppInstData[0]
+	clusterInst := &testutil.ClusterInstData()[0]
+	appInst := &testutil.AppInstData()[0]
 	app.Deployment = cloudcommon.DeploymentTypeKubernetes
 	app.DeploymentManifest = deploymentManifest
 
@@ -473,7 +473,7 @@ func TestImagePullSecrets(t *testing.T) {
 		names.ImagePullSecrets = append(names.ImagePullSecrets, secret)
 	}
 
-	defaultFlavor := testutil.FlavorData[0]
+	defaultFlavor := testutil.FlavorData()[0]
 	newMf, err := MergeEnvVars(ctx, nil, app, baseMf, names.ImagePullSecrets, &KubeNames{}, &defaultFlavor)
 	require.Nil(t, err)
 	fmt.Println(newMf)

@@ -42,18 +42,18 @@ func TestCloudletPoolApi(t *testing.T) {
 	defer sync.Done()
 
 	// create supporting data
-	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData)
-	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData)
-	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData)
+	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
+	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
+	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, testutil.CloudletData())
 
-	testutil.InternalCloudletPoolTest(t, "cud", apis.cloudletPoolApi, testutil.CloudletPoolData)
+	testutil.InternalCloudletPoolTest(t, "cud", apis.cloudletPoolApi, testutil.CloudletPoolData())
 
 	// create test cloudlet
 	testcloudlet := edgeproto.Cloudlet{
 		Key: edgeproto.CloudletKey{
 			Name:         "testcloudlet",
-			Organization: testutil.CloudletPoolData[0].Key.Organization,
+			Organization: testutil.CloudletPoolData()[0].Key.Organization,
 		},
 		NumDynamicIps: 100,
 		Location: dme.Loc{
@@ -67,7 +67,7 @@ func TestCloudletPoolApi(t *testing.T) {
 	fedcloudlet := edgeproto.Cloudlet{
 		Key: edgeproto.CloudletKey{
 			Name:                  "testfedcloudlet",
-			Organization:          testutil.CloudletPoolData[0].Key.Organization,
+			Organization:          testutil.CloudletPoolData()[0].Key.Organization,
 			FederatedOrganization: "FedOrg",
 		},
 		NumDynamicIps: 100,
@@ -85,7 +85,7 @@ func TestCloudletPoolApi(t *testing.T) {
 	count := 1
 	for _, cloudlet := range testcloudlets {
 		// set up test data
-		poolKey := testutil.CloudletPoolData[0].Key
+		poolKey := testutil.CloudletPoolData()[0].Key
 		member := edgeproto.CloudletPoolMember{}
 		member.Key = poolKey
 		member.Cloudlet = cloudlet.Key

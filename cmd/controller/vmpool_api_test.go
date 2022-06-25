@@ -40,7 +40,7 @@ func TestVMPoolApi(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
-	testutil.InternalVMPoolTest(t, "cud", apis.vmPoolApi, testutil.VMPoolData)
+	testutil.InternalVMPoolTest(t, "cud", apis.vmPoolApi, testutil.VMPoolData())
 
 	testAddRemoveVM(t, ctx, apis)
 	testUpdateVMPool(t, ctx, apis)
@@ -51,7 +51,7 @@ func TestVMPoolApi(t *testing.T) {
 func testAddRemoveVM(t *testing.T, ctx context.Context, apis *AllApis) {
 	// test adding cloudlet vm to the pool
 	cm1 := edgeproto.VMPoolMember{}
-	cm1.Key = testutil.VMPoolData[1].Key
+	cm1.Key = testutil.VMPoolData()[1].Key
 	cm1.Vm = edgeproto.VM{
 		Name: "vmX",
 		NetInfo: edgeproto.VMNetInfo{
@@ -70,7 +70,7 @@ func testAddRemoveVM(t *testing.T, ctx context.Context, apis *AllApis) {
 
 	// test adding another cloudlet vm to the pool
 	cm2 := edgeproto.VMPoolMember{}
-	cm2.Key = testutil.VMPoolData[1].Key
+	cm2.Key = testutil.VMPoolData()[1].Key
 	cm2.Vm = edgeproto.VM{
 		Name: "vmY",
 		NetInfo: edgeproto.VMNetInfo{
@@ -107,7 +107,7 @@ func testAddRemoveVM(t *testing.T, ctx context.Context, apis *AllApis) {
 
 	// add/update VM with same external/internal IP as another VM to the pool
 	cm3 := edgeproto.VMPoolMember{}
-	cm3.Key = testutil.VMPoolData[1].Key
+	cm3.Key = testutil.VMPoolData()[1].Key
 	cm3.Vm = edgeproto.VM{
 		Name: "vmZ",
 		NetInfo: edgeproto.VMNetInfo{
@@ -130,7 +130,7 @@ func testAddRemoveVM(t *testing.T, ctx context.Context, apis *AllApis) {
 	require.NotNil(t, err, "add cloudlet vm to cloudlet vm pool should fail as same internalIP exists")
 
 	updateCM := edgeproto.VMPool{}
-	updateCM.Key = testutil.VMPoolData[1].Key
+	updateCM.Key = testutil.VMPoolData()[1].Key
 	updateCM.Vms = []edgeproto.VM{
 		edgeproto.VM{
 			Name: "vmX",
@@ -186,10 +186,10 @@ func testUpdateVMPool(t *testing.T, ctx context.Context, apis *AllApis) {
 	reduceInfoTimeouts(t, ctx, apis)
 
 	// create support data
-	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData)
+	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 
 	cl := testutil.CloudletData()[1]
-	vmp := testutil.VMPoolData[0]
+	vmp := testutil.VMPoolData()[0]
 	cl.VmPool = vmp.Key.Name
 	cl.PlatformType = edgeproto.PlatformType_PLATFORM_TYPE_FAKE_VM_POOL
 	err := apis.cloudletApi.CreateCloudlet(&cl, testutil.NewCudStreamoutCloudlet(ctx))
@@ -230,5 +230,5 @@ func testUpdateVMPool(t *testing.T, ctx context.Context, apis *AllApis) {
 	require.Nil(t, err, "remove vm from pool")
 	err = apis.cloudletApi.DeleteCloudlet(&cl, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
-	testutil.InternalFlavorDelete(t, apis.flavorApi, testutil.FlavorData)
+	testutil.InternalFlavorDelete(t, apis.flavorApi, testutil.FlavorData())
 }
