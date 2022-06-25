@@ -51,11 +51,11 @@ type DeleteDataGen struct{}
 
 // AlertPolicy
 func (s *DeleteDataGen) GetAlertPolicyTestObj() (*edgeproto.AlertPolicy, *testSupportData) {
-	obj := testutil.AlertPolicyData[0]
+	obj := testutil.AlertPolicyData()[0]
 	return &obj, noSupportData
 }
 func (s *DeleteDataGen) GetAppAlertPoliciesRef(key *edgeproto.AlertPolicyKey) (*edgeproto.App, *testSupportData) {
-	ref := testutil.AppData[0]
+	ref := testutil.AppData()[0]
 	ref.Key.Organization = key.Organization
 	ref.AlertPolicies = []string{key.Name}
 	return &ref, noSupportData
@@ -63,16 +63,16 @@ func (s *DeleteDataGen) GetAppAlertPoliciesRef(key *edgeproto.AlertPolicyKey) (*
 
 // App
 func (s *DeleteDataGen) GetAppTestObj() (*edgeproto.App, *testSupportData) {
-	obj := testutil.AppData[0]
+	obj := testutil.AppData()[0]
 	return &obj, noSupportData
 }
 func (s *DeleteDataGen) GetTrustPolicyExceptionKeyAppKeyRef(key *edgeproto.AppKey) (*edgeproto.TrustPolicyException, *testSupportData) {
-	ref := testutil.TrustPolicyExceptionData[0]
+	ref := testutil.TrustPolicyExceptionData()[0]
 	ref.Key.AppKey = *key
 	return &ref, noSupportData
 }
 func (s *DeleteDataGen) GetAppAppInstInstsRef(key *edgeproto.AppKey) (*edgeproto.AppInstRefs, *testSupportData) {
-	instKey := testutil.AppInstData[0].Key
+	instKey := testutil.AppInstData()[0].Key
 	instKey.AppKey = *key
 	inst := edgeproto.AppInst{
 		Key:      instKey,
@@ -95,11 +95,11 @@ func (s *DeleteDataGen) GetAppAppInstInstsRef(key *edgeproto.AppKey) (*edgeproto
 
 // AutoProvPolicy
 func (s *DeleteDataGen) GetAutoProvPolicyTestObj() (*edgeproto.AutoProvPolicy, *testSupportData) {
-	obj := testutil.AutoProvPolicyData[0]
+	obj := testutil.AutoProvPolicyData()[0]
 	return &obj, noSupportData
 }
 func (s *DeleteDataGen) GetAppAutoProvPoliciesRef(key *edgeproto.PolicyKey) (*edgeproto.App, *testSupportData) {
-	ref := testutil.AppData[0]
+	ref := testutil.AppData()[0]
 	ref.Key.Organization = key.Organization
 	ref.AutoProvPolicies = []string{key.Name}
 	return &ref, noSupportData
@@ -107,11 +107,11 @@ func (s *DeleteDataGen) GetAppAutoProvPoliciesRef(key *edgeproto.PolicyKey) (*ed
 
 // AutoScalePolicy
 func (s *DeleteDataGen) GetAutoScalePolicyTestObj() (*edgeproto.AutoScalePolicy, *testSupportData) {
-	obj := testutil.AutoScalePolicyData[0]
+	obj := testutil.AutoScalePolicyData()[0]
 	return &obj, noSupportData
 }
 func (s *DeleteDataGen) GetClusterInstAutoScalePolicyRef(key *edgeproto.PolicyKey) (*edgeproto.ClusterInst, *testSupportData) {
-	ref := testutil.ClusterInstData[0]
+	ref := testutil.ClusterInstData()[0]
 	ref.Key.Organization = key.Organization
 	ref.AutoScalePolicy = key.Name
 	return &ref, noSupportData
@@ -121,11 +121,11 @@ func (s *DeleteDataGen) GetClusterInstAutoScalePolicyRef(key *edgeproto.PolicyKe
 func (s *DeleteDataGen) GetCloudletTestObj() (*edgeproto.Cloudlet, *testSupportData) {
 	obj := testutil.CloudletData()[0]
 	supportData := &testSupportData{}
-	supportData.GpuDrivers = []edgeproto.GPUDriver{testutil.GPUDriverData[0]}
+	supportData.GpuDrivers = []edgeproto.GPUDriver{testutil.GPUDriverData()[0]}
 	return &obj, supportData
 }
 func (s *DeleteDataGen) GetAutoProvPolicyCloudletsRef(key *edgeproto.CloudletKey) (*edgeproto.AutoProvPolicy, *testSupportData) {
-	ref := testutil.AutoProvPolicyData[0]
+	ref := testutil.AutoProvPolicyData()[0]
 	ref.Cloudlets = []*edgeproto.AutoProvCloudlet{
 		&edgeproto.AutoProvCloudlet{
 			Key: *key,
@@ -134,20 +134,20 @@ func (s *DeleteDataGen) GetAutoProvPolicyCloudletsRef(key *edgeproto.CloudletKey
 	return &ref, noSupportData
 }
 func (s *DeleteDataGen) GetCloudletPoolCloudletsRef(key *edgeproto.CloudletKey) (*edgeproto.CloudletPool, *testSupportData) {
-	ref := testutil.CloudletPoolData[0]
+	ref := testutil.CloudletPoolData()[0]
 	ref.Key.Organization = key.Organization
 	ref.Cloudlets = []edgeproto.CloudletKey{*key}
 	return &ref, noSupportData
 }
 func (s *DeleteDataGen) GetNetworkKeyCloudletKeyRef(key *edgeproto.CloudletKey) (*edgeproto.Network, *testSupportData) {
-	ref := testutil.NetworkData[0]
+	ref := testutil.NetworkData()[0]
 	ref.Key.CloudletKey = *key
 	return &ref, noSupportData
 }
 func (s *DeleteDataGen) GetCloudletClusterInstClusterInstsRef(key *edgeproto.CloudletKey) (*edgeproto.CloudletRefs, *testSupportData) {
 	ref := edgeproto.CloudletRefs{}
 	ref.Key = *key
-	clusterInst := testutil.ClusterInstData[0]
+	clusterInst := testutil.ClusterInstData()[0]
 	supportData := &testSupportData{}
 	supportData.ClusterInsts = []edgeproto.ClusterInst{clusterInst}
 	clusterInstRefKey := edgeproto.ClusterInstRefKey{}
@@ -159,18 +159,18 @@ func (s *DeleteDataGen) GetCloudletClusterInstClusterInstsRef(key *edgeproto.Clo
 
 // CloudletPool
 func (s *DeleteDataGen) GetCloudletPoolTestObj() (*edgeproto.CloudletPool, *testSupportData) {
-	obj := testutil.CloudletPoolData[0]
+	obj := testutil.CloudletPoolData()[0]
 	return &obj, noSupportData
 }
 func (s *DeleteDataGen) GetTrustPolicyExceptionKeyCloudletPoolKeyRef(key *edgeproto.CloudletPoolKey) (*edgeproto.TrustPolicyException, *testSupportData) {
-	ref := testutil.TrustPolicyExceptionData[0]
+	ref := testutil.TrustPolicyExceptionData()[0]
 	ref.Key.CloudletPoolKey = *key
 	return &ref, noSupportData
 }
 
 // ClusterInst
 func (s *DeleteDataGen) GetClusterInstTestObj() (*edgeproto.ClusterInst, *testSupportData) {
-	obj := testutil.ClusterInstData[0]
+	obj := testutil.ClusterInstData()[0]
 	obj.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
 	cloudlet := edgeproto.Cloudlet{}
 	cloudlet.Key = obj.Key.CloudletKey
@@ -180,11 +180,11 @@ func (s *DeleteDataGen) GetClusterInstTestObj() (*edgeproto.ClusterInst, *testSu
 	supportData := &testSupportData{}
 	supportData.Cloudlets = []edgeproto.Cloudlet{cloudlet}
 	supportData.CloudletInfos = []edgeproto.CloudletInfo{cloudletInfo}
-	supportData.Flavors = []edgeproto.Flavor{testutil.FlavorData[0]}
+	supportData.Flavors = []edgeproto.Flavor{testutil.FlavorData()[0]}
 	return &obj, supportData
 }
 func (s *DeleteDataGen) GetClusterInstAppInstAppsRef(key *edgeproto.ClusterInstKey) (*edgeproto.ClusterRefs, *testSupportData) {
-	app := testutil.AppData[0]
+	app := testutil.AppData()[0]
 	appInst := edgeproto.AppInst{}
 	appInst.Key.AppKey = app.Key
 	appInst.Key.ClusterInstKey = *key.Virtual("")
@@ -205,11 +205,11 @@ func (s *DeleteDataGen) GetFlavorTestObj() (*edgeproto.Flavor, *testSupportData)
 	supportData := &testSupportData{}
 	supportData.Settings = edgeproto.GetDefaultSettings()
 
-	obj := testutil.FlavorData[0]
+	obj := testutil.FlavorData()[0]
 	return &obj, supportData
 }
 func (s *DeleteDataGen) GetAppDefaultFlavorRef(key *edgeproto.FlavorKey) (*edgeproto.App, *testSupportData) {
-	ref := testutil.AppData[0]
+	ref := testutil.AppData()[0]
 	ref.DefaultFlavor = *key
 	return &ref, noSupportData
 }
@@ -219,19 +219,19 @@ func (s *DeleteDataGen) GetCloudletFlavorRef(key *edgeproto.FlavorKey) (*edgepro
 	return &ref, noSupportData
 }
 func (s *DeleteDataGen) GetClusterInstFlavorRef(key *edgeproto.FlavorKey) (*edgeproto.ClusterInst, *testSupportData) {
-	ref := testutil.ClusterInstData[0]
+	ref := testutil.ClusterInstData()[0]
 	ref.Flavor = *key
 	return &ref, noSupportData
 }
 func (s *DeleteDataGen) GetAppInstFlavorRef(key *edgeproto.FlavorKey) (*edgeproto.AppInst, *testSupportData) {
-	ref := testutil.AppInstData[0]
+	ref := testutil.AppInstData()[0]
 	ref.Flavor = *key
 	return &ref, noSupportData
 }
 
 // GPUDriver
 func (s *DeleteDataGen) GetGPUDriverTestObj() (*edgeproto.GPUDriver, *testSupportData) {
-	obj := testutil.GPUDriverData[0]
+	obj := testutil.GPUDriverData()[0]
 	return &obj, noSupportData
 }
 func (s *DeleteDataGen) GetCloudletGpuConfigDriverRef(key *edgeproto.GPUDriverKey) (*edgeproto.Cloudlet, *testSupportData) {
@@ -242,11 +242,11 @@ func (s *DeleteDataGen) GetCloudletGpuConfigDriverRef(key *edgeproto.GPUDriverKe
 
 // Network
 func (s *DeleteDataGen) GetNetworkTestObj() (*edgeproto.Network, *testSupportData) {
-	obj := testutil.NetworkData[0]
+	obj := testutil.NetworkData()[0]
 	return &obj, noSupportData
 }
 func (s *DeleteDataGen) GetClusterInstNetworksRef(key *edgeproto.NetworkKey) (*edgeproto.ClusterInst, *testSupportData) {
-	ref := testutil.ClusterInstData[0]
+	ref := testutil.ClusterInstData()[0]
 	ref.Key.CloudletKey = key.CloudletKey
 	ref.Networks = []string{key.Name}
 	return &ref, noSupportData
@@ -254,7 +254,7 @@ func (s *DeleteDataGen) GetClusterInstNetworksRef(key *edgeproto.NetworkKey) (*e
 
 // ResTagTable
 func (s *DeleteDataGen) GetResTagTableTestObj() (*edgeproto.ResTagTable, *testSupportData) {
-	obj := testutil.ResTagTableData[0]
+	obj := testutil.ResTagTableData()[0]
 	return &obj, noSupportData
 }
 func (s *DeleteDataGen) GetCloudletResTagMapRef(key *edgeproto.ResTagTableKey) (*edgeproto.Cloudlet, *testSupportData) {
@@ -267,7 +267,7 @@ func (s *DeleteDataGen) GetCloudletResTagMapRef(key *edgeproto.ResTagTableKey) (
 
 // TrustPolicy
 func (s *DeleteDataGen) GetTrustPolicyTestObj() (*edgeproto.TrustPolicy, *testSupportData) {
-	obj := testutil.TrustPolicyData[0]
+	obj := testutil.TrustPolicyData()[0]
 	return &obj, noSupportData
 }
 func (s *DeleteDataGen) GetCloudletTrustPolicyRef(key *edgeproto.PolicyKey) (*edgeproto.Cloudlet, *testSupportData) {
@@ -279,7 +279,7 @@ func (s *DeleteDataGen) GetCloudletTrustPolicyRef(key *edgeproto.PolicyKey) (*ed
 
 // VMPool
 func (s *DeleteDataGen) GetVMPoolTestObj() (*edgeproto.VMPool, *testSupportData) {
-	obj := testutil.VMPoolData[0]
+	obj := testutil.VMPoolData()[0]
 	return &obj, noSupportData
 }
 func (s *DeleteDataGen) GetCloudletVmPoolRef(key *edgeproto.VMPoolKey) (*edgeproto.Cloudlet, *testSupportData) {

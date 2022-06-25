@@ -80,8 +80,8 @@ func TestAutoProv(t *testing.T) {
 
 func testAutoScale(t *testing.T, ctx context.Context, ds *testutil.DummyServer, dn *notify.DummyHandler) {
 	// initial state of ClusterInst
-	cinst := testutil.ClusterInstData[2]
-	numnodes := int(testutil.ClusterInstData[2].NumNodes)
+	cinst := testutil.ClusterInstData()[2]
+	numnodes := int(testutil.ClusterInstData()[2].NumNodes)
 	ds.ClusterInstCache.Update(ctx, &cinst, 0)
 
 	// alert labels for ClusterInst
@@ -148,12 +148,12 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 	autoProvAggr.UpdateSettings(ctx, 300, 0)
 
 	// add reservable ClusterInst
-	rcinst := testutil.ClusterInstData[7]
+	rcinst := testutil.ClusterInstData()[7]
 	dn.ClusterInstCache.Update(ctx, &rcinst, 0)
 	cloudletKey := rcinst.Key.CloudletKey
 
 	// add policies
-	policy := testutil.AutoProvPolicyData[0]
+	policy := testutil.AutoProvPolicyData()[0]
 	policy.Cloudlets = []*edgeproto.AutoProvCloudlet{
 		&edgeproto.AutoProvCloudlet{
 			Key: rcinst.Key.CloudletKey,
@@ -161,7 +161,7 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 	}
 	dn.AutoProvPolicyCache.Update(ctx, &policy, 0)
 
-	policy2 := testutil.AutoProvPolicyData[3]
+	policy2 := testutil.AutoProvPolicyData()[3]
 	policy2.Cloudlets = []*edgeproto.AutoProvCloudlet{
 		&edgeproto.AutoProvCloudlet{
 			Key: rcinst.Key.CloudletKey,
@@ -175,7 +175,7 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 	require.True(t, policy2.DeployIntervalCount > scale*policy.DeployIntervalCount)
 
 	// add app that uses above policy
-	app := testutil.AppData[11]
+	app := testutil.AppData()[11]
 	dn.AppCache.Update(ctx, &app, 0)
 
 	notify.WaitFor(&cacheData.appCache, 1)

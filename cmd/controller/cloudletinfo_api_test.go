@@ -44,17 +44,17 @@ func TestCloudletInfo(t *testing.T) {
 	defer sync.Done()
 
 	// create supporting data
-	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData)
-	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData)
-	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData)
+	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
+	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
+	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, testutil.CloudletData())
-	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData)
+	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 
-	testutil.InternalCloudletInfoTest(t, "show", apis.cloudletInfoApi, testutil.CloudletInfoData)
-	evictCloudletInfo(ctx, apis, testutil.CloudletInfoData)
+	testutil.InternalCloudletInfoTest(t, "show", apis.cloudletInfoApi, testutil.CloudletInfoData())
+	evictCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 
 	// test revision changes to cloudletinfo object on update
-	testCloudletInfoRevs(t, ctx, &dummy, apis, testutil.CloudletInfoData)
+	testCloudletInfoRevs(t, ctx, &dummy, apis, testutil.CloudletInfoData())
 }
 
 func insertCloudletInfo(ctx context.Context, apis *AllApis, data []edgeproto.CloudletInfo) {

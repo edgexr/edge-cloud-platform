@@ -61,26 +61,26 @@ func TestClusterInstApi(t *testing.T) {
 	reduceInfoTimeouts(t, ctx, apis)
 
 	// cannot create insts without cluster/cloudlet
-	for _, obj := range testutil.ClusterInstData {
+	for _, obj := range testutil.ClusterInstData() {
 		err := apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 		require.NotNil(t, err, "Create ClusterInst without cloudlet")
 	}
 
 	// create support data
 	cloudletData := testutil.CloudletData()
-	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData)
-	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData)
-	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData)
+	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
+	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
+	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, cloudletData)
-	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData)
-	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData)
-	testutil.InternalAutoScalePolicyCreate(t, apis.autoScalePolicyApi, testutil.AutoScalePolicyData)
+	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
+	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
+	testutil.InternalAutoScalePolicyCreate(t, apis.autoScalePolicyApi, testutil.AutoScalePolicyData())
 
 	// Set responder to fail. This should clean up the object after
 	// the fake crm returns a failure. If it doesn't, the next test to
 	// create all the cluster insts will fail.
 	responder.SetSimulateClusterCreateFailure(true)
-	for _, obj := range testutil.ClusterInstData {
+	for _, obj := range testutil.ClusterInstData() {
 		err := apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 		require.NotNil(t, err, "Create ClusterInst responder failures")
 		// make sure error matches responder
@@ -89,15 +89,15 @@ func TestClusterInstApi(t *testing.T) {
 	responder.SetSimulateClusterCreateFailure(false)
 	require.Equal(t, 0, len(apis.clusterInstApi.cache.Objs))
 
-	testutil.InternalClusterInstTest(t, "cud", apis.clusterInstApi, testutil.ClusterInstData)
+	testutil.InternalClusterInstTest(t, "cud", apis.clusterInstApi, testutil.ClusterInstData())
 	// after cluster insts create, check that cloudlet refs data is correct.
-	testutil.InternalCloudletRefsTest(t, "show", apis.cloudletRefsApi, testutil.CloudletRefsData)
+	testutil.InternalCloudletRefsTest(t, "show", apis.cloudletRefsApi, testutil.CloudletRefsData())
 
 	commonApi := testutil.NewInternalClusterInstApi(apis.clusterInstApi)
 
 	// Set responder to fail delete.
 	responder.SetSimulateClusterDeleteFailure(true)
-	obj := testutil.ClusterInstData[0]
+	obj := testutil.ClusterInstData()[0]
 	err := apis.clusterInstApi.DeleteClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.NotNil(t, err, "Delete ClusterInst responder failure")
 	responder.SetSimulateClusterDeleteFailure(false)
@@ -125,8 +125,8 @@ func TestClusterInstApi(t *testing.T) {
 	GetClusterInstStreamMsgs(t, ctx, &obj.Key, apis, Fail)
 
 	// test update of autoscale policy
-	obj = testutil.ClusterInstData[0]
-	obj.Key.Organization = testutil.AutoScalePolicyData[1].Key.Organization
+	obj = testutil.ClusterInstData()[0]
+	obj.Key.Organization = testutil.AutoScalePolicyData()[1].Key.Organization
 	err = apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err, "create ClusterInst")
 	check := edgeproto.ClusterInst{}
@@ -137,25 +137,25 @@ func TestClusterInstApi(t *testing.T) {
 	msgs = GetClusterInstStreamMsgs(t, ctx, &obj.Key, apis, Pass)
 	require.Greater(t, len(msgs), 0, "some progress messages")
 
-	obj.AutoScalePolicy = testutil.AutoScalePolicyData[1].Key.Name
+	obj.AutoScalePolicy = testutil.AutoScalePolicyData()[1].Key.Name
 	obj.Fields = []string{edgeproto.ClusterInstFieldAutoScalePolicy}
 	err = apis.clusterInstApi.UpdateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err)
 	check = edgeproto.ClusterInst{}
 	found = apis.clusterInstApi.cache.Get(&obj.Key, &check)
 	require.True(t, found)
-	require.Equal(t, testutil.AutoScalePolicyData[1].Key.Name, check.AutoScalePolicy)
+	require.Equal(t, testutil.AutoScalePolicyData()[1].Key.Name, check.AutoScalePolicy)
 	require.Equal(t, 4, int(check.NumNodes))
 	// progress message should exist
 	msgs = GetClusterInstStreamMsgs(t, ctx, &obj.Key, apis, Pass)
 	require.Greater(t, len(msgs), 0, "some progress messages")
 
-	obj = testutil.ClusterInstData[0]
+	obj = testutil.ClusterInstData()[0]
 	checkClusterInstState(t, ctx, commonApi, &obj, edgeproto.TrackedState_NOT_PRESENT)
 	// override CRM error
 	responder.SetSimulateClusterCreateFailure(true)
 	responder.SetSimulateClusterDeleteFailure(true)
-	obj = testutil.ClusterInstData[0]
+	obj = testutil.ClusterInstData()[0]
 	obj.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM_ERRORS
 	err = apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err, "override crm error")
@@ -163,7 +163,7 @@ func TestClusterInstApi(t *testing.T) {
 	msgs = GetClusterInstStreamMsgs(t, ctx, &obj.Key, apis, Pass)
 	require.Greater(t, len(msgs), 0, "some progress messages")
 	checkClusterInstState(t, ctx, commonApi, &obj, edgeproto.TrackedState_READY)
-	obj = testutil.ClusterInstData[0]
+	obj = testutil.ClusterInstData()[0]
 	obj.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM_ERRORS
 	err = apis.clusterInstApi.DeleteClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err, "override crm error")
@@ -172,20 +172,20 @@ func TestClusterInstApi(t *testing.T) {
 	checkClusterInstState(t, ctx, commonApi, &obj, edgeproto.TrackedState_NOT_PRESENT)
 
 	// ignore CRM
-	obj = testutil.ClusterInstData[0]
+	obj = testutil.ClusterInstData()[0]
 	obj.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
 	err = apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err, "ignore crm")
 	checkClusterInstState(t, ctx, commonApi, &obj, edgeproto.TrackedState_READY)
-	obj = testutil.ClusterInstData[0]
+	obj = testutil.ClusterInstData()[0]
 	obj.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
 	err = apis.clusterInstApi.DeleteClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err, "ignore crm")
 	checkClusterInstState(t, ctx, commonApi, &obj, edgeproto.TrackedState_NOT_PRESENT)
 
 	// inavailability of matching node flavor
-	obj = testutil.ClusterInstData[0]
-	obj.Flavor = testutil.FlavorData[0].Key
+	obj = testutil.ClusterInstData()[0]
+	obj.Flavor = testutil.FlavorData()[0].Key
 	err = apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.NotNil(t, err, "flavor not available")
 
@@ -193,7 +193,7 @@ func TestClusterInstApi(t *testing.T) {
 	// responder is set to fail. But post failure, clusterInst object
 	// created internally should be cleaned up
 	targetCloudletKey := cloudletData[1].Key
-	targetApp := testutil.AppData[11]
+	targetApp := testutil.AppData()[11]
 	testReservableClusterInstExists := func(cloudletKey edgeproto.CloudletKey) {
 		foundCluster := false
 		for cKey, cCache := range apis.clusterInstApi.cache.Objs {
@@ -303,11 +303,11 @@ func forceClusterInstState(ctx context.Context, in *edgeproto.ClusterInst, state
 }
 
 func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.ClusterInstCommonApi, apis *AllApis) {
-	cinst := testutil.ClusterInstData[7]
+	cinst := testutil.ClusterInstData()[7]
 	checkReservedBy(t, ctx, api, &cinst.Key, "")
 
 	// create test app
-	for _, app := range testutil.AppData {
+	for _, app := range testutil.AppData() {
 		_, err := apis.appApi.CreateApp(ctx, &app)
 		require.Nil(t, err, "create App")
 	}
@@ -315,7 +315,7 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 	// Should be able to create a developer AppInst on the ClusterInst
 	streamOut := testutil.NewCudStreamoutAppInst(ctx)
 	appinst := edgeproto.AppInst{}
-	appinst.Key.AppKey = testutil.AppData[0].Key
+	appinst.Key.AppKey = testutil.AppData()[0].Key
 	appinst.Key.ClusterInstKey = *cinst.Key.Virtual("")
 	err := apis.appInstApi.CreateAppInst(&appinst, streamOut)
 	require.Nil(t, err, "create AppInst")
@@ -323,7 +323,7 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 
 	// Cannot create another AppInst on it from different developer
 	appinst2 := edgeproto.AppInst{}
-	appinst2.Key.AppKey = testutil.AppData[10].Key
+	appinst2.Key.AppKey = testutil.AppData()[10].Key
 	appinst2.Key.ClusterInstKey = *cinst.Key.Virtual("")
 	appinst2.Flavor = appinst.Flavor
 	require.NotEqual(t, appinst.Key.AppKey.Organization, appinst2.Key.AppKey.Organization)
@@ -331,7 +331,7 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 	require.NotNil(t, err, "create AppInst on already reserved ClusterInst")
 	// Cannot create another AppInst on it from the same developer
 	appinst3 := edgeproto.AppInst{}
-	appinst3.Key.AppKey = testutil.AppData[1].Key
+	appinst3.Key.AppKey = testutil.AppData()[1].Key
 	appinst3.Key.ClusterInstKey = *cinst.Key.Virtual("")
 	require.Equal(t, appinst.Key.AppKey.Organization, appinst3.Key.AppKey.Organization)
 	err = apis.appInstApi.CreateAppInst(&appinst3, streamOut)
@@ -357,7 +357,7 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 
 	// Cannot create VM with autocluster
 	appinstBad := edgeproto.AppInst{}
-	appinstBad.Key.AppKey = testutil.AppData[12].Key
+	appinstBad.Key.AppKey = testutil.AppData()[12].Key
 	appinstBad.Key.ClusterInstKey.CloudletKey = testutil.CloudletData()[0].Key
 	appinstBad.Key.ClusterInstKey.ClusterKey.Name = "autoclusterBad"
 	appinstBad.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
@@ -372,7 +372,7 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 	require.Contains(t, err.Error(), "No cluster required for App deployment type vm")
 
 	// Delete App
-	for _, app := range testutil.AppData {
+	for _, app := range testutil.AppData() {
 		_, err = apis.appApi.DeleteApp(ctx, &app)
 		require.Nil(t, err, "delete App")
 	}
@@ -391,11 +391,11 @@ func checkReservedBy(t *testing.T, ctx context.Context, api *testutil.ClusterIns
 // Test that Crm Override for Delete ClusterInst overrides any failures
 // on side-car auto-apps.
 func testClusterInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *testutil.ClusterInstCommonApi, responder *DummyInfoResponder, apis *AllApis) {
-	clust := testutil.ClusterInstData[0]
+	clust := testutil.ClusterInstData()[0]
 	clust.Key.ClusterKey.Name = "crmoverride"
 
 	// autoapp
-	app := testutil.AppData[9] // auto-delete app
+	app := testutil.AppData()[9] // auto-delete app
 	require.Equal(t, edgeproto.DeleteType_AUTO_DELETE, app.DelOpt)
 	_, err := apis.appApi.CreateApp(ctx, &app)
 	require.Nil(t, err, "create App")
@@ -643,16 +643,16 @@ func validateClusterInstMetrics(t *testing.T, ctx context.Context, cloudlet *edg
 }
 
 func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllApis) {
-	obj := testutil.ClusterInstData[0]
+	obj := testutil.ClusterInstData()[0]
 	obj.NumNodes = 10
-	obj.Flavor = testutil.FlavorData[3].Key
+	obj.Flavor = testutil.FlavorData()[3].Key
 	err := apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.NotNil(t, err, "not enough resources available")
 	require.Contains(t, err.Error(), "Not enough")
 
 	// create appinst
 	testutil.InternalAppCreate(t, apis.appApi, []edgeproto.App{
-		testutil.AppData[0], testutil.AppData[12],
+		testutil.AppData()[0], testutil.AppData()[12],
 	})
 
 	// Update settings to empty master node flavor, so that we can use GPU flavor for master node
@@ -669,9 +669,9 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 	oldResUsage := getMetricCounts(t, ctx, &cloudletData[0], apis)
 
 	// create clusterInst1
-	clusterInstObj := testutil.ClusterInstData[0]
+	clusterInstObj := testutil.ClusterInstData()[0]
 	clusterInstObj.Key.ClusterKey.Name = "GPUCluster"
-	clusterInstObj.Flavor = testutil.FlavorData[4].Key
+	clusterInstObj.Flavor = testutil.FlavorData()[4].Key
 	err = apis.clusterInstApi.CreateClusterInst(&clusterInstObj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err, "create cluster inst with gpu flavor")
 	// validate clusterinst resource metrics
@@ -681,7 +681,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 	oldResUsage = getMetricCounts(t, ctx, &cloudletData[0], apis)
 
 	// create clusterInst2
-	clusterInstObj2 := testutil.ClusterInstData[0]
+	clusterInstObj2 := testutil.ClusterInstData()[0]
 	clusterInstObj2.Key.ClusterKey.Name = "NonGPUCluster1"
 	err = apis.clusterInstApi.CreateClusterInst(&clusterInstObj2, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err, "create cluster inst")
@@ -712,10 +712,10 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 	// validate clusterinst resource metrics
 	validateClusterInstMetrics(t, ctx, &cloudletData[0], &clusterInstObj2, oldResUsage, apis)
 
-	appInstObj := testutil.AppInstData[0]
+	appInstObj := testutil.AppInstData()[0]
 	appInstObj.Key.ClusterInstKey = *clusterInstObj.Key.Virtual("")
 	testutil.InternalAppInstCreate(t, apis.appInstApi, []edgeproto.AppInst{
-		appInstObj, testutil.AppInstData[11],
+		appInstObj, testutil.AppInstData()[11],
 	})
 
 	err = apis.clusterInstApi.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
@@ -766,11 +766,11 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		}
 		lbFlavor, err := apis.clusterInstApi.GetRootLBFlavorInfo(ctx, stm, &cloudlet, &cloudletInfo)
 		require.Nil(t, err, "found rootlb flavor")
-		clusterInst := testutil.ClusterInstData[0]
+		clusterInst := testutil.ClusterInstData()[0]
 		clusterInst.NumMasters = 2
 		clusterInst.NumNodes = 2
 		clusterInst.IpAccess = edgeproto.IpAccess_IP_ACCESS_DEDICATED
-		clusterInst.Flavor = testutil.FlavorData[4].Key
+		clusterInst.Flavor = testutil.FlavorData()[4].Key
 		clusterInst.NodeFlavor = "flavor.large"
 		nodeFlavorInfo, masterFlavorInfo, err := apis.clusterInstApi.getClusterFlavorInfo(ctx, stm, cloudletInfo.Flavors, &clusterInst)
 		require.Nil(t, err, "get cluster flavor info")
@@ -827,10 +827,10 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		}
 
 		// test vm app inst resource requirements
-		appInst := testutil.AppInstData[11]
-		appInst.Flavor = testutil.FlavorData[4].Key
+		appInst := testutil.AppInstData()[11]
+		appInst.Flavor = testutil.FlavorData()[4].Key
 		appInst.VmFlavor = "flavor.large"
-		vmAppResources, err := cloudcommon.GetVMAppRequirements(ctx, &testutil.AppData[12], &appInst, cloudletInfo.Flavors, lbFlavor)
+		vmAppResources, err := cloudcommon.GetVMAppRequirements(ctx, &testutil.AppData()[12], &appInst, cloudletInfo.Flavors, lbFlavor)
 		require.Nil(t, err, "get app inst vm requirements")
 		require.Equal(t, 2, len(vmAppResources), "matches number of vm resources")
 		foundVMRes := false
@@ -934,13 +934,13 @@ func TestDefaultMTCluster(t *testing.T) {
 	dummyResponder.InitDummyInfoResponder()
 	reduceInfoTimeouts(t, ctx, apis)
 
-	testutil.InternalFlavorTest(t, "cud", apis.flavorApi, testutil.FlavorData)
+	testutil.InternalFlavorTest(t, "cud", apis.flavorApi, testutil.FlavorData())
 
 	cloudlet := testutil.CloudletData()[0]
 	cloudlet.EnableDefaultServerlessCluster = true
 	cloudlet.GpuConfig = edgeproto.GPUConfig{}
 	cloudlet.ResTagMap = nil
-	cloudletInfo := testutil.CloudletInfoData[0]
+	cloudletInfo := testutil.CloudletInfoData()[0]
 	cloudletInfo.State = dme.CloudletState_CLOUDLET_STATE_INIT
 	apis.cloudletInfoApi.Update(ctx, &cloudletInfo, 0)
 
@@ -989,18 +989,18 @@ func testClusterInstGPUFlavor(t *testing.T, ctx context.Context, apis *AllApis) 
 	cloudletData := testutil.CloudletData()
 	vgpuCloudlet := cloudletData[0]
 	vgpuCloudlet.Key.Name = "VGPUCloudlet"
-	vgpuCloudlet.GpuConfig.Driver = testutil.GPUDriverData[3].Key
-	vgpuCloudlet.ResTagMap["gpu"] = &testutil.Restblkeys[0]
+	vgpuCloudlet.GpuConfig.Driver = testutil.GPUDriverData()[3].Key
+	vgpuCloudlet.ResTagMap["gpu"] = &testutil.Restblkeys()[0]
 	err := apis.cloudletApi.CreateCloudlet(&vgpuCloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
-	cloudletInfo := testutil.CloudletInfoData[0]
+	cloudletInfo := testutil.CloudletInfoData()[0]
 	cloudletInfo.Key = vgpuCloudlet.Key
 	cloudletInfo.State = dme.CloudletState_CLOUDLET_STATE_READY
 	apis.cloudletInfoApi.Update(ctx, &cloudletInfo, 0)
 
-	obj := testutil.ClusterInstData[0]
+	obj := testutil.ClusterInstData()[0]
 	obj.Key.ClusterKey.Name = "GPUTestClusterFlavor"
-	obj.Flavor = testutil.FlavorData[4].Key // GPU Passthrough flavor
+	obj.Flavor = testutil.FlavorData()[4].Key // GPU Passthrough flavor
 
 	// Deploy GPU cluster on non-GPU cloudlet, should fail
 	obj.Key.CloudletKey = cloudletData[1].Key
@@ -1014,7 +1014,7 @@ func testClusterInstGPUFlavor(t *testing.T, ctx context.Context, apis *AllApis) 
 	require.NotNil(t, err, "create cluster inst with gpu flavor on vgpu cloudlet fails")
 	require.Contains(t, err.Error(), "doesn't support GPU resource \"pci\"")
 
-	vgpuFlavor := testutil.FlavorData[4]
+	vgpuFlavor := testutil.FlavorData()[4]
 	vgpuFlavor.Key.Name = "mex-vgpu-flavor"
 	vgpuFlavor.OptResMap["gpu"] = "vmware:vgpu:1"
 	_, err = apis.flavorApi.CreateFlavor(ctx, &vgpuFlavor)
