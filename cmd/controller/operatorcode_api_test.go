@@ -41,9 +41,9 @@ func TestOperatorCodeApi(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
-	testutil.InternalOperatorCodeTest(t, "cud", apis.operatorCodeApi, testutil.OperatorCodeData)
+	testutil.InternalOperatorCodeTest(t, "cud", apis.operatorCodeApi, testutil.OperatorCodeData())
 	// create duplicate key should fail
-	code := testutil.OperatorCodeData[0]
+	code := testutil.OperatorCodeData()[0]
 	_, err := apis.operatorCodeApi.CreateOperatorCode(ctx, &code)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "already exists")

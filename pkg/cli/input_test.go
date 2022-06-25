@@ -336,10 +336,10 @@ func TestConversion(t *testing.T) {
 			"optresmap":        "StringToString",
 		},
 	}
-	for _, flavor := range testutil.FlavorData {
+	for _, flavor := range testutil.FlavorData() {
 		testConversion(t, input, &flavor, &edgeproto.Flavor{}, &edgeproto.Flavor{}, nil)
 	}
-	for _, app := range testutil.AppData {
+	for _, app := range testutil.AppData() {
 		testConversion(t, input, &app, &edgeproto.App{}, &edgeproto.App{}, nil)
 	}
 	for _, cloudlet := range testutil.CloudletData() {
@@ -347,13 +347,13 @@ func TestConversion(t *testing.T) {
 		cloudlet.ResTagMap = nil
 		testConversion(t, input, &cloudlet, &edgeproto.Cloudlet{}, &edgeproto.Cloudlet{}, nil)
 	}
-	for _, cinst := range testutil.ClusterInstData {
+	for _, cinst := range testutil.ClusterInstData() {
 		testConversion(t, input, &cinst, &edgeproto.ClusterInst{}, &edgeproto.ClusterInst{}, nil)
 	}
-	for _, appinst := range testutil.AppInstData {
+	for _, appinst := range testutil.AppInstData() {
 		testConversion(t, input, &appinst, &edgeproto.AppInst{}, &edgeproto.AppInst{}, nil)
 	}
-	for _, pp := range testutil.TrustPolicyData {
+	for _, pp := range testutil.TrustPolicyData() {
 		testConversion(t, input, &pp, &edgeproto.TrustPolicy{}, &edgeproto.TrustPolicy{}, nil)
 	}
 	settings := edgeproto.GetDefaultSettings()

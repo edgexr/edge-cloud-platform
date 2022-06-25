@@ -45,12 +45,12 @@ func TestResTagTableApi(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
-	testutil.InternalResTagTableTest(t, "cud", apis.resTagTableApi, testutil.ResTagTableData)
-	testutil.InternalResTagTableTest(t, "show", apis.resTagTableApi, testutil.ResTagTableData)
+	testutil.InternalResTagTableTest(t, "cud", apis.resTagTableApi, testutil.ResTagTableData())
+	testutil.InternalResTagTableTest(t, "show", apis.resTagTableApi, testutil.ResTagTableData())
 
 	// Non-Nominal attempt to create a table that should already exist from our cud tests
 	var tab = edgeproto.ResTagTable{
-		Key: testutil.Restblkeys[0],
+		Key: testutil.Restblkeys()[0],
 	}
 	_, err := apis.resTagTableApi.CreateResTagTable(ctx, &tab)
 	require.Equal(t, "ResTagTable key {\"name\":\"gpu\",\"organization\":\"UFGT Inc.\"} already exists", err.Error(), "create tag table EEXIST expected")

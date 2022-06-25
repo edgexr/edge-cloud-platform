@@ -39,16 +39,16 @@ func TestNetworkApi(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
-	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData)
-	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData)
-	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData)
+	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
+	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
+	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, testutil.CloudletData())
 
-	testutil.InternalNetworkTest(t, "cud", apis.networkApi, testutil.NetworkData)
+	testutil.InternalNetworkTest(t, "cud", apis.networkApi, testutil.NetworkData())
 	// error cases
-	expectCreateNetworkError(t, ctx, apis, &testutil.NetworkErrorData[0], "Invalid route destination cidr")
-	expectCreateNetworkError(t, ctx, apis, &testutil.NetworkErrorData[1], "Invalid next hop")
-	expectCreateNetworkError(t, ctx, apis, &testutil.NetworkErrorData[2], "Invalid connection type")
+	expectCreateNetworkError(t, ctx, apis, &testutil.NetworkErrorData()[0], "Invalid route destination cidr")
+	expectCreateNetworkError(t, ctx, apis, &testutil.NetworkErrorData()[1], "Invalid next hop")
+	expectCreateNetworkError(t, ctx, apis, &testutil.NetworkErrorData()[2], "Invalid connection type")
 
 }
 

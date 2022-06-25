@@ -88,23 +88,23 @@ func TestCollectProxyStats(t *testing.T) {
 	edgeproto.InitClusterInstCache(&ClusterInstCache)
 
 	//Create all clusters, apps, appInstances
-	for ii, obj := range testutil.ClusterInstData {
+	for ii, obj := range testutil.ClusterInstData() {
 		// default all to dedicated access
 		if obj.IpAccess == edgeproto.IpAccess_IP_ACCESS_UNKNOWN {
 			obj.IpAccess = edgeproto.IpAccess_IP_ACCESS_DEDICATED
 		}
-		ClusterInstCache.Update(ctx, &testutil.ClusterInstData[ii], 0)
+		ClusterInstCache.Update(ctx, &testutil.ClusterInstData()[ii], 0)
 	}
-	for ii, obj := range testutil.ClusterInstAutoData {
+	for ii, obj := range testutil.ClusterInstAutoData() {
 		// default all to dedicated access
 		if obj.IpAccess == edgeproto.IpAccess_IP_ACCESS_UNKNOWN {
 			obj.IpAccess = edgeproto.IpAccess_IP_ACCESS_DEDICATED
 		}
-		ClusterInstCache.Update(ctx, &testutil.ClusterInstAutoData[ii], 0)
+		ClusterInstCache.Update(ctx, &testutil.ClusterInstAutoData()[ii], 0)
 	}
 
-	for ii, _ := range testutil.AppData {
-		AppCache.Update(ctx, &testutil.AppData[ii], 0)
+	for ii, _ := range testutil.AppData() {
+		AppCache.Update(ctx, &testutil.AppData()[ii], 0)
 	}
 	// Now test each entry in AppInstData
 	for ii, obj := range testutil.CreatedAppInstData() {
@@ -118,7 +118,7 @@ func TestCollectProxyStats(t *testing.T) {
 		obj.MappedPorts = ports
 		obj.State = edgeproto.TrackedState_READY
 
-		// For each appInst in testutil.AppInstData the result might differ
+		// For each appInst in testutil.AppInstData() the result might differ
 		switch ii {
 		case 0, 1, 3, 4, 6, 7:
 			// tcp,udp,http ports, load-balancer access
@@ -148,7 +148,7 @@ func TestCollectProxyStats(t *testing.T) {
 			target := CollectProxyStats(ctx, &obj)
 			require.NotEmpty(t, target)
 		}
-		AppInstCache.Update(ctx, &testutil.AppInstData[ii], 0)
+		AppInstCache.Update(ctx, &testutil.AppInstData()[ii], 0)
 	}
 	// Test removal of each entry
 	for ii, obj := range testutil.CreatedAppInstData() {
@@ -162,7 +162,7 @@ func TestCollectProxyStats(t *testing.T) {
 		obj.MappedPorts = ports
 		obj.State = edgeproto.TrackedState_DELETING
 
-		// For each appInst in testutil.AppInstData the result might differ
+		// For each appInst in testutil.AppInstData() the result might differ
 		switch ii {
 		case 0, 1, 3, 4, 6, 7:
 			// tcp,udp,http ports, load-balancer access
@@ -192,11 +192,11 @@ func TestCollectProxyStats(t *testing.T) {
 			target := CollectProxyStats(ctx, &obj)
 			require.NotEmpty(t, target)
 		}
-		AppInstCache.Delete(ctx, &testutil.AppInstData[ii], 0)
+		AppInstCache.Delete(ctx, &testutil.AppInstData()[ii], 0)
 	}
 	// test an entry that has a failing platform client
 	myPlatform = &shepherd_unittest.Platform{FailPlatformClient: true}
-	appInst := testutil.AppInstData[0]
+	appInst := testutil.AppInstData()[0]
 	// set mapped ports and state
 	app := edgeproto.App{}
 	found := AppCache.Get(&appInst.Key.AppKey, &app)
@@ -218,7 +218,7 @@ func TestCollectProxyStats(t *testing.T) {
 	require.NotNil(t, ProxyMap[target].Client)
 
 	// Add a second appinst to the same cluster to test cluster net stats
-	appInst = testutil.AppInstData[7]
+	appInst = testutil.AppInstData()[7]
 	// set mapped ports and state
 	app = edgeproto.App{}
 	found = AppCache.Get(&appInst.Key.AppKey, &app)
@@ -254,16 +254,16 @@ func testProxyScraper(ctx context.Context, db *testProxyMetricsdb, t *testing.T)
 	// Verify collected stats
 	require.Equal(t, 2, len(db.appStats))
 	for k, v := range db.appStats {
-		if k.AppKey == testutil.AppInstData[7].Key.AppKey {
+		if k.AppKey == testutil.AppInstData()[7].Key.AppKey {
 			require.Equal(t, 3050, v.NetSent)
 			require.Equal(t, 400, v.NetRecv)
-		} else if k.AppKey == testutil.AppInstData[0].Key.AppKey {
+		} else if k.AppKey == testutil.AppInstData()[0].Key.AppKey {
 			require.Equal(t, 7002, v.NetSent)
 			require.Equal(t, 701, v.NetRecv)
 		}
 	}
 	require.Equal(t, 1, len(db.clusterStats))
-	stat, found := db.clusterStats[testutil.ClusterInstData[0].Key]
+	stat, found := db.clusterStats[testutil.ClusterInstData()[0].Key]
 	require.True(t, found)
 	require.Equal(t, uint64(1101), stat.NetRecv)
 	require.Equal(t, uint64(10052), stat.NetSent)

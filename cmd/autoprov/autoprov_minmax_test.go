@@ -45,7 +45,7 @@ func TestChoose(t *testing.T) {
 	// set up object data
 	app := edgeproto.App{}
 	app.Key.Name = "app"
-	policy := testutil.AutoProvPolicyData[0]
+	policy := testutil.AutoProvPolicyData()[0]
 	cloudlets := make([]edgeproto.Cloudlet, 3, 3)
 	cloudlets[0].Key.Name = "A"
 	cloudlets[1].Key.Name = "B"

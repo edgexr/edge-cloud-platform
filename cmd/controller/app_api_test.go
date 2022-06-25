@@ -47,19 +47,19 @@ func TestAppApi(t *testing.T) {
 	defer sync.Done()
 
 	// cannot create apps without developer
-	for _, obj := range testutil.AppData {
+	for _, obj := range testutil.AppData() {
 		_, err := apis.appApi.CreateApp(ctx, &obj)
 		require.NotNil(t, err, "Create app without developer")
 	}
 
 	// create support data
-	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData)
-	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData)
+	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
+	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 
-	testutil.InternalAppTest(t, "cud", apis.appApi, testutil.AppData)
+	testutil.InternalAppTest(t, "cud", apis.appApi, testutil.AppData())
 
 	// update should validate ports
-	upapp := testutil.AppData[3]
+	upapp := testutil.AppData()[3]
 	upapp.AccessPorts = "tcp:0"
 	upapp.Fields = []string{edgeproto.AppFieldAccessPorts}
 	_, err := apis.appApi.UpdateApp(ctx, &upapp)
@@ -67,38 +67,38 @@ func TestAppApi(t *testing.T) {
 	require.Contains(t, err.Error(), "App ports out of range")
 
 	// update should also validate skipHcPorts
-	upapp = testutil.AppData[3]
+	upapp = testutil.AppData()[3]
 	upapp.SkipHcPorts = "tcp:8080"
 	upapp.Fields = []string{edgeproto.AppFieldSkipHcPorts}
 	_, err = apis.appApi.UpdateApp(ctx, &upapp)
 	require.Nil(t, err, "Update app with SkipHcPort 8080")
-	obj := testutil.AppData[3]
+	obj := testutil.AppData()[3]
 	_, err = apis.appApi.DeleteApp(ctx, &obj)
 	require.Nil(t, err)
 
 	// validateSkipHcPorts
-	obj = testutil.AppData[2]
+	obj = testutil.AppData()[2]
 	obj.SkipHcPorts = "udp:11111"
 	obj.Fields = []string{edgeproto.AppFieldSkipHcPorts}
 	_, err = apis.appApi.UpdateApp(ctx, &obj)
 	require.NotNil(t, err, "update App with udp skipHcPort")
 	require.Contains(t, err.Error(), "Protocol L_PROTO_UDP unsupported for healthchecks")
 
-	obj = testutil.AppData[2]
+	obj = testutil.AppData()[2]
 	obj.SkipHcPorts = "tcp:444"
 	obj.Fields = []string{edgeproto.AppFieldSkipHcPorts}
 	_, err = apis.appApi.UpdateApp(ctx, &obj)
 	require.NotNil(t, err, "Update App with skipHcPort not in AccessPorts")
 	require.Contains(t, err.Error(), "skipHcPort 444 not found in accessPorts")
 
-	obj = testutil.AppData[8]
+	obj = testutil.AppData()[8]
 	obj.SkipHcPorts = "tcp:5000-5004"
 	obj.Fields = []string{edgeproto.AppFieldSkipHcPorts}
 	_, err = apis.appApi.UpdateApp(ctx, &obj)
 	require.NotNil(t, err, "Update App with skipHcPort range not in AccessPorts")
 	require.Contains(t, err.Error(), "skipHcPort 5003 not found in accessPorts")
 
-	obj = testutil.AppData[8]
+	obj = testutil.AppData()[8]
 	obj.SkipHcPorts = "tcp:5000-5002"
 	obj.Fields = []string{edgeproto.AppFieldSkipHcPorts}
 	_, err = apis.appApi.UpdateApp(ctx, &obj)
@@ -116,7 +116,7 @@ func TestAppApi(t *testing.T) {
 		AccessPorts:        "tcp:445,udp:1212",
 		Deployment:         "docker", // avoid trying to parse k8s manifest
 		DeploymentManifest: "some manifest",
-		DefaultFlavor:      testutil.FlavorData[2].Key,
+		DefaultFlavor:      testutil.FlavorData()[2].Key,
 	}
 
 	_, err = apis.appApi.CreateApp(ctx, &app)
@@ -163,12 +163,12 @@ func TestAppApi(t *testing.T) {
 	require.Contains(t, err.Error(), "Empty config for config kind")
 
 	// test Updating of the ports with a manifest k8s. Manifest should be cleared
-	k8sApp := testutil.AppData[2]
+	k8sApp := testutil.AppData()[2]
 	// clean up previous instance first
 	_, err = apis.appApi.DeleteApp(ctx, &k8sApp)
 	require.Nil(t, err)
 
-	k8sApp = testutil.AppData[2]
+	k8sApp = testutil.AppData()[2]
 	k8sApp.Deployment = cloudcommon.DeploymentTypeKubernetes
 	k8sApp.DeploymentManifest = testK8SManifest1
 	k8sApp.AccessPorts = "tcp:80"
@@ -182,7 +182,7 @@ func TestAppApi(t *testing.T) {
 	require.Contains(t, "kubernetes manifest which was previously specified must be provided again when changing access ports",
 		err.Error())
 
-	vmApp := testutil.AppData[3]
+	vmApp := testutil.AppData()[3]
 	vmApp.Deployment = cloudcommon.DeploymentTypeVM
 	vmApp.DeploymentManifest = testVmManifest
 	vmApp.AccessPorts = "tcp:80"
@@ -275,7 +275,7 @@ func TestAppApi(t *testing.T) {
 	_, err = apis.appApi.DeleteApp(ctx, &app)
 	require.Nil(t, err)
 
-	app = testutil.AppData[12]
+	app = testutil.AppData()[12]
 	require.Equal(t, app.Deployment, cloudcommon.DeploymentTypeVM)
 	app.Key.Name = "vm serverless"
 	app.AllowServerless = true
@@ -287,7 +287,7 @@ func TestAppApi(t *testing.T) {
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Allow serverless only supported for deployment type Kubernetes")
 
-	app = testutil.AppData[15]
+	app = testutil.AppData()[15]
 	require.Equal(t, app.Deployment, cloudcommon.DeploymentTypeDocker)
 	app.Key.Name = "docker serverless"
 	app.AllowServerless = true
@@ -300,7 +300,7 @@ func TestAppApi(t *testing.T) {
 	require.Contains(t, err.Error(), "Allow serverless only supported for deployment type Kubernetes")
 
 	// Verify that qossessionduration cannot be specified without also specifying a qossessionprofile
-	qosApp := testutil.AppData[15]
+	qosApp := testutil.AppData()[15]
 	require.Equal(t, app.Deployment, cloudcommon.DeploymentTypeDocker)
 	qosApp.Key.Name = "docker serverless"
 	qosApp.QosSessionDuration = 60
@@ -313,7 +313,7 @@ func TestAppApi(t *testing.T) {
 	require.Nil(t, err, "Create app with proper QOS Priority Sessions config")
 
 	// test updating app with a list of alertpolicies
-	alertPolicyApp := testutil.AppData[1]
+	alertPolicyApp := testutil.AppData()[1]
 	alertPolicyApp.Deployment = cloudcommon.DeploymentTypeKubernetes
 	_, err = apis.appApi.DeleteApp(ctx, &alertPolicyApp)
 	require.Nil(t, err, "Deleted old app")
@@ -325,12 +325,12 @@ func TestAppApi(t *testing.T) {
 	rev := storedApp.Revision
 	// update with alert policy - should fail, no alert policies
 	upapp = alertPolicyApp
-	upapp.AlertPolicies = []string{testutil.AlertPolicyData[0].Key.Name}
+	upapp.AlertPolicies = []string{testutil.AlertPolicyData()[0].Key.Name}
 	upapp.Fields = []string{edgeproto.AppFieldAlertPolicies}
 	_, err = apis.appApi.UpdateApp(ctx, &upapp)
 	require.NotNil(t, err, "Update with a non-existent alert policy")
 	// create alert policy
-	userAlert := testutil.AlertPolicyData[0]
+	userAlert := testutil.AlertPolicyData()[0]
 	_, err = apis.alertPolicyApi.CreateAlertPolicy(ctx, &userAlert)
 	require.Nil(t, err, "Create Alert policy")
 	// update app with existing alert policy
@@ -356,7 +356,7 @@ func TestAppApi(t *testing.T) {
 		ImageType:     edgeproto.ImageType_IMAGE_TYPE_DOCKER,
 		AccessPorts:   "tcp:8080",
 		Deployment:    "kubernetes",
-		DefaultFlavor: testutil.FlavorData[2].Key,
+		DefaultFlavor: testutil.FlavorData()[2].Key,
 	}
 
 	// test reserved ports

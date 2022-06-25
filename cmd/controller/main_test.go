@@ -132,8 +132,8 @@ func testC(t *testing.T) {
 		RecvClusterInstInfo: &crmNotify.ClusterInstInfoCache,
 	}
 	dummyResponder.InitDummyInfoResponder()
-	for ii, _ := range testutil.CloudletInfoData {
-		crmNotify.CloudletInfoCache.Update(ctx, &testutil.CloudletInfoData[ii], 0)
+	for ii, _ := range testutil.CloudletInfoData() {
+		crmNotify.CloudletInfoCache.Update(ctx, &testutil.CloudletInfoData()[ii], 0)
 	}
 	go crmClient.Start()
 	defer crmClient.Stop()
@@ -156,41 +156,41 @@ func testC(t *testing.T) {
 
 	crmClient.WaitForConnect(1)
 	dmeClient.WaitForConnect(1)
-	for ii, _ := range testutil.CloudletInfoData {
-		err := apis.cloudletInfoApi.cache.WaitForCloudletState(ctx, &testutil.CloudletInfoData[ii].Key, dme.CloudletState_CLOUDLET_STATE_READY, time.Second)
+	for ii, _ := range testutil.CloudletInfoData() {
+		err := apis.cloudletInfoApi.cache.WaitForCloudletState(ctx, &testutil.CloudletInfoData()[ii].Key, dme.CloudletState_CLOUDLET_STATE_READY, time.Second)
 		require.Nil(t, err)
 	}
 
 	cloudletData := testutil.CloudletData()
-	testutil.ClientFlavorTest(t, "cud", flavorClient, testutil.FlavorData)
-	testutil.ClientAutoProvPolicyTest(t, "cud", autoProvPolicyClient, testutil.AutoProvPolicyData)
-	testutil.ClientAutoScalePolicyTest(t, "cud", autoScalePolicyClient, testutil.AutoScalePolicyData)
-	testutil.ClientAppTest(t, "cud", appClient, testutil.AppData)
-	testutil.ClientGPUDriverTest(t, "cud", gpuDriverClient, testutil.GPUDriverData)
-	testutil.ClientResTagTableTest(t, "cud", resTagTableClient, testutil.ResTagTableData)
+	testutil.ClientFlavorTest(t, "cud", flavorClient, testutil.FlavorData())
+	testutil.ClientAutoProvPolicyTest(t, "cud", autoProvPolicyClient, testutil.AutoProvPolicyData())
+	testutil.ClientAutoScalePolicyTest(t, "cud", autoScalePolicyClient, testutil.AutoScalePolicyData())
+	testutil.ClientAppTest(t, "cud", appClient, testutil.AppData())
+	testutil.ClientGPUDriverTest(t, "cud", gpuDriverClient, testutil.GPUDriverData())
+	testutil.ClientResTagTableTest(t, "cud", resTagTableClient, testutil.ResTagTableData())
 	testutil.ClientCloudletTest(t, "cud", cloudletClient, cloudletData)
-	testutil.ClientClusterInstTest(t, "cud", clusterInstClient, testutil.ClusterInstData)
-	testutil.ClientAppInstTest(t, "cud", appInstClient, testutil.AppInstData, testutil.WithCreatedAppInstTestData(testutil.CreatedAppInstData()))
+	testutil.ClientClusterInstTest(t, "cud", clusterInstClient, testutil.ClusterInstData())
+	testutil.ClientAppInstTest(t, "cud", appInstClient, testutil.AppInstData(), testutil.WithCreatedAppInstTestData(testutil.CreatedAppInstData()))
 
-	require.Nil(t, dmeNotify.WaitForAppInsts(len(testutil.AppInstData)))
-	require.Nil(t, crmNotify.WaitForFlavors(len(testutil.FlavorData)))
+	require.Nil(t, dmeNotify.WaitForAppInsts(len(testutil.AppInstData())))
+	require.Nil(t, crmNotify.WaitForFlavors(len(testutil.FlavorData())))
 
-	require.Equal(t, len(testutil.AppInstData), len(dmeNotify.AppInstCache.Objs), "num appinsts")
-	require.Equal(t, len(testutil.FlavorData), len(crmNotify.FlavorCache.Objs), "num flavors")
-	require.Equal(t, len(testutil.ClusterInstData)+len(testutil.ClusterInstAutoData), len(crmNotify.ClusterInstInfoCache.Objs), "crm cluster inst infos")
-	require.Equal(t, len(testutil.AppInstData), len(crmNotify.AppInstInfoCache.Objs), "crm cluster inst infos")
+	require.Equal(t, len(testutil.AppInstData()), len(dmeNotify.AppInstCache.Objs), "num appinsts")
+	require.Equal(t, len(testutil.FlavorData()), len(crmNotify.FlavorCache.Objs), "num flavors")
+	require.Equal(t, len(testutil.ClusterInstData())+len(testutil.ClusterInstAutoData()), len(crmNotify.ClusterInstInfoCache.Objs), "crm cluster inst infos")
+	require.Equal(t, len(testutil.AppInstData()), len(crmNotify.AppInstInfoCache.Objs), "crm cluster inst infos")
 
 	ClientAppInstCachedFieldsTest(t, ctx, appClient, cloudletClient, appInstClient)
 
-	WaitForCloudletInfo(apis, len(testutil.CloudletInfoData))
-	require.Equal(t, len(testutil.CloudletInfoData), len(apis.cloudletInfoApi.cache.Objs))
+	WaitForCloudletInfo(apis, len(testutil.CloudletInfoData()))
+	require.Equal(t, len(testutil.CloudletInfoData()), len(apis.cloudletInfoApi.cache.Objs))
 	require.Equal(t, len(crmNotify.CloudletInfoCache.Objs), len(apis.cloudletInfoApi.cache.Objs))
 
 	// test show api for info structs
 	// XXX These checks won't work until we move notifyId out of struct
 	// and into meta data in cache (TODO)
 	if false {
-		CheckCloudletInfo(t, cloudletInfoClient, testutil.CloudletInfoData)
+		CheckCloudletInfo(t, cloudletInfoClient, testutil.CloudletInfoData())
 	}
 	testKeepAliveRecovery(t, ctx, apis)
 
@@ -198,12 +198,12 @@ func testC(t *testing.T) {
 	stream, err := cloudletClient.DeleteCloudlet(ctx, &cloudletData[0])
 	err = testutil.CloudletReadResultStream(stream, err)
 	require.NotNil(t, err)
-	_, err = appClient.DeleteApp(ctx, &testutil.AppData[0])
+	_, err = appClient.DeleteApp(ctx, &testutil.AppData()[0])
 	require.NotNil(t, err)
-	_, err = autoScalePolicyClient.DeleteAutoScalePolicy(ctx, &testutil.AutoScalePolicyData[0])
+	_, err = autoScalePolicyClient.DeleteAutoScalePolicy(ctx, &testutil.AutoScalePolicyData()[0])
 	require.NotNil(t, err)
 	// test that delete works after removing dependencies
-	for _, inst := range testutil.AppInstData {
+	for _, inst := range testutil.AppInstData() {
 		if testutil.IsAutoClusterAutoDeleteApp(&inst.Key) {
 			continue
 		}
@@ -211,7 +211,7 @@ func testC(t *testing.T) {
 		err = testutil.AppInstReadResultStream(stream, err)
 		require.Nil(t, err)
 	}
-	for _, inst := range testutil.ClusterInstData {
+	for _, inst := range testutil.ClusterInstData() {
 		stream, err := clusterInstClient.DeleteClusterInst(ctx, &inst)
 		err = testutil.ClusterInstReadResultStream(stream, err)
 		require.Nil(t, err)
@@ -219,16 +219,16 @@ func testC(t *testing.T) {
 	// cleanup unused reservable auto clusters
 	_, err = clusterInstClient.DeleteIdleReservableClusterInsts(ctx, &edgeproto.IdleReservableClusterInsts{})
 	require.Nil(t, err)
-	for _, obj := range testutil.AppData {
+	for _, obj := range testutil.AppData() {
 		_, err = appClient.DeleteApp(ctx, &obj)
 		require.Nil(t, err)
 	}
-	for _, obj := range testutil.AutoScalePolicyData {
+	for _, obj := range testutil.AutoScalePolicyData() {
 		_, err = autoScalePolicyClient.DeleteAutoScalePolicy(ctx, &obj)
 		require.Nil(t, err)
 	}
-	for ii, _ := range testutil.CloudletInfoData {
-		obj := testutil.CloudletInfoData[ii]
+	for ii, _ := range testutil.CloudletInfoData() {
+		obj := testutil.CloudletInfoData()[ii]
 		obj.State = dme.CloudletState_CLOUDLET_STATE_OFFLINE
 		crmNotify.CloudletInfoCache.Update(ctx, &obj, 0)
 	}
@@ -253,7 +253,7 @@ func TestDataGen(t *testing.T) {
 		require.Nil(t, err, "open file")
 		return
 	}
-	for _, obj := range testutil.DevData {
+	for _, obj := range testutil.DevData() {
 		val, err := json.Marshal(&obj)
 		require.Nil(t, err, "marshal %s", obj)
 		out.Write(val)
@@ -409,10 +409,10 @@ func testKeepAliveRecovery(t *testing.T, ctx context.Context, apis *AllApis) {
 	require.Equal(t, 0, len(apis.alertApi.sourceCache.Objs))
 
 	// add some alerts from crm, will go into source cache
-	for _, alert := range testutil.AlertData {
+	for _, alert := range testutil.AlertData() {
 		apis.alertApi.Update(ctx, &alert, 0)
 	}
-	numCrmAlerts := len(testutil.AlertData)
+	numCrmAlerts := len(testutil.AlertData())
 	totalAlerts := numPrevAlerts + numCrmAlerts
 	WaitForAlerts(t, apis, totalAlerts)
 	require.Equal(t, numCrmAlerts, len(apis.alertApi.sourceCache.Objs))
@@ -445,7 +445,7 @@ func testKeepAliveRecovery(t *testing.T, ctx context.Context, apis *AllApis) {
 
 	log.SpanLog(ctx, log.DebugLevelInfo, "delete alerts")
 	// delete alerts
-	for _, alert := range testutil.AlertData {
+	for _, alert := range testutil.AlertData() {
 		apis.alertApi.Delete(ctx, &alert, 0)
 	}
 	WaitForAlerts(t, apis, numPrevAlerts)
@@ -525,15 +525,15 @@ func TestControllerRace(t *testing.T) {
 // ClusterInst delete to fall in between the AppInst creates.
 func testClusterInstDeleteChecks(t *testing.T, ctx context.Context, apis1, apis2 *AllApis) {
 	var err error
-	testutil.InternalFlavorCreate(t, apis1.flavorApi, testutil.FlavorData)
-	testutil.InternalGPUDriverCreate(t, apis1.gpuDriverApi, testutil.GPUDriverData)
-	testutil.InternalResTagTableCreate(t, apis1.resTagTableApi, testutil.ResTagTableData)
+	testutil.InternalFlavorCreate(t, apis1.flavorApi, testutil.FlavorData())
+	testutil.InternalGPUDriverCreate(t, apis1.gpuDriverApi, testutil.GPUDriverData())
+	testutil.InternalResTagTableCreate(t, apis1.resTagTableApi, testutil.ResTagTableData())
 
 	numTries := 0
 	deleteDelay := 700 * time.Millisecond
 	numApps := 100
 	for ii := 0; ii < numApps; ii++ {
-		app := testutil.AppData[9]
+		app := testutil.AppData()[9]
 		app.Key.Name += fmt.Sprintf("%d", ii)
 		_, err = apis1.appApi.CreateApp(ctx, &app)
 		require.Nil(t, err)
@@ -541,13 +541,13 @@ func testClusterInstDeleteChecks(t *testing.T, ctx context.Context, apis1, apis2
 	cl := testutil.CloudletData()[0]
 	err = apis1.cloudletApi.CreateCloudlet(&cl, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
-	insertCloudletInfo(ctx, apis1, testutil.CloudletInfoData)
-	insertCloudletInfo(ctx, apis2, testutil.CloudletInfoData)
-	ci := testutil.ClusterInstData[0]
+	insertCloudletInfo(ctx, apis1, testutil.CloudletInfoData())
+	insertCloudletInfo(ctx, apis2, testutil.CloudletInfoData())
+	ci := testutil.ClusterInstData()[0]
 
 	ai := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
-			AppKey:         testutil.AppData[9].Key, // auto-delete app
+			AppKey:         testutil.AppData()[9].Key, // auto-delete app
 			ClusterInstKey: *ci.Key.Virtual(""),
 		},
 		Liveness: edgeproto.Liveness_LIVENESS_DYNAMIC,
@@ -608,17 +608,17 @@ func testClusterInstDeleteChecks(t *testing.T, ctx context.Context, apis1, apis2
 	// clean up
 	err = apis1.cloudletApi.DeleteCloudlet(&cl, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
-	evictCloudletInfo(ctx, apis1, testutil.CloudletInfoData)
-	evictCloudletInfo(ctx, apis2, testutil.CloudletInfoData)
+	evictCloudletInfo(ctx, apis1, testutil.CloudletInfoData())
+	evictCloudletInfo(ctx, apis2, testutil.CloudletInfoData())
 	for ii := 0; ii < numApps; ii++ {
-		app := testutil.AppData[9]
+		app := testutil.AppData()[9]
 		app.Key.Name += fmt.Sprintf("%d", ii)
 		_, err = apis1.appApi.DeleteApp(ctx, &app)
 		require.Nil(t, err)
 	}
-	testutil.InternalResTagTableDelete(t, apis1.resTagTableApi, testutil.ResTagTableData)
-	testutil.InternalGPUDriverDelete(t, apis1.gpuDriverApi, testutil.GPUDriverData)
-	testutil.InternalFlavorDelete(t, apis1.flavorApi, testutil.FlavorData)
+	testutil.InternalResTagTableDelete(t, apis1.resTagTableApi, testutil.ResTagTableData())
+	testutil.InternalGPUDriverDelete(t, apis1.gpuDriverApi, testutil.GPUDriverData())
+	testutil.InternalFlavorDelete(t, apis1.flavorApi, testutil.FlavorData())
 }
 
 // Test race between App create (which depends on Flavor) and Flavor delete.
@@ -630,8 +630,8 @@ func testFlavorDeleteChecks(t *testing.T, ctx context.Context, apis1, apis2 *All
 	if numTries == 0 {
 		return
 	}
-	flavor := testutil.FlavorData[0]
-	app := testutil.AppData[0]
+	flavor := testutil.FlavorData()[0]
+	app := testutil.AppData()[0]
 	app.DefaultFlavor = flavor.Key
 	numBothCreated := 0
 	numBothDeleted := 0

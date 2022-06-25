@@ -114,7 +114,7 @@ func TestAutoScaleT(t *testing.T) {
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
-	clusterInst := testutil.ClusterInstData[0]
+	clusterInst := testutil.ClusterInstData()[0]
 
 	policy := edgeproto.AutoScalePolicy{}
 	policy.Key.Organization = clusterInst.Key.Organization
@@ -123,7 +123,7 @@ func TestAutoScaleT(t *testing.T) {
 
 	clusterInst.AutoScalePolicy = policy.Key.Name
 
-	userAlerts := testutil.AlertPolicyData
+	userAlerts := testutil.AlertPolicyData()
 	settings := edgeproto.GetDefaultSettings()
 
 	configExpected := `additionalPrometheusRules:
@@ -186,7 +186,7 @@ func TestAutoScaleT(t *testing.T) {
 
 func testClusterRulesT(t *testing.T, ctx context.Context, clusterInst *edgeproto.ClusterInst, policy *edgeproto.AutoScalePolicy, settings *edgeproto.Settings, alerts []edgeproto.AlertPolicy, expectedAutoProvRules string, expectedAlertPoliciesRules string) {
 	clusterSvc := ClusterSvc{}
-	appInst := testutil.AppInstData[0]
+	appInst := testutil.AppInstData()[0]
 
 	configs, err := clusterSvc.GetAppInstConfigs(ctx, clusterInst, &appInst, policy, settings, alerts)
 	require.Nil(t, err)
