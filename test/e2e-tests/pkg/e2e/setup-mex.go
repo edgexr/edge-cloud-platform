@@ -566,9 +566,6 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 	for _, p := range Deployment.ElasticSearchs {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.Jaegers {
-		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
-	}
 	for _, p := range Deployment.RedisCaches {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
@@ -576,6 +573,14 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	// wait for databases
+	wg.Wait()
+	if failed {
+		return false
+	}
+	// wait for jaeger which depends on elastic search
+	for _, p := range Deployment.Jaegers {
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
+	}
 	wg.Wait()
 	if failed {
 		return false

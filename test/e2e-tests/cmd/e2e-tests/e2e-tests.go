@@ -59,7 +59,7 @@ func init() {
 	stopOnFail = flag.Bool("stop", false, "stop on failures")
 	verbose = flag.Bool("verbose", false, "prints full output screen")
 	notimestamp = flag.Bool("notimestamp", false, "no timestamp on outputdir, logs will be appended to by subsequent runs")
-	runextra = flag.Bool("extra", false, "run extra tests (may take much longer)")
+	runextra = flag.Bool("runextra", false, "run extra tests (may take much longer)")
 }
 
 // a list of tests, which may include another file which has tests.  Looping can
@@ -316,7 +316,7 @@ func runTests(ctx context.Context, dirName, fileName, progName string, depth int
 				runerr = e2e.RunTestSpec(ctx, &testConfig, testSpec, mods, *stopOnFail)
 			}
 			took := time.Since(startT).String()
-			if err == nil {
+			if runerr == nil {
 				fmt.Fprintf(stdout, "PASS  %s\n", took)
 				numPassed += 1
 			} else {
