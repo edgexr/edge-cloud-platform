@@ -55,7 +55,7 @@ tests:
   actions: [dmeapi-findcloudlet]
 
 - name: sleep, allow time token bucket to refill
-  actions: [sleep=2]
+  actions: [sleep=2.2]
 
 - name: FindCloudlet3 FlowRateLimit (will be successful)
   apifile: "{{datadir2}}/find_cloudlet_app1.yml"
