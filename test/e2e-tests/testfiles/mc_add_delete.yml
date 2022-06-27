@@ -38,7 +38,7 @@ tests:
 
 - name: verify admin-only fields are present
   actions: [mcapi-show]
-  apifilevars:
+  actionvars:
     objtypes: gpudrivers,cloudlets
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:

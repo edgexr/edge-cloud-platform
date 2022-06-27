@@ -857,7 +857,7 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 			errs = append(errs, "script failed")
 		}
 	case "mcapi":
-		if !RunMcAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, spec.CurUserFile, outputDir, mods, vars, sharedData, retry) {
+		if !RunMcAPI(actionSubtype, actionParam, spec.ApiFile, spec.ActionVars, spec.ApiFileVars, spec.CurUserFile, outputDir, mods, vars, sharedData, retry) {
 			log.Printf("Unable to run api for %s\n", action)
 			errs = append(errs, "MC api failed")
 		}

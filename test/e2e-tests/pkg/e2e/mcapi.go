@@ -55,7 +55,7 @@ type AllDataOut struct {
 	RegionData []edgetestutil.AllDataOut
 }
 
-func RunMcAPI(api, mcname, apiFile string, apiFileVars map[string]string, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, retry *bool) bool {
+func RunMcAPI(api, mcname, apiFile string, actionVars, apiFileVars map[string]string, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, retry *bool) bool {
 	mc := getMC(mcname)
 	uri := "https://" + mc.Addr + "/api/v1"
 	log.Printf("Using MC %s at %s", mc.Name, uri)
@@ -110,7 +110,7 @@ func RunMcAPI(api, mcname, apiFile string, apiFileVars map[string]string, curUse
 		return runRateLimit(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
 	}
 
-	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, retry)
+	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, actionVars, vars, sharedData, retry)
 }
 
 func getMC(name string) *process.MC {
@@ -382,7 +382,7 @@ func runRateLimit(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	return rc
 }
 
-func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, retry *bool) bool {
+func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string, actionVars, vars, sharedData map[string]string, retry *bool) bool {
 	log.Printf("Applying MC data via APIs for %s mods %v vars %v\n", apiFile, mods, vars)
 	// Data APIs are all run by a given user.
 	// That user is specified in the current user file.
@@ -401,7 +401,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	}
 
 	if api == "show" {
-		objTypes := getVarsObjTypes(vars)
+		objTypes := getVarsObjTypes(actionVars)
 		var showData *ormapi.AllData
 		showData = showMcData(uri, token, tag, objTypes, &rc)
 		if tag == "" {
@@ -651,7 +651,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "showfiltered":
-		objTypes := getVarsObjTypes(vars)
+		objTypes := getVarsObjTypes(actionVars)
 		dataOut, errs := showMcDataFiltered(uri, token, tag, objTypes, data, &rc)
 		if tag == "" {
 			cmpFilterAllData(dataOut)
