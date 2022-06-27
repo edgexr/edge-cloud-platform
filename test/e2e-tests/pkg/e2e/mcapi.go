@@ -55,7 +55,7 @@ type AllDataOut struct {
 	RegionData []edgetestutil.AllDataOut
 }
 
-func RunMcAPI(api, mcname, apiFile string, apiFileVars map[string]string, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, retry *bool) bool {
+func RunMcAPI(api, mcname, apiFile string, actionVars, apiFileVars map[string]string, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, retry *bool) bool {
 	mc := getMC(mcname)
 	uri := "https://" + mc.Addr + "/api/v1"
 	log.Printf("Using MC %s at %s", mc.Name, uri)
@@ -110,7 +110,7 @@ func RunMcAPI(api, mcname, apiFile string, apiFileVars map[string]string, curUse
 		return runRateLimit(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
 	}
 
-	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, retry)
+	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, actionVars, vars, sharedData, retry)
 }
 
 func getMC(name string) *process.MC {
@@ -131,7 +131,7 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 
 	rc := true
 	if api == "showusers" {
-		token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
+		token, rc := getLoginToken(curUserFile, outputDir, vars)
 		if !rc {
 			return false
 		}
@@ -150,9 +150,33 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 		log.Println("Error: Cannot run MC user APIs without API file")
 		return false
 	}
+
+	if api == "newpassusers" {
+		newpass := ormapi.NewPassword{}
+		err := ReadYamlFile(apiFile, &newpass, WithVars(vars), ValidateReplacedVars())
+		if err != nil {
+			log.Printf("Failed to unmarshal NewPassword from file %s: %s\n", apiFile, err)
+			return false
+		}
+		token, ok := getLoginToken(curUserFile, outputDir, vars)
+		if !ok {
+			return false
+		}
+		status, err := mcClient.NewPassword(uri, token, &newpass)
+		checkMcErr("NewPassword", status, err, &rc)
+		return rc
+	}
+
 	users := readUsersFiles(apiFile, vars)
 
 	switch api {
+	case "loginusers":
+		// Login users. This is really only needed for mexadmin, since
+		// other users are automatically logged in on create.
+		// otp is not supported since it's really just for mexadmin.
+		for _, user := range users {
+			doLogin(uri, outputDir, &user, "", &rc)
+		}
 	case "createusers":
 		for _, user := range users {
 			createUser := ormapi.CreateUser{
@@ -160,12 +184,24 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 			}
 			resp, status, err := mcClient.CreateUser(uri, &createUser)
 			checkMcErr("CreateUser", status, err, &rc)
-			if resp != nil {
-				sharedData[user.Name] = resp.TOTPSharedKey
+			if err == nil && resp != nil {
+				otp := ""
+				// generate TOTP so we can log in and save token
+				// Don't test invalidating otp and needing to regenerate it
+				// in e2e tests, that should be done in unit or integration.
+				if resp.TOTPSharedKey != "" {
+					otp, err = totp.GenerateCode(resp.TOTPSharedKey, time.Now())
+					if err != nil {
+						log.Printf("failed to generate otp: %v, %s\n", err, user.Name)
+						rc = false
+					}
+				}
+				// login and save token so we don't need to log in again
+				doLogin(uri, outputDir, &user, otp, &rc)
 			}
 		}
 	case "deleteusers":
-		token, ok := loginCurUser(uri, curUserFile, vars, sharedData)
+		token, ok := getLoginToken(curUserFile, outputDir, vars)
 		if !ok {
 			return false
 		}
@@ -182,7 +218,7 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 func runMcConfig(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {
 	log.Printf("Applying MC config via APIs for %s\n", apiFile)
 
-	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
+	token, rc := getLoginToken(curUserFile, outputDir, vars)
 	if !rc {
 		return false
 	}
@@ -224,7 +260,7 @@ func runMcConfig(api, uri, apiFile, curUserFile, outputDir string, mods []string
 
 func runMcRateLimit(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {
 	log.Printf("Applying MC ratelimit via APIs for %s\n", apiFile)
-	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
+	token, rc := getLoginToken(curUserFile, outputDir, vars)
 	if !rc {
 		return false
 	}
@@ -322,7 +358,7 @@ func runMcRateLimit(api, uri, apiFile, curUserFile, outputDir string, mods []str
 
 func runRateLimit(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {
 	log.Printf("Applying Controller ratelimit via APIs for %s\n", apiFile)
-	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
+	token, rc := getLoginToken(curUserFile, outputDir, vars)
 	if !rc {
 		return false
 	}
@@ -346,13 +382,13 @@ func runRateLimit(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	return rc
 }
 
-func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, retry *bool) bool {
+func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string, actionVars, vars, sharedData map[string]string, retry *bool) bool {
 	log.Printf("Applying MC data via APIs for %s mods %v vars %v\n", apiFile, mods, vars)
 	// Data APIs are all run by a given user.
 	// That user is specified in the current user file.
 	// We need to log in as that user.
 	rc := true
-	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
+	token, rc := getLoginToken(curUserFile, outputDir, vars)
 	if !rc {
 		return false
 	}
@@ -365,8 +401,9 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	}
 
 	if api == "show" {
+		objTypes := getVarsObjTypes(actionVars)
 		var showData *ormapi.AllData
-		showData = showMcData(uri, token, tag, &rc)
+		showData = showMcData(uri, token, tag, objTypes, &rc)
 		if tag == "" {
 			cmpFilterAllData(showData)
 		} else if tag == "noignore" {
@@ -614,7 +651,8 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "showfiltered":
-		dataOut, errs := showMcDataFiltered(uri, token, tag, data, &rc)
+		objTypes := getVarsObjTypes(actionVars)
+		dataOut, errs := showMcDataFiltered(uri, token, tag, objTypes, data, &rc)
 		if tag == "" {
 			cmpFilterAllData(dataOut)
 		} else if tag == "noignore" {
@@ -672,6 +710,9 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 			outMcErr(output, fmt.Sprintf("RestrictedUpdateOrg[%d]", ii), st, err)
 		}
 		errs = output.Errors
+	default:
+		log.Printf("unrecognized api command %s\n", api)
+		return false
 	}
 	if tag != "expecterr" && errs != nil {
 		// no errors expected
@@ -766,7 +807,7 @@ func readMcCustomMetricTargetsFile(file string, vars map[string]string) *ormapi.
 	return &filter
 }
 
-func loginCurUser(uri, curUserFile string, vars, sharedData map[string]string) (string, bool) {
+func getLoginToken(curUserFile, outputDir string, vars map[string]string) (string, bool) {
 	var err error
 	if curUserFile == "" {
 		log.Println("Error: Cannot run MC APIs without current user file")
@@ -777,20 +818,26 @@ func loginCurUser(uri, curUserFile string, vars, sharedData map[string]string) (
 		log.Printf("no user to run MC api\n")
 		return "", false
 	}
-	otp := ""
-	otpKey, ok := sharedData[users[0].Name]
-	if !ok {
-		log.Printf("no user OTP key found to run MC api: %v, %s\n", sharedData, users[0].Name)
-	} else {
-		otp, err = totp.GenerateCode(otpKey, time.Now())
+	fname := getTokenFile(users[0].Name, outputDir)
+	token, err := ioutil.ReadFile(fname)
+	if err != nil {
+		log.Printf("failed to read token file %s: %v\n", fname, err)
+		return "", false
+	}
+	return string(token), true
+}
+
+func doLogin(uri, outputDir string, user *ormapi.User, otp string, rc *bool) {
+	token, _, err := mcClient.DoLogin(uri, user.Name, user.Passhash, otp, orm.NoApiKeyId, orm.NoApiKey)
+	checkMcErr("DoLogin", http.StatusOK, err, rc)
+	if err == nil {
+		fname := getTokenFile(user.Name, outputDir)
+		err = ioutil.WriteFile(fname, []byte(token), 0666)
 		if err != nil {
-			log.Printf("failed to generate otp: %v, %s\n", sharedData, users[0].Name)
+			log.Printf("failed to save token to file %s: %s\n", fname, err)
+			*rc = false
 		}
 	}
-	token, _, err := mcClient.DoLogin(uri, users[0].Name, users[0].Passhash, otp, orm.NoApiKeyId, orm.NoApiKey)
-	rc := true
-	checkMcErr("DoLogin", http.StatusOK, err, &rc)
-	return token, rc
 }
 
 func outMcErr(output *AllDataOut, desc string, status int, err error) {
@@ -841,32 +888,43 @@ func hasMod(mod string, mods []string) bool {
 	return false
 }
 
-func showMcData(uri, token, tag string, rc *bool) *ormapi.AllData {
+func showMcData(uri, token, tag string, objTypes edgeproto.AllSelector, rc *bool) *ormapi.AllData {
 	showFilter := &cli.MapData{
 		Namespace: cli.StructNamespace,
 		Data:      map[string]interface{}{},
 	}
+	showData := &ormapi.AllData{}
 	ctrls, status, err := mcClient.ShowController(uri, token, showFilter)
 	checkMcErr("ShowControllers", status, err, rc)
-	orgs, status, err := mcClient.ShowOrg(uri, token, showFilter)
-	checkMcErr("ShowOrgs", status, err, rc)
-	bOrgs, status, err := mcClient.ShowBillingOrg(uri, token, showFilter)
-	checkMcErr("ShowBillingOrgs", status, err, rc)
-	roles, status, err := mcClient.ShowUserRole(uri, token, showFilter)
-	checkMcErr("ShowRoles", status, err, rc)
-	invites, status, err := mcClient.ShowCloudletPoolAccessInvitation(uri, token, showFilter)
-	checkMcErr("ShowCloudletPoolAccessInvitations", status, err, rc)
-	responses, status, err := mcClient.ShowCloudletPoolAccessResponse(uri, token, showFilter)
-	checkMcErr("ShowCloudletPoolAccessResponses", status, err, rc)
-
-	showData := &ormapi.AllData{
-		Controllers:                   ctrls,
-		Orgs:                          orgs,
-		BillingOrgs:                   bOrgs,
-		Roles:                         roles,
-		CloudletPoolAccessInvitations: invites,
-		CloudletPoolAccessResponses:   responses,
+	if objTypes.Has("controllers") {
+		showData.Controllers = ctrls
 	}
+	if objTypes.Has("orgs") {
+		orgs, status, err := mcClient.ShowOrg(uri, token, showFilter)
+		checkMcErr("ShowOrgs", status, err, rc)
+		showData.Orgs = orgs
+	}
+	if objTypes.Has("billingorgs") {
+		bOrgs, status, err := mcClient.ShowBillingOrg(uri, token, showFilter)
+		checkMcErr("ShowBillingOrgs", status, err, rc)
+		showData.BillingOrgs = bOrgs
+	}
+	if objTypes.Has("roles") {
+		roles, status, err := mcClient.ShowUserRole(uri, token, showFilter)
+		checkMcErr("ShowRoles", status, err, rc)
+		showData.Roles = roles
+	}
+	if objTypes.Has("cloudletpoolaccessinvitations") {
+		invites, status, err := mcClient.ShowCloudletPoolAccessInvitation(uri, token, showFilter)
+		checkMcErr("ShowCloudletPoolAccessInvitations", status, err, rc)
+		showData.CloudletPoolAccessInvitations = invites
+	}
+	if objTypes.Has("cloudletpoolaccessresponses") {
+		responses, status, err := mcClient.ShowCloudletPoolAccessResponse(uri, token, showFilter)
+		checkMcErr("ShowCloudletPoolAccessResponses", status, err, rc)
+		showData.CloudletPoolAccessResponses = responses
+	}
+
 	for _, ctrl := range ctrls {
 		client := testutil.TestClient{
 			Region:          ctrl.Region,
@@ -878,7 +936,7 @@ func showMcData(uri, token, tag string, rc *bool) *ormapi.AllData {
 		filter := &edgeproto.AllData{}
 		appdata := &edgeproto.AllData{}
 		run := edgetestutil.NewRun(&client, context.Background(), "show", rc)
-		edgetestutil.RunAllDataShowApis(run, filter, appdata)
+		edgetestutil.RunAllDataShowApis(run, filter, objTypes, appdata)
 		run.CheckErrs(fmt.Sprintf("show region %s", ctrl.Region), tag)
 		rd := ormapi.RegionData{
 			Region:  ctrl.Region,
@@ -889,7 +947,7 @@ func showMcData(uri, token, tag string, rc *bool) *ormapi.AllData {
 	return showData
 }
 
-func showMcDataFiltered(uri, token, tag string, data *ormapi.AllData, rc *bool) (*ormapi.AllData, []edgetestutil.Err) {
+func showMcDataFiltered(uri, token, tag string, objTypes edgeproto.AllSelector, data *ormapi.AllData, rc *bool) (*ormapi.AllData, []edgetestutil.Err) {
 	dataOut := &ormapi.AllData{}
 
 	// currently only controller APIs support filtering
@@ -908,7 +966,7 @@ func showMcDataFiltered(uri, token, tag string, data *ormapi.AllData, rc *bool) 
 			IgnoreForbidden: true,
 		}
 		run := edgetestutil.NewRun(&client, context.Background(), "showfiltered", rc)
-		edgetestutil.RunAllDataShowApis(run, filter, &rd.AppData)
+		edgetestutil.RunAllDataShowApis(run, filter, objTypes, &rd.AppData)
 		if tag == "expecterr" {
 			return nil, run.Errs
 		} else {
@@ -1337,7 +1395,7 @@ type runCommandMCData struct {
 }
 
 func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {
-	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
+	token, rc := getLoginToken(curUserFile, outputDir, vars)
 	if !rc {
 		return false
 	}
@@ -1395,36 +1453,7 @@ func runMcEvents(api, uri, apiFile, curUserFile, outputDir string, mods []string
 
 	rc := true
 	if api == "eventssetup" {
-		// because the login command is recorded in the audit logs,
-		// having to log in to switch between admin and user2 ends
-		// up affecting the audit logs that we're trying to validate.
-		// Instead, we log in during setup and record the tokens to
-		// be used later.
-		users := readUsersFiles(apiFile, vars)
-		for _, user := range users {
-			var err error
-			otp := ""
-			otpKey, ok := sharedData[user.Name]
-			if !ok {
-				log.Printf("no user OTP key found to run MC api: %v, %s\n", sharedData, user.Name)
-			} else {
-				otp, err = totp.GenerateCode(otpKey, time.Now())
-				if err != nil {
-					log.Printf("failed to generate otp: %v, %s\n", sharedData, user.Name)
-				}
-			}
-			token, _, err := mcClient.DoLogin(uri, user.Name, user.Passhash, otp, orm.NoApiKeyId, orm.NoApiKey)
-			checkMcErr("DoLogin", http.StatusOK, err, &rc)
-			if err == nil && rc {
-				fname := getTokenFile(user.Name, outputDir)
-				err = ioutil.WriteFile(fname, []byte(token), 0644)
-				if err != nil {
-					log.Printf("Write token file %s failed, %v\n", fname, err)
-					rc = false
-				}
-			}
-		}
-		// also set the current time for events and event terms queries
+		// Set the current time for events and event terms queries
 		// so previous iterations of tests don't affect the search.
 		// need a tiny bit of time to not capture events from previous
 		// command
@@ -1759,7 +1788,7 @@ func parseOptimizedMetrics(allMetrics *ormapi.AllMetrics) *[]OptimizedMetricsCom
 
 func runMcShowNode(uri, curUserFile, outputDir string, vars, sharedData map[string]string) bool {
 	rc := true
-	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
+	token, rc := getLoginToken(curUserFile, outputDir, vars)
 	if !rc {
 		return false
 	}
@@ -1776,7 +1805,7 @@ func runMcShowNode(uri, curUserFile, outputDir string, vars, sharedData map[stri
 
 func runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, apiFunc func(string, string, *ormapi.RegionAppAlertPolicy) (*edgeproto.Result, int, error)) bool {
 	rc := true
-	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
+	token, rc := getLoginToken(curUserFile, outputDir, vars)
 	if !rc {
 		return false
 	}
@@ -1813,7 +1842,7 @@ func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 	}
 
 	rc := true
-	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
+	token, rc := getLoginToken(curUserFile, outputDir, vars)
 	if !rc {
 		return false
 	}
@@ -1871,7 +1900,7 @@ func showMcAlerts(uri, apiFile, curUserFile, outputDir string, vars, sharedData 
 	}
 	log.Printf("Running MC showalert APIs for %s\n", apiFile)
 
-	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
+	token, rc := getLoginToken(curUserFile, outputDir, vars)
 	if !rc {
 		return false
 	}
@@ -1896,7 +1925,7 @@ func showMcAlertReceivers(uri, curUserFile, outputDir string, vars, sharedData m
 
 	log.Printf("Running MC showalert receivers APIs\n")
 
-	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
+	token, rc := getLoginToken(curUserFile, outputDir, vars)
 	if !rc {
 		return false
 	}
@@ -1942,4 +1971,14 @@ func streamMcData(uri, token, tag string, data *ormapi.AllData, rc *bool) *AllSt
 		dataOut.RegionData = append(dataOut.RegionData, rd)
 	}
 	return dataOut
+}
+
+func getVarsObjTypes(vars map[string]string) edgeproto.AllSelector {
+	m := edgeproto.AllSelector{}
+	if list, ok := vars["objtypes"]; ok {
+		for _, val := range strings.Split(list, ",") {
+			m.Select(strings.TrimSpace(val))
+		}
+	}
+	return m
 }

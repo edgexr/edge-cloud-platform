@@ -20,6 +20,7 @@ type TestSpec struct {
 	ApiFile          string            `json:"apifile" yaml:"apifile"`
 	ApiFileVars      map[string]string `json:"apifilevars" yaml:"apifilevars"`
 	Actions          []string          `json:"actions" yaml:"actions"`
+	ActionVars       map[string]string `json:"actionvars" yaml:"actionvars"`
 	RetryCount       int               `json:"retrycount" yaml:"retrycount"`
 	RetryIntervalSec float64           `json:"retryintervalsec" yaml:"retryintervalsec"`
 	CurUserFile      string            `json:"curuserfile" yaml:"curuserfile"`

@@ -1,0 +1,9 @@
+cloudletpoolaccessinvitations:
+- org: user3org
+  region: local
+  cloudletpool: enterprise-pool
+  cloudletpoolorg: enterprise
+- org: user3org
+  region: locala
+  cloudletpool: enterprise-pool
+  cloudletpoolorg: enterprise

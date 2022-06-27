@@ -36,9 +36,6 @@ orgs:
   parent: user3org
 roles:
 - org: user3org
-  username: mexadmin
-  role: DeveloperManager
-- org: user3org
   username: user3
   role: DeveloperManager
 cloudletpoolaccessinvitations:

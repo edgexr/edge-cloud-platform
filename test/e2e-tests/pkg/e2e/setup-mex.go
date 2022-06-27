@@ -857,7 +857,7 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 			errs = append(errs, "script failed")
 		}
 	case "mcapi":
-		if !RunMcAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, spec.CurUserFile, outputDir, mods, vars, sharedData, retry) {
+		if !RunMcAPI(actionSubtype, actionParam, spec.ApiFile, spec.ActionVars, spec.ApiFileVars, spec.CurUserFile, outputDir, mods, vars, sharedData, retry) {
 			log.Printf("Unable to run api for %s\n", action)
 			errs = append(errs, "MC api failed")
 		}
@@ -1040,15 +1040,15 @@ func RunTestSpec(ctx context.Context, config *TestConfig, spec *TestSpec, mods [
 			PrintStepBanner("name: " + spec.Name)
 			PrintStepBanner("running action: " + a + retry.Tries())
 			actionretry := false
-			errs := RunAction(ctx, a, outputDir, config, spec, mods, config.Vars, sharedData, &actionretry)
+			runerrs := RunAction(ctx, a, outputDir, config, spec, mods, config.Vars, sharedData, &actionretry)
 			ranTest = true
-			if len(errs) > 0 {
+			if len(runerrs) > 0 {
 				if actionretry {
 					// potential errs that may be ignored after retry
-					tryErrs = append(tryErrs, errs...)
+					tryErrs = append(tryErrs, runerrs...)
 				} else {
 					// no retry for action, so register errs as final errs
-					errs = append(errs, errs...)
+					errs = append(errs, runerrs...)
 					if stopOnFail {
 						break
 					}

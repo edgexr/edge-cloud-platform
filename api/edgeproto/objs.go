@@ -1428,3 +1428,19 @@ func (s *TrustPolicyException) FixupSecurityRules(ctx context.Context) {
 func (s *App) FixupSecurityRules(ctx context.Context) {
 	fixupSecurityRules(ctx, s.RequiredOutboundConnections)
 }
+
+// AllSelector registers selected strings, or all if none specified.
+type AllSelector map[string]struct{}
+
+func (s AllSelector) Select(str string) {
+	s[str] = struct{}{}
+}
+
+func (s AllSelector) Has(str string) bool {
+	if len(s) == 0 {
+		// none selected, select all
+		return true
+	}
+	_, found := s[str]
+	return found
+}

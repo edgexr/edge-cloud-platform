@@ -44,8 +44,10 @@ func RunRateLimitSettingsDataReverseApis(run *Run, in *edgeproto.RateLimitSettin
 	out.Errors = run.Errs
 }
 
-func RunRateLimitSettingsDataShowApis(run *Run, in *edgeproto.RateLimitSettingsData, out *edgeproto.RateLimitSettingsData) {
-	run.RateLimitSettingsApi(&in.Settings, nil, &out.Settings)
+func RunRateLimitSettingsDataShowApis(run *Run, in *edgeproto.RateLimitSettingsData, selector edgeproto.AllSelector, out *edgeproto.RateLimitSettingsData) {
+	if selector.Has("settings") {
+		run.RateLimitSettingsApi(&in.Settings, nil, &out.Settings)
+	}
 }
 
 func (r *Run) RateLimitSettingsApi_FlowRateLimitSettings(data *[]edgeproto.FlowRateLimitSettings, dataMap interface{}, dataOut interface{}) {

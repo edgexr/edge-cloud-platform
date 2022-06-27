@@ -14,67 +14,36 @@
 
 description: adds and deletes from mc
 tests:
-- name: verify no users to start
-  actions: [mcapi-showusers]
-  curuserfile: '{{datadir2}}/mc_admin.yml'
-  compareyaml:
-    yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mc_default_user.yml'
-    filetype: mcusers
-
-- name: verify no provisioned data to start
-  actions: [mcapi-show]
-  curuserfile: '{{datadir2}}/mc_admin.yml'
-  compareyaml:
-    yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
-    filetype: mcdata
-
-- name: verify default config to start
-  actions: [mcapi-configshow]
-  curuserfile: '{{datadir2}}/mc_admin.yml'
-  compareyaml:
-    yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcconfig_default.yml'
-    filetype: mcconfig
 
 - includefile: mc_setup_users.yml
 
-- name: admin creates controllers, flavors; verify it is there
-  actions: [mcapi-create, mcapi-show]
-  apifile: '{{datadir2}}/mc_admin_data.yml'
-  curuserfile: '{{datadir2}}/mc_admin.yml'
-  compareyaml:
-    yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mc_admin_data_show.yml'
-    filetype: mcdata
-
-- name: user1 creates operators
+- name: enterprise user3 creates org
   actions: [mcapi-create]
-  apifile: '{{datadir2}}/mc_user1_org_data.yml'
-  curuserfile: '{{datadir2}}/mc_user1.yml'
+  apifile: '{{datadir2}}/mc_user3_org.yml'
+  curuserfile: '{{datadir2}}/mc_user3.yml'
 
-- name: admin marks operator orgs an non-edgebox only
-  actions: [mcapi-restrictedupdateorg]
-  apifile: '{{datadir2}}/mc_user1_org_update.yml'
-  curuserfile: '{{datadir2}}/mc_admin.yml'
-
-- name: user1 creates cloudlets; verify it is there
-  actions: [mcapi-create, mcapi-show]
-  apifile: '{{datadir2}}/mc_user1_cloudlet_data.yml'
+- name: user1 creates operators and cloudlets
+  actions: [mcapi-create,mcapi-show]
+  apifile: '{{datadir2}}/mc_user1_data.yml'
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
     yaml2: '{{datadir2}}/mc_user1_data_show.yml'
     filetype: mcdata
 
+- name: user1 invites user3org to private enterprise cloudlets
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_user1_invite_user3.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
 - name: verify admin-only fields are present
   actions: [mcapi-show]
-  apifile: '{{datadir2}}/mc_user1_cloudlet_data.yml'
+  actionvars:
+    objtypes: gpudrivers,cloudlets
   curuserfile: '{{datadir2}}/mc_admin.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mc_admin_all_data_show.yml'
+    yaml2: '{{datadir2}}/mc_admin_cloudlet_show.yml'
     filetype: mcdata
 
 - name: verify that cloudlet Prometheus rules and targets are empty
@@ -122,6 +91,7 @@ tests:
     filetype: mcapimetrics
 
 - includefile: stream_edgeevent.yml
+- includefile: verify_loc.yml
 
 - name: admin creates reservable clusterinst on user1 cloudlet
   actions: [mcapi-create]
@@ -309,22 +279,22 @@ tests:
     yaml2: '{{datadir2}}/prom_check_empty_exp'
     filetype: raw
 
-- name: user1 deletes cloudlets
-  actions: [mcapi-delete, mcapi-show]
-  apifile: '{{datadir2}}/mc_user1_cloudlet_data.yml'
+- name: user1 delete user3org invites
+  actions: [mcapi-delete]
+  apifile: '{{datadir2}}/mc_user1_invite_user3.yml'
   curuserfile: '{{datadir2}}/mc_user1.yml'
 
-- name: user1 deletes operator; verify it is empty
-  actions: [mcapi-delete, mcapi-show]
-  apifile: '{{datadir2}}/mc_user1_org_data.yml'
+- name: user1 deletes operators and cloudlets
+  actions: [mcapi-delete,mcapi-show]
+  apifile: '{{datadir2}}/mc_user1_data.yml'
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mc_flavors.yml'
+    yaml2: '{{datadir2}}/mc_userdata_empty.yml'
     filetype: mcdata
 
 - name: user2 recreates AcmeAppCo, verify it is there
-  actions: [mcapi-create, mcapi-show]
+  actions: [mcapi-create,mcapi-show]
   apifile: '{{datadir2}}/mc_user2_org.yml'
   curuserfile: '{{datadir2}}/mc_user2.yml'
   compareyaml:
@@ -342,9 +312,22 @@ tests:
     filetype: mcevents
 
 - name: user2 delete AcmeAppCo org
-  actions: [mcapi-delete]
+  actions: [mcapi-delete,mcapi-show]
   apifile: '{{datadir2}}/mc_user2_org.yml'
   curuserfile: '{{datadir2}}/mc_user2.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_userdata_empty.yml'
+    filetype: mcdata
+
+- name: enterprise user3 deletes org
+  actions: [mcapi-delete,mcapi-show]
+  apifile: '{{datadir2}}/mc_user3_org.yml'
+  curuserfile: '{{datadir2}}/mc_user3.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_userdata_empty.yml'
+    filetype: mcdata
 
 - name: admin can see deleted AcmeAppCo events
   actions: [mcapi-eventsshow]
@@ -354,14 +337,5 @@ tests:
     yaml1: '{{outputdir}}/show-commands.yml'
     yaml2: '{{datadir2}}/mc_admin_orgeventsshow_exp.yml'
     filetype: mcevents
-
-- name: admin delete controllers, flavors, verify it is empty
-  actions: [mcapi-delete, mcapi-show]
-  apifile: '{{datadir2}}/mc_admin_data.yml'
-  curuserfile: '{{datadir2}}/mc_admin.yml'
-  compareyaml:
-    yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/mcappdata_empty.yml'
-    filetype: mcdata
 
 - includefile: mc_cleanup_users.yml
