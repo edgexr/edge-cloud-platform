@@ -12,13 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-flavors:
-- key:
-    name: x1.small
-  ram: 2048
-  vcpus: 2
-  disk: 2
-
 clusterinsts:
 - key:
     clusterkey:

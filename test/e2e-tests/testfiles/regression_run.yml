@@ -15,6 +15,7 @@
 tests:
   - includefile: {{edge-cloud-testfiles}}/stop_cleanup.yml
   - includefile: deploy_start.yml
+  - includefile: admin_setup_platform.yml
   - includefile: mc_add_delete.yml
   - includefile: mc_add_delete.yml
     extratest: true
@@ -25,10 +26,8 @@ tests:
   - includefile: mc_add_delete.yml
     mods: [cli]
     extratest: true
-  - includefile: verify_loc.yml
-  - includefile: verify_loc.yml
-    extratest: true
   - includefile: fetchlogs.yml
   - includefile: federationtest.yml
   - includefile: qos_priority_sessions.yml
+  - includefile: admin_cleanup_platform.yml
   - includefile: {{edge-cloud-testfiles}}/stop_cleanup.yml

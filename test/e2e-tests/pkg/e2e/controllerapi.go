@@ -129,7 +129,7 @@ func RunControllerAPI(api string, ctrlname string, apiFile string, apiFileVars m
 		filter := &edgeproto.AllData{}
 		output := &edgeproto.AllData{}
 		run.Mode = "show"
-		testutil.RunAllDataShowApis(run, filter, output)
+		testutil.RunAllDataShowApis(run, filter, edgeproto.AllSelector{}, output)
 		output.Sort()
 		if api == "shownohide" {
 			// preserve most of the nocmp fields
@@ -149,7 +149,7 @@ func RunControllerAPI(api string, ctrlname string, apiFile string, apiFileVars m
 		filter := &edgeproto.NodeData{}
 		output := &edgeproto.NodeData{}
 		run.Mode = "show"
-		testutil.RunNodeDataShowApis(run, filter, output)
+		testutil.RunNodeDataShowApis(run, filter, edgeproto.AllSelector{}, output)
 		FilterNodeData(output)
 		PrintToYamlFile("show-commands.yml", outputDir, &output, true)
 	} else if strings.HasPrefix(api, "debug") {
@@ -214,7 +214,7 @@ func RunControllerAPI(api string, ctrlname string, apiFile string, apiFileVars m
 			PrintToYamlFile("show-commands.yml", outputDir, output, true)
 		case "showfiltered":
 			output := &edgeproto.AllData{}
-			testutil.RunAllDataShowApis(run, &appData, output)
+			testutil.RunAllDataShowApis(run, &appData, edgeproto.AllSelector{}, output)
 			output.Sort()
 			output.ClearTagged(clearTags)
 			PrintToYamlFile("show-commands.yml", outputDir, output, true)
