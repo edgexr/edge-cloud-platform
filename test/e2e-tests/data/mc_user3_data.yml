@@ -23,7 +23,6 @@ cloudletpoolaccessresponses:
   cloudletpool: enterprise-pool
   cloudletpoolorg: enterprise
   decision: accept
-
 regiondata:
 - region: local
   appdata:

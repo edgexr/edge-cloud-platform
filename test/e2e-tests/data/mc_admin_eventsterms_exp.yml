@@ -18,7 +18,6 @@
     - key: /api/v1/auth/cloudletpoolaccessinvitation/create
     - key: /api/v1/auth/cloudletpoolaccessresponse/create
     - key: /api/v1/auth/config/update
-    - key: /api/v1/auth/controller/create
     - key: /api/v1/auth/ctrl/CreateApp
     - key: /api/v1/auth/ctrl/CreateAppInst
     - key: /api/v1/auth/ctrl/CreateAutoProvPolicy
@@ -26,7 +25,6 @@
     - key: /api/v1/auth/ctrl/CreateCloudlet
     - key: /api/v1/auth/ctrl/CreateCloudletPool
     - key: /api/v1/auth/ctrl/CreateClusterInst
-    - key: /api/v1/auth/ctrl/CreateFlavor
     - key: /api/v1/auth/ctrl/CreateGPUDriver
     - key: /api/v1/auth/ctrl/CreateOperatorCode
     - key: /api/v1/auth/ctrl/DeleteApp
@@ -47,9 +45,6 @@
     - key: /api/v1/auth/ratelimitsettingsmc/deleteflow
     - key: /api/v1/auth/ratelimitsettingsmc/deletemaxreqs
     - key: /api/v1/auth/ratelimitsettingsmc/updateflow
-    - key: /api/v1/auth/restricted/org/update
-    - key: /api/v1/auth/role/adduser
-    - key: /api/v1/login
     - key: AutoCluster create
     - key: AutoProv create AppInst
     - key: AutoProv delete AppInst
@@ -94,7 +89,6 @@
     - key: duration
     - key: email
     - key: federatedorg
-    - key: flavor
     - key: gpudriver
     - key: gpudriverorg
     - key: hostname

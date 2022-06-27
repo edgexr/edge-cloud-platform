@@ -1040,15 +1040,15 @@ func RunTestSpec(ctx context.Context, config *TestConfig, spec *TestSpec, mods [
 			PrintStepBanner("name: " + spec.Name)
 			PrintStepBanner("running action: " + a + retry.Tries())
 			actionretry := false
-			errs := RunAction(ctx, a, outputDir, config, spec, mods, config.Vars, sharedData, &actionretry)
+			runerrs := RunAction(ctx, a, outputDir, config, spec, mods, config.Vars, sharedData, &actionretry)
 			ranTest = true
-			if len(errs) > 0 {
+			if len(runerrs) > 0 {
 				if actionretry {
 					// potential errs that may be ignored after retry
-					tryErrs = append(tryErrs, errs...)
+					tryErrs = append(tryErrs, runerrs...)
 				} else {
 					// no retry for action, so register errs as final errs
-					errs = append(errs, errs...)
+					errs = append(errs, runerrs...)
 					if stopOnFail {
 						break
 					}

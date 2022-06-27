@@ -19,35 +19,27 @@ description: Deploys and starts a system. Does not stop or cleanup
 tests:
   - includefile: {{edge-cloud-testfiles}}/stop_cleanup.yml
   - includefile: deploy_start.yml
+  - includefile: admin_setup_platform.yml
   - includefile: mc_setup_users.yml
 
-  - name: admin creates controllers, flavors, sets up enterprise; verify it is there
-    actions: [mcapi-create, mcapi-show]
-    apifile: '{{datadir2}}/mc_admin_data.yml'
-    curuserfile: '{{datadir2}}/mc_admin.yml'
-    compareyaml:
-      yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/mc_admin_data_show.yml'
-      filetype: mcdata
-
-  - name: user1 creates operators
+  - name: enterprise user3 creates org
     actions: [mcapi-create]
-    apifile: '{{datadir2}}/mc_user1_org_data.yml'
-    curuserfile: '{{datadir2}}/mc_user1.yml'
+    apifile: '{{datadir2}}/mc_user3_org.yml'
+    curuserfile: '{{datadir2}}/mc_user3.yml'
 
-  - name: admin marks operator orgs an non-edgebox only
-    actions: [mcapi-restrictedupdateorg]
-    apifile: '{{datadir2}}/mc_user1_org_update.yml'
-    curuserfile: '{{datadir2}}/mc_admin.yml'
-
-  - name: user1 creates cloudlets; verify it is there
-    actions: [mcapi-create, mcapi-show]
-    apifile: '{{datadir2}}/mc_user1_cloudlet_data.yml'
+  - name: user1 creates operators and cloudlets
+    actions: [mcapi-create,mcapi-show]
+    apifile: '{{datadir2}}/mc_user1_data.yml'
     curuserfile: '{{datadir2}}/mc_user1.yml'
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
       yaml2: '{{datadir2}}/mc_user1_data_show.yml'
       filetype: mcdata
+
+  - name: user1 invites user3org to private enterprise cloudlets
+    actions: [mcapi-create]
+    apifile: '{{datadir2}}/mc_user1_invite_user3.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'  
 
   - name: user2 creates apps; verify it is there
     actions: [mcapi-create, mcapi-show]

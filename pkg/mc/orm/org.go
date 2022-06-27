@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -87,7 +88,9 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 		role = RoleDeveloperManager
 	} else if org.Type == OrgTypeOperator {
 		role = RoleOperatorManager
-		org.EdgeboxOnly = true
+		if os.Getenv("E2ETEST_SKIPEDGEBOXONLY") == "" {
+			org.EdgeboxOnly = true
+		}
 	} else {
 		return fmt.Errorf("Organization type must be %s, or %s", OrgTypeDeveloper, OrgTypeOperator)
 	}

@@ -1219,9 +1219,11 @@ func (t *TestCud) genE2edata(desc *generator.Descriptor) {
 	t.P("}")
 	t.P()
 
-	t.P("func Run", message.Name, "ShowApis(run *Run, in *", pkg, message.Name, ", out *", pkg, message.Name, ") {")
+	t.P("func Run", message.Name, "ShowApis(run *Run, in *", pkg, message.Name, ", selector ", pkg, "AllSelector, out *", pkg, message.Name, ") {")
 	for _, finfo := range showFieldInfos {
+		t.P("if selector.Has(\"", strings.ToLower(finfo.fieldName), "\") {")
 		t.P("run.", finfo.group.ApiName(), "(", finfo.ref, "in.", finfo.fieldName, ", nil, &out.", finfo.fieldName, ")")
+		t.P("}")
 	}
 	t.P("}")
 	t.P()

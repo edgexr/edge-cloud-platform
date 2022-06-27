@@ -147,27 +147,71 @@ func RunAllDataReverseApis(run *Run, in *edgeproto.AllData, inMap map[string]int
 	out.Errors = run.Errs
 }
 
-func RunAllDataShowApis(run *Run, in *edgeproto.AllData, out *edgeproto.AllData) {
-	run.FlavorApi(&in.Flavors, nil, &out.Flavors)
-	run.SettingsApi(in.Settings, nil, &out.Settings)
-	run.OperatorCodeApi(&in.OperatorCodes, nil, &out.OperatorCodes)
-	run.ResTagTableApi(&in.ResTagTables, nil, &out.ResTagTables)
-	run.TrustPolicyApi(&in.TrustPolicies, nil, &out.TrustPolicies)
-	run.GPUDriverApi(&in.GpuDrivers, nil, &out.GpuDrivers)
-	run.CloudletApi(&in.Cloudlets, nil, &out.Cloudlets)
-	run.CloudletInfoApi(&in.CloudletInfos, nil, &out.CloudletInfos)
-	run.CloudletPoolApi(&in.CloudletPools, nil, &out.CloudletPools)
-	run.NetworkApi(&in.Networks, nil, &out.Networks)
-	run.AutoProvPolicyApi(&in.AutoProvPolicies, nil, &out.AutoProvPolicies)
-	run.AutoScalePolicyApi(&in.AutoScalePolicies, nil, &out.AutoScalePolicies)
-	run.ClusterInstApi(&in.ClusterInsts, nil, &out.ClusterInsts)
-	run.AppApi(&in.Apps, nil, &out.Apps)
-	run.AppInstApi(&in.AppInstances, nil, &out.AppInstances)
-	run.AppInstRefsApi(&in.AppInstRefs, nil, &out.AppInstRefs)
-	run.ClusterRefsApi(&in.ClusterRefs, nil, &out.ClusterRefs)
-	run.VMPoolApi(&in.VmPools, nil, &out.VmPools)
-	run.AlertPolicyApi(&in.AlertPolicies, nil, &out.AlertPolicies)
-	run.RateLimitSettingsApi_FlowRateLimitSettings(&in.FlowRateLimitSettings, nil, &out.FlowRateLimitSettings)
-	run.RateLimitSettingsApi_MaxReqsRateLimitSettings(&in.MaxReqsRateLimitSettings, nil, &out.MaxReqsRateLimitSettings)
-	run.TrustPolicyExceptionApi(&in.TrustPolicyExceptions, nil, &out.TrustPolicyExceptions)
+func RunAllDataShowApis(run *Run, in *edgeproto.AllData, selector edgeproto.AllSelector, out *edgeproto.AllData) {
+	if selector.Has("flavors") {
+		run.FlavorApi(&in.Flavors, nil, &out.Flavors)
+	}
+	if selector.Has("settings") {
+		run.SettingsApi(in.Settings, nil, &out.Settings)
+	}
+	if selector.Has("operatorcodes") {
+		run.OperatorCodeApi(&in.OperatorCodes, nil, &out.OperatorCodes)
+	}
+	if selector.Has("restagtables") {
+		run.ResTagTableApi(&in.ResTagTables, nil, &out.ResTagTables)
+	}
+	if selector.Has("trustpolicies") {
+		run.TrustPolicyApi(&in.TrustPolicies, nil, &out.TrustPolicies)
+	}
+	if selector.Has("gpudrivers") {
+		run.GPUDriverApi(&in.GpuDrivers, nil, &out.GpuDrivers)
+	}
+	if selector.Has("cloudlets") {
+		run.CloudletApi(&in.Cloudlets, nil, &out.Cloudlets)
+	}
+	if selector.Has("cloudletinfos") {
+		run.CloudletInfoApi(&in.CloudletInfos, nil, &out.CloudletInfos)
+	}
+	if selector.Has("cloudletpools") {
+		run.CloudletPoolApi(&in.CloudletPools, nil, &out.CloudletPools)
+	}
+	if selector.Has("networks") {
+		run.NetworkApi(&in.Networks, nil, &out.Networks)
+	}
+	if selector.Has("autoprovpolicies") {
+		run.AutoProvPolicyApi(&in.AutoProvPolicies, nil, &out.AutoProvPolicies)
+	}
+	if selector.Has("autoscalepolicies") {
+		run.AutoScalePolicyApi(&in.AutoScalePolicies, nil, &out.AutoScalePolicies)
+	}
+	if selector.Has("clusterinsts") {
+		run.ClusterInstApi(&in.ClusterInsts, nil, &out.ClusterInsts)
+	}
+	if selector.Has("apps") {
+		run.AppApi(&in.Apps, nil, &out.Apps)
+	}
+	if selector.Has("appinstances") {
+		run.AppInstApi(&in.AppInstances, nil, &out.AppInstances)
+	}
+	if selector.Has("appinstrefs") {
+		run.AppInstRefsApi(&in.AppInstRefs, nil, &out.AppInstRefs)
+	}
+	if selector.Has("clusterrefs") {
+		run.ClusterRefsApi(&in.ClusterRefs, nil, &out.ClusterRefs)
+	}
+	if selector.Has("vmpools") {
+		run.VMPoolApi(&in.VmPools, nil, &out.VmPools)
+	}
+	if selector.Has("alertpolicies") {
+		run.AlertPolicyApi(&in.AlertPolicies, nil, &out.AlertPolicies)
+	}
+	if selector.Has("flowratelimitsettings") {
+		run.RateLimitSettingsApi_FlowRateLimitSettings(&in.FlowRateLimitSettings, nil, &out.FlowRateLimitSettings)
+	}
+	if selector.Has("maxreqsratelimitsettings") {
+		run.RateLimitSettingsApi_MaxReqsRateLimitSettings(&in.MaxReqsRateLimitSettings, nil, &out.MaxReqsRateLimitSettings)
+	}
+	if selector.Has("trustpolicyexceptions") {
+		run.TrustPolicyExceptionApi(&in.TrustPolicyExceptions, nil, &out.TrustPolicyExceptions)
+	}
 }
