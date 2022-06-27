@@ -1987,6 +1987,13 @@ func IgnoreDeviceDataFields(taglist string) cmp.Option {
 	return cmpopts.IgnoreFields(DeviceData{}, names...)
 }
 
+func (m *DeviceData) IsEmpty() bool {
+	if m.Devices != nil {
+		return false
+	}
+	return true
+}
+
 func (m *Device) IsValidArgsForInjectDevice() error {
 	return nil
 }
