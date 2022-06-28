@@ -320,7 +320,7 @@ func runTests(ctx context.Context, dirName, fileName, progName string, depth int
 				fmt.Fprintf(stdout, "PASS  %s\n", took)
 				numPassed += 1
 			} else {
-				fmt.Fprintf(stdout, "FAIL: %s %s\n", took, err)
+				fmt.Fprintf(stdout, "FAIL: %s %s\n", took, runerr)
 				numFailed += 1
 				_, ok := failedTests[fileName+":"+t.Name]
 				if !ok {

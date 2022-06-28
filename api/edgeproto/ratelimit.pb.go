@@ -3830,6 +3830,13 @@ func (s *RateLimitSettingsData) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *RateLimitSettingsData) IsEmpty() bool {
+	if m.Settings != nil {
+		return false
+	}
+	return true
+}
+
 var ApiEndpointTypeStrings = []string{
 	"UNKNOWN_API_ENDPOINT_TYPE",
 	"DME",

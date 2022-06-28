@@ -13,7 +13,7 @@
 # limitations under the License.
 
 registerclientrequest:
-  orgname: AcmeAppCo
+  orgname: qos-prio-dev
   appname: qosapplication
   appvers: "1.0"
   authtoken: "GENTOKEN:authtoken_private.pem"
