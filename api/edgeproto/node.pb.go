@@ -1807,6 +1807,13 @@ func IgnoreNodeDataFields(taglist string) cmp.Option {
 	return cmpopts.IgnoreFields(NodeData{}, names...)
 }
 
+func (m *NodeData) IsEmpty() bool {
+	if m.Nodes != nil {
+		return false
+	}
+	return true
+}
+
 func (m *NodeKey) Size() (n int) {
 	if m == nil {
 		return 0

@@ -1103,6 +1103,82 @@ func IgnoreAllDataFields(taglist string) cmp.Option {
 	return cmpopts.IgnoreFields(AllData{}, names...)
 }
 
+func (m *AllData) IsEmpty() bool {
+	if m.Settings != nil {
+		return false
+	}
+	if m.Flavors != nil {
+		return false
+	}
+	if m.OperatorCodes != nil {
+		return false
+	}
+	if m.ResTagTables != nil {
+		return false
+	}
+	if m.Cloudlets != nil {
+		return false
+	}
+	if m.CloudletInfos != nil {
+		return false
+	}
+	if m.CloudletPools != nil {
+		return false
+	}
+	if m.AutoProvPolicies != nil {
+		return false
+	}
+	if m.AutoProvPolicyCloudlets != nil {
+		return false
+	}
+	if m.AutoScalePolicies != nil {
+		return false
+	}
+	if m.TrustPolicies != nil {
+		return false
+	}
+	if m.ClusterInsts != nil {
+		return false
+	}
+	if m.Apps != nil {
+		return false
+	}
+	if m.AppInstances != nil {
+		return false
+	}
+	if m.AppInstRefs != nil {
+		return false
+	}
+	if m.VmPools != nil {
+		return false
+	}
+	if m.IdleReservableClusterInsts != nil {
+		return false
+	}
+	if m.GpuDrivers != nil {
+		return false
+	}
+	if m.AlertPolicies != nil {
+		return false
+	}
+	if m.FlowRateLimitSettings != nil {
+		return false
+	}
+	if m.MaxReqsRateLimitSettings != nil {
+		return false
+	}
+	if m.Networks != nil {
+		return false
+	}
+	if m.TrustPolicyExceptions != nil {
+		return false
+	}
+	if m.ClusterRefs != nil {
+		return false
+	}
+	return true
+}
+
 func (m *AllData) Size() (n int) {
 	if m == nil {
 		return 0
