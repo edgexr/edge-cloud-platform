@@ -14,7 +14,7 @@
 
 apps:
 - key:
-    organization: AcmeAppCo
+    organization: qos-prio-dev
     name: qosapplication
     version: "1.0"
   qossessionprofile: QOS_LOW_LATENCY

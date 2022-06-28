@@ -883,6 +883,13 @@ func IgnoreDebugDataFields(taglist string) cmp.Option {
 	return cmpopts.IgnoreFields(DebugData{}, names...)
 }
 
+func (m *DebugData) IsEmpty() bool {
+	if m.Requests != nil {
+		return false
+	}
+	return true
+}
+
 func (m *DebugRequest) IsValidArgsForEnableDebugLevels() error {
 	if m.Cmd != "" {
 		return fmt.Errorf("Invalid field specified: Cmd, this field is only for internal use")

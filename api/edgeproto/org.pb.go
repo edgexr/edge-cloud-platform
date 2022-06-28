@@ -345,6 +345,13 @@ func (s *OrganizationData) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *OrganizationData) IsEmpty() bool {
+	if m.Orgs != nil {
+		return false
+	}
+	return true
+}
+
 func (m *Organization) IsValidArgsForOrganizationInUse() error {
 	return nil
 }

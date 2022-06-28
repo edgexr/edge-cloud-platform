@@ -2352,6 +2352,25 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 	if gensupport.HasHideTags(m.gen, desc, protogen.E_Hidetag, visited) {
 		m.generateHideTags(desc)
 	}
+
+	if gensupport.GetE2edata(message) {
+		m.P("func (m *", message.Name, ") IsEmpty() bool {")
+		for _, field := range message.Field {
+			if field.Type == nil || field.OneofIndex != nil {
+				continue
+			}
+			if *field.Type != descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+				continue
+			}
+			fname := generator.CamelCase(*field.Name)
+			m.P("if m.", fname, " != nil {")
+			m.P("return false")
+			m.P("}")
+		}
+		m.P("return true")
+		m.P("}")
+		m.P()
+	}
 }
 
 func (m *mex) generateVersionString(hashStr string) {

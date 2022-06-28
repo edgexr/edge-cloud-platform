@@ -17,9 +17,17 @@ description: executes matching engine request for find_cloudlet, then verifies t
 
 tests:
 
+- name: Create qos user
+  actions: [mcapi-createusers]
+  actionvars:
+    usernames: qos-prio-user
+
 - name: Add qosapplication app and appinst
   apifile: "{{datadir2}}/qos_appdata_add.yml"
-  actions: [ctrlapi-create,ctrlapi-show]
+  actions: [mcapi-create,mcapi-show]
+  actionvars:
+    username: qos-prio-user
+    objtypes: nonpublic
   compareyaml:
     yaml1: "{{outputdir}}/show-commands.yml"
     yaml2: "{{datadir2}}/qos_appdata_show.yml"
@@ -126,9 +134,17 @@ tests:
     filetype: deleteqossession
 
 - name: Remove qosapplication app and appinst
-  apifile: "{{datadir2}}/qos_appdata_remove.yml"
-  actions: [ctrlapi-delete,ctrlapi-show]
+  apifile: "{{datadir2}}/qos_appdata_add.yml"
+  actions: [mcapi-delete,mcapi-show]
+  actionvars:
+    username: qos-prio-user
+    objtypes: nonpublic
   compareyaml:
     yaml1: "{{outputdir}}/show-commands.yml"
-    yaml2: "{{datadir2}}/qos_appdata_empty.yml"
+    yaml2: "{{datadir2}}/mc_empty_object.yml"
     filetype: appdata
+
+- name: Delete qos user
+  actions: [mcapi-deleteusers]
+  actionvars:
+    usernames: qos-prio-user
