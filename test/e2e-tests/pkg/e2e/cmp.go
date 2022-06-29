@@ -55,7 +55,7 @@ func CompareYamlFiles(name string, actions []string, compare *CompareYaml) bool 
 	// ignore comments
 	diffArgs := []string{"-au", "-I", "# .*"}
 	expectedFile := ""
-	if strings.Contains(compare.Yaml1, "github.com/mobiledgex/") {
+	if strings.Contains(compare.Yaml1, "github.com/edgexr/") {
 		diffArgs = append(diffArgs, compare.Yaml1, compare.Yaml2)
 		expectedFile = compare.Yaml1
 	} else {

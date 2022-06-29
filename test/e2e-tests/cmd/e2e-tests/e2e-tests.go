@@ -187,7 +187,7 @@ func runTests(ctx context.Context, dirName, fileName, progName string, depth int
 
 	indentstr := ""
 	for i := 0; i < depth; i++ {
-		indentstr = indentstr + " - "
+		indentstr = indentstr + "- "
 	}
 	defer func() {
 		f := indentstr + fileName
