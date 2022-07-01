@@ -17,16 +17,18 @@ package influxq
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client/influxq_testutil"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client/influxq_testutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/gogo/protobuf/types"
+	"github.com/influxdata/influxdb/client/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -96,7 +98,8 @@ func TestInfluxQ(t *testing.T) {
 	}
 
 	// wait for metrics to get pushed to db
-	time.Sleep(2 * InfluxQPushInterval)
+	q.DoPush()
+	WaitCounter(t, &q.DatWrites, uint64(count))
 	assert.Equal(t, uint64(0), q.ErrBatch, "batch errors")
 	assert.Equal(t, uint64(0), q.ErrPoint, "point errors")
 	assert.Equal(t, uint64(0), q.Qfull, "Qfulls")
@@ -208,6 +211,7 @@ func testRetentionPolicyAndContinuousQuery(t *testing.T, ctx context.Context, q 
 	err = CreateContinuousQuery(q, qd, cqs)
 	assert.Nil(t, err, "create cq")
 	time.Sleep(1 * time.Second)
+	count := q.DatWrites
 	// Add some more data for continuous query to aggregate
 	for ii := 0; ii < 2; ii++ {
 		tmst, _ := types.TimestampProto(time.Now())
@@ -231,17 +235,21 @@ func testRetentionPolicyAndContinuousQuery(t *testing.T, ctx context.Context, q 
 			},
 		})
 		q.AddMetric(&metric)
+		count++
 		time.Sleep(time.Microsecond)
 	}
 	// Check that continuous query has aggregated data
-	time.Sleep(2 * time.Second)
+	q.DoPush()
+	time.Sleep(1 * time.Second)
+	WaitCounter(t, &q.DatWrites, count)
 	query := fmt.Sprintf("select * from \"test-metric-10ms\"")
-	res, err := qd.QueryDB(query)
-	require.Nil(t, err, "select *")
-	require.True(t, len(res) > 0)
-	require.True(t, len(res[0].Series) > 0)
-	require.True(t, len(res[0].Series[0].Values) > 0, "num results")
-
+	WaitResults(t, func() error {
+		res, err := qd.QueryDB(query)
+		if err != nil {
+			return err
+		}
+		return checkResults(res)
+	})
 	// Create non-default retention policy to downsampled db (this will be used for continuous query fully qualified measurement)
 	rpnondef := time.Duration(2 * time.Hour)
 	err = qd.CreateRetentionPolicy(rpnondef, NonDefaultRetentionPolicy)
@@ -259,7 +267,7 @@ func testRetentionPolicyAndContinuousQuery(t *testing.T, ctx context.Context, q 
 	}
 	err = CreateContinuousQuery(q, qd, cqs)
 	assert.Nil(t, err, "create cq")
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 	// Add some more data for new continuous query to aggregate
 	for ii := 0; ii < 2; ii++ {
 		tmst, _ := types.TimestampProto(time.Now())
@@ -283,15 +291,54 @@ func testRetentionPolicyAndContinuousQuery(t *testing.T, ctx context.Context, q 
 			},
 		})
 		q.AddMetric(&metric)
+		count++
 		time.Sleep(time.Microsecond)
 	}
+	q.DoPush()
+	WaitCounter(t, &q.DatWrites, count)
 	// Check that new continuous query has aggregated data
-	time.Sleep(3 * time.Second)
+	time.Sleep(1 * time.Second)
+
 	measurementName := CreateInfluxFullyQualifiedMeasurementName(cloudcommon.DownsampledMetricsDbName, "test-metric", 5*time.Millisecond, 2*time.Hour)
-	query = fmt.Sprintf("select * from %s", measurementName)
-	res, err = qd.QueryDB(query)
-	require.Nil(t, err, "select *")
-	require.True(t, len(res) > 0)
-	require.True(t, len(res[0].Series) > 0)
-	require.True(t, len(res[0].Series[0].Values) > 0, "num results")
+	WaitResults(t, func() error {
+		query = fmt.Sprintf("select * from %s", measurementName)
+		res, err := qd.QueryDB(query)
+		if err != nil {
+			return err
+		}
+		return checkResults(res)
+	})
+}
+
+func WaitCounter(t *testing.T, counter *uint64, count uint64) {
+	for i := 0; i < 20; i++ {
+		if *counter == count {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	require.Equal(t, count, *counter)
+}
+
+func WaitResults(t *testing.T, testFunc func() error) {
+	for i := 0; i < 25; i++ {
+		if testFunc() == nil {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	require.Nil(t, testFunc())
+}
+
+func checkResults(res []client.Result) error {
+	if len(res) == 0 {
+		return errors.New("empty Results")
+	}
+	if len(res[0].Series) == 0 {
+		return errors.New("empty Results[0].Series")
+	}
+	if len(res[0].Series[0].Values) == 0 {
+		return errors.New("empty Results[0].Series[0].Values")
+	}
+	return nil
 }
