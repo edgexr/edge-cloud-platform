@@ -153,7 +153,7 @@ install-internal-linux:
 UNIT_TEST_LOG ?= /tmp/edge-cloud-unit-test.log
 
 unit-test:
-	go test ./... > $(UNIT_TEST_LOG) || \
+	go test -timeout=3m ./... > $(UNIT_TEST_LOG) || \
 		((grep -A6 "\--- FAIL:" $(UNIT_TEST_LOG) || \
 		grep -A20 "panic: " $(UNIT_TEST_LOG) || \
 		grep -A2 "FATAL" $(UNIT_TEST_LOG)) && \
