@@ -187,7 +187,7 @@ controllers:
   notifyrootaddrs: "127.0.0.1:5301"
   usevaultpki: true
   edgeturnaddr: "127.0.0.1:8081"
-  appdnsroot: mobiledgex.net
+  appdnsroot: edgecloude2e.net
   deploymenttag: dev
   accessapiaddr: "127.0.0.1:21001"
   thanosrecvaddr: "http://host.docker.internal:10908"
@@ -209,7 +209,7 @@ controllers:
   notifyrootaddrs: "127.0.0.1:5301"
   usevaultpki: true
   edgeturnaddr: "127.0.0.1:8081"
-  appdnsroot: mobiledgex.net
+  appdnsroot: edgecloude2e.net
   deploymenttag: dev
   accessapiaddr: "127.0.0.1:21002"
   envvars:
@@ -231,7 +231,7 @@ controllers:
   region: locala
   usevaultpki: true
   edgeturnaddr: "127.0.0.1:8082"
-  appdnsroot: mobiledgex.net
+  appdnsroot: edgecloude2e.net
   deploymenttag: dev
   influxaddr: "http://127.0.0.1:8087"
   accessapiaddr: "127.0.0.1:21011"
@@ -254,7 +254,7 @@ controllers:
   region: locala
   usevaultpki: true
   edgeturnaddr: "127.0.0.1:8082"
-  appdnsroot: mobiledgex.net
+  appdnsroot: edgecloude2e.net
   deploymenttag: dev
   influxaddr: "http://127.0.0.1:8087"
   accessapiaddr: "127.0.0.1:21012"
@@ -274,7 +274,7 @@ controllers:
   testmode: true
   region: "PA"
   usevaultpki: true
-  appdnsroot: mobiledgex.net
+  appdnsroot: edgecloude2e.net
   deploymenttag: dev
   accessapiaddr: "127.0.0.1:21081"
   envvars:
@@ -293,7 +293,7 @@ controllers:
   testmode: true
   region: "PS"
   usevaultpki: true
-  appdnsroot: mobiledgex.net
+  appdnsroot: edgecloude2e.net
   deploymenttag: dev
   accessapiaddr: "127.0.0.1:21091"
   envvars:

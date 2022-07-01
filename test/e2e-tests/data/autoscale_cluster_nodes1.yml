@@ -44,9 +44,9 @@ regiondata:
           type: k8s-cluster-node
           status: ACTIVE
           infraflavor: x1.small
-        - name: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.mobiledgex.net
+        - name: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.edgecloude2e.net
           type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
       dnslabel: smallcluster-acmeappco
-      fqdn: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.mobiledgex.net
+      fqdn: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.edgecloude2e.net

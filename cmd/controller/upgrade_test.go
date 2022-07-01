@@ -23,10 +23,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -183,6 +183,10 @@ func TestAllUpgradeFuncs(t *testing.T) {
 	cloudletLookup := &node.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup
+
+	// this is needed for AddSetupSpecificAppDNSRootForCloudlets,
+	// because the appinst_api_test sets it to something else.
+	*appDNSRoot = "appdnsroot.net"
 
 	sync := InitSync(&objStore)
 	apis := NewAllApis(sync)

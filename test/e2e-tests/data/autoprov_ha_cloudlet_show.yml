@@ -49,5 +49,5 @@ regiondata:
           name: gpu-driver-dmuus-1
           organization: dmuus
       dnslabel: dmuus-cloud-1-dmuus
-      rootlbfqdn: shared.dmuus-cloud-1-dmuus.local.mobiledgex.net
+      rootlbfqdn: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
       licenseconfigstoragepath: local/dmuus/gpu-driver-dmuus-1/cloudlet/licenseconfig/dmuus-cloud-1/license.conf

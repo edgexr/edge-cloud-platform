@@ -94,7 +94,7 @@ regiondata:
         driver:
           name: gpu-driver-global
       dnslabel: azure-cloud-4-azure
-      rootlbfqdn: shared.azure-cloud-4-azure.local.mobiledgex.net
+      rootlbfqdn: shared.azure-cloud-4-azure.local.edgecloude2e.net
       licenseconfigstoragepath: local/edgecloudorg/gpu-driver-global/cloudlet/licenseconfig/azure/azure-cloud-4/license.conf
     - key:
         organization: dmuus
@@ -130,7 +130,7 @@ regiondata:
           name: gpu-driver-dmuus-1
           organization: dmuus
       dnslabel: dmuus-cloud-1-dmuus
-      rootlbfqdn: shared.dmuus-cloud-1-dmuus.local.mobiledgex.net
+      rootlbfqdn: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
       licenseconfigstoragepath: local/dmuus/gpu-driver-dmuus-1/cloudlet/licenseconfig/dmuus-cloud-1/license.conf
     - key:
         organization: dmuus
@@ -149,7 +149,7 @@ regiondata:
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
       dnslabel: dmuus-cloud-2-dmuus
-      rootlbfqdn: shared.dmuus-cloud-2-dmuus.local.mobiledgex.net
+      rootlbfqdn: shared.dmuus-cloud-2-dmuus.local.edgecloude2e.net
     - key:
         organization: dmuus
         name: partner1-cloud-1
@@ -173,7 +173,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-1-dmuus
-      rootlbfqdn: shared.partner1-cloud-1-dmuus.local.mobiledgex.net
+      rootlbfqdn: shared.partner1-cloud-1-dmuus.local.edgecloude2e.net
       federationconfig:
         federationname: dmuus-SA-partner1-PA-fed
         selffederationid: dmuus-SA-partner1-PA
@@ -203,7 +203,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-2-dmuus
-      rootlbfqdn: shared.partner1-cloud-2-dmuus.local.mobiledgex.net
+      rootlbfqdn: shared.partner1-cloud-2-dmuus.local.edgecloude2e.net
       federationconfig:
         federationname: dmuus-SA-partner1-PA-fed
         selffederationid: dmuus-SA-partner1-PA
@@ -233,7 +233,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-1-dmuus
-      rootlbfqdn: shared.partner2-cloud-1-dmuus.local.mobiledgex.net
+      rootlbfqdn: shared.partner2-cloud-1-dmuus.local.edgecloude2e.net
       federationconfig:
         federationname: dmuus-SA-partner2-PS-fed
         selffederationid: dmuus-SA-partner2-PS
@@ -263,7 +263,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-2-dmuus
-      rootlbfqdn: shared.partner2-cloud-2-dmuus.local.mobiledgex.net
+      rootlbfqdn: shared.partner2-cloud-2-dmuus.local.edgecloude2e.net
       federationconfig:
         federationname: dmuus-SA-partner2-PS-fed
         selffederationid: dmuus-SA-partner2-PS
@@ -287,7 +287,7 @@ regiondata:
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
       dnslabel: enterprise-1-enterprise
-      rootlbfqdn: shared.enterprise-1-enterprise.local.mobiledgex.net
+      rootlbfqdn: shared.enterprise-1-enterprise.local.edgecloude2e.net
     - key:
         organization: enterprise
         name: partner1-cloud-1
@@ -311,7 +311,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-1-enterprise
-      rootlbfqdn: shared.partner1-cloud-1-enterprise.local.mobiledgex.net
+      rootlbfqdn: shared.partner1-cloud-1-enterprise.local.edgecloude2e.net
       federationconfig:
         federationname: enterprise-SA-partner1-PA-fed
         selffederationid: enterprise-SA-partner1-PA
@@ -341,7 +341,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-2-enterprise
-      rootlbfqdn: shared.partner1-cloud-2-enterprise.local.mobiledgex.net
+      rootlbfqdn: shared.partner1-cloud-2-enterprise.local.edgecloude2e.net
       federationconfig:
         federationname: enterprise-SA-partner1-PA-fed
         selffederationid: enterprise-SA-partner1-PA
@@ -371,7 +371,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-1-enterprise
-      rootlbfqdn: shared.partner2-cloud-1-enterprise.local.mobiledgex.net
+      rootlbfqdn: shared.partner2-cloud-1-enterprise.local.edgecloude2e.net
       federationconfig:
         federationname: enterprise-SA-partner2-PS-fed
         selffederationid: enterprise-SA-partner2-PS
@@ -401,7 +401,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-2-enterprise
-      rootlbfqdn: shared.partner2-cloud-2-enterprise.local.mobiledgex.net
+      rootlbfqdn: shared.partner2-cloud-2-enterprise.local.edgecloude2e.net
       federationconfig:
         federationname: enterprise-SA-partner2-PS-fed
         selffederationid: enterprise-SA-partner2-PS
@@ -425,7 +425,7 @@ regiondata:
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
       dnslabel: gcp-cloud-5-gcp
-      rootlbfqdn: shared.gcp-cloud-5-gcp.local.mobiledgex.net
+      rootlbfqdn: shared.gcp-cloud-5-gcp.local.edgecloude2e.net
     cloudletinfos:
     - key:
         organization: azure
@@ -608,7 +608,7 @@ regiondata:
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
       dnslabel: dmuus-cloud-3-dmuus
-      rootlbfqdn: shared.dmuus-cloud-3-dmuus.locala.mobiledgex.net
+      rootlbfqdn: shared.dmuus-cloud-3-dmuus.locala.edgecloude2e.net
     - key:
         organization: dmuus
         name: dmuus-cloud-4
@@ -626,7 +626,7 @@ regiondata:
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
       dnslabel: dmuus-cloud-4-dmuus
-      rootlbfqdn: shared.dmuus-cloud-4-dmuus.locala.mobiledgex.net
+      rootlbfqdn: shared.dmuus-cloud-4-dmuus.locala.edgecloude2e.net
     - key:
         organization: dmuus
         name: partner1-cloud-1
@@ -650,7 +650,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-1-dmuus
-      rootlbfqdn: shared.partner1-cloud-1-dmuus.locala.mobiledgex.net
+      rootlbfqdn: shared.partner1-cloud-1-dmuus.locala.edgecloude2e.net
       federationconfig:
         federationname: dmuus-SB-partner1-PA-fed
         selffederationid: dmuus-SB-partner1-PA
@@ -680,7 +680,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-2-dmuus
-      rootlbfqdn: shared.partner1-cloud-2-dmuus.locala.mobiledgex.net
+      rootlbfqdn: shared.partner1-cloud-2-dmuus.locala.edgecloude2e.net
       federationconfig:
         federationname: dmuus-SB-partner1-PA-fed
         selffederationid: dmuus-SB-partner1-PA
@@ -710,7 +710,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-1-dmuus
-      rootlbfqdn: shared.partner2-cloud-1-dmuus.locala.mobiledgex.net
+      rootlbfqdn: shared.partner2-cloud-1-dmuus.locala.edgecloude2e.net
       federationconfig:
         federationname: dmuus-SB-partner2-PS-fed
         selffederationid: dmuus-SB-partner2-PS
@@ -740,7 +740,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-2-dmuus
-      rootlbfqdn: shared.partner2-cloud-2-dmuus.locala.mobiledgex.net
+      rootlbfqdn: shared.partner2-cloud-2-dmuus.locala.edgecloude2e.net
       federationconfig:
         federationname: dmuus-SB-partner2-PS-fed
         selffederationid: dmuus-SB-partner2-PS
@@ -764,7 +764,7 @@ regiondata:
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
       dnslabel: enterprise-2-enterprise
-      rootlbfqdn: shared.enterprise-2-enterprise.locala.mobiledgex.net
+      rootlbfqdn: shared.enterprise-2-enterprise.locala.edgecloude2e.net
     - key:
         organization: enterprise
         name: partner1-cloud-1
@@ -788,7 +788,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-1-enterprise
-      rootlbfqdn: shared.partner1-cloud-1-enterprise.locala.mobiledgex.net
+      rootlbfqdn: shared.partner1-cloud-1-enterprise.locala.edgecloude2e.net
       federationconfig:
         federationname: enterprise-SB-partner1-PA-fed
         selffederationid: enterprise-SB-partner1-PA
@@ -818,7 +818,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner1-cloud-2-enterprise
-      rootlbfqdn: shared.partner1-cloud-2-enterprise.locala.mobiledgex.net
+      rootlbfqdn: shared.partner1-cloud-2-enterprise.locala.edgecloude2e.net
       federationconfig:
         federationname: enterprise-SB-partner1-PA-fed
         selffederationid: enterprise-SB-partner1-PA
@@ -848,7 +848,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-1-enterprise
-      rootlbfqdn: shared.partner2-cloud-1-enterprise.locala.mobiledgex.net
+      rootlbfqdn: shared.partner2-cloud-1-enterprise.locala.edgecloude2e.net
       federationconfig:
         federationname: enterprise-SB-partner2-PS-fed
         selffederationid: enterprise-SB-partner2-PS
@@ -878,7 +878,7 @@ regiondata:
         value: 40960
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-2-enterprise
-      rootlbfqdn: shared.partner2-cloud-2-enterprise.locala.mobiledgex.net
+      rootlbfqdn: shared.partner2-cloud-2-enterprise.locala.edgecloude2e.net
       federationconfig:
         federationname: enterprise-SB-partner2-PS-fed
         selffederationid: enterprise-SB-partner2-PS

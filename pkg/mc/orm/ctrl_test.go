@@ -1463,7 +1463,9 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		ds.ShowDummyCount = 0
 
 		// wait for event
+		var lastEvent *node.EventData
 		matches := de.WaitLastEventMatches(func(event *node.EventData) bool {
+			lastEvent = event
 			if event.Name != apiUri {
 				return false
 			}
@@ -1477,7 +1479,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 			}
 			return false
 		})
-		require.True(t, matches, "wait last event matches")
+		require.True(t, matches, "wait last event matches, got %v", lastEvent)
 	}
 
 	// delete controller

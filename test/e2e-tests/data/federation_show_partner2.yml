@@ -108,7 +108,7 @@ regiondata:
       trustpolicystate: NotPresent
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-1-partner2
-      rootlbfqdn: shared.partner2-cloud-1-partner2.ps.mobiledgex.net
+      rootlbfqdn: shared.partner2-cloud-1-partner2.ps.edgecloude2e.net
     - key:
         organization: partner2
         name: partner2-cloud-2
@@ -134,7 +134,7 @@ regiondata:
         alertthreshold: 10
       defaultresourcealertthreshold: 80
       dnslabel: partner2-cloud-2-partner2
-      rootlbfqdn: shared.partner2-cloud-2-partner2.ps.mobiledgex.net
+      rootlbfqdn: shared.partner2-cloud-2-partner2.ps.edgecloude2e.net
     cloudletinfos:
     - key:
         organization: partner2

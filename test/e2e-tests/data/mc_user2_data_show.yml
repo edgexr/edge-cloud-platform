@@ -174,12 +174,12 @@ regiondata:
           type: k8s-cluster-node
           status: ACTIVE
           infraflavor: x1.small
-        - name: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.mobiledgex.net
+        - name: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.edgecloude2e.net
           type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
       dnslabel: smallcluster-acmeappco
-      fqdn: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.mobiledgex.net
+      fqdn: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.edgecloude2e.net
     - key:
         clusterkey:
           name: SmallCluster
@@ -208,7 +208,7 @@ regiondata:
           status: ACTIVE
           infraflavor: x1.small
       dnslabel: smallcluster-acmeappco
-      fqdn: smallcluster-acmeappco.dmuus-cloud-2-dmuus.local.mobiledgex.net
+      fqdn: smallcluster-acmeappco.dmuus-cloud-2-dmuus.local.edgecloude2e.net
     apps:
     - key:
         organization: AcmeAppCo
@@ -438,7 +438,7 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.mobiledgex.net
+      uri: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.edgecloude2e.net
       liveness: Static
       mappedports:
       - proto: Tcp
@@ -476,7 +476,7 @@ regiondata:
       cloudletloc:
         latitude: 35
         longitude: -95
-      uri: shared.dmuus-cloud-2-dmuus.local.mobiledgex.net
+      uri: shared.dmuus-cloud-2-dmuus.local.edgecloude2e.net
       liveness: Static
       mappedports:
       - proto: Tcp
@@ -514,7 +514,7 @@ regiondata:
       cloudletloc:
         latitude: 35
         longitude: -95
-      uri: shared.dmuus-cloud-2-dmuus.local.mobiledgex.net
+      uri: shared.dmuus-cloud-2-dmuus.local.edgecloude2e.net
       liveness: Static
       mappedports:
       - proto: Tcp
@@ -697,12 +697,12 @@ regiondata:
           type: k8s-cluster-node
           status: ACTIVE
           infraflavor: x1.small
-        - name: smallcluster-acmeappco.dmuus-cloud-3-dmuus.locala.mobiledgex.net
+        - name: smallcluster-acmeappco.dmuus-cloud-3-dmuus.locala.edgecloude2e.net
           type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
       dnslabel: smallcluster-acmeappco
-      fqdn: smallcluster-acmeappco.dmuus-cloud-3-dmuus.locala.mobiledgex.net
+      fqdn: smallcluster-acmeappco.dmuus-cloud-3-dmuus.locala.edgecloude2e.net
     - key:
         clusterkey:
           name: SmallCluster
@@ -731,7 +731,7 @@ regiondata:
           status: ACTIVE
           infraflavor: x1.small
       dnslabel: smallcluster-acmeappco
-      fqdn: smallcluster-acmeappco.dmuus-cloud-4-dmuus.locala.mobiledgex.net
+      fqdn: smallcluster-acmeappco.dmuus-cloud-4-dmuus.locala.edgecloude2e.net
     apps:
     - key:
         organization: AcmeAppCo
@@ -948,7 +948,7 @@ regiondata:
       cloudletloc:
         latitude: 32
         longitude: -92
-      uri: smallcluster-acmeappco.dmuus-cloud-3-dmuus.locala.mobiledgex.net
+      uri: smallcluster-acmeappco.dmuus-cloud-3-dmuus.locala.edgecloude2e.net
       liveness: Static
       mappedports:
       - proto: Tcp
@@ -986,7 +986,7 @@ regiondata:
       cloudletloc:
         latitude: 36
         longitude: -96
-      uri: shared.dmuus-cloud-4-dmuus.locala.mobiledgex.net
+      uri: shared.dmuus-cloud-4-dmuus.locala.edgecloude2e.net
       liveness: Static
       mappedports:
       - proto: Tcp
