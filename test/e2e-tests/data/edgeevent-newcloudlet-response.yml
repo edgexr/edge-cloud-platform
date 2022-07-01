@@ -15,7 +15,7 @@
 eventtype: CloudletUpdate
 newcloudlet:
   status: Found
-  fqdn: shared.dmuus-cloud-2-dmuus.local.mobiledgex.net
+  fqdn: shared.dmuus-cloud-2-dmuus.local.edgecloude2e.net
   ports:
   - proto: Tcp
     internalport: 80

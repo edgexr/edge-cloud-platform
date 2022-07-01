@@ -87,14 +87,14 @@ regiondata:
           type: k8s-cluster-node
           status: ACTIVE
           infraflavor: x1.small
-        - name: smallcluster-qos-prio-dev.qos-prio-oper-cloud-2-qos-prio-oper.local.mobiledgex.net
+        - name: smallcluster-qos-prio-dev.qos-prio-oper-cloud-2-qos-prio-oper.local.edgecloude2e.net
           type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
       networks:
       - net2
       dnslabel: smallcluster-qos-prio-dev
-      fqdn: smallcluster-qos-prio-dev.qos-prio-oper-cloud-2-qos-prio-oper.local.mobiledgex.net
+      fqdn: smallcluster-qos-prio-dev.qos-prio-oper-cloud-2-qos-prio-oper.local.edgecloude2e.net
     apps:
     - key:
         organization: qos-prio-dev
@@ -244,7 +244,7 @@ regiondata:
       cloudletloc:
         latitude: 35
         longitude: -95
-      uri: smallcluster-qos-prio-dev.qos-prio-oper-cloud-2-qos-prio-oper.local.mobiledgex.net
+      uri: smallcluster-qos-prio-dev.qos-prio-oper-cloud-2-qos-prio-oper.local.edgecloude2e.net
       liveness: Static
       mappedports:
       - proto: Tcp

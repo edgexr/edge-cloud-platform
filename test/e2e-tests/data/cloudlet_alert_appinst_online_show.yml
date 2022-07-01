@@ -31,7 +31,7 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.mobiledgex.net
+      uri: smallcluster-acmeappco.dmuus-cloud-1-dmuus.local.edgecloude2e.net
       liveness: Static
       mappedports:
       - proto: Tcp

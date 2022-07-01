@@ -167,12 +167,12 @@ regiondata:
           type: k8s-cluster-node
           status: ACTIVE
           infraflavor: x1.small
-        - name: smallcluster-user3org.enterprise-1-enterprise.local.mobiledgex.net
+        - name: smallcluster-user3org.enterprise-1-enterprise.local.edgecloude2e.net
           type: dedicatedrootlb
           status: ACTIVE
           infraflavor: x1.small
       dnslabel: smallcluster-user3org
-      fqdn: smallcluster-user3org.enterprise-1-enterprise.local.mobiledgex.net
+      fqdn: smallcluster-user3org.enterprise-1-enterprise.local.edgecloude2e.net
     apps:
     - key:
         organization: user3org
@@ -268,7 +268,7 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: smallcluster-user3org.enterprise-1-enterprise.local.mobiledgex.net
+      uri: smallcluster-user3org.enterprise-1-enterprise.local.edgecloude2e.net
       liveness: Static
       mappedports:
       - proto: Tcp
