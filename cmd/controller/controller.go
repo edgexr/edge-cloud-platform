@@ -84,7 +84,7 @@ var autoUpgrade = flag.Bool("autoUpgrade", false, "Automatically upgrade etcd da
 var testMode = flag.Bool("testMode", false, "Run controller in test mode")
 var commercialCerts = flag.Bool("commercialCerts", false, "Have CRM grab certs from LetsEncrypt. If false then CRM will generate its onwn self-signed cert")
 var checkpointInterval = flag.String("checkpointInterval", "MONTH", "Interval at which to checkpoint cluster usage")
-var appDNSRoot = flag.String("appDNSRoot", "mobiledgex.net", "App domain name root")
+var appDNSRoot = flag.String("appDNSRoot", "appdnsroot.net", "App domain name root")
 var requireNotifyAccessKey = flag.Bool("requireNotifyAccessKey", false, "Require AccessKey authentication on notify API")
 var thanosRecvAddr = flag.String("thanosRecvAddr", "", "Address of thanos receive API endpoint including port")
 

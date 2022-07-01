@@ -103,6 +103,8 @@ func TestAppInstApi(t *testing.T) {
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
+	appDnsRoot := "testappinstapi.net"
+	*appDNSRoot = appDnsRoot
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
@@ -361,7 +363,7 @@ func TestAppInstApi(t *testing.T) {
 	testAppInstId(t, ctx, apis)
 	testAppFlavorRequest(t, ctx, commonApi, responder, apis)
 	testDeprecatedSharedRootLBFQDN(t, ctx, apis)
-	testSingleKubernetesCloudlet(t, ctx, apis)
+	testSingleKubernetesCloudlet(t, ctx, apis, appDnsRoot)
 
 	// cleanup unused reservable auto clusters
 	apis.clusterInstApi.cleanupIdleReservableAutoClusters(ctx, time.Duration(0))
@@ -868,7 +870,7 @@ func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *
 
 }
 
-func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllApis) {
+func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllApis, appDnsRoot string) {
 	var err error
 	var found bool
 	// Single kubernetes cloudlets can be either multi-tenant,
@@ -980,51 +982,51 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 	}, {
 		"MT any clust name",
 		0, &cloudletMT, "clust", mtOrg, "", notDedicatedIp,
-		"shared.singlek8smt-unittest.local.mobiledgex.net", PASS,
+		"shared.singlek8smt-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"MT auto clust name",
 		0, &cloudletMT, "autocluster", mtOrg, "", notDedicatedIp,
-		"shared.singlek8smt-unittest.local.mobiledgex.net", PASS,
+		"shared.singlek8smt-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"MT auto clust name blank org",
 		0, &cloudletMT, "autocluster", "", "", notDedicatedIp,
-		"shared.singlek8smt-unittest.local.mobiledgex.net", PASS,
+		"shared.singlek8smt-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"MT any clust name blank org",
 		0, &cloudletMT, "clust", "", "", notDedicatedIp,
-		"shared.singlek8smt-unittest.local.mobiledgex.net", PASS,
+		"shared.singlek8smt-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"ST any clust name",
 		0, &cloudletST, "clust", stOrg, "", notDedicatedIp,
-		"shared.singlek8sst-unittest.local.mobiledgex.net", PASS,
+		"shared.singlek8sst-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"ST auto clust name",
 		0, &cloudletST, "autocluster", stOrg, "", notDedicatedIp,
-		"shared.singlek8sst-unittest.local.mobiledgex.net", PASS,
+		"shared.singlek8sst-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"ST auto clust name blank org",
 		0, &cloudletST, "autocluster", "", "", notDedicatedIp,
-		"shared.singlek8sst-unittest.local.mobiledgex.net", PASS,
+		"shared.singlek8sst-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"ST any clust name blank org",
 		0, &cloudletST, "clust", "", "", notDedicatedIp,
-		"shared.singlek8sst-unittest.local.mobiledgex.net", PASS,
+		"shared.singlek8sst-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"MT any clust name dedicated",
 		0, &cloudletMT, "clust", mtOrg, "", dedicatedIp,
-		"pillimogo100-atlanticinc.singlek8smt-unittest.local.mobiledgex.net", PASS,
+		"pillimogo100-atlanticinc.singlek8smt-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"MT auto clust name dedicated",
 		0, &cloudletMT, "autocluster", mtOrg, "", dedicatedIp,
-		"pillimogo100-atlanticinc.singlek8smt-unittest.local.mobiledgex.net", PASS,
+		"pillimogo100-atlanticinc.singlek8smt-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"ST any clust name dedicated",
 		0, &cloudletST, "clust", stOrg, "", dedicatedIp,
-		"pillimogo100-atlanticinc.singlek8sst-unittest.local.mobiledgex.net", PASS,
+		"pillimogo100-atlanticinc.singlek8sst-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"ST auto clust name dedicated",
 		0, &cloudletST, "autocluster", stOrg, "", dedicatedIp,
-		"pillimogo100-atlanticinc.singlek8sst-unittest.local.mobiledgex.net", PASS,
+		"pillimogo100-atlanticinc.singlek8sst-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"VM App",
 		11, &cloudletST, "clust", stOrg, "", notDedicatedIp, "",
