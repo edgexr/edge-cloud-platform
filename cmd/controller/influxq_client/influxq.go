@@ -56,6 +56,8 @@ type InfluxQ struct {
 	ErrBatch  uint64
 	ErrPoint  uint64
 	Qfull     uint64
+	QWrites   uint64
+	DatWrites uint64
 	initRP    bool
 	initRPDur time.Duration
 }
@@ -207,6 +209,9 @@ func (q *InfluxQ) RunPush() {
 			log.DebugLog(log.DebugLevelMetrics, "write batch points",
 				"err", err)
 			atomic.AddUint64(&q.ErrBatch, 1)
+		} else {
+			atomic.AddUint64(&q.QWrites, 1)
+			atomic.AddUint64(&q.DatWrites, uint64(len(data)))
 		}
 	}
 	q.wg.Done()
