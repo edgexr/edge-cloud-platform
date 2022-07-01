@@ -212,7 +212,7 @@ func testinit(ctx context.Context, t *testing.T, opts ...TestOp) *testServices {
 	nodeMgr.CloudletLookup = cloudletLookup
 	if options.LocalRedis {
 		// Since it is a single node, config file is not required
-		procOpts := []process.StartOp{process.WithNoConfig()}
+		procOpts := []process.StartOp{process.WithNoConfig(), process.WithCleanStartup()}
 		redisLocal, err := StartLocalRedisServer(procOpts...)
 		require.Nil(t, err, "start redis server")
 		svcs.RedisLocalSrv = redisLocal
