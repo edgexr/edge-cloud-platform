@@ -13,7 +13,7 @@
 # limitations under the License.
 
 status: Found
-fqdn: someapplication110-acmeappco.azure-cloud-4-azure.local.localtest.net
+fqdn: someapplication110-acmeappco.azure-cloud-4-azure.local.edgecloude2e.net
 ports:
 - proto: Tcp
   internalport: 80

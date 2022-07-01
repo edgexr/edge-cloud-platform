@@ -29,5 +29,6 @@ tests:
   - includefile: fetchlogs.yml
   - includefile: federationtest.yml
   - includefile: qos_priority_sessions.yml
+  - includefile: {{edge-cloud-testfiles}}/find_cloudlet.yml
   - includefile: admin_cleanup_platform.yml
   - includefile: {{edge-cloud-testfiles}}/stop_cleanup.yml

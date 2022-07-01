@@ -12,99 +12,129 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+flavors:
+- key:
+    name: x1.medium
+  ram: 4096
+  vcpus: 4
+  disk: 4
+- key:
+    name: x1.small
+  ram: 2048
+  vcpus: 2
+  disk: 2
+- key:
+    name: x1.tiny
+  ram: 1024
+  vcpus: 1
+  disk: 1
 settings:
-  shepherdmetricscollectioninterval: 5s
-  shepherdalertevaluationinterval: 15s
-  shepherdmetricsscrapeinterval: 15s
+  shepherdmetricscollectioninterval: 1s
+  shepherdalertevaluationinterval: 1s
+  shepherdmetricsscrapeinterval: 1s
   shepherdhealthcheckretries: 3
   shepherdhealthcheckinterval: 5s
   autodeployintervalsec: 300
-  autodeployoffsetsec: 20
+  autodeployoffsetsec: 0.3
   autodeploymaxintervals: 10
-  createappinsttimeout: 30m0s
-  updateappinsttimeout: 30m0s
-  deleteappinsttimeout: 20m0s
-  createclusterinsttimeout: 30m0s
-  updateclusterinsttimeout: 20m0s
-  deleteclusterinsttimeout: 20m0s
+  createappinsttimeout: 3s
+  updateappinsttimeout: 2s
+  deleteappinsttimeout: 2s
+  createclusterinsttimeout: 3s
+  updateclusterinsttimeout: 2s
+  deleteclusterinsttimeout: 2s
+  masternodeflavor: x1.small
   maxtrackeddmeclients: 100
   chefclientinterval: 10m0s
   influxdbmetricsretention: 672h0m0s
-  cloudletmaintenancetimeout: 5m0s
+  cloudletmaintenancetimeout: 2s
   updatevmpooltimeout: 20m0s
-  updatetrustpolicytimeout: 10m0s
-  dmeapimetricscollectioninterval: 30s
-  edgeeventsmetricscollectioninterval: 1h0m0s
+  updatetrustpolicytimeout: 5s
+  dmeapimetricscollectioninterval: 1s
+  edgeeventsmetricscollectioninterval: 1s
   cleanupreservableautoclusteridletime: 30m0s
   influxdbcloudletusagemetricsretention: 8760h0m0s
-  createcloudlettimeout: 30m0s
-  updatecloudlettimeout: 20m0s
+  createcloudlettimeout: 10s
+  updatecloudlettimeout: 2s
   locationtilesidelengthkm: 2
   edgeeventsmetricscontinuousqueriescollectionintervals:
-  - interval: 24h0m0s
-    retention: 168h0m0s
-  - interval: 168h0m0s
-    retention: 672h0m0s
-  - interval: 672h0m0s
-    retention: 8064h0m0s
-  influxdbdownsampledmetricsretention: 8760h0m0s
+  - interval: 2s
+  influxdbdownsampledmetricsretention: 672h0m0s
   influxdbedgeeventsmetricsretention: 672h0m0s
-  appinstclientcleanupinterval: 24h0m0s
-  clusterautoscaleaveragingdurationsec: 60
-  clusterautoscaleretrydelay: 1m0s
-  alertpolicymintriggertime: 30s
+  appinstclientcleanupinterval: 3s
+  clusterautoscaleaveragingdurationsec: 1
+  clusterautoscaleretrydelay: 1s
+  alertpolicymintriggertime: 1s
+  disableratelimit: true
   ratelimitmaxtrackedips: 10000
   resourcesnapshotthreadinterval: 10m0s
   platformhainstancepollinterval: 300ms
   platformhainstanceactiveexpiretime: 1s
-flowratelimitsettings:
+gpudrivers:
 - key:
-    flowsettingsname: dmeglobalallreqs1
-    ratelimitkey:
-      apiname: Global
-      apiendpointtype: Dme
-      ratelimittarget: AllRequests
-  settings:
-    flowalgorithm: TokenBucketAlgorithm
-    reqspersecond: 25000
-    burstsize: 250
+    name: gpu-driver-global
+  storagebucketname: mobiledgex-dev-gpu-drivers
+  licenseconfigstoragepath: local/edgecloudorg/gpu-driver-global/licenseconfig/license.conf
+apps:
 - key:
-    flowsettingsname: dmeglobalperip1
-    ratelimitkey:
-      apiname: Global
-      apiendpointtype: Dme
-      ratelimittarget: PerIp
-  settings:
-    flowalgorithm: TokenBucketAlgorithm
-    reqspersecond: 10000
-    burstsize: 100
+    organization: edgecloudorg
+    name: MEXPrometheusAppName
+    version: "1.0"
+  imagepath: https://prometheus-community.github.io/helm-charts:prometheus-community/kube-prometheus-stack
+  imagetype: Helm
+  accessports: tcp:9090
+  defaultflavor:
+    name: x1.small
+  annotations: version=9.4.10
+  deployment: helm
+  delopt: AutoDelete
+  configs:
+  - kind: helmCustomizationYaml
+    config: |
+      prometheus:
+        prometheusSpec:
+          scrapeInterval: "15s"
+        service:
+          type: LoadBalancer
+      kubelet:
+        serviceMonitor:
+          ## Enable scraping the kubelet over https. For requirements to enable this see
+          ## https://github.com/coreos/prometheus-operator/issues/926
+          ##
+          https: true
+      defaultRules:
+        create: true
+        rules:
+          alertmanager: false
+          etcd: false
+          general: false
+          k8s: true
+          kubeApiserver: false
+          kubePrometheusNodeAlerting: false
+          kubePrometheusNodeRecording: true
+          kubernetesAbsent: true
+          kubernetesApps: true
+          kubernetesResources: true
+          kubernetesStorage: true
+          kubernetesSystem: true
+          kubeScheduler: true
+          network: true
+          node: true
+          prometheus: true
+          prometheusOperator: true
+          time: true
+      grafana:
+        enabled: false
+      alertmanager:
+        enabled: false
+      commonLabels:
+        mexAppName: "mexprometheusappname"
+        mexAppVersion: "10"
+  internalports: true
+  accesstype: LoadBalancer
+  trusted: true
+appinstrefs:
 - key:
-    flowsettingsname: persistentconnectionallreqs1
-    ratelimitkey:
-      apiname: PersistentConnection
-      apiendpointtype: Dme
-      ratelimittarget: AllRequests
-  settings:
-    flowalgorithm: TokenBucketAlgorithm
-    reqspersecond: 100
-    burstsize: 10
-- key:
-    flowsettingsname: verifylocallreqs1
-    ratelimitkey:
-      apiname: VerifyLocation
-      apiendpointtype: Dme
-      ratelimittarget: AllRequests
-  settings:
-    flowalgorithm: TokenBucketAlgorithm
-    reqspersecond: 5000
-    burstsize: 50
-- key:
-    flowsettingsname: verifylocperip1
-    ratelimitkey:
-      apiname: VerifyLocation
-      apiendpointtype: Dme
-      ratelimittarget: PerIp
-  settings:
-    flowalgorithm: TokenBucketAlgorithm
-    reqspersecond: 1000
-    burstsize: 25
+    organization: edgecloudorg
+    name: MEXPrometheusAppName
+    version: "1.0"
