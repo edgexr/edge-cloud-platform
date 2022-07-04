@@ -13,7 +13,7 @@
 # limitations under the License.
 
 status: Found
-fqdn: reservablecluster2-mobiledgex.dmuus-cloud-2-dmuus.local.localtest.net
+fqdn: reservablecluster2-edgecloudorg.dmuus-cloud-2-dmuus.local.edgecloude2e.net
 ports:
 - proto: Tcp
   internalport: 80
