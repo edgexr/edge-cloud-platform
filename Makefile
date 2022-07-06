@@ -91,7 +91,7 @@ doc:
 	go install \
 		./tools/protoc-gen-mc2 \
 		./doc/swaggerfix
-	make -C ./api/edgeproto
+	make -C ./api/edgeproto docgen
 	swagger generate spec -i ./doc/init.json -o ./doc/apidocs.swagger.json --scan-models
 	swaggerfix --custom ./doc/custom.yaml ./doc/apidocs.swagger.json
 
