@@ -84,11 +84,14 @@ GRPCGATEWAY	= $(shell GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/grpc-
 tools:
 	make -f Makefile.tools
 
+# Swagger generates spec by parsing swagger annotations in go files.
+# Some of the comments are auto-generated from mc2 generator reading proto files.
 doc:
-	make -C edgeproto doc
-	go install ./protoc-gen-mc2
-	make -f proto.make
-	go install ./doc/swaggerfix
+	(cd $(HOME); go install github.com/go-swagger/go-swagger/cmd/swagger@latest)
+	go install \
+		./tools/protoc-gen-mc2 \
+		./doc/swaggerfix
+	make -C ./api/edgeproto docgen
 	swagger generate spec -i ./doc/init.json -o ./doc/apidocs.swagger.json --scan-models
 	swaggerfix --custom ./doc/custom.yaml ./doc/apidocs.swagger.json
 
@@ -166,7 +169,7 @@ E2E_TESTSTART	= ./test/e2e-tests/testfiles/deploy_start_create.yml
 E2E_TESTRESET	= ./test/test/e2e-tests/testfiles/deploy_reset_create.yml
 E2E_TESTSTOP	= ./test/e2e-tests/testfiles/stop_cleanup.yml
 
-test-all:
+test:
 	e2e-tests -testfile $(E2E_TESTFILE) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS)
 
 test-debug:
@@ -283,3 +286,5 @@ build-ansible:
 
 clean: check-vers
 	go clean ./...
+
+.PHONY: clean doc test
