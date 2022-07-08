@@ -24,18 +24,18 @@ import (
 	"golang.org/x/net/context"
 )
 
-func FindCloudlets(client dme.MatchEngineApiClient) {
+func FindCloudlets(sessionClient dme.SessionClient, appClient dme.MatchEngineApiClient) {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second)
 
 	fmt.Println(">>>>>>>Finding Right Cloudlets<<<<<<<<<")
 	for _, m := range dmetest.FindCloudletData {
-		mstatus, err := client.RegisterClient(ctx, &m.Reg)
+		mstatus, err := sessionClient.RegisterClient(ctx, &m.Reg)
 		if err != nil {
 			log.Fatalf("could not register: %v", err)
 		}
 
 		m.Req.SessionCookie = mstatus.SessionCookie
-		mreply, err := client.FindCloudlet(ctx, &m.Req)
+		mreply, err := appClient.FindCloudlet(ctx, &m.Req)
 		if err != nil {
 			log.Fatalf("could not greet: %v", err)
 		}

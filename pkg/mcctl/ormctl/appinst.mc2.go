@@ -360,7 +360,7 @@ var AppInstComments = map[string]string{
 	"mappedports:#.proto":            "TCP (L4) or UDP (L4) protocol, one of Unknown, Tcp, Udp",
 	"mappedports:#.internalport":     "Container port",
 	"mappedports:#.publicport":       "Public facing port for TCP/UDP (may be mapped on shared LB reverse proxy)",
-	"mappedports:#.fqdnprefix":       "skip 4 to preserve the numbering. 4 was path_prefix but was removed since we dont need it after removed http FQDN prefix to append to base FQDN in FindCloudlet response. May be empty.",
+	"mappedports:#.fqdnprefix":       "FQDN prefix to append to base FQDN in FindCloudlet response. May be empty.",
 	"mappedports:#.endport":          "A non-zero end port indicates a port range from internal port to end port, inclusive.",
 	"mappedports:#.tls":              "TLS termination for this port",
 	"mappedports:#.nginx":            "Use nginx proxy for this port if you really need a transparent proxy (udp only)",

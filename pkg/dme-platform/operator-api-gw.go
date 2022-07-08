@@ -44,7 +44,7 @@ type OperatorApiGw interface {
 	// GetLocation gets the client location
 	GetLocation(mreq *dme.GetLocationRequest, mreply *dme.GetLocationReply) error
 	// GetQOSPositionKPI gets QOS KPIs for GPS positions
-	GetQOSPositionKPI(req *dme.QosPositionRequest, getQosSvr dme.MatchEngineApi_GetQosPositionKpiServer) error
+	GetQOSPositionKPI(req *dme.QosPositionRequest, getQosSvr dme.QosPositionKpi_GetQosPositionKpiServer) error
 	// CreatePrioritySession requests either stable latency or throughput for a client session
 	CreatePrioritySession(ctx context.Context, req *dme.QosPrioritySessionCreateRequest) (*dme.QosPrioritySessionReply, error)
 	// DeletePrioritySession removes a previously created priority session

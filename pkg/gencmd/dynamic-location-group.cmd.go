@@ -8,6 +8,7 @@ import (
 	fmt "fmt"
 	distributed_match_engine "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
+	_ "github.com/gogo/googleapis/google/api"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc/status"
@@ -80,8 +81,66 @@ func SendToGroups(c *cli.Command, data []distributed_match_engine.DlgMessage, er
 	}
 }
 
+var AddUserToGroupCmd = &cli.Command{
+	Use:          "AddUserToGroup",
+	RequiredArgs: strings.Join(DynamicLocGroupRequestRequiredArgs, " "),
+	OptionalArgs: strings.Join(DynamicLocGroupRequestOptionalArgs, " "),
+	AliasArgs:    strings.Join(DynamicLocGroupRequestAliasArgs, " "),
+	SpecialArgs:  &DynamicLocGroupRequestSpecialArgs,
+	Comments:     DynamicLocGroupRequestComments,
+	ReqData:      &distributed_match_engine.DynamicLocGroupRequest{},
+	ReplyData:    &distributed_match_engine.DynamicLocGroupReply{},
+	Run:          runAddUserToGroup,
+}
+
+func runAddUserToGroup(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*distributed_match_engine.DynamicLocGroupRequest)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return AddUserToGroup(c, obj)
+}
+
+func AddUserToGroup(c *cli.Command, in *distributed_match_engine.DynamicLocGroupRequest) error {
+	if DynamicLocGroupApiCmd == nil {
+		return fmt.Errorf("DynamicLocGroupApi client not initialized")
+	}
+	ctx := context.Background()
+	obj, err := DynamicLocGroupApiCmd.AddUserToGroup(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("AddUserToGroup failed: %s", errstr)
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func AddUserToGroups(c *cli.Command, data []distributed_match_engine.DynamicLocGroupRequest, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("AddUserToGroup %v\n", data[ii])
+		myerr := AddUserToGroup(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
 var DynamicLocGroupApiCmds = []*cobra.Command{
 	SendToGroupCmd.GenCmd(),
+	AddUserToGroupCmd.GenCmd(),
 }
 
 var DlgMessageRequiredArgs = []string{}
@@ -114,3 +173,43 @@ var DlgReplyComments = map[string]string{
 	"groupcookie": "Group Cookie for Secure comm",
 }
 var DlgReplySpecialArgs = map[string]string{}
+var DynamicLocGroupRequestRequiredArgs = []string{}
+var DynamicLocGroupRequestOptionalArgs = []string{
+	"ver",
+	"sessioncookie",
+	"lgid",
+	"commtype",
+	"userdata",
+	"tags",
+}
+var DynamicLocGroupRequestAliasArgs = []string{}
+var DynamicLocGroupRequestComments = map[string]string{
+	"ver":           "API version _(hidden)_ Reserved for future use",
+	"sessioncookie": "Session Cookie from RegisterClientRequest",
+	"lgid":          "Dynamic Location Group Id",
+	"commtype":      ", one of Undefined, Secure, Open",
+	"userdata":      "Unused",
+	"tags":          "_(optional)_ Vendor specific data",
+}
+var DynamicLocGroupRequestSpecialArgs = map[string]string{
+	"tags": "StringToString",
+}
+var DynamicLocGroupReplyRequiredArgs = []string{}
+var DynamicLocGroupReplyOptionalArgs = []string{
+	"ver",
+	"status",
+	"errorcode",
+	"groupcookie",
+	"tags",
+}
+var DynamicLocGroupReplyAliasArgs = []string{}
+var DynamicLocGroupReplyComments = map[string]string{
+	"ver":         "API version _(hidden)_ Reserved for future use",
+	"status":      "Status of the reply, one of Undefined, Success, Fail",
+	"errorcode":   "Error Code based on Failure",
+	"groupcookie": "Group Cookie for Secure Group Communication",
+	"tags":        "_(optional)_ Vendor specific data",
+}
+var DynamicLocGroupReplySpecialArgs = map[string]string{
+	"tags": "StringToString",
+}

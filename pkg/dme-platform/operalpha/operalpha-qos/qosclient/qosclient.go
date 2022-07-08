@@ -20,10 +20,10 @@ import (
 	"io"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	operalphaproto "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/proto"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	operalphaproto "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/proto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"google.golang.org/grpc"
@@ -54,7 +54,7 @@ func GetQosCertsFromVault(vaultConfig *vault.Config) error {
 	return nil
 }
 
-func GetQOSPositionFromApiGW(serverUrl string, mreq *dme.QosPositionRequest, qosKpiServer dme.MatchEngineApi_GetQosPositionKpiServer) error {
+func GetQOSPositionFromApiGW(serverUrl string, mreq *dme.QosPositionRequest, qosKpiServer dme.QosPositionKpi_GetQosPositionKpiServer) error {
 	serverCertFile := "/tmp/" + serverCert
 	clientCertFile := "/tmp/" + clientCert
 
