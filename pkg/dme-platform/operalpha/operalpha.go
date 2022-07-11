@@ -23,16 +23,16 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	locclient "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/operalpha-loc/locclient"
-	qosclient "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/operalpha-qos/qosclient"
-	sessionsclient "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/operalpha-sessions/sessionsclient"
-	"github.com/edgexr/edge-cloud-platform/pkg/version"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	operator "github.com/edgexr/edge-cloud-platform/pkg/dme-platform"
 	simulatedloc "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/defaultoperator/simulated-location"
 	simulatedqos "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/defaultoperator/simulated-qos"
+	locclient "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/operalpha-loc/locclient"
+	qosclient "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/operalpha-qos/qosclient"
+	sessionsclient "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/operalpha-sessions/sessionsclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	"github.com/edgexr/edge-cloud-platform/pkg/version"
 )
 
 var QosClientCert = "qosclient.crt"
@@ -104,7 +104,7 @@ func (o *OperatorApiGw) GetLocation(mreq *dme.GetLocationRequest, mreply *dme.Ge
 	return simulatedloc.GetSimulatedClientLoc(mreq, mreply)
 }
 
-func (o *OperatorApiGw) GetQOSPositionKPI(mreq *dme.QosPositionRequest, getQosSvr dme.MatchEngineApi_GetQosPositionKpiServer) error {
+func (o *OperatorApiGw) GetQOSPositionKPI(mreq *dme.QosPositionRequest, getQosSvr dme.QosPositionKpi_GetQosPositionKpiServer) error {
 	log.DebugLog(log.DebugLevelDmereq, "OPERALPHA GetQOSPositionKPI", "QosPosUrl", o.Servers.QosPosUrl, "request", mreq)
 
 	if o.Servers.QosPosUrl == "" {

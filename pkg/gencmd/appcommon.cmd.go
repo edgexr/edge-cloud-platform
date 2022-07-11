@@ -32,7 +32,7 @@ var AppPortComments = map[string]string{
 	"proto":        "TCP (L4) or UDP (L4) protocol, one of Unknown, Tcp, Udp",
 	"internalport": "Container port",
 	"publicport":   "Public facing port for TCP/UDP (may be mapped on shared LB reverse proxy)",
-	"fqdnprefix":   "skip 4 to preserve the numbering. 4 was path_prefix but was removed since we dont need it after removed http FQDN prefix to append to base FQDN in FindCloudlet response. May be empty.",
+	"fqdnprefix":   "FQDN prefix to append to base FQDN in FindCloudlet response. May be empty.",
 	"endport":      "A non-zero end port indicates a port range from internal port to end port, inclusive.",
 	"tls":          "TLS termination for this port",
 	"nginx":        "Use nginx proxy for this port if you really need a transparent proxy (udp only)",

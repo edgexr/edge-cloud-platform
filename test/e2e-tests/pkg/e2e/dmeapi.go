@@ -73,13 +73,42 @@ type findcloudlet struct {
 	At    time.Time                    `yaml:"at"`
 }
 
+type dmeClient interface {
+	dmeproto.MatchEngineApiClient
+	dmeproto.LocationClient
+	dmeproto.QosPositionKpiClient
+	dmeproto.QualityOfServiceClient
+	dmeproto.SessionClient
+	dmeproto.PlatformOSClient
+}
+
+type dmeGrpcClient struct {
+	dmeproto.MatchEngineApiClient
+	dmeproto.LocationClient
+	dmeproto.QosPositionKpiClient
+	dmeproto.QualityOfServiceClient
+	dmeproto.SessionClient
+	dmeproto.PlatformOSClient
+}
+
+func NewDmeGrpcClient(cc *grpc.ClientConn) *dmeGrpcClient {
+	s := dmeGrpcClient{}
+	s.MatchEngineApiClient = dmeproto.NewMatchEngineApiClient(cc)
+	s.LocationClient = dmeproto.NewLocationClient(cc)
+	s.QosPositionKpiClient = dmeproto.NewQosPositionKpiClient(cc)
+	s.QualityOfServiceClient = dmeproto.NewQualityOfServiceClient(cc)
+	s.SessionClient = dmeproto.NewSessionClient(cc)
+	s.PlatformOSClient = dmeproto.NewPlatformOSClient(cc)
+	return &s
+}
+
 // REST client implementation of MatchEngineApiClient interface
 type dmeRestClient struct {
 	client *http.Client
 	addr   string
 }
 
-func NewdmeRestClient(client *http.Client, httpAddr string) dmeproto.MatchEngineApiClient {
+func NewdmeRestClient(client *http.Client, httpAddr string) *dmeRestClient {
 	return &dmeRestClient{client, httpAddr}
 }
 
@@ -161,7 +190,7 @@ func (c *dmeRestClient) GetLocation(ctx context.Context, in *dmeproto.GetLocatio
 	return out, nil
 }
 
-func (c *dmeRestClient) GetQosPositionKpi(ctx context.Context, in *dmeproto.QosPositionRequest, opts ...grpc.CallOption) (dmeproto.MatchEngineApi_GetQosPositionKpiClient, error) {
+func (c *dmeRestClient) GetQosPositionKpi(ctx context.Context, in *dmeproto.QosPositionRequest, opts ...grpc.CallOption) (dmeproto.QosPositionKpi_GetQosPositionKpiClient, error) {
 	return nil, fmt.Errorf("GetQosPositionKpi not supported yet in E2E via REST")
 }
 
@@ -257,7 +286,7 @@ func RunDmeAPI(api string, procname string, apiFile string, apiFileVars map[stri
 	}
 
 	dme := GetDme(procname)
-	var client dmeproto.MatchEngineApiClient
+	var client dmeClient
 
 	if apiType == "rest" {
 		httpClient, err := dme.GetRestClient(apiConnectTimeout)
@@ -273,8 +302,7 @@ func RunDmeAPI(api string, procname string, apiFile string, apiFileVars map[stri
 			return false
 		}
 		defer conn.Close()
-		client = dmeproto.NewMatchEngineApiClient(conn)
-
+		client = NewDmeGrpcClient(conn)
 	}
 
 	rc := true
@@ -325,7 +353,7 @@ const (
 	YesFilterOutput = true
 )
 
-func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiRequest *dmeApiRequest, client dmeproto.MatchEngineApiClient, filterOutput FilterOutput) (bool, interface{}) {
+func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiRequest *dmeApiRequest, client dmeClient, filterOutput FilterOutput) (bool, interface{}) {
 	//generic struct so we can do the marshal in one place even though return types are different
 	var dmereply interface{}
 	var dmeerror error
