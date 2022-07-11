@@ -39,10 +39,14 @@ func (s *server) SendToGroup(ctx context.Context, req *dme.DlgMessage) (*dme.Dlg
 
 	var mreq *dme.DlgReply
 
-	fmt.Printf("SendToGroup: To Group %d\n", req.LgId);
+	fmt.Printf("SendToGroup: To Group %d\n", req.LgId)
 	mreq = new(dme.DlgReply)
 	mreq.AckId = req.MessageId
 	return mreq, nil
+}
+
+func (s *server) AddUserToGroup(ctx context.Context, req *dme.DynamicLocGroupRequest) (*dme.DynamicLocGroupReply, error) {
+	return nil, fmt.Errorf("AddUserToGroup API is unsupported")
 }
 
 // The Group is created as an AppInst from the Controller

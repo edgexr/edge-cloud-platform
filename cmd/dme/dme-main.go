@@ -29,24 +29,24 @@ import (
 	"strings"
 	"time"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/ratelimit"
 	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	op "github.com/edgexr/edge-cloud-platform/pkg/dme-platform"
 	operator "github.com/edgexr/edge-cloud-platform/pkg/dme-platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/dme-platform/defaultoperator"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	log "github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/segmentio/ksuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -514,7 +514,7 @@ func (s *server) AddUserToGroup(ctx context.Context,
 	return mreq, nil
 }
 
-func (s *server) GetQosPositionKpi(req *dme.QosPositionRequest, getQosSvr dme.MatchEngineApi_GetQosPositionKpiServer) error {
+func (s *server) GetQosPositionKpi(req *dme.QosPositionRequest, getQosSvr dme.QosPositionKpi_GetQosPositionKpiServer) error {
 	log.SpanLog(getQosSvr.Context(), log.DebugLevelDmereq, "GetQosPositionKpi", "request", req)
 	return operatorApiGw.GetQOSPositionKPI(req, getQosSvr)
 }
@@ -804,7 +804,13 @@ func main() {
 
 	s := grpc.NewServer(grpcOpts...)
 
-	dme.RegisterMatchEngineApiServer(s, &server{})
+	serv := &server{}
+	dme.RegisterMatchEngineApiServer(s, serv)
+	dme.RegisterLocationServer(s, serv)
+	dme.RegisterQosPositionKpiServer(s, serv)
+	dme.RegisterQualityOfServiceServer(s, serv)
+	dme.RegisterSessionServer(s, serv)
+	dme.RegisterPlatformOSServer(s, serv)
 
 	// Add Global DME RateLimitSettings
 	addDmeApiRateLimitSettings(ctx, edgeproto.GlobalApiName)
@@ -839,6 +845,11 @@ func main() {
 		TlsCertFile: *tlsApiCertFile,
 		ApiHandles: []func(context.Context, *gwruntime.ServeMux, *grpc.ClientConn) error{
 			dme.RegisterMatchEngineApiHandler,
+			dme.RegisterLocationHandler,
+			dme.RegisterQosPositionKpiHandler,
+			dme.RegisterQualityOfServiceHandler,
+			dme.RegisterSessionHandler,
+			dme.RegisterPlatformOSHandler,
 		},
 	}
 	if clientTlsConfig != nil && publicCertManager.TLSMode() != tls.NoTLS {

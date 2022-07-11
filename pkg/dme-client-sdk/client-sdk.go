@@ -36,11 +36,13 @@ func main() {
 	}
 	defer conn.Close()
 
-	client := dme.NewMatchEngineApiClient(conn)
+	sessionClient := dme.NewSessionClient(conn)
+	appClient := dme.NewMatchEngineApiClient(conn)
+	locClient := dme.NewLocationClient(conn)
 
 	_, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	FindCloudlets(client)
-	TestLocations(client)
+	FindCloudlets(sessionClient, appClient)
+	TestLocations(sessionClient, locClient)
 }

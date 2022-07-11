@@ -9,6 +9,7 @@ import (
 	"errors"
 	fmt "fmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	_ "github.com/gogo/googleapis/google/api"
 	proto "github.com/gogo/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -59,6 +60,35 @@ func (x DlgMessage_DlgAck) String() string {
 
 func (DlgMessage_DlgAck) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_75937b7725a23625, []int{0, 0}
+}
+
+// Use Secure communication or Open with the group
+type DynamicLocGroupRequest_DlgCommType int32
+
+const (
+	DynamicLocGroupRequest_DLG_UNDEFINED DynamicLocGroupRequest_DlgCommType = 0
+	DynamicLocGroupRequest_DLG_SECURE    DynamicLocGroupRequest_DlgCommType = 1
+	DynamicLocGroupRequest_DLG_OPEN      DynamicLocGroupRequest_DlgCommType = 2
+)
+
+var DynamicLocGroupRequest_DlgCommType_name = map[int32]string{
+	0: "DLG_UNDEFINED",
+	1: "DLG_SECURE",
+	2: "DLG_OPEN",
+}
+
+var DynamicLocGroupRequest_DlgCommType_value = map[string]int32{
+	"DLG_UNDEFINED": 0,
+	"DLG_SECURE":    1,
+	"DLG_OPEN":      2,
+}
+
+func (x DynamicLocGroupRequest_DlgCommType) String() string {
+	return proto.EnumName(DynamicLocGroupRequest_DlgCommType_name, int32(x))
+}
+
+func (DynamicLocGroupRequest_DlgCommType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_75937b7725a23625, []int{2, 0}
 }
 
 type DlgMessage struct {
@@ -154,40 +184,172 @@ func (m *DlgReply) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DlgReply proto.InternalMessageInfo
 
+type DynamicLocGroupRequest struct {
+	//
+	// API version
+	//
+	// _(hidden)_ Reserved for future use
+	Ver uint32 `protobuf:"varint,1,opt,name=ver,proto3" json:"ver,omitempty"`
+	// Session Cookie from RegisterClientRequest
+	SessionCookie string `protobuf:"bytes,2,opt,name=session_cookie,json=sessionCookie,proto3" json:"session_cookie,omitempty"`
+	// Dynamic Location Group Id
+	LgId     uint64                             `protobuf:"varint,3,opt,name=lg_id,json=lgId,proto3" json:"lg_id,omitempty"`
+	CommType DynamicLocGroupRequest_DlgCommType `protobuf:"varint,11,opt,name=comm_type,json=commType,proto3,enum=distributed_match_engine.DynamicLocGroupRequest_DlgCommType" json:"comm_type,omitempty"`
+	// Unused
+	UserData string `protobuf:"bytes,12,opt,name=user_data,json=userData,proto3" json:"user_data,omitempty"`
+	// _(optional)_ Vendor specific data
+	Tags                 map[string]string `protobuf:"bytes,100,rep,name=tags,proto3" json:"tags,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
+}
+
+func (m *DynamicLocGroupRequest) Reset()         { *m = DynamicLocGroupRequest{} }
+func (m *DynamicLocGroupRequest) String() string { return proto.CompactTextString(m) }
+func (*DynamicLocGroupRequest) ProtoMessage()    {}
+func (*DynamicLocGroupRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_75937b7725a23625, []int{2}
+}
+func (m *DynamicLocGroupRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DynamicLocGroupRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DynamicLocGroupRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DynamicLocGroupRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DynamicLocGroupRequest.Merge(m, src)
+}
+func (m *DynamicLocGroupRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *DynamicLocGroupRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DynamicLocGroupRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DynamicLocGroupRequest proto.InternalMessageInfo
+
+type DynamicLocGroupReply struct {
+	//
+	// API version
+	//
+	// _(hidden)_ Reserved for future use
+	Ver uint32 `protobuf:"varint,1,opt,name=ver,proto3" json:"ver,omitempty"`
+	// Status of the reply
+	Status ReplyStatus `protobuf:"varint,2,opt,name=status,proto3,enum=distributed_match_engine.ReplyStatus" json:"status,omitempty"`
+	// Error Code based on Failure
+	ErrorCode uint32 `protobuf:"varint,3,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	// Group Cookie for Secure Group Communication
+	GroupCookie string `protobuf:"bytes,5,opt,name=group_cookie,json=groupCookie,proto3" json:"group_cookie,omitempty"`
+	// _(optional)_ Vendor specific data
+	Tags                 map[string]string `protobuf:"bytes,100,rep,name=tags,proto3" json:"tags,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
+}
+
+func (m *DynamicLocGroupReply) Reset()         { *m = DynamicLocGroupReply{} }
+func (m *DynamicLocGroupReply) String() string { return proto.CompactTextString(m) }
+func (*DynamicLocGroupReply) ProtoMessage()    {}
+func (*DynamicLocGroupReply) Descriptor() ([]byte, []int) {
+	return fileDescriptor_75937b7725a23625, []int{3}
+}
+func (m *DynamicLocGroupReply) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DynamicLocGroupReply) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DynamicLocGroupReply.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DynamicLocGroupReply) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DynamicLocGroupReply.Merge(m, src)
+}
+func (m *DynamicLocGroupReply) XXX_Size() int {
+	return m.Size()
+}
+func (m *DynamicLocGroupReply) XXX_DiscardUnknown() {
+	xxx_messageInfo_DynamicLocGroupReply.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DynamicLocGroupReply proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterEnum("distributed_match_engine.DlgMessage_DlgAck", DlgMessage_DlgAck_name, DlgMessage_DlgAck_value)
+	proto.RegisterEnum("distributed_match_engine.DynamicLocGroupRequest_DlgCommType", DynamicLocGroupRequest_DlgCommType_name, DynamicLocGroupRequest_DlgCommType_value)
 	proto.RegisterType((*DlgMessage)(nil), "distributed_match_engine.DlgMessage")
 	proto.RegisterType((*DlgReply)(nil), "distributed_match_engine.DlgReply")
+	proto.RegisterType((*DynamicLocGroupRequest)(nil), "distributed_match_engine.DynamicLocGroupRequest")
+	proto.RegisterMapType((map[string]string)(nil), "distributed_match_engine.DynamicLocGroupRequest.TagsEntry")
+	proto.RegisterType((*DynamicLocGroupReply)(nil), "distributed_match_engine.DynamicLocGroupReply")
+	proto.RegisterMapType((map[string]string)(nil), "distributed_match_engine.DynamicLocGroupReply.TagsEntry")
 }
 
 func init() { proto.RegisterFile("dynamic-location-group.proto", fileDescriptor_75937b7725a23625) }
 
 var fileDescriptor_75937b7725a23625 = []byte{
-	// 371 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x52, 0xdf, 0xee, 0xd2, 0x30,
-	0x18, 0xa5, 0xfc, 0x60, 0xc0, 0x87, 0x92, 0xa5, 0x6a, 0x6c, 0xfc, 0xb3, 0xcc, 0xc5, 0x8b, 0x25,
-	0x06, 0x2e, 0xf0, 0x09, 0x26, 0x9b, 0x48, 0xe4, 0x4f, 0xb2, 0x11, 0x12, 0xae, 0x9a, 0xd1, 0x35,
-	0xb3, 0xd9, 0x58, 0x97, 0x31, 0x4c, 0xf6, 0x46, 0x3e, 0x0a, 0x97, 0x3e, 0x82, 0xf2, 0x24, 0x66,
-	0x05, 0xf1, 0x46, 0x0d, 0x77, 0x5f, 0xcf, 0xf9, 0xce, 0xc9, 0xe9, 0x69, 0xe1, 0x55, 0x54, 0x65,
-	0xe1, 0x5e, 0xb0, 0x61, 0x2a, 0x59, 0x58, 0x0a, 0x99, 0x0d, 0xe3, 0x42, 0x1e, 0xf3, 0x51, 0x5e,
-	0xc8, 0x52, 0x62, 0x12, 0x89, 0x43, 0x59, 0x88, 0xdd, 0xb1, 0xe4, 0x11, 0xdd, 0x87, 0x25, 0xfb,
-	0x42, 0x79, 0x16, 0x8b, 0x8c, 0x5b, 0xdf, 0x9a, 0x00, 0x6e, 0x1a, 0x2f, 0xf8, 0xe1, 0x10, 0xc6,
-	0x1c, 0xeb, 0xf0, 0xf0, 0x95, 0x17, 0x04, 0x99, 0xc8, 0x7e, 0xec, 0xd7, 0x23, 0x7e, 0x02, 0xed,
-	0x34, 0xa6, 0x22, 0x22, 0x4d, 0x13, 0xd9, 0x2d, 0xbf, 0x95, 0xc6, 0xb3, 0x08, 0xbf, 0x81, 0x47,
-	0xca, 0x9e, 0x32, 0x29, 0x13, 0xc1, 0xc9, 0x83, 0x89, 0xec, 0x9e, 0xdf, 0x57, 0xd8, 0x44, 0x41,
-	0xf8, 0x35, 0xc0, 0xfe, 0x62, 0x5a, 0x8b, 0x5b, 0x4a, 0xdc, 0xbb, 0x22, 0xb3, 0x08, 0x7f, 0x84,
-	0x6e, 0xc8, 0x12, 0x5a, 0x56, 0x39, 0x27, 0x6d, 0x13, 0xd9, 0x83, 0xf1, 0xbb, 0xd1, 0xbf, 0x42,
-	0x8e, 0xfe, 0x04, 0xac, 0x47, 0x87, 0x25, 0x7e, 0x27, 0x64, 0xc9, 0xba, 0xca, 0x39, 0x26, 0xd0,
-	0xb9, 0x9a, 0x12, 0x4d, 0x85, 0xf8, 0x7d, 0xb4, 0x56, 0xa0, 0x5d, 0x96, 0x31, 0x81, 0xa7, 0xee,
-	0x7c, 0x4a, 0x9d, 0xc9, 0x67, 0xea, 0x39, 0x93, 0x4f, 0x74, 0xe1, 0x05, 0x81, 0x33, 0xf5, 0xf4,
-	0x06, 0x7e, 0x09, 0xcf, 0x15, 0x13, 0x6c, 0xa9, 0xb7, 0xf1, 0xfc, 0x2d, 0x5d, 0xde, 0x48, 0x84,
-	0x07, 0x00, 0x35, 0xb9, 0x5c, 0xd5, 0x4a, 0xbd, 0x69, 0x6d, 0xa0, 0xeb, 0xa6, 0xb1, 0xcf, 0xf3,
-	0xb4, 0xfa, 0x4b, 0x4f, 0xcf, 0x40, 0xab, 0x2f, 0x74, 0x2b, 0xaa, 0x1d, 0xb2, 0xe4, 0xae, 0xa6,
-	0xc6, 0x12, 0xb0, 0x7b, 0x79, 0xbc, 0xb9, 0x64, 0xd3, 0x9a, 0x70, 0x72, 0x81, 0xb7, 0xd0, 0x0f,
-	0x78, 0x16, 0xad, 0xa5, 0x42, 0xf0, 0xdb, 0x7b, 0xda, 0x79, 0x61, 0xfd, 0x77, 0x4b, 0x45, 0xb7,
-	0x1a, 0x1f, 0xf4, 0xd3, 0x4f, 0xa3, 0x71, 0x3a, 0x1b, 0xe8, 0xfb, 0xd9, 0x40, 0x3f, 0xce, 0x06,
-	0xda, 0x69, 0xea, 0x9b, 0xbc, 0xff, 0x15, 0x00, 0x00, 0xff, 0xff, 0xa4, 0x5c, 0x4f, 0x8d, 0x46,
-	0x02, 0x00, 0x00,
+	// 723 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x54, 0xdd, 0x6e, 0xda, 0x48,
+	0x14, 0xc6, 0xe6, 0x27, 0x70, 0x08, 0x2c, 0x3b, 0x9b, 0xdd, 0x58, 0x24, 0x41, 0xac, 0xb5, 0x91,
+	0xd0, 0xae, 0x02, 0xbb, 0xec, 0x45, 0xa3, 0xa8, 0xad, 0x44, 0xc1, 0x49, 0xd3, 0x26, 0xa4, 0x32,
+	0x49, 0x24, 0xae, 0xac, 0x89, 0x67, 0xe4, 0x5a, 0x18, 0x8f, 0x6b, 0x0f, 0x91, 0xb8, 0x6d, 0x9f,
+	0xa0, 0xea, 0x4b, 0xf4, 0xb2, 0x57, 0x7d, 0x86, 0x5c, 0x56, 0xea, 0x0b, 0xb4, 0x51, 0x1f, 0xa4,
+	0x9a, 0x31, 0xd0, 0xb4, 0x21, 0x51, 0x90, 0x7a, 0x77, 0xe6, 0x3b, 0x73, 0xce, 0x7c, 0xf3, 0x7d,
+	0x67, 0x06, 0xd6, 0xc9, 0xd8, 0xc7, 0x43, 0xd7, 0xde, 0xf2, 0x98, 0x8d, 0xb9, 0xcb, 0xfc, 0x2d,
+	0x27, 0x64, 0xa3, 0xa0, 0x1e, 0x84, 0x8c, 0x33, 0xa4, 0x11, 0x37, 0xe2, 0xa1, 0x7b, 0x36, 0xe2,
+	0x94, 0x58, 0x43, 0xcc, 0xed, 0xe7, 0x16, 0xf5, 0x1d, 0xd7, 0xa7, 0xe5, 0x75, 0x87, 0x31, 0xc7,
+	0xa3, 0x0d, 0x1c, 0xb8, 0x0d, 0xec, 0xfb, 0x8c, 0xcb, 0xe2, 0x28, 0xae, 0x2b, 0xff, 0x82, 0x83,
+	0xc0, 0x66, 0xc3, 0x21, 0xf3, 0x63, 0x40, 0x7f, 0xab, 0x02, 0x74, 0x3c, 0xe7, 0x90, 0x46, 0x11,
+	0x76, 0x28, 0x2a, 0x41, 0xf2, 0x9c, 0x86, 0x9a, 0x52, 0x55, 0x6a, 0x05, 0x53, 0x84, 0xe8, 0x37,
+	0x48, 0x7b, 0x8e, 0xe5, 0x12, 0x4d, 0xad, 0x2a, 0xb5, 0x94, 0x99, 0xf2, 0x9c, 0x7d, 0x82, 0xfe,
+	0x84, 0x65, 0xc9, 0xc6, 0xb2, 0x19, 0x1b, 0xb8, 0x54, 0x4b, 0x56, 0x95, 0x5a, 0xce, 0xcc, 0x4b,
+	0xac, 0x2d, 0x21, 0xb4, 0x01, 0x30, 0x8c, 0x9b, 0x8a, 0xe2, 0x94, 0x2c, 0xce, 0x4d, 0x90, 0x7d,
+	0x82, 0x76, 0x21, 0x8b, 0xed, 0x81, 0xc5, 0xc7, 0x01, 0xd5, 0xd2, 0x55, 0xa5, 0x56, 0x6c, 0xfe,
+	0x53, 0xbf, 0xe9, 0x4e, 0xf5, 0x6f, 0x04, 0x45, 0xd8, 0xb2, 0x07, 0xe6, 0x12, 0xb6, 0x07, 0xc7,
+	0xe3, 0x80, 0x22, 0x0d, 0x96, 0x26, 0x4d, 0xb5, 0x8c, 0x24, 0x31, 0x5d, 0xea, 0x47, 0x90, 0x89,
+	0x37, 0x23, 0x0d, 0x56, 0x3a, 0x07, 0x7b, 0x56, 0xab, 0xfd, 0xd4, 0x32, 0x5a, 0xed, 0xc7, 0xd6,
+	0xa1, 0xd1, 0xeb, 0xb5, 0xf6, 0x8c, 0x52, 0x02, 0xad, 0xc1, 0xaa, 0xcc, 0xf4, 0xfa, 0x96, 0x71,
+	0x6a, 0x98, 0x7d, 0xab, 0x3b, 0x4b, 0x2a, 0xa8, 0x08, 0x20, 0x92, 0xdd, 0x23, 0x51, 0x59, 0x52,
+	0xf5, 0x53, 0xc8, 0x76, 0x3c, 0xc7, 0xa4, 0x81, 0x37, 0x9e, 0xa3, 0xd3, 0xef, 0x90, 0x11, 0x17,
+	0x9a, 0x09, 0x95, 0xc6, 0xf6, 0xe0, 0x4e, 0x4a, 0xe9, 0xef, 0x93, 0xf0, 0x47, 0x27, 0x36, 0xfb,
+	0x80, 0xd9, 0x7b, 0x22, 0x63, 0xd2, 0x17, 0x23, 0x1a, 0xf1, 0x39, 0xc7, 0x6c, 0x42, 0x31, 0xa2,
+	0x51, 0xe4, 0x32, 0x7f, 0xda, 0x51, 0x95, 0x1d, 0x0b, 0x13, 0x74, 0xa2, 0xfe, 0xcc, 0xb5, 0xe4,
+	0x15, 0xd7, 0xfa, 0x90, 0x13, 0xde, 0xc7, 0xa2, 0xe7, 0xa5, 0xe8, 0xf7, 0x6f, 0x11, 0x7d, 0x2e,
+	0x25, 0x61, 0x40, 0x9b, 0x0d, 0x87, 0x42, 0x7c, 0x33, 0x6b, 0x4f, 0x22, 0xb4, 0x06, 0xb9, 0x51,
+	0x44, 0x43, 0x8b, 0x60, 0x8e, 0xb5, 0x65, 0xc9, 0x28, 0x2b, 0x80, 0x0e, 0xe6, 0x18, 0x75, 0x21,
+	0xc5, 0xb1, 0x13, 0x69, 0xa4, 0x9a, 0xac, 0xe5, 0x9b, 0x3b, 0x0b, 0x1f, 0x79, 0x8c, 0x9d, 0xc8,
+	0xf0, 0x79, 0x38, 0x36, 0x65, 0x9f, 0xf2, 0x3d, 0xc8, 0xcd, 0x20, 0x21, 0xd1, 0x80, 0x8e, 0xa5,
+	0x44, 0x39, 0x53, 0x84, 0x68, 0x05, 0xd2, 0xe7, 0xd8, 0x1b, 0x4d, 0x95, 0x89, 0x17, 0x3b, 0xea,
+	0xb6, 0xa2, 0x3f, 0x84, 0xfc, 0x15, 0xfa, 0xe8, 0x57, 0x28, 0x08, 0x83, 0x4f, 0xba, 0x1d, 0x63,
+	0x77, 0xbf, 0x6b, 0x74, 0x4a, 0x89, 0xa9, 0xe7, 0x3d, 0xa3, 0x7d, 0x62, 0x8a, 0x19, 0x58, 0x86,
+	0xac, 0x58, 0x1f, 0x3d, 0x33, 0xba, 0x25, 0xf5, 0x49, 0x2a, 0x5b, 0x28, 0x15, 0xcd, 0x25, 0x9b,
+	0x7a, 0x9e, 0xe5, 0x12, 0xfd, 0x9d, 0x0a, 0x2b, 0xd7, 0x28, 0xcf, 0x9f, 0x8e, 0x07, 0x90, 0x89,
+	0x38, 0xe6, 0xa3, 0x48, 0x92, 0x2a, 0x36, 0x37, 0x6f, 0x16, 0x41, 0xb6, 0xe8, 0xc9, 0xcd, 0xe6,
+	0xa4, 0x48, 0x3c, 0x26, 0x1a, 0x86, 0x2c, 0xb4, 0x6c, 0x46, 0xe2, 0x19, 0x2a, 0x98, 0x39, 0x89,
+	0xb4, 0x19, 0xa1, 0xd7, 0x86, 0x2c, 0x7d, 0xfd, 0x39, 0x1e, 0x7c, 0xe7, 0xc1, 0xf6, 0x02, 0x1e,
+	0x04, 0xde, 0xf8, 0xa7, 0x39, 0xd0, 0x7c, 0xa5, 0x02, 0xfa, 0xe1, 0x84, 0x56, 0xe0, 0xa2, 0x3e,
+	0xe4, 0x7b, 0xd4, 0x27, 0xc7, 0x4c, 0x22, 0xe8, 0xaf, 0xbb, 0x7c, 0x05, 0x65, 0xfd, 0xd6, 0x5d,
+	0x92, 0xb8, 0x9e, 0x40, 0xaf, 0x15, 0x28, 0xb6, 0x08, 0x39, 0x89, 0x68, 0x38, 0x6d, 0xff, 0xef,
+	0xa2, 0x13, 0x58, 0xae, 0x2f, 0xa6, 0x97, 0xbe, 0xf1, 0xf2, 0xe3, 0x97, 0x37, 0xea, 0xaa, 0x8e,
+	0x1a, 0xe7, 0xff, 0x35, 0x30, 0x21, 0xe2, 0x29, 0x70, 0x26, 0xfd, 0xd8, 0x51, 0xfe, 0x7e, 0x54,
+	0xba, 0xf8, 0x5c, 0x49, 0x5c, 0x5c, 0x56, 0x94, 0x0f, 0x97, 0x15, 0xe5, 0xd3, 0x65, 0x45, 0x39,
+	0xcb, 0xc8, 0xdf, 0xf8, 0xff, 0xaf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x53, 0xef, 0x88, 0x99, 0xf6,
+	0x05, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -203,6 +365,7 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type DynamicLocGroupApiClient interface {
 	SendToGroup(ctx context.Context, in *DlgMessage, opts ...grpc.CallOption) (*DlgReply, error)
+	AddUserToGroup(ctx context.Context, in *DynamicLocGroupRequest, opts ...grpc.CallOption) (*DynamicLocGroupReply, error)
 }
 
 type dynamicLocGroupApiClient struct {
@@ -222,9 +385,19 @@ func (c *dynamicLocGroupApiClient) SendToGroup(ctx context.Context, in *DlgMessa
 	return out, nil
 }
 
+func (c *dynamicLocGroupApiClient) AddUserToGroup(ctx context.Context, in *DynamicLocGroupRequest, opts ...grpc.CallOption) (*DynamicLocGroupReply, error) {
+	out := new(DynamicLocGroupReply)
+	err := c.cc.Invoke(ctx, "/distributed_match_engine.DynamicLocGroupApi/AddUserToGroup", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DynamicLocGroupApiServer is the server API for DynamicLocGroupApi service.
 type DynamicLocGroupApiServer interface {
 	SendToGroup(context.Context, *DlgMessage) (*DlgReply, error)
+	AddUserToGroup(context.Context, *DynamicLocGroupRequest) (*DynamicLocGroupReply, error)
 }
 
 // UnimplementedDynamicLocGroupApiServer can be embedded to have forward compatible implementations.
@@ -233,6 +406,9 @@ type UnimplementedDynamicLocGroupApiServer struct {
 
 func (*UnimplementedDynamicLocGroupApiServer) SendToGroup(ctx context.Context, req *DlgMessage) (*DlgReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendToGroup not implemented")
+}
+func (*UnimplementedDynamicLocGroupApiServer) AddUserToGroup(ctx context.Context, req *DynamicLocGroupRequest) (*DynamicLocGroupReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddUserToGroup not implemented")
 }
 
 func RegisterDynamicLocGroupApiServer(s *grpc.Server, srv DynamicLocGroupApiServer) {
@@ -257,6 +433,24 @@ func _DynamicLocGroupApi_SendToGroup_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DynamicLocGroupApi_AddUserToGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DynamicLocGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DynamicLocGroupApiServer).AddUserToGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/distributed_match_engine.DynamicLocGroupApi/AddUserToGroup",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DynamicLocGroupApiServer).AddUserToGroup(ctx, req.(*DynamicLocGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _DynamicLocGroupApi_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "distributed_match_engine.DynamicLocGroupApi",
 	HandlerType: (*DynamicLocGroupApiServer)(nil),
@@ -264,6 +458,10 @@ var _DynamicLocGroupApi_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendToGroup",
 			Handler:    _DynamicLocGroupApi_SendToGroup_Handler,
+		},
+		{
+			MethodName: "AddUserToGroup",
+			Handler:    _DynamicLocGroupApi_AddUserToGroup_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -375,6 +573,153 @@ func (m *DlgReply) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *DynamicLocGroupRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DynamicLocGroupRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DynamicLocGroupRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Tags) > 0 {
+		for k := range m.Tags {
+			v := m.Tags[k]
+			baseI := i
+			i -= len(v)
+			copy(dAtA[i:], v)
+			i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(len(v)))
+			i--
+			dAtA[i] = 0x12
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x6
+			i--
+			dAtA[i] = 0xa2
+		}
+	}
+	if len(m.UserData) > 0 {
+		i -= len(m.UserData)
+		copy(dAtA[i:], m.UserData)
+		i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(len(m.UserData)))
+		i--
+		dAtA[i] = 0x62
+	}
+	if m.CommType != 0 {
+		i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(m.CommType))
+		i--
+		dAtA[i] = 0x58
+	}
+	if m.LgId != 0 {
+		i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(m.LgId))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.SessionCookie) > 0 {
+		i -= len(m.SessionCookie)
+		copy(dAtA[i:], m.SessionCookie)
+		i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(len(m.SessionCookie)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Ver != 0 {
+		i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(m.Ver))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DynamicLocGroupReply) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DynamicLocGroupReply) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DynamicLocGroupReply) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Tags) > 0 {
+		for k := range m.Tags {
+			v := m.Tags[k]
+			baseI := i
+			i -= len(v)
+			copy(dAtA[i:], v)
+			i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(len(v)))
+			i--
+			dAtA[i] = 0x12
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x6
+			i--
+			dAtA[i] = 0xa2
+		}
+	}
+	if len(m.GroupCookie) > 0 {
+		i -= len(m.GroupCookie)
+		copy(dAtA[i:], m.GroupCookie)
+		i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(len(m.GroupCookie)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.ErrorCode != 0 {
+		i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(m.ErrorCode))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Status != 0 {
+		i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(m.Status))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Ver != 0 {
+		i = encodeVarintDynamicLocationGroup(dAtA, i, uint64(m.Ver))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintDynamicLocationGroup(dAtA []byte, offset int, v uint64) int {
 	offset -= sovDynamicLocationGroup(v)
 	base := offset
@@ -464,6 +809,125 @@ func (m *DlgReply) ValidateEnums() error {
 }
 
 func (s *DlgReply) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *DynamicLocGroupRequest) CopyInFields(src *DynamicLocGroupRequest) int {
+	changed := 0
+	if m.Ver != src.Ver {
+		m.Ver = src.Ver
+		changed++
+	}
+	if m.SessionCookie != src.SessionCookie {
+		m.SessionCookie = src.SessionCookie
+		changed++
+	}
+	if m.LgId != src.LgId {
+		m.LgId = src.LgId
+		changed++
+	}
+	if m.CommType != src.CommType {
+		m.CommType = src.CommType
+		changed++
+	}
+	if m.UserData != src.UserData {
+		m.UserData = src.UserData
+		changed++
+	}
+	if src.Tags != nil {
+		m.Tags = make(map[string]string)
+		for k0, _ := range src.Tags {
+			m.Tags[k0] = src.Tags[k0]
+			changed++
+		}
+	} else if m.Tags != nil {
+		m.Tags = nil
+		changed++
+	}
+	return changed
+}
+
+func (m *DynamicLocGroupRequest) DeepCopyIn(src *DynamicLocGroupRequest) {
+	m.Ver = src.Ver
+	m.SessionCookie = src.SessionCookie
+	m.LgId = src.LgId
+	m.CommType = src.CommType
+	m.UserData = src.UserData
+	if src.Tags != nil {
+		m.Tags = make(map[string]string)
+		for k, v := range src.Tags {
+			m.Tags[k] = v
+		}
+	} else {
+		m.Tags = nil
+	}
+}
+
+// Helper method to check that enums have valid values
+func (m *DynamicLocGroupRequest) ValidateEnums() error {
+	if _, ok := DynamicLocGroupRequest_DlgCommType_name[int32(m.CommType)]; !ok {
+		return errors.New("invalid CommType")
+	}
+	return nil
+}
+
+func (s *DynamicLocGroupRequest) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *DynamicLocGroupReply) CopyInFields(src *DynamicLocGroupReply) int {
+	changed := 0
+	if m.Ver != src.Ver {
+		m.Ver = src.Ver
+		changed++
+	}
+	if m.Status != src.Status {
+		m.Status = src.Status
+		changed++
+	}
+	if m.ErrorCode != src.ErrorCode {
+		m.ErrorCode = src.ErrorCode
+		changed++
+	}
+	if m.GroupCookie != src.GroupCookie {
+		m.GroupCookie = src.GroupCookie
+		changed++
+	}
+	if src.Tags != nil {
+		m.Tags = make(map[string]string)
+		for k0, _ := range src.Tags {
+			m.Tags[k0] = src.Tags[k0]
+			changed++
+		}
+	} else if m.Tags != nil {
+		m.Tags = nil
+		changed++
+	}
+	return changed
+}
+
+func (m *DynamicLocGroupReply) DeepCopyIn(src *DynamicLocGroupReply) {
+	m.Ver = src.Ver
+	m.Status = src.Status
+	m.ErrorCode = src.ErrorCode
+	m.GroupCookie = src.GroupCookie
+	if src.Tags != nil {
+		m.Tags = make(map[string]string)
+		for k, v := range src.Tags {
+			m.Tags[k] = v
+		}
+	} else {
+		m.Tags = nil
+	}
+}
+
+// Helper method to check that enums have valid values
+func (m *DynamicLocGroupReply) ValidateEnums() error {
+	if _, ok := ReplyStatus_name[int32(m.Status)]; !ok {
+		return errors.New("invalid Status")
+	}
+	return nil
+}
+
+func (s *DynamicLocGroupReply) ClearTagged(tags map[string]struct{}) {
 }
 
 var DlgAckStrings = []string{
@@ -581,7 +1045,126 @@ func (e DlgMessage_DlgAck) MarshalJSON() ([]byte, error) {
 
 var DlgAckCommonPrefix = "Dlg"
 
+var DlgCommTypeStrings = []string{
+	"DLG_UNDEFINED",
+	"DLG_SECURE",
+	"DLG_OPEN",
+}
+
+const (
+	DlgCommTypeDLG_UNDEFINED uint64 = 1 << 0
+	DlgCommTypeDLG_SECURE    uint64 = 1 << 1
+	DlgCommTypeDLG_OPEN      uint64 = 1 << 2
+)
+
+var DynamicLocGroupRequest_DlgCommType_CamelName = map[int32]string{
+	// DLG_UNDEFINED -> DlgUndefined
+	0: "DlgUndefined",
+	// DLG_SECURE -> DlgSecure
+	1: "DlgSecure",
+	// DLG_OPEN -> DlgOpen
+	2: "DlgOpen",
+}
+var DynamicLocGroupRequest_DlgCommType_CamelValue = map[string]int32{
+	"DlgUndefined": 0,
+	"DlgSecure":    1,
+	"DlgOpen":      2,
+}
+
+func ParseDynamicLocGroupRequest_DlgCommType(data interface{}) (DynamicLocGroupRequest_DlgCommType, error) {
+	if val, ok := data.(DynamicLocGroupRequest_DlgCommType); ok {
+		return val, nil
+	} else if str, ok := data.(string); ok {
+		val, ok := DynamicLocGroupRequest_DlgCommType_CamelValue[util.CamelCase(str)]
+		if !ok {
+			// may have omitted common prefix
+			val, ok = DynamicLocGroupRequest_DlgCommType_CamelValue["Dlg"+util.CamelCase(str)]
+		}
+		if !ok {
+			// may be int value instead of enum name
+			ival, err := strconv.Atoi(str)
+			val = int32(ival)
+			if err == nil {
+				_, ok = DynamicLocGroupRequest_DlgCommType_CamelName[val]
+			}
+		}
+		if !ok {
+			return DynamicLocGroupRequest_DlgCommType(0), fmt.Errorf("Invalid DynamicLocGroupRequest_DlgCommType value %q", str)
+		}
+		return DynamicLocGroupRequest_DlgCommType(val), nil
+	} else if ival, ok := data.(int32); ok {
+		if _, ok := DynamicLocGroupRequest_DlgCommType_CamelName[ival]; ok {
+			return DynamicLocGroupRequest_DlgCommType(ival), nil
+		} else {
+			return DynamicLocGroupRequest_DlgCommType(0), fmt.Errorf("Invalid DynamicLocGroupRequest_DlgCommType value %d", ival)
+		}
+	}
+	return DynamicLocGroupRequest_DlgCommType(0), fmt.Errorf("Invalid DynamicLocGroupRequest_DlgCommType value %v", data)
+}
+
+func (e *DynamicLocGroupRequest_DlgCommType) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var str string
+	err := unmarshal(&str)
+	if err != nil {
+		return err
+	}
+	val, err := ParseDynamicLocGroupRequest_DlgCommType(str)
+	if err != nil {
+		return err
+	}
+	*e = val
+	return nil
+}
+
+func (e DynamicLocGroupRequest_DlgCommType) MarshalYAML() (interface{}, error) {
+	str := proto.EnumName(DynamicLocGroupRequest_DlgCommType_CamelName, int32(e))
+	str = strings.TrimPrefix(str, "Dlg")
+	return str, nil
+}
+
+// custom JSON encoding/decoding
+func (e *DynamicLocGroupRequest_DlgCommType) UnmarshalJSON(b []byte) error {
+	var str string
+	err := json.Unmarshal(b, &str)
+	if err == nil {
+		val, err := ParseDynamicLocGroupRequest_DlgCommType(str)
+		if err != nil {
+			return &json.UnmarshalTypeError{
+				Value: "string " + str,
+				Type:  reflect.TypeOf(DynamicLocGroupRequest_DlgCommType(0)),
+			}
+		}
+		*e = DynamicLocGroupRequest_DlgCommType(val)
+		return nil
+	}
+	var ival int32
+	err = json.Unmarshal(b, &ival)
+	if err == nil {
+		val, err := ParseDynamicLocGroupRequest_DlgCommType(ival)
+		if err == nil {
+			*e = val
+			return nil
+		}
+	}
+	return &json.UnmarshalTypeError{
+		Value: "value " + string(b),
+		Type:  reflect.TypeOf(DynamicLocGroupRequest_DlgCommType(0)),
+	}
+}
+
+func (e DynamicLocGroupRequest_DlgCommType) MarshalJSON() ([]byte, error) {
+	str := proto.EnumName(DynamicLocGroupRequest_DlgCommType_CamelName, int32(e))
+	str = strings.TrimPrefix(str, "Dlg")
+	return json.Marshal(str)
+}
+
+var DlgCommTypeCommonPrefix = "Dlg"
+
 func (m *DlgMessage) IsValidArgsForSendToGroup() error {
+	return nil
+}
+
+func (m *DynamicLocGroupRequest) IsValidArgsForAddUserToGroup() error {
 	return nil
 }
 
@@ -632,6 +1215,76 @@ func (m *DlgReply) Size() (n int) {
 	l = len(m.GroupCookie)
 	if l > 0 {
 		n += 1 + l + sovDynamicLocationGroup(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DynamicLocGroupRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Ver != 0 {
+		n += 1 + sovDynamicLocationGroup(uint64(m.Ver))
+	}
+	l = len(m.SessionCookie)
+	if l > 0 {
+		n += 1 + l + sovDynamicLocationGroup(uint64(l))
+	}
+	if m.LgId != 0 {
+		n += 1 + sovDynamicLocationGroup(uint64(m.LgId))
+	}
+	if m.CommType != 0 {
+		n += 1 + sovDynamicLocationGroup(uint64(m.CommType))
+	}
+	l = len(m.UserData)
+	if l > 0 {
+		n += 1 + l + sovDynamicLocationGroup(uint64(l))
+	}
+	if len(m.Tags) > 0 {
+		for k, v := range m.Tags {
+			_ = k
+			_ = v
+			mapEntrySize := 1 + len(k) + sovDynamicLocationGroup(uint64(len(k))) + 1 + len(v) + sovDynamicLocationGroup(uint64(len(v)))
+			n += mapEntrySize + 2 + sovDynamicLocationGroup(uint64(mapEntrySize))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DynamicLocGroupReply) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Ver != 0 {
+		n += 1 + sovDynamicLocationGroup(uint64(m.Ver))
+	}
+	if m.Status != 0 {
+		n += 1 + sovDynamicLocationGroup(uint64(m.Status))
+	}
+	if m.ErrorCode != 0 {
+		n += 1 + sovDynamicLocationGroup(uint64(m.ErrorCode))
+	}
+	l = len(m.GroupCookie)
+	if l > 0 {
+		n += 1 + l + sovDynamicLocationGroup(uint64(l))
+	}
+	if len(m.Tags) > 0 {
+		for k, v := range m.Tags {
+			_ = k
+			_ = v
+			mapEntrySize := 1 + len(k) + sovDynamicLocationGroup(uint64(len(k))) + 1 + len(v) + sovDynamicLocationGroup(uint64(len(v)))
+			n += mapEntrySize + 2 + sovDynamicLocationGroup(uint64(mapEntrySize))
+		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -934,6 +1587,572 @@ func (m *DlgReply) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.GroupCookie = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDynamicLocationGroup(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthDynamicLocationGroup
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DynamicLocGroupRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDynamicLocationGroup
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DynamicLocGroupRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DynamicLocGroupRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ver", wireType)
+			}
+			m.Ver = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDynamicLocationGroup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Ver |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionCookie", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDynamicLocationGroup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDynamicLocationGroup
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDynamicLocationGroup
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SessionCookie = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LgId", wireType)
+			}
+			m.LgId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDynamicLocationGroup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LgId |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CommType", wireType)
+			}
+			m.CommType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDynamicLocationGroup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CommType |= DynamicLocGroupRequest_DlgCommType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UserData", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDynamicLocationGroup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDynamicLocationGroup
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDynamicLocationGroup
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UserData = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 100:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tags", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDynamicLocationGroup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDynamicLocationGroup
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDynamicLocationGroup
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Tags == nil {
+				m.Tags = make(map[string]string)
+			}
+			var mapkey string
+			var mapvalue string
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowDynamicLocationGroup
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowDynamicLocationGroup
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthDynamicLocationGroup
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthDynamicLocationGroup
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var stringLenmapvalue uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowDynamicLocationGroup
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapvalue |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapvalue := int(stringLenmapvalue)
+					if intStringLenmapvalue < 0 {
+						return ErrInvalidLengthDynamicLocationGroup
+					}
+					postStringIndexmapvalue := iNdEx + intStringLenmapvalue
+					if postStringIndexmapvalue < 0 {
+						return ErrInvalidLengthDynamicLocationGroup
+					}
+					if postStringIndexmapvalue > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = string(dAtA[iNdEx:postStringIndexmapvalue])
+					iNdEx = postStringIndexmapvalue
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipDynamicLocationGroup(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthDynamicLocationGroup
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.Tags[mapkey] = mapvalue
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDynamicLocationGroup(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthDynamicLocationGroup
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DynamicLocGroupReply) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDynamicLocationGroup
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DynamicLocGroupReply: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DynamicLocGroupReply: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ver", wireType)
+			}
+			m.Ver = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDynamicLocationGroup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Ver |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			m.Status = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDynamicLocationGroup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Status |= ReplyStatus(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ErrorCode", wireType)
+			}
+			m.ErrorCode = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDynamicLocationGroup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ErrorCode |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GroupCookie", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDynamicLocationGroup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDynamicLocationGroup
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDynamicLocationGroup
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.GroupCookie = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 100:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tags", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDynamicLocationGroup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDynamicLocationGroup
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDynamicLocationGroup
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Tags == nil {
+				m.Tags = make(map[string]string)
+			}
+			var mapkey string
+			var mapvalue string
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowDynamicLocationGroup
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowDynamicLocationGroup
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthDynamicLocationGroup
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthDynamicLocationGroup
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var stringLenmapvalue uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowDynamicLocationGroup
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapvalue |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapvalue := int(stringLenmapvalue)
+					if intStringLenmapvalue < 0 {
+						return ErrInvalidLengthDynamicLocationGroup
+					}
+					postStringIndexmapvalue := iNdEx + intStringLenmapvalue
+					if postStringIndexmapvalue < 0 {
+						return ErrInvalidLengthDynamicLocationGroup
+					}
+					if postStringIndexmapvalue > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = string(dAtA[iNdEx:postStringIndexmapvalue])
+					iNdEx = postStringIndexmapvalue
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipDynamicLocationGroup(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthDynamicLocationGroup
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.Tags[mapkey] = mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
