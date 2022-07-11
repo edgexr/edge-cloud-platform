@@ -12935,7 +12935,7 @@
           "x-go-name": "Message"
         }
       },
-      "x-go-package": "github.com/edgexr/edge-cloud-platform/doc"
+      "x-go-package": "github.com/edgexr/edge-cloud-platform/doc/swagger"
     },
     "versionInfo": {
       "description": "VersionInfo version info",
