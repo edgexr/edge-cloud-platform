@@ -24,18 +24,18 @@ import (
 	"golang.org/x/net/context"
 )
 
-func TestLocations(client dme.MatchEngineApiClient) {
+func TestLocations(sessionClient dme.SessionClient, locClient dme.LocationClient) {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second)
 
 	fmt.Println(">>>>>>>Finding Right Locations<<<<<<<<<")
 	for _, m := range dmetest.VerifyLocData {
 		// Register the client first
-		mstatus, err := client.RegisterClient(ctx, &m.Reg)
+		mstatus, err := sessionClient.RegisterClient(ctx, &m.Reg)
 		if err != nil {
 			log.Fatalf("could not register: %v", err)
 		}
 		m.Req.SessionCookie = mstatus.SessionCookie
-		mreply, err := client.VerifyLocation(ctx, &m.Req)
+		mreply, err := locClient.VerifyLocation(ctx, &m.Req)
 		if err != nil {
 			log.Fatalf("could not greet: %v", err)
 		}

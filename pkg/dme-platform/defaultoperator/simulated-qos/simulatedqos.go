@@ -51,7 +51,7 @@ func getKpiResults(qosres *dme.QosPositionKpiResult) {
 }
 
 // GetSimulatedQOSPositionKPI gets fake QOS Position KPIs
-func GetSimulatedQOSPositionKPI(mreq *dme.QosPositionRequest, getQosSvr dme.MatchEngineApi_GetQosPositionKpiServer) error {
+func GetSimulatedQOSPositionKPI(mreq *dme.QosPositionRequest, getQosSvr dme.QosPositionKpi_GetQosPositionKpiServer) error {
 	log.SpanLog(getQosSvr.Context(), log.DebugLevelDmereq, "getQosPositionKpi", "request", mreq)
 
 	var mreply dme.QosPositionKpiReply
