@@ -21,7 +21,10 @@ var TimestampOptionalArgs = []string{
 	"nanos",
 }
 var TimestampAliasArgs = []string{}
-var TimestampComments = map[string]string{}
+var TimestampComments = map[string]string{
+	"seconds": "Time in seconds since epoch",
+	"nanos":   "Added non-negative sub-second time in nanoseconds",
+}
 var TimestampSpecialArgs = map[string]string{}
 var LocRequiredArgs = []string{}
 var LocOptionalArgs = []string{
