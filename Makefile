@@ -84,26 +84,8 @@ GRPCGATEWAY	= $(shell GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/grpc-
 tools:
 	make -f Makefile.tools
 
-# Swagger generates spec by parsing swagger annotations in go files.
-# Some of the comments are auto-generated from mc2 generator reading proto files.
-doc:
-	(cd $(HOME); go install github.com/go-swagger/go-swagger/cmd/swagger@latest)
-	go install \
-		./tools/protoc-gen-mc2 \
-		./doc/swaggerfix
-	make -C ./api/edgeproto docgen
-	swagger generate spec -i ./doc/init.json -o ./doc/apidocs.swagger.json --scan-models
-	swaggerfix --custom ./doc/custom.yaml ./doc/apidocs.swagger.json
-
 external-doc:
 	make -C edgeproto external-doc
-
-doc-local-server:
-	docker run --rm -p 1081:80 \
-		-v "$(shell pwd)/doc/apidocs.swagger.json:/usr/share/nginx/html/swagger.json" \
-		-e SPEC_URL=swagger.json \
-		-e REDOC_OPTIONS='sort-props-alphabetically=\"true\"' \
-		redocly/redoc:v2.0.0-rc.23
 
 third_party:
 	parsedeps --gennotice ./cmd/crmserver ./cmd/controller ./cmd/dme-server ./cmd/cluster-svc ./cmd/edgeturn ./cmd/notifyroot ./pkg/plugin/platform/ ./pkg/plugin/edgeevents ./cmd/shepherd ./pkg/shepherd_platform ./cmd/mc ./cmd/alertmgr-sidecar ./cmd/autoprov> THIRD-PARTY-NOTICES
