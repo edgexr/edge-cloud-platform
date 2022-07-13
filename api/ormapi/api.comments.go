@@ -87,26 +87,31 @@ var ControllerComments = map[string]string{
 }
 
 var ConfigComments = map[string]string{
-	"locknewaccounts":              `Lock new accounts (must be unlocked by admin)`,
-	"notifyemailaddress":           `Email to notify when locked account is created`,
-	"skipverifyemail":              `Skip email verification for new accounts (testing only)`,
-	"passwordmincracktimesec":      `User accounts min password crack time seconds (a measure of strength)`,
-	"adminpasswordmincracktimesec": `Admin accounts min password crack time seconds (a measure of strength)`,
-	"maxmetricsdatapoints":         `InfluxDB max number of data points returned`,
-	"userapikeycreatelimit":        `Max number of API keys a user can create`,
-	"billingenable":                `Toggle for enabling billing (primarily for testing purposes)`,
-	"disableratelimit":             `Toggle to enable and disable MC API rate limiting`,
-	"ratelimitmaxtrackedips":       `Maximum number of IPs tracked per API group for rate limiting at MC`,
-	"ratelimitmaxtrackedusers":     `Maximum number of users tracked per API group for rate limiting at MC`,
-	"failedloginlockoutthreshold1": `Failed login lockout threshold 1, after this count, lockout time 1 is enabled (default 3)`,
-	"failedloginlockouttimesec1":   `Number of seconds to lock account from logging in after threshold 1 is hit (default 60)`,
-	"failedloginlockoutthreshold2": `Failed login lockout threshold 2, after this count, lockout time 2 is enabled (default 10)`,
-	"failedloginlockouttimesec2":   `Number of seconds to lock account from logging in after threshold 2 is hit (default 300)`,
+	"locknewaccounts":               `Lock new accounts (must be unlocked by admin)`,
+	"notifyemailaddress":            `Email to notify when locked account is created`,
+	"skipverifyemail":               `Skip email verification for new accounts (testing only)`,
+	"passwordmincracktimesec":       `User accounts min password crack time seconds (a measure of strength)`,
+	"adminpasswordmincracktimesec":  `Admin accounts min password crack time seconds (a measure of strength)`,
+	"maxmetricsdatapoints":          `InfluxDB max number of data points returned`,
+	"userapikeycreatelimit":         `Max number of API keys a user can create`,
+	"billingenable":                 `Toggle for enabling billing (primarily for testing purposes)`,
+	"disableratelimit":              `Toggle to enable and disable MC API rate limiting`,
+	"ratelimitmaxtrackedips":        `Maximum number of IPs tracked per API group for rate limiting at MC`,
+	"ratelimitmaxtrackedusers":      `Maximum number of users tracked per API group for rate limiting at MC`,
+	"failedloginlockoutthreshold1":  `Failed login lockout threshold 1, after this count, lockout time 1 is enabled (default 3)`,
+	"failedloginlockouttimesec1":    `Number of seconds to lock account from logging in after threshold 1 is hit (default 60)`,
+	"failedloginlockoutthreshold2":  `Failed login lockout threshold 2, after this count, lockout time 2 is enabled (default 10)`,
+	"failedloginlockouttimesec2":    `Number of seconds to lock account from logging in after threshold 2 is hit (default 300)`,
+	"userlogintokenvalidduration":   `User login token valid duration (in format 2h30m10s, default 24h)`,
+	"apikeylogintokenvalidduration": `API key login token valid duration (in format 2h30m10s, default 4h)`,
+	"websockettokenvalidduration":   `Websocket auth token valid duration (in format 2h30m10s, default 2m)`,
 }
 
 var McRateLimitFlowSettingsComments = map[string]string{
 	"flowsettingsname": `Unique name for FlowSettings`,
 	"apiname":          `Name of API Path (eg. /api/v1/usercreate)`,
+	"ratelimittarget":  `RateLimitTarget (AllRequests, PerIp, or PerUser)`,
+	"flowalgorithm":    `Flow Algorithm (TokenBucketAlgorithm or LeakyBucketAlgorithm)`,
 	"reqspersecond":    `Number of requests per second`,
 	"burstsize":        `Number of requests allowed at once`,
 }
@@ -114,11 +119,17 @@ var McRateLimitFlowSettingsComments = map[string]string{
 var McRateLimitMaxReqsSettingsComments = map[string]string{
 	"maxreqssettingsname": `Unique name for MaxReqsSettings`,
 	"apiname":             `Name of API Path (eg. /api/v1/usercreate)`,
+	"ratelimittarget":     `RateLimitTarget (AllRequests, PerIp, or PerUser)`,
+	"maxreqsalgorithm":    `MaxReqs Algorithm (FixedWindowAlgorithm)`,
 	"maxrequests":         `Maximum number of requests for the specified interval`,
+	"interval":            `Time interval`,
 }
 
 var McRateLimitSettingsComments = map[string]string{
-	"apiname": `Name of API Path (eg. /api/v1/usercreate)`,
+	"apiname":         `Name of API Path (eg. /api/v1/usercreate)`,
+	"ratelimittarget": `RateLimitTarget (AllRequests, PerIp, or PerUser)`,
+	"flowsettings":    `Map of Flow Settings name to FlowSettings`,
+	"maxreqssettings": `Map of MaxReqs Settings name to MaxReqsSettings`,
 }
 
 var OrgCloudletPoolComments = map[string]string{
@@ -206,6 +217,64 @@ var TokenComments = map[string]string{
 	"token": `Authentication token`,
 }
 
+var AllDataComments = map[string]string{
+	"controllers:#.region":                            `Controller region name`,
+	"controllers:#.address":                           `Controller API address or URL`,
+	"controllers:#.notifyaddr":                        `Controller notify address or URL`,
+	"controllers:#.influxdb":                          `InfluxDB address`,
+	"controllers:#.thanosmetrics":                     `Thanos Query URL`,
+	"controllers:#.dnsregion":                         `Unique DNS label for the region`,
+	"billingorgs:#.name":                              `BillingOrganization name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
+	"billingorgs:#.type":                              `Organization type: "parent" or "self"`,
+	"billingorgs:#.firstname":                         `Billing info first name`,
+	"billingorgs:#.lastname":                          `Billing info last name`,
+	"billingorgs:#.email":                             `Organization email`,
+	"billingorgs:#.address":                           `Organization address`,
+	"billingorgs:#.address2":                          `Organization address2`,
+	"billingorgs:#.city":                              `Organization city`,
+	"billingorgs:#.country":                           `Organization country`,
+	"billingorgs:#.state":                             `Organization state`,
+	"billingorgs:#.postalcode":                        `Organization postal code`,
+	"billingorgs:#.phone":                             `Organization phone number`,
+	"billingorgs:#.children":                          `Children belonging to this BillingOrganization`,
+	"billingorgs:#.deleteinprogress":                  `Delete of this BillingOrganization is in progress`,
+	"alertreceivers:#.name":                           `Receiver Name`,
+	"alertreceivers:#.type":                           `Receiver type. Eg. email, slack, pagerduty`,
+	"alertreceivers:#.severity":                       `Alert severity filter`,
+	"alertreceivers:#.region":                         `Region for the alert receiver`,
+	"alertreceivers:#.user":                           `User that created this receiver`,
+	"alertreceivers:#.email":                          `Custom receiving email`,
+	"alertreceivers:#.slackchannel":                   `Custom slack channel`,
+	"alertreceivers:#.slackwebhook":                   `Custom slack webhook`,
+	"alertreceivers:#.pagerdutyintegrationkey":        `PagerDuty integration key`,
+	"alertreceivers:#.pagerdutyapiversion":            `PagerDuty API version`,
+	"alertreceivers:#.cloudlet":                       `Cloudlet spec for alerts`,
+	"alertreceivers:#.appinst":                        `AppInst spec for alerts`,
+	"orgs:#.name":                                     `Organization name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
+	"orgs:#.type":                                     `Organization type: "developer" or "operator"`,
+	"orgs:#.address":                                  `Organization address`,
+	"orgs:#.phone":                                    `Organization phone number`,
+	"orgs:#.publicimages":                             `Images are made available to other organization`,
+	"orgs:#.deleteinprogress":                         `Delete of this organization is in progress`,
+	"orgs:#.edgeboxonly":                              `Edgebox only operator organization`,
+	"roles:#.org":                                     `Organization name`,
+	"roles:#.username":                                `User name`,
+	"roles:#.role":                                    `Role which defines the set of permissions`,
+	"cloudletpoolaccessinvitations:#.org":             `Developer Organization`,
+	"cloudletpoolaccessinvitations:#.region":          `Region`,
+	"cloudletpoolaccessinvitations:#.cloudletpool":    `Operator's CloudletPool name`,
+	"cloudletpoolaccessinvitations:#.cloudletpoolorg": `Operator's Organization`,
+	"cloudletpoolaccessinvitations:#.type":            `Type is an internal-only field which is either invitation or response`,
+	"cloudletpoolaccessinvitations:#.decision":        `Decision is to either accept or reject an invitation`,
+	"cloudletpoolaccessresponses:#.org":               `Developer Organization`,
+	"cloudletpoolaccessresponses:#.region":            `Region`,
+	"cloudletpoolaccessresponses:#.cloudletpool":      `Operator's CloudletPool name`,
+	"cloudletpoolaccessresponses:#.cloudletpoolorg":   `Operator's Organization`,
+	"cloudletpoolaccessresponses:#.type":              `Type is an internal-only field which is either invitation or response`,
+	"cloudletpoolaccessresponses:#.decision":          `Decision is to either accept or reject an invitation`,
+	"regiondata:#.region":                             `Region name`,
+}
+
 var RegionDataComments = map[string]string{
 	"region": `Region name`,
 }
@@ -220,6 +289,8 @@ var RegionAppInstMetricsComments = map[string]string{
 	"metricscommon.limit":      `Display the last X metrics`,
 	"region":                   `Region name`,
 	"selector":                 `Comma separated list of metrics to view. Available metrics: utilization, network, ipusage`,
+	"appinst":                  `Application instance to filter for metrics`,
+	"appinsts":                 `Application instances to filter for metrics`,
 }
 
 var RegionCustomAppMetricsComments = map[string]string{
@@ -231,6 +302,8 @@ var RegionClusterInstMetricsComments = map[string]string{
 	"metricscommon.numsamples": `Display X samples spaced out evenly over start and end times`,
 	"metricscommon.limit":      `Display the last X metrics`,
 	"region":                   `Region name`,
+	"clusterinst":              `Cluster instance key for metrics`,
+	"clusterinsts":             `Cluster instance keys for metrics`,
 	"selector":                 `Comma separated list of metrics to view. Available metrics: utilization, network, ipusage`,
 }
 
@@ -238,6 +311,8 @@ var RegionCloudletMetricsComments = map[string]string{
 	"metricscommon.numsamples": `Display X samples spaced out evenly over start and end times`,
 	"metricscommon.limit":      `Display the last X metrics`,
 	"region":                   `Region name`,
+	"cloudlet":                 `Cloudlet key for metrics`,
+	"cloudlets":                `Cloudlet keys for metrics`,
 	"selector":                 `Comma separated list of metrics to view. Available metrics: utilization, network, ipusage`,
 }
 
@@ -245,6 +320,7 @@ var RegionClientApiUsageMetricsComments = map[string]string{
 	"metricscommon.numsamples": `Display X samples spaced out evenly over start and end times`,
 	"metricscommon.limit":      `Display the last X metrics`,
 	"region":                   `Region name`,
+	"appinst":                  `Application instance key for usage`,
 	"method":                   `API call method, one of: FindCloudlet, PlatformFindCloudlet, RegisterClient, VerifyLocation`,
 	"dmecloudlet":              `Cloudlet name where DME is running`,
 	"dmecloudletorg":           `Operator organization where DME is running`,
@@ -255,6 +331,7 @@ var RegionClientAppUsageMetricsComments = map[string]string{
 	"metricscommon.numsamples": `Display X samples spaced out evenly over start and end times`,
 	"metricscommon.limit":      `Display the last X metrics`,
 	"region":                   `Region name`,
+	"appinst":                  `Application instance key for usage`,
 	"selector":                 `Comma separated list of metrics to view. Available metrics: utilization, network, ipusage`,
 	"devicecarrier":            `Device carrier. Can be used for selectors: latency, deviceinfo`,
 	"datanetworktype":          `Data network type used by client device. Can be used for selectors: latency`,
@@ -267,6 +344,7 @@ var RegionClientCloudletUsageMetricsComments = map[string]string{
 	"metricscommon.numsamples": `Display X samples spaced out evenly over start and end times`,
 	"metricscommon.limit":      `Display the last X metrics`,
 	"region":                   `Region name`,
+	"cloudlet":                 `Cloudlet key for metrics`,
 	"selector":                 `Comma separated list of metrics to view. Available metrics: utilization, network, ipusage`,
 	"devicecarrier":            `Device carrier. Can be used for selectors: latency, deviceinfo`,
 	"datanetworktype":          `Data network type used by client device. Can be used for selectors: latency`,
@@ -279,35 +357,41 @@ var RegionAppInstEventsComments = map[string]string{
 	"metricscommon.numsamples": `Display X samples spaced out evenly over start and end times`,
 	"metricscommon.limit":      `Display the last X metrics`,
 	"region":                   `Region name`,
+	"appinst":                  `Application instance key for events`,
 }
 
 var RegionClusterInstEventsComments = map[string]string{
 	"metricscommon.numsamples": `Display X samples spaced out evenly over start and end times`,
 	"metricscommon.limit":      `Display the last X metrics`,
 	"region":                   `Region name`,
+	"clusterinst":              `Cluster instance key for events`,
 }
 
 var RegionCloudletEventsComments = map[string]string{
 	"metricscommon.numsamples": `Display X samples spaced out evenly over start and end times`,
 	"metricscommon.limit":      `Display the last X metrics`,
 	"region":                   `Region name`,
+	"cloudlet":                 `Cloudlet key for events`,
 }
 
 var RegionAppInstUsageComments = map[string]string{
 	"region":    `Region name`,
+	"appinst":   `Application instance key for usage`,
 	"starttime": `Time to start displaying stats from`,
 	"endtime":   `Time up to which to display stats`,
 	"vmonly":    `Show only VM-based apps`,
 }
 
 var RegionClusterInstUsageComments = map[string]string{
-	"region":    `Region name`,
-	"starttime": `Time to start displaying stats from`,
-	"endtime":   `Time up to which to display stats`,
+	"region":      `Region name`,
+	"clusterinst": `Cluster instances key for usage`,
+	"starttime":   `Time to start displaying stats from`,
+	"endtime":     `Time up to which to display stats`,
 }
 
 var RegionCloudletPoolUsageComments = map[string]string{
 	"region":         `Region name`,
+	"cloudletpool":   `Cloudlet pool key for usage`,
 	"starttime":      `Time to start displaying stats from`,
 	"endtime":        `Time up to which to display stats`,
 	"showvmappsonly": `Show only VM-based apps`,
@@ -328,6 +412,8 @@ var AlertReceiverComments = map[string]string{
 	"slackwebhook":            `Custom slack webhook`,
 	"pagerdutyintegrationkey": `PagerDuty integration key`,
 	"pagerdutyapiversion":     `PagerDuty API version`,
+	"cloudlet":                `Cloudlet spec for alerts`,
+	"appinst":                 `AppInst spec for alerts`,
 }
 
 var ReporterComments = map[string]string{
