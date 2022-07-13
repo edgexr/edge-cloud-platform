@@ -67,14 +67,12 @@ const mimeJson = "application/json"
 
 func NewGenerator() *Generator {
 	g := Generator{}
-	g.visitedComponents = make(map[string]struct{})
 	return &g
 }
 
 type Generator struct {
-	visitedComponents map[string]struct{}
-	parseComments     *parsecomments.ParseComments
-	failed            bool
+	parseComments *parsecomments.ParseComments
+	failed        bool
 }
 
 func (s *Generator) genDoc(scanPaths arrayFlags, baseFileName, outFileName, groupsDirName string) {
@@ -415,6 +413,12 @@ func (s *Generator) addComponent(reflector *openapi3.Reflector, obj interface{},
 			return false, nil
 		}),
 		jsonschema.InterceptProperty(func(name string, field reflect.StructField, propertySchema *jsonschema.Schema) error {
+			// Note: InterceptProperty gets called for each field, but
+			// the field's type definition is processed before this
+			// intercept is called. This leads to some strange behavior
+			// where we return "ErrSkipProperty" here, and the property is
+			// indeed not added to the final parent definition, but its definition
+			// still ends up getting parsed and recursed into. Just FYI.
 			if cmd.ProtobufApi && strings.ToLower(name) == "fields" && field.Type == stringArrayType {
 				return jsonschema.ErrSkipProperty
 			}
