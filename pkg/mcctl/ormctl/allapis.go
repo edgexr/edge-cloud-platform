@@ -43,6 +43,8 @@ type ApiCommand struct {
 	VerifyPassword       bool
 	ReqData              interface{}
 	ReplyData            interface{}
+	ReplyMimeType        string // defaults to application/json
+	ReplyDescription     string
 	Path                 string
 	ProtobufApi          bool
 	StreamOut            bool
@@ -51,6 +53,14 @@ type ApiCommand struct {
 	IsUpdate             bool
 	CliEmptyRequiredArgs string
 	ShowFilter           bool
+	DuplicateForCli      bool
+	FailureResponses     []FailureResponse
+	DocEmptyCommentsOk   bool
+}
+
+type FailureResponse struct {
+	Code int
+	Data interface{}
 }
 
 type ApiGroup struct {
