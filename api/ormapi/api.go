@@ -613,7 +613,6 @@ type RegionCloudletMetrics struct {
 	Cloudlets []edgeproto.CloudletKey `json:",omitempty"`
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
 	Selector string
-	//PlatformType string
 	MetricsCommon
 }
 
