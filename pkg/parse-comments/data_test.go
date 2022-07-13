@@ -27,6 +27,8 @@ type TopObject struct {
 	ObjectArray []dashes.Timestamp
 	// SubObject comment
 	SubObject1 SubObject
+	// PointerSubObject comment
+	SubObjectPtr *SubObject
 	// EmbeddedField comment
 	SubObject
 	// EmbeddedField from another package

@@ -41,6 +41,7 @@ type Field struct {
 	TypeName        string `yaml:",omitempty"`
 	MapType         string `yaml:",omitempty"`
 	Comment         string `yaml:",omitempty"`
+	PointerType     bool   `yaml:",omitempty"`
 	ArrayedInParent bool   `yaml:",omitempty"`
 	Hidden          bool   `yaml:",omitempty"`
 	ReadOnly        bool   `yaml:",omitempty"`
@@ -220,7 +221,10 @@ func (s *ParseComments) Visit(node ast.Node) ast.Visitor {
 			} else {
 				field.MapType = MapType
 			}
-			//extraComment = ", value is key=value format"
+		case *ast.StarExpr:
+			// pointer reference
+			s.setFieldType(field, t.X)
+			field.PointerType = true
 		}
 		if len(x.Names) == 0 {
 			// embedded struct
@@ -271,9 +275,9 @@ func (s *ParseComments) getPkgAndType(typ ast.Expr) (string, string) {
 		}
 		return pkg, t.Sel.Name
 	case *ast.ArrayType:
-		// not handled
+		// nested types not handled
 	case *ast.MapType:
-		// not handled
+		// nested types not handled
 	default:
 		panic(fmt.Sprintf("getPkgAndType invalid type %v passed in\n", typ))
 	}
@@ -317,7 +321,7 @@ func (s *ParseComments) FindStruct(pkgStruct string) (*Struct, bool) {
 
 // Lookup field comments based on package path, go struct name,
 // and go field name. For example,
-// lookup("github.com/company/repo/pkg/path", "Struct", "Name")
+// lookup("github.com/company/repo/pkg/path", "MyObject", "MyField")
 func (s *ParseComments) FindField(pkgPath, structName, fieldName string) (*Field, bool) {
 	return s.findField(GetPkgStructName(pkgPath, structName), fieldName)
 }

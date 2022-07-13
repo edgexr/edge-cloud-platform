@@ -127,6 +127,11 @@ var expectedData = `structs:
     typepkg: github.com/edgexr/edge-cloud-platform/pkg/parse-comments_test
     typename: SubObject
     comment: SubObject comment
+  - name: SubObjectPtr
+    typepkg: github.com/edgexr/edge-cloud-platform/pkg/parse-comments_test
+    typename: SubObject
+    comment: PointerSubObject comment
+    pointertype: true
   embedded:
   - github.com/edgexr/edge-cloud-platform/pkg/parse-comments_test.SubObject
   - github.com/edgexr/edge-cloud-platform/pkg/parse-comments/data.Data
@@ -147,7 +152,9 @@ var expectedData = `structs:
     comment: StringArrayField comment
     arrayedinparent: true
   - name: StringPointer
+    typename: string
     comment: Pointer Field comment
+    pointertype: true
   - name: Timestamp
     typepkg: github.com/edgexr/edge-cloud-platform/pkg/parse-comments/pkg-with-dashes
     typename: Timestamp
