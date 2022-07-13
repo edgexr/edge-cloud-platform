@@ -26,7 +26,14 @@ var StatusInfoOptionalArgs = []string{
 	"msgs",
 }
 var StatusInfoAliasArgs = []string{}
-var StatusInfoComments = map[string]string{}
+var StatusInfoComments = map[string]string{
+	"tasknumber": "Task number",
+	"maxtasks":   "Max tasks",
+	"taskname":   "Task name",
+	"stepname":   "Step name",
+	"msgcount":   "Message count",
+	"msgs":       "Messages",
+}
 var StatusInfoSpecialArgs = map[string]string{
 	"msgs": "StringArray",
 }

@@ -34,31 +34,38 @@ type User struct {
 	// read only: true
 	EmailVerified bool
 	// read only: true
+	// hidden: true
 	Passhash string `gorm:"not null"`
 	// read only: true
+	// hidden: true
 	Salt string `gorm:"not null"`
 	// read only: true
+	// hidden: true
 	Iter int `gorm:"not null"`
 	// Family Name
 	FamilyName string
 	// Given Name
 	GivenName string
-	// read only: true
+	// Picture (currently not used)
 	Picture string
 	// Nick Name
 	Nickname string
 	// read only: true
+	// Time created
 	CreatedAt time.Time `json:",omitempty"`
 	// read only: true
+	// Time last updated
 	UpdatedAt time.Time `json:",omitempty"`
 	// Account is locked
 	// read only: true
 	Locked bool
+	// Password strength in terms of brute-force cracking time
 	// read only: true
 	PassCrackTimeSec float64
 	// Enable or disable temporary one-time passwords for the account
 	EnableTOTP bool
 	// read only: true
+	// hidden: true
 	TOTPSharedKey string
 	// Metadata
 	Metadata string
@@ -73,7 +80,7 @@ type User struct {
 }
 
 type CreateUserApiKey struct {
-	UserApiKey `json:",inline"`
+	UserApiKey
 	// API key
 	ApiKey string
 	// List of API key permissions
@@ -91,23 +98,32 @@ type UserApiKey struct {
 	// required: true
 	Org string
 	// read only: true
+	// hidden: true
 	Username string
 	// read only: true
+	// hidden: true
 	ApiKeyHash string `gorm:"not null"`
 	// read only: true
+	// hidden: true
 	Salt string `gorm:"not null"`
 	// read only: true
+	// hidden: true
 	Iter int `gorm:"not null"`
 	// read only: true
+	// Time created
 	CreatedAt time.Time `json:",omitempty"`
 	// read only: true
+	// hidden: true
 	UpdatedAt time.Time `json:",omitempty"`
 }
 
 type UserResponse struct {
-	Message       string
+	// Message
+	Message string
+	// TOTP shared key
 	TOTPSharedKey string
-	TOTPQRImage   []byte
+	// TOTP QR image
+	TOTPQRImage []byte
 }
 
 type Organization struct {
@@ -121,8 +137,10 @@ type Organization struct {
 	// Organization phone number
 	Phone string `json:",omitempty"`
 	// read only: true
+	// Time created
 	CreatedAt time.Time `json:",omitempty"`
 	// read only: true
+	// Time last updated
 	UpdatedAt time.Time `json:",omitempty"`
 	// Images are made available to other organization
 	// read only: true
@@ -131,6 +149,7 @@ type Organization struct {
 	// read only: true
 	DeleteInProgress bool `json:",omitempty"`
 	// read only: true
+	// This organization's parent organization for billing, if any
 	Parent string `json:",omitempty"`
 	// Edgebox only operator organization
 	// read only: true
@@ -175,8 +194,10 @@ type BillingOrganization struct {
 	// Children belonging to this BillingOrganization
 	Children string `json:",omitempty"`
 	// read only: true
+	// Time created
 	CreatedAt time.Time `json:",omitempty"`
 	// read only: true
+	// Time last updated
 	UpdatedAt time.Time `json:",omitempty"`
 	// Delete of this BillingOrganization is in progress
 	// read only: true
@@ -190,8 +211,10 @@ type AccountInfo struct {
 	AccountId string `json:",omitempty"`
 	// Subscription ID given by the billing platform
 	SubscriptionId string `json:",omitempty"`
-	ParentId       string `json:",omitempty"`
-	Type           string `json:",omitempty"`
+	// Parent ID
+	ParentId string `json:",omitempty"`
+	// Type, either parent, child, or self
+	Type string `json:",omitempty"`
 }
 
 type PaymentProfileDeletion struct {
@@ -216,13 +239,16 @@ type Controller struct {
 	// read only: true
 	DnsRegion string `gorm:"unique;not null" json:",omitempty"`
 	// read only: true
+	// Time created
 	CreatedAt time.Time `json:",omitempty"`
 	// read only: true
+	// Time last updated
 	UpdatedAt time.Time `json:",omitempty"`
 }
 
 type Config struct {
 	// read only: true
+	// hidden: true
 	ID int `gorm:"primary_key;auto_increment:false"`
 	// Lock new accounts (must be unlocked by admin)
 	LockNewAccounts bool
@@ -358,7 +384,7 @@ type OrgCloudlet struct {
 }
 
 type ShowUser struct {
-	User `json:",inline"`
+	User
 	// Organization name
 	Org string `form:"org" json:"org"`
 	// Role name
@@ -390,18 +416,18 @@ type NewPassword struct {
 }
 
 type CreateUser struct {
-	User `json:",inline"`
+	User
 	// Client information to include in verification email request, used mainly by Web UI client
 	Verify EmailRequest `json:"verify"` // for verifying email
 }
 
 type AuditQuery struct {
-	Username            string `json:"username"`
-	Org                 string `form:"org" json:"org"`
-	Limit               int    `json:"limit"`
-	edgeproto.TimeRange `json:",inline"`
-	Operation           string            `json:"operation"`
-	Tags                map[string]string `json:"tags"`
+	Username string `json:"username"`
+	Org      string `form:"org" json:"org"`
+	Limit    int    `json:"limit"`
+	edgeproto.TimeRange
+	Operation string            `json:"operation"`
+	Tags      map[string]string `json:"tags"`
 }
 
 type AuditResponse struct {
@@ -444,15 +470,21 @@ type Token struct {
 // Structs used in replies
 
 type Result struct {
+	// Informational message
 	Message string `json:"message,omitempty"`
-	Code    int    `json:"code,omitempty"`
+	// Error code
+	Code int `json:"code,omitempty"`
 }
 
 type Version struct {
+	// Master build version
 	BuildMaster string `json:"buildmaster,omitempty"`
-	BuildHead   string `json:"buildhead,omitempty"`
+	// Head build version
+	BuildHead string `json:"buildhead,omitempty"`
+	// Build author
 	BuildAuthor string `json:"buildauthor,omitempty"`
-	Hostname    string `json:"hostname,omitempty"`
+	// Hostname that performed build
+	Hostname string `json:"hostname,omitempty"`
 }
 
 // Data struct sent back for streaming (chunked) commands.
@@ -505,7 +537,7 @@ type RegionData struct {
 }
 
 type MetricsCommon struct {
-	edgeproto.TimeRange `json:",inline"`
+	edgeproto.TimeRange
 	// Display X samples spaced out evenly over start and end times
 	NumSamples int `json:",omitempty"`
 	// Display the last X metrics
@@ -514,18 +546,24 @@ type MetricsCommon struct {
 
 // Metrics data
 type AllMetrics struct {
+	// Metrics data
 	Data []MetricData `json:"data"`
 }
 
 type MetricData struct {
+	// Series data
 	Series []MetricSeries `json:"Series"`
 }
 
 type MetricSeries struct {
-	Columns []string          `json:"columns"`
-	Name    string            `json:"name"`
-	Tags    map[string]string `json:"tags"`
-	Values  [][]interface{}   `json:"values"`
+	// Column names
+	Columns []string `json:"columns"`
+	// Series name
+	Name string `json:"name"`
+	// Tags
+	Tags map[string]string `json:"tags"`
+	// 2D Array of column values by time
+	Values [][]interface{} `json:"values"`
 }
 
 type RegionAppInstMetrics struct {
@@ -536,17 +574,22 @@ type RegionAppInstMetrics struct {
 	// Application instance to filter for metrics
 	AppInst edgeproto.AppInstKey `json:",omitempty"`
 	// Application instances to filter for metrics
-	AppInsts      []edgeproto.AppInstKey `json:",omitempty"`
-	MetricsCommon `json:",inline"`
+	AppInsts []edgeproto.AppInstKey `json:",omitempty"`
+	MetricsCommon
 }
 
 type RegionCustomAppMetrics struct {
-	Region        string
-	Measurement   string
-	AppInst       edgeproto.AppInstKey `json:",omitempty"`
-	Port          string               `json:",omitempty"`
-	AggrFunction  string               `json:",omitempty"`
-	MetricsCommon `json:",inline"`
+	// Region name
+	Region string
+	// Pre-built queries, one of: connections
+	Measurement string
+	// Application instance to filter for metrics
+	AppInst edgeproto.AppInstKey `json:",omitempty"`
+	// Port on AppInst (optional)
+	Port string `json:",omitempty"`
+	// Aggregation function (optional)
+	AggrFunction string `json:",omitempty"`
+	MetricsCommon
 }
 
 type RegionClusterInstMetrics struct {
@@ -557,8 +600,8 @@ type RegionClusterInstMetrics struct {
 	// Cluster instance keys for metrics
 	ClusterInsts []edgeproto.ClusterInstKey `json:",omitempty"`
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
-	Selector      string
-	MetricsCommon `json:",inline"`
+	Selector string
+	MetricsCommon
 }
 
 type RegionCloudletMetrics struct {
@@ -569,9 +612,9 @@ type RegionCloudletMetrics struct {
 	// Cloudlet keys for metrics
 	Cloudlets []edgeproto.CloudletKey `json:",omitempty"`
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
-	Selector      string
-	PlatformType  string
-	MetricsCommon `json:",inline"`
+	Selector string
+	//PlatformType string
+	MetricsCommon
 }
 
 type RegionClientApiUsageMetrics struct {
@@ -586,8 +629,8 @@ type RegionClientApiUsageMetrics struct {
 	// Operator organization where DME is running
 	DmeCloudletOrg string `json:",omitempty"`
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
-	Selector      string
-	MetricsCommon `json:",inline"`
+	Selector string
+	MetricsCommon
 }
 
 type RegionClientAppUsageMetrics struct {
@@ -604,15 +647,16 @@ type RegionClientAppUsageMetrics struct {
 	// Device model. Can be used for selectors: deviceinfo
 	DeviceModel string `json:",omitempty"`
 	// Device operating system. Can be used for selectors: deviceinfo
-	DeviceOs       string `json:",omitempty"`
+	DeviceOs string `json:",omitempty"`
+	// Signal strength
 	SignalStrength string `json:",omitempty"`
 	// Provides the range of GPS coordinates for the location tile/square.
 	// Format is: 'LocationUnderLongitude,LocationUnderLatitude_LocationOverLongitude,LocationOverLatitude_LocationTileLength'.
 	// LocationUnder are the GPS coordinates of the corner closest to (0,0) of the location tile.
 	// LocationOver are the GPS coordinates of the corner farthest from (0,0) of the location tile.
 	// LocationTileLength is the length (in kilometers) of one side of the location tile square
-	LocationTile  string `json:",omitempty"`
-	MetricsCommon `json:",inline"`
+	LocationTile string `json:",omitempty"`
+	MetricsCommon
 }
 
 type RegionClientCloudletUsageMetrics struct {
@@ -629,39 +673,40 @@ type RegionClientCloudletUsageMetrics struct {
 	// Device model. Can be used for selectors: deviceinfo
 	DeviceModel string `json:",omitempty"`
 	// Device operating system. Can be used for selectors: deviceinfo
-	DeviceOs       string `json:",omitempty"`
+	DeviceOs string `json:",omitempty"`
+	// Signal strength
 	SignalStrength string `json:",omitempty"`
 	// Provides the range of GPS coordinates for the location tile/square.
 	// Format is: 'LocationUnderLongitude,LocationUnderLatitude_LocationOverLongitude,LocationOverLatitude_LocationTileLength'.
 	// LocationUnder are the GPS coordinates of the corner closest to (0,0) of the location tile.
 	// LocationOver are the GPS coordinates of the corner farthest from (0,0) of the location tile.
 	// LocationTileLength is the length (in kilometers) of one side of the location tile square
-	LocationTile  string `json:",omitempty"`
-	MetricsCommon `json:",inline"`
+	LocationTile string `json:",omitempty"`
+	MetricsCommon
 }
 
 type RegionAppInstEvents struct {
 	// Region name
 	Region string
 	// Application instance key for events
-	AppInst       edgeproto.AppInstKey
-	MetricsCommon `json:",inline"`
+	AppInst edgeproto.AppInstKey
+	MetricsCommon
 }
 
 type RegionClusterInstEvents struct {
 	// Region name
 	Region string
 	// Cluster instance key for events
-	ClusterInst   edgeproto.ClusterInstKey
-	MetricsCommon `json:",inline"`
+	ClusterInst edgeproto.ClusterInstKey
+	MetricsCommon
 }
 
 type RegionCloudletEvents struct {
 	// Region name
 	Region string
 	// Cloudlet key for events
-	Cloudlet      edgeproto.CloudletKey
-	MetricsCommon `json:",inline"`
+	Cloudlet edgeproto.CloudletKey
+	MetricsCommon
 }
 
 type RegionAppInstUsage struct {

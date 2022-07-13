@@ -150,7 +150,7 @@ func (s *ParseComments) ParseFile(fileName string) error {
 	return nil
 }
 
-func (s *ParseComments) Visit(node ast.Node) ast.Visitor {
+func (s *ParseComments) Visit(node ast.Node) (retval ast.Visitor) {
 	switch x := node.(type) {
 	// file parsing
 	case *ast.File:
@@ -195,6 +195,16 @@ func (s *ParseComments) Visit(node ast.Node) ast.Visitor {
 			s.Structs = append(s.Structs, st)
 		}
 		field := &Field{}
+		defer func() {
+			if err := recover(); err != nil {
+				name := field.TypeName
+				if len(x.Names) > 0 {
+					name = x.Names[0].Name
+				}
+				fmt.Printf("Panic parsing %s.%s\n", s.curStruct, name)
+				panic(err)
+			}
+		}()
 
 		switch t := x.Type.(type) {
 		case *ast.Ident:
@@ -239,7 +249,7 @@ func (s *ParseComments) Visit(node ast.Node) ast.Visitor {
 		setFieldComments(field, x.Doc)
 		st.fieldsMap[field.Name] = field
 		st.Fields = append(st.Fields, field)
-		return nil
+		return s
 	}
 	return nil
 }
@@ -278,6 +288,12 @@ func (s *ParseComments) getPkgAndType(typ ast.Expr) (string, string) {
 		// nested types not handled
 	case *ast.MapType:
 		// nested types not handled
+	case *ast.StarExpr:
+		return s.getPkgAndType(t.X)
+	case *ast.FuncType:
+		// func types not handled
+	case *ast.StructType:
+		// anonymous inner structs not handled
 	default:
 		panic(fmt.Sprintf("getPkgAndType invalid type %v passed in\n", typ))
 	}

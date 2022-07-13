@@ -18,8 +18,8 @@ import (
 	fmt "fmt"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/mobiledgex/jaeger/plugin/storage/es/spanstore/dbmodel"
 )
 
@@ -41,16 +41,17 @@ func init() {
 		ReplyData:    &[]node.EventData{},
 		Path:         "/auth/events/show",
 	}, &ApiCommand{
-		Name:         "ShowOldEvents",
-		Use:          "showold",
-		Short:        "Show events and audit events (for old events format)",
-		OptionalArgs: strings.Join(EventsOptionalArgs, " "),
-		AliasArgs:    strings.Join(EventsAliasArgs, " "),
-		Comments:     addRegionComment(EventsComments),
-		SpecialArgs:  &EventsSpecialArgs,
-		ReqData:      &node.EventSearch{},
-		ReplyData:    &[]node.EventDataOld{},
-		Path:         "/auth/events/show",
+		Name:            "ShowOldEvents",
+		Use:             "showold",
+		Short:           "Show events and audit events (for old events format)",
+		OptionalArgs:    strings.Join(EventsOptionalArgs, " "),
+		AliasArgs:       strings.Join(EventsAliasArgs, " "),
+		Comments:        addRegionComment(EventsComments),
+		SpecialArgs:     &EventsSpecialArgs,
+		ReqData:         &node.EventSearch{},
+		ReplyData:       &[]node.EventDataOld{},
+		Path:            "/auth/events/show",
+		DuplicateForCli: true,
 	}, &ApiCommand{
 		Name:         "FindEvents",
 		Use:          "find",
@@ -77,38 +78,41 @@ func init() {
 	AllApis.AddGroup(EventsGroup, "Search events and audit events", cmds)
 
 	cmds = []*ApiCommand{&ApiCommand{
-		Name:         "SpanTerms",
-		Use:          "terms",
-		Short:        "Show aggregated spans terms",
-		OptionalArgs: strings.Join(ShowSpansOptionalArgs, " "),
-		AliasArgs:    strings.Join(ShowSpansAliasArgs, " "),
-		Comments:     addRegionComment(ShowSpansComments),
-		SpecialArgs:  &ShowSpansSpecialArgs,
-		ReqData:      &node.SpanSearch{},
-		ReplyData:    &node.SpanTerms{},
-		Path:         "/auth/spans/terms",
+		Name:               "SpanTerms",
+		Use:                "terms",
+		Short:              "Show aggregated spans terms",
+		OptionalArgs:       strings.Join(ShowSpansOptionalArgs, " "),
+		AliasArgs:          strings.Join(ShowSpansAliasArgs, " "),
+		Comments:           addRegionComment(ShowSpansComments),
+		SpecialArgs:        &ShowSpansSpecialArgs,
+		ReqData:            &node.SpanSearch{},
+		ReplyData:          &node.SpanTerms{},
+		Path:               "/auth/spans/terms",
+		DocEmptyCommentsOk: true,
 	}, &ApiCommand{
-		Name:         "ShowSpans",
-		Use:          "show",
-		Short:        "Search spans",
-		OptionalArgs: strings.Join(ShowSpansOptionalArgs, " "),
-		AliasArgs:    strings.Join(ShowSpansAliasArgs, " "),
-		Comments:     addRegionComment(ShowSpansComments),
-		SpecialArgs:  &ShowSpansSpecialArgs,
-		ReqData:      &node.SpanSearch{},
-		ReplyData:    &[]node.SpanOutCondensed{},
-		Path:         "/auth/spans/show",
+		Name:               "ShowSpans",
+		Use:                "show",
+		Short:              "Search spans",
+		OptionalArgs:       strings.Join(ShowSpansOptionalArgs, " "),
+		AliasArgs:          strings.Join(ShowSpansAliasArgs, " "),
+		Comments:           addRegionComment(ShowSpansComments),
+		SpecialArgs:        &ShowSpansSpecialArgs,
+		ReqData:            &node.SpanSearch{},
+		ReplyData:          &[]node.SpanOutCondensed{},
+		Path:               "/auth/spans/show",
+		DocEmptyCommentsOk: true,
 	}, &ApiCommand{
-		Name:         "ShowSpansVerbose",
-		Use:          "showverbose",
-		Short:        "Search spans, output raw format",
-		OptionalArgs: strings.Join(ShowSpansOptionalArgs, " "),
-		AliasArgs:    strings.Join(ShowSpansAliasArgs, " "),
-		Comments:     addRegionComment(ShowSpansComments),
-		SpecialArgs:  &ShowSpansSpecialArgs,
-		ReqData:      &node.SpanSearch{},
-		ReplyData:    &[]dbmodel.Span{},
-		Path:         "/auth/spans/showverbose",
+		Name:               "ShowSpansVerbose",
+		Use:                "showverbose",
+		Short:              "Search spans, output raw format",
+		OptionalArgs:       strings.Join(ShowSpansOptionalArgs, " "),
+		AliasArgs:          strings.Join(ShowSpansAliasArgs, " "),
+		Comments:           addRegionComment(ShowSpansComments),
+		SpecialArgs:        &ShowSpansSpecialArgs,
+		ReqData:            &node.SpanSearch{},
+		ReplyData:          &[]dbmodel.Span{},
+		Path:               "/auth/spans/showverbose",
+		DocEmptyCommentsOk: true,
 	}}
 	AllApis.AddGroup(SpansGroup, "Search spans", cmds)
 }

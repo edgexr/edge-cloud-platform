@@ -1492,6 +1492,7 @@ type CloudletInfo struct {
 	// Supported flavors by the Cloudlet
 	Flavors []*FlavorInfo `protobuf:"bytes,10,rep,name=flavors,proto3" json:"flavors,omitempty"`
 	// status is used to reflect progress of creation or other events
+	// hidden: true (stored in redis only)
 	Status StatusInfo `protobuf:"bytes,11,opt,name=status,proto3" json:"status"`
 	// Cloudlet container version
 	ContainerVersion string `protobuf:"bytes,12,opt,name=container_version,json=containerVersion,proto3" json:"container_version,omitempty"`

@@ -310,12 +310,18 @@ func (CRMOverride) EnumDescriptor() ([]byte, []int) {
 // Steps are work items within a task. Within the clusterinst and appinst objects this
 // is converted to a string
 type StatusInfo struct {
-	TaskNumber uint32   `protobuf:"varint,1,opt,name=task_number,json=taskNumber,proto3" json:"task_number,omitempty"`
-	MaxTasks   uint32   `protobuf:"varint,2,opt,name=max_tasks,json=maxTasks,proto3" json:"max_tasks,omitempty"`
-	TaskName   string   `protobuf:"bytes,3,opt,name=task_name,json=taskName,proto3" json:"task_name,omitempty"`
-	StepName   string   `protobuf:"bytes,4,opt,name=step_name,json=stepName,proto3" json:"step_name,omitempty"`
-	MsgCount   uint32   `protobuf:"varint,5,opt,name=msg_count,json=msgCount,proto3" json:"msg_count,omitempty"`
-	Msgs       []string `protobuf:"bytes,6,rep,name=msgs,proto3" json:"msgs,omitempty"`
+	// Task number
+	TaskNumber uint32 `protobuf:"varint,1,opt,name=task_number,json=taskNumber,proto3" json:"task_number,omitempty"`
+	// Max tasks
+	MaxTasks uint32 `protobuf:"varint,2,opt,name=max_tasks,json=maxTasks,proto3" json:"max_tasks,omitempty"`
+	// Task name
+	TaskName string `protobuf:"bytes,3,opt,name=task_name,json=taskName,proto3" json:"task_name,omitempty"`
+	// Step name
+	StepName string `protobuf:"bytes,4,opt,name=step_name,json=stepName,proto3" json:"step_name,omitempty"`
+	// Message count
+	MsgCount uint32 `protobuf:"varint,5,opt,name=msg_count,json=msgCount,proto3" json:"msg_count,omitempty"`
+	// Messages
+	Msgs []string `protobuf:"bytes,6,rep,name=msgs,proto3" json:"msgs,omitempty"`
 }
 
 func (m *StatusInfo) Reset()         { *m = StatusInfo{} }

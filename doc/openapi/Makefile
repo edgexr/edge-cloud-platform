@@ -21,7 +21,7 @@ doc:
 
 debug:
 	go install $(TOP)/tools/gen-mc-openapi
-	gen-mc-openapi -baseFile mcbase.yaml -outFile $(OUTFILE) $(SCANPATHS)
+	gen-mc-openapi -baseFile mcbase.yaml -outFile $(OUTFILE) $(SCANPATHS) --debug
 
 local-server:
 	docker run --rm -p 1081:80 -v "$(shell pwd)/:/usr/share/nginx/html/doc" -e SPEC_URL=doc/$(OUTFILE) redocly/redoc

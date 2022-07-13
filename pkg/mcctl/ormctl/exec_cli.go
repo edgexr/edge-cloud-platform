@@ -25,6 +25,7 @@ func init() {
 		cmd.Name += "Cli"
 		var str string
 		cmd.ReplyData = &str
+		cmd.DuplicateForCli = true
 		return &cmd
 	}
 	AllApis.AddCommand(genCliCmd(RunCommandCmd))

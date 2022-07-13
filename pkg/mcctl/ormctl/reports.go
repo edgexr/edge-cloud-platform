@@ -62,14 +62,17 @@ func init() {
 	AllApis.AddGroup(ReporterGroup, "Manage report schedule", cmds)
 
 	cmds = []*ApiCommand{&ApiCommand{
-		Name:         "GenerateReport",
-		Use:          "generate",
-		Short:        "Generate new report for an org of all regions",
-		RequiredArgs: "org starttime endtime",
-		OptionalArgs: "timezone",
-		ReqData:      &ormapi.GenerateReport{},
-		Comments:     ormapi.GenerateReportComments,
-		Path:         "/auth/report/generate",
+		Name:             "GenerateReport",
+		Use:              "generate",
+		Short:            "Generate new report for an org of all regions",
+		RequiredArgs:     "org starttime endtime",
+		OptionalArgs:     "timezone",
+		ReqData:          &ormapi.GenerateReport{},
+		ReplyData:        &[]byte{},
+		ReplyMimeType:    "text/html;charset=UTF-8",
+		ReplyDescription: "pdf document",
+		Comments:         ormapi.GenerateReportComments,
+		Path:             "/auth/report/generate",
 	}, &ApiCommand{
 		Name:         "ShowReport",
 		Use:          "show",
@@ -92,15 +95,16 @@ func init() {
 	AllApis.AddGroup(ReportGroup, "Manage reports", cmds)
 
 	cmds = []*ApiCommand{&ApiCommand{
-		Name:         "GenerateReportData",
-		Use:          "generate",
-		Short:        "Generate report data for an org of all regions",
-		RequiredArgs: "org starttime endtime",
-		OptionalArgs: "org starttime endtime timezone",
-		ReqData:      &ormapi.GenerateReport{},
-		ReplyData:    &map[string]interface{}{},
-		Comments:     ormapi.GenerateReportComments,
-		Path:         "/auth/report/generatedata",
+		Name:             "GenerateReportData",
+		Use:              "generate",
+		Short:            "Generate report data for an org of all regions",
+		RequiredArgs:     "org starttime endtime",
+		OptionalArgs:     "org starttime endtime timezone",
+		ReqData:          &ormapi.GenerateReport{},
+		ReplyData:        &map[string]interface{}{},
+		ReplyDescription: "Generic mapped map[string]interface data",
+		Comments:         ormapi.GenerateReportComments,
+		Path:             "/auth/report/generatedata",
 	}}
 	AllApis.AddGroup(ReportDataGroup, "Access report data", cmds)
 }
