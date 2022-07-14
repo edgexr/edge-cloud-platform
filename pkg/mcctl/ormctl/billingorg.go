@@ -17,8 +17,8 @@ package ormctl
 import (
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 )
 
 const BillingOrgGroup = "BillingOrg"
@@ -86,14 +86,15 @@ func init() {
 		Comments:  ormapi.AccountInfoComments,
 		Path:      "/auth/billingorg/showaccount",
 	}, &ApiCommand{
-		Name:         "ShowPaymentProfiles",
-		Use:          "showpaymentprofiles",
-		Short:        "Show payment profiles associated with the billing org",
-		RequiredArgs: "name",
-		Comments:     map[string]string{"name": "name of the billingOrg to show payment info for"},
-		ReqData:      &ormapi.BillingOrganization{},
-		ReplyData:    &[]billing.PaymentProfile{},
-		Path:         "/auth/billingorg/showpaymentprofiles",
+		Name:               "ShowPaymentProfiles",
+		Use:                "showpaymentprofiles",
+		Short:              "Show payment profiles associated with the billing org",
+		RequiredArgs:       "name",
+		Comments:           map[string]string{"name": "name of the billingOrg to show payment info for"},
+		ReqData:            &ormapi.BillingOrganization{},
+		ReplyData:          &[]billing.PaymentProfile{},
+		Path:               "/auth/billingorg/showpaymentprofiles",
+		DocEmptyCommentsOk: true,
 	}, &ApiCommand{
 		Name:         "DeletePaymentProfile",
 		Use:          "deletepaymentprofile",
@@ -103,14 +104,15 @@ func init() {
 		ReqData:      &ormapi.PaymentProfileDeletion{},
 		Path:         "/auth/billingorg/deletepaymentprofile",
 	}, &ApiCommand{
-		Name:         "GetInvoice",
-		Use:          "getinvoice",
-		RequiredArgs: "name",
-		OptionalArgs: "startdate enddate",
-		ReqData:      &ormapi.InvoiceRequest{},
-		Comments:     ormapi.InvoiceRequestComments,
-		ReplyData:    &[]billing.InvoiceData{},
-		Path:         "/auth/billingorg/invoice",
+		Name:               "GetInvoice",
+		Use:                "getinvoice",
+		RequiredArgs:       "name",
+		OptionalArgs:       "startdate enddate",
+		ReqData:            &ormapi.InvoiceRequest{},
+		Comments:           ormapi.InvoiceRequestComments,
+		ReplyData:          &[]billing.InvoiceData{},
+		Path:               "/auth/billingorg/invoice",
+		DocEmptyCommentsOk: true,
 	}}
 	AllApis.AddGroup(BillingOrgGroup, "Manage billing organizations", cmds)
 }

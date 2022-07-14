@@ -3,24 +3,29 @@ package ormapi
 // This is an auto-generated file. DO NOT EDIT directly.
 
 var UserComments = map[string]string{
-	"name":            `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
-	"email":           `User email`,
-	"emailverified":   `Email address has been verified`,
-	"familyname":      `Family Name`,
-	"givenname":       `Given Name`,
-	"nickname":        `Nick Name`,
-	"locked":          `Account is locked`,
-	"enabletotp":      `Enable or disable temporary one-time passwords for the account`,
-	"metadata":        `Metadata`,
-	"lastlogin":       `Last successful login time`,
-	"lastfailedlogin": `Last failed login time`,
-	"failedlogins":    `Number of failed login attempts since last successful login`,
+	"name":             `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
+	"email":            `User email`,
+	"emailverified":    `Email address has been verified`,
+	"familyname":       `Family Name`,
+	"givenname":        `Given Name`,
+	"picture":          `Picture (currently not used)`,
+	"nickname":         `Nick Name`,
+	"createdat":        `Time created`,
+	"updatedat":        `Time last updated`,
+	"locked":           `Account is locked`,
+	"passcracktimesec": `Password strength in terms of brute-force cracking time`,
+	"enabletotp":       `Enable or disable temporary one-time passwords for the account`,
+	"metadata":         `Metadata`,
+	"lastlogin":        `Last successful login time`,
+	"lastfailedlogin":  `Last failed login time`,
+	"failedlogins":     `Number of failed login attempts since last successful login`,
 }
 
 var CreateUserApiKeyComments = map[string]string{
 	"userapikey.id":          `API key ID used as an identifier for API keys`,
 	"userapikey.description": `Description of the purpose of this API key`,
 	"userapikey.org":         `Org to which API key has permissions to access its objects`,
+	"userapikey.createdat":   `Time created`,
 	"apikey":                 `API key`,
 	"permissions:#.role":     `Role defines a collection of permissions, which are resource-action pairs`,
 	"permissions:#.resource": `Resource defines a resource to act upon`,
@@ -31,6 +36,13 @@ var UserApiKeyComments = map[string]string{
 	"id":          `API key ID used as an identifier for API keys`,
 	"description": `Description of the purpose of this API key`,
 	"org":         `Org to which API key has permissions to access its objects`,
+	"createdat":   `Time created`,
+}
+
+var UserResponseComments = map[string]string{
+	"message":       `Message`,
+	"totpsharedkey": `TOTP shared key`,
+	"totpqrimage":   `TOTP QR image`,
 }
 
 var OrganizationComments = map[string]string{
@@ -38,8 +50,11 @@ var OrganizationComments = map[string]string{
 	"type":             `Organization type: "developer" or "operator"`,
 	"address":          `Organization address`,
 	"phone":            `Organization phone number`,
+	"createdat":        `Time created`,
+	"updatedat":        `Time last updated`,
 	"publicimages":     `Images are made available to other organization`,
 	"deleteinprogress": `Delete of this organization is in progress`,
+	"parent":           `This organization's parent organization for billing, if any`,
 	"edgeboxonly":      `Edgebox only operator organization`,
 }
 
@@ -63,6 +78,8 @@ var BillingOrganizationComments = map[string]string{
 	"postalcode":       `Organization postal code`,
 	"phone":            `Organization phone number`,
 	"children":         `Children belonging to this BillingOrganization`,
+	"createdat":        `Time created`,
+	"updatedat":        `Time last updated`,
 	"deleteinprogress": `Delete of this BillingOrganization is in progress`,
 }
 
@@ -70,6 +87,8 @@ var AccountInfoComments = map[string]string{
 	"orgname":        `Billing Organization name to commit`,
 	"accountid":      `Account ID given by the billing platform`,
 	"subscriptionid": `Subscription ID given by the billing platform`,
+	"parentid":       `Parent ID`,
+	"type":           `Type, either parent, child, or self`,
 }
 
 var PaymentProfileDeletionComments = map[string]string{
@@ -84,6 +103,8 @@ var ControllerComments = map[string]string{
 	"influxdb":      `InfluxDB address`,
 	"thanosmetrics": `Thanos Query URL`,
 	"dnsregion":     `Unique DNS label for the region`,
+	"createdat":     `Time created`,
+	"updatedat":     `Time last updated`,
 }
 
 var ConfigComments = map[string]string{
@@ -159,20 +180,24 @@ var OrgCloudletComments = map[string]string{
 }
 
 var ShowUserComments = map[string]string{
-	"user.name":            `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
-	"user.email":           `User email`,
-	"user.emailverified":   `Email address has been verified`,
-	"user.familyname":      `Family Name`,
-	"user.givenname":       `Given Name`,
-	"user.nickname":        `Nick Name`,
-	"user.locked":          `Account is locked`,
-	"user.enabletotp":      `Enable or disable temporary one-time passwords for the account`,
-	"user.metadata":        `Metadata`,
-	"user.lastlogin":       `Last successful login time`,
-	"user.lastfailedlogin": `Last failed login time`,
-	"user.failedlogins":    `Number of failed login attempts since last successful login`,
-	"org":                  `Organization name`,
-	"role":                 `Role name`,
+	"user.name":             `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
+	"user.email":            `User email`,
+	"user.emailverified":    `Email address has been verified`,
+	"user.familyname":       `Family Name`,
+	"user.givenname":        `Given Name`,
+	"user.picture":          `Picture (currently not used)`,
+	"user.nickname":         `Nick Name`,
+	"user.createdat":        `Time created`,
+	"user.updatedat":        `Time last updated`,
+	"user.locked":           `Account is locked`,
+	"user.passcracktimesec": `Password strength in terms of brute-force cracking time`,
+	"user.enabletotp":       `Enable or disable temporary one-time passwords for the account`,
+	"user.metadata":         `Metadata`,
+	"user.lastlogin":        `Last successful login time`,
+	"user.lastfailedlogin":  `Last failed login time`,
+	"user.failedlogins":     `Number of failed login attempts since last successful login`,
+	"org":                   `Organization name`,
+	"role":                  `Role name`,
 }
 
 var UserLoginComments = map[string]string{
@@ -189,19 +214,23 @@ var NewPasswordComments = map[string]string{
 }
 
 var CreateUserComments = map[string]string{
-	"user.name":            `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
-	"user.email":           `User email`,
-	"user.emailverified":   `Email address has been verified`,
-	"user.familyname":      `Family Name`,
-	"user.givenname":       `Given Name`,
-	"user.nickname":        `Nick Name`,
-	"user.locked":          `Account is locked`,
-	"user.enabletotp":      `Enable or disable temporary one-time passwords for the account`,
-	"user.metadata":        `Metadata`,
-	"user.lastlogin":       `Last successful login time`,
-	"user.lastfailedlogin": `Last failed login time`,
-	"user.failedlogins":    `Number of failed login attempts since last successful login`,
-	"verify.email":         `User's email address`,
+	"user.name":             `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
+	"user.email":            `User email`,
+	"user.emailverified":    `Email address has been verified`,
+	"user.familyname":       `Family Name`,
+	"user.givenname":        `Given Name`,
+	"user.picture":          `Picture (currently not used)`,
+	"user.nickname":         `Nick Name`,
+	"user.createdat":        `Time created`,
+	"user.updatedat":        `Time last updated`,
+	"user.locked":           `Account is locked`,
+	"user.passcracktimesec": `Password strength in terms of brute-force cracking time`,
+	"user.enabletotp":       `Enable or disable temporary one-time passwords for the account`,
+	"user.metadata":         `Metadata`,
+	"user.lastlogin":        `Last successful login time`,
+	"user.lastfailedlogin":  `Last failed login time`,
+	"user.failedlogins":     `Number of failed login attempts since last successful login`,
+	"verify.email":          `User's email address`,
 }
 
 var EmailRequestComments = map[string]string{
@@ -217,6 +246,23 @@ var TokenComments = map[string]string{
 	"token": `Authentication token`,
 }
 
+var ResultComments = map[string]string{
+	"message": `Informational message`,
+	"code":    `Error code`,
+}
+
+var VersionComments = map[string]string{
+	"buildmaster": `Master build version`,
+	"buildhead":   `Head build version`,
+	"buildauthor": `Build author`,
+	"hostname":    `Hostname that performed build`,
+}
+
+var StreamPayloadComments = map[string]string{
+	"result.message": `Informational message`,
+	"result.code":    `Error code`,
+}
+
 var AllDataComments = map[string]string{
 	"controllers:#.region":                            `Controller region name`,
 	"controllers:#.address":                           `Controller API address or URL`,
@@ -224,6 +270,8 @@ var AllDataComments = map[string]string{
 	"controllers:#.influxdb":                          `InfluxDB address`,
 	"controllers:#.thanosmetrics":                     `Thanos Query URL`,
 	"controllers:#.dnsregion":                         `Unique DNS label for the region`,
+	"controllers:#.createdat":                         `Time created`,
+	"controllers:#.updatedat":                         `Time last updated`,
 	"billingorgs:#.name":                              `BillingOrganization name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
 	"billingorgs:#.type":                              `Organization type: "parent" or "self"`,
 	"billingorgs:#.firstname":                         `Billing info first name`,
@@ -237,6 +285,8 @@ var AllDataComments = map[string]string{
 	"billingorgs:#.postalcode":                        `Organization postal code`,
 	"billingorgs:#.phone":                             `Organization phone number`,
 	"billingorgs:#.children":                          `Children belonging to this BillingOrganization`,
+	"billingorgs:#.createdat":                         `Time created`,
+	"billingorgs:#.updatedat":                         `Time last updated`,
 	"billingorgs:#.deleteinprogress":                  `Delete of this BillingOrganization is in progress`,
 	"alertreceivers:#.name":                           `Receiver Name`,
 	"alertreceivers:#.type":                           `Receiver type. Eg. email, slack, pagerduty`,
@@ -254,8 +304,11 @@ var AllDataComments = map[string]string{
 	"orgs:#.type":                                     `Organization type: "developer" or "operator"`,
 	"orgs:#.address":                                  `Organization address`,
 	"orgs:#.phone":                                    `Organization phone number`,
+	"orgs:#.createdat":                                `Time created`,
+	"orgs:#.updatedat":                                `Time last updated`,
 	"orgs:#.publicimages":                             `Images are made available to other organization`,
 	"orgs:#.deleteinprogress":                         `Delete of this organization is in progress`,
+	"orgs:#.parent":                                   `This organization's parent organization for billing, if any`,
 	"orgs:#.edgeboxonly":                              `Edgebox only operator organization`,
 	"roles:#.org":                                     `Organization name`,
 	"roles:#.username":                                `User name`,
@@ -284,6 +337,27 @@ var MetricsCommonComments = map[string]string{
 	"limit":      `Display the last X metrics`,
 }
 
+var AllMetricsComments = map[string]string{
+	"data:#.series:#.columns": `Column names`,
+	"data:#.series:#.name":    `Series name`,
+	"data:#.series:#.tags":    `Tags, value is key=value format`,
+	"data:#.series:#.values":  `2D Array of column values by time`,
+}
+
+var MetricDataComments = map[string]string{
+	"series:#.columns": `Column names`,
+	"series:#.name":    `Series name`,
+	"series:#.tags":    `Tags, value is key=value format`,
+	"series:#.values":  `2D Array of column values by time`,
+}
+
+var MetricSeriesComments = map[string]string{
+	"columns": `Column names`,
+	"name":    `Series name`,
+	"tags":    `Tags, value is key=value format`,
+	"values":  `2D Array of column values by time`,
+}
+
 var RegionAppInstMetricsComments = map[string]string{
 	"metricscommon.numsamples": `Display X samples spaced out evenly over start and end times`,
 	"metricscommon.limit":      `Display the last X metrics`,
@@ -296,6 +370,11 @@ var RegionAppInstMetricsComments = map[string]string{
 var RegionCustomAppMetricsComments = map[string]string{
 	"metricscommon.numsamples": `Display X samples spaced out evenly over start and end times`,
 	"metricscommon.limit":      `Display the last X metrics`,
+	"region":                   `Region name`,
+	"measurement":              `Pre-built queries, one of: connections`,
+	"appinst":                  `Application instance to filter for metrics`,
+	"port":                     `Port on AppInst (optional)`,
+	"aggrfunction":             `Aggregation function (optional)`,
 }
 
 var RegionClusterInstMetricsComments = map[string]string{
@@ -337,6 +416,7 @@ var RegionClientAppUsageMetricsComments = map[string]string{
 	"datanetworktype":          `Data network type used by client device. Can be used for selectors: latency`,
 	"devicemodel":              `Device model. Can be used for selectors: deviceinfo`,
 	"deviceos":                 `Device operating system. Can be used for selectors: deviceinfo`,
+	"signalstrength":           `Signal strength`,
 	"locationtile":             `Provides the range of GPS coordinates for the location tile/square. Format is: 'LocationUnderLongitude,LocationUnderLatitude_LocationOverLongitude,LocationOverLatitude_LocationTileLength'. LocationUnder are the GPS coordinates of the corner closest to (0,0) of the location tile. LocationOver are the GPS coordinates of the corner farthest from (0,0) of the location tile. LocationTileLength is the length (in kilometers) of one side of the location tile square`,
 }
 
@@ -350,6 +430,7 @@ var RegionClientCloudletUsageMetricsComments = map[string]string{
 	"datanetworktype":          `Data network type used by client device. Can be used for selectors: latency`,
 	"devicemodel":              `Device model. Can be used for selectors: deviceinfo`,
 	"deviceos":                 `Device operating system. Can be used for selectors: deviceinfo`,
+	"signalstrength":           `Signal strength`,
 	"locationtile":             `Provides the range of GPS coordinates for the location tile/square. Format is: 'LocationUnderLongitude,LocationUnderLatitude_LocationOverLongitude,LocationOverLatitude_LocationTileLength'. LocationUnder are the GPS coordinates of the corner closest to (0,0) of the location tile. LocationOver are the GPS coordinates of the corner farthest from (0,0) of the location tile. LocationTileLength is the length (in kilometers) of one side of the location tile square`,
 }
 

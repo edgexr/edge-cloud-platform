@@ -685,6 +685,12 @@ var VMPoolInfoComments = map[string]string{
 	"vms:#.flavor.propmap":     "OS Flavor Properties, if any",
 	"state":                    "Current state of the VM pool on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                   "Any errors trying to add/remove VM to/from VM Pool",
+	"status.tasknumber":        "Task number",
+	"status.maxtasks":          "Max tasks",
+	"status.taskname":          "Task name",
+	"status.stepname":          "Step name",
+	"status.msgcount":          "Message count",
+	"status.msgs":              "Messages",
 }
 var VMPoolInfoSpecialArgs = map[string]string{
 	"errors":               "StringArray",

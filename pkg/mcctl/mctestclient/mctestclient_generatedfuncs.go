@@ -3053,15 +3053,20 @@ func (s *Client) ShowMaxReqsRateLimitSettingsMc(uri string, token string, in *or
 
 // Generating group Report
 
-func (s *Client) GenerateReport(uri string, token string, in *ormapi.GenerateReport) (int, error) {
+func (s *Client) GenerateReport(uri string, token string, in *ormapi.GenerateReport) ([]uint8, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
+	var out []uint8
+	rundata.Out = &out
 
 	apiCmd := ormctl.MustGetCommand("GenerateReport")
 	s.ClientRun.Run(apiCmd, &rundata)
-	return rundata.RetStatus, rundata.RetError
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
 }
 
 func (s *Client) ShowReport(uri string, token string, in *ormapi.DownloadReport) ([]string, int, error) {

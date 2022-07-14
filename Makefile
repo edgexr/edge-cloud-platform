@@ -20,7 +20,7 @@ check-vers:
 
 APICOMMENTS = ./mc/ormapi/api.comments.go
 
-build: check-vers
+build: check-vers $(APICOMMENTS)
 	(cd pkg/version; ./version.sh)
 	go install \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway \
@@ -93,6 +93,8 @@ third_party:
 $(APICOMMENTS): ./tools/apidoc/apidoc.go ./api/ormapi/api.go ./api/ormapi/federation_api.go
 	go install ./tools/apidoc
 	apidoc --apiFile ./api/ormapi/api.go --apiFile ./api/ormapi/federation_api.go --outFile ./api/ormapi/api.comments.go
+
+api-comments: $(APICOMMENTS)
 
 # adds license header to all files, see https://github.com/google/addlicense
 addlicense:
