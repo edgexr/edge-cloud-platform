@@ -1,0 +1,275 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for Flavors
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Flavor APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/ctrl/AddFlavorRes:
+    post:
+      description: Add Optional Resource
+      operationId: AddFlavorRes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionFlavor'
+            x-required-fields:
+            - region
+            - flavor.key.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: AddFlavorRes
+      tags:
+      - Flavor
+  /api/v1/auth/ctrl/CreateFlavor:
+    post:
+      description: Create a Flavor
+      operationId: CreateFlavor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionFlavor'
+            x-required-fields:
+            - region
+            - flavor.key.name
+            - flavor.ram
+            - flavor.vcpus
+            - flavor.disk
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateFlavor
+      tags:
+      - Flavor
+  /api/v1/auth/ctrl/DeleteFlavor:
+    post:
+      description: Delete a Flavor
+      operationId: DeleteFlavor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionFlavor'
+            x-required-fields:
+            - region
+            - flavor.key.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteFlavor
+      tags:
+      - Flavor
+  /api/v1/auth/ctrl/RemoveFlavorRes:
+    post:
+      description: Remove Optional Resource
+      operationId: RemoveFlavorRes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionFlavor'
+            x-required-fields:
+            - region
+            - flavor.key.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: RemoveFlavorRes
+      tags:
+      - Flavor
+  /api/v1/auth/ctrl/ShowFlavor:
+    post:
+      description: Show Flavors
+      operationId: ShowFlavor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionFlavor'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoFlavor'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowFlavor
+      tags:
+      - Flavor
+  /api/v1/auth/ctrl/UpdateFlavor:
+    post:
+      description: Update a Flavor
+      operationId: UpdateFlavor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionFlavor'
+            x-required-fields:
+            - region
+            - flavor.key.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateFlavor
+      tags:
+      - Flavor
+components:
+  schemas:
+    EdgeprotoFlavor:
+      properties:
+        delete_prepare:
+          description: Preparing to be deleted
+          type: boolean
+        disk:
+          description: Amount of disk space in gigabytes
+          minimum: 0
+          type: integer
+        key:
+          $ref: '#/components/schemas/EdgeprotoFlavorKey'
+        opt_res_map:
+          additionalProperties:
+            type: string
+          description: 'Optional Resources request, key = gpu form: $resource=$kind:[$alias]$count
+            ex: optresmap=gpu=vgpu:nvidia-63:1'
+          type: object
+        ram:
+          description: RAM in megabytes
+          minimum: 0
+          type: integer
+        vcpus:
+          description: Number of virtual CPUs
+          minimum: 0
+          type: integer
+      type: object
+    EdgeprotoFlavorKey:
+      properties:
+        name:
+          description: Flavor name
+          type: string
+      type: object
+    EdgeprotoResult:
+      properties:
+        code:
+          description: Error code, 0 indicates success, non-zero indicates failure
+            (not implemented)
+          type: integer
+        message:
+          description: Message, may be success or failure message
+          type: string
+      type: object
+    OrmapiRegionFlavor:
+      properties:
+        Flavor:
+          $ref: '#/components/schemas/EdgeprotoFlavor'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

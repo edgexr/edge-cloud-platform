@@ -1,0 +1,219 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for Debugs
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Debug APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/ctrl/DisableDebugLevels:
+    post:
+      description: Disable debug log levels
+      operationId: DisableDebugLevels
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionDebugRequest'
+            x-required-fields:
+            - debugrequest.levels
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoDebugReply'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DisableDebugLevels
+      tags:
+      - Debug
+  /api/v1/auth/ctrl/EnableDebugLevels:
+    post:
+      description: Enable debug log levels
+      operationId: EnableDebugLevels
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionDebugRequest'
+            x-required-fields:
+            - debugrequest.levels
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoDebugReply'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: EnableDebugLevels
+      tags:
+      - Debug
+  /api/v1/auth/ctrl/RunDebug:
+    post:
+      description: Run debug command
+      operationId: RunDebug
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionDebugRequest'
+            x-required-fields:
+            - debugrequest.cmd
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoDebugReply'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: RunDebug
+      tags:
+      - Debug
+  /api/v1/auth/ctrl/ShowDebugLevels:
+    post:
+      description: Show debug log levels
+      operationId: ShowDebugLevels
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionDebugRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoDebugReply'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowDebugLevels
+      tags:
+      - Debug
+components:
+  schemas:
+    EdgeprotoCloudletKey:
+      properties:
+        federated_organization:
+          description: Federated operator organization who shared this cloudlet
+          type: string
+        name:
+          description: Name of the cloudlet
+          type: string
+        organization:
+          description: Organization of the cloudlet site
+          type: string
+      type: object
+    EdgeprotoDebugReply:
+      properties:
+        node:
+          $ref: '#/components/schemas/EdgeprotoNodeKey'
+        output:
+          description: Debug output, if any
+          type: string
+      type: object
+    EdgeprotoDebugRequest:
+      properties:
+        args:
+          description: Additional arguments for cmd
+          type: string
+        cmd:
+          description: Debug command (use "help" to see available commands)
+          type: string
+        id:
+          description: Id used internally
+          minimum: 0
+          type: integer
+        levels:
+          description: 'Comma separated list of debug level names: etcd,api,notify,dmereq,locapi,infra,metrics,upgrade,info,sampled,fedapi'
+          type: string
+        node:
+          $ref: '#/components/schemas/EdgeprotoNodeKey'
+        pretty:
+          description: if possible, make output pretty
+          type: boolean
+        timeout:
+          description: custom timeout (duration, defaults to 10s)
+          type: string
+      type: object
+    EdgeprotoNodeKey:
+      properties:
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        name:
+          description: Name or hostname of node
+          type: string
+        region:
+          description: Region the node is in
+          type: string
+        type:
+          description: Node type
+          type: string
+      type: object
+    OrmapiRegionDebugRequest:
+      properties:
+        DebugRequest:
+          $ref: '#/components/schemas/EdgeprotoDebugRequest'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

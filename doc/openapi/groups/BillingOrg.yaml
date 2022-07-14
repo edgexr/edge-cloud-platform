@@ -1,0 +1,753 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for BillingOrgs
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: BillingOrg APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/billingorg/addchild:
+    post:
+      description: Add an organization as a child of a billing organization
+      operationId: AddBillingOrgChild
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiBillingOrganization'
+            x-required-fields:
+            - name
+            - children
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: AddBillingOrgChild
+      tags:
+      - BillingOrg
+  /api/v1/auth/billingorg/create:
+    post:
+      description: Set up a BillingOrganization and validate inputs
+      operationId: CreateBillingOrg
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiBillingOrganization'
+            x-required-fields:
+            - name
+            - type
+            - firstname
+            - lastname
+            - email
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateBillingOrg
+      tags:
+      - BillingOrg
+  /api/v1/auth/billingorg/delete:
+    post:
+      description: Delete a billing organization
+      operationId: DeleteBillingOrg
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiBillingOrganization'
+            x-required-fields:
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteBillingOrg
+      tags:
+      - BillingOrg
+  /api/v1/auth/billingorg/deletepaymentprofile:
+    post:
+      description: Remove a payment profile
+      operationId: DeletePaymentProfile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiPaymentProfileDeletion'
+            x-required-fields:
+            - org
+            - id
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeletePaymentProfile
+      tags:
+      - BillingOrg
+  /api/v1/auth/billingorg/invoice:
+    post:
+      description: ""
+      operationId: GetInvoice
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiInvoiceRequest'
+            x-required-fields:
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/BillingInvoiceData'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetInvoice
+      tags:
+      - BillingOrg
+  /api/v1/auth/billingorg/removechild:
+    post:
+      description: Remove an organization from a billing organization
+      operationId: RemoveBillingOrgChild
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiBillingOrganization'
+            x-required-fields:
+            - name
+            - children
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: RemoveBillingOrgChild
+      tags:
+      - BillingOrg
+  /api/v1/auth/billingorg/show:
+    post:
+      description: Show billing organizations
+      operationId: ShowBillingOrg
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiBillingOrganization'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiBillingOrganization'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowBillingOrg
+      tags:
+      - BillingOrg
+  /api/v1/auth/billingorg/showaccount:
+    post:
+      description: Show billing account information
+      operationId: ShowAccountInfo
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiAccountInfo'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowAccountInfo
+      tags:
+      - BillingOrg
+  /api/v1/auth/billingorg/showpaymentprofiles:
+    post:
+      description: Show payment profiles associated with the billing org
+      operationId: ShowPaymentProfiles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiBillingOrganization'
+            x-required-fields:
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/BillingPaymentProfile'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowPaymentProfiles
+      tags:
+      - BillingOrg
+  /api/v1/auth/billingorg/update:
+    post:
+      description: Update a billing organization
+      operationId: UpdateBillingOrg
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiBillingOrganization'
+            x-required-fields:
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateBillingOrg
+      tags:
+      - BillingOrg
+components:
+  schemas:
+    BillingAddress:
+      properties:
+        city:
+          type: string
+        country:
+          type: string
+        line2:
+          type: string
+        state:
+          type: string
+        street:
+          type: string
+        zip:
+          type: string
+      type: object
+    BillingCredits:
+      properties:
+        applied_amount:
+          type: string
+        credit_note_number:
+          type: string
+        credit_note_uid:
+          type: string
+        memo:
+          type: string
+        original_amount:
+          type: string
+        transaction_time:
+          type: string
+        uid:
+          type: string
+      type: object
+    BillingDiscounts:
+      properties:
+        code:
+          type: string
+        discount_amount:
+          type: string
+        discount_type:
+          type: string
+        eligible_amount:
+          type: string
+        line_items_breakouts:
+          items:
+            $ref: '#/components/schemas/BillingLineItemsBreakouts'
+          type: array
+        percentage:
+          type: string
+        source_id:
+          type: integer
+        source_type:
+          type: string
+        title:
+          type: string
+        uid:
+          type: string
+      type: object
+    BillingInvoiceData:
+      properties:
+        billing_address:
+          $ref: '#/components/schemas/BillingAddress'
+        collection_method:
+          type: string
+        consolidation_level:
+          type: string
+        credit_amount:
+          type: string
+        credits:
+          items:
+            $ref: '#/components/schemas/BillingCredits'
+          type: array
+        currency:
+          description: ISO 4217 currency code
+          type: string
+        customer:
+          properties:
+            email:
+              type: string
+            first_name:
+              type: string
+            last_name:
+              type: string
+            organization:
+              type: string
+          type: object
+        discount_amount:
+          type: string
+        discounts:
+          items:
+            $ref: '#/components/schemas/BillingDiscounts'
+          type: array
+        due_amount:
+          description: Amount due, which is total - credit - paid
+          type: string
+        due_date:
+          description: Date the invoice is due.
+          type: string
+        issue_date:
+          description: Date the invoice was issued to the customer
+          type: string
+        line_items:
+          items:
+            $ref: '#/components/schemas/BillingLineItems'
+          type: array
+        memo:
+          type: string
+        number:
+          description: A unique string that identifies the invoice
+          type: string
+        paid_amount:
+          description: Paid amount
+          type: string
+        paid_date:
+          description: Date the invoice was fully paid
+          type: string
+        payment_instructions:
+          type: string
+        payments:
+          items:
+            $ref: '#/components/schemas/BillingPayments'
+          type: array
+        previous_balance_data:
+          $ref: '#/components/schemas/BillingPrevBalanceData'
+        product_name:
+          type: string
+        refund_amount:
+          type: string
+        refunds:
+          items:
+            $ref: '#/components/schemas/BillingRefunds'
+          type: array
+        seller:
+          properties:
+            address:
+              $ref: '#/components/schemas/BillingAddress'
+            name:
+              type: string
+            phone:
+              type: string
+          type: object
+        shipping_address:
+          $ref: '#/components/schemas/BillingAddress'
+        status:
+          type: string
+        subtotal_amount:
+          description: Subtotal of invoice, sum of all line items before discounts
+            or taxes
+          type: string
+        tax_amount:
+          type: string
+        taxes:
+          items:
+            $ref: '#/components/schemas/BillingTaxes'
+          type: array
+        total_amount:
+          description: Total amount, which subtotal - discount + tax
+          type: string
+      type: object
+    BillingLineItems:
+      properties:
+        component_id:
+          type: integer
+        description:
+          type: string
+        discount_amount:
+          type: string
+        period_range_end:
+          type: string
+        period_range_start:
+          type: string
+        price_point_id:
+          type: integer
+        product_id:
+          type: integer
+        product_price_point_id:
+          type: integer
+        product_version:
+          type: integer
+        quantity:
+          type: string
+        subtotal_amount:
+          type: string
+        tax_amount:
+          type: string
+        tiered_unit_price:
+          type: boolean
+        title:
+          type: string
+        total_amount:
+          type: string
+        uid:
+          type: string
+        unit_price:
+          type: string
+      type: object
+    BillingLineItemsBreakouts:
+      properties:
+        discount_amount:
+          type: string
+        eligible_amount:
+          type: string
+        uid:
+          type: string
+      type: object
+    BillingPaymentProfile:
+      properties:
+        card_number:
+          type: string
+        card_type:
+          type: string
+        profile_id:
+          type: integer
+      type: object
+    BillingPayments:
+      properties:
+        applied_amount:
+          type: string
+        gateway_transaction_id:
+          type: string
+        memo:
+          description: Memo noted on the payment
+          type: string
+        original_amount:
+          type: string
+        payment_method:
+          items:
+            properties:
+              card_brand:
+                type: string
+              card_expiration:
+                type: string
+              details:
+                type: string
+              kind:
+                type: string
+              last_four:
+                type: string
+              masked_card_number:
+                type: string
+              memo:
+                description: Memo noted on the payment
+                type: string
+              type:
+                type: string
+            type: object
+          type: array
+        prepayment:
+          type: boolean
+        transaction_id:
+          type: integer
+        transaction_time:
+          type: string
+      type: object
+    BillingPrevBalanceData:
+      properties:
+        capture_date:
+          type: string
+        invoices:
+          items:
+            properties:
+              number:
+                type: string
+              outstanding_amount:
+                type: string
+              uid:
+                type: string
+            type: object
+          type: array
+      type: object
+    BillingRefunds:
+      properties:
+        applied_amount:
+          type: string
+        gateway_transaction_id:
+          description: Transaction ID for the refund as returned from the payment
+            gateway
+          type: string
+        memo:
+          description: Memo noted on refund
+          type: string
+        original_amount:
+          type: string
+        payment_id:
+          description: Payment ID to be refunded
+          type: integer
+        transaction_id:
+          type: integer
+      type: object
+    BillingTaxes:
+      properties:
+        line_items_breakouts:
+          items:
+            $ref: '#/components/schemas/BillingLineItemsBreakouts'
+          type: array
+        percentage:
+          type: string
+        source_id:
+          type: integer
+        source_type:
+          type: string
+        tax_amount:
+          type: string
+        taxable_amount:
+          type: string
+        title:
+          type: string
+        uid:
+          type: string
+      type: object
+    OrmapiAccountInfo:
+      properties:
+        AccountId:
+          description: Account ID given by the billing platform
+          type: string
+        OrgName:
+          description: Billing Organization name to commit
+          type: string
+        ParentId:
+          description: Parent ID
+          type: string
+        SubscriptionId:
+          description: Subscription ID given by the billing platform
+          type: string
+        Type:
+          description: Type, either parent, child, or self
+          type: string
+      type: object
+    OrmapiBillingOrganization:
+      properties:
+        Address:
+          description: Organization address
+          type: string
+        Address2:
+          description: Organization address2
+          type: string
+        Children:
+          description: Children belonging to this BillingOrganization
+          type: string
+        City:
+          description: Organization city
+          type: string
+        Country:
+          description: Organization country
+          type: string
+        CreatedAt:
+          description: Time created
+          format: date-time
+          readOnly: true
+          type: string
+        DeleteInProgress:
+          description: Delete of this BillingOrganization is in progress
+          readOnly: true
+          type: boolean
+        Email:
+          description: Organization email
+          type: string
+        FirstName:
+          description: Billing info first name
+          type: string
+        LastName:
+          description: Billing info last name
+          type: string
+        Name:
+          description: BillingOrganization name. Can only contain letters, digits,
+            underscore, period, hyphen. It cannot have leading or trailing spaces
+            or period. It cannot start with hyphen
+          type: string
+        Phone:
+          description: Organization phone number
+          type: string
+        PostalCode:
+          description: Organization postal code
+          type: string
+        State:
+          description: Organization state
+          type: string
+        Type:
+          description: 'Organization type: "parent" or "self"'
+          type: string
+        UpdatedAt:
+          description: Time last updated
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    OrmapiInvoiceRequest:
+      properties:
+        EndDate:
+          description: Date filter for invoice selection, YYYY-MM-DD format
+          type: string
+        Name:
+          description: Billing Organization name to retrieve invoices for
+          type: string
+        StartDate:
+          description: Date filter for invoice selection, YYYY-MM-DD format
+          type: string
+      type: object
+    OrmapiPaymentProfileDeletion:
+      properties:
+        Id:
+          description: Payment Profile Id
+          type: integer
+        Org:
+          description: Billing Organization Name associated with the payment profile
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

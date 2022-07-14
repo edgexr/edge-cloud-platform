@@ -1,0 +1,428 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for OrgCloudletInfos
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: OrgCloudletInfo APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/orgcloudletinfo/show:
+    post:
+      description: ""
+      operationId: ShowOrgCloudletInfo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiOrgCloudlet'
+            x-required-fields:
+            - region
+            - org
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/EdgeprotoCloudletInfo'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowOrgCloudletInfo
+      tags:
+      - OrgCloudletInfo
+components:
+  schemas:
+    DmeProtoCloudletState:
+      type: integer
+    DmeProtoMaintenanceState:
+      type: integer
+    EdgeprotoAppInstRefKey:
+      properties:
+        app_key:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
+        cluster_inst_key:
+          $ref: '#/components/schemas/EdgeprotoClusterInstRefKey'
+      type: object
+    EdgeprotoAppKey:
+      properties:
+        name:
+          description: App name
+          type: string
+        organization:
+          description: App developer organization
+          type: string
+        version:
+          description: App version
+          type: string
+      type: object
+    EdgeprotoCloudletInfo:
+      properties:
+        active_crm_instance:
+          description: Active HA instance
+          type: string
+        availability_zones:
+          description: Availability Zones if any
+          items:
+            $ref: '#/components/schemas/EdgeprotoOSAZone'
+          type: array
+        compatibility_version:
+          description: Version for compatibility tracking
+          minimum: 0
+          type: integer
+        container_version:
+          description: Cloudlet container version
+          type: string
+        controller:
+          description: Connected controller unique id
+          type: string
+        controller_cache_received:
+          description: Indicates all controller data has been sent to CRM
+          type: boolean
+        errors:
+          description: Any errors encountered while making changes to the Cloudlet
+          items:
+            type: string
+          type: array
+        fields:
+          description: Fields are used for the Update API to specify which fields
+            to apply
+          items:
+            type: string
+          type: array
+        flavors:
+          description: Supported flavors by the Cloudlet
+          items:
+            $ref: '#/components/schemas/EdgeprotoFlavorInfo'
+          type: array
+        key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        maintenance_state:
+          $ref: '#/components/schemas/DmeProtoMaintenanceState'
+        node_infos:
+          description: Cluster node info for serverless platforms (k8s multi-tenant
+            cluster)
+          items:
+            $ref: '#/components/schemas/EdgeprotoNodeInfo'
+          type: array
+        notify_id:
+          description: Id of client assigned by server (internal use only)
+          type: integer
+        os_images:
+          description: Local Images availble to cloudlet
+          items:
+            $ref: '#/components/schemas/EdgeprotoOSImage'
+          type: array
+        os_max_ram:
+          description: Maximum Ram in MB on the Cloudlet
+          minimum: 0
+          type: integer
+        os_max_vcores:
+          description: Maximum number of VCPU cores on the Cloudlet
+          minimum: 0
+          type: integer
+        os_max_vol_gb:
+          description: Maximum amount of disk in GB on the Cloudlet
+          minimum: 0
+          type: integer
+        properties:
+          additionalProperties:
+            type: string
+          description: Cloudlet properties
+          type: object
+        release_version:
+          description: Cloudlet release version
+          type: string
+        resources_snapshot:
+          $ref: '#/components/schemas/EdgeprotoInfraResourcesSnapshot'
+        standby_crm:
+          description: Denotes if info was reported by inactive
+          type: boolean
+        state:
+          $ref: '#/components/schemas/DmeProtoCloudletState'
+        trust_policy_state:
+          description: Trust Policy State
+          type: string
+      type: object
+    EdgeprotoCloudletKey:
+      properties:
+        federated_organization:
+          description: Federated operator organization who shared this cloudlet
+          type: string
+        name:
+          description: Name of the cloudlet
+          type: string
+        organization:
+          description: Organization of the cloudlet site
+          type: string
+      type: object
+    EdgeprotoClusterInstRefKey:
+      properties:
+        cluster_key:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
+        organization:
+          description: Name of Developer organization that this cluster belongs to
+          type: string
+      type: object
+    EdgeprotoClusterKey:
+      properties:
+        name:
+          description: Cluster name
+          type: string
+      type: object
+    EdgeprotoContainerInfo:
+      properties:
+        clusterip:
+          description: IP within the CNI and is applicable to kubernetes only
+          type: string
+        name:
+          description: Name of the container
+          type: string
+        restarts:
+          description: Restart count, applicable to kubernetes only
+          type: integer
+        status:
+          description: Runtime status of the container
+          type: string
+        type:
+          description: Type can be docker or kubernetes
+          type: string
+      type: object
+    EdgeprotoFlavorInfo:
+      properties:
+        disk:
+          description: Amount of disk in GB on the Cloudlet
+          minimum: 0
+          type: integer
+        name:
+          description: Name of the flavor on the Cloudlet
+          type: string
+        prop_map:
+          additionalProperties:
+            type: string
+          description: OS Flavor Properties, if any
+          type: object
+        ram:
+          description: Ram in MB on the Cloudlet
+          minimum: 0
+          type: integer
+        vcpus:
+          description: Number of VCPU cores on the Cloudlet
+          minimum: 0
+          type: integer
+      type: object
+    EdgeprotoInfraResource:
+      properties:
+        alert_threshold:
+          description: Generate alert when more than threshold percentage of resource
+            is used
+          type: integer
+        description:
+          description: Resource description
+          type: string
+        infra_max_value:
+          description: Resource infra max value
+          minimum: 0
+          type: integer
+        name:
+          description: Resource name
+          type: string
+        quota_max_value:
+          description: Resource quota max value
+          minimum: 0
+          type: integer
+        units:
+          description: Resource units
+          type: string
+        value:
+          description: Resource value
+          minimum: 0
+          type: integer
+      type: object
+    EdgeprotoInfraResourcesSnapshot:
+      properties:
+        cluster_insts:
+          description: List of clusterinsts this resources snapshot represent
+          items:
+            $ref: '#/components/schemas/EdgeprotoClusterInstRefKey'
+          nullable: true
+          type: array
+        info:
+          description: Infra Resource information
+          items:
+            $ref: '#/components/schemas/EdgeprotoInfraResource'
+          nullable: true
+          type: array
+        k8s_app_insts:
+          description: List of k8s appinsts this resources snapshot represent
+          items:
+            $ref: '#/components/schemas/EdgeprotoAppInstRefKey'
+          nullable: true
+          type: array
+        platform_vms:
+          description: Virtual machine resources info
+          items:
+            $ref: '#/components/schemas/EdgeprotoVmInfo'
+          nullable: true
+          type: array
+        vm_app_insts:
+          description: List of vm appinsts this resources snapshot represent
+          items:
+            $ref: '#/components/schemas/EdgeprotoAppInstRefKey'
+          nullable: true
+          type: array
+      type: object
+    EdgeprotoIpAddr:
+      properties:
+        externalIp:
+          description: External IP address
+          type: string
+        internalIp:
+          description: Internal IP address
+          type: string
+      type: object
+    EdgeprotoNodeInfo:
+      properties:
+        allocatable:
+          additionalProperties:
+            $ref: '#/components/schemas/EdgeprotoUdec64'
+          description: Maximum allocatable resources on the node (capacity - overhead)
+          type: object
+        capacity:
+          additionalProperties:
+            $ref: '#/components/schemas/EdgeprotoUdec64'
+          description: Capacity of underlying resources on the node
+          type: object
+        name:
+          description: Node name
+          type: string
+      type: object
+    EdgeprotoOSAZone:
+      properties:
+        name:
+          description: OpenStack availability zone name
+          type: string
+        status:
+          description: OpenStack availability zone status
+          type: string
+      type: object
+    EdgeprotoOSImage:
+      properties:
+        disk_format:
+          description: format qcow2, img, etc
+          type: string
+        name:
+          description: image name
+          type: string
+        properties:
+          description: image properties/metadata
+          type: string
+        tags:
+          description: optional tags present on image
+          type: string
+      type: object
+    EdgeprotoStatusInfo:
+      properties:
+        max_tasks:
+          description: Max tasks
+          minimum: 0
+          type: integer
+        msg_count:
+          description: Message count
+          minimum: 0
+          type: integer
+        msgs:
+          description: Messages
+          items:
+            type: string
+          type: array
+        step_name:
+          description: Step name
+          type: string
+        task_name:
+          description: Task name
+          type: string
+        task_number:
+          description: Task number
+          minimum: 0
+          type: integer
+      type: object
+    EdgeprotoUdec64:
+      properties:
+        nanos:
+          description: Decimal value in nanos
+          minimum: 0
+          type: integer
+        whole:
+          description: Whole number value
+          minimum: 0
+          type: integer
+      type: object
+    EdgeprotoVmInfo:
+      properties:
+        containers:
+          description: Information about containers running in the VM
+          items:
+            $ref: '#/components/schemas/EdgeprotoContainerInfo'
+          type: array
+        infraFlavor:
+          description: Flavor allocated within the cloudlet infrastructure, distinct
+            from the control plane flavor
+          type: string
+        ipaddresses:
+          description: IP addresses allocated to the VM
+          items:
+            $ref: '#/components/schemas/EdgeprotoIpAddr'
+          nullable: true
+          type: array
+        name:
+          description: Virtual machine name
+          type: string
+        status:
+          description: Runtime status of the VM
+          type: string
+        type:
+          description: Type can be platformvm, platform-cluster-master, platform-cluster-primary-node,
+            platform-cluster-secondary-node, sharedrootlb, dedicatedrootlb, cluster-master,
+            cluster-k8s-node, cluster-docker-node, appvm
+          type: string
+      type: object
+    OrmapiOrgCloudlet:
+      properties:
+        org:
+          description: Org that has permissions for cloudlets
+          type: string
+        region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

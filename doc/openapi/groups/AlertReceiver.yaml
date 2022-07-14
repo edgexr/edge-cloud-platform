@@ -1,0 +1,212 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for AlertReceivers
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: AlertReceiver APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/alertreceiver/create:
+    post:
+      description: Create an alert receiver
+      operationId: CreateAlertReceiver
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiAlertReceiver'
+            x-required-fields:
+            - name
+            - type
+            - severity
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateAlertReceiver
+      tags:
+      - AlertReceiver
+  /api/v1/auth/alertreceiver/delete:
+    post:
+      description: Delete an alert receiver
+      operationId: DeleteAlertReceiver
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiAlertReceiver'
+            x-required-fields:
+            - name
+            - type
+            - severity
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteAlertReceiver
+      tags:
+      - AlertReceiver
+  /api/v1/auth/alertreceiver/show:
+    post:
+      description: Show alert receivers
+      operationId: ShowAlertReceiver
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiAlertReceiver'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiAlertReceiver'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowAlertReceiver
+      tags:
+      - AlertReceiver
+components:
+  schemas:
+    EdgeprotoAppInstKey:
+      properties:
+        app_key:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
+        cluster_inst_key:
+          $ref: '#/components/schemas/EdgeprotoVirtualClusterInstKey'
+      type: object
+    EdgeprotoAppKey:
+      properties:
+        name:
+          description: App name
+          type: string
+        organization:
+          description: App developer organization
+          type: string
+        version:
+          description: App version
+          type: string
+      type: object
+    EdgeprotoCloudletKey:
+      properties:
+        federated_organization:
+          description: Federated operator organization who shared this cloudlet
+          type: string
+        name:
+          description: Name of the cloudlet
+          type: string
+        organization:
+          description: Organization of the cloudlet site
+          type: string
+      type: object
+    EdgeprotoClusterKey:
+      properties:
+        name:
+          description: Cluster name
+          type: string
+      type: object
+    EdgeprotoVirtualClusterInstKey:
+      properties:
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        cluster_key:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
+        organization:
+          description: Name of Developer organization that this cluster belongs to
+          type: string
+      type: object
+    OrmapiAlertReceiver:
+      properties:
+        AppInst:
+          $ref: '#/components/schemas/EdgeprotoAppInstKey'
+        Cloudlet:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        Email:
+          description: Custom receiving email
+          type: string
+        Name:
+          description: Receiver Name
+          type: string
+        PagerDutyApiVersion:
+          description: PagerDuty API version
+          type: string
+        PagerDutyIntegrationKey:
+          description: PagerDuty integration key
+          type: string
+        Region:
+          description: Region for the alert receiver
+          type: string
+        Severity:
+          description: Alert severity filter
+          type: string
+        SlackChannel:
+          description: Custom slack channel
+          type: string
+        SlackWebhook:
+          description: Custom slack webhook
+          type: string
+        Type:
+          description: Receiver type. Eg. email, slack, pagerduty
+          type: string
+        User:
+          description: User that created this receiver
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

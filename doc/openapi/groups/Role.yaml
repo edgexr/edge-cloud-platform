@@ -1,0 +1,242 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for Roles
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Role APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/role/adduser:
+    post:
+      description: Add a role for the organization to the user
+      operationId: AddUserRole
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRole'
+            x-required-fields:
+            - org
+            - username
+            - role
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: AddUserRole
+      tags:
+      - Role
+  /api/v1/auth/role/assignment/show:
+    post:
+      description: Show roles for the current user
+      operationId: ShowRoleAssignment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRole'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiRole'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowRoleAssignment
+      tags:
+      - Role
+  /api/v1/auth/role/perms/show:
+    post:
+      description: Show permissions associated with each role
+      operationId: ShowRolePerm
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRolePerm'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiRolePerm'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowRolePerm
+      tags:
+      - Role
+  /api/v1/auth/role/removeuser:
+    post:
+      description: Remove the role for the organization from the user
+      operationId: RemoveUserRole
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRole'
+            x-required-fields:
+            - org
+            - username
+            - role
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: RemoveUserRole
+      tags:
+      - Role
+  /api/v1/auth/role/show:
+    post:
+      description: Show role names
+      operationId: ShowRoleNames
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowRoleNames
+      tags:
+      - Role
+  /api/v1/auth/role/showuser:
+    post:
+      description: Show roles for the organizations the current user can add or remove
+        roles to
+      operationId: ShowUserRole
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRole'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiRole'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowUserRole
+      tags:
+      - Role
+components:
+  schemas:
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+    OrmapiRole:
+      properties:
+        org:
+          description: Organization name
+          type: string
+        role:
+          description: Role which defines the set of permissions
+          type: string
+        username:
+          description: User name
+          type: string
+      type: object
+    OrmapiRolePerm:
+      properties:
+        action:
+          description: Action defines what type of action can be performed on a resource
+          type: string
+        resource:
+          description: Resource defines a resource to act upon
+          type: string
+        role:
+          description: Role defines a collection of permissions, which are resource-action
+            pairs
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

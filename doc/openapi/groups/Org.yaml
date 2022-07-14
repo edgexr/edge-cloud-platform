@@ -1,0 +1,199 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for Orgs
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Org APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/org/create:
+    post:
+      description: Create a new developer or operator organization
+      operationId: CreateOrg
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiOrganization'
+            x-required-fields:
+            - name
+            - type
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateOrg
+      tags:
+      - Org
+  /api/v1/auth/org/delete:
+    post:
+      description: Delete an organization
+      operationId: DeleteOrg
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiOrganization'
+            x-required-fields:
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteOrg
+      tags:
+      - Org
+  /api/v1/auth/org/show:
+    post:
+      description: Show organizations
+      operationId: ShowOrg
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiOrganization'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiOrganization'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowOrg
+      tags:
+      - Org
+  /api/v1/auth/org/update:
+    post:
+      description: Update an organization
+      operationId: UpdateOrg
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiOrganization'
+            x-required-fields:
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateOrg
+      tags:
+      - Org
+components:
+  schemas:
+    OrmapiOrganization:
+      properties:
+        Address:
+          description: Organization address
+          type: string
+        CreatedAt:
+          description: Time created
+          format: date-time
+          readOnly: true
+          type: string
+        DeleteInProgress:
+          description: Delete of this organization is in progress
+          readOnly: true
+          type: boolean
+        EdgeboxOnly:
+          description: Edgebox only operator organization
+          readOnly: true
+          type: boolean
+        Name:
+          description: Organization name. Can only contain letters, digits, underscore,
+            period, hyphen. It cannot have leading or trailing spaces or period. It
+            cannot start with hyphen
+          type: string
+        Parent:
+          description: This organization's parent organization for billing, if any
+          readOnly: true
+          type: string
+        Phone:
+          description: Organization phone number
+          type: string
+        PublicImages:
+          description: Images are made available to other organization
+          readOnly: true
+          type: boolean
+        Type:
+          description: 'Organization type: "developer" or "operator"'
+          type: string
+        UpdatedAt:
+          description: Time last updated
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

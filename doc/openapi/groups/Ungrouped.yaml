@@ -1,0 +1,236 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for Ungroupeds
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Ungrouped APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/restricted/org/update:
+    post:
+      description: Admin-only update of org fields, requires name
+      operationId: RestrictedUpdateOrg
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiOrganization'
+            x-required-fields:
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: RestrictedUpdateOrg
+  /api/v1/auth/restricted/user/update:
+    post:
+      description: Admin-only update of various user fields, requires name or email
+      operationId: RestrictedUpdateUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiUser'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: RestrictedUpdateUser
+  /api/v1/login:
+    post:
+      description: Login using account credentials
+      operationId: Login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiUserLogin'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Map with key "token" whose value is the JWT key to be used
+            in subsequent API calls, and "admin" to indicate if the user is an admin
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+      summary: Login
+components:
+  schemas:
+    OrmapiOrganization:
+      properties:
+        Address:
+          description: Organization address
+          type: string
+        CreatedAt:
+          description: Time created
+          format: date-time
+          readOnly: true
+          type: string
+        DeleteInProgress:
+          description: Delete of this organization is in progress
+          readOnly: true
+          type: boolean
+        EdgeboxOnly:
+          description: Edgebox only operator organization
+          readOnly: true
+          type: boolean
+        Name:
+          description: Organization name. Can only contain letters, digits, underscore,
+            period, hyphen. It cannot have leading or trailing spaces or period. It
+            cannot start with hyphen
+          type: string
+        Parent:
+          description: This organization's parent organization for billing, if any
+          readOnly: true
+          type: string
+        Phone:
+          description: Organization phone number
+          type: string
+        PublicImages:
+          description: Images are made available to other organization
+          readOnly: true
+          type: boolean
+        Type:
+          description: 'Organization type: "developer" or "operator"'
+          type: string
+        UpdatedAt:
+          description: Time last updated
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+    OrmapiUser:
+      properties:
+        CreatedAt:
+          description: Time created
+          format: date-time
+          readOnly: true
+          type: string
+        Email:
+          description: User email
+          type: string
+        EmailVerified:
+          description: Email address has been verified
+          readOnly: true
+          type: boolean
+        EnableTOTP:
+          description: Enable or disable temporary one-time passwords for the account
+          type: boolean
+        FailedLogins:
+          description: Number of failed login attempts since last successful login
+          type: integer
+        FamilyName:
+          description: Family Name
+          type: string
+        GivenName:
+          description: Given Name
+          type: string
+        LastFailedLogin:
+          description: Last failed login time
+          format: date-time
+          readOnly: true
+          type: string
+        LastLogin:
+          description: Last successful login time
+          format: date-time
+          readOnly: true
+          type: string
+        Locked:
+          description: Account is locked
+          readOnly: true
+          type: boolean
+        Metadata:
+          description: Metadata
+          type: string
+        Name:
+          description: User name. Can only contain letters, digits, underscore, period,
+            hyphen. It cannot have leading or trailing spaces or period. It cannot
+            start with hyphen
+          type: string
+        Nickname:
+          description: Nick Name
+          type: string
+        PassCrackTimeSec:
+          description: Password strength in terms of brute-force cracking time
+          readOnly: true
+          type: number
+        Picture:
+          description: Picture (currently not used)
+          type: string
+        UpdatedAt:
+          description: Time last updated
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    OrmapiUserLogin:
+      properties:
+        apikey:
+          description: API key if logging in using API key
+          type: string
+        apikeyid:
+          description: API key ID if logging in using API key
+          type: string
+        password:
+          description: User's password
+          type: string
+        totp:
+          description: Temporary one-time password if 2-factor authentication is enabled
+          type: string
+        username:
+          description: User's name or email address
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

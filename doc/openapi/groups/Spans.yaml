@@ -1,0 +1,375 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for Spanss
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Spans APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/spans/show:
+    post:
+      description: Search spans
+      operationId: ShowSpans
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeSpanSearch'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/NodeSpanOutCondensed'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowSpans
+      tags:
+      - Spans
+  /api/v1/auth/spans/showverbose:
+    post:
+      description: Search spans, output raw format
+      operationId: ShowSpansVerbose
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeSpanSearch'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DbmodelSpan'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowSpansVerbose
+      tags:
+      - Spans
+  /api/v1/auth/spans/terms:
+    post:
+      description: Show aggregated spans terms
+      operationId: SpanTerms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeSpanSearch'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeSpanTerms'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: SpanTerms
+      tags:
+      - Spans
+components:
+  schemas:
+    DbmodelKeyValue:
+      properties:
+        key:
+          type: string
+        type:
+          $ref: '#/components/schemas/DbmodelValueType'
+        value: {}
+      type: object
+    DbmodelLog:
+      properties:
+        fields:
+          items:
+            $ref: '#/components/schemas/DbmodelKeyValue'
+          nullable: true
+          type: array
+        timestamp:
+          minimum: 0
+          type: integer
+      type: object
+    DbmodelProcess:
+      properties:
+        serviceName:
+          type: string
+        tag:
+          additionalProperties: {}
+          type: object
+        tags:
+          items:
+            $ref: '#/components/schemas/DbmodelKeyValue'
+          nullable: true
+          type: array
+      type: object
+    DbmodelReference:
+      properties:
+        refType:
+          $ref: '#/components/schemas/DbmodelReferenceType'
+        spanID:
+          $ref: '#/components/schemas/DbmodelSpanID'
+        traceID:
+          $ref: '#/components/schemas/DbmodelTraceID'
+      type: object
+    DbmodelReferenceType:
+      type: string
+    DbmodelSpan:
+      properties:
+        duration:
+          minimum: 0
+          type: integer
+        flags:
+          minimum: 0
+          type: integer
+        logs:
+          items:
+            $ref: '#/components/schemas/DbmodelLog'
+          nullable: true
+          type: array
+        operationName:
+          type: string
+        parentSpanID:
+          $ref: '#/components/schemas/DbmodelSpanID'
+        process:
+          $ref: '#/components/schemas/DbmodelProcess'
+        references:
+          items:
+            $ref: '#/components/schemas/DbmodelReference'
+          nullable: true
+          type: array
+        spanID:
+          $ref: '#/components/schemas/DbmodelSpanID'
+        startTime:
+          minimum: 0
+          type: integer
+        startTimeMillis:
+          minimum: 0
+          type: integer
+        tag:
+          additionalProperties: {}
+          type: object
+        tags:
+          items:
+            $ref: '#/components/schemas/DbmodelKeyValue'
+          nullable: true
+          type: array
+        traceID:
+          $ref: '#/components/schemas/DbmodelTraceID'
+      type: object
+    DbmodelSpanID:
+      type: string
+    DbmodelTraceID:
+      type: string
+    DbmodelValueType:
+      type: string
+    EdgeprotoTimeRange:
+      properties:
+        endage:
+          description: End age relative to now of the time range
+          type: string
+        endtime:
+          description: End time of the time range
+          format: date-time
+          type: string
+        startage:
+          description: Start age relative to now of the time range
+          type: string
+        starttime:
+          description: Start time of the time range
+          format: date-time
+          type: string
+      type: object
+    NodeAggrVal:
+      properties:
+        count:
+          description: Count of number of documents associated with key
+          type: integer
+        key:
+          description: Key
+          type: string
+      type: object
+    NodeSpanLogOut:
+      properties:
+        keyvalues:
+          additionalProperties: {}
+          nullable: true
+          type: object
+        lineno:
+          type: string
+        msg:
+          type: string
+        timestamp:
+          format: date-time
+          type: string
+      type: object
+    NodeSpanMatch:
+      properties:
+        hostnames:
+          items:
+            type: string
+          nullable: true
+          type: array
+        logkeyvalues:
+          additionalProperties:
+            type: string
+          nullable: true
+          type: object
+        logmsgs:
+          items:
+            type: string
+          nullable: true
+          type: array
+        logvalues:
+          items:
+            type: string
+          nullable: true
+          type: array
+        operations:
+          items:
+            type: string
+          nullable: true
+          type: array
+        services:
+          items:
+            type: string
+          nullable: true
+          type: array
+        spanids:
+          items:
+            type: string
+          nullable: true
+          type: array
+        tagkeyvalues:
+          additionalProperties:
+            type: string
+          nullable: true
+          type: object
+        tagvalues:
+          items:
+            type: string
+          nullable: true
+          type: array
+        traceids:
+          items:
+            type: string
+          nullable: true
+          type: array
+      type: object
+    NodeSpanOutCondensed:
+      properties:
+        duration:
+          type: string
+        hostname:
+          type: string
+        logs:
+          items:
+            $ref: '#/components/schemas/NodeSpanLogOut'
+          type: array
+        operation:
+          type: string
+        service:
+          type: string
+        spanid:
+          type: string
+        starttime:
+          format: date-time
+          type: string
+        tags:
+          additionalProperties: {}
+          type: object
+        traceid:
+          type: string
+      type: object
+    NodeSpanSearch:
+      properties:
+        TimeRange:
+          $ref: '#/components/schemas/EdgeprotoTimeRange'
+        from:
+          type: integer
+        limit:
+          type: integer
+        match:
+          $ref: '#/components/schemas/NodeSpanMatch'
+        notmatch:
+          $ref: '#/components/schemas/NodeSpanMatch'
+        searchbyrelevance:
+          type: boolean
+      type: object
+    NodeSpanTerms:
+      properties:
+        hostnames:
+          items:
+            $ref: '#/components/schemas/NodeAggrVal'
+          nullable: true
+          type: array
+        msgs:
+          items:
+            $ref: '#/components/schemas/NodeAggrVal'
+          nullable: true
+          type: array
+        operations:
+          items:
+            $ref: '#/components/schemas/NodeAggrVal'
+          nullable: true
+          type: array
+        services:
+          items:
+            $ref: '#/components/schemas/NodeAggrVal'
+          nullable: true
+          type: array
+        tags:
+          items:
+            $ref: '#/components/schemas/NodeAggrVal'
+          nullable: true
+          type: array
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

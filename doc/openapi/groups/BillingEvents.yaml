@@ -1,0 +1,309 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for BillingEventss
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: BillingEvents APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/events/app:
+    post:
+      description: View App billing events
+      operationId: ShowAppEvents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionAppInstEvents'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiAllMetrics'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowAppEvents
+      tags:
+      - BillingEvents
+  /api/v1/auth/events/cloudlet:
+    post:
+      description: View Cloudlet billing events
+      operationId: ShowCloudletEvents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionCloudletEvents'
+            x-required-fields:
+            - region
+            - cloudlet.organization
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiAllMetrics'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowCloudletEvents
+      tags:
+      - BillingEvents
+  /api/v1/auth/events/cluster:
+    post:
+      description: View ClusterInst billing events
+      operationId: ShowClusterEvents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionClusterInstEvents'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiAllMetrics'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowClusterEvents
+      tags:
+      - BillingEvents
+components:
+  schemas:
+    EdgeprotoAppInstKey:
+      properties:
+        app_key:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
+        cluster_inst_key:
+          $ref: '#/components/schemas/EdgeprotoVirtualClusterInstKey'
+      type: object
+    EdgeprotoAppKey:
+      properties:
+        name:
+          description: App name
+          type: string
+        organization:
+          description: App developer organization
+          type: string
+        version:
+          description: App version
+          type: string
+      type: object
+    EdgeprotoCloudletKey:
+      properties:
+        federated_organization:
+          description: Federated operator organization who shared this cloudlet
+          type: string
+        name:
+          description: Name of the cloudlet
+          type: string
+        organization:
+          description: Organization of the cloudlet site
+          type: string
+      type: object
+    EdgeprotoClusterInstKey:
+      properties:
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        cluster_key:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
+        organization:
+          description: Name of Developer organization that this cluster belongs to
+          type: string
+      type: object
+    EdgeprotoClusterKey:
+      properties:
+        name:
+          description: Cluster name
+          type: string
+      type: object
+    EdgeprotoVirtualClusterInstKey:
+      properties:
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        cluster_key:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
+        organization:
+          description: Name of Developer organization that this cluster belongs to
+          type: string
+      type: object
+    OrmapiAllMetrics:
+      properties:
+        data:
+          description: Metrics data
+          items:
+            $ref: '#/components/schemas/OrmapiMetricData'
+          nullable: true
+          type: array
+      type: object
+    OrmapiMetricData:
+      properties:
+        Series:
+          description: Series data
+          items:
+            $ref: '#/components/schemas/OrmapiMetricSeries'
+          nullable: true
+          type: array
+      type: object
+    OrmapiMetricSeries:
+      properties:
+        columns:
+          description: Column names
+          items:
+            type: string
+          nullable: true
+          type: array
+        name:
+          description: Series name
+          type: string
+        tags:
+          additionalProperties:
+            type: string
+          description: Tags
+          nullable: true
+          type: object
+        values:
+          description: 2D Array of column values by time
+          items:
+            items: {}
+            type: array
+          nullable: true
+          type: array
+      type: object
+    OrmapiRegionAppInstEvents:
+      properties:
+        AppInst:
+          $ref: '#/components/schemas/EdgeprotoAppInstKey'
+        Limit:
+          description: Display the last X metrics
+          type: integer
+        NumSamples:
+          description: Display X samples spaced out evenly over start and end times
+          type: integer
+        Region:
+          description: Region name
+          type: string
+        endage:
+          description: End age relative to now of the time range
+          type: string
+        endtime:
+          description: End time of the time range
+          format: date-time
+          type: string
+        startage:
+          description: Start age relative to now of the time range
+          type: string
+        starttime:
+          description: Start time of the time range
+          format: date-time
+          type: string
+      type: object
+    OrmapiRegionCloudletEvents:
+      properties:
+        Cloudlet:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        Limit:
+          description: Display the last X metrics
+          type: integer
+        NumSamples:
+          description: Display X samples spaced out evenly over start and end times
+          type: integer
+        Region:
+          description: Region name
+          type: string
+        endage:
+          description: End age relative to now of the time range
+          type: string
+        endtime:
+          description: End time of the time range
+          format: date-time
+          type: string
+        startage:
+          description: Start age relative to now of the time range
+          type: string
+        starttime:
+          description: Start time of the time range
+          format: date-time
+          type: string
+      type: object
+    OrmapiRegionClusterInstEvents:
+      properties:
+        ClusterInst:
+          $ref: '#/components/schemas/EdgeprotoClusterInstKey'
+        Limit:
+          description: Display the last X metrics
+          type: integer
+        NumSamples:
+          description: Display X samples spaced out evenly over start and end times
+          type: integer
+        Region:
+          description: Region name
+          type: string
+        endage:
+          description: End age relative to now of the time range
+          type: string
+        endtime:
+          description: End time of the time range
+          format: date-time
+          type: string
+        startage:
+          description: Start age relative to now of the time range
+          type: string
+        starttime:
+          description: Start time of the time range
+          format: date-time
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http
