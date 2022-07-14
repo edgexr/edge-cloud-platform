@@ -1,0 +1,288 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for Federations
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Federation APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/federation/create:
+    post:
+      description: Create Federation
+      operationId: CreateFederation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederation'
+            x-required-fields:
+            - selfoperatorid
+            - selffederationid
+            - name
+            - federator.operatorid
+            - federator.countrycode
+            - federator.federationid
+            - federator.federationaddr
+            - federator.apikey
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateFederation
+      tags:
+      - Federation
+  /api/v1/auth/federation/delete:
+    post:
+      description: Delete Federation
+      operationId: DeleteFederation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederation'
+            x-required-fields:
+            - selfoperatorid
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteFederation
+      tags:
+      - Federation
+  /api/v1/auth/federation/deregister:
+    post:
+      description: Deregister Federation
+      operationId: DeregisterFederation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederation'
+            x-required-fields:
+            - selfoperatorid
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeregisterFederation
+      tags:
+      - Federation
+  /api/v1/auth/federation/partner/setapikey:
+    post:
+      description: Set Partner Federation API Key
+      operationId: SetPartnerFederationAPIKey
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederation'
+            x-required-fields:
+            - selfoperatorid
+            - name
+            - federator.apikey
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: SetPartnerFederationAPIKey
+      tags:
+      - Federation
+  /api/v1/auth/federation/register:
+    post:
+      description: Register Federation
+      operationId: RegisterFederation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederation'
+            x-required-fields:
+            - selfoperatorid
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: RegisterFederation
+      tags:
+      - Federation
+  /api/v1/auth/federation/show:
+    post:
+      description: Show Federation
+      operationId: ShowFederation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederation'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiFederation'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowFederation
+      tags:
+      - Federation
+components:
+  schemas:
+    OrmapiFederation:
+      properties:
+        PartnerRoleAccessToSelfZones:
+          description: Partner is allowed access to self federator zones as part of
+            federation
+          readOnly: true
+          type: boolean
+        PartnerRoleShareZonesWithSelf:
+          description: Partner shares its zones with self federator as part of federation
+          readOnly: true
+          type: boolean
+        apikey:
+          description: API Key used for authentication (stored in secure storage)
+          type: string
+        countrycode:
+          description: ISO 3166-1 Alpha-2 code for the country where operator platform
+            is located
+          type: string
+        federationaddr:
+          description: Federation access point address
+          type: string
+        federationid:
+          description: Globally unique string used to indentify a federation with
+            partner federation
+          type: string
+        locatorendpoint:
+          description: IP and Port of discovery service URL of operator platform
+          type: string
+        mcc:
+          description: Mobile country code of operator sending the request
+          type: string
+        mnc:
+          $ref: '#/components/schemas/PqStringArray'
+        name:
+          description: Name to uniquely identify a federation
+          type: string
+        operatorid:
+          description: Globally unique string to identify an operator platform
+          type: string
+        region:
+          description: Region to which this federator is associated with
+          type: string
+        revision:
+          description: Revision ID to track object changes. We use jaeger traceID
+            for easy debugging but this can differ with what partner federator uses
+          readOnly: true
+          type: string
+        selffederationid:
+          description: Self federation ID
+          type: string
+        selfoperatorid:
+          description: Self operator ID
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+    PqStringArray:
+      items:
+        type: string
+      nullable: true
+      type: array
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

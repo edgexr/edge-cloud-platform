@@ -1,0 +1,366 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for AutoProvPolicys
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: AutoProvPolicy APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/ctrl/AddAutoProvPolicyCloudlet:
+    post:
+      description: Add a Cloudlet to the Auto Provisioning Policy
+      operationId: AddAutoProvPolicyCloudlet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionAutoProvPolicyCloudlet'
+            x-required-fields:
+            - region
+            - autoprovpolicycloudlet.key.organization
+            - autoprovpolicycloudlet.key.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: AddAutoProvPolicyCloudlet
+      tags:
+      - AutoProvPolicy
+  /api/v1/auth/ctrl/CreateAutoProvPolicy:
+    post:
+      description: Create an Auto Provisioning Policy
+      operationId: CreateAutoProvPolicy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionAutoProvPolicy'
+            x-required-fields:
+            - region
+            - autoprovpolicy.key.organization
+            - autoprovpolicy.key.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateAutoProvPolicy
+      tags:
+      - AutoProvPolicy
+  /api/v1/auth/ctrl/DeleteAutoProvPolicy:
+    post:
+      description: Delete an Auto Provisioning Policy
+      operationId: DeleteAutoProvPolicy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionAutoProvPolicy'
+            x-required-fields:
+            - region
+            - autoprovpolicy.key.organization
+            - autoprovpolicy.key.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteAutoProvPolicy
+      tags:
+      - AutoProvPolicy
+  /api/v1/auth/ctrl/RemoveAutoProvPolicyCloudlet:
+    post:
+      description: Remove a Cloudlet from the Auto Provisioning Policy
+      operationId: RemoveAutoProvPolicyCloudlet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionAutoProvPolicyCloudlet'
+            x-required-fields:
+            - region
+            - autoprovpolicycloudlet.key.organization
+            - autoprovpolicycloudlet.key.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: RemoveAutoProvPolicyCloudlet
+      tags:
+      - AutoProvPolicy
+  /api/v1/auth/ctrl/ShowAutoProvPolicy:
+    post:
+      description: Show Auto Provisioning Policies. Any fields specified will be used
+        to filter results.
+      operationId: ShowAutoProvPolicy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionAutoProvPolicy'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoAutoProvPolicy'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowAutoProvPolicy
+      tags:
+      - AutoProvPolicy
+  /api/v1/auth/ctrl/UpdateAutoProvPolicy:
+    post:
+      description: Update an Auto Provisioning Policy
+      operationId: UpdateAutoProvPolicy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionAutoProvPolicy'
+            x-required-fields:
+            - region
+            - autoprovpolicy.key.organization
+            - autoprovpolicy.key.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateAutoProvPolicy
+      tags:
+      - AutoProvPolicy
+components:
+  schemas:
+    DmeProtoLoc:
+      properties:
+        altitude:
+          description: On android only lat and long are guaranteed to be supplied
+            Altitude in meters
+          type: number
+        course:
+          description: Course (IOS) / bearing (Android) (degrees east relative to
+            true north)
+          type: number
+        horizontal_accuracy:
+          description: Horizontal accuracy (radius in meters)
+          type: number
+        latitude:
+          description: Latitude in WGS 84 coordinates
+          type: number
+        longitude:
+          description: Longitude in WGS 84 coordinates
+          type: number
+        speed:
+          description: Speed (IOS) / velocity (Android) (meters/sec)
+          type: number
+        timestamp:
+          $ref: '#/components/schemas/DmeProtoTimestamp'
+        vertical_accuracy:
+          description: Vertical accuracy (meters)
+          type: number
+      type: object
+    DmeProtoTimestamp:
+      properties:
+        nanos:
+          description: Added non-negative sub-second time in nanoseconds
+          type: integer
+        seconds:
+          description: Time in seconds since epoch
+          type: integer
+      type: object
+    EdgeprotoAutoProvCloudlet:
+      properties:
+        key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        loc:
+          $ref: '#/components/schemas/DmeProtoLoc'
+      type: object
+    EdgeprotoAutoProvPolicy:
+      properties:
+        cloudlets:
+          description: Allowed deployment locations
+          items:
+            $ref: '#/components/schemas/EdgeprotoAutoProvCloudlet'
+          type: array
+        delete_prepare:
+          description: Preparing to be deleted
+          type: boolean
+        deploy_client_count:
+          description: Minimum number of clients within the auto deploy interval to
+            trigger deployment
+          minimum: 0
+          type: integer
+        deploy_interval_count:
+          description: Number of intervals to check before triggering deployment
+          minimum: 0
+          type: integer
+        key:
+          $ref: '#/components/schemas/EdgeprotoPolicyKey'
+        max_instances:
+          description: Maximum number of instances (active or not)
+          minimum: 0
+          type: integer
+        min_active_instances:
+          description: Minimum number of active instances for High-Availability
+          minimum: 0
+          type: integer
+        undeploy_client_count:
+          description: Number of active clients for the undeploy interval below which
+            trigers undeployment, 0 (default) disables auto undeploy
+          minimum: 0
+          type: integer
+        undeploy_interval_count:
+          description: Number of intervals to check before triggering undeployment
+          minimum: 0
+          type: integer
+      type: object
+    EdgeprotoAutoProvPolicyCloudlet:
+      properties:
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        key:
+          $ref: '#/components/schemas/EdgeprotoPolicyKey'
+      type: object
+    EdgeprotoCloudletKey:
+      properties:
+        federated_organization:
+          description: Federated operator organization who shared this cloudlet
+          type: string
+        name:
+          description: Name of the cloudlet
+          type: string
+        organization:
+          description: Organization of the cloudlet site
+          type: string
+      type: object
+    EdgeprotoPolicyKey:
+      properties:
+        name:
+          description: Policy name
+          type: string
+        organization:
+          description: Name of the organization for the cluster that this policy will
+            apply to
+          type: string
+      type: object
+    EdgeprotoResult:
+      properties:
+        code:
+          description: Error code, 0 indicates success, non-zero indicates failure
+            (not implemented)
+          type: integer
+        message:
+          description: Message, may be success or failure message
+          type: string
+      type: object
+    OrmapiRegionAutoProvPolicy:
+      properties:
+        AutoProvPolicy:
+          $ref: '#/components/schemas/EdgeprotoAutoProvPolicy'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiRegionAutoProvPolicyCloudlet:
+      properties:
+        AutoProvPolicyCloudlet:
+          $ref: '#/components/schemas/EdgeprotoAutoProvPolicyCloudlet'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

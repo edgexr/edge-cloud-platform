@@ -1,0 +1,430 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for GPUDrivers
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: GPUDriver APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/ctrl/AddGPUDriverBuild:
+    post:
+      description: Add GPU Driver Build. Adds new build to GPU driver.
+      operationId: AddGPUDriverBuild
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionGPUDriverBuildMember'
+            x-required-fields:
+            - region
+            - gpudriverbuildmember.key.name
+            - gpudriverbuildmember.key.organization
+            - gpudriverbuildmember.build.name
+            - gpudriverbuildmember.build.driverpath
+            - gpudriverbuildmember.build.operatingsystem
+            - gpudriverbuildmember.build.md5sum
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: AddGPUDriverBuild
+      tags:
+      - GPUDriver
+  /api/v1/auth/ctrl/CreateGPUDriver:
+    post:
+      description: Create GPU Driver. Creates GPU driver with all the config required
+        to install it.
+      operationId: CreateGPUDriver
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionGPUDriver'
+            x-required-fields:
+            - region
+            - gpudriver.key.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateGPUDriver
+      tags:
+      - GPUDriver
+  /api/v1/auth/ctrl/DeleteGPUDriver:
+    post:
+      description: Delete GPU Driver. Deletes GPU driver given that it is not used
+        by any cloudlet.
+      operationId: DeleteGPUDriver
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionGPUDriver'
+            x-required-fields:
+            - region
+            - gpudriver.key.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteGPUDriver
+      tags:
+      - GPUDriver
+  /api/v1/auth/ctrl/GetGPUDriverBuildURL:
+    post:
+      description: Get GPU Driver Build URL. Returns a time-limited signed URL to
+        download GPU driver.
+      operationId: GetGPUDriverBuildURL
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionGPUDriverBuildMember'
+            x-required-fields:
+            - region
+            - gpudriverbuildmember.key.name
+            - gpudriverbuildmember.key.organization
+            - gpudriverbuildmember.build.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoGPUDriverBuildURL'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetGPUDriverBuildURL
+      tags:
+      - GPUDriver
+  /api/v1/auth/ctrl/GetGPUDriverLicenseConfig:
+    post:
+      description: Get GPU Driver License Config. Returns the license config specific
+        to GPU driver
+      operationId: GetGPUDriverLicenseConfig
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionGPUDriverKey'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetGPUDriverLicenseConfig
+      tags:
+      - GPUDriver
+  /api/v1/auth/ctrl/RemoveGPUDriverBuild:
+    post:
+      description: Remove GPU Driver Build. Removes build from GPU driver.
+      operationId: RemoveGPUDriverBuild
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionGPUDriverBuildMember'
+            x-required-fields:
+            - region
+            - gpudriverbuildmember.key.name
+            - gpudriverbuildmember.key.organization
+            - gpudriverbuildmember.build.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: RemoveGPUDriverBuild
+      tags:
+      - GPUDriver
+  /api/v1/auth/ctrl/ShowGPUDriver:
+    post:
+      description: Show GPU Drivers. Lists all the EdgeCloud created GPU drivers and
+        operator created GPU drivers.
+      operationId: ShowGPUDriver
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionGPUDriver'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoGPUDriver'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowGPUDriver
+      tags:
+      - GPUDriver
+  /api/v1/auth/ctrl/UpdateGPUDriver:
+    post:
+      description: Update GPU Driver. Updates GPU driver config.
+      operationId: UpdateGPUDriver
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionGPUDriver'
+            x-required-fields:
+            - region
+            - gpudriver.key.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateGPUDriver
+      tags:
+      - GPUDriver
+components:
+  schemas:
+    EdgeprotoGPUDriver:
+      properties:
+        builds:
+          description: List of GPU driver build
+          items:
+            $ref: '#/components/schemas/EdgeprotoGPUDriverBuild'
+          nullable: true
+          type: array
+        delete_prepare:
+          description: Preparing to be deleted
+          type: boolean
+        ignore_state:
+          description: Ignore state will ignore any action in-progress on the GPU
+            driver
+          type: boolean
+        key:
+          $ref: '#/components/schemas/EdgeprotoGPUDriverKey'
+        license_config:
+          description: License config to setup license (will be stored in secure storage)
+          type: string
+        license_config_md5sum:
+          description: License config md5sum, to ensure integrity of license config
+          type: string
+        license_config_storage_path:
+          description: GPU driver license config storage path
+          type: string
+        properties:
+          additionalProperties:
+            type: string
+          description: 'Additional properties associated with GPU driver build For
+            example: license server information, driver release date, etc'
+          type: object
+        state:
+          description: State to figure out if any action on the GPU driver is in-progress
+          type: string
+        storage_bucket_name:
+          description: GPU driver storage bucket name
+          type: string
+      type: object
+    EdgeprotoGPUDriverBuild:
+      properties:
+        driver_path:
+          description: Path where the driver package is located, if it is authenticated
+            path, then credentials must be passed as part of URL (one-time download
+            path)
+          type: string
+        driver_path_creds:
+          description: Optional credentials (username:password) to access driver path
+          type: string
+        hypervisor_info:
+          description: Info on hypervisor supported by vGPU driver
+          type: string
+        kernel_version:
+          description: Kernel Version supported by GPU driver build
+          type: string
+        md5sum:
+          description: Driver package md5sum to ensure package is not corrupted
+          type: string
+        name:
+          description: Unique identifier key
+          type: string
+        operating_system:
+          description: Operator System supported by GPU driver build
+          type: string
+        storage_path:
+          description: GPU driver build storage path
+          type: string
+      type: object
+    EdgeprotoGPUDriverBuildMember:
+      properties:
+        build:
+          $ref: '#/components/schemas/EdgeprotoGPUDriverBuild'
+        ignore_state:
+          description: Ignore state will ignore any action in-progress on the GPU
+            driver
+          type: boolean
+        key:
+          $ref: '#/components/schemas/EdgeprotoGPUDriverKey'
+      type: object
+    EdgeprotoGPUDriverBuildURL:
+      properties:
+        build_url_path:
+          description: Build URL path
+          type: string
+        validity:
+          description: Build URL path validity
+          type: string
+      type: object
+    EdgeprotoGPUDriverKey:
+      properties:
+        name:
+          description: Name of the driver
+          type: string
+        organization:
+          description: Organization to which the driver belongs to
+          type: string
+      type: object
+    EdgeprotoResult:
+      properties:
+        code:
+          description: Error code, 0 indicates success, non-zero indicates failure
+            (not implemented)
+          type: integer
+        message:
+          description: Message, may be success or failure message
+          type: string
+      type: object
+    OrmapiRegionGPUDriver:
+      properties:
+        GPUDriver:
+          $ref: '#/components/schemas/EdgeprotoGPUDriver'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiRegionGPUDriverBuildMember:
+      properties:
+        GPUDriverBuildMember:
+          $ref: '#/components/schemas/EdgeprotoGPUDriverBuildMember'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiRegionGPUDriverKey:
+      properties:
+        GPUDriverKey:
+          $ref: '#/components/schemas/EdgeprotoGPUDriverKey'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

@@ -1,0 +1,301 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for Execs
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Exec APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/ctrl/AccessCloudlet:
+    post:
+      description: Access Cloudlet VM
+      operationId: AccessCloudlet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionExecRequest'
+            x-required-fields:
+            - region
+            - execrequest.appinstkey.clusterinstkey.cloudletkey.organization
+            - execrequest.appinstkey.clusterinstkey.cloudletkey.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoExecRequest'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: AccessCloudlet
+      tags:
+      - Exec
+  /api/v1/auth/ctrl/RunCommand:
+    post:
+      description: Run a Command or Shell on a container
+      operationId: RunCommand
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionExecRequest'
+            x-required-fields:
+            - region
+            - execrequest.appinstkey.appkey.organization
+            - execrequest.appinstkey.appkey.name
+            - execrequest.appinstkey.appkey.version
+            - execrequest.appinstkey.clusterinstkey.clusterkey.name
+            - execrequest.appinstkey.clusterinstkey.cloudletkey.organization
+            - execrequest.appinstkey.clusterinstkey.cloudletkey.name
+            - execrequest.cmd.command
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoExecRequest'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: RunCommand
+      tags:
+      - Exec
+  /api/v1/auth/ctrl/RunConsole:
+    post:
+      description: Run console on a VM
+      operationId: RunConsole
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionExecRequest'
+            x-required-fields:
+            - region
+            - execrequest.appinstkey.appkey.organization
+            - execrequest.appinstkey.appkey.name
+            - execrequest.appinstkey.appkey.version
+            - execrequest.appinstkey.clusterinstkey.cloudletkey.organization
+            - execrequest.appinstkey.clusterinstkey.cloudletkey.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoExecRequest'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: RunConsole
+      tags:
+      - Exec
+  /api/v1/auth/ctrl/ShowLogs:
+    post:
+      description: View logs for AppInst
+      operationId: ShowLogs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionExecRequest'
+            x-required-fields:
+            - region
+            - execrequest.appinstkey.appkey.organization
+            - execrequest.appinstkey.appkey.name
+            - execrequest.appinstkey.appkey.version
+            - execrequest.appinstkey.clusterinstkey.clusterkey.name
+            - execrequest.appinstkey.clusterinstkey.cloudletkey.organization
+            - execrequest.appinstkey.clusterinstkey.cloudletkey.name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoExecRequest'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowLogs
+      tags:
+      - Exec
+components:
+  schemas:
+    EdgeprotoAppInstKey:
+      properties:
+        app_key:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
+        cluster_inst_key:
+          $ref: '#/components/schemas/EdgeprotoVirtualClusterInstKey'
+      type: object
+    EdgeprotoAppKey:
+      properties:
+        name:
+          description: App name
+          type: string
+        organization:
+          description: App developer organization
+          type: string
+        version:
+          description: App version
+          type: string
+      type: object
+    EdgeprotoCloudletKey:
+      properties:
+        federated_organization:
+          description: Federated operator organization who shared this cloudlet
+          type: string
+        name:
+          description: Name of the cloudlet
+          type: string
+        organization:
+          description: Organization of the cloudlet site
+          type: string
+      type: object
+    EdgeprotoCloudletMgmtNode:
+      properties:
+        name:
+          description: Name of Cloudlet Mgmt Node
+          type: string
+        type:
+          description: Type of Cloudlet Mgmt Node
+          type: string
+      type: object
+    EdgeprotoClusterKey:
+      properties:
+        name:
+          description: Cluster name
+          type: string
+      type: object
+    EdgeprotoExecRequest:
+      properties:
+        access_url:
+          description: Access URL
+          type: string
+        answer:
+          description: Answer
+          type: string
+        app_inst_key:
+          $ref: '#/components/schemas/EdgeprotoAppInstKey'
+        cmd:
+          $ref: '#/components/schemas/EdgeprotoRunCmd'
+        console:
+          $ref: '#/components/schemas/EdgeprotoRunVMConsole'
+        container_id:
+          description: ContainerId is the name or ID of the target container, if applicable
+          type: string
+        edge_turn_addr:
+          description: EdgeTurn Server Address
+          type: string
+        err:
+          description: Any error message
+          type: string
+        log:
+          $ref: '#/components/schemas/EdgeprotoShowLog'
+        offer:
+          description: Offer
+          type: string
+        timeout:
+          description: Timeout
+          type: string
+      type: object
+    EdgeprotoRunCmd:
+      properties:
+        cloudlet_mgmt_node:
+          $ref: '#/components/schemas/EdgeprotoCloudletMgmtNode'
+        command:
+          description: Command or Shell
+          type: string
+      type: object
+    EdgeprotoRunVMConsole:
+      properties:
+        url:
+          description: VM Console URL
+          type: string
+      type: object
+    EdgeprotoShowLog:
+      properties:
+        follow:
+          description: Stream data
+          type: boolean
+        since:
+          description: Show logs since either a duration ago (5s, 2m, 3h) or a timestamp
+            (RFC3339)
+          type: string
+        tail:
+          description: Show only a recent number of lines
+          type: integer
+        timestamps:
+          description: Show timestamps
+          type: boolean
+      type: object
+    EdgeprotoVirtualClusterInstKey:
+      properties:
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        cluster_key:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
+        organization:
+          description: Name of Developer organization that this cluster belongs to
+          type: string
+      type: object
+    OrmapiRegionExecRequest:
+      properties:
+        ExecRequest:
+          $ref: '#/components/schemas/EdgeprotoExecRequest'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

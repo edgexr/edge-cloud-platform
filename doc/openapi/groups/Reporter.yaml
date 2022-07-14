@@ -1,0 +1,196 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for Reporters
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Reporter APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/reporter/create:
+    post:
+      description: Create new reporter
+      operationId: CreateReporter
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiReporter'
+            x-required-fields:
+            - name
+            - org
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateReporter
+      tags:
+      - Reporter
+  /api/v1/auth/reporter/delete:
+    post:
+      description: Delete reporter
+      operationId: DeleteReporter
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiReporter'
+            x-required-fields:
+            - name
+            - org
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteReporter
+      tags:
+      - Reporter
+  /api/v1/auth/reporter/show:
+    post:
+      description: Show reporters
+      operationId: ShowReporter
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiReporter'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiReporter'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowReporter
+      tags:
+      - Reporter
+  /api/v1/auth/reporter/update:
+    post:
+      description: Update reporter
+      operationId: UpdateReporter
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiReporter'
+            x-required-fields:
+            - name
+            - org
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateReporter
+      tags:
+      - Reporter
+components:
+  schemas:
+    OrmapiReporter:
+      properties:
+        Email:
+          description: Email to send generated reports
+          type: string
+        Name:
+          description: Reporter name. Can only contain letters, digits, period, hyphen.
+            It cannot have leading or trailing spaces or period. It cannot start with
+            hyphen
+          type: string
+        NextScheduleDate:
+          description: Date when the next report is scheduled to be generated (for
+            internal use only)
+          readOnly: true
+          type: string
+        Org:
+          description: Organization name
+          type: string
+        Schedule:
+          description: Indicates how often a report should be generated, one of EveryWeek,
+            Every15Days, EveryMonth
+          type: string
+        StartScheduleDate:
+          description: 'Start date (in RFC3339 format with intended timezone) when
+            the report is scheduled to be generated (Default: today)'
+          type: string
+        Status:
+          description: Last report status
+          readOnly: true
+          type: string
+        Timezone:
+          description: Timezone in which to show the reports, defaults to UTC
+          type: string
+        Username:
+          description: User name (for internal use only)
+          readOnly: true
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

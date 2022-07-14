@@ -1,0 +1,457 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for RateLimitSettingss
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: RateLimitSettings APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/ctrl/CreateFlowRateLimitSettings:
+    post:
+      description: Create Flow RateLimit settings for an API endpoint and target
+      operationId: CreateFlowRateLimitSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionFlowRateLimitSettings'
+            x-required-fields:
+            - region
+            - flowratelimitsettings.key.flowsettingsname
+            - flowratelimitsettings.key.ratelimitkey.apiname
+            - flowratelimitsettings.key.ratelimitkey.apiendpointtype
+            - flowratelimitsettings.key.ratelimitkey.ratelimittarget
+            - flowratelimitsettings.settings.flowalgorithm
+            - flowratelimitsettings.settings.reqspersecond
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateFlowRateLimitSettings
+      tags:
+      - RateLimitSettings
+  /api/v1/auth/ctrl/CreateMaxReqsRateLimitSettings:
+    post:
+      description: Create MaxReqs RateLimit settings for an API endpoint and target
+      operationId: CreateMaxReqsRateLimitSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionMaxReqsRateLimitSettings'
+            x-required-fields:
+            - region
+            - maxreqsratelimitsettings.key.maxreqssettingsname
+            - maxreqsratelimitsettings.key.ratelimitkey.apiname
+            - maxreqsratelimitsettings.key.ratelimitkey.apiendpointtype
+            - maxreqsratelimitsettings.key.ratelimitkey.ratelimittarget
+            - maxreqsratelimitsettings.settings.maxreqsalgorithm
+            - maxreqsratelimitsettings.settings.maxrequests
+            - maxreqsratelimitsettings.settings.interval
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateMaxReqsRateLimitSettings
+      tags:
+      - RateLimitSettings
+  /api/v1/auth/ctrl/DeleteFlowRateLimitSettings:
+    post:
+      description: Delete Flow RateLimit settings for an API endpoint and target
+      operationId: DeleteFlowRateLimitSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionFlowRateLimitSettings'
+            x-required-fields:
+            - region
+            - flowratelimitsettings.key.flowsettingsname
+            - flowratelimitsettings.key.ratelimitkey.apiname
+            - flowratelimitsettings.key.ratelimitkey.apiendpointtype
+            - flowratelimitsettings.key.ratelimitkey.ratelimittarget
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteFlowRateLimitSettings
+      tags:
+      - RateLimitSettings
+  /api/v1/auth/ctrl/DeleteMaxReqsRateLimitSettings:
+    post:
+      description: Delete MaxReqs RateLimit settings for an API endpoint and target
+      operationId: DeleteMaxReqsRateLimitSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionMaxReqsRateLimitSettings'
+            x-required-fields:
+            - region
+            - maxreqsratelimitsettings.key.maxreqssettingsname
+            - maxreqsratelimitsettings.key.ratelimitkey.apiname
+            - maxreqsratelimitsettings.key.ratelimitkey.apiendpointtype
+            - maxreqsratelimitsettings.key.ratelimitkey.ratelimittarget
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteMaxReqsRateLimitSettings
+      tags:
+      - RateLimitSettings
+  /api/v1/auth/ctrl/ShowFlowRateLimitSettings:
+    post:
+      description: Show Flow RateLimit settings for an API endpoint and target
+      operationId: ShowFlowRateLimitSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionFlowRateLimitSettings'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoFlowRateLimitSettings'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowFlowRateLimitSettings
+      tags:
+      - RateLimitSettings
+  /api/v1/auth/ctrl/ShowMaxReqsRateLimitSettings:
+    post:
+      description: Show MaxReqs RateLimit settings for an API endpoint and target
+      operationId: ShowMaxReqsRateLimitSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionMaxReqsRateLimitSettings'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoMaxReqsRateLimitSettings'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowMaxReqsRateLimitSettings
+      tags:
+      - RateLimitSettings
+  /api/v1/auth/ctrl/ShowRateLimitSettings:
+    post:
+      description: Show RateLimit settings for an API endpoint and target
+      operationId: ShowRateLimitSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionRateLimitSettings'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoRateLimitSettings'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowRateLimitSettings
+      tags:
+      - RateLimitSettings
+  /api/v1/auth/ctrl/UpdateFlowRateLimitSettings:
+    post:
+      description: Update Flow RateLimit settings for an API endpoint and target
+      operationId: UpdateFlowRateLimitSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionFlowRateLimitSettings'
+            x-required-fields:
+            - region
+            - flowratelimitsettings.key.flowsettingsname
+            - flowratelimitsettings.key.ratelimitkey.apiname
+            - flowratelimitsettings.key.ratelimitkey.apiendpointtype
+            - flowratelimitsettings.key.ratelimitkey.ratelimittarget
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateFlowRateLimitSettings
+      tags:
+      - RateLimitSettings
+  /api/v1/auth/ctrl/UpdateMaxReqsRateLimitSettings:
+    post:
+      description: Update MaxReqs RateLimit settings for an API endpoint and target
+      operationId: UpdateMaxReqsRateLimitSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionMaxReqsRateLimitSettings'
+            x-required-fields:
+            - region
+            - maxreqsratelimitsettings.key.maxreqssettingsname
+            - maxreqsratelimitsettings.key.ratelimitkey.apiname
+            - maxreqsratelimitsettings.key.ratelimitkey.apiendpointtype
+            - maxreqsratelimitsettings.key.ratelimitkey.ratelimittarget
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateMaxReqsRateLimitSettings
+      tags:
+      - RateLimitSettings
+components:
+  schemas:
+    EdgeprotoFlowRateLimitSettings:
+      properties:
+        key:
+          $ref: '#/components/schemas/EdgeprotoFlowRateLimitSettingsKey'
+        settings:
+          $ref: '#/components/schemas/EdgeprotoFlowSettings'
+      type: object
+    EdgeprotoFlowRateLimitSettingsKey:
+      properties:
+        flow_settings_name:
+          description: Unique name for FlowRateLimitSettings (there can be multiple
+            FlowSettings per RateLimitSettingsKey)
+          type: string
+        rate_limit_key:
+          $ref: '#/components/schemas/EdgeprotoRateLimitSettingsKey'
+      type: object
+    EdgeprotoFlowSettings:
+      properties:
+        burst_size:
+          description: Burst size for flow rate limiting (required for TokenBucketAlgorithm)
+          type: integer
+        flow_algorithm:
+          description: Flow Rate Limit algorithm
+          type: string
+        reqs_per_second:
+          description: Requests per second for flow rate limiting
+          type: number
+      type: object
+    EdgeprotoMaxReqsRateLimitSettings:
+      properties:
+        key:
+          $ref: '#/components/schemas/EdgeprotoMaxReqsRateLimitSettingsKey'
+        settings:
+          $ref: '#/components/schemas/EdgeprotoMaxReqsSettings'
+      type: object
+    EdgeprotoMaxReqsRateLimitSettingsKey:
+      properties:
+        max_reqs_settings_name:
+          description: Unique name for MaxReqsRateLimitSettings (there can be multiple
+            MaxReqsSettings per RateLimitSettingsKey)
+          type: string
+        rate_limit_key:
+          $ref: '#/components/schemas/EdgeprotoRateLimitSettingsKey'
+      type: object
+    EdgeprotoMaxReqsSettings:
+      properties:
+        interval:
+          description: Time interval
+          type: string
+        max_reqs_algorithm:
+          description: MaxReqs Rate Limit Algorithm
+          type: string
+        max_requests:
+          description: Maximum number of requests for the given Interval
+          type: integer
+      type: object
+    EdgeprotoRateLimitSettings:
+      properties:
+        flow_settings:
+          additionalProperties:
+            $ref: '#/components/schemas/EdgeprotoFlowSettings'
+          description: 'Map of FlowSettings (key: FlowSettingsName, value: FlowSettings)'
+          type: object
+        key:
+          $ref: '#/components/schemas/EdgeprotoRateLimitSettingsKey'
+        max_reqs_settings:
+          additionalProperties:
+            $ref: '#/components/schemas/EdgeprotoMaxReqsSettings'
+          description: 'Map of MaxReqsSettings (key: MaxReqsSettingsName, value: MaxReqsSettings)'
+          type: object
+      type: object
+    EdgeprotoRateLimitSettingsKey:
+      properties:
+        api_endpoint_type:
+          description: API Endpoint type
+          type: string
+        api_name:
+          description: Name of API (eg. CreateApp or RegisterClient) (Use "Global"
+            if not a specific API)
+          type: string
+        rate_limit_target:
+          description: Target to rate limit
+          type: string
+      type: object
+    EdgeprotoResult:
+      properties:
+        code:
+          description: Error code, 0 indicates success, non-zero indicates failure
+            (not implemented)
+          type: integer
+        message:
+          description: Message, may be success or failure message
+          type: string
+      type: object
+    OrmapiRegionFlowRateLimitSettings:
+      properties:
+        FlowRateLimitSettings:
+          $ref: '#/components/schemas/EdgeprotoFlowRateLimitSettings'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiRegionMaxReqsRateLimitSettings:
+      properties:
+        MaxReqsRateLimitSettings:
+          $ref: '#/components/schemas/EdgeprotoMaxReqsRateLimitSettings'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiRegionRateLimitSettings:
+      properties:
+        RateLimitSettings:
+          $ref: '#/components/schemas/EdgeprotoRateLimitSettings'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

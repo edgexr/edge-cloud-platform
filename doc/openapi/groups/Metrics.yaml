@@ -1,0 +1,621 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for Metricss
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Metrics APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/metrics/app:
+    post:
+      description: View App metrics
+      operationId: ShowAppMetrics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionAppInstMetrics'
+            x-required-fields:
+            - region
+            - selector
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiAllMetrics'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowAppMetrics
+      tags:
+      - Metrics
+  /api/v1/auth/metrics/clientapiusage:
+    post:
+      description: View client API usage
+      operationId: ShowClientApiUsageMetrics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionClientApiUsageMetrics'
+            x-required-fields:
+            - region
+            - selector
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiAllMetrics'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowClientApiUsageMetrics
+      tags:
+      - Metrics
+  /api/v1/auth/metrics/clientappusage:
+    post:
+      description: View client App usage
+      operationId: ShowClientAppUsageMetrics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionClientAppUsageMetrics'
+            x-required-fields:
+            - region
+            - selector
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiAllMetrics'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowClientAppUsageMetrics
+      tags:
+      - Metrics
+  /api/v1/auth/metrics/clientcloudletusage:
+    post:
+      description: View client Cloudlet usage
+      operationId: ShowClientCloudletUsageMetrics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionClientCloudletUsageMetrics'
+            x-required-fields:
+            - region
+            - cloudlet.organization
+            - selector
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiAllMetrics'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowClientCloudletUsageMetrics
+      tags:
+      - Metrics
+  /api/v1/auth/metrics/cloudlet:
+    post:
+      description: View Cloudlet metrics
+      operationId: ShowCloudletMetrics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionCloudletMetrics'
+            x-required-fields:
+            - region
+            - selector
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiAllMetrics'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowCloudletMetrics
+      tags:
+      - Metrics
+  /api/v1/auth/metrics/cloudlet/usage:
+    post:
+      description: View Cloudlet usage
+      operationId: ShowCloudletUsage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionCloudletMetrics'
+            x-required-fields:
+            - region
+            - selector
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiAllMetrics'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowCloudletUsage
+      tags:
+      - Metrics
+  /api/v1/auth/metrics/cluster:
+    post:
+      description: View ClusterInst metrics
+      operationId: ShowClusterMetrics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionClusterInstMetrics'
+            x-required-fields:
+            - region
+            - selector
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiAllMetrics'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowClusterMetrics
+      tags:
+      - Metrics
+components:
+  schemas:
+    EdgeprotoAppInstKey:
+      properties:
+        app_key:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
+        cluster_inst_key:
+          $ref: '#/components/schemas/EdgeprotoVirtualClusterInstKey'
+      type: object
+    EdgeprotoAppKey:
+      properties:
+        name:
+          description: App name
+          type: string
+        organization:
+          description: App developer organization
+          type: string
+        version:
+          description: App version
+          type: string
+      type: object
+    EdgeprotoCloudletKey:
+      properties:
+        federated_organization:
+          description: Federated operator organization who shared this cloudlet
+          type: string
+        name:
+          description: Name of the cloudlet
+          type: string
+        organization:
+          description: Organization of the cloudlet site
+          type: string
+      type: object
+    EdgeprotoClusterInstKey:
+      properties:
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        cluster_key:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
+        organization:
+          description: Name of Developer organization that this cluster belongs to
+          type: string
+      type: object
+    EdgeprotoClusterKey:
+      properties:
+        name:
+          description: Cluster name
+          type: string
+      type: object
+    EdgeprotoVirtualClusterInstKey:
+      properties:
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        cluster_key:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
+        organization:
+          description: Name of Developer organization that this cluster belongs to
+          type: string
+      type: object
+    OrmapiAllMetrics:
+      properties:
+        data:
+          description: Metrics data
+          items:
+            $ref: '#/components/schemas/OrmapiMetricData'
+          nullable: true
+          type: array
+      type: object
+    OrmapiMetricData:
+      properties:
+        Series:
+          description: Series data
+          items:
+            $ref: '#/components/schemas/OrmapiMetricSeries'
+          nullable: true
+          type: array
+      type: object
+    OrmapiMetricSeries:
+      properties:
+        columns:
+          description: Column names
+          items:
+            type: string
+          nullable: true
+          type: array
+        name:
+          description: Series name
+          type: string
+        tags:
+          additionalProperties:
+            type: string
+          description: Tags
+          nullable: true
+          type: object
+        values:
+          description: 2D Array of column values by time
+          items:
+            items: {}
+            type: array
+          nullable: true
+          type: array
+      type: object
+    OrmapiRegionAppInstMetrics:
+      properties:
+        AppInst:
+          $ref: '#/components/schemas/EdgeprotoAppInstKey'
+        AppInsts:
+          description: Application instances to filter for metrics
+          items:
+            $ref: '#/components/schemas/EdgeprotoAppInstKey'
+          type: array
+        Limit:
+          description: Display the last X metrics
+          type: integer
+        NumSamples:
+          description: Display X samples spaced out evenly over start and end times
+          type: integer
+        Region:
+          description: Region name
+          type: string
+        Selector:
+          description: 'Comma separated list of metrics to view. Available metrics:
+            utilization, network, ipusage'
+          type: string
+        endage:
+          description: End age relative to now of the time range
+          type: string
+        endtime:
+          description: End time of the time range
+          format: date-time
+          type: string
+        startage:
+          description: Start age relative to now of the time range
+          type: string
+        starttime:
+          description: Start time of the time range
+          format: date-time
+          type: string
+      type: object
+    OrmapiRegionClientApiUsageMetrics:
+      properties:
+        AppInst:
+          $ref: '#/components/schemas/EdgeprotoAppInstKey'
+        DmeCloudlet:
+          description: Cloudlet name where DME is running
+          type: string
+        DmeCloudletOrg:
+          description: Operator organization where DME is running
+          type: string
+        Limit:
+          description: Display the last X metrics
+          type: integer
+        Method:
+          description: 'API call method, one of: FindCloudlet, PlatformFindCloudlet,
+            RegisterClient, VerifyLocation'
+          type: string
+        NumSamples:
+          description: Display X samples spaced out evenly over start and end times
+          type: integer
+        Region:
+          description: Region name
+          type: string
+        Selector:
+          description: 'Comma separated list of metrics to view. Available metrics:
+            utilization, network, ipusage'
+          type: string
+        endage:
+          description: End age relative to now of the time range
+          type: string
+        endtime:
+          description: End time of the time range
+          format: date-time
+          type: string
+        startage:
+          description: Start age relative to now of the time range
+          type: string
+        starttime:
+          description: Start time of the time range
+          format: date-time
+          type: string
+      type: object
+    OrmapiRegionClientAppUsageMetrics:
+      properties:
+        AppInst:
+          $ref: '#/components/schemas/EdgeprotoAppInstKey'
+        DataNetworkType:
+          description: 'Data network type used by client device. Can be used for selectors:
+            latency'
+          type: string
+        DeviceCarrier:
+          description: 'Device carrier. Can be used for selectors: latency, deviceinfo'
+          type: string
+        DeviceModel:
+          description: 'Device model. Can be used for selectors: deviceinfo'
+          type: string
+        DeviceOs:
+          description: 'Device operating system. Can be used for selectors: deviceinfo'
+          type: string
+        Limit:
+          description: Display the last X metrics
+          type: integer
+        LocationTile:
+          description: 'Provides the range of GPS coordinates for the location tile/square.
+            Format is: ''LocationUnderLongitude,LocationUnderLatitude_LocationOverLongitude,LocationOverLatitude_LocationTileLength''.
+            LocationUnder are the GPS coordinates of the corner closest to (0,0) of
+            the location tile. LocationOver are the GPS coordinates of the corner
+            farthest from (0,0) of the location tile. LocationTileLength is the length
+            (in kilometers) of one side of the location tile square'
+          type: string
+        NumSamples:
+          description: Display X samples spaced out evenly over start and end times
+          type: integer
+        Region:
+          description: Region name
+          type: string
+        Selector:
+          description: 'Comma separated list of metrics to view. Available metrics:
+            utilization, network, ipusage'
+          type: string
+        SignalStrength:
+          description: Signal strength
+          type: string
+        endage:
+          description: End age relative to now of the time range
+          type: string
+        endtime:
+          description: End time of the time range
+          format: date-time
+          type: string
+        startage:
+          description: Start age relative to now of the time range
+          type: string
+        starttime:
+          description: Start time of the time range
+          format: date-time
+          type: string
+      type: object
+    OrmapiRegionClientCloudletUsageMetrics:
+      properties:
+        Cloudlet:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        DataNetworkType:
+          description: 'Data network type used by client device. Can be used for selectors:
+            latency'
+          type: string
+        DeviceCarrier:
+          description: 'Device carrier. Can be used for selectors: latency, deviceinfo'
+          type: string
+        DeviceModel:
+          description: 'Device model. Can be used for selectors: deviceinfo'
+          type: string
+        DeviceOs:
+          description: 'Device operating system. Can be used for selectors: deviceinfo'
+          type: string
+        Limit:
+          description: Display the last X metrics
+          type: integer
+        LocationTile:
+          description: 'Provides the range of GPS coordinates for the location tile/square.
+            Format is: ''LocationUnderLongitude,LocationUnderLatitude_LocationOverLongitude,LocationOverLatitude_LocationTileLength''.
+            LocationUnder are the GPS coordinates of the corner closest to (0,0) of
+            the location tile. LocationOver are the GPS coordinates of the corner
+            farthest from (0,0) of the location tile. LocationTileLength is the length
+            (in kilometers) of one side of the location tile square'
+          type: string
+        NumSamples:
+          description: Display X samples spaced out evenly over start and end times
+          type: integer
+        Region:
+          description: Region name
+          type: string
+        Selector:
+          description: 'Comma separated list of metrics to view. Available metrics:
+            utilization, network, ipusage'
+          type: string
+        SignalStrength:
+          description: Signal strength
+          type: string
+        endage:
+          description: End age relative to now of the time range
+          type: string
+        endtime:
+          description: End time of the time range
+          format: date-time
+          type: string
+        startage:
+          description: Start age relative to now of the time range
+          type: string
+        starttime:
+          description: Start time of the time range
+          format: date-time
+          type: string
+      type: object
+    OrmapiRegionCloudletMetrics:
+      properties:
+        Cloudlet:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        Cloudlets:
+          description: Cloudlet keys for metrics
+          items:
+            $ref: '#/components/schemas/EdgeprotoCloudletKey'
+          type: array
+        Limit:
+          description: Display the last X metrics
+          type: integer
+        NumSamples:
+          description: Display X samples spaced out evenly over start and end times
+          type: integer
+        Region:
+          description: Region name
+          type: string
+        Selector:
+          description: 'Comma separated list of metrics to view. Available metrics:
+            utilization, network, ipusage'
+          type: string
+        endage:
+          description: End age relative to now of the time range
+          type: string
+        endtime:
+          description: End time of the time range
+          format: date-time
+          type: string
+        startage:
+          description: Start age relative to now of the time range
+          type: string
+        starttime:
+          description: Start time of the time range
+          format: date-time
+          type: string
+      type: object
+    OrmapiRegionClusterInstMetrics:
+      properties:
+        ClusterInst:
+          $ref: '#/components/schemas/EdgeprotoClusterInstKey'
+        ClusterInsts:
+          description: Cluster instance keys for metrics
+          items:
+            $ref: '#/components/schemas/EdgeprotoClusterInstKey'
+          type: array
+        Limit:
+          description: Display the last X metrics
+          type: integer
+        NumSamples:
+          description: Display X samples spaced out evenly over start and end times
+          type: integer
+        Region:
+          description: Region name
+          type: string
+        Selector:
+          description: 'Comma separated list of metrics to view. Available metrics:
+            utilization, network, ipusage'
+          type: string
+        endage:
+          description: End age relative to now of the time range
+          type: string
+        endtime:
+          description: End time of the time range
+          format: date-time
+          type: string
+        startage:
+          description: Start age relative to now of the time range
+          type: string
+        starttime:
+          description: Start time of the time range
+          format: date-time
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

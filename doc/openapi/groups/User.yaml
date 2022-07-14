@@ -1,0 +1,692 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for Users
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: User APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/user/create/apikey:
+    post:
+      description: Create an API key for reduced access, typically for automation
+      operationId: CreateUserApiKey
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiCreateUserApiKey'
+            x-required-fields:
+            - userapikey.org
+            - userapikey.description
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiCreateUserApiKey'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateUserApiKey
+      tags:
+      - User
+  /api/v1/auth/user/current:
+    post:
+      description: Show the currently logged in user
+      operationId: CurrentUser
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiUser'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CurrentUser
+      tags:
+      - User
+  /api/v1/auth/user/delete:
+    post:
+      description: Delete an existing user
+      operationId: DeleteUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiUser'
+            x-required-fields:
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteUser
+      tags:
+      - User
+  /api/v1/auth/user/delete/apikey:
+    post:
+      description: Delete an API key
+      operationId: DeleteUserApiKey
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiCreateUserApiKey'
+            x-required-fields:
+            - userapikey.id
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteUserApiKey
+      tags:
+      - User
+  /api/v1/auth/user/newpass:
+    post:
+      description: Set a new password while logged in, requires the existing password
+      operationId: NewPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiNewPassword'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: NewPassword
+      tags:
+      - User
+  /api/v1/auth/user/show:
+    post:
+      description: Show users
+      operationId: ShowUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiShowUser'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiUser'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowUser
+      tags:
+      - User
+  /api/v1/auth/user/show/apikey:
+    post:
+      description: Show existing API keys
+      operationId: ShowUserApiKey
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiCreateUserApiKey'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiCreateUserApiKey'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowUserApiKey
+      tags:
+      - User
+  /api/v1/auth/user/update:
+    post:
+      description: Update a user
+      operationId: UpdateUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiCreateUser'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiUserResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateUser
+      tags:
+      - User
+  /api/v1/passwordreset:
+    post:
+      description: Reset the password using the token from the password reset email
+      operationId: PasswordReset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiPasswordReset'
+            x-required-fields:
+            - token
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+      summary: PasswordReset
+      tags:
+      - User
+  /api/v1/passwordresetrequest:
+    post:
+      description: Request a password reset email to be sent to the user's email
+      operationId: PasswordResetRequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiEmailRequest'
+            x-required-fields:
+            - email
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+      summary: PasswordResetRequest
+      tags:
+      - User
+  /api/v1/resendverify:
+    post:
+      description: Request that the user verification email be resent
+      operationId: ResendVerify
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiEmailRequest'
+            x-required-fields:
+            - email
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+      summary: ResendVerify
+      tags:
+      - User
+  /api/v1/usercreate:
+    post:
+      description: Create a new user
+      operationId: CreateUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiCreateUser'
+            x-required-fields:
+            - user.name
+            - user.email
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiUserResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+      summary: CreateUser
+      tags:
+      - User
+  /api/v1/verifyemail:
+    post:
+      description: Verify a user's email account from the token in the email
+      operationId: VerifyEmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiToken'
+            x-required-fields:
+            - token
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+      summary: VerifyEmail
+      tags:
+      - User
+components:
+  schemas:
+    OrmapiCreateUser:
+      properties:
+        CreatedAt:
+          description: Time created
+          format: date-time
+          readOnly: true
+          type: string
+        Email:
+          description: User email
+          type: string
+        EmailVerified:
+          description: Email address has been verified
+          readOnly: true
+          type: boolean
+        EnableTOTP:
+          description: Enable or disable temporary one-time passwords for the account
+          type: boolean
+        FailedLogins:
+          description: Number of failed login attempts since last successful login
+          type: integer
+        FamilyName:
+          description: Family Name
+          type: string
+        GivenName:
+          description: Given Name
+          type: string
+        LastFailedLogin:
+          description: Last failed login time
+          format: date-time
+          readOnly: true
+          type: string
+        LastLogin:
+          description: Last successful login time
+          format: date-time
+          readOnly: true
+          type: string
+        Locked:
+          description: Account is locked
+          readOnly: true
+          type: boolean
+        Metadata:
+          description: Metadata
+          type: string
+        Name:
+          description: User name. Can only contain letters, digits, underscore, period,
+            hyphen. It cannot have leading or trailing spaces or period. It cannot
+            start with hyphen
+          type: string
+        Nickname:
+          description: Nick Name
+          type: string
+        PassCrackTimeSec:
+          description: Password strength in terms of brute-force cracking time
+          readOnly: true
+          type: number
+        Picture:
+          description: Picture (currently not used)
+          type: string
+        UpdatedAt:
+          description: Time last updated
+          format: date-time
+          readOnly: true
+          type: string
+        verify:
+          $ref: '#/components/schemas/OrmapiEmailRequest'
+      type: object
+    OrmapiCreateUserApiKey:
+      properties:
+        ApiKey:
+          description: API key
+          type: string
+        CreatedAt:
+          description: Time created
+          format: date-time
+          readOnly: true
+          type: string
+        Description:
+          description: Description of the purpose of this API key
+          type: string
+        Id:
+          description: API key ID used as an identifier for API keys
+          readOnly: true
+          type: string
+        Org:
+          description: Org to which API key has permissions to access its objects
+          type: string
+        permissions:
+          description: List of API key permissions
+          items:
+            $ref: '#/components/schemas/OrmapiRolePerm'
+          nullable: true
+          type: array
+      type: object
+    OrmapiEmailRequest:
+      properties:
+        email:
+          description: User's email address
+          readOnly: true
+          type: string
+      type: object
+    OrmapiNewPassword:
+      properties:
+        currentpassword:
+          description: User's current password
+          type: string
+        password:
+          description: User's new password
+          type: string
+      type: object
+    OrmapiPasswordReset:
+      properties:
+        password:
+          description: User's new password
+          type: string
+        token:
+          description: Authentication token
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+    OrmapiRolePerm:
+      properties:
+        action:
+          description: Action defines what type of action can be performed on a resource
+          type: string
+        resource:
+          description: Resource defines a resource to act upon
+          type: string
+        role:
+          description: Role defines a collection of permissions, which are resource-action
+            pairs
+          type: string
+      type: object
+    OrmapiShowUser:
+      properties:
+        CreatedAt:
+          description: Time created
+          format: date-time
+          readOnly: true
+          type: string
+        Email:
+          description: User email
+          type: string
+        EmailVerified:
+          description: Email address has been verified
+          readOnly: true
+          type: boolean
+        EnableTOTP:
+          description: Enable or disable temporary one-time passwords for the account
+          type: boolean
+        FailedLogins:
+          description: Number of failed login attempts since last successful login
+          type: integer
+        FamilyName:
+          description: Family Name
+          type: string
+        GivenName:
+          description: Given Name
+          type: string
+        LastFailedLogin:
+          description: Last failed login time
+          format: date-time
+          readOnly: true
+          type: string
+        LastLogin:
+          description: Last successful login time
+          format: date-time
+          readOnly: true
+          type: string
+        Locked:
+          description: Account is locked
+          readOnly: true
+          type: boolean
+        Metadata:
+          description: Metadata
+          type: string
+        Name:
+          description: User name. Can only contain letters, digits, underscore, period,
+            hyphen. It cannot have leading or trailing spaces or period. It cannot
+            start with hyphen
+          type: string
+        Nickname:
+          description: Nick Name
+          type: string
+        PassCrackTimeSec:
+          description: Password strength in terms of brute-force cracking time
+          readOnly: true
+          type: number
+        Picture:
+          description: Picture (currently not used)
+          type: string
+        UpdatedAt:
+          description: Time last updated
+          format: date-time
+          readOnly: true
+          type: string
+        org:
+          description: Organization name
+          type: string
+        role:
+          description: Role name
+          type: string
+      type: object
+    OrmapiToken:
+      properties:
+        token:
+          description: Authentication token
+          type: string
+      type: object
+    OrmapiUser:
+      properties:
+        CreatedAt:
+          description: Time created
+          format: date-time
+          readOnly: true
+          type: string
+        Email:
+          description: User email
+          type: string
+        EmailVerified:
+          description: Email address has been verified
+          readOnly: true
+          type: boolean
+        EnableTOTP:
+          description: Enable or disable temporary one-time passwords for the account
+          type: boolean
+        FailedLogins:
+          description: Number of failed login attempts since last successful login
+          type: integer
+        FamilyName:
+          description: Family Name
+          type: string
+        GivenName:
+          description: Given Name
+          type: string
+        LastFailedLogin:
+          description: Last failed login time
+          format: date-time
+          readOnly: true
+          type: string
+        LastLogin:
+          description: Last successful login time
+          format: date-time
+          readOnly: true
+          type: string
+        Locked:
+          description: Account is locked
+          readOnly: true
+          type: boolean
+        Metadata:
+          description: Metadata
+          type: string
+        Name:
+          description: User name. Can only contain letters, digits, underscore, period,
+            hyphen. It cannot have leading or trailing spaces or period. It cannot
+            start with hyphen
+          type: string
+        Nickname:
+          description: Nick Name
+          type: string
+        PassCrackTimeSec:
+          description: Password strength in terms of brute-force cracking time
+          readOnly: true
+          type: number
+        Picture:
+          description: Picture (currently not used)
+          type: string
+        UpdatedAt:
+          description: Time last updated
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    OrmapiUserResponse:
+      properties:
+        Message:
+          description: Message
+          type: string
+        TOTPQRImage:
+          description: TOTP QR image
+          items:
+            minimum: 0
+            type: integer
+          nullable: true
+          type: array
+        TOTPSharedKey:
+          description: TOTP shared key
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http
