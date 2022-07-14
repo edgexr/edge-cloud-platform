@@ -150,7 +150,7 @@ func (s *ParseComments) ParseFile(fileName string) error {
 	return nil
 }
 
-func (s *ParseComments) Visit(node ast.Node) (retval ast.Visitor) {
+func (s *ParseComments) Visit(node ast.Node) ast.Visitor {
 	switch x := node.(type) {
 	// file parsing
 	case *ast.File:
