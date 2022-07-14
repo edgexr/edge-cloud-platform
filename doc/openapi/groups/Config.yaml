@@ -1,0 +1,235 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for Configs
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Config APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/config/reset:
+    post:
+      description: Reset master controller global configuration
+      operationId: ResetConfig
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ResetConfig
+      tags:
+      - Config
+  /api/v1/auth/config/show:
+    post:
+      description: Show master controller global configuration
+      operationId: ShowConfig
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiConfig'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowConfig
+      tags:
+      - Config
+  /api/v1/auth/config/update:
+    post:
+      description: Update master controller global configuration
+      operationId: UpdateConfig
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiConfig'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateConfig
+      tags:
+      - Config
+  /api/v1/auth/config/version:
+    post:
+      description: Show master controller version
+      operationId: MCVersion
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiVersion'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: MCVersion
+      tags:
+      - Config
+  /api/v1/publicconfig:
+    post:
+      description: Show publicly visible master controller global configuration
+      operationId: ShowPublicConfig
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiConfig'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+      summary: ShowPublicConfig
+      tags:
+      - Config
+components:
+  schemas:
+    OrmapiConfig:
+      properties:
+        AdminPasswordMinCrackTimeSec:
+          description: Admin accounts min password crack time seconds (a measure of
+            strength)
+          type: number
+        ApiKeyLoginTokenValidDuration:
+          description: API key login token valid duration (in format 2h30m10s, default
+            4h)
+          type: string
+        BillingEnable:
+          description: Toggle for enabling billing (primarily for testing purposes)
+          type: boolean
+        DisableRateLimit:
+          description: Toggle to enable and disable MC API rate limiting
+          type: boolean
+        FailedLoginLockoutThreshold1:
+          description: Failed login lockout threshold 1, after this count, lockout
+            time 1 is enabled (default 3)
+          type: integer
+        FailedLoginLockoutThreshold2:
+          description: Failed login lockout threshold 2, after this count, lockout
+            time 2 is enabled (default 10)
+          type: integer
+        FailedLoginLockoutTimeSec1:
+          description: Number of seconds to lock account from logging in after threshold
+            1 is hit (default 60)
+          type: integer
+        FailedLoginLockoutTimeSec2:
+          description: Number of seconds to lock account from logging in after threshold
+            2 is hit (default 300)
+          type: integer
+        LockNewAccounts:
+          description: Lock new accounts (must be unlocked by admin)
+          type: boolean
+        MaxMetricsDataPoints:
+          description: InfluxDB max number of data points returned
+          type: integer
+        NotifyEmailAddress:
+          description: Email to notify when locked account is created
+          type: string
+        PasswordMinCrackTimeSec:
+          description: User accounts min password crack time seconds (a measure of
+            strength)
+          type: number
+        RateLimitMaxTrackedIps:
+          description: Maximum number of IPs tracked per API group for rate limiting
+            at MC
+          type: integer
+        RateLimitMaxTrackedUsers:
+          description: Maximum number of users tracked per API group for rate limiting
+            at MC
+          type: integer
+        SkipVerifyEmail:
+          description: Skip email verification for new accounts (testing only)
+          type: boolean
+        UserApiKeyCreateLimit:
+          description: Max number of API keys a user can create
+          type: integer
+        UserLoginTokenValidDuration:
+          description: User login token valid duration (in format 2h30m10s, default
+            24h)
+          type: string
+        WebsocketTokenValidDuration:
+          description: Websocket auth token valid duration (in format 2h30m10s, default
+            2m)
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+    OrmapiVersion:
+      properties:
+        buildauthor:
+          description: Build author
+          type: string
+        buildhead:
+          description: Head build version
+          type: string
+        buildmaster:
+          description: Master build version
+          type: string
+        hostname:
+          description: Hostname that performed build
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

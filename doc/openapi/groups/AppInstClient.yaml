@@ -1,0 +1,176 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for AppInstClients
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: AppInstClient APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/ctrl/ShowAppInstClient:
+    post:
+      description: Show application instance clients.
+      operationId: ShowAppInstClient
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionAppInstClientKey'
+            x-required-fields:
+            - region
+            - appinstclientkey.appinstkey.appkey.organization
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoAppInstClient'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowAppInstClient
+      tags:
+      - AppInstClient
+components:
+  schemas:
+    DmeProtoLoc:
+      properties:
+        altitude:
+          description: On android only lat and long are guaranteed to be supplied
+            Altitude in meters
+          type: number
+        course:
+          description: Course (IOS) / bearing (Android) (degrees east relative to
+            true north)
+          type: number
+        horizontal_accuracy:
+          description: Horizontal accuracy (radius in meters)
+          type: number
+        latitude:
+          description: Latitude in WGS 84 coordinates
+          type: number
+        longitude:
+          description: Longitude in WGS 84 coordinates
+          type: number
+        speed:
+          description: Speed (IOS) / velocity (Android) (meters/sec)
+          type: number
+        timestamp:
+          $ref: '#/components/schemas/DmeProtoTimestamp'
+        vertical_accuracy:
+          description: Vertical accuracy (meters)
+          type: number
+      type: object
+    DmeProtoTimestamp:
+      properties:
+        nanos:
+          description: Added non-negative sub-second time in nanoseconds
+          type: integer
+        seconds:
+          description: Time in seconds since epoch
+          type: integer
+      type: object
+    EdgeprotoAppInstClient:
+      properties:
+        client_key:
+          $ref: '#/components/schemas/EdgeprotoAppInstClientKey'
+        location:
+          $ref: '#/components/schemas/DmeProtoLoc'
+        notify_id:
+          description: Id of client assigned by server (internal use only)
+          type: integer
+      type: object
+    EdgeprotoAppInstClientKey:
+      properties:
+        app_inst_key:
+          $ref: '#/components/schemas/EdgeprotoAppInstKey'
+        unique_id:
+          description: AppInstClient Unique Id
+          type: string
+        unique_id_type:
+          description: AppInstClient Unique Id Type
+          type: string
+      type: object
+    EdgeprotoAppInstKey:
+      properties:
+        app_key:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
+        cluster_inst_key:
+          $ref: '#/components/schemas/EdgeprotoVirtualClusterInstKey'
+      type: object
+    EdgeprotoAppKey:
+      properties:
+        name:
+          description: App name
+          type: string
+        organization:
+          description: App developer organization
+          type: string
+        version:
+          description: App version
+          type: string
+      type: object
+    EdgeprotoCloudletKey:
+      properties:
+        federated_organization:
+          description: Federated operator organization who shared this cloudlet
+          type: string
+        name:
+          description: Name of the cloudlet
+          type: string
+        organization:
+          description: Organization of the cloudlet site
+          type: string
+      type: object
+    EdgeprotoClusterKey:
+      properties:
+        name:
+          description: Cluster name
+          type: string
+      type: object
+    EdgeprotoVirtualClusterInstKey:
+      properties:
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        cluster_key:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
+        organization:
+          description: Name of Developer organization that this cluster belongs to
+          type: string
+      type: object
+    OrmapiRegionAppInstClientKey:
+      properties:
+        AppInstClientKey:
+          $ref: '#/components/schemas/EdgeprotoAppInstClientKey'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

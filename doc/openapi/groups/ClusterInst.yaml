@@ -1,0 +1,447 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for ClusterInsts
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: ClusterInst APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/ctrl/CreateClusterInst:
+    post:
+      description: Create Cluster Instance. Creates an instance of a Cluster on a
+        Cloudlet, defined by a Cluster Key and a Cloudlet Key. ClusterInst is a collection
+        of compute resources on a Cloudlet on which AppInsts are deployed.
+      operationId: CreateClusterInst
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionClusterInst'
+            x-required-fields:
+            - region
+            - clusterinst.key.clusterkey.name
+            - clusterinst.key.cloudletkey.organization
+            - clusterinst.key.cloudletkey.name
+            - clusterinst.key.organization
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateClusterInst
+      tags:
+      - ClusterInst
+  /api/v1/auth/ctrl/DeleteClusterInst:
+    post:
+      description: Delete Cluster Instance. Deletes an instance of a Cluster deployed
+        on a Cloudlet.
+      operationId: DeleteClusterInst
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionClusterInst'
+            x-required-fields:
+            - region
+            - clusterinst.key.clusterkey.name
+            - clusterinst.key.cloudletkey.organization
+            - clusterinst.key.cloudletkey.name
+            - clusterinst.key.organization
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteClusterInst
+      tags:
+      - ClusterInst
+  /api/v1/auth/ctrl/DeleteIdleReservableClusterInsts:
+    post:
+      description: Cleanup Reservable Cluster Instances. Deletes reservable cluster
+        instances that are not in use.
+      operationId: DeleteIdleReservableClusterInsts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionIdleReservableClusterInsts'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteIdleReservableClusterInsts
+      tags:
+      - ClusterInst
+  /api/v1/auth/ctrl/ShowClusterInst:
+    post:
+      description: Show Cluster Instances. Lists all the cluster instances managed
+        by Edge Controller.
+      operationId: ShowClusterInst
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionClusterInst'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoClusterInst'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowClusterInst
+      tags:
+      - ClusterInst
+  /api/v1/auth/ctrl/UpdateClusterInst:
+    post:
+      description: Update Cluster Instance. Updates an instance of a Cluster deployed
+        on a Cloudlet.
+      operationId: UpdateClusterInst
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionClusterInst'
+            x-required-fields:
+            - region
+            - clusterinst.key.clusterkey.name
+            - clusterinst.key.cloudletkey.organization
+            - clusterinst.key.cloudletkey.name
+            - clusterinst.key.organization
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateClusterInst
+      tags:
+      - ClusterInst
+components:
+  schemas:
+    EdgeprotoCloudletKey:
+      properties:
+        federated_organization:
+          description: Federated operator organization who shared this cloudlet
+          type: string
+        name:
+          description: Name of the cloudlet
+          type: string
+        organization:
+          description: Organization of the cloudlet site
+          type: string
+      type: object
+    EdgeprotoClusterInst:
+      properties:
+        allocated_ip:
+          description: Allocated IP for dedicated access
+          type: string
+        auto:
+          description: Auto is set to true when automatically created by back-end
+            (internal use only)
+          type: boolean
+        auto_scale_policy:
+          description: Auto scale policy name
+          type: string
+        availability_zone:
+          description: Optional Resource AZ if any
+          type: string
+        created_at:
+          description: Created at time
+          type: string
+        crm_override:
+          description: Override actions to CRM
+          type: string
+        delete_prepare:
+          description: Preparing to be deleted
+          type: boolean
+        deployment:
+          description: Deployment type (kubernetes or docker)
+          type: string
+        dns_label:
+          description: DNS label that is unique within the cloudlet and among other
+            AppInsts/ClusterInsts
+          type: string
+        errors:
+          description: Any errors trying to create, update, or delete the ClusterInst
+            on the Cloudlet.
+          items:
+            type: string
+          type: array
+        external_volume_size:
+          description: Size of external volume to be attached to nodes.  This is for
+            the root partition
+          minimum: 0
+          type: integer
+        flavor:
+          $ref: '#/components/schemas/EdgeprotoFlavorKey'
+        fqdn:
+          description: FQDN is a globally unique DNS id for the ClusterInst
+          type: string
+        image_name:
+          description: Optional resource specific image to launch
+          type: string
+        ip_access:
+          description: IP access type (RootLB Type)
+          type: string
+        key:
+          $ref: '#/components/schemas/EdgeprotoClusterInstKey'
+        liveness:
+          description: Liveness of instance (see Liveness)
+          type: string
+        master_node_flavor:
+          description: Generic flavor for k8s master VM when worker nodes > 0
+          type: string
+        multi_tenant:
+          description: Multi-tenant kubernetes cluster
+          type: boolean
+        networks:
+          description: networks to connect to
+          items:
+            type: string
+          type: array
+        node_flavor:
+          description: Cloudlet specific node flavor
+          type: string
+        num_masters:
+          description: Number of k8s masters (In case of docker deployment, this field
+            is not required)
+          minimum: 0
+          type: integer
+        num_nodes:
+          description: Number of k8s nodes (In case of docker deployment, this field
+            is not required)
+          minimum: 0
+          type: integer
+        opt_res:
+          description: Optional Resources required by OS flavor if any
+          type: string
+        reservable:
+          description: If ClusterInst is reservable
+          type: boolean
+        reservation_ended_at:
+          description: For reservable ClusterInsts, when the last reservation ended
+          type: string
+        reserved_by:
+          description: For reservable EdgeCloud ClusterInsts, the current developer
+            tenant
+          type: string
+        resources:
+          $ref: '#/components/schemas/EdgeprotoInfraResources'
+        shared_volume_size:
+          description: Size of an optional shared volume to be mounted on the master
+          minimum: 0
+          type: integer
+        skip_crm_cleanup_on_failure:
+          description: Prevents cleanup of resources on failure within CRM, used for
+            diagnostic purposes
+          type: boolean
+        state:
+          description: State of the cluster instance
+          type: string
+        updated_at:
+          description: Updated at time
+          type: string
+      type: object
+    EdgeprotoClusterInstKey:
+      properties:
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        cluster_key:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
+        organization:
+          description: Name of Developer organization that this cluster belongs to
+          type: string
+      type: object
+    EdgeprotoClusterKey:
+      properties:
+        name:
+          description: Cluster name
+          type: string
+      type: object
+    EdgeprotoContainerInfo:
+      properties:
+        clusterip:
+          description: IP within the CNI and is applicable to kubernetes only
+          type: string
+        name:
+          description: Name of the container
+          type: string
+        restarts:
+          description: Restart count, applicable to kubernetes only
+          type: integer
+        status:
+          description: Runtime status of the container
+          type: string
+        type:
+          description: Type can be docker or kubernetes
+          type: string
+      type: object
+    EdgeprotoFlavorKey:
+      properties:
+        name:
+          description: Flavor name
+          type: string
+      type: object
+    EdgeprotoIdleReservableClusterInsts:
+      properties:
+        idle_time:
+          description: Idle time (duration)
+          type: string
+      type: object
+    EdgeprotoInfraResources:
+      properties:
+        vms:
+          description: Virtual machine resources info
+          items:
+            $ref: '#/components/schemas/EdgeprotoVmInfo'
+          nullable: true
+          type: array
+      type: object
+    EdgeprotoIpAddr:
+      properties:
+        externalIp:
+          description: External IP address
+          type: string
+        internalIp:
+          description: Internal IP address
+          type: string
+      type: object
+    EdgeprotoResult:
+      properties:
+        code:
+          description: Error code, 0 indicates success, non-zero indicates failure
+            (not implemented)
+          type: integer
+        message:
+          description: Message, may be success or failure message
+          type: string
+      type: object
+    EdgeprotoVmInfo:
+      properties:
+        containers:
+          description: Information about containers running in the VM
+          items:
+            $ref: '#/components/schemas/EdgeprotoContainerInfo'
+          type: array
+        infraFlavor:
+          description: Flavor allocated within the cloudlet infrastructure, distinct
+            from the control plane flavor
+          type: string
+        ipaddresses:
+          description: IP addresses allocated to the VM
+          items:
+            $ref: '#/components/schemas/EdgeprotoIpAddr'
+          nullable: true
+          type: array
+        name:
+          description: Virtual machine name
+          type: string
+        status:
+          description: Runtime status of the VM
+          type: string
+        type:
+          description: Type can be platformvm, platform-cluster-master, platform-cluster-primary-node,
+            platform-cluster-secondary-node, sharedrootlb, dedicatedrootlb, cluster-master,
+            cluster-k8s-node, cluster-docker-node, appvm
+          type: string
+      type: object
+    OrmapiRegionClusterInst:
+      properties:
+        ClusterInst:
+          $ref: '#/components/schemas/EdgeprotoClusterInst'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiRegionIdleReservableClusterInsts:
+      properties:
+        IdleReservableClusterInsts:
+          $ref: '#/components/schemas/EdgeprotoIdleReservableClusterInsts'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

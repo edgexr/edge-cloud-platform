@@ -1,0 +1,188 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for Controllers
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Controller APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/controller/create:
+    post:
+      description: Create a new regional controller
+      operationId: CreateController
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiController'
+            x-required-fields:
+            - region
+            - address
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateController
+      tags:
+      - Controller
+  /api/v1/auth/controller/delete:
+    post:
+      description: Delete a regional controller
+      operationId: DeleteController
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiController'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteController
+      tags:
+      - Controller
+  /api/v1/auth/controller/show:
+    post:
+      description: Show regional controllers
+      operationId: ShowController
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiController'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiController'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowController
+      tags:
+      - Controller
+  /api/v1/auth/controller/update:
+    post:
+      description: Update region controller
+      operationId: UpdateController
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiController'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateController
+      tags:
+      - Controller
+components:
+  schemas:
+    OrmapiController:
+      properties:
+        Address:
+          description: Controller API address or URL
+          type: string
+        CreatedAt:
+          description: Time created
+          format: date-time
+          readOnly: true
+          type: string
+        DnsRegion:
+          description: Unique DNS label for the region
+          readOnly: true
+          type: string
+        InfluxDB:
+          description: InfluxDB address
+          type: string
+        NotifyAddr:
+          description: Controller notify address or URL
+          type: string
+        Region:
+          description: Controller region name
+          type: string
+        ThanosMetrics:
+          description: Thanos Query URL
+          type: string
+        UpdatedAt:
+          description: Time last updated
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

@@ -1,0 +1,274 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for Eventss
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Events APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/events/find:
+    post:
+      description: Find events and audit events, results sorted by relevance
+      operationId: FindEvents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeEventSearch'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/NodeEventData'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: FindEvents
+      tags:
+      - Events
+  /api/v1/auth/events/show:
+    post:
+      description: Show events and audit events
+      operationId: ShowEvents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeEventSearch'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/NodeEventData'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowEvents
+      tags:
+      - Events
+  /api/v1/auth/events/terms:
+    post:
+      description: Show aggregated events terms
+      operationId: EventTerms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeEventSearch'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeEventTerms'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: EventTerms
+      tags:
+      - Events
+components:
+  schemas:
+    NodeAggrVal:
+      properties:
+        count:
+          description: Count of number of documents associated with key
+          type: integer
+        key:
+          description: Key
+          type: string
+      type: object
+    NodeEventData:
+      properties:
+        error:
+          description: Error if event is logging a failure
+          type: string
+        mtags:
+          additionalProperties:
+            type: string
+          description: Tags associated with event
+          type: object
+        name:
+          description: Name of event
+          type: string
+        org:
+          description: Organizations that scan see event
+          items:
+            type: string
+          nullable: true
+          type: array
+        region:
+          description: Region in which event happened
+          type: string
+        tags:
+          description: Tags associated with event
+          items:
+            $ref: '#/components/schemas/NodeEventTag'
+          type: array
+        timestamp:
+          description: Timestamp of event
+          format: date-time
+          type: string
+        type:
+          description: Type of event, audit or event
+          type: string
+      type: object
+    NodeEventMatch:
+      properties:
+        error:
+          description: Error substring to match
+          type: string
+        failed:
+          description: Failure status on event to match
+          type: boolean
+        names:
+          description: Names of events to match
+          items:
+            type: string
+          nullable: true
+          type: array
+        orgs:
+          description: Organizations on events to match
+          items:
+            type: string
+          nullable: true
+          type: array
+        regions:
+          description: Regions on events to match
+          items:
+            type: string
+          type: array
+        tags:
+          additionalProperties:
+            type: string
+          description: Tags on events to match
+          nullable: true
+          type: object
+        types:
+          description: Types of events to match
+          items:
+            type: string
+          nullable: true
+          type: array
+      type: object
+    NodeEventSearch:
+      properties:
+        allowedorgs:
+          description: Organizations allowed to access the event
+          items:
+            type: string
+          nullable: true
+          type: array
+        endage:
+          description: End age relative to now of the time range
+          type: string
+        endtime:
+          description: End time of the time range
+          format: date-time
+          type: string
+        from:
+          description: Start offset if paging through results
+          type: integer
+        limit:
+          description: Display the last X events
+          type: integer
+        match:
+          $ref: '#/components/schemas/NodeEventMatch'
+        notmatch:
+          $ref: '#/components/schemas/NodeEventMatch'
+        startage:
+          description: Start age relative to now of the time range
+          type: string
+        starttime:
+          description: Start time of the time range
+          format: date-time
+          type: string
+      type: object
+    NodeEventTag:
+      properties:
+        key:
+          description: Event tag key
+          type: string
+        value:
+          description: Event tag value
+          type: string
+      type: object
+    NodeEventTerms:
+      properties:
+        names:
+          description: Names of events
+          items:
+            $ref: '#/components/schemas/NodeAggrVal'
+          type: array
+        orgs:
+          description: Organizations on events
+          items:
+            $ref: '#/components/schemas/NodeAggrVal'
+          type: array
+        regions:
+          description: Regions on events
+          items:
+            $ref: '#/components/schemas/NodeAggrVal'
+          type: array
+        tagkeys:
+          description: Tag keys on events
+          items:
+            $ref: '#/components/schemas/NodeAggrVal'
+          type: array
+        types:
+          description: Types of events
+          items:
+            $ref: '#/components/schemas/NodeAggrVal'
+          type: array
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

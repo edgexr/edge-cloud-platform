@@ -1,0 +1,414 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for RateLimitSettingsMcs
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: RateLimitSettingsMc APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/ratelimitsettingsmc/createflow:
+    post:
+      description: Create master controller flowratelimitsettings
+      operationId: CreateFlowRateLimitSettingsMc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiMcRateLimitFlowSettings'
+            x-required-fields:
+            - flowsettingsname
+            - apiname
+            - ratelimittarget
+            - flowalgorithm
+            - reqspersecond
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateFlowRateLimitSettingsMc
+      tags:
+      - RateLimitSettingsMc
+  /api/v1/auth/ratelimitsettingsmc/createmaxreqs:
+    post:
+      description: Create master controller maxreqsratelimitsettings
+      operationId: CreateMaxReqsRateLimitSettingsMc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiMcRateLimitMaxReqsSettings'
+            x-required-fields:
+            - maxreqssettingsname
+            - apiname
+            - ratelimittarget
+            - maxreqsalgorithm
+            - maxrequests
+            - interval
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateMaxReqsRateLimitSettingsMc
+      tags:
+      - RateLimitSettingsMc
+  /api/v1/auth/ratelimitsettingsmc/deleteflow:
+    post:
+      description: Delete master controller flowratelimitsettings
+      operationId: DeleteFlowRateLimitSettingsMc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiMcRateLimitFlowSettings'
+            x-required-fields:
+            - flowsettingsname
+            - apiname
+            - ratelimittarget
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteFlowRateLimitSettingsMc
+      tags:
+      - RateLimitSettingsMc
+  /api/v1/auth/ratelimitsettingsmc/deletemaxreqs:
+    post:
+      description: Delete master controller maxreqsratelimitsettings
+      operationId: DeleteMaxReqsRateLimitSettingsMc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiMcRateLimitMaxReqsSettings'
+            x-required-fields:
+            - maxreqssettingsname
+            - apiname
+            - ratelimittarget
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteMaxReqsRateLimitSettingsMc
+      tags:
+      - RateLimitSettingsMc
+  /api/v1/auth/ratelimitsettingsmc/show:
+    post:
+      description: Show master controller ratelimitsettings
+      operationId: ShowRateLimitSettingsMc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiMcRateLimitSettings'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiMcRateLimitSettings'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowRateLimitSettingsMc
+      tags:
+      - RateLimitSettingsMc
+  /api/v1/auth/ratelimitsettingsmc/showflow:
+    post:
+      description: Show master controller flowratelimitsettings
+      operationId: ShowFlowRateLimitSettingsMc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiMcRateLimitFlowSettings'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiMcRateLimitFlowSettings'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowFlowRateLimitSettingsMc
+      tags:
+      - RateLimitSettingsMc
+  /api/v1/auth/ratelimitsettingsmc/showmaxreqs:
+    post:
+      description: Show master controller maxreqsratelimitsettings
+      operationId: ShowMaxReqsRateLimitSettingsMc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiMcRateLimitMaxReqsSettings'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiMcRateLimitMaxReqsSettings'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowMaxReqsRateLimitSettingsMc
+      tags:
+      - RateLimitSettingsMc
+  /api/v1/auth/ratelimitsettingsmc/updateflow:
+    post:
+      description: Update master controller flowratelimitsettings
+      operationId: UpdateFlowRateLimitSettingsMc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiMcRateLimitFlowSettings'
+            x-required-fields:
+            - flowsettingsname
+            - apiname
+            - ratelimittarget
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateFlowRateLimitSettingsMc
+      tags:
+      - RateLimitSettingsMc
+  /api/v1/auth/ratelimitsettingsmc/updatemaxreqs:
+    post:
+      description: Update master controller maxreqsratelimitsettings
+      operationId: UpdateMaxReqsRateLimitSettingsMc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiMcRateLimitMaxReqsSettings'
+            x-required-fields:
+            - maxreqssettingsname
+            - apiname
+            - ratelimittarget
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateMaxReqsRateLimitSettingsMc
+      tags:
+      - RateLimitSettingsMc
+components:
+  schemas:
+    EdgeprotoFlowSettings:
+      properties:
+        burst_size:
+          description: Burst size for flow rate limiting (required for TokenBucketAlgorithm)
+          type: integer
+        flow_algorithm:
+          description: Flow Rate Limit algorithm
+          type: string
+        reqs_per_second:
+          description: Requests per second for flow rate limiting
+          type: number
+      type: object
+    EdgeprotoMaxReqsSettings:
+      properties:
+        interval:
+          description: Time interval
+          type: string
+        max_reqs_algorithm:
+          description: MaxReqs Rate Limit Algorithm
+          type: string
+        max_requests:
+          description: Maximum number of requests for the given Interval
+          type: integer
+      type: object
+    OrmapiMcRateLimitFlowSettings:
+      properties:
+        ApiName:
+          description: Name of API Path (eg. /api/v1/usercreate)
+          type: string
+        BurstSize:
+          description: Number of requests allowed at once
+          type: integer
+        FlowAlgorithm:
+          description: Flow Algorithm (TokenBucketAlgorithm or LeakyBucketAlgorithm)
+          type: string
+        FlowSettingsName:
+          description: Unique name for FlowSettings
+          type: string
+        RateLimitTarget:
+          description: RateLimitTarget (AllRequests, PerIp, or PerUser)
+          type: string
+        ReqsPerSecond:
+          description: Number of requests per second
+          type: number
+      type: object
+    OrmapiMcRateLimitMaxReqsSettings:
+      properties:
+        ApiName:
+          description: Name of API Path (eg. /api/v1/usercreate)
+          type: string
+        Interval:
+          description: Time interval
+          type: string
+        MaxReqsAlgorithm:
+          description: MaxReqs Algorithm (FixedWindowAlgorithm)
+          type: string
+        MaxReqsSettingsName:
+          description: Unique name for MaxReqsSettings
+          type: string
+        MaxRequests:
+          description: Maximum number of requests for the specified interval
+          type: integer
+        RateLimitTarget:
+          description: RateLimitTarget (AllRequests, PerIp, or PerUser)
+          type: string
+      type: object
+    OrmapiMcRateLimitSettings:
+      properties:
+        ApiName:
+          description: Name of API Path (eg. /api/v1/usercreate)
+          type: string
+        FlowSettings:
+          additionalProperties:
+            $ref: '#/components/schemas/EdgeprotoFlowSettings'
+          description: Map of Flow Settings name to FlowSettings
+          nullable: true
+          type: object
+        MaxReqsSettings:
+          additionalProperties:
+            $ref: '#/components/schemas/EdgeprotoMaxReqsSettings'
+          description: Map of MaxReqs Settings name to MaxReqsSettings
+          nullable: true
+          type: object
+        RateLimitTarget:
+          description: RateLimitTarget (AllRequests, PerIp, or PerUser)
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http

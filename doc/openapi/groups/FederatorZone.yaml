@@ -1,0 +1,448 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for FederatorZones
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: FederatorZone APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/federation/partner/zone/show:
+    post:
+      description: Show Federated Partner Zones
+      operationId: ShowFederatedPartnerZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederatedPartnerZone'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiFederatedPartnerZone'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowFederatedPartnerZone
+      tags:
+      - FederatorZone
+  /api/v1/auth/federation/self/zone/show:
+    post:
+      description: Show Federated Self Zones
+      operationId: ShowFederatedSelfZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederatedSelfZone'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiFederatedSelfZone'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowFederatedSelfZone
+      tags:
+      - FederatorZone
+  /api/v1/auth/federator/partner/zone/deregister:
+    post:
+      description: DeRegister Partner Federator Zone
+      operationId: DeRegisterPartnerFederatorZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederatedZoneRegRequest'
+            x-required-fields:
+            - selfoperatorid
+            - federationname
+            - zones
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeRegisterPartnerFederatorZone
+      tags:
+      - FederatorZone
+  /api/v1/auth/federator/partner/zone/register:
+    post:
+      description: Register Partner Federator Zone
+      operationId: RegisterPartnerFederatorZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederatedZoneRegRequest'
+            x-required-fields:
+            - selfoperatorid
+            - federationname
+            - zones
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: RegisterPartnerFederatorZone
+      tags:
+      - FederatorZone
+  /api/v1/auth/federator/self/zone/create:
+    post:
+      description: Create Self Federator Zone
+      operationId: CreateSelfFederatorZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederatorZone'
+            x-required-fields:
+            - zoneid
+            - operatorid
+            - countrycode
+            - cloudlets
+            - geolocation
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateSelfFederatorZone
+      tags:
+      - FederatorZone
+  /api/v1/auth/federator/self/zone/delete:
+    post:
+      description: Delete Self Federator Zone
+      operationId: DeleteSelfFederatorZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederatorZone'
+            x-required-fields:
+            - zoneid
+            - operatorid
+            - countrycode
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteSelfFederatorZone
+      tags:
+      - FederatorZone
+  /api/v1/auth/federator/self/zone/share:
+    post:
+      description: Share Self Federator Zone
+      operationId: ShareSelfFederatorZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederatedSelfZone'
+            x-required-fields:
+            - zoneid
+            - selfoperatorid
+            - federationname
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShareSelfFederatorZone
+      tags:
+      - FederatorZone
+  /api/v1/auth/federator/self/zone/show:
+    post:
+      description: Show Self Federator Zone
+      operationId: ShowSelfFederatorZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederatorZone'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiFederatorZone'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowSelfFederatorZone
+      tags:
+      - FederatorZone
+  /api/v1/auth/federator/self/zone/unshare:
+    post:
+      description: Unshare Self Federator Zone
+      operationId: UnshareSelfFederatorZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederatedSelfZone'
+            x-required-fields:
+            - zoneid
+            - selfoperatorid
+            - federationname
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UnshareSelfFederatorZone
+      tags:
+      - FederatorZone
+components:
+  schemas:
+    OrmapiFederatedPartnerZone:
+      properties:
+        Registered:
+          description: Zone registered by self federator
+          readOnly: true
+          type: boolean
+        city:
+          description: Comma seperated list of cities under this zone
+          type: string
+        cloudlets:
+          $ref: '#/components/schemas/PqStringArray'
+        countrycode:
+          description: ISO 3166-1 Alpha-2 code for the country where operator platform
+            is located
+          type: string
+        federationname:
+          description: Name of the Federation
+          type: string
+        geolocation:
+          description: GPS co-ordinates associated with the zone (in decimal format)
+          type: string
+        locality:
+          description: Type of locality eg rural, urban etc.
+          type: string
+        operatorid:
+          description: Globally unique string to identify an operator platform
+          type: string
+        region:
+          description: Region in which cloudlets reside
+          type: string
+        revision:
+          description: Revision ID to track object changes. We use jaeger traceID
+            for easy debugging but this can differ with what partner federator uses
+          readOnly: true
+          type: string
+        selfoperatorid:
+          description: Self operator ID
+          type: string
+        state:
+          description: Comma seperated list of states under this zone
+          type: string
+        zoneid:
+          description: Globally unique string used to authenticate operations over
+            federation interface
+          type: string
+      type: object
+    OrmapiFederatedSelfZone:
+      properties:
+        Registered:
+          description: Zone registered by partner federator
+          readOnly: true
+          type: boolean
+        federationname:
+          description: Name of the Federation
+          type: string
+        revision:
+          description: Revision ID to track object changes. We use jaeger traceID
+            for easy debugging but this can differ with what partner federator uses
+          readOnly: true
+          type: string
+        selfoperatorid:
+          description: Self operator ID
+          type: string
+        zoneid:
+          description: Globally unique identifier of the federator zone
+          type: string
+      type: object
+    OrmapiFederatedZoneRegRequest:
+      properties:
+        federationname:
+          description: Name of the Federation
+          type: string
+        selfoperatorid:
+          description: Self operator ID
+          type: string
+        zones:
+          description: Partner federator zones to be registered/deregistered
+          items:
+            type: string
+          nullable: true
+          type: array
+      type: object
+    OrmapiFederatorZone:
+      properties:
+        city:
+          description: Comma seperated list of cities under this zone
+          type: string
+        cloudlets:
+          $ref: '#/components/schemas/PqStringArray'
+        countrycode:
+          description: ISO 3166-1 Alpha-2 code for the country where operator platform
+            is located
+          type: string
+        geolocation:
+          description: GPS co-ordinates associated with the zone (in decimal format)
+          type: string
+        locality:
+          description: Type of locality eg rural, urban etc.
+          type: string
+        operatorid:
+          description: Globally unique string to identify an operator platform
+          type: string
+        region:
+          description: Region in which cloudlets reside
+          type: string
+        revision:
+          description: Revision ID to track object changes. We use jaeger traceID
+            for easy debugging but this can differ with what partner federator uses
+          readOnly: true
+          type: string
+        state:
+          description: Comma seperated list of states under this zone
+          type: string
+        zoneid:
+          description: Globally unique string used to authenticate operations over
+            federation interface
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+    PqStringArray:
+      items:
+        type: string
+      nullable: true
+      type: array
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http
