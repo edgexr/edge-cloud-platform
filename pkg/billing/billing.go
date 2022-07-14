@@ -18,8 +18,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
@@ -58,17 +58,22 @@ type UsageRecord struct {
 }
 
 type InvoiceData struct {
-	Number              string `json:"number,omitempty"`
-	IssueDate           string `json:"issue_date,omitempty"`
-	DueDate             string `json:"due_date,omitempty"`
+	// A unique string that identifies the invoice
+	Number string `json:"number,omitempty"`
+	// Date the invoice was issued to the customer
+	IssueDate string `json:"issue_date,omitempty"`
+	// Date the invoice is due.
+	DueDate string `json:"due_date,omitempty"`
+	// Date the invoice was fully paid
 	PaidDate            string `json:"paid_date,omitempty"`
 	Status              string `json:"status,omitempty"`
 	CollectionMethod    string `json:"collection_method,omitempty"`
 	PaymentInstructions string `json:"payment_instructions,omitempty"`
-	Currency            string `json:"currency,omitempty"`
-	ConsolidationLevel  string `json:"consolidation_level,omitempty"`
-	ProductName         string `json:"product_name,omitempty"`
-	Seller              struct {
+	// ISO 4217 currency code
+	Currency           string `json:"currency,omitempty"`
+	ConsolidationLevel string `json:"consolidation_level,omitempty"`
+	ProductName        string `json:"product_name,omitempty"`
+	Seller             struct {
 		Name    string  `json:"name,omitempty"`
 		Address Address `json:"address,omitempty"`
 		Phone   string  `json:"phone,omitempty"`
@@ -79,16 +84,20 @@ type InvoiceData struct {
 		Organization string `json:"organization,omitempty"`
 		Email        string `json:"email,omitempty"`
 	} `json:"customer,omitempty"`
-	Memo                string          `json:"memo,omitempty"`
-	BillingAddress      Address         `json:"billing_address,omitempty"`
-	ShippingAddress     Address         `json:"shipping_address,omitempty"`
-	SubtotalAmount      string          `json:"subtotal_amount,omitempty"`
-	DiscountAmount      string          `json:"discount_amount,omitempty"`
-	TaxAmount           string          `json:"tax_amount,omitempty"`
-	CreditAmount        string          `json:"credit_amount,omitempty"`
-	RefundAmount        string          `json:"refund_amount,omitempty"`
-	PaidAmount          string          `json:"paid_amount,omitempty"`
-	DueAmount           string          `json:"due_amount,omitempty"`
+	Memo            string  `json:"memo,omitempty"`
+	BillingAddress  Address `json:"billing_address,omitempty"`
+	ShippingAddress Address `json:"shipping_address,omitempty"`
+	// Subtotal of invoice, sum of all line items before discounts or taxes
+	SubtotalAmount string `json:"subtotal_amount,omitempty"`
+	DiscountAmount string `json:"discount_amount,omitempty"`
+	TaxAmount      string `json:"tax_amount,omitempty"`
+	CreditAmount   string `json:"credit_amount,omitempty"`
+	RefundAmount   string `json:"refund_amount,omitempty"`
+	// Paid amount
+	PaidAmount string `json:"paid_amount,omitempty"`
+	// Amount due, which is total - credit - paid
+	DueAmount string `json:"due_amount,omitempty"`
+	// Total amount, which subtotal - discount + tax
 	TotalAmount         string          `json:"total_amount,omitempty"`
 	LineItems           []LineItems     `json:"line_items,omitempty"`
 	Discounts           []Discounts     `json:"discounts,omitempty"`
@@ -169,20 +178,24 @@ type Credits struct {
 }
 
 type Refunds struct {
-	TransactionId        int    `json:"transaction_id,omitempty"`
-	PaymentId            int    `json:"payment_id,omitempty"`
-	Memo                 string `json:"memo,omitempty"`
-	OriginalAmount       string `json:"original_amount,omitempty"`
-	AppliedAmount        string `json:"applied_amount,omitempty"`
+	TransactionId int `json:"transaction_id,omitempty"`
+	// Payment ID to be refunded
+	PaymentId int `json:"payment_id,omitempty"`
+	// Memo noted on refund
+	Memo           string `json:"memo,omitempty"`
+	OriginalAmount string `json:"original_amount,omitempty"`
+	AppliedAmount  string `json:"applied_amount,omitempty"`
+	// Transaction ID for the refund as returned from the payment gateway
 	GatewayTransactionId string `json:"gateway_transaction_id,omitempty"`
 }
 
 type Payments struct {
 	TransactionTime string `json:"transaction_time,omitempty"`
-	Memo            string `json:"memo,omitempty"`
-	OriginalAmount  string `json:"original_amount,omitempty"`
-	AppliedAmount   string `json:"applied_amount,omitempty"`
-	PaymentMethod   []struct {
+	// Memo noted on the payment
+	Memo           string `json:"memo,omitempty"`
+	OriginalAmount string `json:"original_amount,omitempty"`
+	AppliedAmount  string `json:"applied_amount,omitempty"`
+	PaymentMethod  []struct {
 		Details          string `json:"details,omitempty"`
 		Kind             string `json:"kind,omitempty"`
 		Memo             string `json:"memo,omitempty"`

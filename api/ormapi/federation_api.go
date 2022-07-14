@@ -42,10 +42,13 @@ type Federator struct {
 	// API Key used for authentication (stored in secure storage)
 	ApiKey string `json:"apikey"`
 	// read only: true
+	// hidden: true
 	ApiKeyHash string `gorm:"not null"`
 	// read only: true
+	// hidden: true
 	Salt string `gorm:"not null"`
 	// read only: true
+	// hidden: true
 	Iter int `gorm:"not null"`
 }
 
@@ -57,7 +60,7 @@ type Federation struct {
 	// Self operator ID
 	SelfOperatorId string `json:"selfoperatorid"`
 	// Partner Federator
-	Federator `json:",inline"`
+	Federator
 	// Partner shares its zones with self federator as part of federation
 	// read only: true
 	PartnerRoleShareZonesWithSelf bool
@@ -117,7 +120,7 @@ type FederatedPartnerZone struct {
 	// Name of the Federation
 	FederationName string `gorm:"primary_key" json:"federationname"`
 	// Partner federator zone
-	FederatorZone `json:",inline"`
+	FederatorZone
 	// Zone registered by self federator
 	// read only: true
 	Registered bool

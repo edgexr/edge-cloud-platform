@@ -157,14 +157,15 @@ func init() {
 	AllApis.AddCommand(cmd)
 
 	cmd = &ApiCommand{
-		Name:         "Login",
-		Short:        "Login using account credentials",
-		OptionalArgs: "name password totp apikeyid apikey",
-		AliasArgs:    "name=username",
-		Comments:     LoginComments,
-		ReqData:      &ormapi.UserLogin{},
-		ReplyData:    &map[string]interface{}{},
-		Path:         "/login",
+		Name:             "Login",
+		Short:            "Login using account credentials",
+		OptionalArgs:     "name password totp apikeyid apikey",
+		AliasArgs:        "name=username",
+		Comments:         LoginComments,
+		ReqData:          &ormapi.UserLogin{},
+		ReplyData:        &map[string]interface{}{},
+		ReplyDescription: `Map with key "token" whose value is the JWT key to be used in subsequent API calls, and "admin" to indicate if the user is an admin`,
+		Path:             "/login",
 	}
 	AllApis.AddCommand(cmd)
 }

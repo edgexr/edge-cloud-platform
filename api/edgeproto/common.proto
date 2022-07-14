@@ -163,10 +163,16 @@ enum CRMOverride {
 // Steps are work items within a task. Within the clusterinst and appinst objects this
 // is converted to a string
 message StatusInfo{
+  // Task number
   uint32 task_number = 1;
+  // Max tasks
   uint32 max_tasks = 2;
+  // Task name
   string task_name = 3;
+  // Step name
   string step_name = 4;
+  // Message count
   uint32 msg_count = 5;
+  // Messages
   repeated string msgs = 6;
 }

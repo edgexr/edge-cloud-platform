@@ -894,6 +894,12 @@ var AppInstInfoComments = map[string]string{
 	"state":                                                "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                                               "Any errors trying to create, update, or delete the AppInst on the Cloudlet",
 	"runtimeinfo.containerids":                             "List of container names",
+	"status.tasknumber":                                    "Task number",
+	"status.maxtasks":                                      "Max tasks",
+	"status.taskname":                                      "Task name",
+	"status.stepname":                                      "Step name",
+	"status.msgcount":                                      "Message count",
+	"status.msgs":                                          "Messages",
 	"powerstate":                                           "Power State of the AppInst, one of PowerOn, PowerOff, Reboot",
 	"uri":                                                  "Base FQDN for the App based on the cloudlet platform",
 }
