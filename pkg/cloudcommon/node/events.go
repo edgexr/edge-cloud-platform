@@ -103,14 +103,22 @@ var (
 )
 
 type EventData struct {
-	Name      string            `json:"name"`
-	Org       []string          `json:"org"`
-	Type      string            `json:"type"`
-	Region    string            `json:"region,omitempty"`
-	Timestamp time.Time         `json:"timestamp"`
-	Error     string            `json:"error,omitempty"`
-	Tags      []EventTag        `json:"tags,omitempty"`  // this is needed for writing to elasticsearch
-	Mtags     map[string]string `json:"mtags,omitempty"` // used for show output
+	// Name of event
+	Name string `json:"name"`
+	// Organizations that scan see event
+	Org []string `json:"org"`
+	// Type of event, audit or event
+	Type string `json:"type"`
+	// Region in which event happened
+	Region string `json:"region,omitempty"`
+	// Timestamp of event
+	Timestamp time.Time `json:"timestamp"`
+	// Error if event is logging a failure
+	Error string `json:"error,omitempty"`
+	// Tags associated with event
+	Tags []EventTag `json:"tags,omitempty"` // this is needed for writing to elasticsearch
+	// Tags associated with event
+	Mtags map[string]string `json:"mtags,omitempty"` // used for show output
 }
 
 type EventDataOld struct {
@@ -125,7 +133,9 @@ type EventDataOld struct {
 }
 
 type EventTag struct {
-	Key   string `json:"key"`
+	// Event tag key
+	Key string `json:"key"`
+	// Event tag value
 	Value string `json:"value"`
 }
 
@@ -154,7 +164,7 @@ type EventSearch struct {
 	// Organizations allowed to access the event
 	AllowedOrgs []string `json:"allowedorgs"` // to enforce rbac
 	// Time range over which to seach for events
-	edgeproto.TimeRange `json:",inline"`
+	edgeproto.TimeRange
 	// Start offset if paging through results
 	From int `json:"from,omitempty"`
 	// Display the last X events
@@ -197,8 +207,10 @@ type AggrResult struct {
 	Buckets []AggrVal `json:"buckets"`
 }
 type AggrVal struct {
-	Key      string `json:"key"`
-	DocCount int    `json:"count,omitempty" yaml:"count,omitempty" mapstructure:"doc_count,omitempty"`
+	// Key
+	Key string `json:"key"`
+	// Count of number of documents associated with key
+	DocCount int `json:"count,omitempty" yaml:"count,omitempty" mapstructure:"doc_count,omitempty"`
 }
 
 func (s *EventData) TagsToMtags() {

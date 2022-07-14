@@ -879,6 +879,7 @@ message CloudletInfo {
   // Supported flavors by the Cloudlet
   repeated FlavorInfo flavors = 10;
   // status is used to reflect progress of creation or other events
+  // hidden: true (stored in redis only)
   StatusInfo status = 11 [(gogoproto.nullable) = false, (protogen.hidetag) = "nocmp", (protogen.redis_only) = true];
   // Cloudlet container version
   string container_version = 12;
