@@ -25,11 +25,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mitchellh/mapstructure"
 	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -325,6 +325,7 @@ func MapJsonNamesT(dat, js map[string]interface{}, t reflect.Type, inputNS Field
 		if !ok {
 			return fmt.Errorf("Field %s (%s) not found in struct %s", key, inputNS.String(), t.Name())
 		}
+		embedded := sf.Anonymous
 		tag := sf.Tag.Get("json")
 		tagvals := strings.Split(tag, ",")
 		jsonName := ""
@@ -350,7 +351,7 @@ func MapJsonNamesT(dat, js map[string]interface{}, t reflect.Type, inputNS Field
 				return fmt.Errorf("key %s (%s) value %v is a map (struct) but expected %v", key, inputNS.String(), val, sf.Type)
 			}
 			var subjson map[string]interface{}
-			if hasTag("inline", tagvals) {
+			if hasTag("inline", tagvals) || embedded {
 				subjson = js
 			} else {
 				subjson = getSubMap(js, jsonName, -1)
