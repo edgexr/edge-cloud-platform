@@ -247,7 +247,7 @@
     type: audit
     mtags:
       duration: ""
-      email: mexadmin@mobiledgex.net
+      email: mexadmin-email-not-specified
       hostname: ""
       lineno: ""
       method: POST
@@ -266,7 +266,7 @@
     type: audit
     mtags:
       duration: ""
-      email: mexadmin@mobiledgex.net
+      email: mexadmin-email-not-specified
       hostname: ""
       lineno: ""
       method: POST
@@ -285,7 +285,7 @@
     type: audit
     mtags:
       duration: ""
-      email: mexadmin@mobiledgex.net
+      email: mexadmin-email-not-specified
       hostname: ""
       lineno: ""
       method: POST

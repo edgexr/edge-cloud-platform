@@ -4,4 +4,4 @@ FROM $ALLINONE as allinone
 FROM gcr.io/distroless/base-debian10:debug
 
 COPY --from=allinone /usr/local/bin/mc /usr/local/bin/mc
-COPY --from=allinone /MobiledgeX_Logo.png /MobiledgeX_Logo.png
+COPY --from=allinone /Brand_Logo.png /Brand_Logo.png

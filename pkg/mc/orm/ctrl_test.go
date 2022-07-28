@@ -597,13 +597,16 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	badPermTestNonExistent(t, mcClient, uri, tokenOper4, ctrl.Region, tc3)
 
 	// bug 1756 - better error message for nonexisting org in image path
+	gitlabAddrSave := serverConfig.GitlabAddr
+	serverConfig.GitlabAddr = "https://docker.edgecloud.net"
 	badApp := &edgeproto.App{}
 	badApp.Key.Organization = "nonexistent"
-	badApp.ImagePath = "docker-qa.mobiledgex.net/nonexistent/images/server_ping_threaded:5.0"
+	badApp.ImagePath = "docker.edgecloud.net/nonexistent/images/server_ping_threaded:5.0"
 	_, status, err = ormtestutil.TestCreateApp(mcClient, uri, token, ctrl.Region, badApp)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "Organization nonexistent from ImagePath not found")
+	serverConfig.GitlabAddr = gitlabAddrSave
 
 	// flavors, clusterflavors are special - can be seen by all
 	goodPermTestShowFlavor(t, mcClient, uri, tokenDev, ctrl.Region, "", dcnt)
@@ -665,11 +668,11 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		// dev3 will be not be able to create clusterinst/appinst on org3 cloudlet
 		_, status, err := ormtestutil.TestPermCreateAppInst(mcClient, uri, tokenDev3, ctrl.Region, org1, tc3)
 		require.NotNil(t, err)
-		require.Equal(t, err.Error(), "Billing Org must be set up to deploy to public cloudlets, please contact MobiledgeX support")
+		require.Equal(t, err.Error(), "Billing Org must be set up to deploy to public cloudlets, please contact support")
 		require.Equal(t, http.StatusBadRequest, status)
 		_, status, err = ormtestutil.TestPermCreateClusterInst(mcClient, uri, tokenDev3, ctrl.Region, org1, tc3)
 		require.NotNil(t, err)
-		require.Equal(t, err.Error(), "Billing Org must be set up to deploy to public cloudlets, please contact MobiledgeX support")
+		require.Equal(t, err.Error(), "Billing Org must be set up to deploy to public cloudlets, please contact support")
 		require.Equal(t, http.StatusBadRequest, status)
 		// cleanup created cloudlet
 		goodPermDeleteCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, org3, nil)

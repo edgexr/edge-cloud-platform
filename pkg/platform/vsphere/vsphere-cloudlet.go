@@ -17,14 +17,15 @@ package vsphere
 import (
 	"context"
 	"fmt"
+	"path"
 	"sync"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
@@ -101,8 +102,11 @@ func (o *VSpherePlatform) GetSessionTokens(ctx context.Context, vaultConfig *vau
 // import tool will prompt for datastore and portgroup.
 func (v *VSpherePlatform) GetCloudletManifest(ctx context.Context, name string, cloudletImagePath string, vmgp *vmlayer.VMGroupOrchestrationParams) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletManifest", "name", name, "vmgp", vmgp)
+	// get the base directory
+	basePath := path.Dir(cloudletImagePath)
+
 	var manifest infracommon.CloudletManifest
-	ovfLocation := vmlayer.DefaultCloudletVMImagePath + "vsphere-ovf-" + vmlayer.MEXInfraVersion
+	ovfLocation := basePath + "vsphere-ovf-" + vmlayer.MEXInfraVersion
 	err := v.populateOrchestrationParams(ctx, vmgp, vmlayer.ActionCreate)
 	if err != nil {
 		return "", fmt.Errorf("unable to populate orchestration params: %v", err)

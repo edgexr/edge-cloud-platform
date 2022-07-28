@@ -126,6 +126,8 @@ var ConfigComments = map[string]string{
 	"userlogintokenvalidduration":   `User login token valid duration (in format 2h30m10s, default 24h)`,
 	"apikeylogintokenvalidduration": `API key login token valid duration (in format 2h30m10s, default 4h)`,
 	"websockettokenvalidduration":   `Websocket auth token valid duration (in format 2h30m10s, default 2m)`,
+	"supportemail":                  `Support email address`,
+	"slackiconurl":                  `Slack icon URL used for alert manager slack receivers`,
 }
 
 var McRateLimitFlowSettingsComments = map[string]string{

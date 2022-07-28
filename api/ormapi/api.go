@@ -286,6 +286,10 @@ type Config struct {
 	ApiKeyLoginTokenValidDuration edgeproto.Duration
 	// Websocket auth token valid duration (in format 2h30m10s, default 2m)
 	WebsocketTokenValidDuration edgeproto.Duration
+	// Support email address
+	SupportEmail string
+	// Slack icon URL used for alert manager slack receivers
+	SlackIconURL string
 }
 
 type McRateLimitFlowSettings struct {

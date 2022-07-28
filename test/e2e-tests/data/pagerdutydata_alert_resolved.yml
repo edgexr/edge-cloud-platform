@@ -17,7 +17,7 @@
   payload:
     summary: 'Alert for pagerdutyAppAlertReceiver: AppInstDown Application: someapplication1
       Version: 1.0'
-    source: MobiledgeX Monitoring
+    source: Edge Cloud Monitoring
     severity: error
     customdetails:
       firing: |
@@ -39,7 +39,7 @@
          status = HealthCheckServerFail
       numfiring: "1"
       numresolved: "0"
-  client: MobiledgeX Monitoring
+  client: Edge Cloud Monitoring
   clienturl: |
     https://console.mobiledgex.net
 - routingkey: "01234567890123456789012345678901"
@@ -47,7 +47,7 @@
   payload:
     summary: 'Alert for pagerdutyAppAlertReceiver: AppInstDown Application: someapplication1
       Version: 1.0'
-    source: MobiledgeX Monitoring
+    source: Edge Cloud Monitoring
     severity: error
     customdetails:
       numfiring: "0"
@@ -69,6 +69,6 @@
          scope = Application
          severity = error
          status = HealthCheckServerFail
-  client: MobiledgeX Monitoring
+  client: Edge Cloud Monitoring
   clienturl: |
     https://console.mobiledgex.net

@@ -20,18 +20,18 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/labstack/echo"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/labstack/echo"
 )
 
 // Password crack times are estimates of how long it would take to brute
 // force crack the password offline.
 var defaultConfig = ormapi.Config{
 	ID:                            1,
-	NotifyEmailAddress:            "support@mobiledgex.com",
+	NotifyEmailAddress:            "",
 	PasswordMinCrackTimeSec:       30 * 86400,      // 30 days
 	AdminPasswordMinCrackTimeSec:  2 * 365 * 86400, // 2 years
 	MaxMetricsDataPoints:          10000,
@@ -118,10 +118,6 @@ func InitConfig(ctx context.Context) error {
 	}
 	if config.WebsocketTokenValidDuration == 0 {
 		config.WebsocketTokenValidDuration = defaultConfig.WebsocketTokenValidDuration
-		save = true
-	}
-	if config.NotifyEmailAddress == "" {
-		config.NotifyEmailAddress = defaultConfig.NotifyEmailAddress
 		save = true
 	}
 

@@ -26,16 +26,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	ua "github.com/mileusna/useragent"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 	"github.com/trustelem/zxcvbn"
@@ -60,7 +60,7 @@ func InitAdmin(ctx context.Context, superuser, superpass string) error {
 	passhash, salt, iter := ormutil.NewPasshash(superpass)
 	super := ormapi.User{
 		Name:          superuser,
-		Email:         superuser + "@mobiledgex.net",
+		Email:         superuser + "-email-not-specified",
 		EmailVerified: true,
 		Passhash:      passhash,
 		Salt:          salt,
@@ -198,7 +198,7 @@ func Login(c echo.Context) error {
 	}
 
 	if user.Locked {
-		return fmt.Errorf("Account is locked, please contact MobiledgeX support")
+		return fmt.Errorf("Account is locked, please contact Edge Cloud support")
 	}
 	if !getSkipVerifyEmail(ctx, nil) && !user.EmailVerified {
 		return fmt.Errorf("Email not verified yet")
@@ -333,7 +333,7 @@ func RefreshAuthCookie(c echo.Context) error {
 
 func GenerateTOTPQR(accountName string) (string, []byte, error) {
 	key, err := totp.Generate(totp.GenerateOpts{
-		Issuer:      "MobiledgeX",
+		Issuer:      "EdgeCloud",
 		AccountName: accountName,
 		Period:      OTPExpirationTime,
 		Digits:      OTPLen,
@@ -488,7 +488,7 @@ func ResendVerify(c echo.Context) error {
 	if err := ValidEmailRequest(c, &req); err != nil {
 		return err
 	}
-	return sendVerifyEmail(c, "MobiledgeX user", &req)
+	return sendVerifyEmail(c, "Edge Cloud user", &req)
 }
 
 func VerifyEmail(c echo.Context) error {
@@ -871,6 +871,10 @@ func PasswordResetRequest(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	config, err := getConfig(ctx)
+	if err != nil {
+		return err
+	}
 
 	clientIP, browser, os := GetClientDetailsFromRequestHeaders(c)
 
@@ -881,7 +885,9 @@ func PasswordResetRequest(c echo.Context) error {
 		OS:      os,
 		Browser: browser,
 		IP:      clientIP,
+		Support: emailGetSupportString(config),
 	}
+
 	// To ensure we do not leak user accounts, we do not
 	// return an error if the user is not found. Instead, we always
 	// send an email to the account specified, but the contents

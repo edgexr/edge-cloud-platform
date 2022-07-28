@@ -23,12 +23,12 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
@@ -55,9 +55,6 @@ Chef::Log::Formatter.show_time = true`
 
 func (k *K8sBareMetalPlatform) GetChefParams(nodeName, clientKey string, policyName string, attributes map[string]interface{}) *chefmgmt.ServerChefParams {
 	chefServerPath := k.commonPf.ChefServerPath
-	if chefServerPath == "" {
-		chefServerPath = chefmgmt.DefaultChefServerPath
-	}
 	return &chefmgmt.ServerChefParams{
 		NodeName:    nodeName,
 		ServerPath:  chefServerPath,
@@ -77,6 +74,12 @@ func (k *K8sBareMetalPlatform) GetChefClientName(ckey *edgeproto.CloudletKey) st
 func (k *K8sBareMetalPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet", "cloudlet", cloudlet)
 
+	if pfConfig.ChefServerPath == "" {
+		return false, fmt.Errorf("chef server path not specified")
+	}
+	if pfConfig.ContainerRegistryPath == "" {
+		return false, fmt.Errorf("container registry path not specified")
+	}
 	cloudletResourcesCreated := false
 	err := k.commonPf.InitCloudletSSHKeys(ctx, accessApi)
 	if err != nil {
@@ -97,12 +100,6 @@ func (k *K8sBareMetalPlatform) CreateCloudlet(ctx context.Context, cloudlet *edg
 		pfConfig.TlsCertFile = crtFile
 	}
 
-	if pfConfig.ChefServerPath == "" {
-		pfConfig.ChefServerPath = chefmgmt.DefaultChefServerPath
-	}
-	if pfConfig.ContainerRegistryPath == "" {
-		pfConfig.ContainerRegistryPath = infracommon.DefaultContainerRegistryPath
-	}
 	chefApi := chefmgmt.ChefApiAccess{}
 
 	// TODO, we should switch bare metal k8s to use k8s chef policy

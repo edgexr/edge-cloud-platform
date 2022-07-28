@@ -3,7 +3,7 @@ include Makedefs
 
 GOVERS = $(shell go version | awk '{print $$3}' | cut -d. -f1,2)
 
-EDGE_CLOUD_BASE_IMAGE = $(REGISTRY)/edge-cloud-base-image@sha256:97e1ed8e6d9ad5cb5b34b9945d1c128e2fc1928a5c10772701599486db175bf7
+EDGE_CLOUD_BASE_IMAGE = ghcr.io/edgexr/edge-cloud-base-image@sha256:9914b3232532cf2308f2c238d7e691f17afc95c65da598a64a85b0ac391c377c
 
 export GO111MODULE=on
 
@@ -13,8 +13,7 @@ linux: build-linux install-linux
 
 check-vers:
 	@if test $(GOVERS) != go1.18; then \
-		echo "Go version is $(GOVERS)"; \
-		echo "See https://mobiledgex.atlassian.net/wiki/spaces/SWDEV/pages/307986555/Upgrade+to+go+1.12"; \
+		echo "Go version must be $(GOVERS)"; \
 		exit 2; \
 	fi
 
@@ -64,13 +63,13 @@ build-docker:
 		docker buildx build --push -t $(REGISTRY)/edge-cloud-$$COMP:$(TAG) \
 			--build-arg ALLINONE=$(REGISTRY)/edge-cloud:$(TAG) \
 			--build-arg EDGE_CLOUD_BASE_IMAGE=$(EDGE_CLOUD_BASE_IMAGE) \
-			-f build/docker/Dockerfile.$$COMP docker || exit 1; \
+			-f build/docker/Dockerfile.$$COMP build/docker || exit 1; \
 	done
 
-build-nightly: REGISTRY = harbor.mobiledgex.net/mobiledgex
+build-nightly: REGISTRY = ghcr.io/edgexr
 build-nightly: build-docker
-	docker tag mobiledgex/edge-cloud:$(TAG) $(REGISTRY)/edge-cloud:nightly
-	docker push $(REGISTRY)/edge-cloud:nightly
+	docker tag edgexr/edge-cloud-platform:$(TAG) $(REGISTRY)/edge-cloud-platform:nightly
+	docker push $(REGISTRY)/edge-cloud-platform:nightly
 
 install:
 	go install ./...

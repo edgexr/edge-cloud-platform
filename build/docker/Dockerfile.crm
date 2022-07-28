@@ -5,9 +5,9 @@ FROM $ALLINONE as allinone
 
 FROM $EDGE_CLOUD_BASE_IMAGE
 
+COPY --from=allinone /usr/local/bin/crm /usr/local/bin/crmserver
 COPY --from=allinone \
 	/usr/local/bin/atomic-certs-update.sh \
-	/usr/local/bin/crmserver \
 	/usr/local/bin/resource-tracker \
 	/usr/local/bin/shepherd \
 	/usr/local/bin/

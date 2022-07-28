@@ -66,6 +66,7 @@ type NodeMgr struct {
 	ESWroteEvents      uint64
 	tlsClientIssuer    string
 	commonName         string
+	DeploymentName     string
 	DeploymentTag      string
 	AccessKeyClient    AccessKeyClient
 	AccessApiClient    edgeproto.CloudletAccessApiClient
@@ -88,8 +89,9 @@ func (s *NodeMgr) InitFlags() {
 	flag.StringVar(&s.iTlsCAFile, "itlsCA", "", "internal mTLS CA file for communication between services")
 	flag.StringVar(&s.VaultAddr, "vaultAddr", "", "Vault address; local vault runs at http://127.0.0.1:8200")
 	flag.BoolVar(&s.InternalPki.UseVaultPki, "useVaultPki", false, "Use Vault Certs and CAs for internal mTLS and public TLS")
-	flag.StringVar(&s.InternalDomain, "internalDomain", "mobiledgex.net", "domain name for internal PKI")
+	flag.StringVar(&s.InternalDomain, "internalDomain", "internaldomain.net", "domain name for internal PKI")
 	flag.StringVar(&s.commonName, "commonName", "", "common name to use for vault internal pki issued certificates")
+	flag.StringVar(&s.DeploymentName, "deploymentName", "edgecloud", "Name of deployment setup, when managing multiple Edge Cloud setups for different customers")
 	flag.StringVar(&s.DeploymentTag, "deploymentTag", "", "Tag to indicate type of deployment setup. Ex: production, staging, etc")
 }
 

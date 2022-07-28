@@ -21,9 +21,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
@@ -51,7 +51,7 @@ func getSecretAuth(ctx context.Context, imagePath string, authApi cloudcommon.Re
 	}
 	if auth.AuthType != cloudcommon.BasicAuth {
 		// This can be ignored as it'll only happen for internally
-		// used non-docker registry hostnames like artifactory.mobiledgex.net
+		// used non-docker registry hostnames like artifactory.edgecloud.net
 		log.SpanLog(ctx, log.DebugLevelInfra, "warning, auth type is not basic auth type - assume internal registry", "hostname", auth.Hostname, "authType", auth.AuthType)
 		return "", "", nil, nil
 	}
@@ -109,7 +109,7 @@ func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf st
 		// from different registries.
 		cmd := fmt.Sprintf("kubectl create secret -n %s docker-registry %s "+
 			"--docker-server=%s --docker-username='%s' --docker-password='%s' "+
-			"--docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s", namespace,
+			"--docker-email=edgecloud@edgexr.net --kubeconfig=%s", namespace,
 			secretName, dockerServer, auth.Username, auth.Password,
 			kconf)
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateDockerRegistrySecret", "secretName", secretName, "namespace", namespace)

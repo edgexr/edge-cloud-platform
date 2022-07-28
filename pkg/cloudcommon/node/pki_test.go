@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -43,17 +44,6 @@ import (
 	"google.golang.org/grpc/grpclog"
 )
 
-// Local certs generated as:
-// > certstrap init --common-name foo-ca --passphrase="" --expires="10 years"
-// Created out/foo-ca.key
-// Created out/foo-ca.crt
-// Created out/foo-ca.crl
-// > certstrap request-cert --domain ctrl.mobiledgex.net --passphrase=""
-// Created out/ctrl.mobiledgex.net.key
-// Created out/ctrl.mobiledgex.net.csr
-// > certstrap sign --CA foo-ca ctrl.mobiledgex.net --expires="10 years"
-// Created out/ctrl.mobiledgex.net.crt from out/ctrl.mobiledgex.net.csr signed by out/foo-ca.key
-
 func TestInternalPki(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelApi)
 	log.InitTracer(nil)
@@ -61,6 +51,10 @@ func TestInternalPki(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 	// grcp logs not showing up in unit tests for some reason.
 	grpclog.SetLoggerV2(grpclog.NewLoggerV2(ioutil.Discard, ioutil.Discard, os.Stderr))
+	// Generate certs if needed
+	out, err := exec.Command("../../tls/gen-test-certs.sh", "foo-ca", "ctrl.edgecloud.net").CombinedOutput()
+	require.Nil(t, err, "%s", string(out))
+
 	// Set up local Vault process.
 	// Note that this test depends on the approles and
 	// pki configuration done by the vault setup scripts
@@ -71,6 +65,7 @@ func TestInternalPki(t *testing.T) {
 		},
 		Regions:    "us,eu",
 		ListenAddr: "http://127.0.0.1:8201",
+		PKIDomain:  "edgecloud.net",
 	}
 	vroles, err := vp.StartLocalRoles()
 	require.Nil(t, err, "start local vault")
@@ -395,15 +390,15 @@ func TestInternalPki(t *testing.T) {
 	nodeFileOnly := &PkiConfig{
 		Region:   "us",
 		Type:     node.NodeTypeController,
-		CertFile: "./out/ctrl.mobiledgex.net.crt",
-		CertKey:  "./out/ctrl.mobiledgex.net.key",
+		CertFile: "./out/ctrl.edgecloud.net.crt",
+		CertKey:  "./out/ctrl.edgecloud.net.key",
 		CAFile:   "./out/foo-ca.crt",
 	}
 	nodePhase2 := &PkiConfig{
 		Region:      "us",
 		Type:        node.NodeTypeController,
-		CertFile:    "./out/ctrl.mobiledgex.net.crt",
-		CertKey:     "./out/ctrl.mobiledgex.net.key",
+		CertFile:    "./out/ctrl.edgecloud.net.crt",
+		CertKey:     "./out/ctrl.edgecloud.net.key",
 		CAFile:      "./out/foo-ca.crt",
 		UseVaultPki: true,
 		LocalIssuer: node.CertIssuerRegional,
@@ -539,7 +534,7 @@ func testGetTlsConfig(t *testing.T, ctx context.Context, vaultAddr string, vrole
 	vc := getVaultConfig(cfg.NodeType, cfg.Region, vaultAddr, vroles)
 	mgr := node.NodeMgr{}
 	mgr.InternalPki.UseVaultPki = true
-	mgr.InternalDomain = "mobiledgex.net"
+	mgr.InternalDomain = "edgecloud.net"
 	if cfg.AccessKeyFile != "" && cfg.AccessApiAddr != "" {
 		mgr.AccessKeyClient.AccessKeyFile = cfg.AccessKeyFile
 		mgr.AccessKeyClient.AccessApiAddr = cfg.AccessApiAddr
@@ -597,7 +592,7 @@ func (s *PkiConfig) setupNodeMgr(vaultAddr string, vroles *process.VaultRoles) (
 	nodeMgr.SetInternalTlsKeyFile(s.CertKey)
 	nodeMgr.SetInternalTlsCAFile(s.CAFile)
 	nodeMgr.InternalPki.UseVaultPki = s.UseVaultPki
-	nodeMgr.InternalDomain = "mobiledgex.net"
+	nodeMgr.InternalDomain = "edgecloud.net"
 	if s.AccessKeyFile != "" && s.AccessApiAddr != "" {
 		nodeMgr.AccessKeyClient.AccessKeyFile = s.AccessKeyFile
 		nodeMgr.AccessKeyClient.AccessApiAddr = s.AccessApiAddr
@@ -855,7 +850,7 @@ func (s *DummyController) Init(ctx context.Context, region string, vroles *proce
 
 	vc := getVaultConfig(node.NodeTypeController, region, vaultAddr, vroles)
 	s.nodeMgr.InternalPki.UseVaultPki = true
-	s.nodeMgr.InternalDomain = "mobiledgex.net"
+	s.nodeMgr.InternalDomain = "edgecloud.net"
 	_, _, err := s.nodeMgr.Init(node.NodeTypeController, node.NoTlsClientIssuer, node.WithRegion(region), node.WithVaultConfig(vc))
 	return err
 }
