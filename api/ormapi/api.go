@@ -252,7 +252,7 @@ type Config struct {
 	ID int `gorm:"primary_key;auto_increment:false"`
 	// Lock new accounts (must be unlocked by admin)
 	LockNewAccounts bool
-	// Email to notify when locked account is created
+	// Email to notify when locked account is created, defaults to SupportEmail
 	NotifyEmailAddress string
 	// Skip email verification for new accounts (testing only)
 	SkipVerifyEmail bool
@@ -286,7 +286,7 @@ type Config struct {
 	ApiKeyLoginTokenValidDuration edgeproto.Duration
 	// Websocket auth token valid duration (in format 2h30m10s, default 2m)
 	WebsocketTokenValidDuration edgeproto.Duration
-	// Support email address
+	// Support email address shown to users, i.e. support@edgecloud.net
 	SupportEmail string
 	// Slack icon URL used for alert manager slack receivers
 	SlackIconURL string

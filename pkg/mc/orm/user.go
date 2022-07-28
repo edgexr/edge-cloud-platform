@@ -463,8 +463,11 @@ func CreateUser(c echo.Context) error {
 	if user.Locked {
 		msg := fmt.Sprintf("Locked account created for user %s, email %s", user.Name, user.Email)
 		// just log in case of error
-		senderr := sendNotify(ctx, config.NotifyEmailAddress,
-			"Locked account created", msg)
+		emailAddr := config.NotifyEmailAddress
+		if emailAddr == "" {
+			emailAddr = config.SupportEmail
+		}
+		senderr := sendNotify(ctx, emailAddr, "Locked account created", msg)
 		if senderr != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "failed to send notify of new locked account", "err", senderr)
 		}
