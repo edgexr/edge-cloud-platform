@@ -22,4 +22,4 @@ gobuild:
 	docker tag edgexr/build:$(GOVERS) $(REGISTRY)/build:$(GOVERS)
 
 gobuild-publish:
-	docker push $(REGISTRY)/gobuild:$(GOVERS)
+	docker push $(REGISTRY)/build:$(GOVERS)

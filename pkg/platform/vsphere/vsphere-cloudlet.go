@@ -106,7 +106,7 @@ func (v *VSpherePlatform) GetCloudletManifest(ctx context.Context, name string, 
 	basePath := path.Dir(cloudletImagePath)
 
 	var manifest infracommon.CloudletManifest
-	ovfLocation := basePath + "vsphere-ovf-" + vmlayer.MEXInfraVersion
+	ovfLocation := basePath + "/vsphere-ovf-" + vmlayer.MEXInfraVersion
 	err := v.populateOrchestrationParams(ctx, vmgp, vmlayer.ActionCreate)
 	if err != nil {
 		return "", fmt.Errorf("unable to populate orchestration params: %v", err)

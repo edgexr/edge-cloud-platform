@@ -111,10 +111,6 @@ func NewAlertMgrServer(alertMgrAddr string, tlsConfig *tls.Config, alertCache *e
 	return &server, nil
 }
 
-func (s *AlertMgrServer) SetSlackIconURL(u string) {
-	s.slackIconURL = u
-}
-
 // Update callback for a new alert - should send to alertmanager right away
 func (s *AlertMgrServer) UpdateAlert(ctx context.Context, old *edgeproto.Alert, new *edgeproto.Alert) {
 	s.AddAlerts(ctx, new)
