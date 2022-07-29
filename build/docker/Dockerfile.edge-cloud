@@ -11,13 +11,13 @@
 # All the tools will be inside the docker.
 #
 
-ARG REGISTRY=registry.mobiledgex.net:5000/mobiledgex
+ARG REGISTRY=ghcr.io/edgexr
 ARG EDGE_CLOUD_BASE_IMAGE=scratch
 
-FROM $REGISTRY/protoc-gen-swagger:2020-01-19 AS protoc-gen-swagger
-FROM $REGISTRY/go-swagger/swagger:v0.29.0.2mobiledgex AS swagger
+#FROM $REGISTRY/protoc-gen-swagger:2020-01-19 AS protoc-gen-swagger
+#FROM $REGISTRY/go-swagger/swagger:v0.29.0.2mobiledgex AS swagger
 
-FROM $REGISTRY/build:go1.15.2 AS build
+FROM $REGISTRY/build:go1.18.1 AS build
 
 ENV GOPATH=/go
 ENV PATH="/go/bin:${PATH}"
@@ -25,59 +25,53 @@ ENV GO111MODULE=on
 ENV DOCKER_BUILD=yes
 
 # Install support tools for docs
-RUN go get -u github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@v1.3.2
-COPY --from=protoc-gen-swagger /build/bin/protoc-gen-swagger /go/bin
+#RUN go get -u github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@v1.3.2
+#COPY --from=protoc-gen-swagger /build/bin/protoc-gen-swagger /go/bin
 
-WORKDIR /go/src/github.com/mobiledgex
+WORKDIR /go/src/github.com/edgexr
 # Do dependencies first so they can be cached
-COPY edge-cloud/go.mod edge-cloud/go.mod
-COPY edge-cloud/go.sum edge-cloud/go.sum
-COPY edge-cloud/Makefile.tools edge-cloud/Makefile.tools
-COPY edge-cloud-infra/go.mod edge-cloud-infra/go.mod
-COPY edge-cloud-infra/go.sum edge-cloud-infra/go.sum
-WORKDIR /go/src/github.com/mobiledgex/edge-cloud
+COPY edge-cloud-platform/go.mod edge-cloud-platform/go.mod
+COPY edge-cloud-platform/go.sum edge-cloud-platform/go.sum
+COPY edge-cloud-platform/Makefile.tools edge-cloud-platform/Makefile.tools
+WORKDIR /go/src/github.com/edgexr/edge-cloud-platform
 RUN go mod download
 RUN make -f Makefile.tools
-WORKDIR /go/src/github.com/mobiledgex/edge-cloud-infra
-RUN go mod download
 
-WORKDIR /go/src/github.com/mobiledgex
+WORKDIR /go/src/github.com/edgexr
 COPY . .
-WORKDIR /go/src/github.com/mobiledgex/edge-cloud-infra
+WORKDIR /go/src/github.com/edgexr/edge-cloud-platform
 ENV CGO_ENABLED=1
 RUN --mount=type=cache,id=go-build,target=/root/.cache/go-build make
 
 # Build the docs
-WORKDIR /go/src/github.com/mobiledgex/edge-cloud-infra
-COPY --from=swagger /usr/bin/swagger /go/bin/swagger
-RUN --mount=type=cache,id=go-build,target=/root/.cache/go-build make doc
-WORKDIR /go/src/github.com/mobiledgex/edge-cloud
-RUN --mount=type=cache,id=go-build,target=/root/.cache/go-build make doc
-RUN --mount=type=cache,id=go-build,target=/root/.cache/go-build make external-doc
-RUN --mount=type=cache,id=go-build,target=/root/.cache/go-build make -C d-match-engine/dme-proto external-swagger
+#WORKDIR /go/src/github.com/mobiledgex/edge-cloud-infra
+#COPY --from=swagger /usr/bin/swagger /go/bin/swagger
+#RUN --mount=type=cache,id=go-build,target=/root/.cache/go-build make doc
+#WORKDIR /go/src/github.com/mobiledgex/edge-cloud
+#RUN --mount=type=cache,id=go-build,target=/root/.cache/go-build make doc
+#RUN --mount=type=cache,id=go-build,target=/root/.cache/go-build make external-doc
+#RUN --mount=type=cache,id=go-build,target=/root/.cache/go-build make -C d-match-engine/dme-proto external-swagger
 
 FROM $EDGE_CLOUD_BASE_IMAGE
 
 # Will be overridden during build from the command line
 ARG BUILD_TAG=latest
 
-ADD edge-cloud/docker/mex-docker.env /root/mex-docker.env
-ADD edge-cloud/docker/edge-cloud-entrypoint.sh /usr/local/bin
-ADD edge-cloud/docker/test-edgectl.sh /usr/local/bin
-ADD edge-cloud/docker/atomic-certs-update.sh /usr/local/bin
+ADD edge-cloud-platform/build/docker/mex-docker.env /root/mex-docker.env
+ADD edge-cloud-platform/build/docker/edge-cloud-entrypoint.sh /usr/local/bin
+ADD edge-cloud-platform/build/docker/test-edgectl.sh /usr/local/bin
+ADD edge-cloud-platform/build/docker/atomic-certs-update.sh /usr/local/bin
 RUN chmod +x /usr/local/bin/edge-cloud-entrypoint.sh \
 	     /usr/local/bin/test-edgectl.sh \
 	     /usr/local/bin/atomic-certs-update.sh
 
 COPY --from=build /go/bin/controller \
-		  /go/bin/crmserver \
-		  /go/bin/dme-server \
+		  /go/bin/crm \
+		  /go/bin/dme \
 		  /go/bin/cluster-svc \
 		  /go/bin/edgectl \
 		  /go/bin/edgeturn \
 		  /go/bin/frm \
-		  /go/bin/tok-srv-sim \
-		  /go/bin/loc-api-sim \
 		  /go/bin/mc \
 		  /go/bin/shepherd \
 		  /go/bin/mcctl \
@@ -88,11 +82,11 @@ COPY --from=build /go/bin/controller \
 		  /usr/local/bin/
 COPY --from=build /go/plugins /plugins
 
-COPY --from=build /go/src/github.com/mobiledgex/edge-cloud/edgeproto/doc/*.json /usr/local/doc/internal/
-COPY --from=build /go/src/github.com/mobiledgex/edge-cloud/edgeproto/external-doc/*.json /usr/local/doc/external/
-COPY --from=build /go/src/github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto/external-doc/*.json /usr/local/doc/client/
-COPY --from=build /go/src/github.com/mobiledgex/edge-cloud-infra/doc/apidocs.swagger.json /usr/local/doc/mc/
-COPY --from=build /go/src/github.com/mobiledgex/edge-cloud-infra/static/MobiledgeX_Logo.png /MobiledgeX_Logo.png
+#COPY --from=build /go/src/github.com/mobiledgex/edge-cloud/edgeproto/doc/*.json /usr/local/doc/internal/
+#COPY --from=build /go/src/github.com/mobiledgex/edge-cloud/edgeproto/external-doc/*.json /usr/local/doc/external/
+#COPY --from=build /go/src/github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto/external-doc/*.json /usr/local/doc/client/
+#COPY --from=build /go/src/github.com/mobiledgex/edge-cloud-infra/doc/apidocs.swagger.json /usr/local/doc/mc/
+COPY --from=build /go/src/github.com/edgexr/edge-cloud-platform/build/Brand_Logo.png /Brand_Logo.png
 
 RUN echo $BUILD_TAG >/version.txt
 

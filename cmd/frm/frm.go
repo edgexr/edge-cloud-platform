@@ -21,20 +21,20 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/version"
-	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	"github.com/edgexr/edge-cloud-platform/pkg/version"
 )
 
 var notifyAddrs = flag.String("notifyAddrs", "127.0.0.1:50001", "Comma separated list of controller notify listener addresses")
 var hostname = flag.String("hostname", "", "Unique hostname")
 var debugLevels = flag.String("d", "", fmt.Sprintf("Comma separated list of %v", log.DebugLevelStrings))
 var region = flag.String("region", "local", "region name")
-var appDNSRoot = flag.String("appDNSRoot", "mobiledgex.net", "App domain name root")
+var appDNSRoot = flag.String("appDNSRoot", "appdnsdroot.net", "App domain name root")
 
 var sigChan chan os.Signal
 var nodeMgr node.NodeMgr

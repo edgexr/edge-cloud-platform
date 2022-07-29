@@ -61,6 +61,7 @@ type AlertMgrServer struct {
 	waitGrp               sync.WaitGroup
 	stop                  chan struct{}
 	client                Client
+	slackIconURL          string
 }
 
 // TODO - use version to track where this alert came from
@@ -399,7 +400,7 @@ func (s *AlertMgrServer) CreateReceiver(ctx context.Context, receiver *ormapi.Al
 			Text:      alertmanagerConfigSlackText,
 			TitleLink: alertmanagerConfigSlackTitleLink,
 			Fallback:  alertmanagerConfigSlackFallback,
-			IconURL:   alertmanagerConfigSlackIcon,
+			IconURL:   s.slackIconURL,
 		}
 		rec = alertmanager_config.Receiver{
 			// to make the name unique - construct it with all the fields and username

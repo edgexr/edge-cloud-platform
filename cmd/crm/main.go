@@ -27,18 +27,18 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	proxycerts "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -60,7 +60,7 @@ var vmImageVersion = flag.String("vmImageVersion", "", "CRM VM baseimage version
 var packageVersion = flag.String("packageVersion", "", "CRM VM baseimage debian package version")
 var cloudletVMImagePath = flag.String("cloudletVMImagePath", "", "Image path where CRM VM baseimages are present")
 var commercialCerts = flag.Bool("commercialCerts", false, "Get TLS certs from LetsEncrypt. If false CRM will generate its own self-signed certs")
-var appDNSRoot = flag.String("appDNSRoot", "mobiledgex.net", "App domain name root")
+var appDNSRoot = flag.String("appDNSRoot", "appdnsroot.net", "App domain name root")
 var chefServerPath = flag.String("chefServerPath", "", "Chef server path")
 var upgrade = flag.Bool("upgrade", false, "Flag to initiate upgrade run as part of crm bringup")
 var cacheDir = flag.String("cacheDir", "/tmp/", "Cache used by CRM to store frequently accessed data")

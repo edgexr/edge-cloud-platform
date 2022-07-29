@@ -23,11 +23,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miekg/dns"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/miekg/dns"
 	"gortc.io/stun"
 )
 
@@ -126,7 +126,7 @@ func stunGetMyIP(ctx context.Context) (string, error) {
 	var myip string
 
 	// Creating a "connection" to STUN server.
-	c, err := stun.Dial("udp", "stun.mobiledgex.net:19302")
+	c, err := stun.Dial("udp", "stun.edgexr.net:19302")
 	if err != nil {
 		return "", err
 	}

@@ -2,6 +2,13 @@
 CANAME=test-ca
 SERVERNAME=test-server
 
+if [ -n "$1" ]; then
+    CANAME=$1
+fi
+if [ -n "$2" ]; then
+    SERVERNAME=$2
+fi
+
 if [ -e out/${CANAME}.crt ]; then
     echo "certs exist"
     exit 0

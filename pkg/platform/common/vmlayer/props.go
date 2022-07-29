@@ -21,12 +21,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-chef/chef"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/go-chef/chef"
 )
 
 type VMProperties struct {
@@ -59,7 +58,7 @@ var ImageFormatQcow2 = "qcow2"
 var ImageFormatVmdk = "vmdk"
 
 var MEXInfraVersion = "4.10.0"
-var ImageNamePrefix = "mobiledgex-v"
+var ImageNamePrefix = "edgecloud-v"
 var DefaultOSImageName = ImageNamePrefix + MEXInfraVersion
 
 // NoSubnetDNS means that DNS servers are not specified when creating the subnet
@@ -73,8 +72,6 @@ var NoConfigExternalRouter = "NOCONFIG"
 // NoExternalRouter means there is no router at all and we connect the LB to the k8s pods on the same subnet
 // this may eventually be the default and possibly only option
 var NoExternalRouter = "NONE"
-
-var DefaultCloudletVMImagePath = "https://artifactory.mobiledgex.net/artifactory/baseimages/"
 
 // properties common to all VM providers
 var VMProviderProps = map[string]*edgeproto.PropertyInfo{
@@ -218,14 +215,10 @@ func GetCertFilePath(key *edgeproto.CloudletKey) string {
 }
 
 func GetCloudletVMImagePath(imgPath, imgVersion string, imgSuffix string) string {
-	vmRegistryPath := DefaultCloudletVMImagePath
-	if imgPath != "" {
-		vmRegistryPath = imgPath
+	if !strings.HasSuffix(imgPath, "/") {
+		imgPath = imgPath + "/"
 	}
-	if !strings.HasSuffix(vmRegistryPath, "/") {
-		vmRegistryPath = vmRegistryPath + "/"
-	}
-	return vmRegistryPath + GetCloudletVMImageName(imgVersion) + imgSuffix
+	return imgPath + GetCloudletVMImageName(imgVersion) + imgSuffix
 }
 
 // GetCloudletSecurityGroupName overrides cloudlet wide security group if set in
@@ -395,9 +388,6 @@ func (vp *VMProperties) GetChefClient() *chef.Client {
 }
 
 func (vp *VMProperties) GetChefServerPath() string {
-	if vp.CommonPf.ChefServerPath == "" {
-		return chefmgmt.DefaultChefServerPath
-	}
 	return vp.CommonPf.ChefServerPath
 }
 

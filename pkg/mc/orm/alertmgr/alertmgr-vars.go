@@ -73,9 +73,7 @@ var (
 
 	alertmanagerConfigSlackTitleLink = `{{ template "console.link" . }}`
 
-	alertmanagerConfigSlackIcon = "https://www.mobiledgex.com/img/logo.svg"
-
-	alertmanagerConfigPagerDutyClient      = "MobiledgeX Monitoring"
+	alertmanagerConfigPagerDutyClient      = "Edge Cloud Monitoring"
 	alertmanagerConfigPagerDutyDescription = `{{ template "common.title" . }}`
 	alertmanagerConfigPagerDutyDetails     = map[string]string{
 		"firing":   `{{ template "pagerduty.instances" .Alerts.Firing }}`,

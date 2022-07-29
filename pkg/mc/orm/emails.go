@@ -26,13 +26,13 @@ import (
 	"text/template"
 	"time"
 
-	jwt "github.com/golang-jwt/jwt/v4"
-	"github.com/labstack/echo"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	jwt "github.com/golang-jwt/jwt/v4"
+	"github.com/labstack/echo"
 )
 
 // These are email templates. Eventually these should be pulled
@@ -69,6 +69,7 @@ type emailTmplArg struct {
 	Browser string
 	IP      string
 	MCAddr  string
+	Support string
 }
 
 // Use global variable to store func so that for unit-testing we
@@ -108,7 +109,7 @@ Subject: Password Reset Request
 
 Hi {{.Name}},
 
-You recently requested to reset your password for your MobiledgeX account. Use the link below to reset it. This password reset is only valid for the next 1 hour.
+You recently requested to reset your password for your Edge Cloud account. Use the link below to reset it. This password reset is only valid for the next 1 hour.
 
 {{ if .URL}}
 Reset your password: {{.URL}}
@@ -122,10 +123,10 @@ mcctl user passwordreset token={{.Token}}
 {{- end}}
 {{- end}}
 
-For security, this request was received from a {{.OS}} device using {{.Browser}} with IP {{.IP}}. If you did not request this password reset, please ignore this email or contact MobiledgeX support for assistance.
+For security, this request was received from a {{.OS}} device using {{.Browser}} with IP {{.IP}}. If you did not request this password reset, please ignore this email or contact {{.Support}} for assistance.
 
 Thanks!
-MobiledgeX Team
+Edge Cloud Team
 `
 
 var passwordResetNoneT = `From: {{.From}}
@@ -134,12 +135,12 @@ Subject: Password Reset Request
 
 Hi,
 
-A password reset request was submitted to MobiledgeX for this email ({{.Email}}), but no user account is associated with this email. If you submitted a password request recently, perhaps your account is using a different email address. Otherwise, you may ignore this email.
+A password reset request was submitted to Edge Cloud for this email ({{.Email}}), but no user account is associated with this email. If you submitted a password request recently, perhaps your account is using a different email address. Otherwise, you may ignore this email.
 
 For security, this request was received from a {{.OS}} device using {{.Browser}} with IP {{.IP}}.
 
 Thanks!
-MobiledgeX Team
+Edge Cloud Team
 `
 
 type notifyTmplArg struct {
@@ -160,6 +161,10 @@ func sendNotify(ctx context.Context, to, subject, message string) error {
 	if getSkipVerifyEmail(ctx, nil) {
 		return nil
 	}
+	if to == "" {
+		return fmt.Errorf("cannot send notify email as to field is blank, fix mc config")
+	}
+
 	noreply, err := getNoreply(ctx)
 	if err != nil {
 		return err
@@ -181,11 +186,11 @@ func sendNotify(ctx context.Context, to, subject, message string) error {
 
 var welcomeT = `From: {{.From}}
 To: {{.To}}
-Subject: Welcome to MobiledgeX!
+Subject: Welcome to Edge Cloud!
 
 Hi {{.Name}},
 
-Thanks for creating a MobiledgeX account! You are now one step away from utilizing the power of the edge. Please verify this email account by clicking on the link below. Then you'll be able to login and get started.
+Thanks for creating an Edge Cloud account! You are now one step away from utilizing the power of the edge. Please verify this email account by clicking on the link below. Then you'll be able to login and get started.
 
 {{ if .URL}}
 Click to verify: {{.URL}}
@@ -199,10 +204,10 @@ mcctl user verifyemail token={{.Token}}
 {{- end}}
 {{- end}}
 
-For security, this request was received for {{.Email}} from a {{.OS}} device using {{.Browser}} with IP {{.IP}}. If you are not expecting this email, please ignore this email or contact MobiledgeX support for assistance.
+For security, this request was received for {{.Email}} from a {{.OS}} device using {{.Browser}} with IP {{.IP}}. If you are not expecting this email, please ignore this email or contact {{.Support}} for assistance.
 
 Thanks!
-MobiledgeX Team
+Edge Cloud Team
 `
 
 func sendVerifyEmail(c echo.Context, username string, req *ormapi.EmailRequest) error {
@@ -211,6 +216,10 @@ func sendVerifyEmail(c echo.Context, username string, req *ormapi.EmailRequest) 
 		return nil
 	}
 	noreply, err := getNoreply(ctx)
+	if err != nil {
+		return err
+	}
+	config, err := getConfig(ctx)
 	if err != nil {
 		return err
 	}
@@ -239,6 +248,7 @@ func sendVerifyEmail(c echo.Context, username string, req *ormapi.EmailRequest) 
 		Browser: browser,
 		IP:      clientIP,
 		MCAddr:  serverConfig.PublicAddr,
+		Support: emailGetSupportString(config),
 	}
 	if serverConfig.ConsoleAddr != "" && serverConfig.VerifyEmailConsolePath != "" {
 		arg.URL = serverConfig.ConsoleAddr + serverConfig.VerifyEmailConsolePath + "?token=" + cookie
@@ -342,7 +352,7 @@ Hi {{.Name}},
 
 User {{.Admin}} has added you ({{.Email}}) to Organization {{.Org}}! Resources and permissions corresponding to your role {{.Role}} are now available to you.
 
-MobiledgeX Team
+Edge Cloud Team
 `
 
 func sendAddedEmail(ctx context.Context, admin, name, email, org, role string) error {
@@ -391,21 +401,22 @@ type otpTmplArg struct {
 	Name               string
 	TOTP               string
 	TOTPExpirationTime string
+	Support            string
 }
 
 var otpT = `From: {{.From}}
 To: {{.To}}
-Subject: One Time Password (OTP) for you MobiledgeX account login
+Subject: One Time Password (OTP) for you Edge Cloud account login
 
 Hi {{.Name}},
 
 The One Time Password (OTP) for your account login is {{.TOTP}}.
 This OTP is valid for {{.TOTPExpirationTime}}.
 
-In case you have not requested for OTP, please contact us at support@mobiledgex.com
+In case you have not requested for OTP, please contact {{.Support}} for assistance.
 
 Thanks!
-MobiledgeX Team
+Edge Cloud Team
 `
 
 func sendOTPEmail(ctx context.Context, username, email, totp, totpExpTime string) error {
@@ -416,12 +427,17 @@ func sendOTPEmail(ctx context.Context, username, email, totp, totpExpTime string
 	if err != nil {
 		return err
 	}
+	config, err := getConfig(ctx)
+	if err != nil {
+		return err
+	}
 	arg := otpTmplArg{
 		From:               noreply.Email,
 		To:                 email,
 		Name:               username,
 		TOTP:               totp,
 		TOTPExpirationTime: totpExpTime,
+		Support:            emailGetSupportString(config),
 	}
 	buf := bytes.Buffer{}
 	if err := otpTmpl.Execute(&buf, &arg); err != nil {
@@ -444,6 +460,7 @@ type operatorReportTmplArg struct {
 	FileName     string
 	Attachment   string
 	Timezone     string
+	Support      string
 }
 
 var operatorReportT = `Content-Type: multipart/mixed; boundary="{{.Boundary}}"
@@ -462,10 +479,10 @@ Hi {{.Name}},
 Please find the attached report generated for cloudlets part of {{.Org}} organization for the period {{.StartDate}} to {{.EndDate}}
 
 This report was automatically generated by the configured reporter: {{.ReporterName}}
-If you did not request this report, please contact MobiledgeX support for assistance.
+If you did not request this report, please contact {{.Support}} for assistance.
 
 Thanks!
-MobiledgeX Team
+Edge Cloud Team
 
 --{{.Boundary}}
 Content-Type: application/octet-stream
@@ -482,6 +499,10 @@ func sendOperatorReportEmail(ctx context.Context, username, email, reporterName 
 		return nil
 	}
 	noreply, err := getNoreply(ctx)
+	if err != nil {
+		return err
+	}
+	config, err := getConfig(ctx)
 	if err != nil {
 		return err
 	}
@@ -503,6 +524,7 @@ func sendOperatorReportEmail(ctx context.Context, username, email, reporterName 
 		FileName:     pdfFileName,
 		Attachment:   attachment,
 		Timezone:     report.Timezone,
+		Support:      emailGetSupportString(config),
 	}
 	buf := bytes.Buffer{}
 	if err := operatorReportTmpl.Execute(&buf, &arg); err != nil {
@@ -512,4 +534,11 @@ func sendOperatorReportEmail(ctx context.Context, username, email, reporterName 
 	log.SpanLog(ctx, log.DebugLevelApi, "send operator report email",
 		"from", noreply.Email, "to", email, "report file", pdfFileName)
 	return sendMailFunc(noreply, email, &buf)
+}
+
+func emailGetSupportString(config *ormapi.Config) string {
+	if config.SupportEmail != "" {
+		return config.SupportEmail
+	}
+	return "support"
 }

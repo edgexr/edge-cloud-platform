@@ -782,12 +782,20 @@ func main() {
 		}
 	}
 
+	// Convert common name to _.xyz.net name for cert issuing
+	// This is because each dme is given a region.dme.edgecloud.net common name,
+	// and we want to issue a single cert for all *.dme.edgecloud.net.
+	certCommonName := nodeMgr.CommonName()
+	commonNameParts := strings.Split(certCommonName, ".")
+	commonNameParts[0] = "_"
+	certCommonName = strings.Join(commonNameParts, ".")
+
 	// Setup PublicCertManager for dme
 	var publicCertManager *node.PublicCertManager
 	if publicTls := os.Getenv("PUBLIC_ENDPOINT_TLS"); publicTls == "false" {
-		publicCertManager, err = node.NewPublicCertManager("_.dme.mobiledgex.net", nil, "", "")
+		publicCertManager, err = node.NewPublicCertManager(certCommonName, nil, "", "")
 	} else {
-		publicCertManager, err = node.NewPublicCertManager("_.dme.mobiledgex.net", getPublicCertApi, *tlsApiCertFile, *tlsApiKeyFile)
+		publicCertManager, err = node.NewPublicCertManager(certCommonName, getPublicCertApi, *tlsApiCertFile, *tlsApiKeyFile)
 	}
 	if err != nil {
 		span.Finish()

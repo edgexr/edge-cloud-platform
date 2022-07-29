@@ -27,18 +27,18 @@ import (
 	"sync"
 	"time"
 
-	influxdb "github.com/influxdata/influxdb/client/v2"
-	"github.com/labstack/echo"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/gcs"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	influxdb "github.com/influxdata/influxdb/client/v2"
+	"github.com/labstack/echo"
 )
 
 var (
@@ -53,8 +53,8 @@ var (
 	OutputPDF       = false
 )
 
-func getOperatorReportsBucketName(deploymentTag string) string {
-	return fmt.Sprintf("mobiledgex-%s-operator-reports", deploymentTag)
+func getOperatorReportsBucketName(deploymentName, deploymentTag string) string {
+	return fmt.Sprintf("%s-%s-operator-reports", deploymentName, deploymentTag)
 }
 
 func getScheduleDayMonthCount(schedule edgeproto.ReportSchedule) (int, int, error) {
@@ -1634,7 +1634,7 @@ func GenerateCloudletReport(ctx context.Context, username string, regions []stri
 
 // Must call GCSClient.Close() when done
 func getGCSStorageClient(ctx context.Context) (*gcs.GCSClient, error) {
-	bucketName := getOperatorReportsBucketName(serverConfig.DeploymentTag)
+	bucketName := getOperatorReportsBucketName(serverConfig.DeploymentName, serverConfig.DeploymentTag)
 	credsObj, err := gcs.GetGCSCreds(ctx, serverConfig.vaultConfig)
 	if err != nil {
 		return nil, err

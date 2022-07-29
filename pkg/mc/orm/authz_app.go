@@ -20,8 +20,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 )
 
 func authzCreateApp(ctx context.Context, region, username string, obj *edgeproto.App, resource, action string) error {
@@ -38,8 +38,8 @@ func authzUpdateApp(ctx context.Context, region, username string, obj *edgeproto
 	return authorized(ctx, username, obj.Key.Organization, resource, action)
 }
 
-// checkImagePath checks that for a mobiledgex image path, the App's org matches
-// the image path's org. This assumes someone cannot spoof a .mobiledgex.net DNS
+// checkImagePath checks that for a Edge Cloud image path, the App's org matches
+// the image path's org. This assumes someone cannot spoof the DNS
 // address.
 func checkImagePath(ctx context.Context, obj *edgeproto.App) error {
 	if obj.ImagePath == "" {
@@ -60,8 +60,23 @@ func checkImagePath(ctx context.Context, obj *edgeproto.App) error {
 	if u.Host == "" {
 		return fmt.Errorf("Unable to determine host from ImagePath %s", obj.ImagePath)
 	}
-	dns := ".mobiledgex.net"
-	if !strings.HasSuffix(u.Host, ".mobiledgex.net") {
+
+	edgeCloudHosted := false
+	if serverConfig.GitlabAddr != "" {
+		addr := strings.TrimPrefix(serverConfig.GitlabAddr, "http://")
+		addr = strings.TrimPrefix(addr, "https://")
+		if strings.Contains(obj.ImagePath, addr) {
+			edgeCloudHosted = true
+		}
+	}
+	if serverConfig.ArtifactoryAddr != "" {
+		addr := strings.TrimPrefix(serverConfig.ArtifactoryAddr, "http://")
+		addr = strings.TrimPrefix(addr, "https://")
+		if strings.Contains(obj.ImagePath, addr) {
+			edgeCloudHosted = true
+		}
+	}
+	if !edgeCloudHosted {
 		return nil
 	}
 	// user could put an IP instead of DNS entry to bypass above check,
@@ -100,7 +115,7 @@ func checkImagePath(ctx context.Context, obj *edgeproto.App) error {
 	}
 
 	if strings.ToLower(targetOrg) != strings.ToLower(obj.Key.Organization) {
-		return fmt.Errorf("ImagePath for %s registry using organization '%s' does not match App developer name '%s', must match", dns, targetOrg, obj.Key.Organization)
+		return fmt.Errorf("ImagePath %s for Edge Cloud hosted registry using organization '%s' does not match App developer name '%s', must match", obj.ImagePath, targetOrg, obj.Key.Organization)
 	}
 	return nil
 }

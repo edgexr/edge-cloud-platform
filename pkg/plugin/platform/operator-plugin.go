@@ -17,9 +17,9 @@ package main
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha"
-	"github.com/edgexr/edge-cloud-platform/pkg/dme-platform"
+	operator "github.com/edgexr/edge-cloud-platform/pkg/dme-platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/dme-platform/defaultoperator"
+	"github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
