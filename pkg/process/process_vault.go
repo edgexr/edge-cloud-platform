@@ -40,6 +40,7 @@ type Vault struct {
 	ListenAddr string
 	RootToken  string
 	CADir      string
+	PKIDomain  string
 	cmd        *exec.Cmd
 }
 
@@ -304,6 +305,9 @@ func (p *Vault) RunWithInput(bin, args string, input io.Reader, err *error) stri
 		fmt.Sprintf("VAULT_ADDR=%s", p.ListenAddr),
 		fmt.Sprintf("VAULT_TOKEN=%s", p.RootToken),
 		fmt.Sprintf("CADIR=%s", p.CADir))
+	if p.PKIDomain != "" {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("PKI_DOMAIN=%s", p.PKIDomain))
+	}
 	if input != nil {
 		cmd.Stdin = input
 	}

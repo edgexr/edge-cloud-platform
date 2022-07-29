@@ -73,7 +73,7 @@ settings:
 gpudrivers:
 - key:
     name: gpu-driver-global
-  storagebucketname: mobiledgex-dev-gpu-drivers
+  storagebucketname: edgecloud-dev-gpu-drivers
   licenseconfigstoragepath: local/edgecloudorg/gpu-driver-global/licenseconfig/license.conf
 apps:
 - key:

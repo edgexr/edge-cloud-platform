@@ -36,6 +36,10 @@ if [ -z "$REGION" ]; then
 fi
 echo "Setting up Vault region $REGION"
 
+if [ -z $PKI_DOMAIN ]; then
+    PKI_DOMAIN=internaldomain.net
+fi
+
 # set up regional kv database
 vault secrets enable -path=$REGION/jwtkeys kv
 vault kv enable-versioning $REGION/jwtkeys
@@ -44,14 +48,14 @@ vault write $REGION/jwtkeys/config max_versions=2
 # set up regional cert issuer role
 vault write pki-regional/roles/$REGION \
       allow_localhost=true \
-      allowed_domains="mobiledgex.net" \
+      allowed_domains="$PKI_DOMAIN" \
       allow_subdomains=true \
       allowed_uri_sans="region://$REGION"
 
 # set up cloudlet regional cert issuer role
 vault write pki-regional-cloudlet/roles/$REGION \
       allow_localhost=true \
-      allowed_domains="mobiledgex.net" \
+      allowed_domains="$PKI_DOMAIN" \
       allow_subdomains=true \
       allowed_uri_sans="region://$REGION"
 
@@ -170,7 +174,7 @@ vault write -f auth/approle/role/$REGION.rotator/secret-id
 # Generate regional cert for edgectl
 mkdir -p /tmp/edgectl.$REGION
 vault write -format=json pki-regional/issue/$REGION \
-      common_name=edgectl.mobiledgex.net \
+      common_name=edgectl.$PKI_DOMAIN \
       alt_names=localhost \
       ip_sans="127.0.0.1,0.0.0.0" \
       uri_sans="region://$REGION" > /tmp/edgectl.$REGION/issue

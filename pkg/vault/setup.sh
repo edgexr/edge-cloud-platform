@@ -35,6 +35,9 @@ esac
 if [ -z $CADIR ]; then
     CADIR=/tmp/vault_pki
 fi
+if [ -z $PKI_DOMAIN ]; then
+    PKI_DOMAIN=internaldomain.net
+fi
 
 rm -Rf $CADIR
 mkdir -p $CADIR
@@ -96,7 +99,7 @@ vault write pki-regional-cloudlet/intermediate/set-signed certificate=@$CADIR/cl
 # set up global cert issuer role
 vault write pki-global/roles/default \
       allow_localhost=true \
-      allowed_domains="mobiledgex.net" \
+      allowed_domains="$PKI_DOMAIN" \
       allow_subdomains=true \
       allowed_uri_sans="region://none"
 

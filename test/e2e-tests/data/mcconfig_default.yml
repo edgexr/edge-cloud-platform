@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-notifyemailaddress: support@mobiledgex.com
 passwordmincracktimesec: 2.592e+06
 adminpasswordmincracktimesec: 6.3072e+07
 maxmetricsdatapoints: 10000

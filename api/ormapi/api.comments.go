@@ -109,7 +109,7 @@ var ControllerComments = map[string]string{
 
 var ConfigComments = map[string]string{
 	"locknewaccounts":               `Lock new accounts (must be unlocked by admin)`,
-	"notifyemailaddress":            `Email to notify when locked account is created`,
+	"notifyemailaddress":            `Email to notify when locked account is created, defaults to SupportEmail`,
 	"skipverifyemail":               `Skip email verification for new accounts (testing only)`,
 	"passwordmincracktimesec":       `User accounts min password crack time seconds (a measure of strength)`,
 	"adminpasswordmincracktimesec":  `Admin accounts min password crack time seconds (a measure of strength)`,
@@ -126,6 +126,8 @@ var ConfigComments = map[string]string{
 	"userlogintokenvalidduration":   `User login token valid duration (in format 2h30m10s, default 24h)`,
 	"apikeylogintokenvalidduration": `API key login token valid duration (in format 2h30m10s, default 4h)`,
 	"websockettokenvalidduration":   `Websocket auth token valid duration (in format 2h30m10s, default 2m)`,
+	"supportemail":                  `Support email address shown to users, i.e. support@edgecloud.net`,
+	"slackiconurl":                  `Slack icon URL used for alert manager slack receivers`,
 }
 
 var McRateLimitFlowSettingsComments = map[string]string{

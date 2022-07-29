@@ -24,12 +24,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-chef/chef"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/version"
-	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/version"
+	"github.com/go-chef/chef"
 )
 
 type CommonPlatform struct {
@@ -84,7 +84,7 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf
 
 	chefServerPath := platformConfig.ChefServerPath
 	if chefServerPath == "" {
-		chefServerPath = chefmgmt.DefaultChefServerPath
+		return fmt.Errorf("chef server path not specified")
 	}
 
 	chefClient, err := chefmgmt.GetChefClient(ctx, chefAuth.ApiKey, chefServerPath)

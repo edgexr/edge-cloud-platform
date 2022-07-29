@@ -214,7 +214,7 @@ func (s *GPUDriverApi) CreateGPUDriver(in *edgeproto.GPUDriver, cb edgeproto.GPU
 			return in.Key.ExistsError()
 		}
 		in.State = ChangeInProgress
-		in.StorageBucketName = cloudcommon.GetGPUDriverBucketName(nodeMgr.DeploymentTag)
+		in.StorageBucketName = cloudcommon.GetGPUDriverBucketName(nodeMgr.DeploymentName, nodeMgr.DeploymentTag)
 		in.LicenseConfigStoragePath, err = cloudcommon.GetGPUDriverLicenseStoragePath(&in.Key, *region)
 		if err != nil {
 			return err

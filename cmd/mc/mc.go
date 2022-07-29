@@ -21,10 +21,10 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm"
 )
 
 var addr = flag.String("addr", "127.0.0.1:9900", "REST listener address")
@@ -102,6 +102,7 @@ func main() {
 		UsageCheckpointInterval:  *usageCheckpointInterval,
 		DomainName:               nodeMgr.CommonName(),
 		StaticDir:                *staticDir,
+		DeploymentName:           nodeMgr.DeploymentName,
 		DeploymentTag:            nodeMgr.DeploymentTag,
 		ControllerNotifyPort:     *controllerNotifyPort,
 		PublicAddr:               *publicAddr,

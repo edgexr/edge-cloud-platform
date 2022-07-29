@@ -26,6 +26,7 @@ cmd/controller/influxq_client/.influxdb
 cmd/controller/influxq_client/influxdb.log
 cmd/controller/.influxdb/*
 pkg/tls/out
+pkg/cloudcommon/node/out
 
 pkg/mc/orm/dump.sql
 pkg/mc/orm/vault.log

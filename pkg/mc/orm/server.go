@@ -109,6 +109,7 @@ type ServerConfig struct {
 	UsageCheckpointInterval  string
 	DomainName               string
 	StaticDir                string
+	DeploymentName           string
 	DeploymentTag            string
 	ControllerNotifyPort     string
 	ConsoleAddr              string

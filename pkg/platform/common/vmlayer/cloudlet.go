@@ -18,13 +18,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 
@@ -102,8 +102,8 @@ func (v *VMPlatform) GetCloudletImageToUse(ctx context.Context, updateCallback e
 
 	// imageBasePath is the path minus the file
 	imageBasePath := v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath
-	if imageBasePath != "" {
-		imageBasePath = DefaultCloudletVMImagePath
+	if imageBasePath == "" {
+		return "", fmt.Errorf("Get cloudlet image failed, cloudletVMImagePath not set")
 	}
 	imageVersion := v.VMProperties.CommonPf.PlatformConfig.VMImageVersion
 	if imageVersion == "" {
@@ -229,6 +229,13 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	cloudletResourcesCreated := false
 	log.SpanLog(ctx, log.DebugLevelInfra, "Creating cloudlet", "cloudletName", cloudlet.Key.Name)
 
+	if pfConfig.ChefServerPath == "" {
+		return false, fmt.Errorf("chef server path not specified")
+	}
+	if pfConfig.ContainerRegistryPath == "" {
+		return false, fmt.Errorf("container registry path not specified")
+	}
+
 	if !pfConfig.TestMode {
 		err = v.VMProperties.CommonPf.InitCloudletSSHKeys(ctx, accessApi)
 		if err != nil {
@@ -266,20 +273,8 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		pfConfig.TlsCertFile = crtFile
 	}
 
-	if pfConfig.ChefServerPath == "" {
-		pfConfig.ChefServerPath = chefmgmt.DefaultChefServerPath
-	}
-
 	if cloudlet.InfraConfig.ExternalNetworkName != "" {
 		v.VMProperties.SetCloudletExternalNetwork(cloudlet.InfraConfig.ExternalNetworkName)
-	}
-
-	// For real setups, ansible will always specify the correct
-	// cloudlet container and vm image paths to the controller.
-	// But for local testing convenience, we default to the hard-coded
-	// ones if not specified.
-	if pfConfig.ContainerRegistryPath == "" {
-		pfConfig.ContainerRegistryPath = infracommon.DefaultContainerRegistryPath
 	}
 
 	// save caches needed for flavors
@@ -358,7 +353,7 @@ func (v *VMPlatform) GetRestrictedCloudletStatus(ctx context.Context, cloudlet *
 
 	chefServerPath := pfConfig.ChefServerPath
 	if chefServerPath == "" {
-		chefServerPath = chefmgmt.DefaultChefServerPath
+		return fmt.Errorf("chef server path not specified")
 	}
 
 	chefClient, err := chefmgmt.GetChefClient(ctx, chefAuth.ApiKey, chefServerPath)
@@ -451,7 +446,7 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	}
 
 	if pfConfig.ChefServerPath == "" {
-		pfConfig.ChefServerPath = chefmgmt.DefaultChefServerPath
+		return fmt.Errorf("chef server path not specified")
 	}
 
 	v.Caches = caches
@@ -583,7 +578,7 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 	}
 
 	if pfConfig.ContainerRegistryPath == "" {
-		pfConfig.ContainerRegistryPath = infracommon.DefaultContainerRegistryPath
+		return nil, fmt.Errorf("container registry path not specified")
 	}
 
 	if cloudlet.InfraConfig.ExternalNetworkName != "" {
