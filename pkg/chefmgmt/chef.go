@@ -36,12 +36,11 @@ import (
 
 const (
 	// Chef Policies
-	ChefPolicyBase        = "base"
-	ChefPolicyDocker      = "docker_crm"
-	ChefPolicyK8s         = "k8s_crm"
-	ChefPolicyK8sWorker   = "k8s_worker_crm"
-	DefaultChefServerPath = "https://chef.mobiledgex.net/organizations/mobiledgex"
-	DefaultCacheDir       = "/root/crm_cache"
+	ChefPolicyBase      = "base"
+	ChefPolicyDocker    = "docker_crm"
+	ChefPolicyK8s       = "k8s_crm"
+	ChefPolicyK8sWorker = "k8s_worker_crm"
+	DefaultCacheDir     = "/root/crm_cache"
 )
 
 const (
@@ -120,7 +119,7 @@ const (
 
 func GetChefClient(ctx context.Context, apiKey, chefServerPath string) (*chef.Client, error) {
 	if chefServerPath == "" {
-		chefServerPath = DefaultChefServerPath
+		return nil, fmt.Errorf("chef server path not specified")
 	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "get chef client", "chefServerPath", chefServerPath)
@@ -324,11 +323,11 @@ func ChefClientCreate(ctx context.Context, client *chef.Client, chefParams *Serv
 		}
 		err = client.ACLs.Put("nodes", clientName, aclType, acl)
 		if err != nil {
-			return "", fmt.Errorf("unable to add %s acl for node %s", aclType, clientName)
+			return "", fmt.Errorf("unable to add %s acl for node %s: %v: %v", aclType, clientName, acl, err)
 		}
 		err = client.ACLs.Put("clients", clientName, aclType, acl)
 		if err != nil {
-			return "", fmt.Errorf("unable to add %s acl for client %s", aclType, clientName)
+			return "", fmt.Errorf("unable to add %s acl for client %s: %v: %v", aclType, clientName, acl, err)
 		}
 	}
 

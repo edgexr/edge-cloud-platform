@@ -5,14 +5,12 @@
 # Only edge-cloud, edge-cloud-infra, and edge-proto are needed.
 *
 !.git
-!edge-cloud
-!edge-cloud-infra
+!edge-cloud-platform
 !edge-proto
 
 # etcd data comes from unit tests
-edge-cloud/controller/etcdLocal_data
-edge-cloud/edge-mvp
+edge-cloud-platform/cmd/controller/etcdLocal_data
 
 # postgres comes from unit tests
-edge-cloud-infra/mc/orm/.postgres
-edge-cloud-infra/openstack-tenant/agent/build
+edge-cloud-platform/pkg/mc/orm/.postgres
+edge-cloud-platform/build/qcow2

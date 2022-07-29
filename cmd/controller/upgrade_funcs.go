@@ -806,7 +806,7 @@ func AddSetupSpecificAppDNSRootForCloudlets(ctx context.Context, objStore objsto
 				return fmt.Errorf("Unmarshal Cloudlet %s failed: %s", key, err)
 			}
 
-			// this will transition xxx.mobiledgex.net to xxx.mobiledgex-qa.net for example, because
+			// this will transition xxx.edgecloud.net to xxx.edgecloud-qa.net for example, because
 			// our deployment scripts are changing the appDnsRoot parameter that is passed on deploy.
 			newRootLbFqdn := getCloudletRootLBFQDN(&cloudlet)
 			if cloudlet.RootLbFqdn == newRootLbFqdn {
@@ -868,7 +868,7 @@ func AddGPUDriverStoragePaths(ctx context.Context, objStore objstore.KVStore, al
 			if gpuDriver.StorageBucketName != "" && gpuDriver.LicenseConfigStoragePath != "" {
 				return nil // already done
 			}
-			gpuDriver.StorageBucketName = cloudcommon.GetGPUDriverBucketName(nodeMgr.DeploymentTag)
+			gpuDriver.StorageBucketName = cloudcommon.GetGPUDriverBucketName(nodeMgr.DeploymentName, nodeMgr.DeploymentTag)
 			gpuDriver.LicenseConfigStoragePath, err = OldGetGPUDriverLicenseStoragePath(&gpuDriver.Key)
 			if err != nil {
 				return err

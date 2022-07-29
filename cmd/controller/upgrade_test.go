@@ -183,6 +183,7 @@ func TestAllUpgradeFuncs(t *testing.T) {
 	cloudletLookup := &node.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup
+	nodeMgr.DeploymentName = "edgecloud"
 
 	// this is needed for AddSetupSpecificAppDNSRootForCloudlets,
 	// because the appinst_api_test sets it to something else.

@@ -24,34 +24,34 @@ import (
 	"sync"
 	"time"
 
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	awsec2 "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-ec2"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	k8sbm "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-baremetal"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/openstack"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vcd"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vmpool"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vsphere"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	platform "github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_fake"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_k8sbm"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_vmprovider"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_xind"
-	"github.com/edgexr/edge-cloud-platform/pkg/version"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
+	"github.com/edgexr/edge-cloud-platform/pkg/version"
 	"google.golang.org/grpc"
 )
 
@@ -65,7 +65,7 @@ var name = flag.String("name", "shepherd", "Unique name to identify a process")
 var parentSpan = flag.String("span", "", "Use parent span for logging")
 var region = flag.String("region", "local", "Region name")
 var promTargetsFile = flag.String("targetsFile", "/var/tmp/prom_targets.json", "Prometheus targets file")
-var appDNSRoot = flag.String("appDNSRoot", "mobiledgex.net", "App domain name root")
+var appDNSRoot = flag.String("appDNSRoot", "appdnsroot.net", "App domain name root")
 var chefServerPath = flag.String("chefServerPath", "", "Chef server path")
 var promScrapeInterval = flag.Duration("promScrapeInterval", defaultScrapeInterval, "Prometheus Scraping Interval")
 var haRole = flag.String("HARole", string(process.HARolePrimary), "HARole") // for info purposes and to distinguish nodes when running debug commands

@@ -207,7 +207,7 @@ var RootLBHostname = "shared"
 
 // Fully Qualified Domain Names (FQDNs) primarily come in the
 // the following format of 4 "labels" (where domain can actually
-// be more than one label itself, i.e. mobiledgex.net):
+// be more than one label itself, i.e. edgecloud.net):
 // cloudletobject.cloudlet.region.domain
 // In some cases, another label will be prepended
 // (such as for ip-per-k8s-services, the service name is prepended).
@@ -345,11 +345,11 @@ func GetCloudletResourceUsageMeasurement(pfType string) string {
 }
 
 // GCS Storage Bucket Name: used to store GPU driver packages
-func GetGPUDriverBucketName(deploymentTag string) string {
+func GetGPUDriverBucketName(deploymentName, deploymentTag string) string {
 	if deploymentTag == "" {
 		deploymentTag = "local"
 	}
-	return fmt.Sprintf("mobiledgex-%s-gpu-drivers", deploymentTag)
+	return fmt.Sprintf("%s-%s-gpu-drivers", deploymentName, deploymentTag)
 }
 
 func GetGPUDriverStoragePath(key *edgeproto.GPUDriverKey, region string) (string, error) {
