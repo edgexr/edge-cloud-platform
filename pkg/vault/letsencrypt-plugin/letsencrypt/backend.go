@@ -18,19 +18,20 @@ import (
 	"context"
 	"os"
 
-	"github.com/hashicorp/vault/sdk/logical"
 	"github.com/hashicorp/vault/sdk/framework"
+	"github.com/hashicorp/vault/sdk/logical"
 	"github.com/pkg/errors"
 )
 
 type tls struct {
 	Cert string `json:"cert"`
-	Key string `json:"key"`
-	Ttl int `json:"ttl"`
+	Key  string `json:"key"`
+	Ttl  int    `json:"ttl"`
 }
 
 type certlist map[string]interface{}
 
+var CertGenHost string
 var CertGenPort string
 
 // Factory creates a new usable instance of this secrets engine.
@@ -52,8 +53,13 @@ func Backend(c *logical.BackendConfig) *backend {
 	var b backend
 	var ok bool
 
-	CertGenPort, ok = os.LookupEnv("CERTGEN_PORT")
-	if ! ok {
+	CertGenHost, ok = os.LookupEnv("CERTGEN_SERVICE_HOST")
+	if !ok {
+		CertGenHost = "127.0.0.1"
+	}
+
+	CertGenPort, ok = os.LookupEnv("CERTGEN_SERVICE_PORT")
+	if !ok {
 		CertGenPort = "4567"
 	}
 
@@ -89,8 +95,8 @@ Return the letsencrypt cert for the given domain(s), generating it if it is not 
 `,
 				Fields: map[string]*framework.FieldSchema{
 					"domain": {
-						Type:		framework.TypeString,
-						Description:	"Domain(s) (comma-separated) for the cert",
+						Type:        framework.TypeString,
+						Description: "Domain(s) (comma-separated) for the cert",
 					},
 				},
 				Callbacks: map[logical.Operation]framework.OperationFunc{
