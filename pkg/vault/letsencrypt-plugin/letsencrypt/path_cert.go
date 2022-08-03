@@ -17,9 +17,9 @@ package letsencrypt
 import (
 	"context"
 
-	"github.com/hashicorp/vault/sdk/logical"
-	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/go-resty/resty/v2"
+	"github.com/hashicorp/vault/sdk/framework"
+	"github.com/hashicorp/vault/sdk/logical"
 )
 
 func (b *backend) pathCert(_ context.Context, req *logical.Request, d *framework.FieldData) (*logical.Response, error) {
@@ -29,8 +29,8 @@ func (b *backend) pathCert(_ context.Context, req *logical.Request, d *framework
 
 	client := resty.New()
 	resp, err := client.R().
-			SetResult(&t).
-			Get("http://127.0.0.1:" + CertGenPort + "/cert/" + domain)
+		SetResult(&t).
+		Get("http://" + CertGenHost + ":" + CertGenPort + "/cert/" + domain)
 	if err != nil {
 		b.Logger().Error(err.Error())
 		return logical.ErrorResponse(err.Error()), logical.ErrInvalidRequest
@@ -43,9 +43,9 @@ func (b *backend) pathCert(_ context.Context, req *logical.Request, d *framework
 
 	return &logical.Response{
 		Data: map[string]interface{}{
-			"cert":  t.Cert,
-			"key": t.Key,
-			"ttl": t.Ttl,
+			"cert": t.Cert,
+			"key":  t.Key,
+			"ttl":  t.Ttl,
 		},
 	}, nil
 }
