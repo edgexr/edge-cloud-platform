@@ -111,7 +111,7 @@ func TestAlertMgrServer(t *testing.T) {
 	testAlertMgrServer.Start()
 	// Wait refresh interval and check that the same alert is refreshed
 	time.Sleep(alertRefreshInterval * 2)
-	require.GreaterOrEqual(t, 2, fakeAlertmanager.AlertPosts)
+	require.GreaterOrEqual(t, fakeAlertmanager.AlertPosts, 2)
 	fakeAlertmanager.verifyAlertCnt(t, 1)
 	fakeAlertmanager.verifyAlertPresent(t, &testAlerts[0])
 	// Delete alert and check that alert doesn't get refreshed

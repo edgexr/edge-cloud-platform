@@ -161,7 +161,9 @@ components:
     EdgeprotoNetwork:
       properties:
         connection_type:
-          description: Network connection type
+          description: Network connection type, valid values are one of Undefined,
+            ConnectToLoadBalancer, ConnectToClusterNodes, ConnectToAll, or 0, 1, 2,
+            3
           type: string
         delete_prepare:
           description: Preparing to be deleted

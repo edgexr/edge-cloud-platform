@@ -334,7 +334,7 @@ type App struct {
 	Key AppKey `protobuf:"bytes,2,opt,name=key,proto3" json:"key"`
 	// URI of where image resides
 	ImagePath string `protobuf:"bytes,4,opt,name=image_path,json=imagePath,proto3" json:"image_path,omitempty"`
-	// Image type (see ImageType)
+	// Image type
 	ImageType ImageType `protobuf:"varint,5,opt,name=image_type,json=imageType,proto3,enum=edgeproto.ImageType" json:"image_type,omitempty"`
 	// Comma separated list of protocol:port pairs that the App listens on.
 	// Ex: "tcp:80,udp:10002".
@@ -366,9 +366,9 @@ type App struct {
 	DelOpt DeleteType `protobuf:"varint,20,opt,name=del_opt,json=delOpt,proto3,enum=edgeproto.DeleteType" json:"del_opt,omitempty"`
 	// Customization files passed through to implementing services
 	Configs []*ConfigFile `protobuf:"bytes,21,rep,name=configs,proto3" json:"configs,omitempty"`
-	// Option to run App on all nodes of the cluster
+	// True indicates App runs on all nodes of the cluster as it scales
 	ScaleWithCluster bool `protobuf:"varint,22,opt,name=scale_with_cluster,json=scaleWithCluster,proto3" json:"scale_with_cluster,omitempty"`
-	// Should this app have access to outside world?
+	// True indicates App is used internally with other Apps only, and no ports are exposed externally
 	InternalPorts bool `protobuf:"varint,23,opt,name=internal_ports,json=internalPorts,proto3" json:"internal_ports,omitempty"`
 	// Revision can be specified or defaults to current timestamp when app is updated
 	Revision string `protobuf:"bytes,24,opt,name=revision,proto3" json:"revision,omitempty"`
@@ -378,7 +378,7 @@ type App struct {
 	Md5Sum string `protobuf:"bytes,26,opt,name=md5sum,proto3" json:"md5sum,omitempty"`
 	// (_deprecated_) Auto provisioning policy name
 	AutoProvPolicy string `protobuf:"bytes,28,opt,name=auto_prov_policy,json=autoProvPolicy,proto3" json:"auto_prov_policy,omitempty"`
-	// (Deprecated) Access type
+	// (_deprecated_) Access type
 	AccessType AccessType `protobuf:"varint,29,opt,name=access_type,json=accessType,proto3,enum=edgeproto.AccessType" json:"access_type,omitempty"`
 	// Preparing to be deleted
 	DeletePrepare bool `protobuf:"varint,31,opt,name=delete_prepare,json=deletePrepare,proto3" json:"delete_prepare,omitempty"`
@@ -812,23 +812,21 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type AppApiClient interface {
-	// Create Application. Creates a definition for an application instance for Cloudlet deployment.
+	// Create Application. Creates a definition for an application for Cloudlet deployment.
 	CreateApp(ctx context.Context, in *App, opts ...grpc.CallOption) (*Result, error)
-	// Delete Application. Deletes a definition of an Application instance. Make sure no other application
-	// instances exist with that definition. If they do exist, you must delete those Application instances first.
+	// Delete Application. Deletes a definition of an application. Instances of the application must be deleted first.
 	DeleteApp(ctx context.Context, in *App, opts ...grpc.CallOption) (*Result, error)
-	// Update Application. Updates the definition of an Application instance.
+	// Update Application. Updates the definition of an application.
 	UpdateApp(ctx context.Context, in *App, opts ...grpc.CallOption) (*Result, error)
-	// Show Applications. Lists all Application definitions managed from the Edge Controller.
-	// Any fields specified will be used to filter results.
+	// Show Applications. Lists all application definitions. Any fields specified will be used to filter results.
 	ShowApp(ctx context.Context, in *App, opts ...grpc.CallOption) (AppApi_ShowAppClient, error)
-	// Add an AutoProvPolicy to the App
+	// Add an AutoProvPolicy to the application definition
 	AddAppAutoProvPolicy(ctx context.Context, in *AppAutoProvPolicy, opts ...grpc.CallOption) (*Result, error)
-	// Remove an AutoProvPolicy from the App
+	// Remove an AutoProvPolicy from the application definition
 	RemoveAppAutoProvPolicy(ctx context.Context, in *AppAutoProvPolicy, opts ...grpc.CallOption) (*Result, error)
-	// Add an AlertPolicy to the App
+	// Add an AlertPolicy to the application definition
 	AddAppAlertPolicy(ctx context.Context, in *AppAlertPolicy, opts ...grpc.CallOption) (*Result, error)
-	// Remove an AlertPolicy from the App
+	// Remove an AlertPolicy from the application definition
 	RemoveAppAlertPolicy(ctx context.Context, in *AppAlertPolicy, opts ...grpc.CallOption) (*Result, error)
 	// Discover cloudlets supporting deployments of App.DefaultFlavor
 	ShowCloudletsForAppDeployment(ctx context.Context, in *DeploymentCloudletRequest, opts ...grpc.CallOption) (AppApi_ShowCloudletsForAppDeploymentClient, error)
@@ -971,23 +969,21 @@ func (x *appApiShowCloudletsForAppDeploymentClient) Recv() (*CloudletKey, error)
 
 // AppApiServer is the server API for AppApi service.
 type AppApiServer interface {
-	// Create Application. Creates a definition for an application instance for Cloudlet deployment.
+	// Create Application. Creates a definition for an application for Cloudlet deployment.
 	CreateApp(context.Context, *App) (*Result, error)
-	// Delete Application. Deletes a definition of an Application instance. Make sure no other application
-	// instances exist with that definition. If they do exist, you must delete those Application instances first.
+	// Delete Application. Deletes a definition of an application. Instances of the application must be deleted first.
 	DeleteApp(context.Context, *App) (*Result, error)
-	// Update Application. Updates the definition of an Application instance.
+	// Update Application. Updates the definition of an application.
 	UpdateApp(context.Context, *App) (*Result, error)
-	// Show Applications. Lists all Application definitions managed from the Edge Controller.
-	// Any fields specified will be used to filter results.
+	// Show Applications. Lists all application definitions. Any fields specified will be used to filter results.
 	ShowApp(*App, AppApi_ShowAppServer) error
-	// Add an AutoProvPolicy to the App
+	// Add an AutoProvPolicy to the application definition
 	AddAppAutoProvPolicy(context.Context, *AppAutoProvPolicy) (*Result, error)
-	// Remove an AutoProvPolicy from the App
+	// Remove an AutoProvPolicy from the application definition
 	RemoveAppAutoProvPolicy(context.Context, *AppAutoProvPolicy) (*Result, error)
-	// Add an AlertPolicy to the App
+	// Add an AlertPolicy to the application definition
 	AddAppAlertPolicy(context.Context, *AppAlertPolicy) (*Result, error)
-	// Remove an AlertPolicy from the App
+	// Remove an AlertPolicy from the application definition
 	RemoveAppAlertPolicy(context.Context, *AppAlertPolicy) (*Result, error)
 	// Discover cloudlets supporting deployments of App.DefaultFlavor
 	ShowCloudletsForAppDeployment(*DeploymentCloudletRequest, AppApi_ShowCloudletsForAppDeploymentServer) error

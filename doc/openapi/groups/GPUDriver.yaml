@@ -343,7 +343,8 @@ components:
           description: Unique identifier key
           type: string
         operating_system:
-          description: Operator System supported by GPU driver build
+          description: Operator System supported by GPU driver build, valid values
+            are one of Linux, Windows, Others, or 0, 1, 20
           type: string
         storage_path:
           description: GPU driver build storage path

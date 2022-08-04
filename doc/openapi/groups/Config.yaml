@@ -173,7 +173,8 @@ components:
           description: InfluxDB max number of data points returned
           type: integer
         NotifyEmailAddress:
-          description: Email to notify when locked account is created
+          description: Email to notify when locked account is created, defaults to
+            SupportEmail
           type: string
         PasswordMinCrackTimeSec:
           description: User accounts min password crack time seconds (a measure of
@@ -190,6 +191,12 @@ components:
         SkipVerifyEmail:
           description: Skip email verification for new accounts (testing only)
           type: boolean
+        SlackIconURL:
+          description: Slack icon URL used for alert manager slack receivers
+          type: string
+        SupportEmail:
+          description: Support email address shown to users, i.e. support@edgecloud.net
+          type: string
         UserApiKeyCreateLimit:
           description: Max number of API keys a user can create
           type: integer
