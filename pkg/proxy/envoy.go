@@ -21,12 +21,12 @@ import (
 	"html/template"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
@@ -105,7 +105,7 @@ func CreateEnvoyProxy(ctx context.Context, client ssh.Client, name, listenIP, ba
 	if opts.DockerUser != "" {
 		cmdArgs = append(cmdArgs, []string{"-u", fmt.Sprintf("%s:%s", opts.DockerUser, opts.DockerUser)}...)
 	}
-	cmdArgs = append(cmdArgs, "docker.mobiledgex.net/mobiledgex/mobiledgex_public/envoy-with-curl@"+cloudcommon.EnvoyImageDigest)
+	cmdArgs = append(cmdArgs, "europe-west3-docker.pkg.dev/openxedge/docker-public/envoy-with-curl@"+cloudcommon.EnvoyImageDigest)
 	cmdArgs = append(cmdArgs, []string{"envoy", "-c", "/etc/envoy/envoy.yaml --use-dynamic-base-id"}...)
 
 	cmd := "docker " + strings.Join(cmdArgs, " ")

@@ -34,5 +34,5 @@ regiondata:
       numnodes: 3
       masternodeflavor: x1.small
       multitenant: true
-      dnslabel: defaultmtclust-mobiledgex
-      fqdn: defaultmtclust-mobiledgex.kind-cloud-1-dmuus.local.mobiledgex.net
+      dnslabel: defaultmtclust-edgecloudorg
+      fqdn: defaultmtclust-edgecloudorg.kind-cloud-1-dmuus.local.edgecloude2e.net
