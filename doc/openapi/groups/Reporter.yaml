@@ -160,7 +160,8 @@ components:
           type: string
         Schedule:
           description: Indicates how often a report should be generated, one of EveryWeek,
-            Every15Days, EveryMonth
+            Every15Days, EveryMonth, valid values are one of EveryWeek, Every15Days,
+            EveryMonth, or 0, 1, 3
           type: string
         StartScheduleDate:
           description: 'Start date (in RFC3339 format with intended timezone) when

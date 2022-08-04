@@ -364,7 +364,7 @@ func (s *Generator) addComponent(reflector *openapi3.Reflector, obj interface{},
 			rc = captureRc
 		},
 		jsonschema.CollectDefinitions(func(name string, schema jsonschema.Schema) {
-			if isBuiltinJSONType(schema.ReflectType) {
+			if ok, _ := isBuiltinJSONType(schema.ReflectType); ok {
 				return
 			}
 			s.collectDefinition(reflector, name, schema)
@@ -474,11 +474,14 @@ func (s *Generator) addComponent(reflector *openapi3.Reflector, obj interface{},
 				s.failed = true
 			}
 
-			if isBuiltinJSONType(field.Type) {
+			if ok, extraHelp := isBuiltinJSONType(field.Type); ok {
 				typ := &jsonschema.Type{}
 				typ = typ.WithSimpleTypes(jsonschema.String)
 				propertySchema.Type = typ
 				propertySchema.Ref = nil
+				if extraHelp != "" {
+					desc = desc + extraHelp
+				}
 			}
 			return nil
 		}))
@@ -522,23 +525,23 @@ func (s *Generator) hasDefinition(r *openapi3.Reflector, name string) bool {
 }
 
 // Builtin types should not have their own component defined, as they can
-// be unmarshaled from a string.
-func isBuiltinJSONType(typ reflect.Type) bool {
+// be unmarshaled from a string. Returns an optional extra help info.
+func isBuiltinJSONType(typ reflect.Type) (bool, string) {
 	// For enums, don't create a separate definition for them,
 	// just treat them as strings inline, since enums in edgeproto
 	// can unmarshal either ints or strings.
-	_, _, isProtoEnum := edgeproto.GetEnumParseHelp(typ)
+	_, extraHelp, isProtoEnum := edgeproto.GetEnumParseHelp(typ)
 	if isProtoEnum {
-		return true
+		return true, extraHelp
 	}
 	if typ == reflect.TypeOf(edgeproto.Duration(0)) ||
 		typ == reflect.TypeOf(time.Duration(0)) ||
 		typ == reflect.TypeOf(time.Time{}) ||
 		typ == reflect.TypeOf(dmeproto.Timestamp{}) ||
 		typ == reflect.TypeOf(edgeproto.Udec64{}) {
-		return true
+		return true, ""
 	}
-	return false
+	return false, ""
 }
 
 const componentPrefix = "#/components/schemas/"

@@ -315,7 +315,8 @@ components:
           description: Burst size for flow rate limiting (required for TokenBucketAlgorithm)
           type: integer
         flow_algorithm:
-          description: Flow Rate Limit algorithm
+          description: Flow Rate Limit algorithm, valid values are one of UnknownFlowAlgorithm,
+            TokenBucketAlgorithm, LeakyBucketAlgorithm, or 0, 1, 2
           type: string
         reqs_per_second:
           description: Requests per second for flow rate limiting
@@ -327,7 +328,8 @@ components:
           description: Time interval
           type: string
         max_reqs_algorithm:
-          description: MaxReqs Rate Limit Algorithm
+          description: MaxReqs Rate Limit Algorithm, valid values are one of UnknownMaxReqsAlgorithm,
+            FixedWindowAlgorithm, or 0, 1
           type: string
         max_requests:
           description: Maximum number of requests for the given Interval
@@ -342,13 +344,16 @@ components:
           description: Number of requests allowed at once
           type: integer
         FlowAlgorithm:
-          description: Flow Algorithm (TokenBucketAlgorithm or LeakyBucketAlgorithm)
+          description: Flow Algorithm (TokenBucketAlgorithm or LeakyBucketAlgorithm),
+            valid values are one of UnknownFlowAlgorithm, TokenBucketAlgorithm, LeakyBucketAlgorithm,
+            or 0, 1, 2
           type: string
         FlowSettingsName:
           description: Unique name for FlowSettings
           type: string
         RateLimitTarget:
-          description: RateLimitTarget (AllRequests, PerIp, or PerUser)
+          description: RateLimitTarget (AllRequests, PerIp, or PerUser), valid values
+            are one of UnknownTarget, AllRequests, PerIp, PerUser, or 0, 1, 2, 3
           type: string
         ReqsPerSecond:
           description: Number of requests per second
@@ -363,7 +368,8 @@ components:
           description: Time interval
           type: string
         MaxReqsAlgorithm:
-          description: MaxReqs Algorithm (FixedWindowAlgorithm)
+          description: MaxReqs Algorithm (FixedWindowAlgorithm), valid values are
+            one of UnknownMaxReqsAlgorithm, FixedWindowAlgorithm, or 0, 1
           type: string
         MaxReqsSettingsName:
           description: Unique name for MaxReqsSettings
@@ -372,7 +378,8 @@ components:
           description: Maximum number of requests for the specified interval
           type: integer
         RateLimitTarget:
-          description: RateLimitTarget (AllRequests, PerIp, or PerUser)
+          description: RateLimitTarget (AllRequests, PerIp, or PerUser), valid values
+            are one of UnknownTarget, AllRequests, PerIp, PerUser, or 0, 1, 2, 3
           type: string
       type: object
     OrmapiMcRateLimitSettings:
@@ -393,7 +400,8 @@ components:
           nullable: true
           type: object
         RateLimitTarget:
-          description: RateLimitTarget (AllRequests, PerIp, or PerUser)
+          description: RateLimitTarget (AllRequests, PerIp, or PerUser), valid values
+            are one of UnknownTarget, AllRequests, PerIp, PerUser, or 0, 1, 2, 3
           type: string
       type: object
     OrmapiResult:
