@@ -11,7 +11,7 @@ all: build install
 
 linux: build-linux install-linux
 
-check-vers:
+check-go-vers:
 	@if test $(GOVERS) != go1.18; then \
 		echo "Go version must be $(GOVERS)"; \
 		exit 2; \
@@ -19,8 +19,13 @@ check-vers:
 
 APICOMMENTS = ./mc/ormapi/api.comments.go
 
-build: check-vers $(APICOMMENTS)
+gen-test-certs:
+	(cd pkg/tls; ./gen-test-certs.sh)
+
+gen-vers:
 	(cd pkg/version; ./version.sh)
+
+generate: check-go-vers $(APICOMMENTS)
 	go install \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger \
@@ -40,13 +45,16 @@ build: check-vers $(APICOMMENTS)
 	make -C api/edgeproto
 	make -C test/testgen
 	make -C pkg/vault/letsencrypt-plugin letsencrypt/version.go
-	(cd pkg/tls; ./gen-test-certs.sh)
 	go install ./pkg/mcctl/genmctestclient
 	genmctestclient > ./pkg/mcctl/mctestclient/mctestclient_generatedfuncs.go
+
+gobuild: check-go-vers gen-vers
 	go build ./...
 	go build -buildmode=plugin -o ${GOPATH}/plugins/platforms.so pkg/plugin/platform/*.go
 	go build -buildmode=plugin -o ${GOPATH}/plugins/edgeevents.so pkg/plugin/edgeevents/*.go
 	go vet ./...
+
+build: generate gobuild
 
 build-linux:
 	${LINUX_XCOMPILE_ENV} go build ./...
@@ -138,7 +146,7 @@ install-internal-linux:
 
 UNIT_TEST_LOG ?= /tmp/edge-cloud-unit-test.log
 
-unit-test:
+unit-test: gen-test-certs
 	go test -timeout=3m ./... > $(UNIT_TEST_LOG) || \
 		((grep -A6 "\--- FAIL:" $(UNIT_TEST_LOG) || \
 		grep -A20 "panic: " $(UNIT_TEST_LOG) || \
@@ -267,7 +275,7 @@ build-ansible:
 	docker buildx build --load \
 		-t deploy -f docker/Dockerfile.ansible ./ansible
 
-clean: check-vers
+clean: check-go-vers
 	go clean ./...
 
 .PHONY: clean doc test
