@@ -60,25 +60,6 @@ build-linux:
 	${LINUX_XCOMPILE_ENV} go build ./...
 	make -C d-match-engine linux
 
-build-docker:
-	rsync --checksum .dockerignore ../.dockerignore
-	docker buildx build --push \
-		--build-arg BUILD_TAG="$(shell git describe --always --dirty=+), $(shell date +'%Y-%m-%d'), ${TAG}" \
-		--build-arg EDGE_CLOUD_BASE_IMAGE=$(EDGE_CLOUD_BASE_IMAGE) \
-		--build-arg REGISTRY=$(REGISTRY) \
-		-t $(REGISTRY)/edge-cloud:$(TAG) -f build/docker/Dockerfile.edge-cloud ..
-	for COMP in alertmgr-sidecar autoprov cluster-svc controller crm dme edgeturn frm mc notifyroot; do \
-		docker buildx build --push -t $(REGISTRY)/edge-cloud-$$COMP:$(TAG) \
-			--build-arg ALLINONE=$(REGISTRY)/edge-cloud:$(TAG) \
-			--build-arg EDGE_CLOUD_BASE_IMAGE=$(EDGE_CLOUD_BASE_IMAGE) \
-			-f build/docker/Dockerfile.$$COMP build/docker || exit 1; \
-	done
-
-build-nightly: REGISTRY = ghcr.io/edgexr
-build-nightly: build-docker
-	docker tag edgexr/edge-cloud-platform:$(TAG) $(REGISTRY)/edge-cloud-platform:nightly
-	docker push $(REGISTRY)/edge-cloud-platform:nightly
-
 install:
 	go install ./...
 
@@ -270,10 +251,6 @@ build-edgebox:
 
 clean-edgebox:
 	rm -rf edgebox_bin
-
-build-ansible:
-	docker buildx build --load \
-		-t deploy -f docker/Dockerfile.ansible ./ansible
 
 clean: check-go-vers
 	go clean ./...
