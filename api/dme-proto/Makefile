@@ -13,12 +13,9 @@ BUILTIN		= Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoog
 DMEDIR		= ${GOPATH}/src/github.com/edgexr/edge-proto/dme
 PROTOS		:= app-client.proto appcommon.proto dynamic-location-group.proto loc.proto locverify.proto qos-position.proto qos.proto session.proto app-client-platos.proto
 
-CMDDIR		= ../../pkg/gencmd
-
 build: $(PROTOS)
 	protoc ${INCLUDE} --gomex_out=plugins=grpc+mex,${BUILTIN}:. $(PROTOS)
 	protoc ${INCLUDE} --grpc-gateway_out=${BUILTIN}:. $(PROTOS)
-	protoc ${INCLUDE} --cmd_out=${BUILTIN}:${CMDDIR} $(PROTOS)
 
 # swagger annotations for REST APIs
 # go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
