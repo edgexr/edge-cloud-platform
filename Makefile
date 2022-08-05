@@ -25,7 +25,7 @@ gen-test-certs:
 gen-vers:
 	(cd pkg/version; ./version.sh)
 
-generate: check-go-vers $(APICOMMENTS)
+generate: check-go-vers $(APICOMMENTS) gen-vers
 	go install \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger \
