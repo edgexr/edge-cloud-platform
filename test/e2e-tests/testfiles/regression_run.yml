@@ -26,7 +26,6 @@ tests:
   - includefile: mc_add_delete.yml
     mods: [cli]
     extratest: true
-  - includefile: fetchlogs.yml
   - includefile: federationtest.yml
   - includefile: qos_priority_sessions.yml
   - includefile: {{edge-cloud-testfiles}}/find_cloudlet.yml
