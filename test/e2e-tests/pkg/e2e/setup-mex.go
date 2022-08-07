@@ -712,15 +712,6 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 
 	errs := []string{}
 
-	if action == "status" ||
-		action == "ctrlapi" ||
-		action == "dmeapi" ||
-		action == "mcapi" {
-		if !UpdateAPIAddrs() {
-			errs = append(errs, "update API addrs failed")
-		}
-	}
-
 	switch action {
 	case "deploy":
 		err := CreateCloudflareRecords()
@@ -732,10 +723,6 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 			err := DeployK8sServices(dir)
 			if err != nil {
 				errs = append(errs, err.Error())
-			}
-		} else {
-			if !DeployProcesses() {
-				errs = append(errs, "deploy failed")
 			}
 		}
 	case "gencerts":
@@ -785,12 +772,8 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 			break
 
 		}
-		if !UpdateAPIAddrs() {
-			errs = append(errs, "update API addrs failed")
-		} else {
-			if !WaitForProcesses(actionParam, allprocs) {
-				errs = append(errs, "wait for process failed")
-			}
+		if !WaitForProcesses(actionParam, allprocs) {
+			errs = append(errs, "wait for process failed")
 		}
 	case "status":
 		if !WaitForProcesses(actionParam, GetAllProcesses()) {
@@ -816,9 +799,6 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 			allprocs := GetAllProcesses()
 			if !StopProcesses(actionParam, allprocs) {
 				errs = append(errs, "stop failed")
-			}
-			if !StopRemoteProcesses(actionParam) {
-				errs = append(errs, "stop remote failed")
 			}
 		}
 	case "ctrlapi":
@@ -872,10 +852,6 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 			if err != nil {
 				errs = append(errs, err.Error())
 			}
-		} else {
-			if !CleanupRemoteProcesses() {
-				errs = append(errs, "cleanup failed")
-			}
 		}
 		err = process.StopShepherdService(ctx, nil)
 		if err != nil {
@@ -896,10 +872,6 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 		err = Cleanup(ctx)
 		if err != nil {
 			errs = append(errs, err.Error())
-		}
-	case "fetchlogs":
-		if !FetchRemoteLogs(outputDir) {
-			errs = append(errs, "fetch failed")
 		}
 	case "runchefclient":
 		err := RunChefClient(spec.ApiFile, vars)
