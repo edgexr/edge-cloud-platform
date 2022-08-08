@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -83,7 +83,8 @@ func newDummyController(appInstCache *edgeproto.AppInstCache, appInstRefsCache *
 	d.failDeleteInsts = make(map[edgeproto.AppInstKey]struct{})
 	d.serv = grpc.NewServer(
 		grpc.UnaryInterceptor(cloudcommon.AuditUnaryInterceptor),
-		grpc.StreamInterceptor(cloudcommon.AuditStreamInterceptor))
+		grpc.StreamInterceptor(cloudcommon.AuditStreamInterceptor),
+		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}))
 	edgeproto.RegisterAppInstApiServer(d.serv, &d)
 	return &d
 }

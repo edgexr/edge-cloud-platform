@@ -18,9 +18,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/gencmd"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/spf13/cobra"
@@ -78,7 +79,7 @@ func connect(cmd *cobra.Command, args []string) error {
 	if dialOption == nil {
 		return fmt.Errorf("Nil dial option for server: %s.", addr)
 	}
-	conn, err = grpc.Dial(addr, dialOption)
+	conn, err = grpc.Dial(addr, dialOption, grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})))
 	if err != nil {
 		return fmt.Errorf("Connect to server %s failed: %s", addr, err.Error())
 	}
