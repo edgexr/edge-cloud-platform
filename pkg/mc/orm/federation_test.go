@@ -47,7 +47,7 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"

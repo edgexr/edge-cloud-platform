@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/coreos/etcd/clientv3/concurrency"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 // Use for version passed to Update to ignore version check

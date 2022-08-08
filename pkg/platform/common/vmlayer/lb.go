@@ -34,7 +34,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 
-	ssh "github.com/mobiledgex/golang-ssh"
+	ssh "github.com/edgexr/golang-ssh"
 )
 
 // InternalPortAttachPolicy is for dedicated clusters to define whether the internal port should be created when the rootlb

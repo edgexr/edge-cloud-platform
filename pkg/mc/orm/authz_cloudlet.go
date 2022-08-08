@@ -22,7 +22,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 // AuthzCloudlet provides an efficient way to check if the user

@@ -26,7 +26,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	ssh "github.com/mobiledgex/golang-ssh"
+	ssh "github.com/edgexr/golang-ssh"
 )
 
 var ClusterPrometheusAppLabel = "label_" + cloudcommon.MexAppNameLabel
