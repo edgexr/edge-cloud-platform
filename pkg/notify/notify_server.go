@@ -38,8 +38,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"google.golang.org/grpc"
@@ -150,6 +150,7 @@ func (mgr *ServerMgr) Start(name, addr string, tlsConfig *tls.Config, ops ...Ser
 		grpc.KeepaliveEnforcementPolicy(serverEnforcement),
 		opts.unaryInterceptor,
 		opts.streamInterceptor,
+		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}),
 	)
 	edgeproto.RegisterNotifyApiServer(mgr.serv, mgr)
 	if mgr.regServ != nil {

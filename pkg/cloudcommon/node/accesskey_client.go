@@ -26,12 +26,12 @@ import (
 	"strings"
 	"time"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"golang.org/x/crypto/ed25519"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -239,7 +239,7 @@ func (s *AccessKeyClient) upgradeAccessKey(ctx context.Context, verifyOnly Acces
 		tlsConfig.InsecureSkipVerify = true
 	}
 	dialOpt := grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))
-	clientConn, err := grpc.Dial(s.AccessApiAddr, dialOpt)
+	clientConn, err := grpc.Dial(s.AccessApiAddr, dialOpt, grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})))
 	if err != nil {
 		return false, err
 	}
@@ -384,5 +384,6 @@ func (s *AccessKeyClient) ConnectController(ctx context.Context) (*grpc.ClientCo
 			log.StreamClientTraceGrpc,
 			s.StreamAddAccessKey,
 		)),
+		grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})),
 	)
 }

@@ -29,6 +29,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
@@ -41,7 +42,7 @@ import (
 
 func getGrpcClient(t *testing.T) (*grpc.ClientConn, error) {
 	// grpc client
-	return grpc.Dial("127.0.0.1:55001", grpc.WithInsecure())
+	return grpc.Dial("127.0.0.1:55001", grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})))
 }
 
 func TestController(t *testing.T) {

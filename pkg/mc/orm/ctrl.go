@@ -168,6 +168,7 @@ func connectGrpcAddr(ctx context.Context, addr string, serverIssuers []node.Matc
 	return grpc.Dial(addr, dialOption,
 		grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc),
 		grpc.WithStreamInterceptor(log.StreamClientTraceGrpc),
+		grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})),
 	)
 }
 

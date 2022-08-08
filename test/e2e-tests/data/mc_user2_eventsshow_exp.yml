@@ -159,7 +159,7 @@
       region: locala
       remote-ip: 127.0.0.1
       request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"someapplication1","organization":"AcmeAppCo","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"dmuus-cloud-4","organization":"dmuus"},"cluster_key":{"name":"SmallCluster"},"organization":"AcmeAppCo"}}},"Region":"locala"}'
-      response: |
+      response: |-
         {"data":{"message":"Creating"}}
         {"data":{"message":"Creating App Inst"}}
         {"data":{"message":"Ready"}}
@@ -190,7 +190,7 @@
       region: locala
       remote-ip: 127.0.0.1
       request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"someapplication1","organization":"AcmeAppCo","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"dmuus-cloud-3","organization":"dmuus"},"cluster_key":{"name":"SmallCluster"},"organization":"AcmeAppCo"}}},"Region":"locala"}'
-      response: |
+      response: |-
         {"data":{"message":"Creating"}}
         {"data":{"message":"Creating App Inst"}}
         {"data":{"message":"Ready"}}
@@ -455,7 +455,7 @@
       region: locala
       remote-ip: 127.0.0.1
       request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"someapplication1","organization":"AcmeAppCo","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"dmuus-cloud-4","organization":"dmuus"},"cluster_key":{"name":"SmallCluster"},"organization":"AcmeAppCo"}}},"Region":"locala"}'
-      response: |
+      response: |-
         {"data":{"message":"Creating"}}
         {"data":{"message":"Creating App Inst"}}
         {"data":{"message":"Ready"}}
@@ -486,7 +486,7 @@
       region: locala
       remote-ip: 127.0.0.1
       request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"someapplication1","organization":"AcmeAppCo","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"dmuus-cloud-3","organization":"dmuus"},"cluster_key":{"name":"SmallCluster"},"organization":"AcmeAppCo"}}},"Region":"locala"}'
-      response: |
+      response: |-
         {"data":{"message":"Creating"}}
         {"data":{"message":"Creating App Inst"}}
         {"data":{"message":"Ready"}}

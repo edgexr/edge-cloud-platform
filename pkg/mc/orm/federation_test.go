@@ -103,6 +103,7 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 	dc := grpc.NewServer(
 		grpc.UnaryInterceptor(testutil.UnaryInterceptor),
 		grpc.StreamInterceptor(testutil.StreamInterceptor),
+		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}),
 	)
 	lis, err := net.Listen("tcp", ctrlAddr)
 	require.Nil(t, err)

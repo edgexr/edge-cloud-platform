@@ -24,6 +24,7 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	mextls "github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"google.golang.org/grpc"
 	yaml "gopkg.in/yaml.v2"
@@ -198,7 +199,7 @@ func connectAPIImpl(timeout time.Duration, apiaddr string, tlsConfig *tls.Config
 		timeout -= wait
 		time.Sleep(wait)
 	}
-	conn, err := grpc.Dial(apiaddr, mextls.GetGrpcDialOption(tlsConfig))
+	conn, err := grpc.Dial(apiaddr, mextls.GetGrpcDialOption(tlsConfig), grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})))
 	return conn, err
 }
 

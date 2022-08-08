@@ -21,9 +21,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
@@ -128,6 +128,7 @@ func ControllerConnect(ctx context.Context, addr string) (*grpc.ClientConn, erro
 		tls.GetGrpcDialOption(tlsConfig),
 		grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc),
 		grpc.WithStreamInterceptor(log.StreamClientTraceGrpc),
+		grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("Connect to server %s failed: %s", addr, err.Error())
@@ -152,6 +153,7 @@ func notifyRootConnect(ctx context.Context, notifyAddrs string) (*grpc.ClientCon
 		tls.GetGrpcDialOption(tlsConfig),
 		grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc),
 		grpc.WithStreamInterceptor(log.StreamClientTraceGrpc),
+		grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("Connect to server %s failed: %s", addrs[0], err.Error())

@@ -40,9 +40,9 @@ func StartLocalEtcdServer(opts ...process.StartOp) (*process.Etcd, error) {
 			Name: "etcd-local",
 		},
 		DataDir:        testdir,
-		PeerAddrs:      "http://127.0.0.1:52379",
-		ClientAddrs:    "http://127.0.0.1:52380",
-		InitialCluster: "etcd-local=http://127.0.0.1:52379",
+		PeerAddrs:      "http://127.0.0.1:12379",
+		ClientAddrs:    "http://127.0.0.1:12380",
+		InitialCluster: "etcd-local=http://127.0.0.1:12379",
 	}
 	log.InfoLog("Starting local etcd", "clientUrls", etcd.ClientAddrs)
 	err := etcd.StartLocal("", opts...)
