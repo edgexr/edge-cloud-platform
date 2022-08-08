@@ -25,7 +25,7 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	ssh "github.com/mobiledgex/golang-ssh"
+	ssh "github.com/edgexr/golang-ssh"
 )
 
 func getPromAlerts(ctx context.Context, addr string, client ssh.Client) ([]edgeproto.Alert, error) {

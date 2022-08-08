@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -30,6 +31,7 @@ var _ status.Status
 var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
+var _ = metadata.Join
 
 func request_ControllerApi_ShowController_0(ctx context.Context, marshaler runtime.Marshaler, client ControllerApiClient, req *http.Request, pathParams map[string]string) (ControllerApi_ShowControllerClient, runtime.ServerMetadata, error) {
 	var protoReq Controller
@@ -59,6 +61,7 @@ func request_ControllerApi_ShowController_0(ctx context.Context, marshaler runti
 // RegisterControllerApiHandlerServer registers the http handlers for service ControllerApi to "mux".
 // UnaryRPC     :call ControllerApiServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterControllerApiHandlerFromEndpoint instead.
 func RegisterControllerApiHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ControllerApiServer) error {
 
 	mux.Handle("POST", pattern_ControllerApi_ShowController_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

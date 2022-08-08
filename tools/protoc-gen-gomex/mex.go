@@ -154,7 +154,7 @@ func (m *mex) GenerateImports(file *generator.FileDescriptor) {
 	if hasGenerateCud {
 		m.gen.PrintImport("", "encoding/json")
 		m.gen.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/objstore")
-		m.gen.PrintImport("", "github.com/coreos/etcd/clientv3/concurrency")
+		m.gen.PrintImport("", "go.etcd.io/etcd/client/v3/concurrency")
 	}
 	if m.importUtil {
 		m.gen.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/util")

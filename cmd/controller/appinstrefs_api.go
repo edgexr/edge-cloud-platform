@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/coreos/etcd/clientv3/concurrency"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 

@@ -28,7 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	ssh "github.com/mobiledgex/golang-ssh"
+	ssh "github.com/edgexr/golang-ssh"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/xtaci/smux"
 )

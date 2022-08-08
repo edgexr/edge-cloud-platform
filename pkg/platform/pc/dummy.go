@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	ssh "github.com/mobiledgex/golang-ssh"
+	ssh "github.com/edgexr/golang-ssh"
 )
 
 // Dummy SSH Client for unit tests to mock SSH Client.

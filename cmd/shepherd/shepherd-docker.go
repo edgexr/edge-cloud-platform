@@ -29,7 +29,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
-	ssh "github.com/mobiledgex/golang-ssh"
+	ssh "github.com/edgexr/golang-ssh"
 )
 
 var dockerStatsFormat = `"{\"container\":\"{{.Name}}\",\"id\":\"{{.ID}}\",\"memory\":{\"raw\":\"{{.MemUsage}}\",\"percent\":\"{{.MemPerc}}\"},\"cpu\":\"{{.CPUPerc}}\",\"io\":{\"network\":\"{{.NetIO}}\",\"block\":\"{{.BlockIO}}\"}}"`

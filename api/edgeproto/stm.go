@@ -15,7 +15,7 @@
 package edgeproto
 
 import (
-	v3 "github.com/coreos/etcd/clientv3"
+	v3 "go.etcd.io/etcd/client/v3"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 )
 

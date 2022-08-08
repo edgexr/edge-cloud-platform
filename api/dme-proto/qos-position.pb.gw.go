@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -30,6 +31,7 @@ var _ status.Status
 var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
+var _ = metadata.Join
 
 func request_QosPositionKpi_GetQosPositionKpi_0(ctx context.Context, marshaler runtime.Marshaler, client QosPositionKpiClient, req *http.Request, pathParams map[string]string) (QosPositionKpi_GetQosPositionKpiClient, runtime.ServerMetadata, error) {
 	var protoReq QosPositionRequest
@@ -59,6 +61,7 @@ func request_QosPositionKpi_GetQosPositionKpi_0(ctx context.Context, marshaler r
 // RegisterQosPositionKpiHandlerServer registers the http handlers for service QosPositionKpi to "mux".
 // UnaryRPC     :call QosPositionKpiServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterQosPositionKpiHandlerFromEndpoint instead.
 func RegisterQosPositionKpiHandlerServer(ctx context.Context, mux *runtime.ServeMux, server QosPositionKpiServer) error {
 
 	mux.Handle("POST", pattern_QosPositionKpi_GetQosPositionKpi_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

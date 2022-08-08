@@ -22,7 +22,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	ssh "github.com/mobiledgex/golang-ssh"
+	ssh "github.com/edgexr/golang-ssh"
 )
 
 type Platform struct {

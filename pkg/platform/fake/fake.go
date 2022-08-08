@@ -37,7 +37,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
-	ssh "github.com/mobiledgex/golang-ssh"
+	ssh "github.com/edgexr/golang-ssh"
 )
 
 type Platform struct {

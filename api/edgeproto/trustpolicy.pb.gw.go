@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -30,6 +31,7 @@ var _ status.Status
 var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
+var _ = metadata.Join
 
 func request_TrustPolicyApi_CreateTrustPolicy_0(ctx context.Context, marshaler runtime.Marshaler, client TrustPolicyApiClient, req *http.Request, pathParams map[string]string) (TrustPolicyApi_CreateTrustPolicyClient, runtime.ServerMetadata, error) {
 	var protoReq TrustPolicy
@@ -134,6 +136,7 @@ func request_TrustPolicyApi_ShowTrustPolicy_0(ctx context.Context, marshaler run
 // RegisterTrustPolicyApiHandlerServer registers the http handlers for service TrustPolicyApi to "mux".
 // UnaryRPC     :call TrustPolicyApiServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterTrustPolicyApiHandlerFromEndpoint instead.
 func RegisterTrustPolicyApiHandlerServer(ctx context.Context, mux *runtime.ServeMux, server TrustPolicyApiServer) error {
 
 	mux.Handle("POST", pattern_TrustPolicyApi_CreateTrustPolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
