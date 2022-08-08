@@ -100,7 +100,8 @@ func TestAccessClientServer(t *testing.T) {
 		"---- client with no auth credentials, expect failure  ----")
 	clientConn, err := grpc.Dial(dc.ApiAddr(), grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		InsecureSkipVerify: true,
-	})))
+	})), grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})),
+	)
 	require.Nil(t, err)
 	// API calls should fail
 	EchoApisTest(t, ctx, clientConn, "access-key-data not found in metadata")

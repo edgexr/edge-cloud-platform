@@ -808,7 +808,8 @@ func main() {
 		span.Finish()
 		log.FatalLog("get TLS config for grpc server failed", "err", err)
 	}
-	grpcOpts = append(grpcOpts, cloudcommon.GrpcCreds(dmeServerTlsConfig))
+	grpcOpts = append(grpcOpts, cloudcommon.GrpcCreds(dmeServerTlsConfig),
+		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}))
 
 	s := grpc.NewServer(grpcOpts...)
 

@@ -20,9 +20,9 @@ import (
 	"io"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
@@ -73,7 +73,9 @@ func runAppInstApi(ctx context.Context, inst *edgeproto.AppInst, action cloudcom
 	}
 	opts = append(opts, grpc.WithBlock(),
 		grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc),
-		grpc.WithStreamInterceptor(log.StreamClientTraceGrpc))
+		grpc.WithStreamInterceptor(log.StreamClientTraceGrpc),
+		grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})),
+	)
 	conn, err := grpc.Dial(*ctrlAddr, opts...)
 	if err != nil {
 		return err

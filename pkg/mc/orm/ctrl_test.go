@@ -35,6 +35,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/nodetest"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -248,6 +249,7 @@ func TestController(t *testing.T) {
 	dc := grpc.NewServer(
 		grpc.UnaryInterceptor(testutil.UnaryInterceptor),
 		grpc.StreamInterceptor(testutil.StreamInterceptor),
+		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}),
 	)
 	ctrlAddr := "127.0.0.1:9998"
 	lis, err := net.Listen("tcp", ctrlAddr)
@@ -259,7 +261,7 @@ func TestController(t *testing.T) {
 	}()
 	defer dc.Stop()
 
-	dc2 := grpc.NewServer()
+	dc2 := grpc.NewServer(grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}))
 	ctrlAddr2 := "127.0.0.1:9997"
 	lis2, err := net.Listen("tcp", ctrlAddr2)
 	require.Nil(t, err)
@@ -3138,6 +3140,7 @@ func TestUpgrade(t *testing.T) {
 	dc := grpc.NewServer(
 		grpc.UnaryInterceptor(testutil.UnaryInterceptor),
 		grpc.StreamInterceptor(testutil.StreamInterceptor),
+		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}),
 	)
 	ctrlAddr := "127.0.0.1:9998"
 	lis, err := net.Listen("tcp", ctrlAddr)

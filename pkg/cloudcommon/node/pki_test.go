@@ -751,6 +751,7 @@ func testTlsConnect(t *testing.T, ctx context.Context, cc *ClientController, vau
 		edgetls.GetGrpcDialOption(clientTls),
 		grpc.WithUnaryInterceptor(unaryInterceptor),
 		grpc.WithStreamInterceptor(streamInterceptor),
+		grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})),
 	)
 	require.Nil(t, err, "create client conn %s", cc.Line)
 	node.EchoApisTest(t, ctx, clientConn, cc.ExpectErr)
@@ -885,6 +886,7 @@ func (s *DummyController) Start(ctx context.Context) {
 			cloudcommon.AuditStreamInterceptor,
 			s.KeyServer.StreamTlsAccessKey,
 		)),
+		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}),
 	)
 	if s.TlsRegisterCb != nil {
 		s.TlsRegisterCb(s.TlsServ)
