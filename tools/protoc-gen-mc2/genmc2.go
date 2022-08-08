@@ -85,7 +85,7 @@ func (g *GenMC2) Init(gen *generator.Generator) {
 func (g *GenMC2) GenerateImports(file *generator.FileDescriptor) {
 	g.support.PrintUsedImports(g.Generator)
 	if g.importEcho {
-		g.PrintImport("", "github.com/labstack/echo")
+		g.PrintImport("", "github.com/labstack/echo/v4")
 	}
 	if g.importHttp {
 		g.PrintImport("", "net/http")

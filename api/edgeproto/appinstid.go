@@ -17,7 +17,7 @@ package edgeproto
 import (
 	fmt "fmt"
 
-	"github.com/coreos/etcd/clientv3/concurrency"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 )
 

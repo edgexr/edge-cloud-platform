@@ -24,7 +24,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 // Password crack times are estimates of how long it would take to brute

@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/jinzhu/gorm"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"

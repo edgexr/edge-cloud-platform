@@ -49,7 +49,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/version"
 	"github.com/gorilla/websocket"
 	"github.com/jinzhu/gorm"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/lib/pq"
 	"github.com/nmcclain/ldap"
 	gitlab "github.com/xanzy/go-gitlab"

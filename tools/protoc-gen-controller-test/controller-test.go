@@ -79,7 +79,7 @@ func (s *ControllerTest) GenerateImports(file *generator.FileDescriptor) {
 		s.PrintImport("", "github.com/stretchr/testify/require")
 	}
 	if s.importConcurrency {
-		s.PrintImport("", "github.com/coreos/etcd/clientv3/concurrency")
+		s.PrintImport("", "go.etcd.io/etcd/client/v3/concurrency")
 	}
 	if s.importTestutil {
 		s.PrintImport("", "github.com/edgexr/edge-cloud-platform/test/testutil")

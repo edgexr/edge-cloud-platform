@@ -6,7 +6,6 @@ package main
 import (
 	"context"
 	fmt "fmt"
-	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
@@ -14,6 +13,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/require"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	math "math"
 	"testing"
 )

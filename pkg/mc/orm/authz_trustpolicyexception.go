@@ -18,7 +18,7 @@ import (
 	"context"
 	fmt "fmt"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
