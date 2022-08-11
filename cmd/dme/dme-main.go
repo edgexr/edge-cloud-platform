@@ -742,7 +742,7 @@ func main() {
 	dmecommon.EEStats.Start()
 	defer dmecommon.EEStats.Stop()
 
-	dmecommon.InitAppInstClients()
+	dmecommon.InitAppInstClients(time.Duration(dmecommon.Settings.AppinstClientCleanupInterval))
 	defer dmecommon.StopAppInstClients()
 
 	initRateLimitMgr()
