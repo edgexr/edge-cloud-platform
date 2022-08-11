@@ -251,14 +251,14 @@ func WaitFor(cache WaitForCache, count int) error {
 	if cache == nil {
 		return nil
 	}
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 100; i++ {
 		if cache.GetCount() == count {
 			return nil
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
-	log.DebugLog(log.DebugLevelInfo, "Timed out waiting for cache")
-	return fmt.Errorf("Timed out waiting for %s count %d", cache.GetTypeString(), count)
+	log.DebugLog(log.DebugLevelInfo, "Timed out waiting for cache", "type", cache.GetTypeString(), "expected", count, "actual", cache.GetCount())
+	return fmt.Errorf("Timed out waiting for %s count %d, was %d", cache.GetTypeString(), count, cache.GetCount())
 }
 
 func (s *DummyHandler) WaitForAppInstInfo(count int) error {

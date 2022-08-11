@@ -1422,6 +1422,7 @@ func (c *CloudletPoolCache) DeleteCondFunc(ctx context.Context, in *CloudletPool
 }
 
 func (c *CloudletPoolCache) Prune(ctx context.Context, validKeys map[CloudletPoolKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune CloudletPool", "numValidKeys", len(validKeys))
 	notify := make(map[CloudletPoolKey]*CloudletPoolCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

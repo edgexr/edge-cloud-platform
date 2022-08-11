@@ -58,8 +58,9 @@ type DeviceSend struct {
 }
 
 type DeviceSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewDeviceSend(handler SendDeviceHandler) *DeviceSend {
@@ -108,18 +109,28 @@ func (s *DeviceSend) Update(ctx context.Context, key *edgeproto.DeviceKey, old *
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *DeviceSend) updateInternal(ctx context.Context, key *edgeproto.DeviceKey, modRev int64) {
+func (s *DeviceSend) ForceDelete(ctx context.Context, key *edgeproto.DeviceKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *DeviceSend) updateInternal(ctx context.Context, key *edgeproto.DeviceKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal Device", "key", key, "modRev", modRev)
 	s.Keys[*key] = DeviceSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *DeviceSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *DeviceSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -130,7 +141,7 @@ func (s *DeviceSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer st
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -150,6 +161,7 @@ func (s *DeviceSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer st
 			fmt.Sprintf("%s send Device", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -281,6 +293,7 @@ func (s *DeviceRecv) Recv(ctx context.Context, notice *edgeproto.Notice, notifyI
 		fmt.Sprintf("%s recv Device", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)

@@ -815,6 +815,7 @@ func (c *AlertCache) DeleteCondFunc(ctx context.Context, in *Alert, modRev int64
 }
 
 func (c *AlertCache) Prune(ctx context.Context, validKeys map[AlertKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune Alert", "numValidKeys", len(validKeys))
 	notify := make(map[AlertKey]*AlertCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

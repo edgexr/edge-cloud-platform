@@ -57,8 +57,9 @@ type TrustPolicySend struct {
 }
 
 type TrustPolicySendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewTrustPolicySend(handler SendTrustPolicyHandler) *TrustPolicySend {
@@ -107,18 +108,28 @@ func (s *TrustPolicySend) Update(ctx context.Context, key *edgeproto.PolicyKey, 
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *TrustPolicySend) updateInternal(ctx context.Context, key *edgeproto.PolicyKey, modRev int64) {
+func (s *TrustPolicySend) ForceDelete(ctx context.Context, key *edgeproto.PolicyKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *TrustPolicySend) updateInternal(ctx context.Context, key *edgeproto.PolicyKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal TrustPolicy", "key", key, "modRev", modRev)
 	s.Keys[*key] = TrustPolicySendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *TrustPolicySend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *TrustPolicySend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -129,7 +140,7 @@ func (s *TrustPolicySend) Send(stream StreamNotify, notice *edgeproto.Notice, pe
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -149,6 +160,7 @@ func (s *TrustPolicySend) Send(stream StreamNotify, notice *edgeproto.Notice, pe
 			fmt.Sprintf("%s send TrustPolicy", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -279,6 +291,7 @@ func (s *TrustPolicyRecv) Recv(ctx context.Context, notice *edgeproto.Notice, no
 		fmt.Sprintf("%s recv TrustPolicy", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)

@@ -57,8 +57,9 @@ type FlowRateLimitSettingsSend struct {
 }
 
 type FlowRateLimitSettingsSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewFlowRateLimitSettingsSend(handler SendFlowRateLimitSettingsHandler) *FlowRateLimitSettingsSend {
@@ -107,18 +108,28 @@ func (s *FlowRateLimitSettingsSend) Update(ctx context.Context, key *edgeproto.F
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *FlowRateLimitSettingsSend) updateInternal(ctx context.Context, key *edgeproto.FlowRateLimitSettingsKey, modRev int64) {
+func (s *FlowRateLimitSettingsSend) ForceDelete(ctx context.Context, key *edgeproto.FlowRateLimitSettingsKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *FlowRateLimitSettingsSend) updateInternal(ctx context.Context, key *edgeproto.FlowRateLimitSettingsKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal FlowRateLimitSettings", "key", key, "modRev", modRev)
 	s.Keys[*key] = FlowRateLimitSettingsSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *FlowRateLimitSettingsSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *FlowRateLimitSettingsSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -129,7 +140,7 @@ func (s *FlowRateLimitSettingsSend) Send(stream StreamNotify, notice *edgeproto.
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -149,6 +160,7 @@ func (s *FlowRateLimitSettingsSend) Send(stream StreamNotify, notice *edgeproto.
 			fmt.Sprintf("%s send FlowRateLimitSettings", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -279,6 +291,7 @@ func (s *FlowRateLimitSettingsRecv) Recv(ctx context.Context, notice *edgeproto.
 		fmt.Sprintf("%s recv FlowRateLimitSettings", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)
@@ -388,8 +401,9 @@ type MaxReqsRateLimitSettingsSend struct {
 }
 
 type MaxReqsRateLimitSettingsSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewMaxReqsRateLimitSettingsSend(handler SendMaxReqsRateLimitSettingsHandler) *MaxReqsRateLimitSettingsSend {
@@ -438,18 +452,28 @@ func (s *MaxReqsRateLimitSettingsSend) Update(ctx context.Context, key *edgeprot
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *MaxReqsRateLimitSettingsSend) updateInternal(ctx context.Context, key *edgeproto.MaxReqsRateLimitSettingsKey, modRev int64) {
+func (s *MaxReqsRateLimitSettingsSend) ForceDelete(ctx context.Context, key *edgeproto.MaxReqsRateLimitSettingsKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *MaxReqsRateLimitSettingsSend) updateInternal(ctx context.Context, key *edgeproto.MaxReqsRateLimitSettingsKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal MaxReqsRateLimitSettings", "key", key, "modRev", modRev)
 	s.Keys[*key] = MaxReqsRateLimitSettingsSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *MaxReqsRateLimitSettingsSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *MaxReqsRateLimitSettingsSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -460,7 +484,7 @@ func (s *MaxReqsRateLimitSettingsSend) Send(stream StreamNotify, notice *edgepro
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -480,6 +504,7 @@ func (s *MaxReqsRateLimitSettingsSend) Send(stream StreamNotify, notice *edgepro
 			fmt.Sprintf("%s send MaxReqsRateLimitSettings", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -610,6 +635,7 @@ func (s *MaxReqsRateLimitSettingsRecv) Recv(ctx context.Context, notice *edgepro
 		fmt.Sprintf("%s recv MaxReqsRateLimitSettings", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)

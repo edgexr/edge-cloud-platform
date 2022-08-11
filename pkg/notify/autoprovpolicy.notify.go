@@ -59,8 +59,9 @@ type AutoProvPolicySend struct {
 }
 
 type AutoProvPolicySendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewAutoProvPolicySend(handler SendAutoProvPolicyHandler) *AutoProvPolicySend {
@@ -109,18 +110,28 @@ func (s *AutoProvPolicySend) Update(ctx context.Context, key *edgeproto.PolicyKe
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *AutoProvPolicySend) updateInternal(ctx context.Context, key *edgeproto.PolicyKey, modRev int64) {
+func (s *AutoProvPolicySend) ForceDelete(ctx context.Context, key *edgeproto.PolicyKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *AutoProvPolicySend) updateInternal(ctx context.Context, key *edgeproto.PolicyKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal AutoProvPolicy", "key", key, "modRev", modRev)
 	s.Keys[*key] = AutoProvPolicySendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *AutoProvPolicySend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *AutoProvPolicySend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -131,7 +142,7 @@ func (s *AutoProvPolicySend) Send(stream StreamNotify, notice *edgeproto.Notice,
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -151,6 +162,7 @@ func (s *AutoProvPolicySend) Send(stream StreamNotify, notice *edgeproto.Notice,
 			fmt.Sprintf("%s send AutoProvPolicy", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -281,6 +293,7 @@ func (s *AutoProvPolicyRecv) Recv(ctx context.Context, notice *edgeproto.Notice,
 		fmt.Sprintf("%s recv AutoProvPolicy", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)
@@ -377,8 +390,9 @@ type AutoProvCountsSend struct {
 }
 
 type AutoProvCountsSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewAutoProvCountsSend() *AutoProvCountsSend {
@@ -417,6 +431,9 @@ func (s *AutoProvCountsSend) Update(ctx context.Context, msg *edgeproto.AutoProv
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
 	return true
+}
+
+func (s *AutoProvCountsSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *AutoProvCountsSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -631,8 +648,9 @@ type AutoProvInfoSend struct {
 }
 
 type AutoProvInfoSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewAutoProvInfoSend(handler SendAutoProvInfoHandler) *AutoProvInfoSend {
@@ -681,18 +699,28 @@ func (s *AutoProvInfoSend) Update(ctx context.Context, key *edgeproto.CloudletKe
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *AutoProvInfoSend) updateInternal(ctx context.Context, key *edgeproto.CloudletKey, modRev int64) {
+func (s *AutoProvInfoSend) ForceDelete(ctx context.Context, key *edgeproto.CloudletKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *AutoProvInfoSend) updateInternal(ctx context.Context, key *edgeproto.CloudletKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal AutoProvInfo", "key", key, "modRev", modRev)
 	s.Keys[*key] = AutoProvInfoSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *AutoProvInfoSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *AutoProvInfoSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -703,7 +731,7 @@ func (s *AutoProvInfoSend) Send(stream StreamNotify, notice *edgeproto.Notice, p
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -723,6 +751,7 @@ func (s *AutoProvInfoSend) Send(stream StreamNotify, notice *edgeproto.Notice, p
 			fmt.Sprintf("%s send AutoProvInfo", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -854,6 +883,7 @@ func (s *AutoProvInfoRecv) Recv(ctx context.Context, notice *edgeproto.Notice, n
 		fmt.Sprintf("%s recv AutoProvInfo", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)

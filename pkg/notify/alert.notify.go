@@ -58,8 +58,9 @@ type AlertSend struct {
 }
 
 type AlertSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewAlertSend(handler SendAlertHandler) *AlertSend {
@@ -108,18 +109,28 @@ func (s *AlertSend) Update(ctx context.Context, key *edgeproto.AlertKey, old *ed
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *AlertSend) updateInternal(ctx context.Context, key *edgeproto.AlertKey, modRev int64) {
+func (s *AlertSend) ForceDelete(ctx context.Context, key *edgeproto.AlertKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *AlertSend) updateInternal(ctx context.Context, key *edgeproto.AlertKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal Alert", "key", key, "modRev", modRev)
 	s.Keys[*key] = AlertSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *AlertSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *AlertSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -130,7 +141,7 @@ func (s *AlertSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer str
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -150,6 +161,7 @@ func (s *AlertSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer str
 			fmt.Sprintf("%s send Alert", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -281,6 +293,7 @@ func (s *AlertRecv) Recv(ctx context.Context, notice *edgeproto.Notice, notifyId
 		fmt.Sprintf("%s recv Alert", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)

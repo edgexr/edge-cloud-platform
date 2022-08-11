@@ -29,7 +29,7 @@ var _ = math.Inf
 type SendAppInstHandler interface {
 	GetAllKeys(ctx context.Context, cb func(key *edgeproto.AppInstKey, modRev int64))
 	GetWithRev(key *edgeproto.AppInstKey, buf *edgeproto.AppInst, modRev *int64) bool
-	GetForCloudlet(key *edgeproto.CloudletKey, cb func(key *edgeproto.AppInstKey, modRev int64))
+	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(key *edgeproto.AppInstKey, modRev int64))
 }
 
 type RecvAppInstHandler interface {
@@ -59,8 +59,9 @@ type AppInstSend struct {
 }
 
 type AppInstSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewAppInstSend(handler SendAppInstHandler) *AppInstSend {
@@ -115,18 +116,39 @@ func (s *AppInstSend) Update(ctx context.Context, key *edgeproto.AppInstKey, old
 	if !s.UpdateOk(ctx, key) { // to be implemented by hand
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *AppInstSend) updateInternal(ctx context.Context, key *edgeproto.AppInstKey, modRev int64) {
+func (s *AppInstSend) ForceDelete(ctx context.Context, key *edgeproto.AppInstKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *AppInstSend) updateInternal(ctx context.Context, key *edgeproto.AppInstKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal AppInst", "key", key, "modRev", modRev)
 	s.Keys[*key] = AppInstSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *AppInstSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+	keys := make(map[edgeproto.AppInstKey]int64)
+	s.handler.GetForCloudlet(cloudlet, func(objKey *edgeproto.AppInstKey, modRev int64) {
+		keys[*objKey] = modRev
+	})
+	for k, modRev := range keys {
+		if action == edgeproto.NoticeAction_UPDATE {
+			s.Update(ctx, &k, nil, modRev)
+		} else if action == edgeproto.NoticeAction_DELETE {
+			s.ForceDelete(ctx, &k, modRev)
+		}
+	}
 }
 
 func (s *AppInstSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -137,7 +159,7 @@ func (s *AppInstSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer s
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -157,6 +179,7 @@ func (s *AppInstSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer s
 			fmt.Sprintf("%s send AppInst", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -287,6 +310,7 @@ func (s *AppInstRecv) Recv(ctx context.Context, notice *edgeproto.Notice, notify
 		fmt.Sprintf("%s recv AppInst", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)
@@ -396,8 +420,9 @@ type AppInstInfoSend struct {
 }
 
 type AppInstInfoSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewAppInstInfoSend(handler SendAppInstInfoHandler) *AppInstInfoSend {
@@ -446,18 +471,28 @@ func (s *AppInstInfoSend) Update(ctx context.Context, key *edgeproto.AppInstKey,
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *AppInstInfoSend) updateInternal(ctx context.Context, key *edgeproto.AppInstKey, modRev int64) {
+func (s *AppInstInfoSend) ForceDelete(ctx context.Context, key *edgeproto.AppInstKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *AppInstInfoSend) updateInternal(ctx context.Context, key *edgeproto.AppInstKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal AppInstInfo", "key", key, "modRev", modRev)
 	s.Keys[*key] = AppInstInfoSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *AppInstInfoSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *AppInstInfoSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -468,7 +503,7 @@ func (s *AppInstInfoSend) Send(stream StreamNotify, notice *edgeproto.Notice, pe
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -488,6 +523,7 @@ func (s *AppInstInfoSend) Send(stream StreamNotify, notice *edgeproto.Notice, pe
 			fmt.Sprintf("%s send AppInstInfo", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -619,6 +655,7 @@ func (s *AppInstInfoRecv) Recv(ctx context.Context, notice *edgeproto.Notice, no
 		fmt.Sprintf("%s recv AppInstInfo", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)

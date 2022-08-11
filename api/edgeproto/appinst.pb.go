@@ -3779,6 +3779,7 @@ func (c *AppInstCache) DeleteCondFunc(ctx context.Context, in *AppInst, modRev i
 }
 
 func (c *AppInstCache) Prune(ctx context.Context, validKeys map[AppInstKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune AppInst", "numValidKeys", len(validKeys))
 	notify := make(map[AppInstKey]*AppInstCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {
@@ -4918,6 +4919,7 @@ func (c *AppInstInfoCache) DeleteCondFunc(ctx context.Context, in *AppInstInfo, 
 }
 
 func (c *AppInstInfoCache) Prune(ctx context.Context, validKeys map[AppInstKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune AppInstInfo", "numValidKeys", len(validKeys))
 	notify := make(map[AppInstKey]*AppInstInfoCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

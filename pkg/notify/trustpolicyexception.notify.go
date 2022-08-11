@@ -28,6 +28,7 @@ var _ = math.Inf
 type SendTrustPolicyExceptionHandler interface {
 	GetAllKeys(ctx context.Context, cb func(key *edgeproto.TrustPolicyExceptionKey, modRev int64))
 	GetWithRev(key *edgeproto.TrustPolicyExceptionKey, buf *edgeproto.TrustPolicyException, modRev *int64) bool
+	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(key *edgeproto.TrustPolicyExceptionKey, modRev int64))
 }
 
 type RecvTrustPolicyExceptionHandler interface {
@@ -57,8 +58,9 @@ type TrustPolicyExceptionSend struct {
 }
 
 type TrustPolicyExceptionSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewTrustPolicyExceptionSend(handler SendTrustPolicyExceptionHandler) *TrustPolicyExceptionSend {
@@ -113,18 +115,39 @@ func (s *TrustPolicyExceptionSend) Update(ctx context.Context, key *edgeproto.Tr
 	if !s.UpdateOk(ctx, key) { // to be implemented by hand
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *TrustPolicyExceptionSend) updateInternal(ctx context.Context, key *edgeproto.TrustPolicyExceptionKey, modRev int64) {
+func (s *TrustPolicyExceptionSend) ForceDelete(ctx context.Context, key *edgeproto.TrustPolicyExceptionKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *TrustPolicyExceptionSend) updateInternal(ctx context.Context, key *edgeproto.TrustPolicyExceptionKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal TrustPolicyException", "key", key, "modRev", modRev)
 	s.Keys[*key] = TrustPolicyExceptionSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *TrustPolicyExceptionSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+	keys := make(map[edgeproto.TrustPolicyExceptionKey]int64)
+	s.handler.GetForCloudlet(cloudlet, func(objKey *edgeproto.TrustPolicyExceptionKey, modRev int64) {
+		keys[*objKey] = modRev
+	})
+	for k, modRev := range keys {
+		if action == edgeproto.NoticeAction_UPDATE {
+			s.Update(ctx, &k, nil, modRev)
+		} else if action == edgeproto.NoticeAction_DELETE {
+			s.ForceDelete(ctx, &k, modRev)
+		}
+	}
 }
 
 func (s *TrustPolicyExceptionSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -135,7 +158,7 @@ func (s *TrustPolicyExceptionSend) Send(stream StreamNotify, notice *edgeproto.N
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -155,6 +178,7 @@ func (s *TrustPolicyExceptionSend) Send(stream StreamNotify, notice *edgeproto.N
 			fmt.Sprintf("%s send TrustPolicyException", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -285,6 +309,7 @@ func (s *TrustPolicyExceptionRecv) Recv(ctx context.Context, notice *edgeproto.N
 		fmt.Sprintf("%s recv TrustPolicyException", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)

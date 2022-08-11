@@ -1269,6 +1269,7 @@ func (c *FlavorCache) DeleteCondFunc(ctx context.Context, in *Flavor, modRev int
 }
 
 func (c *FlavorCache) Prune(ctx context.Context, validKeys map[FlavorKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune Flavor", "numValidKeys", len(validKeys))
 	notify := make(map[FlavorKey]*FlavorCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

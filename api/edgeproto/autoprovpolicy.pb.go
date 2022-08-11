@@ -1841,6 +1841,7 @@ func (c *AutoProvPolicyCache) DeleteCondFunc(ctx context.Context, in *AutoProvPo
 }
 
 func (c *AutoProvPolicyCache) Prune(ctx context.Context, validKeys map[PolicyKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune AutoProvPolicy", "numValidKeys", len(validKeys))
 	notify := make(map[PolicyKey]*AutoProvPolicyCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {
@@ -3076,6 +3077,7 @@ func (c *AutoProvInfoCache) DeleteCondFunc(ctx context.Context, in *AutoProvInfo
 }
 
 func (c *AutoProvInfoCache) Prune(ctx context.Context, validKeys map[CloudletKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune AutoProvInfo", "numValidKeys", len(validKeys))
 	notify := make(map[CloudletKey]*AutoProvInfoCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

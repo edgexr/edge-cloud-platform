@@ -950,6 +950,7 @@ func (c *ControllerCache) DeleteCondFunc(ctx context.Context, in *Controller, mo
 }
 
 func (c *ControllerCache) Prune(ctx context.Context, validKeys map[ControllerKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune Controller", "numValidKeys", len(validKeys))
 	notify := make(map[ControllerKey]*ControllerCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

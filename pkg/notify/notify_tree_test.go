@@ -52,15 +52,15 @@ func TestNotifyTree(t *testing.T) {
 	found := false
 
 	// one top node
-	top := newNode("top", "127.0.0.1:60002", nil, none)
+	top := newNode("top", "127.0.0.1:16002", nil, none)
 	// two mid nodes
-	mid1 := newNode("mid1", "127.0.0.1:60003", []string{"127.0.0.1:60002"}, dme)
-	mid2 := newNode("mid2", "127.0.0.1:60004", []string{"127.0.0.1:60002"}, crm)
+	mid1 := newNode("mid1", "127.0.0.1:16003", []string{"127.0.0.1:16002"}, dme)
+	mid2 := newNode("mid2", "127.0.0.1:16004", []string{"127.0.0.1:16002"}, crm)
 	// four low nodes
-	low11 := newNode("low11", "", []string{"127.0.0.1:60003"}, dme)
-	low12 := newNode("low12", "", []string{"127.0.0.1:60003"}, dme)
-	low21 := newNode("low21", "", []string{"127.0.0.1:60004"}, crm)
-	low22 := newNode("low22", "", []string{"127.0.0.1:60004"}, crm)
+	low11 := newNode("low11", "", []string{"127.0.0.1:16003"}, dme)
+	low12 := newNode("low12", "", []string{"127.0.0.1:16003"}, dme)
+	low21 := newNode("low21", "", []string{"127.0.0.1:16004"}, crm)
+	low22 := newNode("low22", "", []string{"127.0.0.1:16004"}, crm)
 
 	// Note that data distributed to dme and crm are different.
 
@@ -92,20 +92,22 @@ func TestNotifyTree(t *testing.T) {
 
 	// set ClusterInst and AppInst state to CREATE_REQUESTED so they get
 	// sent to the CRM.
-	for ii, _ := range testutil.ClusterInstData() {
-		testutil.ClusterInstData()[ii].State = edgeproto.TrackedState_CREATE_REQUESTED
-		top.handler.ClusterInstCache.Update(ctx, &testutil.ClusterInstData()[ii], 0)
+	for _, obj := range testutil.ClusterInstData() {
+		obj.State = edgeproto.TrackedState_CREATE_REQUESTED
+		top.handler.ClusterInstCache.Update(ctx, &obj, 0)
 	}
-	for ii, _ := range testutil.AppInstData() {
-		testutil.AppInstData()[ii].State = edgeproto.TrackedState_CREATE_REQUESTED
-		top.handler.AppInstCache.Update(ctx, &testutil.AppInstData()[ii], 0)
+	numAppInstData := 0
+	for _, obj := range testutil.AppInstData() {
+		obj.State = edgeproto.TrackedState_CREATE_REQUESTED
+		top.handler.AppInstCache.Update(ctx, &obj, 0)
+		numAppInstData++
 	}
 	cloudletData := testutil.CloudletData()
 	top.handler.CloudletCache.Update(ctx, &cloudletData[0], 0)
 	top.handler.CloudletCache.Update(ctx, &cloudletData[1], 0)
 	// dmes should get all app insts but no cloudlets
 	for _, n := range dmes {
-		checkClientCache(t, n, 0, 0, len(testutil.AppInstData()), 0)
+		checkClientCache(t, n, 0, 0, numAppInstData, 0)
 	}
 	// crms at all levels get all flavors
 	// mid level gets the appInsts and clusterInsts for all below it.
@@ -181,6 +183,13 @@ func TestNotifyTree(t *testing.T) {
 	checkCache(t, top, AlertType, 1)
 	checkCache(t, mid1, AlertType, 0)
 	checkCache(t, mid2, AlertType, 1)
+	// Clear of CloudletInfo should also trigger flushing of the cloudlet-related
+	// objects in parents that also filter by cloudlet. Otherwise, those objects will
+	// not be able to be deleted because deletes will be filtered out, i.e. deletes
+	// from top to mid2 will be filtered out.
+	// Mid should now equal low22.
+	checkClientCache(t, low22, 3, 3, 4, 1)
+	checkClientCache(t, mid2, 3, 3, 4, 1)
 
 	low21.startClient()
 	checkClientCache(t, low21, 3, 4, 10, 1)
@@ -192,12 +201,13 @@ func TestNotifyTree(t *testing.T) {
 	fmt.Println("========== cleanup")
 
 	// Delete objects to make sure deletes propagate and are applied
-	for ii, _ := range testutil.AppInstData() {
-		top.handler.AppInstCache.Delete(ctx, &testutil.AppInstData()[ii], 0)
+	for _, obj := range testutil.AppInstData() {
+		top.handler.AppInstCache.Delete(ctx, &obj, 0)
 	}
-	for ii, _ := range testutil.ClusterInstData() {
-		log.SpanLog(ctx, log.DebugLevelNotify, "deleting ClusterInst", "key", testutil.ClusterInstData()[ii].Key)
-		top.handler.ClusterInstCache.Delete(ctx, &testutil.ClusterInstData()[ii], 0)
+
+	for _, obj := range testutil.ClusterInstData() {
+		log.SpanLog(ctx, log.DebugLevelNotify, "deleting ClusterInst", "key", obj.Key)
+		top.handler.ClusterInstCache.Delete(ctx, &obj, 0)
 	}
 	top.handler.FlavorCache.Delete(ctx, &testutil.FlavorData()[0], 0)
 	top.handler.FlavorCache.Delete(ctx, &testutil.FlavorData()[1], 0)

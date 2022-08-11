@@ -43,8 +43,9 @@ type ExecRequestSend struct {
 }
 
 type ExecRequestSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewExecRequestSend() *ExecRequestSend {
@@ -91,6 +92,9 @@ func (s *ExecRequestSend) Update(ctx context.Context, msg *edgeproto.ExecRequest
 	return true
 }
 
+func (s *ExecRequestSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+}
+
 func (s *ExecRequestSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
 	s.Mux.Lock()
 	data := s.dataToSend
@@ -112,6 +116,7 @@ func (s *ExecRequestSend) Send(stream StreamNotify, notice *edgeproto.Notice, pe
 			fmt.Sprintf("%s send ExecRequest", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"message", msg)
 		err = stream.Send(notice)
 		if err != nil {
@@ -258,6 +263,7 @@ func (s *ExecRequestRecv) Recv(ctx context.Context, notice *edgeproto.Notice, no
 		fmt.Sprintf("%s recv ExecRequest", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"message", buf)
 	s.handler.RecvExecRequest(ctx, buf)
 	s.sendrecv.stats.Recv++

@@ -147,7 +147,7 @@ type Send{{.Name}}Handler interface {
 	GetAllKeys(ctx context.Context, cb func(key *{{.KeyType}}, modRev int64))
 	GetWithRev(key *{{.KeyType}}, buf *{{.NameType}}, modRev *int64) bool
 {{- if .FilterCloudletKey}}
-	GetForCloudlet(key *edgeproto.CloudletKey, cb func(key *{{.KeyType}}, modRev int64))
+	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(key *{{.KeyType}}, modRev int64))
 {{- end}}
 }
 
@@ -193,6 +193,7 @@ type {{.Name}}Send struct {
 type {{.Name}}SendContext struct {
 	ctx context.Context
 	modRev int64
+	forceDelete bool
 }
 
 {{- if .Cache}}
@@ -261,10 +262,16 @@ func (s *{{.Name}}Send) Update(ctx context.Context, key *{{.KeyType}}, old *{{.N
 		return
 	}
 {{- end}}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *{{.Name}}Send) updateInternal(ctx context.Context, key *{{.KeyType}}, modRev int64) {
+func (s *{{.Name}}Send) ForceDelete(ctx context.Context, key *{{.KeyType}}, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *{{.Name}}Send) updateInternal(ctx context.Context, key *{{.KeyType}}, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 {{- if .PrintSendRecv}}
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal {{.Name}}", "key", key, "modRev", modRev)
@@ -272,6 +279,7 @@ func (s *{{.Name}}Send) updateInternal(ctx context.Context, key *{{.KeyType}}, m
 	s.Keys[*key] = {{.Name}}SendContext{
 		ctx: ctx,
 		modRev: modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
@@ -298,6 +306,22 @@ func (s *{{.Name}}Send) Update(ctx context.Context, msg *{{.NameType}}) bool {
 }
 {{- end}}
 
+func (s *{{.Name}}Send) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+{{- if and .FilterCloudletKey .Cache}}
+	keys := make(map[{{.KeyType}}]int64)
+	s.handler.GetForCloudlet(cloudlet, func(objKey *{{.KeyType}}, modRev int64) {
+		keys[*objKey] = modRev
+	})
+	for k, modRev := range keys {
+		if action == edgeproto.NoticeAction_UPDATE {
+			s.Update(ctx, &k, nil, modRev)
+		} else if action == edgeproto.NoticeAction_DELETE {
+			s.ForceDelete(ctx, &k, modRev)
+		}
+	}
+{{- end}}
+}
+
 func (s *{{.Name}}Send) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
 	s.Mux.Lock()
 {{- if .Cache}}
@@ -315,7 +339,7 @@ func (s *{{.Name}}Send) Send(stream StreamNotify, notice *edgeproto.Notice, peer
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -341,6 +365,7 @@ func (s *{{.Name}}Send) Send(stream StreamNotify, notice *edgeproto.Notice, peer
 			fmt.Sprintf("%s send {{.Name}}", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 {{- if .Cache}}
 			"action", notice.Action,
 			"key", key,
@@ -542,6 +567,7 @@ func (s *{{.Name}}Recv) Recv(ctx context.Context, notice *edgeproto.Notice, noti
 		fmt.Sprintf("%s recv {{.Name}}", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 {{- if .Cache}}
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
