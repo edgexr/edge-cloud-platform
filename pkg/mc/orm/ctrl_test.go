@@ -104,7 +104,7 @@ func TestController(t *testing.T) {
 		BillingPlatform:          billing.BillingTypeFake,
 		DeploymentTag:            "local",
 		AlertCache:               &edgeproto.AlertCache{},
-		PublicAddr:               "http://mc.mobiledgex.net",
+		PublicAddr:               "http://mc.edgecloud.net",
 		PasswordResetConsolePath: "#/passwordreset",
 		VerifyEmailConsolePath:   "#/verify",
 	}
@@ -3161,7 +3161,7 @@ func TestUpgrade(t *testing.T) {
 		UsageCheckpointInterval:  "MONTH",
 		BillingPlatform:          billing.BillingTypeFake,
 		DeploymentTag:            "local",
-		PublicAddr:               "http://mc.mobiledgex.net",
+		PublicAddr:               "http://mc.edgecloud.net",
 		PasswordResetConsolePath: "#/passwordreset",
 		VerifyEmailConsolePath:   "#/verify",
 	}
