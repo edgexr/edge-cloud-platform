@@ -25,6 +25,10 @@ set -e
 
 echo "Setting up Vault"
 
+TMP=$(mktemp -d -t ci-XXXXXXXX)
+
+vault audit enable file file_path="/tmp/vault.audit"
+
 # enable approle if not already enabled
 auths=$(vault auth list)
 case "$auths" in
@@ -33,7 +37,7 @@ case "$auths" in
 esac
 
 if [ -z $CADIR ]; then
-    CADIR=/tmp/vault_pki
+    CADIR=$TMP/vault_pki
 fi
 if [ -z $PKI_DOMAIN ]; then
     PKI_DOMAIN=internaldomain.net
@@ -41,6 +45,9 @@ fi
 
 rm -Rf $CADIR
 mkdir -p $CADIR
+
+# enable kv version2 (default for dev vaults)
+vault kv enable-versioning secret
 
 # enable root pki
 vault secrets enable pki
@@ -104,7 +111,7 @@ vault write pki-global/roles/default \
       allowed_uri_sans="region://none"
 
 # set notifyroot approle - note this is a global service
-cat > /tmp/notifyroot-pol.hcl <<EOF
+cat > $TMP/notifyroot-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
@@ -113,8 +120,8 @@ path "pki-global/issue/*" {
   capabilities = [ "read", "update" ]
 }
 EOF
-vault policy write notifyroot /tmp/notifyroot-pol.hcl
-rm /tmp/notifyroot-pol.hcl
+vault policy write notifyroot $TMP/notifyroot-pol.hcl
+rm $TMP/notifyroot-pol.hcl
 vault write auth/approle/role/notifyroot period="720h" policies="notifyroot"
 # get notifyroot app roleID and generate secretID
 vault read auth/approle/role/notifyroot/role-id
@@ -169,7 +176,7 @@ vault write jwtkeys/config max_versions=2
 #vault kv metadata get jwtkeys/mcorm
 
 # set mcorm approle
-cat > /tmp/mcorm-pol.hcl <<EOF
+cat > $TMP/mcorm-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
@@ -203,7 +210,7 @@ path "secret/data/accounts/gcs" {
 }
 
 path "secret/data/registry/*" {
-  capabilities = [ "read" ]
+  capabilities = [ "read", "create", "update" ]
 }
 
 path "pki-global/issue/*" {
@@ -223,15 +230,15 @@ path "secret/data/federation/*" {
 }
 EOF
 
-vault policy write mcorm /tmp/mcorm-pol.hcl
-rm /tmp/mcorm-pol.hcl
+vault policy write mcorm $TMP/mcorm-pol.hcl
+rm $TMP/mcorm-pol.hcl
 vault write auth/approle/role/mcorm period="720h" policies="mcorm"
 # get mcorm app roleID and generate secretID
 vault read auth/approle/role/mcorm/role-id
 vault write -f auth/approle/role/mcorm/secret-id
 
 # set rotator approle - rotates mcorm secret
-cat > /tmp/rotator-pol.hcl <<EOF
+cat > $TMP/rotator-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
@@ -244,9 +251,11 @@ path "jwtkeys/metadata/*" {
   capabilities = [ "read" ]
 }
 EOF
-vault policy write rotator /tmp/rotator-pol.hcl
-rm /tmp/rotator-pol.hcl
+vault policy write rotator $TMP/rotator-pol.hcl
+rm $TMP/rotator-pol.hcl
 vault write auth/approle/role/rotator period="720h" policies="rotator"
 # get rotator app roleID and generate secretID
 vault read auth/approle/role/rotator/role-id
 vault write -f auth/approle/role/rotator/secret-id
+
+rm -Rf $TMP

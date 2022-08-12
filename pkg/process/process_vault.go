@@ -40,6 +40,7 @@ type Vault struct {
 	ListenAddr string
 	RootToken  string
 	CADir      string
+	RunCACert  string
 	PKIDomain  string
 	cmd        *exec.Cmd
 }
@@ -94,7 +95,6 @@ func (p *Vault) StartLocal(logfile string, opts ...StartOp) error {
 	if p.DmeSecret == "" {
 		p.DmeSecret = "dme-secret"
 	}
-	mcormSecret := "mc-secret"
 
 	args := []string{"server", "-dev"}
 	if p.ListenAddr == "" {
@@ -134,8 +134,19 @@ func (p *Vault) StartLocal(logfile string, opts ...StartOp) error {
 	if p.cmd.Process == nil {
 		return fmt.Errorf("failed to start vault process, see log %s", logfile)
 	}
+	if err := p.Setup(opts...); err != nil {
+		p.StopLocal()
+		return err
+	}
+	return nil
+}
+
+func (p *Vault) Setup(opts ...StartOp) error {
+	var err error
 	options := StartOptions{}
 	options.ApplyStartOptions(opts...)
+
+	mcormSecret := "mc-secret"
 
 	// run setup script
 	gopath := os.Getenv("GOPATH")
@@ -143,7 +154,6 @@ func (p *Vault) StartLocal(logfile string, opts ...StartOp) error {
 	out := p.Run("/bin/sh", setup, &err)
 	fmt.Println(out)
 	if err != nil {
-		p.StopLocal()
 		return err
 	}
 	// get roleIDs and secretIDs
@@ -156,20 +166,17 @@ func (p *Vault) StartLocal(logfile string, opts ...StartOp) error {
 	p.PutSecret("", "mcorm", mcormSecret, &err)
 
 	// Set up dummy key to be used with local chef server to provision cloudlets
-	chefApiKeyPath := "/tmp/dummyChefApiKey.json"
-	err = GetDummyPrivateKey(chefApiKeyPath)
+	chefKeyFile, err := GetDummyPrivateKey()
 	if err != nil {
-		p.StopLocal()
 		return err
 	}
-	p.Run("vault", fmt.Sprintf("kv put %s @%s", "/secret/accounts/chef", chefApiKeyPath), &err)
+	defer os.Remove(chefKeyFile.Name())
+	p.Run("vault", fmt.Sprintf("kv put %s @%s", "/secret/accounts/chef", chefKeyFile.Name()), &err)
 	if err != nil {
-		p.StopLocal()
 		return err
 	}
 	p.Run("vault", fmt.Sprintf("kv put /secret/accounts/noreplyemail Email=dummy@email.com"), &err)
 	if err != nil {
-		p.StopLocal()
 		return err
 	}
 
@@ -181,7 +188,6 @@ func (p *Vault) StartLocal(logfile string, opts ...StartOp) error {
 	p.Run("vault", fmt.Sprintf("kv put %s @%s", path, fileName), &err)
 	log.Printf("PutQosApiKeyToVault at path %s, err=%s", path, err)
 	if err != nil {
-		p.StopLocal()
 		return err
 	}
 
@@ -213,19 +219,16 @@ func (p *Vault) StartLocal(logfile string, opts ...StartOp) error {
 			p.PutSecretsJson(path, InfluxCredsFile, &err)
 		}
 		if err != nil {
-			p.StopLocal()
 			return err
 		}
 	}
 	if options.RolesFile != "" {
 		roleYaml, err := yaml.Marshal(&vroles)
 		if err != nil {
-			p.StopLocal()
 			return err
 		}
 		err = ioutil.WriteFile(options.RolesFile, roleYaml, 0644)
 		if err != nil {
-			p.StopLocal()
 			return err
 		}
 	}
@@ -305,6 +308,9 @@ func (p *Vault) RunWithInput(bin, args string, input io.Reader, err *error) stri
 		fmt.Sprintf("VAULT_ADDR=%s", p.ListenAddr),
 		fmt.Sprintf("VAULT_TOKEN=%s", p.RootToken),
 		fmt.Sprintf("CADIR=%s", p.CADir))
+	if p.RunCACert != "" {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("VAULT_CACERT=%s", p.RunCACert))
+	}
 	if p.PKIDomain != "" {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("PKI_DOMAIN=%s", p.PKIDomain))
 	}
@@ -360,19 +366,14 @@ func (p *Vault) StartLocalRoles() (*VaultRoles, error) {
 	return &roles, nil
 }
 
-func GetDummyPrivateKey(fileName string) error {
-	outFile, err := os.Create(fileName)
-	if err != nil {
-		return err
-	}
-
+func GetDummyPrivateKey() (*os.File, error) {
 	chefApiKey := struct {
 		ApiKey string `json:"apikey"`
 	}{}
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	out := pem.EncodeToMemory(
@@ -384,9 +385,17 @@ func GetDummyPrivateKey(fileName string) error {
 	chefApiKey.ApiKey = string(out)
 	jsonKey, err := json.Marshal(chefApiKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	outFile.Write(jsonKey)
+	outFile, err := os.CreateTemp("/tmp", "dummyChefApiKey.*.json")
+	if err != nil {
+		return nil, err
+	}
 
-	return nil
+	_, err = outFile.Write(jsonKey)
+	if err != nil {
+		os.Remove(outFile.Name())
+		return nil, err
+	}
+	return outFile, nil
 }

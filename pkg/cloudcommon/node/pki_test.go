@@ -37,6 +37,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -64,10 +65,11 @@ func TestInternalPki(t *testing.T) {
 			Name: "vault",
 		},
 		Regions:    "us,eu",
-		ListenAddr: "http://127.0.0.1:8201",
+		ListenAddr: "https://127.0.0.1:8201",
 		PKIDomain:  "edgecloud.net",
 	}
-	vroles, err := vp.StartLocalRoles()
+	_, vroles, vaultCleanup := testutil.NewVaultTestCluster(t, &vp)
+	defer vaultCleanup()
 	require.Nil(t, err, "start local vault")
 	defer vp.StopLocal()
 
