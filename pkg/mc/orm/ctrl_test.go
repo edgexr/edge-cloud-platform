@@ -1455,6 +1455,8 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		ds.EnableMidstreamFailure(api, syncChan)
 		ds.ShowDummyCount = 3
 
+		numEvents := de.GetNumEvents()
+
 		appInst := &ormapi.RegionAppInst{}
 		appInst.Region = ctrl.Region
 		appInst.AppInst.Key.AppKey.Organization = org1
@@ -1469,7 +1471,8 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 
 		// wait for event
 		var lastEvent *node.EventData
-		matches := de.WaitLastEventMatches(func(event *node.EventData) bool {
+		matches := de.WaitLastEventMatches(numEvents, func(event *node.EventData) bool {
+			log.DebugLog(log.DebugLevelInfo, "Check event", "event", *event)
 			lastEvent = event
 			if event.Name != apiUri {
 				return false
