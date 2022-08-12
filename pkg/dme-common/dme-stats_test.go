@@ -89,18 +89,23 @@ func TestStatDrops(t *testing.T) {
 	}
 	wg.Wait()
 
-	// sleep one more interval to get the final stats
-	time.Sleep(notifyInterval)
-
-	dbCount := uint64(0)
-	db.mux.Lock()
-	for _, stat := range db.stats {
-		dbCount += stat.reqs
+	var dbCount uint64
+	numStats := 0
+	for ii := 0; ii < 5; ii++ {
+		dbCount = uint64(0)
+		db.mux.Lock()
+		for _, stat := range db.stats {
+			dbCount += stat.reqs
+		}
+		numStats = len(db.stats)
+		db.mux.Unlock()
+		if numThreads == numStats && count == dbCount {
+			break
+		}
+		time.Sleep(notifyInterval / 2)
 	}
 	assert.Equal(t, numThreads, len(db.stats), "stat count")
-	db.mux.Unlock()
-
-	assert.Equal(t, count, dbCount, "api requests")
+	assert.Equal(t, count, dbCount, "api requests expected %d but was %d", count, dbCount)
 	fmt.Printf("served %d requests\n", count)
 }
 

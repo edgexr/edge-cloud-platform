@@ -20,10 +20,10 @@ import (
 	"testing"
 	"time"
 
-	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	dmetest "github.com/edgexr/edge-cloud-platform/pkg/dme-testutil"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
+	dmetest "github.com/edgexr/edge-cloud-platform/pkg/dme-testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/stretchr/testify/assert"
@@ -46,7 +46,7 @@ func TestNotify(t *testing.T) {
 	require.Nil(t, err, "init edge events plugin")
 	dmecommon.SetupMatchEngine(eehandler)
 	initRateLimitMgr()
-	dmecommon.InitAppInstClients()
+	dmecommon.InitAppInstClients(time.Minute)
 	defer dmecommon.StopAppInstClients()
 	apps := dmetest.GenerateApps()
 	appInsts := dmetest.GenerateAppInsts()

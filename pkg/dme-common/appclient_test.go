@@ -19,8 +19,8 @@ import (
 	"time"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	dmetest "github.com/edgexr/edge-cloud-platform/pkg/dme-testutil"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	dmetest "github.com/edgexr/edge-cloud-platform/pkg/dme-testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
@@ -33,7 +33,7 @@ func TestAddClients(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 	Settings.MaxTrackedDmeClients = 2
 
-	InitAppInstClients()
+	InitAppInstClients(time.Minute)
 	defer StopAppInstClients()
 
 	// need to grab lock to avoid concurrent access with cleanup thread
