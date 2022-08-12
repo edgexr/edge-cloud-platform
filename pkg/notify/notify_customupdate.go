@@ -74,9 +74,8 @@ func (s *CloudletSend) UpdateOk(ctx context.Context, key *edgeproto.CloudletKey)
 		if key.FederatedOrganization == "" {
 			return false
 		}
-		// XXX this shouldn't be needed, VMPool and GPUDrivers are always
-		// sent regardless of filterFederatedCloudlet.
-		//triggerSend = true
+		// trigger send of VMPool and GPUDrivers is not needed because they
+		// are always sent regardless of filterFederatedCloudlet.
 	}
 	if triggerSend {
 		// For filterCloudletKeys, we need to send referenced VMPools and
