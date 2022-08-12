@@ -29,6 +29,7 @@ var _ = math.Inf
 type SendVMPoolHandler interface {
 	GetAllKeys(ctx context.Context, cb func(key *edgeproto.VMPoolKey, modRev int64))
 	GetWithRev(key *edgeproto.VMPoolKey, buf *edgeproto.VMPool, modRev *int64) bool
+	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(key *edgeproto.VMPoolKey, modRev int64))
 }
 
 type RecvVMPoolHandler interface {
@@ -58,8 +59,9 @@ type VMPoolSend struct {
 }
 
 type VMPoolSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewVMPoolSend(handler SendVMPoolHandler) *VMPoolSend {
@@ -114,18 +116,39 @@ func (s *VMPoolSend) Update(ctx context.Context, key *edgeproto.VMPoolKey, old *
 	if !s.UpdateOk(ctx, key) { // to be implemented by hand
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *VMPoolSend) updateInternal(ctx context.Context, key *edgeproto.VMPoolKey, modRev int64) {
+func (s *VMPoolSend) ForceDelete(ctx context.Context, key *edgeproto.VMPoolKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *VMPoolSend) updateInternal(ctx context.Context, key *edgeproto.VMPoolKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal VMPool", "key", key, "modRev", modRev)
 	s.Keys[*key] = VMPoolSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *VMPoolSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+	keys := make(map[edgeproto.VMPoolKey]int64)
+	s.handler.GetForCloudlet(cloudlet, func(objKey *edgeproto.VMPoolKey, modRev int64) {
+		keys[*objKey] = modRev
+	})
+	for k, modRev := range keys {
+		if action == edgeproto.NoticeAction_UPDATE {
+			s.Update(ctx, &k, nil, modRev)
+		} else if action == edgeproto.NoticeAction_DELETE {
+			s.ForceDelete(ctx, &k, modRev)
+		}
+	}
 }
 
 func (s *VMPoolSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -136,7 +159,7 @@ func (s *VMPoolSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer st
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -156,6 +179,7 @@ func (s *VMPoolSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer st
 			fmt.Sprintf("%s send VMPool", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -286,6 +310,7 @@ func (s *VMPoolRecv) Recv(ctx context.Context, notice *edgeproto.Notice, notifyI
 		fmt.Sprintf("%s recv VMPool", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)
@@ -395,8 +420,9 @@ type VMPoolInfoSend struct {
 }
 
 type VMPoolInfoSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewVMPoolInfoSend(handler SendVMPoolInfoHandler) *VMPoolInfoSend {
@@ -445,18 +471,28 @@ func (s *VMPoolInfoSend) Update(ctx context.Context, key *edgeproto.VMPoolKey, o
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *VMPoolInfoSend) updateInternal(ctx context.Context, key *edgeproto.VMPoolKey, modRev int64) {
+func (s *VMPoolInfoSend) ForceDelete(ctx context.Context, key *edgeproto.VMPoolKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *VMPoolInfoSend) updateInternal(ctx context.Context, key *edgeproto.VMPoolKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal VMPoolInfo", "key", key, "modRev", modRev)
 	s.Keys[*key] = VMPoolInfoSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *VMPoolInfoSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *VMPoolInfoSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -467,7 +503,7 @@ func (s *VMPoolInfoSend) Send(stream StreamNotify, notice *edgeproto.Notice, pee
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -487,6 +523,7 @@ func (s *VMPoolInfoSend) Send(stream StreamNotify, notice *edgeproto.Notice, pee
 			fmt.Sprintf("%s send VMPoolInfo", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -618,6 +655,7 @@ func (s *VMPoolInfoRecv) Recv(ctx context.Context, notice *edgeproto.Notice, not
 		fmt.Sprintf("%s recv VMPoolInfo", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)

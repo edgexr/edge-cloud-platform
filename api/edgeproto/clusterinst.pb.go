@@ -2828,6 +2828,7 @@ func (c *ClusterInstCache) DeleteCondFunc(ctx context.Context, in *ClusterInst, 
 }
 
 func (c *ClusterInstCache) Prune(ctx context.Context, validKeys map[ClusterInstKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune ClusterInst", "numValidKeys", len(validKeys))
 	notify := make(map[ClusterInstKey]*ClusterInstCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {
@@ -3952,6 +3953,7 @@ func (c *ClusterInstInfoCache) DeleteCondFunc(ctx context.Context, in *ClusterIn
 }
 
 func (c *ClusterInstInfoCache) Prune(ctx context.Context, validKeys map[ClusterInstKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune ClusterInstInfo", "numValidKeys", len(validKeys))
 	notify := make(map[ClusterInstKey]*ClusterInstInfoCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

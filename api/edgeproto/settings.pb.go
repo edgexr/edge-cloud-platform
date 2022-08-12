@@ -2041,6 +2041,7 @@ func (c *SettingsCache) DeleteCondFunc(ctx context.Context, in *Settings, modRev
 }
 
 func (c *SettingsCache) Prune(ctx context.Context, validKeys map[SettingsKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune Settings", "numValidKeys", len(validKeys))
 	notify := make(map[SettingsKey]*SettingsCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

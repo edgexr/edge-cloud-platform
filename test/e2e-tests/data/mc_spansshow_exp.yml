@@ -38,6 +38,7 @@
       keyvalues:
         action: DELETE
         key: '{dmuus dmuus-cloud-1 }'
+        local: null
         modRev: null
         peer: null
         peerAddr: null

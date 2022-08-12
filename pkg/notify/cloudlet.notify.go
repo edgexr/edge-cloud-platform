@@ -58,8 +58,9 @@ type CloudletInternalSend struct {
 }
 
 type CloudletInternalSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewCloudletInternalSend(handler SendCloudletInternalHandler) *CloudletInternalSend {
@@ -108,18 +109,28 @@ func (s *CloudletInternalSend) Update(ctx context.Context, key *edgeproto.Cloudl
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *CloudletInternalSend) updateInternal(ctx context.Context, key *edgeproto.CloudletKey, modRev int64) {
+func (s *CloudletInternalSend) ForceDelete(ctx context.Context, key *edgeproto.CloudletKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *CloudletInternalSend) updateInternal(ctx context.Context, key *edgeproto.CloudletKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal CloudletInternal", "key", key, "modRev", modRev)
 	s.Keys[*key] = CloudletInternalSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *CloudletInternalSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *CloudletInternalSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -130,7 +141,7 @@ func (s *CloudletInternalSend) Send(stream StreamNotify, notice *edgeproto.Notic
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -150,6 +161,7 @@ func (s *CloudletInternalSend) Send(stream StreamNotify, notice *edgeproto.Notic
 			fmt.Sprintf("%s send CloudletInternal", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -280,6 +292,7 @@ func (s *CloudletInternalRecv) Recv(ctx context.Context, notice *edgeproto.Notic
 		fmt.Sprintf("%s recv CloudletInternal", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)
@@ -360,6 +373,7 @@ func (s *Client) RegisterRecvCloudletInternalCache(cache CloudletInternalCacheHa
 type SendGPUDriverHandler interface {
 	GetAllKeys(ctx context.Context, cb func(key *edgeproto.GPUDriverKey, modRev int64))
 	GetWithRev(key *edgeproto.GPUDriverKey, buf *edgeproto.GPUDriver, modRev *int64) bool
+	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(key *edgeproto.GPUDriverKey, modRev int64))
 }
 
 type RecvGPUDriverHandler interface {
@@ -389,8 +403,9 @@ type GPUDriverSend struct {
 }
 
 type GPUDriverSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewGPUDriverSend(handler SendGPUDriverHandler) *GPUDriverSend {
@@ -445,18 +460,39 @@ func (s *GPUDriverSend) Update(ctx context.Context, key *edgeproto.GPUDriverKey,
 	if !s.UpdateOk(ctx, key) { // to be implemented by hand
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *GPUDriverSend) updateInternal(ctx context.Context, key *edgeproto.GPUDriverKey, modRev int64) {
+func (s *GPUDriverSend) ForceDelete(ctx context.Context, key *edgeproto.GPUDriverKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *GPUDriverSend) updateInternal(ctx context.Context, key *edgeproto.GPUDriverKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal GPUDriver", "key", key, "modRev", modRev)
 	s.Keys[*key] = GPUDriverSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *GPUDriverSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+	keys := make(map[edgeproto.GPUDriverKey]int64)
+	s.handler.GetForCloudlet(cloudlet, func(objKey *edgeproto.GPUDriverKey, modRev int64) {
+		keys[*objKey] = modRev
+	})
+	for k, modRev := range keys {
+		if action == edgeproto.NoticeAction_UPDATE {
+			s.Update(ctx, &k, nil, modRev)
+		} else if action == edgeproto.NoticeAction_DELETE {
+			s.ForceDelete(ctx, &k, modRev)
+		}
+	}
 }
 
 func (s *GPUDriverSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -467,7 +503,7 @@ func (s *GPUDriverSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -487,6 +523,7 @@ func (s *GPUDriverSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer
 			fmt.Sprintf("%s send GPUDriver", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -617,6 +654,7 @@ func (s *GPUDriverRecv) Recv(ctx context.Context, notice *edgeproto.Notice, noti
 		fmt.Sprintf("%s recv GPUDriver", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)
@@ -726,8 +764,9 @@ type CloudletSend struct {
 }
 
 type CloudletSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewCloudletSend(handler SendCloudletHandler) *CloudletSend {
@@ -782,18 +821,28 @@ func (s *CloudletSend) Update(ctx context.Context, key *edgeproto.CloudletKey, o
 	if !s.UpdateOk(ctx, key) { // to be implemented by hand
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *CloudletSend) updateInternal(ctx context.Context, key *edgeproto.CloudletKey, modRev int64) {
+func (s *CloudletSend) ForceDelete(ctx context.Context, key *edgeproto.CloudletKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *CloudletSend) updateInternal(ctx context.Context, key *edgeproto.CloudletKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal Cloudlet", "key", key, "modRev", modRev)
 	s.Keys[*key] = CloudletSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *CloudletSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *CloudletSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -804,7 +853,7 @@ func (s *CloudletSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer 
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -824,6 +873,7 @@ func (s *CloudletSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer 
 			fmt.Sprintf("%s send Cloudlet", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -954,6 +1004,7 @@ func (s *CloudletRecv) Recv(ctx context.Context, notice *edgeproto.Notice, notif
 		fmt.Sprintf("%s recv Cloudlet", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)
@@ -1064,8 +1115,9 @@ type CloudletInfoSend struct {
 }
 
 type CloudletInfoSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewCloudletInfoSend(handler SendCloudletInfoHandler) *CloudletInfoSend {
@@ -1114,18 +1166,28 @@ func (s *CloudletInfoSend) Update(ctx context.Context, key *edgeproto.CloudletKe
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *CloudletInfoSend) updateInternal(ctx context.Context, key *edgeproto.CloudletKey, modRev int64) {
+func (s *CloudletInfoSend) ForceDelete(ctx context.Context, key *edgeproto.CloudletKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *CloudletInfoSend) updateInternal(ctx context.Context, key *edgeproto.CloudletKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal CloudletInfo", "key", key, "modRev", modRev)
 	s.Keys[*key] = CloudletInfoSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *CloudletInfoSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *CloudletInfoSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -1136,7 +1198,7 @@ func (s *CloudletInfoSend) Send(stream StreamNotify, notice *edgeproto.Notice, p
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -1156,6 +1218,7 @@ func (s *CloudletInfoSend) Send(stream StreamNotify, notice *edgeproto.Notice, p
 			fmt.Sprintf("%s send CloudletInfo", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -1287,6 +1350,7 @@ func (s *CloudletInfoRecv) Recv(ctx context.Context, notice *edgeproto.Notice, n
 		fmt.Sprintf("%s recv CloudletInfo", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)

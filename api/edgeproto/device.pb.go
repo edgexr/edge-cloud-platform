@@ -1637,6 +1637,7 @@ func (c *DeviceCache) DeleteCondFunc(ctx context.Context, in *Device, modRev int
 }
 
 func (c *DeviceCache) Prune(ctx context.Context, validKeys map[DeviceKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune Device", "numValidKeys", len(validKeys))
 	notify := make(map[DeviceKey]*DeviceCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

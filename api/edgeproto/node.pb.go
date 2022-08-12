@@ -1424,6 +1424,7 @@ func (c *NodeCache) DeleteCondFunc(ctx context.Context, in *Node, modRev int64, 
 }
 
 func (c *NodeCache) Prune(ctx context.Context, validKeys map[NodeKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune Node", "numValidKeys", len(validKeys))
 	notify := make(map[NodeKey]*NodeCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

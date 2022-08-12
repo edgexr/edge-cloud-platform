@@ -889,6 +889,7 @@ func (c *AppInstClientKeyCache) DeleteCondFunc(ctx context.Context, in *AppInstC
 }
 
 func (c *AppInstClientKeyCache) Prune(ctx context.Context, validKeys map[AppInstClientKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune AppInstClientKey", "numValidKeys", len(validKeys))
 	notify := make(map[AppInstClientKey]*AppInstClientKeyCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

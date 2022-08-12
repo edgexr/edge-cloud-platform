@@ -1680,6 +1680,7 @@ func (c *CloudletRefsCache) DeleteCondFunc(ctx context.Context, in *CloudletRefs
 }
 
 func (c *CloudletRefsCache) Prune(ctx context.Context, validKeys map[CloudletKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune CloudletRefs", "numValidKeys", len(validKeys))
 	notify := make(map[CloudletKey]*CloudletRefsCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {
@@ -2455,6 +2456,7 @@ func (c *ClusterRefsCache) DeleteCondFunc(ctx context.Context, in *ClusterRefs, 
 }
 
 func (c *ClusterRefsCache) Prune(ctx context.Context, validKeys map[ClusterInstKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune ClusterRefs", "numValidKeys", len(validKeys))
 	notify := make(map[ClusterInstKey]*ClusterRefsCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {
@@ -3134,6 +3136,7 @@ func (c *AppInstRefsCache) DeleteCondFunc(ctx context.Context, in *AppInstRefs, 
 }
 
 func (c *AppInstRefsCache) Prune(ctx context.Context, validKeys map[AppKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune AppInstRefs", "numValidKeys", len(validKeys))
 	notify := make(map[AppKey]*AppInstRefsCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {
