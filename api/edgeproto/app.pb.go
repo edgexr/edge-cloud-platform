@@ -3382,6 +3382,7 @@ func (c *AppCache) DeleteCondFunc(ctx context.Context, in *App, modRev int64, co
 }
 
 func (c *AppCache) Prune(ctx context.Context, validKeys map[AppKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune App", "numValidKeys", len(validKeys))
 	notify := make(map[AppKey]*AppCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

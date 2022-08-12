@@ -1162,6 +1162,7 @@ func (c *TrustPolicyCache) DeleteCondFunc(ctx context.Context, in *TrustPolicy, 
 }
 
 func (c *TrustPolicyCache) Prune(ctx context.Context, validKeys map[PolicyKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune TrustPolicy", "numValidKeys", len(validKeys))
 	notify := make(map[PolicyKey]*TrustPolicyCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

@@ -1353,6 +1353,7 @@ func (c *ResTagTableCache) DeleteCondFunc(ctx context.Context, in *ResTagTable, 
 }
 
 func (c *ResTagTableCache) Prune(ctx context.Context, validKeys map[ResTagTableKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune ResTagTable", "numValidKeys", len(validKeys))
 	notify := make(map[ResTagTableKey]*ResTagTableCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

@@ -44,8 +44,9 @@ type DebugRequestSend struct {
 }
 
 type DebugRequestSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewDebugRequestSend() *DebugRequestSend {
@@ -86,6 +87,9 @@ func (s *DebugRequestSend) Update(ctx context.Context, msg *edgeproto.DebugReque
 	return true
 }
 
+func (s *DebugRequestSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+}
+
 func (s *DebugRequestSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
 	s.Mux.Lock()
 	data := s.dataToSend
@@ -107,6 +111,7 @@ func (s *DebugRequestSend) Send(stream StreamNotify, notice *edgeproto.Notice, p
 			fmt.Sprintf("%s send DebugRequest", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"message", msg)
 		err = stream.Send(notice)
 		if err != nil {
@@ -253,6 +258,7 @@ func (s *DebugRequestRecv) Recv(ctx context.Context, notice *edgeproto.Notice, n
 		fmt.Sprintf("%s recv DebugRequest", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"message", buf)
 	s.handler.RecvDebugRequest(ctx, buf)
 	s.sendrecv.stats.Recv++
@@ -303,8 +309,9 @@ type DebugReplySend struct {
 }
 
 type DebugReplySendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewDebugReplySend() *DebugReplySend {
@@ -343,6 +350,9 @@ func (s *DebugReplySend) Update(ctx context.Context, msg *edgeproto.DebugReply) 
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
 	return true
+}
+
+func (s *DebugReplySend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *DebugReplySend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {

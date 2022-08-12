@@ -66,7 +66,7 @@ func NewClient(name string, addrs []string, tlsDialOption grpc.DialOption, ops .
 	for _, op := range ops {
 		op(&s.options)
 	}
-	s.sendrecv.init("client")
+	s.sendrecv.init(name, "client")
 	return &s
 }
 
@@ -248,7 +248,8 @@ func (s *Client) negotiate(stream StreamNotify) error {
 	addr := s.addrs[s.addrIdx]
 	s.mux.Unlock()
 	log.DebugLog(log.DebugLevelNotify, "Notify client connected",
-		"server", addr, "peer", s.sendrecv.peer, "local", s.GetLocalAddr(),
+		"server", addr, "peer", s.sendrecv.peer, "local", s.name,
+		"localAddr", s.GetLocalAddr(),
 		"version", s.version, "supported-version", NotifyVersion,
 		"remoteWanted", s.sendrecv.remoteWanted,
 		"filterCloudletKey", s.sendrecv.filterCloudletKeys,

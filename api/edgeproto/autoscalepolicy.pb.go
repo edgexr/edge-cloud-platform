@@ -1304,6 +1304,7 @@ func (c *AutoScalePolicyCache) DeleteCondFunc(ctx context.Context, in *AutoScale
 }
 
 func (c *AutoScalePolicyCache) Prune(ctx context.Context, validKeys map[PolicyKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune AutoScalePolicy", "numValidKeys", len(validKeys))
 	notify := make(map[PolicyKey]*AutoScalePolicyCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

@@ -43,8 +43,9 @@ type MetricSend struct {
 }
 
 type MetricSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewMetricSend() *MetricSend {
@@ -83,6 +84,9 @@ func (s *MetricSend) Update(ctx context.Context, msg *edgeproto.Metric) bool {
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
 	return true
+}
+
+func (s *MetricSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *MetricSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {

@@ -67,6 +67,7 @@ message TrustPolicyException {
   option (protogen.generate_cache) = true;
   option (protogen.notify_cache) = true;
   option (protogen.notify_custom_update) = true;
+  option (protogen.notify_filter_cloudlet_key) = true;
   option (protogen.alias) = "name=Key.Name,appname=Key.AppKey.Name,apporg=Key.AppKey.Organization,appvers=Key.AppKey.Version,cloudletpoolorg=Key.CloudletPoolKey.Organization,cloudletpoolname=Key.CloudletPoolKey.Name";
   option (protogen.uses_org) = "key=AppKey.Organization";
 }

@@ -703,6 +703,7 @@ func (c *OperatorCodeCache) DeleteCondFunc(ctx context.Context, in *OperatorCode
 }
 
 func (c *OperatorCodeCache) Prune(ctx context.Context, validKeys map[OperatorCodeKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune OperatorCode", "numValidKeys", len(validKeys))
 	notify := make(map[OperatorCodeKey]*OperatorCodeCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

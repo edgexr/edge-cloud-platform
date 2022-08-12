@@ -58,8 +58,9 @@ type CloudletPoolSend struct {
 }
 
 type CloudletPoolSendContext struct {
-	ctx    context.Context
-	modRev int64
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
 }
 
 func NewCloudletPoolSend(handler SendCloudletPoolHandler) *CloudletPoolSend {
@@ -108,18 +109,28 @@ func (s *CloudletPoolSend) Update(ctx context.Context, key *edgeproto.CloudletPo
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	s.updateInternal(ctx, key, modRev)
+	forceDelete := false
+	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *CloudletPoolSend) updateInternal(ctx context.Context, key *edgeproto.CloudletPoolKey, modRev int64) {
+func (s *CloudletPoolSend) ForceDelete(ctx context.Context, key *edgeproto.CloudletPoolKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *CloudletPoolSend) updateInternal(ctx context.Context, key *edgeproto.CloudletPoolKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal CloudletPool", "key", key, "modRev", modRev)
 	s.Keys[*key] = CloudletPoolSendContext{
-		ctx:    ctx,
-		modRev: modRev,
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
 	}
 	s.Mux.Unlock()
 	s.sendrecv.wakeup()
+}
+
+func (s *CloudletPoolSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 }
 
 func (s *CloudletPoolSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
@@ -130,7 +141,7 @@ func (s *CloudletPoolSend) Send(stream StreamNotify, notice *edgeproto.Notice, p
 	for key, sendContext := range keys {
 		ctx := sendContext.ctx
 		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
-		if found {
+		if found && !sendContext.forceDelete {
 			notice.Action = edgeproto.NoticeAction_UPDATE
 		} else {
 			notice.Action = edgeproto.NoticeAction_DELETE
@@ -150,6 +161,7 @@ func (s *CloudletPoolSend) Send(stream StreamNotify, notice *edgeproto.Notice, p
 			fmt.Sprintf("%s send CloudletPool", s.sendrecv.cliserv),
 			"peerAddr", peer,
 			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
 			"action", notice.Action,
 			"key", key,
 			"modRev", notice.ModRev)
@@ -280,6 +292,7 @@ func (s *CloudletPoolRecv) Recv(ctx context.Context, notice *edgeproto.Notice, n
 		fmt.Sprintf("%s recv CloudletPool", s.sendrecv.cliserv),
 		"peerAddr", peerAddr,
 		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
 		"action", notice.Action,
 		"key", buf.GetKeyVal(),
 		"modRev", notice.ModRev)

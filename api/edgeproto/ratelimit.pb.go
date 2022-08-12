@@ -2226,6 +2226,7 @@ func (c *FlowRateLimitSettingsCache) DeleteCondFunc(ctx context.Context, in *Flo
 }
 
 func (c *FlowRateLimitSettingsCache) Prune(ctx context.Context, validKeys map[FlowRateLimitSettingsKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune FlowRateLimitSettings", "numValidKeys", len(validKeys))
 	notify := make(map[FlowRateLimitSettingsKey]*FlowRateLimitSettingsCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {
@@ -3119,6 +3120,7 @@ func (c *MaxReqsRateLimitSettingsCache) DeleteCondFunc(ctx context.Context, in *
 }
 
 func (c *MaxReqsRateLimitSettingsCache) Prune(ctx context.Context, validKeys map[MaxReqsRateLimitSettingsKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune MaxReqsRateLimitSettings", "numValidKeys", len(validKeys))
 	notify := make(map[MaxReqsRateLimitSettingsKey]*MaxReqsRateLimitSettingsCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {
