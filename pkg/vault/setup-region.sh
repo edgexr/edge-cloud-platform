@@ -36,6 +36,8 @@ if [ -z "$REGION" ]; then
 fi
 echo "Setting up Vault region $REGION"
 
+TMP=$(mktemp -d -t ci-XXXXXXXX)
+
 if [ -z $PKI_DOMAIN ]; then
     PKI_DOMAIN=internaldomain.net
 fi
@@ -59,7 +61,7 @@ vault write pki-regional-cloudlet/roles/$REGION \
       allow_subdomains=true \
       allowed_uri_sans="region://$REGION"
 
-cat > /tmp/controller-pol.hcl <<EOF
+cat > $TMP/controller-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
@@ -94,15 +96,15 @@ path "secret/data/kafka/$REGION/*" {
   capabilities = [ "create", "update", "delete", "read" ]
 }
 EOF
-vault policy write $REGION.controller /tmp/controller-pol.hcl
-rm /tmp/controller-pol.hcl
+vault policy write $REGION.controller $TMP/controller-pol.hcl
+rm $TMP/controller-pol.hcl
 vault write auth/approle/role/$REGION.controller period="720h" policies="$REGION.controller"
 # get controller app roleID and generate secretID
 vault read auth/approle/role/$REGION.controller/role-id
 vault write -f auth/approle/role/$REGION.controller/secret-id
 
 # set dme approle
-cat > /tmp/dme-pol.hcl <<EOF
+cat > $TMP/dme-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
@@ -126,15 +128,15 @@ path "/secret/data/accounts/gddt/*" {
     capabilities = [ "read" ]
 }
 EOF
-vault policy write $REGION.dme /tmp/dme-pol.hcl
-rm /tmp/dme-pol.hcl
+vault policy write $REGION.dme $TMP/dme-pol.hcl
+rm $TMP/dme-pol.hcl
 vault write auth/approle/role/$REGION.dme period="720h" policies="$REGION.dme"
 # get dme app roleID and generate secretID
 vault read auth/approle/role/$REGION.dme/role-id
 vault write -f auth/approle/role/$REGION.dme/secret-id
 
 # set cluster-svc approle
-cat > /tmp/cluster-svc-pol.hcl <<EOF
+cat > $TMP/cluster-svc-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
@@ -142,15 +144,15 @@ path "pki-regional/issue/$REGION" {
   capabilities = [ "read", "update" ]
 }
 EOF
-vault policy write $REGION.cluster-svc /tmp/cluster-svc-pol.hcl
-rm /tmp/cluster-svc-pol.hcl
+vault policy write $REGION.cluster-svc $TMP/cluster-svc-pol.hcl
+rm $TMP/cluster-svc-pol.hcl
 vault write auth/approle/role/$REGION.cluster-svc period="720h" policies="$REGION.cluster-svc"
 # get cluster-svc app roleID and generate secretID
 vault read auth/approle/role/$REGION.cluster-svc/role-id
 vault write -f auth/approle/role/$REGION.cluster-svc/secret-id
 
 # set rotator approle - rotates dme secret
-cat > /tmp/rotator-pol.hcl <<EOF
+cat > $TMP/rotator-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
@@ -161,8 +163,8 @@ path "$REGION/jwtkeys/metadata/*" {
   capabilities = [ "read" ]
 }
 EOF
-vault policy write $REGION.rotator /tmp/rotator-pol.hcl
-rm /tmp/rotator-pol.hcl
+vault policy write $REGION.rotator $TMP/rotator-pol.hcl
+rm $TMP/rotator-pol.hcl
 vault write auth/approle/role/$REGION.rotator period="720h" policies="$REGION.rotator"
 # get rotator app roleID and generate secretID
 vault read auth/approle/role/$REGION.rotator/role-id
@@ -183,7 +185,7 @@ cat /tmp/edgectl.$REGION/issue | jq -r .data.private_key > /tmp/edgectl.$REGION/
 cat /tmp/edgectl.$REGION/issue | jq -r .data.issuing_ca > /tmp/edgectl.$REGION/mex-ca.crt
 
 # set edgeturn approle
-cat > /tmp/edgeturn-pol.hcl <<EOF
+cat > $TMP/edgeturn-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
@@ -191,8 +193,8 @@ path "pki-regional/issue/$REGION" {
   capabilities = [ "read", "update" ]
 }
 EOF
-vault policy write $REGION.edgeturn /tmp/edgeturn-pol.hcl
-rm /tmp/edgeturn-pol.hcl
+vault policy write $REGION.edgeturn $TMP/edgeturn-pol.hcl
+rm $TMP/edgeturn-pol.hcl
 vault write auth/approle/role/$REGION.edgeturn period="720h" policies="$REGION.edgeturn"
 # get edgeturn app roleID and generate secretID
 vault read auth/approle/role/$REGION.edgeturn/role-id
@@ -200,7 +202,7 @@ vault write -f auth/approle/role/$REGION.edgeturn/secret-id
 
 # autoprov approle
 # Just need access to influx db credentials
-cat > /tmp/autoprov-pol.hcl <<EOF
+cat > $TMP/autoprov-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
@@ -211,15 +213,15 @@ path "pki-regional/issue/$REGION" {
   capabilities = [ "read", "update" ]
 }
 EOF
-vault policy write $REGION.autoprov /tmp/autoprov-pol.hcl
-rm /tmp/autoprov-pol.hcl
+vault policy write $REGION.autoprov $TMP/autoprov-pol.hcl
+rm $TMP/autoprov-pol.hcl
 vault write auth/approle/role/$REGION.autoprov period="720h" policies="$REGION.autoprov"
 # get autoprov app roleID and generate secretID
 vault read auth/approle/role/$REGION.autoprov/role-id
 vault write -f auth/approle/role/$REGION.autoprov/secret-id
 
 # frm approle
-cat > /tmp/frm-pol.hcl <<EOF
+cat > $TMP/frm-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
@@ -233,11 +235,13 @@ path "pki-regional/issue/$REGION" {
   capabilities = [ "read", "update" ]
 }
 EOF
-vault policy write $REGION.frm /tmp/frm-pol.hcl
-rm /tmp/frm-pol.hcl
+vault policy write $REGION.frm $TMP/frm-pol.hcl
+rm $TMP/frm-pol.hcl
 vault write auth/approle/role/$REGION.frm period="720h" policies="$REGION.frm"
 # get frm app roleID and generate secretID
 vault read auth/approle/role/$REGION.frm/role-id
 vault write -f auth/approle/role/$REGION.frm/secret-id
 
 # Note: Shepherd uses CRM's Vault access creds.
+
+rm -Rf $TMP

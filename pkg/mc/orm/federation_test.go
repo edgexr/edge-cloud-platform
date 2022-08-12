@@ -68,9 +68,10 @@ type CtrlObj struct {
 }
 
 type OPAttr struct {
-	uri    string
-	server *Server
-	ctrls  []CtrlObj
+	uri          string
+	server       *Server
+	ctrls        []CtrlObj
+	vaultCleanup func()
 }
 
 type FederatorAttr struct {
@@ -91,6 +92,9 @@ func (o *OPAttr) CleanupOperatorPlatform(ctx context.Context) {
 		ctrl.Cleanup(ctx)
 	}
 	o.server.Stop()
+	if o.vaultCleanup != nil {
+		o.vaultCleanup()
+	}
 }
 
 func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []string, region string) *CtrlObj {
@@ -214,6 +218,22 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 	fedAddr, err := cloudcommon.GetAvailablePort("127.0.0.1:0")
 	require.Nil(t, err, "get available port")
 
+	vp := process.Vault{
+		Common: process.Common{
+			Name: "vault",
+		},
+		ListenAddr: "https://127.0.0.1:8203",
+		PKIDomain:  "edgecloud.net",
+	}
+	_, vroles, vaultCleanup := testutil.NewVaultTestCluster(t, &vp)
+	os.Setenv("VAULT_ROLE_ID", vroles.MCRoleID)
+	os.Setenv("VAULT_SECRET_ID", vroles.MCSecretID)
+	vcleanup := func() {
+		os.Unsetenv("VAULT_ROLE_ID")
+		os.Unsetenv("VAULT_SECRET_ID")
+		vaultCleanup()
+	}
+
 	uri := "http://" + addr + "/api/v1"
 	config := ServerConfig{
 		ServAddr:                 addr,
@@ -221,15 +241,15 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 		FederationAddr:           fedAddr,
 		RunLocal:                 true,
 		InitLocal:                true,
-		LocalVault:               true,
 		IgnoreEnv:                true,
+		VaultAddr:                vp.ListenAddr,
 		AlertMgrAddr:             testAlertMgrAddr,
 		AlertmgrResolveTimout:    3 * time.Minute,
 		UsageCheckpointInterval:  "MONTH",
 		BillingPlatform:          billing.BillingTypeFake,
 		DeploymentTag:            "local",
 		AlertCache:               &edgeproto.AlertCache{},
-		PublicAddr:               "http://mc.mobiledgex.net",
+		PublicAddr:               "http://mc.edgecloud.net",
 		PasswordResetConsolePath: "#/passwordreset",
 		VerifyEmailConsolePath:   "#/verify",
 		testTransport:            mockTransport,
@@ -263,9 +283,10 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 	ctrlObjs := []CtrlObj{*ctrl1, *ctrl2}
 
 	opAttr := OPAttr{
-		uri:    uri,
-		server: server,
-		ctrls:  ctrlObjs,
+		uri:          uri,
+		server:       server,
+		ctrls:        ctrlObjs,
+		vaultCleanup: vcleanup,
 	}
 
 	// wait till mc is ready

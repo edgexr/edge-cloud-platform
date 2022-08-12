@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -96,7 +97,7 @@ func checkPod(namespace string, podname string, count int, maxwait int) bool {
 	log.Printf("check pod for name %s\n", podname)
 
 	for i := 0; i <= maxwait; i++ {
-		podlist, err := kubeClientset.CoreV1().Pods(namespace).List(v1.ListOptions{})
+		podlist, err := kubeClientset.CoreV1().Pods(namespace).List(context.Background(), v1.ListOptions{})
 
 		readyCount := 0
 		if err != nil {
@@ -121,7 +122,7 @@ func checkPod(namespace string, podname string, count int, maxwait int) bool {
 }
 
 func copyFileToPods(podName string, src string, dest string) error {
-	podlist, err := kubeClientset.CoreV1().Pods("default").List(v1.ListOptions{})
+	podlist, err := kubeClientset.CoreV1().Pods("default").List(context.Background(), v1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -186,7 +187,7 @@ func GetK8sServiceAddr(svcname string, maxwait int) (string, error) {
 	}
 	for i := 0; i <= maxwait; i += 3 {
 		//todo we may not always want default namespace
-		svc, err := kubeClientset.CoreV1().Services("default").Get(svcname, v1.GetOptions{})
+		svc, err := kubeClientset.CoreV1().Services("default").Get(context.Background(), svcname, v1.GetOptions{})
 		if err != nil {
 			return "", err
 		}

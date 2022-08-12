@@ -65,7 +65,7 @@ func TestServer(t *testing.T) {
 		UsageCheckpointInterval:  "MONTH",
 		BillingPlatform:          billing.BillingTypeFake,
 		DeploymentTag:            "local",
-		PublicAddr:               "http://mc.mobiledgex.net",
+		PublicAddr:               "http://mc.edgecloud.net",
 		PasswordResetConsolePath: "#/passwordreset",
 		VerifyEmailConsolePath:   "#/verify",
 	}
@@ -119,7 +119,7 @@ func mcClientUpdateUserWithMockMail(mcClient *mctestclient.Client, uri string, t
 
 func userVerifyEmail(mcClient *mctestclient.Client, t *testing.T, uri string, mailMsg string) {
 	// verify that link to verify email is correct
-	matchStr := "mcctl --addr http://mc.mobiledgex.net user verifyemail token="
+	matchStr := "mcctl --addr http://mc.edgecloud.net user verifyemail token="
 	if serverConfig.ConsoleAddr != "" {
 		matchStr = fmt.Sprintf("Click to verify: %s#/verify?token", serverConfig.ConsoleAddr)
 	}
@@ -532,7 +532,7 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	_, err = mcClient.PasswordResetRequest(uri, &emailReq)
 	require.Nil(t, err)
 	// verify that password reset link is correct
-	require.Contains(t, m.Message, "mcctl --addr http://mc.mobiledgex.net user passwordreset token=")
+	require.Contains(t, m.Message, "mcctl --addr http://mc.edgecloud.net user passwordreset token=")
 	m.Reset()
 
 	// with consoleaddr set, this will send console URL as part of email
@@ -547,7 +547,7 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	_, err = mcClient.ResendVerify(uri, &emailReq)
 	require.Nil(t, err)
 	// verify that password reset link is correct
-	require.Contains(t, m.Message, "mcctl --addr http://mc.mobiledgex.net user verifyemail token=")
+	require.Contains(t, m.Message, "mcctl --addr http://mc.edgecloud.net user verifyemail token=")
 
 	// check role assignments as mister x
 	roleAssignments, status, err = mcClient.ShowRoleAssignment(uri, tokenMisterX, ClientNoShowFilter)
