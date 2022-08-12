@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"flag"
@@ -93,23 +94,16 @@ func TestEdgeTurnServer(t *testing.T) {
 	flag.Parse() // set defaults
 
 	*testMode = true
+	ctx := log.StartTestSpan(context.Background())
 
-	started := make(chan bool)
-	go func() {
-		err := setupTurnServer(started)
-		if err != nil {
-			log.FatalLog(err.Error())
-		}
-	}()
-	<-started
+	turnLis, err := setupTurnServer(ctx)
+	require.Nil(t, err)
+	defer turnLis.Close()
 
-	go func() {
-		err := setupProxyServer(started)
-		if err != nil {
-			log.FatalLog(err.Error())
-		}
-	}()
-	<-started
+	proxyMux := http.NewServeMux()
+	proxyServer, err := setupProxyServer(ctx, proxyMux)
+	require.Nil(t, err)
+	defer proxyServer.Shutdown(context.Background())
 
 	// Test session info received for ExecReqShell
 	// CRM connection to EdgeTurn
@@ -192,6 +186,7 @@ func testEdgeTurnConsole(t *testing.T, isTLS bool) {
 		}))
 	}
 	require.NotNil(t, consoleServer, "start console server")
+	defer consoleServer.Close()
 	consoleURL := consoleServer.URL + "?token=xyz"
 	initURL, err := url.Parse(consoleURL)
 	require.Nil(t, err)
@@ -223,11 +218,13 @@ func testEdgeTurnConsole(t *testing.T, isTLS bool) {
 	proxyVal := TurnProxy.Get(sessInfo.Token)
 	require.NotNil(t, proxyVal, "proxyValue is present, hence not nil")
 	require.NotNil(t, proxyVal.CrmConn, "crm connection is not nil")
+	fmt.Printf("Token is %s\n", sessInfo.Token)
 
 	// setup SMUX connection to console server
 	sess, err := smux.Server(turnConn1, nil)
 	require.Nil(t, err, "setup smux server")
 	go setupConsoleStream(sess, initURL.Host, isTLS)
+	defer sess.Close()
 
 	contents, err := e2e.ReadConsoleURL("https://127.0.0.1:8443/edgeconsole?edgetoken="+sessInfo.Token, nil)
 	require.Nil(t, err)
