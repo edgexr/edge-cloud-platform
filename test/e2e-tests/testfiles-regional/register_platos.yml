@@ -25,8 +25,6 @@ tests:
 
 - name: check device show to have both of the devices
   actions: [ctrlapi-deviceshow]
-#  retrycount: 4
-#  retryintervalsec: 0.5
   compareyaml:
     yaml1: "{{outputdir}}/show-commands.yml"
     yaml2: "{{datadir}}/device_show.yml"
