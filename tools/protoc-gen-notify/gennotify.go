@@ -238,13 +238,13 @@ func (s *{{.Name}}Send) UpdateAll(ctx context.Context) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-{{- if .CustomUpdate}}
-	if !s.UpdateAllOk() { // to be implemented by hand
-		return
-	}
-{{- end}}
 	s.Mux.Lock()
 	s.handler.GetAllKeys(ctx, func(key *{{.KeyType}}, modRev int64) {
+{{- if .CustomUpdate}}
+		if !s.UpdateAllOkLocked(key) { // to be implemented by hand
+			return
+		}
+{{- end}}
 		s.Keys[*key] = {{.Name}}SendContext{
 			ctx: ctx,
 			modRev: modRev,

@@ -440,11 +440,11 @@ func (s *GPUDriverSend) UpdateAll(ctx context.Context) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	if !s.UpdateAllOk() { // to be implemented by hand
-		return
-	}
 	s.Mux.Lock()
 	s.handler.GetAllKeys(ctx, func(key *edgeproto.GPUDriverKey, modRev int64) {
+		if !s.UpdateAllOkLocked(key) { // to be implemented by hand
+			return
+		}
 		s.Keys[*key] = GPUDriverSendContext{
 			ctx:    ctx,
 			modRev: modRev,
@@ -801,11 +801,11 @@ func (s *CloudletSend) UpdateAll(ctx context.Context) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	if !s.UpdateAllOk() { // to be implemented by hand
-		return
-	}
 	s.Mux.Lock()
 	s.handler.GetAllKeys(ctx, func(key *edgeproto.CloudletKey, modRev int64) {
+		if !s.UpdateAllOkLocked(key) { // to be implemented by hand
+			return
+		}
 		s.Keys[*key] = CloudletSendContext{
 			ctx:    ctx,
 			modRev: modRev,

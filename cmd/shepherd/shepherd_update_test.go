@@ -22,13 +22,13 @@ import (
 	"testing"
 	"time"
 
-	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_test"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_test"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -89,7 +89,7 @@ func TestShepherdUpdate(t *testing.T) {
 	start()
 	defer stop()
 
-	crmServer.WaitServerCount(1)
+	require.Nil(t, crmServer.WaitServerCount(1))
 
 	// test settings update
 

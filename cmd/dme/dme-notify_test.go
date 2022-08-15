@@ -153,8 +153,7 @@ func TestNotify(t *testing.T) {
 	count := len(dmetest.DeviceData) - 1 // Since one is a duplicate
 	// verify that devices are in local cache
 	assert.Equal(t, count, len(dmecommon.PlatformClientsCache.Objs))
-	serverHandler.WaitForDevices(count)
-	assert.Equal(t, count, len(serverHandler.DeviceCache.Objs))
+	require.Nil(t, serverHandler.WaitForDevices(count))
 	// Delete all elements from local cache directly
 	for _, data := range dmecommon.PlatformClientsCache.Objs {
 		obj := data.Obj

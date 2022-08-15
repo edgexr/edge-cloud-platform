@@ -20,6 +20,7 @@ package notify
 
 import (
 	"fmt"
+	"runtime"
 	"time"
 
 	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
@@ -258,6 +259,7 @@ func WaitFor(cache WaitForCache, count int) error {
 		time.Sleep(20 * time.Millisecond)
 	}
 	log.DebugLog(log.DebugLevelInfo, "Timed out waiting for cache", "type", cache.GetTypeString(), "expected", count, "actual", cache.GetCount())
+	DumpStacks()
 	return fmt.Errorf("Timed out waiting for %s count %d, was %d", cache.GetTypeString(), count, cache.GetCount())
 }
 
@@ -347,27 +349,53 @@ func (s *DummyHandler) GetCloudletDetails(key *edgeproto.CloudletKey) (string, i
 	return "", -1, fmt.Errorf("Unable to find cloudlet in node list")
 }
 
-func (s *DummyHandler) WaitForDevices(count int) {
-	WaitFor(&s.DeviceCache, count)
+func (s *DummyHandler) WaitForDevices(count int) error {
+	return WaitFor(&s.DeviceCache, count)
 }
 
-func (s *Client) WaitForConnect(connect uint64) {
+func (s *Client) WaitForConnect(connect uint64) error {
+	var cnt uint64
 	for i := 0; i < 10; i++ {
-		if s.sendrecv.stats.Connects == connect {
-			break
+		cnt = s.sendrecv.stats.Connects
+		if cnt == connect {
+			return nil
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
+	DumpStacks()
+	return fmt.Errorf("Timed out waiting for client %s connect count %d, was %d", s.name, connect, cnt)
 }
 
-func (mgr *ServerMgr) WaitServerCount(count int) {
+func (s *Client) WaitForSendAllEnd(count uint64) error {
+	var cnt uint64
+	for i := 0; i < 10; i++ {
+		cnt = s.sendrecv.stats.SendAllEnd
+		if cnt == cnt {
+			return nil
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	DumpStacks()
+	return fmt.Errorf("Timed out waiting for client %s sendAllEnd count %d, was %d", s.name, count, cnt)
+}
+
+func (mgr *ServerMgr) WaitServerCount(count int) error {
+	cnt := 0
 	for i := 0; i < 50; i++ {
 		mgr.mux.Lock()
-		cnt := len(mgr.table)
+		cnt = len(mgr.table)
 		mgr.mux.Unlock()
 		if cnt == count {
-			break
+			return nil
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
+	DumpStacks()
+	return fmt.Errorf("Timed out waiting for mgr %s server count %d, was %d", mgr.name, count, cnt)
+}
+
+func DumpStacks() {
+	buf := make([]byte, 200*1024)
+	len := runtime.Stack(buf, true)
+	fmt.Println(string(buf[:len]))
 }
