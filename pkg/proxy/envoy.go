@@ -105,7 +105,7 @@ func CreateEnvoyProxy(ctx context.Context, client ssh.Client, name, listenIP, ba
 	if opts.DockerUser != "" {
 		cmdArgs = append(cmdArgs, []string{"-u", fmt.Sprintf("%s:%s", opts.DockerUser, opts.DockerUser)}...)
 	}
-	cmdArgs = append(cmdArgs, "europe-west3-docker.pkg.dev/openxedge/docker-public/envoy-with-curl@"+cloudcommon.EnvoyImageDigest)
+	cmdArgs = append(cmdArgs, "ghcr.io/edgexr/envoy-with-curl@"+cloudcommon.EnvoyImageDigest)
 	cmdArgs = append(cmdArgs, []string{"envoy", "-c", "/etc/envoy/envoy.yaml --use-dynamic-base-id"}...)
 
 	cmd := "docker " + strings.Join(cmdArgs, " ")
