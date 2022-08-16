@@ -21,9 +21,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"google.golang.org/grpc"
@@ -114,7 +114,9 @@ func getClusterInstToScale(ctx context.Context, name string, alert *edgeproto.Al
 func scaleClusterInst(ctx context.Context, name string, alert *edgeproto.Alert, inst *edgeproto.ClusterInst) error {
 	conn, err := grpc.Dial(*ctrlAddr, dialOpts, grpc.WithBlock(),
 		grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc),
-		grpc.WithStreamInterceptor(log.StreamClientTraceGrpc))
+		grpc.WithStreamInterceptor(log.StreamClientTraceGrpc),
+		grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})),
+	)
 	if err != nil {
 		return fmt.Errorf("Connect to controller %s failed, %v", *ctrlAddr, err)
 	}

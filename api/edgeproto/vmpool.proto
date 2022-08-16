@@ -121,6 +121,7 @@ message VMPool {
   option (protogen.generate_stream_key) = true;
   option (protogen.notify_cache) = true;
   option (protogen.notify_custom_update) = true;
+  option (protogen.notify_filter_cloudlet_key) = true;
   option (protogen.noconfig) = "Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Vms:#.Flavor";
   option (protogen.alias) = "vmpool=Key.Name,vmpoolorg=Key.Organization";
   option (protogen.uses_org) = "key=Organization";

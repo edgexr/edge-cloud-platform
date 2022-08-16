@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	fmt "fmt"
-	"github.com/coreos/etcd/clientv3/concurrency"
 	distributed_match_engine "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	dme_proto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -20,6 +19,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -3779,6 +3779,7 @@ func (c *AppInstCache) DeleteCondFunc(ctx context.Context, in *AppInst, modRev i
 }
 
 func (c *AppInstCache) Prune(ctx context.Context, validKeys map[AppInstKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune AppInst", "numValidKeys", len(validKeys))
 	notify := make(map[AppInstKey]*AppInstCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {
@@ -4918,6 +4919,7 @@ func (c *AppInstInfoCache) DeleteCondFunc(ctx context.Context, in *AppInstInfo, 
 }
 
 func (c *AppInstInfoCache) Prune(ctx context.Context, validKeys map[AppInstKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune AppInstInfo", "numValidKeys", len(validKeys))
 	notify := make(map[AppInstKey]*AppInstInfoCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

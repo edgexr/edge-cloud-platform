@@ -1,8 +1,6 @@
 *~
 .vscode
 *.kubeconfig
-pkg/notify/*.notify.go
-test/testutil/*_testutil.go
 *.postgres
 *__pycache__
 link-gogo-protobuf
@@ -13,7 +11,6 @@ pkg/cloudcommon/node/vault.log
 pkg/cloudcommon/node/vault_pki
 pkg/cloudcommon/node/roles.yaml
 tools/edgeprotogen/edgeprotogen.proto
-tools/edgeprotogen/edgeprotogen.pb.go
 pkg/vault/vault.log
 pkg/vault/vault_pki
 pkg/vault/roles.yaml

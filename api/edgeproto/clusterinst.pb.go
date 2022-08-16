@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	fmt "fmt"
-	"github.com/coreos/etcd/clientv3/concurrency"
 	distributed_match_engine "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	dme_proto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -20,6 +19,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -2828,6 +2828,7 @@ func (c *ClusterInstCache) DeleteCondFunc(ctx context.Context, in *ClusterInst, 
 }
 
 func (c *ClusterInstCache) Prune(ctx context.Context, validKeys map[ClusterInstKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune ClusterInst", "numValidKeys", len(validKeys))
 	notify := make(map[ClusterInstKey]*ClusterInstCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {
@@ -3952,6 +3953,7 @@ func (c *ClusterInstInfoCache) DeleteCondFunc(ctx context.Context, in *ClusterIn
 }
 
 func (c *ClusterInstInfoCache) Prune(ctx context.Context, validKeys map[ClusterInstKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune ClusterInstInfo", "numValidKeys", len(validKeys))
 	notify := make(map[ClusterInstKey]*ClusterInstInfoCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

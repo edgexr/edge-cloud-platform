@@ -29,7 +29,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"google.golang.org/grpc"
 )
 
@@ -168,6 +168,7 @@ func connectGrpcAddr(ctx context.Context, addr string, serverIssuers []node.Matc
 	return grpc.Dial(addr, dialOption,
 		grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc),
 		grpc.WithStreamInterceptor(log.StreamClientTraceGrpc),
+		grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})),
 	)
 }
 

@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
-	_ "github.com/labstack/echo"
+	_ "github.com/labstack/echo/v4"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/gormlog"

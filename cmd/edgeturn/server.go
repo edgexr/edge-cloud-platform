@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -117,40 +118,34 @@ func main() {
 	}
 	defer nodeMgr.Finish()
 
-	started := make(chan bool)
-	go func() {
-		if *listenAddr == "" {
-			log.FatalLog("listenAddr is empty")
-		}
-		err := setupTurnServer(started)
-		if err != nil {
-			log.FatalLog(err.Error())
-		}
-	}()
-	<-started
+	if *listenAddr == "" {
+		log.FatalLog("listenAddr is empty")
+	}
+	turnLis, err := setupTurnServer(ctx)
+	if err != nil {
+		log.FatalLog(err.Error())
+	}
+	defer turnLis.Close()
+
 	log.SpanLog(ctx, log.DebugLevelInfo, "started edgeturn server")
 
-	go func() {
-		if *proxyAddr == "" {
-			log.FatalLog("proxyAddr is empty")
-		}
-		err := setupProxyServer(started)
-		if err != nil {
-			log.FatalLog(err.Error())
-		}
-	}()
-	<-started
+	proxyMux := http.NewServeMux()
+	if *proxyAddr == "" {
+		log.FatalLog("proxyAddr is empty")
+	}
+	proxyServer, err := setupProxyServer(ctx, proxyMux)
+	if err != nil {
+		log.FatalLog(err.Error())
+	}
+	defer proxyServer.Shutdown(context.Background())
+
 	log.SpanLog(ctx, log.DebugLevelInfo, "started edgeturn proxy server")
 	span.Finish()
 
 	<-sigChan
 }
 
-func setupTurnServer(started chan bool) error {
-	span := log.StartSpan(log.DebugLevelInfo, "turnserver")
-	ctx := log.ContextWithSpan(context.Background(), span)
-	defer span.Finish()
-
+func setupTurnServer(ctx context.Context) (net.Listener, error) {
 	tlsConfig, err := nodeMgr.InternalPki.GetServerTlsConfig(ctx,
 		nodeMgr.CommonName(),
 		node.CertIssuerRegional,
@@ -158,34 +153,41 @@ func setupTurnServer(started chan bool) error {
 			node.SameRegionalCloudletMatchCA(),
 		})
 	if err != nil {
-		return fmt.Errorf("failed to get tls config: %v", err)
+		return nil, fmt.Errorf("failed to get tls config: %v", err)
 	}
 	if *testMode && tlsConfig == nil {
 		tlsConfig, err = edgetls.GetLocalTLSConfig()
 		if err != nil {
-			return fmt.Errorf("failed to get tls config: %v", err)
+			return nil, fmt.Errorf("failed to get tls config: %v", err)
 		}
 	}
 	turnConn, err := tls.Listen("tcp", *listenAddr, tlsConfig)
 	if err != nil {
-		return fmt.Errorf("failed to start server, %v", err)
+		return nil, fmt.Errorf("failed to start server, %v", err)
 	}
-	defer turnConn.Close()
 
-	started <- true
-
-	for {
-		crmConn, err := turnConn.Accept()
-		if err != nil {
-			return fmt.Errorf("failed to accept connection, %v", err)
+	go func() {
+		for {
+			crmConn, err := turnConn.Accept()
+			if err != nil {
+				if errors.Is(err, net.ErrClosed) {
+					break
+				}
+				log.FatalLog(fmt.Sprintf("failed to accept connection, %v", err))
+			}
+			go handleConnection(crmConn)
 		}
-		go handleConnection(ctx, crmConn)
-	}
+	}()
+	return turnConn, nil
 }
 
 // On every connection from CRM to EdgeTurn server, it returns a new Access Token.
 // This token is used to proxy client connections to actual CRM connection
-func handleConnection(ctx context.Context, crmConn net.Conn) {
+func handleConnection(crmConn net.Conn) {
+	span := log.StartSpan(log.DebugLevelInfo, "handleConnection")
+	ctx := log.ContextWithSpan(context.Background(), span)
+	defer span.Finish()
+
 	// Fetch exec req info
 	var execReqInfo cloudcommon.ExecReqInfo
 	d := json.NewDecoder(crmConn)
@@ -221,6 +223,17 @@ func handleConnection(ctx context.Context, crmConn net.Conn) {
 		log.SpanLog(ctx, log.DebugLevelInfo, "failed to marshal session info", "info", sessInfo, "err", err)
 		return
 	}
+	// set up proxy session before writing back reply, otherwise there is a
+	// race condition where the client may connect and find the proxy but without
+	// the session set yet.
+	if execReqInfo.Type == cloudcommon.ExecReqConsole {
+		sess, err := smux.Client(crmConn, nil)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfo, "failed to setup smux client", "err", err)
+			return
+		}
+		proxyVal.ProxySess = sess
+	}
 	TurnProxy.Add(token, proxyVal)
 
 	log.SpanLog(ctx, log.DebugLevelInfo, "send session info", "info", string(out))
@@ -242,12 +255,6 @@ func handleConnection(ctx context.Context, crmConn net.Conn) {
 
 		}
 	case cloudcommon.ExecReqConsole:
-		sess, err := smux.Client(crmConn, nil)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfo, "failed to setup smux client", "err", err)
-			return
-		}
-		proxyVal.ProxySess = sess
 		select {
 		// Note: we can't figure out when to close this connection as there can be multiple requests from
 		// single console url and hence we keep the URL valid for a certain time period (ConsoleConnTimeout)
@@ -299,13 +306,16 @@ func (t *HttpTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 		token = tokenVals[0]
 	}
 	if token == "" {
-		return nil, fmt.Errorf("no token found")
+		return nil, fmt.Errorf("token %s not found", token)
 	}
 
 	proxyVal := TurnProxy.Get(token)
-	if proxyVal == nil || proxyVal.ProxySess == nil {
+	if proxyVal == nil {
+		return nil, fmt.Errorf("missing proxy value for token %s", token)
+	}
+	if proxyVal.ProxySess == nil {
 		TurnProxy.Remove(token)
-		return nil, fmt.Errorf("missing required details in proxy value")
+		return nil, fmt.Errorf("missing session in proxy value for token %s", token)
 	}
 	if proxyVal.InitURL != nil && proxyVal.InitURL.Scheme != "" {
 		r.Header.Set("X-Forwarded-Proto", proxyVal.InitURL.Scheme)
@@ -330,11 +340,7 @@ func (t *HttpTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
-func setupProxyServer(started chan bool) error {
-	span := log.StartSpan(log.DebugLevelInfo, "turnproxyserver")
-	ctx := log.ContextWithSpan(context.Background(), span)
-	defer span.Finish()
-
+func setupProxyServer(ctx context.Context, serveMux *http.ServeMux) (*http.Server, error) {
 	consoleHostname := ""
 	if *consoleAddr != "" {
 		addr := *consoleAddr
@@ -343,7 +349,7 @@ func setupProxyServer(started chan bool) error {
 		}
 		u, err := url.Parse(addr)
 		if err != nil {
-			return fmt.Errorf("Invalid consoleAddr, must be a valid URL")
+			return nil, fmt.Errorf("Invalid consoleAddr, must be a valid URL")
 		}
 		consoleHostname = u.Host
 	}
@@ -363,9 +369,9 @@ func setupProxyServer(started chan bool) error {
 		},
 	}
 
-	http.HandleFunc("/", proxy.ServeHTTP)
+	serveMux.HandleFunc("/", proxy.ServeHTTP)
 
-	http.HandleFunc("/edgeconsole", func(w http.ResponseWriter, r *http.Request) {
+	serveMux.HandleFunc("/edgeconsole", func(w http.ResponseWriter, r *http.Request) {
 		queryArgs := r.URL.Query()
 		tokenVals, ok := queryArgs["edgetoken"]
 		if !ok || len(tokenVals) != 1 {
@@ -462,7 +468,7 @@ func setupProxyServer(started chan bool) error {
 		}
 		return consoleHostname == u.Host
 	}
-	http.HandleFunc("/edgeshell", func(w http.ResponseWriter, r *http.Request) {
+	serveMux.HandleFunc("/edgeshell", func(w http.ResponseWriter, r *http.Request) {
 		queryArgs := r.URL.Query()
 		tokenVals, ok := queryArgs["edgetoken"]
 		token := ""
@@ -518,7 +524,7 @@ func setupProxyServer(started chan bool) error {
 				buf := make([]byte, 1500)
 				n, err := crmConn.Read(buf)
 				if err != nil {
-					if err != io.EOF {
+					if err != io.EOF && !errors.Is(err, net.ErrClosed) {
 						log.SpanLog(ctx, log.DebugLevelInfo, "failed to read from proxyConn", "err", err)
 					}
 					if n <= 0 {
@@ -548,28 +554,30 @@ func setupProxyServer(started chan bool) error {
 		log.SpanLog(ctx, log.DebugLevelInfo, "client exited", "token", token)
 	})
 
-	started <- true
-
-	var err error
+	server := &http.Server{
+		Addr:    *proxyAddr,
+		Handler: serveMux,
+	}
 	if *testMode {
 		// In test mode, setup HTTP server with TLS
 		var tlsConfig *tls.Config
-		tlsConfig, err = edgetls.GetLocalTLSConfig()
+		tlsConfig, err := edgetls.GetLocalTLSConfig()
 		if err != nil {
-			return fmt.Errorf("unable to fetch tls local server config, %v", err)
+			return nil, fmt.Errorf("unable to fetch tls local server config, %v", err)
 		}
-		server := &http.Server{
-			Addr:      *proxyAddr,
-			Handler:   nil,
-			TLSConfig: tlsConfig,
+		server.TLSConfig = tlsConfig
+	}
+	go func() {
+		var err error
+		if server.TLSConfig != nil {
+			err = server.ListenAndServeTLS("", "")
+		} else {
+			// Certs will be provided by LB
+			err = server.ListenAndServe()
 		}
-		err = server.ListenAndServeTLS("", "")
-	} else {
-		// Certs will be provided by LB
-		err = http.ListenAndServe(*proxyAddr, nil)
-	}
-	if err != nil && err != http.ErrServerClosed {
-		return fmt.Errorf("Failed to start console proxy server, %v", err)
-	}
-	return nil
+		if err != nil && err != http.ErrServerClosed {
+			log.FatalLog("Failed to start console proxy server", "err", err)
+		}
+	}()
+	return server, nil
 }

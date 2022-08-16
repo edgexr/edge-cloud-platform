@@ -455,7 +455,8 @@ func startServices() error {
 
 	server := grpc.NewServer(cloudcommon.GrpcCreds(apiTlsConfig),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(cloudcommon.AuditUnaryInterceptor)),
-		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(cloudcommon.AuditStreamInterceptor)))
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(cloudcommon.AuditStreamInterceptor)),
+		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}))
 	edgeproto.RegisterAppApiServer(server, allApis.appApi)
 	edgeproto.RegisterResTagTableApiServer(server, allApis.resTagTableApi)
 	edgeproto.RegisterOperatorCodeApiServer(server, allApis.operatorCodeApi)

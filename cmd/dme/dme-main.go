@@ -742,7 +742,7 @@ func main() {
 	dmecommon.EEStats.Start()
 	defer dmecommon.EEStats.Stop()
 
-	dmecommon.InitAppInstClients()
+	dmecommon.InitAppInstClients(time.Duration(dmecommon.Settings.AppinstClientCleanupInterval))
 	defer dmecommon.StopAppInstClients()
 
 	initRateLimitMgr()
@@ -808,7 +808,8 @@ func main() {
 		span.Finish()
 		log.FatalLog("get TLS config for grpc server failed", "err", err)
 	}
-	grpcOpts = append(grpcOpts, cloudcommon.GrpcCreds(dmeServerTlsConfig))
+	grpcOpts = append(grpcOpts, cloudcommon.GrpcCreds(dmeServerTlsConfig),
+		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}))
 
 	s := grpc.NewServer(grpcOpts...)
 

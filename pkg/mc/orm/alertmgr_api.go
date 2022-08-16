@@ -18,7 +18,7 @@ import (
 	fmt "fmt"
 	"strings"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"

@@ -22,14 +22,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"google.golang.org/grpc/status"
 )
 
@@ -104,6 +104,12 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			bd := middleware.BodyDump(func(c echo.Context, reqB, resB []byte) {
 				reqBody = reqB
 				resBody = resB
+				// new versions of echo use json.Encode to write json,
+				// which adds an extra newline to the output.
+				// For logging, remove this extra newline.
+				if len(resBody) > 0 && resBody[len(resBody)-1] == '\n' {
+					resBody = resBody[:len(resBody)-1]
+				}
 			})
 			next = bd(next)
 		}

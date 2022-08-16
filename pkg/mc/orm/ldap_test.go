@@ -20,10 +20,10 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/billing"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/ldap.v3"
@@ -54,7 +54,7 @@ func TestLDAPServer(t *testing.T) {
 		UsageCheckpointInterval:  "MONTH",
 		BillingPlatform:          billing.BillingTypeFake,
 		DeploymentTag:            "local",
-		PublicAddr:               "http://mc.mobiledgex.net",
+		PublicAddr:               "http://mc.edgecloud.net",
 		PasswordResetConsolePath: "#/passwordreset",
 		VerifyEmailConsolePath:   "#/verify",
 	}

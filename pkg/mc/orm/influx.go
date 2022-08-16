@@ -34,7 +34,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	client "github.com/influxdata/influxdb/client/v2"
 	influxdb "github.com/influxdata/influxdb/client/v2"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 var devInfluxDBTemplate *template.Template

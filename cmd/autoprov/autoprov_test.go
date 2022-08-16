@@ -25,13 +25,13 @@ import (
 	"testing"
 	"time"
 
-	influxdb "github.com/influxdata/influxdb/client/v2"
-	"github.com/influxdata/influxdb/models"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
+	influxdb "github.com/influxdata/influxdb/client/v2"
+	"github.com/influxdata/influxdb/models"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -55,6 +55,7 @@ func TestAutoProv(t *testing.T) {
 	dc := grpc.NewServer(
 		grpc.UnaryInterceptor(testutil.UnaryInterceptor),
 		grpc.StreamInterceptor(testutil.StreamInterceptor),
+		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}),
 	)
 	lis, err := net.Listen("tcp", *ctrlAddr)
 	require.Nil(t, err)

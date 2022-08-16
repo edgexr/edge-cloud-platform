@@ -15,7 +15,7 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	math "math"
 )
 
@@ -511,7 +511,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/ShowTrustPolicy", ShowTrustPolicy)
 	// swagger:route POST /auth/ctrl/CreateApp App CreateApp
 	// Create Application.
-	//  Creates a definition for an application instance for Cloudlet deployment.
+	//  Creates a definition for an application for Cloudlet deployment.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -522,7 +522,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/CreateApp", CreateApp)
 	// swagger:route POST /auth/ctrl/DeleteApp App DeleteApp
 	// Delete Application.
-	//  Deletes a definition of an Application instance. Make sure no other application instances exist with that definition. If they do exist, you must delete those Application instances first.
+	//  Deletes a definition of an application. Instances of the application must be deleted first.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -533,7 +533,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/DeleteApp", DeleteApp)
 	// swagger:route POST /auth/ctrl/UpdateApp App UpdateApp
 	// Update Application.
-	//  Updates the definition of an Application instance.
+	//  Updates the definition of an application.
 	// The following values should be added to `App.fields` field array to specify which fields will be updated.
 	// ```
 	// Key: 2
@@ -601,7 +601,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/UpdateApp", UpdateApp)
 	// swagger:route POST /auth/ctrl/ShowApp App ShowApp
 	// Show Applications.
-	//  Lists all Application definitions managed from the Edge Controller. Any fields specified will be used to filter results.
+	//  Lists all application definitions. Any fields specified will be used to filter results.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -611,7 +611,7 @@ func addControllerApis(method string, group *echo.Group) {
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowApp", ShowApp)
 	// swagger:route POST /auth/ctrl/AddAppAutoProvPolicy AppAutoProvPolicy AddAppAutoProvPolicy
-	// Add an AutoProvPolicy to the App.
+	// Add an AutoProvPolicy to the application definition.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -621,7 +621,7 @@ func addControllerApis(method string, group *echo.Group) {
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/AddAppAutoProvPolicy", AddAppAutoProvPolicy)
 	// swagger:route POST /auth/ctrl/RemoveAppAutoProvPolicy AppAutoProvPolicy RemoveAppAutoProvPolicy
-	// Remove an AutoProvPolicy from the App.
+	// Remove an AutoProvPolicy from the application definition.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -631,7 +631,7 @@ func addControllerApis(method string, group *echo.Group) {
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/RemoveAppAutoProvPolicy", RemoveAppAutoProvPolicy)
 	// swagger:route POST /auth/ctrl/AddAppAlertPolicy AppAlertPolicy AddAppAlertPolicy
-	// Add an AlertPolicy to the App.
+	// Add an AlertPolicy to the application definition.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -641,7 +641,7 @@ func addControllerApis(method string, group *echo.Group) {
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/AddAppAlertPolicy", AddAppAlertPolicy)
 	// swagger:route POST /auth/ctrl/RemoveAppAlertPolicy AppAlertPolicy RemoveAppAlertPolicy
-	// Remove an AlertPolicy from the App.
+	// Remove an AlertPolicy from the application definition.
 	// Security:
 	//   Bearer:
 	// responses:

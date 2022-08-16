@@ -694,7 +694,9 @@ components:
           description: CRM access public key
           type: string
         crm_override:
-          description: Override actions to CRM
+          description: Override actions to CRM, valid values are one of NoOverride,
+            IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState,
+            or 0, 1, 2, 3, 4
           type: string
         default_resource_alert_threshold:
           description: Default resource alert threshold percentage
@@ -732,12 +734,14 @@ components:
           $ref: '#/components/schemas/EdgeprotoGPUConfig'
         infra_api_access:
           description: Infra Access Type is the type of access available to Infra
-            API Endpoint
+            API Endpoint, valid values are one of DirectAccess, RestrictedAccess,
+            or 0, 1
           type: string
         infra_config:
           $ref: '#/components/schemas/EdgeprotoInfraConfig'
         ip_support:
-          description: Type of IP support provided by Cloudlet (see IpSupport)
+          description: Type of IP support provided by Cloudlet (see IpSupport), valid
+            values are one of Unknown, Static, Dynamic, or 0, 1, 2
           type: string
         kafka_cluster:
           description: Operator provided kafka cluster endpoint to push events to
@@ -775,7 +779,10 @@ components:
           description: Enable platform H/A
           type: boolean
         platform_type:
-          description: Platform type
+          description: Platform type, valid values are one of Fake, Dind, Openstack,
+            Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
+            K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
+            or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
           type: string
         res_tag_map:
           additionalProperties:
@@ -806,7 +813,11 @@ components:
             owned by this organization instead of multi-tenant
           type: string
         state:
-          description: Current state of the cloudlet
+          description: Current state of the cloudlet, valid values are one of TrackedStateUnknown,
+            NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested,
+            Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare,
+            CrmInitok, CreatingDependencies, DeleteDone, or 0, 1, 2, 3, 4, 5, 6, 7,
+            8, 9, 10, 11, 12, 13, 14, 15
           type: string
         static_ips:
           description: List of static IPs for static IP support
@@ -817,7 +828,11 @@ components:
           description: Optional Trust Policy
           type: string
         trust_policy_state:
-          description: State of trust policy
+          description: State of trust policy, valid values are one of TrackedStateUnknown,
+            NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested,
+            Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare,
+            CrmInitok, CreatingDependencies, DeleteDone, or 0, 1, 2, 3, 4, 5, 6, 7,
+            8, 9, 10, 11, 12, 13, 14, 15
           type: string
         updated_at:
           description: Updated at time
@@ -861,7 +876,10 @@ components:
           description: Organization
           type: string
         platform_type:
-          description: Platform type
+          description: Platform type, valid values are one of Fake, Dind, Openstack,
+            Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
+            K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
+            or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
           type: string
         properties:
           additionalProperties:
@@ -885,7 +903,10 @@ components:
           description: Organization
           type: string
         platform_type:
-          description: Platform type
+          description: Platform type, valid values are one of Fake, Dind, Openstack,
+            Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
+            K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
+            or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
           type: string
         properties:
           description: Cloudlet resource properties

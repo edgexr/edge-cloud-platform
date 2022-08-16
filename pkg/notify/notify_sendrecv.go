@@ -25,9 +25,9 @@ import (
 	fmt "fmt"
 	"sync"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/gogo/protobuf/types"
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
 )
@@ -51,6 +51,8 @@ type NotifySend interface {
 	PrepData() bool
 	// Queue all cached data for send
 	UpdateAll(ctx context.Context)
+	// Send cloudlet-filtered objects after receiving cloudletinfo
+	SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet)
 }
 
 // NotifyRecv is implemented by auto-generated code. The same
@@ -119,39 +121,36 @@ const (
 )
 
 type SendRecv struct {
-	cliserv                  string // client or server
-	peerAddr                 string
-	peer                     string
-	sendlist                 []NotifySend
-	recvmap                  map[string]NotifyRecv
-	started                  bool
-	done                     bool
-	localWanted              []string
-	remoteWanted             map[string]struct{}
-	filterCloudletKeys       bool
-	filterFederatedCloudlet  bool
-	cloudletKeys             map[edgeproto.CloudletKey]struct{}
-	cloudletReady            bool
-	appSend                  *AppSend
-	cloudletSend             *CloudletSend
-	clusterInstSend          *ClusterInstSend
-	appInstSend              *AppInstSend
-	vmPoolSend               *VMPoolSend
-	gpuDriverSend            *GPUDriverSend
-	TrustPolicySend          *TrustPolicySend
-	TrustPolicyExceptionSend *TrustPolicyExceptionSend
-	CloudletPoolSend         *CloudletPoolSend
-	sendRunning              chan struct{}
-	recvRunning              chan struct{}
-	signal                   chan bool
-	stats                    Stats
-	mux                      sync.Mutex
-	sendAllEnd               bool
-	manualSendAllEnd         bool
-	sendAllRecvHandler       SendAllRecv
+	name                    string
+	cliserv                 string // client or server
+	peerAddr                string
+	peer                    string
+	sendlist                []NotifySend
+	recvmap                 map[string]NotifyRecv
+	started                 bool
+	done                    bool
+	localWanted             []string
+	remoteWanted            map[string]struct{}
+	filterCloudletKeys      bool
+	filterFederatedCloudlet bool
+	cloudletKeys            map[edgeproto.CloudletKey]struct{}
+	cloudletReady           bool
+	appSend                 *AppSend
+	cloudletSend            *CloudletSend
+	vmPoolSend              *VMPoolSend
+	gpuDriverSend           *GPUDriverSend
+	sendRunning             chan struct{}
+	recvRunning             chan struct{}
+	signal                  chan bool
+	stats                   Stats
+	mux                     sync.Mutex
+	sendAllEnd              bool
+	manualSendAllEnd        bool
+	sendAllRecvHandler      SendAllRecv
 }
 
-func (s *SendRecv) init(cliserv string) {
+func (s *SendRecv) init(name, cliserv string) {
+	s.name = name
 	s.cliserv = cliserv
 	s.sendlist = make([]NotifySend, 0)
 	s.recvmap = make(map[string]NotifyRecv)
@@ -179,12 +178,6 @@ func (s *SendRecv) registerSend(send NotifySend) {
 		s.gpuDriverSend = v
 	case *CloudletSend:
 		s.cloudletSend = v
-	case *ClusterInstSend:
-		s.clusterInstSend = v
-	case *AppInstSend:
-		s.appInstSend = v
-	case *TrustPolicySend:
-		s.TrustPolicySend = v
 	}
 }
 
@@ -283,7 +276,7 @@ func (s *SendRecv) send(stream StreamNotify) {
 			break
 		}
 		if sendAll {
-			log.SpanLog(sendAllCtx, log.DebugLevelNotify, "send all", "peer", s.peer)
+			log.SpanLog(sendAllCtx, log.DebugLevelNotify, "send all", "peer", s.peer, "local", s.name)
 			s.stats.SendAll++
 		}
 		// Note that order is important here, as some objects
@@ -301,14 +294,14 @@ func (s *SendRecv) send(stream StreamNotify) {
 		}
 		if sendAllEnd {
 			s.sendAllEnd = false
-			log.SpanLog(sendAllCtx, log.DebugLevelNotify, "send all end", "peer", s.peer)
+			log.SpanLog(sendAllCtx, log.DebugLevelNotify, "send all end", "peer", s.peer, "local", s.name)
 			notice.Action = edgeproto.NoticeAction_SENDALL_END
 			notice.Any = types.Any{}
 			notice.Span = log.SpanToString(sendAllCtx)
 			err = stream.Send(&notice)
 			if err != nil {
 				log.SpanLog(sendAllCtx, log.DebugLevelNotify,
-					"send all end", "peer", s.peer, "err", err)
+					"send sendall end", "peer", s.peer, "local", s.name, "err", err)
 				break
 			}
 			sendAllSpan.Finish()
@@ -363,10 +356,11 @@ func (s *SendRecv) recv(stream StreamNotify, notifyId int64, cleanup Cleanup) {
 				ctx = opentracing.ContextWithSpan(ctx, span)
 			}
 			if err != nil && notice.Action != edgeproto.NoticeAction_SENDALL_END {
-				log.SpanLog(ctx, log.DebugLevelNotify, "hit error", "peer", s.peer, "err", err)
+				log.SpanLog(ctx, log.DebugLevelNotify, "hit error", "peer", s.peer, "local", s.name, "err", err)
 				return
 			}
 			if recvAll && notice.Action == edgeproto.NoticeAction_SENDALL_END {
+				log.SpanLog(ctx, log.DebugLevelNotify, "recv sendall end", "peer", s.peer, "local", s.name)
 				for _, recv := range s.recvmap {
 					recv.RecvAllEnd(ctx, cleanup)
 				}
@@ -385,6 +379,7 @@ func (s *SendRecv) recv(stream StreamNotify, notifyId int64, cleanup Cleanup) {
 					fmt.Sprintf("%s recv unhandled", s.cliserv),
 					"peerAddr", s.peerAddr,
 					"peer", s.peer,
+					"local", s.name,
 					"action", notice.Action,
 					"name", name)
 			}
@@ -432,5 +427,11 @@ func (s *SendRecv) setObjStats(stats *Stats) {
 	}
 	for _, recv := range s.recvmap {
 		stats.ObjRecv[recv.GetName()] = recv.GetRecvCount()
+	}
+}
+
+func (s *SendRecv) sendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+	for _, send := range s.sendlist {
+		send.SendForCloudlet(ctx, action, cloudlet)
 	}
 }

@@ -27,7 +27,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	ssh "github.com/mobiledgex/golang-ssh"
+	ssh "github.com/edgexr/golang-ssh"
 )
 
 var envoyYamlT *template.Template

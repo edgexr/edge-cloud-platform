@@ -343,7 +343,8 @@ components:
           description: Burst size for flow rate limiting (required for TokenBucketAlgorithm)
           type: integer
         flow_algorithm:
-          description: Flow Rate Limit algorithm
+          description: Flow Rate Limit algorithm, valid values are one of UnknownFlowAlgorithm,
+            TokenBucketAlgorithm, LeakyBucketAlgorithm, or 0, 1, 2
           type: string
         reqs_per_second:
           description: Requests per second for flow rate limiting
@@ -371,7 +372,8 @@ components:
           description: Time interval
           type: string
         max_reqs_algorithm:
-          description: MaxReqs Rate Limit Algorithm
+          description: MaxReqs Rate Limit Algorithm, valid values are one of UnknownMaxReqsAlgorithm,
+            FixedWindowAlgorithm, or 0, 1
           type: string
         max_requests:
           description: Maximum number of requests for the given Interval
@@ -395,14 +397,16 @@ components:
     EdgeprotoRateLimitSettingsKey:
       properties:
         api_endpoint_type:
-          description: API Endpoint type
+          description: API Endpoint type, valid values are one of UnknownApiEndpointType,
+            Dme, or 0, 1
           type: string
         api_name:
           description: Name of API (eg. CreateApp or RegisterClient) (Use "Global"
             if not a specific API)
           type: string
         rate_limit_target:
-          description: Target to rate limit
+          description: Target to rate limit, valid values are one of UnknownTarget,
+            AllRequests, PerIp, PerUser, or 0, 1, 2, 3
           type: string
       type: object
     EdgeprotoResult:

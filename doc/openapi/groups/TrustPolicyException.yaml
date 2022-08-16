@@ -215,7 +215,8 @@ components:
           nullable: true
           type: array
         state:
-          description: State of the exception within the approval process
+          description: State of the exception within the approval process, valid values
+            are one of Unknown, ApprovalRequested, Active, Rejected, or 0, 1, 2, 3
           type: string
       type: object
     EdgeprotoTrustPolicyExceptionKey:

@@ -21,7 +21,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/access"
 	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	ssh "github.com/mobiledgex/golang-ssh"
+	ssh "github.com/edgexr/golang-ssh"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"

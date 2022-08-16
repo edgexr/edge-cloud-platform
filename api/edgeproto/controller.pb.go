@@ -7,7 +7,6 @@ import (
 	context "context"
 	"encoding/json"
 	fmt "fmt"
-	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
@@ -17,6 +16,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -950,6 +950,7 @@ func (c *ControllerCache) DeleteCondFunc(ctx context.Context, in *Controller, mo
 }
 
 func (c *ControllerCache) Prune(ctx context.Context, validKeys map[ControllerKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune Controller", "numValidKeys", len(validKeys))
 	notify := make(map[ControllerKey]*ControllerCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

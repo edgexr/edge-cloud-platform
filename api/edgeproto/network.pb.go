@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	fmt "fmt"
-	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
@@ -16,6 +15,7 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -1434,6 +1434,7 @@ func (c *NetworkCache) DeleteCondFunc(ctx context.Context, in *Network, modRev i
 }
 
 func (c *NetworkCache) Prune(ctx context.Context, validKeys map[NetworkKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune Network", "numValidKeys", len(validKeys))
 	notify := make(map[NetworkKey]*NetworkCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

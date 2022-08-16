@@ -7,7 +7,6 @@ import (
 	context "context"
 	"encoding/json"
 	fmt "fmt"
-	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
@@ -15,6 +14,7 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -1304,6 +1304,7 @@ func (c *AutoScalePolicyCache) DeleteCondFunc(ctx context.Context, in *AutoScale
 }
 
 func (c *AutoScalePolicyCache) Prune(ctx context.Context, validKeys map[PolicyKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune AutoScalePolicy", "numValidKeys", len(validKeys))
 	notify := make(map[PolicyKey]*AutoScalePolicyCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

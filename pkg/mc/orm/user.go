@@ -34,7 +34,7 @@ import (
 	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	ua "github.com/mileusna/useragent"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"

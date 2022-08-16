@@ -23,14 +23,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/fake"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/fake"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/test/testutil/testservices"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -772,12 +772,11 @@ func testTrustPolicyExceptionUpdates1(t *testing.T, ctx context.Context, tpe *ed
 	_, err := WaitForTrustPolicyExceptionCacheState(&tpe.Key, state)
 	require.Nil(t, err)
 
-	found := fakePlatform.HasTrustPolicyException(ctx, &tpe.Key, clusterInst)
+	found := fakePlatform.WaitHasTrustPolicyException(ctx, &tpe.Key, clusterInst)
 	require.False(t, found, "tpe not found")
 
 	// test that Approved TPE is not programmed on any clusters
-	count := fakePlatform.TrustPolicyExceptionCount(ctx)
-	require.Equal(t, 0, count)
+	waitTPECount(t, ctx, fakePlatform, 0, 10*time.Millisecond)
 
 	// test that a TPE with State ACTIVE, for an existing AppInst, adds that TPEs to that ClusterInst
 	log.SpanLog(ctx, log.DebugLevelApi, "############ UT1.2")
@@ -787,12 +786,11 @@ func testTrustPolicyExceptionUpdates1(t *testing.T, ctx context.Context, tpe *ed
 	_, err = WaitForTrustPolicyExceptionCacheState(&tpe.Key, state)
 	require.Nil(t, err)
 
-	found = fakePlatform.HasTrustPolicyException(ctx, &tpe.Key, clusterInst)
+	found = fakePlatform.WaitHasTrustPolicyException(ctx, &tpe.Key, clusterInst)
 	require.True(t, found, "tpe found")
 
 	// test that Active TPE is programmed on both clusters of cloudletpool
-	count = fakePlatform.TrustPolicyExceptionCount(ctx)
-	require.Equal(t, 2, count)
+	waitTPECount(t, ctx, fakePlatform, 2, 10*time.Millisecond)
 
 	// test that updating a TPE from ApprovalRequested/Active->Rejected does not add it or removes it from existing AppInsts
 	log.SpanLog(ctx, log.DebugLevelApi, "############ UT1.3")
@@ -803,11 +801,10 @@ func testTrustPolicyExceptionUpdates1(t *testing.T, ctx context.Context, tpe *ed
 	_, err = WaitForTrustPolicyExceptionCacheState(&tpe.Key, state)
 	require.Nil(t, err)
 
-	found = fakePlatform.HasTrustPolicyException(ctx, &tpe.Key, clusterInst)
+	found = fakePlatform.WaitHasTrustPolicyException(ctx, &tpe.Key, clusterInst)
 	require.False(t, found, "tpe not found")
 
-	count = fakePlatform.TrustPolicyExceptionCount(ctx)
-	require.Equal(t, 0, count)
+	waitTPECount(t, ctx, fakePlatform, 0, 10*time.Millisecond)
 
 	// test that updating a TPE from ApprovalRequested/Rejected->Active adds it to existing AppInsts
 	log.SpanLog(ctx, log.DebugLevelApi, "############ UT1.4")
@@ -817,12 +814,11 @@ func testTrustPolicyExceptionUpdates1(t *testing.T, ctx context.Context, tpe *ed
 	_, err = WaitForTrustPolicyExceptionCacheState(&tpe.Key, state)
 	require.Nil(t, err)
 
-	found = fakePlatform.HasTrustPolicyException(ctx, &tpe.Key, clusterInst)
+	found = fakePlatform.WaitHasTrustPolicyException(ctx, &tpe.Key, clusterInst)
 	require.True(t, found, "tpe found")
 
 	// test that Active TPE is programmed on both clusters of cloudletpool
-	count = fakePlatform.TrustPolicyExceptionCount(ctx)
-	require.Equal(t, 2, count)
+	waitTPECount(t, ctx, fakePlatform, 2, 10*time.Millisecond)
 
 	// delete an appInst, should reduce the count by 1
 	log.SpanLog(ctx, log.DebugLevelApi, "############ UT1.5")
@@ -832,8 +828,7 @@ func testTrustPolicyExceptionUpdates1(t *testing.T, ctx context.Context, tpe *ed
 	require.Nil(t, notify.WaitFor(&controllerData.AppInstCache, 3))
 	require.Equal(t, 3, len(controllerData.AppInstCache.Objs))
 	time.Sleep(5 * time.Millisecond)
-	count = fakePlatform.TrustPolicyExceptionCount(ctx)
-	require.Equal(t, 1, count)
+	waitTPECount(t, ctx, fakePlatform, 1, 20*time.Millisecond)
 
 	// restore appInst
 	log.SpanLog(ctx, log.DebugLevelApi, "############ UT1.6")
@@ -841,8 +836,7 @@ func testTrustPolicyExceptionUpdates1(t *testing.T, ctx context.Context, tpe *ed
 	ctrlHandler.AppInstCache.Update(ctx, &data.AppInstances[ii], 0)
 	require.Nil(t, notify.WaitFor(&controllerData.AppInstCache, 3))
 	require.Equal(t, 3, len(controllerData.AppInstCache.Objs))
-	count = fakePlatform.TrustPolicyExceptionCount(ctx)
-	require.Equal(t, 2, count)
+	waitTPECount(t, ctx, fakePlatform, 2, 20*time.Millisecond)
 	log.SpanLog(ctx, log.DebugLevelApi, "############# end testTrustPolicyExceptionUpdates1 #############")
 }
 
@@ -862,12 +856,11 @@ func testTrustPolicyExceptionUpdates2(t *testing.T, ctx context.Context, tpe *ed
 	_, err := WaitForTrustPolicyExceptionCacheState(&tpe.Key, state)
 	require.Nil(t, err)
 
-	found := fakePlatform.HasTrustPolicyException(ctx, &tpe.Key, clusterInst)
+	found := fakePlatform.WaitHasTrustPolicyException(ctx, &tpe.Key, clusterInst)
 	require.False(t, found, "tpe not found")
 
 	// test that the new Approved TPE is not programmed on any clusters, count should still be the old count
-	count := fakePlatform.TrustPolicyExceptionCount(ctx)
-	require.Equal(t, 2, count)
+	waitTPECount(t, ctx, fakePlatform, 2, 10*time.Millisecond)
 
 	// test that a TPE with State ACTIVE, for an existing AppInst, adds that TPEs to that ClusterInst
 	log.SpanLog(ctx, log.DebugLevelApi, "############ UT2.2")
@@ -877,12 +870,11 @@ func testTrustPolicyExceptionUpdates2(t *testing.T, ctx context.Context, tpe *ed
 	_, err = WaitForTrustPolicyExceptionCacheState(&tpe.Key, state)
 	require.Nil(t, err)
 
-	found = fakePlatform.HasTrustPolicyException(ctx, &tpe.Key, clusterInst)
+	found = fakePlatform.WaitHasTrustPolicyException(ctx, &tpe.Key, clusterInst)
 	require.True(t, found, "tpe found")
 
 	// test that Multiple TPEs are configured per app, on multiple clusters. Total count increases by 2
-	count = fakePlatform.TrustPolicyExceptionCount(ctx)
-	require.Equal(t, 4, count)
+	waitTPECount(t, ctx, fakePlatform, 4, 10*time.Millisecond)
 
 	log.SpanLog(ctx, log.DebugLevelApi, "############# end testTrustPolicyExceptionUpdates2 #############")
 }
@@ -891,8 +883,7 @@ func testTrustPolicyExceptionUpdates2(t *testing.T, ctx context.Context, tpe *ed
 func testTrustPolicyExceptionUpdates3(t *testing.T, ctx context.Context, ctrlHandler *notify.DummyHandler, data *edgeproto.AllData, fakePlatform *fake.Platform) {
 
 	log.SpanLog(ctx, log.DebugLevelApi, "############ begin CloudletPoolCache.Update")
-	count := fakePlatform.TrustPolicyExceptionCount(ctx)
-	require.Equal(t, 4, count)
+	waitTPECount(t, ctx, fakePlatform, 4, 10*time.Millisecond)
 
 	var CloudletsSaved [][]edgeproto.CloudletKey
 
@@ -905,14 +896,7 @@ func testTrustPolicyExceptionUpdates3(t *testing.T, ctx context.Context, ctrlHan
 
 	// We've only removed a cloudlet, but cloudletPool cache count remains the same
 	// hence notify wont sleep, poll for count test
-	for ii := 0; ii < 20; ii++ {
-		count = fakePlatform.TrustPolicyExceptionCount(ctx)
-		if count == 0 {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	require.Equal(t, 0, count)
+	waitTPECount(t, ctx, fakePlatform, 0, 500*time.Millisecond)
 
 	log.SpanLog(ctx, log.DebugLevelApi, "############ restore CloudletPoolCache.Update")
 
@@ -924,14 +908,7 @@ func testTrustPolicyExceptionUpdates3(t *testing.T, ctx context.Context, ctrlHan
 
 	// We've only removed a cloudlet, but cloudletPool cache count remains the same
 	// hence notify wont sleep, poll for count test
-	for ii := 0; ii < 20; ii++ {
-		count = fakePlatform.TrustPolicyExceptionCount(ctx)
-		if count == 4 {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	require.Equal(t, 4, count)
+	waitTPECount(t, ctx, fakePlatform, 4, 500*time.Millisecond)
 
 	log.SpanLog(ctx, log.DebugLevelApi, "############ end CloudletPoolCache.Update")
 
@@ -943,12 +920,22 @@ func testTrustPolicyExceptionUpdates3(t *testing.T, ctx context.Context, ctrlHan
 
 	require.Nil(t, notify.WaitFor(&controllerData.TrustPolicyExceptionCache, 0))
 
-	found := fakePlatform.HasTrustPolicyException(ctx, &data.TrustPolicyExceptions[0].Key, &data.ClusterInsts[1])
+	found := fakePlatform.WaitHasTrustPolicyException(ctx, &data.TrustPolicyExceptions[0].Key, &data.ClusterInsts[1])
 	require.False(t, found, "tpe not found")
 
-	count = fakePlatform.TrustPolicyExceptionCount(ctx)
-	require.Equal(t, 0, count)
+	waitTPECount(t, ctx, fakePlatform, 0, 10*time.Millisecond)
+}
 
+func waitTPECount(t *testing.T, ctx context.Context, fakePlatform *fake.Platform, expected int, timeout time.Duration) {
+	count := 0
+	for ii := 0; ii < 20; ii++ {
+		count = fakePlatform.TrustPolicyExceptionCount(ctx)
+		if count == expected {
+			break
+		}
+		time.Sleep(timeout / 20)
+	}
+	require.Equal(t, expected, count)
 }
 
 func testTrustPolicyExceptionUpdates(t *testing.T, ctx context.Context, ctrlHandler *notify.DummyHandler, data *edgeproto.AllData, fakePlatform *fake.Platform) {

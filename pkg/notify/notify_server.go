@@ -38,8 +38,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"google.golang.org/grpc"
@@ -150,6 +150,7 @@ func (mgr *ServerMgr) Start(name, addr string, tlsConfig *tls.Config, ops ...Ser
 		grpc.KeepaliveEnforcementPolicy(serverEnforcement),
 		opts.unaryInterceptor,
 		opts.streamInterceptor,
+		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}),
 	)
 	edgeproto.RegisterNotifyApiServer(mgr.serv, mgr)
 	if mgr.regServ != nil {
@@ -192,23 +193,21 @@ func (mgr *ServerMgr) StreamNotice(stream edgeproto.NotifyApi_StreamNoticeServer
 	server := Server{}
 	server.peerAddr = peerAddr
 	server.running = make(chan struct{})
-	server.sendrecv.init("server")
+	server.sendrecv.init(mgr.name, "server")
 	server.sendrecv.peerAddr = peerAddr
 
 	mgr.mux.Lock()
 	server.notifyId = mgr.notifyId
 	mgr.notifyId++
-	for _, sendMany := range mgr.sends {
-		send := sendMany.NewSend(peerAddr, server.notifyId)
-		server.sendrecv.registerSend(send)
-	}
 	for _, recvMany := range mgr.recvs {
 		recv := recvMany.NewRecv()
 		server.sendrecv.registerRecv(recv)
 	}
 	mgr.mux.Unlock()
 
-	// do initial version exchange
+	// do initial version exchange before registering sends,
+	// otherwise sends could start before cloudlet/federation
+	// filters specified during negotiate are applied.
 	err := server.negotiate(spctx, stream, mgr.name)
 	if err != nil {
 		server.logDisconnect(spctx, err)
@@ -216,6 +215,13 @@ func (mgr *ServerMgr) StreamNotice(stream edgeproto.NotifyApi_StreamNoticeServer
 		span.Finish()
 		return err
 	}
+
+	mgr.mux.Lock()
+	for _, sendMany := range mgr.sends {
+		send := sendMany.NewSend(peerAddr, server.notifyId)
+		server.sendrecv.registerSend(send)
+	}
+	mgr.mux.Unlock()
 
 	// register server by client addr
 	mgr.mux.Lock()
@@ -337,11 +343,13 @@ func (s *Server) negotiate(ctx context.Context, stream edgeproto.NotifyApi_Strea
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelNotify, "Notify server connected",
-		"client", s.peerAddr, "peer", s.sendrecv.peer, "version", s.version,
+		"client", s.peerAddr, "peer", s.sendrecv.peer, "local", s.sendrecv.name,
+		"version", s.version,
 		"supported-version", NotifyVersion,
 		"notifyid", s.notifyId,
 		"remoteWanted", s.sendrecv.remoteWanted,
-		"filterCloudletKey", s.sendrecv.filterCloudletKeys)
+		"filterCloudletKey", s.sendrecv.filterCloudletKeys,
+		"filterFederatedCloudlet", s.sendrecv.filterFederatedCloudlet)
 	return nil
 }
 
@@ -357,10 +365,10 @@ func (s *Server) logDisconnect(ctx context.Context, err error) {
 	st, ok := status.FromError(err)
 	if err == context.Canceled || (ok && st.Code() == codes.Canceled || err == nil) {
 		log.SpanLog(ctx, log.DebugLevelNotify, "Notify server connection closed",
-			"client", s.peerAddr, "peer", s.sendrecv.peer, "err", err)
+			"client", s.peerAddr, "peer", s.sendrecv.peer, "local", s.sendrecv.name, "err", err)
 	} else {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Notify server connection failed",
-			"client", s.peerAddr, "peer", s.sendrecv.peer, "err", err)
+			"client", s.peerAddr, "peer", s.sendrecv.peer, "local", s.sendrecv.name, "err", err)
 	}
 }
 

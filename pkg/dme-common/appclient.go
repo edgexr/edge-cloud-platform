@@ -40,12 +40,12 @@ var clientsMap *ClientsMap
 var ClientSender *notify.AppInstClientSend
 var AppInstClientKeyCache edgeproto.AppInstClientKeyCache
 
-func InitAppInstClients() {
+func InitAppInstClients(timeout time.Duration) {
 	clientsMap = new(ClientsMap)
 	clientsMap.clientsByApp = make(map[edgeproto.AppKey][]edgeproto.AppInstClient)
 	clientsMap.stopCleanupThread = make(chan struct{})
 	clientsMap.updateAppinstClientTimeout = make(chan bool)
-	clientsMap.cleanupTimeout = time.Duration(Settings.AppinstClientCleanupInterval)
+	clientsMap.cleanupTimeout = timeout
 	clientsMap.waitGrp.Add(1)
 	go clientsMap.timeoutAppInstClients()
 }

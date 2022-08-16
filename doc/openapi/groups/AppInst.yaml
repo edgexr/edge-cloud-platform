@@ -267,7 +267,8 @@ components:
     EdgeprotoAppInst:
       properties:
         auto_cluster_ip_access:
-          description: (Deprecated) IpAccess for auto-clusters. Ignored otherwise.
+          description: (Deprecated) IpAccess for auto-clusters. Ignored otherwise.,
+            valid values are one of Unknown, Dedicated, Shared, or 0, 1, 3
           type: string
         availability_zone:
           description: Optional Availability Zone if any
@@ -283,7 +284,9 @@ components:
           description: Created at time
           type: string
         crm_override:
-          description: Override actions to CRM
+          description: Override actions to CRM, valid values are one of NoOverride,
+            IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState,
+            or 0, 1, 2, 3, 4
           type: string
         dedicated_ip:
           description: Dedicated IP assigns an IP for this AppInst but requires platform
@@ -320,7 +323,8 @@ components:
         key:
           $ref: '#/components/schemas/EdgeprotoAppInstKey'
         liveness:
-          description: Liveness of instance (see Liveness)
+          description: Liveness of instance (see Liveness), valid values are one of
+            Unknown, Static, Dynamic, Autoprov, or 0, 1, 2, 3
           type: string
         mapped_ports:
           description: For instances accessible via a shared load balancer, defines
@@ -334,7 +338,10 @@ components:
           description: Optional Resources required by OS flavor if any
           type: string
         power_state:
-          description: Power State of the AppInst
+          description: Power State of the AppInst, valid values are one of PowerStateUnknown,
+            PowerOnRequested, PoweringOn, PowerOn, PowerOffRequested, PoweringOff,
+            PowerOff, RebootRequested, Rebooting, Reboot, PowerStateError, or 0, 1,
+            2, 3, 4, 5, 6, 7, 8, 9, 10
           type: string
         real_cluster_name:
           description: Real ClusterInst name
@@ -346,7 +353,11 @@ components:
         runtime_info:
           $ref: '#/components/schemas/EdgeprotoAppInstRuntime'
         state:
-          description: Current state of the AppInst on the Cloudlet
+          description: Current state of the AppInst on the Cloudlet, valid values
+            are one of TrackedStateUnknown, NotPresent, CreateRequested, Creating,
+            CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested,
+            Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies,
+            DeleteDone, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
           type: string
         unique_id:
           description: A unique id for the AppInst within the region to be used by

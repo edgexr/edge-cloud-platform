@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -30,6 +31,7 @@ var _ status.Status
 var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
+var _ = metadata.Join
 
 func request_GPUDriverApi_CreateGPUDriver_0(ctx context.Context, marshaler runtime.Marshaler, client GPUDriverApiClient, req *http.Request, pathParams map[string]string) (GPUDriverApi_CreateGPUDriverClient, runtime.ServerMetadata, error) {
 	var protoReq GPUDriver
@@ -860,6 +862,7 @@ func request_CloudletMetricsApi_ShowCloudletMetrics_0(ctx context.Context, marsh
 // RegisterGPUDriverApiHandlerServer registers the http handlers for service GPUDriverApi to "mux".
 // UnaryRPC     :call GPUDriverApiServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterGPUDriverApiHandlerFromEndpoint instead.
 func RegisterGPUDriverApiHandlerServer(ctx context.Context, mux *runtime.ServeMux, server GPUDriverApiServer) error {
 
 	mux.Handle("POST", pattern_GPUDriverApi_CreateGPUDriver_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -907,6 +910,8 @@ func RegisterGPUDriverApiHandlerServer(ctx context.Context, mux *runtime.ServeMu
 	mux.Handle("POST", pattern_GPUDriverApi_GetGPUDriverBuildURL_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -914,6 +919,7 @@ func RegisterGPUDriverApiHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			return
 		}
 		resp, md, err := local_request_GPUDriverApi_GetGPUDriverBuildURL_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -927,6 +933,8 @@ func RegisterGPUDriverApiHandlerServer(ctx context.Context, mux *runtime.ServeMu
 	mux.Handle("POST", pattern_GPUDriverApi_GetGPUDriverLicenseConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -934,6 +942,7 @@ func RegisterGPUDriverApiHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			return
 		}
 		resp, md, err := local_request_GPUDriverApi_GetGPUDriverLicenseConfig_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -950,6 +959,7 @@ func RegisterGPUDriverApiHandlerServer(ctx context.Context, mux *runtime.ServeMu
 // RegisterCloudletApiHandlerServer registers the http handlers for service CloudletApi to "mux".
 // UnaryRPC     :call CloudletApiServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterCloudletApiHandlerFromEndpoint instead.
 func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux, server CloudletApiServer) error {
 
 	mux.Handle("POST", pattern_CloudletApi_CreateCloudlet_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -983,6 +993,8 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 	mux.Handle("POST", pattern_CloudletApi_GetCloudletManifest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -990,6 +1002,7 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 		resp, md, err := local_request_CloudletApi_GetCloudletManifest_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1003,6 +1016,8 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 	mux.Handle("POST", pattern_CloudletApi_GetCloudletProps_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -1010,6 +1025,7 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 		resp, md, err := local_request_CloudletApi_GetCloudletProps_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1023,6 +1039,8 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 	mux.Handle("POST", pattern_CloudletApi_GetCloudletResourceQuotaProps_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -1030,6 +1048,7 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 		resp, md, err := local_request_CloudletApi_GetCloudletResourceQuotaProps_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1043,6 +1062,8 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 	mux.Handle("POST", pattern_CloudletApi_GetCloudletResourceUsage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -1050,6 +1071,7 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 		resp, md, err := local_request_CloudletApi_GetCloudletResourceUsage_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1063,6 +1085,8 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 	mux.Handle("POST", pattern_CloudletApi_AddCloudletResMapping_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -1070,6 +1094,7 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 		resp, md, err := local_request_CloudletApi_AddCloudletResMapping_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1083,6 +1108,8 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 	mux.Handle("POST", pattern_CloudletApi_RemoveCloudletResMapping_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -1090,6 +1117,7 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 		resp, md, err := local_request_CloudletApi_RemoveCloudletResMapping_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1103,6 +1131,8 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 	mux.Handle("POST", pattern_CloudletApi_AddCloudletAllianceOrg_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -1110,6 +1140,7 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 		resp, md, err := local_request_CloudletApi_AddCloudletAllianceOrg_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1123,6 +1154,8 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 	mux.Handle("POST", pattern_CloudletApi_RemoveCloudletAllianceOrg_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -1130,6 +1163,7 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 		resp, md, err := local_request_CloudletApi_RemoveCloudletAllianceOrg_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1143,6 +1177,8 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 	mux.Handle("POST", pattern_CloudletApi_FindFlavorMatch_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -1150,6 +1186,7 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 		resp, md, err := local_request_CloudletApi_FindFlavorMatch_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1177,6 +1214,8 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 	mux.Handle("POST", pattern_CloudletApi_RevokeAccessKey_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -1184,6 +1223,7 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 		resp, md, err := local_request_CloudletApi_RevokeAccessKey_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1197,6 +1237,8 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 	mux.Handle("POST", pattern_CloudletApi_GenerateAccessKey_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -1204,6 +1246,7 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 		resp, md, err := local_request_CloudletApi_GenerateAccessKey_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1217,6 +1260,8 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 	mux.Handle("POST", pattern_CloudletApi_GetCloudletGPUDriverLicenseConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -1224,6 +1269,7 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 		resp, md, err := local_request_CloudletApi_GetCloudletGPUDriverLicenseConfig_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1240,6 +1286,7 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 // RegisterCloudletInfoApiHandlerServer registers the http handlers for service CloudletInfoApi to "mux".
 // UnaryRPC     :call CloudletInfoApiServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterCloudletInfoApiHandlerFromEndpoint instead.
 func RegisterCloudletInfoApiHandlerServer(ctx context.Context, mux *runtime.ServeMux, server CloudletInfoApiServer) error {
 
 	mux.Handle("POST", pattern_CloudletInfoApi_ShowCloudletInfo_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -1255,6 +1302,7 @@ func RegisterCloudletInfoApiHandlerServer(ctx context.Context, mux *runtime.Serv
 // RegisterCloudletMetricsApiHandlerServer registers the http handlers for service CloudletMetricsApi to "mux".
 // UnaryRPC     :call CloudletMetricsApiServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterCloudletMetricsApiHandlerFromEndpoint instead.
 func RegisterCloudletMetricsApiHandlerServer(ctx context.Context, mux *runtime.ServeMux, server CloudletMetricsApiServer) error {
 
 	mux.Handle("POST", pattern_CloudletMetricsApi_ShowCloudletMetrics_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

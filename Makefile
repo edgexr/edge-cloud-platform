@@ -11,7 +11,7 @@ all: build install
 
 linux: build-linux install-linux
 
-check-vers:
+check-go-vers:
 	@if test $(GOVERS) != go1.18; then \
 		echo "Go version must be $(GOVERS)"; \
 		exit 2; \
@@ -19,8 +19,13 @@ check-vers:
 
 APICOMMENTS = ./mc/ormapi/api.comments.go
 
-build: check-vers $(APICOMMENTS)
+gen-test-certs:
+	(cd pkg/tls; ./gen-test-certs.sh)
+
+gen-vers:
 	(cd pkg/version; ./version.sh)
+
+generate: check-go-vers $(APICOMMENTS) gen-vers
 	go install \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger \
@@ -40,36 +45,20 @@ build: check-vers $(APICOMMENTS)
 	make -C api/edgeproto
 	make -C test/testgen
 	make -C pkg/vault/letsencrypt-plugin letsencrypt/version.go
-	(cd pkg/tls; ./gen-test-certs.sh)
 	go install ./pkg/mcctl/genmctestclient
 	genmctestclient > ./pkg/mcctl/mctestclient/mctestclient_generatedfuncs.go
+
+gobuild: check-go-vers gen-vers
 	go build ./...
 	go build -buildmode=plugin -o ${GOPATH}/plugins/platforms.so pkg/plugin/platform/*.go
 	go build -buildmode=plugin -o ${GOPATH}/plugins/edgeevents.so pkg/plugin/edgeevents/*.go
 	go vet ./...
 
+build: generate gobuild
+
 build-linux:
 	${LINUX_XCOMPILE_ENV} go build ./...
 	make -C d-match-engine linux
-
-build-docker:
-	rsync --checksum .dockerignore ../.dockerignore
-	docker buildx build --push \
-		--build-arg BUILD_TAG="$(shell git describe --always --dirty=+), $(shell date +'%Y-%m-%d'), ${TAG}" \
-		--build-arg EDGE_CLOUD_BASE_IMAGE=$(EDGE_CLOUD_BASE_IMAGE) \
-		--build-arg REGISTRY=$(REGISTRY) \
-		-t $(REGISTRY)/edge-cloud:$(TAG) -f build/docker/Dockerfile.edge-cloud ..
-	for COMP in alertmgr-sidecar autoprov cluster-svc controller crm dme edgeturn frm mc notifyroot; do \
-		docker buildx build --push -t $(REGISTRY)/edge-cloud-$$COMP:$(TAG) \
-			--build-arg ALLINONE=$(REGISTRY)/edge-cloud:$(TAG) \
-			--build-arg EDGE_CLOUD_BASE_IMAGE=$(EDGE_CLOUD_BASE_IMAGE) \
-			-f build/docker/Dockerfile.$$COMP build/docker || exit 1; \
-	done
-
-build-nightly: REGISTRY = ghcr.io/edgexr
-build-nightly: build-docker
-	docker tag edgexr/edge-cloud-platform:$(TAG) $(REGISTRY)/edge-cloud-platform:nightly
-	docker push $(REGISTRY)/edge-cloud-platform:nightly
 
 install:
 	go install ./...
@@ -138,7 +127,7 @@ install-internal-linux:
 
 UNIT_TEST_LOG ?= /tmp/edge-cloud-unit-test.log
 
-unit-test:
+unit-test: gen-test-certs
 	go test -timeout=3m ./... > $(UNIT_TEST_LOG) || \
 		((grep -A6 "\--- FAIL:" $(UNIT_TEST_LOG) || \
 		grep -A20 "panic: " $(UNIT_TEST_LOG) || \
@@ -263,11 +252,7 @@ build-edgebox:
 clean-edgebox:
 	rm -rf edgebox_bin
 
-build-ansible:
-	docker buildx build --load \
-		-t deploy -f docker/Dockerfile.ansible ./ansible
-
-clean: check-vers
+clean: check-go-vers
 	go clean ./...
 
 .PHONY: clean doc test

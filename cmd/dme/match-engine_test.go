@@ -17,11 +17,12 @@ package main
 import (
 	"fmt"
 	"testing"
+	"time"
 
-	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	dmetest "github.com/edgexr/edge-cloud-platform/pkg/dme-testutil"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
+	dmetest "github.com/edgexr/edge-cloud-platform/pkg/dme-testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/opentracing/opentracing-go"
 	"github.com/stretchr/testify/assert"
@@ -39,7 +40,7 @@ func TestAddRemove(t *testing.T) {
 	eehandler, err := initEdgeEventsPlugin(ctx, "standalone")
 	require.Nil(t, err, "init edge events plugin")
 	dmecommon.SetupMatchEngine(eehandler)
-	dmecommon.InitAppInstClients()
+	dmecommon.InitAppInstClients(time.Minute)
 	defer dmecommon.StopAppInstClients()
 
 	setupJwks()

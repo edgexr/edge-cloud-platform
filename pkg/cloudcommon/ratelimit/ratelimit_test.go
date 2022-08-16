@@ -161,13 +161,22 @@ func TestCompositeLimiter(t *testing.T) {
 			done <- err
 		}()
 	}
-	for i := 0; i < numRequests; i++ {
+	// note that because there is no atomicitiy between the error from
+	// compositeLimiter and pushing the err to the done channel, it's
+	// possible for the last failed err to be out of order in the channel.
+	var failedErr error
+	successes := 0
+	for i := 0; i < numRequests+1; i++ {
 		err := <-done
-		assert.Nil(t, err)
+		if err != nil {
+			failedErr = err
+		} else {
+			successes++
+		}
 	}
-	err = <-done
-	assert.NotNil(t, err)
-	assert.True(t, strings.Contains(err.Error(), "Exceeded limit"))
+	require.Equal(t, numRequests, successes)
+	require.NotNil(t, failedErr)
+	require.True(t, strings.Contains(failedErr.Error(), "Exceeded limit"))
 }
 
 func TestApiRateLimitMgr(t *testing.T) {

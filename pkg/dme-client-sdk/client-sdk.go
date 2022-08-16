@@ -19,6 +19,7 @@ import (
 	"time"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -30,7 +31,7 @@ const (
 
 func main() {
 	// Set up a connection to the server
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}

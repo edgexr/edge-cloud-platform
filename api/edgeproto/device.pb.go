@@ -7,7 +7,6 @@ import (
 	context "context"
 	"encoding/json"
 	fmt "fmt"
-	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
@@ -19,6 +18,7 @@ import (
 	types "github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -1637,6 +1637,7 @@ func (c *DeviceCache) DeleteCondFunc(ctx context.Context, in *Device, modRev int
 }
 
 func (c *DeviceCache) Prune(ctx context.Context, validKeys map[DeviceKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune Device", "numValidKeys", len(validKeys))
 	notify := make(map[DeviceKey]*DeviceCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

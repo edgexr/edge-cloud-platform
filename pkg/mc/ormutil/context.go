@@ -20,7 +20,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/jinzhu/gorm"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"google.golang.org/grpc"
 )
 

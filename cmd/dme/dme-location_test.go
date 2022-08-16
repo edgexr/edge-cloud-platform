@@ -16,6 +16,7 @@ package main
 
 import (
 	"testing"
+	"time"
 
 	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	dmetest "github.com/edgexr/edge-cloud-platform/pkg/dme-testutil"
@@ -36,7 +37,7 @@ func TestVerifyLoc(t *testing.T) {
 	eehandler, err := initEdgeEventsPlugin(ctx, "standalone")
 	require.Nil(t, err, "init edge events plugin")
 	dmecommon.SetupMatchEngine(eehandler)
-	dmecommon.InitAppInstClients()
+	dmecommon.InitAppInstClients(time.Minute)
 	defer dmecommon.StopAppInstClients()
 	operatorApiGw, _ = initOperator(ctx, "standalone")
 	setupJwks()

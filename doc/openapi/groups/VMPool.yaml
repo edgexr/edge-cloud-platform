@@ -262,7 +262,8 @@ components:
         net_info:
           $ref: '#/components/schemas/EdgeprotoVMNetInfo'
         state:
-          description: VM State
+          description: VM State, valid values are one of Free, InProgress, InUse,
+            Add, Remove, Update, ForceFree, or 0, 1, 2, 3, 4, 5, 6
           type: string
         updated_at:
           $ref: '#/components/schemas/TypesTimestamp'
@@ -279,7 +280,9 @@ components:
     EdgeprotoVMPool:
       properties:
         crm_override:
-          description: Override actions to CRM
+          description: Override actions to CRM, valid values are one of NoOverride,
+            IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState,
+            or 0, 1, 2, 3, 4
           type: string
         delete_prepare:
           description: Preparing to be deleted
@@ -292,7 +295,11 @@ components:
         key:
           $ref: '#/components/schemas/EdgeprotoVMPoolKey'
         state:
-          description: Current state of the VM pool
+          description: Current state of the VM pool, valid values are one of TrackedStateUnknown,
+            NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested,
+            Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare,
+            CrmInitok, CreatingDependencies, DeleteDone, or 0, 1, 2, 3, 4, 5, 6, 7,
+            8, 9, 10, 11, 12, 13, 14, 15
           type: string
         vms:
           description: list of VMs to be part of VM pool
@@ -313,7 +320,9 @@ components:
     EdgeprotoVMPoolMember:
       properties:
         crm_override:
-          description: Override actions to CRM
+          description: Override actions to CRM, valid values are one of NoOverride,
+            IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState,
+            or 0, 1, 2, 3, 4
           type: string
         key:
           $ref: '#/components/schemas/EdgeprotoVMPoolKey'

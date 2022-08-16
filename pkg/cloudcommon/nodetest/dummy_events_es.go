@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/jarcoal/httpmock"
 )
 
@@ -84,20 +85,29 @@ func (s *DummyEventsES) HandleIgnore(req *http.Request) (*http.Response, error) 
 	return httpmock.NewStringResponse(200, `{"hits":{"total":{"value":0}}}`), nil
 }
 
-func (s *DummyEventsES) WaitLastEventMatches(matchFunc func(e *node.EventData) bool) bool {
+func (s *DummyEventsES) GetNumEvents() int {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	return len(s.Events)
+}
+
+func (s *DummyEventsES) WaitLastEventMatches(startEvent int, matchFunc func(e *node.EventData) bool) bool {
 	matches := false
-	for ii := 0; ii < 20; ii++ {
+	for ii := 0; ii < 60; ii++ {
 		s.Mux.Lock()
 		if len(s.Events) == 0 {
 			s.Mux.Unlock()
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
-		matches = matchFunc(s.Events[len(s.Events)-1])
-		s.Mux.Unlock()
-		if matches {
-			return matches
+		log.DebugLog(log.DebugLevelInfo, "WaitLastEventMatches", "numEvents", len(s.Events))
+		for _, event := range s.Events[startEvent:] {
+			if matchFunc(event) {
+				s.Mux.Unlock()
+				return true
+			}
 		}
+		s.Mux.Unlock()
 		time.Sleep(100 * time.Millisecond)
 	}
 	return matches

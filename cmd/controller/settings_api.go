@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/etcd/clientv3/concurrency"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"

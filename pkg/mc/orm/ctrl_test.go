@@ -35,6 +35,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/nodetest"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -103,7 +104,7 @@ func TestController(t *testing.T) {
 		BillingPlatform:          billing.BillingTypeFake,
 		DeploymentTag:            "local",
 		AlertCache:               &edgeproto.AlertCache{},
-		PublicAddr:               "http://mc.mobiledgex.net",
+		PublicAddr:               "http://mc.edgecloud.net",
 		PasswordResetConsolePath: "#/passwordreset",
 		VerifyEmailConsolePath:   "#/verify",
 	}
@@ -248,6 +249,7 @@ func TestController(t *testing.T) {
 	dc := grpc.NewServer(
 		grpc.UnaryInterceptor(testutil.UnaryInterceptor),
 		grpc.StreamInterceptor(testutil.StreamInterceptor),
+		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}),
 	)
 	ctrlAddr := "127.0.0.1:9998"
 	lis, err := net.Listen("tcp", ctrlAddr)
@@ -259,7 +261,7 @@ func TestController(t *testing.T) {
 	}()
 	defer dc.Stop()
 
-	dc2 := grpc.NewServer()
+	dc2 := grpc.NewServer(grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}))
 	ctrlAddr2 := "127.0.0.1:9997"
 	lis2, err := net.Listen("tcp", ctrlAddr2)
 	require.Nil(t, err)
@@ -1453,6 +1455,8 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		ds.EnableMidstreamFailure(api, syncChan)
 		ds.ShowDummyCount = 3
 
+		numEvents := de.GetNumEvents()
+
 		appInst := &ormapi.RegionAppInst{}
 		appInst.Region = ctrl.Region
 		appInst.AppInst.Key.AppKey.Organization = org1
@@ -1467,7 +1471,8 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 
 		// wait for event
 		var lastEvent *node.EventData
-		matches := de.WaitLastEventMatches(func(event *node.EventData) bool {
+		matches := de.WaitLastEventMatches(numEvents, func(event *node.EventData) bool {
+			log.DebugLog(log.DebugLevelInfo, "Check event", "event", *event)
 			lastEvent = event
 			if event.Name != apiUri {
 				return false
@@ -3138,6 +3143,7 @@ func TestUpgrade(t *testing.T) {
 	dc := grpc.NewServer(
 		grpc.UnaryInterceptor(testutil.UnaryInterceptor),
 		grpc.StreamInterceptor(testutil.StreamInterceptor),
+		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}),
 	)
 	ctrlAddr := "127.0.0.1:9998"
 	lis, err := net.Listen("tcp", ctrlAddr)
@@ -3158,7 +3164,7 @@ func TestUpgrade(t *testing.T) {
 		UsageCheckpointInterval:  "MONTH",
 		BillingPlatform:          billing.BillingTypeFake,
 		DeploymentTag:            "local",
-		PublicAddr:               "http://mc.mobiledgex.net",
+		PublicAddr:               "http://mc.edgecloud.net",
 		PasswordResetConsolePath: "#/passwordreset",
 		VerifyEmailConsolePath:   "#/verify",
 	}

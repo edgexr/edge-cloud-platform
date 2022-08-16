@@ -315,7 +315,7 @@ func WaitCounter(t *testing.T, counter *uint64, count uint64) {
 		if *counter == count {
 			break
 		}
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 	}
 	require.Equal(t, count, *counter)
 }

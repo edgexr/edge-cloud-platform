@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )

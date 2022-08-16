@@ -8,7 +8,6 @@ import (
 	encoding_binary "encoding/binary"
 	"encoding/json"
 	fmt "fmt"
-	"github.com/coreos/etcd/clientv3/concurrency"
 	distributed_match_engine "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	dme_proto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -20,6 +19,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -815,6 +815,7 @@ func (c *AlertCache) DeleteCondFunc(ctx context.Context, in *Alert, modRev int64
 }
 
 func (c *AlertCache) Prune(ctx context.Context, validKeys map[AlertKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune Alert", "numValidKeys", len(validKeys))
 	notify := make(map[AlertKey]*AlertCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

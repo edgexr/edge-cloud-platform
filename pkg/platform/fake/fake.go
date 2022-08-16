@@ -37,7 +37,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
-	ssh "github.com/mobiledgex/golang-ssh"
+	ssh "github.com/edgexr/golang-ssh"
 )
 
 type Platform struct {
@@ -676,6 +676,16 @@ func (s *Platform) HasTrustPolicyException(ctx context.Context, tpeKey *edgeprot
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake HasTrustPolicyException", "policyKey", tpeKey, "found", found)
 
 	return found
+}
+
+func (s *Platform) WaitHasTrustPolicyException(ctx context.Context, tpeKey *edgeproto.TrustPolicyExceptionKey, clusterInst *edgeproto.ClusterInst) bool {
+	for ii := 0; ii < 10; ii++ {
+		if s.HasTrustPolicyException(ctx, tpeKey, clusterInst) {
+			return true
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return s.HasTrustPolicyException(ctx, tpeKey, clusterInst)
 }
 
 func (s *Platform) TrustPolicyExceptionCount(ctx context.Context) int {

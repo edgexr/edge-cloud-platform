@@ -23,8 +23,8 @@ import (
 	"strings"
 	"time"
 
-	v3 "github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/clientv3/concurrency"
+	v3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"

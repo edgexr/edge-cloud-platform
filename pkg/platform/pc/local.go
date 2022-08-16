@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/creack/pty"
-	ssh "github.com/mobiledgex/golang-ssh"
+	ssh "github.com/edgexr/golang-ssh"
 )
 
 // Implements nanobox-io's ssh.Client interface, but runs commands locally.

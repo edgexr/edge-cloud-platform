@@ -154,7 +154,7 @@ func (m *mex) GenerateImports(file *generator.FileDescriptor) {
 	if hasGenerateCud {
 		m.gen.PrintImport("", "encoding/json")
 		m.gen.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/objstore")
-		m.gen.PrintImport("", "github.com/coreos/etcd/clientv3/concurrency")
+		m.gen.PrintImport("", "go.etcd.io/etcd/client/v3/concurrency")
 	}
 	if m.importUtil {
 		m.gen.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/util")
@@ -1464,6 +1464,7 @@ func (c *{{.Name}}Cache) DeleteCondFunc(ctx context.Context, in *{{.Name}}, modR
 }
 
 func (c *{{.Name}}Cache) Prune(ctx context.Context, validKeys map[{{.KeyType}}]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune {{.Name}}", "numValidKeys", len(validKeys))
 	notify := make(map[{{.KeyType}}]*{{.Name}}CacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

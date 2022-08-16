@@ -32,7 +32,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	jwt "github.com/golang-jwt/jwt/v4"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 // These are email templates. Eventually these should be pulled

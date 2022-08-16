@@ -296,6 +296,7 @@ func cmpFilterSpans(data []SpanSearch) {
 				ignoreMapVal(log.KeyValues, "modRev")
 				ignoreMapVal(log.KeyValues, "peer")
 				ignoreMapVal(log.KeyValues, "peerAddr")
+				ignoreMapVal(log.KeyValues, "local")
 				ignoreMapVal(log.KeyValues, "cookie")
 				ignoreMapVal(log.KeyValues, "expires")
 				ignoreMapVal(log.KeyValues, "resp")

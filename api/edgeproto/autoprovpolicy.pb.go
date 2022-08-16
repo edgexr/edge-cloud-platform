@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	fmt "fmt"
-	"github.com/coreos/etcd/clientv3/concurrency"
 	distributed_match_engine "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	dme_proto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -21,6 +20,7 @@ import (
 	types "github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -1841,6 +1841,7 @@ func (c *AutoProvPolicyCache) DeleteCondFunc(ctx context.Context, in *AutoProvPo
 }
 
 func (c *AutoProvPolicyCache) Prune(ctx context.Context, validKeys map[PolicyKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune AutoProvPolicy", "numValidKeys", len(validKeys))
 	notify := make(map[PolicyKey]*AutoProvPolicyCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {
@@ -3076,6 +3077,7 @@ func (c *AutoProvInfoCache) DeleteCondFunc(ctx context.Context, in *AutoProvInfo
 }
 
 func (c *AutoProvInfoCache) Prune(ctx context.Context, validKeys map[CloudletKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune AutoProvInfo", "numValidKeys", len(validKeys))
 	notify := make(map[CloudletKey]*AutoProvInfoCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

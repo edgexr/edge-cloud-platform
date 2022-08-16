@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	fmt "fmt"
-	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
@@ -17,6 +16,7 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -2226,6 +2226,7 @@ func (c *FlowRateLimitSettingsCache) DeleteCondFunc(ctx context.Context, in *Flo
 }
 
 func (c *FlowRateLimitSettingsCache) Prune(ctx context.Context, validKeys map[FlowRateLimitSettingsKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune FlowRateLimitSettings", "numValidKeys", len(validKeys))
 	notify := make(map[FlowRateLimitSettingsKey]*FlowRateLimitSettingsCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {
@@ -3119,6 +3120,7 @@ func (c *MaxReqsRateLimitSettingsCache) DeleteCondFunc(ctx context.Context, in *
 }
 
 func (c *MaxReqsRateLimitSettingsCache) Prune(ctx context.Context, validKeys map[MaxReqsRateLimitSettingsKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune MaxReqsRateLimitSettings", "numValidKeys", len(validKeys))
 	notify := make(map[MaxReqsRateLimitSettingsKey]*MaxReqsRateLimitSettingsCacheData)
 	c.Mux.Lock()
 	for key, _ := range c.Objs {

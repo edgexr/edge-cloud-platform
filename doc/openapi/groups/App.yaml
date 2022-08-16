@@ -13,7 +13,7 @@ servers:
 paths:
   /api/v1/auth/ctrl/AddAppAlertPolicy:
     post:
-      description: Add an AlertPolicy to the App
+      description: Add an AlertPolicy to the application definition
       operationId: AddAppAlertPolicy
       requestBody:
         content:
@@ -48,7 +48,7 @@ paths:
       - App
   /api/v1/auth/ctrl/AddAppAutoProvPolicy:
     post:
-      description: Add an AutoProvPolicy to the App
+      description: Add an AutoProvPolicy to the application definition
       operationId: AddAppAutoProvPolicy
       requestBody:
         content:
@@ -83,8 +83,8 @@ paths:
       - App
   /api/v1/auth/ctrl/CreateApp:
     post:
-      description: Create Application. Creates a definition for an application instance
-        for Cloudlet deployment.
+      description: Create Application. Creates a definition for an application for
+        Cloudlet deployment.
       operationId: CreateApp
       requestBody:
         content:
@@ -118,9 +118,8 @@ paths:
       - App
   /api/v1/auth/ctrl/DeleteApp:
     post:
-      description: Delete Application. Deletes a definition of an Application instance.
-        Make sure no other application instances exist with that definition. If they
-        do exist, you must delete those Application instances first.
+      description: Delete Application. Deletes a definition of an application. Instances
+        of the application must be deleted first.
       operationId: DeleteApp
       requestBody:
         content:
@@ -154,7 +153,7 @@ paths:
       - App
   /api/v1/auth/ctrl/RemoveAppAlertPolicy:
     post:
-      description: Remove an AlertPolicy from the App
+      description: Remove an AlertPolicy from the application definition
       operationId: RemoveAppAlertPolicy
       requestBody:
         content:
@@ -189,7 +188,7 @@ paths:
       - App
   /api/v1/auth/ctrl/RemoveAppAutoProvPolicy:
     post:
-      description: Remove an AutoProvPolicy from the App
+      description: Remove an AutoProvPolicy from the application definition
       operationId: RemoveAppAutoProvPolicy
       requestBody:
         content:
@@ -224,8 +223,8 @@ paths:
       - App
   /api/v1/auth/ctrl/ShowApp:
     post:
-      description: Show Applications. Lists all Application definitions managed from
-        the Edge Controller. Any fields specified will be used to filter results.
+      description: Show Applications. Lists all application definitions. Any fields
+        specified will be used to filter results.
       operationId: ShowApp
       requestBody:
         content:
@@ -287,7 +286,7 @@ paths:
       - App
   /api/v1/auth/ctrl/UpdateApp:
     post:
-      description: Update Application. Updates the definition of an Application instance.
+      description: Update Application. Updates the definition of an application.
       operationId: UpdateApp
       requestBody:
         content:
@@ -333,7 +332,8 @@ components:
             Ex: "udp:10001:maxpktsize=8000".'
           type: string
         access_type:
-          description: (Deprecated) Access type
+          description: (_deprecated_) Access type, valid values are one of DefaultForDeployment,
+            Direct, LoadBalancer, or 0, 1, 2
           type: string
         alert_policies:
           description: Alert Policies
@@ -376,7 +376,8 @@ components:
         default_flavor:
           $ref: '#/components/schemas/EdgeprotoFlavorKey'
         del_opt:
-          description: Override actions to Controller
+          description: Override actions to Controller, valid values are one of NoAutoDelete,
+            AutoDelete, or 0, 1
           type: string
         delete_prepare:
           description: Preparing to be deleted
@@ -398,10 +399,12 @@ components:
           description: URI of where image resides
           type: string
         image_type:
-          description: Image type (see ImageType)
+          description: Image type, valid values are one of Unknown, Docker, Qcow,
+            Helm, Ovf, or 0, 1, 2, 3, 4
           type: string
         internal_ports:
-          description: Should this app have access to outside world?
+          description: Set true to indicate App is used internally with other Apps
+            only, and no ports are exposed externally
           type: boolean
         key:
           $ref: '#/components/schemas/EdgeprotoAppKey'
@@ -416,7 +419,9 @@ components:
             if not set
           type: string
         qos_session_profile:
-          description: Qualifier for the requested latency profile
+          description: Qualifier for the requested latency profile, valid values are
+            one of NoPriority, LowLatency, ThroughputDownS, ThroughputDownM, ThroughputDownL,
+            or 0, 1, 2, 3, 4
           type: string
         required_outbound_connections:
           description: Connections this app require to determine if the app is compatible
@@ -430,7 +435,7 @@ components:
             when app is updated
           type: string
         scale_with_cluster:
-          description: Option to run App on all nodes of the cluster
+          description: Set true to run App on all nodes of the cluster
           type: boolean
         serverless_config:
           $ref: '#/components/schemas/EdgeprotoServerlessConfig'
@@ -452,7 +457,8 @@ components:
           description: Updated at time
           type: string
         vm_app_os_type:
-          description: OS Type for VM Apps
+          description: OS Type for VM Apps, valid values are one of Unknown, Linux,
+            Windows10, Windows2012, Windows2016, Windows2019, or 0, 1, 2, 3, 4, 5
           type: string
       type: object
     EdgeprotoAppAlertPolicy:

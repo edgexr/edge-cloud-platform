@@ -46,11 +46,11 @@ type CacheUpdateCallback func(updateType CacheUpdateType, value string)
 func DummyUpdateCallback(updateType CacheUpdateType, value string) {}
 
 // GetAppInstsForCloudlets finds all AppInsts associated with the given cloudlets
-func (s *AppInstCache) GetForCloudlet(key *CloudletKey, cb func(appInstKey *AppInstKey, modRev int64)) {
+func (s *AppInstCache) GetForCloudlet(cloudlet *Cloudlet, cb func(appInstKey *AppInstKey, modRev int64)) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for k, v := range s.Objs {
-		if v.Obj.Key.ClusterInstKey.CloudletKey == *key {
+		if v.Obj.Key.ClusterInstKey.CloudletKey == cloudlet.Key {
 			cb(&k, v.ModRev)
 		}
 	}
@@ -71,11 +71,11 @@ func (s *AppInstCache) GetForRealClusterInstKey(key *ClusterInstKey, cb func(app
 
 // GetForCloudlet finds all ClusterInsts associated with the
 // given cloudlets
-func (s *ClusterInstCache) GetForCloudlet(key *CloudletKey, cb func(clusterInstKey *ClusterInstKey, modRev int64)) {
+func (s *ClusterInstCache) GetForCloudlet(cloudlet *Cloudlet, cb func(clusterInstKey *ClusterInstKey, modRev int64)) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for k, v := range s.Objs {
-		if v.Obj.Key.CloudletKey == *key {
+		if v.Obj.Key.CloudletKey == cloudlet.Key {
 			cb(&k, v.ModRev)
 		}
 	}
@@ -513,4 +513,38 @@ func (s *VMPoolInfoCache) SetError(ctx context.Context, key *VMPoolKey, errState
 	info.Errors = append(info.Errors, err)
 	info.State = errState
 	s.Update(ctx, &info, 0)
+}
+
+func (s *VMPoolCache) GetForCloudlet(cloudlet *Cloudlet, cb func(key *VMPoolKey, modRev int64)) {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	for k, v := range s.Objs {
+		if cloudlet.Key.Organization != v.Obj.Key.Organization {
+			continue
+		}
+		if cloudlet.VmPool != v.Obj.Key.Name {
+			continue
+		}
+		cb(&k, v.ModRev)
+	}
+}
+
+func (s *GPUDriverCache) GetForCloudlet(cloudlet *Cloudlet, cb func(key *GPUDriverKey, modRev int64)) {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	for k, v := range s.Objs {
+		if v.Obj.Key.Matches(&cloudlet.GpuConfig.Driver) {
+			cb(&k, v.ModRev)
+		}
+	}
+}
+
+func (s *TrustPolicyExceptionCache) GetForCloudlet(cloudlet *Cloudlet, cb func(key *TrustPolicyExceptionKey, modRev int64)) {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	for k, v := range s.Objs {
+		if cloudlet.Key.Organization == v.Obj.Key.CloudletPoolKey.Organization {
+			cb(&k, v.ModRev)
+		}
+	}
 }

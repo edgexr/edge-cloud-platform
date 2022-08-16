@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/etcd/clientv3/concurrency"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"

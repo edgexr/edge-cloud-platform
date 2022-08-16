@@ -22,7 +22,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"

@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -30,6 +31,7 @@ var _ status.Status
 var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
+var _ = metadata.Join
 
 func request_ClusterInstApi_CreateClusterInst_0(ctx context.Context, marshaler runtime.Marshaler, client ClusterInstApiClient, req *http.Request, pathParams map[string]string) (ClusterInstApi_CreateClusterInstClient, runtime.ServerMetadata, error) {
 	var protoReq ClusterInst
@@ -193,6 +195,7 @@ func request_ClusterInstInfoApi_ShowClusterInstInfo_0(ctx context.Context, marsh
 // RegisterClusterInstApiHandlerServer registers the http handlers for service ClusterInstApi to "mux".
 // UnaryRPC     :call ClusterInstApiServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterClusterInstApiHandlerFromEndpoint instead.
 func RegisterClusterInstApiHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ClusterInstApiServer) error {
 
 	mux.Handle("POST", pattern_ClusterInstApi_CreateClusterInst_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -226,6 +229,8 @@ func RegisterClusterInstApiHandlerServer(ctx context.Context, mux *runtime.Serve
 	mux.Handle("POST", pattern_ClusterInstApi_DeleteIdleReservableClusterInsts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
@@ -233,6 +238,7 @@ func RegisterClusterInstApiHandlerServer(ctx context.Context, mux *runtime.Serve
 			return
 		}
 		resp, md, err := local_request_ClusterInstApi_DeleteIdleReservableClusterInsts_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -249,6 +255,7 @@ func RegisterClusterInstApiHandlerServer(ctx context.Context, mux *runtime.Serve
 // RegisterClusterInstInfoApiHandlerServer registers the http handlers for service ClusterInstInfoApi to "mux".
 // UnaryRPC     :call ClusterInstInfoApiServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterClusterInstInfoApiHandlerFromEndpoint instead.
 func RegisterClusterInstInfoApiHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ClusterInstInfoApiServer) error {
 
 	mux.Handle("POST", pattern_ClusterInstInfoApi_ShowClusterInstInfo_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

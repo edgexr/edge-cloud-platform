@@ -1052,7 +1052,7 @@ paths:
       - Exec
   /api/v1/auth/ctrl/AddAppAlertPolicy:
     post:
-      description: Add an AlertPolicy to the App
+      description: Add an AlertPolicy to the application definition
       operationId: AddAppAlertPolicy
       requestBody:
         content:
@@ -1087,7 +1087,7 @@ paths:
       - App
   /api/v1/auth/ctrl/AddAppAutoProvPolicy:
     post:
-      description: Add an AutoProvPolicy to the App
+      description: Add an AutoProvPolicy to the application definition
       operationId: AddAppAutoProvPolicy
       requestBody:
         content:
@@ -1429,8 +1429,8 @@ paths:
       - AlertPolicy
   /api/v1/auth/ctrl/CreateApp:
     post:
-      description: Create Application. Creates a definition for an application instance
-        for Cloudlet deployment.
+      description: Create Application. Creates a definition for an application for
+        Cloudlet deployment.
       operationId: CreateApp
       requestBody:
         content:
@@ -2056,9 +2056,8 @@ paths:
       - AlertPolicy
   /api/v1/auth/ctrl/DeleteApp:
     post:
-      description: Delete Application. Deletes a definition of an Application instance.
-        Make sure no other application instances exist with that definition. If they
-        do exist, you must delete those Application instances first.
+      description: Delete Application. Deletes a definition of an application. Instances
+        of the application must be deleted first.
       operationId: DeleteApp
       requestBody:
         content:
@@ -3263,7 +3262,7 @@ paths:
       - AppInst
   /api/v1/auth/ctrl/RemoveAppAlertPolicy:
     post:
-      description: Remove an AlertPolicy from the App
+      description: Remove an AlertPolicy from the application definition
       operationId: RemoveAppAlertPolicy
       requestBody:
         content:
@@ -3298,7 +3297,7 @@ paths:
       - App
   /api/v1/auth/ctrl/RemoveAppAutoProvPolicy:
     post:
-      description: Remove an AutoProvPolicy from the App
+      description: Remove an AutoProvPolicy from the application definition
       operationId: RemoveAppAutoProvPolicy
       requestBody:
         content:
@@ -3870,8 +3869,8 @@ paths:
       - AlertPolicy
   /api/v1/auth/ctrl/ShowApp:
     post:
-      description: Show Applications. Lists all Application definitions managed from
-        the Edge Controller. Any fields specified will be used to filter results.
+      description: Show Applications. Lists all application definitions. Any fields
+        specified will be used to filter results.
       operationId: ShowApp
       requestBody:
         content:
@@ -5002,7 +5001,7 @@ paths:
       - AlertPolicy
   /api/v1/auth/ctrl/UpdateApp:
     post:
-      description: Update Application. Updates the definition of an Application instance.
+      description: Update Application. Updates the definition of an application.
       operationId: UpdateApp
       requestBody:
         content:
@@ -8870,7 +8869,8 @@ components:
             Ex: "udp:10001:maxpktsize=8000".'
           type: string
         access_type:
-          description: (Deprecated) Access type
+          description: (_deprecated_) Access type, valid values are one of DefaultForDeployment,
+            Direct, LoadBalancer, or 0, 1, 2
           type: string
         alert_policies:
           description: Alert Policies
@@ -8913,7 +8913,8 @@ components:
         default_flavor:
           $ref: '#/components/schemas/EdgeprotoFlavorKey'
         del_opt:
-          description: Override actions to Controller
+          description: Override actions to Controller, valid values are one of NoAutoDelete,
+            AutoDelete, or 0, 1
           type: string
         delete_prepare:
           description: Preparing to be deleted
@@ -8935,10 +8936,12 @@ components:
           description: URI of where image resides
           type: string
         image_type:
-          description: Image type (see ImageType)
+          description: Image type, valid values are one of Unknown, Docker, Qcow,
+            Helm, Ovf, or 0, 1, 2, 3, 4
           type: string
         internal_ports:
-          description: Should this app have access to outside world?
+          description: Set true to indicate App is used internally with other Apps
+            only, and no ports are exposed externally
           type: boolean
         key:
           $ref: '#/components/schemas/EdgeprotoAppKey'
@@ -8953,7 +8956,9 @@ components:
             if not set
           type: string
         qos_session_profile:
-          description: Qualifier for the requested latency profile
+          description: Qualifier for the requested latency profile, valid values are
+            one of NoPriority, LowLatency, ThroughputDownS, ThroughputDownM, ThroughputDownL,
+            or 0, 1, 2, 3, 4
           type: string
         required_outbound_connections:
           description: Connections this app require to determine if the app is compatible
@@ -8967,7 +8972,7 @@ components:
             when app is updated
           type: string
         scale_with_cluster:
-          description: Option to run App on all nodes of the cluster
+          description: Set true to run App on all nodes of the cluster
           type: boolean
         serverless_config:
           $ref: '#/components/schemas/EdgeprotoServerlessConfig'
@@ -8989,7 +8994,8 @@ components:
           description: Updated at time
           type: string
         vm_app_os_type:
-          description: OS Type for VM Apps
+          description: OS Type for VM Apps, valid values are one of Unknown, Linux,
+            Windows10, Windows2012, Windows2016, Windows2019, or 0, 1, 2, 3, 4, 5
           type: string
       type: object
     EdgeprotoAppAlertPolicy:
@@ -9011,7 +9017,8 @@ components:
     EdgeprotoAppInst:
       properties:
         auto_cluster_ip_access:
-          description: (Deprecated) IpAccess for auto-clusters. Ignored otherwise.
+          description: (Deprecated) IpAccess for auto-clusters. Ignored otherwise.,
+            valid values are one of Unknown, Dedicated, Shared, or 0, 1, 3
           type: string
         availability_zone:
           description: Optional Availability Zone if any
@@ -9027,7 +9034,9 @@ components:
           description: Created at time
           type: string
         crm_override:
-          description: Override actions to CRM
+          description: Override actions to CRM, valid values are one of NoOverride,
+            IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState,
+            or 0, 1, 2, 3, 4
           type: string
         dedicated_ip:
           description: Dedicated IP assigns an IP for this AppInst but requires platform
@@ -9064,7 +9073,8 @@ components:
         key:
           $ref: '#/components/schemas/EdgeprotoAppInstKey'
         liveness:
-          description: Liveness of instance (see Liveness)
+          description: Liveness of instance (see Liveness), valid values are one of
+            Unknown, Static, Dynamic, Autoprov, or 0, 1, 2, 3
           type: string
         mapped_ports:
           description: For instances accessible via a shared load balancer, defines
@@ -9078,7 +9088,10 @@ components:
           description: Optional Resources required by OS flavor if any
           type: string
         power_state:
-          description: Power State of the AppInst
+          description: Power State of the AppInst, valid values are one of PowerStateUnknown,
+            PowerOnRequested, PoweringOn, PowerOn, PowerOffRequested, PoweringOff,
+            PowerOff, RebootRequested, Rebooting, Reboot, PowerStateError, or 0, 1,
+            2, 3, 4, 5, 6, 7, 8, 9, 10
           type: string
         real_cluster_name:
           description: Real ClusterInst name
@@ -9090,7 +9103,11 @@ components:
         runtime_info:
           $ref: '#/components/schemas/EdgeprotoAppInstRuntime'
         state:
-          description: Current state of the AppInst on the Cloudlet
+          description: Current state of the AppInst on the Cloudlet, valid values
+            are one of TrackedStateUnknown, NotPresent, CreateRequested, Creating,
+            CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested,
+            Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies,
+            DeleteDone, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
           type: string
         unique_id:
           description: A unique id for the AppInst within the region to be used by
@@ -9329,7 +9346,9 @@ components:
           description: CRM access public key
           type: string
         crm_override:
-          description: Override actions to CRM
+          description: Override actions to CRM, valid values are one of NoOverride,
+            IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState,
+            or 0, 1, 2, 3, 4
           type: string
         default_resource_alert_threshold:
           description: Default resource alert threshold percentage
@@ -9373,12 +9392,14 @@ components:
           $ref: '#/components/schemas/EdgeprotoGPUConfig'
         infra_api_access:
           description: Infra Access Type is the type of access available to Infra
-            API Endpoint
+            API Endpoint, valid values are one of DirectAccess, RestrictedAccess,
+            or 0, 1
           type: string
         infra_config:
           $ref: '#/components/schemas/EdgeprotoInfraConfig'
         ip_support:
-          description: Type of IP support provided by Cloudlet (see IpSupport)
+          description: Type of IP support provided by Cloudlet (see IpSupport), valid
+            values are one of Unknown, Static, Dynamic, or 0, 1, 2
           type: string
         kafka_cluster:
           description: Operator provided kafka cluster endpoint to push events to
@@ -9416,7 +9437,10 @@ components:
           description: Enable platform H/A
           type: boolean
         platform_type:
-          description: Platform type
+          description: Platform type, valid values are one of Fake, Dind, Openstack,
+            Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
+            K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
+            or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
           type: string
         res_tag_map:
           additionalProperties:
@@ -9447,7 +9471,11 @@ components:
             owned by this organization instead of multi-tenant
           type: string
         state:
-          description: Current state of the cloudlet
+          description: Current state of the cloudlet, valid values are one of TrackedStateUnknown,
+            NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested,
+            Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare,
+            CrmInitok, CreatingDependencies, DeleteDone, or 0, 1, 2, 3, 4, 5, 6, 7,
+            8, 9, 10, 11, 12, 13, 14, 15
           type: string
         static_ips:
           description: List of static IPs for static IP support
@@ -9458,7 +9486,11 @@ components:
           description: Optional Trust Policy
           type: string
         trust_policy_state:
-          description: State of trust policy
+          description: State of trust policy, valid values are one of TrackedStateUnknown,
+            NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested,
+            Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare,
+            CrmInitok, CreatingDependencies, DeleteDone, or 0, 1, 2, 3, 4, 5, 6, 7,
+            8, 9, 10, 11, 12, 13, 14, 15
           type: string
         updated_at:
           description: Updated at time
@@ -9557,7 +9589,11 @@ components:
         state:
           $ref: '#/components/schemas/DmeProtoCloudletState'
         trust_policy_state:
-          description: Trust Policy State
+          description: Trust Policy State, valid values are one of TrackedStateUnknown,
+            NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested,
+            Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare,
+            CrmInitok, CreatingDependencies, DeleteDone, or 0, 1, 2, 3, 4, 5, 6, 7,
+            8, 9, 10, 11, 12, 13, 14, 15
           type: string
       type: object
     EdgeprotoCloudletKey:
@@ -9629,7 +9665,10 @@ components:
           description: Organization
           type: string
         platform_type:
-          description: Platform type
+          description: Platform type, valid values are one of Fake, Dind, Openstack,
+            Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
+            K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
+            or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
           type: string
         properties:
           additionalProperties:
@@ -9698,7 +9737,10 @@ components:
           description: Organization
           type: string
         platform_type:
-          description: Platform type
+          description: Platform type, valid values are one of Fake, Dind, Openstack,
+            Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
+            K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
+            or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
           type: string
         properties:
           description: Cloudlet resource properties
@@ -9740,7 +9782,9 @@ components:
           description: Created at time
           type: string
         crm_override:
-          description: Override actions to CRM
+          description: Override actions to CRM, valid values are one of NoOverride,
+            IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState,
+            or 0, 1, 2, 3, 4
           type: string
         delete_prepare:
           description: Preparing to be deleted
@@ -9772,12 +9816,14 @@ components:
           description: Optional resource specific image to launch
           type: string
         ip_access:
-          description: IP access type (RootLB Type)
+          description: IP access type (RootLB Type), valid values are one of Unknown,
+            Dedicated, Shared, or 0, 1, 3
           type: string
         key:
           $ref: '#/components/schemas/EdgeprotoClusterInstKey'
         liveness:
-          description: Liveness of instance (see Liveness)
+          description: Liveness of instance (see Liveness), valid values are one of
+            Unknown, Static, Dynamic, Autoprov, or 0, 1, 2, 3
           type: string
         master_node_flavor:
           description: Generic flavor for k8s master VM when worker nodes > 0
@@ -9827,7 +9873,11 @@ components:
             diagnostic purposes
           type: boolean
         state:
-          description: State of the cluster instance
+          description: State of the cluster instance, valid values are one of TrackedStateUnknown,
+            NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested,
+            Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare,
+            CrmInitok, CreatingDependencies, DeleteDone, or 0, 1, 2, 3, 4, 5, 6, 7,
+            8, 9, 10, 11, 12, 13, 14, 15
           type: string
         updated_at:
           description: Updated at time
@@ -10129,7 +10179,8 @@ components:
           description: Burst size for flow rate limiting (required for TokenBucketAlgorithm)
           type: integer
         flow_algorithm:
-          description: Flow Rate Limit algorithm
+          description: Flow Rate Limit algorithm, valid values are one of UnknownFlowAlgorithm,
+            TokenBucketAlgorithm, LeakyBucketAlgorithm, or 0, 1, 2
           type: string
         reqs_per_second:
           description: Requests per second for flow rate limiting
@@ -10215,7 +10266,8 @@ components:
           description: Unique identifier key
           type: string
         operating_system:
-          description: Operator System supported by GPU driver build
+          description: Operator System supported by GPU driver build, valid values
+            are one of Linux, Windows, Others, or 0, 1, 20
           type: string
         storage_path:
           description: GPU driver build storage path
@@ -10366,7 +10418,8 @@ components:
           description: Time interval
           type: string
         max_reqs_algorithm:
-          description: MaxReqs Rate Limit Algorithm
+          description: MaxReqs Rate Limit Algorithm, valid values are one of UnknownMaxReqsAlgorithm,
+            FixedWindowAlgorithm, or 0, 1
           type: string
         max_requests:
           description: Maximum number of requests for the given Interval
@@ -10375,7 +10428,9 @@ components:
     EdgeprotoNetwork:
       properties:
         connection_type:
-          description: Network connection type
+          description: Network connection type, valid values are one of Undefined,
+            ConnectToLoadBalancer, ConnectToClusterNodes, ConnectToAll, or 0, 1, 2,
+            3
           type: string
         delete_prepare:
           description: Preparing to be deleted
@@ -10645,14 +10700,16 @@ components:
     EdgeprotoRateLimitSettingsKey:
       properties:
         api_endpoint_type:
-          description: API Endpoint type
+          description: API Endpoint type, valid values are one of UnknownApiEndpointType,
+            Dme, or 0, 1
           type: string
         api_name:
           description: Name of API (eg. CreateApp or RegisterClient) (Use "Global"
             if not a specific API)
           type: string
         rate_limit_target:
-          description: Target to rate limit
+          description: Target to rate limit, valid values are one of UnknownTarget,
+            AllRequests, PerIp, PerUser, or 0, 1, 2, 3
           type: string
       type: object
     EdgeprotoResTagTable:
@@ -10978,7 +11035,8 @@ components:
           nullable: true
           type: array
         state:
-          description: State of the exception within the approval process
+          description: State of the exception within the approval process, valid values
+            are one of Unknown, ApprovalRequested, Active, Rejected, or 0, 1, 2, 3
           type: string
       type: object
     EdgeprotoTrustPolicyExceptionKey:
@@ -11018,7 +11076,8 @@ components:
         net_info:
           $ref: '#/components/schemas/EdgeprotoVMNetInfo'
         state:
-          description: VM State
+          description: VM State, valid values are one of Free, InProgress, InUse,
+            Add, Remove, Update, ForceFree, or 0, 1, 2, 3, 4, 5, 6
           type: string
         updated_at:
           $ref: '#/components/schemas/TypesTimestamp'
@@ -11035,7 +11094,9 @@ components:
     EdgeprotoVMPool:
       properties:
         crm_override:
-          description: Override actions to CRM
+          description: Override actions to CRM, valid values are one of NoOverride,
+            IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState,
+            or 0, 1, 2, 3, 4
           type: string
         delete_prepare:
           description: Preparing to be deleted
@@ -11048,7 +11109,11 @@ components:
         key:
           $ref: '#/components/schemas/EdgeprotoVMPoolKey'
         state:
-          description: Current state of the VM pool
+          description: Current state of the VM pool, valid values are one of TrackedStateUnknown,
+            NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested,
+            Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare,
+            CrmInitok, CreatingDependencies, DeleteDone, or 0, 1, 2, 3, 4, 5, 6, 7,
+            8, 9, 10, 11, 12, 13, 14, 15
           type: string
         vms:
           description: list of VMs to be part of VM pool
@@ -11069,7 +11134,9 @@ components:
     EdgeprotoVMPoolMember:
       properties:
         crm_override:
-          description: Override actions to CRM
+          description: Override actions to CRM, valid values are one of NoOverride,
+            IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState,
+            or 0, 1, 2, 3, 4
           type: string
         key:
           $ref: '#/components/schemas/EdgeprotoVMPoolKey'
@@ -11563,7 +11630,8 @@ components:
           description: InfluxDB max number of data points returned
           type: integer
         NotifyEmailAddress:
-          description: Email to notify when locked account is created
+          description: Email to notify when locked account is created, defaults to
+            SupportEmail
           type: string
         PasswordMinCrackTimeSec:
           description: User accounts min password crack time seconds (a measure of
@@ -11580,6 +11648,12 @@ components:
         SkipVerifyEmail:
           description: Skip email verification for new accounts (testing only)
           type: boolean
+        SlackIconURL:
+          description: Slack icon URL used for alert manager slack receivers
+          type: string
+        SupportEmail:
+          description: Support email address shown to users, i.e. support@edgecloud.net
+          type: string
         UserApiKeyCreateLimit:
           description: Max number of API keys a user can create
           type: integer
@@ -11988,13 +12062,16 @@ components:
           description: Number of requests allowed at once
           type: integer
         FlowAlgorithm:
-          description: Flow Algorithm (TokenBucketAlgorithm or LeakyBucketAlgorithm)
+          description: Flow Algorithm (TokenBucketAlgorithm or LeakyBucketAlgorithm),
+            valid values are one of UnknownFlowAlgorithm, TokenBucketAlgorithm, LeakyBucketAlgorithm,
+            or 0, 1, 2
           type: string
         FlowSettingsName:
           description: Unique name for FlowSettings
           type: string
         RateLimitTarget:
-          description: RateLimitTarget (AllRequests, PerIp, or PerUser)
+          description: RateLimitTarget (AllRequests, PerIp, or PerUser), valid values
+            are one of UnknownTarget, AllRequests, PerIp, PerUser, or 0, 1, 2, 3
           type: string
         ReqsPerSecond:
           description: Number of requests per second
@@ -12009,7 +12086,8 @@ components:
           description: Time interval
           type: string
         MaxReqsAlgorithm:
-          description: MaxReqs Algorithm (FixedWindowAlgorithm)
+          description: MaxReqs Algorithm (FixedWindowAlgorithm), valid values are
+            one of UnknownMaxReqsAlgorithm, FixedWindowAlgorithm, or 0, 1
           type: string
         MaxReqsSettingsName:
           description: Unique name for MaxReqsSettings
@@ -12018,7 +12096,8 @@ components:
           description: Maximum number of requests for the specified interval
           type: integer
         RateLimitTarget:
-          description: RateLimitTarget (AllRequests, PerIp, or PerUser)
+          description: RateLimitTarget (AllRequests, PerIp, or PerUser), valid values
+            are one of UnknownTarget, AllRequests, PerIp, PerUser, or 0, 1, 2, 3
           type: string
       type: object
     OrmapiMcRateLimitSettings:
@@ -12039,7 +12118,8 @@ components:
           nullable: true
           type: object
         RateLimitTarget:
-          description: RateLimitTarget (AllRequests, PerIp, or PerUser)
+          description: RateLimitTarget (AllRequests, PerIp, or PerUser), valid values
+            are one of UnknownTarget, AllRequests, PerIp, PerUser, or 0, 1, 2, 3
           type: string
       type: object
     OrmapiMetricData:
@@ -13045,7 +13125,8 @@ components:
           type: string
         Schedule:
           description: Indicates how often a report should be generated, one of EveryWeek,
-            Every15Days, EveryMonth
+            Every15Days, EveryMonth, valid values are one of EveryWeek, Every15Days,
+            EveryMonth, or 0, 1, 3
           type: string
         StartScheduleDate:
           description: 'Start date (in RFC3339 format with intended timezone) when

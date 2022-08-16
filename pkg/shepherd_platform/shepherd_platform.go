@@ -21,7 +21,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	ssh "github.com/mobiledgex/golang-ssh"
+	ssh "github.com/edgexr/golang-ssh"
 )
 
 // Platform abstracts the underlying cloudlet platform.

@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -29,6 +30,8 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/require"
 )
@@ -121,10 +124,10 @@ const (
 )
 
 func TestAppStoreApi(t *testing.T) {
-	artifactoryAddr := "https://dummy-artifactory.mobiledgex.net"
+	artifactoryAddr := "https://dummy-artifactory.edgecloud.net"
 	artifactoryApiKey := "dummyKey"
 
-	gitlabAddr := "https://dummy-gitlab.mobiledgex.net"
+	gitlabAddr := "https://dummy-gitlab.edgecloud.net"
 	gitlabApiKey := "dummyKey"
 
 	var status int
@@ -148,19 +151,47 @@ func TestAppStoreApi(t *testing.T) {
 
 	defaultConfig.DisableRateLimit = true
 
+	vp := process.Vault{
+		Common: process.Common{
+			Name: "vault",
+		},
+		ListenAddr: "https://127.0.0.1:8202",
+		PKIDomain:  "edgecloud.net",
+	}
+	_, vroles, vaultCleanup := testutil.NewVaultTestCluster(t, &vp)
+	os.Setenv("VAULT_ROLE_ID", vroles.MCRoleID)
+	os.Setenv("VAULT_SECRET_ID", vroles.MCSecretID)
+	defer func() {
+		os.Unsetenv("VAULT_ROLE_ID")
+		os.Unsetenv("VAULT_SECRET_ID")
+		vaultCleanup()
+	}()
+
+	rtfuri, err := url.ParseRequestURI(artifactoryAddr)
+	require.Nil(t, err, "parse artifactory url")
+
+	path := "/secret/registry/" + rtfuri.Host
+	out := vp.Run("vault", fmt.Sprintf("kv put %s apikey=%s", path, artifactoryApiKey), &err)
+	require.Nil(t, err, "added secret to vault %s", out)
+
+	// mock artifactory
+	rtf := NewArtifactoryMock(artifactoryAddr, mockTransport)
+	// mock gitlab
+	gm := NewGitlabMock(gitlabAddr, mockTransport)
+
 	config := ServerConfig{
 		ServAddr:                 addr,
 		SqlAddr:                  "127.0.0.1:5445",
 		RunLocal:                 true,
 		InitLocal:                true,
 		IgnoreEnv:                true,
+		VaultAddr:                vp.ListenAddr,
 		ArtifactoryAddr:          artifactoryAddr,
 		GitlabAddr:               gitlabAddr,
-		LocalVault:               true,
 		UsageCheckpointInterval:  "MONTH",
 		BillingPlatform:          billing.BillingTypeFake,
 		DeploymentTag:            "local",
-		PublicAddr:               "http://mc.mobiledgex.net",
+		PublicAddr:               "http://mc.edgecloud.net",
 		PasswordResetConsolePath: "#/passwordreset",
 		VerifyEmailConsolePath:   "#/verify",
 		testTransport:            mockTransport,
@@ -168,13 +199,6 @@ func TestAppStoreApi(t *testing.T) {
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
 	defer server.Stop()
-
-	rtfuri, err := url.ParseRequestURI(artifactoryAddr)
-	require.Nil(t, err, "parse artifactory url")
-
-	path := "secret/registry/" + rtfuri.Host
-	server.vault.Run("vault", fmt.Sprintf("kv put %s apikey=%s", path, artifactoryApiKey), &err)
-	require.Nil(t, err, "added secret to vault")
 
 	err = server.WaitUntilReady()
 	require.Nil(t, err, "server online")
@@ -186,11 +210,6 @@ func TestAppStoreApi(t *testing.T) {
 	// login as super user
 	tokenAdmin, _, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass, NoOTP, NoApiKeyId, NoApiKey)
 	require.Nil(t, err, "login as superuser")
-
-	// mock artifactory
-	rtf := NewArtifactoryMock(artifactoryAddr, mockTransport)
-	// mock gitlab
-	gm := NewGitlabMock(gitlabAddr, mockTransport)
 
 	// basic direct api tests
 	for user, _ := range testEntries[0].Users {
@@ -407,6 +426,12 @@ func waitSyncCount(t *testing.T, sync *AppStoreSync, count int64) {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
+	}
+	if sync.count != count {
+		// print all goroutines in case sync thread is stuck
+		buf := make([]byte, 200*1024)
+		len := runtime.Stack(buf, true)
+		fmt.Println(string(buf[:len]))
 	}
 	require.True(t, sync.count == count, fmt.Sprintf("sync count %d != expected %d", sync.count, count))
 }
