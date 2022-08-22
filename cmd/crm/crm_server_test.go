@@ -381,7 +381,7 @@ func TestCRM(t *testing.T) {
 		ctrlMgr.Stop()
 	}()
 
-	notifyClient.WaitForConnect(1)
+	require.Nil(t, notifyClient.WaitForConnect(1))
 	stats := notify.Stats{}
 	notifyClient.GetStats(&stats)
 	require.Equal(t, uint64(1), stats.Connects)

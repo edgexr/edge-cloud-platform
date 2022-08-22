@@ -148,8 +148,8 @@ func testC(t *testing.T) {
 	autoScalePolicyClient := edgeproto.NewAutoScalePolicyApiClient(conn)
 	autoProvPolicyClient := edgeproto.NewAutoProvPolicyApiClient(conn)
 
-	crmClient.WaitForConnect(1)
-	dmeClient.WaitForConnect(1)
+	require.Nil(t, crmClient.WaitForConnect(1))
+	require.Nil(t, dmeClient.WaitForConnect(1))
 	for ii, _ := range testutil.CloudletInfoData() {
 		err := apis.cloudletInfoApi.cache.WaitForCloudletState(ctx, &testutil.CloudletInfoData()[ii].Key, dme.CloudletState_CLOUDLET_STATE_READY, time.Second)
 		require.Nil(t, err)

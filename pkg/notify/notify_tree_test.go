@@ -77,7 +77,7 @@ func TestNotifyTree(t *testing.T) {
 
 	// wait till everything is connected
 	for _, n := range clients {
-		n.client.WaitForConnect(1)
+		require.Nil(t, n.client.WaitForConnect(1))
 	}
 
 	// crms need to send cloudletInfo up to trigger sending of

@@ -95,11 +95,11 @@ func (s *AppSend) UpdateAll(ctx context.Context) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	if !s.UpdateAllOk() { // to be implemented by hand
-		return
-	}
 	s.Mux.Lock()
 	s.handler.GetAllKeys(ctx, func(key *edgeproto.AppKey, modRev int64) {
+		if !s.UpdateAllOkLocked(key) { // to be implemented by hand
+			return
+		}
 		s.Keys[*key] = AppSendContext{
 			ctx:    ctx,
 			modRev: modRev,
