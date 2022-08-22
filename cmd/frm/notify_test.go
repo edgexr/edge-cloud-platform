@@ -146,6 +146,9 @@ func TestFRMNotify(t *testing.T) {
 	notifyAddr := "127.0.0.1:21245"
 	ctrlMgr.Start("ctrl", notifyAddr, nil)
 
+	// Populate data first to test sendall filtering
+	addTestData(t, ctx, ctrlHandler, &data)
+
 	var nodeMgr node.NodeMgr
 	var haMgr redundancy.HighAvailabilityManager
 
@@ -168,11 +171,66 @@ func TestFRMNotify(t *testing.T) {
 		ctrlMgr.Stop()
 	}()
 
-	notifyClient.WaitForConnect(1)
-	stats := notify.Stats{}
-	notifyClient.GetStats(&stats)
-	require.Equal(t, uint64(1), stats.Connects)
+	require.Nil(t, notifyClient.WaitForConnect(1))
+	require.Nil(t, notifyClient.WaitForSendAllEnd(1))
 
+	// Wait for FRM to receive data
+	// FRM will only receive data corresponding to federated cloudlets
+	require.Nil(t, notify.WaitFor(&controllerData.FlavorCache, 1))
+	require.Nil(t, notify.WaitFor(controllerData.CloudletCache, 2))
+	require.Nil(t, notify.WaitFor(&controllerData.AppCache, 1))
+	require.Nil(t, notify.WaitFor(&controllerData.ClusterInstCache, 2))
+	require.Nil(t, notify.WaitFor(&controllerData.AppInstCache, 2))
+
+	for key, _ := range controllerData.CloudletCache.Objs {
+		require.NotEmpty(t, key.FederatedOrganization, "recvd federated cloudlet")
+	}
+
+	for key, _ := range controllerData.ClusterInstCache.Objs {
+		require.NotEmpty(t, key.CloudletKey.FederatedOrganization, "recvd federated cloudlet cluster instance")
+	}
+
+	for key, _ := range controllerData.AppInstCache.Objs {
+		require.NotEmpty(t, key.ClusterInstKey.CloudletKey.FederatedOrganization, "recvd federated cloudlet app instance")
+	}
+
+	// Delete and verify data is deleted while connected.
+	removeTestData(t, ctx, ctrlHandler, &data)
+	require.Nil(t, notify.WaitFor(&controllerData.FlavorCache, 0))
+	require.Nil(t, notify.WaitFor(&controllerData.AppCache, 0))
+	require.Nil(t, notify.WaitFor(&controllerData.ClusterInstCache, 0))
+	require.Nil(t, notify.WaitFor(&controllerData.AppInstCache, 0))
+	require.Nil(t, notify.WaitFor(controllerData.CloudletCache, 0))
+
+	// Add back data. This tests data being added while being connected.
+	addTestData(t, ctx, ctrlHandler, &data)
+	require.Nil(t, notify.WaitFor(&controllerData.FlavorCache, 1))
+	require.Nil(t, notify.WaitFor(controllerData.CloudletCache, 2))
+	require.Nil(t, notify.WaitFor(&controllerData.AppCache, 1))
+	require.Nil(t, notify.WaitFor(&controllerData.ClusterInstCache, 2))
+	require.Nil(t, notify.WaitFor(&controllerData.AppInstCache, 2))
+
+	// disconnect client
+	notifyClient.Stop()
+	require.Nil(t, ctrlMgr.WaitServerCount(0))
+
+	// delete all data from controller
+	removeTestData(t, ctx, ctrlHandler, &data)
+
+	// reconnect client, wait for connected
+	notifyClient.Start()
+	require.Nil(t, notifyClient.WaitForConnect(2))
+	require.Nil(t, notifyClient.WaitForSendAllEnd(2))
+
+	// Test that deletes are propogated after reconnect
+	require.Nil(t, notify.WaitFor(&controllerData.FlavorCache, 0))
+	require.Nil(t, notify.WaitFor(&controllerData.AppCache, 0))
+	require.Nil(t, notify.WaitFor(&controllerData.ClusterInstCache, 0))
+	require.Nil(t, notify.WaitFor(&controllerData.AppInstCache, 0))
+	require.Nil(t, notify.WaitFor(controllerData.CloudletCache, 0))
+}
+
+func addTestData(t *testing.T, ctx context.Context, ctrlHandler *notify.DummyHandler, data *edgeproto.AllData) {
 	// Add data to controller
 	for ii := range data.Flavors {
 		ctrlHandler.FlavorCache.Update(ctx, &data.Flavors[ii], 0)
@@ -189,29 +247,9 @@ func TestFRMNotify(t *testing.T) {
 	for ii := range data.AppInstances {
 		ctrlHandler.AppInstCache.Update(ctx, &data.AppInstances[ii], 0)
 	}
+}
 
-	// Wait for FRM to receive data
-	// FRM will only receive data corresponding to federated cloudlets
-	require.Nil(t, notify.WaitFor(controllerData.CloudletCache, 2))
-	require.Nil(t, notify.WaitFor(&controllerData.ClusterInstCache, 2))
-	require.Nil(t, notify.WaitFor(&controllerData.AppInstCache, 2))
-
-	for key, _ := range controllerData.CloudletCache.Objs {
-		require.NotEmpty(t, key.FederatedOrganization, "recvd federated cloudlet")
-	}
-
-	for key, _ := range controllerData.ClusterInstCache.Objs {
-		require.NotEmpty(t, key.CloudletKey.FederatedOrganization, "recvd federated cloudlet cluster instance")
-	}
-
-	for key, _ := range controllerData.AppInstCache.Objs {
-		require.NotEmpty(t, key.ClusterInstKey.CloudletKey.FederatedOrganization, "recvd federated cloudlet app instance")
-	}
-
-	require.Equal(t, 1, len(controllerData.FlavorCache.Objs))
-	require.Equal(t, 1, len(controllerData.AppCache.Objs))
-
-	// delete
+func removeTestData(t *testing.T, ctx context.Context, ctrlHandler *notify.DummyHandler, data *edgeproto.AllData) {
 	for ii := range data.AppInstances {
 		ctrlHandler.AppInstCache.Delete(ctx, &data.AppInstances[ii], 0)
 	}
@@ -227,10 +265,4 @@ func TestFRMNotify(t *testing.T) {
 	for ii := range data.Flavors {
 		ctrlHandler.FlavorCache.Delete(ctx, &data.Flavors[ii], 0)
 	}
-
-	require.Nil(t, notify.WaitFor(&controllerData.FlavorCache, 0))
-	require.Nil(t, notify.WaitFor(&controllerData.AppCache, 0))
-	require.Nil(t, notify.WaitFor(&controllerData.ClusterInstCache, 0))
-	require.Nil(t, notify.WaitFor(&controllerData.AppInstCache, 0))
-	require.Nil(t, notify.WaitFor(controllerData.CloudletCache, 0))
 }

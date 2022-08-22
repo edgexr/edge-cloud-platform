@@ -92,6 +92,7 @@ type Stats struct {
 	Connects        uint64
 	NegotiateErrors uint64
 	SendAll         uint64
+	SendAllEnd      uint64
 	Send            uint64
 	Recv            uint64
 	RecvErrors      uint64
@@ -276,7 +277,7 @@ func (s *SendRecv) send(stream StreamNotify) {
 			break
 		}
 		if sendAll {
-			log.SpanLog(sendAllCtx, log.DebugLevelNotify, "send all", "peer", s.peer, "local", s.name)
+			log.SpanLog(sendAllCtx, log.DebugLevelNotify, fmt.Sprintf("%s send all", s.cliserv), "peer", s.peer, "local", s.name)
 			s.stats.SendAll++
 		}
 		// Note that order is important here, as some objects
@@ -294,14 +295,15 @@ func (s *SendRecv) send(stream StreamNotify) {
 		}
 		if sendAllEnd {
 			s.sendAllEnd = false
-			log.SpanLog(sendAllCtx, log.DebugLevelNotify, "send all end", "peer", s.peer, "local", s.name)
+			log.SpanLog(sendAllCtx, log.DebugLevelNotify, fmt.Sprintf("%s send all end", s.cliserv), "peer", s.peer, "local", s.name)
 			notice.Action = edgeproto.NoticeAction_SENDALL_END
 			notice.Any = types.Any{}
 			notice.Span = log.SpanToString(sendAllCtx)
 			err = stream.Send(&notice)
 			if err != nil {
 				log.SpanLog(sendAllCtx, log.DebugLevelNotify,
-					"send sendall end", "peer", s.peer, "local", s.name, "err", err)
+					fmt.Sprintf("%s send sendall end", s.cliserv),
+					"peer", s.peer, "local", s.name, "err", err)
 				break
 			}
 			sendAllSpan.Finish()
@@ -356,11 +358,11 @@ func (s *SendRecv) recv(stream StreamNotify, notifyId int64, cleanup Cleanup) {
 				ctx = opentracing.ContextWithSpan(ctx, span)
 			}
 			if err != nil && notice.Action != edgeproto.NoticeAction_SENDALL_END {
-				log.SpanLog(ctx, log.DebugLevelNotify, "hit error", "peer", s.peer, "local", s.name, "err", err)
+				log.SpanLog(ctx, log.DebugLevelNotify, fmt.Sprintf("%s hit error", s.cliserv), "peer", s.peer, "local", s.name, "err", err)
 				return
 			}
 			if recvAll && notice.Action == edgeproto.NoticeAction_SENDALL_END {
-				log.SpanLog(ctx, log.DebugLevelNotify, "recv sendall end", "peer", s.peer, "local", s.name)
+				log.SpanLog(ctx, log.DebugLevelNotify, fmt.Sprintf("%s recv sendall end", s.cliserv), "peer", s.peer, "local", s.name)
 				for _, recv := range s.recvmap {
 					recv.RecvAllEnd(ctx, cleanup)
 				}
@@ -369,6 +371,7 @@ func (s *SendRecv) recv(stream StreamNotify, notifyId int64, cleanup Cleanup) {
 					sendAllRecv.RecvAllEnd(ctx)
 				}
 				recvAll = false
+				s.stats.SendAllEnd++
 				return
 			}
 			recv := s.recvmap[name]
@@ -411,10 +414,10 @@ func (s *SendRecv) updateCloudletKey(action edgeproto.NoticeAction, key *edgepro
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	if action == edgeproto.NoticeAction_UPDATE {
-		log.DebugLog(log.DebugLevelNotify, "sendrecv add cloudletkey", "key", key)
+		log.DebugLog(log.DebugLevelNotify, fmt.Sprintf("%s sendrecv add cloudletkey", s.cliserv), "key", key)
 		s.cloudletKeys[*key] = struct{}{}
 	} else {
-		log.DebugLog(log.DebugLevelNotify, "sendrecv remove cloudletkey", "key", key)
+		log.DebugLog(log.DebugLevelNotify, fmt.Sprintf("%s sendrecv remove cloudletkey", s.cliserv), "key", key)
 		delete(s.cloudletKeys, *key)
 	}
 }

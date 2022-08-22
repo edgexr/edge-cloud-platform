@@ -61,15 +61,13 @@ func TestNotifyBasic(t *testing.T) {
 
 	// It takes a little while for the Run thread to start up
 	// Wait until it's connected
-	clientDME.WaitForConnect(1)
-	clientCRM.WaitForConnect(1)
+	require.Nil(t, clientDME.WaitForConnect(1))
+	require.Nil(t, clientCRM.WaitForConnect(1))
 	require.Equal(t, 0, len(dmeHandler.AppCache.Objs), "num Apps")
 	require.Equal(t, 0, len(dmeHandler.AppInstCache.Objs), "num appInsts")
 	require.Equal(t, uint64(0), clientDME.sendrecv.stats.Recv, "num updates")
 	require.Equal(t, NotifyVersion, clientDME.version, "version")
-	require.Equal(t, uint64(1), clientDME.sendrecv.stats.Connects, "connects")
-	require.Equal(t, uint64(1), clientCRM.sendrecv.stats.Connects, "connects")
-	checkServerConnections(t, &serverMgr, 2)
+	require.Nil(t, serverMgr.WaitServerCount(2))
 
 	// Create some app insts which will trigger updates
 	serverHandler.AppCache.Update(ctx, &testutil.AppData()[0], 1)
@@ -98,9 +96,8 @@ func TestNotifyBasic(t *testing.T) {
 	fmt.Println("DME cancel")
 	clientDME.cancel()
 	// wait for it to reconnect
-	clientDME.WaitForConnect(2)
-	require.Equal(t, uint64(2), clientDME.sendrecv.stats.Connects, "connects")
-	checkServerConnections(t, &serverMgr, 2)
+	require.Nil(t, clientDME.WaitForConnect(2))
+	require.Nil(t, serverMgr.WaitServerCount(2))
 
 	// All cloudlets and all app insts will be sent again
 	// Note on server side, this is a new connection so stats are reset
@@ -126,13 +123,11 @@ func TestNotifyBasic(t *testing.T) {
 	// Stop DME, check that server closes connection as well
 	fmt.Println("DME stop")
 	clientDME.Stop()
-	serverMgr.WaitServerCount(1)
-	checkServerConnections(t, &serverMgr, 1)
+	require.Nil(t, serverMgr.WaitServerCount(1))
 	// reset data in handler, check that is it restored on reconnect
 	edgeproto.InitAppInstCache(&dmeHandler.AppInstCache)
 	clientDME.Start()
-	clientDME.WaitForConnect(3)
-	require.Equal(t, uint64(3), clientDME.sendrecv.stats.Connects, "connects")
+	require.Nil(t, clientDME.WaitForConnect(3))
 	dmeHandler.WaitForAppInsts(3)
 	require.Equal(t, 3, len(dmeHandler.AppInstCache.Objs), "num appInsts")
 
@@ -145,9 +140,8 @@ func TestNotifyBasic(t *testing.T) {
 	serverMgr.Stop()
 	serverHandler.AppInstCache.Delete(ctx, &testutil.AppInstData()[1], 0)
 	serverMgr.Start("ctrl", addr, nil)
-	clientDME.WaitForConnect(4)
+	require.Nil(t, clientDME.WaitForConnect(4))
 	dmeHandler.WaitForAppInsts(2)
-	require.Equal(t, uint64(4), clientDME.sendrecv.stats.Connects, "connects")
 	require.Equal(t, 2, len(dmeHandler.AppInstCache.Objs), "num appInsts")
 	clientDME.GetStats(stats)
 	require.Equal(t, uint64(13), stats.ObjRecv["AppInst"], "app inst updates")
@@ -164,8 +158,7 @@ func TestNotifyBasic(t *testing.T) {
 	}
 
 	// Now test CRM
-	clientCRM.WaitForConnect(2)
-	require.Equal(t, uint64(2), clientCRM.sendrecv.stats.Connects, "connects")
+	require.Nil(t, clientCRM.WaitForConnect(2))
 	require.Equal(t, 0, len(crmHandler.CloudletCache.Objs), "num cloudlets")
 	require.Equal(t, 0, len(crmHandler.FlavorCache.Objs), "num flavors")
 	require.Equal(t, 0, len(crmHandler.ClusterInstCache.Objs), "num clusterInsts")
@@ -215,7 +208,7 @@ func TestNotifyBasic(t *testing.T) {
 	require.Nil(t, crmHandler.WaitForCloudlets(1), "num cloudlets")
 	require.Nil(t, crmHandler.WaitForFlavors(3), "num flavors")
 	require.Nil(t, crmHandler.WaitForClusterInsts(2), "num clusterInsts")
-	require.Nil(t, crmHandler.WaitForApps(1), "num apps")
+	require.Nil(t, crmHandler.WaitForApps(5), "num apps")
 	require.Nil(t, crmHandler.WaitForAppInsts(2), "num appInsts")
 	require.Nil(t, crmHandler.WaitForVMPools(1), "num vmPools")
 	require.Nil(t, crmHandler.WaitForGPUDrivers(1), "num gpuDrivers")
@@ -227,7 +220,7 @@ func TestNotifyBasic(t *testing.T) {
 	require.Nil(t, crmHandler.WaitForCloudlets(2), "num cloudlets")
 	require.Nil(t, crmHandler.WaitForFlavors(3), "num flavors")
 	require.Nil(t, crmHandler.WaitForClusterInsts(3), "num clusterInsts")
-	require.Nil(t, crmHandler.WaitForApps(1), "num apps")
+	require.Nil(t, crmHandler.WaitForApps(5), "num apps")
 	require.Nil(t, crmHandler.WaitForAppInsts(2), "num appInsts")
 	require.Nil(t, crmHandler.WaitForVMPools(1), "num vmPools")
 	require.Nil(t, crmHandler.WaitForGPUDrivers(2), "num gpuDrivers")
@@ -275,7 +268,7 @@ func TestNotifyBasic(t *testing.T) {
 	require.Equal(t, uint64(4), stats.ObjSend["Flavor"], "sent flavors")
 	require.Equal(t, uint64(4), stats.ObjSend["ClusterInst"], "sent clusterInsts")
 	require.Equal(t, uint64(3), stats.ObjSend["AppInst"], "sent appInsts")
-	checkServerConnections(t, &serverMgr, 2)
+	require.Nil(t, serverMgr.WaitServerCount(2))
 
 	// Send data from CRM to server
 	fmt.Println("Create AppInstInfo")
@@ -311,19 +304,4 @@ func TestNotifyBasic(t *testing.T) {
 
 	clientDME.Stop()
 	clientCRM.Stop()
-}
-
-func checkServerConnections(t *testing.T, serverMgr *ServerMgr, expected int) {
-	serverMgr.mux.Lock()
-	for addr, server := range serverMgr.table {
-		log.DebugLog(log.DebugLevelNotify, "server connections", "client", addr, "stats", server.sendrecv.stats)
-	}
-	serverMgr.mux.Unlock()
-	for ii := 0; ii < 10; ii++ {
-		if len(serverMgr.table) == expected {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	require.Equal(t, expected, len(serverMgr.table), "num server connections")
 }

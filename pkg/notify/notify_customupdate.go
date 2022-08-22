@@ -32,7 +32,9 @@ var NoForceDelete = false
 // filtered by cloudletkey(s).
 
 func (s *AppSend) UpdateOk(ctx context.Context, key *edgeproto.AppKey) bool {
-	// we need to update all the app changes regardless of the field updated
+	// Always send Apps to allow for App changes to reach cloudlet-filtered CRMs.
+	// Otherwise, we would need to check every AppInst to see if it applies to
+	// in the case of filterCloudletKeys.
 	return true
 }
 
@@ -185,31 +187,55 @@ func (s *TrustPolicyExceptionSend) UpdateOk(ctx context.Context, key *edgeproto.
 	return true
 }
 
-func (s *AppSend) UpdateAllOk() bool {
+func (s *AppSend) UpdateAllOkLocked(key *edgeproto.AppKey) bool {
+	return true
+}
+
+func (s *AppInstSend) UpdateAllOkLocked(key *edgeproto.AppInstKey) bool {
+	if s.sendrecv.filterCloudletKeys {
+		return false
+	}
+	if s.sendrecv.filterFederatedCloudlet {
+		if key.ClusterInstKey.CloudletKey.FederatedOrganization == "" {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *CloudletSend) UpdateAllOkLocked(key *edgeproto.CloudletKey) bool {
+	if s.sendrecv.filterCloudletKeys {
+		return false
+	}
+	if s.sendrecv.filterFederatedCloudlet {
+		if key.FederatedOrganization == "" {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *ClusterInstSend) UpdateAllOkLocked(key *edgeproto.ClusterInstKey) bool {
+	if s.sendrecv.filterCloudletKeys {
+		return false
+	}
+	if s.sendrecv.filterFederatedCloudlet {
+		if key.CloudletKey.FederatedOrganization == "" {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *VMPoolSend) UpdateAllOkLocked(key *edgeproto.VMPoolKey) bool {
 	return !s.sendrecv.filterCloudletKeys
 }
 
-func (s *AppInstSend) UpdateAllOk() bool {
+func (s *GPUDriverSend) UpdateAllOkLocked(key *edgeproto.GPUDriverKey) bool {
 	return !s.sendrecv.filterCloudletKeys
 }
 
-func (s *CloudletSend) UpdateAllOk() bool {
-	return !s.sendrecv.filterCloudletKeys
-}
-
-func (s *ClusterInstSend) UpdateAllOk() bool {
-	return !s.sendrecv.filterCloudletKeys
-}
-
-func (s *VMPoolSend) UpdateAllOk() bool {
-	return !s.sendrecv.filterCloudletKeys
-}
-
-func (s *GPUDriverSend) UpdateAllOk() bool {
-	return !s.sendrecv.filterCloudletKeys
-}
-
-func (s *TrustPolicyExceptionSend) UpdateAllOk() bool {
+func (s *TrustPolicyExceptionSend) UpdateAllOkLocked(key *edgeproto.TrustPolicyExceptionKey) bool {
 	return !s.sendrecv.filterCloudletKeys
 }
 
