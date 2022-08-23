@@ -46,6 +46,7 @@ make test-debug
 ## Running local KIND test
 
 This is similar to the e2e test above, except instead of fake cloudlet platforms, it uses a KIND (Kubernetes IN Docker) cluster to simulate a cloudlet with a single Kubernetes cluster locally. There are two commands, one to start the local processes, and one to stop.
+
 **NOTE: Use kind v0.12.0 as later version use CRI, which are incompatible with the weave CNI(https://github.com/containerd/containerd/issues/6921)**
 
 ``` shell
