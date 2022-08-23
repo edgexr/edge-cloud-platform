@@ -14,16 +14,7 @@
 
 controllers:
 - region: local
-  address: 127.0.0.1:5501
-  notifyaddr: 127.0.0.1:27001
-  influxdb: http://127.0.0.1:8086
-  thanosmetrics: http://127.0.0.1:29090
-  dnsregion: local
 - region: locala
-  address: 127.0.0.1:5511
-  notifyaddr: 127.0.0.1:27011
-  influxdb: http://127.0.0.1:8087
-  dnsregion: locala
 billingorgs:
 - name: user3org
   type: self
@@ -44,9 +35,6 @@ orgs:
   phone: 123-123-1234
   parent: user3org
 roles:
-- org: user3org
-  username: mexadmin
-  role: DeveloperManager
 - org: user3org
   username: user3
   role: DeveloperManager
@@ -69,6 +57,9 @@ regiondata:
       ram: 1024
       vcpus: 1
       disk: 1
+    gpudrivers:
+    - key:
+        name: gpu-driver-global
     cloudlets:
     - key:
         organization: dmuus
@@ -173,7 +164,7 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: shared.kind-cloud-1-dmuus.local.mobiledgex.net
+      uri: shared.kind-cloud-1-dmuus.local.edgecloude2e.net
       liveness: Autoprov
       mappedports:
       - proto: Tcp
@@ -194,7 +185,7 @@ regiondata:
         name: someappuser3
         version: "1.0"
       insts:
-        ? '{"app_key":{"organization":"user3org","name":"someappuser3","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autocluster-autoprov"},"cloudlet_key":{"organization":"dmuus","name":"kind-cloud-1"},"organization":"MobiledgeX"}}'
+        ? '{"app_key":{"organization":"user3org","name":"someappuser3","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autocluster-autoprov"},"cloudlet_key":{"organization":"dmuus","name":"kind-cloud-1"},"organization":"edgecloudorg"}}'
         : 1
 - region: locala
   appdata:

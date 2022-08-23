@@ -17,6 +17,20 @@ description: Deploys and starts a system. Does not stop or cleanup
 tests:
 - includefile: {{edge-cloud-testfiles}}/stop_cleanup.yml
 - includefile: deploy_start.yml
+
+- name: admin login to save token
+  actions: [mcapi-loginusers]
+  apifile: '{{datadir2}}/mc_admin.yml'
+
+- name: admin disable verify email so users can be created
+  actions: [mcapi-configupdate,mcapi-configshow]
+  apifile: '{{datadir2}}/mcconfig.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcconfig.yml'
+    filetype: mcconfig
+
 - includefile: mc_setup_users.yml
 
 - name: stop prom-e2e, it gets in the way of the proxies
@@ -82,6 +96,11 @@ tests:
     yaml1: '{{outputdir}}/show-commands.yml'
     yaml2: '{{datadir2}}/kind_user2_data_show.yml'
     filetype: mcdata-xind
+
+- name: enterprise user3 creates org
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_user3_org.yml'
+  curuserfile: '{{datadir2}}/mc_user3.yml'
 
 - name: user3 creates data; verify it is there
   actions: [mcapi-create, mcapi-show-noignore]

@@ -14,20 +14,15 @@
 
 controllers:
 - region: local
-  address: 127.0.0.1:5501
-  notifyaddr: 127.0.0.1:27001
-  influxdb: http://127.0.0.1:8086
-  thanosmetrics: http://127.0.0.1:29090
-  dnsregion: local
 - region: locala
-  address: 127.0.0.1:5511
-  notifyaddr: 127.0.0.1:27011
-  influxdb: http://127.0.0.1:8087
-  dnsregion: locala
 orgs:
 - name: azure
   type: operator
   address: amazon jungle
+  phone: 123-123-1234
+- name: dmuus
+  type: operator
+  address: dmuus headquarters
   phone: 123-123-1234
 - name: enterprise
   type: operator
@@ -37,21 +32,17 @@ orgs:
   type: operator
   address: mountain view
   phone: 123-123-1234
-- name: dmuus
-  type: operator
-  address: dmuus headquarters
-  phone: 123-123-1234
 roles:
 - org: azure
+  username: user1
+  role: OperatorManager
+- org: dmuus
   username: user1
   role: OperatorManager
 - org: enterprise
   username: user1
   role: OperatorManager
 - org: gcp
-  username: user1
-  role: OperatorManager
-- org: dmuus
   username: user1
   role: OperatorManager
 regiondata:
@@ -73,6 +64,9 @@ regiondata:
       ram: 1024
       vcpus: 1
       disk: 1
+    gpudrivers:
+    - key:
+        name: gpu-driver-global
     cloudlets:
     - key:
         organization: dmuus
@@ -101,7 +95,7 @@ regiondata:
       defaultresourcealertthreshold: 80
       enabledefaultserverlesscluster: true
       dnslabel: kind-cloud-1-dmuus
-      rootlbfqdn: shared.kind-cloud-1-dmuus.local.mobiledgex.net
+      rootlbfqdn: shared.kind-cloud-1-dmuus.local.edgecloude2e.net
     cloudletinfos:
     - key:
         organization: dmuus
