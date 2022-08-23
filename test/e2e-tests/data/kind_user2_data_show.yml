@@ -14,16 +14,7 @@
 
 controllers:
 - region: local
-  address: 127.0.0.1:5501
-  notifyaddr: 127.0.0.1:27001
-  influxdb: http://127.0.0.1:8086
-  thanosmetrics: http://127.0.0.1:29090
-  dnsregion: local
 - region: locala
-  address: 127.0.0.1:5511
-  notifyaddr: 127.0.0.1:27011
-  influxdb: http://127.0.0.1:8087
-  dnsregion: locala
 billingorgs:
 - name: AcmeAppCo
   type: self
@@ -66,6 +57,9 @@ regiondata:
       ram: 1024
       vcpus: 1
       disk: 1
+    gpudrivers:
+    - key:
+        name: gpu-driver-global
     cloudlets:
     - key:
         organization: dmuus
@@ -155,7 +149,7 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: shared.kind-cloud-1-dmuus.local.mobiledgex.net
+      uri: shared.kind-cloud-1-dmuus.local.edgecloude2e.net
       liveness: Static
       mappedports:
       - proto: Tcp
@@ -176,7 +170,7 @@ regiondata:
         name: someapplication1
         version: "1.0"
       insts:
-        ? '{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autocluster-someapp1"},"cloudlet_key":{"organization":"dmuus","name":"kind-cloud-1"},"organization":"MobiledgeX"}}'
+        ? '{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autocluster-someapp1"},"cloudlet_key":{"organization":"dmuus","name":"kind-cloud-1"},"organization":"edgecloudorg"}}'
         : 1
 - region: locala
   appdata:

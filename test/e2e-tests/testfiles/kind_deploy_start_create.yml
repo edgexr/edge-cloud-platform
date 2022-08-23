@@ -97,6 +97,11 @@ tests:
     yaml2: '{{datadir2}}/kind_user2_data_show.yml'
     filetype: mcdata-xind
 
+- name: enterprise user3 creates org
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_user3_org.yml'
+  curuserfile: '{{datadir2}}/mc_user3.yml'
+
 - name: user3 creates data; verify it is there
   actions: [mcapi-create, mcapi-show-noignore]
   apifile: '{{datadir2}}/kind_user3_data.yml'
