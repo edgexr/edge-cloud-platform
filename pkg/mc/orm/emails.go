@@ -263,10 +263,11 @@ func sendVerifyEmail(c echo.Context, username string, req *ormapi.EmailRequest) 
 }
 
 type emailAccount struct {
-	Email string `json:"email"`
-	User  string `json:"user"`
-	Pass  string `json:"pass"`
-	Smtp  string `json:"smtp"`
+	Email    string `json:"email"`
+	User     string `json:"user"`
+	Pass     string `json:"pass"`
+	Smtp     string `json:"smtp"`
+	SmtpPort string `json:"smtpport"`
 }
 
 func getNoreply(ctx context.Context) (*emailAccount, error) {
@@ -277,6 +278,9 @@ func getNoreply(ctx context.Context) (*emailAccount, error) {
 	if err != nil {
 		return nil, err
 	}
+	if noreply.SmtpPort == "" {
+		noreply.SmtpPort = "587"
+	}
 	return &noreply, nil
 }
 
@@ -284,7 +288,7 @@ func getNoreply(ctx context.Context) (*emailAccount, error) {
 func sendEmail(from *emailAccount, to string, contents *bytes.Buffer) error {
 	auth := smtp.PlainAuth("", from.User, from.Pass, from.Smtp)
 
-	client, err := smtp.Dial(from.Smtp + ":587")
+	client, err := smtp.Dial(from.Smtp + ":" + from.SmtpPort)
 	if err != nil {
 		return err
 	}
