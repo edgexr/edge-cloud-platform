@@ -126,7 +126,13 @@ func (s *server) FindCloudlet(ctx context.Context, req *dme.FindCloudletRequest)
 		if qos != "DEFAULT" {
 			var protocol string
 			var asAddr string
-			ips, _ := net.LookupIP(reply.Fqdn)
+			var ips []net.IP
+			if os.Getenv("E2ETEST_TLS") != "" {
+				// avoid IP lookup, it hangs and causes API call to timeout
+				log.SpanLog(ctx, log.DebugLevelDmereq, "Avoid Ip lookup for e2e test")
+			} else {
+				ips, _ = net.LookupIP(reply.Fqdn)
+			}
 			for _, ip := range ips {
 				if ipv4 := ip.To4(); ipv4 != nil {
 					log.SpanLog(ctx, log.DebugLevelDmereq, "Looked up IPv4 address", "reply.Fqdn", reply.Fqdn, "ipv4", ipv4)

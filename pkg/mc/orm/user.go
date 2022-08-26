@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
@@ -870,7 +871,7 @@ func PasswordResetRequest(c echo.Context) error {
 	if err := ValidEmailRequest(c, &req); err != nil {
 		return err
 	}
-	noreply, err := getNoreply(ctx)
+	noreply, err := cloudcommon.GetNoreply(serverConfig.vaultConfig)
 	if err != nil {
 		return err
 	}

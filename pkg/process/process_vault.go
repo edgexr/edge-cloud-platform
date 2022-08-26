@@ -54,13 +54,15 @@ type VaultData struct {
 var defaultVaultAddress = "http://127.0.0.1:8200"
 
 type VaultRoles struct {
-	NotifyRootRoleID   string `json:"notifyrootroleid"`
-	NotifyRootSecretID string `json:"notifyrootsecretid"`
-	MCRoleID           string `json:"mcroleid"`
-	MCSecretID         string `json:"mcsecretid"`
-	RotatorRoleID      string `json:"rotatorroleid"`
-	RotatorSecretID    string `json:"rotatorsecretid"`
-	RegionRoles        map[string]*VaultRegionRoles
+	NotifyRootRoleID        string `json:"notifyrootroleid"`
+	NotifyRootSecretID      string `json:"notifyrootsecretid"`
+	MCRoleID                string `json:"mcroleid"`
+	MCSecretID              string `json:"mcsecretid"`
+	RotatorRoleID           string `json:"rotatorroleid"`
+	RotatorSecretID         string `json:"rotatorsecretid"`
+	AlertMgrSidecarRoleID   string `json:"alertmgrsidecarroleid"`
+	AlertMgrSidecarSecretID string `json:"alertmgrsidecarsecretid"`
+	RegionRoles             map[string]*VaultRegionRoles
 }
 
 type VaultRegionRoles struct {
@@ -162,6 +164,7 @@ func (p *Vault) Setup(opts ...StartOp) error {
 	p.GetAppRole("", "notifyroot", &vroles.NotifyRootRoleID, &vroles.NotifyRootSecretID, &err)
 	p.GetAppRole("", "mcorm", &vroles.MCRoleID, &vroles.MCSecretID, &err)
 	p.GetAppRole("", "rotator", &vroles.RotatorRoleID, &vroles.RotatorSecretID, &err)
+	p.GetAppRole("", "alertmgrsidecar", &vroles.AlertMgrSidecarRoleID, &vroles.AlertMgrSidecarSecretID, &err)
 	p.PutSecret("", "mcorm", mcormSecret+"-old", &err)
 	p.PutSecret("", "mcorm", mcormSecret, &err)
 
