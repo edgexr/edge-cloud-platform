@@ -16,7 +16,10 @@ package process
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os/exec"
+
+	yaml "gopkg.in/yaml.v2"
 )
 
 type AlertmanagerSidecar struct {
@@ -61,9 +64,25 @@ func (p *AlertmanagerSidecar) StartLocal(logfile string, opts ...StartOp) error 
 		args = append(args, "-d")
 		args = append(args, options.Debug)
 	}
+	envs := p.GetEnv()
+	if options.RolesFile != "" {
+		dat, err := ioutil.ReadFile(options.RolesFile)
+		if err != nil {
+			return err
+		}
+		roles := VaultRoles{}
+		err = yaml.Unmarshal(dat, &roles)
+		if err != nil {
+			return err
+		}
+		envs = append(envs,
+			fmt.Sprintf("VAULT_ROLE_ID=%s", roles.AlertMgrSidecarRoleID),
+			fmt.Sprintf("VAULT_SECRET_ID=%s", roles.AlertMgrSidecarSecretID),
+		)
+	}
 
 	var err error
-	p.cmd, err = StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	p.cmd, err = StartLocal(p.Name, p.GetExeName(), args, envs, logfile)
 	return err
 }
 

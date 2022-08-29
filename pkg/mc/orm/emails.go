@@ -27,10 +27,10 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
 )
@@ -77,7 +77,7 @@ type emailTmplArg struct {
 var sendMailFunc = sendEmail
 
 type MockSendMail struct {
-	From    *emailAccount
+	From    *cloudcommon.EmailAccount
 	To      string
 	Message string
 }
@@ -96,7 +96,7 @@ func (m *MockSendMail) Reset() {
 	m.Message = ""
 }
 
-func (m *MockSendMail) SendEmail(from *emailAccount, to string, contents *bytes.Buffer) error {
+func (m *MockSendMail) SendEmail(from *cloudcommon.EmailAccount, to string, contents *bytes.Buffer) error {
 	m.From = from
 	m.To = to
 	m.Message = string(contents.Bytes())
@@ -165,7 +165,7 @@ func sendNotify(ctx context.Context, to, subject, message string) error {
 		return fmt.Errorf("cannot send notify email as to field is blank, fix mc config")
 	}
 
-	noreply, err := getNoreply(ctx)
+	noreply, err := cloudcommon.GetNoreply(serverConfig.vaultConfig)
 	if err != nil {
 		return err
 	}
@@ -215,7 +215,7 @@ func sendVerifyEmail(c echo.Context, username string, req *ormapi.EmailRequest) 
 	if getSkipVerifyEmail(ctx, nil) {
 		return nil
 	}
-	noreply, err := getNoreply(ctx)
+	noreply, err := cloudcommon.GetNoreply(serverConfig.vaultConfig)
 	if err != nil {
 		return err
 	}
@@ -262,30 +262,8 @@ func sendVerifyEmail(c echo.Context, username string, req *ormapi.EmailRequest) 
 	return sendMailFunc(noreply, req.Email, &buf)
 }
 
-type emailAccount struct {
-	Email    string `json:"email"`
-	User     string `json:"user"`
-	Pass     string `json:"pass"`
-	Smtp     string `json:"smtp"`
-	SmtpPort string `json:"smtpport"`
-}
-
-func getNoreply(ctx context.Context) (*emailAccount, error) {
-	log.SpanLog(ctx, log.DebugLevelApi, "lookup Vault email account")
-	noreply := emailAccount{}
-	err := vault.GetData(serverConfig.vaultConfig,
-		"/secret/data/accounts/noreplyemail", 0, &noreply)
-	if err != nil {
-		return nil, err
-	}
-	if noreply.SmtpPort == "" {
-		noreply.SmtpPort = "587"
-	}
-	return &noreply, nil
-}
-
 // sendEmail is only tested with gmail's smtp server.
-func sendEmail(from *emailAccount, to string, contents *bytes.Buffer) error {
+func sendEmail(from *cloudcommon.EmailAccount, to string, contents *bytes.Buffer) error {
 	auth := smtp.PlainAuth("", from.User, from.Pass, from.Smtp)
 
 	client, err := smtp.Dial(from.Smtp + ":" + from.SmtpPort)
@@ -363,7 +341,7 @@ func sendAddedEmail(ctx context.Context, admin, name, email, org, role string) e
 	if getSkipVerifyEmail(ctx, nil) {
 		return nil
 	}
-	noreply, err := getNoreply(ctx)
+	noreply, err := cloudcommon.GetNoreply(serverConfig.vaultConfig)
 	if err != nil {
 		return err
 	}
@@ -427,7 +405,7 @@ func sendOTPEmail(ctx context.Context, username, email, totp, totpExpTime string
 	if getSkipVerifyEmail(ctx, nil) {
 		return nil
 	}
-	noreply, err := getNoreply(ctx)
+	noreply, err := cloudcommon.GetNoreply(serverConfig.vaultConfig)
 	if err != nil {
 		return err
 	}
@@ -502,7 +480,7 @@ func sendOperatorReportEmail(ctx context.Context, username, email, reporterName 
 	if getSkipVerifyEmail(ctx, nil) {
 		return nil
 	}
-	noreply, err := getNoreply(ctx)
+	noreply, err := cloudcommon.GetNoreply(serverConfig.vaultConfig)
 	if err != nil {
 		return err
 	}

@@ -20,8 +20,10 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
@@ -32,23 +34,45 @@ var tlsCert = flag.String("tlsCert", "", "server tls cert file.")
 var tlsCertKey = flag.String("tlsCertKey", "", "server tls cert key file.")
 var clientCert = flag.String("tlsClientCert", "", "client tls cert file")
 var localTest = flag.Bool("localTest", false, "Local tests - self-signed certs")
+var vaultAddr = flag.String("vaultAddr", "", "Vault address; local vault runs at http://127.0.0.1:8200")
 
 var SidecarServer *alertmgr.SidecarServer
 
 func getConfigInfo() (*alertmgr.AlertmgrInitInfo, error) {
-	initInfo := alertmgr.AlertmgrInitInfo{
-		Email:          os.Getenv("ALERTMANAGER_SMTP_EMAIL"),
-		User:           os.Getenv("ALERTMANAGER_SMTP_USER"),
-		Token:          os.Getenv("ALERTMANAGER_SMTP_TOKEN"),
-		Smtp:           os.Getenv("ALERTMANAGER_SMTP_SERVER"),
-		Port:           os.Getenv("ALERTMANAGER_SMTP_SERVER_PORT"),
-		Tls:            os.Getenv("ALERTMANAGER_SMTP_SERVER_TLS"),
-		ResolveTimeout: os.Getenv("ALERTMANAGER_RESOLVE_TIMEOUT"),
-		PagerDutyUrl:   os.Getenv("ALERTMANAGER_PAGERDUTY_URL"),
+	initInfo := alertmgr.AlertmgrInitInfo{}
+	initInfo.ResolveTimeout = os.Getenv("ALERTMANAGER_RESOLVE_TIMEOUT")
+	initInfo.PagerDutyUrl = os.Getenv("ALERTMANAGER_PAGERDUTY_URL")
+
+	vaultConfig, verr := vault.BestConfig(*vaultAddr)
+	if verr == nil {
+		var noreply *cloudcommon.EmailAccount
+		noreply, verr = cloudcommon.GetNoreply(vaultConfig)
+		if verr == nil {
+			initInfo.Email = noreply.Email
+			initInfo.User = noreply.User
+			initInfo.Token = noreply.Pass
+			initInfo.Smtp = noreply.Smtp
+			initInfo.Port = noreply.SmtpPort
+			if noreply.SmtpTLS {
+				initInfo.Tls = "true"
+			} else {
+				initInfo.Tls = "false"
+			}
+		}
+	}
+	if verr != nil {
+		log.InfoLog("Load config from Env", "vaulterr", verr)
+		// backwards compatibility, look up via env vars
+		initInfo.Email = os.Getenv("ALERTMANAGER_SMTP_EMAIL")
+		initInfo.User = os.Getenv("ALERTMANAGER_SMTP_USER")
+		initInfo.Token = os.Getenv("ALERTMANAGER_SMTP_TOKEN")
+		initInfo.Smtp = os.Getenv("ALERTMANAGER_SMTP_SERVER")
+		initInfo.Port = os.Getenv("ALERTMANAGER_SMTP_SERVER_PORT")
+		initInfo.Tls = os.Getenv("ALERTMANAGER_SMTP_SERVER_TLS")
 	}
 	// if smtp server and username are not set, environment is invalid
 	if initInfo.Smtp == "" || initInfo.Email == "" {
-		return nil, fmt.Errorf("Invalid environment %v\n", initInfo)
+		return nil, fmt.Errorf("Invalid config %v", initInfo)
 	}
 	if initInfo.ResolveTimeout == "" {
 		// default 5m
