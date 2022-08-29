@@ -258,4 +258,22 @@ vault write auth/approle/role/rotator period="720h" policies="rotator"
 vault read auth/approle/role/rotator/role-id
 vault write -f auth/approle/role/rotator/secret-id
 
+# alertmanager-sidecar approle
+cat > $TMP/alertmgrsidecar-pol.hcl <<EOF
+path "auth/approle/login" {
+  capabilities = [ "create", "read" ]
+}
+
+path "secret/data/accounts/noreplyemail" {
+  capabilities = [ "read" ]
+}
+EOF
+
+vault policy write alertmgrsidecar $TMP/alertmgrsidecar-pol.hcl
+rm $TMP/alertmgrsidecar-pol.hcl
+vault write auth/approle/role/alertmgrsidecar period="720h" policies="alertmgrsidecar"
+# get alertmgrsidecar app roleID and generate secretID
+vault read auth/approle/role/alertmgrsidecar/role-id
+vault write -f auth/approle/role/alertmgrsidecar/secret-id
+
 rm -Rf $TMP
