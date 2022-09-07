@@ -181,7 +181,8 @@
       region: local
       remote-ip: 127.0.0.1
       request: '{"Cloudlet":{"key":{"name":"dmuus-cloud-1","organization":"dmuus"}},"Region":"local"}'
-      response: '{"data":{"message":"Cloudlet is back to normal operation"}}'
+      response: |
+        {"data":{"message":"Cloudlet is back to normal operation"}}
       spanid: ""
       status: "200"
       traceid: ""
@@ -224,7 +225,7 @@
       region: local
       remote-ip: 127.0.0.1
       request: '{"Cloudlet":{"key":{"name":"dmuus-cloud-1","organization":"dmuus"},"maintenance_state":"MaintenanceStart"},"Region":"local"}'
-      response: |-
+      response: |
         {"data":{"message":"Starting AutoProv failover"}}
         {"data":{"message":"Created AppInst {\"app_key\":{\"organization\":\"AcmeAppCo\",\"name\":\"autoprovHA\",\"version\":\"1.0\"},\"cluster_inst_key\":{\"cluster_key\":{\"name\":\"autocluster-autoprov\"},\"cloudlet_key\":{\"organization\":\"azure\",\"name\":\"azure-cloud-4\"},\"organization\":\"edgecloudorg\"}} to meet policy autoprovHA min constraint 2"}}
         {"data":{"message":"AutoProv failover completed"}}
@@ -390,7 +391,7 @@
       region: locala
       remote-ip: 127.0.0.1
       request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"someapplication1","organization":"AcmeAppCo","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"dmuus-cloud-4","organization":"dmuus"},"cluster_key":{"name":"SmallCluster"},"organization":"AcmeAppCo"}}},"Region":"locala"}'
-      response: |-
+      response: |
         {"data":{"message":"Creating"}}
         {"data":{"message":"Creating App Inst"}}
         {"data":{"message":"Ready"}}
@@ -421,7 +422,7 @@
       region: locala
       remote-ip: 127.0.0.1
       request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"someapplication1","organization":"AcmeAppCo","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"dmuus-cloud-3","organization":"dmuus"},"cluster_key":{"name":"SmallCluster"},"organization":"AcmeAppCo"}}},"Region":"locala"}'
-      response: |-
+      response: |
         {"data":{"message":"Creating"}}
         {"data":{"message":"Creating App Inst"}}
         {"data":{"message":"Ready"}}

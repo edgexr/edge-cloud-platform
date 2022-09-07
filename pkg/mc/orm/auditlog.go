@@ -104,12 +104,6 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			bd := middleware.BodyDump(func(c echo.Context, reqB, resB []byte) {
 				reqBody = reqB
 				resBody = resB
-				// new versions of echo use json.Encode to write json,
-				// which adds an extra newline to the output.
-				// For logging, remove this extra newline.
-				if len(resBody) > 0 && resBody[len(resBody)-1] == '\n' {
-					resBody = resBody[:len(resBody)-1]
-				}
 			})
 			next = bd(next)
 		}

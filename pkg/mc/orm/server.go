@@ -15,6 +15,7 @@
 package orm
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -362,6 +363,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	e := echo.New()
 	e.HideBanner = true
 	e.Binder = &CustomBinder{}
+	e.JSONSerializer = &JSONSerializer{}
 	server.echo = e
 
 	e.GET("/", func(c echo.Context) error {
@@ -1354,6 +1356,35 @@ func WriteStream(c echo.Context, payload *ormapi.StreamPayload) error {
 			return err
 		}
 		c.Response().Flush()
+	}
+	return nil
+}
+
+type JSONSerializer struct {
+	echo.DefaultJSONSerializer
+}
+
+// override the default echo serializer to remove added newline from json.Encode
+func (s JSONSerializer) Serialize(c echo.Context, i interface{}, indent string) error {
+	buf := bytes.Buffer{}
+	enc := json.NewEncoder(&buf)
+	if indent != "" {
+		enc.SetIndent("", indent)
+	}
+	err := enc.Encode(i)
+	if err != nil {
+		return err
+	}
+	dat := buf.Bytes()
+	if len(dat) > 0 && dat[len(dat)-1] == '\n' {
+		dat = dat[:len(dat)-1]
+	}
+	n, err := c.Response().Write(dat)
+	if err != nil {
+		return err
+	}
+	if n != len(dat) {
+		return fmt.Errorf("Only wrote %d of %d bytes to response", n, len(dat))
 	}
 	return nil
 }

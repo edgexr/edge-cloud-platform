@@ -41,7 +41,7 @@
       region: local
       remote-ip: 127.0.0.1
       request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"ep1","organization":"user3org","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"enterprise-1","organization":"enterprise"},"cluster_key":{"name":"SmallCluster"},"organization":"user3org"}}},"Region":"local"}'
-      response: |-
+      response: |
         {"data":{"message":"Creating"}}
         {"data":{"message":"Creating App Inst"}}
         {"data":{"message":"Ready"}}
