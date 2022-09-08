@@ -51,13 +51,28 @@ func GetData(config *Config, path string, version int, data interface{}) error {
 	return mapstructure.WeakDecode(vdat["data"], data)
 }
 
+const NoCheckAndSet = -1
+
 func PutData(config *Config, path string, data interface{}) error {
+	return PutDataCAS(config, path, data, NoCheckAndSet)
+}
+
+// Check and set:
+// -1 to ignore
+// 0: write only allowed if key doesn't exist
+// 1+: write only allowed if cas matches the current version of the secret
+func PutDataCAS(config *Config, path string, data interface{}, checkAndSet int) error {
 	client, err := config.Login()
 	if err != nil {
 		return err
 	}
 	vdata := map[string]interface{}{
 		"data": data,
+	}
+	if checkAndSet != NoCheckAndSet {
+		vdata["options"] = map[string]interface{}{
+			"cas": checkAndSet,
+		}
 	}
 	out, err := json.Marshal(vdata)
 	if err != nil {

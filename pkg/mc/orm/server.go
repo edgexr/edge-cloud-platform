@@ -1115,6 +1115,7 @@ func (s *Server) Stop() {
 	nodeMgr.Finish()
 	serverConfig = &ServerConfig{}
 	gitlabClient = nil
+	harborClient = nil
 }
 
 func ShowVersion(c echo.Context) error {

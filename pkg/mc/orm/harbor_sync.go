@@ -17,6 +17,10 @@ func HarborNewSync() *AppStoreSync {
 }
 
 func (s *AppStoreSync) syncHarborObjects(ctx context.Context) {
+	err := harborInit(ctx)
+	if err != nil {
+		s.syncErr(ctx, err)
+	}
 	s.syncHarborProjects(ctx)
 }
 
@@ -54,10 +58,11 @@ func (s *AppStoreSync) syncHarborProjects(ctx context.Context) {
 		if role == nil {
 			continue
 		}
-		users, ok := orgusers[role.Org]
+		orgName := HarborProjectSanitize(role.Org)
+		users, ok := orgusers[orgName]
 		if !ok {
 			users = make(map[string]*ormapi.Role)
-			orgusers[role.Org] = users
+			orgusers[orgName] = users
 		}
 		users[role.Username] = role
 	}
@@ -66,6 +71,7 @@ func (s *AppStoreSync) syncHarborProjects(ctx context.Context) {
 		if org.Type == OrgTypeOperator {
 			continue
 		}
+		name = HarborProjectSanitize(name)
 		if proj, found := projectsT[name]; found {
 			delete(projectsT, name)
 

@@ -180,7 +180,7 @@ func TestAppStoreApi(t *testing.T) {
 	out := vp.Run("vault", fmt.Sprintf("kv put %s apikey=%s", path, artifactoryApiKey), &err)
 	require.Nil(t, err, "added artifactory secret to vault %s", out)
 
-	hpath := "/secret/registry/docker." + domain
+	hpath := "/secret" + HarborAdminAuthVaultPath
 	out = vp.Run("vault", fmt.Sprintf("kv put %s username=%s password=%s", hpath, harborAdmin, harborPassword), &err)
 	require.Nil(t, err, "added harbor secret to vault %s", out)
 
