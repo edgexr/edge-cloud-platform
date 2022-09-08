@@ -124,11 +124,17 @@ const (
 )
 
 func TestAppStoreApi(t *testing.T) {
-	artifactoryAddr := "https://dummy-artifactory.edgecloud.net"
+	domain := "edgecloud.net"
+
+	artifactoryAddr := "https://dummy-artifactory." + domain
 	artifactoryApiKey := "dummyKey"
 
-	gitlabAddr := "https://dummy-gitlab.edgecloud.net"
+	gitlabAddr := "https://dummy-gitlab." + domain
 	gitlabApiKey := "dummyKey"
+
+	harborAddr := "https://dummy-harbor." + domain
+	harborAdmin := "admin"
+	harborPassword := "password"
 
 	var status int
 
@@ -172,12 +178,22 @@ func TestAppStoreApi(t *testing.T) {
 
 	path := "/secret/registry/" + rtfuri.Host
 	out := vp.Run("vault", fmt.Sprintf("kv put %s apikey=%s", path, artifactoryApiKey), &err)
-	require.Nil(t, err, "added secret to vault %s", out)
+	require.Nil(t, err, "added artifactory secret to vault %s", out)
+
+	hpath := "/secret/registry/docker." + domain
+	out = vp.Run("vault", fmt.Sprintf("kv put %s username=%s password=%s", hpath, harborAdmin, harborPassword), &err)
+	require.Nil(t, err, "added harbor secret to vault %s", out)
 
 	// mock artifactory
 	rtf := NewArtifactoryMock(artifactoryAddr, mockTransport)
 	// mock gitlab
 	gm := NewGitlabMock(gitlabAddr, mockTransport)
+	// mock harbor
+	hm := NewHarborMock(harborAddr, mockTransport, harborAdmin, harborPassword)
+	harborClient = &http.Client{
+		Transport: mockTransport,
+		Timeout:   3 * time.Second,
+	}
 
 	config := ServerConfig{
 		ServAddr:                 addr,
@@ -188,6 +204,7 @@ func TestAppStoreApi(t *testing.T) {
 		VaultAddr:                vp.ListenAddr,
 		ArtifactoryAddr:          artifactoryAddr,
 		GitlabAddr:               gitlabAddr,
+		HarborAddr:               harborAddr,
 		UsageCheckpointInterval:  "MONTH",
 		BillingPlatform:          billing.BillingTypeFake,
 		DeploymentTag:            "local",
@@ -195,6 +212,7 @@ func TestAppStoreApi(t *testing.T) {
 		PasswordResetConsolePath: "#/passwordreset",
 		VerifyEmailConsolePath:   "#/verify",
 		testTransport:            mockTransport,
+		DomainName:               domain,
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
@@ -259,6 +277,10 @@ func TestAppStoreApi(t *testing.T) {
 		// delete again should fail
 		err = artifactoryDeleteLDAPUser(ctx, user)
 		require.NotNil(t, err, user)
+
+		// MC never creates harbor users directly, they
+		// are created either via user logging into Harbor,
+		// or via project member add.
 	}
 
 	// create "missing" data in MC but not in Art/Gitlab
@@ -267,14 +289,17 @@ func TestAppStoreApi(t *testing.T) {
 	}
 	rtf.initData()
 	gm.initData()
+	hm.initData()
 
 	// Create new users & orgs from MC
 	for _, v := range testEntries {
 		mcClientCreate(t, v, mcClient, uri)
 		rtf.verify(t, v, MCObj)
 		gm.verify(t, v, MCObj)
+		hm.verify(t, v, MCObj)
 	}
 	rtf.verifyCount(t, testEntries, MCObj)
+	hm.verifyCount(t, testEntries, MCObj)
 
 	// Create users & orgs which are not present in MC
 	for _, v := range extraEntries {
@@ -284,6 +309,7 @@ func TestAppStoreApi(t *testing.T) {
 		}
 		artifactoryCreateGroupObjects(ctx, v.Org, v.OrgType)
 		gitlabCreateGroup(ctx, &org)
+		harborCreateProject(ctx, &org)
 		for user, userType := range v.Users {
 			userObj := ormapi.User{
 				Name:  user,
@@ -301,11 +327,14 @@ func TestAppStoreApi(t *testing.T) {
 			}
 			gitlabAddGroupMember(ctx, &roleArg, org.Type)
 			artifactoryAddUserToGroup(ctx, &roleArg, org.Type)
+			harborAddProjectMember(ctx, &roleArg, org.Type)
 		}
 		rtf.verify(t, v, ExtraObj)
 		gm.verify(t, v, ExtraObj)
+		hm.verify(t, v, ExtraObj)
 	}
 	rtf.verifyCount(t, append(testEntries, extraEntries...), MCObj)
+	hm.verifyCount(t, append(testEntries, extraEntries...), MCObj)
 
 	// Create operator entries in MC and then force populate them
 	// in artifactory/gitlab to test that sync will remove them.
@@ -318,13 +347,16 @@ func TestAppStoreApi(t *testing.T) {
 		// verify not in artifactory/gitlab
 		rtf.verify(t, v, MCObj)
 		gm.verify(t, v, MCObj)
+		hm.verify(t, v, MCObj)
 
 		artifactoryCreateGroupObjects(ctx, org.Name, org.Type)
 		gitlabCreateGroup(ctx, &org)
+		harborCreateProject(ctx, &org)
 
 		// verify now in artifactory/gitlab
 		rtf.verify(t, v, OldOperObj)
 		gm.verify(t, v, OldOperObj)
+		hm.verify(t, v, OldOperObj)
 	}
 
 	// Trigger resync to delete extra objects and create missing ones
@@ -334,20 +366,27 @@ func TestAppStoreApi(t *testing.T) {
 	status, err = mcClient.GitlabResync(uri, tokenAdmin)
 	require.Nil(t, err, "gitlab resync")
 	require.Equal(t, http.StatusOK, status, "gitlab resync status")
+	status, err = mcClient.HarborResync(uri, tokenAdmin)
+	require.Nil(t, err, "harbor resync")
+	require.Equal(t, http.StatusOK, status, "harbor resync status")
 
 	waitSyncCount(t, gitlabSync, 2)
 	waitSyncCount(t, artifactorySync, 2)
+	waitSyncCount(t, harborSync, 2)
 
 	// Verify that only testEntries and missingEntries are present
 	for _, v := range testEntries {
 		rtf.verify(t, v, MCObj)
 		gm.verify(t, v, MCObj)
+		hm.verify(t, v, MCObj)
 	}
 	for _, v := range missingEntries {
 		rtf.verify(t, v, MCObj)
 		gm.verify(t, v, MCObj)
+		hm.verify(t, v, MCObj)
 	}
 	rtf.verifyCount(t, append(testEntries, missingEntries...), MCObj)
+	hm.verifyCount(t, append(testEntries, missingEntries...), MCObj)
 
 	// Delete MC created Objects
 	for _, v := range testEntries {
@@ -359,6 +398,7 @@ func TestAppStoreApi(t *testing.T) {
 	for _, v := range missingEntries {
 		rtf.verify(t, v, MCObj)
 		gm.verify(t, v, MCObj)
+		hm.verify(t, v, MCObj)
 		// delete them
 		mcClientDelete(t, v, mcClient, uri, tokenAdmin)
 	}
@@ -366,6 +406,7 @@ func TestAppStoreApi(t *testing.T) {
 	// By now, appstore Sync threads should delete all extra objects as well
 	rtf.verifyEmpty(t)
 	gm.verifyEmpty(t)
+	hm.verifyEmpty(t)
 }
 
 func mcClientCreate(t *testing.T, v entry, mcClient *mctestclient.Client, uri string) {
@@ -425,7 +466,7 @@ func waitSyncCount(t *testing.T, sync *AppStoreSync, count int64) {
 		if sync.count >= count {
 			break
 		}
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(1000 * time.Millisecond)
 	}
 	if sync.count != count {
 		// print all goroutines in case sync thread is stuck

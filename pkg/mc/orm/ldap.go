@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	ber "github.com/nmcclain/asn1-ber"
@@ -35,6 +35,8 @@ const (
 	OUusers = "users"
 	OUorgs  = "orgs"
 )
+
+var CNadminOrg = edgeproto.OrganizationEdgeCloud
 
 type ldapHandler struct {
 }
@@ -58,21 +60,33 @@ func (s *ldapHandler) Bind(bindDN, bindSimplePw string, conn net.Conn) (ldap.LDA
 		user := ormapi.User{}
 		log.SpanLog(ctx, log.DebugLevelApi, "lookup", "user", lookup)
 
+		config, err := getConfig(ctx)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "ldap bind config lookup failed", "err", err)
+			return ldap.LDAPResultUnavailable, err
+		}
 		db := loggedDB(ctx)
-		err := db.Where(&lookup).First(&user).Error
+		err = db.Where(&lookup).First(&user).Error
 		if err != nil {
 			time.Sleep(BadAuthDelay)
 			return ldap.LDAPResultInvalidCredentials, err
 		}
-		// don't log "user", as it contains password hash
+		// don't log user object, as it contains password hash
 		log.SpanLog(ctx, log.DebugLevelApi, "pw check", "user", lookup)
-		if !user.EmailVerified || user.Locked {
-			time.Sleep(BadAuthDelay)
-			return ldap.LDAPResultInvalidCredentials, nil
+		if user.Locked {
+			return ldap.LDAPResultUnavailable, fmt.Errorf("Account is locked, please contact support")
 		}
-		matches, err := ormutil.PasswordMatches(bindSimplePw, user.Passhash, user.Salt, user.Iter)
-		if err != nil || !matches {
-			time.Sleep(BadAuthDelay)
+		// do not check for TOTP/2FA, as LDAP can't support it, and this
+		// is not a normal login path.
+		if !getSkipVerifyEmail(ctx, nil) && !user.EmailVerified {
+			return ldap.LDAPResultUnavailable, fmt.Errorf("Email not verified yet")
+		}
+		err = checkLoginLocked(&user, config)
+		if err != nil {
+			return ldap.LDAPResultBusy, err
+		}
+		err = checkLoginPassword(ctx, db, &user, bindSimplePw)
+		if err != nil {
 			return ldap.LDAPResultInvalidCredentials, err
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "success", "user", lookup)
@@ -169,6 +183,7 @@ func ldapLookupUsers(ctx context.Context, username string, filter *ber.Packet, r
 				},
 			},
 		}
+		isAdmin := false
 		roles := []*ormapi.Role{}
 		for ii, _ := range groupings {
 			role := parseRole(groupings[ii])
@@ -179,6 +194,7 @@ func ldapLookupUsers(ctx context.Context, username string, filter *ber.Packet, r
 				continue
 			}
 			if role.Org == "" {
+				isAdmin = true
 				continue
 			}
 			roles = append(roles, role)
@@ -188,6 +204,13 @@ func ldapLookupUsers(ctx context.Context, username string, filter *ber.Packet, r
 			for _, role := range roles {
 				dn := ldapdn{
 					cn: role.Org,
+					ou: OUorgs,
+				}
+				orgs = append(orgs, dn.String())
+			}
+			if isAdmin {
+				dn := ldapdn{
+					cn: CNadminOrg,
 					ou: OUorgs,
 				}
 				orgs = append(orgs, dn.String())

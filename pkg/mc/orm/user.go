@@ -182,20 +182,10 @@ func Login(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		matches, err := ormutil.PasswordMatches(login.Password, user.Passhash, user.Salt, user.Iter)
+		err = checkLoginPassword(ctx, db, &user, login.Password)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelApi, "password matches err", "err", err)
+			return err
 		}
-		if !matches || err != nil {
-			user.FailedLogins += 1
-			user.LastFailedLogin = time.Now()
-			saveUserLogin(ctx, db, &user)
-			time.Sleep(BadAuthDelay)
-			return fmt.Errorf("Invalid username or password")
-		}
-		user.FailedLogins = 0
-		user.LastLogin = time.Now()
-		saveUserLogin(ctx, db, &user)
 	}
 
 	if user.Locked {
@@ -296,6 +286,24 @@ func checkLoginLocked(user *ormapi.User, config *ormapi.Config) error {
 		remaining := lockoutDur - elapsed
 		return fmt.Errorf("Login temporarily disabled due to %d failed login attempts, please try again in %s", user.FailedLogins, remaining.Round(time.Second).String())
 	}
+	return nil
+}
+
+func checkLoginPassword(ctx context.Context, db *gorm.DB, user *ormapi.User, password string) error {
+	matches, err := ormutil.PasswordMatches(password, user.Passhash, user.Salt, user.Iter)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "password matches err", "err", err)
+	}
+	if !matches || err != nil {
+		user.FailedLogins += 1
+		user.LastFailedLogin = time.Now()
+		saveUserLogin(ctx, db, user)
+		time.Sleep(BadAuthDelay)
+		return fmt.Errorf("Invalid username or password")
+	}
+	user.FailedLogins = 0
+	user.LastLogin = time.Now()
+	saveUserLogin(ctx, db, user)
 	return nil
 }
 

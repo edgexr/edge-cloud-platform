@@ -139,6 +139,9 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 	artifactoryCreateGroupObjects(ctx, org.Name, org.Type)
 	artifactoryAddUserToGroup(ctx, &r, org.Type)
 
+	harborCreateProject(ctx, org)
+	harborAddProjectMember(ctx, &r, org.Type)
+
 	return nil
 }
 
@@ -246,6 +249,7 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 
 	gitlabDeleteGroup(ctx, org)
 	artifactoryDeleteGroupObjects(ctx, org.Name, "")
+	harborDeleteProject(ctx, org.Name)
 	return nil
 }
 
@@ -311,6 +315,10 @@ func updateOrg(c echo.Context, updateType UpdateType) error {
 	}
 	if org.PublicImages != old.PublicImages {
 		err := gitlabUpdateVisibility(ctx, &org)
+		if err != nil {
+			return err
+		}
+		err = harborUpdateProjectVisibility(ctx, &org)
 		if err != nil {
 			return err
 		}

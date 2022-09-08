@@ -21,11 +21,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/labstack/echo/v4"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/labstack/echo/v4"
 )
 
 const ActionView = "view"
@@ -515,6 +515,7 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 
 	gitlabAddGroupMember(ctx, role, orgType)
 	artifactoryAddUserToGroup(ctx, role, orgType)
+	harborAddProjectMember(ctx, role, orgType)
 	return nil
 }
 
@@ -598,6 +599,7 @@ func RemoveUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Rol
 
 	gitlabRemoveGroupMember(ctx, role, org.Type)
 	artifactoryRemoveUserFromGroup(ctx, role, org.Type)
+	harborRemoveProjectMember(ctx, role, org.Type)
 
 	return nil
 }

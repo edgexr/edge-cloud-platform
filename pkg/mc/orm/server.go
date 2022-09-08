@@ -91,6 +91,7 @@ type ServerConfig struct {
 	LDAPAddr                 string
 	LDAPUsername             string
 	LDAPPassword             string
+	HarborAddr               string
 	GitlabAddr               string
 	ArtifactoryAddr          string
 	PingInterval             time.Duration
@@ -131,6 +132,7 @@ var database *gorm.DB
 var enforcer *rbac.Enforcer
 var serverConfig *ServerConfig
 var gitlabClient *gitlab.Client
+var harborSync *AppStoreSync
 var gitlabSync *AppStoreSync
 var artifactorySync *AppStoreSync
 var nodeMgr *node.NodeMgr
@@ -634,6 +636,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/gitlab/resync", GitlabResync)
 	auth.POST("/artifactory/resync", ArtifactoryResync)
 	auth.POST("/artifactory/summary", ArtifactorySummary)
+	auth.POST("/harbor/resync", HarborResync)
 	auth.POST("/config/update", UpdateConfig)
 	auth.POST("/config/reset", ResetConfig)
 	auth.POST("/config/show", ShowConfig)
@@ -971,7 +974,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	server.ldapServer = ldapServer
 	go func() {
 		var err error
-		if config.ApiTlsCertFile != "" {
+		if config.ApiTlsCertFile != "" && !edgetls.IsTestTls() {
 			err = ldapServer.ListenAndServeTLS(config.LDAPAddr, config.ApiTlsCertFile, config.ApiTlsKeyFile)
 		} else {
 			err = ldapServer.ListenAndServe(config.LDAPAddr)
@@ -1024,6 +1027,11 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		artifactorySync = ArtifactoryNewSync()
 		artifactorySync.Start(server.done)
 	}
+	if config.HarborAddr != "" {
+		harborSync = HarborNewSync()
+		harborSync.Start(server.done)
+	}
+
 	if AlertManagerServer != nil {
 		AlertManagerServer.Start()
 		server.alertMgrStarted = true

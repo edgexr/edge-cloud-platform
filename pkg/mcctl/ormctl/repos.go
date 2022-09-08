@@ -25,6 +25,10 @@ func init() {
 		Name:  "GitlabResync",
 		Short: "Resync MC and Gitlab data",
 		Path:  "/auth/gitlab/resync",
+	}, {
+		Name:  "HarborResync",
+		Short: "Resync MC and Harbor data",
+		Path:  "/auth/harbor/resync",
 	}}
 	AllApis.AddGroup(RepositoryGroup, "Manage respositories", cmds)
 }
