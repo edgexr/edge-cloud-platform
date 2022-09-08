@@ -171,9 +171,13 @@ func ldapSearchCheck(t *testing.T, l *ldap.Conn, bindDN, bindPassword, baseDN, f
 		BaseDN: baseDN,
 		Filter: filter,
 	}
+	log.DebugLog(log.DebugLevelApi, "ldap search", "bindDN", bindDN, "baseDN", baseDN, "filter", filter)
 	sr, err := l.Search(searchRequest)
 	require.Nil(t, err, "ldap search")
-	require.Equal(t, len(sr.Entries), numEntries, "match num of entries from search result")
+	for _, e := range sr.Entries {
+		log.DebugLog(log.DebugLevelApi, "ldap search result", "entry", e)
+	}
+	require.Equal(t, numEntries, len(sr.Entries), "match num of entries from search result")
 
 	return sr
 }

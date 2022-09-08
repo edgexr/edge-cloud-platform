@@ -34,6 +34,7 @@ type MC struct {
 	RolesFile               string
 	LdapAddr                string
 	GitlabAddr              string
+	HarborAddr              string
 	NotifySrvAddr           string
 	ConsoleProxyAddr        string
 	AlertResolveTimeout     string
@@ -83,6 +84,10 @@ func (p *MC) StartLocal(logfile string, opts ...StartOp) error {
 	if p.GitlabAddr != "" {
 		args = append(args, "--gitlabAddr")
 		args = append(args, p.GitlabAddr)
+	}
+	if p.HarborAddr != "" {
+		args = append(args, "--harborAddr")
+		args = append(args, p.HarborAddr)
 	}
 	if p.NotifySrvAddr != "" {
 		args = append(args, "--notifySrvAddr")

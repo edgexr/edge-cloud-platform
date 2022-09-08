@@ -3187,6 +3187,16 @@ func (s *Client) GitlabResync(uri string, token string) (int, error) {
 	return rundata.RetStatus, rundata.RetError
 }
 
+func (s *Client) HarborResync(uri string, token string) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+
+	apiCmd := ormctl.MustGetCommand("HarborResync")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
 // Generating group ResTagTable
 
 func (s *Client) CreateResTagTable(uri string, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
