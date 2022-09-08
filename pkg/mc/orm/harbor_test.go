@@ -52,7 +52,7 @@ func (s *HarborMock) initData() {
 
 func (s *HarborMock) registerProjects() {
 	u := fmt.Sprintf("%s/projects", s.addr)
-	fmt.Printf("harbor register projects %s\n", u)
+	log.DebugLog(log.DebugLevelApi, "harbor register projects", "url", u)
 	s.mockTransport.RegisterResponder("POST", u,
 		func(req *http.Request) (*http.Response, error) {
 			if err := s.checkAuth(req); err != nil {
@@ -431,7 +431,7 @@ func getQParamInt(values map[string][]string, key string) (int64, bool) {
 
 func (s *HarborMock) verify(t *testing.T, v entry, objType string) {
 	// verify projects
-	fmt.Printf("harbor mock verify entry %s\n", v)
+	log.DebugLog(log.DebugLevelApi, "harbor mock verify entry", "entry", v)
 	proj := s.getProject(v.Org)
 	if v.OrgType == OrgTypeOperator && objType != OldOperObj {
 		require.Nil(t, proj, "no project for operator org")
@@ -451,7 +451,7 @@ func (s *HarborMock) verify(t *testing.T, v entry, objType string) {
 
 	// verify project members
 	for username, userType := range v.Users {
-		fmt.Printf("  harbor mock verify user %s %s\n", username, userType)
+		log.DebugLog(log.DebugLevelApi, "harbor mock verify user", "user", username, "type", userType)
 		member, found := s.getProjectMember(proj.ProjectID, username)
 		require.True(t, found, "member found")
 		roleID := harborGetRoleID(userType)

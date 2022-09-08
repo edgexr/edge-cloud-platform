@@ -24,6 +24,7 @@ const (
 
 var harborFalse = "false"
 var harborTrue = "true"
+var harborScopeProject = "p"
 var harborAuth *cloudcommon.RegistryAuth
 var harborClient = &http.Client{
 	Timeout: 5 * time.Second,
@@ -184,9 +185,9 @@ func harborUpdateProjectVisibility(ctx context.Context, org *ormapi.Organization
 	if !harborEnabled(ctx) {
 		return nil
 	}
-	public := "false"
+	public := harborFalse
 	if org.PublicImages {
-		public = "true"
+		public = harborTrue
 	}
 
 	projReq := models.ProjectReq{
@@ -342,7 +343,7 @@ func harborSetProjectLabel(ctx context.Context, projectID int32) error {
 		Name:        HarborProjectManaged,
 		Description: "Project is managed by Edge Cloud",
 		Color:       "#343DAC",
-		Scope:       "p",
+		Scope:       harborScopeProject,
 		ProjectID:   int64(projectID),
 	}
 	jsonData, err := json.Marshal(label)
@@ -382,7 +383,7 @@ func harborHasProjectLabel(ctx context.Context, projectID int32) (bool, error) {
 	}
 	query := req.URL.Query()
 	query.Add("name", HarborProjectManaged)
-	query.Add("scope", "p")
+	query.Add("scope", harborScopeProject)
 	query.Add("project_id", strconv.FormatInt(int64(projectID), 10))
 	req.URL.RawQuery = query.Encode()
 

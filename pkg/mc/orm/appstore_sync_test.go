@@ -466,7 +466,7 @@ func waitSyncCount(t *testing.T, sync *AppStoreSync, count int64) {
 		if sync.count >= count {
 			break
 		}
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 	}
 	if sync.count != count {
 		// print all goroutines in case sync thread is stuck
