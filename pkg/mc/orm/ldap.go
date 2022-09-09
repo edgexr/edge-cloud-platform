@@ -32,8 +32,9 @@ import (
 // LDAP interface to MC user database
 
 const (
-	OUusers = "users"
-	OUorgs  = "orgs"
+	OUusers             = "users"
+	OUorgs              = "orgs"
+	LdapGroupMembership = "memberOf"
 )
 
 var CNadminOrg = edgeproto.OrganizationEdgeCloud
@@ -217,7 +218,7 @@ func ldapLookupUsers(ctx context.Context, username string, filter *ber.Packet, r
 			}
 			if len(orgs) > 0 {
 				attr := ldap.EntryAttribute{
-					Name:   "memberOf",
+					Name:   LdapGroupMembership,
 					Values: orgs,
 				}
 				entry.Attributes = append(entry.Attributes, &attr)

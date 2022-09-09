@@ -79,20 +79,32 @@ type RegistryAuthApi interface {
 	GetRegistryAuth(ctx context.Context, imgUrl string) (*RegistryAuth, error)
 }
 
+// return hostname and port
+func parseImageUrl(imgUrl string) (string, string, error) {
+	urlObj, err := util.ImagePathParse(imgUrl)
+	if err != nil {
+		return "", "", err
+	}
+	hostname := strings.Split(urlObj.Host, ":")
+	if len(hostname) < 1 {
+		return "", "", fmt.Errorf("empty hostname")
+	}
+	port := ""
+	if len(hostname) > 1 {
+		port = hostname[1]
+	}
+	return hostname[0], port, nil
+}
+
 func GetRegistryAuth(ctx context.Context, imgUrl string, vaultConfig *vault.Config) (*RegistryAuth, error) {
 	if vaultConfig == nil || vaultConfig.Addr == "" {
 		return nil, fmt.Errorf("no vault specified")
 	}
-	urlObj, err := util.ImagePathParse(imgUrl)
+	hostname, port, err := parseImageUrl(imgUrl)
 	if err != nil {
 		return nil, err
 	}
-	hostname := strings.Split(urlObj.Host, ":")
-
-	if len(hostname) < 1 {
-		return nil, fmt.Errorf("empty hostname")
-	}
-	vaultPath := getVaultRegistryPath(hostname[0])
+	vaultPath := getVaultRegistryPath(hostname)
 	log.SpanLog(ctx, log.DebugLevelApi, "get registry auth", "vault-path", vaultPath)
 	auth := &RegistryAuth{}
 	err = vault.GetData(vaultConfig, vaultPath, 0, auth)
@@ -105,10 +117,8 @@ func GetRegistryAuth(ctx context.Context, imgUrl string, vaultConfig *vault.Conf
 	if err != nil {
 		return nil, err
 	}
-	auth.Hostname = hostname[0]
-	if len(hostname) > 1 {
-		auth.Port = hostname[1]
-	}
+	auth.Hostname = hostname
+	auth.Port = port
 	if auth.Username != "" && auth.Password != "" {
 		auth.AuthType = BasicAuth
 	} else if auth.Token != "" {
@@ -117,6 +127,25 @@ func GetRegistryAuth(ctx context.Context, imgUrl string, vaultConfig *vault.Conf
 		auth.AuthType = ApiKeyAuth
 	}
 	return auth, nil
+}
+
+func PutRegistryAuth(ctx context.Context, imgUrl string, auth *RegistryAuth, vaultConfig *vault.Config, checkAndSet int) error {
+	if vaultConfig == nil || vaultConfig.Addr == "" {
+		return fmt.Errorf("no vault specified")
+	}
+	hostname, port, err := parseImageUrl(imgUrl)
+	if err != nil {
+		return err
+	}
+	auth.Hostname = hostname
+	auth.Port = port
+	vaultPath := getVaultRegistryPath(hostname)
+	log.SpanLog(ctx, log.DebugLevelApi, "put auth secret", "vault-path", vaultPath)
+	err = vault.PutDataCAS(vaultConfig, vaultPath, auth, checkAndSet)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func GetAuthToken(ctx context.Context, host string, authApi RegistryAuthApi, userName string) (string, error) {

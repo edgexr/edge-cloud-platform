@@ -193,6 +193,10 @@ path "secret/data/accounts/sql" {
   capabilities = [ "read" ]
 }
 
+path "secret/data/accounts/harbor" {
+  capabilities = [ "read" ]
+}
+
 path "secret/data/accounts/noreplyemail" {
   capabilities = [ "read" ]
 }

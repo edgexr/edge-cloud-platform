@@ -21,9 +21,12 @@ type HarborMock struct {
 	projects       map[int32]*models.Project
 	projectMembers map[int32]map[int64]*models.ProjectMemberEntity
 	labels         map[int64]*models.Label
+	robots         map[int64]*models.Robot
+	config         models.Configurations
 	nextProjectID  int32
 	nextMemberID   int64
 	nextLabelID    int64
+	nextRobotID    int64
 	mockTransport  *httpmock.MockTransport
 }
 
@@ -38,6 +41,8 @@ func NewHarborMock(addr string, tr *httpmock.MockTransport, admin, password stri
 	hm.registerProjects()
 	hm.registerProjectMembers()
 	hm.registerLabels()
+	hm.registerRobots()
+	hm.registerConfigurations()
 	return &hm
 }
 
@@ -45,9 +50,12 @@ func (s *HarborMock) initData() {
 	s.projects = make(map[int32]*models.Project)
 	s.projectMembers = make(map[int32]map[int64]*models.ProjectMemberEntity)
 	s.labels = make(map[int64]*models.Label)
+	s.robots = make(map[int64]*models.Robot)
+	s.config.RobotNamePrefix = stringRef("robot$")
 	s.nextProjectID = 1
 	s.nextMemberID = 1
 	s.nextLabelID = 1
+	s.nextRobotID = 1
 }
 
 func (s *HarborMock) registerProjects() {
@@ -79,20 +87,9 @@ func (s *HarborMock) registerProjects() {
 			if err := s.checkAuth(req); err != nil {
 				return s.fail(403, err)
 			}
-			params := req.URL.Query()
-			page := 1
-			pageSize := 10
-			if val, ok := getQParamInt(params, "page"); ok {
-				if val <= 0 {
-					return s.fail(400, fmt.Errorf("page must be > 0"))
-				}
-				page = int(val)
-			}
-			if val, ok := getQParamInt(params, "page_size"); ok {
-				if val <= 0 {
-					return s.fail(400, fmt.Errorf("page size must be > 0"))
-				}
-				pageSize = int(val)
+			page, pageSize, err := getPageParams(req)
+			if err != nil {
+				return s.fail(400, err)
 			}
 			projects := []*models.Project{}
 			for _, proj := range s.projects {
@@ -105,8 +102,8 @@ func (s *HarborMock) registerProjects() {
 			for ii := pageSize * (page - 1); ii < pageSize*page && ii < len(projects); ii++ {
 				ret = append(ret, projects[ii])
 			}
-			log.DebugLog(log.DebugLevelApi, "harbor mock get projects", "projects", projects)
-			return httpmock.NewJsonResponse(200, projects)
+			log.DebugLog(log.DebugLevelApi, "harbor mock get projects", "projects", ret)
+			return httpmock.NewJsonResponse(200, ret)
 		},
 	)
 	u = fmt.Sprintf(`=~^%s/projects/([^/]+)\z`, s.addr)
@@ -138,7 +135,7 @@ func (s *HarborMock) registerProjects() {
 			nameOrId := httpmock.MustGetSubmatch(req, 1)
 			proj, code, err := s.lookupProj(nameOrId)
 			if err != nil {
-				s.fail(code, err)
+				return s.fail(code, err)
 			}
 			delete(s.projects, proj.ProjectID)
 			delete(s.projectMembers, proj.ProjectID)
@@ -168,7 +165,7 @@ func (s *HarborMock) registerProjects() {
 			nameOrId := httpmock.MustGetSubmatch(req, 1)
 			proj, code, err := s.lookupProj(nameOrId)
 			if err != nil {
-				s.fail(code, err)
+				return s.fail(code, err)
 			}
 			// only support updating public visiblity now
 			if projReq.Metadata.Public == harborTrue {
@@ -192,7 +189,7 @@ func (s *HarborMock) registerProjectMembers() {
 			nameOrId := httpmock.MustGetSubmatch(req, 1)
 			proj, code, err := s.lookupProj(nameOrId)
 			if err != nil {
-				s.fail(code, err)
+				return s.fail(code, err)
 			}
 			memberReq := models.ProjectMember{}
 			err = json.NewDecoder(req.Body).Decode(&memberReq)
@@ -213,7 +210,7 @@ func (s *HarborMock) registerProjectMembers() {
 				member.EntityID = memberReq.MemberGroup.ID
 				member.EntityName = memberReq.MemberGroup.GroupName
 			} else {
-				s.fail(400, fmt.Errorf("either member user or member group must be specified"))
+				return s.fail(400, fmt.Errorf("either member user or member group must be specified"))
 			}
 			log.DebugLog(log.DebugLevelApi, "harbor mock created project member", "member", member)
 			members, _ := s.projectMembers[proj.ProjectID]
@@ -229,22 +226,11 @@ func (s *HarborMock) registerProjectMembers() {
 			nameOrId := httpmock.MustGetSubmatch(req, 1)
 			proj, code, err := s.lookupProj(nameOrId)
 			if err != nil {
-				s.fail(code, err)
+				return s.fail(code, err)
 			}
-			params := req.URL.Query()
-			page := 1
-			pageSize := 10
-			if val, ok := getQParamInt(params, "page"); ok {
-				if val <= 0 {
-					return s.fail(400, fmt.Errorf("page must be > 0"))
-				}
-				page = int(val)
-			}
-			if val, ok := getQParamInt(params, "page_size"); ok {
-				if val <= 0 {
-					return s.fail(400, fmt.Errorf("page size must be > 0"))
-				}
-				pageSize = int(val)
+			page, pageSize, err := getPageParams(req)
+			if err != nil {
+				return s.fail(400, err)
 			}
 			members := []*models.ProjectMemberEntity{}
 			m, _ := s.projectMembers[proj.ProjectID]
@@ -272,11 +258,11 @@ func (s *HarborMock) registerProjectMembers() {
 			mid := httpmock.MustGetSubmatch(req, 2)
 			entity, code, err := s.lookupProjMember(nameOrId, mid)
 			if err != nil {
-				s.fail(code, err)
+				return s.fail(code, err)
 			}
 			members, ok := s.projectMembers[int32(entity.ProjectID)]
 			if !ok {
-				s.fail(404, fmt.Errorf("MemberID not found"))
+				return s.fail(404, fmt.Errorf("MemberID not found"))
 			}
 			delete(members, entity.EntityID)
 			log.DebugLog(log.DebugLevelApi, "harbor mock deleted project member", "project", nameOrId, "member", entity)
@@ -363,6 +349,81 @@ func (s *HarborMock) lookupProj(nameOrId string) (*models.Project, int, error) {
 	return nil, 404, fmt.Errorf("project %s not found", nameOrId)
 }
 
+func (s *HarborMock) registerRobots() {
+	u := fmt.Sprintf("%s/robots", s.addr)
+	log.DebugLog(log.DebugLevelApi, "harbor register projects", "url", u)
+	s.mockTransport.RegisterResponder("POST", u,
+		func(req *http.Request) (*http.Response, error) {
+			if err := s.checkAuth(req); err != nil {
+				return s.fail(403, err)
+			}
+			in := models.RobotCreate{}
+			err := json.NewDecoder(req.Body).Decode(&in)
+			if err != nil {
+				return s.fail(400, err)
+			}
+			robot := models.Robot{}
+			robot.ID = s.nextRobotID
+			robot.Name = *s.config.RobotNamePrefix + in.Name
+			robot.Description = in.Description
+			robot.Secret = in.Secret
+			robot.Level = in.Level
+			robot.Duration = in.Duration
+			robot.Permissions = in.Permissions
+			s.nextRobotID++
+			s.robots[robot.ID] = &robot
+			log.DebugLog(log.DebugLevelApi, "harbor mock created robot", "robot", robot.Name)
+			return httpmock.NewBytesResponse(201, []byte{}), nil
+		},
+	)
+	s.mockTransport.RegisterResponder("GET", u,
+		func(req *http.Request) (*http.Response, error) {
+			if err := s.checkAuth(req); err != nil {
+				return s.fail(403, err)
+			}
+			page, pageSize, err := getPageParams(req)
+			if err != nil {
+				return s.fail(400, err)
+			}
+			robots := []*models.Robot{}
+			for _, r := range s.robots {
+				robots = append(robots, r)
+			}
+			sort.Slice(robots, func(i, j int) bool {
+				return robots[i].ID < robots[j].ID
+			})
+			ret := []*models.Robot{}
+			for ii := pageSize * (page - 1); ii < pageSize*page && ii < len(robots); ii++ {
+				ret = append(ret, robots[ii])
+			}
+			log.DebugLog(log.DebugLevelApi, "harbor mock get robots", "robots", robots)
+			return httpmock.NewJsonResponse(200, ret)
+		},
+	)
+}
+
+func (s *HarborMock) registerConfigurations() {
+	u := fmt.Sprintf("%s/configurations", s.addr)
+	log.DebugLog(log.DebugLevelApi, "harbor register projects", "url", u)
+	s.mockTransport.RegisterResponder("PUT", u,
+		func(req *http.Request) (*http.Response, error) {
+			if err := s.checkAuth(req); err != nil {
+				return s.fail(403, err)
+			}
+			in := models.Configurations{}
+			err := json.NewDecoder(req.Body).Decode(&in)
+			if err != nil {
+				return s.fail(400, err)
+			}
+			// ignore fields that don't matter for testing
+			if in.RobotNamePrefix != nil {
+				s.config.RobotNamePrefix = in.RobotNamePrefix
+			}
+			return httpmock.NewBytesResponse(200, []byte{}), nil
+		},
+	)
+}
+
 func (s *HarborMock) lookupProjMember(projNameOrId string, memberId string) (*models.ProjectMemberEntity, int, error) {
 	proj, code, err := s.lookupProj(projNameOrId)
 	if err != nil {
@@ -413,6 +474,25 @@ func (s *HarborMock) fail(code int, err error) (*http.Response, error) {
 	return httpmock.NewJsonResponse(code, &obj)
 }
 
+func getPageParams(req *http.Request) (int, int, error) {
+	params := req.URL.Query()
+	page := 1
+	pageSize := 10
+	if val, ok := getQParamInt(params, "page"); ok {
+		if val <= 0 {
+			return 0, 0, fmt.Errorf("page must be > 0")
+		}
+		page = int(val)
+	}
+	if val, ok := getQParamInt(params, "page_size"); ok {
+		if val <= 0 {
+			return 0, 0, fmt.Errorf("page size must be > 0")
+		}
+		pageSize = int(val)
+	}
+	return page, pageSize, nil
+}
+
 func getQParam(values map[string][]string, key string) (string, bool) {
 	if p, ok := values[key]; ok && len(p) > 0 {
 		return p[0], true
@@ -432,13 +512,14 @@ func getQParamInt(values map[string][]string, key string) (int64, bool) {
 func (s *HarborMock) verify(t *testing.T, v entry, objType string) {
 	// verify projects
 	log.DebugLog(log.DebugLevelApi, "harbor mock verify entry", "entry", v)
-	proj := s.getProject(v.Org)
+	orgName := HarborProjectSanitize(v.Org)
+	proj := s.getProject(orgName)
 	if v.OrgType == OrgTypeOperator && objType != OldOperObj {
 		require.Nil(t, proj, "no project for operator org")
 		return
 	}
 	require.NotNil(t, proj, "project exists")
-	require.Equal(t, v.Org, proj.Name)
+	require.Equal(t, orgName, proj.Name)
 	// project must have edge cloud label
 	found := false
 	for _, label := range s.labels {
@@ -462,7 +543,8 @@ func (s *HarborMock) verify(t *testing.T, v entry, objType string) {
 func (s *HarborMock) verifyCount(t *testing.T, entries []entry, objType string) {
 	numProj := 0
 	for _, v := range entries {
-		proj := s.getProject(v.Org)
+		orgName := HarborProjectSanitize(v.Org)
+		proj := s.getProject(orgName)
 		if v.OrgType == OrgTypeOperator {
 			require.Nil(t, proj, "project not exists")
 			continue
@@ -509,4 +591,24 @@ func (s *HarborMock) getProjectMember(projectID int32, username string) (*models
 		}
 	}
 	return nil, false
+}
+
+func TestHarborSanitize(t *testing.T) {
+	data := []struct {
+		in  string
+		out string
+	}{
+		{"-foo_", "foo"},
+		{".bar-", "bar"},
+		{"_CAT.", "cat"},
+		{"._-", ""},
+		{"", ""},
+		{"fOO_-.bAR", "foo_-.bar"},
+		{"foo$%^bar", "foo---bar"},
+		{"%$_foo_$%", "foo"},
+	}
+	for _, d := range data {
+		out := HarborProjectSanitize(d.in)
+		require.Equal(t, d.out, out)
+	}
 }

@@ -95,3 +95,42 @@ func GitlabGroupSanitize(name string) string {
 		return '-'
 	}, name)
 }
+
+// Name must start and end with letter or digit.
+// Allowed characters are lower case letters, digits, and _ . -
+// Max length is 255.
+// This function truncates and may return an empty string.
+// It is up to the caller to check for this case.
+func HarborProjectSanitize(name string) string {
+	name = strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) {
+			return unicode.ToLower(r)
+		}
+		if unicode.IsNumber(r) || r == '_' || r == '.' || r == '-' {
+			return r
+		}
+		return '-'
+	}, name)
+	for {
+		if len(name) == 0 {
+			break
+		}
+		if name[0] == '_' || name[0] == '-' || name[0] == '.' {
+			name = name[1:]
+			continue
+		}
+		break
+	}
+	for {
+		if len(name) == 0 {
+			break
+		}
+		last := name[len(name)-1]
+		if last == '_' || last == '-' || last == '.' {
+			name = name[:len(name)-1]
+			continue
+		}
+		break
+	}
+	return name
+}
