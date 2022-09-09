@@ -496,7 +496,6 @@ func harborEnsureApiKey(ctx context.Context, harborHostPort string) error {
 		AuthType: cloudcommon.ApiKeyAuth,
 		ApiKey:   key,
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "debug new auth", "auth", auth)
 	// will not overwrite existing secret, avoids race condition with another
 	// process calling GetHarborApiKey.
 	err = cloudcommon.PutRegistryAuth(ctx, harborHostPort, auth, serverConfig.vaultConfig, 0)
