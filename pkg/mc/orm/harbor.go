@@ -499,7 +499,7 @@ func harborEnsureApiKey(ctx context.Context, harborHostPort string) error {
 	// will not overwrite existing secret, avoids race condition with another
 	// process calling GetHarborApiKey.
 	err = cloudcommon.PutRegistryAuth(ctx, harborHostPort, auth, serverConfig.vaultConfig, 0)
-	if err != nil && strings.Contains(err.Error(), "check-and-set parameter did not match the current version") {
+	if vault.IsCheckAndSetError(err) {
 		// already exists
 		err = nil
 	}
@@ -650,7 +650,7 @@ func harborInit(ctx context.Context) error {
 		}
 	}
 
-	harborHostPort := "docker." + serverConfig.DomainName
+	harborHostPort := serverConfig.HarborAddr
 	log.SpanLog(ctx, log.DebugLevelApi, "harbor init", "hostport", harborHostPort)
 
 	// ensure api key is present in Vault
