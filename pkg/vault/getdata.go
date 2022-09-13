@@ -17,6 +17,7 @@ package vault
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 )
@@ -85,6 +86,13 @@ func PutDataCAS(config *Config, path string, data interface{}, checkAndSet int) 
 		return fmt.Errorf("Failed to unmarshal json to vault data: %v", err)
 	}
 	return PutKV(client, path, vaultData)
+}
+
+func IsCheckAndSetError(err error) bool {
+	if err != nil && strings.Contains(err.Error(), "check-and-set parameter did not match the current version") {
+		return true
+	}
+	return false
 }
 
 func GetEnvVars(config *Config, path string) (map[string]string, error) {

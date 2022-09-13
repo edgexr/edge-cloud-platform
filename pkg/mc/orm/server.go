@@ -260,6 +260,10 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	log.SpanLog(ctx, log.DebugLevelInfo, "vault auth", "type", config.vaultConfig.Auth.Type())
 	server.initJWKDone = make(chan struct{}, 1)
 	InitVault(config.vaultConfig, server.done, server.initJWKDone)
+	err = initLdapAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	switch serverConfig.BillingPlatform {
 	case "fake":

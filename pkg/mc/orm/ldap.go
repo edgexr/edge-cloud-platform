@@ -23,8 +23,11 @@ import (
 
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	"github.com/google/uuid"
 	ber "github.com/nmcclain/asn1-ber"
 	"github.com/nmcclain/ldap"
 )
@@ -38,6 +41,41 @@ const (
 )
 
 var CNadminOrg = edgeproto.OrganizationEdgeCloud
+
+func initLdapAuth(ctx context.Context) error {
+	if serverConfig.LDAPUsername != "" || serverConfig.LDAPPassword != "" {
+		return nil
+	}
+	// look up in Vault
+	vaultPath := "/secret/data/accounts/mcldap"
+	log.SpanLog(ctx, log.DebugLevelApi, "get ldap auth", "vault-path", vaultPath)
+	auth := &cloudcommon.RegistryAuth{}
+	err := vault.GetData(serverConfig.vaultConfig, vaultPath, 0, auth)
+	if err != nil && strings.Contains(err.Error(), "no secrets") {
+		// generate new auth
+		auth.AuthType = cloudcommon.BasicAuth
+		auth.Username = "ldapuser"
+		auth.Password = uuid.New().String()
+		log.SpanLog(ctx, log.DebugLevelApi, "put new ldap auth", "vault-path", vaultPath)
+		err := vault.PutDataCAS(serverConfig.vaultConfig, vaultPath, auth, 0)
+		if vault.IsCheckAndSetError(err) {
+			// read out auth data
+			log.SpanLog(ctx, log.DebugLevelApi, "put ldap auth check-and-set failure, get again")
+			err = vault.GetData(serverConfig.vaultConfig, vaultPath, 0, auth)
+			if err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+	// either first get worked, or put worked, or put and get worked.
+	serverConfig.LDAPUsername = auth.Username
+	serverConfig.LDAPPassword = auth.Password
+	return nil
+}
 
 type ldapHandler struct {
 }
