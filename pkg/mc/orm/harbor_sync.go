@@ -30,6 +30,8 @@ func (s *AppStoreSync) syncHarborProjects(ctx context.Context) {
 		s.syncErr(ctx, err)
 		return
 	}
+	orgsT[harborEdgeCloudOrg.Name] = &harborEdgeCloudOrg
+
 	projects, err := harborGetProjects(ctx)
 	if err != nil {
 		s.syncErr(ctx, err)

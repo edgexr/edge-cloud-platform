@@ -291,6 +291,9 @@ func TestAppStoreApi(t *testing.T) {
 	gm.initData()
 	hm.initData()
 
+	// for consistency in counts, make sure edgecloud org project exists
+	harborCreateProject(ctx, &harborEdgeCloudOrg)
+
 	// Create new users & orgs from MC
 	for _, v := range testEntries {
 		mcClientCreate(t, v, mcClient, uri)

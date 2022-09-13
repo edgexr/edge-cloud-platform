@@ -35,6 +35,10 @@ var harborScopeProject = "p"
 var harborLdapScopeSubtree = int64(2)
 var harborAuth *cloudcommon.RegistryAuth
 var harborClient *http.Client
+var harborEdgeCloudOrg = ormapi.Organization{
+	Name: edgeproto.OrganizationEdgeCloud,
+	Type: OrgTypeDeveloper,
+}
 
 func harborEnabled(ctx context.Context) bool {
 	if serverConfig.HarborAddr == "" {
@@ -140,6 +144,10 @@ func harborCreateProject(ctx context.Context, org *ormapi.Organization) {
 		return
 	}
 	if code != http.StatusCreated {
+		if strings.Contains(string(resBody), "already exists") {
+			log.SpanLog(ctx, log.DebugLevelApi, "harbor create project already exists", "org", org.Name, "code", code, "resp", string(resBody))
+			return
+		}
 		log.SpanLog(ctx, log.DebugLevelApi, "harbor create project failed", "org", org.Name, "code", code, "resp", string(resBody))
 		harborSync.NeedsSync()
 		return
@@ -493,8 +501,9 @@ func harborEnsureApiKey(ctx context.Context, harborHostPort string) error {
 	// (UUID doesn't use upper case), add a suffix.
 	key += "-Harb0r"
 	auth = &cloudcommon.RegistryAuth{
-		AuthType: cloudcommon.ApiKeyAuth,
-		ApiKey:   key,
+		AuthType: cloudcommon.BasicAuth,
+		Username: HarborRobotPrefix + HarborRobotName,
+		Password: key,
 	}
 	// will not overwrite existing secret, avoids race condition with another
 	// process calling GetHarborApiKey.
@@ -517,13 +526,13 @@ func harborEnsureRobotAccount(ctx context.Context, harborHostPort string) error 
 	if err != nil {
 		return err
 	}
-	if auth.AuthType != cloudcommon.ApiKeyAuth {
-		return fmt.Errorf("unexpected auth type %s from %s vault key, expected %s", auth.AuthType, harborHostPort, cloudcommon.ApiKeyAuth)
+	if auth.AuthType != cloudcommon.BasicAuth {
+		return fmt.Errorf("unexpected auth type %s from %s vault key, expected %s", auth.AuthType, harborHostPort, cloudcommon.BasicAuth)
 	}
 
+	// Create does not write the secret, we need to call PUT to do so.
 	robot := models.RobotCreate{
 		Name:        HarborRobotName,
-		Secret:      auth.ApiKey,
 		Description: "Account for cloudlets to pull images",
 		Level:       "system",
 		Duration:    -1,
@@ -539,6 +548,9 @@ func harborEnsureRobotAccount(ctx context.Context, harborHostPort string) error 
 			}, {
 				Resource: "helm-chart",
 				Action:   "read",
+			}, {
+				Resource: "tag",
+				Action:   "list",
 			}},
 		}},
 	}
@@ -546,12 +558,6 @@ func harborEnsureRobotAccount(ctx context.Context, harborHostPort string) error 
 	code, resBody, err := harborDoReq(ctx, http.MethodPost, "/robots", &robot)
 	if err != nil {
 		return err
-	}
-	if code == http.StatusCreated {
-		return nil
-	}
-	if !strings.Contains(string(resBody), "already exists") {
-		return fmt.Errorf("create robot account failed: code %d, message %s", code, string(resBody))
 	}
 	// already exists, update it to make sure it's correct
 	log.SpanLog(ctx, log.DebugLevelApi, "harbor get robot account", "name", HarborRobotName)
@@ -668,5 +674,8 @@ func harborInit(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	// ensure EdgeCloud project exists, as it will hold the
+	// crm and shepherd container images.
+	harborCreateProject(ctx, &harborEdgeCloudOrg)
 	return nil
 }

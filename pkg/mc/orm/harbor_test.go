@@ -71,6 +71,12 @@ func (s *HarborMock) registerProjects() {
 			if err != nil {
 				return s.fail(400, err)
 			}
+			// check if name already exists
+			for _, proj := range s.projects {
+				if projReq.ProjectName == proj.Name {
+					return s.fail(400, fmt.Errorf("project name already exists"))
+				}
+			}
 			proj := models.Project{}
 			proj.ProjectID = s.nextProjectID
 			proj.Name = projReq.ProjectName
@@ -146,8 +152,8 @@ func (s *HarborMock) registerProjects() {
 				}
 			}
 			log.DebugLog(log.DebugLevelApi, "harbor mock deleted project", "project", nameOrId, "projectID", proj.ProjectID)
-			for id, label := range s.labels {
-				log.DebugLog(log.DebugLevelApi, "remaining labels", "id", id, "label", *label)
+			for _, proj := range s.projects {
+				log.DebugLog(log.DebugLevelApi, "remaining projects", "name", proj.Name)
 			}
 			return httpmock.NewJsonResponse(200, proj)
 		},
@@ -400,6 +406,57 @@ func (s *HarborMock) registerRobots() {
 			return httpmock.NewJsonResponse(200, ret)
 		},
 	)
+	u = fmt.Sprintf(`=~^%s/robots/([^/]+)\z`, s.addr)
+	s.mockTransport.RegisterResponder("PUT", u,
+		func(req *http.Request) (*http.Response, error) {
+			if err := s.checkAuth(req); err != nil {
+				return s.fail(403, err)
+			}
+			idstr := httpmock.MustGetSubmatch(req, 1)
+			id, err := strconv.ParseInt(idstr, 10, 64)
+			if err != nil {
+				return s.fail(400, err)
+			}
+			in := models.Robot{}
+			err = json.NewDecoder(req.Body).Decode(&in)
+			if err != nil {
+				return s.fail(400, err)
+			}
+			robot, found := s.robots[id]
+			if !found {
+				return s.fail(400, fmt.Errorf("robot not found"))
+			}
+			if in.Permissions != nil {
+				robot.Permissions = in.Permissions
+			}
+			log.DebugLog(log.DebugLevelApi, "harbor mock updated robot permissions", "robot", idstr)
+			return httpmock.NewBytesResponse(200, []byte{}), nil
+		},
+	)
+	s.mockTransport.RegisterResponder("PATCH", u,
+		func(req *http.Request) (*http.Response, error) {
+			if err := s.checkAuth(req); err != nil {
+				return s.fail(403, err)
+			}
+			idstr := httpmock.MustGetSubmatch(req, 1)
+			id, err := strconv.ParseInt(idstr, 10, 64)
+			if err != nil {
+				return s.fail(400, err)
+			}
+			in := models.RobotSec{}
+			err = json.NewDecoder(req.Body).Decode(&in)
+			if err != nil {
+				return s.fail(400, err)
+			}
+			robot, found := s.robots[id]
+			if !found {
+				return s.fail(400, fmt.Errorf("robot not found"))
+			}
+			robot.Secret = in.Secret
+			log.DebugLog(log.DebugLevelApi, "harbor mock updated robot secret", "robot", idstr)
+			return httpmock.NewBytesResponse(200, []byte{}), nil
+		},
+	)
 }
 
 func (s *HarborMock) registerConfigurations() {
@@ -541,7 +598,8 @@ func (s *HarborMock) verify(t *testing.T, v entry, objType string) {
 }
 
 func (s *HarborMock) verifyCount(t *testing.T, entries []entry, objType string) {
-	numProj := 0
+	// extra edgecloudorg project
+	numProj := 1
 	for _, v := range entries {
 		orgName := HarborProjectSanitize(v.Org)
 		proj := s.getProject(orgName)
@@ -560,9 +618,23 @@ func (s *HarborMock) verifyCount(t *testing.T, entries []entry, objType string) 
 }
 
 func (s *HarborMock) verifyEmpty(t *testing.T) {
-	require.Equal(t, 0, len(s.projects), "no projects")
-	require.Equal(t, 0, len(s.projectMembers), "no members")
-	require.Equal(t, 0, len(s.labels), "no labels")
+	for _, proj := range s.projects {
+		log.DebugLog(log.DebugLevelApi, "verifyEmpty", "project", proj.Name)
+	}
+	numMembers := 0
+	for _, members := range s.projectMembers {
+		for _, member := range members {
+			numMembers++
+			log.DebugLog(log.DebugLevelApi, "verifyEmpty", "projectMember", *member)
+		}
+	}
+	for _, label := range s.labels {
+		log.DebugLog(log.DebugLevelApi, "verifyEmpty", "label", *label)
+	}
+
+	require.Equal(t, 1, len(s.projects), "no projects")
+	require.Equal(t, 0, numMembers, "no members")
+	require.Equal(t, 1, len(s.labels), "no labels")
 }
 
 func (s *HarborMock) getProject(nameOrID string) *models.Project {
