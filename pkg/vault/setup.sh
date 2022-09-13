@@ -217,6 +217,10 @@ path "secret/data/registry/*" {
   capabilities = [ "read", "create", "update" ]
 }
 
+path "secret/data/accounts/mcldap" {
+  capabilities = [ "create", "update", "read" ]
+}
+
 path "pki-global/issue/*" {
   capabilities = [ "read", "update" ]
 }
