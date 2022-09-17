@@ -219,6 +219,33 @@ type AccessApi interface {
 	GetFederationAPIKey(ctx context.Context, fedName string) (string, error)
 }
 
+// AccessData types
+const (
+	GetCloudletAccessVars   = "get-cloudlet-access-vars"
+	GetRegistryAuth         = "get-registry-auth"
+	SignSSHKey              = "sign-ssh-key"
+	GetSSHPublicKey         = "get-ssh-public-key"
+	GetOldSSHKey            = "get-old-ssh-key"
+	GetChefAuthKey          = "get-chef-auth-key"
+	CreateOrUpdateDNSRecord = "create-or-update-dns-record"
+	GetDNSRecords           = "get-dns-records"
+	DeleteDNSRecord         = "delete-dns-record"
+	GetSessionTokens        = "get-session-tokens"
+	GetPublicCert           = "get-public-cert"
+	GetKafkaCreds           = "get-kafka-creds"
+	GetGCSCreds             = "get-gcs-creds"
+	GetFederationAPIKey     = "get-federation-apikey"
+)
+
+type DNSRequest struct {
+	Zone    string
+	Name    string
+	RType   string
+	Content string
+	TTL     int
+	Proxy   bool
+}
+
 var pfMaps = map[string]string{
 	"fakeinfra": "fake",
 	"edgebox":   "dind",

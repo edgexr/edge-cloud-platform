@@ -16,22 +16,21 @@ package openstack
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	yaml "github.com/mobiledgex/yaml/v2"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
-	"github.com/edgexr/edge-cloud-platform/test/e2e-tests/pkg/e2e"
 	"github.com/stretchr/testify/require"
 )
 
@@ -112,15 +111,21 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 
 	generatedFile := vmgp.GroupName + "-heat.yaml"
 	expectedResultsFile := vmgp.GroupName + "-heat-expected.yaml"
-	compare := e2e.CompareYaml{
-		Yaml1:    generatedFile,
-		Yaml2:    expectedResultsFile,
-		FileType: "heat-test",
+	genDat, err := ioutil.ReadFile(generatedFile)
+	require.Nil(t, err)
+	expDat, err := ioutil.ReadFile(expectedResultsFile)
+	require.Nil(t, err)
+	genObj := &OSHeatStackTemplate{}
+	err = yaml.Unmarshal(genDat, &genObj)
+	require.Nil(t, err)
+	expObj := &OSHeatStackTemplate{}
+	err = yaml.Unmarshal(expDat, &expObj)
+	require.Nil(t, err)
+	if !cmp.Equal(expObj, genObj) {
+		diff := cmp.Diff(expObj, genObj)
+		fmt.Println(diff)
+		require.True(t, false, "should be equal")
 	}
-	compareResult := e2e.CompareYamlFiles("heat compare", []string{}, &compare)
-	log.SpanLog(ctx, log.DebugLevelInfra, "yaml compare result", "compareResult", compareResult)
-
-	require.Equal(t, compareResult, true)
 
 	stackTemplateData, err := ioutil.ReadFile(generatedFile)
 	require.Nil(t, err)
@@ -214,22 +219,14 @@ func TestHeatTemplate(t *testing.T) {
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
-	vaultServer, vaultConfig := vault.DummyServer()
-	defer vaultServer.Close()
 
 	ckey := edgeproto.CloudletKey{
 		Organization: "MobiledgeX",
 		Name:         "unit-test",
 	}
-	cloudlet := edgeproto.Cloudlet{
-		Key:          ckey,
-		PhysicalName: ckey.Name,
-	}
-	accessApi := accessapi.NewVaultClient(&cloudlet, vaultConfig, "local")
 
 	pc := pf.PlatformConfig{}
 	pc.CloudletKey = &ckey
-	pc.AccessApi = accessApi
 
 	op := OpenstackPlatform{}
 	var vmp = vmlayer.VMPlatform{

@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 )
 
 // Handles unmarshaling of data from ControllerClient. It then calls
@@ -38,44 +39,44 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 	var out []byte
 	var merr error
 	switch req.Type {
-	case GetCloudletAccessVars:
+	case platform.GetCloudletAccessVars:
 		vars, err := s.vaultClient.GetCloudletAccessVars(ctx)
 		if err != nil {
 			return nil, err
 		}
 		out, merr = json.Marshal(vars)
-	case GetRegistryAuth:
+	case platform.GetRegistryAuth:
 		auth, err := s.vaultClient.GetRegistryAuth(ctx, string(req.Data))
 		if err != nil {
 			return nil, err
 		}
 		out, merr = json.Marshal(auth)
-	case SignSSHKey:
+	case platform.SignSSHKey:
 		signed, err := s.vaultClient.SignSSHKey(ctx, string(req.Data))
 		if err != nil {
 			return nil, err
 		}
 		out = []byte(signed)
-	case GetSSHPublicKey:
+	case platform.GetSSHPublicKey:
 		pubkey, err := s.vaultClient.GetSSHPublicKey(ctx)
 		if err != nil {
 			return nil, err
 		}
 		out = []byte(pubkey)
-	case GetOldSSHKey:
+	case platform.GetOldSSHKey:
 		mexkey, err := s.vaultClient.GetOldSSHKey(ctx)
 		if err != nil {
 			return nil, err
 		}
 		out, merr = json.Marshal(mexkey)
-	case GetChefAuthKey:
+	case platform.GetChefAuthKey:
 		auth, err := s.vaultClient.GetChefAuthKey(ctx)
 		if err != nil {
 			return nil, err
 		}
 		out, merr = json.Marshal(auth)
-	case CreateOrUpdateDNSRecord:
-		dnsReq := DNSRequest{}
+	case platform.CreateOrUpdateDNSRecord:
+		dnsReq := platform.DNSRequest{}
 		err := json.Unmarshal(req.Data, &dnsReq)
 		if err != nil {
 			return nil, err
@@ -84,8 +85,8 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 		if err != nil {
 			return nil, err
 		}
-	case GetDNSRecords:
-		dnsReq := DNSRequest{}
+	case platform.GetDNSRecords:
+		dnsReq := platform.DNSRequest{}
 		err := json.Unmarshal(req.Data, &dnsReq)
 		if err != nil {
 			return nil, err
@@ -95,8 +96,8 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 			return nil, err
 		}
 		out, merr = json.Marshal(records)
-	case DeleteDNSRecord:
-		dnsReq := DNSRequest{}
+	case platform.DeleteDNSRecord:
+		dnsReq := platform.DNSRequest{}
 		err := json.Unmarshal(req.Data, &dnsReq)
 		if err != nil {
 			return nil, err
@@ -105,31 +106,31 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 		if err != nil {
 			return nil, err
 		}
-	case GetSessionTokens:
+	case platform.GetSessionTokens:
 		tokens, err := s.vaultClient.GetSessionTokens(ctx, req.Data)
 		if err != nil {
 			return nil, err
 		}
 		out, merr = json.Marshal(tokens)
-	case GetPublicCert:
+	case platform.GetPublicCert:
 		publicCert, err := s.vaultClient.GetPublicCert(ctx, string(req.Data))
 		if err != nil {
 			return nil, err
 		}
 		out, merr = json.Marshal(*publicCert)
-	case GetKafkaCreds:
+	case platform.GetKafkaCreds:
 		creds, err := s.vaultClient.GetKafkaCreds(ctx)
 		if err != nil {
 			return nil, err
 		}
 		out, merr = json.Marshal(creds)
-	case GetGCSCreds:
+	case platform.GetGCSCreds:
 		creds, err := s.vaultClient.GetGCSCreds(ctx)
 		if err != nil {
 			return nil, err
 		}
 		out = creds
-	case GetFederationAPIKey:
+	case platform.GetFederationAPIKey:
 		apiKey, err := s.vaultClient.GetFederationAPIKey(ctx, string(req.Data))
 		if err != nil {
 			return nil, err

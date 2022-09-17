@@ -24,15 +24,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/access"
-	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
+	accessapicloudlet "github.com/edgexr/edge-cloud-platform/pkg/accessapi-cloudlet"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
 	opentracing "github.com/opentracing/opentracing-go"
 )
@@ -91,11 +91,11 @@ var fixedCerts = false
 
 var AtomicCertsUpdater = "/usr/local/bin/atomic-certs-update.sh"
 
-var accessApi *accessapi.ControllerClient
+var accessApi *accessapicloudlet.ControllerClient
 var platform pf.Platform
 var getRootLBCertsTrigger chan bool
 
-func Init(ctx context.Context, inPlatform pf.Platform, inAccessApi *accessapi.ControllerClient) {
+func Init(ctx context.Context, inPlatform pf.Platform, inAccessApi *accessapicloudlet.ControllerClient) {
 	accessApi = inAccessApi
 	platform = inPlatform
 	getRootLBCertsTrigger = make(chan bool)

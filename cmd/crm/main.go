@@ -25,20 +25,19 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	accessapicloudlet "github.com/edgexr/edge-cloud-platform/pkg/accessapi-cloudlet"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	proxycerts "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs"
+	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -259,7 +258,7 @@ func main() {
 
 		updateCloudletStatus(edgeproto.UpdateTask, "Initializing platform")
 
-		accessApi := accessapi.NewControllerClient(nodeMgr.AccessApiClient)
+		accessApi := accessapicloudlet.NewControllerClient(nodeMgr.AccessApiClient)
 		pc := pf.PlatformConfig{
 			CloudletKey:         &myCloudletInfo.Key,
 			PhysicalName:        *physicalName,
@@ -373,7 +372,7 @@ func main() {
 		)
 		if err == nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Get rootLB certs", "key", myCloudletInfo.Key)
-			proxycerts.Init(ctx, platform, accessapi.NewControllerClient(nodeMgr.AccessApiClient))
+			proxycerts.Init(ctx, platform, accessapicloudlet.NewControllerClient(nodeMgr.AccessApiClient))
 			pfType := pf.GetType(cloudlet.PlatformType.String())
 			proxycerts.GetRootLbCerts(ctx, &myCloudletInfo.Key, wildcardName, &nodeMgr, pfType, rootlb, *commercialCerts, &highAvailabilityManager)
 			// setup debug func to trigger refresh of rootlb certs

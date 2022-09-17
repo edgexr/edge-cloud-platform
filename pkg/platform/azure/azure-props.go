@@ -18,11 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
@@ -59,7 +58,7 @@ func (a *AzurePlatform) GetProviderSpecificProps(ctx context.Context) (map[strin
 func (a *AzurePlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AzurePlatform GetAccessData", "dataType", dataType)
 	switch dataType {
-	case accessapi.GetCloudletAccessVars:
+	case platform.GetCloudletAccessVars:
 		vars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, azureVaultPath)
 		if err != nil {
 			return nil, err

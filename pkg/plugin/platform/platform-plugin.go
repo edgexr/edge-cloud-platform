@@ -12,14 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package platform
 
 import (
 	"fmt"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	awsec2 "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-ec2"
 	awseks "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-eks"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/azure"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/edgebox"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/fakeinfra"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/federation"
@@ -30,10 +33,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vcd"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vmpool"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vsphere"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
 	"github.com/edgexr/edge-cloud-platform/pkg/plugin/platform/common"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 )
 
 func GetPlatform(plat string) (platform.Platform, error) {

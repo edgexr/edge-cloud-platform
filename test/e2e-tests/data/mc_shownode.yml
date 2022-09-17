@@ -72,21 +72,11 @@ nodes:
     region: local
   containerversion: "2019-10-24"
   internalpki: UseVaultPki
-  properties:
-    FakeInfraBuildAuthor: ""
-    FakeInfraBuildDate: ""
-    FakeInfraBuildHead: ""
-    FakeInfraBuildMaster: ""
 - key:
     type: controller
     region: local
   containerversion: "2019-10-24"
   internalpki: UseVaultPki
-  properties:
-    FakeInfraBuildAuthor: ""
-    FakeInfraBuildDate: ""
-    FakeInfraBuildHead: ""
-    FakeInfraBuildMaster: ""
 - key:
     type: controller
     region: locala
@@ -113,11 +103,6 @@ nodes:
     region: local
   containerversion: "2019-10-24"
   internalpki: useAccessKey,UseVaultPki
-  properties:
-    FakeInfraBuildAuthor: ""
-    FakeInfraBuildDate: ""
-    FakeInfraBuildHead: ""
-    FakeInfraBuildMaster: ""
 - key:
     type: crm
     cloudletkey:
