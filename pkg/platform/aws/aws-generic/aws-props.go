@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
@@ -130,14 +130,14 @@ func (a *AwsGenericPlatform) GetSessionTokens(ctx context.Context, vaultConfig *
 func (a *AwsGenericPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "AwsGenericPlatform GetAccessData", "dataType", dataType)
 	switch dataType {
-	case accessapi.GetCloudletAccessVars:
+	case platform.GetCloudletAccessVars:
 		path := a.GetVaultCloudletAccessPath(&cloudlet.Key, region, cloudlet.PhysicalName)
 		vars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, path)
 		if err != nil {
 			return nil, err
 		}
 		return vars, nil
-	case accessapi.GetSessionTokens:
+	case platform.GetSessionTokens:
 		return a.GetSessionTokens(ctx, vaultConfig, string(arg))
 	}
 	return nil, fmt.Errorf("AwsGeneric unhandled GetAccessData type %s", dataType)

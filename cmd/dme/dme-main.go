@@ -25,13 +25,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"plugin"
 	"strings"
 	"time"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
+	accessapicloudlet "github.com/edgexr/edge-cloud-platform/pkg/accessapi-cloudlet"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/ratelimit"
@@ -42,6 +42,8 @@ import (
 	log "github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/plugin/edgeevents"
+	pplat "github.com/edgexr/edge-cloud-platform/pkg/plugin/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -535,24 +537,7 @@ func initOperator(ctx context.Context, operatorName string) (op.OperatorApiGw, e
 	if operatorName == "" || operatorName == "standalone" {
 		return &defaultoperator.OperatorApiGw{}, nil
 	}
-	if *solib == "" {
-		*solib = os.Getenv("GOPATH") + "/plugins/platforms.so"
-	}
-	log.SpanLog(ctx, log.DebugLevelDmereq, "Loading plugin", "plugin", *solib)
-	plug, err := plugin.Open(*solib)
-	if err != nil {
-		log.WarnLog("failed to load plugin", "plugin", *solib, "error", err)
-		return nil, err
-	}
-	sym, err := plug.Lookup("GetOperatorApiGw")
-	if err != nil {
-		log.FatalLog("plugin does not have GetOperatorApiGw symbol", "plugin", *solib)
-	}
-	getOperatorFunc, ok := sym.(func(ctx context.Context, operatorName string) (op.OperatorApiGw, error))
-	if !ok {
-		log.FatalLog("plugin GetOperatorApiGw symbol does not implement func(ctx context.Context, opername string) (op.OperatorApiGw, error)", "plugin", *solib)
-	}
-	apiGw, err := getOperatorFunc(ctx, operatorName)
+	apiGw, err := pplat.GetOperatorApiGw(ctx, operatorName)
 	if err != nil {
 		return nil, err
 	}
@@ -565,25 +550,7 @@ func initEdgeEventsPlugin(ctx context.Context, operatorName string) (dmecommon.E
 	if operatorName == "" || operatorName == "standalone" {
 		return &dmecommon.EmptyEdgeEventsHandler{}, nil
 	}
-	// Load Edge Events Plugin
-	if *eesolib == "" {
-		*eesolib = os.Getenv("GOPATH") + "/plugins/edgeevents.so"
-	}
-	log.SpanLog(ctx, log.DebugLevelDmereq, "Loading plugin", "plugin", *eesolib)
-	plug, err := plugin.Open(*eesolib)
-	if err != nil {
-		log.WarnLog("failed to load plugin", "plugin", *eesolib, "error", err)
-		return nil, err
-	}
-	sym, err := plug.Lookup("GetEdgeEventsHandler")
-	if err != nil {
-		log.FatalLog("plugin does not have GetEdgeEventsHandler symbol", "plugin", *eesolib)
-	}
-	getEdgeEventsHandlerFunc, ok := sym.(func(ctx context.Context, edgeEventsCookieExpiration time.Duration) (dmecommon.EdgeEventsHandler, error))
-	if !ok {
-		log.FatalLog("plugin GetEdgeEventsHandler symbol does not implement func(ctx context.Context, edgeEventsCookieExpiration time.Duration) (dmecommon.EdgeEventsHandler, error)", "plugin", *eesolib)
-	}
-	eehandler, err := getEdgeEventsHandlerFunc(ctx, *edgeEventsCookieExpiration)
+	eehandler, err := edgeevents.GetEdgeEventsHandler(ctx, *edgeEventsCookieExpiration)
 	if err != nil {
 		return nil, err
 	}
@@ -770,7 +737,7 @@ func main() {
 			span.Finish()
 			log.FatalLog("access key client is not enabled")
 		}
-		accessApi = accessapi.NewControllerClient(nodeMgr.AccessApiClient)
+		accessApi = accessapicloudlet.NewControllerClient(nodeMgr.AccessApiClient)
 	} else {
 		// DME has direct access to vault
 		cloudlet := &edgeproto.Cloudlet{

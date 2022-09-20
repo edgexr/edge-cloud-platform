@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package edgeevents
 
 import (
 	"context"
 	"time"
 
-	edgeevents "github.com/edgexr/edge-cloud-platform/pkg/edge-events"
-	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
+	edgeevents "github.com/edgexr/edge-cloud-platform/pkg/edge-events"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 

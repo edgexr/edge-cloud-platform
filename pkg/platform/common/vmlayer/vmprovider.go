@@ -19,20 +19,19 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
+	"github.com/gogo/protobuf/types"
 )
 
 // VMProvider is an interface that platforms implement to perform the details of interfacing with the orchestration layer
@@ -632,7 +631,7 @@ func (v *VMPlatform) GetClusterInfraResources(ctx context.Context, clusterKey *e
 func (v *VMPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "VMProvider GetAccessData", "dataType", dataType)
 	switch dataType {
-	case accessapi.GetCloudletAccessVars:
+	case platform.GetCloudletAccessVars:
 		path := v.VMProvider.GetVaultCloudletAccessPath(&cloudlet.Key, region, cloudlet.PhysicalName)
 		if path == "" {
 			log.SpanLog(ctx, log.DebugLevelApi, "No access vars path, returning empty map")
@@ -645,7 +644,7 @@ func (v *VMPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Clou
 			return nil, err
 		}
 		return vars, nil
-	case accessapi.GetSessionTokens:
+	case platform.GetSessionTokens:
 		return v.VMProvider.GetSessionTokens(ctx, vaultConfig, string(arg))
 	}
 	return nil, fmt.Errorf("VMPlatform unhandled GetAccessData type %s", dataType)

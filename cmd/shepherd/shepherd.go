@@ -26,7 +26,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
+	accessapicloudlet "github.com/edgexr/edge-cloud-platform/pkg/accessapi-cloudlet"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
@@ -470,7 +470,7 @@ func start() {
 		log.FatalLog("access key client is not enabled")
 	}
 
-	accessApi := accessapi.NewControllerClient(nodeMgr.AccessApiClient)
+	accessApi := accessapicloudlet.NewControllerClient(nodeMgr.AccessApiClient)
 
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		nodeMgr.CommonName(),
