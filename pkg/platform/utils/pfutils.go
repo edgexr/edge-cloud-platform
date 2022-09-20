@@ -21,13 +21,14 @@ import (
 	"plugin"
 	"strings"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/dind"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/fake"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/kind"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	pplat "github.com/edgexr/edge-cloud-platform/pkg/plugin/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
@@ -47,54 +48,13 @@ func GetPlatform(ctx context.Context, plat string, setVersionProps func(context.
 		return &kind.Platform{}, nil
 	} else if plat == "PLATFORM_TYPE_FAKE_VM_POOL" {
 		return &fake.PlatformVMPool{}, nil
+	} else {
+		return pplat.GetPlatform(plat)
 	}
-	if GetPlatformFunc == nil {
-		plug, err := loadPlugin(ctx)
-		if err != nil {
-			return nil, err
-		}
-		sym, err := plug.Lookup("GetPlatform")
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfo, "plugin does not have GetPlatform symbol", "plugin", solib)
-			return nil, fmt.Errorf("failed to load plugin for GetPlatform, err: GetPlatform symbol not found")
-		}
-		getPlatFunc, ok := sym.(func(plat string) (pf.Platform, error))
-		if !ok {
-			log.SpanLog(ctx, log.DebugLevelInfo, "plugin GetPlatform symbol does not implement func(plat string) (platform.Platform, error)", "plugin", solib)
-			return nil, fmt.Errorf("failed to load plugin for platform: %s, err: GetPlatform symbol does not implement func(plat string) (platform.Platform, error)", plat)
-		}
-		GetPlatformFunc = getPlatFunc
-		if setVersionProps != nil {
-			pf, err := getPlatFunc(plat)
-			if err == nil {
-				setVersionProps(ctx, pf.GetVersionProperties())
-			}
-		}
-	}
-	log.SpanLog(ctx, log.DebugLevelInfo, "Creating platform")
-	return GetPlatformFunc(plat)
 }
 
 func GetClusterSvc(ctx context.Context, pluginRequired bool) (pf.ClusterSvc, error) {
-	plug, err := loadPlugin(ctx)
-	if err != nil {
-		if !pluginRequired {
-			log.SpanLog(ctx, log.DebugLevelInfo, "plugin not required, ignoring load plugin failure", "err", err)
-			err = nil
-		}
-		return nil, err
-	}
-	sym, err := plug.Lookup("GetClusterSvc")
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfo, "plugin does not have GetClusterSvc symbol", "plugin", solib)
-	}
-	getClusterSvcFunc, ok := sym.(func() (pf.ClusterSvc, error))
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelInfo, "plugin GetClusterSvc symbol does not implement func() (platform.ClusterSvc, error)", "plugin", solib)
-		return nil, fmt.Errorf("failed to load plugin %s, err: GetClusterSvc symbol does not implement func() (platform.ClusterSvc, error)", solib)
-	}
-	log.SpanLog(ctx, log.DebugLevelInfo, "Creating ClusterSvc")
-	return getClusterSvcFunc()
+	return pplat.GetClusterSvc()
 }
 
 // GetAppInstId returns a string for this AppInst that is likely to be

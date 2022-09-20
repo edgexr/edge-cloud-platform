@@ -50,8 +50,6 @@ generate: check-go-vers $(APICOMMENTS) gen-vers
 
 gobuild: check-go-vers gen-vers
 	go build ./...
-	go build -buildmode=plugin -o ${GOPATH}/plugins/platforms.so pkg/plugin/platform/*.go
-	go build -buildmode=plugin -o ${GOPATH}/plugins/edgeevents.so pkg/plugin/edgeevents/*.go
 	go vet ./...
 
 build: generate gobuild

@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudflaremgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/gcs"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
@@ -69,7 +70,7 @@ func (s *VaultClient) GetCloudletAccessVars(ctx context.Context) (map[string]str
 	if err != nil {
 		return nil, err
 	}
-	return cloudletPlatform.GetAccessData(ctx, s.cloudlet, s.region, s.vaultConfig, GetCloudletAccessVars, nil)
+	return cloudletPlatform.GetAccessData(ctx, s.cloudlet, s.region, s.vaultConfig, platform.GetCloudletAccessVars, nil)
 }
 
 func (s *VaultClient) GetRegistryAuth(ctx context.Context, imgUrl string) (*cloudcommon.RegistryAuth, error) {
@@ -163,7 +164,7 @@ func (s *VaultClient) GetSessionTokens(ctx context.Context, arg []byte) (map[str
 	if err != nil {
 		return nil, err
 	}
-	return cloudletPlatform.GetAccessData(ctx, s.cloudlet, s.region, s.vaultConfig, GetSessionTokens, arg)
+	return cloudletPlatform.GetAccessData(ctx, s.cloudlet, s.region, s.vaultConfig, platform.GetSessionTokens, arg)
 }
 
 func (s *VaultClient) GetPublicCert(ctx context.Context, commonName string) (*vault.PublicCert, error) {
