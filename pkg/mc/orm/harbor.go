@@ -591,7 +591,7 @@ func harborEnsureRobotAccount(ctx context.Context, harborHostPort string) error 
 	// re-write it to Harbor.
 	log.SpanLog(ctx, log.DebugLevelApi, "harbor update robot secret", "name", HarborRobotName)
 	rsec := models.RobotSec{
-		Secret: auth.ApiKey,
+		Secret: auth.Password,
 	}
 	code, resBody, err = harborDoReq(ctx, http.MethodPatch, path, &rsec)
 	if err != nil {
