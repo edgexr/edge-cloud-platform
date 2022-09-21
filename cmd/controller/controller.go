@@ -154,6 +154,11 @@ func validateFields(ctx context.Context) error {
 		if *versionTag == "" {
 			return fmt.Errorf("Version tag is required")
 		}
+		if *cloudletRegistryPath == "edge-cloud-crm" {
+			// local KIND operators testing, ignore
+			log.SpanLog(ctx, log.DebugLevelInfo, "skipping cloudletRegistryPath validation for local KIND testing", "cloudletRegistryPath", *cloudletRegistryPath)
+			return nil
+		}
 		parts := strings.Split(*cloudletRegistryPath, "/")
 		if len(parts) < 2 || !strings.Contains(parts[0], ".") {
 			return fmt.Errorf("Cloudlet registry path should be full registry URL: <domain-name>/<registry-path>")
