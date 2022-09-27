@@ -18,15 +18,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/dind"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -66,6 +66,9 @@ func (e *EdgeboxPlatform) InitCommon(ctx context.Context, platformConfig *platfo
 	infracommon.SetEdgeboxMode(true)
 
 	if err := e.commonPf.InitInfraCommon(ctx, platformConfig, edgeboxProps); err != nil {
+		return err
+	}
+	if err := e.commonPf.InitChef(ctx, platformConfig); err != nil {
 		return err
 	}
 

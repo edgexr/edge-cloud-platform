@@ -76,7 +76,10 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf
 	if platformConfig.DeploymentTag == "" {
 		return fmt.Errorf("missing deployment tag")
 	}
+	return nil
+}
 
+func (c *CommonPlatform) InitChef(ctx context.Context, platformConfig *pf.PlatformConfig) error {
 	chefAuth, err := platformConfig.AccessApi.GetChefAuthKey(ctx)
 	if err != nil {
 		return err

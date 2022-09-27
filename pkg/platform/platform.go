@@ -96,6 +96,7 @@ type Features struct {
 	SupportsPlatformHighAvailabilityOnDocker bool // Supports HA on docker
 
 	NoKubernetesClusterAutoScale bool // No support for k8s cluster auto-scale
+	IsPrebuiltKubernetesCluster  bool // k8s cluster is created externally and already exists
 }
 
 // Platform abstracts the underlying cloudlet platform.

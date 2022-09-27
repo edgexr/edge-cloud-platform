@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/gcp"
 	k8sbm "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-baremetal"
+	k8sop "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-operator"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/kindinfra"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/openstack"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vcd"
@@ -94,6 +95,12 @@ func GetPlatform(plat string) (platform.Platform, error) {
 		outPlatform = &fakeinfra.Platform{}
 	case "PLATFORM_TYPE_K8S_BARE_METAL":
 		outPlatform = &k8sbm.K8sBareMetalPlatform{}
+	case "PLATFORM_TYPE_K8S_OPERATOR":
+		provider := &k8sop.K8sOperator{}
+		outPlatform = &managedk8s.ManagedK8sPlatform{
+			Type:     pfType,
+			Provider: provider,
+		}
 	case "PLATFORM_TYPE_KINDINFRA":
 		outPlatform = &kindinfra.Platform{}
 	case "PLATFORM_TYPE_FEDERATION":

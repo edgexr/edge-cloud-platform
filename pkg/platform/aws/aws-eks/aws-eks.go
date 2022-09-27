@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
@@ -93,7 +93,7 @@ func (a *AwsEksPlatform) GetCredentials(ctx context.Context, clusterName string)
 	return nil
 }
 
-func (a *AwsEksPlatform) SetProperties(props *infracommon.InfraProperties) error {
+func (a *AwsEksPlatform) SetProperties(props *infracommon.InfraProperties, caches *platform.Caches) error {
 	a.awsGenPf = &awsgen.AwsGenericPlatform{Properties: props}
 	return nil
 }

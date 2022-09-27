@@ -24,10 +24,10 @@ import (
 	"strings"
 
 	sh "github.com/codeskyblue/go-sh"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -177,7 +177,7 @@ func (g *GCPPlatform) NameSanitize(clusterName string) string {
 	return clusterName
 }
 
-func (g *GCPPlatform) SetProperties(props *infracommon.InfraProperties) error {
+func (g *GCPPlatform) SetProperties(props *infracommon.InfraProperties, caches *platform.Caches) error {
 	g.properties = props
 	var err error
 	g.gcpRegion, err = g.GetGcpRegionFromZone(g.GetGcpZone())

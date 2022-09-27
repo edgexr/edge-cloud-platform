@@ -1222,7 +1222,7 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 	case reflect.TypeOf(AccessType(0)):
 		return "AccessType", ", valid values are one of DefaultForDeployment, Direct, LoadBalancer, or 0, 1, 2", true
 	case reflect.TypeOf(PlatformType(0)):
-		return "PlatformType", ", valid values are one of Fake, Dind, Openstack, Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd, K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17", true
+		return "PlatformType", ", valid values are one of Fake, Dind, Openstack, Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd, K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool, K8SOperator, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18", true
 	case reflect.TypeOf(InfraApiAccess(0)):
 		return "InfraApiAccess", ", valid values are one of DirectAccess, RestrictedAccess, or 0, 1", true
 	case reflect.TypeOf(OSType(0)):

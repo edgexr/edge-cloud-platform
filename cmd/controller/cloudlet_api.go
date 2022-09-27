@@ -26,7 +26,6 @@ import (
 	"sync"
 	"time"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
@@ -40,6 +39,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 	"github.com/gogo/protobuf/types"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type CloudletApi struct {
@@ -434,7 +434,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	}
 
 	if in.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS &&
-		!features.IsVMPool {
+		!features.IsVMPool && !features.IsPrebuiltKubernetesCluster {
 		if in.InfraConfig.FlavorName == "" {
 			return errors.New("Infra flavor name is required for private deployments")
 		}
@@ -2159,6 +2159,7 @@ func (s *CloudletApi) GenerateAccessKey(ctx context.Context, key *edgeproto.Clou
 			return err
 		}
 		cloudlet.CrmAccessPublicKey = keyPair.PublicPEM
+		cloudlet.CrmAccessKeyUpgradeRequired = false
 		res.Message = keyPair.PrivatePEM
 		s.store.STMPut(stm, &cloudlet)
 		return nil

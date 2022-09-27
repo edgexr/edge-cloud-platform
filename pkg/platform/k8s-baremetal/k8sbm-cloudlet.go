@@ -90,6 +90,9 @@ func (k *K8sBareMetalPlatform) CreateCloudlet(ctx context.Context, cloudlet *edg
 	if err := k.commonPf.InitInfraCommon(ctx, k.commonPf.PlatformConfig, k8sbmProps); err != nil {
 		return cloudletResourcesCreated, err
 	}
+	if err := k.commonPf.InitChef(ctx, k.commonPf.PlatformConfig); err != nil {
+		return cloudletResourcesCreated, err
+	}
 
 	// edge-cloud image already contains the certs
 	if pfConfig.TlsCertFile != "" {
@@ -221,6 +224,9 @@ func (k *K8sBareMetalPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edg
 	if err := k.commonPf.InitInfraCommon(ctx, k.commonPf.PlatformConfig, k8sbmProps); err != nil {
 		return err
 	}
+	if err := k.commonPf.InitChef(ctx, k.commonPf.PlatformConfig); err != nil {
+		return err
+	}
 	sshClient, err := k.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: k.commonPf.PlatformConfig.CloudletKey.String(), Type: k8sControlHostNodeType})
 	if err != nil {
 		return fmt.Errorf("Failed to get ssh client to control host: %v", err)
@@ -266,39 +272,6 @@ func (k *K8sBareMetalPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edg
 	out, err = sshClient.Output("sudo rm -f /etc/chef/client.pem")
 	log.SpanLog(ctx, log.DebugLevelInfra, "chef pem rm results", "out", out, "err", err)
 	return nil
-}
-
-func (k *K8sBareMetalPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetFlavorList")
-	var flavors []*edgeproto.FlavorInfo
-	if k.caches == nil {
-		log.WarnLog("flavor cache is nil")
-		return nil, fmt.Errorf("Flavor cache is nil")
-	}
-	flavorkeys := make(map[edgeproto.FlavorKey]struct{})
-	k.caches.FlavorCache.GetAllKeys(ctx, func(k *edgeproto.FlavorKey, modRev int64) {
-		flavorkeys[*k] = struct{}{}
-	})
-	for f := range flavorkeys {
-		log.SpanLog(ctx, log.DebugLevelInfra, "GetFlavorList found flavor", "key", k)
-		var flav edgeproto.Flavor
-		if k.caches.FlavorCache.Get(&f, &flav) {
-			var flavInfo edgeproto.FlavorInfo
-			_, gpu := flav.OptResMap["gpu"]
-			if gpu {
-				// gpu not currently supported
-				log.SpanLog(ctx, log.DebugLevelInfra, "skipping GPU flavor", "flav", flav)
-				continue
-			}
-			flavInfo.Name = flav.Key.Name
-			flavInfo.Vcpus = flav.Vcpus
-			flavInfo.Ram = flav.Ram
-			flavors = append(flavors, &flavInfo)
-		} else {
-			return nil, fmt.Errorf("fail to fetch flavor %s", f)
-		}
-	}
-	return flavors, nil
 }
 
 func (k *K8sBareMetalPlatform) GetNodeInfos(ctx context.Context) ([]*edgeproto.NodeInfo, error) {
