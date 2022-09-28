@@ -36,7 +36,7 @@ import (
 // Use env var KIND_IMAGE to override default below.
 // NOTE: image digest is required, otherwise the image pulled will be for the latest version of KIND
 // Below is for KIND v0.12.0
-var DefaultNodeImage = "kindest/node:v1.18.20@sha256:e3dca5e16116d11363e31639640042a9b1bd2c90f85717a7fc66be34089a8169"
+var DefaultNodeImage = "kindest/node:v1.18.20@sha256:61c9e1698c1cb19c3b1d8151a9135b379657aee23c59bde4a8d87923fcb43a91"
 
 func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 	var err error
