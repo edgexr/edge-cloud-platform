@@ -23,14 +23,15 @@ import (
 	"strings"
 	"time"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/pkg/deploygen"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/deploygen"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"go.etcd.io/etcd/client/v3/concurrency"
+	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 )
 
@@ -857,6 +858,15 @@ func validateAppConfigsForDeployment(ctx context.Context, configs []*edgeproto.C
 		case edgeproto.AppConfigEnvYaml:
 			if deployment != cloudcommon.DeploymentTypeKubernetes {
 				invalid = true
+			}
+		case edgeproto.AppConfigPodArgs:
+			if deployment != cloudcommon.DeploymentTypeKubernetes {
+				invalid = true
+			}
+			args := []string{}
+			err := yaml.Unmarshal([]byte(cfg.Config), &args)
+			if err != nil {
+				return fmt.Errorf("Invalid format for %s, expected yaml list: %s", cfg.Kind, err)
 			}
 		}
 		if invalid {
