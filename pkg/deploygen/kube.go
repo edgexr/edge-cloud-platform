@@ -183,6 +183,7 @@ func (g *kubeBasicGen) kubeApp() {
 	if g.app.Command != "" {
 		cs = strings.Split(g.app.Command, " ")
 	}
+
 	registrySecret := g.app.ImageHost
 	hostname := strings.Split(g.app.ImageHost, ":")
 	if len(hostname) > 1 {
@@ -197,6 +198,7 @@ func (g *kubeBasicGen) kubeApp() {
 		Ports:          g.ports,
 		ImagePath:      g.app.ImagePath,
 		Command:        cs,
+		Args:           g.app.Args,
 		RegistrySecret: registrySecret,
 		MexDeployGen:   MexDeployGenLabel,
 	}
@@ -219,6 +221,7 @@ type appData struct {
 	ImagePath      string
 	Ports          []kubePort
 	Command        []string
+	Args           []string
 	RegistrySecret string
 	MexDeployGen   string
 }
@@ -261,6 +264,12 @@ var podTemplate = `
 {{- if .Command}}
         command:
 {{- range .Command}}
+        - "{{.}}"
+{{- end}}
+{{- end}}
+{{- if .Args}}
+        args:
+{{- range .Args}}
         - "{{.}}"
 {{- end}}
 {{- end}}
