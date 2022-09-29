@@ -120,23 +120,25 @@ func (s *VaultClient) getCloudflareApi() (*cloudflare.API, error) {
 	if cloudflareApi != nil {
 		return cloudflareApi, nil
 	}
-	// This path is deprecated and should not be used anymore
-	vaultPath := "/secret/data/cloudlet/openstack/mexenv.json"
-	vars, err := vault.GetEnvVars(s.vaultConfig, vaultPath)
+
+	// look up cloudflare api token
+	// (path matches where global-operator saves it)
+	auth := cloudcommon.RegistryAuth{}
+	err := vault.GetData(s.vaultConfig, vaultCloudflareApiPath, 0, &auth)
 	if err == nil {
-		api, err := cloudflare.New(vars["MEX_CF_KEY"], vars["MEX_CF_USER"])
+		api, err := cloudflare.NewWithAPIToken(auth.Token)
 		if err != nil {
 			return nil, err
 		}
 		cloudflareApi = api
 	} else if err != nil && strings.Contains(err.Error(), "no secrets at path") {
-		// look up in alternate path (matches where global-operator puts it)
-		auth := cloudcommon.RegistryAuth{}
-		err = vault.GetData(s.vaultConfig, vaultCloudflareApiPath, 0, &auth)
+		// look up in old deprecated path (should not be used for new deployments)
+		vaultPath := "/secret/data/cloudlet/openstack/mexenv.json"
+		vars, err := vault.GetEnvVars(s.vaultConfig, vaultPath)
 		if err != nil {
 			return nil, err
 		}
-		api, err := cloudflare.NewWithAPIToken(auth.Token)
+		api, err := cloudflare.New(vars["MEX_CF_KEY"], vars["MEX_CF_USER"])
 		if err != nil {
 			return nil, err
 		}
