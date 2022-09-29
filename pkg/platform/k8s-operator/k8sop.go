@@ -2,16 +2,15 @@ package k8sop
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
 	k8scommon "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-common"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -20,12 +19,17 @@ import (
 // with rbac perms to be able to run kubectl in the pod. So no
 // kubeconfig is needed.
 const NoKubeconfig = ""
+
+// Working dir corresponds to the persistent volume claim in the
+// cloudlet operator.
 const WorkingDir = "/root/config"
 
 type K8sOperator struct {
-	managedk8s.ManagedK8sPlatform
+	Type       string
+	CommonPf   infracommon.CommonPlatform
 	properties *infracommon.InfraProperties
 	caches     *platform.Caches
+	infracommon.CommonEmbedded
 }
 
 func (s *K8sOperator) GetFeatures() *platform.Features {
@@ -39,10 +43,6 @@ func (s *K8sOperator) GetFeatures() *platform.Features {
 	}
 }
 
-func platformName() string {
-	return platform.GetType(edgeproto.PlatformType_PLATFORM_TYPE_K8S_OPERATOR.String())
-}
-
 func (s *K8sOperator) getClient() ssh.Client {
 	// k8s operator runs all kubectl commands locally in the pod
 	return &pc.LocalClient{
@@ -50,12 +50,23 @@ func (s *K8sOperator) getClient() ssh.Client {
 	}
 }
 
-func (s *K8sOperator) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
-	return s.getClient(), nil
+func (s *K8sOperator) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "Init", "type", s.Type)
+	s.caches = caches
+
+	if err := s.CommonPf.InitInfraCommon(ctx, platformConfig, map[string]*edgeproto.PropertyInfo{}); err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err")
+		return err
+	}
+	return nil
 }
 
-func (s *K8sOperator) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode, ops ...pc.SSHClientOp) (ssh.Client, error) {
-	return s.getClient(), nil
+func (s *K8sOperator) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	return nil
+}
+
+func (s *K8sOperator) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {
+	return "k8sop-1.0"
 }
 
 func (s *K8sOperator) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
@@ -69,42 +80,25 @@ func (s *K8sOperator) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cl
 	return err
 }
 
-func (s *K8sOperator) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
-	return make(map[string]*edgeproto.PropertyInfo), nil
+func (s *K8sOperator) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
+	return s.getClient(), nil
 }
 
-func (s *K8sOperator) SetProperties(props *infracommon.InfraProperties, caches *platform.Caches) error {
-	s.properties = props
-	s.caches = caches
-	return nil
+func (s *K8sOperator) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode, ops ...pc.SSHClientOp) (ssh.Client, error) {
+	return s.getClient(), nil
 }
 
-func (s *K8sOperator) Login(ctx context.Context) error {
-	return nil
-}
-
-func (s *K8sOperator) GetCredentials(ctx context.Context, clusterName string) error {
-	return nil
+func (s *K8sOperator) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst, vmAppInsts []edgeproto.AppInst) ([]edgeproto.CloudletMgmtNode, error) {
+	return []edgeproto.CloudletMgmtNode{}, nil
 }
 
 func (s *K8sOperator) NameSanitize(name string) string {
 	return name
 }
 
-func (s *K8sOperator) CreateClusterPrerequisites(ctx context.Context, clusterName string) error {
-	return nil
-}
-
-func (s *K8sOperator) RunClusterCreateCommand(ctx context.Context, clusterName string, numNodes uint32, flavor string) error {
-	return fmt.Errorf("Cluster create not supported")
-}
-
-func (s *K8sOperator) RunClusterDeleteCommand(ctx context.Context, clusterName string) error {
-	return fmt.Errorf("Cluster delete not supported")
-}
-
-func (s *K8sOperator) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {
-	return nil
+func (s *K8sOperator) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
+	props := edgeproto.CloudletProps{}
+	return &props, nil
 }
 
 func (k *K8sOperator) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {

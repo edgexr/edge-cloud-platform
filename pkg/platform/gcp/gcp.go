@@ -177,7 +177,7 @@ func (g *GCPPlatform) NameSanitize(clusterName string) string {
 	return clusterName
 }
 
-func (g *GCPPlatform) SetProperties(props *infracommon.InfraProperties, caches *platform.Caches) error {
+func (g *GCPPlatform) SetProperties(props *infracommon.InfraProperties) error {
 	g.properties = props
 	var err error
 	g.gcpRegion, err = g.GetGcpRegionFromZone(g.GetGcpZone())

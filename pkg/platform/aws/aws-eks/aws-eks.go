@@ -93,7 +93,7 @@ func (a *AwsEksPlatform) GetCredentials(ctx context.Context, clusterName string)
 	return nil
 }
 
-func (a *AwsEksPlatform) SetProperties(props *infracommon.InfraProperties, caches *platform.Caches) error {
+func (a *AwsEksPlatform) SetProperties(props *infracommon.InfraProperties) error {
 	a.awsGenPf = &awsgen.AwsGenericPlatform{Properties: props}
 	return nil
 }

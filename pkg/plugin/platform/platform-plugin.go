@@ -96,10 +96,8 @@ func GetPlatform(plat string) (platform.Platform, error) {
 	case "PLATFORM_TYPE_K8S_BARE_METAL":
 		outPlatform = &k8sbm.K8sBareMetalPlatform{}
 	case "PLATFORM_TYPE_K8S_OPERATOR":
-		provider := &k8sop.K8sOperator{}
-		outPlatform = &managedk8s.ManagedK8sPlatform{
-			Type:     pfType,
-			Provider: provider,
+		outPlatform = &k8sop.K8sOperator{
+			Type: pfType,
 		}
 	case "PLATFORM_TYPE_KINDINFRA":
 		outPlatform = &kindinfra.Platform{}

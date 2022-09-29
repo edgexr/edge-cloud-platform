@@ -60,12 +60,6 @@ func (m *ManagedK8sPlatform) getCloudletClusterName(cloudlet *edgeproto.Cloudlet
 }
 
 func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
-	if m.Provider.GetFeatures().IsPrebuiltKubernetesCluster {
-		if cloudlet.InfraApiAccess != edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
-			return false, fmt.Errorf("Create of single kubernetes cluster from controller is not supported, use restricted access for offline setup")
-		}
-		return false, nil
-	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet", "cloudlet", cloudlet)
 	cloudletResourcesCreated := false
 	if cloudlet.Deployment != cloudcommon.DeploymentTypeKubernetes {
@@ -89,7 +83,7 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 		return cloudletResourcesCreated, err
 	}
 
-	err = m.Provider.SetProperties(&m.CommonPf.Properties, m.caches)
+	err = m.Provider.SetProperties(&m.CommonPf.Properties)
 	if err != nil {
 		return cloudletResourcesCreated, err
 	}
@@ -124,9 +118,6 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 }
 
 func (m *ManagedK8sPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
-	if m.Provider.GetFeatures().IsPrebuiltKubernetesCluster {
-		return nil
-	}
 	return nil
 }
 
@@ -143,9 +134,6 @@ func (m *ManagedK8sPlatform) DeleteTrustPolicyException(ctx context.Context, Tru
 }
 
 func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
-	if m.Provider.GetFeatures().IsPrebuiltKubernetesCluster {
-		return nil
-	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteCloudlet", "cloudlet", cloudlet)
 	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
 	props, err := m.Provider.GetProviderSpecificProps(ctx)
@@ -164,7 +152,7 @@ func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgep
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitChef failed", "err", err)
 		return err
 	}
-	err = m.Provider.SetProperties(&m.CommonPf.Properties, m.caches)
+	err = m.Provider.SetProperties(&m.CommonPf.Properties)
 	if err != nil {
 		return err
 	}

@@ -32,7 +32,7 @@ type ManagedK8sProvider interface {
 	GetFeatures() *platform.Features
 	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
 	GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error)
-	SetProperties(props *infracommon.InfraProperties, caches *platform.Caches) error
+	SetProperties(props *infracommon.InfraProperties) error
 	Login(ctx context.Context) error
 	GetCredentials(ctx context.Context, clusterName string) error
 	NameSanitize(name string) string
@@ -52,7 +52,6 @@ type ManagedK8sPlatform struct {
 	Type     string
 	CommonPf infracommon.CommonPlatform
 	Provider ManagedK8sProvider
-	caches   *platform.Caches
 	infracommon.CommonEmbedded
 }
 
@@ -73,14 +72,11 @@ func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *pla
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return err
 	}
-	if !m.Provider.GetFeatures().IsPrebuiltKubernetesCluster {
-		if err := m.CommonPf.InitChef(ctx, platformConfig); err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "InitChef failed", "err", err)
-			return err
-		}
+	if err := m.CommonPf.InitChef(ctx, platformConfig); err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "InitChef failed", "err", err)
+		return err
 	}
-	m.caches = caches
-	err = m.Provider.SetProperties(&m.CommonPf.Properties, caches)
+	err = m.Provider.SetProperties(&m.CommonPf.Properties)
 	if err != nil {
 		return err
 	}
@@ -91,7 +87,7 @@ func (m *ManagedK8sPlatform) InitHAConditional(ctx context.Context, platformConf
 	return nil
 }
 
-func (s *ManagedK8sPlatform) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {
+func (m *ManagedK8sPlatform) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {
 	return "mk8s-1.0"
 }
 

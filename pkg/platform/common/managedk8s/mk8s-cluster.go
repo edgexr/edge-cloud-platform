@@ -32,9 +32,6 @@ import (
 const MaxKubeCredentialsWait = 10 * time.Second
 
 func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
-	if m.Provider.GetFeatures().IsPrebuiltKubernetesCluster {
-		return nil
-	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterInst", "clusterInst", clusterInst)
 	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(&clusterInst.Key))
 	updateCallback(edgeproto.UpdateTask, "Creating Kubernetes Cluster: "+clusterName)
@@ -100,9 +97,6 @@ func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, clie
 }
 
 func (m *ManagedK8sPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	if m.Provider.GetFeatures().IsPrebuiltKubernetesCluster {
-		return nil
-	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteClusterInst", "clusterInst", clusterInst)
 	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(&clusterInst.Key))
 	err := m.deleteClusterInstInternal(ctx, clusterName, updateCallback)
@@ -122,9 +116,6 @@ func (m *ManagedK8sPlatform) deleteClusterInstInternal(ctx context.Context, clus
 }
 
 func (m *ManagedK8sPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	if m.Provider.GetFeatures().IsPrebuiltKubernetesCluster {
-		return nil
-	}
 	return fmt.Errorf("Update cluster inst not implemented")
 }
 
