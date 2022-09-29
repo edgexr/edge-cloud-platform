@@ -14,15 +14,10 @@ import (
 // This serves as a wrapper around kubectl to ensure the
 // correct version of kubectl is used for the target cluster.
 
-type KubectlVersion struct {
-	ClusterName string
-	Kubectl     string
-}
-
 var (
 	BinDir           = "/usr/bin"
 	DefaultMajorVers = "1"
-	DefaultMinorVers = "16"
+	DefaultMinorVers = "18"
 )
 
 type VersionOutput struct {
@@ -93,24 +88,24 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	minX := strconv.Itoa(minInt - 1)
-	minZ := strconv.Itoa(minInt + 1)
+	minLT := strconv.Itoa(minInt - 1)
+	minGT := strconv.Itoa(minInt + 1)
 
 	kubectl := ""
-	kubectlX := kubectlPath(maj, minX)
-	kubectlY := kubectlPath(maj, min)
-	kubectlZ := kubectlPath(maj, minZ)
-	if _, err := os.Stat(kubectlY); err == nil {
-		kubectl = kubectlY
-	} else if _, err := os.Stat(kubectlX); err == nil {
-		kubectl = kubectlX
-	} else if _, err := os.Stat(kubectlZ); err == nil {
-		kubectl = kubectlZ
+	kubectlLT := kubectlPath(maj, minLT)
+	kubectlEQ := kubectlPath(maj, min)
+	kubectlGT := kubectlPath(maj, minGT)
+	if _, err := os.Stat(kubectlEQ); err == nil {
+		kubectl = kubectlEQ
+	} else if _, err := os.Stat(kubectlLT); err == nil {
+		kubectl = kubectlLT
+	} else if _, err := os.Stat(kubectlGT); err == nil {
+		kubectl = kubectlGT
 	} else {
-		kubectl = kubectlY
+		kubectl = kubectlEQ
 		download(maj, min)
 	}
-	// run original command with matching kubectl version
+	// run original command with compatible kubectl version
 	cmd := exec.Command(kubectl, os.Args[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
