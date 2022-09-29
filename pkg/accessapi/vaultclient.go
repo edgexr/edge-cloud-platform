@@ -36,6 +36,8 @@ import (
 // This is a global in order to cache it across all platforms in the Controller.
 var cloudflareApi *cloudflare.API
 
+const vaultCloudflareApiPath = "/secret/data/accounts/cloudflareapi"
+
 // VaultClient implements platform.AccessApi for access from the Controller
 // directly to Vault. In some cases it may require loading the platform
 // specific plugin.
@@ -118,16 +120,32 @@ func (s *VaultClient) getCloudflareApi() (*cloudflare.API, error) {
 	if cloudflareApi != nil {
 		return cloudflareApi, nil
 	}
-	vaultPath := "/secret/data/cloudlet/openstack/mexenv.json"
-	vars, err := vault.GetEnvVars(s.vaultConfig, vaultPath)
-	if err != nil {
+
+	// look up cloudflare api token
+	// (path matches where global-operator saves it)
+	auth := cloudcommon.RegistryAuth{}
+	err := vault.GetData(s.vaultConfig, vaultCloudflareApiPath, 0, &auth)
+	if err == nil {
+		api, err := cloudflare.NewWithAPIToken(auth.Token)
+		if err != nil {
+			return nil, err
+		}
+		cloudflareApi = api
+	} else if err != nil && strings.Contains(err.Error(), "no secrets at path") {
+		// look up in old deprecated path (should not be used for new deployments)
+		vaultPath := "/secret/data/cloudlet/openstack/mexenv.json"
+		vars, err := vault.GetEnvVars(s.vaultConfig, vaultPath)
+		if err != nil {
+			return nil, err
+		}
+		api, err := cloudflare.New(vars["MEX_CF_KEY"], vars["MEX_CF_USER"])
+		if err != nil {
+			return nil, err
+		}
+		cloudflareApi = api
+	} else if err != nil {
 		return nil, err
 	}
-	api, err := cloudflare.New(vars["MEX_CF_KEY"], vars["MEX_CF_USER"])
-	if err != nil {
-		return nil, err
-	}
-	cloudflareApi = api
 	return cloudflareApi, nil
 }
 

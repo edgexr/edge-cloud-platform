@@ -18,12 +18,12 @@ import (
 	"context"
 	"fmt"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 // Issue certificate to RegionalCloudlet service.
@@ -99,6 +99,6 @@ func (s *CloudletApi) GetAccessData(ctx context.Context, req *edgeproto.AccessDa
 		return nil, verified.Key.NotFoundError()
 	}
 	vaultClient := accessapi.NewVaultClient(cloudlet, vaultConfig, *region)
-	handler := accessapi.NewControllerHandler(vaultClient)
+	handler := accessapi.NewControllerHandler(vaultClient, *dnsZone)
 	return handler.GetAccessData(ctx, req)
 }
