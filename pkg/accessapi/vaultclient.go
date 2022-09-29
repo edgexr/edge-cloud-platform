@@ -120,14 +120,28 @@ func (s *VaultClient) getCloudflareApi() (*cloudflare.API, error) {
 	}
 	vaultPath := "/secret/data/cloudlet/openstack/mexenv.json"
 	vars, err := vault.GetEnvVars(s.vaultConfig, vaultPath)
-	if err != nil {
+	if err == nil {
+		api, err := cloudflare.New(vars["MEX_CF_KEY"], vars["MEX_CF_USER"])
+		if err != nil {
+			return nil, err
+		}
+		cloudflareApi = api
+	} else if err != nil && strings.Contains(err.Error(), "no secrets at path") {
+		// look up in alternate path (matches where global-operator puts it)
+		vaultPath = "/secret/data/accounts/cloudflareapi"
+		auth := cloudcommon.RegistryAuth{}
+		err = vault.GetData(s.vaultConfig, vaultPath, 0, &auth)
+		if err != nil {
+			return nil, err
+		}
+		api, err := cloudflare.NewWithAPIToken(auth.Token)
+		if err != nil {
+			return nil, err
+		}
+		cloudflareApi = api
+	} else if err != nil {
 		return nil, err
 	}
-	api, err := cloudflare.New(vars["MEX_CF_KEY"], vars["MEX_CF_USER"])
-	if err != nil {
-		return nil, err
-	}
-	cloudflareApi = api
 	return cloudflareApi, nil
 }
 
