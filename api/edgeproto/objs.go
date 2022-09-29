@@ -42,14 +42,16 @@ const (
 	AppConfigHelmYaml      = "helmCustomizationYaml"
 	AppAccessCustomization = "appAccessCustomization"
 	AppConfigEnvYaml       = "envVarsYaml"
+	AppConfigPodArgs       = "podArgs"
 
 	GPUDriverLicenseConfig = "license.conf"
 )
 
 var ValidConfigKinds = map[string]struct{}{
-	AppConfigHelmYaml:      struct{}{},
-	AppAccessCustomization: struct{}{},
-	AppConfigEnvYaml:       struct{}{},
+	AppConfigHelmYaml:      {},
+	AppAccessCustomization: {},
+	AppConfigEnvYaml:       {},
+	AppConfigPodArgs:       {},
 }
 
 var ReservedPlatformPorts = map[string]string{
