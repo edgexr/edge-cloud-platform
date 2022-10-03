@@ -366,10 +366,6 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 	if err != nil {
 		return err
 	}
-	err = v.VMProperties.CommonPf.InitChef(ctx, platformConfig)
-	if err != nil {
-		return err
-	}
 	v.VMProvider.SetVMProperties(&v.VMProperties)
 	v.VMProperties.SharedRootLBName = v.GetRootLBName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey)
 	v.VMProperties.PlatformSecgrpName = infracommon.GetServerSecurityGroupName(v.GetPlatformVMName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey))

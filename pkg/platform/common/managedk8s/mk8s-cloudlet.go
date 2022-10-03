@@ -78,10 +78,6 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return cloudletResourcesCreated, err
 	}
-	if err := m.CommonPf.InitChef(ctx, platCfg); err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "InitChef failed", "err", err)
-		return cloudletResourcesCreated, err
-	}
 
 	err = m.Provider.SetProperties(&m.CommonPf.Properties)
 	if err != nil {
@@ -146,10 +142,6 @@ func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgep
 	}
 	if err := m.CommonPf.InitInfraCommon(ctx, platCfg, props); err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
-		return err
-	}
-	if err := m.CommonPf.InitChef(ctx, platCfg); err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "InitChef failed", "err", err)
 		return err
 	}
 	err = m.Provider.SetProperties(&m.CommonPf.Properties)

@@ -68,9 +68,6 @@ func (e *EdgeboxPlatform) InitCommon(ctx context.Context, platformConfig *platfo
 	if err := e.commonPf.InitInfraCommon(ctx, platformConfig, edgeboxProps); err != nil {
 		return err
 	}
-	if err := e.commonPf.InitChef(ctx, platformConfig); err != nil {
-		return err
-	}
 
 	e.NetworkScheme = e.GetEdgeboxNetworkScheme()
 	if e.NetworkScheme != cloudcommon.NetworkSchemePrivateIP &&

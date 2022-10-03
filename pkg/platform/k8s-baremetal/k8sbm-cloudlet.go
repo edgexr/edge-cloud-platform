@@ -90,9 +90,6 @@ func (k *K8sBareMetalPlatform) CreateCloudlet(ctx context.Context, cloudlet *edg
 	if err := k.commonPf.InitInfraCommon(ctx, k.commonPf.PlatformConfig, k8sbmProps); err != nil {
 		return cloudletResourcesCreated, err
 	}
-	if err := k.commonPf.InitChef(ctx, k.commonPf.PlatformConfig); err != nil {
-		return cloudletResourcesCreated, err
-	}
 
 	// edge-cloud image already contains the certs
 	if pfConfig.TlsCertFile != "" {
@@ -222,9 +219,6 @@ func (k *K8sBareMetalPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edg
 	}
 	k.commonPf.PlatformConfig = infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
 	if err := k.commonPf.InitInfraCommon(ctx, k.commonPf.PlatformConfig, k8sbmProps); err != nil {
-		return err
-	}
-	if err := k.commonPf.InitChef(ctx, k.commonPf.PlatformConfig); err != nil {
 		return err
 	}
 	sshClient, err := k.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: k.commonPf.PlatformConfig.CloudletKey.String(), Type: k8sControlHostNodeType})

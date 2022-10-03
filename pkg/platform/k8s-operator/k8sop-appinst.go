@@ -17,6 +17,9 @@ import (
 func (s *K8sOperator) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAppInst", "appInst", appInst)
 	updateCallback(edgeproto.UpdateTask, "Creating AppInst")
+	if app.Deployment != cloudcommon.DeploymentTypeKubernetes && app.Deployment != cloudcommon.DeploymentTypeHelm {
+		return fmt.Errorf("unsupported deployment type %s", app.Deployment)
+	}
 
 	if err := s.SetupKconf(ctx, clusterInst); err != nil {
 		return fmt.Errorf("can't set up kconf, %s", err.Error())
@@ -37,16 +40,11 @@ func (s *K8sOperator) CreateAppInst(ctx context.Context, clusterInst *edgeproto.
 		}
 	}
 
-	switch deployment := app.Deployment; deployment {
-	case cloudcommon.DeploymentTypeKubernetes:
-		err = k8smgmt.CreateAppInst(ctx, s.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst, flavor)
-		if err == nil {
-			updateCallback(edgeproto.UpdateTask, "Waiting for AppInst to Start")
+	err = k8smgmt.CreateAppInst(ctx, s.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst, flavor)
+	if err == nil {
+		updateCallback(edgeproto.UpdateTask, "Waiting for AppInst to Start")
 
-			err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
-		}
-	default:
-		err = fmt.Errorf("unsupported deployment type %s", deployment)
+		err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
 	}
 	if err != nil {
 		return err

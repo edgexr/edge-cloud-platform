@@ -72,10 +72,6 @@ func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *pla
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return err
 	}
-	if err := m.CommonPf.InitChef(ctx, platformConfig); err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "InitChef failed", "err", err)
-		return err
-	}
 	err = m.Provider.SetProperties(&m.CommonPf.Properties)
 	if err != nil {
 		return err

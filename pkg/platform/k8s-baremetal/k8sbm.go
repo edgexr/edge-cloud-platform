@@ -106,9 +106,6 @@ func (k *K8sBareMetalPlatform) InitCommon(ctx context.Context, platformConfig *p
 	if err := k.commonPf.InitInfraCommon(ctx, platformConfig, k8sbmProps); err != nil {
 		return err
 	}
-	if err := k.commonPf.InitChef(ctx, platformConfig); err != nil {
-		return err
-	}
 	externalIps, err := infracommon.ParseIpRanges(k.GetExternalIpRanges())
 	if err != nil {
 		return err
