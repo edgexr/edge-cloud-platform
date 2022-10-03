@@ -27,11 +27,13 @@ import (
 // to the VaultClient to access data from Vault.
 type ControllerHandler struct {
 	vaultClient *VaultClient
+	dnsZone     string
 }
 
-func NewControllerHandler(vaultClient *VaultClient) *ControllerHandler {
+func NewControllerHandler(vaultClient *VaultClient, dnsZone string) *ControllerHandler {
 	return &ControllerHandler{
 		vaultClient: vaultClient,
+		dnsZone:     dnsZone,
 	}
 }
 
@@ -81,7 +83,7 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 		if err != nil {
 			return nil, err
 		}
-		err = s.vaultClient.CreateOrUpdateDNSRecord(ctx, dnsReq.Zone, dnsReq.Name, dnsReq.RType, dnsReq.Content, dnsReq.TTL, dnsReq.Proxy)
+		err = s.vaultClient.CreateOrUpdateDNSRecord(ctx, s.dnsZone, dnsReq.Name, dnsReq.RType, dnsReq.Content, dnsReq.TTL, dnsReq.Proxy)
 		if err != nil {
 			return nil, err
 		}
@@ -91,7 +93,7 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 		if err != nil {
 			return nil, err
 		}
-		records, err := s.vaultClient.GetDNSRecords(ctx, dnsReq.Zone, dnsReq.Name)
+		records, err := s.vaultClient.GetDNSRecords(ctx, s.dnsZone, dnsReq.Name)
 		if err != nil {
 			return nil, err
 		}
