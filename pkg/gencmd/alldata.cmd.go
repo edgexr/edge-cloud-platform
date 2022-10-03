@@ -877,7 +877,7 @@ var AllDataComments = map[string]string{
 	"cloudlets:#.state":                                                              "Current state of the cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"cloudlets:#.crmoverride":                                                        "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
 	"cloudlets:#.deploymentlocal":                                                    "Deploy cloudlet services locally",
-	"cloudlets:#.platformtype":                                                       "Platform type, one of Fake, Dind, Openstack, Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd, K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool",
+	"cloudlets:#.platformtype":                                                       "Platform type, one of Fake, Dind, Openstack, Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd, K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool, K8SOperator",
 	"cloudlets:#.notifysrvaddr":                                                      "Address for the CRM notify listener to run on",
 	"cloudlets:#.flavor.name":                                                        "Flavor name",
 	"cloudlets:#.physicalname":                                                       "Physical infrastructure cloudlet name",

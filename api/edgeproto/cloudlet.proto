@@ -156,6 +156,7 @@ message FederationConfig {
 // 15: `PLATFORM_TYPE_FAKE_SINGLE_CLUSTER`
 // 16: `PLATFORM_TYPE_FEDERATION`
 // 17: `PLATFORM_TYPE_FAKE_VM_POOL`
+// 18: `PLATFORM_TYPE_K8S_OPERATOR`
 enum PlatformType {
   // Fake Cloudlet
   PLATFORM_TYPE_FAKE = 0;
@@ -181,7 +182,7 @@ enum PlatformType {
   PLATFORM_TYPE_AWS_EC2 = 10;
   // VMWare vCloud Director Cloudlet
   PLATFORM_TYPE_VCD = 11;
-  // Kubebetes on bare metal
+  // Kubernetes on bare metal
   PLATFORM_TYPE_K8S_BARE_METAL = 12;
   // KIND Cloudlet
   PLATFORM_TYPE_KIND = 13;
@@ -193,6 +194,8 @@ enum PlatformType {
   PLATFORM_TYPE_FEDERATION  = 16;
   // Fake VM Pool Cloudlet
   PLATFORM_TYPE_FAKE_VM_POOL = 17;
+  // Kubernetes via cloudlet operator
+  PLATFORM_TYPE_K8S_OPERATOR = 18;
 }
 
 // Optional resource input consists of a resource specifier and clouldkey name

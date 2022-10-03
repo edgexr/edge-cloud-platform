@@ -21,11 +21,11 @@ import (
 	"strconv"
 	"time"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type CloudletInfoApi struct {
@@ -423,44 +423,57 @@ func (s *CloudletInfoApi) checkCloudletReady(cctx *CallContext, stm concurrency.
 
 // Clean up CloudletInfo after Cloudlet delete.
 // Only delete if state is Offline.
-func (s *CloudletInfoApi) cleanupCloudletInfo(ctx context.Context, key *edgeproto.CloudletKey) {
-	done := make(chan bool, 1)
+func (s *CloudletInfoApi) cleanupCloudletInfo(ctx context.Context, in *edgeproto.Cloudlet) {
+	var delErr error
 	info := edgeproto.CloudletInfo{}
-	checkState := func() {
-		if !s.cache.Get(key, &info) {
-			done <- true
-			return
-		}
-		if info.State == dme.CloudletState_CLOUDLET_STATE_OFFLINE {
-			done <- true
-		}
-	}
-	cancel := s.cache.WatchKey(key, func(ctx context.Context) {
-		checkState()
-	})
-	defer cancel()
-	// after setting up watch, check current state,
-	// as it may have already changed to target state
-	checkState()
-
-	select {
-	case <-done:
-	case <-time.After(cleanupCloudletInfoTimeout):
-		log.SpanLog(ctx, log.DebugLevelApi, "timed out waiting for CloudletInfo to go Offline", "key", key)
-	}
-	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-		info := edgeproto.CloudletInfo{}
-		if !s.store.STMGet(stm, key, &info) {
+	if in.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
+		// no way for the controller to shutdown the crm,
+		// so just clean up the CloudletInfo
+		delErr = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+			if !s.store.STMGet(stm, &in.Key, &info) {
+				return nil
+			}
+			s.store.STMDel(stm, &in.Key)
 			return nil
+		})
+	} else {
+		done := make(chan bool, 1)
+		checkState := func() {
+			if !s.cache.Get(&in.Key, &info) {
+				done <- true
+				return
+			}
+			if info.State == dme.CloudletState_CLOUDLET_STATE_OFFLINE {
+				done <- true
+			}
 		}
-		if info.State != dme.CloudletState_CLOUDLET_STATE_OFFLINE {
-			return fmt.Errorf("could not delete CloudletInfo, state is %s instead of offline", info.State.String())
+		cancel := s.cache.WatchKey(&in.Key, func(ctx context.Context) {
+			checkState()
+		})
+		defer cancel()
+		// after setting up watch, check current state,
+		// as it may have already changed to target state
+		checkState()
+
+		select {
+		case <-done:
+		case <-time.After(cleanupCloudletInfoTimeout):
+			log.SpanLog(ctx, log.DebugLevelApi, "timed out waiting for CloudletInfo to go Offline", "key", &in.Key)
 		}
-		s.store.STMDel(stm, key)
-		return nil
-	})
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "cleanup CloudletInfo failed", "err", err)
+		delErr = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+			info := edgeproto.CloudletInfo{}
+			if !s.store.STMGet(stm, &in.Key, &info) {
+				return nil
+			}
+			if info.State != dme.CloudletState_CLOUDLET_STATE_OFFLINE {
+				return fmt.Errorf("could not delete CloudletInfo, state is %s instead of offline", info.State.String())
+			}
+			s.store.STMDel(stm, &in.Key)
+			return nil
+		})
+	}
+	if delErr != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "cleanup CloudletInfo failed", "err", delErr)
 	}
 	// clean up any associated alerts with this cloudlet
 	s.ClearCloudletAndAppInstDownAlerts(ctx, &info)
