@@ -17,12 +17,12 @@ package managedk8s
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -83,7 +83,7 @@ func (m *ManagedK8sPlatform) InitHAConditional(ctx context.Context, platformConf
 	return nil
 }
 
-func (s *ManagedK8sPlatform) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {
+func (m *ManagedK8sPlatform) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {
 	return "mk8s-1.0"
 }
 

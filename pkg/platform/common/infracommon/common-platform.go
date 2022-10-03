@@ -46,8 +46,14 @@ type CommonPlatform struct {
 var testMode = false
 var edgeboxMode = false
 
-func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf.PlatformConfig, platformSpecificProps map[string]*edgeproto.PropertyInfo) error {
+func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf.PlatformConfig, platformSpecificProps map[string]*edgeproto.PropertyInfo, ops ...InitOp) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon", "cloudletKey", platformConfig.CloudletKey)
+	opts := &InitOptions{
+		Chef: true,
+	}
+	for _, op := range ops {
+		op(opts)
+	}
 
 	c.PlatformConfig = platformConfig
 	c.Properties.Init()
@@ -77,39 +83,41 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf
 		return fmt.Errorf("missing deployment tag")
 	}
 
-	chefAuth, err := platformConfig.AccessApi.GetChefAuthKey(ctx)
-	if err != nil {
-		return err
-	}
-
-	chefServerPath := platformConfig.ChefServerPath
-	if chefServerPath == "" {
-		return fmt.Errorf("chef server path not specified")
-	}
-
-	chefClient, err := chefmgmt.GetChefClient(ctx, chefAuth.ApiKey, chefServerPath)
-	if err != nil {
-		return err
-	}
-	supportedTags, err := chefmgmt.ChefPolicyGroupList(ctx, chefClient)
-	if err != nil {
-		return err
-	}
-	found := false
-	for _, tag := range supportedTags {
-		if tag == platformConfig.DeploymentTag {
-			found = true
-			break
+	if opts.Chef {
+		chefAuth, err := platformConfig.AccessApi.GetChefAuthKey(ctx)
+		if err != nil {
+			return err
 		}
+
+		chefServerPath := platformConfig.ChefServerPath
+		if chefServerPath == "" {
+			return fmt.Errorf("chef server path not specified")
+		}
+
+		chefClient, err := chefmgmt.GetChefClient(ctx, chefAuth.ApiKey, chefServerPath)
+		if err != nil {
+			return err
+		}
+		supportedTags, err := chefmgmt.ChefPolicyGroupList(ctx, chefClient)
+		if err != nil {
+			return err
+		}
+		found := false
+		for _, tag := range supportedTags {
+			if tag == platformConfig.DeploymentTag {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("invalid deployment tag %s, supported tags: %v", platformConfig.DeploymentTag, supportedTags)
+		}
+		// Set chef client, note here object is just initialised and
+		// no connection has formed with chef server
+		c.ChefClient = chefClient
+		c.ChefServerPath = chefServerPath
+		c.DeploymentTag = platformConfig.DeploymentTag
 	}
-	if !found {
-		return fmt.Errorf("invalid deployment tag %s, supported tags: %v", platformConfig.DeploymentTag, supportedTags)
-	}
-	// Set chef client, note here object is just initialised and
-	// no connection has formed with chef server
-	c.ChefClient = chefClient
-	c.ChefServerPath = chefServerPath
-	c.DeploymentTag = platformConfig.DeploymentTag
 	return nil
 }
 
@@ -194,4 +202,14 @@ type CommonEmbedded struct{}
 
 func (c *CommonEmbedded) GetVersionProperties() map[string]string {
 	return version.BuildProps("Platform")
+}
+
+type InitOptions struct {
+	Chef bool
+}
+
+type InitOp func(opts *InitOptions)
+
+func WithoutChef() InitOp {
+	return func(opts *InitOptions) { opts.Chef = false }
 }
