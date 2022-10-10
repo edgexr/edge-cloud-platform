@@ -21,16 +21,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/fedapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/gormlog"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"github.com/lib/pq"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/gormlog"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 const (
@@ -189,7 +190,7 @@ func (p *PartnerApi) ValidateAndGetFederatorInfo(c echo.Context, origKey, destKe
 // on our cloudlets
 func (p *PartnerApi) FederationOperatorPartnerCreate(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	opRegReq := OperatorRegistrationRequest{}
+	opRegReq := fedapi.OperatorRegistrationRequest{}
 	if err := c.Bind(&opRegReq); err != nil {
 		return err
 	}
@@ -221,7 +222,7 @@ func (p *PartnerApi) FederationOperatorPartnerCreate(c echo.Context) error {
 		return ormutil.DbErr(err)
 	}
 
-	out := OperatorRegistrationResponse{}
+	out := fedapi.OperatorRegistrationResponse{}
 	out.RequestId = opRegReq.RequestId
 	out.OrigFederationId = selfFed.FederationId
 	out.DestFederationId = opRegReq.OrigFederationId
@@ -240,7 +241,7 @@ func (p *PartnerApi) FederationOperatorPartnerCreate(c echo.Context) error {
 			return ormutil.DbErr(err)
 		}
 
-		partnerZone := ZoneInfo{
+		partnerZone := fedapi.ZoneInfo{
 			ZoneId:      opZone.ZoneId,
 			GeoLocation: opZone.GeoLocation,
 			City:        opZone.City,
@@ -266,7 +267,7 @@ func (p *PartnerApi) FederationOperatorPartnerCreate(c echo.Context) error {
 // the change in its MNC, MCC or locator URL
 func (p *PartnerApi) FederationOperatorPartnerUpdate(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	opConf := UpdateMECNetConf{}
+	opConf := fedapi.UpdateMECNetConf{}
 	if err := c.Bind(&opConf); err != nil {
 		return err
 	}
@@ -314,7 +315,7 @@ func (p *PartnerApi) FederationOperatorPartnerUpdate(c echo.Context) error {
 // on our cloudlets
 func (p *PartnerApi) FederationOperatorPartnerDelete(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	opFedReq := FederationRequest{}
+	opFedReq := fedapi.FederationRequest{}
 	if err := c.Bind(&opFedReq); err != nil {
 		return err
 	}
@@ -431,7 +432,7 @@ func (p *PartnerApi) GetZoneResourcesUpperLimit(ctx context.Context, region, ope
 // developers or subscribers
 func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	opRegReq := OperatorZoneRegister{}
+	opRegReq := fedapi.OperatorZoneRegister{}
 	if err := c.Bind(&opRegReq); err != nil {
 		return err
 	}
@@ -455,7 +456,7 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 
 	// Check if zone exists
 	db := p.loggedDB(ctx)
-	zoneRegDetails := []ZoneRegisterDetails{}
+	zoneRegDetails := []fedapi.ZoneRegisterDetails{}
 	for _, zoneId := range opRegReq.Zones {
 		lookup := ormapi.FederatedSelfZone{
 			ZoneId:         zoneId,
@@ -491,7 +492,7 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 			// ignore if failed to find upper limit for now
 			log.SpanLog(ctx, log.DebugLevelApi, "failed to get zone resources upper limit", "zone", fedZone.ZoneId, "err", err)
 		}
-		upperLimitQuota := ZoneResourceInfo{}
+		upperLimitQuota := fedapi.ZoneResourceInfo{}
 		if val, ok := zoneResLimit[cloudcommon.ResourceVcpus]; ok {
 			upperLimitQuota.CPU = int64(val)
 		}
@@ -507,7 +508,7 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 		if err := db.Save(&existingZone).Error; err != nil {
 			return ormutil.DbErr(err)
 		}
-		zoneRegDetails = append(zoneRegDetails, ZoneRegisterDetails{
+		zoneRegDetails = append(zoneRegDetails, fedapi.ZoneRegisterDetails{
 			ZoneId:            zoneId,
 			RegistrationToken: selfFed.FederationId,
 			UpperLimitQuota:   upperLimitQuota,
@@ -519,7 +520,7 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 		})
 	}
 	// Share zone details
-	resp := OperatorZoneRegisterResponse{}
+	resp := fedapi.OperatorZoneRegisterResponse{}
 	resp.RequestId = opRegReq.RequestId
 	resp.LeadOperatorId = selfFed.OperatorId
 	resp.PartnerOperatorId = opRegReq.Operator
@@ -533,7 +534,7 @@ func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
 // to remote partner federator's developers or subscribers
 func (p *PartnerApi) FederationOperatorZoneDeRegister(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	opRegReq := ZoneMultiRequest{}
+	opRegReq := fedapi.ZoneMultiRequest{}
 	if err := c.Bind(&opRegReq); err != nil {
 		return err
 	}
@@ -597,7 +598,7 @@ func (p *PartnerApi) FederationOperatorZoneDeRegister(c echo.Context) error {
 // and it wishes to share the zone with us
 func (p *PartnerApi) FederationOperatorZoneShare(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	opZoneShare := NotifyPartnerOperatorZone{}
+	opZoneShare := fedapi.NotifyPartnerOperatorZone{}
 	if err := c.Bind(&opZoneShare); err != nil {
 		return err
 	}
@@ -650,7 +651,7 @@ func (p *PartnerApi) FederationOperatorZoneShare(c echo.Context) error {
 // one of its zone with us
 func (p *PartnerApi) FederationOperatorZoneUnShare(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	opZone := ZoneSingleRequest{}
+	opZone := fedapi.ZoneSingleRequest{}
 	if err := c.Bind(&opZone); err != nil {
 		return err
 	}
@@ -712,7 +713,7 @@ func (p *PartnerApi) FederationOperatorZoneUnShare(c echo.Context) error {
 // Remote partner federator sends this request to us to onboarding application
 func (p *PartnerApi) FederationAppOnboarding(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	appObReq := AppOnboardingRequest{}
+	appObReq := fedapi.AppOnboardingRequest{}
 	if err := c.Bind(&appObReq); err != nil {
 		return err
 	}
@@ -828,7 +829,7 @@ func (p *PartnerApi) FederationAppOnboarding(c echo.Context) error {
 		return err
 	}
 
-	appObResp := AppOnboardingResponse{
+	appObResp := fedapi.AppOnboardingResponse{
 		CreatedAt: ormapi.TimeToStr(time.Now()),
 		AppId:     appObReq.AppId,
 		RequestId: appObReq.RequestId,
@@ -839,7 +840,7 @@ func (p *PartnerApi) FederationAppOnboarding(c echo.Context) error {
 // Remote partner federator sends this request to us to get application onboarding status
 func (p *PartnerApi) FederationAppOnboardingStatus(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	appObStatusReq := AppDeploymentStatusRequest{}
+	appObStatusReq := fedapi.AppDeploymentStatusRequest{}
 	if err := c.Bind(&appObStatusReq); err != nil {
 		return err
 	}
@@ -908,18 +909,18 @@ func (p *PartnerApi) FederationAppOnboardingStatus(c echo.Context) error {
 		return err
 	}
 
-	status := OnboardingState_FAILED
+	status := fedapi.OnboardingState_FAILED
 	if appFound && clusterInstFound {
-		status = OnboardingState_ONBOARDED
+		status = fedapi.OnboardingState_ONBOARDED
 	}
 
-	appObStatusResp := AppOnboardingStatusResponse{
+	appObStatusResp := fedapi.AppOnboardingStatusResponse{
 		RequestId:      appObStatusReq.RequestId,
 		LeadOperatorId: appObStatusReq.Operator,
 		FederationId:   appObStatusReq.LeadFederationId,
 		AppId:          appObStatusReq.AppId,
-		OnboardStatus: []ZoneOnboardStatus{
-			ZoneOnboardStatus{
+		OnboardStatus: []fedapi.ZoneOnboardStatus{
+			fedapi.ZoneOnboardStatus{
 				ZoneId: "",
 				Status: status,
 			},
@@ -931,7 +932,7 @@ func (p *PartnerApi) FederationAppOnboardingStatus(c echo.Context) error {
 // Remote partner federator sends this request to us to deboard application
 func (p *PartnerApi) FederationAppDeboarding(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	appDeboardReq := AppDeboardingRequest{}
+	appDeboardReq := fedapi.AppDeboardingRequest{}
 	if err := c.Bind(&appDeboardReq); err != nil {
 		return err
 	}
@@ -1007,7 +1008,7 @@ func (p *PartnerApi) FederationAppDeboarding(c echo.Context) error {
 
 func (p *PartnerApi) FederationAppProvision(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	appProvReq := AppProvisionRequest{}
+	appProvReq := fedapi.AppProvisionRequest{}
 	if err := c.Bind(&appProvReq); err != nil {
 		return err
 	}
@@ -1069,7 +1070,7 @@ func (p *PartnerApi) FederationAppProvision(c echo.Context) error {
 
 func (p *PartnerApi) FederationAppDeprovision(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	appDeprovReq := AppDeprovisionRequest{}
+	appDeprovReq := fedapi.AppDeprovisionRequest{}
 	if err := c.Bind(&appDeprovReq); err != nil {
 		return err
 	}
