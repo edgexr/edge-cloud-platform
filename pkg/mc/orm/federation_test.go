@@ -28,6 +28,7 @@ import (
 	"time"
 
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/fedapi"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
@@ -83,7 +84,7 @@ type FederatorAttr struct {
 	fedName     string
 	fedAddr     string
 	region      string
-	zones       []federation.ZoneInfo
+	zones       []fedapi.ZoneInfo
 	apiKey      string
 }
 
@@ -375,14 +376,14 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr, mockTranspo
 				fmt.Printf("failed to read body from request %s: %v\n", req.URL.String(), err)
 				return httpmock.NewStringResponse(400, "failed to read body"), nil
 			}
-			fedReq := federation.OperatorRegistrationRequest{}
+			fedReq := fedapi.OperatorRegistrationRequest{}
 			err = json.Unmarshal(body, &fedReq)
 			if err != nil {
 				fmt.Printf("failed to unmarshal req data %s: %v\n", body, err)
 				return httpmock.NewStringResponse(400, "failed to read body"), nil
 			}
 
-			out := federation.OperatorRegistrationResponse{
+			out := fedapi.OperatorRegistrationResponse{
 				OrigOperatorId:    partnerFed.operatorId,
 				OrigFederationId:  partnerFed.fedId,
 				PartnerOperatorId: fedReq.OperatorId,
@@ -407,7 +408,7 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr, mockTranspo
 				fmt.Printf("failed to read body from request %s: %v\n", req.URL.String(), err)
 				return httpmock.NewStringResponse(400, "failed to read body"), nil
 			}
-			inReq := federation.UpdateMECNetConf{}
+			inReq := fedapi.UpdateMECNetConf{}
 			err = json.Unmarshal(body, &inReq)
 			if err != nil {
 				fmt.Printf("failed to unmarshal req data %s: %v\n", body, err)
@@ -430,7 +431,7 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr, mockTranspo
 				fmt.Printf("failed to read body from request %s: %v\n", req.URL.String(), err)
 				return httpmock.NewStringResponse(400, "failed to read body"), nil
 			}
-			inReq := federation.FederationRequest{}
+			inReq := fedapi.FederationRequest{}
 			err = json.Unmarshal(body, &inReq)
 			if err != nil {
 				fmt.Printf("failed to unmarshal req data %s: %v\n", body, err)
@@ -453,22 +454,22 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr, mockTranspo
 				fmt.Printf("failed to read body from request %s: %v\n", req.URL.String(), err)
 				return httpmock.NewStringResponse(400, "failed to read body"), nil
 			}
-			zoneRegReq := federation.OperatorZoneRegister{}
+			zoneRegReq := fedapi.OperatorZoneRegister{}
 			err = json.Unmarshal(body, &zoneRegReq)
 			if err != nil {
 				fmt.Printf("failed to unmarshal req data %s: %v\n", body, err)
 				return httpmock.NewStringResponse(400, "failed to read body"), nil
 			}
 
-			zoneRegDetailsOut := []federation.ZoneRegisterDetails{}
+			zoneRegDetailsOut := []fedapi.ZoneRegisterDetails{}
 			for _, zoneName := range zoneRegReq.Zones {
-				zoneRegDetailsOut = append(zoneRegDetailsOut, federation.ZoneRegisterDetails{
+				zoneRegDetailsOut = append(zoneRegDetailsOut, fedapi.ZoneRegisterDetails{
 					ZoneId:            zoneName,
 					RegistrationToken: zoneRegReq.OrigFederationId,
 				})
 			}
 
-			out := federation.OperatorZoneRegisterResponse{
+			out := fedapi.OperatorZoneRegisterResponse{
 				LeadOperatorId: partnerFed.operatorId,
 				FederationId:   partnerFed.fedId,
 				Zone:           zoneRegDetailsOut,
@@ -488,7 +489,7 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr, mockTranspo
 				fmt.Printf("failed to read body from request %s: %v\n", req.URL.String(), err)
 				return httpmock.NewStringResponse(400, "failed to read body"), nil
 			}
-			zoneDeRegReq := federation.ZoneMultiRequest{}
+			zoneDeRegReq := fedapi.ZoneMultiRequest{}
 			err = json.Unmarshal(body, &zoneDeRegReq)
 			if err != nil {
 				fmt.Printf("failed to unmarshal req data %s: %v\n", body, err)
@@ -511,7 +512,7 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr, mockTranspo
 				fmt.Printf("failed to read body from request %s: %v\n", req.URL.String(), err)
 				return httpmock.NewStringResponse(400, "failed to read body"), nil
 			}
-			inReq := federation.NotifyPartnerOperatorZone{}
+			inReq := fedapi.NotifyPartnerOperatorZone{}
 			err = json.Unmarshal(body, &inReq)
 			if err != nil {
 				fmt.Printf("failed to unmarshal req data %s: %v\n", body, err)
@@ -537,7 +538,7 @@ func registerFederationAPIs(t *testing.T, partnerFed *FederatorAttr, mockTranspo
 				fmt.Printf("failed to read body from request %s: %v\n", req.URL.String(), err)
 				return httpmock.NewStringResponse(400, "failed to read body"), nil
 			}
-			inReq := federation.ZoneSingleRequest{}
+			inReq := fedapi.ZoneSingleRequest{}
 			err = json.Unmarshal(body, &inReq)
 			if err != nil {
 				fmt.Printf("failed to unmarshal req data %s: %v\n", body, err)
@@ -579,15 +580,15 @@ func TestFederation(t *testing.T) {
 		fedAddr:     "http://111.111.111.111",
 		apiKey:      PartnerApiKey,
 	}
-	partnerZones := []federation.ZoneInfo{
-		federation.ZoneInfo{
+	partnerZones := []fedapi.ZoneInfo{
+		fedapi.ZoneInfo{
 			ZoneId:      fmt.Sprintf("%s-testzone0", partnerFed.operatorId),
 			GeoLocation: "1.1,2.2",
 			City:        "New York",
 			State:       "New York",
 			EdgeCount:   2,
 		},
-		federation.ZoneInfo{
+		fedapi.ZoneInfo{
 			ZoneId:      fmt.Sprintf("%s-testzone1", partnerFed.operatorId),
 			GeoLocation: "2.2,3.3",
 			City:        "Nevada",
@@ -624,14 +625,14 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 
 	// Partner federator sends federation creation request
 	// ==================================================
-	opRegReq := federation.OperatorRegistrationRequest{
+	opRegReq := fedapi.OperatorRegistrationRequest{
 		RequestId:        "r1",
 		OrigFederationId: partnerFed.fedId,
 		DestFederationId: selfFed1.fedId,
 		OperatorId:       partnerFed.operatorId,
 		CountryCode:      partnerFed.countryCode,
 	}
-	opRegRes := federation.OperatorRegistrationResponse{}
+	opRegRes := fedapi.OperatorRegistrationResponse{}
 	err = fedClient.SendRequest(ctx, "POST", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorPartnerAPI, &opRegReq, &opRegRes)
 	require.Nil(t, err, "partnerFed adds selfFed1 as partner OP")
 	// verify federation response
@@ -653,7 +654,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 
 	// partnerFed updates its MCC value and notifies selfFed1 about it
 	// ===============================================================
-	updateReq := federation.UpdateMECNetConf{
+	updateReq := fedapi.UpdateMECNetConf{
 		RequestId:        "r2",
 		OrigFederationId: partnerFed.fedId,
 		DestFederationId: selfFed1.fedId,
@@ -685,7 +686,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 	for _, sZone := range selfFed1.zones {
 		regZones = append(regZones, sZone.ZoneId)
 	}
-	zoneRegReq := federation.OperatorZoneRegister{
+	zoneRegReq := fedapi.OperatorZoneRegister{
 		RequestId:        "r3",
 		OrigFederationId: partnerFed.fedId,
 		DestFederationId: selfFed1.fedId,
@@ -693,7 +694,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 		Country:          partnerFed.countryCode,
 		Zones:            regZones,
 	}
-	opZoneRes := federation.OperatorZoneRegisterResponse{}
+	opZoneRes := fedapi.OperatorZoneRegisterResponse{}
 	err = fedClient.SendRequest(ctx, "POST", selfFed1.fedAddr, partnerFed.fedName, selfFed1.apiKey, federation.OperatorZoneAPI, &zoneRegReq, &opZoneRes)
 	require.Nil(t, err, "partnerFed sends registration request for selfFed1 zones")
 	require.Equal(t, zoneRegReq.RequestId, opZoneRes.RequestId)
@@ -727,14 +728,14 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 
 	// partnerFed notifies selfFed1 about a new zone
 	// =============================================
-	newZone := federation.ZoneInfo{
+	newZone := fedapi.ZoneInfo{
 		ZoneId:      fmt.Sprintf("%s-testzoneX", partnerFed.operatorId),
 		GeoLocation: "9.9",
 		City:        "Newark",
 		State:       "Newark",
 		EdgeCount:   2,
 	}
-	zoneNotifyReq := federation.NotifyPartnerOperatorZone{
+	zoneNotifyReq := fedapi.NotifyPartnerOperatorZone{
 		RequestId:        "r4",
 		OrigFederationId: partnerFed.fedId,
 		DestFederationId: selfFed1.fedId,
@@ -768,7 +769,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 
 	// partnerFed notifies selfFed1 about a deleted zone
 	// =================================================
-	zoneUnshareReq := federation.ZoneSingleRequest{
+	zoneUnshareReq := fedapi.ZoneSingleRequest{
 		RequestId:        "r5",
 		OrigFederationId: partnerFed.fedId,
 		DestFederationId: selfFed1.fedId,
@@ -791,7 +792,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 	for _, sZone := range selfFed1.zones {
 		deregZones = append(deregZones, sZone.ZoneId)
 	}
-	zoneDeRegReq := federation.ZoneMultiRequest{
+	zoneDeRegReq := fedapi.ZoneMultiRequest{
 		RequestId:        "r6",
 		OrigFederationId: partnerFed.fedId,
 		DestFederationId: selfFed1.fedId,
@@ -822,7 +823,7 @@ func testPartnerFederationAPIs(t *testing.T, ctx context.Context, mcClient *mcte
 
 	// partnerFed removes selfFed1 as federation partner
 	// =================================================
-	opFedReq := federation.FederationRequest{
+	opFedReq := fedapi.FederationRequest{
 		RequestId:        "r7",
 		OrigFederationId: partnerFed.fedId,
 		DestFederationId: selfFed1.fedId,
@@ -1023,7 +1024,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// ===========================
 	clList := []edgeproto.Cloudlet{}
 	for fid, selfFed := range selfFederators {
-		zones := []federation.ZoneInfo{}
+		zones := []fedapi.ZoneInfo{}
 		filter := &edgeproto.Cloudlet{
 			Key: edgeproto.CloudletKey{
 				Organization: selfFed.operatorId,
@@ -1046,7 +1047,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 			_, status, err = mcClient.CreateSelfFederatorZone(op.uri, selfFed.tokenOper, fedZone)
 			require.Nil(t, err, "create federation zone")
 			require.Equal(t, http.StatusOK, status)
-			fedZoneInfo := federation.ZoneInfo{
+			fedZoneInfo := fedapi.ZoneInfo{
 				ZoneId:      fedZone.ZoneId,
 				GeoLocation: fedZone.GeoLocation,
 				City:        fedZone.City,

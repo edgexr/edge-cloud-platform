@@ -20,19 +20,20 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
-	"github.com/labstack/echo/v4"
+	dme_proto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/fedapi"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	fedmgmt "github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	fedcommon "github.com/edgexr/edge-cloud-platform/pkg/mc/federation/common"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	fedmgmt "github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	dme_proto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/google/uuid"
+	"github.com/jinzhu/gorm"
+	"github.com/labstack/echo/v4"
 )
 
 func setForeignKeyConstraint(loggedDb *gorm.DB, fKeyTableName, fKeyFields, refTableName, refFields string) error {
@@ -361,7 +362,7 @@ func UpdateSelfFederator(c echo.Context) error {
 	if partnerFedExists &&
 		(partnerFed.PartnerRoleAccessToSelfZones ||
 			partnerFed.PartnerRoleShareZonesWithSelf) {
-		opConf := federation.UpdateMECNetConf{
+		opConf := fedapi.UpdateMECNetConf{
 			RequestId:        selfFed.Revision,
 			OrigFederationId: selfFed.FederationId,
 			DestFederationId: partnerFed.FederationId,
@@ -1039,13 +1040,13 @@ func ShareSelfFederatorZone(c echo.Context) error {
 	// And only share if federation exists with partner federator, else
 	// just add it to the DB (federation planning)
 	if partnerFed.PartnerRoleAccessToSelfZones {
-		opZoneShare := federation.NotifyPartnerOperatorZone{
+		opZoneShare := fedapi.NotifyPartnerOperatorZone{
 			RequestId:        revision,
 			OrigFederationId: selfFed.FederationId,
 			DestFederationId: partnerFed.FederationId,
 			Operator:         selfFed.OperatorId,
 			Country:          selfFed.CountryCode,
-			PartnerZone: federation.ZoneInfo{
+			PartnerZone: fedapi.ZoneInfo{
 				ZoneId:      existingZone.ZoneId,
 				GeoLocation: existingZone.GeoLocation,
 				City:        existingZone.City,
@@ -1142,7 +1143,7 @@ func UnshareSelfFederatorZone(c echo.Context) error {
 	// just add it to the DB (federation planning)
 	if partnerFed.PartnerRoleAccessToSelfZones {
 		// Notify federated partner about deleted zone
-		opZoneUnShare := federation.ZoneSingleRequest{
+		opZoneUnShare := fedapi.ZoneSingleRequest{
 			RequestId:        revision,
 			OrigFederationId: selfFed.FederationId,
 			DestFederationId: partnerFed.FederationId,
@@ -1231,7 +1232,7 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 	revision := log.SpanTraceID(ctx)
 
 	// Notify partner federator about zone registration
-	opZoneReg := federation.OperatorZoneRegister{
+	opZoneReg := fedapi.OperatorZoneRegister{
 		RequestId:        revision,
 		OrigFederationId: selfFed.FederationId,
 		DestFederationId: partnerFed.FederationId,
@@ -1239,7 +1240,7 @@ func RegisterPartnerFederatorZone(c echo.Context) error {
 		Country:          selfFed.CountryCode,
 		Zones:            reg.Zones,
 	}
-	opZoneRes := federation.OperatorZoneRegisterResponse{}
+	opZoneRes := fedapi.OperatorZoneRegisterResponse{}
 	err = fedClient.SendRequest(ctx, "POST", partnerFed.FederationAddr, partnerFed.Name, federation.APIKeyFromVault, federation.OperatorZoneAPI, &opZoneReg, &opZoneRes)
 	if err != nil {
 		return err
@@ -1412,7 +1413,7 @@ func DeregisterPartnerFederatorZone(c echo.Context) error {
 	revision := log.SpanTraceID(ctx)
 
 	// Notify federated partner about zone deregistration
-	opZoneReg := federation.ZoneMultiRequest{
+	opZoneReg := fedapi.ZoneMultiRequest{
 		RequestId:        revision,
 		OrigFederationId: selfFed.FederationId,
 		DestFederationId: partnerFed.FederationId,
@@ -1471,14 +1472,14 @@ func RegisterFederation(c echo.Context) error {
 	revision := log.SpanTraceID(ctx)
 
 	// Call federation API
-	opRegReq := federation.OperatorRegistrationRequest{
+	opRegReq := fedapi.OperatorRegistrationRequest{
 		RequestId:        revision,
 		OrigFederationId: selfFed.FederationId,
 		DestFederationId: partnerFed.FederationId,
 		OperatorId:       selfFed.OperatorId,
 		CountryCode:      selfFed.CountryCode,
 	}
-	opRegRes := federation.OperatorRegistrationResponse{}
+	opRegRes := fedapi.OperatorRegistrationResponse{}
 	err = fedClient.SendRequest(ctx, "POST", partnerFed.FederationAddr, partnerFed.Name, federation.APIKeyFromVault, federation.OperatorPartnerAPI, &opRegReq, &opRegRes)
 	if err != nil {
 		return err
@@ -1569,7 +1570,7 @@ func DeregisterFederation(c echo.Context) error {
 	revision := log.SpanTraceID(ctx)
 
 	// call federation API
-	opFedReq := federation.FederationRequest{
+	opFedReq := fedapi.FederationRequest{
 		RequestId:        revision,
 		OrigFederationId: selfFed.FederationId,
 		DestFederationId: partnerFed.FederationId,
