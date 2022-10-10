@@ -102,7 +102,6 @@ func main() {
 		AlertCache:               &alertCache,
 		AlertmgrResolveTimout:    *alertMgrResolveTimeout,
 		UsageCheckpointInterval:  *usageCheckpointInterval,
-		DomainName:               nodeMgr.CommonName(),
 		StaticDir:                *staticDir,
 		DeploymentName:           nodeMgr.DeploymentName,
 		DeploymentTag:            nodeMgr.DeploymentTag,

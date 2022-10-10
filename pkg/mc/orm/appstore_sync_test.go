@@ -212,7 +212,7 @@ func TestAppStoreApi(t *testing.T) {
 		PasswordResetConsolePath: "#/passwordreset",
 		VerifyEmailConsolePath:   "#/verify",
 		testTransport:            mockTransport,
-		DomainName:               domain,
+		HTTPCookieDomain:         domain,
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")

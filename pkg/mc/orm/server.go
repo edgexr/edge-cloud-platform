@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"reflect"
 	"strconv"
@@ -109,7 +110,7 @@ type ServerConfig struct {
 	AlertMgrAddr             string
 	AlertmgrResolveTimout    time.Duration
 	UsageCheckpointInterval  string
-	DomainName               string
+	HTTPCookieDomain         string
 	StaticDir                string
 	DeploymentName           string
 	DeploymentTag            string
@@ -196,6 +197,11 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		if !strings.HasSuffix(config.ConsoleAddr, "/") {
 			config.ConsoleAddr = config.ConsoleAddr + "/"
 		}
+		u, err := url.Parse(config.ConsoleAddr)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to parse URL %s for consoleAddr", config.ConsoleAddr)
+		}
+		config.HTTPCookieDomain = strings.Split(u.Host, ":")[0]
 	}
 	if config.PublicAddr != "" {
 		if !strings.HasPrefix(config.PublicAddr, "http") {

@@ -255,7 +255,7 @@ func Login(c echo.Context) error {
 		}
 	}
 
-	cookie, err := GenerateCookie(&user, login.ApiKeyId, serverConfig.DomainName, config)
+	cookie, err := GenerateCookie(&user, login.ApiKeyId, serverConfig.HTTPCookieDomain, config)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie", "err", err)
 		return fmt.Errorf("Failed to generate cookie")
@@ -335,7 +335,7 @@ func RefreshAuthCookie(c echo.Context) error {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie", "err", err)
 		return fmt.Errorf("Failed to generate cookie")
 	}
-	httpCookie := NewHTTPAuthCookie(cookie, claims.ExpiresAt, serverConfig.DomainName)
+	httpCookie := NewHTTPAuthCookie(cookie, claims.ExpiresAt, serverConfig.HTTPCookieDomain)
 	c.SetCookie(httpCookie)
 	return c.JSON(http.StatusOK, ormutil.M{"token": cookie})
 }
