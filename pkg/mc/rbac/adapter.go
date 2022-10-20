@@ -12,12 +12,11 @@ package rbac
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	"github.com/jinzhu/gorm"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/gormlog"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/gormlog"
+	"github.com/jinzhu/gorm"
 )
 
 type Adapter struct {
@@ -30,13 +29,13 @@ type Adapter struct {
 // with gorm-adapter.
 type CasbinRule struct {
 	TablePrefix string `gorm:"-"`
-	PType       string `gorm:"size:100" json:"p_type"`
-	V0          string `gorm:"size:100"`
-	V1          string `gorm:"size:100"`
-	V2          string `gorm:"size:100"`
-	V3          string `gorm:"size:100"`
-	V4          string `gorm:"size:100"`
-	V5          string `gorm:"size:100"`
+	PType       string `gorm:"size:100;unique_index:casbin" json:"p_type"`
+	V0          string `gorm:"size:100;unique_index:casbin"`
+	V1          string `gorm:"size:100;unique_index:casbin"`
+	V2          string `gorm:"size:100;unique_index:casbin"`
+	V3          string `gorm:"size:100;unique_index:casbin"`
+	V4          string `gorm:"size:100;unique_index:casbin"`
+	V5          string `gorm:"size:100;unique_index:casbin"`
 }
 
 func (a *Adapter) Init(ctx context.Context) error {
@@ -52,40 +51,7 @@ func (c *CasbinRule) TableName() string {
 }
 
 func (a *Adapter) createTable(ctx context.Context) error {
-	if a.db.HasTable(getTableInstance()) {
-		return nil
-	}
-
-	db := a.loggedDB(ctx)
-
-	// gorm does not support a way to specify the UNIQUE table constraint
-	// so we have to do it manually.
-	// Specifying all fields as UNIQUE prevents duplicates in the table.
-	fields := []string{}
-	tags := []string{}
-	scope := db.Unscoped().NewScope(getTableInstance())
-	for _, field := range scope.GetModelStruct().StructFields {
-		if field.IsNormal {
-			sqlTag := scope.Dialect().DataTypeOf(field)
-			tags = append(tags, scope.Quote(field.DBName)+" "+sqlTag)
-			fields = append(fields, scope.Quote(field.DBName))
-		}
-	}
-	// Note race condition between multiple MCs starting at the same time,
-	// must allow for table already existing because table may have been
-	// created after earlier check passed.
-	cmd := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %v (%v, UNIQUE (%v))", scope.QuotedTableName(), strings.Join(tags, ","), strings.Join(fields, ","))
-	err := db.Exec(cmd).Error
-	if err != nil {
-		// For some reason, we still get a race condition even with
-		// IF NOT EXISTS. Perhaps the above command is not atomic.
-		// Detect the conflict and ignore.
-		if strings.Contains(err.Error(), `pq: duplicate key value violates unique constraint "pg_type_typname_nsp_index"`) || strings.Contains(err.Error(), `pq: relation "casbin_rule" already exists`) {
-			err = nil
-		}
-		log.SpanLog(ctx, log.DebugLevelInfo, "init adapter failed", "err", err)
-	}
-	return err
+	return a.db.AutoMigrate(&CasbinRule{}).Error
 }
 
 func (a *Adapter) GetAuthorized(ctx context.Context, obj, act string) (map[string]string, error) {
@@ -98,17 +64,17 @@ func (a *Adapter) GetAuthorized(ctx context.Context, obj, act string) (map[strin
 	// select criteria.
 	query := fmt.Sprintf(`
 SELECT o2.sub, o1.role FROM
- (SELECT v0 AS role FROM %s WHERE p_type = 'p' AND v1 = '%s' AND v2 = '%s') o1
+ (SELECT v0 AS role FROM %s WHERE p_type = 'p' AND v1 = ? AND v2 = ?) o1
  INNER JOIN LATERAL
  (SELECT v0 AS sub FROM %s WHERE p_type = 'g' AND v1 = o1.role) o2
- ON true;`, c.TableName(), obj, act, c.TableName())
+ ON true;`, c.TableName(), c.TableName())
 
 	db := a.db
 	if a.logAuthz {
 		db = a.loggedDB(ctx)
 	}
 
-	rows, err := db.Raw(query).Rows()
+	rows, err := db.Raw(query, obj, act).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -137,15 +103,15 @@ func (a *Adapter) GetPermissions(ctx context.Context, username, org string) (map
 	// for those roles.
 	query := fmt.Sprintf(`
 SELECT o2.resource, o2.action FROM
- (SELECT v1 AS role FROM %s WHERE p_type = 'g' AND v0 = '%s') o1
+ (SELECT v1 AS role FROM %s WHERE p_type = 'g' AND v0 = ?) o1
  INNER JOIN LATERAL
  (SELECT v1 AS resource, v2 AS action FROM %s WHERE p_type = 'p' AND v0 = o1.role) o2
-ON true;`, c.TableName(), subj, c.TableName())
+ON true;`, c.TableName(), c.TableName())
 	db := a.db
 	if a.logAuthz {
 		db = a.loggedDB(ctx)
 	}
-	rows, err := db.Raw(query).Rows()
+	rows, err := db.Raw(query, subj).Rows()
 	if err != nil {
 		return nil, err
 	}
