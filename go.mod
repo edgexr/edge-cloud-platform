@@ -39,7 +39,7 @@ require (
 	github.com/influxdata/influxdb v1.7.7
 	github.com/jaegertracing/jaeger v1.21.0
 	github.com/jarcoal/httpmock v1.0.7
-	github.com/jinzhu/gorm v1.9.10
+	github.com/jinzhu/gorm v1.9.16
 	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/lib/pq v1.10.2

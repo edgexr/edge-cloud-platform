@@ -24,7 +24,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -45,8 +44,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/cliwrapper"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mccli"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/jarcoal/httpmock"
@@ -1012,6 +1009,15 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		status, err = mcClient.CreateCloudletPoolAccessResponse(uri, tokenDev, &op1accept)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
+
+		// side test: unique composite index should prevent
+		// adding the same set of data twice
+		db := loggedDB(ctx)
+		dupOp := op1
+		dupOp.Type = ormapi.CloudletPoolAccessInvitation
+		err = db.Create(&dupOp).Error
+		require.NotNil(t, err)
+		require.Contains(t, err.Error(), `pq: duplicate key value violates unique constraint "compindex"`)
 
 		// now add should succeed because developer has granted access
 		_, status, err = mcClient.AddCloudletPoolMember(uri, tokenOper, &member)
@@ -3124,252 +3130,6 @@ type Controller struct {
 	InfluxDB   string    `gorm:"type:text"`
 	CreatedAt  time.Time `json:",omitempty"`
 	UpdatedAt  time.Time `json:",omitempty"`
-}
-
-func TestUpgrade(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelApi)
-	log.InitTracer(nil)
-	defer log.FinishTracer()
-	ctx := log.StartTestSpan(context.Background())
-	addr := "127.0.0.1:9999"
-
-	vaultServer, vaultConfig := vault.DummyServer()
-	defer vaultServer.Close()
-
-	// run dummy controller - this always returns success
-	// to all APIs directed to it, and does not actually
-	// create or delete objects. We are mocking it out
-	// so we can test rbac permissions.
-	dc := grpc.NewServer(
-		grpc.UnaryInterceptor(testutil.UnaryInterceptor),
-		grpc.StreamInterceptor(testutil.StreamInterceptor),
-		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}),
-	)
-	ctrlAddr := "127.0.0.1:9998"
-	lis, err := net.Listen("tcp", ctrlAddr)
-	require.Nil(t, err)
-	go func() {
-		dc.Serve(lis)
-	}()
-	defer dc.Stop()
-
-	unitTest = true
-	defaultConfig.DisableRateLimit = true
-	config := ServerConfig{
-		ServAddr:                 addr,
-		SqlAddr:                  "127.0.0.1:5445",
-		RunLocal:                 false, // using existing db
-		IgnoreEnv:                true,
-		vaultConfig:              vaultConfig,
-		UsageCheckpointInterval:  "MONTH",
-		BillingPlatform:          billing.BillingTypeFake,
-		DeploymentTag:            "local",
-		PublicAddr:               "http://mc.edgecloud.net",
-		PasswordResetConsolePath: "#/passwordreset",
-		VerifyEmailConsolePath:   "#/verify",
-	}
-
-	// start postgres so we can prepopulate it with old data
-	sql := intprocess.Sql{
-		Common: process.Common{
-			Name: "sql1",
-		},
-		DataDir:  "./.postgres",
-		HttpAddr: config.SqlAddr,
-		Username: DefaultDBUser,
-		Dbname:   DefaultDBName,
-	}
-	_, err = os.Stat(sql.DataDir)
-	sql.InitDataDir()
-	err = sql.StartLocal("")
-	require.Nil(t, err, "local sql start")
-	defer sql.StopLocal()
-
-	initdb, err := InitSql(ctx, config.SqlAddr, DefaultDBUser, DefaultDBPass, DefaultDBName)
-	require.Nil(t, err, "init sql")
-	database = initdb
-
-	db := loggedDB(ctx)
-	err = db.AutoMigrate(&ormapi.Organization{}, &Controller{}, &OrgCloudletPool{}, &User{}).Error
-	require.Nil(t, err)
-	// add old data
-	ctrl := Controller{
-		Region:  "USA",
-		Address: ctrlAddr,
-	}
-	err = db.Create(&ctrl).Error
-	require.Nil(t, err)
-	ctrl2 := Controller{
-		Region:  "EU",
-		Address: "127.0.0.1:9999", // not used
-	}
-	err = db.Create(&ctrl2).Error
-	require.Nil(t, err)
-
-	addOld := addOldTestOrgCloudletPool
-	data := []OrgCloudletPool{}
-	dataLen := 7
-	numReallyOldData := 3
-	for ii := 0; ii < dataLen; ii++ {
-		addOld(&data, ii)
-	}
-	// insert into db old format OrgCloudletPool with blank type
-	for ii, d := range data {
-		org := ormapi.Organization{}
-		// create dev org (must exist)
-		org.Name = d.Org
-		err := db.Create(&org).Error
-		require.Nil(t, err)
-		// create oper org (must exist)
-		org.Name = d.CloudletPoolOrg
-		err = db.Create(&org).Error
-		require.Nil(t, err)
-		// create org cloudlet pool
-		if ii < numReallyOldData {
-			// really old data, no cloudlet_pool_org
-			cmd := fmt.Sprintf("INSERT INTO org_cloudlet_pools (org, region, cloudlet_pool) VALUES ('%s', '%s', '%s')", d.Org, d.Region, d.CloudletPool)
-			err = db.Exec(cmd).Error
-			require.Nil(t, err)
-			data[ii].CloudletPoolOrg = ""
-			continue
-		}
-		// create old orgcloudletpool with empty type
-		err = db.Create(&d).Error
-		require.Nil(t, err)
-	}
-	// check that really old data has cloudlet_pool_org as null
-	cmd := fmt.Sprintf("SELECT * FROM org_cloudlet_pools WHERE cloudlet_pool_org IS NULL")
-	res := db.Raw(cmd)
-	require.Nil(t, res.Error)
-	rows, err := res.Rows()
-	require.Nil(t, err)
-	defer rows.Close()
-	checkNumReallyOld := 0
-	for rows.Next() {
-		checkNumReallyOld++
-	}
-	require.Equal(t, numReallyOldData, checkNumReallyOld)
-
-	// check data
-	check := []OrgCloudletPool{}
-	err = db.Find(&check).Error
-	require.Nil(t, err)
-	require.Equal(t, data, check)
-
-	// set up old unique constraint (old code for InitOrgCloudletPool)
-	scope := db.Unscoped().NewScope(&OrgCloudletPool{})
-	fields := []string{}
-	for _, field := range scope.GetModelStruct().StructFields {
-		if field.IsNormal {
-			fields = append(fields, scope.Quote(field.DBName))
-		}
-	}
-	cmd = fmt.Sprintf("ALTER TABLE %s ADD UNIQUE (%s)", scope.QuotedTableName(), strings.Join(fields, ","))
-	err = db.Exec(cmd).Error
-	require.Nil(t, err)
-	// add it again just to make sure it gets cleaned up
-	err = db.Exec(cmd).Error
-	require.Nil(t, err)
-
-	// add old users so automigrate will add null columns
-	numOldUsers := 3
-	for ii := 0; ii < numOldUsers; ii++ {
-		user := User{
-			Name:     fmt.Sprintf("user%d", ii),
-			Email:    fmt.Sprintf("email%d", ii),
-			Passhash: "1",
-			Salt:     "1",
-			Iter:     1,
-		}
-		err = db.Create(&user).Error
-		require.Nil(t, err)
-	}
-
-	// ============================================================
-	// start the server, will run all the upgrade functions
-	// ============================================================
-	server, err := RunServer(&config)
-	require.Nil(t, err, "run server")
-	defer server.Stop()
-	enforcer.LogEnforce(true)
-	db = loggedDB(ctx)
-	// wait till mc is ready
-	err = server.WaitUntilReady()
-	require.Nil(t, err, "server online")
-
-	// expect that old OrgCloudletPool data has been converted
-	// to invitation/response pairs.
-	addNew := addNewTestOrgCloudletPool
-	expected := []ormapi.OrgCloudletPool{}
-	for ii := 0; ii < dataLen; ii++ {
-		if ii < numReallyOldData {
-			// data was dropped
-			continue
-		}
-		addNew(&expected, ii, ormapi.CloudletPoolAccessDecisionAccept)
-		addNew(&expected, ii, ormapi.CloudletPoolAccessInvitation)
-	}
-	// check upgraded data
-	checkUpgraded := []ormapi.OrgCloudletPool{}
-	err = db.Find(&checkUpgraded).Error
-	require.Nil(t, err)
-	require.ElementsMatch(t, expected, checkUpgraded)
-
-	// check that upgrade functions are idempotent
-	err = InitOrgCloudletPool(ctx)
-	require.Nil(t, err)
-	err = InitOrgCloudletPool(ctx)
-	require.Nil(t, err)
-	// check data
-	checkUpgraded = []ormapi.OrgCloudletPool{}
-	err = db.Find(&checkUpgraded).Error
-	require.Nil(t, err)
-	require.ElementsMatch(t, expected, checkUpgraded)
-	// check constraints
-	cmd = fmt.Sprintf("SELECT indexdef FROM pg_indexes WHERE tablename = 'org_cloudlet_pools'")
-	res = db.Raw(cmd)
-	require.Nil(t, res.Error)
-	rows, err = res.Rows()
-	require.Nil(t, err)
-	defer rows.Close()
-	found := 0
-	foundExpected := false
-	for rows.Next() {
-		found++
-		indexdef := ""
-		rows.Scan(&indexdef)
-		if indexdef == "" {
-			continue
-		}
-		matches := tableUniqueConstraintRE.FindStringSubmatch(indexdef)
-		if len(matches) != 4 {
-			continue
-		}
-		if matches[1] == UniqueKey {
-			foundExpected = true
-		}
-		constraint := matches[3]
-		require.Equal(t, "org, region, cloudlet_pool, cloudlet_pool_org, type", constraint)
-	}
-	// should have only found the one expected rule
-	require.True(t, foundExpected)
-	require.Equal(t, 1, found)
-
-	// check that users don't have any null values anymore
-	require.Equal(t, 0, getUsersNullCount(t, ctx))
-
-	// check upgraded controllers
-	checkCtrls := []ormapi.Controller{}
-	err = db.Find(&checkCtrls).Error
-	require.Nil(t, err)
-	for _, checkCtrl := range checkCtrls {
-		if checkCtrl.Region == ctrl.Region {
-			require.Equal(t, "usa", checkCtrl.DnsRegion)
-		} else if checkCtrl.Region == ctrl2.Region {
-			require.Equal(t, "eu", checkCtrl.DnsRegion)
-		}
-	}
-	require.Equal(t, 2, len(checkCtrls))
 }
 
 func getUsersNullCount(t *testing.T, ctx context.Context) int {

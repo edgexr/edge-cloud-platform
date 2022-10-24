@@ -337,15 +337,15 @@ type McRateLimitSettings struct {
 
 type OrgCloudletPool struct {
 	// Developer Organization
-	Org string `gorm:"type:citext REFERENCES organizations(name)"`
+	Org string `gorm:"unique_index:compindex;type:citext REFERENCES organizations(name)"`
 	// Region
-	Region string `gorm:"type:text REFERENCES controllers(region)"`
+	Region string `gorm:"unique_index:compindex;type:text REFERENCES controllers(region)"`
 	// Operator's CloudletPool name
-	CloudletPool string `gorm:"not null"`
+	CloudletPool string `gorm:"unique_index:compindex;not null"`
 	// Operator's Organization
-	CloudletPoolOrg string `gorm:"type:citext REFERENCES organizations(name)"`
+	CloudletPoolOrg string `gorm:"unique_index:compindex;type:citext REFERENCES organizations(name)"`
 	// Type is an internal-only field which is either invitation or response
-	Type string `json:",omitempty"`
+	Type string `gorm:"unique_index:compindex" json:",omitempty"`
 	// Decision is to either accept or reject an invitation
 	Decision string `json:",omitempty"`
 }

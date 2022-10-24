@@ -21,15 +21,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/gormlog"
+	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/jinzhu/gorm"
 	_ "github.com/labstack/echo/v4"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/gormlog"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/util"
-	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 )
 
 var retryInterval = 10 * time.Second
@@ -82,14 +81,8 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 			return
 		}
 
-		err := upgradeCustom(ctx, db)
-		if err != nil {
-			initDone <- err
-			return
-		}
-
 		// create or update tables
-		err = db.AutoMigrate(
+		err := db.AutoMigrate(
 			&ormapi.User{},
 			&ormapi.Organization{},
 			&ormapi.Controller{},
@@ -138,15 +131,6 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 		err = InitConfig(ctx)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "init config", "err", err)
-			if unitTest {
-				initDone <- err
-				return
-			}
-			continue
-		}
-		err = InitOrgCloudletPool(ctx)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelApi, "init orgcloudletpool", "err", err)
 			if unitTest {
 				initDone <- err
 				return
@@ -448,51 +432,4 @@ func getPostgresEmptyVal(dataType string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("unrecognized type %s", dataType)
-}
-
-// custom upgrades that can't be done via AutoMigrate
-func upgradeCustom(ctx context.Context, db *gorm.DB) error {
-	// add unique not null DnsRegion column to controllers
-	cmd := `ALTER TABLE IF EXISTS "controllers" ADD IF NOT EXISTS "dns_region" text NOT NULL DEFAULT ''`
-	res := db.Exec(cmd)
-	if res.Error != nil {
-		return res.Error
-	}
-
-	// change value to unique, desired values
-	ctrls := []ormapi.Controller{}
-	err := db.Find(&ctrls).Error
-	updateControllers := true
-	if err != nil && strings.Contains(err.Error(), `relation "controllers" does not exist`) {
-		err = nil
-		updateControllers = false
-	}
-	if err != nil {
-		return err
-	}
-	if updateControllers {
-		dnsRegions := make(map[string]*ormapi.Controller)
-
-		for _, ctrl := range ctrls {
-			if ctrl.DnsRegion == "" {
-				ctrl.DnsRegion = util.DNSSanitize(ctrl.Region)
-				if conflict, found := dnsRegions[ctrl.DnsRegion]; found {
-					return fmt.Errorf("dns region name conflict, regions %s and %s both dns sanitizes to %s, please fix region names", conflict.Region, ctrl.Region, ctrl.DnsRegion)
-				}
-				cmd := fmt.Sprintf(`UPDATE "controllers" SET "dns_region" = '%s' WHERE "region" = '%s'`, ctrl.DnsRegion, ctrl.Region)
-				res := db.Exec(cmd)
-				if res.Error != nil {
-					return res.Error
-				}
-			}
-			dnsRegions[ctrl.DnsRegion] = &ctrl
-		}
-		// add unique constraint
-		cmd = `ALTER TABLE IF EXISTS "controllers" ADD UNIQUE ("dns_region")`
-		res = db.Exec(cmd)
-		if res.Error != nil {
-			return res.Error
-		}
-	}
-	return nil
 }
