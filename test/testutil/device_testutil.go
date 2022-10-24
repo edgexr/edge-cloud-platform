@@ -347,6 +347,7 @@ func (s *DummyServer) InjectDevice(ctx context.Context, in *edgeproto.Device) (*
 	if s.CudNoop {
 		return &edgeproto.Result{}, nil
 	}
+	s.DeviceCache.Update(ctx, in, 0)
 	return &edgeproto.Result{}, nil
 }
 
@@ -378,6 +379,7 @@ func (s *DummyServer) EvictDevice(ctx context.Context, in *edgeproto.Device) (*e
 	if s.CudNoop {
 		return &edgeproto.Result{}, nil
 	}
+	s.DeviceCache.Delete(ctx, in, 0)
 	return &edgeproto.Result{}, nil
 }
 
