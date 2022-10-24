@@ -898,6 +898,12 @@ func (t *TestCud) getMethodArgs(service string, method *descriptor.MethodDescrip
 		} else if strings.HasPrefix(*method.Name, "Update") {
 			args.CacheFunc = "Update"
 			cud = true
+		} else if strings.HasPrefix(*method.Name, "Evict") {
+			args.CacheFunc = "Delete"
+			cud = true
+		} else if strings.HasPrefix(*method.Name, "Inject") {
+			args.CacheFunc = "Update"
+			cud = true
 		}
 	}
 	args.OutData = "*" + args.Pkg + "." + args.OutName

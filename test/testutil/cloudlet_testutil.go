@@ -1707,6 +1707,7 @@ func (s *DummyServer) InjectCloudletInfo(ctx context.Context, in *edgeproto.Clou
 	if s.CudNoop {
 		return &edgeproto.Result{}, nil
 	}
+	s.CloudletInfoCache.Update(ctx, in, 0)
 	return &edgeproto.Result{}, nil
 }
 
@@ -1714,6 +1715,7 @@ func (s *DummyServer) EvictCloudletInfo(ctx context.Context, in *edgeproto.Cloud
 	if s.CudNoop {
 		return &edgeproto.Result{}, nil
 	}
+	s.CloudletInfoCache.Delete(ctx, in, 0)
 	return &edgeproto.Result{}, nil
 }
 
