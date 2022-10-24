@@ -1,0 +1,6 @@
+package: federation
+generate:
+  echo-server: true
+output: ../../pkg/mc/federation/ewbi-server.gen.go
+compatibility:
+  disable-required-readonly-as-pointer: true
