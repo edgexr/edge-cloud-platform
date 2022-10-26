@@ -1,9 +1,12 @@
 ## Federation EWBI Openapi Spec
 
-Here contains the official Federation EWBI (East-West Bound Interface)
-API spec as `FederationApi_v1.3.0-official.yaml` ([source](https://www.gsma.com/futurenetworks/resources/platform-group-4-0-federation-api-1-0-0-yaml/), [download](https://www.gsma.com/futurenetworks/wp-content/uploads/2022/10/OPG.04-v1.0-1.zip), a modified version as `FederationApi_v1.3.0.yaml`, and a Makefile to generate both API struct models and golang Echo server stubs.
+Here contains:
 
-### Generators
+- The official Federation EWBI (East-West Bound Interface) API spec as `FederationApi_v1.3.0-official.yaml` ([source](https://www.gsma.com/futurenetworks/resources/platform-group-4-0-federation-api-1-0-0-yaml/), [download](https://www.gsma.com/futurenetworks/wp-content/uploads/2022/10/OPG.04-v1.0-1.zip))
+- A modified version as `FederationApi_v1.3.0.yaml`
+- A Makefile to generate both API struct models and golang Echo server stubs.
+
+## Generators
 
 We use two generators as part of the doc/fedapi files:
 
@@ -16,7 +19,7 @@ To generate, just run
 make
 ```
 
-### Changes
+## Changes
 
 We have several modifications to the official yaml which are documented as patches in the `patches` directory. To add a new change:
 
@@ -30,7 +33,7 @@ We have several modifications to the official yaml which are documented as patch
   diff -au FederationApi_v1.3.0.yaml.last FederationApi_v1.3.0.yaml > patches/##-my-change-desc.patch
   ```
 
-### Updating Official Spec
+## Updating Official Spec
 
 If updating the official spec:
 
