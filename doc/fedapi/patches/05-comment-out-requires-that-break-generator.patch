@@ -1,0 +1,73 @@
+--- FederationApi_v1.3.0.yaml.last	2022-10-26 10:33:22.883755700 -0700
++++ FederationApi_v1.3.0.yaml	2022-10-26 10:46:31.283755700 -0700
+@@ -850,13 +850,13 @@
+       type: object
+       required:
+         - port
+-      anyOf:
+-        - required: 
+-            -  fqdn 
+-        - required: 
+-            - ipv4Addresses 
+-        - required: 
+-            - ipv6Addresses
++#      anyOf:
++#        - required: 
++#            -  fqdn 
++#        - required: 
++#            - ipv4Addresses 
++#        - required: 
++#            - ipv6Addresses
+       properties:
+         port: 
+           $ref: '#/components/schemas/Port'
+@@ -2367,17 +2367,17 @@
+                 appUpdQoSProfile: 
+                   description: Parameters corresponding to the performance constraints, tenancy details etc.
+                   type: object
+-                  anyOf:
+-                    - required:
+-                      - latencyConstraint
+-                    - required:
+-                      - bandwidthRequired
+-                    - required:
+-                      - mobilitySupport
+-                    - required:
+-                      - multiUserClients  
+-                    - required:
+-                      - appProvisioning
++#                  anyOf:
++#                    - required:
++#                      - latencyConstraint
++#                    - required:
++#                      - bandwidthRequired
++#                    - required:
++#                      - mobilitySupport
++#                    - required:
++#                      - multiUserClients  
++#                    - required:
++#                      - appProvisioning
+                   properties:
+                     latencyConstraints:
+                       type: string
+@@ -2420,13 +2420,13 @@
+                     type: object
+                     required:
+                        - componentName                   
+-                    anyOf:
+-                      - required:
+-                        - serviceNameNB
+-                      - required:
+-                        - serviceNameEW                       
+-                      - required:
+-                        - artefactId
++#                    anyOf:
++#                      - required:
++#                        - serviceNameNB
++#                      - required:
++#                        - serviceNameEW                       
++#                      - required:
++#                        - artefactId
+                     properties:
+                       serviceNameNB: 
+                         type: string
