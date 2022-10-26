@@ -1,0 +1,167 @@
+--- FederationApi_v1.3.0.yaml.last	2022-10-26 10:18:54.803755700 -0700
++++ FederationApi_v1.3.0.yaml	2022-10-26 10:26:06.283755700 -0700
+@@ -916,56 +916,59 @@
+         acceptedZoneResourceInfo:
+           type: array
+           items:
+-            type: object
+-            required:
+-              - zoneId
+-              - reservedResources
+-              - resourceQuotaLimits
+-              - flavoursSupported
+-            properties:
+-              zoneId:
+-                $ref: '#/components/schemas/ZoneIdentifier'
+-              reservedComputeResources:
+-                description: Resources exclusively reserved for the originator OP.
+-                type: array
+-                items:
+-                  $ref: '#/components/schemas/ComputeResourceInfo'
+-                minItems: 1
+-              computeResourceQuotaLimits:
+-                description: Max quota on  resources  partner OP allows over reserved resources.
+-                type: array
+-                items:
+-                  $ref: '#/components/schemas/ComputeResourceInfo'
+-                minItems: 1
+-              flavoursSupported:
+-                type: array
+-                items:
+-                  $ref: '#/components/schemas/Flavour'      
+-                minItems: 1
+-              networkResources:
+-                type: object
+-                required:
+-                  - egressBandWidth
+-                  - dedicatedNIC
+-                  - supportSriov
+-                  - supportDPDK
+-                properties:  
+-                  egressBandWidth:
+-                    type: integer
+-                    format: int32
+-                    description: Max dl throughput that this edge can offer. It is defined in Mbps.
+-                  dedicatedNIC:
+-                    type: integer
+-                    format: int32
+-                    description: Number of  network interface cards which can be dedicatedly assigned to application pods on isolated networks.
+-                                        This includes virtual as well physical NICs
+-                  supportSriov:
+-                    type: boolean
+-                    description: If this zone support SRIOV networks or not
+-                  supportDPDK:
+-                    type: boolean
+-                    description: If this zone supports DPDK based networking.                 
+-          minItems: 1         
++            $ref: '#/components/schemas/ZoneRegisteredData'
++          minItems: 1
++
++    ZoneRegisteredData:
++      type: object
++      required:
++        - zoneId
++        - reservedResources
++        - resourceQuotaLimits
++        - flavoursSupported
++      properties:
++        zoneId:
++          $ref: '#/components/schemas/ZoneIdentifier'
++        reservedComputeResources:
++          description: Resources exclusively reserved for the originator OP.
++          type: array
++          items:
++            $ref: '#/components/schemas/ComputeResourceInfo'
++          minItems: 1
++        computeResourceQuotaLimits:
++          description: Max quota on resources partner OP allows over reserved resources.
++          type: array
++          items:
++            $ref: '#/components/schemas/ComputeResourceInfo'
++          minItems: 1
++        flavoursSupported:
++          type: array
++          items:
++            $ref: '#/components/schemas/Flavour'      
++          minItems: 1
++        networkResources:
++          type: object
++          required:
++            - egressBandWidth
++            - dedicatedNIC
++            - supportSriov
++            - supportDPDK
++          properties:  
++            egressBandWidth:
++              type: integer
++              format: int32
++              description: Max dl throughput that this edge can offer. It is defined in Mbps.
++            dedicatedNIC:
++              type: integer
++              format: int32
++              description: Number of  network interface cards which can be dedicatedly assigned to application pods on isolated networks.
++                                  This includes virtual as well physical NICs
++            supportSriov:
++              type: boolean
++              description: If this zone support SRIOV networks or not
++            supportDPDK:
++              type: boolean
++              description: If this zone supports DPDK based networking.
+                                        
+ #
+ # HTTP responses
+@@ -1548,53 +1551,7 @@
+           content: 
+             application/json:
+               schema:         
+-                type: object
+-                required:
+-                  - zoneId
+-                  - reservedResources
+-                  - resourceQuotaLimits
+-                  - flavoursSupported
+-                properties:
+-                  zoneId:
+-                    $ref: '#/components/schemas/ZoneIdentifier'
+-                  reservedComputeResources:
+-                    description: Resources exclusively reserved for the originator OP.
+-                    type: array
+-                    items:
+-                      $ref: '#/components/schemas/ComputeResourceInfo'
+-                    minItems: 1
+-                  computeResourceQuotaLimits:
+-                    description: Max quota on  resources  partner OP allows over reserved resources.
+-                    type: array
+-                    items:
+-                      $ref: '#/components/schemas/ComputeResourceInfo'
+-                    minItems: 1
+-                  flavoursSupported:
+-                    type: array
+-                    items:
+-                      $ref: '#/components/schemas/Flavour'      
+-                    minItems: 1
+-                  networkResources:
+-                    type: object
+-                    required:
+-                      - egressBandWidth
+-                      - dedicatedNIC
+-                      - supportSriov
+-                      - supportDPDK
+-                    properties:  
+-                      egressBandWidth:
+-                        type: integer
+-                        format: int32
+-                        description: Max dl throughput that this edge can offer. It is defined in Mbps.
+-                      dedicatedNIC:
+-                        type: integer
+-                        format: int32
+-                      supportSriov:
+-                        type: boolean
+-                        description: If this zone support SRIOV networks or not
+-                      supportDPDK:
+-                        type: boolean
+-                        description: If this zone supports DPDK based networking.                 
++                $ref: '#/components/schemas/ZoneRegisteredData'
+ 
+         '400':
+           $ref: '#/components/responses/400'

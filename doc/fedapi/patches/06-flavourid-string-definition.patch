@@ -1,0 +1,81 @@
+--- FederationApi_v1.3.0.yaml.last	2022-10-26 11:16:24.783755700 -0700
++++ FederationApi_v1.3.0.yaml	2022-10-26 11:20:18.643755700 -0700
+@@ -232,7 +232,11 @@
+       type: string
+       format: uuid
+       description: A globally unique identifier associated with the image file. Originating OP generates this identifier when file is uploaded over NBI.
+-        
++
++    FlavourId:
++      type: string
++      description: An identifier to refer to a specific combination of compute resources.
++      
+     GeoLocation:
+       type: string
+       description: "Latitude, Longitude as decimal fraction upto 4 digit precision"
+@@ -564,9 +568,7 @@
+         - storageSize
+       properties:
+         flavourId:
+-          type: integer
+-          format: int32
+-          description: An identifier to refer to this combination of compute resources. 
++          $ref: '#/components/schemas/FlavourId'
+         cpuArchType:
+           $ref: '#/components/schemas/CPUArchType'
+         supportedOSTypes:
+@@ -2522,9 +2524,7 @@
+                             zoneId:
+                               $ref:  '#/components/schemas/ZoneIdentifier'
+                             flavourId:
+-                              type: integer
+-                              format: int32
+-                              description: Flavour identifier. Should corresponds to flavours indicated by Partner OP for the corresponding zone.
++                              $ref: '#/components/schemas/FlavourId'
+                             resourceConsumption:
+                               type: string
+                               enum:
+@@ -2869,9 +2869,7 @@
+                     zoneId:
+                       $ref:  '#/components/schemas/ZoneIdentifier'
+                     flavourId:
+-                      type: integer
+-                      format: int32
+-                      description: flavour identifier. Should corresponds to flavours indicated by Partner OP for the corresponding zone.
++                      $ref: '#/components/schemas/FlavourId'
+                     resourceConsumption:
+                       type: string
+                       enum:
+@@ -3250,9 +3248,7 @@
+                           - numFlavour
+                         properties:
+                           flavourId:
+-                            type: integer
+-                            format: int32
+-                            description: Flavour identifier. Should corresponds to flavours indicated by Partner OP for the corresponding zone.
++                            $ref: '#/components/schemas/FlavourId'
+                           numFlavour:
+                             type: integer
+                             format: int32
+@@ -3335,9 +3331,7 @@
+                               - numFlavour
+                             properties:
+                               flavourId:
+-                                type: integer
+-                                format: int32
+-                                description: An identifier to refer to this combination of compute resources. 
++                                $ref: '#/components/schemas/FlavourId'
+                               numFlavour:
+                                 type: integer
+                                 format: int32
+@@ -3496,9 +3490,7 @@
+                     description: Specify if resource corresponding this flavour needs to added or removed. 
+                                         Field 'count' gives the final total no of such flavours that should be reserved.  count 0 means remove all the resources.
+                   flavourId:
+-                    type: integer
+-                    format: int32
+-                    description: An identifier to refer to this combination of compute resources. 
++                    $ref: '#/components/schemas/FlavourId'
+                   count:
+                     type: integer
+                     format: int32
