@@ -18,8 +18,8 @@ import (
 type InstallAppRequestZoneInfo struct {
 	// Human readable name of the zone.
 	ZoneId string `json:"zoneId"`
-	// flavour identifier. Should corresponds to flavours indicated by Partner OP for the corresponding zone.
-	FlavourId int32 `json:"flavourId"`
+	// An identifier to refer to a specific combination of compute resources.
+	FlavourId string `json:"flavourId"`
 	// Specifies if the application can be instantiated using  pre-reserved resource or not.  App provider can pre-reserve a pool of compute resource on each zone.  'RESERVED_RES_SHALL' instruct OP to use only the pre-reserved resources. 'RESERVED_RES_PREFER' instruct to first try using  pre-reserved resource, if none available go for non-reserved resources. 'RESERVED_RES_AVOID' instruct OP  not to use pre-reserved resource if possible, it is a choice depending upon circumstances 'RESERVED_RES_FORBID' instruct OP not to use pre-reserved resources.
 	ResourceConsumption *string `json:"resourceConsumption,omitempty"`
 	// Resource pool to be used for application instantiation on this zone.  Valid only if IE 'resourceConsumption' is set to 'RESERVED_RES_SHALL' or 'RESERVED_RES_PREFER'
@@ -30,7 +30,7 @@ type InstallAppRequestZoneInfo struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewInstallAppRequestZoneInfo(zoneId string, flavourId int32) *InstallAppRequestZoneInfo {
+func NewInstallAppRequestZoneInfo(zoneId string, flavourId string) *InstallAppRequestZoneInfo {
 	this := InstallAppRequestZoneInfo{}
 	this.ZoneId = zoneId
 	this.FlavourId = flavourId
@@ -74,9 +74,9 @@ func (o *InstallAppRequestZoneInfo) SetZoneId(v string) {
 }
 
 // GetFlavourId returns the FlavourId field value
-func (o *InstallAppRequestZoneInfo) GetFlavourId() int32 {
+func (o *InstallAppRequestZoneInfo) GetFlavourId() string {
 	if o == nil {
-		var ret int32
+		var ret string
 		return ret
 	}
 
@@ -85,7 +85,7 @@ func (o *InstallAppRequestZoneInfo) GetFlavourId() int32 {
 
 // GetFlavourIdOk returns a tuple with the FlavourId field value
 // and a boolean to check if the value has been set.
-func (o *InstallAppRequestZoneInfo) GetFlavourIdOk() (*int32, bool) {
+func (o *InstallAppRequestZoneInfo) GetFlavourIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -93,7 +93,7 @@ func (o *InstallAppRequestZoneInfo) GetFlavourIdOk() (*int32, bool) {
 }
 
 // SetFlavourId sets field value
-func (o *InstallAppRequestZoneInfo) SetFlavourId(v int32) {
+func (o *InstallAppRequestZoneInfo) SetFlavourId(v string) {
 	o.FlavourId = v
 }
 

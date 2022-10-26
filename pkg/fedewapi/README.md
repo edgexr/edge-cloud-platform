@@ -289,10 +289,10 @@ Class | Method | HTTP request | Description
  - [ViewISVResPool200Response](docs/ViewISVResPool200Response.md)
  - [ViewISVResPool200ResponseReservedFlavoursInner](docs/ViewISVResPool200ResponseReservedFlavoursInner.md)
  - [ZoneDetails](docs/ZoneDetails.md)
- - [ZoneRegisterationRequestData](docs/ZoneRegisterationRequestData.md)
- - [ZoneRegisterationResponseData](docs/ZoneRegisterationResponseData.md)
  - [ZoneRegisteredData](docs/ZoneRegisteredData.md)
  - [ZoneRegisteredDataNetworkResources](docs/ZoneRegisteredDataNetworkResources.md)
+ - [ZoneRegistrationRequestData](docs/ZoneRegistrationRequestData.md)
+ - [ZoneRegistrationResponseData](docs/ZoneRegistrationResponseData.md)
 
 
 ## Documentation For Authorization

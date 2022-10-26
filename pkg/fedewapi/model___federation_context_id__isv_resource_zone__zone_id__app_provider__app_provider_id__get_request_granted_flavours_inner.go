@@ -16,8 +16,8 @@ import (
 
 // FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner struct for FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner
 type FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner struct {
-	// An identifier to refer to this combination of compute resources.
-	FlavourId int32 `json:"flavourId"`
+	// An identifier to refer to a specific combination of compute resources.
+	FlavourId string `json:"flavourId"`
 	// Count of flavour
 	NumFlavour int32 `json:"numFlavour"`
 }
@@ -26,7 +26,7 @@ type FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestG
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner(flavourId int32, numFlavour int32) *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner {
+func NewFederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner(flavourId string, numFlavour int32) *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner {
 	this := FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner{}
 	this.FlavourId = flavourId
 	this.NumFlavour = numFlavour
@@ -42,9 +42,9 @@ func NewFederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetReque
 }
 
 // GetFlavourId returns the FlavourId field value
-func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner) GetFlavourId() int32 {
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner) GetFlavourId() string {
 	if o == nil {
-		var ret int32
+		var ret string
 		return ret
 	}
 
@@ -53,7 +53,7 @@ func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequ
 
 // GetFlavourIdOk returns a tuple with the FlavourId field value
 // and a boolean to check if the value has been set.
-func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner) GetFlavourIdOk() (*int32, bool) {
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner) GetFlavourIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -61,7 +61,7 @@ func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequ
 }
 
 // SetFlavourId sets field value
-func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner) SetFlavourId(v int32) {
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner) SetFlavourId(v string) {
 	o.FlavourId = v
 }
 

@@ -20,7 +20,7 @@ type ZoneRegisteredData struct {
 	ZoneId string `json:"zoneId"`
 	// Resources exclusively reserved for the originator OP.
 	ReservedComputeResources []ComputeResourceInfo `json:"reservedComputeResources,omitempty"`
-	// Max quota on  resources  partner OP allows over reserved resources.
+	// Max quota on resources partner OP allows over reserved resources.
 	ComputeResourceQuotaLimits []ComputeResourceInfo `json:"computeResourceQuotaLimits,omitempty"`
 	FlavoursSupported []Flavour `json:"flavoursSupported"`
 	NetworkResources *ZoneRegisteredDataNetworkResources `json:"networkResources,omitempty"`

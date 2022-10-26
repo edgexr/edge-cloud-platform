@@ -16,8 +16,8 @@ import (
 
 // CreateResourcePoolsRequestResRequestFlavoursInner struct for CreateResourcePoolsRequestResRequestFlavoursInner
 type CreateResourcePoolsRequestResRequestFlavoursInner struct {
-	// Flavour identifier. Should corresponds to flavours indicated by Partner OP for the corresponding zone.
-	FlavourId int32 `json:"flavourId"`
+	// An identifier to refer to a specific combination of compute resources.
+	FlavourId string `json:"flavourId"`
 	// Total number of flavours to be reserved
 	NumFlavour int32 `json:"numFlavour"`
 	// If specified, indicate the minimum numbers of flavours to be reserved up to maximum as given in “count” member. If partner OP cannot reserve the minimum number of flavours, then the request shall fail.
@@ -28,7 +28,7 @@ type CreateResourcePoolsRequestResRequestFlavoursInner struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCreateResourcePoolsRequestResRequestFlavoursInner(flavourId int32, numFlavour int32) *CreateResourcePoolsRequestResRequestFlavoursInner {
+func NewCreateResourcePoolsRequestResRequestFlavoursInner(flavourId string, numFlavour int32) *CreateResourcePoolsRequestResRequestFlavoursInner {
 	this := CreateResourcePoolsRequestResRequestFlavoursInner{}
 	this.FlavourId = flavourId
 	this.NumFlavour = numFlavour
@@ -44,9 +44,9 @@ func NewCreateResourcePoolsRequestResRequestFlavoursInnerWithDefaults() *CreateR
 }
 
 // GetFlavourId returns the FlavourId field value
-func (o *CreateResourcePoolsRequestResRequestFlavoursInner) GetFlavourId() int32 {
+func (o *CreateResourcePoolsRequestResRequestFlavoursInner) GetFlavourId() string {
 	if o == nil {
-		var ret int32
+		var ret string
 		return ret
 	}
 
@@ -55,7 +55,7 @@ func (o *CreateResourcePoolsRequestResRequestFlavoursInner) GetFlavourId() int32
 
 // GetFlavourIdOk returns a tuple with the FlavourId field value
 // and a boolean to check if the value has been set.
-func (o *CreateResourcePoolsRequestResRequestFlavoursInner) GetFlavourIdOk() (*int32, bool) {
+func (o *CreateResourcePoolsRequestResRequestFlavoursInner) GetFlavourIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -63,7 +63,7 @@ func (o *CreateResourcePoolsRequestResRequestFlavoursInner) GetFlavourIdOk() (*i
 }
 
 // SetFlavourId sets field value
-func (o *CreateResourcePoolsRequestResRequestFlavoursInner) SetFlavourId(v int32) {
+func (o *CreateResourcePoolsRequestResRequestFlavoursInner) SetFlavourId(v string) {
 	o.FlavourId = v
 }
 

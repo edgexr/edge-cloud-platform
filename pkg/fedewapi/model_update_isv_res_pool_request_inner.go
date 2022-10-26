@@ -18,8 +18,8 @@ import (
 type UpdateISVResPoolRequestInner struct {
 	// Specify if resource corresponding this flavour needs to added or removed. Field 'count' gives the final total no of such flavours that should be reserved.  count 0 means remove all the resources.
 	UpdateType string `json:"updateType"`
-	// An identifier to refer to this combination of compute resources.
-	FlavourId int32 `json:"flavourId"`
+	// An identifier to refer to a specific combination of compute resources.
+	FlavourId string `json:"flavourId"`
 	// Total number of flavours to be reserved
 	Count int32 `json:"count"`
 	ReserveDuration *ResourceReservationDuration `json:"reserveDuration,omitempty"`
@@ -29,7 +29,7 @@ type UpdateISVResPoolRequestInner struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewUpdateISVResPoolRequestInner(updateType string, flavourId int32, count int32) *UpdateISVResPoolRequestInner {
+func NewUpdateISVResPoolRequestInner(updateType string, flavourId string, count int32) *UpdateISVResPoolRequestInner {
 	this := UpdateISVResPoolRequestInner{}
 	this.UpdateType = updateType
 	this.FlavourId = flavourId
@@ -70,9 +70,9 @@ func (o *UpdateISVResPoolRequestInner) SetUpdateType(v string) {
 }
 
 // GetFlavourId returns the FlavourId field value
-func (o *UpdateISVResPoolRequestInner) GetFlavourId() int32 {
+func (o *UpdateISVResPoolRequestInner) GetFlavourId() string {
 	if o == nil {
-		var ret int32
+		var ret string
 		return ret
 	}
 
@@ -81,7 +81,7 @@ func (o *UpdateISVResPoolRequestInner) GetFlavourId() int32 {
 
 // GetFlavourIdOk returns a tuple with the FlavourId field value
 // and a boolean to check if the value has been set.
-func (o *UpdateISVResPoolRequestInner) GetFlavourIdOk() (*int32, bool) {
+func (o *UpdateISVResPoolRequestInner) GetFlavourIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -89,7 +89,7 @@ func (o *UpdateISVResPoolRequestInner) GetFlavourIdOk() (*int32, bool) {
 }
 
 // SetFlavourId sets field value
-func (o *UpdateISVResPoolRequestInner) SetFlavourId(v int32) {
+func (o *UpdateISVResPoolRequestInner) SetFlavourId(v string) {
 	o.FlavourId = v
 }
 

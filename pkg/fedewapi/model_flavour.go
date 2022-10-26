@@ -16,8 +16,8 @@ import (
 
 // Flavour struct for Flavour
 type Flavour struct {
-	// An identifier to refer to this combination of compute resources.
-	FlavourId int32 `json:"flavourId"`
+	// An identifier to refer to a specific combination of compute resources.
+	FlavourId string `json:"flavourId"`
 	CpuArchType CPUArchType `json:"cpuArchType"`
 	// A list of operating systems which this flavour configuration can support e.g., RHEL Linux, Ubuntu 18.04 LTS, MS Windows 2012 R2.
 	SupportedOSTypes []OSType `json:"supportedOSTypes"`
@@ -39,7 +39,7 @@ type Flavour struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFlavour(flavourId int32, cpuArchType CPUArchType, supportedOSTypes []OSType, numCPU int32, memorySize int32, storageSize int32) *Flavour {
+func NewFlavour(flavourId string, cpuArchType CPUArchType, supportedOSTypes []OSType, numCPU int32, memorySize int32, storageSize int32) *Flavour {
 	this := Flavour{}
 	this.FlavourId = flavourId
 	this.CpuArchType = cpuArchType
@@ -59,9 +59,9 @@ func NewFlavourWithDefaults() *Flavour {
 }
 
 // GetFlavourId returns the FlavourId field value
-func (o *Flavour) GetFlavourId() int32 {
+func (o *Flavour) GetFlavourId() string {
 	if o == nil {
-		var ret int32
+		var ret string
 		return ret
 	}
 
@@ -70,7 +70,7 @@ func (o *Flavour) GetFlavourId() int32 {
 
 // GetFlavourIdOk returns a tuple with the FlavourId field value
 // and a boolean to check if the value has been set.
-func (o *Flavour) GetFlavourIdOk() (*int32, bool) {
+func (o *Flavour) GetFlavourIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -78,7 +78,7 @@ func (o *Flavour) GetFlavourIdOk() (*int32, bool) {
 }
 
 // SetFlavourId sets field value
-func (o *Flavour) SetFlavourId(v int32) {
+func (o *Flavour) SetFlavourId(v string) {
 	o.FlavourId = v
 }
 
