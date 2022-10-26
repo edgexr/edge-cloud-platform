@@ -2411,19 +2411,15 @@ var PlatformConfigSpecialArgs = map[string]string{
 }
 var FederationConfigRequiredArgs = []string{}
 var FederationConfigOptionalArgs = []string{
-	"federationname",
-	"selffederationid",
-	"partnerfederationid",
-	"zonecountrycode",
+	"federationcontextid",
 	"partnerfederationaddr",
+	"federationdbid",
 }
 var FederationConfigAliasArgs = []string{}
 var FederationConfigComments = map[string]string{
-	"federationname":        "Federation name",
-	"selffederationid":      "Self federation ID",
-	"partnerfederationid":   "Partner federation ID",
-	"zonecountrycode":       "Cloudlet zone country code",
+	"federationcontextid":   "Federation context id",
 	"partnerfederationaddr": "Partner federation address",
+	"federationdbid":        "Federation database id",
 }
 var FederationConfigSpecialArgs = map[string]string{}
 var CloudletResMapRequiredArgs = []string{
@@ -2769,11 +2765,9 @@ var CloudletComments = map[string]string{
 	"secondarynotifysrvaddr":                 "Address for the secondary CRM notify listener to run on",
 	"dnslabel":                               "DNS label that is unique within the region",
 	"rootlbfqdn":                             "Root LB FQDN which is globally unique",
-	"federationconfig.federationname":        "Federation name",
-	"federationconfig.selffederationid":      "Self federation ID",
-	"federationconfig.partnerfederationid":   "Partner federation ID",
-	"federationconfig.zonecountrycode":       "Cloudlet zone country code",
+	"federationconfig.federationcontextid":   "Federation context id",
 	"federationconfig.partnerfederationaddr": "Partner federation address",
+	"federationconfig.federationdbid":        "Federation database id",
 	"licenseconfigstoragepath":               "GPU driver license config storage path",
 }
 var CloudletSpecialArgs = map[string]string{

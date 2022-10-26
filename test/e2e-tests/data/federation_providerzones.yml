@@ -1,0 +1,19 @@
+providerzones:
+- zoneid: dmuuscloud1
+  operatorid: dmuus
+  providername: dmuus-{{partnertag}}
+- zoneid: dmuuscloud2
+  operatorid: dmuus
+  providername: dmuus-{{partnertag}}
+- zoneid: dmuuscloud3
+  operatorid: dmuus
+  providername: dmuus-{{partnertag}}
+- zoneid: dmuuscloud4
+  operatorid: dmuus
+  providername: dmuus-{{partnertag}}
+- zoneid: enterprise1
+  operatorid: enterprise
+  providername: enterprise-{{partnertag}}
+- zoneid: enterprise2
+  operatorid: enterprise
+  providername: enterprise-{{partnertag}}

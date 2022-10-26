@@ -230,7 +230,7 @@ func CreateController(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Controller registered"))
 }
 
-func CreateControllerObj(ctx context.Context, claims *UserClaims, ctrl *ormapi.Controller) error {
+func CreateControllerObj(ctx context.Context, claims *ormutil.UserClaims, ctrl *ormapi.Controller) error {
 	ctrl.DnsRegion = util.DNSSanitize(ctrl.Region)
 	if err := validateControllerObj(ctrl); err != nil {
 		return err
@@ -270,7 +270,7 @@ func DeleteController(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Controller deregistered"))
 }
 
-func DeleteControllerObj(ctx context.Context, claims *UserClaims, ctrl *ormapi.Controller) error {
+func DeleteControllerObj(ctx context.Context, claims *ormutil.UserClaims, ctrl *ormapi.Controller) error {
 	if ctrl.Region == "" {
 		return fmt.Errorf("Controller Region not specified")
 	}
@@ -385,7 +385,7 @@ func ShowController(c echo.Context) error {
 	return ormutil.SetReply(c, ctrls)
 }
 
-func ShowControllerObj(ctx context.Context, claims *UserClaims, filter map[string]interface{}) ([]ormapi.Controller, error) {
+func ShowControllerObj(ctx context.Context, claims *ormutil.UserClaims, filter map[string]interface{}) ([]ormapi.Controller, error) {
 	ctrls := []ormapi.Controller{}
 	db := loggedDB(ctx)
 	err := db.Where(filter).Find(&ctrls).Error

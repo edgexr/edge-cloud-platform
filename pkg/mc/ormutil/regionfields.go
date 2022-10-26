@@ -91,3 +91,24 @@ func SetRegionObjFields(jsonData []byte, regionObj ormapi.RegionObjWithFields) e
 	regionObj.SetObjFields(fields)
 	return nil
 }
+
+// Get names from keys. Uses '.' to concatenate
+// sub levels of names from a map generated via:
+// m := map[string]interface{}
+// err := json.Unmarshal(data, &m)
+// Therefore no real structs should be present, only basic types
+// or interfaces
+func GetMapKeys(in map[string]interface{}) []string {
+	names := []string{}
+	for k, v := range in {
+		if submap, ok := v.(map[string]interface{}); ok {
+			subKeys := GetMapKeys(submap)
+			for _, skey := range subKeys {
+				names = append(names, k+"."+skey)
+			}
+			continue
+		}
+		names = append(names, k)
+	}
+	return names
+}

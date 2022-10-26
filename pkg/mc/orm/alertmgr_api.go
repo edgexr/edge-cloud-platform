@@ -29,7 +29,7 @@ import (
 )
 
 type AlertManagerContext struct {
-	claims *UserClaims
+	claims *ormutil.UserClaims
 }
 
 // Create alert receiver api handler

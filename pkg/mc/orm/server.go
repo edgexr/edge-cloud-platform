@@ -44,11 +44,13 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/pkg/version"
+	oauth2server "github.com/go-oauth2/oauth2/v4/server"
 	"github.com/gorilla/websocket"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
@@ -81,6 +83,7 @@ type ServerConfig struct {
 	SqlAddr                  string
 	VaultAddr                string
 	FederationAddr           string
+	FederationExternalAddr   string
 	PublicAddr               string
 	RunLocal                 bool
 	InitLocal                bool
@@ -118,6 +121,7 @@ type ServerConfig struct {
 	ConsoleAddr              string
 	PasswordResetConsolePath string
 	VerifyEmailConsolePath   string
+	oauth2Server             *oauth2server.Server
 	testTransport            http.RoundTripper // for unit-tests
 }
 
@@ -140,7 +144,8 @@ var nodeMgr *node.NodeMgr
 var AlertManagerServer *alertmgr.AlertMgrServer
 var allRegionCaches AllRegionCaches
 var connCache *ConnCache
-var fedClient *federation.FederationClient
+var accessApi platform.AccessApi
+var partnerApi *federation.PartnerApi
 
 var unitTestNodeMgrOps []node.NodeOp
 var rateLimitMgr *ratelimit.RateLimitManager
@@ -271,6 +276,8 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		return nil, err
 	}
 
+	serverConfig.oauth2Server = InitOauth2()
+
 	switch serverConfig.BillingPlatform {
 	case "fake":
 		serverConfig.BillingService = &fakebilling.BillingService{}
@@ -344,10 +351,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		return nil, fmt.Errorf("enforcer init failed, %v", err)
 	}
 
-	fedClient, err = federation.NewClient(accessapi.NewVaultGlobalClient(config.vaultConfig))
-	if err != nil {
-		log.FatalLog("Failed to setup federation client", "err", err)
-	}
+	accessApi = accessapi.NewVaultGlobalClient(config.vaultConfig)
 
 	server.initDataDone = make(chan error, 1)
 	go InitData(ctx, Superuser, superpass, config.PingInterval, &server.stopInitData, server.done, server.initDataDone)
@@ -385,6 +389,8 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	// AuthCookie needs to be done here at the root so it can run before RateLimit and extract the user information needed by the RateLimit middleware.
 	// AuthCookie will only run for the /auth path.
 	e.Use(logger, AuthCookie, RateLimit)
+
+	e.POST("/oauth2/token", Oauth2Token)
 
 	// login route
 	root := "api/v1"
@@ -886,26 +892,27 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/report/download", DownloadReport)
 
 	// Plan and manage federation
-	auth.POST("/federator/self/create", CreateSelfFederator)
-	auth.POST("/federator/self/update", UpdateSelfFederator)
-	auth.POST("/federator/self/delete", DeleteSelfFederator)
-	auth.POST("/federator/self/show", ShowSelfFederator)
-	auth.POST("/federator/self/generateapikey", GenerateSelfFederatorAPIKey)
-	auth.POST("/federator/self/zone/create", CreateSelfFederatorZone)
-	auth.POST("/federator/self/zone/delete", DeleteSelfFederatorZone)
-	auth.POST("/federator/self/zone/show", ShowSelfFederatorZone)
-	auth.POST("/federator/self/zone/share", ShareSelfFederatorZone)
-	auth.POST("/federator/self/zone/unshare", UnshareSelfFederatorZone)
-	auth.POST("/federator/partner/zone/register", RegisterPartnerFederatorZone)
-	auth.POST("/federator/partner/zone/deregister", DeregisterPartnerFederatorZone)
-	auth.POST("/federation/create", CreateFederation)
-	auth.POST("/federation/delete", DeleteFederation)
-	auth.POST("/federation/register", RegisterFederation)
-	auth.POST("/federation/deregister", DeregisterFederation)
-	auth.POST("/federation/partner/setapikey", SetPartnerFederationAPIKey)
-	auth.POST("/federation/show", ShowFederation)
-	auth.POST("/federation/self/zone/show", ShowFederatedSelfZone)
-	auth.POST("/federation/partner/zone/show", ShowFederatedPartnerZone)
+	auth.POST("/federation/provider/create", CreateFederationProvider)
+	auth.POST("/federation/provider/delete", DeleteFederationProvider)
+	auth.POST("/federation/provider/update", UpdateFederationProvider)
+	auth.POST("/federation/provider/show", ShowFederationProvider)
+	auth.POST("/federation/provider/generateapikey", GenerateFederationProviderAPIKey)
+	auth.POST("/federation/provider/setnotifykey", SetFederationProviderNotifyKey)
+	auth.POST("/federation/provider/zonebase/create", CreateProviderZoneBase)
+	auth.POST("/federation/provider/zonebase/delete", DeleteProviderZoneBase)
+	auth.POST("/federation/provider/zonebase/show", ShowProviderZoneBase)
+	auth.POST("/federation/provider/zone/share", ShareProviderZone)
+	auth.POST("/federation/provider/zone/unshare", UnshareProviderZone)
+	auth.POST("/federation/provider/zone/show", ShowProviderZone)
+
+	auth.POST("/federation/consumer/create", CreateFederationConsumer)
+	auth.POST("/federation/consumer/delete", DeleteFederationConsumer)
+	auth.POST("/federation/consumer/show", ShowFederationConsumer)
+	auth.POST("/federation/consumer/setapikey", SetFederationConsumerAPIKey)
+	auth.POST("/federation/consumer/generatenotifykey", GenerateFederationConsumerNotifyKey)
+	auth.POST("/federation/consumer/zone/register", RegisterConsumerZone)
+	auth.POST("/federation/consumer/zone/deregister", DeregisterConsumerZone)
+	auth.POST("/federation/consumer/zone/show", ShowConsumerZone)
 
 	// Generate new short-lived token to authenticate websocket connections
 	// Note: Web-client should not store auth token as part of local storage,
@@ -995,19 +1002,20 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	}()
 
 	if config.FederationAddr != "" {
+		if config.FederationExternalAddr == "" {
+			// local deployment, no external routing/ingress
+			config.FederationExternalAddr = "https://" + config.FederationAddr
+		}
 		// Global Operator Platform Federation
 		federationEcho := echo.New()
 		federationEcho.HideBanner = true
 		federationEcho.Binder = &CustomBinder{}
 
-		// RateLimit based on partner's federation ID if present or else use partner's IP
-		federationEcho.Use(logger, federation.AuthAPIKey, FederationRateLimit)
+		// RateLimit based on auth
+		federationEcho.Use(logger, AuthCookie, FederationRateLimit)
 		server.federationEcho = federationEcho
 
-		partnerApi := federation.PartnerApi{
-			Database:  database,
-			ConnCache: connCache,
-		}
+		partnerApi = federation.NewPartnerApi(database, connCache, config.vaultConfig)
 		partnerApi.InitAPIs(federationEcho)
 
 		go func() {
@@ -1126,6 +1134,7 @@ func (s *Server) Stop() {
 	serverConfig = &ServerConfig{}
 	gitlabClient = nil
 	harborClient = nil
+	partnerApi = nil
 }
 
 func ShowVersion(c echo.Context) error {

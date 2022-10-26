@@ -18,14 +18,6 @@ controllers:
   notifyaddr: {{ctrlnotifyaddr}}
   dnsregion: {{dnsregion}}
 
-orgs:
-- name: {{partnertag}}
-  type: operator
-  address: mobiledgex
-  phone: 123-123-1234
-  publicimages: true
-  edgeboxonly: true
-
 regiondata:
 - region: {{region}}
   appdata:

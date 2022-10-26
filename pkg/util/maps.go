@@ -36,3 +36,31 @@ func AddMaps(maps ...map[string]string) map[string]string {
 	}
 	return merged
 }
+
+func AddStringSliceUniques(ss []string, add []string) []string {
+	m1 := map[string]struct{}{}
+	for _, val := range ss {
+		m1[val] = struct{}{}
+	}
+	for _, val := range add {
+		if _, found := m1[val]; !found {
+			ss = append(ss, val)
+		}
+	}
+	return ss
+}
+
+func RemoveStringSliceUniques(ss []string, rm []string) []string {
+	rmMap := map[string]struct{}{}
+	for _, val := range rm {
+		rmMap[val] = struct{}{}
+	}
+	news := []string{}
+	for _, val := range ss {
+		if _, found := rmMap[val]; found {
+			continue
+		}
+		news = append(news, val)
+	}
+	return news
+}

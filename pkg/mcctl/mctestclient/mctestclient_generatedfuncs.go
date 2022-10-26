@@ -1862,9 +1862,9 @@ func (s *Client) AccessCloudlet(uri string, token string, in *ormapi.RegionExecR
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-// Generating group Federation
+// Generating group FederationConsumer
 
-func (s *Client) CreateFederation(uri string, token string, in *ormapi.Federation) (*ormapi.Result, int, error) {
+func (s *Client) CreateFederationConsumer(uri string, token string, in *ormapi.FederationConsumer) (*ormapi.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -1872,7 +1872,7 @@ func (s *Client) CreateFederation(uri string, token string, in *ormapi.Federatio
 	var out ormapi.Result
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("CreateFederation")
+	apiCmd := ormctl.MustGetCommand("CreateFederationConsumer")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -1880,7 +1880,7 @@ func (s *Client) CreateFederation(uri string, token string, in *ormapi.Federatio
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteFederation(uri string, token string, in *ormapi.Federation) (*ormapi.Result, int, error) {
+func (s *Client) DeleteFederationConsumer(uri string, token string, in *ormapi.FederationConsumer) (*ormapi.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -1888,7 +1888,7 @@ func (s *Client) DeleteFederation(uri string, token string, in *ormapi.Federatio
 	var out ormapi.Result
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("DeleteFederation")
+	apiCmd := ormctl.MustGetCommand("DeleteFederationConsumer")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -1896,63 +1896,15 @@ func (s *Client) DeleteFederation(uri string, token string, in *ormapi.Federatio
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) SetPartnerFederationAPIKey(uri string, token string, in *ormapi.Federation) (*ormapi.Result, int, error) {
+func (s *Client) ShowFederationConsumer(uri string, token string, in *cli.MapData) ([]ormapi.FederationConsumer, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
-	var out ormapi.Result
+	var out []ormapi.FederationConsumer
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("SetPartnerFederationAPIKey")
-	s.ClientRun.Run(apiCmd, &rundata)
-	if rundata.RetError != nil {
-		return nil, rundata.RetStatus, rundata.RetError
-	}
-	return &out, rundata.RetStatus, rundata.RetError
-}
-
-func (s *Client) RegisterFederation(uri string, token string, in *ormapi.Federation) (*ormapi.Result, int, error) {
-	rundata := RunData{}
-	rundata.Uri = uri
-	rundata.Token = token
-	rundata.In = in
-	var out ormapi.Result
-	rundata.Out = &out
-
-	apiCmd := ormctl.MustGetCommand("RegisterFederation")
-	s.ClientRun.Run(apiCmd, &rundata)
-	if rundata.RetError != nil {
-		return nil, rundata.RetStatus, rundata.RetError
-	}
-	return &out, rundata.RetStatus, rundata.RetError
-}
-
-func (s *Client) DeregisterFederation(uri string, token string, in *ormapi.Federation) (*ormapi.Result, int, error) {
-	rundata := RunData{}
-	rundata.Uri = uri
-	rundata.Token = token
-	rundata.In = in
-	var out ormapi.Result
-	rundata.Out = &out
-
-	apiCmd := ormctl.MustGetCommand("DeregisterFederation")
-	s.ClientRun.Run(apiCmd, &rundata)
-	if rundata.RetError != nil {
-		return nil, rundata.RetStatus, rundata.RetError
-	}
-	return &out, rundata.RetStatus, rundata.RetError
-}
-
-func (s *Client) ShowFederation(uri string, token string, in *cli.MapData) ([]ormapi.Federation, int, error) {
-	rundata := RunData{}
-	rundata.Uri = uri
-	rundata.Token = token
-	rundata.In = in
-	var out []ormapi.Federation
-	rundata.Out = &out
-
-	apiCmd := ormctl.MustGetCommand("ShowFederation")
+	apiCmd := ormctl.MustGetCommand("ShowFederationConsumer")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -1960,25 +1912,7 @@ func (s *Client) ShowFederation(uri string, token string, in *cli.MapData) ([]or
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-// Generating group Federator
-
-func (s *Client) CreateSelfFederator(uri string, token string, in *ormapi.Federator) (*ormapi.Federator, int, error) {
-	rundata := RunData{}
-	rundata.Uri = uri
-	rundata.Token = token
-	rundata.In = in
-	var out ormapi.Federator
-	rundata.Out = &out
-
-	apiCmd := ormctl.MustGetCommand("CreateSelfFederator")
-	s.ClientRun.Run(apiCmd, &rundata)
-	if rundata.RetError != nil {
-		return nil, rundata.RetStatus, rundata.RetError
-	}
-	return &out, rundata.RetStatus, rundata.RetError
-}
-
-func (s *Client) UpdateSelfFederator(uri string, token string, in *cli.MapData) (*ormapi.Result, int, error) {
+func (s *Client) SetFederationConsumerAPIKey(uri string, token string, in *ormapi.FederationConsumer) (*ormapi.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -1986,7 +1920,7 @@ func (s *Client) UpdateSelfFederator(uri string, token string, in *cli.MapData) 
 	var out ormapi.Result
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("UpdateSelfFederator")
+	apiCmd := ormctl.MustGetCommand("SetFederationConsumerAPIKey")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -1994,7 +1928,7 @@ func (s *Client) UpdateSelfFederator(uri string, token string, in *cli.MapData) 
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteSelfFederator(uri string, token string, in *ormapi.Federator) (*ormapi.Result, int, error) {
+func (s *Client) GenerateFederationConsumerNotifyKey(uri string, token string, in *ormapi.FederationConsumer) (*ormapi.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -2002,7 +1936,7 @@ func (s *Client) DeleteSelfFederator(uri string, token string, in *ormapi.Federa
 	var out ormapi.Result
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("DeleteSelfFederator")
+	apiCmd := ormctl.MustGetCommand("GenerateFederationConsumerNotifyKey")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -2010,15 +1944,47 @@ func (s *Client) DeleteSelfFederator(uri string, token string, in *ormapi.Federa
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowSelfFederator(uri string, token string, in *cli.MapData) ([]ormapi.Federator, int, error) {
+func (s *Client) RegisterConsumerZone(uri string, token string, in *ormapi.FederatedZoneRegRequest) (*ormapi.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
-	var out []ormapi.Federator
+	var out ormapi.Result
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("ShowSelfFederator")
+	apiCmd := ormctl.MustGetCommand("RegisterConsumerZone")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) DeregisterConsumerZone(uri string, token string, in *ormapi.FederatedZoneRegRequest) (*ormapi.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out ormapi.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("DeregisterConsumerZone")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowConsumerZone(uri string, token string, in *cli.MapData) ([]ormapi.ConsumerZone, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []ormapi.ConsumerZone
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowConsumerZone")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -2026,15 +1992,17 @@ func (s *Client) ShowSelfFederator(uri string, token string, in *cli.MapData) ([
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GenerateSelfFederatorAPIKey(uri string, token string, in *ormapi.Federator) (*ormapi.Federator, int, error) {
+// Generating group FederationProvider
+
+func (s *Client) CreateFederationProvider(uri string, token string, in *ormapi.FederationProvider) (*ormapi.FederationProviderInfo, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
-	var out ormapi.Federator
+	var out ormapi.FederationProviderInfo
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("GenerateSelfFederatorAPIKey")
+	apiCmd := ormctl.MustGetCommand("CreateFederationProvider")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -2042,9 +2010,7 @@ func (s *Client) GenerateSelfFederatorAPIKey(uri string, token string, in *ormap
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-// Generating group FederatorZone
-
-func (s *Client) CreateSelfFederatorZone(uri string, token string, in *ormapi.FederatorZone) (*ormapi.Result, int, error) {
+func (s *Client) UpdateFederationProvider(uri string, token string, in *cli.MapData) (*ormapi.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -2052,7 +2018,7 @@ func (s *Client) CreateSelfFederatorZone(uri string, token string, in *ormapi.Fe
 	var out ormapi.Result
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("CreateSelfFederatorZone")
+	apiCmd := ormctl.MustGetCommand("UpdateFederationProvider")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -2060,7 +2026,7 @@ func (s *Client) CreateSelfFederatorZone(uri string, token string, in *ormapi.Fe
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteSelfFederatorZone(uri string, token string, in *ormapi.FederatorZone) (*ormapi.Result, int, error) {
+func (s *Client) DeleteFederationProvider(uri string, token string, in *ormapi.FederationProvider) (*ormapi.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -2068,7 +2034,7 @@ func (s *Client) DeleteSelfFederatorZone(uri string, token string, in *ormapi.Fe
 	var out ormapi.Result
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("DeleteSelfFederatorZone")
+	apiCmd := ormctl.MustGetCommand("DeleteFederationProvider")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -2076,15 +2042,15 @@ func (s *Client) DeleteSelfFederatorZone(uri string, token string, in *ormapi.Fe
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowSelfFederatorZone(uri string, token string, in *cli.MapData) ([]ormapi.FederatorZone, int, error) {
+func (s *Client) ShowFederationProvider(uri string, token string, in *cli.MapData) ([]ormapi.FederationProvider, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
-	var out []ormapi.FederatorZone
+	var out []ormapi.FederationProvider
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("ShowSelfFederatorZone")
+	apiCmd := ormctl.MustGetCommand("ShowFederationProvider")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -2092,15 +2058,15 @@ func (s *Client) ShowSelfFederatorZone(uri string, token string, in *cli.MapData
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShareSelfFederatorZone(uri string, token string, in *ormapi.FederatedSelfZone) (*ormapi.Result, int, error) {
+func (s *Client) GenerateFederationProviderAPIKey(uri string, token string, in *ormapi.FederationProvider) (*ormapi.FederationProviderInfo, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
-	var out ormapi.Result
+	var out ormapi.FederationProviderInfo
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("ShareSelfFederatorZone")
+	apiCmd := ormctl.MustGetCommand("GenerateFederationProviderAPIKey")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -2108,7 +2074,7 @@ func (s *Client) ShareSelfFederatorZone(uri string, token string, in *ormapi.Fed
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UnshareSelfFederatorZone(uri string, token string, in *ormapi.FederatedSelfZone) (*ormapi.Result, int, error) {
+func (s *Client) SetFederationProviderNotifyKey(uri string, token string, in *ormapi.FederationProvider) (*ormapi.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -2116,7 +2082,7 @@ func (s *Client) UnshareSelfFederatorZone(uri string, token string, in *ormapi.F
 	var out ormapi.Result
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("UnshareSelfFederatorZone")
+	apiCmd := ormctl.MustGetCommand("SetFederationProviderNotifyKey")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -2124,7 +2090,7 @@ func (s *Client) UnshareSelfFederatorZone(uri string, token string, in *ormapi.F
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RegisterPartnerFederatorZone(uri string, token string, in *ormapi.FederatedZoneRegRequest) (*ormapi.Result, int, error) {
+func (s *Client) CreateProviderZoneBase(uri string, token string, in *ormapi.ProviderZoneBase) (*ormapi.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -2132,7 +2098,7 @@ func (s *Client) RegisterPartnerFederatorZone(uri string, token string, in *orma
 	var out ormapi.Result
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("RegisterPartnerFederatorZone")
+	apiCmd := ormctl.MustGetCommand("CreateProviderZoneBase")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -2140,7 +2106,7 @@ func (s *Client) RegisterPartnerFederatorZone(uri string, token string, in *orma
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeRegisterPartnerFederatorZone(uri string, token string, in *ormapi.FederatedZoneRegRequest) (*ormapi.Result, int, error) {
+func (s *Client) DeleteProviderZoneBase(uri string, token string, in *ormapi.ProviderZoneBase) (*ormapi.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -2148,7 +2114,7 @@ func (s *Client) DeRegisterPartnerFederatorZone(uri string, token string, in *or
 	var out ormapi.Result
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("DeRegisterPartnerFederatorZone")
+	apiCmd := ormctl.MustGetCommand("DeleteProviderZoneBase")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -2156,15 +2122,15 @@ func (s *Client) DeRegisterPartnerFederatorZone(uri string, token string, in *or
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowFederatedSelfZone(uri string, token string, in *cli.MapData) ([]ormapi.FederatedSelfZone, int, error) {
+func (s *Client) ShowProviderZoneBase(uri string, token string, in *cli.MapData) ([]ormapi.ProviderZoneBase, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
-	var out []ormapi.FederatedSelfZone
+	var out []ormapi.ProviderZoneBase
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("ShowFederatedSelfZone")
+	apiCmd := ormctl.MustGetCommand("ShowProviderZoneBase")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -2172,15 +2138,47 @@ func (s *Client) ShowFederatedSelfZone(uri string, token string, in *cli.MapData
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowFederatedPartnerZone(uri string, token string, in *cli.MapData) ([]ormapi.FederatedPartnerZone, int, error) {
+func (s *Client) ShareProviderZone(uri string, token string, in *ormapi.FederatedZoneShareRequest) (*ormapi.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
-	var out []ormapi.FederatedPartnerZone
+	var out ormapi.Result
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("ShowFederatedPartnerZone")
+	apiCmd := ormctl.MustGetCommand("ShareProviderZone")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) UnshareProviderZone(uri string, token string, in *ormapi.FederatedZoneShareRequest) (*ormapi.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out ormapi.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("UnshareProviderZone")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowProviderZone(uri string, token string, in *cli.MapData) ([]ormapi.ProviderZone, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []ormapi.ProviderZone
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowProviderZone")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError

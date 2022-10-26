@@ -1,0 +1,27 @@
+federationconsumers:
+- name: dmuus-{{partnertag}}
+  operatorid: {{partnertag}}
+  partneraddr: {{fedaddr}}
+  partnertokenurl: {{tokenurl}}
+  region: {{region}}
+  autoregisterzones: true
+  providerclientid: set-by-mcapi.go
+  providerclientkey: set-by-macpi.go
+  myinfo:
+    countrycode: SA
+    mcc: 456
+    mnc: [444, 555, 666]
+    fixednetworkids: [blah, bloh, bluh]
+- name: enterprise-{{partnertag}}
+  operatorid: {{partnertag}}
+  partneraddr: {{fedaddr}}
+  partnertokenurl: {{tokenurl}}
+  region: {{region}}
+  autoregisterzones: true
+  providerclientid: set-by-mcapi.go
+  providerclientkey: set-by-macpi.go
+  myinfo:
+    countrycode: SA
+    mcc: 456
+    mnc: [444, 555, 666]
+    fixednetworkids: [blah, bloh, bluh]

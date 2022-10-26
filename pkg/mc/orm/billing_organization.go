@@ -55,7 +55,7 @@ func CreateBillingOrg(c echo.Context) error {
 }
 
 // Parent billing orgs will have a billing Group, self billing orgs will just use the existing developer group from the org
-func CreateBillingOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.BillingOrganization) error {
+func CreateBillingOrgObj(ctx context.Context, claims *ormutil.UserClaims, org *ormapi.BillingOrganization) error {
 	// TODO: remove this later, for now only mexadmin the permission to create billingOrgs
 	if !isAdmin(ctx, claims.Username) && billingEnabled(ctx) {
 		return fmt.Errorf("Currently only admins may create and commit billingOrgs")
@@ -248,7 +248,7 @@ func AddChildOrg(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Organization added"))
 }
 
-func AddChildOrgObj(ctx context.Context, claims *UserClaims, parentOrg *ormapi.BillingOrganization) error {
+func AddChildOrgObj(ctx context.Context, claims *ormutil.UserClaims, parentOrg *ormapi.BillingOrganization) error {
 	if err := authorized(ctx, claims.Username, parentOrg.Name, ResourceBilling, ActionManage); err != nil {
 		return err
 	}
@@ -336,7 +336,7 @@ func RemoveChildOrg(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Organization removed"))
 }
 
-func RemoveChildOrgObj(ctx context.Context, claims *UserClaims, billing *ormapi.BillingOrganization) error {
+func RemoveChildOrgObj(ctx context.Context, claims *ormutil.UserClaims, billing *ormapi.BillingOrganization) error {
 	if err := authorized(ctx, claims.Username, billing.Name, ResourceBilling, ActionManage); err != nil {
 		return err
 	}
@@ -430,7 +430,7 @@ func DeleteBillingOrg(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Billing Organization deleted"))
 }
 
-func DeleteBillingOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.BillingOrganization) error {
+func DeleteBillingOrgObj(ctx context.Context, claims *ormutil.UserClaims, org *ormapi.BillingOrganization) error {
 	// TODO: remove this check later, for now to keep consistent with create, only allow admins to delete billingOrgs
 	if !isAdmin(ctx, claims.Username) && billingEnabled(ctx) {
 		return fmt.Errorf("Currently only admins may create and commit billingOrgs")
@@ -526,7 +526,7 @@ func ShowBillingOrg(c echo.Context) error {
 	return ormutil.SetReply(c, orgs)
 }
 
-func ShowBillingOrgObj(ctx context.Context, claims *UserClaims) ([]ormapi.BillingOrganization, error) {
+func ShowBillingOrgObj(ctx context.Context, claims *ormutil.UserClaims) ([]ormapi.BillingOrganization, error) {
 	orgs := []ormapi.BillingOrganization{}
 	db := loggedDB(ctx)
 	authOrgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceBilling, ActionView)
@@ -581,7 +581,7 @@ func ShowAccountInfo(c echo.Context) error {
 	return ormutil.SetReply(c, accs)
 }
 
-func ShowAccountInfoObj(ctx context.Context, claims *UserClaims) ([]ormapi.AccountInfo, error) {
+func ShowAccountInfoObj(ctx context.Context, claims *ormutil.UserClaims) ([]ormapi.AccountInfo, error) {
 	accs := []ormapi.AccountInfo{}
 	db := loggedDB(ctx)
 	authOrgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceBilling, ActionManage)
@@ -640,7 +640,7 @@ func ShowPaymentInfo(c echo.Context) error {
 	return ormutil.SetReply(c, profiles)
 }
 
-func ShowPaymentInfoObj(ctx context.Context, claims *UserClaims, org *ormapi.BillingOrganization) ([]billing.PaymentProfile, error) {
+func ShowPaymentInfoObj(ctx context.Context, claims *ormutil.UserClaims, org *ormapi.BillingOrganization) ([]billing.PaymentProfile, error) {
 	// TODO: remove this later, for now only mexadmin has the permission to manipulate payment info
 	isAdmin, err := isUserAdmin(ctx, claims.Username)
 	if err != nil {
@@ -677,7 +677,7 @@ func DeletePaymentInfo(c echo.Context) error {
 	return ormutil.SetReply(c, nil)
 }
 
-func deletePaymentProfileObj(ctx context.Context, claims *UserClaims, profile *ormapi.PaymentProfileDeletion) error {
+func deletePaymentProfileObj(ctx context.Context, claims *ormutil.UserClaims, profile *ormapi.PaymentProfileDeletion) error {
 	// TODO: remove this later, for now only mexadmin has the permission to manipulare payment info
 	isAdmin, err := isUserAdmin(ctx, claims.Username)
 	if err != nil {

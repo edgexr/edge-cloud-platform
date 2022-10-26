@@ -26,9 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/gormlog"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/jinzhu/gorm"
-	_ "github.com/labstack/echo/v4"
 	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 )
 
 var retryInterval = 10 * time.Second
@@ -95,11 +93,11 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 			&ormapi.McRateLimitFlowSettings{},
 			&ormapi.McRateLimitMaxReqsSettings{},
 			// Federation GORM Objects
-			&ormapi.Federator{},
-			&ormapi.Federation{},
-			&ormapi.FederatorZone{},
-			&ormapi.FederatedPartnerZone{},
-			&ormapi.FederatedSelfZone{},
+			&ormapi.FederationProvider{},
+			&ormapi.FederationConsumer{},
+			&ormapi.ProviderZoneBase{},
+			&ormapi.ProviderZone{},
+			&ormapi.ConsumerZone{},
 		).Error
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "automigrate", "err", err)

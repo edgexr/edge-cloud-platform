@@ -1211,7 +1211,7 @@ func GetAppResourceUsageData(ctx context.Context, username string, report *ormap
 		},
 	}
 	rc.region = in.Region
-	claims := &UserClaims{Username: username}
+	claims := &ormutil.UserClaims{Username: username}
 	cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.AppKey.Organization},
 		ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.ClusterInstKey.CloudletKey})
 	if err != nil {

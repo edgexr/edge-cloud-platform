@@ -23,6 +23,7 @@ import (
 	valid "github.com/asaskevich/govalidator"
 )
 
+// Parse the Geo Location format
 func ParseGeoLocation(geoLoc string) (float64, float64, error) {
 	var lat float64
 	var long float64
@@ -31,42 +32,41 @@ func ParseGeoLocation(geoLoc string) (float64, float64, error) {
 	}
 	loc := strings.Split(geoLoc, ",")
 	if len(loc) != 2 {
-		return lat, long, fmt.Errorf("Invalid geo location %q. Valid format: <LatInDecimal,LongInDecimal>", geoLoc)
+		return lat, long, fmt.Errorf("Invalid geo location format %q. Valid format: <LatInDecimal,LongInDecimal>", geoLoc)
 	}
 	latStr, longStr := strings.TrimSpace(loc[0]), strings.TrimSpace(loc[1])
 	lat, err := strconv.ParseFloat(latStr, 64)
 	if err != nil {
 		return lat, long, fmt.Errorf("Invalid latitude %q, must be a valid decimal number", latStr)
 	}
-	if !valid.IsLatitude(latStr) {
-		return lat, long, fmt.Errorf("Invalid latitude: %s", latStr)
+	if lat < float64(-90) || lat > float64(90) {
+		return lat, long, fmt.Errorf("Latitude out of bounds: %s", latStr)
 	}
-
 	long, err = strconv.ParseFloat(longStr, 64)
 	if err != nil {
 		return lat, long, fmt.Errorf("Invalid longitude %q, must be a valid decimal number", longStr)
 	}
-	if !valid.IsLongitude(longStr) {
-		return lat, long, fmt.Errorf("Invalid longitude: %s", longStr)
+	if long < float64(-180) || long > float64(180) {
+		return lat, long, fmt.Errorf("Longitude out of bounds: %s", longStr)
 	}
-
 	return lat, long, nil
 }
 
+// Generate a geo location string.
+func GenGeoLocation(latitude, longitude float64) string {
+	lat := strconv.FormatFloat(latitude, 'g', -1, 64)
+	long := strconv.FormatFloat(longitude, 'g', -1, 64)
+	return lat + "," + long
+}
+
+// Federation ID and Zone ID
+var idMatch = regexp.MustCompile("^[a-fA-f0-9]+$")
+var zoneMatch = regexp.MustCompile("^[a-zA-Z0-9-]+$")
 var nameMatch = regexp.MustCompile("^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$")
 
 func ValidateZoneId(zoneId string) error {
-	if !nameMatch.MatchString(zoneId) {
-		return fmt.Errorf("Invalid zone ID %q, can only contain alphanumeric, -, _ characters", zoneId)
-	}
-	if strings.HasPrefix(zoneId, "_") {
-		return fmt.Errorf("Invalid zone ID %q, cannot start with _", zoneId)
-	}
-	if strings.HasPrefix(zoneId, "-") {
-		return fmt.Errorf("Invalid zone ID %q, cannot start with -", zoneId)
-	}
-	if len(zoneId) < 8 || len(zoneId) > 32 {
-		return fmt.Errorf("Invalid zone ID %q, valid length is 8 to 32 characters", zoneId)
+	if !zoneMatch.MatchString(zoneId) {
+		return fmt.Errorf("Invalid zone ID %q, valid format is %s", zoneId, zoneMatch)
 	}
 	return nil
 }
@@ -89,14 +89,8 @@ func ValidateCountryCode(countryCode string) error {
 }
 
 func ValidateFederationId(fedId string) error {
-	if !nameMatch.MatchString(fedId) {
-		return fmt.Errorf("Invalid federation ID %q, can only contain alphanumeric, -, _ characters", fedId)
-	}
-	if strings.HasPrefix(fedId, "_") {
-		return fmt.Errorf("Invalid federation ID %q, cannot start with _", fedId)
-	}
-	if strings.HasPrefix(fedId, "-") {
-		return fmt.Errorf("Invalid federation ID %q, cannot start with -", fedId)
+	if !idMatch.MatchString(fedId) {
+		return fmt.Errorf("Invalid federation ID %q, can only contain a-f, A-F, and 0-9 characters", fedId)
 	}
 	if len(fedId) < 8 || len(fedId) > 128 {
 		return fmt.Errorf("Invalid federation ID %q, valid length is 8 to 128 characters", fedId)

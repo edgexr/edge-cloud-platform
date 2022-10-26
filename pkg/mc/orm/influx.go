@@ -47,7 +47,7 @@ var maxEntriesFromInfluxDb = 10000
 
 type InfluxDBContext struct {
 	region string
-	claims *UserClaims
+	claims *ormutil.UserClaims
 	conn   influxdb.Client
 }
 

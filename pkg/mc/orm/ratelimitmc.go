@@ -15,20 +15,19 @@
 package orm
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	fmt "fmt"
-	"io/ioutil"
 	"net/http"
+	"regexp"
 
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/ratelimit"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/ratelimit"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 // Default McRateLimitSettings structs
@@ -216,6 +215,8 @@ func RateLimit(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
+var fedPathMatch = regexp.MustCompile(federation.ApiRoot + "/(.*)?/")
+
 // Echo middleware function that handles rate limiting for federation APIs
 func FederationRateLimit(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -226,37 +227,22 @@ func FederationRateLimit(next echo.HandlerFunc) echo.HandlerFunc {
 			return next(c)
 		}
 
-		// Get partner's federation ID from request body.
-		reqBody := []byte{}
-		if c.Request().Body != nil { // Read
-			reqBody, _ = ioutil.ReadAll(c.Request().Body)
-		}
-		c.Request().Body = ioutil.NopCloser(bytes.NewBuffer(reqBody)) // Reset
-
-		// All federation APIs must have `origFederationId` field, use that
-		// as username for ratelimitting federation APIs
-		type CommonReq struct {
-			OrigFederationId string `json:"origFederationId"`
-		}
-		origFedId := ""
-		fedIdObj := CommonReq{}
-		err := json.Unmarshal(reqBody, &fedIdObj)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfo, "failed to unmarshal request body to fetch origin federation ID", "req body", string(reqBody), "err", err)
-		} else {
-			origFedId = fedIdObj.OrigFederationId
+		// Rate limit based on authenticated apikey username
+		username := ""
+		claims, err := getClaims(c)
+		if err == nil {
+			username = claims.Username
 		}
 
 		// Create callerInfo
 		callerInfo := &ratelimit.CallerInfo{
 			Api: c.Path(),
 		}
-		if origFedId == "" {
+		if username == "" {
 			// use IP if cannot get partner's federation ID
 			callerInfo.Ip = c.RealIP()
 		} else {
-			// use partner's federation ID as Username
-			callerInfo.User = origFedId
+			callerInfo.User = username
 		}
 
 		// Rate limit

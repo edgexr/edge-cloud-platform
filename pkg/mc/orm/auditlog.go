@@ -211,14 +211,25 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			if err != nil {
 				reqBody = []byte{}
 			}
-		} else if strings.Contains(req.RequestURI, "/auth/federation/create") ||
-			strings.Contains(req.RequestURI, "/auth/federation/partner/setapikey") {
-			fedReq := ormapi.Federation{}
+		} else if strings.Contains(req.RequestURI, "/auth/federation/provider/create") ||
+			strings.Contains(req.RequestURI, "/auth/federation/provider/setnotifykey") {
+			fedReq := ormapi.FederationProvider{}
 			err := json.Unmarshal(reqBody, &fedReq)
 			if err == nil {
 				// do not log partner federator's API key
-				fedReq.ApiKey = ""
-				fedReq.ApiKeyHash = ""
+				fedReq.PartnerNotifyClientKey = ""
+				reqBody, err = json.Marshal(fedReq)
+			}
+			if err != nil {
+				reqBody = []byte{}
+			}
+		} else if strings.Contains(req.RequestURI, "/auth/federation/consumer/create") ||
+			strings.Contains(req.RequestURI, "/auth/federation/consumer/setapikey") {
+			fedReq := ormapi.FederationConsumer{}
+			err := json.Unmarshal(reqBody, &fedReq)
+			if err == nil {
+				// do not log partner federator's API key
+				fedReq.ProviderClientKey = ""
 				reqBody, err = json.Marshal(fedReq)
 			}
 			if err != nil {
@@ -274,12 +285,13 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 					} else {
 						response = string(resBody)
 					}
-				} else if strings.Contains(req.RequestURI, "/federator/self/generateapikey") ||
-					strings.Contains(req.RequestURI, "/federator/create") {
-					resp := ormapi.Federation{}
+				}
+			} else if strings.Contains(string(resBody), "ClientKey") {
+				if strings.Contains(req.RequestURI, "/federation/provider/generateapikey") {
+					resp := ormapi.FederationProviderInfo{}
 					err := json.Unmarshal(resBody, &resp)
 					if err == nil {
-						resp.ApiKey = ""
+						resp.ClientKey = ""
 						updatedResp, err := json.Marshal(&resp)
 						if err == nil {
 							response = string(updatedResp)
@@ -290,7 +302,21 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 						response = string(resBody)
 					}
 				}
-
+				if strings.Contains(req.RequestURI, "/federation/consumer/generatenotifykey") {
+					resp := ormapi.FederationConsumerAuth{}
+					err := json.Unmarshal(resBody, &resp)
+					if err == nil {
+						resp.ClientKey = ""
+						updatedResp, err := json.Marshal(&resp)
+						if err == nil {
+							response = string(updatedResp)
+						} else {
+							response = string(resBody)
+						}
+					} else {
+						response = string(resBody)
+					}
+				}
 			} else {
 				response = string(resBody)
 			}

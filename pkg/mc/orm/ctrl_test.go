@@ -2933,7 +2933,7 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 	require.Nil(t, err, "login using api key")
 
 	// user's login token should have shorter expiration time
-	claims := UserClaims{}
+	claims := ormutil.UserClaims{}
 	_, err = Jwks.VerifyCookie(apiKeyLoginToken, &claims)
 	require.Nil(t, err, "parse token")
 	delta := claims.ExpiresAt - claims.IssuedAt

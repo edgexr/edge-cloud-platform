@@ -519,19 +519,19 @@ type RegionObjWithFields interface {
 // all data is for full create/delete
 
 type AllData struct {
-	Controllers                   []Controller           `json:"controllers,omitempty"`
-	BillingOrgs                   []BillingOrganization  `json:"billingorgs,omitempty"`
-	AlertReceivers                []AlertReceiver        `json:"alertreceivers,omitempty"`
-	Orgs                          []Organization         `json:"orgs,omitempty"`
-	Roles                         []Role                 `json:"roles,omitempty"`
-	CloudletPoolAccessInvitations []OrgCloudletPool      `json:"cloudletpoolaccessinvitations,omitempty"`
-	CloudletPoolAccessResponses   []OrgCloudletPool      `json:"cloudletpoolaccessresponses,omitempty"`
-	RegionData                    []RegionData           `json:"regiondata,omitempty"`
-	Federators                    []Federator            `json:"federators,omitempty"`
-	FederatorZones                []FederatorZone        `json:"federatorzones,omitempty"`
-	Federations                   []Federation           `json:"federations,omitempty"`
-	FederatedSelfZones            []FederatedSelfZone    `json:"federatedselfzones,omitempty"`
-	FederatedPartnerZones         []FederatedPartnerZone `json:"federatedpartnerzones,omitempty"`
+	Controllers                   []Controller          `json:"controllers,omitempty"`
+	BillingOrgs                   []BillingOrganization `json:"billingorgs,omitempty"`
+	AlertReceivers                []AlertReceiver       `json:"alertreceivers,omitempty"`
+	Orgs                          []Organization        `json:"orgs,omitempty"`
+	Roles                         []Role                `json:"roles,omitempty"`
+	CloudletPoolAccessInvitations []OrgCloudletPool     `json:"cloudletpoolaccessinvitations,omitempty"`
+	CloudletPoolAccessResponses   []OrgCloudletPool     `json:"cloudletpoolaccessresponses,omitempty"`
+	RegionData                    []RegionData          `json:"regiondata,omitempty"`
+	FederationProviders           []FederationProvider  `json:"federationproviders,omitempty"`
+	ProviderZoneBases             []ProviderZoneBase    `json:"providerzonebasess,omitempty"`
+	ProviderZones                 []ProviderZone        `json:"providerzones,omitempty"`
+	FederationConsumers           []FederationConsumer  `json:"federationconsumers,omitempty"`
+	ConsumerZones                 []ConsumerZone        `json:"consumerzones,omitempty"`
 }
 
 type RegionData struct {
@@ -900,19 +900,19 @@ func (s *AllData) Sort() {
 	for ii := range s.RegionData {
 		s.RegionData[ii].AppData.Sort()
 	}
-	sort.Slice(s.Federators, func(i, j int) bool {
-		return s.Federators[i].FederationId < s.Federators[j].FederationId
+	sort.Slice(s.FederationProviders, func(i, j int) bool {
+		return s.FederationProviders[i].GetSortString() < s.FederationProviders[j].GetSortString()
 	})
-	sort.Slice(s.FederatorZones, func(i, j int) bool {
-		return s.FederatorZones[i].ZoneId < s.FederatorZones[j].ZoneId
+	sort.Slice(s.ProviderZoneBases, func(i, j int) bool {
+		return s.ProviderZoneBases[i].GetSortString() < s.ProviderZoneBases[j].GetSortString()
 	})
-	sort.Slice(s.Federations, func(i, j int) bool {
-		return s.Federations[i].Name < s.Federations[j].Name
+	sort.Slice(s.ProviderZones, func(i, j int) bool {
+		return s.ProviderZones[i].GetSortString() < s.ProviderZones[j].GetSortString()
 	})
-	sort.Slice(s.FederatedSelfZones, func(i, j int) bool {
-		return s.FederatedSelfZones[i].ZoneId < s.FederatedSelfZones[j].ZoneId
+	sort.Slice(s.FederationConsumers, func(i, j int) bool {
+		return s.FederationConsumers[i].GetSortString() < s.FederationConsumers[j].GetSortString()
 	})
-	sort.Slice(s.FederatedPartnerZones, func(i, j int) bool {
-		return s.FederatedPartnerZones[i].FederatorZone.ZoneId < s.FederatedPartnerZones[j].FederatorZone.ZoneId
+	sort.Slice(s.ConsumerZones, func(i, j int) bool {
+		return s.ConsumerZones[i].GetSortString() < s.ConsumerZones[j].GetSortString()
 	})
 }
