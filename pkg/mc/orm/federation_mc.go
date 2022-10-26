@@ -100,7 +100,7 @@ func InitFederationAPIConstraints(db *gorm.DB) error {
 
 func fedAuthorized(ctx context.Context, username, operatorId string) error {
 	if operatorId == "" {
-		return fmt.Errorf("Missing self operator ID")
+		return fmt.Errorf("Missing operator ID")
 	}
 	return authorized(ctx, username, operatorId, ResourceCloudlets, ActionManage, withRequiresOrg(operatorId))
 }
@@ -261,8 +261,8 @@ func CreateFederationProvider(c echo.Context) (reterr error) {
 	return c.JSON(http.StatusOK, &opFedOut)
 }
 
-// Update self federator attributes and notify associated
-// partner federators who have access to self federator zones
+// Update federation provider and notify associated
+// partner federators
 func UpdateFederationProvider(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
@@ -323,7 +323,7 @@ func UpdateFederationProvider(c echo.Context) error {
 		return ormutil.DbErr(err)
 	}
 
-	// Notify partner federator who have access to self zones
+	// Notify partner federator
 	if provider.PartnerNotifyDest != "" {
 		// TODO: callback update
 		/*
@@ -410,7 +410,7 @@ func DeleteFederationProvider(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Deleted FederationProvider successfully"))
 }
 
-// Fields to ignore for ShowSelfFederator/ShowFederation filtering. Names are in database format.
+// Fields to ignore for ShowFederation filtering. Names are in database format.
 var FederatorIgnoreFilterKeys = []string{
 	"my_mnc", // ignore array field
 }
@@ -833,7 +833,7 @@ func DeleteProviderZoneBase(c echo.Context) error {
 		return fmt.Errorf("Zone %s does not exist", opZone.ZoneId)
 	}
 
-	// ensure that self federator zone is not shared/registered as part of federation
+	// ensure that provider zone is not shared/registered as part of federation
 	shLookup := ormapi.ProviderZone{
 		ZoneId: opZone.ZoneId,
 	}
@@ -854,7 +854,7 @@ func DeleteProviderZoneBase(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Deleted federator zone successfully"))
 }
 
-// Fields to ignore for ShowSelfProviderZoneBase/ShowConsumerZone
+// Fields to ignore for ShowProviderZoneBase
 // filtering. Names are in database format.
 var ProviderZoneBaseIgnoreFilterKeys = []string{
 	"cloudlets", // ignore array field
@@ -890,72 +890,6 @@ func ShowProviderZoneBase(c echo.Context) error {
 			continue
 		}
 		out = append(out, opZone)
-	}
-
-	return c.JSON(http.StatusOK, out)
-}
-
-func ShowProviderZone(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
-	claims, err := getClaims(c)
-	if err != nil {
-		return err
-	}
-	filter, err := bindDbFilter(c, &ormapi.ProviderZone{})
-	if err != nil {
-		return err
-	}
-	authz, err := newShowAuthz(ctx, "", claims.Username, ResourceCloudlets, ActionView)
-	if err != nil {
-		return err
-	}
-	db := loggedDB(ctx)
-	opZones := []ormapi.ProviderZone{}
-	res := db.Where(filter).Find(&opZones)
-	if !res.RecordNotFound() && res.Error != nil {
-		return ormutil.DbErr(res.Error)
-	}
-	out := []ormapi.ProviderZone{}
-	for _, zone := range opZones {
-		if !authz.Ok(zone.OperatorId) {
-			continue
-		}
-		out = append(out, zone)
-	}
-
-	return c.JSON(http.StatusOK, out)
-}
-
-func ShowConsumerZone(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
-	claims, err := getClaims(c)
-	if err != nil {
-		return err
-	}
-	filter, err := bindDbFilter(c, &ormapi.ConsumerZone{})
-	if err != nil {
-		return err
-	}
-	// prevent filtering output on special fields
-	for _, name := range ProviderZoneBaseIgnoreFilterKeys {
-		delete(filter, name)
-	}
-	authz, err := newShowAuthz(ctx, "", claims.Username, ResourceCloudlets, ActionView)
-	if err != nil {
-		return err
-	}
-	db := loggedDB(ctx)
-	opZones := []ormapi.ConsumerZone{}
-	res := db.Where(filter).Find(&opZones)
-	if !res.RecordNotFound() && res.Error != nil {
-		return ormutil.DbErr(res.Error)
-	}
-	out := []ormapi.ConsumerZone{}
-	for _, zone := range opZones {
-		if !authz.Ok(zone.OperatorId) {
-			continue
-		}
-		out = append(out, zone)
 	}
 
 	return c.JSON(http.StatusOK, out)
@@ -1013,7 +947,7 @@ func ShareProviderZone(c echo.Context) error {
 			return fmt.Errorf("Provider is not sharing resources from region %s", basis.Region)
 		}
 
-		// create self zone if it doesn't already exist
+		// create provider zone if it doesn't already exist
 		shareZone := ormapi.ProviderZone{
 			ProviderName: provider.Name,
 			ZoneId:       basis.ZoneId,
@@ -1142,6 +1076,72 @@ func UnshareProviderZone(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Zones unshared from federation %q successfully", provider.Name)))
 }
 
+func ShowProviderZone(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	filter, err := bindDbFilter(c, &ormapi.ProviderZone{})
+	if err != nil {
+		return err
+	}
+	authz, err := newShowAuthz(ctx, "", claims.Username, ResourceCloudlets, ActionView)
+	if err != nil {
+		return err
+	}
+	db := loggedDB(ctx)
+	opZones := []ormapi.ProviderZone{}
+	res := db.Where(filter).Find(&opZones)
+	if !res.RecordNotFound() && res.Error != nil {
+		return ormutil.DbErr(res.Error)
+	}
+	out := []ormapi.ProviderZone{}
+	for _, zone := range opZones {
+		if !authz.Ok(zone.OperatorId) {
+			continue
+		}
+		out = append(out, zone)
+	}
+
+	return c.JSON(http.StatusOK, out)
+}
+
+func ShowConsumerZone(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	filter, err := bindDbFilter(c, &ormapi.ConsumerZone{})
+	if err != nil {
+		return err
+	}
+	// prevent filtering output on special fields
+	for _, name := range ProviderZoneBaseIgnoreFilterKeys {
+		delete(filter, name)
+	}
+	authz, err := newShowAuthz(ctx, "", claims.Username, ResourceCloudlets, ActionView)
+	if err != nil {
+		return err
+	}
+	db := loggedDB(ctx)
+	opZones := []ormapi.ConsumerZone{}
+	res := db.Where(filter).Find(&opZones)
+	if !res.RecordNotFound() && res.Error != nil {
+		return ormutil.DbErr(res.Error)
+	}
+	out := []ormapi.ConsumerZone{}
+	for _, zone := range opZones {
+		if !authz.Ok(zone.OperatorId) {
+			continue
+		}
+		out = append(out, zone)
+	}
+
+	return c.JSON(http.StatusOK, out)
+}
+
 // Register consumer zone creates a Cloudlet in the region that users
 // can deploy AppInsts to, which will deploy those AppInsts on the
 // federation partner's zone.
@@ -1208,9 +1208,9 @@ func DeregisterConsumerZone(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Partner federator zones deregistered successfully"))
 }
 
-// Creates a directed federation between self federator and partner federator.
-// This gives self federator access to all the zones of the partner federator
-// which it is willing to share
+// Registers the consumer with the remote provider.
+// This gives consumer access to all the zones of the provider federator
+// which it is willing to share.
 func registerFederationConsumer(ctx context.Context, consumer *ormapi.FederationConsumer) (reterr error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "registering federation consumer", "name", consumer.Name, "operator", consumer.OperatorId, "partnerAddr", consumer.PartnerAddr, "tokenURL", consumer.PartnerTokenUrl)
 
@@ -1298,8 +1298,8 @@ func registerFederationConsumer(ctx context.Context, consumer *ormapi.Federation
 	return nil
 }
 
-// Delete directed federation between self federator and partner federator.
-// Self federator will no longer have access to any of partner federator zones
+// Deregister directed federation between consumer and provider.
+// Consumer will no longer have access to any of provider zones
 func deregisterFederationConsumer(ctx context.Context, consumer *ormapi.FederationConsumer) error {
 	fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)
 	if err != nil {
