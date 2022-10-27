@@ -166,8 +166,6 @@ func (p *PartnerApi) GetFederationAPIKey(ctx context.Context, fedKey *federation
 	return federationmgmt.GetFederationAPIKey(ctx, p.vaultConfig, fedKey)
 }
 
-// May need to have different ones based on callback type
-// since each callback addr is different.
 func (p *PartnerApi) ProviderPartnerClient(ctx context.Context, provider *ormapi.FederationProvider) (*federationmgmt.Client, error) {
 	fedKey := ProviderFedKey(provider)
 	return p.tokenSources.Client(ctx, provider.PartnerNotifyDest, fedKey)

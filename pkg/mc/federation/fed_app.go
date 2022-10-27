@@ -81,37 +81,37 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 		if err != nil {
 			return err
 		}
-		/*
-			// Create ClusterInst
-			clusterInstIn := edgeproto.ClusterInst{
-				Key: edgeproto.ClusterInstKey{
-					ClusterKey: edgeproto.ClusterKey{
-						Name: req.AppId,
-					},
-					CloudletKey: edgeproto.CloudletKey{
-						Name:         req.Regions[0].Zone,
-						Organization: req.Regions[0].Operator,
-					},
-					Organization: "", // TODO
+		/* TODO: likely remove
+		// Create ClusterInst
+		clusterInstIn := edgeproto.ClusterInst{
+			Key: edgeproto.ClusterInstKey{
+				ClusterKey: edgeproto.ClusterKey{
+					Name: req.AppId,
 				},
-				Flavor: edgeproto.FlavorKey{
-					Name: resRequirements.ResourceProfileId,
+				CloudletKey: edgeproto.CloudletKey{
+					Name:         req.Regions[0].Zone,
+					Organization: req.Regions[0].Operator,
 				},
-				IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
-				Deployment: cloudcommon.DeploymentTypeKubernetes,
-				NumNodes:   1, // Not specified, hence default to 1
-			}
-			log.SpanLog(ctx, log.DebugLevelApi, "Federation creating clusterinst", "clusterinst", clusterInstIn)
-			err = ctrlclient.CreateClusterInstStream(
-				ctx, &rc, &clusterInstIn, p.connCache,
-				func(res *edgeproto.Result) error {
-					log.SpanLog(ctx, log.DebugLevelApi, "Federation clusterinst creation status", "clusterinst key", clusterInstIn.Key, "result", res)
-					return nil
-				},
-			)
-			if err != nil {
-				return err
-			}
+				Organization: "", // TODO
+			},
+			Flavor: edgeproto.FlavorKey{
+				Name: resRequirements.ResourceProfileId,
+			},
+			IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
+			Deployment: cloudcommon.DeploymentTypeKubernetes,
+			NumNodes:   1, // Not specified, hence default to 1
+		}
+		log.SpanLog(ctx, log.DebugLevelApi, "Federation creating clusterinst", "clusterinst", clusterInstIn)
+		err = ctrlclient.CreateClusterInstStream(
+			ctx, &rc, &clusterInstIn, p.connCache,
+			func(res *edgeproto.Result) error {
+				log.SpanLog(ctx, log.DebugLevelApi, "Federation clusterinst creation status", "clusterinst key", clusterInstIn.Key, "result", res)
+				return nil
+			},
+		)
+		if err != nil {
+			return err
+		}
 		*/
 	}
 	c.Response().WriteHeader(http.StatusAccepted)
@@ -163,28 +163,28 @@ func (p *PartnerApi) ViewApplication(c echo.Context, fedCtxId FederationContextI
 	if !appFound {
 		return fmt.Errorf("App not found")
 	}
-	/*
-		log.SpanLog(ctx, log.DebugLevelApi, "Federation show clusterInst", "clusterInst", appObStatusReq.AppId)
-		clusterInstKey := edgeproto.ClusterInstKey{
-			ClusterKey: edgeproto.ClusterKey{
-				Name: appObStatusReq.AppId,
-			},
-			Organization: "", // TODO
-		}
-		clusterInstFound := false
-		err = ctrlclient.ShowClusterInstStream(
-			ctx, &rc, &edgeproto.ClusterInst{Key: clusterInstKey}, p.connCache, nil,
-			func(clusterInst *edgeproto.ClusterInst) error {
-				if clusterInst != nil {
-					clusterInstFound = true
-					log.SpanLog(ctx, log.DebugLevelApi, "Federation show clusterInst found", "clusterInst", clusterInst)
-				}
-				return nil
-			},
-		)
-		if err != nil {
-			return err
-		}
+	/* TODO: likely remove
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation show clusterInst", "clusterInst", appObStatusReq.AppId)
+	clusterInstKey := edgeproto.ClusterInstKey{
+		ClusterKey: edgeproto.ClusterKey{
+			Name: appObStatusReq.AppId,
+		},
+		Organization: "", // TODO
+	}
+	clusterInstFound := false
+	err = ctrlclient.ShowClusterInstStream(
+		ctx, &rc, &edgeproto.ClusterInst{Key: clusterInstKey}, p.connCache, nil,
+		func(clusterInst *edgeproto.ClusterInst) error {
+			if clusterInst != nil {
+				clusterInstFound = true
+				log.SpanLog(ctx, log.DebugLevelApi, "Federation show clusterInst found", "clusterInst", clusterInst)
+			}
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
 	*/
 	out := fedewapi.ViewApplication200Response{
 		AppId: string(appId),
@@ -215,38 +215,38 @@ func (p *PartnerApi) DeboardApplication(c echo.Context, fedCtxId FederationConte
 			SkipAuthz: true,
 			Database:  p.database,
 		}
-		/*
-			// Fetch zone details
-			lookup := ormapi.FederatorZone{
-				ZoneId: appDeboardReq.Zone,
-			}
-			zoneInfo := ormapi.FederatorZone{}
-			res := db.Where(&lookup).First(&zoneInfo)
-			if !res.RecordNotFound() && err != nil {
-				return ormutil.DbErr(err)
-			}
+		/* TODO: likely remove
+		// Fetch zone details
+		lookup := ormapi.FederatorZone{
+			ZoneId: appDeboardReq.Zone,
+		}
+		zoneInfo := ormapi.FederatorZone{}
+		res := db.Where(&lookup).First(&zoneInfo)
+		if !res.RecordNotFound() && err != nil {
+			return ormutil.DbErr(err)
+		}
 
-			// Delete ClusterInst
-			clusterInstKey := edgeproto.ClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name: appDeboardReq.AppId,
-				},
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         appDeboardReq.Zone,
-					Organization: zoneInfo.OperatorId,
-				},
-				Organization: "", // TODO
-			}
-			log.SpanLog(ctx, log.DebugLevelApi, "Federation delete clusterInst", "clusterInst", clusterInstKey)
-			err = ctrlclient.DeleteClusterInstStream(
-				ctx, &rc, &edgeproto.ClusterInst{Key: clusterInstKey}, p.connCache,
-				func(res *edgeproto.Result) error {
-					return nil
-				},
-			)
-			if err != nil {
-				return err
-			}
+		// Delete ClusterInst
+		clusterInstKey := edgeproto.ClusterInstKey{
+			ClusterKey: edgeproto.ClusterKey{
+				Name: appDeboardReq.AppId,
+			},
+			CloudletKey: edgeproto.CloudletKey{
+				Name:         appDeboardReq.Zone,
+				Organization: zoneInfo.OperatorId,
+			},
+			Organization: "", // TODO
+		}
+		log.SpanLog(ctx, log.DebugLevelApi, "Federation delete clusterInst", "clusterInst", clusterInstKey)
+		err = ctrlclient.DeleteClusterInstStream(
+			ctx, &rc, &edgeproto.ClusterInst{Key: clusterInstKey}, p.connCache,
+			func(res *edgeproto.Result) error {
+				return nil
+			},
+		)
+		if err != nil {
+			return err
+		}
 		*/
 		// Delete App
 		log.SpanLog(ctx, log.DebugLevelApi, "Federation delete app", "app", app)

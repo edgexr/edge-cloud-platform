@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	valid "github.com/asaskevich/govalidator"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 // Parse the Geo Location format
@@ -39,14 +40,14 @@ func ParseGeoLocation(geoLoc string) (float64, float64, error) {
 	if err != nil {
 		return lat, long, fmt.Errorf("Invalid latitude %q, must be a valid decimal number", latStr)
 	}
-	if lat < float64(-90) || lat > float64(90) {
+	if !util.IsLatitudeValid(lat) {
 		return lat, long, fmt.Errorf("Latitude out of bounds: %s", latStr)
 	}
 	long, err = strconv.ParseFloat(longStr, 64)
 	if err != nil {
 		return lat, long, fmt.Errorf("Invalid longitude %q, must be a valid decimal number", longStr)
 	}
-	if long < float64(-180) || long > float64(180) {
+	if !util.IsLongitudeValid(long) {
 		return lat, long, fmt.Errorf("Longitude out of bounds: %s", longStr)
 	}
 	return lat, long, nil

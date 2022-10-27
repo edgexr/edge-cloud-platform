@@ -63,7 +63,7 @@ type FederationProvider struct {
 type FederationProviderInfo struct {
 	// Client ID for Oauth
 	ClientId string
-	// Client Key for Oauth. Save this, as it the system cannot retreive it.
+	// Client Key for Oauth. Save this, as it the system cannot retrieve it.
 	ClientKey string
 	// Target Address for EWBI create
 	TargetAddr string
@@ -123,7 +123,7 @@ type FederationConsumerAuth struct {
 // Federator contains operator properties. It is never saved
 // to the db standalone, but only as part of a federation.
 type Federator struct {
-	// Globally unique string used to indentify a federation with partner federation
+	// Globally unique string used to indentify a federation operator
 	FederationId string
 	// ISO 3166-1 Alpha-2 code for the country where operator platform is located
 	CountryCode string
@@ -131,7 +131,7 @@ type Federator struct {
 	MCC string
 	// List of mobile network codes of operator sending the request
 	MNC pq.StringArray `gorm:"type:text[]"`
-	// Fixed linke network ids
+	// Fixed link network ids
 	FixedNetworkIds pq.StringArray `gorm:"type:text[]"`
 	// IP and Port of discovery service URL of operator platform
 	DiscoveryEndPoint string

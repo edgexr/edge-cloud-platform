@@ -97,13 +97,19 @@ func (s *TokenSourceCache) Get(ctx context.Context, fedKey *FedKey) (oauth2.Toke
 	tokenSource, ok := s.sources[*fedKey]
 	s.Unlock()
 	if !ok {
+		// don't hold lock during network call
 		apiKey, err := s.apiKeyHandler.GetFederationAPIKey(ctx, fedKey)
 		if err != nil {
 			return nil, err
 		}
 		tokenSource = NewTokenSource(ctx, apiKey)
 		s.Lock()
-		s.sources[*fedKey] = tokenSource
+		// recheck in case another thread added it
+		if ts, ok := s.sources[*fedKey]; ok {
+			tokenSource = ts
+		} else {
+			s.sources[*fedKey] = tokenSource
+		}
 		s.Unlock()
 	}
 	return tokenSource, nil
