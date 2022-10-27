@@ -16,7 +16,7 @@
 This establishes a unidirectional federation whereby a *Provider* provides edge resources to a *Consumer*, allowing the *Consumer* to deploy applications on those edge resources.
 
 1. Operator1 creates ProviderZoneBases, to map cloudlets to zones. These definitions are federation independent. `/api/v1/auth/federation/provider/zonebase/create`
-2. Operator1 creates a FederationProvider. This returns the authentication credentials to gove to the consumer out of band. `/api/v1/auth/federation/provider/create`
+2. Operator1 creates a FederationProvider. This returns the authentication credentials to give to the consumer out of band. `/api/v1/auth/federation/provider/create`
 3. (Optional) Operator1 shares ProviderZoneBases with the FederationProvider. This makes those zones available via that provider (can be done later as well) `/api/v1/auth/federation/provider/zone/share`
 4. Operator2 creates a FederationConsumer, given the address and authentication credentials for a FederationProvider. This connects to the provider via the EWBI, and receives any shared provider zones, creating consumer zones for them. Optionally, it auto-registers those zones. For registered zones, it creates a Cloudlet in the configurated region to represent that zone. `/api/v1/auth/federation/consumer/create` -> `/operatorplatform/federation/v1/partner`
 5. (Optional) Operator2 (consumer) will receive (via partner callback) notification of any new shared zones from Operator1 (provider). These zones can be registered. `/api/v1/auth/federation/consumer/zone/register` -> `/operatorplatform/federation/v1/{fedctxid}/zones`
@@ -43,4 +43,4 @@ Notes:
 - Clients [store the api-key in Vault](../../federationmgmt/federation.go)
 - Clients use a [tokenSource](../../federationmgmt/client.go) to cache tokens (tokens are JWT)
 - Oauth2 [server code](../orm/oauth2server.go) leverages existing code for validating keys and generating JWTs
-- Servers [store only the hashed version](../ormutil/auth.go) of the api key password
+- Servers [store only the hashed version](../ormutil/auth.go) of the api key password in postgres
