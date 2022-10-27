@@ -1,115 +1,46 @@
-## Federation Interconnect
+# Federation
 
-### Initial Setup
+- [The Federation EWBI Readme](../../../doc/fedapi/README.md) describes the Federation EWBI APIs and server stubs.
+- MC North-bound Federation APIs (of our own design) are implemented in [pkg/mc/orm/federation_mc.go](../orm/federation_mc.go)
+- EWBI (East-West Bound Interface) APIs are implemented here.
 
-##### Operator sets up Cloudlets
+## Terminology
 
-| User Action                  | OP1                   | OP2                   |
-| ---------------------------- | --------------------- | --------------------- |
-| Operator1 onboards cloudlets | - cloudlet onboarding |                       |
-| Operator2 onboards cloudlets |                       | - cloudlet onboarding |
+- The GSMA spec defines a Federation as established between two *Operators*, an *Originating* Operator and a *Partner* Operator. On our platform, an *Operator* corresponds to an operator-type Organization.
+- We use the term *Consumer* instead of *Originator*, and *Provider* instead of *Partner*, for better clarity.
+- NB MC APIs have path prefix `/api/v1/`
+- EWBI APIs have path prefix `/operatorplatform/federation/v1`
 
-###Federation Planning
+## Federation Setup
 
-##### Operator sets up self federator 
+This establishes a unidirectional federation whereby a *Provider* provides edge resources to a *Consumer*, allowing the *Consumer* to deploy applications on those edge resources.
 
-| User Action                                                  | OP1                                     | OP2                                     |
-| ------------------------------------------------------------ | --------------------------------------- | --------------------------------------- |
-| Operator1 creates self federator (API:`/auth/federator/self/create`) | - defines federator object              |                                         |
-|                                                              | - returns federation key                |                                         |
-| Operator1 defines AZs (API:`/federator/self/zone/create`)    | - create zone = collection of cloudlets |                                         |
-| Operator2 creates self federator (API:`/auth/federator/self/create`) |                                         | - defines federator object              |
-|                                                              |                                         | - returns federation key                |
-| Operator1 defines AZs (API:`/federator/self/zone/create`)    |                                         | - create zone = collection of cloudlets |
+1. Operator1 creates ProviderZoneBases, to map cloudlets to zones. These definitions are federation independent. `/api/v1/auth/federation/provider/zonebase/create`
+2. Operator1 creates a FederationProvider. This returns the authentication credentials to gove to the consumer out of band. `/api/v1/auth/federation/provider/create`
+3. (Optional) Operator1 shares ProviderZoneBases with the FederationProvider. This makes those zones available via that provider (can be done later as well) `/api/v1/auth/federation/provider/zone/share`
+4. Operator2 creates a FederationConsumer, given the address and authentication credentials for a FederationProvider. This connects to the provider via the EWBI, and receives any shared provider zones, creating consumer zones for them. Optionally, it auto-registers those zones. For registered zones, it creates a Cloudlet in the configurated region to represent that zone. `/api/v1/auth/federation/consumer/create` -> `/operatorplatform/federation/v1/partner`
+5. (Optional) Operator2 (consumer) will receive (via partner callback) notification of any new shared zones from Operator1 (provider). These zones can be registered. `/api/v1/auth/federation/consumer/zone/register` -> `/operatorplatform/federation/v1/{fedctxid}/zones`
 
-##### Operator sets up partner federation and marks zones to be shared with them
+Notes:
+- Federations are 1-to-1.
+- To establish another federation, Operator1 would need to start again with step 2.
+- To establish the reverse direction, all steps would need to be repeated with the operator roles swapped.
 
-| User Action                                                  | OP1                                                          | OP2                                               |
-| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
-| Operator1 creates partner federation with Operator2 (API:`/auth/federation/create`) | - defines partner federation object                          |                                                   |
-|                                                              | - this only adds entry in DB, for federation to be setup, it has be registered (i.e user must call API:`/auth/federation/register`) |                                                   |
-| Operator1 marks zones to be shared with partner (API:`/federator/self/zone/share`) | - marks zones to be shared with partner federator            |                                                   |
-| Operator2 creates partner federation with Operator1 (API:`/auth/federation/create`) |                                                              | - defines partner federation object               |
-|                                                              |                                                              | - this only adds entry in DB                      |
-| Operator2 marks zones to be shared with partner (API:`/auth/federator/self/zone/share`) |                                                              | - marks zones to be shared with partner federator |
+## Controller Regions
 
-### Federation Manage
+- FederationProvider is multi-region
+   - Cloudlets can be shared as zones from regions configured on the FederationProvider
+   - App definitions sent by the Consumer to the Provider will be created on every region configured on the Provider
+- FederationConsumer is single region
+   - Cloudlets that are created on the consumer to represent Provider Zones are created in the single region configured on the FederationConsumer
 
-##### Operator registers federation with partner federator
+## Authentication
 
-| User Action                                                  | OP1                                                          | OP2                                                          |
-| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| Operator1 registers federation with partner Operator2 (API:`/auth/federation/register`) | - calls **POST** `/operator/partner`                         |                                                              |
-|                                                              |                                                              | - validate federation                                        |
-|                                                              |                                                              | - stores partner federation details in DB                    |
-|                                                              |                                                              | - set `PartnerRoleAccessToSelfZones` to true as part of federation object |
-|                                                              |                                                              | - shares all the zones                                       |
-|                                                              | - receives all the zones and stores zone info in DB          |                                                              |
-|                                                              | - stores partner federation details in DB                    |                                                              |
-|                                                              | - set `PartnerRoleShareZonesWithSelf` to true as part of federation object |                                                              |
-
-##### Operator updates its Federation attributes
-
-| User Action                                                  | OP1                                                          | OP2                                         |
-| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------- |
-| Operator1 updates its federation attributes like MCC/MNC/LocatorEndPoint (API:`/auth/federator/self/update`) | - validate update fields                                     |                                             |
-|                                                              | - calls **PUT** `/operator/partner` for all the partner OPs (with whom this OP is sharing zones i.e. role is to **share** zones) about the update of federation attributes |                                             |
-|                                                              |                                                              | - validate federation                       |
-|                                                              |                                                              | - update federation attributes of OP1 in DB |
-|                                                              | - store updated details in DB                                |                                             |
-
-##### Operator shares new zone after federation is setup
-
-| User Action                                                  | OP1                        | OP2                                                          |
-| ------------------------------------------------------------ | -------------------------- | ------------------------------------------------------------ |
-| Operator2 shares new zone. (API:`/auth/federator/self/zone/share`) |                            | - share zone                                                 |
-|                                                              |                            | - calls **POST** `/operator/notify/zone` to notify partner OP (with whom this OP is sharing zones i.e. role is to **share** zones) about this zone |
-|                                                              | - validate federation      |                                                              |
-|                                                              | - store zone details in DB |                                                              |
-
-##### Operator unshares a zone after federation is setup
-
-| User Action                                                  | OP1                            | OP2                                                          |
-| ------------------------------------------------------------ | ------------------------------ | ------------------------------------------------------------ |
-| Operator2 unshares a  zone. (API:`/auth/federator/self/zone/unshare`) |                                | - unshare zone                                               |
-|                                                              |                                | - ensure that it is not being used/registered by an OP       |
-|                                                              |                                | - calls **DELETE** `/operator/notify/zone` to notify partner OP (with whom this OP is sharing zones i.e. role is to **share** zones) about the unsharing of this zone |
-|                                                              | - validate federation          |                                                              |
-|                                                              | - remove zone from shared list |                                                              |
-
-##### Operator registers a zone after federation is setup
-
-| User Action                                                  | OP1                                | OP2                                            |
-| ------------------------------------------------------------ | ---------------------------------- | ---------------------------------------------- |
-| Operator1 registers OP2  zone. (API:`/auth/federator/partner/zone/register`) | - check if zone exists             |                                                |
-|                                                              | - calls **POST** `/operator/zone`  |                                                |
-|                                                              |                                    | - validate federation                          |
-|                                                              |                                    | - store registering OP details along with zone |
-|                                                              | - store OP details along with zone |                                                |
-
-##### Operator deregisters a zone after federation is setup
-
-| User Action                                                  | OP1                                 | OP2                            |
-| ------------------------------------------------------------ | ----------------------------------- | ------------------------------ |
-| Operator1 deregisters OP2  zone. (API:`/auth/federator/partner/zone/deregister`) | - check if zone exists              |                                |
-|                                                              | - calls **DELETE** `/operator/zone` |                                |
-|                                                              |                                     | - validate federation          |
-|                                                              |                                     | - delete registered OP details |
-|                                                              | - delete registered OP details      |                                |
-
-##### Operator deregisters partner federation
-
-| User Action                                                  | OP1                                                       | OP2                   |
-| ------------------------------------------------------------ | --------------------------------------------------------- | --------------------- |
-| Operator1 deregisters federation with OP2 (API:`/auth/federation/deregister`) | - validate that all the partner OP zones are deregistered |                       |
-|                                                              | - calls **DELETE** `/operator/partner`                    |                       |
-|                                                              |                                                           | - validate federation |
-|                                                              |                                                           | - delete OP1 details  |
-|                                                              | - delete all details of OP2 zones                         |                       |
-
-##### Operator deletes partner federation
-
-| User Action                                                  | OP1                                        | OP2  |
-| ------------------------------------------------------------ | ------------------------------------------ | ---- |
-| Operator1 remove OP2 as federation partner (API:`/auth/federation/delete`) | - validate that federation is deregistered |      |
-|                                                              | - delete OP2 federation details            |      |
+- Authentication uses the [oauth2 client credential flow](https://auth0.com/docs/get-started/authentication-and-authorization-flow/client-credentials-flow).
+- This exactly matches our user api-keys, so they are used as the auth credentials
+- Consumer -> Provider uses one set of credentials and the Provider's oauth2 token server
+- Provider -> Consumer callbacks use another set of credentials and the Consumer's oauth2 token server
+- Clients [store the api-key in Vault](../../federationmgmt/federation.go)
+- Clients use a [tokenSource](../../federationmgmt/client.go) to cache tokens (tokens are JWT)
+- Oauth2 [server code](../orm/oauth2server.go) leverages existing code for validating keys and generating JWTs
+- Servers [store only the hashed version](../ormutil/auth.go) of the api key password
