@@ -23,6 +23,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/chefauth"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
@@ -237,14 +238,20 @@ func (s *ControllerClient) GetGCSCreds(ctx context.Context) ([]byte, error) {
 	return reply.Data, err
 }
 
-func (s *ControllerClient) GetFederationAPIKey(ctx context.Context, fedName string) (string, error) {
+func (s *ControllerClient) GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error) {
+	data, err := json.Marshal(fedKey)
+	if err != nil {
+		return nil, err
+	}
 	req := &edgeproto.AccessDataRequest{
 		Type: platform.GetFederationAPIKey,
-		Data: []byte(fedName),
+		Data: data,
 	}
 	reply, err := s.client.GetAccessData(ctx, req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(reply.Data), err
+	apiKey := federationmgmt.ApiKey{}
+	err = json.Unmarshal(reply.Data, &apiKey)
+	return &apiKey, err
 }

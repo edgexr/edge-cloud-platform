@@ -26,6 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/chefauth"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -217,7 +218,7 @@ type AccessApi interface {
 	GetSessionTokens(ctx context.Context, arg []byte) (map[string]string, error)
 	GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error)
 	GetGCSCreds(ctx context.Context) ([]byte, error)
-	GetFederationAPIKey(ctx context.Context, fedName string) (string, error)
+	GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error)
 }
 
 // AccessData types

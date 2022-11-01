@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 )
 
@@ -133,11 +134,16 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 		}
 		out = creds
 	case platform.GetFederationAPIKey:
-		apiKey, err := s.vaultClient.GetFederationAPIKey(ctx, string(req.Data))
+		fedKey := federationmgmt.FedKey{}
+		err := json.Unmarshal(req.Data, &fedKey)
 		if err != nil {
 			return nil, err
 		}
-		out = []byte(apiKey)
+		apiKey, err := s.vaultClient.GetFederationAPIKey(ctx, &fedKey)
+		if err != nil {
+			return nil, err
+		}
+		out, merr = json.Marshal(apiKey)
 	default:
 		return nil, fmt.Errorf("Unexpected request data type %s", req.Type)
 	}
