@@ -226,7 +226,6 @@ func CreateFederationProvider(c echo.Context) (reterr error) {
 			undoErr := federation.DeleteProviderPartnerApiKey(ctx, &provider, serverConfig.vaultConfig)
 			if undoErr != nil {
 				log.SpanLog(ctx, log.DebugLevelApi, "undo failed to delete provider partner api key", "err", undoErr)
-
 			}
 		}()
 	}
@@ -538,8 +537,8 @@ func CreateFederationConsumer(c echo.Context) error {
 	if err := c.Bind(&consumer); err != nil {
 		return ormutil.BindErr(err)
 	}
-	//span := log.SpanFromContext(ctx)
-	//log.SetTags(span, consumer.GetTags())
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, consumer.GetTags())
 	// sanity check
 	if consumer.OperatorId == "" {
 		return fmt.Errorf("Missing operator id")
