@@ -796,7 +796,7 @@ func MarshalArgs(obj interface{}, ignore []string, aliases []string) ([]string, 
 
 	// for updates, passed in data may already by mapped
 	dat, ok := obj.(*MapData)
-	if !ok {
+	if !ok || dat == nil {
 		var err error
 		dat, err = GetStructMap(obj, WithStructMapOmitEmpty())
 		if err != nil {

@@ -211,10 +211,10 @@ func (s *VaultClient) GetGCSCreds(ctx context.Context) ([]byte, error) {
 	return creds, nil
 }
 
-func (s *VaultClient) GetFederationAPIKey(ctx context.Context, fedName string) (string, error) {
-	apiKey, err := federationmgmt.GetFederationAPIKey(ctx, s.vaultConfig, fedName)
+func (s *VaultClient) GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error) {
+	apiKey, err := federationmgmt.GetFederationAPIKey(ctx, s.vaultConfig, fedKey)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	return apiKey, nil
 }

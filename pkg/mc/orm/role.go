@@ -386,7 +386,7 @@ func AddUserRole(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Role added to user"))
 }
 
-func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) error {
+func AddUserRoleObj(ctx context.Context, claims *ormutil.UserClaims, role *ormapi.Role) error {
 	if role.Username == "" {
 		return fmt.Errorf("Username not specified")
 	}
@@ -537,7 +537,7 @@ func RemoveUserRole(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Role removed from user"))
 }
 
-func RemoveUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) error {
+func RemoveUserRoleObj(ctx context.Context, claims *ormutil.UserClaims, role *ormapi.Role) error {
 	if role.Username == "" {
 		return fmt.Errorf("Username not specified")
 	}

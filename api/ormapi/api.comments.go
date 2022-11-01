@@ -525,76 +525,124 @@ var GenerateReportComments = map[string]string{
 	"timezone":  `Timezone in which to show the reports, defaults to UTC`,
 }
 
+var FederationProviderComments = map[string]string{
+	"id":                            `Unique ID`,
+	"name":                          `Name to describe this provider`,
+	"operatorid":                    `Operator Organization`,
+	"regions":                       `Regions from which to provide resources`,
+	"federationcontextid":           `The federation context id we generated for this federation`,
+	"myinfo.federationid":           `Globally unique string used to indentify a federation operator`,
+	"myinfo.countrycode":            `ISO 3166-1 Alpha-2 code for the country where operator platform is located`,
+	"myinfo.mcc":                    `Mobile country code of operator sending the request`,
+	"myinfo.mnc":                    `List of mobile network codes of operator sending the request`,
+	"myinfo.fixednetworkids":        `Fixed link network ids`,
+	"myinfo.discoveryendpoint":      `IP and Port of discovery service URL of operator platform`,
+	"myinfo.initialdate":            `Initial create time to denote time zone`,
+	"partnerinfo.federationid":      `Globally unique string used to indentify a federation operator`,
+	"partnerinfo.countrycode":       `ISO 3166-1 Alpha-2 code for the country where operator platform is located`,
+	"partnerinfo.mcc":               `Mobile country code of operator sending the request`,
+	"partnerinfo.mnc":               `List of mobile network codes of operator sending the request`,
+	"partnerinfo.fixednetworkids":   `Fixed link network ids`,
+	"partnerinfo.discoveryendpoint": `IP and Port of discovery service URL of operator platform`,
+	"partnerinfo.initialdate":       `Initial create time to denote time zone`,
+	"partnernotifydest":             `Partner notification URI`,
+	"partnernotifytokenurl":         `Partner Oauth token URI`,
+	"partnernotifyclientid":         `Partner notification client id`,
+	"partnernotifyclientkey":        `Partner notification client key (saved in secret storage)`,
+	"status":                        `Status`,
+	"providerclientid":              `Provider client ID for inbound connections`,
+	"createdat":                     `Time created`,
+	"updatedat":                     `Time updated`,
+}
+
+var FederationProviderInfoComments = map[string]string{
+	"clientid":   `Client ID for Oauth`,
+	"clientkey":  `Client Key for Oauth. Save this, as it the system cannot retrieve it.`,
+	"targetaddr": `Target Address for EWBI create`,
+	"tokenurl":   `Oauth2 token URL`,
+}
+
+var FederationConsumerComments = map[string]string{
+	"id":                            `Unique ID`,
+	"name":                          `Name to describe this consumer`,
+	"operatorid":                    `Operator Organization`,
+	"partneraddr":                   `Partner Address`,
+	"partnertokenurl":               `Partner token URL`,
+	"region":                        `Region in which partner zones will be created as cloudlets and whose apps will be mirrored to federation partner`,
+	"federationcontextid":           `Federation context id returned by partner`,
+	"myinfo.federationid":           `Globally unique string used to indentify a federation operator`,
+	"myinfo.countrycode":            `ISO 3166-1 Alpha-2 code for the country where operator platform is located`,
+	"myinfo.mcc":                    `Mobile country code of operator sending the request`,
+	"myinfo.mnc":                    `List of mobile network codes of operator sending the request`,
+	"myinfo.fixednetworkids":        `Fixed link network ids`,
+	"myinfo.discoveryendpoint":      `IP and Port of discovery service URL of operator platform`,
+	"myinfo.initialdate":            `Initial create time to denote time zone`,
+	"partnerinfo.federationid":      `Globally unique string used to indentify a federation operator`,
+	"partnerinfo.countrycode":       `ISO 3166-1 Alpha-2 code for the country where operator platform is located`,
+	"partnerinfo.mcc":               `Mobile country code of operator sending the request`,
+	"partnerinfo.mnc":               `List of mobile network codes of operator sending the request`,
+	"partnerinfo.fixednetworkids":   `Fixed link network ids`,
+	"partnerinfo.discoveryendpoint": `IP and Port of discovery service URL of operator platform`,
+	"partnerinfo.initialdate":       `Initial create time to denote time zone`,
+	"autoregisterzones":             `Automatically register any zone shared with me`,
+	"status":                        `Status`,
+	"providerclientid":              `Auth ClientId for connecting to provider`,
+	"providerclientkey":             `Auth ClientKey for connection to provider (stored in secret storage)`,
+	"notifyclientid":                `Auth ClientId for notify callbacks to this consumer`,
+	"createdat":                     `Time created`,
+	"updatedat":                     `Time updated`,
+}
+
+var FederationConsumerAuthComments = map[string]string{
+	"clientid":  `Client ID for Oauth`,
+	"clientkey": `Client Key for Oauth`,
+}
+
 var FederatorComments = map[string]string{
-	"federationid":    `Globally unique string used to indentify a federation with partner federation`,
-	"operatorid":      `Globally unique string to identify an operator platform`,
-	"countrycode":     `ISO 3166-1 Alpha-2 code for the country where operator platform is located`,
-	"federationaddr":  `Federation access point address`,
-	"region":          `Region to which this federator is associated with`,
-	"mcc":             `Mobile country code of operator sending the request`,
-	"mnc":             `List of mobile network codes of operator sending the request`,
-	"locatorendpoint": `IP and Port of discovery service URL of operator platform`,
-	"revision":        `Revision ID to track object changes. We use jaeger traceID for easy debugging but this can differ with what partner federator uses`,
-	"apikey":          `API Key used for authentication (stored in secure storage)`,
+	"federationid":      `Globally unique string used to indentify a federation operator`,
+	"countrycode":       `ISO 3166-1 Alpha-2 code for the country where operator platform is located`,
+	"mcc":               `Mobile country code of operator sending the request`,
+	"mnc":               `List of mobile network codes of operator sending the request`,
+	"fixednetworkids":   `Fixed link network ids`,
+	"discoveryendpoint": `IP and Port of discovery service URL of operator platform`,
+	"initialdate":       `Initial create time to denote time zone`,
 }
 
-var FederationComments = map[string]string{
-	"federator.federationid":        `Globally unique string used to indentify a federation with partner federation`,
-	"federator.operatorid":          `Globally unique string to identify an operator platform`,
-	"federator.countrycode":         `ISO 3166-1 Alpha-2 code for the country where operator platform is located`,
-	"federator.federationaddr":      `Federation access point address`,
-	"federator.region":              `Region to which this federator is associated with`,
-	"federator.mcc":                 `Mobile country code of operator sending the request`,
-	"federator.mnc":                 `List of mobile network codes of operator sending the request`,
-	"federator.locatorendpoint":     `IP and Port of discovery service URL of operator platform`,
-	"federator.revision":            `Revision ID to track object changes. We use jaeger traceID for easy debugging but this can differ with what partner federator uses`,
-	"federator.apikey":              `API Key used for authentication (stored in secure storage)`,
-	"name":                          `Name to uniquely identify a federation`,
-	"selffederationid":              `Self federation ID`,
-	"selfoperatorid":                `Self operator ID`,
-	"partnerrolesharezoneswithself": `Partner shares its zones with self federator as part of federation`,
-	"partnerroleaccesstoselfzones":  `Partner is allowed access to self federator zones as part of federation`,
+var ProviderZoneBaseComments = map[string]string{
+	"zoneid":           `Unique name for zone`,
+	"operatorid":       `Operator organization`,
+	"countrycode":      `ISO 3166-1 Alpha-2 code for the country where operator platform is located`,
+	"geolocation":      `GPS co-ordinates associated with the zone (in decimal format)`,
+	"geographydetails": `Geography details`,
+	"region":           `Region in which cloudlets reside`,
+	"cloudlets":        `List of cloudlets part of this zone`,
 }
 
-var FederatorZoneComments = map[string]string{
-	"zoneid":      `Globally unique string used to authenticate operations over federation interface`,
-	"operatorid":  `Globally unique string to identify an operator platform`,
-	"countrycode": `ISO 3166-1 Alpha-2 code for the country where operator platform is located`,
-	"geolocation": `GPS co-ordinates associated with the zone (in decimal format)`,
-	"city":        `Comma seperated list of cities under this zone`,
-	"state":       `Comma seperated list of states under this zone`,
-	"locality":    `Type of locality eg rural, urban etc.`,
-	"region":      `Region in which cloudlets reside`,
-	"cloudlets":   `List of cloudlets part of this zone`,
-	"revision":    `Revision ID to track object changes. We use jaeger traceID for easy debugging but this can differ with what partner federator uses`,
+var ProviderZoneComments = map[string]string{
+	"zoneid":               `Globally unique identifier of the federator zone`,
+	"providername":         `Name of the Federation Provider`,
+	"operatorid":           `Provider operator organization`,
+	"status":               `Zone status`,
+	"partnernotifyzoneuri": `Partner notify zone URI`,
 }
 
-var FederatedSelfZoneComments = map[string]string{
-	"zoneid":         `Globally unique identifier of the federator zone`,
-	"selfoperatorid": `Self operator ID`,
-	"federationname": `Name of the Federation`,
-	"registered":     `Zone registered by partner federator`,
-	"revision":       `Revision ID to track object changes. We use jaeger traceID for easy debugging but this can differ with what partner federator uses`,
-}
-
-var FederatedPartnerZoneComments = map[string]string{
-	"federatorzone.zoneid":      `Globally unique string used to authenticate operations over federation interface`,
-	"federatorzone.operatorid":  `Globally unique string to identify an operator platform`,
-	"federatorzone.countrycode": `ISO 3166-1 Alpha-2 code for the country where operator platform is located`,
-	"federatorzone.geolocation": `GPS co-ordinates associated with the zone (in decimal format)`,
-	"federatorzone.city":        `Comma seperated list of cities under this zone`,
-	"federatorzone.state":       `Comma seperated list of states under this zone`,
-	"federatorzone.locality":    `Type of locality eg rural, urban etc.`,
-	"federatorzone.region":      `Region in which cloudlets reside`,
-	"federatorzone.cloudlets":   `List of cloudlets part of this zone`,
-	"federatorzone.revision":    `Revision ID to track object changes. We use jaeger traceID for easy debugging but this can differ with what partner federator uses`,
-	"selfoperatorid":            `Self operator ID`,
-	"federationname":            `Name of the Federation`,
-	"registered":                `Zone registered by self federator`,
+var ConsumerZoneComments = map[string]string{
+	"zoneid":           `Zone unique name`,
+	"consumername":     `Name of the Federation consumer`,
+	"operatorid":       `Consumer operator organization`,
+	"geolocation":      `GPS co-ordinates associated with the zone (in decimal format)`,
+	"geographydetails": `Geography details`,
+	"status":           `Zone status`,
 }
 
 var FederatedZoneRegRequestComments = map[string]string{
-	"selfoperatorid": `Self operator ID`,
-	"federationname": `Name of the Federation`,
-	"zones":          `Partner federator zones to be registered/deregistered`,
+	"operatorid":   `Operator organization`,
+	"consumername": `Federation consumer name`,
+	"zones":        `Partner federator zones to be registered/deregistered`,
+}
+
+var FederatedZoneShareRequestComments = map[string]string{
+	"operatorid":   `Operator organization`,
+	"providername": `Federation provider name`,
+	"zones":        `Self federator zones to be shared/unshared`,
 }

@@ -113,13 +113,6 @@ etcds:
   initialcluster: "etcd-partner1=http://127.0.0.1:3081"
   hostname: "127.0.0.1"
 
-- name: etcd-partner2
-  datadir: /var/tmp/edge-cloud-local-etcd/etcd-partner2
-  peeraddrs: "http://127.0.0.1:3091"
-  clientaddrs: "http://127.0.0.1:3009"
-  initialcluster: "etcd-partner2=http://127.0.0.1:3091"
-  hostname: "127.0.0.1"
-
 rediscaches:
 # redis HA for ctrl1/ctrl2
 - name: redis1
@@ -160,11 +153,6 @@ rediscaches:
 - name: redis-partner1
   type: master
   port: 26383
-  hostname: "127.0.0.1"
-# standalone redis for ctrl-partner2
-- name: redis-partner2
-  type: master
-  port: 26384
   hostname: "127.0.0.1"
 # redis standalone for crm
 - name: redis-standalone
@@ -281,25 +269,6 @@ controllers:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
 
-- name: ctrl-partner2
-  etcdaddrs: "http://127.0.0.1:3009"
-  apiaddr: "127.0.0.1:5591"
-  httpaddr: "127.0.0.1:26091"
-  notifyaddr: "127.0.0.1:27091"
-  vaultaddr: "http://127.0.0.1:8200"
-  redisstandaloneaddr: "127.0.0.1:26384"
-  hostname: "127.0.0.1"
-  versiontag: "2019-10-24"
-  testmode: true
-  region: "PS"
-  usevaultpki: true
-  appdnsroot: edgecloude2e.net
-  deploymenttag: dev
-  accessapiaddr: "127.0.0.1:21091"
-  envvars:
-    ES_SERVER_URLS: https://localhost:9201
-    E2ETEST_TLS: true
-
 frms:
 - name: frm1
   notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
@@ -314,6 +283,17 @@ frms:
 
 - name: frma1
   notifyaddrs: "127.0.0.1:27011,127.0.0.1:27012"
+  hostname: "127.0.0.1"
+  deploymenttag: dev
+  region: locala
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+- name: frm-partner1
+  notifyaddrs: "127.0.0.1:27081"
   hostname: "127.0.0.1"
   deploymenttag: dev
   region: locala
@@ -453,6 +433,26 @@ dmes:
     E2ETEST_TLS: true
     E2ETEST_NORANDOM: true
 
+- name: dme-partner1
+  apiaddr: "127.0.0.1:5063"
+  httpaddr: "127.0.0.1:28013"
+  notifyaddrs: "127.0.0.1:27081"
+  locverurl: "{{locverurl}}"
+  toksrvurl: "{{toksrvurl}}"
+  carrier: GDDT
+  cloudletkey: '{"organization":"partner1","name":"partner1-cloud-1"}'
+  vaultaddr: "http://127.0.0.1:8200"
+  region: locala
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  deploymenttag: dev
+  envvars:
+    LOCAPI_USER: mexserver
+    LOCAPI_PASSWD: eC2835!
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+    E2ETEST_NORANDOM: true
+
 mcs:
 - name: mc1
   addr: "127.0.0.1:9900"
@@ -513,23 +513,7 @@ mcs:
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
-  staticdir: "{{staticdir}}"
-
-- name: mc-partner2
-  addr: "127.0.0.1:9909"
-  sqladdr: "127.0.0.1:5439"
-  vaultaddr: "http://127.0.0.1:8200"
-  usevaultpki: true
-  hostname: "127.0.0.1"
-  ldapaddr: "127.0.0.1:9989"
-  federationaddr: "127.0.0.1:9809"
-  notifysrvaddr: "127.0.0.1:5291"
-  apitlscert: "{{tlsoutdir}}/test-server.crt"
-  apitlskey: "{{tlsoutdir}}/test-server.key"
-  deploymenttag: dev
-  envvars:
-    ES_SERVER_URLS: https://localhost:9201
-    E2ETEST_TLS: true
+    E2ETEST_SKIPEDGEBOXONLY: true
   staticdir: "{{staticdir}}"
 
 sqls:
@@ -542,12 +526,6 @@ sqls:
 - name: sql-partner1
   datadir: /var/tmp/edge-cloud-local-sql/sql-partner1
   httpaddr: "127.0.0.1:5438"
-  username: mcuser
-  dbname: mcdb
-  hostname: "127.0.0.1"
-- name: sql-partner2
-  datadir: /var/tmp/edge-cloud-local-sql/sql-partner2
-  httpaddr: "127.0.0.1:5439"
   username: mcuser
   dbname: mcdb
   hostname: "127.0.0.1"

@@ -17,19 +17,9 @@ controllers:
   address: 127.0.0.1:5581
   notifyaddr: 127.0.0.1:27081
   dnsregion: pa
-orgs:
-- name: partner1
-  type: operator
-  address: mobiledgex
-  phone: 123-123-1234
-  publicimages: true
-  edgeboxonly: true
 roles:
 - username: mexadmin
   role: AdminManager
-- org: partner1
-  username: mexadmin
-  role: OperatorManager
 regiondata:
 - region: PA
   appdata:

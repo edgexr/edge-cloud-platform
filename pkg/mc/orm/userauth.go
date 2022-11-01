@@ -23,14 +23,15 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 var PasswordMinLength = 8
@@ -39,12 +40,7 @@ var PasswordMaxLength = 4096
 var BruteForceGuessesPerSecond = 1000000
 
 var Jwks vault.JWKS
-var NoUserClaims *UserClaims = nil
-
-const (
-	ApiKeyAuth   string = "apikeyauth"
-	PasswordAuth string = "passwordauth"
-)
+var NoUserClaims *ormutil.UserClaims = nil
 
 type TokenAuth struct {
 	Token string
@@ -68,24 +64,6 @@ func ValidPassword(pw string) error {
 	return nil
 }
 
-type UserClaims struct {
-	jwt.StandardClaims
-	Username       string `json:"username"`
-	Email          string `json:"email"`
-	Kid            int    `json:"kid"`
-	FirstIssuedAt  int64  `json:"firstiat,omitempty"`
-	AuthType       string `json:"authtype"`
-	ApiKeyUsername string `json:"apikeyusername"`
-}
-
-func (u *UserClaims) GetKid() (int, error) {
-	return u.Kid, nil
-}
-
-func (u *UserClaims) SetKid(kid int) {
-	u.Kid = kid
-}
-
 func NewHTTPAuthCookie(token string, expires int64, domain string) *http.Cookie {
 	return &http.Cookie{
 		Name:    "token",
@@ -103,7 +81,7 @@ func NewHTTPAuthCookie(token string, expires int64, domain string) *http.Cookie 
 }
 
 func GenerateCookie(user *ormapi.User, apiKeyId, domain string, config *ormapi.Config) (*http.Cookie, error) {
-	claims := UserClaims{
+	claims := ormutil.UserClaims{
 		StandardClaims: jwt.StandardClaims{
 			IssuedAt: time.Now().Unix(),
 			// 1 day expiration for now
@@ -121,51 +99,23 @@ func GenerateCookie(user *ormapi.User, apiKeyId, domain string, config *ormapi.C
 		claims.Username = apiKeyId
 		// shorter expiration time if apiKeyId is specified
 		claims.ExpiresAt = time.Now().Add(config.ApiKeyLoginTokenValidDuration.TimeDuration()).Unix()
-		claims.AuthType = ApiKeyAuth
+		claims.AuthType = ormutil.ApiKeyAuth
 		claims.ApiKeyUsername = user.Name
 	} else {
-		claims.AuthType = PasswordAuth
+		claims.AuthType = ormutil.PasswordAuth
 	}
 	cookie, err := Jwks.GenerateCookie(&claims)
 	return NewHTTPAuthCookie(cookie, claims.ExpiresAt, domain), err
 }
 
-func getClaims(c echo.Context) (*UserClaims, error) {
-	user := c.Get("user")
-	ctx := ormutil.GetContext(c)
-	if user == nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "get claims: no user")
-		return nil, echo.ErrUnauthorized
-	}
-	token, ok := user.(*jwt.Token)
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelApi, "get claims: no token")
-		return nil, echo.ErrUnauthorized
-	}
-	claims, ok := token.Claims.(*UserClaims)
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelApi, "get claims: bad claims type")
-		return nil, echo.ErrUnauthorized
-	}
-	if claims.Username == "" {
-		log.SpanLog(ctx, log.DebugLevelApi, "get claims: bad claims content")
-		return nil, echo.ErrUnauthorized
-	}
-	span := log.SpanFromContext(ctx)
-	if claims.AuthType == ApiKeyAuth {
-		span.SetTag("username", claims.ApiKeyUsername)
-		span.SetTag("apikeyid", claims.Username)
-	} else {
-		span.SetTag("username", claims.Username)
-	}
-	span.SetTag("email", claims.Email)
-	return claims, nil
+func getClaims(c echo.Context) (*ormutil.UserClaims, error) {
+	return ormutil.GetClaims(c)
 }
 
 func AuthCookie(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		api := c.Path()
-		if strings.Contains(api, "/auth/") && !strings.Contains(api, "/ws/") {
+		if (strings.Contains(api, "/auth/") || strings.Contains(api, federation.ApiRoot)) && !strings.Contains(api, "/ws/") {
 			auth := c.Request().Header.Get(echo.HeaderAuthorization)
 			scheme := "Bearer"
 			l := len(scheme)
@@ -192,7 +142,7 @@ func AuthCookie(next echo.HandlerFunc) echo.HandlerFunc {
 				}
 			}
 
-			claims := UserClaims{}
+			claims := ormutil.UserClaims{}
 			token, err := Jwks.VerifyCookie(cookie, &claims)
 			if err == nil && token.Valid {
 				c.Set("user", token)
@@ -226,7 +176,7 @@ func AuthWSCookie(c echo.Context, ws *websocket.Conn) (bool, error) {
 		return false, err
 	}
 
-	claims := UserClaims{}
+	claims := ormutil.UserClaims{}
 	cookie := tokAuth.Token
 	token, err := Jwks.VerifyCookie(cookie, &claims)
 	if err == nil && token.Valid {

@@ -1117,11 +1117,9 @@ var CloudletAliasArgs = []string{
 	"secondarynotifysrvaddr=cloudlet.secondarynotifysrvaddr",
 	"dnslabel=cloudlet.dnslabel",
 	"rootlbfqdn=cloudlet.rootlbfqdn",
-	"federationconfig.federationname=cloudlet.federationconfig.federationname",
-	"federationconfig.selffederationid=cloudlet.federationconfig.selffederationid",
-	"federationconfig.partnerfederationid=cloudlet.federationconfig.partnerfederationid",
-	"federationconfig.zonecountrycode=cloudlet.federationconfig.zonecountrycode",
+	"federationconfig.federationcontextid=cloudlet.federationconfig.federationcontextid",
 	"federationconfig.partnerfederationaddr=cloudlet.federationconfig.partnerfederationaddr",
+	"federationconfig.federationdbid=cloudlet.federationconfig.federationdbid",
 	"licenseconfigstoragepath=cloudlet.licenseconfigstoragepath",
 }
 var CloudletComments = map[string]string{
@@ -1219,11 +1217,9 @@ var CloudletComments = map[string]string{
 	"secondarynotifysrvaddr":                 "Address for the secondary CRM notify listener to run on",
 	"dnslabel":                               "DNS label that is unique within the region",
 	"rootlbfqdn":                             "Root LB FQDN which is globally unique",
-	"federationconfig.federationname":        "Federation name",
-	"federationconfig.selffederationid":      "Self federation ID",
-	"federationconfig.partnerfederationid":   "Partner federation ID",
-	"federationconfig.zonecountrycode":       "Cloudlet zone country code",
+	"federationconfig.federationcontextid":   "Federation context id",
 	"federationconfig.partnerfederationaddr": "Partner federation address",
+	"federationconfig.federationdbid":        "Federation database id",
 	"licenseconfigstoragepath":               "GPU driver license config storage path",
 }
 var CloudletSpecialArgs = map[string]string{

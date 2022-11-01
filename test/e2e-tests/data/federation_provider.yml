@@ -1,0 +1,21 @@
+federationproviders:
+- name: dmuus-{{partnertag}}
+  operatorid: dmuus
+  regions:
+  - local
+  - locala
+  myinfo:
+    countrycode: SA
+    mcc: 123
+    mnc: [111, 222, 333]
+    fixednetworkids: [foo, bar, foobar]
+- name: enterprise-{{partnertag}}
+  operatorid: enterprise
+  regions:
+  - local
+  - locala
+  myinfo:
+    countrycode: SA
+    mcc: 123
+    mnc: [111, 222, 333]
+    fixednetworkids: [foo, bar, foobar]

@@ -38,9 +38,12 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const TokenTypeBearer = "Bearer"
+
 type Client struct {
 	SkipVerify bool
 	Debug      bool
+	TokenType  string
 	// To allow testing of midstream failures, we need to wait until
 	// some stream messages have been received before signaling to the
 	// sender that it's ok to generate an error.
@@ -56,7 +59,7 @@ func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
 	var err error
 	uri := runData.Uri + apiCmd.Path
 
-	if structMap, ok := runData.In.(*cli.MapData); ok {
+	if structMap, ok := runData.In.(*cli.MapData); ok && structMap != nil {
 		// Passed in generic map can be in any namespace,
 		// but embedded objects must not have been squashed,
 		// which is what json does. So it's recommended to
@@ -106,14 +109,15 @@ func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
 }
 
 func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Response, error) {
-	return s.HttpJsonSendReq("POST", uri, token, reqData)
+	return s.HttpJsonSendReq("POST", uri, token, reqData, nil)
 }
 
 func (s *Client) PostJson(uri, token string, reqData interface{}, replyData interface{}) (int, error) {
-	return s.HttpJsonSend("POST", uri, token, reqData, replyData)
+	status, _, err := s.HttpJsonSend("POST", uri, token, reqData, replyData, nil)
+	return status, err
 }
 
-func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{}) (*http.Response, error) {
+func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{}, headerVals http.Header) (*http.Response, error) {
 	var body io.Reader
 	var datastr string
 	if reqData != nil {
@@ -148,9 +152,18 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{})
 	}
 	req.Close = true
 	req.Header.Set("Content-Type", "application/json")
+	tokenType := s.TokenType
+	if tokenType == "" {
+		tokenType = TokenTypeBearer
+	}
 	if token != "" {
-		req.Header.Add("Authorization", "Bearer "+token)
+		req.Header.Add("Authorization", tokenType+" "+token)
 		req.Header.Add("x-api-key", token)
+	}
+	for k, vals := range headerVals {
+		for _, v := range vals {
+			req.Header.Add(k, v)
+		}
 	}
 	tlsConfig := &tls.Config{}
 	if s.SkipVerify {
@@ -167,7 +180,7 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{})
 	if s.Debug {
 		curlcmd := fmt.Sprintf(`curl -X %s "%s" -H "Content-Type: application/json"`, method, uri)
 		if token != "" {
-			curlcmd += ` -H "Authorization: Bearer ${TOKEN}"`
+			curlcmd += fmt.Sprintf(` -H "Authorization: %s ${TOKEN}"`, tokenType)
 		}
 		if s.SkipVerify {
 			curlcmd += " -k"
@@ -182,32 +195,32 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{})
 	return client.Do(req)
 }
 
-func (s *Client) HttpJsonSend(method, uri, token string, reqData interface{}, replyData interface{}) (int, error) {
-	resp, err := s.HttpJsonSendReq(method, uri, token, reqData)
+func (s *Client) HttpJsonSend(method, uri, token string, reqData interface{}, replyData interface{}, headerVals http.Header) (int, http.Header, error) {
+	resp, err := s.HttpJsonSendReq(method, uri, token, reqData, headerVals)
 	if err != nil {
-		return 0, fmt.Errorf("%s %s client do failed, %s", method, uri, err.Error())
+		return 0, nil, fmt.Errorf("%s %s client do failed, %s", method, uri, err.Error())
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK && replyData != nil {
 		err = json.NewDecoder(resp.Body).Decode(replyData)
 		if err != nil && err != io.EOF {
-			return resp.StatusCode, fmt.Errorf("%s %s decode resp failed, %v", method, uri, err)
+			return resp.StatusCode, nil, fmt.Errorf("%s %s decode resp failed, %v", method, uri, err)
 		}
 	}
 	if resp.StatusCode != http.StatusOK {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return resp.StatusCode, err
+			return resp.StatusCode, nil, err
 		}
 		res := ormapi.Result{}
 		err = json.Unmarshal(body, &res)
 		if err != nil {
 			// string error
-			return resp.StatusCode, fmt.Errorf("%s", body)
+			return resp.StatusCode, nil, fmt.Errorf("%s", body)
 		}
-		return resp.StatusCode, errors.New(res.Message)
+		return resp.StatusCode, nil, errors.New(res.Message)
 	}
-	return resp.StatusCode, nil
+	return resp.StatusCode, resp.Header, nil
 }
 
 func (s *Client) PostJsonStreamOut(uri, token string, reqData, replyData interface{}, replyReady func()) (int, error) {

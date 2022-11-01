@@ -426,7 +426,7 @@ func (s *CloudletInfoApi) checkCloudletReady(cctx *CallContext, stm concurrency.
 func (s *CloudletInfoApi) cleanupCloudletInfo(ctx context.Context, in *edgeproto.Cloudlet) {
 	var delErr error
 	info := edgeproto.CloudletInfo{}
-	if in.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
+	if in.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS || in.Key.FederatedOrganization != "" {
 		// no way for the controller to shutdown the crm,
 		// so just clean up the CloudletInfo
 		delErr = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {

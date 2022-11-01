@@ -18,15 +18,12 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/api/fedapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
@@ -44,9 +41,9 @@ const (
 // NOTE: This object is shared by all FRM-based cloudlets and hence it can't
 //       hold fields just for a specific cloudlet
 type FederationPlatform struct {
-	fedClient *federation.FederationClient
-	caches    *platform.Caches
-	commonPf  *infracommon.CommonPlatform
+	tokenSources *federationmgmt.TokenSourceCache
+	caches       *platform.Caches
+	commonPf     *infracommon.CommonPlatform
 }
 
 // GetVersionProperties returns properties related to the platform version
@@ -68,7 +65,7 @@ func (f *FederationPlatform) GetFederationConfig(ctx context.Context, cloudletKe
 	if !f.caches.CloudletCache.Get(cloudletKey, &cloudlet) {
 		return nil, fmt.Errorf("Cloudlet not found in cache %s", cloudletKey.String())
 	}
-	if cloudlet.FederationConfig.FederationName == "" {
+	if cloudlet.FederationConfig.FederationContextId == "" {
 		return nil, fmt.Errorf("Unable to find federation config for %s", cloudletKey.String())
 	}
 	return &cloudlet.FederationConfig, nil
@@ -76,11 +73,7 @@ func (f *FederationPlatform) GetFederationConfig(ctx context.Context, cloudletKe
 
 // Init is called once during FRM startup.
 func (f *FederationPlatform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
-	client, err := federation.NewClient(platformConfig.AccessApi)
-	if err != nil {
-		return err
-	}
-	f.fedClient = client
+	f.tokenSources = federationmgmt.NewTokenSourceCache(platformConfig.AccessApi)
 	f.caches = caches
 	f.commonPf = &infracommon.CommonPlatform{
 		PlatformConfig: platformConfig,
@@ -216,8 +209,20 @@ func GetAppFederationConfigs(ctx context.Context, appId string, fedAddr *string,
 
 // XXX === End of changes ===
 
+func (f *FederationPlatform) fedClient(ctx context.Context, addr string, cloudlet *edgeproto.Cloudlet) (*federationmgmt.Client, error) {
+	fedKey := federationmgmt.FedKey{
+		OperatorId: cloudlet.Key.Organization,
+		Name:       cloudlet.Key.Name,
+		FedType:    federationmgmt.FederationTypeConsumer,
+		ID:         uint(cloudlet.FederationConfig.FederationDbId),
+	}
+	return f.tokenSources.Client(ctx, addr, &fedKey)
+}
+
 // Create an appInst on a cluster
 func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
+	return fmt.Errorf("not supported yet")
+	/* TODO: fix me
 	if app.Deployment != cloudcommon.DeploymentTypeKubernetes {
 		return fmt.Errorf("Only kubernetes based applications are supported on federation cloudlets")
 	}
@@ -297,10 +302,12 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 			},
 		},
 	}
-	err = f.fedClient.SendRequest(ctx, "POST",
-		fedConfig.PartnerFederationAddr, fedConfig.FederationName,
-		federation.APIKeyFromVault, federation.OperatorAppOnboardingAPI,
-		&appObReq, nil)
+	fedClient, err := f.fedClient(ctx, fedConfig.PartnerFederationAddr, &appInst.Key.ClusterInstKey.CloudletKey)
+	if err != nil {
+		return err
+	}
+	method, path := federationmgmt.PathCreateAppInst(fedConfig.FederationContextId)
+	_, err = fedClient.SendRequest(ctx, method, path, &appObReq, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -322,10 +329,10 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	}
 	for {
 		time.Sleep(10 * time.Second)
-
 		// Fetch onboarding status
 		appObStatusResp := fedapi.AppOnboardingStatusResponse{}
-		err = f.fedClient.SendRequest(ctx, "GET",
+		method, path := federationmgmt.PathGetAppInst(fedConfig.FederationContextId, appId, appInstId, zoneId)
+		err = fedClient.SendRequest(ctx, "GET",
 			fedConfig.PartnerFederationAddr, fedConfig.FederationName,
 			federation.APIKeyFromVault, federation.OperatorAppOnboardingAPI+"?"+deplStatusReqArgs,
 			nil, &appObStatusResp)
@@ -440,10 +447,13 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 		break
 	}
 	return nil
+	*/
 }
 
 // Delete an AppInst on a Cluster
 func (f *FederationPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+	return fmt.Errorf("not supported yet")
+	/* TODO: fix me
 	fedConfig, err := f.GetFederationConfig(ctx, &appInst.ClusterInstKey().CloudletKey)
 	if err != nil {
 		return err
@@ -524,6 +534,7 @@ func (f *FederationPlatform) DeleteAppInst(ctx context.Context, clusterInst *edg
 	}
 
 	return nil
+	*/
 }
 
 // Update an AppInst

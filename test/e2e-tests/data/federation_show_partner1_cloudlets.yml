@@ -1,0 +1,374 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+controllers:
+- region: PA
+orgs:
+- name: partner1
+  type: operator
+  address: mobiledgex
+  phone: 123-123-1234
+roles:
+- org: partner1
+  username: fedop
+  role: OperatorManager
+regiondata:
+- region: PA
+  appdata:
+    flavors:
+    - key:
+        name: x1.medium
+      ram: 4096
+      vcpus: 4
+      disk: 4
+    - key:
+        name: x1.small
+      ram: 2048
+      vcpus: 2
+      disk: 2
+    - key:
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
+    cloudlets:
+    - key:
+        organization: partner1
+        name: dmuuscloud1
+        federatedorganization: dmuus-partner1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 10
+      state: Ready
+      platformtype: Federation
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: dmuuscloud1
+      deployment: docker
+      crmaccesskeyupgraderequired: true
+      resourcequotas:
+      - name: vCPUs
+        value: 20
+      - name: RAM
+        value: 409600
+      defaultresourcealertthreshold: 80
+      dnslabel: dmuuscloud1-partner1
+      rootlbfqdn: shared.dmuuscloud1-partner1.pa.edgecloude2e.net
+      federationconfig:
+        partnerfederationaddr: https://127.0.0.1:9801
+        federationdbid: 1
+    - key:
+        organization: partner1
+        name: dmuuscloud2
+        federatedorganization: dmuus-partner1
+      location:
+        latitude: 35
+        longitude: -95
+      ipsupport: Dynamic
+      numdynamicips: 10
+      state: Ready
+      platformtype: Federation
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: dmuuscloud2
+      deployment: docker
+      crmaccesskeyupgraderequired: true
+      resourcequotas:
+      - name: vCPUs
+        value: 50
+      - name: RAM
+        value: 40960
+      defaultresourcealertthreshold: 80
+      dnslabel: dmuuscloud2-partner1
+      rootlbfqdn: shared.dmuuscloud2-partner1.pa.edgecloude2e.net
+      federationconfig:
+        partnerfederationaddr: https://127.0.0.1:9801
+        federationdbid: 1
+    - key:
+        organization: partner1
+        name: dmuuscloud3
+        federatedorganization: dmuus-partner1
+      location:
+        latitude: 32
+        longitude: -92
+      ipsupport: Dynamic
+      numdynamicips: 10
+      state: Ready
+      platformtype: Federation
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: dmuuscloud3
+      deployment: docker
+      crmaccesskeyupgraderequired: true
+      resourcequotas:
+      - name: vCPUs
+        value: 50
+      - name: RAM
+        value: 40960
+      defaultresourcealertthreshold: 80
+      dnslabel: dmuuscloud3-partner1
+      rootlbfqdn: shared.dmuuscloud3-partner1.pa.edgecloude2e.net
+      federationconfig:
+        partnerfederationaddr: https://127.0.0.1:9801
+        federationdbid: 1
+    - key:
+        organization: partner1
+        name: dmuuscloud4
+        federatedorganization: dmuus-partner1
+      location:
+        latitude: 36
+        longitude: -96
+      ipsupport: Dynamic
+      numdynamicips: 10
+      state: Ready
+      platformtype: Federation
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: dmuuscloud4
+      deployment: docker
+      crmaccesskeyupgraderequired: true
+      resourcequotas:
+      - name: vCPUs
+        value: 50
+      - name: RAM
+        value: 40960
+      defaultresourcealertthreshold: 80
+      dnslabel: dmuuscloud4-partner1
+      rootlbfqdn: shared.dmuuscloud4-partner1.pa.edgecloude2e.net
+      federationconfig:
+        partnerfederationaddr: https://127.0.0.1:9801
+        federationdbid: 1
+    - key:
+        organization: partner1
+        name: enterprise1
+        federatedorganization: enterprise-partner1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 10
+      state: Ready
+      platformtype: Federation
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: enterprise1
+      deployment: docker
+      crmaccesskeyupgraderequired: true
+      resourcequotas:
+      - name: vCPUs
+        value: 50
+      - name: RAM
+        value: 40960
+      defaultresourcealertthreshold: 80
+      dnslabel: enterprise1-partner1
+      rootlbfqdn: shared.enterprise1-partner1.pa.edgecloude2e.net
+      federationconfig:
+        partnerfederationaddr: https://127.0.0.1:9801
+        federationdbid: 2
+    - key:
+        organization: partner1
+        name: enterprise2
+        federatedorganization: enterprise-partner1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 10
+      state: Ready
+      platformtype: Federation
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: enterprise2
+      deployment: docker
+      crmaccesskeyupgraderequired: true
+      resourcequotas:
+      - name: vCPUs
+        value: 50
+      - name: RAM
+        value: 40960
+      defaultresourcealertthreshold: 80
+      dnslabel: enterprise2-partner1
+      rootlbfqdn: shared.enterprise2-partner1.pa.edgecloude2e.net
+      federationconfig:
+        partnerfederationaddr: https://127.0.0.1:9801
+        federationdbid: 2
+    - key:
+        organization: partner1
+        name: partner1-cloud-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: partner1-cloud-1
+      containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
+      defaultresourcealertthreshold: 80
+      dnslabel: partner1-cloud-1-partner1
+      rootlbfqdn: shared.partner1-cloud-1-partner1.pa.edgecloude2e.net
+    - key:
+        organization: partner1
+        name: partner1-cloud-2
+      location:
+        latitude: 81
+        longitude: -11
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: partner1-cloud-2
+      containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
+      resourcequotas:
+      - name: RAM
+        alertthreshold: 50
+      - name: vCPUs
+        value: 20
+        alertthreshold: 50
+      - name: External IPs
+        alertthreshold: 10
+      defaultresourcealertthreshold: 80
+      dnslabel: partner1-cloud-2-partner1
+      rootlbfqdn: shared.partner1-cloud-2-partner1.pa.edgecloude2e.net
+    cloudletinfos:
+    - key:
+        organization: partner1
+        name: dmuuscloud1
+        federatedorganization: dmuus-partner1
+      state: Ready
+      flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+    - key:
+        organization: partner1
+        name: dmuuscloud2
+        federatedorganization: dmuus-partner1
+      state: Ready
+      flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+    - key:
+        organization: partner1
+        name: dmuuscloud3
+        federatedorganization: dmuus-partner1
+      state: Ready
+      flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+    - key:
+        organization: partner1
+        name: dmuuscloud4
+        federatedorganization: dmuus-partner1
+      state: Ready
+      flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+    - key:
+        organization: partner1
+        name: enterprise1
+        federatedorganization: enterprise-partner1
+      state: Ready
+      flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+    - key:
+        organization: partner1
+        name: enterprise2
+        federatedorganization: enterprise-partner1
+      state: Ready
+      flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+    - key:
+        organization: partner1
+        name: partner1-cloud-1
+      state: Ready
+      osmaxram: 40960
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+      containerversion: "2019-10-24"
+      controllercachereceived: true
+      trustpolicystate: NotPresent
+    - key:
+        organization: partner1
+        name: partner1-cloud-2
+      state: Ready
+      osmaxram: 40960
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+      containerversion: "2019-10-24"
+      controllercachereceived: true
+      trustpolicystate: NotPresent

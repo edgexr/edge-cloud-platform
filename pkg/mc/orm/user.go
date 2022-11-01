@@ -1187,7 +1187,7 @@ func CreateUserApiKey(c echo.Context) error {
 		return err
 	}
 	// Disallow apikey creation if auth type is ApiKey auth
-	if claims.AuthType == ApiKeyAuth {
+	if claims.AuthType == ormutil.ApiKeyAuth {
 		return ormutil.NewHTTPError(http.StatusForbidden, "ApiKey auth not allowed to create API keys, please log in with user account")
 	}
 	apiKeyReq := ormapi.CreateUserApiKey{}
@@ -1307,7 +1307,7 @@ func DeleteUserApiKey(c echo.Context) error {
 		return err
 	}
 	// Disallow apikey deletion if auth type is ApiKey auth
-	if claims.AuthType == ApiKeyAuth {
+	if claims.AuthType == ormutil.ApiKeyAuth {
 		return ormutil.NewHTTPError(http.StatusForbidden, "ApiKey auth not allowed to delete API keys, please log in with user account")
 	}
 	lookup := ormapi.CreateUserApiKey{}
@@ -1354,7 +1354,7 @@ func ShowUserApiKey(c echo.Context) error {
 		return err
 	}
 	// Disallow apikey users to view api keys
-	if claims.AuthType == ApiKeyAuth {
+	if claims.AuthType == ormutil.ApiKeyAuth {
 		return ormutil.NewHTTPError(http.StatusForbidden, "ApiKey auth not allowed to show API keys, please log in with user account")
 	}
 	filter := ormapi.CreateUserApiKey{}

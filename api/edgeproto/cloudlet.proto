@@ -122,16 +122,12 @@ message PlatformConfig {
 
 // Federation config associated with the cloudlet
 message FederationConfig {
-  // Federation name
-  string federation_name = 1;
-  // Self federation ID
-  string self_federation_id = 2;
-  // Partner federation ID
-  string partner_federation_id = 3;
-  // Cloudlet zone country code
-  string zone_country_code = 4;
+  // Federation context id
+  string federation_context_id = 1;
   // Partner federation address
-  string partner_federation_addr = 5;
+  string partner_federation_addr = 2;
+  // Federation database id
+  uint64 federation_db_id = 3;
 }
 
 // Platform Type

@@ -21,350 +21,381 @@ import (
 )
 
 const (
-	FederatorGroup     = "Federator"
-	FederatorZoneGroup = "FederatorZone"
-	FederationGroup    = "Federation"
+	FederationProviderGroup = "FederationProvider"
+	FederationConsumerGroup = "FederationConsumer"
 )
 
 func init() {
 	cmds := []*ApiCommand{
 		&ApiCommand{
-			Name:         "CreateSelfFederator",
+			Name:         "CreateFederationProvider",
 			Use:          "create",
-			Short:        "Create Self Federator",
-			SpecialArgs:  &FederatorSpecialArgs,
-			RequiredArgs: strings.Join(FederatorRequiredArgs, " "),
-			OptionalArgs: strings.Join(FederatorOptionalArgs, " "),
-			Comments:     ormapi.FederatorComments,
-			ReqData:      &ormapi.Federator{},
-			ReplyData:    &ormapi.Federator{},
-			Path:         "/auth/federator/self/create",
+			Short:        "Create Federation Provider",
+			SpecialArgs:  &FederationProviderSpecialArgs,
+			RequiredArgs: strings.Join(FederationProviderRequiredArgs, " "),
+			OptionalArgs: strings.Join(FederationProviderOptionalArgs, " "),
+			Comments:     ormapi.FederationProviderComments,
+			ReqData:      &ormapi.FederationProvider{},
+			ReplyData:    &ormapi.FederationProviderInfo{},
+			Path:         "/auth/federation/provider/create",
 		},
 		&ApiCommand{
-			Name:         "UpdateSelfFederator",
+			Name:         "UpdateFederationProvider",
 			Use:          "update",
-			Short:        "Update Self Federator",
-			SpecialArgs:  &FederatorSpecialArgs,
-			RequiredArgs: "operatorid federationid",
-			OptionalArgs: "mcc mnc locatorendpoint",
-			Comments:     ormapi.FederatorComments,
-			ReqData:      &ormapi.Federator{},
+			Short:        "Update Federation Provider",
+			SpecialArgs:  &FederationProviderSpecialArgs,
+			RequiredArgs: "name operatorid",
+			OptionalArgs: strings.Join(FederationProviderOptionalArgs, " "),
+			Comments:     ormapi.FederationProviderComments,
+			ReqData:      &ormapi.FederationProvider{},
 			ReplyData:    &ormapi.Result{},
-			Path:         "/auth/federator/self/update",
+			Path:         "/auth/federation/provider/update",
 		},
 		&ApiCommand{
-			Name:         "DeleteSelfFederator",
+			Name:         "DeleteFederationProvider",
 			Use:          "delete",
-			Short:        "Delete Self Federator",
-			RequiredArgs: "operatorid federationid",
-			Comments:     ormapi.FederatorComments,
-			ReqData:      &ormapi.Federator{},
+			Short:        "Delete Federation Provider",
+			RequiredArgs: "name operatorid",
+			Comments:     ormapi.FederationProviderComments,
+			ReqData:      &ormapi.FederationProvider{},
 			ReplyData:    &ormapi.Result{},
-			Path:         "/auth/federator/self/delete",
+			Path:         "/auth/federation/provider/delete",
 		},
 		&ApiCommand{
-			Name:         "ShowSelfFederator",
+			Name:         "ShowFederationProvider",
 			Use:          "show",
-			Short:        "Show Self Federator",
-			SpecialArgs:  &FederatorSpecialArgs,
-			OptionalArgs: strings.Join(append(FederatorRequiredArgs, FederatorOptionalArgs...), " "),
-			Comments:     ormapi.FederatorComments,
-			ReqData:      &ormapi.Federator{},
-			ReplyData:    &[]ormapi.Federator{},
-			Path:         "/auth/federator/self/show",
+			Short:        "Show Federation Provider",
+			SpecialArgs:  &FederationProviderSpecialArgs,
+			OptionalArgs: strings.Join(FederationProviderShowArgs, " "),
+			Comments:     ormapi.FederationProviderComments,
+			ReqData:      &ormapi.FederationProvider{},
+			ReplyData:    &[]ormapi.FederationProvider{},
+			Path:         "/auth/federation/provider/show",
 			ShowFilter:   true,
 		},
 		&ApiCommand{
-			Name:         "GenerateSelfFederatorAPIKey",
-			Use:          "generateselfapikey",
-			Short:        "Generate Self Federator API Key",
-			SpecialArgs:  &FederatorSpecialArgs,
-			RequiredArgs: "operatorid federationid",
-			Comments:     ormapi.FederatorComments,
-			ReqData:      &ormapi.Federator{},
-			ReplyData:    &ormapi.Federator{},
-			Path:         "/auth/federator/self/generateapikey",
+			Name:         "GenerateFederationProviderAPIKey",
+			Use:          "generateapikey",
+			Short:        "Generate Federation Provider API Key to share with Consumer",
+			RequiredArgs: "name operatorid",
+			Comments:     ormapi.FederationProviderComments,
+			ReqData:      &ormapi.FederationProvider{},
+			ReplyData:    &ormapi.FederationProviderInfo{},
+			Path:         "/auth/federation/provider/generateapikey",
 		},
-	}
-	AllApis.AddGroup(FederatorGroup, "Federator APIs", cmds)
-
-	cmds = []*ApiCommand{
 		&ApiCommand{
-			Name:         "CreateSelfFederatorZone",
-			Use:          "create",
-			Short:        "Create Self Federator Zone",
-			SpecialArgs:  &FederatorZoneSpecialArgs,
-			RequiredArgs: strings.Join(FederatorZoneRequiredArgs, " "),
-			OptionalArgs: strings.Join(FederatorZoneOptionalArgs, " "),
-			Comments:     ormapi.FederatorZoneComments,
-			ReqData:      &ormapi.FederatorZone{},
+			Name:         "SetFederationProviderNotifyKey",
+			Use:          "setnotifykey",
+			Short:        "Set Federation Provider notify key for notify connections",
+			RequiredArgs: "name operatorid partnernotifyclientid partnernotifyclientkey",
+			Comments:     ormapi.FederationProviderComments,
+			ReqData:      &ormapi.FederationProvider{},
 			ReplyData:    &ormapi.Result{},
-			Path:         "/auth/federator/self/zone/create",
+			Path:         "/auth/federation/provider/setnotifykey",
 		},
 		&ApiCommand{
-			Name:         "DeleteSelfFederatorZone",
-			Use:          "delete",
-			Short:        "Delete Self Federator Zone",
+			Name:         "CreateProviderZoneBase",
+			Use:          "createzonebase",
+			Short:        "Create Provider Zone Base to package cloudlets into a zone",
+			SpecialArgs:  &ProviderZoneBaseSpecialArgs,
+			RequiredArgs: strings.Join(ProviderZoneBaseRequiredArgs, " "),
+			OptionalArgs: strings.Join(ProviderZoneBaseOptionalArgs, " "),
+			Comments:     ormapi.ProviderZoneBaseComments,
+			ReqData:      &ormapi.ProviderZoneBase{},
+			ReplyData:    &ormapi.Result{},
+			Path:         "/auth/federation/provider/zonebase/create",
+		},
+		&ApiCommand{
+			Name:         "DeleteProviderZoneBase",
+			Use:          "deletezonebase",
+			Short:        "Delete Provider Zone Base",
 			RequiredArgs: "zoneid operatorid countrycode",
-			Comments:     ormapi.FederatorZoneComments,
-			ReqData:      &ormapi.FederatorZone{},
+			Comments:     ormapi.ProviderZoneBaseComments,
+			ReqData:      &ormapi.ProviderZoneBase{},
 			ReplyData:    &ormapi.Result{},
-			Path:         "/auth/federator/self/zone/delete",
+			Path:         "/auth/federation/provider/zonebase/delete",
 		},
 		&ApiCommand{
-			Name:         "ShowSelfFederatorZone",
-			Use:          "show",
-			Short:        "Show Self Federator Zone",
-			OptionalArgs: "operatorid countrycode zoneid city region",
-			Comments:     ormapi.FederatorZoneComments,
-			ReqData:      &ormapi.FederatorZone{},
-			ReplyData:    &[]ormapi.FederatorZone{},
-			Path:         "/auth/federator/self/zone/show",
+			Name:         "ShowProviderZoneBase",
+			Use:          "showzonebase",
+			Short:        "Show Provider Zone Bases",
+			OptionalArgs: "zoneid operatorid countrycode geolocation geographydetails region cloudlets",
+			Comments:     ormapi.ProviderZoneBaseComments,
+			ReqData:      &ormapi.ProviderZoneBase{},
+			ReplyData:    &[]ormapi.ProviderZoneBase{},
+			Path:         "/auth/federation/provider/zonebase/show",
 			ShowFilter:   true,
 		},
 		&ApiCommand{
-			Name:         "ShareSelfFederatorZone",
-			Use:          "share",
-			Short:        "Share Self Federator Zone",
-			RequiredArgs: strings.Join(FederatedZoneArgs, " "),
-			Comments:     ormapi.FederatedSelfZoneComments,
-			ReqData:      &ormapi.FederatedSelfZone{},
+			Name:         "ShareProviderZone",
+			Use:          "sharezone",
+			Short:        "Share Provider Zone with Partner OP",
+			RequiredArgs: strings.Join(ShareZoneRequiredArgs, " "),
+			SpecialArgs:  &ShareZoneSpecialArgs,
+			Comments:     ormapi.FederatedZoneShareRequestComments,
+			ReqData:      &ormapi.FederatedZoneShareRequest{},
 			ReplyData:    &ormapi.Result{},
-			Path:         "/auth/federator/self/zone/share",
+			Path:         "/auth/federation/provider/zone/share",
 		},
 		&ApiCommand{
-			Name:         "UnshareSelfFederatorZone",
-			Use:          "unshare",
-			Short:        "Unshare Self Federator Zone",
-			RequiredArgs: strings.Join(FederatedZoneArgs, " "),
-			Comments:     ormapi.FederatedSelfZoneComments,
-			ReqData:      &ormapi.FederatedSelfZone{},
+			Name:         "UnshareProviderZone",
+			Use:          "unsharezone",
+			Short:        "Unshare Provider Zone with Partner OP",
+			RequiredArgs: strings.Join(ShareZoneRequiredArgs, " "),
+			SpecialArgs:  &ShareZoneSpecialArgs,
+			Comments:     ormapi.FederatedZoneShareRequestComments,
+			ReqData:      &ormapi.FederatedZoneShareRequest{},
 			ReplyData:    &ormapi.Result{},
-			Path:         "/auth/federator/self/zone/unshare",
+			Path:         "/auth/federation/provider/zone/unshare",
 		},
 		&ApiCommand{
-			Name:         "RegisterPartnerFederatorZone",
-			Use:          "register",
-			Short:        "Register Partner Federator Zone",
-			SpecialArgs:  &FederatorZoneRegSpecialArgs,
-			RequiredArgs: strings.Join(FederatedZoneRegArgs, " "),
-			Comments:     ormapi.FederatedZoneRegRequestComments,
-			ReqData:      &ormapi.FederatedZoneRegRequest{},
-			ReplyData:    &ormapi.Result{},
-			Path:         "/auth/federator/partner/zone/register",
-		},
-		&ApiCommand{
-			Name:         "DeRegisterPartnerFederatorZone",
-			Use:          "deregister",
-			Short:        "DeRegister Partner Federator Zone",
-			SpecialArgs:  &FederatorZoneRegSpecialArgs,
-			RequiredArgs: strings.Join(FederatedZoneRegArgs, " "),
-			Comments:     ormapi.FederatedZoneRegRequestComments,
-			ReqData:      &ormapi.FederatedZoneRegRequest{},
-			ReplyData:    &ormapi.Result{},
-			Path:         "/auth/federator/partner/zone/deregister",
-		},
-		&ApiCommand{
-			Name:         "ShowFederatedSelfZone",
-			Use:          "showfederatedselfzone",
-			Short:        "Show Federated Self Zones",
-			OptionalArgs: strings.Join(append(FederatedZoneArgs, FederatedZoneOptionalArgs...), " "),
-			Comments:     ormapi.FederatedSelfZoneComments,
-			ReqData:      &ormapi.FederatedSelfZone{},
-			ReplyData:    &[]ormapi.FederatedSelfZone{},
-			Path:         "/auth/federation/self/zone/show",
-			ShowFilter:   true,
-		},
-		&ApiCommand{
-			Name:         "ShowFederatedPartnerZone",
-			Use:          "showfederatedpartnerzone",
-			Short:        "Show Federated Partner Zones",
-			SpecialArgs:  &FederatorZoneSpecialArgs,
-			AliasArgs:    strings.Join(FederatorZoneAliasArgs, " "),
-			OptionalArgs: strings.Join(append(FederatedZoneArgs, FederatedZoneOptionalArgs...), " "),
-			Comments:     aliasedComments(ormapi.FederatedPartnerZoneComments, FederatorZoneAliasArgs),
-			ReqData:      &ormapi.FederatedPartnerZone{},
-			ReplyData:    &[]ormapi.FederatedPartnerZone{},
-			Path:         "/auth/federation/partner/zone/show",
+			Name:         "ShowProviderZone",
+			Use:          "showsharedzones",
+			Short:        "Show Shared Provider Zones",
+			OptionalArgs: strings.Join(ProviderZoneShowArgs, " "),
+			Comments:     ormapi.ProviderZoneComments,
+			ReqData:      &ormapi.ProviderZone{},
+			ReplyData:    &[]ormapi.ProviderZone{},
+			Path:         "/auth/federation/provider/zone/show",
 			ShowFilter:   true,
 		},
 	}
-	AllApis.AddGroup(FederatorZoneGroup, "Federator Zone APIs", cmds)
-
+	AllApis.AddGroup(FederationProviderGroup, "Manage Federation Provider and Zones", cmds)
 	cmds = []*ApiCommand{
 		&ApiCommand{
-			Name:         "CreateFederation",
+			Name:         "CreateFederationConsumer",
 			Use:          "create",
-			Short:        "Create Federation",
-			SpecialArgs:  &FederationSpecialArgs,
-			AliasArgs:    strings.Join(FederationAliasArgs, " "),
-			RequiredArgs: strings.Join(append(SelfFederatorArgs, FederationRequiredArgs...), " "),
-			Comments:     aliasedComments(ormapi.FederationComments, FederationAliasArgs),
-			ReqData:      &ormapi.Federation{},
+			Short:        "Create Federation Consumer",
+			SpecialArgs:  &FederationConsumerSpecialArgs,
+			RequiredArgs: strings.Join(FederationConsumerRequiredArgs, " "),
+			Comments:     ormapi.FederationConsumerComments,
+			ReqData:      &ormapi.FederationConsumer{},
 			ReplyData:    &ormapi.Result{},
-			Path:         "/auth/federation/create",
+			Path:         "/auth/federation/consumer/create",
 		},
 		&ApiCommand{
-			Name:         "DeleteFederation",
+			Name:         "DeleteFederationConsumer",
 			Use:          "delete",
-			Short:        "Delete Federation",
-			AliasArgs:    strings.Join(FederationAliasArgs, " "),
-			RequiredArgs: strings.Join(FederationArgs, " "),
-			Comments:     aliasedComments(ormapi.FederationComments, FederationAliasArgs),
-			ReqData:      &ormapi.Federation{},
+			Short:        "Delete Federation Consumer",
+			SpecialArgs:  &FederationConsumerSpecialArgs,
+			OptionalArgs: "id name operatorid",
+			Comments:     ormapi.FederationConsumerComments,
+			ReqData:      &ormapi.FederationConsumer{},
 			ReplyData:    &ormapi.Result{},
-			Path:         "/auth/federation/delete",
+			Path:         "/auth/federation/consumer/delete",
 		},
 		&ApiCommand{
-			Name:         "SetPartnerFederationAPIKey",
+			Name:         "ShowFederationConsumer",
+			Use:          "show",
+			Short:        "Show Federation Consumer",
+			SpecialArgs:  &FederationConsumerSpecialArgs,
+			OptionalArgs: strings.Join(FederationConsumerShowArgs, " "),
+			Comments:     ormapi.FederationConsumerComments,
+			ReqData:      &ormapi.FederationConsumer{},
+			ReplyData:    &[]ormapi.FederationConsumer{},
+			Path:         "/auth/federation/consumer/show",
+			ShowFilter:   true,
+		},
+		&ApiCommand{
+			Name:         "SetFederationConsumerAPIKey",
 			Use:          "setpartnerapikey",
 			Short:        "Set Partner Federation API Key",
-			SpecialArgs:  &FederatorSpecialArgs,
-			AliasArgs:    strings.Join(FederationAliasArgs, " "),
-			RequiredArgs: strings.Join(append(FederationArgs, FederationUpdateArgs...), " "),
-			Comments:     aliasedComments(ormapi.FederationComments, FederationAliasArgs),
-			ReqData:      &ormapi.Federation{},
+			RequiredArgs: "name operatorid providerclientid providerclientkey",
+			SpecialArgs:  &FederationConsumerSpecialArgs,
+			Comments:     ormapi.FederationConsumerComments,
+			ReqData:      &ormapi.FederationConsumer{},
 			ReplyData:    &ormapi.Result{},
-			Path:         "/auth/federation/partner/setapikey",
+			Path:         "/auth/federation/consumer/setapikey",
 		},
 		&ApiCommand{
-			Name:         "RegisterFederation",
+			Name:         "GenerateFederationConsumerNotifyKey",
+			Use:          "generatenotifykey",
+			Short:        "Set Partner Federation API Key",
+			RequiredArgs: "name operatorid",
+			SpecialArgs:  &FederationConsumerSpecialArgs,
+			Comments:     ormapi.FederationConsumerComments,
+			ReqData:      &ormapi.FederationConsumer{},
+			ReplyData:    &ormapi.Result{},
+			Path:         "/auth/federation/consumer/gennotifykey",
+		},
+		&ApiCommand{
+			Name:         "RegisterConsumerZone",
 			Use:          "register",
-			Short:        "Register Federation",
-			AliasArgs:    strings.Join(FederationAliasArgs, " "),
-			RequiredArgs: strings.Join(FederationArgs, " "),
-			Comments:     aliasedComments(ormapi.FederationComments, FederationAliasArgs),
-			ReqData:      &ormapi.Federation{},
+			Short:        "Register Partner Federator Zone",
+			SpecialArgs:  &RegisterZoneSpecialArgs,
+			RequiredArgs: strings.Join(RegisterZoneRequiredArgs, " "),
+			Comments:     ormapi.FederatedZoneRegRequestComments,
+			ReqData:      &ormapi.FederatedZoneRegRequest{},
 			ReplyData:    &ormapi.Result{},
-			Path:         "/auth/federation/register",
+			Path:         "/auth/federation/consumer/zone/register",
 		},
 		&ApiCommand{
-			Name:         "DeregisterFederation",
+			Name:         "DeregisterConsumerZone",
 			Use:          "deregister",
-			Short:        "Deregister Federation",
-			AliasArgs:    strings.Join(FederationAliasArgs, " "),
-			RequiredArgs: strings.Join(FederationArgs, " "),
-			Comments:     aliasedComments(ormapi.FederationComments, FederationAliasArgs),
-			ReqData:      &ormapi.Federation{},
+			Short:        "DeRegister Partner Federator Zone",
+			SpecialArgs:  &RegisterZoneSpecialArgs,
+			RequiredArgs: strings.Join(RegisterZoneRequiredArgs, " "),
+			Comments:     ormapi.FederatedZoneRegRequestComments,
+			ReqData:      &ormapi.FederatedZoneRegRequest{},
 			ReplyData:    &ormapi.Result{},
-			Path:         "/auth/federation/deregister",
+			Path:         "/auth/federation/consumer/zone/deregister",
 		},
 		&ApiCommand{
-			Name:         "ShowFederation",
-			Use:          "show",
-			Short:        "Show Federation",
-			SpecialArgs:  &FederationSpecialArgs,
-			AliasArgs:    strings.Join(FederationAliasArgs, " "),
-			OptionalArgs: strings.Join(append(SelfFederatorArgs, FederationRequiredArgs...), " "),
-			Comments:     aliasedComments(ormapi.FederationComments, FederationAliasArgs),
-			ReqData:      &ormapi.Federation{},
-			ReplyData:    &[]ormapi.Federation{},
-			Path:         "/auth/federation/show",
+			Name:         "ShowConsumerZone",
+			Use:          "showzones",
+			Short:        "Show Federated Partner Zones",
+			OptionalArgs: strings.Join(ConsumerZoneShowArgs, " "),
+			Comments:     ormapi.ConsumerZoneComments,
+			ReqData:      &ormapi.ConsumerZone{},
+			ReplyData:    &[]ormapi.ConsumerZone{},
+			Path:         "/auth/federation/consumer/zone/show",
 			ShowFilter:   true,
 		},
 	}
-	AllApis.AddGroup(FederationGroup, "Federation APIs", cmds)
+	AllApis.AddGroup(FederationConsumerGroup, "Manage Federation Consumer and Zones", cmds)
 }
 
-var SelfFederatorArgs = []string{
-	"selfoperatorid",
-	"selffederationid",
-}
-
-var FederatorRequiredArgs = []string{
+var FederationProviderRequiredArgs = []string{
+	"name",
 	"operatorid",
-	"countrycode",
+	"regions",
+}
+
+var FederationProviderOptionalArgs = []string{
+	"myinfo.countrycode",
+	"myinfo.mcc",
+	"myinfo.mnc",
+	"myinfo.fixednetworkids",
+}
+
+var FederationProviderSpecialArgs = map[string]string{
+	"regions":                     "StringArray",
+	"myinfo.mnc":                  "StringArray",
+	"myinfo.fixednetworkids":      "StringArray",
+	"partnerinfo.mnc":             "StringArray",
+	"partnerinfo.fixednetworkids": "StringArray",
+}
+
+var FederationProviderShowArgs = []string{
+	"id",
+	"name",
+	"operatorid",
+	"regions",
+	"federationcontextid",
+	"myinfo.federationid",
+	"myinfo.countrycode",
+	"myinfo.mcc",
+	"myinfo.mnc",
+	"myinfo.fixednetworkids",
+	"myinfo.discoveryendpoint",
+	"partnerinfo.federationid",
+	"partnerinfo.countrycode",
+	"partnerinfo.mcc",
+	"partnerinfo.mnc",
+	"partnerinfo.fixednetworkids",
+	"partnerinfo.discoveryendpoint",
+	"status",
+	"providerclientid",
+}
+
+var ProviderZoneBaseRequiredArgs = []string{
+	"zoneid",
+	"operatorid",
 	"region",
-	"mcc",
-	"mnc",
+	"cloudlets",
 }
 
-var FederatorOptionalArgs = []string{
-	"federationid",
-	"locatorendpoint",
-}
-
-var FederationRequiredArgs = []string{
-	"name",
-	"operatorid",
+var ProviderZoneBaseOptionalArgs = []string{
 	"countrycode",
-	"federationid",
-	"federationaddr",
-	"apikey",
+	"geolocation",
+	"geographydetails",
 }
 
-var FederationArgs = []string{
-	"selfoperatorid",
-	"name",
+var ProviderZoneBaseSpecialArgs = map[string]string{
+	"cloudlets": "StringArray",
 }
 
-var FederationUpdateArgs = []string{
-	"apikey",
+var ShareZoneRequiredArgs = []string{
+	"operatorid",
+	"providername",
+	"zones",
 }
 
-var FederationAliasArgs = []string{
-	"operatorid=federator.operatorid",
-	"countrycode=federator.countrycode",
-	"federationid=federator.federationid",
-	"federationaddr=federator.federationaddr",
-	"mcc=federator.mcc",
-	"mnc=federator.mnc",
-	"locatorendpoint=federator.locatorendpoint",
-	"apikey=federator.apikey",
+var ProviderZoneShowArgs = []string{
+	"zoneid",
+	"operatorid",
+	"providername",
+	"status",
 }
 
-var FederatorSpecialArgs = map[string]string{
-	"mnc": "StringArray",
-}
-var FederationSpecialArgs = map[string]string{
-	"federator.mnc": "StringArray",
-}
-var FederatorZoneSpecialArgs = map[string]string{
-	"federatorzone.cloudlets": "StringArray",
-}
-var FederatorZoneRegSpecialArgs = map[string]string{
+var ShareZoneSpecialArgs = map[string]string{
 	"zones": "StringArray",
 }
 
-var FederatorZoneRequiredArgs = []string{
-	"zoneid",
+var FederationConsumerRequiredArgs = []string{
+	"name",
 	"operatorid",
-	"countrycode",
-	"cloudlets",
-	"geolocation",
+	"partneraddr",
 	"region",
+	"providerclientid",
+	"providerclientkey",
 }
 
-var FederatorZoneOptionalArgs = []string{
-	"city",
-	"state",
-	"locality",
+var FederationConsumerOptionalArgs = []string{
+	"autoregisterzones",
+	"partnertokenurl",
+	"myinfo.countrycode",
+	"myinfo.mcc",
+	"myinfo.mnc",
+	"myinfo.fixednetworkids",
 }
 
-var FederatorZoneAliasArgs = []string{
-	"operatorid=federatorzone.operatorid",
-	"countrycode=federatorzone.countrycode",
-	"zoneid=federatorzone.zoneid",
-	"geolocation=federatorzone.geolocation",
-	"city=federatorzone.city",
-	"state=federatorzone.state",
-	"locality=federatorzone.locality",
-	"region=federatorzone.region",
-	"cloudlets=federatorzone.cloudlets",
+var FederationConsumerSpecialArgs = map[string]string{
+	"myinfo.mnc":                  "StringArray",
+	"myinfo.fixednetworkids":      "StringArray",
+	"partnerinfo.mnc":             "StringArray",
+	"partnerinfo.fixednetworkids": "StringArray",
 }
 
-var FederatedZoneArgs = []string{
-	"zoneid",
-	"selfoperatorid",
-	"federationname",
+var FederationConsumerShowArgs = []string{
+	"id",
+	"name",
+	"operatorid",
+	"partneraddr",
+	"region",
+	"federationcontextid",
+	"myinfo.federationid",
+	"myinfo.countrycode",
+	"myinfo.mcc",
+	"myinfo.mnc",
+	"myinfo.fixednetworkids",
+	"myinfo.discoveryendpoint",
+	"partnerinfo.federationid",
+	"partnerinfo.countrycode",
+	"partnerinfo.mcc",
+	"partnerinfo.mnc",
+	"partnerinfo.fixednetworkids",
+	"partnerinfo.discoveryendpoint",
+	"status",
+	"providerclientid",
+	"notifyclientid",
 }
 
-var FederatedZoneOptionalArgs = []string{
-	"registered",
-}
-
-var FederatedZoneRegArgs = []string{
-	"selfoperatorid",
-	"federationname",
+var RegisterZoneRequiredArgs = []string{
+	"operatorid",
+	"consumername",
 	"zones",
+}
+
+var RegisterZoneSpecialArgs = map[string]string{
+	"zones": "StringArray",
+}
+
+var ConsumerZoneShowArgs = []string{
+	"zoneid",
+	"consumername",
+	"operatorid",
+	"geolocation",
+	"geographydetails",
+	"status",
 }

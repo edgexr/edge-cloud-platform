@@ -21,984 +21,514 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/api/fedapi"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/gormlog"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
-	"github.com/lib/pq"
 )
 
 const (
-	// Federation APIs
-	OperatorPartnerAPI    = "/operator/partner"
-	OperatorZoneAPI       = "/operator/zone"
-	OperatorNotifyZoneAPI = "/operator/notify/zone"
+	ApiRoot  = "operatorplatform/federation/v1"
+	TokenUrl = "oauth2/token"
 
-	// App management APIs
-	OperatorAppOnboardingAPI      = "/operator/application/onboarding"
-	OperatorAppProvisionAPI       = "/operator/application/provision"
-	OperatorAppProvisionStatusAPI = "/operator/application/provisionstatus"
+	StatusUnregistered = "Unregistered"
+	StatusRegistered   = "Registered"
+
+	HeaderXNotifyAuth     = "X-Notify-Auth"
+	HeaderXNotifyTokenUrl = "X-Notify-Token-Url"
+
+	// Path params
+	PathVarFederationContextId = "federationContextId"
+	PathVarZoneId              = "zoneid"
+	PathVarAppId               = "appid"
+	PathVarAppInstId           = "appinstid"
+	PathVarProviderId          = "appproviderid"
+	PathVarPoolId              = "poolid"
+
+	// callback urls in UriTemplate (RFC6570) format
+	PartnerNotifyPath      = "/notify/{" + PathVarFederationContextId + "}"
+	PartnerZoneNotifyPath  = "/notify/{" + PathVarFederationContextId + "}/zones/{" + PathVarZoneId + "}"
+	PartnerAppOnNotifyPath = "/notify/{" + PathVarFederationContextId + "}/application/onboarding/app/{" + PathVarAppId + "}"
 
 	BadAuthDelay   = 3 * time.Second
 	AllAppsVersion = "1.0"
 )
 
 type PartnerApi struct {
-	Database  *gorm.DB
-	ConnCache ctrlclient.ClientConnMgr
+	database       *gorm.DB
+	connCache      ctrlclient.ClientConnMgr
+	vaultConfig    *vault.Config
+	tokenSources   *federationmgmt.TokenSourceCache
+	allowPlainHttp bool // for unit testing
+}
+
+func NewPartnerApi(db *gorm.DB, connCache ctrlclient.ClientConnMgr, vaultConfig *vault.Config) *PartnerApi {
+	p := &PartnerApi{
+		database:    db,
+		connCache:   connCache,
+		vaultConfig: vaultConfig,
+	}
+	p.tokenSources = federationmgmt.NewTokenSourceCache(p)
+	return p
 }
 
 func (p *PartnerApi) loggedDB(ctx context.Context) *gorm.DB {
-	return gormlog.LoggedDB(ctx, p.Database)
+	return gormlog.LoggedDB(ctx, p.database)
+}
+
+// unit testing only
+func (p *PartnerApi) AllowPlainHttp() {
+	p.allowPlainHttp = true
 }
 
 // E/W-BoundInterface APIs for Federation between multiple Operator Platforms (federators)
 // These are the standard interfaces which are called by other federators for unified edge platform experience
 func (p *PartnerApi) InitAPIs(e *echo.Echo) {
-	// Create directed federation with partner federator
-	e.POST(OperatorPartnerAPI, p.FederationOperatorPartnerCreate)
-	// Update attributes of an existing federation with a partner federator
-	e.PUT(OperatorPartnerAPI, p.FederationOperatorPartnerUpdate)
-	// Remove existing federation with a partner federator
-	e.DELETE(OperatorPartnerAPI, p.FederationOperatorPartnerDelete)
-	// Partner registers self federator zones
-	e.POST(OperatorZoneAPI, p.FederationOperatorZoneRegister)
-	// Partner deregisters self federator zones
-	e.DELETE(OperatorZoneAPI, p.FederationOperatorZoneDeRegister)
-	// Notify partner federator about a new zone being added
-	e.POST(OperatorNotifyZoneAPI, p.FederationOperatorZoneShare)
-	// Notify partner federator about a zone being unshared
-	e.DELETE(OperatorNotifyZoneAPI, p.FederationOperatorZoneUnShare)
-	// Onboarding application on partner federator zone
-	e.POST(OperatorAppOnboardingAPI, p.FederationAppOnboarding)
-	// Get application onboarding status on partner federator zone
-	e.GET(OperatorAppOnboardingAPI, p.FederationAppOnboardingStatus)
-	// Deboarding application on partner federator zone
-	e.DELETE(OperatorAppOnboardingAPI, p.FederationAppDeboarding)
-	// Provisioning application on partner federator zone
-	e.POST(OperatorAppProvisionAPI, p.FederationAppProvision)
-	// Deprovisioning application on partner federator zone
-	e.DELETE(OperatorAppProvisionAPI, p.FederationAppDeprovision)
+	RegisterHandlersWithBaseURL(e, p, ApiRoot)
+	// TODO: register all notify callback paths
+
+	e.POST(ApiRoot+ormutil.NewUriTemplate(PartnerNotifyPath).EchoPath(), p.PartnerNotify)
+	e.POST(ApiRoot+ormutil.NewUriTemplate(PartnerZoneNotifyPath).EchoPath(), p.PartnerZoneNotify)
 }
 
-func AuthAPIKey(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		auth := c.Request().Header.Get(echo.HeaderAuthorization)
-		scheme := "Bearer"
-		l := len(scheme)
-		apiKey := ""
-		if len(auth) > len(scheme) && strings.HasPrefix(auth, scheme) {
-			apiKey = auth[l+1:]
-		}
-		if apiKey == "" {
-			// Partner federator is using x-api-key for API key-based auth,
-			// which will be changed in the future to use Authorization header.
-			// So for now, we will support both.
-			auth = c.Request().Header.Get("x-api-key")
-			if len(auth) > 0 {
-				apiKey = auth
-			} else {
-				// if no api key found, return a 400 err
-				return &echo.HTTPError{
-					Code:     http.StatusBadRequest,
-					Message:  "api key not found in bearer token or x-api-key",
-					Internal: fmt.Errorf("api key not found in bearer token or x-api-key"),
-				}
-			}
-		}
-		c.Set("apikey", apiKey)
-		return next(c)
-	}
-}
-
-func (p *PartnerApi) ValidateAndGetFederatorInfo(c echo.Context, origKey, destKey, origOperatorId string) (*ormapi.Federator, *ormapi.Federation, error) {
-	apiKeyIntf := c.Get("apikey")
-	ctx := ormutil.GetContext(c)
-	if apiKeyIntf == nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "no apikey found")
-		return nil, nil, echo.ErrUnauthorized
-	}
-	apiKey, ok := apiKeyIntf.(string)
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelApi, "invalid apikey type")
-		return nil, nil, echo.ErrUnauthorized
-	}
-	// sanity check
-	if origKey == "" {
-		return nil, nil, fmt.Errorf("Missing origin federation key")
-	}
-	if destKey == "" {
-		return nil, nil, fmt.Errorf("Missing destination federation key")
-	}
-	if origOperatorId == "" {
-		return nil, nil, fmt.Errorf("Missing origin Operator ID")
-	}
-	db := p.loggedDB(ctx)
-
-	// We are using destination federation key to get self federator info.
-	// A federator is identified by operatorID/countryCode, but the partner
-	// federator does not send these details.
-	// Hence, MC uses the destination federation key to multiplex federation
-	// requests to appropriate self federator
-	selfFed := ormapi.Federator{
-		FederationId: destKey,
-	}
-	res := db.Where(&selfFed).First(&selfFed)
-	if res.RecordNotFound() {
-		return nil, nil, fmt.Errorf("Invalid destination federation key")
-	}
-	if res.Error != nil {
-		return nil, nil, ormutil.DbErr(res.Error)
-	}
-
-	partnerLookup := ormapi.Federation{
-		SelfFederationId: selfFed.FederationId,
-	}
-	partnerFed := ormapi.Federation{}
-	res = db.Where(&partnerLookup).First(&partnerFed)
-	if res.RecordNotFound() {
-		return nil, nil, fmt.Errorf("Origin federator with ID %q does not exist", selfFed.FederationId)
-	}
-	if res.Error != nil {
-		return nil, nil, ormutil.DbErr(res.Error)
-	}
-	// validate api key
-	matches, err := ormutil.PasswordMatches(apiKey, selfFed.ApiKeyHash, selfFed.Salt, selfFed.Iter)
+func (p *PartnerApi) lookupProvider(c echo.Context, federationContextId FederationContextId) (*ormapi.FederationProvider, error) {
+	claims, err := ormutil.GetClaims(c)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "apiKeyId matches err", "err", err)
+		return nil, err
 	}
-	if !matches || err != nil {
-		time.Sleep(BadAuthDelay)
-		return nil, nil, fmt.Errorf("Invalid ApiKey")
+	ctx := ormutil.GetContext(c)
+	db := p.loggedDB(ctx)
+	// claims.Username has the info to lookup provider
+	typ, id, err := federationmgmt.ParseFedKeyUser(claims.Username)
+	if err != nil {
+		return nil, err
+	}
+	if typ != federationmgmt.FederationTypeProvider {
+		return nil, fmt.Errorf("expected owner %s but was %s", federationmgmt.FederationTypeProvider, typ)
 	}
 
-	// validate origin (partner) federation ID
-	if partnerFed.FederationId != origKey {
-		return nil, nil, fmt.Errorf("Invalid origin federation key")
+	provider := ormapi.FederationProvider{
+		ID: id,
 	}
-	return &selfFed, &partnerFed, nil
+	res := db.Where(&provider).First(&provider)
+	if res.RecordNotFound() {
+		return nil, fmt.Errorf("federation provider %q not found", claims.Username)
+	}
+	if res.Error != nil {
+		return nil, ormutil.DbErr(res.Error)
+	}
+	if federationContextId != "" && string(federationContextId) != provider.FederationContextId {
+		return nil, fmt.Errorf("mismatch between access token and federation context id")
+	}
+	return &provider, nil
+}
+
+func (p *PartnerApi) lookupConsumer(c echo.Context, federationContextId FederationContextId) (*ormapi.FederationConsumer, error) {
+	claims, err := ormutil.GetClaims(c)
+	if err != nil {
+		return nil, err
+	}
+	ctx := ormutil.GetContext(c)
+	db := p.loggedDB(ctx)
+	// claims.Username has the info to lookup consumer
+	typ, id, err := federationmgmt.ParseFedKeyUser(claims.Username)
+	if err != nil {
+		return nil, err
+	}
+	if typ != federationmgmt.FederationTypeConsumer {
+		return nil, fmt.Errorf("expected owner %s but was %s", federationmgmt.FederationTypeConsumer, typ)
+	}
+
+	consumer := ormapi.FederationConsumer{
+		ID: id,
+	}
+	res := db.Where(&consumer).First(&consumer)
+	if res.RecordNotFound() {
+		return nil, fmt.Errorf("federation consumer %q not found", claims.Username)
+	}
+	if res.Error != nil {
+		return nil, ormutil.DbErr(res.Error)
+	}
+	if federationContextId != "" && string(federationContextId) != consumer.FederationContextId {
+		return nil, fmt.Errorf("mismatch between access token and federation context id")
+	}
+	return &consumer, nil
+}
+
+func (p *PartnerApi) GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error) {
+	return federationmgmt.GetFederationAPIKey(ctx, p.vaultConfig, fedKey)
+}
+
+func (p *PartnerApi) ProviderPartnerClient(ctx context.Context, provider *ormapi.FederationProvider) (*federationmgmt.Client, error) {
+	fedKey := ProviderFedKey(provider)
+	return p.tokenSources.Client(ctx, provider.PartnerNotifyDest, fedKey)
+}
+
+func (p *PartnerApi) ConsumerPartnerClient(ctx context.Context, consumer *ormapi.FederationConsumer) (*federationmgmt.Client, error) {
+	fedKey := ConsumerFedKey(consumer)
+	return p.tokenSources.Client(ctx, consumer.PartnerAddr, fedKey)
 }
 
 // Remote partner federator requests to create the federation, which
 // allows its developers and subscribers to run their applications
 // on our cloudlets
-func (p *PartnerApi) FederationOperatorPartnerCreate(c echo.Context) error {
+func (p *PartnerApi) CreateFederation(c echo.Context) (reterr error) {
 	ctx := ormutil.GetContext(c)
-	opRegReq := fedapi.OperatorRegistrationRequest{}
-	if err := c.Bind(&opRegReq); err != nil {
-		return err
-	}
-
-	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		c,
-		opRegReq.OrigFederationId,
-		opRegReq.DestFederationId,
-		opRegReq.OperatorId,
-	)
+	// lookup federation provider based on claims
+	provider, err := p.lookupProvider(c, "")
 	if err != nil {
 		return err
 	}
 
-	// check that there is no existing federation with partner federator
-	db := p.loggedDB(ctx)
-	if partnerFed.PartnerRoleAccessToSelfZones {
-		return fmt.Errorf("Federation already exists with partner federator (id:%q)",
-			partnerFed.FederationId)
+	req := fedewapi.FederationRequestData{}
+	if err := c.Bind(&req); err != nil {
+		return err
+	}
+	if req.OrigOPFederationId == "" {
+		return fmt.Errorf("OrigOPFederationID not specified")
+	}
+	if req.FederationNotificationDest == "" {
+		return fmt.Errorf("FederationNotificationDest not specified")
+	}
+	if !strings.HasPrefix(req.FederationNotificationDest, "https://") && !p.allowPlainHttp {
+		return fmt.Errorf("FederationNotificationDest only supports https scheme")
 	}
 
-	// Get list of zones to be shared with partner federator
-	opShZones := []ormapi.FederatedSelfZone{}
-	lookup := ormapi.FederatedSelfZone{
-		FederationName: partnerFed.Name,
-	}
-	err = db.Where(&lookup).Find(&opShZones).Error
-	if err != nil {
-		return ormutil.DbErr(err)
-	}
-
-	out := fedapi.OperatorRegistrationResponse{}
-	out.RequestId = opRegReq.RequestId
-	out.OrigFederationId = selfFed.FederationId
-	out.DestFederationId = opRegReq.OrigFederationId
-	out.OrigOperatorId = selfFed.OperatorId
-	out.PartnerOperatorId = opRegReq.OperatorId
-	out.MCC = selfFed.MCC
-	out.MNC = selfFed.MNC
-	out.LocatorEndPoint = selfFed.LocatorEndPoint
-	for _, opShZone := range opShZones {
-		zoneLookup := ormapi.FederatorZone{
-			ZoneId: opShZone.ZoneId,
+	// For convenience allow CreateFederation to be idempotent,
+	// but only if it's the same requestor
+	if provider.PartnerInfo.FederationId != "" {
+		if req.OrigOPFederationId != provider.PartnerInfo.FederationId {
+			return fmt.Errorf("Federation provider already in use by another consumer")
 		}
-		opZone := ormapi.FederatorZone{}
-		err = db.Where(&zoneLookup).First(&opZone).Error
+	}
+
+	// So we just overwrite existing partner data and reuse existing
+	// federation context id.
+	provider.PartnerInfo.FederationId = req.OrigOPFederationId
+	provider.PartnerInfo.InitialDate = req.InitialDate
+	notifyDestTmpl := ormutil.NewUriTemplate(req.FederationNotificationDest)
+	vars := map[string]string{
+		PathVarFederationContextId: provider.FederationContextId,
+	}
+	provider.PartnerNotifyDest = notifyDestTmpl.Eval(vars)
+	if req.OrigOPCountryCode != nil {
+		provider.PartnerInfo.CountryCode = *req.OrigOPCountryCode
+	}
+	SetFixedNetworkIds(&provider.PartnerInfo, req.OrigOPFixedNetworkCodes)
+	SetMobileNetworkIds(&provider.PartnerInfo, req.OrigOPMobileNetworkCodes)
+	provider.Status = StatusRegistered
+
+	out := fedewapi.FederationResponseData{}
+	out.FederationContextId = provider.FederationContextId
+	out.PartnerOPFederationId = provider.MyInfo.FederationId
+	out.PartnerOPCountryCode = provider.MyInfo.CountryCode
+	out.EdgeDiscoveryServiceEndPoint = fedewapi.ServiceEndpoint{
+		// TODO
+	}
+	out.LcmServiceEndPoint = fedewapi.ServiceEndpoint{
+		// TODO
+	}
+	out.PartnerOPMobileNetworkCodes = GetMobileNetworkIds(&provider.MyInfo)
+	out.PartnerOPFixedNetworkCodes = GetFixedNetworkIds(&provider.MyInfo)
+
+	zones, err := p.getAvailabilityZones(ctx, provider)
+	if err != nil {
+		return err
+	}
+	if len(zones) > 0 {
+		out.OfferedAvailabilityZones = zones
+	}
+
+	// Pull notify credentials from header if present and store
+	if auth, found := c.Request().Header[HeaderXNotifyAuth]; found && len(auth) > 0 {
+		id, pass, ok := ormutil.DecodeBasicAuth(auth[0])
+		if !ok {
+			return fmt.Errorf("Header %s specified but not expected format", HeaderXNotifyAuth)
+		}
+		tokenUrl, found := c.Request().Header[HeaderXNotifyTokenUrl]
+		if !found || len(tokenUrl) < 1 {
+			return fmt.Errorf("Header %s also requires header %s", HeaderXNotifyAuth, HeaderXNotifyTokenUrl)
+		}
+
+		fedKey := ProviderFedKey(provider)
+		apiKey := federationmgmt.ApiKey{
+			Id:       id,
+			Key:      pass,
+			TokenUrl: tokenUrl[0],
+		}
+		err := federationmgmt.PutAPIKeyToVault(ctx, p.vaultConfig, fedKey, &apiKey)
 		if err != nil {
-			return ormutil.DbErr(err)
+			return err
 		}
+		provider.PartnerNotifyClientId = "***"
+		provider.PartnerNotifyTokenUrl = tokenUrl[0]
 
-		partnerZone := fedapi.ZoneInfo{
-			ZoneId:      opZone.ZoneId,
-			GeoLocation: opZone.GeoLocation,
-			City:        opZone.City,
-			State:       opZone.State,
-			Locality:    opZone.Locality,
-			EdgeCount:   len(opZone.Cloudlets),
-		}
-		out.PartnerZone = append(out.PartnerZone, partnerZone)
+		defer func() {
+			if reterr == nil {
+				return
+			}
+			undoErr := federationmgmt.DeleteAPIKeyFromVault(ctx, p.vaultConfig, fedKey)
+			if undoErr != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "undo: delete apikey failed", "err", undoErr)
+			}
+		}()
 	}
 
 	// Add federation with partner federator
-	partnerFed.PartnerRoleAccessToSelfZones = true
-	partnerFed.Revision = opRegReq.RequestId
-	if err := db.Save(&partnerFed).Error; err != nil {
+	db := p.loggedDB(ctx)
+	if err := db.Save(&provider).Error; err != nil {
 		return ormutil.DbErr(err)
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "federation provider registered", "provider", provider, "response", out)
 
 	// Return with list of zones to be shared
 	return c.JSON(http.StatusOK, out)
 }
 
-// Remote partner federator sends this request to us to notify about
-// the change in its MNC, MCC or locator URL
-func (p *PartnerApi) FederationOperatorPartnerUpdate(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
-	opConf := fedapi.UpdateMECNetConf{}
-	if err := c.Bind(&opConf); err != nil {
-		return err
+func (p *PartnerApi) getAvailabilityZones(ctx context.Context, provider *ormapi.FederationProvider) ([]fedewapi.ZoneDetails, error) {
+	// Get list of zones to be shared with partner federator
+	opShZones := []ormapi.ProviderZone{}
+	lookup := ormapi.ProviderZone{
+		OperatorId:   provider.OperatorId,
+		ProviderName: provider.Name,
+	}
+	db := p.loggedDB(ctx)
+	err := db.Where(&lookup).Find(&opShZones).Error
+	if err != nil {
+		return nil, ormutil.DbErr(err)
 	}
 
-	_, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		c,
-		opConf.OrigFederationId,
-		opConf.DestFederationId,
-		opConf.Operator,
-	)
+	zones := []fedewapi.ZoneDetails{}
+	for _, opShZone := range opShZones {
+		zoneBase := ormapi.ProviderZoneBase{
+			ZoneId:     opShZone.ZoneId,
+			OperatorId: provider.OperatorId,
+		}
+		err = db.Where(&zoneBase).First(&zoneBase).Error
+		if err != nil {
+			return nil, ormutil.DbErr(err)
+		}
+		details := fedewapi.ZoneDetails{
+			GeographyDetails: zoneBase.GeographyDetails,
+			Geolocation:      zoneBase.GeoLocation,
+			ZoneId:           zoneBase.ZoneId,
+		}
+		zones = append(zones, details)
+	}
+	return zones, nil
+}
+
+// Remote partner federator sends this request to us to notify about
+// the change in its MNC, MCC or locator URL
+func (p *PartnerApi) GetFederationDetails(c echo.Context, fedCtxId FederationContextId) error {
+	ctx := ormutil.GetContext(c)
+	// lookup federation provider based on claims
+	provider, err := p.lookupProvider(c, fedCtxId)
+	if err != nil {
+		return err
+	}
+	out, err := p.getProviderDetails(ctx, provider)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, out)
+}
+
+func (p *PartnerApi) getProviderDetails(ctx context.Context, provider *ormapi.FederationProvider) (map[string]interface{}, error) {
+	zones, err := p.getAvailabilityZones(ctx, provider)
+	if err != nil {
+		return nil, err
+	}
+
+	out := map[string]interface{}{
+		"edgeDiscoveryServiceEndPoint": fedewapi.ServiceEndpoint{
+			// TODO
+		},
+		"lcmServiceEndPoint": fedewapi.ServiceEndpoint{
+			// TODO
+		},
+		"allowedMobileNetworkIds": GetMobileNetworkIds(&provider.MyInfo),
+		"allowedFixedNetworkIds":  GetFixedNetworkIds(&provider.MyInfo),
+	}
+	if len(zones) > 0 {
+		out["offeredAvailabilityZones"] = zones
+	}
+	return out, nil
+}
+
+func (p *PartnerApi) UpdateFederation(c echo.Context, fedCtxId FederationContextId) error {
+	ctx := ormutil.GetContext(c)
+	// lookup federation provider based on claims
+	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
 		return err
 	}
 
+	in := fedewapi.UpdateFederationRequest{}
+	if err := c.Bind(&in); err != nil {
+		return err
+	}
+	switch in.ObjectType {
+	case "MOBILE_NETWORK_CODES":
+		switch in.OperationType {
+		case "ADD_CODES":
+			if in.AddMobileNetworkIds == nil {
+				return fmt.Errorf("Add mobile network codes specified but add codes not present")
+			}
+			if in.AddMobileNetworkIds.Mcc != nil {
+				provider.MyInfo.MCC = *in.AddMobileNetworkIds.Mcc
+			}
+			if in.AddMobileNetworkIds.Mncs != nil {
+				provider.MyInfo.MNC = util.AddStringSliceUniques(provider.MyInfo.MNC, in.AddMobileNetworkIds.Mncs)
+			}
+		case "REMOVE_CODES":
+			if in.RemoveMobileNetworkIds == nil {
+				return fmt.Errorf("Remove mobile network codes specified but remove codes not present")
+			}
+			if in.RemoveMobileNetworkIds.Mcc != nil && provider.MyInfo.MCC == *in.RemoveMobileNetworkIds.Mcc {
+				provider.MyInfo.MCC = ""
+			}
+			if in.RemoveMobileNetworkIds.Mncs != nil {
+				provider.MyInfo.MNC = util.RemoveStringSliceUniques(provider.MyInfo.MNC, in.RemoveMobileNetworkIds.Mncs)
+			}
+		case "UPDATE_CODES":
+			if in.AddMobileNetworkIds == nil {
+				return fmt.Errorf("Update mobile network codes specified but add codes not present")
+			}
+			SetMobileNetworkIds(&provider.MyInfo, in.AddMobileNetworkIds)
+		default:
+			return fmt.Errorf("Invalid OperationType %s", in.OperationType)
+		}
+	case "FIXED_NETWORK_CODES":
+		switch in.OperationType {
+		case "ADD_CODES":
+			if in.AddFixedNetworkIds == nil {
+				return fmt.Errorf("Add fixed network codes specified but add codes not present")
+			}
+			if in.AddFixedNetworkIds != nil {
+				provider.MyInfo.FixedNetworkIds = util.AddStringSliceUniques(provider.MyInfo.FixedNetworkIds, in.AddFixedNetworkIds)
+			}
+		case "REMOVE_CODES":
+			if in.RemoveFixedNetworkIds == nil {
+				return fmt.Errorf("Remove fixed network codes specified but remove codes not present")
+			}
+			if in.RemoveFixedNetworkIds != nil {
+				provider.MyInfo.FixedNetworkIds = util.RemoveStringSliceUniques(provider.MyInfo.FixedNetworkIds, in.RemoveFixedNetworkIds)
+			}
+		case "UPDATE_CODES":
+			if in.AddFixedNetworkIds == nil {
+				return fmt.Errorf("Update fixed network codes specified but add codes not present")
+			}
+			SetFixedNetworkIds(&provider.MyInfo, in.AddFixedNetworkIds)
+		default:
+			return fmt.Errorf("Invalid operationType %s", in.OperationType)
+		}
+	default:
+		return fmt.Errorf("Invalid objectType %s", in.ObjectType)
+	}
+
 	db := p.loggedDB(ctx)
-	update := false
-	if opConf.MCC != "" {
-		partnerFed.MCC = opConf.MCC
-		update = true
-	}
-	if len(opConf.MNC) > 0 {
-		partnerFed.MNC = opConf.MNC
-		update = true
-	}
-	if opConf.LocatorEndPoint != "" {
-		partnerFed.LocatorEndPoint = opConf.LocatorEndPoint
-		update = true
-	}
-
-	if !update {
-		return fmt.Errorf("Nothing to update")
-	}
-
-	partnerFed.Revision = opConf.RequestId
-	err = db.Save(partnerFed).Error
+	err = db.Save(provider).Error
 	if err != nil {
 		return ormutil.DbErr(err)
 	}
 
-	return c.JSON(http.StatusOK, "Federation attributes of partner federator updated successfully")
+	out, err := p.getProviderDetails(ctx, provider)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, out)
 }
 
 // Remote partner federator requests to delete the federation, which
 // disallows its developers and subscribers to run their applications
 // on our cloudlets
-func (p *PartnerApi) FederationOperatorPartnerDelete(c echo.Context) error {
+func (p *PartnerApi) DeleteFederationDetails(c echo.Context, fedCtxId FederationContextId) error {
 	ctx := ormutil.GetContext(c)
-	opFedReq := fedapi.FederationRequest{}
-	if err := c.Bind(&opFedReq); err != nil {
-		return err
-	}
-
-	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		c,
-		opFedReq.OrigFederationId,
-		opFedReq.DestFederationId,
-		opFedReq.Operator,
-	)
+	// lookup federation provider based on claims
+	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
 		return err
 	}
 
-	if !partnerFed.PartnerRoleAccessToSelfZones {
-		return fmt.Errorf("Federation does not exist with partner federator (id:%q)",
-			partnerFed.FederationId)
-	}
-
-	// Check if all the self zones are deregistered by partner federator
+	// Check if all the provider zones are deregistered by partner federator
 	db := p.loggedDB(ctx)
-	lookup := ormapi.FederatedSelfZone{
-		FederationName: partnerFed.Name,
+	lookup := ormapi.ProviderZone{
+		OperatorId:   provider.OperatorId,
+		ProviderName: provider.Name,
 	}
-	partnerZones := []ormapi.FederatedSelfZone{}
-	err = db.Where(&lookup).Find(&partnerZones).Error
+	zones := []ormapi.ProviderZone{}
+	err = db.Where(&lookup).Find(&zones).Error
 	if err != nil {
 		return ormutil.DbErr(err)
 	}
-	for _, pZone := range partnerZones {
-		if pZone.Registered {
-			return fmt.Errorf("Cannot delete partner federation as zone %q of self federator (%q) "+
-				"is registered by partner federator. Please deregister it before deleting the "+
-				"partner federation", pZone.ZoneId,
-				selfFed.FederationId)
+	for _, pZone := range zones {
+		if pZone.Status == StatusRegistered {
+			return fmt.Errorf("Cannot delete partner federation as zone %q of federation %q is registered by partner federator. Please deregister it before deleting the federation", pZone.ZoneId, provider.FederationContextId)
 		}
 	}
 
-	// Remove federation with partner federator
-	partnerFed.PartnerRoleAccessToSelfZones = false
-	partnerFed.Revision = opFedReq.RequestId
-	if err = db.Save(&partnerFed).Error; err != nil {
+	provider.PartnerInfo = ormapi.Federator{}
+	provider.PartnerNotifyDest = ""
+	provider.PartnerNotifyTokenUrl = ""
+	provider.Status = StatusUnregistered
+	providerClientId := provider.ProviderClientId
+	provider.ProviderClientId = ""
+	provider.PartnerNotifyClientId = ""
+
+	err = db.Save(provider).Error
+	if err != nil {
 		return ormutil.DbErr(err)
 	}
 
-	return ormutil.SetReply(c, ormutil.Msg("Deleted partner federation successfully"))
+	// delete partner key
+	err = ormutil.DeleteApiKey(ctx, db, providerClientId)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "Failed to delete provider client id", "id", provider.ProviderClientId)
+	}
+
+	// delete provider api key
+	err = DeleteProviderPartnerApiKey(ctx, provider, p.vaultConfig)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "Failed to delete provider partner notify key", "id", provider.PartnerNotifyClientId)
+	}
+	return nil
 }
 
-func (p *PartnerApi) GetZoneResourcesUpperLimit(ctx context.Context, region, operatorOrg string, cloudlets pq.StringArray) (map[string]uint64, error) {
-	log.SpanLog(ctx, log.DebugLevelApi, "get zone resources upper limit", "org", operatorOrg, "cloudlets", cloudlets)
-	rc := ormutil.RegionContext{
-		Region:    region,
-		SkipAuthz: true,
-		Database:  p.Database,
-	}
-	// get supported resources upper limit values
-	totalRes := map[string]uint64{
-		cloudcommon.ResourceRamMb:  0,
-		cloudcommon.ResourceVcpus:  0,
-		cloudcommon.ResourceDiskGb: 0,
-	}
-	for _, cloudletName := range cloudlets {
-		cloudletRes := map[string]uint64{
-			cloudcommon.ResourceRamMb:  0,
-			cloudcommon.ResourceVcpus:  0,
-			cloudcommon.ResourceDiskGb: 0,
-		}
-		cloudletKey := edgeproto.CloudletKey{
-			Name:         string(cloudletName),
-			Organization: operatorOrg,
-		}
-		err := ctrlclient.ShowCloudletStream(
-			ctx, &rc, &edgeproto.Cloudlet{Key: cloudletKey}, p.ConnCache, nil,
-			func(cloudlet *edgeproto.Cloudlet) error {
-				for _, resQuota := range cloudlet.ResourceQuotas {
-					if _, ok := cloudletRes[resQuota.Name]; ok {
-						cloudletRes[resQuota.Name] += resQuota.Value
-					}
-				}
-				return nil
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-		// If resource quota is empty, then use infra max value as the
-		// upper limit quota of the cloudlet resources
-		err = ctrlclient.ShowCloudletInfoStream(
-			ctx, &rc, &edgeproto.CloudletInfo{Key: cloudletKey}, p.ConnCache, nil,
-			func(cloudletInfo *edgeproto.CloudletInfo) error {
-				for _, res := range cloudletInfo.ResourcesSnapshot.Info {
-					if val, ok := cloudletRes[res.Name]; ok && val == 0 {
-						cloudletRes[res.Name] += res.InfraMaxValue
-					}
-				}
-				return nil
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-		for k, v := range cloudletRes {
-			if _, ok := totalRes[k]; ok {
-				totalRes[k] += v
-			}
-		}
-	}
-	return totalRes, nil
-}
-
-// Remote partner federator sends this request to us to register
-// our zone i.e cloudlet. Once our cloudlet is registered,
-// remote partner federator can then make it accessible to its
-// developers or subscribers
-func (p *PartnerApi) FederationOperatorZoneRegister(c echo.Context) error {
+// Remote partner federator calls this api callback to notify us about
+// its federation when something about it's federation changes.
+func (p *PartnerApi) PartnerNotifyEvent(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	opRegReq := fedapi.OperatorZoneRegister{}
-	if err := c.Bind(&opRegReq); err != nil {
-		return err
+	fedCtxId := c.Param(PathVarFederationContextId)
+	if fedCtxId == "" {
+		return fmt.Errorf("Missing federation context id in path")
 	}
-	if len(opRegReq.Zones) == 0 {
-		return fmt.Errorf("Must specify zones")
-	}
-	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		c,
-		opRegReq.OrigFederationId,
-		opRegReq.DestFederationId,
-		opRegReq.Operator,
-	)
+	// lookup federation provider based on claims
+	consumer, err := p.lookupConsumer(c, FederationContextId(fedCtxId))
 	if err != nil {
 		return err
 	}
-
-	if !partnerFed.PartnerRoleAccessToSelfZones {
-		return fmt.Errorf("Federation does not exist with partner federator (id:%q)",
-			partnerFed.FederationId)
-	}
-
-	// Check if zone exists
-	db := p.loggedDB(ctx)
-	zoneRegDetails := []fedapi.ZoneRegisterDetails{}
-	for _, zoneId := range opRegReq.Zones {
-		lookup := ormapi.FederatedSelfZone{
-			ZoneId:         zoneId,
-			FederationName: partnerFed.Name,
-		}
-		existingZone := ormapi.FederatedSelfZone{}
-		err = db.Where(&lookup).First(&existingZone).Error
-		if err != nil {
-			return ormutil.DbErr(err)
-		}
-		if existingZone.ZoneId == "" {
-			return fmt.Errorf("Zone ID %q not shared with partner federator %s", zoneId,
-				partnerFed.FederationId)
-		}
-		if existingZone.Registered {
-			return fmt.Errorf("Zone ID %q is already registered by partner federator %s", zoneId,
-				partnerFed.FederationId)
-		}
-
-		zlookup := ormapi.FederatorZone{
-			ZoneId: zoneId,
-		}
-		fedZone := ormapi.FederatorZone{}
-		err = db.Where(&zlookup).First(&fedZone).Error
-		if err != nil {
-			return ormutil.DbErr(err)
-		}
-		if fedZone.ZoneId == "" {
-			return fmt.Errorf("Zone ID %q does not exist", zoneId)
-		}
-		zoneResLimit, err := p.GetZoneResourcesUpperLimit(ctx, fedZone.Region, fedZone.OperatorId, fedZone.Cloudlets)
-		if err != nil {
-			// ignore if failed to find upper limit for now
-			log.SpanLog(ctx, log.DebugLevelApi, "failed to get zone resources upper limit", "zone", fedZone.ZoneId, "err", err)
-		}
-		upperLimitQuota := fedapi.ZoneResourceInfo{}
-		if val, ok := zoneResLimit[cloudcommon.ResourceVcpus]; ok {
-			upperLimitQuota.CPU = int64(val)
-		}
-		if val, ok := zoneResLimit[cloudcommon.ResourceRamMb]; ok {
-			upperLimitQuota.RAM = int64(val) / 1024 // RAM is in GBs
-		}
-		if val, ok := zoneResLimit[cloudcommon.ResourceDiskGb]; ok {
-			upperLimitQuota.Disk = int64(val)
-		}
-
-		existingZone.Registered = true
-		existingZone.Revision = opRegReq.RequestId
-		if err := db.Save(&existingZone).Error; err != nil {
-			return ormutil.DbErr(err)
-		}
-		zoneRegDetails = append(zoneRegDetails, fedapi.ZoneRegisterDetails{
-			ZoneId:            zoneId,
-			RegistrationToken: selfFed.FederationId,
-			UpperLimitQuota:   upperLimitQuota,
-			// Guaranteed resources are the resources that you can most definitely utilize
-			// from an operations standpoint, going beyond the guaranteed resources limit
-			// would likely mean some form of compromise in service uptime.
-			// In our case, upper limit quota is the guaranteed resources
-			GuaranteedResources: upperLimitQuota,
-		})
-	}
-	// Share zone details
-	resp := fedapi.OperatorZoneRegisterResponse{}
-	resp.RequestId = opRegReq.RequestId
-	resp.LeadOperatorId = selfFed.OperatorId
-	resp.PartnerOperatorId = opRegReq.Operator
-	resp.FederationId = selfFed.FederationId
-	resp.Zone = zoneRegDetails
-	return c.JSON(http.StatusOK, resp)
-}
-
-// Remote partner federator deregisters our zone i.e. cloudlet.
-// This will ensure that our cloudlet is no longer accessible
-// to remote partner federator's developers or subscribers
-func (p *PartnerApi) FederationOperatorZoneDeRegister(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
-	opRegReq := fedapi.ZoneMultiRequest{}
-	if err := c.Bind(&opRegReq); err != nil {
+	in := fedewapi.PartnerPostRequest{}
+	if err := c.Bind(&in); err != nil {
 		return err
 	}
-	if len(opRegReq.Zones) == 0 {
-		return fmt.Errorf("Must specify zones")
+	// TODO: finish once callbacks are cleaned up
+	// for now just support zones
+	switch in.OperationType {
+	case "ADD_ZONES":
+		err = p.AddConsumerZones(ctx, consumer, in.AddZones)
+	case "REMOVE_ZONES":
+		err = p.RemoveConsumerZones(ctx, consumer, in.RemoveZones)
+	case "UPDATE_ZONES":
+		err = p.SetConsumerZones(ctx, consumer, in.AddZones)
 	}
-	_, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		c,
-		opRegReq.OrigFederationId,
-		opRegReq.DestFederationId,
-		opRegReq.Operator,
-	)
-	if err != nil {
-		return err
-	}
-
-	if !partnerFed.PartnerRoleAccessToSelfZones {
-		return fmt.Errorf("Federation does not exist with partner federator (id:%q)",
-			partnerFed.FederationId)
-	}
-
-	db := p.loggedDB(ctx)
-	zones := []ormapi.FederatedSelfZone{}
-	for _, zoneId := range opRegReq.Zones {
-		lookup := ormapi.FederatedSelfZone{
-			ZoneId:         zoneId,
-			FederationName: partnerFed.Name,
-		}
-		existingZone := ormapi.FederatedSelfZone{}
-		err = db.Where(&lookup).First(&existingZone).Error
-		if err != nil {
-			return ormutil.DbErr(err)
-		}
-		if existingZone.ZoneId == "" {
-			return fmt.Errorf("Zone ID %q not shared with partner federator %s", zoneId,
-				partnerFed.FederationId)
-		}
-		if !existingZone.Registered {
-			return fmt.Errorf("Zone ID %q is not registered by partner federator %s", zoneId,
-				partnerFed.FederationId)
-		}
-		zones = append(zones, existingZone)
-	}
-
-	// TODO: make sure no AppInsts are deployed on the cloudlet
-	//       before the zone is deregistered
-
-	for _, existingZone := range zones {
-		existingZone.Registered = false
-		existingZone.Revision = opRegReq.RequestId
-		if err := db.Save(&existingZone).Error; err != nil {
-			return ormutil.DbErr(err)
-		}
-	}
-
-	return c.JSON(http.StatusOK, "Zone(s) deregistered successfully")
-}
-
-// Remote partner federator sends this request to us to share its zone.
-// It is triggered by partner federator when it has a new zone available
-// and it wishes to share the zone with us
-func (p *PartnerApi) FederationOperatorZoneShare(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
-	opZoneShare := fedapi.NotifyPartnerOperatorZone{}
-	if err := c.Bind(&opZoneShare); err != nil {
-		return err
-	}
-
-	if opZoneShare.PartnerZone.ZoneId == "" {
-		return fmt.Errorf("Must specify zone ID")
-	}
-
-	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		c,
-		opZoneShare.OrigFederationId,
-		opZoneShare.DestFederationId,
-		opZoneShare.Operator,
-	)
-	if err != nil {
-		return err
-	}
-
-	if !partnerFed.PartnerRoleShareZonesWithSelf {
-		return fmt.Errorf("No federation with partner federator (%s) to access self zones exists",
-			partnerFed.FederationId)
-	}
-
-	db := p.loggedDB(ctx)
-	zoneId := opZoneShare.PartnerZone.ZoneId
-	zoneObj := ormapi.FederatedPartnerZone{}
-	zoneObj.SelfOperatorId = selfFed.OperatorId
-	zoneObj.FederationName = partnerFed.Name
-	zoneObj.ZoneId = zoneId
-	zoneObj.OperatorId = partnerFed.OperatorId
-	zoneObj.CountryCode = partnerFed.CountryCode
-	zoneObj.GeoLocation = opZoneShare.PartnerZone.GeoLocation
-	zoneObj.City = opZoneShare.PartnerZone.City
-	zoneObj.State = opZoneShare.PartnerZone.State
-	zoneObj.Locality = opZoneShare.PartnerZone.Locality
-	zoneObj.Revision = opZoneShare.RequestId
-	if err := db.Create(&zoneObj).Error; err != nil {
-		if strings.Contains(err.Error(), "pq: duplicate key value violates unique constraint") {
-			return fmt.Errorf("Zone ID %q already exists for partner federator %s", zoneId,
-				partnerFed.FederationId)
-		}
-		return ormutil.DbErr(err)
-	}
-
-	return ormutil.SetReply(c, ormutil.Msg("Added zone successfully"))
-}
-
-// Remote partner federator sends this request to us to unshare its zone.
-// This api is triggered when the remote partner federator decides to unshare
-// one of its zone with us
-func (p *PartnerApi) FederationOperatorZoneUnShare(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
-	opZone := fedapi.ZoneSingleRequest{}
-	if err := c.Bind(&opZone); err != nil {
-		return err
-	}
-
-	if opZone.Zone == "" {
-		return fmt.Errorf("Must specify zone ID")
-	}
-
-	_, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		c,
-		opZone.OrigFederationId,
-		opZone.DestFederationId,
-		opZone.Operator,
-	)
-	if err != nil {
-		return err
-	}
-
-	if !partnerFed.PartnerRoleShareZonesWithSelf {
-		return fmt.Errorf("No federation with partner federator (%s) to access self zones exists",
-			partnerFed.FederationId)
-	}
-
-	// Check if zone exists
-	db := p.loggedDB(ctx)
-	zoneId := opZone.Zone
-	lookup := ormapi.FederatedPartnerZone{
-		FederationName: partnerFed.Name,
-		FederatorZone: ormapi.FederatorZone{
-			ZoneId: zoneId,
-		},
-	}
-	existingZone := ormapi.FederatedPartnerZone{}
-	res := db.Where(&lookup).First(&existingZone)
-	if !res.RecordNotFound() && err != nil {
-		return ormutil.DbErr(err)
-	}
-	if existingZone.ZoneId == "" {
-		return fmt.Errorf("Zone ID %q does not exist for partner federator (id:%q)", zoneId,
-			partnerFed.FederationId)
-	}
-
-	// Ensure that this zone is not registered by us
-	if existingZone.Registered {
-		return fmt.Errorf("Cannot remove partner federator zone %q as it is registered locally. "+
-			"Please deregister it before unsharing the zone", existingZone.ZoneId)
-	}
-
-	// Delete zone from shared list in DB
-	if err := db.Delete(&existingZone).Error; err != nil {
-		if err != gorm.ErrRecordNotFound {
-			return ormutil.DbErr(err)
-		}
-	}
-
-	return ormutil.SetReply(c, ormutil.Msg("Removed zone successfully"))
-}
-
-// Remote partner federator sends this request to us to onboarding application
-func (p *PartnerApi) FederationAppOnboarding(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
-	appObReq := fedapi.AppOnboardingRequest{}
-	if err := c.Bind(&appObReq); err != nil {
-		return err
-	}
-
-	log.SpanLog(ctx, log.DebugLevelApi, "Federation app onboarding", "request", appObReq)
-	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		c,
-		appObReq.LeadFederationId,
-		appObReq.PartnerFederationId,
-		appObReq.LeadOperatorId,
-	)
-	if err != nil {
-		return err
-	}
-
-	if !partnerFed.PartnerRoleShareZonesWithSelf {
-		return fmt.Errorf("No federation with partner federator (%s) to manage application",
-			partnerFed.FederationId)
-	}
-
-	rc := ormutil.RegionContext{
-		Region:    selfFed.Region,
-		SkipAuthz: true,
-		Database:  p.Database,
-	}
-
-	if appObReq.AppId == "" {
-		return fmt.Errorf("Missing application ID")
-	}
-
-	if len(appObReq.Specification.ComponentDetails) == 0 {
-		return fmt.Errorf("Missing component details")
-	}
-
-	if len(appObReq.Specification.ComponentDetails) > 1 {
-		return fmt.Errorf("Only one component detail is supported, more than one specified")
-	}
-
-	if len(appObReq.Specification.ComponentDetails[0].Components) == 0 {
-		return fmt.Errorf("Missing components")
-	}
-
-	if len(appObReq.Specification.ComponentDetails[0].Components) > 1 {
-		return fmt.Errorf("Only one component is supported, more than one specified")
-	}
-
-	if len(appObReq.Regions) == 0 {
-		return fmt.Errorf("Missing region")
-	}
-
-	if len(appObReq.Regions) > 1 {
-		return fmt.Errorf("Only one region is supported, more than one specified")
-	}
-
-	resRequirements := appObReq.Specification.ComponentDetails[0].Components[0].ComputeResourceRequirements
-	if resRequirements.ResourceProfileId == "" {
-		return fmt.Errorf("Missing compute resource requirements profile ID")
-	}
-
-	ports := []string{}
-	for _, intf := range appObReq.Specification.ComponentDetails[0].Components[0].ExposedInterfaces {
-		proto := strings.ToLower(intf.Protocol)
-		port := intf.Port
-		ports = append(ports, fmt.Sprintf("%s:%s", proto, port))
-	}
-
-	// Create App
-	appIn := edgeproto.App{
-		Key: edgeproto.AppKey{
-			Organization: "", // TODO
-			Name:         appObReq.AppId,
-			Version:      AllAppsVersion,
-		},
-		ImagePath:   appObReq.Specification.ComponentDetails[0].Components[0].ComponentSource.Path,
-		ImageType:   edgeproto.ImageType_IMAGE_TYPE_DOCKER,
-		Deployment:  cloudcommon.DeploymentTypeKubernetes,
-		AccessPorts: strings.Join(ports, ","),
-	}
-	log.SpanLog(ctx, log.DebugLevelApi, "Federation creating app", "app", appIn)
-	_, err = ctrlclient.CreateAppObj(ctx, &rc, &appIn, p.ConnCache)
-	if err != nil {
-		return err
-	}
-
-	// Create ClusterInst
-	clusterInstIn := edgeproto.ClusterInst{
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey: edgeproto.ClusterKey{
-				Name: appObReq.AppId,
-			},
-			CloudletKey: edgeproto.CloudletKey{
-				Name:         appObReq.Regions[0].Zone,
-				Organization: appObReq.Regions[0].Operator,
-			},
-			Organization: "", // TODO
-		},
-		Flavor: edgeproto.FlavorKey{
-			Name: resRequirements.ResourceProfileId,
-		},
-		IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
-		Deployment: cloudcommon.DeploymentTypeKubernetes,
-		NumNodes:   1, // Not specified, hence default to 1
-	}
-	log.SpanLog(ctx, log.DebugLevelApi, "Federation creating clusterinst", "clusterinst", clusterInstIn)
-	err = ctrlclient.CreateClusterInstStream(
-		ctx, &rc, &clusterInstIn, p.ConnCache,
-		func(res *edgeproto.Result) error {
-			log.SpanLog(ctx, log.DebugLevelApi, "Federation clusterinst creation status", "clusterinst key", clusterInstIn.Key, "result", res)
-			return nil
-		},
-	)
-	if err != nil {
-		return err
-	}
-
-	appObResp := fedapi.AppOnboardingResponse{
-		CreatedAt: ormapi.TimeToStr(time.Now()),
-		AppId:     appObReq.AppId,
-		RequestId: appObReq.RequestId,
-	}
-	return ormutil.SetReply(c, &appObResp)
-}
-
-// Remote partner federator sends this request to us to get application onboarding status
-func (p *PartnerApi) FederationAppOnboardingStatus(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
-	appObStatusReq := fedapi.AppDeploymentStatusRequest{}
-	if err := c.Bind(&appObStatusReq); err != nil {
-		return err
-	}
-
-	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		c,
-		appObStatusReq.LeadFederationId,
-		appObStatusReq.PartnerFederationId,
-		appObStatusReq.Operator,
-	)
-	if err != nil {
-		return err
-	}
-
-	if !partnerFed.PartnerRoleShareZonesWithSelf {
-		return fmt.Errorf("No federation with partner federator (%s) to manage application",
-			partnerFed.FederationId)
-	}
-
-	rc := ormutil.RegionContext{
-		Region:    selfFed.Region,
-		SkipAuthz: true,
-		Database:  p.Database,
-	}
-
-	// TODO If app & clusterInst exists, then just return status as ONBOARDED, else return failed
-	log.SpanLog(ctx, log.DebugLevelApi, "Federation show app", "app", appObStatusReq.AppId)
-	appKey := edgeproto.AppKey{
-		Organization: "", // TODO
-		Name:         appObStatusReq.AppId,
-		Version:      AllAppsVersion,
-	}
-	appFound := false
-	err = ctrlclient.ShowAppStream(
-		ctx, &rc, &edgeproto.App{Key: appKey}, p.ConnCache, nil,
-		func(app *edgeproto.App) error {
-			if app != nil {
-				log.SpanLog(ctx, log.DebugLevelApi, "Federation show app found", "app", app)
-				appFound = true
-			}
-			return nil
-		},
-	)
-	if err != nil {
-		return err
-	}
-	log.SpanLog(ctx, log.DebugLevelApi, "Federation show clusterInst", "clusterInst", appObStatusReq.AppId)
-	clusterInstKey := edgeproto.ClusterInstKey{
-		ClusterKey: edgeproto.ClusterKey{
-			Name: appObStatusReq.AppId,
-		},
-		Organization: "", // TODO
-	}
-	clusterInstFound := false
-	err = ctrlclient.ShowClusterInstStream(
-		ctx, &rc, &edgeproto.ClusterInst{Key: clusterInstKey}, p.ConnCache, nil,
-		func(clusterInst *edgeproto.ClusterInst) error {
-			if clusterInst != nil {
-				clusterInstFound = true
-				log.SpanLog(ctx, log.DebugLevelApi, "Federation show clusterInst found", "clusterInst", clusterInst)
-			}
-			return nil
-		},
-	)
-	if err != nil {
-		return err
-	}
-
-	status := fedapi.OnboardingState_FAILED
-	if appFound && clusterInstFound {
-		status = fedapi.OnboardingState_ONBOARDED
-	}
-
-	appObStatusResp := fedapi.AppOnboardingStatusResponse{
-		RequestId:      appObStatusReq.RequestId,
-		LeadOperatorId: appObStatusReq.Operator,
-		FederationId:   appObStatusReq.LeadFederationId,
-		AppId:          appObStatusReq.AppId,
-		OnboardStatus: []fedapi.ZoneOnboardStatus{
-			fedapi.ZoneOnboardStatus{
-				ZoneId: "",
-				Status: status,
-			},
-		},
-	}
-	return ormutil.SetReply(c, &appObStatusResp)
-}
-
-// Remote partner federator sends this request to us to deboard application
-func (p *PartnerApi) FederationAppDeboarding(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
-	appDeboardReq := fedapi.AppDeboardingRequest{}
-	if err := c.Bind(&appDeboardReq); err != nil {
-		return err
-	}
-
-	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		c,
-		appDeboardReq.LeadFederationId,
-		appDeboardReq.PartnerFederationId,
-		appDeboardReq.LeadOperatorId,
-	)
-	if err != nil {
-		return err
-	}
-
-	if !partnerFed.PartnerRoleShareZonesWithSelf {
-		return fmt.Errorf("No federation with partner federator (%s) to manage application",
-			partnerFed.FederationId)
-	}
-
-	rc := ormutil.RegionContext{
-		Region:    selfFed.Region,
-		SkipAuthz: true,
-		Database:  p.Database,
-	}
-
-	// Fetch zone details
-	db := p.loggedDB(ctx)
-	lookup := ormapi.FederatorZone{
-		ZoneId: appDeboardReq.Zone,
-	}
-	zoneInfo := ormapi.FederatorZone{}
-	res := db.Where(&lookup).First(&zoneInfo)
-	if !res.RecordNotFound() && err != nil {
-		return ormutil.DbErr(err)
-	}
-
-	// Delete ClusterInst
-	clusterInstKey := edgeproto.ClusterInstKey{
-		ClusterKey: edgeproto.ClusterKey{
-			Name: appDeboardReq.AppId,
-		},
-		CloudletKey: edgeproto.CloudletKey{
-			Name:         appDeboardReq.Zone,
-			Organization: zoneInfo.OperatorId,
-		},
-		Organization: "", // TODO
-	}
-	log.SpanLog(ctx, log.DebugLevelApi, "Federation delete clusterInst", "clusterInst", clusterInstKey)
-	err = ctrlclient.DeleteClusterInstStream(
-		ctx, &rc, &edgeproto.ClusterInst{Key: clusterInstKey}, p.ConnCache,
-		func(res *edgeproto.Result) error {
-			return nil
-		},
-	)
-	if err != nil {
-		return err
-	}
-
-	// Delete App
-	appKey := edgeproto.AppKey{
-		Organization: "", // TODO
-		Name:         appDeboardReq.AppId,
-		Version:      AllAppsVersion,
-	}
-	log.SpanLog(ctx, log.DebugLevelApi, "Federation delete app", "app", appKey)
-	_, err = ctrlclient.DeleteAppObj(ctx, &rc, &edgeproto.App{Key: appKey}, p.ConnCache)
 	if err != nil {
 		return err
 	}
@@ -1006,126 +536,194 @@ func (p *PartnerApi) FederationAppDeboarding(c echo.Context) error {
 	return nil
 }
 
-func (p *PartnerApi) FederationAppProvision(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
-	appProvReq := fedapi.AppProvisionRequest{}
-	if err := c.Bind(&appProvReq); err != nil {
-		return err
+func (p *PartnerApi) AddConsumerZones(ctx context.Context, consumer *ormapi.FederationConsumer, zones []fedewapi.ZoneDetails) (reterr error) {
+	db := p.loggedDB(ctx)
+	createdZones := []string{}
+	defer func() {
+		if reterr == nil {
+			return
+		}
+		for _, id := range createdZones {
+			delZone := ormapi.ConsumerZone{
+				ZoneId:       id,
+				ConsumerName: consumer.Name,
+				OperatorId:   consumer.OperatorId,
+			}
+			undoErr := db.Delete(&delZone).Error
+			if undoErr != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "failed to clean up zone on register federation failure", "err", undoErr)
+			}
+		}
+	}()
+
+	// Store partner zones in DB
+	for _, partnerZone := range zones {
+		zoneObj := ormapi.ConsumerZone{}
+		zoneObj.ZoneId = partnerZone.ZoneId
+		zoneObj.ConsumerName = consumer.Name
+		zoneObj.OperatorId = consumer.OperatorId
+		zoneObj.GeoLocation = partnerZone.Geolocation
+		zoneObj.GeographyDetails = partnerZone.GeographyDetails
+		zoneObj.Status = StatusUnregistered
+		if err := db.Create(&zoneObj).Error; err != nil {
+			if strings.Contains(err.Error(), "pq: duplicate key value violates unique constraint") {
+				log.SpanLog(ctx, log.DebugLevelApi, "ignore zone already exists error", "err", err)
+				continue
+			} else {
+				err = ormutil.DbErr(err)
+			}
+			log.SpanLog(ctx, log.DebugLevelApi, "register FederationConsumer failed", "err", err)
+			return err
+		}
+		createdZones = append(createdZones, zoneObj.ZoneId)
 	}
 
-	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		c,
-		appProvReq.LeadFederationId,
-		appProvReq.PartnerFederationId,
-		appProvReq.AppProvData.Region.Operator,
-	)
-	if err != nil {
-		return err
+	if consumer.AutoRegisterZones {
+		regErr := p.RegisterConsumerZones(ctx, consumer, consumer.Region, createdZones)
+		if regErr != nil {
+			// don't fail, just log that registration will need
+			// to be done manually
+			log.SpanLog(ctx, log.DebugLevelApi, "auto-registration of zones failed, some zones may need to be registered manually", "err", regErr)
+		}
 	}
-
-	if !partnerFed.PartnerRoleShareZonesWithSelf {
-		return fmt.Errorf("No federation with partner federator (%s) to manage application",
-			partnerFed.FederationId)
-	}
-
-	rc := ormutil.RegionContext{
-		Region:    selfFed.Region,
-		SkipAuthz: true,
-		Database:  p.Database,
-	}
-
-	// Create AppInst
-	appInstIn := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Organization: "", // TODO
-				Name:         appProvReq.AppProvData.AppId,
-				Version:      AllAppsVersion,
-			},
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name: appProvReq.AppProvData.AppId,
-				},
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         appProvReq.AppProvData.Region.Zone,
-					Organization: appProvReq.AppProvData.Region.Operator,
-				},
-				Organization: "", // TODO
-			},
-		},
-	}
-	log.SpanLog(ctx, log.DebugLevelApi, "Federation create appinst", "appInst", appInstIn)
-	err = ctrlclient.CreateAppInstStream(
-		ctx, &rc, &appInstIn, p.ConnCache,
-		func(res *edgeproto.Result) error {
-			return nil
-		},
-	)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
-func (p *PartnerApi) FederationAppDeprovision(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
-	appDeprovReq := fedapi.AppDeprovisionRequest{}
-	if err := c.Bind(&appDeprovReq); err != nil {
-		return err
-	}
+func (p *PartnerApi) RemoveConsumerZones(ctx context.Context, consumer *ormapi.FederationConsumer, zoneIds []string) (reterr error) {
+	db := p.loggedDB(ctx)
 
-	selfFed, partnerFed, err := p.ValidateAndGetFederatorInfo(
-		c,
-		appDeprovReq.LeadFederationId,
-		appDeprovReq.PartnerFederationId,
-		appDeprovReq.AppDeprovData.Region.Operator,
-	)
+	// Deregister zones automatically if they are registered.
+	// This will fail if anything has been deployed to the cloudlet.
+	err := p.DeregisterConsumerZones(ctx, consumer, zoneIds)
 	if err != nil {
-		return err
+		return fmt.Errorf("Some zones are registered and could not be automatically deregistered: %v", err)
 	}
 
-	if !partnerFed.PartnerRoleShareZonesWithSelf {
-		return fmt.Errorf("No federation with partner federator (%s) to manage application",
-			partnerFed.FederationId)
+	// Remove partner zones from db
+	for _, zoneId := range zoneIds {
+		zoneObj := ormapi.ConsumerZone{}
+		zoneObj.ZoneId = zoneId
+		zoneObj.ConsumerName = consumer.Name
+		zoneObj.OperatorId = consumer.OperatorId
+		if err := db.Delete(&zoneObj).Error; err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "deregister FederationConsumer failed", "err", err)
+			return err
+		}
 	}
-
-	rc := ormutil.RegionContext{
-		Region:    selfFed.Region,
-		SkipAuthz: true,
-		Database:  p.Database,
-	}
-
-	// Delete AppInst
-	appInstIn := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Organization: "", // TODO
-				Name:         appDeprovReq.AppDeprovData.AppId,
-				Version:      AllAppsVersion,
-			},
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name: appDeprovReq.AppDeprovData.AppId,
-				},
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         appDeprovReq.AppDeprovData.Region.Zone,
-					Organization: appDeprovReq.AppDeprovData.Region.Operator,
-				},
-				Organization: "", // TODO
-			},
-		},
-	}
-	log.SpanLog(ctx, log.DebugLevelApi, "Federation delete appinst", "appInst", appInstIn)
-	err = ctrlclient.DeleteAppInstStream(
-		ctx, &rc, &appInstIn, p.ConnCache,
-		func(res *edgeproto.Result) error {
-			return nil
-		},
-	)
-	if err != nil {
-		return err
-	}
-
 	return nil
+}
+
+func (p *PartnerApi) SetConsumerZones(ctx context.Context, consumer *ormapi.FederationConsumer, zones []fedewapi.ZoneDetails) error {
+	db := p.loggedDB(ctx)
+
+	// get all existing zones
+	lookup := ormapi.ConsumerZone{
+		ConsumerName: consumer.Name,
+		OperatorId:   consumer.OperatorId,
+	}
+	existingZones := []ormapi.ConsumerZone{}
+	err := db.Where(&lookup).Find(&existingZones).Error
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+
+	// Add all new zones (no-op if already exists)
+	err = p.AddConsumerZones(ctx, consumer, zones)
+	if err != nil {
+		return err
+	}
+
+	// Zones to keep
+	keep := map[string]struct{}{}
+	for _, zone := range zones {
+		keep[zone.ZoneId] = struct{}{}
+	}
+
+	toDelete := []string{}
+	for _, zone := range existingZones {
+		if _, found := keep[zone.ZoneId]; !found {
+			toDelete = append(toDelete, zone.ZoneId)
+		}
+	}
+	// Remove zones to delete
+	err = p.RemoveConsumerZones(ctx, consumer, toDelete)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *PartnerApi) GetCandidateZones(c echo.Context, fedCtxId FederationContextId) error {
+	return fmt.Errorf("not supported")
+}
+
+func (p *PartnerApi) AuthenticateDevice(c echo.Context, fedCtxId FederationContextId, deviceId DeviceId, authToken AuthorizationToken) error {
+	return fmt.Errorf("not supported")
+}
+
+func GetFixedNetworkIds(fed *ormapi.Federator) []string {
+	if len(fed.FixedNetworkIds) == 0 {
+		return nil
+	}
+	ids := fed.FixedNetworkIds
+	return ids
+}
+
+func SetFixedNetworkIds(fed *ormapi.Federator, ids []string) {
+	if ids == nil {
+		return
+	}
+	fed.FixedNetworkIds = ids
+}
+
+func GetMobileNetworkIds(fed *ormapi.Federator) *fedewapi.MobileNetworkIds {
+	if fed.MCC == "" && len(fed.MNC) == 0 {
+		return nil
+	}
+	ids := fedewapi.MobileNetworkIds{}
+	if fed.MCC != "" {
+		ids.Mcc = &fed.MCC
+	}
+	if len(fed.MNC) > 0 {
+		ids.Mncs = fed.MNC
+	}
+	return &ids
+}
+
+func SetMobileNetworkIds(fed *ormapi.Federator, ids *fedewapi.MobileNetworkIds) {
+	if ids == nil {
+		return
+	}
+	if ids.Mcc != nil {
+		fed.MCC = *ids.Mcc
+	}
+	if ids.Mncs != nil {
+		fed.MNC = ids.Mncs
+	}
+}
+
+func (p *PartnerApi) PartnerNotify(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	fedCtxId := c.Param(PathVarFederationContextId)
+	// lookup federation consumer based on claims
+	consumer, err := p.lookupConsumer(c, FederationContextId(fedCtxId))
+	if err != nil {
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "partner notify", "consumer", consumer.Name, "operatorid", consumer.OperatorId)
+	in := fedewapi.PartnerPostRequest{}
+	if err = c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
+	switch in.OperationType {
+	case "ADD_ZONES":
+		err = p.AddConsumerZones(ctx, consumer, in.AddZones)
+	case "REMOVE_ZONES":
+		err = p.RemoveConsumerZones(ctx, consumer, in.RemoveZones)
+	case "UPDATE_ZONES":
+		err = p.SetConsumerZones(ctx, consumer, in.AddZones)
+	default:
+		err = fmt.Errorf("Unsupported operationtype %q", in.OperationType)
+	}
+	return err
 }

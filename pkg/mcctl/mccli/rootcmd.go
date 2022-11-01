@@ -78,9 +78,8 @@ func GetRootCommand() *RootCommand {
 		rc.getCmdGroup(ormctl.TrustPolicyExceptionGroup),
 		rc.getCmdGroup(ormctl.NetworkGroup),
 		rc.getReportCmdGroup(),
-		rc.getCmdGroup(ormctl.FederatorGroup),
-		rc.getCmdGroup(ormctl.FederatorZoneGroup),
-		rc.getCmdGroup(ormctl.FederationGroup),
+		rc.getCmdGroup(ormctl.FederationProviderGroup),
+		rc.getCmdGroup(ormctl.FederationConsumerGroup),
 	}
 	developerCommands := []*cobra.Command{
 		rc.getDevCloudletShowCommand(),

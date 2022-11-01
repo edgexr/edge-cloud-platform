@@ -70,7 +70,7 @@ func CreateOrg(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Organization created"))
 }
 
-func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organization) error {
+func CreateOrgObj(ctx context.Context, claims *ormutil.UserClaims, org *ormapi.Organization) error {
 	if org.Name == "" {
 		return fmt.Errorf("Name not specified")
 	}
@@ -165,7 +165,7 @@ func DeleteOrg(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Organization deleted"))
 }
 
-func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organization) error {
+func DeleteOrgObj(ctx context.Context, claims *ormutil.UserClaims, org *ormapi.Organization) error {
 	if org.Name == "" {
 		return fmt.Errorf("Organization name not specified")
 	}
@@ -360,7 +360,7 @@ func ShowOrg(c echo.Context) error {
 	return ormutil.SetReply(c, orgs)
 }
 
-func ShowOrgObj(ctx context.Context, claims *UserClaims, filter map[string]interface{}) ([]ormapi.Organization, error) {
+func ShowOrgObj(ctx context.Context, claims *ormutil.UserClaims, filter map[string]interface{}) ([]ormapi.Organization, error) {
 	orgs := []ormapi.Organization{}
 	db := loggedDB(ctx)
 	err := db.Where(filter).Find(&orgs).Error
