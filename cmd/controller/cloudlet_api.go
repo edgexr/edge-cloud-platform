@@ -32,7 +32,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
@@ -434,7 +433,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	}
 
 	if in.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS &&
-		!features.IsVMPool && !features.IsPrebuiltKubernetesCluster {
+		!features.IsVmPool && !features.IsPrebuiltKubernetesCluster {
 		if in.InfraConfig.FlavorName == "" {
 			return errors.New("Infra flavor name is required for private deployments")
 		}
@@ -443,7 +442,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		}
 	}
 	if in.VmPool != "" {
-		if !features.IsVMPool {
+		if !features.IsVmPool {
 			return errors.New("VM Pool is only valid for PlatformTypeVmPool")
 		}
 		vmPoolKey := edgeproto.VMPoolKey{
@@ -454,7 +453,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 			return errors.New("VM Pool with this name is already in use by some other Cloudlet")
 		}
 	} else {
-		if features.IsVMPool {
+		if features.IsVmPool {
 			return errors.New("VM Pool is mandatory for PlatformTypeVmPool")
 		}
 	}
@@ -467,7 +466,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	if in.PlatformHighAvailability {
 		if in.Deployment == cloudcommon.DeploymentTypeDocker && !features.SupportsPlatformHighAvailabilityOnDocker {
 			return fmt.Errorf("Platform High Availability not supported for docker on %s", platName)
-		} else if in.Deployment == cloudcommon.DeploymentTypeKubernetes && !features.SupportsPlatformHighAvailabilityOnK8s {
+		} else if in.Deployment == cloudcommon.DeploymentTypeKubernetes && !features.SupportsPlatformHighAvailabilityOnK8S {
 			return fmt.Errorf("Platform High Availability not supported for k8s on %s", platName)
 		}
 	}
@@ -1519,7 +1518,7 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	var dynInsts map[edgeproto.AppInstKey]struct{}
 	var clDynInsts map[edgeproto.ClusterInstKey]struct{}
 
-	var features *platform.Features
+	var features *edgeproto.PlatformFeatures
 	var prevState edgeproto.TrackedState
 	var gpuDriver edgeproto.GPUDriver
 	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
@@ -1994,7 +1993,7 @@ func (s *CloudletApi) GetCloudletManifest(ctx context.Context, key *edgeproto.Cl
 	}
 
 	pfFlavor := edgeproto.Flavor{}
-	if !features.IsVMPool {
+	if !features.IsVmPool {
 		if cloudlet.Flavor.Name == "" || cloudlet.Flavor.Name == DefaultPlatformFlavor.Key.Name {
 			cloudlet.Flavor = DefaultPlatformFlavor.Key
 			pfFlavor = DefaultPlatformFlavor
@@ -2124,7 +2123,20 @@ func (s *CloudletApi) GetCloudletProps(ctx context.Context, in *edgeproto.Cloudl
 	return cloudletPlatform.GetCloudletProps(ctx)
 }
 
-func GetCloudletFeatures(ctx context.Context, platformType edgeproto.PlatformType) (*platform.Features, error) {
+func (s *CloudletApi) GetCloudletPlatformFeatures(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.PlatformFeatures, error) {
+	cloudlet := &edgeproto.Cloudlet{}
+	if !s.all.cloudletApi.cache.Get(in, cloudlet) {
+		return nil, in.NotFoundError()
+	}
+
+	features, err := GetCloudletFeatures(ctx, cloudlet.PlatformType)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get features for platform: %s", err)
+	}
+	return features, nil
+}
+
+func GetCloudletFeatures(ctx context.Context, platformType edgeproto.PlatformType) (*edgeproto.PlatformFeatures, error) {
 	cloudletPlatform, err := pfutils.GetPlatform(ctx, platformType.String(), nodeMgr.UpdateNodeProps)
 	if err != nil {
 		return nil, err

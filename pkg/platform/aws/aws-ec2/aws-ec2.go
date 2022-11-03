@@ -18,11 +18,11 @@ import (
 	"context"
 	"fmt"
 
-	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 )
 
 type AwsEc2Platform struct {
@@ -34,8 +34,8 @@ type AwsEc2Platform struct {
 	VpcCidr         string
 }
 
-func (o *AwsEc2Platform) GetFeatures() *platform.Features {
-	return &platform.Features{
+func (o *AwsEc2Platform) GetFeatures() *edgeproto.PlatformFeatures {
+	return &edgeproto.PlatformFeatures{
 		SupportsMultiTenantCluster: true,
 	}
 }

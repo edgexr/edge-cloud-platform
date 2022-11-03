@@ -78,34 +78,12 @@ type Caches struct {
 	VMPoolMux *sync.Mutex
 }
 
-// Features that the platform supports or enables
-type Features struct {
-	SupportsMultiTenantCluster               bool
-	SupportsSharedVolume                     bool
-	SupportsTrustPolicy                      bool
-	SupportsKubernetesOnly                   bool // does not support docker/VM
-	KubernetesRequiresWorkerNodes            bool // k8s cluster cannot be master only
-	CloudletServicesLocal                    bool // cloudlet services running locally to controller
-	IPAllocatedPerService                    bool // Every k8s service gets a public IP (GCP/etc)
-	SupportsImageTypeOVF                     bool // Supports OVF images for VM deployments
-	IsVMPool                                 bool // cloudlet is just a pool of pre-existing VMs
-	IsFake                                   bool // Just for unit-testing/e2e-testing
-	SupportsAdditionalNetworks               bool // Additional networks can be added
-	IsSingleKubernetesCluster                bool // Entire platform is just a single K8S cluster
-	SupportsAppInstDedicatedIP               bool // Supports per AppInst dedicated IPs
-	SupportsPlatformHighAvailabilityOnK8s    bool // Supports High Availablity with 2 CRMs on K8s
-	SupportsPlatformHighAvailabilityOnDocker bool // Supports HA on docker
-
-	NoKubernetesClusterAutoScale bool // No support for k8s cluster auto-scale
-	IsPrebuiltKubernetesCluster  bool // k8s cluster is created externally and already exists
-}
-
 // Platform abstracts the underlying cloudlet platform.
 type Platform interface {
 	// GetVersionProperties returns properties related to the platform version
 	GetVersionProperties() map[string]string
 	// Get platform features
-	GetFeatures() *Features
+	GetFeatures() *edgeproto.PlatformFeatures
 	// InitCommon is called once during CRM startup to do steps needed for both active or standby. If the platform does not support
 	// H/A and does not need separate steps for the active unit, then just this func can be implemented and InitHAConditional can be left empty
 	InitCommon(ctx context.Context, platformConfig *PlatformConfig, caches *Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error
@@ -265,7 +243,7 @@ func GetType(pfType string) string {
 }
 
 // Track K8s AppInstances for resource management only if platform supports K8s deployments only
-func TrackK8sAppInst(ctx context.Context, app *edgeproto.App, features *Features) bool {
+func TrackK8sAppInst(ctx context.Context, app *edgeproto.App, features *edgeproto.PlatformFeatures) bool {
 	if features.SupportsKubernetesOnly &&
 		(app.Deployment == cloudcommon.DeploymentTypeKubernetes ||
 			app.Deployment == cloudcommon.DeploymentTypeHelm) {

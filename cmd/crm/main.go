@@ -237,7 +237,7 @@ func main() {
 		caches := controllerData.GetCaches()
 
 		features := platform.GetFeatures()
-		if features.IsVMPool {
+		if features.IsVmPool {
 			if cloudlet.VmPool == "" {
 				log.FatalLog("Cloudlet is missing VM pool name")
 			}

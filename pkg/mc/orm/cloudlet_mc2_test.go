@@ -563,6 +563,39 @@ func badRegionGetCloudletManifest(t *testing.T, mcClient *mctestclient.Client, u
 
 var _ = edgeproto.GetFields
 
+func badPermGetCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
+	_, status, err := testutil.TestPermGetCloudletPlatformFeatures(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badGetCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.CloudletKey)) {
+	_, st, err := testutil.TestPermGetCloudletPlatformFeatures(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
+func goodPermGetCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
+	_, status, err := testutil.TestPermGetCloudletPlatformFeatures(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionGetCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
+	out, status, err := testutil.TestPermGetCloudletPlatformFeatures(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
+var _ = edgeproto.GetFields
+
 func badPermGetCloudletProps(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletProps)) {
 	_, status, err := testutil.TestPermGetCloudletProps(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
@@ -1073,6 +1106,7 @@ func permTestCloudletAllianceOrg(t *testing.T, mcClient *mctestclient.Client, ur
 // an organization that the user does not have permissions for.
 func badPermTestCloudletApiCloudletKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
 	badPermGetCloudletManifest(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermGetCloudletPlatformFeatures(t, mcClient, uri, token, region, org, modFuncs...)
 	badPermShowFlavorsForCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
 	badPermGetOrganizationsOnCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
 	badPermRevokeAccessKey(t, mcClient, uri, token, region, org, modFuncs...)
@@ -1084,6 +1118,7 @@ func badPermTestCloudletApiCloudletKey(t *testing.T, mcClient *mctestclient.Clie
 // an organization that the user has permissions for.
 func goodPermTestCloudletApiCloudletKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.CloudletKey)) {
 	goodPermGetCloudletManifest(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermGetCloudletPlatformFeatures(t, mcClient, uri, token, region, org, modFuncs...)
 	goodPermShowFlavorsForCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
 	goodPermGetOrganizationsOnCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
 	goodPermRevokeAccessKey(t, mcClient, uri, token, region, org, modFuncs...)
@@ -1091,6 +1126,7 @@ func goodPermTestCloudletApiCloudletKey(t *testing.T, mcClient *mctestclient.Cli
 	goodPermGetCloudletGPUDriverLicenseConfig(t, mcClient, uri, token, region, org, modFuncs...)
 	// make sure region check works
 	badRegionGetCloudletManifest(t, mcClient, uri, token, org, modFuncs...)
+	badRegionGetCloudletPlatformFeatures(t, mcClient, uri, token, org, modFuncs...)
 	badRegionShowFlavorsForCloudlet(t, mcClient, uri, token, org, modFuncs...)
 	badRegionGetOrganizationsOnCloudlet(t, mcClient, uri, token, org, modFuncs...)
 	badRegionRevokeAccessKey(t, mcClient, uri, token, org, modFuncs...)

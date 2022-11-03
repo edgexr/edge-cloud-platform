@@ -412,6 +412,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	//   403: forbidden
 	//   404: notFound
 	e.POST(root+"/usercreate", CreateUser)
+	e.POST(root+"/userdelete", DeleteLockedUser)
 	e.POST(root+"/passwordresetrequest", PasswordResetRequest)
 	// swagger:route POST /publicconfig Config PublicConfig
 	// Show Public Configuration.

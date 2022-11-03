@@ -605,6 +605,44 @@ func GetCloudletManifest(c echo.Context) error {
 	return ormutil.SetReply(c, resp)
 }
 
+func GetCloudletPlatformFeatures(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	rc := &ormutil.RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.Username = claims.Username
+
+	in := ormapi.RegionCloudletKey{}
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
+	}
+	rc.Region = in.Region
+	rc.Database = database
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+
+	obj := &in.CloudletKey
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, "",
+			ResourceCloudlets, ActionView); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlclient.GetCloudletPlatformFeaturesObj(ctx, rc, obj, connCache)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			err = fmt.Errorf("%s", st.Message())
+		}
+		return err
+	}
+	return ormutil.SetReply(c, resp)
+}
+
 func GetCloudletProps(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
 	rc := &ormutil.RegionContext{}

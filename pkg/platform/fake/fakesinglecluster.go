@@ -14,15 +14,15 @@
 
 package fake
 
-import "github.com/edgexr/edge-cloud-platform/pkg/platform"
+import "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 
 type PlatformSingleCluster struct {
 	Platform
 }
 
-func (s *PlatformSingleCluster) GetFeatures() *platform.Features {
+func (s *PlatformSingleCluster) GetFeatures() *edgeproto.PlatformFeatures {
 	features := s.Platform.GetFeatures()
 	features.IsSingleKubernetesCluster = true
-	features.SupportsAppInstDedicatedIP = true
+	features.SupportsAppInstDedicatedIp = true
 	return features
 }

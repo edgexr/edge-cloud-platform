@@ -32,12 +32,12 @@ type K8sOperator struct {
 	infracommon.CommonEmbedded
 }
 
-func (s *K8sOperator) GetFeatures() *platform.Features {
-	return &platform.Features{
+func (s *K8sOperator) GetFeatures() *edgeproto.PlatformFeatures {
+	return &edgeproto.PlatformFeatures{
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,
-		IPAllocatedPerService:         true,
+		IpAllocatedPerService:         true,
 		IsSingleKubernetesCluster:     true,
 		IsPrebuiltKubernetesCluster:   true,
 	}

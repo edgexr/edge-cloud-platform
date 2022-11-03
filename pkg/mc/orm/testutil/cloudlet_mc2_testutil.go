@@ -329,6 +329,20 @@ func TestPermGetCloudletManifest(mcClient *mctestclient.Client, uri, token, regi
 	return TestGetCloudletManifest(mcClient, uri, token, region, in, modFuncs...)
 }
 
+func TestGetCloudletPlatformFeatures(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.PlatformFeatures, int, error) {
+	dat := &ormapi.RegionCloudletKey{}
+	dat.Region = region
+	dat.CloudletKey = *in
+	for _, fn := range modFuncs {
+		fn(&dat.CloudletKey)
+	}
+	return mcClient.GetCloudletPlatformFeatures(uri, token, dat)
+}
+func TestPermGetCloudletPlatformFeatures(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.PlatformFeatures, int, error) {
+	in := &edgeproto.CloudletKey{}
+	return TestGetCloudletPlatformFeatures(mcClient, uri, token, region, in, modFuncs...)
+}
+
 func TestGetCloudletProps(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletProps, modFuncs ...func(*edgeproto.CloudletProps)) (*edgeproto.CloudletProps, int, error) {
 	dat := &ormapi.RegionCloudletProps{}
 	dat.Region = region
@@ -605,6 +619,18 @@ func (s *TestClient) GetCloudletManifest(ctx context.Context, in *edgeproto.Clou
 		CloudletKey: *in,
 	}
 	out, status, err := s.McClient.GetCloudletManifest(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) GetCloudletPlatformFeatures(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.PlatformFeatures, error) {
+	inR := &ormapi.RegionCloudletKey{
+		Region:      s.Region,
+		CloudletKey: *in,
+	}
+	out, status, err := s.McClient.GetCloudletPlatformFeatures(s.Uri, s.Token, inR)
 	if err == nil && status != 200 {
 		err = fmt.Errorf("status: %d\n", status)
 	}

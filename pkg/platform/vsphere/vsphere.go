@@ -36,8 +36,8 @@ type VSpherePlatform struct {
 	caches       *platform.Caches
 }
 
-func (o *VSpherePlatform) GetFeatures() *platform.Features {
-	return &platform.Features{
+func (o *VSpherePlatform) GetFeatures() *edgeproto.PlatformFeatures {
+	return &edgeproto.PlatformFeatures{
 		SupportsMultiTenantCluster: true,
 		SupportsSharedVolume:       true,
 	}

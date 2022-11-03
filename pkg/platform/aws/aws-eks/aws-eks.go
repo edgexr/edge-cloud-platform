@@ -40,12 +40,12 @@ type AwsEksResources struct {
 	NetworkLBsUsed            uint64
 }
 
-func (o *AwsEksPlatform) GetFeatures() *platform.Features {
-	return &platform.Features{
+func (o *AwsEksPlatform) GetFeatures() *edgeproto.PlatformFeatures {
+	return &edgeproto.PlatformFeatures{
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,
-		IPAllocatedPerService:         true,
+		IpAllocatedPerService:         true,
 	}
 }
 

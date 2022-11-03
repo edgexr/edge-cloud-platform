@@ -884,6 +884,22 @@ func (s *Client) GetCloudletManifest(uri string, token string, in *ormapi.Region
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
+func (s *Client) GetCloudletPlatformFeatures(uri string, token string, in *ormapi.RegionCloudletKey) (*edgeproto.PlatformFeatures, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out edgeproto.PlatformFeatures
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("GetCloudletPlatformFeatures")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
 func (s *Client) GetCloudletProps(uri string, token string, in *ormapi.RegionCloudletProps) (*edgeproto.CloudletProps, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
@@ -3784,6 +3800,16 @@ func (s *Client) DeleteUser(uri string, token string, in *ormapi.User) (int, err
 	rundata.In = in
 
 	apiCmd := ormctl.MustGetCommand("DeleteUser")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) DeleteLockedUser(uri string, in *ormapi.User) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.In = in
+
+	apiCmd := ormctl.MustGetCommand("DeleteLockedUser")
 	s.ClientRun.Run(apiCmd, &rundata)
 	return rundata.RetStatus, rundata.RetError
 }

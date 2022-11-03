@@ -102,8 +102,8 @@ func (e *EdgeboxPlatform) GetEdgeboxDockerCreds() (string, string) {
 	return user_val, pass_val
 }
 
-func (o *EdgeboxPlatform) GetFeatures() *platform.Features {
-	return &platform.Features{
+func (o *EdgeboxPlatform) GetFeatures() *edgeproto.PlatformFeatures {
+	return &edgeproto.PlatformFeatures{
 		SupportsMultiTenantCluster: true,
 		CloudletServicesLocal:      true,
 	}

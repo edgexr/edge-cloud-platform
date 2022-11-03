@@ -357,6 +357,32 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	require.NotNil(t, err)
 	require.Equal(t, "Email misterx@gmail.com already in use", err.Error())
 
+	// create new locked user (doesn't actually matter if it's
+	// locked or not)
+	userLocked := ormapi.User{
+		Name:     "MisterLocked",
+		Email:    "misterlocked@email.com",
+		Passhash: "mister-locked-super-best-awesome-password",
+	}
+	_, _, status, err = mcClientCreateUserWithMockMail(mcClient, uri, &ormapi.CreateUser{User: userLocked})
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// delete locked user via deletelockeduser api
+	status, err = mcClient.DeleteLockedUser(uri, &userLocked)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// verify user does not exist
+	showUserLocked := &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"Name": userLocked.Name,
+		},
+	}
+	users, status, err = mcClient.ShowUser(uri, token, showUserLocked)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(users))
+
 	// create an Organization
 	org2 := ormapi.Organization{
 		Type:         "developer",

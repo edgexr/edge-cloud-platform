@@ -226,6 +226,13 @@ func (s *RegionCloudletKey) GetObjName() string {
 	return "CloudletKey"
 }
 
+// Request summary for GetCloudletPlatformFeatures
+// swagger:parameters GetCloudletPlatformFeatures
+type swaggerGetCloudletPlatformFeatures struct {
+	// in: body
+	Body RegionCloudletKey
+}
+
 // Request summary for GetCloudletProps
 // swagger:parameters GetCloudletProps
 type swaggerGetCloudletProps struct {

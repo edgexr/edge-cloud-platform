@@ -47,6 +47,16 @@ func init() {
 		ReqData:      &ormapi.User{},
 		Path:         "/auth/user/delete",
 	}, &ApiCommand{
+		Name:           "DeleteLockedUser",
+		Use:            "deletelocked",
+		Short:          "Delete a locked user by supplying the password",
+		RequiredArgs:   "name",
+		Comments:       ormapi.UserComments,
+		PasswordArg:    "passhash",
+		VerifyPassword: true,
+		ReqData:        &ormapi.User{},
+		Path:           "/userdelete",
+	}, &ApiCommand{
 		Name:         "UpdateUser",
 		Use:          "update",
 		Short:        "Update a user",
