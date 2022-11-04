@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -33,6 +32,7 @@ import (
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/gogo/protobuf/types"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -603,7 +603,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	reservedAutoClusterId := -1
 	var reservedClusterInstKey *edgeproto.ClusterInstKey
 	realClusterName := in.RealClusterName
-	var cloudletFeatures *platform.Features
+	var cloudletFeatures *edgeproto.PlatformFeatures
 	cloudletCompatibilityVersion := uint32(0)
 	var cloudletPlatformType edgeproto.PlatformType
 	var cloudletLoc dme.Loc
@@ -665,7 +665,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if err != nil {
 			return fmt.Errorf("Failed to get features for platform: %s", err)
 		}
-		if in.DedicatedIp && !cloudletFeatures.SupportsAppInstDedicatedIP {
+		if in.DedicatedIp && !cloudletFeatures.SupportsAppInstDedicatedIp {
 			return fmt.Errorf("Target cloudlet platform does not support a per-AppInst dedicated IP")
 		}
 		if s.store.STMGet(stm, &in.Key, in) {
@@ -2155,20 +2155,20 @@ func (s *AppInstApi) ReplaceErrorState(ctx context.Context, in *edgeproto.AppIns
 }
 
 // public cloud k8s cluster allocates a separate IP per service.  This is a type of dedicated access
-func isIPAllocatedPerService(ctx context.Context, platformType edgeproto.PlatformType, features *platform.Features, operator string) bool {
+func isIPAllocatedPerService(ctx context.Context, platformType edgeproto.PlatformType, features *edgeproto.PlatformFeatures, operator string) bool {
 	log.SpanLog(ctx, log.DebugLevelApi, "isIPAllocatedPerService", "platformType", platformType, "operator", operator)
 
 	if features.IsFake {
 		// for a fake cloudlet used in testing, decide based on operator name
 		return operator == cloudcommon.OperatorGCP || operator == cloudcommon.OperatorAzure || operator == cloudcommon.OperatorAWS
 	}
-	return features.IPAllocatedPerService
+	return features.IpAllocatedPerService
 }
 
-func validateImageTypeForPlatform(ctx context.Context, imageType edgeproto.ImageType, platformType edgeproto.PlatformType, features *platform.Features) error {
+func validateImageTypeForPlatform(ctx context.Context, imageType edgeproto.ImageType, platformType edgeproto.PlatformType, features *edgeproto.PlatformFeatures) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "validateImageTypeForPlatform", "imageType", imageType, "platformType", platformType)
 	if imageType == edgeproto.ImageType_IMAGE_TYPE_OVF {
-		if !features.SupportsImageTypeOVF {
+		if !features.SupportsImageTypeOvf {
 			platName := edgeproto.PlatformType_name[int32(platformType)]
 			return fmt.Errorf("image type %s is not valid for platform type: %s", imageType, platName)
 		}
@@ -2176,7 +2176,7 @@ func validateImageTypeForPlatform(ctx context.Context, imageType edgeproto.Image
 	return nil
 }
 
-func allocateIP(ctx context.Context, inst *edgeproto.ClusterInst, cloudlet *edgeproto.Cloudlet, platformType edgeproto.PlatformType, features *platform.Features, refs *edgeproto.CloudletRefs) error {
+func allocateIP(ctx context.Context, inst *edgeproto.ClusterInst, cloudlet *edgeproto.Cloudlet, platformType edgeproto.PlatformType, features *edgeproto.PlatformFeatures, refs *edgeproto.CloudletRefs) error {
 
 	if isIPAllocatedPerService(ctx, platformType, features, cloudlet.Key.Organization) {
 		// we don't track IPs in managed k8s clouds

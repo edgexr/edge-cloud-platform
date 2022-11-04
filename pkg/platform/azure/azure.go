@@ -24,7 +24,6 @@ import (
 	"github.com/codeskyblue/go-sh"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
@@ -56,12 +55,12 @@ type AZFlavor struct {
 	VCPUs int
 }
 
-func (o *AzurePlatform) GetFeatures() *platform.Features {
-	return &platform.Features{
+func (o *AzurePlatform) GetFeatures() *edgeproto.PlatformFeatures {
+	return &edgeproto.PlatformFeatures{
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,
-		IPAllocatedPerService:         true,
+		IpAllocatedPerService:         true,
 	}
 }
 

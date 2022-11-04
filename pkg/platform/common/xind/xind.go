@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -46,8 +46,8 @@ func (s *Xind) GetInitHAConditionalCompatibilityVersion(ctx context.Context) str
 	return "xind-1.0"
 }
 
-func (s *Xind) GetFeatures() *platform.Features {
-	return &platform.Features{
+func (s *Xind) GetFeatures() *edgeproto.PlatformFeatures {
+	return &edgeproto.PlatformFeatures{
 		CloudletServicesLocal: true,
 	}
 }

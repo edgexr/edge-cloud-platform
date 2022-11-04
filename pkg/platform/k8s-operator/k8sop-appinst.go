@@ -65,7 +65,7 @@ func (s *K8sOperator) CreateAppInst(ctx context.Context, clusterInst *edgeproto.
 		} else {
 			return nil, fmt.Errorf("Did not get either an IP or a hostname from GetSvcExternalIpOrHost")
 		}
-		action.AddDNS = !app.InternalPorts && features.IPAllocatedPerService
+		action.AddDNS = !app.InternalPorts && features.IpAllocatedPerService
 		return &action, nil
 	}
 	err = s.CommonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, infracommon.NoDnsOverride, getDnsAction)

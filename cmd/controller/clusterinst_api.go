@@ -22,18 +22,17 @@ import (
 	"strings"
 	"time"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/gogo/protobuf/types"
 	"github.com/opentracing/opentracing-go"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	"google.golang.org/grpc"
 )
 
@@ -160,7 +159,7 @@ func (s *ClusterInstApi) UsesNetwork(networkKey *edgeproto.NetworkKey) *edgeprot
 
 // validateAndDefaultIPAccess checks that the IP access type is valid if it is set.  If it is not set
 // it returns the new value based on the other parameters
-func validateAndDefaultIPAccess(ctx context.Context, clusterInst *edgeproto.ClusterInst, platformType edgeproto.PlatformType, features *platform.Features, cb edgeproto.ClusterInstApi_CreateClusterInstServer) (edgeproto.IpAccess, error) {
+func validateAndDefaultIPAccess(ctx context.Context, clusterInst *edgeproto.ClusterInst, platformType edgeproto.PlatformType, features *edgeproto.PlatformFeatures, cb edgeproto.ClusterInstApi_CreateClusterInstServer) (edgeproto.IpAccess, error) {
 
 	platName := edgeproto.PlatformType_name[int32(platformType)]
 
@@ -202,7 +201,7 @@ func validateAndDefaultIPAccess(ctx context.Context, clusterInst *edgeproto.Clus
 	return clusterInst.IpAccess, nil
 }
 
-func validateNumNodesForKubernetes(ctx context.Context, platformType edgeproto.PlatformType, features *platform.Features, numnodes uint32) error {
+func validateNumNodesForKubernetes(ctx context.Context, platformType edgeproto.PlatformType, features *edgeproto.PlatformFeatures, numnodes uint32) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "validateNumNodesForKubernetes", "platformType", platformType.String(), "numnodes", numnodes)
 	if platformType == edgeproto.PlatformType_PLATFORM_TYPE_K8S_BARE_METAL {
 		// Special case for k8s baremetal because multi-tenanancy is
@@ -1826,7 +1825,7 @@ func (s *StreamoutCb) Context() context.Context {
 	return s.ctx
 }
 
-func (s *ClusterInstApi) createDefaultMultiTenantCluster(ctx context.Context, cloudletKey edgeproto.CloudletKey, features *platform.Features) {
+func (s *ClusterInstApi) createDefaultMultiTenantCluster(ctx context.Context, cloudletKey edgeproto.CloudletKey, features *edgeproto.PlatformFeatures) {
 	span, ctx := log.ChildSpan(ctx, log.DebugLevelApi, "Create default multi-tenant cluster")
 	defer span.Finish()
 

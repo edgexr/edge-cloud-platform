@@ -24,9 +24,9 @@ import (
 
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -158,14 +158,14 @@ func (v *VcdPlatform) InitData(ctx context.Context, caches *platform.Caches) {
 	v.caches = caches
 }
 
-func (o *VcdPlatform) GetFeatures() *platform.Features {
-	return &platform.Features{
+func (o *VcdPlatform) GetFeatures() *edgeproto.PlatformFeatures {
+	return &edgeproto.PlatformFeatures{
 		SupportsMultiTenantCluster:            true,
 		SupportsSharedVolume:                  true,
 		SupportsTrustPolicy:                   true,
-		SupportsImageTypeOVF:                  true,
+		SupportsImageTypeOvf:                  true,
 		SupportsAdditionalNetworks:            true,
-		SupportsPlatformHighAvailabilityOnK8s: true,
+		SupportsPlatformHighAvailabilityOnK8S: true,
 	}
 }
 

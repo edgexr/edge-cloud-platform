@@ -26,7 +26,6 @@ import (
 	sh "github.com/codeskyblue/go-sh"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -56,12 +55,12 @@ type GCPFlavor struct {
 	Name                         string
 }
 
-func (o *GCPPlatform) GetFeatures() *platform.Features {
-	return &platform.Features{
+func (o *GCPPlatform) GetFeatures() *edgeproto.PlatformFeatures {
+	return &edgeproto.PlatformFeatures{
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,
-		IPAllocatedPerService:         true,
+		IpAllocatedPerService:         true,
 	}
 }
 

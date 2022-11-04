@@ -83,7 +83,7 @@ func (m *ManagedK8sPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 		} else {
 			return nil, fmt.Errorf("Did not get either an IP or a hostname from GetSvcExternalIpOrHost")
 		}
-		action.AddDNS = !app.InternalPorts && features.IPAllocatedPerService
+		action.AddDNS = !app.InternalPorts && features.IpAllocatedPerService
 		return &action, nil
 	}
 	err = m.CommonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, infracommon.NoDnsOverride, getDnsAction)

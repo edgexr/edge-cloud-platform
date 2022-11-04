@@ -1146,6 +1146,63 @@ func GetCloudletManifests(c *cli.Command, data []edgeproto.CloudletKey, err *err
 	}
 }
 
+var GetCloudletPlatformFeaturesCmd = &cli.Command{
+	Use:          "GetCloudletPlatformFeatures",
+	RequiredArgs: strings.Join(CloudletKeyRequiredArgs, " "),
+	OptionalArgs: strings.Join(CloudletKeyOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletKeyAliasArgs, " "),
+	SpecialArgs:  &CloudletKeySpecialArgs,
+	Comments:     CloudletKeyComments,
+	ReqData:      &edgeproto.CloudletKey{},
+	ReplyData:    &edgeproto.PlatformFeatures{},
+	Run:          runGetCloudletPlatformFeatures,
+}
+
+func runGetCloudletPlatformFeatures(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.CloudletKey)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return GetCloudletPlatformFeatures(c, obj)
+}
+
+func GetCloudletPlatformFeatures(c *cli.Command, in *edgeproto.CloudletKey) error {
+	if CloudletApiCmd == nil {
+		return fmt.Errorf("CloudletApi client not initialized")
+	}
+	ctx := context.Background()
+	obj, err := CloudletApiCmd.GetCloudletPlatformFeatures(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("GetCloudletPlatformFeatures failed: %s", errstr)
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func GetCloudletPlatformFeaturess(c *cli.Command, data []edgeproto.CloudletKey, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("GetCloudletPlatformFeatures %v\n", data[ii])
+		myerr := GetCloudletPlatformFeatures(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
 var GetCloudletPropsCmd = &cli.Command{
 	Use:          "GetCloudletProps",
 	RequiredArgs: strings.Join(GetCloudletPropsRequiredArgs, " "),
@@ -2018,6 +2075,7 @@ var CloudletApiCmds = []*cobra.Command{
 	UpdateCloudletCmd.GenCmd(),
 	ShowCloudletCmd.GenCmd(),
 	GetCloudletManifestCmd.GenCmd(),
+	GetCloudletPlatformFeaturesCmd.GenCmd(),
 	GetCloudletPropsCmd.GenCmd(),
 	GetCloudletResourceQuotaPropsCmd.GenCmd(),
 	GetCloudletResourceUsageCmd.GenCmd(),
@@ -2422,6 +2480,47 @@ var FederationConfigComments = map[string]string{
 	"federationdbid":        "Federation database id",
 }
 var FederationConfigSpecialArgs = map[string]string{}
+var PlatformFeaturesRequiredArgs = []string{}
+var PlatformFeaturesOptionalArgs = []string{
+	"supportsmultitenantcluster",
+	"supportssharedvolume",
+	"supportstrustpolicy",
+	"supportskubernetesonly",
+	"kubernetesrequiresworkernodes",
+	"cloudletserviceslocal",
+	"ipallocatedperservice",
+	"supportsimagetypeovf",
+	"isvmpool",
+	"isfake",
+	"supportsadditionalnetworks",
+	"issinglekubernetescluster",
+	"supportsappinstdedicatedip",
+	"supportsplatformhighavailabilityonk8s",
+	"supportsplatformhighavailabilityondocker",
+	"nokubernetesclusterautoscale",
+	"isprebuiltkubernetescluster",
+}
+var PlatformFeaturesAliasArgs = []string{}
+var PlatformFeaturesComments = map[string]string{
+	"supportsmultitenantcluster":               "Platform supports multi tenant kubernetes clusters",
+	"supportssharedvolume":                     "Platform supports shared volumes",
+	"supportstrustpolicy":                      "Platform supports trust policies",
+	"supportskubernetesonly":                   "Platform only supports kubernetes deployments",
+	"kubernetesrequiresworkernodes":            "Kubernetes clusters requires worker nodes and cannot be master only",
+	"cloudletserviceslocal":                    "Cloudlet servicess run local to the controller",
+	"ipallocatedperservice":                    "Every kubernetes services gets a public IP (public cloud)",
+	"supportsimagetypeovf":                     "Platform supports OVF images for VM deployments",
+	"isvmpool":                                 "Platform is a a pool of pre-existing virtual machines",
+	"isfake":                                   "Platform is a fake platform for unit/e2e testing",
+	"supportsadditionalnetworks":               "Platform supports adding networks",
+	"issinglekubernetescluster":                "The entire platform is a single kubernetes cluster",
+	"supportsappinstdedicatedip":               "Platform supports per AppInst dedicated IPs",
+	"supportsplatformhighavailabilityonk8s":    "Supports high availability with two CRMs on kubernetes",
+	"supportsplatformhighavailabilityondocker": "Supports high availability with two CRMs on docker",
+	"nokubernetesclusterautoscale":             "No support for kubernetes cluster auto-scale",
+	"isprebuiltkubernetescluster":              "Kubernetes cluster is created externally and already exists",
+}
+var PlatformFeaturesSpecialArgs = map[string]string{}
 var CloudletResMapRequiredArgs = []string{
 	"cloudletorg",
 	"cloudlet",

@@ -176,8 +176,8 @@ func (s *Platform) GetInitHAConditionalCompatibilityVersion(ctx context.Context)
 	return "fake-1.0"
 }
 
-func (s *Platform) GetFeatures() *platform.Features {
-	return &platform.Features{
+func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
+	return &edgeproto.PlatformFeatures{
 		SupportsMultiTenantCluster:               true,
 		SupportsSharedVolume:                     true,
 		SupportsTrustPolicy:                      true,
@@ -185,7 +185,7 @@ func (s *Platform) GetFeatures() *platform.Features {
 		IsFake:                                   true,
 		SupportsAdditionalNetworks:               true,
 		SupportsPlatformHighAvailabilityOnDocker: true,
-		SupportsPlatformHighAvailabilityOnK8s:    true,
+		SupportsPlatformHighAvailabilityOnK8S:    true,
 	}
 }
 

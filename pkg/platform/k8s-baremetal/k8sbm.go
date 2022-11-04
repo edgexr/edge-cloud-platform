@@ -67,11 +67,11 @@ func (k *K8sBareMetalPlatform) GetCloudletKubeConfig(cloudletKey *edgeproto.Clou
 	return k8smgmt.GetKconfName(k.GetDefaultCluster(cloudletKey))
 }
 
-func (o *K8sBareMetalPlatform) GetFeatures() *platform.Features {
-	return &platform.Features{
+func (o *K8sBareMetalPlatform) GetFeatures() *edgeproto.PlatformFeatures {
+	return &edgeproto.PlatformFeatures{
 		SupportsKubernetesOnly:     true,
 		IsSingleKubernetesCluster:  true,
-		SupportsAppInstDedicatedIP: true,
+		SupportsAppInstDedicatedIp: true,
 	}
 }
 
