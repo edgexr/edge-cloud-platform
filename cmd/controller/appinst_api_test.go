@@ -23,17 +23,16 @@ import (
 	"testing"
 	"time"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	"google.golang.org/grpc"
 )
 
@@ -320,7 +319,7 @@ func TestAppInstApi(t *testing.T) {
 		cloudlet := edgeproto.Cloudlet{}
 		found := apis.cloudletApi.cache.Get(&obj.Key.ClusterInstKey.CloudletKey, &cloudlet)
 		require.True(t, found)
-		features := platform.Features{}
+		features := edgeproto.PlatformFeatures{}
 		operator := obj.Key.ClusterInstKey.CloudletKey.Organization
 
 		for _, port := range obj.MappedPorts {

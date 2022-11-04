@@ -64,6 +64,10 @@ func (s *DummyServer) GetCloudletManifest(ctx context.Context, key *edgeproto.Cl
 	return &edgeproto.CloudletManifest{}, nil
 }
 
+func (s *DummyServer) GetCloudletPlatformFeatures(ctx context.Context, key *edgeproto.CloudletKey) (*edgeproto.PlatformFeatures, error) {
+	return &edgeproto.PlatformFeatures{}, nil
+}
+
 func (s *DummyServer) GetCloudletResourceUsage(ctx context.Context, usage *edgeproto.CloudletResourceUsage) (*edgeproto.CloudletResourceUsage, error) {
 	return &edgeproto.CloudletResourceUsage{}, nil
 }

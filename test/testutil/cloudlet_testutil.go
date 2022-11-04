@@ -1344,6 +1344,17 @@ func (r *Run) CloudletApi_CloudletKey(data *[]edgeproto.CloudletKey, dataMap int
 				}
 				*outp = append(*outp, *out)
 			}
+		case "getcloudletplatformfeatures":
+			out, err := r.client.GetCloudletPlatformFeatures(r.ctx, obj)
+			if err != nil {
+				r.logErr(fmt.Sprintf("CloudletApi_CloudletKey[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[]edgeproto.PlatformFeatures)
+				if !ok {
+					panic(fmt.Sprintf("RunCloudletApi_CloudletKey expected dataOut type *[]edgeproto.PlatformFeatures, but was %T", dataOut))
+				}
+				*outp = append(*outp, *out)
+			}
 		case "showflavorsforcloudlet":
 			out, err := r.client.ShowFlavorsForCloudlet(r.ctx, obj)
 			if err != nil {
@@ -1998,6 +2009,18 @@ func (s *CliClient) GetCloudletManifest(ctx context.Context, in *edgeproto.Cloud
 	return &out, err
 }
 
+func (s *ApiClient) GetCloudletPlatformFeatures(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.PlatformFeatures, error) {
+	api := edgeproto.NewCloudletApiClient(s.Conn)
+	return api.GetCloudletPlatformFeatures(ctx, in)
+}
+
+func (s *CliClient) GetCloudletPlatformFeatures(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.PlatformFeatures, error) {
+	out := edgeproto.PlatformFeatures{}
+	args := append(s.BaseArgs, "controller", "GetCloudletPlatformFeatures")
+	err := wrapper.RunEdgectlObjs(args, in, &out, s.RunOps...)
+	return &out, err
+}
+
 func (s *ApiClient) GetCloudletProps(ctx context.Context, in *edgeproto.CloudletProps) (*edgeproto.CloudletProps, error) {
 	api := edgeproto.NewCloudletApiClient(s.Conn)
 	return api.GetCloudletProps(ctx, in)
@@ -2222,6 +2245,7 @@ type CloudletApiClient interface {
 	UpdateCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Result, error)
 	ShowCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Cloudlet, error)
 	GetCloudletManifest(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.CloudletManifest, error)
+	GetCloudletPlatformFeatures(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.PlatformFeatures, error)
 	GetCloudletProps(ctx context.Context, in *edgeproto.CloudletProps) (*edgeproto.CloudletProps, error)
 	GetCloudletResourceQuotaProps(ctx context.Context, in *edgeproto.CloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, error)
 	GetCloudletResourceUsage(ctx context.Context, in *edgeproto.CloudletResourceUsage) (*edgeproto.CloudletResourceUsage, error)

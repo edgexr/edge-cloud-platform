@@ -39,8 +39,8 @@ func (s *Platform) GetInitHAConditionalCompatibilityVersion(ctx context.Context)
 	return s.Xind.GetInitHAConditionalCompatibilityVersion(ctx)
 }
 
-func (s *Platform) GetFeatures() *platform.Features {
-	return &platform.Features{
+func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
+	return &edgeproto.PlatformFeatures{
 		SupportsMultiTenantCluster:   true,
 		CloudletServicesLocal:        true,
 		NoKubernetesClusterAutoScale: true,

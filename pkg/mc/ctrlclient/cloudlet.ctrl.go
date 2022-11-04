@@ -380,6 +380,17 @@ func GetCloudletManifestObj(ctx context.Context, rc *ormutil.RegionContext, obj 
 	return api.GetCloudletManifest(ctx, obj)
 }
 
+func GetCloudletPlatformFeaturesObj(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.CloudletKey, connObj ClientConnMgr) (*edgeproto.PlatformFeatures, error) {
+	conn, err := connObj.GetRegionConn(ctx, rc.Region)
+	if err != nil {
+		return nil, err
+	}
+	api := edgeproto.NewCloudletApiClient(conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
+	return api.GetCloudletPlatformFeatures(ctx, obj)
+}
+
 func GetCloudletPropsObj(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.CloudletProps, connObj ClientConnMgr) (*edgeproto.CloudletProps, error) {
 	conn, err := connObj.GetRegionConn(ctx, rc.Region)
 	if err != nil {

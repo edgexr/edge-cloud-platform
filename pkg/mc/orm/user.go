@@ -535,6 +535,44 @@ func VerifyEmail(c echo.Context) error {
 	return c.JSON(http.StatusOK, ormutil.Msg("email verified, thank you"))
 }
 
+// DeleteLockedUser allows a user to delete the account
+// they created if it is locked (because they can't login to
+// call the authenticated version of DeleteUser)
+func DeleteLockedUser(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	in := ormapi.User{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
+	if in.Name == "" && in.Email == "" {
+		return fmt.Errorf("Name or Email must be specified")
+	}
+	if in.Passhash == "" {
+		return fmt.Errorf("Please specify password in passhash")
+	}
+	user := ormapi.User{Name: in.Name}
+	db := loggedDB(ctx)
+	res := db.Where(&user).First(&user)
+	if res.RecordNotFound() {
+		// try look-up by email
+		user.Name = ""
+		user.Email = in.Email
+		res = db.Where(&user).First(&user)
+	}
+	err := res.Error
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "user lookup failed", "lookup", user, "err", err)
+		time.Sleep(BadAuthDelay)
+		return fmt.Errorf("Invalid username or password")
+	}
+	// validate password
+	err = checkLoginPassword(ctx, db, &user, in.Passhash)
+	if err != nil {
+		return err
+	}
+	return DeleteUserCommon(c, &user)
+}
+
 func DeleteUser(c echo.Context) error {
 	claims, err := getClaims(c)
 	if err != nil {
@@ -555,6 +593,11 @@ func DeleteUser(c echo.Context) error {
 			return err
 		}
 	}
+	return DeleteUserCommon(c, &user)
+}
+
+func DeleteUserCommon(c echo.Context, user *ormapi.User) error {
+	ctx := ormutil.GetContext(c)
 	if user.Name == Superuser {
 		return fmt.Errorf("Cannot delete superuser")
 	}

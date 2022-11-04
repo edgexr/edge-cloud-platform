@@ -307,6 +307,21 @@ var GetCloudletManifestCmd = &ApiCommand{
 	ProtobufApi:  true,
 }
 
+var GetCloudletPlatformFeaturesCmd = &ApiCommand{
+	Name:         "GetCloudletPlatformFeatures",
+	Use:          "getplatformfeatures",
+	Short:        "Get Cloudlet platform features",
+	RequiredArgs: "region " + strings.Join(CloudletKeyRequiredArgs, " "),
+	OptionalArgs: strings.Join(CloudletKeyOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletKeyAliasArgs, " "),
+	SpecialArgs:  &CloudletKeySpecialArgs,
+	Comments:     addRegionComment(CloudletKeyComments),
+	ReqData:      &ormapi.RegionCloudletKey{},
+	ReplyData:    &edgeproto.PlatformFeatures{},
+	Path:         "/auth/ctrl/GetCloudletPlatformFeatures",
+	ProtobufApi:  true,
+}
+
 var GetCloudletPropsCmd = &ApiCommand{
 	Name:         "GetCloudletProps",
 	Use:          "getprops",
@@ -514,6 +529,7 @@ var CloudletApiCmds = []*ApiCommand{
 	UpdateCloudletCmd,
 	ShowCloudletCmd,
 	GetCloudletManifestCmd,
+	GetCloudletPlatformFeaturesCmd,
 	GetCloudletPropsCmd,
 	GetCloudletResourceQuotaPropsCmd,
 	GetCloudletResourceUsageCmd,

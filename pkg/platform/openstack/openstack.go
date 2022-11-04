@@ -22,9 +22,9 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -38,13 +38,13 @@ func (o *OpenstackPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) 
 	o.VMProperties = vmProperties
 }
 
-func (o *OpenstackPlatform) GetFeatures() *platform.Features {
-	return &platform.Features{
+func (o *OpenstackPlatform) GetFeatures() *edgeproto.PlatformFeatures {
+	return &edgeproto.PlatformFeatures{
 		SupportsMultiTenantCluster:            true,
 		SupportsSharedVolume:                  true,
 		SupportsTrustPolicy:                   true,
 		SupportsAdditionalNetworks:            true,
-		SupportsPlatformHighAvailabilityOnK8s: true,
+		SupportsPlatformHighAvailabilityOnK8S: true,
 	}
 }
 

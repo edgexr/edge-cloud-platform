@@ -547,7 +547,7 @@ func (v *VMPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgep
 	return v.VMProvider.SaveCloudletAccessVars(ctx, cloudlet, accessVarsIn, pfConfig, vaultConfig, updateCallback)
 }
 
-func (v *VMPlatform) GetFeatures() *platform.Features {
+func (v *VMPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return v.VMProvider.GetFeatures()
 }
 

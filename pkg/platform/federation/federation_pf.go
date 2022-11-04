@@ -52,8 +52,8 @@ func (f *FederationPlatform) GetVersionProperties() map[string]string {
 }
 
 // Get platform features
-func (f *FederationPlatform) GetFeatures() *platform.Features {
-	return &platform.Features{
+func (f *FederationPlatform) GetFeatures() *edgeproto.PlatformFeatures {
+	return &edgeproto.PlatformFeatures{
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,
 	}
