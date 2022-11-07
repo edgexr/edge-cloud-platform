@@ -110,6 +110,7 @@ var RunCommandOptionalArgs = []string{
 	"federatedorg",
 	"clusterorg",
 	"containerid",
+	"edgeturnproxyaddr",
 }
 var RunConsoleRequiredArgs = []string{
 	"apporg",
@@ -122,6 +123,7 @@ var RunConsoleOptionalArgs = []string{
 	"cluster",
 	"federatedorg",
 	"clusterorg",
+	"edgeturnproxyaddr",
 }
 var ShowLogsRequiredArgs = []string{
 	"apporg",
@@ -139,6 +141,7 @@ var ShowLogsOptionalArgs = []string{
 	"tail",
 	"timestamps",
 	"follow",
+	"edgeturnproxyaddr",
 }
 var AccessCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -149,6 +152,7 @@ var AccessCloudletOptionalArgs = []string{
 	"command",
 	"nodetype",
 	"nodename",
+	"edgeturnproxyaddr",
 }
 var ExecRequestRequiredArgs = []string{
 	"apporg",
@@ -169,6 +173,7 @@ var ExecRequestOptionalArgs = []string{
 	"tail",
 	"timestamps",
 	"follow",
+	"edgeturnproxyaddr",
 }
 var ExecRequestAliasArgs = []string{
 	"apporg=execrequest.appinstkey.appkey.organization",
@@ -194,30 +199,32 @@ var ExecRequestAliasArgs = []string{
 	"timeout=execrequest.timeout",
 	"accessurl=execrequest.accessurl",
 	"edgeturnaddr=execrequest.edgeturnaddr",
+	"edgeturnproxyaddr=execrequest.edgeturnproxyaddr",
 }
 var ExecRequestComments = map[string]string{
-	"apporg":       "App developer organization",
-	"appname":      "App name",
-	"appvers":      "App version",
-	"cluster":      "Cluster name",
-	"cloudletorg":  "Organization of the cloudlet site",
-	"cloudlet":     "Name of the cloudlet",
-	"federatedorg": "Federated operator organization who shared this cloudlet",
-	"clusterorg":   "Name of Developer organization that this cluster belongs to",
-	"containerid":  "ContainerId is the name or ID of the target container, if applicable",
-	"offer":        "Offer",
-	"answer":       "Answer",
-	"err":          "Any error message",
-	"command":      "Command or Shell",
-	"nodetype":     "Type of Cloudlet Mgmt Node",
-	"nodename":     "Name of Cloudlet Mgmt Node",
-	"since":        "Show logs since either a duration ago (5s, 2m, 3h) or a timestamp (RFC3339)",
-	"tail":         "Show only a recent number of lines",
-	"timestamps":   "Show timestamps",
-	"follow":       "Stream data",
-	"console.url":  "VM Console URL",
-	"timeout":      "Timeout",
-	"accessurl":    "Access URL",
-	"edgeturnaddr": "EdgeTurn Server Address",
+	"apporg":            "App developer organization",
+	"appname":           "App name",
+	"appvers":           "App version",
+	"cluster":           "Cluster name",
+	"cloudletorg":       "Organization of the cloudlet site",
+	"cloudlet":          "Name of the cloudlet",
+	"federatedorg":      "Federated operator organization who shared this cloudlet",
+	"clusterorg":        "Name of Developer organization that this cluster belongs to",
+	"containerid":       "ContainerId is the name or ID of the target container, if applicable",
+	"offer":             "Offer",
+	"answer":            "Answer",
+	"err":               "Any error message",
+	"command":           "Command or Shell",
+	"nodetype":          "Type of Cloudlet Mgmt Node",
+	"nodename":          "Name of Cloudlet Mgmt Node",
+	"since":             "Show logs since either a duration ago (5s, 2m, 3h) or a timestamp (RFC3339)",
+	"tail":              "Show only a recent number of lines",
+	"timestamps":        "Show timestamps",
+	"follow":            "Stream data",
+	"console.url":       "VM Console URL",
+	"timeout":           "Timeout",
+	"accessurl":         "Access URL",
+	"edgeturnaddr":      "EdgeTurn Server Address",
+	"edgeturnproxyaddr": "EdgeTurn Proxy Address",
 }
 var ExecRequestSpecialArgs = map[string]string{}

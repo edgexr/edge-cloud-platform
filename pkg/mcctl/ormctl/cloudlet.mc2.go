@@ -307,18 +307,19 @@ var GetCloudletManifestCmd = &ApiCommand{
 	ProtobufApi:  true,
 }
 
-var GetCloudletPlatformFeaturesCmd = &ApiCommand{
-	Name:         "GetCloudletPlatformFeatures",
-	Use:          "getplatformfeatures",
-	Short:        "Get Cloudlet platform features",
-	RequiredArgs: "region " + strings.Join(CloudletKeyRequiredArgs, " "),
-	OptionalArgs: strings.Join(CloudletKeyOptionalArgs, " "),
-	AliasArgs:    strings.Join(CloudletKeyAliasArgs, " "),
-	SpecialArgs:  &CloudletKeySpecialArgs,
-	Comments:     addRegionComment(CloudletKeyComments),
-	ReqData:      &ormapi.RegionCloudletKey{},
+var ShowCloudletPlatformFeaturesCmd = &ApiCommand{
+	Name:         "ShowCloudletPlatformFeatures",
+	Use:          "showplatformfeatures",
+	Short:        "Show Cloudlet Platform Features. Shows platform specific features",
+	RequiredArgs: "region",
+	OptionalArgs: strings.Join(append(PlatformFeaturesRequiredArgs, PlatformFeaturesOptionalArgs...), " "),
+	AliasArgs:    strings.Join(PlatformFeaturesAliasArgs, " "),
+	SpecialArgs:  &PlatformFeaturesSpecialArgs,
+	Comments:     addRegionComment(PlatformFeaturesComments),
+	ReqData:      &ormapi.RegionPlatformFeatures{},
 	ReplyData:    &edgeproto.PlatformFeatures{},
-	Path:         "/auth/ctrl/GetCloudletPlatformFeatures",
+	Path:         "/auth/ctrl/ShowCloudletPlatformFeatures",
+	StreamOut:    true,
 	ProtobufApi:  true,
 }
 
@@ -529,7 +530,7 @@ var CloudletApiCmds = []*ApiCommand{
 	UpdateCloudletCmd,
 	ShowCloudletCmd,
 	GetCloudletManifestCmd,
-	GetCloudletPlatformFeaturesCmd,
+	ShowCloudletPlatformFeaturesCmd,
 	GetCloudletPropsCmd,
 	GetCloudletResourceQuotaPropsCmd,
 	GetCloudletResourceUsageCmd,
@@ -839,6 +840,68 @@ func init() {
 	AllApis.AddGroup(CloudletInfoGroup, "Manage CloudletInfos", CloudletInfoApiCmds)
 }
 
+var PlatformFeaturesRequiredArgs = []string{}
+var PlatformFeaturesOptionalArgs = []string{
+	"platformtype",
+	"supportsmultitenantcluster",
+	"supportssharedvolume",
+	"supportstrustpolicy",
+	"supportskubernetesonly",
+	"kubernetesrequiresworkernodes",
+	"cloudletserviceslocal",
+	"ipallocatedperservice",
+	"supportsimagetypeovf",
+	"isvmpool",
+	"isfake",
+	"supportsadditionalnetworks",
+	"issinglekubernetescluster",
+	"supportsappinstdedicatedip",
+	"supportsplatformhighavailabilityonk8s",
+	"supportsplatformhighavailabilityondocker",
+	"nokubernetesclusterautoscale",
+	"isprebuiltkubernetescluster",
+}
+var PlatformFeaturesAliasArgs = []string{
+	"platformtype=platformfeatures.platformtype",
+	"supportsmultitenantcluster=platformfeatures.supportsmultitenantcluster",
+	"supportssharedvolume=platformfeatures.supportssharedvolume",
+	"supportstrustpolicy=platformfeatures.supportstrustpolicy",
+	"supportskubernetesonly=platformfeatures.supportskubernetesonly",
+	"kubernetesrequiresworkernodes=platformfeatures.kubernetesrequiresworkernodes",
+	"cloudletserviceslocal=platformfeatures.cloudletserviceslocal",
+	"ipallocatedperservice=platformfeatures.ipallocatedperservice",
+	"supportsimagetypeovf=platformfeatures.supportsimagetypeovf",
+	"isvmpool=platformfeatures.isvmpool",
+	"isfake=platformfeatures.isfake",
+	"supportsadditionalnetworks=platformfeatures.supportsadditionalnetworks",
+	"issinglekubernetescluster=platformfeatures.issinglekubernetescluster",
+	"supportsappinstdedicatedip=platformfeatures.supportsappinstdedicatedip",
+	"supportsplatformhighavailabilityonk8s=platformfeatures.supportsplatformhighavailabilityonk8s",
+	"supportsplatformhighavailabilityondocker=platformfeatures.supportsplatformhighavailabilityondocker",
+	"nokubernetesclusterautoscale=platformfeatures.nokubernetesclusterautoscale",
+	"isprebuiltkubernetescluster=platformfeatures.isprebuiltkubernetescluster",
+}
+var PlatformFeaturesComments = map[string]string{
+	"platformtype":                             "Platform type, one of Fake, Dind, Openstack, Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd, K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool, K8SOperator",
+	"supportsmultitenantcluster":               "Platform supports multi tenant kubernetes clusters",
+	"supportssharedvolume":                     "Platform supports shared volumes",
+	"supportstrustpolicy":                      "Platform supports trust policies",
+	"supportskubernetesonly":                   "Platform only supports kubernetes deployments",
+	"kubernetesrequiresworkernodes":            "Kubernetes clusters requires worker nodes and cannot be master only",
+	"cloudletserviceslocal":                    "Cloudlet servicess run local to the controller",
+	"ipallocatedperservice":                    "Every kubernetes services gets a public IP (public cloud)",
+	"supportsimagetypeovf":                     "Platform supports OVF images for VM deployments",
+	"isvmpool":                                 "Platform is a a pool of pre-existing virtual machines",
+	"isfake":                                   "Platform is a fake platform for unit/e2e testing",
+	"supportsadditionalnetworks":               "Platform supports adding networks",
+	"issinglekubernetescluster":                "The entire platform is a single kubernetes cluster",
+	"supportsappinstdedicatedip":               "Platform supports per AppInst dedicated IPs",
+	"supportsplatformhighavailabilityonk8s":    "Supports high availability with two CRMs on kubernetes",
+	"supportsplatformhighavailabilityondocker": "Supports high availability with two CRMs on docker",
+	"nokubernetesclusterautoscale":             "No support for kubernetes cluster auto-scale",
+	"isprebuiltkubernetescluster":              "Kubernetes cluster is created externally and already exists",
+}
+var PlatformFeaturesSpecialArgs = map[string]string{}
 var CloudletResMapRequiredArgs = []string{
 	"cloudletorg",
 	"cloudlet",

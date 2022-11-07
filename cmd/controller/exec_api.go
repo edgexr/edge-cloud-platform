@@ -20,8 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
@@ -172,6 +172,7 @@ func (s *ExecApi) doExchange(ctx context.Context, req *edgeproto.ExecRequest) (*
 		return nil, fmt.Errorf("EdgeTurn server address is required to run commands")
 	}
 	req.EdgeTurnAddr = *edgeTurnAddr
+	req.EdgeTurnProxyAddr = *edgeTurnProxyAddr
 	reqId := ksuid.New()
 	req.Offer = reqId.String()
 	// Increase timeout, as for EdgeTurn based implemention,

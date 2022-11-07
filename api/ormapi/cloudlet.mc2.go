@@ -226,11 +226,31 @@ func (s *RegionCloudletKey) GetObjName() string {
 	return "CloudletKey"
 }
 
-// Request summary for GetCloudletPlatformFeatures
-// swagger:parameters GetCloudletPlatformFeatures
-type swaggerGetCloudletPlatformFeatures struct {
+// Request summary for ShowCloudletPlatformFeatures
+// swagger:parameters ShowCloudletPlatformFeatures
+type swaggerShowCloudletPlatformFeatures struct {
 	// in: body
-	Body RegionCloudletKey
+	Body RegionPlatformFeatures
+}
+
+type RegionPlatformFeatures struct {
+	// Region name
+	// required: true
+	Region string
+	// PlatformFeatures in region
+	PlatformFeatures edgeproto.PlatformFeatures
+}
+
+func (s *RegionPlatformFeatures) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionPlatformFeatures) GetObj() interface{} {
+	return &s.PlatformFeatures
+}
+
+func (s *RegionPlatformFeatures) GetObjName() string {
+	return "PlatformFeatures"
 }
 
 // Request summary for GetCloudletProps

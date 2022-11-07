@@ -959,8 +959,9 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/GetCloudletManifest", GetCloudletManifest)
-	// swagger:route POST /auth/ctrl/GetCloudletPlatformFeatures CloudletKey GetCloudletPlatformFeatures
-	// Get Cloudlet platform features.
+	// swagger:route POST /auth/ctrl/ShowCloudletPlatformFeatures PlatformFeatures ShowCloudletPlatformFeatures
+	// Show Cloudlet Platform Features.
+	//  Shows platform specific features
 	// Security:
 	//   Bearer:
 	// responses:
@@ -968,7 +969,7 @@ func addControllerApis(method string, group *echo.Group) {
 	//   400: badRequest
 	//   403: forbidden
 	//   404: notFound
-	group.Match([]string{method}, "/ctrl/GetCloudletPlatformFeatures", GetCloudletPlatformFeatures)
+	group.Match([]string{method}, "/ctrl/ShowCloudletPlatformFeatures", ShowCloudletPlatformFeatures)
 	// swagger:route POST /auth/ctrl/GetCloudletProps CloudletProps GetCloudletProps
 	// Get Cloudlet Properties.
 	//  Shows all the infra properties used to setup cloudlet

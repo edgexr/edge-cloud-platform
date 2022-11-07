@@ -884,20 +884,20 @@ func (s *Client) GetCloudletManifest(uri string, token string, in *ormapi.Region
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetCloudletPlatformFeatures(uri string, token string, in *ormapi.RegionCloudletKey) (*edgeproto.PlatformFeatures, int, error) {
+func (s *Client) ShowCloudletPlatformFeatures(uri string, token string, in *ormapi.RegionPlatformFeatures) ([]edgeproto.PlatformFeatures, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
-	var out edgeproto.PlatformFeatures
+	var out []edgeproto.PlatformFeatures
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("GetCloudletPlatformFeatures")
+	apiCmd := ormctl.MustGetCommand("ShowCloudletPlatformFeatures")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
 	}
-	return &out, rundata.RetStatus, rundata.RetError
+	return out, rundata.RetStatus, rundata.RetError
 }
 
 func (s *Client) GetCloudletProps(uri string, token string, in *ormapi.RegionCloudletProps) (*edgeproto.CloudletProps, int, error) {
