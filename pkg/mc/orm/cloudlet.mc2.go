@@ -605,7 +605,7 @@ func GetCloudletManifest(c echo.Context) error {
 	return ormutil.SetReply(c, resp)
 }
 
-func GetCloudletPlatformFeatures(c echo.Context) error {
+func ShowCloudletPlatformFeatures(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
@@ -614,7 +614,7 @@ func GetCloudletPlatformFeatures(c echo.Context) error {
 	}
 	rc.Username = claims.Username
 
-	in := ormapi.RegionCloudletKey{}
+	in := ormapi.RegionPlatformFeatures{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
@@ -624,23 +624,18 @@ func GetCloudletPlatformFeatures(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 
-	obj := &in.CloudletKey
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if !rc.SkipAuthz {
-		if err := authorized(ctx, rc.Username, "",
-			ResourceCloudlets, ActionView); err != nil {
-			return err
-		}
-	}
+	obj := &in.PlatformFeatures
 
-	resp, err := ctrlclient.GetCloudletPlatformFeaturesObj(ctx, rc, obj, connCache)
+	cb := func(res *edgeproto.PlatformFeatures) error {
+		payload := ormapi.StreamPayload{}
+		payload.Data = res
+		return WriteStream(c, &payload)
+	}
+	err = ctrlclient.ShowCloudletPlatformFeaturesStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			err = fmt.Errorf("%s", st.Message())
-		}
 		return err
 	}
-	return ormutil.SetReply(c, resp)
+	return nil
 }
 
 func GetCloudletProps(c echo.Context) error {

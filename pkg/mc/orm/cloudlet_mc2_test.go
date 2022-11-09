@@ -563,27 +563,27 @@ func badRegionGetCloudletManifest(t *testing.T, mcClient *mctestclient.Client, u
 
 var _ = edgeproto.GetFields
 
-func badPermGetCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
-	_, status, err := testutil.TestPermGetCloudletPlatformFeatures(mcClient, uri, token, region, org, modFuncs...)
+func badPermShowCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PlatformFeatures)) {
+	_, status, err := testutil.TestPermShowCloudletPlatformFeatures(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badGetCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.CloudletKey)) {
-	_, st, err := testutil.TestPermGetCloudletPlatformFeatures(mcClient, uri, token, region, org, modFuncs...)
+func badShowCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.PlatformFeatures)) {
+	_, st, err := testutil.TestPermShowCloudletPlatformFeatures(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermGetCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
-	_, status, err := testutil.TestPermGetCloudletPlatformFeatures(mcClient, uri, token, region, org, modFuncs...)
+func goodPermShowCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PlatformFeatures)) {
+	_, status, err := testutil.TestPermShowCloudletPlatformFeatures(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
-func badRegionGetCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
-	out, status, err := testutil.TestPermGetCloudletPlatformFeatures(mcClient, uri, token, "bad region", org, modFuncs...)
+func badRegionShowCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.PlatformFeatures)) {
+	out, status, err := testutil.TestPermShowCloudletPlatformFeatures(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	if err.Error() == "Forbidden" {
 		require.Equal(t, http.StatusForbidden, status)
@@ -591,7 +591,7 @@ func badRegionGetCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.C
 		require.Contains(t, err.Error(), "\"bad region\" not found")
 		require.Equal(t, http.StatusBadRequest, status)
 	}
-	_ = out
+	require.Equal(t, 0, len(out))
 }
 
 var _ = edgeproto.GetFields
@@ -1106,7 +1106,6 @@ func permTestCloudletAllianceOrg(t *testing.T, mcClient *mctestclient.Client, ur
 // an organization that the user does not have permissions for.
 func badPermTestCloudletApiCloudletKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
 	badPermGetCloudletManifest(t, mcClient, uri, token, region, org, modFuncs...)
-	badPermGetCloudletPlatformFeatures(t, mcClient, uri, token, region, org, modFuncs...)
 	badPermShowFlavorsForCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
 	badPermGetOrganizationsOnCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
 	badPermRevokeAccessKey(t, mcClient, uri, token, region, org, modFuncs...)
@@ -1118,7 +1117,6 @@ func badPermTestCloudletApiCloudletKey(t *testing.T, mcClient *mctestclient.Clie
 // an organization that the user has permissions for.
 func goodPermTestCloudletApiCloudletKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.CloudletKey)) {
 	goodPermGetCloudletManifest(t, mcClient, uri, token, region, org, modFuncs...)
-	goodPermGetCloudletPlatformFeatures(t, mcClient, uri, token, region, org, modFuncs...)
 	goodPermShowFlavorsForCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
 	goodPermGetOrganizationsOnCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
 	goodPermRevokeAccessKey(t, mcClient, uri, token, region, org, modFuncs...)
@@ -1126,7 +1124,6 @@ func goodPermTestCloudletApiCloudletKey(t *testing.T, mcClient *mctestclient.Cli
 	goodPermGetCloudletGPUDriverLicenseConfig(t, mcClient, uri, token, region, org, modFuncs...)
 	// make sure region check works
 	badRegionGetCloudletManifest(t, mcClient, uri, token, org, modFuncs...)
-	badRegionGetCloudletPlatformFeatures(t, mcClient, uri, token, org, modFuncs...)
 	badRegionShowFlavorsForCloudlet(t, mcClient, uri, token, org, modFuncs...)
 	badRegionGetOrganizationsOnCloudlet(t, mcClient, uri, token, org, modFuncs...)
 	badRegionRevokeAccessKey(t, mcClient, uri, token, org, modFuncs...)
@@ -1265,6 +1262,43 @@ func permTestFlavorMatch(t *testing.T, mcClient *mctestclient.Client, uri, token
 	badPermTestFlavorMatch(t, mcClient, uri, token2, region, org1, modFuncs...)
 	goodPermTestFlavorMatch(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
 	goodPermTestFlavorMatch(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}
+
+func badPermTestShowPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowCloudletPlatformFeatures(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list0))
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.PlatformFeatures)) {
+	goodPermTestShowPlatformFeatures(t, mcClient, uri, token, region, org, showcount)
+	// make sure region check works
+}
+func goodPermTestShowPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowCloudletPlatformFeatures(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, count, len(list0))
+
+	badRegionShowCloudletPlatformFeatures(t, mcClient, uri, token, org)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.PlatformFeatures)) {
+	badPermTestShowPlatformFeatures(t, mcClient, uri, token1, region, org2)
+	badPermTestShowPlatformFeatures(t, mcClient, uri, token2, region, org1)
+	goodPermTestPlatformFeatures(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestPlatformFeatures(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }
 
 var _ = edgeproto.GetFields

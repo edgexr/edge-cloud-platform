@@ -2123,17 +2123,42 @@ func (s *CloudletApi) GetCloudletProps(ctx context.Context, in *edgeproto.Cloudl
 	return cloudletPlatform.GetCloudletProps(ctx)
 }
 
-func (s *CloudletApi) GetCloudletPlatformFeatures(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.PlatformFeatures, error) {
-	cloudlet := &edgeproto.Cloudlet{}
-	if !s.all.cloudletApi.cache.Get(in, cloudlet) {
-		return nil, in.NotFoundError()
+func (s *CloudletApi) ShowCloudletPlatformFeatures(in *edgeproto.PlatformFeatures, cb edgeproto.CloudletApi_ShowCloudletPlatformFeaturesServer) error {
+	ctx := cb.Context()
+	platforms := []edgeproto.PlatformType{}
+	if in.PlatformType != 0 {
+		// unfortunately 0 is fake, so no way to specify
+		// showing only fake platform features.
+		platforms = append(platforms, in.PlatformType)
+	} else {
+		// only show features for registered cloudlets
+		pmap := map[edgeproto.PlatformType]struct{}{}
+		err := s.cache.Show(&edgeproto.Cloudlet{}, func(obj *edgeproto.Cloudlet) error {
+			pmap[obj.PlatformType] = struct{}{}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+		for p, _ := range pmap {
+			platforms = append(platforms, p)
+		}
+		sort.Slice(platforms, func(i, j int) bool {
+			return int(platforms[i]) < int(platforms[j])
+		})
 	}
-
-	features, err := GetCloudletFeatures(ctx, cloudlet.PlatformType)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get features for platform: %s", err)
+	for _, p := range platforms {
+		features, err := GetCloudletFeatures(ctx, p)
+		if err != nil {
+			return err
+		}
+		features.PlatformType = p
+		err = cb.Send(features)
+		if err != nil {
+			return err
+		}
 	}
-	return features, nil
+	return nil
 }
 
 func GetCloudletFeatures(ctx context.Context, platformType edgeproto.PlatformType) (*edgeproto.PlatformFeatures, error) {

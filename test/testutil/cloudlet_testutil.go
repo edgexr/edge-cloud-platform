@@ -1344,17 +1344,6 @@ func (r *Run) CloudletApi_CloudletKey(data *[]edgeproto.CloudletKey, dataMap int
 				}
 				*outp = append(*outp, *out)
 			}
-		case "getcloudletplatformfeatures":
-			out, err := r.client.GetCloudletPlatformFeatures(r.ctx, obj)
-			if err != nil {
-				r.logErr(fmt.Sprintf("CloudletApi_CloudletKey[%d]", ii), err)
-			} else {
-				outp, ok := dataOut.(*[]edgeproto.PlatformFeatures)
-				if !ok {
-					panic(fmt.Sprintf("RunCloudletApi_CloudletKey expected dataOut type *[]edgeproto.PlatformFeatures, but was %T", dataOut))
-				}
-				*outp = append(*outp, *out)
-			}
 		case "showflavorsforcloudlet":
 			out, err := r.client.ShowFlavorsForCloudlet(r.ctx, obj)
 			if err != nil {
@@ -1524,6 +1513,40 @@ func (r *Run) CloudletApi_FlavorMatch(data *[]edgeproto.FlavorMatch, dataMap int
 					panic(fmt.Sprintf("RunCloudletApi_FlavorMatch expected dataOut type *[]edgeproto.FlavorMatch, but was %T", dataOut))
 				}
 				*outp = append(*outp, *out)
+			}
+		}
+	}
+}
+
+func (r *Run) CloudletApi_PlatformFeatures(data *[]edgeproto.PlatformFeatures, dataMap interface{}, dataOut interface{}) {
+	log.DebugLog(log.DebugLevelApi, "API for PlatformFeatures", "mode", r.Mode)
+	if r.Mode == "show" {
+		obj := &edgeproto.PlatformFeatures{}
+		out, err := r.client.ShowCloudletPlatformFeatures(r.ctx, obj)
+		if err != nil {
+			r.logErr("CloudletApi_PlatformFeatures", err)
+		} else {
+			outp, ok := dataOut.(*[]edgeproto.PlatformFeatures)
+			if !ok {
+				panic(fmt.Sprintf("RunCloudletApi_PlatformFeatures expected dataOut type *[]edgeproto.PlatformFeatures, but was %T", dataOut))
+			}
+			*outp = append(*outp, out...)
+		}
+		return
+	}
+	for ii, objD := range *data {
+		obj := &objD
+		switch r.Mode {
+		case "showfiltered":
+			out, err := r.client.ShowCloudletPlatformFeatures(r.ctx, obj)
+			if err != nil {
+				r.logErr(fmt.Sprintf("CloudletApi_PlatformFeatures[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[]edgeproto.PlatformFeatures)
+				if !ok {
+					panic(fmt.Sprintf("RunCloudletApi_PlatformFeatures expected dataOut type *[]edgeproto.PlatformFeatures, but was %T", dataOut))
+				}
+				*outp = append(*outp, out...)
 			}
 		}
 	}
@@ -2009,16 +2032,39 @@ func (s *CliClient) GetCloudletManifest(ctx context.Context, in *edgeproto.Cloud
 	return &out, err
 }
 
-func (s *ApiClient) GetCloudletPlatformFeatures(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.PlatformFeatures, error) {
-	api := edgeproto.NewCloudletApiClient(s.Conn)
-	return api.GetCloudletPlatformFeatures(ctx, in)
+type PlatformFeaturesStream interface {
+	Recv() (*edgeproto.PlatformFeatures, error)
 }
 
-func (s *CliClient) GetCloudletPlatformFeatures(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.PlatformFeatures, error) {
-	out := edgeproto.PlatformFeatures{}
-	args := append(s.BaseArgs, "controller", "GetCloudletPlatformFeatures")
-	err := wrapper.RunEdgectlObjs(args, in, &out, s.RunOps...)
-	return &out, err
+func PlatformFeaturesReadStream(stream PlatformFeaturesStream) ([]edgeproto.PlatformFeatures, error) {
+	output := []edgeproto.PlatformFeatures{}
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return output, fmt.Errorf("read PlatformFeatures stream failed, %v", err)
+		}
+		output = append(output, *obj)
+	}
+	return output, nil
+}
+
+func (s *ApiClient) ShowCloudletPlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) ([]edgeproto.PlatformFeatures, error) {
+	api := edgeproto.NewCloudletApiClient(s.Conn)
+	stream, err := api.ShowCloudletPlatformFeatures(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return PlatformFeaturesReadStream(stream)
+}
+
+func (s *CliClient) ShowCloudletPlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) ([]edgeproto.PlatformFeatures, error) {
+	output := []edgeproto.PlatformFeatures{}
+	args := append(s.BaseArgs, "controller", "ShowCloudletPlatformFeatures")
+	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
+	return output, err
 }
 
 func (s *ApiClient) GetCloudletProps(ctx context.Context, in *edgeproto.CloudletProps) (*edgeproto.CloudletProps, error) {
@@ -2245,7 +2291,7 @@ type CloudletApiClient interface {
 	UpdateCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Result, error)
 	ShowCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Cloudlet, error)
 	GetCloudletManifest(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.CloudletManifest, error)
-	GetCloudletPlatformFeatures(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.PlatformFeatures, error)
+	ShowCloudletPlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) ([]edgeproto.PlatformFeatures, error)
 	GetCloudletProps(ctx context.Context, in *edgeproto.CloudletProps) (*edgeproto.CloudletProps, error)
 	GetCloudletResourceQuotaProps(ctx context.Context, in *edgeproto.CloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, error)
 	GetCloudletResourceUsage(ctx context.Context, in *edgeproto.CloudletResourceUsage) (*edgeproto.CloudletResourceUsage, error)

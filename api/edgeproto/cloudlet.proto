@@ -197,40 +197,42 @@ enum PlatformType {
 // PlatformFeatures are characteristics and supported
 // features of a platform type.
 message PlatformFeatures {
+  // Platform type
+  PlatformType platform_type = 1;
   // Platform supports multi tenant kubernetes clusters
-  bool supports_multi_tenant_cluster = 1;
+  bool supports_multi_tenant_cluster = 2;
   // Platform supports shared volumes
-  bool supports_shared_volume = 2;
+  bool supports_shared_volume = 3;
   // Platform supports trust policies
-  bool supports_trust_policy = 3;
+  bool supports_trust_policy = 4;
   // Platform only supports kubernetes deployments
-  bool supports_kubernetes_only = 4;
+  bool supports_kubernetes_only = 5;
   // Kubernetes clusters requires worker nodes and cannot be master only
-  bool kubernetes_requires_worker_nodes = 5;
+  bool kubernetes_requires_worker_nodes = 6;
   // Cloudlet servicess run local to the controller
-  bool cloudlet_services_local = 6;
+  bool cloudlet_services_local = 7;
   // Every kubernetes services gets a public IP (public cloud)
-  bool ip_allocated_per_service = 7;
+  bool ip_allocated_per_service = 8;
   // Platform supports OVF images for VM deployments
-  bool supports_image_type_ovf = 8;
+  bool supports_image_type_ovf = 9;
   // Platform is a a pool of pre-existing virtual machines
-  bool is_vm_pool = 9;
+  bool is_vm_pool = 10;
   // Platform is a fake platform for unit/e2e testing
-  bool is_fake = 10;
+  bool is_fake = 11;
   // Platform supports adding networks
-  bool supports_additional_networks = 11;
+  bool supports_additional_networks = 12;
   // The entire platform is a single kubernetes cluster
-  bool is_single_kubernetes_cluster = 12;
+  bool is_single_kubernetes_cluster = 13;
   // Platform supports per AppInst dedicated IPs
-  bool supports_app_inst_dedicated_ip = 13;
+  bool supports_app_inst_dedicated_ip = 14;
   // Supports high availability with two CRMs on kubernetes
-  bool supports_platform_high_availability_on_k8s = 14;
+  bool supports_platform_high_availability_on_k8s = 15;
   // Supports high availability with two CRMs on docker
-  bool supports_platform_high_availability_on_docker = 15;
+  bool supports_platform_high_availability_on_docker = 16;
   // No support for kubernetes cluster auto-scale
-  bool no_kubernetes_cluster_auto_scale = 16;
+  bool no_kubernetes_cluster_auto_scale = 17;
   // Kubernetes cluster is created externally and already exists
-  bool is_prebuilt_kubernetes_cluster = 17;
+  bool is_prebuilt_kubernetes_cluster = 18;
 }
 
 // Optional resource input consists of a resource specifier and clouldkey name
@@ -738,13 +740,13 @@ service CloudletApi {
     };
     option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Organization";
   }
-  // Get Cloudlet platform features
-  rpc GetCloudletPlatformFeatures(CloudletKey) returns (PlatformFeatures) {
+  // Show Cloudlet Platform Features. Shows platform specific features
+  rpc ShowCloudletPlatformFeatures(PlatformFeatures) returns (stream PlatformFeatures) {
     option (google.api.http) = {
-      post: "/get/cloudlet/platformfeatures"
+      post: "/show/cloudletplatformfeatures"
       body: "*"
     };
-    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,";
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,skipenforce";
   }
   // Get Cloudlet Properties. Shows all the infra properties used to setup cloudlet
   rpc GetCloudletProps(CloudletProps) returns (CloudletProps) {

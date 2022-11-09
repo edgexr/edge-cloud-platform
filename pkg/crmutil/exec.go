@@ -24,9 +24,9 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -253,6 +253,9 @@ func (cd *ControllerData) ProcessExecReq(ctx context.Context, req *edgeproto.Exe
 	if req.EdgeTurnAddr == "" {
 		return fmt.Errorf("no edgeturn server address specified")
 	}
+	if req.EdgeTurnProxyAddr == "" {
+		return fmt.Errorf("no edgeturn proxy address specified")
+	}
 
 	tlsConfig, err := cd.NodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		cd.NodeMgr.CommonName(),
@@ -287,11 +290,6 @@ func (cd *ControllerData) ProcessExecReq(ctx context.Context, req *edgeproto.Exe
 		return fmt.Errorf("failed to decode session info: %v", err)
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "received session info from edgeturn server", "info", sessInfo)
-
-	turnAddrParts := strings.Split(req.EdgeTurnAddr, ":")
-	if len(turnAddrParts) != 2 {
-		return fmt.Errorf("invalid edgeturn Addr: %s", req.EdgeTurnAddr)
-	}
 
 	replySent := false
 	// if ExecRequest reply is already sent, we can't send any error back to the
@@ -337,7 +335,7 @@ func (cd *ControllerData) ProcessExecReq(ctx context.Context, req *edgeproto.Exe
 		server.Close()
 		defer sess.Close()
 		// Notify controller that connection is setup
-		proxyAddr := "https://" + turnAddrParts[0] + ":" + sessInfo.AccessPort + "/edgeconsole?edgetoken=" + sessInfo.Token
+		proxyAddr := "https://" + req.EdgeTurnProxyAddr + "/edgeconsole?edgetoken=" + sessInfo.Token
 		req.AccessUrl = proxyAddr
 		cd.ExecReqSend.Update(ctx, req)
 		replySent = true
@@ -388,7 +386,7 @@ func (cd *ControllerData) ProcessExecReq(ctx context.Context, req *edgeproto.Exe
 			}(server, stream)
 		}
 	} else {
-		proxyAddr := "wss://" + turnAddrParts[0] + ":" + sessInfo.AccessPort + "/edgeshell?edgetoken=" + sessInfo.Token
+		proxyAddr := "wss://" + req.EdgeTurnProxyAddr + "/edgeshell?edgetoken=" + sessInfo.Token
 		req.AccessUrl = proxyAddr
 		cd.ExecReqSend.Update(ctx, req)
 		replySent = true

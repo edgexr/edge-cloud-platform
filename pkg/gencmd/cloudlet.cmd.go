@@ -1146,56 +1146,75 @@ func GetCloudletManifests(c *cli.Command, data []edgeproto.CloudletKey, err *err
 	}
 }
 
-var GetCloudletPlatformFeaturesCmd = &cli.Command{
-	Use:          "GetCloudletPlatformFeatures",
-	RequiredArgs: strings.Join(CloudletKeyRequiredArgs, " "),
-	OptionalArgs: strings.Join(CloudletKeyOptionalArgs, " "),
-	AliasArgs:    strings.Join(CloudletKeyAliasArgs, " "),
-	SpecialArgs:  &CloudletKeySpecialArgs,
-	Comments:     CloudletKeyComments,
-	ReqData:      &edgeproto.CloudletKey{},
+var ShowCloudletPlatformFeaturesCmd = &cli.Command{
+	Use:          "ShowCloudletPlatformFeatures",
+	OptionalArgs: strings.Join(append(PlatformFeaturesRequiredArgs, PlatformFeaturesOptionalArgs...), " "),
+	AliasArgs:    strings.Join(PlatformFeaturesAliasArgs, " "),
+	SpecialArgs:  &PlatformFeaturesSpecialArgs,
+	Comments:     PlatformFeaturesComments,
+	ReqData:      &edgeproto.PlatformFeatures{},
 	ReplyData:    &edgeproto.PlatformFeatures{},
-	Run:          runGetCloudletPlatformFeatures,
+	Run:          runShowCloudletPlatformFeatures,
 }
 
-func runGetCloudletPlatformFeatures(c *cli.Command, args []string) error {
+func runShowCloudletPlatformFeatures(c *cli.Command, args []string) error {
 	if cli.SilenceUsage {
 		c.CobraCmd.SilenceUsage = true
 	}
-	obj := c.ReqData.(*edgeproto.CloudletKey)
+	obj := c.ReqData.(*edgeproto.PlatformFeatures)
 	_, err := c.ParseInput(args)
 	if err != nil {
 		return err
 	}
-	return GetCloudletPlatformFeatures(c, obj)
+	return ShowCloudletPlatformFeatures(c, obj)
 }
 
-func GetCloudletPlatformFeatures(c *cli.Command, in *edgeproto.CloudletKey) error {
+func ShowCloudletPlatformFeatures(c *cli.Command, in *edgeproto.PlatformFeatures) error {
 	if CloudletApiCmd == nil {
 		return fmt.Errorf("CloudletApi client not initialized")
 	}
 	ctx := context.Background()
-	obj, err := CloudletApiCmd.GetCloudletPlatformFeatures(ctx, in)
+	stream, err := CloudletApiCmd.ShowCloudletPlatformFeatures(ctx, in)
 	if err != nil {
 		errstr := err.Error()
 		st, ok := status.FromError(err)
 		if ok {
 			errstr = st.Message()
 		}
-		return fmt.Errorf("GetCloudletPlatformFeatures failed: %s", errstr)
+		return fmt.Errorf("ShowCloudletPlatformFeatures failed: %s", errstr)
 	}
-	c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
+
+	objs := make([]*edgeproto.PlatformFeatures, 0)
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errstr := err.Error()
+			st, ok := status.FromError(err)
+			if ok {
+				errstr = st.Message()
+			}
+			return fmt.Errorf("ShowCloudletPlatformFeatures recv failed: %s", errstr)
+		}
+		objs = append(objs, obj)
+	}
+	if len(objs) == 0 {
+		return nil
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), objs, cli.OutputFormat)
 	return nil
 }
 
 // this supports "Create" and "Delete" commands on ApplicationData
-func GetCloudletPlatformFeaturess(c *cli.Command, data []edgeproto.CloudletKey, err *error) {
+func ShowCloudletPlatformFeaturess(c *cli.Command, data []edgeproto.PlatformFeatures, err *error) {
 	if *err != nil {
 		return
 	}
 	for ii, _ := range data {
-		fmt.Printf("GetCloudletPlatformFeatures %v\n", data[ii])
-		myerr := GetCloudletPlatformFeatures(c, &data[ii])
+		fmt.Printf("ShowCloudletPlatformFeatures %v\n", data[ii])
+		myerr := ShowCloudletPlatformFeatures(c, &data[ii])
 		if myerr != nil {
 			*err = myerr
 			break
@@ -2075,7 +2094,7 @@ var CloudletApiCmds = []*cobra.Command{
 	UpdateCloudletCmd.GenCmd(),
 	ShowCloudletCmd.GenCmd(),
 	GetCloudletManifestCmd.GenCmd(),
-	GetCloudletPlatformFeaturesCmd.GenCmd(),
+	ShowCloudletPlatformFeaturesCmd.GenCmd(),
 	GetCloudletPropsCmd.GenCmd(),
 	GetCloudletResourceQuotaPropsCmd.GenCmd(),
 	GetCloudletResourceUsageCmd.GenCmd(),
@@ -2482,6 +2501,7 @@ var FederationConfigComments = map[string]string{
 var FederationConfigSpecialArgs = map[string]string{}
 var PlatformFeaturesRequiredArgs = []string{}
 var PlatformFeaturesOptionalArgs = []string{
+	"platformtype",
 	"supportsmultitenantcluster",
 	"supportssharedvolume",
 	"supportstrustpolicy",
@@ -2502,6 +2522,7 @@ var PlatformFeaturesOptionalArgs = []string{
 }
 var PlatformFeaturesAliasArgs = []string{}
 var PlatformFeaturesComments = map[string]string{
+	"platformtype":                             "Platform type, one of Fake, Dind, Openstack, Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd, K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool, K8SOperator",
 	"supportsmultitenantcluster":               "Platform supports multi tenant kubernetes clusters",
 	"supportssharedvolume":                     "Platform supports shared volumes",
 	"supportstrustpolicy":                      "Platform supports trust policies",
