@@ -105,8 +105,8 @@ func (p *PartnerApi) lookupProvider(c echo.Context, federationContextId Federati
 	}
 	ctx := ormutil.GetContext(c)
 	db := p.loggedDB(ctx)
-	// claims.Username has the info to lookup provider
-	typ, id, err := federationmgmt.ParseFedKeyUser(claims.Username)
+	// claims.ApiKeyUsername has the info to lookup provider
+	typ, id, err := federationmgmt.ParseFedKeyUser(claims.ApiKeyUsername)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (p *PartnerApi) lookupProvider(c echo.Context, federationContextId Federati
 	}
 	res := db.Where(&provider).First(&provider)
 	if res.RecordNotFound() {
-		return nil, fmt.Errorf("federation provider %q not found", claims.Username)
+		return nil, fmt.Errorf("federation provider %q not found", claims.ApiKeyUsername)
 	}
 	if res.Error != nil {
 		return nil, ormutil.DbErr(res.Error)
@@ -137,8 +137,8 @@ func (p *PartnerApi) lookupConsumer(c echo.Context, federationContextId Federati
 	}
 	ctx := ormutil.GetContext(c)
 	db := p.loggedDB(ctx)
-	// claims.Username has the info to lookup consumer
-	typ, id, err := federationmgmt.ParseFedKeyUser(claims.Username)
+	// claims.ApiKeyUsername has the info to lookup consumer
+	typ, id, err := federationmgmt.ParseFedKeyUser(claims.ApiKeyUsername)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (p *PartnerApi) lookupConsumer(c echo.Context, federationContextId Federati
 	}
 	res := db.Where(&consumer).First(&consumer)
 	if res.RecordNotFound() {
-		return nil, fmt.Errorf("federation consumer %q not found", claims.Username)
+		return nil, fmt.Errorf("federation consumer %q not found", claims.ApiKeyUsername)
 	}
 	if res.Error != nil {
 		return nil, ormutil.DbErr(res.Error)

@@ -50,6 +50,7 @@ const ResourceConfig = "config"
 const ResourceAlert = "alert"
 const ResourceDeveloperPolicy = "developerpolicy"
 const ResourceResTagTable = "restagtbl"
+const ResourceArtifacts = "artifacts"
 
 const ApiKeyRoleSuffix = "-role"
 
@@ -62,6 +63,7 @@ var DeveloperResources = []string{
 	ResourceClusterAnalytics,
 	ResourceDeveloperPolicy,
 	ResourceAlert,
+	ResourceArtifacts,
 }
 var OperatorResources = []string{
 	ResourceCloudlets,

@@ -380,6 +380,15 @@ type Role struct {
 	Role string `form:"role" json:"role"`
 }
 
+type AuthScope struct {
+	// Organization name
+	Org string `form:"org" json:"org"`
+	// Resource defines a resource to act upon
+	Resource string `json:"resource"`
+	// Action defines what type of action can be performed on a resource
+	Action string `json:"action"`
+}
+
 type OrgCloudlet struct {
 	// Region name
 	Region string `json:"region,omitempty"`
@@ -404,9 +413,9 @@ type UserLogin struct {
 	Password string `form:"password" json:"password"`
 	// Temporary one-time password if 2-factor authentication is enabled
 	TOTP string `form:"totp" json:"totp"`
-	// API key ID if logging in using API key
+	// (deprecated) Use username field for ApiKeyId
 	ApiKeyId string `form:"apikeyid" json:"apikeyid"`
-	// API key if logging in using API key
+	// (deprecated) Use password field for ApiKey
 	ApiKey string `form:"apikey" json:"apikey"`
 }
 

@@ -176,6 +176,12 @@ var RoleComments = map[string]string{
 	"role":     `Role which defines the set of permissions`,
 }
 
+var AuthScopeComments = map[string]string{
+	"org":      `Organization name`,
+	"resource": `Resource defines a resource to act upon`,
+	"action":   `Action defines what type of action can be performed on a resource`,
+}
+
 var OrgCloudletComments = map[string]string{
 	"region": `Region name`,
 	"org":    `Org that has permissions for cloudlets`,
@@ -206,8 +212,8 @@ var UserLoginComments = map[string]string{
 	"username": `User's name or email address`,
 	"password": `User's password`,
 	"totp":     `Temporary one-time password if 2-factor authentication is enabled`,
-	"apikeyid": `API key ID if logging in using API key`,
-	"apikey":   `API key if logging in using API key`,
+	"apikeyid": `(deprecated) Use username field for ApiKeyId`,
+	"apikey":   `(deprecated) Use password field for ApiKey`,
 }
 
 var NewPasswordComments = map[string]string{

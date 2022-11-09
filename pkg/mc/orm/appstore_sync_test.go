@@ -27,6 +27,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
@@ -167,9 +168,11 @@ func TestAppStoreApi(t *testing.T) {
 	_, vroles, vaultCleanup := testutil.NewVaultTestCluster(t, &vp)
 	os.Setenv("VAULT_ROLE_ID", vroles.MCRoleID)
 	os.Setenv("VAULT_SECRET_ID", vroles.MCSecretID)
+	os.Setenv("E2ETEST_TLS", "true")
 	defer func() {
 		os.Unsetenv("VAULT_ROLE_ID")
 		os.Unsetenv("VAULT_SECRET_ID")
+		os.Unsetenv("E2ETEST_TLS")
 		vaultCleanup()
 	}()
 
@@ -213,6 +216,7 @@ func TestAppStoreApi(t *testing.T) {
 		VerifyEmailConsolePath:   "#/verify",
 		testTransport:            mockTransport,
 		HTTPCookieDomain:         domain,
+		VmRegistryAddr:           addr,
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
@@ -391,6 +395,8 @@ func TestAppStoreApi(t *testing.T) {
 	rtf.verifyCount(t, append(testEntries, missingEntries...), MCObj)
 	hm.verifyCount(t, append(testEntries, missingEntries...), MCObj)
 
+	verifyVmRegistryApiKey(t, ctx, &config, mcClient, uri)
+
 	// Delete MC created Objects
 	for _, v := range testEntries {
 		mcClientDelete(t, v, mcClient, uri, tokenAdmin)
@@ -410,6 +416,7 @@ func TestAppStoreApi(t *testing.T) {
 	rtf.verifyEmpty(t)
 	gm.verifyEmpty(t)
 	hm.verifyEmpty(t)
+
 }
 
 func mcClientCreate(t *testing.T, v entry, mcClient *mctestclient.Client, uri string) {
@@ -478,4 +485,83 @@ func waitSyncCount(t *testing.T, sync *AppStoreSync, count int64) {
 		fmt.Println(string(buf[:len]))
 	}
 	require.True(t, sync.count == count, fmt.Sprintf("sync count %d != expected %d", sync.count, count))
+}
+
+func verifyVmRegistryApiKey(t *testing.T, ctx context.Context, serverConfig *ServerConfig, mcClient *mctestclient.Client, uri string) {
+	// verify vm registry api key
+	auth, err := cloudcommon.GetRegistryAuth(ctx, serverConfig.VmRegistryAddr, serverConfig.vaultConfig)
+	require.Nil(t, err)
+	require.Equal(t, cloudcommon.BasicAuth, auth.AuthType)
+	require.NotEmpty(t, auth.Username)
+	require.NotEmpty(t, auth.Password)
+	// login
+	token, _, err := mcClient.DoLogin(uri, auth.Username, auth.Password, NoOTP, NoApiKeyId, NoApiKey)
+	require.Nil(t, err)
+	// check auth scopes
+	scopes, status, err := mcClient.AuthScopes(uri, token)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, []ormapi.AuthScope{{
+		Resource: ResourceArtifacts,
+		Action:   ActionManage,
+	}, {
+		Resource: ResourceArtifacts,
+		Action:   ActionView,
+	}}, scopes)
+	// verify authorization
+	scope := ormapi.AuthScope{
+		Resource: ResourceArtifacts,
+		Action:   ActionManage,
+	}
+	status, err = mcClient.UserAuthorized(uri, token, &scope)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	scope = ormapi.AuthScope{
+		Org:      testEntries[0].Org,
+		Resource: ResourceArtifacts,
+		Action:   ActionView,
+	}
+	status, err = mcClient.UserAuthorized(uri, token, &scope)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// verify lack of authorization
+	scope = ormapi.AuthScope{
+		Resource: ResourceFlavors,
+		Action:   ActionView,
+	}
+	status, err = mcClient.UserAuthorized(uri, token, &scope)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+
+	// verify can get access token
+	authApi := &TestRegistryAuthApi{
+		auth: *auth,
+	}
+	tok, err := cloudcommon.GetRegistryAuthToken(ctx, serverConfig.VmRegistryAddr, authApi)
+	require.Nil(t, err)
+	require.NotEmpty(t, tok)
+	// verify authorization
+	scope = ormapi.AuthScope{
+		Resource: ResourceArtifacts,
+		Action:   ActionManage,
+	}
+	status, err = mcClient.UserAuthorized(uri, tok, &scope)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// verify lack of authorization
+	scope = ormapi.AuthScope{
+		Resource: ResourceFlavors,
+		Action:   ActionView,
+	}
+	status, err = mcClient.UserAuthorized(uri, tok, &scope)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+type TestRegistryAuthApi struct {
+	auth cloudcommon.RegistryAuth
+}
+
+func (s *TestRegistryAuthApi) GetRegistryAuth(ctx context.Context, imgUrl string) (*cloudcommon.RegistryAuth, error) {
+	return &s.auth, nil
 }

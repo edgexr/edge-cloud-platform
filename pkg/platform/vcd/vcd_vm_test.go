@@ -22,8 +22,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
 	"github.com/stretchr/testify/require"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
@@ -65,8 +65,9 @@ func InitVcdTestEnv() (bool, context.Context, error) {
 		live = true
 		fmt.Printf("\tPopulateOrgLoginCredsFromEnv\n")
 		// Tests don't need vault etc
-		tv.PopulateOrgLoginCredsFromEnv(ctx)
-
+		if err := tv.PopulateOrgLoginCredsFromEnv(ctx); err != nil {
+			return false, ctx, err
+		}
 		var err error
 		//fmt.Printf("\tMaps made, GetClient\n")
 		testVcdClient, err = tv.GetClient(ctx, tv.Creds)

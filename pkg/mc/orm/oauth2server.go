@@ -75,6 +75,7 @@ func (s *ClientStore) GetByID(ctx context.Context, id string) (oauth2.ClientInfo
 		KeyHash:  apiKey.ApiKeyHash,
 		Salt:     apiKey.Salt,
 		Iter:     apiKey.Iter,
+		ApiKeyId: apiKey.Id,
 	}
 	return &info, nil
 }
@@ -86,6 +87,7 @@ type ClientInfo struct {
 	Salt     string
 	Iter     int
 	NotFound bool
+	ApiKeyId string
 }
 
 func (s *ClientInfo) GetID() string     { return s.ID }
@@ -112,16 +114,17 @@ func (s *AccessGen) Token(ctx context.Context, data *oauth2.GenerateBasic, isGen
 	if err != nil {
 		return "", "", err
 	}
+	client, ok := data.Client.(*ClientInfo)
+	if !ok {
+		return "", "", fmt.Errorf("Invalid client info")
+	}
 	user := ormapi.User{
-		Name: data.Client.GetUserID(),
+		Name: client.Username,
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "gen token", "id", data.Client.GetID(), "username", data.Client.GetUserID())
-	// although this is an apikey, we need to treat it as a user
-	// to be able to look up the associated federation provider/consumer
-	// via the username.
-	notApiKey := ""
+
 	domain := serverConfig.HTTPCookieDomain
-	cookie, err := GenerateCookie(&user, notApiKey, domain, config)
+	cookie, err := GenerateCookie(&user, client.ApiKeyId, domain, config)
 	if err != nil {
 		return "", "", err
 	}
@@ -150,7 +153,7 @@ func (s *TokenStore) GetByRefresh(ctx context.Context, code string) (oauth2.Toke
 }
 
 // Authenticate and issue a JWT token.
-// Currently this is only for Federation.
+// Currently this is only for Api Keys.
 func Oauth2Token(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
 	req := c.Request().WithContext(ctx)

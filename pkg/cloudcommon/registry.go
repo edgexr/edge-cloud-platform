@@ -23,6 +23,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"regexp"
 	"strconv"
@@ -69,6 +70,11 @@ type AuthTokenResp struct {
 	Scope       string `json:"scope"`
 	AccessToken string `json:"access_token"`
 	ExpiresIn   int    `json:"expires_in"`
+}
+
+type OauthTokenResp struct {
+	TokenType   string `json:"token_type"`
+	AccessToken string `json:"access_token"`
 }
 
 func getVaultRegistryPath(registry string) string {
@@ -146,6 +152,52 @@ func PutRegistryAuth(ctx context.Context, imgUrl string, auth *RegistryAuth, vau
 		return err
 	}
 	return nil
+}
+
+func GetRegistryAuthToken(ctx context.Context, host string, authApi RegistryAuthApi) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelApi, "GetRegistryAuthToken", "host", host)
+	if authApi == nil {
+		return "", fmt.Errorf("missing registry credentials")
+	}
+	auth, err := authApi.GetRegistryAuth(ctx, host)
+	if err != nil {
+		return "", err
+	}
+	if auth.AuthType != BasicAuth {
+		return "", fmt.Errorf("expected Basic Auth credentials for GetRegistryAuthToken, but was %s", auth.AuthType)
+	}
+
+	scheme := "https"
+	if os.Getenv("E2ETEST_TLS") != "" {
+		scheme = "http"
+	}
+	url := fmt.Sprintf("%s://%s/oauth2/token", scheme, host)
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		return "", err
+	}
+	q := req.URL.Query()
+	q.Add("grant_type", "client_credentials")
+	req.URL.RawQuery = q.Encode()
+	req.SetBasicAuth(auth.Username, auth.Password)
+
+	client := http.Client{}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		return "", fmt.Errorf("error reading token response: %v", err)
+	}
+	tokenResp := &OauthTokenResp{}
+	err = json.Unmarshal(body, &tokenResp)
+	if err != nil {
+		return "", fmt.Errorf("Fail to unmarshal response - %v", err)
+	}
+	return tokenResp.AccessToken, nil
 }
 
 func GetAuthToken(ctx context.Context, host string, authApi RegistryAuthApi, userName string) (string, error) {
