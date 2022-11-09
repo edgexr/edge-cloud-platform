@@ -128,7 +128,6 @@ func TestEdgeTurnServer(t *testing.T) {
 	err = d.Decode(&sessInfo)
 	require.Nil(t, err, "decode session info from EdgeTurn server")
 	require.NotEqual(t, "", sessInfo.Token, "token is not empty")
-	require.Equal(t, "8443", sessInfo.AccessPort, "accessport is set to default value")
 
 	proxyVal := TurnProxy.Get(sessInfo.Token)
 	require.NotNil(t, proxyVal, "proxyValue is present, hence not nil")
@@ -213,7 +212,6 @@ func testEdgeTurnConsole(t *testing.T, isTLS bool) {
 	err = d.Decode(&sessInfo)
 	require.Nil(t, err, "decode session info from EdgeTurn server")
 	require.NotEqual(t, "", sessInfo.Token, "token is not empty")
-	require.Equal(t, "8443", sessInfo.AccessPort, "accessport is set to default value")
 
 	proxyVal := TurnProxy.Get(sessInfo.Token)
 	require.NotNil(t, proxyVal, "proxyValue is present, hence not nil")

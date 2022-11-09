@@ -54,7 +54,6 @@ var consoleAddr = flag.String("consoleAddr", "", "Address of the UI console usin
 const (
 	ShellConnTimeout   = 5 * time.Minute
 	ConsoleConnTimeout = 20 * time.Minute
-	ClientAccessPort   = "443"
 )
 
 type ProxyValue struct {
@@ -209,14 +208,7 @@ func handleConnection(crmConn net.Conn) {
 
 	// Send Initial Information about the connection
 	sessInfo := cloudcommon.SessionInfo{
-		Token:      token,
-		AccessPort: ClientAccessPort,
-	}
-	if *testMode {
-		// For testing, use internal access port,
-		// as it is not fronted by LB
-		addrParts := strings.Split(*proxyAddr, ":")
-		sessInfo.AccessPort = addrParts[1]
+		Token: token,
 	}
 	out, err := json.Marshal(&sessInfo)
 	if err != nil {
