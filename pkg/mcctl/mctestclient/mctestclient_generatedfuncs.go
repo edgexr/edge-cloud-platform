@@ -3955,6 +3955,32 @@ func (s *Client) ShowUserApiKey(uri string, token string, in *ormapi.CreateUserA
 	return out, rundata.RetStatus, rundata.RetError
 }
 
+func (s *Client) UserAuthorized(uri string, token string, in *ormapi.AuthScope) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+
+	apiCmd := ormctl.MustGetCommand("UserAuthorized")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) AuthScopes(uri string, token string) ([]ormapi.AuthScope, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	var out []ormapi.AuthScope
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("AuthScopes")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
 // Generating group VMPool
 
 func (s *Client) CreateVMPool(uri string, token string, in *ormapi.RegionVMPool) (*edgeproto.Result, int, error) {

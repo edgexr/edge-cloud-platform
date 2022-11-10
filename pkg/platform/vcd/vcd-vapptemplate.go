@@ -24,16 +24,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
 
-const TemplateNotFoundError string = "Template Not Found"
+const TemplateNotFoundError string = "entity not found"
 
 type OvfParams struct {
 	ImageBaseFileName string
@@ -399,7 +399,7 @@ func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infra
 	}
 
 	// get a token that VCD can use to pull from the artifactory
-	token, err := cloudcommon.GetAuthToken(ctx, artifactoryHost, v.vmProperties.CommonPf.PlatformConfig.AccessApi, vcdDirectUser)
+	token, err := cloudcommon.GetRegistryAuthToken(ctx, artifactoryHost, v.vmProperties.CommonPf.PlatformConfig.AccessApi)
 	if err != nil {
 		return fmt.Errorf("Fail to get artifactory token - %v", err)
 	}

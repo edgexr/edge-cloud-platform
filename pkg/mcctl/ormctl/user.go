@@ -151,6 +151,18 @@ func init() {
 		Comments:     aliasedComments(ormapi.CreateUserApiKeyComments, CreateUserApiKeyAliasArgs),
 		ReplyData:    &[]ormapi.CreateUserApiKey{},
 		Path:         "/auth/user/show/apikey",
+	}, &ApiCommand{
+		Name:         "UserAuthorized",
+		Short:        "Check if user is authorized",
+		ReqData:      &ormapi.AuthScope{},
+		RequiredArgs: "org resource action",
+		Comments:     ormapi.AuthScopeComments,
+		Path:         "/auth/user/authorized",
+	}, &ApiCommand{
+		Name:      "AuthScopes",
+		Short:     "Show authorized permissions",
+		ReplyData: &[]ormapi.AuthScope{},
+		Path:      "/auth/user/scopes",
 	}}
 	AllApis.AddGroup(UserGroup, "Manage your account or other users", cmds)
 

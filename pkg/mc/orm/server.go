@@ -96,6 +96,7 @@ type ServerConfig struct {
 	LDAPUsername             string
 	LDAPPassword             string
 	HarborAddr               string
+	VmRegistryAddr           string
 	GitlabAddr               string
 	ArtifactoryAddr          string
 	PingInterval             time.Duration
@@ -474,6 +475,8 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/user/create/apikey", CreateUserApiKey)
 	auth.POST("/user/delete/apikey", DeleteUserApiKey)
 	auth.POST("/user/show/apikey", ShowUserApiKey)
+	auth.POST("/user/authorized", UserAuthorized)
+	auth.POST("/user/scopes", AuthScopes)
 	// swagger:route POST /auth/role/assignment/show Role ShowRoleAssignment
 	// Show Role Assignment.
 	// Show roles for the current user.
@@ -1049,6 +1052,12 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	if config.HarborAddr != "" {
 		harborSync = HarborNewSync()
 		harborSync.Start(server.done)
+	}
+	if config.VmRegistryAddr != "" {
+		err = vmRegistryEnsureApiKey(ctx, Superuser)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if AlertManagerServer != nil {

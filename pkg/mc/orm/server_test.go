@@ -165,7 +165,7 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	policies, status, err := mcClient.ShowRolePerm(uri, token, ClientNoShowFilter)
 	require.Nil(t, err, "show role perms err")
 	require.Equal(t, http.StatusOK, status, "show role perms status")
-	require.Equal(t, 163, len(policies), "number of role perms")
+	require.Equal(t, 173, len(policies), "number of role perms")
 	roles, status, err := mcClient.ShowRoleNames(uri, token)
 	require.Nil(t, err, "show roles err")
 	require.Equal(t, http.StatusOK, status, "show roles status")

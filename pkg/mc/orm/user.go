@@ -120,20 +120,34 @@ func Login(c echo.Context) error {
 	}
 	db := loggedDB(ctx)
 	user := ormapi.User{}
-	if login.ApiKey != "" || login.ApiKeyId != "" {
-		if login.ApiKeyId == "" {
-			return fmt.Errorf("apikeyid not specified")
+	// backwards compatibility, ApiKeyId and ApiKey fields
+	// no longer used, just use username and password fields.
+	if login.ApiKeyId != "" {
+		if login.Username != "" {
+			return fmt.Errorf("cannot specify both api key ID and username, please just use the username field")
 		}
-		if login.ApiKey == "" {
-			return fmt.Errorf("apikey not specified")
+		login.Username = login.ApiKeyId
+	}
+	if login.ApiKey != "" {
+		if login.Password != "" {
+			return fmt.Errorf("cannot specify both api key and password, please just use the password field")
 		}
-		apiKeyObj := ormapi.UserApiKey{Id: login.ApiKeyId}
-		err := db.Where(&apiKeyObj).First(&apiKeyObj).Error
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelApi, "ApiKey lookup failed", "apiKey", apiKeyObj, "err", err)
-			time.Sleep(BadAuthDelay)
-			return fmt.Errorf("Invalid ApiKey")
-		}
+		login.Password = login.ApiKey
+	}
+	if login.Username == "" {
+		return fmt.Errorf("username not specified")
+	}
+	if login.Password == "" {
+		return fmt.Errorf("password not specified")
+	}
+	// try logging in as api key
+	userAuth := false
+	apiKeyId := ""
+	apiKeyObj := ormapi.UserApiKey{Id: login.Username}
+	err = db.Where(&apiKeyObj).First(&apiKeyObj).Error
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "ApiKey lookup failed", "apiKey", apiKeyObj, "err", err)
+	} else {
 		user.Name = apiKeyObj.Username
 		err = db.Where(&user).First(&user).Error
 		if err != nil {
@@ -143,7 +157,7 @@ func Login(c echo.Context) error {
 		span.SetTag("username", user.Name)
 		span.SetTag("email", user.Email)
 
-		matches, err := ormutil.PasswordMatches(login.ApiKey, apiKeyObj.ApiKeyHash, apiKeyObj.Salt, apiKeyObj.Iter)
+		matches, err := ormutil.PasswordMatches(login.Password, apiKeyObj.ApiKeyHash, apiKeyObj.Salt, apiKeyObj.Iter)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "apiKeyId matches err", "err", err)
 		}
@@ -151,14 +165,10 @@ func Login(c echo.Context) error {
 			time.Sleep(BadAuthDelay)
 			return fmt.Errorf("Invalid ApiKey or ApiKeyId")
 		}
-	} else {
-		if login.Username == "" {
-			return fmt.Errorf("Username not specified")
-		}
-
-		if login.Password == "" {
-			return fmt.Errorf("Please specify password")
-		}
+		apiKeyId = login.Username
+	}
+	if err != nil {
+		// try to log in as user
 		lookup := ormapi.User{Name: login.Username}
 		res := db.Where(&lookup).First(&user)
 		if res.RecordNotFound() {
@@ -186,6 +196,7 @@ func Login(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		userAuth = true
 	}
 
 	if user.Locked {
@@ -199,7 +210,7 @@ func Login(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	if login.Password != "" && user.PassCrackTimeSec == 0 {
+	if userAuth && user.PassCrackTimeSec == 0 {
 		calcPasswordStrength(ctx, &user, login.Password)
 		var err error
 		err = checkPasswordStrength(ctx, &user, nil, isAdmin)
@@ -219,7 +230,7 @@ func Login(c echo.Context) error {
 		}
 	}
 
-	if login.Password != "" && user.EnableTOTP && user.TOTPSharedKey != "" {
+	if userAuth && user.EnableTOTP && user.TOTPSharedKey != "" {
 		opts := totp.ValidateOpts{
 			Period:    OTPExpirationTime,
 			Skew:      1,
@@ -255,7 +266,7 @@ func Login(c echo.Context) error {
 		}
 	}
 
-	cookie, err := GenerateCookie(&user, login.ApiKeyId, serverConfig.HTTPCookieDomain, config)
+	cookie, err := GenerateCookie(&user, apiKeyId, serverConfig.HTTPCookieDomain, config)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie", "err", err)
 		return fmt.Errorf("Failed to generate cookie")
@@ -1224,7 +1235,6 @@ func UpdateUser(c echo.Context) error {
 
 func CreateUserApiKey(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	db := loggedDB(ctx)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1237,13 +1247,22 @@ func CreateUserApiKey(c echo.Context) error {
 	if err := c.Bind(&apiKeyReq); err != nil {
 		return ormutil.BindErr(err)
 	}
+	err = createUserApiKeyInternal(ctx, claims.Username, &apiKeyReq)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, apiKeyReq)
+}
+
+func createUserApiKeyInternal(ctx context.Context, username string, apiKeyReq *ormapi.CreateUserApiKey) error {
 	config, err := getConfig(ctx)
 	if err != nil {
 		return err
 	}
 	// ensure that user has not reached the limit on the number of api keys it can create
-	lookup := ormapi.UserApiKey{Username: claims.Username}
+	lookup := ormapi.UserApiKey{Username: username}
 	curApiKeys := []ormapi.UserApiKey{}
+	db := loggedDB(ctx)
 	err = db.Where(&lookup).Find(&curApiKeys).Error
 	if err != nil {
 		return ormutil.DbErr(err)
@@ -1252,31 +1271,39 @@ func CreateUserApiKey(c echo.Context) error {
 		return fmt.Errorf("User cannot create more than %d API keys, please delete existing keys to create new one", config.UserApiKeyCreateLimit)
 	}
 	if len(apiKeyReq.Permissions) == 0 {
-		return fmt.Errorf("No permissions for specified org")
+		return fmt.Errorf("No permissions specified")
+	}
+	isAdmin, err := isUserAdmin(ctx, username)
+	if err != nil {
+		return err
 	}
 
 	apiKeyObj := ormapi.UserApiKey{}
-	apiKeyObj.Username = claims.Username
+	apiKeyObj.Username = username
 	apiKeyObj.Org = apiKeyReq.Org
 	apiKeyObj.Description = apiKeyReq.Description
 
-	// verify that specified org exists
-	org := ormapi.Organization{}
-	org.Name = apiKeyObj.Org
-	res := db.Where(&org).First(&org)
-	if res.RecordNotFound() {
-		return fmt.Errorf("Invalid org specified")
+	if apiKeyObj.Org == "" && !isAdmin {
+		return fmt.Errorf("Org not specified")
 	}
-	if res.Error != nil {
-		return ormutil.DbErr(res.Error)
+	if apiKeyObj.Org != "" {
+		// verify that specified org exists
+		org := ormapi.Organization{}
+		org.Name = apiKeyObj.Org
+		res := db.Where(&org).First(&org)
+		if res.RecordNotFound() {
+			return fmt.Errorf("Invalid org specified")
+		}
+		if res.Error != nil {
+			return ormutil.DbErr(res.Error)
+		}
 	}
-
 	lookupOrg := apiKeyObj.Org
-	if claims.Username == Superuser {
+	if isAdmin {
 		lookupOrg = ""
 	}
 	// make sure caller has perms to access resource of target org
-	validRolePerms, err := enforcer.GetPermissions(ctx, claims.Username, lookupOrg)
+	validRolePerms, err := enforcer.GetPermissions(ctx, username, lookupOrg)
 	if err != nil {
 		return err
 	}
@@ -1286,7 +1313,7 @@ func CreateUserApiKey(c echo.Context) error {
 	apiKeyRole := getApiKeyRoleName(apiKeyId)
 	psub := rbac.GetCasbinGroup(apiKeyObj.Org, apiKeyId)
 	cleanupPoliciesOnErr := func() {
-		log.SpanLog(ctx, log.DebugLevelApi, "cleaning up all the policies", "user", claims.Username, "apiKeyId", apiKeyId)
+		log.SpanLog(ctx, log.DebugLevelApi, "cleaning up all the policies", "user", username, "apiKeyId", apiKeyId)
 		// remove policy if present, ignore err
 		enforcer.RemovePolicy(ctx, apiKeyRole)
 		enforcer.RemoveGroupingPolicy(ctx, psub, apiKeyRole)
@@ -1336,15 +1363,13 @@ func CreateUserApiKey(c echo.Context) error {
 		cleanupPoliciesOnErr()
 		return ormutil.DbErr(err)
 	}
-	apiKeyOut := ormapi.CreateUserApiKey{}
-	apiKeyOut.Id = apiKeyId
-	apiKeyOut.ApiKey = apiKey
-	return c.JSON(http.StatusOK, &apiKeyOut)
+	apiKeyReq.Id = apiKeyId
+	apiKeyReq.ApiKey = apiKey
+	return nil
 }
 
 func DeleteUserApiKey(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	db := loggedDB(ctx)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1357,10 +1382,19 @@ func DeleteUserApiKey(c echo.Context) error {
 	if err := c.Bind(&lookup); err != nil {
 		return ormutil.BindErr(err)
 	}
-	if lookup.Id == "" {
+	err = deleteUserApiKeyInternal(ctx, claims.Username, lookup.Id)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, ormutil.Msg("deleted API Key successfully"))
+}
+
+func deleteUserApiKeyInternal(ctx context.Context, username, id string) error {
+	if id == "" {
 		return fmt.Errorf("Missing API key ID")
 	}
-	apiKeyObj := ormapi.UserApiKey{Id: lookup.Id}
+	apiKeyObj := ormapi.UserApiKey{Id: id}
+	db := loggedDB(ctx)
 	res := db.Where(&apiKeyObj).First(&apiKeyObj)
 	if res.RecordNotFound() {
 		return fmt.Errorf("API key ID not found")
@@ -1368,11 +1402,11 @@ func DeleteUserApiKey(c echo.Context) error {
 	if res.Error != nil {
 		return ormutil.DbErr(res.Error)
 	}
-	if !isAdmin(ctx, claims.Username) && apiKeyObj.Username != claims.Username {
+	if !isAdmin(ctx, username) && apiKeyObj.Username != username {
 		return ormutil.NewHTTPError(http.StatusForbidden, "Cannot delete other user's API key")
 	}
 	apiKeyRole := getApiKeyRoleName(apiKeyObj.Id)
-	err = enforcer.RemovePolicy(ctx, apiKeyRole)
+	err := enforcer.RemovePolicy(ctx, apiKeyRole)
 	if err != nil {
 		return ormutil.DbErr(err)
 	}
@@ -1386,7 +1420,7 @@ func DeleteUserApiKey(c echo.Context) error {
 	if err != nil {
 		return ormutil.DbErr(err)
 	}
-	return c.JSON(http.StatusOK, ormutil.Msg("deleted API Key successfully"))
+	return nil
 }
 
 func ShowUserApiKey(c echo.Context) error {
@@ -1454,4 +1488,71 @@ func ShowUserApiKey(c echo.Context) error {
 		outApiKeys = append(outApiKeys, out)
 	}
 	return c.JSON(http.StatusOK, &outApiKeys)
+}
+
+func UserAuthorized(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	in := ormapi.AuthScope{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
+	err = authorized(ctx, claims.Username, in.Org, in.Resource, in.Action)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, ormutil.Msg("authorized ok"))
+}
+
+func AuthScopes(c echo.Context) error {
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	policies, err := enforcer.GetPolicy()
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+	groupings, err := enforcer.GetGroupingPolicy()
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+	perms := map[string][]ormapi.RolePerm{}
+	for ii, _ := range policies {
+		if len(policies[ii]) < 3 {
+			continue
+		}
+		perm := ormapi.RolePerm{
+			Role:     policies[ii][0],
+			Resource: policies[ii][1],
+			Action:   policies[ii][2],
+		}
+		perms[perm.Role] = append(perms[perm.Role], perm)
+	}
+	scopes := []ormapi.AuthScope{}
+	for ii, _ := range groupings {
+		role := parseRole(groupings[ii])
+		if role == nil {
+			continue
+		}
+		if role.Username != claims.Username {
+			continue
+		}
+		rolePerms, ok := perms[role.Role]
+		if !ok {
+			continue
+		}
+		for _, rp := range rolePerms {
+			scope := ormapi.AuthScope{
+				Org:      role.Org,
+				Resource: rp.Resource,
+				Action:   rp.Action,
+			}
+			scopes = append(scopes, scope)
+		}
+	}
+	return c.JSON(http.StatusOK, scopes)
 }
