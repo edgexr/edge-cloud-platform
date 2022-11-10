@@ -82,7 +82,6 @@ func InitAdmin(ctx context.Context, superuser, superpass string) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
