@@ -22,7 +22,10 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
 	"github.com/stretchr/testify/require"
@@ -51,24 +54,38 @@ var phyName = flag.String("phy", "packet", "some physicalLocation")
 var orgName = flag.String("org", "mexorg", "some vCD Org")
 var regionName = flag.String("reg", "US", "some regiony")
 var livetest = flag.String("live", "false", "live or canned data")
+var uploadFromUrl = flag.String("uploadFromUrl", "", "update ova test url")
+var uploadFile = flag.String("uploadFile", "", "file to update for cats test")
 
 // Unit test env init. We have two cases, the default is live=false making
 // it safe for inclusion in our make unit-test.
 func InitVcdTestEnv() (bool, context.Context, error) {
 	var live bool = false
-	log.SetDebugLevel(log.DebugLevelApi)
+	log.SetDebugLevel(log.DebugLevelApi | log.DebugLevelInfra)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 	tv.TestMode = true
 	if *livetest == "true" {
+		vmplat := vmlayer.VMPlatform{
+			VMProvider: &tv,
+		}
+		err := vmplat.InitProps(ctx, &platform.PlatformConfig{
+			CloudletKey: &edgeproto.CloudletKey{
+				Name:         *cldName,
+				Organization: *orgName,
+			},
+			DeploymentTag: "main",
+		}, infracommon.WithoutChef())
+		if err != nil {
+			return false, ctx, err
+		}
 		live = true
 		fmt.Printf("\tPopulateOrgLoginCredsFromEnv\n")
 		// Tests don't need vault etc
 		if err := tv.PopulateOrgLoginCredsFromEnv(ctx); err != nil {
 			return false, ctx, err
 		}
-		var err error
 		//fmt.Printf("\tMaps made, GetClient\n")
 		testVcdClient, err = tv.GetClient(ctx, tv.Creds)
 		if err != nil {
@@ -583,4 +600,22 @@ func TestGetExtAddrOfVM(t *testing.T) {
 		}
 		fmt.Printf("extAddr: %s\n", extAddr)
 	}
+}
+
+// uses -grp=<groupname>, i.e.
+// -grp=cloudlet-org-pf
+func TestDeleteVMs(t *testing.T) {
+	live, ctx, err := InitVcdTestEnv()
+	require.Nil(t, err, "InitTestEnv")
+	defer testVcdClient.Disconnect()
+	if !live {
+		return
+	}
+	if *grpName == "" {
+		fmt.Printf("Please specify -grp <groupName>")
+		t.Fail()
+		return
+	}
+	err = tv.DeleteVMs(ctx, *grpName)
+	require.Nil(t, err)
 }

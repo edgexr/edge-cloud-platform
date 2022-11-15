@@ -22,10 +22,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
@@ -240,11 +240,14 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 		return fmt.Errorf("GetVdc Failed - %v", err)
 	}
 	affinityRule, err := vdc.GetVmAffinityRuleById(vappName + "-anti-affinity")
+	if err != nil && strings.Contains(err.Error(), "no link with VM affinity rule found in VDC") {
+		err = nil
+	}
 	if err != nil {
 		if !govcd.ContainsNotFound(err) {
 			return fmt.Errorf("error finding affinity rule for vapp - %v", err)
 		}
-	} else {
+	} else if affinityRule != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "deleting affinity rule for vapp")
 		err = affinityRule.Delete()
 		if err != nil {

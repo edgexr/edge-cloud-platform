@@ -1274,8 +1274,6 @@ github.com/mitchellh/reflectwalk v1.0.0/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx
 github.com/mitchellh/reflectwalk v1.0.2 h1:G2LzWKi524PWgd3mLHV8Y5k7s6XUvT0Gef6zxSIeXaQ=
 github.com/mitchellh/reflectwalk v1.0.2/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
 github.com/mjibson/esc v0.2.0/go.mod h1:9Hw9gxxfHulMF5OJKCyhYD7PzlSdhzXyaGEBRPH1OPs=
-github.com/mobiledgex/go-vcloud-director/v2 v2.11.0-241.2 h1:mmpYVq9BA9Ii7wD/Nzs1xiUkPYJlRDdc0i050bfzxZw=
-github.com/mobiledgex/go-vcloud-director/v2 v2.11.0-241.2/go.mod h1:czvTQZlB4/WsOsL7rMVCb+SYAPJhx/dYoS/Sk7rc/O0=
 github.com/mobiledgex/jaeger v1.13.1 h1:ccldpM70eSW7JLCKhv+cht4OVIdp/wjdioegeWOk4Zc=
 github.com/mobiledgex/jaeger v1.13.1/go.mod h1:3ZqlHonoQOPkVP13bNnMWLJFGY9n+uEKdCEZeakOvxI=
 github.com/mobiledgex/mapstructure v1.2.4-0.20200429201435-a2efef9031f5 h1:HVqsqIZH1daOCnojV5KHRSHBEW3bkEgyScQ9eipPSPc=
@@ -1652,6 +1650,8 @@ github.com/valyala/fasttemplate v1.2.1/go.mod h1:KHLXt3tVN2HBp8eijSv/kGJopbvo7S+
 github.com/valyala/tcplisten v1.0.0/go.mod h1:T0xQ8SeCZGxckz9qRXTfG43PvQ/mcWh7FwZEA7Ioqkc=
 github.com/vektah/gqlparser v1.1.2/go.mod h1:1ycwN7Ij5njmMkPPAOaRFY4rET2Enx7IkVv3vaXspKw=
 github.com/vektra/mockery v0.0.0-20181123154057-e78b021dcbb5/go.mod h1:ppEjwdhyy7Y31EnHRDm1JkChoC7LXIJ7Ex0VYLWtZtQ=
+github.com/vmware/go-vcloud-director/v2 v2.16.0 h1:2KxPI3jDPV4ZpYU6odYcMiyKyXK589Hg5cRdnnOU5Gw=
+github.com/vmware/go-vcloud-director/v2 v2.16.0/go.mod h1:DgfzOh0u9J70FFOC2Qwy4iCjPoktg6SDdEguNi0z0H0=
 github.com/vmware/govmomi v0.18.0 h1:f7QxSmP7meCtoAmiKZogvVbLInT+CZx6Px6K5rYsJZo=
 github.com/vmware/govmomi v0.18.0/go.mod h1:URlwyTFZX72RmxtxuaFL2Uj3fD1JTvZdx59bHWk6aFU=
 github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad/go.mod h1:Hy8o65+MXnS6EwGElrSRjUzQDLXreJlzYLlWiHtt8hM=

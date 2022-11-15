@@ -21,9 +21,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 )
 
 const NSXT = "NSX-T"

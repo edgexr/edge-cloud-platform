@@ -564,8 +564,15 @@ func GetChefPlatformAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet
 			return nil, err
 		}
 		hostname := strings.Split(urlObj.Host, ":")
-		if len(hostname) != 2 {
-			return nil, fmt.Errorf("invalid api endpoint addr: %s", apiAccess.ApiEndpoint)
+		if len(hostname) == 1 {
+			// no port, use defaults for http
+			if strings.Contains(apiAccess.ApiEndpoint, "http://") {
+				hostname = append(hostname, "80")
+			} else if strings.Contains(apiAccess.ApiEndpoint, "https://") {
+				hostname = append(hostname, "443")
+			} else {
+				return nil, fmt.Errorf("invalid api endpoint addr not http and missing port: %s", apiAccess.ApiEndpoint)
+			}
 		}
 		// API Endpoint address might have hostname in it, hence resolve the addr
 		endpointIp, err := cloudcommon.LookupDNS(hostname[0])

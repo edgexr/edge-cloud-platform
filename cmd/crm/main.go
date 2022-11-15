@@ -276,6 +276,7 @@ func main() {
 			AccessApi:           accessApi,
 			TrustPolicy:         cloudlet.TrustPolicy,
 			CacheDir:            *cacheDir,
+			ChefServerPath:      *chefServerPath,
 		}
 
 		conditionalInitRequired := true
@@ -530,6 +531,9 @@ func getMexReleaseInfo(ctx context.Context) {
 	m, err := readMexReleaseFileVars(ctx)
 	if err != nil {
 		return
+	}
+	if nodeMgr.MyNode.Properties == nil {
+		nodeMgr.MyNode.Properties = make(map[string]string)
 	}
 	k := envMexBuild
 	v, ok := m[k]

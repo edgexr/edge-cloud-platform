@@ -325,7 +325,7 @@ func TestRawVApp(t *testing.T) {
 		fmt.Printf("TestVApp-Start create vapp named %s\n", *vappName)
 
 		// 1) create raw vapp, and 2) add networks:
-		err = vdc.ComposeRawVApp(*vappName)
+		err = vdc.ComposeRawVApp(*vappName, "test raw vapp")
 		require.Nil(t, err, "vdc.CreateRawVapp")
 
 		vapp, err := vdc.GetVAppByName(*vappName, false)
