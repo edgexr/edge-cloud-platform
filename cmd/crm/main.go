@@ -276,6 +276,7 @@ func main() {
 			AccessApi:           accessApi,
 			TrustPolicy:         cloudlet.TrustPolicy,
 			CacheDir:            *cacheDir,
+			ChefServerPath:      *chefServerPath,
 		}
 
 		conditionalInitRequired := true
