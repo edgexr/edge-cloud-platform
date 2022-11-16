@@ -41,8 +41,6 @@ type OvfParams struct {
 	OSType            string
 }
 
-var vcdDirectUser string = "vcdDirect"
-
 var OvfTemplate = `<?xml version='1.0' encoding='UTF-8'?>
 <Envelope xmlns="http://schemas.dmtf.org/ovf/envelope/1" xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1" xmlns:vmw="http://www.vmware.com/schema/ovf" xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:vssd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData">
   <References>
@@ -155,71 +153,47 @@ var OvfTemplate = `<?xml version='1.0' encoding='UTF-8'?>
 func (v *VcdPlatform) FindTemplate(ctx context.Context, tmplName string, vcdClient *govcd.VCDClient) (*govcd.VAppTemplate, error) {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "Find template", "Name", tmplName)
-	tmpls, err := v.GetAllVdcTemplates(ctx, vcdClient)
+	org, err := v.GetOrg(ctx, vcdClient)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, tmpl := range tmpls {
-		if tmpl.VAppTemplate.Name == tmplName {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Found template", "Name", tmplName)
-			return tmpl, nil
-		}
+	catName := v.GetCatalogName()
+	if catName == "" {
+		return nil, fmt.Errorf("MEX_CATALOG name not found")
 	}
 
+	cat, err := org.GetCatalogByName(catName, true)
+	if err != nil {
+		return nil, err
+	}
+	tmpls, err := cat.QueryVappTemplateList()
+	if err != nil {
+		return nil, err
+	}
+	for _, tmpl := range tmpls {
+		if tmpl.Name == tmplName {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Found template", "Name", tmplName)
+			return cat.GetVappTemplateByHref(tmpl.HREF)
+		}
+	}
 	return nil, fmt.Errorf("%s - %s", TemplateNotFoundError, tmplName)
 }
 
 func (v *VcdPlatform) ImportTemplateFromUrl(ctx context.Context, name, templUrl string, catalog *govcd.Catalog) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ImportTemplateFromUrl", "name", name, "templUrl", templUrl)
-	err := catalog.UploadOvfUrl(templUrl, name, name)
+	task, err := catalog.UploadOvfByLink(templUrl, name, name)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed UploadOvfUrl", "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed UploadOvfByLink", "err", err)
+		return fmt.Errorf("Failed to upload from URL - %v", err)
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed waiting for UploadOvfByLink task", "err", err)
 		return fmt.Errorf("Failed to upload from URL - %v", err)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "ImportTemplateFromUrl done")
 	return nil
-}
-
-// Return all templates found as vdc resources from MEX_CATALOG
-func (v *VcdPlatform) GetAllVdcTemplates(ctx context.Context, vcdClient *govcd.VCDClient) ([]*govcd.VAppTemplate, error) {
-
-	var tmpls []*govcd.VAppTemplate
-	org, err := v.GetOrg(ctx, vcdClient)
-	if err != nil {
-		return tmpls, err
-	}
-	vdc, err := v.GetVdc(ctx, vcdClient)
-	if err != nil {
-		return tmpls, err
-	}
-	// Get our catalog MEX_CATALOG
-	catName := v.GetCatalogName()
-	if catName == "" {
-		return tmpls, fmt.Errorf("MEX_CATALOG name not found")
-	}
-
-	cat, err := org.GetCatalogByName(catName, true)
-	if err != nil {
-		return tmpls, err
-	}
-
-	for _, r := range vdc.Vdc.ResourceEntities {
-		for _, res := range r.ResourceEntity {
-			if res.Type == "application/vnd.vmware.vcloud.vAppTemplate+xml" {
-				if v.Verbose {
-					log.SpanLog(ctx, log.DebugLevelInfra, "Found Vdc resource template", "Name", res.Name, "from Catalog", catName)
-				}
-				tmpl, err := cat.GetVappTemplateByHref(res.HREF)
-				if err != nil {
-					continue
-				} else {
-					tmpls = append(tmpls, tmpl)
-				}
-			}
-		}
-	}
-	return tmpls, nil
 }
 
 // AddImageIfNotPresent works as follows:
@@ -408,7 +382,11 @@ func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infra
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed retrieving catalog", "cat", v.GetCatalogName())
 		return fmt.Errorf("failed to find upload catalog - %v", err)
 	}
-	artifactoryOvfPathWithToken := strings.Replace(artifactoryOvfPath, artifactoryHost, vcdDirectUser+":"+token+"@"+artifactoryHost, 1)
+	addToken := "?token=" + token
+	if strings.Contains(artifactoryOvfPath, "?") {
+		addToken = "&token=" + token
+	}
+	artifactoryOvfPathWithToken := artifactoryOvfPath + addToken
 	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Importing OVF to VCD for Image: %s", imageInfo.LocalImageName))
 	err = v.ImportTemplateFromUrl(ctx, imageInfo.LocalImageName, artifactoryOvfPathWithToken, cat)
 	if err != nil {

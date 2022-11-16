@@ -350,7 +350,7 @@ func (v *VMPlatform) GetResTablesForCloudlet(ctx context.Context, ckey *edgeprot
 	return tbls
 }
 
-func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.PlatformConfig) error {
+func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.PlatformConfig, ops ...infracommon.InitOp) error {
 	props := make(map[string]*edgeproto.PropertyInfo)
 	for k, v := range VMProviderProps {
 		props[k] = v
@@ -362,7 +362,7 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 	for k, v := range providerProps {
 		props[k] = v
 	}
-	err = v.VMProperties.CommonPf.InitInfraCommon(ctx, platformConfig, props)
+	err = v.VMProperties.CommonPf.InitInfraCommon(ctx, platformConfig, props, ops...)
 	if err != nil {
 		return err
 	}

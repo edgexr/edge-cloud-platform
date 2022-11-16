@@ -532,6 +532,9 @@ func getMexReleaseInfo(ctx context.Context) {
 	if err != nil {
 		return
 	}
+	if nodeMgr.MyNode.Properties == nil {
+		nodeMgr.MyNode.Properties = make(map[string]string)
+	}
 	k := envMexBuild
 	v, ok := m[k]
 	if ok {

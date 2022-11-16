@@ -18,9 +18,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/stretchr/testify/require"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -56,6 +59,19 @@ func TestRMTmpl(t *testing.T) {
 	}
 }
 
+// uses -tmpl
+func TestFindTemplate(t *testing.T) {
+	live, ctx, err := InitVcdTestEnv()
+	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
+	if !live {
+		log.SpanLog(ctx, log.DebugLevelApi, "Skipping test")
+		return
+	}
+	_, err = tv.FindTemplate(ctx, *tmplName, testVcdClient)
+	require.Nil(t, err)
+}
+
 // uses -ova
 // If you run this live, use --timeout 0 to disable the default panic after 10 mins
 // since this test runs ~ upload complete in 17m20.262586965s
@@ -68,6 +84,29 @@ func TestUploadOva(t *testing.T) {
 		fmt.Printf("Live OVA  upload test\n")
 		err = testOvaUpload(t, ctx)
 		require.Nil(t, err, "testOVAUpload")
+	} else {
+		return
+	}
+}
+
+// uses -uploadFromUrl
+func TestUploadOvaUrl(t *testing.T) {
+	live, ctx, err := InitVcdTestEnv()
+	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
+	if live {
+		fmt.Printf("Live OVA  upload test\n")
+		if *uploadFromUrl == "" {
+			fmt.Printf("please specify uploadFromUrl")
+			t.Fail()
+		}
+		cat, err := tv.GetCatalog(ctx, tv.GetCatalogName(), testVcdClient)
+		require.Nil(t, err)
+		name := "test-upload-ova"
+		task, err := cat.UploadOvfByLink(*uploadFromUrl, name, name)
+		require.Nil(t, err, "testOVAUpload")
+		err = task.WaitTaskCompletion()
+		require.Nil(t, err)
 	} else {
 		return
 	}
@@ -123,13 +162,14 @@ func TestGetTemplates(t *testing.T) {
 // uses -ova for what (local) file to upload
 func testOvaUpload(t *testing.T, ctx context.Context) error {
 
-	path := os.Getenv("HOME")
-	fmt.Printf("Path: %s\n", path)
+	if *uploadFile == "" {
+		fmt.Printf("Please specify --uploadFile")
+		return fmt.Errorf("--uploadFile not specified")
+	}
+	url, err := filepath.Abs(*uploadFile)
+	require.Nil(t, err)
 
-	url := path + "/vmware-lab/" + *ovaName
-
-	//tname := *ovaName
-	tname := "mobiledgex-v4.1.3-vcd"
+	tname := path.Base(url)
 	fmt.Printf("testMediaUpload-I-attempt uploading: %s naming it %s \n", url, tname)
 
 	cat, err := tv.GetCatalog(ctx, tv.GetCatalogName(), testVcdClient)

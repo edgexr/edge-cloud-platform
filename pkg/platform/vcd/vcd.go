@@ -313,11 +313,10 @@ func (v *VcdPlatform) NameSanitize(name string) string {
 	return str
 }
 
-// IdSanitize is NameSanitize plus removing "."
+// VCD names conform to XML format and may be strings
+// including spaces and various characters.
 func (v *VcdPlatform) IdSanitize(name string) string {
-	str := v.NameSanitize(name)
-	str = strings.ReplaceAll(str, ".", "-")
-	return str
+	return name
 }
 
 func (v *VcdPlatform) GetServerDetail(ctx context.Context, serverName string) (*vmlayer.ServerDetail, error) {
