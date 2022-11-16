@@ -20,9 +20,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
 	"github.com/tmc/scp"
 )
@@ -111,7 +111,7 @@ func (cp *CommonPlatform) GetSSHClientFromIPAddr(ctx context.Context, ipaddr str
 	if cp.SshKey.PrivateKey == "" {
 		return nil, fmt.Errorf("missing cloudlet private key")
 	}
-	if cp.SshKey.PrivateKey == "" {
+	if cp.SshKey.SignedPublicKey == "" {
 		return nil, fmt.Errorf("missing cloudlet signed public Key")
 	}
 
@@ -127,6 +127,7 @@ func (cp *CommonPlatform) GetSSHClientFromIPAddr(ctx context.Context, ipaddr str
 	cp.SshKey.Mux.Unlock()
 
 	if cp.SshKey.UseMEXPrivateKey {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Using mex private key")
 		auth = ssh.Auth{RawKeys: [][]byte{
 			[]byte(cp.SshKey.MEXPrivateKey),
 		}}
@@ -143,8 +144,11 @@ func (cp *CommonPlatform) GetSSHClientFromIPAddr(ctx context.Context, ipaddr str
 			return nil, err
 		}
 	} else {
-		var err error
-		client, err = ssh.NewNativeClient(SSHUser, ClientVersion, ipaddr, 22, &auth, opts.Timeout, nil)
+		config, err := ssh.NewNativeConfig(SSHUser, ClientVersion, &auth, opts.Timeout, nil)
+		if err != nil {
+			return nil, err
+		}
+		client, err = ssh.NewNativeClientWithConfig(ipaddr, 22, config)
 		if err != nil {
 			return nil, fmt.Errorf("cannot get ssh client for addr %s, %v", ipaddr, err)
 		}
