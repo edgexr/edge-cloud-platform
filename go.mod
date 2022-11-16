@@ -60,7 +60,7 @@ require (
 	github.com/shirou/gopsutil v3.21.5+incompatible
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	github.com/test-go/testify v1.1.4
 	github.com/tmc/scp v0.0.0-20170824174625-f7b48647feef
 	github.com/trustelem/zxcvbn v1.0.1
@@ -71,11 +71,11 @@ require (
 	github.com/xanzy/go-gitlab v0.16.0
 	github.com/xtaci/smux v1.3.6
 	go.uber.org/zap v1.19.1
-	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
-	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e
+	golang.org/x/crypto v0.2.0
+	golang.org/x/net v0.2.0
 	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
-	golang.org/x/tools v0.1.10
+	golang.org/x/tools v0.1.12
 	google.golang.org/api v0.91.0
 	google.golang.org/grpc v1.48.0
 	gopkg.in/ldap.v3 v3.0.3
@@ -91,7 +91,7 @@ require (
 require (
 	cloud.google.com/go/storage v1.22.1
 	github.com/deepmap/oapi-codegen v1.11.0
-	github.com/edgexr/golang-ssh v0.0.11
+	github.com/edgexr/golang-ssh v0.0.12
 	github.com/edgexr/harbor-api v0.0.1
 	github.com/go-oauth2/oauth2/v4 v4.5.1
 	github.com/go-redis/redis/v8 v8.11.5
@@ -260,7 +260,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
-	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
+	github.com/moby/term v0.0.0-20221105221325-4eb28fa6025c // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nicolai86/scaleway-sdk v1.10.2-0.20180628010248-798f60e20bb2 // indirect
@@ -303,11 +303,11 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/image v0.0.0-20200927104501-e162460cd6b5 // indirect
-	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
-	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
-	golang.org/x/sys v0.0.0-20220624220833-87e55d714810 // indirect
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
+	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
+	golang.org/x/sys v0.2.0 // indirect
+	golang.org/x/term v0.2.0 // indirect
+	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220624142145-8cd45d7dbd1f // indirect
