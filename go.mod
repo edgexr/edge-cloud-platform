@@ -66,7 +66,7 @@ require (
 	github.com/trustelem/zxcvbn v1.0.1
 	github.com/uber/jaeger-client-go v2.23.1+incompatible
 	github.com/uber/jaeger-lib v2.4.0+incompatible
-	github.com/vmware/go-vcloud-director/v2 v2.11.0
+	github.com/vmware/go-vcloud-director/v2 v2.16.0
 	github.com/wcharczuk/go-chart/v2 v2.1.0
 	github.com/xanzy/go-gitlab v0.16.0
 	github.com/xtaci/smux v1.3.6
@@ -330,10 +330,3 @@ require (
 )
 
 replace github.com/mitchellh/mapstructure => github.com/mobiledgex/mapstructure v1.2.4-0.20200429201435-a2efef9031f5
-
-//replace (
-//	github.com/Sirupsen/logrus => github.com/Sirupsen/logrus v1.6.0
-//	github.com/Sirupsen/logrus v1.6.0 => github.com/sirupsen/logrus v1.6.0
-//)
-
-replace github.com/vmware/go-vcloud-director/v2 v2.11.0 => github.com/mobiledgex/go-vcloud-director/v2 v2.11.0-241.2

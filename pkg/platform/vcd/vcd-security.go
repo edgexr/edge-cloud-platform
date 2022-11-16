@@ -22,7 +22,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -30,11 +29,11 @@ import (
 
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -343,7 +342,7 @@ func (v *VcdPlatform) WaitForOauthTokenViaNotify(ctx context.Context, ckey *edge
 
 func (v *VcdPlatform) UpdateOauthToken(ctx context.Context, creds *VcdConfigParams) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateOauthToken", "user", creds.User, "OauthSgwUrl", creds.OauthSgwUrl)
-
+	/* TODO: Remove, Replace, or Merge with upstream?
 	oauthFailReason := ""
 	oauthTokenReceived := ""
 	encToken := ""
@@ -413,6 +412,7 @@ func (v *VcdPlatform) UpdateOauthToken(ctx context.Context, creds *VcdConfigPara
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "Saving encrypted Oauth token to vmProperties")
 	v.vmProperties.CloudletAccessToken = encToken
+	*/
 	return nil
 }
 
@@ -458,10 +458,11 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetClient", "user", creds.User, "OauthSgwUrl", creds.OauthSgwUrl)
-	vcdClient := govcd.NewVCDClient(*u, creds.Insecure,
-		govcd.WithOauthUrl(creds.OauthSgwUrl),
-		govcd.WithClientTlsCerts(creds.ClientTlsCert, creds.ClientTlsKey),
-		govcd.WithOauthCreds(creds.OauthClientId, creds.OauthClientSecret))
+	vcdClient := govcd.NewVCDClient(*u, creds.Insecure)
+	/* TODO: Remove, Replace, or Merge with upstream?
+	govcd.WithOauthUrl(creds.OauthSgwUrl),
+	govcd.WithClientTlsCerts(creds.ClientTlsCert, creds.ClientTlsKey),
+	govcd.WithOauthCreds(creds.OauthClientId, creds.OauthClientSecret))
 
 	if creds.OauthSgwUrl != "" && v.vmProperties.CloudletAccessToken == "" {
 		return nil, fmt.Errorf("Oauth GW specified but no cloudlet Token found")
@@ -473,7 +474,7 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 		}
 		vcdClient.Client.OauthAccessToken = decToken
 	}
-
+	*/
 	// always refresh the vcd session token
 	_, err = vcdClient.GetAuthResponse(creds.User, creds.Password, creds.Org)
 	if err != nil {
