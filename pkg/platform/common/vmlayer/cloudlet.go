@@ -489,7 +489,7 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 			if v.VMProperties.IptablesBasedFirewall {
 				// iptables based security rules can fail on one clusterInst LB or other VM not responding
 				log.SpanLog(ctx, log.DebugLevelInfra, "Warning: error in ConfigureCloudletSecurityRules", "err", err)
-			} else {
+			} else if err.Error() != ServerDoesNotExistError {
 				return err
 			}
 		}

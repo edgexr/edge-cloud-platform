@@ -57,7 +57,7 @@ const MINIMUM_VCPUS uint64 = 2
 var ImageFormatQcow2 = "qcow2"
 var ImageFormatVmdk = "vmdk"
 
-var MEXInfraVersion = "4.10.0"
+var MEXInfraVersion = "4.11.0"
 var ImageNamePrefix = "edgecloud-v"
 var DefaultOSImageName = ImageNamePrefix + MEXInfraVersion
 

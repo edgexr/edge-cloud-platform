@@ -18,9 +18,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,10 +30,14 @@ var testprop3_map = make(map[string]string)
 var OSFlavors = []OSFlavorDetail{
 
 	OSFlavorDetail{
-		Name:        "m4.large-gpu",
-		RAM:         8192,
-		Ephemeral:   0,
-		Properties:  "hw:mem_page_size='large', hw:numa_nodes='1', pci_passthrough:alias='t4gpu:1'",
+		Name:      "m4.large-gpu",
+		RAM:       8192,
+		Ephemeral: 0,
+		Properties: map[string]string{
+			"hw:mem_page_size":      "large",
+			"hw:numa_nodes":         "1",
+			"pci_passthrough:alias": "t4gpu:1",
+		},
 		VCPUs:       4,
 		Swap:        "",
 		Public:      true,
@@ -43,10 +46,12 @@ var OSFlavors = []OSFlavorDetail{
 		ID:          "2b0297da-5c76-475e-934f-088c57f997fd",
 	},
 	OSFlavorDetail{
-		Name:        "m4.xlarge",
-		RAM:         16384,
-		Ephemeral:   0,
-		Properties:  "hw:mem_page_size='large'",
+		Name:      "m4.xlarge",
+		RAM:       16384,
+		Ephemeral: 0,
+		Properties: map[string]string{
+			"hw:mem_page_size": "large",
+		},
 		VCPUs:       8,
 		Swap:        "",
 		Public:      true,
@@ -55,10 +60,12 @@ var OSFlavors = []OSFlavorDetail{
 		ID:          "0a6ae797-2894-40b7-820d-6172b775a1b5",
 	},
 	OSFlavorDetail{
-		Name:        "m4.small",
-		RAM:         2048,
-		Ephemeral:   0,
-		Properties:  "hw:mem_page_size='large'",
+		Name:      "m4.small",
+		RAM:       2048,
+		Ephemeral: 0,
+		Properties: map[string]string{
+			"hw:mem_page_size": "large",
+		},
 		VCPUs:       2,
 		Swap:        "",
 		Public:      true,
@@ -71,8 +78,9 @@ var OSFlavors = []OSFlavorDetail{
 		Name:      "m1.medium-gpu",
 		RAM:       8192,
 		Ephemeral: 0,
-		//		Properties:  "vmware:vgpu='1'",
-		Properties:  "pci_passthrough:alias='vmware-vpu:1'",
+		Properties: map[string]string{
+			"pci_passthrough:alias": "vmware-vpu:1",
+		},
 		VCPUs:       2,
 		Swap:        "",
 		Public:      true,
@@ -84,7 +92,7 @@ var OSFlavors = []OSFlavorDetail{
 		Name:        "m1.large",
 		RAM:         8192,
 		Ephemeral:   0,
-		Properties:  "",
+		Properties:  map[string]string{},
 		VCPUs:       4,
 		Swap:        "",
 		Public:      true,
@@ -96,7 +104,7 @@ var OSFlavors = []OSFlavorDetail{
 		Name:        "m1.xxlarge24-64-160",
 		RAM:         65535,
 		Ephemeral:   0,
-		Properties:  "",
+		Properties:  map[string]string{},
 		VCPUs:       24,
 		Swap:        "",
 		Public:      true,
@@ -108,7 +116,6 @@ var OSFlavors = []OSFlavorDetail{
 		Name:        "m1.tiny",
 		RAM:         512,
 		Ephemeral:   0,
-		Properties:  "",
 		VCPUs:       1,
 		Swap:        "",
 		Public:      true,
@@ -120,7 +127,6 @@ var OSFlavors = []OSFlavorDetail{
 		Name:        "m1.medium",
 		RAM:         4096,
 		Ephemeral:   0,
-		Properties:  "",
 		VCPUs:       2,
 		Swap:        "",
 		Public:      true,
@@ -130,10 +136,12 @@ var OSFlavors = []OSFlavorDetail{
 	},
 	// Test auto created flavor in VIO unqiue syntax
 	OSFlavorDetail{
-		Name:        "vmware.medium-gpu",
-		RAM:         4096,
-		Ephemeral:   0,
-		Properties:  "vmware:vgpu='1'",
+		Name:      "vmware.medium-gpu",
+		RAM:       4096,
+		Ephemeral: 0,
+		Properties: map[string]string{
+			"vmware:vgpu": "1",
+		},
 		VCPUs:       2,
 		Swap:        "",
 		Public:      true,
@@ -141,43 +149,6 @@ var OSFlavors = []OSFlavorDetail{
 		RXTX_Factor: "1.0",
 		ID:          "94557fcc-d217-4270-8511-79bce1d6c0c9",
 	},
-}
-
-func TestParseFlavorProps(t *testing.T) {
-
-	testprop1_map["hw"] = "mem_page_size=large"
-	testprop1_map["hw"] = "numa_nodes=1"
-	testprop1_map["pci_passthrough"] = "alias=t4gpu:1"
-	// maps are unordered, this could be a problem.
-	propmap := ParseFlavorProperties(OSFlavors[0])
-	require.Equal(t, testprop1_map, propmap)
-
-	testprop2_map["hw"] = "mem_page_size=large"
-	propmap = ParseFlavorProperties(OSFlavors[1])
-	require.Equal(t, testprop2_map, propmap)
-
-	testprop3_map["hw"] = "mem_page_size=large"
-	propmap = ParseFlavorProperties(OSFlavors[2])
-	require.Equal(t, testprop3_map, propmap)
-
-	var finfo []*edgeproto.FlavorInfo
-	//	var props map[string]string
-	for _, f := range OSFlavors {
-		var props map[string]string
-		if f.Properties != "" {
-			props = ParseFlavorProperties(f)
-		}
-
-		finfo = append(
-			finfo,
-			&edgeproto.FlavorInfo{
-				Name:    f.Name,
-				Vcpus:   uint64(f.VCPUs),
-				Ram:     uint64(f.RAM),
-				Disk:    uint64(f.Disk),
-				PropMap: props},
-		)
-	}
 }
 
 func TestHeatNodePrefix(t *testing.T) {
@@ -220,26 +191,37 @@ func TestHeatNodePrefix(t *testing.T) {
 
 func TestIpPoolRange(t *testing.T) {
 	// single pool
-	n, err := getIpCountFromPools("10.10.10.1-10.10.10.20")
+	pools := []OSAllocationPool{{
+		Start: "10.10.10.1",
+		End:   "10.10.10.20",
+	}}
+	n, err := getIpCountFromPools(pools)
 	require.Nil(t, err)
 	require.Equal(t, uint64(20), n)
 	// several pools
-	n, err = getIpCountFromPools("10.10.10.1-10.10.10.20,10.10.10.30-10.10.10.40")
+	pools = []OSAllocationPool{{
+		Start: "10.10.10.1",
+		End:   "10.10.10.20",
+	}, {
+		Start: "10.10.10.30",
+		End:   "10.10.10.40",
+	}}
+	n, err = getIpCountFromPools(pools)
 	require.Nil(t, err)
 	require.Equal(t, uint64(31), n)
 	// ipv6 pool
-	n, err = getIpCountFromPools("2a01:598:4:4011::2-2a01:598:4:4011:ffff:ffff:ffff:ffff")
+	pools = []OSAllocationPool{{
+		Start: "2a01:598:4:4011::2",
+		End:   "2a01:598:4:4011:ffff:ffff:ffff:ffff",
+	}}
+	n, err = getIpCountFromPools(pools)
 	require.Nil(t, err)
 	require.Equal(t, uint64(18446744073709551614), n)
-	// empty pool
-	n, err = getIpCountFromPools("")
-	require.Contains(t, err.Error(), "invalid ip pool format")
-	require.Equal(t, uint64(0), n)
 	// invalid pool
-	n, err = getIpCountFromPools("invalid pool")
-	require.Contains(t, err.Error(), "invalid ip pool format")
-	require.Equal(t, uint64(0), n)
-	n, err = getIpCountFromPools("invalid-pool")
+	pools = []OSAllocationPool{{
+		Start: "invalid",
+	}}
+	n, err = getIpCountFromPools(pools)
 	require.Contains(t, err.Error(), "Could not parse ip pool limits")
 	require.Equal(t, uint64(0), n)
 }
