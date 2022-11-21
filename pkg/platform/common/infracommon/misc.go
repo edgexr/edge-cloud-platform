@@ -96,7 +96,9 @@ func SeedDockerSecret(ctx context.Context, client ssh.Client, clusterInst *edgep
 		out, err = client.Output(cmd)
 	}()
 
-	cmd = fmt.Sprintf("cat .docker-pass | docker login -u %s --password-stdin %s ", auth.Username, auth.Hostname)
+	// quote username to deal with harbor api users which
+	// have a '$' in the name.
+	cmd = fmt.Sprintf("cat .docker-pass | docker login -u '%s' --password-stdin %s ", auth.Username, auth.Hostname)
 	out, err = client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("can't docker login on rootlb to %s, %s, %v", auth.Hostname, out, err)

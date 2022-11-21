@@ -22,11 +22,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
+	"github.com/gogo/protobuf/types"
 )
 
 func (o *OpenstackPlatform) GetServerDetail(ctx context.Context, serverName string) (*vmlayer.ServerDetail, error) {
@@ -52,7 +52,7 @@ func (o *OpenstackPlatform) GetServerDetail(ctx context.Context, serverName stri
 }
 
 // UpdateServerIPs gets the ServerIPs for the given network from the addresses and ports
-func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses string, ports []OSPort, serverDetail *vmlayer.ServerDetail) error {
+func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses map[string][]string, ports []OSPort, serverDetail *vmlayer.ServerDetail) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateServerIPs", "addresses", addresses, "serverDetail", serverDetail, "ports", ports)
 
 	netTypes := []vmlayer.NetworkType{
@@ -62,30 +62,22 @@ func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses strin
 		vmlayer.NetworkTypeExternalPrimary,
 	}
 	externalNetMap := o.VMProperties.GetNetworksByType(ctx, netTypes)
-	its := strings.Split(addresses, ";")
 
-	for _, it := range its {
-		sits := strings.Split(it, "=")
-		if len(sits) != 2 {
-			return fmt.Errorf("UpdateServerIPs: Unable to parse '%s'", it)
+	for network, ips := range addresses {
+		if len(ips) == 0 {
+			continue
 		}
-		network := strings.TrimSpace(sits[0])
-		addr := sits[1]
+		addr := ips[0]
 		_, isExternal := externalNetMap[network]
 		if isExternal {
 			var serverIP vmlayer.ServerIP
 			serverIP.Network = network
 			// multiple ips for an external network indicates a floating ip on a single port
-			if strings.Contains(addr, ",") {
-				addrs := strings.Split(addr, ",")
-				if len(addrs) == 2 {
-					serverIP.InternalAddr = strings.TrimSpace(addrs[0])
-					serverIP.ExternalAddr = strings.TrimSpace(addrs[1])
-					serverIP.ExternalAddrIsFloating = true
-					serverDetail.Addresses = append(serverDetail.Addresses, serverIP)
-				} else {
-					return fmt.Errorf("GetServerExternalIPFromAddr: Unable to parse '%s'", addr)
-				}
+			if len(ips) == 2 {
+				serverIP.InternalAddr = strings.TrimSpace(ips[0])
+				serverIP.ExternalAddr = strings.TrimSpace(ips[1])
+				serverIP.ExternalAddrIsFloating = true
+				serverDetail.Addresses = append(serverDetail.Addresses, serverIP)
 			} else {
 				// no floating IP, internal and external are the same
 				addr = strings.TrimSpace(addr)
@@ -100,8 +92,7 @@ func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses strin
 			if err != nil {
 				return fmt.Errorf("unable to find subnet for network: %s", network)
 			}
-			addrs := strings.Split(addr, ",")
-			for _, addr := range addrs {
+			for _, addr := range ips {
 				addr = strings.TrimSpace(addr)
 				ipaddr := net.ParseIP(addr)
 				subnetfound := false
@@ -129,7 +120,14 @@ func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses strin
 		// now look through the ports and assign port name and mac addresses
 		for _, port := range ports {
 			for ai, serverAddr := range serverDetail.Addresses {
-				if strings.Contains(port.FixedIPs, serverAddr.InternalAddr) {
+				hasIp := false
+				for _, fip := range port.FixedIPs {
+					if strings.Contains(fip.IPAddress, serverAddr.InternalAddr) {
+						hasIp = true
+						break
+					}
+				}
+				if hasIp {
 					serverDetail.Addresses[ai].MacAddress = port.MACAddress
 					serverDetail.Addresses[ai].PortName = port.Name
 				}
@@ -249,17 +247,12 @@ func (o *OpenstackPlatform) VmAppChangedCallback(ctx context.Context, appInst *e
 // Given pool ranges return total number of available ip addresses
 // Example: 10.10.10.1-10.10.10.20,10.10.10.30-10.10.10.40
 //  Returns 20+11 = 31
-func getIpCountFromPools(ipPools string) (uint64, error) {
+func getIpCountFromPools(ipPools []OSAllocationPool) (uint64, error) {
 	var total uint64
 	total = 0
-	pools := strings.Split(ipPools, ",")
-	for _, p := range pools {
-		ipRange := strings.Split(p, "-")
-		if len(ipRange) != 2 {
-			return 0, fmt.Errorf("invalid ip pool format")
-		}
-		ipStart := net.ParseIP(ipRange[0])
-		ipEnd := net.ParseIP(ipRange[1])
+	for _, pool := range ipPools {
+		ipStart := net.ParseIP(pool.Start)
+		ipEnd := net.ParseIP(pool.End)
 		if ipStart == nil || ipEnd == nil {
 			return 0, fmt.Errorf("Could not parse ip pool limits")
 		}
@@ -287,7 +280,7 @@ func (s *OpenstackPlatform) addIpUsageDetails(ctx context.Context, platformRes *
 	if externalNet == nil {
 		return fmt.Errorf("No external network")
 	}
-	subnets := strings.Split(externalNet.Subnets, ",")
+	subnets := externalNet.Subnets
 	if len(subnets) < 1 {
 		return nil
 	}
@@ -306,8 +299,10 @@ func (s *OpenstackPlatform) addIpUsageDetails(ctx context.Context, platformRes *
 	}
 	platformRes.Ipv4Used = 0
 	for _, srv := range srvs {
-		if strings.Contains(srv.Networks, s.VMProperties.GetCloudletExternalNetwork()) {
-			platformRes.Ipv4Used++
+		for netname, ips := range srv.Networks {
+			if strings.Contains(netname, s.VMProperties.GetCloudletExternalNetwork()) {
+				platformRes.Ipv4Used += uint64(len(ips))
+			}
 		}
 	}
 	return nil

@@ -18,12 +18,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 )
 
 //GetExternalGateway retrieves Gateway IP from the external network information. It first gets external
@@ -39,10 +38,10 @@ func (s *OpenstackPlatform) GetExternalGateway(ctx context.Context, extNetName s
 	if nd.Status != "ACTIVE" {
 		return "", fmt.Errorf("network %s is not active, status %s", extNetName, nd.Status)
 	}
-	if nd.AdminStateUp != "UP" {
+	if !nd.AdminStateUp {
 		return "", fmt.Errorf("network %s is not admin-state set to up", extNetName)
 	}
-	subnets := strings.Split(nd.Subnets, ",")
+	subnets := nd.Subnets
 	//XXX beware of extra spaces
 	if len(subnets) < 1 {
 		return "", fmt.Errorf("no subnets for %s", extNetName)
@@ -264,7 +263,7 @@ func (o *OpenstackPlatform) GetCloudletSubnets(ctx context.Context) ([]string, e
 		return nil, fmt.Errorf("can't get MEX network detail, %v", err)
 	}
 
-	subnets := strings.Split(nd.Subnets, ",")
+	subnets := nd.Subnets
 	if len(subnets) < 1 {
 		return nil, fmt.Errorf("can't get a list of subnets for MEX network")
 	}
@@ -280,25 +279,24 @@ func getNameAndIPFromNetwork(network string) (string, string, error) {
 	return nets[0], nets[1], nil
 }
 
-func GetServerNetworkIP(networks, netmatch string) (string, error) {
-	for _, n := range strings.Split(networks, "'") {
-		netname, ip, err := getNameAndIPFromNetwork(n)
-		if err != nil {
-			return "", err
-		}
+func GetServerNetworkIP(networks map[string][]string, netmatch string) (string, error) {
+	for netname, ips := range networks {
 		if strings.Contains(netname, netmatch) {
-			return ip, nil
+			if len(ips) == 0 {
+				return "", fmt.Errorf("no ips for network %s matching %s", netname, netmatch)
+			}
+			return ips[0], nil
 		}
 	}
 	return "", fmt.Errorf("no network matching: %s", netmatch)
 }
 
-func (o *OpenstackPlatform) GetServerExternalIP(networks string) (string, error) {
+func (o *OpenstackPlatform) GetServerExternalIP(networks map[string][]string) (string, error) {
 	extNet := o.VMProperties.GetCloudletExternalNetwork()
 	return GetServerNetworkIP(networks, extNet)
 }
 
-func (o *OpenstackPlatform) GetServerInternalIP(networks string) (string, error) {
+func (o *OpenstackPlatform) GetServerInternalIP(networks map[string][]string) (string, error) {
 	mexNet := o.VMProperties.GetCloudletMexNetwork()
 	return GetServerNetworkIP(networks, mexNet)
 }
@@ -321,41 +319,6 @@ func (s *OpenstackPlatform) GetInternalCIDR(name string, srvs []OSServer) (strin
 	}
 	cidr := addr + "/24" // XXX we use this convention of /24 in k8s priv-net
 	return cidr, nil
-}
-
-// TODO collapse common keys into a single entry with multi-part values ex: "hw"
-// (We don't use this property values today, but perhaps in the future)
-func ParseFlavorProperties(f OSFlavorDetail) map[string]string {
-
-	var props map[string]string
-
-	ms := strings.Split(f.Properties, ",")
-	props = make(map[string]string)
-	for _, m := range ms {
-		// ex: pci_passthrough:alias='t4gpu:1’
-		var val []string
-		if strings.Contains(m, ":") {
-			val = strings.Split(m, ":")
-		} else if strings.Contains(m, "=") {
-			// handle vio (wwt) flavor syntax
-			val = strings.Split(m, "=")
-		}
-
-		if len(val) > 1 {
-			val[0] = strings.TrimSpace(val[0])
-			var s []string
-			for i := 1; i < len(val); i++ {
-				val[i] = strings.Replace(val[i], "'", "", -1)
-				if _, err := strconv.Atoi(val[i]); err == nil {
-					s = append(s, ":")
-				}
-				s = append(s, val[i])
-			}
-			props[val[0]] = strings.Join(s, "")
-		}
-
-	}
-	return props
 }
 
 func (o *OpenstackPlatform) GetRouterDetail(ctx context.Context, routerName string) (*vmlayer.RouterDetail, error) {
