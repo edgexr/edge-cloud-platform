@@ -22,14 +22,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
-const ResourceNotFound string = "Could not find resource"
+const ImageNotFound string = "No Image found"
 const DuplicateResourceFound string = "More than one resource exists"
 const StackNotFound string = "Stack not found"
 
@@ -42,7 +42,7 @@ func (s *OpenstackPlatform) TimedOpenStackCommand(ctx context.Context, name stri
 
 	out, err := newSh.Command(name, a).CombinedOutput()
 	if err != nil {
-		log.InfoLog("Openstack command returned error", "parms", parmstr, "err", err, "out", string(out), "elapsed time", time.Since(start))
+		log.SpanLog(ctx, log.DebugLevelInfra, "Openstack command returned error", "parms", parmstr, "err", err, "out", string(out), "elapsed time", time.Since(start))
 		return out, err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "OpenStack Command Done", "parmstr", parmstr, "elapsed time", time.Since(start))
@@ -141,8 +141,7 @@ func (s *OpenstackPlatform) ListImages(ctx context.Context) ([]OSImage, error) {
 
 //GetImageDetail show of a given image from Glance
 func (s *OpenstackPlatform) GetImageDetail(ctx context.Context, name string) (*OSImageDetail, error) {
-	out, err := s.TimedOpenStackCommand(
-		ctx, "openstack", "image", "show", name, "-f", "json",
+	out, err := s.TimedOpenStackCommand(ctx, "openstack", "image", "show", name, "-f", "json",
 		"-c", "id",
 		"-c", "status",
 		"-c", "updated_at",
@@ -320,7 +319,7 @@ func (s *OpenstackPlatform) CreateServer(ctx context.Context, opts *OSServerOpt)
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating server with args", "iargs", iargs)
 
 	//log.SpanLog(ctx,log.DebugLevelInfra, "openstack create server", "opts", opts, "iargs", iargs)
-	out, err := s.TimedOpenStackCommand(ctx, "openstack", iargs...)
+	out, err := s.TimedOpenStackCommand(ctx, "openstack", iargs...) // server create
 	if err != nil {
 		err = fmt.Errorf("cannot create server, %v, '%s'", err, out)
 		return err
@@ -461,7 +460,7 @@ func (s *OpenstackPlatform) CreateNetwork(ctx context.Context, name, netType, av
 		args = append(args, []string{"--availability-zone-hint", availabilityZone}...)
 	}
 	args = append(args, name)
-	out, err := s.TimedOpenStackCommand(ctx, "openstack", args...)
+	out, err := s.TimedOpenStackCommand(ctx, "openstack", args...) // network create
 	if err != nil {
 		err = fmt.Errorf("can't create network %s, %s, %v", name, out, err)
 		return err
@@ -731,7 +730,7 @@ func (s *OpenstackPlatform) DeleteImage(ctx context.Context, folder, imageName s
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting image", "name", imageName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "image", "delete", imageName)
 	if err != nil {
-		if strings.Contains(string(out), ResourceNotFound) {
+		if strings.Contains(string(out), ImageNotFound) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "image not found", "name", imageName)
 			return nil
 		} else {
@@ -957,11 +956,6 @@ func (s *OpenstackPlatform) GetFlavorInfo(ctx context.Context) ([]*edgeproto.Fla
 	}
 	var finfo []*edgeproto.FlavorInfo
 	for _, f := range osflavors {
-		var props map[string]string
-		if f.Properties != "" {
-			props = ParseFlavorProperties(f)
-		}
-
 		finfo = append(
 			finfo,
 			&edgeproto.FlavorInfo{
@@ -969,7 +963,7 @@ func (s *OpenstackPlatform) GetFlavorInfo(ctx context.Context) ([]*edgeproto.Fla
 				Vcpus:   uint64(f.VCPUs),
 				Ram:     uint64(f.RAM),
 				Disk:    uint64(f.Disk),
-				PropMap: props},
+				PropMap: f.Properties},
 		)
 	}
 	zones, err := s.ListAZones(ctx)
@@ -1121,7 +1115,7 @@ func (o *OpenstackPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo 
 	imageFound := false
 	imageDetail, err := o.GetImageDetail(ctx, imageInfo.LocalImageName)
 	if err != nil {
-		if strings.Contains(err.Error(), ResourceNotFound) {
+		if strings.Contains(err.Error(), ImageNotFound) {
 			// Add image to Glance
 			log.SpanLog(ctx, log.DebugLevelInfra, "image is not present in glance, add image")
 			createImage = true

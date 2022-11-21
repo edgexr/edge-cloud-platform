@@ -24,7 +24,12 @@ type OSLimit struct {
 }
 
 type OSServer struct {
-	Status, Name, Image, ID, Flavor, Networks string
+	Status   string
+	Name     string
+	Image    string
+	ID       string
+	Flavor   string
+	Networks map[string][]string // network name to ip list
 }
 
 type OSFlavorDetail struct {
@@ -35,9 +40,9 @@ type OSFlavorDetail struct {
 	VCPUs       int                        `json:"vcpus"`
 	Disk        int                        `json:"disk"`
 	Public      bool                       `json:"os-flavor-access:is_public"`
-	Properties  string                     `json:"properties"`
+	Properties  map[string]string          `json:"properties"`
 	Swap        util.EmptyStringJsonNumber `json:"swap"`
-	RXTX_Factor util.EmptyStringJsonNumber `json:"rxtx factor"`
+	RXTX_Factor util.EmptyStringJsonNumber `json:"rxtx_factor"`
 }
 
 type OSAZone struct {
@@ -65,6 +70,10 @@ type OSSecurityGroup struct {
 	Name    string `json:"Name"`
 }
 
+type OSSecurityGroupName struct {
+	Name string `json:"name"`
+}
+
 type OSSecurityGroupRule struct {
 	ID        string `json:"ID"`
 	IPRange   string `json:"IP Range"`
@@ -81,49 +90,48 @@ type OSServerOpt struct {
 }
 
 type OSServerDetail struct {
-	TaskState        string `json:"OS-EXT-STS:task_state"`
-	Addresses        string `json:"addresses"`
-	Image            string `json:"image"`
-	VMState          string `json:"OS-EXT-STS:vm_state"`
-	LaunchedAt       string `json:"OS-SRV-USG:launched_at"`
-	Flavor           string `json:"flavor"`
-	ID               string `json:"id"`
-	SecurityGroups   string `json:"security_groups"`
-	VolumesAttached  string `json:"volumes_attached"`
-	UserID           string `json:"user_id"`
-	DiskConfig       string `json:"OS-DCF:diskConfig"`
-	AccessIPv4       string `json:"accessIPv4"`
-	AccessIPv6       string `json:"accessIPv6"`
-	Progress         int    `json:"progress"`
-	PowerState       string `json:"OS-EXT-STS:power_state"`
-	ProjectID        string `json:"project_id"`
-	ConfigDrive      string `json:"config_drive"`
-	Status           string `json:"status"`
-	Updated          string `json:"updated"`
-	HostID           string `json:"hostId"`
-	TerminatedAt     string `json:"OS-SRV-USG:terminated_at"`
-	KeyName          string `json:"key_name"`
-	AvailabilityZone string `json:"OS-EXT-AZ:availability_zone"`
-	Name             string `json:"name"`
-	Created          string `json:"created"`
-	Properties       string `json:"properties"`
+	TaskState        string                 `json:"OS-EXT-STS:task_state"`
+	Addresses        map[string][]string    `json:"addresses"`
+	Image            string                 `json:"image"`
+	VMState          string                 `json:"OS-EXT-STS:vm_state"`
+	LaunchedAt       string                 `json:"OS-SRV-USG:launched_at"`
+	Flavor           string                 `json:"flavor"`
+	ID               string                 `json:"id"`
+	SecurityGroups   []OSSecurityGroupName  `json:"security_groups"`
+	UserID           string                 `json:"user_id"`
+	DiskConfig       string                 `json:"OS-DCF:diskConfig"`
+	AccessIPv4       string                 `json:"accessIPv4"`
+	AccessIPv6       string                 `json:"accessIPv6"`
+	Progress         int                    `json:"progress"`
+	PowerState       int                    `json:"OS-EXT-STS:power_state"`
+	ProjectID        string                 `json:"project_id"`
+	ConfigDrive      string                 `json:"config_drive"`
+	Status           string                 `json:"status"`
+	Updated          string                 `json:"updated"`
+	HostID           string                 `json:"hostId"`
+	TerminatedAt     string                 `json:"OS-SRV-USG:terminated_at"`
+	KeyName          string                 `json:"key_name"`
+	AvailabilityZone string                 `json:"OS-EXT-AZ:availability_zone"`
+	Name             string                 `json:"name"`
+	Created          string                 `json:"created"`
+	Properties       map[string]interface{} `json:"properties"`
 }
 
 type OSPort struct {
-	ID         string `json:"ID"`
-	Name       string `json:"Name"`
-	Status     string `json:"Status"`
-	MACAddress string `json:"MAC Address"`
-	FixedIPs   string `json:"Fixed IP Addresses"`
+	ID         string      `json:"ID"`
+	Name       string      `json:"Name"`
+	Status     string      `json:"Status"`
+	MACAddress string      `json:"MAC Address"`
+	FixedIPs   []OSFixedIP `json:"Fixed IP Addresses"`
 }
 
 type OSPortDetail struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	DeviceID   string `json:"device_id"`
-	Status     string `json:"status"`
-	MACAddress string `json:"mac_address"`
-	FixedIPs   string `json:"fixed_ips"`
+	ID         string      `json:"id"`
+	Name       string      `json:"name"`
+	DeviceID   string      `json:"device_id"`
+	Status     string      `json:"status"`
+	MACAddress string      `json:"mac_address"`
+	FixedIPs   []OSFixedIP `json:"fixed_ips"`
 }
 
 type OSImage struct {
@@ -131,48 +139,47 @@ type OSImage struct {
 }
 
 type OSImageDetail struct {
-	Name       string `json:"name"`
-	Status     string `json:"status"`
-	ID         string `json:"id"`
-	UpdatedAt  string `json:"updated_at"`
-	Checksum   string `json:"checksum"`
-	Tags       string `json:"tags"`
-	Properties string `json:"propereties"`
-	DiskFormat string `json:"disk_format"`
+	Name       string                 `json:"name"`
+	Status     string                 `json:"status"`
+	ID         string                 `json:"id"`
+	UpdatedAt  string                 `json:"updated_at"`
+	Checksum   string                 `json:"checksum"`
+	Tags       string                 `json:"tags"`
+	Properties map[string]interface{} `json:"properties"`
+	DiskFormat string                 `json:"disk_format"`
 }
 
 type OSNetwork struct {
-	Subnets, ID, Name string
+	ID, Name string
+	Subnets  []string
 }
 
 type OSNetworkDetail struct {
-	ID                      string `json:"id"`
-	Name                    string `json:"name"`
-	ProviderPhysicalNetwork string `json:"provider:physical_network"`
-	IPv6AddressScope        string `json:"ipv6_address_scope"`
-	DNSDomain               string `json:"dns_domain"`
-	IsVLANTransparent       bool   `json:"is_vlan_transparent"`
-	ProviderNetworkType     string `json:"provider:network_type"`
-	External                string `json:"router:external"`
-	AvailabilityZoneHints   string `json:"availability_zone_hints"`
-	AvailabilityZones       string `json:"availability_zones"`
-	Segments                string `json:"segments"`
-	IPv4AddressScope        string `json:"ipv4_address_scope"`
-	ProjectID               string `json:"project_id"`
-	Status                  string `json:"status"`
-	Subnets                 string `json:"subnets"`
-	Description             string `json:"description"`
-	Tags                    string `json:"tags"`
-	UpdatedAt               string `json:"updated_at"`
-	ProviderSegmentationID  int    `json:"provider:segmentation_id"`
-	QOSPolicyID             string `json:"qos_policy_id"`
-	AdminStateUp            string `json:"admin_state_up"`
-	CreatedAt               string `json:"created_at"`
-	RevisionNumber          int    `json:"revision_number"`
-	MTU                     int    `json:"mtu"`
-	PortSecurityEnabled     bool   `json:"port_security_enabled"`
-	Shared                  bool   `json:"shared"`
-	IsDefault               bool   `json:"is_default"`
+	ID                      string   `json:"id"`
+	Name                    string   `json:"name"`
+	ProviderPhysicalNetwork string   `json:"provider:physical_network"`
+	IPv6AddressScope        string   `json:"ipv6_address_scope"`
+	DNSDomain               string   `json:"dns_domain"`
+	IsVLANTransparent       bool     `json:"is_vlan_transparent"`
+	ProviderNetworkType     string   `json:"provider:network_type"`
+	External                bool     `json:"router:external"`
+	AvailabilityZones       []string `json:"availability_zones"`
+	Segments                string   `json:"segments"`
+	IPv4AddressScope        string   `json:"ipv4_address_scope"`
+	ProjectID               string   `json:"project_id"`
+	Status                  string   `json:"status"`
+	Subnets                 []string `json:"subnets"`
+	Description             string   `json:"description"`
+	UpdatedAt               string   `json:"updated_at"`
+	ProviderSegmentationID  int      `json:"provider:segmentation_id"`
+	QOSPolicyID             string   `json:"qos_policy_id"`
+	AdminStateUp            bool     `json:"admin_state_up"`
+	CreatedAt               string   `json:"created_at"`
+	RevisionNumber          int      `json:"revision_number"`
+	MTU                     int      `json:"mtu"`
+	PortSecurityEnabled     bool     `json:"port_security_enabled"`
+	Shared                  bool     `json:"shared"`
+	IsDefault               bool     `json:"is_default"`
 }
 
 type OSFlavor struct {
@@ -184,28 +191,30 @@ type OSSubnet struct {
 	Name, ID, Network, Subnet string
 }
 
+type OSAllocationPool struct {
+	Start string `json:"start"`
+	End   string `json:"end"`
+}
+
 type OSSubnetDetail struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	ServiceTypes    string `json:"service_types"`
-	Description     string `json:"description"`
-	EnableDHCP      bool   `json:"enable_dhcp"`
-	SegmentID       string `json:"segment_id"`
-	NetworkID       string `json:"network_id"`
-	CreatedAt       string `json:"created_at"`
-	Tags            string `json:"tags"`
-	DNSNameServers  string `json:"dns_nameservers"`
-	UpdatedAt       string `json:"updated_at"`
-	IPv6RAMode      string `json:"ipv6_ra_mode"`
-	AllocationPools string `json:"allocation_pools"`
-	GatewayIP       string `json:"gateway_ip"`
-	RevisionNumber  int    `json:"revision_number"`
-	IPv6AddressMode string `json:"ipv6_address_mode"`
-	IPVersion       int    `json:"ip_version"`
-	HostRoutes      string `json:"host_routes"`
-	CIDR            string `json:"cidr"`
-	ProjectID       string `json:"project_id"`
-	SubnetPoolID    string `json:"subnetpool_id"`
+	ID              string             `json:"id"`
+	Name            string             `json:"name"`
+	Description     string             `json:"description"`
+	EnableDHCP      bool               `json:"enable_dhcp"`
+	SegmentID       string             `json:"segment_id"`
+	NetworkID       string             `json:"network_id"`
+	CreatedAt       string             `json:"created_at"`
+	DNSNameServers  []string           `json:"dns_nameservers"`
+	UpdatedAt       string             `json:"updated_at"`
+	IPv6RAMode      string             `json:"ipv6_ra_mode"`
+	AllocationPools []OSAllocationPool `json:"allocation_pools"`
+	GatewayIP       string             `json:"gateway_ip"`
+	RevisionNumber  int                `json:"revision_number"`
+	IPv6AddressMode string             `json:"ipv6_address_mode"`
+	IPVersion       int                `json:"ip_version"`
+	CIDR            string             `json:"cidr"`
+	ProjectID       string             `json:"project_id"`
+	SubnetPoolID    string             `json:"subnetpool_id"`
 }
 
 type OSRouter struct {
@@ -214,33 +223,29 @@ type OSRouter struct {
 }
 
 type OSRouterDetail struct {
-	ID                    string `json:"id"`
-	Name                  string `json:"name"`
-	ExternalGatewayInfo   string `json:"external_gateway_info"`
-	Status                string `json:"status"`
-	AvailabilityZoneHints string `json:"availability_zone_hints"`
-	AvailabilityZones     string `json:"availability_zones"`
-	Description           string `json:"description"`
-	AdminStateUp          string `json:"admin_state_up"`
-	CreatedAt             string `json:"created_at"`
-	Tags                  string `json:"tags"`
-	UpdatedAt             string `json:"updated_at"`
-	InterfacesInfo        string `json:"interfaces_info"`
-	ProjectID             string `json:"project_id"`
-	FlavorID              string `json:"flavor_id"`
-	Routes                string `json:"routes"`
-	Distributed           bool   `json:"distributed"`
-	HA                    bool   `json:"ha"`
-	RevisionNumber        int    `json:"revision_number"`
+	ID                  string `json:"id"`
+	Name                string `json:"name"`
+	ExternalGatewayInfo string `json:"external_gateway_info"`
+	Status              string `json:"status"`
+	Description         string `json:"description"`
+	CreatedAt           string `json:"created_at"`
+	UpdatedAt           string `json:"updated_at"`
+	InterfacesInfo      string `json:"interfaces_info"`
+	ProjectID           string `json:"project_id"`
+	FlavorID            string `json:"flavor_id"`
+	Routes              string `json:"routes"`
+	Distributed         bool   `json:"distributed"`
+	HA                  bool   `json:"ha"`
+	RevisionNumber      int    `json:"revision_number"`
 }
 
 type OSExternalGateway struct {
-	NetworkID        string              `json:"network_id"` //subnet of external net
-	EnableSNAT       bool                `json:"enable_snat"`
-	ExternalFixedIPs []OSExternalFixedIP `json:"external_fixed_ips"` //gateway between extnet and privnet
+	NetworkID        string      `json:"network_id"` //subnet of external net
+	EnableSNAT       bool        `json:"enable_snat"`
+	ExternalFixedIPs []OSFixedIP `json:"external_fixed_ips"` //gateway between extnet and privnet
 }
 
-type OSExternalFixedIP struct {
+type OSFixedIP struct {
 	SubnetID  string `json:"subnet_id"`
 	IPAddress string `json:"ip_address"`
 }
@@ -263,7 +268,6 @@ type NeutronErrorType struct {
 
 type OSHeatStackDetail struct {
 	ID                string            `json:"id"`
-	Parent            string            `json:"parent"`
 	Description       string            `json:"description"`
 	Parameters        map[string]string `json:"parameters"`
 	StackStatusReason string            `json:"stack_status_reason"`
