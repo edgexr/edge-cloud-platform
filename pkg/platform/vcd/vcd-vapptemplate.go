@@ -407,6 +407,10 @@ func (v *VcdPlatform) DeleteImage(ctx context.Context, folder, image string) err
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
 		return fmt.Errorf(NoVCDClientInContext)
 	}
+	if !v.GetTemplateArtifactoryImportEnabled() {
+		log.SpanLog(ctx, log.DebugLevelInfra, "skipping template delete because import is disabled, delete manually if needed", "template", image)
+		return nil
+	}
 	err := v.DeleteTemplate(ctx, image, vcdClient)
 	if err != nil {
 		if strings.Contains(err.Error(), govcd.ErrorEntityNotFound.Error()) {
