@@ -84,6 +84,7 @@ func GetRootCommand() *RootCommand {
 	developerCommands := []*cobra.Command{
 		rc.getDevCloudletShowCommand(),
 		rc.getCmdGroup(ormctl.CloudletPoolResponseGroup, ormctl.CloudletPoolAccessGroup),
+		rc.getArtifactCmdGroup(),
 		rc.getCmdGroup(ormctl.AppGroup),
 		rc.getCmdGroup(ormctl.ClusterInstGroup),
 		rc.getCmdGroup(ormctl.AppInstGroup),

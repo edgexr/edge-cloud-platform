@@ -22,41 +22,50 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
 	"github.com/spf13/cobra"
 )
 
 var LookupKey = "lookupkey"
+
+func (s *RootCommand) runRestArgs(c *cli.Command, args []string) (*cli.MapData, error) {
+	c.CobraCmd.SilenceUsage = true
+
+	if s.client.PrintTransformations {
+		fmt.Printf("%s: transform args %v to data\n", log.GetLineno(0), args)
+	}
+	mapData, err := c.ParseInput(args)
+	if err != nil {
+		if len(args) == 0 {
+			// Force print usage since no args specified,
+			// but obviously some are required.
+			c.CobraCmd.SilenceUsage = false
+		}
+		return nil, err
+	}
+	if s.client.PrintTransformations {
+		fmt.Printf("%s: transformed args to data %#v\n", log.GetLineno(0), mapData.Data)
+	}
+
+	s.client.Debug = cli.Debug
+	return mapData, nil
+}
 
 func (s *RootCommand) runRest(path string) func(c *cli.Command, args []string) error {
 	return func(c *cli.Command, args []string) error {
 		if c.ReplyData == nil {
 			c.ReplyData = &ormapi.Result{}
 		}
-		c.CobraCmd.SilenceUsage = true
-
-		if s.client.PrintTransformations {
-			fmt.Printf("%s: transform args %v to data\n", log.GetLineno(0), args)
-		}
-		mapData, err := c.ParseInput(args)
+		mapData, err := s.runRestArgs(c, args)
 		if err != nil {
-			if len(args) == 0 {
-				// Force print usage since no args specified,
-				// but obviously some are required.
-				c.CobraCmd.SilenceUsage = false
-			}
 			return err
 		}
 		in := mapData.Data
-		if s.client.PrintTransformations {
-			fmt.Printf("%s: transformed args to data %#v\n", log.GetLineno(0), in)
-		}
 
-		s.client.Debug = cli.Debug
 		if c.StreamOut && c.StreamOutIncremental {
 			// print streamed data as it comes
 			replyReady := func() {
@@ -99,6 +108,9 @@ func check(c *cli.Command, status int, err error, reply interface{}) error {
 	// all failure cases result in error getting set (by PostJson)
 	if err != nil {
 		if status != 0 {
+			if err.Error() == "" {
+				return fmt.Errorf("%s (%d)", http.StatusText(status), status)
+			}
 			return fmt.Errorf("%s (%d), %v", http.StatusText(status), status, err)
 		}
 		return err
@@ -176,6 +188,14 @@ func (s *RootCommand) getUri() string {
 		prefix = "http://"
 	}
 	return prefix + s.addr + "/api/v1"
+}
+
+func (s *RootCommand) getArtifactUri() string {
+	prefix := ""
+	if !strings.HasPrefix(s.addr, "http") {
+		prefix = "http://"
+	}
+	return prefix + s.addr + "/storage/v1"
 }
 
 func (s *RootCommand) ConvertCmd(api *ormctl.ApiCommand) *cli.Command {

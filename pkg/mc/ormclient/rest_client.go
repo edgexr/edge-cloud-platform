@@ -109,15 +109,15 @@ func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
 }
 
 func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Response, error) {
-	return s.HttpJsonSendReq("POST", uri, token, reqData, nil)
+	return s.HttpJsonSendReq("POST", uri, token, reqData, nil, nil)
 }
 
 func (s *Client) PostJson(uri, token string, reqData interface{}, replyData interface{}) (int, error) {
-	status, _, err := s.HttpJsonSend("POST", uri, token, reqData, replyData, nil)
+	status, _, err := s.HttpJsonSend("POST", uri, token, reqData, replyData, nil, nil)
 	return status, err
 }
 
-func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{}, headerVals http.Header) (*http.Response, error) {
+func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{}, headerVals http.Header, queryParams map[string]string) (*http.Response, error) {
 	var body io.Reader
 	var datastr string
 	if reqData != nil {
@@ -165,6 +165,14 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{},
 			req.Header.Add(k, v)
 		}
 	}
+	if queryParams != nil {
+		vals := req.URL.Query()
+		for k, v := range queryParams {
+			vals.Add(k, v)
+		}
+		req.URL.RawQuery = vals.Encode()
+	}
+
 	tlsConfig := &tls.Config{}
 	if s.SkipVerify {
 		tlsConfig.InsecureSkipVerify = true
@@ -195,14 +203,14 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{},
 	return client.Do(req)
 }
 
-func (s *Client) HttpJsonSend(method, uri, token string, reqData interface{}, replyData interface{}, headerVals http.Header) (int, http.Header, error) {
-	resp, err := s.HttpJsonSendReq(method, uri, token, reqData, headerVals)
+func (s *Client) HttpJsonSend(method, uri, token string, reqData interface{}, replyData interface{}, headerVals http.Header, queryParams map[string]string) (int, http.Header, error) {
+	resp, err := s.HttpJsonSendReq(method, uri, token, reqData, headerVals, queryParams)
 	if err != nil {
 		return 0, nil, fmt.Errorf("%s %s client do failed, %s", method, uri, err.Error())
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK && replyData != nil {
-		err = json.NewDecoder(resp.Body).Decode(replyData)
+		err := json.NewDecoder(resp.Body).Decode(replyData)
 		if err != nil && err != io.EOF {
 			return resp.StatusCode, nil, fmt.Errorf("%s %s decode resp failed, %v", method, uri, err)
 		}

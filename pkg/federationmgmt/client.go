@@ -153,7 +153,7 @@ func (c *Client) SendRequest(ctx context.Context, method, endpoint string, reqDa
 	}
 	requestUrl := fmt.Sprintf("%s%s", c.addr, endpoint)
 	log.SpanLog(ctx, log.DebugLevelApi, "federation send request", "method", method, "url", requestUrl)
-	status, respHeader, err := restClient.HttpJsonSend(method, requestUrl, token.AccessToken, reqData, replyData, headerVals)
+	status, respHeader, err := restClient.HttpJsonSend(method, requestUrl, token.AccessToken, reqData, replyData, headerVals, nil)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "Federation API failed", "method", method, "url", requestUrl, "error", err)
 		return nil, err

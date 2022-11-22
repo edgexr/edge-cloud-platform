@@ -21,9 +21,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
 	"github.com/spf13/cobra"
 )
 
@@ -45,17 +45,7 @@ func (s *RootCommand) getReportCmdGroup() *cobra.Command {
 
 func (s *RootCommand) runGenerateReport(path string) func(c *cli.Command, args []string) error {
 	return func(c *cli.Command, args []string) error {
-		c.CobraCmd.SilenceUsage = true
-		in, err := c.ParseInput(args)
-		if err != nil {
-			if len(args) == 0 {
-				// Force print usage since no args specified,
-				// but obviously some are required.
-				c.CobraCmd.SilenceUsage = false
-			}
-			return err
-		}
-		s.client.Debug = cli.Debug
+		in, err := s.runRestArgs(c, args)
 
 		report, ok := c.ReqData.(*ormapi.GenerateReport)
 		if !ok {
@@ -70,17 +60,8 @@ func (s *RootCommand) runGenerateReport(path string) func(c *cli.Command, args [
 
 func (s *RootCommand) runDownloadReport(path string) func(c *cli.Command, args []string) error {
 	return func(c *cli.Command, args []string) error {
-		c.CobraCmd.SilenceUsage = true
-		in, err := c.ParseInput(args)
-		if err != nil {
-			if len(args) == 0 {
-				// Force print usage since no args specified,
-				// but obviously some are required.
-				c.CobraCmd.SilenceUsage = false
-			}
-			return err
-		}
-		s.client.Debug = cli.Debug
+		in, err := s.runRestArgs(c, args)
+
 		report, ok := c.ReqData.(*ormapi.DownloadReport)
 		if !ok {
 			return fmt.Errorf("unable to fetch report args: %v", c.ReqData)
