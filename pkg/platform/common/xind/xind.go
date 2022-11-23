@@ -121,7 +121,7 @@ func (s *Xind) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, err
 	return nil, nil
 }
 
-func (s *Xind) GetVersionProperties() map[string]string {
+func (s *Xind) GetVersionProperties(ctx context.Context) map[string]string {
 	return map[string]string{}
 }
 

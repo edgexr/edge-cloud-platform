@@ -264,6 +264,6 @@ func (k *K8sBareMetalPlatform) GetRootLBClients(ctx context.Context) (map[string
 	return nil, nil
 }
 
-func (k *K8sBareMetalPlatform) GetVersionProperties() map[string]string {
+func (k *K8sBareMetalPlatform) GetVersionProperties(ctx context.Context) map[string]string {
 	return map[string]string{}
 }

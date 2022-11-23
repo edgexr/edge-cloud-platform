@@ -541,7 +541,7 @@ func initOperator(ctx context.Context, operatorName string) (op.OperatorApiGw, e
 	if err != nil {
 		return nil, err
 	}
-	nodeMgr.UpdateNodeProps(ctx, apiGw.GetVersionProperties())
+	nodeMgr.UpdateNodeProps(ctx, apiGw.GetVersionProperties(ctx))
 	return apiGw, nil
 }
 
@@ -554,7 +554,7 @@ func initEdgeEventsPlugin(ctx context.Context, operatorName string) (dmecommon.E
 	if err != nil {
 		return nil, err
 	}
-	nodeMgr.UpdateNodeProps(ctx, eehandler.GetVersionProperties())
+	nodeMgr.UpdateNodeProps(ctx, eehandler.GetVersionProperties(ctx))
 	return eehandler, nil
 }
 

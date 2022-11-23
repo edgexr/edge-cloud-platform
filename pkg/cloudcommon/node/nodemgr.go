@@ -114,12 +114,13 @@ func (s *NodeMgr) Init(nodeType, tlsClientIssuer string, ops ...NodeOp) (context
 		}
 		s.MyNode.Key.Name = cloudcommon.Hostname() + roleSuffix
 	}
+	buildInfo := version.GetBuildInfo(initCtx)
 	s.MyNode.Key.Region = opts.region
 	s.MyNode.Key.CloudletKey = opts.cloudletKey
-	s.MyNode.BuildMaster = version.BuildMaster
-	s.MyNode.BuildHead = version.BuildHead
-	s.MyNode.BuildAuthor = version.BuildAuthor
-	s.MyNode.BuildDate = version.BuildDate
+	s.MyNode.BuildMaster = buildInfo.BuildMaster
+	s.MyNode.BuildHead = buildInfo.BuildHead
+	s.MyNode.BuildAuthor = buildInfo.BuildAuthor
+	s.MyNode.BuildDate = buildInfo.BuildDate
 	s.MyNode.Hostname = cloudcommon.Hostname()
 	s.MyNode.ContainerVersion = opts.containerVersion
 	s.Region = opts.region

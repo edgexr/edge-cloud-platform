@@ -58,10 +58,11 @@ func NewControllerApi(sync *Sync, all *AllApis) *ControllerApi {
 // Note that the calls to etcd will block if etcd is not reachable.
 func (s *ControllerApi) registerController(ctx context.Context, lease int64) error {
 	ctrl := edgeproto.Controller{}
+	buildInfo := version.GetBuildInfo(ctx)
 	ctrl.Key.Addr = *externalApiAddr
-	ctrl.BuildMaster = version.BuildMaster
-	ctrl.BuildHead = version.BuildHead
-	ctrl.BuildAuthor = version.BuildAuthor
+	ctrl.BuildMaster = buildInfo.BuildMaster
+	ctrl.BuildHead = buildInfo.BuildHead
+	ctrl.BuildAuthor = buildInfo.BuildAuthor
 	ctrl.Hostname = cloudcommon.Hostname()
 	_, err := s.store.Put(ctx, &ctrl, s.sync.syncWait, objstore.WithLease(lease))
 	return err

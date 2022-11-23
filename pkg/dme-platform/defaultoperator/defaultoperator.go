@@ -56,8 +56,8 @@ func (*OperatorApiGw) GetQOSPositionKPI(mreq *dme.QosPositionRequest, getQosSvr 
 	return simulatedqos.GetSimulatedQOSPositionKPI(mreq, getQosSvr)
 }
 
-func (*OperatorApiGw) GetVersionProperties() map[string]string {
-	return version.BuildProps("DefaultOperator")
+func (*OperatorApiGw) GetVersionProperties(ctx context.Context) map[string]string {
+	return version.BuildProps(ctx, "DefaultOperator")
 }
 
 func (*OperatorApiGw) CreatePrioritySession(ctx context.Context, req *dme.QosPrioritySessionCreateRequest) (*dme.QosPrioritySessionReply, error) {

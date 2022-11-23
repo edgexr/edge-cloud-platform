@@ -172,6 +172,6 @@ func (s *Platform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletPro
 	return s.Platform.GetCloudletProps(ctx)
 }
 
-func (s *Platform) GetVersionProperties() map[string]string {
-	return version.BuildProps("FakeInfra")
+func (s *Platform) GetVersionProperties(ctx context.Context) map[string]string {
+	return version.BuildProps(ctx, "")
 }
