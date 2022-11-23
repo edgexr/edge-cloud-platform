@@ -2,6 +2,7 @@ package mccli
 
 import (
 	"bufio"
+	"crypto/md5"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -83,6 +84,12 @@ func (s *RootCommand) uploadArtifact(c *cli.Command, args []string) error {
 		return fmt.Errorf("file %s not found", art.LocalFile)
 	}
 
+	file, err := os.Open(art.LocalFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
 	// do a quick info check to see if we're authorized
 	uri := s.buildArtifactPath(art)
 	resp, err := s.client.HttpJsonSendReq("HEAD", uri, s.token, nil, nil, nil)
@@ -92,12 +99,20 @@ func (s *RootCommand) uploadArtifact(c *cli.Command, args []string) error {
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
 		return bodyError(c, resp)
 	}
-
-	file, err := os.Open(art.LocalFile)
-	if err != nil {
-		return err
+	if resp.StatusCode == http.StatusOK {
+		// check if local file matches remote file
+		hash := md5.New()
+		_, err := io.Copy(hash, file)
+		if err != nil {
+			return fmt.Errorf("Remote file %s/%s exists and failed to calculate md5 hash of local file %s: %s", art.Org, art.Path, art.LocalFile, err)
+		}
+		remoteMd5 := resp.Header.Get("md5")
+		if string(hash.Sum(nil)) == remoteMd5 {
+			fmt.Printf("Remote file %s/%s exists and md5 hash matches local file %s\n", art.Org, art.Path, art.LocalFile)
+			return nil
+		}
+		return fmt.Errorf("Remote file %s/%s already exists and hash does not match local, please delete or move first", art.Org, art.Path)
 	}
-	defer file.Close()
 
 	bar := pb.Full.Start64(fileInfo.Size())
 	defer bar.Finish()
@@ -217,9 +232,17 @@ func (s *RootCommand) getArtifact(c *cli.Command, args []string) error {
 		return fmt.Errorf("path cannot be empty")
 	}
 
-	uri := s.buildArtifactPath(artifact)
+	// check for local file already exists
+	localFile := artifact.LocalFile
+	if localFile == "" {
+		localFile = path.Base(artifact.Path)
+	}
+	if _, err := os.Stat(localFile); err == nil {
+		return fmt.Errorf("local file %s already exists, aborting", localFile)
+	}
 
 	// do a quick info check to get size
+	uri := s.buildArtifactPath(artifact)
 	resp, err := s.client.HttpJsonSendReq("HEAD", uri, s.token, nil, nil, nil)
 	if err != nil {
 		return err
@@ -234,11 +257,6 @@ func (s *RootCommand) getArtifact(c *cli.Command, args []string) error {
 	}
 
 	// open local file for write
-	localFile := artifact.LocalFile
-	if localFile == "" {
-		localFile = path.Base(artifact.Path)
-	}
-
 	file, err := os.Create(localFile)
 	if err != nil {
 		return err
