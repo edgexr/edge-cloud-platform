@@ -2167,11 +2167,16 @@ func isIPAllocatedPerService(ctx context.Context, platformType edgeproto.Platfor
 
 func validateImageTypeForPlatform(ctx context.Context, imageType edgeproto.ImageType, platformType edgeproto.PlatformType, features *edgeproto.PlatformFeatures) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "validateImageTypeForPlatform", "imageType", imageType, "platformType", platformType)
-	if imageType == edgeproto.ImageType_IMAGE_TYPE_OVF {
-		if !features.SupportsImageTypeOvf {
-			platName := edgeproto.PlatformType_name[int32(platformType)]
-			return fmt.Errorf("image type %s is not valid for platform type: %s", imageType, platName)
-		}
+	supported := true
+	if imageType == edgeproto.ImageType_IMAGE_TYPE_OVF && !features.SupportsImageTypeOvf {
+		supported = false
+	}
+	if imageType == edgeproto.ImageType_IMAGE_TYPE_OVA && !features.SupportsImageTypeOva {
+		supported = false
+	}
+	if !supported {
+		platName := edgeproto.PlatformType_name[int32(platformType)]
+		return fmt.Errorf("image type %s is not valid for platform type: %s", imageType.String(), platName)
 	}
 	return nil
 }

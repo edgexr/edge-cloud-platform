@@ -369,7 +369,7 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	authApi := &cloudcommon.VaultRegistryAuthApi{
 		VaultConfig: vaultConfig,
 	}
-	if in.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW {
+	if in.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW || in.ImageType == edgeproto.ImageType_IMAGE_TYPE_OVA {
 		if !strings.Contains(in.ImagePath, "://") {
 			in.ImagePath = "https://" + in.ImagePath
 		}

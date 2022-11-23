@@ -204,9 +204,6 @@ func (v *VcdPlatform) ImportTemplateFromUrl(ctx context.Context, name, templUrl 
 func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infracommon.ImageInfo, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddImageIfNotPresent", "imageInfo", imageInfo)
 
-	artifactoryVmdkPath := strings.TrimSuffix(imageInfo.ImagePath, filepath.Ext(imageInfo.ImagePath)) + ".vmdk"
-	artifactoryOvfPath := strings.TrimSuffix(imageInfo.ImagePath, filepath.Ext(imageInfo.ImagePath)) + ".ovf"
-	ovfExistsInArtifactory := false
 	u, err := url.Parse(imageInfo.ImagePath)
 	if err != nil {
 		return fmt.Errorf("unable to parse app image path - %v", err)
@@ -226,6 +223,7 @@ func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infra
 	// first see if this template already exists within our catalog
 	_, err = v.FindTemplate(ctx, imageInfo.LocalImageName, vcdClient)
 	if err == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Found existing image template", "template", imageInfo.LocalImageName)
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Found existing image template: %s", imageInfo.LocalImageName))
 		return nil
 	} else {
@@ -233,6 +231,10 @@ func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infra
 		if !strings.Contains(err.Error(), TemplateNotFoundError) {
 			return fmt.Errorf("unexpected error finding template %s - %v", imageInfo.LocalImageName, err)
 		}
+	}
+
+	if imageInfo.ImageType == edgeproto.ImageType_IMAGE_TYPE_OVA {
+		return v.uploadToVCD(ctx, imageInfo, updateCallback, imageInfo.ImagePath, artifactoryHost)
 	}
 
 	filesToCleanup := []string{}
@@ -257,6 +259,10 @@ func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infra
 		}
 		diskSize = flavor.Disk
 	}
+
+	artifactoryVmdkPath := strings.TrimSuffix(imageInfo.ImagePath, filepath.Ext(imageInfo.ImagePath)) + ".vmdk"
+	artifactoryOvfPath := strings.TrimSuffix(imageInfo.ImagePath, filepath.Ext(imageInfo.ImagePath)) + ".ovf"
+	ovfExistsInArtifactory := false
 
 	// we generate a VMDK only if it is not there. We always regenerate the OVF in case the OS type changed
 	log.SpanLog(ctx, log.DebugLevelInfra, "Will generate VMDK if not present", "artifactoryVmdkPath", artifactoryVmdkPath)
@@ -367,9 +373,18 @@ func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infra
 		}
 		defer resp.Body.Close()
 	}
+	err = v.uploadToVCD(ctx, imageInfo, updateCallback, artifactoryOvfPath, artifactoryHost)
+	return err
+}
 
+func (v *VcdPlatform) uploadToVCD(ctx context.Context, imageInfo *infracommon.ImageInfo, updateCallback edgeproto.CacheUpdateCallback, artifactoryPath, artifactoryHost string) error {
 	if !v.GetTemplateArtifactoryImportEnabled() {
-		return fmt.Errorf("Template not found in catalog and import is disabled.  Please upload ovf from \"%s\" manually to catalog and name as \"%s\" and try again", artifactoryOvfPath, imageInfo.LocalImageName)
+		return fmt.Errorf("Template not found in catalog and import is disabled.  Please upload ovf from \"%s\" manually to catalog and name as \"%s\" and try again", artifactoryPath, imageInfo.LocalImageName)
+	}
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return fmt.Errorf(NoVCDClientInContext)
 	}
 
 	// get a token that VCD can use to pull from the artifactory
@@ -383,10 +398,10 @@ func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infra
 		return fmt.Errorf("failed to find upload catalog - %v", err)
 	}
 	addToken := "?token=" + token
-	if strings.Contains(artifactoryOvfPath, "?") {
+	if strings.Contains(artifactoryPath, "?") {
 		addToken = "&token=" + token
 	}
-	artifactoryOvfPathWithToken := artifactoryOvfPath + addToken
+	artifactoryOvfPathWithToken := artifactoryPath + addToken
 	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Importing OVF to VCD for Image: %s", imageInfo.LocalImageName))
 	err = v.ImportTemplateFromUrl(ctx, imageInfo.LocalImageName, artifactoryOvfPathWithToken, cat)
 	if err != nil {

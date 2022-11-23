@@ -1125,7 +1125,7 @@ var AllDataComments = map[string]string{
 	"apps:#.key.name":                                                                "App name",
 	"apps:#.key.version":                                                             "App version",
 	"apps:#.imagepath":                                                               "URI of where image resides",
-	"apps:#.imagetype":                                                               "Image type, one of Unknown, Docker, Qcow, Helm, Ovf",
+	"apps:#.imagetype":                                                               "Image type, one of Unknown, Docker, Qcow, Helm, Ovf, Ova",
 	"apps:#.accessports":                                                             "Comma separated list of protocol:port pairs that the App listens on. Ex: tcp:80,udp:10002. Also supports additional configurations per port: (1) tls (tcp-only) - Enables TLS on specified port. Ex: tcp:443:tls. (2) nginx (udp-only) - Use NGINX LB instead of envoy for specified port. Ex: udp:10001:nginx. (3) maxpktsize (udp-only) - Configures maximum UDP datagram size allowed on port for both upstream/downstream traffic. Ex: udp:10001:maxpktsize=8000.",
 	"apps:#.defaultflavor.name":                                                      "Flavor name",
 	"apps:#.authpublickey":                                                           "Public key used for authentication",
