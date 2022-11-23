@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -47,12 +48,14 @@ func (s *RootCommand) getArtifactCmdGroup() *cobra.Command {
 			cliCmd.Run = s.uploadArtifact
 		case "ListArtifacts":
 			cliCmd.Run = s.listArtifacts
-		case "GetArtifact":
+		case "DownloadArtifact":
 			cliCmd.Run = s.getArtifact
 		case "DeleteArtifact":
 			cliCmd.Run = s.deleteArtifact
 		case "InfoArtifact":
 			cliCmd.Run = s.infoArtifact
+		default:
+			panic(fmt.Sprintf("getArtifactCmdGroup cmd %s not found", c.Name))
 		}
 		cmds = append(cmds, cliCmd)
 	}
@@ -215,31 +218,58 @@ func (s *RootCommand) getArtifact(c *cli.Command, args []string) error {
 	}
 
 	uri := s.buildArtifactPath(artifact)
-	req, err := http.NewRequest("GET", uri, nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Authorization", "Bearer "+s.token)
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
 
+	// do a quick info check to get size
+	resp, err := s.client.HttpJsonSendReq("HEAD", uri, s.token, nil, nil, nil)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
+		return bodyError(c, resp)
+	}
+	contentLength := resp.Header.Get("Content-Length")
+	size, err := strconv.Atoi(contentLength)
+	if err != nil {
+		return fmt.Errorf("Failed to convert Content-Length of %s to number, %v", contentLength, err)
+	}
+
+	// open local file for write
 	localFile := artifact.LocalFile
 	if localFile == "" {
 		localFile = path.Base(artifact.Path)
 	}
 
-	file, err := os.Create(artifact.LocalFile)
+	file, err := os.Create(localFile)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
+	// set up request
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.token)
+
+	// set up progress bar
+	bar := pb.Full.Start64(int64(size))
+	defer bar.Finish()
 	writer := bufio.NewWriter(file)
-	io.Copy(writer, resp.Body)
+	barWriter := bar.NewProxyWriter(writer)
+
+	// do request
+	client := &http.Client{}
+	resp, err = client.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return bodyError(c, resp)
+	}
+
+	defer resp.Body.Close()
+	io.Copy(barWriter, resp.Body)
 	writer.Flush()
 	return check(c, resp.StatusCode, nil, nil)
 }
