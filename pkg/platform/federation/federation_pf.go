@@ -47,7 +47,7 @@ type FederationPlatform struct {
 }
 
 // GetVersionProperties returns properties related to the platform version
-func (f *FederationPlatform) GetVersionProperties() map[string]string {
+func (f *FederationPlatform) GetVersionProperties(ctx context.Context) map[string]string {
 	return map[string]string{}
 }
 

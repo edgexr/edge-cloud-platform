@@ -200,8 +200,8 @@ func GetPlatformConfig(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Platfor
 
 type CommonEmbedded struct{}
 
-func (c *CommonEmbedded) GetVersionProperties() map[string]string {
-	return version.BuildProps("Platform")
+func (c *CommonEmbedded) GetVersionProperties(ctx context.Context) map[string]string {
+	return version.BuildProps(ctx, "")
 }
 
 type InitOptions struct {

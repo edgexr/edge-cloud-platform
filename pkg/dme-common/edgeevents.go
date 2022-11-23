@@ -23,7 +23,7 @@ import (
 )
 
 type EdgeEventsHandler interface {
-	GetVersionProperties() map[string]string
+	GetVersionProperties(ctx context.Context) map[string]string
 	AddClient(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey CookieKey, lastLoc dme.Loc, carrier string, sendFunc func(event *dme.ServerEdgeEvent))
 	RemoveClient(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey CookieKey)
 	UpdateClientLastLocation(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey CookieKey, lastLoc dme.Loc)
@@ -118,6 +118,6 @@ func (e *EmptyEdgeEventsHandler) SendEdgeEventToClient(ctx context.Context, serv
 	return
 }
 
-func (e *EmptyEdgeEventsHandler) GetVersionProperties() map[string]string {
+func (e *EmptyEdgeEventsHandler) GetVersionProperties(ctx context.Context) map[string]string {
 	return map[string]string{}
 }
