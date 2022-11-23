@@ -25,10 +25,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
@@ -652,10 +652,11 @@ func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams *vmla
 		log.SpanLog(ctx, log.DebugLevelInfra, "updateVM AddMetadataToVm  failed", "vm", vm.VM.Name, "err", err)
 		return nil
 	}
+	/* Remove
 	if vmparams.Role == vmlayer.RoleVMApplication {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Skipping populateProductSection for VMApp", "vm", vm.VM.Name)
 		return nil
-	}
+	}*/
 	psl, err := v.populateProductSection(ctx, vm, vmparams, masterIP)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "updateVM populateProductSection failed", "vm", vm.VM.Name, "err", err)

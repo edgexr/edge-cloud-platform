@@ -164,6 +164,7 @@ func (o *VcdPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsSharedVolume:                  true,
 		SupportsTrustPolicy:                   true,
 		SupportsImageTypeOvf:                  true,
+		SupportsImageTypeOva:                  true,
 		SupportsAdditionalNetworks:            true,
 		SupportsPlatformHighAvailabilityOnK8S: true,
 	}

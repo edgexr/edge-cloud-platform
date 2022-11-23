@@ -215,6 +215,8 @@ message PlatformFeatures {
   bool ip_allocated_per_service = 8;
   // Platform supports OVF images for VM deployments
   bool supports_image_type_ovf = 9;
+  // Platform supports OVA images for VM deployments
+  bool supports_image_type_ova = 19;
   // Platform is a a pool of pre-existing virtual machines
   bool is_vm_pool = 10;
   // Platform is a fake platform for unit/e2e testing

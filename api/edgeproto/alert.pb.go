@@ -1212,7 +1212,7 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 	case reflect.TypeOf(CRMOverride(0)):
 		return "CRMOverride", ", valid values are one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState, or 0, 1, 2, 3, 4", true
 	case reflect.TypeOf(ImageType(0)):
-		return "ImageType", ", valid values are one of Unknown, Docker, Qcow, Helm, Ovf, or 0, 1, 2, 3, 4", true
+		return "ImageType", ", valid values are one of Unknown, Docker, Qcow, Helm, Ovf, Ova, or 0, 1, 2, 3, 4, 5", true
 	case reflect.TypeOf(QosSessionProfile(0)):
 		return "QosSessionProfile", ", valid values are one of NoPriority, LowLatency, ThroughputDownS, ThroughputDownM, ThroughputDownL, or 0, 1, 2, 3, 4", true
 	case reflect.TypeOf(VmAppOsType(0)):

@@ -69,8 +69,10 @@ enum ImageType {
   IMAGE_TYPE_QCOW = 2;
   // Helm chart is a separate image type
   IMAGE_TYPE_HELM = 3;
-    // OVF is for VMWare VCloud Director. A VMDK and optional MF file should also be present
+  // OVF is for VMWare VCloud Director. A VMDK and optional MF file should also be present
   IMAGE_TYPE_OVF = 4;
+  // OVA is for VMWare VCloud Director.
+  IMAGE_TYPE_OVA = 5;
 }
 
 // The selected profile name will be included 

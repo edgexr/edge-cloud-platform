@@ -3642,12 +3642,12 @@ func getTestJsonInputData() []testJsonError {
 		Desc:        "enum bad string value",
 		InputObj:    &ormapi.RegionApp{},
 		InputJson:   `{"App":{"allow_serverless":true,"default_flavor":{"name":"x1.medium"},"image_path":"docker","image_type":"foo","key":{"name":"app1635445756-9768332","organization":"automation_dev_org","version":"1.0"},"serverless_config":{"min_replicas":1,"ram":1,"vcpus":1}},"Region":"local"}`,
-		ExpectedErr: `Invalid JSON data: Unmarshal error: expected ImageType, but got string foo for field "App.image_type", valid values are one of Unknown, Docker, Qcow, Helm, Ovf, or 0, 1, 2, 3, 4`,
+		ExpectedErr: `Invalid JSON data: Unmarshal error: expected ImageType, but got string foo for field "App.image_type", valid values are one of Unknown, Docker, Qcow, Helm, Ovf, Ova, or 0, 1, 2, 3, 4, 5`,
 	}, {
 		Desc:        "enum bad int value",
 		InputObj:    &ormapi.RegionApp{},
 		InputJson:   `{"App":{"allow_serverless":true,"default_flavor":{"name":"x1.medium"},"image_path":"docker","image_type":-1,"key":{"name":"app1635445756-9768332","organization":"automation_dev_org","version":"1.0"},"serverless_config":{"min_replicas":1,"ram":1,"vcpus":1}},"Region":"local"}`,
-		ExpectedErr: `Invalid JSON data: Unmarshal error: expected ImageType, but got value -1 for field "App.image_type", valid values are one of Unknown, Docker, Qcow, Helm, Ovf, or 0, 1, 2, 3, 4`,
+		ExpectedErr: `Invalid JSON data: Unmarshal error: expected ImageType, but got value -1 for field "App.image_type", valid values are one of Unknown, Docker, Qcow, Helm, Ovf, Ova, or 0, 1, 2, 3, 4, 5`,
 	}, {
 		Desc:        "dme enum bad string value",
 		InputObj:    &ormapi.RegionCloudlet{},
