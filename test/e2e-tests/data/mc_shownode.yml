@@ -18,55 +18,55 @@ nodes:
     region: local
   internalpki: UseVaultPki
   properties:
-    InfraBuildAuthor: ""
-    InfraBuildDate: ""
-    InfraBuildHead: ""
-    InfraBuildMaster: ""
+    BuildDate: ""
+    BuildHead: ""
+    BuildMaster: ""
+    BuildTag: ""
 - key:
     type: autoprov
     region: locala
   internalpki: UseVaultPki
   properties:
-    InfraBuildAuthor: ""
-    InfraBuildDate: ""
-    InfraBuildHead: ""
-    InfraBuildMaster: ""
+    BuildDate: ""
+    BuildHead: ""
+    BuildMaster: ""
+    BuildTag: ""
 - key:
     type: cluster-svc
     region: local
   internalpki: UseVaultPki
   properties:
-    InfraClusterSvcBuildAuthor: ""
-    InfraClusterSvcBuildDate: ""
-    InfraClusterSvcBuildHead: ""
-    InfraClusterSvcBuildMaster: ""
+    BuildDate: ""
+    BuildHead: ""
+    BuildMaster: ""
+    BuildTag: ""
 - key:
     type: cluster-svc
     region: local
   internalpki: UseVaultPki
   properties:
-    InfraClusterSvcBuildAuthor: ""
-    InfraClusterSvcBuildDate: ""
-    InfraClusterSvcBuildHead: ""
-    InfraClusterSvcBuildMaster: ""
+    BuildDate: ""
+    BuildHead: ""
+    BuildMaster: ""
+    BuildTag: ""
 - key:
     type: cluster-svc
     region: locala
   internalpki: UseVaultPki
   properties:
-    InfraClusterSvcBuildAuthor: ""
-    InfraClusterSvcBuildDate: ""
-    InfraClusterSvcBuildHead: ""
-    InfraClusterSvcBuildMaster: ""
+    BuildDate: ""
+    BuildHead: ""
+    BuildMaster: ""
+    BuildTag: ""
 - key:
     type: cluster-svc
     region: locala
   internalpki: UseVaultPki
   properties:
-    InfraClusterSvcBuildAuthor: ""
-    InfraClusterSvcBuildDate: ""
-    InfraClusterSvcBuildHead: ""
-    InfraClusterSvcBuildMaster: ""
+    BuildDate: ""
+    BuildHead: ""
+    BuildMaster: ""
+    BuildTag: ""
 - key:
     type: controller
     region: local
@@ -159,14 +159,14 @@ nodes:
     region: local
   internalpki: UseVaultPki
   properties:
-    EdgeEventsBuildAuthor: ""
     EdgeEventsBuildDate: ""
     EdgeEventsBuildHead: ""
     EdgeEventsBuildMaster: ""
-    OPERALPHAOperatorBuildAuthor: ""
+    EdgeEventsBuildTag: ""
     OPERALPHAOperatorBuildDate: ""
     OPERALPHAOperatorBuildHead: ""
     OPERALPHAOperatorBuildMaster: ""
+    OPERALPHAOperatorBuildTag: ""
 - key:
     type: dme
     cloudletkey:
@@ -175,14 +175,14 @@ nodes:
     region: local
   internalpki: UseVaultPki
   properties:
-    EdgeEventsBuildAuthor: ""
     EdgeEventsBuildDate: ""
     EdgeEventsBuildHead: ""
     EdgeEventsBuildMaster: ""
-    OPERALPHAOperatorBuildAuthor: ""
+    EdgeEventsBuildTag: ""
     OPERALPHAOperatorBuildDate: ""
     OPERALPHAOperatorBuildHead: ""
     OPERALPHAOperatorBuildMaster: ""
+    OPERALPHAOperatorBuildTag: ""
 - key:
     type: dme
     cloudletkey:
@@ -191,14 +191,14 @@ nodes:
     region: locala
   internalpki: UseVaultPki
   properties:
-    EdgeEventsBuildAuthor: ""
     EdgeEventsBuildDate: ""
     EdgeEventsBuildHead: ""
     EdgeEventsBuildMaster: ""
-    OPERALPHAOperatorBuildAuthor: ""
+    EdgeEventsBuildTag: ""
     OPERALPHAOperatorBuildDate: ""
     OPERALPHAOperatorBuildHead: ""
     OPERALPHAOperatorBuildMaster: ""
+    OPERALPHAOperatorBuildTag: ""
 - key:
     type: dme
     cloudletkey:
@@ -207,48 +207,48 @@ nodes:
     region: locala
   internalpki: UseVaultPki
   properties:
-    EdgeEventsBuildAuthor: ""
     EdgeEventsBuildDate: ""
     EdgeEventsBuildHead: ""
     EdgeEventsBuildMaster: ""
-    OPERALPHAOperatorBuildAuthor: ""
+    EdgeEventsBuildTag: ""
     OPERALPHAOperatorBuildDate: ""
     OPERALPHAOperatorBuildHead: ""
     OPERALPHAOperatorBuildMaster: ""
+    OPERALPHAOperatorBuildTag: ""
 - key:
     type: frm
     region: local
   internalpki: UseVaultPki
   properties:
-    InfraBuildAuthor: ""
-    InfraBuildDate: ""
-    InfraBuildHead: ""
-    InfraBuildMaster: ""
+    BuildDate: ""
+    BuildHead: ""
+    BuildMaster: ""
+    BuildTag: ""
 - key:
     type: frm
     region: locala
   internalpki: UseVaultPki
   properties:
-    InfraBuildAuthor: ""
-    InfraBuildDate: ""
-    InfraBuildHead: ""
-    InfraBuildMaster: ""
+    BuildDate: ""
+    BuildHead: ""
+    BuildMaster: ""
+    BuildTag: ""
 - key:
     type: mc
   internalpki: UseVaultPki
   properties:
-    InfraBuildAuthor: ""
-    InfraBuildDate: ""
-    InfraBuildHead: ""
-    InfraBuildMaster: ""
+    BuildDate: ""
+    BuildHead: ""
+    BuildMaster: ""
+    BuildTag: ""
 - key:
     type: mc
   internalpki: UseVaultPki
   properties:
-    InfraBuildAuthor: ""
-    InfraBuildDate: ""
-    InfraBuildHead: ""
-    InfraBuildMaster: ""
+    BuildDate: ""
+    BuildHead: ""
+    BuildMaster: ""
+    BuildTag: ""
 - key:
     type: notifyroot
   internalpki: UseVaultPki
@@ -260,7 +260,7 @@ nodes:
     region: local
   internalpki: useAccessKey,UseVaultPki
   properties:
-    InfraBuildAuthor: ""
-    InfraBuildDate: ""
-    InfraBuildHead: ""
-    InfraBuildMaster: ""
+    BuildDate: ""
+    BuildHead: ""
+    BuildMaster: ""
+    BuildTag: ""
