@@ -433,10 +433,8 @@ func vcdMetaDataFormatter(instring string) string {
 func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, vmparams *vmlayer.VMOrchestrationParams, masterIP string) (*types.ProductSectionList, error) {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection", "vm", vm.VM.Name, "masterIP", masterIP)
-	command := ""
-	manifest := ""
 	// format vmparams.CloudConfigParams into yaml format, which we'll then base64 encode for the ovf datasource
-	udata, err := vmlayer.GetVMUserData(vm.VM.Name, vmparams.SharedVolume, manifest, command, &vmparams.CloudConfigParams, vcdUserDataFormatter)
+	udata, err := vmlayer.GetVMUserData(vm.VM.Name, vmparams.SharedVolume, vmparams.DeploymentManifest, vmparams.Command, &vmparams.CloudConfigParams, vcdUserDataFormatter)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Unable to retrive VMUserData", "err", err)
 		return nil, err
@@ -452,6 +450,10 @@ func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, 
 	_, err = vm.SetGuestCustomizationSection(guestCustomSec)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "SetGuestCustomizationSection failed", "err", err)
+		if strings.Contains(err.Error(), "Guest customization is not supported by the selected OS") {
+			mappedGuestType, _ := vmlayer.GetVmwareMappedOsType(vmparams.VmAppOsType)
+			err = fmt.Errorf("Guest customization via DeploymentManifest is not supported for OS type %q (%s)", vmparams.VmAppOsType.String(), mappedGuestType)
+		}
 		return nil, err
 	}
 	if (vmparams.Role == vmlayer.RoleMaster || vmparams.Role == vmlayer.RoleK8sNode) && masterIP == "" {

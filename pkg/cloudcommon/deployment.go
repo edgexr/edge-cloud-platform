@@ -29,8 +29,8 @@ import (
 	"time"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/pkg/deploygen"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/deploygen"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	yaml "github.com/mobiledgex/yaml/v2"
@@ -82,6 +82,8 @@ func IsValidDeploymentForImage(imageType edgeproto.ImageType, deployment string)
 	case edgeproto.ImageType_IMAGE_TYPE_QCOW:
 		fallthrough
 	case edgeproto.ImageType_IMAGE_TYPE_OVF:
+		fallthrough
+	case edgeproto.ImageType_IMAGE_TYPE_OVA:
 		if deployment == DeploymentTypeVM {
 			return true
 		}
@@ -263,6 +265,10 @@ func GetDefaultDeploymentType(imageType edgeproto.ImageType) (string, error) {
 	case edgeproto.ImageType_IMAGE_TYPE_DOCKER:
 		return DeploymentTypeKubernetes, nil
 	case edgeproto.ImageType_IMAGE_TYPE_QCOW:
+		fallthrough
+	case edgeproto.ImageType_IMAGE_TYPE_OVF:
+		fallthrough
+	case edgeproto.ImageType_IMAGE_TYPE_OVA:
 		return DeploymentTypeVM, nil
 	case edgeproto.ImageType_IMAGE_TYPE_HELM:
 		return DeploymentTypeHelm, nil
