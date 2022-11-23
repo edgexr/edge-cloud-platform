@@ -18,6 +18,7 @@ import (
 	fmt "fmt"
 	"strings"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
@@ -56,6 +57,7 @@ type ApiCommand struct {
 	DuplicateForCli      bool
 	FailureResponses     []FailureResponse
 	DocEmptyCommentsOk   bool
+	Run                  func(c *cli.Command, args []string) error
 }
 
 type FailureResponse struct {

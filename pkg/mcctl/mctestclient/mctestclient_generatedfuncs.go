@@ -445,6 +445,53 @@ func (s *Client) ShowAppInstRefs(uri string, token string, in *ormapi.RegionAppI
 	return out, rundata.RetStatus, rundata.RetError
 }
 
+// Generating group Artifact
+
+func (s *Client) UploadArtifact(uri string) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+
+	apiCmd := ormctl.MustGetCommand("UploadArtifact")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) InfoArtifact(uri string) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+
+	apiCmd := ormctl.MustGetCommand("InfoArtifact")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) DownloadArtifact(uri string) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+
+	apiCmd := ormctl.MustGetCommand("DownloadArtifact")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ListArtifacts(uri string) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+
+	apiCmd := ormctl.MustGetCommand("ListArtifacts")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) DeleteArtifact(uri string) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+
+	apiCmd := ormctl.MustGetCommand("DeleteArtifact")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
 // Generating group AutoProvPolicy
 
 func (s *Client) CreateAutoProvPolicy(uri string, token string, in *ormapi.RegionAutoProvPolicy) (*edgeproto.Result, int, error) {

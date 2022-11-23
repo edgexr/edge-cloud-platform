@@ -73,7 +73,7 @@ func (s *Input) ParseArgs(args []string, obj interface{}) (*MapData, error) {
 		Namespace: ArgsNamespace,
 		Data:      dat,
 	}
-	if len(args) == 0 && s.PasswordArg == "" && s.CurrentPasswordArg == "" {
+	if len(args) == 0 && s.PasswordArg == "" && s.CurrentPasswordArg == "" && len(s.RequiredArgs) == 0 {
 		return &data, nil
 	}
 	if obj == nil {
