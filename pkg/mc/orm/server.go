@@ -241,7 +241,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 			server.Stop()
 		}
 	}()
-	nodeMgr.UpdateNodeProps(ctx, version.BuildProps("Infra"))
+	nodeMgr.UpdateNodeProps(ctx, version.BuildProps(ctx, ""))
 
 	if config.LocalVault {
 		vaultProc := process.Vault{
@@ -1157,10 +1157,12 @@ func ShowVersion(c echo.Context) error {
 	if err := authorized(ctx, claims.Username, "", ResourceConfig, ActionView); err != nil {
 		return err
 	}
+	buildInfo := version.GetBuildInfo(ctx)
 	ver := ormapi.Version{
-		BuildMaster: version.BuildMaster,
-		BuildHead:   version.BuildHead,
-		BuildAuthor: version.BuildAuthor,
+		BuildTag:    buildInfo.BuildTag,
+		BuildMaster: buildInfo.BuildMaster,
+		BuildHead:   buildInfo.BuildHead,
+		BuildAuthor: buildInfo.BuildAuthor,
 		Hostname:    cloudcommon.Hostname(),
 	}
 	return c.JSON(http.StatusOK, ver)

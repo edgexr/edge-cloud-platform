@@ -114,8 +114,8 @@ func (o *OperatorApiGw) GetQOSPositionKPI(mreq *dme.QosPositionRequest, getQosSv
 	return qosclient.GetQOSPositionFromApiGW(o.Servers.QosPosUrl, mreq, getQosSvr)
 }
 
-func (*OperatorApiGw) GetVersionProperties() map[string]string {
-	return version.BuildProps("OPERALPHAOperator")
+func (*OperatorApiGw) GetVersionProperties(ctx context.Context) map[string]string {
+	return version.BuildProps(ctx, "OPERALPHAOperator")
 }
 
 func (o *OperatorApiGw) SetQosSessionsApiKey(key string) {

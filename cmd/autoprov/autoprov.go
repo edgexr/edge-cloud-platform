@@ -23,13 +23,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/version"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	"github.com/edgexr/edge-cloud-platform/pkg/version"
 	"google.golang.org/grpc"
 )
 
@@ -79,7 +79,7 @@ func start() error {
 	}
 	defer span.Finish()
 	vaultConfig = nodeMgr.VaultConfig
-	nodeMgr.UpdateNodeProps(ctx, version.BuildProps("Infra"))
+	nodeMgr.UpdateNodeProps(ctx, version.BuildProps(ctx, ""))
 
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		nodeMgr.CommonName(),

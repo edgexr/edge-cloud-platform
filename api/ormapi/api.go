@@ -490,6 +490,8 @@ type Result struct {
 }
 
 type Version struct {
+	// Build tag
+	BuildTag string `json:"buildtag,omitempty"`
 	// Master build version
 	BuildMaster string `json:"buildmaster,omitempty"`
 	// Head build version

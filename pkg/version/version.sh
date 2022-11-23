@@ -15,33 +15,35 @@
 
 
 REPO=$1
-OUT=version.go
+OUT=version.yaml
 # if no local/branch commits beyond master, master and head will be the same
 BUILD_MASTER=`git describe --tags --always origin/master`
 BUILD_HEAD=`git describe --tags --always --dirty=+`
 BUILD_AUTHOR=`git config user.name`
 DATE=`date`
 
-cat <<EOF > $OUT.tmp
-package version
+cat <<EOF > $OUT
+buildtag: "$BUILD_TAG"
+buildmaster: "$BUILD_MASTER"
+buildhead: "$BUILD_HEAD"
+buildauthor: "$BUILD_AUTHOR"
+builddate: "$DATE"
+EOF
 
+GOOUT=../version_embedded/version_embedded.go
+cat <<EOF > $GOOUT.tmp
+package version_embedded
+
+// These are used for binaries distributed individually.
+// For binaries distributed in containers, use the version
+// package instead to prevent binaries from changing due to
+// every change to the git commit id.
+var BuildTag = "$BUILD_TAG"
 var BuildMaster = "$BUILD_MASTER"
 var BuildHead = "$BUILD_HEAD"
 var BuildAuthor = "$BUILD_AUTHOR"
-var BuildDate = "$DATE"
-
-func ${REPO}BuildProps(prefix string) map[string]string {
-	m := map[string]string{
-		prefix + "BuildMaster": BuildMaster,
-		prefix + "BuildHead":   BuildHead,
-		prefix + "BuildDate":   BuildDate,
-	}
-	if BuildAuthor != "" {
-		m[prefix + "BuildAuthor"] = BuildAuthor
-	}
-	return m
-}
+var BuildDate = "$BUILD_DATE"
 EOF
 
-gofmt $OUT.tmp > $OUT
-rm $OUT.tmp
+gofmt $GOOUT.tmp > $GOOUT
+rm $GOOUT.tmp

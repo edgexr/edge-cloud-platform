@@ -464,7 +464,7 @@ func start() {
 		log.FatalLog(err.Error())
 	}
 	defer span.Finish()
-	nodeMgr.UpdateNodeProps(ctx, version.BuildProps("Infra"))
+	nodeMgr.UpdateNodeProps(ctx, version.BuildProps(ctx, ""))
 
 	if !nodeMgr.AccessKeyClient.IsEnabled() {
 		log.FatalLog("access key client is not enabled")

@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
-	"github.com/edgexr/edge-cloud-platform/pkg/version"
+	vers "github.com/edgexr/edge-cloud-platform/pkg/version_embedded"
 	"github.com/spf13/cobra"
 )
 
@@ -29,12 +29,15 @@ func GetVersionCmd() *cobra.Command {
 	}
 	cmd.Run = func(c *cli.Command, args []string) error {
 		wr := c.CobraCmd.OutOrStdout()
-		fmt.Fprintf(wr, "buildmaster: %s\n", version.BuildMaster)
-		fmt.Fprintf(wr, "buildhead: %s\n", version.BuildHead)
-		if version.BuildAuthor != "" {
-			fmt.Fprintf(wr, "buildauthor: %s\n", version.BuildAuthor)
+		if vers.BuildTag != "" {
+			fmt.Fprintf(wr, "buildtag: %s\n", vers.BuildTag)
 		}
-		fmt.Fprintf(wr, "builddate: %s\n", version.BuildDate)
+		fmt.Fprintf(wr, "buildmaster: %s\n", vers.BuildMaster)
+		fmt.Fprintf(wr, "buildhead: %s\n", vers.BuildHead)
+		if vers.BuildAuthor != "" {
+			fmt.Fprintf(wr, "buildauthor: %s\n", vers.BuildAuthor)
+		}
+		fmt.Fprintf(wr, "builddate: %s\n", vers.BuildDate)
 		return nil
 	}
 	return cmd.GenCmd()

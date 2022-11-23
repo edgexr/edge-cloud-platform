@@ -70,7 +70,7 @@ func main() {
 		log.FatalLog(err.Error())
 	}
 	defer span.Finish()
-	nodeMgr.UpdateNodeProps(ctx, version.BuildProps("Infra"))
+	nodeMgr.UpdateNodeProps(ctx, version.BuildProps(ctx, ""))
 
 	notifyClient, controllerData, err = InitFRM(ctx, &nodeMgr, &haMgr, *hostname, *region, *appDNSRoot, *notifyAddrs)
 	if err != nil {

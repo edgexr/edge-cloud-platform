@@ -3,7 +3,7 @@ include Makedefs
 
 GOVERS = $(shell go version | awk '{print $$3}' | cut -d. -f1,2)
 
-EDGE_CLOUD_BASE_IMAGE = ghcr.io/edgexr/edge-cloud-base-image@sha256:9914b3232532cf2308f2c238d7e691f17afc95c65da598a64a85b0ac391c377c
+GO_BUILD_FLAGS = --trimpath --buildvcs=false
 
 export GO111MODULE=on
 
@@ -26,13 +26,13 @@ gen-vers:
 	(cd pkg/version; ./version.sh)
 
 generate: check-go-vers $(APICOMMENTS) gen-vers
-	go install \
+	go install $(GO_BUILD_FLAGS) \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger \
 		github.com/gogo/protobuf/protoc-gen-gogofast
 	make -C tools/protogen
 	make -C tools/edgeprotogen
-	go install \
+	go install $(GO_BUILD_FLAGS) \
 		./tools/protoc-gen-gomex \
 		./tools/protoc-gen-test \
 		./tools/protoc-gen-cmd \
@@ -45,24 +45,24 @@ generate: check-go-vers $(APICOMMENTS) gen-vers
 	make -C api/edgeproto
 	make -C test/testgen
 	make -C pkg/vault/letsencrypt-plugin letsencrypt/version.go
-	go install ./pkg/mcctl/genmctestclient
+	go install $(GO_BUILD_FLAGS) ./pkg/mcctl/genmctestclient
 	genmctestclient > ./pkg/mcctl/mctestclient/mctestclient_generatedfuncs.go
 
 gobuild: check-go-vers gen-vers
-	go build ./...
+	go build $(GO_BUILD_FLAGS) ./...
 	go vet ./...
 
 build: generate gobuild
 
 build-linux:
-	${LINUX_XCOMPILE_ENV} go build ./...
+	${LINUX_XCOMPILE_ENV} go build $(GO_BUILD_FLAGS) ./...
 	make -C d-match-engine linux
 
 install:
-	go install ./...
+	go install $(GO_BUILD_FLAGS) ./...
 
 install-linux:
-	${LINUX_XCOMPILE_ENV} go install ./...
+	${LINUX_XCOMPILE_ENV} go install $(GO_BUILD_FLAGS) ./...
 
 GOGOPROTO	= $(shell GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/gogo/protobuf)
 GRPCGATEWAY	= $(shell GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/grpc-ecosystem/grpc-gateway)

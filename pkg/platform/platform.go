@@ -81,7 +81,7 @@ type Caches struct {
 // Platform abstracts the underlying cloudlet platform.
 type Platform interface {
 	// GetVersionProperties returns properties related to the platform version
-	GetVersionProperties() map[string]string
+	GetVersionProperties(ctx context.Context) map[string]string
 	// Get platform features
 	GetFeatures() *edgeproto.PlatformFeatures
 	// InitCommon is called once during CRM startup to do steps needed for both active or standby. If the platform does not support
@@ -172,7 +172,7 @@ type Platform interface {
 
 type ClusterSvc interface {
 	// GetVersionProperties returns properties related to the platform version
-	GetVersionProperties() map[string]string
+	GetVersionProperties(ctx context.Context) map[string]string
 	// Get AppInst Configs
 	GetAppInstConfigs(ctx context.Context, clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst,
 		autoScalePolicy *edgeproto.AutoScalePolicy, settings *edgeproto.Settings,

@@ -260,6 +260,7 @@ var ResultComments = map[string]string{
 }
 
 var VersionComments = map[string]string{
+	"buildtag":    `Build tag`,
 	"buildmaster": `Master build version`,
 	"buildhead":   `Head build version`,
 	"buildauthor": `Build author`,
