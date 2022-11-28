@@ -272,7 +272,7 @@ func readMatchEngineStatus(filename string, mes *registration) error {
 	return ReadYamlFile(filename, &mes)
 }
 
-func RunDmeAPI(api string, procname string, apiFile string, apiFileVars map[string]string, apiType string, outputDir string) bool {
+func RunDmeAPI(api string, procname string, apiFile string, apiFileVars map[string]string, apiType string, outputDir string, mods []string) bool {
 	if apiFile == "" {
 		log.Println("Error: Cannot run DME APIs without API file")
 		return false
@@ -288,7 +288,14 @@ func RunDmeAPI(api string, procname string, apiFile string, apiFileVars map[stri
 	dme := GetDme(procname)
 	var client dmeClient
 
-	if apiType == "rest" {
+	rest := false
+	for _, mod := range mods {
+		if mod == "rest" {
+			rest = true
+		}
+	}
+
+	if rest || apiType == "rest" {
 		httpClient, err := dme.GetRestClient(apiConnectTimeout)
 		if err != nil {
 			log.Printf("Error: unable to connect to dme addr %v\n", dme.HttpAddr)
