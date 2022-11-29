@@ -20,10 +20,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gogo/gateway"
-	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
+	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -63,16 +62,7 @@ func GrpcGateway(cfg *GrpcGWConfig) (http.Handler, error) {
 	if err != nil {
 		log.FatalLog("Failed to start REST gateway", "error", err)
 	}
-
-	jsonpb := &gateway.JSONPb{
-		EmitDefaults: true,
-		Indent:       " ",
-		OrigName:     true,
-	}
 	mux := gwruntime.NewServeMux(
-		// this avoids a marshaling issue with grpc-gateway and
-		// gogo protobuf non-nullable embedded structs
-		gwruntime.WithMarshalerOption(gwruntime.MIMEWildcard, jsonpb),
 		// this is necessary to get error details properly
 		// marshalled in unary requests
 		gwruntime.WithProtoErrorHandler(gwruntime.DefaultHTTPProtoErrorHandler),

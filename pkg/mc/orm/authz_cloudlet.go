@@ -275,7 +275,7 @@ func authzCreateCloudlet(ctx context.Context, region, username string, obj *edge
 	if obj.SingleKubernetesClusterOwner != "" {
 		ops = append(ops, withReferenceOrg(obj.SingleKubernetesClusterOwner, "single kubernetes cluster owner", OrgTypeDeveloper))
 	}
-	if obj.PlatformType != edgeproto.PlatformType_PLATFORM_TYPE_EDGEBOX {
+	if obj.PlatformType != edgeproto.PlatformType_PLATFORM_TYPE_EDGEBOX && obj.PlatformType != edgeproto.PlatformType_PLATFORM_TYPE_FAKE {
 		ops = append(ops, withNoEdgeboxOnly())
 	}
 	return authorized(ctx, username, obj.Key.Organization, resource, action, ops...)

@@ -77,6 +77,8 @@ tests:
 - includefile: mc_ratelimittest.yml
 
 - includefile: find_cloudlet.yml
+- includefile: find_cloudlet.yml
+  mods: [rest]
 
 - name: sleep, allow time for metrics to collect
   actions: [sleep=3]
