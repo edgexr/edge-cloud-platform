@@ -88,7 +88,7 @@ var checkpointInterval = flag.String("checkpointInterval", "MONTH", "Interval at
 var appDNSRoot = flag.String("appDNSRoot", "appdnsroot.net", "App domain name root")
 var requireNotifyAccessKey = flag.Bool("requireNotifyAccessKey", false, "Require AccessKey authentication on notify API")
 var thanosRecvAddr = flag.String("thanosRecvAddr", "", "Address of thanos receive API endpoint including port")
-var dnsZone = flag.String("dnsZone", "", "dns zone for DNS update requests")
+var dnsZone = flag.String("dnsZone", "", "comma separated list of allowed dns zones for DNS update requests")
 
 var ControllerId = ""
 var InfluxDBName = cloudcommon.DeveloperMetricsDbName

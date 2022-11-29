@@ -248,7 +248,7 @@ func (s *StreamObjApi) StreamCloudlet(key *edgeproto.CloudletKey, cb edgeproto.S
 	if err != nil {
 		return fmt.Errorf("Failed to get platform: %v", err)
 	}
-	accessApi := accessapi.NewVaultClient(cloudlet, vaultConfig, *region)
+	accessApi := accessapi.NewVaultClient(cloudlet, vaultConfig, *region, *dnsZone)
 	updatecb := updateCloudletCallback{cloudlet, cb}
 	err = cloudletPlatform.GetRestrictedCloudletStatus(ctx, cloudlet, pfConfig, accessApi, updatecb.cb)
 	if err != nil {
@@ -749,7 +749,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	} else {
 		// Some platform types require caches
 		caches := s.getCaches(ctx, &vmPool)
-		accessApi := accessapi.NewVaultClient(in, vaultConfig, *region)
+		accessApi := accessapi.NewVaultClient(in, vaultConfig, *region, *dnsZone)
 		cloudletResourcesCreated, err = cloudletPlatform.CreateCloudlet(ctx, in, pfConfig, &pfFlavor, caches, accessApi, updatecb.cb)
 	}
 
@@ -1486,7 +1486,7 @@ func (s *CloudletApi) PlatformDeleteCloudlet(in *edgeproto.Cloudlet, cb edgeprot
 
 	// Some platform types require caches
 	caches := s.getCaches(ctx, &vmPool)
-	accessApi := accessapi.NewVaultClient(in, vaultConfig, *region)
+	accessApi := accessapi.NewVaultClient(in, vaultConfig, *region, *dnsZone)
 	return cloudletPlatform.DeleteCloudlet(ctx, in, pfConfig, caches, accessApi, updatecb.cb)
 }
 
@@ -2008,7 +2008,7 @@ func (s *CloudletApi) GetCloudletManifest(ctx context.Context, key *edgeproto.Cl
 	if err != nil {
 		return nil, err
 	}
-	accessApi := accessapi.NewVaultClient(cloudlet, vaultConfig, *region)
+	accessApi := accessapi.NewVaultClient(cloudlet, vaultConfig, *region, *dnsZone)
 	cloudletPlatform, err := pfutils.GetPlatform(ctx, cloudlet.PlatformType.String(), nodeMgr.UpdateNodeProps)
 	if err != nil {
 		return nil, err

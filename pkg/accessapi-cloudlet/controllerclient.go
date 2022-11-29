@@ -134,9 +134,8 @@ func (s *ControllerClient) GetPublicCert(ctx context.Context, commonName string)
 	return pubcert, err
 }
 
-func (s *ControllerClient) CreateOrUpdateDNSRecord(ctx context.Context, zone, name, rtype, content string, ttl int, proxy bool) error {
+func (s *ControllerClient) CreateOrUpdateDNSRecord(ctx context.Context, name, rtype, content string, ttl int, proxy bool) error {
 	record := platform.DNSRequest{
-		Zone:    zone,
 		Name:    name,
 		RType:   rtype,
 		Content: content,
@@ -155,9 +154,8 @@ func (s *ControllerClient) CreateOrUpdateDNSRecord(ctx context.Context, zone, na
 	return err
 }
 
-func (s *ControllerClient) GetDNSRecords(ctx context.Context, zone, fqdn string) ([]cloudflare.DNSRecord, error) {
+func (s *ControllerClient) GetDNSRecords(ctx context.Context, fqdn string) ([]cloudflare.DNSRecord, error) {
 	record := platform.DNSRequest{
-		Zone: zone,
 		Name: fqdn,
 	}
 	data, err := json.Marshal(record)
@@ -180,9 +178,8 @@ func (s *ControllerClient) GetDNSRecords(ctx context.Context, zone, fqdn string)
 	return records, nil
 }
 
-func (s *ControllerClient) DeleteDNSRecord(ctx context.Context, zone, recordID string) error {
+func (s *ControllerClient) DeleteDNSRecord(ctx context.Context, recordID string) error {
 	record := platform.DNSRequest{
-		Zone: zone,
 		Name: recordID,
 	}
 	data, err := json.Marshal(record)

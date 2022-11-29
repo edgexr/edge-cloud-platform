@@ -190,9 +190,9 @@ type AccessApi interface {
 	GetSSHPublicKey(ctx context.Context) (string, error)
 	GetOldSSHKey(ctx context.Context) (*vault.MEXKey, error)
 	GetChefAuthKey(ctx context.Context) (*chefauth.ChefAuthKey, error)
-	CreateOrUpdateDNSRecord(ctx context.Context, zone, name, rtype, content string, ttl int, proxy bool) error
-	GetDNSRecords(ctx context.Context, zone, fqdn string) ([]cloudflare.DNSRecord, error)
-	DeleteDNSRecord(ctx context.Context, zone, recordID string) error
+	CreateOrUpdateDNSRecord(ctx context.Context, name, rtype, content string, ttl int, proxy bool) error
+	GetDNSRecords(ctx context.Context, fqdn string) ([]cloudflare.DNSRecord, error)
+	DeleteDNSRecord(ctx context.Context, recordID string) error
 	GetSessionTokens(ctx context.Context, arg []byte) (map[string]string, error)
 	GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error)
 	GetGCSCreds(ctx context.Context) ([]byte, error)
@@ -218,7 +218,6 @@ const (
 )
 
 type DNSRequest struct {
-	Zone    string
 	Name    string
 	RType   string
 	Content string

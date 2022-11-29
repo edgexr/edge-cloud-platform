@@ -3176,7 +3176,7 @@ func testEdgeboxOnlyCloudletCreate(t *testing.T, ctx context.Context, mcClient *
 				Name:         "cl1",
 				Organization: operOrg.Name,
 			},
-			PlatformType: edgeproto.PlatformType_PLATFORM_TYPE_FAKE,
+			PlatformType: edgeproto.PlatformType_PLATFORM_TYPE_FAKEINFRA,
 		},
 	}
 	_, status, err = mcClient.CreateCloudlet(uri, token, &regCloudlet)

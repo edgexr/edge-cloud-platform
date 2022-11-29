@@ -47,13 +47,15 @@ type VaultClient struct {
 	vaultConfig   *vault.Config
 	region        string
 	cloudflareApi *cloudflare.API
+	dnsZones      []string
 }
 
-func NewVaultClient(cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config, region string) *VaultClient {
+func NewVaultClient(cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config, region string, dnsZones string) *VaultClient {
 	return &VaultClient{
 		cloudlet:    cloudlet,
 		vaultConfig: vaultConfig,
 		region:      region,
+		dnsZones:    strings.Split(dnsZones, ","),
 	}
 }
 
@@ -149,31 +151,31 @@ func (s *VaultClient) getCloudflareApi() (*cloudflare.API, error) {
 	return cloudflareApi, nil
 }
 
-func (s *VaultClient) CreateOrUpdateDNSRecord(ctx context.Context, zone, name, rtype, content string, ttl int, proxy bool) error {
+func (s *VaultClient) CreateOrUpdateDNSRecord(ctx context.Context, name, rtype, content string, ttl int, proxy bool) error {
 	api, err := s.getCloudflareApi()
 	if err != nil {
 		return err
 	}
 	// TODO: validate parameters are ok for this cloudlet
-	return cloudflaremgmt.CreateOrUpdateDNSRecord(ctx, api, zone, name, rtype, content, ttl, proxy)
+	return cloudflaremgmt.CreateOrUpdateDNSRecord(ctx, api, s.dnsZones, name, rtype, content, ttl, proxy)
 }
 
-func (s *VaultClient) GetDNSRecords(ctx context.Context, zone, fqdn string) ([]cloudflare.DNSRecord, error) {
+func (s *VaultClient) GetDNSRecords(ctx context.Context, fqdn string) ([]cloudflare.DNSRecord, error) {
 	api, err := s.getCloudflareApi()
 	if err != nil {
 		return nil, err
 	}
 	// TODO: validate parameters are ok for this cloudlet
-	return cloudflaremgmt.GetDNSRecords(ctx, api, zone, fqdn)
+	return cloudflaremgmt.GetDNSRecords(ctx, api, s.dnsZones, fqdn)
 }
 
-func (s *VaultClient) DeleteDNSRecord(ctx context.Context, zone, recordID string) error {
+func (s *VaultClient) DeleteDNSRecord(ctx context.Context, recordID string) error {
 	api, err := s.getCloudflareApi()
 	if err != nil {
 		return err
 	}
 	// TODO: validate parameters are ok for this cloudlet
-	return cloudflaremgmt.DeleteDNSRecord(ctx, api, zone, recordID)
+	return cloudflaremgmt.DeleteDNSRecord(ctx, api, s.dnsZones, recordID)
 }
 
 func (s *VaultClient) GetSessionTokens(ctx context.Context, arg []byte) (map[string]string, error) {
