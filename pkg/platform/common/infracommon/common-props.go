@@ -54,6 +54,10 @@ var InfraCommonProps = map[string]*edgeproto.PropertyInfo{
 		Internal:    true,
 		Value:       "3600",
 	},
+	"MEX_SHARED_ROOTLB_NAME": {
+		Name:        "Shared rootLB name",
+		Description: "Used for backwards compatibility if appDnsRoot changes",
+	},
 }
 
 func (ip *InfraProperties) GetCloudletCRMGatewayIPAndPort() (string, int) {
