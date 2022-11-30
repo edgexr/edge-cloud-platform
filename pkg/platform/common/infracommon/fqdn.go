@@ -75,5 +75,5 @@ func uri2fqdn(uri string) string {
 func (c *CommonPlatform) ActivateFQDNA(ctx context.Context, fqdn, addr string) error {
 
 	mappedAddr := c.GetMappedExternalIP(addr)
-	return c.PlatformConfig.AccessApi.CreateOrUpdateDNSRecord(ctx, c.GetCloudletDNSZone(), fqdn, "A", mappedAddr, 1, false)
+	return c.PlatformConfig.AccessApi.CreateOrUpdateDNSRecord(ctx, fqdn, "A", mappedAddr, 1, false)
 }
