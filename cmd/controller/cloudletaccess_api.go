@@ -98,7 +98,7 @@ func (s *CloudletApi) GetAccessData(ctx context.Context, req *edgeproto.AccessDa
 	if !s.all.cloudletApi.cache.Get(&verified.Key, cloudlet) {
 		return nil, verified.Key.NotFoundError()
 	}
-	vaultClient := accessapi.NewVaultClient(cloudlet, vaultConfig, *region)
-	handler := accessapi.NewControllerHandler(vaultClient, *dnsZone)
+	vaultClient := accessapi.NewVaultClient(cloudlet, vaultConfig, *region, *dnsZone)
+	handler := accessapi.NewControllerHandler(vaultClient)
 	return handler.GetAccessData(ctx, req)
 }

@@ -67,7 +67,7 @@ func TestGetDNSRecords(t *testing.T) {
 		return
 	}
 	// XXX not sure if domain is zone or name, but guessing zone
-	recs, err := GetDNSRecords(ctx, testapi, domain, "")
+	recs, err := GetDNSRecords(ctx, testapi, []string{domain}, "")
 	if err != nil {
 		t.Errorf("can not get dns records for %s, %v", domain, err)
 	}
@@ -98,14 +98,14 @@ func TestCreateDNSRecord(t *testing.T) {
 		t.Errorf("should have failed")
 	}
 
-	recs, err := GetDNSRecords(ctx, testapi, domain, "")
+	recs, err := GetDNSRecords(ctx, testapi, []string{domain}, "")
 	if err != nil {
 		t.Errorf("can not get dns records for %s, %v", domain, err)
 	}
 
 	for _, rec := range recs {
 		if strings.HasPrefix(rec.Name, cname) {
-			err = DeleteDNSRecord(ctx, testapi, domain, rec.ID)
+			err = DeleteDNSRecord(ctx, testapi, []string{domain}, rec.ID)
 			if err != nil {
 				t.Errorf("cannot delete dns record id %s zone %s, %v", rec.ID, domain, err)
 			}

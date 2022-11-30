@@ -27,11 +27,11 @@ var LocalTestZone = "localtest.net"
 
 // GetDNSRecords returns a list of DNS records for the given domain name. Error returned otherwise.
 // if name is provided, that is used as a filter
-func GetDNSRecords(ctx context.Context, api *cloudflare.API, zone string, name string) ([]cloudflare.DNSRecord, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetDNSRecords", "name", name)
-
-	if zone == "" {
-		return nil, fmt.Errorf("missing domain zone")
+func GetDNSRecords(ctx context.Context, api *cloudflare.API, zones []string, name string) ([]cloudflare.DNSRecord, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetDNSRecords", "name", name, "zones", zones)
+	zone, err := getAllowedZone(ctx, name, zones)
+	if err != nil {
+		return nil, err
 	}
 
 	zoneID, err := api.ZoneIDByName(zone)
@@ -52,15 +52,13 @@ func GetDNSRecords(ctx context.Context, api *cloudflare.API, zone string, name s
 }
 
 // CreateOrUpdateDNSRecord changes the existing record if found, or adds a new one
-func CreateOrUpdateDNSRecord(ctx context.Context, api *cloudflare.API, zone, name, rtype, content string, ttl int, proxy bool) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateOrUpdateDNSRecord", "zone", zone, "name", name, "content", content)
+func CreateOrUpdateDNSRecord(ctx context.Context, api *cloudflare.API, zones []string, name, rtype, content string, ttl int, proxy bool) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateOrUpdateDNSRecord", "zones", zones, "name", name, "content", content)
 
-	if !strings.Contains(name, zone) {
-		// mismatch between what the controller thinks is the appdnsroot is and what the value
-		// the CRM is running with.
-		return fmt.Errorf("Mismatch between requested DNS record zone: %s and CRM zone: %s", name, zone)
+	zone, err := getAllowedZone(ctx, name, zones)
+	if err != nil {
+		return err
 	}
-
 	if zone == LocalTestZone {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Skip record creation for test zone", "zone", zone)
 		return nil
@@ -164,14 +162,14 @@ func CreateDNSRecord(ctx context.Context, api *cloudflare.API, zone, name, rtype
 }
 
 // DeleteDNSRecord deletes DNS record specified by recordID in zone.
-func DeleteDNSRecord(ctx context.Context, api *cloudflare.API, zone, recordID string) error {
+func DeleteDNSRecord(ctx context.Context, api *cloudflare.API, zones []string, recordID string) error {
+	zone, err := getAllowedZone(ctx, recordID, zones)
+	if err != nil {
+		return err
+	}
 	if zone == LocalTestZone {
 		return nil
 	}
-	if zone == "" {
-		return fmt.Errorf("missing zone")
-	}
-
 	if recordID == "" {
 		return fmt.Errorf("missing recordID")
 	}
@@ -182,4 +180,16 @@ func DeleteDNSRecord(ctx context.Context, api *cloudflare.API, zone, recordID st
 	}
 
 	return api.DeleteDNSRecord(zoneID, recordID)
+}
+
+func getAllowedZone(ctx context.Context, name string, zones []string) (string, error) {
+	if len(zones) == 0 {
+		return "", fmt.Errorf("missing allowed DNS zone domain")
+	}
+	for _, zone := range zones {
+		if strings.Contains(name, zone) {
+			return zone, nil
+		}
+	}
+	return "", fmt.Errorf("Zone mismatch between requested DNS record %s and allowed zones %v", name, zones)
 }
