@@ -25,13 +25,13 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 
 	valid "github.com/asaskevich/govalidator"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 
 	ssh "github.com/edgexr/golang-ssh"
@@ -277,7 +277,12 @@ func (v *VMPlatform) AttachAndEnableRootLBInterface(ctx context.Context, client 
 // the VM name the same, and only use the new RootLBFQDN name
 // for the DNS registration.
 func (v *VMPlatform) GetRootLBName(key *edgeproto.CloudletKey) string {
-	name := cloudcommon.GetRootLBFQDNOld(key, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
+	// If the appDnsRoot changes, the only way to point back
+	// to the original rootLB name is manually via this env var.
+	name, ok := v.VMProperties.CommonPf.Properties.GetValue("MEX_SHARED_ROOTLB_NAME")
+	if !ok || name == "" {
+		name = cloudcommon.GetRootLBFQDNOld(key, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
+	}
 	return v.VMProvider.NameSanitize(name)
 }
 
