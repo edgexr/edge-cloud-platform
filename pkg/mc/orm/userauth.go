@@ -123,7 +123,6 @@ func AuthCookie(next echo.HandlerFunc) echo.HandlerFunc {
 			if err != nil {
 				return err
 			}
-			return next(c)
 		}
 		return next(c)
 	}

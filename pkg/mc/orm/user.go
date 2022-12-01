@@ -18,13 +18,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"html/template"
 	"image/png"
 	"io/ioutil"
 	math "math"
 	"net/http"
 	"sort"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
@@ -1583,16 +1583,15 @@ func LoginPage(c echo.Context) error {
 
 	err := registerAuthClaims(c)
 	if err == nil {
-		// already logged in, give link to proceed.
-		// This may be needed if the browser refuses
-		// to include cookies after a redirect.
-		// If redirect from POST login works, this
-		// page will not be used.
+		// already logged in, give link to proceed. This may be
+		// needed if the browser refuses to include cookies
+		// after a redirect. If redirect from POST login works,
+		// this page will not be used.
 		data.RedirectUrl = rd
 		data.Loggedin = true
 	} else {
-		// present login page, which will post to
-		// login and then redirect to original request
+		// present login page, which will post to login and
+		// then redirect to original request
 		data.UrlParams = "?rd=" + rd
 	}
 
@@ -1606,24 +1605,21 @@ func LoginPage(c echo.Context) error {
 	return nil
 }
 
-// Authorize is currently used to authorize nginx-ingress
-// for access to internal services like jaeger-ui.
-// If no auth is present, return login page.
-// This process is a bit tricky.
-// Nginx will call HttpAuthorize as a subrequest for every
-// incoming request to authenticate the token.
-// If HttpAuthorize returns 2xx, the initial request will be
-// allowed. If there is no token or the token is invalid, this
-// function needs to return a login page to allow the user to
-// login. The login page will call the logic function, which
-// will set a cookie for the main domain. The main domain must
-// include any subdomains, including the console, that users
-// need access to. The cookie will be stored in the browser,
-// and on redirect will be sent with the request.
+// Authorize is currently used to authorize nginx-ingress for access
+// to internal services like jaeger-ui. If no auth is present, return
+// login page. This process is a bit tricky.
+// Nginx will call HttpAuthorize as a subrequest for every incoming
+// request to authenticate the token. If HttpAuthorize returns 2xx, the
+// initial request will be allowed. If there is no token or the token is
+// invalid, this function needs to return a login page to allow the user
+// to login. The login page will call the logic function, which will set
+// a cookie for the main domain. The main domain must include any
+// subdomains, including the console, that users need access to. The
+// cookie will be stored in the browser, and on redirect will be sent
+// with the request.
 //
-// One gotcha is that browsers do not send the cookie even
-// if domains match on the first request (where user types
-// in the url manually).
+// One gotcha is that browsers do not send the cookie even if domains
+// match on the first request (where user types in the url manually).
 func HttpAuthorize(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
 	req := c.Request()
