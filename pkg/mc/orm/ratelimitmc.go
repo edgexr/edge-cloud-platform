@@ -201,7 +201,10 @@ func RateLimit(next echo.HandlerFunc) echo.HandlerFunc {
 			// use Username if can get claims
 			callerInfo.User = claims.Username
 		}
-
+		if rateLimitMgr == nil {
+			// not initialized yet
+			return echo.NewHTTPError(http.StatusServiceUnavailable, "Service temporarily unavailable")
+		}
 		// Rate limit
 		if err = rateLimitMgr.Limit(ctx, callerInfo); err != nil {
 			errMsg := fmt.Sprintf("%s is rejected, please retry later.", c.Path())

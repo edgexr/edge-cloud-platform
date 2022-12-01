@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
@@ -276,6 +277,10 @@ func Login(c echo.Context) error {
 		ret["admin"] = true
 	}
 	c.SetCookie(cookie)
+	if rd := c.Request().URL.Query().Get("rd"); rd != "" {
+		// nginx auth redirect
+		return c.Redirect(http.StatusFound, rd)
+	}
 	return c.JSON(http.StatusOK, ret)
 }
 
@@ -1555,4 +1560,93 @@ func AuthScopes(c echo.Context) error {
 		}
 	}
 	return c.JSON(http.StatusOK, scopes)
+}
+
+var loginT = template.Must(template.ParseFS(resources, "resources/login.gohtml"))
+
+type loginData struct {
+	Domain      string
+	UrlParams   string
+	Loggedin    bool
+	RedirectUrl string
+}
+
+func LoginPage(c echo.Context) error {
+	data := loginData{
+		Domain: serverConfig.HTTPCookieDomain,
+	}
+	// nginx sends original request as rd param
+	rd := c.Request().URL.Query().Get("rd")
+	if rd == "" {
+		return fmt.Errorf("missing redirect parameter 'rd'")
+	}
+
+	err := registerAuthClaims(c)
+	if err == nil {
+		// already logged in, give link to proceed.
+		// This may be needed if the browser refuses
+		// to include cookies after a redirect.
+		// If redirect from POST login works, this
+		// page will not be used.
+		data.RedirectUrl = rd
+		data.Loggedin = true
+	} else {
+		// present login page, which will post to
+		// login and then redirect to original request
+		data.UrlParams = "?rd=" + rd
+	}
+
+	w := c.Response()
+	if err := loginT.Execute(w, data); err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
+	return nil
+}
+
+// Authorize is currently used to authorize nginx-ingress
+// for access to internal services like jaeger-ui.
+// If no auth is present, return login page.
+// This process is a bit tricky.
+// Nginx will call HttpAuthorize as a subrequest for every
+// incoming request to authenticate the token.
+// If HttpAuthorize returns 2xx, the initial request will be
+// allowed. If there is no token or the token is invalid, this
+// function needs to return a login page to allow the user to
+// login. The login page will call the logic function, which
+// will set a cookie for the main domain. The main domain must
+// include any subdomains, including the console, that users
+// need access to. The cookie will be stored in the browser,
+// and on redirect will be sent with the request.
+//
+// One gotcha is that browsers do not send the cookie even
+// if domains match on the first request (where user types
+// in the url manually).
+func HttpAuthorize(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	req := c.Request()
+	header := req.Header
+	log.SpanLog(ctx, log.DebugLevelApi, "authorize", "header", header)
+	err := registerAuthClaims(c)
+	if err != nil {
+		// missing or invalid claims
+		return c.HTML(http.StatusUnauthorized, "")
+	}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "got claims", "claims", claims)
+	// Currently this is only used for admin access to internal
+	// services like jaeger.
+	isAdmin, err := isUserAdmin(ctx, claims.Username)
+	if err != nil {
+		return err
+	}
+	if !isAdmin {
+		return c.HTML(http.StatusUnauthorized, "")
+	}
+	return nil
 }

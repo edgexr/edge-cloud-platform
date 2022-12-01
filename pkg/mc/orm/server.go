@@ -16,6 +16,7 @@ package orm
 
 import (
 	"bytes"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -135,6 +136,9 @@ var Superuser string
 
 var database *gorm.DB
 
+//go:embed resources
+var resources embed.FS
+
 var enforcer *rbac.Enforcer
 var serverConfig *ServerConfig
 var gitlabClient *gitlab.Client
@@ -208,6 +212,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 			return nil, fmt.Errorf("Failed to parse URL %s for consoleAddr", config.ConsoleAddr)
 		}
 		config.HTTPCookieDomain = strings.Split(u.Host, ":")[0]
+		config.HTTPCookieDomain = strings.TrimPrefix(config.HTTPCookieDomain, "console.")
 	}
 	if config.PublicAddr != "" {
 		if !strings.HasPrefix(config.PublicAddr, "http") {
@@ -242,6 +247,8 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		}
 	}()
 	nodeMgr.UpdateNodeProps(ctx, version.BuildProps(ctx, ""))
+
+	log.SpanLog(ctx, log.DebugLevelApi, "http cookie domain", "domain", config.HTTPCookieDomain)
 
 	if config.LocalVault {
 		vaultProc := process.Vault{
@@ -404,6 +411,9 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	//   200: authToken
 	//   400: loginBadRequest
 	e.POST(root+"/login", Login)
+	// external authorization for same-site
+	e.GET(root+"/httpauth", HttpAuthorize)
+	e.GET(root+"/loginpage", LoginPage)
 	// swagger:route POST /usercreate User CreateUser
 	// Create User.
 	// Creates a new user and allows them to access and manage resources.
@@ -1299,6 +1309,9 @@ func (s *CustomBinder) Bind(i interface{}, c echo.Context) error {
 			return err
 		}
 		return BindJson(dat, i)
+	case strings.HasPrefix(ctype, echo.MIMEApplicationForm):
+		binder := echo.DefaultBinder{}
+		return binder.BindBody(c, i)
 	default:
 		return echo.ErrUnsupportedMediaType
 	}

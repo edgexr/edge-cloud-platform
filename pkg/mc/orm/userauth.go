@@ -41,6 +41,7 @@ var BruteForceGuessesPerSecond = 1000000
 
 var Jwks vault.JWKS
 var NoUserClaims *ormutil.UserClaims = nil
+var TokenHttpCookieName = "token"
 
 type TokenAuth struct {
 	Token string
@@ -66,16 +67,18 @@ func ValidPassword(pw string) error {
 
 func NewHTTPAuthCookie(token string, expires int64, domain string) *http.Cookie {
 	return &http.Cookie{
-		Name:    "token",
+		Name:    TokenHttpCookieName,
 		Value:   token,
 		Expires: time.Unix(expires, 0),
 		// only send this cookie over HTTPS
 		Secure: true,
+		// set an explicit path, otherwise browser may fill in /api/v1, which prevents this cookie from being used to httpauth other subdomains like jaeger-ui.<this-domain>
+		Path: "/",
 		// true means no scripts will be able to access this cookie, http requests only
 		HttpOnly: true,
-		// limit cookie access to this domain only
+		// limit cookie access to this domain only. Note that this may be a subdomain, i.e. abc.xyz.com, which is more strict than "site", which is only the last two labels, xyz.com.
 		Domain: domain,
-		// limits cookie's scope to only requests originating from same site
+		// Site is only xyz.com, unless xyz.com is on the list of "public sites" (which it won't be for this platform). Subdomains like console.xyz.com and jaeger.xyz.com are considered the same "site".
 		SameSite: http.SameSiteStrictMode,
 	}
 }
@@ -116,53 +119,61 @@ func AuthCookie(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		api := c.Path()
 		if (strings.Contains(api, "/auth/") || strings.Contains(api, federation.ApiRoot)) && !strings.Contains(api, "/ws/") {
-			auth := c.Request().Header.Get(echo.HeaderAuthorization)
-			scheme := "Bearer"
-			l := len(scheme)
-			cookie := ""
-			if len(auth) > len(scheme) && strings.HasPrefix(auth, scheme) {
-				cookie = auth[l+1:]
-			} else {
-				// if no token provided as part of request headers,
-				// then check if it is part of http cookie
-				for _, httpCookie := range c.Request().Cookies() {
-					if httpCookie.Name == "token" {
-						cookie = httpCookie.Value
-						break
-					}
-				}
+			err := registerAuthClaims(c)
+			if err != nil {
+				return err
 			}
-
-			if cookie == "" {
-				//if no token found, return a 400 err
-				return &echo.HTTPError{
-					Code:     http.StatusBadRequest,
-					Message:  "no bearer token found",
-					Internal: fmt.Errorf("no token found for Authorization Bearer"),
-				}
-			}
-
-			claims := ormutil.UserClaims{}
-			token, err := Jwks.VerifyCookie(cookie, &claims)
-			if err == nil && token.Valid {
-				c.Set("user", token)
-				return next(c)
-			}
-			// display error regarding token valid time/expired
-			if err != nil && strings.Contains(err.Error(), "expired") {
-				return &echo.HTTPError{
-					Code:     http.StatusBadRequest,
-					Message:  err.Error(),
-					Internal: err,
-				}
-			}
-			return &echo.HTTPError{
-				Code:     http.StatusUnauthorized,
-				Message:  "invalid or expired jwt",
-				Internal: err,
-			}
+			return next(c)
 		}
 		return next(c)
+	}
+}
+
+func registerAuthClaims(c echo.Context) error {
+	auth := c.Request().Header.Get(echo.HeaderAuthorization)
+	scheme := "Bearer"
+	l := len(scheme)
+	cookie := ""
+	if len(auth) > len(scheme) && strings.HasPrefix(auth, scheme) {
+		cookie = auth[l+1:]
+	} else {
+		// if no token provided as part of request headers,
+		// then check if it is part of http cookie
+		for _, httpCookie := range c.Request().Cookies() {
+			if httpCookie.Name == TokenHttpCookieName {
+				cookie = httpCookie.Value
+				break
+			}
+		}
+	}
+
+	if cookie == "" {
+		//if no token found, return a 401 err for nginx auth proxy
+		return &echo.HTTPError{
+			Code:     http.StatusUnauthorized,
+			Message:  "no bearer token found",
+			Internal: fmt.Errorf("no token found for Authorization Bearer"),
+		}
+	}
+
+	claims := ormutil.UserClaims{}
+	token, err := Jwks.VerifyCookie(cookie, &claims)
+	if err == nil && token.Valid {
+		c.Set("user", token)
+		return nil
+	}
+	// display error regarding token valid time/expired
+	if err != nil && strings.Contains(err.Error(), "expired") {
+		return &echo.HTTPError{
+			Code:     http.StatusUnauthorized,
+			Message:  err.Error(),
+			Internal: err,
+		}
+	}
+	return &echo.HTTPError{
+		Code:     http.StatusUnauthorized,
+		Message:  "invalid or expired jwt",
+		Internal: err,
 	}
 }
 
