@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the FederationContextIdApplicationLcmPostRequestAppInstanceInfo type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &FederationContextIdApplicationLcmPostRequestAppInstanceInfo{}
+
 // FederationContextIdApplicationLcmPostRequestAppInstanceInfo struct for FederationContextIdApplicationLcmPostRequestAppInstanceInfo
 type FederationContextIdApplicationLcmPostRequestAppInstanceInfo struct {
 	// Running status of the application instance.
@@ -41,7 +44,7 @@ func NewFederationContextIdApplicationLcmPostRequestAppInstanceInfoWithDefaults(
 
 // GetAppInstanceState returns the AppInstanceState field value if set, zero value otherwise.
 func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAppInstanceState() string {
-	if o == nil || o.AppInstanceState == nil {
+	if o == nil || isNil(o.AppInstanceState) {
 		var ret string
 		return ret
 	}
@@ -51,7 +54,7 @@ func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAppInst
 // GetAppInstanceStateOk returns a tuple with the AppInstanceState field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAppInstanceStateOk() (*string, bool) {
-	if o == nil || o.AppInstanceState == nil {
+	if o == nil || isNil(o.AppInstanceState) {
 		return nil, false
 	}
 	return o.AppInstanceState, true
@@ -59,7 +62,7 @@ func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAppInst
 
 // HasAppInstanceState returns a boolean if a field has been set.
 func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) HasAppInstanceState() bool {
-	if o != nil && o.AppInstanceState != nil {
+	if o != nil && !isNil(o.AppInstanceState) {
 		return true
 	}
 
@@ -73,7 +76,7 @@ func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) SetAppInst
 
 // GetAccesspointInfo returns the AccesspointInfo field value if set, zero value otherwise.
 func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAccesspointInfo() []FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner {
-	if o == nil || o.AccesspointInfo == nil {
+	if o == nil || isNil(o.AccesspointInfo) {
 		var ret []FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner
 		return ret
 	}
@@ -83,7 +86,7 @@ func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAccessp
 // GetAccesspointInfoOk returns a tuple with the AccesspointInfo field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAccesspointInfoOk() ([]FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner, bool) {
-	if o == nil || o.AccesspointInfo == nil {
+	if o == nil || isNil(o.AccesspointInfo) {
 		return nil, false
 	}
 	return o.AccesspointInfo, true
@@ -91,7 +94,7 @@ func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAccessp
 
 // HasAccesspointInfo returns a boolean if a field has been set.
 func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) HasAccesspointInfo() bool {
-	if o != nil && o.AccesspointInfo != nil {
+	if o != nil && !isNil(o.AccesspointInfo) {
 		return true
 	}
 
@@ -104,14 +107,22 @@ func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) SetAccessp
 }
 
 func (o FederationContextIdApplicationLcmPostRequestAppInstanceInfo) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if o.AppInstanceState != nil {
-		toSerialize["appInstanceState"] = o.AppInstanceState
-	}
-	if o.AccesspointInfo != nil {
-		toSerialize["accesspointInfo"] = o.AccesspointInfo
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o FederationContextIdApplicationLcmPostRequestAppInstanceInfo) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	if !isNil(o.AppInstanceState) {
+		toSerialize["appInstanceState"] = o.AppInstanceState
+	}
+	if !isNil(o.AccesspointInfo) {
+		toSerialize["accesspointInfo"] = o.AccesspointInfo
+	}
+	return toSerialize, nil
 }
 
 type NullableFederationContextIdApplicationLcmPostRequestAppInstanceInfo struct {

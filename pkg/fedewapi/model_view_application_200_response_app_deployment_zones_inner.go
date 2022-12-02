@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the ViewApplication200ResponseAppDeploymentZonesInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ViewApplication200ResponseAppDeploymentZonesInner{}
+
 // ViewApplication200ResponseAppDeploymentZonesInner struct for ViewApplication200ResponseAppDeploymentZonesInner
 type ViewApplication200ResponseAppDeploymentZonesInner struct {
 	// ISO 3166-1 Alpha-2 code for the country of Partner operator
@@ -89,14 +92,18 @@ func (o *ViewApplication200ResponseAppDeploymentZonesInner) SetZoneInfo(v ViewAp
 }
 
 func (o ViewApplication200ResponseAppDeploymentZonesInner) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["countryCode"] = o.CountryCode
-	}
-	if true {
-		toSerialize["zoneInfo"] = o.ZoneInfo
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o ViewApplication200ResponseAppDeploymentZonesInner) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["countryCode"] = o.CountryCode
+	toSerialize["zoneInfo"] = o.ZoneInfo
+	return toSerialize, nil
 }
 
 type NullableViewApplication200ResponseAppDeploymentZonesInner struct {

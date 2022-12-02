@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the CreateResourcePoolsRequestResRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &CreateResourcePoolsRequestResRequest{}
+
 // CreateResourcePoolsRequestResRequest Compute flavours to be reserved and their time duration
 type CreateResourcePoolsRequestResRequest struct {
 	Flavours []CreateResourcePoolsRequestResRequestFlavoursInner `json:"flavours"`
@@ -88,14 +91,18 @@ func (o *CreateResourcePoolsRequestResRequest) SetReserveDuration(v ResourceRese
 }
 
 func (o CreateResourcePoolsRequestResRequest) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["flavours"] = o.Flavours
-	}
-	if true {
-		toSerialize["reserveDuration"] = o.ReserveDuration
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o CreateResourcePoolsRequestResRequest) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["flavours"] = o.Flavours
+	toSerialize["reserveDuration"] = o.ReserveDuration
+	return toSerialize, nil
 }
 
 type NullableCreateResourcePoolsRequestResRequest struct {

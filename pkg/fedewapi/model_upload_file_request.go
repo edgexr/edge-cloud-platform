@@ -12,101 +12,323 @@ package fedewapi
 
 import (
 	"encoding/json"
+	"os"
 )
 
-// checks if the ClientLocation type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ClientLocation{}
+// checks if the UploadFileRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &UploadFileRequest{}
 
-// ClientLocation struct for ClientLocation
-type ClientLocation struct {
-	// Latitude, Longitude as decimal fraction up to 4 digit precision
-	GeoLocation *string `json:"geo_location,omitempty"`
-	// Information about the 4G/5G Cell ids where the client is currently served.
-	RadLocation []ClientLocationRadLocationInner `json:"rad_location,omitempty"`
+// UploadFileRequest struct for UploadFileRequest
+type UploadFileRequest struct {
+	// A globally unique identifier associated with the image file. Originating OP generates this identifier when file is uploaded over NBI.
+	FileId string `json:"fileId"`
+	// UserId of the app provider.  Identifier is relevant only in context of this federation.
+	AppProviderId string `json:"appProviderId"`
+	// Name of the image file.   App  provides specifies this name when image is uploaded on originating OP over NBI.
+	FileName string `json:"fileName"`
+	// Brief description about the image file.
+	FileDescription *string `json:"fileDescription,omitempty"`
+	// File version information
+	FileVersionInfo string `json:"fileVersionInfo"`
+	// Indicate if the file is Container image or VM image (QCOW2)
+	FileType string `json:"fileType"`
+	// Base OS for the image. Currently only “Linux” is supported
+	ImgOSType string `json:"imgOSType"`
+	ImgInsSetArch string `json:"imgInsSetArch"`
+	Repolocation *UploadFileRequestRepolocation `json:"repolocation,omitempty"`
+	// Binary image associated with an application component.
+	File **os.File `json:"file,omitempty"`
 }
 
-// NewClientLocation instantiates a new ClientLocation object
+// NewUploadFileRequest instantiates a new UploadFileRequest object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewClientLocation() *ClientLocation {
-	this := ClientLocation{}
+func NewUploadFileRequest(fileId string, appProviderId string, fileName string, fileVersionInfo string, fileType string, imgOSType string, imgInsSetArch string) *UploadFileRequest {
+	this := UploadFileRequest{}
+	this.FileId = fileId
+	this.AppProviderId = appProviderId
+	this.FileName = fileName
+	this.FileVersionInfo = fileVersionInfo
+	this.FileType = fileType
+	this.ImgOSType = imgOSType
+	this.ImgInsSetArch = imgInsSetArch
 	return &this
 }
 
-// NewClientLocationWithDefaults instantiates a new ClientLocation object
+// NewUploadFileRequestWithDefaults instantiates a new UploadFileRequest object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewClientLocationWithDefaults() *ClientLocation {
-	this := ClientLocation{}
+func NewUploadFileRequestWithDefaults() *UploadFileRequest {
+	this := UploadFileRequest{}
 	return &this
 }
 
-// GetGeoLocation returns the GeoLocation field value if set, zero value otherwise.
-func (o *ClientLocation) GetGeoLocation() string {
-	if o == nil || isNil(o.GeoLocation) {
+// GetFileId returns the FileId field value
+func (o *UploadFileRequest) GetFileId() string {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.GeoLocation
+
+	return o.FileId
 }
 
-// GetGeoLocationOk returns a tuple with the GeoLocation field value if set, nil otherwise
+// GetFileIdOk returns a tuple with the FileId field value
 // and a boolean to check if the value has been set.
-func (o *ClientLocation) GetGeoLocationOk() (*string, bool) {
-	if o == nil || isNil(o.GeoLocation) {
+func (o *UploadFileRequest) GetFileIdOk() (*string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.GeoLocation, true
+	return &o.FileId, true
 }
 
-// HasGeoLocation returns a boolean if a field has been set.
-func (o *ClientLocation) HasGeoLocation() bool {
-	if o != nil && !isNil(o.GeoLocation) {
-		return true
-	}
-
-	return false
+// SetFileId sets field value
+func (o *UploadFileRequest) SetFileId(v string) {
+	o.FileId = v
 }
 
-// SetGeoLocation gets a reference to the given string and assigns it to the GeoLocation field.
-func (o *ClientLocation) SetGeoLocation(v string) {
-	o.GeoLocation = &v
-}
-
-// GetRadLocation returns the RadLocation field value if set, zero value otherwise.
-func (o *ClientLocation) GetRadLocation() []ClientLocationRadLocationInner {
-	if o == nil || isNil(o.RadLocation) {
-		var ret []ClientLocationRadLocationInner
+// GetAppProviderId returns the AppProviderId field value
+func (o *UploadFileRequest) GetAppProviderId() string {
+	if o == nil {
+		var ret string
 		return ret
 	}
-	return o.RadLocation
+
+	return o.AppProviderId
 }
 
-// GetRadLocationOk returns a tuple with the RadLocation field value if set, nil otherwise
+// GetAppProviderIdOk returns a tuple with the AppProviderId field value
 // and a boolean to check if the value has been set.
-func (o *ClientLocation) GetRadLocationOk() ([]ClientLocationRadLocationInner, bool) {
-	if o == nil || isNil(o.RadLocation) {
+func (o *UploadFileRequest) GetAppProviderIdOk() (*string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.RadLocation, true
+	return &o.AppProviderId, true
 }
 
-// HasRadLocation returns a boolean if a field has been set.
-func (o *ClientLocation) HasRadLocation() bool {
-	if o != nil && !isNil(o.RadLocation) {
+// SetAppProviderId sets field value
+func (o *UploadFileRequest) SetAppProviderId(v string) {
+	o.AppProviderId = v
+}
+
+// GetFileName returns the FileName field value
+func (o *UploadFileRequest) GetFileName() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.FileName
+}
+
+// GetFileNameOk returns a tuple with the FileName field value
+// and a boolean to check if the value has been set.
+func (o *UploadFileRequest) GetFileNameOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.FileName, true
+}
+
+// SetFileName sets field value
+func (o *UploadFileRequest) SetFileName(v string) {
+	o.FileName = v
+}
+
+// GetFileDescription returns the FileDescription field value if set, zero value otherwise.
+func (o *UploadFileRequest) GetFileDescription() string {
+	if o == nil || isNil(o.FileDescription) {
+		var ret string
+		return ret
+	}
+	return *o.FileDescription
+}
+
+// GetFileDescriptionOk returns a tuple with the FileDescription field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *UploadFileRequest) GetFileDescriptionOk() (*string, bool) {
+	if o == nil || isNil(o.FileDescription) {
+		return nil, false
+	}
+	return o.FileDescription, true
+}
+
+// HasFileDescription returns a boolean if a field has been set.
+func (o *UploadFileRequest) HasFileDescription() bool {
+	if o != nil && !isNil(o.FileDescription) {
 		return true
 	}
 
 	return false
 }
 
-// SetRadLocation gets a reference to the given []ClientLocationRadLocationInner and assigns it to the RadLocation field.
-func (o *ClientLocation) SetRadLocation(v []ClientLocationRadLocationInner) {
-	o.RadLocation = v
+// SetFileDescription gets a reference to the given string and assigns it to the FileDescription field.
+func (o *UploadFileRequest) SetFileDescription(v string) {
+	o.FileDescription = &v
 }
 
-func (o ClientLocation) MarshalJSON() ([]byte, error) {
+// GetFileVersionInfo returns the FileVersionInfo field value
+func (o *UploadFileRequest) GetFileVersionInfo() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.FileVersionInfo
+}
+
+// GetFileVersionInfoOk returns a tuple with the FileVersionInfo field value
+// and a boolean to check if the value has been set.
+func (o *UploadFileRequest) GetFileVersionInfoOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.FileVersionInfo, true
+}
+
+// SetFileVersionInfo sets field value
+func (o *UploadFileRequest) SetFileVersionInfo(v string) {
+	o.FileVersionInfo = v
+}
+
+// GetFileType returns the FileType field value
+func (o *UploadFileRequest) GetFileType() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.FileType
+}
+
+// GetFileTypeOk returns a tuple with the FileType field value
+// and a boolean to check if the value has been set.
+func (o *UploadFileRequest) GetFileTypeOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.FileType, true
+}
+
+// SetFileType sets field value
+func (o *UploadFileRequest) SetFileType(v string) {
+	o.FileType = v
+}
+
+// GetImgOSType returns the ImgOSType field value
+func (o *UploadFileRequest) GetImgOSType() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.ImgOSType
+}
+
+// GetImgOSTypeOk returns a tuple with the ImgOSType field value
+// and a boolean to check if the value has been set.
+func (o *UploadFileRequest) GetImgOSTypeOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ImgOSType, true
+}
+
+// SetImgOSType sets field value
+func (o *UploadFileRequest) SetImgOSType(v string) {
+	o.ImgOSType = v
+}
+
+// GetImgInsSetArch returns the ImgInsSetArch field value
+func (o *UploadFileRequest) GetImgInsSetArch() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.ImgInsSetArch
+}
+
+// GetImgInsSetArchOk returns a tuple with the ImgInsSetArch field value
+// and a boolean to check if the value has been set.
+func (o *UploadFileRequest) GetImgInsSetArchOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ImgInsSetArch, true
+}
+
+// SetImgInsSetArch sets field value
+func (o *UploadFileRequest) SetImgInsSetArch(v string) {
+	o.ImgInsSetArch = v
+}
+
+// GetRepolocation returns the Repolocation field value if set, zero value otherwise.
+func (o *UploadFileRequest) GetRepolocation() UploadFileRequestRepolocation {
+	if o == nil || isNil(o.Repolocation) {
+		var ret UploadFileRequestRepolocation
+		return ret
+	}
+	return *o.Repolocation
+}
+
+// GetRepolocationOk returns a tuple with the Repolocation field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *UploadFileRequest) GetRepolocationOk() (*UploadFileRequestRepolocation, bool) {
+	if o == nil || isNil(o.Repolocation) {
+		return nil, false
+	}
+	return o.Repolocation, true
+}
+
+// HasRepolocation returns a boolean if a field has been set.
+func (o *UploadFileRequest) HasRepolocation() bool {
+	if o != nil && !isNil(o.Repolocation) {
+		return true
+	}
+
+	return false
+}
+
+// SetRepolocation gets a reference to the given UploadFileRequestRepolocation and assigns it to the Repolocation field.
+func (o *UploadFileRequest) SetRepolocation(v UploadFileRequestRepolocation) {
+	o.Repolocation = &v
+}
+
+// GetFile returns the File field value if set, zero value otherwise.
+func (o *UploadFileRequest) GetFile() *os.File {
+	if o == nil || isNil(o.File) {
+		var ret *os.File
+		return ret
+	}
+	return *o.File
+}
+
+// GetFileOk returns a tuple with the File field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *UploadFileRequest) GetFileOk() (**os.File, bool) {
+	if o == nil || isNil(o.File) {
+		return nil, false
+	}
+	return o.File, true
+}
+
+// HasFile returns a boolean if a field has been set.
+func (o *UploadFileRequest) HasFile() bool {
+	if o != nil && !isNil(o.File) {
+		return true
+	}
+
+	return false
+}
+
+// SetFile gets a reference to the given *os.File and assigns it to the File field.
+func (o *UploadFileRequest) SetFile(v *os.File) {
+	o.File = &v
+}
+
+func (o UploadFileRequest) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -114,49 +336,59 @@ func (o ClientLocation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ClientLocation) ToMap() (map[string]interface{}, error) {
+func (o UploadFileRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.GeoLocation) {
-		toSerialize["geo_location"] = o.GeoLocation
+	toSerialize["fileId"] = o.FileId
+	toSerialize["appProviderId"] = o.AppProviderId
+	toSerialize["fileName"] = o.FileName
+	if !isNil(o.FileDescription) {
+		toSerialize["fileDescription"] = o.FileDescription
 	}
-	if !isNil(o.RadLocation) {
-		toSerialize["rad_location"] = o.RadLocation
+	toSerialize["fileVersionInfo"] = o.FileVersionInfo
+	toSerialize["fileType"] = o.FileType
+	toSerialize["imgOSType"] = o.ImgOSType
+	toSerialize["imgInsSetArch"] = o.ImgInsSetArch
+	if !isNil(o.Repolocation) {
+		toSerialize["repolocation"] = o.Repolocation
+	}
+	if !isNil(o.File) {
+		toSerialize["file"] = o.File
 	}
 	return toSerialize, nil
 }
 
-type NullableClientLocation struct {
-	value *ClientLocation
+type NullableUploadFileRequest struct {
+	value *UploadFileRequest
 	isSet bool
 }
 
-func (v NullableClientLocation) Get() *ClientLocation {
+func (v NullableUploadFileRequest) Get() *UploadFileRequest {
 	return v.value
 }
 
-func (v *NullableClientLocation) Set(val *ClientLocation) {
+func (v *NullableUploadFileRequest) Set(val *UploadFileRequest) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableClientLocation) IsSet() bool {
+func (v NullableUploadFileRequest) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableClientLocation) Unset() {
+func (v *NullableUploadFileRequest) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableClientLocation(val *ClientLocation) *NullableClientLocation {
-	return &NullableClientLocation{value: val, isSet: true}
+func NewNullableUploadFileRequest(val *UploadFileRequest) *NullableUploadFileRequest {
+	return &NullableUploadFileRequest{value: val, isSet: true}
 }
 
-func (v NullableClientLocation) MarshalJSON() ([]byte, error) {
+func (v NullableUploadFileRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableClientLocation) UnmarshalJSON(src []byte) error {
+func (v *NullableUploadFileRequest) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

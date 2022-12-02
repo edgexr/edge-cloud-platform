@@ -1,0 +1,40 @@
+--- FederationApi_v1.3.0.yaml.last	2022-11-29 00:01:00.518707100 -0800
++++ FederationApi_v1.3.0.yaml	2022-12-01 18:29:29.408707100 -0800
+@@ -1598,13 +1598,13 @@
+                 - artefactFileName
+                 - artefactFileFormat
+                 - artefactDescriptorType
+-              oneOf:
+-                - required:
+-                  - artefactRepoLocation
+-                - required:
+-                  - componentSpec
+-                - required:
+-                  - artefactFile
++#              oneOf:
++#                - required:
++#                  - artefactRepoLocation
++#                - required:
++#                  - componentSpec
++#                - required:
++#                  - artefactFile
+               properties:
+                 artefactId:
+                   $ref:  '#/components/schemas/ArtefactId'         
+@@ -1874,11 +1874,11 @@
+                 - fileType
+                 - imgOSType
+                 - imgInsSetArch
+-              oneOf:
+-                - required:
+-                  - file
+-                - required:
+-                  - repolocation
++#              oneOf:
++#                - required:
++#                  - file
++#                - required:
++#                  - repolocation
+               properties:
+                 fileId:
+                   $ref:  '#/components/schemas/FileId'         

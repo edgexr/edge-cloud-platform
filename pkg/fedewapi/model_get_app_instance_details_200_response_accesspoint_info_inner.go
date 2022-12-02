@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the GetAppInstanceDetails200ResponseAccesspointInfoInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &GetAppInstanceDetails200ResponseAccesspointInfoInner{}
+
 // GetAppInstanceDetails200ResponseAccesspointInfoInner struct for GetAppInstanceDetails200ResponseAccesspointInfoInner
 type GetAppInstanceDetails200ResponseAccesspointInfoInner struct {
 	// This is the interface identifier that app provider defines when application is onboarded.
@@ -89,14 +92,18 @@ func (o *GetAppInstanceDetails200ResponseAccesspointInfoInner) SetAccessPoints(v
 }
 
 func (o GetAppInstanceDetails200ResponseAccesspointInfoInner) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["interfaceId"] = o.InterfaceId
-	}
-	if true {
-		toSerialize["accessPoints"] = o.AccessPoints
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o GetAppInstanceDetails200ResponseAccesspointInfoInner) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["interfaceId"] = o.InterfaceId
+	toSerialize["accessPoints"] = o.AccessPoints
+	return toSerialize, nil
 }
 
 type NullableGetAppInstanceDetails200ResponseAccesspointInfoInner struct {

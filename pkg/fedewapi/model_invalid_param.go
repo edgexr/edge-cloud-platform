@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the InvalidParam type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &InvalidParam{}
+
 // InvalidParam struct for InvalidParam
 type InvalidParam struct {
 	Param string `json:"param"`
@@ -64,7 +67,7 @@ func (o *InvalidParam) SetParam(v string) {
 
 // GetReason returns the Reason field value if set, zero value otherwise.
 func (o *InvalidParam) GetReason() string {
-	if o == nil || o.Reason == nil {
+	if o == nil || isNil(o.Reason) {
 		var ret string
 		return ret
 	}
@@ -74,7 +77,7 @@ func (o *InvalidParam) GetReason() string {
 // GetReasonOk returns a tuple with the Reason field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *InvalidParam) GetReasonOk() (*string, bool) {
-	if o == nil || o.Reason == nil {
+	if o == nil || isNil(o.Reason) {
 		return nil, false
 	}
 	return o.Reason, true
@@ -82,7 +85,7 @@ func (o *InvalidParam) GetReasonOk() (*string, bool) {
 
 // HasReason returns a boolean if a field has been set.
 func (o *InvalidParam) HasReason() bool {
-	if o != nil && o.Reason != nil {
+	if o != nil && !isNil(o.Reason) {
 		return true
 	}
 
@@ -95,14 +98,20 @@ func (o *InvalidParam) SetReason(v string) {
 }
 
 func (o InvalidParam) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["param"] = o.Param
-	}
-	if o.Reason != nil {
-		toSerialize["reason"] = o.Reason
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o InvalidParam) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["param"] = o.Param
+	if !isNil(o.Reason) {
+		toSerialize["reason"] = o.Reason
+	}
+	return toSerialize, nil
 }
 
 type NullableInvalidParam struct {

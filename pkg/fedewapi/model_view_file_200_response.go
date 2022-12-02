@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the ViewFile200Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ViewFile200Response{}
+
 // ViewFile200Response struct for ViewFile200Response
 type ViewFile200Response struct {
 	// A globally unique identifier associated with the image file. Originating OP generates this identifier when file is uploaded over NBI.
@@ -131,7 +134,7 @@ func (o *ViewFile200Response) SetFileName(v string) {
 
 // GetFileDescription returns the FileDescription field value if set, zero value otherwise.
 func (o *ViewFile200Response) GetFileDescription() string {
-	if o == nil || o.FileDescription == nil {
+	if o == nil || isNil(o.FileDescription) {
 		var ret string
 		return ret
 	}
@@ -141,7 +144,7 @@ func (o *ViewFile200Response) GetFileDescription() string {
 // GetFileDescriptionOk returns a tuple with the FileDescription field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ViewFile200Response) GetFileDescriptionOk() (*string, bool) {
-	if o == nil || o.FileDescription == nil {
+	if o == nil || isNil(o.FileDescription) {
 		return nil, false
 	}
 	return o.FileDescription, true
@@ -149,7 +152,7 @@ func (o *ViewFile200Response) GetFileDescriptionOk() (*string, bool) {
 
 // HasFileDescription returns a boolean if a field has been set.
 func (o *ViewFile200Response) HasFileDescription() bool {
-	if o != nil && o.FileDescription != nil {
+	if o != nil && !isNil(o.FileDescription) {
 		return true
 	}
 
@@ -258,32 +261,26 @@ func (o *ViewFile200Response) SetImgInsSetArch(v string) {
 }
 
 func (o ViewFile200Response) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["fileId"] = o.FileId
-	}
-	if true {
-		toSerialize["appProviderId"] = o.AppProviderId
-	}
-	if true {
-		toSerialize["fileName"] = o.FileName
-	}
-	if o.FileDescription != nil {
-		toSerialize["fileDescription"] = o.FileDescription
-	}
-	if true {
-		toSerialize["fileVersionInfo"] = o.FileVersionInfo
-	}
-	if true {
-		toSerialize["fileType"] = o.FileType
-	}
-	if true {
-		toSerialize["imgOSType"] = o.ImgOSType
-	}
-	if true {
-		toSerialize["imgInsSetArch"] = o.ImgInsSetArch
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o ViewFile200Response) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["fileId"] = o.FileId
+	toSerialize["appProviderId"] = o.AppProviderId
+	toSerialize["fileName"] = o.FileName
+	if !isNil(o.FileDescription) {
+		toSerialize["fileDescription"] = o.FileDescription
+	}
+	toSerialize["fileVersionInfo"] = o.FileVersionInfo
+	toSerialize["fileType"] = o.FileType
+	toSerialize["imgOSType"] = o.ImgOSType
+	toSerialize["imgInsSetArch"] = o.ImgInsSetArch
+	return toSerialize, nil
 }
 
 type NullableViewFile200Response struct {

@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the CreateResourcePools200Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &CreateResourcePools200Response{}
+
 // CreateResourcePools200Response struct for CreateResourcePools200Response
 type CreateResourcePools200Response struct {
 	// OP defined Identifier for the pool reserved for the ISV.  It should be unique with an OP.
@@ -63,11 +66,17 @@ func (o *CreateResourcePools200Response) SetPoolId(v string) {
 }
 
 func (o CreateResourcePools200Response) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["poolId"] = o.PoolId
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o CreateResourcePools200Response) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["poolId"] = o.PoolId
+	return toSerialize, nil
 }
 
 type NullableCreateResourcePools200Response struct {

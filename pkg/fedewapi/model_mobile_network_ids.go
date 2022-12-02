@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the MobileNetworkIds type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &MobileNetworkIds{}
+
 // MobileNetworkIds struct for MobileNetworkIds
 type MobileNetworkIds struct {
 	Mcc *string `json:"mcc,omitempty"`
@@ -39,7 +42,7 @@ func NewMobileNetworkIdsWithDefaults() *MobileNetworkIds {
 
 // GetMcc returns the Mcc field value if set, zero value otherwise.
 func (o *MobileNetworkIds) GetMcc() string {
-	if o == nil || o.Mcc == nil {
+	if o == nil || isNil(o.Mcc) {
 		var ret string
 		return ret
 	}
@@ -49,7 +52,7 @@ func (o *MobileNetworkIds) GetMcc() string {
 // GetMccOk returns a tuple with the Mcc field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *MobileNetworkIds) GetMccOk() (*string, bool) {
-	if o == nil || o.Mcc == nil {
+	if o == nil || isNil(o.Mcc) {
 		return nil, false
 	}
 	return o.Mcc, true
@@ -57,7 +60,7 @@ func (o *MobileNetworkIds) GetMccOk() (*string, bool) {
 
 // HasMcc returns a boolean if a field has been set.
 func (o *MobileNetworkIds) HasMcc() bool {
-	if o != nil && o.Mcc != nil {
+	if o != nil && !isNil(o.Mcc) {
 		return true
 	}
 
@@ -71,7 +74,7 @@ func (o *MobileNetworkIds) SetMcc(v string) {
 
 // GetMncs returns the Mncs field value if set, zero value otherwise.
 func (o *MobileNetworkIds) GetMncs() []string {
-	if o == nil || o.Mncs == nil {
+	if o == nil || isNil(o.Mncs) {
 		var ret []string
 		return ret
 	}
@@ -81,7 +84,7 @@ func (o *MobileNetworkIds) GetMncs() []string {
 // GetMncsOk returns a tuple with the Mncs field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *MobileNetworkIds) GetMncsOk() ([]string, bool) {
-	if o == nil || o.Mncs == nil {
+	if o == nil || isNil(o.Mncs) {
 		return nil, false
 	}
 	return o.Mncs, true
@@ -89,7 +92,7 @@ func (o *MobileNetworkIds) GetMncsOk() ([]string, bool) {
 
 // HasMncs returns a boolean if a field has been set.
 func (o *MobileNetworkIds) HasMncs() bool {
-	if o != nil && o.Mncs != nil {
+	if o != nil && !isNil(o.Mncs) {
 		return true
 	}
 
@@ -102,14 +105,22 @@ func (o *MobileNetworkIds) SetMncs(v []string) {
 }
 
 func (o MobileNetworkIds) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if o.Mcc != nil {
-		toSerialize["mcc"] = o.Mcc
-	}
-	if o.Mncs != nil {
-		toSerialize["mncs"] = o.Mncs
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o MobileNetworkIds) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	if !isNil(o.Mcc) {
+		toSerialize["mcc"] = o.Mcc
+	}
+	if !isNil(o.Mncs) {
+		toSerialize["mncs"] = o.Mncs
+	}
+	return toSerialize, nil
 }
 
 type NullableMobileNetworkIds struct {

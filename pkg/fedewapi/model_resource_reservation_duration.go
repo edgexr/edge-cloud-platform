@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the ResourceReservationDuration type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ResourceReservationDuration{}
+
 // ResourceReservationDuration Time period for which resources are to be reserved starting from now
 type ResourceReservationDuration struct {
 	// Number of days to be reserved
@@ -43,7 +46,7 @@ func NewResourceReservationDurationWithDefaults() *ResourceReservationDuration {
 
 // GetNumOfDays returns the NumOfDays field value if set, zero value otherwise.
 func (o *ResourceReservationDuration) GetNumOfDays() int32 {
-	if o == nil || o.NumOfDays == nil {
+	if o == nil || isNil(o.NumOfDays) {
 		var ret int32
 		return ret
 	}
@@ -53,7 +56,7 @@ func (o *ResourceReservationDuration) GetNumOfDays() int32 {
 // GetNumOfDaysOk returns a tuple with the NumOfDays field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ResourceReservationDuration) GetNumOfDaysOk() (*int32, bool) {
-	if o == nil || o.NumOfDays == nil {
+	if o == nil || isNil(o.NumOfDays) {
 		return nil, false
 	}
 	return o.NumOfDays, true
@@ -61,7 +64,7 @@ func (o *ResourceReservationDuration) GetNumOfDaysOk() (*int32, bool) {
 
 // HasNumOfDays returns a boolean if a field has been set.
 func (o *ResourceReservationDuration) HasNumOfDays() bool {
-	if o != nil && o.NumOfDays != nil {
+	if o != nil && !isNil(o.NumOfDays) {
 		return true
 	}
 
@@ -75,7 +78,7 @@ func (o *ResourceReservationDuration) SetNumOfDays(v int32) {
 
 // GetNumOfMonths returns the NumOfMonths field value if set, zero value otherwise.
 func (o *ResourceReservationDuration) GetNumOfMonths() int32 {
-	if o == nil || o.NumOfMonths == nil {
+	if o == nil || isNil(o.NumOfMonths) {
 		var ret int32
 		return ret
 	}
@@ -85,7 +88,7 @@ func (o *ResourceReservationDuration) GetNumOfMonths() int32 {
 // GetNumOfMonthsOk returns a tuple with the NumOfMonths field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ResourceReservationDuration) GetNumOfMonthsOk() (*int32, bool) {
-	if o == nil || o.NumOfMonths == nil {
+	if o == nil || isNil(o.NumOfMonths) {
 		return nil, false
 	}
 	return o.NumOfMonths, true
@@ -93,7 +96,7 @@ func (o *ResourceReservationDuration) GetNumOfMonthsOk() (*int32, bool) {
 
 // HasNumOfMonths returns a boolean if a field has been set.
 func (o *ResourceReservationDuration) HasNumOfMonths() bool {
-	if o != nil && o.NumOfMonths != nil {
+	if o != nil && !isNil(o.NumOfMonths) {
 		return true
 	}
 
@@ -107,7 +110,7 @@ func (o *ResourceReservationDuration) SetNumOfMonths(v int32) {
 
 // GetNumOfYears returns the NumOfYears field value if set, zero value otherwise.
 func (o *ResourceReservationDuration) GetNumOfYears() int32 {
-	if o == nil || o.NumOfYears == nil {
+	if o == nil || isNil(o.NumOfYears) {
 		var ret int32
 		return ret
 	}
@@ -117,7 +120,7 @@ func (o *ResourceReservationDuration) GetNumOfYears() int32 {
 // GetNumOfYearsOk returns a tuple with the NumOfYears field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ResourceReservationDuration) GetNumOfYearsOk() (*int32, bool) {
-	if o == nil || o.NumOfYears == nil {
+	if o == nil || isNil(o.NumOfYears) {
 		return nil, false
 	}
 	return o.NumOfYears, true
@@ -125,7 +128,7 @@ func (o *ResourceReservationDuration) GetNumOfYearsOk() (*int32, bool) {
 
 // HasNumOfYears returns a boolean if a field has been set.
 func (o *ResourceReservationDuration) HasNumOfYears() bool {
-	if o != nil && o.NumOfYears != nil {
+	if o != nil && !isNil(o.NumOfYears) {
 		return true
 	}
 
@@ -138,17 +141,25 @@ func (o *ResourceReservationDuration) SetNumOfYears(v int32) {
 }
 
 func (o ResourceReservationDuration) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if o.NumOfDays != nil {
-		toSerialize["numOfDays"] = o.NumOfDays
-	}
-	if o.NumOfMonths != nil {
-		toSerialize["numOfMonths"] = o.NumOfMonths
-	}
-	if o.NumOfYears != nil {
-		toSerialize["numOfYears"] = o.NumOfYears
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o ResourceReservationDuration) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	if !isNil(o.NumOfDays) {
+		toSerialize["numOfDays"] = o.NumOfDays
+	}
+	if !isNil(o.NumOfMonths) {
+		toSerialize["numOfMonths"] = o.NumOfMonths
+	}
+	if !isNil(o.NumOfYears) {
+		toSerialize["numOfYears"] = o.NumOfYears
+	}
+	return toSerialize, nil
 }
 
 type NullableResourceReservationDuration struct {

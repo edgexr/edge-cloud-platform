@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the ServiceEndpoint type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ServiceEndpoint{}
+
 // ServiceEndpoint struct for ServiceEndpoint
 type ServiceEndpoint struct {
 	Port int32 `json:"port"`
@@ -66,7 +69,7 @@ func (o *ServiceEndpoint) SetPort(v int32) {
 
 // GetFqdn returns the Fqdn field value if set, zero value otherwise.
 func (o *ServiceEndpoint) GetFqdn() string {
-	if o == nil || o.Fqdn == nil {
+	if o == nil || isNil(o.Fqdn) {
 		var ret string
 		return ret
 	}
@@ -76,7 +79,7 @@ func (o *ServiceEndpoint) GetFqdn() string {
 // GetFqdnOk returns a tuple with the Fqdn field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ServiceEndpoint) GetFqdnOk() (*string, bool) {
-	if o == nil || o.Fqdn == nil {
+	if o == nil || isNil(o.Fqdn) {
 		return nil, false
 	}
 	return o.Fqdn, true
@@ -84,7 +87,7 @@ func (o *ServiceEndpoint) GetFqdnOk() (*string, bool) {
 
 // HasFqdn returns a boolean if a field has been set.
 func (o *ServiceEndpoint) HasFqdn() bool {
-	if o != nil && o.Fqdn != nil {
+	if o != nil && !isNil(o.Fqdn) {
 		return true
 	}
 
@@ -98,7 +101,7 @@ func (o *ServiceEndpoint) SetFqdn(v string) {
 
 // GetIpv4Addresses returns the Ipv4Addresses field value if set, zero value otherwise.
 func (o *ServiceEndpoint) GetIpv4Addresses() []string {
-	if o == nil || o.Ipv4Addresses == nil {
+	if o == nil || isNil(o.Ipv4Addresses) {
 		var ret []string
 		return ret
 	}
@@ -108,7 +111,7 @@ func (o *ServiceEndpoint) GetIpv4Addresses() []string {
 // GetIpv4AddressesOk returns a tuple with the Ipv4Addresses field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ServiceEndpoint) GetIpv4AddressesOk() ([]string, bool) {
-	if o == nil || o.Ipv4Addresses == nil {
+	if o == nil || isNil(o.Ipv4Addresses) {
 		return nil, false
 	}
 	return o.Ipv4Addresses, true
@@ -116,7 +119,7 @@ func (o *ServiceEndpoint) GetIpv4AddressesOk() ([]string, bool) {
 
 // HasIpv4Addresses returns a boolean if a field has been set.
 func (o *ServiceEndpoint) HasIpv4Addresses() bool {
-	if o != nil && o.Ipv4Addresses != nil {
+	if o != nil && !isNil(o.Ipv4Addresses) {
 		return true
 	}
 
@@ -130,7 +133,7 @@ func (o *ServiceEndpoint) SetIpv4Addresses(v []string) {
 
 // GetIpv6Addresses returns the Ipv6Addresses field value if set, zero value otherwise.
 func (o *ServiceEndpoint) GetIpv6Addresses() []Ipv6Addr {
-	if o == nil || o.Ipv6Addresses == nil {
+	if o == nil || isNil(o.Ipv6Addresses) {
 		var ret []Ipv6Addr
 		return ret
 	}
@@ -140,7 +143,7 @@ func (o *ServiceEndpoint) GetIpv6Addresses() []Ipv6Addr {
 // GetIpv6AddressesOk returns a tuple with the Ipv6Addresses field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ServiceEndpoint) GetIpv6AddressesOk() ([]Ipv6Addr, bool) {
-	if o == nil || o.Ipv6Addresses == nil {
+	if o == nil || isNil(o.Ipv6Addresses) {
 		return nil, false
 	}
 	return o.Ipv6Addresses, true
@@ -148,7 +151,7 @@ func (o *ServiceEndpoint) GetIpv6AddressesOk() ([]Ipv6Addr, bool) {
 
 // HasIpv6Addresses returns a boolean if a field has been set.
 func (o *ServiceEndpoint) HasIpv6Addresses() bool {
-	if o != nil && o.Ipv6Addresses != nil {
+	if o != nil && !isNil(o.Ipv6Addresses) {
 		return true
 	}
 
@@ -161,20 +164,26 @@ func (o *ServiceEndpoint) SetIpv6Addresses(v []Ipv6Addr) {
 }
 
 func (o ServiceEndpoint) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["port"] = o.Port
-	}
-	if o.Fqdn != nil {
-		toSerialize["fqdn"] = o.Fqdn
-	}
-	if o.Ipv4Addresses != nil {
-		toSerialize["ipv4Addresses"] = o.Ipv4Addresses
-	}
-	if o.Ipv6Addresses != nil {
-		toSerialize["ipv6Addresses"] = o.Ipv6Addresses
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o ServiceEndpoint) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["port"] = o.Port
+	if !isNil(o.Fqdn) {
+		toSerialize["fqdn"] = o.Fqdn
+	}
+	if !isNil(o.Ipv4Addresses) {
+		toSerialize["ipv4Addresses"] = o.Ipv4Addresses
+	}
+	if !isNil(o.Ipv6Addresses) {
+		toSerialize["ipv6Addresses"] = o.Ipv6Addresses
+	}
+	return toSerialize, nil
 }
 
 type NullableServiceEndpoint struct {

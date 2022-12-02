@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo{}
+
 // ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo struct for ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo
 type ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo struct {
 	// Human readable name of the zone.
@@ -99,7 +102,7 @@ func (o *ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) SetFlavourId
 
 // GetResourceConsumption returns the ResourceConsumption field value if set, zero value otherwise.
 func (o *ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) GetResourceConsumption() string {
-	if o == nil || o.ResourceConsumption == nil {
+	if o == nil || isNil(o.ResourceConsumption) {
 		var ret string
 		return ret
 	}
@@ -109,7 +112,7 @@ func (o *ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) GetResourceC
 // GetResourceConsumptionOk returns a tuple with the ResourceConsumption field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) GetResourceConsumptionOk() (*string, bool) {
-	if o == nil || o.ResourceConsumption == nil {
+	if o == nil || isNil(o.ResourceConsumption) {
 		return nil, false
 	}
 	return o.ResourceConsumption, true
@@ -117,7 +120,7 @@ func (o *ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) GetResourceC
 
 // HasResourceConsumption returns a boolean if a field has been set.
 func (o *ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) HasResourceConsumption() bool {
-	if o != nil && o.ResourceConsumption != nil {
+	if o != nil && !isNil(o.ResourceConsumption) {
 		return true
 	}
 
@@ -131,7 +134,7 @@ func (o *ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) SetResourceC
 
 // GetResPool returns the ResPool field value if set, zero value otherwise.
 func (o *ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) GetResPool() string {
-	if o == nil || o.ResPool == nil {
+	if o == nil || isNil(o.ResPool) {
 		var ret string
 		return ret
 	}
@@ -141,7 +144,7 @@ func (o *ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) GetResPool()
 // GetResPoolOk returns a tuple with the ResPool field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) GetResPoolOk() (*string, bool) {
-	if o == nil || o.ResPool == nil {
+	if o == nil || isNil(o.ResPool) {
 		return nil, false
 	}
 	return o.ResPool, true
@@ -149,7 +152,7 @@ func (o *ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) GetResPoolOk
 
 // HasResPool returns a boolean if a field has been set.
 func (o *ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) HasResPool() bool {
-	if o != nil && o.ResPool != nil {
+	if o != nil && !isNil(o.ResPool) {
 		return true
 	}
 
@@ -162,20 +165,24 @@ func (o *ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) SetResPool(v
 }
 
 func (o ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["zoneId"] = o.ZoneId
-	}
-	if true {
-		toSerialize["flavourId"] = o.FlavourId
-	}
-	if o.ResourceConsumption != nil {
-		toSerialize["resourceConsumption"] = o.ResourceConsumption
-	}
-	if o.ResPool != nil {
-		toSerialize["resPool"] = o.ResPool
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["zoneId"] = o.ZoneId
+	toSerialize["flavourId"] = o.FlavourId
+	if !isNil(o.ResourceConsumption) {
+		toSerialize["resourceConsumption"] = o.ResourceConsumption
+	}
+	if !isNil(o.ResPool) {
+		toSerialize["resPool"] = o.ResPool
+	}
+	return toSerialize, nil
 }
 
 type NullableViewApplication200ResponseAppDeploymentZonesInnerZoneInfo struct {

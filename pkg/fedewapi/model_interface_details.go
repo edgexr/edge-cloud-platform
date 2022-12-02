@@ -14,99 +14,200 @@ import (
 	"encoding/json"
 )
 
-// checks if the ClientLocation type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ClientLocation{}
+// checks if the InterfaceDetails type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &InterfaceDetails{}
 
-// ClientLocation struct for ClientLocation
-type ClientLocation struct {
-	// Latitude, Longitude as decimal fraction up to 4 digit precision
-	GeoLocation *string `json:"geo_location,omitempty"`
-	// Information about the 4G/5G Cell ids where the client is currently served.
-	RadLocation []ClientLocationRadLocationInner `json:"rad_location,omitempty"`
+// InterfaceDetails struct for InterfaceDetails
+type InterfaceDetails struct {
+	// Each Port and corresponding traffic protocol exposed by the component is identified by a name. Application client on user device requires this to uniquely identify the interface.
+	InterfaceId string `json:"interfaceId"`
+	// Defines the IP transport communication protocol i.e., TCP, UDP or HTTP
+	CommProtocol string `json:"commProtocol"`
+	// Port number exposed by the component. OP may generate a dynamic port towards the UCs corresponding to this internal port and forward the client traffic from dynamic port to container Port.
+	CommPort int32 `json:"commPort"`
+	// Defines whether the interface is exposed to outer world or not i.e., external, or internal. If this is set to \"external\", then it is  exposed to external applications otherwise it is exposed internally to edge application components within edge cloud. When exposed to external world, an external dynamic port is assigned for UC traffic and mapped to the internal container Port
+	VisibilityType string `json:"visibilityType"`
+	// Name of the network.  In case the application has to be associated with more than 1 network then app provider must define the name of the network on which this interface has to be exposed.  This parameter is required only if the port has to be exposed on a specific network other than default.
+	Network string `json:"network"`
+	// Interface Name. Required only if application has to be attached to a network other than default.
+	InterfaceName *string `json:"InterfaceName,omitempty"`
 }
 
-// NewClientLocation instantiates a new ClientLocation object
+// NewInterfaceDetails instantiates a new InterfaceDetails object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewClientLocation() *ClientLocation {
-	this := ClientLocation{}
+func NewInterfaceDetails(interfaceId string, commProtocol string, commPort int32, visibilityType string, network string) *InterfaceDetails {
+	this := InterfaceDetails{}
+	this.InterfaceId = interfaceId
+	this.CommProtocol = commProtocol
+	this.CommPort = commPort
+	this.VisibilityType = visibilityType
+	this.Network = network
 	return &this
 }
 
-// NewClientLocationWithDefaults instantiates a new ClientLocation object
+// NewInterfaceDetailsWithDefaults instantiates a new InterfaceDetails object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewClientLocationWithDefaults() *ClientLocation {
-	this := ClientLocation{}
+func NewInterfaceDetailsWithDefaults() *InterfaceDetails {
+	this := InterfaceDetails{}
 	return &this
 }
 
-// GetGeoLocation returns the GeoLocation field value if set, zero value otherwise.
-func (o *ClientLocation) GetGeoLocation() string {
-	if o == nil || isNil(o.GeoLocation) {
+// GetInterfaceId returns the InterfaceId field value
+func (o *InterfaceDetails) GetInterfaceId() string {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.GeoLocation
+
+	return o.InterfaceId
 }
 
-// GetGeoLocationOk returns a tuple with the GeoLocation field value if set, nil otherwise
+// GetInterfaceIdOk returns a tuple with the InterfaceId field value
 // and a boolean to check if the value has been set.
-func (o *ClientLocation) GetGeoLocationOk() (*string, bool) {
-	if o == nil || isNil(o.GeoLocation) {
+func (o *InterfaceDetails) GetInterfaceIdOk() (*string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.GeoLocation, true
+	return &o.InterfaceId, true
 }
 
-// HasGeoLocation returns a boolean if a field has been set.
-func (o *ClientLocation) HasGeoLocation() bool {
-	if o != nil && !isNil(o.GeoLocation) {
-		return true
-	}
-
-	return false
+// SetInterfaceId sets field value
+func (o *InterfaceDetails) SetInterfaceId(v string) {
+	o.InterfaceId = v
 }
 
-// SetGeoLocation gets a reference to the given string and assigns it to the GeoLocation field.
-func (o *ClientLocation) SetGeoLocation(v string) {
-	o.GeoLocation = &v
-}
-
-// GetRadLocation returns the RadLocation field value if set, zero value otherwise.
-func (o *ClientLocation) GetRadLocation() []ClientLocationRadLocationInner {
-	if o == nil || isNil(o.RadLocation) {
-		var ret []ClientLocationRadLocationInner
+// GetCommProtocol returns the CommProtocol field value
+func (o *InterfaceDetails) GetCommProtocol() string {
+	if o == nil {
+		var ret string
 		return ret
 	}
-	return o.RadLocation
+
+	return o.CommProtocol
 }
 
-// GetRadLocationOk returns a tuple with the RadLocation field value if set, nil otherwise
+// GetCommProtocolOk returns a tuple with the CommProtocol field value
 // and a boolean to check if the value has been set.
-func (o *ClientLocation) GetRadLocationOk() ([]ClientLocationRadLocationInner, bool) {
-	if o == nil || isNil(o.RadLocation) {
+func (o *InterfaceDetails) GetCommProtocolOk() (*string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.RadLocation, true
+	return &o.CommProtocol, true
 }
 
-// HasRadLocation returns a boolean if a field has been set.
-func (o *ClientLocation) HasRadLocation() bool {
-	if o != nil && !isNil(o.RadLocation) {
+// SetCommProtocol sets field value
+func (o *InterfaceDetails) SetCommProtocol(v string) {
+	o.CommProtocol = v
+}
+
+// GetCommPort returns the CommPort field value
+func (o *InterfaceDetails) GetCommPort() int32 {
+	if o == nil {
+		var ret int32
+		return ret
+	}
+
+	return o.CommPort
+}
+
+// GetCommPortOk returns a tuple with the CommPort field value
+// and a boolean to check if the value has been set.
+func (o *InterfaceDetails) GetCommPortOk() (*int32, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.CommPort, true
+}
+
+// SetCommPort sets field value
+func (o *InterfaceDetails) SetCommPort(v int32) {
+	o.CommPort = v
+}
+
+// GetVisibilityType returns the VisibilityType field value
+func (o *InterfaceDetails) GetVisibilityType() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.VisibilityType
+}
+
+// GetVisibilityTypeOk returns a tuple with the VisibilityType field value
+// and a boolean to check if the value has been set.
+func (o *InterfaceDetails) GetVisibilityTypeOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.VisibilityType, true
+}
+
+// SetVisibilityType sets field value
+func (o *InterfaceDetails) SetVisibilityType(v string) {
+	o.VisibilityType = v
+}
+
+// GetNetwork returns the Network field value
+func (o *InterfaceDetails) GetNetwork() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Network
+}
+
+// GetNetworkOk returns a tuple with the Network field value
+// and a boolean to check if the value has been set.
+func (o *InterfaceDetails) GetNetworkOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Network, true
+}
+
+// SetNetwork sets field value
+func (o *InterfaceDetails) SetNetwork(v string) {
+	o.Network = v
+}
+
+// GetInterfaceName returns the InterfaceName field value if set, zero value otherwise.
+func (o *InterfaceDetails) GetInterfaceName() string {
+	if o == nil || isNil(o.InterfaceName) {
+		var ret string
+		return ret
+	}
+	return *o.InterfaceName
+}
+
+// GetInterfaceNameOk returns a tuple with the InterfaceName field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *InterfaceDetails) GetInterfaceNameOk() (*string, bool) {
+	if o == nil || isNil(o.InterfaceName) {
+		return nil, false
+	}
+	return o.InterfaceName, true
+}
+
+// HasInterfaceName returns a boolean if a field has been set.
+func (o *InterfaceDetails) HasInterfaceName() bool {
+	if o != nil && !isNil(o.InterfaceName) {
 		return true
 	}
 
 	return false
 }
 
-// SetRadLocation gets a reference to the given []ClientLocationRadLocationInner and assigns it to the RadLocation field.
-func (o *ClientLocation) SetRadLocation(v []ClientLocationRadLocationInner) {
-	o.RadLocation = v
+// SetInterfaceName gets a reference to the given string and assigns it to the InterfaceName field.
+func (o *InterfaceDetails) SetInterfaceName(v string) {
+	o.InterfaceName = &v
 }
 
-func (o ClientLocation) MarshalJSON() ([]byte, error) {
+func (o InterfaceDetails) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -114,49 +215,51 @@ func (o ClientLocation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ClientLocation) ToMap() (map[string]interface{}, error) {
+func (o InterfaceDetails) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.GeoLocation) {
-		toSerialize["geo_location"] = o.GeoLocation
-	}
-	if !isNil(o.RadLocation) {
-		toSerialize["rad_location"] = o.RadLocation
+	toSerialize["interfaceId"] = o.InterfaceId
+	toSerialize["commProtocol"] = o.CommProtocol
+	toSerialize["commPort"] = o.CommPort
+	toSerialize["visibilityType"] = o.VisibilityType
+	toSerialize["network"] = o.Network
+	if !isNil(o.InterfaceName) {
+		toSerialize["InterfaceName"] = o.InterfaceName
 	}
 	return toSerialize, nil
 }
 
-type NullableClientLocation struct {
-	value *ClientLocation
+type NullableInterfaceDetails struct {
+	value *InterfaceDetails
 	isSet bool
 }
 
-func (v NullableClientLocation) Get() *ClientLocation {
+func (v NullableInterfaceDetails) Get() *InterfaceDetails {
 	return v.value
 }
 
-func (v *NullableClientLocation) Set(val *ClientLocation) {
+func (v *NullableInterfaceDetails) Set(val *InterfaceDetails) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableClientLocation) IsSet() bool {
+func (v NullableInterfaceDetails) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableClientLocation) Unset() {
+func (v *NullableInterfaceDetails) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableClientLocation(val *ClientLocation) *NullableClientLocation {
-	return &NullableClientLocation{value: val, isSet: true}
+func NewNullableInterfaceDetails(val *InterfaceDetails) *NullableInterfaceDetails {
+	return &NullableInterfaceDetails{value: val, isSet: true}
 }
 
-func (v NullableClientLocation) MarshalJSON() ([]byte, error) {
+func (v NullableInterfaceDetails) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableClientLocation) UnmarshalJSON(src []byte) error {
+func (v *NullableInterfaceDetails) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

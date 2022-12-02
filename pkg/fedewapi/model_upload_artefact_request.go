@@ -12,23 +12,24 @@ package fedewapi
 
 import (
 	"encoding/json"
+	"os"
 )
 
-// checks if the GetArtefact200Response type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &GetArtefact200Response{}
+// checks if the UploadArtefactRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &UploadArtefactRequest{}
 
-// GetArtefact200Response struct for GetArtefact200Response
-type GetArtefact200Response struct {
+// UploadArtefactRequest struct for UploadArtefactRequest
+type UploadArtefactRequest struct {
 	// A globally unique identifier associated with the artefact. Originating OP generates this identifier when artefact is submitted over NBI.
 	ArtefactId string `json:"artefactId"`
 	// UserId of the app provider.  Identifier is relevant only in context of this federation.
 	AppProviderId string `json:"appProviderId"`
 	// Name of the artefact.
 	ArtefactName string `json:"artefactName"`
-	// Brief description of the artefact by the application provider
-	ArtefactDescription *string `json:"artefactDescription,omitempty"`
 	// Artefact version information
 	ArtefactVersionInfo string `json:"artefactVersionInfo"`
+	// Brief description of the artefact by the application provider
+	ArtefactDescription *string `json:"artefactDescription,omitempty"`
 	ArtefactVirtType string `json:"artefactVirtType"`
 	// Name of the file.
 	ArtefactFileName string `json:"artefactFileName"`
@@ -36,15 +37,19 @@ type GetArtefact200Response struct {
 	ArtefactFileFormat string `json:"artefactFileFormat"`
 	// Type of descriptor present in the artefact.  App provider can either define either a Helm chart or a Terraform script or container spec.
 	ArtefactDescriptorType string `json:"artefactDescriptorType"`
-	ArtefactRepoLocation GetArtefact200ResponseArtefactRepoLocation `json:"artefactRepoLocation"`
+	ArtefactRepoLocation *ObjectRepoLocation `json:"artefactRepoLocation,omitempty"`
+	// Details about compute, networking and storage requirements for each component of the application. App provider should  define all information needed to instantiate the component. If artefact is being defined at component level  this section should have information just about the component. In case the artefact is being defined at application level  the section should provide details about all the components.
+	ComponentSpec []ComponentSpec `json:"componentSpec,omitempty"`
+	// Helm archive or Terraform archive or container spec file.
+	ArtefactFile **os.File `json:"artefactFile,omitempty"`
 }
 
-// NewGetArtefact200Response instantiates a new GetArtefact200Response object
+// NewUploadArtefactRequest instantiates a new UploadArtefactRequest object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGetArtefact200Response(artefactId string, appProviderId string, artefactName string, artefactVersionInfo string, artefactVirtType string, artefactFileName string, artefactFileFormat string, artefactDescriptorType string, artefactRepoLocation GetArtefact200ResponseArtefactRepoLocation) *GetArtefact200Response {
-	this := GetArtefact200Response{}
+func NewUploadArtefactRequest(artefactId string, appProviderId string, artefactName string, artefactVersionInfo string, artefactVirtType string, artefactFileName string, artefactFileFormat string, artefactDescriptorType string) *UploadArtefactRequest {
+	this := UploadArtefactRequest{}
 	this.ArtefactId = artefactId
 	this.AppProviderId = appProviderId
 	this.ArtefactName = artefactName
@@ -53,20 +58,19 @@ func NewGetArtefact200Response(artefactId string, appProviderId string, artefact
 	this.ArtefactFileName = artefactFileName
 	this.ArtefactFileFormat = artefactFileFormat
 	this.ArtefactDescriptorType = artefactDescriptorType
-	this.ArtefactRepoLocation = artefactRepoLocation
 	return &this
 }
 
-// NewGetArtefact200ResponseWithDefaults instantiates a new GetArtefact200Response object
+// NewUploadArtefactRequestWithDefaults instantiates a new UploadArtefactRequest object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewGetArtefact200ResponseWithDefaults() *GetArtefact200Response {
-	this := GetArtefact200Response{}
+func NewUploadArtefactRequestWithDefaults() *UploadArtefactRequest {
+	this := UploadArtefactRequest{}
 	return &this
 }
 
 // GetArtefactId returns the ArtefactId field value
-func (o *GetArtefact200Response) GetArtefactId() string {
+func (o *UploadArtefactRequest) GetArtefactId() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -77,7 +81,7 @@ func (o *GetArtefact200Response) GetArtefactId() string {
 
 // GetArtefactIdOk returns a tuple with the ArtefactId field value
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactIdOk() (*string, bool) {
+func (o *UploadArtefactRequest) GetArtefactIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -85,12 +89,12 @@ func (o *GetArtefact200Response) GetArtefactIdOk() (*string, bool) {
 }
 
 // SetArtefactId sets field value
-func (o *GetArtefact200Response) SetArtefactId(v string) {
+func (o *UploadArtefactRequest) SetArtefactId(v string) {
 	o.ArtefactId = v
 }
 
 // GetAppProviderId returns the AppProviderId field value
-func (o *GetArtefact200Response) GetAppProviderId() string {
+func (o *UploadArtefactRequest) GetAppProviderId() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -101,7 +105,7 @@ func (o *GetArtefact200Response) GetAppProviderId() string {
 
 // GetAppProviderIdOk returns a tuple with the AppProviderId field value
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetAppProviderIdOk() (*string, bool) {
+func (o *UploadArtefactRequest) GetAppProviderIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -109,12 +113,12 @@ func (o *GetArtefact200Response) GetAppProviderIdOk() (*string, bool) {
 }
 
 // SetAppProviderId sets field value
-func (o *GetArtefact200Response) SetAppProviderId(v string) {
+func (o *UploadArtefactRequest) SetAppProviderId(v string) {
 	o.AppProviderId = v
 }
 
 // GetArtefactName returns the ArtefactName field value
-func (o *GetArtefact200Response) GetArtefactName() string {
+func (o *UploadArtefactRequest) GetArtefactName() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -125,7 +129,7 @@ func (o *GetArtefact200Response) GetArtefactName() string {
 
 // GetArtefactNameOk returns a tuple with the ArtefactName field value
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactNameOk() (*string, bool) {
+func (o *UploadArtefactRequest) GetArtefactNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -133,44 +137,12 @@ func (o *GetArtefact200Response) GetArtefactNameOk() (*string, bool) {
 }
 
 // SetArtefactName sets field value
-func (o *GetArtefact200Response) SetArtefactName(v string) {
+func (o *UploadArtefactRequest) SetArtefactName(v string) {
 	o.ArtefactName = v
 }
 
-// GetArtefactDescription returns the ArtefactDescription field value if set, zero value otherwise.
-func (o *GetArtefact200Response) GetArtefactDescription() string {
-	if o == nil || isNil(o.ArtefactDescription) {
-		var ret string
-		return ret
-	}
-	return *o.ArtefactDescription
-}
-
-// GetArtefactDescriptionOk returns a tuple with the ArtefactDescription field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactDescriptionOk() (*string, bool) {
-	if o == nil || isNil(o.ArtefactDescription) {
-		return nil, false
-	}
-	return o.ArtefactDescription, true
-}
-
-// HasArtefactDescription returns a boolean if a field has been set.
-func (o *GetArtefact200Response) HasArtefactDescription() bool {
-	if o != nil && !isNil(o.ArtefactDescription) {
-		return true
-	}
-
-	return false
-}
-
-// SetArtefactDescription gets a reference to the given string and assigns it to the ArtefactDescription field.
-func (o *GetArtefact200Response) SetArtefactDescription(v string) {
-	o.ArtefactDescription = &v
-}
-
 // GetArtefactVersionInfo returns the ArtefactVersionInfo field value
-func (o *GetArtefact200Response) GetArtefactVersionInfo() string {
+func (o *UploadArtefactRequest) GetArtefactVersionInfo() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -181,7 +153,7 @@ func (o *GetArtefact200Response) GetArtefactVersionInfo() string {
 
 // GetArtefactVersionInfoOk returns a tuple with the ArtefactVersionInfo field value
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactVersionInfoOk() (*string, bool) {
+func (o *UploadArtefactRequest) GetArtefactVersionInfoOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -189,12 +161,44 @@ func (o *GetArtefact200Response) GetArtefactVersionInfoOk() (*string, bool) {
 }
 
 // SetArtefactVersionInfo sets field value
-func (o *GetArtefact200Response) SetArtefactVersionInfo(v string) {
+func (o *UploadArtefactRequest) SetArtefactVersionInfo(v string) {
 	o.ArtefactVersionInfo = v
 }
 
+// GetArtefactDescription returns the ArtefactDescription field value if set, zero value otherwise.
+func (o *UploadArtefactRequest) GetArtefactDescription() string {
+	if o == nil || isNil(o.ArtefactDescription) {
+		var ret string
+		return ret
+	}
+	return *o.ArtefactDescription
+}
+
+// GetArtefactDescriptionOk returns a tuple with the ArtefactDescription field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *UploadArtefactRequest) GetArtefactDescriptionOk() (*string, bool) {
+	if o == nil || isNil(o.ArtefactDescription) {
+		return nil, false
+	}
+	return o.ArtefactDescription, true
+}
+
+// HasArtefactDescription returns a boolean if a field has been set.
+func (o *UploadArtefactRequest) HasArtefactDescription() bool {
+	if o != nil && !isNil(o.ArtefactDescription) {
+		return true
+	}
+
+	return false
+}
+
+// SetArtefactDescription gets a reference to the given string and assigns it to the ArtefactDescription field.
+func (o *UploadArtefactRequest) SetArtefactDescription(v string) {
+	o.ArtefactDescription = &v
+}
+
 // GetArtefactVirtType returns the ArtefactVirtType field value
-func (o *GetArtefact200Response) GetArtefactVirtType() string {
+func (o *UploadArtefactRequest) GetArtefactVirtType() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -205,7 +209,7 @@ func (o *GetArtefact200Response) GetArtefactVirtType() string {
 
 // GetArtefactVirtTypeOk returns a tuple with the ArtefactVirtType field value
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactVirtTypeOk() (*string, bool) {
+func (o *UploadArtefactRequest) GetArtefactVirtTypeOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -213,12 +217,12 @@ func (o *GetArtefact200Response) GetArtefactVirtTypeOk() (*string, bool) {
 }
 
 // SetArtefactVirtType sets field value
-func (o *GetArtefact200Response) SetArtefactVirtType(v string) {
+func (o *UploadArtefactRequest) SetArtefactVirtType(v string) {
 	o.ArtefactVirtType = v
 }
 
 // GetArtefactFileName returns the ArtefactFileName field value
-func (o *GetArtefact200Response) GetArtefactFileName() string {
+func (o *UploadArtefactRequest) GetArtefactFileName() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -229,7 +233,7 @@ func (o *GetArtefact200Response) GetArtefactFileName() string {
 
 // GetArtefactFileNameOk returns a tuple with the ArtefactFileName field value
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactFileNameOk() (*string, bool) {
+func (o *UploadArtefactRequest) GetArtefactFileNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -237,12 +241,12 @@ func (o *GetArtefact200Response) GetArtefactFileNameOk() (*string, bool) {
 }
 
 // SetArtefactFileName sets field value
-func (o *GetArtefact200Response) SetArtefactFileName(v string) {
+func (o *UploadArtefactRequest) SetArtefactFileName(v string) {
 	o.ArtefactFileName = v
 }
 
 // GetArtefactFileFormat returns the ArtefactFileFormat field value
-func (o *GetArtefact200Response) GetArtefactFileFormat() string {
+func (o *UploadArtefactRequest) GetArtefactFileFormat() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -253,7 +257,7 @@ func (o *GetArtefact200Response) GetArtefactFileFormat() string {
 
 // GetArtefactFileFormatOk returns a tuple with the ArtefactFileFormat field value
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactFileFormatOk() (*string, bool) {
+func (o *UploadArtefactRequest) GetArtefactFileFormatOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -261,12 +265,12 @@ func (o *GetArtefact200Response) GetArtefactFileFormatOk() (*string, bool) {
 }
 
 // SetArtefactFileFormat sets field value
-func (o *GetArtefact200Response) SetArtefactFileFormat(v string) {
+func (o *UploadArtefactRequest) SetArtefactFileFormat(v string) {
 	o.ArtefactFileFormat = v
 }
 
 // GetArtefactDescriptorType returns the ArtefactDescriptorType field value
-func (o *GetArtefact200Response) GetArtefactDescriptorType() string {
+func (o *UploadArtefactRequest) GetArtefactDescriptorType() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -277,7 +281,7 @@ func (o *GetArtefact200Response) GetArtefactDescriptorType() string {
 
 // GetArtefactDescriptorTypeOk returns a tuple with the ArtefactDescriptorType field value
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactDescriptorTypeOk() (*string, bool) {
+func (o *UploadArtefactRequest) GetArtefactDescriptorTypeOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -285,35 +289,107 @@ func (o *GetArtefact200Response) GetArtefactDescriptorTypeOk() (*string, bool) {
 }
 
 // SetArtefactDescriptorType sets field value
-func (o *GetArtefact200Response) SetArtefactDescriptorType(v string) {
+func (o *UploadArtefactRequest) SetArtefactDescriptorType(v string) {
 	o.ArtefactDescriptorType = v
 }
 
-// GetArtefactRepoLocation returns the ArtefactRepoLocation field value
-func (o *GetArtefact200Response) GetArtefactRepoLocation() GetArtefact200ResponseArtefactRepoLocation {
-	if o == nil {
-		var ret GetArtefact200ResponseArtefactRepoLocation
+// GetArtefactRepoLocation returns the ArtefactRepoLocation field value if set, zero value otherwise.
+func (o *UploadArtefactRequest) GetArtefactRepoLocation() ObjectRepoLocation {
+	if o == nil || isNil(o.ArtefactRepoLocation) {
+		var ret ObjectRepoLocation
 		return ret
 	}
-
-	return o.ArtefactRepoLocation
+	return *o.ArtefactRepoLocation
 }
 
-// GetArtefactRepoLocationOk returns a tuple with the ArtefactRepoLocation field value
+// GetArtefactRepoLocationOk returns a tuple with the ArtefactRepoLocation field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactRepoLocationOk() (*GetArtefact200ResponseArtefactRepoLocation, bool) {
-	if o == nil {
+func (o *UploadArtefactRequest) GetArtefactRepoLocationOk() (*ObjectRepoLocation, bool) {
+	if o == nil || isNil(o.ArtefactRepoLocation) {
 		return nil, false
 	}
-	return &o.ArtefactRepoLocation, true
+	return o.ArtefactRepoLocation, true
 }
 
-// SetArtefactRepoLocation sets field value
-func (o *GetArtefact200Response) SetArtefactRepoLocation(v GetArtefact200ResponseArtefactRepoLocation) {
-	o.ArtefactRepoLocation = v
+// HasArtefactRepoLocation returns a boolean if a field has been set.
+func (o *UploadArtefactRequest) HasArtefactRepoLocation() bool {
+	if o != nil && !isNil(o.ArtefactRepoLocation) {
+		return true
+	}
+
+	return false
 }
 
-func (o GetArtefact200Response) MarshalJSON() ([]byte, error) {
+// SetArtefactRepoLocation gets a reference to the given ObjectRepoLocation and assigns it to the ArtefactRepoLocation field.
+func (o *UploadArtefactRequest) SetArtefactRepoLocation(v ObjectRepoLocation) {
+	o.ArtefactRepoLocation = &v
+}
+
+// GetComponentSpec returns the ComponentSpec field value if set, zero value otherwise.
+func (o *UploadArtefactRequest) GetComponentSpec() []ComponentSpec {
+	if o == nil || isNil(o.ComponentSpec) {
+		var ret []ComponentSpec
+		return ret
+	}
+	return o.ComponentSpec
+}
+
+// GetComponentSpecOk returns a tuple with the ComponentSpec field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *UploadArtefactRequest) GetComponentSpecOk() ([]ComponentSpec, bool) {
+	if o == nil || isNil(o.ComponentSpec) {
+		return nil, false
+	}
+	return o.ComponentSpec, true
+}
+
+// HasComponentSpec returns a boolean if a field has been set.
+func (o *UploadArtefactRequest) HasComponentSpec() bool {
+	if o != nil && !isNil(o.ComponentSpec) {
+		return true
+	}
+
+	return false
+}
+
+// SetComponentSpec gets a reference to the given []ComponentSpec and assigns it to the ComponentSpec field.
+func (o *UploadArtefactRequest) SetComponentSpec(v []ComponentSpec) {
+	o.ComponentSpec = v
+}
+
+// GetArtefactFile returns the ArtefactFile field value if set, zero value otherwise.
+func (o *UploadArtefactRequest) GetArtefactFile() *os.File {
+	if o == nil || isNil(o.ArtefactFile) {
+		var ret *os.File
+		return ret
+	}
+	return *o.ArtefactFile
+}
+
+// GetArtefactFileOk returns a tuple with the ArtefactFile field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *UploadArtefactRequest) GetArtefactFileOk() (**os.File, bool) {
+	if o == nil || isNil(o.ArtefactFile) {
+		return nil, false
+	}
+	return o.ArtefactFile, true
+}
+
+// HasArtefactFile returns a boolean if a field has been set.
+func (o *UploadArtefactRequest) HasArtefactFile() bool {
+	if o != nil && !isNil(o.ArtefactFile) {
+		return true
+	}
+
+	return false
+}
+
+// SetArtefactFile gets a reference to the given *os.File and assigns it to the ArtefactFile field.
+func (o *UploadArtefactRequest) SetArtefactFile(v *os.File) {
+	o.ArtefactFile = &v
+}
+
+func (o UploadArtefactRequest) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -321,55 +397,63 @@ func (o GetArtefact200Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o GetArtefact200Response) ToMap() (map[string]interface{}, error) {
+func (o UploadArtefactRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["artefactId"] = o.ArtefactId
 	toSerialize["appProviderId"] = o.AppProviderId
 	toSerialize["artefactName"] = o.ArtefactName
+	toSerialize["artefactVersionInfo"] = o.ArtefactVersionInfo
 	if !isNil(o.ArtefactDescription) {
 		toSerialize["artefactDescription"] = o.ArtefactDescription
 	}
-	toSerialize["artefactVersionInfo"] = o.ArtefactVersionInfo
 	toSerialize["artefactVirtType"] = o.ArtefactVirtType
 	toSerialize["artefactFileName"] = o.ArtefactFileName
 	toSerialize["artefactFileFormat"] = o.ArtefactFileFormat
 	toSerialize["artefactDescriptorType"] = o.ArtefactDescriptorType
-	toSerialize["artefactRepoLocation"] = o.ArtefactRepoLocation
+	if !isNil(o.ArtefactRepoLocation) {
+		toSerialize["artefactRepoLocation"] = o.ArtefactRepoLocation
+	}
+	if !isNil(o.ComponentSpec) {
+		toSerialize["componentSpec"] = o.ComponentSpec
+	}
+	if !isNil(o.ArtefactFile) {
+		toSerialize["artefactFile"] = o.ArtefactFile
+	}
 	return toSerialize, nil
 }
 
-type NullableGetArtefact200Response struct {
-	value *GetArtefact200Response
+type NullableUploadArtefactRequest struct {
+	value *UploadArtefactRequest
 	isSet bool
 }
 
-func (v NullableGetArtefact200Response) Get() *GetArtefact200Response {
+func (v NullableUploadArtefactRequest) Get() *UploadArtefactRequest {
 	return v.value
 }
 
-func (v *NullableGetArtefact200Response) Set(val *GetArtefact200Response) {
+func (v *NullableUploadArtefactRequest) Set(val *UploadArtefactRequest) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableGetArtefact200Response) IsSet() bool {
+func (v NullableUploadArtefactRequest) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableGetArtefact200Response) Unset() {
+func (v *NullableUploadArtefactRequest) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableGetArtefact200Response(val *GetArtefact200Response) *NullableGetArtefact200Response {
-	return &NullableGetArtefact200Response{value: val, isSet: true}
+func NewNullableUploadArtefactRequest(val *UploadArtefactRequest) *NullableUploadArtefactRequest {
+	return &NullableUploadArtefactRequest{value: val, isSet: true}
 }
 
-func (v NullableGetArtefact200Response) MarshalJSON() ([]byte, error) {
+func (v NullableUploadArtefactRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableGetArtefact200Response) UnmarshalJSON(src []byte) error {
+func (v *NullableUploadArtefactRequest) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

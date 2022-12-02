@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the ZoneRegistrationRequestData type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ZoneRegistrationRequestData{}
+
 // ZoneRegistrationRequestData struct for ZoneRegistrationRequestData
 type ZoneRegistrationRequestData struct {
 	AcceptedAvailabilityZones []string `json:"acceptedAvailabilityZones"`
@@ -88,14 +91,18 @@ func (o *ZoneRegistrationRequestData) SetAvailZoneNotifLink(v string) {
 }
 
 func (o ZoneRegistrationRequestData) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["acceptedAvailabilityZones"] = o.AcceptedAvailabilityZones
-	}
-	if true {
-		toSerialize["availZoneNotifLink"] = o.AvailZoneNotifLink
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o ZoneRegistrationRequestData) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["acceptedAvailabilityZones"] = o.AcceptedAvailabilityZones
+	toSerialize["availZoneNotifLink"] = o.AvailZoneNotifLink
+	return toSerialize, nil
 }
 
 type NullableZoneRegistrationRequestData struct {

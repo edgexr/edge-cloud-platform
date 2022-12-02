@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the OnboardApplicationRequestAppQoSProfile type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &OnboardApplicationRequestAppQoSProfile{}
+
 // OnboardApplicationRequestAppQoSProfile Parameters corresponding to the performance constraints, tenancy details etc.
 type OnboardApplicationRequestAppQoSProfile struct {
 	// Latency requirements for the application. Allowed values (non-standardized) are none, low and ultra-low. Ultra-Low may corresponds to range 15 - 30 msec, Low correspond to range 30 - 50 msec. None means 51 and above
@@ -84,7 +87,7 @@ func (o *OnboardApplicationRequestAppQoSProfile) SetLatencyConstraints(v string)
 
 // GetBandwidthRequired returns the BandwidthRequired field value if set, zero value otherwise.
 func (o *OnboardApplicationRequestAppQoSProfile) GetBandwidthRequired() int32 {
-	if o == nil || o.BandwidthRequired == nil {
+	if o == nil || isNil(o.BandwidthRequired) {
 		var ret int32
 		return ret
 	}
@@ -94,7 +97,7 @@ func (o *OnboardApplicationRequestAppQoSProfile) GetBandwidthRequired() int32 {
 // GetBandwidthRequiredOk returns a tuple with the BandwidthRequired field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *OnboardApplicationRequestAppQoSProfile) GetBandwidthRequiredOk() (*int32, bool) {
-	if o == nil || o.BandwidthRequired == nil {
+	if o == nil || isNil(o.BandwidthRequired) {
 		return nil, false
 	}
 	return o.BandwidthRequired, true
@@ -102,7 +105,7 @@ func (o *OnboardApplicationRequestAppQoSProfile) GetBandwidthRequiredOk() (*int3
 
 // HasBandwidthRequired returns a boolean if a field has been set.
 func (o *OnboardApplicationRequestAppQoSProfile) HasBandwidthRequired() bool {
-	if o != nil && o.BandwidthRequired != nil {
+	if o != nil && !isNil(o.BandwidthRequired) {
 		return true
 	}
 
@@ -116,7 +119,7 @@ func (o *OnboardApplicationRequestAppQoSProfile) SetBandwidthRequired(v int32) {
 
 // GetMultiUserClients returns the MultiUserClients field value if set, zero value otherwise.
 func (o *OnboardApplicationRequestAppQoSProfile) GetMultiUserClients() string {
-	if o == nil || o.MultiUserClients == nil {
+	if o == nil || isNil(o.MultiUserClients) {
 		var ret string
 		return ret
 	}
@@ -126,7 +129,7 @@ func (o *OnboardApplicationRequestAppQoSProfile) GetMultiUserClients() string {
 // GetMultiUserClientsOk returns a tuple with the MultiUserClients field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *OnboardApplicationRequestAppQoSProfile) GetMultiUserClientsOk() (*string, bool) {
-	if o == nil || o.MultiUserClients == nil {
+	if o == nil || isNil(o.MultiUserClients) {
 		return nil, false
 	}
 	return o.MultiUserClients, true
@@ -134,7 +137,7 @@ func (o *OnboardApplicationRequestAppQoSProfile) GetMultiUserClientsOk() (*strin
 
 // HasMultiUserClients returns a boolean if a field has been set.
 func (o *OnboardApplicationRequestAppQoSProfile) HasMultiUserClients() bool {
-	if o != nil && o.MultiUserClients != nil {
+	if o != nil && !isNil(o.MultiUserClients) {
 		return true
 	}
 
@@ -148,7 +151,7 @@ func (o *OnboardApplicationRequestAppQoSProfile) SetMultiUserClients(v string) {
 
 // GetNoOfUsersPerAppInst returns the NoOfUsersPerAppInst field value if set, zero value otherwise.
 func (o *OnboardApplicationRequestAppQoSProfile) GetNoOfUsersPerAppInst() int32 {
-	if o == nil || o.NoOfUsersPerAppInst == nil {
+	if o == nil || isNil(o.NoOfUsersPerAppInst) {
 		var ret int32
 		return ret
 	}
@@ -158,7 +161,7 @@ func (o *OnboardApplicationRequestAppQoSProfile) GetNoOfUsersPerAppInst() int32 
 // GetNoOfUsersPerAppInstOk returns a tuple with the NoOfUsersPerAppInst field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *OnboardApplicationRequestAppQoSProfile) GetNoOfUsersPerAppInstOk() (*int32, bool) {
-	if o == nil || o.NoOfUsersPerAppInst == nil {
+	if o == nil || isNil(o.NoOfUsersPerAppInst) {
 		return nil, false
 	}
 	return o.NoOfUsersPerAppInst, true
@@ -166,7 +169,7 @@ func (o *OnboardApplicationRequestAppQoSProfile) GetNoOfUsersPerAppInstOk() (*in
 
 // HasNoOfUsersPerAppInst returns a boolean if a field has been set.
 func (o *OnboardApplicationRequestAppQoSProfile) HasNoOfUsersPerAppInst() bool {
-	if o != nil && o.NoOfUsersPerAppInst != nil {
+	if o != nil && !isNil(o.NoOfUsersPerAppInst) {
 		return true
 	}
 
@@ -180,7 +183,7 @@ func (o *OnboardApplicationRequestAppQoSProfile) SetNoOfUsersPerAppInst(v int32)
 
 // GetAppProvisioning returns the AppProvisioning field value if set, zero value otherwise.
 func (o *OnboardApplicationRequestAppQoSProfile) GetAppProvisioning() bool {
-	if o == nil || o.AppProvisioning == nil {
+	if o == nil || isNil(o.AppProvisioning) {
 		var ret bool
 		return ret
 	}
@@ -190,7 +193,7 @@ func (o *OnboardApplicationRequestAppQoSProfile) GetAppProvisioning() bool {
 // GetAppProvisioningOk returns a tuple with the AppProvisioning field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *OnboardApplicationRequestAppQoSProfile) GetAppProvisioningOk() (*bool, bool) {
-	if o == nil || o.AppProvisioning == nil {
+	if o == nil || isNil(o.AppProvisioning) {
 		return nil, false
 	}
 	return o.AppProvisioning, true
@@ -198,7 +201,7 @@ func (o *OnboardApplicationRequestAppQoSProfile) GetAppProvisioningOk() (*bool, 
 
 // HasAppProvisioning returns a boolean if a field has been set.
 func (o *OnboardApplicationRequestAppQoSProfile) HasAppProvisioning() bool {
-	if o != nil && o.AppProvisioning != nil {
+	if o != nil && !isNil(o.AppProvisioning) {
 		return true
 	}
 
@@ -211,23 +214,29 @@ func (o *OnboardApplicationRequestAppQoSProfile) SetAppProvisioning(v bool) {
 }
 
 func (o OnboardApplicationRequestAppQoSProfile) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["latencyConstraints"] = o.LatencyConstraints
-	}
-	if o.BandwidthRequired != nil {
-		toSerialize["bandwidthRequired"] = o.BandwidthRequired
-	}
-	if o.MultiUserClients != nil {
-		toSerialize["multiUserClients"] = o.MultiUserClients
-	}
-	if o.NoOfUsersPerAppInst != nil {
-		toSerialize["noOfUsersPerAppInst"] = o.NoOfUsersPerAppInst
-	}
-	if o.AppProvisioning != nil {
-		toSerialize["appProvisioning"] = o.AppProvisioning
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o OnboardApplicationRequestAppQoSProfile) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["latencyConstraints"] = o.LatencyConstraints
+	if !isNil(o.BandwidthRequired) {
+		toSerialize["bandwidthRequired"] = o.BandwidthRequired
+	}
+	if !isNil(o.MultiUserClients) {
+		toSerialize["multiUserClients"] = o.MultiUserClients
+	}
+	if !isNil(o.NoOfUsersPerAppInst) {
+		toSerialize["noOfUsersPerAppInst"] = o.NoOfUsersPerAppInst
+	}
+	if !isNil(o.AppProvisioning) {
+		toSerialize["appProvisioning"] = o.AppProvisioning
+	}
+	return toSerialize, nil
 }
 
 type NullableOnboardApplicationRequestAppQoSProfile struct {

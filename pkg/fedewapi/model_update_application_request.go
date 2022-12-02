@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the UpdateApplicationRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &UpdateApplicationRequest{}
+
 // UpdateApplicationRequest struct for UpdateApplicationRequest
 type UpdateApplicationRequest struct {
 	AppUpdQoSProfile *UpdateApplicationRequestAppUpdQoSProfile `json:"appUpdQoSProfile,omitempty"`
@@ -40,7 +43,7 @@ func NewUpdateApplicationRequestWithDefaults() *UpdateApplicationRequest {
 
 // GetAppUpdQoSProfile returns the AppUpdQoSProfile field value if set, zero value otherwise.
 func (o *UpdateApplicationRequest) GetAppUpdQoSProfile() UpdateApplicationRequestAppUpdQoSProfile {
-	if o == nil || o.AppUpdQoSProfile == nil {
+	if o == nil || isNil(o.AppUpdQoSProfile) {
 		var ret UpdateApplicationRequestAppUpdQoSProfile
 		return ret
 	}
@@ -50,7 +53,7 @@ func (o *UpdateApplicationRequest) GetAppUpdQoSProfile() UpdateApplicationReques
 // GetAppUpdQoSProfileOk returns a tuple with the AppUpdQoSProfile field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateApplicationRequest) GetAppUpdQoSProfileOk() (*UpdateApplicationRequestAppUpdQoSProfile, bool) {
-	if o == nil || o.AppUpdQoSProfile == nil {
+	if o == nil || isNil(o.AppUpdQoSProfile) {
 		return nil, false
 	}
 	return o.AppUpdQoSProfile, true
@@ -58,7 +61,7 @@ func (o *UpdateApplicationRequest) GetAppUpdQoSProfileOk() (*UpdateApplicationRe
 
 // HasAppUpdQoSProfile returns a boolean if a field has been set.
 func (o *UpdateApplicationRequest) HasAppUpdQoSProfile() bool {
-	if o != nil && o.AppUpdQoSProfile != nil {
+	if o != nil && !isNil(o.AppUpdQoSProfile) {
 		return true
 	}
 
@@ -72,7 +75,7 @@ func (o *UpdateApplicationRequest) SetAppUpdQoSProfile(v UpdateApplicationReques
 
 // GetAppComponentSpecs returns the AppComponentSpecs field value if set, zero value otherwise.
 func (o *UpdateApplicationRequest) GetAppComponentSpecs() []UpdateApplicationRequestAppComponentSpecsInner {
-	if o == nil || o.AppComponentSpecs == nil {
+	if o == nil || isNil(o.AppComponentSpecs) {
 		var ret []UpdateApplicationRequestAppComponentSpecsInner
 		return ret
 	}
@@ -82,7 +85,7 @@ func (o *UpdateApplicationRequest) GetAppComponentSpecs() []UpdateApplicationReq
 // GetAppComponentSpecsOk returns a tuple with the AppComponentSpecs field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateApplicationRequest) GetAppComponentSpecsOk() ([]UpdateApplicationRequestAppComponentSpecsInner, bool) {
-	if o == nil || o.AppComponentSpecs == nil {
+	if o == nil || isNil(o.AppComponentSpecs) {
 		return nil, false
 	}
 	return o.AppComponentSpecs, true
@@ -90,7 +93,7 @@ func (o *UpdateApplicationRequest) GetAppComponentSpecsOk() ([]UpdateApplication
 
 // HasAppComponentSpecs returns a boolean if a field has been set.
 func (o *UpdateApplicationRequest) HasAppComponentSpecs() bool {
-	if o != nil && o.AppComponentSpecs != nil {
+	if o != nil && !isNil(o.AppComponentSpecs) {
 		return true
 	}
 
@@ -103,14 +106,22 @@ func (o *UpdateApplicationRequest) SetAppComponentSpecs(v []UpdateApplicationReq
 }
 
 func (o UpdateApplicationRequest) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if o.AppUpdQoSProfile != nil {
-		toSerialize["appUpdQoSProfile"] = o.AppUpdQoSProfile
-	}
-	if o.AppComponentSpecs != nil {
-		toSerialize["appComponentSpecs"] = o.AppComponentSpecs
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o UpdateApplicationRequest) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	if !isNil(o.AppUpdQoSProfile) {
+		toSerialize["appUpdQoSProfile"] = o.AppUpdQoSProfile
+	}
+	if !isNil(o.AppComponentSpecs) {
+		toSerialize["appComponentSpecs"] = o.AppComponentSpecs
+	}
+	return toSerialize, nil
 }
 
 type NullableUpdateApplicationRequest struct {

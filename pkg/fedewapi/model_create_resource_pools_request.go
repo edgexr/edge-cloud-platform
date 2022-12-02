@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the CreateResourcePoolsRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &CreateResourcePoolsRequest{}
+
 // CreateResourcePoolsRequest struct for CreateResourcePoolsRequest
 type CreateResourcePoolsRequest struct {
 	// ISV defined name of the resource pool.
@@ -115,17 +118,19 @@ func (o *CreateResourcePoolsRequest) SetResourceReservationCallbackLink(v string
 }
 
 func (o CreateResourcePoolsRequest) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["poolName"] = o.PoolName
-	}
-	if true {
-		toSerialize["resRequest"] = o.ResRequest
-	}
-	if true {
-		toSerialize["resourceReservationCallbackLink"] = o.ResourceReservationCallbackLink
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o CreateResourcePoolsRequest) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["poolName"] = o.PoolName
+	toSerialize["resRequest"] = o.ResRequest
+	toSerialize["resourceReservationCallbackLink"] = o.ResourceReservationCallbackLink
+	return toSerialize, nil
 }
 
 type NullableCreateResourcePoolsRequest struct {

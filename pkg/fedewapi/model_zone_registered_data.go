@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the ZoneRegisteredData type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ZoneRegisteredData{}
+
 // ZoneRegisteredData struct for ZoneRegisteredData
 type ZoneRegisteredData struct {
 	// Human readable name of the zone.
@@ -71,7 +74,7 @@ func (o *ZoneRegisteredData) SetZoneId(v string) {
 
 // GetReservedComputeResources returns the ReservedComputeResources field value if set, zero value otherwise.
 func (o *ZoneRegisteredData) GetReservedComputeResources() []ComputeResourceInfo {
-	if o == nil || o.ReservedComputeResources == nil {
+	if o == nil || isNil(o.ReservedComputeResources) {
 		var ret []ComputeResourceInfo
 		return ret
 	}
@@ -81,7 +84,7 @@ func (o *ZoneRegisteredData) GetReservedComputeResources() []ComputeResourceInfo
 // GetReservedComputeResourcesOk returns a tuple with the ReservedComputeResources field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ZoneRegisteredData) GetReservedComputeResourcesOk() ([]ComputeResourceInfo, bool) {
-	if o == nil || o.ReservedComputeResources == nil {
+	if o == nil || isNil(o.ReservedComputeResources) {
 		return nil, false
 	}
 	return o.ReservedComputeResources, true
@@ -89,7 +92,7 @@ func (o *ZoneRegisteredData) GetReservedComputeResourcesOk() ([]ComputeResourceI
 
 // HasReservedComputeResources returns a boolean if a field has been set.
 func (o *ZoneRegisteredData) HasReservedComputeResources() bool {
-	if o != nil && o.ReservedComputeResources != nil {
+	if o != nil && !isNil(o.ReservedComputeResources) {
 		return true
 	}
 
@@ -103,7 +106,7 @@ func (o *ZoneRegisteredData) SetReservedComputeResources(v []ComputeResourceInfo
 
 // GetComputeResourceQuotaLimits returns the ComputeResourceQuotaLimits field value if set, zero value otherwise.
 func (o *ZoneRegisteredData) GetComputeResourceQuotaLimits() []ComputeResourceInfo {
-	if o == nil || o.ComputeResourceQuotaLimits == nil {
+	if o == nil || isNil(o.ComputeResourceQuotaLimits) {
 		var ret []ComputeResourceInfo
 		return ret
 	}
@@ -113,7 +116,7 @@ func (o *ZoneRegisteredData) GetComputeResourceQuotaLimits() []ComputeResourceIn
 // GetComputeResourceQuotaLimitsOk returns a tuple with the ComputeResourceQuotaLimits field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ZoneRegisteredData) GetComputeResourceQuotaLimitsOk() ([]ComputeResourceInfo, bool) {
-	if o == nil || o.ComputeResourceQuotaLimits == nil {
+	if o == nil || isNil(o.ComputeResourceQuotaLimits) {
 		return nil, false
 	}
 	return o.ComputeResourceQuotaLimits, true
@@ -121,7 +124,7 @@ func (o *ZoneRegisteredData) GetComputeResourceQuotaLimitsOk() ([]ComputeResourc
 
 // HasComputeResourceQuotaLimits returns a boolean if a field has been set.
 func (o *ZoneRegisteredData) HasComputeResourceQuotaLimits() bool {
-	if o != nil && o.ComputeResourceQuotaLimits != nil {
+	if o != nil && !isNil(o.ComputeResourceQuotaLimits) {
 		return true
 	}
 
@@ -159,7 +162,7 @@ func (o *ZoneRegisteredData) SetFlavoursSupported(v []Flavour) {
 
 // GetNetworkResources returns the NetworkResources field value if set, zero value otherwise.
 func (o *ZoneRegisteredData) GetNetworkResources() ZoneRegisteredDataNetworkResources {
-	if o == nil || o.NetworkResources == nil {
+	if o == nil || isNil(o.NetworkResources) {
 		var ret ZoneRegisteredDataNetworkResources
 		return ret
 	}
@@ -169,7 +172,7 @@ func (o *ZoneRegisteredData) GetNetworkResources() ZoneRegisteredDataNetworkReso
 // GetNetworkResourcesOk returns a tuple with the NetworkResources field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ZoneRegisteredData) GetNetworkResourcesOk() (*ZoneRegisteredDataNetworkResources, bool) {
-	if o == nil || o.NetworkResources == nil {
+	if o == nil || isNil(o.NetworkResources) {
 		return nil, false
 	}
 	return o.NetworkResources, true
@@ -177,7 +180,7 @@ func (o *ZoneRegisteredData) GetNetworkResourcesOk() (*ZoneRegisteredDataNetwork
 
 // HasNetworkResources returns a boolean if a field has been set.
 func (o *ZoneRegisteredData) HasNetworkResources() bool {
-	if o != nil && o.NetworkResources != nil {
+	if o != nil && !isNil(o.NetworkResources) {
 		return true
 	}
 
@@ -190,23 +193,27 @@ func (o *ZoneRegisteredData) SetNetworkResources(v ZoneRegisteredDataNetworkReso
 }
 
 func (o ZoneRegisteredData) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["zoneId"] = o.ZoneId
-	}
-	if o.ReservedComputeResources != nil {
-		toSerialize["reservedComputeResources"] = o.ReservedComputeResources
-	}
-	if o.ComputeResourceQuotaLimits != nil {
-		toSerialize["computeResourceQuotaLimits"] = o.ComputeResourceQuotaLimits
-	}
-	if true {
-		toSerialize["flavoursSupported"] = o.FlavoursSupported
-	}
-	if o.NetworkResources != nil {
-		toSerialize["networkResources"] = o.NetworkResources
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o ZoneRegisteredData) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["zoneId"] = o.ZoneId
+	if !isNil(o.ReservedComputeResources) {
+		toSerialize["reservedComputeResources"] = o.ReservedComputeResources
+	}
+	if !isNil(o.ComputeResourceQuotaLimits) {
+		toSerialize["computeResourceQuotaLimits"] = o.ComputeResourceQuotaLimits
+	}
+	toSerialize["flavoursSupported"] = o.FlavoursSupported
+	if !isNil(o.NetworkResources) {
+		toSerialize["networkResources"] = o.NetworkResources
+	}
+	return toSerialize, nil
 }
 
 type NullableZoneRegisteredData struct {

@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the ZoneDetails type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ZoneDetails{}
+
 // ZoneDetails struct for ZoneDetails
 type ZoneDetails struct {
 	// Human readable name of the zone.
@@ -117,17 +120,19 @@ func (o *ZoneDetails) SetGeographyDetails(v string) {
 }
 
 func (o ZoneDetails) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["zoneId"] = o.ZoneId
-	}
-	if true {
-		toSerialize["geolocation"] = o.Geolocation
-	}
-	if true {
-		toSerialize["geographyDetails"] = o.GeographyDetails
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o ZoneDetails) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["zoneId"] = o.ZoneId
+	toSerialize["geolocation"] = o.Geolocation
+	toSerialize["geographyDetails"] = o.GeographyDetails
+	return toSerialize, nil
 }
 
 type NullableZoneDetails struct {

@@ -14,99 +14,193 @@ import (
 	"encoding/json"
 )
 
-// checks if the ClientLocation type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ClientLocation{}
+// checks if the UploadFileRequestRepolocation type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &UploadFileRequestRepolocation{}
 
-// ClientLocation struct for ClientLocation
-type ClientLocation struct {
-	// Latitude, Longitude as decimal fraction up to 4 digit precision
-	GeoLocation *string `json:"geo_location,omitempty"`
-	// Information about the 4G/5G Cell ids where the client is currently served.
-	RadLocation []ClientLocationRadLocationInner `json:"rad_location,omitempty"`
+// UploadFileRequestRepolocation struct for UploadFileRequestRepolocation
+type UploadFileRequestRepolocation struct {
+	// Artefact repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo etc, PRIVATEREPO  is used for private repo managed by the application developer, UPLOAD is for the case when artefact is uploaded from MEC web portal.
+	Repotype *string `json:"repotype,omitempty"`
+	RepoURL string `json:"repoURL"`
+	// Username to access the artefact repository
+	UserName *string `json:"userName,omitempty"`
+	// Password to access the artefact repository
+	Password *string `json:"password,omitempty"`
+	// Authorization token access the artefact repository
+	Token *string `json:"token,omitempty"`
 }
 
-// NewClientLocation instantiates a new ClientLocation object
+// NewUploadFileRequestRepolocation instantiates a new UploadFileRequestRepolocation object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewClientLocation() *ClientLocation {
-	this := ClientLocation{}
+func NewUploadFileRequestRepolocation(repoURL string) *UploadFileRequestRepolocation {
+	this := UploadFileRequestRepolocation{}
+	this.RepoURL = repoURL
 	return &this
 }
 
-// NewClientLocationWithDefaults instantiates a new ClientLocation object
+// NewUploadFileRequestRepolocationWithDefaults instantiates a new UploadFileRequestRepolocation object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewClientLocationWithDefaults() *ClientLocation {
-	this := ClientLocation{}
+func NewUploadFileRequestRepolocationWithDefaults() *UploadFileRequestRepolocation {
+	this := UploadFileRequestRepolocation{}
 	return &this
 }
 
-// GetGeoLocation returns the GeoLocation field value if set, zero value otherwise.
-func (o *ClientLocation) GetGeoLocation() string {
-	if o == nil || isNil(o.GeoLocation) {
+// GetRepotype returns the Repotype field value if set, zero value otherwise.
+func (o *UploadFileRequestRepolocation) GetRepotype() string {
+	if o == nil || isNil(o.Repotype) {
 		var ret string
 		return ret
 	}
-	return *o.GeoLocation
+	return *o.Repotype
 }
 
-// GetGeoLocationOk returns a tuple with the GeoLocation field value if set, nil otherwise
+// GetRepotypeOk returns a tuple with the Repotype field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ClientLocation) GetGeoLocationOk() (*string, bool) {
-	if o == nil || isNil(o.GeoLocation) {
+func (o *UploadFileRequestRepolocation) GetRepotypeOk() (*string, bool) {
+	if o == nil || isNil(o.Repotype) {
 		return nil, false
 	}
-	return o.GeoLocation, true
+	return o.Repotype, true
 }
 
-// HasGeoLocation returns a boolean if a field has been set.
-func (o *ClientLocation) HasGeoLocation() bool {
-	if o != nil && !isNil(o.GeoLocation) {
+// HasRepotype returns a boolean if a field has been set.
+func (o *UploadFileRequestRepolocation) HasRepotype() bool {
+	if o != nil && !isNil(o.Repotype) {
 		return true
 	}
 
 	return false
 }
 
-// SetGeoLocation gets a reference to the given string and assigns it to the GeoLocation field.
-func (o *ClientLocation) SetGeoLocation(v string) {
-	o.GeoLocation = &v
+// SetRepotype gets a reference to the given string and assigns it to the Repotype field.
+func (o *UploadFileRequestRepolocation) SetRepotype(v string) {
+	o.Repotype = &v
 }
 
-// GetRadLocation returns the RadLocation field value if set, zero value otherwise.
-func (o *ClientLocation) GetRadLocation() []ClientLocationRadLocationInner {
-	if o == nil || isNil(o.RadLocation) {
-		var ret []ClientLocationRadLocationInner
+// GetRepoURL returns the RepoURL field value
+func (o *UploadFileRequestRepolocation) GetRepoURL() string {
+	if o == nil {
+		var ret string
 		return ret
 	}
-	return o.RadLocation
+
+	return o.RepoURL
 }
 
-// GetRadLocationOk returns a tuple with the RadLocation field value if set, nil otherwise
+// GetRepoURLOk returns a tuple with the RepoURL field value
 // and a boolean to check if the value has been set.
-func (o *ClientLocation) GetRadLocationOk() ([]ClientLocationRadLocationInner, bool) {
-	if o == nil || isNil(o.RadLocation) {
+func (o *UploadFileRequestRepolocation) GetRepoURLOk() (*string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.RadLocation, true
+	return &o.RepoURL, true
 }
 
-// HasRadLocation returns a boolean if a field has been set.
-func (o *ClientLocation) HasRadLocation() bool {
-	if o != nil && !isNil(o.RadLocation) {
+// SetRepoURL sets field value
+func (o *UploadFileRequestRepolocation) SetRepoURL(v string) {
+	o.RepoURL = v
+}
+
+// GetUserName returns the UserName field value if set, zero value otherwise.
+func (o *UploadFileRequestRepolocation) GetUserName() string {
+	if o == nil || isNil(o.UserName) {
+		var ret string
+		return ret
+	}
+	return *o.UserName
+}
+
+// GetUserNameOk returns a tuple with the UserName field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *UploadFileRequestRepolocation) GetUserNameOk() (*string, bool) {
+	if o == nil || isNil(o.UserName) {
+		return nil, false
+	}
+	return o.UserName, true
+}
+
+// HasUserName returns a boolean if a field has been set.
+func (o *UploadFileRequestRepolocation) HasUserName() bool {
+	if o != nil && !isNil(o.UserName) {
 		return true
 	}
 
 	return false
 }
 
-// SetRadLocation gets a reference to the given []ClientLocationRadLocationInner and assigns it to the RadLocation field.
-func (o *ClientLocation) SetRadLocation(v []ClientLocationRadLocationInner) {
-	o.RadLocation = v
+// SetUserName gets a reference to the given string and assigns it to the UserName field.
+func (o *UploadFileRequestRepolocation) SetUserName(v string) {
+	o.UserName = &v
 }
 
-func (o ClientLocation) MarshalJSON() ([]byte, error) {
+// GetPassword returns the Password field value if set, zero value otherwise.
+func (o *UploadFileRequestRepolocation) GetPassword() string {
+	if o == nil || isNil(o.Password) {
+		var ret string
+		return ret
+	}
+	return *o.Password
+}
+
+// GetPasswordOk returns a tuple with the Password field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *UploadFileRequestRepolocation) GetPasswordOk() (*string, bool) {
+	if o == nil || isNil(o.Password) {
+		return nil, false
+	}
+	return o.Password, true
+}
+
+// HasPassword returns a boolean if a field has been set.
+func (o *UploadFileRequestRepolocation) HasPassword() bool {
+	if o != nil && !isNil(o.Password) {
+		return true
+	}
+
+	return false
+}
+
+// SetPassword gets a reference to the given string and assigns it to the Password field.
+func (o *UploadFileRequestRepolocation) SetPassword(v string) {
+	o.Password = &v
+}
+
+// GetToken returns the Token field value if set, zero value otherwise.
+func (o *UploadFileRequestRepolocation) GetToken() string {
+	if o == nil || isNil(o.Token) {
+		var ret string
+		return ret
+	}
+	return *o.Token
+}
+
+// GetTokenOk returns a tuple with the Token field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *UploadFileRequestRepolocation) GetTokenOk() (*string, bool) {
+	if o == nil || isNil(o.Token) {
+		return nil, false
+	}
+	return o.Token, true
+}
+
+// HasToken returns a boolean if a field has been set.
+func (o *UploadFileRequestRepolocation) HasToken() bool {
+	if o != nil && !isNil(o.Token) {
+		return true
+	}
+
+	return false
+}
+
+// SetToken gets a reference to the given string and assigns it to the Token field.
+func (o *UploadFileRequestRepolocation) SetToken(v string) {
+	o.Token = &v
+}
+
+func (o UploadFileRequestRepolocation) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -114,49 +208,56 @@ func (o ClientLocation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ClientLocation) ToMap() (map[string]interface{}, error) {
+func (o UploadFileRequestRepolocation) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.GeoLocation) {
-		toSerialize["geo_location"] = o.GeoLocation
+	if !isNil(o.Repotype) {
+		toSerialize["repotype"] = o.Repotype
 	}
-	if !isNil(o.RadLocation) {
-		toSerialize["rad_location"] = o.RadLocation
+	toSerialize["repoURL"] = o.RepoURL
+	if !isNil(o.UserName) {
+		toSerialize["userName"] = o.UserName
+	}
+	if !isNil(o.Password) {
+		toSerialize["password"] = o.Password
+	}
+	if !isNil(o.Token) {
+		toSerialize["token"] = o.Token
 	}
 	return toSerialize, nil
 }
 
-type NullableClientLocation struct {
-	value *ClientLocation
+type NullableUploadFileRequestRepolocation struct {
+	value *UploadFileRequestRepolocation
 	isSet bool
 }
 
-func (v NullableClientLocation) Get() *ClientLocation {
+func (v NullableUploadFileRequestRepolocation) Get() *UploadFileRequestRepolocation {
 	return v.value
 }
 
-func (v *NullableClientLocation) Set(val *ClientLocation) {
+func (v *NullableUploadFileRequestRepolocation) Set(val *UploadFileRequestRepolocation) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableClientLocation) IsSet() bool {
+func (v NullableUploadFileRequestRepolocation) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableClientLocation) Unset() {
+func (v *NullableUploadFileRequestRepolocation) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableClientLocation(val *ClientLocation) *NullableClientLocation {
-	return &NullableClientLocation{value: val, isSet: true}
+func NewNullableUploadFileRequestRepolocation(val *UploadFileRequestRepolocation) *NullableUploadFileRequestRepolocation {
+	return &NullableUploadFileRequestRepolocation{value: val, isSet: true}
 }
 
-func (v NullableClientLocation) MarshalJSON() ([]byte, error) {
+func (v NullableUploadFileRequestRepolocation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableClientLocation) UnmarshalJSON(src []byte) error {
+func (v *NullableUploadFileRequestRepolocation) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

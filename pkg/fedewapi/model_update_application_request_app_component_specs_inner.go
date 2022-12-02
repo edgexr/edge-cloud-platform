@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the UpdateApplicationRequestAppComponentSpecsInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &UpdateApplicationRequestAppComponentSpecsInner{}
+
 // UpdateApplicationRequestAppComponentSpecsInner struct for UpdateApplicationRequestAppComponentSpecsInner
 type UpdateApplicationRequestAppComponentSpecsInner struct {
 	// Must be a valid RFC 1035 label name.  This defines the DNS name via which the component can be accessed over NBI. Access via serviceNameNB is restricted on specific ports. Platform shall expose component access externally via this DNS name
@@ -46,7 +49,7 @@ func NewUpdateApplicationRequestAppComponentSpecsInnerWithDefaults() *UpdateAppl
 
 // GetServiceNameNB returns the ServiceNameNB field value if set, zero value otherwise.
 func (o *UpdateApplicationRequestAppComponentSpecsInner) GetServiceNameNB() string {
-	if o == nil || o.ServiceNameNB == nil {
+	if o == nil || isNil(o.ServiceNameNB) {
 		var ret string
 		return ret
 	}
@@ -56,7 +59,7 @@ func (o *UpdateApplicationRequestAppComponentSpecsInner) GetServiceNameNB() stri
 // GetServiceNameNBOk returns a tuple with the ServiceNameNB field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateApplicationRequestAppComponentSpecsInner) GetServiceNameNBOk() (*string, bool) {
-	if o == nil || o.ServiceNameNB == nil {
+	if o == nil || isNil(o.ServiceNameNB) {
 		return nil, false
 	}
 	return o.ServiceNameNB, true
@@ -64,7 +67,7 @@ func (o *UpdateApplicationRequestAppComponentSpecsInner) GetServiceNameNBOk() (*
 
 // HasServiceNameNB returns a boolean if a field has been set.
 func (o *UpdateApplicationRequestAppComponentSpecsInner) HasServiceNameNB() bool {
-	if o != nil && o.ServiceNameNB != nil {
+	if o != nil && !isNil(o.ServiceNameNB) {
 		return true
 	}
 
@@ -78,7 +81,7 @@ func (o *UpdateApplicationRequestAppComponentSpecsInner) SetServiceNameNB(v stri
 
 // GetServiceNameEW returns the ServiceNameEW field value if set, zero value otherwise.
 func (o *UpdateApplicationRequestAppComponentSpecsInner) GetServiceNameEW() string {
-	if o == nil || o.ServiceNameEW == nil {
+	if o == nil || isNil(o.ServiceNameEW) {
 		var ret string
 		return ret
 	}
@@ -88,7 +91,7 @@ func (o *UpdateApplicationRequestAppComponentSpecsInner) GetServiceNameEW() stri
 // GetServiceNameEWOk returns a tuple with the ServiceNameEW field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateApplicationRequestAppComponentSpecsInner) GetServiceNameEWOk() (*string, bool) {
-	if o == nil || o.ServiceNameEW == nil {
+	if o == nil || isNil(o.ServiceNameEW) {
 		return nil, false
 	}
 	return o.ServiceNameEW, true
@@ -96,7 +99,7 @@ func (o *UpdateApplicationRequestAppComponentSpecsInner) GetServiceNameEWOk() (*
 
 // HasServiceNameEW returns a boolean if a field has been set.
 func (o *UpdateApplicationRequestAppComponentSpecsInner) HasServiceNameEW() bool {
-	if o != nil && o.ServiceNameEW != nil {
+	if o != nil && !isNil(o.ServiceNameEW) {
 		return true
 	}
 
@@ -134,7 +137,7 @@ func (o *UpdateApplicationRequestAppComponentSpecsInner) SetComponentName(v stri
 
 // GetArtefactId returns the ArtefactId field value if set, zero value otherwise.
 func (o *UpdateApplicationRequestAppComponentSpecsInner) GetArtefactId() string {
-	if o == nil || o.ArtefactId == nil {
+	if o == nil || isNil(o.ArtefactId) {
 		var ret string
 		return ret
 	}
@@ -144,7 +147,7 @@ func (o *UpdateApplicationRequestAppComponentSpecsInner) GetArtefactId() string 
 // GetArtefactIdOk returns a tuple with the ArtefactId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateApplicationRequestAppComponentSpecsInner) GetArtefactIdOk() (*string, bool) {
-	if o == nil || o.ArtefactId == nil {
+	if o == nil || isNil(o.ArtefactId) {
 		return nil, false
 	}
 	return o.ArtefactId, true
@@ -152,7 +155,7 @@ func (o *UpdateApplicationRequestAppComponentSpecsInner) GetArtefactIdOk() (*str
 
 // HasArtefactId returns a boolean if a field has been set.
 func (o *UpdateApplicationRequestAppComponentSpecsInner) HasArtefactId() bool {
-	if o != nil && o.ArtefactId != nil {
+	if o != nil && !isNil(o.ArtefactId) {
 		return true
 	}
 
@@ -165,20 +168,26 @@ func (o *UpdateApplicationRequestAppComponentSpecsInner) SetArtefactId(v string)
 }
 
 func (o UpdateApplicationRequestAppComponentSpecsInner) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if o.ServiceNameNB != nil {
-		toSerialize["serviceNameNB"] = o.ServiceNameNB
-	}
-	if o.ServiceNameEW != nil {
-		toSerialize["serviceNameEW"] = o.ServiceNameEW
-	}
-	if true {
-		toSerialize["componentName"] = o.ComponentName
-	}
-	if o.ArtefactId != nil {
-		toSerialize["artefactId"] = o.ArtefactId
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o UpdateApplicationRequestAppComponentSpecsInner) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	if !isNil(o.ServiceNameNB) {
+		toSerialize["serviceNameNB"] = o.ServiceNameNB
+	}
+	if !isNil(o.ServiceNameEW) {
+		toSerialize["serviceNameEW"] = o.ServiceNameEW
+	}
+	toSerialize["componentName"] = o.ComponentName
+	if !isNil(o.ArtefactId) {
+		toSerialize["artefactId"] = o.ArtefactId
+	}
+	return toSerialize, nil
 }
 
 type NullableUpdateApplicationRequestAppComponentSpecsInner struct {

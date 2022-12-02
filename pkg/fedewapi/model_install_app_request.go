@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the InstallAppRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &InstallAppRequest{}
+
 // InstallAppRequest struct for InstallAppRequest
 type InstallAppRequest struct {
 	// Identifier used to refer to an application. This identifier is globally unique so that application can be identified uniquely across different OPs.
@@ -169,23 +172,21 @@ func (o *InstallAppRequest) SetAppInstCallbackLink(v string) {
 }
 
 func (o InstallAppRequest) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["appId"] = o.AppId
-	}
-	if true {
-		toSerialize["appVersion"] = o.AppVersion
-	}
-	if true {
-		toSerialize["appProviderId"] = o.AppProviderId
-	}
-	if true {
-		toSerialize["zoneInfo"] = o.ZoneInfo
-	}
-	if true {
-		toSerialize["appInstCallbackLink"] = o.AppInstCallbackLink
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o InstallAppRequest) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["appId"] = o.AppId
+	toSerialize["appVersion"] = o.AppVersion
+	toSerialize["appProviderId"] = o.AppProviderId
+	toSerialize["zoneInfo"] = o.ZoneInfo
+	toSerialize["appInstCallbackLink"] = o.AppInstCallbackLink
+	return toSerialize, nil
 }
 
 type NullableInstallAppRequest struct {

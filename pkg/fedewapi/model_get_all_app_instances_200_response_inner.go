@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the GetAllAppInstances200ResponseInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &GetAllAppInstances200ResponseInner{}
+
 // GetAllAppInstances200ResponseInner struct for GetAllAppInstances200ResponseInner
 type GetAllAppInstances200ResponseInner struct {
 	// Human readable name of the zone.
@@ -89,14 +92,18 @@ func (o *GetAllAppInstances200ResponseInner) SetAppInstanceInfo(v []GetAllAppIns
 }
 
 func (o GetAllAppInstances200ResponseInner) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["zoneId"] = o.ZoneId
-	}
-	if true {
-		toSerialize["appInstanceInfo"] = o.AppInstanceInfo
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o GetAllAppInstances200ResponseInner) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["zoneId"] = o.ZoneId
+	toSerialize["appInstanceInfo"] = o.AppInstanceInfo
+	return toSerialize, nil
 }
 
 type NullableGetAllAppInstances200ResponseInner struct {

@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the InstallApp202Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &InstallApp202Response{}
+
 // InstallApp202Response struct for InstallApp202Response
 type InstallApp202Response struct {
 	// Human readable name of the zone.
@@ -90,14 +93,18 @@ func (o *InstallApp202Response) SetAppInstIdentifier(v string) {
 }
 
 func (o InstallApp202Response) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["zoneId"] = o.ZoneId
-	}
-	if true {
-		toSerialize["appInstIdentifier"] = o.AppInstIdentifier
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o InstallApp202Response) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["zoneId"] = o.ZoneId
+	toSerialize["appInstIdentifier"] = o.AppInstIdentifier
+	return toSerialize, nil
 }
 
 type NullableInstallApp202Response struct {

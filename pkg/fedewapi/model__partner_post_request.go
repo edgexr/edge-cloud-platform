@@ -15,6 +15,9 @@ import (
 	"time"
 )
 
+// checks if the PartnerPostRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &PartnerPostRequest{}
+
 // PartnerPostRequest struct for PartnerPostRequest
 type PartnerPostRequest struct {
 	ObjectType string `json:"objectType"`
@@ -106,7 +109,7 @@ func (o *PartnerPostRequest) SetOperationType(v string) {
 
 // GetEdgeDiscoverySvcEndPoint returns the EdgeDiscoverySvcEndPoint field value if set, zero value otherwise.
 func (o *PartnerPostRequest) GetEdgeDiscoverySvcEndPoint() ServiceEndpoint {
-	if o == nil || o.EdgeDiscoverySvcEndPoint == nil {
+	if o == nil || isNil(o.EdgeDiscoverySvcEndPoint) {
 		var ret ServiceEndpoint
 		return ret
 	}
@@ -116,7 +119,7 @@ func (o *PartnerPostRequest) GetEdgeDiscoverySvcEndPoint() ServiceEndpoint {
 // GetEdgeDiscoverySvcEndPointOk returns a tuple with the EdgeDiscoverySvcEndPoint field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *PartnerPostRequest) GetEdgeDiscoverySvcEndPointOk() (*ServiceEndpoint, bool) {
-	if o == nil || o.EdgeDiscoverySvcEndPoint == nil {
+	if o == nil || isNil(o.EdgeDiscoverySvcEndPoint) {
 		return nil, false
 	}
 	return o.EdgeDiscoverySvcEndPoint, true
@@ -124,7 +127,7 @@ func (o *PartnerPostRequest) GetEdgeDiscoverySvcEndPointOk() (*ServiceEndpoint, 
 
 // HasEdgeDiscoverySvcEndPoint returns a boolean if a field has been set.
 func (o *PartnerPostRequest) HasEdgeDiscoverySvcEndPoint() bool {
-	if o != nil && o.EdgeDiscoverySvcEndPoint != nil {
+	if o != nil && !isNil(o.EdgeDiscoverySvcEndPoint) {
 		return true
 	}
 
@@ -138,7 +141,7 @@ func (o *PartnerPostRequest) SetEdgeDiscoverySvcEndPoint(v ServiceEndpoint) {
 
 // GetLcmSvcEndPoint returns the LcmSvcEndPoint field value if set, zero value otherwise.
 func (o *PartnerPostRequest) GetLcmSvcEndPoint() ServiceEndpoint {
-	if o == nil || o.LcmSvcEndPoint == nil {
+	if o == nil || isNil(o.LcmSvcEndPoint) {
 		var ret ServiceEndpoint
 		return ret
 	}
@@ -148,7 +151,7 @@ func (o *PartnerPostRequest) GetLcmSvcEndPoint() ServiceEndpoint {
 // GetLcmSvcEndPointOk returns a tuple with the LcmSvcEndPoint field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *PartnerPostRequest) GetLcmSvcEndPointOk() (*ServiceEndpoint, bool) {
-	if o == nil || o.LcmSvcEndPoint == nil {
+	if o == nil || isNil(o.LcmSvcEndPoint) {
 		return nil, false
 	}
 	return o.LcmSvcEndPoint, true
@@ -156,7 +159,7 @@ func (o *PartnerPostRequest) GetLcmSvcEndPointOk() (*ServiceEndpoint, bool) {
 
 // HasLcmSvcEndPoint returns a boolean if a field has been set.
 func (o *PartnerPostRequest) HasLcmSvcEndPoint() bool {
-	if o != nil && o.LcmSvcEndPoint != nil {
+	if o != nil && !isNil(o.LcmSvcEndPoint) {
 		return true
 	}
 
@@ -170,7 +173,7 @@ func (o *PartnerPostRequest) SetLcmSvcEndPoint(v ServiceEndpoint) {
 
 // GetAddMobileNetworkIds returns the AddMobileNetworkIds field value if set, zero value otherwise.
 func (o *PartnerPostRequest) GetAddMobileNetworkIds() MobileNetworkIds {
-	if o == nil || o.AddMobileNetworkIds == nil {
+	if o == nil || isNil(o.AddMobileNetworkIds) {
 		var ret MobileNetworkIds
 		return ret
 	}
@@ -180,7 +183,7 @@ func (o *PartnerPostRequest) GetAddMobileNetworkIds() MobileNetworkIds {
 // GetAddMobileNetworkIdsOk returns a tuple with the AddMobileNetworkIds field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *PartnerPostRequest) GetAddMobileNetworkIdsOk() (*MobileNetworkIds, bool) {
-	if o == nil || o.AddMobileNetworkIds == nil {
+	if o == nil || isNil(o.AddMobileNetworkIds) {
 		return nil, false
 	}
 	return o.AddMobileNetworkIds, true
@@ -188,7 +191,7 @@ func (o *PartnerPostRequest) GetAddMobileNetworkIdsOk() (*MobileNetworkIds, bool
 
 // HasAddMobileNetworkIds returns a boolean if a field has been set.
 func (o *PartnerPostRequest) HasAddMobileNetworkIds() bool {
-	if o != nil && o.AddMobileNetworkIds != nil {
+	if o != nil && !isNil(o.AddMobileNetworkIds) {
 		return true
 	}
 
@@ -202,7 +205,7 @@ func (o *PartnerPostRequest) SetAddMobileNetworkIds(v MobileNetworkIds) {
 
 // GetRemoveMobileNetworkIds returns the RemoveMobileNetworkIds field value if set, zero value otherwise.
 func (o *PartnerPostRequest) GetRemoveMobileNetworkIds() MobileNetworkIds {
-	if o == nil || o.RemoveMobileNetworkIds == nil {
+	if o == nil || isNil(o.RemoveMobileNetworkIds) {
 		var ret MobileNetworkIds
 		return ret
 	}
@@ -212,7 +215,7 @@ func (o *PartnerPostRequest) GetRemoveMobileNetworkIds() MobileNetworkIds {
 // GetRemoveMobileNetworkIdsOk returns a tuple with the RemoveMobileNetworkIds field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *PartnerPostRequest) GetRemoveMobileNetworkIdsOk() (*MobileNetworkIds, bool) {
-	if o == nil || o.RemoveMobileNetworkIds == nil {
+	if o == nil || isNil(o.RemoveMobileNetworkIds) {
 		return nil, false
 	}
 	return o.RemoveMobileNetworkIds, true
@@ -220,7 +223,7 @@ func (o *PartnerPostRequest) GetRemoveMobileNetworkIdsOk() (*MobileNetworkIds, b
 
 // HasRemoveMobileNetworkIds returns a boolean if a field has been set.
 func (o *PartnerPostRequest) HasRemoveMobileNetworkIds() bool {
-	if o != nil && o.RemoveMobileNetworkIds != nil {
+	if o != nil && !isNil(o.RemoveMobileNetworkIds) {
 		return true
 	}
 
@@ -234,7 +237,7 @@ func (o *PartnerPostRequest) SetRemoveMobileNetworkIds(v MobileNetworkIds) {
 
 // GetAddFixedNetworkIds returns the AddFixedNetworkIds field value if set, zero value otherwise.
 func (o *PartnerPostRequest) GetAddFixedNetworkIds() []string {
-	if o == nil || o.AddFixedNetworkIds == nil {
+	if o == nil || isNil(o.AddFixedNetworkIds) {
 		var ret []string
 		return ret
 	}
@@ -244,7 +247,7 @@ func (o *PartnerPostRequest) GetAddFixedNetworkIds() []string {
 // GetAddFixedNetworkIdsOk returns a tuple with the AddFixedNetworkIds field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *PartnerPostRequest) GetAddFixedNetworkIdsOk() ([]string, bool) {
-	if o == nil || o.AddFixedNetworkIds == nil {
+	if o == nil || isNil(o.AddFixedNetworkIds) {
 		return nil, false
 	}
 	return o.AddFixedNetworkIds, true
@@ -252,7 +255,7 @@ func (o *PartnerPostRequest) GetAddFixedNetworkIdsOk() ([]string, bool) {
 
 // HasAddFixedNetworkIds returns a boolean if a field has been set.
 func (o *PartnerPostRequest) HasAddFixedNetworkIds() bool {
-	if o != nil && o.AddFixedNetworkIds != nil {
+	if o != nil && !isNil(o.AddFixedNetworkIds) {
 		return true
 	}
 
@@ -266,7 +269,7 @@ func (o *PartnerPostRequest) SetAddFixedNetworkIds(v []string) {
 
 // GetRemoveFixedNetworkIds returns the RemoveFixedNetworkIds field value if set, zero value otherwise.
 func (o *PartnerPostRequest) GetRemoveFixedNetworkIds() []string {
-	if o == nil || o.RemoveFixedNetworkIds == nil {
+	if o == nil || isNil(o.RemoveFixedNetworkIds) {
 		var ret []string
 		return ret
 	}
@@ -276,7 +279,7 @@ func (o *PartnerPostRequest) GetRemoveFixedNetworkIds() []string {
 // GetRemoveFixedNetworkIdsOk returns a tuple with the RemoveFixedNetworkIds field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *PartnerPostRequest) GetRemoveFixedNetworkIdsOk() ([]string, bool) {
-	if o == nil || o.RemoveFixedNetworkIds == nil {
+	if o == nil || isNil(o.RemoveFixedNetworkIds) {
 		return nil, false
 	}
 	return o.RemoveFixedNetworkIds, true
@@ -284,7 +287,7 @@ func (o *PartnerPostRequest) GetRemoveFixedNetworkIdsOk() ([]string, bool) {
 
 // HasRemoveFixedNetworkIds returns a boolean if a field has been set.
 func (o *PartnerPostRequest) HasRemoveFixedNetworkIds() bool {
-	if o != nil && o.RemoveFixedNetworkIds != nil {
+	if o != nil && !isNil(o.RemoveFixedNetworkIds) {
 		return true
 	}
 
@@ -298,7 +301,7 @@ func (o *PartnerPostRequest) SetRemoveFixedNetworkIds(v []string) {
 
 // GetAddZones returns the AddZones field value if set, zero value otherwise.
 func (o *PartnerPostRequest) GetAddZones() []ZoneDetails {
-	if o == nil || o.AddZones == nil {
+	if o == nil || isNil(o.AddZones) {
 		var ret []ZoneDetails
 		return ret
 	}
@@ -308,7 +311,7 @@ func (o *PartnerPostRequest) GetAddZones() []ZoneDetails {
 // GetAddZonesOk returns a tuple with the AddZones field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *PartnerPostRequest) GetAddZonesOk() ([]ZoneDetails, bool) {
-	if o == nil || o.AddZones == nil {
+	if o == nil || isNil(o.AddZones) {
 		return nil, false
 	}
 	return o.AddZones, true
@@ -316,7 +319,7 @@ func (o *PartnerPostRequest) GetAddZonesOk() ([]ZoneDetails, bool) {
 
 // HasAddZones returns a boolean if a field has been set.
 func (o *PartnerPostRequest) HasAddZones() bool {
-	if o != nil && o.AddZones != nil {
+	if o != nil && !isNil(o.AddZones) {
 		return true
 	}
 
@@ -330,7 +333,7 @@ func (o *PartnerPostRequest) SetAddZones(v []ZoneDetails) {
 
 // GetRemoveZones returns the RemoveZones field value if set, zero value otherwise.
 func (o *PartnerPostRequest) GetRemoveZones() []string {
-	if o == nil || o.RemoveZones == nil {
+	if o == nil || isNil(o.RemoveZones) {
 		var ret []string
 		return ret
 	}
@@ -340,7 +343,7 @@ func (o *PartnerPostRequest) GetRemoveZones() []string {
 // GetRemoveZonesOk returns a tuple with the RemoveZones field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *PartnerPostRequest) GetRemoveZonesOk() ([]string, bool) {
-	if o == nil || o.RemoveZones == nil {
+	if o == nil || isNil(o.RemoveZones) {
 		return nil, false
 	}
 	return o.RemoveZones, true
@@ -348,7 +351,7 @@ func (o *PartnerPostRequest) GetRemoveZonesOk() ([]string, bool) {
 
 // HasRemoveZones returns a boolean if a field has been set.
 func (o *PartnerPostRequest) HasRemoveZones() bool {
-	if o != nil && o.RemoveZones != nil {
+	if o != nil && !isNil(o.RemoveZones) {
 		return true
 	}
 
@@ -362,7 +365,7 @@ func (o *PartnerPostRequest) SetRemoveZones(v []string) {
 
 // GetZoneStatus returns the ZoneStatus field value if set, zero value otherwise.
 func (o *PartnerPostRequest) GetZoneStatus() []PartnerPostRequestZoneStatusInner {
-	if o == nil || o.ZoneStatus == nil {
+	if o == nil || isNil(o.ZoneStatus) {
 		var ret []PartnerPostRequestZoneStatusInner
 		return ret
 	}
@@ -372,7 +375,7 @@ func (o *PartnerPostRequest) GetZoneStatus() []PartnerPostRequestZoneStatusInner
 // GetZoneStatusOk returns a tuple with the ZoneStatus field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *PartnerPostRequest) GetZoneStatusOk() ([]PartnerPostRequestZoneStatusInner, bool) {
-	if o == nil || o.ZoneStatus == nil {
+	if o == nil || isNil(o.ZoneStatus) {
 		return nil, false
 	}
 	return o.ZoneStatus, true
@@ -380,7 +383,7 @@ func (o *PartnerPostRequest) GetZoneStatusOk() ([]PartnerPostRequestZoneStatusIn
 
 // HasZoneStatus returns a boolean if a field has been set.
 func (o *PartnerPostRequest) HasZoneStatus() bool {
-	if o != nil && o.ZoneStatus != nil {
+	if o != nil && !isNil(o.ZoneStatus) {
 		return true
 	}
 
@@ -417,44 +420,46 @@ func (o *PartnerPostRequest) SetModificationDate(v time.Time) {
 }
 
 func (o PartnerPostRequest) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["objectType"] = o.ObjectType
-	}
-	if true {
-		toSerialize["operationType"] = o.OperationType
-	}
-	if o.EdgeDiscoverySvcEndPoint != nil {
-		toSerialize["edgeDiscoverySvcEndPoint"] = o.EdgeDiscoverySvcEndPoint
-	}
-	if o.LcmSvcEndPoint != nil {
-		toSerialize["lcmSvcEndPoint"] = o.LcmSvcEndPoint
-	}
-	if o.AddMobileNetworkIds != nil {
-		toSerialize["addMobileNetworkIds"] = o.AddMobileNetworkIds
-	}
-	if o.RemoveMobileNetworkIds != nil {
-		toSerialize["removeMobileNetworkIds"] = o.RemoveMobileNetworkIds
-	}
-	if o.AddFixedNetworkIds != nil {
-		toSerialize["addFixedNetworkIds"] = o.AddFixedNetworkIds
-	}
-	if o.RemoveFixedNetworkIds != nil {
-		toSerialize["removeFixedNetworkIds"] = o.RemoveFixedNetworkIds
-	}
-	if o.AddZones != nil {
-		toSerialize["addZones"] = o.AddZones
-	}
-	if o.RemoveZones != nil {
-		toSerialize["removeZones"] = o.RemoveZones
-	}
-	if o.ZoneStatus != nil {
-		toSerialize["zoneStatus"] = o.ZoneStatus
-	}
-	if true {
-		toSerialize["modificationDate"] = o.ModificationDate
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o PartnerPostRequest) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["objectType"] = o.ObjectType
+	toSerialize["operationType"] = o.OperationType
+	if !isNil(o.EdgeDiscoverySvcEndPoint) {
+		toSerialize["edgeDiscoverySvcEndPoint"] = o.EdgeDiscoverySvcEndPoint
+	}
+	if !isNil(o.LcmSvcEndPoint) {
+		toSerialize["lcmSvcEndPoint"] = o.LcmSvcEndPoint
+	}
+	if !isNil(o.AddMobileNetworkIds) {
+		toSerialize["addMobileNetworkIds"] = o.AddMobileNetworkIds
+	}
+	if !isNil(o.RemoveMobileNetworkIds) {
+		toSerialize["removeMobileNetworkIds"] = o.RemoveMobileNetworkIds
+	}
+	if !isNil(o.AddFixedNetworkIds) {
+		toSerialize["addFixedNetworkIds"] = o.AddFixedNetworkIds
+	}
+	if !isNil(o.RemoveFixedNetworkIds) {
+		toSerialize["removeFixedNetworkIds"] = o.RemoveFixedNetworkIds
+	}
+	if !isNil(o.AddZones) {
+		toSerialize["addZones"] = o.AddZones
+	}
+	if !isNil(o.RemoveZones) {
+		toSerialize["removeZones"] = o.RemoveZones
+	}
+	if !isNil(o.ZoneStatus) {
+		toSerialize["zoneStatus"] = o.ZoneStatus
+	}
+	toSerialize["modificationDate"] = o.ModificationDate
+	return toSerialize, nil
 }
 
 type NullablePartnerPostRequest struct {

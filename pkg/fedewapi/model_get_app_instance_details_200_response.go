@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the GetAppInstanceDetails200Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &GetAppInstanceDetails200Response{}
+
 // GetAppInstanceDetails200Response struct for GetAppInstanceDetails200Response
 type GetAppInstanceDetails200Response struct {
 	AppInstanceState *InstanceState `json:"appInstanceState,omitempty"`
@@ -40,7 +43,7 @@ func NewGetAppInstanceDetails200ResponseWithDefaults() *GetAppInstanceDetails200
 
 // GetAppInstanceState returns the AppInstanceState field value if set, zero value otherwise.
 func (o *GetAppInstanceDetails200Response) GetAppInstanceState() InstanceState {
-	if o == nil || o.AppInstanceState == nil {
+	if o == nil || isNil(o.AppInstanceState) {
 		var ret InstanceState
 		return ret
 	}
@@ -50,7 +53,7 @@ func (o *GetAppInstanceDetails200Response) GetAppInstanceState() InstanceState {
 // GetAppInstanceStateOk returns a tuple with the AppInstanceState field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetAppInstanceDetails200Response) GetAppInstanceStateOk() (*InstanceState, bool) {
-	if o == nil || o.AppInstanceState == nil {
+	if o == nil || isNil(o.AppInstanceState) {
 		return nil, false
 	}
 	return o.AppInstanceState, true
@@ -58,7 +61,7 @@ func (o *GetAppInstanceDetails200Response) GetAppInstanceStateOk() (*InstanceSta
 
 // HasAppInstanceState returns a boolean if a field has been set.
 func (o *GetAppInstanceDetails200Response) HasAppInstanceState() bool {
-	if o != nil && o.AppInstanceState != nil {
+	if o != nil && !isNil(o.AppInstanceState) {
 		return true
 	}
 
@@ -72,7 +75,7 @@ func (o *GetAppInstanceDetails200Response) SetAppInstanceState(v InstanceState) 
 
 // GetAccesspointInfo returns the AccesspointInfo field value if set, zero value otherwise.
 func (o *GetAppInstanceDetails200Response) GetAccesspointInfo() []GetAppInstanceDetails200ResponseAccesspointInfoInner {
-	if o == nil || o.AccesspointInfo == nil {
+	if o == nil || isNil(o.AccesspointInfo) {
 		var ret []GetAppInstanceDetails200ResponseAccesspointInfoInner
 		return ret
 	}
@@ -82,7 +85,7 @@ func (o *GetAppInstanceDetails200Response) GetAccesspointInfo() []GetAppInstance
 // GetAccesspointInfoOk returns a tuple with the AccesspointInfo field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetAppInstanceDetails200Response) GetAccesspointInfoOk() ([]GetAppInstanceDetails200ResponseAccesspointInfoInner, bool) {
-	if o == nil || o.AccesspointInfo == nil {
+	if o == nil || isNil(o.AccesspointInfo) {
 		return nil, false
 	}
 	return o.AccesspointInfo, true
@@ -90,7 +93,7 @@ func (o *GetAppInstanceDetails200Response) GetAccesspointInfoOk() ([]GetAppInsta
 
 // HasAccesspointInfo returns a boolean if a field has been set.
 func (o *GetAppInstanceDetails200Response) HasAccesspointInfo() bool {
-	if o != nil && o.AccesspointInfo != nil {
+	if o != nil && !isNil(o.AccesspointInfo) {
 		return true
 	}
 
@@ -103,14 +106,22 @@ func (o *GetAppInstanceDetails200Response) SetAccesspointInfo(v []GetAppInstance
 }
 
 func (o GetAppInstanceDetails200Response) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if o.AppInstanceState != nil {
-		toSerialize["appInstanceState"] = o.AppInstanceState
-	}
-	if o.AccesspointInfo != nil {
-		toSerialize["accesspointInfo"] = o.AccesspointInfo
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o GetAppInstanceDetails200Response) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	if !isNil(o.AppInstanceState) {
+		toSerialize["appInstanceState"] = o.AppInstanceState
+	}
+	if !isNil(o.AccesspointInfo) {
+		toSerialize["accesspointInfo"] = o.AccesspointInfo
+	}
+	return toSerialize, nil
 }
 
 type NullableGetAppInstanceDetails200Response struct {

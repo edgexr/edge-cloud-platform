@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the ZoneRegisteredDataNetworkResources type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ZoneRegisteredDataNetworkResources{}
+
 // ZoneRegisteredDataNetworkResources struct for ZoneRegisteredDataNetworkResources
 type ZoneRegisteredDataNetworkResources struct {
 	// Max dl throughput that this edge can offer. It is defined in Mbps.
@@ -144,20 +147,20 @@ func (o *ZoneRegisteredDataNetworkResources) SetSupportDPDK(v bool) {
 }
 
 func (o ZoneRegisteredDataNetworkResources) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["egressBandWidth"] = o.EgressBandWidth
-	}
-	if true {
-		toSerialize["dedicatedNIC"] = o.DedicatedNIC
-	}
-	if true {
-		toSerialize["supportSriov"] = o.SupportSriov
-	}
-	if true {
-		toSerialize["supportDPDK"] = o.SupportDPDK
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o ZoneRegisteredDataNetworkResources) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["egressBandWidth"] = o.EgressBandWidth
+	toSerialize["dedicatedNIC"] = o.DedicatedNIC
+	toSerialize["supportSriov"] = o.SupportSriov
+	toSerialize["supportDPDK"] = o.SupportDPDK
+	return toSerialize, nil
 }
 
 type NullableZoneRegisteredDataNetworkResources struct {

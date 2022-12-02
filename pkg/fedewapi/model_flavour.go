@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the Flavour type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &Flavour{}
+
 // Flavour struct for Flavour
 type Flavour struct {
 	// An identifier to refer to a specific combination of compute resources.
@@ -204,7 +207,7 @@ func (o *Flavour) SetStorageSize(v int32) {
 
 // GetGpu returns the Gpu field value if set, zero value otherwise.
 func (o *Flavour) GetGpu() []GpuInfo {
-	if o == nil || o.Gpu == nil {
+	if o == nil || isNil(o.Gpu) {
 		var ret []GpuInfo
 		return ret
 	}
@@ -214,7 +217,7 @@ func (o *Flavour) GetGpu() []GpuInfo {
 // GetGpuOk returns a tuple with the Gpu field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Flavour) GetGpuOk() ([]GpuInfo, bool) {
-	if o == nil || o.Gpu == nil {
+	if o == nil || isNil(o.Gpu) {
 		return nil, false
 	}
 	return o.Gpu, true
@@ -222,7 +225,7 @@ func (o *Flavour) GetGpuOk() ([]GpuInfo, bool) {
 
 // HasGpu returns a boolean if a field has been set.
 func (o *Flavour) HasGpu() bool {
-	if o != nil && o.Gpu != nil {
+	if o != nil && !isNil(o.Gpu) {
 		return true
 	}
 
@@ -236,7 +239,7 @@ func (o *Flavour) SetGpu(v []GpuInfo) {
 
 // GetVpu returns the Vpu field value if set, zero value otherwise.
 func (o *Flavour) GetVpu() int32 {
-	if o == nil || o.Vpu == nil {
+	if o == nil || isNil(o.Vpu) {
 		var ret int32
 		return ret
 	}
@@ -246,7 +249,7 @@ func (o *Flavour) GetVpu() int32 {
 // GetVpuOk returns a tuple with the Vpu field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Flavour) GetVpuOk() (*int32, bool) {
-	if o == nil || o.Vpu == nil {
+	if o == nil || isNil(o.Vpu) {
 		return nil, false
 	}
 	return o.Vpu, true
@@ -254,7 +257,7 @@ func (o *Flavour) GetVpuOk() (*int32, bool) {
 
 // HasVpu returns a boolean if a field has been set.
 func (o *Flavour) HasVpu() bool {
-	if o != nil && o.Vpu != nil {
+	if o != nil && !isNil(o.Vpu) {
 		return true
 	}
 
@@ -268,7 +271,7 @@ func (o *Flavour) SetVpu(v int32) {
 
 // GetHugepages returns the Hugepages field value if set, zero value otherwise.
 func (o *Flavour) GetHugepages() []HugePage {
-	if o == nil || o.Hugepages == nil {
+	if o == nil || isNil(o.Hugepages) {
 		var ret []HugePage
 		return ret
 	}
@@ -278,7 +281,7 @@ func (o *Flavour) GetHugepages() []HugePage {
 // GetHugepagesOk returns a tuple with the Hugepages field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Flavour) GetHugepagesOk() ([]HugePage, bool) {
-	if o == nil || o.Hugepages == nil {
+	if o == nil || isNil(o.Hugepages) {
 		return nil, false
 	}
 	return o.Hugepages, true
@@ -286,7 +289,7 @@ func (o *Flavour) GetHugepagesOk() ([]HugePage, bool) {
 
 // HasHugepages returns a boolean if a field has been set.
 func (o *Flavour) HasHugepages() bool {
-	if o != nil && o.Hugepages != nil {
+	if o != nil && !isNil(o.Hugepages) {
 		return true
 	}
 
@@ -300,7 +303,7 @@ func (o *Flavour) SetHugepages(v []HugePage) {
 
 // GetCpuExclusivity returns the CpuExclusivity field value if set, zero value otherwise.
 func (o *Flavour) GetCpuExclusivity() bool {
-	if o == nil || o.CpuExclusivity == nil {
+	if o == nil || isNil(o.CpuExclusivity) {
 		var ret bool
 		return ret
 	}
@@ -310,7 +313,7 @@ func (o *Flavour) GetCpuExclusivity() bool {
 // GetCpuExclusivityOk returns a tuple with the CpuExclusivity field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Flavour) GetCpuExclusivityOk() (*bool, bool) {
-	if o == nil || o.CpuExclusivity == nil {
+	if o == nil || isNil(o.CpuExclusivity) {
 		return nil, false
 	}
 	return o.CpuExclusivity, true
@@ -318,7 +321,7 @@ func (o *Flavour) GetCpuExclusivityOk() (*bool, bool) {
 
 // HasCpuExclusivity returns a boolean if a field has been set.
 func (o *Flavour) HasCpuExclusivity() bool {
-	if o != nil && o.CpuExclusivity != nil {
+	if o != nil && !isNil(o.CpuExclusivity) {
 		return true
 	}
 
@@ -331,38 +334,34 @@ func (o *Flavour) SetCpuExclusivity(v bool) {
 }
 
 func (o Flavour) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["flavourId"] = o.FlavourId
-	}
-	if true {
-		toSerialize["cpuArchType"] = o.CpuArchType
-	}
-	if true {
-		toSerialize["supportedOSTypes"] = o.SupportedOSTypes
-	}
-	if true {
-		toSerialize["numCPU"] = o.NumCPU
-	}
-	if true {
-		toSerialize["memorySize"] = o.MemorySize
-	}
-	if true {
-		toSerialize["storageSize"] = o.StorageSize
-	}
-	if o.Gpu != nil {
-		toSerialize["gpu"] = o.Gpu
-	}
-	if o.Vpu != nil {
-		toSerialize["vpu"] = o.Vpu
-	}
-	if o.Hugepages != nil {
-		toSerialize["hugepages"] = o.Hugepages
-	}
-	if o.CpuExclusivity != nil {
-		toSerialize["cpuExclusivity"] = o.CpuExclusivity
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o Flavour) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["flavourId"] = o.FlavourId
+	toSerialize["cpuArchType"] = o.CpuArchType
+	toSerialize["supportedOSTypes"] = o.SupportedOSTypes
+	toSerialize["numCPU"] = o.NumCPU
+	toSerialize["memorySize"] = o.MemorySize
+	toSerialize["storageSize"] = o.StorageSize
+	if !isNil(o.Gpu) {
+		toSerialize["gpu"] = o.Gpu
+	}
+	if !isNil(o.Vpu) {
+		toSerialize["vpu"] = o.Vpu
+	}
+	if !isNil(o.Hugepages) {
+		toSerialize["hugepages"] = o.Hugepages
+	}
+	if !isNil(o.CpuExclusivity) {
+		toSerialize["cpuExclusivity"] = o.CpuExclusivity
+	}
+	return toSerialize, nil
 }
 
 type NullableFlavour struct {

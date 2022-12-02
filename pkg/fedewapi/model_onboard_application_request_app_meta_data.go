@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the OnboardApplicationRequestAppMetaData type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &OnboardApplicationRequestAppMetaData{}
+
 // OnboardApplicationRequestAppMetaData Application metadata details
 type OnboardApplicationRequestAppMetaData struct {
 	// Name of the application.   Application provider define a human readable name for the application
@@ -104,7 +107,7 @@ func (o *OnboardApplicationRequestAppMetaData) SetVersion(v string) {
 
 // GetAppDescription returns the AppDescription field value if set, zero value otherwise.
 func (o *OnboardApplicationRequestAppMetaData) GetAppDescription() string {
-	if o == nil || o.AppDescription == nil {
+	if o == nil || isNil(o.AppDescription) {
 		var ret string
 		return ret
 	}
@@ -114,7 +117,7 @@ func (o *OnboardApplicationRequestAppMetaData) GetAppDescription() string {
 // GetAppDescriptionOk returns a tuple with the AppDescription field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *OnboardApplicationRequestAppMetaData) GetAppDescriptionOk() (*string, bool) {
-	if o == nil || o.AppDescription == nil {
+	if o == nil || isNil(o.AppDescription) {
 		return nil, false
 	}
 	return o.AppDescription, true
@@ -122,7 +125,7 @@ func (o *OnboardApplicationRequestAppMetaData) GetAppDescriptionOk() (*string, b
 
 // HasAppDescription returns a boolean if a field has been set.
 func (o *OnboardApplicationRequestAppMetaData) HasAppDescription() bool {
-	if o != nil && o.AppDescription != nil {
+	if o != nil && !isNil(o.AppDescription) {
 		return true
 	}
 
@@ -136,7 +139,7 @@ func (o *OnboardApplicationRequestAppMetaData) SetAppDescription(v string) {
 
 // GetMobilitySupport returns the MobilitySupport field value if set, zero value otherwise.
 func (o *OnboardApplicationRequestAppMetaData) GetMobilitySupport() bool {
-	if o == nil || o.MobilitySupport == nil {
+	if o == nil || isNil(o.MobilitySupport) {
 		var ret bool
 		return ret
 	}
@@ -146,7 +149,7 @@ func (o *OnboardApplicationRequestAppMetaData) GetMobilitySupport() bool {
 // GetMobilitySupportOk returns a tuple with the MobilitySupport field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *OnboardApplicationRequestAppMetaData) GetMobilitySupportOk() (*bool, bool) {
-	if o == nil || o.MobilitySupport == nil {
+	if o == nil || isNil(o.MobilitySupport) {
 		return nil, false
 	}
 	return o.MobilitySupport, true
@@ -154,7 +157,7 @@ func (o *OnboardApplicationRequestAppMetaData) GetMobilitySupportOk() (*bool, bo
 
 // HasMobilitySupport returns a boolean if a field has been set.
 func (o *OnboardApplicationRequestAppMetaData) HasMobilitySupport() bool {
-	if o != nil && o.MobilitySupport != nil {
+	if o != nil && !isNil(o.MobilitySupport) {
 		return true
 	}
 
@@ -192,7 +195,7 @@ func (o *OnboardApplicationRequestAppMetaData) SetAccessToken(v string) {
 
 // GetCategory returns the Category field value if set, zero value otherwise.
 func (o *OnboardApplicationRequestAppMetaData) GetCategory() string {
-	if o == nil || o.Category == nil {
+	if o == nil || isNil(o.Category) {
 		var ret string
 		return ret
 	}
@@ -202,7 +205,7 @@ func (o *OnboardApplicationRequestAppMetaData) GetCategory() string {
 // GetCategoryOk returns a tuple with the Category field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *OnboardApplicationRequestAppMetaData) GetCategoryOk() (*string, bool) {
-	if o == nil || o.Category == nil {
+	if o == nil || isNil(o.Category) {
 		return nil, false
 	}
 	return o.Category, true
@@ -210,7 +213,7 @@ func (o *OnboardApplicationRequestAppMetaData) GetCategoryOk() (*string, bool) {
 
 // HasCategory returns a boolean if a field has been set.
 func (o *OnboardApplicationRequestAppMetaData) HasCategory() bool {
-	if o != nil && o.Category != nil {
+	if o != nil && !isNil(o.Category) {
 		return true
 	}
 
@@ -223,26 +226,28 @@ func (o *OnboardApplicationRequestAppMetaData) SetCategory(v string) {
 }
 
 func (o OnboardApplicationRequestAppMetaData) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["appName"] = o.AppName
-	}
-	if true {
-		toSerialize["version"] = o.Version
-	}
-	if o.AppDescription != nil {
-		toSerialize["appDescription"] = o.AppDescription
-	}
-	if o.MobilitySupport != nil {
-		toSerialize["mobilitySupport"] = o.MobilitySupport
-	}
-	if true {
-		toSerialize["accessToken"] = o.AccessToken
-	}
-	if o.Category != nil {
-		toSerialize["category"] = o.Category
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o OnboardApplicationRequestAppMetaData) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["appName"] = o.AppName
+	toSerialize["version"] = o.Version
+	if !isNil(o.AppDescription) {
+		toSerialize["appDescription"] = o.AppDescription
+	}
+	if !isNil(o.MobilitySupport) {
+		toSerialize["mobilitySupport"] = o.MobilitySupport
+	}
+	toSerialize["accessToken"] = o.AccessToken
+	if !isNil(o.Category) {
+		toSerialize["category"] = o.Category
+	}
+	return toSerialize, nil
 }
 
 type NullableOnboardApplicationRequestAppMetaData struct {

@@ -1598,13 +1598,13 @@ paths:
                 - artefactFileName
                 - artefactFileFormat
                 - artefactDescriptorType
-              oneOf:
-                - required:
-                  - artefactRepoLocation
-                - required:
-                  - componentSpec
-                - required:
-                  - artefactFile
+#              oneOf:
+#                - required:
+#                  - artefactRepoLocation
+#                - required:
+#                  - componentSpec
+#                - required:
+#                  - artefactFile
               properties:
                 artefactId:
                   $ref:  '#/components/schemas/ArtefactId'         
@@ -1874,11 +1874,11 @@ paths:
                 - fileType
                 - imgOSType
                 - imgInsSetArch
-              oneOf:
-                - required:
-                  - file
-                - required:
-                  - repolocation
+#              oneOf:
+#                - required:
+#                  - file
+#                - required:
+#                  - repolocation
               properties:
                 fileId:
                   $ref:  '#/components/schemas/FileId'         
