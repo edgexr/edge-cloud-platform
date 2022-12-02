@@ -1,0 +1,46 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="theme-color" content="#000000">
+  <meta name="Description" content="Login">
+  <meta http-equiv="Content-Security-Policy"
+	content="default-src 'self';
+		 style-src 'self';
+		 font-src 'self';
+		 script-src 'self';
+		 connect-src 'self';
+		 frame-src 'self';
+		 object-src 'none';
+		 base-uri 'self';
+		 manifest-src 'self';
+		 media-src 'self';
+		 worker-src 'self';"/>
+  <title id="title">{{ .Domain }}</title>
+</head>
+
+<body>
+    <div class="container">
+        {{ if .Loggedin }}
+        <h1>Logged in to {{ .Domain }}</h1>
+	<a href="{{ .RedirectUrl }}">proceed to {{.RedirectUrl }}</a>
+        {{ else }}
+        <h1>Login for {{ .Domain }}</h1>
+        <form action="/api/v1/login{{ .UrlParams }}" method="POST">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" class="form-control" name="username" required placeholder="Please enter your user name">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" class="form-control" name="password" placeholder="Please enter your password">
+            </div>
+            <button type="submit" class="btn btn-success">Login</button>
+        </form>
+        {{ end }}
+    </div>
+</body>
+
+</html>

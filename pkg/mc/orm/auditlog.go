@@ -60,7 +60,8 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			strings.Contains(req.RequestURI, "/auth/audit/") ||
 			strings.Contains(req.RequestURI, "/auth/events/") ||
 			strings.Contains(req.RequestURI, "/auth/report/generate") ||
-			strings.Contains(req.RequestURI, "/auth/report/download") {
+			strings.Contains(req.RequestURI, "/auth/report/download") ||
+			strings.Contains(req.RequestURI, "/api/v1/httpauth") {
 			// don't log (fills up Audit logs)
 			lvl = log.SuppressLvl
 			logaudit = false
