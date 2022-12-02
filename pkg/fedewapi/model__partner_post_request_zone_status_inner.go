@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the PartnerPostRequestZoneStatusInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &PartnerPostRequestZoneStatusInner{}
+
 // PartnerPostRequestZoneStatusInner struct for PartnerPostRequestZoneStatusInner
 type PartnerPostRequestZoneStatusInner struct {
 	// Human readable name of the zone.
@@ -89,14 +92,18 @@ func (o *PartnerPostRequestZoneStatusInner) SetStatus(v Status) {
 }
 
 func (o PartnerPostRequestZoneStatusInner) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["zoneId"] = o.ZoneId
-	}
-	if true {
-		toSerialize["status"] = o.Status
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o PartnerPostRequestZoneStatusInner) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["zoneId"] = o.ZoneId
+	toSerialize["status"] = o.Status
+	return toSerialize, nil
 }
 
 type NullablePartnerPostRequestZoneStatusInner struct {

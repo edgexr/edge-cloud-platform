@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources{}
+
 // FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources struct for FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources
 type FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources struct {
 	// Max dl thoughput that this edge can offer. It is defined in Mbps.
@@ -44,7 +47,7 @@ func NewFederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResour
 
 // GetEgressBandWidth returns the EgressBandWidth field value if set, zero value otherwise.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources) GetEgressBandWidth() int32 {
-	if o == nil || o.EgressBandWidth == nil {
+	if o == nil || isNil(o.EgressBandWidth) {
 		var ret int32
 		return ret
 	}
@@ -54,7 +57,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResou
 // GetEgressBandWidthOk returns a tuple with the EgressBandWidth field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources) GetEgressBandWidthOk() (*int32, bool) {
-	if o == nil || o.EgressBandWidth == nil {
+	if o == nil || isNil(o.EgressBandWidth) {
 		return nil, false
 	}
 	return o.EgressBandWidth, true
@@ -62,7 +65,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResou
 
 // HasEgressBandWidth returns a boolean if a field has been set.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources) HasEgressBandWidth() bool {
-	if o != nil && o.EgressBandWidth != nil {
+	if o != nil && !isNil(o.EgressBandWidth) {
 		return true
 	}
 
@@ -76,7 +79,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResou
 
 // GetDedicatedNIC returns the DedicatedNIC field value if set, zero value otherwise.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources) GetDedicatedNIC() int32 {
-	if o == nil || o.DedicatedNIC == nil {
+	if o == nil || isNil(o.DedicatedNIC) {
 		var ret int32
 		return ret
 	}
@@ -86,7 +89,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResou
 // GetDedicatedNICOk returns a tuple with the DedicatedNIC field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources) GetDedicatedNICOk() (*int32, bool) {
-	if o == nil || o.DedicatedNIC == nil {
+	if o == nil || isNil(o.DedicatedNIC) {
 		return nil, false
 	}
 	return o.DedicatedNIC, true
@@ -94,7 +97,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResou
 
 // HasDedicatedNIC returns a boolean if a field has been set.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources) HasDedicatedNIC() bool {
-	if o != nil && o.DedicatedNIC != nil {
+	if o != nil && !isNil(o.DedicatedNIC) {
 		return true
 	}
 
@@ -108,7 +111,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResou
 
 // GetSupportSriov returns the SupportSriov field value if set, zero value otherwise.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources) GetSupportSriov() bool {
-	if o == nil || o.SupportSriov == nil {
+	if o == nil || isNil(o.SupportSriov) {
 		var ret bool
 		return ret
 	}
@@ -118,7 +121,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResou
 // GetSupportSriovOk returns a tuple with the SupportSriov field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources) GetSupportSriovOk() (*bool, bool) {
-	if o == nil || o.SupportSriov == nil {
+	if o == nil || isNil(o.SupportSriov) {
 		return nil, false
 	}
 	return o.SupportSriov, true
@@ -126,7 +129,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResou
 
 // HasSupportSriov returns a boolean if a field has been set.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources) HasSupportSriov() bool {
-	if o != nil && o.SupportSriov != nil {
+	if o != nil && !isNil(o.SupportSriov) {
 		return true
 	}
 
@@ -140,7 +143,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResou
 
 // GetSupportDPDK returns the SupportDPDK field value if set, zero value otherwise.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources) GetSupportDPDK() bool {
-	if o == nil || o.SupportDPDK == nil {
+	if o == nil || isNil(o.SupportDPDK) {
 		var ret bool
 		return ret
 	}
@@ -150,7 +153,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResou
 // GetSupportDPDKOk returns a tuple with the SupportDPDK field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources) GetSupportDPDKOk() (*bool, bool) {
-	if o == nil || o.SupportDPDK == nil {
+	if o == nil || isNil(o.SupportDPDK) {
 		return nil, false
 	}
 	return o.SupportDPDK, true
@@ -158,7 +161,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResou
 
 // HasSupportDPDK returns a boolean if a field has been set.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources) HasSupportDPDK() bool {
-	if o != nil && o.SupportDPDK != nil {
+	if o != nil && !isNil(o.SupportDPDK) {
 		return true
 	}
 
@@ -171,20 +174,28 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResou
 }
 
 func (o FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if o.EgressBandWidth != nil {
-		toSerialize["egressBandWidth"] = o.EgressBandWidth
-	}
-	if o.DedicatedNIC != nil {
-		toSerialize["dedicatedNIC"] = o.DedicatedNIC
-	}
-	if o.SupportSriov != nil {
-		toSerialize["supportSriov"] = o.SupportSriov
-	}
-	if o.SupportDPDK != nil {
-		toSerialize["supportDPDK"] = o.SupportDPDK
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	if !isNil(o.EgressBandWidth) {
+		toSerialize["egressBandWidth"] = o.EgressBandWidth
+	}
+	if !isNil(o.DedicatedNIC) {
+		toSerialize["dedicatedNIC"] = o.DedicatedNIC
+	}
+	if !isNil(o.SupportSriov) {
+		toSerialize["supportSriov"] = o.SupportSriov
+	}
+	if !isNil(o.SupportDPDK) {
+		toSerialize["supportDPDK"] = o.SupportDPDK
+	}
+	return toSerialize, nil
 }
 
 type NullableFederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources struct {

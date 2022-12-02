@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest{}
+
 // FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest struct for FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest
 type FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest struct {
 	// UserId of the app provider.  Identifier is relevant only in context of this federation.
@@ -143,20 +146,20 @@ func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequ
 }
 
 func (o FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["appProviderId"] = o.AppProviderId
-	}
-	if true {
-		toSerialize["zoneId"] = o.ZoneId
-	}
-	if true {
-		toSerialize["poolId"] = o.PoolId
-	}
-	if true {
-		toSerialize["grantedFlavours"] = o.GrantedFlavours
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["appProviderId"] = o.AppProviderId
+	toSerialize["zoneId"] = o.ZoneId
+	toSerialize["poolId"] = o.PoolId
+	toSerialize["grantedFlavours"] = o.GrantedFlavours
+	return toSerialize, nil
 }
 
 type NullableFederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest struct {

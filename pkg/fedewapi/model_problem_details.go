@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the ProblemDetails type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ProblemDetails{}
+
 // ProblemDetails struct for ProblemDetails
 type ProblemDetails struct {
 	Title *string `json:"title,omitempty"`
@@ -41,7 +44,7 @@ func NewProblemDetailsWithDefaults() *ProblemDetails {
 
 // GetTitle returns the Title field value if set, zero value otherwise.
 func (o *ProblemDetails) GetTitle() string {
-	if o == nil || o.Title == nil {
+	if o == nil || isNil(o.Title) {
 		var ret string
 		return ret
 	}
@@ -51,7 +54,7 @@ func (o *ProblemDetails) GetTitle() string {
 // GetTitleOk returns a tuple with the Title field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ProblemDetails) GetTitleOk() (*string, bool) {
-	if o == nil || o.Title == nil {
+	if o == nil || isNil(o.Title) {
 		return nil, false
 	}
 	return o.Title, true
@@ -59,7 +62,7 @@ func (o *ProblemDetails) GetTitleOk() (*string, bool) {
 
 // HasTitle returns a boolean if a field has been set.
 func (o *ProblemDetails) HasTitle() bool {
-	if o != nil && o.Title != nil {
+	if o != nil && !isNil(o.Title) {
 		return true
 	}
 
@@ -73,7 +76,7 @@ func (o *ProblemDetails) SetTitle(v string) {
 
 // GetDetail returns the Detail field value if set, zero value otherwise.
 func (o *ProblemDetails) GetDetail() string {
-	if o == nil || o.Detail == nil {
+	if o == nil || isNil(o.Detail) {
 		var ret string
 		return ret
 	}
@@ -83,7 +86,7 @@ func (o *ProblemDetails) GetDetail() string {
 // GetDetailOk returns a tuple with the Detail field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ProblemDetails) GetDetailOk() (*string, bool) {
-	if o == nil || o.Detail == nil {
+	if o == nil || isNil(o.Detail) {
 		return nil, false
 	}
 	return o.Detail, true
@@ -91,7 +94,7 @@ func (o *ProblemDetails) GetDetailOk() (*string, bool) {
 
 // HasDetail returns a boolean if a field has been set.
 func (o *ProblemDetails) HasDetail() bool {
-	if o != nil && o.Detail != nil {
+	if o != nil && !isNil(o.Detail) {
 		return true
 	}
 
@@ -105,7 +108,7 @@ func (o *ProblemDetails) SetDetail(v string) {
 
 // GetCause returns the Cause field value if set, zero value otherwise.
 func (o *ProblemDetails) GetCause() string {
-	if o == nil || o.Cause == nil {
+	if o == nil || isNil(o.Cause) {
 		var ret string
 		return ret
 	}
@@ -115,7 +118,7 @@ func (o *ProblemDetails) GetCause() string {
 // GetCauseOk returns a tuple with the Cause field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ProblemDetails) GetCauseOk() (*string, bool) {
-	if o == nil || o.Cause == nil {
+	if o == nil || isNil(o.Cause) {
 		return nil, false
 	}
 	return o.Cause, true
@@ -123,7 +126,7 @@ func (o *ProblemDetails) GetCauseOk() (*string, bool) {
 
 // HasCause returns a boolean if a field has been set.
 func (o *ProblemDetails) HasCause() bool {
-	if o != nil && o.Cause != nil {
+	if o != nil && !isNil(o.Cause) {
 		return true
 	}
 
@@ -137,7 +140,7 @@ func (o *ProblemDetails) SetCause(v string) {
 
 // GetInvalidParams returns the InvalidParams field value if set, zero value otherwise.
 func (o *ProblemDetails) GetInvalidParams() []InvalidParam {
-	if o == nil || o.InvalidParams == nil {
+	if o == nil || isNil(o.InvalidParams) {
 		var ret []InvalidParam
 		return ret
 	}
@@ -147,7 +150,7 @@ func (o *ProblemDetails) GetInvalidParams() []InvalidParam {
 // GetInvalidParamsOk returns a tuple with the InvalidParams field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ProblemDetails) GetInvalidParamsOk() ([]InvalidParam, bool) {
-	if o == nil || o.InvalidParams == nil {
+	if o == nil || isNil(o.InvalidParams) {
 		return nil, false
 	}
 	return o.InvalidParams, true
@@ -155,7 +158,7 @@ func (o *ProblemDetails) GetInvalidParamsOk() ([]InvalidParam, bool) {
 
 // HasInvalidParams returns a boolean if a field has been set.
 func (o *ProblemDetails) HasInvalidParams() bool {
-	if o != nil && o.InvalidParams != nil {
+	if o != nil && !isNil(o.InvalidParams) {
 		return true
 	}
 
@@ -168,20 +171,28 @@ func (o *ProblemDetails) SetInvalidParams(v []InvalidParam) {
 }
 
 func (o ProblemDetails) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if o.Title != nil {
-		toSerialize["title"] = o.Title
-	}
-	if o.Detail != nil {
-		toSerialize["detail"] = o.Detail
-	}
-	if o.Cause != nil {
-		toSerialize["cause"] = o.Cause
-	}
-	if o.InvalidParams != nil {
-		toSerialize["invalidParams"] = o.InvalidParams
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o ProblemDetails) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	if !isNil(o.Title) {
+		toSerialize["title"] = o.Title
+	}
+	if !isNil(o.Detail) {
+		toSerialize["detail"] = o.Detail
+	}
+	if !isNil(o.Cause) {
+		toSerialize["cause"] = o.Cause
+	}
+	if !isNil(o.InvalidParams) {
+		toSerialize["invalidParams"] = o.InvalidParams
+	}
+	return toSerialize, nil
 }
 
 type NullableProblemDetails struct {

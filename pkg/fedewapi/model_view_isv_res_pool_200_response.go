@@ -15,6 +15,9 @@ import (
 	"time"
 )
 
+// checks if the ViewISVResPool200Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ViewISVResPool200Response{}
+
 // ViewISVResPool200Response struct for ViewISVResPool200Response
 type ViewISVResPool200Response struct {
 	// ISV defined name of the resource pool.
@@ -121,7 +124,7 @@ func (o *ViewISVResPool200Response) SetReservedFlavours(v []ViewISVResPool200Res
 
 // GetReserveDuration returns the ReserveDuration field value if set, zero value otherwise.
 func (o *ViewISVResPool200Response) GetReserveDuration() ResourceReservationDuration {
-	if o == nil || o.ReserveDuration == nil {
+	if o == nil || isNil(o.ReserveDuration) {
 		var ret ResourceReservationDuration
 		return ret
 	}
@@ -131,7 +134,7 @@ func (o *ViewISVResPool200Response) GetReserveDuration() ResourceReservationDura
 // GetReserveDurationOk returns a tuple with the ReserveDuration field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ViewISVResPool200Response) GetReserveDurationOk() (*ResourceReservationDuration, bool) {
-	if o == nil || o.ReserveDuration == nil {
+	if o == nil || isNil(o.ReserveDuration) {
 		return nil, false
 	}
 	return o.ReserveDuration, true
@@ -139,7 +142,7 @@ func (o *ViewISVResPool200Response) GetReserveDurationOk() (*ResourceReservation
 
 // HasReserveDuration returns a boolean if a field has been set.
 func (o *ViewISVResPool200Response) HasReserveDuration() bool {
-	if o != nil && o.ReserveDuration != nil {
+	if o != nil && !isNil(o.ReserveDuration) {
 		return true
 	}
 
@@ -153,7 +156,7 @@ func (o *ViewISVResPool200Response) SetReserveDuration(v ResourceReservationDura
 
 // GetReservationTime returns the ReservationTime field value if set, zero value otherwise.
 func (o *ViewISVResPool200Response) GetReservationTime() time.Time {
-	if o == nil || o.ReservationTime == nil {
+	if o == nil || isNil(o.ReservationTime) {
 		var ret time.Time
 		return ret
 	}
@@ -163,7 +166,7 @@ func (o *ViewISVResPool200Response) GetReservationTime() time.Time {
 // GetReservationTimeOk returns a tuple with the ReservationTime field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ViewISVResPool200Response) GetReservationTimeOk() (*time.Time, bool) {
-	if o == nil || o.ReservationTime == nil {
+	if o == nil || isNil(o.ReservationTime) {
 		return nil, false
 	}
 	return o.ReservationTime, true
@@ -171,7 +174,7 @@ func (o *ViewISVResPool200Response) GetReservationTimeOk() (*time.Time, bool) {
 
 // HasReservationTime returns a boolean if a field has been set.
 func (o *ViewISVResPool200Response) HasReservationTime() bool {
-	if o != nil && o.ReservationTime != nil {
+	if o != nil && !isNil(o.ReservationTime) {
 		return true
 	}
 
@@ -184,23 +187,25 @@ func (o *ViewISVResPool200Response) SetReservationTime(v time.Time) {
 }
 
 func (o ViewISVResPool200Response) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["poolName"] = o.PoolName
-	}
-	if true {
-		toSerialize["reservedPoolId"] = o.ReservedPoolId
-	}
-	if true {
-		toSerialize["reservedFlavours"] = o.ReservedFlavours
-	}
-	if o.ReserveDuration != nil {
-		toSerialize["reserveDuration"] = o.ReserveDuration
-	}
-	if o.ReservationTime != nil {
-		toSerialize["reservationTime"] = o.ReservationTime
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o ViewISVResPool200Response) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["poolName"] = o.PoolName
+	toSerialize["reservedPoolId"] = o.ReservedPoolId
+	toSerialize["reservedFlavours"] = o.ReservedFlavours
+	if !isNil(o.ReserveDuration) {
+		toSerialize["reserveDuration"] = o.ReserveDuration
+	}
+	if !isNil(o.ReservationTime) {
+		toSerialize["reservationTime"] = o.ReservationTime
+	}
+	return toSerialize, nil
 }
 
 type NullableViewISVResPool200Response struct {

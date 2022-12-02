@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the FederationContextIdApplicationOnboardingPostRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &FederationContextIdApplicationOnboardingPostRequest{}
+
 // FederationContextIdApplicationOnboardingPostRequest struct for FederationContextIdApplicationOnboardingPostRequest
 type FederationContextIdApplicationOnboardingPostRequest struct {
 	// Identifier used to refer to an application. This identifier is globally unique so that application can be identified uniquely across different OPs.
@@ -89,14 +92,18 @@ func (o *FederationContextIdApplicationOnboardingPostRequest) SetStatusInfo(v []
 }
 
 func (o FederationContextIdApplicationOnboardingPostRequest) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["appId"] = o.AppId
-	}
-	if true {
-		toSerialize["statusInfo"] = o.StatusInfo
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o FederationContextIdApplicationOnboardingPostRequest) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["appId"] = o.AppId
+	toSerialize["statusInfo"] = o.StatusInfo
+	return toSerialize, nil
 }
 
 type NullableFederationContextIdApplicationOnboardingPostRequest struct {

@@ -14,99 +14,152 @@ import (
 	"encoding/json"
 )
 
-// checks if the ClientLocation type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ClientLocation{}
+// checks if the CompEnvParams type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &CompEnvParams{}
 
-// ClientLocation struct for ClientLocation
-type ClientLocation struct {
-	// Latitude, Longitude as decimal fraction up to 4 digit precision
-	GeoLocation *string `json:"geo_location,omitempty"`
-	// Information about the 4G/5G Cell ids where the client is currently served.
-	RadLocation []ClientLocationRadLocationInner `json:"rad_location,omitempty"`
+// CompEnvParams Environment variables are key value pairs that should be injected when component in instantiated
+type CompEnvParams struct {
+	// Name of environment variable
+	EnvVarName string `json:"envVarName"`
+	EnvValueType string `json:"envValueType"`
+	// Value to be assigned to environment variable
+	EnvVarValue *string `json:"envVarValue,omitempty"`
+	// Full path of parameter  from componentSpec that should be used to generate the environment value. Eg. networkResourceProfile[1]. interfaceId.
+	EnvVarSrc *string `json:"envVarSrc,omitempty"`
 }
 
-// NewClientLocation instantiates a new ClientLocation object
+// NewCompEnvParams instantiates a new CompEnvParams object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewClientLocation() *ClientLocation {
-	this := ClientLocation{}
+func NewCompEnvParams(envVarName string, envValueType string) *CompEnvParams {
+	this := CompEnvParams{}
+	this.EnvVarName = envVarName
+	this.EnvValueType = envValueType
 	return &this
 }
 
-// NewClientLocationWithDefaults instantiates a new ClientLocation object
+// NewCompEnvParamsWithDefaults instantiates a new CompEnvParams object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewClientLocationWithDefaults() *ClientLocation {
-	this := ClientLocation{}
+func NewCompEnvParamsWithDefaults() *CompEnvParams {
+	this := CompEnvParams{}
 	return &this
 }
 
-// GetGeoLocation returns the GeoLocation field value if set, zero value otherwise.
-func (o *ClientLocation) GetGeoLocation() string {
-	if o == nil || isNil(o.GeoLocation) {
+// GetEnvVarName returns the EnvVarName field value
+func (o *CompEnvParams) GetEnvVarName() string {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.GeoLocation
+
+	return o.EnvVarName
 }
 
-// GetGeoLocationOk returns a tuple with the GeoLocation field value if set, nil otherwise
+// GetEnvVarNameOk returns a tuple with the EnvVarName field value
 // and a boolean to check if the value has been set.
-func (o *ClientLocation) GetGeoLocationOk() (*string, bool) {
-	if o == nil || isNil(o.GeoLocation) {
+func (o *CompEnvParams) GetEnvVarNameOk() (*string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.GeoLocation, true
+	return &o.EnvVarName, true
 }
 
-// HasGeoLocation returns a boolean if a field has been set.
-func (o *ClientLocation) HasGeoLocation() bool {
-	if o != nil && !isNil(o.GeoLocation) {
-		return true
-	}
-
-	return false
+// SetEnvVarName sets field value
+func (o *CompEnvParams) SetEnvVarName(v string) {
+	o.EnvVarName = v
 }
 
-// SetGeoLocation gets a reference to the given string and assigns it to the GeoLocation field.
-func (o *ClientLocation) SetGeoLocation(v string) {
-	o.GeoLocation = &v
-}
-
-// GetRadLocation returns the RadLocation field value if set, zero value otherwise.
-func (o *ClientLocation) GetRadLocation() []ClientLocationRadLocationInner {
-	if o == nil || isNil(o.RadLocation) {
-		var ret []ClientLocationRadLocationInner
+// GetEnvValueType returns the EnvValueType field value
+func (o *CompEnvParams) GetEnvValueType() string {
+	if o == nil {
+		var ret string
 		return ret
 	}
-	return o.RadLocation
+
+	return o.EnvValueType
 }
 
-// GetRadLocationOk returns a tuple with the RadLocation field value if set, nil otherwise
+// GetEnvValueTypeOk returns a tuple with the EnvValueType field value
 // and a boolean to check if the value has been set.
-func (o *ClientLocation) GetRadLocationOk() ([]ClientLocationRadLocationInner, bool) {
-	if o == nil || isNil(o.RadLocation) {
+func (o *CompEnvParams) GetEnvValueTypeOk() (*string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.RadLocation, true
+	return &o.EnvValueType, true
 }
 
-// HasRadLocation returns a boolean if a field has been set.
-func (o *ClientLocation) HasRadLocation() bool {
-	if o != nil && !isNil(o.RadLocation) {
+// SetEnvValueType sets field value
+func (o *CompEnvParams) SetEnvValueType(v string) {
+	o.EnvValueType = v
+}
+
+// GetEnvVarValue returns the EnvVarValue field value if set, zero value otherwise.
+func (o *CompEnvParams) GetEnvVarValue() string {
+	if o == nil || isNil(o.EnvVarValue) {
+		var ret string
+		return ret
+	}
+	return *o.EnvVarValue
+}
+
+// GetEnvVarValueOk returns a tuple with the EnvVarValue field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CompEnvParams) GetEnvVarValueOk() (*string, bool) {
+	if o == nil || isNil(o.EnvVarValue) {
+		return nil, false
+	}
+	return o.EnvVarValue, true
+}
+
+// HasEnvVarValue returns a boolean if a field has been set.
+func (o *CompEnvParams) HasEnvVarValue() bool {
+	if o != nil && !isNil(o.EnvVarValue) {
 		return true
 	}
 
 	return false
 }
 
-// SetRadLocation gets a reference to the given []ClientLocationRadLocationInner and assigns it to the RadLocation field.
-func (o *ClientLocation) SetRadLocation(v []ClientLocationRadLocationInner) {
-	o.RadLocation = v
+// SetEnvVarValue gets a reference to the given string and assigns it to the EnvVarValue field.
+func (o *CompEnvParams) SetEnvVarValue(v string) {
+	o.EnvVarValue = &v
 }
 
-func (o ClientLocation) MarshalJSON() ([]byte, error) {
+// GetEnvVarSrc returns the EnvVarSrc field value if set, zero value otherwise.
+func (o *CompEnvParams) GetEnvVarSrc() string {
+	if o == nil || isNil(o.EnvVarSrc) {
+		var ret string
+		return ret
+	}
+	return *o.EnvVarSrc
+}
+
+// GetEnvVarSrcOk returns a tuple with the EnvVarSrc field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CompEnvParams) GetEnvVarSrcOk() (*string, bool) {
+	if o == nil || isNil(o.EnvVarSrc) {
+		return nil, false
+	}
+	return o.EnvVarSrc, true
+}
+
+// HasEnvVarSrc returns a boolean if a field has been set.
+func (o *CompEnvParams) HasEnvVarSrc() bool {
+	if o != nil && !isNil(o.EnvVarSrc) {
+		return true
+	}
+
+	return false
+}
+
+// SetEnvVarSrc gets a reference to the given string and assigns it to the EnvVarSrc field.
+func (o *CompEnvParams) SetEnvVarSrc(v string) {
+	o.EnvVarSrc = &v
+}
+
+func (o CompEnvParams) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -114,49 +167,51 @@ func (o ClientLocation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ClientLocation) ToMap() (map[string]interface{}, error) {
+func (o CompEnvParams) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.GeoLocation) {
-		toSerialize["geo_location"] = o.GeoLocation
+	toSerialize["envVarName"] = o.EnvVarName
+	toSerialize["envValueType"] = o.EnvValueType
+	if !isNil(o.EnvVarValue) {
+		toSerialize["envVarValue"] = o.EnvVarValue
 	}
-	if !isNil(o.RadLocation) {
-		toSerialize["rad_location"] = o.RadLocation
+	if !isNil(o.EnvVarSrc) {
+		toSerialize["envVarSrc"] = o.EnvVarSrc
 	}
 	return toSerialize, nil
 }
 
-type NullableClientLocation struct {
-	value *ClientLocation
+type NullableCompEnvParams struct {
+	value *CompEnvParams
 	isSet bool
 }
 
-func (v NullableClientLocation) Get() *ClientLocation {
+func (v NullableCompEnvParams) Get() *CompEnvParams {
 	return v.value
 }
 
-func (v *NullableClientLocation) Set(val *ClientLocation) {
+func (v *NullableCompEnvParams) Set(val *CompEnvParams) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableClientLocation) IsSet() bool {
+func (v NullableCompEnvParams) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableClientLocation) Unset() {
+func (v *NullableCompEnvParams) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableClientLocation(val *ClientLocation) *NullableClientLocation {
-	return &NullableClientLocation{value: val, isSet: true}
+func NewNullableCompEnvParams(val *CompEnvParams) *NullableCompEnvParams {
+	return &NullableCompEnvParams{value: val, isSet: true}
 }
 
-func (v NullableClientLocation) MarshalJSON() ([]byte, error) {
+func (v NullableCompEnvParams) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableClientLocation) UnmarshalJSON(src []byte) error {
+func (v *NullableCompEnvParams) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

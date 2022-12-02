@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the Ipv6Addr type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &Ipv6Addr{}
+
 // Ipv6Addr struct for Ipv6Addr
 type Ipv6Addr struct {
 }
@@ -36,8 +39,16 @@ func NewIpv6AddrWithDefaults() *Ipv6Addr {
 }
 
 func (o Ipv6Addr) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
+	}
 	return json.Marshal(toSerialize)
+}
+
+func (o Ipv6Addr) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	return toSerialize, nil
 }
 
 type NullableIpv6Addr struct {

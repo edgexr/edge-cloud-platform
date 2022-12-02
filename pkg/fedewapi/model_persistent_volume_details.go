@@ -14,99 +14,226 @@ import (
 	"encoding/json"
 )
 
-// checks if the ClientLocation type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ClientLocation{}
+// checks if the PersistentVolumeDetails type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &PersistentVolumeDetails{}
 
-// ClientLocation struct for ClientLocation
-type ClientLocation struct {
-	// Latitude, Longitude as decimal fraction up to 4 digit precision
-	GeoLocation *string `json:"geo_location,omitempty"`
-	// Information about the 4G/5G Cell ids where the client is currently served.
-	RadLocation []ClientLocationRadLocationInner `json:"rad_location,omitempty"`
+// PersistentVolumeDetails struct for PersistentVolumeDetails
+type PersistentVolumeDetails struct {
+	// size of the volume given by user (10GB, 20GB, 50 GB or 100GB)
+	VolumeSize string `json:"volumeSize"`
+	// Defines the mount path of the volume
+	VolumeMountPath string `json:"volumeMountPath"`
+	// Human readable name for the volume
+	VolumeName string `json:"volumeName"`
+	// It indicates the ephemeral storage on the node and contents are not preserved if containers restarts
+	EphemeralType *bool `json:"ephemeralType,omitempty"`
+	// Values are RW (read/write) and RO (read-only)l
+	AccessMode *string `json:"accessMode,omitempty"`
+	// Exclusive or Shared. If shared, then in case of multiple containers same volume will be shared across the containers.
+	SharingPolicy *string `json:"sharingPolicy,omitempty"`
 }
 
-// NewClientLocation instantiates a new ClientLocation object
+// NewPersistentVolumeDetails instantiates a new PersistentVolumeDetails object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewClientLocation() *ClientLocation {
-	this := ClientLocation{}
+func NewPersistentVolumeDetails(volumeSize string, volumeMountPath string, volumeName string) *PersistentVolumeDetails {
+	this := PersistentVolumeDetails{}
+	this.VolumeSize = volumeSize
+	this.VolumeMountPath = volumeMountPath
+	this.VolumeName = volumeName
+	var ephemeralType bool = false
+	this.EphemeralType = &ephemeralType
+	var accessMode string = "RW"
+	this.AccessMode = &accessMode
+	var sharingPolicy string = "EXCLUSIVE"
+	this.SharingPolicy = &sharingPolicy
 	return &this
 }
 
-// NewClientLocationWithDefaults instantiates a new ClientLocation object
+// NewPersistentVolumeDetailsWithDefaults instantiates a new PersistentVolumeDetails object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewClientLocationWithDefaults() *ClientLocation {
-	this := ClientLocation{}
+func NewPersistentVolumeDetailsWithDefaults() *PersistentVolumeDetails {
+	this := PersistentVolumeDetails{}
+	var ephemeralType bool = false
+	this.EphemeralType = &ephemeralType
+	var accessMode string = "RW"
+	this.AccessMode = &accessMode
+	var sharingPolicy string = "EXCLUSIVE"
+	this.SharingPolicy = &sharingPolicy
 	return &this
 }
 
-// GetGeoLocation returns the GeoLocation field value if set, zero value otherwise.
-func (o *ClientLocation) GetGeoLocation() string {
-	if o == nil || isNil(o.GeoLocation) {
+// GetVolumeSize returns the VolumeSize field value
+func (o *PersistentVolumeDetails) GetVolumeSize() string {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.GeoLocation
+
+	return o.VolumeSize
 }
 
-// GetGeoLocationOk returns a tuple with the GeoLocation field value if set, nil otherwise
+// GetVolumeSizeOk returns a tuple with the VolumeSize field value
 // and a boolean to check if the value has been set.
-func (o *ClientLocation) GetGeoLocationOk() (*string, bool) {
-	if o == nil || isNil(o.GeoLocation) {
+func (o *PersistentVolumeDetails) GetVolumeSizeOk() (*string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.GeoLocation, true
+	return &o.VolumeSize, true
 }
 
-// HasGeoLocation returns a boolean if a field has been set.
-func (o *ClientLocation) HasGeoLocation() bool {
-	if o != nil && !isNil(o.GeoLocation) {
-		return true
-	}
-
-	return false
+// SetVolumeSize sets field value
+func (o *PersistentVolumeDetails) SetVolumeSize(v string) {
+	o.VolumeSize = v
 }
 
-// SetGeoLocation gets a reference to the given string and assigns it to the GeoLocation field.
-func (o *ClientLocation) SetGeoLocation(v string) {
-	o.GeoLocation = &v
-}
-
-// GetRadLocation returns the RadLocation field value if set, zero value otherwise.
-func (o *ClientLocation) GetRadLocation() []ClientLocationRadLocationInner {
-	if o == nil || isNil(o.RadLocation) {
-		var ret []ClientLocationRadLocationInner
+// GetVolumeMountPath returns the VolumeMountPath field value
+func (o *PersistentVolumeDetails) GetVolumeMountPath() string {
+	if o == nil {
+		var ret string
 		return ret
 	}
-	return o.RadLocation
+
+	return o.VolumeMountPath
 }
 
-// GetRadLocationOk returns a tuple with the RadLocation field value if set, nil otherwise
+// GetVolumeMountPathOk returns a tuple with the VolumeMountPath field value
 // and a boolean to check if the value has been set.
-func (o *ClientLocation) GetRadLocationOk() ([]ClientLocationRadLocationInner, bool) {
-	if o == nil || isNil(o.RadLocation) {
+func (o *PersistentVolumeDetails) GetVolumeMountPathOk() (*string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.RadLocation, true
+	return &o.VolumeMountPath, true
 }
 
-// HasRadLocation returns a boolean if a field has been set.
-func (o *ClientLocation) HasRadLocation() bool {
-	if o != nil && !isNil(o.RadLocation) {
+// SetVolumeMountPath sets field value
+func (o *PersistentVolumeDetails) SetVolumeMountPath(v string) {
+	o.VolumeMountPath = v
+}
+
+// GetVolumeName returns the VolumeName field value
+func (o *PersistentVolumeDetails) GetVolumeName() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.VolumeName
+}
+
+// GetVolumeNameOk returns a tuple with the VolumeName field value
+// and a boolean to check if the value has been set.
+func (o *PersistentVolumeDetails) GetVolumeNameOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.VolumeName, true
+}
+
+// SetVolumeName sets field value
+func (o *PersistentVolumeDetails) SetVolumeName(v string) {
+	o.VolumeName = v
+}
+
+// GetEphemeralType returns the EphemeralType field value if set, zero value otherwise.
+func (o *PersistentVolumeDetails) GetEphemeralType() bool {
+	if o == nil || isNil(o.EphemeralType) {
+		var ret bool
+		return ret
+	}
+	return *o.EphemeralType
+}
+
+// GetEphemeralTypeOk returns a tuple with the EphemeralType field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *PersistentVolumeDetails) GetEphemeralTypeOk() (*bool, bool) {
+	if o == nil || isNil(o.EphemeralType) {
+		return nil, false
+	}
+	return o.EphemeralType, true
+}
+
+// HasEphemeralType returns a boolean if a field has been set.
+func (o *PersistentVolumeDetails) HasEphemeralType() bool {
+	if o != nil && !isNil(o.EphemeralType) {
 		return true
 	}
 
 	return false
 }
 
-// SetRadLocation gets a reference to the given []ClientLocationRadLocationInner and assigns it to the RadLocation field.
-func (o *ClientLocation) SetRadLocation(v []ClientLocationRadLocationInner) {
-	o.RadLocation = v
+// SetEphemeralType gets a reference to the given bool and assigns it to the EphemeralType field.
+func (o *PersistentVolumeDetails) SetEphemeralType(v bool) {
+	o.EphemeralType = &v
 }
 
-func (o ClientLocation) MarshalJSON() ([]byte, error) {
+// GetAccessMode returns the AccessMode field value if set, zero value otherwise.
+func (o *PersistentVolumeDetails) GetAccessMode() string {
+	if o == nil || isNil(o.AccessMode) {
+		var ret string
+		return ret
+	}
+	return *o.AccessMode
+}
+
+// GetAccessModeOk returns a tuple with the AccessMode field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *PersistentVolumeDetails) GetAccessModeOk() (*string, bool) {
+	if o == nil || isNil(o.AccessMode) {
+		return nil, false
+	}
+	return o.AccessMode, true
+}
+
+// HasAccessMode returns a boolean if a field has been set.
+func (o *PersistentVolumeDetails) HasAccessMode() bool {
+	if o != nil && !isNil(o.AccessMode) {
+		return true
+	}
+
+	return false
+}
+
+// SetAccessMode gets a reference to the given string and assigns it to the AccessMode field.
+func (o *PersistentVolumeDetails) SetAccessMode(v string) {
+	o.AccessMode = &v
+}
+
+// GetSharingPolicy returns the SharingPolicy field value if set, zero value otherwise.
+func (o *PersistentVolumeDetails) GetSharingPolicy() string {
+	if o == nil || isNil(o.SharingPolicy) {
+		var ret string
+		return ret
+	}
+	return *o.SharingPolicy
+}
+
+// GetSharingPolicyOk returns a tuple with the SharingPolicy field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *PersistentVolumeDetails) GetSharingPolicyOk() (*string, bool) {
+	if o == nil || isNil(o.SharingPolicy) {
+		return nil, false
+	}
+	return o.SharingPolicy, true
+}
+
+// HasSharingPolicy returns a boolean if a field has been set.
+func (o *PersistentVolumeDetails) HasSharingPolicy() bool {
+	if o != nil && !isNil(o.SharingPolicy) {
+		return true
+	}
+
+	return false
+}
+
+// SetSharingPolicy gets a reference to the given string and assigns it to the SharingPolicy field.
+func (o *PersistentVolumeDetails) SetSharingPolicy(v string) {
+	o.SharingPolicy = &v
+}
+
+func (o PersistentVolumeDetails) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -114,49 +241,55 @@ func (o ClientLocation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ClientLocation) ToMap() (map[string]interface{}, error) {
+func (o PersistentVolumeDetails) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.GeoLocation) {
-		toSerialize["geo_location"] = o.GeoLocation
+	toSerialize["volumeSize"] = o.VolumeSize
+	toSerialize["volumeMountPath"] = o.VolumeMountPath
+	toSerialize["volumeName"] = o.VolumeName
+	if !isNil(o.EphemeralType) {
+		toSerialize["ephemeralType"] = o.EphemeralType
 	}
-	if !isNil(o.RadLocation) {
-		toSerialize["rad_location"] = o.RadLocation
+	if !isNil(o.AccessMode) {
+		toSerialize["accessMode"] = o.AccessMode
+	}
+	if !isNil(o.SharingPolicy) {
+		toSerialize["sharingPolicy"] = o.SharingPolicy
 	}
 	return toSerialize, nil
 }
 
-type NullableClientLocation struct {
-	value *ClientLocation
+type NullablePersistentVolumeDetails struct {
+	value *PersistentVolumeDetails
 	isSet bool
 }
 
-func (v NullableClientLocation) Get() *ClientLocation {
+func (v NullablePersistentVolumeDetails) Get() *PersistentVolumeDetails {
 	return v.value
 }
 
-func (v *NullableClientLocation) Set(val *ClientLocation) {
+func (v *NullablePersistentVolumeDetails) Set(val *PersistentVolumeDetails) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableClientLocation) IsSet() bool {
+func (v NullablePersistentVolumeDetails) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableClientLocation) Unset() {
+func (v *NullablePersistentVolumeDetails) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableClientLocation(val *ClientLocation) *NullableClientLocation {
-	return &NullableClientLocation{value: val, isSet: true}
+func NewNullablePersistentVolumeDetails(val *PersistentVolumeDetails) *NullablePersistentVolumeDetails {
+	return &NullablePersistentVolumeDetails{value: val, isSet: true}
 }
 
-func (v NullableClientLocation) MarshalJSON() ([]byte, error) {
+func (v NullablePersistentVolumeDetails) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableClientLocation) UnmarshalJSON(src []byte) error {
+func (v *NullablePersistentVolumeDetails) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

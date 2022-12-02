@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the GetFederationDetails200Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &GetFederationDetails200Response{}
+
 // GetFederationDetails200Response struct for GetFederationDetails200Response
 type GetFederationDetails200Response struct {
 	EdgeDiscoveryServiceEndPoint ServiceEndpoint `json:"edgeDiscoveryServiceEndPoint"`
@@ -93,7 +96,7 @@ func (o *GetFederationDetails200Response) SetLcmServiceEndPoint(v ServiceEndpoin
 
 // GetAllowedMobileNetworkIds returns the AllowedMobileNetworkIds field value if set, zero value otherwise.
 func (o *GetFederationDetails200Response) GetAllowedMobileNetworkIds() MobileNetworkIds {
-	if o == nil || o.AllowedMobileNetworkIds == nil {
+	if o == nil || isNil(o.AllowedMobileNetworkIds) {
 		var ret MobileNetworkIds
 		return ret
 	}
@@ -103,7 +106,7 @@ func (o *GetFederationDetails200Response) GetAllowedMobileNetworkIds() MobileNet
 // GetAllowedMobileNetworkIdsOk returns a tuple with the AllowedMobileNetworkIds field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetFederationDetails200Response) GetAllowedMobileNetworkIdsOk() (*MobileNetworkIds, bool) {
-	if o == nil || o.AllowedMobileNetworkIds == nil {
+	if o == nil || isNil(o.AllowedMobileNetworkIds) {
 		return nil, false
 	}
 	return o.AllowedMobileNetworkIds, true
@@ -111,7 +114,7 @@ func (o *GetFederationDetails200Response) GetAllowedMobileNetworkIdsOk() (*Mobil
 
 // HasAllowedMobileNetworkIds returns a boolean if a field has been set.
 func (o *GetFederationDetails200Response) HasAllowedMobileNetworkIds() bool {
-	if o != nil && o.AllowedMobileNetworkIds != nil {
+	if o != nil && !isNil(o.AllowedMobileNetworkIds) {
 		return true
 	}
 
@@ -125,7 +128,7 @@ func (o *GetFederationDetails200Response) SetAllowedMobileNetworkIds(v MobileNet
 
 // GetAllowedFixedNetworkIds returns the AllowedFixedNetworkIds field value if set, zero value otherwise.
 func (o *GetFederationDetails200Response) GetAllowedFixedNetworkIds() []string {
-	if o == nil || o.AllowedFixedNetworkIds == nil {
+	if o == nil || isNil(o.AllowedFixedNetworkIds) {
 		var ret []string
 		return ret
 	}
@@ -135,7 +138,7 @@ func (o *GetFederationDetails200Response) GetAllowedFixedNetworkIds() []string {
 // GetAllowedFixedNetworkIdsOk returns a tuple with the AllowedFixedNetworkIds field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetFederationDetails200Response) GetAllowedFixedNetworkIdsOk() ([]string, bool) {
-	if o == nil || o.AllowedFixedNetworkIds == nil {
+	if o == nil || isNil(o.AllowedFixedNetworkIds) {
 		return nil, false
 	}
 	return o.AllowedFixedNetworkIds, true
@@ -143,7 +146,7 @@ func (o *GetFederationDetails200Response) GetAllowedFixedNetworkIdsOk() ([]strin
 
 // HasAllowedFixedNetworkIds returns a boolean if a field has been set.
 func (o *GetFederationDetails200Response) HasAllowedFixedNetworkIds() bool {
-	if o != nil && o.AllowedFixedNetworkIds != nil {
+	if o != nil && !isNil(o.AllowedFixedNetworkIds) {
 		return true
 	}
 
@@ -157,7 +160,7 @@ func (o *GetFederationDetails200Response) SetAllowedFixedNetworkIds(v []string) 
 
 // GetOfferedAvailabilityZones returns the OfferedAvailabilityZones field value if set, zero value otherwise.
 func (o *GetFederationDetails200Response) GetOfferedAvailabilityZones() []ZoneDetails {
-	if o == nil || o.OfferedAvailabilityZones == nil {
+	if o == nil || isNil(o.OfferedAvailabilityZones) {
 		var ret []ZoneDetails
 		return ret
 	}
@@ -167,7 +170,7 @@ func (o *GetFederationDetails200Response) GetOfferedAvailabilityZones() []ZoneDe
 // GetOfferedAvailabilityZonesOk returns a tuple with the OfferedAvailabilityZones field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetFederationDetails200Response) GetOfferedAvailabilityZonesOk() ([]ZoneDetails, bool) {
-	if o == nil || o.OfferedAvailabilityZones == nil {
+	if o == nil || isNil(o.OfferedAvailabilityZones) {
 		return nil, false
 	}
 	return o.OfferedAvailabilityZones, true
@@ -175,7 +178,7 @@ func (o *GetFederationDetails200Response) GetOfferedAvailabilityZonesOk() ([]Zon
 
 // HasOfferedAvailabilityZones returns a boolean if a field has been set.
 func (o *GetFederationDetails200Response) HasOfferedAvailabilityZones() bool {
-	if o != nil && o.OfferedAvailabilityZones != nil {
+	if o != nil && !isNil(o.OfferedAvailabilityZones) {
 		return true
 	}
 
@@ -188,23 +191,27 @@ func (o *GetFederationDetails200Response) SetOfferedAvailabilityZones(v []ZoneDe
 }
 
 func (o GetFederationDetails200Response) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["edgeDiscoveryServiceEndPoint"] = o.EdgeDiscoveryServiceEndPoint
-	}
-	if true {
-		toSerialize["lcmServiceEndPoint"] = o.LcmServiceEndPoint
-	}
-	if o.AllowedMobileNetworkIds != nil {
-		toSerialize["allowedMobileNetworkIds"] = o.AllowedMobileNetworkIds
-	}
-	if o.AllowedFixedNetworkIds != nil {
-		toSerialize["allowedFixedNetworkIds"] = o.AllowedFixedNetworkIds
-	}
-	if o.OfferedAvailabilityZones != nil {
-		toSerialize["offeredAvailabilityZones"] = o.OfferedAvailabilityZones
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o GetFederationDetails200Response) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["edgeDiscoveryServiceEndPoint"] = o.EdgeDiscoveryServiceEndPoint
+	toSerialize["lcmServiceEndPoint"] = o.LcmServiceEndPoint
+	if !isNil(o.AllowedMobileNetworkIds) {
+		toSerialize["allowedMobileNetworkIds"] = o.AllowedMobileNetworkIds
+	}
+	if !isNil(o.AllowedFixedNetworkIds) {
+		toSerialize["allowedFixedNetworkIds"] = o.AllowedFixedNetworkIds
+	}
+	if !isNil(o.OfferedAvailabilityZones) {
+		toSerialize["offeredAvailabilityZones"] = o.OfferedAvailabilityZones
+	}
+	return toSerialize, nil
 }
 
 type NullableGetFederationDetails200Response struct {

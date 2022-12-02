@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the FederationContextIdApplicationOnboardingPostRequestStatusInfoInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &FederationContextIdApplicationOnboardingPostRequestStatusInfoInner{}
+
 // FederationContextIdApplicationOnboardingPostRequestStatusInfoInner struct for FederationContextIdApplicationOnboardingPostRequestStatusInfoInner
 type FederationContextIdApplicationOnboardingPostRequestStatusInfoInner struct {
 	// Human readable name of the zone.
@@ -90,14 +93,18 @@ func (o *FederationContextIdApplicationOnboardingPostRequestStatusInfoInner) Set
 }
 
 func (o FederationContextIdApplicationOnboardingPostRequestStatusInfoInner) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["zoneId"] = o.ZoneId
-	}
-	if true {
-		toSerialize["onboardStatusInfo"] = o.OnboardStatusInfo
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o FederationContextIdApplicationOnboardingPostRequestStatusInfoInner) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["zoneId"] = o.ZoneId
+	toSerialize["onboardStatusInfo"] = o.OnboardStatusInfo
+	return toSerialize, nil
 }
 
 type NullableFederationContextIdApplicationOnboardingPostRequestStatusInfoInner struct {

@@ -15,6 +15,9 @@ import (
 	"time"
 )
 
+// checks if the FederationContextIdApplicationLcmPostRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &FederationContextIdApplicationLcmPostRequest{}
+
 // FederationContextIdApplicationLcmPostRequest struct for FederationContextIdApplicationLcmPostRequest
 type FederationContextIdApplicationLcmPostRequest struct {
 	// Identifier used to refer to an application. This identifier is globally unique so that application can be identified uniquely across different OPs.
@@ -147,7 +150,7 @@ func (o *FederationContextIdApplicationLcmPostRequest) SetAppInstanceInfo(v Fede
 
 // GetModificationDate returns the ModificationDate field value if set, zero value otherwise.
 func (o *FederationContextIdApplicationLcmPostRequest) GetModificationDate() time.Time {
-	if o == nil || o.ModificationDate == nil {
+	if o == nil || isNil(o.ModificationDate) {
 		var ret time.Time
 		return ret
 	}
@@ -157,7 +160,7 @@ func (o *FederationContextIdApplicationLcmPostRequest) GetModificationDate() tim
 // GetModificationDateOk returns a tuple with the ModificationDate field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationContextIdApplicationLcmPostRequest) GetModificationDateOk() (*time.Time, bool) {
-	if o == nil || o.ModificationDate == nil {
+	if o == nil || isNil(o.ModificationDate) {
 		return nil, false
 	}
 	return o.ModificationDate, true
@@ -165,7 +168,7 @@ func (o *FederationContextIdApplicationLcmPostRequest) GetModificationDateOk() (
 
 // HasModificationDate returns a boolean if a field has been set.
 func (o *FederationContextIdApplicationLcmPostRequest) HasModificationDate() bool {
-	if o != nil && o.ModificationDate != nil {
+	if o != nil && !isNil(o.ModificationDate) {
 		return true
 	}
 
@@ -178,23 +181,23 @@ func (o *FederationContextIdApplicationLcmPostRequest) SetModificationDate(v tim
 }
 
 func (o FederationContextIdApplicationLcmPostRequest) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["appId"] = o.AppId
-	}
-	if true {
-		toSerialize["appInstIdentifier"] = o.AppInstIdentifier
-	}
-	if true {
-		toSerialize["zoneId"] = o.ZoneId
-	}
-	if true {
-		toSerialize["appInstanceInfo"] = o.AppInstanceInfo
-	}
-	if o.ModificationDate != nil {
-		toSerialize["modificationDate"] = o.ModificationDate
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o FederationContextIdApplicationLcmPostRequest) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["appId"] = o.AppId
+	toSerialize["appInstIdentifier"] = o.AppInstIdentifier
+	toSerialize["zoneId"] = o.ZoneId
+	toSerialize["appInstanceInfo"] = o.AppInstanceInfo
+	if !isNil(o.ModificationDate) {
+		toSerialize["modificationDate"] = o.ModificationDate
+	}
+	return toSerialize, nil
 }
 
 type NullableFederationContextIdApplicationLcmPostRequest struct {

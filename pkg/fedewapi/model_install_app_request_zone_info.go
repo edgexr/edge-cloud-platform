@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the InstallAppRequestZoneInfo type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &InstallAppRequestZoneInfo{}
+
 // InstallAppRequestZoneInfo struct for InstallAppRequestZoneInfo
 type InstallAppRequestZoneInfo struct {
 	// Human readable name of the zone.
@@ -99,7 +102,7 @@ func (o *InstallAppRequestZoneInfo) SetFlavourId(v string) {
 
 // GetResourceConsumption returns the ResourceConsumption field value if set, zero value otherwise.
 func (o *InstallAppRequestZoneInfo) GetResourceConsumption() string {
-	if o == nil || o.ResourceConsumption == nil {
+	if o == nil || isNil(o.ResourceConsumption) {
 		var ret string
 		return ret
 	}
@@ -109,7 +112,7 @@ func (o *InstallAppRequestZoneInfo) GetResourceConsumption() string {
 // GetResourceConsumptionOk returns a tuple with the ResourceConsumption field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *InstallAppRequestZoneInfo) GetResourceConsumptionOk() (*string, bool) {
-	if o == nil || o.ResourceConsumption == nil {
+	if o == nil || isNil(o.ResourceConsumption) {
 		return nil, false
 	}
 	return o.ResourceConsumption, true
@@ -117,7 +120,7 @@ func (o *InstallAppRequestZoneInfo) GetResourceConsumptionOk() (*string, bool) {
 
 // HasResourceConsumption returns a boolean if a field has been set.
 func (o *InstallAppRequestZoneInfo) HasResourceConsumption() bool {
-	if o != nil && o.ResourceConsumption != nil {
+	if o != nil && !isNil(o.ResourceConsumption) {
 		return true
 	}
 
@@ -131,7 +134,7 @@ func (o *InstallAppRequestZoneInfo) SetResourceConsumption(v string) {
 
 // GetResPool returns the ResPool field value if set, zero value otherwise.
 func (o *InstallAppRequestZoneInfo) GetResPool() string {
-	if o == nil || o.ResPool == nil {
+	if o == nil || isNil(o.ResPool) {
 		var ret string
 		return ret
 	}
@@ -141,7 +144,7 @@ func (o *InstallAppRequestZoneInfo) GetResPool() string {
 // GetResPoolOk returns a tuple with the ResPool field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *InstallAppRequestZoneInfo) GetResPoolOk() (*string, bool) {
-	if o == nil || o.ResPool == nil {
+	if o == nil || isNil(o.ResPool) {
 		return nil, false
 	}
 	return o.ResPool, true
@@ -149,7 +152,7 @@ func (o *InstallAppRequestZoneInfo) GetResPoolOk() (*string, bool) {
 
 // HasResPool returns a boolean if a field has been set.
 func (o *InstallAppRequestZoneInfo) HasResPool() bool {
-	if o != nil && o.ResPool != nil {
+	if o != nil && !isNil(o.ResPool) {
 		return true
 	}
 
@@ -162,20 +165,24 @@ func (o *InstallAppRequestZoneInfo) SetResPool(v string) {
 }
 
 func (o InstallAppRequestZoneInfo) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["zoneId"] = o.ZoneId
-	}
-	if true {
-		toSerialize["flavourId"] = o.FlavourId
-	}
-	if o.ResourceConsumption != nil {
-		toSerialize["resourceConsumption"] = o.ResourceConsumption
-	}
-	if o.ResPool != nil {
-		toSerialize["resPool"] = o.ResPool
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o InstallAppRequestZoneInfo) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["zoneId"] = o.ZoneId
+	toSerialize["flavourId"] = o.FlavourId
+	if !isNil(o.ResourceConsumption) {
+		toSerialize["resourceConsumption"] = o.ResourceConsumption
+	}
+	if !isNil(o.ResPool) {
+		toSerialize["resPool"] = o.ResPool
+	}
+	return toSerialize, nil
 }
 
 type NullableInstallAppRequestZoneInfo struct {

@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the ComputeResourceInfo type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ComputeResourceInfo{}
+
 // ComputeResourceInfo struct for ComputeResourceInfo
 type ComputeResourceInfo struct {
 	// CPU Instruction Set Architecture (ISA) E.g., Intel, Arm etc.
@@ -153,7 +156,7 @@ func (o *ComputeResourceInfo) SetDiskStorage(v int32) {
 
 // GetGpu returns the Gpu field value if set, zero value otherwise.
 func (o *ComputeResourceInfo) GetGpu() []GpuInfo {
-	if o == nil || o.Gpu == nil {
+	if o == nil || isNil(o.Gpu) {
 		var ret []GpuInfo
 		return ret
 	}
@@ -163,7 +166,7 @@ func (o *ComputeResourceInfo) GetGpu() []GpuInfo {
 // GetGpuOk returns a tuple with the Gpu field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ComputeResourceInfo) GetGpuOk() ([]GpuInfo, bool) {
-	if o == nil || o.Gpu == nil {
+	if o == nil || isNil(o.Gpu) {
 		return nil, false
 	}
 	return o.Gpu, true
@@ -171,7 +174,7 @@ func (o *ComputeResourceInfo) GetGpuOk() ([]GpuInfo, bool) {
 
 // HasGpu returns a boolean if a field has been set.
 func (o *ComputeResourceInfo) HasGpu() bool {
-	if o != nil && o.Gpu != nil {
+	if o != nil && !isNil(o.Gpu) {
 		return true
 	}
 
@@ -185,7 +188,7 @@ func (o *ComputeResourceInfo) SetGpu(v []GpuInfo) {
 
 // GetVpu returns the Vpu field value if set, zero value otherwise.
 func (o *ComputeResourceInfo) GetVpu() int32 {
-	if o == nil || o.Vpu == nil {
+	if o == nil || isNil(o.Vpu) {
 		var ret int32
 		return ret
 	}
@@ -195,7 +198,7 @@ func (o *ComputeResourceInfo) GetVpu() int32 {
 // GetVpuOk returns a tuple with the Vpu field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ComputeResourceInfo) GetVpuOk() (*int32, bool) {
-	if o == nil || o.Vpu == nil {
+	if o == nil || isNil(o.Vpu) {
 		return nil, false
 	}
 	return o.Vpu, true
@@ -203,7 +206,7 @@ func (o *ComputeResourceInfo) GetVpuOk() (*int32, bool) {
 
 // HasVpu returns a boolean if a field has been set.
 func (o *ComputeResourceInfo) HasVpu() bool {
-	if o != nil && o.Vpu != nil {
+	if o != nil && !isNil(o.Vpu) {
 		return true
 	}
 
@@ -217,7 +220,7 @@ func (o *ComputeResourceInfo) SetVpu(v int32) {
 
 // GetFpga returns the Fpga field value if set, zero value otherwise.
 func (o *ComputeResourceInfo) GetFpga() int32 {
-	if o == nil || o.Fpga == nil {
+	if o == nil || isNil(o.Fpga) {
 		var ret int32
 		return ret
 	}
@@ -227,7 +230,7 @@ func (o *ComputeResourceInfo) GetFpga() int32 {
 // GetFpgaOk returns a tuple with the Fpga field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ComputeResourceInfo) GetFpgaOk() (*int32, bool) {
-	if o == nil || o.Fpga == nil {
+	if o == nil || isNil(o.Fpga) {
 		return nil, false
 	}
 	return o.Fpga, true
@@ -235,7 +238,7 @@ func (o *ComputeResourceInfo) GetFpgaOk() (*int32, bool) {
 
 // HasFpga returns a boolean if a field has been set.
 func (o *ComputeResourceInfo) HasFpga() bool {
-	if o != nil && o.Fpga != nil {
+	if o != nil && !isNil(o.Fpga) {
 		return true
 	}
 
@@ -249,7 +252,7 @@ func (o *ComputeResourceInfo) SetFpga(v int32) {
 
 // GetHugepages returns the Hugepages field value if set, zero value otherwise.
 func (o *ComputeResourceInfo) GetHugepages() []HugePage {
-	if o == nil || o.Hugepages == nil {
+	if o == nil || isNil(o.Hugepages) {
 		var ret []HugePage
 		return ret
 	}
@@ -259,7 +262,7 @@ func (o *ComputeResourceInfo) GetHugepages() []HugePage {
 // GetHugepagesOk returns a tuple with the Hugepages field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ComputeResourceInfo) GetHugepagesOk() ([]HugePage, bool) {
-	if o == nil || o.Hugepages == nil {
+	if o == nil || isNil(o.Hugepages) {
 		return nil, false
 	}
 	return o.Hugepages, true
@@ -267,7 +270,7 @@ func (o *ComputeResourceInfo) GetHugepagesOk() ([]HugePage, bool) {
 
 // HasHugepages returns a boolean if a field has been set.
 func (o *ComputeResourceInfo) HasHugepages() bool {
-	if o != nil && o.Hugepages != nil {
+	if o != nil && !isNil(o.Hugepages) {
 		return true
 	}
 
@@ -281,7 +284,7 @@ func (o *ComputeResourceInfo) SetHugepages(v []HugePage) {
 
 // GetCpuExclusivity returns the CpuExclusivity field value if set, zero value otherwise.
 func (o *ComputeResourceInfo) GetCpuExclusivity() bool {
-	if o == nil || o.CpuExclusivity == nil {
+	if o == nil || isNil(o.CpuExclusivity) {
 		var ret bool
 		return ret
 	}
@@ -291,7 +294,7 @@ func (o *ComputeResourceInfo) GetCpuExclusivity() bool {
 // GetCpuExclusivityOk returns a tuple with the CpuExclusivity field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ComputeResourceInfo) GetCpuExclusivityOk() (*bool, bool) {
-	if o == nil || o.CpuExclusivity == nil {
+	if o == nil || isNil(o.CpuExclusivity) {
 		return nil, false
 	}
 	return o.CpuExclusivity, true
@@ -299,7 +302,7 @@ func (o *ComputeResourceInfo) GetCpuExclusivityOk() (*bool, bool) {
 
 // HasCpuExclusivity returns a boolean if a field has been set.
 func (o *ComputeResourceInfo) HasCpuExclusivity() bool {
-	if o != nil && o.CpuExclusivity != nil {
+	if o != nil && !isNil(o.CpuExclusivity) {
 		return true
 	}
 
@@ -312,35 +315,35 @@ func (o *ComputeResourceInfo) SetCpuExclusivity(v bool) {
 }
 
 func (o ComputeResourceInfo) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["cpuArchType"] = o.CpuArchType
-	}
-	if true {
-		toSerialize["numCPU"] = o.NumCPU
-	}
-	if true {
-		toSerialize["memory"] = o.Memory
-	}
-	if true {
-		toSerialize["diskStorage"] = o.DiskStorage
-	}
-	if o.Gpu != nil {
-		toSerialize["gpu"] = o.Gpu
-	}
-	if o.Vpu != nil {
-		toSerialize["vpu"] = o.Vpu
-	}
-	if o.Fpga != nil {
-		toSerialize["fpga"] = o.Fpga
-	}
-	if o.Hugepages != nil {
-		toSerialize["hugepages"] = o.Hugepages
-	}
-	if o.CpuExclusivity != nil {
-		toSerialize["cpuExclusivity"] = o.CpuExclusivity
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o ComputeResourceInfo) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["cpuArchType"] = o.CpuArchType
+	toSerialize["numCPU"] = o.NumCPU
+	toSerialize["memory"] = o.Memory
+	toSerialize["diskStorage"] = o.DiskStorage
+	if !isNil(o.Gpu) {
+		toSerialize["gpu"] = o.Gpu
+	}
+	if !isNil(o.Vpu) {
+		toSerialize["vpu"] = o.Vpu
+	}
+	if !isNil(o.Fpga) {
+		toSerialize["fpga"] = o.Fpga
+	}
+	if !isNil(o.Hugepages) {
+		toSerialize["hugepages"] = o.Hugepages
+	}
+	if !isNil(o.CpuExclusivity) {
+		toSerialize["cpuExclusivity"] = o.CpuExclusivity
+	}
+	return toSerialize, nil
 }
 
 type NullableComputeResourceInfo struct {

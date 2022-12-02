@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the GpuInfo type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &GpuInfo{}
+
 // GpuInfo struct for GpuInfo
 type GpuInfo struct {
 	// GPU vendor name e.g. NVIDIA, AMD etc.
@@ -144,20 +147,20 @@ func (o *GpuInfo) SetNumGPU(v int32) {
 }
 
 func (o GpuInfo) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["gpuVendorType"] = o.GpuVendorType
-	}
-	if true {
-		toSerialize["gpuModeName"] = o.GpuModeName
-	}
-	if true {
-		toSerialize["gpuMemory"] = o.GpuMemory
-	}
-	if true {
-		toSerialize["numGPU"] = o.NumGPU
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o GpuInfo) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["gpuVendorType"] = o.GpuVendorType
+	toSerialize["gpuModeName"] = o.GpuModeName
+	toSerialize["gpuMemory"] = o.GpuMemory
+	toSerialize["numGPU"] = o.NumGPU
+	return toSerialize, nil
 }
 
 type NullableGpuInfo struct {

@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the FederationResponseData type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &FederationResponseData{}
+
 // FederationResponseData struct for FederationResponseData
 type FederationResponseData struct {
 	// Globally unique Identifier allocated to an operator platform. This is valid and used only in context of  MEC federation interface.
@@ -177,7 +180,7 @@ func (o *FederationResponseData) SetLcmServiceEndPoint(v ServiceEndpoint) {
 
 // GetPartnerOPMobileNetworkCodes returns the PartnerOPMobileNetworkCodes field value if set, zero value otherwise.
 func (o *FederationResponseData) GetPartnerOPMobileNetworkCodes() MobileNetworkIds {
-	if o == nil || o.PartnerOPMobileNetworkCodes == nil {
+	if o == nil || isNil(o.PartnerOPMobileNetworkCodes) {
 		var ret MobileNetworkIds
 		return ret
 	}
@@ -187,7 +190,7 @@ func (o *FederationResponseData) GetPartnerOPMobileNetworkCodes() MobileNetworkI
 // GetPartnerOPMobileNetworkCodesOk returns a tuple with the PartnerOPMobileNetworkCodes field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationResponseData) GetPartnerOPMobileNetworkCodesOk() (*MobileNetworkIds, bool) {
-	if o == nil || o.PartnerOPMobileNetworkCodes == nil {
+	if o == nil || isNil(o.PartnerOPMobileNetworkCodes) {
 		return nil, false
 	}
 	return o.PartnerOPMobileNetworkCodes, true
@@ -195,7 +198,7 @@ func (o *FederationResponseData) GetPartnerOPMobileNetworkCodesOk() (*MobileNetw
 
 // HasPartnerOPMobileNetworkCodes returns a boolean if a field has been set.
 func (o *FederationResponseData) HasPartnerOPMobileNetworkCodes() bool {
-	if o != nil && o.PartnerOPMobileNetworkCodes != nil {
+	if o != nil && !isNil(o.PartnerOPMobileNetworkCodes) {
 		return true
 	}
 
@@ -209,7 +212,7 @@ func (o *FederationResponseData) SetPartnerOPMobileNetworkCodes(v MobileNetworkI
 
 // GetPartnerOPFixedNetworkCodes returns the PartnerOPFixedNetworkCodes field value if set, zero value otherwise.
 func (o *FederationResponseData) GetPartnerOPFixedNetworkCodes() []string {
-	if o == nil || o.PartnerOPFixedNetworkCodes == nil {
+	if o == nil || isNil(o.PartnerOPFixedNetworkCodes) {
 		var ret []string
 		return ret
 	}
@@ -219,7 +222,7 @@ func (o *FederationResponseData) GetPartnerOPFixedNetworkCodes() []string {
 // GetPartnerOPFixedNetworkCodesOk returns a tuple with the PartnerOPFixedNetworkCodes field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationResponseData) GetPartnerOPFixedNetworkCodesOk() ([]string, bool) {
-	if o == nil || o.PartnerOPFixedNetworkCodes == nil {
+	if o == nil || isNil(o.PartnerOPFixedNetworkCodes) {
 		return nil, false
 	}
 	return o.PartnerOPFixedNetworkCodes, true
@@ -227,7 +230,7 @@ func (o *FederationResponseData) GetPartnerOPFixedNetworkCodesOk() ([]string, bo
 
 // HasPartnerOPFixedNetworkCodes returns a boolean if a field has been set.
 func (o *FederationResponseData) HasPartnerOPFixedNetworkCodes() bool {
-	if o != nil && o.PartnerOPFixedNetworkCodes != nil {
+	if o != nil && !isNil(o.PartnerOPFixedNetworkCodes) {
 		return true
 	}
 
@@ -265,7 +268,7 @@ func (o *FederationResponseData) SetOfferedAvailabilityZones(v []ZoneDetails) {
 
 // GetPlatformCaps returns the PlatformCaps field value if set, zero value otherwise.
 func (o *FederationResponseData) GetPlatformCaps() []string {
-	if o == nil || o.PlatformCaps == nil {
+	if o == nil || isNil(o.PlatformCaps) {
 		var ret []string
 		return ret
 	}
@@ -275,7 +278,7 @@ func (o *FederationResponseData) GetPlatformCaps() []string {
 // GetPlatformCapsOk returns a tuple with the PlatformCaps field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationResponseData) GetPlatformCapsOk() ([]string, bool) {
-	if o == nil || o.PlatformCaps == nil {
+	if o == nil || isNil(o.PlatformCaps) {
 		return nil, false
 	}
 	return o.PlatformCaps, true
@@ -283,7 +286,7 @@ func (o *FederationResponseData) GetPlatformCapsOk() ([]string, bool) {
 
 // HasPlatformCaps returns a boolean if a field has been set.
 func (o *FederationResponseData) HasPlatformCaps() bool {
-	if o != nil && o.PlatformCaps != nil {
+	if o != nil && !isNil(o.PlatformCaps) {
 		return true
 	}
 
@@ -296,35 +299,31 @@ func (o *FederationResponseData) SetPlatformCaps(v []string) {
 }
 
 func (o FederationResponseData) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["partnerOPFederationId"] = o.PartnerOPFederationId
-	}
-	if true {
-		toSerialize["partnerOPCountryCode"] = o.PartnerOPCountryCode
-	}
-	if true {
-		toSerialize["federationContextId"] = o.FederationContextId
-	}
-	if true {
-		toSerialize["edgeDiscoveryServiceEndPoint"] = o.EdgeDiscoveryServiceEndPoint
-	}
-	if true {
-		toSerialize["lcmServiceEndPoint"] = o.LcmServiceEndPoint
-	}
-	if o.PartnerOPMobileNetworkCodes != nil {
-		toSerialize["partnerOPMobileNetworkCodes"] = o.PartnerOPMobileNetworkCodes
-	}
-	if o.PartnerOPFixedNetworkCodes != nil {
-		toSerialize["partnerOPFixedNetworkCodes"] = o.PartnerOPFixedNetworkCodes
-	}
-	if true {
-		toSerialize["offeredAvailabilityZones"] = o.OfferedAvailabilityZones
-	}
-	if o.PlatformCaps != nil {
-		toSerialize["platformCaps"] = o.PlatformCaps
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o FederationResponseData) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["partnerOPFederationId"] = o.PartnerOPFederationId
+	toSerialize["partnerOPCountryCode"] = o.PartnerOPCountryCode
+	toSerialize["federationContextId"] = o.FederationContextId
+	toSerialize["edgeDiscoveryServiceEndPoint"] = o.EdgeDiscoveryServiceEndPoint
+	toSerialize["lcmServiceEndPoint"] = o.LcmServiceEndPoint
+	if !isNil(o.PartnerOPMobileNetworkCodes) {
+		toSerialize["partnerOPMobileNetworkCodes"] = o.PartnerOPMobileNetworkCodes
+	}
+	if !isNil(o.PartnerOPFixedNetworkCodes) {
+		toSerialize["partnerOPFixedNetworkCodes"] = o.PartnerOPFixedNetworkCodes
+	}
+	toSerialize["offeredAvailabilityZones"] = o.OfferedAvailabilityZones
+	if !isNil(o.PlatformCaps) {
+		toSerialize["platformCaps"] = o.PlatformCaps
+	}
+	return toSerialize, nil
 }
 
 type NullableFederationResponseData struct {

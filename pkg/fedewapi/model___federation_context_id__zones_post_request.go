@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the FederationContextIdZonesPostRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &FederationContextIdZonesPostRequest{}
+
 // FederationContextIdZonesPostRequest struct for FederationContextIdZonesPostRequest
 type FederationContextIdZonesPostRequest struct {
 	ZoneResUpdInfo []FederationContextIdZonesPostRequestZoneResUpdInfoInner `json:"zoneResUpdInfo"`
@@ -62,11 +65,17 @@ func (o *FederationContextIdZonesPostRequest) SetZoneResUpdInfo(v []FederationCo
 }
 
 func (o FederationContextIdZonesPostRequest) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["zoneResUpdInfo"] = o.ZoneResUpdInfo
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o FederationContextIdZonesPostRequest) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["zoneResUpdInfo"] = o.ZoneResUpdInfo
+	return toSerialize, nil
 }
 
 type NullableFederationContextIdZonesPostRequest struct {

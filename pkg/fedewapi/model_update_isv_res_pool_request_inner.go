@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the UpdateISVResPoolRequestInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &UpdateISVResPoolRequestInner{}
+
 // UpdateISVResPoolRequestInner struct for UpdateISVResPoolRequestInner
 type UpdateISVResPoolRequestInner struct {
 	// Specify if resource corresponding this flavour needs to added or removed. Field 'count' gives the final total no of such flavours that should be reserved.  count 0 means remove all the resources.
@@ -119,7 +122,7 @@ func (o *UpdateISVResPoolRequestInner) SetCount(v int32) {
 
 // GetReserveDuration returns the ReserveDuration field value if set, zero value otherwise.
 func (o *UpdateISVResPoolRequestInner) GetReserveDuration() ResourceReservationDuration {
-	if o == nil || o.ReserveDuration == nil {
+	if o == nil || isNil(o.ReserveDuration) {
 		var ret ResourceReservationDuration
 		return ret
 	}
@@ -129,7 +132,7 @@ func (o *UpdateISVResPoolRequestInner) GetReserveDuration() ResourceReservationD
 // GetReserveDurationOk returns a tuple with the ReserveDuration field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateISVResPoolRequestInner) GetReserveDurationOk() (*ResourceReservationDuration, bool) {
-	if o == nil || o.ReserveDuration == nil {
+	if o == nil || isNil(o.ReserveDuration) {
 		return nil, false
 	}
 	return o.ReserveDuration, true
@@ -137,7 +140,7 @@ func (o *UpdateISVResPoolRequestInner) GetReserveDurationOk() (*ResourceReservat
 
 // HasReserveDuration returns a boolean if a field has been set.
 func (o *UpdateISVResPoolRequestInner) HasReserveDuration() bool {
-	if o != nil && o.ReserveDuration != nil {
+	if o != nil && !isNil(o.ReserveDuration) {
 		return true
 	}
 
@@ -150,20 +153,22 @@ func (o *UpdateISVResPoolRequestInner) SetReserveDuration(v ResourceReservationD
 }
 
 func (o UpdateISVResPoolRequestInner) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["updateType"] = o.UpdateType
-	}
-	if true {
-		toSerialize["flavourId"] = o.FlavourId
-	}
-	if true {
-		toSerialize["count"] = o.Count
-	}
-	if o.ReserveDuration != nil {
-		toSerialize["reserveDuration"] = o.ReserveDuration
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o UpdateISVResPoolRequestInner) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["updateType"] = o.UpdateType
+	toSerialize["flavourId"] = o.FlavourId
+	toSerialize["count"] = o.Count
+	if !isNil(o.ReserveDuration) {
+		toSerialize["reserveDuration"] = o.ReserveDuration
+	}
+	return toSerialize, nil
 }
 
 type NullableUpdateISVResPoolRequestInner struct {

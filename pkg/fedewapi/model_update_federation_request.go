@@ -15,6 +15,9 @@ import (
 	"time"
 )
 
+// checks if the UpdateFederationRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &UpdateFederationRequest{}
+
 // UpdateFederationRequest struct for UpdateFederationRequest
 type UpdateFederationRequest struct {
 	ObjectType string `json:"objectType"`
@@ -99,7 +102,7 @@ func (o *UpdateFederationRequest) SetOperationType(v string) {
 
 // GetAddMobileNetworkIds returns the AddMobileNetworkIds field value if set, zero value otherwise.
 func (o *UpdateFederationRequest) GetAddMobileNetworkIds() MobileNetworkIds {
-	if o == nil || o.AddMobileNetworkIds == nil {
+	if o == nil || isNil(o.AddMobileNetworkIds) {
 		var ret MobileNetworkIds
 		return ret
 	}
@@ -109,7 +112,7 @@ func (o *UpdateFederationRequest) GetAddMobileNetworkIds() MobileNetworkIds {
 // GetAddMobileNetworkIdsOk returns a tuple with the AddMobileNetworkIds field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateFederationRequest) GetAddMobileNetworkIdsOk() (*MobileNetworkIds, bool) {
-	if o == nil || o.AddMobileNetworkIds == nil {
+	if o == nil || isNil(o.AddMobileNetworkIds) {
 		return nil, false
 	}
 	return o.AddMobileNetworkIds, true
@@ -117,7 +120,7 @@ func (o *UpdateFederationRequest) GetAddMobileNetworkIdsOk() (*MobileNetworkIds,
 
 // HasAddMobileNetworkIds returns a boolean if a field has been set.
 func (o *UpdateFederationRequest) HasAddMobileNetworkIds() bool {
-	if o != nil && o.AddMobileNetworkIds != nil {
+	if o != nil && !isNil(o.AddMobileNetworkIds) {
 		return true
 	}
 
@@ -131,7 +134,7 @@ func (o *UpdateFederationRequest) SetAddMobileNetworkIds(v MobileNetworkIds) {
 
 // GetRemoveMobileNetworkIds returns the RemoveMobileNetworkIds field value if set, zero value otherwise.
 func (o *UpdateFederationRequest) GetRemoveMobileNetworkIds() MobileNetworkIds {
-	if o == nil || o.RemoveMobileNetworkIds == nil {
+	if o == nil || isNil(o.RemoveMobileNetworkIds) {
 		var ret MobileNetworkIds
 		return ret
 	}
@@ -141,7 +144,7 @@ func (o *UpdateFederationRequest) GetRemoveMobileNetworkIds() MobileNetworkIds {
 // GetRemoveMobileNetworkIdsOk returns a tuple with the RemoveMobileNetworkIds field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateFederationRequest) GetRemoveMobileNetworkIdsOk() (*MobileNetworkIds, bool) {
-	if o == nil || o.RemoveMobileNetworkIds == nil {
+	if o == nil || isNil(o.RemoveMobileNetworkIds) {
 		return nil, false
 	}
 	return o.RemoveMobileNetworkIds, true
@@ -149,7 +152,7 @@ func (o *UpdateFederationRequest) GetRemoveMobileNetworkIdsOk() (*MobileNetworkI
 
 // HasRemoveMobileNetworkIds returns a boolean if a field has been set.
 func (o *UpdateFederationRequest) HasRemoveMobileNetworkIds() bool {
-	if o != nil && o.RemoveMobileNetworkIds != nil {
+	if o != nil && !isNil(o.RemoveMobileNetworkIds) {
 		return true
 	}
 
@@ -163,7 +166,7 @@ func (o *UpdateFederationRequest) SetRemoveMobileNetworkIds(v MobileNetworkIds) 
 
 // GetAddFixedNetworkIds returns the AddFixedNetworkIds field value if set, zero value otherwise.
 func (o *UpdateFederationRequest) GetAddFixedNetworkIds() []string {
-	if o == nil || o.AddFixedNetworkIds == nil {
+	if o == nil || isNil(o.AddFixedNetworkIds) {
 		var ret []string
 		return ret
 	}
@@ -173,7 +176,7 @@ func (o *UpdateFederationRequest) GetAddFixedNetworkIds() []string {
 // GetAddFixedNetworkIdsOk returns a tuple with the AddFixedNetworkIds field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateFederationRequest) GetAddFixedNetworkIdsOk() ([]string, bool) {
-	if o == nil || o.AddFixedNetworkIds == nil {
+	if o == nil || isNil(o.AddFixedNetworkIds) {
 		return nil, false
 	}
 	return o.AddFixedNetworkIds, true
@@ -181,7 +184,7 @@ func (o *UpdateFederationRequest) GetAddFixedNetworkIdsOk() ([]string, bool) {
 
 // HasAddFixedNetworkIds returns a boolean if a field has been set.
 func (o *UpdateFederationRequest) HasAddFixedNetworkIds() bool {
-	if o != nil && o.AddFixedNetworkIds != nil {
+	if o != nil && !isNil(o.AddFixedNetworkIds) {
 		return true
 	}
 
@@ -195,7 +198,7 @@ func (o *UpdateFederationRequest) SetAddFixedNetworkIds(v []string) {
 
 // GetRemoveFixedNetworkIds returns the RemoveFixedNetworkIds field value if set, zero value otherwise.
 func (o *UpdateFederationRequest) GetRemoveFixedNetworkIds() []string {
-	if o == nil || o.RemoveFixedNetworkIds == nil {
+	if o == nil || isNil(o.RemoveFixedNetworkIds) {
 		var ret []string
 		return ret
 	}
@@ -205,7 +208,7 @@ func (o *UpdateFederationRequest) GetRemoveFixedNetworkIds() []string {
 // GetRemoveFixedNetworkIdsOk returns a tuple with the RemoveFixedNetworkIds field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateFederationRequest) GetRemoveFixedNetworkIdsOk() ([]string, bool) {
-	if o == nil || o.RemoveFixedNetworkIds == nil {
+	if o == nil || isNil(o.RemoveFixedNetworkIds) {
 		return nil, false
 	}
 	return o.RemoveFixedNetworkIds, true
@@ -213,7 +216,7 @@ func (o *UpdateFederationRequest) GetRemoveFixedNetworkIdsOk() ([]string, bool) 
 
 // HasRemoveFixedNetworkIds returns a boolean if a field has been set.
 func (o *UpdateFederationRequest) HasRemoveFixedNetworkIds() bool {
-	if o != nil && o.RemoveFixedNetworkIds != nil {
+	if o != nil && !isNil(o.RemoveFixedNetworkIds) {
 		return true
 	}
 
@@ -250,29 +253,31 @@ func (o *UpdateFederationRequest) SetModificationDate(v time.Time) {
 }
 
 func (o UpdateFederationRequest) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["objectType"] = o.ObjectType
-	}
-	if true {
-		toSerialize["operationType"] = o.OperationType
-	}
-	if o.AddMobileNetworkIds != nil {
-		toSerialize["addMobileNetworkIds"] = o.AddMobileNetworkIds
-	}
-	if o.RemoveMobileNetworkIds != nil {
-		toSerialize["removeMobileNetworkIds"] = o.RemoveMobileNetworkIds
-	}
-	if o.AddFixedNetworkIds != nil {
-		toSerialize["addFixedNetworkIds"] = o.AddFixedNetworkIds
-	}
-	if o.RemoveFixedNetworkIds != nil {
-		toSerialize["removeFixedNetworkIds"] = o.RemoveFixedNetworkIds
-	}
-	if true {
-		toSerialize["modificationDate"] = o.ModificationDate
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o UpdateFederationRequest) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["objectType"] = o.ObjectType
+	toSerialize["operationType"] = o.OperationType
+	if !isNil(o.AddMobileNetworkIds) {
+		toSerialize["addMobileNetworkIds"] = o.AddMobileNetworkIds
+	}
+	if !isNil(o.RemoveMobileNetworkIds) {
+		toSerialize["removeMobileNetworkIds"] = o.RemoveMobileNetworkIds
+	}
+	if !isNil(o.AddFixedNetworkIds) {
+		toSerialize["addFixedNetworkIds"] = o.AddFixedNetworkIds
+	}
+	if !isNil(o.RemoveFixedNetworkIds) {
+		toSerialize["removeFixedNetworkIds"] = o.RemoveFixedNetworkIds
+	}
+	toSerialize["modificationDate"] = o.ModificationDate
+	return toSerialize, nil
 }
 
 type NullableUpdateFederationRequest struct {

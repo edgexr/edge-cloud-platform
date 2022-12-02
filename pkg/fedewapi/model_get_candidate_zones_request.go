@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the GetCandidateZonesRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &GetCandidateZonesRequest{}
+
 // GetCandidateZonesRequest struct for GetCandidateZonesRequest
 type GetCandidateZonesRequest struct {
 	// UserId of the app provider.  Identifier is relevant only in context of this federation.
@@ -92,7 +95,7 @@ func (o *GetCandidateZonesRequest) SetAppId(v string) {
 
 // GetEdgeDiscoveryFilters returns the EdgeDiscoveryFilters field value if set, zero value otherwise.
 func (o *GetCandidateZonesRequest) GetEdgeDiscoveryFilters() GetCandidateZonesRequestEdgeDiscoveryFilters {
-	if o == nil || o.EdgeDiscoveryFilters == nil {
+	if o == nil || isNil(o.EdgeDiscoveryFilters) {
 		var ret GetCandidateZonesRequestEdgeDiscoveryFilters
 		return ret
 	}
@@ -102,7 +105,7 @@ func (o *GetCandidateZonesRequest) GetEdgeDiscoveryFilters() GetCandidateZonesRe
 // GetEdgeDiscoveryFiltersOk returns a tuple with the EdgeDiscoveryFilters field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetCandidateZonesRequest) GetEdgeDiscoveryFiltersOk() (*GetCandidateZonesRequestEdgeDiscoveryFilters, bool) {
-	if o == nil || o.EdgeDiscoveryFilters == nil {
+	if o == nil || isNil(o.EdgeDiscoveryFilters) {
 		return nil, false
 	}
 	return o.EdgeDiscoveryFilters, true
@@ -110,7 +113,7 @@ func (o *GetCandidateZonesRequest) GetEdgeDiscoveryFiltersOk() (*GetCandidateZon
 
 // HasEdgeDiscoveryFilters returns a boolean if a field has been set.
 func (o *GetCandidateZonesRequest) HasEdgeDiscoveryFilters() bool {
-	if o != nil && o.EdgeDiscoveryFilters != nil {
+	if o != nil && !isNil(o.EdgeDiscoveryFilters) {
 		return true
 	}
 
@@ -123,17 +126,21 @@ func (o *GetCandidateZonesRequest) SetEdgeDiscoveryFilters(v GetCandidateZonesRe
 }
 
 func (o GetCandidateZonesRequest) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["appProviderId"] = o.AppProviderId
-	}
-	if true {
-		toSerialize["appId"] = o.AppId
-	}
-	if o.EdgeDiscoveryFilters != nil {
-		toSerialize["edgeDiscoveryFilters"] = o.EdgeDiscoveryFilters
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o GetCandidateZonesRequest) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["appProviderId"] = o.AppProviderId
+	toSerialize["appId"] = o.AppId
+	if !isNil(o.EdgeDiscoveryFilters) {
+		toSerialize["edgeDiscoveryFilters"] = o.EdgeDiscoveryFilters
+	}
+	return toSerialize, nil
 }
 
 type NullableGetCandidateZonesRequest struct {

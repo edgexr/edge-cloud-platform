@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the OSType type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &OSType{}
+
 // OSType struct for OSType
 type OSType struct {
 	Architecture string `json:"architecture"`
@@ -140,20 +143,20 @@ func (o *OSType) SetLicense(v string) {
 }
 
 func (o OSType) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["architecture"] = o.Architecture
-	}
-	if true {
-		toSerialize["distribution"] = o.Distribution
-	}
-	if true {
-		toSerialize["version"] = o.Version
-	}
-	if true {
-		toSerialize["license"] = o.License
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o OSType) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["architecture"] = o.Architecture
+	toSerialize["distribution"] = o.Distribution
+	toSerialize["version"] = o.Version
+	toSerialize["license"] = o.License
+	return toSerialize, nil
 }
 
 type NullableOSType struct {

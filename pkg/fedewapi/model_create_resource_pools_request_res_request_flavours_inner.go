@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the CreateResourcePoolsRequestResRequestFlavoursInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &CreateResourcePoolsRequestResRequestFlavoursInner{}
+
 // CreateResourcePoolsRequestResRequestFlavoursInner struct for CreateResourcePoolsRequestResRequestFlavoursInner
 type CreateResourcePoolsRequestResRequestFlavoursInner struct {
 	// An identifier to refer to a specific combination of compute resources.
@@ -93,7 +96,7 @@ func (o *CreateResourcePoolsRequestResRequestFlavoursInner) SetNumFlavour(v int3
 
 // GetMinNumOfFlavours returns the MinNumOfFlavours field value if set, zero value otherwise.
 func (o *CreateResourcePoolsRequestResRequestFlavoursInner) GetMinNumOfFlavours() int32 {
-	if o == nil || o.MinNumOfFlavours == nil {
+	if o == nil || isNil(o.MinNumOfFlavours) {
 		var ret int32
 		return ret
 	}
@@ -103,7 +106,7 @@ func (o *CreateResourcePoolsRequestResRequestFlavoursInner) GetMinNumOfFlavours(
 // GetMinNumOfFlavoursOk returns a tuple with the MinNumOfFlavours field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *CreateResourcePoolsRequestResRequestFlavoursInner) GetMinNumOfFlavoursOk() (*int32, bool) {
-	if o == nil || o.MinNumOfFlavours == nil {
+	if o == nil || isNil(o.MinNumOfFlavours) {
 		return nil, false
 	}
 	return o.MinNumOfFlavours, true
@@ -111,7 +114,7 @@ func (o *CreateResourcePoolsRequestResRequestFlavoursInner) GetMinNumOfFlavoursO
 
 // HasMinNumOfFlavours returns a boolean if a field has been set.
 func (o *CreateResourcePoolsRequestResRequestFlavoursInner) HasMinNumOfFlavours() bool {
-	if o != nil && o.MinNumOfFlavours != nil {
+	if o != nil && !isNil(o.MinNumOfFlavours) {
 		return true
 	}
 
@@ -124,17 +127,21 @@ func (o *CreateResourcePoolsRequestResRequestFlavoursInner) SetMinNumOfFlavours(
 }
 
 func (o CreateResourcePoolsRequestResRequestFlavoursInner) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["flavourId"] = o.FlavourId
-	}
-	if true {
-		toSerialize["numFlavour"] = o.NumFlavour
-	}
-	if o.MinNumOfFlavours != nil {
-		toSerialize["minNumOfFlavours"] = o.MinNumOfFlavours
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o CreateResourcePoolsRequestResRequestFlavoursInner) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["flavourId"] = o.FlavourId
+	toSerialize["numFlavour"] = o.NumFlavour
+	if !isNil(o.MinNumOfFlavours) {
+		toSerialize["minNumOfFlavours"] = o.MinNumOfFlavours
+	}
+	return toSerialize, nil
 }
 
 type NullableCreateResourcePoolsRequestResRequestFlavoursInner struct {

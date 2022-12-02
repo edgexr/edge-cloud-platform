@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the OnboardApplicationRequestAppDeploymentZonesInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &OnboardApplicationRequestAppDeploymentZonesInner{}
+
 // OnboardApplicationRequestAppDeploymentZonesInner struct for OnboardApplicationRequestAppDeploymentZonesInner
 type OnboardApplicationRequestAppDeploymentZonesInner struct {
 	// ISO 3166-1 Alpha-2 code for the country of Partner operator
@@ -90,14 +93,18 @@ func (o *OnboardApplicationRequestAppDeploymentZonesInner) SetZoneInfo(v string)
 }
 
 func (o OnboardApplicationRequestAppDeploymentZonesInner) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["countryCode"] = o.CountryCode
-	}
-	if true {
-		toSerialize["zoneInfo"] = o.ZoneInfo
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o OnboardApplicationRequestAppDeploymentZonesInner) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["countryCode"] = o.CountryCode
+	toSerialize["zoneInfo"] = o.ZoneInfo
+	return toSerialize, nil
 }
 
 type NullableOnboardApplicationRequestAppDeploymentZonesInner struct {

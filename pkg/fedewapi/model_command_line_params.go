@@ -14,99 +14,92 @@ import (
 	"encoding/json"
 )
 
-// checks if the ClientLocation type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ClientLocation{}
+// checks if the CommandLineParams type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &CommandLineParams{}
 
-// ClientLocation struct for ClientLocation
-type ClientLocation struct {
-	// Latitude, Longitude as decimal fraction up to 4 digit precision
-	GeoLocation *string `json:"geo_location,omitempty"`
-	// Information about the 4G/5G Cell ids where the client is currently served.
-	RadLocation []ClientLocationRadLocationInner `json:"rad_location,omitempty"`
+// CommandLineParams List of commands and arguments that shall be invoked when the component instance is created. This is valid only for container  based deployment.
+type CommandLineParams struct {
+	// List of commands that application should invoke when an instance is created.
+	Command []string `json:"command"`
+	// List of arguments required by the command.
+	CommandArgs []string `json:"commandArgs,omitempty"`
 }
 
-// NewClientLocation instantiates a new ClientLocation object
+// NewCommandLineParams instantiates a new CommandLineParams object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewClientLocation() *ClientLocation {
-	this := ClientLocation{}
+func NewCommandLineParams(command []string) *CommandLineParams {
+	this := CommandLineParams{}
+	this.Command = command
 	return &this
 }
 
-// NewClientLocationWithDefaults instantiates a new ClientLocation object
+// NewCommandLineParamsWithDefaults instantiates a new CommandLineParams object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewClientLocationWithDefaults() *ClientLocation {
-	this := ClientLocation{}
+func NewCommandLineParamsWithDefaults() *CommandLineParams {
+	this := CommandLineParams{}
 	return &this
 }
 
-// GetGeoLocation returns the GeoLocation field value if set, zero value otherwise.
-func (o *ClientLocation) GetGeoLocation() string {
-	if o == nil || isNil(o.GeoLocation) {
-		var ret string
+// GetCommand returns the Command field value
+func (o *CommandLineParams) GetCommand() []string {
+	if o == nil {
+		var ret []string
 		return ret
 	}
-	return *o.GeoLocation
+
+	return o.Command
 }
 
-// GetGeoLocationOk returns a tuple with the GeoLocation field value if set, nil otherwise
+// GetCommandOk returns a tuple with the Command field value
 // and a boolean to check if the value has been set.
-func (o *ClientLocation) GetGeoLocationOk() (*string, bool) {
-	if o == nil || isNil(o.GeoLocation) {
+func (o *CommandLineParams) GetCommandOk() ([]string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.GeoLocation, true
+	return o.Command, true
 }
 
-// HasGeoLocation returns a boolean if a field has been set.
-func (o *ClientLocation) HasGeoLocation() bool {
-	if o != nil && !isNil(o.GeoLocation) {
+// SetCommand sets field value
+func (o *CommandLineParams) SetCommand(v []string) {
+	o.Command = v
+}
+
+// GetCommandArgs returns the CommandArgs field value if set, zero value otherwise.
+func (o *CommandLineParams) GetCommandArgs() []string {
+	if o == nil || isNil(o.CommandArgs) {
+		var ret []string
+		return ret
+	}
+	return o.CommandArgs
+}
+
+// GetCommandArgsOk returns a tuple with the CommandArgs field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CommandLineParams) GetCommandArgsOk() ([]string, bool) {
+	if o == nil || isNil(o.CommandArgs) {
+		return nil, false
+	}
+	return o.CommandArgs, true
+}
+
+// HasCommandArgs returns a boolean if a field has been set.
+func (o *CommandLineParams) HasCommandArgs() bool {
+	if o != nil && !isNil(o.CommandArgs) {
 		return true
 	}
 
 	return false
 }
 
-// SetGeoLocation gets a reference to the given string and assigns it to the GeoLocation field.
-func (o *ClientLocation) SetGeoLocation(v string) {
-	o.GeoLocation = &v
+// SetCommandArgs gets a reference to the given []string and assigns it to the CommandArgs field.
+func (o *CommandLineParams) SetCommandArgs(v []string) {
+	o.CommandArgs = v
 }
 
-// GetRadLocation returns the RadLocation field value if set, zero value otherwise.
-func (o *ClientLocation) GetRadLocation() []ClientLocationRadLocationInner {
-	if o == nil || isNil(o.RadLocation) {
-		var ret []ClientLocationRadLocationInner
-		return ret
-	}
-	return o.RadLocation
-}
-
-// GetRadLocationOk returns a tuple with the RadLocation field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *ClientLocation) GetRadLocationOk() ([]ClientLocationRadLocationInner, bool) {
-	if o == nil || isNil(o.RadLocation) {
-		return nil, false
-	}
-	return o.RadLocation, true
-}
-
-// HasRadLocation returns a boolean if a field has been set.
-func (o *ClientLocation) HasRadLocation() bool {
-	if o != nil && !isNil(o.RadLocation) {
-		return true
-	}
-
-	return false
-}
-
-// SetRadLocation gets a reference to the given []ClientLocationRadLocationInner and assigns it to the RadLocation field.
-func (o *ClientLocation) SetRadLocation(v []ClientLocationRadLocationInner) {
-	o.RadLocation = v
-}
-
-func (o ClientLocation) MarshalJSON() ([]byte, error) {
+func (o CommandLineParams) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -114,49 +107,47 @@ func (o ClientLocation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ClientLocation) ToMap() (map[string]interface{}, error) {
+func (o CommandLineParams) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.GeoLocation) {
-		toSerialize["geo_location"] = o.GeoLocation
-	}
-	if !isNil(o.RadLocation) {
-		toSerialize["rad_location"] = o.RadLocation
+	toSerialize["command"] = o.Command
+	if !isNil(o.CommandArgs) {
+		toSerialize["commandArgs"] = o.CommandArgs
 	}
 	return toSerialize, nil
 }
 
-type NullableClientLocation struct {
-	value *ClientLocation
+type NullableCommandLineParams struct {
+	value *CommandLineParams
 	isSet bool
 }
 
-func (v NullableClientLocation) Get() *ClientLocation {
+func (v NullableCommandLineParams) Get() *CommandLineParams {
 	return v.value
 }
 
-func (v *NullableClientLocation) Set(val *ClientLocation) {
+func (v *NullableCommandLineParams) Set(val *CommandLineParams) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableClientLocation) IsSet() bool {
+func (v NullableCommandLineParams) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableClientLocation) Unset() {
+func (v *NullableCommandLineParams) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableClientLocation(val *ClientLocation) *NullableClientLocation {
-	return &NullableClientLocation{value: val, isSet: true}
+func NewNullableCommandLineParams(val *CommandLineParams) *NullableCommandLineParams {
+	return &NullableCommandLineParams{value: val, isSet: true}
 }
 
-func (v NullableClientLocation) MarshalJSON() ([]byte, error) {
+func (v NullableCommandLineParams) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableClientLocation) UnmarshalJSON(src []byte) error {
+func (v *NullableCommandLineParams) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

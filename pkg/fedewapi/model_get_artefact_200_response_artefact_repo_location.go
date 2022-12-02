@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the GetArtefact200ResponseArtefactRepoLocation type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &GetArtefact200ResponseArtefactRepoLocation{}
+
 // GetArtefact200ResponseArtefactRepoLocation struct for GetArtefact200ResponseArtefactRepoLocation
 type GetArtefact200ResponseArtefactRepoLocation struct {
 	// Artefact repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo etc, PRIVATEREPO  is used for private repo managed by the application developer, UPLOAD is for the case when artefact is uploaded from MEC web portal.
@@ -47,7 +50,7 @@ func NewGetArtefact200ResponseArtefactRepoLocationWithDefaults() *GetArtefact200
 
 // GetRepotype returns the Repotype field value if set, zero value otherwise.
 func (o *GetArtefact200ResponseArtefactRepoLocation) GetRepotype() string {
-	if o == nil || o.Repotype == nil {
+	if o == nil || isNil(o.Repotype) {
 		var ret string
 		return ret
 	}
@@ -57,7 +60,7 @@ func (o *GetArtefact200ResponseArtefactRepoLocation) GetRepotype() string {
 // GetRepotypeOk returns a tuple with the Repotype field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetArtefact200ResponseArtefactRepoLocation) GetRepotypeOk() (*string, bool) {
-	if o == nil || o.Repotype == nil {
+	if o == nil || isNil(o.Repotype) {
 		return nil, false
 	}
 	return o.Repotype, true
@@ -65,7 +68,7 @@ func (o *GetArtefact200ResponseArtefactRepoLocation) GetRepotypeOk() (*string, b
 
 // HasRepotype returns a boolean if a field has been set.
 func (o *GetArtefact200ResponseArtefactRepoLocation) HasRepotype() bool {
-	if o != nil && o.Repotype != nil {
+	if o != nil && !isNil(o.Repotype) {
 		return true
 	}
 
@@ -103,7 +106,7 @@ func (o *GetArtefact200ResponseArtefactRepoLocation) SetRepoURL(v string) {
 
 // GetUserName returns the UserName field value if set, zero value otherwise.
 func (o *GetArtefact200ResponseArtefactRepoLocation) GetUserName() string {
-	if o == nil || o.UserName == nil {
+	if o == nil || isNil(o.UserName) {
 		var ret string
 		return ret
 	}
@@ -113,7 +116,7 @@ func (o *GetArtefact200ResponseArtefactRepoLocation) GetUserName() string {
 // GetUserNameOk returns a tuple with the UserName field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetArtefact200ResponseArtefactRepoLocation) GetUserNameOk() (*string, bool) {
-	if o == nil || o.UserName == nil {
+	if o == nil || isNil(o.UserName) {
 		return nil, false
 	}
 	return o.UserName, true
@@ -121,7 +124,7 @@ func (o *GetArtefact200ResponseArtefactRepoLocation) GetUserNameOk() (*string, b
 
 // HasUserName returns a boolean if a field has been set.
 func (o *GetArtefact200ResponseArtefactRepoLocation) HasUserName() bool {
-	if o != nil && o.UserName != nil {
+	if o != nil && !isNil(o.UserName) {
 		return true
 	}
 
@@ -135,7 +138,7 @@ func (o *GetArtefact200ResponseArtefactRepoLocation) SetUserName(v string) {
 
 // GetPassword returns the Password field value if set, zero value otherwise.
 func (o *GetArtefact200ResponseArtefactRepoLocation) GetPassword() string {
-	if o == nil || o.Password == nil {
+	if o == nil || isNil(o.Password) {
 		var ret string
 		return ret
 	}
@@ -145,7 +148,7 @@ func (o *GetArtefact200ResponseArtefactRepoLocation) GetPassword() string {
 // GetPasswordOk returns a tuple with the Password field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetArtefact200ResponseArtefactRepoLocation) GetPasswordOk() (*string, bool) {
-	if o == nil || o.Password == nil {
+	if o == nil || isNil(o.Password) {
 		return nil, false
 	}
 	return o.Password, true
@@ -153,7 +156,7 @@ func (o *GetArtefact200ResponseArtefactRepoLocation) GetPasswordOk() (*string, b
 
 // HasPassword returns a boolean if a field has been set.
 func (o *GetArtefact200ResponseArtefactRepoLocation) HasPassword() bool {
-	if o != nil && o.Password != nil {
+	if o != nil && !isNil(o.Password) {
 		return true
 	}
 
@@ -167,7 +170,7 @@ func (o *GetArtefact200ResponseArtefactRepoLocation) SetPassword(v string) {
 
 // GetToken returns the Token field value if set, zero value otherwise.
 func (o *GetArtefact200ResponseArtefactRepoLocation) GetToken() string {
-	if o == nil || o.Token == nil {
+	if o == nil || isNil(o.Token) {
 		var ret string
 		return ret
 	}
@@ -177,7 +180,7 @@ func (o *GetArtefact200ResponseArtefactRepoLocation) GetToken() string {
 // GetTokenOk returns a tuple with the Token field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetArtefact200ResponseArtefactRepoLocation) GetTokenOk() (*string, bool) {
-	if o == nil || o.Token == nil {
+	if o == nil || isNil(o.Token) {
 		return nil, false
 	}
 	return o.Token, true
@@ -185,7 +188,7 @@ func (o *GetArtefact200ResponseArtefactRepoLocation) GetTokenOk() (*string, bool
 
 // HasToken returns a boolean if a field has been set.
 func (o *GetArtefact200ResponseArtefactRepoLocation) HasToken() bool {
-	if o != nil && o.Token != nil {
+	if o != nil && !isNil(o.Token) {
 		return true
 	}
 
@@ -198,23 +201,29 @@ func (o *GetArtefact200ResponseArtefactRepoLocation) SetToken(v string) {
 }
 
 func (o GetArtefact200ResponseArtefactRepoLocation) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if o.Repotype != nil {
-		toSerialize["repotype"] = o.Repotype
-	}
-	if true {
-		toSerialize["repoURL"] = o.RepoURL
-	}
-	if o.UserName != nil {
-		toSerialize["userName"] = o.UserName
-	}
-	if o.Password != nil {
-		toSerialize["password"] = o.Password
-	}
-	if o.Token != nil {
-		toSerialize["token"] = o.Token
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o GetArtefact200ResponseArtefactRepoLocation) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	if !isNil(o.Repotype) {
+		toSerialize["repotype"] = o.Repotype
+	}
+	toSerialize["repoURL"] = o.RepoURL
+	if !isNil(o.UserName) {
+		toSerialize["userName"] = o.UserName
+	}
+	if !isNil(o.Password) {
+		toSerialize["password"] = o.Password
+	}
+	if !isNil(o.Token) {
+		toSerialize["token"] = o.Token
+	}
+	return toSerialize, nil
 }
 
 type NullableGetArtefact200ResponseArtefactRepoLocation struct {

@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the OnboardApplicationRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &OnboardApplicationRequest{}
+
 // OnboardApplicationRequest struct for OnboardApplicationRequest
 type OnboardApplicationRequest struct {
 	// Identifier used to refer to an application. This identifier is globally unique so that application can be identified uniquely across different OPs.
@@ -222,29 +225,23 @@ func (o *OnboardApplicationRequest) SetAppStatusCallbackLink(v string) {
 }
 
 func (o OnboardApplicationRequest) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["appId"] = o.AppId
-	}
-	if true {
-		toSerialize["appProviderId"] = o.AppProviderId
-	}
-	if true {
-		toSerialize["appDeploymentZones"] = o.AppDeploymentZones
-	}
-	if true {
-		toSerialize["appMetaData"] = o.AppMetaData
-	}
-	if true {
-		toSerialize["appQoSProfile"] = o.AppQoSProfile
-	}
-	if true {
-		toSerialize["appComponentSpecs"] = o.AppComponentSpecs
-	}
-	if true {
-		toSerialize["appStatusCallbackLink"] = o.AppStatusCallbackLink
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o OnboardApplicationRequest) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["appId"] = o.AppId
+	toSerialize["appProviderId"] = o.AppProviderId
+	toSerialize["appDeploymentZones"] = o.AppDeploymentZones
+	toSerialize["appMetaData"] = o.AppMetaData
+	toSerialize["appQoSProfile"] = o.AppQoSProfile
+	toSerialize["appComponentSpecs"] = o.AppComponentSpecs
+	toSerialize["appStatusCallbackLink"] = o.AppStatusCallbackLink
+	return toSerialize, nil
 }
 
 type NullableOnboardApplicationRequest struct {

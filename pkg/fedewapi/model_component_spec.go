@@ -14,306 +14,358 @@ import (
 	"encoding/json"
 )
 
-// checks if the GetArtefact200Response type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &GetArtefact200Response{}
+// checks if the ComponentSpec type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ComponentSpec{}
 
-// GetArtefact200Response struct for GetArtefact200Response
-type GetArtefact200Response struct {
-	// A globally unique identifier associated with the artefact. Originating OP generates this identifier when artefact is submitted over NBI.
-	ArtefactId string `json:"artefactId"`
-	// UserId of the app provider.  Identifier is relevant only in context of this federation.
-	AppProviderId string `json:"appProviderId"`
-	// Name of the artefact.
-	ArtefactName string `json:"artefactName"`
-	// Brief description of the artefact by the application provider
-	ArtefactDescription *string `json:"artefactDescription,omitempty"`
-	// Artefact version information
-	ArtefactVersionInfo string `json:"artefactVersionInfo"`
-	ArtefactVirtType string `json:"artefactVirtType"`
-	// Name of the file.
-	ArtefactFileName string `json:"artefactFileName"`
-	// Artefacts like Helm charts or Terraform scripts may need compressed format.
-	ArtefactFileFormat string `json:"artefactFileFormat"`
-	// Type of descriptor present in the artefact.  App provider can either define either a Helm chart or a Terraform script or container spec.
-	ArtefactDescriptorType string `json:"artefactDescriptorType"`
-	ArtefactRepoLocation GetArtefact200ResponseArtefactRepoLocation `json:"artefactRepoLocation"`
+// ComponentSpec Details about compute, networking and storage requirements for each component of the application. App provider should  define all information needed to instantiate the component. If artefact is being defined at component level  this section should have information just about the component. In case the artefact is being defined at application level  the section should provide details about all the components.
+type ComponentSpec struct {
+	// Must be a valid RFC 1035 label name.  Component name must be unique with an application
+	ComponentName string `json:"componentName"`
+	OsType OSType `json:"osType"`
+	InstSetArch CPUArchType `json:"InstSetArch"`
+	// List of all images associated with the component. Images are uploaded or specified using Upload File apis
+	ImagesPath []string `json:"imagesPath,omitempty"`
+	// Number of component instances to be launched.
+	NumOfInstances int32 `json:"numOfInstances"`
+	// How the platform shall handle component failure
+	RestartPolicy string `json:"restartPolicy"`
+	CommandLineParams *CommandLineParams `json:"commandLineParams,omitempty"`
+	// Each application component exposes some ports either for external users or for inter component communication. Application provider is required to specify which ports are to be exposed and the type of traffic that will flow through these ports.
+	ExposedInterfaces []InterfaceDetails `json:"exposedInterfaces,omitempty"`
+	ComputeResourceProfile ComputeResourceInfo `json:"computeResourceProfile"`
+	CompEnvParams []CompEnvParams `json:"compEnvParams,omitempty"`
+	// The ephemeral volume a container process may need to temporary store internal data
+	PersistentVolumes []PersistentVolumeDetails `json:"persistentVolumes,omitempty"`
 }
 
-// NewGetArtefact200Response instantiates a new GetArtefact200Response object
+// NewComponentSpec instantiates a new ComponentSpec object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGetArtefact200Response(artefactId string, appProviderId string, artefactName string, artefactVersionInfo string, artefactVirtType string, artefactFileName string, artefactFileFormat string, artefactDescriptorType string, artefactRepoLocation GetArtefact200ResponseArtefactRepoLocation) *GetArtefact200Response {
-	this := GetArtefact200Response{}
-	this.ArtefactId = artefactId
-	this.AppProviderId = appProviderId
-	this.ArtefactName = artefactName
-	this.ArtefactVersionInfo = artefactVersionInfo
-	this.ArtefactVirtType = artefactVirtType
-	this.ArtefactFileName = artefactFileName
-	this.ArtefactFileFormat = artefactFileFormat
-	this.ArtefactDescriptorType = artefactDescriptorType
-	this.ArtefactRepoLocation = artefactRepoLocation
+func NewComponentSpec(componentName string, osType OSType, instSetArch CPUArchType, numOfInstances int32, restartPolicy string, computeResourceProfile ComputeResourceInfo) *ComponentSpec {
+	this := ComponentSpec{}
+	this.ComponentName = componentName
+	this.OsType = osType
+	this.InstSetArch = instSetArch
+	this.NumOfInstances = numOfInstances
+	this.RestartPolicy = restartPolicy
+	this.ComputeResourceProfile = computeResourceProfile
 	return &this
 }
 
-// NewGetArtefact200ResponseWithDefaults instantiates a new GetArtefact200Response object
+// NewComponentSpecWithDefaults instantiates a new ComponentSpec object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewGetArtefact200ResponseWithDefaults() *GetArtefact200Response {
-	this := GetArtefact200Response{}
+func NewComponentSpecWithDefaults() *ComponentSpec {
+	this := ComponentSpec{}
 	return &this
 }
 
-// GetArtefactId returns the ArtefactId field value
-func (o *GetArtefact200Response) GetArtefactId() string {
+// GetComponentName returns the ComponentName field value
+func (o *ComponentSpec) GetComponentName() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.ArtefactId
+	return o.ComponentName
 }
 
-// GetArtefactIdOk returns a tuple with the ArtefactId field value
+// GetComponentNameOk returns a tuple with the ComponentName field value
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactIdOk() (*string, bool) {
+func (o *ComponentSpec) GetComponentNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ArtefactId, true
+	return &o.ComponentName, true
 }
 
-// SetArtefactId sets field value
-func (o *GetArtefact200Response) SetArtefactId(v string) {
-	o.ArtefactId = v
+// SetComponentName sets field value
+func (o *ComponentSpec) SetComponentName(v string) {
+	o.ComponentName = v
 }
 
-// GetAppProviderId returns the AppProviderId field value
-func (o *GetArtefact200Response) GetAppProviderId() string {
+// GetOsType returns the OsType field value
+func (o *ComponentSpec) GetOsType() OSType {
 	if o == nil {
-		var ret string
+		var ret OSType
 		return ret
 	}
 
-	return o.AppProviderId
+	return o.OsType
 }
 
-// GetAppProviderIdOk returns a tuple with the AppProviderId field value
+// GetOsTypeOk returns a tuple with the OsType field value
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetAppProviderIdOk() (*string, bool) {
+func (o *ComponentSpec) GetOsTypeOk() (*OSType, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.AppProviderId, true
+	return &o.OsType, true
 }
 
-// SetAppProviderId sets field value
-func (o *GetArtefact200Response) SetAppProviderId(v string) {
-	o.AppProviderId = v
+// SetOsType sets field value
+func (o *ComponentSpec) SetOsType(v OSType) {
+	o.OsType = v
 }
 
-// GetArtefactName returns the ArtefactName field value
-func (o *GetArtefact200Response) GetArtefactName() string {
+// GetInstSetArch returns the InstSetArch field value
+func (o *ComponentSpec) GetInstSetArch() CPUArchType {
 	if o == nil {
-		var ret string
+		var ret CPUArchType
 		return ret
 	}
 
-	return o.ArtefactName
+	return o.InstSetArch
 }
 
-// GetArtefactNameOk returns a tuple with the ArtefactName field value
+// GetInstSetArchOk returns a tuple with the InstSetArch field value
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactNameOk() (*string, bool) {
+func (o *ComponentSpec) GetInstSetArchOk() (*CPUArchType, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ArtefactName, true
+	return &o.InstSetArch, true
 }
 
-// SetArtefactName sets field value
-func (o *GetArtefact200Response) SetArtefactName(v string) {
-	o.ArtefactName = v
+// SetInstSetArch sets field value
+func (o *ComponentSpec) SetInstSetArch(v CPUArchType) {
+	o.InstSetArch = v
 }
 
-// GetArtefactDescription returns the ArtefactDescription field value if set, zero value otherwise.
-func (o *GetArtefact200Response) GetArtefactDescription() string {
-	if o == nil || isNil(o.ArtefactDescription) {
-		var ret string
+// GetImagesPath returns the ImagesPath field value if set, zero value otherwise.
+func (o *ComponentSpec) GetImagesPath() []string {
+	if o == nil || isNil(o.ImagesPath) {
+		var ret []string
 		return ret
 	}
-	return *o.ArtefactDescription
+	return o.ImagesPath
 }
 
-// GetArtefactDescriptionOk returns a tuple with the ArtefactDescription field value if set, nil otherwise
+// GetImagesPathOk returns a tuple with the ImagesPath field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactDescriptionOk() (*string, bool) {
-	if o == nil || isNil(o.ArtefactDescription) {
+func (o *ComponentSpec) GetImagesPathOk() ([]string, bool) {
+	if o == nil || isNil(o.ImagesPath) {
 		return nil, false
 	}
-	return o.ArtefactDescription, true
+	return o.ImagesPath, true
 }
 
-// HasArtefactDescription returns a boolean if a field has been set.
-func (o *GetArtefact200Response) HasArtefactDescription() bool {
-	if o != nil && !isNil(o.ArtefactDescription) {
+// HasImagesPath returns a boolean if a field has been set.
+func (o *ComponentSpec) HasImagesPath() bool {
+	if o != nil && !isNil(o.ImagesPath) {
 		return true
 	}
 
 	return false
 }
 
-// SetArtefactDescription gets a reference to the given string and assigns it to the ArtefactDescription field.
-func (o *GetArtefact200Response) SetArtefactDescription(v string) {
-	o.ArtefactDescription = &v
+// SetImagesPath gets a reference to the given []string and assigns it to the ImagesPath field.
+func (o *ComponentSpec) SetImagesPath(v []string) {
+	o.ImagesPath = v
 }
 
-// GetArtefactVersionInfo returns the ArtefactVersionInfo field value
-func (o *GetArtefact200Response) GetArtefactVersionInfo() string {
+// GetNumOfInstances returns the NumOfInstances field value
+func (o *ComponentSpec) GetNumOfInstances() int32 {
+	if o == nil {
+		var ret int32
+		return ret
+	}
+
+	return o.NumOfInstances
+}
+
+// GetNumOfInstancesOk returns a tuple with the NumOfInstances field value
+// and a boolean to check if the value has been set.
+func (o *ComponentSpec) GetNumOfInstancesOk() (*int32, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.NumOfInstances, true
+}
+
+// SetNumOfInstances sets field value
+func (o *ComponentSpec) SetNumOfInstances(v int32) {
+	o.NumOfInstances = v
+}
+
+// GetRestartPolicy returns the RestartPolicy field value
+func (o *ComponentSpec) GetRestartPolicy() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.ArtefactVersionInfo
+	return o.RestartPolicy
 }
 
-// GetArtefactVersionInfoOk returns a tuple with the ArtefactVersionInfo field value
+// GetRestartPolicyOk returns a tuple with the RestartPolicy field value
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactVersionInfoOk() (*string, bool) {
+func (o *ComponentSpec) GetRestartPolicyOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ArtefactVersionInfo, true
+	return &o.RestartPolicy, true
 }
 
-// SetArtefactVersionInfo sets field value
-func (o *GetArtefact200Response) SetArtefactVersionInfo(v string) {
-	o.ArtefactVersionInfo = v
+// SetRestartPolicy sets field value
+func (o *ComponentSpec) SetRestartPolicy(v string) {
+	o.RestartPolicy = v
 }
 
-// GetArtefactVirtType returns the ArtefactVirtType field value
-func (o *GetArtefact200Response) GetArtefactVirtType() string {
+// GetCommandLineParams returns the CommandLineParams field value if set, zero value otherwise.
+func (o *ComponentSpec) GetCommandLineParams() CommandLineParams {
+	if o == nil || isNil(o.CommandLineParams) {
+		var ret CommandLineParams
+		return ret
+	}
+	return *o.CommandLineParams
+}
+
+// GetCommandLineParamsOk returns a tuple with the CommandLineParams field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ComponentSpec) GetCommandLineParamsOk() (*CommandLineParams, bool) {
+	if o == nil || isNil(o.CommandLineParams) {
+		return nil, false
+	}
+	return o.CommandLineParams, true
+}
+
+// HasCommandLineParams returns a boolean if a field has been set.
+func (o *ComponentSpec) HasCommandLineParams() bool {
+	if o != nil && !isNil(o.CommandLineParams) {
+		return true
+	}
+
+	return false
+}
+
+// SetCommandLineParams gets a reference to the given CommandLineParams and assigns it to the CommandLineParams field.
+func (o *ComponentSpec) SetCommandLineParams(v CommandLineParams) {
+	o.CommandLineParams = &v
+}
+
+// GetExposedInterfaces returns the ExposedInterfaces field value if set, zero value otherwise.
+func (o *ComponentSpec) GetExposedInterfaces() []InterfaceDetails {
+	if o == nil || isNil(o.ExposedInterfaces) {
+		var ret []InterfaceDetails
+		return ret
+	}
+	return o.ExposedInterfaces
+}
+
+// GetExposedInterfacesOk returns a tuple with the ExposedInterfaces field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ComponentSpec) GetExposedInterfacesOk() ([]InterfaceDetails, bool) {
+	if o == nil || isNil(o.ExposedInterfaces) {
+		return nil, false
+	}
+	return o.ExposedInterfaces, true
+}
+
+// HasExposedInterfaces returns a boolean if a field has been set.
+func (o *ComponentSpec) HasExposedInterfaces() bool {
+	if o != nil && !isNil(o.ExposedInterfaces) {
+		return true
+	}
+
+	return false
+}
+
+// SetExposedInterfaces gets a reference to the given []InterfaceDetails and assigns it to the ExposedInterfaces field.
+func (o *ComponentSpec) SetExposedInterfaces(v []InterfaceDetails) {
+	o.ExposedInterfaces = v
+}
+
+// GetComputeResourceProfile returns the ComputeResourceProfile field value
+func (o *ComponentSpec) GetComputeResourceProfile() ComputeResourceInfo {
 	if o == nil {
-		var ret string
+		var ret ComputeResourceInfo
 		return ret
 	}
 
-	return o.ArtefactVirtType
+	return o.ComputeResourceProfile
 }
 
-// GetArtefactVirtTypeOk returns a tuple with the ArtefactVirtType field value
+// GetComputeResourceProfileOk returns a tuple with the ComputeResourceProfile field value
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactVirtTypeOk() (*string, bool) {
+func (o *ComponentSpec) GetComputeResourceProfileOk() (*ComputeResourceInfo, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ArtefactVirtType, true
+	return &o.ComputeResourceProfile, true
 }
 
-// SetArtefactVirtType sets field value
-func (o *GetArtefact200Response) SetArtefactVirtType(v string) {
-	o.ArtefactVirtType = v
+// SetComputeResourceProfile sets field value
+func (o *ComponentSpec) SetComputeResourceProfile(v ComputeResourceInfo) {
+	o.ComputeResourceProfile = v
 }
 
-// GetArtefactFileName returns the ArtefactFileName field value
-func (o *GetArtefact200Response) GetArtefactFileName() string {
-	if o == nil {
-		var ret string
+// GetCompEnvParams returns the CompEnvParams field value if set, zero value otherwise.
+func (o *ComponentSpec) GetCompEnvParams() []CompEnvParams {
+	if o == nil || isNil(o.CompEnvParams) {
+		var ret []CompEnvParams
 		return ret
 	}
-
-	return o.ArtefactFileName
+	return o.CompEnvParams
 }
 
-// GetArtefactFileNameOk returns a tuple with the ArtefactFileName field value
+// GetCompEnvParamsOk returns a tuple with the CompEnvParams field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactFileNameOk() (*string, bool) {
-	if o == nil {
+func (o *ComponentSpec) GetCompEnvParamsOk() ([]CompEnvParams, bool) {
+	if o == nil || isNil(o.CompEnvParams) {
 		return nil, false
 	}
-	return &o.ArtefactFileName, true
+	return o.CompEnvParams, true
 }
 
-// SetArtefactFileName sets field value
-func (o *GetArtefact200Response) SetArtefactFileName(v string) {
-	o.ArtefactFileName = v
+// HasCompEnvParams returns a boolean if a field has been set.
+func (o *ComponentSpec) HasCompEnvParams() bool {
+	if o != nil && !isNil(o.CompEnvParams) {
+		return true
+	}
+
+	return false
 }
 
-// GetArtefactFileFormat returns the ArtefactFileFormat field value
-func (o *GetArtefact200Response) GetArtefactFileFormat() string {
-	if o == nil {
-		var ret string
+// SetCompEnvParams gets a reference to the given []CompEnvParams and assigns it to the CompEnvParams field.
+func (o *ComponentSpec) SetCompEnvParams(v []CompEnvParams) {
+	o.CompEnvParams = v
+}
+
+// GetPersistentVolumes returns the PersistentVolumes field value if set, zero value otherwise.
+func (o *ComponentSpec) GetPersistentVolumes() []PersistentVolumeDetails {
+	if o == nil || isNil(o.PersistentVolumes) {
+		var ret []PersistentVolumeDetails
 		return ret
 	}
-
-	return o.ArtefactFileFormat
+	return o.PersistentVolumes
 }
 
-// GetArtefactFileFormatOk returns a tuple with the ArtefactFileFormat field value
+// GetPersistentVolumesOk returns a tuple with the PersistentVolumes field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactFileFormatOk() (*string, bool) {
-	if o == nil {
+func (o *ComponentSpec) GetPersistentVolumesOk() ([]PersistentVolumeDetails, bool) {
+	if o == nil || isNil(o.PersistentVolumes) {
 		return nil, false
 	}
-	return &o.ArtefactFileFormat, true
+	return o.PersistentVolumes, true
 }
 
-// SetArtefactFileFormat sets field value
-func (o *GetArtefact200Response) SetArtefactFileFormat(v string) {
-	o.ArtefactFileFormat = v
-}
-
-// GetArtefactDescriptorType returns the ArtefactDescriptorType field value
-func (o *GetArtefact200Response) GetArtefactDescriptorType() string {
-	if o == nil {
-		var ret string
-		return ret
+// HasPersistentVolumes returns a boolean if a field has been set.
+func (o *ComponentSpec) HasPersistentVolumes() bool {
+	if o != nil && !isNil(o.PersistentVolumes) {
+		return true
 	}
 
-	return o.ArtefactDescriptorType
+	return false
 }
 
-// GetArtefactDescriptorTypeOk returns a tuple with the ArtefactDescriptorType field value
-// and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactDescriptorTypeOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.ArtefactDescriptorType, true
+// SetPersistentVolumes gets a reference to the given []PersistentVolumeDetails and assigns it to the PersistentVolumes field.
+func (o *ComponentSpec) SetPersistentVolumes(v []PersistentVolumeDetails) {
+	o.PersistentVolumes = v
 }
 
-// SetArtefactDescriptorType sets field value
-func (o *GetArtefact200Response) SetArtefactDescriptorType(v string) {
-	o.ArtefactDescriptorType = v
-}
-
-// GetArtefactRepoLocation returns the ArtefactRepoLocation field value
-func (o *GetArtefact200Response) GetArtefactRepoLocation() GetArtefact200ResponseArtefactRepoLocation {
-	if o == nil {
-		var ret GetArtefact200ResponseArtefactRepoLocation
-		return ret
-	}
-
-	return o.ArtefactRepoLocation
-}
-
-// GetArtefactRepoLocationOk returns a tuple with the ArtefactRepoLocation field value
-// and a boolean to check if the value has been set.
-func (o *GetArtefact200Response) GetArtefactRepoLocationOk() (*GetArtefact200ResponseArtefactRepoLocation, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.ArtefactRepoLocation, true
-}
-
-// SetArtefactRepoLocation sets field value
-func (o *GetArtefact200Response) SetArtefactRepoLocation(v GetArtefact200ResponseArtefactRepoLocation) {
-	o.ArtefactRepoLocation = v
-}
-
-func (o GetArtefact200Response) MarshalJSON() ([]byte, error) {
+func (o ComponentSpec) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -321,55 +373,64 @@ func (o GetArtefact200Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o GetArtefact200Response) ToMap() (map[string]interface{}, error) {
+func (o ComponentSpec) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["artefactId"] = o.ArtefactId
-	toSerialize["appProviderId"] = o.AppProviderId
-	toSerialize["artefactName"] = o.ArtefactName
-	if !isNil(o.ArtefactDescription) {
-		toSerialize["artefactDescription"] = o.ArtefactDescription
+	toSerialize["componentName"] = o.ComponentName
+	toSerialize["osType"] = o.OsType
+	toSerialize["InstSetArch"] = o.InstSetArch
+	if !isNil(o.ImagesPath) {
+		toSerialize["imagesPath"] = o.ImagesPath
 	}
-	toSerialize["artefactVersionInfo"] = o.ArtefactVersionInfo
-	toSerialize["artefactVirtType"] = o.ArtefactVirtType
-	toSerialize["artefactFileName"] = o.ArtefactFileName
-	toSerialize["artefactFileFormat"] = o.ArtefactFileFormat
-	toSerialize["artefactDescriptorType"] = o.ArtefactDescriptorType
-	toSerialize["artefactRepoLocation"] = o.ArtefactRepoLocation
+	toSerialize["numOfInstances"] = o.NumOfInstances
+	toSerialize["restartPolicy"] = o.RestartPolicy
+	if !isNil(o.CommandLineParams) {
+		toSerialize["commandLineParams"] = o.CommandLineParams
+	}
+	if !isNil(o.ExposedInterfaces) {
+		toSerialize["exposedInterfaces"] = o.ExposedInterfaces
+	}
+	toSerialize["computeResourceProfile"] = o.ComputeResourceProfile
+	if !isNil(o.CompEnvParams) {
+		toSerialize["compEnvParams"] = o.CompEnvParams
+	}
+	if !isNil(o.PersistentVolumes) {
+		toSerialize["persistentVolumes"] = o.PersistentVolumes
+	}
 	return toSerialize, nil
 }
 
-type NullableGetArtefact200Response struct {
-	value *GetArtefact200Response
+type NullableComponentSpec struct {
+	value *ComponentSpec
 	isSet bool
 }
 
-func (v NullableGetArtefact200Response) Get() *GetArtefact200Response {
+func (v NullableComponentSpec) Get() *ComponentSpec {
 	return v.value
 }
 
-func (v *NullableGetArtefact200Response) Set(val *GetArtefact200Response) {
+func (v *NullableComponentSpec) Set(val *ComponentSpec) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableGetArtefact200Response) IsSet() bool {
+func (v NullableComponentSpec) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableGetArtefact200Response) Unset() {
+func (v *NullableComponentSpec) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableGetArtefact200Response(val *GetArtefact200Response) *NullableGetArtefact200Response {
-	return &NullableGetArtefact200Response{value: val, isSet: true}
+func NewNullableComponentSpec(val *ComponentSpec) *NullableComponentSpec {
+	return &NullableComponentSpec{value: val, isSet: true}
 }
 
-func (v NullableGetArtefact200Response) MarshalJSON() ([]byte, error) {
+func (v NullableComponentSpec) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableGetArtefact200Response) UnmarshalJSON(src []byte) error {
+func (v *NullableComponentSpec) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

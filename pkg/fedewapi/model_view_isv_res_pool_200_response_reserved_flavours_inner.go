@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the ViewISVResPool200ResponseReservedFlavoursInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ViewISVResPool200ResponseReservedFlavoursInner{}
+
 // ViewISVResPool200ResponseReservedFlavoursInner struct for ViewISVResPool200ResponseReservedFlavoursInner
 type ViewISVResPool200ResponseReservedFlavoursInner struct {
 	FlavourId Flavour `json:"flavourId"`
@@ -89,14 +92,18 @@ func (o *ViewISVResPool200ResponseReservedFlavoursInner) SetCount(v int32) {
 }
 
 func (o ViewISVResPool200ResponseReservedFlavoursInner) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["flavourId"] = o.FlavourId
-	}
-	if true {
-		toSerialize["count"] = o.Count
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o ViewISVResPool200ResponseReservedFlavoursInner) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["flavourId"] = o.FlavourId
+	toSerialize["count"] = o.Count
+	return toSerialize, nil
 }
 
 type NullableViewISVResPool200ResponseReservedFlavoursInner struct {

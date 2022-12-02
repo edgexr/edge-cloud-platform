@@ -15,6 +15,9 @@ import (
 	"time"
 )
 
+// checks if the FederationRequestData type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &FederationRequestData{}
+
 // FederationRequestData struct for FederationRequestData
 type FederationRequestData struct {
 	// Globally unique Identifier allocated to an operator platform. This is valid and used only in context of  MEC federation interface.
@@ -75,7 +78,7 @@ func (o *FederationRequestData) SetOrigOPFederationId(v string) {
 
 // GetOrigOPCountryCode returns the OrigOPCountryCode field value if set, zero value otherwise.
 func (o *FederationRequestData) GetOrigOPCountryCode() string {
-	if o == nil || o.OrigOPCountryCode == nil {
+	if o == nil || isNil(o.OrigOPCountryCode) {
 		var ret string
 		return ret
 	}
@@ -85,7 +88,7 @@ func (o *FederationRequestData) GetOrigOPCountryCode() string {
 // GetOrigOPCountryCodeOk returns a tuple with the OrigOPCountryCode field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationRequestData) GetOrigOPCountryCodeOk() (*string, bool) {
-	if o == nil || o.OrigOPCountryCode == nil {
+	if o == nil || isNil(o.OrigOPCountryCode) {
 		return nil, false
 	}
 	return o.OrigOPCountryCode, true
@@ -93,7 +96,7 @@ func (o *FederationRequestData) GetOrigOPCountryCodeOk() (*string, bool) {
 
 // HasOrigOPCountryCode returns a boolean if a field has been set.
 func (o *FederationRequestData) HasOrigOPCountryCode() bool {
-	if o != nil && o.OrigOPCountryCode != nil {
+	if o != nil && !isNil(o.OrigOPCountryCode) {
 		return true
 	}
 
@@ -107,7 +110,7 @@ func (o *FederationRequestData) SetOrigOPCountryCode(v string) {
 
 // GetOrigOPMobileNetworkCodes returns the OrigOPMobileNetworkCodes field value if set, zero value otherwise.
 func (o *FederationRequestData) GetOrigOPMobileNetworkCodes() MobileNetworkIds {
-	if o == nil || o.OrigOPMobileNetworkCodes == nil {
+	if o == nil || isNil(o.OrigOPMobileNetworkCodes) {
 		var ret MobileNetworkIds
 		return ret
 	}
@@ -117,7 +120,7 @@ func (o *FederationRequestData) GetOrigOPMobileNetworkCodes() MobileNetworkIds {
 // GetOrigOPMobileNetworkCodesOk returns a tuple with the OrigOPMobileNetworkCodes field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationRequestData) GetOrigOPMobileNetworkCodesOk() (*MobileNetworkIds, bool) {
-	if o == nil || o.OrigOPMobileNetworkCodes == nil {
+	if o == nil || isNil(o.OrigOPMobileNetworkCodes) {
 		return nil, false
 	}
 	return o.OrigOPMobileNetworkCodes, true
@@ -125,7 +128,7 @@ func (o *FederationRequestData) GetOrigOPMobileNetworkCodesOk() (*MobileNetworkI
 
 // HasOrigOPMobileNetworkCodes returns a boolean if a field has been set.
 func (o *FederationRequestData) HasOrigOPMobileNetworkCodes() bool {
-	if o != nil && o.OrigOPMobileNetworkCodes != nil {
+	if o != nil && !isNil(o.OrigOPMobileNetworkCodes) {
 		return true
 	}
 
@@ -139,7 +142,7 @@ func (o *FederationRequestData) SetOrigOPMobileNetworkCodes(v MobileNetworkIds) 
 
 // GetOrigOPFixedNetworkCodes returns the OrigOPFixedNetworkCodes field value if set, zero value otherwise.
 func (o *FederationRequestData) GetOrigOPFixedNetworkCodes() []string {
-	if o == nil || o.OrigOPFixedNetworkCodes == nil {
+	if o == nil || isNil(o.OrigOPFixedNetworkCodes) {
 		var ret []string
 		return ret
 	}
@@ -149,7 +152,7 @@ func (o *FederationRequestData) GetOrigOPFixedNetworkCodes() []string {
 // GetOrigOPFixedNetworkCodesOk returns a tuple with the OrigOPFixedNetworkCodes field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationRequestData) GetOrigOPFixedNetworkCodesOk() ([]string, bool) {
-	if o == nil || o.OrigOPFixedNetworkCodes == nil {
+	if o == nil || isNil(o.OrigOPFixedNetworkCodes) {
 		return nil, false
 	}
 	return o.OrigOPFixedNetworkCodes, true
@@ -157,7 +160,7 @@ func (o *FederationRequestData) GetOrigOPFixedNetworkCodesOk() ([]string, bool) 
 
 // HasOrigOPFixedNetworkCodes returns a boolean if a field has been set.
 func (o *FederationRequestData) HasOrigOPFixedNetworkCodes() bool {
-	if o != nil && o.OrigOPFixedNetworkCodes != nil {
+	if o != nil && !isNil(o.OrigOPFixedNetworkCodes) {
 		return true
 	}
 
@@ -218,26 +221,28 @@ func (o *FederationRequestData) SetFederationNotificationDest(v string) {
 }
 
 func (o FederationRequestData) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["origOPFederationId"] = o.OrigOPFederationId
-	}
-	if o.OrigOPCountryCode != nil {
-		toSerialize["origOPCountryCode"] = o.OrigOPCountryCode
-	}
-	if o.OrigOPMobileNetworkCodes != nil {
-		toSerialize["origOPMobileNetworkCodes"] = o.OrigOPMobileNetworkCodes
-	}
-	if o.OrigOPFixedNetworkCodes != nil {
-		toSerialize["origOPFixedNetworkCodes"] = o.OrigOPFixedNetworkCodes
-	}
-	if true {
-		toSerialize["initialDate"] = o.InitialDate
-	}
-	if true {
-		toSerialize["federationNotificationDest"] = o.FederationNotificationDest
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o FederationRequestData) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["origOPFederationId"] = o.OrigOPFederationId
+	if !isNil(o.OrigOPCountryCode) {
+		toSerialize["origOPCountryCode"] = o.OrigOPCountryCode
+	}
+	if !isNil(o.OrigOPMobileNetworkCodes) {
+		toSerialize["origOPMobileNetworkCodes"] = o.OrigOPMobileNetworkCodes
+	}
+	if !isNil(o.OrigOPFixedNetworkCodes) {
+		toSerialize["origOPFixedNetworkCodes"] = o.OrigOPFixedNetworkCodes
+	}
+	toSerialize["initialDate"] = o.InitialDate
+	toSerialize["federationNotificationDest"] = o.FederationNotificationDest
+	return toSerialize, nil
 }
 
 type NullableFederationRequestData struct {

@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the GetCandidateZonesRequestEdgeDiscoveryFilters type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &GetCandidateZonesRequestEdgeDiscoveryFilters{}
+
 // GetCandidateZonesRequestEdgeDiscoveryFilters struct for GetCandidateZonesRequestEdgeDiscoveryFilters
 type GetCandidateZonesRequestEdgeDiscoveryFilters struct {
 	Location *ClientLocation `json:"location,omitempty"`
@@ -38,7 +41,7 @@ func NewGetCandidateZonesRequestEdgeDiscoveryFiltersWithDefaults() *GetCandidate
 
 // GetLocation returns the Location field value if set, zero value otherwise.
 func (o *GetCandidateZonesRequestEdgeDiscoveryFilters) GetLocation() ClientLocation {
-	if o == nil || o.Location == nil {
+	if o == nil || isNil(o.Location) {
 		var ret ClientLocation
 		return ret
 	}
@@ -48,7 +51,7 @@ func (o *GetCandidateZonesRequestEdgeDiscoveryFilters) GetLocation() ClientLocat
 // GetLocationOk returns a tuple with the Location field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetCandidateZonesRequestEdgeDiscoveryFilters) GetLocationOk() (*ClientLocation, bool) {
-	if o == nil || o.Location == nil {
+	if o == nil || isNil(o.Location) {
 		return nil, false
 	}
 	return o.Location, true
@@ -56,7 +59,7 @@ func (o *GetCandidateZonesRequestEdgeDiscoveryFilters) GetLocationOk() (*ClientL
 
 // HasLocation returns a boolean if a field has been set.
 func (o *GetCandidateZonesRequestEdgeDiscoveryFilters) HasLocation() bool {
-	if o != nil && o.Location != nil {
+	if o != nil && !isNil(o.Location) {
 		return true
 	}
 
@@ -69,11 +72,19 @@ func (o *GetCandidateZonesRequestEdgeDiscoveryFilters) SetLocation(v ClientLocat
 }
 
 func (o GetCandidateZonesRequestEdgeDiscoveryFilters) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if o.Location != nil {
-		toSerialize["location"] = o.Location
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o GetCandidateZonesRequestEdgeDiscoveryFilters) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	if !isNil(o.Location) {
+		toSerialize["location"] = o.Location
+	}
+	return toSerialize, nil
 }
 
 type NullableGetCandidateZonesRequestEdgeDiscoveryFilters struct {

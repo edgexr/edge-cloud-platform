@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the FederationContextIdZonesPostRequestZoneResUpdInfoInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &FederationContextIdZonesPostRequestZoneResUpdInfoInner{}
+
 // FederationContextIdZonesPostRequestZoneResUpdInfoInner struct for FederationContextIdZonesPostRequestZoneResUpdInfoInner
 type FederationContextIdZonesPostRequestZoneResUpdInfoInner struct {
 	// Resources exclusively reserved for the originator OP.
@@ -40,7 +43,7 @@ func NewFederationContextIdZonesPostRequestZoneResUpdInfoInnerWithDefaults() *Fe
 
 // GetAvailableCompResources returns the AvailableCompResources field value if set, zero value otherwise.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInner) GetAvailableCompResources() []ComputeResourceInfo {
-	if o == nil || o.AvailableCompResources == nil {
+	if o == nil || isNil(o.AvailableCompResources) {
 		var ret []ComputeResourceInfo
 		return ret
 	}
@@ -50,7 +53,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInner) GetAvailableCom
 // GetAvailableCompResourcesOk returns a tuple with the AvailableCompResources field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInner) GetAvailableCompResourcesOk() ([]ComputeResourceInfo, bool) {
-	if o == nil || o.AvailableCompResources == nil {
+	if o == nil || isNil(o.AvailableCompResources) {
 		return nil, false
 	}
 	return o.AvailableCompResources, true
@@ -58,7 +61,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInner) GetAvailableCom
 
 // HasAvailableCompResources returns a boolean if a field has been set.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInner) HasAvailableCompResources() bool {
-	if o != nil && o.AvailableCompResources != nil {
+	if o != nil && !isNil(o.AvailableCompResources) {
 		return true
 	}
 
@@ -72,7 +75,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInner) SetAvailableCom
 
 // GetAvailableNetResources returns the AvailableNetResources field value if set, zero value otherwise.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInner) GetAvailableNetResources() FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources {
-	if o == nil || o.AvailableNetResources == nil {
+	if o == nil || isNil(o.AvailableNetResources) {
 		var ret FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources
 		return ret
 	}
@@ -82,7 +85,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInner) GetAvailableNet
 // GetAvailableNetResourcesOk returns a tuple with the AvailableNetResources field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInner) GetAvailableNetResourcesOk() (*FederationContextIdZonesPostRequestZoneResUpdInfoInnerAvailableNetResources, bool) {
-	if o == nil || o.AvailableNetResources == nil {
+	if o == nil || isNil(o.AvailableNetResources) {
 		return nil, false
 	}
 	return o.AvailableNetResources, true
@@ -90,7 +93,7 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInner) GetAvailableNet
 
 // HasAvailableNetResources returns a boolean if a field has been set.
 func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInner) HasAvailableNetResources() bool {
-	if o != nil && o.AvailableNetResources != nil {
+	if o != nil && !isNil(o.AvailableNetResources) {
 		return true
 	}
 
@@ -103,14 +106,22 @@ func (o *FederationContextIdZonesPostRequestZoneResUpdInfoInner) SetAvailableNet
 }
 
 func (o FederationContextIdZonesPostRequestZoneResUpdInfoInner) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if o.AvailableCompResources != nil {
-		toSerialize["availableCompResources"] = o.AvailableCompResources
-	}
-	if o.AvailableNetResources != nil {
-		toSerialize["availableNetResources"] = o.AvailableNetResources
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o FederationContextIdZonesPostRequestZoneResUpdInfoInner) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	if !isNil(o.AvailableCompResources) {
+		toSerialize["availableCompResources"] = o.AvailableCompResources
+	}
+	if !isNil(o.AvailableNetResources) {
+		toSerialize["availableNetResources"] = o.AvailableNetResources
+	}
+	return toSerialize, nil
 }
 
 type NullableFederationContextIdZonesPostRequestZoneResUpdInfoInner struct {

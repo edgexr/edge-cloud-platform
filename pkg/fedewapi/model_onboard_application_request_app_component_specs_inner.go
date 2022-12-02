@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the OnboardApplicationRequestAppComponentSpecsInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &OnboardApplicationRequestAppComponentSpecsInner{}
+
 // OnboardApplicationRequestAppComponentSpecsInner struct for OnboardApplicationRequestAppComponentSpecsInner
 type OnboardApplicationRequestAppComponentSpecsInner struct {
 	// Must be a valid RFC 1035 label name.  This defines the DNS name via which the component can be accessed over NBI. Access via serviceNameNB is restricted on specific ports. Platform shall expose component access externally via this DNS name
@@ -71,7 +74,7 @@ func (o *OnboardApplicationRequestAppComponentSpecsInner) SetServiceNameNB(v str
 
 // GetServiceNameEW returns the ServiceNameEW field value if set, zero value otherwise.
 func (o *OnboardApplicationRequestAppComponentSpecsInner) GetServiceNameEW() string {
-	if o == nil || o.ServiceNameEW == nil {
+	if o == nil || isNil(o.ServiceNameEW) {
 		var ret string
 		return ret
 	}
@@ -81,7 +84,7 @@ func (o *OnboardApplicationRequestAppComponentSpecsInner) GetServiceNameEW() str
 // GetServiceNameEWOk returns a tuple with the ServiceNameEW field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *OnboardApplicationRequestAppComponentSpecsInner) GetServiceNameEWOk() (*string, bool) {
-	if o == nil || o.ServiceNameEW == nil {
+	if o == nil || isNil(o.ServiceNameEW) {
 		return nil, false
 	}
 	return o.ServiceNameEW, true
@@ -89,7 +92,7 @@ func (o *OnboardApplicationRequestAppComponentSpecsInner) GetServiceNameEWOk() (
 
 // HasServiceNameEW returns a boolean if a field has been set.
 func (o *OnboardApplicationRequestAppComponentSpecsInner) HasServiceNameEW() bool {
-	if o != nil && o.ServiceNameEW != nil {
+	if o != nil && !isNil(o.ServiceNameEW) {
 		return true
 	}
 
@@ -103,7 +106,7 @@ func (o *OnboardApplicationRequestAppComponentSpecsInner) SetServiceNameEW(v str
 
 // GetComponentName returns the ComponentName field value if set, zero value otherwise.
 func (o *OnboardApplicationRequestAppComponentSpecsInner) GetComponentName() string {
-	if o == nil || o.ComponentName == nil {
+	if o == nil || isNil(o.ComponentName) {
 		var ret string
 		return ret
 	}
@@ -113,7 +116,7 @@ func (o *OnboardApplicationRequestAppComponentSpecsInner) GetComponentName() str
 // GetComponentNameOk returns a tuple with the ComponentName field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *OnboardApplicationRequestAppComponentSpecsInner) GetComponentNameOk() (*string, bool) {
-	if o == nil || o.ComponentName == nil {
+	if o == nil || isNil(o.ComponentName) {
 		return nil, false
 	}
 	return o.ComponentName, true
@@ -121,7 +124,7 @@ func (o *OnboardApplicationRequestAppComponentSpecsInner) GetComponentNameOk() (
 
 // HasComponentName returns a boolean if a field has been set.
 func (o *OnboardApplicationRequestAppComponentSpecsInner) HasComponentName() bool {
-	if o != nil && o.ComponentName != nil {
+	if o != nil && !isNil(o.ComponentName) {
 		return true
 	}
 
@@ -158,20 +161,24 @@ func (o *OnboardApplicationRequestAppComponentSpecsInner) SetArtefactId(v string
 }
 
 func (o OnboardApplicationRequestAppComponentSpecsInner) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["serviceNameNB"] = o.ServiceNameNB
-	}
-	if o.ServiceNameEW != nil {
-		toSerialize["serviceNameEW"] = o.ServiceNameEW
-	}
-	if o.ComponentName != nil {
-		toSerialize["componentName"] = o.ComponentName
-	}
-	if true {
-		toSerialize["artefactId"] = o.ArtefactId
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o OnboardApplicationRequestAppComponentSpecsInner) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["serviceNameNB"] = o.ServiceNameNB
+	if !isNil(o.ServiceNameEW) {
+		toSerialize["serviceNameEW"] = o.ServiceNameEW
+	}
+	if !isNil(o.ComponentName) {
+		toSerialize["componentName"] = o.ComponentName
+	}
+	toSerialize["artefactId"] = o.ArtefactId
+	return toSerialize, nil
 }
 
 type NullableOnboardApplicationRequestAppComponentSpecsInner struct {

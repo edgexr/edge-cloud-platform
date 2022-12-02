@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the HugePage type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &HugePage{}
+
 // HugePage struct for HugePage
 type HugePage struct {
 	// Size of hugepage
@@ -90,14 +93,18 @@ func (o *HugePage) SetNumber(v int32) {
 }
 
 func (o HugePage) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["pageSize"] = o.PageSize
-	}
-	if true {
-		toSerialize["number"] = o.Number
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o HugePage) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["pageSize"] = o.PageSize
+	toSerialize["number"] = o.Number
+	return toSerialize, nil
 }
 
 type NullableHugePage struct {

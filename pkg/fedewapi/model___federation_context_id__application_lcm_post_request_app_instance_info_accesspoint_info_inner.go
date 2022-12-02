@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner{}
+
 // FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner struct for FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner
 type FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner struct {
 	// This is the interface Identifier that app provider defines when application is onboarded.
@@ -89,14 +92,18 @@ func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointI
 }
 
 func (o FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["interfaceId"] = o.InterfaceId
-	}
-	if true {
-		toSerialize["accessPoints"] = o.AccessPoints
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["interfaceId"] = o.InterfaceId
+	toSerialize["accessPoints"] = o.AccessPoints
+	return toSerialize, nil
 }
 
 type NullableFederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner struct {

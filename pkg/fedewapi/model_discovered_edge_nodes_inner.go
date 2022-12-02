@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the DiscoveredEdgeNodesInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &DiscoveredEdgeNodesInner{}
+
 // DiscoveredEdgeNodesInner struct for DiscoveredEdgeNodesInner
 type DiscoveredEdgeNodesInner struct {
 	// Human readable name of the zone.
@@ -89,14 +92,18 @@ func (o *DiscoveredEdgeNodesInner) SetLatencyServiceEndPoints(v ServiceEndpoint)
 }
 
 func (o DiscoveredEdgeNodesInner) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["zoneId"] = o.ZoneId
-	}
-	if true {
-		toSerialize["latencyServiceEndPoints"] = o.LatencyServiceEndPoints
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o DiscoveredEdgeNodesInner) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["zoneId"] = o.ZoneId
+	toSerialize["latencyServiceEndPoints"] = o.LatencyServiceEndPoints
+	return toSerialize, nil
 }
 
 type NullableDiscoveredEdgeNodesInner struct {

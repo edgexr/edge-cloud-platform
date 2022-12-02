@@ -14,6 +14,9 @@ import (
 	"encoding/json"
 )
 
+// checks if the UpdateApplicationRequestAppUpdQoSProfile type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &UpdateApplicationRequestAppUpdQoSProfile{}
+
 // UpdateApplicationRequestAppUpdQoSProfile Parameters corresponding to the performance constraints, tenancy details etc.
 type UpdateApplicationRequestAppUpdQoSProfile struct {
 	// Latency requirements for the application. Allowed values (non-standardized) are none, low and ultra-low. Ultra-Low may corresponds to range 15 - 30 msec, Low correspond to range 30 - 50 msec. None means 51 and above
@@ -61,7 +64,7 @@ func NewUpdateApplicationRequestAppUpdQoSProfileWithDefaults() *UpdateApplicatio
 
 // GetLatencyConstraints returns the LatencyConstraints field value if set, zero value otherwise.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) GetLatencyConstraints() string {
-	if o == nil || o.LatencyConstraints == nil {
+	if o == nil || isNil(o.LatencyConstraints) {
 		var ret string
 		return ret
 	}
@@ -71,7 +74,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) GetLatencyConstraints() strin
 // GetLatencyConstraintsOk returns a tuple with the LatencyConstraints field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) GetLatencyConstraintsOk() (*string, bool) {
-	if o == nil || o.LatencyConstraints == nil {
+	if o == nil || isNil(o.LatencyConstraints) {
 		return nil, false
 	}
 	return o.LatencyConstraints, true
@@ -79,7 +82,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) GetLatencyConstraintsOk() (*s
 
 // HasLatencyConstraints returns a boolean if a field has been set.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) HasLatencyConstraints() bool {
-	if o != nil && o.LatencyConstraints != nil {
+	if o != nil && !isNil(o.LatencyConstraints) {
 		return true
 	}
 
@@ -93,7 +96,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) SetLatencyConstraints(v strin
 
 // GetBandwidthRequired returns the BandwidthRequired field value if set, zero value otherwise.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) GetBandwidthRequired() int32 {
-	if o == nil || o.BandwidthRequired == nil {
+	if o == nil || isNil(o.BandwidthRequired) {
 		var ret int32
 		return ret
 	}
@@ -103,7 +106,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) GetBandwidthRequired() int32 
 // GetBandwidthRequiredOk returns a tuple with the BandwidthRequired field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) GetBandwidthRequiredOk() (*int32, bool) {
-	if o == nil || o.BandwidthRequired == nil {
+	if o == nil || isNil(o.BandwidthRequired) {
 		return nil, false
 	}
 	return o.BandwidthRequired, true
@@ -111,7 +114,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) GetBandwidthRequiredOk() (*in
 
 // HasBandwidthRequired returns a boolean if a field has been set.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) HasBandwidthRequired() bool {
-	if o != nil && o.BandwidthRequired != nil {
+	if o != nil && !isNil(o.BandwidthRequired) {
 		return true
 	}
 
@@ -125,7 +128,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) SetBandwidthRequired(v int32)
 
 // GetMobilitySupport returns the MobilitySupport field value if set, zero value otherwise.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) GetMobilitySupport() bool {
-	if o == nil || o.MobilitySupport == nil {
+	if o == nil || isNil(o.MobilitySupport) {
 		var ret bool
 		return ret
 	}
@@ -135,7 +138,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) GetMobilitySupport() bool {
 // GetMobilitySupportOk returns a tuple with the MobilitySupport field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) GetMobilitySupportOk() (*bool, bool) {
-	if o == nil || o.MobilitySupport == nil {
+	if o == nil || isNil(o.MobilitySupport) {
 		return nil, false
 	}
 	return o.MobilitySupport, true
@@ -143,7 +146,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) GetMobilitySupportOk() (*bool
 
 // HasMobilitySupport returns a boolean if a field has been set.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) HasMobilitySupport() bool {
-	if o != nil && o.MobilitySupport != nil {
+	if o != nil && !isNil(o.MobilitySupport) {
 		return true
 	}
 
@@ -157,7 +160,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) SetMobilitySupport(v bool) {
 
 // GetMultiUserClients returns the MultiUserClients field value if set, zero value otherwise.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) GetMultiUserClients() string {
-	if o == nil || o.MultiUserClients == nil {
+	if o == nil || isNil(o.MultiUserClients) {
 		var ret string
 		return ret
 	}
@@ -167,7 +170,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) GetMultiUserClients() string 
 // GetMultiUserClientsOk returns a tuple with the MultiUserClients field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) GetMultiUserClientsOk() (*string, bool) {
-	if o == nil || o.MultiUserClients == nil {
+	if o == nil || isNil(o.MultiUserClients) {
 		return nil, false
 	}
 	return o.MultiUserClients, true
@@ -175,7 +178,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) GetMultiUserClientsOk() (*str
 
 // HasMultiUserClients returns a boolean if a field has been set.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) HasMultiUserClients() bool {
-	if o != nil && o.MultiUserClients != nil {
+	if o != nil && !isNil(o.MultiUserClients) {
 		return true
 	}
 
@@ -189,7 +192,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) SetMultiUserClients(v string)
 
 // GetNoOfUsersPerAppInst returns the NoOfUsersPerAppInst field value if set, zero value otherwise.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) GetNoOfUsersPerAppInst() int32 {
-	if o == nil || o.NoOfUsersPerAppInst == nil {
+	if o == nil || isNil(o.NoOfUsersPerAppInst) {
 		var ret int32
 		return ret
 	}
@@ -199,7 +202,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) GetNoOfUsersPerAppInst() int3
 // GetNoOfUsersPerAppInstOk returns a tuple with the NoOfUsersPerAppInst field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) GetNoOfUsersPerAppInstOk() (*int32, bool) {
-	if o == nil || o.NoOfUsersPerAppInst == nil {
+	if o == nil || isNil(o.NoOfUsersPerAppInst) {
 		return nil, false
 	}
 	return o.NoOfUsersPerAppInst, true
@@ -207,7 +210,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) GetNoOfUsersPerAppInstOk() (*
 
 // HasNoOfUsersPerAppInst returns a boolean if a field has been set.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) HasNoOfUsersPerAppInst() bool {
-	if o != nil && o.NoOfUsersPerAppInst != nil {
+	if o != nil && !isNil(o.NoOfUsersPerAppInst) {
 		return true
 	}
 
@@ -221,7 +224,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) SetNoOfUsersPerAppInst(v int3
 
 // GetAppProvisioning returns the AppProvisioning field value if set, zero value otherwise.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) GetAppProvisioning() bool {
-	if o == nil || o.AppProvisioning == nil {
+	if o == nil || isNil(o.AppProvisioning) {
 		var ret bool
 		return ret
 	}
@@ -231,7 +234,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) GetAppProvisioning() bool {
 // GetAppProvisioningOk returns a tuple with the AppProvisioning field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) GetAppProvisioningOk() (*bool, bool) {
-	if o == nil || o.AppProvisioning == nil {
+	if o == nil || isNil(o.AppProvisioning) {
 		return nil, false
 	}
 	return o.AppProvisioning, true
@@ -239,7 +242,7 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) GetAppProvisioningOk() (*bool
 
 // HasAppProvisioning returns a boolean if a field has been set.
 func (o *UpdateApplicationRequestAppUpdQoSProfile) HasAppProvisioning() bool {
-	if o != nil && o.AppProvisioning != nil {
+	if o != nil && !isNil(o.AppProvisioning) {
 		return true
 	}
 
@@ -252,26 +255,34 @@ func (o *UpdateApplicationRequestAppUpdQoSProfile) SetAppProvisioning(v bool) {
 }
 
 func (o UpdateApplicationRequestAppUpdQoSProfile) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if o.LatencyConstraints != nil {
-		toSerialize["latencyConstraints"] = o.LatencyConstraints
-	}
-	if o.BandwidthRequired != nil {
-		toSerialize["bandwidthRequired"] = o.BandwidthRequired
-	}
-	if o.MobilitySupport != nil {
-		toSerialize["mobilitySupport"] = o.MobilitySupport
-	}
-	if o.MultiUserClients != nil {
-		toSerialize["multiUserClients"] = o.MultiUserClients
-	}
-	if o.NoOfUsersPerAppInst != nil {
-		toSerialize["noOfUsersPerAppInst"] = o.NoOfUsersPerAppInst
-	}
-	if o.AppProvisioning != nil {
-		toSerialize["appProvisioning"] = o.AppProvisioning
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
 	}
 	return json.Marshal(toSerialize)
+}
+
+func (o UpdateApplicationRequestAppUpdQoSProfile) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	if !isNil(o.LatencyConstraints) {
+		toSerialize["latencyConstraints"] = o.LatencyConstraints
+	}
+	if !isNil(o.BandwidthRequired) {
+		toSerialize["bandwidthRequired"] = o.BandwidthRequired
+	}
+	if !isNil(o.MobilitySupport) {
+		toSerialize["mobilitySupport"] = o.MobilitySupport
+	}
+	if !isNil(o.MultiUserClients) {
+		toSerialize["multiUserClients"] = o.MultiUserClients
+	}
+	if !isNil(o.NoOfUsersPerAppInst) {
+		toSerialize["noOfUsersPerAppInst"] = o.NoOfUsersPerAppInst
+	}
+	if !isNil(o.AppProvisioning) {
+		toSerialize["appProvisioning"] = o.AppProvisioning
+	}
+	return toSerialize, nil
 }
 
 type NullableUpdateApplicationRequestAppUpdQoSProfile struct {
