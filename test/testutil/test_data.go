@@ -290,6 +290,17 @@ func AppData() []edgeproto.App {
 		AccessPorts:   "tcp:80,tcp:443,tcp:81:tls",
 		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
 		DefaultFlavor: flavorData[0].Key,
+	}, { // edgeproto.App // 16
+		Key: edgeproto.AppKey{
+			Organization: devData[0],
+			Name:         "Custom-k8s",
+			Version:      "1.0",
+		},
+		Deployment:    cloudcommon.DeploymentTypeKubernetes,
+		ImageType:     edgeproto.ImageType_IMAGE_TYPE_DOCKER,
+		AccessPorts:   "tcp:80,tcp:443,tcp:81:tls",
+		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
+		DefaultFlavor: flavorData[0].Key,
 	}}
 }
 
