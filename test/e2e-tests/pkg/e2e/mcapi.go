@@ -1204,7 +1204,6 @@ func manageFederatorZoneData(mode, uri, token, tag string, data *ormapi.AllData,
 	case "share":
 		for ii, fd := range data.ProviderZones {
 			share := ormapi.FederatedZoneShareRequest{
-				OperatorId:   fd.OperatorId,
 				ProviderName: fd.ProviderName,
 				Zones:        []string{fd.ZoneId},
 			}
@@ -1214,7 +1213,6 @@ func manageFederatorZoneData(mode, uri, token, tag string, data *ormapi.AllData,
 	case "unshare":
 		for ii, fd := range data.ProviderZones {
 			share := ormapi.FederatedZoneShareRequest{
-				OperatorId:   fd.OperatorId,
 				ProviderName: fd.ProviderName,
 				Zones:        []string{fd.ZoneId},
 			}
@@ -1224,7 +1222,6 @@ func manageFederatorZoneData(mode, uri, token, tag string, data *ormapi.AllData,
 	case "register":
 		for ii, fd := range data.ConsumerZones {
 			req := ormapi.FederatedZoneRegRequest{
-				OperatorId:   fd.OperatorId,
 				ConsumerName: fd.ConsumerName,
 				Zones:        []string{fd.ZoneId},
 			}
@@ -1234,7 +1231,6 @@ func manageFederatorZoneData(mode, uri, token, tag string, data *ormapi.AllData,
 	case "deregister":
 		for ii, fd := range data.ConsumerZones {
 			req := ormapi.FederatedZoneRegRequest{
-				OperatorId:   fd.OperatorId,
 				ConsumerName: fd.ConsumerName,
 				Zones:        []string{fd.ZoneId},
 			}

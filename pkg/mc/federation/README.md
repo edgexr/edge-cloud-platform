@@ -31,8 +31,15 @@ Notes:
 - FederationProvider is multi-region
    - Cloudlets can be shared as zones from regions configured on the FederationProvider
    - App definitions sent by the Consumer to the Provider will be created on every region configured on the Provider
-- FederationConsumer is single region
-   - Cloudlets that are created on the consumer to represent Provider Zones are created in the single region configured on the FederationConsumer
+- FederationConsumer is multi-region
+   - Each zone can be registered to a specific region as a Cloudlet
+
+## Organizations
+
+- Creating a FederationProvider also creates a developer organization of the same name
+   - The federation developer org is used to house images (files), artefacts, apps, and app instances sent by the partner
+- Creating a FederationConsumer also creates an operator organization of the same name
+   - The federation operator org is used to house cloudlets corresponding to partner zones
 
 ## Authentication
 

@@ -1,0 +1,138 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+controllers:
+- region: PA
+orgs:
+- name: dmuus-partner1
+  type: operator
+- name: enterprise-partner1
+  type: operator
+- name: partner1
+  type: operator
+  address: mobiledgex
+  phone: 123-123-1234
+roles:
+- org: dmuus-partner1
+  username: fedop
+  role: OperatorManager
+- org: enterprise-partner1
+  username: fedop
+  role: OperatorManager
+- org: partner1
+  username: fedop
+  role: OperatorManager
+regiondata:
+- region: PA
+  appdata:
+    flavors:
+    - key:
+        name: x1.medium
+      ram: 4096
+      vcpus: 4
+      disk: 4
+    - key:
+        name: x1.small
+      ram: 2048
+      vcpus: 2
+      disk: 2
+    - key:
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
+    cloudlets:
+    - key:
+        organization: partner1
+        name: partner1-cloud-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: partner1-cloud-1
+      containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
+      defaultresourcealertthreshold: 80
+      dnslabel: partner1-cloud-1-partner1
+      rootlbfqdn: shared.partner1-cloud-1-partner1.pa.edgecloude2e.net
+    - key:
+        organization: partner1
+        name: partner1-cloud-2
+      location:
+        latitude: 81
+        longitude: -11
+      ipsupport: Dynamic
+      numdynamicips: 254
+      state: Ready
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: partner1-cloud-2
+      containerversion: "2019-10-24"
+      deployment: docker
+      trustpolicystate: NotPresent
+      resourcequotas:
+      - name: RAM
+        alertthreshold: 50
+      - name: vCPUs
+        value: 20
+        alertthreshold: 50
+      - name: External IPs
+        alertthreshold: 10
+      defaultresourcealertthreshold: 80
+      dnslabel: partner1-cloud-2-partner1
+      rootlbfqdn: shared.partner1-cloud-2-partner1.pa.edgecloude2e.net
+    cloudletinfos:
+    - key:
+        organization: partner1
+        name: partner1-cloud-1
+      state: Ready
+      osmaxram: 40960
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+      containerversion: "2019-10-24"
+      controllercachereceived: true
+      trustpolicystate: NotPresent
+    - key:
+        organization: partner1
+        name: partner1-cloud-2
+      state: Ready
+      osmaxram: 40960
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+      containerversion: "2019-10-24"
+      controllercachereceived: true
+      trustpolicystate: NotPresent

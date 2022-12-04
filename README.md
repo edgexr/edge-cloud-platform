@@ -75,3 +75,7 @@ Infrastructure specific code is packaged under a plugin to allow for new infrast
 - Google Cloud Platform (GCP) GKE
 - K8S Bare Metal (primarily but not limited to Google Anthos)
 - Microsoft Azure Kubernetes Service (AKS)
+
+## Federation
+
+Refer to [Federation README](pkg/mc/federation/README.md)

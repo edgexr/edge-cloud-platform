@@ -15,11 +15,21 @@
 controllers:
 - region: PA
 orgs:
+- name: dmuus-partner1
+  type: operator
+- name: enterprise-partner1
+  type: operator
 - name: partner1
   type: operator
   address: mobiledgex
   phone: 123-123-1234
 roles:
+- org: dmuus-partner1
+  username: fedop
+  role: OperatorManager
+- org: enterprise-partner1
+  username: fedop
+  role: OperatorManager
 - org: partner1
   username: fedop
   role: OperatorManager
@@ -44,9 +54,9 @@ regiondata:
       disk: 1
     cloudlets:
     - key:
-        organization: partner1
+        organization: dmuus-partner1
         name: dmuuscloud1
-        federatedorganization: dmuus-partner1
+        federatedorganization: partner1
       location:
         latitude: 31
         longitude: -91
@@ -65,15 +75,15 @@ regiondata:
       - name: RAM
         value: 409600
       defaultresourcealertthreshold: 80
-      dnslabel: dmuuscloud1-partner1
-      rootlbfqdn: shared.dmuuscloud1-partner1.pa.edgecloude2e.net
+      dnslabel: dmuuscloud1-dmuus-partner1
+      rootlbfqdn: shared.dmuuscloud1-dmuus-partner1.pa.edgecloude2e.net
       federationconfig:
         partnerfederationaddr: https://127.0.0.1:9801
         federationdbid: 1
     - key:
-        organization: partner1
+        organization: dmuus-partner1
         name: dmuuscloud2
-        federatedorganization: dmuus-partner1
+        federatedorganization: partner1
       location:
         latitude: 35
         longitude: -95
@@ -92,15 +102,15 @@ regiondata:
       - name: RAM
         value: 40960
       defaultresourcealertthreshold: 80
-      dnslabel: dmuuscloud2-partner1
-      rootlbfqdn: shared.dmuuscloud2-partner1.pa.edgecloude2e.net
+      dnslabel: dmuuscloud2-dmuus-partner1
+      rootlbfqdn: shared.dmuuscloud2-dmuus-partner1.pa.edgecloude2e.net
       federationconfig:
         partnerfederationaddr: https://127.0.0.1:9801
         federationdbid: 1
     - key:
-        organization: partner1
+        organization: dmuus-partner1
         name: dmuuscloud3
-        federatedorganization: dmuus-partner1
+        federatedorganization: partner1
       location:
         latitude: 32
         longitude: -92
@@ -119,15 +129,15 @@ regiondata:
       - name: RAM
         value: 40960
       defaultresourcealertthreshold: 80
-      dnslabel: dmuuscloud3-partner1
-      rootlbfqdn: shared.dmuuscloud3-partner1.pa.edgecloude2e.net
+      dnslabel: dmuuscloud3-dmuus-partner1
+      rootlbfqdn: shared.dmuuscloud3-dmuus-partner1.pa.edgecloude2e.net
       federationconfig:
         partnerfederationaddr: https://127.0.0.1:9801
         federationdbid: 1
     - key:
-        organization: partner1
+        organization: dmuus-partner1
         name: dmuuscloud4
-        federatedorganization: dmuus-partner1
+        federatedorganization: partner1
       location:
         latitude: 36
         longitude: -96
@@ -146,15 +156,15 @@ regiondata:
       - name: RAM
         value: 40960
       defaultresourcealertthreshold: 80
-      dnslabel: dmuuscloud4-partner1
-      rootlbfqdn: shared.dmuuscloud4-partner1.pa.edgecloude2e.net
+      dnslabel: dmuuscloud4-dmuus-partner1
+      rootlbfqdn: shared.dmuuscloud4-dmuus-partner1.pa.edgecloude2e.net
       federationconfig:
         partnerfederationaddr: https://127.0.0.1:9801
         federationdbid: 1
     - key:
-        organization: partner1
+        organization: enterprise-partner1
         name: enterprise1
-        federatedorganization: enterprise-partner1
+        federatedorganization: partner1
       location:
         latitude: 31
         longitude: -91
@@ -173,15 +183,15 @@ regiondata:
       - name: RAM
         value: 40960
       defaultresourcealertthreshold: 80
-      dnslabel: enterprise1-partner1
-      rootlbfqdn: shared.enterprise1-partner1.pa.edgecloude2e.net
+      dnslabel: enterprise1-enterprise-partner1
+      rootlbfqdn: shared.enterprise1-enterprise-partner1.pa.edgecloude2e.net
       federationconfig:
         partnerfederationaddr: https://127.0.0.1:9801
         federationdbid: 2
     - key:
-        organization: partner1
+        organization: enterprise-partner1
         name: enterprise2
-        federatedorganization: enterprise-partner1
+        federatedorganization: partner1
       location:
         latitude: 31
         longitude: -91
@@ -200,8 +210,8 @@ regiondata:
       - name: RAM
         value: 40960
       defaultresourcealertthreshold: 80
-      dnslabel: enterprise2-partner1
-      rootlbfqdn: shared.enterprise2-partner1.pa.edgecloude2e.net
+      dnslabel: enterprise2-enterprise-partner1
+      rootlbfqdn: shared.enterprise2-enterprise-partner1.pa.edgecloude2e.net
       federationconfig:
         partnerfederationaddr: https://127.0.0.1:9801
         federationdbid: 2
@@ -251,9 +261,9 @@ regiondata:
       rootlbfqdn: shared.partner1-cloud-2-partner1.pa.edgecloude2e.net
     cloudletinfos:
     - key:
-        organization: partner1
+        organization: dmuus-partner1
         name: dmuuscloud1
-        federatedorganization: dmuus-partner1
+        federatedorganization: partner1
       state: Ready
       flavors:
       - name: x1.tiny
@@ -265,9 +275,9 @@ regiondata:
         ram: 4096
         disk: 40
     - key:
-        organization: partner1
+        organization: dmuus-partner1
         name: dmuuscloud2
-        federatedorganization: dmuus-partner1
+        federatedorganization: partner1
       state: Ready
       flavors:
       - name: x1.tiny
@@ -279,9 +289,9 @@ regiondata:
         ram: 4096
         disk: 40
     - key:
-        organization: partner1
+        organization: dmuus-partner1
         name: dmuuscloud3
-        federatedorganization: dmuus-partner1
+        federatedorganization: partner1
       state: Ready
       flavors:
       - name: x1.tiny
@@ -293,9 +303,9 @@ regiondata:
         ram: 4096
         disk: 40
     - key:
-        organization: partner1
+        organization: dmuus-partner1
         name: dmuuscloud4
-        federatedorganization: dmuus-partner1
+        federatedorganization: partner1
       state: Ready
       flavors:
       - name: x1.tiny
@@ -307,9 +317,9 @@ regiondata:
         ram: 4096
         disk: 40
     - key:
-        organization: partner1
+        organization: enterprise-partner1
         name: enterprise1
-        federatedorganization: enterprise-partner1
+        federatedorganization: partner1
       state: Ready
       flavors:
       - name: x1.tiny
@@ -321,9 +331,9 @@ regiondata:
         ram: 4096
         disk: 40
     - key:
-        organization: partner1
+        organization: enterprise-partner1
         name: enterprise2
-        federatedorganization: enterprise-partner1
+        federatedorganization: partner1
       state: Ready
       flavors:
       - name: x1.tiny

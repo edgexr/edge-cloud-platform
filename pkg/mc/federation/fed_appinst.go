@@ -34,7 +34,7 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) er
 	}
 
 	// lookup zone to make sure zone is shared
-	zone, err := p.LookupProviderZone(ctx, provider.Name, in.ZoneInfo.ZoneId, provider.OperatorId)
+	zone, err := p.LookupProviderZone(ctx, provider.Name, in.ZoneInfo.ZoneId)
 	if err != nil {
 		return err
 	}

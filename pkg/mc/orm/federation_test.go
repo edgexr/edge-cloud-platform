@@ -328,7 +328,7 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 		// admin allow non-edgebox cloudlets on operator org
 		setOperatorOrgNoEdgeboxOnly(t, mcClient, uri, tokenAd, operatorId)
 		fed := FederatorAttr{}
-		fed.fedName = operatorId
+		fed.fedName = "fed-" + operatorId
 		fed.tokenOper = tokenOper
 		fed.operatorId = operatorId
 		fed.countryCode = countryCode
@@ -378,7 +378,6 @@ func createAndShareProviderZones(t *testing.T, ctx context.Context, mcClient *mc
 		names = append(names, cloudlet.Key.Name)
 	}
 	zoneShReq := &ormapi.FederatedZoneShareRequest{
-		OperatorId:   provAttr.operatorId,
 		ProviderName: provAttr.fedName,
 		Zones:        names,
 	}
@@ -516,7 +515,6 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		OperatorId:      consAttr.operatorId,
 		PartnerAddr:     "http://" + op.fedAddr,
 		PartnerTokenUrl: "http://" + op.tokenAddr + "/" + federation.TokenUrl,
-		Region:          consAttr.region,
 		MyInfo: ormapi.Federator{
 			CountryCode: consAttr.countryCode,
 			MNC:         []string{"123", "345"},
@@ -675,8 +673,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Register consumer zone should fail if zoneid is invalid
 	// ==================================================================
 	zoneRegReq := &ormapi.FederatedZoneRegRequest{
-		OperatorId:   consAttr.operatorId,
 		ConsumerName: consAttr.fedName,
+		Region:       consAttr.region,
 		Zones:        []string{"badzone"},
 	}
 	_, _, err = mcClient.RegisterConsumerZone(op.uri, consAttr.tokenAd, zoneRegReq)
@@ -701,8 +699,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 			Cloudlet: edgeproto.Cloudlet{
 				Key: edgeproto.CloudletKey{
 					Name:                  zoneId,
-					Organization:          consAttr.operatorId,
-					FederatedOrganization: consAttr.fedName,
+					Organization:          consAttr.fedName,
+					FederatedOrganization: consAttr.operatorId,
 				},
 			},
 		}
@@ -717,8 +715,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 			CloudletInfo: edgeproto.CloudletInfo{
 				Key: edgeproto.CloudletKey{
 					Name:                  zoneId,
-					Organization:          consAttr.operatorId,
-					FederatedOrganization: consAttr.fedName,
+					Organization:          consAttr.fedName,
+					FederatedOrganization: consAttr.operatorId,
 				},
 			},
 		}
@@ -767,7 +765,6 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Unshare provider zone should fail if it's still in use
 	// ======================================================
 	zoneShReq := &ormapi.FederatedZoneShareRequest{
-		OperatorId:   provAttr.operatorId,
 		ProviderName: provAttr.fedName,
 		Zones:        sharedZones,
 	}
@@ -778,8 +775,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Deregister all the partner zones
 	// ================================
 	zoneRegReq = &ormapi.FederatedZoneRegRequest{
-		OperatorId:   consAttr.operatorId,
 		ConsumerName: consAttr.fedName,
+		Region:       consAttr.region,
 		Zones:        sharedZones,
 	}
 	_, status, err = mcClient.DeregisterConsumerZone(op.uri, consAttr.tokenOper, zoneRegReq)
@@ -793,8 +790,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 			Cloudlet: edgeproto.Cloudlet{
 				Key: edgeproto.CloudletKey{
 					Name:                  zoneId,
-					Organization:          consAttr.operatorId,
-					FederatedOrganization: consAttr.fedName,
+					Organization:          consAttr.fedName,
+					FederatedOrganization: consAttr.operatorId,
 				},
 			},
 		}
@@ -957,12 +954,105 @@ func StartDB() (*intprocess.Sql, *gorm.DB, error) {
 	return &sql, db, nil
 }
 
+type FederationProvider struct {
+	ID                     uint             `gorm:"primary_key"`
+	Name                   string           `gorm:"unique_index:fedprovindex;type:text;not null"`
+	OperatorId             string           `gorm:"unique_index:fedprovindex;type:citext REFERENCES organizations(name);not null"`
+	Regions                pq.StringArray   `gorm:"type:text[]"`
+	FederationContextId    string           `gorm:"unique;not null"`
+	MyInfo                 ormapi.Federator `gorm:"embedded;embedded_prefix:my_"`
+	PartnerInfo            ormapi.Federator `gorm:"embedded;embedded_prefix:partner_"`
+	PartnerNotifyDest      string
+	PartnerNotifyTokenUrl  string
+	PartnerNotifyClientId  string
+	PartnerNotifyClientKey string
+	Status                 string
+	ProviderClientId       string
+	CreatedAt              time.Time `json:",omitempty"`
+	UpdatedAt              time.Time `json:",omitempty"`
+}
+
+type FederationConsumer struct {
+	ID                  uint   `gorm:"primary_key"`
+	Name                string `gorm:"unique_index:fedconsindex;type:text;not null"`
+	OperatorId          string `gorm:"unique_index:fedconsindex;type:citext REFERENCES organizations(name);not null"`
+	PartnerAddr         string `gorm:"not null"`
+	PartnerTokenUrl     string
+	Region              string `gorm:"not null"`
+	FederationContextId string
+	MyInfo              ormapi.Federator `gorm:"embedded;embedded_prefix:my_"`
+	PartnerInfo         ormapi.Federator `gorm:"embedded;embedded_prefix:partner_"`
+	AutoRegisterZones   bool
+	Status              string
+	ProviderClientId    string
+	ProviderClientKey   string
+	NotifyClientId      string
+	CreatedAt           time.Time `json:",omitempty"`
+	UpdatedAt           time.Time `json:",omitempty"`
+}
+
+type ProviderZone struct {
+	ZoneId               string `gorm:"primary_key"`
+	ProviderName         string `gorm:"primary_key"`
+	OperatorId           string `gorm:"primary_key;type:citext"`
+	Status               string
+	PartnerNotifyZoneURI string
+}
+
+type ConsumerZone struct {
+	ZoneId           string `gorm:"primary_key"`
+	ConsumerName     string `gorm:"primary_key"`
+	OperatorId       string `gorm:"primary_key;type:citext"`
+	GeoLocation      string
+	GeographyDetails string
+	Status           string
+}
+
+type testFedObjOpts struct {
+	runUpgrade      bool
+	idempotentCheck bool
+}
+
 func TestGormFederationObjs(t *testing.T) {
+	opts := testFedObjOpts{}
+	testGormFederationObjs(t, opts)
+}
+
+func TestGormFederationObjsUpgrade(t *testing.T) {
+	opts := testFedObjOpts{
+		runUpgrade: true,
+	}
+	testGormFederationObjs(t, opts)
+}
+
+func TestGormFederationObjsRestart(t *testing.T) {
+	opts := testFedObjOpts{
+		runUpgrade:      true,
+		idempotentCheck: true,
+	}
+	testGormFederationObjs(t, opts)
+}
+
+// Test both upgrade changes to federation objects and constraints
+func testGormFederationObjs(t *testing.T, opts testFedObjOpts) {
+	log.SetDebugLevel(log.DebugLevelApi)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
 	sql, db, err := StartDB()
 	require.Nil(t, err, "start sql db")
 	defer sql.StopLocal()
 	defer db.Close()
 
+	dbObjsOld := []interface{}{
+		&ormapi.Organization{},
+		&FederationProvider{},
+		&FederationConsumer{},
+		&ormapi.ProviderZoneBase{},
+		&ProviderZone{},
+		&ConsumerZone{},
+	}
 	dbObjs := []interface{}{
 		&ormapi.Organization{},
 		&ormapi.FederationProvider{},
@@ -977,36 +1067,127 @@ func TestGormFederationObjs(t *testing.T) {
 		db.DropTableIfExists(dbObjs[ii])
 	}
 	db.LogMode(true)
-	db.AutoMigrate(dbObjs...)
 
-	err = InitFederationAPIConstraints(db)
-	require.Nil(t, err, "set constraints")
+	if opts.runUpgrade {
+		// create old objects
+		db.AutoMigrate(dbObjsOld...)
+
+		// set old constraints
+		err = db.Exec(`ALTER TABLE provider_zones ADD CONSTRAINT fk_provider_nameoperator_id_constraint FOREIGN KEY ("provider_name","operator_id") REFERENCES federation_providers("name","operator_id")`).Error
+		require.Nil(t, err)
+		err = db.Exec(`ALTER TABLE provider_zones ADD CONSTRAINT fk_zone_idoperator_id_constraint FOREIGN KEY ("zone_id","operator_id") REFERENCES provider_zone_bases("zone_id","operator_id")`).Error
+		require.Nil(t, err)
+		err = db.Exec(`ALTER TABLE consumer_zones ADD CONSTRAINT fk_consumer_nameoperator_id_constraint FOREIGN KEY ("consumer_name","operator_id") REFERENCES federation_consumers("name","operator_id")`).Error
+		require.Nil(t, err)
+	}
+
+	init := func() {
+		// table upgrade
+		err = fixFederationTables(ctx, db)
+		require.Nil(t, err)
+
+		db.AutoMigrate(dbObjs...)
+
+		err = InitFederationAPIConstraints(db)
+		require.Nil(t, err, "set constraints")
+	}
+	init()
+
+	if opts.idempotentCheck {
+		init()
+	}
 
 	tests := []DBExec{{
 		obj:  &ormapi.Organization{Name: "GDDT"},
 		pass: true,
 	}, {
+		obj:  &ormapi.Organization{Name: "P1"},
+		pass: true,
+	}, {
+		obj:  &ormapi.Organization{Name: "P2"},
+		pass: true,
+	}, {
+		obj:  &ormapi.Organization{Name: "P3"},
+		pass: true,
+	}, {
 		obj:  &ormapi.Organization{Name: "BT"},
 		pass: true,
 	}, {
-		obj:  &ormapi.FederationProvider{OperatorId: "GDDT", Name: "P1"},
+		obj:  &ormapi.Organization{Name: "C1"},
 		pass: true,
 	}, {
-		obj:  &ormapi.FederationConsumer{OperatorId: "BT", Name: "C1"},
+		obj:  &ormapi.Organization{Name: "C2"},
 		pass: true,
 	}, {
-		// Test composite unique index, should allow
-		// same operator with different name.
-		obj:  &ormapi.FederationConsumer{OperatorId: "BT", Name: "P2"},
+		obj: &ormapi.FederationProvider{
+			OperatorId:          "GDDT",
+			Name:                "P1",
+			FederationContextId: "1",
+		},
 		pass: true,
 	}, {
-		// Test composite unique index, should fail
-		// since both match already existing row.
-		obj:  &ormapi.FederationConsumer{OperatorId: "BT", Name: "P2"},
+		// pass: same operator can create another federation
+		obj: &ormapi.FederationProvider{
+			OperatorId:          "GDDT",
+			Name:                "P2",
+			FederationContextId: "2",
+		},
+		pass: true,
+	}, {
+		// fail: provider name does not reference existing org
+		obj: &ormapi.FederationProvider{
+			OperatorId: "GDDT",
+			Name:       "pbad",
+		},
 		pass: false,
 	}, {
-		// NOTE: This should fail, as org "BTS" does not exist
-		obj:  &ormapi.FederationProvider{OperatorId: "BTS", Name: "Pbad"},
+		// fail: unique name already exists
+		obj: &ormapi.FederationProvider{
+			OperatorId:          "BT",
+			Name:                "P2",
+			FederationContextId: "3",
+		},
+		pass: false,
+	}, {
+		// fail: BTS does not exist
+		obj: &ormapi.FederationProvider{
+			OperatorId:          "BTS",
+			Name:                "P3",
+			FederationContextId: "4",
+		},
+	}, {
+		obj: &ormapi.FederationConsumer{
+			OperatorId: "BT",
+			Name:       "C1",
+		},
+		pass: true,
+	}, {
+		// pass: same operator can create another consumer
+		obj: &ormapi.FederationConsumer{
+			OperatorId: "BT",
+			Name:       "C2",
+		},
+		pass: true,
+	}, {
+		// fail: consumer name does not reference existing org
+		obj: &ormapi.FederationConsumer{
+			OperatorId: "BT",
+			Name:       "cbad",
+		},
+		pass: false,
+	}, {
+		// fail: unique name already exists
+		obj: &ormapi.FederationConsumer{
+			OperatorId: "GDDT",
+			Name:       "C2",
+		},
+		pass: false,
+	}, {
+		// fail: BTS does not exist
+		obj: &ormapi.FederationConsumer{
+			OperatorId: "BTS",
+			Name:       "C2",
+		},
 		pass: false,
 	}, {
 		obj: &ormapi.ProviderZoneBase{
@@ -1015,10 +1196,31 @@ func TestGormFederationObjs(t *testing.T) {
 		},
 		pass: true,
 	}, {
-		// Fail: missing operator
+		// Pass: composite primary key with operatorid already used
+		obj: &ormapi.ProviderZoneBase{
+			ZoneId:     "zone2",
+			OperatorId: "GDDT",
+		},
+		pass: true,
+	}, {
+		// Pass: composite primary key with zone already used
 		obj: &ormapi.ProviderZoneBase{
 			ZoneId:     "zone1",
+			OperatorId: "BT",
+		},
+		pass: true,
+	}, {
+		// Fail: missing operator
+		obj: &ormapi.ProviderZoneBase{
+			ZoneId:     "zone2",
 			OperatorId: "bad",
+		},
+		pass: false,
+	}, {
+		// Fail: duplicate composite primary key
+		obj: &ormapi.ProviderZoneBase{
+			ZoneId:     "zone1",
+			OperatorId: "GDDT",
 		},
 		pass: false,
 	}, {
@@ -1028,6 +1230,22 @@ func TestGormFederationObjs(t *testing.T) {
 			ProviderName: "P1",
 		},
 		pass: true,
+	}, {
+		// pass: composite primary key zone+provider
+		obj: &ormapi.ProviderZone{
+			ZoneId:       "zone2",
+			OperatorId:   "GDDT",
+			ProviderName: "P1",
+		},
+		pass: true,
+	}, {
+		// fail: duplicate primary key zone+provider
+		obj: &ormapi.ProviderZone{
+			ZoneId:       "zone2",
+			OperatorId:   "BT",
+			ProviderName: "P1",
+		},
+		pass: false,
 	}, {
 		// fail: missing zone
 		obj: &ormapi.ProviderZone{
@@ -1059,6 +1277,22 @@ func TestGormFederationObjs(t *testing.T) {
 			OperatorId:   "BT",
 		},
 		pass: true,
+	}, {
+		// pass: composite primary key zone+consumer
+		obj: &ormapi.ConsumerZone{
+			ZoneId:       "zone2",
+			ConsumerName: "C1",
+			OperatorId:   "BT",
+		},
+		pass: true,
+	}, {
+		// fail: duplicate composite primary key zone+consumer
+		obj: &ormapi.ConsumerZone{
+			ZoneId:       "zone2",
+			ConsumerName: "C1",
+			OperatorId:   "GDDT",
+		},
+		pass: false,
 	}, {
 		// fail: missing consumer
 		obj: &ormapi.ConsumerZone{

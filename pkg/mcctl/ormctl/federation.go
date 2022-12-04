@@ -234,7 +234,7 @@ func init() {
 			Use:          "deregister",
 			Short:        "DeRegister Partner Federator Zone",
 			SpecialArgs:  &RegisterZoneSpecialArgs,
-			RequiredArgs: strings.Join(RegisterZoneRequiredArgs, " "),
+			RequiredArgs: strings.Join(DeregisterZoneRequiredArgs, " "),
 			Comments:     ormapi.FederatedZoneRegRequestComments,
 			ReqData:      &ormapi.FederatedZoneRegRequest{},
 			ReplyData:    &ormapi.Result{},
@@ -316,7 +316,6 @@ var ProviderZoneBaseSpecialArgs = map[string]string{
 }
 
 var ShareZoneRequiredArgs = []string{
-	"operatorid",
 	"providername",
 	"zones",
 }
@@ -336,13 +335,13 @@ var FederationConsumerRequiredArgs = []string{
 	"name",
 	"operatorid",
 	"partneraddr",
-	"region",
 	"providerclientid",
 	"providerclientkey",
 }
 
 var FederationConsumerOptionalArgs = []string{
 	"autoregisterzones",
+	"autoregisterregion",
 	"partnertokenurl",
 	"myinfo.countrycode",
 	"myinfo.mcc",
@@ -362,7 +361,6 @@ var FederationConsumerShowArgs = []string{
 	"name",
 	"operatorid",
 	"partneraddr",
-	"region",
 	"federationcontextid",
 	"myinfo.federationid",
 	"myinfo.countrycode",
@@ -382,7 +380,12 @@ var FederationConsumerShowArgs = []string{
 }
 
 var RegisterZoneRequiredArgs = []string{
-	"operatorid",
+	"consumername",
+	"region",
+	"zones",
+}
+
+var DeregisterZoneRequiredArgs = []string{
 	"consumername",
 	"zones",
 }

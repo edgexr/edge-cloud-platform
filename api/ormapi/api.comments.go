@@ -534,8 +534,8 @@ var GenerateReportComments = map[string]string{
 
 var FederationProviderComments = map[string]string{
 	"id":                            `Unique ID`,
-	"name":                          `Name to describe this provider`,
-	"operatorid":                    `Operator Organization`,
+	"name":                          `Unique name of this provider, will be used as a developer org name for consumer's images and apps`,
+	"operatorid":                    `Operator Organization that provides the resources`,
 	"regions":                       `Regions from which to provide resources`,
 	"federationcontextid":           `The federation context id we generated for this federation`,
 	"myinfo.federationid":           `Globally unique string used to indentify a federation operator`,
@@ -571,11 +571,10 @@ var FederationProviderInfoComments = map[string]string{
 
 var FederationConsumerComments = map[string]string{
 	"id":                            `Unique ID`,
-	"name":                          `Name to describe this consumer`,
-	"operatorid":                    `Operator Organization`,
+	"name":                          `Unique name of this consumer, will be used as an operator org for provider's zones`,
+	"operatorid":                    `Operator Organization that establishes the federation with a provider`,
 	"partneraddr":                   `Partner Address`,
 	"partnertokenurl":               `Partner token URL`,
-	"region":                        `Region in which partner zones will be created as cloudlets and whose apps will be mirrored to federation partner`,
 	"federationcontextid":           `Federation context id returned by partner`,
 	"myinfo.federationid":           `Globally unique string used to indentify a federation operator`,
 	"myinfo.countrycode":            `ISO 3166-1 Alpha-2 code for the country where operator platform is located`,
@@ -592,6 +591,7 @@ var FederationConsumerComments = map[string]string{
 	"partnerinfo.discoveryendpoint": `IP and Port of discovery service URL of operator platform`,
 	"partnerinfo.initialdate":       `Initial create time to denote time zone`,
 	"autoregisterzones":             `Automatically register any zone shared with me`,
+	"autoregisterregion":            `Region used for automatically registered zones`,
 	"status":                        `Status`,
 	"providerclientid":              `Auth ClientId for connecting to provider`,
 	"providerclientkey":             `Auth ClientKey for connection to provider (stored in secret storage)`,
@@ -637,19 +637,19 @@ var ConsumerZoneComments = map[string]string{
 	"zoneid":           `Zone unique name`,
 	"consumername":     `Name of the Federation consumer`,
 	"operatorid":       `Consumer operator organization`,
+	"region":           `Region in which zone is instantiated`,
 	"geolocation":      `GPS co-ordinates associated with the zone (in decimal format)`,
 	"geographydetails": `Geography details`,
 	"status":           `Zone status`,
 }
 
 var FederatedZoneRegRequestComments = map[string]string{
-	"operatorid":   `Operator organization`,
 	"consumername": `Federation consumer name`,
+	"region":       `Region to create local cloudlet versions of provider zones`,
 	"zones":        `Partner federator zones to be registered/deregistered`,
 }
 
 var FederatedZoneShareRequestComments = map[string]string{
-	"operatorid":   `Operator organization`,
 	"providername": `Federation provider name`,
 	"zones":        `Self federator zones to be shared/unshared`,
 }

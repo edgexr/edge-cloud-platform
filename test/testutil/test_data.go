@@ -840,6 +840,9 @@ func GetAppInstRefsData() []edgeproto.AppInstRefs {
 		Insts: map[string]uint32{
 			appInstData[17].Key.GetKeyString(): 1,
 		},
+	}, { // edgeproto.AppInstRefs
+		Key:   appData[16].Key,
+		Insts: map[string]uint32{},
 	}}
 }
 

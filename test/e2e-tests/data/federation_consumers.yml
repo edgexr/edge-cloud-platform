@@ -3,8 +3,8 @@ federationconsumers:
   operatorid: {{partnertag}}
   partneraddr: {{fedaddr}}
   partnertokenurl: {{tokenurl}}
-  region: {{region}}
   autoregisterzones: true
+  autoregisterregion: {{region}}
   providerclientid: set-by-mcapi.go
   providerclientkey: set-by-macpi.go
   myinfo:
@@ -16,8 +16,8 @@ federationconsumers:
   operatorid: {{partnertag}}
   partneraddr: {{fedaddr}}
   partnertokenurl: {{tokenurl}}
-  region: {{region}}
   autoregisterzones: true
+  autoregisterregion: {{region}}
   providerclientid: set-by-mcapi.go
   providerclientkey: set-by-macpi.go
   myinfo:

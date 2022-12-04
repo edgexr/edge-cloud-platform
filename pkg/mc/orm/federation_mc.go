@@ -44,9 +44,71 @@ const (
 	CreateOnly  = false
 )
 
-func setForeignKeyConstraint(loggedDb *gorm.DB, constName, fKeyTableName, fKeyFields, refTableName, refFields string) error {
-	cmd := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT fk_%s_constraint FOREIGN KEY (%s) "+
-		"REFERENCES %s(%s)", fKeyTableName, constName, fKeyFields, refTableName, refFields)
+func fixFederationTables(ctx context.Context, db *gorm.DB) error {
+	if !db.HasTable(&ormapi.FederationProvider{}) {
+		// no federation tables, skip this
+		return nil
+	}
+	// upgrade function to fix federation table constraints
+	// this deletes old constraints, and adds new ones that
+	// gorm's AutoMigrate doesn't handle.
+	var err, newerr error
+
+	log.SpanLog(ctx, log.DebugLevelInfo, "fixing federation tables upgrade function")
+
+	// delete foreign key constraints first so we can change column type
+	err = cleanupOldSql(db, "ALTER TABLE provider_zones DROP CONSTRAINT IF EXISTS fk_provider_nameoperator_id_constraint", err)
+	err = cleanupOldSql(db, "ALTER TABLE provider_zones DROP CONSTRAINT IF EXISTS fk_zoneidoperator_id_constraint", err)
+	err = cleanupOldSql(db, "ALTER TABLE consumer_zones DROP CONSTRAINT IF EXISTS fk_consumer_nameoperator_id_constraint", err)
+	err = cleanupOldSql(db, "DROP INDEX IF EXISTS fedprovindex", err)
+
+	newerr = fixColumnType(ctx, db, "federation_providers",
+		[]ColType{{"name", "citext"}})
+	err = accumulateErr(err, newerr)
+
+	newerr = fixColumnType(ctx, db, "federation_providers",
+		[]ColType{{"name", "citext"}})
+	err = accumulateErr(err, newerr)
+
+	newerr = fixColumnType(ctx, db, "federation_consumers",
+		[]ColType{{"name", "citext"}})
+	err = accumulateErr(err, newerr)
+
+	newerr = fixColumnType(ctx, db, "provider_zones",
+		[]ColType{{"provider_name", "citext"}})
+	err = accumulateErr(err, newerr)
+
+	newerr = fixColumnType(ctx, db, "consumer_zones",
+		[]ColType{{"consumer_name", "citext"}})
+	err = accumulateErr(err, newerr)
+
+	err = cleanupOldSql(db, "ALTER TABLE federation_consumers DROP COLUMN IF EXISTS region", err)
+
+	newerr = setUniqueConstraint(db, "federation_providers", "name")
+	err = accumulateErr(err, newerr)
+
+	newerr = setUniqueConstraint(db, "federation_consumers", "name")
+	err = accumulateErr(err, newerr)
+
+	newerr = fixPrimaryKeys(ctx, db, "provider_zones", []string{"zone_id", "provider_name"})
+	err = accumulateErr(err, newerr)
+
+	newerr = fixPrimaryKeys(ctx, db, "consumer_zones", []string{"zone_id", "consumer_name"})
+	err = accumulateErr(err, newerr)
+
+	err = setForeignKey(db, &ormapi.FederationProvider{}, "name", &ormapi.Organization{}, "name", err)
+	err = setForeignKey(db, &ormapi.FederationConsumer{}, "name", &ormapi.Organization{}, "name", err)
+
+	return err
+}
+
+func cleanupOldSql(loggedDb *gorm.DB, cmd string, prevErr error) error {
+	err := loggedDb.Exec(cmd).Error
+	return accumulateErr(prevErr, err)
+}
+
+func setForeignKeyConstraint(loggedDb *gorm.DB, constraintName, fKeyTableName, fKeyFields, refTableName, refFields string) error {
+	cmd := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)", fKeyTableName, constraintName, fKeyFields, refTableName, refFields)
 	err := loggedDb.Exec(cmd).Error
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
@@ -72,9 +134,13 @@ func setForeignKey(loggedDb *gorm.DB, fromObj interface{}, fromFields string, to
 		refFields = append(refFields, scope.Quote(field))
 	}
 	toFieldsStr := strings.Join(refFields, ",")
-	name := strings.ReplaceAll(fromFields, ",", "")
+	constraintName := fKeyTableName + "_" + strings.ReplaceAll(fromFields, ",", "_") + "_fkey"
 
-	err := setForeignKeyConstraint(loggedDb, name, fKeyTableName, fromFieldsStr, refTableName, toFieldsStr)
+	err := setForeignKeyConstraint(loggedDb, constraintName, fKeyTableName, fromFieldsStr, refTableName, toFieldsStr)
+	return accumulateErr(prevErr, err)
+}
+
+func accumulateErr(prevErr, err error) error {
 	if err == nil {
 		return prevErr
 	} else if prevErr == nil {
@@ -92,9 +158,9 @@ func InitFederationAPIConstraints(db *gorm.DB) error {
 	// that is part of a composite unique/primary key. The referenced
 	// field(s) must define a unique value in the table.
 	var err error
-	err = setForeignKey(db, &ormapi.ProviderZone{}, "provider_name,operator_id", &ormapi.FederationProvider{}, "name,operator_id", err)
+	err = setForeignKey(db, &ormapi.ProviderZone{}, "provider_name", &ormapi.FederationProvider{}, "name", err)
 	err = setForeignKey(db, &ormapi.ProviderZone{}, "zone_id,operator_id", &ormapi.ProviderZoneBase{}, "zone_id,operator_id", err)
-	err = setForeignKey(db, &ormapi.ConsumerZone{}, "consumer_name,operator_id", &ormapi.FederationConsumer{}, "name,operator_id", err)
+	err = setForeignKey(db, &ormapi.ConsumerZone{}, "consumer_name", &ormapi.FederationConsumer{}, "name", err)
 	return err
 }
 
@@ -105,15 +171,14 @@ func fedAuthorized(ctx context.Context, username, operatorId string) error {
 	return authorized(ctx, username, operatorId, ResourceCloudlets, ActionManage, withRequiresOrg(operatorId))
 }
 
-func lookupFederationProvider(ctx context.Context, id uint, name, org string) (*ormapi.FederationProvider, error) {
-	if id == 0 && (name == "" || org == "") {
-		return nil, fmt.Errorf("missing federation provider name and org, or id")
+func lookupFederationProvider(ctx context.Context, id uint, name string) (*ormapi.FederationProvider, error) {
+	if id == 0 && name == "" {
+		return nil, fmt.Errorf("missing federation provider name or id")
 	}
 	db := loggedDB(ctx)
 	fedObj := ormapi.FederationProvider{
-		ID:         id,
-		Name:       name,
-		OperatorId: org,
+		ID:   id,
+		Name: name,
 	}
 	res := db.Where(&fedObj).First(&fedObj)
 	if res.RecordNotFound() {
@@ -125,15 +190,14 @@ func lookupFederationProvider(ctx context.Context, id uint, name, org string) (*
 	return &fedObj, nil
 }
 
-func lookupFederationConsumer(ctx context.Context, id uint, name, org string) (*ormapi.FederationConsumer, error) {
-	if id == 0 && (name == "" || org == "") {
-		return nil, fmt.Errorf("missing federation consumer name and org, or id")
+func lookupFederationConsumer(ctx context.Context, id uint, name string) (*ormapi.FederationConsumer, error) {
+	if id == 0 && name == "" {
+		return nil, fmt.Errorf("missing federation consumer name or id")
 	}
 	db := loggedDB(ctx)
 	fedObj := ormapi.FederationConsumer{
-		ID:         id,
-		Name:       name,
-		OperatorId: org,
+		ID:   id,
+		Name: name,
 	}
 	res := db.Where(&fedObj).First(&fedObj)
 	if res.RecordNotFound() {
@@ -145,16 +209,13 @@ func lookupFederationConsumer(ctx context.Context, id uint, name, org string) (*
 	return &fedObj, nil
 }
 
-func setMyFedId(fed *ormapi.Federator, operatorId, name string) {
+func setMyFedId(fed *ormapi.Federator, name string) {
 	// Federation ID is supposed to be a globally unique identifier
 	// allocated to an operator platform. Not sure who decides what
 	// these are or manages global uniqueness. For now just hard code
-	// to operator name plus a random UUID.
+	// to name plus a random UUID.
 	if fed.FederationId == "" {
-		// EWBI spec format: ^[A-Fa-f0-9]*$
-		// TODO: either ask for format change or
-		// convert operatorId to match format.
-		fed.FederationId = name + operatorId + "085d364c07fb4fe0b09979127f7c3d68"
+		fed.FederationId = name + "085d364c07fb4fe0b09979127f7c3d68"
 	}
 }
 
@@ -196,7 +257,7 @@ func CreateFederationProvider(c echo.Context) (reterr error) {
 			return err
 		}
 	}
-	setMyFedId(&provider.MyInfo, provider.OperatorId, provider.Name)
+	setMyFedId(&provider.MyInfo, provider.Name)
 	// allocate a federation context id here, so that when we
 	// write to the database it will guarantee it is unique.
 	fedCtxId := strings.ReplaceAll(uuid.New().String(), "-", "")
@@ -212,6 +273,27 @@ func CreateFederationProvider(c echo.Context) (reterr error) {
 	}
 	provider.ProviderClientId = uuid.New().String()
 	provider.Status = federation.StatusUnregistered
+
+	// create a developer org from the provider name
+	// this org will be used to house images, apps, appinsts, etc
+	// that are created by the partner.
+	devOrg := ormapi.Organization{
+		Name: provider.Name,
+		Type: OrgTypeDeveloper,
+	}
+	err = CreateOrgObj(ctx, claims, &devOrg)
+	if err != nil {
+		return fmt.Errorf("failed to create developer org %q based on provider name to house partner images and apps: %s", devOrg.Name, err)
+	}
+	defer func() {
+		if reterr == nil {
+			return
+		}
+		undoErr := DeleteOrgObj(ctx, claims, &devOrg)
+		if undoErr != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "undo failed to delete developer org for federation provider", "name", devOrg.Name, "err", undoErr)
+		}
+	}()
 
 	// notify key may be specified during create
 	if provider.PartnerNotifyClientId != "" || provider.PartnerNotifyClientKey != "" {
@@ -280,7 +362,7 @@ func UpdateFederationProvider(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	log.SetTags(span, in.GetTags())
 
-	provider, err := lookupFederationProvider(ctx, 0, in.Name, in.OperatorId)
+	provider, err := lookupFederationProvider(ctx, 0, in.Name)
 	if err != nil {
 		return err
 	}
@@ -364,7 +446,7 @@ func DeleteFederationProvider(c echo.Context) error {
 		return err
 	}
 	// get federator information
-	provider, err := lookupFederationProvider(ctx, in.ID, in.Name, in.OperatorId)
+	provider, err := lookupFederationProvider(ctx, in.ID, in.Name)
 	if err != nil {
 		return err
 	}
@@ -406,6 +488,11 @@ func DeleteFederationProvider(c echo.Context) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "delete provider api key", "err", err)
 	err = federation.DeleteProviderPartnerApiKey(ctx, provider, serverConfig.vaultConfig)
 	log.SpanLog(ctx, log.DebugLevelApi, "delete provider partner api key", "err", err)
+	devOrg := ormapi.Organization{
+		Name: provider.Name,
+	}
+	err = DeleteOrgObj(ctx, claims, &devOrg)
+	log.SpanLog(ctx, log.DebugLevelApi, "delete provider's dev org", "name", devOrg.Name, "err", err)
 	return ormutil.SetReply(c, ormutil.Msg("Deleted FederationProvider successfully"))
 }
 
@@ -492,7 +579,7 @@ func GenerateFederationProviderAPIKey(c echo.Context) error {
 		return ormutil.BindErr(err)
 	}
 
-	provider, err := lookupFederationProvider(ctx, in.ID, in.Name, in.OperatorId)
+	provider, err := lookupFederationProvider(ctx, in.ID, in.Name)
 	if err != nil {
 		return err
 	}
@@ -527,7 +614,7 @@ func SetFederationProviderNotifyKey(c echo.Context) error {
 
 // Create a Federation Consumer to use partner resources.
 // This will attempt to create the connection to the partner.
-func CreateFederationConsumer(c echo.Context) error {
+func CreateFederationConsumer(c echo.Context) (reterr error) {
 	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
@@ -563,27 +650,54 @@ func CreateFederationConsumer(c echo.Context) error {
 			return err
 		}
 	}
-	setMyFedId(&consumer.MyInfo, consumer.OperatorId, consumer.Name)
+	if consumer.AutoRegisterZones {
+		if consumer.AutoRegisterRegion == "" {
+			return fmt.Errorf("please specify auto register region to use with auto register zones")
+		}
+		if _, err := getControllerObj(ctx, consumer.AutoRegisterRegion); err != nil {
+			return err
+		}
+	}
+	setMyFedId(&consumer.MyInfo, consumer.Name)
 
-	if consumer.Region == "" {
-		return fmt.Errorf("Missing region")
-	}
-	if _, err := getControllerObj(ctx, consumer.Region); err != nil {
-		return err
-	}
 	if consumer.PartnerTokenUrl == "" {
 		consumer.PartnerTokenUrl = consumer.PartnerAddr + "/" + federation.TokenUrl
 	}
+
+	// create operator organization to house partner's cloudlets (zones)
+	operOrg := ormapi.Organization{
+		Name: consumer.Name,
+		Type: OrgTypeOperator,
+	}
+	err = CreateOrgObj(ctx, claims, &operOrg)
+	if err != nil {
+		return fmt.Errorf("failed to create operator org %q base on consumer name to house partner zones: %s", operOrg.Name, err)
+	}
+	defer func() {
+		if reterr == nil {
+			return
+		}
+		undoErr := DeleteOrgObj(ctx, claims, &operOrg)
+		if undoErr != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "undo failed to delete operator org for federation consumer", "name", operOrg.Name, "err", undoErr)
+		}
+	}()
+
 	if err := federation.SaveConsumerPartnerApiKey(ctx, &consumer, serverConfig.vaultConfig); err != nil {
 		return err
 	}
-
-	// This will commit consumer to database
-	if err := registerFederationConsumer(ctx, &consumer); err != nil {
+	defer func() {
+		if reterr == nil {
+			return
+		}
 		undoErr := fedmgmt.DeleteAPIKeyFromVault(ctx, serverConfig.vaultConfig, federation.ConsumerFedKey(&consumer))
 		if undoErr != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "undo failed to delete secret from vault", "err", undoErr)
 		}
+	}()
+
+	// This will commit consumer to database
+	if err := registerFederationConsumer(ctx, &consumer); err != nil {
 		return err
 	}
 
@@ -600,7 +714,7 @@ func DeleteFederationConsumer(c echo.Context) error {
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)
 	}
-	consumer, err := lookupFederationConsumer(ctx, in.ID, in.Name, in.OperatorId)
+	consumer, err := lookupFederationConsumer(ctx, in.ID, in.Name)
 	if err != nil {
 		return err
 	}
@@ -628,6 +742,11 @@ func DeleteFederationConsumer(c echo.Context) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "Deleting partner federation API key from vault", "fedkey", fedKey)
 	err = fedmgmt.DeleteAPIKeyFromVault(ctx, serverConfig.vaultConfig, fedKey)
 	log.SpanLog(ctx, log.DebugLevelApi, "delete API key from vault", "err", err)
+	operOrg := ormapi.Organization{
+		Name: consumer.Name,
+	}
+	err = DeleteOrgObj(ctx, claims, &operOrg)
+	log.SpanLog(ctx, log.DebugLevelApi, "delete consumer's operator org", "name", operOrg.Name, "err", err)
 
 	return ormutil.SetReply(c, ormutil.Msg("Deleted federation consumer successfully"))
 }
@@ -648,7 +767,7 @@ func SetFederationConsumerAPIKey(c echo.Context) error {
 	if err := fedAuthorized(ctx, claims.Username, opFed.OperatorId); err != nil {
 		return err
 	}
-	consumer, err := lookupFederationConsumer(ctx, opFed.ID, opFed.Name, opFed.OperatorId)
+	consumer, err := lookupFederationConsumer(ctx, opFed.ID, opFed.Name)
 	if err != nil {
 		return err
 	}
@@ -907,7 +1026,7 @@ func ShareProviderZone(c echo.Context) error {
 	if len(share.Zones) == 0 {
 		return fmt.Errorf("Must specify the zones to be shared")
 	}
-	provider, err := lookupFederationProvider(ctx, 0, share.ProviderName, share.OperatorId)
+	provider, err := lookupFederationProvider(ctx, 0, share.ProviderName)
 	if err != nil {
 		return err
 	}
@@ -1003,7 +1122,7 @@ func UnshareProviderZone(c echo.Context) error {
 	if len(share.Zones) == 0 {
 		return fmt.Errorf("Must specify the zones to be unshared")
 	}
-	provider, err := lookupFederationProvider(ctx, 0, share.ProviderName, share.OperatorId)
+	provider, err := lookupFederationProvider(ctx, 0, share.ProviderName)
 	if err != nil {
 		return err
 	}
@@ -1157,7 +1276,13 @@ func RegisterConsumerZone(c echo.Context) error {
 	if len(reg.Zones) == 0 {
 		return fmt.Errorf("Must specify the zones to be registered")
 	}
-	consumer, err := lookupFederationConsumer(ctx, 0, reg.ConsumerName, reg.OperatorId)
+	if reg.Region == "" {
+		return fmt.Errorf("Region in which to create cloudlets for zones must be specified")
+	}
+	if _, err := getControllerObj(ctx, reg.Region); err != nil {
+		return err
+	}
+	consumer, err := lookupFederationConsumer(ctx, 0, reg.ConsumerName)
 	if err != nil {
 		return err
 	}
@@ -1169,7 +1294,7 @@ func RegisterConsumerZone(c echo.Context) error {
 	}
 
 	// register zones
-	err = partnerApi.RegisterConsumerZones(ctx, consumer, consumer.Region, reg.Zones)
+	err = partnerApi.RegisterConsumerZones(ctx, consumer, reg.Region, reg.Zones)
 	if err != nil {
 		return err
 	}
@@ -1190,7 +1315,7 @@ func DeregisterConsumerZone(c echo.Context) error {
 	if len(reg.Zones) == 0 {
 		return fmt.Errorf("Must specify zones to be deregistered")
 	}
-	consumer, err := lookupFederationConsumer(ctx, 0, reg.ConsumerName, reg.OperatorId)
+	consumer, err := lookupFederationConsumer(ctx, 0, reg.ConsumerName)
 	if err != nil {
 		return err
 	}

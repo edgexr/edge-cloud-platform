@@ -19,20 +19,16 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (p *PartnerApi) LookupProviderZone(ctx context.Context, providerName, zoneId, operatorId string) (*ormapi.ProviderZone, error) {
+func (p *PartnerApi) LookupProviderZone(ctx context.Context, providerName, zoneId string) (*ormapi.ProviderZone, error) {
 	if providerName == "" {
 		return nil, fmt.Errorf("missing federation provider name")
 	}
 	if zoneId == "" {
 		return nil, fmt.Errorf("missing zone id")
 	}
-	if operatorId == "" {
-		return nil, fmt.Errorf("missing operator id")
-	}
 	lookup := ormapi.ProviderZone{
 		ProviderName: providerName,
 		ZoneId:       zoneId,
-		OperatorId:   operatorId,
 	}
 	db := p.loggedDB(ctx)
 	res := db.Where(&lookup).First(&lookup)
@@ -45,20 +41,16 @@ func (p *PartnerApi) LookupProviderZone(ctx context.Context, providerName, zoneI
 	return &lookup, nil
 }
 
-func (p *PartnerApi) LookupConsumerZone(ctx context.Context, consumerName, zoneId, operatorId string) (*ormapi.ConsumerZone, error) {
+func (p *PartnerApi) LookupConsumerZone(ctx context.Context, consumerName, zoneId string) (*ormapi.ConsumerZone, error) {
 	if consumerName == "" {
 		return nil, fmt.Errorf("missing federation consumer name")
 	}
 	if zoneId == "" {
 		return nil, fmt.Errorf("missing zone id")
 	}
-	if operatorId == "" {
-		return nil, fmt.Errorf("missing operator id")
-	}
 	lookup := ormapi.ConsumerZone{
 		ConsumerName: consumerName,
 		ZoneId:       zoneId,
-		OperatorId:   operatorId,
 	}
 	db := p.loggedDB(ctx)
 	res := db.Where(&lookup).First(&lookup)
@@ -114,7 +106,7 @@ func (p *PartnerApi) ZoneSubscribe(c echo.Context, fedCtxId FederationContextId)
 
 	db := p.loggedDB(ctx)
 	for _, zoneId := range in.AcceptedAvailabilityZones {
-		zone, err := p.LookupProviderZone(ctx, provider.Name, zoneId, provider.OperatorId)
+		zone, err := p.LookupProviderZone(ctx, provider.Name, zoneId)
 		if err != nil {
 			return err
 		}
@@ -180,7 +172,7 @@ func (p *PartnerApi) GetZoneData(c echo.Context, fedCtxId FederationContextId, z
 		return err
 	}
 
-	zone, err := p.LookupProviderZone(ctx, provider.Name, string(zoneId), provider.OperatorId)
+	zone, err := p.LookupProviderZone(ctx, provider.Name, string(zoneId))
 	if err != nil {
 		return err
 	}
@@ -339,12 +331,15 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 	zonesMap := make(map[string]*ormapi.ConsumerZone)
 	regZoneIds := []string{}
 	for _, zoneId := range zoneIds {
-		zone, err := p.LookupConsumerZone(ctx, consumer.Name, zoneId, consumer.OperatorId)
+		zone, err := p.LookupConsumerZone(ctx, consumer.Name, zoneId)
 		if err != nil {
 			return err
 		}
 		if zone.Status == StatusRegistered {
 			// already registered
+			if zone.Region != region {
+				return fmt.Errorf("zone already registered but under region %q, not region %q", zone.Region, region)
+			}
 			continue
 		}
 		regZoneIds = append(regZoneIds, zoneId)
@@ -386,8 +381,8 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 		fedCloudlet := edgeproto.Cloudlet{
 			Key: edgeproto.CloudletKey{
 				Name:                  zone.ZoneId,
-				Organization:          consumer.OperatorId,
-				FederatedOrganization: consumer.Name,
+				Organization:          consumer.Name,
+				FederatedOrganization: consumer.OperatorId,
 			},
 			Location: dme_proto.Loc{
 				Latitude:  lat,
@@ -463,6 +458,7 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 
 		// Mark zone as registered in DB
 		zone.Status = StatusRegistered
+		zone.Region = region
 		err = db.Save(zone).Error
 		if err != nil {
 			// undo
@@ -489,68 +485,61 @@ func (p *PartnerApi) DeregisterConsumerZones(ctx context.Context, consumer *orma
 	defer zoneRegMutex.Unlock()
 
 	// lookup zones
-	zonesRegionMap := make(map[string]map[string]*ormapi.ConsumerZone)
+	zones := []*ormapi.ConsumerZone{}
+	//zonesRegionMap := make(map[string]map[string]*ormapi.ConsumerZone)
 	for _, inZone := range zoneIds {
-		zone, err := p.LookupConsumerZone(ctx, consumer.Name, inZone, consumer.OperatorId)
+		zone, err := p.LookupConsumerZone(ctx, consumer.Name, inZone)
 		if err != nil {
 			return err
 		}
 		if zone.Status == StatusUnregistered {
 			continue
 		}
-		zones, ok := zonesRegionMap[consumer.Region]
-		if !ok {
-			zones = make(map[string]*ormapi.ConsumerZone)
-			zonesRegionMap[consumer.Region] = zones
-		}
-		zones[zone.ZoneId] = zone
+		zones = append(zones, zone)
 	}
 
 	fedClient, err := p.ConsumerPartnerClient(ctx, consumer)
 	if err != nil {
 		return err
 	}
-	for region, zonesMap := range zonesRegionMap {
+	for _, zone := range zones {
 		rc := &ormutil.RegionContext{}
 		rc.Username = consumer.FederationContextId
-		rc.Region = region
+		rc.Region = zone.Region
 		rc.Database = p.database
 		cb := func(res *edgeproto.Result) error {
-			log.SpanLog(ctx, log.DebugLevelApi, "delete partner zone as cloudlet progress", "progress result", res)
+			log.SpanLog(ctx, log.DebugLevelApi, "deleting zone progress", "zone", zone.ZoneId, "status", res)
 			return nil
 		}
 
 		// Delete the zone added as cloudlet from regional controller.
 		// This also ensures that no AppInsts are deployed on the cloudlet
 		// before the zone is deregistered
-		for _, existingZone := range zonesMap {
-			// delete cloudlet
-			fedCloudlet := edgeproto.Cloudlet{
-				Key: edgeproto.CloudletKey{
-					Name:                  existingZone.ZoneId,
-					Organization:          consumer.OperatorId,
-					FederatedOrganization: consumer.Name,
-				},
-			}
-			log.SpanLog(ctx, log.DebugLevelApi, "delete partner zone as cloudlet", "key", fedCloudlet.Key)
-			err := ctrlclient.DeleteCloudletStream(ctx, rc, &fedCloudlet, p.connCache, cb)
-			if err != nil && !strings.Contains(err.Error(), fedCloudlet.Key.NotFoundError().Error()) {
-				return err
-			}
-			// delete cloudletinfo is not required
-			// because delete cloudlet will delete it.
-			// notify partner
-			apiPath := fmt.Sprintf("/%s/%s/zones/%s", ApiRoot, consumer.FederationContextId, existingZone.ZoneId)
-			_, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
-			if err != nil {
-				return err
-			}
-			// update status
-			existingZone.Status = StatusUnregistered
-			err = db.Save(&existingZone).Error
-			if err != nil {
-				return ormutil.DbErr(err)
-			}
+		fedCloudlet := edgeproto.Cloudlet{
+			Key: edgeproto.CloudletKey{
+				Name:                  zone.ZoneId,
+				Organization:          consumer.Name,
+				FederatedOrganization: consumer.OperatorId,
+			},
+		}
+		log.SpanLog(ctx, log.DebugLevelApi, "delete partner zone as cloudlet", "key", fedCloudlet.Key)
+		err := ctrlclient.DeleteCloudletStream(ctx, rc, &fedCloudlet, p.connCache, cb)
+		if err != nil && !strings.Contains(err.Error(), fedCloudlet.Key.NotFoundError().Error()) {
+			return err
+		}
+		// delete cloudletinfo is not required
+		// because delete cloudlet will delete it.
+		// notify partner
+		apiPath := fmt.Sprintf("/%s/%s/zones/%s", ApiRoot, consumer.FederationContextId, zone.ZoneId)
+		_, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
+		if err != nil {
+			return err
+		}
+		// update status
+		zone.Status = StatusUnregistered
+		err = db.Save(zone).Error
+		if err != nil {
+			return ormutil.DbErr(err)
 		}
 	}
 	return nil

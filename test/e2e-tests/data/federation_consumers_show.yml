@@ -18,7 +18,6 @@ federationconsumers:
   operatorid: partner1
   partneraddr: https://127.0.0.1:9801
   partnertokenurl: https://127.0.0.1:9900/oauth2/token
-  region: PA
   myinfo:
     countrycode: SA
     mcc: "456"
@@ -42,13 +41,13 @@ federationconsumers:
     - bar
     - foobar
   autoregisterzones: true
+  autoregisterregion: PA
   status: Registered
 - id: 2
   name: enterprise-partner1
   operatorid: partner1
   partneraddr: https://127.0.0.1:9801
   partnertokenurl: https://127.0.0.1:9900/oauth2/token
-  region: PA
   myinfo:
     countrycode: SA
     mcc: "456"
@@ -72,4 +71,5 @@ federationconsumers:
     - bar
     - foobar
   autoregisterzones: true
+  autoregisterregion: PA
   status: Registered
