@@ -5,7 +5,7 @@
 *__pycache__
 link-gogo-protobuf
 link-grpc-gateway
-pkg/version_embedded/version_embedded.go
+pkg/version/version.yaml
 api/dme-proto/*.proto
 pkg/cloudcommon/node/vault.log
 pkg/cloudcommon/node/vault_pki
