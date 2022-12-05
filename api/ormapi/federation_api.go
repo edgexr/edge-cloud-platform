@@ -26,10 +26,10 @@ import (
 type FederationProvider struct {
 	// Unique ID
 	ID uint `gorm:"primary_key"`
-	// Name to describe this provider
-	Name string `gorm:"unique_index:fedprovindex;type:text;not null"`
-	// Operator Organization
-	OperatorId string `gorm:"unique_index:fedprovindex;type:citext REFERENCES organizations(name);not null"`
+	// Unique name of this provider, will be used as a developer org name for consumer's images and apps
+	Name string `gorm:"type:citext REFERENCES organizations(name);unique;not null"`
+	// Operator Organization that provides the resources
+	OperatorId string `gorm:"type:citext REFERENCES organizations(name);not null"`
 	// Regions from which to provide resources
 	Regions pq.StringArray `gorm:"type:text[]"`
 	// The federation context id we generated for this federation
@@ -77,16 +77,14 @@ type FederationProviderInfo struct {
 type FederationConsumer struct {
 	// Unique ID
 	ID uint `gorm:"primary_key"`
-	// Name to describe this consumer
-	Name string `gorm:"unique_index:fedconsindex;type:text;not null"`
-	// Operator Organization
-	OperatorId string `gorm:"unique_index:fedconsindex;type:citext REFERENCES organizations(name);not null"`
+	// Unique name of this consumer, will be used as an operator org for provider's zones
+	Name string `gorm:"type:citext REFERENCES organizations(name);unique;not null"`
+	// Operator Organization that establishes the federation with a provider
+	OperatorId string `gorm:"type:citext REFERENCES organizations(name);not null"`
 	// Partner Address
 	PartnerAddr string `gorm:"not null"`
 	// Partner token URL
 	PartnerTokenUrl string
-	// Region in which partner zones will be created as cloudlets and whose apps will be mirrored to federation partner
-	Region string `gorm:"not null"`
 	// Federation context id returned by partner
 	FederationContextId string
 	// My federation info provided to partner
@@ -95,6 +93,8 @@ type FederationConsumer struct {
 	PartnerInfo Federator `gorm:"embedded;embedded_prefix:partner_"`
 	// Automatically register any zone shared with me
 	AutoRegisterZones bool
+	// Region used for automatically registered zones
+	AutoRegisterRegion string
 	// Status
 	// read only: true
 	Status string
@@ -164,9 +164,9 @@ type ProviderZone struct {
 	// Globally unique identifier of the federator zone
 	ZoneId string `gorm:"primary_key"`
 	// Name of the Federation Provider
-	ProviderName string `gorm:"primary_key"`
+	ProviderName string `gorm:"primary_key;type:citext"`
 	// Provider operator organization
-	OperatorId string `gorm:"primary_key;type:citext"`
+	OperatorId string `gorm:"type:citext"`
 	// Zone status
 	// read only: true
 	Status string
@@ -179,9 +179,11 @@ type ConsumerZone struct {
 	// Zone unique name
 	ZoneId string `gorm:"primary_key"`
 	// Name of the Federation consumer
-	ConsumerName string `gorm:"primary_key"`
+	ConsumerName string `gorm:"primary_key;type:citext"`
 	// Consumer operator organization
-	OperatorId string `gorm:"primary_key;type:citext"`
+	OperatorId string `gorm:"type:citext REFERENCES organizations(name)"`
+	// Region in which zone is instantiated
+	Region string
 	// GPS co-ordinates associated with the zone (in decimal format)
 	GeoLocation string
 	// Geography details
@@ -193,18 +195,16 @@ type ConsumerZone struct {
 
 // Register/Deregister partner zones shared as part of federation
 type FederatedZoneRegRequest struct {
-	// Operator organization
-	OperatorId string
 	// Federation consumer name
 	ConsumerName string
+	// Region to create local cloudlet versions of provider zones
+	Region string
 	// Partner federator zones to be registered/deregistered
 	Zones []string
 }
 
 // Share/Unshare self zones shared as part of federation
 type FederatedZoneShareRequest struct {
-	// Operator organization
-	OperatorId string
 	// Federation provider name
 	ProviderName string
 	// Self federator zones to be shared/unshared

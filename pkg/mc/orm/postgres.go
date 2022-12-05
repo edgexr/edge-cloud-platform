@@ -79,8 +79,18 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 			return
 		}
 
+		err := fixFederationTables(ctx, db)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "clearOldFederationConstraints", "err", err)
+			if unitTest {
+				initDone <- err
+				return
+			}
+			continue
+		}
+
 		// create or update tables
-		err := db.AutoMigrate(
+		err = db.AutoMigrate(
 			&ormapi.User{},
 			&ormapi.Organization{},
 			&ormapi.Controller{},
@@ -430,4 +440,95 @@ func getPostgresEmptyVal(dataType string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("unrecognized type %s", dataType)
+}
+
+func getTablePrimaryKeys(db *gorm.DB, tableName string) ([]string, error) {
+	res := db.Raw(`SELECT a.attname
+FROM   pg_index i
+JOIN   pg_attribute a ON a.attrelid = i.indrelid
+                     AND a.attnum = ANY(i.indkey)
+WHERE  i.indrelid = '` + tableName + `'::regclass
+AND    i.indisprimary;`)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	rows, err := res.Rows()
+	if err != nil {
+		return nil, err
+	}
+	keys := []string{}
+	defer rows.Close()
+	for rows.Next() {
+		row := ""
+		rows.Scan(&row)
+		if row == "" {
+			continue
+		}
+		keys = append(keys, row)
+	}
+	return keys, nil
+}
+
+func fixPrimaryKeys(ctx context.Context, db *gorm.DB, tableName string, keys []string) error {
+	curKeys, err := getTablePrimaryKeys(db, tableName)
+	if err != nil && !strings.Contains(err.Error(), fmt.Sprintf("relation %q does not exist", tableName)) {
+		return err
+	}
+	needsChange := false
+	if len(keys) != len(curKeys) {
+		needsChange = true
+	} else {
+		for ii := range keys {
+			if keys[ii] != curKeys[ii] {
+				needsChange = true
+				break
+			}
+		}
+	}
+	if !needsChange {
+		return nil
+	}
+	cmd := fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s_pkey; ALTER TABLE %s ADD CONSTRAINT %s_pkey PRIMARY KEY (%s);", tableName, tableName, tableName, tableName, strings.Join(keys, ","))
+	log.SpanLog(ctx, log.DebugLevelInfo, "fixing primary keys", "table", tableName, "oldkeys", curKeys, "newkeys", keys, "cmd", cmd)
+	err = db.Exec(cmd).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type ColType struct {
+	Name string
+	Type string
+}
+
+func fixColumnType(ctx context.Context, db *gorm.DB, tableName string, colTypes []ColType) error {
+	cmd := "ALTER TABLE " + tableName + " "
+	alters := []string{}
+	for _, col := range colTypes {
+		alters = append(alters, fmt.Sprintf("ALTER COLUMN %s TYPE %s", col.Name, col.Type))
+	}
+	cmd += strings.Join(alters, ", ") + ";"
+	err := db.Exec(cmd).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func setUniqueConstraint(db *gorm.DB, tableName, field string) error {
+	constraintName := tableName + "_" + field + "_key"
+	return setCompositeUniqueConstraint(db, tableName, constraintName, []string{field})
+}
+
+func setCompositeUniqueConstraint(db *gorm.DB, tableName, constraintName string, fields []string) error {
+	if constraintName == "" {
+		return fmt.Errorf("setCompositeUniqueConstraint: multi-column composite unique must specify constraintName as it is specified in gorm field annotation for %s(%s)", tableName, strings.Join(fields, ","))
+	}
+	cmd := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (%s);", tableName, constraintName, strings.Join(fields, "."))
+	err := db.Exec(cmd).Error
+	if err != nil && !strings.Contains(err.Error(), "already exists") {
+		return err
+	}
+	return nil
 }

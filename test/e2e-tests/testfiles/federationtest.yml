@@ -166,7 +166,7 @@ tests:
   curuserfile: '{{datadir2}}/mc_user_fedop.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_show_partner1.yml'
+    yaml2: '{{datadir2}}/federation_show_partner1_fedorgs.yml'
     filetype: mcdata
 
 - name: delete federation consumers

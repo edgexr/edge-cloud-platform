@@ -579,7 +579,7 @@ func (p *PartnerApi) AddConsumerZones(ctx context.Context, consumer *ormapi.Fede
 	}
 
 	if consumer.AutoRegisterZones {
-		regErr := p.RegisterConsumerZones(ctx, consumer, consumer.Region, createdZones)
+		regErr := p.RegisterConsumerZones(ctx, consumer, consumer.AutoRegisterRegion, createdZones)
 		if regErr != nil {
 			// don't fail, just log that registration will need
 			// to be done manually
