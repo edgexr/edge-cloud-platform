@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	ssh "github.com/edgexr/golang-ssh"
 	yaml "github.com/mobiledgex/yaml/v2"
@@ -153,16 +153,16 @@ func handleDockerZipfile(ctx context.Context, authApi cloudcommon.RegistryAuthAp
 			}
 		}
 		// pull the zipfile
-		_, err = client.Output(fmt.Sprintf("wget %s -T 60 -P %s %s", passParams, dir, app.DeploymentManifest))
+		out, err := client.Output(fmt.Sprintf("wget %s -T 60 -P %s %s", passParams, dir, app.DeploymentManifest))
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "wget err", "err", err)
-			return fmt.Errorf("wget of app zipfile failed: %v", err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "wget err", "out", "err", err)
+			return fmt.Errorf("wget of app zipfile failed: %s %v", out, err)
 		}
 		s := strings.Split(app.DeploymentManifest, "/")
 		zipfile := s[len(s)-1]
 		cmd := "unzip -o -d " + dir + " " + dir + "/" + zipfile
 		log.SpanLog(ctx, log.DebugLevelInfra, "running unzip", "cmd", cmd)
-		out, err := client.Output(cmd)
+		out, err = client.Output(cmd)
 		if err != nil {
 			return fmt.Errorf("error unzipping, %s, %v", out, err)
 		}
