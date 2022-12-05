@@ -445,14 +445,14 @@ func GetAppInstRuntime(ctx context.Context, client ssh.Client, app *edgeproto.Ap
 	cmd := fmt.Sprintf(`docker ps --format "{{.Names}}" --filter "label=%s=%s" --filter "label=%s=%s"`,
 		cloudcommon.MexAppNameLabel, nameLabelVal, cloudcommon.MexAppVersionLabel, versionLabelVal)
 	out, err := client.Output(cmd)
-	if err == nil {
+	if err == nil && len(out) > 0 {
 		for _, name := range strings.Split(out, "\n") {
 			name = strings.TrimSpace(name)
 			rt.ContainerIds = append(rt.ContainerIds, name)
 		}
 		return rt, nil
 	} else {
-		log.SpanLog(ctx, log.DebugLevelInfo, "GetAppInstRuntime cmd failed", "cmd", cmd, "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfo, "GetAppInstRuntime cmd failed", "cmd", cmd, "out", out, "err", err)
 	}
 
 	// get the expected names if couldn't get it from the runtime
