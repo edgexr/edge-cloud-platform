@@ -78,7 +78,7 @@ func (s *VaultClient) GetCloudletAccessVars(ctx context.Context) (map[string]str
 }
 
 func (s *VaultClient) GetRegistryAuth(ctx context.Context, imgUrl string) (*cloudcommon.RegistryAuth, error) {
-	return cloudcommon.GetRegistryAuth(ctx, imgUrl, s.vaultConfig)
+	return cloudcommon.GetRegistryAuth(ctx, imgUrl, cloudcommon.AllOrgs, s.vaultConfig)
 }
 
 func (s *VaultClient) SignSSHKey(ctx context.Context, publicKey string) (string, error) {
