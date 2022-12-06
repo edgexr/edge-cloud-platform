@@ -22,13 +22,13 @@ import (
 	"sort"
 	strings "strings"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	distributed_match_engine "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	context "golang.org/x/net/context"
 )
 
@@ -708,7 +708,7 @@ func AddDnsLabels(ctx context.Context, objStore objstore.KVStore, allApis *AllAp
 			appInst := edgeproto.AppInst{}
 			err := json.Unmarshal([]byte(appInstStr), &appInst)
 			if err != nil {
-				return fmt.Errorf("Unmarshal ClusterInst %s failed: %s", key, err)
+				return fmt.Errorf("Unmarshal AppInst %s failed: %s", key, err)
 			}
 			if appInst.DnsLabel != "" {
 				return nil // already done
@@ -921,6 +921,64 @@ func AddGPUDriverStoragePaths(ctx context.Context, objStore objstore.KVStore, al
 				return err
 			}
 			allApis.cloudletApi.store.STMPut(stm, &cloudlet)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// After appDnsRoot change and change to the way rootLB FQDNs are generated,
+// Cloudlet now has a new rootLbFqdn value, but AppInsts still have the old
+// one. Make sure the AppInsts using the shared rootLB use the new one.
+func FixSharedRootLBFQDN(ctx context.Context, objStore objstore.KVStore, allApis *AllApis) error {
+	appInstKeys, err := getDbObjectKeys(objStore, "AppInst")
+	if err != nil {
+		return err
+	}
+	for key, _ := range appInstKeys {
+		_, err = objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			appInstStr := stm.Get(key)
+			if appInstStr == "" {
+				return nil // was deleted
+			}
+			appInst := edgeproto.AppInst{}
+			err := json.Unmarshal([]byte(appInstStr), &appInst)
+			if err != nil {
+				return fmt.Errorf("Unmarshal AppInst %s failed: %s", key, err)
+			}
+			clusterInst := edgeproto.ClusterInst{}
+			if !allApis.clusterInstApi.store.STMGet(stm, appInst.ClusterInstKey(), &clusterInst) {
+				log.SpanLog(ctx, log.DebugLevelUpgrade, "FixSharedRootLBFQDN: clusterInst not found for AppInst", "appinst", key)
+				return nil
+			}
+			app := edgeproto.App{}
+			if !allApis.appApi.store.STMGet(stm, &appInst.Key.AppKey, &app) {
+				log.SpanLog(ctx, log.DebugLevelUpgrade, "FixSharedRootLBFQDN: app not found for AppInst", "appinst", key)
+				return nil
+			}
+			if !cloudcommon.IsClusterInstReqd(&app) || app.InternalPorts || app.AccessPorts == "" {
+				return nil
+			}
+			if clusterInst.IpAccess != edgeproto.IpAccess_IP_ACCESS_SHARED {
+				return nil
+			}
+			cloudlet := edgeproto.Cloudlet{}
+			if !allApis.cloudletApi.store.STMGet(stm, &appInst.ClusterInstKey().CloudletKey, &cloudlet) {
+				log.SpanLog(ctx, log.DebugLevelUpgrade, "FixSharedRootLBFQDN: cloudlet not found for AppInst", "appinst", key)
+				return nil
+			}
+			if appInst.Uri == cloudlet.RootLbFqdn {
+				return nil
+			}
+			appInst.Uri = cloudlet.RootLbFqdn
+			appInstData, err := json.Marshal(appInst)
+			if err != nil {
+				return fmt.Errorf("Marshal AppInst %s failed: %s", appInst.Key.GetKeyString(), err)
+			}
+			stm.Put(key, string(appInstData))
 			return nil
 		})
 		if err != nil {

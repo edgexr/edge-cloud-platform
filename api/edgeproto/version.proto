@@ -64,6 +64,7 @@ enum VersionHash {
   HASH_636a7d17efd0532933313e27e6de0a5b = 42;
   HASH_0a418578eee77cabd2b8e1dd1fa64dbe = 43;
   HASH_93e8b0c0bb73ce790ebcd69d8437539c = 44 [(protogen.upgrade_func) = "AddGPUDriverStoragePaths"];
+  HASH_29fb22509ab88f8106c5b27f147a8aaa = 45 [(protogen.upgrade_func) = "FixSharedRootLBFQDN"];
   option (protogen.version_hash) = true;
-  option (protogen.version_hash_salt) = "8";
+  option (protogen.version_hash_salt) = "9";
 }
