@@ -1243,15 +1243,9 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				ports[ii].PublicPort = ports[ii].InternalPort
 			}
 		} else if ipaccess == edgeproto.IpAccess_IP_ACCESS_SHARED && !app.InternalPorts {
-			if cloudletCompatibilityVersion < cloudcommon.CRMCompatibilitySharedRootLBFQDN {
-				// CRM has issued DNS entry only for old style FQDN.
-				// This case can be removed once all CRMs have been
-				// updated to current version.
-				in.Uri = cloudcommon.GetRootLBFQDNOld(&in.Key.ClusterInstKey.CloudletKey, *appDNSRoot)
-			} else {
-				// uri points to cloudlet shared root LB
-				in.Uri = cloudlet.RootLbFqdn
-			}
+			// uri points to cloudlet shared root LB
+			in.Uri = cloudlet.RootLbFqdn
+
 			if cloudletRefs.RootLbPorts == nil {
 				cloudletRefs.RootLbPorts = make(map[int32]int32)
 			}
