@@ -949,17 +949,17 @@ func FixSharedRootLBFQDN(ctx context.Context, objStore objstore.KVStore, allApis
 			if err != nil {
 				return fmt.Errorf("Unmarshal AppInst %s failed: %s", key, err)
 			}
-			clusterInst := edgeproto.ClusterInst{}
-			if !allApis.clusterInstApi.store.STMGet(stm, appInst.ClusterInstKey(), &clusterInst) {
-				log.SpanLog(ctx, log.DebugLevelUpgrade, "FixSharedRootLBFQDN: clusterInst not found for AppInst", "appinst", key)
-				return nil
-			}
 			app := edgeproto.App{}
 			if !allApis.appApi.store.STMGet(stm, &appInst.Key.AppKey, &app) {
 				log.SpanLog(ctx, log.DebugLevelUpgrade, "FixSharedRootLBFQDN: app not found for AppInst", "appinst", key)
 				return nil
 			}
 			if !cloudcommon.IsClusterInstReqd(&app) || app.InternalPorts || app.AccessPorts == "" {
+				return nil
+			}
+			clusterInst := edgeproto.ClusterInst{}
+			if !allApis.clusterInstApi.store.STMGet(stm, appInst.ClusterInstKey(), &clusterInst) {
+				log.SpanLog(ctx, log.DebugLevelUpgrade, "FixSharedRootLBFQDN: clusterInst not found for AppInst", "appinst", key)
 				return nil
 			}
 			if clusterInst.IpAccess != edgeproto.IpAccess_IP_ACCESS_SHARED {
