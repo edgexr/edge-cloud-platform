@@ -43,6 +43,7 @@ const (
 	DockerHub         = "docker.io"
 	DockerHubRegistry = "registry-1.docker.io"
 	MaxOvfVmVersion   = 14
+	AllOrgs           = ""
 )
 
 type RegistryAuth struct {
@@ -77,8 +78,14 @@ type OauthTokenResp struct {
 	AccessToken string `json:"access_token"`
 }
 
-func getVaultRegistryPath(registry string) string {
-	return fmt.Sprintf("/secret/data/registry/%s", registry)
+func getVaultRegistryPath(registry, org string) string {
+	if org == AllOrgs {
+		// registry key granting access to all orgs
+		return fmt.Sprintf("/secret/data/registry/%s", registry)
+	} else {
+		// registry key granting access only to a specific org
+		return fmt.Sprintf("/secret/data/registry/%s-orgs/%s", registry, org)
+	}
 }
 
 type RegistryAuthApi interface {
@@ -102,7 +109,7 @@ func parseImageUrl(imgUrl string) (string, string, error) {
 	return hostname[0], port, nil
 }
 
-func GetRegistryAuth(ctx context.Context, imgUrl string, vaultConfig *vault.Config) (*RegistryAuth, error) {
+func GetRegistryAuth(ctx context.Context, imgUrl, org string, vaultConfig *vault.Config) (*RegistryAuth, error) {
 	if vaultConfig == nil || vaultConfig.Addr == "" {
 		return nil, fmt.Errorf("no vault specified")
 	}
@@ -110,7 +117,7 @@ func GetRegistryAuth(ctx context.Context, imgUrl string, vaultConfig *vault.Conf
 	if err != nil {
 		return nil, err
 	}
-	vaultPath := getVaultRegistryPath(hostname)
+	vaultPath := getVaultRegistryPath(hostname, org)
 	log.SpanLog(ctx, log.DebugLevelApi, "get registry auth", "vault-path", vaultPath)
 	auth := &RegistryAuth{}
 	err = vault.GetData(vaultConfig, vaultPath, 0, auth)
@@ -135,7 +142,7 @@ func GetRegistryAuth(ctx context.Context, imgUrl string, vaultConfig *vault.Conf
 	return auth, nil
 }
 
-func PutRegistryAuth(ctx context.Context, imgUrl string, auth *RegistryAuth, vaultConfig *vault.Config, checkAndSet int) error {
+func PutRegistryAuth(ctx context.Context, imgUrl, org string, auth *RegistryAuth, vaultConfig *vault.Config, checkAndSet int) error {
 	if vaultConfig == nil || vaultConfig.Addr == "" {
 		return fmt.Errorf("no vault specified")
 	}
@@ -145,7 +152,7 @@ func PutRegistryAuth(ctx context.Context, imgUrl string, auth *RegistryAuth, vau
 	}
 	auth.Hostname = hostname
 	auth.Port = port
-	vaultPath := getVaultRegistryPath(hostname)
+	vaultPath := getVaultRegistryPath(hostname, org)
 	log.SpanLog(ctx, log.DebugLevelApi, "put auth secret", "vault-path", vaultPath)
 	err = vault.PutDataCAS(vaultConfig, vaultPath, auth, checkAndSet)
 	if err != nil {
@@ -579,7 +586,7 @@ type VaultRegistryAuthApi struct {
 }
 
 func (s *VaultRegistryAuthApi) GetRegistryAuth(ctx context.Context, imgUrl string) (*RegistryAuth, error) {
-	return GetRegistryAuth(ctx, imgUrl, s.VaultConfig)
+	return GetRegistryAuth(ctx, imgUrl, AllOrgs, s.VaultConfig)
 }
 
 // For unit tests
