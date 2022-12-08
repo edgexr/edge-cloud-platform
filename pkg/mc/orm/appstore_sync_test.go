@@ -489,7 +489,7 @@ func waitSyncCount(t *testing.T, sync *AppStoreSync, count int64) {
 
 func verifyVmRegistryApiKey(t *testing.T, ctx context.Context, serverConfig *ServerConfig, mcClient *mctestclient.Client, uri string) {
 	// verify vm registry api key
-	auth, err := cloudcommon.GetRegistryAuth(ctx, serverConfig.VmRegistryAddr, serverConfig.vaultConfig)
+	auth, err := cloudcommon.GetRegistryAuth(ctx, serverConfig.VmRegistryAddr, cloudcommon.AllOrgs, serverConfig.vaultConfig)
 	require.Nil(t, err)
 	require.Equal(t, cloudcommon.BasicAuth, auth.AuthType)
 	require.NotEmpty(t, auth.Username)

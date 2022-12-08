@@ -10,7 +10,7 @@ import (
 )
 
 func vmRegistryEnsureApiKey(ctx context.Context, username string) error {
-	auth, err := cloudcommon.GetRegistryAuth(ctx, serverConfig.VmRegistryAddr, serverConfig.vaultConfig)
+	auth, err := cloudcommon.GetRegistryAuth(ctx, serverConfig.VmRegistryAddr, cloudcommon.AllOrgs, serverConfig.vaultConfig)
 	if err != nil {
 		return err
 	}

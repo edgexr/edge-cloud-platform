@@ -166,6 +166,12 @@ func harborCreateProject(ctx context.Context, org *ormapi.Organization) {
 		harborSync.NeedsSync()
 		return
 	}
+	// create robot account for pulling
+	err = harborEnsureRobotAccount(ctx, serverConfig.HarborAddr, org.Name)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "harbor create project ensure robot account", "org", org.Name, "err", err)
+		harborSync.NeedsSync()
+	}
 }
 
 func harborDeleteProject(ctx context.Context, orgName string) {
@@ -486,13 +492,13 @@ func harborGetPages(ctx context.Context, reqUrl string, callback func(bodyData [
 	return nil
 }
 
-func harborEnsureApiKey(ctx context.Context, harborHostPort string) error {
-	auth, err := cloudcommon.GetRegistryAuth(ctx, harborHostPort, serverConfig.vaultConfig)
+func harborEnsureApiKey(ctx context.Context, harborHostPort, org string) (*cloudcommon.RegistryAuth, error) {
+	auth, err := cloudcommon.GetRegistryAuth(ctx, harborHostPort, org, serverConfig.vaultConfig)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if auth.AuthType != cloudcommon.NoAuth {
-		return nil
+		return auth, nil
 	}
 	// does not exist, create it now
 	key := uuid.New().String()
@@ -507,22 +513,23 @@ func harborEnsureApiKey(ctx context.Context, harborHostPort string) error {
 	}
 	// will not overwrite existing secret, avoids race condition with another
 	// process calling GetHarborApiKey.
-	err = cloudcommon.PutRegistryAuth(ctx, harborHostPort, auth, serverConfig.vaultConfig, 0)
+	err = cloudcommon.PutRegistryAuth(ctx, harborHostPort, org, auth, serverConfig.vaultConfig, 0)
 	if vault.IsCheckAndSetError(err) {
 		// already exists
 		err = nil
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return auth, nil
 }
 
-func harborEnsureRobotAccount(ctx context.Context, harborHostPort string) error {
+func harborEnsureRobotAccount(ctx context.Context, harborHostPort, org string) error {
 	if !harborEnabled(ctx) {
 		return nil
 	}
-	auth, err := cloudcommon.GetRegistryAuth(ctx, harborHostPort, serverConfig.vaultConfig)
+	// ensure api key is present in Vault
+	auth, err := harborEnsureApiKey(ctx, harborHostPort, org)
 	if err != nil {
 		return err
 	}
@@ -530,15 +537,38 @@ func harborEnsureRobotAccount(ctx context.Context, harborHostPort string) error 
 		return fmt.Errorf("unexpected auth type %s from %s vault key, expected %s", auth.AuthType, harborHostPort, cloudcommon.BasicAuth)
 	}
 
+	// if we can login, the robot account is working
+	req, err := http.NewRequest(http.MethodGet, harborHostPort+"/service/token", nil)
+	if err != nil {
+		return err
+	}
+	req.URL.Query().Add("service", "harbor-registry")
+	req.SetBasicAuth(auth.Username, auth.Password)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode == http.StatusOK {
+		return nil
+	}
+
+	name := HarborRobotName
+	level := "system"
+	namespace := "*"
+	if org != "" {
+		name = org + "projpull"
+		level = "project"
+		namespace = org
+	}
 	// Create does not write the secret, we need to call PUT to do so.
 	robot := models.RobotCreate{
-		Name:        HarborRobotName,
+		Name:        name,
 		Description: "Account for cloudlets to pull images",
-		Level:       "system",
+		Level:       level,
 		Duration:    -1,
 		Permissions: []*models.RobotPermission{{
 			Kind:      "project",
-			Namespace: "*",
+			Namespace: namespace,
 			Access: []*models.Access{{
 				Resource: "repository",
 				Action:   "pull",
@@ -554,7 +584,7 @@ func harborEnsureRobotAccount(ctx context.Context, harborHostPort string) error 
 			}},
 		}},
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "creating harbor robot account", "name", HarborRobotName)
+	log.SpanLog(ctx, log.DebugLevelApi, "creating harbor robot account", "name", name)
 	code, resBody, err := harborDoReq(ctx, http.MethodPost, "/robots", &robot)
 	if err != nil {
 		return err
@@ -659,13 +689,8 @@ func harborInit(ctx context.Context) error {
 	harborHostPort := serverConfig.HarborAddr
 	log.SpanLog(ctx, log.DebugLevelApi, "harbor init", "hostport", harborHostPort)
 
-	// ensure api key is present in Vault
-	err := harborEnsureApiKey(ctx, harborHostPort)
-	if err != nil {
-		return err
-	}
 	// ensure api key is registered in harbor as a robot account
-	err = harborEnsureRobotAccount(ctx, harborHostPort)
+	err := harborEnsureRobotAccount(ctx, harborHostPort, cloudcommon.AllOrgs)
 	if err != nil {
 		return err
 	}

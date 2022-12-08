@@ -49,7 +49,7 @@ func artifactoryClient(ctx context.Context) (*artifactory.Artifactory, error) {
 		return nil, fmt.Errorf("no artifactory addr specified")
 	}
 	if rtfAuth == nil {
-		auth, err := cloudcommon.GetRegistryAuth(ctx, serverConfig.ArtifactoryAddr, serverConfig.vaultConfig)
+		auth, err := cloudcommon.GetRegistryAuth(ctx, serverConfig.ArtifactoryAddr, cloudcommon.AllOrgs, serverConfig.vaultConfig)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to fetch artifactory AuthKey from Vault",
 				"artifactoryAddr", serverConfig.ArtifactoryAddr,

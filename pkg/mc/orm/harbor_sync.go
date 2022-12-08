@@ -84,13 +84,16 @@ func (s *AppStoreSync) syncHarborProjects(ctx context.Context) {
 					s.syncErr(ctx, err)
 				}
 			}
-			s.syncHarborProjectMembers(ctx, proj, org, orgusers[name])
+			err = harborEnsureRobotAccount(ctx, serverConfig.HarborAddr, org.Name)
+			if err != nil {
+				s.syncErr(ctx, err)
+			}
 		} else {
 			// missing from Harbor, so create
 			log.SpanLog(ctx, log.DebugLevelApi, "harbor sync create missing project", "org", name)
 			harborCreateProject(ctx, org)
-			s.syncHarborProjectMembers(ctx, proj, org, orgusers[name])
 		}
+		s.syncHarborProjectMembers(ctx, org, orgusers[name])
 	}
 	for name, proj := range projectsT {
 		managed, err := harborHasProjectLabel(ctx, proj.ProjectID)
@@ -107,7 +110,7 @@ func (s *AppStoreSync) syncHarborProjects(ctx context.Context) {
 	}
 }
 
-func (s *AppStoreSync) syncHarborProjectMembers(ctx context.Context, proj *models.Project, org *ormapi.Organization, orgRoles map[string]*ormapi.Role) {
+func (s *AppStoreSync) syncHarborProjectMembers(ctx context.Context, org *ormapi.Organization, orgRoles map[string]*ormapi.Role) {
 	mems, err := harborGetProjectMembers(ctx, org.Name)
 	if err != nil {
 		s.syncErr(ctx, err)
