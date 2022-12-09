@@ -19,10 +19,11 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 func (s *RootCommand) getLoginCmd() *cobra.Command {
@@ -61,7 +62,13 @@ func (s *RootCommand) runLogin(path string) func(c *cli.Command, args []string) 
 			return err
 		}
 		fmt.Fprintln(wr, "login successful")
-		err = ioutil.WriteFile(GetTokenFile(), []byte(token), 0600)
+		tokens := GetTokens()
+		tokens[s.getAddr()] = token
+		dat, err := yaml.Marshal(tokens)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(GetTokenFile(), dat, 0600)
 		if err != nil {
 			fmt.Fprintf(wr, "warning, cannot save token file %s, %v\n", GetTokenFile(), err)
 			fmt.Fprintf(wr, "token: %s\n", token)

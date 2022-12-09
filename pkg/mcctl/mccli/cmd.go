@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 var LookupKey = "lookupkey"
@@ -161,10 +162,8 @@ func (s *RootCommand) PreRunE(cmd *cobra.Command, args []string) error {
 		s.token = os.Getenv("TOKEN")
 	}
 	if s.token == "" {
-		tok, err := ioutil.ReadFile(GetTokenFile())
-		if err == nil {
-			s.token = strings.TrimSpace(string(tok))
-		}
+		tokens := GetTokens()
+		s.token = tokens[s.getAddr()]
 	}
 	if s.skipVerify {
 		s.client.SkipVerify = true
@@ -172,9 +171,18 @@ func (s *RootCommand) PreRunE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func GetTokens() map[string]string {
+	tokens := map[string]string{}
+	dat, err := ioutil.ReadFile(GetTokenFile())
+	if err == nil {
+		err = yaml.Unmarshal(dat, &tokens)
+	}
+	return tokens
+}
+
 func GetTokenFile() string {
 	home := os.Getenv("HOME")
-	return home + "/.mctoken"
+	return home + "/.mctoken.yml"
 }
 
 func GetAdminFile() string {
@@ -182,12 +190,16 @@ func GetAdminFile() string {
 	return home + "/.mcctl_admin"
 }
 
-func (s *RootCommand) getUri() string {
+func (s *RootCommand) getAddr() string {
 	prefix := ""
 	if !strings.HasPrefix(s.addr, "http") {
 		prefix = "http://"
 	}
-	return prefix + s.addr + "/api/v1"
+	return prefix + s.addr
+}
+
+func (s *RootCommand) getUri() string {
+	return s.getAddr() + "/api/v1"
 }
 
 func (s *RootCommand) getArtifactUri() string {
