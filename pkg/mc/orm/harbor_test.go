@@ -15,6 +15,7 @@ import (
 )
 
 type HarborMock struct {
+	bareAddr       string
 	addr           string
 	admin          string
 	password       string
@@ -32,6 +33,7 @@ type HarborMock struct {
 
 func NewHarborMock(addr string, tr *httpmock.MockTransport, admin, password string) *HarborMock {
 	hm := HarborMock{}
+	hm.bareAddr = addr
 	hm.addr = addr + "/api/v2.0"
 	hm.admin = admin
 	hm.password = password
@@ -180,6 +182,12 @@ func (s *HarborMock) registerProjects() {
 				proj.Metadata.Public = harborFalse
 			}
 			log.DebugLog(log.DebugLevelApi, "harbor mock update project", "project", nameOrId)
+			return httpmock.NewBytesResponse(200, []byte{}), nil
+		},
+	)
+	u = fmt.Sprintf(`%s/service/token`, s.bareAddr)
+	s.mockTransport.RegisterResponder("GET", u,
+		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewBytesResponse(200, []byte{}), nil
 		},
 	)

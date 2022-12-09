@@ -544,7 +544,7 @@ func harborEnsureRobotAccount(ctx context.Context, harborHostPort, org string) e
 	}
 	req.URL.Query().Add("service", "harbor-registry")
 	req.SetBasicAuth(auth.Username, auth.Password)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := harborClient.Do(req)
 	if err != nil {
 		return err
 	}
