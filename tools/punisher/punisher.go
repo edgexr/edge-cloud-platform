@@ -16,7 +16,6 @@ package main
 
 import (
 	"flag"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -24,10 +23,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mccli"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mccli"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 )
 
 var numThreads = flag.Int("numthreads", 2, "number of threads")
@@ -43,11 +42,8 @@ func main() {
 		*token = os.Getenv("TOKEN")
 	}
 	if *token == "" {
-		tok, err := ioutil.ReadFile(mccli.GetTokenFile())
-		if err != nil {
-			log.Fatal(err)
-		}
-		*token = strings.TrimSpace(string(tok))
+		tokens := mccli.GetTokens()
+		*token = tokens[*addr]
 	}
 	if *token == "" {
 		log.Fatal("please login via mcctl, or specify --token, or set TOKEN env var")
