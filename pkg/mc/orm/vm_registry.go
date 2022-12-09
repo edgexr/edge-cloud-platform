@@ -44,7 +44,7 @@ func vmRegistryEnsureApiKey(ctx context.Context, username string) error {
 	}
 	// will not overwrite existing secret, avoids race
 	// condition with another process.
-	err = cloudcommon.PutRegistryAuth(ctx, serverConfig.VmRegistryAddr, auth, serverConfig.vaultConfig, 0)
+	err = cloudcommon.PutRegistryAuth(ctx, serverConfig.VmRegistryAddr, cloudcommon.AllOrgs, auth, serverConfig.vaultConfig, 0)
 	if vault.IsCheckAndSetError(err) {
 		err = nil
 		// already exists
