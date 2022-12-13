@@ -112,12 +112,12 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 	// external image pull secrets, so if they are specified,
 	// we copy the image in. If partner requests upload we honor it.
 	if src.UserName == nil && src.Password == nil && src.Token == nil && src.RepoType != RepoTypeUpload {
-		// public image, can keep as reference
+		// keep as reference
 		image.Status = ImageStatusReady
 		image.Path = src.RepoURL
-		log.SpanLog(ctx, log.DebugLevelApi, "Assume public image, will save as reference", "info", image)
+		log.SpanLog(ctx, log.DebugLevelApi, "Saving image as reference", "info", image)
 	} else {
-		log.SpanLog(ctx, log.DebugLevelApi, "Repo credentials specified, will download")
+		log.SpanLog(ctx, log.DebugLevelApi, "Will copy image")
 		if src.UserName != nil && *src.UserName != "" {
 			if src.Password == nil || *src.Password == "" {
 				return fmt.Errorf("repolocation username specified but no password")
@@ -208,13 +208,11 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "uploaded vm-registry image", "out", out)
 		// check that checksum matches
-		if image.Checksum != "" {
-			if image.Checksum != out.MD5 {
-				return fmt.Errorf("Upload succeeded but checksums mismatch, expected %s but is %s", image.Checksum, out.MD5)
-			}
+		if image.Checksum != "" && image.Checksum != out.MD5 {
+			return fmt.Errorf("Upload succeeded but checksums mismatch, expected %s but is %s", image.Checksum, out.MD5)
 		}
 	} else if image.Type == string(fedewapi.VIRTIMAGETYPE_DOCKER) {
-		log.SpanLog(ctx, log.DebugLevelApi, "download file into harbor", "info", image)
+		log.SpanLog(ctx, log.DebugLevelApi, "copy docker file inot harbor", "info", image)
 		// use skopeo to transfer docker image from source (remote)
 		// to destination (local harbor)
 		dest := fmt.Sprintf("%s/%s", util.TrimScheme(p.harborAddr), localPath)
@@ -287,7 +285,7 @@ func (p *PartnerApi) RemoveFile(c echo.Context, fedCtxId FederationContextId, fi
 	db := p.loggedDB(ctx)
 	res := db.Where(&image).First(&image)
 	if res.RecordNotFound() {
-		return c.String(http.StatusNotFound, "Specified file ID not found")
+		return c.String(http.StatusNotFound, fmt.Sprintf("Specified file ID %s not found", string(fileId)))
 	}
 	if res.Error != nil {
 		return c.String(http.StatusInternalServerError, res.Error.Error())

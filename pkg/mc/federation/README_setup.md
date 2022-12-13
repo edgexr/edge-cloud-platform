@@ -160,7 +160,7 @@ mcctl --addr https://console.$DOMAINP federationprovider showimages
 ### Delete images
 
 Images can be deleted by developer by specifying ID or triplet of {organization, federationname, name}
-```
+```bash
 mcctl --addr https://console.$DOMAINC federation deleteimage id=da308dcb-6251-41ad-bba8-fa66cdfda2e5
 ```
 

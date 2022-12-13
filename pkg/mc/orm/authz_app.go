@@ -106,7 +106,6 @@ func checkImagePathStrings(ctx context.Context, org, imagePath string) error {
 	path := strings.TrimLeft(u.Path, "/")
 	path = strings.TrimPrefix(path, pathPrefix)
 	path = strings.TrimPrefix(path, "/")
-	fmt.Printf("path is %s, prefix is %s\n", path, pathPrefix)
 	pathNames := strings.Split(path, "/")
 	if len(pathNames) == 0 {
 		return fmt.Errorf("Empty URL path in ImagePath")

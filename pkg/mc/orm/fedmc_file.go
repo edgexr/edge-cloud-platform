@@ -327,7 +327,7 @@ func ShowProviderImage(c echo.Context) error {
 	if err != nil {
 		return ormutil.DbErr(err)
 	}
-	showAuth, err := newShowAuthz(ctx, "", claims.Username, ResourceApps, ActionView)
+	showAuth, err := newShowAuthz(ctx, "", claims.Username, ResourceCloudlets, ActionView)
 	if err != nil {
 		return err
 	}
