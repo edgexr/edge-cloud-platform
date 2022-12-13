@@ -25,6 +25,7 @@ import (
 const (
 	HarborProjectManaged     = "ManagedByEdgeCloud"
 	HarborRobotName          = "edgecloudpull"
+	HarborProjectRobotName   = "projpull"
 	HarborRobotPrefix        = "robot$"
 	HarborAdminAuthVaultPath = "/accounts/harbor"
 )
@@ -41,7 +42,7 @@ var harborEdgeCloudOrg = ormapi.Organization{
 }
 
 func harborEnabled(ctx context.Context) bool {
-	if serverConfig.HarborAddr == "" {
+	if serverConfig.HarborAddr == "" || harborClient == nil {
 		return false
 	}
 	return true
@@ -102,8 +103,10 @@ func harborDoReq(ctx context.Context, method, url string, obj interface{}) (int,
 	}
 	resp, err := harborClient.Do(req)
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "harbor req failed", "method", method, "url", reqUrl, "err", err)
 		return 0, nil, err
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "harbor req", "method", method, "url", reqUrl, "status", resp.StatusCode)
 	defer resp.Body.Close()
 	resBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -374,7 +377,7 @@ func harborGetProject(ctx context.Context, nameOrId string) (*models.Project, er
 	if !harborEnabled(ctx) {
 		return nil, fmt.Errorf("harbor address not configured")
 	}
-	path := "/projects/" + nameOrId
+	path := "/projects/" + strings.ToLower(nameOrId)
 	code, resBody, err := harborDoReq(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err
@@ -396,7 +399,7 @@ func harborGetProjects(ctx context.Context) ([]models.Project, error) {
 	}
 	reqUrl := harborGetAddr() + "/projects"
 	projects := []models.Project{}
-	err := harborGetPages(ctx, reqUrl, func(resBody []byte) (int, error) {
+	err := harborGetPages(ctx, reqUrl, nil, func(resBody []byte) (int, error) {
 		ps := []models.Project{}
 		err := json.Unmarshal(resBody, &ps)
 		if err != nil {
@@ -418,7 +421,7 @@ func harborGetProjectMembers(ctx context.Context, orgName string) ([]models.Proj
 	orgName = HarborProjectSanitize(orgName)
 	reqUrl := harborGetAddr() + "/projects/" + orgName + "/members"
 	members := []models.ProjectMemberEntity{}
-	err := harborGetPages(ctx, reqUrl, func(resBody []byte) (int, error) {
+	err := harborGetPages(ctx, reqUrl, nil, func(resBody []byte) (int, error) {
 		mems := []models.ProjectMemberEntity{}
 		err := json.Unmarshal(resBody, &mems)
 		if err != nil {
@@ -433,13 +436,17 @@ func harborGetProjectMembers(ctx context.Context, orgName string) ([]models.Proj
 	return members, err
 }
 
-func harborGetRobots(ctx context.Context) ([]models.Robot, error) {
+func harborGetRobots(ctx context.Context, projID int64) ([]models.Robot, error) {
 	if !harborEnabled(ctx) {
 		return nil, fmt.Errorf("harbor address not configured")
 	}
 	reqUrl := harborGetAddr() + "/robots"
+	queryParams := map[string]string{}
+	if projID != int64(-1) {
+		queryParams["q"] = fmt.Sprintf("Level=project,ProjectID=%d", projID)
+	}
 	robots := []models.Robot{}
-	err := harborGetPages(ctx, reqUrl, func(resBody []byte) (int, error) {
+	err := harborGetPages(ctx, reqUrl, queryParams, func(resBody []byte) (int, error) {
 		rs := []models.Robot{}
 		err := json.Unmarshal(resBody, &rs)
 		if err != nil {
@@ -454,7 +461,34 @@ func harborGetRobots(ctx context.Context) ([]models.Robot, error) {
 	return robots, err
 }
 
-func harborGetPages(ctx context.Context, reqUrl string, callback func(bodyData []byte) (int, error)) error {
+func harborGetRobotPull(ctx context.Context, org string) (*models.Robot, error) {
+	if !harborEnabled(ctx) {
+		return nil, fmt.Errorf("harbor address not configured")
+	}
+	projID := int64(-1)
+	name := getHarborRobotName(org, harborRobotPostCreate)
+	if org != cloudcommon.AllOrgs {
+		// project level
+		proj, err := harborGetProject(ctx, org)
+		if err != nil {
+			return nil, err
+		}
+		projID = int64(proj.ProjectID)
+	}
+	robots, err := harborGetRobots(ctx, projID)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range robots {
+		log.SpanLog(ctx, log.DebugLevelApi, "harbor get robot account", "robot", r)
+		if r.Name == name {
+			return &r, nil
+		}
+	}
+	return nil, fmt.Errorf("robot pull account not found")
+}
+
+func harborGetPages(ctx context.Context, reqUrl string, queryParams map[string]string, callback func(bodyData []byte) (int, error)) error {
 	page := 1
 	pageSize := 50
 	pageSizeStr := strconv.Itoa(pageSize)
@@ -465,6 +499,11 @@ func harborGetPages(ctx context.Context, reqUrl string, callback func(bodyData [
 			return fmt.Errorf("harbor get pages failed to create request for %s: %s", reqUrl, err)
 		}
 		query := req.URL.Query()
+		if queryParams != nil {
+			for k, v := range queryParams {
+				query.Set(k, v)
+			}
+		}
 		query.Add("page", strconv.Itoa(page))
 		query.Add("page_size", pageSizeStr)
 		req.URL.RawQuery = query.Encode()
@@ -508,7 +547,7 @@ func harborEnsureApiKey(ctx context.Context, harborHostPort, org string) (*cloud
 	key += "-Harb0r"
 	auth = &cloudcommon.RegistryAuth{
 		AuthType: cloudcommon.BasicAuth,
-		Username: HarborRobotPrefix + HarborRobotName,
+		Username: getHarborRobotName(org, harborRobotPostCreate),
 		Password: key,
 	}
 	// will not overwrite existing secret, avoids race condition with another
@@ -528,6 +567,14 @@ func harborEnsureRobotAccount(ctx context.Context, harborHostPort, org string) e
 	if !harborEnabled(ctx) {
 		return nil
 	}
+	name := getHarborRobotName(org, harborRobotPreCreate)
+	level := "system"
+	namespace := "*"
+	if org != cloudcommon.AllOrgs {
+		level = "project"
+		namespace = HarborProjectSanitize(org)
+	}
+
 	// ensure api key is present in Vault
 	auth, err := harborEnsureApiKey(ctx, harborHostPort, org)
 	if err != nil {
@@ -537,30 +584,22 @@ func harborEnsureRobotAccount(ctx context.Context, harborHostPort, org string) e
 		return fmt.Errorf("unexpected auth type %s from %s vault key, expected %s", auth.AuthType, harborHostPort, cloudcommon.BasicAuth)
 	}
 
-	// if we can login, the robot account is working
-	req, err := http.NewRequest(http.MethodGet, harborHostPort+"/service/token", nil)
-	if err != nil {
-		return err
-	}
-	req.URL.Query().Add("service", "harbor-registry")
-	req.SetBasicAuth(auth.Username, auth.Password)
-	resp, err := harborClient.Do(req)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode == http.StatusOK {
-		return nil
-	}
+	// setup up permissions
+	access := []*models.Access{{
+		Resource: "repository",
+		Action:   "pull",
+	}, {
+		Resource: "artifact",
+		Action:   "read",
+	}, {
+		Resource: "helm-chart",
+		Action:   "read",
+	}, {
+		Resource: "tag",
+		Action:   "list",
+	}}
 
-	name := HarborRobotName
-	level := "system"
-	namespace := "*"
-	if org != "" {
-		name = org + "projpull"
-		level = "project"
-		namespace = org
-	}
-	// Create does not write the secret, we need to call PUT to do so.
+	// Try to create the account, it may already exist
 	robot := models.RobotCreate{
 		Name:        name,
 		Description: "Account for cloudlets to pull images",
@@ -569,60 +608,55 @@ func harborEnsureRobotAccount(ctx context.Context, harborHostPort, org string) e
 		Permissions: []*models.RobotPermission{{
 			Kind:      "project",
 			Namespace: namespace,
-			Access: []*models.Access{{
-				Resource: "repository",
-				Action:   "pull",
-			}, {
-				Resource: "artifact",
-				Action:   "read",
-			}, {
-				Resource: "helm-chart",
-				Action:   "read",
-			}, {
-				Resource: "tag",
-				Action:   "list",
-			}},
+			Access:    access,
 		}},
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "creating harbor robot account", "name", name)
+	log.SpanLog(ctx, log.DebugLevelApi, "creating harbor robot account", "name", name, "org", org, "payload", robot)
 	code, resBody, err := harborDoReq(ctx, http.MethodPost, "/robots", &robot)
 	if err != nil {
 		return err
 	}
-	// already exists, update it to make sure it's correct
-	log.SpanLog(ctx, log.DebugLevelApi, "harbor get robot account", "name", HarborRobotName)
-	robots, err := harborGetRobots(ctx)
-	if err != nil {
-		return err
-	}
-	var updateRobot *models.Robot
-	for _, r := range robots {
-		log.SpanLog(ctx, log.DebugLevelApi, "harbor get robot account", "robot", r)
-		if r.Name == HarborRobotPrefix+HarborRobotName {
-			updateRobot = &r
-			break
+	var id int64
+	ensureFailed := false
+	if code == http.StatusOK {
+		created := models.RobotCreated{}
+		err = json.Unmarshal(resBody, &created)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal robot account created response: %s", err)
 		}
-	}
-	if updateRobot == nil {
-		return fmt.Errorf("create robot %s failed with already exists, but can't get it", HarborRobotName)
-	}
-	log.SpanLog(ctx, log.DebugLevelApi, "harbor update robot account permissions", "name", HarborRobotName)
-	updateRobot.Permissions = robot.Permissions
-	path := fmt.Sprintf("/robots/%d", updateRobot.ID)
-	code, resBody, err = harborDoReq(ctx, http.MethodPut, path, updateRobot)
-	if err != nil {
-		return fmt.Errorf("update robot account failed, %v", err)
-	}
-	if code != http.StatusOK {
-		return fmt.Errorf("update robot account failed, code %d, resp %s", code, string(resBody))
+		id = created.ID
+	} else if code == http.StatusConflict {
+		// account exists, make sure permissions are set correctly
+		updateRobot, err := harborGetRobotPull(ctx, org)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "lookup harbor robot account failed", "name", name, "org", org, "err", err)
+			return err
+		}
+		updateRobot.Permissions = robot.Permissions
+		updateRobot.Editable = true
+		id = updateRobot.ID
+		path := fmt.Sprintf("/robots/%d", updateRobot.ID)
+		code, resBody, err = harborDoReq(ctx, http.MethodPut, path, updateRobot)
+		if err != nil {
+			return fmt.Errorf("update robot account failed, %v", err)
+		}
+		// even if failed, continue to update password
+		if code != http.StatusOK {
+			ensureFailed = true
+			log.SpanLog(ctx, log.DebugLevelApi, "harbor update robot account permissions failed", "payload", updateRobot, "status", code, "resp", resBody)
+		}
+	} else {
+		// continue on failure
+		log.SpanLog(ctx, log.DebugLevelApi, "harbor create robot unhandled response", "status", code, "resp", resBody, "payload", robot)
+		ensureFailed = true
 	}
 
-	// there's no way to read the secret, so in case the secret changed in Vault,
-	// re-write it to Harbor.
-	log.SpanLog(ctx, log.DebugLevelApi, "harbor update robot secret", "name", HarborRobotName)
+	// there's no way to read the secret, so in case the secret changed
+	// in Vault, re-write it to Harbor.
 	rsec := models.RobotSec{
 		Secret: auth.Password,
 	}
+	path := fmt.Sprintf("/robots/%d", id)
 	code, resBody, err = harborDoReq(ctx, http.MethodPatch, path, &rsec)
 	if err != nil {
 		return fmt.Errorf("update robot secret failed, %v", err)
@@ -630,11 +664,45 @@ func harborEnsureRobotAccount(ctx context.Context, harborHostPort, org string) e
 	if code != http.StatusOK {
 		return fmt.Errorf("update robot secret failed, code %d, resp %s", code, string(resBody))
 	}
+	if ensureFailed {
+		return fmt.Errorf("ensure robot account encountered failure(s)")
+	}
 	return nil
 }
 
 func stringRef(str string) *string {
 	return &str
+}
+
+const (
+	harborRobotPreCreate  = "pre"
+	harborRobotPostCreate = "post"
+)
+
+// Get the harbor robot name for the org.
+// Harbor adds a bunch of stuff to the name after the robot is created.
+func getHarborRobotName(org, createState string) string {
+	// we have one robot account for all orgs,
+	// and one robot account per org for reduced perms.
+	var name string
+	if org == cloudcommon.AllOrgs {
+		name = HarborRobotName
+	} else {
+		name = HarborProjectRobotName
+	}
+	if createState == harborRobotPreCreate {
+		return name
+	}
+
+	// If account was already created, then name has the prefix
+	// added, and if it's a project-based account, the project name
+	// is also automatically added by harbor.
+	if org == cloudcommon.AllOrgs {
+		return HarborRobotPrefix + name
+	} else {
+		// project based account
+		return HarborRobotPrefix + strings.ToLower(org) + "+" + name
+	}
 }
 
 func harborEnsureConfiguration(ctx context.Context) error {
@@ -677,7 +745,7 @@ func harborEnsureConfiguration(ctx context.Context) error {
 }
 
 func harborInit(ctx context.Context) error {
-	if !harborEnabled(ctx) {
+	if serverConfig.HarborAddr == "" {
 		return nil
 	}
 	if harborClient == nil {

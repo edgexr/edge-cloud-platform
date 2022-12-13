@@ -35,6 +35,7 @@ type PartnerPostRequest struct {
 	// List of zones, which the operator platform no longer wishes to share.
 	RemoveZones []string `json:"removeZones,omitempty"`
 	ZoneStatus []PartnerPostRequestZoneStatusInner `json:"zoneStatus,omitempty"`
+	FederationStatus *Status `json:"federationStatus,omitempty"`
 	// Date and time of the federation  modification by the originating partner OP
 	ModificationDate time.Time `json:"modificationDate"`
 }
@@ -395,6 +396,38 @@ func (o *PartnerPostRequest) SetZoneStatus(v []PartnerPostRequestZoneStatusInner
 	o.ZoneStatus = v
 }
 
+// GetFederationStatus returns the FederationStatus field value if set, zero value otherwise.
+func (o *PartnerPostRequest) GetFederationStatus() Status {
+	if o == nil || isNil(o.FederationStatus) {
+		var ret Status
+		return ret
+	}
+	return *o.FederationStatus
+}
+
+// GetFederationStatusOk returns a tuple with the FederationStatus field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *PartnerPostRequest) GetFederationStatusOk() (*Status, bool) {
+	if o == nil || isNil(o.FederationStatus) {
+		return nil, false
+	}
+	return o.FederationStatus, true
+}
+
+// HasFederationStatus returns a boolean if a field has been set.
+func (o *PartnerPostRequest) HasFederationStatus() bool {
+	if o != nil && !isNil(o.FederationStatus) {
+		return true
+	}
+
+	return false
+}
+
+// SetFederationStatus gets a reference to the given Status and assigns it to the FederationStatus field.
+func (o *PartnerPostRequest) SetFederationStatus(v Status) {
+	o.FederationStatus = &v
+}
+
 // GetModificationDate returns the ModificationDate field value
 func (o *PartnerPostRequest) GetModificationDate() time.Time {
 	if o == nil {
@@ -457,6 +490,9 @@ func (o PartnerPostRequest) ToMap() (map[string]interface{}, error) {
 	}
 	if !isNil(o.ZoneStatus) {
 		toSerialize["zoneStatus"] = o.ZoneStatus
+	}
+	if !isNil(o.FederationStatus) {
+		toSerialize["federationStatus"] = o.FederationStatus
 	}
 	toSerialize["modificationDate"] = o.ModificationDate
 	return toSerialize, nil

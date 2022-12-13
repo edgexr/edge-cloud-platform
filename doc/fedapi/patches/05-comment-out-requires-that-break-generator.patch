@@ -1,6 +1,6 @@
---- FederationApi_v1.3.0.yaml.last	2022-10-26 10:33:22.883755700 -0700
-+++ FederationApi_v1.3.0.yaml	2022-10-26 10:46:31.283755700 -0700
-@@ -850,13 +850,13 @@
+--- FederationApi_v1.3.0.yaml.last	2022-12-09 12:34:39.648707100 -0800
++++ FederationApi_v1.3.0.yaml	2022-12-09 12:34:55.828707100 -0800
+@@ -863,13 +863,13 @@
        type: object
        required:
          - port
@@ -21,7 +21,7 @@
        properties:
          port: 
            $ref: '#/components/schemas/Port'
-@@ -2367,17 +2367,17 @@
+@@ -2299,17 +2299,17 @@
                  appUpdQoSProfile: 
                    description: Parameters corresponding to the performance constraints, tenancy details etc.
                    type: object
@@ -50,7 +50,7 @@
                    properties:
                      latencyConstraints:
                        type: string
-@@ -2420,13 +2420,13 @@
+@@ -2352,13 +2352,13 @@
                      type: object
                      required:
                         - componentName                   

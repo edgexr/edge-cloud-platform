@@ -29,18 +29,19 @@ type ViewFile200Response struct {
 	FileDescription *string `json:"fileDescription,omitempty"`
 	// File version information
 	FileVersionInfo string `json:"fileVersionInfo"`
-	// Indicate if the file is Container image or VM image (QCOW2)
-	FileType string `json:"fileType"`
-	// Base OS for the image. Currently only “Linux” is supported
-	ImgOSType string `json:"imgOSType"`
-	ImgInsSetArch string `json:"imgInsSetArch"`
+	FileType VirtImageType `json:"fileType"`
+	// MD5 checksum for VM and file-based images, sha256 digest for containers
+	Checksum *string `json:"checksum,omitempty"`
+	ImgOSType OSType `json:"imgOSType"`
+	ImgInsSetArch CPUArchType `json:"imgInsSetArch"`
+	FileRepolocation ObjectRepoLocation `json:"fileRepolocation"`
 }
 
 // NewViewFile200Response instantiates a new ViewFile200Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewViewFile200Response(fileId string, appProviderId string, fileName string, fileVersionInfo string, fileType string, imgOSType string, imgInsSetArch string) *ViewFile200Response {
+func NewViewFile200Response(fileId string, appProviderId string, fileName string, fileVersionInfo string, fileType VirtImageType, imgOSType OSType, imgInsSetArch CPUArchType, fileRepolocation ObjectRepoLocation) *ViewFile200Response {
 	this := ViewFile200Response{}
 	this.FileId = fileId
 	this.AppProviderId = appProviderId
@@ -49,6 +50,7 @@ func NewViewFile200Response(fileId string, appProviderId string, fileName string
 	this.FileType = fileType
 	this.ImgOSType = imgOSType
 	this.ImgInsSetArch = imgInsSetArch
+	this.FileRepolocation = fileRepolocation
 	return &this
 }
 
@@ -189,9 +191,9 @@ func (o *ViewFile200Response) SetFileVersionInfo(v string) {
 }
 
 // GetFileType returns the FileType field value
-func (o *ViewFile200Response) GetFileType() string {
+func (o *ViewFile200Response) GetFileType() VirtImageType {
 	if o == nil {
-		var ret string
+		var ret VirtImageType
 		return ret
 	}
 
@@ -200,7 +202,7 @@ func (o *ViewFile200Response) GetFileType() string {
 
 // GetFileTypeOk returns a tuple with the FileType field value
 // and a boolean to check if the value has been set.
-func (o *ViewFile200Response) GetFileTypeOk() (*string, bool) {
+func (o *ViewFile200Response) GetFileTypeOk() (*VirtImageType, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -208,14 +210,46 @@ func (o *ViewFile200Response) GetFileTypeOk() (*string, bool) {
 }
 
 // SetFileType sets field value
-func (o *ViewFile200Response) SetFileType(v string) {
+func (o *ViewFile200Response) SetFileType(v VirtImageType) {
 	o.FileType = v
 }
 
-// GetImgOSType returns the ImgOSType field value
-func (o *ViewFile200Response) GetImgOSType() string {
-	if o == nil {
+// GetChecksum returns the Checksum field value if set, zero value otherwise.
+func (o *ViewFile200Response) GetChecksum() string {
+	if o == nil || isNil(o.Checksum) {
 		var ret string
+		return ret
+	}
+	return *o.Checksum
+}
+
+// GetChecksumOk returns a tuple with the Checksum field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ViewFile200Response) GetChecksumOk() (*string, bool) {
+	if o == nil || isNil(o.Checksum) {
+		return nil, false
+	}
+	return o.Checksum, true
+}
+
+// HasChecksum returns a boolean if a field has been set.
+func (o *ViewFile200Response) HasChecksum() bool {
+	if o != nil && !isNil(o.Checksum) {
+		return true
+	}
+
+	return false
+}
+
+// SetChecksum gets a reference to the given string and assigns it to the Checksum field.
+func (o *ViewFile200Response) SetChecksum(v string) {
+	o.Checksum = &v
+}
+
+// GetImgOSType returns the ImgOSType field value
+func (o *ViewFile200Response) GetImgOSType() OSType {
+	if o == nil {
+		var ret OSType
 		return ret
 	}
 
@@ -224,7 +258,7 @@ func (o *ViewFile200Response) GetImgOSType() string {
 
 // GetImgOSTypeOk returns a tuple with the ImgOSType field value
 // and a boolean to check if the value has been set.
-func (o *ViewFile200Response) GetImgOSTypeOk() (*string, bool) {
+func (o *ViewFile200Response) GetImgOSTypeOk() (*OSType, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -232,14 +266,14 @@ func (o *ViewFile200Response) GetImgOSTypeOk() (*string, bool) {
 }
 
 // SetImgOSType sets field value
-func (o *ViewFile200Response) SetImgOSType(v string) {
+func (o *ViewFile200Response) SetImgOSType(v OSType) {
 	o.ImgOSType = v
 }
 
 // GetImgInsSetArch returns the ImgInsSetArch field value
-func (o *ViewFile200Response) GetImgInsSetArch() string {
+func (o *ViewFile200Response) GetImgInsSetArch() CPUArchType {
 	if o == nil {
-		var ret string
+		var ret CPUArchType
 		return ret
 	}
 
@@ -248,7 +282,7 @@ func (o *ViewFile200Response) GetImgInsSetArch() string {
 
 // GetImgInsSetArchOk returns a tuple with the ImgInsSetArch field value
 // and a boolean to check if the value has been set.
-func (o *ViewFile200Response) GetImgInsSetArchOk() (*string, bool) {
+func (o *ViewFile200Response) GetImgInsSetArchOk() (*CPUArchType, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -256,8 +290,32 @@ func (o *ViewFile200Response) GetImgInsSetArchOk() (*string, bool) {
 }
 
 // SetImgInsSetArch sets field value
-func (o *ViewFile200Response) SetImgInsSetArch(v string) {
+func (o *ViewFile200Response) SetImgInsSetArch(v CPUArchType) {
 	o.ImgInsSetArch = v
+}
+
+// GetFileRepolocation returns the FileRepolocation field value
+func (o *ViewFile200Response) GetFileRepolocation() ObjectRepoLocation {
+	if o == nil {
+		var ret ObjectRepoLocation
+		return ret
+	}
+
+	return o.FileRepolocation
+}
+
+// GetFileRepolocationOk returns a tuple with the FileRepolocation field value
+// and a boolean to check if the value has been set.
+func (o *ViewFile200Response) GetFileRepolocationOk() (*ObjectRepoLocation, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.FileRepolocation, true
+}
+
+// SetFileRepolocation sets field value
+func (o *ViewFile200Response) SetFileRepolocation(v ObjectRepoLocation) {
+	o.FileRepolocation = v
 }
 
 func (o ViewFile200Response) MarshalJSON() ([]byte, error) {
@@ -278,8 +336,12 @@ func (o ViewFile200Response) ToMap() (map[string]interface{}, error) {
 	}
 	toSerialize["fileVersionInfo"] = o.FileVersionInfo
 	toSerialize["fileType"] = o.FileType
+	if !isNil(o.Checksum) {
+		toSerialize["checksum"] = o.Checksum
+	}
 	toSerialize["imgOSType"] = o.ImgOSType
 	toSerialize["imgInsSetArch"] = o.ImgInsSetArch
+	toSerialize["fileRepolocation"] = o.FileRepolocation
 	return toSerialize, nil
 }
 

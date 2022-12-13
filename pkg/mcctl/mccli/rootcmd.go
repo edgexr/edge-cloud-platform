@@ -97,6 +97,7 @@ func GetRootCommand() *RootCommand {
 		rc.getExecCmd("RunCommandCli", cli.AddTtyFlags),
 		rc.getExecCmd("RunConsole", cli.NoFlags),
 		rc.getExecCmd("ShowLogsCli", cli.NoFlags),
+		rc.getCmdGroup(ormctl.FederationDeveloperGroup),
 	}
 	adminCommands := []*cobra.Command{
 		rc.getCmdGroup(ormctl.ControllerGroup),

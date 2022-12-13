@@ -109,7 +109,7 @@ func init() {
 			Name:         "DeleteProviderZoneBase",
 			Use:          "deletezonebase",
 			Short:        "Delete Provider Zone Base",
-			RequiredArgs: "zoneid operatorid countrycode",
+			RequiredArgs: "zoneid operatorid",
 			Comments:     ormapi.ProviderZoneBaseComments,
 			ReqData:      &ormapi.ProviderZoneBase{},
 			ReplyData:    &ormapi.Result{},
@@ -158,6 +158,16 @@ func init() {
 			ReplyData:    &[]ormapi.ProviderZone{},
 			Path:         "/auth/federation/provider/zone/show",
 			ShowFilter:   true,
+		}, {
+			Name:         "ShowProviderImage",
+			Use:          "showimages",
+			Short:        "Show Images uploaded by partner",
+			OptionalArgs: strings.Join(ProviderImageShowArgs, " "),
+			Comments:     ormapi.ProviderImageComments,
+			ReqData:      &ormapi.ProviderImage{},
+			ReplyData:    &[]ormapi.ProviderImage{},
+			Path:         "/auth/federation/provider/image/show",
+			ShowFilter:   true,
 		},
 	}
 	AllApis.AddGroup(FederationProviderGroup, "Manage Federation Provider and Zones", cmds)
@@ -168,10 +178,23 @@ func init() {
 			Short:        "Create Federation Consumer",
 			SpecialArgs:  &FederationConsumerSpecialArgs,
 			RequiredArgs: strings.Join(FederationConsumerRequiredArgs, " "),
+			OptionalArgs: strings.Join(FederationConsumerOptionalArgs, " "),
 			Comments:     ormapi.FederationConsumerComments,
 			ReqData:      &ormapi.FederationConsumer{},
 			ReplyData:    &ormapi.Result{},
 			Path:         "/auth/federation/consumer/create",
+		},
+		&ApiCommand{
+			Name:         "UpdateFederationConsumer",
+			Use:          "update",
+			Short:        "Update Federation Consumer",
+			SpecialArgs:  &FederationConsumerSpecialArgs,
+			RequiredArgs: "name operatorid",
+			OptionalArgs: "public",
+			Comments:     ormapi.FederationConsumerComments,
+			ReqData:      &ormapi.FederationConsumer{},
+			ReplyData:    &ormapi.Result{},
+			Path:         "/auth/federation/consumer/update",
 		},
 		&ApiCommand{
 			Name:         "DeleteFederationConsumer",
@@ -255,6 +278,9 @@ func init() {
 	AllApis.AddGroup(FederationConsumerGroup, "Manage Federation Consumer and Zones", cmds)
 }
 
+// Federation Provider
+// ===================
+
 var FederationProviderRequiredArgs = []string{
 	"name",
 	"operatorid",
@@ -331,6 +357,9 @@ var ShareZoneSpecialArgs = map[string]string{
 	"zones": "StringArray",
 }
 
+// Federation Consumer
+// ===================
+
 var FederationConsumerRequiredArgs = []string{
 	"name",
 	"operatorid",
@@ -340,6 +369,7 @@ var FederationConsumerRequiredArgs = []string{
 }
 
 var FederationConsumerOptionalArgs = []string{
+	"public",
 	"autoregisterzones",
 	"autoregisterregion",
 	"partnertokenurl",
@@ -400,5 +430,15 @@ var ConsumerZoneShowArgs = []string{
 	"operatorid",
 	"geolocation",
 	"geographydetails",
+	"status",
+}
+
+var ProviderImageShowArgs = []string{
+	"federationname",
+	"fileid",
+	"path",
+	"name",
+	"type",
+	"appproviderid",
 	"status",
 }

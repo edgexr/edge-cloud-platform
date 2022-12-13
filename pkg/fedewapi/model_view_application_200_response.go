@@ -19,30 +19,29 @@ var _ MappedNullable = &ViewApplication200Response{}
 
 // ViewApplication200Response struct for ViewApplication200Response
 type ViewApplication200Response struct {
-	// Identifier used to refer to an application. This identifier is globally unique so that application can be identified uniquely across different OPs.
+	// Identifier used to refer to an application.
 	AppId string `json:"appId"`
 	// UserId of the app provider.  Identifier is relevant only in context of this federation.
 	AppProviderId string `json:"appProviderId"`
-	// Details about partner OP zones where the application should be made available
+	// Details about partner OP zones where the application should be made available;  This field when specified will instruct the OP to restrict application instantiation only on the listed zones.
 	AppDeploymentZones []ViewApplication200ResponseAppDeploymentZonesInner `json:"appDeploymentZones"`
 	AppMetaData OnboardApplicationRequestAppMetaData `json:"appMetaData"`
 	AppQoSProfile OnboardApplicationRequestAppQoSProfile `json:"appQoSProfile"`
 	// An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally.  App providers are required to provide details about all these components, their associated descriptors and their DNS names.
-	AppComponentSpecs []OnboardApplicationRequestAppComponentSpecsInner `json:"appComponentSpecs"`
+	AppComponentSpecs []OnboardApplicationRequestAppComponentSpecsInner `json:"appComponentSpecs,omitempty"`
 }
 
 // NewViewApplication200Response instantiates a new ViewApplication200Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewViewApplication200Response(appId string, appProviderId string, appDeploymentZones []ViewApplication200ResponseAppDeploymentZonesInner, appMetaData OnboardApplicationRequestAppMetaData, appQoSProfile OnboardApplicationRequestAppQoSProfile, appComponentSpecs []OnboardApplicationRequestAppComponentSpecsInner) *ViewApplication200Response {
+func NewViewApplication200Response(appId string, appProviderId string, appDeploymentZones []ViewApplication200ResponseAppDeploymentZonesInner, appMetaData OnboardApplicationRequestAppMetaData, appQoSProfile OnboardApplicationRequestAppQoSProfile) *ViewApplication200Response {
 	this := ViewApplication200Response{}
 	this.AppId = appId
 	this.AppProviderId = appProviderId
 	this.AppDeploymentZones = appDeploymentZones
 	this.AppMetaData = appMetaData
 	this.AppQoSProfile = appQoSProfile
-	this.AppComponentSpecs = appComponentSpecs
 	return &this
 }
 
@@ -174,26 +173,34 @@ func (o *ViewApplication200Response) SetAppQoSProfile(v OnboardApplicationReques
 	o.AppQoSProfile = v
 }
 
-// GetAppComponentSpecs returns the AppComponentSpecs field value
+// GetAppComponentSpecs returns the AppComponentSpecs field value if set, zero value otherwise.
 func (o *ViewApplication200Response) GetAppComponentSpecs() []OnboardApplicationRequestAppComponentSpecsInner {
-	if o == nil {
+	if o == nil || isNil(o.AppComponentSpecs) {
 		var ret []OnboardApplicationRequestAppComponentSpecsInner
 		return ret
 	}
-
 	return o.AppComponentSpecs
 }
 
-// GetAppComponentSpecsOk returns a tuple with the AppComponentSpecs field value
+// GetAppComponentSpecsOk returns a tuple with the AppComponentSpecs field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ViewApplication200Response) GetAppComponentSpecsOk() ([]OnboardApplicationRequestAppComponentSpecsInner, bool) {
-	if o == nil {
+	if o == nil || isNil(o.AppComponentSpecs) {
 		return nil, false
 	}
 	return o.AppComponentSpecs, true
 }
 
-// SetAppComponentSpecs sets field value
+// HasAppComponentSpecs returns a boolean if a field has been set.
+func (o *ViewApplication200Response) HasAppComponentSpecs() bool {
+	if o != nil && !isNil(o.AppComponentSpecs) {
+		return true
+	}
+
+	return false
+}
+
+// SetAppComponentSpecs gets a reference to the given []OnboardApplicationRequestAppComponentSpecsInner and assigns it to the AppComponentSpecs field.
 func (o *ViewApplication200Response) SetAppComponentSpecs(v []OnboardApplicationRequestAppComponentSpecsInner) {
 	o.AppComponentSpecs = v
 }
@@ -213,7 +220,9 @@ func (o ViewApplication200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize["appDeploymentZones"] = o.AppDeploymentZones
 	toSerialize["appMetaData"] = o.AppMetaData
 	toSerialize["appQoSProfile"] = o.AppQoSProfile
-	toSerialize["appComponentSpecs"] = o.AppComponentSpecs
+	if !isNil(o.AppComponentSpecs) {
+		toSerialize["appComponentSpecs"] = o.AppComponentSpecs
+	}
 	return toSerialize, nil
 }
 

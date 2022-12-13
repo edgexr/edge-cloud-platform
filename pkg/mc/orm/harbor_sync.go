@@ -133,6 +133,10 @@ func (s *AppStoreSync) syncHarborProjectMembers(ctx context.Context, org *ormapi
 	}
 	for _, member := range members {
 		// delete extra member
+		if member.EntityName == "admin" {
+			// admin is always there
+			continue
+		}
 		log.SpanLog(ctx, log.DebugLevelApi, "harbor sync delete extra project member", "org", org.Name, "user", member.EntityName)
 		projID := strconv.FormatInt(member.ProjectID, 10)
 		err := harborRemoveProjectMemberId(ctx, projID, member.EntityID)

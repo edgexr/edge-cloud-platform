@@ -1252,14 +1252,17 @@ func CreateUserApiKey(c echo.Context) error {
 	if err := c.Bind(&apiKeyReq); err != nil {
 		return ormutil.BindErr(err)
 	}
-	err = createUserApiKeyInternal(ctx, claims.Username, &apiKeyReq)
+	err = createUserApiKeyInternal(ctx, claims.Username, GenerateId, GeneratePassword, &apiKeyReq)
 	if err != nil {
 		return err
 	}
 	return c.JSON(http.StatusOK, apiKeyReq)
 }
 
-func createUserApiKeyInternal(ctx context.Context, username string, apiKeyReq *ormapi.CreateUserApiKey) error {
+const GenerateId = "$$generate$$id"
+const GeneratePassword = "$$generate$$password"
+
+func createUserApiKeyInternal(ctx context.Context, username, apiKeyId, apiKey string, apiKeyReq *ormapi.CreateUserApiKey) error {
 	config, err := getConfig(ctx)
 	if err != nil {
 		return err
@@ -1313,8 +1316,12 @@ func createUserApiKeyInternal(ctx context.Context, username string, apiKeyReq *o
 		return err
 	}
 
-	apiKeyId := uuid.New().String()
-	apiKey := uuid.New().String()
+	if apiKeyId == GenerateId {
+		apiKeyId = uuid.New().String()
+	}
+	if apiKey == GeneratePassword {
+		apiKey = uuid.New().String()
+	}
 	apiKeyRole := getApiKeyRoleName(apiKeyId)
 	psub := rbac.GetCasbinGroup(apiKeyObj.Org, apiKeyId)
 	cleanupPoliciesOnErr := func() {
@@ -1508,6 +1515,13 @@ func UserAuthorized(c echo.Context) error {
 	err = authorized(ctx, claims.Username, in.Org, in.Resource, in.Action)
 	if err != nil {
 		return err
+	}
+	if claims.ObjectRestriction != "" {
+		// claims has restricted access to only the specified object
+		if claims.ObjectRestriction != in.Object {
+			log.SpanLog(ctx, log.DebugLevelApi, "Unauthorized, object restriction mistmatch", "restriction", claims.ObjectRestriction, "auth-req-object", in.Object)
+			return c.String(http.StatusUnauthorized, "Not authorized for object")
+		}
 	}
 	return c.JSON(http.StatusOK, ormutil.Msg("authorized ok"))
 }

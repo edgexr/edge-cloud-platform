@@ -20,7 +20,7 @@ var _ MappedNullable = &FederationRequestData{}
 
 // FederationRequestData struct for FederationRequestData
 type FederationRequestData struct {
-	// Globally unique Identifier allocated to an operator platform. This is valid and used only in context of  MEC federation interface.
+	// Globally unique identifier allocated to an operator platform. This is valid and used only in context of  MEC federation interface.
 	OrigOPFederationId string `json:"origOPFederationId"`
 	// ISO 3166-1 Alpha-2 code for the country of Partner operator
 	OrigOPCountryCode *string `json:"origOPCountryCode,omitempty"`

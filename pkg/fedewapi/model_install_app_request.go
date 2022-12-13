@@ -19,7 +19,7 @@ var _ MappedNullable = &InstallAppRequest{}
 
 // InstallAppRequest struct for InstallAppRequest
 type InstallAppRequest struct {
-	// Identifier used to refer to an application. This identifier is globally unique so that application can be identified uniquely across different OPs.
+	// Identifier used to refer to an application.
 	AppId string `json:"appId"`
 	// Versioning info in the format major.minor.patch
 	AppVersion string `json:"appVersion"`

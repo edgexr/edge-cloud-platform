@@ -180,6 +180,7 @@ var AuthScopeComments = map[string]string{
 	"org":      `Organization name`,
 	"resource": `Resource defines a resource to act upon`,
 	"action":   `Action defines what type of action can be performed on a resource`,
+	"object":   `Optional object to act upon if auth claims has restriction`,
 }
 
 var OrgCloudletComments = map[string]string{
@@ -573,6 +574,7 @@ var FederationConsumerComments = map[string]string{
 	"id":                            `Unique ID`,
 	"name":                          `Unique name of this consumer, will be used as an operator org for provider's zones`,
 	"operatorid":                    `Operator Organization that establishes the federation with a provider`,
+	"public":                        `Public means any developer will be able to use the cloudlets, otherwise (TODO) allowed developers will need to be added explicitly`,
 	"partneraddr":                   `Partner Address`,
 	"partnertokenurl":               `Partner token URL`,
 	"federationcontextid":           `Federation context id returned by partner`,
@@ -652,4 +654,32 @@ var FederatedZoneRegRequestComments = map[string]string{
 var FederatedZoneShareRequestComments = map[string]string{
 	"providername": `Federation provider name`,
 	"zones":        `Self federator zones to be shared/unshared`,
+}
+
+var ConsumerImageComments = map[string]string{
+	"id":             `ID`,
+	"organization":   `Developer organization that owns the image`,
+	"federationname": `Federation the image is copied to (ConsumerFederation)`,
+	"name":           `Image name`,
+	"sourcepath":     `Full path to source image as used in App, i.e. https://vm-registry.domain/org/image.img`,
+	"type":           `Image type (DOCKER, HELM, QCOW2, or OVA)`,
+	"checksum":       `MD5 checksum for VM and file-based image types, sha256 digest for containers and Helm charts`,
+	"status":         `Image status`,
+}
+
+var ProviderImageComments = map[string]string{
+	"federationname": `Federation Provider name`,
+	"fileid":         `File ID sent by partner`,
+	"path":           `Image path`,
+	"name":           `Image name`,
+	"type":           `Image type (DOCKER, HELM, QCOW2, or OVA)`,
+	"appproviderid":  `Partner app provider organization`,
+	"checksum":       `MD5 checksum for VM and file-based image types, sha256 digest for containers and Helm charts`,
+	"status":         `Image status`,
+}
+
+var ConsumerAppComments = map[string]string{
+	"region":         `Region name`,
+	"app":            `App in region`,
+	"federationname": `Target federation consumer name`,
 }

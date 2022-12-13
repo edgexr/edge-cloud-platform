@@ -108,6 +108,8 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 			&ormapi.ProviderZoneBase{},
 			&ormapi.ProviderZone{},
 			&ormapi.ConsumerZone{},
+			&ormapi.ConsumerImage{},
+			&ormapi.ProviderImage{},
 		).Error
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "automigrate", "err", err)

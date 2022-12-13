@@ -23,7 +23,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -117,17 +119,82 @@ func (s *Client) PostJson(uri, token string, reqData interface{}, replyData inte
 	return status, err
 }
 
+type MultiPartFormData struct {
+	fields map[string]interface{}
+	files  map[string]*os.File
+}
+
+func NewMultiPartFormData() *MultiPartFormData {
+	data := MultiPartFormData{
+		fields: make(map[string]interface{}),
+		files:  make(map[string]*os.File),
+	}
+	return &data
+}
+
+func (s *MultiPartFormData) AddField(key string, val interface{}) {
+	s.fields[key] = val
+}
+
+func (s *MultiPartFormData) AddFile(key string, val *os.File) {
+	s.files[key] = val
+}
+
+func (s *MultiPartFormData) Write(buf *bytes.Buffer) (string, error) {
+	wr := multipart.NewWriter(buf)
+	for key, val := range s.fields {
+		var data []byte
+		if str, ok := val.(string); ok {
+			data = []byte(str)
+		} else {
+			var err error
+			data, err = json.Marshal(val)
+			if err != nil {
+				return "", fmt.Errorf("multipart form-data failed to JSON marshal field %s: %s", key, err)
+			}
+		}
+		fw, err := wr.CreateFormField(key)
+		if err != nil {
+			return "", err
+		}
+		_, err = fw.Write(data)
+		if err != nil {
+			return "", err
+		}
+	}
+	for key, file := range s.files {
+		fw, err := wr.CreateFormFile(key, file.Name())
+		if err != nil {
+			return "", err
+		}
+		_, err = io.Copy(fw, file)
+		if err != nil {
+			return "", err
+		}
+	}
+	wr.Close()
+	return wr.FormDataContentType(), nil
+}
+
 func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{}, headerVals http.Header, queryParams map[string]string) (*http.Response, error) {
 	var body io.Reader
 	var datastr string
+	contentType := "application/json"
 	if reqData != nil {
 		// Note that if reqData is a generic map, it must be in the
 		// JSON namspace, because it is marshaled and sent directly.
-		str, ok := reqData.(string)
-		if ok {
+		if str, ok := reqData.(string); ok {
 			// assume string is json data
 			body = bytes.NewBuffer([]byte(str))
 			datastr = str
+		} else if mpfd, ok := reqData.(*MultiPartFormData); ok {
+			bd := &bytes.Buffer{}
+			var err error
+			contentType, err = mpfd.Write(bd)
+			if err != nil {
+				return nil, err
+			}
+			body = bd
 		} else {
 			if s.PrintTransformations {
 				fmt.Printf("%s: marshaling input %#v to json\n", log.GetLineno(0), reqData)
@@ -151,7 +218,7 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{},
 		return nil, fmt.Errorf("%s %s http req failed, %s", method, uri, err.Error())
 	}
 	req.Close = true
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", contentType)
 	tokenType := s.TokenType
 	if tokenType == "" {
 		tokenType = TokenTypeBearer
@@ -185,8 +252,13 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{},
 	if s.TestTransport != nil {
 		tr = s.TestTransport
 	}
+
 	if s.Debug {
 		curlcmd := fmt.Sprintf(`curl -X %s "%s" -H "Content-Type: application/json"`, method, uri)
+		tokenType := s.TokenType
+		if tokenType == "" {
+			tokenType = TokenTypeBearer
+		}
 		if token != "" {
 			curlcmd += fmt.Sprintf(` -H "Authorization: %s ${TOKEN}"`, tokenType)
 		}
@@ -198,7 +270,6 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{},
 		}
 		fmt.Printf("%s\n", curlcmd)
 	}
-
 	client := &http.Client{Transport: tr}
 	return client.Do(req)
 }

@@ -75,6 +75,8 @@ type FederatorAttr struct {
 	tokenAd     string
 	tokenOper   string
 	operatorId  string
+	tokenDev    string
+	developerId string
 	fedCtxId    string
 	countryCode string
 	fedId       string
@@ -231,6 +233,11 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 		vaultCleanup()
 	}
 
+	defaultConfig.DisableRateLimit = true
+	defer func() {
+		defaultConfig.DisableRateLimit = false
+	}()
+
 	uri := "http://" + addr + "/api/v1"
 	config := ServerConfig{
 		ServAddr:                 addr,
@@ -272,6 +279,7 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 
 	countryCode := "US"
 	operatorIds := []string{"operP", "operC"}
+	developerIds := []string{"devP", "devC"}
 	regions := []string{"US-East", "US-West"}
 
 	ctrl1 := SetupControllerService(t, ctx, operatorIds, regions[0])
@@ -291,7 +299,6 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 	err = server.WaitUntilReady()
 	require.Nil(t, err, "server online")
 
-	defaultConfig.DisableRateLimit = true
 	enforcer.LogEnforce(true)
 
 	partnerApi.AllowPlainHttp()
@@ -327,10 +334,15 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 		_, _, tokenOper := testCreateUserOrg(t, mcClient, uri, operatorId+"-user", OrgTypeOperator, operatorId)
 		// admin allow non-edgebox cloudlets on operator org
 		setOperatorOrgNoEdgeboxOnly(t, mcClient, uri, tokenAd, operatorId)
+		// create a developer
+		devId := developerIds[ii]
+		_, _, tokenDev := testCreateUserOrg(t, mcClient, uri, devId+"-user", OrgTypeDeveloper, devId)
 		fed := FederatorAttr{}
 		fed.fedName = "fed-" + operatorId
 		fed.tokenOper = tokenOper
 		fed.operatorId = operatorId
+		fed.tokenDev = tokenDev
+		fed.developerId = devId
 		fed.countryCode = countryCode
 		fed.tokenAd = tokenAd
 		fed.region = regions[ii]
@@ -513,6 +525,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	consReq := &ormapi.FederationConsumer{
 		Name:            consAttr.fedName,
 		OperatorId:      consAttr.operatorId,
+		Public:          true,
 		PartnerAddr:     "http://" + op.fedAddr,
 		PartnerTokenUrl: "http://" + op.tokenAddr + "/" + federation.TokenUrl,
 		MyInfo: ormapi.Federator{
@@ -584,10 +597,12 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(checkProvFeds))
+	// consumer fed is public, so can be seen, but not all info
 	checkConsFeds, status, err := mcClient.ShowFederationConsumer(op.uri, provAttr.tokenOper, showConsFed)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 0, len(checkConsFeds))
+	require.Equal(t, 1, len(checkConsFeds))
+	require.Zero(t, checkConsFeds[0].FederationContextId)
 
 	// Update provider federation MCC value
 	// ===============================
@@ -735,13 +750,115 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Equal(t, federation.StatusRegistered, zone.Status)
 	}
 
-	// Test federation APIs
-	// ====================
-	//testPartnerFederationAPIs(t, ctx, mcClient, op, selfFederators, partnerFed)
+	// Consumer developer create Apps
+	// ==============================
+
+	// developer should be able to see federations to be able
+	// to onboard images and Apps.
+	feds, status, err := mcClient.ShowFederation(op.uri, consAttr.tokenDev, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 1, len(feds))
+	require.Equal(t, consAttr.fedName, feds[0].Name)
+
+	for _, app := range getConsApps(consAttr.developerId) {
+		regionApp := ormapi.RegionApp{
+			Region: consAttr.region,
+			App:    app,
+		}
+		_, status, err = mcClient.CreateApp(op.uri, consAttr.tokenDev, &regionApp)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+
+	// Test File APIs
+	// ==============
+
+	// developer create image on federation
+	consImages := getConsImages(consAttr.developerId, consAttr.fedName)
+	for _, consImage := range consImages {
+		_, status, err = mcClient.CreateConsumerImage(op.uri, consAttr.tokenDev, consImage)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+	// check duplicates
+	for _, consImage := range consImages {
+		dup := *consImage
+		// exact dup no error
+		_, status, err = mcClient.CreateConsumerImage(op.uri, consAttr.tokenDev, &dup)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+		// mismatch duplicate yields error
+		dup = *consImage
+		dup.Checksum = "3209f029"
+		_, status, err = mcClient.CreateConsumerImage(op.uri, consAttr.tokenDev, &dup)
+		require.NotNil(t, err)
+		require.Equal(t, http.StatusBadRequest, status)
+		require.Contains(t, err.Error(), "please choose a different Name")
+	}
+
+	// create images from apps
+	for _, app := range getConsApps(consAttr.developerId) {
+		req := ormapi.ConsumerApp{}
+		req.Region = consAttr.region
+		req.App = app
+		req.FederationName = consAttr.fedName
+		_, status, err = mcClient.CreateConsumerApp(op.uri, consAttr.tokenDev, &req)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+	consAppImages := getConsAppImages(t, consAttr.developerId, consAttr.fedName)
+	consImagesExp := append(consImages, consAppImages...)
+
+	// developer can see created images
+	consImagesShow, status, err := mcClient.ShowConsumerImage(op.uri, consAttr.tokenDev, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(consImagesExp), len(consImagesShow))
+	for ii := range consImagesExp {
+		exp := consImagesExp[ii]
+		act := consImagesShow[ii]
+		fmt.Printf("DEBUG: %v\n", act)
+		require.NotZero(t, act.ID)
+		require.Equal(t, exp.Organization, act.Organization)
+		require.Equal(t, exp.FederationName, act.FederationName)
+		require.Equal(t, federation.ImageStatusReady, act.Status)
+	}
+
+	// provider can see created images
+	provImagesShow, status, err := mcClient.ShowProviderImage(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(consImagesExp), len(provImagesShow))
+	for ii := range provImagesShow {
+		exp := consImagesShow[ii]
+		act := provImagesShow[ii]
+		require.Equal(t, provAttr.fedName, act.FederationName)
+		require.Equal(t, exp.ID, act.FileID)
+		require.Equal(t, exp.Organization, act.AppProviderId)
+		require.Equal(t, exp.Type, act.Type)
+		require.Equal(t, federation.ImageStatusReady, act.Status)
+	}
 
 	// --------+
 	// Cleanup |
 	// --------+
+
+	// Delete images
+	// =============
+	for _, image := range consImagesShow {
+		_, status, err = mcClient.DeleteConsumerImage(op.uri, consAttr.tokenDev, &image)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+	consImagesShow, status, err = mcClient.ShowConsumerImage(op.uri, consAttr.tokenDev, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(consImagesShow))
+	provImagesShow, status, err = mcClient.ShowProviderImage(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(provImagesShow))
 
 	// Delete of either Provider or Consumer should fail if there
 	// are registered zones.

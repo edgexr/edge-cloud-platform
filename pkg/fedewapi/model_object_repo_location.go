@@ -19,14 +19,14 @@ var _ MappedNullable = &ObjectRepoLocation{}
 
 // ObjectRepoLocation struct for ObjectRepoLocation
 type ObjectRepoLocation struct {
-	// Artefact repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo etc, PRIVATEREPO  is used for private repo managed by the application developer, UPLOAD is for the case when artefact is uploaded from MEC web portal.
+	// Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo etc, PRIVATEREPO  is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal.
 	RepoType string `json:"repoType"`
 	RepoURL string `json:"repoURL"`
-	// Username to access the artefact repository
+	// Username to access the repository
 	UserName *string `json:"userName,omitempty"`
-	// Password to access the artefact repository
+	// Password to access the repository
 	Password *string `json:"password,omitempty"`
-	// Authorization token to access the artefact repository
+	// Authorization token to access the repository
 	Token *string `json:"token,omitempty"`
 }
 

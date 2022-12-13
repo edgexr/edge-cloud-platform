@@ -83,18 +83,42 @@ func NewHTTPAuthCookie(token string, expires int64, domain string) *http.Cookie 
 	}
 }
 
-func GenerateCookie(user *ormapi.User, apiKeyId, domain string, config *ormapi.Config) (*http.Cookie, error) {
+type CookieOptions struct {
+	ObjectRestriction string
+	ValidDuration     time.Duration
+}
+
+type GenCookieOp func(opts *CookieOptions)
+
+func WithObjectRestriction(restriction string) GenCookieOp {
+	return func(opts *CookieOptions) { opts.ObjectRestriction = restriction }
+}
+
+func WithValidDuration(dur time.Duration) GenCookieOp {
+	return func(opts *CookieOptions) { opts.ValidDuration = dur }
+}
+
+func GenerateCookie(user *ormapi.User, apiKeyId, domain string, config *ormapi.Config, ops ...GenCookieOp) (*http.Cookie, error) {
+	options := &CookieOptions{}
+	for _, op := range ops {
+		op(options)
+	}
+	duration := options.ValidDuration
+	if duration == 0 {
+		duration = config.UserLoginTokenValidDuration.TimeDuration()
+	}
 	claims := ormutil.UserClaims{
 		StandardClaims: jwt.StandardClaims{
 			IssuedAt: time.Now().Unix(),
 			// 1 day expiration for now
-			ExpiresAt: time.Now().Add(config.UserLoginTokenValidDuration.TimeDuration()).Unix(),
+			ExpiresAt: time.Now().Add(duration).Unix(),
 		},
 		Username: user.Name,
 		Email:    user.Email,
 		// This is used to keep track of when the first auth token was issued,
 		// using this info we allow refreshing of auth token if the token is valid
-		FirstIssuedAt: time.Now().Unix(),
+		FirstIssuedAt:     time.Now().Unix(),
+		ObjectRestriction: options.ObjectRestriction,
 	}
 	if apiKeyId != "" {
 		// Set ApiKeyId as username to ensure that we always enforce RBAC on ApikeyId,

@@ -30,6 +30,8 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
+const harborVaultAccount = "/secret/data/accounts/harbor"
+
 // As computing power grows, we should increase iter and salt bytes
 var PasshashIter = 10000
 var PasshashKeyBytes = 32
@@ -64,12 +66,13 @@ const (
 
 type UserClaims struct {
 	jwt.StandardClaims
-	Username       string `json:"username"`
-	Email          string `json:"email"`
-	Kid            int    `json:"kid"`
-	FirstIssuedAt  int64  `json:"firstiat,omitempty"`
-	AuthType       string `json:"authtype"`
-	ApiKeyUsername string `json:"apikeyusername"`
+	Username          string `json:"username"`
+	Email             string `json:"email"`
+	Kid               int    `json:"kid"`
+	FirstIssuedAt     int64  `json:"firstiat,omitempty"`
+	AuthType          string `json:"authtype"`
+	ApiKeyUsername    string `json:"apikeyusername"`
+	ObjectRestriction string `json:"objectrestriction"`
 }
 
 func (u *UserClaims) GetKid() (int, error) {

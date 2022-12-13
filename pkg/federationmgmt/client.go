@@ -81,7 +81,7 @@ func NewTokenSource(ctx context.Context, apiKey *ApiKey) oauth2.TokenSource {
 			TLSClientConfig:       tlsConfig,
 		},
 	}
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
+	ctx = context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
 	return config.TokenSource(ctx)
 }
 
@@ -100,7 +100,7 @@ func (s *TokenSourceCache) Get(ctx context.Context, fedKey *FedKey) (oauth2.Toke
 		// don't hold lock during network call
 		apiKey, err := s.apiKeyHandler.GetFederationAPIKey(ctx, fedKey)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get apikey: %s", err)
 		}
 		tokenSource = NewTokenSource(ctx, apiKey)
 		s.Lock()
@@ -118,7 +118,7 @@ func (s *TokenSourceCache) Get(ctx context.Context, fedKey *FedKey) (oauth2.Toke
 func (s *TokenSourceCache) Client(ctx context.Context, addr string, fedKey *FedKey) (*Client, error) {
 	tokenSource, err := s.Get(ctx, fedKey)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get token source: %s", err)
 	}
 	return NewClient(addr, tokenSource), nil
 }
@@ -142,7 +142,7 @@ func (c *Client) SendRequest(ctx context.Context, method, endpoint string, reqDa
 	}
 	token, err := c.tokenSource.Token()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get federation token for %s: %s", c.addr, err)
 	}
 
 	restClient := &ormclient.Client{
@@ -156,10 +156,10 @@ func (c *Client) SendRequest(ctx context.Context, method, endpoint string, reqDa
 	status, respHeader, err := restClient.HttpJsonSend(method, requestUrl, token.AccessToken, reqData, replyData, headerVals, nil)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "Federation API failed", "method", method, "url", requestUrl, "error", err)
-		return nil, err
+		return nil, fmt.Errorf("%s %s failed: %s", method, requestUrl, err)
 	}
 	if status != http.StatusOK {
-		return nil, fmt.Errorf("Failed to get response for %s request to URL %s, status=%s", method, requestUrl, http.StatusText(status))
+		return nil, fmt.Errorf("Bad response for %s request to URL %s, status=%s", method, requestUrl, http.StatusText(status))
 	}
 	return respHeader, nil
 }

@@ -12,187 +12,102 @@ package fedewapi
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
-// GetZoneData200ResponseNetworkResources struct for GetZoneData200ResponseNetworkResources
-type GetZoneData200ResponseNetworkResources struct {
-	// Max dl throughput that this edge can offer. It is defined in Mbps.
-	EgressBandWidth int32 `json:"egressBandWidth"`
-	DedicatedNIC int32 `json:"dedicatedNIC"`
-	// If this zone support SRIOV networks or not
-	SupportSriov bool `json:"supportSriov"`
-	// If this zone supports DPDK based networking.
-	SupportDPDK bool `json:"supportDPDK"`
+// VirtImageType Indicate if the file is Container image or VM image (QCOW2, OVA)
+type VirtImageType string
+
+// List of VirtImageType
+const (
+	VIRTIMAGETYPE_QCOW2 VirtImageType = "QCOW2"
+	VIRTIMAGETYPE_DOCKER VirtImageType = "DOCKER"
+	VIRTIMAGETYPE_OVA VirtImageType = "OVA"
+)
+
+// All allowed values of VirtImageType enum
+var AllowedVirtImageTypeEnumValues = []VirtImageType{
+	"QCOW2",
+	"DOCKER",
+	"OVA",
 }
 
-// NewGetZoneData200ResponseNetworkResources instantiates a new GetZoneData200ResponseNetworkResources object
-// This constructor will assign default values to properties that have it defined,
-// and makes sure properties required by API are set, but the set of arguments
-// will change when the set of required properties is changed
-func NewGetZoneData200ResponseNetworkResources(egressBandWidth int32, dedicatedNIC int32, supportSriov bool, supportDPDK bool) *GetZoneData200ResponseNetworkResources {
-	this := GetZoneData200ResponseNetworkResources{}
-	this.EgressBandWidth = egressBandWidth
-	this.DedicatedNIC = dedicatedNIC
-	this.SupportSriov = supportSriov
-	this.SupportDPDK = supportDPDK
-	return &this
-}
-
-// NewGetZoneData200ResponseNetworkResourcesWithDefaults instantiates a new GetZoneData200ResponseNetworkResources object
-// This constructor will only assign default values to properties that have it defined,
-// but it doesn't guarantee that properties required by API are set
-func NewGetZoneData200ResponseNetworkResourcesWithDefaults() *GetZoneData200ResponseNetworkResources {
-	this := GetZoneData200ResponseNetworkResources{}
-	return &this
-}
-
-// GetEgressBandWidth returns the EgressBandWidth field value
-func (o *GetZoneData200ResponseNetworkResources) GetEgressBandWidth() int32 {
-	if o == nil {
-		var ret int32
-		return ret
+func (v *VirtImageType) UnmarshalJSON(src []byte) error {
+	var value string
+	err := json.Unmarshal(src, &value)
+	if err != nil {
+		return err
+	}
+	enumTypeValue := VirtImageType(value)
+	for _, existing := range AllowedVirtImageTypeEnumValues {
+		if existing == enumTypeValue {
+			*v = enumTypeValue
+			return nil
+		}
 	}
 
-	return o.EgressBandWidth
+	return fmt.Errorf("%+v is not a valid VirtImageType", value)
 }
 
-// GetEgressBandWidthOk returns a tuple with the EgressBandWidth field value
-// and a boolean to check if the value has been set.
-func (o *GetZoneData200ResponseNetworkResources) GetEgressBandWidthOk() (*int32, bool) {
-	if o == nil {
-		return nil, false
+// NewVirtImageTypeFromValue returns a pointer to a valid VirtImageType
+// for the value passed as argument, or an error if the value passed is not allowed by the enum
+func NewVirtImageTypeFromValue(v string) (*VirtImageType, error) {
+	ev := VirtImageType(v)
+	if ev.IsValid() {
+		return &ev, nil
+	} else {
+		return nil, fmt.Errorf("invalid value '%v' for VirtImageType: valid values are %v", v, AllowedVirtImageTypeEnumValues)
 	}
-	return &o.EgressBandWidth, true
 }
 
-// SetEgressBandWidth sets field value
-func (o *GetZoneData200ResponseNetworkResources) SetEgressBandWidth(v int32) {
-	o.EgressBandWidth = v
-}
-
-// GetDedicatedNIC returns the DedicatedNIC field value
-func (o *GetZoneData200ResponseNetworkResources) GetDedicatedNIC() int32 {
-	if o == nil {
-		var ret int32
-		return ret
+// IsValid return true if the value is valid for the enum, false otherwise
+func (v VirtImageType) IsValid() bool {
+	for _, existing := range AllowedVirtImageTypeEnumValues {
+		if existing == v {
+			return true
+		}
 	}
-
-	return o.DedicatedNIC
+	return false
 }
 
-// GetDedicatedNICOk returns a tuple with the DedicatedNIC field value
-// and a boolean to check if the value has been set.
-func (o *GetZoneData200ResponseNetworkResources) GetDedicatedNICOk() (*int32, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.DedicatedNIC, true
+// Ptr returns reference to VirtImageType value
+func (v VirtImageType) Ptr() *VirtImageType {
+	return &v
 }
 
-// SetDedicatedNIC sets field value
-func (o *GetZoneData200ResponseNetworkResources) SetDedicatedNIC(v int32) {
-	o.DedicatedNIC = v
-}
-
-// GetSupportSriov returns the SupportSriov field value
-func (o *GetZoneData200ResponseNetworkResources) GetSupportSriov() bool {
-	if o == nil {
-		var ret bool
-		return ret
-	}
-
-	return o.SupportSriov
-}
-
-// GetSupportSriovOk returns a tuple with the SupportSriov field value
-// and a boolean to check if the value has been set.
-func (o *GetZoneData200ResponseNetworkResources) GetSupportSriovOk() (*bool, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.SupportSriov, true
-}
-
-// SetSupportSriov sets field value
-func (o *GetZoneData200ResponseNetworkResources) SetSupportSriov(v bool) {
-	o.SupportSriov = v
-}
-
-// GetSupportDPDK returns the SupportDPDK field value
-func (o *GetZoneData200ResponseNetworkResources) GetSupportDPDK() bool {
-	if o == nil {
-		var ret bool
-		return ret
-	}
-
-	return o.SupportDPDK
-}
-
-// GetSupportDPDKOk returns a tuple with the SupportDPDK field value
-// and a boolean to check if the value has been set.
-func (o *GetZoneData200ResponseNetworkResources) GetSupportDPDKOk() (*bool, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.SupportDPDK, true
-}
-
-// SetSupportDPDK sets field value
-func (o *GetZoneData200ResponseNetworkResources) SetSupportDPDK(v bool) {
-	o.SupportDPDK = v
-}
-
-func (o GetZoneData200ResponseNetworkResources) MarshalJSON() ([]byte, error) {
-	toSerialize := map[string]interface{}{}
-	if true {
-		toSerialize["egressBandWidth"] = o.EgressBandWidth
-	}
-	if true {
-		toSerialize["dedicatedNIC"] = o.DedicatedNIC
-	}
-	if true {
-		toSerialize["supportSriov"] = o.SupportSriov
-	}
-	if true {
-		toSerialize["supportDPDK"] = o.SupportDPDK
-	}
-	return json.Marshal(toSerialize)
-}
-
-type NullableGetZoneData200ResponseNetworkResources struct {
-	value *GetZoneData200ResponseNetworkResources
+type NullableVirtImageType struct {
+	value *VirtImageType
 	isSet bool
 }
 
-func (v NullableGetZoneData200ResponseNetworkResources) Get() *GetZoneData200ResponseNetworkResources {
+func (v NullableVirtImageType) Get() *VirtImageType {
 	return v.value
 }
 
-func (v *NullableGetZoneData200ResponseNetworkResources) Set(val *GetZoneData200ResponseNetworkResources) {
+func (v *NullableVirtImageType) Set(val *VirtImageType) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableGetZoneData200ResponseNetworkResources) IsSet() bool {
+func (v NullableVirtImageType) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableGetZoneData200ResponseNetworkResources) Unset() {
+func (v *NullableVirtImageType) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableGetZoneData200ResponseNetworkResources(val *GetZoneData200ResponseNetworkResources) *NullableGetZoneData200ResponseNetworkResources {
-	return &NullableGetZoneData200ResponseNetworkResources{value: val, isSet: true}
+func NewNullableVirtImageType(val *VirtImageType) *NullableVirtImageType {
+	return &NullableVirtImageType{value: val, isSet: true}
 }
 
-func (v NullableGetZoneData200ResponseNetworkResources) MarshalJSON() ([]byte, error) {
+func (v NullableVirtImageType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableGetZoneData200ResponseNetworkResources) UnmarshalJSON(src []byte) error {
+func (v *NullableVirtImageType) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
 

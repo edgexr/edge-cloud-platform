@@ -456,6 +456,7 @@ dmes:
 mcs:
 - name: mc1
   addr: "127.0.0.1:9900"
+  consoleaddr: "https://127.0.0.1:9900"
   sqladdr: "127.0.0.1:5432"
   vaultaddr: "http://127.0.0.1:8200"
   notifyaddrs: "127.0.0.1:5301"
@@ -478,6 +479,7 @@ mcs:
 
 - name: mc2
   addr: "127.0.0.1:9901"
+  consoleaddr: "https://127.0.0.1:9901"
   sqladdr: "127.0.0.1:5432"
   vaultaddr: "http://127.0.0.1:8200"
   notifyaddrs: "127.0.0.1:5301"
@@ -500,6 +502,7 @@ mcs:
 
 - name: mc-partner1
   addr: "127.0.0.1:9908"
+  consoleaddr: "https://127.0.0.1:9908"
   sqladdr: "127.0.0.1:5438"
   vaultaddr: "http://127.0.0.1:8200"
   usevaultpki: true

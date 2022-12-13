@@ -20,12 +20,14 @@ type CPUArchType string
 
 // List of CPUArchType
 const (
+	CPUARCHTYPE_X86 CPUArchType = "ISA_X86"
 	CPUARCHTYPE_X86_64 CPUArchType = "ISA_X86_64"
 	CPUARCHTYPE_ARM_64 CPUArchType = "ISA_ARM_64"
 )
 
 // All allowed values of CPUArchType enum
 var AllowedCPUArchTypeEnumValues = []CPUArchType{
+	"ISA_X86",
 	"ISA_X86_64",
 	"ISA_ARM_64",
 }

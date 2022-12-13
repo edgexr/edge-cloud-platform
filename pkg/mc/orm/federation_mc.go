@@ -337,7 +337,7 @@ func CreateFederationProvider(c echo.Context) (reterr error) {
 		ClientId:   provider.ProviderClientId,
 		ClientKey:  key,
 		TargetAddr: serverConfig.FederationExternalAddr,
-		TokenUrl:   serverConfig.ConsoleAddr + "/" + federation.TokenUrl,
+		TokenUrl:   serverConfig.ConsoleAddr + federation.TokenUrl,
 	}
 	return c.JSON(http.StatusOK, &opFedOut)
 }
@@ -751,6 +751,63 @@ func DeleteFederationConsumer(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Deleted federation consumer successfully"))
 }
 
+func UpdateFederationConsumer(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	// Pull json directly so we can unmarshal twice.
+	// First time is to do lookup, second time is to apply
+	// modified fields.
+	body, err := ioutil.ReadAll(c.Request().Body)
+	in := ormapi.FederationConsumer{}
+	err = BindJson(body, &in)
+	if err != nil {
+		return ormutil.BindErr(err)
+	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, in.GetTags())
+
+	consumer, err := lookupFederationConsumer(ctx, 0, in.Name)
+	if err != nil {
+		return err
+	}
+	if err := fedAuthorized(ctx, claims.Username, consumer.OperatorId); err != nil {
+		return err
+	}
+	// Umarshal to map to know what was specified
+	inMap := make(map[string]interface{})
+	err = BindJson(body, &inMap)
+	if err != nil {
+		return err
+	}
+	// Ensure only allowed fields were updated
+	// Note these names are the json field names.
+	allowedFields := map[string]struct{}{
+		"Name":       {}, // for lookup
+		"OperatorId": {}, // for lookup
+		"Public":     {},
+	}
+	for _, field := range ormutil.GetMapKeys(inMap) {
+		if _, found := allowedFields[field]; !found {
+			return fmt.Errorf("Update %s not allowed", field)
+		}
+	}
+	// Update via json unmarshal
+	err = BindJson(body, consumer)
+	if err != nil {
+		return err
+	}
+
+	db := loggedDB(ctx)
+	err = db.Save(consumer).Error
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+	return nil
+}
+
 // Update consumer's client key for provider in case provider regenerated it.
 func SetFederationConsumerAPIKey(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
@@ -874,6 +931,9 @@ func CreateProviderZoneBase(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	// By design this should not be able to see cloudlets that
+	// were created via a federation and have their
+	// FederatedOrganization field set.
 	for _, clname := range opZone.Cloudlets {
 		if _, found := cloudletMap[clname]; !found {
 			return fmt.Errorf("cloudlet %s not found", clname)
@@ -1013,7 +1073,7 @@ func ShowProviderZoneBase(c echo.Context) error {
 	return c.JSON(http.StatusOK, out)
 }
 
-func ShareProviderZone(c echo.Context) error {
+func ShareProviderZone(c echo.Context) (reterr error) {
 	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1037,10 +1097,23 @@ func ShareProviderZone(c echo.Context) error {
 		return err
 	}
 
+	db := loggedDB(ctx)
+	createdZones := []*ormapi.ProviderZone{}
+	defer func() {
+		if reterr == nil {
+			return
+		}
+		for _, zone := range createdZones {
+			undoErr := db.Delete(zone).Error
+			if undoErr != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "failed to undo provider zone create", "err", undoErr)
+			}
+		}
+	}()
+
 	zoneDetails := []fedewapi.ZoneDetails{}
 	for _, zoneId := range share.Zones {
 		// Check if zones exist
-		db := loggedDB(ctx)
 		lookup := ormapi.ProviderZoneBase{
 			ZoneId:     zoneId,
 			OperatorId: provider.OperatorId,
@@ -1085,6 +1158,7 @@ func ShareProviderZone(c echo.Context) error {
 			Geolocation:      basis.GeoLocation,
 			ZoneId:           basis.ZoneId,
 		})
+		createdZones = append(createdZones, &shareZone)
 	}
 
 	log.SpanLog(ctx, log.DebugLevelApi, "share provider zone", "provider-status", provider.Status, "notify", provider.PartnerNotifyDest)
@@ -1100,7 +1174,7 @@ func ShareProviderZone(c echo.Context) error {
 		}
 		_, err = fedClient.SendRequest(ctx, "POST", "", &req, nil, nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to notify partner: %s", err)
 		}
 	}
 
@@ -1162,7 +1236,7 @@ func UnshareProviderZone(c echo.Context) error {
 		// For now, cannot unshare registered zones.
 		// We may want some way to force unshare though, if remote
 		// is completely gone.
-		return fmt.Errorf("Cannot unshare registered zones %s", strings.Join(registeredZones, ","))
+		return fmt.Errorf("Cannot unshare registered zones %s, please ask consumer to deregister it", strings.Join(registeredZones, ","))
 	}
 
 	if provider.Status == federation.StatusRegistered {
@@ -1178,7 +1252,7 @@ func UnshareProviderZone(c echo.Context) error {
 		}
 		_, err = fedClient.SendRequest(ctx, "POST", "", &req, nil, nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to notify partner: %s", err)
 		}
 	}
 
@@ -1403,10 +1477,14 @@ func registerFederationConsumer(ctx context.Context, consumer *ormapi.Federation
 	if err != nil {
 		return err
 	}
-
-	consumer.FederationContextId = res.FederationContextId
+	if res.FederationContextId == nil || *res.FederationContextId == "" {
+		return fmt.Errorf("partner did not specify federation context id")
+	}
+	consumer.FederationContextId = *res.FederationContextId
 	consumer.PartnerInfo.FederationId = res.PartnerOPFederationId
-	consumer.PartnerInfo.CountryCode = res.PartnerOPCountryCode
+	if res.PartnerOPCountryCode != nil {
+		consumer.PartnerInfo.CountryCode = *res.PartnerOPCountryCode
+	}
 	federation.SetFixedNetworkIds(&consumer.PartnerInfo, res.PartnerOPFixedNetworkCodes)
 	federation.SetMobileNetworkIds(&consumer.PartnerInfo, res.PartnerOPMobileNetworkCodes)
 	consumer.Status = federation.StatusRegistered
@@ -1505,6 +1583,15 @@ func ShowFederationConsumer(c echo.Context) error {
 	out := []ormapi.FederationConsumer{}
 	for _, fed := range feds {
 		if !authz.Ok(fed.OperatorId) {
+			if fed.Public {
+				// show public info
+				fedpub := ormapi.FederationConsumer{
+					Name:       fed.Name,
+					OperatorId: fed.OperatorId,
+					Status:     fed.Status,
+				}
+				out = append(out, fedpub)
+			}
 			continue
 		}
 		out = append(out, fed)

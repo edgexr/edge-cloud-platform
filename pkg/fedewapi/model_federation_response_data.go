@@ -19,12 +19,12 @@ var _ MappedNullable = &FederationResponseData{}
 
 // FederationResponseData struct for FederationResponseData
 type FederationResponseData struct {
-	// Globally unique Identifier allocated to an operator platform. This is valid and used only in context of  MEC federation interface.
+	// Globally unique identifier allocated to an operator platform. This is valid and used only in context of  MEC federation interface.
 	PartnerOPFederationId string `json:"partnerOPFederationId"`
 	// ISO 3166-1 Alpha-2 code for the country of Partner operator
-	PartnerOPCountryCode string `json:"partnerOPCountryCode"`
-	// This key shall be provided by the partner OP on successful verification and validation of the federation create request and is used by partner op to identify this newly created federation context. Originating OP shall provide this key in any subsequent request towards the partner op.
-	FederationContextId string `json:"federationContextId"`
+	PartnerOPCountryCode *string `json:"partnerOPCountryCode,omitempty"`
+	// This identifier shall be provided by the partner OP on successful verification and validation of the federation create request and is used by partner op to identify this newly created federation context. Originating OP shall provide this identifier in any subsequent request towards the partner op.
+	FederationContextId *string `json:"federationContextId,omitempty"`
 	EdgeDiscoveryServiceEndPoint ServiceEndpoint `json:"edgeDiscoveryServiceEndPoint"`
 	LcmServiceEndPoint ServiceEndpoint `json:"lcmServiceEndPoint"`
 	PartnerOPMobileNetworkCodes *MobileNetworkIds `json:"partnerOPMobileNetworkCodes,omitempty"`
@@ -39,11 +39,9 @@ type FederationResponseData struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFederationResponseData(partnerOPFederationId string, partnerOPCountryCode string, federationContextId string, edgeDiscoveryServiceEndPoint ServiceEndpoint, lcmServiceEndPoint ServiceEndpoint, offeredAvailabilityZones []ZoneDetails) *FederationResponseData {
+func NewFederationResponseData(partnerOPFederationId string, edgeDiscoveryServiceEndPoint ServiceEndpoint, lcmServiceEndPoint ServiceEndpoint, offeredAvailabilityZones []ZoneDetails) *FederationResponseData {
 	this := FederationResponseData{}
 	this.PartnerOPFederationId = partnerOPFederationId
-	this.PartnerOPCountryCode = partnerOPCountryCode
-	this.FederationContextId = federationContextId
 	this.EdgeDiscoveryServiceEndPoint = edgeDiscoveryServiceEndPoint
 	this.LcmServiceEndPoint = lcmServiceEndPoint
 	this.OfferedAvailabilityZones = offeredAvailabilityZones
@@ -82,52 +80,68 @@ func (o *FederationResponseData) SetPartnerOPFederationId(v string) {
 	o.PartnerOPFederationId = v
 }
 
-// GetPartnerOPCountryCode returns the PartnerOPCountryCode field value
+// GetPartnerOPCountryCode returns the PartnerOPCountryCode field value if set, zero value otherwise.
 func (o *FederationResponseData) GetPartnerOPCountryCode() string {
-	if o == nil {
+	if o == nil || isNil(o.PartnerOPCountryCode) {
 		var ret string
 		return ret
 	}
-
-	return o.PartnerOPCountryCode
+	return *o.PartnerOPCountryCode
 }
 
-// GetPartnerOPCountryCodeOk returns a tuple with the PartnerOPCountryCode field value
+// GetPartnerOPCountryCodeOk returns a tuple with the PartnerOPCountryCode field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationResponseData) GetPartnerOPCountryCodeOk() (*string, bool) {
-	if o == nil {
+	if o == nil || isNil(o.PartnerOPCountryCode) {
 		return nil, false
 	}
-	return &o.PartnerOPCountryCode, true
+	return o.PartnerOPCountryCode, true
 }
 
-// SetPartnerOPCountryCode sets field value
+// HasPartnerOPCountryCode returns a boolean if a field has been set.
+func (o *FederationResponseData) HasPartnerOPCountryCode() bool {
+	if o != nil && !isNil(o.PartnerOPCountryCode) {
+		return true
+	}
+
+	return false
+}
+
+// SetPartnerOPCountryCode gets a reference to the given string and assigns it to the PartnerOPCountryCode field.
 func (o *FederationResponseData) SetPartnerOPCountryCode(v string) {
-	o.PartnerOPCountryCode = v
+	o.PartnerOPCountryCode = &v
 }
 
-// GetFederationContextId returns the FederationContextId field value
+// GetFederationContextId returns the FederationContextId field value if set, zero value otherwise.
 func (o *FederationResponseData) GetFederationContextId() string {
-	if o == nil {
+	if o == nil || isNil(o.FederationContextId) {
 		var ret string
 		return ret
 	}
-
-	return o.FederationContextId
+	return *o.FederationContextId
 }
 
-// GetFederationContextIdOk returns a tuple with the FederationContextId field value
+// GetFederationContextIdOk returns a tuple with the FederationContextId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationResponseData) GetFederationContextIdOk() (*string, bool) {
-	if o == nil {
+	if o == nil || isNil(o.FederationContextId) {
 		return nil, false
 	}
-	return &o.FederationContextId, true
+	return o.FederationContextId, true
 }
 
-// SetFederationContextId sets field value
+// HasFederationContextId returns a boolean if a field has been set.
+func (o *FederationResponseData) HasFederationContextId() bool {
+	if o != nil && !isNil(o.FederationContextId) {
+		return true
+	}
+
+	return false
+}
+
+// SetFederationContextId gets a reference to the given string and assigns it to the FederationContextId field.
 func (o *FederationResponseData) SetFederationContextId(v string) {
-	o.FederationContextId = v
+	o.FederationContextId = &v
 }
 
 // GetEdgeDiscoveryServiceEndPoint returns the EdgeDiscoveryServiceEndPoint field value
@@ -309,8 +323,12 @@ func (o FederationResponseData) MarshalJSON() ([]byte, error) {
 func (o FederationResponseData) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["partnerOPFederationId"] = o.PartnerOPFederationId
-	toSerialize["partnerOPCountryCode"] = o.PartnerOPCountryCode
-	toSerialize["federationContextId"] = o.FederationContextId
+	if !isNil(o.PartnerOPCountryCode) {
+		toSerialize["partnerOPCountryCode"] = o.PartnerOPCountryCode
+	}
+	if !isNil(o.FederationContextId) {
+		toSerialize["federationContextId"] = o.FederationContextId
+	}
 	toSerialize["edgeDiscoveryServiceEndPoint"] = o.EdgeDiscoveryServiceEndPoint
 	toSerialize["lcmServiceEndPoint"] = o.LcmServiceEndPoint
 	if !isNil(o.PartnerOPMobileNetworkCodes) {

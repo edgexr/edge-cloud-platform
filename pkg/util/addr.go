@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 // Get the external address with port when running under kubernetes.
@@ -53,4 +54,12 @@ func ResolveExternalAddr() (string, error) {
 		return "", err
 	}
 	return addrs[0], nil
+}
+
+func TrimScheme(addr string) string {
+	idx := strings.Index(addr, "://")
+	if idx == -1 {
+		return addr
+	}
+	return addr[idx+3:]
 }

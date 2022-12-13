@@ -78,6 +78,10 @@ type OauthTokenResp struct {
 	AccessToken string `json:"access_token"`
 }
 
+func getVaultAccountPath(name string) string {
+	return fmt.Sprintf("/secret/data/accounts/%s", name)
+}
+
 func getVaultRegistryPath(registry, org string) string {
 	if org == AllOrgs {
 		// registry key granting access to all orgs
@@ -107,6 +111,24 @@ func parseImageUrl(imgUrl string) (string, string, error) {
 		port = hostname[1]
 	}
 	return hostname[0], port, nil
+}
+
+// Same as registry auth, but is always the user/password of an admin
+// or other user account.
+func GetAccountAuth(ctx context.Context, name string, vaultConfig *vault.Config) (*RegistryAuth, error) {
+	if vaultConfig == nil || vaultConfig.Addr == "" {
+		return nil, fmt.Errorf("no vault specified")
+	}
+	vaultPath := getVaultAccountPath(name)
+	log.SpanLog(ctx, log.DebugLevelApi, "get account auth", "vault-path", vaultPath)
+	auth := &RegistryAuth{}
+	err := vault.GetData(vaultConfig, vaultPath, 0, auth)
+	if err != nil && strings.Contains(err.Error(), "no secrets") {
+		return nil, fmt.Errorf("no account credentials found for %s in Vault", name)
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get account credentials for %s: %s", name, err)
+	}
+	return auth, nil
 }
 
 func GetRegistryAuth(ctx context.Context, imgUrl, org string, vaultConfig *vault.Config) (*RegistryAuth, error) {
