@@ -55,7 +55,7 @@ func init() {
 			Name:         "DeleteFederationProvider",
 			Use:          "delete",
 			Short:        "Delete Federation Provider",
-			RequiredArgs: "name operatorid",
+			RequiredArgs: "name",
 			Comments:     ormapi.FederationProviderComments,
 			ReqData:      &ormapi.FederationProvider{},
 			ReplyData:    &ormapi.Result{},
@@ -273,6 +273,16 @@ func init() {
 			ReplyData:    &[]ormapi.ConsumerZone{},
 			Path:         "/auth/federation/consumer/zone/show",
 			ShowFilter:   true,
+		}, {
+			Name:         "ShowFedConsumerImage",
+			Use:          "showimages",
+			Short:        "Show Images onboarded by developers",
+			OptionalArgs: strings.Join(ConsumerImageRedactedShowArgs, " "),
+			Comments:     ormapi.ConsumerImageComments,
+			ReqData:      &ormapi.ConsumerImage{},
+			ReplyData:    &[]ormapi.ConsumerImage{},
+			Path:         "/auth/federation/consumer/image/show",
+			ShowFilter:   true,
 		},
 	}
 	AllApis.AddGroup(FederationConsumerGroup, "Manage Federation Consumer and Zones", cmds)
@@ -441,4 +451,10 @@ var ProviderImageShowArgs = []string{
 	"type",
 	"appproviderid",
 	"status",
+}
+
+var ConsumerImageRedactedShowArgs = []string{
+	"id",
+	"organization",
+	"federationname",
 }

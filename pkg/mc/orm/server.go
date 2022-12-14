@@ -929,9 +929,10 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/federation/consumer/zone/register", RegisterConsumerZone)
 	auth.POST("/federation/consumer/zone/deregister", DeregisterConsumerZone)
 	auth.POST("/federation/consumer/zone/show", ShowConsumerZone)
-	auth.POST("/federation/consumer/image/create", CreateFederatedImage)
-	auth.POST("/federation/consumer/image/delete", DeleteFederatedImage)
-	auth.POST("/federation/consumer/image/show", ShowFederatedImage)
+	// the following federation APIs are called by developers
+	auth.POST("/federation/consumer/image/create", CreateConsumerImage)
+	auth.POST("/federation/consumer/image/delete", DeleteConsumerImage)
+	auth.POST("/federation/consumer/image/show", ShowConsumerImage)
 	auth.POST("/federation/consumer/app/create", CreateConsumerApp)
 
 	// Generate new short-lived token to authenticate websocket connections

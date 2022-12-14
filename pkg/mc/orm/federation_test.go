@@ -1177,6 +1177,8 @@ func testGormFederationObjs(t *testing.T, opts testFedObjOpts) {
 		&ormapi.ProviderZoneBase{},
 		&ormapi.ProviderZone{},
 		&ormapi.ConsumerZone{},
+		&ormapi.ProviderImage{},
+		&ormapi.ConsumerImage{},
 	}
 
 	// drop based on the order of dependency

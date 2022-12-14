@@ -126,7 +126,7 @@ mcctl --addr https://console.$DOMAINC federation createimage organization=$DEVOR
   sourcepath=https://cloud-images.ubuntu.com/kinetic/current/kinetic-server-cloudimg-amd64.img \
   type=QCOW2 checksum=d4d5dae810da3bfbd903e830ca8aabed
 
-Onboard a private VM image from the platform (will be uploaded to partner)
+Onboard a private VM image from the platform (will be copied to partner)
 ```bash
 mcctl --addr https://console.$DOMAINC federation createimage organization=$DEVORG federationname=$FEDC \
   sourcepath=https://console.$DOMAINC/storage/v1/artifacts/$DEVORG/tinycore2.iso \
@@ -139,7 +139,7 @@ mcctl --addr https://console.$DOMAINC federation createimage organization=$DEVOR
   sourcepath=hashicorp/http-echo:0.2.3 type=DOCKER
 ```
 
-Onboard a private docker image (will be copied)
+Onboard a private docker image (will be copied to partner)
 ```bash
 mcctl --addr https://console.$DOMAINC federation createimage organization=$DEVORG federationname=$FEDC \
   sourcepath=docker.$DOMAINC/$DEVORG/http-echo:0.2.1 type=DOCKER

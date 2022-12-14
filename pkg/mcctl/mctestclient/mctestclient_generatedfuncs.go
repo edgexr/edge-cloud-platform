@@ -2162,6 +2162,22 @@ func (s *Client) ShowConsumerZone(uri string, token string, in *cli.MapData) ([]
 	return out, rundata.RetStatus, rundata.RetError
 }
 
+func (s *Client) ShowFedConsumerImage(uri string, token string, in *cli.MapData) ([]ormapi.ConsumerImage, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []ormapi.ConsumerImage
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowFedConsumerImage")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
 // Generating group FederationProvider
 
 func (s *Client) CreateFederationProvider(uri string, token string, in *ormapi.FederationProvider) (*ormapi.FederationProviderInfo, int, error) {

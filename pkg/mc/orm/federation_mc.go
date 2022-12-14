@@ -161,6 +161,9 @@ func InitFederationAPIConstraints(db *gorm.DB) error {
 	err = setForeignKey(db, &ormapi.ProviderZone{}, "provider_name", &ormapi.FederationProvider{}, "name", err)
 	err = setForeignKey(db, &ormapi.ProviderZone{}, "zone_id,operator_id", &ormapi.ProviderZoneBase{}, "zone_id,operator_id", err)
 	err = setForeignKey(db, &ormapi.ConsumerZone{}, "consumer_name", &ormapi.FederationConsumer{}, "name", err)
+	err = setForeignKey(db, &ormapi.ProviderImage{}, "federation_name", &ormapi.FederationProvider{}, "name", err)
+	err = setForeignKey(db, &ormapi.ConsumerImage{}, "federation_name", &ormapi.FederationConsumer{}, "name", err)
+	err = setForeignKey(db, &ormapi.ConsumerImage{}, "organization", &ormapi.Organization{}, "name", err)
 	return err
 }
 
@@ -440,18 +443,29 @@ func DeleteFederationProvider(c echo.Context) error {
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)
 	}
-	span := log.SpanFromContext(ctx)
-	log.SetTags(span, in.GetTags())
-	if err := fedAuthorized(ctx, claims.Username, in.OperatorId); err != nil {
-		return err
-	}
-	// get federator information
 	provider, err := lookupFederationProvider(ctx, in.ID, in.Name)
 	if err != nil {
 		return err
 	}
-
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, provider.GetTags())
+	if err := fedAuthorized(ctx, claims.Username, provider.OperatorId); err != nil {
+		return err
+	}
 	db := loggedDB(ctx)
+
+	// check if images exist
+	images := []ormapi.ProviderImage{}
+	imageLookup := ormapi.ProviderImage{
+		FederationName: provider.Name,
+	}
+	err = db.Where(&imageLookup).Find(&images).Error
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+	if len(images) > 0 {
+		return fmt.Errorf("Cannot delete provider when there are files (images) still present")
+	}
 
 	// Ensure no zones are shared.
 	// TODO: clean up files/artifacts
@@ -493,7 +507,7 @@ func DeleteFederationProvider(c echo.Context) error {
 	}
 	err = DeleteOrgObj(ctx, claims, &devOrg)
 	log.SpanLog(ctx, log.DebugLevelApi, "delete provider's dev org", "name", devOrg.Name, "err", err)
-	return ormutil.SetReply(c, ormutil.Msg("Deleted FederationProvider successfully"))
+	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("FederationProvider %s deleted", provider.Name)))
 }
 
 // Fields to ignore for ShowFederation filtering. Names are in database format.
@@ -701,7 +715,7 @@ func CreateFederationConsumer(c echo.Context) (reterr error) {
 		return err
 	}
 
-	return ormutil.SetReply(c, ormutil.Msg("Created federation consumer successfully"))
+	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation consumer %s created", consumer.Name)))
 }
 
 func DeleteFederationConsumer(c echo.Context) error {
@@ -723,6 +737,20 @@ func DeleteFederationConsumer(c echo.Context) error {
 	if err := fedAuthorized(ctx, claims.Username, consumer.OperatorId); err != nil {
 		return err
 	}
+	db := loggedDB(ctx)
+
+	// check if images exist
+	images := []ormapi.ConsumerImage{}
+	imageLookup := ormapi.ConsumerImage{
+		FederationName: consumer.Name,
+	}
+	err = db.Where(&imageLookup).Find(&images).Error
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+	if len(images) > 0 {
+		return fmt.Errorf("Cannot delete consumer when there are files (images) still present")
+	}
 
 	// check if federation with partner federator exists
 	if consumer.Status == federation.StatusRegistered {
@@ -732,7 +760,6 @@ func DeleteFederationConsumer(c echo.Context) error {
 	}
 
 	// Delete federation consumer
-	db := loggedDB(ctx)
 	if err := db.Delete(consumer).Error; err != nil {
 		return ormutil.DbErr(err)
 	}
@@ -748,7 +775,7 @@ func DeleteFederationConsumer(c echo.Context) error {
 	err = DeleteOrgObj(ctx, claims, &operOrg)
 	log.SpanLog(ctx, log.DebugLevelApi, "delete consumer's operator org", "name", operOrg.Name, "err", err)
 
-	return ormutil.SetReply(c, ormutil.Msg("Deleted federation consumer successfully"))
+	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation consumer %s deleted", consumer.Name)))
 }
 
 func UpdateFederationConsumer(c echo.Context) error {
@@ -805,7 +832,7 @@ func UpdateFederationConsumer(c echo.Context) error {
 	if err != nil {
 		return ormutil.DbErr(err)
 	}
-	return nil
+	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation consumer %s updated", consumer.Name)))
 }
 
 // Update consumer's client key for provider in case provider regenerated it.
@@ -839,13 +866,13 @@ func SetFederationConsumerAPIKey(c echo.Context) error {
 	if err != nil {
 		return ormutil.DbErr(err)
 	}
-	return ormutil.SetReply(c, ormutil.Msg("Updated consumer's key for provider"))
+	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation consumer %s api key set", consumer.Name)))
 }
 
 // Generate a notify key to allow provider to callback to consumer
 func GenerateFederationConsumerNotifyKey(c echo.Context) error {
 	// TODO
-	return nil
+	return fmt.Errorf("Not implemented yet")
 }
 
 func CreateProviderZoneBase(c echo.Context) error {

@@ -22,7 +22,7 @@ import (
 
 var ErrExactDuplicate = errors.New("exact duplicate")
 
-func CreateFederatedImage(c echo.Context) (reterr error) {
+func CreateConsumerImage(c echo.Context) (reterr error) {
 	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
@@ -54,7 +54,7 @@ func CreateFederatedImage(c echo.Context) (reterr error) {
 	} else if err != nil {
 		return err
 	}
-	return ormutil.SetReply(c, ormutil.Msg("Image created"))
+	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Image %s created", image.ID)))
 }
 
 func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (reterr error) {
@@ -232,7 +232,7 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 	return nil
 }
 
-func DeleteFederatedImage(c echo.Context) error {
+func DeleteConsumerImage(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
@@ -275,10 +275,10 @@ func DeleteFederatedImage(c echo.Context) error {
 	if err != nil {
 		return ormutil.DbErr(err)
 	}
-	return ormutil.SetReply(c, ormutil.Msg("Image deleted"))
+	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Image %s deleted", image.ID)))
 }
 
-func ShowFederatedImage(c echo.Context) error {
+func ShowConsumerImage(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
@@ -306,6 +306,17 @@ func ShowFederatedImage(c echo.Context) error {
 	for _, image := range images {
 		if showAuth.Ok(image.Organization) {
 			allowedImages = append(allowedImages, image)
+		} else if showAuth.Ok(image.FederationName) {
+			// consumer fed needs to be able to see images to
+			// ask developers to delete them in order to be able
+			// to delete the federation consumer.
+			// Show only id and org.
+			redactedImage := ormapi.ConsumerImage{
+				ID:             image.ID,
+				Organization:   image.Organization,
+				FederationName: image.FederationName,
+			}
+			allowedImages = append(allowedImages, redactedImage)
 		}
 	}
 	return ormutil.SetReply(c, allowedImages)
