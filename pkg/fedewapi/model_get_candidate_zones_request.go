@@ -21,7 +21,7 @@ var _ MappedNullable = &GetCandidateZonesRequest{}
 type GetCandidateZonesRequest struct {
 	// UserId of the app provider.  Identifier is relevant only in context of this federation.
 	AppProviderId string `json:"appProviderId"`
-	// Identifier used to refer to an application. This identifier is globally unique so that application can be identified uniquely across different OPs.
+	// Identifier used to refer to an application.
 	AppId string `json:"appId"`
 	EdgeDiscoveryFilters *GetCandidateZonesRequestEdgeDiscoveryFilters `json:"edgeDiscoveryFilters,omitempty"`
 }

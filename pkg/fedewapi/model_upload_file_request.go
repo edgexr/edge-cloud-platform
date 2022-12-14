@@ -30,12 +30,12 @@ type UploadFileRequest struct {
 	FileDescription *string `json:"fileDescription,omitempty"`
 	// File version information
 	FileVersionInfo string `json:"fileVersionInfo"`
-	// Indicate if the file is Container image or VM image (QCOW2)
-	FileType string `json:"fileType"`
-	// Base OS for the image. Currently only “Linux” is supported
-	ImgOSType string `json:"imgOSType"`
-	ImgInsSetArch string `json:"imgInsSetArch"`
-	Repolocation *UploadFileRequestRepolocation `json:"repolocation,omitempty"`
+	FileType VirtImageType `json:"fileType"`
+	// MD5 checksum for VM and file-based images, sha256 digest for containers
+	Checksum *string `json:"checksum,omitempty"`
+	ImgOSType OSType `json:"imgOSType"`
+	ImgInsSetArch CPUArchType `json:"imgInsSetArch"`
+	FileRepoLocation ObjectRepoLocation `json:"fileRepoLocation"`
 	// Binary image associated with an application component.
 	File **os.File `json:"file,omitempty"`
 }
@@ -44,7 +44,7 @@ type UploadFileRequest struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewUploadFileRequest(fileId string, appProviderId string, fileName string, fileVersionInfo string, fileType string, imgOSType string, imgInsSetArch string) *UploadFileRequest {
+func NewUploadFileRequest(fileId string, appProviderId string, fileName string, fileVersionInfo string, fileType VirtImageType, imgOSType OSType, imgInsSetArch CPUArchType, fileRepoLocation ObjectRepoLocation) *UploadFileRequest {
 	this := UploadFileRequest{}
 	this.FileId = fileId
 	this.AppProviderId = appProviderId
@@ -53,6 +53,7 @@ func NewUploadFileRequest(fileId string, appProviderId string, fileName string, 
 	this.FileType = fileType
 	this.ImgOSType = imgOSType
 	this.ImgInsSetArch = imgInsSetArch
+	this.FileRepoLocation = fileRepoLocation
 	return &this
 }
 
@@ -193,9 +194,9 @@ func (o *UploadFileRequest) SetFileVersionInfo(v string) {
 }
 
 // GetFileType returns the FileType field value
-func (o *UploadFileRequest) GetFileType() string {
+func (o *UploadFileRequest) GetFileType() VirtImageType {
 	if o == nil {
-		var ret string
+		var ret VirtImageType
 		return ret
 	}
 
@@ -204,7 +205,7 @@ func (o *UploadFileRequest) GetFileType() string {
 
 // GetFileTypeOk returns a tuple with the FileType field value
 // and a boolean to check if the value has been set.
-func (o *UploadFileRequest) GetFileTypeOk() (*string, bool) {
+func (o *UploadFileRequest) GetFileTypeOk() (*VirtImageType, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -212,14 +213,46 @@ func (o *UploadFileRequest) GetFileTypeOk() (*string, bool) {
 }
 
 // SetFileType sets field value
-func (o *UploadFileRequest) SetFileType(v string) {
+func (o *UploadFileRequest) SetFileType(v VirtImageType) {
 	o.FileType = v
 }
 
-// GetImgOSType returns the ImgOSType field value
-func (o *UploadFileRequest) GetImgOSType() string {
-	if o == nil {
+// GetChecksum returns the Checksum field value if set, zero value otherwise.
+func (o *UploadFileRequest) GetChecksum() string {
+	if o == nil || isNil(o.Checksum) {
 		var ret string
+		return ret
+	}
+	return *o.Checksum
+}
+
+// GetChecksumOk returns a tuple with the Checksum field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *UploadFileRequest) GetChecksumOk() (*string, bool) {
+	if o == nil || isNil(o.Checksum) {
+		return nil, false
+	}
+	return o.Checksum, true
+}
+
+// HasChecksum returns a boolean if a field has been set.
+func (o *UploadFileRequest) HasChecksum() bool {
+	if o != nil && !isNil(o.Checksum) {
+		return true
+	}
+
+	return false
+}
+
+// SetChecksum gets a reference to the given string and assigns it to the Checksum field.
+func (o *UploadFileRequest) SetChecksum(v string) {
+	o.Checksum = &v
+}
+
+// GetImgOSType returns the ImgOSType field value
+func (o *UploadFileRequest) GetImgOSType() OSType {
+	if o == nil {
+		var ret OSType
 		return ret
 	}
 
@@ -228,7 +261,7 @@ func (o *UploadFileRequest) GetImgOSType() string {
 
 // GetImgOSTypeOk returns a tuple with the ImgOSType field value
 // and a boolean to check if the value has been set.
-func (o *UploadFileRequest) GetImgOSTypeOk() (*string, bool) {
+func (o *UploadFileRequest) GetImgOSTypeOk() (*OSType, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -236,14 +269,14 @@ func (o *UploadFileRequest) GetImgOSTypeOk() (*string, bool) {
 }
 
 // SetImgOSType sets field value
-func (o *UploadFileRequest) SetImgOSType(v string) {
+func (o *UploadFileRequest) SetImgOSType(v OSType) {
 	o.ImgOSType = v
 }
 
 // GetImgInsSetArch returns the ImgInsSetArch field value
-func (o *UploadFileRequest) GetImgInsSetArch() string {
+func (o *UploadFileRequest) GetImgInsSetArch() CPUArchType {
 	if o == nil {
-		var ret string
+		var ret CPUArchType
 		return ret
 	}
 
@@ -252,7 +285,7 @@ func (o *UploadFileRequest) GetImgInsSetArch() string {
 
 // GetImgInsSetArchOk returns a tuple with the ImgInsSetArch field value
 // and a boolean to check if the value has been set.
-func (o *UploadFileRequest) GetImgInsSetArchOk() (*string, bool) {
+func (o *UploadFileRequest) GetImgInsSetArchOk() (*CPUArchType, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -260,40 +293,32 @@ func (o *UploadFileRequest) GetImgInsSetArchOk() (*string, bool) {
 }
 
 // SetImgInsSetArch sets field value
-func (o *UploadFileRequest) SetImgInsSetArch(v string) {
+func (o *UploadFileRequest) SetImgInsSetArch(v CPUArchType) {
 	o.ImgInsSetArch = v
 }
 
-// GetRepolocation returns the Repolocation field value if set, zero value otherwise.
-func (o *UploadFileRequest) GetRepolocation() UploadFileRequestRepolocation {
-	if o == nil || isNil(o.Repolocation) {
-		var ret UploadFileRequestRepolocation
+// GetFileRepoLocation returns the FileRepoLocation field value
+func (o *UploadFileRequest) GetFileRepoLocation() ObjectRepoLocation {
+	if o == nil {
+		var ret ObjectRepoLocation
 		return ret
 	}
-	return *o.Repolocation
+
+	return o.FileRepoLocation
 }
 
-// GetRepolocationOk returns a tuple with the Repolocation field value if set, nil otherwise
+// GetFileRepoLocationOk returns a tuple with the FileRepoLocation field value
 // and a boolean to check if the value has been set.
-func (o *UploadFileRequest) GetRepolocationOk() (*UploadFileRequestRepolocation, bool) {
-	if o == nil || isNil(o.Repolocation) {
+func (o *UploadFileRequest) GetFileRepoLocationOk() (*ObjectRepoLocation, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Repolocation, true
+	return &o.FileRepoLocation, true
 }
 
-// HasRepolocation returns a boolean if a field has been set.
-func (o *UploadFileRequest) HasRepolocation() bool {
-	if o != nil && !isNil(o.Repolocation) {
-		return true
-	}
-
-	return false
-}
-
-// SetRepolocation gets a reference to the given UploadFileRequestRepolocation and assigns it to the Repolocation field.
-func (o *UploadFileRequest) SetRepolocation(v UploadFileRequestRepolocation) {
-	o.Repolocation = &v
+// SetFileRepoLocation sets field value
+func (o *UploadFileRequest) SetFileRepoLocation(v ObjectRepoLocation) {
+	o.FileRepoLocation = v
 }
 
 // GetFile returns the File field value if set, zero value otherwise.
@@ -346,11 +371,12 @@ func (o UploadFileRequest) ToMap() (map[string]interface{}, error) {
 	}
 	toSerialize["fileVersionInfo"] = o.FileVersionInfo
 	toSerialize["fileType"] = o.FileType
+	if !isNil(o.Checksum) {
+		toSerialize["checksum"] = o.Checksum
+	}
 	toSerialize["imgOSType"] = o.ImgOSType
 	toSerialize["imgInsSetArch"] = o.ImgInsSetArch
-	if !isNil(o.Repolocation) {
-		toSerialize["repolocation"] = o.Repolocation
-	}
+	toSerialize["fileRepoLocation"] = o.FileRepoLocation
 	if !isNil(o.File) {
 		toSerialize["file"] = o.File
 	}

@@ -1,18 +1,10 @@
---- FederationApi_v1.3.0.yaml.last	2022-10-26 10:15:24.583755700 -0700
-+++ FederationApi_v1.3.0.yaml	2022-10-26 10:17:35.803755700 -0700
-@@ -221,7 +221,6 @@
+--- FederationApi_v1.3.0.yaml.last	2022-12-09 11:33:16.888707100 -0800
++++ FederationApi_v1.3.0.yaml	2022-12-09 11:33:32.248707100 -0800
+@@ -222,7 +222,6 @@
      FederationContextId:
        type: string
-       pattern: '^([0-9]{5,6}-)?[^-]+$'
+       pattern: '^[A-Za-z0-9][A-Za-z0-9-]*$'
 -      readOnly: true
-       description: This key shall be provided by the partner OP on successful verification and validation of the federation create request and is used by partner op to identify this newly created federation context. Originating OP shall provide this key in any subsequent request towards the partner op.
+       description: This identifier shall be provided by the partner OP on successful verification and validation of the federation create request and is used by partner op to identify this newly created federation context. Originating OP shall provide this identifier in any subsequent request towards the partner op.
    
      FederationIdentifier:
-@@ -517,6 +516,7 @@
-       required:
-         - partnerOPFederationId 
-         - partnerOPCountryCode
-+        - federationContextId
-         - edgeDiscoveryServiceEndPoint
-         - lcmServiceEndPoint 
-         - offeredAvailabilityZones

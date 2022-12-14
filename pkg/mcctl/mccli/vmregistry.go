@@ -14,28 +14,30 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/cheggaaa/pb/v3"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
 	"github.com/spf13/cobra"
 )
 
 type ArtifactRequest struct {
-	Org       string `json:"org,omitempty"`
-	Path      string `json:"path,omitempty"`
-	LocalFile string `json:"localfile,omitempty"`
+	Org            string `json:"org,omitempty"`
+	Path           string `json:"path,omitempty"`
+	LocalFile      string `json:"localfile,omitempty"`
+	RemoteUrl      string `json:"remoteurl,omitempty"`
+	RemoteUsername string `json:"remoteusername,omitempty"`
+	RemotePassword string `json:"remotepassword,omitempty"`
+	RemoteToken    string `json:"remotetoken,omitempty"`
 }
 
-type ArtifactObject struct {
-	Org       string    `json:"org,omitempty"`
-	Path      string    `json:"path,omitempty"`
-	Size      int64     `json:"size,omitempty"`
-	CreatedBy string    `json:"createdby,omitempty"`
-	Created   time.Time `json:"created,omitempty"`
-	MimeType  string    `json:"mimeType,omitempty"`
-	MD5       string    `json:"md5,omitempty"`
+type ArtifactPullRequest struct {
+	URL      string `json:"url"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Token    string `json:"token"`
 }
 
 func (s *RootCommand) getArtifactCmdGroup() *cobra.Command {
@@ -47,7 +49,7 @@ func (s *RootCommand) getArtifactCmdGroup() *cobra.Command {
 		switch c.Name {
 		case "UploadArtifact":
 			cliCmd.Run = s.uploadArtifact
-		case "ListArtifacts":
+		case "ShowArtifacts":
 			cliCmd.Run = s.listArtifacts
 		case "DownloadArtifact":
 			cliCmd.Run = s.getArtifact
@@ -55,6 +57,8 @@ func (s *RootCommand) getArtifactCmdGroup() *cobra.Command {
 			cliCmd.Run = s.deleteArtifact
 		case "InfoArtifact":
 			cliCmd.Run = s.infoArtifact
+		case "UploadArtifactFromURL":
+			cliCmd.Run = s.pullArtifact
 		default:
 			panic(fmt.Sprintf("getArtifactCmdGroup cmd %s not found", c.Name))
 		}
@@ -167,7 +171,52 @@ func (s *RootCommand) uploadArtifact(c *cli.Command, args []string) error {
 		return fmt.Errorf("failed to read json response: %v", err)
 	}
 	defer resp.Body.Close()
-	out := ArtifactObject{}
+	out := ormapi.ArtifactObject{}
+	err = json.Unmarshal(body, &out)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+	return check(c, resp.StatusCode, nil, &out)
+}
+
+func (s *RootCommand) pullArtifact(c *cli.Command, args []string) error {
+	_, err := s.runRestArgs(c, args)
+	if err != nil {
+		return err
+	}
+	art, _ := c.ReqData.(*ArtifactRequest)
+	if art.Org == "" {
+		return fmt.Errorf("org cannot be empty")
+	}
+	if art.Path == "" {
+		return fmt.Errorf("path cannot be empty")
+	}
+	if art.RemoteUrl == "" {
+		return fmt.Errorf("remote URL cannot be empty")
+	}
+	pullReq := ArtifactPullRequest{
+		URL:      art.RemoteUrl,
+		Username: art.RemoteUsername,
+		Password: art.RemotePassword,
+		Token:    art.RemoteToken,
+	}
+	uri := s.buildArtifactPullPath(art)
+	if s.client.Debug {
+		fmt.Printf("sending pull request to %s\n", uri)
+	}
+	resp, err := s.client.HttpJsonSendReq("POST", uri, s.token, &pullReq, nil, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read error response: %s", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("pull request failed, %d: %s", resp.StatusCode, string(body))
+	}
+	out := ormapi.ArtifactObject{}
 	err = json.Unmarshal(body, &out)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal response: %v", err)
@@ -189,7 +238,7 @@ func (s *RootCommand) listArtifacts(c *cli.Command, args []string) error {
 	if pathFilter != "" {
 		queryParams["pathfilter"] = pathFilter
 	}
-	output := []ArtifactObject{}
+	output := []ormapi.ArtifactObject{}
 	st, _, err := s.client.HttpJsonSend("GET", uri, s.token, nil, &output, nil, queryParams)
 	return check(c, st, err, &output)
 }
@@ -316,16 +365,19 @@ func (s *RootCommand) infoArtifact(c *cli.Command, args []string) error {
 }
 
 func (s *RootCommand) buildArtifactPath(req *ArtifactRequest) string {
-	uri := s.getArtifactUri() + "/artifacts"
-	uri += "/" + req.Org
-	if req.Path != "" {
-		if req.Path[0] == '/' {
-			uri += req.Path
-		} else {
-			uri += "/" + req.Path
-		}
+	prefix := ""
+	if !strings.HasPrefix(s.addr, "http") {
+		prefix = "http://"
 	}
-	return uri
+	return cloudcommon.GetArtifactStoragePath(prefix+s.addr, req.Org, req.Path)
+}
+
+func (s *RootCommand) buildArtifactPullPath(req *ArtifactRequest) string {
+	prefix := ""
+	if !strings.HasPrefix(s.addr, "http") {
+		prefix = "http://"
+	}
+	return cloudcommon.GetArtifactPullPath(prefix+s.addr, req.Org, req.Path)
 }
 
 func bodyError(c *cli.Command, resp *http.Response) error {

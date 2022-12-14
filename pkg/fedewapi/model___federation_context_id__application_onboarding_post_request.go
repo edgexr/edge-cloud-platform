@@ -19,7 +19,7 @@ var _ MappedNullable = &FederationContextIdApplicationOnboardingPostRequest{}
 
 // FederationContextIdApplicationOnboardingPostRequest struct for FederationContextIdApplicationOnboardingPostRequest
 type FederationContextIdApplicationOnboardingPostRequest struct {
-	// Identifier used to refer to an application. This identifier is globally unique so that application can be identified uniquely across different OPs.
+	// Identifier used to refer to an application.
 	AppId string `json:"appId"`
 	StatusInfo []FederationContextIdApplicationOnboardingPostRequestStatusInfoInner `json:"statusInfo"`
 }

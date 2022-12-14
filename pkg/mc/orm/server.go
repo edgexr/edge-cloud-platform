@@ -918,15 +918,22 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/federation/provider/zone/share", ShareProviderZone)
 	auth.POST("/federation/provider/zone/unshare", UnshareProviderZone)
 	auth.POST("/federation/provider/zone/show", ShowProviderZone)
+	auth.POST("/federation/provider/image/show", ShowProviderImage)
 
 	auth.POST("/federation/consumer/create", CreateFederationConsumer)
 	auth.POST("/federation/consumer/delete", DeleteFederationConsumer)
+	auth.POST("/federation/consumer/update", UpdateFederationConsumer)
 	auth.POST("/federation/consumer/show", ShowFederationConsumer)
 	auth.POST("/federation/consumer/setapikey", SetFederationConsumerAPIKey)
 	auth.POST("/federation/consumer/generatenotifykey", GenerateFederationConsumerNotifyKey)
 	auth.POST("/federation/consumer/zone/register", RegisterConsumerZone)
 	auth.POST("/federation/consumer/zone/deregister", DeregisterConsumerZone)
 	auth.POST("/federation/consumer/zone/show", ShowConsumerZone)
+	// the following federation APIs are called by developers
+	auth.POST("/federation/consumer/image/create", CreateConsumerImage)
+	auth.POST("/federation/consumer/image/delete", DeleteConsumerImage)
+	auth.POST("/federation/consumer/image/show", ShowConsumerImage)
+	auth.POST("/federation/consumer/app/create", CreateConsumerApp)
 
 	// Generate new short-lived token to authenticate websocket connections
 	// Note: Web-client should not store auth token as part of local storage,
@@ -1029,7 +1036,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		federationEcho.Use(logger, AuthCookie, FederationRateLimit)
 		server.federationEcho = federationEcho
 
-		partnerApi = federation.NewPartnerApi(database, connCache, config.vaultConfig)
+		partnerApi = federation.NewPartnerApi(database, connCache, config.vaultConfig, config.VmRegistryAddr, config.HarborAddr)
 		partnerApi.InitAPIs(federationEcho)
 
 		go func() {

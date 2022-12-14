@@ -28,6 +28,7 @@ type MC struct {
 	Common                  `yaml:",inline"`
 	NodeCommon              `yaml:",inline"`
 	Addr                    string
+	ConsoleAddr             string
 	FederationAddr          string
 	SqlAddr                 string
 	NotifyAddrs             string
@@ -54,6 +55,10 @@ func (p *MC) StartLocal(logfile string, opts ...StartOp) error {
 	if p.Addr != "" {
 		args = append(args, "--addr")
 		args = append(args, p.Addr)
+	}
+	if p.ConsoleAddr != "" {
+		args = append(args, "--consoleAddr")
+		args = append(args, p.ConsoleAddr)
 	}
 	if p.FederationAddr != "" {
 		args = append(args, "--federationAddr")

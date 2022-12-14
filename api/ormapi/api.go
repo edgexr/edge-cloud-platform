@@ -387,6 +387,8 @@ type AuthScope struct {
 	Resource string `json:"resource"`
 	// Action defines what type of action can be performed on a resource
 	Action string `json:"action"`
+	// Optional object to act upon if auth claims has restriction
+	Object string `json:"object"`
 }
 
 type OrgCloudlet struct {
@@ -456,6 +458,16 @@ type AuditResponse struct {
 	Error         string               `json:"error"`
 	TraceID       string               `json:"traceid"`
 	Tags          map[string]string    `json:"tags"`
+}
+
+type ArtifactObject struct {
+	Org       string    `json:"org,omitempty"`
+	Path      string    `json:"path,omitempty"`
+	Size      int64     `json:"size,omitempty"`
+	CreatedBy string    `json:"createdby,omitempty"`
+	Created   time.Time `json:"created,omitempty"`
+	MimeType  string    `json:"mimeType,omitempty"`
+	MD5       string    `json:"md5,omitempty"`
 }
 
 // Email request is used for password reset and to resend welcome

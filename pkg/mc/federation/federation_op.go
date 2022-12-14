@@ -66,14 +66,18 @@ type PartnerApi struct {
 	connCache      ctrlclient.ClientConnMgr
 	vaultConfig    *vault.Config
 	tokenSources   *federationmgmt.TokenSourceCache
+	vmRegistryAddr string
+	harborAddr     string
 	allowPlainHttp bool // for unit testing
 }
 
-func NewPartnerApi(db *gorm.DB, connCache ctrlclient.ClientConnMgr, vaultConfig *vault.Config) *PartnerApi {
+func NewPartnerApi(db *gorm.DB, connCache ctrlclient.ClientConnMgr, vaultConfig *vault.Config, vmRegistryAddr, harborAddr string) *PartnerApi {
 	p := &PartnerApi{
-		database:    db,
-		connCache:   connCache,
-		vaultConfig: vaultConfig,
+		database:       db,
+		connCache:      connCache,
+		vaultConfig:    vaultConfig,
+		vmRegistryAddr: vmRegistryAddr,
+		harborAddr:     harborAddr,
 	}
 	p.tokenSources = federationmgmt.NewTokenSourceCache(p)
 	return p
@@ -226,9 +230,11 @@ func (p *PartnerApi) CreateFederation(c echo.Context) (reterr error) {
 	provider.Status = StatusRegistered
 
 	out := fedewapi.FederationResponseData{}
-	out.FederationContextId = provider.FederationContextId
+	out.FederationContextId = &provider.FederationContextId
 	out.PartnerOPFederationId = provider.MyInfo.FederationId
-	out.PartnerOPCountryCode = provider.MyInfo.CountryCode
+	if provider.MyInfo.CountryCode != "" {
+		out.PartnerOPCountryCode = &provider.MyInfo.CountryCode
+	}
 	out.EdgeDiscoveryServiceEndPoint = fedewapi.ServiceEndpoint{
 		// TODO
 	}
@@ -479,25 +485,10 @@ func (p *PartnerApi) DeleteFederationDetails(c echo.Context, fedCtxId Federation
 	provider.PartnerNotifyDest = ""
 	provider.PartnerNotifyTokenUrl = ""
 	provider.Status = StatusUnregistered
-	providerClientId := provider.ProviderClientId
-	provider.ProviderClientId = ""
-	provider.PartnerNotifyClientId = ""
 
 	err = db.Save(provider).Error
 	if err != nil {
 		return ormutil.DbErr(err)
-	}
-
-	// delete partner key
-	err = ormutil.DeleteApiKey(ctx, db, providerClientId)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "Failed to delete provider client id", "id", provider.ProviderClientId)
-	}
-
-	// delete provider api key
-	err = DeleteProviderPartnerApiKey(ctx, provider, p.vaultConfig)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "Failed to delete provider partner notify key", "id", provider.PartnerNotifyClientId)
 	}
 	return nil
 }

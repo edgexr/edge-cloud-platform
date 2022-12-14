@@ -19,12 +19,12 @@ var _ MappedNullable = &OnboardApplicationRequest{}
 
 // OnboardApplicationRequest struct for OnboardApplicationRequest
 type OnboardApplicationRequest struct {
-	// Identifier used to refer to an application. This identifier is globally unique so that application can be identified uniquely across different OPs.
+	// Identifier used to refer to an application.
 	AppId string `json:"appId"`
 	// UserId of the app provider.  Identifier is relevant only in context of this federation.
 	AppProviderId string `json:"appProviderId"`
-	// Details about partner OP zones where the application should be made available
-	AppDeploymentZones []OnboardApplicationRequestAppDeploymentZonesInner `json:"appDeploymentZones"`
+	// Details about partner OP zones where the application should be made available;  This field when specified will instruct the OP to restrict application instantiation only on the listed zones.
+	AppDeploymentZones []OnboardApplicationRequestAppDeploymentZonesInner `json:"appDeploymentZones,omitempty"`
 	AppMetaData OnboardApplicationRequestAppMetaData `json:"appMetaData"`
 	AppQoSProfile OnboardApplicationRequestAppQoSProfile `json:"appQoSProfile"`
 	// An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally.  App providers are required to provide details about all these components, their associated descriptors and their DNS names.
@@ -36,11 +36,10 @@ type OnboardApplicationRequest struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewOnboardApplicationRequest(appId string, appProviderId string, appDeploymentZones []OnboardApplicationRequestAppDeploymentZonesInner, appMetaData OnboardApplicationRequestAppMetaData, appQoSProfile OnboardApplicationRequestAppQoSProfile, appComponentSpecs []OnboardApplicationRequestAppComponentSpecsInner, appStatusCallbackLink string) *OnboardApplicationRequest {
+func NewOnboardApplicationRequest(appId string, appProviderId string, appMetaData OnboardApplicationRequestAppMetaData, appQoSProfile OnboardApplicationRequestAppQoSProfile, appComponentSpecs []OnboardApplicationRequestAppComponentSpecsInner, appStatusCallbackLink string) *OnboardApplicationRequest {
 	this := OnboardApplicationRequest{}
 	this.AppId = appId
 	this.AppProviderId = appProviderId
-	this.AppDeploymentZones = appDeploymentZones
 	this.AppMetaData = appMetaData
 	this.AppQoSProfile = appQoSProfile
 	this.AppComponentSpecs = appComponentSpecs
@@ -104,26 +103,34 @@ func (o *OnboardApplicationRequest) SetAppProviderId(v string) {
 	o.AppProviderId = v
 }
 
-// GetAppDeploymentZones returns the AppDeploymentZones field value
+// GetAppDeploymentZones returns the AppDeploymentZones field value if set, zero value otherwise.
 func (o *OnboardApplicationRequest) GetAppDeploymentZones() []OnboardApplicationRequestAppDeploymentZonesInner {
-	if o == nil {
+	if o == nil || isNil(o.AppDeploymentZones) {
 		var ret []OnboardApplicationRequestAppDeploymentZonesInner
 		return ret
 	}
-
 	return o.AppDeploymentZones
 }
 
-// GetAppDeploymentZonesOk returns a tuple with the AppDeploymentZones field value
+// GetAppDeploymentZonesOk returns a tuple with the AppDeploymentZones field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *OnboardApplicationRequest) GetAppDeploymentZonesOk() ([]OnboardApplicationRequestAppDeploymentZonesInner, bool) {
-	if o == nil {
+	if o == nil || isNil(o.AppDeploymentZones) {
 		return nil, false
 	}
 	return o.AppDeploymentZones, true
 }
 
-// SetAppDeploymentZones sets field value
+// HasAppDeploymentZones returns a boolean if a field has been set.
+func (o *OnboardApplicationRequest) HasAppDeploymentZones() bool {
+	if o != nil && !isNil(o.AppDeploymentZones) {
+		return true
+	}
+
+	return false
+}
+
+// SetAppDeploymentZones gets a reference to the given []OnboardApplicationRequestAppDeploymentZonesInner and assigns it to the AppDeploymentZones field.
 func (o *OnboardApplicationRequest) SetAppDeploymentZones(v []OnboardApplicationRequestAppDeploymentZonesInner) {
 	o.AppDeploymentZones = v
 }
@@ -236,7 +243,9 @@ func (o OnboardApplicationRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["appId"] = o.AppId
 	toSerialize["appProviderId"] = o.AppProviderId
-	toSerialize["appDeploymentZones"] = o.AppDeploymentZones
+	if !isNil(o.AppDeploymentZones) {
+		toSerialize["appDeploymentZones"] = o.AppDeploymentZones
+	}
 	toSerialize["appMetaData"] = o.AppMetaData
 	toSerialize["appQoSProfile"] = o.AppQoSProfile
 	toSerialize["appComponentSpecs"] = o.AppComponentSpecs

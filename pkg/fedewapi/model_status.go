@@ -24,6 +24,7 @@ const (
 	STATUS_TEMPORARY_FAILURE Status = "TEMPORARY_FAILURE"
 	STATUS_AVAILABLE Status = "AVAILABLE"
 	STATUS_LOCKED Status = "LOCKED"
+	STATUS_NOT_AVAILABLE Status = "NOT_AVAILABLE"
 )
 
 // All allowed values of Status enum
@@ -32,6 +33,7 @@ var AllowedStatusEnumValues = []Status{
 	"TEMPORARY_FAILURE",
 	"AVAILABLE",
 	"LOCKED",
+	"NOT_AVAILABLE",
 }
 
 func (v *Status) UnmarshalJSON(src []byte) error {

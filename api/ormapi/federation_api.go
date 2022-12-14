@@ -17,6 +17,7 @@ package ormapi
 import (
 	"time"
 
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/lib/pq"
 )
 
@@ -81,6 +82,8 @@ type FederationConsumer struct {
 	Name string `gorm:"type:citext REFERENCES organizations(name);unique;not null"`
 	// Operator Organization that establishes the federation with a provider
 	OperatorId string `gorm:"type:citext REFERENCES organizations(name);not null"`
+	// Public means any developer will be able to use the cloudlets, otherwise (TODO) allowed developers will need to be added explicitly
+	Public bool
 	// Partner Address
 	PartnerAddr string `gorm:"not null"`
 	// Partner token URL
@@ -209,6 +212,58 @@ type FederatedZoneShareRequest struct {
 	ProviderName string
 	// Self federator zones to be shared/unshared
 	Zones []string
+}
+
+// Consumer images are local images copied to a provider
+type ConsumerImage struct {
+	// ID
+	ID string `gorm:"primary_key"`
+	// Developer organization that owns the image
+	Organization string `gorm:"unique_index:consumerimageindex;type:citext;not null"`
+	// Federation the image is copied to (ConsumerFederation)
+	FederationName string `gorm:"unique_index:consumerimageindex;type:citext;not null"`
+	// Image name
+	Name string `gorm:"unique_index:consumerimageindex;type:text;not null"`
+	// Full path to source image as used in App, i.e. https://vm-registry.domain/org/image.img
+	SourcePath string
+	// Image type (DOCKER, HELM, QCOW2, or OVA)
+	Type string
+	// MD5 checksum for VM and file-based image types, sha256 digest for containers and Helm charts
+	Checksum string
+	// Image status
+	// read only: true
+	Status string
+}
+
+// Provider images are images copied from the consumer
+type ProviderImage struct {
+	// Federation Provider name
+	FederationName string `gorm:"primary_key;type:citext;not null"`
+	// File ID sent by partner
+	FileID string `gorm:"primary_key;type:citext;not null"`
+	// Image path
+	Path string
+	// Image name
+	Name string
+	// Image type (DOCKER, HELM, QCOW2, or OVA)
+	Type string
+	// Partner app provider organization
+	AppProviderId string
+	// MD5 checksum for VM and file-based image types, sha256 digest for containers and Helm charts
+	Checksum string
+	// Image status
+	Status string
+}
+
+// ConsumerApp tracks an App that has been onboarded to the partner
+type ConsumerApp struct {
+	// Region name
+	// required: true
+	Region string
+	// App in region
+	App edgeproto.App
+	// Target federation consumer name
+	FederationName string
 }
 
 func (f *FederationProvider) GetSortString() string {

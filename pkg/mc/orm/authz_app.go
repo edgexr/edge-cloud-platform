@@ -22,6 +22,8 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 func authzCreateApp(ctx context.Context, region, username string, obj *edgeproto.App, resource, action string) error {
@@ -42,37 +44,56 @@ func authzUpdateApp(ctx context.Context, region, username string, obj *edgeproto
 // the image path's org. This assumes someone cannot spoof the DNS
 // address.
 func checkImagePath(ctx context.Context, obj *edgeproto.App) error {
-	if obj.ImagePath == "" {
+	return checkImagePathStrings(ctx, obj.Key.Organization, obj.ImagePath)
+}
+
+func checkImagePathStrings(ctx context.Context, org, imagePath string) error {
+	if imagePath == "" {
 		return nil
 	}
-	u, err := url.Parse(obj.ImagePath)
+	u, err := url.Parse(imagePath)
 	if err != nil {
 		return fmt.Errorf("Failed to parse ImagePath, %v", err)
 	}
 	if u.Scheme == "" {
 		// No scheme specified, causes host to be parsed as path.
 		// Typical for docker URIs that leave out the http scheme.
-		u, err = url.Parse("http://" + obj.ImagePath)
+		u, err = url.Parse("http://" + imagePath)
 		if err != nil {
 			return fmt.Errorf("Failed to parse http:// scheme prepended ImagePath, %v", err)
 		}
 	}
 	if u.Host == "" {
-		return fmt.Errorf("Unable to determine host from ImagePath %s", obj.ImagePath)
+		return fmt.Errorf("Unable to determine host from ImagePath %s", imagePath)
 	}
 
+	// all paths should be of the form
+	// scheme://addr/pathprefix/org/image
 	edgeCloudHosted := false
+	pathPrefix := ""
 	if serverConfig.GitlabAddr != "" {
-		addr := strings.TrimPrefix(serverConfig.GitlabAddr, "http://")
-		addr = strings.TrimPrefix(addr, "https://")
-		if strings.Contains(obj.ImagePath, addr) {
+		addr := util.TrimScheme(serverConfig.GitlabAddr)
+		if strings.Contains(imagePath, addr) {
 			edgeCloudHosted = true
 		}
 	}
 	if serverConfig.ArtifactoryAddr != "" {
-		addr := strings.TrimPrefix(serverConfig.ArtifactoryAddr, "http://")
-		addr = strings.TrimPrefix(addr, "https://")
-		if strings.Contains(obj.ImagePath, addr) {
+		addr := util.TrimScheme(serverConfig.ArtifactoryAddr)
+		if strings.Contains(imagePath, addr) {
+			edgeCloudHosted = true
+			pathPrefix = "artifactory/" + ArtifactoryRepoPrefix
+		}
+	}
+	if serverConfig.VmRegistryAddr != "" {
+		addr := util.TrimScheme(serverConfig.VmRegistryAddr)
+		if strings.Contains(imagePath, addr) {
+			edgeCloudHosted = true
+			pathPrefix = strings.TrimLeft(cloudcommon.VmRegPath, "/")
+		}
+	}
+	if serverConfig.HarborAddr != "" {
+		addr := util.TrimScheme(serverConfig.HarborAddr)
+		if strings.Contains(imagePath, addr) {
 			edgeCloudHosted = true
 		}
 	}
@@ -82,14 +103,9 @@ func checkImagePath(ctx context.Context, obj *edgeproto.App) error {
 	// user could put an IP instead of DNS entry to bypass above check,
 	// but we look up registry perms from Vault, and we shouldn't put
 	// IP addresses into Vault for registries.
-	artPrefix := "artifactory/" + ArtifactoryRepoPrefix
 	path := strings.TrimLeft(u.Path, "/")
-	if strings.HasPrefix(path, artPrefix) {
-		// artifactory path
-		path = strings.TrimPrefix(path, artPrefix)
-	} else {
-		// gitlab path starts with org name
-	}
+	path = strings.TrimPrefix(path, pathPrefix)
+	path = strings.TrimPrefix(path, "/")
 	pathNames := strings.Split(path, "/")
 	if len(pathNames) == 0 {
 		return fmt.Errorf("Empty URL path in ImagePath")
@@ -114,8 +130,8 @@ func checkImagePath(ctx context.Context, obj *edgeproto.App) error {
 		return nil
 	}
 
-	if strings.ToLower(targetOrg) != strings.ToLower(obj.Key.Organization) {
-		return fmt.Errorf("ImagePath %s for Edge Cloud hosted registry using organization '%s' does not match App developer name '%s', must match", obj.ImagePath, targetOrg, obj.Key.Organization)
+	if strings.ToLower(targetOrg) != strings.ToLower(org) {
+		return fmt.Errorf("ImagePath %s for Edge Cloud hosted registry using organization '%s' does not match organization name '%s', must match", imagePath, targetOrg, org)
 	}
 	return nil
 }

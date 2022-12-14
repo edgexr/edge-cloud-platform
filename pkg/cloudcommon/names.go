@@ -142,6 +142,10 @@ var LatencyMetric = "latency-metric"
 var DeviceMetric = "device-metric"
 var CustomMetric = "custom-metric"
 
+// Common API paths
+var VmRegPath = "/storage/v1/artifacts"
+var VmRegPullPath = "/storage/v1/pull"
+
 // Map used to identify which metrics should go to persistent_metrics db. Value represents the measurement creation status
 var EdgeEventsMetrics = map[string]struct{}{
 	LatencyMetric: struct{}{},
@@ -438,4 +442,26 @@ func IsPlatformNode(nodeTypeStr string) bool {
 
 func IsLBNode(nodeTypeStr string) bool {
 	return nodeTypeStr == NodeTypeDedicatedRootLB.String() || nodeTypeStr == NodeTypeSharedRootLB.String()
+}
+
+func GetArtifactOrgPath(org, path string) string {
+	orgpath := "/" + org
+	if path != "" {
+		if path[0] == '/' {
+			orgpath += path
+		} else {
+			orgpath += "/" + path
+		}
+	}
+	return orgpath
+}
+
+func GetArtifactStoragePath(addr, org, path string) string {
+	addr = strings.TrimRight(addr, "/")
+	return addr + VmRegPath + GetArtifactOrgPath(org, path)
+}
+
+func GetArtifactPullPath(addr, org, path string) string {
+	addr = strings.TrimRight(addr, "/")
+	return addr + VmRegPullPath + GetArtifactOrgPath(org, path)
 }

@@ -192,35 +192,6 @@ All URIs are relative to *https://operatorplatform.com/operatorplatform/federati
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*AppProviderResourceManagementApi* | [**CreateResourcePools**](docs/AppProviderResourceManagementApi.md#createresourcepools) | **Post** /{federationContextId}/isv/resource/zone/{zoneId}/appProvider/{appProviderId} | Reserves resources (compute, network and storage)  on a partner OP zone.   ISVs registered with home OP reserves resources on a partner OP zone.
-*AppProviderResourceManagementApi* | [**RemoveISVResPool**](docs/AppProviderResourceManagementApi.md#removeisvrespool) | **Delete** /{federationContextId}/isv/resource/zone/{zoneId}/appProvider/{appProviderId}/pool/{poolId} | Deletes the resource pool reserved by an ISV
-*AppProviderResourceManagementApi* | [**UpdateISVResPool**](docs/AppProviderResourceManagementApi.md#updateisvrespool) | **Patch** /{federationContextId}/isv/resource/zone/{zoneId}/appProvider/{appProviderId}/pool/{poolId} | Updates resources reserved for a pool by an ISV
-*AppProviderResourceManagementApi* | [**ViewISVResPool**](docs/AppProviderResourceManagementApi.md#viewisvrespool) | **Get** /{federationContextId}/isv/resource/zone/{zoneId}/appProvider/{appProviderId} | Retrieves the resource pool reserved by an ISV
-*ApplicationDeploymentManagementApi* | [**GetAllAppInstances**](docs/ApplicationDeploymentManagementApi.md#getallappinstances) | **Get** /{federationContextId}/application/lcm/app/{appId}/appProvider/{appProviderId} | Retrieves all application instance of partner OP
-*ApplicationDeploymentManagementApi* | [**GetAppInstanceDetails**](docs/ApplicationDeploymentManagementApi.md#getappinstancedetails) | **Get** /{federationContextId}/application/lcm/app/{appId}/instance/{appInstanceId}/zone/{zoneId} | Retrieves an application instance details from partner OP.
-*ApplicationDeploymentManagementApi* | [**InstallApp**](docs/ApplicationDeploymentManagementApi.md#installapp) | **Post** /{federationContextId}/application/lcm | Instantiates an application on a partner OP zone.
-*ApplicationDeploymentManagementApi* | [**RemoveApp**](docs/ApplicationDeploymentManagementApi.md#removeapp) | **Delete** /{federationContextId}/application/lcm/app/{appId}/instance/{appInstanceId}/zone/{zoneId} | Terminate an application instance on a partner OP zone.
-*ApplicationOnboardingManagementApi* | [**DeboardApplication**](docs/ApplicationOnboardingManagementApi.md#deboardapplication) | **Delete** /{federationContextId}/application/onboarding/app/{appId}/zone/{zoneId} | Deboards an application from partner OP zones
-*ApplicationOnboardingManagementApi* | [**LockUnlockApplicationZone**](docs/ApplicationOnboardingManagementApi.md#lockunlockapplicationzone) | **Post** /{federationContextId}/application/onboarding/app/{appId}/zoneForbid | Forbid/allow application instantiation on a partner zone
-*ApplicationOnboardingManagementApi* | [**OnboardApplication**](docs/ApplicationOnboardingManagementApi.md#onboardapplication) | **Post** /{federationContextId}/application/onboarding | Submits an application details to a partner OP. Based on the details provided,  partner OP shall do bookkeeping, resource validation and other pre-deployment operations.
-*ApplicationOnboardingManagementApi* | [**OnboardExistingAppNewZones**](docs/ApplicationOnboardingManagementApi.md#onboardexistingappnewzones) | **Post** /{federationContextId}/application/onboarding/app/{appId}/additionalZones | Onboards an existing application to a new zone within partner OP.
-*ApplicationOnboardingManagementApi* | [**UpdateApplication**](docs/ApplicationOnboardingManagementApi.md#updateapplication) | **Patch** /{federationContextId}/application/onboarding/app/{appId} | Updates partner OP about changes in  application compute resource requirements, QOS Profile, associated descriptor or change in associated components
-*ApplicationOnboardingManagementApi* | [**ViewApplication**](docs/ApplicationOnboardingManagementApi.md#viewapplication) | **Get** /{federationContextId}/application/onboarding/app/{appId} | Retrieves application details from partner OP
-*ArtefactManagementApi* | [**GetArtefact**](docs/ArtefactManagementApi.md#getartefact) | **Get** /{federationContextId}/artefact/{artefactId} | Retrieves details about an artefact.
-*ArtefactManagementApi* | [**RemoveArtefact**](docs/ArtefactManagementApi.md#removeartefact) | **Delete** /{federationContextId}/artefact/{artefactId} | Removes an artefact from partner OP.
-*ArtefactManagementApi* | [**RemoveFile**](docs/ArtefactManagementApi.md#removefile) | **Delete** /{federationContextId}/files/{fileId} | Removes an image file from partner OP.
-*ArtefactManagementApi* | [**UploadArtefact**](docs/ArtefactManagementApi.md#uploadartefact) | **Post** /{federationContextId}/artefact | Uploads application artefact  on partner OP. Artefact is a zip file containing  scripts and/or packaging files like Terraform or Helm which are required to create an instance of an application.
-*ArtefactManagementApi* | [**UploadFile**](docs/ArtefactManagementApi.md#uploadfile) | **Post** /{federationContextId}/files | Uploads an image file. Originating OP uses this api to onboard an application image to partner OP.
-*ArtefactManagementApi* | [**ViewFile**](docs/ArtefactManagementApi.md#viewfile) | **Get** /{federationContextId}/files/{fileId} | View an image file from partner OP.
-*AvailabilityZoneInfoSynchronizationApi* | [**GetZoneData**](docs/AvailabilityZoneInfoSynchronizationApi.md#getzonedata) | **Get** /{federationContextId}/zones/{zoneId} | Retrieves details about the computation and network resources that partner OP has reserved for this zone.
-*AvailabilityZoneInfoSynchronizationApi* | [**ZoneSubscribe**](docs/AvailabilityZoneInfoSynchronizationApi.md#zonesubscribe) | **Post** /{federationContextId}/zones | Originating OP informs partner OP that it is willing to access the specified zones  and partner OP shall reserve compute and network resources for these zones.
-*AvailabilityZoneInfoSynchronizationApi* | [**ZoneUnsubscribe**](docs/AvailabilityZoneInfoSynchronizationApi.md#zoneunsubscribe) | **Delete** /{federationContextId}/zones/{zoneId} | Asservate usage of  a partner OP zone. Originating OP informs partner OP that it will no longer access the specified zone.
-*EdgeNodeSharingApi* | [**GetCandidateZones**](docs/EdgeNodeSharingApi.md#getcandidatezones) | **Post** /{federationContextId}/edgenodesharing/edgeDiscovery | Edge discovery procedures towards partner OP over E/WBI. Originating OP request partner OP to provide a list of candidate zones where an application instance can be created. Partner OP applies a set of filtering criteria’s to select candidate zones.
-*FederationManagementApi* | [**CreateFederation**](docs/FederationManagementApi.md#createfederation) | **Post** /partner | Creates one direction federation with partner operator platform.
-*FederationManagementApi* | [**DeleteFederationDetails**](docs/FederationManagementApi.md#deletefederationdetails) | **Delete** /{federationContextId}/partner | Remove existing federation with the partner OP
-*FederationManagementApi* | [**GetFederationDetails**](docs/FederationManagementApi.md#getfederationdetails) | **Get** /{federationContextId}/partner | Retrieves details about the federation context with the partner OP. The response shall provide info about the zones offered by the partner, partner OP network codes, information about edge discovery and LCM service etc.
-*FederationManagementApi* | [**UpdateFederation**](docs/FederationManagementApi.md#updatefederation) | **Patch** /{federationContextId}/partner | API used by the Originating OP towards the partner OP, to update the parameters associated to the existing federation
-*LBORoamingAuthenticationApi* | [**AuthenticateDevice**](docs/LBORoamingAuthenticationApi.md#authenticatedevice) | **Get** /{federationContextId}/roaminguserauth/device/{deviceId}/token/{authToken} | Validates the authenticity of a roaming user from home OP
 
 
 ## Documentation For Models
@@ -228,6 +199,9 @@ Class | Method | HTTP request | Description
  - [CPUArchType](docs/CPUArchType.md)
  - [ClientLocation](docs/ClientLocation.md)
  - [ClientLocationRadLocationInner](docs/ClientLocationRadLocationInner.md)
+ - [CommandLineParams](docs/CommandLineParams.md)
+ - [CompEnvParams](docs/CompEnvParams.md)
+ - [ComponentSpec](docs/ComponentSpec.md)
  - [ComputeResourceInfo](docs/ComputeResourceInfo.md)
  - [CreateResourcePools200Response](docs/CreateResourcePools200Response.md)
  - [CreateResourcePoolsRequest](docs/CreateResourcePoolsRequest.md)
@@ -252,7 +226,6 @@ Class | Method | HTTP request | Description
  - [GetAppInstanceDetails200Response](docs/GetAppInstanceDetails200Response.md)
  - [GetAppInstanceDetails200ResponseAccesspointInfoInner](docs/GetAppInstanceDetails200ResponseAccesspointInfoInner.md)
  - [GetArtefact200Response](docs/GetArtefact200Response.md)
- - [GetArtefact200ResponseArtefactRepoLocation](docs/GetArtefact200ResponseArtefactRepoLocation.md)
  - [GetCandidateZonesRequest](docs/GetCandidateZonesRequest.md)
  - [GetCandidateZonesRequestEdgeDiscoveryFilters](docs/GetCandidateZonesRequestEdgeDiscoveryFilters.md)
  - [GetFederationDetails200Response](docs/GetFederationDetails200Response.md)
@@ -262,10 +235,12 @@ Class | Method | HTTP request | Description
  - [InstallAppRequest](docs/InstallAppRequest.md)
  - [InstallAppRequestZoneInfo](docs/InstallAppRequestZoneInfo.md)
  - [InstanceState](docs/InstanceState.md)
+ - [InterfaceDetails](docs/InterfaceDetails.md)
  - [InvalidParam](docs/InvalidParam.md)
  - [Ipv6Addr](docs/Ipv6Addr.md)
  - [MobileNetworkIds](docs/MobileNetworkIds.md)
  - [OSType](docs/OSType.md)
+ - [ObjectRepoLocation](docs/ObjectRepoLocation.md)
  - [OnboardApplicationRequest](docs/OnboardApplicationRequest.md)
  - [OnboardApplicationRequestAppComponentSpecsInner](docs/OnboardApplicationRequestAppComponentSpecsInner.md)
  - [OnboardApplicationRequestAppDeploymentZonesInner](docs/OnboardApplicationRequestAppDeploymentZonesInner.md)
@@ -273,6 +248,7 @@ Class | Method | HTTP request | Description
  - [OnboardApplicationRequestAppQoSProfile](docs/OnboardApplicationRequestAppQoSProfile.md)
  - [PartnerPostRequest](docs/PartnerPostRequest.md)
  - [PartnerPostRequestZoneStatusInner](docs/PartnerPostRequestZoneStatusInner.md)
+ - [PersistentVolumeDetails](docs/PersistentVolumeDetails.md)
  - [ProblemDetails](docs/ProblemDetails.md)
  - [ResourceReservationDuration](docs/ResourceReservationDuration.md)
  - [ServiceEndpoint](docs/ServiceEndpoint.md)
@@ -282,12 +258,15 @@ Class | Method | HTTP request | Description
  - [UpdateApplicationRequestAppUpdQoSProfile](docs/UpdateApplicationRequestAppUpdQoSProfile.md)
  - [UpdateFederationRequest](docs/UpdateFederationRequest.md)
  - [UpdateISVResPoolRequestInner](docs/UpdateISVResPoolRequestInner.md)
+ - [UploadArtefactRequest](docs/UploadArtefactRequest.md)
+ - [UploadFileRequest](docs/UploadFileRequest.md)
  - [ViewApplication200Response](docs/ViewApplication200Response.md)
  - [ViewApplication200ResponseAppDeploymentZonesInner](docs/ViewApplication200ResponseAppDeploymentZonesInner.md)
  - [ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo](docs/ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo.md)
  - [ViewFile200Response](docs/ViewFile200Response.md)
  - [ViewISVResPool200Response](docs/ViewISVResPool200Response.md)
  - [ViewISVResPool200ResponseReservedFlavoursInner](docs/ViewISVResPool200ResponseReservedFlavoursInner.md)
+ - [VirtImageType](docs/VirtImageType.md)
  - [ZoneDetails](docs/ZoneDetails.md)
  - [ZoneRegisteredData](docs/ZoneRegisteredData.md)
  - [ZoneRegisteredDataNetworkResources](docs/ZoneRegisteredDataNetworkResources.md)
@@ -345,6 +324,5 @@ Each of these functions takes a value of the given basic type and returns a poin
 * `PtrTime`
 
 ## Author
-
 
 

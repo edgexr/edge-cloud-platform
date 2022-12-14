@@ -456,6 +456,15 @@ func (s *Client) UploadArtifact(uri string) (int, error) {
 	return rundata.RetStatus, rundata.RetError
 }
 
+func (s *Client) UploadArtifactFromURL(uri string) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+
+	apiCmd := ormctl.MustGetCommand("UploadArtifactFromURL")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
 func (s *Client) InfoArtifact(uri string) (int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
@@ -474,11 +483,11 @@ func (s *Client) DownloadArtifact(uri string) (int, error) {
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ListArtifacts(uri string) (int, error) {
+func (s *Client) ShowArtifacts(uri string) (int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 
-	apiCmd := ormctl.MustGetCommand("ListArtifacts")
+	apiCmd := ormctl.MustGetCommand("ShowArtifacts")
 	s.ClientRun.Run(apiCmd, &rundata)
 	return rundata.RetStatus, rundata.RetError
 }
@@ -1925,6 +1934,88 @@ func (s *Client) AccessCloudlet(uri string, token string, in *ormapi.RegionExecR
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
+// Generating group Federation
+
+func (s *Client) ShowFederation(uri string, token string, in *cli.MapData) ([]ormapi.FederationConsumer, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []ormapi.FederationConsumer
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowFederation")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) CreateConsumerApp(uri string, token string, in *ormapi.ConsumerApp) (*ormapi.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out ormapi.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("CreateConsumerApp")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) CreateConsumerImage(uri string, token string, in *ormapi.ConsumerImage) (*ormapi.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out ormapi.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("CreateConsumerImage")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) DeleteConsumerImage(uri string, token string, in *ormapi.ConsumerImage) (*ormapi.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out ormapi.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("DeleteConsumerImage")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowConsumerImage(uri string, token string, in *cli.MapData) ([]ormapi.ConsumerImage, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []ormapi.ConsumerImage
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowConsumerImage")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
 // Generating group FederationConsumer
 
 func (s *Client) CreateFederationConsumer(uri string, token string, in *ormapi.FederationConsumer) (*ormapi.Result, int, error) {
@@ -1936,6 +2027,22 @@ func (s *Client) CreateFederationConsumer(uri string, token string, in *ormapi.F
 	rundata.Out = &out
 
 	apiCmd := ormctl.MustGetCommand("CreateFederationConsumer")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) UpdateFederationConsumer(uri string, token string, in *cli.MapData) (*ormapi.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out ormapi.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("UpdateFederationConsumer")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -2048,6 +2155,22 @@ func (s *Client) ShowConsumerZone(uri string, token string, in *cli.MapData) ([]
 	rundata.Out = &out
 
 	apiCmd := ormctl.MustGetCommand("ShowConsumerZone")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowFedConsumerImage(uri string, token string, in *cli.MapData) ([]ormapi.ConsumerImage, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []ormapi.ConsumerImage
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowFedConsumerImage")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -2242,6 +2365,22 @@ func (s *Client) ShowProviderZone(uri string, token string, in *cli.MapData) ([]
 	rundata.Out = &out
 
 	apiCmd := ormctl.MustGetCommand("ShowProviderZone")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowProviderImage(uri string, token string, in *cli.MapData) ([]ormapi.ProviderImage, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []ormapi.ProviderImage
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowProviderImage")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError

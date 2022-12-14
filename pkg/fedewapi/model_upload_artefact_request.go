@@ -32,14 +32,14 @@ type UploadArtefactRequest struct {
 	ArtefactDescription *string `json:"artefactDescription,omitempty"`
 	ArtefactVirtType string `json:"artefactVirtType"`
 	// Name of the file.
-	ArtefactFileName string `json:"artefactFileName"`
+	ArtefactFileName *string `json:"artefactFileName,omitempty"`
 	// Artefacts like Helm charts or Terraform scripts may need compressed format.
-	ArtefactFileFormat string `json:"artefactFileFormat"`
+	ArtefactFileFormat *string `json:"artefactFileFormat,omitempty"`
 	// Type of descriptor present in the artefact.  App provider can either define either a Helm chart or a Terraform script or container spec.
 	ArtefactDescriptorType string `json:"artefactDescriptorType"`
 	ArtefactRepoLocation *ObjectRepoLocation `json:"artefactRepoLocation,omitempty"`
 	// Details about compute, networking and storage requirements for each component of the application. App provider should  define all information needed to instantiate the component. If artefact is being defined at component level  this section should have information just about the component. In case the artefact is being defined at application level  the section should provide details about all the components.
-	ComponentSpec []ComponentSpec `json:"componentSpec,omitempty"`
+	ComponentSpec []ComponentSpec `json:"componentSpec"`
 	// Helm archive or Terraform archive or container spec file.
 	ArtefactFile **os.File `json:"artefactFile,omitempty"`
 }
@@ -48,16 +48,15 @@ type UploadArtefactRequest struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewUploadArtefactRequest(artefactId string, appProviderId string, artefactName string, artefactVersionInfo string, artefactVirtType string, artefactFileName string, artefactFileFormat string, artefactDescriptorType string) *UploadArtefactRequest {
+func NewUploadArtefactRequest(artefactId string, appProviderId string, artefactName string, artefactVersionInfo string, artefactVirtType string, artefactDescriptorType string, componentSpec []ComponentSpec) *UploadArtefactRequest {
 	this := UploadArtefactRequest{}
 	this.ArtefactId = artefactId
 	this.AppProviderId = appProviderId
 	this.ArtefactName = artefactName
 	this.ArtefactVersionInfo = artefactVersionInfo
 	this.ArtefactVirtType = artefactVirtType
-	this.ArtefactFileName = artefactFileName
-	this.ArtefactFileFormat = artefactFileFormat
 	this.ArtefactDescriptorType = artefactDescriptorType
+	this.ComponentSpec = componentSpec
 	return &this
 }
 
@@ -221,52 +220,68 @@ func (o *UploadArtefactRequest) SetArtefactVirtType(v string) {
 	o.ArtefactVirtType = v
 }
 
-// GetArtefactFileName returns the ArtefactFileName field value
+// GetArtefactFileName returns the ArtefactFileName field value if set, zero value otherwise.
 func (o *UploadArtefactRequest) GetArtefactFileName() string {
-	if o == nil {
+	if o == nil || isNil(o.ArtefactFileName) {
 		var ret string
 		return ret
 	}
-
-	return o.ArtefactFileName
+	return *o.ArtefactFileName
 }
 
-// GetArtefactFileNameOk returns a tuple with the ArtefactFileName field value
+// GetArtefactFileNameOk returns a tuple with the ArtefactFileName field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UploadArtefactRequest) GetArtefactFileNameOk() (*string, bool) {
-	if o == nil {
+	if o == nil || isNil(o.ArtefactFileName) {
 		return nil, false
 	}
-	return &o.ArtefactFileName, true
+	return o.ArtefactFileName, true
 }
 
-// SetArtefactFileName sets field value
+// HasArtefactFileName returns a boolean if a field has been set.
+func (o *UploadArtefactRequest) HasArtefactFileName() bool {
+	if o != nil && !isNil(o.ArtefactFileName) {
+		return true
+	}
+
+	return false
+}
+
+// SetArtefactFileName gets a reference to the given string and assigns it to the ArtefactFileName field.
 func (o *UploadArtefactRequest) SetArtefactFileName(v string) {
-	o.ArtefactFileName = v
+	o.ArtefactFileName = &v
 }
 
-// GetArtefactFileFormat returns the ArtefactFileFormat field value
+// GetArtefactFileFormat returns the ArtefactFileFormat field value if set, zero value otherwise.
 func (o *UploadArtefactRequest) GetArtefactFileFormat() string {
-	if o == nil {
+	if o == nil || isNil(o.ArtefactFileFormat) {
 		var ret string
 		return ret
 	}
-
-	return o.ArtefactFileFormat
+	return *o.ArtefactFileFormat
 }
 
-// GetArtefactFileFormatOk returns a tuple with the ArtefactFileFormat field value
+// GetArtefactFileFormatOk returns a tuple with the ArtefactFileFormat field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UploadArtefactRequest) GetArtefactFileFormatOk() (*string, bool) {
-	if o == nil {
+	if o == nil || isNil(o.ArtefactFileFormat) {
 		return nil, false
 	}
-	return &o.ArtefactFileFormat, true
+	return o.ArtefactFileFormat, true
 }
 
-// SetArtefactFileFormat sets field value
+// HasArtefactFileFormat returns a boolean if a field has been set.
+func (o *UploadArtefactRequest) HasArtefactFileFormat() bool {
+	if o != nil && !isNil(o.ArtefactFileFormat) {
+		return true
+	}
+
+	return false
+}
+
+// SetArtefactFileFormat gets a reference to the given string and assigns it to the ArtefactFileFormat field.
 func (o *UploadArtefactRequest) SetArtefactFileFormat(v string) {
-	o.ArtefactFileFormat = v
+	o.ArtefactFileFormat = &v
 }
 
 // GetArtefactDescriptorType returns the ArtefactDescriptorType field value
@@ -325,34 +340,26 @@ func (o *UploadArtefactRequest) SetArtefactRepoLocation(v ObjectRepoLocation) {
 	o.ArtefactRepoLocation = &v
 }
 
-// GetComponentSpec returns the ComponentSpec field value if set, zero value otherwise.
+// GetComponentSpec returns the ComponentSpec field value
 func (o *UploadArtefactRequest) GetComponentSpec() []ComponentSpec {
-	if o == nil || isNil(o.ComponentSpec) {
+	if o == nil {
 		var ret []ComponentSpec
 		return ret
 	}
+
 	return o.ComponentSpec
 }
 
-// GetComponentSpecOk returns a tuple with the ComponentSpec field value if set, nil otherwise
+// GetComponentSpecOk returns a tuple with the ComponentSpec field value
 // and a boolean to check if the value has been set.
 func (o *UploadArtefactRequest) GetComponentSpecOk() ([]ComponentSpec, bool) {
-	if o == nil || isNil(o.ComponentSpec) {
+	if o == nil {
 		return nil, false
 	}
 	return o.ComponentSpec, true
 }
 
-// HasComponentSpec returns a boolean if a field has been set.
-func (o *UploadArtefactRequest) HasComponentSpec() bool {
-	if o != nil && !isNil(o.ComponentSpec) {
-		return true
-	}
-
-	return false
-}
-
-// SetComponentSpec gets a reference to the given []ComponentSpec and assigns it to the ComponentSpec field.
+// SetComponentSpec sets field value
 func (o *UploadArtefactRequest) SetComponentSpec(v []ComponentSpec) {
 	o.ComponentSpec = v
 }
@@ -407,15 +414,17 @@ func (o UploadArtefactRequest) ToMap() (map[string]interface{}, error) {
 		toSerialize["artefactDescription"] = o.ArtefactDescription
 	}
 	toSerialize["artefactVirtType"] = o.ArtefactVirtType
-	toSerialize["artefactFileName"] = o.ArtefactFileName
-	toSerialize["artefactFileFormat"] = o.ArtefactFileFormat
+	if !isNil(o.ArtefactFileName) {
+		toSerialize["artefactFileName"] = o.ArtefactFileName
+	}
+	if !isNil(o.ArtefactFileFormat) {
+		toSerialize["artefactFileFormat"] = o.ArtefactFileFormat
+	}
 	toSerialize["artefactDescriptorType"] = o.ArtefactDescriptorType
 	if !isNil(o.ArtefactRepoLocation) {
 		toSerialize["artefactRepoLocation"] = o.ArtefactRepoLocation
 	}
-	if !isNil(o.ComponentSpec) {
-		toSerialize["componentSpec"] = o.ComponentSpec
-	}
+	toSerialize["componentSpec"] = o.ComponentSpec
 	if !isNil(o.ArtefactFile) {
 		toSerialize["artefactFile"] = o.ArtefactFile
 	}

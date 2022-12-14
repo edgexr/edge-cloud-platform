@@ -23,8 +23,8 @@ type ComponentSpec struct {
 	ComponentName string `json:"componentName"`
 	OsType OSType `json:"osType"`
 	InstSetArch CPUArchType `json:"InstSetArch"`
-	// List of all images associated with the component. Images are uploaded or specified using Upload File apis
-	ImagesPath []string `json:"imagesPath,omitempty"`
+	// List of all images associated with the component. Images are specified using the file identifiers. Partner OP provides these images using file upload api.
+	Images []string `json:"images"`
 	// Number of component instances to be launched.
 	NumOfInstances int32 `json:"numOfInstances"`
 	// How the platform shall handle component failure
@@ -42,11 +42,12 @@ type ComponentSpec struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewComponentSpec(componentName string, osType OSType, instSetArch CPUArchType, numOfInstances int32, restartPolicy string, computeResourceProfile ComputeResourceInfo) *ComponentSpec {
+func NewComponentSpec(componentName string, osType OSType, instSetArch CPUArchType, images []string, numOfInstances int32, restartPolicy string, computeResourceProfile ComputeResourceInfo) *ComponentSpec {
 	this := ComponentSpec{}
 	this.ComponentName = componentName
 	this.OsType = osType
 	this.InstSetArch = instSetArch
+	this.Images = images
 	this.NumOfInstances = numOfInstances
 	this.RestartPolicy = restartPolicy
 	this.ComputeResourceProfile = computeResourceProfile
@@ -133,36 +134,28 @@ func (o *ComponentSpec) SetInstSetArch(v CPUArchType) {
 	o.InstSetArch = v
 }
 
-// GetImagesPath returns the ImagesPath field value if set, zero value otherwise.
-func (o *ComponentSpec) GetImagesPath() []string {
-	if o == nil || isNil(o.ImagesPath) {
+// GetImages returns the Images field value
+func (o *ComponentSpec) GetImages() []string {
+	if o == nil {
 		var ret []string
 		return ret
 	}
-	return o.ImagesPath
+
+	return o.Images
 }
 
-// GetImagesPathOk returns a tuple with the ImagesPath field value if set, nil otherwise
+// GetImagesOk returns a tuple with the Images field value
 // and a boolean to check if the value has been set.
-func (o *ComponentSpec) GetImagesPathOk() ([]string, bool) {
-	if o == nil || isNil(o.ImagesPath) {
+func (o *ComponentSpec) GetImagesOk() ([]string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.ImagesPath, true
+	return o.Images, true
 }
 
-// HasImagesPath returns a boolean if a field has been set.
-func (o *ComponentSpec) HasImagesPath() bool {
-	if o != nil && !isNil(o.ImagesPath) {
-		return true
-	}
-
-	return false
-}
-
-// SetImagesPath gets a reference to the given []string and assigns it to the ImagesPath field.
-func (o *ComponentSpec) SetImagesPath(v []string) {
-	o.ImagesPath = v
+// SetImages sets field value
+func (o *ComponentSpec) SetImages(v []string) {
+	o.Images = v
 }
 
 // GetNumOfInstances returns the NumOfInstances field value
@@ -378,9 +371,7 @@ func (o ComponentSpec) ToMap() (map[string]interface{}, error) {
 	toSerialize["componentName"] = o.ComponentName
 	toSerialize["osType"] = o.OsType
 	toSerialize["InstSetArch"] = o.InstSetArch
-	if !isNil(o.ImagesPath) {
-		toSerialize["imagesPath"] = o.ImagesPath
-	}
+	toSerialize["images"] = o.Images
 	toSerialize["numOfInstances"] = o.NumOfInstances
 	toSerialize["restartPolicy"] = o.RestartPolicy
 	if !isNil(o.CommandLineParams) {
