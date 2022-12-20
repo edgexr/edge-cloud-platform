@@ -657,6 +657,11 @@ func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams *vmla
 		log.SpanLog(ctx, log.DebugLevelInfra, "Skipping populateProductSection for VMApp", "vm", vm.VM.Name)
 		return nil
 	}*/
+	// if the manifest is empty, omit guest customization
+	if vmparams.DeploymentManifest == "" {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Skipping populateProductSection for VMApp with empty Deployment Manifest", "vm", vm.VM.Name)
+		return nil
+	}
 	psl, err := v.populateProductSection(ctx, vm, vmparams, masterIP)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "updateVM populateProductSection failed", "vm", vm.VM.Name, "err", err)
