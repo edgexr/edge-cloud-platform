@@ -658,7 +658,7 @@ func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams *vmla
 		return nil
 	}*/
 	// if the manifest is empty, omit guest customization
-	if vmparams.DeploymentManifest == "" {
+	if vmparams.Role == vmlayer.RoleVMApplication && vmparams.DeploymentManifest == "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Skipping populateProductSection for VMApp with empty Deployment Manifest", "vm", vm.VM.Name)
 		return nil
 	}
