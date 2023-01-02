@@ -80,6 +80,10 @@ func SeedDockerSecret(ctx context.Context, client ssh.Client, clusterInst *edgep
 		log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot get docker registry secret from vault - assume public registry", "err", err)
 		return nil
 	}
+	if auth.AuthType == cloudcommon.NoAuth {
+		log.SpanLog(ctx, log.DebugLevelInfra, "warning, no registry credentials in vault, assume public registry")
+		return nil
+	}
 	if auth.AuthType != cloudcommon.BasicAuth {
 		return fmt.Errorf("auth type for %s is not basic auth type", auth.Hostname)
 	}
