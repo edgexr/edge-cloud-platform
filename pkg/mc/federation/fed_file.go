@@ -22,7 +22,10 @@ const (
 	FileFieldAppProviderId = "appProviderId"
 	FileFieldFileName      = "fileName"
 	FileFieldFileType      = "fileType"
-	FileFieldRepolocation  = "repolocation"
+	FileFieldRepoType      = "repoType"
+	FileFieldImgOSType     = "imgOSType"
+	FileFieldImgArchType   = "imgInsSetArch"
+	FileFieldRepoLocation  = "fileRepoLocation"
 	FileFieldFile          = "file"
 	FileFieldChecksum      = "checksum"
 	ImageStatusReady       = "Ready"
@@ -73,7 +76,8 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 	image.Type = req.PostFormValue(FileFieldFileType)
 	image.Checksum = req.PostFormValue(FileFieldChecksum)
 	image.Status = ImageStatusReceiving
-	repoloc := req.PostFormValue(FileFieldRepolocation)
+	repoType := req.PostFormValue(FileFieldRepoType)
+	repoloc := req.PostFormValue(FileFieldRepoLocation)
 	if image.FileID == "" {
 		return fmt.Errorf("%s is missing", FileFieldFileId)
 	}
@@ -99,7 +103,7 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 		return fmt.Errorf("inline file upload not supported yet, use repolocation instead")
 	}
 	if repoloc == "" {
-		return fmt.Errorf("%s must be specified, inline upload not supported", FileFieldRepolocation)
+		return fmt.Errorf("%s must be specified, inline upload not supported", FileFieldRepoLocation)
 	}
 	src := &fedewapi.ObjectRepoLocation{}
 	err = json.Unmarshal([]byte(repoloc), src)
@@ -108,13 +112,17 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 	}
 	db := p.loggedDB(ctx)
 
+	if src.RepoURL == nil {
+		return fmt.Errorf("repoLocation's repo URL must be specified")
+	}
+
 	// We don't want to have to store and manage all kinds of
 	// external image pull secrets, so if they are specified,
 	// we copy the image in. If partner requests upload we honor it.
-	if src.UserName == nil && src.Password == nil && src.Token == nil && src.RepoType != RepoTypeUpload {
+	if src.UserName == nil && src.Password == nil && src.Token == nil && repoType == RepoTypePublic {
 		// keep as reference
 		image.Status = ImageStatusReady
-		image.Path = src.RepoURL
+		image.Path = *src.RepoURL
 		log.SpanLog(ctx, log.DebugLevelApi, "Saving image as reference", "info", image)
 	} else {
 		log.SpanLog(ctx, log.DebugLevelApi, "Will copy image")
@@ -159,7 +167,7 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 		// the pullspec contains the url to pull the image from,
 		// plus any authentication needed.
 		pullSpec := map[string]string{
-			"url": src.RepoURL,
+			"url": *src.RepoURL,
 		}
 		if src.Token != nil {
 			pullSpec["token"] = *src.Token
@@ -232,7 +240,7 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 
 		args = append(args, "--dest-creds",
 			auth.Username+":"+auth.Password,
-			"docker://"+strings.ToLower(src.RepoURL),
+			"docker://"+strings.ToLower(*src.RepoURL),
 			"docker://"+strings.ToLower(dest))
 		cmd := exec.Command("skopeo", args...)
 		logCmd := cmd.String()

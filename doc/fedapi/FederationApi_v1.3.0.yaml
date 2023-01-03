@@ -14,7 +14,7 @@ info:
     APIs defined in this version of the specification can be categorized into the following areas:
     * __FederationManagement__ - Create and manage directed federation relationship with a partner OP
     * __AvailabilityZoneInfoSynchronization__ - Management of resources of partner OP zones and status updates 
-    * __ArtifactManagement__ - Upload, remove, retrieve and update application descriptors, charts and packages over E/WBI towards a partner OP
+    * __ArtefactManagement__ - Upload, remove, retrieve and update application descriptors, charts and packages over E/WBI towards a partner OP
     * __FileManagement__ - Upload, remove, retrieve and update  application binaries over E/WBI towards a partner OP
     * __ApplicationOnboardingManagement__ - Register, retrieve, update and remove applications over E/WBI towards a partner OP
     * __ApplicationDeploymentManagement__ - Create, update, retrieve and terminate application instances over E/WBI towards a partner OP
@@ -240,8 +240,8 @@ components:
 
     GeoLocation:
       type: string
-      description: "Latitude, Longitude as decimal fraction upto 4 digit precision"
-      pattern: ^([-+]?)([\d]{1,2})(((\.)(\d+)(,)))(\s*)(([-+]?)([\d]{1,3})((\.)(\d+))?)$  
+      description: "Latitude,Longitude as decimal fraction up to 4 digit precision"
+      pattern: ^([-+]?)([\d]{1,2})((((\.)([\d]{1,4}))?(,)))(([-+]?)([\d]{1,3})((\.)([\d]{1,4}))?)$
  
     Mcc:
       type: string
@@ -251,6 +251,11 @@ components:
       type: string
       pattern: '^\d{2,3}$'     
       
+    PoolName:
+      type: string
+      pattern:  ^[A-Za-z0-9][A-Za-z0-9_]{6,30}[A-Za-z0-9]$
+      description: ISV defined name of the resource pool.
+
     PoolId:
       type: string
       pattern:  ^[A-Za-z0-9][A-Za-z0-9_]{6,30}[A-Za-z0-9]$      
@@ -293,7 +298,120 @@ components:
 #
 # STRUCTURED DATA TYPES
 #                
+
+      
+    AppComponentSpecs:
+      description: An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services 
+                          externally or internally.  App providers are required to provide details about all these components, their associated descriptors and their 
+                          DNS names. 
+      type: array
+      items:
+        type: object
+        required:
+          - serviceNameNB
+          - componentname
+          - artefactId
+        properties:
+          serviceNameNB: 
+            type: string
+            pattern:  ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
+            description:  Must be a valid RFC 1035 label name.  This defines the DNS name via which the component can be accessed over NBI. 
+                                 Access via serviceNameNB is restricted on specific ports. Platform shall expose component access externally via this DNS name
+          serviceNameEW: 
+            type: string
+            pattern:  ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
+            description:  Must be a valid RFC 1035 label name.  This defines the DNS name via which the component can be accessed via peer components.
+                                 Access via serviceNameEW is open on all ports.   Platform shall not expose serviceNameEW externally outside edge.
+          componentName:
+            type: string
+            pattern:  ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
+            description: Must be a valid RFC 1035 label name.  Component name must be unique with an application
+          artefactId:
+            $ref:  '#/components/schemas/ArtefactId'    
+      minItems: 1
  
+    AppMetaData:
+      description: Application metadata details
+      type: object
+      required:
+        - appName
+        - version
+        - accessToken
+      properties:
+        appName: 
+          type: string
+          pattern: ^[A-Za-z][A-Za-z0-9_]{7,31}$
+          description: Name of the application.   Application provider define a human readable name for the application 
+        version:
+          type: string
+          pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
+          description: Version info of the application
+        appDescription:
+          type: string
+          minLength: 16
+          maxLength: 256
+          description: Brief application description provided by application provider
+        mobilitySupport:
+          type: boolean
+          default: false
+          description: Indicates if an application is sensitive to user mobility and can be relocated. Default is “FALSE”                       
+        accessToken:
+          type: string
+          pattern: ^[A-Za-z][A-Za-z0-9_]{31,63}$
+          description: An application Access key, to be used with UNI interface to authorize UCs Access to a given application
+        category:
+          type: string
+          enum:
+            - IOT
+            - HEALTH_CARE
+            - GAMING
+            - VIRTUAL_REALITY
+            - SOCIALIZING
+            - SURVELIANCE
+            - ENTERTAINMENT
+            - CONNECTIVITY
+            - PRODUCTIVITY
+            - SECURITY
+            - IDUSTRIAL
+            - EDUCATION
+            - OTHERS    
+          description:  Possible categorization of the application   
+      
+    AppQoSProfile:
+      description: Parameters corresponding to the performance constraints, tenancy details etc.
+      type: object
+      required:
+        - latencyConstraints
+      properties:
+        latencyConstraints:
+          type: string
+          enum:
+            - NONE
+            - LOW
+            - ULTRALOW
+          description: Latency requirements for the application. 
+                              Allowed values (non-standardized) are none, low and ultra-low. Ultra-Low may corresponds to range 15 - 30 msec, 
+                              Low correspond to range 30 - 50 msec. None means 51 and above
+        bandwidthRequired:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Data transfer bandwidth requirement (minimum limit) for the application. It should in Mbits/sec
+        multiUserClients:
+          type: string
+          enum: 
+            - APP_TYPE_SINGLE_USER
+            - APP_TYPE_MULTI_USER
+          default: APP_TYPE_SINGLE_USER
+          description: Single user type application are designed to serve just one client. Multi user type application is designed to serve multiple clients
+        noOfUsersPerAppInst:
+          type: integer
+          default: 1
+          description: Maximum no of clients that can connect to an instance of this application. This parameter is relevant only for application of type multi user
+        appProvisioning:
+          type: boolean
+          default: true                      
+          description: Define if application can be instantiated or not     
     ClientLocation:
       type: object
       minProperties: 1
@@ -601,6 +719,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GpuInfo'
+        fpga:
+          type: integer
+          format: int32
+          description: Number of FPGAs
         vpu:
           type: integer
           description: Number of Intel VPUs available
@@ -674,7 +796,7 @@ components:
           enum:
             - TCP
             - UDP
-            - HTTP/HTTPS
+            - HTTP_HTTPS
           description: Defines the IP transport communication protocol i.e., TCP, UDP or HTTP
         commPort:
           type: integer
@@ -725,19 +847,7 @@ components:
      
     ObjectRepoLocation:       
       type: object
-      required:
-        - repoType
-        - repoURL
       properties:
-        repoType:                 
-          type: string
-          enum:
-            - PRIVATEREPO
-            - PUBLICREPO
-            - UPLOAD
-          description: Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo etc, 
-                              PRIVATEREPO  is used for private repo managed by the application developer,
-                              UPLOAD is for the case when artefact/file is uploaded from MEC web portal.
         repoURL:
           $ref: '#/components/schemas/Uri'
         userName:
@@ -749,7 +859,8 @@ components:
           description:  Password to access the repository
         token:
           type: string          
-          description:  Authorization token to access the repository   
+          description:  Authorization token to access the repository  
+ 
     OSType:
       type: object
       required:
@@ -931,8 +1042,8 @@ components:
       type: object
       required:
         - zoneId
-        - reservedResources
-        - resourceQuotaLimits
+        - reservedComputeResources
+        - computeResourceQuotaLimits
         - flavoursSupported
       properties:
         zoneId:
@@ -1614,6 +1725,7 @@ paths:
                 - artefactVersionInfo
                 - artefactVirtType
                 - artefactDescriptorType
+                - repoType
                 - componentSpec
               properties:
                 artefactId:
@@ -1659,8 +1771,19 @@ paths:
                     - SHELL      
                     - COMPONENTSPEC
                   description: Type of descriptor present in the artefact.  App provider can either define either a Helm chart or a Terraform script or container spec.
+                repoType:
+                  type: string
+                  enum:
+                    - PRIVATEREPO
+                    - PUBLICREPO
+                    - UPLOAD
+                  description: Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO  is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal.  OP should pull the image from ‘repoUrl’ immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
                 artefactRepoLocation:      
                   $ref: '#/components/schemas/ObjectRepoLocation'  
+                artefactFile:
+                  type: string
+                  format: binary
+                  description: Helm archive/Terraform archive/container spec file or Binary image associated with an application component.
                 componentSpec:
                   description: Details about compute, networking and storage requirements for each component of the application.  
                                       App provider should  define all information needed to instantiate the component. 
@@ -1670,10 +1793,6 @@ paths:
                   items:
                      $ref: '#/components/schemas/ComponentSpec'
                   minItems: 1                    
-                artefactFile:        
-                  type: string
-                  format: binary
-                  description: Helm archive or Terraform archive or container spec file.                  
         required: true
       responses:
         '200':
@@ -1728,6 +1847,7 @@ paths:
                   - artefactVersionInfo
                   - artefactVirtType
                   - artefactDescriptorType
+                  - repoType
                 properties:
                   artefactId:
                     $ref:  '#/components/schemas/ArtefactId'         
@@ -1772,6 +1892,13 @@ paths:
                       - SHELL      
                       - COMPONENTSPEC
                     description: Type of descriptor present in the artefact.  App provider can either define either a Helm chart or a Terraform script or container spec.
+                  repoType:
+                    type: string
+                    enum:
+                      - PRIVATEREPO
+                      - PUBLICREPO
+                      - UPLOAD
+                    description: Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO  is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal.  OP should pull the image from ‘repoUrl’ immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
                   artefactRepoLocation:       
                     $ref: '#/components/schemas/ObjectRepoLocation'  
         '400':
@@ -1856,7 +1983,7 @@ paths:
                 - fileType
                 - imgOSType
                 - imgInsSetArch
-                - fileRepoLocation
+                - repoType
               properties:
                 fileId:
                   $ref:  '#/components/schemas/FileId'         
@@ -1884,6 +2011,13 @@ paths:
                   $ref: '#/components/schemas/OSType'
                 imgInsSetArch:
                   $ref: '#/components/schemas/CPUArchType'
+                repoType:
+                  type: string
+                  enum:
+                    - PRIVATEREPO
+                    - PUBLICREPO
+                    - UPLOAD
+                  description: Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO  is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal.  OP should pull the image from ‘repoUrl’ immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
                 fileRepoLocation:
                   $ref: '#/components/schemas/ObjectRepoLocation'                   
                 file:         
@@ -1984,7 +2118,7 @@ paths:
                - fileType
                - imgOSType
                - imgInsSetArch
-               - fileRepolocation
+               - repoType
              properties:
                fileId:
                  $ref:  '#/components/schemas/FileId'         
@@ -2012,6 +2146,13 @@ paths:
                  $ref: '#/components/schemas/OSType'
                imgInsSetArch:
                  $ref: '#/components/schemas/CPUArchType'         
+               repoType:
+                    type: string
+                    enum:
+                      - PRIVATEREPO
+                      - PUBLICREPO
+                      - UPLOAD
+                    description: Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO  is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal.  OP should pull the image from ‘repoUrl’ immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
                fileRepolocation:
                  $ref: '#/components/schemas/ObjectRepoLocation'  
         '400':
@@ -2080,115 +2221,11 @@ paths:
                         $ref:  '#/components/schemas/ZoneIdentifier'
                   minItems: 1
                 appMetaData:
-                  description: Application metadata details
-                  type: object
-                  required:
-                    - appName
-                    - version
-                    - accessToken
-                  properties:
-                    appName: 
-                      type: string
-                      pattern: ^[A-Za-z][A-Za-z0-9_]{7,31}$
-                      description: Name of the application.   Application provider define a human readable name for the application 
-                    version:
-                      type: string
-                      pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
-                      description: Version info of the application
-                    appDescription:
-                      type: string
-                      minLength: 16
-                      maxLength: 256
-                      description: Brief application description provided by application provider
-                    mobilitySupport:
-                      type: boolean
-                      default: false
-                      description: Indicates if an application is sensitive to user mobility and can be relocated. Default is “FALSE”                       
-                    accessToken:
-                      type: string
-                      pattern: ^[A-Za-z][A-Za-z0-9_]{31,63}$
-                      description: An application Access key, to be used with UNI interface to authorize UCs Access to a given application
-                    category:
-                      type: string
-                      enum:
-                        - IOT
-                        - HEALTH_CARE
-                        - GAMING
-                        - VIRTUAL_REALITY
-                        - SOCIALIZING
-                        - SURVELIANCE
-                        - ENTERTAINMENT
-                        - CONNECTIVITY
-                        - PRODUCTIVITY
-                        - SECURITY
-                        - IDUSTRIAL
-                        - EDUCATION
-                        - OTHERS    
-                      description:  Possible categorization of the application                        
+                  $ref:  '#/components/schemas/AppMetaData'                        
                 appQoSProfile:
-                  description: Parameters corresponding to the performance constraints, tenancy details etc.
-                  type: object
-                  required:
-                    - latencyConstraints
-                  properties:
-                    latencyConstraints:
-                      type: string
-                      enum:
-                        - NONE
-                        - LOW
-                        - ULTRALOW
-                      description: Latency requirements for the application. 
-                                          Allowed values (non-standardized) are none, low and ultra-low. Ultra-Low may corresponds to range 15 - 30 msec, 
-                                          Low correspond to range 30 - 50 msec. None means 51 and above
-                    bandwidthRequired:
-                      type: integer
-                      format: int32
-                      minimum: 1
-                      description: Data transfer bandwidth requirement (minimum limit) for the application. It should in Mbits/sec
-                    multiUserClients:
-                      type: string
-                      enum: 
-                        - APP_TYPE_SINGLE_USER
-                        - APP_TYPE_MULTI_USER
-                      default: APP_TYPE_SINGLE_USER
-                      description: Single user type application are designed to serve just one client. Multi user type application is designed to serve multiple clients
-                    noOfUsersPerAppInst:
-                      type: integer
-                      default: 1
-                      description: Maximum no of clients that can connect to an instance of this application. This parameter is relevant only for application of type multi user
-                    appProvisioning:
-                      type: boolean
-                      default: true                      
-                      description: Define if application can be instantiated or not
+                  $ref:  '#/components/schemas/AppQoSProfile'      
                 appComponentSpecs:
-                  description: An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services 
-                                      externally or internally.  App providers are required to provide details about all these components, their associated descriptors and their 
-                                      DNS names. 
-                  type: array
-                  items:
-                    type: object
-                    required:
-                      - serviceNameNB
-                      - componentname
-                      - artefactId
-                    properties:
-                      serviceNameNB: 
-                        type: string
-                        pattern:  ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
-                        description:  Must be a valid RFC 1035 label name.  This defines the DNS name via which the component can be accessed over NBI. 
-                                             Access via serviceNameNB is restricted on specific ports. Platform shall expose component access externally via this DNS name
-                      serviceNameEW: 
-                        type: string
-                        pattern:  ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
-                        description:  Must be a valid RFC 1035 label name.  This defines the DNS name via which the component can be accessed via peer components.
-                                             Access via serviceNameEW is open on all ports.   Platform shall not expose serviceNameEW externally outside edge.
-                      componentName:
-                        type: string
-                        pattern:  ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
-                        description: Must be a valid RFC 1035 label name.  Component name must be unique with an application
-                      artefactId:
-                        $ref:  '#/components/schemas/ArtefactId'    
-                  minItems: 1
+                  $ref:  '#/components/schemas/AppComponentSpecs'  
                 appStatusCallbackLink:
                   $ref: '#/components/schemas/Uri'
       responses:       
@@ -2434,6 +2471,7 @@ paths:
                   - appDeploymentZones
                   - appMetaData
                   - appQoSProfile               
+                  - appComponentSpecs
                 properties:
                   appId:
                     $ref:  '#/components/schemas/AppIdentifier'         
@@ -2451,145 +2489,14 @@ paths:
                         countryCode:
                           $ref:  '#/components/schemas/CountryCode'
                         zoneInfo:
-                          type: object
-                          required:
-                            - zoneId
-                            - flavourId
-                          properties:
-                            zoneId:
-                              $ref:  '#/components/schemas/ZoneIdentifier'
-                            flavourId:
-                              $ref: '#/components/schemas/FlavourId'
-                            resourceConsumption:
-                              type: string
-                              enum:
-                                - RESERVED_RES_SHALL
-                                - RESERVED_RES_PREFER
-                                - RESERVED_RES_AVOID
-                                - RESERVED_RES_FORBID
-                              default: RESERVED_RES_AVOID
-                              description: Specifies if the application can be instantiated using  pre-reserved resource or not.  App provider can pre-reserve
-                                                  a pool of compute resources on each zone.  'RESERVED_RES_SHALL' instruct OP to use only the pre-reserved resources.
-                                                  'RESERVED_RES_PREFER' instruct to first try using  pre-reserved resource, if none available go for non-reserved resources.
-                                                  'RESERVED_RES_AVOID' instruct OP  not to use pre-reserved resource if possible, it is a choice depending upon circumstances
-                                                  'RESERVED_RES_FORBID' instruct OP not to use pre-reserved resources.
-                            resPool:
-                              type: string
-                              pattern:  ^[A-Za-z0-9][A-Za-z0-9_]{6,30}[A-Za-z0-9]$  
-                              description: Resource pool to be used for application instantiation on this zone.  Valid only if IE 'resourceConsumption' is set to
-                                                  'RESERVED_RES_SHALL' or 'RESERVED_RES_PREFER'
+                          $ref:  '#/components/schemas/ZoneIdentifier'
                     minItems: 1
                   appMetaData:
-                    description: Application metadata details
-                    type: object
-                    required:
-                      - appName
-                      - version
-                      - accessToken
-                    properties:
-                      appName: 
-                        type: string
-                        pattern: ^[A-Za-z][A-Za-z0-9_]{7,31}$
-                        description: Name of the application.   Application provider define a human readable name for the application 
-                      version:
-                        type: string
-                        pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
-                        description: Version info of the application
-                      appDescription:
-                        type: string
-                        minLength: 16
-                        maxLength: 256
-                        description: Brief application description provided by application provider
-                      mobilitySupport:
-                        type: boolean
-                        default: false
-                        description: Indicates if an application is sensitive to user mobility and can be relocated. Default is “FALSE”                       
-                      accessToken:
-                        type: string
-                        pattern: ^[A-Za-z][A-Za-z0-9_]{31,63}$
-                        description: An application Access key, to be used with UNI interface to authorize UCs Access to a given application
-                      category:
-                        type: string
-                        enum:
-                          - IOT
-                          - HEALTH_CARE
-                          - GAMING
-                          - VIRTUAL_REALITY
-                          - SOCIALIZING
-                          - SURVELIANCE
-                          - ENTERTAINMENT
-                          - CONNECTIVITY
-                          - PRODUCTIVITY
-                          - SECURITY
-                          - IDUSTRIAL
-                          - EDUCATION
-                          - OTHERS    
-                        description:  Possible categorization of the application                        
+                    $ref: '#/components/schemas/AppMetaData'                 
                   appQoSProfile:
-                    description: Parameters corresponding to the performance constraints, tenancy details etc.
-                    type: object
-                    required:
-                      - latencyConstraints
-                    properties:
-                      latencyConstraints:
-                        type: string
-                        enum:
-                          - NONE
-                          - LOW
-                          - ULTRALOW
-                        description: Latency requirements for the application. 
-                                            Allowed values (non-standardized) are none, low and ultra-low. Ultra-Low may corresponds to range 15 - 30 msec, 
-                                            Low correspond to range 30 - 50 msec. None means 51 and above
-                      bandwidthRequired:
-                        type: integer
-                        format: int32
-                        minimum: 1
-                        description: Data transfer bandwidth requirement (minimum limit) for the application. It should in Mbits/sec
-                      multiUserClients:
-                        type: string
-                        enum: 
-                          - APP_TYPE_SINGLE_USER
-                          - APP_TYPE_MULTI_USER
-                        default: APP_TYPE_SINGLE_USER
-                        description: Single user type application are designed to serve just one client. Multi user type application is designed to serve multiple clients
-                      noOfUsersPerAppInst:
-                        type: integer
-                        default: 1
-                        description: Maximum no of clients that can connect to an instance of this application. This parameter is relevant only for application of type multi user
-                      appProvisioning:
-                        type: boolean
-                        default: true                      
-                        description: Define if application can be instantiated or not
+                    $ref: '#/components/schemas/AppQoSProfile' 
                   appComponentSpecs:
-                    description: An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services 
-                                        externally or internally.  App providers are required to provide details about all these components, their associated descriptors and their 
-                                        DNS names. 
-                    type: array
-                    items:
-                      type: object
-                      required:
-                        - serviceNameNB
-                        - componentname
-                        - artefactId
-                      properties:
-                        serviceNameNB: 
-                          type: string
-                          pattern:  ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
-                          description:  Must be a valid RFC 1035 label name.  This defines the DNS name via which the component can be accessed over NBI. 
-                                               Access via serviceNameNB is restricted on specific ports. Platform shall expose component access externally via this DNS name
-                        serviceNameEW: 
-                          type: string
-                          pattern:  ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
-                          description:  Must be a valid RFC 1035 label name.  This defines the DNS name via which the component can be accessed via peer components.
-                                               Access via serviceNameEW is open on all ports.   Platform shall not expose serviceNameEW externally outside edge.
-                        componentName:
-                          type: string
-                          pattern:  ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
-                          description: Must be a valid RFC 1035 label name.  Component name must be unique with an application
-                        artefactId:
-                          $ref:  '#/components/schemas/ArtefactId'    
-                    minItems: 1
-
+                    $ref: '#/components/schemas/AppComponentSpecs' 
         '400':
             $ref: '#/components/responses/400'
         '401':
@@ -3159,21 +3066,19 @@ paths:
             schema:
               type: object
               required:
-                - poolName
                 - resRequest
                 - resourceReservationCallbackLink
               properties:
-                poolName:
-                  type: string
-                  pattern:  ^[A-Za-z0-9][A-Za-z0-9_]{6,30}[A-Za-z0-9]$      
-                  description: ISV defined name of the resource pool.                   
                 resRequest:
                   description: Compute flavours to be reserved and their time duration
                   type: object
                   required:
+                    - poolName
                     - flavours
                     - reserveDuration
                   properties:
+                    poolName:
+                      $ref: '#/components/schemas/PoolName'
                     flavours:
                       type: array
                       items:
@@ -3207,7 +3112,10 @@ paths:
                type: object
                required:
                  - poolId
+                 - poolName
                properties:        
+                 poolName:
+                    $ref: '#/components/schemas/PoolName'
                  poolId:
                    $ref: '#/components/schemas/PoolId'                   
         
@@ -3324,6 +3232,8 @@ paths:
           content: 
            application/json:
             schema:         
+              type: array
+              items:
                type: object
                required:
                  - poolName
@@ -3331,9 +3241,7 @@ paths:
                  - reservedFlavours
                properties:
                  poolName:
-                   type: string
-                   pattern:  ^[A-Za-z0-9][A-Za-z0-9_]{6,30}[A-Za-z0-9]$      
-                   description: ISV defined name of the resource pool.           
+                      $ref: '#/components/schemas/PoolName'
                  reservedPoolId:
                    $ref: '#/components/schemas/PoolId'                   
                  reservedFlavours:
@@ -3345,7 +3253,7 @@ paths:
                        - count
                      properties:
                        flavourId:
-                         $ref: '#/components/schemas/Flavour'
+                            $ref: '#/components/schemas/FlavourId'
                        count:
                          type: integer
                          format: int32
