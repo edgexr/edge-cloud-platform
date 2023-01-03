@@ -177,9 +177,8 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 		data.AddField(federation.FileFieldChecksum, image.Checksum)
 	}
 
-	repolocation := &fedewapi.ObjectRepoLocation{
-		RepoURL:  image.SourcePath,
-		RepoType: federation.RepoTypePublic,
+	repoLocation := &fedewapi.ObjectRepoLocation{
+		RepoURL: &image.SourcePath,
 	}
 	if inVmReg {
 		// generate a short-lived cookie that is only good
@@ -200,17 +199,19 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 		}
 		cookie, err := GenerateCookie(&user, "", serverConfig.HTTPCookieDomain, config, WithObjectRestriction(parts[1]), WithValidDuration(time.Hour))
 		// add vmreg credentials
-		repolocation.Token = &cookie.Value
-		repolocation.RepoType = federation.RepoTypeUpload
+		repoLocation.Token = &cookie.Value
+		data.AddField(federation.FileFieldRepoType, federation.RepoTypeUpload)
 		log.SpanLog(ctx, log.DebugLevelApi, "upload file request added vm-registry auth token", "object-restriction", parts[1])
 	} else if inHarbor {
 		// add harbor credentials
-		repolocation.UserName = &auth.Username
-		repolocation.Password = &auth.Password
-		repolocation.RepoType = federation.RepoTypeUpload
+		repoLocation.UserName = &auth.Username
+		repoLocation.Password = &auth.Password
+		data.AddField(federation.FileFieldRepoType, federation.RepoTypeUpload)
 		log.SpanLog(ctx, log.DebugLevelApi, "upload file request added harbor basic credentials")
+	} else {
+		data.AddField(federation.FileFieldRepoType, federation.RepoTypePublic)
 	}
-	data.AddField(federation.FileFieldRepolocation, repolocation)
+	data.AddField(federation.FileFieldRepoLocation, repoLocation)
 
 	fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)
 	if err != nil {

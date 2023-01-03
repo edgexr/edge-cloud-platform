@@ -11,7 +11,7 @@ RESTful APIs that allow an OP to share the edge cloud resources and capabilities
 APIs defined in this version of the specification can be categorized into the following areas:
 * __FederationManagement__ - Create and manage directed federation relationship with a partner OP
 * __AvailabilityZoneInfoSynchronization__ - Management of resources of partner OP zones and status updates 
-* __ArtifactManagement__ - Upload, remove, retrieve and update application descriptors, charts and packages over E/WBI towards a partner OP
+* __ArtefactManagement__ - Upload, remove, retrieve and update application descriptors, charts and packages over E/WBI towards a partner OP
 * __FileManagement__ - Upload, remove, retrieve and update  application binaries over E/WBI towards a partner OP
 * __ApplicationOnboardingManagement__ - Register, retrieve, update and remove applications over E/WBI towards a partner OP
 * __ApplicationDeploymentManagement__ - Create, update, retrieve and terminate application instances over E/WBI towards a partner OP
@@ -196,6 +196,9 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [AppComponentSpecsInner](docs/AppComponentSpecsInner.md)
+ - [AppMetaData](docs/AppMetaData.md)
+ - [AppQoSProfile](docs/AppQoSProfile.md)
  - [CPUArchType](docs/CPUArchType.md)
  - [ClientLocation](docs/ClientLocation.md)
  - [ClientLocationRadLocationInner](docs/ClientLocationRadLocationInner.md)
@@ -242,10 +245,7 @@ Class | Method | HTTP request | Description
  - [OSType](docs/OSType.md)
  - [ObjectRepoLocation](docs/ObjectRepoLocation.md)
  - [OnboardApplicationRequest](docs/OnboardApplicationRequest.md)
- - [OnboardApplicationRequestAppComponentSpecsInner](docs/OnboardApplicationRequestAppComponentSpecsInner.md)
  - [OnboardApplicationRequestAppDeploymentZonesInner](docs/OnboardApplicationRequestAppDeploymentZonesInner.md)
- - [OnboardApplicationRequestAppMetaData](docs/OnboardApplicationRequestAppMetaData.md)
- - [OnboardApplicationRequestAppQoSProfile](docs/OnboardApplicationRequestAppQoSProfile.md)
  - [PartnerPostRequest](docs/PartnerPostRequest.md)
  - [PartnerPostRequestZoneStatusInner](docs/PartnerPostRequestZoneStatusInner.md)
  - [PersistentVolumeDetails](docs/PersistentVolumeDetails.md)
@@ -261,11 +261,9 @@ Class | Method | HTTP request | Description
  - [UploadArtefactRequest](docs/UploadArtefactRequest.md)
  - [UploadFileRequest](docs/UploadFileRequest.md)
  - [ViewApplication200Response](docs/ViewApplication200Response.md)
- - [ViewApplication200ResponseAppDeploymentZonesInner](docs/ViewApplication200ResponseAppDeploymentZonesInner.md)
- - [ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo](docs/ViewApplication200ResponseAppDeploymentZonesInnerZoneInfo.md)
  - [ViewFile200Response](docs/ViewFile200Response.md)
- - [ViewISVResPool200Response](docs/ViewISVResPool200Response.md)
- - [ViewISVResPool200ResponseReservedFlavoursInner](docs/ViewISVResPool200ResponseReservedFlavoursInner.md)
+ - [ViewISVResPool200ResponseInner](docs/ViewISVResPool200ResponseInner.md)
+ - [ViewISVResPool200ResponseInnerReservedFlavoursInner](docs/ViewISVResPool200ResponseInnerReservedFlavoursInner.md)
  - [VirtImageType](docs/VirtImageType.md)
  - [ZoneDetails](docs/ZoneDetails.md)
  - [ZoneRegisteredData](docs/ZoneRegisteredData.md)
