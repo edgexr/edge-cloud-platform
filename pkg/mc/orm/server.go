@@ -414,6 +414,8 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	// external authorization for same-site
 	e.GET(root+"/httpauth", HttpAuthorize)
 	e.GET(root+"/loginpage", LoginPage)
+	// get mcctl
+	e.GET(root+"/mcctl", GetMcctl)
 	// swagger:route POST /usercreate User CreateUser
 	// Create User.
 	// Creates a new user and allows them to access and manage resources.
@@ -1447,4 +1449,8 @@ func (s JSONSerializer) Serialize(c echo.Context, i interface{}, indent string) 
 		return fmt.Errorf("Only wrote %d of %d bytes to response", n, len(dat))
 	}
 	return nil
+}
+
+func GetMcctl(c echo.Context) error {
+	return c.File("/usr/bin/mcctl")
 }
