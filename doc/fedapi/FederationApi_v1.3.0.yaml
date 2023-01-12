@@ -1163,6 +1163,17 @@ paths:
       operationId: CreateFederation
       tags:
         - FederationManagement
+      parameters:
+        - in: header
+          name: X-Notify-Token-Url
+          schema:
+            type: string
+            format: URL for oauth2 token endpoint for callback auth
+        - in: header
+          name: X-Notify-Auth
+          schema:
+            type: string
+            format: base64 id:key encoded string of credentials for oauth2 client credential flow for callbacks
       requestBody:
         required: true
         content:
@@ -2314,6 +2325,43 @@ paths:
                     $ref: '#/components/responses/default' 
                     
   /{federationContextId}/application/onboarding/app/{appId}:
+    delete:
+      summary: Deletes an app from partner OP.
+      operationId: DeleteApp
+      tags:
+        - ApplicationOnboardingManagement
+      parameters:
+        - name: federationContextId
+          in: path
+          required: true
+          schema:
+            $ref:  '#/components/schemas/FederationContextId'
+        - name: appId
+          in: path
+          required: true
+          schema:
+           $ref:  '#/components/schemas/AppIdentifier'
+      responses:
+        '200':
+          description: App deletion successful
+        '400':
+            $ref: '#/components/responses/400'
+        '401':
+            $ref: '#/components/responses/401'
+        '404':
+            $ref: '#/components/responses/404'
+        '409':
+            $ref: '#/components/responses/409'
+        '422':
+            $ref: '#/components/responses/422'
+        '500':
+            $ref: '#/components/responses/500'
+        '503':
+            $ref: '#/components/responses/503'
+        '520':
+            $ref: '#/components/responses/520'
+        default:
+            $ref: '#/components/responses/default'
     patch:
       summary: Updates partner OP about changes in  application compute resource requirements, QOS Profile, associated descriptor or change in associated components
       operationId: UpdateApplication

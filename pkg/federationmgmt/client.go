@@ -136,13 +136,19 @@ func NewClient(addr string, tokenSource oauth2.TokenSource) *Client {
 	}
 }
 
-func (c *Client) SendRequest(ctx context.Context, method, endpoint string, reqData, replyData interface{}, headerVals http.Header) (http.Header, error) {
+var okStatuses = map[int]struct{}{
+	http.StatusOK:       struct{}{},
+	http.StatusCreated:  struct{}{},
+	http.StatusAccepted: struct{}{},
+}
+
+func (c *Client) SendRequest(ctx context.Context, method, endpoint string, reqData, replyData interface{}, headerVals http.Header) (int, http.Header, error) {
 	if c.addr == "" {
-		return nil, fmt.Errorf("Missing federation address")
+		return 0, nil, fmt.Errorf("Missing federation address")
 	}
 	token, err := c.tokenSource.Token()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get federation token for %s: %s", c.addr, err)
+		return 0, nil, fmt.Errorf("failed to get federation token for %s: %s", c.addr, err)
 	}
 
 	restClient := &ormclient.Client{
@@ -153,13 +159,13 @@ func (c *Client) SendRequest(ctx context.Context, method, endpoint string, reqDa
 	}
 	requestUrl := fmt.Sprintf("%s%s", c.addr, endpoint)
 	log.SpanLog(ctx, log.DebugLevelApi, "federation send request", "method", method, "url", requestUrl)
-	status, respHeader, err := restClient.HttpJsonSend(method, requestUrl, token.AccessToken, reqData, replyData, headerVals, nil)
+	status, respHeader, err := restClient.HttpJsonSend(method, requestUrl, token.AccessToken, reqData, replyData, headerVals, nil, okStatuses)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "Federation API failed", "method", method, "url", requestUrl, "error", err)
-		return nil, fmt.Errorf("%s %s failed: %s", method, requestUrl, err)
+		return status, nil, fmt.Errorf("%s %s failed: %s", method, requestUrl, err)
 	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("Bad response for %s request to URL %s, status=%s", method, requestUrl, http.StatusText(status))
+	if _, ok := okStatuses[status]; !ok {
+		return status, nil, fmt.Errorf("Bad response for %s request to URL %s, status=%s", method, requestUrl, http.StatusText(status))
 	}
-	return respHeader, nil
+	return status, respHeader, nil
 }

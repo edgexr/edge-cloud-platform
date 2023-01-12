@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 const (
@@ -24,20 +23,37 @@ func init() {
 		Path:         "/auth/federation/consumer/show",
 		ShowFilter:   true,
 	}, {
-		Name:         "CreateConsumerApp",
-		Use:          "createapp",
-		Short:        "Onboard App to partner federation",
-		RequiredArgs: "region federationname " + strings.Join(AppRequiredArgs, " "),
-		Comments:     util.AddMaps(addRegionComment(AppComments), ormapi.ConsumerAppComments),
-		AliasArgs:    strings.Join(AppAliasArgs, " "),
-		SpecialArgs:  &AppSpecialArgs,
+		Name:         "OnboardConsumerApp",
+		Use:          "onboardapp",
+		Short:        "Onboard existing App to partner federation",
+		RequiredArgs: "region federationname appname apporg appvers",
+		Comments:     addRegionComment(ormapi.ConsumerAppComments),
 		ReqData:      &ormapi.ConsumerApp{},
 		ReplyData:    &ormapi.Result{},
-		Path:         "/auth/federation/consumer/app/create",
+		Path:         "/auth/federation/consumer/app/onboard",
+	}, {
+		Name:         "DeboardConsumerApp",
+		Use:          "deboardapp",
+		Short:        "Remove App from partner federation",
+		RequiredArgs: "federationname appname apporg appvers",
+		Comments:     addRegionComment(ormapi.ConsumerAppComments),
+		ReqData:      &ormapi.ConsumerApp{},
+		ReplyData:    &ormapi.Result{},
+		Path:         "/auth/federation/consumer/app/deboard",
+	}, {
+		Name:         "ShowConsumerApp",
+		Use:          "showapps",
+		Short:        "Show Apps onboarded to partner federation",
+		OptionalArgs: "id region federationname appname apporg appvers artefactid status",
+		Comments:     ormapi.ConsumerAppComments,
+		ReqData:      &ormapi.ConsumerApp{},
+		ReplyData:    &[]ormapi.ConsumerApp{},
+		Path:         "/auth/federation/consumer/app/show",
+		ShowFilter:   true,
 	}, {
 		Name:         "CreateConsumerImage",
 		Use:          "createimage",
-		Short:        "Create image on federation partner",
+		Short:        "Create image on partner federation",
 		RequiredArgs: strings.Join(ConsumerImageRequiredArgs, " "),
 		OptionalArgs: strings.Join(ConsumerImageOptionalArgs, " "),
 		Comments:     ormapi.ConsumerImageComments,
@@ -47,7 +63,7 @@ func init() {
 	}, {
 		Name:         "DeleteConsumerImage",
 		Use:          "deleteimage",
-		Short:        "Delete image from federation partner",
+		Short:        "Delete image from partner federation",
 		OptionalArgs: "id organization federationname name",
 		Comments:     ormapi.ConsumerImageComments,
 		ReqData:      &ormapi.ConsumerImage{},
@@ -56,7 +72,7 @@ func init() {
 	}, {
 		Name:         "ShowConsumerImage",
 		Use:          "showimages",
-		Short:        "Show images on federation partner",
+		Short:        "Show images on partner federation",
 		OptionalArgs: strings.Join(ConsumerImageShowArgs, " "),
 		Comments:     ormapi.ConsumerImageComments,
 		ReqData:      &ormapi.ConsumerImage{},

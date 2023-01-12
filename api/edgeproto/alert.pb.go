@@ -1157,6 +1157,8 @@ func EnumDecodeHook(from, to reflect.Type, data interface{}) (interface{}, error
 		return ParseDeleteType(data)
 	case reflect.TypeOf(AccessType(0)):
 		return ParseAccessType(data)
+	case reflect.TypeOf(GpuType(0)):
+		return ParseGpuType(data)
 	case reflect.TypeOf(PlatformType(0)):
 		return ParsePlatformType(data)
 	case reflect.TypeOf(InfraApiAccess(0)):
@@ -1221,6 +1223,8 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 		return "DeleteType", ", valid values are one of NoAutoDelete, AutoDelete, or 0, 1", true
 	case reflect.TypeOf(AccessType(0)):
 		return "AccessType", ", valid values are one of DefaultForDeployment, Direct, LoadBalancer, or 0, 1, 2", true
+	case reflect.TypeOf(GpuType(0)):
+		return "GpuType", ", valid values are one of None, Any, Vgpu, Pci, or 0, 1, 2, 3", true
 	case reflect.TypeOf(PlatformType(0)):
 		return "PlatformType", ", valid values are one of Fake, Dind, Openstack, Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd, K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool, K8SOperator, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18", true
 	case reflect.TypeOf(InfraApiAccess(0)):

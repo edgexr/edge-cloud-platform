@@ -17,7 +17,6 @@ package ormapi
 import (
 	"time"
 
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/lib/pq"
 )
 
@@ -257,13 +256,53 @@ type ProviderImage struct {
 
 // ConsumerApp tracks an App that has been onboarded to the partner
 type ConsumerApp struct {
+	// Unique ID, acts as both the App and Artefact IDs
+	ID string `gorm:"primary_key"`
 	// Region name
 	// required: true
 	Region string
-	// App in region
-	App edgeproto.App
+	// App name in region
+	AppName string
+	// App org in region
+	AppOrg string
+	// App version in region
+	AppVers string
 	// Target federation consumer name
 	FederationName string
+	// Status
+	// read only: true
+	Status string
+}
+
+// Tracks an App created in the Provider's regions for an Artefact
+type ProviderArtefact struct {
+	// Federation Provider name
+	FederationName string `gorm:"primary_key;type:citext;not null"`
+	// Artefact ID send by partner
+	ArtefactID string `gorm:"primary_key;type:text;not null"`
+	// App name in region
+	AppName string
+	// App version in region
+	AppVers string
+	// App provider ID
+	AppProviderId string
+	// Virtualization Type
+	VirtType string
+	// Descriptor Type
+	DescType string
+}
+
+type ProviderApp struct {
+	// Federation Provider name
+	FederationName string `gorm:"primary_key;type:citext;not null"`
+	// App ID send by partner, also is the artefact ID
+	AppID string `gorm:"primary_key;type:text;not null"`
+	// App provider ID
+	AppProviderId string
+	// Artefact IDs
+	ArtefactIds pq.StringArray `gorm:"type:text[]"`
+	// Restricted Zones
+	DeploymentZones pq.StringArray `gorm:"type:text[]"`
 }
 
 func (f *FederationProvider) GetSortString() string {

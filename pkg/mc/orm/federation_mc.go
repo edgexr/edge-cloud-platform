@@ -164,6 +164,11 @@ func InitFederationAPIConstraints(db *gorm.DB) error {
 	err = setForeignKey(db, &ormapi.ProviderImage{}, "federation_name", &ormapi.FederationProvider{}, "name", err)
 	err = setForeignKey(db, &ormapi.ConsumerImage{}, "federation_name", &ormapi.FederationConsumer{}, "name", err)
 	err = setForeignKey(db, &ormapi.ConsumerImage{}, "organization", &ormapi.Organization{}, "name", err)
+	// region is explicitly not part of the unique key because we can't
+	// create partner apps for the same app from different regions, can only
+	// create one.
+	cerr := setCompositeUniqueConstraint(db, "consumer_apps", "consumer_apps_unique_key", []string{"app_name", "app_org", "app_vers", "federation_name"})
+	err = accumulateErr(err, cerr)
 	return err
 }
 
@@ -1217,7 +1222,7 @@ func ShareProviderZone(c echo.Context) (reterr error) {
 			OperationType: "ADD_ZONES",
 			AddZones:      zoneDetails,
 		}
-		_, err = fedClient.SendRequest(ctx, "POST", "", &req, nil, nil)
+		_, _, err = fedClient.SendRequest(ctx, "POST", "", &req, nil, nil)
 		if err != nil {
 			return fmt.Errorf("failed to notify partner: %s", err)
 		}
@@ -1295,7 +1300,7 @@ func UnshareProviderZone(c echo.Context) error {
 			OperationType: "REMOVE_ZONES",
 			RemoveZones:   rmZones,
 		}
-		_, err = fedClient.SendRequest(ctx, "POST", "", &req, nil, nil)
+		_, _, err = fedClient.SendRequest(ctx, "POST", "", &req, nil, nil)
 		if err != nil {
 			return fmt.Errorf("failed to notify partner: %s", err)
 		}
@@ -1502,7 +1507,7 @@ func registerFederationConsumer(ctx context.Context, consumer *ormapi.Federation
 	headerVals := http.Header{}
 	headerVals.Add(federation.HeaderXNotifyAuth, auth)
 	headerVals.Add(federation.HeaderXNotifyTokenUrl, serverConfig.ConsoleAddr+federation.TokenUrl)
-	_, err = fedClient.SendRequest(ctx, "POST", "/"+federation.ApiRoot+"/partner", &req, &res, headerVals)
+	_, _, err = fedClient.SendRequest(ctx, "POST", "/"+federation.ApiRoot+"/partner", &req, &res, headerVals)
 	if err != nil {
 		return err
 	}
@@ -1559,7 +1564,7 @@ func deregisterFederationConsumer(ctx context.Context, consumer *ormapi.Federati
 	}
 
 	apiPath := fmt.Sprintf("/%s/%s/partner", federation.ApiRoot, consumer.FederationContextId)
-	_, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
+	_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
 	if err != nil {
 		return err
 	}

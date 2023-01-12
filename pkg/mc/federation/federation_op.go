@@ -47,15 +47,16 @@ const (
 	// Path params
 	PathVarFederationContextId = "federationContextId"
 	PathVarZoneId              = "zoneid"
-	PathVarAppId               = "appid"
-	PathVarAppInstId           = "appinstid"
-	PathVarProviderId          = "appproviderid"
-	PathVarPoolId              = "poolid"
+	//PathVarAppId               = "appid" // TODO: inconsistent callback parameters
+	PathVarAppInstId  = "appinstid"
+	PathVarProviderId = "appproviderid"
+	PathVarPoolId     = "poolid"
 
 	// callback urls in UriTemplate (RFC6570) format
-	PartnerNotifyPath      = "/notify/{" + PathVarFederationContextId + "}"
-	PartnerZoneNotifyPath  = "/notify/{" + PathVarFederationContextId + "}/zones/{" + PathVarZoneId + "}"
-	PartnerAppOnNotifyPath = "/notify/{" + PathVarFederationContextId + "}/application/onboarding/app/{" + PathVarAppId + "}"
+	PartnerNotifyPath     = "/notify/{" + PathVarFederationContextId + "}"
+	PartnerZoneNotifyPath = "/notify/{" + PathVarFederationContextId + "}/zones/{" + PathVarZoneId + "}"
+	PartnerAppNotifyPath  = "/notify/{" + PathVarFederationContextId + "}/application/onboarding/app/"
+	//PartnerAppNotifyPath  = "/notify/{" + PathVarFederationContextId + "}/application/onboarding/app/{" + PathVarAppId + "}" // TODO: inconsistent callback parameters
 
 	BadAuthDelay   = 3 * time.Second
 	AllAppsVersion = "1.0"
@@ -100,6 +101,7 @@ func (p *PartnerApi) InitAPIs(e *echo.Echo) {
 
 	e.POST(ApiRoot+ormutil.NewUriTemplate(PartnerNotifyPath).EchoPath(), p.PartnerNotify)
 	e.POST(ApiRoot+ormutil.NewUriTemplate(PartnerZoneNotifyPath).EchoPath(), p.PartnerZoneNotify)
+	e.POST(ApiRoot+ormutil.NewUriTemplate(PartnerAppNotifyPath).EchoPath(), p.PartnerAppNotify)
 }
 
 func (p *PartnerApi) lookupProvider(c echo.Context, federationContextId FederationContextId) (*ormapi.FederationProvider, error) {
@@ -183,7 +185,7 @@ func (p *PartnerApi) ConsumerPartnerClient(ctx context.Context, consumer *ormapi
 // Remote partner federator requests to create the federation, which
 // allows its developers and subscribers to run their applications
 // on our cloudlets
-func (p *PartnerApi) CreateFederation(c echo.Context) (reterr error) {
+func (p *PartnerApi) CreateFederation(c echo.Context, params CreateFederationParams) (reterr error) {
 	ctx := ormutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, "")

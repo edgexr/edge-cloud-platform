@@ -1,0 +1,46 @@
+--- FederationApi_v1.3.0.yaml.last	2023-01-10 21:38:19.612143000 -0800
++++ FederationApi_v1.3.0.yaml	2023-01-10 21:40:43.552143000 -0800
+@@ -2314,6 +2314,43 @@
+                     $ref: '#/components/responses/default' 
+                     
+   /{federationContextId}/application/onboarding/app/{appId}:
++    delete:
++      summary: Deletes an app from partner OP.
++      operationId: DeleteApp
++      tags:
++        - ApplicationOnboardingManagement
++      parameters:
++        - name: federationContextId
++          in: path
++          required: true
++          schema:
++            $ref:  '#/components/schemas/FederationContextId'
++        - name: appId
++          in: path
++          required: true
++          schema:
++           $ref:  '#/components/schemas/AppIdentifier'
++      responses:
++        '200':
++          description: App deletion successful
++        '400':
++            $ref: '#/components/responses/400'
++        '401':
++            $ref: '#/components/responses/401'
++        '404':
++            $ref: '#/components/responses/404'
++        '409':
++            $ref: '#/components/responses/409'
++        '422':
++            $ref: '#/components/responses/422'
++        '500':
++            $ref: '#/components/responses/500'
++        '503':
++            $ref: '#/components/responses/503'
++        '520':
++            $ref: '#/components/responses/520'
++        default:
++            $ref: '#/components/responses/default'
+     patch:
+       summary: Updates partner OP about changes in  application compute resource requirements, QOS Profile, associated descriptor or change in associated components
+       operationId: UpdateApplication

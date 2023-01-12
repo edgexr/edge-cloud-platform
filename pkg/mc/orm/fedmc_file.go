@@ -218,7 +218,7 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 		return err
 	}
 	apiPath := fmt.Sprintf("/%s/%s/files", federation.ApiRoot, consumer.FederationContextId)
-	_, err = fedClient.SendRequest(ctx, http.MethodPost, apiPath, data, nil, nil)
+	_, _, err = fedClient.SendRequest(ctx, http.MethodPost, apiPath, data, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -268,7 +268,7 @@ func DeleteConsumerImage(c echo.Context) error {
 		return err
 	}
 	apiPath := fmt.Sprintf("/%s/%s/files/%s", federation.ApiRoot, consumer.FederationContextId, image.ID)
-	_, err = fedClient.SendRequest(ctx, http.MethodDelete, apiPath, nil, nil, nil)
+	_, _, err = fedClient.SendRequest(ctx, http.MethodDelete, apiPath, nil, nil, nil)
 	if err != nil {
 		return err
 	}

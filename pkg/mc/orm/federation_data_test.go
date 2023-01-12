@@ -5,6 +5,7 @@ import (
 
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/stretchr/testify/require"
 )
@@ -35,18 +36,20 @@ func getConsApps(org string) []edgeproto.App {
 			Name:         "dockerapp",
 			Version:      "1.0.0",
 		},
-		ImageType: edgeproto.ImageType_IMAGE_TYPE_DOCKER,
-		ImagePath: "org/image:v1.3.0",
-		Md5Sum:    "sha256:209f09fg090923",
+		ImageType:  edgeproto.ImageType_IMAGE_TYPE_DOCKER,
+		ImagePath:  "org/image:v1.3.0",
+		Md5Sum:     "sha256:209f09fg090923",
+		Deployment: cloudcommon.DeploymentTypeKubernetes,
 	}, {
 		Key: edgeproto.AppKey{
 			Organization: org,
 			Name:         "vmapp",
 			Version:      "1.0.0",
 		},
-		ImageType: edgeproto.ImageType_IMAGE_TYPE_QCOW,
-		ImagePath: "https://vm.com/org/image.img",
-		Md5Sum:    "309fa098fb0983309",
+		ImageType:  edgeproto.ImageType_IMAGE_TYPE_QCOW,
+		ImagePath:  "https://vm.com/org/image.img",
+		Md5Sum:     "309fa098fb0983309",
+		Deployment: cloudcommon.DeploymentTypeVM,
 	}}
 }
 

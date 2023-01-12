@@ -15,7 +15,7 @@ import (
 type ServerInterface interface {
 	// Creates one direction federation with partner operator platform.
 	// (POST /partner)
-	CreateFederation(ctx echo.Context) error
+	CreateFederation(ctx echo.Context, params CreateFederationParams) error
 	// Instantiates an application on a partner OP zone.
 	// (POST /{federationContextId}/application/lcm)
 	InstallApp(ctx echo.Context, federationContextId FederationContextId) error
@@ -31,6 +31,9 @@ type ServerInterface interface {
 	// Submits an application details to a partner OP. Based on the details provided,  partner OP shall do bookkeeping, resource validation and other pre-deployment operations.
 	// (POST /{federationContextId}/application/onboarding)
 	OnboardApplication(ctx echo.Context, federationContextId FederationContextId) error
+	// Deletes an app from partner OP.
+	// (DELETE /{federationContextId}/application/onboarding/app/{appId})
+	DeleteApp(ctx echo.Context, federationContextId FederationContextId, appId AppIdentifier) error
 	// Retrieves application details from partner OP
 	// (GET /{federationContextId}/application/onboarding/app/{appId})
 	ViewApplication(ctx echo.Context, federationContextId FederationContextId, appId AppIdentifier) error
@@ -113,8 +116,43 @@ func (w *ServerInterfaceWrapper) CreateFederation(ctx echo.Context) error {
 
 	ctx.Set(OAuth2ClientCredentialsScopes, []string{"fed-mgmt"})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateFederationParams
+
+	headers := ctx.Request().Header
+	// ------------- Optional header parameter "X-Notify-Token-Url" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Notify-Token-Url")]; found {
+		var XNotifyTokenUrl string
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Notify-Token-Url, got %d", n))
+		}
+
+		err = runtime.BindStyledParameterWithLocation("simple", false, "X-Notify-Token-Url", runtime.ParamLocationHeader, valueList[0], &XNotifyTokenUrl)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Notify-Token-Url: %s", err))
+		}
+
+		params.XNotifyTokenUrl = &XNotifyTokenUrl
+	}
+	// ------------- Optional header parameter "X-Notify-Auth" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Notify-Auth")]; found {
+		var XNotifyAuth string
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Notify-Auth, got %d", n))
+		}
+
+		err = runtime.BindStyledParameterWithLocation("simple", false, "X-Notify-Auth", runtime.ParamLocationHeader, valueList[0], &XNotifyAuth)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Notify-Auth: %s", err))
+		}
+
+		params.XNotifyAuth = &XNotifyAuth
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.CreateFederation(ctx)
+	err = w.Handler.CreateFederation(ctx, params)
 	return err
 }
 
@@ -269,6 +307,32 @@ func (w *ServerInterfaceWrapper) OnboardApplication(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.OnboardApplication(ctx, federationContextId)
+	return err
+}
+
+// DeleteApp converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteApp(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "federationContextId" -------------
+	var federationContextId FederationContextId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "federationContextId", runtime.ParamLocationPath, ctx.Param("federationContextId"), &federationContextId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter federationContextId: %s", err))
+	}
+
+	// ------------- Path parameter "appId" -------------
+	var appId AppIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "appId", runtime.ParamLocationPath, ctx.Param("appId"), &appId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter appId: %s", err))
+	}
+
+	ctx.Set(OAuth2ClientCredentialsScopes, []string{"fed-mgmt"})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteApp(ctx, federationContextId, appId)
 	return err
 }
 
@@ -912,6 +976,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/:federationContextId/application/lcm/app/:appId/instance/:appInstanceId/zone/:zoneId", wrapper.RemoveApp)
 	router.GET(baseURL+"/:federationContextId/application/lcm/app/:appId/instance/:appInstanceId/zone/:zoneId", wrapper.GetAppInstanceDetails)
 	router.POST(baseURL+"/:federationContextId/application/onboarding", wrapper.OnboardApplication)
+	router.DELETE(baseURL+"/:federationContextId/application/onboarding/app/:appId", wrapper.DeleteApp)
 	router.GET(baseURL+"/:federationContextId/application/onboarding/app/:appId", wrapper.ViewApplication)
 	router.PATCH(baseURL+"/:federationContextId/application/onboarding/app/:appId", wrapper.UpdateApplication)
 	router.POST(baseURL+"/:federationContextId/application/onboarding/app/:appId/additionalZones", wrapper.OnboardExistingAppNewZones)

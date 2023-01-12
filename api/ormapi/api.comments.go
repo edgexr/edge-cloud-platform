@@ -679,7 +679,30 @@ var ProviderImageComments = map[string]string{
 }
 
 var ConsumerAppComments = map[string]string{
+	"id":             `Unique ID`,
 	"region":         `Region name`,
-	"app":            `App in region`,
+	"appname":        `App name in region`,
+	"apporg":         `App org in region`,
+	"appvers":        `App version in region`,
 	"federationname": `Target federation consumer name`,
+	"artefactid":     `ID of remote artefact for App`,
+	"status":         `Status`,
+}
+
+var ProviderArtefactComments = map[string]string{
+	"federationname": `Federation Provider name`,
+	"artefactid":     `Artefact ID send by partner`,
+	"appname":        `App name in region`,
+	"appvers":        `App version in region`,
+	"appproviderid":  `App provider ID`,
+	"virttype":       `Virtualization Type`,
+	"desctype":       `Descriptor Type`,
+}
+
+var ProviderAppComments = map[string]string{
+	"federationname":  `Federation Provider name`,
+	"appid":           `App ID send by partner, also is the artefact ID`,
+	"appproviderid":   `App provider ID`,
+	"artefactids":     `Artefact IDs`,
+	"deploymentzones": `Restricted Zones`,
 }

@@ -110,6 +110,9 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 			&ormapi.ConsumerZone{},
 			&ormapi.ConsumerImage{},
 			&ormapi.ProviderImage{},
+			&ormapi.ConsumerApp{},
+			&ormapi.ProviderArtefact{},
+			&ormapi.ProviderApp{},
 		).Error
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "automigrate", "err", err)
@@ -527,7 +530,7 @@ func setCompositeUniqueConstraint(db *gorm.DB, tableName, constraintName string,
 	if constraintName == "" {
 		return fmt.Errorf("setCompositeUniqueConstraint: multi-column composite unique must specify constraintName as it is specified in gorm field annotation for %s(%s)", tableName, strings.Join(fields, ","))
 	}
-	cmd := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (%s);", tableName, constraintName, strings.Join(fields, "."))
+	cmd := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (%s);", tableName, constraintName, strings.Join(fields, ","))
 	err := db.Exec(cmd).Error
 	if err != nil && !strings.Contains(err.Error(), "already exists") {
 		return err

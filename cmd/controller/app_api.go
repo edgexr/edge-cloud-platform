@@ -425,6 +425,15 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	}
 
 	flavor := &edgeproto.Flavor{}
+	if in.DefaultFlavor.Name == "" && in.ServerlessConfig != nil {
+		// infer flavor from serverless config
+		flavor, err := s.all.flavorApi.getFlavorForServerlessConfig(ctx, in.ServerlessConfig)
+		if err == nil && flavor != nil {
+			in.DefaultFlavor = flavor.Key
+		} else {
+			log.SpanLog(ctx, log.DebugLevelApi, "Unable to get flavor match for serverless config", "config", *in.ServerlessConfig, "err", err)
+		}
+	}
 	if in.DefaultFlavor.Name == "" {
 		return fmt.Errorf("Default flavor must be specified")
 	}

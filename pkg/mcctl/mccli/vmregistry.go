@@ -239,7 +239,7 @@ func (s *RootCommand) listArtifacts(c *cli.Command, args []string) error {
 		queryParams["pathfilter"] = pathFilter
 	}
 	output := []ormapi.ArtifactObject{}
-	st, _, err := s.client.HttpJsonSend("GET", uri, s.token, nil, &output, nil, queryParams)
+	st, _, err := s.client.HttpJsonSend("GET", uri, s.token, nil, &output, nil, queryParams, nil)
 	return check(c, st, err, &output)
 }
 

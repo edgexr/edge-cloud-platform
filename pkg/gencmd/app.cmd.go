@@ -707,6 +707,10 @@ var AppOptionalArgs = []string{
 	"serverlessconfig.vcpus",
 	"serverlessconfig.ram",
 	"serverlessconfig.minreplicas",
+	"serverlessconfig.gpuconfig.type",
+	"serverlessconfig.gpuconfig.model",
+	"serverlessconfig.gpuconfig.numgpu",
+	"serverlessconfig.gpuconfig.ram",
 	"vmappostype",
 	"alertpolicies",
 	"qossessionprofile",
@@ -757,14 +761,18 @@ var AppComments = map[string]string{
 	"requiredoutboundconnections:#.portrangemin": "TCP or UDP port range start",
 	"requiredoutboundconnections:#.portrangemax": "TCP or UDP port range end",
 	"requiredoutboundconnections:#.remotecidr":   "Remote CIDR X.X.X.X/X",
-	"allowserverless":              "App is allowed to deploy as serverless containers",
-	"serverlessconfig.vcpus":       "Virtual CPUs allocation per container when serverless, may be decimal in increments of 0.001",
-	"serverlessconfig.ram":         "RAM allocation in megabytes per container when serverless",
-	"serverlessconfig.minreplicas": "Minimum number of replicas when serverless",
-	"vmappostype":                  "OS Type for VM Apps, one of Unknown, Linux, Windows10, Windows2012, Windows2016, Windows2019",
-	"alertpolicies":                "Alert Policies, specify alertpolicies:empty=true to clear",
-	"qossessionprofile":            "Qualifier for the requested latency profile, one of NoPriority, LowLatency, ThroughputDownS, ThroughputDownM, ThroughputDownL",
-	"qossessionduration":           "Session duration in seconds. Maximal value of 24 hours is used if not set",
+	"allowserverless":                   "App is allowed to deploy as serverless containers",
+	"serverlessconfig.vcpus":            "Virtual CPUs allocation per container when serverless, may be decimal in increments of 0.001",
+	"serverlessconfig.ram":              "RAM allocation in megabytes per container when serverless",
+	"serverlessconfig.minreplicas":      "Minimum number of replicas when serverless",
+	"serverlessconfig.gpuconfig.type":   "GPU Type, one of None, Any, Vgpu, Pci",
+	"serverlessconfig.gpuconfig.model":  "Model name or vgpu type",
+	"serverlessconfig.gpuconfig.numgpu": "Number of instances",
+	"serverlessconfig.gpuconfig.ram":    "required memory in megabytes",
+	"vmappostype":                       "OS Type for VM Apps, one of Unknown, Linux, Windows10, Windows2012, Windows2016, Windows2019",
+	"alertpolicies":                     "Alert Policies, specify alertpolicies:empty=true to clear",
+	"qossessionprofile":                 "Qualifier for the requested latency profile, one of NoPriority, LowLatency, ThroughputDownS, ThroughputDownM, ThroughputDownL",
+	"qossessionduration":                "Session duration in seconds. Maximal value of 24 hours is used if not set",
 }
 var AppSpecialArgs = map[string]string{
 	"alertpolicies":    "StringArray",
@@ -776,14 +784,37 @@ var ServerlessConfigOptionalArgs = []string{
 	"vcpus",
 	"ram",
 	"minreplicas",
+	"gpuconfig.type",
+	"gpuconfig.model",
+	"gpuconfig.numgpu",
+	"gpuconfig.ram",
 }
 var ServerlessConfigAliasArgs = []string{}
 var ServerlessConfigComments = map[string]string{
-	"vcpus":       "Virtual CPUs allocation per container when serverless, may be decimal in increments of 0.001",
-	"ram":         "RAM allocation in megabytes per container when serverless",
-	"minreplicas": "Minimum number of replicas when serverless",
+	"vcpus":            "Virtual CPUs allocation per container when serverless, may be decimal in increments of 0.001",
+	"ram":              "RAM allocation in megabytes per container when serverless",
+	"minreplicas":      "Minimum number of replicas when serverless",
+	"gpuconfig.type":   "GPU Type, one of None, Any, Vgpu, Pci",
+	"gpuconfig.model":  "Model name or vgpu type",
+	"gpuconfig.numgpu": "Number of instances",
+	"gpuconfig.ram":    "required memory in megabytes",
 }
 var ServerlessConfigSpecialArgs = map[string]string{}
+var GpuConfigRequiredArgs = []string{}
+var GpuConfigOptionalArgs = []string{
+	"type",
+	"model",
+	"numgpu",
+	"ram",
+}
+var GpuConfigAliasArgs = []string{}
+var GpuConfigComments = map[string]string{
+	"type":   "GPU Type, one of None, Any, Vgpu, Pci",
+	"model":  "Model name or vgpu type",
+	"numgpu": "Number of instances",
+	"ram":    "required memory in megabytes",
+}
+var GpuConfigSpecialArgs = map[string]string{}
 var AppAutoProvPolicyRequiredArgs = []string{
 	"apporg",
 	"appname",
@@ -860,6 +891,10 @@ var DeploymentCloudletRequestOptionalArgs = []string{
 	"app.serverlessconfig.vcpus",
 	"app.serverlessconfig.ram",
 	"app.serverlessconfig.minreplicas",
+	"app.serverlessconfig.gpuconfig.type",
+	"app.serverlessconfig.gpuconfig.model",
+	"app.serverlessconfig.gpuconfig.numgpu",
+	"app.serverlessconfig.gpuconfig.ram",
 	"app.vmappostype",
 	"app.alertpolicies",
 	"app.qossessionprofile",
@@ -912,6 +947,10 @@ var DeploymentCloudletRequestComments = map[string]string{
 	"app.serverlessconfig.vcpus":                     "Virtual CPUs allocation per container when serverless, may be decimal in increments of 0.001",
 	"app.serverlessconfig.ram":                       "RAM allocation in megabytes per container when serverless",
 	"app.serverlessconfig.minreplicas":               "Minimum number of replicas when serverless",
+	"app.serverlessconfig.gpuconfig.type":            "GPU Type, one of None, Any, Vgpu, Pci",
+	"app.serverlessconfig.gpuconfig.model":           "Model name or vgpu type",
+	"app.serverlessconfig.gpuconfig.numgpu":          "Number of instances",
+	"app.serverlessconfig.gpuconfig.ram":             "required memory in megabytes",
 	"app.vmappostype":                                "OS Type for VM Apps, one of Unknown, Linux, Windows10, Windows2012, Windows2016, Windows2019",
 	"app.alertpolicies":                              "Alert Policies",
 	"app.qossessionprofile":                          "Qualifier for the requested latency profile, one of NoPriority, LowLatency, ThroughputDownS, ThroughputDownM, ThroughputDownL",

@@ -586,6 +586,11 @@ func addControllerApis(method string, group *echo.Group) {
 	// ServerlessConfigVcpusNanos: 40.1.2
 	// ServerlessConfigRam: 40.2
 	// ServerlessConfigMinReplicas: 40.3
+	// ServerlessConfigGpuConfig: 40.4
+	// ServerlessConfigGpuConfigType: 40.4.1
+	// ServerlessConfigGpuConfigModel: 40.4.2
+	// ServerlessConfigGpuConfigNumGpu: 40.4.3
+	// ServerlessConfigGpuConfigRam: 40.4.4
 	// VmAppOsType: 41
 	// AlertPolicies: 42
 	// QosSessionProfile: 43

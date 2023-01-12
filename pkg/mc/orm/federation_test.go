@@ -761,6 +761,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Equal(t, 1, len(feds))
 	require.Equal(t, consAttr.fedName, feds[0].Name)
 
+	// create apps to be onboarded
 	for _, app := range getConsApps(consAttr.developerId) {
 		regionApp := ormapi.RegionApp{
 			Region: consAttr.region,
@@ -797,15 +798,21 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Contains(t, err.Error(), "please choose a different Name")
 	}
 
-	// create images from apps
+	// Test App APIs
+	// ==============
+	// also creates images and artefacts
+	consAppsExp := []ormapi.ConsumerApp{}
 	for _, app := range getConsApps(consAttr.developerId) {
 		req := ormapi.ConsumerApp{}
 		req.Region = consAttr.region
-		req.App = app
+		req.AppName = app.Key.Name
+		req.AppOrg = app.Key.Organization
+		req.AppVers = app.Key.Version
 		req.FederationName = consAttr.fedName
-		_, status, err = mcClient.CreateConsumerApp(op.uri, consAttr.tokenDev, &req)
+		_, status, err = mcClient.OnboardConsumerApp(op.uri, consAttr.tokenDev, &req)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
+		consAppsExp = append(consAppsExp, req)
 	}
 	consAppImages := getConsAppImages(t, consAttr.developerId, consAttr.fedName)
 	consImagesExp := append(consImages, consAppImages...)
@@ -818,11 +825,24 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	for ii := range consImagesExp {
 		exp := consImagesExp[ii]
 		act := consImagesShow[ii]
-		fmt.Printf("DEBUG: %v\n", act)
 		require.NotZero(t, act.ID)
 		require.Equal(t, exp.Organization, act.Organization)
 		require.Equal(t, exp.FederationName, act.FederationName)
 		require.Equal(t, federation.ImageStatusReady, act.Status)
+	}
+	// developer can see created apps
+	consAppsShow, status, err := mcClient.ShowConsumerApp(op.uri, consAttr.tokenDev, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(consAppsExp), len(consAppsShow))
+	for ii := range consAppsExp {
+		exp := consAppsExp[ii]
+		act := consAppsShow[ii]
+		require.NotZero(t, act.ID)
+		require.Equal(t, exp.AppName, act.AppName)
+		require.Equal(t, exp.AppOrg, act.AppOrg)
+		require.Equal(t, exp.AppVers, act.AppVers)
+		require.Equal(t, exp.FederationName, act.FederationName)
 	}
 
 	// provider can see created images
@@ -839,10 +859,73 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Equal(t, exp.Type, act.Type)
 		require.Equal(t, federation.ImageStatusReady, act.Status)
 	}
+	// provider can see created providerArtefacts
+	provArtsShow, status, err := mcClient.ShowProviderArtefact(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(consAppsExp), len(provArtsShow))
+	for ii := range provArtsShow {
+		exp := consAppsShow[ii]
+		act := provArtsShow[ii]
+		require.Equal(t, provAttr.fedName, act.FederationName)
+		require.Equal(t, exp.AppName, act.AppName)
+		require.Equal(t, exp.AppVers, act.AppVers)
+		require.Equal(t, exp.AppOrg, act.AppProviderId)
+	}
+	// provider can see create providerApps
+	provAppsShow, status, err := mcClient.ShowProviderApp(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(consAppsExp), len(provAppsShow))
+	for ii := range provAppsShow {
+		act := provAppsShow[ii]
+		require.Equal(t, provAttr.fedName, act.FederationName)
+	}
+	// provider can see created regional apps
+	provAppFilter := ormapi.RegionApp{
+		Region: provAttr.region,
+	}
+	appsShow, status, err := mcClient.ShowApp(op.uri, provAttr.tokenOper, &provAppFilter)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(consAppsExp), len(appsShow))
 
 	// --------+
 	// Cleanup |
 	// --------+
+
+	// Delete Apps
+	for _, app := range getConsApps(consAttr.developerId) {
+		req := ormapi.ConsumerApp{}
+		req.AppName = app.Key.Name
+		req.AppOrg = app.Key.Organization
+		req.AppVers = app.Key.Version
+		req.FederationName = consAttr.fedName
+		_, status, err = mcClient.DeboardConsumerApp(op.uri, consAttr.tokenDev, &req)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+
+	// consumer apps should be empty
+	consAppsShow, status, err = mcClient.ShowConsumerApp(op.uri, consAttr.tokenDev, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(consAppsShow))
+	// provider artefacts should be empty
+	provArtsShow, status, err = mcClient.ShowProviderArtefact(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(provArtsShow))
+	// provider app should be empty
+	provAppsShow, status, err = mcClient.ShowProviderApp(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(provAppsShow))
+	// provider regional apps should be empty
+	appsShow, status, err = mcClient.ShowApp(op.uri, provAttr.tokenOper, &provAppFilter)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(appsShow))
 
 	// Delete images
 	// =============
@@ -859,6 +942,17 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(provImagesShow))
+
+	// delete regional app definitions
+	for _, app := range getConsApps(consAttr.developerId) {
+		regionApp := ormapi.RegionApp{
+			Region: consAttr.region,
+			App:    app,
+		}
+		_, status, err = mcClient.DeleteApp(op.uri, consAttr.tokenDev, &regionApp)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
 
 	// Delete of either Provider or Consumer should fail if there
 	// are registered zones.
@@ -1179,6 +1273,9 @@ func testGormFederationObjs(t *testing.T, opts testFedObjOpts) {
 		&ormapi.ConsumerZone{},
 		&ormapi.ProviderImage{},
 		&ormapi.ConsumerImage{},
+		&ormapi.ConsumerApp{},
+		&ormapi.ProviderArtefact{},
+		&ormapi.ProviderApp{},
 	}
 
 	// drop based on the order of dependency

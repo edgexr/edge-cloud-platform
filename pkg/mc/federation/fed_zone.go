@@ -357,7 +357,7 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 	}
 	opZoneRes := fedewapi.ZoneRegistrationResponseData{}
 	apiPath := fmt.Sprintf("/%s/%s/zones", ApiRoot, consumer.FederationContextId)
-	_, err = fedClient.SendRequest(ctx, "POST", apiPath, &opZoneReg, &opZoneRes, nil)
+	_, _, err = fedClient.SendRequest(ctx, "POST", apiPath, &opZoneReg, &opZoneRes, nil)
 	if err != nil {
 		return err
 	}
@@ -531,7 +531,7 @@ func (p *PartnerApi) DeregisterConsumerZones(ctx context.Context, consumer *orma
 		// because delete cloudlet will delete it.
 		// notify partner
 		apiPath := fmt.Sprintf("/%s/%s/zones/%s", ApiRoot, consumer.FederationContextId, zone.ZoneId)
-		_, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
+		_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
 		if err != nil {
 			return err
 		}
@@ -554,12 +554,12 @@ func (p *PartnerApi) PartnerZoneNotify(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "partner notify", "consumer", consumer.Name, "operatorid", consumer.OperatorId, "zoneId", zoneId)
 	in := fedewapi.FederationContextIdZonesPostRequest{}
 	if err = c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)
 	}
 	// Notification about resource availability,
 	// nothing for us to do.
+	log.SpanLog(ctx, log.DebugLevelApi, "partner notify", "consumer", consumer.Name, "operatorid", consumer.OperatorId, "zoneId", zoneId, "data", in)
 	return nil
 }
