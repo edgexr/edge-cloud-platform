@@ -14,7 +14,7 @@ type EmailAccount struct {
 }
 
 func GetNoreply(vaultConfig *vault.Config) (*EmailAccount, error) {
-	noreply := EmailAccount{}
+	noreply := EmailAccount{SmtpTLS: true} // default tls to true
 	err := vault.GetData(vaultConfig,
 		"/secret/data/accounts/noreplyemail", 0, &noreply)
 	if err != nil {
