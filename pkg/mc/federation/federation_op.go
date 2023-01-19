@@ -46,16 +46,20 @@ const (
 
 	// Path params
 	PathVarFederationContextId = "federationContextId"
-	PathVarZoneId              = "zoneid"
-	//PathVarAppId               = "appid" // TODO: inconsistent callback parameters
-	PathVarAppInstId  = "appinstid"
-	PathVarProviderId = "appproviderid"
-	PathVarPoolId     = "poolid"
+	PathVarZoneId              = "zoneId"
+	PathVarAppId               = "appId" // TODO: inconsistent callback parameters
+	PathVarAppInstId           = "appInstanceId"
+	PathVarAppProviderId       = "appProviderId"
+	PathVarPoolId              = "poolId"
 
 	// callback urls in UriTemplate (RFC6570) format
-	PartnerNotifyPath     = "/notify/{" + PathVarFederationContextId + "}"
-	PartnerZoneNotifyPath = "/notify/{" + PathVarFederationContextId + "}/zones/{" + PathVarZoneId + "}"
-	PartnerAppNotifyPath  = "/notify/{" + PathVarFederationContextId + "}/application/onboarding/app/"
+	CallbackRoot              = ApiRoot + "/notify"
+	PartnerNotifyPath         = "/{" + PathVarFederationContextId + "}/onPartnerStatusEvent"
+	PartnerZoneNotifyPath     = "/{" + PathVarFederationContextId + "}/onZoneResourceUpdateEvent/zone/{" + PathVarZoneId + "}"
+	PartnerAppNotifyPath      = "/{" + PathVarFederationContextId + "}/onApplicationOnboardStatusEvent/app/{" + PathVarAppId + "}"
+	PartnerLcmNotifyPath      = "/{" + PathVarFederationContextId + "}/onInstanceStatusEvent/app/{" + PathVarAppId + "}/instance/{" + PathVarAppInstId + "}/zone/{" + PathVarZoneId + "}"
+	PartnerResourceNotifyPath = "/{" + PathVarFederationContextId + "}/onResourceStatusChangeEvent/zone/{" + PathVarZoneId + "}/appProvider/{" + PathVarAppProviderId + "}/pool/{" + PathVarPoolId + "}"
+
 	//PartnerAppNotifyPath  = "/notify/{" + PathVarFederationContextId + "}/application/onboarding/app/{" + PathVarAppId + "}" // TODO: inconsistent callback parameters
 
 	BadAuthDelay   = 3 * time.Second
@@ -67,16 +71,18 @@ type PartnerApi struct {
 	connCache      ctrlclient.ClientConnMgr
 	vaultConfig    *vault.Config
 	tokenSources   *federationmgmt.TokenSourceCache
+	fedExtAddr     string
 	vmRegistryAddr string
 	harborAddr     string
 	allowPlainHttp bool // for unit testing
 }
 
-func NewPartnerApi(db *gorm.DB, connCache ctrlclient.ClientConnMgr, vaultConfig *vault.Config, vmRegistryAddr, harborAddr string) *PartnerApi {
+func NewPartnerApi(db *gorm.DB, connCache ctrlclient.ClientConnMgr, vaultConfig *vault.Config, fedExtAddr, vmRegistryAddr, harborAddr string) *PartnerApi {
 	p := &PartnerApi{
 		database:       db,
 		connCache:      connCache,
 		vaultConfig:    vaultConfig,
+		fedExtAddr:     fedExtAddr,
 		vmRegistryAddr: vmRegistryAddr,
 		harborAddr:     harborAddr,
 	}
@@ -97,11 +103,11 @@ func (p *PartnerApi) AllowPlainHttp() {
 // These are the standard interfaces which are called by other federators for unified edge platform experience
 func (p *PartnerApi) InitAPIs(e *echo.Echo) {
 	RegisterHandlersWithBaseURL(e, p, ApiRoot)
-	// TODO: register all notify callback paths
-
-	e.POST(ApiRoot+ormutil.NewUriTemplate(PartnerNotifyPath).EchoPath(), p.PartnerNotify)
-	e.POST(ApiRoot+ormutil.NewUriTemplate(PartnerZoneNotifyPath).EchoPath(), p.PartnerZoneNotify)
-	e.POST(ApiRoot+ormutil.NewUriTemplate(PartnerAppNotifyPath).EchoPath(), p.PartnerAppNotify)
+	e.POST(CallbackRoot+ormutil.NewUriTemplate(PartnerNotifyPath).EchoPath(), p.PartnerNotify)
+	e.POST(CallbackRoot+ormutil.NewUriTemplate(PartnerZoneNotifyPath).EchoPath(), p.PartnerZoneNotify)
+	e.POST(CallbackRoot+ormutil.NewUriTemplate(PartnerAppNotifyPath).EchoPath(), p.PartnerAppNotify)
+	e.POST(CallbackRoot+ormutil.NewUriTemplate(PartnerLcmNotifyPath).EchoPath(), p.PartnerLcmNotify)
+	e.POST(CallbackRoot+ormutil.NewUriTemplate(PartnerResourceNotifyPath).EchoPath(), p.PartnerResourceNotify)
 }
 
 func (p *PartnerApi) lookupProvider(c echo.Context, federationContextId FederationContextId) (*ormapi.FederationProvider, error) {
@@ -172,9 +178,9 @@ func (p *PartnerApi) GetFederationAPIKey(ctx context.Context, fedKey *federation
 	return federationmgmt.GetFederationAPIKey(ctx, p.vaultConfig, fedKey)
 }
 
-func (p *PartnerApi) ProviderPartnerClient(ctx context.Context, provider *ormapi.FederationProvider) (*federationmgmt.Client, error) {
+func (p *PartnerApi) ProviderPartnerClient(ctx context.Context, provider *ormapi.FederationProvider, cbUrl string) (*federationmgmt.Client, error) {
 	fedKey := ProviderFedKey(provider)
-	return p.tokenSources.Client(ctx, provider.PartnerNotifyDest, fedKey)
+	return p.tokenSources.Client(ctx, cbUrl, fedKey)
 }
 
 func (p *PartnerApi) ConsumerPartnerClient(ctx context.Context, consumer *ormapi.FederationConsumer) (*federationmgmt.Client, error) {
@@ -219,11 +225,13 @@ func (p *PartnerApi) CreateFederation(c echo.Context, params CreateFederationPar
 	// federation context id.
 	provider.PartnerInfo.FederationId = req.OrigOPFederationId
 	provider.PartnerInfo.InitialDate = req.InitialDate
-	notifyDestTmpl := ormutil.NewUriTemplate(req.FederationNotificationDest)
-	vars := map[string]string{
-		PathVarFederationContextId: provider.FederationContextId,
+	if req.FederationNotificationDest != "" {
+		notifyDestTmpl := ormutil.NewUriTemplate(req.FederationNotificationDest + PartnerNotifyPath)
+		vars := map[string]string{
+			PathVarFederationContextId: provider.FederationContextId,
+		}
+		provider.PartnerNotifyDest = notifyDestTmpl.Eval(vars)
 	}
-	provider.PartnerNotifyDest = notifyDestTmpl.Eval(vars)
 	if req.OrigOPCountryCode != nil {
 		provider.PartnerInfo.CountryCode = *req.OrigOPCountryCode
 	}
@@ -232,7 +240,7 @@ func (p *PartnerApi) CreateFederation(c echo.Context, params CreateFederationPar
 	provider.Status = StatusRegistered
 
 	out := fedewapi.FederationResponseData{}
-	out.FederationContextId = &provider.FederationContextId
+	out.FederationContextId = provider.FederationContextId
 	out.PartnerOPFederationId = provider.MyInfo.FederationId
 	if provider.MyInfo.CountryCode != "" {
 		out.PartnerOPCountryCode = &provider.MyInfo.CountryCode

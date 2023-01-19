@@ -54,6 +54,7 @@ type Client struct {
 	TestTransport http.RoundTripper
 	// Print input data transformations
 	PrintTransformations bool
+	Timeout              time.Duration
 }
 
 func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
@@ -270,7 +271,10 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{},
 		}
 		fmt.Printf("%s\n", curlcmd)
 	}
-	client := &http.Client{Transport: tr}
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   s.Timeout,
+	}
 	return client.Do(req)
 }
 

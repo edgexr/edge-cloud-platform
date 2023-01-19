@@ -37,10 +37,11 @@ import (
 
 // Should only be one of these instantiated in main
 type AppApi struct {
-	all   *AllApis
-	sync  *Sync
-	store edgeproto.AppStore
-	cache edgeproto.AppCache
+	all        *AllApis
+	sync       *Sync
+	store      edgeproto.AppStore
+	cache      edgeproto.AppCache
+	fedIdStore edgeproto.AppFedIdStore
 }
 
 func NewAppApi(sync *Sync, all *AllApis) *AppApi {
@@ -545,10 +546,15 @@ func (s *AppApi) CreateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.R
 		if err != nil {
 			return err
 		}
+		err = s.setFederatedId(stm, in)
+		if err != nil {
+			return err
+		}
 		s.all.appInstRefsApi.createRef(stm, &in.Key)
 
 		in.CreatedAt = dme.TimeToTimestamp(time.Now())
 		s.store.STMPut(stm, in)
+		s.fedIdStore.STMPut(stm, in.FederatedId)
 		elapsed := time.Since(start)
 		log.SpanLog(ctx, log.DebugLevelApi, "CreateApp finish ApplySTMWait", "app", in.Key.String(), "elapsed", elapsed, "err", err)
 		return nil
@@ -785,6 +791,7 @@ func (s *AppApi) DeleteApp(ctx context.Context, in *edgeproto.App) (res *edgepro
 		}
 		// delete app
 		s.store.STMDel(stm, &in.Key)
+		s.fedIdStore.STMDel(stm, in.FederatedId)
 		// delete refs
 		s.all.appInstRefsApi.deleteRef(stm, &in.Key)
 		return nil

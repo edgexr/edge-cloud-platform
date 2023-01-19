@@ -44,7 +44,7 @@ func init() {
 		Name:         "ShowConsumerApp",
 		Use:          "showapps",
 		Short:        "Show Apps onboarded to partner federation",
-		OptionalArgs: "id region federationname appname apporg appvers artefactid status",
+		OptionalArgs: "id region federationname appname apporg appvers status",
 		Comments:     ormapi.ConsumerAppComments,
 		ReqData:      &ormapi.ConsumerApp{},
 		ReplyData:    &[]ormapi.ConsumerApp{},

@@ -254,10 +254,13 @@ type ProviderImage struct {
 	Status string
 }
 
-// ConsumerApp tracks an App that has been onboarded to the partner
+// ConsumerApp tracks an App that has been onboarded to the partner.
+// The same App in different regions must be onboarded per region.
 type ConsumerApp struct {
 	// Unique ID, acts as both the App and Artefact IDs
 	ID string `gorm:"primary_key"`
+	// Target federation consumer name
+	FederationName string `gorm:"primary_key;type:citext;not null"`
 	// Region name
 	// required: true
 	Region string
@@ -267,8 +270,6 @@ type ConsumerApp struct {
 	AppOrg string
 	// App version in region
 	AppVers string
-	// Target federation consumer name
-	FederationName string
 	// Status
 	// read only: true
 	Status string
@@ -303,6 +304,14 @@ type ProviderApp struct {
 	ArtefactIds pq.StringArray `gorm:"type:text[]"`
 	// Restricted Zones
 	DeploymentZones pq.StringArray `gorm:"type:text[]"`
+}
+
+// This is only to allocate an appInst unique ID
+type ProviderAppInst struct {
+	// Federation Provider name
+	FederationName string `gorm:"primary_key;type:citext;not null"`
+	// AppInst unique ID
+	AppInstID string `gorm:"primary_key;type:text;not null"`
 }
 
 func (f *FederationProvider) GetSortString() string {

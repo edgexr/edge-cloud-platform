@@ -17,8 +17,8 @@ package edgeproto
 import (
 	fmt "fmt"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type AppInstIdStore struct{}
@@ -43,5 +43,30 @@ func (s *AppInstIdStore) STMPut(stm concurrency.STM, id string) {
 
 func (s *AppInstIdStore) STMDel(stm concurrency.STM, id string) {
 	keystr := AppInstIdDbKey(id)
+	stm.Del(keystr)
+}
+
+type AppFedIdStore struct{}
+
+func AppFedIdDbKey(id string) string {
+	return fmt.Sprintf("%s/%s", objstore.DbKeyPrefixString("AppFedId"), id)
+}
+
+func (s *AppFedIdStore) STMHas(stm concurrency.STM, id string) bool {
+	keystr := AppFedIdDbKey(id)
+	valstr := stm.Get(keystr)
+	if valstr == "" {
+		return false
+	}
+	return true
+}
+
+func (s *AppFedIdStore) STMPut(stm concurrency.STM, id string) {
+	keystr := AppFedIdDbKey(id)
+	stm.Put(keystr, id)
+}
+
+func (s *AppFedIdStore) STMDel(stm concurrency.STM, id string) {
+	keystr := AppFedIdDbKey(id)
 	stm.Del(keystr)
 }

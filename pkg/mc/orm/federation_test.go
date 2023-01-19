@@ -21,11 +21,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -36,6 +38,8 @@ import (
 	ormtestutil "github.com/edgexr/edge-cloud-platform/pkg/mc/orm/testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	fedp "github.com/edgexr/edge-cloud-platform/pkg/platform/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -60,6 +64,7 @@ type CtrlObj struct {
 	dcnt        int
 	operatorIds []string
 	region      string
+	frm         *fedp.FederationPlatform
 }
 
 type OPAttr struct {
@@ -84,6 +89,7 @@ type FederatorAttr struct {
 	fedAddr     string
 	region      string
 	apiKey      string
+	frm         *fedp.FederationPlatform
 }
 
 func (o *OPAttr) CleanupOperatorPlatform(ctx context.Context) {
@@ -96,7 +102,7 @@ func (o *OPAttr) CleanupOperatorPlatform(ctx context.Context) {
 	}
 }
 
-func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []string, region string) *CtrlObj {
+func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []string, region string, vroles *process.VaultRoles, vaultAddr string) *CtrlObj {
 	ctrlAddr, err := cloudcommon.GetAvailablePort("127.0.0.1:0")
 	require.Nil(t, err, "get available port")
 	// run dummy controller - this always returns success
@@ -174,6 +180,32 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 		}
 	}
 
+	// set up FRM. Note that FRM is not actually connected to the
+	// controller via notify, because the dummy controller doesn't
+	// support that. Instead we'll need to call the FRM's functions
+	// directly from the test code.
+	frmVaultConfig := vault.NewConfig(vaultAddr, vault.NewAppRoleAuth(vroles.RegionRoles[region].FrmRoleID, vroles.RegionRoles[region].FrmSecretID))
+	pc := platform.PlatformConfig{
+		AccessApi: accessapi.NewVaultGlobalClient(frmVaultConfig),
+	}
+	caches := platform.Caches{
+		SettingsCache:        &ds.SettingsCache,
+		FlavorCache:          &ds.FlavorCache,
+		TrustPolicyCache:     &ds.TrustPolicyCache,
+		CloudletPoolCache:    &ds.CloudletPoolCache,
+		ClusterInstCache:     &ds.ClusterInstCache,
+		ClusterInstInfoCache: &ds.ClusterInstInfoCache,
+		AppInstCache:         &ds.AppInstCache,
+		AppInstInfoCache:     &ds.AppInstInfoCache,
+		AppCache:             &ds.AppCache,
+		ResTagTableCache:     &ds.ResTagTableCache,
+		CloudletCache:        &ds.CloudletCache,
+		CloudletInfoCache:    &ds.CloudletInfoCache,
+	}
+	frm := &fedp.FederationPlatform{}
+	err = frm.InitCommon(ctx, &pc, &caches, nil, nil)
+	require.Nil(t, err)
+
 	return &CtrlObj{
 		addr:        ctrlAddr,
 		ds:          ds,
@@ -181,6 +213,7 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 		dc:          dc,
 		operatorIds: operatorIds,
 		region:      region,
+		frm:         frm,
 	}
 }
 
@@ -217,12 +250,15 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 	fedAddr, err := cloudcommon.GetAvailablePort("127.0.0.1:0")
 	require.Nil(t, err, "get available port")
 
+	regions := []string{"US-East", "US-West"}
+
 	vp := process.Vault{
 		Common: process.Common{
 			Name: "vault",
 		},
 		ListenAddr: "https://127.0.0.1:8203",
 		PKIDomain:  "edgecloud.net",
+		Regions:    strings.Join(regions, ","),
 	}
 	_, vroles, vaultCleanup := testutil.NewVaultTestCluster(t, &vp)
 	os.Setenv("VAULT_ROLE_ID", vroles.MCRoleID)
@@ -280,10 +316,9 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 	countryCode := "US"
 	operatorIds := []string{"operP", "operC"}
 	developerIds := []string{"devP", "devC"}
-	regions := []string{"US-East", "US-West"}
 
-	ctrl1 := SetupControllerService(t, ctx, operatorIds, regions[0])
-	ctrl2 := SetupControllerService(t, ctx, operatorIds, regions[1])
+	ctrl1 := SetupControllerService(t, ctx, operatorIds, regions[0], vroles, vp.ListenAddr)
+	ctrl2 := SetupControllerService(t, ctx, operatorIds, regions[1], vroles, vp.ListenAddr)
 	ctrlObjs := []CtrlObj{*ctrl1, *ctrl2}
 
 	opAttr := OPAttr{
@@ -347,6 +382,7 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 		fed.tokenAd = tokenAd
 		fed.region = regions[ii]
 		fed.fedAddr = "http://" + fedAddr
+		fed.frm = ctrlObjs[ii].frm
 		selfFederators = append(selfFederators, fed)
 	}
 
@@ -889,6 +925,20 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(consAppsExp), len(appsShow))
+
+	// ---------
+	// FRM Tests
+	// ---------
+
+	cb := func(updateType edgeproto.CacheUpdateType, value string) {
+		fmt.Printf("createAppInstCb: %s\n", value)
+	}
+	frmData := getFrmData(&consAttr, &provAttr, sharedZones)
+	for _, dat := range frmData {
+		err := consAttr.frm.CreateAppInst(ctx, &dat.consClusterInst, &dat.consApp, &dat.consAppInst, nil, cb)
+		require.Nil(t, err)
+	}
+	// check that appInsts were created on provider
 
 	// --------+
 	// Cleanup |

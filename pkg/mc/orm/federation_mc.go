@@ -164,10 +164,7 @@ func InitFederationAPIConstraints(db *gorm.DB) error {
 	err = setForeignKey(db, &ormapi.ProviderImage{}, "federation_name", &ormapi.FederationProvider{}, "name", err)
 	err = setForeignKey(db, &ormapi.ConsumerImage{}, "federation_name", &ormapi.FederationConsumer{}, "name", err)
 	err = setForeignKey(db, &ormapi.ConsumerImage{}, "organization", &ormapi.Organization{}, "name", err)
-	// region is explicitly not part of the unique key because we can't
-	// create partner apps for the same app from different regions, can only
-	// create one.
-	cerr := setCompositeUniqueConstraint(db, "consumer_apps", "consumer_apps_unique_key", []string{"app_name", "app_org", "app_vers", "federation_name"})
+	cerr := setCompositeUniqueConstraint(db, "consumer_apps", "consumer_apps_unique_key", []string{"region", "app_name", "app_org", "app_vers", "federation_name"})
 	err = accumulateErr(err, cerr)
 	return err
 }
@@ -1213,7 +1210,7 @@ func ShareProviderZone(c echo.Context) (reterr error) {
 
 	log.SpanLog(ctx, log.DebugLevelApi, "share provider zone", "provider-status", provider.Status, "notify", provider.PartnerNotifyDest)
 	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != "" {
-		fedClient, err := partnerApi.ProviderPartnerClient(ctx, provider)
+		fedClient, err := partnerApi.ProviderPartnerClient(ctx, provider, provider.PartnerNotifyDest)
 		if err != nil {
 			return err
 		}
@@ -1289,9 +1286,9 @@ func UnshareProviderZone(c echo.Context) error {
 		return fmt.Errorf("Cannot unshare registered zones %s, please ask consumer to deregister it", strings.Join(registeredZones, ","))
 	}
 
-	if provider.Status == federation.StatusRegistered {
+	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != "" {
 		// Notify partner
-		fedClient, err := partnerApi.ProviderPartnerClient(ctx, provider)
+		fedClient, err := partnerApi.ProviderPartnerClient(ctx, provider, provider.PartnerNotifyDest)
 		if err != nil {
 			return err
 		}
@@ -1494,7 +1491,7 @@ func registerFederationConsumer(ctx context.Context, consumer *ormapi.Federation
 	}
 
 	req := fedewapi.FederationRequestData{
-		FederationNotificationDest: serverConfig.FederationExternalAddr + "/" + federation.ApiRoot + federation.PartnerNotifyPath,
+		FederationNotificationDest: serverConfig.FederationExternalAddr + "/" + federation.CallbackRoot,
 		InitialDate:                time.Now(),
 		OrigOPCountryCode:          &consumer.MyInfo.CountryCode,
 		OrigOPFederationId:         consumer.MyInfo.FederationId,
@@ -1511,10 +1508,10 @@ func registerFederationConsumer(ctx context.Context, consumer *ormapi.Federation
 	if err != nil {
 		return err
 	}
-	if res.FederationContextId == nil || *res.FederationContextId == "" {
+	if res.FederationContextId == "" {
 		return fmt.Errorf("partner did not specify federation context id")
 	}
-	consumer.FederationContextId = *res.FederationContextId
+	consumer.FederationContextId = res.FederationContextId
 	consumer.PartnerInfo.FederationId = res.PartnerOPFederationId
 	if res.PartnerOPCountryCode != nil {
 		consumer.PartnerInfo.CountryCode = *res.PartnerOPCountryCode

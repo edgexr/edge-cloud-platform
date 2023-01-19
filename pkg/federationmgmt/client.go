@@ -153,6 +153,7 @@ func (c *Client) SendRequest(ctx context.Context, method, endpoint string, reqDa
 
 	restClient := &ormclient.Client{
 		TokenType: token.TokenType,
+		Timeout:   60 * time.Minute,
 	}
 	if pkgtls.IsTestTls() {
 		restClient.SkipVerify = true

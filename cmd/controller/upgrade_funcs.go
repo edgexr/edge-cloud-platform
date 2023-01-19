@@ -987,3 +987,40 @@ func FixSharedRootLBFQDN(ctx context.Context, objStore objstore.KVStore, allApis
 	}
 	return nil
 }
+
+func SetAppFederatedId(ctx context.Context, objStore objstore.KVStore, allApis *AllApis) error {
+	log.SpanLog(ctx, log.DebugLevelUpgrade, "SetAppFederatedId")
+
+	appKeys, err := getDbObjectKeys(objStore, "App")
+	if err != nil {
+		return err
+	}
+	for appKey, _ := range appKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			appStr := stm.Get(appKey)
+			if appStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			var app edgeproto.App
+			err2 := json.Unmarshal([]byte(appStr), &app)
+			if err2 != nil {
+				log.SpanLog(ctx, log.DebugLevelUpgrade, "Cannot unmarshal key", "val", appStr, "err", err2, "app", app)
+				return err2
+			}
+			if app.FederatedId != "" {
+				return nil
+			}
+			if err := allApis.appApi.setFederatedId(stm, &app); err != nil {
+				return fmt.Errorf("Set federated id for app %s failed, %s", appKey, err)
+			}
+			allApis.appApi.store.STMPut(stm, &app)
+			allApis.appApi.fedIdStore.STMPut(stm, app.FederatedId)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

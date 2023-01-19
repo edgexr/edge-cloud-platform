@@ -68,6 +68,14 @@ func (p *PartnerApi) lookupArtefact(c echo.Context, provider *ormapi.FederationP
 	return &provArt, nil
 }
 
+func getAppKey(provArt *ormapi.ProviderArtefact) edgeproto.AppKey {
+	return edgeproto.AppKey{
+		Name:         provArt.AppName,
+		Organization: provArt.FederationName,
+		Version:      provArt.AppVers,
+	}
+}
+
 func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId) (reterr error) {
 	ctx := ormutil.GetContext(c)
 	log.SpanLog(ctx, log.DebugLevelApi, "Fed EWBI UploadArtefact", "fedCtxId", fedCtxId)
@@ -144,9 +152,7 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 
 	// build app from spec
 	app := edgeproto.App{}
-	app.Key.Name = provArt.AppName
-	app.Key.Organization = provArt.FederationName
-	app.Key.Version = provArt.AppVers
+	app.Key = getAppKey(&provArt)
 	if spec.NumOfInstances == -1 {
 		app.ScaleWithCluster = true
 	}
@@ -369,9 +375,7 @@ func (p *PartnerApi) RemoveArtefact(c echo.Context, fedCtxId FederationContextId
 	}
 
 	app := edgeproto.App{}
-	app.Key.Name = provArt.AppName
-	app.Key.Organization = provArt.FederationName
-	app.Key.Version = provArt.AppVers
+	app.Key = getAppKey(provArt)
 
 	// make sure App can be deleted from each region
 	log.SpanLog(ctx, log.DebugLevelApi, "delete apps for artefact", "app", provApp)

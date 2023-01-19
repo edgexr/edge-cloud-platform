@@ -246,6 +246,8 @@ message App {
   QosSessionProfile qos_session_profile = 43;
   // Session duration in seconds. Maximal value of 24 hours is used if not set
   int64 qos_session_duration = 44 [(gogoproto.casttype) = "Duration"];
+  // A unique id for the App to be used with federation
+  string federated_id = 45 [(protogen.backend) = true];
 
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;

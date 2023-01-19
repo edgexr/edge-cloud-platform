@@ -118,6 +118,16 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 		zones = append(zones, provZone.ZoneId)
 	}
 
+	callbackUrl := ""
+	if req.AppStatusCallbackLink != "" {
+		notifyTmpl := ormutil.NewUriTemplate(req.AppStatusCallbackLink + PartnerAppNotifyPath)
+		vars := map[string]string{
+			PathVarFederationContextId: provider.FederationContextId,
+			PathVarAppId:               req.AppId,
+		}
+		callbackUrl = notifyTmpl.Eval(vars)
+	}
+
 	// create provider App
 	provApp := ormapi.ProviderApp{
 		FederationName:  provider.Name,
@@ -135,6 +145,27 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 	}
 
 	c.Response().WriteHeader(http.StatusAccepted)
+	c.Response().After(func() {
+		if callbackUrl == "" {
+			log.SpanLog(ctx, log.DebugLevelApi, "app create no callback", "app", provApp)
+			return
+		}
+		cb := fedewapi.FederationContextIdApplicationOnboardingPostRequest{}
+		for _, zone := range zones {
+			status := fedewapi.FederationContextIdApplicationOnboardingPostRequestStatusInfoInner{
+				ZoneId:            zone,
+				OnboardStatusInfo: "ONBOARDED",
+			}
+			cb.StatusInfo = append(cb.StatusInfo, status)
+		}
+		fedClient, err := p.ProviderPartnerClient(ctx, provider, callbackUrl)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to send app create callback", "url", callbackUrl, "err", err)
+			return
+		}
+		_, _, err = fedClient.SendRequest(ctx, "POST", "", &cb, nil, nil)
+		log.SpanLog(ctx, log.DebugLevelApi, "sent app create callback", "url", callbackUrl, "err", err)
+	})
 	return nil
 }
 
@@ -288,6 +319,7 @@ func (p *PartnerApi) LockUnlockApplicationZone(c echo.Context, fedCtxId Federati
 func (p *PartnerApi) PartnerAppNotify(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
 	fedCtxId := c.Param(PathVarFederationContextId)
+	appId := c.Param(PathVarAppId)
 	// lookup federation consumer based on claims
 	consumer, err := p.lookupConsumer(c, FederationContextId(fedCtxId))
 	if err != nil {
@@ -305,11 +337,11 @@ func (p *PartnerApi) PartnerAppNotify(c echo.Context) error {
 	db := p.loggedDB(ctx)
 	// look up app
 	cApp := ormapi.ConsumerApp{
-		ID: in.AppId,
+		ID: appId,
 	}
 	res := db.Where(&cApp).First(&cApp)
 	if res.RecordNotFound() {
-		return c.String(http.StatusNotFound, "App not found for ID "+in.AppId)
+		return c.String(http.StatusNotFound, "App not found for ID "+appId)
 	}
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Failed to look up App, "+err.Error())

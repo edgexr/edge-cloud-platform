@@ -595,6 +595,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// AlertPolicies: 42
 	// QosSessionProfile: 43
 	// QosSessionDuration: 44
+	// FederatedId: 45
 	// ```
 	// Security:
 	//   Bearer:
@@ -1708,6 +1709,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// MappedPortsMaxPktSize: 9.9
 	// Flavor: 12
 	// FlavorName: 12.1
+	// CloudletFlavor: 42
 	// State: 14
 	// Errors: 15
 	// CrmOverride: 16

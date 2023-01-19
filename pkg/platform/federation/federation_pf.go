@@ -209,20 +209,35 @@ func GetAppFederationConfigs(ctx context.Context, appId string, fedAddr *string,
 
 // XXX === End of changes ===
 
-func (f *FederationPlatform) fedClient(ctx context.Context, addr string, cloudlet *edgeproto.Cloudlet) (*federationmgmt.Client, error) {
+func (f *FederationPlatform) fedClient(ctx context.Context, cloudletKey *edgeproto.CloudletKey, fedConfig *edgeproto.FederationConfig) (*federationmgmt.Client, error) {
 	fedKey := federationmgmt.FedKey{
-		OperatorId: cloudlet.Key.Organization,
-		Name:       cloudlet.Key.Name,
+		OperatorId: cloudletKey.Organization,
+		Name:       cloudletKey.Name,
 		FedType:    federationmgmt.FederationTypeConsumer,
-		ID:         uint(cloudlet.FederationConfig.FederationDbId),
+		ID:         uint(fedConfig.FederationDbId),
 	}
-	return f.tokenSources.Client(ctx, addr, &fedKey)
+	return f.tokenSources.Client(ctx, fedConfig.PartnerFederationAddr, &fedKey)
 }
 
 // Create an appInst on a cluster
 func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("not supported yet")
 	/* TODO: fix me
+	// helm not supported yet
+	if app.Deployment == cloudcommon.DeploymentTypeHelm {
+		return fmt.Errorf("Helm deployment not supported yet")
+	}
+
+	cloudletKey := &clusterInst.Key.CloudletKey
+	fedConfig, err := f.GetFederationConfig(ctx, cloudletKey)
+	if err != nil {
+		return err
+	}
+	fedClient, err := f.fedClient(ctx, cloudletKey, fedConfig)
+	if err != nil {
+		return err
+	}
+
+	// ============ old stuff
 	if app.Deployment != cloudcommon.DeploymentTypeKubernetes {
 		return fmt.Errorf("Only kubernetes based applications are supported on federation cloudlets")
 	}
@@ -446,8 +461,8 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 		}
 		break
 	}
-	return nil
 	*/
+	return nil
 }
 
 // Delete an AppInst on a Cluster

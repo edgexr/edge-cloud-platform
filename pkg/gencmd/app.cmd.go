@@ -715,6 +715,7 @@ var AppOptionalArgs = []string{
 	"alertpolicies",
 	"qossessionprofile",
 	"qossessionduration",
+	"federatedid",
 }
 var AppAliasArgs = []string{
 	"apporg=key.organization",
@@ -773,6 +774,7 @@ var AppComments = map[string]string{
 	"alertpolicies":                     "Alert Policies, specify alertpolicies:empty=true to clear",
 	"qossessionprofile":                 "Qualifier for the requested latency profile, one of NoPriority, LowLatency, ThroughputDownS, ThroughputDownM, ThroughputDownL",
 	"qossessionduration":                "Session duration in seconds. Maximal value of 24 hours is used if not set",
+	"federatedid":                       "A unique id for the App to be used with federation",
 }
 var AppSpecialArgs = map[string]string{
 	"alertpolicies":    "StringArray",
@@ -899,6 +901,7 @@ var DeploymentCloudletRequestOptionalArgs = []string{
 	"app.alertpolicies",
 	"app.qossessionprofile",
 	"app.qossessionduration",
+	"app.federatedid",
 	"dryrundeploy",
 	"numnodes",
 }
@@ -955,6 +958,7 @@ var DeploymentCloudletRequestComments = map[string]string{
 	"app.alertpolicies":                              "Alert Policies",
 	"app.qossessionprofile":                          "Qualifier for the requested latency profile, one of NoPriority, LowLatency, ThroughputDownS, ThroughputDownM, ThroughputDownL",
 	"app.qossessionduration":                         "Session duration in seconds. Maximal value of 24 hours is used if not set",
+	"app.federatedid":                                "A unique id for the App to be used with federation",
 	"dryrundeploy":                                   "Attempt to qualify cloudlet resources for deployment",
 	"numnodes":                                       "Optional number of worker VMs in dry run K8s Cluster, default = 2",
 }

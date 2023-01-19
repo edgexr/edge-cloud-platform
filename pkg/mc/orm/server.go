@@ -1040,7 +1040,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		federationEcho.Use(logger, AuthCookie, FederationRateLimit)
 		server.federationEcho = federationEcho
 
-		partnerApi = federation.NewPartnerApi(database, connCache, config.vaultConfig, config.VmRegistryAddr, config.HarborAddr)
+		partnerApi = federation.NewPartnerApi(database, connCache, config.vaultConfig, config.FederationExternalAddr, config.VmRegistryAddr, config.HarborAddr)
 		partnerApi.InitAPIs(federationEcho)
 
 		go func() {

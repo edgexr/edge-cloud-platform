@@ -21,3 +21,7 @@ func (p *PartnerApi) UpdateISVResPool(c echo.Context, fedCtxId FederationContext
 func (p *PartnerApi) ViewISVResPool(c echo.Context, fedCtxId FederationContextId, zoneId ZoneIdentifier, appProviderId AppProviderId) error {
 	return fmt.Errorf("not implemented yet")
 }
+
+func (p *PartnerApi) PartnerResourceNotify(c echo.Context) error {
+	return nil
+}

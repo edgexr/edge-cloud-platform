@@ -16,7 +16,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
@@ -50,8 +49,6 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 	if in.ID != "" {
 		return fmt.Errorf("ID cannot be specified")
 	}
-	// ID will be both the ProviderApp and ProviderArtefact IDs
-	in.ID = uuid.New().String()
 
 	// check that user has perms for the developer organization
 	if err = authorized(ctx, claims.Username, in.AppOrg, ResourceApps, ActionManage); err != nil {
@@ -62,26 +59,6 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 	if err != nil {
 		return err
 	}
-
-	// create database object so we can check for duplicates and get ID
-	db := loggedDB(ctx)
-	err = db.Create(&in).Error
-	if err != nil {
-		if strings.Contains(err.Error(), `duplicate key value`) {
-			return fmt.Errorf("ConsumerApp already exists")
-		}
-		log.SpanLog(ctx, log.DebugLevelApi, "failed create consumer app", "app", in, "err", err)
-		return err
-	}
-	defer func() {
-		if reterr == nil {
-			return
-		}
-		undoErr := db.Delete(&in).Error
-		if undoErr != nil {
-			log.SpanLog(ctx, log.DebugLevelApi, "failed to undo consumer app create", "app", in, "err", undoErr)
-		}
-	}()
 
 	// lookup App
 	log.SpanLog(ctx, log.DebugLevelApi, "create ConsumerApp, look up app")
@@ -109,7 +86,7 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		return fmt.Errorf("App not found")
 	}
 
-	log.SpanLog(ctx, log.DebugLevelApi, "create ConsumerApp, look flavors")
+	log.SpanLog(ctx, log.DebugLevelApi, "create ConsumerApp, look up flavors")
 	flavorLookup := edgeproto.Flavor{
 		Key: app.DefaultFlavor,
 	}
@@ -124,6 +101,32 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 	if flavor == nil {
 		return fmt.Errorf("App DefaultFlavor %s not found", app.DefaultFlavor.Name)
 	}
+
+	// ID is set to the app's federation id.
+	// The ID should be unique across all regions, as it contains the
+	// region name.
+	in.ID = app.FederatedId
+
+	// create database object so we can check for duplicates
+	db := loggedDB(ctx)
+	err = db.Create(&in).Error
+	if err != nil {
+		if strings.Contains(err.Error(), `duplicate key value`) {
+			log.SpanLog(ctx, log.DebugLevelApi, "duplicate key value", "err", err)
+			return fmt.Errorf("ConsumerApp already exists")
+		}
+		log.SpanLog(ctx, log.DebugLevelApi, "failed create consumer app", "app", in, "err", err)
+		return err
+	}
+	defer func() {
+		if reterr == nil {
+			return
+		}
+		undoErr := db.Delete(&in).Error
+		if undoErr != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to undo consumer app create", "app", in, "err", undoErr)
+		}
+	}()
 
 	// create images from App info
 	log.SpanLog(ctx, log.DebugLevelApi, "create ConsumerApp, get images for app")
@@ -228,7 +231,6 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 	for _, image := range images {
 		spec.Images = append(spec.Images, image.ID)
 	}
-	spec.InstSetArch = fedewapi.CPUARCHTYPE_X86_64
 	if app.ScaleWithCluster {
 		spec.NumOfInstances = -1
 	} else {

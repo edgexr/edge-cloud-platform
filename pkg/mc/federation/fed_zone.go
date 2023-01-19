@@ -98,9 +98,6 @@ func (p *PartnerApi) ZoneSubscribe(c echo.Context, fedCtxId FederationContextId)
 	if len(in.AcceptedAvailabilityZones) == 0 {
 		return fmt.Errorf("Must specify accepted availability zones")
 	}
-	if in.AvailZoneNotifLink == "" {
-		return fmt.Errorf("Must specify availZoneNotifLink")
-	}
 
 	out := fedewapi.ZoneRegistrationResponseData{}
 
@@ -118,7 +115,15 @@ func (p *PartnerApi) ZoneSubscribe(c echo.Context, fedCtxId FederationContextId)
 		// Ok if already registered, it's just a no-op
 		if zone.Status == StatusUnregistered {
 			zone.Status = StatusRegistered
-			zone.PartnerNotifyZoneURI = in.AvailZoneNotifLink
+
+			if in.AvailZoneNotifLink != "" {
+				notifyTmpl := ormutil.NewUriTemplate(in.AvailZoneNotifLink + PartnerZoneNotifyPath)
+				vars := map[string]string{
+					PathVarFederationContextId: provider.FederationContextId,
+					PathVarZoneId:              zoneId,
+				}
+				zone.PartnerNotifyZoneURI = notifyTmpl.Eval(vars)
+			}
 			if err := db.Save(&zone).Error; err != nil {
 				return ormutil.DbErr(err)
 			}
@@ -353,7 +358,7 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 	}
 	opZoneReg := fedewapi.ZoneRegistrationRequestData{
 		AcceptedAvailabilityZones: regZoneIds,
-		AvailZoneNotifLink:        ApiRoot + PartnerZoneNotifyPath,
+		AvailZoneNotifLink:        p.fedExtAddr + "/" + CallbackRoot,
 	}
 	opZoneRes := fedewapi.ZoneRegistrationResponseData{}
 	apiPath := fmt.Sprintf("/%s/%s/zones", ApiRoot, consumer.FederationContextId)

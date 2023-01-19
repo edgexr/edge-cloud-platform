@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 // Functions to manage unique DNS labels.
@@ -105,6 +105,34 @@ func (s *AppInstApi) setDnsLabel(stm concurrency.STM, ai *edgeproto.AppInst) err
 		return nil
 	}
 	return dnsLabelError(baseLabel)
+}
+
+func (s *AppApi) setFederatedId(stm concurrency.STM, app *edgeproto.App) error {
+	// More likely unique names should come first
+	// to avoid being truncated, except for region since
+	// that cannot be checked for uniqueness within the region.
+	// Truncate fields separately to avoid the last field from
+	// being completely truncated if other fields are too long.
+	reg := dnsSanitizeTrunc(*region, 10)
+	name := dnsSanitizeTrunc(app.Key.Name, 30)
+	ver := dnsSanitizeTrunc(app.Key.Version, 30)
+	org := dnsSanitizeTrunc(app.Key.Organization, 30)
+	id := fmt.Sprintf("%s-%s%s%s", reg, name, ver, org)
+	if len(id) > cloudcommon.AppFederatedIdMaxLen {
+		id = dnsSanitizeTrunc(id, cloudcommon.AppFederatedIdMaxLen)
+	}
+
+	// Number of iterations must be fairly low to avoid STM limits
+	app.FederatedId = ""
+	for ii := 0; ii < 10; ii++ {
+		fedId := genNextDnsLabel(id, cloudcommon.AppFederatedIdMaxLen, ii)
+		if s.fedIdStore.STMHas(stm, fedId) {
+			continue
+		}
+		app.FederatedId = fedId
+		return nil
+	}
+	return fmt.Errorf("Unable to generate unique federated id from base label of %q, please change key values", id)
 }
 
 func dnsSanitizeTrunc(name string, maxLen int) string {
