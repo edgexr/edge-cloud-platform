@@ -155,7 +155,7 @@ scrape_configs:
 - name: autoprov-feature
   rules:
   - alert: AutoProvUndeploy
-    expr: envoy_cluster_upstream_cx_active{app="App",appver="",apporg=""} <= 3
+    expr: envoy_cluster_upstream_cx_active{app="App",appver="",apporg=""} < 3
     for: 15m
 `
 	require.Equal(t, expected, string(fileContents))
@@ -201,7 +201,7 @@ scrape_configs:
 - name: autoprov-feature
   rules:
   - alert: AutoProvUndeploy
-    expr: envoy_cluster_upstream_cx_active{app="App",appver="",apporg=""} <= 3
+    expr: envoy_cluster_upstream_cx_active{app="App",appver="",apporg=""} < 3
     for: 45s
 `
 	require.Equal(t, expected, string(fileContents))
@@ -226,7 +226,7 @@ scrape_configs:
 - name: autoprov-feature
   rules:
   - alert: AutoProvUndeploy
-    expr: envoy_cluster_upstream_cx_active{app="App",appver="",apporg=""} <= 5
+    expr: envoy_cluster_upstream_cx_active{app="App",appver="",apporg=""} < 5
     for: 45s
 `
 	require.Equal(t, expected, string(fileContents))
