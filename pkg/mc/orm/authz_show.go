@@ -17,11 +17,11 @@ package orm
 import (
 	"context"
 
-	"github.com/labstack/echo/v4"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/labstack/echo/v4"
 )
 
 type AuthzShow struct {
@@ -170,7 +170,7 @@ type AuthzAppShow struct {
 	allowedOrgsByPool map[string]struct{}
 }
 
-func newShowAppAuthz(ctx context.Context, region, username string, resource, action string) (ctrlclient.ShowAppAuthz, error) {
+func newShowAppAuthz(ctx context.Context, region, username string, resource, action string) (*AuthzAppShow, error) {
 	// this gets developer orgs that user can see
 	orgs, err := enforcer.GetAuthorizedOrgs(ctx, username, resource, action)
 	if err != nil {
@@ -225,14 +225,18 @@ func newShowAppAuthz(ctx context.Context, region, username string, resource, act
 }
 
 func (s *AuthzAppShow) Ok(obj *edgeproto.App) (bool, bool) {
+	return s.OkOrg(obj.Key.Organization)
+}
+
+func (s *AuthzAppShow) OkOrg(org string) (bool, bool) {
 	filterOutput := false
 	if s.allowAll {
 		return true, filterOutput
 	}
-	if _, found := s.allowedOrgs[obj.Key.Organization]; found {
+	if _, found := s.allowedOrgs[org]; found {
 		return true, filterOutput
 	}
-	if _, found := s.allowedOrgsByPool[obj.Key.Organization]; found {
+	if _, found := s.allowedOrgsByPool[org]; found {
 		filterOutput = true
 		return true, filterOutput
 	}

@@ -133,6 +133,7 @@ apps:
   internalports: true
   accesstype: LoadBalancer
   trusted: true
+  globalid: local-mexprometheusappname10edgecloudorg
 appinstrefs:
 - key:
     organization: edgecloudorg

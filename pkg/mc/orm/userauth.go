@@ -25,8 +25,8 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	jwt "github.com/golang-jwt/jwt/v4"
@@ -142,7 +142,7 @@ func getClaims(c echo.Context) (*ormutil.UserClaims, error) {
 func AuthCookie(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		api := c.Path()
-		if (strings.Contains(api, "/auth/") || strings.Contains(api, federation.ApiRoot)) && !strings.Contains(api, "/ws/") {
+		if (strings.Contains(api, "/auth/") || strings.Contains(api, federationmgmt.ApiRoot) || strings.Contains(api, federationmgmt.CallbackRoot)) && !strings.Contains(api, "/ws/") {
 			err := registerAuthClaims(c)
 			if err != nil {
 				return err

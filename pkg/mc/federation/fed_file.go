@@ -28,9 +28,10 @@ const (
 	FileFieldRepoLocation  = "fileRepoLocation"
 	FileFieldFile          = "file"
 	FileFieldChecksum      = "checksum"
-	ImageStatusReady       = "Ready"
-	ImageStatusSending     = "Sending"
-	ImageStatusReceiving   = "Receiving"
+
+	ImageStatusReady     = "Ready"
+	ImageStatusSending   = "Sending"
+	ImageStatusReceiving = "Receiving"
 )
 
 const (

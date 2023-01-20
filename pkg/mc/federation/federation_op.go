@@ -35,7 +35,6 @@ import (
 )
 
 const (
-	ApiRoot  = "operatorplatform/federation/v1"
 	TokenUrl = "oauth2/token"
 
 	StatusUnregistered = "Unregistered"
@@ -46,16 +45,11 @@ const (
 
 	// Path params
 	PathVarFederationContextId = "federationContextId"
-	PathVarZoneId              = "zoneid"
-	PathVarAppId               = "appid"
-	PathVarAppInstId           = "appinstid"
-	PathVarProviderId          = "appproviderid"
-	PathVarPoolId              = "poolid"
-
-	// callback urls in UriTemplate (RFC6570) format
-	PartnerNotifyPath      = "/notify/{" + PathVarFederationContextId + "}"
-	PartnerZoneNotifyPath  = "/notify/{" + PathVarFederationContextId + "}/zones/{" + PathVarZoneId + "}"
-	PartnerAppOnNotifyPath = "/notify/{" + PathVarFederationContextId + "}/application/onboarding/app/{" + PathVarAppId + "}"
+	PathVarZoneId              = "zoneId"
+	PathVarAppId               = "appId" // TODO: inconsistent callback parameters
+	PathVarAppInstId           = "appInstanceId"
+	PathVarAppProviderId       = "appProviderId"
+	PathVarPoolId              = "poolId"
 
 	BadAuthDelay   = 3 * time.Second
 	AllAppsVersion = "1.0"
@@ -66,16 +60,18 @@ type PartnerApi struct {
 	connCache      ctrlclient.ClientConnMgr
 	vaultConfig    *vault.Config
 	tokenSources   *federationmgmt.TokenSourceCache
+	fedExtAddr     string
 	vmRegistryAddr string
 	harborAddr     string
 	allowPlainHttp bool // for unit testing
 }
 
-func NewPartnerApi(db *gorm.DB, connCache ctrlclient.ClientConnMgr, vaultConfig *vault.Config, vmRegistryAddr, harborAddr string) *PartnerApi {
+func NewPartnerApi(db *gorm.DB, connCache ctrlclient.ClientConnMgr, vaultConfig *vault.Config, fedExtAddr, vmRegistryAddr, harborAddr string) *PartnerApi {
 	p := &PartnerApi{
 		database:       db,
 		connCache:      connCache,
 		vaultConfig:    vaultConfig,
+		fedExtAddr:     fedExtAddr,
 		vmRegistryAddr: vmRegistryAddr,
 		harborAddr:     harborAddr,
 	}
@@ -95,11 +91,12 @@ func (p *PartnerApi) AllowPlainHttp() {
 // E/W-BoundInterface APIs for Federation between multiple Operator Platforms (federators)
 // These are the standard interfaces which are called by other federators for unified edge platform experience
 func (p *PartnerApi) InitAPIs(e *echo.Echo) {
-	RegisterHandlersWithBaseURL(e, p, ApiRoot)
-	// TODO: register all notify callback paths
-
-	e.POST(ApiRoot+ormutil.NewUriTemplate(PartnerNotifyPath).EchoPath(), p.PartnerNotify)
-	e.POST(ApiRoot+ormutil.NewUriTemplate(PartnerZoneNotifyPath).EchoPath(), p.PartnerZoneNotify)
+	RegisterHandlersWithBaseURL(e, p, federationmgmt.ApiRoot)
+	e.POST(federationmgmt.PartnerStatusEventPath, p.PartnerStatusEvent)
+	e.POST(federationmgmt.PartnerZoneResourceUpdatePath, p.PartnerZoneResourceUpdate)
+	e.POST(federationmgmt.PartnerAppOnboardStatusEventPath, p.PartnerAppOnboardStatusEvent)
+	e.POST(federationmgmt.PartnerInstanceStatusEventPath, p.PartnerInstanceStatusEvent)
+	e.POST(federationmgmt.PartnerResourceStatusChangePath, p.PartnerResourceStatusChange)
 }
 
 func (p *PartnerApi) lookupProvider(c echo.Context, federationContextId FederationContextId) (*ormapi.FederationProvider, error) {
@@ -134,7 +131,7 @@ func (p *PartnerApi) lookupProvider(c echo.Context, federationContextId Federati
 	return &provider, nil
 }
 
-func (p *PartnerApi) lookupConsumer(c echo.Context, federationContextId FederationContextId) (*ormapi.FederationConsumer, error) {
+func (p *PartnerApi) lookupConsumer(c echo.Context, federationContextId string) (*ormapi.FederationConsumer, error) {
 	claims, err := ormutil.GetClaims(c)
 	if err != nil {
 		return nil, err
@@ -170,9 +167,9 @@ func (p *PartnerApi) GetFederationAPIKey(ctx context.Context, fedKey *federation
 	return federationmgmt.GetFederationAPIKey(ctx, p.vaultConfig, fedKey)
 }
 
-func (p *PartnerApi) ProviderPartnerClient(ctx context.Context, provider *ormapi.FederationProvider) (*federationmgmt.Client, error) {
+func (p *PartnerApi) ProviderPartnerClient(ctx context.Context, provider *ormapi.FederationProvider, cbUrl string) (*federationmgmt.Client, error) {
 	fedKey := ProviderFedKey(provider)
-	return p.tokenSources.Client(ctx, provider.PartnerNotifyDest, fedKey)
+	return p.tokenSources.Client(ctx, cbUrl, fedKey)
 }
 
 func (p *PartnerApi) ConsumerPartnerClient(ctx context.Context, consumer *ormapi.FederationConsumer) (*federationmgmt.Client, error) {
@@ -183,7 +180,7 @@ func (p *PartnerApi) ConsumerPartnerClient(ctx context.Context, consumer *ormapi
 // Remote partner federator requests to create the federation, which
 // allows its developers and subscribers to run their applications
 // on our cloudlets
-func (p *PartnerApi) CreateFederation(c echo.Context) (reterr error) {
+func (p *PartnerApi) CreateFederation(c echo.Context, params CreateFederationParams) (reterr error) {
 	ctx := ormutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, "")
@@ -198,11 +195,11 @@ func (p *PartnerApi) CreateFederation(c echo.Context) (reterr error) {
 	if req.OrigOPFederationId == "" {
 		return fmt.Errorf("OrigOPFederationID not specified")
 	}
-	if req.FederationNotificationDest == "" {
+	if req.PartnerStatusLink == "" {
 		return fmt.Errorf("FederationNotificationDest not specified")
 	}
-	if !strings.HasPrefix(req.FederationNotificationDest, "https://") && !p.allowPlainHttp {
-		return fmt.Errorf("FederationNotificationDest only supports https scheme")
+	if !strings.HasPrefix(req.PartnerStatusLink, "https://") && !p.allowPlainHttp {
+		return fmt.Errorf("PartnerStatusLink must use https scheme")
 	}
 
 	// For convenience allow CreateFederation to be idempotent,
@@ -217,11 +214,7 @@ func (p *PartnerApi) CreateFederation(c echo.Context) (reterr error) {
 	// federation context id.
 	provider.PartnerInfo.FederationId = req.OrigOPFederationId
 	provider.PartnerInfo.InitialDate = req.InitialDate
-	notifyDestTmpl := ormutil.NewUriTemplate(req.FederationNotificationDest)
-	vars := map[string]string{
-		PathVarFederationContextId: provider.FederationContextId,
-	}
-	provider.PartnerNotifyDest = notifyDestTmpl.Eval(vars)
+	provider.PartnerNotifyDest = req.PartnerStatusLink
 	if req.OrigOPCountryCode != nil {
 		provider.PartnerInfo.CountryCode = *req.OrigOPCountryCode
 	}
@@ -230,7 +223,7 @@ func (p *PartnerApi) CreateFederation(c echo.Context) (reterr error) {
 	provider.Status = StatusRegistered
 
 	out := fedewapi.FederationResponseData{}
-	out.FederationContextId = &provider.FederationContextId
+	out.FederationContextId = provider.FederationContextId
 	out.PartnerOPFederationId = provider.MyInfo.FederationId
 	if provider.MyInfo.CountryCode != "" {
 		out.PartnerOPCountryCode = &provider.MyInfo.CountryCode
@@ -493,40 +486,6 @@ func (p *PartnerApi) DeleteFederationDetails(c echo.Context, fedCtxId Federation
 	return nil
 }
 
-// Remote partner federator calls this api callback to notify us about
-// its federation when something about it's federation changes.
-func (p *PartnerApi) PartnerNotifyEvent(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
-	fedCtxId := c.Param(PathVarFederationContextId)
-	if fedCtxId == "" {
-		return fmt.Errorf("Missing federation context id in path")
-	}
-	// lookup federation provider based on claims
-	consumer, err := p.lookupConsumer(c, FederationContextId(fedCtxId))
-	if err != nil {
-		return err
-	}
-	in := fedewapi.PartnerPostRequest{}
-	if err := c.Bind(&in); err != nil {
-		return err
-	}
-	// TODO: finish once callbacks are cleaned up
-	// for now just support zones
-	switch in.OperationType {
-	case "ADD_ZONES":
-		err = p.AddConsumerZones(ctx, consumer, in.AddZones)
-	case "REMOVE_ZONES":
-		err = p.RemoveConsumerZones(ctx, consumer, in.RemoveZones)
-	case "UPDATE_ZONES":
-		err = p.SetConsumerZones(ctx, consumer, in.AddZones)
-	}
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (p *PartnerApi) AddConsumerZones(ctx context.Context, consumer *ormapi.FederationConsumer, zones []fedewapi.ZoneDetails) (reterr error) {
 	db := p.loggedDB(ctx)
 	createdZones := []string{}
@@ -693,19 +652,18 @@ func SetMobileNetworkIds(fed *ormapi.Federator, ids *fedewapi.MobileNetworkIds) 
 	}
 }
 
-func (p *PartnerApi) PartnerNotify(c echo.Context) error {
+func (p *PartnerApi) PartnerStatusEvent(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	fedCtxId := c.Param(PathVarFederationContextId)
+	in := fedewapi.PartnerPostRequest{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
 	// lookup federation consumer based on claims
-	consumer, err := p.lookupConsumer(c, FederationContextId(fedCtxId))
+	consumer, err := p.lookupConsumer(c, in.FederationContextId)
 	if err != nil {
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "partner notify", "consumer", consumer.Name, "operatorid", consumer.OperatorId)
-	in := fedewapi.PartnerPostRequest{}
-	if err = c.Bind(&in); err != nil {
-		return ormutil.BindErr(err)
-	}
 	switch in.OperationType {
 	case "ADD_ZONES":
 		err = p.AddConsumerZones(ctx, consumer, in.AddZones)

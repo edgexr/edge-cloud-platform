@@ -690,6 +690,27 @@ func (r *Run) AppInstApi(data *[]edgeproto.AppInst, dataMap interface{}, dataOut
 	}
 }
 
+func (r *Run) AppInstApi_FedAppInstEvent(data *[]edgeproto.FedAppInstEvent, dataMap interface{}, dataOut interface{}) {
+	log.DebugLog(log.DebugLevelApi, "API for FedAppInstEvent", "mode", r.Mode)
+	for ii, objD := range *data {
+		obj := &objD
+		switch r.Mode {
+		case "handle":
+			out, err := r.client.HandleFedAppInstEvent(r.ctx, obj)
+			if err != nil {
+				err = ignoreExpectedErrors(r.Mode, obj.GetKey(), err)
+				r.logErr(fmt.Sprintf("AppInstApi_FedAppInstEvent[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[]edgeproto.Result)
+				if !ok {
+					panic(fmt.Sprintf("RunAppInstApi_FedAppInstEvent expected dataOut type *[]edgeproto.Result, but was %T", dataOut))
+				}
+				*outp = append(*outp, *out)
+			}
+		}
+	}
+}
+
 func (s *DummyServer) CreateAppInst(in *edgeproto.AppInst, server edgeproto.AppInstApi_CreateAppInstServer) error {
 	var err error
 	if true {
@@ -1005,12 +1026,25 @@ func (s *CliClient) ShowAppInst(ctx context.Context, in *edgeproto.AppInst) ([]e
 	return output, err
 }
 
+func (s *ApiClient) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.FedAppInstEvent) (*edgeproto.Result, error) {
+	api := edgeproto.NewAppInstApiClient(s.Conn)
+	return api.HandleFedAppInstEvent(ctx, in)
+}
+
+func (s *CliClient) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.FedAppInstEvent) (*edgeproto.Result, error) {
+	out := edgeproto.Result{}
+	args := append(s.BaseArgs, "controller", "HandleFedAppInstEvent")
+	err := wrapper.RunEdgectlObjs(args, in, &out, s.RunOps...)
+	return &out, err
+}
+
 type AppInstApiClient interface {
 	CreateAppInst(ctx context.Context, in *edgeproto.AppInst) ([]edgeproto.Result, error)
 	DeleteAppInst(ctx context.Context, in *edgeproto.AppInst) ([]edgeproto.Result, error)
 	RefreshAppInst(ctx context.Context, in *edgeproto.AppInst) ([]edgeproto.Result, error)
 	UpdateAppInst(ctx context.Context, in *edgeproto.AppInst) ([]edgeproto.Result, error)
 	ShowAppInst(ctx context.Context, in *edgeproto.AppInst) ([]edgeproto.AppInst, error)
+	HandleFedAppInstEvent(ctx context.Context, in *edgeproto.FedAppInstEvent) (*edgeproto.Result, error)
 }
 
 type AppInstInfoStream interface {

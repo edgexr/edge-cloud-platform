@@ -252,6 +252,7 @@ regiondata:
                   protocol: UDP
       deploymentgenerator: kubernetes-basic
       accesstype: LoadBalancer
+      globalid: local-ep110user3org
     appinstances:
     - key:
         appkey:

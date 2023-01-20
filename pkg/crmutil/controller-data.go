@@ -25,13 +25,13 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	opentracing "github.com/opentracing/opentracing-go"
 )
@@ -796,6 +796,7 @@ func (cd *ControllerData) appInstChanged(ctx context.Context, old *edgeproto.App
 				defer cd.vmResourceActionEnd(ctx, &new.Key.ClusterInstKey.CloudletKey)
 			}
 			oldUri := new.Uri
+			oldFedName := new.FedKey.FederationName
 			err = cd.platform.CreateAppInst(ctx, &clusterInst, &app, new, &flavor, updateAppCacheCallback)
 			if err != nil {
 				errstr := fmt.Sprintf("Create App Inst failed: %s", err)
@@ -810,6 +811,11 @@ func (cd *ControllerData) appInstChanged(ctx context.Context, old *edgeproto.App
 			if new.Uri != "" && oldUri != new.Uri {
 				cd.AppInstInfoCache.SetUri(ctx, &new.Key, new.Uri)
 			}
+			// for FRM/Federation, set AppInstId returned by partner OP
+			if new.FedKey.FederationName != "" && oldFedName != new.FedKey.FederationName {
+				cd.AppInstInfoCache.SetFedAppInstKey(ctx, &new.Key, new.FedKey)
+			}
+
 			log.SpanLog(ctx, log.DebugLevelInfra, "created app inst", "appinst", new, "ClusterInst", clusterInst)
 
 			cd.appInstInfoPowerState(ctx, &new.Key, edgeproto.PowerState_POWER_ON)

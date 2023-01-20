@@ -225,6 +225,7 @@ const DnsDomainLabelMaxLen = 40
 const DnsRegionLabelMaxLen = 10
 const DnsCloudletLabelMaxLen = 50
 const DnsCloudletObjectLabelMaxLen = 63
+const AppFederatedIdMaxLen = 50
 
 // Values for QOS Priority Session API
 const TagPrioritySessionId string = "priority_session_id"

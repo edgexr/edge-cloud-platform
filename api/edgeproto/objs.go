@@ -612,6 +612,15 @@ func (s *AppInst) Validate(fields map[string]struct{}) error {
 	return nil
 }
 
+func (s *FedAppInstKey) ValidateKey() error {
+	// key never comes from external input
+	return nil
+}
+
+func (s *FedAppInst) Validate(fields map[string]struct{}) error {
+	return nil
+}
+
 func (key *ControllerKey) ValidateKey() error {
 	if key.Addr == "" {
 		return errors.New("Invalid address")

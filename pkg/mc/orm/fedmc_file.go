@@ -10,6 +10,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
@@ -217,8 +218,8 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 	if err != nil {
 		return err
 	}
-	apiPath := fmt.Sprintf("/%s/%s/files", federation.ApiRoot, consumer.FederationContextId)
-	_, err = fedClient.SendRequest(ctx, http.MethodPost, apiPath, data, nil, nil)
+	apiPath := fmt.Sprintf("/%s/%s/files", federationmgmt.ApiRoot, consumer.FederationContextId)
+	_, _, err = fedClient.SendRequest(ctx, http.MethodPost, apiPath, data, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -267,8 +268,8 @@ func DeleteConsumerImage(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	apiPath := fmt.Sprintf("/%s/%s/files/%s", federation.ApiRoot, consumer.FederationContextId, image.ID)
-	_, err = fedClient.SendRequest(ctx, http.MethodDelete, apiPath, nil, nil, nil)
+	apiPath := fmt.Sprintf("/%s/%s/files/%s", federationmgmt.ApiRoot, consumer.FederationContextId, image.ID)
+	_, _, err = fedClient.SendRequest(ctx, http.MethodDelete, apiPath, nil, nil, nil)
 	if err != nil {
 		return err
 	}

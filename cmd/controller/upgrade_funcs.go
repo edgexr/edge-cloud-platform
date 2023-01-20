@@ -987,3 +987,40 @@ func FixSharedRootLBFQDN(ctx context.Context, objStore objstore.KVStore, allApis
 	}
 	return nil
 }
+
+func SetAppGlobalId(ctx context.Context, objStore objstore.KVStore, allApis *AllApis) error {
+	log.SpanLog(ctx, log.DebugLevelUpgrade, "SetAppGlobalId")
+
+	appKeys, err := getDbObjectKeys(objStore, "App")
+	if err != nil {
+		return err
+	}
+	for appKey, _ := range appKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			appStr := stm.Get(appKey)
+			if appStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			var app edgeproto.App
+			err2 := json.Unmarshal([]byte(appStr), &app)
+			if err2 != nil {
+				log.SpanLog(ctx, log.DebugLevelUpgrade, "Cannot unmarshal key", "val", appStr, "err", err2, "app", app)
+				return err2
+			}
+			if app.GlobalId != "" {
+				return nil
+			}
+			if err := allApis.appApi.setGlobalId(stm, &app); err != nil {
+				return fmt.Errorf("Set global id for app %s failed, %s", appKey, err)
+			}
+			allApis.appApi.store.STMPut(stm, &app)
+			allApis.appApi.globalIdStore.STMPut(stm, app.GlobalId)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

@@ -176,6 +176,10 @@ func (s *TestClient) ShowAppInst(ctx context.Context, in *edgeproto.AppInst) ([]
 	return out, err
 }
 
+func (s *TestClient) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.FedAppInstEvent) (*edgeproto.Result, error) {
+	return nil, nil
+}
+
 func (s *TestClient) ShowAppInstInfo(ctx context.Context, in *edgeproto.AppInstInfo) ([]edgeproto.AppInstInfo, error) {
 	return nil, nil
 }

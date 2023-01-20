@@ -11,6 +11,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
@@ -98,9 +99,6 @@ func (p *PartnerApi) ZoneSubscribe(c echo.Context, fedCtxId FederationContextId)
 	if len(in.AcceptedAvailabilityZones) == 0 {
 		return fmt.Errorf("Must specify accepted availability zones")
 	}
-	if in.AvailZoneNotifLink == "" {
-		return fmt.Errorf("Must specify availZoneNotifLink")
-	}
 
 	out := fedewapi.ZoneRegistrationResponseData{}
 
@@ -118,6 +116,7 @@ func (p *PartnerApi) ZoneSubscribe(c echo.Context, fedCtxId FederationContextId)
 		// Ok if already registered, it's just a no-op
 		if zone.Status == StatusUnregistered {
 			zone.Status = StatusRegistered
+
 			zone.PartnerNotifyZoneURI = in.AvailZoneNotifLink
 			if err := db.Save(&zone).Error; err != nil {
 				return ormutil.DbErr(err)
@@ -353,11 +352,11 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 	}
 	opZoneReg := fedewapi.ZoneRegistrationRequestData{
 		AcceptedAvailabilityZones: regZoneIds,
-		AvailZoneNotifLink:        ApiRoot + PartnerZoneNotifyPath,
+		AvailZoneNotifLink:        p.fedExtAddr + "/" + federationmgmt.CallbackRoot,
 	}
 	opZoneRes := fedewapi.ZoneRegistrationResponseData{}
-	apiPath := fmt.Sprintf("/%s/%s/zones", ApiRoot, consumer.FederationContextId)
-	_, err = fedClient.SendRequest(ctx, "POST", apiPath, &opZoneReg, &opZoneRes, nil)
+	apiPath := fmt.Sprintf("/%s/%s/zones", federationmgmt.ApiRoot, consumer.FederationContextId)
+	_, _, err = fedClient.SendRequest(ctx, "POST", apiPath, &opZoneReg, &opZoneRes, nil)
 	if err != nil {
 		return err
 	}
@@ -530,8 +529,8 @@ func (p *PartnerApi) DeregisterConsumerZones(ctx context.Context, consumer *orma
 		// delete cloudletinfo is not required
 		// because delete cloudlet will delete it.
 		// notify partner
-		apiPath := fmt.Sprintf("/%s/%s/zones/%s", ApiRoot, consumer.FederationContextId, zone.ZoneId)
-		_, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
+		apiPath := fmt.Sprintf("/%s/%s/zones/%s", federationmgmt.ApiRoot, consumer.FederationContextId, zone.ZoneId)
+		_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
 		if err != nil {
 			return err
 		}
@@ -545,21 +544,19 @@ func (p *PartnerApi) DeregisterConsumerZones(ctx context.Context, consumer *orma
 	return nil
 }
 
-func (p *PartnerApi) PartnerZoneNotify(c echo.Context) error {
+func (p *PartnerApi) PartnerZoneResourceUpdate(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	fedCtxId := c.Param(PathVarFederationContextId)
-	zoneId := c.Param(PathVarZoneId)
+	in := fedewapi.FederationContextIdZonesPostRequest{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
 	// lookup federation consumer based on claims
-	consumer, err := p.lookupConsumer(c, FederationContextId(fedCtxId))
+	consumer, err := p.lookupConsumer(c, in.FederationContextId)
 	if err != nil {
 		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "partner notify", "consumer", consumer.Name, "operatorid", consumer.OperatorId, "zoneId", zoneId)
-	in := fedewapi.FederationContextIdZonesPostRequest{}
-	if err = c.Bind(&in); err != nil {
-		return ormutil.BindErr(err)
-	}
 	// Notification about resource availability,
 	// nothing for us to do.
+	log.SpanLog(ctx, log.DebugLevelApi, "partner zone resource update", "consumer", consumer.Name, "operatorid", consumer.OperatorId, "data", in)
 	return nil
 }

@@ -586,10 +586,16 @@ func addControllerApis(method string, group *echo.Group) {
 	// ServerlessConfigVcpusNanos: 40.1.2
 	// ServerlessConfigRam: 40.2
 	// ServerlessConfigMinReplicas: 40.3
+	// ServerlessConfigGpuConfig: 40.4
+	// ServerlessConfigGpuConfigType: 40.4.1
+	// ServerlessConfigGpuConfigModel: 40.4.2
+	// ServerlessConfigGpuConfigNumGpu: 40.4.3
+	// ServerlessConfigGpuConfigRam: 40.4.4
 	// VmAppOsType: 41
 	// AlertPolicies: 42
 	// QosSessionProfile: 43
 	// QosSessionDuration: 44
+	// GlobalId: 45
 	// ```
 	// Security:
 	//   Bearer:
@@ -927,6 +933,8 @@ func addControllerApis(method string, group *echo.Group) {
 	// FederationConfigFederationContextId: 56.1
 	// FederationConfigPartnerFederationAddr: 56.2
 	// FederationConfigFederationDbId: 56.3
+	// FederationConfigFederationName: 56.4
+	// FederationConfigAppInstStatusEventPath: 56.5
 	// LicenseConfigStoragePath: 57
 	// ```
 	// Security:
@@ -1703,6 +1711,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// MappedPortsMaxPktSize: 9.9
 	// Flavor: 12
 	// FlavorName: 12.1
+	// CloudletFlavor: 42
 	// State: 14
 	// Errors: 15
 	// CrmOverride: 16
@@ -1734,6 +1743,9 @@ func addControllerApis(method string, group *echo.Group) {
 	// DedicatedIp: 39
 	// UniqueId: 40
 	// DnsLabel: 41
+	// FedKey: 43
+	// FedKeyFederationName: 43.1
+	// FedKeyAppInstId: 43.2
 	// ```
 	// Security:
 	//   Bearer:

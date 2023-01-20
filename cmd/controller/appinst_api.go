@@ -43,6 +43,7 @@ type AppInstApi struct {
 	store         edgeproto.AppInstStore
 	cache         edgeproto.AppInstCache
 	idStore       edgeproto.AppInstIdStore
+	fedStore      edgeproto.FedAppInstStore
 	dnsLabelStore *edgeproto.CloudletObjectDnsLabelStore
 }
 
@@ -66,6 +67,7 @@ func NewAppInstApi(sync *Sync, all *AllApis) *AppInstApi {
 	appInstApi.all = all
 	appInstApi.sync = sync
 	appInstApi.store = edgeproto.NewAppInstStore(sync.store)
+	appInstApi.fedStore = edgeproto.NewFedAppInstStore(sync.store)
 	appInstApi.dnsLabelStore = &all.cloudletApi.objectDnsLabelStore
 	edgeproto.InitAppInstCache(&appInstApi.cache)
 	sync.RegisterCache(&appInstApi.cache)
@@ -1076,6 +1078,9 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				if curr.State == edgeproto.TrackedState_CREATING_DEPENDENCIES {
 					s.store.STMDel(stm, &in.Key)
 					s.idStore.STMDel(stm, in.UniqueId)
+					if in.FedKey.FederationName != "" {
+						s.fedStore.STMDel(stm, &in.FedKey)
+					}
 					s.dnsLabelStore.STMDel(stm, &in.Key.ClusterInstKey.CloudletKey, in.DnsLabel)
 					s.all.appInstRefsApi.removeRef(stm, &in.Key)
 					if cloudcommon.IsClusterInstReqd(&app) {
@@ -1918,6 +1923,9 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			// controller state.
 			s.store.STMDel(stm, &in.Key)
 			s.idStore.STMDel(stm, in.UniqueId)
+			if in.FedKey.FederationName != "" {
+				s.fedStore.STMDel(stm, &in.FedKey)
+			}
 			s.dnsLabelStore.STMDel(stm, &in.Key.ClusterInstKey.CloudletKey, in.DnsLabel)
 			s.all.appInstRefsApi.removeRef(stm, &in.Key)
 			if cloudcommon.IsClusterInstReqd(&app) {
@@ -2045,6 +2053,15 @@ func (s *AppInstApi) UpdateFromInfo(ctx context.Context, in *edgeproto.AppInstIn
 			inst.Uri = in.Uri
 			applyUpdate = true
 		}
+		if in.FedKey.AppInstId != "" && inst.FedKey.AppInstId == "" {
+			inst.FedKey = in.FedKey
+			fedAppInst := edgeproto.FedAppInst{
+				Key:        in.FedKey,
+				AppInstKey: in.Key,
+			}
+			s.fedStore.STMPut(stm, &fedAppInst)
+			applyUpdate = true
+		}
 
 		if inst.State == in.State {
 			// already in that state
@@ -2114,11 +2131,78 @@ func (s *AppInstApi) DeleteFromInfo(ctx context.Context, in *edgeproto.AppInstIn
 		}
 		s.store.STMDel(stm, &in.Key)
 		s.idStore.STMDel(stm, inst.UniqueId)
+		if in.FedKey.FederationName != "" {
+			s.fedStore.STMDel(stm, &in.FedKey)
+		}
 		s.dnsLabelStore.STMDel(stm, &in.Key.ClusterInstKey.CloudletKey, inst.DnsLabel)
 		s.all.appInstRefsApi.removeRef(stm, &in.Key)
 		s.all.clusterRefsApi.removeRef(stm, &inst)
 		return nil
 	})
+}
+
+func (s *AppInstApi) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.FedAppInstEvent) (*edgeproto.Result, error) {
+	log.SpanLog(ctx, log.DebugLevelApi, "FedAppInstEvent", "appInstInfo", in)
+	portFqdns := map[int32]string{}
+	for _, port := range in.Ports {
+		portFqdns[port.InternalPort] = port.FqdnPrefix
+	}
+
+	var info *edgeproto.AppInstInfo
+	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+		// We need to lookup the AppInstKey from the FedAppInstId
+		fedAppInst := edgeproto.FedAppInst{}
+		if !s.fedStore.STMGet(stm, &in.Key, &fedAppInst) {
+			return in.Key.NotFoundError()
+		}
+		info = &edgeproto.AppInstInfo{}
+		if !s.all.appInstInfoApi.store.STMGet(stm, &fedAppInst.AppInstKey, info) {
+			return fedAppInst.AppInstKey.NotFoundError()
+		}
+		// Set state to update. We don't actually update info here
+		// to be able to reuse the logic in UpdateFromInfo.
+		if in.State != edgeproto.TrackedState_TRACKED_STATE_UNKNOWN {
+			info.State = in.State
+		}
+		if in.State == edgeproto.TrackedState_CREATE_ERROR {
+			if in.Message != "" {
+				info.Errors = append(info.Errors, in.Message)
+			}
+		} else {
+			if in.Message != "" {
+				info.Status.SetTask(in.Message)
+			}
+		}
+
+		if len(portFqdns) > 0 {
+			// update port FQDNs on AppInst
+			inst := edgeproto.AppInst{}
+			if !s.store.STMGet(stm, &fedAppInst.AppInstKey, &inst) {
+				return fmt.Errorf("Unable to update AppInst ports, %s", fedAppInst.AppInstKey.NotFoundError())
+			}
+			applyUpdate := false
+			for ii, port := range inst.MappedPorts {
+				fqdn, ok := portFqdns[port.InternalPort]
+				if !ok {
+					continue
+				}
+				if inst.MappedPorts[ii].FqdnPrefix == fqdn {
+					continue
+				}
+				inst.MappedPorts[ii].FqdnPrefix = fqdn
+				applyUpdate = true
+			}
+			if applyUpdate {
+				s.store.STMPut(stm, &inst)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return &edgeproto.Result{}, err
+	}
+	s.UpdateFromInfo(ctx, info)
+	return &edgeproto.Result{}, nil
 }
 
 func (s *AppInstApi) ReplaceErrorState(ctx context.Context, in *edgeproto.AppInst, newState edgeproto.TrackedState) {
@@ -2136,6 +2220,9 @@ func (s *AppInstApi) ReplaceErrorState(ctx context.Context, in *edgeproto.AppIns
 		if newState == edgeproto.TrackedState_DELETE_DONE {
 			s.store.STMDel(stm, &in.Key)
 			s.idStore.STMDel(stm, inst.UniqueId)
+			if in.FedKey.FederationName != "" {
+				s.fedStore.STMDel(stm, &in.FedKey)
+			}
 			s.dnsLabelStore.STMDel(stm, &in.Key.ClusterInstKey.CloudletKey, inst.DnsLabel)
 			s.all.appInstRefsApi.removeRef(stm, &in.Key)
 			s.all.clusterRefsApi.removeRef(stm, &inst)

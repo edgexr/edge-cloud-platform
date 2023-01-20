@@ -17,7 +17,6 @@ package ormapi
 import (
 	"time"
 
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/lib/pq"
 )
 
@@ -255,15 +254,64 @@ type ProviderImage struct {
 	Status string
 }
 
-// ConsumerApp tracks an App that has been onboarded to the partner
+// ConsumerApp tracks an App that has been onboarded to the partner.
+// The same App in different regions must be onboarded per region.
 type ConsumerApp struct {
+	// Unique ID, acts as both the App and Artefact IDs
+	ID string `gorm:"primary_key"`
+	// Target federation consumer name
+	FederationName string `gorm:"primary_key;type:citext;not null"`
 	// Region name
 	// required: true
 	Region string
-	// App in region
-	App edgeproto.App
-	// Target federation consumer name
-	FederationName string
+	// App name in region
+	AppName string
+	// App org in region
+	AppOrg string
+	// App version in region
+	AppVers string
+	// Status
+	// read only: true
+	Status string
+}
+
+// Tracks an App created in the Provider's regions for an Artefact
+type ProviderArtefact struct {
+	// Federation Provider name
+	FederationName string `gorm:"primary_key;type:citext;not null"`
+	// Artefact ID send by partner
+	ArtefactID string `gorm:"primary_key;type:text;not null"`
+	// App name in region
+	AppName string
+	// App version in region
+	AppVers string
+	// App provider ID
+	AppProviderId string
+	// Virtualization Type
+	VirtType string
+	// Descriptor Type
+	DescType string
+}
+
+type ProviderApp struct {
+	// Federation Provider name
+	FederationName string `gorm:"primary_key;type:citext;not null"`
+	// App ID send by partner, also is the artefact ID
+	AppID string `gorm:"primary_key;type:text;not null"`
+	// App provider ID
+	AppProviderId string
+	// Artefact IDs
+	ArtefactIds pq.StringArray `gorm:"type:text[]"`
+	// Restricted Zones
+	DeploymentZones pq.StringArray `gorm:"type:text[]"`
+}
+
+// This is only to allocate an appInst unique ID
+type ProviderAppInst struct {
+	// Federation Provider name
+	FederationName string `gorm:"primary_key;type:citext;not null"`
+	// AppInst unique ID
+	AppInstID string `gorm:"primary_key;type:text;not null"`
 }
 
 func (f *FederationProvider) GetSortString() string {

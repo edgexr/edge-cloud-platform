@@ -168,6 +168,27 @@ func init() {
 			ReplyData:    &[]ormapi.ProviderImage{},
 			Path:         "/auth/federation/provider/image/show",
 			ShowFilter:   true,
+		}, {
+			Name:         "ShowProviderArtefact",
+			Use:          "showartefacts",
+			Short:        "Show Artefacts created by partner",
+			OptionalArgs: strings.Join(ProviderArtefactShowArgs, " "),
+			Comments:     ormapi.ProviderArtefactComments,
+			ReqData:      &ormapi.ProviderArtefact{},
+			ReplyData:    &[]ormapi.ProviderArtefact{},
+			Path:         "/auth/federation/provider/artefact/show",
+			ShowFilter:   true,
+		}, {
+			Name:         "ShowProviderApp",
+			Use:          "showapps",
+			Short:        "Show Apps onboarded by partner",
+			OptionalArgs: strings.Join(ProviderAppShowArgs, " "),
+			SpecialArgs:  &ProviderAppSpecialArgs,
+			Comments:     ormapi.ProviderAppComments,
+			ReqData:      &ormapi.ProviderApp{},
+			ReplyData:    &[]ormapi.ProviderApp{},
+			Path:         "/auth/federation/provider/app/show",
+			ShowFilter:   true,
 		},
 	}
 	AllApis.AddGroup(FederationProviderGroup, "Manage Federation Provider and Zones", cmds)
@@ -365,6 +386,29 @@ var ProviderZoneShowArgs = []string{
 
 var ShareZoneSpecialArgs = map[string]string{
 	"zones": "StringArray",
+}
+
+var ProviderArtefactShowArgs = []string{
+	"federationname",
+	"artefactid",
+	"appname",
+	"appvers",
+	"appproviderid",
+	"virttype",
+	"desctype",
+}
+
+var ProviderAppShowArgs = []string{
+	"federationname",
+	"appid",
+	"appproviderid",
+	"artefactids",
+	"deploymentzones",
+}
+
+var ProviderAppSpecialArgs = map[string]string{
+	"artefactids":     "StringArray",
+	"deploymentzones": "StringArray",
 }
 
 // Federation Consumer

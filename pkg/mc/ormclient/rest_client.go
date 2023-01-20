@@ -54,6 +54,7 @@ type Client struct {
 	TestTransport http.RoundTripper
 	// Print input data transformations
 	PrintTransformations bool
+	Timeout              time.Duration
 }
 
 func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
@@ -115,7 +116,7 @@ func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Res
 }
 
 func (s *Client) PostJson(uri, token string, reqData interface{}, replyData interface{}) (int, error) {
-	status, _, err := s.HttpJsonSend("POST", uri, token, reqData, replyData, nil, nil)
+	status, _, err := s.HttpJsonSend("POST", uri, token, reqData, replyData, nil, nil, nil)
 	return status, err
 }
 
@@ -270,23 +271,32 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{},
 		}
 		fmt.Printf("%s\n", curlcmd)
 	}
-	client := &http.Client{Transport: tr}
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   s.Timeout,
+	}
 	return client.Do(req)
 }
 
-func (s *Client) HttpJsonSend(method, uri, token string, reqData interface{}, replyData interface{}, headerVals http.Header, queryParams map[string]string) (int, http.Header, error) {
+func (s *Client) HttpJsonSend(method, uri, token string, reqData interface{}, replyData interface{}, headerVals http.Header, queryParams map[string]string, okStatuses map[int]struct{}) (int, http.Header, error) {
 	resp, err := s.HttpJsonSendReq(method, uri, token, reqData, headerVals, queryParams)
 	if err != nil {
 		return 0, nil, fmt.Errorf("%s %s client do failed, %s", method, uri, err.Error())
 	}
+	okStatus := false
+	if okStatuses == nil {
+		okStatus = resp.StatusCode == http.StatusOK
+	} else {
+		_, okStatus = okStatuses[resp.StatusCode]
+	}
 	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusOK && replyData != nil {
+	if okStatus && replyData != nil {
 		err := json.NewDecoder(resp.Body).Decode(replyData)
 		if err != nil && err != io.EOF {
 			return resp.StatusCode, nil, fmt.Errorf("%s %s decode resp failed, %v", method, uri, err)
 		}
 	}
-	if resp.StatusCode != http.StatusOK {
+	if !okStatus {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return resp.StatusCode, nil, err

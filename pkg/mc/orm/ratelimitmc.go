@@ -23,8 +23,8 @@ import (
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/ratelimit"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
@@ -218,7 +218,7 @@ func RateLimit(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-var fedPathMatch = regexp.MustCompile(federation.ApiRoot + "/(.*)?/")
+var fedPathMatch = regexp.MustCompile(federationmgmt.ApiRoot + "/(.*)?/")
 
 // Echo middleware function that handles rate limiting for federation APIs
 func FederationRateLimit(next echo.HandlerFunc) echo.HandlerFunc {

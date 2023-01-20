@@ -1,73 +1,73 @@
---- FederationApi_v1.3.0.yaml.last	2022-12-09 12:34:39.648707100 -0800
-+++ FederationApi_v1.3.0.yaml	2022-12-09 12:34:55.828707100 -0800
-@@ -863,13 +863,13 @@
+--- FederationApi_v1.3.0.yaml.last	2023-01-18 15:29:01.652143000 -0800
++++ FederationApi_v1.3.0.yaml	2023-01-18 15:30:16.262143000 -0800
+@@ -895,13 +894,13 @@
        type: object
        required:
          - port
 -      anyOf:
--        - required: 
--            -  fqdn 
--        - required: 
--            - ipv4Addresses 
--        - required: 
+-        - required:
+-            - fqdn
+-        - required:
+-            - ipv4Addresses
+-        - required:
 -            - ipv6Addresses
 +#      anyOf:
-+#        - required: 
-+#            -  fqdn 
-+#        - required: 
-+#            - ipv4Addresses 
-+#        - required: 
++#        - required:
++#            - fqdn
++#        - required:
++#            - ipv4Addresses
++#        - required:
 +#            - ipv6Addresses
        properties:
-         port: 
+         port:
            $ref: '#/components/schemas/Port'
-@@ -2299,17 +2299,17 @@
-                 appUpdQoSProfile: 
+@@ -2246,17 +2245,17 @@
+                 appUpdQoSProfile:
                    description: Parameters corresponding to the performance constraints, tenancy details etc.
                    type: object
 -                  anyOf:
 -                    - required:
--                      - latencyConstraint
+-                        - latencyConstraint
 -                    - required:
--                      - bandwidthRequired
+-                        - bandwidthRequired
 -                    - required:
--                      - mobilitySupport
+-                        - mobilitySupport
 -                    - required:
--                      - multiUserClients  
+-                        - multiUserClients
 -                    - required:
--                      - appProvisioning
+-                        - appProvisioning
 +#                  anyOf:
 +#                    - required:
-+#                      - latencyConstraint
++#                        - latencyConstraint
 +#                    - required:
-+#                      - bandwidthRequired
++#                        - bandwidthRequired
 +#                    - required:
-+#                      - mobilitySupport
++#                        - mobilitySupport
 +#                    - required:
-+#                      - multiUserClients  
++#                        - multiUserClients
 +#                    - required:
-+#                      - appProvisioning
++#                        - appProvisioning
                    properties:
                      latencyConstraints:
                        type: string
-@@ -2352,13 +2352,13 @@
+@@ -2295,13 +2294,13 @@
                      type: object
                      required:
-                        - componentName                   
+                       - componentName
 -                    anyOf:
 -                      - required:
--                        - serviceNameNB
+-                          - serviceNameNB
 -                      - required:
--                        - serviceNameEW                       
+-                          - serviceNameEW
 -                      - required:
--                        - artefactId
+-                          - artefactId
 +#                    anyOf:
 +#                      - required:
-+#                        - serviceNameNB
++#                          - serviceNameNB
 +#                      - required:
-+#                        - serviceNameEW                       
++#                          - serviceNameEW
 +#                      - required:
-+#                        - artefactId
++#                          - artefactId
                      properties:
-                       serviceNameNB: 
+                       serviceNameNB:
                          type: string

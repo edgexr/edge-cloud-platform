@@ -3,15 +3,62 @@ package federation
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/labstack/echo/v4"
 )
+
+const (
+	AppQosLatencyNone     = "NONE"
+	AppQosLatencyLow      = "LOW"
+	AppQosLatencyUltraLow = "ULTRALOW"
+
+	AppStatusPending    = "PENDING"
+	AppStatusOnboarded  = "ONBOARDED"
+	AppStatusDeboarding = "DEBOARDING"
+	AppStatusRemoved    = "REMOVED"
+	AppStatusFailed     = "FAILED"
+)
+
+func (p *PartnerApi) lookupApp(c echo.Context, provider *ormapi.FederationProvider, appId string) (*ormapi.ProviderApp, error) {
+	ctx := ormutil.GetContext(c)
+	db := p.loggedDB(ctx)
+
+	provApp := ormapi.ProviderApp{
+		FederationName: provider.Name,
+		AppID:          string(appId),
+	}
+	res := db.Where(&provApp).First(&provApp)
+	if res.RecordNotFound() {
+		return nil, c.String(http.StatusNotFound, "Application "+string(appId)+" not found")
+	}
+	if res.Error != nil {
+		return nil, c.String(http.StatusInternalServerError, "Failed to look up application, "+res.Error.Error())
+	}
+	return &provApp, nil
+}
+
+func (p *PartnerApi) lookupConsumerApp(c echo.Context, consumer *ormapi.FederationConsumer, appId string) (*ormapi.ConsumerApp, error) {
+	ctx := ormutil.GetContext(c)
+	db := p.loggedDB(ctx)
+
+	consApp := ormapi.ConsumerApp{
+		ID:             appId,
+		FederationName: consumer.Name,
+	}
+	res := db.Where(&consApp).First(&consApp)
+	if res.RecordNotFound() {
+		return nil, fmt.Errorf("Consumer Application " + appId + " not found")
+	}
+	if res.Error != nil {
+		return nil, fmt.Errorf("Failed to look up application, %s", res.Error)
+	}
+	return &consApp, nil
+}
 
 // Remote partner federator sends this request to us to onboard an application
 func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationContextId) error {
@@ -27,7 +74,7 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 		return err
 	}
 
-	log.SpanLog(ctx, log.DebugLevelApi, "Federation app onboarding", "request", req)
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation app onboarding", "fedName", provider.Name, "request", req)
 	if req.AppId == "" {
 		return fmt.Errorf("Missing application ID")
 	}
@@ -41,155 +88,155 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 		return fmt.Errorf("Missing app version")
 	}
 	if len(req.AppComponentSpecs) == 0 {
-		return fmt.Errorf("Missing component details")
+		return fmt.Errorf("Missing app component details")
 	}
 
 	if len(req.AppComponentSpecs) > 1 {
-		return fmt.Errorf("Only one component detail is supported, more than one specified")
-	}
-	for ii, spec := range req.AppComponentSpecs {
-		if spec.ComponentName == nil || *spec.ComponentName == "" {
-			return fmt.Errorf("Missing component name for AppComponentSpec[%d]", ii)
-		}
-		if spec.ArtefactId != "" {
-			// TODO: verify that artefact exists
-		}
+		return fmt.Errorf("Only one component detail is supported, but %d are specified", len(req.AppComponentSpecs))
 	}
 
-	// create app in provider regions
-	for _, region := range provider.Regions {
-		rc := ormutil.RegionContext{
-			Region:    region,
-			SkipAuthz: true,
-			Database:  p.database,
-		}
-		// Create App
-		appIn := edgeproto.App{
-			Key: edgeproto.AppKey{
-				Organization: provider.FederationContextId,
-				Name:         req.AppId,
-				Version:      AllAppsVersion,
-			},
-			ImagePath:   "",                                    // TODO: based on Artefact?
-			ImageType:   edgeproto.ImageType_IMAGE_TYPE_DOCKER, // TODO: based on Artefect?
-			Deployment:  cloudcommon.DeploymentTypeKubernetes,  // TODO: based on Artefact?
-			AccessPorts: "",                                    // TODO: no ports in spec?
-			Annotations: getAppAnnotation(req.AppId),
-		}
-		log.SpanLog(ctx, log.DebugLevelApi, "Federation creating app", "app", appIn)
-		_, err = ctrlclient.CreateAppObj(ctx, &rc, &appIn, p.connCache)
-		if err != nil {
-			return err
-		}
-		/* TODO: likely remove
-		// Create ClusterInst
-		clusterInstIn := edgeproto.ClusterInst{
-			Key: edgeproto.ClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name: req.AppId,
-				},
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         req.Regions[0].Zone,
-					Organization: req.Regions[0].Operator,
-				},
-				Organization: "", // TODO
-			},
-			Flavor: edgeproto.FlavorKey{
-				Name: resRequirements.ResourceProfileId,
-			},
-			IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
-			Deployment: cloudcommon.DeploymentTypeKubernetes,
-			NumNodes:   1, // Not specified, hence default to 1
-		}
-		log.SpanLog(ctx, log.DebugLevelApi, "Federation creating clusterinst", "clusterinst", clusterInstIn)
-		err = ctrlclient.CreateClusterInstStream(
-			ctx, &rc, &clusterInstIn, p.connCache,
-			func(res *edgeproto.Result) error {
-				log.SpanLog(ctx, log.DebugLevelApi, "Federation clusterinst creation status", "clusterinst key", clusterInstIn.Key, "result", res)
-				return nil
-			},
-		)
-		if err != nil {
-			return err
-		}
-		*/
+	provArt := ormapi.ProviderArtefact{
+		FederationName: provider.Name,
 	}
+	for _, spec := range req.AppComponentSpecs {
+		if spec.ArtefactId == "" {
+			return fmt.Errorf("AppComponentSpec missing Artefact ID")
+		}
+		provArt.ArtefactID = spec.ArtefactId
+	}
+
+	// look up artefact
+	db := p.loggedDB(ctx)
+	res := db.Where(&provArt).First(&provArt)
+	if res.RecordNotFound() {
+		return fmt.Errorf("Artefact %s not found", provArt.ArtefactID)
+	}
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to look up Artefact, "+err.Error())
+	}
+
+	// check any specified zones
+	zones := []string{}
+	for _, depZone := range req.AppDeploymentZones {
+		provZone := ormapi.ProviderZone{
+			ProviderName: provider.Name,
+			ZoneId:       depZone.ZoneInfo,
+		}
+		// look up zone
+		res := db.Where(&provZone).First(&provZone)
+		if res.RecordNotFound() {
+			return fmt.Errorf("Deployment zone %s not found", provZone.ZoneId)
+		}
+		if err != nil {
+			return c.String(http.StatusInternalServerError, "Failed to look up deployment zone "+provZone.ZoneId+", "+err.Error())
+		}
+		if provZone.Status == StatusUnregistered {
+			return fmt.Errorf("Deployment zone %s is not registered", provZone.ZoneId)
+		}
+		zones = append(zones, provZone.ZoneId)
+	}
+
+	// create provider App
+	provApp := ormapi.ProviderApp{
+		FederationName:  provider.Name,
+		AppID:           req.AppId,
+		AppProviderId:   req.AppProviderId,
+		ArtefactIds:     []string{provArt.ArtefactID},
+		DeploymentZones: zones,
+	}
+	err = db.Create(&provApp).Error
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key value") {
+			return fmt.Errorf("Application with ID %s already exists", provApp.AppID)
+		}
+		return c.String(http.StatusInternalServerError, "Failed to save app to database, "+err.Error())
+	}
+
 	c.Response().WriteHeader(http.StatusAccepted)
+	c.Response().After(func() {
+		if req.AppStatusCallbackLink == "" {
+			log.SpanLog(ctx, log.DebugLevelApi, "app create no callback", "app", provApp)
+			return
+		}
+		cb := fedewapi.FederationContextIdApplicationOnboardingPostRequest{
+			FederationContextId: provider.FederationContextId,
+			AppId:               req.AppId,
+		}
+		for _, zone := range zones {
+			status := fedewapi.FederationContextIdApplicationOnboardingPostRequestStatusInfoInner{
+				ZoneId:            zone,
+				OnboardStatusInfo: "ONBOARDED",
+			}
+			cb.StatusInfo = append(cb.StatusInfo, status)
+		}
+		fedClient, err := p.ProviderPartnerClient(ctx, provider, req.AppStatusCallbackLink)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to send app create callback", "url", req.AppStatusCallbackLink, "err", err)
+			return
+		}
+		_, _, err = fedClient.SendRequest(ctx, "POST", "", &cb, nil, nil)
+		log.SpanLog(ctx, log.DebugLevelApi, "sent app create callback", "url", req.AppStatusCallbackLink, "err", err)
+	})
 	return nil
 }
 
-func getAppAnnotation(appId string) string {
-	return fmt.Sprintf("id=%s", appId)
+func (p *PartnerApi) DeleteApp(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier) error {
+	// lookup federation provider based on claims
+	ctx := ormutil.GetContext(c)
+	provider, err := p.lookupProvider(c, fedCtxId)
+	if err != nil {
+		return err
+	}
+	provApp, err := p.lookupApp(c, provider, string(appId))
+	if err != nil {
+		return err
+	}
+
+	// TODO: check if there are any appinsts for App
+
+	// Note that edgeproto.App object is tied to the ProviderArtefact,
+	// so the only action here is to delete the ProviderApp.
+	db := p.loggedDB(ctx)
+	err = db.Delete(provApp).Error
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to delete App, "+err.Error())
+	}
+	return nil
 }
 
 // ViewApplication gets onboarded app
 func (p *PartnerApi) ViewApplication(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier) error {
-	ctx := ormutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
 		return err
 	}
-
-	// only need to get from one region
-	region := provider.Regions[0]
-	rc := ormutil.RegionContext{
-		Region:    region,
-		SkipAuthz: true,
-		Database:  p.database,
-	}
-
-	log.SpanLog(ctx, log.DebugLevelApi, "Federation show app", "app", appId, "fedctxid", fedCtxId)
-	filter := edgeproto.App{
-		Key: edgeproto.AppKey{
-			Organization: provider.FederationContextId,
-			Name:         string(appId),
-			Version:      AllAppsVersion,
-		},
-	}
-	appFound := false
-	err = ctrlclient.ShowAppStream(ctx, &rc, &filter, p.connCache, nil,
-		func(app *edgeproto.App) error {
-			if app != nil {
-				log.SpanLog(ctx, log.DebugLevelApi, "Federation show app found", "app", app)
-				appFound = true
-			}
-			return nil
-		},
-	)
+	provApp, err := p.lookupApp(c, provider, string(appId))
 	if err != nil {
 		return err
 	}
-	if !appFound {
-		return fmt.Errorf("App not found")
+
+	app := fedewapi.ViewApplication200Response{
+		AppId:         provApp.AppID,
+		AppProviderId: provApp.AppProviderId,
 	}
-	/* TODO: likely remove
-	log.SpanLog(ctx, log.DebugLevelApi, "Federation show clusterInst", "clusterInst", appObStatusReq.AppId)
-	clusterInstKey := edgeproto.ClusterInstKey{
-		ClusterKey: edgeproto.ClusterKey{
-			Name: appObStatusReq.AppId,
-		},
-		Organization: "", // TODO
+	specs := []fedewapi.AppComponentSpecsInner{}
+	for _, artid := range provApp.ArtefactIds {
+		spec := fedewapi.AppComponentSpecsInner{
+			ArtefactId: artid,
+		}
+		specs = append(specs, spec)
 	}
-	clusterInstFound := false
-	err = ctrlclient.ShowClusterInstStream(
-		ctx, &rc, &edgeproto.ClusterInst{Key: clusterInstKey}, p.connCache, nil,
-		func(clusterInst *edgeproto.ClusterInst) error {
-			if clusterInst != nil {
-				clusterInstFound = true
-				log.SpanLog(ctx, log.DebugLevelApi, "Federation show clusterInst found", "clusterInst", clusterInst)
-			}
-			return nil
-		},
-	)
-	if err != nil {
-		return err
+	app.AppComponentSpecs = specs
+	zones := []fedewapi.OnboardApplicationRequestAppDeploymentZonesInner{}
+	for _, zone := range provApp.DeploymentZones {
+		dz := fedewapi.OnboardApplicationRequestAppDeploymentZonesInner{
+			ZoneInfo: zone,
+		}
+		zones = append(zones, dz)
 	}
-	*/
-	out := fedewapi.ViewApplication200Response{
-		AppId: string(appId),
-	}
-	return c.JSON(http.StatusOK, &out)
+	app.AppDeploymentZones = zones
+	return c.JSON(http.StatusOK, app)
 }
 
 // Remote partner federator sends this request to us to deboard application
@@ -200,61 +247,28 @@ func (p *PartnerApi) DeboardApplication(c echo.Context, fedCtxId FederationConte
 	if err != nil {
 		return err
 	}
-
-	app := edgeproto.App{
-		Key: edgeproto.AppKey{
-			Organization: provider.FederationContextId,
-			Name:         string(appId),
-			Version:      AllAppsVersion,
-		},
+	provApp, err := p.lookupApp(c, provider, string(appId))
+	if err != nil {
+		return err
 	}
-
-	for _, region := range provider.Regions {
-		rc := ormutil.RegionContext{
-			Region:    region,
-			SkipAuthz: true,
-			Database:  p.database,
-		}
-		/* TODO: likely remove
-		// Fetch zone details
-		lookup := ormapi.FederatorZone{
-			ZoneId: appDeboardReq.Zone,
-		}
-		zoneInfo := ormapi.FederatorZone{}
-		res := db.Where(&lookup).First(&zoneInfo)
-		if !res.RecordNotFound() && err != nil {
-			return ormutil.DbErr(err)
-		}
-
-		// Delete ClusterInst
-		clusterInstKey := edgeproto.ClusterInstKey{
-			ClusterKey: edgeproto.ClusterKey{
-				Name: appDeboardReq.AppId,
-			},
-			CloudletKey: edgeproto.CloudletKey{
-				Name:         appDeboardReq.Zone,
-				Organization: zoneInfo.OperatorId,
-			},
-			Organization: "", // TODO
-		}
-		log.SpanLog(ctx, log.DebugLevelApi, "Federation delete clusterInst", "clusterInst", clusterInstKey)
-		err = ctrlclient.DeleteClusterInstStream(
-			ctx, &rc, &edgeproto.ClusterInst{Key: clusterInstKey}, p.connCache,
-			func(res *edgeproto.Result) error {
-				return nil
-			},
-		)
-		if err != nil {
-			return err
-		}
-		*/
-		// Delete App
-		log.SpanLog(ctx, log.DebugLevelApi, "Federation delete app", "app", app)
-		_, err = ctrlclient.DeleteAppObj(ctx, &rc, &app, p.connCache)
-		if err != nil {
-			return err
+	found := false
+	for ii, zone := range provApp.DeploymentZones {
+		if zone == string(zoneId) {
+			provApp.DeploymentZones = append(provApp.DeploymentZones[:ii], provApp.DeploymentZones[ii+1:]...)
+			found = true
+			break
 		}
 	}
+	if !found {
+		return c.String(http.StatusNotFound, "Zone "+string(zoneId)+" not found")
+	}
+	db := p.loggedDB(ctx)
+	err = db.Save(&provApp).Error
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to save App, "+err.Error())
+	}
+
+	c.Response().WriteHeader(http.StatusAccepted)
 	return nil
 }
 
@@ -263,9 +277,71 @@ func (p *PartnerApi) UpdateApplication(c echo.Context, fedCtxId FederationContex
 }
 
 func (p *PartnerApi) OnboardExistingAppNewZones(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier) error {
-	return fmt.Errorf("not supported")
+	ctx := ormutil.GetContext(c)
+	// lookup federation provider based on claims
+	provider, err := p.lookupProvider(c, fedCtxId)
+	if err != nil {
+		return err
+	}
+	provApp, err := p.lookupApp(c, provider, string(appId))
+	if err != nil {
+		return err
+	}
+	in := []string{}
+	if err := c.Bind(&in); err != nil {
+		return err
+	}
+	if len(in) == 0 {
+		return fmt.Errorf("No zones specified")
+	}
+
+	// ignore dups
+	existing := map[string]struct{}{}
+	nonDups := []string{}
+	for _, zone := range provApp.DeploymentZones {
+		existing[zone] = struct{}{}
+	}
+	for _, zone := range in {
+		if _, ok := existing[zone]; ok {
+			continue
+		}
+		nonDups = append(nonDups, zone)
+	}
+	if len(nonDups) == 0 {
+		return fmt.Errorf("No new zones added")
+	}
+
+	// add new zones and save
+	provApp.DeploymentZones = append(provApp.DeploymentZones, nonDups...)
+	db := p.loggedDB(ctx)
+	err = db.Save(&provApp).Error
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to save App, "+err.Error())
+	}
+
+	c.Response().WriteHeader(http.StatusAccepted)
+	return nil
 }
 
 func (p *PartnerApi) LockUnlockApplicationZone(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier) error {
 	return fmt.Errorf("not supported")
+}
+
+func (p *PartnerApi) PartnerAppOnboardStatusEvent(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	in := fedewapi.FederationContextIdApplicationOnboardingPostRequest{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
+	// lookup federation consumer based on claims
+	consumer, err := p.lookupConsumer(c, in.FederationContextId)
+	if err != nil {
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "partner app onboard status event", "consumer", consumer.Name, "operatorid", consumer.OperatorId, "request", in)
+	// Notification about app onboarding status
+	// This notifies state per zone, but we don't explicitly onboard per zone.
+	// Since we'll never specify zones to onboard, we should never get
+	// this callback.
+	return nil
 }

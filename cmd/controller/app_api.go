@@ -37,10 +37,11 @@ import (
 
 // Should only be one of these instantiated in main
 type AppApi struct {
-	all   *AllApis
-	sync  *Sync
-	store edgeproto.AppStore
-	cache edgeproto.AppCache
+	all           *AllApis
+	sync          *Sync
+	store         edgeproto.AppStore
+	cache         edgeproto.AppCache
+	globalIdStore edgeproto.AppGlobalIdStore
 }
 
 func NewAppApi(sync *Sync, all *AllApis) *AppApi {
@@ -425,6 +426,15 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	}
 
 	flavor := &edgeproto.Flavor{}
+	if in.DefaultFlavor.Name == "" && in.ServerlessConfig != nil {
+		// infer flavor from serverless config
+		flavor, err := s.all.flavorApi.getFlavorForServerlessConfig(ctx, in.ServerlessConfig)
+		if err == nil && flavor != nil {
+			in.DefaultFlavor = flavor.Key
+		} else {
+			log.SpanLog(ctx, log.DebugLevelApi, "Unable to get flavor match for serverless config", "config", *in.ServerlessConfig, "err", err)
+		}
+	}
 	if in.DefaultFlavor.Name == "" {
 		return fmt.Errorf("Default flavor must be specified")
 	}
@@ -536,10 +546,15 @@ func (s *AppApi) CreateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.R
 		if err != nil {
 			return err
 		}
+		err = s.setGlobalId(stm, in)
+		if err != nil {
+			return err
+		}
 		s.all.appInstRefsApi.createRef(stm, &in.Key)
 
 		in.CreatedAt = dme.TimeToTimestamp(time.Now())
 		s.store.STMPut(stm, in)
+		s.globalIdStore.STMPut(stm, in.GlobalId)
 		elapsed := time.Since(start)
 		log.SpanLog(ctx, log.DebugLevelApi, "CreateApp finish ApplySTMWait", "app", in.Key.String(), "elapsed", elapsed, "err", err)
 		return nil
@@ -776,6 +791,7 @@ func (s *AppApi) DeleteApp(ctx context.Context, in *edgeproto.App) (res *edgepro
 		}
 		// delete app
 		s.store.STMDel(stm, &in.Key)
+		s.globalIdStore.STMDel(stm, in.GlobalId)
 		// delete refs
 		s.all.appInstRefsApi.deleteRef(stm, &in.Key)
 		return nil

@@ -266,6 +266,7 @@ regiondata:
       accesstype: LoadBalancer
       autoprovpolicies:
       - autoprov1
+      globalid: local-autoprovapp10acmeappco
     - key:
         organization: AcmeAppCo
         name: autoprovappd
@@ -279,6 +280,7 @@ regiondata:
       accesstype: LoadBalancer
       autoprovpolicies:
       - autoprov1
+      globalid: local-autoprovappd10acmeappco
     - key:
         organization: AcmeAppCo
         name: someapplication1
@@ -368,6 +370,7 @@ regiondata:
       deploymentgenerator: kubernetes-basic
       androidpackagename: com.acme.someapplication1
       accesstype: LoadBalancer
+      globalid: local-someapplication110acmeappco
     - key:
         organization: platos
         name: platosEnablingLayer
@@ -422,6 +425,7 @@ regiondata:
                   protocol: TCP
       deploymentgenerator: kubernetes-basic
       accesstype: LoadBalancer
+      globalid: local-platosenablinglayer10platos
     appinstances:
     - key:
         appkey:
@@ -789,6 +793,7 @@ regiondata:
       accesstype: LoadBalancer
       autoprovpolicies:
       - autoprov1
+      globalid: locala-autoprovapp10acmeappco
     - key:
         organization: AcmeAppCo
         name: someapplication1
@@ -878,6 +883,7 @@ regiondata:
       deploymentgenerator: kubernetes-basic
       androidpackagename: com.acme.someapplication1
       accesstype: LoadBalancer
+      globalid: locala-someapplication110acmeappco
     - key:
         organization: platos
         name: platosEnablingLayer
@@ -932,6 +938,7 @@ regiondata:
                   protocol: TCP
       deploymentgenerator: kubernetes-basic
       accesstype: LoadBalancer
+      globalid: locala-platosenablinglayer10platos
     appinstances:
     - key:
         appkey:

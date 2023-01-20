@@ -1952,7 +1952,23 @@ func (s *Client) ShowFederation(uri string, token string, in *cli.MapData) ([]or
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) CreateConsumerApp(uri string, token string, in *ormapi.ConsumerApp) (*ormapi.Result, int, error) {
+func (s *Client) OnboardConsumerApp(uri string, token string, in *ormapi.ConsumerApp) ([]ormapi.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []ormapi.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("OnboardConsumerApp")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) DeboardConsumerApp(uri string, token string, in *ormapi.ConsumerApp) (*ormapi.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -1960,12 +1976,28 @@ func (s *Client) CreateConsumerApp(uri string, token string, in *ormapi.Consumer
 	var out ormapi.Result
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("CreateConsumerApp")
+	apiCmd := ormctl.MustGetCommand("DeboardConsumerApp")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
 	}
 	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowConsumerApp(uri string, token string, in *cli.MapData) ([]ormapi.ConsumerApp, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []ormapi.ConsumerApp
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowConsumerApp")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
 }
 
 func (s *Client) CreateConsumerImage(uri string, token string, in *ormapi.ConsumerImage) (*ormapi.Result, int, error) {
@@ -2381,6 +2413,38 @@ func (s *Client) ShowProviderImage(uri string, token string, in *cli.MapData) ([
 	rundata.Out = &out
 
 	apiCmd := ormctl.MustGetCommand("ShowProviderImage")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowProviderArtefact(uri string, token string, in *cli.MapData) ([]ormapi.ProviderArtefact, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []ormapi.ProviderArtefact
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowProviderArtefact")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowProviderApp(uri string, token string, in *cli.MapData) ([]ormapi.ProviderApp, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []ormapi.ProviderApp
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowProviderApp")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError

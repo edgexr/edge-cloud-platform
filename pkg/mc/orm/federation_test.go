@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -36,6 +37,7 @@ import (
 	ormtestutil "github.com/edgexr/edge-cloud-platform/pkg/mc/orm/testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
+	fedp "github.com/edgexr/edge-cloud-platform/pkg/platform/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -60,6 +62,7 @@ type CtrlObj struct {
 	dcnt        int
 	operatorIds []string
 	region      string
+	frm         *fedp.FederationPlatform
 }
 
 type OPAttr struct {
@@ -84,6 +87,7 @@ type FederatorAttr struct {
 	fedAddr     string
 	region      string
 	apiKey      string
+	frm         *fedp.FederationPlatform
 }
 
 func (o *OPAttr) CleanupOperatorPlatform(ctx context.Context) {
@@ -96,7 +100,7 @@ func (o *OPAttr) CleanupOperatorPlatform(ctx context.Context) {
 	}
 }
 
-func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []string, region string) *CtrlObj {
+func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []string, region string, vroles *process.VaultRoles, vaultAddr string) *CtrlObj {
 	ctrlAddr, err := cloudcommon.GetAvailablePort("127.0.0.1:0")
 	require.Nil(t, err, "get available port")
 	// run dummy controller - this always returns success
@@ -174,6 +178,33 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 		}
 	}
 
+	/* NOTYET
+	// set up FRM. Note that FRM is not actually connected to the
+	// controller via notify, because the dummy controller doesn't
+	// support that. Instead we'll need to call the FRM's functions
+	// directly from the test code.
+	frmVaultConfig := vault.NewConfig(vaultAddr, vault.NewAppRoleAuth(vroles.RegionRoles[region].FrmRoleID, vroles.RegionRoles[region].FrmSecretID))
+	pc := platform.PlatformConfig{
+		AccessApi: accessapi.NewVaultGlobalClient(frmVaultConfig),
+	}
+	caches := platform.Caches{
+		SettingsCache:        &ds.SettingsCache,
+		FlavorCache:          &ds.FlavorCache,
+		TrustPolicyCache:     &ds.TrustPolicyCache,
+		CloudletPoolCache:    &ds.CloudletPoolCache,
+		ClusterInstCache:     &ds.ClusterInstCache,
+		ClusterInstInfoCache: &ds.ClusterInstInfoCache,
+		AppInstCache:         &ds.AppInstCache,
+		AppInstInfoCache:     &ds.AppInstInfoCache,
+		AppCache:             &ds.AppCache,
+		ResTagTableCache:     &ds.ResTagTableCache,
+		CloudletCache:        &ds.CloudletCache,
+		CloudletInfoCache:    &ds.CloudletInfoCache,
+	}
+	frm := &fedp.FederationPlatform{}
+	err = frm.InitCommon(ctx, &pc, &caches, nil, nil)
+	require.Nil(t, err)
+	*/
 	return &CtrlObj{
 		addr:        ctrlAddr,
 		ds:          ds,
@@ -181,6 +212,7 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 		dc:          dc,
 		operatorIds: operatorIds,
 		region:      region,
+		//frm:         frm,
 	}
 }
 
@@ -217,12 +249,15 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 	fedAddr, err := cloudcommon.GetAvailablePort("127.0.0.1:0")
 	require.Nil(t, err, "get available port")
 
+	regions := []string{"US-East", "US-West"}
+
 	vp := process.Vault{
 		Common: process.Common{
 			Name: "vault",
 		},
 		ListenAddr: "https://127.0.0.1:8203",
 		PKIDomain:  "edgecloud.net",
+		Regions:    strings.Join(regions, ","),
 	}
 	_, vroles, vaultCleanup := testutil.NewVaultTestCluster(t, &vp)
 	os.Setenv("VAULT_ROLE_ID", vroles.MCRoleID)
@@ -280,10 +315,9 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 	countryCode := "US"
 	operatorIds := []string{"operP", "operC"}
 	developerIds := []string{"devP", "devC"}
-	regions := []string{"US-East", "US-West"}
 
-	ctrl1 := SetupControllerService(t, ctx, operatorIds, regions[0])
-	ctrl2 := SetupControllerService(t, ctx, operatorIds, regions[1])
+	ctrl1 := SetupControllerService(t, ctx, operatorIds, regions[0], vroles, vp.ListenAddr)
+	ctrl2 := SetupControllerService(t, ctx, operatorIds, regions[1], vroles, vp.ListenAddr)
 	ctrlObjs := []CtrlObj{*ctrl1, *ctrl2}
 
 	opAttr := OPAttr{
@@ -347,6 +381,7 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 		fed.tokenAd = tokenAd
 		fed.region = regions[ii]
 		fed.fedAddr = "http://" + fedAddr
+		fed.frm = ctrlObjs[ii].frm
 		selfFederators = append(selfFederators, fed)
 	}
 
@@ -761,6 +796,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Equal(t, 1, len(feds))
 	require.Equal(t, consAttr.fedName, feds[0].Name)
 
+	// create apps to be onboarded
 	for _, app := range getConsApps(consAttr.developerId) {
 		regionApp := ormapi.RegionApp{
 			Region: consAttr.region,
@@ -797,15 +833,21 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Contains(t, err.Error(), "please choose a different Name")
 	}
 
-	// create images from apps
+	// Test App APIs
+	// ==============
+	// also creates images and artefacts
+	consAppsExp := []ormapi.ConsumerApp{}
 	for _, app := range getConsApps(consAttr.developerId) {
 		req := ormapi.ConsumerApp{}
 		req.Region = consAttr.region
-		req.App = app
+		req.AppName = app.Key.Name
+		req.AppOrg = app.Key.Organization
+		req.AppVers = app.Key.Version
 		req.FederationName = consAttr.fedName
-		_, status, err = mcClient.CreateConsumerApp(op.uri, consAttr.tokenDev, &req)
+		_, status, err = mcClient.OnboardConsumerApp(op.uri, consAttr.tokenDev, &req)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
+		consAppsExp = append(consAppsExp, req)
 	}
 	consAppImages := getConsAppImages(t, consAttr.developerId, consAttr.fedName)
 	consImagesExp := append(consImages, consAppImages...)
@@ -818,11 +860,24 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	for ii := range consImagesExp {
 		exp := consImagesExp[ii]
 		act := consImagesShow[ii]
-		fmt.Printf("DEBUG: %v\n", act)
 		require.NotZero(t, act.ID)
 		require.Equal(t, exp.Organization, act.Organization)
 		require.Equal(t, exp.FederationName, act.FederationName)
 		require.Equal(t, federation.ImageStatusReady, act.Status)
+	}
+	// developer can see created apps
+	consAppsShow, status, err := mcClient.ShowConsumerApp(op.uri, consAttr.tokenDev, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(consAppsExp), len(consAppsShow))
+	for ii := range consAppsExp {
+		exp := consAppsExp[ii]
+		act := consAppsShow[ii]
+		require.NotZero(t, act.ID)
+		require.Equal(t, exp.AppName, act.AppName)
+		require.Equal(t, exp.AppOrg, act.AppOrg)
+		require.Equal(t, exp.AppVers, act.AppVers)
+		require.Equal(t, exp.FederationName, act.FederationName)
 	}
 
 	// provider can see created images
@@ -839,10 +894,89 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Equal(t, exp.Type, act.Type)
 		require.Equal(t, federation.ImageStatusReady, act.Status)
 	}
+	// provider can see created providerArtefacts
+	provArtsShow, status, err := mcClient.ShowProviderArtefact(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(consAppsExp), len(provArtsShow))
+	for ii := range provArtsShow {
+		exp := consAppsShow[ii]
+		act := provArtsShow[ii]
+		require.Equal(t, provAttr.fedName, act.FederationName)
+		require.Equal(t, exp.AppName, act.AppName)
+		require.Equal(t, exp.AppVers, act.AppVers)
+		require.Equal(t, exp.AppOrg, act.AppProviderId)
+	}
+	// provider can see create providerApps
+	provAppsShow, status, err := mcClient.ShowProviderApp(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(consAppsExp), len(provAppsShow))
+	for ii := range provAppsShow {
+		act := provAppsShow[ii]
+		require.Equal(t, provAttr.fedName, act.FederationName)
+	}
+	// provider can see created regional apps
+	provAppFilter := ormapi.RegionApp{
+		Region: provAttr.region,
+	}
+	appsShow, status, err := mcClient.ShowApp(op.uri, provAttr.tokenOper, &provAppFilter)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(consAppsExp), len(appsShow))
+
+	// ---------
+	// FRM Tests
+	// ---------
+
+	/* NOT YET
+	cb := func(updateType edgeproto.CacheUpdateType, value string) {
+		fmt.Printf("createAppInstCb: %s\n", value)
+	}
+	frmData := getFrmData(&consAttr, &provAttr, sharedZones)
+	for _, dat := range frmData {
+		err := consAttr.frm.CreateAppInst(ctx, &dat.consClusterInst, &dat.consApp, &dat.consAppInst, nil, cb)
+		require.Nil(t, err)
+	}
+	// check that appInsts were created on provider
+	*/
 
 	// --------+
 	// Cleanup |
 	// --------+
+
+	// Delete Apps
+	for _, app := range getConsApps(consAttr.developerId) {
+		req := ormapi.ConsumerApp{}
+		req.AppName = app.Key.Name
+		req.AppOrg = app.Key.Organization
+		req.AppVers = app.Key.Version
+		req.FederationName = consAttr.fedName
+		_, status, err = mcClient.DeboardConsumerApp(op.uri, consAttr.tokenDev, &req)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+
+	// consumer apps should be empty
+	consAppsShow, status, err = mcClient.ShowConsumerApp(op.uri, consAttr.tokenDev, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(consAppsShow))
+	// provider artefacts should be empty
+	provArtsShow, status, err = mcClient.ShowProviderArtefact(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(provArtsShow))
+	// provider app should be empty
+	provAppsShow, status, err = mcClient.ShowProviderApp(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(provAppsShow))
+	// provider regional apps should be empty
+	appsShow, status, err = mcClient.ShowApp(op.uri, provAttr.tokenOper, &provAppFilter)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(appsShow))
 
 	// Delete images
 	// =============
@@ -859,6 +993,17 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(provImagesShow))
+
+	// delete regional app definitions
+	for _, app := range getConsApps(consAttr.developerId) {
+		regionApp := ormapi.RegionApp{
+			Region: consAttr.region,
+			App:    app,
+		}
+		_, status, err = mcClient.DeleteApp(op.uri, consAttr.tokenDev, &regionApp)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
 
 	// Delete of either Provider or Consumer should fail if there
 	// are registered zones.
@@ -1179,6 +1324,9 @@ func testGormFederationObjs(t *testing.T, opts testFedObjOpts) {
 		&ormapi.ConsumerZone{},
 		&ormapi.ProviderImage{},
 		&ormapi.ConsumerImage{},
+		&ormapi.ConsumerApp{},
+		&ormapi.ProviderArtefact{},
+		&ormapi.ProviderApp{},
 	}
 
 	// drop based on the order of dependency
