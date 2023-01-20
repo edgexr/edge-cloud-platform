@@ -595,7 +595,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// AlertPolicies: 42
 	// QosSessionProfile: 43
 	// QosSessionDuration: 44
-	// FederatedId: 45
+	// GlobalId: 45
 	// ```
 	// Security:
 	//   Bearer:
@@ -933,6 +933,8 @@ func addControllerApis(method string, group *echo.Group) {
 	// FederationConfigFederationContextId: 56.1
 	// FederationConfigPartnerFederationAddr: 56.2
 	// FederationConfigFederationDbId: 56.3
+	// FederationConfigFederationName: 56.4
+	// FederationConfigAppInstStatusEventPath: 56.5
 	// LicenseConfigStoragePath: 57
 	// ```
 	// Security:
@@ -1741,6 +1743,9 @@ func addControllerApis(method string, group *echo.Group) {
 	// DedicatedIp: 39
 	// UniqueId: 40
 	// DnsLabel: 41
+	// FedKey: 43
+	// FedKeyFederationName: 43.1
+	// FedKeyAppInstId: 43.2
 	// ```
 	// Security:
 	//   Bearer:

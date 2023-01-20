@@ -29,18 +29,18 @@ type FederationRequestData struct {
 	OrigOPFixedNetworkCodes []string `json:"origOPFixedNetworkCodes,omitempty"`
 	// Time zone info of the federation initiated by the originating OP
 	InitialDate time.Time `json:"initialDate"`
-	FederationNotificationDest string `json:"federationNotificationDest"`
+	PartnerStatusLink string `json:"partnerStatusLink"`
 }
 
 // NewFederationRequestData instantiates a new FederationRequestData object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFederationRequestData(origOPFederationId string, initialDate time.Time, federationNotificationDest string) *FederationRequestData {
+func NewFederationRequestData(origOPFederationId string, initialDate time.Time, partnerStatusLink string) *FederationRequestData {
 	this := FederationRequestData{}
 	this.OrigOPFederationId = origOPFederationId
 	this.InitialDate = initialDate
-	this.FederationNotificationDest = federationNotificationDest
+	this.PartnerStatusLink = partnerStatusLink
 	return &this
 }
 
@@ -196,28 +196,28 @@ func (o *FederationRequestData) SetInitialDate(v time.Time) {
 	o.InitialDate = v
 }
 
-// GetFederationNotificationDest returns the FederationNotificationDest field value
-func (o *FederationRequestData) GetFederationNotificationDest() string {
+// GetPartnerStatusLink returns the PartnerStatusLink field value
+func (o *FederationRequestData) GetPartnerStatusLink() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.FederationNotificationDest
+	return o.PartnerStatusLink
 }
 
-// GetFederationNotificationDestOk returns a tuple with the FederationNotificationDest field value
+// GetPartnerStatusLinkOk returns a tuple with the PartnerStatusLink field value
 // and a boolean to check if the value has been set.
-func (o *FederationRequestData) GetFederationNotificationDestOk() (*string, bool) {
+func (o *FederationRequestData) GetPartnerStatusLinkOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.FederationNotificationDest, true
+	return &o.PartnerStatusLink, true
 }
 
-// SetFederationNotificationDest sets field value
-func (o *FederationRequestData) SetFederationNotificationDest(v string) {
-	o.FederationNotificationDest = v
+// SetPartnerStatusLink sets field value
+func (o *FederationRequestData) SetPartnerStatusLink(v string) {
+	o.PartnerStatusLink = v
 }
 
 func (o FederationRequestData) MarshalJSON() ([]byte, error) {
@@ -241,7 +241,7 @@ func (o FederationRequestData) ToMap() (map[string]interface{}, error) {
 		toSerialize["origOPFixedNetworkCodes"] = o.OrigOPFixedNetworkCodes
 	}
 	toSerialize["initialDate"] = o.InitialDate
-	toSerialize["federationNotificationDest"] = o.FederationNotificationDest
+	toSerialize["partnerStatusLink"] = o.PartnerStatusLink
 	return toSerialize, nil
 }
 

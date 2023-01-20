@@ -5,11 +5,13 @@ import (
 	fmt "fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
@@ -20,6 +22,8 @@ import (
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 )
+
+const AppCreateTimeout = 10 * time.Minute
 
 func OnboardConsumerApp(c echo.Context) (reterr error) {
 	ctx := ormutil.GetContext(c)
@@ -105,7 +109,7 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 	// ID is set to the app's federation id.
 	// The ID should be unique across all regions, as it contains the
 	// region name.
-	in.ID = app.FederatedId
+	in.ID = app.GlobalId
 
 	// create database object so we can check for duplicates
 	db := loggedDB(ctx)
@@ -128,6 +132,19 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		}
 	}()
 
+	cb := func(code int32, msg string) error {
+		payload := ormapi.StreamPayload{}
+		payload.Data = &edgeproto.Result{
+			Code:    code,
+			Message: msg,
+		}
+		return WriteStream(c, &payload)
+	}
+	err = cb(200, "Creating images")
+	if err != nil {
+		return err
+	}
+
 	// create images from App info
 	log.SpanLog(ctx, log.DebugLevelApi, "create ConsumerApp, get images for app")
 	images, err := getImagesForApp(in.FederationName, app)
@@ -143,6 +160,11 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		if err != nil {
 			return err
 		}
+	}
+
+	err = cb(200, "Creating artefact")
+	if err != nil {
+		return err
 	}
 
 	// create artefact for app with component spec
@@ -161,9 +183,19 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		}
 	}()
 
+	err = cb(200, "Creating app")
+	if err != nil {
+		return err
+	}
+
 	// create federated app
 	log.SpanLog(ctx, log.DebugLevelApi, "create ConsumerApp, create app")
 	err = createConsumerApp(ctx, consumer, &in, app)
+	if err != nil {
+		return err
+	}
+
+	err = cb(200, "App created successfully")
 	if err != nil {
 		return err
 	}
@@ -278,20 +310,27 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 	}
 	interfaces := []fedewapi.InterfaceDetails{}
 	for _, port := range ports {
-		intf := fedewapi.InterfaceDetails{}
-		intf.InterfaceId = fmt.Sprintf("%d", port.InternalPort)
-		if port.Proto == dmeproto.LProto_L_PROTO_UDP {
-			intf.CommProtocol = federation.CommProtoUDP
-		} else {
-			intf.CommProtocol = federation.CommProtoTCP
+		portStart := port.InternalPort
+		portEnd := port.EndPort
+		if portEnd == 0 {
+			portEnd = portStart
 		}
-		intf.CommPort = port.InternalPort
-		if app.InternalPorts {
-			intf.VisibilityType = federation.CommPortVisInt
-		} else {
-			intf.VisibilityType = federation.CommPortVisExt
+		for portVal := portStart; portVal <= portEnd; portVal++ {
+			intf := fedewapi.InterfaceDetails{}
+			intf.InterfaceId = fmt.Sprintf("%d", portVal)
+			if port.Proto == dmeproto.LProto_L_PROTO_UDP {
+				intf.CommProtocol = federation.CommProtoUDP
+			} else {
+				intf.CommProtocol = federation.CommProtoTCP
+			}
+			intf.CommPort = portVal
+			if app.InternalPorts {
+				intf.VisibilityType = federation.CommPortVisInt
+			} else {
+				intf.VisibilityType = federation.CommPortVisExt
+			}
+			interfaces = append(interfaces, intf)
 		}
-		interfaces = append(interfaces, intf)
 	}
 	if len(interfaces) > 0 {
 		spec.ExposedInterfaces = interfaces
@@ -318,7 +357,7 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 	if err != nil {
 		return err
 	}
-	apiPath := fmt.Sprintf("/%s/%s/artefact", federation.ApiRoot, consumer.FederationContextId)
+	apiPath := fmt.Sprintf("/%s/%s/artefact", federationmgmt.ApiRoot, consumer.FederationContextId)
 	_, _, err = fedClient.SendRequest(ctx, http.MethodPost, apiPath, data, nil, nil)
 	if err != nil {
 		return err
@@ -342,13 +381,14 @@ func createConsumerApp(ctx context.Context, consumer *ormapi.FederationConsumer,
 		AppComponentSpecs: []fedewapi.AppComponentSpecsInner{{
 			ArtefactId: cApp.ID,
 		}},
-		AppStatusCallbackLink: "",
+		AppStatusCallbackLink: serverConfig.FederationExternalAddr + "/" + federationmgmt.PartnerAppOnboardStatusEventPath,
 	}
+
 	fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)
 	if err != nil {
 		return err
 	}
-	apiPath := fmt.Sprintf("/%s/%s/application/onboarding", federation.ApiRoot, consumer.FederationContextId)
+	apiPath := fmt.Sprintf("/%s/%s/application/onboarding", federationmgmt.ApiRoot, consumer.FederationContextId)
 	_, _, err = fedClient.SendRequest(ctx, http.MethodPost, apiPath, appReq, nil, nil)
 	if err != nil {
 		return err
@@ -422,7 +462,7 @@ func deleteApp(ctx context.Context, consumer *ormapi.FederationConsumer, cApp *o
 	if err != nil {
 		return err
 	}
-	apiPath := fmt.Sprintf("/%s/%s/application/onboarding/app/%s", federation.ApiRoot, consumer.FederationContextId, cApp.ID)
+	apiPath := fmt.Sprintf("/%s/%s/application/onboarding/app/%s", federationmgmt.ApiRoot, consumer.FederationContextId, cApp.ID)
 	_, _, err = fedClient.SendRequest(ctx, http.MethodDelete, apiPath, nil, nil, nil)
 	if err != nil {
 		return err
@@ -435,7 +475,7 @@ func deleteAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 	if err != nil {
 		return err
 	}
-	apiPath := fmt.Sprintf("/%s/%s/artefact/%s", federation.ApiRoot, consumer.FederationContextId, cApp.ID)
+	apiPath := fmt.Sprintf("/%s/%s/artefact/%s", federationmgmt.ApiRoot, consumer.FederationContextId, cApp.ID)
 	_, _, err = fedClient.SendRequest(ctx, http.MethodDelete, apiPath, nil, nil, nil)
 	if err != nil {
 		return err

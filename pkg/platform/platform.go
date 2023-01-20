@@ -52,6 +52,7 @@ type PlatformConfig struct {
 	TrustPolicy         string
 	CacheDir            string
 	GPUConfig           *edgeproto.GPUConfig
+	FedExternalAddr     string
 }
 
 type Caches struct {

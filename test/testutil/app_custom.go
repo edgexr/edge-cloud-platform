@@ -46,6 +46,10 @@ func (s *DummyServer) ShowFlavorsForCloudlet(*edgeproto.CloudletKey, edgeproto.C
 	return nil
 }
 
+func (s *DummyServer) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.FedAppInstEvent) (*edgeproto.Result, error) {
+	return &edgeproto.Result{}, nil
+}
+
 // minimal bits not currently generated for cloudletkey.proto and app.proto
 // in support of CLI test for an rpc that streams cloudletkeys as its result
 //

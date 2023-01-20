@@ -105,3 +105,4 @@ regiondata:
       deploymentgenerator: kubernetes-basic
       androidpackagename: com.acme.someapplication1
       accesstype: LoadBalancer
+      globalid: local-someapplication110acmeappco

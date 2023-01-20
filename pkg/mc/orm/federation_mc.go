@@ -1491,12 +1491,12 @@ func registerFederationConsumer(ctx context.Context, consumer *ormapi.Federation
 	}
 
 	req := fedewapi.FederationRequestData{
-		FederationNotificationDest: serverConfig.FederationExternalAddr + "/" + federation.CallbackRoot,
-		InitialDate:                time.Now(),
-		OrigOPCountryCode:          &consumer.MyInfo.CountryCode,
-		OrigOPFederationId:         consumer.MyInfo.FederationId,
-		OrigOPFixedNetworkCodes:    federation.GetFixedNetworkIds(&consumer.MyInfo),
-		OrigOPMobileNetworkCodes:   federation.GetMobileNetworkIds(&consumer.MyInfo),
+		PartnerStatusLink:        serverConfig.FederationExternalAddr + "/" + fedmgmt.PartnerStatusEventPath,
+		InitialDate:              time.Now(),
+		OrigOPCountryCode:        &consumer.MyInfo.CountryCode,
+		OrigOPFederationId:       consumer.MyInfo.FederationId,
+		OrigOPFixedNetworkCodes:  federation.GetFixedNetworkIds(&consumer.MyInfo),
+		OrigOPMobileNetworkCodes: federation.GetMobileNetworkIds(&consumer.MyInfo),
 	}
 	res := fedewapi.FederationResponseData{}
 
@@ -1504,7 +1504,7 @@ func registerFederationConsumer(ctx context.Context, consumer *ormapi.Federation
 	headerVals := http.Header{}
 	headerVals.Add(federation.HeaderXNotifyAuth, auth)
 	headerVals.Add(federation.HeaderXNotifyTokenUrl, serverConfig.ConsoleAddr+federation.TokenUrl)
-	_, _, err = fedClient.SendRequest(ctx, "POST", "/"+federation.ApiRoot+"/partner", &req, &res, headerVals)
+	_, _, err = fedClient.SendRequest(ctx, "POST", "/"+fedmgmt.ApiRoot+"/partner", &req, &res, headerVals)
 	if err != nil {
 		return err
 	}
@@ -1560,7 +1560,7 @@ func deregisterFederationConsumer(ctx context.Context, consumer *ormapi.Federati
 		return fmt.Errorf("Cannot deregister federation %q as partner zones %s are registered locally. Please deregister zones before deregistering federation", consumer.Name, strings.Join(registeredZones, ", "))
 	}
 
-	apiPath := fmt.Sprintf("/%s/%s/partner", federation.ApiRoot, consumer.FederationContextId)
+	apiPath := fmt.Sprintf("/%s/%s/partner", fedmgmt.ApiRoot, consumer.FederationContextId)
 	_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
 	if err != nil {
 		return err

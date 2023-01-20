@@ -988,8 +988,8 @@ func FixSharedRootLBFQDN(ctx context.Context, objStore objstore.KVStore, allApis
 	return nil
 }
 
-func SetAppFederatedId(ctx context.Context, objStore objstore.KVStore, allApis *AllApis) error {
-	log.SpanLog(ctx, log.DebugLevelUpgrade, "SetAppFederatedId")
+func SetAppGlobalId(ctx context.Context, objStore objstore.KVStore, allApis *AllApis) error {
+	log.SpanLog(ctx, log.DebugLevelUpgrade, "SetAppGlobalId")
 
 	appKeys, err := getDbObjectKeys(objStore, "App")
 	if err != nil {
@@ -1008,14 +1008,14 @@ func SetAppFederatedId(ctx context.Context, objStore objstore.KVStore, allApis *
 				log.SpanLog(ctx, log.DebugLevelUpgrade, "Cannot unmarshal key", "val", appStr, "err", err2, "app", app)
 				return err2
 			}
-			if app.FederatedId != "" {
+			if app.GlobalId != "" {
 				return nil
 			}
-			if err := allApis.appApi.setFederatedId(stm, &app); err != nil {
-				return fmt.Errorf("Set federated id for app %s failed, %s", appKey, err)
+			if err := allApis.appApi.setGlobalId(stm, &app); err != nil {
+				return fmt.Errorf("Set global id for app %s failed, %s", appKey, err)
 			}
 			allApis.appApi.store.STMPut(stm, &app)
-			allApis.appApi.fedIdStore.STMPut(stm, app.FederatedId)
+			allApis.appApi.globalIdStore.STMPut(stm, app.GlobalId)
 			return nil
 		})
 		if err != nil {

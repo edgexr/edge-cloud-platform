@@ -19,6 +19,14 @@ var _ MappedNullable = &FederationContextIdIsvResourceZoneZoneIdAppProviderAppPr
 
 // FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest struct for FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest
 type FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest struct {
+	// Globally unique identifier allocated to an operator platform. This is valid and used only in context of MEC federation interface.
+	FederationContextId string `json:"federationContextId"`
+	// Human readable name of the zone.
+	ZoneId string `json:"zoneId"`
+	// UserId of the app provider.  Identifier is relevant only in context of this federation.
+	AppProviderId string `json:"appProviderId"`
+	// OP defined Identifier for the pool reserved for the ISV. It should be unique with an OP.
+	PoolId string `json:"poolId"`
 	GrantedFlavours []FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner `json:"grantedFlavours"`
 }
 
@@ -26,8 +34,12 @@ type FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest 
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest(grantedFlavours []FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner) *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest {
+func NewFederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest(federationContextId string, zoneId string, appProviderId string, poolId string, grantedFlavours []FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner) *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest {
 	this := FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest{}
+	this.FederationContextId = federationContextId
+	this.ZoneId = zoneId
+	this.AppProviderId = appProviderId
+	this.PoolId = poolId
 	this.GrantedFlavours = grantedFlavours
 	return &this
 }
@@ -38,6 +50,102 @@ func NewFederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetReque
 func NewFederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestWithDefaults() *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest {
 	this := FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest{}
 	return &this
+}
+
+// GetFederationContextId returns the FederationContextId field value
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) GetFederationContextId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.FederationContextId
+}
+
+// GetFederationContextIdOk returns a tuple with the FederationContextId field value
+// and a boolean to check if the value has been set.
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) GetFederationContextIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.FederationContextId, true
+}
+
+// SetFederationContextId sets field value
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) SetFederationContextId(v string) {
+	o.FederationContextId = v
+}
+
+// GetZoneId returns the ZoneId field value
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) GetZoneId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.ZoneId
+}
+
+// GetZoneIdOk returns a tuple with the ZoneId field value
+// and a boolean to check if the value has been set.
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) GetZoneIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ZoneId, true
+}
+
+// SetZoneId sets field value
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) SetZoneId(v string) {
+	o.ZoneId = v
+}
+
+// GetAppProviderId returns the AppProviderId field value
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) GetAppProviderId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.AppProviderId
+}
+
+// GetAppProviderIdOk returns a tuple with the AppProviderId field value
+// and a boolean to check if the value has been set.
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) GetAppProviderIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.AppProviderId, true
+}
+
+// SetAppProviderId sets field value
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) SetAppProviderId(v string) {
+	o.AppProviderId = v
+}
+
+// GetPoolId returns the PoolId field value
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) GetPoolId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.PoolId
+}
+
+// GetPoolIdOk returns a tuple with the PoolId field value
+// and a boolean to check if the value has been set.
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) GetPoolIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.PoolId, true
+}
+
+// SetPoolId sets field value
+func (o *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) SetPoolId(v string) {
+	o.PoolId = v
 }
 
 // GetGrantedFlavours returns the GrantedFlavours field value
@@ -74,6 +182,10 @@ func (o FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetReque
 
 func (o FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	toSerialize["federationContextId"] = o.FederationContextId
+	toSerialize["zoneId"] = o.ZoneId
+	toSerialize["appProviderId"] = o.AppProviderId
+	toSerialize["poolId"] = o.PoolId
 	toSerialize["grantedFlavours"] = o.GrantedFlavours
 	return toSerialize, nil
 }

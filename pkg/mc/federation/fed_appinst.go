@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
+	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
@@ -17,7 +20,13 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+var DisableFedAppInsts = true
+
 func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (reterr error) {
+	if DisableFedAppInsts {
+		return nil
+	}
+
 	ctx := ormutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
@@ -74,18 +83,6 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 		return c.String(http.StatusInternalServerError, "Failed to create new provider AppInst, "+err.Error())
 	}
 
-	callbackUrl := ""
-	if in.AppInstCallbackLink != "" {
-		notifyTmpl := ormutil.NewUriTemplate(in.AppInstCallbackLink + PartnerLcmNotifyPath)
-		vars := map[string]string{
-			PathVarFederationContextId: provider.FederationContextId,
-			PathVarAppId:               in.AppId,
-			PathVarAppInstId:           provAppInst.AppInstID,
-			PathVarZoneId:              in.ZoneInfo.ZoneId,
-		}
-		callbackUrl = notifyTmpl.Eval(vars)
-	}
-
 	// Run the actual create after sending the response
 	worker := AppInstWorker{
 		parentCtx:   ctx,
@@ -95,13 +92,12 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 		provArt:     provArt,
 		provApp:     provApp,
 		provAppInst: &provAppInst,
-		callbackUrl: callbackUrl,
+		callbackUrl: in.AppInstCallbackLink,
 	}
 	c.Response().After(func() {
 		go worker.createAppInstJob()
 	})
 
-	// appInst.UniqueId is only unique within the region, so append region name
 	resp := fedewapi.InstallApp202Response{
 		ZoneId:            in.ZoneInfo.ZoneId,
 		AppInstIdentifier: provAppInst.AppInstID,
@@ -189,6 +185,9 @@ func (s *AppInstWorker) sendCallback(ctx context.Context, state string, accesspo
 }
 
 func (p *PartnerApi) RemoveApp(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier, appInstId InstanceIdentifier, zoneId ZoneIdentifier) error {
+	if DisableFedAppInsts {
+		return nil
+	}
 	ctx := ormutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
@@ -256,9 +255,11 @@ func getAppInstKey(provider *ormapi.FederationProvider, provArt *ormapi.Provider
 	}
 }
 
+/* REMOVE
 func getAppInstId(ai *edgeproto.AppInst, region string) string {
 	return ai.UniqueId + "-" + region
 }
+*/
 
 func (p *PartnerApi) GetAllAppInstances(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier, appProviderId AppProviderId) error {
 	return fmt.Errorf("not implemented yet")
@@ -268,6 +269,84 @@ func (p *PartnerApi) GetAppInstanceDetails(c echo.Context, fedCtxId FederationCo
 	return fmt.Errorf("not implemented yet")
 }
 
-func (p *PartnerApi) PartnerLcmNotify(c echo.Context) error {
+func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
+	if DisableFedAppInsts {
+		return nil
+	}
+	ctx := ormutil.GetContext(c)
+	in := fedewapi.FederationContextIdApplicationLcmPostRequest{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
+	// lookup federation consumer based on claims
+	consumer, err := p.lookupConsumer(c, in.FederationContextId)
+	if err != nil {
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "partner app instance status event", "consumer", consumer.Name, "operatorid", consumer.OperatorId, "request", in)
+
+	// lookup app
+	app, err := p.lookupConsumerApp(c, consumer, in.AppId)
+	if err != nil {
+		return err
+	}
+
+	event := edgeproto.FedAppInstEvent{
+		Key: edgeproto.FedAppInstKey{
+			FederationName: consumer.Name,
+			AppInstId:      in.AppInstanceId,
+		},
+	}
+	info := &in.AppInstanceInfo
+	if info.Message != nil {
+		event.Message = *info.Message
+	}
+	if info.AppInstanceState != nil {
+		switch *info.AppInstanceState {
+		case federationmgmt.AppInstStatePending:
+			event.State = edgeproto.TrackedState_CREATING
+		case federationmgmt.AppInstStateReady:
+			event.State = edgeproto.TrackedState_READY
+		case federationmgmt.AppInstStateFailed:
+			event.State = edgeproto.TrackedState_CREATE_ERROR
+		case federationmgmt.AppInstStateTerminating:
+			event.State = edgeproto.TrackedState_CREATE_ERROR
+			event.Message = "Terminating"
+			if info.Message != nil {
+				event.Message += ", " + *info.Message
+			}
+		}
+	}
+	if len(info.AccesspointInfo) > 0 {
+		for _, ap := range info.AccesspointInfo {
+			port := dmeproto.AppPort{}
+			portVal, err := strconv.Atoi(ap.InterfaceId)
+			if err != nil {
+				return fmt.Errorf("Invalid interfaceId %s, cannot convert to a port number, %s", ap.InterfaceId, err)
+			}
+			port.InternalPort = int32(portVal)
+			// Note that baseURL will be empty, so FqdnPrefix
+			// will be used as the whole Fqdn.
+			// Note we do not support multiple IP addresses.
+			if ap.AccessPoints.Fqdn != nil {
+				port.FqdnPrefix = *ap.AccessPoints.Fqdn
+			} else if len(ap.AccessPoints.Ipv4Addresses) > 0 {
+				port.FqdnPrefix = ap.AccessPoints.Ipv4Addresses[0]
+			} else if len(ap.AccessPoints.Ipv6Addresses) > 0 {
+				port.FqdnPrefix = ap.AccessPoints.Ipv6Addresses[0]
+			} else {
+				return fmt.Errorf("No valid fqdn or ip address for interfaceId %s", ap.InterfaceId)
+			}
+			event.Ports = append(event.Ports, port)
+		}
+	}
+
+	// TODO: make call to Controller
+	_ = ormutil.RegionContext{
+		Region:    app.Region,
+		SkipAuthz: true,
+		Database:  p.database,
+	}
+
 	return nil
 }

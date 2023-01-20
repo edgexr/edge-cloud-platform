@@ -240,7 +240,6 @@ Class | Method | HTTP request | Description
  - [InstanceState](docs/InstanceState.md)
  - [InterfaceDetails](docs/InterfaceDetails.md)
  - [InvalidParam](docs/InvalidParam.md)
- - [Ipv6Addr](docs/Ipv6Addr.md)
  - [MobileNetworkIds](docs/MobileNetworkIds.md)
  - [OSType](docs/OSType.md)
  - [ObjectRepoLocation](docs/ObjectRepoLocation.md)

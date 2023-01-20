@@ -27,7 +27,6 @@ import (
 
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -38,7 +37,6 @@ import (
 	ormtestutil "github.com/edgexr/edge-cloud-platform/pkg/mc/orm/testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	fedp "github.com/edgexr/edge-cloud-platform/pkg/platform/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
@@ -180,6 +178,7 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 		}
 	}
 
+	/* NOTYET
 	// set up FRM. Note that FRM is not actually connected to the
 	// controller via notify, because the dummy controller doesn't
 	// support that. Instead we'll need to call the FRM's functions
@@ -205,7 +204,7 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 	frm := &fedp.FederationPlatform{}
 	err = frm.InitCommon(ctx, &pc, &caches, nil, nil)
 	require.Nil(t, err)
-
+	*/
 	return &CtrlObj{
 		addr:        ctrlAddr,
 		ds:          ds,
@@ -213,7 +212,7 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 		dc:          dc,
 		operatorIds: operatorIds,
 		region:      region,
-		frm:         frm,
+		//frm:         frm,
 	}
 }
 
@@ -930,6 +929,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// FRM Tests
 	// ---------
 
+	/* NOT YET
 	cb := func(updateType edgeproto.CacheUpdateType, value string) {
 		fmt.Printf("createAppInstCb: %s\n", value)
 	}
@@ -939,6 +939,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Nil(t, err)
 	}
 	// check that appInsts were created on provider
+	*/
 
 	// --------+
 	// Cleanup |

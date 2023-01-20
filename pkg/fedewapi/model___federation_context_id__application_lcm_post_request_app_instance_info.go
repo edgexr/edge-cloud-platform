@@ -21,6 +21,8 @@ var _ MappedNullable = &FederationContextIdApplicationLcmPostRequestAppInstanceI
 type FederationContextIdApplicationLcmPostRequestAppInstanceInfo struct {
 	// Running status of the application instance.
 	AppInstanceState *string `json:"appInstanceState,omitempty"`
+	// Event information or failure message.
+	Message *string `json:"message,omitempty"`
 	// Information about the IP and Port exposed by the OP. Application clients shall use these access points to reach this application instance
 	AccesspointInfo []FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner `json:"accesspointInfo,omitempty"`
 }
@@ -74,6 +76,38 @@ func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) SetAppInst
 	o.AppInstanceState = &v
 }
 
+// GetMessage returns the Message field value if set, zero value otherwise.
+func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetMessage() string {
+	if o == nil || isNil(o.Message) {
+		var ret string
+		return ret
+	}
+	return *o.Message
+}
+
+// GetMessageOk returns a tuple with the Message field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetMessageOk() (*string, bool) {
+	if o == nil || isNil(o.Message) {
+		return nil, false
+	}
+	return o.Message, true
+}
+
+// HasMessage returns a boolean if a field has been set.
+func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) HasMessage() bool {
+	if o != nil && !isNil(o.Message) {
+		return true
+	}
+
+	return false
+}
+
+// SetMessage gets a reference to the given string and assigns it to the Message field.
+func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) SetMessage(v string) {
+	o.Message = &v
+}
+
 // GetAccesspointInfo returns the AccesspointInfo field value if set, zero value otherwise.
 func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAccesspointInfo() []FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner {
 	if o == nil || isNil(o.AccesspointInfo) {
@@ -118,6 +152,9 @@ func (o FederationContextIdApplicationLcmPostRequestAppInstanceInfo) ToMap() (ma
 	toSerialize := map[string]interface{}{}
 	if !isNil(o.AppInstanceState) {
 		toSerialize["appInstanceState"] = o.AppInstanceState
+	}
+	if !isNil(o.Message) {
+		toSerialize["message"] = o.Message
 	}
 	if !isNil(o.AccesspointInfo) {
 		toSerialize["accesspointInfo"] = o.AccesspointInfo

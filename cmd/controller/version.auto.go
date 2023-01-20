@@ -55,7 +55,8 @@ var VersionHash_UpgradeFuncs = map[int32]VersionUpgradeFunc{
 	43: nil,
 	44: AddGPUDriverStoragePaths,
 	45: FixSharedRootLBFQDN,
-	46: SetAppFederatedId,
+	46: SetAppGlobalId,
+	47: nil,
 }
 var VersionHash_UpgradeFuncNames = map[int32]string{
 	0:  "",
@@ -96,7 +97,8 @@ var VersionHash_UpgradeFuncNames = map[int32]string{
 	43: "",
 	44: "AddGPUDriverStoragePaths",
 	45: "FixSharedRootLBFQDN",
-	46: "SetAppFederatedId",
+	46: "SetAppGlobalId",
+	47: "",
 }
 
 // Auto-generated code: DO NOT EDIT

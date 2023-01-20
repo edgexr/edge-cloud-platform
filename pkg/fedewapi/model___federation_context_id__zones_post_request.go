@@ -19,6 +19,10 @@ var _ MappedNullable = &FederationContextIdZonesPostRequest{}
 
 // FederationContextIdZonesPostRequest struct for FederationContextIdZonesPostRequest
 type FederationContextIdZonesPostRequest struct {
+	// Globally unique identifier allocated to an operator platform. This is valid and used only in context of MEC federation interface.
+	FederationContextId string `json:"federationContextId"`
+	// Human readable name of the zone.
+	ZoneId string `json:"zoneId"`
 	ZoneResUpdInfo []FederationContextIdZonesPostRequestZoneResUpdInfoInner `json:"zoneResUpdInfo"`
 }
 
@@ -26,8 +30,10 @@ type FederationContextIdZonesPostRequest struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFederationContextIdZonesPostRequest(zoneResUpdInfo []FederationContextIdZonesPostRequestZoneResUpdInfoInner) *FederationContextIdZonesPostRequest {
+func NewFederationContextIdZonesPostRequest(federationContextId string, zoneId string, zoneResUpdInfo []FederationContextIdZonesPostRequestZoneResUpdInfoInner) *FederationContextIdZonesPostRequest {
 	this := FederationContextIdZonesPostRequest{}
+	this.FederationContextId = federationContextId
+	this.ZoneId = zoneId
 	this.ZoneResUpdInfo = zoneResUpdInfo
 	return &this
 }
@@ -38,6 +44,54 @@ func NewFederationContextIdZonesPostRequest(zoneResUpdInfo []FederationContextId
 func NewFederationContextIdZonesPostRequestWithDefaults() *FederationContextIdZonesPostRequest {
 	this := FederationContextIdZonesPostRequest{}
 	return &this
+}
+
+// GetFederationContextId returns the FederationContextId field value
+func (o *FederationContextIdZonesPostRequest) GetFederationContextId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.FederationContextId
+}
+
+// GetFederationContextIdOk returns a tuple with the FederationContextId field value
+// and a boolean to check if the value has been set.
+func (o *FederationContextIdZonesPostRequest) GetFederationContextIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.FederationContextId, true
+}
+
+// SetFederationContextId sets field value
+func (o *FederationContextIdZonesPostRequest) SetFederationContextId(v string) {
+	o.FederationContextId = v
+}
+
+// GetZoneId returns the ZoneId field value
+func (o *FederationContextIdZonesPostRequest) GetZoneId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.ZoneId
+}
+
+// GetZoneIdOk returns a tuple with the ZoneId field value
+// and a boolean to check if the value has been set.
+func (o *FederationContextIdZonesPostRequest) GetZoneIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ZoneId, true
+}
+
+// SetZoneId sets field value
+func (o *FederationContextIdZonesPostRequest) SetZoneId(v string) {
+	o.ZoneId = v
 }
 
 // GetZoneResUpdInfo returns the ZoneResUpdInfo field value
@@ -74,6 +128,8 @@ func (o FederationContextIdZonesPostRequest) MarshalJSON() ([]byte, error) {
 
 func (o FederationContextIdZonesPostRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	toSerialize["federationContextId"] = o.FederationContextId
+	toSerialize["zoneId"] = o.ZoneId
 	toSerialize["zoneResUpdInfo"] = o.ZoneResUpdInfo
 	return toSerialize, nil
 }

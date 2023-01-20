@@ -19,15 +19,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 )
 
@@ -47,7 +47,7 @@ func InitClientNotify(client *notify.Client, nodeMgr *node.NodeMgr, cd *Controll
 	crmutil.InitClientNotify(client, nodeMgr, cd.ControllerData)
 }
 
-func InitFRM(ctx context.Context, nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityManager, hostname, region, appDNSRoot, notifyAddrs string) (*notify.Client, *ControllerData, error) {
+func InitFRM(ctx context.Context, nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityManager, hostname, region, appDNSRoot, notifyAddrs, fedExtAddr string) (*notify.Client, *ControllerData, error) {
 	// Load platform implementation.
 	platform, err := pfutils.GetPlatform(ctx,
 		edgeproto.PlatformType_PLATFORM_TYPE_FEDERATION.String(),
@@ -59,11 +59,12 @@ func InitFRM(ctx context.Context, nodeMgr *node.NodeMgr, haMgr *redundancy.HighA
 	controllerData := NewControllerData(platform, nodeMgr, haMgr)
 
 	pc := pf.PlatformConfig{
-		Region:        region,
-		NodeMgr:       nodeMgr,
-		DeploymentTag: nodeMgr.DeploymentTag,
-		AppDNSRoot:    appDNSRoot,
-		AccessApi:     accessapi.NewVaultGlobalClient(nodeMgr.VaultConfig),
+		Region:          region,
+		NodeMgr:         nodeMgr,
+		DeploymentTag:   nodeMgr.DeploymentTag,
+		AppDNSRoot:      appDNSRoot,
+		AccessApi:       accessapi.NewVaultGlobalClient(nodeMgr.VaultConfig),
+		FedExternalAddr: fedExtAddr,
 	}
 	caches := controllerData.GetCaches()
 	noopCb := func(updateType edgeproto.CacheUpdateType, value string) {}

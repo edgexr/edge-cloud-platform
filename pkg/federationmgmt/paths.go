@@ -5,6 +5,23 @@ import (
 	"net/http"
 )
 
+const (
+	ApiRoot      = "operatorplatform/federation/v1"
+	CallbackRoot = "operatorplatform/fedcallbacks/v1"
+
+	// callback urls, used by both MC and FRM
+	PartnerStatusEventPath           = CallbackRoot + "/onPartnerStatusEvent"
+	PartnerZoneResourceUpdatePath    = CallbackRoot + "/onZoneResourceUpdateEvent"
+	PartnerAppOnboardStatusEventPath = CallbackRoot + "/onApplicationOnboardStatusEvent"
+	PartnerInstanceStatusEventPath   = CallbackRoot + "/onInstanceStatusEvent"
+	PartnerResourceStatusChangePath  = CallbackRoot + "/onResourceStatusChangeEvent"
+
+	AppInstStatePending     = "PENDING"
+	AppInstStateReady       = "READY"
+	AppInstStateFailed      = "FAILED"
+	AppInstStateTerminating = "TERMINATING"
+)
+
 func PathCreateAppInst(fedCtxId string) (string, string) {
 	return http.MethodPost, fmt.Sprintf("/%s/application/lcm", fedCtxId)
 }

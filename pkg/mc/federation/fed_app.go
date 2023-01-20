@@ -42,6 +42,24 @@ func (p *PartnerApi) lookupApp(c echo.Context, provider *ormapi.FederationProvid
 	return &provApp, nil
 }
 
+func (p *PartnerApi) lookupConsumerApp(c echo.Context, consumer *ormapi.FederationConsumer, appId string) (*ormapi.ConsumerApp, error) {
+	ctx := ormutil.GetContext(c)
+	db := p.loggedDB(ctx)
+
+	consApp := ormapi.ConsumerApp{
+		ID:             appId,
+		FederationName: consumer.Name,
+	}
+	res := db.Where(&consApp).First(&consApp)
+	if res.RecordNotFound() {
+		return nil, fmt.Errorf("Consumer Application " + appId + " not found")
+	}
+	if res.Error != nil {
+		return nil, fmt.Errorf("Failed to look up application, %s", res.Error)
+	}
+	return &consApp, nil
+}
+
 // Remote partner federator sends this request to us to onboard an application
 func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationContextId) error {
 	ctx := ormutil.GetContext(c)
@@ -118,16 +136,6 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 		zones = append(zones, provZone.ZoneId)
 	}
 
-	callbackUrl := ""
-	if req.AppStatusCallbackLink != "" {
-		notifyTmpl := ormutil.NewUriTemplate(req.AppStatusCallbackLink + PartnerAppNotifyPath)
-		vars := map[string]string{
-			PathVarFederationContextId: provider.FederationContextId,
-			PathVarAppId:               req.AppId,
-		}
-		callbackUrl = notifyTmpl.Eval(vars)
-	}
-
 	// create provider App
 	provApp := ormapi.ProviderApp{
 		FederationName:  provider.Name,
@@ -146,11 +154,14 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 
 	c.Response().WriteHeader(http.StatusAccepted)
 	c.Response().After(func() {
-		if callbackUrl == "" {
+		if req.AppStatusCallbackLink == "" {
 			log.SpanLog(ctx, log.DebugLevelApi, "app create no callback", "app", provApp)
 			return
 		}
-		cb := fedewapi.FederationContextIdApplicationOnboardingPostRequest{}
+		cb := fedewapi.FederationContextIdApplicationOnboardingPostRequest{
+			FederationContextId: provider.FederationContextId,
+			AppId:               req.AppId,
+		}
 		for _, zone := range zones {
 			status := fedewapi.FederationContextIdApplicationOnboardingPostRequestStatusInfoInner{
 				ZoneId:            zone,
@@ -158,13 +169,13 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 			}
 			cb.StatusInfo = append(cb.StatusInfo, status)
 		}
-		fedClient, err := p.ProviderPartnerClient(ctx, provider, callbackUrl)
+		fedClient, err := p.ProviderPartnerClient(ctx, provider, req.AppStatusCallbackLink)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelApi, "failed to send app create callback", "url", callbackUrl, "err", err)
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to send app create callback", "url", req.AppStatusCallbackLink, "err", err)
 			return
 		}
 		_, _, err = fedClient.SendRequest(ctx, "POST", "", &cb, nil, nil)
-		log.SpanLog(ctx, log.DebugLevelApi, "sent app create callback", "url", callbackUrl, "err", err)
+		log.SpanLog(ctx, log.DebugLevelApi, "sent app create callback", "url", req.AppStatusCallbackLink, "err", err)
 	})
 	return nil
 }
@@ -316,35 +327,21 @@ func (p *PartnerApi) LockUnlockApplicationZone(c echo.Context, fedCtxId Federati
 	return fmt.Errorf("not supported")
 }
 
-func (p *PartnerApi) PartnerAppNotify(c echo.Context) error {
+func (p *PartnerApi) PartnerAppOnboardStatusEvent(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	fedCtxId := c.Param(PathVarFederationContextId)
-	appId := c.Param(PathVarAppId)
+	in := fedewapi.FederationContextIdApplicationOnboardingPostRequest{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
 	// lookup federation consumer based on claims
-	consumer, err := p.lookupConsumer(c, FederationContextId(fedCtxId))
+	consumer, err := p.lookupConsumer(c, in.FederationContextId)
 	if err != nil {
 		return err
 	}
-	in := fedewapi.FederationContextIdApplicationOnboardingPostRequest{}
-	if err = c.Bind(&in); err != nil {
-		return ormutil.BindErr(err)
-	}
-	log.SpanLog(ctx, log.DebugLevelApi, "partner notify", "consumer", consumer.Name, "operatorid", consumer.OperatorId, "callback", in)
+	log.SpanLog(ctx, log.DebugLevelApi, "partner app onboard status event", "consumer", consumer.Name, "operatorid", consumer.OperatorId, "request", in)
 	// Notification about app onboarding status
 	// This notifies state per zone, but we don't explicitly onboard per zone.
-	// So this callback serves no purpose for us.
-
-	db := p.loggedDB(ctx)
-	// look up app
-	cApp := ormapi.ConsumerApp{
-		ID: appId,
-	}
-	res := db.Where(&cApp).First(&cApp)
-	if res.RecordNotFound() {
-		return c.String(http.StatusNotFound, "App not found for ID "+appId)
-	}
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "Failed to look up App, "+err.Error())
-	}
+	// Since we'll never specify zones to onboard, we should never get
+	// this callback.
 	return nil
 }

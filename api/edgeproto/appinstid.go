@@ -46,14 +46,14 @@ func (s *AppInstIdStore) STMDel(stm concurrency.STM, id string) {
 	stm.Del(keystr)
 }
 
-type AppFedIdStore struct{}
+type AppGlobalIdStore struct{}
 
-func AppFedIdDbKey(id string) string {
-	return fmt.Sprintf("%s/%s", objstore.DbKeyPrefixString("AppFedId"), id)
+func AppGlobalIdDbKey(id string) string {
+	return fmt.Sprintf("%s/%s", objstore.DbKeyPrefixString("AppGlobalId"), id)
 }
 
-func (s *AppFedIdStore) STMHas(stm concurrency.STM, id string) bool {
-	keystr := AppFedIdDbKey(id)
+func (s *AppGlobalIdStore) STMHas(stm concurrency.STM, id string) bool {
+	keystr := AppGlobalIdDbKey(id)
 	valstr := stm.Get(keystr)
 	if valstr == "" {
 		return false
@@ -61,12 +61,12 @@ func (s *AppFedIdStore) STMHas(stm concurrency.STM, id string) bool {
 	return true
 }
 
-func (s *AppFedIdStore) STMPut(stm concurrency.STM, id string) {
-	keystr := AppFedIdDbKey(id)
+func (s *AppGlobalIdStore) STMPut(stm concurrency.STM, id string) {
+	keystr := AppGlobalIdDbKey(id)
 	stm.Put(keystr, id)
 }
 
-func (s *AppFedIdStore) STMDel(stm concurrency.STM, id string) {
-	keystr := AppFedIdDbKey(id)
+func (s *AppGlobalIdStore) STMDel(stm concurrency.STM, id string) {
+	keystr := AppGlobalIdDbKey(id)
 	stm.Del(keystr)
 }

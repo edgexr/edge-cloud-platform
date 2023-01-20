@@ -160,6 +160,10 @@ func (s *DummyController) ShowAppInst(in *edgeproto.AppInst, server edgeproto.Ap
 	return err
 }
 
+func (s *DummyController) HandleFedAppInstEvent(ctx context.Context, event *edgeproto.FedAppInstEvent) (*edgeproto.Result, error) {
+	return &edgeproto.Result{}, nil
+}
+
 func (s *DummyController) updateAppInst(ctx context.Context, in *edgeproto.AppInst) {
 	log.SpanLog(ctx, log.DebugLevelApi, "UpdateAppInst", "inst", *in)
 	if s.appInstRefsCache != nil {

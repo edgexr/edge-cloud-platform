@@ -19,6 +19,10 @@ var _ MappedNullable = &FederationContextIdApplicationOnboardingPostRequest{}
 
 // FederationContextIdApplicationOnboardingPostRequest struct for FederationContextIdApplicationOnboardingPostRequest
 type FederationContextIdApplicationOnboardingPostRequest struct {
+	// Globally unique identifier allocated to an operator platform. This is valid and used only in context of MEC federation interface.
+	FederationContextId string `json:"federationContextId"`
+	// Identifier used to refer to an application.
+	AppId string `json:"appId"`
 	StatusInfo []FederationContextIdApplicationOnboardingPostRequestStatusInfoInner `json:"statusInfo"`
 }
 
@@ -26,8 +30,10 @@ type FederationContextIdApplicationOnboardingPostRequest struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFederationContextIdApplicationOnboardingPostRequest(statusInfo []FederationContextIdApplicationOnboardingPostRequestStatusInfoInner) *FederationContextIdApplicationOnboardingPostRequest {
+func NewFederationContextIdApplicationOnboardingPostRequest(federationContextId string, appId string, statusInfo []FederationContextIdApplicationOnboardingPostRequestStatusInfoInner) *FederationContextIdApplicationOnboardingPostRequest {
 	this := FederationContextIdApplicationOnboardingPostRequest{}
+	this.FederationContextId = federationContextId
+	this.AppId = appId
 	this.StatusInfo = statusInfo
 	return &this
 }
@@ -38,6 +44,54 @@ func NewFederationContextIdApplicationOnboardingPostRequest(statusInfo []Federat
 func NewFederationContextIdApplicationOnboardingPostRequestWithDefaults() *FederationContextIdApplicationOnboardingPostRequest {
 	this := FederationContextIdApplicationOnboardingPostRequest{}
 	return &this
+}
+
+// GetFederationContextId returns the FederationContextId field value
+func (o *FederationContextIdApplicationOnboardingPostRequest) GetFederationContextId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.FederationContextId
+}
+
+// GetFederationContextIdOk returns a tuple with the FederationContextId field value
+// and a boolean to check if the value has been set.
+func (o *FederationContextIdApplicationOnboardingPostRequest) GetFederationContextIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.FederationContextId, true
+}
+
+// SetFederationContextId sets field value
+func (o *FederationContextIdApplicationOnboardingPostRequest) SetFederationContextId(v string) {
+	o.FederationContextId = v
+}
+
+// GetAppId returns the AppId field value
+func (o *FederationContextIdApplicationOnboardingPostRequest) GetAppId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.AppId
+}
+
+// GetAppIdOk returns a tuple with the AppId field value
+// and a boolean to check if the value has been set.
+func (o *FederationContextIdApplicationOnboardingPostRequest) GetAppIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.AppId, true
+}
+
+// SetAppId sets field value
+func (o *FederationContextIdApplicationOnboardingPostRequest) SetAppId(v string) {
+	o.AppId = v
 }
 
 // GetStatusInfo returns the StatusInfo field value
@@ -74,6 +128,8 @@ func (o FederationContextIdApplicationOnboardingPostRequest) MarshalJSON() ([]by
 
 func (o FederationContextIdApplicationOnboardingPostRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	toSerialize["federationContextId"] = o.FederationContextId
+	toSerialize["appId"] = o.AppId
 	toSerialize["statusInfo"] = o.StatusInfo
 	return toSerialize, nil
 }

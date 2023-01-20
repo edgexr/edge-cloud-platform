@@ -344,6 +344,7 @@ type DummyServer struct {
 	NetworkCache                  edgeproto.NetworkCache
 	AppInstCache                  edgeproto.AppInstCache
 	AppInstInfoCache              edgeproto.AppInstInfoCache
+	FedAppInstCache               edgeproto.FedAppInstCache
 	CloudletRefsCache             edgeproto.CloudletRefsCache
 	ClusterRefsCache              edgeproto.ClusterRefsCache
 	AppInstRefsCache              edgeproto.AppInstRefsCache
@@ -385,6 +386,7 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.InitNetworkCache(&d.NetworkCache)
 	edgeproto.InitAppInstCache(&d.AppInstCache)
 	edgeproto.InitAppInstInfoCache(&d.AppInstInfoCache)
+	edgeproto.InitFedAppInstCache(&d.FedAppInstCache)
 	edgeproto.InitCloudletRefsCache(&d.CloudletRefsCache)
 	edgeproto.InitClusterRefsCache(&d.ClusterRefsCache)
 	edgeproto.InitAppInstRefsCache(&d.AppInstRefsCache)

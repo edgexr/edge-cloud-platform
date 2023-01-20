@@ -22,7 +22,7 @@ type ServiceEndpoint struct {
 	Port int32 `json:"port"`
 	Fqdn *string `json:"fqdn,omitempty"`
 	Ipv4Addresses []string `json:"ipv4Addresses,omitempty"`
-	Ipv6Addresses []Ipv6Addr `json:"ipv6Addresses,omitempty"`
+	Ipv6Addresses []string `json:"ipv6Addresses,omitempty"`
 }
 
 // NewServiceEndpoint instantiates a new ServiceEndpoint object
@@ -132,9 +132,9 @@ func (o *ServiceEndpoint) SetIpv4Addresses(v []string) {
 }
 
 // GetIpv6Addresses returns the Ipv6Addresses field value if set, zero value otherwise.
-func (o *ServiceEndpoint) GetIpv6Addresses() []Ipv6Addr {
+func (o *ServiceEndpoint) GetIpv6Addresses() []string {
 	if o == nil || isNil(o.Ipv6Addresses) {
-		var ret []Ipv6Addr
+		var ret []string
 		return ret
 	}
 	return o.Ipv6Addresses
@@ -142,7 +142,7 @@ func (o *ServiceEndpoint) GetIpv6Addresses() []Ipv6Addr {
 
 // GetIpv6AddressesOk returns a tuple with the Ipv6Addresses field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ServiceEndpoint) GetIpv6AddressesOk() ([]Ipv6Addr, bool) {
+func (o *ServiceEndpoint) GetIpv6AddressesOk() ([]string, bool) {
 	if o == nil || isNil(o.Ipv6Addresses) {
 		return nil, false
 	}
@@ -158,8 +158,8 @@ func (o *ServiceEndpoint) HasIpv6Addresses() bool {
 	return false
 }
 
-// SetIpv6Addresses gets a reference to the given []Ipv6Addr and assigns it to the Ipv6Addresses field.
-func (o *ServiceEndpoint) SetIpv6Addresses(v []Ipv6Addr) {
+// SetIpv6Addresses gets a reference to the given []string and assigns it to the Ipv6Addresses field.
+func (o *ServiceEndpoint) SetIpv6Addresses(v []string) {
 	o.Ipv6Addresses = v
 }
 

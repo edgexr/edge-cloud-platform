@@ -1952,12 +1952,12 @@ func (s *Client) ShowFederation(uri string, token string, in *cli.MapData) ([]or
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) OnboardConsumerApp(uri string, token string, in *ormapi.ConsumerApp) (*ormapi.Result, int, error) {
+func (s *Client) OnboardConsumerApp(uri string, token string, in *ormapi.ConsumerApp) ([]ormapi.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
-	var out ormapi.Result
+	var out []ormapi.Result
 	rundata.Out = &out
 
 	apiCmd := ormctl.MustGetCommand("OnboardConsumerApp")
@@ -1965,7 +1965,7 @@ func (s *Client) OnboardConsumerApp(uri string, token string, in *ormapi.Consume
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
 	}
-	return &out, rundata.RetStatus, rundata.RetError
+	return out, rundata.RetStatus, rundata.RetError
 }
 
 func (s *Client) DeboardConsumerApp(uri string, token string, in *ormapi.ConsumerApp) (*ormapi.Result, int, error) {

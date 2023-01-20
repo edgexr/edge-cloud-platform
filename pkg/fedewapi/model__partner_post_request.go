@@ -20,6 +20,8 @@ var _ MappedNullable = &PartnerPostRequest{}
 
 // PartnerPostRequest struct for PartnerPostRequest
 type PartnerPostRequest struct {
+	// Globally unique identifier allocated to an operator platform. This is valid and used only in context of MEC federation interface.
+	FederationContextId string `json:"federationContextId"`
 	ObjectType string `json:"objectType"`
 	OperationType string `json:"operationType"`
 	EdgeDiscoverySvcEndPoint *ServiceEndpoint `json:"edgeDiscoverySvcEndPoint,omitempty"`
@@ -44,8 +46,9 @@ type PartnerPostRequest struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPartnerPostRequest(objectType string, operationType string, modificationDate time.Time) *PartnerPostRequest {
+func NewPartnerPostRequest(federationContextId string, objectType string, operationType string, modificationDate time.Time) *PartnerPostRequest {
 	this := PartnerPostRequest{}
+	this.FederationContextId = federationContextId
 	this.ObjectType = objectType
 	this.OperationType = operationType
 	this.ModificationDate = modificationDate
@@ -58,6 +61,30 @@ func NewPartnerPostRequest(objectType string, operationType string, modification
 func NewPartnerPostRequestWithDefaults() *PartnerPostRequest {
 	this := PartnerPostRequest{}
 	return &this
+}
+
+// GetFederationContextId returns the FederationContextId field value
+func (o *PartnerPostRequest) GetFederationContextId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.FederationContextId
+}
+
+// GetFederationContextIdOk returns a tuple with the FederationContextId field value
+// and a boolean to check if the value has been set.
+func (o *PartnerPostRequest) GetFederationContextIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.FederationContextId, true
+}
+
+// SetFederationContextId sets field value
+func (o *PartnerPostRequest) SetFederationContextId(v string) {
+	o.FederationContextId = v
 }
 
 // GetObjectType returns the ObjectType field value
@@ -462,6 +489,7 @@ func (o PartnerPostRequest) MarshalJSON() ([]byte, error) {
 
 func (o PartnerPostRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	toSerialize["federationContextId"] = o.FederationContextId
 	toSerialize["objectType"] = o.ObjectType
 	toSerialize["operationType"] = o.OperationType
 	if !isNil(o.EdgeDiscoverySvcEndPoint) {

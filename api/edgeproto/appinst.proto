@@ -176,6 +176,8 @@ message AppInst {
   string unique_id = 40 [(protogen.backend) = true];
   // DNS label that is unique within the cloudlet and among other AppInsts/ClusterInsts
   string dns_label = 41 [(protogen.backend) = true];
+  // Federated ID if federated AppInst
+  FedAppInstKey fed_key = 43 [(gogoproto.nullable) = false, (protogen.backend) = true];
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;
@@ -185,7 +187,7 @@ message AppInst {
   option (protogen.notify_cache) = true;
   option (protogen.notify_custom_update) = true;
   option (protogen.notify_filter_cloudlet_key) = true;
-  option (protogen.noconfig) = "CloudletLoc,Uri,MappedPorts,Liveness,CreatedAt,Revision,Errors,RuntimeInfo,VmFlavor,ExternalVolumeSize,AvailabilityZone,State,UpdatedAt,OptRes,SharedVolumeSize,AutoClusterIpAccess,InternalPortToLbIp,UniqueId,DnsLabel";
+  option (protogen.noconfig) = "CloudletLoc,Uri,MappedPorts,Liveness,CreatedAt,Revision,Errors,RuntimeInfo,VmFlavor,ExternalVolumeSize,AvailabilityZone,State,UpdatedAt,OptRes,SharedVolumeSize,AutoClusterIpAccess,InternalPortToLbIp,UniqueId,DnsLabel,FedKey";
   option (protogen.alias) = "appname=Key.AppKey.Name,appvers=Key.AppKey.Version,apporg=Key.AppKey.Organization,cluster=Key.ClusterInstKey.ClusterKey.Name,clusterorg=Key.ClusterInstKey.Organization,cloudlet=Key.ClusterInstKey.CloudletKey.Name,cloudletorg=Key.ClusterInstKey.CloudletKey.Organization,federatedorg=Key.ClusterInstKey.CloudletKey.FederatedOrganization,flavor=Flavor.Name";
   option (protogen.not_required) = "Key.ClusterInstKey.Organization,Key.ClusterInstKey.ClusterKey.Name,Key.ClusterInstKey.CloudletKey.FederatedOrganization";
   option (protogen.mc2_target_cloudlet) = "Key.ClusterInstKey.CloudletKey";
@@ -256,6 +258,12 @@ service AppInstApi {
     option (protogen.mc2_api) = "ResourceAppInsts,ActionView,Key.AppKey.Organization";
     option (protogen.mc2_custom_authz) = true;
   }
+  rpc HandleFedAppInstEvent(FedAppInstEvent) returns (Result) {
+    option (google.api.http) = {
+      post: "/fedevent/appinstinfo"
+      body: "*"
+    };
+  }
 }
 
 // AppInstInfo provides information from the Cloudlet Resource Manager about the state of the AppInst on the Cloudlet. Whereas the AppInst defines the intent of instantiating an App on a Cloudlet, the AppInstInfo defines the current state of trying to apply that intent on the physical resources of the Cloudlet.
@@ -278,6 +286,8 @@ message AppInstInfo {
   PowerState power_state = 8;
   // Base FQDN for the App based on the cloudlet platform
   string uri = 9 [(protogen.backend) = true];
+  // Federation AppInst Key, if any
+  FedAppInstKey fed_key = 10 [(protogen.backend) = true, (gogoproto.nullable) = false];
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cache) = true;
@@ -353,4 +363,40 @@ service AppInstLatencyApi {
     };
     option (protogen.mc2_api) = "ResourceAppInsts,ActionManage,Key.AppKey.Organization";
   }
+}
+
+// Federation AppInst Key
+message FedAppInstKey {
+  // Federation name
+  string federation_name = 1 [(protogen.keytag) = "federationname", (protogen.skip_keytag_conflict_check) = true];
+  // Federated AppInst ID
+  string app_inst_id = 2 [(protogen.keytag) = "appinstid", (protogen.skip_keytag_conflict_check) = true];
+  option (protogen.generate_matches) = true;
+  option (protogen.obj_key) = true;
+  option (gogoproto.gostring) = true;
+}
+
+// FedAppInst associates a Federated AppInst Id with the AppInst Key
+message FedAppInst {
+  // FedAppInst Key
+  FedAppInstKey key = 1 [(gogoproto.nullable) = false];
+  // AppInst Key
+  AppInstKey app_inst_key = 2 [(gogoproto.nullable) = false];
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.uses_org) = "none";
+  option (protogen.ignore_refers_to) = true;
+}
+
+// FedAppInstEvent is received from a partner Federation
+message FedAppInstEvent {
+  // FedAppInst Key
+  FedAppInstKey key = 1 [(gogoproto.nullable) = false];
+  // Updated State if any
+  TrackedState state = 2;
+  // Event message or error message
+  string message = 3;
+  // Port info if any
+  repeated distributed_match_engine.AppPort ports = 4 [(gogoproto.nullable) = false];
 }

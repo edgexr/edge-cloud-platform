@@ -188,9 +188,9 @@ components:
       example: 198.51.100.1
     Ipv6Addr:
       type: string
-      allOf:
-        - pattern: ^((:|(0?|([1-9a-f][0-9a-f]{0,3}))):)((0?|([1-9a-f][0-9a-f]{0,3})):){0,6}(:|(0?|([1-9a-f][0-9a-f]{0,3})))$
-        - pattern: ^((([^:]+:){7}([^:]+))|((([^:]+:)*[^:]+)?::(([^:]+:)*[^:]+)?))$
+#      allOf:
+#        - pattern: ^((:|(0?|([1-9a-f][0-9a-f]{0,3}))):)((0?|([1-9a-f][0-9a-f]{0,3})):){0,6}(:|(0?|([1-9a-f][0-9a-f]{0,3})))$
+#        - pattern: ^((([^:]+:){7}([^:]+))|((([^:]+:)*[^:]+)?::(([^:]+:)*[^:]+)?))$
       example: 2001:db8:85a3::8a2e:370:7334
     Fqdn:
       type: string
@@ -562,7 +562,7 @@ components:
       required:
         - origOPFederationId
         - initialDate
-        - federationNotificationDest
+        - partnerStatusLink
       properties:
         origOPFederationId:
           $ref: '#/components/schemas/FederationIdentifier'
@@ -576,7 +576,7 @@ components:
           type: string
           format: date-time
           description: Time zone info of the federation initiated by the originating OP
-        federationNotificationDest:
+        partnerStatusLink:
           $ref: '#/components/schemas/Uri'
     FederationResponseData:
       type: object
@@ -1133,14 +1133,8 @@ paths:
           $ref: '#/components/responses/default'
       callbacks:
         onPartnerStatusEvent:
-          '{$request.body#/federationNotificationDest}/{federationContextId}/onPartnerStatusEvent':
+          '{$request.body#/partnerStatusLink}':
             post:
-              parameters:
-                - name: federationContextId
-                  in: path
-                  required: true
-                  schema:
-                    $ref: '#/components/schemas/FederationContextId'
               requestBody:
                 description: |
                   OP uses this callback api to notify partner OP about change in federation status, federation metadata or offered zone details. Allowed combinations of objectType and operationType are
@@ -1159,10 +1153,13 @@ paths:
                     schema:
                       type: object
                       required:
+                        - federationContextId
                         - objectType
                         - operationType
                         - modificationDate
                       properties:
+                        federationContextId:
+                          $ref: '#/components/schemas/FederationIdentifier'
                         objectType:
                           type: string
                           enum:
@@ -1462,19 +1459,8 @@ paths:
           $ref: '#/components/responses/default'
       callbacks:
         onZoneResourceUpdateEvent:
-          '{$request.body#/availZoneNotifLink}/{federationContextId}/onZoneResourceUpdateEvent/zone/{zoneId}':
+          '{$request.body#/availZoneNotifLink}':
             post:
-              parameters:
-                - name: federationContextId
-                  in: path
-                  required: true
-                  schema:
-                    $ref: '#/components/schemas/FederationContextId'
-                - name: zoneId
-                  in: path
-                  required: true
-                  schema:
-                    $ref: '#/components/schemas/ZoneIdentifier'
               requestBody:
                 description: Notification about resource availability.
                 content:
@@ -1482,8 +1468,14 @@ paths:
                     schema:
                       type: object
                       required:
+                        - federationContextId
+                        - zoneId
                         - zoneResUpdInfo
                       properties:
+                        federationContextId:
+                          $ref: '#/components/schemas/FederationIdentifier'
+                        zoneId:
+                          $ref: '#/components/schemas/ZoneIdentifier'
                         zoneResUpdInfo:
                           type: array
                           items:
@@ -2153,19 +2145,8 @@ paths:
           $ref: '#/components/responses/default'
       callbacks:
         onApplicationOnboardStatusEvent:
-          '{$request.body#/appStatusCallbackLink}/{federationContextId}/onApplicationOnboardStatusEvent/app/{appId}':
+          '{$request.body#/appStatusCallbackLink}':
             post:
-              parameters:
-                - name: federationContextId
-                  in: path
-                  required: true
-                  schema:
-                    $ref: '#/components/schemas/FederationContextId'
-                - name: appId
-                  in: path
-                  required: true
-                  schema:
-                    $ref: '#/components/schemas/AppIdentifier'
               requestBody:
                 description: Notification payload.
                 content:
@@ -2173,8 +2154,14 @@ paths:
                     schema:
                       type: object
                       required:
+                        - federationContextId
+                        - appId
                         - statusInfo
                       properties:
+                        federationContextId:
+                          $ref: '#/components/schemas/FederationIdentifier'
+                        appId:
+                          $ref: '#/components/schemas/AppIdentifier'
                         statusInfo:
                           type: array
                           items:
@@ -2687,29 +2674,8 @@ paths:
           $ref: '#/components/responses/default'
       callbacks:
         onInstanceStatusEvent:
-          '{$request.body#/appInstCallbackLink}/{federationContextId}/onInstanceStatusEvent/app/{appId}/instance/{appInstanceId}/zone/{zoneId}':
+          '{$request.body#/appInstCallbackLink}':
             post:
-              parameters:
-                - name: federationContextId
-                  in: path
-                  required: true
-                  schema:
-                    $ref: '#/components/schemas/FederationContextId'
-                - name: appId
-                  in: path
-                  required: true
-                  schema:
-                    $ref: '#/components/schemas/AppIdentifier'
-                - name: appInstanceId
-                  in: path
-                  required: true
-                  schema:
-                    $ref: '#/components/schemas/InstanceIdentifier'
-                - name: zoneId
-                  in: path
-                  required: true
-                  schema:
-                    $ref: '#/components/schemas/ZoneIdentifier'
               requestBody:
                 description: Notification payload.
                 content:
@@ -2717,8 +2683,20 @@ paths:
                     schema:
                       type: object
                       required:
+                        - federationContextId
+                        - appId
+                        - appInstanceId
+                        - zoneId
                         - appInstanceInfo
                       properties:
+                        federationContextId:
+                          $ref: '#/components/schemas/FederationIdentifier'
+                        appId:
+                          $ref: '#/components/schemas/AppIdentifier'
+                        appInstanceId:
+                          $ref: '#/components/schemas/InstanceIdentifier'
+                        zoneId:
+                          $ref: '#/components/schemas/ZoneIdentifier'
                         appInstanceInfo:
                           type: object
                           properties:
@@ -2730,6 +2708,9 @@ paths:
                                 - FAILED
                                 - TERMINATING
                               description: Running status of the application instance.
+                            message:
+                              type: string
+                              description: Event information or failure message.
                             accesspointInfo:
                               description: Information about the IP and Port exposed by the OP. Application clients shall use these access points to reach this application instance
                               type: array
@@ -3059,29 +3040,8 @@ paths:
           $ref: '#/components/responses/default'
       callbacks:
         onResourceStatusChangeEvent:
-          '{$request.body#/resourceReservationCallbackLink}/{federationContextId}/onResourceStatusChangeEvent/zone/{zoneId}/appProvider/{appProviderId}/pool/{poolId}':
+          '{$request.body#/resourceReservationCallbackLink}':
             post:
-              parameters:
-                - name: federationContextId
-                  in: path
-                  required: true
-                  schema:
-                    $ref: '#/components/schemas/FederationContextId'
-                - name: zoneId
-                  in: path
-                  required: true
-                  schema:
-                    $ref: '#/components/schemas/ZoneIdentifier'
-                - name: appProviderId
-                  in: path
-                  required: true
-                  schema:
-                    $ref: '#/components/schemas/AppProviderId'
-                - name: poolId
-                  in: path
-                  required: true
-                  schema:
-                    $ref: '#/components/schemas/PoolId'
               requestBody:
                 description: Notification payload.
                 content:
@@ -3089,8 +3049,20 @@ paths:
                     schema:
                       type: object
                       required:
+                        - federationContextId
+                        - zoneId
+                        - appProviderId
+                        - poolId
                         - grantedFlavours
                       properties:
+                        federationContextId:
+                          $ref: '#/components/schemas/FederationIdentifier'
+                        zoneId:
+                          $ref: '#/components/schemas/ZoneIdentifier'
+                        appProviderId:
+                          $ref: '#/components/schemas/AppProviderId'
+                        poolId:
+                          $ref: '#/components/schemas/PoolId'
                         grantedFlavours:
                           type: array
                           items:

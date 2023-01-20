@@ -356,6 +356,23 @@ func (s *AppInstInfoCache) SetUri(ctx context.Context, key *AppInstKey, uri stri
 	return
 }
 
+func (s *AppInstInfoCache) SetFedAppInstKey(ctx context.Context, key *AppInstKey, fedKey FedAppInstKey) {
+	if fedKey.FederationName == "" {
+		return
+	}
+	s.UpdateModFunc(ctx, key, 0, func(old *AppInstInfo) (newObj *AppInstInfo, changed bool) {
+		info := &AppInstInfo{}
+		if old == nil {
+			info.Key = *key
+		} else {
+			*info = *old
+		}
+		info.FedKey = fedKey
+		return info, true
+	})
+	return
+}
+
 func (s *AppInstInfoCache) SetStateRuntime(ctx context.Context, key *AppInstKey, state TrackedState, rt *AppInstRuntime) {
 	info := AppInstInfo{}
 	if !s.Get(key, &info) {

@@ -107,7 +107,7 @@ func (s *AppInstApi) setDnsLabel(stm concurrency.STM, ai *edgeproto.AppInst) err
 	return dnsLabelError(baseLabel)
 }
 
-func (s *AppApi) setFederatedId(stm concurrency.STM, app *edgeproto.App) error {
+func (s *AppApi) setGlobalId(stm concurrency.STM, app *edgeproto.App) error {
 	// More likely unique names should come first
 	// to avoid being truncated, except for region since
 	// that cannot be checked for uniqueness within the region.
@@ -123,16 +123,16 @@ func (s *AppApi) setFederatedId(stm concurrency.STM, app *edgeproto.App) error {
 	}
 
 	// Number of iterations must be fairly low to avoid STM limits
-	app.FederatedId = ""
+	app.GlobalId = ""
 	for ii := 0; ii < 10; ii++ {
-		fedId := genNextDnsLabel(id, cloudcommon.AppFederatedIdMaxLen, ii)
-		if s.fedIdStore.STMHas(stm, fedId) {
+		tmpId := genNextDnsLabel(id, cloudcommon.AppFederatedIdMaxLen, ii)
+		if s.globalIdStore.STMHas(stm, tmpId) {
 			continue
 		}
-		app.FederatedId = fedId
+		app.GlobalId = tmpId
 		return nil
 	}
-	return fmt.Errorf("Unable to generate unique federated id from base label of %q, please change key values", id)
+	return fmt.Errorf("Unable to generate unique global id from base label of %q, please change key values", id)
 }
 
 func dnsSanitizeTrunc(name string, maxLen int) string {

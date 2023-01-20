@@ -35,6 +35,7 @@ var hostname = flag.String("hostname", "", "Unique hostname")
 var debugLevels = flag.String("d", "", fmt.Sprintf("Comma separated list of %v", log.DebugLevelStrings))
 var region = flag.String("region", "local", "region name")
 var appDNSRoot = flag.String("appDNSRoot", "appdnsdroot.net", "App domain name root")
+var federationExternalAddr = flag.String("federationExternalAddr", "", "Federation EWBI API endpoint for clients")
 
 var sigChan chan os.Signal
 var nodeMgr node.NodeMgr
@@ -72,7 +73,7 @@ func main() {
 	defer span.Finish()
 	nodeMgr.UpdateNodeProps(ctx, version.BuildProps(ctx, ""))
 
-	notifyClient, controllerData, err = InitFRM(ctx, &nodeMgr, &haMgr, *hostname, *region, *appDNSRoot, *notifyAddrs)
+	notifyClient, controllerData, err = InitFRM(ctx, &nodeMgr, &haMgr, *hostname, *region, *appDNSRoot, *notifyAddrs, *federationExternalAddr)
 	if err != nil {
 		log.FatalLog("Failed to init frm", "err", err)
 	}

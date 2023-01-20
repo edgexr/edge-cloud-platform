@@ -200,6 +200,7 @@ regiondata:
       accesstype: LoadBalancer
       qossessionprofile: ThroughputDownM
       qossessionduration: 5m0s
+      globalid: local-qosapplication10qos-prio-dev
     appinstances:
     - key:
         appkey:
