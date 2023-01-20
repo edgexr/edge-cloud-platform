@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"strings"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type ResTagTableApi struct {
@@ -344,7 +344,7 @@ func (s *ResTagTableApi) ValidateOptResMapValues(resmap map[string]string) (bool
 	var err error
 	for k, v := range resmap {
 		if k == "gpu" {
-			_, err = cloudcommon.ParseGPUResourceCount(v)
+			_, _, _, err = cloudcommon.ParseGPUResource(v)
 			if err != nil {
 				return false, err
 			}

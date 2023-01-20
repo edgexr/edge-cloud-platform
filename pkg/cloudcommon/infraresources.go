@@ -283,30 +283,35 @@ func IsGPUFlavor(flavor *edgeproto.Flavor) (bool, int) {
 	if !ok {
 		return ok, 0
 	}
-	count, err := ParseGPUResourceCount(resStr)
+	_, _, count, err := ParseGPUResource(resStr)
 	if err != nil {
 		return false, 0
 	}
 	return true, count
 }
 
-func ParseGPUResourceCount(resStr string) (int, error) {
+func ParseGPUResource(resStr string) (string, string, int, error) {
+	typ := ""
+	spec := ""
 	count := 0
 	values := strings.Split(resStr, ":")
 	if len(values) == 1 {
-		return count, fmt.Errorf("Missing manditory resource count, ex: optresmap=gpu=gpu:1")
+		return typ, spec, count, fmt.Errorf("Missing manditory resource count, ex: optresmap=gpu=gpu:1")
 	}
 	var countStr string
 	var err error
 	if len(values) == 2 {
+		typ = values[0]
 		countStr = values[1]
 	} else if len(values) == 3 {
+		typ = values[0]
+		spec = values[1]
 		countStr = values[2]
 	} else {
-		return count, fmt.Errorf("Invalid optresmap syntax encountered: ex: optresmap=gpu=gpu:1")
+		return typ, spec, count, fmt.Errorf("Invalid optresmap syntax encountered: ex: optresmap=gpu=gpu:1")
 	}
 	if count, err = strconv.Atoi(countStr); err != nil {
-		return count, fmt.Errorf("Non-numeric resource count encountered, found %s", values[1])
+		return typ, spec, count, fmt.Errorf("Non-numeric resource count encountered, found %s", values[1])
 	}
-	return count, nil
+	return typ, spec, count, nil
 }

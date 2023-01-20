@@ -65,6 +65,16 @@ func FlavorData() []edgeproto.Flavor {
 		OptResMap: map[string]string{
 			"gpu": "pci:1",
 		},
+	}, {
+		Key: edgeproto.FlavorKey{
+			Name: "x1.small.vgpu",
+		},
+		Ram:   2048,
+		Vcpus: 2,
+		Disk:  2,
+		OptResMap: map[string]string{
+			"gpu": "vgpu:1",
+		},
 	}}
 }
 

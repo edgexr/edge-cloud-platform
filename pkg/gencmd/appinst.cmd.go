@@ -473,12 +473,70 @@ func ShowAppInsts(c *cli.Command, data []edgeproto.AppInst, err *error) {
 	}
 }
 
+var HandleFedAppInstEventCmd = &cli.Command{
+	Use:          "HandleFedAppInstEvent",
+	RequiredArgs: strings.Join(FedAppInstEventRequiredArgs, " "),
+	OptionalArgs: strings.Join(FedAppInstEventOptionalArgs, " "),
+	AliasArgs:    strings.Join(FedAppInstEventAliasArgs, " "),
+	SpecialArgs:  &FedAppInstEventSpecialArgs,
+	Comments:     FedAppInstEventComments,
+	ReqData:      &edgeproto.FedAppInstEvent{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runHandleFedAppInstEvent,
+}
+
+func runHandleFedAppInstEvent(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.FedAppInstEvent)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return HandleFedAppInstEvent(c, obj)
+}
+
+func HandleFedAppInstEvent(c *cli.Command, in *edgeproto.FedAppInstEvent) error {
+	if AppInstApiCmd == nil {
+		return fmt.Errorf("AppInstApi client not initialized")
+	}
+	ctx := context.Background()
+	obj, err := AppInstApiCmd.HandleFedAppInstEvent(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("HandleFedAppInstEvent failed: %s", errstr)
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func HandleFedAppInstEvents(c *cli.Command, data []edgeproto.FedAppInstEvent, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("HandleFedAppInstEvent %v\n", data[ii])
+		myerr := HandleFedAppInstEvent(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
 var AppInstApiCmds = []*cobra.Command{
 	CreateAppInstCmd.GenCmd(),
 	DeleteAppInstCmd.GenCmd(),
 	RefreshAppInstCmd.GenCmd(),
 	UpdateAppInstCmd.GenCmd(),
 	ShowAppInstCmd.GenCmd(),
+	HandleFedAppInstEventCmd.GenCmd(),
 }
 
 var AppInstInfoApiCmd edgeproto.AppInstInfoApiClient
@@ -761,6 +819,7 @@ var AppInstOptionalArgs = []string{
 	"federatedorg",
 	"clusterorg",
 	"flavor",
+	"cloudletflavor",
 	"crmoverride",
 	"forceupdate",
 	"updatemultiple",
@@ -813,6 +872,7 @@ var AppInstComments = map[string]string{
 	"mappedports:#.nginx":            "Use nginx proxy for this port if you really need a transparent proxy (udp only)",
 	"mappedports:#.maxpktsize":       "Maximum datagram size (udp only)",
 	"flavor":                         "Flavor name",
+	"cloudletflavor":                 "Cloudlet-specific flavor instead of regional flavor",
 	"state":                          "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                         "Any errors trying to create, update, or delete the AppInst on the Cloudlet, specify errors:empty=true to clear",
 	"crmoverride":                    "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
@@ -837,6 +897,8 @@ var AppInstComments = map[string]string{
 	"dedicatedip":                    "Dedicated IP assigns an IP for this AppInst but requires platform support",
 	"uniqueid":                       "A unique id for the AppInst within the region to be used by platforms",
 	"dnslabel":                       "DNS label that is unique within the cloudlet and among other AppInsts/ClusterInsts",
+	"fedkey.federationname":          "Federation name",
+	"fedkey.appinstid":               "Federated AppInst ID",
 }
 var AppInstSpecialArgs = map[string]string{
 	"errors":                   "StringArray",
@@ -878,6 +940,8 @@ var AppInstInfoOptionalArgs = []string{
 	"status.msgs",
 	"powerstate",
 	"uri",
+	"fedkey.federationname",
+	"fedkey.appinstid",
 }
 var AppInstInfoAliasArgs = []string{}
 var AppInstInfoComments = map[string]string{
@@ -902,6 +966,8 @@ var AppInstInfoComments = map[string]string{
 	"status.msgs":                                          "Messages",
 	"powerstate":                                           "Power State of the AppInst, one of PowerOn, PowerOff, Reboot",
 	"uri":                                                  "Base FQDN for the App based on the cloudlet platform",
+	"fedkey.federationname":                                "Federation name",
+	"fedkey.appinstid":                                     "Federated AppInst ID",
 }
 var AppInstInfoSpecialArgs = map[string]string{
 	"errors":                   "StringArray",
@@ -1009,6 +1075,77 @@ var AppInstLatencyComments = map[string]string{
 	"clusterorg":   "Name of Developer organization that this cluster belongs to",
 }
 var AppInstLatencySpecialArgs = map[string]string{}
+var FedAppInstKeyRequiredArgs = []string{}
+var FedAppInstKeyOptionalArgs = []string{
+	"federationname",
+	"appinstid",
+}
+var FedAppInstKeyAliasArgs = []string{}
+var FedAppInstKeyComments = map[string]string{
+	"federationname": "Federation name",
+	"appinstid":      "Federated AppInst ID",
+}
+var FedAppInstKeySpecialArgs = map[string]string{}
+var FedAppInstRequiredArgs = []string{
+	"key.federationname",
+	"key.appinstid",
+}
+var FedAppInstOptionalArgs = []string{
+	"appinstkey.appkey.organization",
+	"appinstkey.appkey.name",
+	"appinstkey.appkey.version",
+	"appinstkey.clusterinstkey.clusterkey.name",
+	"appinstkey.clusterinstkey.cloudletkey.organization",
+	"appinstkey.clusterinstkey.cloudletkey.name",
+	"appinstkey.clusterinstkey.cloudletkey.federatedorganization",
+	"appinstkey.clusterinstkey.organization",
+}
+var FedAppInstAliasArgs = []string{}
+var FedAppInstComments = map[string]string{
+	"key.federationname":                                          "Federation name",
+	"key.appinstid":                                               "Federated AppInst ID",
+	"appinstkey.appkey.organization":                              "App developer organization",
+	"appinstkey.appkey.name":                                      "App name",
+	"appinstkey.appkey.version":                                   "App version",
+	"appinstkey.clusterinstkey.clusterkey.name":                   "Cluster name",
+	"appinstkey.clusterinstkey.cloudletkey.organization":          "Organization of the cloudlet site",
+	"appinstkey.clusterinstkey.cloudletkey.name":                  "Name of the cloudlet",
+	"appinstkey.clusterinstkey.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
+	"appinstkey.clusterinstkey.organization":                      "Name of Developer organization that this cluster belongs to",
+}
+var FedAppInstSpecialArgs = map[string]string{}
+var FedAppInstEventRequiredArgs = []string{
+	"key.federationname",
+	"key.appinstid",
+}
+var FedAppInstEventOptionalArgs = []string{
+	"state",
+	"message",
+	"ports:#.proto",
+	"ports:#.internalport",
+	"ports:#.publicport",
+	"ports:#.fqdnprefix",
+	"ports:#.endport",
+	"ports:#.tls",
+	"ports:#.nginx",
+	"ports:#.maxpktsize",
+}
+var FedAppInstEventAliasArgs = []string{}
+var FedAppInstEventComments = map[string]string{
+	"key.federationname":   "Federation name",
+	"key.appinstid":        "Federated AppInst ID",
+	"state":                "Updated State if any, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
+	"message":              "Event message or error message",
+	"ports:#.proto":        "TCP (L4) or UDP (L4) protocol, one of Unknown, Tcp, Udp",
+	"ports:#.internalport": "Container port",
+	"ports:#.publicport":   "Public facing port for TCP/UDP (may be mapped on shared LB reverse proxy)",
+	"ports:#.fqdnprefix":   "FQDN prefix to append to base FQDN in FindCloudlet response. May be empty.",
+	"ports:#.endport":      "A non-zero end port indicates a port range from internal port to end port, inclusive.",
+	"ports:#.tls":          "TLS termination for this port",
+	"ports:#.nginx":        "Use nginx proxy for this port if you really need a transparent proxy (udp only)",
+	"ports:#.maxpktsize":   "Maximum datagram size (udp only)",
+}
+var FedAppInstEventSpecialArgs = map[string]string{}
 var CreateAppInstRequiredArgs = []string{
 	"apporg",
 	"appname",
@@ -1021,6 +1158,7 @@ var CreateAppInstOptionalArgs = []string{
 	"federatedorg",
 	"clusterorg",
 	"flavor",
+	"cloudletflavor",
 	"crmoverride",
 	"configs:#.kind",
 	"configs:#.config",
@@ -1040,6 +1178,7 @@ var DeleteAppInstOptionalArgs = []string{
 	"federatedorg",
 	"clusterorg",
 	"flavor",
+	"cloudletflavor",
 	"crmoverride",
 	"forceupdate",
 	"updatemultiple",
@@ -1060,6 +1199,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"cloudlet",
 	"federatedorg",
 	"clusterorg",
+	"cloudletflavor",
 	"crmoverride",
 	"forceupdate",
 	"updatemultiple",
@@ -1077,6 +1217,7 @@ var UpdateAppInstOptionalArgs = []string{
 	"cluster",
 	"federatedorg",
 	"clusterorg",
+	"cloudletflavor",
 	"crmoverride",
 	"configs:empty",
 	"configs:#.kind",

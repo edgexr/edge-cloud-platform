@@ -246,6 +246,8 @@ message App {
   QosSessionProfile qos_session_profile = 43;
   // Session duration in seconds. Maximal value of 24 hours is used if not set
   int64 qos_session_duration = 44 [(gogoproto.casttype) = "Duration"];
+  // A globally unique id for the App to be used with federation
+  string global_id = 45 [(protogen.backend) = true];
 
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
@@ -266,6 +268,30 @@ message ServerlessConfig {
   uint64 ram = 2;
   // Minimum number of replicas when serverless
   uint32 min_replicas = 3;
+  // GPU config
+  GpuConfig gpu_config = 4 [(gogoproto.nullable) = false];
+}
+
+message GpuConfig {
+  // GPU Type
+  GpuType type = 1;
+  // Model name or vgpu type
+  string model = 2;
+  // Number of instances
+  int32 num_gpu = 3;
+  // required memory in megabytes
+  uint64 ram = 4;
+}
+
+enum GpuType {
+  // None
+  GPU_TYPE_NONE = 0;
+  // Any type
+  GPU_TYPE_ANY = 1;
+  // VGPU type
+  GPU_TYPE_VGPU = 2;
+  // PCI passthrough
+  GPU_TYPE_PCI = 3;
 }
 
 // AutoProvPolicy belonging to an app
