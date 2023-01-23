@@ -399,4 +399,7 @@ message FedAppInstEvent {
   string message = 3;
   // Port info if any
   repeated distributed_match_engine.AppPort ports = 4 [(gogoproto.nullable) = false];
+  // Unique Id, matches AppInst.UniqueId
+  string unique_id = 5;
+  option (protogen.notify_message) = true;
 }

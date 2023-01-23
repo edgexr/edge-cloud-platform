@@ -26,7 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
-	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 )
@@ -49,13 +49,7 @@ func InitClientNotify(client *notify.Client, nodeMgr *node.NodeMgr, cd *Controll
 
 func InitFRM(ctx context.Context, nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityManager, hostname, region, appDNSRoot, notifyAddrs, fedExtAddr string) (*notify.Client, *ControllerData, error) {
 	// Load platform implementation.
-	platform, err := pfutils.GetPlatform(ctx,
-		edgeproto.PlatformType_PLATFORM_TYPE_FEDERATION.String(),
-		nodeMgr.UpdateNodeProps)
-	if err != nil {
-		return nil, nil, err
-	}
-
+	platform := &federation.FederationPlatform{}
 	controllerData := NewControllerData(platform, nodeMgr, haMgr)
 
 	pc := pf.PlatformConfig{
@@ -68,7 +62,7 @@ func InitFRM(ctx context.Context, nodeMgr *node.NodeMgr, haMgr *redundancy.HighA
 	}
 	caches := controllerData.GetCaches()
 	noopCb := func(updateType edgeproto.CacheUpdateType, value string) {}
-	err = platform.InitCommon(ctx, &pc, caches, haMgr, noopCb)
+	err := platform.InitCommon(ctx, &pc, caches, haMgr, noopCb)
 	if err == nil {
 		err = platform.InitHAConditional(ctx, &pc, noopCb)
 	}
@@ -89,6 +83,7 @@ func InitFRM(ctx context.Context, nodeMgr *node.NodeMgr, haMgr *redundancy.HighA
 	notifyClient := notify.NewClient(nodeMgr.Name(), addrs, dialOption)
 
 	notifyClient.SetFilterByFederatedCloudlet()
+	notifyClient.RegisterRecv(notify.NewFedAppInstEventRecv(platform))
 	InitClientNotify(notifyClient, nodeMgr, controllerData)
 	notifyClient.Start()
 

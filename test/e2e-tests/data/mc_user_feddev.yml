@@ -1,0 +1,3 @@
+- name: feddev
+  passhash: feddev-password-super-long-difficult
+  email: feddev@enterprise.com

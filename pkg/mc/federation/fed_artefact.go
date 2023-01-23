@@ -189,6 +189,10 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 			return fmt.Errorf("virtType is %s but image %s type is %s, which is inconsistent", provArt.VirtType, provImage.FileID, provImage.Type)
 		}
 		app.Deployment = cloudcommon.DeploymentTypeVM
+		if provImage.Checksum == "" {
+			return fmt.Errorf("Checksum missing for VM image %s", provImage.FileID)
+		}
+		app.ImagePath += "#md5:" + provImage.Checksum
 	case ArtefactVirtTypeContainer:
 		if provImage.Type != string(fedewapi.VIRTIMAGETYPE_DOCKER) {
 			return fmt.Errorf("virtType is %s but image %s type is %s, which is inconsistent", provArt.VirtType, provImage.FileID, provImage.Type)

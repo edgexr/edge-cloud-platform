@@ -796,7 +796,6 @@ func (cd *ControllerData) appInstChanged(ctx context.Context, old *edgeproto.App
 				defer cd.vmResourceActionEnd(ctx, &new.Key.ClusterInstKey.CloudletKey)
 			}
 			oldUri := new.Uri
-			oldFedName := new.FedKey.FederationName
 			err = cd.platform.CreateAppInst(ctx, &clusterInst, &app, new, &flavor, updateAppCacheCallback)
 			if err != nil {
 				errstr := fmt.Sprintf("Create App Inst failed: %s", err)
@@ -810,10 +809,6 @@ func (cd *ControllerData) appInstChanged(ctx context.Context, old *edgeproto.App
 			}
 			if new.Uri != "" && oldUri != new.Uri {
 				cd.AppInstInfoCache.SetUri(ctx, &new.Key, new.Uri)
-			}
-			// for FRM/Federation, set AppInstId returned by partner OP
-			if new.FedKey.FederationName != "" && oldFedName != new.FedKey.FederationName {
-				cd.AppInstInfoCache.SetFedAppInstKey(ctx, &new.Key, new.FedKey)
 			}
 
 			log.SpanLog(ctx, log.DebugLevelInfra, "created app inst", "appinst", new, "ClusterInst", clusterInst)

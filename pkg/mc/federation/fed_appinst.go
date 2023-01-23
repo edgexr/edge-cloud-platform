@@ -20,13 +20,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-var DisableFedAppInsts = true
-
 func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (reterr error) {
-	if DisableFedAppInsts {
-		return nil
-	}
-
 	ctx := ormutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
@@ -36,6 +30,21 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 
 	in := fedewapi.InstallAppRequest{}
 	if err := c.Bind(&in); err != nil {
+		return err
+	}
+	if in.AppId == "" {
+		return fmt.Errorf("Missing application ID")
+	}
+	if in.AppVersion == "" {
+		return fmt.Errorf("Missing app version")
+	}
+	if in.AppProviderId == "" {
+		return fmt.Errorf("Missing app provider ID")
+	}
+	if in.ZoneInfo.ZoneId == "" {
+		return fmt.Errorf("Missing zone id")
+	}
+	if err := p.validateCallbackLink(in.AppInstCallbackLink); err != nil {
 		return err
 	}
 
@@ -74,8 +83,9 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 
 	// generate unique id for appInst
 	provAppInst := ormapi.ProviderAppInst{
-		FederationName: provider.Name,
-		AppInstID:      uuid.New().String(),
+		FederationName:      provider.Name,
+		AppInstID:           uuid.New().String(),
+		AppInstCallbackLink: in.AppInstCallbackLink,
 	}
 	db := p.loggedDB(ctx)
 	err = db.Create(&provAppInst).Error
@@ -185,9 +195,6 @@ func (s *AppInstWorker) sendCallback(ctx context.Context, state string, accesspo
 }
 
 func (p *PartnerApi) RemoveApp(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier, appInstId InstanceIdentifier, zoneId ZoneIdentifier) error {
-	if DisableFedAppInsts {
-		return nil
-	}
 	ctx := ormutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
@@ -255,12 +262,6 @@ func getAppInstKey(provider *ormapi.FederationProvider, provArt *ormapi.Provider
 	}
 }
 
-/* REMOVE
-func getAppInstId(ai *edgeproto.AppInst, region string) string {
-	return ai.UniqueId + "-" + region
-}
-*/
-
 func (p *PartnerApi) GetAllAppInstances(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier, appProviderId AppProviderId) error {
 	return fmt.Errorf("not implemented yet")
 }
@@ -270,10 +271,8 @@ func (p *PartnerApi) GetAppInstanceDetails(c echo.Context, fedCtxId FederationCo
 }
 
 func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
-	if DisableFedAppInsts {
-		return nil
-	}
 	ctx := ormutil.GetContext(c)
+	uniqueId := c.Param(federationmgmt.PathVarAppInstUniqueId)
 	in := fedewapi.FederationContextIdApplicationLcmPostRequest{}
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)
@@ -296,6 +295,7 @@ func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
 			FederationName: consumer.Name,
 			AppInstId:      in.AppInstanceId,
 		},
+		UniqueId: uniqueId,
 	}
 	info := &in.AppInstanceInfo
 	if info.Message != nil {
@@ -341,12 +341,15 @@ func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
 		}
 	}
 
-	// TODO: make call to Controller
-	_ = ormutil.RegionContext{
+	// make call to Controller
+	rc := ormutil.RegionContext{
 		Region:    app.Region,
 		SkipAuthz: true,
 		Database:  p.database,
 	}
-
+	_, err = ctrlclient.HandleFedAppInstEventObj(ctx, &rc, &event, p.connCache)
+	if err != nil {
+		return err
+	}
 	return nil
 }

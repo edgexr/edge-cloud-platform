@@ -874,6 +874,27 @@ func (s *Transformer) AddSetZeroTypeField(typ interface{}, fields ...string) {
 	}
 }
 
+func (s *Transformer) ReplaceStringField(typ interface{}, replace string, fields ...string) {
+	t := reflect.TypeOf(typ)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	setString := func(v reflect.Value) {
+		if !v.CanSet() {
+			return
+		}
+		t := v.Type()
+		if t.Kind() != reflect.String {
+			return
+		}
+		v.SetString(replace)
+	}
+
+	for _, field := range fields {
+		s.AddTransform(t, field, setString)
+	}
+}
+
 func (s *Transformer) SetZero(v reflect.Value) {
 	if !v.CanSet() {
 		return

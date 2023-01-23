@@ -202,6 +202,9 @@ func (s *FlavorApi) getFlavorForServerlessConfig(ctx context.Context, sconfig *e
 	if err != nil {
 		return nil, err
 	}
+	if len(flavors) == 0 {
+		return nil, fmt.Errorf("no flavors defined")
+	}
 	sort.Slice(flavors, func(i, j int) bool {
 		if flavors[i].Vcpus < flavors[j].Vcpus {
 			return true

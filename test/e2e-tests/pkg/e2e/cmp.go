@@ -141,6 +141,8 @@ func cmpFilterAllData(data *ormapi.AllData) {
 	tx.AddSetZeroTypeField(ormapi.FederationConsumer{}, "NotifyClientId")
 	tx.AddSetZeroTypeField(ormapi.FederationConsumer{}, "CreatedAt")
 	tx.AddSetZeroTypeField(ormapi.FederationConsumer{}, "UpdatedAt")
+	tx.ReplaceStringField(ormapi.ConsumerImage{}, "***id***", "ID")
+	tx.ReplaceStringField(ormapi.ProviderImage{}, "***fileid***", "FileID")
 	tx.AddSetZeroTypeField(edgeproto.FederationConfig{}, "FederationContextId")
 	tx.Apply(data)
 

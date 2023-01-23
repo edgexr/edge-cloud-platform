@@ -16,7 +16,10 @@ package federation
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
+	"sync"
 	"time"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
@@ -34,17 +37,17 @@ import (
 )
 
 const (
-	AppDeploymentTimeout = 20 * time.Minute
+	AppInstDeploymentTimeout = 20 * time.Minute
 )
-
-var DisableFedAppInsts = true
 
 // NOTE: This object is shared by all FRM-based cloudlets and hence it can't
 //       hold fields just for a specific cloudlet
 type FederationPlatform struct {
-	tokenSources *federationmgmt.TokenSourceCache
-	caches       *platform.Caches
-	commonPf     *infracommon.CommonPlatform
+	tokenSources          *federationmgmt.TokenSourceCache
+	caches                *platform.Caches
+	commonPf              *infracommon.CommonPlatform
+	fedAppInstEventsChans map[string](chan edgeproto.FedAppInstEvent)
+	fedAppInstEventsMux   sync.Mutex
 }
 
 // GetVersionProperties returns properties related to the platform version
@@ -64,10 +67,14 @@ func (f *FederationPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 func (f *FederationPlatform) GetFederationConfig(ctx context.Context, cloudletKey *edgeproto.CloudletKey) (*edgeproto.FederationConfig, error) {
 	cloudlet := edgeproto.Cloudlet{}
 	if !f.caches.CloudletCache.Get(cloudletKey, &cloudlet) {
-		return nil, fmt.Errorf("Cloudlet not found in cache %s", cloudletKey.String())
+		log.SpanLog(ctx, log.DebugLevelApi, "Cloudlet not found in cache", "key", cloudletKey)
+		f.caches.CloudletCache.GetAllKeys(ctx, func(k *edgeproto.CloudletKey, modRev int64) {
+			log.SpanLog(ctx, log.DebugLevelApi, "CloudletCache key", "key", k.GetKeyString())
+		})
+		return nil, fmt.Errorf("Cloudlet not found in cache %s", cloudletKey.GetKeyString())
 	}
 	if cloudlet.FederationConfig.FederationContextId == "" {
-		return nil, fmt.Errorf("Unable to find federation config for %s", cloudletKey.String())
+		return nil, fmt.Errorf("Unable to find federation config for %s", cloudletKey.GetKeyString())
 	}
 	return &cloudlet.FederationConfig, nil
 }
@@ -76,6 +83,7 @@ func (f *FederationPlatform) GetFederationConfig(ctx context.Context, cloudletKe
 func (f *FederationPlatform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	f.tokenSources = federationmgmt.NewTokenSourceCache(platformConfig.AccessApi)
 	f.caches = caches
+	f.fedAppInstEventsChans = make(map[string](chan edgeproto.FedAppInstEvent))
 	f.commonPf = &infracommon.CommonPlatform{
 		PlatformConfig: platformConfig,
 	}
@@ -142,19 +150,16 @@ func (f *FederationPlatform) GetClusterInfraResources(ctx context.Context, clust
 
 func (f *FederationPlatform) fedClient(ctx context.Context, cloudletKey *edgeproto.CloudletKey, fedConfig *edgeproto.FederationConfig) (*federationmgmt.Client, error) {
 	fedKey := federationmgmt.FedKey{
-		OperatorId: cloudletKey.Organization,
-		Name:       cloudletKey.Name,
+		OperatorId: cloudletKey.FederatedOrganization,
+		Name:       cloudletKey.Organization,
 		FedType:    federationmgmt.FederationTypeConsumer,
 		ID:         uint(fedConfig.FederationDbId),
 	}
-	return f.tokenSources.Client(ctx, fedConfig.PartnerFederationAddr, &fedKey)
+	return f.tokenSources.Client(ctx, fedConfig.PartnerFederationAddr, &fedKey, nil)
 }
 
 // Create an appInst. This runs on the Consumer.
 func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
-	if DisableFedAppInsts {
-		return nil
-	}
 	// helm not supported yet
 	if app.Deployment == cloudcommon.DeploymentTypeHelm {
 		return fmt.Errorf("Helm deployment not supported yet")
@@ -163,7 +168,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 		return fmt.Errorf("Error, AppInst already has a federation AppInstId set")
 	}
 
-	cloudletKey := &clusterInst.Key.CloudletKey
+	cloudletKey := &appInst.Key.ClusterInstKey.CloudletKey
 	fedConfig, err := f.GetFederationConfig(ctx, cloudletKey)
 	if err != nil {
 		return err
@@ -181,33 +186,86 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 			ZoneId:    cloudletKey.Name,
 			FlavourId: "TBD",
 		},
-		AppInstCallbackLink: f.commonPf.PlatformConfig.FedExternalAddr + "/" + federationmgmt.PartnerInstanceStatusEventPath,
+		AppInstCallbackLink: f.commonPf.PlatformConfig.FedExternalAddr + "/" + federationmgmt.PartnerInstanceStatusEventPath + "/" + appInst.UniqueId,
 	}
 	updateCallback(edgeproto.UpdateTask, "Sending app instance create request to federation partner")
+
+	eventsCh := f.registerFedAppInstEvents(appInst.UniqueId)
+	defer f.deregisterFedAppInstEvents(appInst.UniqueId)
+
 	res := fedewapi.InstallApp202Response{}
-	_, _, err = fedClient.SendRequest(ctx, "POST", "/"+federationmgmt.ApiRoot+"/application/lcm", &req, &res, nil)
+	apiPath := fmt.Sprintf("/%s/%s/application/lcm", federationmgmt.ApiRoot, fedConfig.FederationContextId)
+	_, _, err = fedClient.SendRequest(ctx, "POST", apiPath, &req, &res, nil)
 	if err != nil {
 		return err
 	}
 	if res.AppInstIdentifier == "" {
 		return fmt.Errorf("App instance created succeeded but no ID in response")
 	}
-	appInst.FedKey.FederationName = fedConfig.FederationName
-	appInst.FedKey.AppInstId = res.AppInstIdentifier
 	log.SpanLog(ctx, log.DebugLevelApi, "Got FedAppInstId", "appInstKey", appInst.Key, "fedAppInstId", res.AppInstIdentifier)
+
+	// send back appInstId
+	fedKey := edgeproto.FedAppInstKey{
+		FederationName: fedConfig.FederationName,
+		AppInstId:      res.AppInstIdentifier,
+	}
+	f.caches.AppInstInfoCache.SetFedAppInstKey(ctx, &appInst.Key, fedKey)
 
 	// Partner returns immediately with 202, and will call the callback link
 	// to denote the result.
 	// The callback link goes to MC. MC will then call the
-	// AppInst.FedAppInstEvent API with an AppInstInfo, which then follows
-	// the same path as FRM sending back an AppInstInfo.
+	// AppInst.FedAppInstEvent API with an AppInstInfo.
+	// The event may either be handled by the controller, or may be
+	// forwarded to the FRM if it's ERROR/READY so we can stop waiting here.
 	updateCallback(edgeproto.UpdateTask, "Waiting for federation partner callbacks for FedAppInstId "+res.AppInstIdentifier)
+
+	timeout := AppInstDeploymentTimeout
+	if os.Getenv("E2ETEST_TLS") != "" {
+		timeout = 3 * time.Second
+	}
+	select {
+	case event := <-eventsCh:
+		if event.State == edgeproto.TrackedState_READY {
+			if event.Message != "" {
+				updateCallback(edgeproto.UpdateTask, event.Message)
+			}
+			return nil
+		} else if event.State == edgeproto.TrackedState_CREATE_ERROR {
+			if event.Message == "" {
+				event.Message = "Create failed, no error message"
+			}
+			return errors.New(event.Message)
+		} else {
+			log.SpanLog(ctx, log.DebugLevelApi, "Unexpected state on fedAppInstEvent", "event", event)
+		}
+	case <-time.After(timeout):
+		return fmt.Errorf("Timed out waiting for callback")
+	}
 	return nil
 }
 
 // Delete an AppInst on a Cluster
 func (f *FederationPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("not supported yet")
+	cloudletKey := &appInst.Key.ClusterInstKey.CloudletKey
+	fedConfig, err := f.GetFederationConfig(ctx, cloudletKey)
+	if err != nil {
+		return err
+	}
+	fedClient, err := f.fedClient(ctx, cloudletKey, fedConfig)
+	if err != nil {
+		return err
+	}
+
+	apiPath := fmt.Sprintf("/%s/%s/application/lcm/app/%s/instance/%s/zone/%s", federationmgmt.ApiRoot, fedConfig.FederationContextId, app.GlobalId, appInst.FedKey.AppInstId, cloudletKey.Name)
+	_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
+	if err != nil {
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "Deleted FedAppInstId", "appInstKey", appInst.Key, "fedAppInstId", appInst.FedKey)
+	appInst.FedKey.FederationName = ""
+	appInst.FedKey.AppInstId = ""
+	updateCallback(edgeproto.UpdateTask, "Federated AppInst deleted")
+	return nil
 }
 
 // Update an AppInst
@@ -218,6 +276,35 @@ func (f *FederationPlatform) UpdateAppInst(ctx context.Context, clusterInst *edg
 // Get AppInst runtime information
 func (f *FederationPlatform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
 	return &edgeproto.AppInstRuntime{}, nil
+}
+
+func (f *FederationPlatform) RecvFedAppInstEvent(ctx context.Context, msg *edgeproto.FedAppInstEvent) {
+	f.fedAppInstEventsMux.Lock()
+	defer f.fedAppInstEventsMux.Unlock()
+	if ch, ok := f.fedAppInstEventsChans[msg.UniqueId]; ok {
+		ch <- *msg
+	}
+}
+
+func (f *FederationPlatform) registerFedAppInstEvents(uniqueId string) chan edgeproto.FedAppInstEvent {
+	f.fedAppInstEventsMux.Lock()
+	defer f.fedAppInstEventsMux.Unlock()
+	if ch, ok := f.fedAppInstEventsChans[uniqueId]; ok {
+		// already some thread waiting, abort the previous one
+		close(ch)
+	}
+	ch := make(chan edgeproto.FedAppInstEvent, 10)
+	f.fedAppInstEventsChans[uniqueId] = ch
+	return ch
+}
+
+func (f *FederationPlatform) deregisterFedAppInstEvents(uniqueId string) {
+	f.fedAppInstEventsMux.Lock()
+	defer f.fedAppInstEventsMux.Unlock()
+	if ch, ok := f.fedAppInstEventsChans[uniqueId]; ok {
+		close(ch)
+	}
+	delete(f.fedAppInstEventsChans, uniqueId)
 }
 
 // Get the client to manage the ClusterInst

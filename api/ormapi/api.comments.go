@@ -699,14 +699,16 @@ var ProviderArtefactComments = map[string]string{
 }
 
 var ProviderAppComments = map[string]string{
-	"federationname":  `Federation Provider name`,
-	"appid":           `App ID send by partner, also is the artefact ID`,
-	"appproviderid":   `App provider ID`,
-	"artefactids":     `Artefact IDs`,
-	"deploymentzones": `Restricted Zones`,
+	"federationname":        `Federation Provider name`,
+	"appid":                 `App ID send by partner, also is the artefact ID`,
+	"appproviderid":         `App provider ID`,
+	"artefactids":           `Artefact IDs`,
+	"deploymentzones":       `Onboarding Zones`,
+	"appstatuscallbacklink": `App status callback link`,
 }
 
 var ProviderAppInstComments = map[string]string{
-	"federationname": `Federation Provider name`,
-	"appinstid":      `AppInst unique ID`,
+	"federationname":      `Federation Provider name`,
+	"appinstid":           `AppInst unique ID`,
+	"appinstcallbacklink": `AppInst callback link`,
 }

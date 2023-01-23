@@ -18,15 +18,18 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/gormlog"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -46,7 +49,7 @@ const (
 	// Path params
 	PathVarFederationContextId = "federationContextId"
 	PathVarZoneId              = "zoneId"
-	PathVarAppId               = "appId" // TODO: inconsistent callback parameters
+	PathVarAppId               = "appId"
 	PathVarAppInstId           = "appInstanceId"
 	PathVarAppProviderId       = "appProviderId"
 	PathVarPoolId              = "poolId"
@@ -58,6 +61,7 @@ const (
 type PartnerApi struct {
 	database       *gorm.DB
 	connCache      ctrlclient.ClientConnMgr
+	nodeMgr        *node.NodeMgr
 	vaultConfig    *vault.Config
 	tokenSources   *federationmgmt.TokenSourceCache
 	fedExtAddr     string
@@ -66,10 +70,11 @@ type PartnerApi struct {
 	allowPlainHttp bool // for unit testing
 }
 
-func NewPartnerApi(db *gorm.DB, connCache ctrlclient.ClientConnMgr, vaultConfig *vault.Config, fedExtAddr, vmRegistryAddr, harborAddr string) *PartnerApi {
+func NewPartnerApi(db *gorm.DB, connCache ctrlclient.ClientConnMgr, nodeMgr *node.NodeMgr, vaultConfig *vault.Config, fedExtAddr, vmRegistryAddr, harborAddr string) *PartnerApi {
 	p := &PartnerApi{
 		database:       db,
 		connCache:      connCache,
+		nodeMgr:        nodeMgr,
 		vaultConfig:    vaultConfig,
 		fedExtAddr:     fedExtAddr,
 		vmRegistryAddr: vmRegistryAddr,
@@ -95,7 +100,7 @@ func (p *PartnerApi) InitAPIs(e *echo.Echo) {
 	e.POST(federationmgmt.PartnerStatusEventPath, p.PartnerStatusEvent)
 	e.POST(federationmgmt.PartnerZoneResourceUpdatePath, p.PartnerZoneResourceUpdate)
 	e.POST(federationmgmt.PartnerAppOnboardStatusEventPath, p.PartnerAppOnboardStatusEvent)
-	e.POST(federationmgmt.PartnerInstanceStatusEventPath, p.PartnerInstanceStatusEvent)
+	e.POST(federationmgmt.PartnerInstanceStatusEventPath+"/:"+federationmgmt.PathVarAppInstUniqueId, p.PartnerInstanceStatusEvent)
 	e.POST(federationmgmt.PartnerResourceStatusChangePath, p.PartnerResourceStatusChange)
 }
 
@@ -163,18 +168,50 @@ func (p *PartnerApi) lookupConsumer(c echo.Context, federationContextId string) 
 	return &consumer, nil
 }
 
+func (p *PartnerApi) auditCb(ctx context.Context, fedKey *federationmgmt.FedKey, data *ormclient.AuditLogData) {
+	eventTags := data.GetEventTags()
+	p.nodeMgr.TimedEvent(ctx, "federation client api", fedKey.Name, node.EventType, eventTags, data.Err, data.Start, data.End)
+}
+
 func (p *PartnerApi) GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error) {
 	return federationmgmt.GetFederationAPIKey(ctx, p.vaultConfig, fedKey)
 }
 
 func (p *PartnerApi) ProviderPartnerClient(ctx context.Context, provider *ormapi.FederationProvider, cbUrl string) (*federationmgmt.Client, error) {
 	fedKey := ProviderFedKey(provider)
-	return p.tokenSources.Client(ctx, cbUrl, fedKey)
+	return p.tokenSources.Client(ctx, cbUrl, fedKey, p.auditCb)
 }
 
 func (p *PartnerApi) ConsumerPartnerClient(ctx context.Context, consumer *ormapi.FederationConsumer) (*federationmgmt.Client, error) {
 	fedKey := ConsumerFedKey(consumer)
-	return p.tokenSources.Client(ctx, consumer.PartnerAddr, fedKey)
+	return p.tokenSources.Client(ctx, consumer.PartnerAddr, fedKey, p.auditCb)
+}
+
+func (p *PartnerApi) validateCallbackLink(link string) error {
+	if link == "" {
+		return nil
+	}
+	_, err := url.ParseRequestURI(link)
+	if err != nil {
+		return fmt.Errorf("Invalid callback link %s, %s", link, err)
+	}
+	u, err := url.Parse(link)
+	if err != nil {
+		return fmt.Errorf("Invalid callback link %s, %s", link, err)
+	}
+	if p.allowPlainHttp {
+		if u.Scheme != "http" && u.Scheme != "https" {
+			return fmt.Errorf("Invalid scheme %q in callback link %s, must be http or https", u.Scheme, link)
+		}
+	} else {
+		if u.Scheme != "https" {
+			return fmt.Errorf("Invalid scheme %q in callback link %s, must be https", u.Scheme, link)
+		}
+	}
+	if u.Host == "" {
+		return fmt.Errorf("No host in callback link %s", link)
+	}
+	return nil
 }
 
 // Remote partner federator requests to create the federation, which
@@ -195,11 +232,8 @@ func (p *PartnerApi) CreateFederation(c echo.Context, params CreateFederationPar
 	if req.OrigOPFederationId == "" {
 		return fmt.Errorf("OrigOPFederationID not specified")
 	}
-	if req.PartnerStatusLink == "" {
-		return fmt.Errorf("FederationNotificationDest not specified")
-	}
-	if !strings.HasPrefix(req.PartnerStatusLink, "https://") && !p.allowPlainHttp {
-		return fmt.Errorf("PartnerStatusLink must use https scheme")
+	if err := p.validateCallbackLink(req.PartnerStatusLink); err != nil {
+		return err
 	}
 
 	// For convenience allow CreateFederation to be idempotent,

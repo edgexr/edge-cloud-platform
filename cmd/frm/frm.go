@@ -35,7 +35,7 @@ var hostname = flag.String("hostname", "", "Unique hostname")
 var debugLevels = flag.String("d", "", fmt.Sprintf("Comma separated list of %v", log.DebugLevelStrings))
 var region = flag.String("region", "local", "region name")
 var appDNSRoot = flag.String("appDNSRoot", "appdnsdroot.net", "App domain name root")
-var federationExternalAddr = flag.String("federationExternalAddr", "", "Federation EWBI API endpoint for clients")
+var federationExternalAddr = flag.String("federationExternalAddr", "", "MC's Federation EWBI API endpoint for clients")
 
 var sigChan chan os.Signal
 var nodeMgr node.NodeMgr

@@ -302,8 +302,10 @@ type ProviderApp struct {
 	AppProviderId string
 	// Artefact IDs
 	ArtefactIds pq.StringArray `gorm:"type:text[]"`
-	// Restricted Zones
+	// Onboarding Zones
 	DeploymentZones pq.StringArray `gorm:"type:text[]"`
+	// App status callback link
+	AppStatusCallbackLink string
 }
 
 // This is only to allocate an appInst unique ID
@@ -312,6 +314,8 @@ type ProviderAppInst struct {
 	FederationName string `gorm:"primary_key;type:citext;not null"`
 	// AppInst unique ID
 	AppInstID string `gorm:"primary_key;type:text;not null"`
+	// AppInst callback link
+	AppInstCallbackLink string
 }
 
 func (f *FederationProvider) GetSortString() string {

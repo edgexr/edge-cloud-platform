@@ -79,7 +79,7 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 		return fmt.Errorf("Missing application ID")
 	}
 	if req.AppProviderId == "" {
-		return fmt.Errorf("Missing provider ID")
+		return fmt.Errorf("Missing app provider ID")
 	}
 	if req.AppMetaData.AppName == "" {
 		return fmt.Errorf("Missing app name")
@@ -89,6 +89,9 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 	}
 	if len(req.AppComponentSpecs) == 0 {
 		return fmt.Errorf("Missing app component details")
+	}
+	if err := p.validateCallbackLink(req.AppStatusCallbackLink); err != nil {
+		return err
 	}
 
 	if len(req.AppComponentSpecs) > 1 {
@@ -138,11 +141,12 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 
 	// create provider App
 	provApp := ormapi.ProviderApp{
-		FederationName:  provider.Name,
-		AppID:           req.AppId,
-		AppProviderId:   req.AppProviderId,
-		ArtefactIds:     []string{provArt.ArtefactID},
-		DeploymentZones: zones,
+		FederationName:        provider.Name,
+		AppID:                 req.AppId,
+		AppProviderId:         req.AppProviderId,
+		ArtefactIds:           []string{provArt.ArtefactID},
+		DeploymentZones:       zones,
+		AppStatusCallbackLink: req.AppStatusCallbackLink,
 	}
 	err = db.Create(&provApp).Error
 	if err != nil {

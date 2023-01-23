@@ -15,8 +15,10 @@
 package edgeproto
 
 import (
+	"encoding/json"
 	fmt "fmt"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
@@ -36,14 +38,40 @@ func (s *AppInstIdStore) STMHas(stm concurrency.STM, id string) bool {
 	return true
 }
 
-func (s *AppInstIdStore) STMPut(stm concurrency.STM, id string) {
+func (s *AppInstIdStore) STMPut(stm concurrency.STM, id string, obj *AppInstKey) {
 	keystr := AppInstIdDbKey(id)
-	stm.Put(keystr, id)
+	val, err := json.Marshal(obj)
+	if err != nil {
+		log.InfoLog("AppInstId -> AppInstKey json marshal failed", "obj", obj, "err", err)
+	}
+	stm.Put(keystr, string(val))
 }
 
 func (s *AppInstIdStore) STMDel(stm concurrency.STM, id string) {
 	keystr := AppInstIdDbKey(id)
 	stm.Del(keystr)
+}
+
+func (s *AppInstIdStore) STMGet(stm concurrency.STM, id string, buf *AppInstKey) bool {
+	keystr := AppInstIdDbKey(id)
+	valstr := stm.Get(keystr)
+	return s.parseGetData([]byte(valstr), buf)
+}
+
+func (s *AppInstIdStore) parseGetData(val []byte, buf *AppInstKey) bool {
+	if len(val) == 0 {
+		return false
+	}
+	if buf != nil {
+		// clear buf, because empty values in val won't
+		// overwrite non-empty values in buf.
+		*buf = AppInstKey{}
+		err := json.Unmarshal(val, buf)
+		if err != nil {
+			return false
+		}
+	}
+	return true
 }
 
 type AppGlobalIdStore struct{}

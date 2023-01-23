@@ -20,7 +20,7 @@ description: Federation tests
 
 tests:
 ###############################################################
-# Setup provider operator platform
+# Setup provider operator platform (main MC)
 ###############################################################
 - includefile: mc_setup_users.yml
 
@@ -34,7 +34,7 @@ tests:
     filetype: mcdata
 
 ###############################################################
-# Setup consumer operator platform
+# Setup consumer operator platform (partner1 MC)
 ###############################################################
 - name: partner1 admin disable verify email so users can be created
   actions: [mcapi-configupdate=mc-partner1,mcapi-configshow=mc-partner1]
@@ -62,18 +62,18 @@ tests:
 
 - name: create partner1 platform users
   actions: [mcapi-createusers=mc-partner1]
-  apifile: '{{datadir2}}/mc_user_fedop.yml'
+  apifile: '{{datadir2}}/mc_user_fedop.yml,{{datadir2}}/mc_user_feddev.yml'
 
-- name: setup federation partner1 operator regional data
+- name: setup federation consumer (partner1) operator regional data
   actions: [mcapi-create=mc-partner1, mcapi-show=mc-partner1]
-  apifile: '{{datadir2}}/federation_data.yml'
+  apifile: '{{datadir2}}/fedcons_op_data.yml'
   apifilevars:
     partnertag: "partner1"
     region: "PA"
   curuserfile: '{{datadir2}}/mc_user_fedop.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_show_partner1.yml'
+    yaml2: '{{datadir2}}/fedcons_op_data_show.yml'
     filetype: mcdata
 
 ###############################################################
@@ -147,8 +147,110 @@ tests:
     filetype: mcdata
 
 ###############################################################
+# consumer onboard apps
+###############################################################
+- name: consumer create dev regional data (apps)
+  actions: [mcapi-create=mc-partner1, mcapi-show=mc-partner1]
+  apifile: '{{datadir2}}/fedcons_dev_apps.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_user_feddev.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/fedcons_dev_apps_show.yml'
+    filetype: mcdata
+
+- name: consumer dev onboard apps
+  actions: [mcapi-create=mc-partner1,mcapi-showconsumerappdata=mc-partner1]
+  apifile: '{{datadir2}}/fedcons_dev_consapps.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_user_feddev.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/fedcons_dev_consapps_show.yml'
+    filetype: mcdata
+
+- name: provider show onboarded apps
+  actions: [mcapi-showproviderappdata]
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/fedprov_provapps_show.yml'
+    filetype: mcdata
+
+###############################################################
+# consumer create appinsts on provider cloudlets
+###############################################################
+- name: consumer create appinsts on provider cloudlets
+  actions: [mcapi-create=mc-partner1,mcapi-show=mc-partner1]
+  apifile: '{{datadir2}}/fedcons_dev_appinsts.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_user_feddev.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/fedcons_dev_appinsts_show.yml'
+    filetype: mcdata
+
+- name: check provider created appinsts
+  actions: [mcapi-show]
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/fedprov_appinsts_show.yml'
+    filetype: mcdata
+
+###############################################################
 # consumer clean up
 ###############################################################
+- name: consumer delete appinsts
+  actions: [mcapi-delete=mc-partner1,mcapi-show=mc-partner1]
+  apifile: '{{datadir2}}/fedcons_dev_appinsts.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_user_feddev.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/fedcons_dev_apps_show.yml'
+    filetype: mcdata
+
+- name: consumer deboard apps
+  actions: [mcapi-delete=mc-partner1,mcapi-showconsumerappdata=mc-partner1]
+  apifile: '{{datadir2}}/fedcons_dev_consapps.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_user_feddev.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
+    filetype: mcdata
+
+- name: consumer delete dev regional data (apps)
+  actions: [mcapi-delete=mc-partner1, mcapi-show=mc-partner1]
+  apifile: '{{datadir2}}/fedcons_dev_apps.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_user_feddev.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
+    filetype: mcdata
+    
+- name: provider check no more provider app data
+  actions: [mcapi-showproviderappdata]
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_empty_object.yml'
+    filetype: mcdata
+
 - name: deregister consumer zones
   actions: [mcapi-deregister=mc-partner1,mcapi-showconsumerzones=mc-partner1]
   apifile: '{{datadir2}}/federation_consumerzones_show.yml'
@@ -218,19 +320,27 @@ tests:
     filetype: mcdata
 
 ###############################################################
-# Delete partner data
+# Delete consumer (partner1) data
 ###############################################################
-- name: delete partner1 cloudlets
+- name: delete consumer developer data
   actions: [mcapi-delete=mc-partner1]
-  apifile: '{{datadir2}}/federation_data.yml'
+  apifile: '{{datadir2}}/fedcons_dev_data.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_user_feddev.yml'
+
+- name: delete consumer operator data
+  actions: [mcapi-delete=mc-partner1]
+  apifile: '{{datadir2}}/fedcons_op_data.yml'
   apifilevars:
     partnertag: "partner1"
     region: "PA"
   curuserfile: '{{datadir2}}/mc_user_fedop.yml'
 
-- name: delete partner1 platform users
+- name: delete consumer platform users
   actions: [mcapi-deleteusers=mc-partner1]
-  apifile: '{{datadir2}}/mc_user_fedop.yml'
+  apifile: '{{datadir2}}/mc_user_fedop.yml,{{datadir2}}/mc_user_feddev.yml'
   curuserfile: '{{datadir2}}/mc_admin.yml'    
 
 - name: delete partner1 init data

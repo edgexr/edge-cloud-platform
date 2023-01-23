@@ -189,6 +189,16 @@ func init() {
 			ReplyData:    &[]ormapi.ProviderApp{},
 			Path:         "/auth/federation/provider/app/show",
 			ShowFilter:   true,
+		}, {
+			Name:         "ShowProviderAppInst",
+			Use:          "showappinsts",
+			Short:        "Show AppInsts onboarded by partner, just for tracking unique ids",
+			OptionalArgs: strings.Join(ProviderAppInstShowArgs, " "),
+			Comments:     ormapi.ProviderAppInstComments,
+			ReqData:      &ormapi.ProviderAppInst{},
+			ReplyData:    &[]ormapi.ProviderAppInst{},
+			Path:         "/auth/federation/provider/appinst/show",
+			ShowFilter:   true,
 		},
 	}
 	AllApis.AddGroup(FederationProviderGroup, "Manage Federation Provider and Zones", cmds)
@@ -404,6 +414,11 @@ var ProviderAppShowArgs = []string{
 	"appproviderid",
 	"artefactids",
 	"deploymentzones",
+}
+
+var ProviderAppInstShowArgs = []string{
+	"federationname",
+	"appinstid",
 }
 
 var ProviderAppSpecialArgs = map[string]string{

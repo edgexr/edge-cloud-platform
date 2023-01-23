@@ -17,8 +17,9 @@ package ctrlclient
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
@@ -31,4 +32,15 @@ func RunCommandValidateInput(ctx context.Context, rc *ormutil.RegionContext, obj
 		obj.Cmd.Command = sanitizedCmd
 	}
 	return nil
+}
+
+func HandleFedAppInstEventObj(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.FedAppInstEvent, connObj ClientConnMgr) (*edgeproto.Result, error) {
+	conn, err := connObj.GetRegionConn(ctx, rc.Region)
+	if err != nil {
+		return nil, err
+	}
+	api := edgeproto.NewAppInstApiClient(conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
+	return api.HandleFedAppInstEvent(ctx, obj)
 }

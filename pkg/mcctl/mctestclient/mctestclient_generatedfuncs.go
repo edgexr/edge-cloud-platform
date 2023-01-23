@@ -1968,12 +1968,12 @@ func (s *Client) OnboardConsumerApp(uri string, token string, in *ormapi.Consume
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeboardConsumerApp(uri string, token string, in *ormapi.ConsumerApp) (*ormapi.Result, int, error) {
+func (s *Client) DeboardConsumerApp(uri string, token string, in *ormapi.ConsumerApp) ([]ormapi.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
-	var out ormapi.Result
+	var out []ormapi.Result
 	rundata.Out = &out
 
 	apiCmd := ormctl.MustGetCommand("DeboardConsumerApp")
@@ -1981,7 +1981,7 @@ func (s *Client) DeboardConsumerApp(uri string, token string, in *ormapi.Consume
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
 	}
-	return &out, rundata.RetStatus, rundata.RetError
+	return out, rundata.RetStatus, rundata.RetError
 }
 
 func (s *Client) ShowConsumerApp(uri string, token string, in *cli.MapData) ([]ormapi.ConsumerApp, int, error) {
@@ -2445,6 +2445,22 @@ func (s *Client) ShowProviderApp(uri string, token string, in *cli.MapData) ([]o
 	rundata.Out = &out
 
 	apiCmd := ormctl.MustGetCommand("ShowProviderApp")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowProviderAppInst(uri string, token string, in *cli.MapData) ([]ormapi.ProviderAppInst, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []ormapi.ProviderAppInst
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowProviderAppInst")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError

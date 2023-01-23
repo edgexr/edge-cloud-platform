@@ -555,6 +555,12 @@ type AllData struct {
 	ProviderZones                 []ProviderZone        `json:"providerzones,omitempty"`
 	FederationConsumers           []FederationConsumer  `json:"federationconsumers,omitempty"`
 	ConsumerZones                 []ConsumerZone        `json:"consumerzones,omitempty"`
+	ConsumerImages                []ConsumerImage       `json:"consumerimages,omitempty"`
+	ProviderImages                []ProviderImage       `json:"providerimages,omitempty"`
+	ConsumerApps                  []ConsumerApp         `json:"consumerapps,omitempty"`
+	ProviderArtefacts             []ProviderArtefact    `json:"providerartefacts,omitempty"`
+	ProviderApps                  []ProviderApp         `json:"providerapps,omitempty"`
+	ProviderAppInsts              []ProviderAppInst     `json:"providerappinst,omitempty"`
 }
 
 type RegionData struct {

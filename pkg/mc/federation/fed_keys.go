@@ -24,7 +24,7 @@ func ConsumerFedKey(consumer *ormapi.FederationConsumer) *federationmgmt.FedKey 
 	return &federationmgmt.FedKey{
 		OperatorId: consumer.OperatorId,
 		Name:       consumer.Name,
-		FedType:    federationmgmt.FederationTypeProvider,
+		FedType:    federationmgmt.FederationTypeConsumer,
 		ID:         consumer.ID,
 	}
 }

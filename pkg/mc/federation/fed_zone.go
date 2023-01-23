@@ -99,6 +99,9 @@ func (p *PartnerApi) ZoneSubscribe(c echo.Context, fedCtxId FederationContextId)
 	if len(in.AcceptedAvailabilityZones) == 0 {
 		return fmt.Errorf("Must specify accepted availability zones")
 	}
+	if err := p.validateCallbackLink(in.AvailZoneNotifLink); err != nil {
+		return err
+	}
 
 	out := fedewapi.ZoneRegistrationResponseData{}
 

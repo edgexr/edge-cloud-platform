@@ -732,3 +732,268 @@ func (s *Client) RegisterRecvAppInstInfoCache(cache AppInstInfoCacheHandler) {
 	recv := NewAppInstInfoRecv(cache)
 	s.RegisterRecv(recv)
 }
+
+type RecvFedAppInstEventHandler interface {
+	RecvFedAppInstEvent(ctx context.Context, msg *edgeproto.FedAppInstEvent)
+}
+
+type FedAppInstEventSend struct {
+	Name        string
+	MessageName string
+	Data        []*edgeproto.FedAppInstEvent
+	dataToSend  []*edgeproto.FedAppInstEvent
+	Ctxs        []context.Context
+	ctxsToSend  []context.Context
+	notifyId    int64
+	Mux         sync.Mutex
+	buf         edgeproto.FedAppInstEvent
+	SendCount   uint64
+	sendrecv    *SendRecv
+}
+
+type FedAppInstEventSendContext struct {
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
+}
+
+func NewFedAppInstEventSend() *FedAppInstEventSend {
+	send := &FedAppInstEventSend{}
+	send.Name = "FedAppInstEvent"
+	send.MessageName = proto.MessageName((*edgeproto.FedAppInstEvent)(nil))
+	send.Data = make([]*edgeproto.FedAppInstEvent, 0)
+	return send
+}
+
+func (s *FedAppInstEventSend) SetSendRecv(sendrecv *SendRecv) {
+	s.sendrecv = sendrecv
+}
+
+func (s *FedAppInstEventSend) GetMessageName() string {
+	return s.MessageName
+}
+
+func (s *FedAppInstEventSend) GetName() string {
+	return s.Name
+}
+
+func (s *FedAppInstEventSend) GetSendCount() uint64 {
+	return s.SendCount
+}
+
+func (s *FedAppInstEventSend) GetNotifyId() int64 {
+	return s.notifyId
+}
+func (s *FedAppInstEventSend) UpdateAll(ctx context.Context) {}
+
+func (s *FedAppInstEventSend) Update(ctx context.Context, msg *edgeproto.FedAppInstEvent) bool {
+	s.Mux.Lock()
+	s.Data = append(s.Data, msg)
+	s.Ctxs = append(s.Ctxs, ctx)
+	s.Mux.Unlock()
+	s.sendrecv.wakeup()
+	return true
+}
+
+func (s *FedAppInstEventSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+}
+
+func (s *FedAppInstEventSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
+	s.Mux.Lock()
+	data := s.dataToSend
+	s.dataToSend = nil
+	ctxs := s.ctxsToSend
+	s.ctxsToSend = nil
+	s.Mux.Unlock()
+	for ii, msg := range data {
+		any, err := types.MarshalAny(msg)
+		ctx := ctxs[ii]
+		if err != nil {
+			s.sendrecv.stats.MarshalErrors++
+			err = nil
+			continue
+		}
+		notice.Any = *any
+		notice.Span = log.SpanToString(ctx)
+		log.SpanLog(ctx, log.DebugLevelNotify,
+			fmt.Sprintf("%s send FedAppInstEvent", s.sendrecv.cliserv),
+			"peerAddr", peer,
+			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
+			"message", msg)
+		err = stream.Send(notice)
+		if err != nil {
+			s.sendrecv.stats.SendErrors++
+			return err
+		}
+		s.sendrecv.stats.Send++
+		// object specific counter
+		s.SendCount++
+	}
+	return nil
+}
+
+func (s *FedAppInstEventSend) PrepData() bool {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	if len(s.Data) > 0 {
+		s.dataToSend = s.Data
+		s.Data = make([]*edgeproto.FedAppInstEvent, 0)
+		s.ctxsToSend = s.Ctxs
+		s.Ctxs = make([]context.Context, 0)
+		return true
+	}
+	return false
+}
+
+// Server accepts multiple clients so needs to track multiple
+// peers to send to.
+type FedAppInstEventSendMany struct {
+	Mux   sync.Mutex
+	sends map[string]*FedAppInstEventSend
+}
+
+func NewFedAppInstEventSendMany() *FedAppInstEventSendMany {
+	s := &FedAppInstEventSendMany{}
+	s.sends = make(map[string]*FedAppInstEventSend)
+	return s
+}
+
+func (s *FedAppInstEventSendMany) NewSend(peerAddr string, notifyId int64) NotifySend {
+	send := NewFedAppInstEventSend()
+	send.notifyId = notifyId
+	s.Mux.Lock()
+	s.sends[peerAddr] = send
+	s.Mux.Unlock()
+	return send
+}
+
+func (s *FedAppInstEventSendMany) DoneSend(peerAddr string, send NotifySend) {
+	asend, ok := send.(*FedAppInstEventSend)
+	if !ok {
+		return
+	}
+	// another connection may come from the same client so remove
+	// only if it matches
+	s.Mux.Lock()
+	if remove, _ := s.sends[peerAddr]; remove == asend {
+		delete(s.sends, peerAddr)
+	}
+	s.Mux.Unlock()
+}
+func (s *FedAppInstEventSendMany) Update(ctx context.Context, msg *edgeproto.FedAppInstEvent) int {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	count := 0
+	for _, send := range s.sends {
+		if send.Update(ctx, msg) {
+			count++
+		}
+	}
+	return count
+}
+
+func (s *FedAppInstEventSendMany) UpdateFiltered(ctx context.Context, msg *edgeproto.FedAppInstEvent, sendOk func(ctx context.Context, send *FedAppInstEventSend, msg *edgeproto.FedAppInstEvent) bool) int {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	count := 0
+	for _, send := range s.sends {
+		if !sendOk(ctx, send, msg) {
+			continue
+		}
+		if send.Update(ctx, msg) {
+			count++
+		}
+	}
+	return count
+}
+
+func (s *FedAppInstEventSendMany) GetTypeString() string {
+	return "FedAppInstEvent"
+}
+
+type FedAppInstEventRecv struct {
+	Name        string
+	MessageName string
+	handler     RecvFedAppInstEventHandler
+	Mux         sync.Mutex
+	buf         edgeproto.FedAppInstEvent
+	RecvCount   uint64
+	sendrecv    *SendRecv
+}
+
+func NewFedAppInstEventRecv(handler RecvFedAppInstEventHandler) *FedAppInstEventRecv {
+	recv := &FedAppInstEventRecv{}
+	recv.Name = "FedAppInstEvent"
+	recv.MessageName = proto.MessageName((*edgeproto.FedAppInstEvent)(nil))
+	recv.handler = handler
+	return recv
+}
+
+func (s *FedAppInstEventRecv) SetSendRecv(sendrecv *SendRecv) {
+	s.sendrecv = sendrecv
+}
+
+func (s *FedAppInstEventRecv) GetMessageName() string {
+	return s.MessageName
+}
+
+func (s *FedAppInstEventRecv) GetName() string {
+	return s.Name
+}
+
+func (s *FedAppInstEventRecv) GetRecvCount() uint64 {
+	return s.RecvCount
+}
+
+func (s *FedAppInstEventRecv) Recv(ctx context.Context, notice *edgeproto.Notice, notifyId int64, peerAddr string) {
+	span := opentracing.SpanFromContext(ctx)
+	if span != nil {
+		span.SetTag("objtype", "FedAppInstEvent")
+	}
+
+	buf := &edgeproto.FedAppInstEvent{}
+	err := types.UnmarshalAny(&notice.Any, buf)
+	if err != nil {
+		s.sendrecv.stats.UnmarshalErrors++
+		log.SpanLog(ctx, log.DebugLevelNotify, "Unmarshal Error", "err", err)
+		return
+	}
+	if span != nil {
+		span.SetTag("msg", buf)
+	}
+	log.SpanLog(ctx, log.DebugLevelNotify,
+		fmt.Sprintf("%s recv FedAppInstEvent", s.sendrecv.cliserv),
+		"peerAddr", peerAddr,
+		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
+		"message", buf)
+	s.handler.RecvFedAppInstEvent(ctx, buf)
+	s.sendrecv.stats.Recv++
+	// object specific counter
+	s.RecvCount++
+}
+
+func (s *FedAppInstEventRecv) RecvAllStart() {
+}
+
+func (s *FedAppInstEventRecv) RecvAllEnd(ctx context.Context, cleanup Cleanup) {
+}
+
+type FedAppInstEventRecvMany struct {
+	handler RecvFedAppInstEventHandler
+}
+
+func NewFedAppInstEventRecvMany(handler RecvFedAppInstEventHandler) *FedAppInstEventRecvMany {
+	s := &FedAppInstEventRecvMany{}
+	s.handler = handler
+	return s
+}
+
+func (s *FedAppInstEventRecvMany) NewRecv() NotifyRecv {
+	recv := NewFedAppInstEventRecv(s.handler)
+	return recv
+}
+
+func (s *FedAppInstEventRecvMany) Flush(ctx context.Context, notifyId int64) {
+}

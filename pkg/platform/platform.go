@@ -16,6 +16,7 @@ package platform
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"sync"
 	"time"
@@ -78,6 +79,9 @@ type Caches struct {
 	VMPool    *edgeproto.VMPool
 	VMPoolMux *sync.Mutex
 }
+
+// Used by federation to redirect FRM to finish CreateAppInst via the controller
+var ErrContinueViaController = errors.New("continue operation via controller")
 
 // Platform abstracts the underlying cloudlet platform.
 type Platform interface {

@@ -426,18 +426,18 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	}
 
 	flavor := &edgeproto.Flavor{}
-	if in.DefaultFlavor.Name == "" && in.ServerlessConfig != nil {
-		// infer flavor from serverless config
-		flavor, err := s.all.flavorApi.getFlavorForServerlessConfig(ctx, in.ServerlessConfig)
-		if err == nil && flavor != nil {
-			in.DefaultFlavor = flavor.Key
-		} else {
-			log.SpanLog(ctx, log.DebugLevelApi, "Unable to get flavor match for serverless config", "config", *in.ServerlessConfig, "err", err)
-		}
+	if in.DefaultFlavor.Name == "" && in.ServerlessConfig == nil {
+		return fmt.Errorf("Default flavor or ServerlessConfig must be specified")
 	}
 	if in.DefaultFlavor.Name == "" {
-		return fmt.Errorf("Default flavor must be specified")
+		// infer flavor from serverless config
+		flavor, err := s.all.flavorApi.getFlavorForServerlessConfig(ctx, in.ServerlessConfig)
+		if err != nil {
+			return fmt.Errorf("DefaultFlavor not specified, and unable to get flavor for serverless config, %s", err)
+		}
+		in.DefaultFlavor = flavor.Key
 	}
+
 	if !s.all.flavorApi.store.STMGet(stm, &in.DefaultFlavor, flavor) {
 		return in.DefaultFlavor.NotFoundError()
 	}
@@ -473,10 +473,6 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 		}
 		if in.ServerlessConfig.MinReplicas == 0 {
 			in.ServerlessConfig.MinReplicas = 1
-		}
-	} else {
-		if in.ServerlessConfig != nil {
-			return fmt.Errorf("Serverless config cannot be specified without allow serverless true")
 		}
 	}
 

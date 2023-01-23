@@ -215,50 +215,6 @@ regiondata:
       federationconfig:
         partnerfederationaddr: https://127.0.0.1:9801
         federationdbid: 2
-    - key:
-        organization: partner1
-        name: partner1-cloud-1
-      location:
-        latitude: 31
-        longitude: -91
-      ipsupport: Dynamic
-      numdynamicips: 254
-      state: Ready
-      flavor:
-        name: DefaultPlatformFlavor
-      physicalname: partner1-cloud-1
-      containerversion: "2019-10-24"
-      deployment: docker
-      trustpolicystate: NotPresent
-      defaultresourcealertthreshold: 80
-      dnslabel: partner1-cloud-1-partner1
-      rootlbfqdn: shared.partner1-cloud-1-partner1.pa.edgecloude2e.net
-    - key:
-        organization: partner1
-        name: partner1-cloud-2
-      location:
-        latitude: 81
-        longitude: -11
-      ipsupport: Dynamic
-      numdynamicips: 254
-      state: Ready
-      flavor:
-        name: DefaultPlatformFlavor
-      physicalname: partner1-cloud-2
-      containerversion: "2019-10-24"
-      deployment: docker
-      trustpolicystate: NotPresent
-      resourcequotas:
-      - name: RAM
-        alertthreshold: 50
-      - name: vCPUs
-        value: 20
-        alertthreshold: 50
-      - name: External IPs
-        alertthreshold: 10
-      defaultresourcealertthreshold: 80
-      dnslabel: partner1-cloud-2-partner1
-      rootlbfqdn: shared.partner1-cloud-2-partner1.pa.edgecloude2e.net
     cloudletinfos:
     - key:
         organization: dmuus-partner1
@@ -344,41 +300,3 @@ regiondata:
         vcpus: 2
         ram: 4096
         disk: 40
-    - key:
-        organization: partner1
-        name: partner1-cloud-1
-      state: Ready
-      osmaxram: 40960
-      osmaxvcores: 50
-      osmaxvolgb: 5000
-      flavors:
-      - name: x1.tiny
-        vcpus: 1
-        ram: 1024
-        disk: 20
-      - name: x1.small
-        vcpus: 2
-        ram: 4096
-        disk: 40
-      containerversion: "2019-10-24"
-      controllercachereceived: true
-      trustpolicystate: NotPresent
-    - key:
-        organization: partner1
-        name: partner1-cloud-2
-      state: Ready
-      osmaxram: 40960
-      osmaxvcores: 50
-      osmaxvolgb: 5000
-      flavors:
-      - name: x1.tiny
-        vcpus: 1
-        ram: 1024
-        disk: 20
-      - name: x1.small
-        vcpus: 2
-        ram: 4096
-        disk: 40
-      containerversion: "2019-10-24"
-      controllercachereceived: true
-      trustpolicystate: NotPresent

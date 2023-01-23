@@ -132,15 +132,7 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		}
 	}()
 
-	cb := func(code int32, msg string) error {
-		payload := ormapi.StreamPayload{}
-		payload.Data = &edgeproto.Result{
-			Code:    code,
-			Message: msg,
-		}
-		return WriteStream(c, &payload)
-	}
-	err = cb(200, "Creating images")
+	err = streamCb(c, 200, "Creating images")
 	if err != nil {
 		return err
 	}
@@ -162,7 +154,7 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		}
 	}
 
-	err = cb(200, "Creating artefact")
+	err = streamCb(c, 200, "Creating artefact")
 	if err != nil {
 		return err
 	}
@@ -183,7 +175,7 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		}
 	}()
 
-	err = cb(200, "Creating app")
+	err = streamCb(c, 200, "Creating app")
 	if err != nil {
 		return err
 	}
@@ -195,7 +187,7 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		return err
 	}
 
-	err = cb(200, "App created successfully")
+	err = streamCb(c, 200, "App created successfully")
 	if err != nil {
 		return err
 	}
@@ -431,6 +423,9 @@ func DeboardConsumerApp(c echo.Context) error {
 
 	// TODO: check if AppInsts exist that reference edgeproto App
 
+	if err := streamCb(c, 200, "Deleting App"); err != nil {
+		return err
+	}
 	// delete remote app
 	err = deleteApp(ctx, consumer, &in)
 	if err != nil && strings.Contains(strings.ToLower(err.Error()), "not found") {
@@ -440,6 +435,9 @@ func DeboardConsumerApp(c echo.Context) error {
 		return fmt.Errorf("failed to delete app, %s", err)
 	}
 
+	if err := streamCb(c, 200, "Deleting Artefact"); err != nil {
+		return err
+	}
 	// delete remote artefact
 	err = deleteAppArtefact(ctx, consumer, &in)
 	if err != nil && strings.Contains(strings.ToLower(err.Error()), "not found") {
@@ -453,6 +451,9 @@ func DeboardConsumerApp(c echo.Context) error {
 	err = db.Delete(&in).Error
 	if err != nil {
 		return ormutil.DbErr(err)
+	}
+	if err := streamCb(c, 200, "Deleted App successfully"); err != nil {
+		return err
 	}
 	return nil
 }
@@ -581,4 +582,39 @@ func ShowProviderApp(c echo.Context) error {
 		}
 	}
 	return ormutil.SetReply(c, showApps)
+}
+
+func ShowProviderAppInst(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	filter, err := bindDbFilter(c, &ormapi.ProviderAppInst{})
+	if err != nil {
+		return err
+	}
+	db := loggedDB(ctx)
+
+	insts := []ormapi.ProviderAppInst{}
+	err = db.Where(filter).Find(&insts).Error
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+
+	orgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceCloudlets, ActionView)
+	if err != nil {
+		return err
+	}
+	if _, ok := orgs[""]; ok {
+		// admin
+		return ormutil.SetReply(c, insts)
+	}
+	showAppInsts := []ormapi.ProviderAppInst{}
+	for _, inst := range insts {
+		if _, ok := orgs[inst.FederationName]; ok {
+			showAppInsts = append(showAppInsts, inst)
+		}
+	}
+	return ormutil.SetReply(c, showAppInsts)
 }

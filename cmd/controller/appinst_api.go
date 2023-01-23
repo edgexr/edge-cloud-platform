@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
@@ -38,13 +39,14 @@ import (
 )
 
 type AppInstApi struct {
-	all           *AllApis
-	sync          *Sync
-	store         edgeproto.AppInstStore
-	cache         edgeproto.AppInstCache
-	idStore       edgeproto.AppInstIdStore
-	fedStore      edgeproto.FedAppInstStore
-	dnsLabelStore *edgeproto.CloudletObjectDnsLabelStore
+	all                     *AllApis
+	sync                    *Sync
+	store                   edgeproto.AppInstStore
+	cache                   edgeproto.AppInstCache
+	idStore                 edgeproto.AppInstIdStore
+	fedStore                edgeproto.FedAppInstStore
+	dnsLabelStore           *edgeproto.CloudletObjectDnsLabelStore
+	fedAppInstEventSendMany *notify.FedAppInstEventSendMany
 }
 
 const RootLBSharedPortBegin int32 = 10000
@@ -69,6 +71,7 @@ func NewAppInstApi(sync *Sync, all *AllApis) *AppInstApi {
 	appInstApi.store = edgeproto.NewAppInstStore(sync.store)
 	appInstApi.fedStore = edgeproto.NewFedAppInstStore(sync.store)
 	appInstApi.dnsLabelStore = &all.cloudletApi.objectDnsLabelStore
+	appInstApi.fedAppInstEventSendMany = notify.NewFedAppInstEventSendMany()
 	edgeproto.InitAppInstCache(&appInstApi.cache)
 	sync.RegisterCache(&appInstApi.cache)
 	return &appInstApi
@@ -643,9 +646,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 		if in.Flavor.Name == "" {
 			in.Flavor = app.DefaultFlavor
-			if in.Flavor.Name == "" {
-				return fmt.Errorf("No AppInst or App flavor specified")
-			}
 		}
 		sidecarApp = cloudcommon.IsSideCarApp(&app)
 		// make sure cloudlet exists so we don't create refs for missing cloudlet
@@ -1042,7 +1042,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		// appinst progress
 		in.State = edgeproto.TrackedState_CREATING_DEPENDENCIES
 		s.store.STMPut(stm, in)
-		s.idStore.STMPut(stm, in.UniqueId)
+		s.idStore.STMPut(stm, in.UniqueId, &in.Key)
 		s.dnsLabelStore.STMPut(stm, &in.Key.ClusterInstKey.CloudletKey, in.DnsLabel)
 		s.all.appInstRefsApi.addRef(stm, &in.Key)
 		if cloudcommon.IsClusterInstReqd(&app) {
@@ -2141,6 +2141,7 @@ func (s *AppInstApi) DeleteFromInfo(ctx context.Context, in *edgeproto.AppInstIn
 	})
 }
 
+// Handle AppInst status callbacks from Federation Partner
 func (s *AppInstApi) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.FedAppInstEvent) (*edgeproto.Result, error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "FedAppInstEvent", "appInstInfo", in)
 	portFqdns := map[int32]string{}
@@ -2148,37 +2149,51 @@ func (s *AppInstApi) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.Fe
 		portFqdns[port.InternalPort] = port.FqdnPrefix
 	}
 
+	// The FRM may be waiting for the callbacks. It needs to do this because
+	// the FRM performs some more work (GetAppInst runtime, etc) in the
+	// common controller-data code once the AppInst has been created.
+	// So, we need to forward the event to the FRM.
+	// However, for intermediate events (i.e. task message updates), the
+	// FRM would just end up sending the event back to the controller,
+	// which is roundabout and pointless. So for intermediate updates,
+	// we don't bother sending them to the FRM, but instead process them
+	// here.
+	// Also, we update AppPorts since AppInstInfo doesn't carry port info.
+	updateInfo := true
+	if in.State == edgeproto.TrackedState_READY || in.State == edgeproto.TrackedState_CREATE_ERROR {
+		// FRM needs to see the event
+		log.SpanLog(ctx, log.DebugLevelApi, "Forwarding FedAppInstEvent via notify")
+		s.fedAppInstEventSendMany.Update(ctx, in)
+		updateInfo = false
+	}
+
 	var info *edgeproto.AppInstInfo
 	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-		// We need to lookup the AppInstKey from the FedAppInstId
-		fedAppInst := edgeproto.FedAppInst{}
-		if !s.fedStore.STMGet(stm, &in.Key, &fedAppInst) {
-			return in.Key.NotFoundError()
+		// Look up the AppInstKey from the unique id in the event.
+		appInstKey := edgeproto.AppInstKey{}
+		if !s.idStore.STMGet(stm, in.UniqueId, &appInstKey) {
+			return fmt.Errorf("No appinstkey found for unique id %s", in.UniqueId)
 		}
-		info = &edgeproto.AppInstInfo{}
-		if !s.all.appInstInfoApi.store.STMGet(stm, &fedAppInst.AppInstKey, info) {
-			return fedAppInst.AppInstKey.NotFoundError()
-		}
-		// Set state to update. We don't actually update info here
-		// to be able to reuse the logic in UpdateFromInfo.
-		if in.State != edgeproto.TrackedState_TRACKED_STATE_UNKNOWN {
-			info.State = in.State
-		}
-		if in.State == edgeproto.TrackedState_CREATE_ERROR {
-			if in.Message != "" {
-				info.Errors = append(info.Errors, in.Message)
+		if updateInfo {
+			info = &edgeproto.AppInstInfo{}
+			if !s.all.appInstInfoApi.store.STMGet(stm, &appInstKey, info) {
+				return appInstKey.NotFoundError()
 			}
-		} else {
+			// New state if specified. We don't write to db here
+			// to be able to reuse the logic in UpdateFromInfo.
+			if in.State != edgeproto.TrackedState_TRACKED_STATE_UNKNOWN {
+				info.State = in.State
+			}
 			if in.Message != "" {
 				info.Status.SetTask(in.Message)
 			}
 		}
-
+		// Regardless of state, if ports are set, update ports on AppInst
 		if len(portFqdns) > 0 {
 			// update port FQDNs on AppInst
 			inst := edgeproto.AppInst{}
-			if !s.store.STMGet(stm, &fedAppInst.AppInstKey, &inst) {
-				return fmt.Errorf("Unable to update AppInst ports, %s", fedAppInst.AppInstKey.NotFoundError())
+			if !s.store.STMGet(stm, &appInstKey, &inst) {
+				return fmt.Errorf("Unable to update FedAppInst ports, %s", appInstKey.NotFoundError())
 			}
 			applyUpdate := false
 			for ii, port := range inst.MappedPorts {
@@ -2201,7 +2216,9 @@ func (s *AppInstApi) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.Fe
 	if err != nil {
 		return &edgeproto.Result{}, err
 	}
-	s.UpdateFromInfo(ctx, info)
+	if updateInfo {
+		s.UpdateFromInfo(ctx, info)
+	}
 	return &edgeproto.Result{}, nil
 }
 

@@ -23,11 +23,12 @@ import (
 )
 
 type FRM struct {
-	Common      `yaml:",inline"`
-	NodeCommon  `yaml:",inline"`
-	NotifyAddrs string
-	Region      string
-	cmd         *exec.Cmd
+	Common                 `yaml:",inline"`
+	NodeCommon             `yaml:",inline"`
+	NotifyAddrs            string
+	Region                 string
+	FederationExternalAddr string
+	cmd                    *exec.Cmd
 }
 
 func (p *FRM) StartLocal(logfile string, opts ...StartOp) error {
@@ -43,6 +44,9 @@ func (p *FRM) StartLocal(logfile string, opts ...StartOp) error {
 	if p.Region != "" {
 		args = append(args, "--region")
 		args = append(args, p.Region)
+	}
+	if p.FederationExternalAddr != "" {
+		args = append(args, "--federationExternalAddr", p.FederationExternalAddr)
 	}
 	args = append(args, "--hostname", p.Name)
 	options := StartOptions{}
