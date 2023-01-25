@@ -425,6 +425,9 @@ func (s *AutoProvCountsSend) GetNotifyId() int64 {
 func (s *AutoProvCountsSend) UpdateAll(ctx context.Context) {}
 
 func (s *AutoProvCountsSend) Update(ctx context.Context, msg *edgeproto.AutoProvCounts) bool {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return false
+	}
 	s.Mux.Lock()
 	s.Data = append(s.Data, msg)
 	s.Ctxs = append(s.Ctxs, ctx)

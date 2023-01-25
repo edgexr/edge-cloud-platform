@@ -25,9 +25,11 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
@@ -155,7 +157,13 @@ func (f *FederationPlatform) fedClient(ctx context.Context, cloudletKey *edgepro
 		FedType:    federationmgmt.FederationTypeConsumer,
 		ID:         uint(fedConfig.FederationDbId),
 	}
-	return f.tokenSources.Client(ctx, fedConfig.PartnerFederationAddr, &fedKey, nil)
+	return f.tokenSources.Client(ctx, fedConfig.PartnerFederationAddr, &fedKey, f.auditCb)
+}
+
+func (f *FederationPlatform) auditCb(ctx context.Context, fedKey *federationmgmt.FedKey, data *ormclient.AuditLogData) {
+	nodeMgr := f.commonPf.PlatformConfig.NodeMgr
+	eventTags := data.GetEventTags()
+	nodeMgr.TimedEvent(ctx, "federation client api", fedKey.Name, node.EventType, eventTags, data.Err, data.Start, data.End)
 }
 
 // Create an appInst. This runs on the Consumer.

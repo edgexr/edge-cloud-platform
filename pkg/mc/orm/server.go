@@ -1040,7 +1040,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		federationEcho.Binder = &CustomBinder{}
 
 		// RateLimit based on auth
-		federationEcho.Use(logger, AuthCookie, FederationRateLimit)
+		federationEcho.Use(fedLogger, AuthCookie, FederationRateLimit)
 		server.federationEcho = federationEcho
 
 		partnerApi = federation.NewPartnerApi(database, connCache, nodeMgr, config.vaultConfig, config.FederationExternalAddr, config.VmRegistryAddr, config.HarborAddr)

@@ -397,6 +397,7 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 				FederationContextId:   consumer.FederationContextId,
 				PartnerFederationAddr: consumer.PartnerAddr,
 				FederationDbId:        uint64(consumer.ID),
+				FederationName:        consumer.Name,
 			},
 		}
 		var quotaLimit *fedewapi.ComputeResourceInfo
@@ -428,9 +429,10 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 				})
 			}
 		}
-		log.SpanLog(ctx, log.DebugLevelApi, "add partner zone as cloudlet", "key", fedCloudlet.Key)
+		log.SpanLog(ctx, log.DebugLevelApi, "add partner zone as cloudlet", "cloudlet", fedCloudlet)
 		err = ctrlclient.CreateCloudletStream(ctx, rc, &fedCloudlet, p.connCache, cb)
 		if err != nil {
+			// TODO: send unregister to partner?
 			return err
 		}
 		// create cloudlet info with flavors

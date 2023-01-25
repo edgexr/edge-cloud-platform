@@ -15,6 +15,7 @@
 package edgeproto
 
 import (
+	context "context"
 	"encoding/json"
 	fmt "fmt"
 
@@ -23,10 +24,16 @@ import (
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
-type AppInstIdStore struct{}
+type AppInstIdStore struct {
+	kvstore objstore.KVStore
+}
 
 func AppInstIdDbKey(id string) string {
 	return fmt.Sprintf("%s/%s", objstore.DbKeyPrefixString("AppInstId"), id)
+}
+
+func (s *AppInstIdStore) Init(kvstore objstore.KVStore) {
+	s.kvstore = kvstore
 }
 
 func (s *AppInstIdStore) STMHas(stm concurrency.STM, id string) bool {
@@ -56,6 +63,15 @@ func (s *AppInstIdStore) STMGet(stm concurrency.STM, id string, buf *AppInstKey)
 	keystr := AppInstIdDbKey(id)
 	valstr := stm.Get(keystr)
 	return s.parseGetData([]byte(valstr), buf)
+}
+
+func (s *AppInstIdStore) Get(ctx context.Context, id string, buf *AppInstKey) bool {
+	keystr := AppInstIdDbKey(id)
+	val, _, _, err := s.kvstore.Get(keystr)
+	if err != nil {
+		return false
+	}
+	return s.parseGetData(val, buf)
 }
 
 func (s *AppInstIdStore) parseGetData(val []byte, buf *AppInstKey) bool {

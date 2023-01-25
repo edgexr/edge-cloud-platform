@@ -69,6 +69,7 @@ func NewAppInstApi(sync *Sync, all *AllApis) *AppInstApi {
 	appInstApi.all = all
 	appInstApi.sync = sync
 	appInstApi.store = edgeproto.NewAppInstStore(sync.store)
+	appInstApi.idStore.Init(sync.store)
 	appInstApi.fedStore = edgeproto.NewFedAppInstStore(sync.store)
 	appInstApi.dnsLabelStore = &all.cloudletApi.objectDnsLabelStore
 	appInstApi.fedAppInstEventSendMany = notify.NewFedAppInstEventSendMany()
@@ -2091,7 +2092,10 @@ func (s *AppInstApi) UpdateFromInfo(ctx context.Context, in *edgeproto.AppInstIn
 			inst.Errors = nil
 		}
 
-		inst.RuntimeInfo = in.RuntimeInfo
+		if len(in.RuntimeInfo.ContainerIds) > 0 {
+			inst.RuntimeInfo = in.RuntimeInfo
+			applyUpdate = true
+		}
 		if applyUpdate {
 			s.store.STMPut(stm, &inst)
 		}
@@ -2143,11 +2147,7 @@ func (s *AppInstApi) DeleteFromInfo(ctx context.Context, in *edgeproto.AppInstIn
 
 // Handle AppInst status callbacks from Federation Partner
 func (s *AppInstApi) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.FedAppInstEvent) (*edgeproto.Result, error) {
-	log.SpanLog(ctx, log.DebugLevelApi, "FedAppInstEvent", "appInstInfo", in)
-	portFqdns := map[int32]string{}
-	for _, port := range in.Ports {
-		portFqdns[port.InternalPort] = port.FqdnPrefix
-	}
+	log.SpanLog(ctx, log.DebugLevelApi, "handle FedAppInstEvent", "event", in)
 
 	// The FRM may be waiting for the callbacks. It needs to do this because
 	// the FRM performs some more work (GetAppInst runtime, etc) in the
@@ -2167,29 +2167,34 @@ func (s *AppInstApi) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.Fe
 		updateInfo = false
 	}
 
-	var info *edgeproto.AppInstInfo
-	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-		// Look up the AppInstKey from the unique id in the event.
-		appInstKey := edgeproto.AppInstKey{}
-		if !s.idStore.STMGet(stm, in.UniqueId, &appInstKey) {
-			return fmt.Errorf("No appinstkey found for unique id %s", in.UniqueId)
+	// Look up the AppInstKey from the unique id in the event.
+	appInstKey := edgeproto.AppInstKey{}
+	if !s.idStore.Get(ctx, in.UniqueId, &appInstKey) {
+		return &edgeproto.Result{}, fmt.Errorf("No appinstkey found for unique id %s", in.UniqueId)
+	}
+
+	// Update AppInstInfo
+	if updateInfo {
+		info := &edgeproto.AppInstInfo{
+			Key: appInstKey,
 		}
-		if updateInfo {
-			info = &edgeproto.AppInstInfo{}
-			if !s.all.appInstInfoApi.store.STMGet(stm, &appInstKey, info) {
-				return appInstKey.NotFoundError()
-			}
-			// New state if specified. We don't write to db here
-			// to be able to reuse the logic in UpdateFromInfo.
-			if in.State != edgeproto.TrackedState_TRACKED_STATE_UNKNOWN {
-				info.State = in.State
-			}
-			if in.Message != "" {
-				info.Status.SetTask(in.Message)
-			}
+		// New state if specified.
+		if in.State != edgeproto.TrackedState_TRACKED_STATE_UNKNOWN {
+			info.State = in.State
 		}
-		// Regardless of state, if ports are set, update ports on AppInst
-		if len(portFqdns) > 0 {
+		if in.Message != "" {
+			info.Status.SetTask(in.Message)
+		}
+		s.UpdateFromInfo(ctx, info)
+	}
+
+	// If ports are set, update ports on AppInst
+	portFqdns := map[int32]string{}
+	for _, port := range in.Ports {
+		portFqdns[port.InternalPort] = port.FqdnPrefix
+	}
+	if len(portFqdns) > 0 {
+		err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 			// update port FQDNs on AppInst
 			inst := edgeproto.AppInst{}
 			if !s.store.STMGet(stm, &appInstKey, &inst) {
@@ -2210,14 +2215,11 @@ func (s *AppInstApi) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.Fe
 			if applyUpdate {
 				s.store.STMPut(stm, &inst)
 			}
+			return nil
+		})
+		if err != nil {
+			return &edgeproto.Result{}, err
 		}
-		return nil
-	})
-	if err != nil {
-		return &edgeproto.Result{}, err
-	}
-	if updateInfo {
-		s.UpdateFromInfo(ctx, info)
 	}
 	return &edgeproto.Result{}, nil
 }

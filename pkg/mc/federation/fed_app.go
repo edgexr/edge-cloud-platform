@@ -30,14 +30,14 @@ func (p *PartnerApi) lookupApp(c echo.Context, provider *ormapi.FederationProvid
 
 	provApp := ormapi.ProviderApp{
 		FederationName: provider.Name,
-		AppID:          string(appId),
+		AppID:          appId,
 	}
 	res := db.Where(&provApp).First(&provApp)
 	if res.RecordNotFound() {
-		return nil, c.String(http.StatusNotFound, "Application "+string(appId)+" not found")
+		return nil, fedError(http.StatusNotFound, fmt.Errorf("Application %s not found", appId))
 	}
 	if res.Error != nil {
-		return nil, c.String(http.StatusInternalServerError, "Failed to look up application, "+res.Error.Error())
+		return nil, fedError(http.StatusInternalServerError, fmt.Errorf("Failed to look up application, %s", res.Error.Error()))
 	}
 	return &provApp, nil
 }
@@ -115,7 +115,7 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 		return fmt.Errorf("Artefact %s not found", provArt.ArtefactID)
 	}
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Failed to look up Artefact, "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to look up Artefact, %s", err.Error()))
 	}
 
 	// check any specified zones
@@ -131,7 +131,7 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 			return fmt.Errorf("Deployment zone %s not found", provZone.ZoneId)
 		}
 		if err != nil {
-			return c.String(http.StatusInternalServerError, "Failed to look up deployment zone "+provZone.ZoneId+", "+err.Error())
+			return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to look up deployment zone %s, %s", provZone.ZoneId, err.Error()))
 		}
 		if provZone.Status == StatusUnregistered {
 			return fmt.Errorf("Deployment zone %s is not registered", provZone.ZoneId)
@@ -153,7 +153,7 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 		if strings.Contains(err.Error(), "duplicate key value") {
 			return fmt.Errorf("Application with ID %s already exists", provApp.AppID)
 		}
-		return c.String(http.StatusInternalServerError, "Failed to save app to database, "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to save app to database, %s", err.Error()))
 	}
 
 	c.Response().WriteHeader(http.StatusAccepted)
@@ -203,7 +203,7 @@ func (p *PartnerApi) DeleteApp(c echo.Context, fedCtxId FederationContextId, app
 	db := p.loggedDB(ctx)
 	err = db.Delete(provApp).Error
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Failed to delete App, "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to delete App, %s", err.Error()))
 	}
 	return nil
 }
@@ -264,12 +264,12 @@ func (p *PartnerApi) DeboardApplication(c echo.Context, fedCtxId FederationConte
 		}
 	}
 	if !found {
-		return c.String(http.StatusNotFound, "Zone "+string(zoneId)+" not found")
+		return fedError(http.StatusNotFound, fmt.Errorf("Zone %s not found", string(zoneId)))
 	}
 	db := p.loggedDB(ctx)
 	err = db.Save(&provApp).Error
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Failed to save App, "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to save App, %s", err.Error()))
 	}
 
 	c.Response().WriteHeader(http.StatusAccepted)
@@ -320,7 +320,7 @@ func (p *PartnerApi) OnboardExistingAppNewZones(c echo.Context, fedCtxId Federat
 	db := p.loggedDB(ctx)
 	err = db.Save(&provApp).Error
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Failed to save App, "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to save App, %s", err.Error()))
 	}
 
 	c.Response().WriteHeader(http.StatusAccepted)

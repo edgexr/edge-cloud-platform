@@ -874,7 +874,7 @@ func (s *Transformer) AddSetZeroTypeField(typ interface{}, fields ...string) {
 	}
 }
 
-func (s *Transformer) ReplaceStringField(typ interface{}, replace string, fields ...string) {
+func (s *Transformer) ReplaceStringField(typ interface{}, fields ...string) {
 	t := reflect.TypeOf(typ)
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
@@ -887,7 +887,12 @@ func (s *Transformer) ReplaceStringField(typ interface{}, replace string, fields
 		if t.Kind() != reflect.String {
 			return
 		}
-		v.SetString(replace)
+		if v.IsZero() {
+			// don't set field if already zero,
+			// we only want to mask existing random values
+			return
+		}
+		v.SetString("***replaced***")
 	}
 
 	for _, field := range fields {

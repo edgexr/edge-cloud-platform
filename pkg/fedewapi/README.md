@@ -200,6 +200,7 @@ Class | Method | HTTP request | Description
  - [AppMetaData](docs/AppMetaData.md)
  - [AppQoSProfile](docs/AppQoSProfile.md)
  - [CPUArchType](docs/CPUArchType.md)
+ - [CallbackCredentials](docs/CallbackCredentials.md)
  - [ClientLocation](docs/ClientLocation.md)
  - [ClientLocationRadLocationInner](docs/ClientLocationRadLocationInner.md)
  - [CommandLineParams](docs/CommandLineParams.md)

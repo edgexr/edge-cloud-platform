@@ -63,17 +63,9 @@ func (p *PartnerApi) lookupArtefact(c echo.Context, provider *ormapi.FederationP
 		return nil, fmt.Errorf("Artefact %s not found", artefactId)
 	}
 	if res.Error != nil {
-		return nil, c.String(http.StatusInternalServerError, "failure looking up artefact: "+res.Error.Error())
+		return nil, fedError(http.StatusInternalServerError, fmt.Errorf("Failed to look up artefact, %s", res.Error.Error()))
 	}
 	return &provArt, nil
-}
-
-func getAppKey(provArt *ormapi.ProviderArtefact) edgeproto.AppKey {
-	return edgeproto.AppKey{
-		Name:         provArt.AppName,
-		Organization: provArt.FederationName,
-		Version:      provArt.AppVers,
-	}
 }
 
 func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId) (reterr error) {
@@ -152,7 +144,7 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 
 	// build app from spec
 	app := edgeproto.App{}
-	app.Key = getAppKey(&provArt)
+	app.Key = provArt.GetAppKey()
 	if spec.NumOfInstances == -1 {
 		app.ScaleWithCluster = true
 	}
@@ -170,7 +162,7 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 		return fmt.Errorf("Image ID %s in component spec not found, please ensure it has been created", spec.Images[0])
 	}
 	if res.Error != nil {
-		return c.String(http.StatusInternalServerError, res.Error.Error())
+		return fedError(http.StatusInternalServerError, res.Error)
 	}
 	app.ImagePath = provImage.Path
 	switch provImage.Type {
@@ -300,7 +292,7 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 	log.SpanLog(ctx, log.DebugLevelApi, "save providerArtefact", "provArt", provArt)
 	err = db.Create(&provArt).Error
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "failed to save artefact: "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to save artefact, %s", err.Error()))
 	}
 	defer func() {
 		if reterr == nil {
@@ -368,7 +360,7 @@ func (p *PartnerApi) RemoveArtefact(c echo.Context, fedCtxId FederationContextId
 	provApps := []ormapi.ProviderApp{}
 	err = db.Where(&provApp).Find(&provApps).Error
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "failure looking up Apps that may depend on Artefact: "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed looking up Apps that may depend on Artefact, %s", err.Error()))
 	}
 	for _, papp := range provApps {
 		for _, af := range papp.ArtefactIds {
@@ -379,7 +371,7 @@ func (p *PartnerApi) RemoveArtefact(c echo.Context, fedCtxId FederationContextId
 	}
 
 	app := edgeproto.App{}
-	app.Key = getAppKey(provArt)
+	app.Key = provArt.GetAppKey()
 
 	// make sure App can be deleted from each region
 	log.SpanLog(ctx, log.DebugLevelApi, "delete apps for artefact", "app", provApp)
@@ -402,7 +394,7 @@ func (p *PartnerApi) RemoveArtefact(c echo.Context, fedCtxId FederationContextId
 	// delete artefact
 	err = db.Delete(&provArt).Error
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "failed to delete artefact from database: "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to delete artefact from database, %s", err.Error()))
 	}
 	return nil
 }

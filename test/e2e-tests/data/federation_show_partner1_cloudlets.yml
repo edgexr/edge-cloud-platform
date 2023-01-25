@@ -78,8 +78,10 @@ regiondata:
       dnslabel: dmuuscloud1-dmuus-partner1
       rootlbfqdn: shared.dmuuscloud1-dmuus-partner1.pa.edgecloude2e.net
       federationconfig:
+        federationcontextid: '***replaced***'
         partnerfederationaddr: https://127.0.0.1:9801
         federationdbid: 1
+        federationname: dmuus-partner1
     - key:
         organization: dmuus-partner1
         name: dmuuscloud2
@@ -105,8 +107,10 @@ regiondata:
       dnslabel: dmuuscloud2-dmuus-partner1
       rootlbfqdn: shared.dmuuscloud2-dmuus-partner1.pa.edgecloude2e.net
       federationconfig:
+        federationcontextid: '***replaced***'
         partnerfederationaddr: https://127.0.0.1:9801
         federationdbid: 1
+        federationname: dmuus-partner1
     - key:
         organization: dmuus-partner1
         name: dmuuscloud3
@@ -132,8 +136,10 @@ regiondata:
       dnslabel: dmuuscloud3-dmuus-partner1
       rootlbfqdn: shared.dmuuscloud3-dmuus-partner1.pa.edgecloude2e.net
       federationconfig:
+        federationcontextid: '***replaced***'
         partnerfederationaddr: https://127.0.0.1:9801
         federationdbid: 1
+        federationname: dmuus-partner1
     - key:
         organization: dmuus-partner1
         name: dmuuscloud4
@@ -159,8 +165,10 @@ regiondata:
       dnslabel: dmuuscloud4-dmuus-partner1
       rootlbfqdn: shared.dmuuscloud4-dmuus-partner1.pa.edgecloude2e.net
       federationconfig:
+        federationcontextid: '***replaced***'
         partnerfederationaddr: https://127.0.0.1:9801
         federationdbid: 1
+        federationname: dmuus-partner1
     - key:
         organization: enterprise-partner1
         name: enterprise1
@@ -186,8 +194,10 @@ regiondata:
       dnslabel: enterprise1-enterprise-partner1
       rootlbfqdn: shared.enterprise1-enterprise-partner1.pa.edgecloude2e.net
       federationconfig:
+        federationcontextid: '***replaced***'
         partnerfederationaddr: https://127.0.0.1:9801
         federationdbid: 2
+        federationname: enterprise-partner1
     - key:
         organization: enterprise-partner1
         name: enterprise2
@@ -213,8 +223,10 @@ regiondata:
       dnslabel: enterprise2-enterprise-partner1
       rootlbfqdn: shared.enterprise2-enterprise-partner1.pa.edgecloude2e.net
       federationconfig:
+        federationcontextid: '***replaced***'
         partnerfederationaddr: https://127.0.0.1:9801
         federationdbid: 2
+        federationname: enterprise-partner1
     cloudletinfos:
     - key:
         organization: dmuus-partner1

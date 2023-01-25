@@ -368,6 +368,23 @@ components:
           type: boolean
           default: true
           description: Define if application can be instantiated or not
+    CallbackCredentials:
+      type: object
+      description: Authentication credentials for callbacks. Callbacks use the same security scheme, flows, and scopes as the forward path.
+      required:
+        - tokenUrl
+        - clientId
+        - clientSecret
+      properties:
+        tokenUrl:
+          $ref: '#/components/schemas/Uri'
+          description: Oauth2 token endpoint.
+        clientId:
+          type: string
+          description: Client id for oauth2 client credentials flow.
+        clientSecret:
+          type: string
+          description: Client secret for oauth2 client credentials flow.
     ClientLocation:
       type: object
       minProperties: 1
@@ -578,6 +595,8 @@ components:
           description: Time zone info of the federation initiated by the originating OP
         partnerStatusLink:
           $ref: '#/components/schemas/Uri'
+        partnerCallbackCredentials:
+          $ref: '#/components/schemas/CallbackCredentials'
     FederationResponseData:
       type: object
       required:

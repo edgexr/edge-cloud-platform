@@ -19,7 +19,9 @@ federationproviders:
   regions:
   - local
   - locala
+  federationcontextid: '***replaced***'
   myinfo:
+    federationid: '***replaced***'
     countrycode: SA
     mcc: "123"
     mnc:
@@ -31,13 +33,16 @@ federationproviders:
     - bar
     - foobar
   status: Unregistered
+  providerclientid: '***replaced***'
 - id: 2
   name: enterprise-partner1
   operatorid: enterprise
   regions:
   - local
   - locala
+  federationcontextid: '***replaced***'
   myinfo:
+    federationid: '***replaced***'
     countrycode: SA
     mcc: "123"
     mnc:
@@ -49,3 +54,4 @@ federationproviders:
     - bar
     - foobar
   status: Unregistered
+  providerclientid: '***replaced***'

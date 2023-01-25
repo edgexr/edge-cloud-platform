@@ -787,6 +787,9 @@ func (s *FedAppInstEventSend) GetNotifyId() int64 {
 func (s *FedAppInstEventSend) UpdateAll(ctx context.Context) {}
 
 func (s *FedAppInstEventSend) Update(ctx context.Context, msg *edgeproto.FedAppInstEvent) bool {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return false
+	}
 	s.Mux.Lock()
 	s.Data = append(s.Data, msg)
 	s.Ctxs = append(s.Ctxs, ctx)

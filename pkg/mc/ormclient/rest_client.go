@@ -57,6 +57,7 @@ type Client struct {
 	PrintTransformations bool
 	Timeout              time.Duration
 	AuditLogFunc         func(data *AuditLogData)
+	ParseErrorFunc       func(resBody []byte) error
 }
 
 type AuditLogData struct {
@@ -311,7 +312,7 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{},
 		respContentType = resp.Header.Get("Content-Type")
 		status = resp.StatusCode
 	}
-	if s.AuditLogFunc != nil && resp != nil && respContentType == "application/json" {
+	if s.AuditLogFunc != nil && resp != nil && strings.Contains(respContentType, "application/json") {
 		if resp.Body != nil {
 			resBody, _ = ioutil.ReadAll(resp.Body)
 		}
@@ -359,13 +360,20 @@ func (s *Client) HttpJsonSend(method, uri, token string, reqData interface{}, re
 		if err != nil {
 			return resp.StatusCode, nil, err
 		}
-		res := ormapi.Result{}
-		err = json.Unmarshal(body, &res)
-		if err != nil {
-			// string error
-			return resp.StatusCode, nil, fmt.Errorf("%s", body)
+		var reterr error
+		if s.ParseErrorFunc != nil {
+			reterr = s.ParseErrorFunc(body)
+		} else {
+			res := ormapi.Result{}
+			err = json.Unmarshal(body, &res)
+			if err != nil {
+				// string error
+				reterr = fmt.Errorf("%s", string(body))
+			} else {
+				reterr = errors.New(res.Message)
+			}
 		}
-		return resp.StatusCode, nil, errors.New(res.Message)
+		return resp.StatusCode, nil, reterr
 	}
 	return resp.StatusCode, resp.Header, nil
 }

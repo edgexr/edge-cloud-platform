@@ -30,6 +30,7 @@ type FederationRequestData struct {
 	// Time zone info of the federation initiated by the originating OP
 	InitialDate time.Time `json:"initialDate"`
 	PartnerStatusLink string `json:"partnerStatusLink"`
+	PartnerCallbackCredentials *CallbackCredentials `json:"partnerCallbackCredentials,omitempty"`
 }
 
 // NewFederationRequestData instantiates a new FederationRequestData object
@@ -220,6 +221,38 @@ func (o *FederationRequestData) SetPartnerStatusLink(v string) {
 	o.PartnerStatusLink = v
 }
 
+// GetPartnerCallbackCredentials returns the PartnerCallbackCredentials field value if set, zero value otherwise.
+func (o *FederationRequestData) GetPartnerCallbackCredentials() CallbackCredentials {
+	if o == nil || isNil(o.PartnerCallbackCredentials) {
+		var ret CallbackCredentials
+		return ret
+	}
+	return *o.PartnerCallbackCredentials
+}
+
+// GetPartnerCallbackCredentialsOk returns a tuple with the PartnerCallbackCredentials field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *FederationRequestData) GetPartnerCallbackCredentialsOk() (*CallbackCredentials, bool) {
+	if o == nil || isNil(o.PartnerCallbackCredentials) {
+		return nil, false
+	}
+	return o.PartnerCallbackCredentials, true
+}
+
+// HasPartnerCallbackCredentials returns a boolean if a field has been set.
+func (o *FederationRequestData) HasPartnerCallbackCredentials() bool {
+	if o != nil && !isNil(o.PartnerCallbackCredentials) {
+		return true
+	}
+
+	return false
+}
+
+// SetPartnerCallbackCredentials gets a reference to the given CallbackCredentials and assigns it to the PartnerCallbackCredentials field.
+func (o *FederationRequestData) SetPartnerCallbackCredentials(v CallbackCredentials) {
+	o.PartnerCallbackCredentials = &v
+}
+
 func (o FederationRequestData) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -242,6 +275,9 @@ func (o FederationRequestData) ToMap() (map[string]interface{}, error) {
 	}
 	toSerialize["initialDate"] = o.InitialDate
 	toSerialize["partnerStatusLink"] = o.PartnerStatusLink
+	if !isNil(o.PartnerCallbackCredentials) {
+		toSerialize["partnerCallbackCredentials"] = o.PartnerCallbackCredentials
+	}
 	return toSerialize, nil
 }
 

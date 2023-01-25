@@ -102,6 +102,7 @@ func (p *PartnerApi) InitAPIs(e *echo.Echo) {
 	e.POST(federationmgmt.PartnerAppOnboardStatusEventPath, p.PartnerAppOnboardStatusEvent)
 	e.POST(federationmgmt.PartnerInstanceStatusEventPath+"/:"+federationmgmt.PathVarAppInstUniqueId, p.PartnerInstanceStatusEvent)
 	e.POST(federationmgmt.PartnerResourceStatusChangePath, p.PartnerResourceStatusChange)
+
 }
 
 func (p *PartnerApi) lookupProvider(c echo.Context, federationContextId FederationContextId) (*ormapi.FederationProvider, error) {
@@ -280,7 +281,10 @@ func (p *PartnerApi) CreateFederation(c echo.Context, params CreateFederationPar
 	}
 
 	// Pull notify credentials from header if present and store
+	// TODO: remove credentials from header if change is commited.
+	var apiKey *federationmgmt.ApiKey
 	if auth, found := c.Request().Header[HeaderXNotifyAuth]; found && len(auth) > 0 {
+		log.SpanLog(ctx, log.DebugLevelApi, "got callback credentials in header")
 		id, pass, ok := ormutil.DecodeBasicAuth(auth[0])
 		if !ok {
 			return fmt.Errorf("Header %s specified but not expected format", HeaderXNotifyAuth)
@@ -290,18 +294,29 @@ func (p *PartnerApi) CreateFederation(c echo.Context, params CreateFederationPar
 			return fmt.Errorf("Header %s also requires header %s", HeaderXNotifyAuth, HeaderXNotifyTokenUrl)
 		}
 
-		fedKey := ProviderFedKey(provider)
-		apiKey := federationmgmt.ApiKey{
+		apiKey = &federationmgmt.ApiKey{
 			Id:       id,
 			Key:      pass,
 			TokenUrl: tokenUrl[0],
 		}
-		err := federationmgmt.PutAPIKeyToVault(ctx, p.vaultConfig, fedKey, &apiKey)
+	}
+	// In new scheme, credentials are in body.
+	if req.PartnerCallbackCredentials != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "got callback credentials in body")
+		apiKey = &federationmgmt.ApiKey{
+			TokenUrl: req.PartnerCallbackCredentials.TokenUrl,
+			Id:       req.PartnerCallbackCredentials.ClientId,
+			Key:      req.PartnerCallbackCredentials.ClientSecret,
+		}
+	}
+	if apiKey != nil {
+		fedKey := ProviderFedKey(provider)
+		err := federationmgmt.PutAPIKeyToVault(ctx, p.vaultConfig, fedKey, apiKey)
 		if err != nil {
 			return err
 		}
 		provider.PartnerNotifyClientId = "***"
-		provider.PartnerNotifyTokenUrl = tokenUrl[0]
+		provider.PartnerNotifyTokenUrl = apiKey.TokenUrl
 
 		defer func() {
 			if reterr == nil {
@@ -709,4 +724,21 @@ func (p *PartnerApi) PartnerStatusEvent(c echo.Context) error {
 		err = fmt.Errorf("Unsupported operationtype %q", in.OperationType)
 	}
 	return err
+}
+
+type FedError struct {
+	Code    int
+	Message string
+}
+
+func (s FedError) Error() string {
+	return s.Message
+}
+
+// Use this to specify a particular error code
+func fedError(code int, err error) error {
+	return &FedError{
+		Code:    code,
+		Message: err.Error(),
+	}
 }

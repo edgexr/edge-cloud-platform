@@ -281,7 +281,7 @@ frms:
   deploymenttag: dev
   region: local
   vaultaddr: "http://127.0.0.1:8200"
-  federationexternaladdr: "https://127.0.0.1:9900"
+  federationexternaladdr: "https://127.0.0.1:9801"
   usevaultpki: true
   envvars:
     ES_SERVER_URLS: https://localhost:9201
@@ -293,7 +293,7 @@ frms:
   deploymenttag: dev
   region: locala
   vaultaddr: "http://127.0.0.1:8200"
-  federationexternaladdr: "https://127.0.0.1:9901"
+  federationexternaladdr: "https://127.0.0.1:9802"
   usevaultpki: true
   envvars:
     ES_SERVER_URLS: https://localhost:9201
@@ -305,7 +305,7 @@ frms:
   deploymenttag: dev
   region: locala
   vaultaddr: "http://127.0.0.1:8200"
-  federationexternaladdr: "https://127.0.0.1:9908"
+  federationexternaladdr: "https://127.0.0.1:9808"
   usevaultpki: true
   envvars:
     ES_SERVER_URLS: https://localhost:9201

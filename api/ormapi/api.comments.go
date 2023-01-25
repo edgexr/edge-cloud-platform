@@ -710,5 +710,14 @@ var ProviderAppComments = map[string]string{
 var ProviderAppInstComments = map[string]string{
 	"federationname":      `Federation Provider name`,
 	"appinstid":           `AppInst unique ID`,
+	"appid":               `AppID for ProviderApp`,
+	"region":              `Region for AppInst`,
+	"appname":             `App name for AppInstKey`,
+	"appvers":             `App version for AppInstKey`,
+	"cluster":             `Cluster name for AppInstKey`,
+	"clusterorg":          `Cluster org for AppInstKey`,
+	"cloudlet":            `Cloudlet name for AppInstKey`,
+	"cloudletorg":         `Cloudlet org for AppInstKey`,
+	"cloudletfedorg":      `Cloudlet federation org for AppInstKey (this should always be blank)`,
 	"appinstcallbacklink": `AppInst callback link`,
 }

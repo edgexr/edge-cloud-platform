@@ -18,7 +18,9 @@ federationconsumers:
   operatorid: partner1
   partneraddr: https://127.0.0.1:9801
   partnertokenurl: https://127.0.0.1:9900/oauth2/token
+  federationcontextid: '***replaced***'
   myinfo:
+    federationid: '***replaced***'
     countrycode: SA
     mcc: "456"
     mnc:
@@ -30,6 +32,7 @@ federationconsumers:
     - bloh
     - bluh
   partnerinfo:
+    federationid: '***replaced***'
     countrycode: SA
     mcc: "123"
     mnc:
@@ -43,12 +46,16 @@ federationconsumers:
   autoregisterzones: true
   autoregisterregion: PA
   status: Registered
+  providerclientid: '***replaced***'
+  notifyclientid: '***replaced***'
 - id: 2
   name: enterprise-partner1
   operatorid: partner1
   partneraddr: https://127.0.0.1:9801
   partnertokenurl: https://127.0.0.1:9900/oauth2/token
+  federationcontextid: '***replaced***'
   myinfo:
+    federationid: '***replaced***'
     countrycode: SA
     mcc: "456"
     mnc:
@@ -60,6 +67,7 @@ federationconsumers:
     - bloh
     - bluh
   partnerinfo:
+    federationid: '***replaced***'
     countrycode: SA
     mcc: "123"
     mnc:
@@ -73,3 +81,5 @@ federationconsumers:
   autoregisterzones: true
   autoregisterregion: PA
   status: Registered
+  providerclientid: '***replaced***'
+  notifyclientid: '***replaced***'

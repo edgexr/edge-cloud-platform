@@ -130,8 +130,6 @@ message FederationConfig {
   uint64 federation_db_id = 3;
   // Federation Name
   string federation_name = 4;
-  // Federation app inst status callback path
-  string app_inst_status_event_path = 5;
 }
 
 // Platform Type
