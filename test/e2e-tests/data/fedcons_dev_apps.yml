@@ -1,0 +1,51 @@
+orgs:
+- name: FedAppCo
+  type: developer
+  address: 123 Maple Street, Gainesville, FL 32604
+  phone: 123-123-1234
+
+regiondata:
+- region: PA
+  appdata:
+    apps:
+    - key:
+        organization: FedAppCo
+        name: k8sapp
+        version: "1.0"
+      imagepath: registry.edgecloud.net/FedAppCo/k8sapp:1.0
+      imagetype: Docker
+      deployment: "kubernetes"
+      defaultflavor:
+        name: x1.small
+      accessports: "tcp:80,tcp:443,udp:10002"
+    - key:
+        organization: FedAppCo
+        name: dockerapp
+        version: "1.0"
+      imagepath: registry.edgecloud.net/FedAppCo/dockerapp:1.0
+      imagetype: Docker
+      deployment: "kubernetes"
+      defaultflavor:
+        name: x1.small
+      accessports: "tcp:81"
+    - key:
+        organization: FedAppCo
+        name: vmapp
+        version: "1.0"
+      imagepath: https://registry.edgecloud.net/FedAppCo/vm.img#md5:2039483048230944325345245243524352345245
+      imagetype: Qcow
+      deployment: vm
+      defaultflavor:
+        name: x1.small
+      accessports: "tcp:81"
+
+    autoscalepolicies:
+    - key:
+        organization: FedAppCo
+        name: scale1
+      minnodes: 1
+      maxnodes: 5
+      stabilizationwindowsec: 2
+      targetcpu: 0.7
+      targetmem: 0.7
+      targetactiveconnections: 200

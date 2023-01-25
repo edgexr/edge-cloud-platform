@@ -224,6 +224,8 @@ type ConsumerImage struct {
 	FederationName string `gorm:"unique_index:consumerimageindex;type:citext;not null"`
 	// Image name
 	Name string `gorm:"unique_index:consumerimageindex;type:text;not null"`
+	// Image version
+	Version string
 	// Full path to source image as used in App, i.e. https://vm-registry.domain/org/image.img
 	SourcePath string
 	// Image type (DOCKER, HELM, QCOW2, or OVA)
@@ -245,6 +247,8 @@ type ProviderImage struct {
 	Path string
 	// Image name
 	Name string
+	// Image version
+	Version string
 	// Image type (DOCKER, HELM, QCOW2, or OVA)
 	Type string
 	// Partner app provider organization
@@ -299,6 +303,10 @@ type ProviderApp struct {
 	FederationName string `gorm:"primary_key;type:citext;not null"`
 	// App ID send by partner, also is the artefact ID
 	AppID string `gorm:"primary_key;type:text;not null"`
+	// App name in region
+	AppName string
+	// App version in region
+	AppVers string
 	// App provider ID
 	AppProviderId string
 	// Artefact IDs

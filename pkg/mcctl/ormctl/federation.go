@@ -411,6 +411,8 @@ var ProviderArtefactShowArgs = []string{
 var ProviderAppShowArgs = []string{
 	"federationname",
 	"appid",
+	"appname",
+	"appvers",
 	"appproviderid",
 	"artefactids",
 	"deploymentzones",
@@ -507,6 +509,7 @@ var ProviderImageShowArgs = []string{
 	"fileid",
 	"path",
 	"name",
+	"version",
 	"type",
 	"appproviderid",
 	"status",

@@ -251,6 +251,7 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 
 	// Create ComponentSpec
 	spec := fedewapi.ComponentSpec{}
+	spec.ComponentName = app.Key.Name
 	spec.Images = []string{}
 	for _, image := range images {
 		spec.Images = append(spec.Images, image.ID)
@@ -374,6 +375,9 @@ func createConsumerApp(ctx context.Context, consumer *ormapi.FederationConsumer,
 			ArtefactId: cApp.ID,
 		}},
 		AppStatusCallbackLink: serverConfig.FederationExternalAddr + "/" + federationmgmt.PartnerAppOnboardStatusEventPath,
+	}
+	if appReq.AppMetaData.AccessToken == "" {
+		appReq.AppMetaData.AccessToken = "none"
 	}
 
 	fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)

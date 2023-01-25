@@ -234,81 +234,105 @@ regiondata:
         federatedorganization: partner1
       state: Ready
       flavors:
+      - name: x1.medium
+        vcpus: 4
+        ram: 4096
+        disk: 4
+      - name: x1.small
+        vcpus: 2
+        ram: 2048
+        disk: 2
       - name: x1.tiny
         vcpus: 1
         ram: 1024
-        disk: 20
-      - name: x1.small
-        vcpus: 2
-        ram: 4096
-        disk: 40
+        disk: 1
     - key:
         organization: dmuus-partner1
         name: dmuuscloud2
         federatedorganization: partner1
       state: Ready
       flavors:
+      - name: x1.medium
+        vcpus: 4
+        ram: 4096
+        disk: 4
+      - name: x1.small
+        vcpus: 2
+        ram: 2048
+        disk: 2
       - name: x1.tiny
         vcpus: 1
         ram: 1024
-        disk: 20
-      - name: x1.small
-        vcpus: 2
-        ram: 4096
-        disk: 40
+        disk: 1
     - key:
         organization: dmuus-partner1
         name: dmuuscloud3
         federatedorganization: partner1
       state: Ready
       flavors:
+      - name: x1.medium
+        vcpus: 4
+        ram: 4096
+        disk: 4
+      - name: x1.small
+        vcpus: 2
+        ram: 2048
+        disk: 2
       - name: x1.tiny
         vcpus: 1
         ram: 1024
-        disk: 20
-      - name: x1.small
-        vcpus: 2
-        ram: 4096
-        disk: 40
+        disk: 1
     - key:
         organization: dmuus-partner1
         name: dmuuscloud4
         federatedorganization: partner1
       state: Ready
       flavors:
+      - name: x1.medium
+        vcpus: 4
+        ram: 4096
+        disk: 4
+      - name: x1.small
+        vcpus: 2
+        ram: 2048
+        disk: 2
       - name: x1.tiny
         vcpus: 1
         ram: 1024
-        disk: 20
-      - name: x1.small
-        vcpus: 2
-        ram: 4096
-        disk: 40
+        disk: 1
     - key:
         organization: enterprise-partner1
         name: enterprise1
         federatedorganization: partner1
       state: Ready
       flavors:
+      - name: x1.medium
+        vcpus: 4
+        ram: 4096
+        disk: 4
+      - name: x1.small
+        vcpus: 2
+        ram: 2048
+        disk: 2
       - name: x1.tiny
         vcpus: 1
         ram: 1024
-        disk: 20
-      - name: x1.small
-        vcpus: 2
-        ram: 4096
-        disk: 40
+        disk: 1
     - key:
         organization: enterprise-partner1
         name: enterprise2
         federatedorganization: partner1
       state: Ready
       flavors:
+      - name: x1.medium
+        vcpus: 4
+        ram: 4096
+        disk: 4
+      - name: x1.small
+        vcpus: 2
+        ram: 2048
+        disk: 2
       - name: x1.tiny
         vcpus: 1
         ram: 1024
-        disk: 20
-      - name: x1.small
-        vcpus: 2
-        ram: 4096
-        disk: 40
+        disk: 1

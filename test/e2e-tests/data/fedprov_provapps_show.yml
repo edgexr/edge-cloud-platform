@@ -1,0 +1,89 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+providerimages:
+- federationname: dmuus-partner1
+  fileid: '***replaced***'
+  path: registry.edgecloud.net/FedAppCo/k8sapp:1.0
+  name: k8sapp:1.0
+  version: k8sapp:1.0
+  type: DOCKER
+  appproviderid: FedAppCo
+  checksum: sha256:8d4ea2a9476bc51681c6e7e59759c10237669c950b1b4a3cd6834e2161d7bde2
+  status: Ready
+- federationname: dmuus-partner1
+  fileid: '***replaced***'
+  path: registry.edgecloud.net/FedAppCo/dockerapp:1.0
+  name: dockerapp:1.0
+  version: dockerapp:1.0
+  type: DOCKER
+  appproviderid: FedAppCo
+  checksum: sha256:8d4ea2a9476bc51681c6e7e59759c10237669c950b1b4a3cd6834e2161d7bde2
+  status: Ready
+- federationname: dmuus-partner1
+  fileid: '***replaced***'
+  path: https://registry.edgecloud.net/FedAppCo/vm.img
+  name: vm.img
+  version: vm.img
+  type: QCOW2
+  appproviderid: FedAppCo
+  checksum: "2039483048230944325345245243524352345245"
+  status: Ready
+providerartefacts:
+- federationname: dmuus-partner1
+  artefactid: pa-k8sapp10fedappco
+  appname: k8sapp
+  appvers: "1.0"
+  appproviderid: FedAppCo
+  virttype: CONTAINER_TYPE
+  desctype: COMPONENTSPEC
+- federationname: dmuus-partner1
+  artefactid: pa-dockerapp10fedappco
+  appname: dockerapp
+  appvers: "1.0"
+  appproviderid: FedAppCo
+  virttype: CONTAINER_TYPE
+  desctype: COMPONENTSPEC
+- federationname: dmuus-partner1
+  artefactid: pa-vmapp10fedappco
+  appname: vmapp
+  appvers: "1.0"
+  appproviderid: FedAppCo
+  virttype: VM_TYPE
+  desctype: COMPONENTSPEC
+providerapps:
+- federationname: dmuus-partner1
+  appid: pa-k8sapp10fedappco
+  appname: k8sapp
+  appvers: "1.0"
+  appproviderid: FedAppCo
+  artefactids:
+  - pa-k8sapp10fedappco
+  appstatuscallbacklink: https://127.0.0.1:9808/operatorplatform/fedcallbacks/v1/onApplicationOnboardStatusEvent
+- federationname: dmuus-partner1
+  appid: pa-dockerapp10fedappco
+  appname: dockerapp
+  appvers: "1.0"
+  appproviderid: FedAppCo
+  artefactids:
+  - pa-dockerapp10fedappco
+  appstatuscallbacklink: https://127.0.0.1:9808/operatorplatform/fedcallbacks/v1/onApplicationOnboardStatusEvent
+- federationname: dmuus-partner1
+  appid: pa-vmapp10fedappco
+  appname: vmapp
+  appvers: "1.0"
+  appproviderid: FedAppCo
+  artefactids:
+  - pa-vmapp10fedappco
+  appstatuscallbacklink: https://127.0.0.1:9808/operatorplatform/fedcallbacks/v1/onApplicationOnboardStatusEvent

@@ -100,6 +100,7 @@ var ConsumerImageRequiredArgs = []string{
 var ConsumerImageOptionalArgs = []string{
 	"id",
 	"name",
+	"version",
 	"checksum",
 }
 
@@ -108,6 +109,7 @@ var ConsumerImageShowArgs = []string{
 	"organization",
 	"federationname",
 	"name",
+	"version",
 	"sourcepath",
 	"type",
 	"status",

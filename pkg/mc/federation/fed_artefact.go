@@ -140,6 +140,17 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 		return fmt.Errorf("only one component spec is supported, but found %d", len(specs))
 	}
 	spec := specs[0]
+	// check spec fields are set
+	if spec.ComponentName == "" {
+		return fmt.Errorf("ComponentSpec component name missing")
+	}
+	if len(spec.Images) == 0 {
+		return fmt.Errorf("ComponentSpec missing at least 1 image")
+	}
+	if spec.RestartPolicy == "" {
+		return fmt.Errorf("ComponentSpec restart policy missing")
+	}
+
 	db := p.loggedDB(ctx)
 
 	// build app from spec
@@ -236,7 +247,20 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 	}
 	intPorts := []string{}
 	extPorts := []string{}
-	for _, port := range spec.ExposedInterfaces {
+	for ii, port := range spec.ExposedInterfaces {
+		if port.InterfaceId == "" {
+			return fmt.Errorf("ExposedInterface[%d] missing InterfaceId", ii)
+		}
+		if port.CommProtocol == "" {
+			return fmt.Errorf("ExposedInterface %s missing CommProtocol", port.InterfaceId)
+		}
+		if port.CommPort == 0 {
+			return fmt.Errorf("ExposedInterface %s missing CommPort", port.InterfaceId)
+		}
+		if port.VisibilityType == "" {
+			return fmt.Errorf("ExposedInterface %s missing VisibilityType", port.InterfaceId)
+		}
+
 		proto := ""
 		switch port.CommProtocol {
 		case CommProtoHTTP:
@@ -245,7 +269,7 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 		case CommProtoUDP:
 			proto = "udp"
 		default:
-			return fmt.Errorf("Unsupported protocol %s for exposed interface %d", port.CommProtocol, port.CommPort)
+			return fmt.Errorf("Unsupported protocol %q for exposed interface %d", port.CommProtocol, port.CommPort)
 		}
 		pspec := fmt.Sprintf("%s:%d", proto, port.CommPort)
 		if port.VisibilityType == CommPortVisInt {

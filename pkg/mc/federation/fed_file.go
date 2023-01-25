@@ -19,16 +19,17 @@ import (
 )
 
 const (
-	FileFieldFileId        = "fileId"
-	FileFieldAppProviderId = "appProviderId"
-	FileFieldFileName      = "fileName"
-	FileFieldFileType      = "fileType"
-	FileFieldRepoType      = "repoType"
-	FileFieldImgOSType     = "imgOSType"
-	FileFieldImgArchType   = "imgInsSetArch"
-	FileFieldRepoLocation  = "fileRepoLocation"
-	FileFieldFile          = "file"
-	FileFieldChecksum      = "checksum"
+	FileFieldFileId          = "fileId"
+	FileFieldAppProviderId   = "appProviderId"
+	FileFieldFileName        = "fileName"
+	FileFieldFileVersionInfo = "fileVersionInfo"
+	FileFieldFileType        = "fileType"
+	FileFieldRepoType        = "repoType"
+	FileFieldImgOSType       = "imgOSType"
+	FileFieldImgArchType     = "imgInsSetArch"
+	FileFieldRepoLocation    = "fileRepoLocation"
+	FileFieldFile            = "file"
+	FileFieldChecksum        = "checksum"
 
 	ImageStatusReady     = "Ready"
 	ImageStatusSending   = "Sending"
@@ -75,6 +76,7 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 	image.FileID = req.PostFormValue(FileFieldFileId)
 	image.AppProviderId = req.PostFormValue(FileFieldAppProviderId)
 	image.Name = req.PostFormValue(FileFieldFileName)
+	image.Version = req.PostFormValue(FileFieldFileVersionInfo)
 	image.Type = req.PostFormValue(FileFieldFileType)
 	image.Checksum = req.PostFormValue(FileFieldChecksum)
 	image.Status = ImageStatusReceiving
@@ -92,6 +94,11 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 	if image.Type == "" {
 		return fmt.Errorf("%s is missing", FileFieldFileType)
 	}
+	if image.Version == "" {
+		return fmt.Errorf("%s is missing", FileFieldFileVersionInfo)
+	}
+	// TODO: capture and save osType
+
 	if err := CheckFileType(image.Type); err != nil {
 		return err
 	}
@@ -376,6 +383,14 @@ func (p *PartnerApi) ViewFile(c echo.Context, fedCtxId FederationContextId, file
 		FileName:        image.Name,
 		FileDescription: &image.Path,
 		FileType:        fedewapi.VirtImageType(image.Type),
+		FileVersionInfo: image.Version,
+		ImgInsSetArch:   fedewapi.CPUARCHTYPE_X86_64,
+		ImgOSType: fedewapi.OSType{
+			Architecture: "x86_64",
+			Distribution: "OTHER",
+			Version:      "OTHER",
+			License:      "NOT_SPECIFIED",
+		},
 	}
 	return c.JSON(http.StatusOK, resp)
 }

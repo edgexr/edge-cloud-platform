@@ -79,6 +79,10 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 		parts := strings.Split(image.SourcePath, "/")
 		image.Name = parts[len(parts)-1]
 	}
+	if image.Version == "" {
+		image.Version = image.Name
+	}
+
 	consumer, err := lookupFederationConsumer(ctx, 0, image.FederationName)
 	if err != nil {
 		return err
@@ -167,13 +171,22 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 			log.SpanLog(ctx, log.DebugLevelApi, "failed to undo image create", "image", image, "err", undoErr)
 		}
 	}()
+	osType := fedewapi.OSType{
+		Architecture: "x86_64",
+		Distribution: "OTHER",
+		Version:      "OTHER",
+		License:      "NOT_SPECIFIED",
+	}
 
 	// multipart/form-data
 	data := ormclient.NewMultiPartFormData()
 	data.AddField(federation.FileFieldFileId, image.ID)
 	data.AddField(federation.FileFieldAppProviderId, image.Organization)
 	data.AddField(federation.FileFieldFileName, image.Name)
+	data.AddField(federation.FileFieldFileVersionInfo, image.Version)
 	data.AddField(federation.FileFieldFileType, image.Type)
+	data.AddField(federation.FileFieldImgOSType, osType)
+	data.AddField(federation.FileFieldImgArchType, fedewapi.CPUARCHTYPE_X86_64)
 	if image.Checksum != "" {
 		data.AddField(federation.FileFieldChecksum, image.Checksum)
 	}

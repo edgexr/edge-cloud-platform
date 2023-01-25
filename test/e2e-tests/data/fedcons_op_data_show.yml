@@ -15,21 +15,11 @@
 controllers:
 - region: PA
 orgs:
-- name: dmuus-partner1
-  type: operator
-- name: enterprise-partner1
-  type: operator
 - name: partner1
   type: operator
   address: mobiledgex
   phone: 123-123-1234
 roles:
-- org: dmuus-partner1
-  username: fedop
-  role: OperatorManager
-- org: enterprise-partner1
-  username: fedop
-  role: OperatorManager
 - org: partner1
   username: fedop
   role: OperatorManager

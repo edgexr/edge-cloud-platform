@@ -87,6 +87,9 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 	if req.AppMetaData.Version == "" {
 		return fmt.Errorf("Missing app version")
 	}
+	if req.AppMetaData.AccessToken == "" {
+		return fmt.Errorf("Missing access token")
+	}
 	if len(req.AppComponentSpecs) == 0 {
 		return fmt.Errorf("Missing app component details")
 	}
@@ -144,6 +147,8 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 		FederationName:        provider.Name,
 		AppID:                 req.AppId,
 		AppProviderId:         req.AppProviderId,
+		AppName:               req.AppMetaData.AppName,
+		AppVers:               req.AppMetaData.Version,
 		ArtefactIds:           []string{provArt.ArtefactID},
 		DeploymentZones:       zones,
 		AppStatusCallbackLink: req.AppStatusCallbackLink,
@@ -155,6 +160,8 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 		}
 		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to save app to database, %s", err.Error()))
 	}
+
+	// TODO: write req.AppMetaData.AccessToken to app.PublicKey or similar
 
 	c.Response().WriteHeader(http.StatusAccepted)
 	c.Response().After(func() {
@@ -223,6 +230,13 @@ func (p *PartnerApi) ViewApplication(c echo.Context, fedCtxId FederationContextI
 	app := fedewapi.ViewApplication200Response{
 		AppId:         provApp.AppID,
 		AppProviderId: provApp.AppProviderId,
+		AppMetaData: fedewapi.AppMetaData{
+			AppName: provApp.AppName,
+			Version: provApp.AppVers,
+		},
+		AppQoSProfile: fedewapi.AppQoSProfile{
+			LatencyConstraints: AppQosLatencyNone,
+		},
 	}
 	specs := []fedewapi.AppComponentSpecsInner{}
 	for _, artid := range provApp.ArtefactIds {
