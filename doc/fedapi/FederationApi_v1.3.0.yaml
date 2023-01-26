@@ -270,8 +270,6 @@ components:
       items:
         type: object
         required:
-          - serviceNameNB
-          - componentName
           - artefactId
         properties:
           serviceNameNB:
@@ -303,7 +301,6 @@ components:
           description: Name of the application. Application provider define a human readable name for the application
         version:
           type: string
-          pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
           description: Version info of the application
         appDescription:
           type: string
@@ -474,7 +471,6 @@ components:
         - images
         - numOfInstances
         - restartPolicy
-        - networkResourceProfile
         - computeResourceProfile
       properties:
         componentName:
@@ -732,8 +728,6 @@ components:
         - commProtocol
         - commPort
         - visibilityType
-        - network
-        - interfaceName
       properties:
         interfaceId:
           type: string
@@ -1094,17 +1088,6 @@ paths:
       operationId: CreateFederation
       tags:
         - FederationManagement
-      parameters:
-        - in: header
-          name: X-Notify-Token-Url
-          schema:
-            type: string
-            format: URL for oauth2 token endpoint for callback auth
-        - in: header
-          name: X-Notify-Auth
-          schema:
-            type: string
-            format: base64 id:key encoded string of credentials for oauth2 client credential flow for callbacks
       requestBody:
         required: true
         content:
@@ -1649,7 +1632,6 @@ paths:
                 - artefactVersionInfo
                 - artefactVirtType
                 - artefactDescriptorType
-                - repoType
                 - componentSpec
               properties:
                 artefactId:
@@ -1662,7 +1644,6 @@ paths:
                   description: Name of the artefact.
                 artefactVersionInfo:
                   type: string
-                  pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
                   description: Artefact version information
                 artefactDescription:
                   type: string
@@ -1767,7 +1748,6 @@ paths:
                   - artefactVersionInfo
                   - artefactVirtType
                   - artefactDescriptorType
-                  - repoType
                 properties:
                   artefactId:
                     $ref: '#/components/schemas/ArtefactId'
@@ -1783,7 +1763,6 @@ paths:
                     description: Brief description of the artefact by the application provider
                   artefactVersionInfo:
                     type: string
-                    pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
                     description: Artefact version information
                   artefactVirtType:
                     type: string
@@ -1901,7 +1880,6 @@ paths:
                 - fileType
                 - imgOSType
                 - imgInsSetArch
-                - repoType
               properties:
                 fileId:
                   $ref: '#/components/schemas/FileId'
@@ -1918,7 +1896,6 @@ paths:
                   description: Brief description about the image file.
                 fileVersionInfo:
                   type: string
-                  pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
                   description: File version information
                 fileType:
                   $ref: '#/components/schemas/VirtImageType'
@@ -2033,7 +2010,6 @@ paths:
                   - fileType
                   - imgOSType
                   - imgInsSetArch
-                  - repoType
                 properties:
                   fileId:
                     $ref: '#/components/schemas/FileId'
@@ -2050,7 +2026,6 @@ paths:
                     description: Brief description about the image file.
                   fileVersionInfo:
                     type: string
-                    pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
                     description: File version information
                   fileType:
                     $ref: '#/components/schemas/VirtImageType'
@@ -2630,7 +2605,8 @@ paths:
                 appId:
                   $ref: '#/components/schemas/AppIdentifier'
                 appVersion:
-                  $ref: '#/components/schemas/Version'
+                  type: string
+                  description: Version info of the application
                 appProviderId:
                   $ref: '#/components/schemas/AppProviderId'
                 zoneInfo:

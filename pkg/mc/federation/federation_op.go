@@ -43,9 +43,6 @@ const (
 	StatusUnregistered = "Unregistered"
 	StatusRegistered   = "Registered"
 
-	HeaderXNotifyAuth     = "X-Notify-Auth"
-	HeaderXNotifyTokenUrl = "X-Notify-Token-Url"
-
 	// Path params
 	PathVarFederationContextId = "federationContextId"
 	PathVarZoneId              = "zoneId"
@@ -218,7 +215,7 @@ func (p *PartnerApi) validateCallbackLink(link string) error {
 // Remote partner federator requests to create the federation, which
 // allows its developers and subscribers to run their applications
 // on our cloudlets
-func (p *PartnerApi) CreateFederation(c echo.Context, params CreateFederationParams) (reterr error) {
+func (p *PartnerApi) CreateFederation(c echo.Context) (reterr error) {
 	ctx := ormutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, "")
@@ -264,11 +261,12 @@ func (p *PartnerApi) CreateFederation(c echo.Context, params CreateFederationPar
 		out.PartnerOPCountryCode = &provider.MyInfo.CountryCode
 	}
 	out.EdgeDiscoveryServiceEndPoint = fedewapi.ServiceEndpoint{
-		// TODO
+		// TODO: Unclear how EdgeDiscoveryServiceEndpoint should work
 	}
 	out.LcmServiceEndPoint = fedewapi.ServiceEndpoint{
-		// TODO
+		// TODO: Unclear how LcmServiceEndpoint should work
 	}
+	out.PlatformCaps = []string{"homeRouting", "Anchoring"}
 	out.PartnerOPMobileNetworkCodes = GetMobileNetworkIds(&provider.MyInfo)
 	out.PartnerOPFixedNetworkCodes = GetFixedNetworkIds(&provider.MyInfo)
 
@@ -280,27 +278,7 @@ func (p *PartnerApi) CreateFederation(c echo.Context, params CreateFederationPar
 		out.OfferedAvailabilityZones = zones
 	}
 
-	// Pull notify credentials from header if present and store
-	// TODO: remove credentials from header if change is commited.
 	var apiKey *federationmgmt.ApiKey
-	if auth, found := c.Request().Header[HeaderXNotifyAuth]; found && len(auth) > 0 {
-		log.SpanLog(ctx, log.DebugLevelApi, "got callback credentials in header")
-		id, pass, ok := ormutil.DecodeBasicAuth(auth[0])
-		if !ok {
-			return fmt.Errorf("Header %s specified but not expected format", HeaderXNotifyAuth)
-		}
-		tokenUrl, found := c.Request().Header[HeaderXNotifyTokenUrl]
-		if !found || len(tokenUrl) < 1 {
-			return fmt.Errorf("Header %s also requires header %s", HeaderXNotifyAuth, HeaderXNotifyTokenUrl)
-		}
-
-		apiKey = &federationmgmt.ApiKey{
-			Id:       id,
-			Key:      pass,
-			TokenUrl: tokenUrl[0],
-		}
-	}
-	// In new scheme, credentials are in body.
 	if req.PartnerCallbackCredentials != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "got callback credentials in body")
 		apiKey = &federationmgmt.ApiKey{

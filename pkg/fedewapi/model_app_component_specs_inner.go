@@ -20,11 +20,11 @@ var _ MappedNullable = &AppComponentSpecsInner{}
 // AppComponentSpecsInner struct for AppComponentSpecsInner
 type AppComponentSpecsInner struct {
 	// Must be a valid RFC 1035 label name. This defines the DNS name via which the component can be accessed over NBI. Access via serviceNameNB is restricted on specific ports. Platform shall expose component access externally via this DNS name
-	ServiceNameNB string `json:"serviceNameNB"`
+	ServiceNameNB *string `json:"serviceNameNB,omitempty"`
 	// Must be a valid RFC 1035 label name. This defines the DNS name via which the component can be accessed via peer components. Access via serviceNameEW is open on all ports.   Platform shall not expose serviceNameEW externally outside edge.
 	ServiceNameEW *string `json:"serviceNameEW,omitempty"`
 	// Must be a valid RFC 1035 label name.  Component name must be unique with an application
-	ComponentName string `json:"componentName"`
+	ComponentName *string `json:"componentName,omitempty"`
 	// A globally unique identifier associated with the artefact. Originating OP generates this identifier when artefact is submitted over NBI.
 	ArtefactId string `json:"artefactId"`
 }
@@ -33,10 +33,8 @@ type AppComponentSpecsInner struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewAppComponentSpecsInner(serviceNameNB string, componentName string, artefactId string) *AppComponentSpecsInner {
+func NewAppComponentSpecsInner(artefactId string) *AppComponentSpecsInner {
 	this := AppComponentSpecsInner{}
-	this.ServiceNameNB = serviceNameNB
-	this.ComponentName = componentName
 	this.ArtefactId = artefactId
 	return &this
 }
@@ -49,28 +47,36 @@ func NewAppComponentSpecsInnerWithDefaults() *AppComponentSpecsInner {
 	return &this
 }
 
-// GetServiceNameNB returns the ServiceNameNB field value
+// GetServiceNameNB returns the ServiceNameNB field value if set, zero value otherwise.
 func (o *AppComponentSpecsInner) GetServiceNameNB() string {
-	if o == nil {
+	if o == nil || isNil(o.ServiceNameNB) {
 		var ret string
 		return ret
 	}
-
-	return o.ServiceNameNB
+	return *o.ServiceNameNB
 }
 
-// GetServiceNameNBOk returns a tuple with the ServiceNameNB field value
+// GetServiceNameNBOk returns a tuple with the ServiceNameNB field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *AppComponentSpecsInner) GetServiceNameNBOk() (*string, bool) {
-	if o == nil {
+	if o == nil || isNil(o.ServiceNameNB) {
 		return nil, false
 	}
-	return &o.ServiceNameNB, true
+	return o.ServiceNameNB, true
 }
 
-// SetServiceNameNB sets field value
+// HasServiceNameNB returns a boolean if a field has been set.
+func (o *AppComponentSpecsInner) HasServiceNameNB() bool {
+	if o != nil && !isNil(o.ServiceNameNB) {
+		return true
+	}
+
+	return false
+}
+
+// SetServiceNameNB gets a reference to the given string and assigns it to the ServiceNameNB field.
 func (o *AppComponentSpecsInner) SetServiceNameNB(v string) {
-	o.ServiceNameNB = v
+	o.ServiceNameNB = &v
 }
 
 // GetServiceNameEW returns the ServiceNameEW field value if set, zero value otherwise.
@@ -105,28 +111,36 @@ func (o *AppComponentSpecsInner) SetServiceNameEW(v string) {
 	o.ServiceNameEW = &v
 }
 
-// GetComponentName returns the ComponentName field value
+// GetComponentName returns the ComponentName field value if set, zero value otherwise.
 func (o *AppComponentSpecsInner) GetComponentName() string {
-	if o == nil {
+	if o == nil || isNil(o.ComponentName) {
 		var ret string
 		return ret
 	}
-
-	return o.ComponentName
+	return *o.ComponentName
 }
 
-// GetComponentNameOk returns a tuple with the ComponentName field value
+// GetComponentNameOk returns a tuple with the ComponentName field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *AppComponentSpecsInner) GetComponentNameOk() (*string, bool) {
-	if o == nil {
+	if o == nil || isNil(o.ComponentName) {
 		return nil, false
 	}
-	return &o.ComponentName, true
+	return o.ComponentName, true
 }
 
-// SetComponentName sets field value
+// HasComponentName returns a boolean if a field has been set.
+func (o *AppComponentSpecsInner) HasComponentName() bool {
+	if o != nil && !isNil(o.ComponentName) {
+		return true
+	}
+
+	return false
+}
+
+// SetComponentName gets a reference to the given string and assigns it to the ComponentName field.
 func (o *AppComponentSpecsInner) SetComponentName(v string) {
-	o.ComponentName = v
+	o.ComponentName = &v
 }
 
 // GetArtefactId returns the ArtefactId field value
@@ -163,11 +177,15 @@ func (o AppComponentSpecsInner) MarshalJSON() ([]byte, error) {
 
 func (o AppComponentSpecsInner) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["serviceNameNB"] = o.ServiceNameNB
+	if !isNil(o.ServiceNameNB) {
+		toSerialize["serviceNameNB"] = o.ServiceNameNB
+	}
 	if !isNil(o.ServiceNameEW) {
 		toSerialize["serviceNameEW"] = o.ServiceNameEW
 	}
-	toSerialize["componentName"] = o.ComponentName
+	if !isNil(o.ComponentName) {
+		toSerialize["componentName"] = o.ComponentName
+	}
 	toSerialize["artefactId"] = o.ArtefactId
 	return toSerialize, nil
 }

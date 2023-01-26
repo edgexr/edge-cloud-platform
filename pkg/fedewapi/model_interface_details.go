@@ -28,7 +28,7 @@ type InterfaceDetails struct {
 	// Defines whether the interface is exposed to outer world or not i.e., external, or internal. If this is set to \"external\", then it is exposed to external applications otherwise it is exposed internally to edge application components within edge cloud. When exposed to external world, an external dynamic port is assigned for UC traffic and mapped to the internal container Port
 	VisibilityType string `json:"visibilityType"`
 	// Name of the network.  In case the application has to be associated with more than 1 network then app provider must define the name of the network on which this interface has to be exposed.  This parameter is required only if the port has to be exposed on a specific network other than default.
-	Network string `json:"network"`
+	Network *string `json:"network,omitempty"`
 	// Interface Name. Required only if application has to be attached to a network other than default.
 	InterfaceName *string `json:"InterfaceName,omitempty"`
 }
@@ -37,13 +37,12 @@ type InterfaceDetails struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewInterfaceDetails(interfaceId string, commProtocol string, commPort int32, visibilityType string, network string) *InterfaceDetails {
+func NewInterfaceDetails(interfaceId string, commProtocol string, commPort int32, visibilityType string) *InterfaceDetails {
 	this := InterfaceDetails{}
 	this.InterfaceId = interfaceId
 	this.CommProtocol = commProtocol
 	this.CommPort = commPort
 	this.VisibilityType = visibilityType
-	this.Network = network
 	return &this
 }
 
@@ -151,28 +150,36 @@ func (o *InterfaceDetails) SetVisibilityType(v string) {
 	o.VisibilityType = v
 }
 
-// GetNetwork returns the Network field value
+// GetNetwork returns the Network field value if set, zero value otherwise.
 func (o *InterfaceDetails) GetNetwork() string {
-	if o == nil {
+	if o == nil || isNil(o.Network) {
 		var ret string
 		return ret
 	}
-
-	return o.Network
+	return *o.Network
 }
 
-// GetNetworkOk returns a tuple with the Network field value
+// GetNetworkOk returns a tuple with the Network field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *InterfaceDetails) GetNetworkOk() (*string, bool) {
-	if o == nil {
+	if o == nil || isNil(o.Network) {
 		return nil, false
 	}
-	return &o.Network, true
+	return o.Network, true
 }
 
-// SetNetwork sets field value
+// HasNetwork returns a boolean if a field has been set.
+func (o *InterfaceDetails) HasNetwork() bool {
+	if o != nil && !isNil(o.Network) {
+		return true
+	}
+
+	return false
+}
+
+// SetNetwork gets a reference to the given string and assigns it to the Network field.
 func (o *InterfaceDetails) SetNetwork(v string) {
-	o.Network = v
+	o.Network = &v
 }
 
 // GetInterfaceName returns the InterfaceName field value if set, zero value otherwise.
@@ -221,7 +228,9 @@ func (o InterfaceDetails) ToMap() (map[string]interface{}, error) {
 	toSerialize["commProtocol"] = o.CommProtocol
 	toSerialize["commPort"] = o.CommPort
 	toSerialize["visibilityType"] = o.VisibilityType
-	toSerialize["network"] = o.Network
+	if !isNil(o.Network) {
+		toSerialize["network"] = o.Network
+	}
 	if !isNil(o.InterfaceName) {
 		toSerialize["InterfaceName"] = o.InterfaceName
 	}

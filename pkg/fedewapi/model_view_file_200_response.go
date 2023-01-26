@@ -35,7 +35,7 @@ type ViewFile200Response struct {
 	ImgOSType OSType `json:"imgOSType"`
 	ImgInsSetArch CPUArchType `json:"imgInsSetArch"`
 	// Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal.  OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
-	RepoType string `json:"repoType"`
+	RepoType *string `json:"repoType,omitempty"`
 	FileRepoLocation *ObjectRepoLocation `json:"fileRepoLocation,omitempty"`
 }
 
@@ -43,7 +43,7 @@ type ViewFile200Response struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewViewFile200Response(fileId string, appProviderId string, fileName string, fileVersionInfo string, fileType VirtImageType, imgOSType OSType, imgInsSetArch CPUArchType, repoType string) *ViewFile200Response {
+func NewViewFile200Response(fileId string, appProviderId string, fileName string, fileVersionInfo string, fileType VirtImageType, imgOSType OSType, imgInsSetArch CPUArchType) *ViewFile200Response {
 	this := ViewFile200Response{}
 	this.FileId = fileId
 	this.AppProviderId = appProviderId
@@ -52,7 +52,6 @@ func NewViewFile200Response(fileId string, appProviderId string, fileName string
 	this.FileType = fileType
 	this.ImgOSType = imgOSType
 	this.ImgInsSetArch = imgInsSetArch
-	this.RepoType = repoType
 	return &this
 }
 
@@ -296,28 +295,36 @@ func (o *ViewFile200Response) SetImgInsSetArch(v CPUArchType) {
 	o.ImgInsSetArch = v
 }
 
-// GetRepoType returns the RepoType field value
+// GetRepoType returns the RepoType field value if set, zero value otherwise.
 func (o *ViewFile200Response) GetRepoType() string {
-	if o == nil {
+	if o == nil || isNil(o.RepoType) {
 		var ret string
 		return ret
 	}
-
-	return o.RepoType
+	return *o.RepoType
 }
 
-// GetRepoTypeOk returns a tuple with the RepoType field value
+// GetRepoTypeOk returns a tuple with the RepoType field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ViewFile200Response) GetRepoTypeOk() (*string, bool) {
-	if o == nil {
+	if o == nil || isNil(o.RepoType) {
 		return nil, false
 	}
-	return &o.RepoType, true
+	return o.RepoType, true
 }
 
-// SetRepoType sets field value
+// HasRepoType returns a boolean if a field has been set.
+func (o *ViewFile200Response) HasRepoType() bool {
+	if o != nil && !isNil(o.RepoType) {
+		return true
+	}
+
+	return false
+}
+
+// SetRepoType gets a reference to the given string and assigns it to the RepoType field.
 func (o *ViewFile200Response) SetRepoType(v string) {
-	o.RepoType = v
+	o.RepoType = &v
 }
 
 // GetFileRepoLocation returns the FileRepoLocation field value if set, zero value otherwise.
@@ -375,7 +382,9 @@ func (o ViewFile200Response) ToMap() (map[string]interface{}, error) {
 	}
 	toSerialize["imgOSType"] = o.ImgOSType
 	toSerialize["imgInsSetArch"] = o.ImgInsSetArch
-	toSerialize["repoType"] = o.RepoType
+	if !isNil(o.RepoType) {
+		toSerialize["repoType"] = o.RepoType
+	}
 	if !isNil(o.FileRepoLocation) {
 		toSerialize["fileRepoLocation"] = o.FileRepoLocation
 	}

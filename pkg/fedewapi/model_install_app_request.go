@@ -21,7 +21,7 @@ var _ MappedNullable = &InstallAppRequest{}
 type InstallAppRequest struct {
 	// Identifier used to refer to an application.
 	AppId string `json:"appId"`
-	// Versioning info in the format major.minor.patch
+	// Version info of the application
 	AppVersion string `json:"appVersion"`
 	// UserId of the app provider.  Identifier is relevant only in context of this federation.
 	AppProviderId string `json:"appProviderId"`
