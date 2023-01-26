@@ -25,13 +25,13 @@ type FederationResponseData struct {
 	PartnerOPCountryCode *string `json:"partnerOPCountryCode,omitempty"`
 	// This identifier shall be provided by the partner OP on successful verification and validation of the federation create request and is used by partner op to identify this newly created federation context. Originating OP shall provide this identifier in any subsequent request towards the partner op.
 	FederationContextId string `json:"federationContextId"`
-	EdgeDiscoveryServiceEndPoint ServiceEndpoint `json:"edgeDiscoveryServiceEndPoint"`
-	LcmServiceEndPoint ServiceEndpoint `json:"lcmServiceEndPoint"`
+	EdgeDiscoveryServiceEndPoint *ServiceEndpoint `json:"edgeDiscoveryServiceEndPoint,omitempty"`
+	LcmServiceEndPoint *ServiceEndpoint `json:"lcmServiceEndPoint,omitempty"`
 	PartnerOPMobileNetworkCodes *MobileNetworkIds `json:"partnerOPMobileNetworkCodes,omitempty"`
 	// List of network identifier associated with the fixed line network of the operator platform.
 	PartnerOPFixedNetworkCodes []string `json:"partnerOPFixedNetworkCodes,omitempty"`
 	// List of zones, which the operator platform wishes to make available to developers/ISVs of requesting operator platform.
-	OfferedAvailabilityZones []ZoneDetails `json:"offeredAvailabilityZones"`
+	OfferedAvailabilityZones []ZoneDetails `json:"offeredAvailabilityZones,omitempty"`
 	PlatformCaps []string `json:"platformCaps"`
 }
 
@@ -39,13 +39,10 @@ type FederationResponseData struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFederationResponseData(partnerOPFederationId string, federationContextId string, edgeDiscoveryServiceEndPoint ServiceEndpoint, lcmServiceEndPoint ServiceEndpoint, offeredAvailabilityZones []ZoneDetails, platformCaps []string) *FederationResponseData {
+func NewFederationResponseData(partnerOPFederationId string, federationContextId string, platformCaps []string) *FederationResponseData {
 	this := FederationResponseData{}
 	this.PartnerOPFederationId = partnerOPFederationId
 	this.FederationContextId = federationContextId
-	this.EdgeDiscoveryServiceEndPoint = edgeDiscoveryServiceEndPoint
-	this.LcmServiceEndPoint = lcmServiceEndPoint
-	this.OfferedAvailabilityZones = offeredAvailabilityZones
 	this.PlatformCaps = platformCaps
 	return &this
 }
@@ -138,52 +135,68 @@ func (o *FederationResponseData) SetFederationContextId(v string) {
 	o.FederationContextId = v
 }
 
-// GetEdgeDiscoveryServiceEndPoint returns the EdgeDiscoveryServiceEndPoint field value
+// GetEdgeDiscoveryServiceEndPoint returns the EdgeDiscoveryServiceEndPoint field value if set, zero value otherwise.
 func (o *FederationResponseData) GetEdgeDiscoveryServiceEndPoint() ServiceEndpoint {
-	if o == nil {
+	if o == nil || isNil(o.EdgeDiscoveryServiceEndPoint) {
 		var ret ServiceEndpoint
 		return ret
 	}
-
-	return o.EdgeDiscoveryServiceEndPoint
+	return *o.EdgeDiscoveryServiceEndPoint
 }
 
-// GetEdgeDiscoveryServiceEndPointOk returns a tuple with the EdgeDiscoveryServiceEndPoint field value
+// GetEdgeDiscoveryServiceEndPointOk returns a tuple with the EdgeDiscoveryServiceEndPoint field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationResponseData) GetEdgeDiscoveryServiceEndPointOk() (*ServiceEndpoint, bool) {
-	if o == nil {
+	if o == nil || isNil(o.EdgeDiscoveryServiceEndPoint) {
 		return nil, false
 	}
-	return &o.EdgeDiscoveryServiceEndPoint, true
+	return o.EdgeDiscoveryServiceEndPoint, true
 }
 
-// SetEdgeDiscoveryServiceEndPoint sets field value
+// HasEdgeDiscoveryServiceEndPoint returns a boolean if a field has been set.
+func (o *FederationResponseData) HasEdgeDiscoveryServiceEndPoint() bool {
+	if o != nil && !isNil(o.EdgeDiscoveryServiceEndPoint) {
+		return true
+	}
+
+	return false
+}
+
+// SetEdgeDiscoveryServiceEndPoint gets a reference to the given ServiceEndpoint and assigns it to the EdgeDiscoveryServiceEndPoint field.
 func (o *FederationResponseData) SetEdgeDiscoveryServiceEndPoint(v ServiceEndpoint) {
-	o.EdgeDiscoveryServiceEndPoint = v
+	o.EdgeDiscoveryServiceEndPoint = &v
 }
 
-// GetLcmServiceEndPoint returns the LcmServiceEndPoint field value
+// GetLcmServiceEndPoint returns the LcmServiceEndPoint field value if set, zero value otherwise.
 func (o *FederationResponseData) GetLcmServiceEndPoint() ServiceEndpoint {
-	if o == nil {
+	if o == nil || isNil(o.LcmServiceEndPoint) {
 		var ret ServiceEndpoint
 		return ret
 	}
-
-	return o.LcmServiceEndPoint
+	return *o.LcmServiceEndPoint
 }
 
-// GetLcmServiceEndPointOk returns a tuple with the LcmServiceEndPoint field value
+// GetLcmServiceEndPointOk returns a tuple with the LcmServiceEndPoint field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationResponseData) GetLcmServiceEndPointOk() (*ServiceEndpoint, bool) {
-	if o == nil {
+	if o == nil || isNil(o.LcmServiceEndPoint) {
 		return nil, false
 	}
-	return &o.LcmServiceEndPoint, true
+	return o.LcmServiceEndPoint, true
 }
 
-// SetLcmServiceEndPoint sets field value
+// HasLcmServiceEndPoint returns a boolean if a field has been set.
+func (o *FederationResponseData) HasLcmServiceEndPoint() bool {
+	if o != nil && !isNil(o.LcmServiceEndPoint) {
+		return true
+	}
+
+	return false
+}
+
+// SetLcmServiceEndPoint gets a reference to the given ServiceEndpoint and assigns it to the LcmServiceEndPoint field.
 func (o *FederationResponseData) SetLcmServiceEndPoint(v ServiceEndpoint) {
-	o.LcmServiceEndPoint = v
+	o.LcmServiceEndPoint = &v
 }
 
 // GetPartnerOPMobileNetworkCodes returns the PartnerOPMobileNetworkCodes field value if set, zero value otherwise.
@@ -250,26 +263,34 @@ func (o *FederationResponseData) SetPartnerOPFixedNetworkCodes(v []string) {
 	o.PartnerOPFixedNetworkCodes = v
 }
 
-// GetOfferedAvailabilityZones returns the OfferedAvailabilityZones field value
+// GetOfferedAvailabilityZones returns the OfferedAvailabilityZones field value if set, zero value otherwise.
 func (o *FederationResponseData) GetOfferedAvailabilityZones() []ZoneDetails {
-	if o == nil {
+	if o == nil || isNil(o.OfferedAvailabilityZones) {
 		var ret []ZoneDetails
 		return ret
 	}
-
 	return o.OfferedAvailabilityZones
 }
 
-// GetOfferedAvailabilityZonesOk returns a tuple with the OfferedAvailabilityZones field value
+// GetOfferedAvailabilityZonesOk returns a tuple with the OfferedAvailabilityZones field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *FederationResponseData) GetOfferedAvailabilityZonesOk() ([]ZoneDetails, bool) {
-	if o == nil {
+	if o == nil || isNil(o.OfferedAvailabilityZones) {
 		return nil, false
 	}
 	return o.OfferedAvailabilityZones, true
 }
 
-// SetOfferedAvailabilityZones sets field value
+// HasOfferedAvailabilityZones returns a boolean if a field has been set.
+func (o *FederationResponseData) HasOfferedAvailabilityZones() bool {
+	if o != nil && !isNil(o.OfferedAvailabilityZones) {
+		return true
+	}
+
+	return false
+}
+
+// SetOfferedAvailabilityZones gets a reference to the given []ZoneDetails and assigns it to the OfferedAvailabilityZones field.
 func (o *FederationResponseData) SetOfferedAvailabilityZones(v []ZoneDetails) {
 	o.OfferedAvailabilityZones = v
 }
@@ -313,15 +334,21 @@ func (o FederationResponseData) ToMap() (map[string]interface{}, error) {
 		toSerialize["partnerOPCountryCode"] = o.PartnerOPCountryCode
 	}
 	toSerialize["federationContextId"] = o.FederationContextId
-	toSerialize["edgeDiscoveryServiceEndPoint"] = o.EdgeDiscoveryServiceEndPoint
-	toSerialize["lcmServiceEndPoint"] = o.LcmServiceEndPoint
+	if !isNil(o.EdgeDiscoveryServiceEndPoint) {
+		toSerialize["edgeDiscoveryServiceEndPoint"] = o.EdgeDiscoveryServiceEndPoint
+	}
+	if !isNil(o.LcmServiceEndPoint) {
+		toSerialize["lcmServiceEndPoint"] = o.LcmServiceEndPoint
+	}
 	if !isNil(o.PartnerOPMobileNetworkCodes) {
 		toSerialize["partnerOPMobileNetworkCodes"] = o.PartnerOPMobileNetworkCodes
 	}
 	if !isNil(o.PartnerOPFixedNetworkCodes) {
 		toSerialize["partnerOPFixedNetworkCodes"] = o.PartnerOPFixedNetworkCodes
 	}
-	toSerialize["offeredAvailabilityZones"] = o.OfferedAvailabilityZones
+	if !isNil(o.OfferedAvailabilityZones) {
+		toSerialize["offeredAvailabilityZones"] = o.OfferedAvailabilityZones
+	}
 	toSerialize["platformCaps"] = o.PlatformCaps
 	return toSerialize, nil
 }

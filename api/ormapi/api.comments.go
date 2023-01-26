@@ -673,6 +673,7 @@ var ProviderImageComments = map[string]string{
 	"fileid":         `File ID sent by partner`,
 	"path":           `Image path`,
 	"name":           `Image name`,
+	"description":    `Image description`,
 	"version":        `Image version`,
 	"type":           `Image type (DOCKER, HELM, QCOW2, or OVA)`,
 	"appproviderid":  `Partner app provider organization`,

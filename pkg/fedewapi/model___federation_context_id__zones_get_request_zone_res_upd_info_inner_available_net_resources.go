@@ -14,224 +14,166 @@ import (
 	"encoding/json"
 )
 
-// checks if the OnboardApplicationRequest type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &OnboardApplicationRequest{}
+// checks if the FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources{}
 
-// OnboardApplicationRequest struct for OnboardApplicationRequest
-type OnboardApplicationRequest struct {
-	// Identifier used to refer to an application.
-	AppId string `json:"appId"`
-	// UserId of the app provider.  Identifier is relevant only in context of this federation.
-	AppProviderId string `json:"appProviderId"`
-	// Details about partner OP zones where the application should be made available;  This field when specified will instruct the OP to restrict application instantiation only on the listed zones.
-	AppDeploymentZones []string `json:"appDeploymentZones,omitempty"`
-	AppMetaData AppMetaData `json:"appMetaData"`
-	AppQoSProfile AppQoSProfile `json:"appQoSProfile"`
-	// An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally.  App providers are required to provide details about all these components, their associated descriptors and their DNS names.
-	AppComponentSpecs []AppComponentSpecsInner `json:"appComponentSpecs"`
-	AppStatusCallbackLink string `json:"appStatusCallbackLink"`
+// FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources struct for FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources
+type FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources struct {
+	// Max dl throughput that this edge can offer. It is defined in Mbps.
+	EgressBandWidth *int32 `json:"egressBandWidth,omitempty"`
+	DedicatedNIC *int32 `json:"dedicatedNIC,omitempty"`
+	// If this zone support SRIOV networks or not
+	SupportSriov *bool `json:"supportSriov,omitempty"`
+	// If this zone supports DPDK based networking
+	SupportDPDK *bool `json:"supportDPDK,omitempty"`
 }
 
-// NewOnboardApplicationRequest instantiates a new OnboardApplicationRequest object
+// NewFederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources instantiates a new FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewOnboardApplicationRequest(appId string, appProviderId string, appMetaData AppMetaData, appQoSProfile AppQoSProfile, appComponentSpecs []AppComponentSpecsInner, appStatusCallbackLink string) *OnboardApplicationRequest {
-	this := OnboardApplicationRequest{}
-	this.AppId = appId
-	this.AppProviderId = appProviderId
-	this.AppMetaData = appMetaData
-	this.AppQoSProfile = appQoSProfile
-	this.AppComponentSpecs = appComponentSpecs
-	this.AppStatusCallbackLink = appStatusCallbackLink
+func NewFederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources() *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources {
+	this := FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources{}
 	return &this
 }
 
-// NewOnboardApplicationRequestWithDefaults instantiates a new OnboardApplicationRequest object
+// NewFederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResourcesWithDefaults instantiates a new FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewOnboardApplicationRequestWithDefaults() *OnboardApplicationRequest {
-	this := OnboardApplicationRequest{}
+func NewFederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResourcesWithDefaults() *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources {
+	this := FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources{}
 	return &this
 }
 
-// GetAppId returns the AppId field value
-func (o *OnboardApplicationRequest) GetAppId() string {
-	if o == nil {
-		var ret string
+// GetEgressBandWidth returns the EgressBandWidth field value if set, zero value otherwise.
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) GetEgressBandWidth() int32 {
+	if o == nil || isNil(o.EgressBandWidth) {
+		var ret int32
 		return ret
 	}
-
-	return o.AppId
+	return *o.EgressBandWidth
 }
 
-// GetAppIdOk returns a tuple with the AppId field value
+// GetEgressBandWidthOk returns a tuple with the EgressBandWidth field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppIdOk() (*string, bool) {
-	if o == nil {
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) GetEgressBandWidthOk() (*int32, bool) {
+	if o == nil || isNil(o.EgressBandWidth) {
 		return nil, false
 	}
-	return &o.AppId, true
+	return o.EgressBandWidth, true
 }
 
-// SetAppId sets field value
-func (o *OnboardApplicationRequest) SetAppId(v string) {
-	o.AppId = v
-}
-
-// GetAppProviderId returns the AppProviderId field value
-func (o *OnboardApplicationRequest) GetAppProviderId() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.AppProviderId
-}
-
-// GetAppProviderIdOk returns a tuple with the AppProviderId field value
-// and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppProviderIdOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.AppProviderId, true
-}
-
-// SetAppProviderId sets field value
-func (o *OnboardApplicationRequest) SetAppProviderId(v string) {
-	o.AppProviderId = v
-}
-
-// GetAppDeploymentZones returns the AppDeploymentZones field value if set, zero value otherwise.
-func (o *OnboardApplicationRequest) GetAppDeploymentZones() []string {
-	if o == nil || isNil(o.AppDeploymentZones) {
-		var ret []string
-		return ret
-	}
-	return o.AppDeploymentZones
-}
-
-// GetAppDeploymentZonesOk returns a tuple with the AppDeploymentZones field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppDeploymentZonesOk() ([]string, bool) {
-	if o == nil || isNil(o.AppDeploymentZones) {
-		return nil, false
-	}
-	return o.AppDeploymentZones, true
-}
-
-// HasAppDeploymentZones returns a boolean if a field has been set.
-func (o *OnboardApplicationRequest) HasAppDeploymentZones() bool {
-	if o != nil && !isNil(o.AppDeploymentZones) {
+// HasEgressBandWidth returns a boolean if a field has been set.
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) HasEgressBandWidth() bool {
+	if o != nil && !isNil(o.EgressBandWidth) {
 		return true
 	}
 
 	return false
 }
 
-// SetAppDeploymentZones gets a reference to the given []string and assigns it to the AppDeploymentZones field.
-func (o *OnboardApplicationRequest) SetAppDeploymentZones(v []string) {
-	o.AppDeploymentZones = v
+// SetEgressBandWidth gets a reference to the given int32 and assigns it to the EgressBandWidth field.
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) SetEgressBandWidth(v int32) {
+	o.EgressBandWidth = &v
 }
 
-// GetAppMetaData returns the AppMetaData field value
-func (o *OnboardApplicationRequest) GetAppMetaData() AppMetaData {
-	if o == nil {
-		var ret AppMetaData
+// GetDedicatedNIC returns the DedicatedNIC field value if set, zero value otherwise.
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) GetDedicatedNIC() int32 {
+	if o == nil || isNil(o.DedicatedNIC) {
+		var ret int32
 		return ret
 	}
-
-	return o.AppMetaData
+	return *o.DedicatedNIC
 }
 
-// GetAppMetaDataOk returns a tuple with the AppMetaData field value
+// GetDedicatedNICOk returns a tuple with the DedicatedNIC field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppMetaDataOk() (*AppMetaData, bool) {
-	if o == nil {
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) GetDedicatedNICOk() (*int32, bool) {
+	if o == nil || isNil(o.DedicatedNIC) {
 		return nil, false
 	}
-	return &o.AppMetaData, true
+	return o.DedicatedNIC, true
 }
 
-// SetAppMetaData sets field value
-func (o *OnboardApplicationRequest) SetAppMetaData(v AppMetaData) {
-	o.AppMetaData = v
+// HasDedicatedNIC returns a boolean if a field has been set.
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) HasDedicatedNIC() bool {
+	if o != nil && !isNil(o.DedicatedNIC) {
+		return true
+	}
+
+	return false
 }
 
-// GetAppQoSProfile returns the AppQoSProfile field value
-func (o *OnboardApplicationRequest) GetAppQoSProfile() AppQoSProfile {
-	if o == nil {
-		var ret AppQoSProfile
+// SetDedicatedNIC gets a reference to the given int32 and assigns it to the DedicatedNIC field.
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) SetDedicatedNIC(v int32) {
+	o.DedicatedNIC = &v
+}
+
+// GetSupportSriov returns the SupportSriov field value if set, zero value otherwise.
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) GetSupportSriov() bool {
+	if o == nil || isNil(o.SupportSriov) {
+		var ret bool
 		return ret
 	}
-
-	return o.AppQoSProfile
+	return *o.SupportSriov
 }
 
-// GetAppQoSProfileOk returns a tuple with the AppQoSProfile field value
+// GetSupportSriovOk returns a tuple with the SupportSriov field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppQoSProfileOk() (*AppQoSProfile, bool) {
-	if o == nil {
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) GetSupportSriovOk() (*bool, bool) {
+	if o == nil || isNil(o.SupportSriov) {
 		return nil, false
 	}
-	return &o.AppQoSProfile, true
+	return o.SupportSriov, true
 }
 
-// SetAppQoSProfile sets field value
-func (o *OnboardApplicationRequest) SetAppQoSProfile(v AppQoSProfile) {
-	o.AppQoSProfile = v
+// HasSupportSriov returns a boolean if a field has been set.
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) HasSupportSriov() bool {
+	if o != nil && !isNil(o.SupportSriov) {
+		return true
+	}
+
+	return false
 }
 
-// GetAppComponentSpecs returns the AppComponentSpecs field value
-func (o *OnboardApplicationRequest) GetAppComponentSpecs() []AppComponentSpecsInner {
-	if o == nil {
-		var ret []AppComponentSpecsInner
+// SetSupportSriov gets a reference to the given bool and assigns it to the SupportSriov field.
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) SetSupportSriov(v bool) {
+	o.SupportSriov = &v
+}
+
+// GetSupportDPDK returns the SupportDPDK field value if set, zero value otherwise.
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) GetSupportDPDK() bool {
+	if o == nil || isNil(o.SupportDPDK) {
+		var ret bool
 		return ret
 	}
-
-	return o.AppComponentSpecs
+	return *o.SupportDPDK
 }
 
-// GetAppComponentSpecsOk returns a tuple with the AppComponentSpecs field value
+// GetSupportDPDKOk returns a tuple with the SupportDPDK field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppComponentSpecsOk() ([]AppComponentSpecsInner, bool) {
-	if o == nil {
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) GetSupportDPDKOk() (*bool, bool) {
+	if o == nil || isNil(o.SupportDPDK) {
 		return nil, false
 	}
-	return o.AppComponentSpecs, true
+	return o.SupportDPDK, true
 }
 
-// SetAppComponentSpecs sets field value
-func (o *OnboardApplicationRequest) SetAppComponentSpecs(v []AppComponentSpecsInner) {
-	o.AppComponentSpecs = v
-}
-
-// GetAppStatusCallbackLink returns the AppStatusCallbackLink field value
-func (o *OnboardApplicationRequest) GetAppStatusCallbackLink() string {
-	if o == nil {
-		var ret string
-		return ret
+// HasSupportDPDK returns a boolean if a field has been set.
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) HasSupportDPDK() bool {
+	if o != nil && !isNil(o.SupportDPDK) {
+		return true
 	}
 
-	return o.AppStatusCallbackLink
+	return false
 }
 
-// GetAppStatusCallbackLinkOk returns a tuple with the AppStatusCallbackLink field value
-// and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppStatusCallbackLinkOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.AppStatusCallbackLink, true
+// SetSupportDPDK gets a reference to the given bool and assigns it to the SupportDPDK field.
+func (o *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) SetSupportDPDK(v bool) {
+	o.SupportDPDK = &v
 }
 
-// SetAppStatusCallbackLink sets field value
-func (o *OnboardApplicationRequest) SetAppStatusCallbackLink(v string) {
-	o.AppStatusCallbackLink = v
-}
-
-func (o OnboardApplicationRequest) MarshalJSON() ([]byte, error) {
+func (o FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -239,52 +181,55 @@ func (o OnboardApplicationRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o OnboardApplicationRequest) ToMap() (map[string]interface{}, error) {
+func (o FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["appId"] = o.AppId
-	toSerialize["appProviderId"] = o.AppProviderId
-	if !isNil(o.AppDeploymentZones) {
-		toSerialize["appDeploymentZones"] = o.AppDeploymentZones
+	if !isNil(o.EgressBandWidth) {
+		toSerialize["egressBandWidth"] = o.EgressBandWidth
 	}
-	toSerialize["appMetaData"] = o.AppMetaData
-	toSerialize["appQoSProfile"] = o.AppQoSProfile
-	toSerialize["appComponentSpecs"] = o.AppComponentSpecs
-	toSerialize["appStatusCallbackLink"] = o.AppStatusCallbackLink
+	if !isNil(o.DedicatedNIC) {
+		toSerialize["dedicatedNIC"] = o.DedicatedNIC
+	}
+	if !isNil(o.SupportSriov) {
+		toSerialize["supportSriov"] = o.SupportSriov
+	}
+	if !isNil(o.SupportDPDK) {
+		toSerialize["supportDPDK"] = o.SupportDPDK
+	}
 	return toSerialize, nil
 }
 
-type NullableOnboardApplicationRequest struct {
-	value *OnboardApplicationRequest
+type NullableFederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources struct {
+	value *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources
 	isSet bool
 }
 
-func (v NullableOnboardApplicationRequest) Get() *OnboardApplicationRequest {
+func (v NullableFederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) Get() *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources {
 	return v.value
 }
 
-func (v *NullableOnboardApplicationRequest) Set(val *OnboardApplicationRequest) {
+func (v *NullableFederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) Set(val *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableOnboardApplicationRequest) IsSet() bool {
+func (v NullableFederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableOnboardApplicationRequest) Unset() {
+func (v *NullableFederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableOnboardApplicationRequest(val *OnboardApplicationRequest) *NullableOnboardApplicationRequest {
-	return &NullableOnboardApplicationRequest{value: val, isSet: true}
+func NewNullableFederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources(val *FederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) *NullableFederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources {
+	return &NullableFederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources{value: val, isSet: true}
 }
 
-func (v NullableOnboardApplicationRequest) MarshalJSON() ([]byte, error) {
+func (v NullableFederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableOnboardApplicationRequest) UnmarshalJSON(src []byte) error {
+func (v *NullableFederationContextIdZonesGetRequestZoneResUpdInfoInnerAvailableNetResources) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

@@ -22,6 +22,7 @@ const (
 	FileFieldFileId          = "fileId"
 	FileFieldAppProviderId   = "appProviderId"
 	FileFieldFileName        = "fileName"
+	FileFieldFileDescription = "fileDescription"
 	FileFieldFileVersionInfo = "fileVersionInfo"
 	FileFieldFileType        = "fileType"
 	FileFieldRepoType        = "repoType"
@@ -76,6 +77,7 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 	image.FileID = req.PostFormValue(FileFieldFileId)
 	image.AppProviderId = req.PostFormValue(FileFieldAppProviderId)
 	image.Name = req.PostFormValue(FileFieldFileName)
+	image.Description = req.PostFormValue(FileFieldFileDescription)
 	image.Version = req.PostFormValue(FileFieldFileVersionInfo)
 	image.Type = req.PostFormValue(FileFieldFileType)
 	image.Checksum = req.PostFormValue(FileFieldChecksum)

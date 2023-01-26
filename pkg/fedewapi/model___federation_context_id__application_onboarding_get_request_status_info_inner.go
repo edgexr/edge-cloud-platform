@@ -14,224 +14,85 @@ import (
 	"encoding/json"
 )
 
-// checks if the OnboardApplicationRequest type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &OnboardApplicationRequest{}
+// checks if the FederationContextIdApplicationOnboardingGetRequestStatusInfoInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &FederationContextIdApplicationOnboardingGetRequestStatusInfoInner{}
 
-// OnboardApplicationRequest struct for OnboardApplicationRequest
-type OnboardApplicationRequest struct {
-	// Identifier used to refer to an application.
-	AppId string `json:"appId"`
-	// UserId of the app provider.  Identifier is relevant only in context of this federation.
-	AppProviderId string `json:"appProviderId"`
-	// Details about partner OP zones where the application should be made available;  This field when specified will instruct the OP to restrict application instantiation only on the listed zones.
-	AppDeploymentZones []string `json:"appDeploymentZones,omitempty"`
-	AppMetaData AppMetaData `json:"appMetaData"`
-	AppQoSProfile AppQoSProfile `json:"appQoSProfile"`
-	// An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally.  App providers are required to provide details about all these components, their associated descriptors and their DNS names.
-	AppComponentSpecs []AppComponentSpecsInner `json:"appComponentSpecs"`
-	AppStatusCallbackLink string `json:"appStatusCallbackLink"`
+// FederationContextIdApplicationOnboardingGetRequestStatusInfoInner struct for FederationContextIdApplicationOnboardingGetRequestStatusInfoInner
+type FederationContextIdApplicationOnboardingGetRequestStatusInfoInner struct {
+	// Human readable name of the zone.
+	ZoneId string `json:"zoneId"`
+	// Defines change in application status. This change could be related to application itself or an application instance status
+	OnboardStatusInfo string `json:"onboardStatusInfo"`
 }
 
-// NewOnboardApplicationRequest instantiates a new OnboardApplicationRequest object
+// NewFederationContextIdApplicationOnboardingGetRequestStatusInfoInner instantiates a new FederationContextIdApplicationOnboardingGetRequestStatusInfoInner object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewOnboardApplicationRequest(appId string, appProviderId string, appMetaData AppMetaData, appQoSProfile AppQoSProfile, appComponentSpecs []AppComponentSpecsInner, appStatusCallbackLink string) *OnboardApplicationRequest {
-	this := OnboardApplicationRequest{}
-	this.AppId = appId
-	this.AppProviderId = appProviderId
-	this.AppMetaData = appMetaData
-	this.AppQoSProfile = appQoSProfile
-	this.AppComponentSpecs = appComponentSpecs
-	this.AppStatusCallbackLink = appStatusCallbackLink
+func NewFederationContextIdApplicationOnboardingGetRequestStatusInfoInner(zoneId string, onboardStatusInfo string) *FederationContextIdApplicationOnboardingGetRequestStatusInfoInner {
+	this := FederationContextIdApplicationOnboardingGetRequestStatusInfoInner{}
+	this.ZoneId = zoneId
+	this.OnboardStatusInfo = onboardStatusInfo
 	return &this
 }
 
-// NewOnboardApplicationRequestWithDefaults instantiates a new OnboardApplicationRequest object
+// NewFederationContextIdApplicationOnboardingGetRequestStatusInfoInnerWithDefaults instantiates a new FederationContextIdApplicationOnboardingGetRequestStatusInfoInner object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewOnboardApplicationRequestWithDefaults() *OnboardApplicationRequest {
-	this := OnboardApplicationRequest{}
+func NewFederationContextIdApplicationOnboardingGetRequestStatusInfoInnerWithDefaults() *FederationContextIdApplicationOnboardingGetRequestStatusInfoInner {
+	this := FederationContextIdApplicationOnboardingGetRequestStatusInfoInner{}
 	return &this
 }
 
-// GetAppId returns the AppId field value
-func (o *OnboardApplicationRequest) GetAppId() string {
+// GetZoneId returns the ZoneId field value
+func (o *FederationContextIdApplicationOnboardingGetRequestStatusInfoInner) GetZoneId() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.AppId
+	return o.ZoneId
 }
 
-// GetAppIdOk returns a tuple with the AppId field value
+// GetZoneIdOk returns a tuple with the ZoneId field value
 // and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppIdOk() (*string, bool) {
+func (o *FederationContextIdApplicationOnboardingGetRequestStatusInfoInner) GetZoneIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.AppId, true
+	return &o.ZoneId, true
 }
 
-// SetAppId sets field value
-func (o *OnboardApplicationRequest) SetAppId(v string) {
-	o.AppId = v
+// SetZoneId sets field value
+func (o *FederationContextIdApplicationOnboardingGetRequestStatusInfoInner) SetZoneId(v string) {
+	o.ZoneId = v
 }
 
-// GetAppProviderId returns the AppProviderId field value
-func (o *OnboardApplicationRequest) GetAppProviderId() string {
+// GetOnboardStatusInfo returns the OnboardStatusInfo field value
+func (o *FederationContextIdApplicationOnboardingGetRequestStatusInfoInner) GetOnboardStatusInfo() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.AppProviderId
+	return o.OnboardStatusInfo
 }
 
-// GetAppProviderIdOk returns a tuple with the AppProviderId field value
+// GetOnboardStatusInfoOk returns a tuple with the OnboardStatusInfo field value
 // and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppProviderIdOk() (*string, bool) {
+func (o *FederationContextIdApplicationOnboardingGetRequestStatusInfoInner) GetOnboardStatusInfoOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.AppProviderId, true
+	return &o.OnboardStatusInfo, true
 }
 
-// SetAppProviderId sets field value
-func (o *OnboardApplicationRequest) SetAppProviderId(v string) {
-	o.AppProviderId = v
+// SetOnboardStatusInfo sets field value
+func (o *FederationContextIdApplicationOnboardingGetRequestStatusInfoInner) SetOnboardStatusInfo(v string) {
+	o.OnboardStatusInfo = v
 }
 
-// GetAppDeploymentZones returns the AppDeploymentZones field value if set, zero value otherwise.
-func (o *OnboardApplicationRequest) GetAppDeploymentZones() []string {
-	if o == nil || isNil(o.AppDeploymentZones) {
-		var ret []string
-		return ret
-	}
-	return o.AppDeploymentZones
-}
-
-// GetAppDeploymentZonesOk returns a tuple with the AppDeploymentZones field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppDeploymentZonesOk() ([]string, bool) {
-	if o == nil || isNil(o.AppDeploymentZones) {
-		return nil, false
-	}
-	return o.AppDeploymentZones, true
-}
-
-// HasAppDeploymentZones returns a boolean if a field has been set.
-func (o *OnboardApplicationRequest) HasAppDeploymentZones() bool {
-	if o != nil && !isNil(o.AppDeploymentZones) {
-		return true
-	}
-
-	return false
-}
-
-// SetAppDeploymentZones gets a reference to the given []string and assigns it to the AppDeploymentZones field.
-func (o *OnboardApplicationRequest) SetAppDeploymentZones(v []string) {
-	o.AppDeploymentZones = v
-}
-
-// GetAppMetaData returns the AppMetaData field value
-func (o *OnboardApplicationRequest) GetAppMetaData() AppMetaData {
-	if o == nil {
-		var ret AppMetaData
-		return ret
-	}
-
-	return o.AppMetaData
-}
-
-// GetAppMetaDataOk returns a tuple with the AppMetaData field value
-// and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppMetaDataOk() (*AppMetaData, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.AppMetaData, true
-}
-
-// SetAppMetaData sets field value
-func (o *OnboardApplicationRequest) SetAppMetaData(v AppMetaData) {
-	o.AppMetaData = v
-}
-
-// GetAppQoSProfile returns the AppQoSProfile field value
-func (o *OnboardApplicationRequest) GetAppQoSProfile() AppQoSProfile {
-	if o == nil {
-		var ret AppQoSProfile
-		return ret
-	}
-
-	return o.AppQoSProfile
-}
-
-// GetAppQoSProfileOk returns a tuple with the AppQoSProfile field value
-// and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppQoSProfileOk() (*AppQoSProfile, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.AppQoSProfile, true
-}
-
-// SetAppQoSProfile sets field value
-func (o *OnboardApplicationRequest) SetAppQoSProfile(v AppQoSProfile) {
-	o.AppQoSProfile = v
-}
-
-// GetAppComponentSpecs returns the AppComponentSpecs field value
-func (o *OnboardApplicationRequest) GetAppComponentSpecs() []AppComponentSpecsInner {
-	if o == nil {
-		var ret []AppComponentSpecsInner
-		return ret
-	}
-
-	return o.AppComponentSpecs
-}
-
-// GetAppComponentSpecsOk returns a tuple with the AppComponentSpecs field value
-// and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppComponentSpecsOk() ([]AppComponentSpecsInner, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return o.AppComponentSpecs, true
-}
-
-// SetAppComponentSpecs sets field value
-func (o *OnboardApplicationRequest) SetAppComponentSpecs(v []AppComponentSpecsInner) {
-	o.AppComponentSpecs = v
-}
-
-// GetAppStatusCallbackLink returns the AppStatusCallbackLink field value
-func (o *OnboardApplicationRequest) GetAppStatusCallbackLink() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.AppStatusCallbackLink
-}
-
-// GetAppStatusCallbackLinkOk returns a tuple with the AppStatusCallbackLink field value
-// and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppStatusCallbackLinkOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.AppStatusCallbackLink, true
-}
-
-// SetAppStatusCallbackLink sets field value
-func (o *OnboardApplicationRequest) SetAppStatusCallbackLink(v string) {
-	o.AppStatusCallbackLink = v
-}
-
-func (o OnboardApplicationRequest) MarshalJSON() ([]byte, error) {
+func (o FederationContextIdApplicationOnboardingGetRequestStatusInfoInner) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -239,52 +100,45 @@ func (o OnboardApplicationRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o OnboardApplicationRequest) ToMap() (map[string]interface{}, error) {
+func (o FederationContextIdApplicationOnboardingGetRequestStatusInfoInner) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["appId"] = o.AppId
-	toSerialize["appProviderId"] = o.AppProviderId
-	if !isNil(o.AppDeploymentZones) {
-		toSerialize["appDeploymentZones"] = o.AppDeploymentZones
-	}
-	toSerialize["appMetaData"] = o.AppMetaData
-	toSerialize["appQoSProfile"] = o.AppQoSProfile
-	toSerialize["appComponentSpecs"] = o.AppComponentSpecs
-	toSerialize["appStatusCallbackLink"] = o.AppStatusCallbackLink
+	toSerialize["zoneId"] = o.ZoneId
+	toSerialize["onboardStatusInfo"] = o.OnboardStatusInfo
 	return toSerialize, nil
 }
 
-type NullableOnboardApplicationRequest struct {
-	value *OnboardApplicationRequest
+type NullableFederationContextIdApplicationOnboardingGetRequestStatusInfoInner struct {
+	value *FederationContextIdApplicationOnboardingGetRequestStatusInfoInner
 	isSet bool
 }
 
-func (v NullableOnboardApplicationRequest) Get() *OnboardApplicationRequest {
+func (v NullableFederationContextIdApplicationOnboardingGetRequestStatusInfoInner) Get() *FederationContextIdApplicationOnboardingGetRequestStatusInfoInner {
 	return v.value
 }
 
-func (v *NullableOnboardApplicationRequest) Set(val *OnboardApplicationRequest) {
+func (v *NullableFederationContextIdApplicationOnboardingGetRequestStatusInfoInner) Set(val *FederationContextIdApplicationOnboardingGetRequestStatusInfoInner) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableOnboardApplicationRequest) IsSet() bool {
+func (v NullableFederationContextIdApplicationOnboardingGetRequestStatusInfoInner) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableOnboardApplicationRequest) Unset() {
+func (v *NullableFederationContextIdApplicationOnboardingGetRequestStatusInfoInner) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableOnboardApplicationRequest(val *OnboardApplicationRequest) *NullableOnboardApplicationRequest {
-	return &NullableOnboardApplicationRequest{value: val, isSet: true}
+func NewNullableFederationContextIdApplicationOnboardingGetRequestStatusInfoInner(val *FederationContextIdApplicationOnboardingGetRequestStatusInfoInner) *NullableFederationContextIdApplicationOnboardingGetRequestStatusInfoInner {
+	return &NullableFederationContextIdApplicationOnboardingGetRequestStatusInfoInner{value: val, isSet: true}
 }
 
-func (v NullableOnboardApplicationRequest) MarshalJSON() ([]byte, error) {
+func (v NullableFederationContextIdApplicationOnboardingGetRequestStatusInfoInner) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableOnboardApplicationRequest) UnmarshalJSON(src []byte) error {
+func (v *NullableFederationContextIdApplicationOnboardingGetRequestStatusInfoInner) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

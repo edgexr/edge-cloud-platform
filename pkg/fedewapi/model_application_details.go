@@ -14,49 +14,48 @@ import (
 	"encoding/json"
 )
 
-// checks if the OnboardApplicationRequest type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &OnboardApplicationRequest{}
+// checks if the ApplicationDetails type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ApplicationDetails{}
 
-// OnboardApplicationRequest struct for OnboardApplicationRequest
-type OnboardApplicationRequest struct {
+// ApplicationDetails Application details.
+type ApplicationDetails struct {
 	// Identifier used to refer to an application.
 	AppId string `json:"appId"`
 	// UserId of the app provider.  Identifier is relevant only in context of this federation.
 	AppProviderId string `json:"appProviderId"`
 	// Details about partner OP zones where the application should be made available;  This field when specified will instruct the OP to restrict application instantiation only on the listed zones.
-	AppDeploymentZones []string `json:"appDeploymentZones,omitempty"`
+	AppDeploymentZones []ApplicationDetailsAppDeploymentZonesInner `json:"appDeploymentZones"`
 	AppMetaData AppMetaData `json:"appMetaData"`
 	AppQoSProfile AppQoSProfile `json:"appQoSProfile"`
 	// An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally.  App providers are required to provide details about all these components, their associated descriptors and their DNS names.
 	AppComponentSpecs []AppComponentSpecsInner `json:"appComponentSpecs"`
-	AppStatusCallbackLink string `json:"appStatusCallbackLink"`
 }
 
-// NewOnboardApplicationRequest instantiates a new OnboardApplicationRequest object
+// NewApplicationDetails instantiates a new ApplicationDetails object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewOnboardApplicationRequest(appId string, appProviderId string, appMetaData AppMetaData, appQoSProfile AppQoSProfile, appComponentSpecs []AppComponentSpecsInner, appStatusCallbackLink string) *OnboardApplicationRequest {
-	this := OnboardApplicationRequest{}
+func NewApplicationDetails(appId string, appProviderId string, appDeploymentZones []ApplicationDetailsAppDeploymentZonesInner, appMetaData AppMetaData, appQoSProfile AppQoSProfile, appComponentSpecs []AppComponentSpecsInner) *ApplicationDetails {
+	this := ApplicationDetails{}
 	this.AppId = appId
 	this.AppProviderId = appProviderId
+	this.AppDeploymentZones = appDeploymentZones
 	this.AppMetaData = appMetaData
 	this.AppQoSProfile = appQoSProfile
 	this.AppComponentSpecs = appComponentSpecs
-	this.AppStatusCallbackLink = appStatusCallbackLink
 	return &this
 }
 
-// NewOnboardApplicationRequestWithDefaults instantiates a new OnboardApplicationRequest object
+// NewApplicationDetailsWithDefaults instantiates a new ApplicationDetails object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewOnboardApplicationRequestWithDefaults() *OnboardApplicationRequest {
-	this := OnboardApplicationRequest{}
+func NewApplicationDetailsWithDefaults() *ApplicationDetails {
+	this := ApplicationDetails{}
 	return &this
 }
 
 // GetAppId returns the AppId field value
-func (o *OnboardApplicationRequest) GetAppId() string {
+func (o *ApplicationDetails) GetAppId() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -67,7 +66,7 @@ func (o *OnboardApplicationRequest) GetAppId() string {
 
 // GetAppIdOk returns a tuple with the AppId field value
 // and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppIdOk() (*string, bool) {
+func (o *ApplicationDetails) GetAppIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -75,12 +74,12 @@ func (o *OnboardApplicationRequest) GetAppIdOk() (*string, bool) {
 }
 
 // SetAppId sets field value
-func (o *OnboardApplicationRequest) SetAppId(v string) {
+func (o *ApplicationDetails) SetAppId(v string) {
 	o.AppId = v
 }
 
 // GetAppProviderId returns the AppProviderId field value
-func (o *OnboardApplicationRequest) GetAppProviderId() string {
+func (o *ApplicationDetails) GetAppProviderId() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -91,7 +90,7 @@ func (o *OnboardApplicationRequest) GetAppProviderId() string {
 
 // GetAppProviderIdOk returns a tuple with the AppProviderId field value
 // and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppProviderIdOk() (*string, bool) {
+func (o *ApplicationDetails) GetAppProviderIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -99,44 +98,36 @@ func (o *OnboardApplicationRequest) GetAppProviderIdOk() (*string, bool) {
 }
 
 // SetAppProviderId sets field value
-func (o *OnboardApplicationRequest) SetAppProviderId(v string) {
+func (o *ApplicationDetails) SetAppProviderId(v string) {
 	o.AppProviderId = v
 }
 
-// GetAppDeploymentZones returns the AppDeploymentZones field value if set, zero value otherwise.
-func (o *OnboardApplicationRequest) GetAppDeploymentZones() []string {
-	if o == nil || isNil(o.AppDeploymentZones) {
-		var ret []string
+// GetAppDeploymentZones returns the AppDeploymentZones field value
+func (o *ApplicationDetails) GetAppDeploymentZones() []ApplicationDetailsAppDeploymentZonesInner {
+	if o == nil {
+		var ret []ApplicationDetailsAppDeploymentZonesInner
 		return ret
 	}
+
 	return o.AppDeploymentZones
 }
 
-// GetAppDeploymentZonesOk returns a tuple with the AppDeploymentZones field value if set, nil otherwise
+// GetAppDeploymentZonesOk returns a tuple with the AppDeploymentZones field value
 // and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppDeploymentZonesOk() ([]string, bool) {
-	if o == nil || isNil(o.AppDeploymentZones) {
+func (o *ApplicationDetails) GetAppDeploymentZonesOk() ([]ApplicationDetailsAppDeploymentZonesInner, bool) {
+	if o == nil {
 		return nil, false
 	}
 	return o.AppDeploymentZones, true
 }
 
-// HasAppDeploymentZones returns a boolean if a field has been set.
-func (o *OnboardApplicationRequest) HasAppDeploymentZones() bool {
-	if o != nil && !isNil(o.AppDeploymentZones) {
-		return true
-	}
-
-	return false
-}
-
-// SetAppDeploymentZones gets a reference to the given []string and assigns it to the AppDeploymentZones field.
-func (o *OnboardApplicationRequest) SetAppDeploymentZones(v []string) {
+// SetAppDeploymentZones sets field value
+func (o *ApplicationDetails) SetAppDeploymentZones(v []ApplicationDetailsAppDeploymentZonesInner) {
 	o.AppDeploymentZones = v
 }
 
 // GetAppMetaData returns the AppMetaData field value
-func (o *OnboardApplicationRequest) GetAppMetaData() AppMetaData {
+func (o *ApplicationDetails) GetAppMetaData() AppMetaData {
 	if o == nil {
 		var ret AppMetaData
 		return ret
@@ -147,7 +138,7 @@ func (o *OnboardApplicationRequest) GetAppMetaData() AppMetaData {
 
 // GetAppMetaDataOk returns a tuple with the AppMetaData field value
 // and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppMetaDataOk() (*AppMetaData, bool) {
+func (o *ApplicationDetails) GetAppMetaDataOk() (*AppMetaData, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -155,12 +146,12 @@ func (o *OnboardApplicationRequest) GetAppMetaDataOk() (*AppMetaData, bool) {
 }
 
 // SetAppMetaData sets field value
-func (o *OnboardApplicationRequest) SetAppMetaData(v AppMetaData) {
+func (o *ApplicationDetails) SetAppMetaData(v AppMetaData) {
 	o.AppMetaData = v
 }
 
 // GetAppQoSProfile returns the AppQoSProfile field value
-func (o *OnboardApplicationRequest) GetAppQoSProfile() AppQoSProfile {
+func (o *ApplicationDetails) GetAppQoSProfile() AppQoSProfile {
 	if o == nil {
 		var ret AppQoSProfile
 		return ret
@@ -171,7 +162,7 @@ func (o *OnboardApplicationRequest) GetAppQoSProfile() AppQoSProfile {
 
 // GetAppQoSProfileOk returns a tuple with the AppQoSProfile field value
 // and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppQoSProfileOk() (*AppQoSProfile, bool) {
+func (o *ApplicationDetails) GetAppQoSProfileOk() (*AppQoSProfile, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -179,12 +170,12 @@ func (o *OnboardApplicationRequest) GetAppQoSProfileOk() (*AppQoSProfile, bool) 
 }
 
 // SetAppQoSProfile sets field value
-func (o *OnboardApplicationRequest) SetAppQoSProfile(v AppQoSProfile) {
+func (o *ApplicationDetails) SetAppQoSProfile(v AppQoSProfile) {
 	o.AppQoSProfile = v
 }
 
 // GetAppComponentSpecs returns the AppComponentSpecs field value
-func (o *OnboardApplicationRequest) GetAppComponentSpecs() []AppComponentSpecsInner {
+func (o *ApplicationDetails) GetAppComponentSpecs() []AppComponentSpecsInner {
 	if o == nil {
 		var ret []AppComponentSpecsInner
 		return ret
@@ -195,7 +186,7 @@ func (o *OnboardApplicationRequest) GetAppComponentSpecs() []AppComponentSpecsIn
 
 // GetAppComponentSpecsOk returns a tuple with the AppComponentSpecs field value
 // and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppComponentSpecsOk() ([]AppComponentSpecsInner, bool) {
+func (o *ApplicationDetails) GetAppComponentSpecsOk() ([]AppComponentSpecsInner, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -203,35 +194,11 @@ func (o *OnboardApplicationRequest) GetAppComponentSpecsOk() ([]AppComponentSpec
 }
 
 // SetAppComponentSpecs sets field value
-func (o *OnboardApplicationRequest) SetAppComponentSpecs(v []AppComponentSpecsInner) {
+func (o *ApplicationDetails) SetAppComponentSpecs(v []AppComponentSpecsInner) {
 	o.AppComponentSpecs = v
 }
 
-// GetAppStatusCallbackLink returns the AppStatusCallbackLink field value
-func (o *OnboardApplicationRequest) GetAppStatusCallbackLink() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.AppStatusCallbackLink
-}
-
-// GetAppStatusCallbackLinkOk returns a tuple with the AppStatusCallbackLink field value
-// and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppStatusCallbackLinkOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.AppStatusCallbackLink, true
-}
-
-// SetAppStatusCallbackLink sets field value
-func (o *OnboardApplicationRequest) SetAppStatusCallbackLink(v string) {
-	o.AppStatusCallbackLink = v
-}
-
-func (o OnboardApplicationRequest) MarshalJSON() ([]byte, error) {
+func (o ApplicationDetails) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -239,52 +206,49 @@ func (o OnboardApplicationRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o OnboardApplicationRequest) ToMap() (map[string]interface{}, error) {
+func (o ApplicationDetails) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["appId"] = o.AppId
 	toSerialize["appProviderId"] = o.AppProviderId
-	if !isNil(o.AppDeploymentZones) {
-		toSerialize["appDeploymentZones"] = o.AppDeploymentZones
-	}
+	toSerialize["appDeploymentZones"] = o.AppDeploymentZones
 	toSerialize["appMetaData"] = o.AppMetaData
 	toSerialize["appQoSProfile"] = o.AppQoSProfile
 	toSerialize["appComponentSpecs"] = o.AppComponentSpecs
-	toSerialize["appStatusCallbackLink"] = o.AppStatusCallbackLink
 	return toSerialize, nil
 }
 
-type NullableOnboardApplicationRequest struct {
-	value *OnboardApplicationRequest
+type NullableApplicationDetails struct {
+	value *ApplicationDetails
 	isSet bool
 }
 
-func (v NullableOnboardApplicationRequest) Get() *OnboardApplicationRequest {
+func (v NullableApplicationDetails) Get() *ApplicationDetails {
 	return v.value
 }
 
-func (v *NullableOnboardApplicationRequest) Set(val *OnboardApplicationRequest) {
+func (v *NullableApplicationDetails) Set(val *ApplicationDetails) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableOnboardApplicationRequest) IsSet() bool {
+func (v NullableApplicationDetails) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableOnboardApplicationRequest) Unset() {
+func (v *NullableApplicationDetails) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableOnboardApplicationRequest(val *OnboardApplicationRequest) *NullableOnboardApplicationRequest {
-	return &NullableOnboardApplicationRequest{value: val, isSet: true}
+func NewNullableApplicationDetails(val *ApplicationDetails) *NullableApplicationDetails {
+	return &NullableApplicationDetails{value: val, isSet: true}
 }
 
-func (v NullableOnboardApplicationRequest) MarshalJSON() ([]byte, error) {
+func (v NullableApplicationDetails) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableOnboardApplicationRequest) UnmarshalJSON(src []byte) error {
+func (v *NullableApplicationDetails) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

@@ -247,6 +247,8 @@ type ProviderImage struct {
 	Path string
 	// Image name
 	Name string
+	// Image description
+	Description string
 	// Image version
 	Version string
 	// Image type (DOCKER, HELM, QCOW2, or OVA)

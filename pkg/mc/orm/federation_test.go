@@ -813,6 +813,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		req.AppVers = app.Key.Version
 		req.FederationName = consAttr.fedName
 		_, status, err = mcClient.OnboardConsumerApp(op.uri, consAttr.tokenDev, &req)
+		fmt.Printf("***** Onboard consumer app %d, %s\n", status, err)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 		consAppsExp = append(consAppsExp, req)

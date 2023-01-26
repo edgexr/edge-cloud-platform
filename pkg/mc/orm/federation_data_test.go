@@ -42,6 +42,10 @@ func getConsApps(org string) []edgeproto.App {
 		Md5Sum:     "sha256:209f09fg090923",
 		Deployment: cloudcommon.DeploymentTypeKubernetes,
 		GlobalId:   "region-dockerapp100org",
+		ServerlessConfig: &edgeproto.ServerlessConfig{
+			Vcpus: *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
+			Ram:   100,
+		},
 	}, {
 		Key: edgeproto.AppKey{
 			Organization: org,
@@ -53,6 +57,10 @@ func getConsApps(org string) []edgeproto.App {
 		Md5Sum:     "309fa098fb0983309",
 		Deployment: cloudcommon.DeploymentTypeVM,
 		GlobalId:   "region-vmapp100org",
+		ServerlessConfig: &edgeproto.ServerlessConfig{
+			Vcpus: *edgeproto.NewUdec64(1, 500*edgeproto.DecMillis),
+			Ram:   100,
+		},
 	}}
 }
 

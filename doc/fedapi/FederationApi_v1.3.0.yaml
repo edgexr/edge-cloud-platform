@@ -246,6 +246,17 @@ components:
         - NOT_AVAILABLE
     Uri:
       type: string
+    Vcpu:
+      type: string
+      pattern: ^\d+((\.\d{1,3})|(m))?$
+      description: Number of vcpus in whole, decimal up to millivcpu, or millivcpu format.
+      example:
+        whole:
+          value: 2
+        decimal:
+          value: 0.500
+        millivcpu:
+          value: 500m
     Version:
       type: string
       pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
@@ -463,6 +474,24 @@ components:
           items:
             type: string
           description: List of arguments required by the command.
+    DeploymentConfig:
+      description: Configuration used when deploying a component. May override other ComponentSpec parameters related to deployment like restart policy, command line parameters, environment variables, etc.
+      type: object
+      required:
+        - configType
+        - contents
+      properties:
+        configType:
+          type: string
+          enum:
+            - DOCKER_COMPOSE
+            - KUBERNETES_MANIFEST
+            - CLOUD_INIT
+            - HELM_VALUES
+          description: Config type.
+        contents:
+          type: string
+          description: Contents of the configuration.
     ComponentSpec:
       description: Details about compute, networking and storage requirements for each component of the application. App provider should define all information needed to instantiate the component. If artefact is being defined at component level this section should have information just about the component. In case the artefact is being defined at application level the section should provide details about all the components.
       type: object
@@ -507,6 +536,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CompEnvParams'
+        deploymentConfig:
+          $ref: '#/components/schemas/DeploymentConfig'
         persistentVolumes:
           description: The ephemeral volume a container process may need to temporary store internal data
           type: array
@@ -519,7 +550,6 @@ components:
         - cpuArchType
         - numCPU
         - memory
-        - diskStorage
       properties:
         cpuArchType:
           type: string
@@ -528,9 +558,7 @@ components:
             - ISA_ARM_64
           description: CPU Instruction Set Architecture (ISA) E.g., Intel, Arm etc.
         numCPU:
-          type: integer
-          format: int32
-          description: Number of available vCPUs.
+          $ref: '#/components/schemas/Vcpu'
         memory:
           type: integer
           format: int64
@@ -598,9 +626,6 @@ components:
       required:
         - partnerOPFederationId
         - federationContextId
-        - edgeDiscoveryServiceEndPoint
-        - lcmServiceEndPoint
-        - offeredAvailabilityZones
         - platformCaps
       properties:
         partnerOPFederationId:
@@ -786,7 +811,6 @@ components:
           $ref: '#/components/schemas/Uri'
         userName:
           type: string
-          pattern: ^[A-Za-z][A-Za-z0-9_]{7,63}$
           description: Username to access the repository
         password:
           type: string
@@ -2098,15 +2122,7 @@ paths:
                   description: Details about partner OP zones where the application should be made available;  This field when specified will instruct the OP to restrict application instantiation only on the listed zones.
                   type: array
                   items:
-                    type: object
-                    required:
-                      - countryCode
-                      - zoneInfo
-                    properties:
-                      countryCode:
-                        $ref: '#/components/schemas/CountryCode'
-                      zoneInfo:
-                        $ref: '#/components/schemas/ZoneIdentifier'
+                    $ref: '#/components/schemas/ZoneIdentifier'
                   minItems: 1
                 appMetaData:
                   $ref: '#/components/schemas/AppMetaData'

@@ -4,6 +4,7 @@ import (
 	"context"
 	fmt "fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,6 +32,9 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 	if err != nil {
 		return err
 	}
+	// Mark stream API
+	c.Set(StreamAPITag, true)
+
 	in := ormapi.ConsumerApp{}
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)
@@ -90,20 +94,26 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		return fmt.Errorf("App not found")
 	}
 
-	log.SpanLog(ctx, log.DebugLevelApi, "create ConsumerApp, look up flavors")
-	flavorLookup := edgeproto.Flavor{
-		Key: app.DefaultFlavor,
+	if app.DefaultFlavor.Name == "" && app.ServerlessConfig == nil {
+		return fmt.Errorf("App has no default flavor and no serverless config to specify compute resources")
 	}
+
 	var flavor *edgeproto.Flavor
-	err = ctrlclient.ShowFlavorStream(ctx, &rc, &flavorLookup, connCache, func(retFlavor *edgeproto.Flavor) error {
-		flavor = retFlavor
-		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("Failure looking up Flavor %s: %s", app.DefaultFlavor.Name, err)
-	}
-	if flavor == nil {
-		return fmt.Errorf("App DefaultFlavor %s not found", app.DefaultFlavor.Name)
+	if app.DefaultFlavor.Name != "" {
+		log.SpanLog(ctx, log.DebugLevelApi, "create ConsumerApp, look up flavors")
+		flavorLookup := edgeproto.Flavor{
+			Key: app.DefaultFlavor,
+		}
+		err = ctrlclient.ShowFlavorStream(ctx, &rc, &flavorLookup, connCache, func(retFlavor *edgeproto.Flavor) error {
+			flavor = retFlavor
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("Failure looking up Flavor %s: %s", app.DefaultFlavor.Name, err)
+		}
+		if flavor == nil {
+			return fmt.Errorf("App DefaultFlavor %s not found", app.DefaultFlavor.Name)
+		}
 	}
 
 	// ID is set to the app's federation id.
@@ -328,10 +338,22 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 	if len(interfaces) > 0 {
 		spec.ExposedInterfaces = interfaces
 	}
+
 	resources := fedewapi.ComputeResourceInfo{}
-	resources.NumCPU = int32(defaultFlavor.Vcpus)
-	resources.Memory = int64(defaultFlavor.Ram)
-	resources.DiskStorage = int32(defaultFlavor.Disk)
+	if defaultFlavor == nil && app.ServerlessConfig == nil {
+		return fmt.Errorf("Cannot specify compute resource info, one of default flavor or serverless config must be set")
+	}
+	if app.ServerlessConfig != nil {
+		resources.NumCPU = app.ServerlessConfig.Vcpus.DecString()
+		resources.Memory = int64(app.ServerlessConfig.Ram)
+	} else {
+		disk := int32(defaultFlavor.Disk)
+		resources.NumCPU = strconv.Itoa(int(defaultFlavor.Vcpus))
+		resources.Memory = int64(defaultFlavor.Ram)
+		if disk > 0 {
+			resources.DiskStorage = &disk
+		}
+	}
 	// TODO: resources.Gpu
 	spec.ComputeResourceProfile = resources
 
@@ -398,6 +420,9 @@ func DeboardConsumerApp(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	// Mark stream API
+	c.Set(StreamAPITag, true)
+
 	in := ormapi.ConsumerApp{}
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)

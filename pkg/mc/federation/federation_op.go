@@ -260,12 +260,8 @@ func (p *PartnerApi) CreateFederation(c echo.Context) (reterr error) {
 	if provider.MyInfo.CountryCode != "" {
 		out.PartnerOPCountryCode = &provider.MyInfo.CountryCode
 	}
-	out.EdgeDiscoveryServiceEndPoint = fedewapi.ServiceEndpoint{
-		// TODO: Unclear how EdgeDiscoveryServiceEndpoint should work
-	}
-	out.LcmServiceEndPoint = fedewapi.ServiceEndpoint{
-		// TODO: Unclear how LcmServiceEndpoint should work
-	}
+	// TODO: Unclear how EdgeDiscoveryServiceEndpoint should work
+	// TODO: Unclear how LcmServiceEndpoint should work
 	out.PlatformCaps = []string{"homeRouting", "Anchoring"}
 	out.PartnerOPMobileNetworkCodes = GetMobileNetworkIds(&provider.MyInfo)
 	out.PartnerOPFixedNetworkCodes = GetFixedNetworkIds(&provider.MyInfo)

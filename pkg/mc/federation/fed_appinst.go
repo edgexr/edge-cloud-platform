@@ -156,6 +156,7 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 		provApp:     provApp,
 		provAppInst: &provAppInst,
 		callbackUrl: in.AppInstCallbackLink,
+		flavor:      in.ZoneInfo.FlavourId,
 	}
 	c.Response().After(func() {
 		go worker.createAppInstJob()
@@ -178,6 +179,7 @@ type AppInstWorker struct {
 	provApp     *ormapi.ProviderApp
 	provAppInst *ormapi.ProviderAppInst
 	callbackUrl string // only for create
+	flavor      string
 }
 
 func (s *AppInstWorker) createAppInstJob() {
@@ -212,8 +214,11 @@ func (s *AppInstWorker) createAppInst(ctx context.Context) (reterr error) {
 
 	appInstIn := edgeproto.AppInst{
 		Key: s.provAppInst.GetAppInstKey(),
-		//CloudletFlavor: s.req.ZoneInfo.FlavorId, // TODO
 	}
+	if s.flavor != "NOT_SPECIFIED" {
+		appInstIn.Flavor.Name = s.flavor
+	}
+
 	log.SpanLog(ctx, log.DebugLevelApi, "Federation create appinst", "appInst", appInstIn)
 	cb := func(res *edgeproto.Result) error {
 		log.SpanLog(ctx, log.DebugLevelApi, "controller create appinst callback", "res", *res)

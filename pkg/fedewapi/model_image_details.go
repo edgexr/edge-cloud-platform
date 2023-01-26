@@ -14,332 +14,352 @@ import (
 	"encoding/json"
 )
 
-// checks if the ComponentSpec type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ComponentSpec{}
+// checks if the ImageDetails type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ImageDetails{}
 
-// ComponentSpec Details about compute, networking and storage requirements for each component of the application. App provider should define all information needed to instantiate the component. If artefact is being defined at component level this section should have information just about the component. In case the artefact is being defined at application level the section should provide details about all the components.
-type ComponentSpec struct {
-	// Must be a valid RFC 1035 label name.  Component name must be unique with an application
-	ComponentName string `json:"componentName"`
-	// List of all images associated with the component. Images are specified using the file identifiers. Partner OP provides these images using file upload api.
-	Images []string `json:"images"`
-	// Number of component instances to be launched.
-	NumOfInstances int32 `json:"numOfInstances"`
-	// How the platform shall handle component failure
-	RestartPolicy string `json:"restartPolicy"`
-	CommandLineParams *CommandLineParams `json:"commandLineParams,omitempty"`
-	// Each application component exposes some ports either for external users or for inter component communication. Application provider is required to specify which ports are to be exposed and the type of traffic that will flow through these ports.
-	ExposedInterfaces []InterfaceDetails `json:"exposedInterfaces,omitempty"`
-	ComputeResourceProfile ComputeResourceInfo `json:"computeResourceProfile"`
-	CompEnvParams []CompEnvParams `json:"compEnvParams,omitempty"`
-	DeploymentConfig *DeploymentConfig `json:"deploymentConfig,omitempty"`
-	// The ephemeral volume a container process may need to temporary store internal data
-	PersistentVolumes []PersistentVolumeDetails `json:"persistentVolumes,omitempty"`
+// ImageDetails struct for ImageDetails
+type ImageDetails struct {
+	// A globally unique identifier associated with the image file. Originating OP generates this identifier when file is uploaded over NBI.
+	FileId string `json:"fileId"`
+	// UserId of the app provider.  Identifier is relevant only in context of this federation.
+	AppProviderId string `json:"appProviderId"`
+	// Name of the image file.   App provides specifies this name when image is uploaded on originating OP over NBI.
+	FileName string `json:"fileName"`
+	// Brief description about the image file.
+	FileDescription *string `json:"fileDescription,omitempty"`
+	// File version information
+	FileVersionInfo string `json:"fileVersionInfo"`
+	FileType VirtImageType `json:"fileType"`
+	// MD5 checksum for VM and file-based images, sha256 digest for containers
+	Checksum *string `json:"checksum,omitempty"`
+	ImgOSType OSType `json:"imgOSType"`
+	ImgInsSetArch CPUArchType `json:"imgInsSetArch"`
+	// Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal.  OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
+	RepoType *string `json:"repoType,omitempty"`
+	FileRepoLocation *ObjectRepoLocation `json:"fileRepoLocation,omitempty"`
 }
 
-// NewComponentSpec instantiates a new ComponentSpec object
+// NewImageDetails instantiates a new ImageDetails object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewComponentSpec(componentName string, images []string, numOfInstances int32, restartPolicy string, computeResourceProfile ComputeResourceInfo) *ComponentSpec {
-	this := ComponentSpec{}
-	this.ComponentName = componentName
-	this.Images = images
-	this.NumOfInstances = numOfInstances
-	this.RestartPolicy = restartPolicy
-	this.ComputeResourceProfile = computeResourceProfile
+func NewImageDetails(fileId string, appProviderId string, fileName string, fileVersionInfo string, fileType VirtImageType, imgOSType OSType, imgInsSetArch CPUArchType) *ImageDetails {
+	this := ImageDetails{}
+	this.FileId = fileId
+	this.AppProviderId = appProviderId
+	this.FileName = fileName
+	this.FileVersionInfo = fileVersionInfo
+	this.FileType = fileType
+	this.ImgOSType = imgOSType
+	this.ImgInsSetArch = imgInsSetArch
 	return &this
 }
 
-// NewComponentSpecWithDefaults instantiates a new ComponentSpec object
+// NewImageDetailsWithDefaults instantiates a new ImageDetails object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewComponentSpecWithDefaults() *ComponentSpec {
-	this := ComponentSpec{}
+func NewImageDetailsWithDefaults() *ImageDetails {
+	this := ImageDetails{}
 	return &this
 }
 
-// GetComponentName returns the ComponentName field value
-func (o *ComponentSpec) GetComponentName() string {
+// GetFileId returns the FileId field value
+func (o *ImageDetails) GetFileId() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.ComponentName
+	return o.FileId
 }
 
-// GetComponentNameOk returns a tuple with the ComponentName field value
+// GetFileIdOk returns a tuple with the FileId field value
 // and a boolean to check if the value has been set.
-func (o *ComponentSpec) GetComponentNameOk() (*string, bool) {
+func (o *ImageDetails) GetFileIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ComponentName, true
+	return &o.FileId, true
 }
 
-// SetComponentName sets field value
-func (o *ComponentSpec) SetComponentName(v string) {
-	o.ComponentName = v
+// SetFileId sets field value
+func (o *ImageDetails) SetFileId(v string) {
+	o.FileId = v
 }
 
-// GetImages returns the Images field value
-func (o *ComponentSpec) GetImages() []string {
-	if o == nil {
-		var ret []string
-		return ret
-	}
-
-	return o.Images
-}
-
-// GetImagesOk returns a tuple with the Images field value
-// and a boolean to check if the value has been set.
-func (o *ComponentSpec) GetImagesOk() ([]string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return o.Images, true
-}
-
-// SetImages sets field value
-func (o *ComponentSpec) SetImages(v []string) {
-	o.Images = v
-}
-
-// GetNumOfInstances returns the NumOfInstances field value
-func (o *ComponentSpec) GetNumOfInstances() int32 {
-	if o == nil {
-		var ret int32
-		return ret
-	}
-
-	return o.NumOfInstances
-}
-
-// GetNumOfInstancesOk returns a tuple with the NumOfInstances field value
-// and a boolean to check if the value has been set.
-func (o *ComponentSpec) GetNumOfInstancesOk() (*int32, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.NumOfInstances, true
-}
-
-// SetNumOfInstances sets field value
-func (o *ComponentSpec) SetNumOfInstances(v int32) {
-	o.NumOfInstances = v
-}
-
-// GetRestartPolicy returns the RestartPolicy field value
-func (o *ComponentSpec) GetRestartPolicy() string {
+// GetAppProviderId returns the AppProviderId field value
+func (o *ImageDetails) GetAppProviderId() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.RestartPolicy
+	return o.AppProviderId
 }
 
-// GetRestartPolicyOk returns a tuple with the RestartPolicy field value
+// GetAppProviderIdOk returns a tuple with the AppProviderId field value
 // and a boolean to check if the value has been set.
-func (o *ComponentSpec) GetRestartPolicyOk() (*string, bool) {
+func (o *ImageDetails) GetAppProviderIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.RestartPolicy, true
+	return &o.AppProviderId, true
 }
 
-// SetRestartPolicy sets field value
-func (o *ComponentSpec) SetRestartPolicy(v string) {
-	o.RestartPolicy = v
+// SetAppProviderId sets field value
+func (o *ImageDetails) SetAppProviderId(v string) {
+	o.AppProviderId = v
 }
 
-// GetCommandLineParams returns the CommandLineParams field value if set, zero value otherwise.
-func (o *ComponentSpec) GetCommandLineParams() CommandLineParams {
-	if o == nil || isNil(o.CommandLineParams) {
-		var ret CommandLineParams
-		return ret
-	}
-	return *o.CommandLineParams
-}
-
-// GetCommandLineParamsOk returns a tuple with the CommandLineParams field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *ComponentSpec) GetCommandLineParamsOk() (*CommandLineParams, bool) {
-	if o == nil || isNil(o.CommandLineParams) {
-		return nil, false
-	}
-	return o.CommandLineParams, true
-}
-
-// HasCommandLineParams returns a boolean if a field has been set.
-func (o *ComponentSpec) HasCommandLineParams() bool {
-	if o != nil && !isNil(o.CommandLineParams) {
-		return true
-	}
-
-	return false
-}
-
-// SetCommandLineParams gets a reference to the given CommandLineParams and assigns it to the CommandLineParams field.
-func (o *ComponentSpec) SetCommandLineParams(v CommandLineParams) {
-	o.CommandLineParams = &v
-}
-
-// GetExposedInterfaces returns the ExposedInterfaces field value if set, zero value otherwise.
-func (o *ComponentSpec) GetExposedInterfaces() []InterfaceDetails {
-	if o == nil || isNil(o.ExposedInterfaces) {
-		var ret []InterfaceDetails
-		return ret
-	}
-	return o.ExposedInterfaces
-}
-
-// GetExposedInterfacesOk returns a tuple with the ExposedInterfaces field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *ComponentSpec) GetExposedInterfacesOk() ([]InterfaceDetails, bool) {
-	if o == nil || isNil(o.ExposedInterfaces) {
-		return nil, false
-	}
-	return o.ExposedInterfaces, true
-}
-
-// HasExposedInterfaces returns a boolean if a field has been set.
-func (o *ComponentSpec) HasExposedInterfaces() bool {
-	if o != nil && !isNil(o.ExposedInterfaces) {
-		return true
-	}
-
-	return false
-}
-
-// SetExposedInterfaces gets a reference to the given []InterfaceDetails and assigns it to the ExposedInterfaces field.
-func (o *ComponentSpec) SetExposedInterfaces(v []InterfaceDetails) {
-	o.ExposedInterfaces = v
-}
-
-// GetComputeResourceProfile returns the ComputeResourceProfile field value
-func (o *ComponentSpec) GetComputeResourceProfile() ComputeResourceInfo {
+// GetFileName returns the FileName field value
+func (o *ImageDetails) GetFileName() string {
 	if o == nil {
-		var ret ComputeResourceInfo
+		var ret string
 		return ret
 	}
 
-	return o.ComputeResourceProfile
+	return o.FileName
 }
 
-// GetComputeResourceProfileOk returns a tuple with the ComputeResourceProfile field value
+// GetFileNameOk returns a tuple with the FileName field value
 // and a boolean to check if the value has been set.
-func (o *ComponentSpec) GetComputeResourceProfileOk() (*ComputeResourceInfo, bool) {
+func (o *ImageDetails) GetFileNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ComputeResourceProfile, true
+	return &o.FileName, true
 }
 
-// SetComputeResourceProfile sets field value
-func (o *ComponentSpec) SetComputeResourceProfile(v ComputeResourceInfo) {
-	o.ComputeResourceProfile = v
+// SetFileName sets field value
+func (o *ImageDetails) SetFileName(v string) {
+	o.FileName = v
 }
 
-// GetCompEnvParams returns the CompEnvParams field value if set, zero value otherwise.
-func (o *ComponentSpec) GetCompEnvParams() []CompEnvParams {
-	if o == nil || isNil(o.CompEnvParams) {
-		var ret []CompEnvParams
+// GetFileDescription returns the FileDescription field value if set, zero value otherwise.
+func (o *ImageDetails) GetFileDescription() string {
+	if o == nil || isNil(o.FileDescription) {
+		var ret string
 		return ret
 	}
-	return o.CompEnvParams
+	return *o.FileDescription
 }
 
-// GetCompEnvParamsOk returns a tuple with the CompEnvParams field value if set, nil otherwise
+// GetFileDescriptionOk returns a tuple with the FileDescription field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ComponentSpec) GetCompEnvParamsOk() ([]CompEnvParams, bool) {
-	if o == nil || isNil(o.CompEnvParams) {
+func (o *ImageDetails) GetFileDescriptionOk() (*string, bool) {
+	if o == nil || isNil(o.FileDescription) {
 		return nil, false
 	}
-	return o.CompEnvParams, true
+	return o.FileDescription, true
 }
 
-// HasCompEnvParams returns a boolean if a field has been set.
-func (o *ComponentSpec) HasCompEnvParams() bool {
-	if o != nil && !isNil(o.CompEnvParams) {
+// HasFileDescription returns a boolean if a field has been set.
+func (o *ImageDetails) HasFileDescription() bool {
+	if o != nil && !isNil(o.FileDescription) {
 		return true
 	}
 
 	return false
 }
 
-// SetCompEnvParams gets a reference to the given []CompEnvParams and assigns it to the CompEnvParams field.
-func (o *ComponentSpec) SetCompEnvParams(v []CompEnvParams) {
-	o.CompEnvParams = v
+// SetFileDescription gets a reference to the given string and assigns it to the FileDescription field.
+func (o *ImageDetails) SetFileDescription(v string) {
+	o.FileDescription = &v
 }
 
-// GetDeploymentConfig returns the DeploymentConfig field value if set, zero value otherwise.
-func (o *ComponentSpec) GetDeploymentConfig() DeploymentConfig {
-	if o == nil || isNil(o.DeploymentConfig) {
-		var ret DeploymentConfig
+// GetFileVersionInfo returns the FileVersionInfo field value
+func (o *ImageDetails) GetFileVersionInfo() string {
+	if o == nil {
+		var ret string
 		return ret
 	}
-	return *o.DeploymentConfig
+
+	return o.FileVersionInfo
 }
 
-// GetDeploymentConfigOk returns a tuple with the DeploymentConfig field value if set, nil otherwise
+// GetFileVersionInfoOk returns a tuple with the FileVersionInfo field value
 // and a boolean to check if the value has been set.
-func (o *ComponentSpec) GetDeploymentConfigOk() (*DeploymentConfig, bool) {
-	if o == nil || isNil(o.DeploymentConfig) {
+func (o *ImageDetails) GetFileVersionInfoOk() (*string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.DeploymentConfig, true
+	return &o.FileVersionInfo, true
 }
 
-// HasDeploymentConfig returns a boolean if a field has been set.
-func (o *ComponentSpec) HasDeploymentConfig() bool {
-	if o != nil && !isNil(o.DeploymentConfig) {
+// SetFileVersionInfo sets field value
+func (o *ImageDetails) SetFileVersionInfo(v string) {
+	o.FileVersionInfo = v
+}
+
+// GetFileType returns the FileType field value
+func (o *ImageDetails) GetFileType() VirtImageType {
+	if o == nil {
+		var ret VirtImageType
+		return ret
+	}
+
+	return o.FileType
+}
+
+// GetFileTypeOk returns a tuple with the FileType field value
+// and a boolean to check if the value has been set.
+func (o *ImageDetails) GetFileTypeOk() (*VirtImageType, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.FileType, true
+}
+
+// SetFileType sets field value
+func (o *ImageDetails) SetFileType(v VirtImageType) {
+	o.FileType = v
+}
+
+// GetChecksum returns the Checksum field value if set, zero value otherwise.
+func (o *ImageDetails) GetChecksum() string {
+	if o == nil || isNil(o.Checksum) {
+		var ret string
+		return ret
+	}
+	return *o.Checksum
+}
+
+// GetChecksumOk returns a tuple with the Checksum field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ImageDetails) GetChecksumOk() (*string, bool) {
+	if o == nil || isNil(o.Checksum) {
+		return nil, false
+	}
+	return o.Checksum, true
+}
+
+// HasChecksum returns a boolean if a field has been set.
+func (o *ImageDetails) HasChecksum() bool {
+	if o != nil && !isNil(o.Checksum) {
 		return true
 	}
 
 	return false
 }
 
-// SetDeploymentConfig gets a reference to the given DeploymentConfig and assigns it to the DeploymentConfig field.
-func (o *ComponentSpec) SetDeploymentConfig(v DeploymentConfig) {
-	o.DeploymentConfig = &v
+// SetChecksum gets a reference to the given string and assigns it to the Checksum field.
+func (o *ImageDetails) SetChecksum(v string) {
+	o.Checksum = &v
 }
 
-// GetPersistentVolumes returns the PersistentVolumes field value if set, zero value otherwise.
-func (o *ComponentSpec) GetPersistentVolumes() []PersistentVolumeDetails {
-	if o == nil || isNil(o.PersistentVolumes) {
-		var ret []PersistentVolumeDetails
+// GetImgOSType returns the ImgOSType field value
+func (o *ImageDetails) GetImgOSType() OSType {
+	if o == nil {
+		var ret OSType
 		return ret
 	}
-	return o.PersistentVolumes
+
+	return o.ImgOSType
 }
 
-// GetPersistentVolumesOk returns a tuple with the PersistentVolumes field value if set, nil otherwise
+// GetImgOSTypeOk returns a tuple with the ImgOSType field value
 // and a boolean to check if the value has been set.
-func (o *ComponentSpec) GetPersistentVolumesOk() ([]PersistentVolumeDetails, bool) {
-	if o == nil || isNil(o.PersistentVolumes) {
+func (o *ImageDetails) GetImgOSTypeOk() (*OSType, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.PersistentVolumes, true
+	return &o.ImgOSType, true
 }
 
-// HasPersistentVolumes returns a boolean if a field has been set.
-func (o *ComponentSpec) HasPersistentVolumes() bool {
-	if o != nil && !isNil(o.PersistentVolumes) {
+// SetImgOSType sets field value
+func (o *ImageDetails) SetImgOSType(v OSType) {
+	o.ImgOSType = v
+}
+
+// GetImgInsSetArch returns the ImgInsSetArch field value
+func (o *ImageDetails) GetImgInsSetArch() CPUArchType {
+	if o == nil {
+		var ret CPUArchType
+		return ret
+	}
+
+	return o.ImgInsSetArch
+}
+
+// GetImgInsSetArchOk returns a tuple with the ImgInsSetArch field value
+// and a boolean to check if the value has been set.
+func (o *ImageDetails) GetImgInsSetArchOk() (*CPUArchType, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ImgInsSetArch, true
+}
+
+// SetImgInsSetArch sets field value
+func (o *ImageDetails) SetImgInsSetArch(v CPUArchType) {
+	o.ImgInsSetArch = v
+}
+
+// GetRepoType returns the RepoType field value if set, zero value otherwise.
+func (o *ImageDetails) GetRepoType() string {
+	if o == nil || isNil(o.RepoType) {
+		var ret string
+		return ret
+	}
+	return *o.RepoType
+}
+
+// GetRepoTypeOk returns a tuple with the RepoType field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ImageDetails) GetRepoTypeOk() (*string, bool) {
+	if o == nil || isNil(o.RepoType) {
+		return nil, false
+	}
+	return o.RepoType, true
+}
+
+// HasRepoType returns a boolean if a field has been set.
+func (o *ImageDetails) HasRepoType() bool {
+	if o != nil && !isNil(o.RepoType) {
 		return true
 	}
 
 	return false
 }
 
-// SetPersistentVolumes gets a reference to the given []PersistentVolumeDetails and assigns it to the PersistentVolumes field.
-func (o *ComponentSpec) SetPersistentVolumes(v []PersistentVolumeDetails) {
-	o.PersistentVolumes = v
+// SetRepoType gets a reference to the given string and assigns it to the RepoType field.
+func (o *ImageDetails) SetRepoType(v string) {
+	o.RepoType = &v
 }
 
-func (o ComponentSpec) MarshalJSON() ([]byte, error) {
+// GetFileRepoLocation returns the FileRepoLocation field value if set, zero value otherwise.
+func (o *ImageDetails) GetFileRepoLocation() ObjectRepoLocation {
+	if o == nil || isNil(o.FileRepoLocation) {
+		var ret ObjectRepoLocation
+		return ret
+	}
+	return *o.FileRepoLocation
+}
+
+// GetFileRepoLocationOk returns a tuple with the FileRepoLocation field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ImageDetails) GetFileRepoLocationOk() (*ObjectRepoLocation, bool) {
+	if o == nil || isNil(o.FileRepoLocation) {
+		return nil, false
+	}
+	return o.FileRepoLocation, true
+}
+
+// HasFileRepoLocation returns a boolean if a field has been set.
+func (o *ImageDetails) HasFileRepoLocation() bool {
+	if o != nil && !isNil(o.FileRepoLocation) {
+		return true
+	}
+
+	return false
+}
+
+// SetFileRepoLocation gets a reference to the given ObjectRepoLocation and assigns it to the FileRepoLocation field.
+func (o *ImageDetails) SetFileRepoLocation(v ObjectRepoLocation) {
+	o.FileRepoLocation = &v
+}
+
+func (o ImageDetails) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -347,63 +367,62 @@ func (o ComponentSpec) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ComponentSpec) ToMap() (map[string]interface{}, error) {
+func (o ImageDetails) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["componentName"] = o.ComponentName
-	toSerialize["images"] = o.Images
-	toSerialize["numOfInstances"] = o.NumOfInstances
-	toSerialize["restartPolicy"] = o.RestartPolicy
-	if !isNil(o.CommandLineParams) {
-		toSerialize["commandLineParams"] = o.CommandLineParams
+	toSerialize["fileId"] = o.FileId
+	toSerialize["appProviderId"] = o.AppProviderId
+	toSerialize["fileName"] = o.FileName
+	if !isNil(o.FileDescription) {
+		toSerialize["fileDescription"] = o.FileDescription
 	}
-	if !isNil(o.ExposedInterfaces) {
-		toSerialize["exposedInterfaces"] = o.ExposedInterfaces
+	toSerialize["fileVersionInfo"] = o.FileVersionInfo
+	toSerialize["fileType"] = o.FileType
+	if !isNil(o.Checksum) {
+		toSerialize["checksum"] = o.Checksum
 	}
-	toSerialize["computeResourceProfile"] = o.ComputeResourceProfile
-	if !isNil(o.CompEnvParams) {
-		toSerialize["compEnvParams"] = o.CompEnvParams
+	toSerialize["imgOSType"] = o.ImgOSType
+	toSerialize["imgInsSetArch"] = o.ImgInsSetArch
+	if !isNil(o.RepoType) {
+		toSerialize["repoType"] = o.RepoType
 	}
-	if !isNil(o.DeploymentConfig) {
-		toSerialize["deploymentConfig"] = o.DeploymentConfig
-	}
-	if !isNil(o.PersistentVolumes) {
-		toSerialize["persistentVolumes"] = o.PersistentVolumes
+	if !isNil(o.FileRepoLocation) {
+		toSerialize["fileRepoLocation"] = o.FileRepoLocation
 	}
 	return toSerialize, nil
 }
 
-type NullableComponentSpec struct {
-	value *ComponentSpec
+type NullableImageDetails struct {
+	value *ImageDetails
 	isSet bool
 }
 
-func (v NullableComponentSpec) Get() *ComponentSpec {
+func (v NullableImageDetails) Get() *ImageDetails {
 	return v.value
 }
 
-func (v *NullableComponentSpec) Set(val *ComponentSpec) {
+func (v *NullableImageDetails) Set(val *ImageDetails) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableComponentSpec) IsSet() bool {
+func (v NullableImageDetails) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableComponentSpec) Unset() {
+func (v *NullableImageDetails) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableComponentSpec(val *ComponentSpec) *NullableComponentSpec {
-	return &NullableComponentSpec{value: val, isSet: true}
+func NewNullableImageDetails(val *ImageDetails) *NullableImageDetails {
+	return &NullableImageDetails{value: val, isSet: true}
 }
 
-func (v NullableComponentSpec) MarshalJSON() ([]byte, error) {
+func (v NullableImageDetails) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableComponentSpec) UnmarshalJSON(src []byte) error {
+func (v *NullableImageDetails) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

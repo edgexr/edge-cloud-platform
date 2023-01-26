@@ -121,12 +121,16 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to look up Artefact, %s", err.Error()))
 	}
 
+	// TODO: handle onboarding. We do not have any way to explictly
+	// onboard a zone beforehand. And managing where images are
+	// onboarded can be difficult in the case of kubernetes, as it
+	// has it's own mechanisms for cleaing up images.
 	// check any specified zones
 	zones := []string{}
 	for _, depZone := range req.AppDeploymentZones {
 		provZone := ormapi.ProviderZone{
 			ProviderName: provider.Name,
-			ZoneId:       depZone.ZoneInfo,
+			ZoneId:       depZone,
 		}
 		// look up zone
 		res := db.Where(&provZone).First(&provZone)
@@ -246,9 +250,9 @@ func (p *PartnerApi) ViewApplication(c echo.Context, fedCtxId FederationContextI
 		specs = append(specs, spec)
 	}
 	app.AppComponentSpecs = specs
-	zones := []fedewapi.OnboardApplicationRequestAppDeploymentZonesInner{}
+	zones := []fedewapi.ViewApplication200ResponseAppDeploymentZonesInner{}
 	for _, zone := range provApp.DeploymentZones {
-		dz := fedewapi.OnboardApplicationRequestAppDeploymentZonesInner{
+		dz := fedewapi.ViewApplication200ResponseAppDeploymentZonesInner{
 			ZoneInfo: zone,
 		}
 		zones = append(zones, dz)
@@ -361,5 +365,6 @@ func (p *PartnerApi) PartnerAppOnboardStatusEvent(c echo.Context) error {
 	// This notifies state per zone, but we don't explicitly onboard per zone.
 	// Since we'll never specify zones to onboard, we should never get
 	// this callback.
+	c.Response().WriteHeader(http.StatusNoContent)
 	return nil
 }

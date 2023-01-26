@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -280,19 +281,26 @@ func (p *PartnerApi) getZoneResources(ctx context.Context, base *ormapi.Provider
 			}
 		}
 	}
+	disk := int32(totalRes[cloudcommon.ResourceDiskGb])
+	var diskPtr *int32
+	if disk > 0 {
+		diskPtr = &disk
+	}
 	zoneInfo.ComputeResourceQuotaLimits = []fedewapi.ComputeResourceInfo{{
 		CpuArchType: string(fedewapi.CPUARCHTYPE_X86_64),
-		NumCPU:      int32(totalRes[cloudcommon.ResourceVcpus]),
+		NumCPU:      strconv.Itoa(int(totalRes[cloudcommon.ResourceVcpus])),
 		Memory:      int64(totalRes[cloudcommon.ResourceRamMb]),
-		DiskStorage: int32(totalRes[cloudcommon.ResourceDiskGb]),
+		DiskStorage: diskPtr,
 	}}
+
 	// reserved resources not supported yet, but API requires it to
 	// be specified
+	reservedDisk := int32(0)
 	zoneInfo.ReservedComputeResources = []fedewapi.ComputeResourceInfo{{
 		CpuArchType: string(fedewapi.CPUARCHTYPE_X86_64),
-		NumCPU:      0,
+		NumCPU:      "0",
 		Memory:      0,
-		DiskStorage: 0,
+		DiskStorage: &reservedDisk,
 	}}
 
 	flavorsSupported := []fedewapi.Flavour{}
@@ -478,10 +486,17 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 			}
 		}
 		if quotaLimit != nil {
-			if quotaLimit.NumCPU > 0 {
+			vcpus, err := edgeproto.ParseUdec64(quotaLimit.NumCPU)
+			if err != nil {
+				return fmt.Errorf("Failed to parse QuotaLimit NumCPU %s, %s", quotaLimit.NumCPU, err)
+			}
+			// quotas are whole cpus only
+			cpus := vcpus.Uint64()
+
+			if cpus > 0 {
 				fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
 					Name:  cloudcommon.ResourceVcpus,
-					Value: uint64(quotaLimit.NumCPU),
+					Value: cpus,
 				})
 			}
 			if quotaLimit.Memory > 0 {
@@ -490,10 +505,10 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 					Value: uint64(quotaLimit.Memory),
 				})
 			}
-			if quotaLimit.DiskStorage > 0 {
+			if quotaLimit.DiskStorage != nil && *quotaLimit.DiskStorage > 0 {
 				fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
 					Name:  cloudcommon.ResourceDiskGb,
-					Value: uint64(quotaLimit.DiskStorage),
+					Value: uint64(*quotaLimit.DiskStorage),
 				})
 			}
 		}

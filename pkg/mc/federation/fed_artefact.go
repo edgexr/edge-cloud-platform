@@ -285,18 +285,22 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 		app.AccessPorts = strings.Join(extPorts, ",")
 		log.SpanLog(ctx, log.DebugLevelApi, "ignoring internal ports in mix of internal and external ports", "intPorts", intPorts)
 	}
+	vcpus, err := edgeproto.ParseUdec64(spec.ComputeResourceProfile.NumCPU)
+	if err != nil {
+		return fmt.Errorf("Failed to parse ComponentSpec ComputeResourceProfile NumCPU %s, %s", spec.ComputeResourceProfile.NumCPU, err)
+	}
 	// handle resource requirements
-	if spec.ComputeResourceProfile.NumCPU < 0 {
+	if vcpus.IsZero() {
 		return fmt.Errorf("ComponentSpec computeResourceProfile num CPU must be greater than 0")
 	}
 	if spec.ComputeResourceProfile.Memory < 0 {
 		return fmt.Errorf("ComponentSpec computeResourceProfile memory must be greater than 0")
 	}
-	if spec.ComputeResourceProfile.DiskStorage < 0 {
+	if spec.ComputeResourceProfile.DiskStorage != nil && *spec.ComputeResourceProfile.DiskStorage < 0 {
 		return fmt.Errorf("ComponentSpec computeResourceProfile disk storage must be greater than 0")
 	}
 	serverlessConfig := edgeproto.ServerlessConfig{
-		Vcpus: *edgeproto.NewUdec64(uint64(spec.ComputeResourceProfile.NumCPU), 0),
+		Vcpus: *vcpus,
 		Ram:   uint64(spec.ComputeResourceProfile.Memory),
 	}
 	gpu := spec.ComputeResourceProfile.Gpu

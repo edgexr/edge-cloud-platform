@@ -192,7 +192,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 		AppProviderId: app.Key.Organization,
 		ZoneInfo: fedewapi.InstallAppRequestZoneInfo{
 			ZoneId:    cloudletKey.Name,
-			FlavourId: "TBD",
+			FlavourId: flavor.Key.Name,
 		},
 		AppInstCallbackLink: f.commonPf.PlatformConfig.FedExternalAddr + "/" + federationmgmt.PartnerInstanceStatusEventPath + "/" + appInst.UniqueId,
 	}
