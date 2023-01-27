@@ -320,7 +320,7 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 		}
 		for portVal := portStart; portVal <= portEnd; portVal++ {
 			intf := fedewapi.InterfaceDetails{}
-			intf.InterfaceId = fmt.Sprintf("%d", portVal)
+			intf.InterfaceId = partnerApi.GetInterfaceId(port, portVal)
 			if port.Proto == dmeproto.LProto_L_PROTO_UDP {
 				intf.CommProtocol = federation.CommProtoUDP
 			} else {

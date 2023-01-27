@@ -127,50 +127,8 @@ regiondata:
       accessports: tcp:81
       defaultflavor:
         name: x1.small
-      deployment: kubernetes
-      deploymentmanifest: |
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: dockerapp10-tcp
-          labels:
-            run: dockerapp1.0
-        spec:
-          type: LoadBalancer
-          ports:
-          - name: tcp81
-            protocol: TCP
-            port: 81
-            targetPort: 81
-          selector:
-            run: dockerapp1.0
-        ---
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: dockerapp10-deployment
-        spec:
-          replicas: 1
-          selector:
-            matchLabels:
-              run: dockerapp1.0
-          template:
-            metadata:
-              labels:
-                run: dockerapp1.0
-                mexDeployGen: kubernetes-basic
-            spec:
-              volumes:
-              imagePullSecrets:
-              - name: registry.edgecloud.net
-              containers:
-              - name: dockerapp10
-                image: registry.edgecloud.net/FedAppCo/dockerapp:1.0
-                imagePullPolicy: Always
-                ports:
-                - containerPort: 81
-                  protocol: TCP
-      deploymentgenerator: kubernetes-basic
+      command: -text="hello world"
+      deployment: docker
       accesstype: LoadBalancer
       globalid: pa-dockerapp10fedappco
     - key:
@@ -249,7 +207,13 @@ regiondata:
                   protocol: TCP
                 - containerPort: 10002
                   protocol: UDP
+                args:
+                - "--text=\"hello world\""
       deploymentgenerator: kubernetes-basic
+      configs:
+      - kind: podArgs
+        config: |
+          ["--text=\"hello world\""]
       accesstype: LoadBalancer
       globalid: pa-k8sapp10fedappco
     - key:

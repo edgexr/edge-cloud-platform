@@ -1139,7 +1139,7 @@ var AllDataComments = map[string]string{
 	"apps:#.accessports":                                                             "Comma separated list of protocol:port pairs that the App listens on. Ex: tcp:80,udp:10002. Also supports additional configurations per port: (1) tls (tcp-only) - Enables TLS on specified port. Ex: tcp:443:tls. (2) nginx (udp-only) - Use NGINX LB instead of envoy for specified port. Ex: udp:10001:nginx. (3) maxpktsize (udp-only) - Configures maximum UDP datagram size allowed on port for both upstream/downstream traffic. Ex: udp:10001:maxpktsize=8000.",
 	"apps:#.defaultflavor.name":                                                      "Flavor name",
 	"apps:#.authpublickey":                                                           "Public key used for authentication",
-	"apps:#.command":                                                                 "Command that the container runs to start service",
+	"apps:#.command":                                                                 "Command that the container runs to start service, separate multiple commands by a space",
 	"apps:#.annotations":                                                             "Annotations is a comma separated map of arbitrary key value pairs, for example: key1=val1,key2=val2,key3=val 3",
 	"apps:#.deployment":                                                              "Deployment type (kubernetes, docker, or vm)",
 	"apps:#.deploymentmanifest":                                                      "Deployment manifest is the deployment specific manifest file/config. For docker deployment, this can be a docker-compose or docker run file. For kubernetes deployment, this can be a kubernetes yaml or helm chart file.",

@@ -500,7 +500,7 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	if in.DeploymentManifest != "" {
 		err = cloudcommon.IsValidDeploymentManifest(in.Deployment, in.Command, in.DeploymentManifest, ports, flavor)
 		if err != nil {
-			return fmt.Errorf("Invalid deployment manifest, %v", err)
+			return fmt.Errorf("Invalid deployment manifest, %s, %v", in.DeploymentManifest, err)
 		}
 	}
 

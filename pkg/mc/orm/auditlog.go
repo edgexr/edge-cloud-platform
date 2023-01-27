@@ -30,7 +30,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"google.golang.org/grpc/status"
 )
 
@@ -38,6 +37,7 @@ var AuditId uint64
 
 var TokenFieldClearer = util.NewJsonFieldClearer("token")
 var ClientSecretFieldClearer = util.NewJsonFieldClearer("clientSecret")
+var PasswordFieldClearer = util.NewJsonFieldClearer("password")
 
 func logger(next echo.HandlerFunc) echo.HandlerFunc {
 	return loggerCustom(next, resultErrorHandler)
@@ -112,7 +112,7 @@ func loggerCustom(next echo.HandlerFunc, errorHandler echo.MiddlewareFunc) echo.
 			// req/reply is captured later below
 		} else {
 			// use body dump to capture req/res.
-			bd := middleware.BodyDump(func(c echo.Context, reqB, resB []byte) {
+			bd := BodyDump(func(c echo.Context, reqB, resB []byte) {
 				reqBody = reqB
 				resBody = resB
 			})
@@ -145,6 +145,8 @@ func loggerCustom(next echo.HandlerFunc, errorHandler echo.MiddlewareFunc) echo.
 		}
 
 		// remove passwords from requests so they aren't logged
+		reqBody = TokenFieldClearer.Clear(reqBody)
+		reqBody = PasswordFieldClearer.Clear(reqBody)
 		if strings.Contains(req.RequestURI, "login") {
 			login := ormapi.UserLogin{}
 			err := json.Unmarshal(reqBody, &login)

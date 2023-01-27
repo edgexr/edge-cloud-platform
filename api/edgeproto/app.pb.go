@@ -386,7 +386,7 @@ type App struct {
 	DefaultFlavor FlavorKey `protobuf:"bytes,9,opt,name=default_flavor,json=defaultFlavor,proto3" json:"default_flavor"`
 	// Public key used for authentication
 	AuthPublicKey string `protobuf:"bytes,12,opt,name=auth_public_key,json=authPublicKey,proto3" json:"auth_public_key,omitempty"`
-	// Command that the container runs to start service
+	// Command that the container runs to start service, separate multiple commands by a space
 	Command string `protobuf:"bytes,13,opt,name=command,proto3" json:"command,omitempty"`
 	// Annotations is a comma separated map of arbitrary key value pairs,
 	// for example: key1=val1,key2=val2,key3="val 3"

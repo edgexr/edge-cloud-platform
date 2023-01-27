@@ -60,8 +60,7 @@ func (f *FederationPlatform) GetVersionProperties(ctx context.Context) map[strin
 // Get platform features
 func (f *FederationPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
-		SupportsKubernetesOnly:        true,
-		KubernetesRequiresWorkerNodes: true,
+		NoKubernetesClusterAutoScale: true,
 	}
 }
 

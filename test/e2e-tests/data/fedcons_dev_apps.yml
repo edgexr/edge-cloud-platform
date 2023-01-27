@@ -14,20 +14,25 @@ regiondata:
         version: "1.0"
       imagepath: registry.edgecloud.net/FedAppCo/k8sapp:1.0
       imagetype: Docker
-      deployment: "kubernetes"
+      deployment: kubernetes
       defaultflavor:
         name: x1.small
       accessports: "tcp:80,tcp:443,udp:10002"
+      configs:
+      - kind: podArgs
+        config: |
+          ["--text=\"hello world\""]
     - key:
         organization: FedAppCo
         name: dockerapp
         version: "1.0"
       imagepath: registry.edgecloud.net/FedAppCo/dockerapp:1.0
       imagetype: Docker
-      deployment: "kubernetes"
+      deployment: docker
       defaultflavor:
         name: x1.small
       accessports: "tcp:81"
+      command: "-text=\"hello world\""
     - key:
         organization: FedAppCo
         name: vmapp

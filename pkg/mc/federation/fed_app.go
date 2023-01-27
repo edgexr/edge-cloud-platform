@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -367,4 +368,8 @@ func (p *PartnerApi) PartnerAppOnboardStatusEvent(c echo.Context) error {
 	// this callback.
 	c.Response().WriteHeader(http.StatusNoContent)
 	return nil
+}
+
+func (p *PartnerApi) GetInterfaceId(port dme.AppPort, portVal int32) string {
+	return fmt.Sprintf("%d", portVal)
 }

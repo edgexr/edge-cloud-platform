@@ -309,50 +309,8 @@ regiondata:
       accessports: tcp:81
       defaultflavor:
         name: x1.small
-      deployment: kubernetes
-      deploymentmanifest: |
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: dockerapp10-tcp
-          labels:
-            run: dockerapp1.0
-        spec:
-          type: LoadBalancer
-          ports:
-          - name: tcp81
-            protocol: TCP
-            port: 81
-            targetPort: 81
-          selector:
-            run: dockerapp1.0
-        ---
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: dockerapp10-deployment
-        spec:
-          replicas: 1
-          selector:
-            matchLabels:
-              run: dockerapp1.0
-          template:
-            metadata:
-              labels:
-                run: dockerapp1.0
-                mexDeployGen: kubernetes-basic
-            spec:
-              volumes:
-              imagePullSecrets:
-              - name: registry.edgecloud.net
-              containers:
-              - name: dockerapp10
-                image: registry.edgecloud.net/FedAppCo/dockerapp:1.0
-                imagePullPolicy: Always
-                ports:
-                - containerPort: 81
-                  protocol: TCP
-      deploymentgenerator: kubernetes-basic
+      command: -text="hello world"
+      deployment: docker
       accesstype: LoadBalancer
       serverlessconfig:
         vcpus: 2
@@ -367,74 +325,8 @@ regiondata:
       accessports: tcp:80,tcp:443,udp:10002
       defaultflavor:
         name: x1.small
-      deployment: kubernetes
-      deploymentmanifest: |
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: k8sapp10-tcp
-          labels:
-            run: k8sapp1.0
-        spec:
-          type: LoadBalancer
-          ports:
-          - name: tcp80
-            protocol: TCP
-            port: 80
-            targetPort: 80
-          - name: tcp443
-            protocol: TCP
-            port: 443
-            targetPort: 443
-          selector:
-            run: k8sapp1.0
-        ---
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: k8sapp10-udp
-          labels:
-            run: k8sapp1.0
-        spec:
-          type: LoadBalancer
-          ports:
-          - name: udp10002
-            protocol: UDP
-            port: 10002
-            targetPort: 10002
-          selector:
-            run: k8sapp1.0
-        ---
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: k8sapp10-deployment
-        spec:
-          replicas: 1
-          selector:
-            matchLabels:
-              run: k8sapp1.0
-          template:
-            metadata:
-              labels:
-                run: k8sapp1.0
-                mexDeployGen: kubernetes-basic
-            spec:
-              volumes:
-              imagePullSecrets:
-              - name: registry.edgecloud.net
-              containers:
-              - name: k8sapp10
-                image: registry.edgecloud.net/FedAppCo/k8sapp:1.0
-                imagePullPolicy: Always
-                ports:
-                - containerPort: 80
-                  protocol: TCP
-                - containerPort: 443
-                  protocol: TCP
-                - containerPort: 10002
-                  protocol: UDP
-      deploymentgenerator: kubernetes-basic
+      command: --text="hello world"
+      deployment: docker
       accesstype: LoadBalancer
       serverlessconfig:
         vcpus: 2
@@ -471,7 +363,7 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+      uri: reservable1-edgecloudorg.dmuus-cloud-1-dmuus.local.edgecloude2e.net
       liveness: Static
       mappedports:
       - proto: Tcp
@@ -480,9 +372,6 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
-      runtimeinfo:
-        containerids:
-        - appOnClusterNode0
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
@@ -504,7 +393,7 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+      uri: reservable0-edgecloudorg.dmuus-cloud-1-dmuus.local.edgecloude2e.net
       liveness: Static
       mappedports:
       - proto: Tcp
@@ -519,9 +408,6 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
-      runtimeinfo:
-        containerids:
-        - appOnClusterNode0
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
@@ -730,50 +616,8 @@ regiondata:
       accessports: tcp:81
       defaultflavor:
         name: x1.small
-      deployment: kubernetes
-      deploymentmanifest: |
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: dockerapp10-tcp
-          labels:
-            run: dockerapp1.0
-        spec:
-          type: LoadBalancer
-          ports:
-          - name: tcp81
-            protocol: TCP
-            port: 81
-            targetPort: 81
-          selector:
-            run: dockerapp1.0
-        ---
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: dockerapp10-deployment
-        spec:
-          replicas: 1
-          selector:
-            matchLabels:
-              run: dockerapp1.0
-          template:
-            metadata:
-              labels:
-                run: dockerapp1.0
-                mexDeployGen: kubernetes-basic
-            spec:
-              volumes:
-              imagePullSecrets:
-              - name: registry.edgecloud.net
-              containers:
-              - name: dockerapp10
-                image: registry.edgecloud.net/FedAppCo/dockerapp:1.0
-                imagePullPolicy: Always
-                ports:
-                - containerPort: 81
-                  protocol: TCP
-      deploymentgenerator: kubernetes-basic
+      command: -text="hello world"
+      deployment: docker
       accesstype: LoadBalancer
       serverlessconfig:
         vcpus: 2
@@ -788,74 +632,8 @@ regiondata:
       accessports: tcp:80,tcp:443,udp:10002
       defaultflavor:
         name: x1.small
-      deployment: kubernetes
-      deploymentmanifest: |
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: k8sapp10-tcp
-          labels:
-            run: k8sapp1.0
-        spec:
-          type: LoadBalancer
-          ports:
-          - name: tcp80
-            protocol: TCP
-            port: 80
-            targetPort: 80
-          - name: tcp443
-            protocol: TCP
-            port: 443
-            targetPort: 443
-          selector:
-            run: k8sapp1.0
-        ---
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: k8sapp10-udp
-          labels:
-            run: k8sapp1.0
-        spec:
-          type: LoadBalancer
-          ports:
-          - name: udp10002
-            protocol: UDP
-            port: 10002
-            targetPort: 10002
-          selector:
-            run: k8sapp1.0
-        ---
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: k8sapp10-deployment
-        spec:
-          replicas: 1
-          selector:
-            matchLabels:
-              run: k8sapp1.0
-          template:
-            metadata:
-              labels:
-                run: k8sapp1.0
-                mexDeployGen: kubernetes-basic
-            spec:
-              volumes:
-              imagePullSecrets:
-              - name: registry.edgecloud.net
-              containers:
-              - name: k8sapp10
-                image: registry.edgecloud.net/FedAppCo/k8sapp:1.0
-                imagePullPolicy: Always
-                ports:
-                - containerPort: 80
-                  protocol: TCP
-                - containerPort: 443
-                  protocol: TCP
-                - containerPort: 10002
-                  protocol: UDP
-      deploymentgenerator: kubernetes-basic
+      command: --text="hello world"
+      deployment: docker
       accesstype: LoadBalancer
       serverlessconfig:
         vcpus: 2

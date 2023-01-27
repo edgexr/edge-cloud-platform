@@ -2194,6 +2194,7 @@ func (s *AppInstApi) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.Fe
 		portFqdns[port.InternalPort] = port.FqdnPrefix
 	}
 	if len(portFqdns) > 0 {
+		log.SpanLog(ctx, log.DebugLevelApi, "Updating ports on federated appinst", "key", appInstKey, "ports", portFqdns)
 		err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 			// update port FQDNs on AppInst
 			inst := edgeproto.AppInst{}
@@ -2210,6 +2211,11 @@ func (s *AppInstApi) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.Fe
 					continue
 				}
 				inst.MappedPorts[ii].FqdnPrefix = fqdn
+				applyUpdate = true
+			}
+			// clear URI, as full path to port is in FqdnPrefix
+			if inst.Uri != "" {
+				inst.Uri = ""
 				applyUpdate = true
 			}
 			if applyUpdate {

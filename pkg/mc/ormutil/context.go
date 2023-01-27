@@ -15,6 +15,7 @@
 package ormutil
 
 import (
+	"bytes"
 	"context"
 	"time"
 
@@ -40,6 +41,7 @@ type EchoContext struct {
 	wsRequest  []byte
 	wsResponse []string
 	eventStart time.Time
+	reqLogger  *ReqLogger
 }
 
 func NewEchoContext(c echo.Context, ctx context.Context, eventStart time.Time) *EchoContext {
@@ -105,4 +107,26 @@ func GetWsLogData(c echo.Context) ([]byte, []string) {
 		panic("auditlog.go logger func should have wrapped echo.Context with EchoContext")
 	}
 	return ec.wsRequest, ec.wsResponse
+}
+
+func SetReqLogger(c echo.Context) {
+	ec, ok := c.(*EchoContext)
+	if !ok {
+		panic("auditlog.go logger func should have wrapped echo.Context with EchoContext")
+	}
+	reqLogger := &ReqLogger{}
+	ec.reqLogger = reqLogger
+}
+
+func GetReqLogger(c echo.Context) *ReqLogger {
+	ec, ok := c.(*EchoContext)
+	if !ok {
+		panic("auditlog.go logger func should have wrapped echo.Context with EchoContext")
+	}
+	return ec.reqLogger
+}
+
+type ReqLogger struct {
+	data   bytes.Buffer
+	logged bool
 }

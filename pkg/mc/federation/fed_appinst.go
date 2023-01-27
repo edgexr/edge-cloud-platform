@@ -193,7 +193,7 @@ func (s *AppInstWorker) createAppInstJob() {
 }
 
 func (s *AppInstWorker) createAppInst(ctx context.Context) (reterr error) {
-	log.SpanLog(ctx, log.DebugLevelApi, "creating AppInst", "provAppInst", s.provAppInst)
+	log.SpanLog(ctx, log.DebugLevelApi, "federation provider creating AppInst", "provAppInst", s.provAppInst)
 	defer func() {
 		if reterr == nil {
 			return
@@ -219,7 +219,7 @@ func (s *AppInstWorker) createAppInst(ctx context.Context) (reterr error) {
 		appInstIn.Flavor.Name = s.flavor
 	}
 
-	log.SpanLog(ctx, log.DebugLevelApi, "Federation create appinst", "appInst", appInstIn)
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation provider create appinst", "appInst", appInstIn)
 	cb := func(res *edgeproto.Result) error {
 		log.SpanLog(ctx, log.DebugLevelApi, "controller create appinst callback", "res", *res)
 		s.sendCallback(ctx, federationmgmt.AppInstStatePending, res.Message, nil)
@@ -229,7 +229,36 @@ func (s *AppInstWorker) createAppInst(ctx context.Context) (reterr error) {
 	if err != nil {
 		return err
 	}
-	s.sendCallback(ctx, federationmgmt.AppInstStateReady, "", nil)
+
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation provider check appinst ports", "appInst", appInstIn)
+	filter := edgeproto.AppInst{
+		Key: appInstIn.Key,
+	}
+	var appInstOut *edgeproto.AppInst
+	err = ctrlclient.ShowAppInstStream(ctx, &rc, &filter, s.partner.connCache, nil, func(ai *edgeproto.AppInst) error {
+		appInstOut = ai
+		return nil
+	})
+	if appInstOut == nil {
+		return fmt.Errorf("Unable to find created AppInst %s", filter.Key.GetKeyString())
+	}
+	accessPoints := []fedewapi.FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner{}
+	for _, port := range appInstOut.MappedPorts {
+		portStart := port.InternalPort
+		portEnd := port.EndPort
+		if portEnd == 0 {
+			portEnd = portStart
+		}
+		for portVal := portStart; portVal <= portEnd; portVal++ {
+			ap := fedewapi.FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner{}
+			ap.InterfaceId = s.partner.GetInterfaceId(port, portVal)
+			fqdn := appInstOut.Uri + port.FqdnPrefix
+			ap.AccessPoints.Port = portVal
+			ap.AccessPoints.Fqdn = &fqdn
+			accessPoints = append(accessPoints, ap)
+		}
+	}
+	s.sendCallback(ctx, federationmgmt.AppInstStateReady, "", accessPoints)
 	return nil
 }
 

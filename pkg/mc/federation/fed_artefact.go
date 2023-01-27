@@ -50,6 +50,11 @@ const (
 	CommPortVisInt = "VISIBILITY_INTERNAL"
 
 	EnvVarTypeUser = "USER_DEFINED"
+
+	ConfigTypeDockerCompose = "DOCKER_COMPOSE"
+	ConfigTypeK8sManifest   = "KUBERNETES_MANIFEST"
+	ConfigTypeCloudInit     = "CLOUD_INIT"
+	ConfigTypeHelmValues    = "HELM_VALUES"
 )
 
 func (p *PartnerApi) lookupArtefact(c echo.Context, provider *ormapi.FederationProvider, artefactId string) (*ormapi.ProviderArtefact, error) {
@@ -200,14 +205,46 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 		if provImage.Type != string(fedewapi.VIRTIMAGETYPE_DOCKER) {
 			return fmt.Errorf("virtType is %s but image %s type is %s, which is inconsistent", provArt.VirtType, provImage.FileID, provImage.Type)
 		}
-		// TODO: need a way to distinguish docker from k8s
-		app.Deployment = cloudcommon.DeploymentTypeKubernetes
+		// default deployment type for container is docker for now
+		app.Deployment = cloudcommon.DeploymentTypeDocker
 	}
-	if spec.CommandLineParams != nil {
+	if spec.DeploymentConfig != nil {
+		badConfigErr := func() error {
+			return fmt.Errorf("Cannot use deployment config type %s for virtType %s", spec.DeploymentConfig.ConfigType, provArt.VirtType)
+		}
+
+		switch spec.DeploymentConfig.ConfigType {
+		case ConfigTypeDockerCompose:
+			if provArt.VirtType != ArtefactVirtTypeContainer {
+				return badConfigErr()
+			}
+			app.Deployment = cloudcommon.DeploymentTypeDocker
+			app.DeploymentManifest = spec.DeploymentConfig.Contents
+		case ConfigTypeK8sManifest:
+			if provArt.VirtType != ArtefactVirtTypeContainer {
+				return badConfigErr()
+			}
+			app.Deployment = cloudcommon.DeploymentTypeKubernetes
+			app.DeploymentManifest = spec.DeploymentConfig.Contents
+		case ConfigTypeCloudInit:
+			if provArt.VirtType != ArtefactVirtTypeVM {
+				return badConfigErr()
+			}
+			app.Deployment = cloudcommon.DeploymentTypeVM
+			app.DeploymentManifest = spec.DeploymentConfig.Contents
+		case ConfigTypeHelmValues:
+			if provArt.VirtType != ArtefactVirtTypeContainer {
+				return badConfigErr()
+			}
+			app.Deployment = cloudcommon.DeploymentTypeHelm
+			app.DeploymentManifest = spec.DeploymentConfig.Contents
+		}
+	}
+	if spec.CommandLineParams != nil && app.Deployment == cloudcommon.DeploymentTypeKubernetes {
 		if len(spec.CommandLineParams.Command) > 0 {
 			app.Command = strings.Join(spec.CommandLineParams.Command, " ")
 		}
-		if len(spec.CommandLineParams.CommandArgs) > 0 {
+		if len(spec.CommandLineParams.CommandArgs) > 0 && app.Deployment == cloudcommon.DeploymentTypeKubernetes {
 			dat, err := yaml.Marshal(spec.CommandLineParams.CommandArgs)
 			if err != nil {
 				return fmt.Errorf("failed to marshal command line args %v to yaml ConfigFile for app, %s", spec.CommandLineParams.CommandArgs, err)
@@ -218,6 +255,12 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 			}
 			app.Configs = append(app.Configs, &cfg)
 		}
+	}
+	if spec.CommandLineParams != nil && app.Deployment == cloudcommon.DeploymentTypeDocker {
+		args := []string{}
+		args = append(args, spec.CommandLineParams.Command...)
+		args = append(args, spec.CommandLineParams.CommandArgs...)
+		app.Command = strings.Join(args, " ")
 	}
 	envVars := []v1.EnvVar{}
 	for _, param := range spec.CompEnvParams {
