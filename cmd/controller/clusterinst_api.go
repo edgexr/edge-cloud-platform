@@ -195,7 +195,7 @@ func validateAndDefaultIPAccess(ctx context.Context, clusterInst *edgeproto.Clus
 	case cloudcommon.DeploymentTypeDocker:
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_UNKNOWN {
 			cb.Send(&edgeproto.Result{Message: "Defaulting IpAccess to IpAccessDedicated for deployment " + clusterInst.Deployment})
-			return edgeproto.IpAccess_IP_ACCESS_DEDICATED, nil
+			return edgeproto.IpAccess_IP_ACCESS_SHARED, nil
 		}
 	}
 	return clusterInst.IpAccess, nil

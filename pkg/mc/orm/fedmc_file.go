@@ -144,6 +144,7 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 	if res.Error == nil && !res.RecordNotFound() {
 		if image.SourcePath == dup.SourcePath && image.Type == dup.Type && image.Checksum == dup.Checksum {
 			// exact match
+			image.ID = dup.ID
 			log.SpanLog(ctx, log.DebugLevelApi, "create consumer image already exists with exact match", "image", dup)
 			return ErrExactDuplicate
 		}
