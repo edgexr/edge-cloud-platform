@@ -18,8 +18,3 @@ type InstanceIdentifier string
 const (
 	OAuth2ClientCredentialsScopes = "oAuth2ClientCredentials.Scopes"
 )
-
-type CreateFederationParams struct {
-	XNotifyTokenUrl *string
-	XNotifyAuth     *string
-}

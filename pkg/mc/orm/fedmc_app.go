@@ -4,6 +4,7 @@ import (
 	"context"
 	fmt "fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,6 +32,9 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 	if err != nil {
 		return err
 	}
+	// Mark stream API
+	c.Set(StreamAPITag, true)
+
 	in := ormapi.ConsumerApp{}
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)
@@ -90,20 +94,26 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		return fmt.Errorf("App not found")
 	}
 
-	log.SpanLog(ctx, log.DebugLevelApi, "create ConsumerApp, look up flavors")
-	flavorLookup := edgeproto.Flavor{
-		Key: app.DefaultFlavor,
+	if app.DefaultFlavor.Name == "" && app.ServerlessConfig == nil {
+		return fmt.Errorf("App has no default flavor and no serverless config to specify compute resources")
 	}
+
 	var flavor *edgeproto.Flavor
-	err = ctrlclient.ShowFlavorStream(ctx, &rc, &flavorLookup, connCache, func(retFlavor *edgeproto.Flavor) error {
-		flavor = retFlavor
-		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("Failure looking up Flavor %s: %s", app.DefaultFlavor.Name, err)
-	}
-	if flavor == nil {
-		return fmt.Errorf("App DefaultFlavor %s not found", app.DefaultFlavor.Name)
+	if app.DefaultFlavor.Name != "" {
+		log.SpanLog(ctx, log.DebugLevelApi, "create ConsumerApp, look up flavors")
+		flavorLookup := edgeproto.Flavor{
+			Key: app.DefaultFlavor,
+		}
+		err = ctrlclient.ShowFlavorStream(ctx, &rc, &flavorLookup, connCache, func(retFlavor *edgeproto.Flavor) error {
+			flavor = retFlavor
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("Failure looking up Flavor %s: %s", app.DefaultFlavor.Name, err)
+		}
+		if flavor == nil {
+			return fmt.Errorf("App DefaultFlavor %s not found", app.DefaultFlavor.Name)
+		}
 	}
 
 	// ID is set to the app's federation id.
@@ -132,15 +142,7 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		}
 	}()
 
-	cb := func(code int32, msg string) error {
-		payload := ormapi.StreamPayload{}
-		payload.Data = &edgeproto.Result{
-			Code:    code,
-			Message: msg,
-		}
-		return WriteStream(c, &payload)
-	}
-	err = cb(200, "Creating images")
+	err = streamCb(c, 200, "Creating images")
 	if err != nil {
 		return err
 	}
@@ -162,7 +164,7 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		}
 	}
 
-	err = cb(200, "Creating artefact")
+	err = streamCb(c, 200, "Creating artefact")
 	if err != nil {
 		return err
 	}
@@ -183,7 +185,7 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		}
 	}()
 
-	err = cb(200, "Creating app")
+	err = streamCb(c, 200, "Creating app")
 	if err != nil {
 		return err
 	}
@@ -195,7 +197,7 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		return err
 	}
 
-	err = cb(200, "App created successfully")
+	err = streamCb(c, 200, "App created successfully")
 	if err != nil {
 		return err
 	}
@@ -259,6 +261,7 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 
 	// Create ComponentSpec
 	spec := fedewapi.ComponentSpec{}
+	spec.ComponentName = app.Key.Name
 	spec.Images = []string{}
 	for _, image := range images {
 		spec.Images = append(spec.Images, image.ID)
@@ -317,7 +320,7 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 		}
 		for portVal := portStart; portVal <= portEnd; portVal++ {
 			intf := fedewapi.InterfaceDetails{}
-			intf.InterfaceId = fmt.Sprintf("%d", portVal)
+			intf.InterfaceId = partnerApi.GetInterfaceId(port, portVal)
 			if port.Proto == dmeproto.LProto_L_PROTO_UDP {
 				intf.CommProtocol = federation.CommProtoUDP
 			} else {
@@ -335,10 +338,22 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 	if len(interfaces) > 0 {
 		spec.ExposedInterfaces = interfaces
 	}
+
 	resources := fedewapi.ComputeResourceInfo{}
-	resources.NumCPU = int32(defaultFlavor.Vcpus)
-	resources.Memory = int64(defaultFlavor.Ram)
-	resources.DiskStorage = int32(defaultFlavor.Disk)
+	if defaultFlavor == nil && app.ServerlessConfig == nil {
+		return fmt.Errorf("Cannot specify compute resource info, one of default flavor or serverless config must be set")
+	}
+	if app.ServerlessConfig != nil {
+		resources.NumCPU = app.ServerlessConfig.Vcpus.DecString()
+		resources.Memory = int64(app.ServerlessConfig.Ram)
+	} else {
+		disk := int32(defaultFlavor.Disk)
+		resources.NumCPU = strconv.Itoa(int(defaultFlavor.Vcpus))
+		resources.Memory = int64(defaultFlavor.Ram)
+		if disk > 0 {
+			resources.DiskStorage = &disk
+		}
+	}
 	// TODO: resources.Gpu
 	spec.ComputeResourceProfile = resources
 
@@ -383,6 +398,9 @@ func createConsumerApp(ctx context.Context, consumer *ormapi.FederationConsumer,
 		}},
 		AppStatusCallbackLink: serverConfig.FederationExternalAddr + "/" + federationmgmt.PartnerAppOnboardStatusEventPath,
 	}
+	if appReq.AppMetaData.AccessToken == "" {
+		appReq.AppMetaData.AccessToken = "none"
+	}
 
 	fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)
 	if err != nil {
@@ -402,6 +420,9 @@ func DeboardConsumerApp(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	// Mark stream API
+	c.Set(StreamAPITag, true)
+
 	in := ormapi.ConsumerApp{}
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)
@@ -431,6 +452,9 @@ func DeboardConsumerApp(c echo.Context) error {
 
 	// TODO: check if AppInsts exist that reference edgeproto App
 
+	if err := streamCb(c, 200, "Deleting App"); err != nil {
+		return err
+	}
 	// delete remote app
 	err = deleteApp(ctx, consumer, &in)
 	if err != nil && strings.Contains(strings.ToLower(err.Error()), "not found") {
@@ -440,6 +464,9 @@ func DeboardConsumerApp(c echo.Context) error {
 		return fmt.Errorf("failed to delete app, %s", err)
 	}
 
+	if err := streamCb(c, 200, "Deleting Artefact"); err != nil {
+		return err
+	}
 	// delete remote artefact
 	err = deleteAppArtefact(ctx, consumer, &in)
 	if err != nil && strings.Contains(strings.ToLower(err.Error()), "not found") {
@@ -453,6 +480,9 @@ func DeboardConsumerApp(c echo.Context) error {
 	err = db.Delete(&in).Error
 	if err != nil {
 		return ormutil.DbErr(err)
+	}
+	if err := streamCb(c, 200, "Deleted App successfully"); err != nil {
+		return err
 	}
 	return nil
 }
@@ -581,4 +611,39 @@ func ShowProviderApp(c echo.Context) error {
 		}
 	}
 	return ormutil.SetReply(c, showApps)
+}
+
+func ShowProviderAppInst(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	filter, err := bindDbFilter(c, &ormapi.ProviderAppInst{})
+	if err != nil {
+		return err
+	}
+	db := loggedDB(ctx)
+
+	insts := []ormapi.ProviderAppInst{}
+	err = db.Where(filter).Find(&insts).Error
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+
+	orgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceCloudlets, ActionView)
+	if err != nil {
+		return err
+	}
+	if _, ok := orgs[""]; ok {
+		// admin
+		return ormutil.SetReply(c, insts)
+	}
+	showAppInsts := []ormapi.ProviderAppInst{}
+	for _, inst := range insts {
+		if _, ok := orgs[inst.FederationName]; ok {
+			showAppInsts = append(showAppInsts, inst)
+		}
+	}
+	return ormutil.SetReply(c, showAppInsts)
 }

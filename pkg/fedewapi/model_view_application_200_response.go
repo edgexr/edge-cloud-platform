@@ -24,7 +24,7 @@ type ViewApplication200Response struct {
 	// UserId of the app provider.  Identifier is relevant only in context of this federation.
 	AppProviderId string `json:"appProviderId"`
 	// Details about partner OP zones where the application should be made available;  This field when specified will instruct the OP to restrict application instantiation only on the listed zones.
-	AppDeploymentZones []OnboardApplicationRequestAppDeploymentZonesInner `json:"appDeploymentZones"`
+	AppDeploymentZones []ViewApplication200ResponseAppDeploymentZonesInner `json:"appDeploymentZones"`
 	AppMetaData AppMetaData `json:"appMetaData"`
 	AppQoSProfile AppQoSProfile `json:"appQoSProfile"`
 	// An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally.  App providers are required to provide details about all these components, their associated descriptors and their DNS names.
@@ -35,7 +35,7 @@ type ViewApplication200Response struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewViewApplication200Response(appId string, appProviderId string, appDeploymentZones []OnboardApplicationRequestAppDeploymentZonesInner, appMetaData AppMetaData, appQoSProfile AppQoSProfile, appComponentSpecs []AppComponentSpecsInner) *ViewApplication200Response {
+func NewViewApplication200Response(appId string, appProviderId string, appDeploymentZones []ViewApplication200ResponseAppDeploymentZonesInner, appMetaData AppMetaData, appQoSProfile AppQoSProfile, appComponentSpecs []AppComponentSpecsInner) *ViewApplication200Response {
 	this := ViewApplication200Response{}
 	this.AppId = appId
 	this.AppProviderId = appProviderId
@@ -103,9 +103,9 @@ func (o *ViewApplication200Response) SetAppProviderId(v string) {
 }
 
 // GetAppDeploymentZones returns the AppDeploymentZones field value
-func (o *ViewApplication200Response) GetAppDeploymentZones() []OnboardApplicationRequestAppDeploymentZonesInner {
+func (o *ViewApplication200Response) GetAppDeploymentZones() []ViewApplication200ResponseAppDeploymentZonesInner {
 	if o == nil {
-		var ret []OnboardApplicationRequestAppDeploymentZonesInner
+		var ret []ViewApplication200ResponseAppDeploymentZonesInner
 		return ret
 	}
 
@@ -114,7 +114,7 @@ func (o *ViewApplication200Response) GetAppDeploymentZones() []OnboardApplicatio
 
 // GetAppDeploymentZonesOk returns a tuple with the AppDeploymentZones field value
 // and a boolean to check if the value has been set.
-func (o *ViewApplication200Response) GetAppDeploymentZonesOk() ([]OnboardApplicationRequestAppDeploymentZonesInner, bool) {
+func (o *ViewApplication200Response) GetAppDeploymentZonesOk() ([]ViewApplication200ResponseAppDeploymentZonesInner, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -122,7 +122,7 @@ func (o *ViewApplication200Response) GetAppDeploymentZonesOk() ([]OnboardApplica
 }
 
 // SetAppDeploymentZones sets field value
-func (o *ViewApplication200Response) SetAppDeploymentZones(v []OnboardApplicationRequestAppDeploymentZonesInner) {
+func (o *ViewApplication200Response) SetAppDeploymentZones(v []ViewApplication200ResponseAppDeploymentZonesInner) {
 	o.AppDeploymentZones = v
 }
 

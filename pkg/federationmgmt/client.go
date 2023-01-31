@@ -17,6 +17,8 @@ package federationmgmt
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -24,9 +26,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	pkgtls "github.com/edgexr/edge-cloud-platform/pkg/tls"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
@@ -34,7 +38,13 @@ import (
 type Client struct {
 	addr        string
 	tokenSource oauth2.TokenSource
+	fedKey      *FedKey
+	auditLogCb  AuditLogCb
 }
+
+type AuditLogCb func(ctx context.Context, fedKey *FedKey, data *ormclient.AuditLogData)
+
+var ClientSecretFieldClearer = util.NewJsonFieldClearer("clientSecret")
 
 // For callers who connect to multiple federations
 // TODO: need a periodic thread to remove stale sources
@@ -115,17 +125,17 @@ func (s *TokenSourceCache) Get(ctx context.Context, fedKey *FedKey) (oauth2.Toke
 	return tokenSource, nil
 }
 
-func (s *TokenSourceCache) Client(ctx context.Context, addr string, fedKey *FedKey) (*Client, error) {
+func (s *TokenSourceCache) Client(ctx context.Context, addr string, fedKey *FedKey, auditLogCb AuditLogCb) (*Client, error) {
 	tokenSource, err := s.Get(ctx, fedKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token source: %s", err)
 	}
-	return NewClient(addr, tokenSource), nil
+	return NewClient(addr, tokenSource, fedKey, auditLogCb), nil
 }
 
 // Create a new client for federation requests.
 // Client caches auth creds and token, and is meant to be reused.
-func NewClient(addr string, tokenSource oauth2.TokenSource) *Client {
+func NewClient(addr string, tokenSource oauth2.TokenSource, fedKey *FedKey, auditLogCb AuditLogCb) *Client {
 	if !strings.HasPrefix(addr, "http") {
 		addr = "https://" + addr
 	}
@@ -133,6 +143,8 @@ func NewClient(addr string, tokenSource oauth2.TokenSource) *Client {
 	return &Client{
 		addr:        addr,
 		tokenSource: tokenSource,
+		fedKey:      fedKey,
+		auditLogCb:  auditLogCb,
 	}
 }
 
@@ -154,6 +166,10 @@ func (c *Client) SendRequest(ctx context.Context, method, endpoint string, reqDa
 	restClient := &ormclient.Client{
 		TokenType: token.TokenType,
 		Timeout:   60 * time.Minute,
+		AuditLogFunc: func(data *ormclient.AuditLogData) {
+			c.audit(ctx, c.fedKey, data)
+		},
+		ParseErrorFunc: c.parseFedError,
 	}
 	if pkgtls.IsTestTls() {
 		restClient.SkipVerify = true
@@ -162,11 +178,50 @@ func (c *Client) SendRequest(ctx context.Context, method, endpoint string, reqDa
 	log.SpanLog(ctx, log.DebugLevelApi, "federation send request", "method", method, "url", requestUrl)
 	status, respHeader, err := restClient.HttpJsonSend(method, requestUrl, token.AccessToken, reqData, replyData, headerVals, nil, okStatuses)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "Federation API failed", "method", method, "url", requestUrl, "error", err)
 		return status, nil, fmt.Errorf("%s %s failed: %s", method, requestUrl, err)
 	}
 	if _, ok := okStatuses[status]; !ok {
 		return status, nil, fmt.Errorf("Bad response for %s request to URL %s, status=%s", method, requestUrl, http.StatusText(status))
 	}
 	return status, respHeader, nil
+}
+
+func (c *Client) audit(ctx context.Context, fedKey *FedKey, data *ormclient.AuditLogData) {
+	data.RespBody = ClientSecretFieldClearer.Clear(data.RespBody)
+
+	log.SpanLog(ctx, log.DebugLevelApi, "federation client api", "method", data.Method, "url", data.Url.String(), "reqContentType", data.ReqContentType, "req", string(data.ReqBody), "status", data.Status, "respContentType", data.RespContentType, "resp", string(data.RespBody), "err", data.Err, "took", data.End.Sub(data.Start).String())
+	if c.auditLogCb != nil {
+		c.auditLogCb(ctx, fedKey, data)
+	}
+}
+
+func (c *Client) parseFedError(body []byte) error {
+	problem := fedewapi.ProblemDetails{}
+	err := json.Unmarshal(body, &problem)
+	if err != nil || problem.Title == nil && problem.Detail == nil && problem.Cause == nil {
+		// unknown format, return string instead
+		return fmt.Errorf("%s", string(body))
+	}
+	msgs := []string{}
+	if problem.Title != nil {
+		msgs = append(msgs, *problem.Title)
+	}
+	if problem.Detail != nil {
+		msgs = append(msgs, *problem.Detail)
+	}
+	if problem.Cause != nil {
+		msgs = append(msgs, *problem.Cause)
+	}
+	invalidParams := []string{}
+	for _, param := range problem.InvalidParams {
+		str := param.Param
+		if param.Reason != nil {
+			str += "(" + *param.Reason + ")"
+		}
+		invalidParams = append(invalidParams, str)
+	}
+	if len(invalidParams) > 0 {
+		msgs = append(msgs, "invalid params: %s", strings.Join(invalidParams, ","))
+	}
+	return errors.New(strings.Join(msgs, ", "))
 }

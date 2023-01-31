@@ -16,6 +16,8 @@ const (
 	PartnerInstanceStatusEventPath   = CallbackRoot + "/onInstanceStatusEvent"
 	PartnerResourceStatusChangePath  = CallbackRoot + "/onResourceStatusChangeEvent"
 
+	PathVarAppInstUniqueId = "appInstUniqueId"
+
 	AppInstStatePending     = "PENDING"
 	AppInstStateReady       = "READY"
 	AppInstStateFailed      = "FAILED"

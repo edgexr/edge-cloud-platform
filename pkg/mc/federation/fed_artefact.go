@@ -50,6 +50,11 @@ const (
 	CommPortVisInt = "VISIBILITY_INTERNAL"
 
 	EnvVarTypeUser = "USER_DEFINED"
+
+	ConfigTypeDockerCompose = "DOCKER_COMPOSE"
+	ConfigTypeK8sManifest   = "KUBERNETES_MANIFEST"
+	ConfigTypeCloudInit     = "CLOUD_INIT"
+	ConfigTypeHelmValues    = "HELM_VALUES"
 )
 
 func (p *PartnerApi) lookupArtefact(c echo.Context, provider *ormapi.FederationProvider, artefactId string) (*ormapi.ProviderArtefact, error) {
@@ -63,17 +68,9 @@ func (p *PartnerApi) lookupArtefact(c echo.Context, provider *ormapi.FederationP
 		return nil, fmt.Errorf("Artefact %s not found", artefactId)
 	}
 	if res.Error != nil {
-		return nil, c.String(http.StatusInternalServerError, "failure looking up artefact: "+res.Error.Error())
+		return nil, fedError(http.StatusInternalServerError, fmt.Errorf("Failed to look up artefact, %s", res.Error.Error()))
 	}
 	return &provArt, nil
-}
-
-func getAppKey(provArt *ormapi.ProviderArtefact) edgeproto.AppKey {
-	return edgeproto.AppKey{
-		Name:         provArt.AppName,
-		Organization: provArt.FederationName,
-		Version:      provArt.AppVers,
-	}
 }
 
 func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId) (reterr error) {
@@ -148,11 +145,22 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 		return fmt.Errorf("only one component spec is supported, but found %d", len(specs))
 	}
 	spec := specs[0]
+	// check spec fields are set
+	if spec.ComponentName == "" {
+		return fmt.Errorf("ComponentSpec component name missing")
+	}
+	if len(spec.Images) == 0 {
+		return fmt.Errorf("ComponentSpec missing at least 1 image")
+	}
+	if spec.RestartPolicy == "" {
+		return fmt.Errorf("ComponentSpec restart policy missing")
+	}
+
 	db := p.loggedDB(ctx)
 
 	// build app from spec
 	app := edgeproto.App{}
-	app.Key = getAppKey(&provArt)
+	app.Key = provArt.GetAppKey()
 	if spec.NumOfInstances == -1 {
 		app.ScaleWithCluster = true
 	}
@@ -170,7 +178,7 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 		return fmt.Errorf("Image ID %s in component spec not found, please ensure it has been created", spec.Images[0])
 	}
 	if res.Error != nil {
-		return c.String(http.StatusInternalServerError, res.Error.Error())
+		return fedError(http.StatusInternalServerError, res.Error)
 	}
 	app.ImagePath = provImage.Path
 	switch provImage.Type {
@@ -189,18 +197,54 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 			return fmt.Errorf("virtType is %s but image %s type is %s, which is inconsistent", provArt.VirtType, provImage.FileID, provImage.Type)
 		}
 		app.Deployment = cloudcommon.DeploymentTypeVM
+		if provImage.Checksum == "" {
+			return fmt.Errorf("Checksum missing for VM image %s", provImage.FileID)
+		}
+		app.ImagePath += "#md5:" + provImage.Checksum
 	case ArtefactVirtTypeContainer:
 		if provImage.Type != string(fedewapi.VIRTIMAGETYPE_DOCKER) {
 			return fmt.Errorf("virtType is %s but image %s type is %s, which is inconsistent", provArt.VirtType, provImage.FileID, provImage.Type)
 		}
-		// TODO: need a way to distinguish docker from k8s
-		app.Deployment = cloudcommon.DeploymentTypeKubernetes
+		// default deployment type for container is docker for now
+		app.Deployment = cloudcommon.DeploymentTypeDocker
 	}
-	if spec.CommandLineParams != nil {
+	if spec.DeploymentConfig != nil {
+		badConfigErr := func() error {
+			return fmt.Errorf("Cannot use deployment config type %s for virtType %s", spec.DeploymentConfig.ConfigType, provArt.VirtType)
+		}
+
+		switch spec.DeploymentConfig.ConfigType {
+		case ConfigTypeDockerCompose:
+			if provArt.VirtType != ArtefactVirtTypeContainer {
+				return badConfigErr()
+			}
+			app.Deployment = cloudcommon.DeploymentTypeDocker
+			app.DeploymentManifest = spec.DeploymentConfig.Contents
+		case ConfigTypeK8sManifest:
+			if provArt.VirtType != ArtefactVirtTypeContainer {
+				return badConfigErr()
+			}
+			app.Deployment = cloudcommon.DeploymentTypeKubernetes
+			app.DeploymentManifest = spec.DeploymentConfig.Contents
+		case ConfigTypeCloudInit:
+			if provArt.VirtType != ArtefactVirtTypeVM {
+				return badConfigErr()
+			}
+			app.Deployment = cloudcommon.DeploymentTypeVM
+			app.DeploymentManifest = spec.DeploymentConfig.Contents
+		case ConfigTypeHelmValues:
+			if provArt.VirtType != ArtefactVirtTypeContainer {
+				return badConfigErr()
+			}
+			app.Deployment = cloudcommon.DeploymentTypeHelm
+			app.DeploymentManifest = spec.DeploymentConfig.Contents
+		}
+	}
+	if spec.CommandLineParams != nil && app.Deployment == cloudcommon.DeploymentTypeKubernetes {
 		if len(spec.CommandLineParams.Command) > 0 {
 			app.Command = strings.Join(spec.CommandLineParams.Command, " ")
 		}
-		if len(spec.CommandLineParams.CommandArgs) > 0 {
+		if len(spec.CommandLineParams.CommandArgs) > 0 && app.Deployment == cloudcommon.DeploymentTypeKubernetes {
 			dat, err := yaml.Marshal(spec.CommandLineParams.CommandArgs)
 			if err != nil {
 				return fmt.Errorf("failed to marshal command line args %v to yaml ConfigFile for app, %s", spec.CommandLineParams.CommandArgs, err)
@@ -211,6 +255,12 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 			}
 			app.Configs = append(app.Configs, &cfg)
 		}
+	}
+	if spec.CommandLineParams != nil && app.Deployment == cloudcommon.DeploymentTypeDocker {
+		args := []string{}
+		args = append(args, spec.CommandLineParams.Command...)
+		args = append(args, spec.CommandLineParams.CommandArgs...)
+		app.Command = strings.Join(args, " ")
 	}
 	envVars := []v1.EnvVar{}
 	for _, param := range spec.CompEnvParams {
@@ -240,7 +290,20 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 	}
 	intPorts := []string{}
 	extPorts := []string{}
-	for _, port := range spec.ExposedInterfaces {
+	for ii, port := range spec.ExposedInterfaces {
+		if port.InterfaceId == "" {
+			return fmt.Errorf("ExposedInterface[%d] missing InterfaceId", ii)
+		}
+		if port.CommProtocol == "" {
+			return fmt.Errorf("ExposedInterface %s missing CommProtocol", port.InterfaceId)
+		}
+		if port.CommPort == 0 {
+			return fmt.Errorf("ExposedInterface %s missing CommPort", port.InterfaceId)
+		}
+		if port.VisibilityType == "" {
+			return fmt.Errorf("ExposedInterface %s missing VisibilityType", port.InterfaceId)
+		}
+
 		proto := ""
 		switch port.CommProtocol {
 		case CommProtoHTTP:
@@ -249,7 +312,7 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 		case CommProtoUDP:
 			proto = "udp"
 		default:
-			return fmt.Errorf("Unsupported protocol %s for exposed interface %d", port.CommProtocol, port.CommPort)
+			return fmt.Errorf("Unsupported protocol %q for exposed interface %d", port.CommProtocol, port.CommPort)
 		}
 		pspec := fmt.Sprintf("%s:%d", proto, port.CommPort)
 		if port.VisibilityType == CommPortVisInt {
@@ -265,18 +328,22 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 		app.AccessPorts = strings.Join(extPorts, ",")
 		log.SpanLog(ctx, log.DebugLevelApi, "ignoring internal ports in mix of internal and external ports", "intPorts", intPorts)
 	}
+	vcpus, err := edgeproto.ParseUdec64(spec.ComputeResourceProfile.NumCPU)
+	if err != nil {
+		return fmt.Errorf("Failed to parse ComponentSpec ComputeResourceProfile NumCPU %s, %s", spec.ComputeResourceProfile.NumCPU, err)
+	}
 	// handle resource requirements
-	if spec.ComputeResourceProfile.NumCPU < 0 {
+	if vcpus.IsZero() {
 		return fmt.Errorf("ComponentSpec computeResourceProfile num CPU must be greater than 0")
 	}
 	if spec.ComputeResourceProfile.Memory < 0 {
 		return fmt.Errorf("ComponentSpec computeResourceProfile memory must be greater than 0")
 	}
-	if spec.ComputeResourceProfile.DiskStorage < 0 {
+	if spec.ComputeResourceProfile.DiskStorage != nil && *spec.ComputeResourceProfile.DiskStorage < 0 {
 		return fmt.Errorf("ComponentSpec computeResourceProfile disk storage must be greater than 0")
 	}
 	serverlessConfig := edgeproto.ServerlessConfig{
-		Vcpus: *edgeproto.NewUdec64(uint64(spec.ComputeResourceProfile.NumCPU), 0),
+		Vcpus: *vcpus,
 		Ram:   uint64(spec.ComputeResourceProfile.Memory),
 	}
 	gpu := spec.ComputeResourceProfile.Gpu
@@ -296,7 +363,7 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 	log.SpanLog(ctx, log.DebugLevelApi, "save providerArtefact", "provArt", provArt)
 	err = db.Create(&provArt).Error
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "failed to save artefact: "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to save artefact, %s", err.Error()))
 	}
 	defer func() {
 		if reterr == nil {
@@ -364,7 +431,7 @@ func (p *PartnerApi) RemoveArtefact(c echo.Context, fedCtxId FederationContextId
 	provApps := []ormapi.ProviderApp{}
 	err = db.Where(&provApp).Find(&provApps).Error
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "failure looking up Apps that may depend on Artefact: "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed looking up Apps that may depend on Artefact, %s", err.Error()))
 	}
 	for _, papp := range provApps {
 		for _, af := range papp.ArtefactIds {
@@ -375,7 +442,7 @@ func (p *PartnerApi) RemoveArtefact(c echo.Context, fedCtxId FederationContextId
 	}
 
 	app := edgeproto.App{}
-	app.Key = getAppKey(provArt)
+	app.Key = provArt.GetAppKey()
 
 	// make sure App can be deleted from each region
 	log.SpanLog(ctx, log.DebugLevelApi, "delete apps for artefact", "app", provApp)
@@ -398,7 +465,7 @@ func (p *PartnerApi) RemoveArtefact(c echo.Context, fedCtxId FederationContextId
 	// delete artefact
 	err = db.Delete(&provArt).Error
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "failed to delete artefact from database: "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to delete artefact from database, %s", err.Error()))
 	}
 	return nil
 }

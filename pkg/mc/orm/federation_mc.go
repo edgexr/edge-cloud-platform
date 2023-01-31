@@ -1500,11 +1500,14 @@ func registerFederationConsumer(ctx context.Context, consumer *ormapi.Federation
 	}
 	res := fedewapi.FederationResponseData{}
 
-	auth := ormutil.EncodeBasicAuth(consumer.NotifyClientId, notifyKey)
-	headerVals := http.Header{}
-	headerVals.Add(federation.HeaderXNotifyAuth, auth)
-	headerVals.Add(federation.HeaderXNotifyTokenUrl, serverConfig.ConsoleAddr+federation.TokenUrl)
-	_, _, err = fedClient.SendRequest(ctx, "POST", "/"+fedmgmt.ApiRoot+"/partner", &req, &res, headerVals)
+	// set callback creds
+	ccreds := fedewapi.CallbackCredentials{
+		TokenUrl:     serverConfig.ConsoleAddr + federation.TokenUrl,
+		ClientId:     consumer.NotifyClientId,
+		ClientSecret: notifyKey,
+	}
+	req.PartnerCallbackCredentials = &ccreds
+	_, _, err = fedClient.SendRequest(ctx, "POST", "/"+fedmgmt.ApiRoot+"/partner", &req, &res, nil)
 	if err != nil {
 		return err
 	}

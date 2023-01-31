@@ -17,6 +17,7 @@ package ormapi
 import (
 	"time"
 
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/lib/pq"
 )
 
@@ -223,6 +224,8 @@ type ConsumerImage struct {
 	FederationName string `gorm:"unique_index:consumerimageindex;type:citext;not null"`
 	// Image name
 	Name string `gorm:"unique_index:consumerimageindex;type:text;not null"`
+	// Image version
+	Version string
 	// Full path to source image as used in App, i.e. https://vm-registry.domain/org/image.img
 	SourcePath string
 	// Image type (DOCKER, HELM, QCOW2, or OVA)
@@ -244,6 +247,10 @@ type ProviderImage struct {
 	Path string
 	// Image name
 	Name string
+	// Image description
+	Description string
+	// Image version
+	Version string
 	// Image type (DOCKER, HELM, QCOW2, or OVA)
 	Type string
 	// Partner app provider organization
@@ -298,20 +305,46 @@ type ProviderApp struct {
 	FederationName string `gorm:"primary_key;type:citext;not null"`
 	// App ID send by partner, also is the artefact ID
 	AppID string `gorm:"primary_key;type:text;not null"`
+	// App name in region
+	AppName string
+	// App version in region
+	AppVers string
 	// App provider ID
 	AppProviderId string
 	// Artefact IDs
 	ArtefactIds pq.StringArray `gorm:"type:text[]"`
-	// Restricted Zones
+	// Onboarding Zones
 	DeploymentZones pq.StringArray `gorm:"type:text[]"`
+	// App status callback link
+	AppStatusCallbackLink string
 }
 
-// This is only to allocate an appInst unique ID
+// Track AppInst created on behalf of consumer
 type ProviderAppInst struct {
 	// Federation Provider name
 	FederationName string `gorm:"primary_key;type:citext;not null"`
 	// AppInst unique ID
 	AppInstID string `gorm:"primary_key;type:text;not null"`
+	// AppID for ProviderApp
+	AppID string
+	// Region for AppInst
+	Region string
+	// App name for AppInstKey
+	AppName string
+	// App version for AppInstKey
+	AppVers string
+	// Cluster name for AppInstKey
+	Cluster string
+	// Cluster org for AppInstKey
+	ClusterOrg string
+	// Cloudlet name for AppInstKey
+	Cloudlet string
+	// Cloudlet org for AppInstKey
+	CloudletOrg string
+	// Cloudlet federation org for AppInstKey (this should always be blank)
+	CloudletFedOrg string
+	// AppInst callback link
+	AppInstCallbackLink string
 }
 
 func (f *FederationProvider) GetSortString() string {
@@ -370,4 +403,32 @@ func (f *ConsumerZone) GetTags() map[string]string {
 	tags["federationname"] = f.ConsumerName
 	tags["zoneid"] = f.ZoneId
 	return tags
+}
+
+func (s *ProviderArtefact) GetAppKey() edgeproto.AppKey {
+	return edgeproto.AppKey{
+		Name:         s.AppName,
+		Version:      s.AppVers,
+		Organization: s.FederationName,
+	}
+}
+
+func (s *ProviderAppInst) GetAppInstKey() edgeproto.AppInstKey {
+	return edgeproto.AppInstKey{
+		AppKey: edgeproto.AppKey{
+			Name:         s.AppName,
+			Version:      s.AppVers,
+			Organization: s.FederationName,
+		},
+		ClusterInstKey: edgeproto.VirtualClusterInstKey{
+			ClusterKey: edgeproto.ClusterKey{
+				Name: s.Cluster,
+			},
+			CloudletKey: edgeproto.CloudletKey{
+				Name:         s.Cloudlet,
+				Organization: s.CloudletOrg,
+			},
+			Organization: s.ClusterOrg,
+		},
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -30,14 +31,14 @@ func (p *PartnerApi) lookupApp(c echo.Context, provider *ormapi.FederationProvid
 
 	provApp := ormapi.ProviderApp{
 		FederationName: provider.Name,
-		AppID:          string(appId),
+		AppID:          appId,
 	}
 	res := db.Where(&provApp).First(&provApp)
 	if res.RecordNotFound() {
-		return nil, c.String(http.StatusNotFound, "Application "+string(appId)+" not found")
+		return nil, fedError(http.StatusNotFound, fmt.Errorf("Application %s not found", appId))
 	}
 	if res.Error != nil {
-		return nil, c.String(http.StatusInternalServerError, "Failed to look up application, "+res.Error.Error())
+		return nil, fedError(http.StatusInternalServerError, fmt.Errorf("Failed to look up application, %s", res.Error.Error()))
 	}
 	return &provApp, nil
 }
@@ -79,7 +80,7 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 		return fmt.Errorf("Missing application ID")
 	}
 	if req.AppProviderId == "" {
-		return fmt.Errorf("Missing provider ID")
+		return fmt.Errorf("Missing app provider ID")
 	}
 	if req.AppMetaData.AppName == "" {
 		return fmt.Errorf("Missing app name")
@@ -87,8 +88,14 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 	if req.AppMetaData.Version == "" {
 		return fmt.Errorf("Missing app version")
 	}
+	if req.AppMetaData.AccessToken == "" {
+		return fmt.Errorf("Missing access token")
+	}
 	if len(req.AppComponentSpecs) == 0 {
 		return fmt.Errorf("Missing app component details")
+	}
+	if err := p.validateCallbackLink(req.AppStatusCallbackLink); err != nil {
+		return err
 	}
 
 	if len(req.AppComponentSpecs) > 1 {
@@ -112,15 +119,19 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 		return fmt.Errorf("Artefact %s not found", provArt.ArtefactID)
 	}
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Failed to look up Artefact, "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to look up Artefact, %s", err.Error()))
 	}
 
+	// TODO: handle onboarding. We do not have any way to explictly
+	// onboard a zone beforehand. And managing where images are
+	// onboarded can be difficult in the case of kubernetes, as it
+	// has it's own mechanisms for cleaing up images.
 	// check any specified zones
 	zones := []string{}
 	for _, depZone := range req.AppDeploymentZones {
 		provZone := ormapi.ProviderZone{
 			ProviderName: provider.Name,
-			ZoneId:       depZone.ZoneInfo,
+			ZoneId:       depZone,
 		}
 		// look up zone
 		res := db.Where(&provZone).First(&provZone)
@@ -128,7 +139,7 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 			return fmt.Errorf("Deployment zone %s not found", provZone.ZoneId)
 		}
 		if err != nil {
-			return c.String(http.StatusInternalServerError, "Failed to look up deployment zone "+provZone.ZoneId+", "+err.Error())
+			return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to look up deployment zone %s, %s", provZone.ZoneId, err.Error()))
 		}
 		if provZone.Status == StatusUnregistered {
 			return fmt.Errorf("Deployment zone %s is not registered", provZone.ZoneId)
@@ -138,19 +149,24 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 
 	// create provider App
 	provApp := ormapi.ProviderApp{
-		FederationName:  provider.Name,
-		AppID:           req.AppId,
-		AppProviderId:   req.AppProviderId,
-		ArtefactIds:     []string{provArt.ArtefactID},
-		DeploymentZones: zones,
+		FederationName:        provider.Name,
+		AppID:                 req.AppId,
+		AppProviderId:         req.AppProviderId,
+		AppName:               req.AppMetaData.AppName,
+		AppVers:               req.AppMetaData.Version,
+		ArtefactIds:           []string{provArt.ArtefactID},
+		DeploymentZones:       zones,
+		AppStatusCallbackLink: req.AppStatusCallbackLink,
 	}
 	err = db.Create(&provApp).Error
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value") {
 			return fmt.Errorf("Application with ID %s already exists", provApp.AppID)
 		}
-		return c.String(http.StatusInternalServerError, "Failed to save app to database, "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to save app to database, %s", err.Error()))
 	}
+
+	// TODO: write req.AppMetaData.AccessToken to app.PublicKey or similar
 
 	c.Response().WriteHeader(http.StatusAccepted)
 	c.Response().After(func() {
@@ -199,7 +215,7 @@ func (p *PartnerApi) DeleteApp(c echo.Context, fedCtxId FederationContextId, app
 	db := p.loggedDB(ctx)
 	err = db.Delete(provApp).Error
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Failed to delete App, "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to delete App, %s", err.Error()))
 	}
 	return nil
 }
@@ -219,6 +235,13 @@ func (p *PartnerApi) ViewApplication(c echo.Context, fedCtxId FederationContextI
 	app := fedewapi.ViewApplication200Response{
 		AppId:         provApp.AppID,
 		AppProviderId: provApp.AppProviderId,
+		AppMetaData: fedewapi.AppMetaData{
+			AppName: provApp.AppName,
+			Version: provApp.AppVers,
+		},
+		AppQoSProfile: fedewapi.AppQoSProfile{
+			LatencyConstraints: AppQosLatencyNone,
+		},
 	}
 	specs := []fedewapi.AppComponentSpecsInner{}
 	for _, artid := range provApp.ArtefactIds {
@@ -228,9 +251,9 @@ func (p *PartnerApi) ViewApplication(c echo.Context, fedCtxId FederationContextI
 		specs = append(specs, spec)
 	}
 	app.AppComponentSpecs = specs
-	zones := []fedewapi.OnboardApplicationRequestAppDeploymentZonesInner{}
+	zones := []fedewapi.ViewApplication200ResponseAppDeploymentZonesInner{}
 	for _, zone := range provApp.DeploymentZones {
-		dz := fedewapi.OnboardApplicationRequestAppDeploymentZonesInner{
+		dz := fedewapi.ViewApplication200ResponseAppDeploymentZonesInner{
 			ZoneInfo: zone,
 		}
 		zones = append(zones, dz)
@@ -260,12 +283,12 @@ func (p *PartnerApi) DeboardApplication(c echo.Context, fedCtxId FederationConte
 		}
 	}
 	if !found {
-		return c.String(http.StatusNotFound, "Zone "+string(zoneId)+" not found")
+		return fedError(http.StatusNotFound, fmt.Errorf("Zone %s not found", string(zoneId)))
 	}
 	db := p.loggedDB(ctx)
 	err = db.Save(&provApp).Error
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Failed to save App, "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to save App, %s", err.Error()))
 	}
 
 	c.Response().WriteHeader(http.StatusAccepted)
@@ -316,7 +339,7 @@ func (p *PartnerApi) OnboardExistingAppNewZones(c echo.Context, fedCtxId Federat
 	db := p.loggedDB(ctx)
 	err = db.Save(&provApp).Error
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Failed to save App, "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to save App, %s", err.Error()))
 	}
 
 	c.Response().WriteHeader(http.StatusAccepted)
@@ -343,5 +366,10 @@ func (p *PartnerApi) PartnerAppOnboardStatusEvent(c echo.Context) error {
 	// This notifies state per zone, but we don't explicitly onboard per zone.
 	// Since we'll never specify zones to onboard, we should never get
 	// this callback.
+	c.Response().WriteHeader(http.StatusNoContent)
 	return nil
+}
+
+func (p *PartnerApi) GetInterfaceId(port dme.AppPort, portVal int32) string {
+	return fmt.Sprintf("%d", portVal)
 }

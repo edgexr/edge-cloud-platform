@@ -34,14 +34,16 @@ func init() {
 		StreamOut:            true,
 		StreamOutIncremental: true,
 	}, {
-		Name:         "DeboardConsumerApp",
-		Use:          "deboardapp",
-		Short:        "Remove App from partner federation",
-		RequiredArgs: "federationname appname apporg appvers",
-		Comments:     addRegionComment(ormapi.ConsumerAppComments),
-		ReqData:      &ormapi.ConsumerApp{},
-		ReplyData:    &ormapi.Result{},
-		Path:         "/auth/federation/consumer/app/deboard",
+		Name:                 "DeboardConsumerApp",
+		Use:                  "deboardapp",
+		Short:                "Remove App from partner federation",
+		RequiredArgs:         "federationname appname apporg appvers",
+		Comments:             addRegionComment(ormapi.ConsumerAppComments),
+		ReqData:              &ormapi.ConsumerApp{},
+		ReplyData:            &ormapi.Result{},
+		Path:                 "/auth/federation/consumer/app/deboard",
+		StreamOut:            true,
+		StreamOutIncremental: true,
 	}, {
 		Name:         "ShowConsumerApp",
 		Use:          "showapps",
@@ -98,6 +100,7 @@ var ConsumerImageRequiredArgs = []string{
 var ConsumerImageOptionalArgs = []string{
 	"id",
 	"name",
+	"version",
 	"checksum",
 }
 
@@ -106,6 +109,7 @@ var ConsumerImageShowArgs = []string{
 	"organization",
 	"federationname",
 	"name",
+	"version",
 	"sourcepath",
 	"type",
 	"status",

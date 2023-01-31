@@ -21,12 +21,12 @@ var _ MappedNullable = &ComputeResourceInfo{}
 type ComputeResourceInfo struct {
 	// CPU Instruction Set Architecture (ISA) E.g., Intel, Arm etc.
 	CpuArchType string `json:"cpuArchType"`
-	// Number of available vCPUs.
-	NumCPU int32 `json:"numCPU"`
+	// Number of vcpus in whole, decimal up to millivcpu, or millivcpu format.
+	NumCPU string `json:"numCPU"`
 	// Amount of RAM in Mbytes
 	Memory int64 `json:"memory"`
 	// Amount of disk storage in Gbytes for a given ISA type
-	DiskStorage int32 `json:"diskStorage"`
+	DiskStorage *int32 `json:"diskStorage,omitempty"`
 	Gpu []GpuInfo `json:"gpu,omitempty"`
 	// Number of Intel VPUs available for a given ISA type
 	Vpu *int32 `json:"vpu,omitempty"`
@@ -41,12 +41,11 @@ type ComputeResourceInfo struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewComputeResourceInfo(cpuArchType string, numCPU int32, memory int64, diskStorage int32) *ComputeResourceInfo {
+func NewComputeResourceInfo(cpuArchType string, numCPU string, memory int64) *ComputeResourceInfo {
 	this := ComputeResourceInfo{}
 	this.CpuArchType = cpuArchType
 	this.NumCPU = numCPU
 	this.Memory = memory
-	this.DiskStorage = diskStorage
 	return &this
 }
 
@@ -83,9 +82,9 @@ func (o *ComputeResourceInfo) SetCpuArchType(v string) {
 }
 
 // GetNumCPU returns the NumCPU field value
-func (o *ComputeResourceInfo) GetNumCPU() int32 {
+func (o *ComputeResourceInfo) GetNumCPU() string {
 	if o == nil {
-		var ret int32
+		var ret string
 		return ret
 	}
 
@@ -94,7 +93,7 @@ func (o *ComputeResourceInfo) GetNumCPU() int32 {
 
 // GetNumCPUOk returns a tuple with the NumCPU field value
 // and a boolean to check if the value has been set.
-func (o *ComputeResourceInfo) GetNumCPUOk() (*int32, bool) {
+func (o *ComputeResourceInfo) GetNumCPUOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -102,7 +101,7 @@ func (o *ComputeResourceInfo) GetNumCPUOk() (*int32, bool) {
 }
 
 // SetNumCPU sets field value
-func (o *ComputeResourceInfo) SetNumCPU(v int32) {
+func (o *ComputeResourceInfo) SetNumCPU(v string) {
 	o.NumCPU = v
 }
 
@@ -130,28 +129,36 @@ func (o *ComputeResourceInfo) SetMemory(v int64) {
 	o.Memory = v
 }
 
-// GetDiskStorage returns the DiskStorage field value
+// GetDiskStorage returns the DiskStorage field value if set, zero value otherwise.
 func (o *ComputeResourceInfo) GetDiskStorage() int32 {
-	if o == nil {
+	if o == nil || isNil(o.DiskStorage) {
 		var ret int32
 		return ret
 	}
-
-	return o.DiskStorage
+	return *o.DiskStorage
 }
 
-// GetDiskStorageOk returns a tuple with the DiskStorage field value
+// GetDiskStorageOk returns a tuple with the DiskStorage field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ComputeResourceInfo) GetDiskStorageOk() (*int32, bool) {
-	if o == nil {
+	if o == nil || isNil(o.DiskStorage) {
 		return nil, false
 	}
-	return &o.DiskStorage, true
+	return o.DiskStorage, true
 }
 
-// SetDiskStorage sets field value
+// HasDiskStorage returns a boolean if a field has been set.
+func (o *ComputeResourceInfo) HasDiskStorage() bool {
+	if o != nil && !isNil(o.DiskStorage) {
+		return true
+	}
+
+	return false
+}
+
+// SetDiskStorage gets a reference to the given int32 and assigns it to the DiskStorage field.
 func (o *ComputeResourceInfo) SetDiskStorage(v int32) {
-	o.DiskStorage = v
+	o.DiskStorage = &v
 }
 
 // GetGpu returns the Gpu field value if set, zero value otherwise.
@@ -327,7 +334,9 @@ func (o ComputeResourceInfo) ToMap() (map[string]interface{}, error) {
 	toSerialize["cpuArchType"] = o.CpuArchType
 	toSerialize["numCPU"] = o.NumCPU
 	toSerialize["memory"] = o.Memory
-	toSerialize["diskStorage"] = o.DiskStorage
+	if !isNil(o.DiskStorage) {
+		toSerialize["diskStorage"] = o.DiskStorage
+	}
 	if !isNil(o.Gpu) {
 		toSerialize["gpu"] = o.Gpu
 	}

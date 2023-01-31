@@ -246,6 +246,17 @@ components:
         - NOT_AVAILABLE
     Uri:
       type: string
+    Vcpu:
+      type: string
+      pattern: ^\d+((\.\d{1,3})|(m))?$
+      description: Number of vcpus in whole, decimal up to millivcpu, or millivcpu format.
+      example:
+        whole:
+          value: 2
+        decimal:
+          value: 0.500
+        millivcpu:
+          value: 500m
     Version:
       type: string
       pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
@@ -270,8 +281,6 @@ components:
       items:
         type: object
         required:
-          - serviceNameNB
-          - componentName
           - artefactId
         properties:
           serviceNameNB:
@@ -303,7 +312,6 @@ components:
           description: Name of the application. Application provider define a human readable name for the application
         version:
           type: string
-          pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
           description: Version info of the application
         appDescription:
           type: string
@@ -368,6 +376,23 @@ components:
           type: boolean
           default: true
           description: Define if application can be instantiated or not
+    CallbackCredentials:
+      type: object
+      description: Authentication credentials for callbacks. Callbacks use the same security scheme, flows, and scopes as the forward path.
+      required:
+        - tokenUrl
+        - clientId
+        - clientSecret
+      properties:
+        tokenUrl:
+          $ref: '#/components/schemas/Uri'
+          description: Oauth2 token endpoint.
+        clientId:
+          type: string
+          description: Client id for oauth2 client credentials flow.
+        clientSecret:
+          type: string
+          description: Client secret for oauth2 client credentials flow.
     ClientLocation:
       type: object
       minProperties: 1
@@ -449,6 +474,24 @@ components:
           items:
             type: string
           description: List of arguments required by the command.
+    DeploymentConfig:
+      description: Configuration used when deploying a component. May override other ComponentSpec parameters related to deployment like restart policy, command line parameters, environment variables, etc.
+      type: object
+      required:
+        - configType
+        - contents
+      properties:
+        configType:
+          type: string
+          enum:
+            - DOCKER_COMPOSE
+            - KUBERNETES_MANIFEST
+            - CLOUD_INIT
+            - HELM_VALUES
+          description: Config type.
+        contents:
+          type: string
+          description: Contents of the configuration.
     ComponentSpec:
       description: Details about compute, networking and storage requirements for each component of the application. App provider should define all information needed to instantiate the component. If artefact is being defined at component level this section should have information just about the component. In case the artefact is being defined at application level the section should provide details about all the components.
       type: object
@@ -457,7 +500,6 @@ components:
         - images
         - numOfInstances
         - restartPolicy
-        - networkResourceProfile
         - computeResourceProfile
       properties:
         componentName:
@@ -494,6 +536,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CompEnvParams'
+        deploymentConfig:
+          $ref: '#/components/schemas/DeploymentConfig'
         persistentVolumes:
           description: The ephemeral volume a container process may need to temporary store internal data
           type: array
@@ -506,7 +550,6 @@ components:
         - cpuArchType
         - numCPU
         - memory
-        - diskStorage
       properties:
         cpuArchType:
           type: string
@@ -515,9 +558,7 @@ components:
             - ISA_ARM_64
           description: CPU Instruction Set Architecture (ISA) E.g., Intel, Arm etc.
         numCPU:
-          type: integer
-          format: int32
-          description: Number of available vCPUs.
+          $ref: '#/components/schemas/Vcpu'
         memory:
           type: integer
           format: int64
@@ -578,14 +619,13 @@ components:
           description: Time zone info of the federation initiated by the originating OP
         partnerStatusLink:
           $ref: '#/components/schemas/Uri'
+        partnerCallbackCredentials:
+          $ref: '#/components/schemas/CallbackCredentials'
     FederationResponseData:
       type: object
       required:
         - partnerOPFederationId
         - federationContextId
-        - edgeDiscoveryServiceEndPoint
-        - lcmServiceEndPoint
-        - offeredAvailabilityZones
         - platformCaps
       properties:
         partnerOPFederationId:
@@ -713,8 +753,6 @@ components:
         - commProtocol
         - commPort
         - visibilityType
-        - network
-        - interfaceName
       properties:
         interfaceId:
           type: string
@@ -773,7 +811,6 @@ components:
           $ref: '#/components/schemas/Uri'
         userName:
           type: string
-          pattern: ^[A-Za-z][A-Za-z0-9_]{7,63}$
           description: Username to access the repository
         password:
           type: string
@@ -1075,17 +1112,6 @@ paths:
       operationId: CreateFederation
       tags:
         - FederationManagement
-      parameters:
-        - in: header
-          name: X-Notify-Token-Url
-          schema:
-            type: string
-            format: URL for oauth2 token endpoint for callback auth
-        - in: header
-          name: X-Notify-Auth
-          schema:
-            type: string
-            format: base64 id:key encoded string of credentials for oauth2 client credential flow for callbacks
       requestBody:
         required: true
         content:
@@ -1630,7 +1656,6 @@ paths:
                 - artefactVersionInfo
                 - artefactVirtType
                 - artefactDescriptorType
-                - repoType
                 - componentSpec
               properties:
                 artefactId:
@@ -1643,7 +1668,6 @@ paths:
                   description: Name of the artefact.
                 artefactVersionInfo:
                   type: string
-                  pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
                   description: Artefact version information
                 artefactDescription:
                   type: string
@@ -1748,7 +1772,6 @@ paths:
                   - artefactVersionInfo
                   - artefactVirtType
                   - artefactDescriptorType
-                  - repoType
                 properties:
                   artefactId:
                     $ref: '#/components/schemas/ArtefactId'
@@ -1764,7 +1787,6 @@ paths:
                     description: Brief description of the artefact by the application provider
                   artefactVersionInfo:
                     type: string
-                    pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
                     description: Artefact version information
                   artefactVirtType:
                     type: string
@@ -1882,7 +1904,6 @@ paths:
                 - fileType
                 - imgOSType
                 - imgInsSetArch
-                - repoType
               properties:
                 fileId:
                   $ref: '#/components/schemas/FileId'
@@ -1899,7 +1920,6 @@ paths:
                   description: Brief description about the image file.
                 fileVersionInfo:
                   type: string
-                  pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
                   description: File version information
                 fileType:
                   $ref: '#/components/schemas/VirtImageType'
@@ -2014,7 +2034,6 @@ paths:
                   - fileType
                   - imgOSType
                   - imgInsSetArch
-                  - repoType
                 properties:
                   fileId:
                     $ref: '#/components/schemas/FileId'
@@ -2031,7 +2050,6 @@ paths:
                     description: Brief description about the image file.
                   fileVersionInfo:
                     type: string
-                    pattern: ^(\d{1,2}\.)?(\d{1,2}\.)?(\d{1,2})$
                     description: File version information
                   fileType:
                     $ref: '#/components/schemas/VirtImageType'
@@ -2104,15 +2122,7 @@ paths:
                   description: Details about partner OP zones where the application should be made available;  This field when specified will instruct the OP to restrict application instantiation only on the listed zones.
                   type: array
                   items:
-                    type: object
-                    required:
-                      - countryCode
-                      - zoneInfo
-                    properties:
-                      countryCode:
-                        $ref: '#/components/schemas/CountryCode'
-                      zoneInfo:
-                        $ref: '#/components/schemas/ZoneIdentifier'
+                    $ref: '#/components/schemas/ZoneIdentifier'
                   minItems: 1
                 appMetaData:
                   $ref: '#/components/schemas/AppMetaData'
@@ -2611,7 +2621,8 @@ paths:
                 appId:
                   $ref: '#/components/schemas/AppIdentifier'
                 appVersion:
-                  $ref: '#/components/schemas/Version'
+                  type: string
+                  description: Version info of the application
                 appProviderId:
                   $ref: '#/components/schemas/AppProviderId'
                 zoneInfo:

@@ -38,7 +38,7 @@ type UploadArtefactRequest struct {
 	// Type of descriptor present in the artefact.  App provider can either define either a Helm chart or a Terraform script or container spec.
 	ArtefactDescriptorType string `json:"artefactDescriptorType"`
 	// Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal. OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
-	RepoType string `json:"repoType"`
+	RepoType *string `json:"repoType,omitempty"`
 	ArtefactRepoLocation *ObjectRepoLocation `json:"artefactRepoLocation,omitempty"`
 	// Helm archive/Terraform archive/container spec file or Binary image associated with an application component.
 	ArtefactFile **os.File `json:"artefactFile,omitempty"`
@@ -50,7 +50,7 @@ type UploadArtefactRequest struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewUploadArtefactRequest(artefactId string, appProviderId string, artefactName string, artefactVersionInfo string, artefactVirtType string, artefactDescriptorType string, repoType string, componentSpec []ComponentSpec) *UploadArtefactRequest {
+func NewUploadArtefactRequest(artefactId string, appProviderId string, artefactName string, artefactVersionInfo string, artefactVirtType string, artefactDescriptorType string, componentSpec []ComponentSpec) *UploadArtefactRequest {
 	this := UploadArtefactRequest{}
 	this.ArtefactId = artefactId
 	this.AppProviderId = appProviderId
@@ -58,7 +58,6 @@ func NewUploadArtefactRequest(artefactId string, appProviderId string, artefactN
 	this.ArtefactVersionInfo = artefactVersionInfo
 	this.ArtefactVirtType = artefactVirtType
 	this.ArtefactDescriptorType = artefactDescriptorType
-	this.RepoType = repoType
 	this.ComponentSpec = componentSpec
 	return &this
 }
@@ -311,28 +310,36 @@ func (o *UploadArtefactRequest) SetArtefactDescriptorType(v string) {
 	o.ArtefactDescriptorType = v
 }
 
-// GetRepoType returns the RepoType field value
+// GetRepoType returns the RepoType field value if set, zero value otherwise.
 func (o *UploadArtefactRequest) GetRepoType() string {
-	if o == nil {
+	if o == nil || isNil(o.RepoType) {
 		var ret string
 		return ret
 	}
-
-	return o.RepoType
+	return *o.RepoType
 }
 
-// GetRepoTypeOk returns a tuple with the RepoType field value
+// GetRepoTypeOk returns a tuple with the RepoType field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UploadArtefactRequest) GetRepoTypeOk() (*string, bool) {
-	if o == nil {
+	if o == nil || isNil(o.RepoType) {
 		return nil, false
 	}
-	return &o.RepoType, true
+	return o.RepoType, true
 }
 
-// SetRepoType sets field value
+// HasRepoType returns a boolean if a field has been set.
+func (o *UploadArtefactRequest) HasRepoType() bool {
+	if o != nil && !isNil(o.RepoType) {
+		return true
+	}
+
+	return false
+}
+
+// SetRepoType gets a reference to the given string and assigns it to the RepoType field.
 func (o *UploadArtefactRequest) SetRepoType(v string) {
-	o.RepoType = v
+	o.RepoType = &v
 }
 
 // GetArtefactRepoLocation returns the ArtefactRepoLocation field value if set, zero value otherwise.
@@ -448,7 +455,9 @@ func (o UploadArtefactRequest) ToMap() (map[string]interface{}, error) {
 		toSerialize["artefactFileFormat"] = o.ArtefactFileFormat
 	}
 	toSerialize["artefactDescriptorType"] = o.ArtefactDescriptorType
-	toSerialize["repoType"] = o.RepoType
+	if !isNil(o.RepoType) {
+		toSerialize["repoType"] = o.RepoType
+	}
 	if !isNil(o.ArtefactRepoLocation) {
 		toSerialize["artefactRepoLocation"] = o.ArtefactRepoLocation
 	}

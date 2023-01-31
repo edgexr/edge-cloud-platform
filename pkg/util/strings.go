@@ -15,6 +15,8 @@
 package util
 
 import (
+	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -135,4 +137,30 @@ func QuoteArgs(cmd string) (string, error) {
 		args[i] = strconv.Quote(args[i])
 	}
 	return strings.Join(args, " "), nil
+}
+
+// Clears the value of a JSON field to avoid leaking
+// sensitive data in logs, etc.
+type JsonFieldClearer struct {
+	field   string
+	search  string
+	replace []byte
+	re      *regexp.Regexp
+}
+
+func NewJsonFieldClearer(field string) *JsonFieldClearer {
+	re := regexp.MustCompile(fmt.Sprintf(`"%s":"(.+?)"`, field))
+	return &JsonFieldClearer{
+		field:   field,
+		search:  fmt.Sprintf(`"%s":`, field),
+		replace: []byte(fmt.Sprintf(`"%s":""`, field)),
+		re:      re,
+	}
+}
+
+func (s *JsonFieldClearer) Clear(data []byte) []byte {
+	if strings.Contains(string(data), s.search) {
+		return s.re.ReplaceAll(data, s.replace)
+	}
+	return data
 }

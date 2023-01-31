@@ -1129,6 +1129,7 @@ var FedAppInstEventOptionalArgs = []string{
 	"ports:#.tls",
 	"ports:#.nginx",
 	"ports:#.maxpktsize",
+	"uniqueid",
 }
 var FedAppInstEventAliasArgs = []string{}
 var FedAppInstEventComments = map[string]string{
@@ -1144,6 +1145,7 @@ var FedAppInstEventComments = map[string]string{
 	"ports:#.tls":          "TLS termination for this port",
 	"ports:#.nginx":        "Use nginx proxy for this port if you really need a transparent proxy (udp only)",
 	"ports:#.maxpktsize":   "Maximum datagram size (udp only)",
+	"uniqueid":             "Unique Id, matches AppInst.UniqueId",
 }
 var FedAppInstEventSpecialArgs = map[string]string{}
 var CreateAppInstRequiredArgs = []string{

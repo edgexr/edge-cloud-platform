@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -33,8 +34,15 @@ type SkopeoInspect struct {
 	Env           []string
 }
 
+const E2ETEST_IMAGE_CHECKSUM = "sha256:8d4ea2a9476bc51681c6e7e59759c10237669c950b1b4a3cd6834e2161d7bde2"
+
 // Return sha256 image digest, requires skopeo installed
 func GetDockerImageChecksum(ctx context.Context, imagePath string, auth *RegistryAuth) (string, error) {
+	if os.Getenv("E2ETEST_FED") != "" {
+		// skip for e2e tests
+		return E2ETEST_IMAGE_CHECKSUM, nil
+	}
+
 	// shouldn't have leading scheme, strip it just in case
 	imagePath = util.TrimScheme(imagePath)
 

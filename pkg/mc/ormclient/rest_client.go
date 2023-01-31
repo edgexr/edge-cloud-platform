@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"reflect"
 	"strings"
@@ -55,6 +56,23 @@ type Client struct {
 	// Print input data transformations
 	PrintTransformations bool
 	Timeout              time.Duration
+	AuditLogFunc         func(data *AuditLogData)
+	ParseErrorFunc       func(resBody []byte) error
+}
+
+type AuditLogData struct {
+	Method          string
+	Url             *url.URL
+	ReqContentType  string
+	ReqHeader       http.Header
+	ReqBody         []byte
+	Status          int
+	RespContentType string
+	RespHeader      http.Header
+	RespBody        []byte
+	Err             error
+	Start           time.Time
+	End             time.Time
 }
 
 func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
@@ -275,7 +293,48 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{},
 		Transport: tr,
 		Timeout:   s.Timeout,
 	}
-	return client.Do(req)
+	reqBody := []byte{}
+	start := time.Now()
+	if s.AuditLogFunc != nil && contentType == "application/json" {
+		if req.Body != nil {
+			reqBody, _ = ioutil.ReadAll(req.Body)
+		}
+		req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBody))
+	}
+	// send request
+	resp, err := client.Do(req)
+
+	// audit logging
+	resBody := []byte{}
+	respContentType := "?"
+	status := 0
+	if resp != nil {
+		respContentType = resp.Header.Get("Content-Type")
+		status = resp.StatusCode
+	}
+	if s.AuditLogFunc != nil && resp != nil && strings.Contains(respContentType, "application/json") {
+		if resp.Body != nil {
+			resBody, _ = ioutil.ReadAll(resp.Body)
+		}
+		resp.Body = ioutil.NopCloser(bytes.NewBuffer(resBody))
+	}
+	if s.AuditLogFunc != nil {
+		data := AuditLogData{
+			Method:          req.Method,
+			Url:             req.URL,
+			ReqContentType:  contentType,
+			ReqHeader:       req.Header,
+			ReqBody:         reqBody,
+			Status:          status,
+			RespContentType: respContentType,
+			RespBody:        resBody,
+			Err:             err,
+			Start:           start,
+			End:             time.Now(),
+		}
+		s.AuditLogFunc(&data)
+	}
+	return resp, err
 }
 
 func (s *Client) HttpJsonSend(method, uri, token string, reqData interface{}, replyData interface{}, headerVals http.Header, queryParams map[string]string, okStatuses map[int]struct{}) (int, http.Header, error) {
@@ -301,13 +360,20 @@ func (s *Client) HttpJsonSend(method, uri, token string, reqData interface{}, re
 		if err != nil {
 			return resp.StatusCode, nil, err
 		}
-		res := ormapi.Result{}
-		err = json.Unmarshal(body, &res)
-		if err != nil {
-			// string error
-			return resp.StatusCode, nil, fmt.Errorf("%s", body)
+		var reterr error
+		if s.ParseErrorFunc != nil {
+			reterr = s.ParseErrorFunc(body)
+		} else {
+			res := ormapi.Result{}
+			err = json.Unmarshal(body, &res)
+			if err != nil {
+				// string error
+				reterr = fmt.Errorf("%s", string(body))
+			} else {
+				reterr = errors.New(res.Message)
+			}
 		}
-		return resp.StatusCode, nil, errors.New(res.Message)
+		return resp.StatusCode, nil, reterr
 	}
 	return resp.StatusCode, resp.Header, nil
 }
@@ -499,4 +565,16 @@ func (s *Client) DisableMidstreamFailure(uri string) {
 
 func (s *Client) EnablePrintTransformations() {
 	s.PrintTransformations = true
+}
+
+func (s *AuditLogData) GetEventTags() map[string]string {
+	return map[string]string{
+		"method":            s.Method,
+		"url":               s.Url.String(),
+		"req-content-type":  s.ReqContentType,
+		"request":           string(s.ReqBody),
+		"status":            fmt.Sprintf("%d", s.Status),
+		"resp-content-type": s.RespContentType,
+		"response":          string(s.RespBody),
+	}
 }

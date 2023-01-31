@@ -1,0 +1,243 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+controllers:
+- region: PA
+orgs:
+- name: FedAppCo
+  type: developer
+  address: 123 Maple Street, Gainesville, FL 32604
+  phone: 123-123-1234
+roles:
+- org: FedAppCo
+  username: feddev
+  role: DeveloperManager
+regiondata:
+- region: PA
+  appdata:
+    flavors:
+    - key:
+        name: x1.medium
+      ram: 4096
+      vcpus: 4
+      disk: 4
+    - key:
+        name: x1.small
+      ram: 2048
+      vcpus: 2
+      disk: 2
+    - key:
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
+    cloudlets:
+    - key:
+        organization: dmuus-partner1
+        name: dmuuscloud1
+        federatedorganization: partner1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 10
+      state: Ready
+      platformtype: Federation
+    - key:
+        organization: dmuus-partner1
+        name: dmuuscloud2
+        federatedorganization: partner1
+      location:
+        latitude: 35
+        longitude: -95
+      ipsupport: Dynamic
+      numdynamicips: 10
+      state: Ready
+      platformtype: Federation
+    - key:
+        organization: dmuus-partner1
+        name: dmuuscloud3
+        federatedorganization: partner1
+      location:
+        latitude: 32
+        longitude: -92
+      ipsupport: Dynamic
+      numdynamicips: 10
+      state: Ready
+      platformtype: Federation
+    - key:
+        organization: dmuus-partner1
+        name: dmuuscloud4
+        federatedorganization: partner1
+      location:
+        latitude: 36
+        longitude: -96
+      ipsupport: Dynamic
+      numdynamicips: 10
+      state: Ready
+      platformtype: Federation
+    - key:
+        organization: enterprise-partner1
+        name: enterprise1
+        federatedorganization: partner1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 10
+      state: Ready
+      platformtype: Federation
+    - key:
+        organization: enterprise-partner1
+        name: enterprise2
+        federatedorganization: partner1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 10
+      state: Ready
+      platformtype: Federation
+    autoscalepolicies:
+    - key:
+        organization: FedAppCo
+        name: scale1
+      minnodes: 1
+      maxnodes: 5
+      stabilizationwindowsec: 2
+      targetactiveconnections: 200
+    apps:
+    - key:
+        organization: FedAppCo
+        name: dockerapp
+        version: "1.0"
+      imagepath: registry.edgecloud.net/FedAppCo/dockerapp:1.0
+      imagetype: Docker
+      accessports: tcp:81
+      defaultflavor:
+        name: x1.small
+      command: -text="hello world"
+      deployment: docker
+      accesstype: LoadBalancer
+      globalid: pa-dockerapp10fedappco
+    - key:
+        organization: FedAppCo
+        name: k8sapp
+        version: "1.0"
+      imagepath: registry.edgecloud.net/FedAppCo/k8sapp:1.0
+      imagetype: Docker
+      accessports: tcp:80,tcp:443,udp:10002
+      defaultflavor:
+        name: x1.small
+      deployment: kubernetes
+      deploymentmanifest: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: k8sapp10-tcp
+          labels:
+            run: k8sapp1.0
+        spec:
+          type: LoadBalancer
+          ports:
+          - name: tcp80
+            protocol: TCP
+            port: 80
+            targetPort: 80
+          - name: tcp443
+            protocol: TCP
+            port: 443
+            targetPort: 443
+          selector:
+            run: k8sapp1.0
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: k8sapp10-udp
+          labels:
+            run: k8sapp1.0
+        spec:
+          type: LoadBalancer
+          ports:
+          - name: udp10002
+            protocol: UDP
+            port: 10002
+            targetPort: 10002
+          selector:
+            run: k8sapp1.0
+        ---
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: k8sapp10-deployment
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              run: k8sapp1.0
+          template:
+            metadata:
+              labels:
+                run: k8sapp1.0
+                mexDeployGen: kubernetes-basic
+            spec:
+              volumes:
+              imagePullSecrets:
+              - name: registry.edgecloud.net
+              containers:
+              - name: k8sapp10
+                image: registry.edgecloud.net/FedAppCo/k8sapp:1.0
+                imagePullPolicy: Always
+                ports:
+                - containerPort: 80
+                  protocol: TCP
+                - containerPort: 443
+                  protocol: TCP
+                - containerPort: 10002
+                  protocol: UDP
+                args:
+                - "--text=\"hello world\""
+      deploymentgenerator: kubernetes-basic
+      configs:
+      - kind: podArgs
+        config: |
+          ["--text=\"hello world\""]
+      accesstype: LoadBalancer
+      globalid: pa-k8sapp10fedappco
+    - key:
+        organization: FedAppCo
+        name: vmapp
+        version: "1.0"
+      imagepath: https://registry.edgecloud.net/FedAppCo/vm.img#md5:2039483048230944325345245243524352345245
+      imagetype: Qcow
+      accessports: tcp:81
+      defaultflavor:
+        name: x1.small
+      deployment: vm
+      accesstype: LoadBalancer
+      globalid: pa-vmapp10fedappco
+    appinstrefs:
+    - key:
+        organization: FedAppCo
+        name: dockerapp
+        version: "1.0"
+    - key:
+        organization: FedAppCo
+        name: k8sapp
+        version: "1.0"
+    - key:
+        organization: FedAppCo
+        name: vmapp
+        version: "1.0"

@@ -37,7 +37,6 @@ import (
 	ormtestutil "github.com/edgexr/edge-cloud-platform/pkg/mc/orm/testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
-	fedp "github.com/edgexr/edge-cloud-platform/pkg/platform/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -62,7 +61,6 @@ type CtrlObj struct {
 	dcnt        int
 	operatorIds []string
 	region      string
-	frm         *fedp.FederationPlatform
 }
 
 type OPAttr struct {
@@ -87,7 +85,6 @@ type FederatorAttr struct {
 	fedAddr     string
 	region      string
 	apiKey      string
-	frm         *fedp.FederationPlatform
 }
 
 func (o *OPAttr) CleanupOperatorPlatform(ctx context.Context) {
@@ -178,33 +175,6 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 		}
 	}
 
-	/* NOTYET
-	// set up FRM. Note that FRM is not actually connected to the
-	// controller via notify, because the dummy controller doesn't
-	// support that. Instead we'll need to call the FRM's functions
-	// directly from the test code.
-	frmVaultConfig := vault.NewConfig(vaultAddr, vault.NewAppRoleAuth(vroles.RegionRoles[region].FrmRoleID, vroles.RegionRoles[region].FrmSecretID))
-	pc := platform.PlatformConfig{
-		AccessApi: accessapi.NewVaultGlobalClient(frmVaultConfig),
-	}
-	caches := platform.Caches{
-		SettingsCache:        &ds.SettingsCache,
-		FlavorCache:          &ds.FlavorCache,
-		TrustPolicyCache:     &ds.TrustPolicyCache,
-		CloudletPoolCache:    &ds.CloudletPoolCache,
-		ClusterInstCache:     &ds.ClusterInstCache,
-		ClusterInstInfoCache: &ds.ClusterInstInfoCache,
-		AppInstCache:         &ds.AppInstCache,
-		AppInstInfoCache:     &ds.AppInstInfoCache,
-		AppCache:             &ds.AppCache,
-		ResTagTableCache:     &ds.ResTagTableCache,
-		CloudletCache:        &ds.CloudletCache,
-		CloudletInfoCache:    &ds.CloudletInfoCache,
-	}
-	frm := &fedp.FederationPlatform{}
-	err = frm.InitCommon(ctx, &pc, &caches, nil, nil)
-	require.Nil(t, err)
-	*/
 	return &CtrlObj{
 		addr:        ctrlAddr,
 		ds:          ds,
@@ -212,7 +182,6 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 		dc:          dc,
 		operatorIds: operatorIds,
 		region:      region,
-		//frm:         frm,
 	}
 }
 
@@ -381,7 +350,6 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 		fed.tokenAd = tokenAd
 		fed.region = regions[ii]
 		fed.fedAddr = "http://" + fedAddr
-		fed.frm = ctrlObjs[ii].frm
 		selfFederators = append(selfFederators, fed)
 	}
 
@@ -845,6 +813,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		req.AppVers = app.Key.Version
 		req.FederationName = consAttr.fedName
 		_, status, err = mcClient.OnboardConsumerApp(op.uri, consAttr.tokenDev, &req)
+		fmt.Printf("***** Onboard consumer app %d, %s\n", status, err)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 		consAppsExp = append(consAppsExp, req)
@@ -924,22 +893,6 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(consAppsExp), len(appsShow))
-
-	// ---------
-	// FRM Tests
-	// ---------
-
-	/* NOT YET
-	cb := func(updateType edgeproto.CacheUpdateType, value string) {
-		fmt.Printf("createAppInstCb: %s\n", value)
-	}
-	frmData := getFrmData(&consAttr, &provAttr, sharedZones)
-	for _, dat := range frmData {
-		err := consAttr.frm.CreateAppInst(ctx, &dat.consClusterInst, &dat.consApp, &dat.consAppInst, nil, cb)
-		require.Nil(t, err)
-	}
-	// check that appInsts were created on provider
-	*/
 
 	// --------+
 	// Cleanup |

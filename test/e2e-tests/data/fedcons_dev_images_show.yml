@@ -1,0 +1,42 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+consumerimages:
+- id: '***replaced***'
+  organization: FedAppCo
+  federationname: dmuus-partner1
+  name: k8sapp:1.0
+  version: k8sapp:1.0
+  sourcepath: registry.edgecloud.net/FedAppCo/k8sapp:1.0
+  type: DOCKER
+  checksum: sha256:8d4ea2a9476bc51681c6e7e59759c10237669c950b1b4a3cd6834e2161d7bde2
+  status: Ready
+- id: '***replaced***'
+  organization: FedAppCo
+  federationname: dmuus-partner1
+  name: dockerapp:1.0
+  version: dockerapp:1.0
+  sourcepath: registry.edgecloud.net/FedAppCo/dockerapp:1.0
+  type: DOCKER
+  checksum: sha256:8d4ea2a9476bc51681c6e7e59759c10237669c950b1b4a3cd6834e2161d7bde2
+  status: Ready
+- id: '***replaced***'
+  organization: FedAppCo
+  federationname: dmuus-partner1
+  name: vm.img
+  version: vm.img
+  sourcepath: https://registry.edgecloud.net/FedAppCo/vm.img
+  type: QCOW2
+  checksum: "2039483048230944325345245243524352345245"
+  status: Ready

@@ -934,7 +934,6 @@ func addControllerApis(method string, group *echo.Group) {
 	// FederationConfigPartnerFederationAddr: 56.2
 	// FederationConfigFederationDbId: 56.3
 	// FederationConfigFederationName: 56.4
-	// FederationConfigAppInstStatusEventPath: 56.5
 	// LicenseConfigStoragePath: 57
 	// ```
 	// Security:

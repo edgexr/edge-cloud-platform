@@ -181,7 +181,28 @@ func (g *kubeBasicGen) kubeApp() {
 	}
 	var cs []string
 	if g.app.Command != "" {
-		cs = strings.Split(g.app.Command, " ")
+		quoted := false
+		cs = strings.FieldsFunc(g.app.Command, func(rn rune) bool {
+			if rn == '"' {
+				quoted = !quoted
+			}
+			return !quoted && rn == ' '
+		})
+		for ii, cmd := range cs {
+			cmd = strings.TrimSpace(cmd)
+			cmd, err := strconv.Unquote(cmd)
+			if err == nil {
+				cs[ii] = cmd
+			}
+			cmd = strings.TrimSpace(cs[ii])
+			cs[ii] = strconv.Quote(cmd)
+		}
+	}
+	if len(g.app.Args) > 0 {
+		for ii, arg := range g.app.Args {
+			arg = strings.TrimSpace(arg)
+			g.app.Args[ii] = strconv.Quote(arg)
+		}
 	}
 
 	registrySecret := g.app.ImageHost
@@ -264,13 +285,13 @@ var podTemplate = `
 {{- if .Command}}
         command:
 {{- range .Command}}
-        - "{{.}}"
+        - {{.}}
 {{- end}}
 {{- end}}
 {{- if .Args}}
         args:
 {{- range .Args}}
-        - "{{.}}"
+        - {{.}}
 {{- end}}
 {{- end}}
 `

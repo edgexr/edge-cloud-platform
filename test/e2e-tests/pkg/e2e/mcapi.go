@@ -596,6 +596,50 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		*retry = true
 		return rc
 	}
+	if api == "showproviderappdata" {
+		showFilter := &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data:      map[string]interface{}{},
+		}
+		images, status, err := mcClient.ShowProviderImage(uri, token, showFilter)
+		checkMcErr("ShowProviderImage", status, err, &rc)
+		artefacts, status, err := mcClient.ShowProviderArtefact(uri, token, showFilter)
+		checkMcErr("ShowProviderArtefact", status, err, &rc)
+		apps, status, err := mcClient.ShowProviderApp(uri, token, showFilter)
+		checkMcErr("ShowProviderApp", status, err, &rc)
+		appInsts, status, err := mcClient.ShowProviderAppInst(uri, token, showFilter)
+		checkMcErr("ShowProviderAppInst", status, err, &rc)
+
+		showData := ormapi.AllData{
+			ProviderImages:    images,
+			ProviderArtefacts: artefacts,
+			ProviderApps:      apps,
+			ProviderAppInsts:  appInsts,
+		}
+		cmpFilterAllData(&showData)
+		PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
+		*retry = true
+		return rc
+	}
+	if api == "showconsumerappdata" {
+		showFilter := &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data:      map[string]interface{}{},
+		}
+		images, status, err := mcClient.ShowConsumerImage(uri, token, showFilter)
+		checkMcErr("ShowConsumerImage", status, err, &rc)
+		apps, status, err := mcClient.ShowConsumerApp(uri, token, showFilter)
+		checkMcErr("ShowConsumerApp", status, err, &rc)
+
+		showData := ormapi.AllData{
+			ConsumerImages: images,
+			ConsumerApps:   apps,
+		}
+		cmpFilterAllData(&showData)
+		PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
+		*retry = true
+		return rc
+	}
 
 	if strings.HasPrefix(api, "showcustommetrics") {
 		query := readMcCustomMetricTargetsFile(apiFile, vars)
@@ -1124,6 +1168,14 @@ func createMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 		_, st, err := mcClient.CreateFederationConsumer(uri, token, &fd)
 		outMcErr(output, fmt.Sprintf("CreateFederationConsumer[%d]", ii), st, err)
 	}
+	for ii, fd := range data.ConsumerImages {
+		_, st, err := mcClient.CreateConsumerImage(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("CreateConsumerImage[%d]", ii), st, err)
+	}
+	for ii, fd := range data.ConsumerApps {
+		_, st, err := mcClient.OnboardConsumerApp(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("OnboardConsumerApp[%d]", ii), st, err)
+	}
 }
 
 func deleteMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[string]interface{}, sharedData map[string]string, output *AllDataOut, rc *bool) {
@@ -1164,6 +1216,14 @@ func deleteMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 	for region, _ := range regions {
 		// unused callbacks
 		apiRegionCb("cloudletpools", region)
+	}
+	for ii, fd := range data.ConsumerApps {
+		_, st, err := mcClient.DeboardConsumerApp(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("DeboardConsumerApp[%d]", ii), st, err)
+	}
+	for ii, fd := range data.ConsumerImages {
+		_, st, err := mcClient.DeleteConsumerImage(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("DeleteConsumerImage[%d]", ii), st, err)
 	}
 	for ii, fd := range data.FederationConsumers {
 		_, st, err := mcClient.DeleteFederationConsumer(uri, token, &fd)

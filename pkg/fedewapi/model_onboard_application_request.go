@@ -24,7 +24,7 @@ type OnboardApplicationRequest struct {
 	// UserId of the app provider.  Identifier is relevant only in context of this federation.
 	AppProviderId string `json:"appProviderId"`
 	// Details about partner OP zones where the application should be made available;  This field when specified will instruct the OP to restrict application instantiation only on the listed zones.
-	AppDeploymentZones []OnboardApplicationRequestAppDeploymentZonesInner `json:"appDeploymentZones,omitempty"`
+	AppDeploymentZones []string `json:"appDeploymentZones,omitempty"`
 	AppMetaData AppMetaData `json:"appMetaData"`
 	AppQoSProfile AppQoSProfile `json:"appQoSProfile"`
 	// An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally.  App providers are required to provide details about all these components, their associated descriptors and their DNS names.
@@ -104,9 +104,9 @@ func (o *OnboardApplicationRequest) SetAppProviderId(v string) {
 }
 
 // GetAppDeploymentZones returns the AppDeploymentZones field value if set, zero value otherwise.
-func (o *OnboardApplicationRequest) GetAppDeploymentZones() []OnboardApplicationRequestAppDeploymentZonesInner {
+func (o *OnboardApplicationRequest) GetAppDeploymentZones() []string {
 	if o == nil || isNil(o.AppDeploymentZones) {
-		var ret []OnboardApplicationRequestAppDeploymentZonesInner
+		var ret []string
 		return ret
 	}
 	return o.AppDeploymentZones
@@ -114,7 +114,7 @@ func (o *OnboardApplicationRequest) GetAppDeploymentZones() []OnboardApplication
 
 // GetAppDeploymentZonesOk returns a tuple with the AppDeploymentZones field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *OnboardApplicationRequest) GetAppDeploymentZonesOk() ([]OnboardApplicationRequestAppDeploymentZonesInner, bool) {
+func (o *OnboardApplicationRequest) GetAppDeploymentZonesOk() ([]string, bool) {
 	if o == nil || isNil(o.AppDeploymentZones) {
 		return nil, false
 	}
@@ -130,8 +130,8 @@ func (o *OnboardApplicationRequest) HasAppDeploymentZones() bool {
 	return false
 }
 
-// SetAppDeploymentZones gets a reference to the given []OnboardApplicationRequestAppDeploymentZonesInner and assigns it to the AppDeploymentZones field.
-func (o *OnboardApplicationRequest) SetAppDeploymentZones(v []OnboardApplicationRequestAppDeploymentZonesInner) {
+// SetAppDeploymentZones gets a reference to the given []string and assigns it to the AppDeploymentZones field.
+func (o *OnboardApplicationRequest) SetAppDeploymentZones(v []string) {
 	o.AppDeploymentZones = v
 }
 

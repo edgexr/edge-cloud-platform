@@ -923,6 +923,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/federation/provider/image/show", ShowProviderImage)
 	auth.POST("/federation/provider/artefact/show", ShowProviderArtefact)
 	auth.POST("/federation/provider/app/show", ShowProviderApp)
+	auth.POST("/federation/provider/appinst/show", ShowProviderAppInst)
 
 	auth.POST("/federation/consumer/create", CreateFederationConsumer)
 	auth.POST("/federation/consumer/delete", DeleteFederationConsumer)
@@ -1039,10 +1040,10 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		federationEcho.Binder = &CustomBinder{}
 
 		// RateLimit based on auth
-		federationEcho.Use(logger, AuthCookie, FederationRateLimit)
+		federationEcho.Use(fedLogger, AuthCookie, FederationRateLimit)
 		server.federationEcho = federationEcho
 
-		partnerApi = federation.NewPartnerApi(database, connCache, config.vaultConfig, config.FederationExternalAddr, config.VmRegistryAddr, config.HarborAddr)
+		partnerApi = federation.NewPartnerApi(database, connCache, nodeMgr, config.vaultConfig, config.FederationExternalAddr, config.VmRegistryAddr, config.HarborAddr)
 		partnerApi.InitAPIs(federationEcho)
 
 		go func() {
@@ -1400,6 +1401,15 @@ func writeWS(c echo.Context, ws *websocket.Conn, wsPayload *ormapi.WSStreamPaylo
 		ormutil.LogWsResponse(c, string(out))
 	}
 	return ws.WriteJSON(wsPayload)
+}
+
+func streamCb(c echo.Context, code int32, msg string) error {
+	payload := ormapi.StreamPayload{}
+	payload.Data = &edgeproto.Result{
+		Code:    code,
+		Message: msg,
+	}
+	return WriteStream(c, &payload)
 }
 
 func WriteStream(c echo.Context, payload *ormapi.StreamPayload) error {

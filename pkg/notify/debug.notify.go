@@ -79,6 +79,9 @@ func (s *DebugRequestSend) GetNotifyId() int64 {
 func (s *DebugRequestSend) UpdateAll(ctx context.Context) {}
 
 func (s *DebugRequestSend) Update(ctx context.Context, msg *edgeproto.DebugRequest) bool {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return false
+	}
 	s.Mux.Lock()
 	s.Data = append(s.Data, msg)
 	s.Ctxs = append(s.Ctxs, ctx)
@@ -344,6 +347,9 @@ func (s *DebugReplySend) GetNotifyId() int64 {
 func (s *DebugReplySend) UpdateAll(ctx context.Context) {}
 
 func (s *DebugReplySend) Update(ctx context.Context, msg *edgeproto.DebugReply) bool {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return false
+	}
 	s.Mux.Lock()
 	s.Data = append(s.Data, msg)
 	s.Ctxs = append(s.Ctxs, ctx)

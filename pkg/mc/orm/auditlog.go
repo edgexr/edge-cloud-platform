@@ -18,26 +18,36 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"google.golang.org/grpc/status"
 )
 
 var AuditId uint64
 
-var TokenStringRegex = regexp.MustCompile(`"token":"(.*?)"`)
+var TokenFieldClearer = util.NewJsonFieldClearer("token")
+var ClientSecretFieldClearer = util.NewJsonFieldClearer("clientSecret")
+var PasswordFieldClearer = util.NewJsonFieldClearer("password")
 
 func logger(next echo.HandlerFunc) echo.HandlerFunc {
+	return loggerCustom(next, resultErrorHandler)
+}
+
+func fedLogger(next echo.HandlerFunc) echo.HandlerFunc {
+	return loggerCustom(next, fedErrorHandler)
+}
+
+func loggerCustom(next echo.HandlerFunc, errorHandler echo.MiddlewareFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		eventStart := time.Now()
 		logaudit := true
@@ -102,7 +112,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			// req/reply is captured later below
 		} else {
 			// use body dump to capture req/res.
-			bd := middleware.BodyDump(func(c echo.Context, reqB, resB []byte) {
+			bd := BodyDump(func(c echo.Context, reqB, resB []byte) {
 				reqBody = reqB
 				resBody = resB
 			})
@@ -135,6 +145,8 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		// remove passwords from requests so they aren't logged
+		reqBody = TokenFieldClearer.Clear(reqBody)
+		reqBody = PasswordFieldClearer.Clear(reqBody)
 		if strings.Contains(req.RequestURI, "login") {
 			login := ormapi.UserLogin{}
 			err := json.Unmarshal(reqBody, &login)
@@ -254,9 +266,9 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		} else if len(resBody) > 0 {
 			// for all responses, if it has a jwt token
 			// remove it before logging
-			if strings.Contains(string(resBody), "token") {
-				response = string(TokenStringRegex.ReplaceAll(resBody, []byte(`"token":""`)))
-			} else if strings.Contains(string(resBody), "TOTP") {
+			resBody = TokenFieldClearer.Clear(resBody)
+			resBody = ClientSecretFieldClearer.Clear(resBody)
+			if strings.Contains(string(resBody), "TOTP") {
 				resp := ormapi.UserResponse{}
 				err := json.Unmarshal(resBody, &resp)
 				if err == nil {
@@ -371,6 +383,9 @@ func getErrorResult(err error) (int, *ormapi.Result) {
 	} else if e, ok := err.(*echo.HTTPError); ok {
 		code = e.Code
 		msg = fmt.Sprintf("%v", e.Message)
+	} else if e, ok := err.(*federation.FedError); ok {
+		code = e.Code
+		msg = e.Message
 	} else {
 		msg = err.Error()
 	}
@@ -382,7 +397,7 @@ func getErrorResult(err error) (int, *ormapi.Result) {
 	}
 }
 
-func errorHandler(next echo.HandlerFunc) echo.HandlerFunc {
+func resultErrorHandler(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// All error handling is done here. We do not rely on
 		// echo's default error handler, which basically just calls
@@ -411,6 +426,25 @@ func errorHandler(next echo.HandlerFunc) echo.HandlerFunc {
 			// write to response header
 			writeErr = c.JSON(code, res)
 		}
+		if writeErr != nil {
+			ctx := ormutil.GetContext(c)
+			log.SpanLog(ctx, log.DebugLevelApi, "Failed to write error to response", "err", err, "writeError", writeErr)
+		}
+		return err
+	}
+}
+
+func fedErrorHandler(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		err := next(c)
+		if err == nil {
+			return nil
+		}
+		code, res := getErrorResult(err)
+		resp := fedewapi.ProblemDetails{
+			Detail: &res.Message,
+		}
+		writeErr := c.JSON(code, &resp)
 		if writeErr != nil {
 			ctx := ormutil.GetContext(c)
 			log.SpanLog(ctx, log.DebugLevelApi, "Failed to write error to response", "err", err, "writeError", writeErr)

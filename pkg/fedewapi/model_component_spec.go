@@ -32,6 +32,7 @@ type ComponentSpec struct {
 	ExposedInterfaces []InterfaceDetails `json:"exposedInterfaces,omitempty"`
 	ComputeResourceProfile ComputeResourceInfo `json:"computeResourceProfile"`
 	CompEnvParams []CompEnvParams `json:"compEnvParams,omitempty"`
+	DeploymentConfig *DeploymentConfig `json:"deploymentConfig,omitempty"`
 	// The ephemeral volume a container process may need to temporary store internal data
 	PersistentVolumes []PersistentVolumeDetails `json:"persistentVolumes,omitempty"`
 }
@@ -274,6 +275,38 @@ func (o *ComponentSpec) SetCompEnvParams(v []CompEnvParams) {
 	o.CompEnvParams = v
 }
 
+// GetDeploymentConfig returns the DeploymentConfig field value if set, zero value otherwise.
+func (o *ComponentSpec) GetDeploymentConfig() DeploymentConfig {
+	if o == nil || isNil(o.DeploymentConfig) {
+		var ret DeploymentConfig
+		return ret
+	}
+	return *o.DeploymentConfig
+}
+
+// GetDeploymentConfigOk returns a tuple with the DeploymentConfig field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ComponentSpec) GetDeploymentConfigOk() (*DeploymentConfig, bool) {
+	if o == nil || isNil(o.DeploymentConfig) {
+		return nil, false
+	}
+	return o.DeploymentConfig, true
+}
+
+// HasDeploymentConfig returns a boolean if a field has been set.
+func (o *ComponentSpec) HasDeploymentConfig() bool {
+	if o != nil && !isNil(o.DeploymentConfig) {
+		return true
+	}
+
+	return false
+}
+
+// SetDeploymentConfig gets a reference to the given DeploymentConfig and assigns it to the DeploymentConfig field.
+func (o *ComponentSpec) SetDeploymentConfig(v DeploymentConfig) {
+	o.DeploymentConfig = &v
+}
+
 // GetPersistentVolumes returns the PersistentVolumes field value if set, zero value otherwise.
 func (o *ComponentSpec) GetPersistentVolumes() []PersistentVolumeDetails {
 	if o == nil || isNil(o.PersistentVolumes) {
@@ -329,6 +362,9 @@ func (o ComponentSpec) ToMap() (map[string]interface{}, error) {
 	toSerialize["computeResourceProfile"] = o.ComputeResourceProfile
 	if !isNil(o.CompEnvParams) {
 		toSerialize["compEnvParams"] = o.CompEnvParams
+	}
+	if !isNil(o.DeploymentConfig) {
+		toSerialize["deploymentConfig"] = o.DeploymentConfig
 	}
 	if !isNil(o.PersistentVolumes) {
 		toSerialize["persistentVolumes"] = o.PersistentVolumes

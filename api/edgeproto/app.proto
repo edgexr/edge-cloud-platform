@@ -177,7 +177,7 @@ message App {
   FlavorKey default_flavor = 9 [(gogoproto.nullable) = false, (protogen.refers_to) = "Flavor"];
   // Public key used for authentication
   string auth_public_key = 12;
-  // Command that the container runs to start service 
+  // Command that the container runs to start service, separate multiple commands by a space
   string command = 13;
   // Annotations is a comma separated map of arbitrary key value pairs,
   // for example: key1=val1,key2=val2,key3="val 3"

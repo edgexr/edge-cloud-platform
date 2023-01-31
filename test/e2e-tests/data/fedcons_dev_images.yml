@@ -1,0 +1,10 @@
+consumerimages:
+- organization: FedAppCo
+  federationname: dmuus-partner1
+  name: k8sapp:1.0
+- organization: FedAppCo
+  federationname: dmuus-partner1
+  name: dockerapp:1.0
+- organization: FedAppCo
+  federationname: dmuus-partner1
+  name: vm.img

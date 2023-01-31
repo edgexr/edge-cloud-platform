@@ -15,7 +15,7 @@ import (
 type ServerInterface interface {
 	// Creates one direction federation with partner operator platform.
 	// (POST /partner)
-	CreateFederation(ctx echo.Context, params CreateFederationParams) error
+	CreateFederation(ctx echo.Context) error
 	// Instantiates an application on a partner OP zone.
 	// (POST /{federationContextId}/application/lcm)
 	InstallApp(ctx echo.Context, federationContextId FederationContextId) error
@@ -116,43 +116,8 @@ func (w *ServerInterfaceWrapper) CreateFederation(ctx echo.Context) error {
 
 	ctx.Set(OAuth2ClientCredentialsScopes, []string{"fed-mgmt"})
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params CreateFederationParams
-
-	headers := ctx.Request().Header
-	// ------------- Optional header parameter "X-Notify-Token-Url" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-Notify-Token-Url")]; found {
-		var XNotifyTokenUrl string
-		n := len(valueList)
-		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Notify-Token-Url, got %d", n))
-		}
-
-		err = runtime.BindStyledParameterWithLocation("simple", false, "X-Notify-Token-Url", runtime.ParamLocationHeader, valueList[0], &XNotifyTokenUrl)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Notify-Token-Url: %s", err))
-		}
-
-		params.XNotifyTokenUrl = &XNotifyTokenUrl
-	}
-	// ------------- Optional header parameter "X-Notify-Auth" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-Notify-Auth")]; found {
-		var XNotifyAuth string
-		n := len(valueList)
-		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Notify-Auth, got %d", n))
-		}
-
-		err = runtime.BindStyledParameterWithLocation("simple", false, "X-Notify-Auth", runtime.ParamLocationHeader, valueList[0], &XNotifyAuth)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Notify-Auth: %s", err))
-		}
-
-		params.XNotifyAuth = &XNotifyAuth
-	}
-
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.CreateFederation(ctx, params)
+	err = w.Handler.CreateFederation(ctx)
 	return err
 }
 

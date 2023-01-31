@@ -1,0 +1,16 @@
+consumerapps:
+- federationname: dmuus-{{partnertag}}
+  region: {{region}}
+  appname: k8sapp
+  apporg: FedAppCo
+  appvers: "1.0"
+- federationname: dmuus-{{partnertag}}
+  region: {{region}}
+  appname: dockerapp
+  apporg: FedAppCo
+  appvers: "1.0"
+- federationname: dmuus-{{partnertag}}
+  region: {{region}}
+  appname: vmapp
+  apporg: FedAppCo
+  appvers: "1.0"

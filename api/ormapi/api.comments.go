@@ -661,6 +661,7 @@ var ConsumerImageComments = map[string]string{
 	"organization":   `Developer organization that owns the image`,
 	"federationname": `Federation the image is copied to (ConsumerFederation)`,
 	"name":           `Image name`,
+	"version":        `Image version`,
 	"sourcepath":     `Full path to source image as used in App, i.e. https://vm-registry.domain/org/image.img`,
 	"type":           `Image type (DOCKER, HELM, QCOW2, or OVA)`,
 	"checksum":       `MD5 checksum for VM and file-based image types, sha256 digest for containers and Helm charts`,
@@ -672,6 +673,8 @@ var ProviderImageComments = map[string]string{
 	"fileid":         `File ID sent by partner`,
 	"path":           `Image path`,
 	"name":           `Image name`,
+	"description":    `Image description`,
+	"version":        `Image version`,
 	"type":           `Image type (DOCKER, HELM, QCOW2, or OVA)`,
 	"appproviderid":  `Partner app provider organization`,
 	"checksum":       `MD5 checksum for VM and file-based image types, sha256 digest for containers and Helm charts`,
@@ -699,14 +702,27 @@ var ProviderArtefactComments = map[string]string{
 }
 
 var ProviderAppComments = map[string]string{
-	"federationname":  `Federation Provider name`,
-	"appid":           `App ID send by partner, also is the artefact ID`,
-	"appproviderid":   `App provider ID`,
-	"artefactids":     `Artefact IDs`,
-	"deploymentzones": `Restricted Zones`,
+	"federationname":        `Federation Provider name`,
+	"appid":                 `App ID send by partner, also is the artefact ID`,
+	"appname":               `App name in region`,
+	"appvers":               `App version in region`,
+	"appproviderid":         `App provider ID`,
+	"artefactids":           `Artefact IDs`,
+	"deploymentzones":       `Onboarding Zones`,
+	"appstatuscallbacklink": `App status callback link`,
 }
 
 var ProviderAppInstComments = map[string]string{
-	"federationname": `Federation Provider name`,
-	"appinstid":      `AppInst unique ID`,
+	"federationname":      `Federation Provider name`,
+	"appinstid":           `AppInst unique ID`,
+	"appid":               `AppID for ProviderApp`,
+	"region":              `Region for AppInst`,
+	"appname":             `App name for AppInstKey`,
+	"appvers":             `App version for AppInstKey`,
+	"cluster":             `Cluster name for AppInstKey`,
+	"clusterorg":          `Cluster org for AppInstKey`,
+	"cloudlet":            `Cloudlet name for AppInstKey`,
+	"cloudletorg":         `Cloudlet org for AppInstKey`,
+	"cloudletfedorg":      `Cloudlet federation org for AppInstKey (this should always be blank)`,
+	"appinstcallbacklink": `AppInst callback link`,
 }

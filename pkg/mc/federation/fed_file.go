@@ -2,6 +2,7 @@ package federation
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,16 +19,18 @@ import (
 )
 
 const (
-	FileFieldFileId        = "fileId"
-	FileFieldAppProviderId = "appProviderId"
-	FileFieldFileName      = "fileName"
-	FileFieldFileType      = "fileType"
-	FileFieldRepoType      = "repoType"
-	FileFieldImgOSType     = "imgOSType"
-	FileFieldImgArchType   = "imgInsSetArch"
-	FileFieldRepoLocation  = "fileRepoLocation"
-	FileFieldFile          = "file"
-	FileFieldChecksum      = "checksum"
+	FileFieldFileId          = "fileId"
+	FileFieldAppProviderId   = "appProviderId"
+	FileFieldFileName        = "fileName"
+	FileFieldFileDescription = "fileDescription"
+	FileFieldFileVersionInfo = "fileVersionInfo"
+	FileFieldFileType        = "fileType"
+	FileFieldRepoType        = "repoType"
+	FileFieldImgOSType       = "imgOSType"
+	FileFieldImgArchType     = "imgInsSetArch"
+	FileFieldRepoLocation    = "fileRepoLocation"
+	FileFieldFile            = "file"
+	FileFieldChecksum        = "checksum"
 
 	ImageStatusReady     = "Ready"
 	ImageStatusSending   = "Sending"
@@ -74,6 +77,8 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 	image.FileID = req.PostFormValue(FileFieldFileId)
 	image.AppProviderId = req.PostFormValue(FileFieldAppProviderId)
 	image.Name = req.PostFormValue(FileFieldFileName)
+	image.Description = req.PostFormValue(FileFieldFileDescription)
+	image.Version = req.PostFormValue(FileFieldFileVersionInfo)
 	image.Type = req.PostFormValue(FileFieldFileType)
 	image.Checksum = req.PostFormValue(FileFieldChecksum)
 	image.Status = ImageStatusReceiving
@@ -91,6 +96,11 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 	if image.Type == "" {
 		return fmt.Errorf("%s is missing", FileFieldFileType)
 	}
+	if image.Version == "" {
+		return fmt.Errorf("%s is missing", FileFieldFileVersionInfo)
+	}
+	// TODO: capture and save osType
+
 	if err := CheckFileType(image.Type); err != nil {
 		return err
 	}
@@ -141,7 +151,7 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 
 	err = db.Create(&image).Error
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "failed to save image: "+err.Error())
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to save image, %s", err.Error()))
 	}
 	if image.Status == ImageStatusReady {
 		// all done
@@ -294,10 +304,10 @@ func (p *PartnerApi) RemoveFile(c echo.Context, fedCtxId FederationContextId, fi
 	db := p.loggedDB(ctx)
 	res := db.Where(&image).First(&image)
 	if res.RecordNotFound() {
-		return c.String(http.StatusNotFound, fmt.Sprintf("Specified file ID %s not found", string(fileId)))
+		return fedError(http.StatusNotFound, fmt.Errorf("Specified file ID %s not found", string(fileId)))
 	}
 	if res.Error != nil {
-		return c.String(http.StatusInternalServerError, res.Error.Error())
+		return fedError(http.StatusInternalServerError, res.Error)
 	}
 
 	if p.vmRegistryAddr != "" && strings.Contains(image.Path, p.vmRegistryAddr) {
@@ -315,12 +325,12 @@ func (p *PartnerApi) RemoveFile(c echo.Context, fedCtxId FederationContextId, fi
 		client := http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
-			return c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to delete local copy of image: %s", err))
+			return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to delete local copy of image: %s", err))
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
 			bd, _ := io.ReadAll(resp.Body)
-			return c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to delete local copy of image: %d, %s", resp.StatusCode, string(bd)))
+			return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to delete local copy of image: %d, %s", resp.StatusCode, string(bd)))
 		}
 	}
 	if p.harborAddr != "" && strings.Contains(image.Path, util.TrimScheme(p.harborAddr)) {
@@ -337,13 +347,13 @@ func (p *PartnerApi) RemoveFile(c echo.Context, fedCtxId FederationContextId, fi
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "delete docker image failed", "path", image.Path, "out", string(out), "err", err)
-			return c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to delete local copy of image: %s", string(out)))
+			return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to delete local copy of image: %s", string(out)))
 		}
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "deleting image", "image", image)
 	err = db.Delete(&image).Error
 	if err != nil {
-		return c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to delete image: %s", err))
+		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to delete image: %s", err))
 	}
 	return nil
 }
@@ -364,10 +374,10 @@ func (p *PartnerApi) ViewFile(c echo.Context, fedCtxId FederationContextId, file
 	db := p.loggedDB(ctx)
 	res := db.Where(&image).First(&image)
 	if res.RecordNotFound() {
-		return c.String(http.StatusNotFound, "Specified file ID not found")
+		return fedError(http.StatusNotFound, errors.New("Specified file ID not found"))
 	}
 	if res.Error != nil {
-		return c.String(http.StatusInternalServerError, res.Error.Error())
+		return fedError(http.StatusInternalServerError, res.Error)
 	}
 	resp := fedewapi.ViewFile200Response{
 		FileId:          image.FileID,
@@ -375,6 +385,14 @@ func (p *PartnerApi) ViewFile(c echo.Context, fedCtxId FederationContextId, file
 		FileName:        image.Name,
 		FileDescription: &image.Path,
 		FileType:        fedewapi.VirtImageType(image.Type),
+		FileVersionInfo: image.Version,
+		ImgInsSetArch:   fedewapi.CPUARCHTYPE_X86_64,
+		ImgOSType: fedewapi.OSType{
+			Architecture: "x86_64",
+			Distribution: "OTHER",
+			Version:      "OTHER",
+			License:      "NOT_SPECIFIED",
+		},
 	}
 	return c.JSON(http.StatusOK, resp)
 }

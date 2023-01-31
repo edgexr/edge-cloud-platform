@@ -278,14 +278,18 @@ func SendHTTPReqAuth(ctx context.Context, method, regUrl string, auth *RegistryA
 	if reqConfig != nil && reqConfig.ResponseHeaderTimeout != 0 {
 		respHeaderTimeout = reqConfig.ResponseHeaderTimeout
 	}
+	dialTimeout := 10 * time.Second
+	if os.Getenv("E2ETEST_SKIPREGISTRY") != "" {
+		dialTimeout = 10 * time.Millisecond
+	}
 	client := &http.Client{
 		Transport: &http.Transport{
 			// Connection Timeout
 			DialContext: (&net.Dialer{
-				Timeout:   10 * time.Second,
+				Timeout:   dialTimeout,
 				KeepAlive: 10 * time.Second,
 			}).DialContext,
-			TLSHandshakeTimeout: 10 * time.Second,
+			TLSHandshakeTimeout: dialTimeout,
 
 			// Response Header Timeout
 			ExpectContinueTimeout: 5 * time.Second,
