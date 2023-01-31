@@ -21,16 +21,14 @@ import (
 )
 
 type AppInstInfoApi struct {
-	all   *AllApis
-	sync  *Sync
-	store edgeproto.AppInstInfoStore
+	all  *AllApis
+	sync *Sync
 }
 
 func NewAppInstInfoApi(sync *Sync, all *AllApis) *AppInstInfoApi {
 	appInstInfoApi := AppInstInfoApi{}
 	appInstInfoApi.all = all
 	appInstInfoApi.sync = sync
-	appInstInfoApi.store = edgeproto.NewAppInstInfoStore(sync.store)
 	return &appInstInfoApi
 }
 

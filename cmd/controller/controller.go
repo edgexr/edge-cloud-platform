@@ -796,6 +796,7 @@ func InitNotify(metricsInflux *influxq.InfluxQ, edgeEventsInflux *influxq.Influx
 	// TrustPolicyExceptions depend on App and Cloudlet so must be sent after them.
 	notify.ServerMgrOne.RegisterSendTrustPolicyExceptionCache(&allApis.trustPolicyExceptionApi.cache)
 	notify.ServerMgrOne.RegisterSend(execRequestSendMany)
+	notify.ServerMgrOne.RegisterSend(allApis.appInstApi.fedAppInstEventSendMany)
 
 	nodeMgr.RegisterServer(&notify.ServerMgrOne)
 	notify.ServerMgrOne.RegisterRecv(notify.NewCloudletInfoRecvMany(allApis.cloudletInfoApi))

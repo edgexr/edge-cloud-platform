@@ -200,6 +200,12 @@ func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgepro
 	if new.Deployment != cloudcommon.DeploymentTypeKubernetes {
 		return
 	}
+	// don't touch federated cloudlets; monitoring is the domain of the
+	// federated partner
+	if new.Key.CloudletKey.FederatedOrganization != "" {
+		return
+	}
+
 	log.SpanLog(ctx, log.DebugLevelNotify, "cluster update", "cluster", new.Key.ClusterKey.Name,
 		"cloudlet", new.Key.CloudletKey.Name, "state", edgeproto.TrackedState_name[int32(new.State)])
 

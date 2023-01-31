@@ -424,6 +424,9 @@ func (s *AppInstClientSend) GetNotifyId() int64 {
 func (s *AppInstClientSend) UpdateAll(ctx context.Context) {}
 
 func (s *AppInstClientSend) Update(ctx context.Context, msg *edgeproto.AppInstClient) bool {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return false
+	}
 	s.Mux.Lock()
 	s.Data = append(s.Data, msg)
 	s.Ctxs = append(s.Ctxs, ctx)
