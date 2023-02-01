@@ -21,9 +21,9 @@ var _ MappedNullable = &ViewFile200Response{}
 type ViewFile200Response struct {
 	// A globally unique identifier associated with the image file. Originating OP generates this identifier when file is uploaded over NBI.
 	FileId string `json:"fileId"`
-	// UserId of the app provider.  Identifier is relevant only in context of this federation.
+	// UserId of the app provider. Identifier is relevant only in context of this federation.
 	AppProviderId string `json:"appProviderId"`
-	// Name of the image file.   App provides specifies this name when image is uploaded on originating OP over NBI.
+	// Name of the image file. App provides specifies this name when image is uploaded on originating OP over NBI.
 	FileName string `json:"fileName"`
 	// Brief description about the image file.
 	FileDescription *string `json:"fileDescription,omitempty"`
@@ -34,7 +34,7 @@ type ViewFile200Response struct {
 	Checksum *string `json:"checksum,omitempty"`
 	ImgOSType OSType `json:"imgOSType"`
 	ImgInsSetArch CPUArchType `json:"imgInsSetArch"`
-	// Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal.  OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
+	// Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal. OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
 	RepoType *string `json:"repoType,omitempty"`
 	FileRepoLocation *ObjectRepoLocation `json:"fileRepoLocation,omitempty"`
 }

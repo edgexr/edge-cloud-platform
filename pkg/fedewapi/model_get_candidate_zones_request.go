@@ -19,7 +19,7 @@ var _ MappedNullable = &GetCandidateZonesRequest{}
 
 // GetCandidateZonesRequest struct for GetCandidateZonesRequest
 type GetCandidateZonesRequest struct {
-	// UserId of the app provider.  Identifier is relevant only in context of this federation.
+	// UserId of the app provider. Identifier is relevant only in context of this federation.
 	AppProviderId string `json:"appProviderId"`
 	// Identifier used to refer to an application.
 	AppId string `json:"appId"`

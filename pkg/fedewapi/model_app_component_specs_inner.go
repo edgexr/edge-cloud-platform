@@ -21,9 +21,9 @@ var _ MappedNullable = &AppComponentSpecsInner{}
 type AppComponentSpecsInner struct {
 	// Must be a valid RFC 1035 label name. This defines the DNS name via which the component can be accessed over NBI. Access via serviceNameNB is restricted on specific ports. Platform shall expose component access externally via this DNS name
 	ServiceNameNB *string `json:"serviceNameNB,omitempty"`
-	// Must be a valid RFC 1035 label name. This defines the DNS name via which the component can be accessed via peer components. Access via serviceNameEW is open on all ports.   Platform shall not expose serviceNameEW externally outside edge.
+	// Must be a valid RFC 1035 label name. This defines the DNS name via which the component can be accessed via peer components. Access via serviceNameEW is open on all ports. Platform shall not expose serviceNameEW externally outside edge.
 	ServiceNameEW *string `json:"serviceNameEW,omitempty"`
-	// Must be a valid RFC 1035 label name.  Component name must be unique with an application
+	// Must be a valid RFC 1035 label name. Component name must be unique with an application
 	ComponentName *string `json:"componentName,omitempty"`
 	// A globally unique identifier associated with the artefact. Originating OP generates this identifier when artefact is submitted over NBI.
 	ArtefactId string `json:"artefactId"`

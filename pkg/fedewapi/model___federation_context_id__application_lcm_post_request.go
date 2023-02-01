@@ -20,7 +20,7 @@ var _ MappedNullable = &FederationContextIdApplicationLcmPostRequest{}
 
 // FederationContextIdApplicationLcmPostRequest struct for FederationContextIdApplicationLcmPostRequest
 type FederationContextIdApplicationLcmPostRequest struct {
-	// Globally unique identifier allocated to an operator platform. This is valid and used only in context of MEC federation interface.
+	// This identifier shall be provided by the partner OP on successful verification and validation of the federation create request and is used by partner op to identify this newly created federation context. Originating OP shall provide this identifier in any subsequent request towards the partner op.
 	FederationContextId string `json:"federationContextId"`
 	// Identifier used to refer to an application.
 	AppId string `json:"appId"`

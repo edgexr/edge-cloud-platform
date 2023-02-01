@@ -19,7 +19,7 @@ var _ MappedNullable = &FederationContextIdZonesPostRequest{}
 
 // FederationContextIdZonesPostRequest struct for FederationContextIdZonesPostRequest
 type FederationContextIdZonesPostRequest struct {
-	// Globally unique identifier allocated to an operator platform. This is valid and used only in context of MEC federation interface.
+	// This identifier shall be provided by the partner OP on successful verification and validation of the federation create request and is used by partner op to identify this newly created federation context. Originating OP shall provide this identifier in any subsequent request towards the partner op.
 	FederationContextId string `json:"federationContextId"`
 	// Human readable name of the zone.
 	ZoneId string `json:"zoneId"`

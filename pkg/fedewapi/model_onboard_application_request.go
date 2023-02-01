@@ -21,13 +21,13 @@ var _ MappedNullable = &OnboardApplicationRequest{}
 type OnboardApplicationRequest struct {
 	// Identifier used to refer to an application.
 	AppId string `json:"appId"`
-	// UserId of the app provider.  Identifier is relevant only in context of this federation.
+	// UserId of the app provider. Identifier is relevant only in context of this federation.
 	AppProviderId string `json:"appProviderId"`
 	// Details about partner OP zones where the application should be made available;  This field when specified will instruct the OP to restrict application instantiation only on the listed zones.
 	AppDeploymentZones []string `json:"appDeploymentZones,omitempty"`
 	AppMetaData AppMetaData `json:"appMetaData"`
 	AppQoSProfile AppQoSProfile `json:"appQoSProfile"`
-	// An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally.  App providers are required to provide details about all these components, their associated descriptors and their DNS names.
+	// An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally. App providers are required to provide details about all these components, their associated descriptors and their DNS names.
 	AppComponentSpecs []AppComponentSpecsInner `json:"appComponentSpecs"`
 	AppStatusCallbackLink string `json:"appStatusCallbackLink"`
 }

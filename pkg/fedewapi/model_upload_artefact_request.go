@@ -22,7 +22,7 @@ var _ MappedNullable = &UploadArtefactRequest{}
 type UploadArtefactRequest struct {
 	// A globally unique identifier associated with the artefact. Originating OP generates this identifier when artefact is submitted over NBI.
 	ArtefactId string `json:"artefactId"`
-	// UserId of the app provider.  Identifier is relevant only in context of this federation.
+	// UserId of the app provider. Identifier is relevant only in context of this federation.
 	AppProviderId string `json:"appProviderId"`
 	// Name of the artefact.
 	ArtefactName string `json:"artefactName"`
@@ -35,7 +35,7 @@ type UploadArtefactRequest struct {
 	ArtefactFileName *string `json:"artefactFileName,omitempty"`
 	// Artefacts like Helm charts or Terraform scripts may need compressed format.
 	ArtefactFileFormat *string `json:"artefactFileFormat,omitempty"`
-	// Type of descriptor present in the artefact.  App provider can either define either a Helm chart or a Terraform script or container spec.
+	// Type of descriptor present in the artefact. App provider can either define either a Helm chart or a Terraform script or container spec.
 	ArtefactDescriptorType string `json:"artefactDescriptorType"`
 	// Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal. OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
 	RepoType *string `json:"repoType,omitempty"`

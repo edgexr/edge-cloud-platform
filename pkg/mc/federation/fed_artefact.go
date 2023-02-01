@@ -1,11 +1,14 @@
 package federation
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
+	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -472,7 +475,7 @@ func (p *PartnerApi) RemoveArtefact(c echo.Context, fedCtxId FederationContextId
 
 func (p *PartnerApi) GetArtefact(c echo.Context, fedCtxId FederationContextId, artefactId ArtefactId) error {
 	ctx := ormutil.GetContext(c)
-	log.SpanLog(ctx, log.DebugLevelApi, "Fed EWBI RemoveArtefact", "fedCtxId", fedCtxId, "artefactId", artefactId)
+	log.SpanLog(ctx, log.DebugLevelApi, "Fed EWBI GetArtefact", "fedCtxId", fedCtxId, "artefactId", artefactId)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
@@ -483,6 +486,26 @@ func (p *PartnerApi) GetArtefact(c echo.Context, fedCtxId FederationContextId, a
 		return err
 	}
 
+	// look up app
+	rc := ormutil.RegionContext{
+		Region:    provider.Regions[0],
+		SkipAuthz: true,
+		Database:  p.loggedDB(ctx),
+	}
+	appKey := provArt.GetAppKey()
+	app, flavor, err := LookupRegionApp(ctx, &rc, p.connCache, &appKey)
+	if err != nil {
+		return fedError(http.StatusInternalServerError, err)
+	}
+	imageIds, err := p.getProviderImageIdsForApp(ctx, provider.Name, app)
+	if err != nil {
+		return fedError(http.StatusInternalServerError, err)
+	}
+	spec, err := p.GenerateComponentSpec(ctx, app, imageIds, flavor)
+	if err != nil {
+		return fedError(http.StatusInternalServerError, err)
+	}
+
 	resp := fedewapi.GetArtefact200Response{}
 	resp.ArtefactId = provArt.ArtefactID
 	resp.AppProviderId = provArt.AppProviderId
@@ -490,5 +513,170 @@ func (p *PartnerApi) GetArtefact(c echo.Context, fedCtxId FederationContextId, a
 	resp.ArtefactVersionInfo = provArt.AppVers
 	resp.ArtefactVirtType = provArt.VirtType
 	resp.ArtefactDescriptorType = provArt.DescType
+	resp.ComponentSpec = append(resp.ComponentSpec, *spec)
 	return c.JSON(http.StatusOK, resp)
+}
+
+func LookupRegionApp(ctx context.Context, rc *ormutil.RegionContext, connCache ctrlclient.ClientConnMgr, appKey *edgeproto.AppKey) (*edgeproto.App, *edgeproto.Flavor, error) {
+	log.SpanLog(ctx, log.DebugLevelApi, "lookup region app", "appkey", *appKey)
+	lookup := edgeproto.App{
+		Key: *appKey,
+	}
+	var app *edgeproto.App
+	err := ctrlclient.ShowAppStream(ctx, rc, &lookup, connCache, nil, func(retApp *edgeproto.App) error {
+		app = retApp
+		return nil
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("Failure looking up App: %s", err)
+	}
+	if app == nil {
+		return nil, nil, fmt.Errorf("App not found")
+	}
+
+	if app.DefaultFlavor.Name == "" && app.ServerlessConfig == nil {
+		return nil, nil, fmt.Errorf("App has no default flavor and no serverless config to specify compute resources")
+	}
+
+	var flavor *edgeproto.Flavor
+	if app.DefaultFlavor.Name != "" {
+		log.SpanLog(ctx, log.DebugLevelApi, "create ConsumerApp, look up flavors")
+		flavorLookup := edgeproto.Flavor{
+			Key: app.DefaultFlavor,
+		}
+		err = ctrlclient.ShowFlavorStream(ctx, rc, &flavorLookup, connCache, func(retFlavor *edgeproto.Flavor) error {
+			flavor = retFlavor
+			return nil
+		})
+		if err != nil {
+			return nil, nil, fmt.Errorf("Failure looking up Flavor %s: %s", app.DefaultFlavor.Name, err)
+		}
+		if flavor == nil {
+			return nil, nil, fmt.Errorf("App DefaultFlavor %s not found", app.DefaultFlavor.Name)
+		}
+	}
+	return app, flavor, nil
+}
+
+func (p *PartnerApi) getProviderImageIdsForApp(ctx context.Context, fedName string, app *edgeproto.App) ([]string, error) {
+	if app.ImagePath != "" {
+		image := ormapi.ProviderImage{
+			FederationName: fedName,
+			Path:           app.ImagePath,
+		}
+		// lookup image
+		db := p.loggedDB(ctx)
+		images := []ormapi.ProviderImage{}
+		res := db.Where(&image).Find(&images)
+		if res.RecordNotFound() {
+			return []string{}, nil
+		}
+		if res.Error != nil {
+			return []string{}, res.Error
+		}
+		imageIds := []string{}
+		for _, img := range images {
+			imageIds = append(imageIds, img.FileID)
+		}
+		return imageIds, nil
+	}
+	return []string{}, nil
+}
+
+func (p *PartnerApi) GenerateComponentSpec(ctx context.Context, app *edgeproto.App, imageIds []string, defaultFlavor *edgeproto.Flavor) (*fedewapi.ComponentSpec, error) {
+	// Create ComponentSpec
+	spec := fedewapi.ComponentSpec{}
+	spec.ComponentName = app.Key.Name
+	spec.Images = imageIds
+	if app.ScaleWithCluster {
+		spec.NumOfInstances = -1
+	} else {
+		spec.NumOfInstances = 1
+	}
+	spec.RestartPolicy = RestartPolicyAlways
+	commandLineParams := fedewapi.CommandLineParams{}
+	envVars := []v1.EnvVar{}
+	if app.Command != "" {
+		commandLineParams.Command = []string{app.Command}
+	}
+	for _, cfg := range app.Configs {
+		switch cfg.Kind {
+		case edgeproto.AppConfigHelmYaml:
+			// TODO: spec doesn't have any place for this yet
+		case edgeproto.AppConfigEnvYaml:
+			err := yaml.Unmarshal([]byte(cfg.Config), &envVars)
+			if err != nil {
+				return nil, fmt.Errorf("Failed to unmarshal ConfigFile for env vars: %s", err)
+			}
+		case edgeproto.AppConfigPodArgs:
+			args := []string{}
+			err := yaml.Unmarshal([]byte(cfg.Config), &args)
+			if err != nil {
+				return nil, err
+			}
+			commandLineParams.CommandArgs = args
+		}
+	}
+	if len(commandLineParams.Command) > 0 || len(commandLineParams.CommandArgs) > 0 {
+		spec.CommandLineParams = &commandLineParams
+	}
+	for _, envVar := range envVars {
+		env := fedewapi.CompEnvParams{
+			EnvVarName:   envVar.Name,
+			EnvVarValue:  &envVar.Value,
+			EnvValueType: EnvVarTypeUser,
+		}
+		spec.CompEnvParams = append(spec.CompEnvParams, env)
+	}
+
+	ports, err := edgeproto.ParseAppPorts(app.AccessPorts)
+	if err != nil {
+		return nil, err
+	}
+	interfaces := []fedewapi.InterfaceDetails{}
+	for _, port := range ports {
+		portStart := port.InternalPort
+		portEnd := port.EndPort
+		if portEnd == 0 {
+			portEnd = portStart
+		}
+		for portVal := portStart; portVal <= portEnd; portVal++ {
+			intf := fedewapi.InterfaceDetails{}
+			intf.InterfaceId = p.GetInterfaceId(port, portVal)
+			if port.Proto == dmeproto.LProto_L_PROTO_UDP {
+				intf.CommProtocol = CommProtoUDP
+			} else {
+				intf.CommProtocol = CommProtoTCP
+			}
+			intf.CommPort = portVal
+			if app.InternalPorts {
+				intf.VisibilityType = CommPortVisInt
+			} else {
+				intf.VisibilityType = CommPortVisExt
+			}
+			interfaces = append(interfaces, intf)
+		}
+	}
+	if len(interfaces) > 0 {
+		spec.ExposedInterfaces = interfaces
+	}
+
+	resources := fedewapi.ComputeResourceInfo{}
+	if defaultFlavor == nil && app.ServerlessConfig == nil {
+		return nil, fmt.Errorf("Cannot specify compute resource info, one of default flavor or serverless config must be set")
+	}
+	if app.ServerlessConfig != nil {
+		resources.NumCPU = app.ServerlessConfig.Vcpus.DecString()
+		resources.Memory = int64(app.ServerlessConfig.Ram)
+	} else {
+		disk := int32(defaultFlavor.Disk)
+		resources.NumCPU = strconv.Itoa(int(defaultFlavor.Vcpus))
+		resources.Memory = int64(defaultFlavor.Ram)
+		if disk > 0 {
+			resources.DiskStorage = &disk
+		}
+	}
+	// TODO: resources.Gpu
+	spec.ComputeResourceProfile = resources
+	return &spec, nil
 }

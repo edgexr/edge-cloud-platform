@@ -73,7 +73,7 @@ type ServerInterface interface {
 	// Retrieves the resource pool reserved by an ISV
 	// (GET /{federationContextId}/isv/resource/zone/{zoneId}/appProvider/{appProviderId})
 	ViewISVResPool(ctx echo.Context, federationContextId FederationContextId, zoneId ZoneIdentifier, appProviderId AppProviderId) error
-	// Reserves resources (compute, network and storage)  on a partner OP zone.   ISVs registered with home OP reserves resources on a partner OP zone.
+	// Reserves resources (compute, network and storage)  on a partner OP zone. ISVs registered with home OP reserves resources on a partner OP zone.
 	// (POST /{federationContextId}/isv/resource/zone/{zoneId}/appProvider/{appProviderId})
 	CreateResourcePools(ctx echo.Context, federationContextId FederationContextId, zoneId ZoneIdentifier, appProviderId AppProviderId) error
 	// Deletes the resource pool reserved by an ISV

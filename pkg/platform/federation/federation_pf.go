@@ -36,6 +36,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
+	"github.com/google/uuid"
 )
 
 const (
@@ -186,6 +187,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	}
 
 	req := fedewapi.InstallAppRequest{
+		AppInstanceId: uuid.New().String(), // TODO: no uniqueness check
 		AppId:         app.GlobalId,
 		AppVersion:    app.Key.Version,
 		AppProviderId: app.Key.Organization,
@@ -200,21 +202,16 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	eventsCh := f.registerFedAppInstEvents(appInst.UniqueId)
 	defer f.deregisterFedAppInstEvents(appInst.UniqueId)
 
-	res := fedewapi.InstallApp202Response{}
 	apiPath := fmt.Sprintf("/%s/%s/application/lcm", federationmgmt.ApiRoot, fedConfig.FederationContextId)
-	_, _, err = fedClient.SendRequest(ctx, "POST", apiPath, &req, &res, nil)
+	_, _, err = fedClient.SendRequest(ctx, "POST", apiPath, &req, nil, nil)
 	if err != nil {
 		return err
 	}
-	if res.AppInstIdentifier == "" {
-		return fmt.Errorf("App instance created succeeded but no ID in response")
-	}
-	log.SpanLog(ctx, log.DebugLevelApi, "Got FedAppInstId", "appInstKey", appInst.Key, "fedAppInstId", res.AppInstIdentifier)
 
 	// send back appInstId
 	fedKey := edgeproto.FedAppInstKey{
 		FederationName: fedConfig.FederationName,
-		AppInstId:      res.AppInstIdentifier,
+		AppInstId:      req.AppInstanceId,
 	}
 	f.caches.AppInstInfoCache.SetFedAppInstKey(ctx, &appInst.Key, fedKey)
 
@@ -224,7 +221,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	// AppInst.FedAppInstEvent API with an AppInstInfo.
 	// The event may either be handled by the controller, or may be
 	// forwarded to the FRM if it's ERROR/READY so we can stop waiting here.
-	updateCallback(edgeproto.UpdateTask, "Waiting for federation partner callbacks for FedAppInstId "+res.AppInstIdentifier)
+	updateCallback(edgeproto.UpdateTask, "Waiting for federation partner callbacks for FedAppInstId "+req.AppInstanceId)
 
 	timeout := AppInstDeploymentTimeout
 	if os.Getenv("E2ETEST_TLS") != "" {
