@@ -20,8 +20,8 @@ var _ MappedNullable = &GetAppInstanceDetails200Response{}
 // GetAppInstanceDetails200Response struct for GetAppInstanceDetails200Response
 type GetAppInstanceDetails200Response struct {
 	AppInstanceState *InstanceState `json:"appInstanceState,omitempty"`
-	// Information about the IP and Port exposed by the OP. Application clients shall use these access points to reach this application instance
-	AccesspointInfo []GetAppInstanceDetails200ResponseAccesspointInfoInner `json:"accesspointInfo,omitempty"`
+	// Information about the IP and Port exposed by the OP. Application clients shall use these access points to reach this application instance.
+	AccesspointInfo []AccessPointInfoInner `json:"accesspointInfo,omitempty"`
 }
 
 // NewGetAppInstanceDetails200Response instantiates a new GetAppInstanceDetails200Response object
@@ -74,9 +74,9 @@ func (o *GetAppInstanceDetails200Response) SetAppInstanceState(v InstanceState) 
 }
 
 // GetAccesspointInfo returns the AccesspointInfo field value if set, zero value otherwise.
-func (o *GetAppInstanceDetails200Response) GetAccesspointInfo() []GetAppInstanceDetails200ResponseAccesspointInfoInner {
+func (o *GetAppInstanceDetails200Response) GetAccesspointInfo() []AccessPointInfoInner {
 	if o == nil || isNil(o.AccesspointInfo) {
-		var ret []GetAppInstanceDetails200ResponseAccesspointInfoInner
+		var ret []AccessPointInfoInner
 		return ret
 	}
 	return o.AccesspointInfo
@@ -84,7 +84,7 @@ func (o *GetAppInstanceDetails200Response) GetAccesspointInfo() []GetAppInstance
 
 // GetAccesspointInfoOk returns a tuple with the AccesspointInfo field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetAppInstanceDetails200Response) GetAccesspointInfoOk() ([]GetAppInstanceDetails200ResponseAccesspointInfoInner, bool) {
+func (o *GetAppInstanceDetails200Response) GetAccesspointInfoOk() ([]AccessPointInfoInner, bool) {
 	if o == nil || isNil(o.AccesspointInfo) {
 		return nil, false
 	}
@@ -100,8 +100,8 @@ func (o *GetAppInstanceDetails200Response) HasAccesspointInfo() bool {
 	return false
 }
 
-// SetAccesspointInfo gets a reference to the given []GetAppInstanceDetails200ResponseAccesspointInfoInner and assigns it to the AccesspointInfo field.
-func (o *GetAppInstanceDetails200Response) SetAccesspointInfo(v []GetAppInstanceDetails200ResponseAccesspointInfoInner) {
+// SetAccesspointInfo gets a reference to the given []AccessPointInfoInner and assigns it to the AccesspointInfo field.
+func (o *GetAppInstanceDetails200Response) SetAccesspointInfo(v []AccessPointInfoInner) {
 	o.AccesspointInfo = v
 }
 

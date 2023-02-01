@@ -184,7 +184,8 @@ func (s *AppInstWorker) createAppInstJob() {
 	defer span.Finish()
 	err := s.createAppInst(ctx)
 	if err != nil {
-		s.sendCallback(ctx, "FAILED", err.Error(), nil)
+		state := fedewapi.INSTANCESTATE_FAILED
+		s.sendCallback(ctx, &state, err.Error(), nil)
 		log.SpanLog(ctx, log.DebugLevelApi, "create provider AppInst failed", "appInst", s.provAppInst, "err", err)
 	}
 }
@@ -219,7 +220,8 @@ func (s *AppInstWorker) createAppInst(ctx context.Context) (reterr error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "Federation provider create appinst", "appInst", appInstIn)
 	cb := func(res *edgeproto.Result) error {
 		log.SpanLog(ctx, log.DebugLevelApi, "controller create appinst callback", "res", *res)
-		s.sendCallback(ctx, federationmgmt.AppInstStatePending, res.Message, nil)
+		state := fedewapi.INSTANCESTATE_PENDING
+		s.sendCallback(ctx, &state, res.Message, nil)
 		return nil
 	}
 	err := ctrlclient.CreateAppInstStream(ctx, &rc, &appInstIn, s.partner.connCache, cb)
@@ -239,27 +241,64 @@ func (s *AppInstWorker) createAppInst(ctx context.Context) (reterr error) {
 	if appInstOut == nil {
 		return fmt.Errorf("Unable to find created AppInst %s", filter.Key.GetKeyString())
 	}
-	accessPoints := []fedewapi.FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner{}
-	for _, port := range appInstOut.MappedPorts {
+	accessPoints := s.partner.getAppInstAccessPointInfo(appInstOut)
+	state := getInstanceState(appInstOut)
+	s.sendCallback(ctx, state, "", accessPoints)
+	return nil
+}
+
+func getInstanceState(appInst *edgeproto.AppInst) *fedewapi.InstanceState {
+	var state fedewapi.InstanceState
+	switch appInst.State {
+	case edgeproto.TrackedState_CREATE_REQUESTED:
+		fallthrough
+	case edgeproto.TrackedState_CREATING:
+		fallthrough
+	case edgeproto.TrackedState_UPDATE_REQUESTED:
+		fallthrough
+	case edgeproto.TrackedState_UPDATING:
+		state = fedewapi.INSTANCESTATE_PENDING
+	case edgeproto.TrackedState_DELETE_REQUESTED:
+		fallthrough
+	case edgeproto.TrackedState_DELETING:
+		fallthrough
+	case edgeproto.TrackedState_DELETE_PREPARE:
+		state = fedewapi.INSTANCESTATE_TERMINATING
+	case edgeproto.TrackedState_CREATE_ERROR:
+		fallthrough
+	case edgeproto.TrackedState_UPDATE_ERROR:
+		fallthrough
+	case edgeproto.TrackedState_DELETE_ERROR:
+		state = fedewapi.INSTANCESTATE_FAILED
+	case edgeproto.TrackedState_READY:
+		state = fedewapi.INSTANCESTATE_READY
+	default:
+		return nil
+	}
+	return &state
+}
+
+func (s *PartnerApi) getAppInstAccessPointInfo(appInst *edgeproto.AppInst) []fedewapi.AccessPointInfoInner {
+	accessPoints := []fedewapi.AccessPointInfoInner{}
+	for _, port := range appInst.MappedPorts {
 		portStart := port.InternalPort
 		portEnd := port.EndPort
 		if portEnd == 0 {
 			portEnd = portStart
 		}
 		for portVal := portStart; portVal <= portEnd; portVal++ {
-			ap := fedewapi.FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner{}
-			ap.InterfaceId = s.partner.GetInterfaceId(port, portVal)
-			fqdn := appInstOut.Uri + port.FqdnPrefix
+			ap := fedewapi.AccessPointInfoInner{}
+			ap.InterfaceId = s.GetInterfaceId(port, portVal)
+			fqdn := appInst.Uri + port.FqdnPrefix
 			ap.AccessPoints.Port = portVal
 			ap.AccessPoints.Fqdn = &fqdn
 			accessPoints = append(accessPoints, ap)
 		}
 	}
-	s.sendCallback(ctx, federationmgmt.AppInstStateReady, "", accessPoints)
-	return nil
+	return accessPoints
 }
 
-func (s *AppInstWorker) sendCallback(ctx context.Context, state, message string, accesspointInfo []fedewapi.FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner) {
+func (s *AppInstWorker) sendCallback(ctx context.Context, state *fedewapi.InstanceState, message string, accesspointInfo []fedewapi.AccessPointInfoInner) {
 	now := time.Now()
 	req := fedewapi.FederationContextIdApplicationLcmPostRequest{
 		FederationContextId: s.provider.FederationContextId,
@@ -267,7 +306,7 @@ func (s *AppInstWorker) sendCallback(ctx context.Context, state, message string,
 		AppInstanceId:       s.provAppInst.AppInstID,
 		ZoneId:              s.base.ZoneId,
 		AppInstanceInfo: fedewapi.FederationContextIdApplicationLcmPostRequestAppInstanceInfo{
-			AppInstanceState: &state,
+			AppInstanceState: state,
 			AccesspointInfo:  accesspointInfo,
 		},
 		ModificationDate: &now,
@@ -338,7 +377,44 @@ func (p *PartnerApi) GetAllAppInstances(c echo.Context, fedCtxId FederationConte
 }
 
 func (p *PartnerApi) GetAppInstanceDetails(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier, appInstId InstanceIdentifier, zoneId ZoneIdentifier) error {
-	return fmt.Errorf("not implemented yet")
+	ctx := ormutil.GetContext(c)
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation get appInstanceDetails", "fedCtxId", fedCtxId, "appInstId", appInstId)
+	// lookup federation provider based on claims
+	provider, err := p.lookupProvider(c, fedCtxId)
+	if err != nil {
+		return err
+	}
+	// lookup AppInst
+	provAppInst, err := p.lookupAppInst(c, provider, string(appInstId))
+	if err != nil {
+		return err
+	}
+
+	filter := edgeproto.AppInst{
+		Key: provAppInst.GetAppInstKey(),
+	}
+	rc := ormutil.RegionContext{
+		Region:    provAppInst.Region,
+		SkipAuthz: true,
+		Database:  p.database,
+	}
+	var appInstOut *edgeproto.AppInst
+	err = ctrlclient.ShowAppInstStream(ctx, &rc, &filter, p.connCache, nil, func(ai *edgeproto.AppInst) error {
+		appInstOut = ai
+		return nil
+	})
+	if appInstOut == nil {
+		return fmt.Errorf("Unable to find AppInst %s", filter.Key.GetKeyString())
+	}
+	accessPoints := p.getAppInstAccessPointInfo(appInstOut)
+
+	resp := fedewapi.GetAppInstanceDetails200Response{
+		AppInstanceState: getInstanceState(appInstOut),
+	}
+	if len(accessPoints) > 0 {
+		resp.AccesspointInfo = accessPoints
+	}
+	return c.JSON(http.StatusOK, &resp)
 }
 
 func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
@@ -374,13 +450,13 @@ func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
 	}
 	if info.AppInstanceState != nil {
 		switch *info.AppInstanceState {
-		case federationmgmt.AppInstStatePending:
+		case fedewapi.INSTANCESTATE_PENDING:
 			event.State = edgeproto.TrackedState_CREATING
-		case federationmgmt.AppInstStateReady:
+		case fedewapi.INSTANCESTATE_READY:
 			event.State = edgeproto.TrackedState_READY
-		case federationmgmt.AppInstStateFailed:
+		case fedewapi.INSTANCESTATE_FAILED:
 			event.State = edgeproto.TrackedState_CREATE_ERROR
-		case federationmgmt.AppInstStateTerminating:
+		case fedewapi.INSTANCESTATE_TERMINATING:
 			event.State = edgeproto.TrackedState_CREATE_ERROR
 			event.Message = "Terminating"
 			if info.Message != nil {
