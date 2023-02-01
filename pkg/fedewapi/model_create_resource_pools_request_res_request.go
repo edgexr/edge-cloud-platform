@@ -19,6 +19,8 @@ var _ MappedNullable = &CreateResourcePoolsRequestResRequest{}
 
 // CreateResourcePoolsRequestResRequest Compute flavours to be reserved and their time duration
 type CreateResourcePoolsRequestResRequest struct {
+	// OP defined Identifier for the pool reserved for the ISV. It should be unique with an OP.
+	PoolId string `json:"poolId"`
 	// ISV defined name of the resource pool.
 	PoolName string `json:"poolName"`
 	Flavours []CreateResourcePoolsRequestResRequestFlavoursInner `json:"flavours"`
@@ -29,8 +31,9 @@ type CreateResourcePoolsRequestResRequest struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCreateResourcePoolsRequestResRequest(poolName string, flavours []CreateResourcePoolsRequestResRequestFlavoursInner, reserveDuration ResourceReservationDuration) *CreateResourcePoolsRequestResRequest {
+func NewCreateResourcePoolsRequestResRequest(poolId string, poolName string, flavours []CreateResourcePoolsRequestResRequestFlavoursInner, reserveDuration ResourceReservationDuration) *CreateResourcePoolsRequestResRequest {
 	this := CreateResourcePoolsRequestResRequest{}
+	this.PoolId = poolId
 	this.PoolName = poolName
 	this.Flavours = flavours
 	this.ReserveDuration = reserveDuration
@@ -43,6 +46,30 @@ func NewCreateResourcePoolsRequestResRequest(poolName string, flavours []CreateR
 func NewCreateResourcePoolsRequestResRequestWithDefaults() *CreateResourcePoolsRequestResRequest {
 	this := CreateResourcePoolsRequestResRequest{}
 	return &this
+}
+
+// GetPoolId returns the PoolId field value
+func (o *CreateResourcePoolsRequestResRequest) GetPoolId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.PoolId
+}
+
+// GetPoolIdOk returns a tuple with the PoolId field value
+// and a boolean to check if the value has been set.
+func (o *CreateResourcePoolsRequestResRequest) GetPoolIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.PoolId, true
+}
+
+// SetPoolId sets field value
+func (o *CreateResourcePoolsRequestResRequest) SetPoolId(v string) {
+	o.PoolId = v
 }
 
 // GetPoolName returns the PoolName field value
@@ -127,6 +154,7 @@ func (o CreateResourcePoolsRequestResRequest) MarshalJSON() ([]byte, error) {
 
 func (o CreateResourcePoolsRequestResRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	toSerialize["poolId"] = o.PoolId
 	toSerialize["poolName"] = o.PoolName
 	toSerialize["flavours"] = o.Flavours
 	toSerialize["reserveDuration"] = o.ReserveDuration

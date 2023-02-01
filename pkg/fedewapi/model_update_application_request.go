@@ -20,7 +20,7 @@ var _ MappedNullable = &UpdateApplicationRequest{}
 // UpdateApplicationRequest struct for UpdateApplicationRequest
 type UpdateApplicationRequest struct {
 	AppUpdQoSProfile *UpdateApplicationRequestAppUpdQoSProfile `json:"appUpdQoSProfile,omitempty"`
-	// An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally.  App providers are required to provide details about all these components, their associated descriptors and their DNS names.
+	// An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally. App providers are required to provide details about all these components, their associated descriptors and their DNS names.
 	AppComponentSpecs []UpdateApplicationRequestAppComponentSpecsInner `json:"appComponentSpecs,omitempty"`
 }
 

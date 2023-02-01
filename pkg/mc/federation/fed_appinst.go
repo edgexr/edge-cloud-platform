@@ -18,7 +18,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 )
@@ -55,6 +54,9 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 	in := fedewapi.InstallAppRequest{}
 	if err := c.Bind(&in); err != nil {
 		return err
+	}
+	if in.AppInstanceId == "" {
+		return fmt.Errorf("Missing app instance ID")
 	}
 	if in.AppId == "" {
 		return fmt.Errorf("Missing application ID")
@@ -125,12 +127,11 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 		clusterOrg = edgeproto.OrganizationEdgeCloud
 	}
 
-	// generate unique id for appInst
 	// we'll update the AppInstKey once the AppInst is created,
 	// in case it updates some of the optional fields.
 	provAppInst := ormapi.ProviderAppInst{
 		FederationName:      provider.Name,
-		AppInstID:           uuid.New().String(),
+		AppInstID:           in.AppInstanceId,
 		AppInstCallbackLink: in.AppInstCallbackLink,
 		Region:              base.Region,
 		AppName:             provArt.AppName,
@@ -162,11 +163,7 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 		go worker.createAppInstJob()
 	})
 
-	resp := fedewapi.InstallApp202Response{
-		ZoneId:            in.ZoneInfo.ZoneId,
-		AppInstIdentifier: provAppInst.AppInstID,
-	}
-	return c.JSON(http.StatusAccepted, &resp)
+	return c.JSON(http.StatusAccepted, "")
 }
 
 type AppInstWorker struct {

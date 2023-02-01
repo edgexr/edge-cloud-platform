@@ -145,10 +145,9 @@ components:
     AppProviderId:
       type: string
       pattern: ^[A-Za-z][A-Za-z0-9_]{7,63}$
-      description: UserId of the app provider.  Identifier is relevant only in context of this federation.
+      description: UserId of the app provider. Identifier is relevant only in context of this federation.
     ArtefactId:
       type: string
-      format: uuid
       description: A globally unique identifier associated with the artefact. Originating OP generates this identifier when artefact is submitted over NBI.
     AuthorizationToken:
       type: string
@@ -210,7 +209,6 @@ components:
       description: Globally unique identifier allocated to an operator platform. This is valid and used only in context of MEC federation interface.
     FileId:
       type: string
-      format: uuid
       description: A globally unique identifier associated with the image file. Originating OP generates this identifier when file is uploaded over NBI.
     FlavourId:
       type: string
@@ -276,7 +274,7 @@ components:
     # STRUCTURED DATA TYPES
     #
     AppComponentSpecs:
-      description: An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally.  App providers are required to provide details about all these components, their associated descriptors and their DNS names.
+      description: An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally. App providers are required to provide details about all these components, their associated descriptors and their DNS names.
       type: array
       items:
         type: object
@@ -290,11 +288,11 @@ components:
           serviceNameEW:
             type: string
             pattern: ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
-            description: Must be a valid RFC 1035 label name. This defines the DNS name via which the component can be accessed via peer components. Access via serviceNameEW is open on all ports.   Platform shall not expose serviceNameEW externally outside edge.
+            description: Must be a valid RFC 1035 label name. This defines the DNS name via which the component can be accessed via peer components. Access via serviceNameEW is open on all ports. Platform shall not expose serviceNameEW externally outside edge.
           componentName:
             type: string
             pattern: ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
-            description: Must be a valid RFC 1035 label name.  Component name must be unique with an application
+            description: Must be a valid RFC 1035 label name. Component name must be unique with an application
           artefactId:
             $ref: '#/components/schemas/ArtefactId'
       minItems: 1
@@ -505,7 +503,7 @@ components:
         componentName:
           type: string
           pattern: ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
-          description: Must be a valid RFC 1035 label name.  Component name must be unique with an application
+          description: Must be a valid RFC 1035 label name. Component name must be unique with an application
         images:
           description: List of all images associated with the component. Images are specified using the file identifiers. Partner OP provides these images using file upload api.
           type: array
@@ -780,7 +778,7 @@ components:
         network:
           type: string
           pattern: ^[A-Za-z][A-Za-z0-9_]{6,30}[A-Za-z0-9]$
-          description: Name of the network.  In case the application has to be associated with more than 1 network then app provider must define the name of the network on which this interface has to be exposed.  This parameter is required only if the port has to be exposed on a specific network other than default.
+          description: Name of the network. In case the application has to be associated with more than 1 network then app provider must define the name of the network on which this interface has to be exposed. This parameter is required only if the port has to be exposed on a specific network other than default.
         InterfaceName:
           type: string
           pattern: ^[a-z][a-z0-9]{3}$
@@ -1185,7 +1183,7 @@ paths:
                         - modificationDate
                       properties:
                         federationContextId:
-                          $ref: '#/components/schemas/FederationIdentifier'
+                          $ref: '#/components/schemas/FederationContextId'
                         objectType:
                           type: string
                           enum:
@@ -1499,7 +1497,7 @@ paths:
                         - zoneResUpdInfo
                       properties:
                         federationContextId:
-                          $ref: '#/components/schemas/FederationIdentifier'
+                          $ref: '#/components/schemas/FederationContextId'
                         zoneId:
                           $ref: '#/components/schemas/ZoneIdentifier'
                         zoneResUpdInfo:
@@ -1699,7 +1697,7 @@ paths:
                     - ANSIBLE
                     - SHELL
                     - COMPONENTSPEC
-                  description: Type of descriptor present in the artefact.  App provider can either define either a Helm chart or a Terraform script or container spec.
+                  description: Type of descriptor present in the artefact. App provider can either define either a Helm chart or a Terraform script or container spec.
                 repoType:
                   type: string
                   enum:
@@ -1814,16 +1812,22 @@ paths:
                       - ANSIBLE
                       - SHELL
                       - COMPONENTSPEC
-                    description: Type of descriptor present in the artefact.  App provider can either define either a Helm chart or a Terraform script or container spec.
+                    description: Type of descriptor present in the artefact. App provider can either define either a Helm chart or a Terraform script or container spec.
                   repoType:
                     type: string
                     enum:
                       - PRIVATEREPO
                       - PUBLICREPO
                       - UPLOAD
-                    description: Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal.  OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
+                    description: Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal. OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
                   artefactRepoLocation:
                     $ref: '#/components/schemas/ObjectRepoLocation'
+                  componentSpec:
+                    description: Details about compute, networking and storage requirements for each component of the application. App provider should define all information needed to instantiate the component. If artefact is being defined at component level this section should have information just about the component. In case the artefact is being defined at application level the section should provide details about all the components.
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComponentSpec'
+                    minItems: 1
         "400":
           $ref: '#/components/responses/400'
         "401":
@@ -1912,7 +1916,7 @@ paths:
                 fileName:
                   type: string
                   pattern: ^[A-Za-z][A-Za-z0-9_]{7,31}$
-                  description: Name of the image file.   App provides specifies this name when image is uploaded on originating OP over NBI.
+                  description: Name of the image file. App provides specifies this name when image is uploaded on originating OP over NBI.
                 fileDescription:
                   type: string
                   minLength: 8
@@ -1936,7 +1940,7 @@ paths:
                     - PRIVATEREPO
                     - PUBLICREPO
                     - UPLOAD
-                  description: Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal.  OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
+                  description: Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal. OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
                 fileRepoLocation:
                   $ref: '#/components/schemas/ObjectRepoLocation'
                 file:
@@ -2042,7 +2046,7 @@ paths:
                   fileName:
                     type: string
                     pattern: ^[A-Za-z][A-Za-z0-9_]{7,31}$
-                    description: Name of the image file.   App provides specifies this name when image is uploaded on originating OP over NBI.
+                    description: Name of the image file. App provides specifies this name when image is uploaded on originating OP over NBI.
                   fileDescription:
                     type: string
                     minLength: 8
@@ -2066,7 +2070,7 @@ paths:
                       - PRIVATEREPO
                       - PUBLICREPO
                       - UPLOAD
-                    description: Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal.  OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
+                    description: Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal. OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
                   fileRepoLocation:
                     $ref: '#/components/schemas/ObjectRepoLocation'
         "400":
@@ -2169,7 +2173,7 @@ paths:
                         - statusInfo
                       properties:
                         federationContextId:
-                          $ref: '#/components/schemas/FederationIdentifier'
+                          $ref: '#/components/schemas/FederationContextId'
                         appId:
                           $ref: '#/components/schemas/AppIdentifier'
                         statusInfo:
@@ -2322,7 +2326,7 @@ paths:
                       default: true
                       description: Define if application can be instantiated or not
                 appComponentSpecs:
-                  description: An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally.  App providers are required to provide details about all these components, their associated descriptors and their DNS names.
+                  description: An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally. App providers are required to provide details about all these components, their associated descriptors and their DNS names.
                   type: array
                   items:
                     type: object
@@ -2339,15 +2343,15 @@ paths:
                       serviceNameNB:
                         type: string
                         pattern: ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
-                        description: Must be a valid RFC 1035 label name.  This defines the DNS name via which the component can be accessed over NBI. Access via serviceNameNB is restricted on specific ports. Platform shall expose component access externally via this DNS name
+                        description: Must be a valid RFC 1035 label name. This defines the DNS name via which the component can be accessed over NBI. Access via serviceNameNB is restricted on specific ports. Platform shall expose component access externally via this DNS name
                       serviceNameEW:
                         type: string
                         pattern: ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
-                        description: Must be a valid RFC 1035 label name.  This defines the DNS name via which the component can be accessed via peer components. Access via serviceNameEW is open on all ports.   Platform shall not expose serviceNameEW externally outside edge.
+                        description: Must be a valid RFC 1035 label name. This defines the DNS name via which the component can be accessed via peer components. Access via serviceNameEW is open on all ports. Platform shall not expose serviceNameEW externally outside edge.
                       componentName:
                         type: string
                         pattern: ^[A-Za-z0-9][A-Za-z0-9_]{6,62}[A-Za-z0-9]$
-                        description: Must be a valid RFC 1035 label name.  Component name must be unique with an application
+                        description: Must be a valid RFC 1035 label name. Component name must be unique with an application
                       artefactId:
                         $ref: '#/components/schemas/ArtefactId'
                   minItems: 1
@@ -2570,7 +2574,7 @@ paths:
                   $ref: '#/components/schemas/ZoneIdentifier'
                 forbid:
                   type: boolean
-                  description: Value 'true' will forbid application instantiation on this zone.  No new instance of the application can be created on this zone.
+                  description: Value 'true' will forbid application instantiation on this zone. No new instance of the application can be created on this zone.
               minItems: 1
       responses:
         "200":
@@ -2612,12 +2616,15 @@ paths:
             schema:
               type: object
               required:
+                - appInstanceId
                 - appId
                 - appProviderId
                 - appVersion
                 - zoneInfo
                 - appInstCallbackLink
               properties:
+                appInstanceId:
+                  $ref: '#/components/schemas/InstanceIdentifier'
                 appId:
                   $ref: '#/components/schemas/AppIdentifier'
                 appVersion:
@@ -2643,28 +2650,16 @@ paths:
                         - RESERVED_RES_AVOID
                         - RESERVED_RES_FORBID
                       default: RESERVED_RES_AVOID
-                      description: Specifies if the application can be instantiated using pre-reserved resource or not.  App provider can pre-reserve a pool of compute resource on each zone.  'RESERVED_RES_SHALL' instruct OP to use only the pre-reserved resources. 'RESERVED_RES_PREFER' instruct to first try using pre-reserved resource, if none available go for non-reserved resources. 'RESERVED_RES_AVOID' instruct OP not to use pre-reserved resource if possible, it is a choice depending upon circumstances 'RESERVED_RES_FORBID' instruct OP not to use pre-reserved resources.
+                      description: Specifies if the application can be instantiated using pre-reserved resource or not. App provider can pre-reserve a pool of compute resource on each zone. 'RESERVED_RES_SHALL' instruct OP to use only the pre-reserved resources. 'RESERVED_RES_PREFER' instruct to first try using pre-reserved resource, if none available go for non-reserved resources. 'RESERVED_RES_AVOID' instruct OP not to use pre-reserved resource if possible, it is a choice depending upon circumstances 'RESERVED_RES_FORBID' instruct OP not to use pre-reserved resources.
                     resPool:
                       type: string
                       pattern: ^[A-Za-z0-9][A-Za-z0-9_]{6,30}[A-Za-z0-9]$
-                      description: Resource pool to be used for application instantiation on this zone.  Valid only if IE 'resourceConsumption' is set to 'RESERVED_RES_SHALL' or 'RESERVED_RES_PREFER'
+                      description: Resource pool to be used for application instantiation on this zone. Valid only if IE 'resourceConsumption' is set to 'RESERVED_RES_SHALL' or 'RESERVED_RES_PREFER'
                 appInstCallbackLink:
                   $ref: '#/components/schemas/Uri'
       responses:
         "202":
-          description: Application instance creation request accepted.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - zoneId
-                  - appInstIdentifier
-                properties:
-                  zoneId:
-                    $ref: '#/components/schemas/ZoneIdentifier'
-                  appInstIdentifier:
-                    $ref: '#/components/schemas/InstanceIdentifier'
+          description: Application instantiation request accepted
         "400":
           $ref: '#/components/responses/400'
         "401":
@@ -2701,7 +2696,7 @@ paths:
                         - appInstanceInfo
                       properties:
                         federationContextId:
-                          $ref: '#/components/schemas/FederationIdentifier'
+                          $ref: '#/components/schemas/FederationContextId'
                         appId:
                           $ref: '#/components/schemas/AppIdentifier'
                         appInstanceId:
@@ -2954,7 +2949,7 @@ paths:
           $ref: '#/components/responses/default'
   /{federationContextId}/isv/resource/zone/{zoneId}/appProvider/{appProviderId}:
     post:
-      summary: Reserves resources (compute, network and storage)  on a partner OP zone.   ISVs registered with home OP reserves resources on a partner OP zone.
+      summary: Reserves resources (compute, network and storage)  on a partner OP zone. ISVs registered with home OP reserves resources on a partner OP zone.
       operationId: CreateResourcePools
       tags:
         - AppProviderResourceManagement
@@ -2987,10 +2982,13 @@ paths:
                   description: Compute flavours to be reserved and their time duration
                   type: object
                   required:
+                    - poolId
                     - poolName
                     - flavours
                     - reserveDuration
                   properties:
+                    poolId:
+                      $ref: '#/components/schemas/PoolId'
                     poolName:
                       $ref: '#/components/schemas/PoolName'
                     flavours:
@@ -3019,18 +3017,6 @@ paths:
       responses:
         "200":
           description: ISV Resource reservation request accepted
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - poolId
-                  - poolName
-                properties:
-                  poolName:
-                    $ref: '#/components/schemas/PoolName'
-                  poolId:
-                    $ref: '#/components/schemas/PoolId'
         "400":
           $ref: '#/components/responses/400'
         "401":
@@ -3067,7 +3053,7 @@ paths:
                         - grantedFlavours
                       properties:
                         federationContextId:
-                          $ref: '#/components/schemas/FederationIdentifier'
+                          $ref: '#/components/schemas/FederationContextId'
                         zoneId:
                           $ref: '#/components/schemas/ZoneIdentifier'
                         appProviderId:
@@ -3233,7 +3219,7 @@ paths:
                       - ADD
                       - REMOVE
                       - DURATION
-                    description: Specify if resource corresponding this flavour needs to added or removed. Field 'count' gives the final total no of such flavours that should be reserved.  count 0 means remove all the resources.
+                    description: Specify if resource corresponding this flavour needs to added or removed. Field 'count' gives the final total no of such flavours that should be reserved. count 0 means remove all the resources.
                   flavourId:
                     $ref: '#/components/schemas/FlavourId'
                   count:

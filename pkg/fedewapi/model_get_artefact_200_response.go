@@ -21,7 +21,7 @@ var _ MappedNullable = &GetArtefact200Response{}
 type GetArtefact200Response struct {
 	// A globally unique identifier associated with the artefact. Originating OP generates this identifier when artefact is submitted over NBI.
 	ArtefactId string `json:"artefactId"`
-	// UserId of the app provider.  Identifier is relevant only in context of this federation.
+	// UserId of the app provider. Identifier is relevant only in context of this federation.
 	AppProviderId string `json:"appProviderId"`
 	// Name of the artefact.
 	ArtefactName string `json:"artefactName"`
@@ -34,11 +34,13 @@ type GetArtefact200Response struct {
 	ArtefactFileName *string `json:"artefactFileName,omitempty"`
 	// Artefacts like Helm charts or Terraform scripts may need compressed format.
 	ArtefactFileFormat *string `json:"artefactFileFormat,omitempty"`
-	// Type of descriptor present in the artefact.  App provider can either define either a Helm chart or a Terraform script or container spec.
+	// Type of descriptor present in the artefact. App provider can either define either a Helm chart or a Terraform script or container spec.
 	ArtefactDescriptorType string `json:"artefactDescriptorType"`
-	// Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal.  OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
+	// Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal. OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
 	RepoType *string `json:"repoType,omitempty"`
 	ArtefactRepoLocation *ObjectRepoLocation `json:"artefactRepoLocation,omitempty"`
+	// Details about compute, networking and storage requirements for each component of the application. App provider should define all information needed to instantiate the component. If artefact is being defined at component level this section should have information just about the component. In case the artefact is being defined at application level the section should provide details about all the components.
+	ComponentSpec []ComponentSpec `json:"componentSpec,omitempty"`
 }
 
 // NewGetArtefact200Response instantiates a new GetArtefact200Response object
@@ -368,6 +370,38 @@ func (o *GetArtefact200Response) SetArtefactRepoLocation(v ObjectRepoLocation) {
 	o.ArtefactRepoLocation = &v
 }
 
+// GetComponentSpec returns the ComponentSpec field value if set, zero value otherwise.
+func (o *GetArtefact200Response) GetComponentSpec() []ComponentSpec {
+	if o == nil || isNil(o.ComponentSpec) {
+		var ret []ComponentSpec
+		return ret
+	}
+	return o.ComponentSpec
+}
+
+// GetComponentSpecOk returns a tuple with the ComponentSpec field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetArtefact200Response) GetComponentSpecOk() ([]ComponentSpec, bool) {
+	if o == nil || isNil(o.ComponentSpec) {
+		return nil, false
+	}
+	return o.ComponentSpec, true
+}
+
+// HasComponentSpec returns a boolean if a field has been set.
+func (o *GetArtefact200Response) HasComponentSpec() bool {
+	if o != nil && !isNil(o.ComponentSpec) {
+		return true
+	}
+
+	return false
+}
+
+// SetComponentSpec gets a reference to the given []ComponentSpec and assigns it to the ComponentSpec field.
+func (o *GetArtefact200Response) SetComponentSpec(v []ComponentSpec) {
+	o.ComponentSpec = v
+}
+
 func (o GetArtefact200Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -398,6 +432,9 @@ func (o GetArtefact200Response) ToMap() (map[string]interface{}, error) {
 	}
 	if !isNil(o.ArtefactRepoLocation) {
 		toSerialize["artefactRepoLocation"] = o.ArtefactRepoLocation
+	}
+	if !isNil(o.ComponentSpec) {
+		toSerialize["componentSpec"] = o.ComponentSpec
 	}
 	return toSerialize, nil
 }

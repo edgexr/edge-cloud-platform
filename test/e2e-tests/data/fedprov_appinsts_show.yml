@@ -363,7 +363,7 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: reservable1-edgecloudorg.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+      uri: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
       liveness: Static
       mappedports:
       - proto: Tcp
@@ -393,7 +393,7 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: reservable0-edgecloudorg.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+      uri: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
       liveness: Static
       mappedports:
       - proto: Tcp

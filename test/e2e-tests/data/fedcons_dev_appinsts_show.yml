@@ -250,7 +250,7 @@ regiondata:
       - proto: Tcp
         internalport: 81
         publicport: 81
-        fqdnprefix: reservable1-edgecloudorg.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+        fqdnprefix: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
       flavor:
         name: x1.small
       state: Ready
@@ -284,15 +284,15 @@ regiondata:
       - proto: Tcp
         internalport: 80
         publicport: 80
-        fqdnprefix: reservable0-edgecloudorg.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+        fqdnprefix: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
       - proto: Tcp
         internalport: 443
         publicport: 443
-        fqdnprefix: reservable0-edgecloudorg.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+        fqdnprefix: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
       - proto: Udp
         internalport: 10002
         publicport: 10002
-        fqdnprefix: reservable0-edgecloudorg.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+        fqdnprefix: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
       flavor:
         name: x1.small
       state: Ready

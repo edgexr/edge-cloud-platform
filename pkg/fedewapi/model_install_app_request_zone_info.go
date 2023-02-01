@@ -23,9 +23,9 @@ type InstallAppRequestZoneInfo struct {
 	ZoneId string `json:"zoneId"`
 	// An identifier to refer to a specific combination of compute resources.
 	FlavourId string `json:"flavourId"`
-	// Specifies if the application can be instantiated using pre-reserved resource or not.  App provider can pre-reserve a pool of compute resource on each zone.  'RESERVED_RES_SHALL' instruct OP to use only the pre-reserved resources. 'RESERVED_RES_PREFER' instruct to first try using pre-reserved resource, if none available go for non-reserved resources. 'RESERVED_RES_AVOID' instruct OP not to use pre-reserved resource if possible, it is a choice depending upon circumstances 'RESERVED_RES_FORBID' instruct OP not to use pre-reserved resources.
+	// Specifies if the application can be instantiated using pre-reserved resource or not. App provider can pre-reserve a pool of compute resource on each zone. 'RESERVED_RES_SHALL' instruct OP to use only the pre-reserved resources. 'RESERVED_RES_PREFER' instruct to first try using pre-reserved resource, if none available go for non-reserved resources. 'RESERVED_RES_AVOID' instruct OP not to use pre-reserved resource if possible, it is a choice depending upon circumstances 'RESERVED_RES_FORBID' instruct OP not to use pre-reserved resources.
 	ResourceConsumption *string `json:"resourceConsumption,omitempty"`
-	// Resource pool to be used for application instantiation on this zone.  Valid only if IE 'resourceConsumption' is set to 'RESERVED_RES_SHALL' or 'RESERVED_RES_PREFER'
+	// Resource pool to be used for application instantiation on this zone. Valid only if IE 'resourceConsumption' is set to 'RESERVED_RES_SHALL' or 'RESERVED_RES_PREFER'
 	ResPool *string `json:"resPool,omitempty"`
 }
 

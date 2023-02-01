@@ -19,11 +19,11 @@ var _ MappedNullable = &FederationContextIdIsvResourceZoneZoneIdAppProviderAppPr
 
 // FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest struct for FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest
 type FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest struct {
-	// Globally unique identifier allocated to an operator platform. This is valid and used only in context of MEC federation interface.
+	// This identifier shall be provided by the partner OP on successful verification and validation of the federation create request and is used by partner op to identify this newly created federation context. Originating OP shall provide this identifier in any subsequent request towards the partner op.
 	FederationContextId string `json:"federationContextId"`
 	// Human readable name of the zone.
 	ZoneId string `json:"zoneId"`
-	// UserId of the app provider.  Identifier is relevant only in context of this federation.
+	// UserId of the app provider. Identifier is relevant only in context of this federation.
 	AppProviderId string `json:"appProviderId"`
 	// OP defined Identifier for the pool reserved for the ISV. It should be unique with an OP.
 	PoolId string `json:"poolId"`

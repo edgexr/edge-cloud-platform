@@ -4,24 +4,19 @@ import (
 	"context"
 	fmt "fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
-	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/labstack/echo/v4"
-	"gopkg.in/yaml.v2"
-	v1 "k8s.io/api/core/v1"
 )
 
 const AppCreateTimeout = 10 * time.Minute
@@ -75,45 +70,14 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		SkipAuthz: true,
 		Database:  loggedDB(ctx),
 	}
-	lookup := edgeproto.App{
-		Key: edgeproto.AppKey{
-			Name:         in.AppName,
-			Organization: in.AppOrg,
-			Version:      in.AppVers,
-		},
+	appKey := edgeproto.AppKey{
+		Name:         in.AppName,
+		Version:      in.AppVers,
+		Organization: in.AppOrg,
 	}
-	var app *edgeproto.App
-	err = ctrlclient.ShowAppStream(ctx, &rc, &lookup, connCache, nil, func(retApp *edgeproto.App) error {
-		app = retApp
-		return nil
-	})
+	app, flavor, err := federation.LookupRegionApp(ctx, &rc, connCache, &appKey)
 	if err != nil {
-		return fmt.Errorf("Failure looking up App: %s", err)
-	}
-	if app == nil {
-		return fmt.Errorf("App not found")
-	}
-
-	if app.DefaultFlavor.Name == "" && app.ServerlessConfig == nil {
-		return fmt.Errorf("App has no default flavor and no serverless config to specify compute resources")
-	}
-
-	var flavor *edgeproto.Flavor
-	if app.DefaultFlavor.Name != "" {
-		log.SpanLog(ctx, log.DebugLevelApi, "create ConsumerApp, look up flavors")
-		flavorLookup := edgeproto.Flavor{
-			Key: app.DefaultFlavor,
-		}
-		err = ctrlclient.ShowFlavorStream(ctx, &rc, &flavorLookup, connCache, func(retFlavor *edgeproto.Flavor) error {
-			flavor = retFlavor
-			return nil
-		})
-		if err != nil {
-			return fmt.Errorf("Failure looking up Flavor %s: %s", app.DefaultFlavor.Name, err)
-		}
-		if flavor == nil {
-			return fmt.Errorf("App DefaultFlavor %s not found", app.DefaultFlavor.Name)
-		}
+		return err
 	}
 
 	// ID is set to the app's federation id.
@@ -169,9 +133,14 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		return err
 	}
 
+	imageIds := []string{}
+	for _, image := range images {
+		imageIds = append(imageIds, image.ID)
+	}
+
 	// create artefact for app with component spec
 	log.SpanLog(ctx, log.DebugLevelApi, "create ConsumerApp, create artefact")
-	err = createAppArtefact(ctx, consumer, &in, app, images, flavor)
+	err = createAppArtefact(ctx, consumer, &in, app, imageIds, flavor)
 	if err != nil {
 		return fmt.Errorf("failed to create federation artefact for app: %s", err)
 	}
@@ -251,7 +220,7 @@ func getImagesForApp(fedName string, app *edgeproto.App) ([]*ormapi.ConsumerImag
 	return images, nil
 }
 
-func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer, cApp *ormapi.ConsumerApp, app *edgeproto.App, images []*ormapi.ConsumerImage, defaultFlavor *edgeproto.Flavor) (reterr error) {
+func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer, cApp *ormapi.ConsumerApp, app *edgeproto.App, imageIds []string, defaultFlavor *edgeproto.Flavor) (reterr error) {
 	var virtType string
 	if app.Deployment == cloudcommon.DeploymentTypeVM {
 		virtType = federation.ArtefactVirtTypeVM
@@ -259,103 +228,10 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 		virtType = federation.ArtefactVirtTypeContainer
 	}
 
-	// Create ComponentSpec
-	spec := fedewapi.ComponentSpec{}
-	spec.ComponentName = app.Key.Name
-	spec.Images = []string{}
-	for _, image := range images {
-		spec.Images = append(spec.Images, image.ID)
-	}
-	if app.ScaleWithCluster {
-		spec.NumOfInstances = -1
-	} else {
-		spec.NumOfInstances = 1
-	}
-	spec.RestartPolicy = federation.RestartPolicyAlways
-	commandLineParams := fedewapi.CommandLineParams{}
-	envVars := []v1.EnvVar{}
-	if app.Command != "" {
-		commandLineParams.Command = []string{app.Command}
-	}
-	for _, cfg := range app.Configs {
-		switch cfg.Kind {
-		case edgeproto.AppConfigHelmYaml:
-			// TODO: spec doesn't have any place for this yet
-		case edgeproto.AppConfigEnvYaml:
-			err := yaml.Unmarshal([]byte(cfg.Config), &envVars)
-			if err != nil {
-				return fmt.Errorf("Failed to unmarshal ConfigFile for env vars: %s", err)
-			}
-		case edgeproto.AppConfigPodArgs:
-			args := []string{}
-			err := yaml.Unmarshal([]byte(cfg.Config), &args)
-			if err != nil {
-				return err
-			}
-			commandLineParams.CommandArgs = args
-		}
-	}
-	if len(commandLineParams.Command) > 0 || len(commandLineParams.CommandArgs) > 0 {
-		spec.CommandLineParams = &commandLineParams
-	}
-	for _, envVar := range envVars {
-		env := fedewapi.CompEnvParams{
-			EnvVarName:   envVar.Name,
-			EnvVarValue:  &envVar.Value,
-			EnvValueType: federation.EnvVarTypeUser,
-		}
-		spec.CompEnvParams = append(spec.CompEnvParams, env)
-	}
-
-	ports, err := edgeproto.ParseAppPorts(app.AccessPorts)
+	spec, err := partnerApi.GenerateComponentSpec(ctx, app, imageIds, defaultFlavor)
 	if err != nil {
 		return err
 	}
-	interfaces := []fedewapi.InterfaceDetails{}
-	for _, port := range ports {
-		portStart := port.InternalPort
-		portEnd := port.EndPort
-		if portEnd == 0 {
-			portEnd = portStart
-		}
-		for portVal := portStart; portVal <= portEnd; portVal++ {
-			intf := fedewapi.InterfaceDetails{}
-			intf.InterfaceId = partnerApi.GetInterfaceId(port, portVal)
-			if port.Proto == dmeproto.LProto_L_PROTO_UDP {
-				intf.CommProtocol = federation.CommProtoUDP
-			} else {
-				intf.CommProtocol = federation.CommProtoTCP
-			}
-			intf.CommPort = portVal
-			if app.InternalPorts {
-				intf.VisibilityType = federation.CommPortVisInt
-			} else {
-				intf.VisibilityType = federation.CommPortVisExt
-			}
-			interfaces = append(interfaces, intf)
-		}
-	}
-	if len(interfaces) > 0 {
-		spec.ExposedInterfaces = interfaces
-	}
-
-	resources := fedewapi.ComputeResourceInfo{}
-	if defaultFlavor == nil && app.ServerlessConfig == nil {
-		return fmt.Errorf("Cannot specify compute resource info, one of default flavor or serverless config must be set")
-	}
-	if app.ServerlessConfig != nil {
-		resources.NumCPU = app.ServerlessConfig.Vcpus.DecString()
-		resources.Memory = int64(app.ServerlessConfig.Ram)
-	} else {
-		disk := int32(defaultFlavor.Disk)
-		resources.NumCPU = strconv.Itoa(int(defaultFlavor.Vcpus))
-		resources.Memory = int64(defaultFlavor.Ram)
-		if disk > 0 {
-			resources.DiskStorage = &disk
-		}
-	}
-	// TODO: resources.Gpu
-	spec.ComputeResourceProfile = resources
 
 	// multipart/form-data
 	data := ormclient.NewMultiPartFormData()
@@ -365,7 +241,7 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 	data.AddField(federation.ArtefactFieldVersionInfo, cApp.AppVers)
 	data.AddField(federation.ArtefactFieldVirtType, virtType)
 	data.AddField(federation.ArtefactFieldDescriptorType, federation.ArtefactDescTypeCompSpec)
-	specs := []fedewapi.ComponentSpec{spec}
+	specs := []fedewapi.ComponentSpec{*spec}
 	data.AddField(federation.ArtefactFieldComponentSpec, specs)
 
 	fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)

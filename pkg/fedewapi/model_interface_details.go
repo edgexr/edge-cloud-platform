@@ -27,7 +27,7 @@ type InterfaceDetails struct {
 	CommPort int32 `json:"commPort"`
 	// Defines whether the interface is exposed to outer world or not i.e., external, or internal. If this is set to \"external\", then it is exposed to external applications otherwise it is exposed internally to edge application components within edge cloud. When exposed to external world, an external dynamic port is assigned for UC traffic and mapped to the internal container Port
 	VisibilityType string `json:"visibilityType"`
-	// Name of the network.  In case the application has to be associated with more than 1 network then app provider must define the name of the network on which this interface has to be exposed.  This parameter is required only if the port has to be exposed on a specific network other than default.
+	// Name of the network. In case the application has to be associated with more than 1 network then app provider must define the name of the network on which this interface has to be exposed. This parameter is required only if the port has to be exposed on a specific network other than default.
 	Network *string `json:"network,omitempty"`
 	// Interface Name. Required only if application has to be attached to a network other than default.
 	InterfaceName *string `json:"InterfaceName,omitempty"`

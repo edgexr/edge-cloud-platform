@@ -19,7 +19,7 @@ var _ MappedNullable = &UpdateISVResPoolRequestInner{}
 
 // UpdateISVResPoolRequestInner struct for UpdateISVResPoolRequestInner
 type UpdateISVResPoolRequestInner struct {
-	// Specify if resource corresponding this flavour needs to added or removed. Field 'count' gives the final total no of such flavours that should be reserved.  count 0 means remove all the resources.
+	// Specify if resource corresponding this flavour needs to added or removed. Field 'count' gives the final total no of such flavours that should be reserved. count 0 means remove all the resources.
 	UpdateType string `json:"updateType"`
 	// An identifier to refer to a specific combination of compute resources.
 	FlavourId string `json:"flavourId"`
