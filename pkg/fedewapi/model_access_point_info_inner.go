@@ -14,98 +14,84 @@ import (
 	"encoding/json"
 )
 
-// checks if the GetAppInstanceDetails200Response type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &GetAppInstanceDetails200Response{}
+// checks if the AccessPointInfoInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &AccessPointInfoInner{}
 
-// GetAppInstanceDetails200Response struct for GetAppInstanceDetails200Response
-type GetAppInstanceDetails200Response struct {
-	AppInstanceState *InstanceState `json:"appInstanceState,omitempty"`
-	// Information about the IP and Port exposed by the OP. Application clients shall use these access points to reach this application instance.
-	AccesspointInfo []AccessPointInfoInner `json:"accesspointInfo,omitempty"`
+// AccessPointInfoInner struct for AccessPointInfoInner
+type AccessPointInfoInner struct {
+	// Each Port and corresponding traffic protocol exposed by the component is identified by a name. Application client on user device requires this to uniquely identify the interface.
+	InterfaceId string `json:"interfaceId"`
+	AccessPoints ServiceEndpoint `json:"accessPoints"`
 }
 
-// NewGetAppInstanceDetails200Response instantiates a new GetAppInstanceDetails200Response object
+// NewAccessPointInfoInner instantiates a new AccessPointInfoInner object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGetAppInstanceDetails200Response() *GetAppInstanceDetails200Response {
-	this := GetAppInstanceDetails200Response{}
+func NewAccessPointInfoInner(interfaceId string, accessPoints ServiceEndpoint) *AccessPointInfoInner {
+	this := AccessPointInfoInner{}
+	this.InterfaceId = interfaceId
+	this.AccessPoints = accessPoints
 	return &this
 }
 
-// NewGetAppInstanceDetails200ResponseWithDefaults instantiates a new GetAppInstanceDetails200Response object
+// NewAccessPointInfoInnerWithDefaults instantiates a new AccessPointInfoInner object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewGetAppInstanceDetails200ResponseWithDefaults() *GetAppInstanceDetails200Response {
-	this := GetAppInstanceDetails200Response{}
+func NewAccessPointInfoInnerWithDefaults() *AccessPointInfoInner {
+	this := AccessPointInfoInner{}
 	return &this
 }
 
-// GetAppInstanceState returns the AppInstanceState field value if set, zero value otherwise.
-func (o *GetAppInstanceDetails200Response) GetAppInstanceState() InstanceState {
-	if o == nil || isNil(o.AppInstanceState) {
-		var ret InstanceState
+// GetInterfaceId returns the InterfaceId field value
+func (o *AccessPointInfoInner) GetInterfaceId() string {
+	if o == nil {
+		var ret string
 		return ret
 	}
-	return *o.AppInstanceState
+
+	return o.InterfaceId
 }
 
-// GetAppInstanceStateOk returns a tuple with the AppInstanceState field value if set, nil otherwise
+// GetInterfaceIdOk returns a tuple with the InterfaceId field value
 // and a boolean to check if the value has been set.
-func (o *GetAppInstanceDetails200Response) GetAppInstanceStateOk() (*InstanceState, bool) {
-	if o == nil || isNil(o.AppInstanceState) {
+func (o *AccessPointInfoInner) GetInterfaceIdOk() (*string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.AppInstanceState, true
+	return &o.InterfaceId, true
 }
 
-// HasAppInstanceState returns a boolean if a field has been set.
-func (o *GetAppInstanceDetails200Response) HasAppInstanceState() bool {
-	if o != nil && !isNil(o.AppInstanceState) {
-		return true
-	}
-
-	return false
+// SetInterfaceId sets field value
+func (o *AccessPointInfoInner) SetInterfaceId(v string) {
+	o.InterfaceId = v
 }
 
-// SetAppInstanceState gets a reference to the given InstanceState and assigns it to the AppInstanceState field.
-func (o *GetAppInstanceDetails200Response) SetAppInstanceState(v InstanceState) {
-	o.AppInstanceState = &v
-}
-
-// GetAccesspointInfo returns the AccesspointInfo field value if set, zero value otherwise.
-func (o *GetAppInstanceDetails200Response) GetAccesspointInfo() []AccessPointInfoInner {
-	if o == nil || isNil(o.AccesspointInfo) {
-		var ret []AccessPointInfoInner
+// GetAccessPoints returns the AccessPoints field value
+func (o *AccessPointInfoInner) GetAccessPoints() ServiceEndpoint {
+	if o == nil {
+		var ret ServiceEndpoint
 		return ret
 	}
-	return o.AccesspointInfo
+
+	return o.AccessPoints
 }
 
-// GetAccesspointInfoOk returns a tuple with the AccesspointInfo field value if set, nil otherwise
+// GetAccessPointsOk returns a tuple with the AccessPoints field value
 // and a boolean to check if the value has been set.
-func (o *GetAppInstanceDetails200Response) GetAccesspointInfoOk() ([]AccessPointInfoInner, bool) {
-	if o == nil || isNil(o.AccesspointInfo) {
+func (o *AccessPointInfoInner) GetAccessPointsOk() (*ServiceEndpoint, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.AccesspointInfo, true
+	return &o.AccessPoints, true
 }
 
-// HasAccesspointInfo returns a boolean if a field has been set.
-func (o *GetAppInstanceDetails200Response) HasAccesspointInfo() bool {
-	if o != nil && !isNil(o.AccesspointInfo) {
-		return true
-	}
-
-	return false
+// SetAccessPoints sets field value
+func (o *AccessPointInfoInner) SetAccessPoints(v ServiceEndpoint) {
+	o.AccessPoints = v
 }
 
-// SetAccesspointInfo gets a reference to the given []AccessPointInfoInner and assigns it to the AccesspointInfo field.
-func (o *GetAppInstanceDetails200Response) SetAccesspointInfo(v []AccessPointInfoInner) {
-	o.AccesspointInfo = v
-}
-
-func (o GetAppInstanceDetails200Response) MarshalJSON() ([]byte, error) {
+func (o AccessPointInfoInner) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -113,49 +99,45 @@ func (o GetAppInstanceDetails200Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o GetAppInstanceDetails200Response) ToMap() (map[string]interface{}, error) {
+func (o AccessPointInfoInner) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.AppInstanceState) {
-		toSerialize["appInstanceState"] = o.AppInstanceState
-	}
-	if !isNil(o.AccesspointInfo) {
-		toSerialize["accesspointInfo"] = o.AccesspointInfo
-	}
+	toSerialize["interfaceId"] = o.InterfaceId
+	toSerialize["accessPoints"] = o.AccessPoints
 	return toSerialize, nil
 }
 
-type NullableGetAppInstanceDetails200Response struct {
-	value *GetAppInstanceDetails200Response
+type NullableAccessPointInfoInner struct {
+	value *AccessPointInfoInner
 	isSet bool
 }
 
-func (v NullableGetAppInstanceDetails200Response) Get() *GetAppInstanceDetails200Response {
+func (v NullableAccessPointInfoInner) Get() *AccessPointInfoInner {
 	return v.value
 }
 
-func (v *NullableGetAppInstanceDetails200Response) Set(val *GetAppInstanceDetails200Response) {
+func (v *NullableAccessPointInfoInner) Set(val *AccessPointInfoInner) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableGetAppInstanceDetails200Response) IsSet() bool {
+func (v NullableAccessPointInfoInner) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableGetAppInstanceDetails200Response) Unset() {
+func (v *NullableAccessPointInfoInner) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableGetAppInstanceDetails200Response(val *GetAppInstanceDetails200Response) *NullableGetAppInstanceDetails200Response {
-	return &NullableGetAppInstanceDetails200Response{value: val, isSet: true}
+func NewNullableAccessPointInfoInner(val *AccessPointInfoInner) *NullableAccessPointInfoInner {
+	return &NullableAccessPointInfoInner{value: val, isSet: true}
 }
 
-func (v NullableGetAppInstanceDetails200Response) MarshalJSON() ([]byte, error) {
+func (v NullableAccessPointInfoInner) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableGetAppInstanceDetails200Response) UnmarshalJSON(src []byte) error {
+func (v *NullableAccessPointInfoInner) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

@@ -196,6 +196,7 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [AccessPointInfoInner](docs/AccessPointInfoInner.md)
  - [AppComponentSpecsInner](docs/AppComponentSpecsInner.md)
  - [AppMetaData](docs/AppMetaData.md)
  - [AppQoSProfile](docs/AppQoSProfile.md)
@@ -214,7 +215,6 @@ Class | Method | HTTP request | Description
  - [DiscoveredEdgeNodesInner](docs/DiscoveredEdgeNodesInner.md)
  - [FederationContextIdApplicationLcmPostRequest](docs/FederationContextIdApplicationLcmPostRequest.md)
  - [FederationContextIdApplicationLcmPostRequestAppInstanceInfo](docs/FederationContextIdApplicationLcmPostRequestAppInstanceInfo.md)
- - [FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner](docs/FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner.md)
  - [FederationContextIdApplicationOnboardingPostRequest](docs/FederationContextIdApplicationOnboardingPostRequest.md)
  - [FederationContextIdApplicationOnboardingPostRequestStatusInfoInner](docs/FederationContextIdApplicationOnboardingPostRequestStatusInfoInner.md)
  - [FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest](docs/FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest.md)
@@ -228,7 +228,6 @@ Class | Method | HTTP request | Description
  - [GetAllAppInstances200ResponseInner](docs/GetAllAppInstances200ResponseInner.md)
  - [GetAllAppInstances200ResponseInnerAppInstanceInfoInner](docs/GetAllAppInstances200ResponseInnerAppInstanceInfoInner.md)
  - [GetAppInstanceDetails200Response](docs/GetAppInstanceDetails200Response.md)
- - [GetAppInstanceDetails200ResponseAccesspointInfoInner](docs/GetAppInstanceDetails200ResponseAccesspointInfoInner.md)
  - [GetArtefact200Response](docs/GetArtefact200Response.md)
  - [GetCandidateZonesRequest](docs/GetCandidateZonesRequest.md)
  - [GetCandidateZonesRequestEdgeDiscoveryFilters](docs/GetCandidateZonesRequestEdgeDiscoveryFilters.md)

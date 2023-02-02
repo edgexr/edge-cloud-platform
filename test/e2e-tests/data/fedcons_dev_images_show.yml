@@ -16,8 +16,8 @@ consumerimages:
 - id: '***replaced***'
   organization: FedAppCo
   federationname: dmuus-partner1
-  name: k8sapp:1.0
-  version: k8sapp:1.0
+  name: k8sapp
+  version: "1.0"
   sourcepath: registry.edgecloud.net/FedAppCo/k8sapp:1.0
   type: DOCKER
   checksum: sha256:8d4ea2a9476bc51681c6e7e59759c10237669c950b1b4a3cd6834e2161d7bde2
@@ -25,8 +25,8 @@ consumerimages:
 - id: '***replaced***'
   organization: FedAppCo
   federationname: dmuus-partner1
-  name: dockerapp:1.0
-  version: dockerapp:1.0
+  name: dockerapp
+  version: "1.0"
   sourcepath: registry.edgecloud.net/FedAppCo/dockerapp:1.0
   type: DOCKER
   checksum: sha256:8d4ea2a9476bc51681c6e7e59759c10237669c950b1b4a3cd6834e2161d7bde2

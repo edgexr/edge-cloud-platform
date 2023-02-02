@@ -217,6 +217,10 @@ components:
       type: string
       description: Latitude,Longitude as decimal fraction up to 4 digit precision
       pattern: ^([-+]?)([\d]{1,2})((((\.)([\d]{1,4}))?(,)))(([-+]?)([\d]{1,3})((\.)([\d]{1,4}))?)$
+    InterfaceId:
+      type: string
+      pattern: ^[A-Za-z][A-Za-z0-9_-]{0,127}$
+      description: Each Port and corresponding traffic protocol exposed by the component is identified by a name. Application client on user device requires this to uniquely identify the interface.
     Mcc:
       type: string
       pattern: ^\d{3}$
@@ -273,6 +277,20 @@ components:
     #
     # STRUCTURED DATA TYPES
     #
+    AccessPointInfo:
+      description: Information about the IP and Port exposed by the OP. Application clients shall use these access points to reach this application instance.
+      type: array
+      items:
+        type: object
+        required:
+          - interfaceId
+          - accessPoints
+        properties:
+          interfaceId:
+            $ref: '#/components/schemas/InterfaceId'
+          accessPoints:
+            $ref: '#/components/schemas/ServiceEndpoint'
+      minItems: 1
     AppComponentSpecs:
       description: An application may consist of more than one component. Each component is associated with a descriptor and may exposes its services externally or internally. App providers are required to provide details about all these components, their associated descriptors and their DNS names.
       type: array
@@ -306,7 +324,7 @@ components:
       properties:
         appName:
           type: string
-          pattern: ^[A-Za-z][A-Za-z0-9_]{7,31}$
+          pattern: ^[A-Za-z][A-Za-z0-9_-]{0,127}$
           description: Name of the application. Application provider define a human readable name for the application
         version:
           type: string
@@ -753,9 +771,7 @@ components:
         - visibilityType
       properties:
         interfaceId:
-          type: string
-          description: Each Port and corresponding traffic protocol exposed by the component is identified by a name. Application client on user device requires this to uniquely identify the interface.
-          pattern: ^[A-Za-z0-9][A-Za-z0-9_]{6,30}[A-Za-z0-9]$
+          $ref: '#/components/schemas/InterfaceId'
         commProtocol:
           type: string
           enum:
@@ -1662,7 +1678,7 @@ paths:
                   $ref: '#/components/schemas/AppProviderId'
                 artefactName:
                   type: string
-                  pattern: ^[A-Za-z][A-Za-z0-9_]{7,31}$
+                  pattern: ^[A-Za-z][A-Za-z0-9_-]{0,127}$
                   description: Name of the artefact.
                 artefactVersionInfo:
                   type: string
@@ -1777,7 +1793,7 @@ paths:
                     $ref: '#/components/schemas/AppProviderId'
                   artefactName:
                     type: string
-                    pattern: ^[A-Za-z][A-Za-z0-9_]{7,31}$
+                    pattern: ^[A-Za-z][A-Za-z0-9_-]{0,127}$
                     description: Name of the artefact.
                   artefactDescription:
                     type: string
@@ -1915,7 +1931,7 @@ paths:
                   $ref: '#/components/schemas/AppProviderId'
                 fileName:
                   type: string
-                  pattern: ^[A-Za-z][A-Za-z0-9_]{7,31}$
+                  pattern: ^[A-Za-z][A-Za-z0-9_\.-]{0,127}$
                   description: Name of the image file. App provides specifies this name when image is uploaded on originating OP over NBI.
                 fileDescription:
                   type: string
@@ -2045,7 +2061,7 @@ paths:
                     $ref: '#/components/schemas/AppProviderId'
                   fileName:
                     type: string
-                    pattern: ^[A-Za-z][A-Za-z0-9_]{7,31}$
+                    pattern: ^[A-Za-z][A-Za-z0-9_\.-]{0,127}$
                     description: Name of the image file. App provides specifies this name when image is uploaded on originating OP over NBI.
                   fileDescription:
                     type: string
@@ -2707,32 +2723,12 @@ paths:
                           type: object
                           properties:
                             appInstanceState:
-                              type: string
-                              enum:
-                                - PENDING
-                                - READY
-                                - FAILED
-                                - TERMINATING
-                              description: Running status of the application instance.
+                              $ref: '#/components/schemas/InstanceState'
                             message:
                               type: string
                               description: Event information or failure message.
                             accesspointInfo:
-                              description: Information about the IP and Port exposed by the OP. Application clients shall use these access points to reach this application instance
-                              type: array
-                              items:
-                                type: object
-                                required:
-                                  - interfaceId
-                                  - accessPoints
-                                properties:
-                                  interfaceId:
-                                    type: string
-                                    pattern: ^[A-Za-z0-9][A-Za-z0-9_]{6,30}[A-Za-z0-9]$
-                                    description: This is the interface Identifier that app provider defines when application is onboarded.
-                                  accessPoints:
-                                    $ref: '#/components/schemas/ServiceEndpoint'
-                              minItems: 1
+                              $ref: '#/components/schemas/AccessPointInfo'
                           minProperties: 1
                         modificationDate:
                           type: string
@@ -2797,21 +2793,7 @@ paths:
                   appInstanceState:
                     $ref: '#/components/schemas/InstanceState'
                   accesspointInfo:
-                    description: Information about the IP and Port exposed by the OP. Application clients shall use these access points to reach this application instance
-                    type: array
-                    items:
-                      type: object
-                      required:
-                        - interfaceId
-                        - accessPoints
-                      properties:
-                        interfaceId:
-                          type: string
-                          pattern: ^[A-Za-z0-9][A-Za-z0-9_]{6,30}[A-Za-z0-9]$
-                          description: This is the interface identifier that app provider defines when application is onboarded.
-                        accessPoints:
-                          $ref: '#/components/schemas/ServiceEndpoint'
-                    minItems: 1
+                    $ref: '#/components/schemas/AccessPointInfo'
                 minProperties: 1
         "400":
           $ref: '#/components/responses/400'

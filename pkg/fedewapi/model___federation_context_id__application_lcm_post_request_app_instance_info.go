@@ -19,12 +19,11 @@ var _ MappedNullable = &FederationContextIdApplicationLcmPostRequestAppInstanceI
 
 // FederationContextIdApplicationLcmPostRequestAppInstanceInfo struct for FederationContextIdApplicationLcmPostRequestAppInstanceInfo
 type FederationContextIdApplicationLcmPostRequestAppInstanceInfo struct {
-	// Running status of the application instance.
-	AppInstanceState *string `json:"appInstanceState,omitempty"`
+	AppInstanceState *InstanceState `json:"appInstanceState,omitempty"`
 	// Event information or failure message.
 	Message *string `json:"message,omitempty"`
-	// Information about the IP and Port exposed by the OP. Application clients shall use these access points to reach this application instance
-	AccesspointInfo []FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner `json:"accesspointInfo,omitempty"`
+	// Information about the IP and Port exposed by the OP. Application clients shall use these access points to reach this application instance.
+	AccesspointInfo []AccessPointInfoInner `json:"accesspointInfo,omitempty"`
 }
 
 // NewFederationContextIdApplicationLcmPostRequestAppInstanceInfo instantiates a new FederationContextIdApplicationLcmPostRequestAppInstanceInfo object
@@ -45,9 +44,9 @@ func NewFederationContextIdApplicationLcmPostRequestAppInstanceInfoWithDefaults(
 }
 
 // GetAppInstanceState returns the AppInstanceState field value if set, zero value otherwise.
-func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAppInstanceState() string {
+func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAppInstanceState() InstanceState {
 	if o == nil || isNil(o.AppInstanceState) {
-		var ret string
+		var ret InstanceState
 		return ret
 	}
 	return *o.AppInstanceState
@@ -55,7 +54,7 @@ func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAppInst
 
 // GetAppInstanceStateOk returns a tuple with the AppInstanceState field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAppInstanceStateOk() (*string, bool) {
+func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAppInstanceStateOk() (*InstanceState, bool) {
 	if o == nil || isNil(o.AppInstanceState) {
 		return nil, false
 	}
@@ -71,8 +70,8 @@ func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) HasAppInst
 	return false
 }
 
-// SetAppInstanceState gets a reference to the given string and assigns it to the AppInstanceState field.
-func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) SetAppInstanceState(v string) {
+// SetAppInstanceState gets a reference to the given InstanceState and assigns it to the AppInstanceState field.
+func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) SetAppInstanceState(v InstanceState) {
 	o.AppInstanceState = &v
 }
 
@@ -109,9 +108,9 @@ func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) SetMessage
 }
 
 // GetAccesspointInfo returns the AccesspointInfo field value if set, zero value otherwise.
-func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAccesspointInfo() []FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner {
+func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAccesspointInfo() []AccessPointInfoInner {
 	if o == nil || isNil(o.AccesspointInfo) {
-		var ret []FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner
+		var ret []AccessPointInfoInner
 		return ret
 	}
 	return o.AccesspointInfo
@@ -119,7 +118,7 @@ func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAccessp
 
 // GetAccesspointInfoOk returns a tuple with the AccesspointInfo field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAccesspointInfoOk() ([]FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner, bool) {
+func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) GetAccesspointInfoOk() ([]AccessPointInfoInner, bool) {
 	if o == nil || isNil(o.AccesspointInfo) {
 		return nil, false
 	}
@@ -135,8 +134,8 @@ func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) HasAccessp
 	return false
 }
 
-// SetAccesspointInfo gets a reference to the given []FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner and assigns it to the AccesspointInfo field.
-func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) SetAccesspointInfo(v []FederationContextIdApplicationLcmPostRequestAppInstanceInfoAccesspointInfoInner) {
+// SetAccesspointInfo gets a reference to the given []AccessPointInfoInner and assigns it to the AccesspointInfo field.
+func (o *FederationContextIdApplicationLcmPostRequestAppInstanceInfo) SetAccesspointInfo(v []AccessPointInfoInner) {
 	o.AccesspointInfo = v
 }
 

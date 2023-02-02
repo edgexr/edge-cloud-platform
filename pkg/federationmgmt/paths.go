@@ -17,11 +17,6 @@ const (
 	PartnerResourceStatusChangePath  = CallbackRoot + "/onResourceStatusChangeEvent"
 
 	PathVarAppInstUniqueId = "appInstUniqueId"
-
-	AppInstStatePending     = "PENDING"
-	AppInstStateReady       = "READY"
-	AppInstStateFailed      = "FAILED"
-	AppInstStateTerminating = "TERMINATING"
 )
 
 func PathCreateAppInst(fedCtxId string) (string, string) {
