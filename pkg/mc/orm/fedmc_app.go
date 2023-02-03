@@ -16,6 +16,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/labstack/echo/v4"
 )
 
@@ -236,7 +237,7 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 	// multipart/form-data
 	data := ormclient.NewMultiPartFormData()
 	data.AddField(federation.ArtefactFieldId, cApp.ID)
-	data.AddField(federation.ArtefactFieldAppProviderId, cApp.AppOrg)
+	data.AddField(federation.ArtefactFieldAppProviderId, util.DNSSanitize(cApp.AppOrg))
 	data.AddField(federation.ArtefactFieldName, cApp.AppName)
 	data.AddField(federation.ArtefactFieldVersionInfo, cApp.AppVers)
 	data.AddField(federation.ArtefactFieldVirtType, virtType)
@@ -260,7 +261,7 @@ func createConsumerApp(ctx context.Context, consumer *ormapi.FederationConsumer,
 
 	appReq := fedewapi.OnboardApplicationRequest{
 		AppId:         cApp.ID,
-		AppProviderId: cApp.AppOrg,
+		AppProviderId: util.DNSSanitize(cApp.AppOrg),
 		AppMetaData: fedewapi.AppMetaData{
 			AppName:     cApp.AppName,
 			Version:     cApp.AppVers,

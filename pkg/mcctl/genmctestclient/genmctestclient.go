@@ -60,6 +60,7 @@ func main() {
 		"github.com/edgexr/edge-cloud-platform/api/ormapi",
 		"github.com/edgexr/edge-cloud-platform/pkg/cli",
 		"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node",
+		"github.com/edgexr/edge-cloud-platform/pkg/fedewapi",
 		"github.com/edgexr/edge-cloud-platform/api/edgeproto",
 		"github.com/mobiledgex/jaeger/plugin/storage/es/spanstore/dbmodel",
 	}

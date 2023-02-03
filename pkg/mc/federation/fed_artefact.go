@@ -93,9 +93,9 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 	provArt := ormapi.ProviderArtefact{}
 	provArt.FederationName = provider.Name
 	provArt.ArtefactID = req.PostFormValue(ArtefactFieldId)
-	provArt.AppName = req.PostFormValue(ArtefactFieldName)
+	provArt.ArtefactName = req.PostFormValue(ArtefactFieldName)
 	provArt.AppProviderId = req.PostFormValue(ArtefactFieldAppProviderId)
-	provArt.AppVers = req.PostFormValue(ArtefactFieldVersionInfo)
+	provArt.ArtefactVersion = req.PostFormValue(ArtefactFieldVersionInfo)
 	provArt.VirtType = req.PostFormValue(ArtefactFieldVirtType)
 	provArt.DescType = req.PostFormValue(ArtefactFieldDescriptorType)
 	if val := req.PostFormValue(ArtefactFieldRepoLocation); val != "" {
@@ -112,8 +112,8 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 	artReq := fedewapi.UploadArtefactRequest{
 		ArtefactId:             provArt.ArtefactID,
 		AppProviderId:          provArt.AppProviderId,
-		ArtefactName:           provArt.AppName,
-		ArtefactVersionInfo:    provArt.AppVers,
+		ArtefactName:           provArt.ArtefactName,
+		ArtefactVersionInfo:    provArt.ArtefactVersion,
 		ArtefactVirtType:       provArt.VirtType,
 		ArtefactDescriptorType: provArt.DescType,
 	}
@@ -148,6 +148,10 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 	if len(spec.Images) == 0 {
 		return fmt.Errorf("ComponentSpec missing at least 1 image")
 	}
+
+	// decide on fields used for AppKey
+	provArt.AppName = provArt.ArtefactID
+	provArt.AppVers = provArt.ArtefactVersion
 
 	db := p.loggedDB(ctx)
 

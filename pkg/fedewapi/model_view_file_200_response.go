@@ -42,7 +42,7 @@ type ViewFile200Response struct {
 	FileRepoLocation *ObjectRepoLocation `json:"fileRepoLocation,omitempty"`
 }
 
-var ViewFile200ResponseAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var ViewFile200ResponseAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var ViewFile200ResponseAppProviderIdRE = regexp.MustCompile(ViewFile200ResponseAppProviderIdPattern)
 var ViewFile200ResponseFileNamePattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9_][A-Za-z0-9_\\.-]{0,127}$/", "/"), "/")
 var ViewFile200ResponseFileNameRE = regexp.MustCompile(ViewFile200ResponseFileNamePattern)

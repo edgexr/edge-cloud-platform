@@ -27,7 +27,7 @@ type GetAllAppInstances200ResponseInner struct {
 	AppInstanceInfo []GetAllAppInstances200ResponseInnerAppInstanceInfoInner `json:"appInstanceInfo"`
 }
 
-var GetAllAppInstances200ResponseInnerZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/", "/"), "/")
+var GetAllAppInstances200ResponseInnerZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var GetAllAppInstances200ResponseInnerZoneIdRE = regexp.MustCompile(GetAllAppInstances200ResponseInnerZoneIdPattern)
 
 func (s *GetAllAppInstances200ResponseInner) Validate() error {

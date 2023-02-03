@@ -692,20 +692,22 @@ var ConsumerAppComments = map[string]string{
 }
 
 var ProviderArtefactComments = map[string]string{
-	"federationname": `Federation Provider name`,
-	"artefactid":     `Artefact ID send by partner`,
-	"appname":        `App name in region`,
-	"appvers":        `App version in region`,
-	"appproviderid":  `App provider ID`,
-	"virttype":       `Virtualization Type`,
-	"desctype":       `Descriptor Type`,
+	"federationname":  `Federation Provider name`,
+	"artefactid":      `Artefact ID send by partner`,
+	"artefactname":    `Artefact name`,
+	"artefactversion": `Artefact version`,
+	"appname":         `App name in region`,
+	"appvers":         `App version in region`,
+	"appproviderid":   `App provider ID`,
+	"virttype":        `Virtualization Type`,
+	"desctype":        `Descriptor Type`,
 }
 
 var ProviderAppComments = map[string]string{
 	"federationname":        `Federation Provider name`,
-	"appid":                 `App ID send by partner, also is the artefact ID`,
-	"appname":               `App name in region`,
-	"appvers":               `App version in region`,
+	"appid":                 `App ID send by partner`,
+	"appname":               `App name of federation app (not region app)`,
+	"appvers":               `App version  of federation app (not region app)`,
 	"appproviderid":         `App provider ID`,
 	"artefactids":           `Artefact IDs`,
 	"deploymentzones":       `Onboarding Zones`,

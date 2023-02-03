@@ -30,6 +30,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
@@ -53,6 +54,24 @@ type Err struct {
 type AllDataOut struct {
 	Errors     []Err
 	RegionData []edgetestutil.AllDataOut
+}
+
+type FedDataIn struct {
+	Consumers []ormapi.FederationConsumer
+	Zones     []ormapi.ConsumerZone
+	Artefacts []ormapi.ConsumerApp
+	Files     []ormapi.ConsumerImage
+	Apps      []ormapi.ConsumerApp
+	AppInsts  []ormapi.RegionAppInst
+}
+
+type FedDataOut struct {
+	Partners  []fedewapi.GetFederationDetails200Response
+	Zones     []fedewapi.ZoneRegisteredData
+	Artefacts []fedewapi.GetArtefact200Response
+	Files     []fedewapi.ViewFile200Response
+	Apps      []fedewapi.ViewApplication200Response
+	AppInsts  []fedewapi.GetAppInstanceDetails200Response
 }
 
 func RunMcAPI(api, mcname, apiFile string, actionVars, apiFileVars map[string]string, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, retry *bool) bool {
@@ -637,6 +656,57 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		}
 		cmpFilterAllData(&showData)
 		PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
+		*retry = true
+		return rc
+	}
+	if api == "getfederationdirect" {
+		fedDataIn := FedDataIn{}
+		err := ReadYamlFile(apiFile, &fedDataIn, WithVars(vars), ValidateReplacedVars())
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s, %s\n", apiFile, err)
+		}
+		out := FedDataOut{}
+		for _, cons := range fedDataIn.Consumers {
+			partner, status, err := mcClient.GetFederationPartner(uri, token, &cons)
+			checkMcErr("GetFederationPartner", status, err, &rc)
+			if partner != nil {
+				out.Partners = append(out.Partners, *partner)
+			}
+		}
+		for _, zone := range fedDataIn.Zones {
+			zoneOut, status, err := mcClient.GetFederationZone(uri, token, &zone)
+			checkMcErr("GetFederationZone", status, err, &rc)
+			if zoneOut != nil {
+				out.Zones = append(out.Zones, *zoneOut)
+			}
+		}
+		for _, art := range fedDataIn.Artefacts {
+			artOut, status, err := mcClient.GetFederationArtefact(uri, token, &art)
+			checkMcErr("GetFederationArtefact", status, err, &rc)
+			if artOut != nil {
+				out.Artefacts = append(out.Artefacts, *artOut)
+			}
+		}
+		for _, file := range fedDataIn.Files {
+			fileOut, status, err := mcClient.GetFederationFile(uri, token, &file)
+			checkMcErr("GetFederationFile", status, err, &rc)
+			if fileOut != nil {
+				out.Files = append(out.Files, *fileOut)
+			}
+		}
+		for _, app := range fedDataIn.Apps {
+			appOut, status, err := mcClient.GetFederationApp(uri, token, &app)
+			checkMcErr("GetFederationApp", status, err, &rc)
+			if appOut != nil {
+				out.Apps = append(out.Apps, *appOut)
+			}
+		}
+		for _, inst := range fedDataIn.AppInsts {
+			instsOut, status, err := mcClient.GetFederationAppInsts(uri, token, &inst)
+			checkMcErr("GetFederationAppInsts", status, err, &rc)
+			out.AppInsts = append(out.AppInsts, instsOut...)
+		}
+		PrintToYamlFile("show-commands.yml", outputDir, &out, true)
 		*retry = true
 		return rc
 	}

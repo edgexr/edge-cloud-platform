@@ -32,7 +32,7 @@ type ZoneRegisteredData struct {
 	NetworkResources           *ZoneRegisteredDataNetworkResources `json:"networkResources,omitempty"`
 }
 
-var ZoneRegisteredDataZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/", "/"), "/")
+var ZoneRegisteredDataZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var ZoneRegisteredDataZoneIdRE = regexp.MustCompile(ZoneRegisteredDataZoneIdPattern)
 
 func (s *ZoneRegisteredData) Validate() error {

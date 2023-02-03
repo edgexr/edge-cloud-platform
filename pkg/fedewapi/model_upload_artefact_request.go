@@ -49,9 +49,9 @@ type UploadArtefactRequest struct {
 	ComponentSpec []ComponentSpec `json:"componentSpec"`
 }
 
-var UploadArtefactRequestArtefactIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var UploadArtefactRequestArtefactIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var UploadArtefactRequestArtefactIdRE = regexp.MustCompile(UploadArtefactRequestArtefactIdPattern)
-var UploadArtefactRequestAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var UploadArtefactRequestAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var UploadArtefactRequestAppProviderIdRE = regexp.MustCompile(UploadArtefactRequestAppProviderIdPattern)
 var UploadArtefactRequestArtefactNamePattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9_][A-Za-z0-9_\\.-]{0,127}$/", "/"), "/")
 var UploadArtefactRequestArtefactNameRE = regexp.MustCompile(UploadArtefactRequestArtefactNamePattern)

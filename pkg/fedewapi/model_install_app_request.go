@@ -34,11 +34,11 @@ type InstallAppRequest struct {
 	AppInstCallbackLink string                    `json:"appInstCallbackLink"`
 }
 
-var InstallAppRequestAppInstanceIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var InstallAppRequestAppInstanceIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var InstallAppRequestAppInstanceIdRE = regexp.MustCompile(InstallAppRequestAppInstanceIdPattern)
-var InstallAppRequestAppIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var InstallAppRequestAppIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var InstallAppRequestAppIdRE = regexp.MustCompile(InstallAppRequestAppIdPattern)
-var InstallAppRequestAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var InstallAppRequestAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var InstallAppRequestAppProviderIdRE = regexp.MustCompile(InstallAppRequestAppProviderIdPattern)
 
 func (s *InstallAppRequest) Validate() error {

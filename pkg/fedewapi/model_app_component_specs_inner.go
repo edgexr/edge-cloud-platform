@@ -22,23 +22,23 @@ var _ MappedNullable = &AppComponentSpecsInner{}
 
 // AppComponentSpecsInner struct for AppComponentSpecsInner
 type AppComponentSpecsInner struct {
-	// Must be a valid RFC 1035 label name. This defines the DNS name via which the component can be accessed over NBI. Access via serviceNameNB is restricted on specific ports. Platform shall expose component access externally via this DNS name
+	// Must be a valid RFC 1123 label name. This defines the DNS name via which the component can be accessed over NBI. Access via serviceNameNB is restricted on specific ports. Platform shall expose component access externally via this DNS name
 	ServiceNameNB *string `json:"serviceNameNB,omitempty"`
-	// Must be a valid RFC 1035 label name. This defines the DNS name via which the component can be accessed via peer components. Access via serviceNameEW is open on all ports. Platform shall not expose serviceNameEW externally outside edge.
+	// Must be a valid RFC 1123 label name. This defines the DNS name via which the component can be accessed via peer components. Access via serviceNameEW is open on all ports. Platform shall not expose serviceNameEW externally outside edge.
 	ServiceNameEW *string `json:"serviceNameEW,omitempty"`
-	// Must be a valid RFC 1035 label name. Component name must be unique with an application
+	// Must be a valid RFC 1123 label name. Component name must be unique with an application
 	ComponentName *string `json:"componentName,omitempty"`
 	// A globally unique identifier associated with the artefact. Originating OP generates this identifier when artefact is submitted over NBI.
 	ArtefactId string `json:"artefactId"`
 }
 
-var AppComponentSpecsInnerServiceNameNBPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{6,62}[A-Za-z0-9]$/", "/"), "/")
+var AppComponentSpecsInnerServiceNameNBPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var AppComponentSpecsInnerServiceNameNBRE = regexp.MustCompile(AppComponentSpecsInnerServiceNameNBPattern)
-var AppComponentSpecsInnerServiceNameEWPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{6,62}[A-Za-z0-9]$/", "/"), "/")
+var AppComponentSpecsInnerServiceNameEWPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var AppComponentSpecsInnerServiceNameEWRE = regexp.MustCompile(AppComponentSpecsInnerServiceNameEWPattern)
-var AppComponentSpecsInnerComponentNamePattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{6,62}[A-Za-z0-9]$/", "/"), "/")
+var AppComponentSpecsInnerComponentNamePattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var AppComponentSpecsInnerComponentNameRE = regexp.MustCompile(AppComponentSpecsInnerComponentNamePattern)
-var AppComponentSpecsInnerArtefactIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var AppComponentSpecsInnerArtefactIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var AppComponentSpecsInnerArtefactIdRE = regexp.MustCompile(AppComponentSpecsInnerArtefactIdPattern)
 
 func (s *AppComponentSpecsInner) Validate() error {

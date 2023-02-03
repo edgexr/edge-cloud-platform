@@ -14,52 +14,58 @@
 
 providerimages:
 - federationname: dmuus-partner1
-  fileid: '***replaced***'
+  fileid: e2e-test-file-id-1
   path: registry.edgecloud.net/FedAppCo/k8sapp:1.0
   name: k8sapp
   version: "1.0"
   type: DOCKER
-  appproviderid: FedAppCo
+  appproviderid: fedappco
   checksum: sha256:8d4ea2a9476bc51681c6e7e59759c10237669c950b1b4a3cd6834e2161d7bde2
   status: Ready
 - federationname: dmuus-partner1
-  fileid: '***replaced***'
+  fileid: e2e-test-file-id-2
   path: registry.edgecloud.net/FedAppCo/dockerapp:1.0
   name: dockerapp
   version: "1.0"
   type: DOCKER
-  appproviderid: FedAppCo
+  appproviderid: fedappco
   checksum: sha256:8d4ea2a9476bc51681c6e7e59759c10237669c950b1b4a3cd6834e2161d7bde2
   status: Ready
 - federationname: dmuus-partner1
-  fileid: '***replaced***'
+  fileid: e2e-test-file-id-3
   path: https://registry.edgecloud.net/FedAppCo/vm.img
   name: vm.img
   version: vm.img
   type: QCOW2
-  appproviderid: FedAppCo
+  appproviderid: fedappco
   checksum: "2039483048230944325345245243524352345245"
   status: Ready
 providerartefacts:
 - federationname: dmuus-partner1
   artefactid: pa-k8sapp10fedappco
-  appname: k8sapp
+  artefactname: k8sapp
+  artefactversion: "1.0"
+  appname: pa-k8sapp10fedappco
   appvers: "1.0"
-  appproviderid: FedAppCo
+  appproviderid: fedappco
   virttype: CONTAINER_TYPE
   desctype: COMPONENTSPEC
 - federationname: dmuus-partner1
   artefactid: pa-dockerapp10fedappco
-  appname: dockerapp
+  artefactname: dockerapp
+  artefactversion: "1.0"
+  appname: pa-dockerapp10fedappco
   appvers: "1.0"
-  appproviderid: FedAppCo
+  appproviderid: fedappco
   virttype: CONTAINER_TYPE
   desctype: COMPONENTSPEC
 - federationname: dmuus-partner1
   artefactid: pa-vmapp10fedappco
-  appname: vmapp
+  artefactname: vmapp
+  artefactversion: "1.0"
+  appname: pa-vmapp10fedappco
   appvers: "1.0"
-  appproviderid: FedAppCo
+  appproviderid: fedappco
   virttype: VM_TYPE
   desctype: COMPONENTSPEC
 providerapps:
@@ -67,7 +73,7 @@ providerapps:
   appid: pa-k8sapp10fedappco
   appname: k8sapp
   appvers: "1.0"
-  appproviderid: FedAppCo
+  appproviderid: fedappco
   artefactids:
   - pa-k8sapp10fedappco
   appstatuscallbacklink: https://127.0.0.1:9808/operatorplatform/fedcallbacks/v1/onApplicationOnboardStatusEvent
@@ -75,7 +81,7 @@ providerapps:
   appid: pa-dockerapp10fedappco
   appname: dockerapp
   appvers: "1.0"
-  appproviderid: FedAppCo
+  appproviderid: fedappco
   artefactids:
   - pa-dockerapp10fedappco
   appstatuscallbacklink: https://127.0.0.1:9808/operatorplatform/fedcallbacks/v1/onApplicationOnboardStatusEvent
@@ -83,7 +89,7 @@ providerapps:
   appid: pa-vmapp10fedappco
   appname: vmapp
   appvers: "1.0"
-  appproviderid: FedAppCo
+  appproviderid: fedappco
   artefactids:
   - pa-vmapp10fedappco
   appstatuscallbacklink: https://127.0.0.1:9808/operatorplatform/fedcallbacks/v1/onApplicationOnboardStatusEvent
@@ -91,7 +97,7 @@ providerappinsts:
 - federationname: dmuus-partner1
   appinstid: '***replaced***'
   region: local
-  appname: k8sapp
+  appname: pa-k8sapp10fedappco
   appvers: "1.0"
   cluster: autoclusterabcdefABCDEF
   clusterorg: edgecloudorg
@@ -101,7 +107,7 @@ providerappinsts:
 - federationname: dmuus-partner1
   appinstid: '***replaced***'
   region: local
-  appname: dockerapp
+  appname: pa-dockerapp10fedappco
   appvers: "1.0"
   cluster: autoclusterabcdefABCDEF
   clusterorg: edgecloudorg
@@ -111,7 +117,7 @@ providerappinsts:
 - federationname: dmuus-partner1
   appinstid: '***replaced***'
   region: local
-  appname: vmapp
+  appname: pa-vmapp10fedappco
   appvers: "1.0"
   cluster: defaultclust
   clusterorg: dmuus-partner1

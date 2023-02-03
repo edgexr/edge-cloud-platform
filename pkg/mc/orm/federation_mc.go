@@ -31,6 +31,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	fedcommon "github.com/edgexr/edge-cloud-platform/pkg/mc/federation/common"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
@@ -220,7 +221,7 @@ func setMyFedId(fed *ormapi.Federator, name string) {
 	// these are or manages global uniqueness. For now just hard code
 	// to name plus a random UUID.
 	if fed.FederationId == "" {
-		fed.FederationId = name + "085d364c07fb4fe0b09979127f7c3d68"
+		fed.FederationId = util.DNSSanitize(name) + "085d364c07fb4fe0b09979127f7c3d68"
 	}
 }
 
@@ -271,7 +272,7 @@ func CreateFederationProvider(c echo.Context) (reterr error) {
 	// ensure that operator ID is a valid operator org
 	org, err := orgExists(ctx, provider.OperatorId)
 	if err != nil {
-		return fmt.Errorf("Invalid operator ID specified")
+		return fmt.Errorf("Invalid operator ID specified, already exists")
 	}
 	if org.Type != OrgTypeOperator {
 		return fmt.Errorf("Invalid operator ID, must be a valid operator org")
@@ -911,6 +912,9 @@ func CreateProviderZoneBase(c echo.Context) error {
 	// sanity check
 	if opZone.ZoneId == "" {
 		return fmt.Errorf("Missing zone ID")
+	}
+	if err := util.ValidDNSName(opZone.ZoneId); err != nil {
+		return fmt.Errorf("Invalid zone ID, %s", err)
 	}
 	if opZone.OperatorId == "" {
 		return fmt.Errorf("Missing operator")

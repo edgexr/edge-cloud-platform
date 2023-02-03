@@ -116,13 +116,14 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 
 	// we'll update the AppInstKey once the AppInst is created,
 	// in case it updates some of the optional fields.
+	appKey := provArt.GetAppKey()
 	provAppInst := ormapi.ProviderAppInst{
 		FederationName:      provider.Name,
 		AppInstID:           in.AppInstanceId,
 		AppInstCallbackLink: in.AppInstCallbackLink,
 		Region:              base.Region,
-		AppName:             provArt.AppName,
-		AppVers:             provArt.AppVers,
+		AppName:             appKey.Name,
+		AppVers:             appKey.Version,
 		Cluster:             clusterName,
 		ClusterOrg:          clusterOrg,
 		Cloudlet:            base.Cloudlets[0],

@@ -215,3 +215,29 @@ func TestK8SContainerName(t *testing.T) {
 		require.NotNil(t, err, "invalid k8s container name")
 	}
 }
+
+func TestDNSSanitize(t *testing.T) {
+	tests := []struct {
+		in  string
+		out string
+		err string
+	}{
+		{"myapp1", "myapp1", ""},
+		{"myApp-1", "myapp-1", "does not allow upper case"},
+		{"9-abc1", "9-abc1", ""},
+		{"-foo_bar-", "foo-bar", "cannot start or end with '-'"},
+		{"8* ()/f", "8f", "does not allow '*'"},
+		{"Blue Green Frog", "bluegreenfrog", "does not allow upper case"},
+		{"_foo_bar_", "foo-bar", "does not allow '_'"},
+	}
+	for ii, test := range tests {
+		val := DNSSanitize(test.in)
+		require.Equal(t, test.out, val, "[%d] expected %s -> %s", ii, test.in, test.out)
+		err := ValidDNSName(test.in)
+		if test.err == "" {
+			require.Nil(t, err, "[%d] valid test of %s", ii, test.in)
+		} else {
+			require.Contains(t, err.Error(), test.err, "[%d] valid test for %s", ii, test.in)
+		}
+	}
+}

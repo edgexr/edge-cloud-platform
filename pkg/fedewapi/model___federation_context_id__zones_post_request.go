@@ -29,9 +29,9 @@ type FederationContextIdZonesPostRequest struct {
 	ZoneResUpdInfo []FederationContextIdZonesPostRequestZoneResUpdInfoInner `json:"zoneResUpdInfo"`
 }
 
-var FederationContextIdZonesPostRequestFederationContextIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var FederationContextIdZonesPostRequestFederationContextIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var FederationContextIdZonesPostRequestFederationContextIdRE = regexp.MustCompile(FederationContextIdZonesPostRequestFederationContextIdPattern)
-var FederationContextIdZonesPostRequestZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/", "/"), "/")
+var FederationContextIdZonesPostRequestZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var FederationContextIdZonesPostRequestZoneIdRE = regexp.MustCompile(FederationContextIdZonesPostRequestZoneIdPattern)
 
 func (s *FederationContextIdZonesPostRequest) Validate() error {

@@ -326,7 +326,7 @@ regiondata:
       - proto: Tcp
         internalport: 81
         publicport: 81
-        fqdnprefix: vmapp10-dmuus-partner1.dmuus-cloud-2-dmuus.local.edgecloude2e.net
+        fqdnprefix: pa-vmapp10fedappco10-dmuus-partner1.dmuus-cloud-2-dmuus.local.edgecloude2e.net
       flavor:
         name: x1.small
       state: Ready

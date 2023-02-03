@@ -34,6 +34,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 	"github.com/google/uuid"
@@ -190,7 +191,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 		AppInstanceId: uuid.New().String(), // TODO: no uniqueness check
 		AppId:         app.GlobalId,
 		AppVersion:    app.Key.Version,
-		AppProviderId: app.Key.Organization,
+		AppProviderId: util.DNSSanitize(app.Key.Organization),
 		ZoneInfo: fedewapi.InstallAppRequestZoneInfo{
 			ZoneId:    cloudletKey.Name,
 			FlavourId: flavor.Key.Name,

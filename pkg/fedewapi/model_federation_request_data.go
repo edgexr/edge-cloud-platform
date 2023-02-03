@@ -36,7 +36,7 @@ type FederationRequestData struct {
 	PartnerCallbackCredentials *CallbackCredentials `json:"partnerCallbackCredentials,omitempty"`
 }
 
-var FederationRequestDataOrigOPFederationIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var FederationRequestDataOrigOPFederationIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var FederationRequestDataOrigOPFederationIdRE = regexp.MustCompile(FederationRequestDataOrigOPFederationIdPattern)
 var FederationRequestDataOrigOPCountryCodePattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Z]{2}$/", "/"), "/")
 var FederationRequestDataOrigOPCountryCodeRE = regexp.MustCompile(FederationRequestDataOrigOPCountryCodePattern)

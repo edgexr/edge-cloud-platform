@@ -39,6 +39,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/jarcoal/httpmock"
@@ -218,7 +219,7 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 	fedAddr, err := cloudcommon.GetAvailablePort("127.0.0.1:0")
 	require.Nil(t, err, "get available port")
 
-	regions := []string{"US-East", "US-West"}
+	regions := []string{"USEast", "USWest"}
 
 	vp := process.Vault{
 		Common: process.Common{
@@ -642,7 +643,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Negative tests for provider zone create
 	// =======================================
 	testZone := &ormapi.ProviderZoneBase{
-		ZoneId:      "testZone",
+		ZoneId:      "testzone",
 		OperatorId:  provAttr.operatorId,
 		CountryCode: provAttr.countryCode,
 		Region:      provAttr.region,
@@ -859,7 +860,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		act := provImagesShow[ii]
 		require.Equal(t, provAttr.fedName, act.FederationName)
 		require.Equal(t, exp.ID, act.FileID)
-		require.Equal(t, exp.Organization, act.AppProviderId)
+		require.Equal(t, util.DNSSanitize(exp.Organization), act.AppProviderId)
 		require.Equal(t, exp.Type, act.Type)
 		require.Equal(t, federation.ImageStatusReady, act.Status)
 	}
@@ -872,9 +873,9 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		exp := consAppsShow[ii]
 		act := provArtsShow[ii]
 		require.Equal(t, provAttr.fedName, act.FederationName)
-		require.Equal(t, exp.AppName, act.AppName)
+		require.Equal(t, exp.ID, act.AppName)
 		require.Equal(t, exp.AppVers, act.AppVers)
-		require.Equal(t, exp.AppOrg, act.AppProviderId)
+		require.Equal(t, util.DNSSanitize(exp.AppOrg), act.AppProviderId)
 	}
 	// provider can see create providerApps
 	provAppsShow, status, err := mcClient.ShowProviderApp(op.uri, provAttr.tokenOper, nil)

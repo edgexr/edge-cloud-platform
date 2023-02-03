@@ -20,6 +20,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
 	"github.com/mobiledgex/jaeger/plugin/storage/es/spanstore/dbmodel"
@@ -2203,6 +2204,104 @@ func (s *Client) ShowFedConsumerImage(uri string, token string, in *cli.MapData)
 	rundata.Out = &out
 
 	apiCmd := ormctl.MustGetCommand("ShowFedConsumerImage")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
+// Generating group FederationDirect
+
+func (s *Client) GetFederationPartner(uri string, token string, in *ormapi.FederationConsumer) (*fedewapi.GetFederationDetails200Response, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out fedewapi.GetFederationDetails200Response
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("GetFederationPartner")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) GetFederationZone(uri string, token string, in *ormapi.ConsumerZone) (*fedewapi.ZoneRegisteredData, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out fedewapi.ZoneRegisteredData
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("GetFederationZone")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) GetFederationArtefact(uri string, token string, in *ormapi.ConsumerApp) (*fedewapi.GetArtefact200Response, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out fedewapi.GetArtefact200Response
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("GetFederationArtefact")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) GetFederationFile(uri string, token string, in *ormapi.ConsumerImage) (*fedewapi.ViewFile200Response, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out fedewapi.ViewFile200Response
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("GetFederationFile")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) GetFederationApp(uri string, token string, in *ormapi.ConsumerApp) (*fedewapi.ViewApplication200Response, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out fedewapi.ViewApplication200Response
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("GetFederationApp")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) GetFederationAppInsts(uri string, token string, in *ormapi.RegionAppInst) ([]fedewapi.GetAppInstanceDetails200Response, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []fedewapi.GetAppInstanceDetails200Response
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("GetFederationAppInsts")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError

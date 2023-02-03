@@ -5,6 +5,7 @@ import (
 	"errors"
 	fmt "fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 )
 
 var ErrExactDuplicate = errors.New("exact duplicate")
+var e2eTestNextFileId = 1
 
 func CreateConsumerImage(c echo.Context) (reterr error) {
 	ctx := ormutil.GetContext(c)
@@ -157,6 +159,11 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 
 	// save first before we upload
 	image.ID = uuid.New().String()
+	if os.Getenv("E2ETEST_FED") != "" {
+		// federation test, use deterministic ids
+		image.ID = fmt.Sprintf("e2e-test-file-id-%d", e2eTestNextFileId)
+		e2eTestNextFileId++
+	}
 	image.Status = federation.ImageStatusSending
 	err = db.Create(&image).Error
 	if err != nil {
@@ -187,7 +194,7 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 	// multipart/form-data
 	data := ormclient.NewMultiPartFormData()
 	data.AddField(federation.FileFieldFileId, image.ID)
-	data.AddField(federation.FileFieldAppProviderId, image.Organization)
+	data.AddField(federation.FileFieldAppProviderId, util.DNSSanitize(image.Organization))
 	data.AddField(federation.FileFieldFileName, image.Name)
 	data.AddField(federation.FileFieldFileVersionInfo, image.Version)
 	data.AddField(federation.FileFieldFileType, image.Type)

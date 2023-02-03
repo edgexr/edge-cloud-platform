@@ -28,7 +28,7 @@ type FederationContextIdApplicationOnboardingPostRequestStatusInfoInner struct {
 	OnboardStatusInfo string `json:"onboardStatusInfo"`
 }
 
-var FederationContextIdApplicationOnboardingPostRequestStatusInfoInnerZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/", "/"), "/")
+var FederationContextIdApplicationOnboardingPostRequestStatusInfoInnerZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var FederationContextIdApplicationOnboardingPostRequestStatusInfoInnerZoneIdRE = regexp.MustCompile(FederationContextIdApplicationOnboardingPostRequestStatusInfoInnerZoneIdPattern)
 
 func (s *FederationContextIdApplicationOnboardingPostRequestStatusInfoInner) Validate() error {

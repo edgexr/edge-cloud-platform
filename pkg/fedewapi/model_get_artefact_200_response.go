@@ -46,9 +46,9 @@ type GetArtefact200Response struct {
 	ComponentSpec []ComponentSpec `json:"componentSpec,omitempty"`
 }
 
-var GetArtefact200ResponseArtefactIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var GetArtefact200ResponseArtefactIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var GetArtefact200ResponseArtefactIdRE = regexp.MustCompile(GetArtefact200ResponseArtefactIdPattern)
-var GetArtefact200ResponseAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var GetArtefact200ResponseAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var GetArtefact200ResponseAppProviderIdRE = regexp.MustCompile(GetArtefact200ResponseAppProviderIdPattern)
 var GetArtefact200ResponseArtefactNamePattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9_][A-Za-z0-9_\\.-]{0,127}$/", "/"), "/")
 var GetArtefact200ResponseArtefactNameRE = regexp.MustCompile(GetArtefact200ResponseArtefactNamePattern)

@@ -33,13 +33,13 @@ type FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest 
 	GrantedFlavours []FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestGrantedFlavoursInner `json:"grantedFlavours"`
 }
 
-var FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestFederationContextIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestFederationContextIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestFederationContextIdRE = regexp.MustCompile(FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestFederationContextIdPattern)
-var FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/", "/"), "/")
+var FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestZoneIdRE = regexp.MustCompile(FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestZoneIdPattern)
-var FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestAppProviderIdRE = regexp.MustCompile(FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestAppProviderIdPattern)
-var FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestPoolIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestPoolIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestPoolIdRE = regexp.MustCompile(FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequestPoolIdPattern)
 
 func (s *FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest) Validate() error {

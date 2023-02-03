@@ -200,11 +200,23 @@ func (p *PartnerApi) DeleteApp(c echo.Context, fedCtxId FederationContextId, app
 		return err
 	}
 
-	// TODO: check if there are any appinsts for App
+	// check if app is in use
+	provAppInst := ormapi.ProviderAppInst{
+		FederationName: provider.Name,
+		AppID:          provApp.AppID,
+	}
+	insts := []ormapi.ProviderAppInst{}
+	db := p.loggedDB(ctx)
+	err = db.Where(&provAppInst).Find(&insts).Error
+	if err != nil {
+		return err
+	}
+	if len(insts) > 0 {
+		return fmt.Errorf("Cannot delete app as it in use by app instances")
+	}
 
 	// Note that edgeproto.App object is tied to the ProviderArtefact,
 	// so the only action here is to delete the ProviderApp.
-	db := p.loggedDB(ctx)
 	err = db.Delete(provApp).Error
 	if err != nil {
 		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to delete App, %s", err.Error()))

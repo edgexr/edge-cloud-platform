@@ -36,9 +36,9 @@ type InterfaceDetails struct {
 	InterfaceName *string `json:"InterfaceName,omitempty"`
 }
 
-var InterfaceDetailsInterfaceIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var InterfaceDetailsInterfaceIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var InterfaceDetailsInterfaceIdRE = regexp.MustCompile(InterfaceDetailsInterfaceIdPattern)
-var InterfaceDetailsNetworkPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/", "/"), "/")
+var InterfaceDetailsNetworkPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var InterfaceDetailsNetworkRE = regexp.MustCompile(InterfaceDetailsNetworkPattern)
 var InterfaceDetailsInterfaceNamePattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z][a-z0-9_-]{0,32}$/", "/"), "/")
 var InterfaceDetailsInterfaceNameRE = regexp.MustCompile(InterfaceDetailsInterfaceNamePattern)

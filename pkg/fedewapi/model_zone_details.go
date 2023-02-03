@@ -30,7 +30,7 @@ type ZoneDetails struct {
 	GeographyDetails string `json:"geographyDetails"`
 }
 
-var ZoneDetailsZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/", "/"), "/")
+var ZoneDetailsZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var ZoneDetailsZoneIdRE = regexp.MustCompile(ZoneDetailsZoneIdPattern)
 var ZoneDetailsGeolocationPattern = strings.TrimPrefix(strings.TrimSuffix("/^[-+]?[\\d]{1,2}(\\.[\\d]{1,4})?,\\s*[-+]?[\\d]{1,3}(\\.[\\d]{1,4})?$/", "/"), "/")
 var ZoneDetailsGeolocationRE = regexp.MustCompile(ZoneDetailsGeolocationPattern)
