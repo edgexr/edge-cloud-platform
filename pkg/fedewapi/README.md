@@ -258,7 +258,6 @@ Class | Method | HTTP request | Description
  - [UploadArtefactRequest](docs/UploadArtefactRequest.md)
  - [UploadFileRequest](docs/UploadFileRequest.md)
  - [ViewApplication200Response](docs/ViewApplication200Response.md)
- - [ViewApplication200ResponseAppDeploymentZonesInner](docs/ViewApplication200ResponseAppDeploymentZonesInner.md)
  - [ViewFile200Response](docs/ViewFile200Response.md)
  - [ViewISVResPool200ResponseInner](docs/ViewISVResPool200ResponseInner.md)
  - [ViewISVResPool200ResponseInnerReservedFlavoursInner](docs/ViewISVResPool200ResponseInnerReservedFlavoursInner.md)

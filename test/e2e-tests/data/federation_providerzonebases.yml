@@ -17,6 +17,7 @@ providerzonebases:
   operatorid: dmuus
   countrycode: SA
   geolocation: 31,-91
+  geographydetails: None
   region: local
   cloudlets:
   - dmuus-cloud-1
@@ -24,6 +25,7 @@ providerzonebases:
   operatorid: dmuus
   countrycode: SA
   geolocation: 35,-95
+  geographydetails: None
   region: local
   cloudlets:
   - dmuus-cloud-2
@@ -31,6 +33,7 @@ providerzonebases:
   operatorid: dmuus
   countrycode: SB
   geolocation: 32,-92
+  geographydetails: None
   region: locala
   cloudlets:
   - dmuus-cloud-3
@@ -38,6 +41,7 @@ providerzonebases:
   operatorid: dmuus
   countrycode: SB
   geolocation: 36,-96
+  geographydetails: None
   region: locala
   cloudlets:
   - dmuus-cloud-4
@@ -45,6 +49,7 @@ providerzonebases:
   operatorid: enterprise
   countrycode: SA
   geolocation: 31,-91
+  geographydetails: None
   region: local
   cloudlets:
   - enterprise-1
@@ -52,6 +57,7 @@ providerzonebases:
   operatorid: enterprise
   countrycode: SB
   geolocation: 31,-91
+  geographydetails: None
   region: locala
   cloudlets:
   - enterprise-2

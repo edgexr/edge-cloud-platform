@@ -1,4 +1,4 @@
-// JKG checks if the {{classname}} type satisfies the MappedNullable interface at compile time
+// checks if the {{classname}} type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &{{classname}}{}
 
 // {{classname}} {{{description}}}{{^description}}struct for {{{classname}}}{{/description}}
@@ -27,6 +27,87 @@ type {{classname}} struct {
 {{#isAdditionalPropertiesTrue}}
 	AdditionalProperties map[string]interface{}
 {{/isAdditionalPropertiesTrue}}
+}
+
+{{#vars}}
+{{#pattern}}
+var {{classname}}{{name}}Pattern = strings.TrimPrefix(strings.TrimSuffix("{{pattern}}", "/"), "/")
+var {{classname}}{{name}}RE = regexp.MustCompile({{classname}}{{name}}Pattern)
+{{/pattern}}
+{{#isArray}}
+{{#items.pattern}}
+var {{classname}}{{name}}Pattern = strings.TrimPrefix(strings.TrimSuffix("{{pattern}}", "/"), "/")
+var {{classname}}{{name}}RE = regexp.MustCompile({{classname}}{{name}}Pattern)
+{{/items.pattern}}
+{{/isArray}}
+{{/vars}}
+
+func (s *{{classname}}) Validate() error {
+{{! check required string fields}}
+{{#vars}}
+{{#required}}
+{{#isString}}
+	if s.{{name}} == "" {
+		return errors.New("{{baseName}} is required")
+	}
+{{/isString}}
+{{/required}}
+{{! check if field matches specified pattern}}
+{{#pattern}}
+	if {{^required}}{{^isNullable}}{{^isArray}}{{^isFreeFormObject}}s.{{name}} != nil && {{/isFreeFormObject}}{{/isArray}}{{/isNullable}}{{/required}}!{{classname}}{{name}}RE.MatchString({{^required}}{{^isNullable}}{{^isArray}}{{^isFreeFormObject}}*{{/isFreeFormObject}}{{/isArray}}{{/isNullable}}{{/required}}s.{{name}}) {
+		return errors.New("{{baseName}} "+{{^required}}{{^isNullable}}{{^isArray}}{{^isFreeFormObject}}*{{/isFreeFormObject}}{{/isArray}}{{/isNullable}}{{/required}}s.{{name}}+" does not match format "+{{classname}}{{name}}Pattern)
+	}
+{{/pattern}}
+{{! check if object is valid}}
+{{#isModel}}
+{{^required}}
+{{^isNullable}}
+{{^isArray}}
+{{^isFreeFormObject}}
+	if s.{{name}} != nil {
+{{/isFreeFormObject}}
+{{/isArray}}
+{{/isNullable}}
+{{/required}}
+	if err := s.{{name}}.Validate(); err != nil {
+		return err
+	}
+{{^required}}
+{{^isNullable}}
+{{^isArray}}
+{{^isFreeFormObject}}
+	}
+{{/isFreeFormObject}}
+{{/isArray}}
+{{/isNullable}}
+{{/required}}
+{{/isModel}}
+{{! check if arrayed field matches specified pattern }}
+{{#isArray}}
+{{#items.pattern}}
+	for ii := range s.{{name}} {
+{{#items}}
+		if !{{classname}}{{name}}RE.MatchString(s.{{name}}[ii]) {
+			return errors.New("{{baseName}} "+s.{{name}}[ii]+" does not match format "+{{classname}}{{name}}Pattern)
+		}
+{{/items}}
+	}
+{{/items.pattern}}
+{{/isArray}}
+{{! check if arrayed object is valid }}
+{{#isArray}}
+{{#items.isModel}}
+	for ii := range s.{{name}} {
+{{#items}}
+		if err := s.{{name}}[ii].Validate(); err != nil {
+			return err
+		}
+{{/items}}
+	}
+{{/items.isModel}}
+{{/isArray}}
+{{/vars}}
+	return nil
 }
 
 {{#isAdditionalPropertiesTrue}}

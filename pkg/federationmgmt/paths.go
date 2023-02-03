@@ -17,6 +17,8 @@ const (
 	PartnerResourceStatusChangePath  = CallbackRoot + "/onResourceStatusChangeEvent"
 
 	PathVarAppInstUniqueId = "appInstUniqueId"
+
+	CallbackNotSupported = "NOT_SUPPORTED"
 )
 
 func PathCreateAppInst(fedCtxId string) (string, string) {
