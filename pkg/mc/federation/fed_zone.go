@@ -22,6 +22,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+const GeographyDetailsNone = "None"
+
 func (p *PartnerApi) LookupProviderZone(ctx context.Context, providerName, zoneId string) (*ormapi.ProviderZone, error) {
 	if providerName == "" {
 		return nil, fmt.Errorf("missing federation provider name")
@@ -96,6 +98,12 @@ func (p *PartnerApi) ZoneSubscribe(c echo.Context, fedCtxId FederationContextId)
 
 	in := fedewapi.ZoneRegistrationRequestData{}
 	if err := c.Bind(&in); err != nil {
+		return err
+	}
+	if in.AvailZoneNotifLink == "" {
+		in.AvailZoneNotifLink = federationmgmt.CallbackNotSupported
+	}
+	if err := in.Validate(); err != nil {
 		return err
 	}
 	if len(in.AcceptedAvailabilityZones) == 0 {
@@ -423,6 +431,10 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 	if err != nil {
 		return err
 	}
+	if err := opZoneRes.Validate(); err != nil {
+		return fmt.Errorf("Invalid response from federation host, %s", err)
+	}
+
 	if len(opZoneRes.AcceptedZoneResourceInfo) == 0 {
 		return fmt.Errorf("Zone registration response missing accepted zone resource info")
 	}
@@ -638,6 +650,9 @@ func (p *PartnerApi) PartnerZoneResourceUpdate(c echo.Context) error {
 	in := fedewapi.FederationContextIdZonesPostRequest{}
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)
+	}
+	if err := in.Validate(); err != nil {
+		return err
 	}
 	// lookup federation consumer based on claims
 	consumer, err := p.lookupConsumer(c, in.FederationContextId)

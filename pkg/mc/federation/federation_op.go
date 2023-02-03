@@ -186,7 +186,7 @@ func (p *PartnerApi) ConsumerPartnerClient(ctx context.Context, consumer *ormapi
 }
 
 func (p *PartnerApi) validateCallbackLink(link string) error {
-	if link == "" {
+	if link == "" || link == federationmgmt.CallbackNotSupported {
 		return nil
 	}
 	_, err := url.ParseRequestURI(link)
@@ -227,8 +227,11 @@ func (p *PartnerApi) CreateFederation(c echo.Context) (reterr error) {
 	if err := c.Bind(&req); err != nil {
 		return err
 	}
-	if req.OrigOPFederationId == "" {
-		return fmt.Errorf("OrigOPFederationID not specified")
+	if req.PartnerStatusLink == "" {
+		req.PartnerStatusLink = federationmgmt.CallbackNotSupported
+	}
+	if err := req.Validate(); err != nil {
+		return err
 	}
 	if err := p.validateCallbackLink(req.PartnerStatusLink); err != nil {
 		return err
@@ -255,7 +258,9 @@ func (p *PartnerApi) CreateFederation(c echo.Context) (reterr error) {
 	provider.Status = StatusRegistered
 
 	out := fedewapi.FederationResponseData{}
+	log.SpanLog(ctx, log.DebugLevelApi, "partner response fed ctx id", "id", provider.FederationContextId)
 	out.FederationContextId = provider.FederationContextId
+	log.SpanLog(ctx, log.DebugLevelApi, "partner response out", "id", out.FederationContextId, "out", out)
 	out.PartnerOPFederationId = provider.MyInfo.FederationId
 	if provider.MyInfo.CountryCode != "" {
 		out.PartnerOPCountryCode = &provider.MyInfo.CountryCode
@@ -342,6 +347,9 @@ func (p *PartnerApi) getAvailabilityZones(ctx context.Context, provider *ormapi.
 			Geolocation:      zoneBase.GeoLocation,
 			ZoneId:           zoneBase.ZoneId,
 		}
+		if details.GeographyDetails == "" {
+			details.GeographyDetails = GeographyDetailsNone
+		}
 		zones = append(zones, details)
 	}
 	return zones, nil
@@ -397,6 +405,10 @@ func (p *PartnerApi) UpdateFederation(c echo.Context, fedCtxId FederationContext
 	if err := c.Bind(&in); err != nil {
 		return err
 	}
+	if err := in.Validate(); err != nil {
+		return err
+	}
+
 	switch in.ObjectType {
 	case "MOBILE_NETWORK_CODES":
 		switch in.OperationType {
@@ -681,6 +693,10 @@ func (p *PartnerApi) PartnerStatusEvent(c echo.Context) error {
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)
 	}
+	if err := in.Validate(); err != nil {
+		return err
+	}
+
 	// lookup federation consumer based on claims
 	consumer, err := p.lookupConsumer(c, in.FederationContextId)
 	if err != nil {

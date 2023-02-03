@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -55,20 +54,8 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 	if err := c.Bind(&in); err != nil {
 		return err
 	}
-	if in.AppInstanceId == "" {
-		return fmt.Errorf("Missing app instance ID")
-	}
-	if in.AppId == "" {
-		return fmt.Errorf("Missing application ID")
-	}
-	if in.AppVersion == "" {
-		return fmt.Errorf("Missing app version")
-	}
-	if in.AppProviderId == "" {
-		return fmt.Errorf("Missing app provider ID")
-	}
-	if in.ZoneInfo.ZoneId == "" {
-		return fmt.Errorf("Missing zone id")
+	if err := in.Validate(); err != nil {
+		return err
 	}
 	if err := p.validateCallbackLink(in.AppInstCallbackLink); err != nil {
 		return err
@@ -467,11 +454,7 @@ func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
 	if len(info.AccesspointInfo) > 0 {
 		for _, ap := range info.AccesspointInfo {
 			port := dmeproto.AppPort{}
-			portVal, err := strconv.Atoi(ap.InterfaceId)
-			if err != nil {
-				return fmt.Errorf("Invalid interfaceId %s, cannot convert to a port number, %s", ap.InterfaceId, err)
-			}
-			port.InternalPort = int32(portVal)
+			port.InternalPort = int32(ap.AccessPoints.Port)
 			// Note that baseURL will be empty, so FqdnPrefix
 			// will be used as the whole Fqdn.
 			// Note we do not support multiple IP addresses.

@@ -7,6 +7,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -76,20 +77,11 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 	}
 
 	log.SpanLog(ctx, log.DebugLevelApi, "Federation app onboarding", "fedName", provider.Name, "request", req)
-	if req.AppId == "" {
-		return fmt.Errorf("Missing application ID")
+	if req.AppStatusCallbackLink == "" {
+		req.AppStatusCallbackLink = federationmgmt.CallbackNotSupported
 	}
-	if req.AppProviderId == "" {
-		return fmt.Errorf("Missing app provider ID")
-	}
-	if req.AppMetaData.AppName == "" {
-		return fmt.Errorf("Missing app name")
-	}
-	if req.AppMetaData.Version == "" {
-		return fmt.Errorf("Missing app version")
-	}
-	if req.AppMetaData.AccessToken == "" {
-		return fmt.Errorf("Missing access token")
+	if err := req.Validate(); err != nil {
+		return err
 	}
 	if len(req.AppComponentSpecs) == 0 {
 		return fmt.Errorf("Missing app component details")
@@ -170,7 +162,7 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 
 	c.Response().WriteHeader(http.StatusAccepted)
 	c.Response().After(func() {
-		if req.AppStatusCallbackLink == "" {
+		if req.AppStatusCallbackLink == federationmgmt.CallbackNotSupported {
 			log.SpanLog(ctx, log.DebugLevelApi, "app create no callback", "app", provApp)
 			return
 		}
@@ -251,14 +243,9 @@ func (p *PartnerApi) ViewApplication(c echo.Context, fedCtxId FederationContextI
 		specs = append(specs, spec)
 	}
 	app.AppComponentSpecs = specs
-	zones := []fedewapi.ViewApplication200ResponseAppDeploymentZonesInner{}
-	for _, zone := range provApp.DeploymentZones {
-		dz := fedewapi.ViewApplication200ResponseAppDeploymentZonesInner{
-			ZoneInfo: zone,
-		}
-		zones = append(zones, dz)
+	if len(provApp.DeploymentZones) > 0 {
+		app.AppDeploymentZones = provApp.DeploymentZones
 	}
-	app.AppDeploymentZones = zones
 	return c.JSON(http.StatusOK, app)
 }
 
@@ -356,6 +343,9 @@ func (p *PartnerApi) PartnerAppOnboardStatusEvent(c echo.Context) error {
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)
 	}
+	if err := in.Validate(); err != nil {
+		return err
+	}
 	// lookup federation consumer based on claims
 	consumer, err := p.lookupConsumer(c, in.FederationContextId)
 	if err != nil {
@@ -371,5 +361,5 @@ func (p *PartnerApi) PartnerAppOnboardStatusEvent(c echo.Context) error {
 }
 
 func (p *PartnerApi) GetInterfaceId(port dme.AppPort, portVal int32) string {
-	return fmt.Sprintf("%d", portVal)
+	return fmt.Sprintf("port%d", portVal)
 }

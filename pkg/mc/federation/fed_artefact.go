@@ -108,26 +108,20 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 
 	log.SpanLog(ctx, log.DebugLevelApi, "create artefact request", "provArt", provArt, "specData", specData)
 
-	if provArt.ArtefactID == "" {
-		return fmt.Errorf("%s not specified", ArtefactFieldId)
+	// for validation
+	artReq := fedewapi.UploadArtefactRequest{
+		ArtefactId:             provArt.ArtefactID,
+		AppProviderId:          provArt.AppProviderId,
+		ArtefactName:           provArt.AppName,
+		ArtefactVersionInfo:    provArt.AppVers,
+		ArtefactVirtType:       provArt.VirtType,
+		ArtefactDescriptorType: provArt.DescType,
 	}
-	if provArt.AppName == "" {
-		return fmt.Errorf("%s not specified", ArtefactFieldName)
-	}
-	if provArt.AppProviderId == "" {
-		return fmt.Errorf("%s not specified", ArtefactFieldAppProviderId)
-	}
-	if provArt.AppVers == "" {
-		return fmt.Errorf("%s not specified", ArtefactFieldVersionInfo)
-	}
-	if provArt.VirtType == "" {
-		return fmt.Errorf("%s not specified", ArtefactFieldVirtType)
+	if err := artReq.Validate(); err != nil {
+		return err
 	}
 	if provArt.VirtType != ArtefactVirtTypeVM && provArt.VirtType != ArtefactVirtTypeContainer {
 		return fmt.Errorf("%s invalid value %s, valid values are %s and %s", ArtefactFieldVirtType, provArt.VirtType, ArtefactVirtTypeVM, ArtefactVirtTypeContainer)
-	}
-	if provArt.DescType == "" {
-		return fmt.Errorf("%s not specified", ArtefactFieldDescriptorType)
 	}
 	if provArt.DescType != ArtefactDescTypeCompSpec {
 		log.SpanLog(ctx, log.DebugLevelApi, "artefact does not support descriptor type", "type", provArt.DescType)
@@ -148,15 +142,11 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 		return fmt.Errorf("only one component spec is supported, but found %d", len(specs))
 	}
 	spec := specs[0]
-	// check spec fields are set
-	if spec.ComponentName == "" {
-		return fmt.Errorf("ComponentSpec component name missing")
+	if err := spec.Validate(); err != nil {
+		return err
 	}
 	if len(spec.Images) == 0 {
 		return fmt.Errorf("ComponentSpec missing at least 1 image")
-	}
-	if spec.RestartPolicy == "" {
-		return fmt.Errorf("ComponentSpec restart policy missing")
 	}
 
 	db := p.loggedDB(ctx)
@@ -661,7 +651,9 @@ func (p *PartnerApi) GenerateComponentSpec(ctx context.Context, app *edgeproto.A
 		spec.ExposedInterfaces = interfaces
 	}
 
-	resources := fedewapi.ComputeResourceInfo{}
+	resources := fedewapi.ComputeResourceInfo{
+		CpuArchType: CPUArchTypeX8664,
+	}
 	if defaultFlavor == nil && app.ServerlessConfig == nil {
 		return nil, fmt.Errorf("Cannot specify compute resource info, one of default flavor or serverless config must be set")
 	}

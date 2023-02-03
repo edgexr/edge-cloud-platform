@@ -78,11 +78,11 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 	if image.Name == "" {
 		parts := strings.Split(image.SourcePath, "/")
 		image.Name = parts[len(parts)-1]
-		parts = strings.SplitN(image.Name, ":", 2)
-		if len(parts) > 1 {
-			image.Name = parts[0]
-			image.Version = parts[1]
-		}
+	}
+	parts := strings.SplitN(image.Name, ":", 2)
+	if len(parts) > 1 {
+		image.Name = parts[0]
+		image.Version = parts[1]
 	}
 	if image.Version == "" {
 		image.Version = image.Name
@@ -178,7 +178,7 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 		}
 	}()
 	osType := fedewapi.OSType{
-		Architecture: "x86_64",
+		Architecture: federation.CPUArchTypeX8664,
 		Distribution: "OTHER",
 		Version:      "OTHER",
 		License:      "NOT_SPECIFIED",

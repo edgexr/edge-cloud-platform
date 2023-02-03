@@ -265,7 +265,7 @@ func CreateFederationProvider(c echo.Context) (reterr error) {
 	setMyFedId(&provider.MyInfo, provider.Name)
 	// allocate a federation context id here, so that when we
 	// write to the database it will guarantee it is unique.
-	fedCtxId := strings.ReplaceAll(uuid.New().String(), "-", "")
+	fedCtxId := uuid.New().String()
 	provider.FederationContextId = fedCtxId
 
 	// ensure that operator ID is a valid operator org
@@ -410,7 +410,7 @@ func UpdateFederationProvider(c echo.Context) error {
 	}
 
 	// Notify partner federator
-	if provider.PartnerNotifyDest != "" {
+	if provider.PartnerNotifyDest != fedmgmt.CallbackNotSupported {
 		// TODO: callback update
 		/*
 			opConf := fedapi.UpdateMECNetConf{
@@ -918,6 +918,9 @@ func CreateProviderZoneBase(c echo.Context) error {
 	if opZone.Region == "" {
 		return fmt.Errorf("Missing region")
 	}
+	if opZone.GeographyDetails == "" {
+		opZone.GeographyDetails = federation.GeographyDetailsNone
+	}
 	if len(opZone.Cloudlets) == 0 {
 		return fmt.Errorf("Missing cloudlets")
 	}
@@ -1200,24 +1203,30 @@ func ShareProviderZone(c echo.Context) (reterr error) {
 				return ormutil.DbErr(err)
 			}
 		}
-		zoneDetails = append(zoneDetails, fedewapi.ZoneDetails{
+
+		zoneDetail := fedewapi.ZoneDetails{
 			GeographyDetails: basis.GeographyDetails,
 			Geolocation:      basis.GeoLocation,
 			ZoneId:           basis.ZoneId,
-		})
+		}
+		if zoneDetail.GeographyDetails == "" {
+			zoneDetail.GeographyDetails = federation.GeographyDetailsNone
+		}
+		zoneDetails = append(zoneDetails, zoneDetail)
 		createdZones = append(createdZones, &shareZone)
 	}
 
 	log.SpanLog(ctx, log.DebugLevelApi, "share provider zone", "provider-status", provider.Status, "notify", provider.PartnerNotifyDest)
-	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != "" {
+	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != fedmgmt.CallbackNotSupported {
 		fedClient, err := partnerApi.ProviderPartnerClient(ctx, provider, provider.PartnerNotifyDest)
 		if err != nil {
 			return err
 		}
 		req := fedewapi.PartnerPostRequest{
-			ObjectType:    "ZONES",
-			OperationType: "ADD_ZONES",
-			AddZones:      zoneDetails,
+			FederationContextId: provider.FederationContextId,
+			ObjectType:          "ZONES",
+			OperationType:       "ADD_ZONES",
+			AddZones:            zoneDetails,
 		}
 		_, _, err = fedClient.SendRequest(ctx, "POST", "", &req, nil, nil)
 		if err != nil {
@@ -1286,16 +1295,17 @@ func UnshareProviderZone(c echo.Context) error {
 		return fmt.Errorf("Cannot unshare registered zones %s, please ask consumer to deregister it", strings.Join(registeredZones, ","))
 	}
 
-	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != "" {
+	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != fedmgmt.CallbackNotSupported {
 		// Notify partner
 		fedClient, err := partnerApi.ProviderPartnerClient(ctx, provider, provider.PartnerNotifyDest)
 		if err != nil {
 			return err
 		}
 		req := fedewapi.PartnerPostRequest{
-			ObjectType:    "ZONES",
-			OperationType: "REMOVE_ZONES",
-			RemoveZones:   rmZones,
+			FederationContextId: provider.FederationContextId,
+			ObjectType:          "ZONES",
+			OperationType:       "REMOVE_ZONES",
+			RemoveZones:         rmZones,
 		}
 		_, _, err = fedClient.SendRequest(ctx, "POST", "", &req, nil, nil)
 		if err != nil {
@@ -1511,8 +1521,8 @@ func registerFederationConsumer(ctx context.Context, consumer *ormapi.Federation
 	if err != nil {
 		return err
 	}
-	if res.FederationContextId == "" {
-		return fmt.Errorf("partner did not specify federation context id")
+	if err := res.Validate(); err != nil {
+		return fmt.Errorf("Invalid data from partner, %s", err)
 	}
 	consumer.FederationContextId = res.FederationContextId
 	consumer.PartnerInfo.FederationId = res.PartnerOPFederationId

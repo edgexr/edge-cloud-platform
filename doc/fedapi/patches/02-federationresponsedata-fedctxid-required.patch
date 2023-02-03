@@ -1,9 +1,9 @@
---- FederationApi_v1.3.0.yaml.last	2023-01-18 15:29:01.652143000 -0800
-+++ FederationApi_v1.3.0.yaml	2023-01-18 15:29:07.112143000 -0800
-@@ -203,7 +203,6 @@
+--- FederationApi_v1.3.0.yaml.last	2023-02-02 14:25:01.912143000 -0800
++++ FederationApi_v1.3.0.yaml	2023-02-02 14:25:22.602143000 -0800
+@@ -206,7 +206,6 @@
      FederationContextId:
        type: string
-       pattern: ^[A-Za-z0-9][A-Za-z0-9-]*$
+       pattern: ^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$
 -      readOnly: true
        description: This identifier shall be provided by the partner OP on successful verification and validation of the federation create request and is used by partner op to identify this newly created federation context. Originating OP shall provide this identifier in any subsequent request towards the partner op.
      FederationIdentifier:

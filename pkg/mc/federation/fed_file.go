@@ -35,6 +35,10 @@ const (
 	ImageStatusReady     = "Ready"
 	ImageStatusSending   = "Sending"
 	ImageStatusReceiving = "Receiving"
+
+	CPUArchTypeX86   = "ISA_X86"
+	CPUArchTypeX8664 = "ISA_X86_64"
+	CPUArchTypeArm64 = "ISA_ARM_64"
 )
 
 const (
@@ -84,22 +88,12 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 	image.Status = ImageStatusReceiving
 	repoType := req.PostFormValue(FileFieldRepoType)
 	repoloc := req.PostFormValue(FileFieldRepoLocation)
-	if image.FileID == "" {
-		return fmt.Errorf("%s is missing", FileFieldFileId)
-	}
-	if image.AppProviderId == "" {
-		return fmt.Errorf("%s is missing", FileFieldAppProviderId)
-	}
-	if image.Name == "" {
-		return fmt.Errorf("%s is missing", FileFieldFileName)
-	}
+	osTypeStr := req.PostFormValue(FileFieldImgOSType)
+	archTypeStr := req.PostFormValue(FileFieldImgArchType)
 	if image.Type == "" {
-		return fmt.Errorf("%s is missing", FileFieldFileType)
+		return fmt.Errorf("%s is required", FileFieldFileType)
 	}
-	if image.Version == "" {
-		return fmt.Errorf("%s is missing", FileFieldFileVersionInfo)
-	}
-	// TODO: capture and save osType
+	// TODO: save osType/archType if needed
 
 	if err := CheckFileType(image.Type); err != nil {
 		return err
@@ -119,8 +113,29 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 	src := &fedewapi.ObjectRepoLocation{}
 	err = json.Unmarshal([]byte(repoloc), src)
 	if err != nil {
-		return fmt.Errorf("failed to json unmarshal repolocation: %s", err)
+		return fmt.Errorf("failed to json unmarshal %s: %s", FileFieldRepoLocation, err)
 	}
+	osType := fedewapi.OSType{}
+	err = json.Unmarshal([]byte(osTypeStr), &osType)
+	if err != nil {
+		return fmt.Errorf("failed to json unmarshal %s: %s", FileFieldImgOSType, err)
+	}
+
+	// for validation
+	fileReq := fedewapi.UploadFileRequest{
+		FileId:           image.FileID,
+		AppProviderId:    image.AppProviderId,
+		FileName:         image.Name,
+		FileVersionInfo:  image.Version,
+		FileType:         fedewapi.VirtImageType(image.Type),
+		ImgOSType:        osType,
+		ImgInsSetArch:    fedewapi.CPUArchType(archTypeStr),
+		FileRepoLocation: src,
+	}
+	if err := fileReq.Validate(); err != nil {
+		return err
+	}
+
 	db := p.loggedDB(ctx)
 
 	if src.RepoURL == nil {
