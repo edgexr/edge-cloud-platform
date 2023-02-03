@@ -2135,10 +2135,10 @@ func (s *AppInstApi) DeleteFromInfo(ctx context.Context, in *edgeproto.AppInstIn
 		}
 		s.store.STMDel(stm, &in.Key)
 		s.idStore.STMDel(stm, inst.UniqueId)
-		if in.FedKey.FederationName != "" {
-			s.fedStore.STMDel(stm, &in.FedKey)
+		if inst.FedKey.FederationName != "" {
+			s.fedStore.STMDel(stm, &inst.FedKey)
 		}
-		s.dnsLabelStore.STMDel(stm, &in.Key.ClusterInstKey.CloudletKey, inst.DnsLabel)
+		s.dnsLabelStore.STMDel(stm, &inst.Key.ClusterInstKey.CloudletKey, inst.DnsLabel)
 		s.all.appInstRefsApi.removeRef(stm, &in.Key)
 		s.all.clusterRefsApi.removeRef(stm, &inst)
 		return nil
@@ -2245,10 +2245,10 @@ func (s *AppInstApi) ReplaceErrorState(ctx context.Context, in *edgeproto.AppIns
 		if newState == edgeproto.TrackedState_DELETE_DONE {
 			s.store.STMDel(stm, &in.Key)
 			s.idStore.STMDel(stm, inst.UniqueId)
-			if in.FedKey.FederationName != "" {
-				s.fedStore.STMDel(stm, &in.FedKey)
+			if inst.FedKey.FederationName != "" {
+				s.fedStore.STMDel(stm, &inst.FedKey)
 			}
-			s.dnsLabelStore.STMDel(stm, &in.Key.ClusterInstKey.CloudletKey, inst.DnsLabel)
+			s.dnsLabelStore.STMDel(stm, &inst.Key.ClusterInstKey.CloudletKey, inst.DnsLabel)
 			s.all.appInstRefsApi.removeRef(stm, &in.Key)
 			s.all.clusterRefsApi.removeRef(stm, &inst)
 		} else {

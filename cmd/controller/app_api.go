@@ -787,7 +787,7 @@ func (s *AppApi) DeleteApp(ctx context.Context, in *edgeproto.App) (res *edgepro
 		}
 		// delete app
 		s.store.STMDel(stm, &in.Key)
-		s.globalIdStore.STMDel(stm, in.GlobalId)
+		s.globalIdStore.STMDel(stm, app.GlobalId)
 		// delete refs
 		s.all.appInstRefsApi.deleteRef(stm, &in.Key)
 		return nil
