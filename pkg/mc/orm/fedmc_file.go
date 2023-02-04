@@ -290,6 +290,22 @@ func DeleteConsumerImage(c echo.Context) error {
 		return err
 	}
 
+	apps := []ormapi.ConsumerApp{}
+	err = db.Find(&apps).Error
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+	for _, app := range apps {
+		if app.FederationName != image.FederationName {
+			continue
+		}
+		for _, id := range app.ImageIds {
+			if image.ID == id {
+				return fmt.Errorf("Image in use by App %s", app.ID)
+			}
+		}
+	}
+
 	fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)
 	if err != nil {
 		return err

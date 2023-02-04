@@ -277,6 +277,8 @@ type ConsumerApp struct {
 	AppOrg string
 	// App version in region
 	AppVers string
+	// Image IDs belonging to artefacts
+	ImageIds pq.StringArray `gorm:"type:text[]"`
 	// Status
 	// read only: true
 	Status string

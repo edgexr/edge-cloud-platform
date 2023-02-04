@@ -47,15 +47,21 @@ consumerapps:
   appname: k8sapp
   apporg: FedAppCo
   appvers: "1.0"
+  imageids:
+  - e2e-test-file-id-1
 - id: pa-dockerapp10fedappco
   federationname: dmuus-partner1
   region: PA
   appname: dockerapp
   apporg: FedAppCo
   appvers: "1.0"
+  imageids:
+  - e2e-test-file-id-2
 - id: pa-vmapp10fedappco
   federationname: dmuus-partner1
   region: PA
   appname: vmapp
   apporg: FedAppCo
   appvers: "1.0"
+  imageids:
+  - e2e-test-file-id-3

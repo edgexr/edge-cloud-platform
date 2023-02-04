@@ -688,6 +688,7 @@ var ConsumerAppComments = map[string]string{
 	"appname":        `App name in region`,
 	"apporg":         `App org in region`,
 	"appvers":        `App version in region`,
+	"imageids":       `Image IDs belonging to artefacts`,
 	"status":         `Status`,
 }
 

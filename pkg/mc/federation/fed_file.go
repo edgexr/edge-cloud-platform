@@ -166,6 +166,9 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 
 	err = db.Create(&image).Error
 	if err != nil {
+		if strings.Contains(err.Error(), "pq: duplicate key value") {
+			return fmt.Errorf("FileID %s already exists", image.FileID)
+		}
 		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to save image, %s", err.Error()))
 	}
 	if image.Status == ImageStatusReady {

@@ -470,8 +470,33 @@ func DeleteFederationProvider(c echo.Context) error {
 		return fmt.Errorf("Cannot delete provider when there are files (images) still present")
 	}
 
+	// check if artefacts exist
+	arts := []ormapi.ProviderArtefact{}
+	artLookup := ormapi.ProviderArtefact{
+		FederationName: provider.Name,
+	}
+	err = db.Where(&artLookup).Find(&arts).Error
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+	if len(arts) > 0 {
+		return fmt.Errorf("Cannot delete provider when artefacts are still present")
+	}
+
+	// check if apps exist
+	apps := []ormapi.ProviderApp{}
+	appLookup := ormapi.ProviderApp{
+		FederationName: provider.Name,
+	}
+	err = db.Where(&appLookup).Find(&apps).Error
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+	if len(arts) > 0 {
+		return fmt.Errorf("Cannot delete provider when apps are still present")
+	}
+
 	// Ensure no zones are shared.
-	// TODO: clean up files/artifacts
 	zones := []ormapi.ProviderZone{}
 	zoneLookup := ormapi.ProviderZone{
 		ProviderName: provider.Name,

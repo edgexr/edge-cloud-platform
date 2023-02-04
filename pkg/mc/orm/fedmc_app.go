@@ -13,6 +13,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -92,7 +93,7 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 	if err != nil {
 		if strings.Contains(err.Error(), `duplicate key value`) {
 			log.SpanLog(ctx, log.DebugLevelApi, "duplicate key value", "err", err)
-			return fmt.Errorf("ConsumerApp already exists")
+			return fmt.Errorf("ConsumerApp already %s exists", in.ID)
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "failed create consumer app", "app", in, "err", err)
 		return err
@@ -137,6 +138,11 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 	imageIds := []string{}
 	for _, image := range images {
 		imageIds = append(imageIds, image.ID)
+	}
+	in.ImageIds = imageIds
+	err = db.Save(&in).Error
+	if err != nil {
+		return ormutil.DbErr(err)
 	}
 
 	// create artefact for app with component spec
@@ -327,7 +333,32 @@ func DeboardConsumerApp(c echo.Context) error {
 		return err
 	}
 
-	// TODO: check if AppInsts exist that reference edgeproto App
+	// check if AppInsts exist that reference edgeproto App
+	rc := ormutil.RegionContext{
+		Region:    in.Region,
+		SkipAuthz: true,
+		Database:  database,
+	}
+	appInstFilter := edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			AppKey: edgeproto.AppKey{
+				Name:         in.AppName,
+				Organization: in.AppOrg,
+				Version:      in.AppVers,
+			},
+		},
+	}
+	inUseKeys := []string{}
+	err = ctrlclient.ShowAppInstStream(ctx, &rc, &appInstFilter, connCache, nil, func(ai *edgeproto.AppInst) error {
+		inUseKeys = append(inUseKeys, ai.Key.GetKeyString())
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if len(inUseKeys) > 0 {
+		return fmt.Errorf("App still in use by %d AppInsts: %v", len(inUseKeys), strings.Join(inUseKeys, ", "))
+	}
 
 	if err := streamCb(c, 200, "Deleting App"); err != nil {
 		return err

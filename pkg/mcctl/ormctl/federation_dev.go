@@ -28,6 +28,7 @@ func init() {
 		Short:                "Onboard existing App to partner federation",
 		RequiredArgs:         "region federationname appname apporg appvers",
 		Comments:             addRegionComment(ormapi.ConsumerAppComments),
+		SpecialArgs:          &ConsumerAppSpecialArgs,
 		ReqData:              &ormapi.ConsumerApp{},
 		ReplyData:            &ormapi.Result{},
 		Path:                 "/auth/federation/consumer/app/onboard",
@@ -39,6 +40,7 @@ func init() {
 		Short:                "Remove App from partner federation",
 		RequiredArgs:         "federationname appname apporg appvers",
 		Comments:             addRegionComment(ormapi.ConsumerAppComments),
+		SpecialArgs:          &ConsumerAppSpecialArgs,
 		ReqData:              &ormapi.ConsumerApp{},
 		ReplyData:            &ormapi.Result{},
 		Path:                 "/auth/federation/consumer/app/deboard",
@@ -49,6 +51,7 @@ func init() {
 		Use:          "showapps",
 		Short:        "Show Apps onboarded to partner federation",
 		OptionalArgs: "id region federationname appname apporg appvers status",
+		SpecialArgs:  &ConsumerAppSpecialArgs,
 		Comments:     ormapi.ConsumerAppComments,
 		ReqData:      &ormapi.ConsumerApp{},
 		ReplyData:    &[]ormapi.ConsumerApp{},
@@ -113,4 +116,8 @@ var ConsumerImageShowArgs = []string{
 	"sourcepath",
 	"type",
 	"status",
+}
+
+var ConsumerAppSpecialArgs = map[string]string{
+	"imageids": "StringArray",
 }
