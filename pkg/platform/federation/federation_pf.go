@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -188,7 +189,8 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	}
 
 	req := fedewapi.InstallAppRequest{
-		AppInstanceId: uuid.New().String(), // TODO: no uniqueness check
+		AppInstanceId: strings.ReplaceAll(uuid.New().String(), "-", ""), // TODO: no uniqueness check
+		//AppInstanceId: uuid.New().String(), // TODO: no uniqueness check
 		AppId:         app.GlobalId,
 		AppVersion:    app.Key.Version,
 		AppProviderId: util.DNSSanitize(app.Key.Organization),

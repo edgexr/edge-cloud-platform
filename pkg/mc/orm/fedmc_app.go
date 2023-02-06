@@ -282,7 +282,7 @@ func createConsumerApp(ctx context.Context, consumer *ormapi.FederationConsumer,
 		AppStatusCallbackLink: serverConfig.FederationExternalAddr + "/" + federationmgmt.PartnerAppOnboardStatusEventPath,
 	}
 	if appReq.AppMetaData.AccessToken == "" {
-		appReq.AppMetaData.AccessToken = "none"
+		appReq.AppMetaData.AccessToken = "nonenonenonenonenonenonenonenone11"
 	}
 
 	fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)
