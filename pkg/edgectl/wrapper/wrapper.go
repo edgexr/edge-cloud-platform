@@ -41,7 +41,7 @@ func RunEdgectlObjs(args []string, in, out interface{}, ops ...RunOp) error {
 	opts := runOptions{}
 	opts.apply(ops)
 
-	objArgs, err := cli.MarshalArgs(in, opts.ignore, nil)
+	objArgs, err := cli.MarshalArgs(in, opts.ignore, nil, nil)
 	if err != nil {
 		return err
 	}

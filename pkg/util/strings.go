@@ -88,6 +88,8 @@ func CapitalizeMessage(msg string) string {
 	return t
 }
 
+const lowerCaseOffset = 'a' - 'A'
+
 func UncapitalizeMessage(msg string) string {
 	c := msg[0]
 	// Return msg if already lower case
@@ -95,7 +97,7 @@ func UncapitalizeMessage(msg string) string {
 		return msg
 	}
 	t := string(msg[1:])
-	c += 'a' - 'A'
+	c += lowerCaseOffset
 	t = string(c) + t
 	return t
 }

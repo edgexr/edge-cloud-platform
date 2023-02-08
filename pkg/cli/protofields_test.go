@@ -81,7 +81,7 @@ func testGetFieldsArgs(t *testing.T, obj interface{}, args []string, expected []
 	// test GetSpecifiedFieldsData (kind of the opposite of above)
 	dmap, err := GetStructMap(obj, WithStructMapFieldFlags(expected))
 	require.Nil(t, err, "GetStructMap fields %v", expected)
-	genArgs, err := MarshalArgs(dmap, nil, nil)
+	genArgs, err := MarshalArgs(dmap, nil, nil, nil)
 	require.Nil(t, err, "MarshalArgs for %v", dmap)
 	require.ElementsMatch(t, args, genArgs, "args should match")
 }

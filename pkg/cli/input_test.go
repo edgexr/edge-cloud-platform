@@ -21,8 +21,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	yaml "github.com/mobiledgex/yaml/v2"
 	"github.com/stretchr/testify/assert"
@@ -69,6 +69,7 @@ func TestParseArgs(t *testing.T) {
 	input := &cli.Input{
 		SpecialArgs: &spargs,
 		DecodeHook:  edgeproto.DecodeHook,
+		QueryParams: []string{"forcedelete", "queryParam1"},
 	}
 
 	ex := TestObj{
@@ -152,9 +153,13 @@ func TestParseArgs(t *testing.T) {
 		Disk:  2,
 		Ram:   3,
 	}
-	args = []string{"vcpus=1", "disk=2", "key.name=x1.tiny", "ram=3"}
+	args = []string{"vcpus=1", "disk=2", "key.name=x1.tiny", "ram=3", "forcedelete=true", "queryParam1=1"}
 	// basic parsing
-	testParseArgs(t, input, args, &rf, &edgeproto.Flavor{}, &edgeproto.Flavor{})
+	expectedQueryParams := map[string]string{
+		"forcedelete": "true",
+		"queryParam1": "1",
+	}
+	testParseArgs(t, input, args, &rf, &edgeproto.Flavor{}, &edgeproto.Flavor{}, expectedQueryParams)
 
 	// required args
 	input.RequiredArgs = []string{"regionx"}
@@ -162,13 +167,13 @@ func TestParseArgs(t *testing.T) {
 	require.NotNil(t, err)
 
 	input.RequiredArgs = []string{"key.name"}
-	testParseArgs(t, input, args, &rf, &edgeproto.Flavor{}, &edgeproto.Flavor{})
+	testParseArgs(t, input, args, &rf, &edgeproto.Flavor{}, &edgeproto.Flavor{}, nil)
 
 	// alias args
 	input.AliasArgs = []string{"name=key.name"}
 	args = []string{"vcpus=1", "disk=2", "name=x1.tiny", "ram=3"}
 	input.RequiredArgs = []string{"name"}
-	testParseArgs(t, input, args, &rf, &edgeproto.Flavor{}, &edgeproto.Flavor{})
+	testParseArgs(t, input, args, &rf, &edgeproto.Flavor{}, &edgeproto.Flavor{}, nil)
 
 	// test extra args
 	args = []string{"vcpus=1", "disk=2", "name=x1.tiny", "ram=3", "extra.arg=foo"}
@@ -185,7 +190,7 @@ func TestParseArgs(t *testing.T) {
 		IpSupport: edgeproto.IpSupport_IP_SUPPORT_DYNAMIC,
 	}
 	args = []string{"ipsupport=Dynamic"}
-	testParseArgs(t, input, args, &rc, &edgeproto.Cloudlet{}, &edgeproto.Cloudlet{})
+	testParseArgs(t, input, args, &rc, &edgeproto.Cloudlet{}, &edgeproto.Cloudlet{}, nil)
 
 	// For updates, we need to distinguish between empty fields to be updated,
 	// versus empty fields to be ignored. In JSON/YAML, this is accomplished
@@ -282,20 +287,24 @@ func testConversionEmptyFields(t *testing.T, input *cli.Input, obj, buf interfac
 	require.Nil(t, err)
 	fmt.Printf("extractedDat: %#v\n", extractedDat)
 	// convert extractedDat to extractedArgs, should be the same as args
-	extractedArgs, err := cli.MarshalArgs(extractedDat, []string{}, input.AliasArgs)
+	extractedArgs, err := cli.MarshalArgs(extractedDat, []string{}, input.AliasArgs, dat.QueryParams)
 	require.Nil(t, err)
 	fmt.Printf("args: %v\n", args)
 	fmt.Printf("extractedArgs: %v\n", extractedArgs)
 	require.ElementsMatch(t, args, extractedArgs)
 }
 
-func testParseArgs(t *testing.T, input *cli.Input, args []string, expected, buf1, buf2 interface{}) {
+func testParseArgs(t *testing.T, input *cli.Input, args []string, expected, buf1, buf2 interface{}, expectedQueryParams map[string]string) {
 	// parse the args into a clean buffer
 	dat, err := input.ParseArgs(args, buf1)
 	require.Nil(t, err)
 	// check that buffer matches expected
 	require.Equal(t, expected, buf1, "buf1 %v\n", buf1)
 	fmt.Printf("argsmap: %v\n", dat)
+	fmt.Printf("queryparams: %v\n", dat.QueryParams)
+	if expectedQueryParams != nil {
+		require.Equal(t, expectedQueryParams, dat.QueryParams)
+	}
 
 	// convert args to json
 	jsmap, err := cli.JsonMap(dat, buf1)
@@ -319,7 +328,7 @@ func testParseArgs(t *testing.T, input *cli.Input, args []string, expected, buf1
 	require.Nil(t, err)
 	fmt.Printf("extractedMap: %v\n", extractedMap)
 	// marshal into args, should match original set of args
-	extractedArgs, err := cli.MarshalArgs(extractedMap, []string{}, input.AliasArgs)
+	extractedArgs, err := cli.MarshalArgs(extractedMap, []string{}, input.AliasArgs, dat.QueryParams)
 	require.Nil(t, err)
 	fmt.Printf("args: %v\n", args)
 	fmt.Printf("extractedArgs: %v\n", extractedArgs)
@@ -364,7 +373,7 @@ func TestConversion(t *testing.T) {
 
 func testConversion(t *testing.T, input *cli.Input, obj interface{}, buf, buf2 interface{}, expectedArgs []string) {
 	// marshal object to args
-	args, err := cli.MarshalArgs(obj, nil, input.AliasArgs)
+	args, err := cli.MarshalArgs(obj, nil, input.AliasArgs, nil)
 	require.Nil(t, err, "marshal %v", obj)
 
 	fmt.Printf("args: %v\n", args)
