@@ -32,9 +32,9 @@ type InstallAppRequestZoneInfo struct {
 	ResPool *string `json:"resPool,omitempty"`
 }
 
-var InstallAppRequestZoneInfoZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/", "/"), "/")
+var InstallAppRequestZoneInfoZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var InstallAppRequestZoneInfoZoneIdRE = regexp.MustCompile(InstallAppRequestZoneInfoZoneIdPattern)
-var InstallAppRequestZoneInfoResPoolPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{6,30}[A-Za-z0-9]$/", "/"), "/")
+var InstallAppRequestZoneInfoResPoolPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var InstallAppRequestZoneInfoResPoolRE = regexp.MustCompile(InstallAppRequestZoneInfoResPoolPattern)
 
 func (s *InstallAppRequestZoneInfo) Validate() error {

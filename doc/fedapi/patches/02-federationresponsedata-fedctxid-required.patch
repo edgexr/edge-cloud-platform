@@ -3,7 +3,7 @@
 @@ -206,7 +206,6 @@
      FederationContextId:
        type: string
-       pattern: ^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$
+       pattern: ^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$
 -      readOnly: true
        description: This identifier shall be provided by the partner OP on successful verification and validation of the federation create request and is used by partner op to identify this newly created federation context. Originating OP shall provide this identifier in any subsequent request towards the partner op.
      FederationIdentifier:

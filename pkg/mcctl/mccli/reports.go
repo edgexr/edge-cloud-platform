@@ -74,7 +74,7 @@ func (s *RootCommand) runDownloadReport(path string) func(c *cli.Command, args [
 
 func (s *RootCommand) sendReqAndDownloadPDF(path, filename string, reqData interface{}) (int, error) {
 	uri := s.getUri() + path
-	resp, err := s.client.PostJsonSend(uri, s.token, reqData)
+	resp, err := s.client.PostJsonSend(uri, s.token, reqData, nil)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("post %s client do failed, %s", uri, err.Error())
 	}

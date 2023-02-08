@@ -29,9 +29,9 @@ type GetCandidateZonesRequest struct {
 	EdgeDiscoveryFilters *GetCandidateZonesRequestEdgeDiscoveryFilters `json:"edgeDiscoveryFilters,omitempty"`
 }
 
-var GetCandidateZonesRequestAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var GetCandidateZonesRequestAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var GetCandidateZonesRequestAppProviderIdRE = regexp.MustCompile(GetCandidateZonesRequestAppProviderIdPattern)
-var GetCandidateZonesRequestAppIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var GetCandidateZonesRequestAppIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var GetCandidateZonesRequestAppIdRE = regexp.MustCompile(GetCandidateZonesRequestAppIdPattern)
 
 func (s *GetCandidateZonesRequest) Validate() error {

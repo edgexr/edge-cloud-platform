@@ -18,10 +18,10 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
 	"github.com/stretchr/testify/require"
 )
 
@@ -64,7 +64,7 @@ func TestObjToArgs(t *testing.T) {
 }
 
 func testObjToArgs(t *testing.T, obj interface{}, expected []string) {
-	args, err := cli.MarshalArgs(obj, nil, nil)
+	args, err := cli.MarshalArgs(obj, nil, nil, nil)
 	require.Nil(t, err)
 	sort.Strings(args)
 	sort.Strings(expected)

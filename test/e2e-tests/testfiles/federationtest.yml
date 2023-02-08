@@ -212,6 +212,17 @@ tests:
     yaml2: '{{datadir2}}/fedprov_provappinsts_show.yml'
     filetype: mcdata
 
+- name: check direct get APIs
+  actions: [mcapi-getfederationdirect=mc-partner1]
+  apifile: '{{datadir2}}/fed_direct_get.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/fed_direct_get_show.yml'
+    
 ###############################################################
 # consumer clean up
 ###############################################################

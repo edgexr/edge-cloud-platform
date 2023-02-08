@@ -141,6 +141,14 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 	if src.RepoURL == nil {
 		return fmt.Errorf("repoLocation's repo URL must be specified")
 	}
+	/* TODO: resolve if repoURL should be full path to image
+	 * or parent repository path
+	remoteImagePath := *src.RepoURL
+	*/
+	remoteImagePath := *src.RepoURL + "/" + image.Name
+	if image.Type == string(fedewapi.VIRTIMAGETYPE_DOCKER) && image.Version != "" {
+		remoteImagePath += ":" + image.Version
+	}
 
 	// We don't want to have to store and manage all kinds of
 	// external image pull secrets, so if they are specified,
@@ -148,7 +156,7 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 	if src.UserName == nil && src.Password == nil && src.Token == nil && repoType == RepoTypePublic {
 		// keep as reference
 		image.Status = ImageStatusReady
-		image.Path = *src.RepoURL
+		image.Path = remoteImagePath
 		log.SpanLog(ctx, log.DebugLevelApi, "Saving image as reference", "info", image)
 	} else {
 		log.SpanLog(ctx, log.DebugLevelApi, "Will copy image")
@@ -166,6 +174,9 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 
 	err = db.Create(&image).Error
 	if err != nil {
+		if strings.Contains(err.Error(), "pq: duplicate key value") {
+			return fmt.Errorf("FileID %s already exists", image.FileID)
+		}
 		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to save image, %s", err.Error()))
 	}
 	if image.Status == ImageStatusReady {
@@ -185,7 +196,7 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 	// Note that the provider Name is the owning org, and both
 	// vm-registry and harbor can handle '/' in object names.
 	localPath := fmt.Sprintf("%s/%s/%s", provider.Name, image.AppProviderId, image.Name)
-	log.SpanLog(ctx, log.DebugLevelApi, "Federation retreiving upload file", "info", image, "local", localPath, "remoteurl", src.RepoURL)
+	log.SpanLog(ctx, log.DebugLevelApi, "Federation retreiving upload file", "info", image, "local", localPath, "remoteurl", remoteImagePath)
 
 	if image.Type == string(fedewapi.VIRTIMAGETYPE_QCOW2) || image.Type == string(fedewapi.VIRTIMAGETYPE_OVA) {
 		log.SpanLog(ctx, log.DebugLevelApi, "download file into vm-registry", "info", image)
@@ -193,7 +204,7 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 		// the pullspec contains the url to pull the image from,
 		// plus any authentication needed.
 		pullSpec := map[string]string{
-			"url": *src.RepoURL,
+			"url": remoteImagePath,
 		}
 		if src.Token != nil {
 			pullSpec["token"] = *src.Token
@@ -266,7 +277,7 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 
 		args = append(args, "--dest-creds",
 			auth.Username+":"+auth.Password,
-			"docker://"+strings.ToLower(*src.RepoURL),
+			"docker://"+strings.ToLower(remoteImagePath),
 			"docker://"+strings.ToLower(dest))
 		cmd := exec.Command("skopeo", args...)
 		logCmd := cmd.String()
@@ -277,7 +288,7 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 		log.SpanLog(ctx, log.DebugLevelApi, "copy docker", "cmd", logCmd)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelApi, "copy docker image failed", "src", src.RepoURL, "dest", dest, "out", string(out), "err", err)
+			log.SpanLog(ctx, log.DebugLevelApi, "copy docker image failed", "src", remoteImagePath, "dest", dest, "out", string(out), "err", err)
 			return fmt.Errorf("copy docker image failed: %s", string(out))
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "copied docker image", "out", string(out))
@@ -311,10 +322,14 @@ func (p *PartnerApi) RemoveFile(c echo.Context, fedCtxId FederationContextId, fi
 	if err != nil {
 		return err
 	}
+	return p.RemoveFileInternal(c, provider, string(fileId))
+}
 
+func (p *PartnerApi) RemoveFileInternal(c echo.Context, provider *ormapi.FederationProvider, fileId string) error {
+	ctx := ormutil.GetContext(c)
 	image := ormapi.ProviderImage{
 		FederationName: provider.Name,
-		FileID:         string(fileId),
+		FileID:         fileId,
 	}
 	db := p.loggedDB(ctx)
 	res := db.Where(&image).First(&image)
@@ -366,7 +381,7 @@ func (p *PartnerApi) RemoveFile(c echo.Context, fedCtxId FederationContextId, fi
 		}
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "deleting image", "image", image)
-	err = db.Delete(&image).Error
+	err := db.Delete(&image).Error
 	if err != nil {
 		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to delete image: %s", err))
 	}
@@ -398,7 +413,6 @@ func (p *PartnerApi) ViewFile(c echo.Context, fedCtxId FederationContextId, file
 		FileId:          image.FileID,
 		AppProviderId:   image.AppProviderId,
 		FileName:        image.Name,
-		FileDescription: &image.Path,
 		FileType:        fedewapi.VirtImageType(image.Type),
 		FileVersionInfo: image.Version,
 		ImgInsSetArch:   fedewapi.CPUARCHTYPE_X86_64,
@@ -408,6 +422,12 @@ func (p *PartnerApi) ViewFile(c echo.Context, fedCtxId FederationContextId, file
 			Version:      "OTHER",
 			License:      "NOT_SPECIFIED",
 		},
+	}
+	if image.Description != "" {
+		resp.FileDescription = &image.Description
+	}
+	if image.Checksum != "" {
+		resp.Checksum = &image.Checksum
 	}
 	return c.JSON(http.StatusOK, resp)
 }

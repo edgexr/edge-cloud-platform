@@ -578,7 +578,7 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 
 // DeregisterConsumerZones deletes Cloudlets in the region that
 // correspond to shared zones from the partner.
-func (p *PartnerApi) DeregisterConsumerZones(ctx context.Context, consumer *ormapi.FederationConsumer, zoneIds []string) error {
+func (p *PartnerApi) DeregisterConsumerZones(ctx context.Context, consumer *ormapi.FederationConsumer, zoneIds []string, fedQueryParams FedQueryParams) error {
 	db := p.loggedDB(ctx)
 
 	zoneRegMutex.Lock()
@@ -586,7 +586,6 @@ func (p *PartnerApi) DeregisterConsumerZones(ctx context.Context, consumer *orma
 
 	// lookup zones
 	zones := []*ormapi.ConsumerZone{}
-	//zonesRegionMap := make(map[string]map[string]*ormapi.ConsumerZone)
 	for _, inZone := range zoneIds {
 		zone, err := p.LookupConsumerZone(ctx, consumer.Name, inZone)
 		if err != nil {
@@ -631,9 +630,13 @@ func (p *PartnerApi) DeregisterConsumerZones(ctx context.Context, consumer *orma
 		// because delete cloudlet will delete it.
 		// notify partner
 		apiPath := fmt.Sprintf("/%s/%s/zones/%s", federationmgmt.ApiRoot, consumer.FederationContextId, zone.ZoneId)
-		_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
-		if err != nil {
-			return err
+		if fedQueryParams.IgnorePartner {
+			log.SpanLog(ctx, log.DebugLevelApi, "skipping partner call", "method", "DELETE", "api", apiPath)
+		} else {
+			_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
+			if err != nil {
+				return err
+			}
 		}
 		// update status
 		zone.Status = StatusUnregistered

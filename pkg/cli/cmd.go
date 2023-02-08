@@ -82,6 +82,8 @@ type Command struct {
 	AliasArgs            string
 	SpecialArgs          *map[string]string
 	Comments             map[string]string
+	QueryParams          string
+	QueryComments        map[string]string
 	ReqData              interface{}
 	ReplyData            interface{}
 	PasswordArg          string
@@ -131,6 +133,7 @@ func (c *Command) usageFunc(cmd *cobra.Command) error {
 
 	pad := 0
 	allargs := append(strings.Split(c.RequiredArgs, " "), strings.Split(c.OptionalArgs, " ")...)
+	allargs = append(allargs, strings.Split(c.QueryParams, " ")...)
 	for _, str := range allargs {
 		if len(str) > pad {
 			pad = len(str)
@@ -176,10 +179,18 @@ func (c *Command) requiredArgsHelp(pad int) string {
 }
 
 func (c *Command) optionalArgsHelp(pad int) string {
-	if strings.TrimSpace(c.OptionalArgs) == "" {
+	args := []string{}
+	if str := strings.TrimSpace(c.OptionalArgs); str != "" {
+		a := strings.Split(c.OptionalArgs, " ")
+		args = append(args, a...)
+	}
+	if str := strings.TrimSpace(c.QueryParams); str != "" {
+		a := strings.Split(c.QueryParams, " ")
+		args = append(args, a...)
+	}
+	if len(args) == 0 {
 		return ""
 	}
-	args := strings.Split(c.OptionalArgs, " ")
 	buf := bytes.Buffer{}
 	fmt.Fprintf(&buf, "Optional Args:\n")
 	fmt.Fprint(&buf, c.argsHelp(pad, args))
@@ -192,8 +203,11 @@ func (c *Command) argsHelp(pad int, args []string) string {
 		comment := ""
 		if c.Comments != nil {
 			comment = c.Comments[str]
-			comment = util.CapitalizeMessage(comment)
 		}
+		if comment == "" && c.QueryComments != nil {
+			comment = c.QueryComments[str]
+		}
+		comment = util.CapitalizeMessage(comment)
 		fmt.Fprintf(&buf, "  %-*s%s\n", pad, str, comment)
 	}
 	return buf.String()
@@ -272,6 +286,7 @@ func (c *Command) ParseInput(args []string) (*MapData, error) {
 			CurrentPasswordArg: c.CurrentPasswordArg,
 			VerifyPassword:     c.VerifyPassword,
 			DecodeHook:         DecodeHook,
+			QueryParams:        strings.Fields(c.QueryParams),
 		}
 		argsMap, err := input.ParseArgs(args, c.ReqData)
 		if err != nil {

@@ -38,11 +38,11 @@ type FederationResponseData struct {
 	PlatformCaps             []string      `json:"platformCaps"`
 }
 
-var FederationResponseDataPartnerOPFederationIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var FederationResponseDataPartnerOPFederationIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var FederationResponseDataPartnerOPFederationIdRE = regexp.MustCompile(FederationResponseDataPartnerOPFederationIdPattern)
 var FederationResponseDataPartnerOPCountryCodePattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Z]{2}$/", "/"), "/")
 var FederationResponseDataPartnerOPCountryCodeRE = regexp.MustCompile(FederationResponseDataPartnerOPCountryCodePattern)
-var FederationResponseDataFederationContextIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var FederationResponseDataFederationContextIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var FederationResponseDataFederationContextIdRE = regexp.MustCompile(FederationResponseDataFederationContextIdPattern)
 
 func (s *FederationResponseData) Validate() error {

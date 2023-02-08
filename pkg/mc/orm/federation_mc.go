@@ -31,6 +31,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	fedcommon "github.com/edgexr/edge-cloud-platform/pkg/mc/federation/common"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
@@ -220,7 +221,7 @@ func setMyFedId(fed *ormapi.Federator, name string) {
 	// these are or manages global uniqueness. For now just hard code
 	// to name plus a random UUID.
 	if fed.FederationId == "" {
-		fed.FederationId = name + "085d364c07fb4fe0b09979127f7c3d68"
+		fed.FederationId = util.DNSSanitize(name) + "085d364c07fb4fe0b09979127f7c3d68"
 	}
 }
 
@@ -271,7 +272,7 @@ func CreateFederationProvider(c echo.Context) (reterr error) {
 	// ensure that operator ID is a valid operator org
 	org, err := orgExists(ctx, provider.OperatorId)
 	if err != nil {
-		return fmt.Errorf("Invalid operator ID specified")
+		return fmt.Errorf("Invalid operator ID specified, already exists")
 	}
 	if org.Type != OrgTypeOperator {
 		return fmt.Errorf("Invalid operator ID, must be a valid operator org")
@@ -469,8 +470,33 @@ func DeleteFederationProvider(c echo.Context) error {
 		return fmt.Errorf("Cannot delete provider when there are files (images) still present")
 	}
 
+	// check if artefacts exist
+	arts := []ormapi.ProviderArtefact{}
+	artLookup := ormapi.ProviderArtefact{
+		FederationName: provider.Name,
+	}
+	err = db.Where(&artLookup).Find(&arts).Error
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+	if len(arts) > 0 {
+		return fmt.Errorf("Cannot delete provider when artefacts are still present")
+	}
+
+	// check if apps exist
+	apps := []ormapi.ProviderApp{}
+	appLookup := ormapi.ProviderApp{
+		FederationName: provider.Name,
+	}
+	err = db.Where(&appLookup).Find(&apps).Error
+	if err != nil {
+		return ormutil.DbErr(err)
+	}
+	if len(arts) > 0 {
+		return fmt.Errorf("Cannot delete provider when apps are still present")
+	}
+
 	// Ensure no zones are shared.
-	// TODO: clean up files/artifacts
 	zones := []ormapi.ProviderZone{}
 	zoneLookup := ormapi.ProviderZone{
 		ProviderName: provider.Name,
@@ -752,6 +778,7 @@ func DeleteFederationConsumer(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	fedQueryParams := federation.GetFedQueryParams(c)
 	span := log.SpanFromContext(ctx)
 	log.SetTags(span, consumer.GetTags())
 	if err := fedAuthorized(ctx, claims.Username, consumer.OperatorId); err != nil {
@@ -774,7 +801,7 @@ func DeleteFederationConsumer(c echo.Context) error {
 
 	// check if federation with partner federator exists
 	if consumer.Status == federation.StatusRegistered {
-		if err := deregisterFederationConsumer(ctx, consumer); err != nil {
+		if err := deregisterFederationConsumer(ctx, consumer, fedQueryParams); err != nil {
 			return err
 		}
 	}
@@ -911,6 +938,9 @@ func CreateProviderZoneBase(c echo.Context) error {
 	// sanity check
 	if opZone.ZoneId == "" {
 		return fmt.Errorf("Missing zone ID")
+	}
+	if err := util.ValidDNSName(opZone.ZoneId); err != nil {
+		return fmt.Errorf("Invalid zone ID, %s", err)
 	}
 	if opZone.OperatorId == "" {
 		return fmt.Errorf("Missing operator")
@@ -1140,6 +1170,8 @@ func ShareProviderZone(c echo.Context) (reterr error) {
 	if err != nil {
 		return err
 	}
+	fedQueryParams := federation.GetFedQueryParams(c)
+
 	span := log.SpanFromContext(ctx)
 	log.SetTags(span, provider.GetTags())
 
@@ -1217,7 +1249,7 @@ func ShareProviderZone(c echo.Context) (reterr error) {
 	}
 
 	log.SpanLog(ctx, log.DebugLevelApi, "share provider zone", "provider-status", provider.Status, "notify", provider.PartnerNotifyDest)
-	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != fedmgmt.CallbackNotSupported {
+	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != fedmgmt.CallbackNotSupported && !fedQueryParams.IgnorePartner {
 		fedClient, err := partnerApi.ProviderPartnerClient(ctx, provider, provider.PartnerNotifyDest)
 		if err != nil {
 			return err
@@ -1256,6 +1288,7 @@ func UnshareProviderZone(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	fedQueryParams := federation.GetFedQueryParams(c)
 	span := log.SpanFromContext(ctx)
 	log.SetTags(span, provider.GetTags())
 
@@ -1288,14 +1321,14 @@ func UnshareProviderZone(c echo.Context) error {
 		rmZones = append(rmZones, zoneId)
 		zonesMap[zoneId] = &existingZone
 	}
-	if len(registeredZones) > 0 {
+	if len(registeredZones) > 0 && !fedQueryParams.IgnorePartner {
 		// For now, cannot unshare registered zones.
 		// We may want some way to force unshare though, if remote
 		// is completely gone.
 		return fmt.Errorf("Cannot unshare registered zones %s, please ask consumer to deregister it", strings.Join(registeredZones, ","))
 	}
 
-	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != fedmgmt.CallbackNotSupported {
+	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != fedmgmt.CallbackNotSupported && !fedQueryParams.IgnorePartner {
 		// Notify partner
 		fedClient, err := partnerApi.ProviderPartnerClient(ctx, provider, provider.PartnerNotifyDest)
 		if err != nil {
@@ -1450,13 +1483,14 @@ func DeregisterConsumerZone(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	fedQueryParams := federation.GetFedQueryParams(c)
 	span := log.SpanFromContext(ctx)
 	log.SetTags(span, consumer.GetTags())
 
 	if err := fedAuthorized(ctx, claims.Username, consumer.OperatorId); err != nil {
 		return err
 	}
-	err = partnerApi.DeregisterConsumerZones(ctx, consumer, reg.Zones)
+	err = partnerApi.DeregisterConsumerZones(ctx, consumer, reg.Zones, fedQueryParams)
 	if err != nil {
 		return err
 	}
@@ -1546,7 +1580,7 @@ func registerFederationConsumer(ctx context.Context, consumer *ormapi.Federation
 
 // Deregister directed federation between consumer and provider.
 // Consumer will no longer have access to any of provider zones
-func deregisterFederationConsumer(ctx context.Context, consumer *ormapi.FederationConsumer) error {
+func deregisterFederationConsumer(ctx context.Context, consumer *ormapi.FederationConsumer, fedQueryParams federation.FedQueryParams) error {
 	fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)
 	if err != nil {
 		return err
@@ -1574,9 +1608,13 @@ func deregisterFederationConsumer(ctx context.Context, consumer *ormapi.Federati
 	}
 
 	apiPath := fmt.Sprintf("/%s/%s/partner", fedmgmt.ApiRoot, consumer.FederationContextId)
-	_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
-	if err != nil {
-		return err
+	if fedQueryParams.IgnorePartner {
+		log.SpanLog(ctx, log.DebugLevelApi, "skipping federation api call", "method", "DELETE", "api", apiPath)
+	} else {
+		_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Delete all the local copy of partner federator zones

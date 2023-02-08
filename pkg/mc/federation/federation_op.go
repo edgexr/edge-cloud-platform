@@ -55,6 +55,18 @@ const (
 	AllAppsVersion = "1.0"
 )
 
+type FedQueryParams struct {
+	IgnorePartner bool
+}
+
+func GetFedQueryParams(c echo.Context) FedQueryParams {
+	qp := FedQueryParams{}
+	if c.QueryParam("ignorepartner") == "true" {
+		qp.IgnorePartner = true
+	}
+	return qp
+}
+
 type PartnerApi struct {
 	database       *gorm.DB
 	connCache      ctrlclient.ClientConnMgr
@@ -579,7 +591,7 @@ func (p *PartnerApi) RemoveConsumerZones(ctx context.Context, consumer *ormapi.F
 
 	// Deregister zones automatically if they are registered.
 	// This will fail if anything has been deployed to the cloudlet.
-	err := p.DeregisterConsumerZones(ctx, consumer, zoneIds)
+	err := p.DeregisterConsumerZones(ctx, consumer, zoneIds, FedQueryParams{})
 	if err != nil {
 		return fmt.Errorf("Some zones are registered and could not be automatically deregistered: %v", err)
 	}

@@ -73,7 +73,7 @@ func (s *RootCommand) runRest(path string) func(c *cli.Command, args []string) e
 				check(c, 0, nil, c.ReplyData)
 			}
 			st, err := s.client.PostJsonStreamOut(s.getUri()+path,
-				s.token, in, c.ReplyData, replyReady)
+				s.token, in, c.ReplyData, mapData.QueryParams, replyReady)
 			return check(c, st, err, nil)
 		} else if c.StreamOut {
 			// gather streamed data into array to print
@@ -89,7 +89,7 @@ func (s *RootCommand) runRest(path string) func(c *cli.Command, args []string) e
 				outs = append(outs, copy)
 			}
 			st, err := s.client.PostJsonStreamOut(s.getUri()+path,
-				s.token, in, c.ReplyData, replyReady)
+				s.token, in, c.ReplyData, mapData.QueryParams, replyReady)
 			// print output
 			check(c, st, nil, outs)
 			return check(c, st, err, nil)
@@ -98,7 +98,7 @@ func (s *RootCommand) runRest(path string) func(c *cli.Command, args []string) e
 				ormclient.ClearObject(c.ReplyData)
 			}
 			st, err := s.client.PostJson(s.getUri()+path, s.token,
-				in, c.ReplyData)
+				in, c.ReplyData, mapData.QueryParams)
 			return check(c, st, err, c.ReplyData)
 		}
 	}
@@ -238,6 +238,8 @@ func (s *RootCommand) ConvertCmd(api *ormctl.ApiCommand) *cli.Command {
 		AliasArgs:            api.AliasArgs,
 		SpecialArgs:          api.SpecialArgs,
 		Comments:             api.Comments,
+		QueryParams:          api.QueryParams,
+		QueryComments:        api.QueryComments,
 		ReqData:              api.ReqData,
 		ReplyData:            api.ReplyData,
 		PasswordArg:          api.PasswordArg,

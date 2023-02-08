@@ -13,9 +13,11 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/labstack/echo/v4"
 )
 
@@ -91,7 +93,7 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 	if err != nil {
 		if strings.Contains(err.Error(), `duplicate key value`) {
 			log.SpanLog(ctx, log.DebugLevelApi, "duplicate key value", "err", err)
-			return fmt.Errorf("ConsumerApp already exists")
+			return fmt.Errorf("ConsumerApp already %s exists", in.ID)
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "failed create consumer app", "app", in, "err", err)
 		return err
@@ -136,6 +138,11 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 	imageIds := []string{}
 	for _, image := range images {
 		imageIds = append(imageIds, image.ID)
+	}
+	in.ImageIds = imageIds
+	err = db.Save(&in).Error
+	if err != nil {
+		return ormutil.DbErr(err)
 	}
 
 	// create artefact for app with component spec
@@ -236,7 +243,7 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 	// multipart/form-data
 	data := ormclient.NewMultiPartFormData()
 	data.AddField(federation.ArtefactFieldId, cApp.ID)
-	data.AddField(federation.ArtefactFieldAppProviderId, cApp.AppOrg)
+	data.AddField(federation.ArtefactFieldAppProviderId, util.DNSSanitize(cApp.AppOrg))
 	data.AddField(federation.ArtefactFieldName, cApp.AppName)
 	data.AddField(federation.ArtefactFieldVersionInfo, cApp.AppVers)
 	data.AddField(federation.ArtefactFieldVirtType, virtType)
@@ -260,7 +267,7 @@ func createConsumerApp(ctx context.Context, consumer *ormapi.FederationConsumer,
 
 	appReq := fedewapi.OnboardApplicationRequest{
 		AppId:         cApp.ID,
-		AppProviderId: cApp.AppOrg,
+		AppProviderId: util.DNSSanitize(cApp.AppOrg),
 		AppMetaData: fedewapi.AppMetaData{
 			AppName:     cApp.AppName,
 			Version:     cApp.AppVers,
@@ -275,7 +282,7 @@ func createConsumerApp(ctx context.Context, consumer *ormapi.FederationConsumer,
 		AppStatusCallbackLink: serverConfig.FederationExternalAddr + "/" + federationmgmt.PartnerAppOnboardStatusEventPath,
 	}
 	if appReq.AppMetaData.AccessToken == "" {
-		appReq.AppMetaData.AccessToken = "none"
+		appReq.AppMetaData.AccessToken = "nonenonenonenonenonenonenonenone11"
 	}
 
 	fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)
@@ -309,6 +316,7 @@ func DeboardConsumerApp(c echo.Context) error {
 	if in.FederationName == "" {
 		return fmt.Errorf("Federation name must be specified")
 	}
+	fedQueryParams := federation.GetFedQueryParams(c)
 
 	db := loggedDB(ctx)
 	res := db.Where(&in).First(&in)
@@ -326,30 +334,62 @@ func DeboardConsumerApp(c echo.Context) error {
 		return err
 	}
 
-	// TODO: check if AppInsts exist that reference edgeproto App
-
-	if err := streamCb(c, 200, "Deleting App"); err != nil {
+	// check if AppInsts exist that reference edgeproto App
+	rc := ormutil.RegionContext{
+		Region:    in.Region,
+		SkipAuthz: true,
+		Database:  database,
+	}
+	appInstFilter := edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			AppKey: edgeproto.AppKey{
+				Name:         in.AppName,
+				Organization: in.AppOrg,
+				Version:      in.AppVers,
+			},
+		},
+	}
+	inUseKeys := []string{}
+	err = ctrlclient.ShowAppInstStream(ctx, &rc, &appInstFilter, connCache, nil, func(ai *edgeproto.AppInst) error {
+		inUseKeys = append(inUseKeys, ai.Key.GetKeyString())
+		return nil
+	})
+	if err != nil {
 		return err
 	}
-	// delete remote app
-	err = deleteApp(ctx, consumer, &in)
-	if err != nil && strings.Contains(strings.ToLower(err.Error()), "not found") {
-		err = nil
-	}
-	if err != nil {
-		return fmt.Errorf("failed to delete app, %s", err)
+	if len(inUseKeys) > 0 {
+		return fmt.Errorf("App still in use by %d AppInsts: %v", len(inUseKeys), strings.Join(inUseKeys, ", "))
 	}
 
-	if err := streamCb(c, 200, "Deleting Artefact"); err != nil {
-		return err
-	}
-	// delete remote artefact
-	err = deleteAppArtefact(ctx, consumer, &in)
-	if err != nil && strings.Contains(strings.ToLower(err.Error()), "not found") {
-		err = nil
-	}
-	if err != nil {
-		return fmt.Errorf("failed to delete artefact for app, %s", err)
+	if fedQueryParams.IgnorePartner {
+		log.SpanLog(ctx, log.DebugLevelApi, "skipping federation api calls to delete app and artefact")
+		if err := streamCb(c, 200, "Skipping partner API calls"); err != nil {
+			return err
+		}
+	} else {
+		if err := streamCb(c, 200, "Deleting App"); err != nil {
+			return err
+		}
+		// delete remote app
+		err = deleteApp(ctx, consumer, &in)
+		if err != nil && strings.Contains(strings.ToLower(err.Error()), "not found") {
+			err = nil
+		}
+		if err != nil {
+			return fmt.Errorf("failed to delete app, %s", err)
+		}
+
+		if err := streamCb(c, 200, "Deleting Artefact"); err != nil {
+			return err
+		}
+		// delete remote artefact
+		err = deleteAppArtefact(ctx, consumer, &in)
+		if err != nil && strings.Contains(strings.ToLower(err.Error()), "not found") {
+			err = nil
+		}
+		if err != nil {
+			return fmt.Errorf("failed to delete artefact for app, %s", err)
+		}
 	}
 
 	// delete consumerapp
@@ -522,4 +562,94 @@ func ShowProviderAppInst(c echo.Context) error {
 		}
 	}
 	return ormutil.SetReply(c, showAppInsts)
+}
+
+func UnsafeDeleteProviderArtefact(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	in := ormapi.ProviderArtefact{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
+	if in.ArtefactID == "" {
+		return fmt.Errorf("ArtefactID must be specified")
+	}
+	if in.FederationName == "" {
+		return fmt.Errorf("Federation name must be specified")
+	}
+
+	provider, err := lookupFederationProvider(ctx, 0, in.FederationName)
+	if err != nil {
+		return err
+	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, provider.GetTags())
+	if err := fedAuthorized(ctx, claims.Username, provider.OperatorId); err != nil {
+		return err
+	}
+
+	return partnerApi.RemoveArtefactInternal(c, provider, in.ArtefactID)
+}
+
+func UnsafeDeleteProviderApp(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	in := ormapi.ProviderApp{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
+	if in.AppID == "" {
+		return fmt.Errorf("AppID must be specified")
+	}
+	if in.FederationName == "" {
+		return fmt.Errorf("Federation name must be specified")
+	}
+
+	provider, err := lookupFederationProvider(ctx, 0, in.FederationName)
+	if err != nil {
+		return err
+	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, provider.GetTags())
+	if err := fedAuthorized(ctx, claims.Username, provider.OperatorId); err != nil {
+		return err
+	}
+
+	return partnerApi.DeleteAppInternal(c, provider, in.AppID)
+}
+
+func UnsafeDeleteProviderAppInst(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	in := ormapi.ProviderAppInst{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
+	if in.AppInstID == "" {
+		return fmt.Errorf("AppInstID must be specified")
+	}
+	if in.FederationName == "" {
+		return fmt.Errorf("Federation name must be specified")
+	}
+
+	provider, err := lookupFederationProvider(ctx, 0, in.FederationName)
+	if err != nil {
+		return err
+	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, provider.GetTags())
+	if err := fedAuthorized(ctx, claims.Username, provider.OperatorId); err != nil {
+		return err
+	}
+
+	return partnerApi.RemoveAppInstInternal(c, provider, in.AppInstID)
 }

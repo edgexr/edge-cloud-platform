@@ -60,6 +60,7 @@ func main() {
 		"github.com/edgexr/edge-cloud-platform/api/ormapi",
 		"github.com/edgexr/edge-cloud-platform/pkg/cli",
 		"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node",
+		"github.com/edgexr/edge-cloud-platform/pkg/fedewapi",
 		"github.com/edgexr/edge-cloud-platform/api/edgeproto",
 		"github.com/mobiledgex/jaeger/plugin/storage/es/spanstore/dbmodel",
 	}
@@ -196,8 +197,9 @@ type funcArgs struct {
 }
 
 var funcT = template.Must(template.New("func").Parse(`
-func (s *Client) {{.Name}}(uri string{{.TokenArg}}{{.InArg}}) ({{.OutArg}}int, error) {
+func (s *Client) {{.Name}}(uri string{{.TokenArg}}{{.InArg}}, ops ...Op) ({{.OutArg}}int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 {{- if .TokenArg}}
 	rundata.Token = token

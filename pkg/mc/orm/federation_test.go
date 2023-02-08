@@ -32,6 +32,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/nodetest"
+	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	ormtestutil "github.com/edgexr/edge-cloud-platform/pkg/mc/orm/testutil"
@@ -39,6 +40,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/jarcoal/httpmock"
@@ -218,7 +220,7 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 	fedAddr, err := cloudcommon.GetAvailablePort("127.0.0.1:0")
 	require.Nil(t, err, "get available port")
 
-	regions := []string{"US-East", "US-West"}
+	regions := []string{"USEast", "USWest"}
 
 	vp := process.Vault{
 		Common: process.Common{
@@ -374,6 +376,7 @@ func TestFederation(t *testing.T) {
 
 	for _, clientRun := range getUnitTestClientRuns(mockTransport) {
 		testFederationInterconnect(t, ctx, clientRun, op, selfFederators)
+		testFederationIgnorePartner(t, ctx, clientRun, op, selfFederators)
 	}
 }
 
@@ -642,7 +645,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Negative tests for provider zone create
 	// =======================================
 	testZone := &ormapi.ProviderZoneBase{
-		ZoneId:      "testZone",
+		ZoneId:      "testzone",
 		OperatorId:  provAttr.operatorId,
 		CountryCode: provAttr.countryCode,
 		Region:      provAttr.region,
@@ -859,7 +862,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		act := provImagesShow[ii]
 		require.Equal(t, provAttr.fedName, act.FederationName)
 		require.Equal(t, exp.ID, act.FileID)
-		require.Equal(t, exp.Organization, act.AppProviderId)
+		require.Equal(t, util.DNSSanitize(exp.Organization), act.AppProviderId)
 		require.Equal(t, exp.Type, act.Type)
 		require.Equal(t, federation.ImageStatusReady, act.Status)
 	}
@@ -872,9 +875,9 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		exp := consAppsShow[ii]
 		act := provArtsShow[ii]
 		require.Equal(t, provAttr.fedName, act.FederationName)
-		require.Equal(t, exp.AppName, act.AppName)
+		require.Equal(t, exp.ID, act.AppName)
 		require.Equal(t, exp.AppVers, act.AppVers)
-		require.Equal(t, exp.AppOrg, act.AppProviderId)
+		require.Equal(t, util.DNSSanitize(exp.AppOrg), act.AppProviderId)
 	}
 	// provider can see create providerApps
 	provAppsShow, status, err := mcClient.ShowProviderApp(op.uri, provAttr.tokenOper, nil)
@@ -893,6 +896,35 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(consAppsExp), len(appsShow))
+
+	// check direct get file funcs
+	for _, image := range provImagesShow {
+		findImage := ormapi.ConsumerImage{
+			FederationName: consAttr.fedName,
+			ID:             image.FileID,
+		}
+		file, status, err := mcClient.GetFederationFile(op.uri, consAttr.tokenOper, &findImage)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+		require.Equal(t, image.FileID, file.FileId)
+		require.Equal(t, image.AppProviderId, file.AppProviderId)
+		if image.Description == "" {
+			require.Nil(t, file.FileDescription)
+		} else {
+			require.NotNil(t, file.FileDescription)
+			require.Equal(t, image.Description, *file.FileDescription)
+		}
+		require.Equal(t, image.Name, file.FileName)
+		require.Equal(t, image.Version, file.FileVersionInfo)
+		require.Equal(t, image.Type, string(file.FileType))
+		if image.Checksum == "" {
+			require.Nil(t, file.Checksum)
+		} else {
+			require.NotNil(t, file.Checksum)
+			require.Equal(t, image.Checksum, *file.Checksum)
+		}
+		require.Equal(t, fedewapi.CPUARCHTYPE_X86_64, file.ImgInsSetArch)
+	}
 
 	// --------+
 	// Cleanup |
@@ -1131,6 +1163,260 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Nil(t, err, "show provider zone bases")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(selfFedZones), "provider zone bases match")
+}
+
+func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mctestclient.ClientRun, op *OPAttr, selfFederators []FederatorAttr) {
+	mcClient := mctestclient.NewClient(clientRun)
+
+	// federation provider operator
+	provAttr := selfFederators[0]
+	// federation consumer operator
+	consAttr := selfFederators[1]
+
+	// Create federation provider
+	// ==========================
+	provReq := &ormapi.FederationProvider{
+		Name:       provAttr.fedName,
+		OperatorId: provAttr.operatorId,
+		Regions:    []string{provAttr.region},
+		MyInfo: ormapi.Federator{
+			CountryCode: provAttr.countryCode,
+			MCC:         "340",
+			MNC:         []string{"120", "121", "122"},
+		},
+	}
+	provResp, status, err := mcClient.CreateFederationProvider(op.uri, provAttr.tokenOper, provReq)
+	require.Nil(t, err, "create federation provider")
+	require.Equal(t, http.StatusOK, status)
+
+	// Get cloudlets that will be provided to consumer
+	// ===============================================
+	clList := []edgeproto.Cloudlet{}
+	filter := &edgeproto.Cloudlet{
+		Key: edgeproto.CloudletKey{
+			Organization: provAttr.operatorId,
+		},
+	}
+	clList, status, err = ormtestutil.TestShowCloudlet(mcClient, op.uri, provAttr.tokenOper, provAttr.region, filter)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 3, len(clList))
+
+	// Create and share one provider zone. This tests that
+	// consumer zones gets created during federation connect.
+	// ===============================================
+	sharedZones := []string{}
+	pz := createAndShareProviderZones(t, ctx, mcClient, op, provAttr, clList)
+	sharedZones = append(sharedZones, pz...)
+
+	// Create federation consumer.
+	// This will cause MC to connect back to itself to
+	// link consumer to provider.
+	// ======================================
+	consReq := &ormapi.FederationConsumer{
+		Name:            consAttr.fedName,
+		OperatorId:      consAttr.operatorId,
+		Public:          true,
+		PartnerAddr:     "http://" + op.fedAddr,
+		PartnerTokenUrl: "http://" + op.tokenAddr + "/" + federation.TokenUrl,
+		MyInfo: ormapi.Federator{
+			CountryCode: consAttr.countryCode,
+			MNC:         []string{"123", "345"},
+		},
+		ProviderClientId:  provResp.ClientId,
+		ProviderClientKey: provResp.ClientKey,
+	}
+	_, status, err = mcClient.CreateFederationConsumer(op.uri, consAttr.tokenOper, consReq)
+	require.Nil(t, err, "create federation consumer")
+	require.Equal(t, http.StatusOK, status)
+
+	// Register all the partner zones to be used
+	// =========================================
+	zoneRegReq := &ormapi.FederatedZoneRegRequest{
+		ConsumerName: consAttr.fedName,
+		Region:       consAttr.region,
+		Zones:        sharedZones,
+	}
+	_, status, err = mcClient.RegisterConsumerZone(op.uri, consAttr.tokenOper, zoneRegReq)
+	require.Nil(t, err, "register partner federator zone")
+	require.Equal(t, http.StatusOK, status)
+
+	// Verify that consumer zones are registered
+	checkConsumerZones(t, ctx, mcClient, op, consAttr, sharedZones, federation.StatusRegistered)
+
+	// Consumer developer create Apps
+	// ==============================
+	consApps := getConsApps(consAttr.developerId)
+	for _, app := range consApps {
+		regionApp := ormapi.RegionApp{
+			Region: consAttr.region,
+			App:    app,
+		}
+		_, status, err = mcClient.CreateApp(op.uri, consAttr.tokenDev, &regionApp)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+	// onboard apps
+	for _, app := range getConsApps(consAttr.developerId) {
+		req := ormapi.ConsumerApp{}
+		req.Region = consAttr.region
+		req.AppName = app.Key.Name
+		req.AppOrg = app.Key.Organization
+		req.AppVers = app.Key.Version
+		req.FederationName = consAttr.fedName
+		_, status, err = mcClient.OnboardConsumerApp(op.uri, consAttr.tokenDev, &req)
+		fmt.Printf("***** Onboard consumer app %d, %s\n", status, err)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+
+	// Provider unsafe delete all data
+	// ===============================
+	// apps
+	provAppsShow, status, err := mcClient.ShowProviderApp(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(consApps), len(provAppsShow))
+	for _, app := range provAppsShow {
+		_, status, err = mcClient.UnsafeDeleteProviderApp(op.uri, provAttr.tokenOper, &app)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+	provAppsShow, status, err = mcClient.ShowProviderApp(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(provAppsShow))
+	// artefacts
+	provArtsShow, status, err := mcClient.ShowProviderArtefact(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(consApps), len(provArtsShow))
+	for _, art := range provArtsShow {
+		_, status, err = mcClient.UnsafeDeleteProviderArtefact(op.uri, provAttr.tokenOper, &art)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+	provArtsShow, status, err = mcClient.ShowProviderArtefact(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(provArtsShow))
+	// images
+	consAppImages := getConsAppImages(t, consAttr.developerId, consAttr.fedName)
+	provImagesShow, status, err := mcClient.ShowProviderImage(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(consAppImages), len(provImagesShow))
+	for _, image := range provImagesShow {
+		_, status, err = mcClient.UnsafeDeleteProviderImage(op.uri, provAttr.tokenOper, &image)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+	provImagesShow, status, err = mcClient.ShowProviderImage(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(provImagesShow))
+	// zones
+	zoneShReq := &ormapi.FederatedZoneShareRequest{
+		ProviderName: provAttr.fedName,
+		Zones:        sharedZones,
+	}
+	queryParams := map[string]string{
+		"ignorepartner": "true",
+	}
+	_, status, err = mcClient.UnshareProviderZone(op.uri, provAttr.tokenOper, zoneShReq, mctestclient.WithQueryParams(queryParams))
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	provZones, status, err := mcClient.ShowProviderZone(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err, "show shared self federator zones")
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(provZones))
+	// zone bases
+	for _, cloudlet := range clList {
+		fedZone := &ormapi.ProviderZoneBase{
+			ZoneId:      cloudlet.Key.Name,
+			OperatorId:  provAttr.operatorId,
+			CountryCode: provAttr.countryCode,
+			Region:      provAttr.region,
+			Cloudlets:   []string{cloudlet.Key.Name},
+		}
+		_, status, err := mcClient.DeleteProviderZoneBase(op.uri, provAttr.tokenOper, fedZone)
+		require.Nil(t, err, "delete provider zone basis")
+		require.Equal(t, http.StatusOK, status)
+	}
+	// provider
+	_, status, err = mcClient.DeleteFederationProvider(op.uri, provAttr.tokenOper, provReq)
+	require.Nil(t, err, "delete federation provider")
+	require.Equal(t, http.StatusOK, status)
+	// check that federation provider is gone
+	provShowResp, status, err := mcClient.ShowFederationProvider(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err, "show federation provider")
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(provShowResp))
+
+	// Consumer delete all data, ignoring partner
+	// ==========================================
+	// apps
+	for _, app := range getConsApps(consAttr.developerId) {
+		req := ormapi.ConsumerApp{}
+		req.AppName = app.Key.Name
+		req.AppOrg = app.Key.Organization
+		req.AppVers = app.Key.Version
+		req.FederationName = consAttr.fedName
+		_, status, err = mcClient.DeboardConsumerApp(op.uri, consAttr.tokenDev, &req, mctestclient.WithQueryParams(queryParams))
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+	// consumer apps should be empty
+	consAppsShow, status, err := mcClient.ShowConsumerApp(op.uri, consAttr.tokenDev, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(consAppsShow))
+	// images
+	consImagesShow, status, err := mcClient.ShowConsumerImage(op.uri, consAttr.tokenDev, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, len(consAppImages), len(consImagesShow))
+	for _, image := range consImagesShow {
+		_, status, err = mcClient.DeleteConsumerImage(op.uri, consAttr.tokenDev, &image, mctestclient.WithQueryParams(queryParams))
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+	consImagesShow, status, err = mcClient.ShowConsumerImage(op.uri, consAttr.tokenDev, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(consImagesShow))
+	// delete regional app definitions
+	for _, app := range getConsApps(consAttr.developerId) {
+		regionApp := ormapi.RegionApp{
+			Region: consAttr.region,
+			App:    app,
+		}
+		_, status, err = mcClient.DeleteApp(op.uri, consAttr.tokenDev, &regionApp)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+	// zones
+	zoneRegReq = &ormapi.FederatedZoneRegRequest{
+		ConsumerName: consAttr.fedName,
+		Region:       consAttr.region,
+		Zones:        sharedZones,
+	}
+	_, status, err = mcClient.DeregisterConsumerZone(op.uri, consAttr.tokenOper, zoneRegReq, mctestclient.WithQueryParams(queryParams))
+	require.Nil(t, err, "deregister consumer zones")
+	require.Equal(t, http.StatusOK, status)
+	// consumer
+	consDelReq := &ormapi.FederationConsumer{
+		OperatorId: consAttr.operatorId,
+		Name:       consAttr.fedName,
+	}
+	_, status, err = mcClient.DeleteFederationConsumer(op.uri, consAttr.tokenOper, consDelReq, mctestclient.WithQueryParams(queryParams))
+	require.Nil(t, err, "delete federation consumer")
+	require.Equal(t, http.StatusOK, status)
+	// check consumer is gone
+	checkConsFeds, status, err := mcClient.ShowFederationConsumer(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(checkConsFeds))
 }
 
 type DBExec struct {

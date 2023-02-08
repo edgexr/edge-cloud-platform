@@ -190,21 +190,38 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 
 func (p *PartnerApi) DeleteApp(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier) error {
 	// lookup federation provider based on claims
-	ctx := ormutil.GetContext(c)
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
 		return err
 	}
+	return p.DeleteAppInternal(c, provider, string(appId))
+}
+
+func (p *PartnerApi) DeleteAppInternal(c echo.Context, provider *ormapi.FederationProvider, appId string) error {
+	ctx := ormutil.GetContext(c)
+	// lookup app
 	provApp, err := p.lookupApp(c, provider, string(appId))
 	if err != nil {
 		return err
 	}
 
-	// TODO: check if there are any appinsts for App
+	// check if app is in use
+	provAppInst := ormapi.ProviderAppInst{
+		FederationName: provider.Name,
+		AppID:          provApp.AppID,
+	}
+	insts := []ormapi.ProviderAppInst{}
+	db := p.loggedDB(ctx)
+	err = db.Where(&provAppInst).Find(&insts).Error
+	if err != nil {
+		return err
+	}
+	if len(insts) > 0 {
+		return fmt.Errorf("Cannot delete app as it in use by app instances")
+	}
 
 	// Note that edgeproto.App object is tied to the ProviderArtefact,
 	// so the only action here is to delete the ProviderApp.
-	db := p.loggedDB(ctx)
 	err = db.Delete(provApp).Error
 	if err != nil {
 		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to delete App, %s", err.Error()))

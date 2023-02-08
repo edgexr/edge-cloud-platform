@@ -45,7 +45,7 @@ type PartnerPostRequest struct {
 	ModificationDate time.Time `json:"modificationDate"`
 }
 
-var PartnerPostRequestFederationContextIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var PartnerPostRequestFederationContextIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var PartnerPostRequestFederationContextIdRE = regexp.MustCompile(PartnerPostRequestFederationContextIdPattern)
 var PartnerPostRequestRemoveZonesPattern = strings.TrimPrefix(strings.TrimSuffix("", "/"), "/")
 var PartnerPostRequestRemoveZonesRE = regexp.MustCompile(PartnerPostRequestRemoveZonesPattern)

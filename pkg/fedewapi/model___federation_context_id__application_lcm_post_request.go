@@ -36,13 +36,13 @@ type FederationContextIdApplicationLcmPostRequest struct {
 	ModificationDate *time.Time `json:"modificationDate,omitempty"`
 }
 
-var FederationContextIdApplicationLcmPostRequestFederationContextIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var FederationContextIdApplicationLcmPostRequestFederationContextIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var FederationContextIdApplicationLcmPostRequestFederationContextIdRE = regexp.MustCompile(FederationContextIdApplicationLcmPostRequestFederationContextIdPattern)
-var FederationContextIdApplicationLcmPostRequestAppIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var FederationContextIdApplicationLcmPostRequestAppIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var FederationContextIdApplicationLcmPostRequestAppIdRE = regexp.MustCompile(FederationContextIdApplicationLcmPostRequestAppIdPattern)
-var FederationContextIdApplicationLcmPostRequestAppInstanceIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var FederationContextIdApplicationLcmPostRequestAppInstanceIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var FederationContextIdApplicationLcmPostRequestAppInstanceIdRE = regexp.MustCompile(FederationContextIdApplicationLcmPostRequestAppInstanceIdPattern)
-var FederationContextIdApplicationLcmPostRequestZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/", "/"), "/")
+var FederationContextIdApplicationLcmPostRequestZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var FederationContextIdApplicationLcmPostRequestZoneIdRE = regexp.MustCompile(FederationContextIdApplicationLcmPostRequestZoneIdPattern)
 
 func (s *FederationContextIdApplicationLcmPostRequest) Validate() error {

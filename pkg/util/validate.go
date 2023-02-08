@@ -103,18 +103,49 @@ func DockerSanitize(name string) string {
 	return r.Replace(name)
 }
 
-// DNSSanitize santizies the name string to make it usable in
-// a DNS name. Valid chars are only 0-9, a-z, and '-' and cannot end in '-'
+// DNSSanitize santizies the name string for RFC 1123 DNS format.
+// Valid chars are only 0-9, a-z, and '-' and cannot start or end in '-'
 func DNSSanitize(name string) string {
-	r := strings.NewReplacer(
-		"_", "-",
-		" ", "",
-		"&", "",
-		",", "",
-		".", "",
-		"!", "")
-	rval := strings.ToLower(r.Replace(name))
-	return strings.TrimRight(rval, "-")
+	buf := make([]rune, len(name), len(name))
+	last := len(name) - 1
+	skipped := 0
+	for ii, ch := range name {
+		if isASCIILower(byte(ch)) || isASCIIDigit(byte(ch)) {
+			buf[ii-skipped] = ch
+		} else if isASCIIUpper(byte(ch)) {
+			buf[ii-skipped] = ch + lowerCaseOffset
+		} else if ch == '-' || ch == '_' {
+			if ii == 0 || ii == last {
+				skipped++
+			} else {
+				buf[ii-skipped] = '-'
+			}
+		} else {
+			skipped++
+		}
+	}
+	return string(buf[:len(name)-skipped])
+}
+
+func ValidDNSName(name string) error {
+	if len(name) > 63 {
+		return fmt.Errorf("invalid RFC1123 name %q, cannot be longer than 63 characters", name)
+	}
+	last := len(name) - 1
+	for ii, ch := range name {
+		if isASCIILower(byte(ch)) || isASCIIDigit(byte(ch)) {
+			continue
+		} else if isASCIIUpper(byte(ch)) {
+			return fmt.Errorf("invalid RFC1123 name %q, does not allow upper case characters", name)
+		} else if ch == '-' {
+			if ii == 0 || ii == last {
+				return fmt.Errorf("invalid RFC1123 name %q, cannot start or end with '-'", name)
+			}
+		} else {
+			return fmt.Errorf("invalid RFC1123 name %q, does not allow %q", name, ch)
+		}
+	}
+	return nil
 }
 
 // HostnameSanitize makes a valid hostname, for which the rules

@@ -27,7 +27,7 @@ type DiscoveredEdgeNodesInner struct {
 	LatencyServiceEndPoints ServiceEndpoint `json:"latencyServiceEndPoints"`
 }
 
-var DiscoveredEdgeNodesInnerZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/", "/"), "/")
+var DiscoveredEdgeNodesInnerZoneIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var DiscoveredEdgeNodesInnerZoneIdRE = regexp.MustCompile(DiscoveredEdgeNodesInnerZoneIdPattern)
 
 func (s *DiscoveredEdgeNodesInner) Validate() error {

@@ -34,9 +34,9 @@ type ViewApplication200Response struct {
 	AppComponentSpecs []AppComponentSpecsInner `json:"appComponentSpecs"`
 }
 
-var ViewApplication200ResponseAppIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var ViewApplication200ResponseAppIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var ViewApplication200ResponseAppIdRE = regexp.MustCompile(ViewApplication200ResponseAppIdPattern)
-var ViewApplication200ResponseAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var ViewApplication200ResponseAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var ViewApplication200ResponseAppProviderIdRE = regexp.MustCompile(ViewApplication200ResponseAppProviderIdPattern)
 var ViewApplication200ResponseAppDeploymentZonesPattern = strings.TrimPrefix(strings.TrimSuffix("", "/"), "/")
 var ViewApplication200ResponseAppDeploymentZonesRE = regexp.MustCompile(ViewApplication200ResponseAppDeploymentZonesPattern)

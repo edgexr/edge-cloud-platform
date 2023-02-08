@@ -921,9 +921,13 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/federation/provider/zone/unshare", UnshareProviderZone)
 	auth.POST("/federation/provider/zone/show", ShowProviderZone)
 	auth.POST("/federation/provider/image/show", ShowProviderImage)
+	auth.POST("/federation/provider/image/unsafedelete", UnsafeDeleteProviderImage)
 	auth.POST("/federation/provider/artefact/show", ShowProviderArtefact)
+	auth.POST("/federation/provider/artefact/unsafedelete", UnsafeDeleteProviderArtefact)
 	auth.POST("/federation/provider/app/show", ShowProviderApp)
+	auth.POST("/federation/provider/app/unsafedelete", UnsafeDeleteProviderApp)
 	auth.POST("/federation/provider/appinst/show", ShowProviderAppInst)
+	auth.POST("/federation/provider/appinst/unsafedelete", UnsafeDeleteProviderAppInst)
 
 	auth.POST("/federation/consumer/create", CreateFederationConsumer)
 	auth.POST("/federation/consumer/delete", DeleteFederationConsumer)
@@ -941,6 +945,14 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/federation/consumer/app/onboard", OnboardConsumerApp)
 	auth.POST("/federation/consumer/app/deboard", DeboardConsumerApp)
 	auth.POST("/federation/consumer/app/show", ShowConsumerApp)
+
+	// apis for admins to query partner directly
+	auth.POST("/federation/direct/partner/get", FederationGetPartner)
+	auth.POST("/federation/direct/zone/get", FederationGetZone)
+	auth.POST("/federation/direct/artefact/get", FederationGetArtefact)
+	auth.POST("/federation/direct/file/get", FederationGetFile)
+	auth.POST("/federation/direct/app/get", FederationGetApp)
+	auth.POST("/federation/direct/appinst/get", FederationGetAppInst)
 
 	// Generate new short-lived token to authenticate websocket connections
 	// Note: Web-client should not store auth token as part of local storage,

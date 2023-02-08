@@ -36,7 +36,7 @@ type AppMetaData struct {
 	Category *string `json:"category,omitempty"`
 }
 
-var AppMetaDataAppNamePattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/", "/"), "/")
+var AppMetaDataAppNamePattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var AppMetaDataAppNameRE = regexp.MustCompile(AppMetaDataAppNamePattern)
 
 func (s *AppMetaData) Validate() error {

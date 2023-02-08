@@ -45,7 +45,7 @@ type UploadFileRequest struct {
 	File **os.File `json:"file,omitempty"`
 }
 
-var UploadFileRequestAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var UploadFileRequestAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var UploadFileRequestAppProviderIdRE = regexp.MustCompile(UploadFileRequestAppProviderIdPattern)
 var UploadFileRequestFileNamePattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9_][A-Za-z0-9_\\.-]{0,127}$/", "/"), "/")
 var UploadFileRequestFileNameRE = regexp.MustCompile(UploadFileRequestFileNamePattern)

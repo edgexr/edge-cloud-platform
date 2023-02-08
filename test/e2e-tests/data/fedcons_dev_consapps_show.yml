@@ -13,7 +13,7 @@
 # limitations under the License.
 
 consumerimages:
-- id: '***replaced***'
+- id: e2e-test-file-id-1
   organization: FedAppCo
   federationname: dmuus-partner1
   name: k8sapp
@@ -22,7 +22,7 @@ consumerimages:
   type: DOCKER
   checksum: sha256:8d4ea2a9476bc51681c6e7e59759c10237669c950b1b4a3cd6834e2161d7bde2
   status: Ready
-- id: '***replaced***'
+- id: e2e-test-file-id-2
   organization: FedAppCo
   federationname: dmuus-partner1
   name: dockerapp
@@ -31,11 +31,11 @@ consumerimages:
   type: DOCKER
   checksum: sha256:8d4ea2a9476bc51681c6e7e59759c10237669c950b1b4a3cd6834e2161d7bde2
   status: Ready
-- id: '***replaced***'
+- id: e2e-test-file-id-3
   organization: FedAppCo
   federationname: dmuus-partner1
   name: vm.img
-  version: vm.img
+  version: no version info
   sourcepath: https://registry.edgecloud.net/FedAppCo/vm.img
   type: QCOW2
   checksum: "2039483048230944325345245243524352345245"
@@ -47,15 +47,21 @@ consumerapps:
   appname: k8sapp
   apporg: FedAppCo
   appvers: "1.0"
+  imageids:
+  - e2e-test-file-id-1
 - id: pa-dockerapp10fedappco
   federationname: dmuus-partner1
   region: PA
   appname: dockerapp
   apporg: FedAppCo
   appvers: "1.0"
+  imageids:
+  - e2e-test-file-id-2
 - id: pa-vmapp10fedappco
   federationname: dmuus-partner1
   region: PA
   appname: vmapp
   apporg: FedAppCo
   appvers: "1.0"
+  imageids:
+  - e2e-test-file-id-3

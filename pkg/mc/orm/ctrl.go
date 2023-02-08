@@ -202,6 +202,9 @@ func validateControllerObj(ctrl *ormapi.Controller) error {
 	if ctrl.Region == "" {
 		return fmt.Errorf("Controller Region not specified")
 	}
+	if strings.Contains(ctrl.Region, "-") {
+		return fmt.Errorf("Region cannot contain '-'")
+	}
 	if ctrl.Address == "" {
 		return fmt.Errorf("Controller Address not specified")
 	}

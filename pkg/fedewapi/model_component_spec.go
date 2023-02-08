@@ -22,7 +22,7 @@ var _ MappedNullable = &ComponentSpec{}
 
 // ComponentSpec Details about compute, networking and storage requirements for each component of the application. App provider should define all information needed to instantiate the component. If artefact is being defined at component level this section should have information just about the component. In case the artefact is being defined at application level the section should provide details about all the components.
 type ComponentSpec struct {
-	// Must be a valid RFC 1035 label name. Component name must be unique with an application
+	// Must be a valid RFC 1123 label name. Component name must be unique with an application
 	ComponentName string `json:"componentName"`
 	// List of all images associated with the component. Images are specified using the file identifiers. Partner OP provides these images using file upload api.
 	Images []string `json:"images"`
@@ -40,7 +40,7 @@ type ComponentSpec struct {
 	PersistentVolumes []PersistentVolumeDetails `json:"persistentVolumes,omitempty"`
 }
 
-var ComponentSpecComponentNamePattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/", "/"), "/")
+var ComponentSpecComponentNamePattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var ComponentSpecComponentNameRE = regexp.MustCompile(ComponentSpecComponentNamePattern)
 
 func (s *ComponentSpec) Validate() error {

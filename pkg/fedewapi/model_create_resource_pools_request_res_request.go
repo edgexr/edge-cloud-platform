@@ -30,10 +30,8 @@ type CreateResourcePoolsRequestResRequest struct {
 	ReserveDuration ResourceReservationDuration                         `json:"reserveDuration"`
 }
 
-var CreateResourcePoolsRequestResRequestPoolIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var CreateResourcePoolsRequestResRequestPoolIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var CreateResourcePoolsRequestResRequestPoolIdRE = regexp.MustCompile(CreateResourcePoolsRequestResRequestPoolIdPattern)
-var CreateResourcePoolsRequestResRequestPoolNamePattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/", "/"), "/")
-var CreateResourcePoolsRequestResRequestPoolNameRE = regexp.MustCompile(CreateResourcePoolsRequestResRequestPoolNamePattern)
 
 func (s *CreateResourcePoolsRequestResRequest) Validate() error {
 	if s.PoolId == "" {
@@ -44,9 +42,6 @@ func (s *CreateResourcePoolsRequestResRequest) Validate() error {
 	}
 	if s.PoolName == "" {
 		return errors.New("poolName is required")
-	}
-	if !CreateResourcePoolsRequestResRequestPoolNameRE.MatchString(s.PoolName) {
-		return errors.New("poolName " + s.PoolName + " does not match format " + CreateResourcePoolsRequestResRequestPoolNamePattern)
 	}
 	for ii := range s.Flavours {
 		if err := s.Flavours[ii].Validate(); err != nil {

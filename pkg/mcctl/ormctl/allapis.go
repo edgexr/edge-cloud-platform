@@ -38,6 +38,8 @@ type ApiCommand struct {
 	AliasArgs            string
 	SpecialArgs          *map[string]string
 	Comments             map[string]string
+	QueryParams          string
+	QueryComments        map[string]string
 	NoConfig             string
 	PasswordArg          string
 	CurrentPasswordArg   string
@@ -182,6 +184,18 @@ func (s *ApiCommand) Validate() error {
 	}
 	if len(missingComments) > 0 {
 		return fmt.Errorf("Error, no comment found for command %s args %v, comments are %v, aliases are %v", s.Name, missingComments, s.Comments, s.AliasArgs)
+	}
+	if str := strings.TrimSpace(s.QueryParams); str != "" {
+		missingComments = []string{}
+		for _, param := range strings.Split(str, " ") {
+			_, found := s.QueryComments[param]
+			if !found {
+				missingComments = append(missingComments, param)
+			}
+		}
+		if len(missingComments) > 0 {
+			return fmt.Errorf("Error, no comment found for command %s query param %s, query comments are %v", s.Name, missingComments, s.QueryComments)
+		}
 	}
 	aliasMap := make(map[string]string)
 	for _, alias := range strings.Fields(s.AliasArgs) {

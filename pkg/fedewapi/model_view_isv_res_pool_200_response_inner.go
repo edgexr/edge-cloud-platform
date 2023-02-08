@@ -33,17 +33,12 @@ type ViewISVResPool200ResponseInner struct {
 	ReservationTime *time.Time `json:"reservationTime,omitempty"`
 }
 
-var ViewISVResPool200ResponseInnerPoolNamePattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/", "/"), "/")
-var ViewISVResPool200ResponseInnerPoolNameRE = regexp.MustCompile(ViewISVResPool200ResponseInnerPoolNamePattern)
-var ViewISVResPool200ResponseInnerReservedPoolIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var ViewISVResPool200ResponseInnerReservedPoolIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var ViewISVResPool200ResponseInnerReservedPoolIdRE = regexp.MustCompile(ViewISVResPool200ResponseInnerReservedPoolIdPattern)
 
 func (s *ViewISVResPool200ResponseInner) Validate() error {
 	if s.PoolName == "" {
 		return errors.New("poolName is required")
-	}
-	if !ViewISVResPool200ResponseInnerPoolNameRE.MatchString(s.PoolName) {
-		return errors.New("poolName " + s.PoolName + " does not match format " + ViewISVResPool200ResponseInnerPoolNamePattern)
 	}
 	if s.ReservedPoolId == "" {
 		return errors.New("reservedPoolId is required")

@@ -277,6 +277,8 @@ type ConsumerApp struct {
 	AppOrg string
 	// App version in region
 	AppVers string
+	// Image IDs belonging to artefacts
+	ImageIds pq.StringArray `gorm:"type:text[]"`
 	// Status
 	// read only: true
 	Status string
@@ -288,6 +290,10 @@ type ProviderArtefact struct {
 	FederationName string `gorm:"primary_key;type:citext;not null"`
 	// Artefact ID send by partner
 	ArtefactID string `gorm:"primary_key;type:text;not null"`
+	// Artefact name
+	ArtefactName string
+	// Artefact version
+	ArtefactVersion string
 	// App name in region
 	AppName string
 	// App version in region
@@ -303,11 +309,11 @@ type ProviderArtefact struct {
 type ProviderApp struct {
 	// Federation Provider name
 	FederationName string `gorm:"primary_key;type:citext;not null"`
-	// App ID send by partner, also is the artefact ID
+	// App ID send by partner
 	AppID string `gorm:"primary_key;type:text;not null"`
-	// App name in region
+	// App name of federation app (not region app)
 	AppName string
-	// App version in region
+	// App version  of federation app (not region app)
 	AppVers string
 	// App provider ID
 	AppProviderId string

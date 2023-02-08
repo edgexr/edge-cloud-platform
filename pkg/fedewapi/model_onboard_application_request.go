@@ -35,9 +35,9 @@ type OnboardApplicationRequest struct {
 	AppStatusCallbackLink string                   `json:"appStatusCallbackLink"`
 }
 
-var OnboardApplicationRequestAppIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var OnboardApplicationRequestAppIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var OnboardApplicationRequestAppIdRE = regexp.MustCompile(OnboardApplicationRequestAppIdPattern)
-var OnboardApplicationRequestAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/", "/"), "/")
+var OnboardApplicationRequestAppProviderIdPattern = strings.TrimPrefix(strings.TrimSuffix("/^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$/", "/"), "/")
 var OnboardApplicationRequestAppProviderIdRE = regexp.MustCompile(OnboardApplicationRequestAppProviderIdPattern)
 var OnboardApplicationRequestAppDeploymentZonesPattern = strings.TrimPrefix(strings.TrimSuffix("", "/"), "/")
 var OnboardApplicationRequestAppDeploymentZonesRE = regexp.MustCompile(OnboardApplicationRequestAppDeploymentZonesPattern)

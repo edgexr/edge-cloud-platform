@@ -33,7 +33,7 @@ func (p *PartnerApi) lookupAppInst(c echo.Context, provider *ormapi.FederationPr
 	}
 	res := db.Where(&provAppInst).First(&provAppInst)
 	if res.RecordNotFound() {
-		return nil, fedError(http.StatusNotFound, fmt.Errorf("Application %s not found", appInstanceId))
+		return nil, fedError(http.StatusNotFound, fmt.Errorf("Application instance %s not found", appInstanceId))
 	}
 	if res.Error != nil {
 		return nil, fedError(http.StatusInternalServerError, fmt.Errorf("Failed to look up application, %s", res.Error.Error()))
@@ -53,6 +53,9 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 	in := fedewapi.InstallAppRequest{}
 	if err := c.Bind(&in); err != nil {
 		return err
+	}
+	if in.AppInstCallbackLink == "" {
+		in.AppInstCallbackLink = federationmgmt.CallbackNotSupported
 	}
 	if err := in.Validate(); err != nil {
 		return err
@@ -116,13 +119,14 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 
 	// we'll update the AppInstKey once the AppInst is created,
 	// in case it updates some of the optional fields.
+	appKey := provArt.GetAppKey()
 	provAppInst := ormapi.ProviderAppInst{
 		FederationName:      provider.Name,
 		AppInstID:           in.AppInstanceId,
 		AppInstCallbackLink: in.AppInstCallbackLink,
 		Region:              base.Region,
-		AppName:             provArt.AppName,
-		AppVers:             provArt.AppVers,
+		AppName:             appKey.Name,
+		AppVers:             appKey.Version,
 		Cluster:             clusterName,
 		ClusterOrg:          clusterOrg,
 		Cloudlet:            base.Cloudlets[0],
@@ -302,6 +306,11 @@ func (s *AppInstWorker) sendCallback(ctx context.Context, state *fedewapi.Instan
 		req.AppInstanceInfo.Message = &message
 	}
 
+	if s.callbackUrl == federationmgmt.CallbackNotSupported {
+		log.SpanLog(ctx, log.DebugLevelApi, "appInst lcm skip callback", "req", req, "path", s.callbackUrl)
+		return
+	}
+
 	log.SpanLog(ctx, log.DebugLevelApi, "appInst lcm create callback", "req", req, "path", s.callbackUrl)
 	fedClient, err := s.partner.ProviderPartnerClient(ctx, s.provider, s.callbackUrl)
 	if err != nil {
@@ -314,19 +323,23 @@ func (s *AppInstWorker) sendCallback(ctx context.Context, state *fedewapi.Instan
 }
 
 func (p *PartnerApi) RemoveApp(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier, appInstId InstanceIdentifier, zoneId ZoneIdentifier) error {
-	ctx := ormutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
 		return err
 	}
 
+	return p.RemoveAppInstInternal(c, provider, string(appInstId))
+}
+
+func (p *PartnerApi) RemoveAppInstInternal(c echo.Context, provider *ormapi.FederationProvider, appInstId string) error {
 	// lookup AppInst
 	provAppInst, err := p.lookupAppInst(c, provider, string(appInstId))
 	if err != nil {
 		return err
 	}
 
+	ctx := ormutil.GetContext(c)
 	appInst := edgeproto.AppInst{
 		Key: provAppInst.GetAppInstKey(),
 	}

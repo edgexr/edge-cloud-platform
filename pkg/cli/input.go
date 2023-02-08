@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -58,6 +59,8 @@ type Input struct {
 	DecodeHook mapstructure.DecodeHookFunc
 	// Allow extra args that were not mapped to target object.
 	AllowUnused bool
+	// Args that are query params and not part of the object
+	QueryParams []string
 }
 
 // Args are format name=val, where name could be a hierarchical name
@@ -70,8 +73,9 @@ type Input struct {
 func (s *Input) ParseArgs(args []string, obj interface{}) (*MapData, error) {
 	dat := map[string]interface{}{}
 	data := MapData{
-		Namespace: ArgsNamespace,
-		Data:      dat,
+		Namespace:   ArgsNamespace,
+		Data:        dat,
+		QueryParams: make(map[string]string),
 	}
 	if len(args) == 0 && s.PasswordArg == "" && s.CurrentPasswordArg == "" && len(s.RequiredArgs) == 0 {
 		return &data, nil
@@ -101,6 +105,12 @@ func (s *Input) ParseArgs(args []string, obj interface{}) (*MapData, error) {
 			required[req] = struct{}{}
 		}
 	}
+	queryParams := make(map[string]struct{})
+	if s.QueryParams != nil {
+		for _, param := range s.QueryParams {
+			queryParams[param] = struct{}{}
+		}
+	}
 
 	// create generic data map from args
 	passwordFound := false
@@ -114,6 +124,12 @@ func (s *Input) ParseArgs(args []string, obj interface{}) (*MapData, error) {
 		}
 		argKey, argVal := kv[0], kv[1]
 		argKey = resolveAlias(argKey, aliases)
+		if s.QueryParams != nil {
+			if _, ok := queryParams[argKey]; ok {
+				data.QueryParams[argKey] = argVal
+				continue
+			}
+		}
 		specialArgType := ""
 		if s.SpecialArgs != nil {
 			if argType, found := (*s.SpecialArgs)[argKey]; found {
@@ -270,8 +286,9 @@ const (
 // MapData associates generic imported mapped data with the
 // namespace that the keys are in.
 type MapData struct {
-	Namespace FieldNamespace
-	Data      map[string]interface{}
+	Namespace   FieldNamespace
+	Data        map[string]interface{}
+	QueryParams map[string]string
 }
 
 func (s FieldNamespace) String() string {
@@ -306,8 +323,9 @@ func JsonMap(mdat *MapData, obj interface{}) (*MapData, error) {
 		return nil, err
 	}
 	jsDat := MapData{
-		Namespace: JsonNamespace,
-		Data:      js,
+		Namespace:   JsonNamespace,
+		Data:        js,
+		QueryParams: mdat.QueryParams,
 	}
 	return &jsDat, nil
 }
@@ -788,7 +806,7 @@ func replaceMapVals(src map[string]interface{}, dst map[string]interface{}) {
 // Arg names that should be ignore can be specified. Names are the
 // same format as arg names, lowercase of field names, joined by '.'
 // Aliases are of the form alias=hiername.
-func MarshalArgs(obj interface{}, ignore []string, aliases []string) ([]string, error) {
+func MarshalArgs(obj interface{}, ignore []string, aliases []string, queryParams map[string]string) ([]string, error) {
 	args := []string{}
 	if obj == nil {
 		return args, nil
@@ -827,7 +845,16 @@ func MarshalArgs(obj interface{}, ignore []string, aliases []string) ([]string, 
 		aliasm[ar[1]] = ar[0]
 	}
 
-	return MapToArgs([]string{}, dat.Data, ignoremap, spargs, aliasm), nil
+	argsOut := MapToArgs([]string{}, dat.Data, ignoremap, spargs, aliasm)
+	if queryParams != nil {
+		params := []string{}
+		for k, v := range queryParams {
+			params = append(params, k+"="+v)
+		}
+		sort.Strings(params)
+		argsOut = append(argsOut, params...)
+	}
+	return argsOut, nil
 }
 
 func MapToArgs(prefix []string, dat map[string]interface{}, ignore map[string]struct{}, specialArgs map[string]string, aliases map[string]string) []string {

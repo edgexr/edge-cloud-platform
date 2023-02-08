@@ -108,10 +108,10 @@ func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
 	if apiCmd.StreamOutIncremental {
 		ops = append(ops, withStreamOutIncremental())
 	}
-	runData.RetStatus, runData.RetError = s.runObjs(runData.Uri, runData.Token, args, runData.In, runData.Out, apiCmd, ops...)
+	runData.RetStatus, runData.RetError = s.runObjs(runData.Uri, runData.Token, args, runData.In, runData.Out, apiCmd, runData.QueryParams, ops...)
 }
 
-func (s *Client) runObjs(uri, token string, args []string, in, out interface{}, apiCmd *ormctl.ApiCommand, ops ...runOp) (int, error) {
+func (s *Client) runObjs(uri, token string, args []string, in, out interface{}, apiCmd *ormctl.ApiCommand, queryParams map[string]string, ops ...runOp) (int, error) {
 	opts := runOptions{}
 	opts.apply(ops)
 
@@ -122,7 +122,7 @@ func (s *Client) runObjs(uri, token string, args []string, in, out interface{}, 
 		if s.PrintTransformations {
 			fmt.Printf("%s: transforming input %#v to args\n", edgelog.GetLineno(0), in)
 		}
-		objArgs, err := cli.MarshalArgs(in, opts.ignore, strings.Fields(apiCmd.AliasArgs))
+		objArgs, err := cli.MarshalArgs(in, opts.ignore, strings.Fields(apiCmd.AliasArgs), queryParams)
 		if err != nil {
 			return 0, err
 		}
