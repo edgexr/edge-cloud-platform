@@ -35,7 +35,7 @@ consumerimages:
   organization: FedAppCo
   federationname: dmuus-partner1
   name: vm.img
-  version: vm.img
+  version: no version info
   sourcepath: https://registry.edgecloud.net/FedAppCo/vm.img
   type: QCOW2
   checksum: "2039483048230944325345245243524352345245"

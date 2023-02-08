@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -189,8 +188,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	}
 
 	req := fedewapi.InstallAppRequest{
-		AppInstanceId: strings.ReplaceAll(uuid.New().String(), "-", ""), // TODO: no uniqueness check
-		//AppInstanceId: uuid.New().String(), // TODO: no uniqueness check
+		AppInstanceId: uuid.New().String(), // TODO: no uniqueness check
 		AppId:         app.GlobalId,
 		AppVersion:    app.Key.Version,
 		AppProviderId: util.DNSSanitize(app.Key.Organization),
@@ -205,18 +203,18 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	eventsCh := f.registerFedAppInstEvents(appInst.UniqueId)
 	defer f.deregisterFedAppInstEvents(appInst.UniqueId)
 
-	apiPath := fmt.Sprintf("/%s/%s/application/lcm", federationmgmt.ApiRoot, fedConfig.FederationContextId)
-	_, _, err = fedClient.SendRequest(ctx, "POST", apiPath, &req, nil, nil)
-	if err != nil {
-		return err
-	}
-
 	// send back appInstId
 	fedKey := edgeproto.FedAppInstKey{
 		FederationName: fedConfig.FederationName,
 		AppInstId:      req.AppInstanceId,
 	}
 	f.caches.AppInstInfoCache.SetFedAppInstKey(ctx, &appInst.Key, fedKey)
+
+	apiPath := fmt.Sprintf("/%s/%s/application/lcm", federationmgmt.ApiRoot, fedConfig.FederationContextId)
+	_, _, err = fedClient.SendRequest(ctx, "POST", apiPath, &req, nil, nil)
+	if err != nil {
+		return err
+	}
 
 	// Partner returns immediately with 202, and will call the callback link
 	// to denote the result.
@@ -243,7 +241,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 			}
 			return errors.New(event.Message)
 		} else {
-			log.SpanLog(ctx, log.DebugLevelApi, "Unexpected state on fedAppInstEvent", "event", event)
+			updateCallback(edgeproto.UpdateTask, event.Message)
 		}
 	case <-time.After(timeout):
 		return fmt.Errorf("Timed out waiting for callback")
@@ -264,6 +262,11 @@ func (f *FederationPlatform) DeleteAppInst(ctx context.Context, clusterInst *edg
 	}
 
 	apiPath := fmt.Sprintf("/%s/%s/application/lcm/app/%s/instance/%s/zone/%s", federationmgmt.ApiRoot, fedConfig.FederationContextId, app.GlobalId, appInst.FedKey.AppInstId, cloudletKey.Name)
+
+	if appInst.FedKey.AppInstId == "" {
+		log.SpanLog(ctx, log.DebugLevelApi, "delete appinst but id missing", "appInst", appInst.Key, "apiPath", apiPath)
+		return fmt.Errorf("Cannot delete AppInst with no federated appInstId")
+	}
 	_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
 	if err != nil {
 		return err

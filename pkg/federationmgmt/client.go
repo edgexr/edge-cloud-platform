@@ -42,6 +42,10 @@ type Client struct {
 	auditLogCb  AuditLogCb
 }
 
+type ClientConfig struct {
+	IgnorePartner bool
+}
+
 type AuditLogCb func(ctx context.Context, fedKey *FedKey, data *ormclient.AuditLogData)
 
 var ClientSecretFieldClearer = util.NewJsonFieldClearer("clientSecret")
@@ -158,6 +162,7 @@ func (c *Client) SendRequest(ctx context.Context, method, endpoint string, reqDa
 	if c.addr == "" {
 		return 0, nil, fmt.Errorf("Missing federation address")
 	}
+
 	token, err := c.tokenSource.Token()
 	if err != nil {
 		return 0, nil, fmt.Errorf("failed to get federation token for %s: %s", c.addr, err)

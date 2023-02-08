@@ -117,8 +117,7 @@ func (s *AppApi) setGlobalId(stm concurrency.STM, app *edgeproto.App) error {
 	name := dnsSanitizeTrunc(app.Key.Name, 30)
 	ver := dnsSanitizeTrunc(app.Key.Version, 30)
 	org := dnsSanitizeTrunc(app.Key.Organization, 30)
-	id := fmt.Sprintf("%s%s%s%s", reg, name, ver, org)
-	//id := fmt.Sprintf("%s-%s%s%s", reg, name, ver, org)
+	id := fmt.Sprintf("%s-%s%s%s", reg, name, ver, org)
 	if len(id) > cloudcommon.AppFederatedIdMaxLen {
 		id = dnsSanitizeTrunc(id, cloudcommon.AppFederatedIdMaxLen)
 	}

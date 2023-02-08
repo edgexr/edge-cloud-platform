@@ -415,6 +415,12 @@ func (p *PartnerApi) RemoveArtefact(c echo.Context, fedCtxId FederationContextId
 	if err != nil {
 		return err
 	}
+	return p.RemoveArtefactInternal(c, provider, string(artefactId))
+}
+
+func (p *PartnerApi) RemoveArtefactInternal(c echo.Context, provider *ormapi.FederationProvider, artefactId string) error {
+	ctx := ormutil.GetContext(c)
+
 	provArt, err := p.lookupArtefact(c, provider, string(artefactId))
 	if err != nil {
 		return err
@@ -503,8 +509,8 @@ func (p *PartnerApi) GetArtefact(c echo.Context, fedCtxId FederationContextId, a
 	resp := fedewapi.GetArtefact200Response{}
 	resp.ArtefactId = provArt.ArtefactID
 	resp.AppProviderId = provArt.AppProviderId
-	resp.ArtefactName = provArt.AppName
-	resp.ArtefactVersionInfo = provArt.AppVers
+	resp.ArtefactName = provArt.ArtefactName
+	resp.ArtefactVersionInfo = provArt.ArtefactVersion
 	resp.ArtefactVirtType = provArt.VirtType
 	resp.ArtefactDescriptorType = provArt.DescType
 	resp.ComponentSpec = append(resp.ComponentSpec, *spec)

@@ -921,9 +921,13 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/federation/provider/zone/unshare", UnshareProviderZone)
 	auth.POST("/federation/provider/zone/show", ShowProviderZone)
 	auth.POST("/federation/provider/image/show", ShowProviderImage)
+	auth.POST("/federation/provider/image/unsafedelete", UnsafeDeleteProviderImage)
 	auth.POST("/federation/provider/artefact/show", ShowProviderArtefact)
+	auth.POST("/federation/provider/artefact/unsafedelete", UnsafeDeleteProviderArtefact)
 	auth.POST("/federation/provider/app/show", ShowProviderApp)
+	auth.POST("/federation/provider/app/unsafedelete", UnsafeDeleteProviderApp)
 	auth.POST("/federation/provider/appinst/show", ShowProviderAppInst)
+	auth.POST("/federation/provider/appinst/unsafedelete", UnsafeDeleteProviderAppInst)
 
 	auth.POST("/federation/consumer/create", CreateFederationConsumer)
 	auth.POST("/federation/consumer/delete", DeleteFederationConsumer)

@@ -1430,7 +1430,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		// allow "autoscalepolicy".
 		js := `{"Region":"` + ctrl.Region + `","autoscalepolicy":{"key":{"organization":"MobiledgeX"}}}`
 		res := edgeproto.Result{}
-		status, err := restClient.PostJson(uri+"/auth/ctrl/UpdateAutoScalePolicy", token, js, &res)
+		status, err := restClient.PostJson(uri+"/auth/ctrl/UpdateAutoScalePolicy", token, js, &res, nil)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 	}
@@ -1528,7 +1528,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		// check that we get intermediate results.
 		// the callback func is only called when data is read back.
 		status, err = restClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
-			token, &dat, &out, func() {
+			token, &dat, &out, nil, func() {
 				// got a result, trigger next result
 				count++
 				require.Equal(t, count, int(out.Code))
@@ -1541,7 +1541,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		count = 0
 		sds.next = make(chan int, 1)
 		status, err = restClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
-			token, &dat, &out, func() {
+			token, &dat, &out, nil, func() {
 				count++
 			})
 		require.NotNil(t, err)
@@ -1557,13 +1557,13 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		wsuri := "ws://" + addr + "/ws/api/v1"
 		// validate the error is received with appropriate error code on invalid token
 		status, err = restClient.PostJsonStreamOut(wsuri+"/auth/ctrl/CreateClusterInst",
-			"invalidToken", &dat, &wsOut, func() {
+			"invalidToken", &dat, &wsOut, nil, func() {
 			})
 		require.NotNil(t, err, "invalid token error")
 		require.Equal(t, http.StatusBadRequest, status)
 		require.Equal(t, "Invalid or expired jwt", err.Error())
 		status, err = restClient.PostJsonStreamOut(wsuri+"/auth/ctrl/CreateClusterInst",
-			token, &dat, &wsOut, func() {
+			token, &dat, &wsOut, nil, func() {
 				// got a result, trigger next result
 				count++
 				require.Equal(t, 200, int(wsOut.Code))
@@ -1580,7 +1580,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		count = 0
 		sds.next = make(chan int, 1)
 		status, err = restClient.PostJsonStreamOut(wsuri+"/auth/ctrl/CreateClusterInst",
-			token, &dat, &wsOut, func() {
+			token, &dat, &wsOut, nil, func() {
 				count++
 			})
 		require.NotNil(t, err)
@@ -1596,7 +1596,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		filter := map[string]interface{}{
 			"region": "foo",
 		}
-		status, err = restClient.PostJson(uri+"/auth/cloudletpoolaccessresponse/show", token, filter, nil)
+		status, err = restClient.PostJson(uri+"/auth/cloudletpoolaccessresponse/show", token, filter, nil, nil)
 		require.Nil(t, err, "show cloudlet pool access invitation")
 		require.Equal(t, http.StatusOK, status)
 	}

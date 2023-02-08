@@ -18,11 +18,11 @@ import (
 	fmt "fmt"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	edgecli "github.com/edgexr/edge-cloud-platform/pkg/edgectl/cli"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -45,7 +45,7 @@ func (s *RootCommand) runExecRequest(path string) func(c *cli.Command, args []st
 			AliasArgs:    strings.Split(c.AliasArgs, " "),
 		}
 		req := ormapi.RegionExecRequest{}
-		_, err := input.ParseArgs(args, &req)
+		mapData, err := input.ParseArgs(args, &req)
 		if err != nil {
 			return err
 		}
@@ -53,7 +53,7 @@ func (s *RootCommand) runExecRequest(path string) func(c *cli.Command, args []st
 
 		exchangeFunc := func() (*edgeproto.ExecRequest, error) {
 			reply := edgeproto.ExecRequest{}
-			st, err := s.client.PostJson(s.getUri()+path, s.token, &req, &reply)
+			st, err := s.client.PostJson(s.getUri()+path, s.token, &req, &reply, mapData.QueryParams)
 			err = check(c, st, err, nil)
 			if err != nil {
 				return nil, err

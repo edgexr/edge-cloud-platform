@@ -119,22 +119,22 @@ func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
 		if arrV.Kind() == reflect.Ptr {
 			arrV = arrV.Elem()
 		}
-		status, err = s.PostJsonStreamOut(uri, runData.Token, runData.In, buf.Interface(), func() {
+		status, err = s.PostJsonStreamOut(uri, runData.Token, runData.In, buf.Interface(), runData.QueryParams, func() {
 			arrV.Set(reflect.Append(arrV, reflect.Indirect(buf)))
 		})
 	} else {
-		status, err = s.PostJson(uri, runData.Token, runData.In, runData.Out)
+		status, err = s.PostJson(uri, runData.Token, runData.In, runData.Out, runData.QueryParams)
 	}
 	runData.RetStatus = status
 	runData.RetError = err
 }
 
-func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Response, error) {
-	return s.HttpJsonSendReq("POST", uri, token, reqData, nil, nil)
+func (s *Client) PostJsonSend(uri, token string, reqData interface{}, queryParams map[string]string) (*http.Response, error) {
+	return s.HttpJsonSendReq("POST", uri, token, reqData, nil, queryParams)
 }
 
-func (s *Client) PostJson(uri, token string, reqData interface{}, replyData interface{}) (int, error) {
-	status, _, err := s.HttpJsonSend("POST", uri, token, reqData, replyData, nil, nil, nil)
+func (s *Client) PostJson(uri, token string, reqData interface{}, replyData interface{}, queryParams map[string]string) (int, error) {
+	status, _, err := s.HttpJsonSend("POST", uri, token, reqData, replyData, nil, queryParams, nil)
 	return status, err
 }
 
@@ -163,7 +163,11 @@ func (s *MultiPartFormData) Write(buf *bytes.Buffer) (string, error) {
 	wr := multipart.NewWriter(buf)
 	for key, val := range s.fields {
 		var data []byte
-		if str, ok := val.(string); ok {
+		v := reflect.ValueOf(val)
+		if v.Kind() == reflect.String {
+			// use reflect instead of type cast to bypass
+			// enum string types, and treat them as strings.
+			str := v.String()
 			data = []byte(str)
 		} else {
 			var err error
@@ -273,7 +277,7 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{},
 	}
 
 	if s.Debug {
-		curlcmd := fmt.Sprintf(`curl -X %s "%s" -H "Content-Type: application/json"`, method, uri)
+		curlcmd := fmt.Sprintf(`curl -X %s -H "Content-Type: application/json" %q`, method, req.URL.String())
 		tokenType := s.TokenType
 		if tokenType == "" {
 			tokenType = TokenTypeBearer
@@ -378,16 +382,16 @@ func (s *Client) HttpJsonSend(method, uri, token string, reqData interface{}, re
 	return resp.StatusCode, resp.Header, nil
 }
 
-func (s *Client) PostJsonStreamOut(uri, token string, reqData, replyData interface{}, replyReady func()) (int, error) {
+func (s *Client) PostJsonStreamOut(uri, token string, reqData, replyData interface{}, queryParams map[string]string, replyReady func()) (int, error) {
 	if strings.Contains(uri, "ws/api/v1") {
-		return s.HandleWebsocketStreamOut(uri, token, nil, reqData, replyData, replyReady)
+		return s.HandleWebsocketStreamOut(uri, token, nil, reqData, replyData, queryParams, replyReady)
 	} else {
-		return s.handleHttpStreamOut(uri, token, reqData, replyData, replyReady)
+		return s.handleHttpStreamOut(uri, token, reqData, replyData, queryParams, replyReady)
 	}
 }
 
-func (s *Client) handleHttpStreamOut(uri, token string, reqData, replyData interface{}, replyReady func()) (int, error) {
-	resp, err := s.PostJsonSend(uri, token, reqData)
+func (s *Client) handleHttpStreamOut(uri, token string, reqData, replyData interface{}, queryParams map[string]string, replyReady func()) (int, error) {
+	resp, err := s.PostJsonSend(uri, token, reqData, queryParams)
 	if err != nil {
 		return 0, fmt.Errorf("post %s client do failed, %s", uri, err.Error())
 	}
@@ -490,7 +494,7 @@ func (s *Client) WebsocketConn(uri, token string, reqData interface{}) (*websock
 	return ws, nil
 }
 
-func (s *Client) HandleWebsocketStreamOut(uri, token string, reader *bufio.Reader, reqData, replyData interface{}, replyReady func()) (int, error) {
+func (s *Client) HandleWebsocketStreamOut(uri, token string, reader *bufio.Reader, reqData, replyData interface{}, queryParams map[string]string, replyReady func()) (int, error) {
 	wsPayload, ok := replyData.(*ormapi.WSStreamPayload)
 	if !ok {
 		return 0, fmt.Errorf("response can only be of type WSStreamPayload")

@@ -75,8 +75,22 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 	if err != nil {
 		return err
 	}
+	// for now treat repoURL as the repository path of the image,
+	// i.e. URL minus the fileName+fileVersion
+	parts := strings.Split(image.SourcePath, "/")
+	repoUrl := strings.Join(parts[:len(parts)-1], "/")
+	image.Name = parts[len(parts)-1]
 
-	// get image name
+	parts = strings.SplitN(image.Name, ":", 2)
+	if len(parts) > 1 {
+		image.Name = parts[0]
+		image.Version = parts[1]
+	} else {
+		image.Version = "no version info"
+	}
+
+	/* TODO: resolve if repoURL should be full path to image
+	 * or parent repository path
 	if image.Name == "" {
 		parts := strings.Split(image.SourcePath, "/")
 		image.Name = parts[len(parts)-1]
@@ -89,6 +103,8 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 	if image.Version == "" {
 		image.Version = image.Name
 	}
+	repoURL := image.SourcePath
+	*/
 
 	consumer, err := lookupFederationConsumer(ctx, 0, image.FederationName)
 	if err != nil {
@@ -205,7 +221,7 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 	}
 
 	repoLocation := &fedewapi.ObjectRepoLocation{
-		RepoURL: &image.SourcePath,
+		RepoURL: &repoUrl,
 	}
 	if inVmReg {
 		// generate a short-lived cookie that is only good
@@ -273,6 +289,7 @@ func DeleteConsumerImage(c echo.Context) error {
 	if image.ID == "" && (image.Organization == "" || image.FederationName == "" || image.Name == "") {
 		return fmt.Errorf("Either ID, or the triplet of Organization, FederationName, and Name must be specified to uniquely identify the image")
 	}
+	fedQueryParams := federation.GetFedQueryParams(c)
 
 	db := loggedDB(ctx)
 	res := db.Where(&image).First(&image)
@@ -306,14 +323,18 @@ func DeleteConsumerImage(c echo.Context) error {
 		}
 	}
 
-	fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)
-	if err != nil {
-		return err
-	}
 	apiPath := fmt.Sprintf("/%s/%s/files/%s", federationmgmt.ApiRoot, consumer.FederationContextId, image.ID)
-	_, _, err = fedClient.SendRequest(ctx, http.MethodDelete, apiPath, nil, nil, nil)
-	if err != nil {
-		return err
+	if fedQueryParams.IgnorePartner {
+		log.SpanLog(ctx, log.DebugLevelApi, "skipping federation api call", "method", http.MethodDelete, "api", apiPath)
+	} else {
+		fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)
+		if err != nil {
+			return err
+		}
+		_, _, err = fedClient.SendRequest(ctx, http.MethodDelete, apiPath, nil, nil, nil)
+		if err != nil {
+			return err
+		}
 	}
 	err = db.Delete(&image).Error
 	if err != nil {
@@ -397,4 +418,34 @@ func ShowProviderImage(c echo.Context) error {
 		}
 	}
 	return ormutil.SetReply(c, allowedImages)
+}
+
+func UnsafeDeleteProviderImage(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	in := ormapi.ProviderImage{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
+	if in.FileID == "" {
+		return fmt.Errorf("FileID must be specified")
+	}
+	if in.FederationName == "" {
+		return fmt.Errorf("Federation name must be specified")
+	}
+
+	provider, err := lookupFederationProvider(ctx, 0, in.FederationName)
+	if err != nil {
+		return err
+	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, provider.GetTags())
+	if err := fedAuthorized(ctx, claims.Username, provider.OperatorId); err != nil {
+		return err
+	}
+
+	return partnerApi.RemoveFileInternal(c, provider, in.FileID)
 }

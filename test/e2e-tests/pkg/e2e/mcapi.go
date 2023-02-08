@@ -1966,7 +1966,7 @@ func runMcShowNode(uri, curUserFile, outputDir string, actionVars, vars, sharedD
 	return rc
 }
 
-func runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir string, mods []string, actionVars, vars, sharedData map[string]string, apiFunc func(string, string, *ormapi.RegionAppAlertPolicy) (*edgeproto.Result, int, error)) bool {
+func runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir string, mods []string, actionVars, vars, sharedData map[string]string, apiFunc func(string, string, *ormapi.RegionAppAlertPolicy, ...mctestclient.Op) (*edgeproto.Result, int, error)) bool {
 	rc := true
 	token, rc := getLoginToken(curUserFile, outputDir, actionVars, vars)
 	if !rc {

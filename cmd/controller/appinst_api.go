@@ -2153,39 +2153,23 @@ func (s *AppInstApi) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.Fe
 	// the FRM performs some more work (GetAppInst runtime, etc) in the
 	// common controller-data code once the AppInst has been created.
 	// So, we need to forward the event to the FRM.
-	// However, for intermediate events (i.e. task message updates), the
+	// For intermediate events (i.e. task message updates), the
 	// FRM would just end up sending the event back to the controller,
-	// which is roundabout and pointless. So for intermediate updates,
-	// we don't bother sending them to the FRM, but instead process them
-	// here.
-	// Also, we update AppPorts since AppInstInfo doesn't carry port info.
-	updateInfo := true
-	if in.State == edgeproto.TrackedState_READY || in.State == edgeproto.TrackedState_CREATE_ERROR {
-		// FRM needs to see the event
-		log.SpanLog(ctx, log.DebugLevelApi, "Forwarding FedAppInstEvent via notify")
-		s.fedAppInstEventSendMany.Update(ctx, in)
-		updateInfo = false
-	}
+	// which is roundabout and pointless. Unfortunately, the way the
+	// streaming messages and callbacks work, they need to build the full
+	// list of messages, which requires appending the current message to
+	// AppInstInfo in the cache. And only the FRM keeps that cached.
+	// So we still need to send it to the FRM.
+	// Also, we update AppPorts here since AppInstInfo doesn't carry port info.
+
+	// FRM needs to see the event
+	log.SpanLog(ctx, log.DebugLevelApi, "Forwarding FedAppInstEvent via notify")
+	s.fedAppInstEventSendMany.Update(ctx, in)
 
 	// Look up the AppInstKey from the unique id in the event.
 	appInstKey := edgeproto.AppInstKey{}
 	if !s.idStore.Get(ctx, in.UniqueId, &appInstKey) {
 		return &edgeproto.Result{}, fmt.Errorf("No appinstkey found for unique id %s", in.UniqueId)
-	}
-
-	// Update AppInstInfo
-	if updateInfo {
-		info := &edgeproto.AppInstInfo{
-			Key: appInstKey,
-		}
-		// New state if specified.
-		if in.State != edgeproto.TrackedState_TRACKED_STATE_UNKNOWN {
-			info.State = in.State
-		}
-		if in.Message != "" {
-			info.Status.SetTask(in.Message)
-		}
-		s.UpdateFromInfo(ctx, info)
 	}
 
 	// If ports are set, update ports on AppInst

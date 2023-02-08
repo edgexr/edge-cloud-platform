@@ -778,6 +778,7 @@ func DeleteFederationConsumer(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	fedQueryParams := federation.GetFedQueryParams(c)
 	span := log.SpanFromContext(ctx)
 	log.SetTags(span, consumer.GetTags())
 	if err := fedAuthorized(ctx, claims.Username, consumer.OperatorId); err != nil {
@@ -800,7 +801,7 @@ func DeleteFederationConsumer(c echo.Context) error {
 
 	// check if federation with partner federator exists
 	if consumer.Status == federation.StatusRegistered {
-		if err := deregisterFederationConsumer(ctx, consumer); err != nil {
+		if err := deregisterFederationConsumer(ctx, consumer, fedQueryParams); err != nil {
 			return err
 		}
 	}
@@ -1169,6 +1170,8 @@ func ShareProviderZone(c echo.Context) (reterr error) {
 	if err != nil {
 		return err
 	}
+	fedQueryParams := federation.GetFedQueryParams(c)
+
 	span := log.SpanFromContext(ctx)
 	log.SetTags(span, provider.GetTags())
 
@@ -1246,7 +1249,7 @@ func ShareProviderZone(c echo.Context) (reterr error) {
 	}
 
 	log.SpanLog(ctx, log.DebugLevelApi, "share provider zone", "provider-status", provider.Status, "notify", provider.PartnerNotifyDest)
-	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != fedmgmt.CallbackNotSupported {
+	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != fedmgmt.CallbackNotSupported && !fedQueryParams.IgnorePartner {
 		fedClient, err := partnerApi.ProviderPartnerClient(ctx, provider, provider.PartnerNotifyDest)
 		if err != nil {
 			return err
@@ -1285,6 +1288,7 @@ func UnshareProviderZone(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	fedQueryParams := federation.GetFedQueryParams(c)
 	span := log.SpanFromContext(ctx)
 	log.SetTags(span, provider.GetTags())
 
@@ -1317,14 +1321,14 @@ func UnshareProviderZone(c echo.Context) error {
 		rmZones = append(rmZones, zoneId)
 		zonesMap[zoneId] = &existingZone
 	}
-	if len(registeredZones) > 0 {
+	if len(registeredZones) > 0 && !fedQueryParams.IgnorePartner {
 		// For now, cannot unshare registered zones.
 		// We may want some way to force unshare though, if remote
 		// is completely gone.
 		return fmt.Errorf("Cannot unshare registered zones %s, please ask consumer to deregister it", strings.Join(registeredZones, ","))
 	}
 
-	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != fedmgmt.CallbackNotSupported {
+	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != fedmgmt.CallbackNotSupported && !fedQueryParams.IgnorePartner {
 		// Notify partner
 		fedClient, err := partnerApi.ProviderPartnerClient(ctx, provider, provider.PartnerNotifyDest)
 		if err != nil {
@@ -1479,13 +1483,14 @@ func DeregisterConsumerZone(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	fedQueryParams := federation.GetFedQueryParams(c)
 	span := log.SpanFromContext(ctx)
 	log.SetTags(span, consumer.GetTags())
 
 	if err := fedAuthorized(ctx, claims.Username, consumer.OperatorId); err != nil {
 		return err
 	}
-	err = partnerApi.DeregisterConsumerZones(ctx, consumer, reg.Zones)
+	err = partnerApi.DeregisterConsumerZones(ctx, consumer, reg.Zones, fedQueryParams)
 	if err != nil {
 		return err
 	}
@@ -1575,7 +1580,7 @@ func registerFederationConsumer(ctx context.Context, consumer *ormapi.Federation
 
 // Deregister directed federation between consumer and provider.
 // Consumer will no longer have access to any of provider zones
-func deregisterFederationConsumer(ctx context.Context, consumer *ormapi.FederationConsumer) error {
+func deregisterFederationConsumer(ctx context.Context, consumer *ormapi.FederationConsumer, fedQueryParams federation.FedQueryParams) error {
 	fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)
 	if err != nil {
 		return err
@@ -1603,9 +1608,13 @@ func deregisterFederationConsumer(ctx context.Context, consumer *ormapi.Federati
 	}
 
 	apiPath := fmt.Sprintf("/%s/%s/partner", fedmgmt.ApiRoot, consumer.FederationContextId)
-	_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
-	if err != nil {
-		return err
+	if fedQueryParams.IgnorePartner {
+		log.SpanLog(ctx, log.DebugLevelApi, "skipping federation api call", "method", "DELETE", "api", apiPath)
+	} else {
+		_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Delete all the local copy of partner federator zones

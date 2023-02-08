@@ -1329,6 +1329,7 @@ func testEdgeboxOnlyOrgs(t *testing.T, uri string, mcClient *mctestclient.Client
 
 func getUnitTestClientRuns(trans http.RoundTripper) []mctestclient.ClientRun {
 	restClient := &ormclient.Client{}
+	restClient.Debug = true
 	cliClient := cliwrapper.NewClient()
 	cliClient.DebugLog = true
 	cliClient.SilenceUsage = true

@@ -30,8 +30,9 @@ import (
 
 // Generating group Alert
 
-func (s *Client) ShowAlert(uri string, token string, in *ormapi.RegionAlert) ([]edgeproto.Alert, int, error) {
+func (s *Client) ShowAlert(uri string, token string, in *ormapi.RegionAlert, ops ...Op) ([]edgeproto.Alert, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -48,8 +49,9 @@ func (s *Client) ShowAlert(uri string, token string, in *ormapi.RegionAlert) ([]
 
 // Generating group AlertPolicy
 
-func (s *Client) CreateAlertPolicy(uri string, token string, in *ormapi.RegionAlertPolicy) (*edgeproto.Result, int, error) {
+func (s *Client) CreateAlertPolicy(uri string, token string, in *ormapi.RegionAlertPolicy, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -64,8 +66,9 @@ func (s *Client) CreateAlertPolicy(uri string, token string, in *ormapi.RegionAl
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteAlertPolicy(uri string, token string, in *ormapi.RegionAlertPolicy) (*edgeproto.Result, int, error) {
+func (s *Client) DeleteAlertPolicy(uri string, token string, in *ormapi.RegionAlertPolicy, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -80,8 +83,9 @@ func (s *Client) DeleteAlertPolicy(uri string, token string, in *ormapi.RegionAl
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateAlertPolicy(uri string, token string, in *ormapi.RegionAlertPolicy) (*edgeproto.Result, int, error) {
+func (s *Client) UpdateAlertPolicy(uri string, token string, in *ormapi.RegionAlertPolicy, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -100,8 +104,9 @@ func (s *Client) UpdateAlertPolicy(uri string, token string, in *ormapi.RegionAl
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowAlertPolicy(uri string, token string, in *ormapi.RegionAlertPolicy) ([]edgeproto.AlertPolicy, int, error) {
+func (s *Client) ShowAlertPolicy(uri string, token string, in *ormapi.RegionAlertPolicy, ops ...Op) ([]edgeproto.AlertPolicy, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -118,8 +123,9 @@ func (s *Client) ShowAlertPolicy(uri string, token string, in *ormapi.RegionAler
 
 // Generating group AlertReceiver
 
-func (s *Client) CreateAlertReceiver(uri string, token string, in *ormapi.AlertReceiver) (int, error) {
+func (s *Client) CreateAlertReceiver(uri string, token string, in *ormapi.AlertReceiver, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -129,8 +135,9 @@ func (s *Client) CreateAlertReceiver(uri string, token string, in *ormapi.AlertR
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteAlertReceiver(uri string, token string, in *ormapi.AlertReceiver) (int, error) {
+func (s *Client) DeleteAlertReceiver(uri string, token string, in *ormapi.AlertReceiver, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -140,8 +147,9 @@ func (s *Client) DeleteAlertReceiver(uri string, token string, in *ormapi.AlertR
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowAlertReceiver(uri string, token string, in *ormapi.AlertReceiver) ([]ormapi.AlertReceiver, int, error) {
+func (s *Client) ShowAlertReceiver(uri string, token string, in *ormapi.AlertReceiver, ops ...Op) ([]ormapi.AlertReceiver, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -158,8 +166,9 @@ func (s *Client) ShowAlertReceiver(uri string, token string, in *ormapi.AlertRec
 
 // Generating group App
 
-func (s *Client) CreateApp(uri string, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error) {
+func (s *Client) CreateApp(uri string, token string, in *ormapi.RegionApp, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -174,8 +183,9 @@ func (s *Client) CreateApp(uri string, token string, in *ormapi.RegionApp) (*edg
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteApp(uri string, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error) {
+func (s *Client) DeleteApp(uri string, token string, in *ormapi.RegionApp, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -190,8 +200,9 @@ func (s *Client) DeleteApp(uri string, token string, in *ormapi.RegionApp) (*edg
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateApp(uri string, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error) {
+func (s *Client) UpdateApp(uri string, token string, in *ormapi.RegionApp, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -210,8 +221,9 @@ func (s *Client) UpdateApp(uri string, token string, in *ormapi.RegionApp) (*edg
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowApp(uri string, token string, in *ormapi.RegionApp) ([]edgeproto.App, int, error) {
+func (s *Client) ShowApp(uri string, token string, in *ormapi.RegionApp, ops ...Op) ([]edgeproto.App, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -226,8 +238,9 @@ func (s *Client) ShowApp(uri string, token string, in *ormapi.RegionApp) ([]edge
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AddAppAutoProvPolicy(uri string, token string, in *ormapi.RegionAppAutoProvPolicy) (*edgeproto.Result, int, error) {
+func (s *Client) AddAppAutoProvPolicy(uri string, token string, in *ormapi.RegionAppAutoProvPolicy, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -242,8 +255,9 @@ func (s *Client) AddAppAutoProvPolicy(uri string, token string, in *ormapi.Regio
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RemoveAppAutoProvPolicy(uri string, token string, in *ormapi.RegionAppAutoProvPolicy) (*edgeproto.Result, int, error) {
+func (s *Client) RemoveAppAutoProvPolicy(uri string, token string, in *ormapi.RegionAppAutoProvPolicy, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -258,8 +272,9 @@ func (s *Client) RemoveAppAutoProvPolicy(uri string, token string, in *ormapi.Re
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AddAppAlertPolicy(uri string, token string, in *ormapi.RegionAppAlertPolicy) (*edgeproto.Result, int, error) {
+func (s *Client) AddAppAlertPolicy(uri string, token string, in *ormapi.RegionAppAlertPolicy, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -274,8 +289,9 @@ func (s *Client) AddAppAlertPolicy(uri string, token string, in *ormapi.RegionAp
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RemoveAppAlertPolicy(uri string, token string, in *ormapi.RegionAppAlertPolicy) (*edgeproto.Result, int, error) {
+func (s *Client) RemoveAppAlertPolicy(uri string, token string, in *ormapi.RegionAppAlertPolicy, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -290,8 +306,9 @@ func (s *Client) RemoveAppAlertPolicy(uri string, token string, in *ormapi.Regio
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudletsForAppDeployment(uri string, token string, in *ormapi.RegionDeploymentCloudletRequest) ([]edgeproto.CloudletKey, int, error) {
+func (s *Client) ShowCloudletsForAppDeployment(uri string, token string, in *ormapi.RegionDeploymentCloudletRequest, ops ...Op) ([]edgeproto.CloudletKey, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -308,8 +325,9 @@ func (s *Client) ShowCloudletsForAppDeployment(uri string, token string, in *orm
 
 // Generating group AppInst
 
-func (s *Client) CreateAppInst(uri string, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
+func (s *Client) CreateAppInst(uri string, token string, in *ormapi.RegionAppInst, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -324,8 +342,9 @@ func (s *Client) CreateAppInst(uri string, token string, in *ormapi.RegionAppIns
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteAppInst(uri string, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
+func (s *Client) DeleteAppInst(uri string, token string, in *ormapi.RegionAppInst, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -340,8 +359,9 @@ func (s *Client) DeleteAppInst(uri string, token string, in *ormapi.RegionAppIns
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RefreshAppInst(uri string, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
+func (s *Client) RefreshAppInst(uri string, token string, in *ormapi.RegionAppInst, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -356,8 +376,9 @@ func (s *Client) RefreshAppInst(uri string, token string, in *ormapi.RegionAppIn
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateAppInst(uri string, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
+func (s *Client) UpdateAppInst(uri string, token string, in *ormapi.RegionAppInst, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -376,8 +397,9 @@ func (s *Client) UpdateAppInst(uri string, token string, in *ormapi.RegionAppIns
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowAppInst(uri string, token string, in *ormapi.RegionAppInst) ([]edgeproto.AppInst, int, error) {
+func (s *Client) ShowAppInst(uri string, token string, in *ormapi.RegionAppInst, ops ...Op) ([]edgeproto.AppInst, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -394,8 +416,9 @@ func (s *Client) ShowAppInst(uri string, token string, in *ormapi.RegionAppInst)
 
 // Generating group AppInstClient
 
-func (s *Client) ShowAppInstClient(uri string, token string, in *ormapi.RegionAppInstClientKey) ([]edgeproto.AppInstClient, int, error) {
+func (s *Client) ShowAppInstClient(uri string, token string, in *ormapi.RegionAppInstClientKey, ops ...Op) ([]edgeproto.AppInstClient, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -412,8 +435,9 @@ func (s *Client) ShowAppInstClient(uri string, token string, in *ormapi.RegionAp
 
 // Generating group AppInstLatency
 
-func (s *Client) RequestAppInstLatency(uri string, token string, in *ormapi.RegionAppInstLatency) (*edgeproto.Result, int, error) {
+func (s *Client) RequestAppInstLatency(uri string, token string, in *ormapi.RegionAppInstLatency, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -430,8 +454,9 @@ func (s *Client) RequestAppInstLatency(uri string, token string, in *ormapi.Regi
 
 // Generating group AppInstRefs
 
-func (s *Client) ShowAppInstRefs(uri string, token string, in *ormapi.RegionAppInstRefs) ([]edgeproto.AppInstRefs, int, error) {
+func (s *Client) ShowAppInstRefs(uri string, token string, in *ormapi.RegionAppInstRefs, ops ...Op) ([]edgeproto.AppInstRefs, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -448,8 +473,9 @@ func (s *Client) ShowAppInstRefs(uri string, token string, in *ormapi.RegionAppI
 
 // Generating group Artifact
 
-func (s *Client) UploadArtifact(uri string) (int, error) {
+func (s *Client) UploadArtifact(uri string, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 
 	apiCmd := ormctl.MustGetCommand("UploadArtifact")
@@ -457,8 +483,9 @@ func (s *Client) UploadArtifact(uri string) (int, error) {
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UploadArtifactFromURL(uri string) (int, error) {
+func (s *Client) UploadArtifactFromURL(uri string, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 
 	apiCmd := ormctl.MustGetCommand("UploadArtifactFromURL")
@@ -466,8 +493,9 @@ func (s *Client) UploadArtifactFromURL(uri string) (int, error) {
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) InfoArtifact(uri string) (int, error) {
+func (s *Client) InfoArtifact(uri string, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 
 	apiCmd := ormctl.MustGetCommand("InfoArtifact")
@@ -475,8 +503,9 @@ func (s *Client) InfoArtifact(uri string) (int, error) {
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DownloadArtifact(uri string) (int, error) {
+func (s *Client) DownloadArtifact(uri string, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 
 	apiCmd := ormctl.MustGetCommand("DownloadArtifact")
@@ -484,8 +513,9 @@ func (s *Client) DownloadArtifact(uri string) (int, error) {
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowArtifacts(uri string) (int, error) {
+func (s *Client) ShowArtifacts(uri string, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 
 	apiCmd := ormctl.MustGetCommand("ShowArtifacts")
@@ -493,8 +523,9 @@ func (s *Client) ShowArtifacts(uri string) (int, error) {
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteArtifact(uri string) (int, error) {
+func (s *Client) DeleteArtifact(uri string, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 
 	apiCmd := ormctl.MustGetCommand("DeleteArtifact")
@@ -504,8 +535,9 @@ func (s *Client) DeleteArtifact(uri string) (int, error) {
 
 // Generating group AutoProvPolicy
 
-func (s *Client) CreateAutoProvPolicy(uri string, token string, in *ormapi.RegionAutoProvPolicy) (*edgeproto.Result, int, error) {
+func (s *Client) CreateAutoProvPolicy(uri string, token string, in *ormapi.RegionAutoProvPolicy, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -520,8 +552,9 @@ func (s *Client) CreateAutoProvPolicy(uri string, token string, in *ormapi.Regio
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteAutoProvPolicy(uri string, token string, in *ormapi.RegionAutoProvPolicy) (*edgeproto.Result, int, error) {
+func (s *Client) DeleteAutoProvPolicy(uri string, token string, in *ormapi.RegionAutoProvPolicy, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -536,8 +569,9 @@ func (s *Client) DeleteAutoProvPolicy(uri string, token string, in *ormapi.Regio
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateAutoProvPolicy(uri string, token string, in *ormapi.RegionAutoProvPolicy) (*edgeproto.Result, int, error) {
+func (s *Client) UpdateAutoProvPolicy(uri string, token string, in *ormapi.RegionAutoProvPolicy, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -556,8 +590,9 @@ func (s *Client) UpdateAutoProvPolicy(uri string, token string, in *ormapi.Regio
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowAutoProvPolicy(uri string, token string, in *ormapi.RegionAutoProvPolicy) ([]edgeproto.AutoProvPolicy, int, error) {
+func (s *Client) ShowAutoProvPolicy(uri string, token string, in *ormapi.RegionAutoProvPolicy, ops ...Op) ([]edgeproto.AutoProvPolicy, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -572,8 +607,9 @@ func (s *Client) ShowAutoProvPolicy(uri string, token string, in *ormapi.RegionA
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AddAutoProvPolicyCloudlet(uri string, token string, in *ormapi.RegionAutoProvPolicyCloudlet) (*edgeproto.Result, int, error) {
+func (s *Client) AddAutoProvPolicyCloudlet(uri string, token string, in *ormapi.RegionAutoProvPolicyCloudlet, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -588,8 +624,9 @@ func (s *Client) AddAutoProvPolicyCloudlet(uri string, token string, in *ormapi.
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RemoveAutoProvPolicyCloudlet(uri string, token string, in *ormapi.RegionAutoProvPolicyCloudlet) (*edgeproto.Result, int, error) {
+func (s *Client) RemoveAutoProvPolicyCloudlet(uri string, token string, in *ormapi.RegionAutoProvPolicyCloudlet, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -606,8 +643,9 @@ func (s *Client) RemoveAutoProvPolicyCloudlet(uri string, token string, in *orma
 
 // Generating group AutoScalePolicy
 
-func (s *Client) CreateAutoScalePolicy(uri string, token string, in *ormapi.RegionAutoScalePolicy) (*edgeproto.Result, int, error) {
+func (s *Client) CreateAutoScalePolicy(uri string, token string, in *ormapi.RegionAutoScalePolicy, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -622,8 +660,9 @@ func (s *Client) CreateAutoScalePolicy(uri string, token string, in *ormapi.Regi
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteAutoScalePolicy(uri string, token string, in *ormapi.RegionAutoScalePolicy) (*edgeproto.Result, int, error) {
+func (s *Client) DeleteAutoScalePolicy(uri string, token string, in *ormapi.RegionAutoScalePolicy, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -638,8 +677,9 @@ func (s *Client) DeleteAutoScalePolicy(uri string, token string, in *ormapi.Regi
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateAutoScalePolicy(uri string, token string, in *ormapi.RegionAutoScalePolicy) (*edgeproto.Result, int, error) {
+func (s *Client) UpdateAutoScalePolicy(uri string, token string, in *ormapi.RegionAutoScalePolicy, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -658,8 +698,9 @@ func (s *Client) UpdateAutoScalePolicy(uri string, token string, in *ormapi.Regi
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowAutoScalePolicy(uri string, token string, in *ormapi.RegionAutoScalePolicy) ([]edgeproto.AutoScalePolicy, int, error) {
+func (s *Client) ShowAutoScalePolicy(uri string, token string, in *ormapi.RegionAutoScalePolicy, ops ...Op) ([]edgeproto.AutoScalePolicy, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -676,8 +717,9 @@ func (s *Client) ShowAutoScalePolicy(uri string, token string, in *ormapi.Region
 
 // Generating group BillingEvents
 
-func (s *Client) ShowAppEvents(uri string, token string, in *ormapi.RegionAppInstEvents) (*ormapi.AllMetrics, int, error) {
+func (s *Client) ShowAppEvents(uri string, token string, in *ormapi.RegionAppInstEvents, ops ...Op) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -692,8 +734,9 @@ func (s *Client) ShowAppEvents(uri string, token string, in *ormapi.RegionAppIns
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowClusterEvents(uri string, token string, in *ormapi.RegionClusterInstEvents) (*ormapi.AllMetrics, int, error) {
+func (s *Client) ShowClusterEvents(uri string, token string, in *ormapi.RegionClusterInstEvents, ops ...Op) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -708,8 +751,9 @@ func (s *Client) ShowClusterEvents(uri string, token string, in *ormapi.RegionCl
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudletEvents(uri string, token string, in *ormapi.RegionCloudletEvents) (*ormapi.AllMetrics, int, error) {
+func (s *Client) ShowCloudletEvents(uri string, token string, in *ormapi.RegionCloudletEvents, ops ...Op) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -726,8 +770,9 @@ func (s *Client) ShowCloudletEvents(uri string, token string, in *ormapi.RegionC
 
 // Generating group BillingOrg
 
-func (s *Client) CreateBillingOrg(uri string, token string, in *ormapi.BillingOrganization) (int, error) {
+func (s *Client) CreateBillingOrg(uri string, token string, in *ormapi.BillingOrganization, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -737,8 +782,9 @@ func (s *Client) CreateBillingOrg(uri string, token string, in *ormapi.BillingOr
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateBillingOrg(uri string, token string, in *cli.MapData) (int, error) {
+func (s *Client) UpdateBillingOrg(uri string, token string, in *cli.MapData, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -748,8 +794,9 @@ func (s *Client) UpdateBillingOrg(uri string, token string, in *cli.MapData) (in
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AddBillingOrgChild(uri string, token string, in *ormapi.BillingOrganization) (int, error) {
+func (s *Client) AddBillingOrgChild(uri string, token string, in *ormapi.BillingOrganization, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -759,8 +806,9 @@ func (s *Client) AddBillingOrgChild(uri string, token string, in *ormapi.Billing
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RemoveBillingOrgChild(uri string, token string, in *ormapi.BillingOrganization) (int, error) {
+func (s *Client) RemoveBillingOrgChild(uri string, token string, in *ormapi.BillingOrganization, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -770,8 +818,9 @@ func (s *Client) RemoveBillingOrgChild(uri string, token string, in *ormapi.Bill
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteBillingOrg(uri string, token string, in *ormapi.BillingOrganization) (int, error) {
+func (s *Client) DeleteBillingOrg(uri string, token string, in *ormapi.BillingOrganization, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -781,8 +830,9 @@ func (s *Client) DeleteBillingOrg(uri string, token string, in *ormapi.BillingOr
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowBillingOrg(uri string, token string, in *cli.MapData) ([]ormapi.BillingOrganization, int, error) {
+func (s *Client) ShowBillingOrg(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.BillingOrganization, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -797,8 +847,9 @@ func (s *Client) ShowBillingOrg(uri string, token string, in *cli.MapData) ([]or
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowAccountInfo(uri string, token string) ([]ormapi.AccountInfo, int, error) {
+func (s *Client) ShowAccountInfo(uri string, token string, ops ...Op) ([]ormapi.AccountInfo, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	var out []ormapi.AccountInfo
@@ -812,8 +863,9 @@ func (s *Client) ShowAccountInfo(uri string, token string) ([]ormapi.AccountInfo
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowPaymentProfiles(uri string, token string, in *ormapi.BillingOrganization) ([]billing.PaymentProfile, int, error) {
+func (s *Client) ShowPaymentProfiles(uri string, token string, in *ormapi.BillingOrganization, ops ...Op) ([]billing.PaymentProfile, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -828,8 +880,9 @@ func (s *Client) ShowPaymentProfiles(uri string, token string, in *ormapi.Billin
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeletePaymentProfile(uri string, token string, in *ormapi.PaymentProfileDeletion) (int, error) {
+func (s *Client) DeletePaymentProfile(uri string, token string, in *ormapi.PaymentProfileDeletion, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -839,8 +892,9 @@ func (s *Client) DeletePaymentProfile(uri string, token string, in *ormapi.Payme
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetInvoice(uri string, token string, in *ormapi.InvoiceRequest) ([]billing.InvoiceData, int, error) {
+func (s *Client) GetInvoice(uri string, token string, in *ormapi.InvoiceRequest, ops ...Op) ([]billing.InvoiceData, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -857,8 +911,9 @@ func (s *Client) GetInvoice(uri string, token string, in *ormapi.InvoiceRequest)
 
 // Generating group Cloudlet
 
-func (s *Client) CreateCloudlet(uri string, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Result, int, error) {
+func (s *Client) CreateCloudlet(uri string, token string, in *ormapi.RegionCloudlet, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -873,8 +928,9 @@ func (s *Client) CreateCloudlet(uri string, token string, in *ormapi.RegionCloud
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteCloudlet(uri string, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Result, int, error) {
+func (s *Client) DeleteCloudlet(uri string, token string, in *ormapi.RegionCloudlet, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -889,8 +945,9 @@ func (s *Client) DeleteCloudlet(uri string, token string, in *ormapi.RegionCloud
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateCloudlet(uri string, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Result, int, error) {
+func (s *Client) UpdateCloudlet(uri string, token string, in *ormapi.RegionCloudlet, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -909,8 +966,9 @@ func (s *Client) UpdateCloudlet(uri string, token string, in *ormapi.RegionCloud
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudlet(uri string, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Cloudlet, int, error) {
+func (s *Client) ShowCloudlet(uri string, token string, in *ormapi.RegionCloudlet, ops ...Op) ([]edgeproto.Cloudlet, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -925,8 +983,9 @@ func (s *Client) ShowCloudlet(uri string, token string, in *ormapi.RegionCloudle
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetCloudletManifest(uri string, token string, in *ormapi.RegionCloudletKey) (*edgeproto.CloudletManifest, int, error) {
+func (s *Client) GetCloudletManifest(uri string, token string, in *ormapi.RegionCloudletKey, ops ...Op) (*edgeproto.CloudletManifest, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -941,8 +1000,9 @@ func (s *Client) GetCloudletManifest(uri string, token string, in *ormapi.Region
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudletPlatformFeatures(uri string, token string, in *ormapi.RegionPlatformFeatures) ([]edgeproto.PlatformFeatures, int, error) {
+func (s *Client) ShowCloudletPlatformFeatures(uri string, token string, in *ormapi.RegionPlatformFeatures, ops ...Op) ([]edgeproto.PlatformFeatures, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -957,8 +1017,9 @@ func (s *Client) ShowCloudletPlatformFeatures(uri string, token string, in *orma
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetCloudletProps(uri string, token string, in *ormapi.RegionCloudletProps) (*edgeproto.CloudletProps, int, error) {
+func (s *Client) GetCloudletProps(uri string, token string, in *ormapi.RegionCloudletProps, ops ...Op) (*edgeproto.CloudletProps, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -973,8 +1034,9 @@ func (s *Client) GetCloudletProps(uri string, token string, in *ormapi.RegionClo
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetCloudletResourceQuotaProps(uri string, token string, in *ormapi.RegionCloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, int, error) {
+func (s *Client) GetCloudletResourceQuotaProps(uri string, token string, in *ormapi.RegionCloudletResourceQuotaProps, ops ...Op) (*edgeproto.CloudletResourceQuotaProps, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -989,8 +1051,9 @@ func (s *Client) GetCloudletResourceQuotaProps(uri string, token string, in *orm
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetCloudletResourceUsage(uri string, token string, in *ormapi.RegionCloudletResourceUsage) (*edgeproto.CloudletResourceUsage, int, error) {
+func (s *Client) GetCloudletResourceUsage(uri string, token string, in *ormapi.RegionCloudletResourceUsage, ops ...Op) (*edgeproto.CloudletResourceUsage, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1005,8 +1068,9 @@ func (s *Client) GetCloudletResourceUsage(uri string, token string, in *ormapi.R
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AddCloudletResMapping(uri string, token string, in *ormapi.RegionCloudletResMap) (*edgeproto.Result, int, error) {
+func (s *Client) AddCloudletResMapping(uri string, token string, in *ormapi.RegionCloudletResMap, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1021,8 +1085,9 @@ func (s *Client) AddCloudletResMapping(uri string, token string, in *ormapi.Regi
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RemoveCloudletResMapping(uri string, token string, in *ormapi.RegionCloudletResMap) (*edgeproto.Result, int, error) {
+func (s *Client) RemoveCloudletResMapping(uri string, token string, in *ormapi.RegionCloudletResMap, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1037,8 +1102,9 @@ func (s *Client) RemoveCloudletResMapping(uri string, token string, in *ormapi.R
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AddCloudletAllianceOrg(uri string, token string, in *ormapi.RegionCloudletAllianceOrg) (*edgeproto.Result, int, error) {
+func (s *Client) AddCloudletAllianceOrg(uri string, token string, in *ormapi.RegionCloudletAllianceOrg, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1053,8 +1119,9 @@ func (s *Client) AddCloudletAllianceOrg(uri string, token string, in *ormapi.Reg
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RemoveCloudletAllianceOrg(uri string, token string, in *ormapi.RegionCloudletAllianceOrg) (*edgeproto.Result, int, error) {
+func (s *Client) RemoveCloudletAllianceOrg(uri string, token string, in *ormapi.RegionCloudletAllianceOrg, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1069,8 +1136,9 @@ func (s *Client) RemoveCloudletAllianceOrg(uri string, token string, in *ormapi.
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) FindFlavorMatch(uri string, token string, in *ormapi.RegionFlavorMatch) (*edgeproto.FlavorMatch, int, error) {
+func (s *Client) FindFlavorMatch(uri string, token string, in *ormapi.RegionFlavorMatch, ops ...Op) (*edgeproto.FlavorMatch, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1085,8 +1153,9 @@ func (s *Client) FindFlavorMatch(uri string, token string, in *ormapi.RegionFlav
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowFlavorsForCloudlet(uri string, token string, in *ormapi.RegionCloudletKey) ([]edgeproto.FlavorKey, int, error) {
+func (s *Client) ShowFlavorsForCloudlet(uri string, token string, in *ormapi.RegionCloudletKey, ops ...Op) ([]edgeproto.FlavorKey, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1101,8 +1170,9 @@ func (s *Client) ShowFlavorsForCloudlet(uri string, token string, in *ormapi.Reg
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetOrganizationsOnCloudlet(uri string, token string, in *ormapi.RegionCloudletKey) ([]edgeproto.Organization, int, error) {
+func (s *Client) GetOrganizationsOnCloudlet(uri string, token string, in *ormapi.RegionCloudletKey, ops ...Op) ([]edgeproto.Organization, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1117,8 +1187,9 @@ func (s *Client) GetOrganizationsOnCloudlet(uri string, token string, in *ormapi
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RevokeAccessKey(uri string, token string, in *ormapi.RegionCloudletKey) (*edgeproto.Result, int, error) {
+func (s *Client) RevokeAccessKey(uri string, token string, in *ormapi.RegionCloudletKey, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1133,8 +1204,9 @@ func (s *Client) RevokeAccessKey(uri string, token string, in *ormapi.RegionClou
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GenerateAccessKey(uri string, token string, in *ormapi.RegionCloudletKey) (*edgeproto.Result, int, error) {
+func (s *Client) GenerateAccessKey(uri string, token string, in *ormapi.RegionCloudletKey, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1149,8 +1221,9 @@ func (s *Client) GenerateAccessKey(uri string, token string, in *ormapi.RegionCl
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetCloudletGPUDriverLicenseConfig(uri string, token string, in *ormapi.RegionCloudletKey) (*edgeproto.Result, int, error) {
+func (s *Client) GetCloudletGPUDriverLicenseConfig(uri string, token string, in *ormapi.RegionCloudletKey, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1167,8 +1240,9 @@ func (s *Client) GetCloudletGPUDriverLicenseConfig(uri string, token string, in 
 
 // Generating group CloudletInfo
 
-func (s *Client) ShowCloudletInfo(uri string, token string, in *ormapi.RegionCloudletInfo) ([]edgeproto.CloudletInfo, int, error) {
+func (s *Client) ShowCloudletInfo(uri string, token string, in *ormapi.RegionCloudletInfo, ops ...Op) ([]edgeproto.CloudletInfo, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1183,8 +1257,9 @@ func (s *Client) ShowCloudletInfo(uri string, token string, in *ormapi.RegionClo
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) InjectCloudletInfo(uri string, token string, in *ormapi.RegionCloudletInfo) (*edgeproto.Result, int, error) {
+func (s *Client) InjectCloudletInfo(uri string, token string, in *ormapi.RegionCloudletInfo, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1199,8 +1274,9 @@ func (s *Client) InjectCloudletInfo(uri string, token string, in *ormapi.RegionC
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) EvictCloudletInfo(uri string, token string, in *ormapi.RegionCloudletInfo) (*edgeproto.Result, int, error) {
+func (s *Client) EvictCloudletInfo(uri string, token string, in *ormapi.RegionCloudletInfo, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1217,8 +1293,9 @@ func (s *Client) EvictCloudletInfo(uri string, token string, in *ormapi.RegionCl
 
 // Generating group CloudletPool
 
-func (s *Client) CreateCloudletPool(uri string, token string, in *ormapi.RegionCloudletPool) (*edgeproto.Result, int, error) {
+func (s *Client) CreateCloudletPool(uri string, token string, in *ormapi.RegionCloudletPool, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1233,8 +1310,9 @@ func (s *Client) CreateCloudletPool(uri string, token string, in *ormapi.RegionC
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteCloudletPool(uri string, token string, in *ormapi.RegionCloudletPool) (*edgeproto.Result, int, error) {
+func (s *Client) DeleteCloudletPool(uri string, token string, in *ormapi.RegionCloudletPool, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1249,8 +1327,9 @@ func (s *Client) DeleteCloudletPool(uri string, token string, in *ormapi.RegionC
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateCloudletPool(uri string, token string, in *ormapi.RegionCloudletPool) (*edgeproto.Result, int, error) {
+func (s *Client) UpdateCloudletPool(uri string, token string, in *ormapi.RegionCloudletPool, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -1269,8 +1348,9 @@ func (s *Client) UpdateCloudletPool(uri string, token string, in *ormapi.RegionC
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudletPool(uri string, token string, in *ormapi.RegionCloudletPool) ([]edgeproto.CloudletPool, int, error) {
+func (s *Client) ShowCloudletPool(uri string, token string, in *ormapi.RegionCloudletPool, ops ...Op) ([]edgeproto.CloudletPool, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1285,8 +1365,9 @@ func (s *Client) ShowCloudletPool(uri string, token string, in *ormapi.RegionClo
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AddCloudletPoolMember(uri string, token string, in *ormapi.RegionCloudletPoolMember) (*edgeproto.Result, int, error) {
+func (s *Client) AddCloudletPoolMember(uri string, token string, in *ormapi.RegionCloudletPoolMember, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1301,8 +1382,9 @@ func (s *Client) AddCloudletPoolMember(uri string, token string, in *ormapi.Regi
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RemoveCloudletPoolMember(uri string, token string, in *ormapi.RegionCloudletPoolMember) (*edgeproto.Result, int, error) {
+func (s *Client) RemoveCloudletPoolMember(uri string, token string, in *ormapi.RegionCloudletPoolMember, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1319,8 +1401,9 @@ func (s *Client) RemoveCloudletPoolMember(uri string, token string, in *ormapi.R
 
 // Generating group CloudletPoolAccess
 
-func (s *Client) ShowCloudletPoolAccessGranted(uri string, token string, in *cli.MapData) ([]ormapi.OrgCloudletPool, int, error) {
+func (s *Client) ShowCloudletPoolAccessGranted(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.OrgCloudletPool, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1335,8 +1418,9 @@ func (s *Client) ShowCloudletPoolAccessGranted(uri string, token string, in *cli
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudletPoolAccessPending(uri string, token string, in *cli.MapData) ([]ormapi.OrgCloudletPool, int, error) {
+func (s *Client) ShowCloudletPoolAccessPending(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.OrgCloudletPool, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1353,8 +1437,9 @@ func (s *Client) ShowCloudletPoolAccessPending(uri string, token string, in *cli
 
 // Generating group CloudletPoolInvitation
 
-func (s *Client) CreateCloudletPoolAccessInvitation(uri string, token string, in *ormapi.OrgCloudletPool) (int, error) {
+func (s *Client) CreateCloudletPoolAccessInvitation(uri string, token string, in *ormapi.OrgCloudletPool, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1364,8 +1449,9 @@ func (s *Client) CreateCloudletPoolAccessInvitation(uri string, token string, in
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteCloudletPoolAccessInvitation(uri string, token string, in *ormapi.OrgCloudletPool) (int, error) {
+func (s *Client) DeleteCloudletPoolAccessInvitation(uri string, token string, in *ormapi.OrgCloudletPool, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1375,8 +1461,9 @@ func (s *Client) DeleteCloudletPoolAccessInvitation(uri string, token string, in
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudletPoolAccessInvitation(uri string, token string, in *cli.MapData) ([]ormapi.OrgCloudletPool, int, error) {
+func (s *Client) ShowCloudletPoolAccessInvitation(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.OrgCloudletPool, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1393,8 +1480,9 @@ func (s *Client) ShowCloudletPoolAccessInvitation(uri string, token string, in *
 
 // Generating group CloudletPoolResponse
 
-func (s *Client) CreateCloudletPoolAccessResponse(uri string, token string, in *ormapi.OrgCloudletPool) (int, error) {
+func (s *Client) CreateCloudletPoolAccessResponse(uri string, token string, in *ormapi.OrgCloudletPool, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1404,8 +1492,9 @@ func (s *Client) CreateCloudletPoolAccessResponse(uri string, token string, in *
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteCloudletPoolAccessResponse(uri string, token string, in *ormapi.OrgCloudletPool) (int, error) {
+func (s *Client) DeleteCloudletPoolAccessResponse(uri string, token string, in *ormapi.OrgCloudletPool, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1415,8 +1504,9 @@ func (s *Client) DeleteCloudletPoolAccessResponse(uri string, token string, in *
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudletPoolAccessResponse(uri string, token string, in *cli.MapData) ([]ormapi.OrgCloudletPool, int, error) {
+func (s *Client) ShowCloudletPoolAccessResponse(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.OrgCloudletPool, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1433,8 +1523,9 @@ func (s *Client) ShowCloudletPoolAccessResponse(uri string, token string, in *cl
 
 // Generating group CloudletRefs
 
-func (s *Client) ShowCloudletRefs(uri string, token string, in *ormapi.RegionCloudletRefs) ([]edgeproto.CloudletRefs, int, error) {
+func (s *Client) ShowCloudletRefs(uri string, token string, in *ormapi.RegionCloudletRefs, ops ...Op) ([]edgeproto.CloudletRefs, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1451,8 +1542,9 @@ func (s *Client) ShowCloudletRefs(uri string, token string, in *ormapi.RegionClo
 
 // Generating group ClusterInst
 
-func (s *Client) CreateClusterInst(uri string, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error) {
+func (s *Client) CreateClusterInst(uri string, token string, in *ormapi.RegionClusterInst, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1467,8 +1559,9 @@ func (s *Client) CreateClusterInst(uri string, token string, in *ormapi.RegionCl
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteClusterInst(uri string, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error) {
+func (s *Client) DeleteClusterInst(uri string, token string, in *ormapi.RegionClusterInst, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1483,8 +1576,9 @@ func (s *Client) DeleteClusterInst(uri string, token string, in *ormapi.RegionCl
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateClusterInst(uri string, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error) {
+func (s *Client) UpdateClusterInst(uri string, token string, in *ormapi.RegionClusterInst, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -1503,8 +1597,9 @@ func (s *Client) UpdateClusterInst(uri string, token string, in *ormapi.RegionCl
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowClusterInst(uri string, token string, in *ormapi.RegionClusterInst) ([]edgeproto.ClusterInst, int, error) {
+func (s *Client) ShowClusterInst(uri string, token string, in *ormapi.RegionClusterInst, ops ...Op) ([]edgeproto.ClusterInst, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1519,8 +1614,9 @@ func (s *Client) ShowClusterInst(uri string, token string, in *ormapi.RegionClus
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteIdleReservableClusterInsts(uri string, token string, in *ormapi.RegionIdleReservableClusterInsts) (*edgeproto.Result, int, error) {
+func (s *Client) DeleteIdleReservableClusterInsts(uri string, token string, in *ormapi.RegionIdleReservableClusterInsts, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1537,8 +1633,9 @@ func (s *Client) DeleteIdleReservableClusterInsts(uri string, token string, in *
 
 // Generating group ClusterRefs
 
-func (s *Client) ShowClusterRefs(uri string, token string, in *ormapi.RegionClusterRefs) ([]edgeproto.ClusterRefs, int, error) {
+func (s *Client) ShowClusterRefs(uri string, token string, in *ormapi.RegionClusterRefs, ops ...Op) ([]edgeproto.ClusterRefs, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1555,8 +1652,9 @@ func (s *Client) ShowClusterRefs(uri string, token string, in *ormapi.RegionClus
 
 // Generating group Config
 
-func (s *Client) UpdateConfig(uri string, token string, in *cli.MapData) (int, error) {
+func (s *Client) UpdateConfig(uri string, token string, in *cli.MapData, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1566,8 +1664,9 @@ func (s *Client) UpdateConfig(uri string, token string, in *cli.MapData) (int, e
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ResetConfig(uri string, token string) (int, error) {
+func (s *Client) ResetConfig(uri string, token string, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 
@@ -1576,8 +1675,9 @@ func (s *Client) ResetConfig(uri string, token string) (int, error) {
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowConfig(uri string, token string) (*ormapi.Config, int, error) {
+func (s *Client) ShowConfig(uri string, token string, ops ...Op) (*ormapi.Config, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	var out ormapi.Config
@@ -1591,8 +1691,9 @@ func (s *Client) ShowConfig(uri string, token string) (*ormapi.Config, int, erro
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowPublicConfig(uri string) (*ormapi.Config, int, error) {
+func (s *Client) ShowPublicConfig(uri string, ops ...Op) (*ormapi.Config, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	var out ormapi.Config
 	rundata.Out = &out
@@ -1605,8 +1706,9 @@ func (s *Client) ShowPublicConfig(uri string) (*ormapi.Config, int, error) {
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) MCVersion(uri string, token string) (*ormapi.Version, int, error) {
+func (s *Client) MCVersion(uri string, token string, ops ...Op) (*ormapi.Version, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	var out ormapi.Version
@@ -1622,8 +1724,9 @@ func (s *Client) MCVersion(uri string, token string) (*ormapi.Version, int, erro
 
 // Generating group Controller
 
-func (s *Client) CreateController(uri string, token string, in *ormapi.Controller) (int, error) {
+func (s *Client) CreateController(uri string, token string, in *ormapi.Controller, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1633,8 +1736,9 @@ func (s *Client) CreateController(uri string, token string, in *ormapi.Controlle
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateController(uri string, token string, in *cli.MapData) (int, error) {
+func (s *Client) UpdateController(uri string, token string, in *cli.MapData, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1644,8 +1748,9 @@ func (s *Client) UpdateController(uri string, token string, in *cli.MapData) (in
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteController(uri string, token string, in *ormapi.Controller) (int, error) {
+func (s *Client) DeleteController(uri string, token string, in *ormapi.Controller, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1655,8 +1760,9 @@ func (s *Client) DeleteController(uri string, token string, in *ormapi.Controlle
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowController(uri string, token string, in *cli.MapData) ([]ormapi.Controller, int, error) {
+func (s *Client) ShowController(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.Controller, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1673,8 +1779,9 @@ func (s *Client) ShowController(uri string, token string, in *cli.MapData) ([]or
 
 // Generating group Debug
 
-func (s *Client) EnableDebugLevels(uri string, token string, in *ormapi.RegionDebugRequest) ([]edgeproto.DebugReply, int, error) {
+func (s *Client) EnableDebugLevels(uri string, token string, in *ormapi.RegionDebugRequest, ops ...Op) ([]edgeproto.DebugReply, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1689,8 +1796,9 @@ func (s *Client) EnableDebugLevels(uri string, token string, in *ormapi.RegionDe
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DisableDebugLevels(uri string, token string, in *ormapi.RegionDebugRequest) ([]edgeproto.DebugReply, int, error) {
+func (s *Client) DisableDebugLevels(uri string, token string, in *ormapi.RegionDebugRequest, ops ...Op) ([]edgeproto.DebugReply, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1705,8 +1813,9 @@ func (s *Client) DisableDebugLevels(uri string, token string, in *ormapi.RegionD
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowDebugLevels(uri string, token string, in *ormapi.RegionDebugRequest) ([]edgeproto.DebugReply, int, error) {
+func (s *Client) ShowDebugLevels(uri string, token string, in *ormapi.RegionDebugRequest, ops ...Op) ([]edgeproto.DebugReply, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1721,8 +1830,9 @@ func (s *Client) ShowDebugLevels(uri string, token string, in *ormapi.RegionDebu
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RunDebug(uri string, token string, in *ormapi.RegionDebugRequest) ([]edgeproto.DebugReply, int, error) {
+func (s *Client) RunDebug(uri string, token string, in *ormapi.RegionDebugRequest, ops ...Op) ([]edgeproto.DebugReply, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1739,8 +1849,9 @@ func (s *Client) RunDebug(uri string, token string, in *ormapi.RegionDebugReques
 
 // Generating group Device
 
-func (s *Client) InjectDevice(uri string, token string, in *ormapi.RegionDevice) (*edgeproto.Result, int, error) {
+func (s *Client) InjectDevice(uri string, token string, in *ormapi.RegionDevice, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1755,8 +1866,9 @@ func (s *Client) InjectDevice(uri string, token string, in *ormapi.RegionDevice)
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowDevice(uri string, token string, in *ormapi.RegionDevice) ([]edgeproto.Device, int, error) {
+func (s *Client) ShowDevice(uri string, token string, in *ormapi.RegionDevice, ops ...Op) ([]edgeproto.Device, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1771,8 +1883,9 @@ func (s *Client) ShowDevice(uri string, token string, in *ormapi.RegionDevice) (
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) EvictDevice(uri string, token string, in *ormapi.RegionDevice) (*edgeproto.Result, int, error) {
+func (s *Client) EvictDevice(uri string, token string, in *ormapi.RegionDevice, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1787,8 +1900,9 @@ func (s *Client) EvictDevice(uri string, token string, in *ormapi.RegionDevice) 
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowDeviceReport(uri string, token string, in *ormapi.RegionDeviceReport) ([]edgeproto.Device, int, error) {
+func (s *Client) ShowDeviceReport(uri string, token string, in *ormapi.RegionDeviceReport, ops ...Op) ([]edgeproto.Device, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1805,8 +1919,9 @@ func (s *Client) ShowDeviceReport(uri string, token string, in *ormapi.RegionDev
 
 // Generating group Events
 
-func (s *Client) ShowEvents(uri string, token string, in *node.EventSearch) ([]node.EventData, int, error) {
+func (s *Client) ShowEvents(uri string, token string, in *node.EventSearch, ops ...Op) ([]node.EventData, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1821,8 +1936,9 @@ func (s *Client) ShowEvents(uri string, token string, in *node.EventSearch) ([]n
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowOldEvents(uri string, token string, in *node.EventSearch) ([]node.EventDataOld, int, error) {
+func (s *Client) ShowOldEvents(uri string, token string, in *node.EventSearch, ops ...Op) ([]node.EventDataOld, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1837,8 +1953,9 @@ func (s *Client) ShowOldEvents(uri string, token string, in *node.EventSearch) (
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) FindEvents(uri string, token string, in *node.EventSearch) ([]node.EventData, int, error) {
+func (s *Client) FindEvents(uri string, token string, in *node.EventSearch, ops ...Op) ([]node.EventData, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1853,8 +1970,9 @@ func (s *Client) FindEvents(uri string, token string, in *node.EventSearch) ([]n
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) EventTerms(uri string, token string, in *node.EventSearch) (*node.EventTerms, int, error) {
+func (s *Client) EventTerms(uri string, token string, in *node.EventSearch, ops ...Op) (*node.EventTerms, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1871,8 +1989,9 @@ func (s *Client) EventTerms(uri string, token string, in *node.EventSearch) (*no
 
 // Generating group Exec
 
-func (s *Client) RunCommand(uri string, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
+func (s *Client) RunCommand(uri string, token string, in *ormapi.RegionExecRequest, ops ...Op) (*edgeproto.ExecRequest, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1887,8 +2006,9 @@ func (s *Client) RunCommand(uri string, token string, in *ormapi.RegionExecReque
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RunConsole(uri string, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
+func (s *Client) RunConsole(uri string, token string, in *ormapi.RegionExecRequest, ops ...Op) (*edgeproto.ExecRequest, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1903,8 +2023,9 @@ func (s *Client) RunConsole(uri string, token string, in *ormapi.RegionExecReque
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowLogs(uri string, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
+func (s *Client) ShowLogs(uri string, token string, in *ormapi.RegionExecRequest, ops ...Op) (*edgeproto.ExecRequest, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1919,8 +2040,9 @@ func (s *Client) ShowLogs(uri string, token string, in *ormapi.RegionExecRequest
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AccessCloudlet(uri string, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
+func (s *Client) AccessCloudlet(uri string, token string, in *ormapi.RegionExecRequest, ops ...Op) (*edgeproto.ExecRequest, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1937,8 +2059,9 @@ func (s *Client) AccessCloudlet(uri string, token string, in *ormapi.RegionExecR
 
 // Generating group Federation
 
-func (s *Client) ShowFederation(uri string, token string, in *cli.MapData) ([]ormapi.FederationConsumer, int, error) {
+func (s *Client) ShowFederation(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.FederationConsumer, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1953,8 +2076,9 @@ func (s *Client) ShowFederation(uri string, token string, in *cli.MapData) ([]or
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) OnboardConsumerApp(uri string, token string, in *ormapi.ConsumerApp) ([]ormapi.Result, int, error) {
+func (s *Client) OnboardConsumerApp(uri string, token string, in *ormapi.ConsumerApp, ops ...Op) ([]ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1969,8 +2093,9 @@ func (s *Client) OnboardConsumerApp(uri string, token string, in *ormapi.Consume
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeboardConsumerApp(uri string, token string, in *ormapi.ConsumerApp) ([]ormapi.Result, int, error) {
+func (s *Client) DeboardConsumerApp(uri string, token string, in *ormapi.ConsumerApp, ops ...Op) ([]ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -1985,8 +2110,9 @@ func (s *Client) DeboardConsumerApp(uri string, token string, in *ormapi.Consume
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowConsumerApp(uri string, token string, in *cli.MapData) ([]ormapi.ConsumerApp, int, error) {
+func (s *Client) ShowConsumerApp(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.ConsumerApp, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2001,8 +2127,9 @@ func (s *Client) ShowConsumerApp(uri string, token string, in *cli.MapData) ([]o
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) CreateConsumerImage(uri string, token string, in *ormapi.ConsumerImage) (*ormapi.Result, int, error) {
+func (s *Client) CreateConsumerImage(uri string, token string, in *ormapi.ConsumerImage, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2017,8 +2144,9 @@ func (s *Client) CreateConsumerImage(uri string, token string, in *ormapi.Consum
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteConsumerImage(uri string, token string, in *ormapi.ConsumerImage) (*ormapi.Result, int, error) {
+func (s *Client) DeleteConsumerImage(uri string, token string, in *ormapi.ConsumerImage, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2033,8 +2161,9 @@ func (s *Client) DeleteConsumerImage(uri string, token string, in *ormapi.Consum
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowConsumerImage(uri string, token string, in *cli.MapData) ([]ormapi.ConsumerImage, int, error) {
+func (s *Client) ShowConsumerImage(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.ConsumerImage, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2051,8 +2180,9 @@ func (s *Client) ShowConsumerImage(uri string, token string, in *cli.MapData) ([
 
 // Generating group FederationConsumer
 
-func (s *Client) CreateFederationConsumer(uri string, token string, in *ormapi.FederationConsumer) (*ormapi.Result, int, error) {
+func (s *Client) CreateFederationConsumer(uri string, token string, in *ormapi.FederationConsumer, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2067,8 +2197,9 @@ func (s *Client) CreateFederationConsumer(uri string, token string, in *ormapi.F
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateFederationConsumer(uri string, token string, in *cli.MapData) (*ormapi.Result, int, error) {
+func (s *Client) UpdateFederationConsumer(uri string, token string, in *cli.MapData, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2083,8 +2214,9 @@ func (s *Client) UpdateFederationConsumer(uri string, token string, in *cli.MapD
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteFederationConsumer(uri string, token string, in *ormapi.FederationConsumer) (*ormapi.Result, int, error) {
+func (s *Client) DeleteFederationConsumer(uri string, token string, in *ormapi.FederationConsumer, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2099,8 +2231,9 @@ func (s *Client) DeleteFederationConsumer(uri string, token string, in *ormapi.F
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowFederationConsumer(uri string, token string, in *cli.MapData) ([]ormapi.FederationConsumer, int, error) {
+func (s *Client) ShowFederationConsumer(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.FederationConsumer, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2115,8 +2248,9 @@ func (s *Client) ShowFederationConsumer(uri string, token string, in *cli.MapDat
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) SetFederationConsumerAPIKey(uri string, token string, in *ormapi.FederationConsumer) (*ormapi.Result, int, error) {
+func (s *Client) SetFederationConsumerAPIKey(uri string, token string, in *ormapi.FederationConsumer, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2131,8 +2265,9 @@ func (s *Client) SetFederationConsumerAPIKey(uri string, token string, in *ormap
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GenerateFederationConsumerNotifyKey(uri string, token string, in *ormapi.FederationConsumer) (*ormapi.Result, int, error) {
+func (s *Client) GenerateFederationConsumerNotifyKey(uri string, token string, in *ormapi.FederationConsumer, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2147,8 +2282,9 @@ func (s *Client) GenerateFederationConsumerNotifyKey(uri string, token string, i
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RegisterConsumerZone(uri string, token string, in *ormapi.FederatedZoneRegRequest) (*ormapi.Result, int, error) {
+func (s *Client) RegisterConsumerZone(uri string, token string, in *ormapi.FederatedZoneRegRequest, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2163,8 +2299,9 @@ func (s *Client) RegisterConsumerZone(uri string, token string, in *ormapi.Feder
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeregisterConsumerZone(uri string, token string, in *ormapi.FederatedZoneRegRequest) (*ormapi.Result, int, error) {
+func (s *Client) DeregisterConsumerZone(uri string, token string, in *ormapi.FederatedZoneRegRequest, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2179,8 +2316,9 @@ func (s *Client) DeregisterConsumerZone(uri string, token string, in *ormapi.Fed
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowConsumerZone(uri string, token string, in *cli.MapData) ([]ormapi.ConsumerZone, int, error) {
+func (s *Client) ShowConsumerZone(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.ConsumerZone, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2195,8 +2333,9 @@ func (s *Client) ShowConsumerZone(uri string, token string, in *cli.MapData) ([]
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowFedConsumerImage(uri string, token string, in *cli.MapData) ([]ormapi.ConsumerImage, int, error) {
+func (s *Client) ShowFedConsumerImage(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.ConsumerImage, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2213,8 +2352,9 @@ func (s *Client) ShowFedConsumerImage(uri string, token string, in *cli.MapData)
 
 // Generating group FederationDirect
 
-func (s *Client) GetFederationPartner(uri string, token string, in *ormapi.FederationConsumer) (*fedewapi.GetFederationDetails200Response, int, error) {
+func (s *Client) GetFederationPartner(uri string, token string, in *ormapi.FederationConsumer, ops ...Op) (*fedewapi.GetFederationDetails200Response, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2229,8 +2369,9 @@ func (s *Client) GetFederationPartner(uri string, token string, in *ormapi.Feder
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetFederationZone(uri string, token string, in *ormapi.ConsumerZone) (*fedewapi.ZoneRegisteredData, int, error) {
+func (s *Client) GetFederationZone(uri string, token string, in *ormapi.ConsumerZone, ops ...Op) (*fedewapi.ZoneRegisteredData, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2245,8 +2386,9 @@ func (s *Client) GetFederationZone(uri string, token string, in *ormapi.Consumer
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetFederationArtefact(uri string, token string, in *ormapi.ConsumerApp) (*fedewapi.GetArtefact200Response, int, error) {
+func (s *Client) GetFederationArtefact(uri string, token string, in *ormapi.ConsumerApp, ops ...Op) (*fedewapi.GetArtefact200Response, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2261,8 +2403,9 @@ func (s *Client) GetFederationArtefact(uri string, token string, in *ormapi.Cons
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetFederationFile(uri string, token string, in *ormapi.ConsumerImage) (*fedewapi.ViewFile200Response, int, error) {
+func (s *Client) GetFederationFile(uri string, token string, in *ormapi.ConsumerImage, ops ...Op) (*fedewapi.ViewFile200Response, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2277,8 +2420,9 @@ func (s *Client) GetFederationFile(uri string, token string, in *ormapi.Consumer
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetFederationApp(uri string, token string, in *ormapi.ConsumerApp) (*fedewapi.ViewApplication200Response, int, error) {
+func (s *Client) GetFederationApp(uri string, token string, in *ormapi.ConsumerApp, ops ...Op) (*fedewapi.ViewApplication200Response, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2293,8 +2437,9 @@ func (s *Client) GetFederationApp(uri string, token string, in *ormapi.ConsumerA
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetFederationAppInsts(uri string, token string, in *ormapi.RegionAppInst) ([]fedewapi.GetAppInstanceDetails200Response, int, error) {
+func (s *Client) GetFederationAppInsts(uri string, token string, in *ormapi.RegionAppInst, ops ...Op) ([]fedewapi.GetAppInstanceDetails200Response, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2311,8 +2456,9 @@ func (s *Client) GetFederationAppInsts(uri string, token string, in *ormapi.Regi
 
 // Generating group FederationProvider
 
-func (s *Client) CreateFederationProvider(uri string, token string, in *ormapi.FederationProvider) (*ormapi.FederationProviderInfo, int, error) {
+func (s *Client) CreateFederationProvider(uri string, token string, in *ormapi.FederationProvider, ops ...Op) (*ormapi.FederationProviderInfo, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2327,8 +2473,9 @@ func (s *Client) CreateFederationProvider(uri string, token string, in *ormapi.F
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateFederationProvider(uri string, token string, in *cli.MapData) (*ormapi.Result, int, error) {
+func (s *Client) UpdateFederationProvider(uri string, token string, in *cli.MapData, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2343,8 +2490,9 @@ func (s *Client) UpdateFederationProvider(uri string, token string, in *cli.MapD
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteFederationProvider(uri string, token string, in *ormapi.FederationProvider) (*ormapi.Result, int, error) {
+func (s *Client) DeleteFederationProvider(uri string, token string, in *ormapi.FederationProvider, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2359,8 +2507,9 @@ func (s *Client) DeleteFederationProvider(uri string, token string, in *ormapi.F
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowFederationProvider(uri string, token string, in *cli.MapData) ([]ormapi.FederationProvider, int, error) {
+func (s *Client) ShowFederationProvider(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.FederationProvider, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2375,8 +2524,9 @@ func (s *Client) ShowFederationProvider(uri string, token string, in *cli.MapDat
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GenerateFederationProviderAPIKey(uri string, token string, in *ormapi.FederationProvider) (*ormapi.FederationProviderInfo, int, error) {
+func (s *Client) GenerateFederationProviderAPIKey(uri string, token string, in *ormapi.FederationProvider, ops ...Op) (*ormapi.FederationProviderInfo, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2391,8 +2541,9 @@ func (s *Client) GenerateFederationProviderAPIKey(uri string, token string, in *
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) SetFederationProviderNotifyKey(uri string, token string, in *ormapi.FederationProvider) (*ormapi.Result, int, error) {
+func (s *Client) SetFederationProviderNotifyKey(uri string, token string, in *ormapi.FederationProvider, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2407,8 +2558,9 @@ func (s *Client) SetFederationProviderNotifyKey(uri string, token string, in *or
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) CreateProviderZoneBase(uri string, token string, in *ormapi.ProviderZoneBase) (*ormapi.Result, int, error) {
+func (s *Client) CreateProviderZoneBase(uri string, token string, in *ormapi.ProviderZoneBase, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2423,8 +2575,9 @@ func (s *Client) CreateProviderZoneBase(uri string, token string, in *ormapi.Pro
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteProviderZoneBase(uri string, token string, in *ormapi.ProviderZoneBase) (*ormapi.Result, int, error) {
+func (s *Client) DeleteProviderZoneBase(uri string, token string, in *ormapi.ProviderZoneBase, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2439,8 +2592,9 @@ func (s *Client) DeleteProviderZoneBase(uri string, token string, in *ormapi.Pro
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowProviderZoneBase(uri string, token string, in *cli.MapData) ([]ormapi.ProviderZoneBase, int, error) {
+func (s *Client) ShowProviderZoneBase(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.ProviderZoneBase, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2455,8 +2609,9 @@ func (s *Client) ShowProviderZoneBase(uri string, token string, in *cli.MapData)
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShareProviderZone(uri string, token string, in *ormapi.FederatedZoneShareRequest) (*ormapi.Result, int, error) {
+func (s *Client) ShareProviderZone(uri string, token string, in *ormapi.FederatedZoneShareRequest, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2471,8 +2626,9 @@ func (s *Client) ShareProviderZone(uri string, token string, in *ormapi.Federate
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UnshareProviderZone(uri string, token string, in *ormapi.FederatedZoneShareRequest) (*ormapi.Result, int, error) {
+func (s *Client) UnshareProviderZone(uri string, token string, in *ormapi.FederatedZoneShareRequest, ops ...Op) (*ormapi.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2487,8 +2643,9 @@ func (s *Client) UnshareProviderZone(uri string, token string, in *ormapi.Federa
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowProviderZone(uri string, token string, in *cli.MapData) ([]ormapi.ProviderZone, int, error) {
+func (s *Client) ShowProviderZone(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.ProviderZone, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2503,8 +2660,9 @@ func (s *Client) ShowProviderZone(uri string, token string, in *cli.MapData) ([]
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowProviderImage(uri string, token string, in *cli.MapData) ([]ormapi.ProviderImage, int, error) {
+func (s *Client) ShowProviderImage(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.ProviderImage, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2519,8 +2677,9 @@ func (s *Client) ShowProviderImage(uri string, token string, in *cli.MapData) ([
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowProviderArtefact(uri string, token string, in *cli.MapData) ([]ormapi.ProviderArtefact, int, error) {
+func (s *Client) ShowProviderArtefact(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.ProviderArtefact, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2535,8 +2694,9 @@ func (s *Client) ShowProviderArtefact(uri string, token string, in *cli.MapData)
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowProviderApp(uri string, token string, in *cli.MapData) ([]ormapi.ProviderApp, int, error) {
+func (s *Client) ShowProviderApp(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.ProviderApp, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2551,8 +2711,9 @@ func (s *Client) ShowProviderApp(uri string, token string, in *cli.MapData) ([]o
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowProviderAppInst(uri string, token string, in *cli.MapData) ([]ormapi.ProviderAppInst, int, error) {
+func (s *Client) ShowProviderAppInst(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.ProviderAppInst, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2567,10 +2728,79 @@ func (s *Client) ShowProviderAppInst(uri string, token string, in *cli.MapData) 
 	return out, rundata.RetStatus, rundata.RetError
 }
 
+func (s *Client) UnsafeDeleteProviderImage(uri string, token string, in *ormapi.ProviderImage, ops ...Op) (*ormapi.Result, int, error) {
+	rundata := RunData{}
+	applyOps(&rundata, ops...)
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out ormapi.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("UnsafeDeleteProviderImage")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) UnsafeDeleteProviderArtefact(uri string, token string, in *ormapi.ProviderArtefact, ops ...Op) (*ormapi.Result, int, error) {
+	rundata := RunData{}
+	applyOps(&rundata, ops...)
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out ormapi.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("UnsafeDeleteProviderArtefact")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) UnsafeDeleteProviderApp(uri string, token string, in *ormapi.ProviderApp, ops ...Op) (*ormapi.Result, int, error) {
+	rundata := RunData{}
+	applyOps(&rundata, ops...)
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out ormapi.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("UnsafeDeleteProviderApp")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) UnsafeDeleteProviderAppInst(uri string, token string, in *ormapi.ProviderAppInst, ops ...Op) (*ormapi.Result, int, error) {
+	rundata := RunData{}
+	applyOps(&rundata, ops...)
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out ormapi.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("UnsafeDeleteProviderAppInst")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
 // Generating group Flavor
 
-func (s *Client) CreateFlavor(uri string, token string, in *ormapi.RegionFlavor) (*edgeproto.Result, int, error) {
+func (s *Client) CreateFlavor(uri string, token string, in *ormapi.RegionFlavor, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2585,8 +2815,9 @@ func (s *Client) CreateFlavor(uri string, token string, in *ormapi.RegionFlavor)
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteFlavor(uri string, token string, in *ormapi.RegionFlavor) (*edgeproto.Result, int, error) {
+func (s *Client) DeleteFlavor(uri string, token string, in *ormapi.RegionFlavor, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2601,8 +2832,9 @@ func (s *Client) DeleteFlavor(uri string, token string, in *ormapi.RegionFlavor)
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateFlavor(uri string, token string, in *ormapi.RegionFlavor) (*edgeproto.Result, int, error) {
+func (s *Client) UpdateFlavor(uri string, token string, in *ormapi.RegionFlavor, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -2621,8 +2853,9 @@ func (s *Client) UpdateFlavor(uri string, token string, in *ormapi.RegionFlavor)
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowFlavor(uri string, token string, in *ormapi.RegionFlavor) ([]edgeproto.Flavor, int, error) {
+func (s *Client) ShowFlavor(uri string, token string, in *ormapi.RegionFlavor, ops ...Op) ([]edgeproto.Flavor, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2637,8 +2870,9 @@ func (s *Client) ShowFlavor(uri string, token string, in *ormapi.RegionFlavor) (
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AddFlavorRes(uri string, token string, in *ormapi.RegionFlavor) (*edgeproto.Result, int, error) {
+func (s *Client) AddFlavorRes(uri string, token string, in *ormapi.RegionFlavor, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2653,8 +2887,9 @@ func (s *Client) AddFlavorRes(uri string, token string, in *ormapi.RegionFlavor)
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RemoveFlavorRes(uri string, token string, in *ormapi.RegionFlavor) (*edgeproto.Result, int, error) {
+func (s *Client) RemoveFlavorRes(uri string, token string, in *ormapi.RegionFlavor, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2671,8 +2906,9 @@ func (s *Client) RemoveFlavorRes(uri string, token string, in *ormapi.RegionFlav
 
 // Generating group GPUDriver
 
-func (s *Client) CreateGPUDriver(uri string, token string, in *ormapi.RegionGPUDriver) ([]edgeproto.Result, int, error) {
+func (s *Client) CreateGPUDriver(uri string, token string, in *ormapi.RegionGPUDriver, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2687,8 +2923,9 @@ func (s *Client) CreateGPUDriver(uri string, token string, in *ormapi.RegionGPUD
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteGPUDriver(uri string, token string, in *ormapi.RegionGPUDriver) ([]edgeproto.Result, int, error) {
+func (s *Client) DeleteGPUDriver(uri string, token string, in *ormapi.RegionGPUDriver, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2703,8 +2940,9 @@ func (s *Client) DeleteGPUDriver(uri string, token string, in *ormapi.RegionGPUD
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateGPUDriver(uri string, token string, in *ormapi.RegionGPUDriver) ([]edgeproto.Result, int, error) {
+func (s *Client) UpdateGPUDriver(uri string, token string, in *ormapi.RegionGPUDriver, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -2723,8 +2961,9 @@ func (s *Client) UpdateGPUDriver(uri string, token string, in *ormapi.RegionGPUD
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowGPUDriver(uri string, token string, in *ormapi.RegionGPUDriver) ([]edgeproto.GPUDriver, int, error) {
+func (s *Client) ShowGPUDriver(uri string, token string, in *ormapi.RegionGPUDriver, ops ...Op) ([]edgeproto.GPUDriver, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2739,8 +2978,9 @@ func (s *Client) ShowGPUDriver(uri string, token string, in *ormapi.RegionGPUDri
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AddGPUDriverBuild(uri string, token string, in *ormapi.RegionGPUDriverBuildMember) ([]edgeproto.Result, int, error) {
+func (s *Client) AddGPUDriverBuild(uri string, token string, in *ormapi.RegionGPUDriverBuildMember, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2755,8 +2995,9 @@ func (s *Client) AddGPUDriverBuild(uri string, token string, in *ormapi.RegionGP
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RemoveGPUDriverBuild(uri string, token string, in *ormapi.RegionGPUDriverBuildMember) ([]edgeproto.Result, int, error) {
+func (s *Client) RemoveGPUDriverBuild(uri string, token string, in *ormapi.RegionGPUDriverBuildMember, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2771,8 +3012,9 @@ func (s *Client) RemoveGPUDriverBuild(uri string, token string, in *ormapi.Regio
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetGPUDriverBuildURL(uri string, token string, in *ormapi.RegionGPUDriverBuildMember) (*edgeproto.GPUDriverBuildURL, int, error) {
+func (s *Client) GetGPUDriverBuildURL(uri string, token string, in *ormapi.RegionGPUDriverBuildMember, ops ...Op) (*edgeproto.GPUDriverBuildURL, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2787,8 +3029,9 @@ func (s *Client) GetGPUDriverBuildURL(uri string, token string, in *ormapi.Regio
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetGPUDriverLicenseConfig(uri string, token string, in *ormapi.RegionGPUDriverKey) (*edgeproto.Result, int, error) {
+func (s *Client) GetGPUDriverLicenseConfig(uri string, token string, in *ormapi.RegionGPUDriverKey, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2805,8 +3048,9 @@ func (s *Client) GetGPUDriverLicenseConfig(uri string, token string, in *ormapi.
 
 // Generating group Metrics
 
-func (s *Client) ShowAppMetrics(uri string, token string, in *ormapi.RegionAppInstMetrics) (*ormapi.AllMetrics, int, error) {
+func (s *Client) ShowAppMetrics(uri string, token string, in *ormapi.RegionAppInstMetrics, ops ...Op) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2821,8 +3065,9 @@ func (s *Client) ShowAppMetrics(uri string, token string, in *ormapi.RegionAppIn
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowClusterMetrics(uri string, token string, in *ormapi.RegionClusterInstMetrics) (*ormapi.AllMetrics, int, error) {
+func (s *Client) ShowClusterMetrics(uri string, token string, in *ormapi.RegionClusterInstMetrics, ops ...Op) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2837,8 +3082,9 @@ func (s *Client) ShowClusterMetrics(uri string, token string, in *ormapi.RegionC
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudletMetrics(uri string, token string, in *ormapi.RegionCloudletMetrics) (*ormapi.AllMetrics, int, error) {
+func (s *Client) ShowCloudletMetrics(uri string, token string, in *ormapi.RegionCloudletMetrics, ops ...Op) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2853,8 +3099,9 @@ func (s *Client) ShowCloudletMetrics(uri string, token string, in *ormapi.Region
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudletUsage(uri string, token string, in *ormapi.RegionCloudletMetrics) (*ormapi.AllMetrics, int, error) {
+func (s *Client) ShowCloudletUsage(uri string, token string, in *ormapi.RegionCloudletMetrics, ops ...Op) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2869,8 +3116,9 @@ func (s *Client) ShowCloudletUsage(uri string, token string, in *ormapi.RegionCl
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowClientApiUsageMetrics(uri string, token string, in *ormapi.RegionClientApiUsageMetrics) (*ormapi.AllMetrics, int, error) {
+func (s *Client) ShowClientApiUsageMetrics(uri string, token string, in *ormapi.RegionClientApiUsageMetrics, ops ...Op) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2885,8 +3133,9 @@ func (s *Client) ShowClientApiUsageMetrics(uri string, token string, in *ormapi.
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowClientAppUsageMetrics(uri string, token string, in *ormapi.RegionClientAppUsageMetrics) (*ormapi.AllMetrics, int, error) {
+func (s *Client) ShowClientAppUsageMetrics(uri string, token string, in *ormapi.RegionClientAppUsageMetrics, ops ...Op) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2901,8 +3150,9 @@ func (s *Client) ShowClientAppUsageMetrics(uri string, token string, in *ormapi.
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowClientCloudletUsageMetrics(uri string, token string, in *ormapi.RegionClientCloudletUsageMetrics) (*ormapi.AllMetrics, int, error) {
+func (s *Client) ShowClientCloudletUsageMetrics(uri string, token string, in *ormapi.RegionClientCloudletUsageMetrics, ops ...Op) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2919,8 +3169,9 @@ func (s *Client) ShowClientCloudletUsageMetrics(uri string, token string, in *or
 
 // Generating group MetricsV2
 
-func (s *Client) ShowAppV2Metrics(uri string, token string, in *ormapi.RegionCustomAppMetrics) (*ormapi.AllMetrics, int, error) {
+func (s *Client) ShowAppV2Metrics(uri string, token string, in *ormapi.RegionCustomAppMetrics, ops ...Op) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2937,8 +3188,9 @@ func (s *Client) ShowAppV2Metrics(uri string, token string, in *ormapi.RegionCus
 
 // Generating group Network
 
-func (s *Client) CreateNetwork(uri string, token string, in *ormapi.RegionNetwork) ([]edgeproto.Result, int, error) {
+func (s *Client) CreateNetwork(uri string, token string, in *ormapi.RegionNetwork, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2953,8 +3205,9 @@ func (s *Client) CreateNetwork(uri string, token string, in *ormapi.RegionNetwor
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteNetwork(uri string, token string, in *ormapi.RegionNetwork) ([]edgeproto.Result, int, error) {
+func (s *Client) DeleteNetwork(uri string, token string, in *ormapi.RegionNetwork, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -2969,8 +3222,9 @@ func (s *Client) DeleteNetwork(uri string, token string, in *ormapi.RegionNetwor
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateNetwork(uri string, token string, in *ormapi.RegionNetwork) ([]edgeproto.Result, int, error) {
+func (s *Client) UpdateNetwork(uri string, token string, in *ormapi.RegionNetwork, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -2989,8 +3243,9 @@ func (s *Client) UpdateNetwork(uri string, token string, in *ormapi.RegionNetwor
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowNetwork(uri string, token string, in *ormapi.RegionNetwork) ([]edgeproto.Network, int, error) {
+func (s *Client) ShowNetwork(uri string, token string, in *ormapi.RegionNetwork, ops ...Op) ([]edgeproto.Network, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3007,8 +3262,9 @@ func (s *Client) ShowNetwork(uri string, token string, in *ormapi.RegionNetwork)
 
 // Generating group Node
 
-func (s *Client) ShowNode(uri string, token string, in *ormapi.RegionNode) ([]edgeproto.Node, int, error) {
+func (s *Client) ShowNode(uri string, token string, in *ormapi.RegionNode, ops ...Op) ([]edgeproto.Node, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3025,8 +3281,9 @@ func (s *Client) ShowNode(uri string, token string, in *ormapi.RegionNode) ([]ed
 
 // Generating group OperatorCode
 
-func (s *Client) CreateOperatorCode(uri string, token string, in *ormapi.RegionOperatorCode) (*edgeproto.Result, int, error) {
+func (s *Client) CreateOperatorCode(uri string, token string, in *ormapi.RegionOperatorCode, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3041,8 +3298,9 @@ func (s *Client) CreateOperatorCode(uri string, token string, in *ormapi.RegionO
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteOperatorCode(uri string, token string, in *ormapi.RegionOperatorCode) (*edgeproto.Result, int, error) {
+func (s *Client) DeleteOperatorCode(uri string, token string, in *ormapi.RegionOperatorCode, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3057,8 +3315,9 @@ func (s *Client) DeleteOperatorCode(uri string, token string, in *ormapi.RegionO
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowOperatorCode(uri string, token string, in *ormapi.RegionOperatorCode) ([]edgeproto.OperatorCode, int, error) {
+func (s *Client) ShowOperatorCode(uri string, token string, in *ormapi.RegionOperatorCode, ops ...Op) ([]edgeproto.OperatorCode, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3075,8 +3334,9 @@ func (s *Client) ShowOperatorCode(uri string, token string, in *ormapi.RegionOpe
 
 // Generating group Org
 
-func (s *Client) CreateOrg(uri string, token string, in *ormapi.Organization) (int, error) {
+func (s *Client) CreateOrg(uri string, token string, in *ormapi.Organization, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3086,8 +3346,9 @@ func (s *Client) CreateOrg(uri string, token string, in *ormapi.Organization) (i
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateOrg(uri string, token string, in *cli.MapData) (int, error) {
+func (s *Client) UpdateOrg(uri string, token string, in *cli.MapData, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3097,8 +3358,9 @@ func (s *Client) UpdateOrg(uri string, token string, in *cli.MapData) (int, erro
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteOrg(uri string, token string, in *ormapi.Organization) (int, error) {
+func (s *Client) DeleteOrg(uri string, token string, in *ormapi.Organization, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3108,8 +3370,9 @@ func (s *Client) DeleteOrg(uri string, token string, in *ormapi.Organization) (i
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowOrg(uri string, token string, in *cli.MapData) ([]ormapi.Organization, int, error) {
+func (s *Client) ShowOrg(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.Organization, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3126,8 +3389,9 @@ func (s *Client) ShowOrg(uri string, token string, in *cli.MapData) ([]ormapi.Or
 
 // Generating group OrgCloudlet
 
-func (s *Client) ShowOrgCloudlet(uri string, token string, in *ormapi.OrgCloudlet) ([]edgeproto.Cloudlet, int, error) {
+func (s *Client) ShowOrgCloudlet(uri string, token string, in *ormapi.OrgCloudlet, ops ...Op) ([]edgeproto.Cloudlet, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3144,8 +3408,9 @@ func (s *Client) ShowOrgCloudlet(uri string, token string, in *ormapi.OrgCloudle
 
 // Generating group OrgCloudletInfo
 
-func (s *Client) ShowOrgCloudletInfo(uri string, token string, in *ormapi.OrgCloudlet) ([]edgeproto.CloudletInfo, int, error) {
+func (s *Client) ShowOrgCloudletInfo(uri string, token string, in *ormapi.OrgCloudlet, ops ...Op) ([]edgeproto.CloudletInfo, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3162,8 +3427,9 @@ func (s *Client) ShowOrgCloudletInfo(uri string, token string, in *ormapi.OrgClo
 
 // Generating group RateLimitSettings
 
-func (s *Client) ShowRateLimitSettings(uri string, token string, in *ormapi.RegionRateLimitSettings) ([]edgeproto.RateLimitSettings, int, error) {
+func (s *Client) ShowRateLimitSettings(uri string, token string, in *ormapi.RegionRateLimitSettings, ops ...Op) ([]edgeproto.RateLimitSettings, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3178,8 +3444,9 @@ func (s *Client) ShowRateLimitSettings(uri string, token string, in *ormapi.Regi
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) CreateFlowRateLimitSettings(uri string, token string, in *ormapi.RegionFlowRateLimitSettings) (*edgeproto.Result, int, error) {
+func (s *Client) CreateFlowRateLimitSettings(uri string, token string, in *ormapi.RegionFlowRateLimitSettings, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3194,8 +3461,9 @@ func (s *Client) CreateFlowRateLimitSettings(uri string, token string, in *ormap
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateFlowRateLimitSettings(uri string, token string, in *ormapi.RegionFlowRateLimitSettings) (*edgeproto.Result, int, error) {
+func (s *Client) UpdateFlowRateLimitSettings(uri string, token string, in *ormapi.RegionFlowRateLimitSettings, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -3214,8 +3482,9 @@ func (s *Client) UpdateFlowRateLimitSettings(uri string, token string, in *ormap
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteFlowRateLimitSettings(uri string, token string, in *ormapi.RegionFlowRateLimitSettings) (*edgeproto.Result, int, error) {
+func (s *Client) DeleteFlowRateLimitSettings(uri string, token string, in *ormapi.RegionFlowRateLimitSettings, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3230,8 +3499,9 @@ func (s *Client) DeleteFlowRateLimitSettings(uri string, token string, in *ormap
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowFlowRateLimitSettings(uri string, token string, in *ormapi.RegionFlowRateLimitSettings) ([]edgeproto.FlowRateLimitSettings, int, error) {
+func (s *Client) ShowFlowRateLimitSettings(uri string, token string, in *ormapi.RegionFlowRateLimitSettings, ops ...Op) ([]edgeproto.FlowRateLimitSettings, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3246,8 +3516,9 @@ func (s *Client) ShowFlowRateLimitSettings(uri string, token string, in *ormapi.
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) CreateMaxReqsRateLimitSettings(uri string, token string, in *ormapi.RegionMaxReqsRateLimitSettings) (*edgeproto.Result, int, error) {
+func (s *Client) CreateMaxReqsRateLimitSettings(uri string, token string, in *ormapi.RegionMaxReqsRateLimitSettings, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3262,8 +3533,9 @@ func (s *Client) CreateMaxReqsRateLimitSettings(uri string, token string, in *or
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateMaxReqsRateLimitSettings(uri string, token string, in *ormapi.RegionMaxReqsRateLimitSettings) (*edgeproto.Result, int, error) {
+func (s *Client) UpdateMaxReqsRateLimitSettings(uri string, token string, in *ormapi.RegionMaxReqsRateLimitSettings, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -3282,8 +3554,9 @@ func (s *Client) UpdateMaxReqsRateLimitSettings(uri string, token string, in *or
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteMaxReqsRateLimitSettings(uri string, token string, in *ormapi.RegionMaxReqsRateLimitSettings) (*edgeproto.Result, int, error) {
+func (s *Client) DeleteMaxReqsRateLimitSettings(uri string, token string, in *ormapi.RegionMaxReqsRateLimitSettings, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3298,8 +3571,9 @@ func (s *Client) DeleteMaxReqsRateLimitSettings(uri string, token string, in *or
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowMaxReqsRateLimitSettings(uri string, token string, in *ormapi.RegionMaxReqsRateLimitSettings) ([]edgeproto.MaxReqsRateLimitSettings, int, error) {
+func (s *Client) ShowMaxReqsRateLimitSettings(uri string, token string, in *ormapi.RegionMaxReqsRateLimitSettings, ops ...Op) ([]edgeproto.MaxReqsRateLimitSettings, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3316,8 +3590,9 @@ func (s *Client) ShowMaxReqsRateLimitSettings(uri string, token string, in *orma
 
 // Generating group RateLimitSettingsMc
 
-func (s *Client) ShowRateLimitSettingsMc(uri string, token string, in *ormapi.McRateLimitSettings) ([]ormapi.McRateLimitSettings, int, error) {
+func (s *Client) ShowRateLimitSettingsMc(uri string, token string, in *ormapi.McRateLimitSettings, ops ...Op) ([]ormapi.McRateLimitSettings, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3332,8 +3607,9 @@ func (s *Client) ShowRateLimitSettingsMc(uri string, token string, in *ormapi.Mc
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) CreateFlowRateLimitSettingsMc(uri string, token string, in *ormapi.McRateLimitFlowSettings) (int, error) {
+func (s *Client) CreateFlowRateLimitSettingsMc(uri string, token string, in *ormapi.McRateLimitFlowSettings, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3343,8 +3619,9 @@ func (s *Client) CreateFlowRateLimitSettingsMc(uri string, token string, in *orm
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateFlowRateLimitSettingsMc(uri string, token string, in *cli.MapData) (int, error) {
+func (s *Client) UpdateFlowRateLimitSettingsMc(uri string, token string, in *cli.MapData, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3354,8 +3631,9 @@ func (s *Client) UpdateFlowRateLimitSettingsMc(uri string, token string, in *cli
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteFlowRateLimitSettingsMc(uri string, token string, in *ormapi.McRateLimitFlowSettings) (int, error) {
+func (s *Client) DeleteFlowRateLimitSettingsMc(uri string, token string, in *ormapi.McRateLimitFlowSettings, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3365,8 +3643,9 @@ func (s *Client) DeleteFlowRateLimitSettingsMc(uri string, token string, in *orm
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowFlowRateLimitSettingsMc(uri string, token string, in *ormapi.McRateLimitFlowSettings) ([]ormapi.McRateLimitFlowSettings, int, error) {
+func (s *Client) ShowFlowRateLimitSettingsMc(uri string, token string, in *ormapi.McRateLimitFlowSettings, ops ...Op) ([]ormapi.McRateLimitFlowSettings, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3381,8 +3660,9 @@ func (s *Client) ShowFlowRateLimitSettingsMc(uri string, token string, in *ormap
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) CreateMaxReqsRateLimitSettingsMc(uri string, token string, in *ormapi.McRateLimitMaxReqsSettings) (int, error) {
+func (s *Client) CreateMaxReqsRateLimitSettingsMc(uri string, token string, in *ormapi.McRateLimitMaxReqsSettings, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3392,8 +3672,9 @@ func (s *Client) CreateMaxReqsRateLimitSettingsMc(uri string, token string, in *
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateMaxReqsRateLimitSettingsMc(uri string, token string, in *cli.MapData) (int, error) {
+func (s *Client) UpdateMaxReqsRateLimitSettingsMc(uri string, token string, in *cli.MapData, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3403,8 +3684,9 @@ func (s *Client) UpdateMaxReqsRateLimitSettingsMc(uri string, token string, in *
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteMaxReqsRateLimitSettingsMc(uri string, token string, in *ormapi.McRateLimitMaxReqsSettings) (int, error) {
+func (s *Client) DeleteMaxReqsRateLimitSettingsMc(uri string, token string, in *ormapi.McRateLimitMaxReqsSettings, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3414,8 +3696,9 @@ func (s *Client) DeleteMaxReqsRateLimitSettingsMc(uri string, token string, in *
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowMaxReqsRateLimitSettingsMc(uri string, token string, in *ormapi.McRateLimitMaxReqsSettings) ([]ormapi.McRateLimitMaxReqsSettings, int, error) {
+func (s *Client) ShowMaxReqsRateLimitSettingsMc(uri string, token string, in *ormapi.McRateLimitMaxReqsSettings, ops ...Op) ([]ormapi.McRateLimitMaxReqsSettings, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3432,8 +3715,9 @@ func (s *Client) ShowMaxReqsRateLimitSettingsMc(uri string, token string, in *or
 
 // Generating group Report
 
-func (s *Client) GenerateReport(uri string, token string, in *ormapi.GenerateReport) ([]uint8, int, error) {
+func (s *Client) GenerateReport(uri string, token string, in *ormapi.GenerateReport, ops ...Op) ([]uint8, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3448,8 +3732,9 @@ func (s *Client) GenerateReport(uri string, token string, in *ormapi.GenerateRep
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowReport(uri string, token string, in *ormapi.DownloadReport) ([]string, int, error) {
+func (s *Client) ShowReport(uri string, token string, in *ormapi.DownloadReport, ops ...Op) ([]string, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3464,8 +3749,9 @@ func (s *Client) ShowReport(uri string, token string, in *ormapi.DownloadReport)
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DownloadReport(uri string, token string, in *ormapi.DownloadReport) (int, error) {
+func (s *Client) DownloadReport(uri string, token string, in *ormapi.DownloadReport, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3477,8 +3763,9 @@ func (s *Client) DownloadReport(uri string, token string, in *ormapi.DownloadRep
 
 // Generating group ReportData
 
-func (s *Client) GenerateReportData(uri string, token string, in *ormapi.GenerateReport) (map[string]interface{}, int, error) {
+func (s *Client) GenerateReportData(uri string, token string, in *ormapi.GenerateReport, ops ...Op) (map[string]interface{}, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3495,8 +3782,9 @@ func (s *Client) GenerateReportData(uri string, token string, in *ormapi.Generat
 
 // Generating group Reporter
 
-func (s *Client) CreateReporter(uri string, token string, in *ormapi.Reporter) (int, error) {
+func (s *Client) CreateReporter(uri string, token string, in *ormapi.Reporter, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3506,8 +3794,9 @@ func (s *Client) CreateReporter(uri string, token string, in *ormapi.Reporter) (
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateReporter(uri string, token string, in *cli.MapData) (int, error) {
+func (s *Client) UpdateReporter(uri string, token string, in *cli.MapData, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3517,8 +3806,9 @@ func (s *Client) UpdateReporter(uri string, token string, in *cli.MapData) (int,
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteReporter(uri string, token string, in *ormapi.Reporter) (int, error) {
+func (s *Client) DeleteReporter(uri string, token string, in *ormapi.Reporter, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3528,8 +3818,9 @@ func (s *Client) DeleteReporter(uri string, token string, in *ormapi.Reporter) (
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowReporter(uri string, token string, in *ormapi.Reporter) ([]ormapi.Reporter, int, error) {
+func (s *Client) ShowReporter(uri string, token string, in *ormapi.Reporter, ops ...Op) ([]ormapi.Reporter, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3546,8 +3837,9 @@ func (s *Client) ShowReporter(uri string, token string, in *ormapi.Reporter) ([]
 
 // Generating group Repos
 
-func (s *Client) ArtifactoryResync(uri string, token string) (int, error) {
+func (s *Client) ArtifactoryResync(uri string, token string, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 
@@ -3556,8 +3848,9 @@ func (s *Client) ArtifactoryResync(uri string, token string) (int, error) {
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GitlabResync(uri string, token string) (int, error) {
+func (s *Client) GitlabResync(uri string, token string, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 
@@ -3566,8 +3859,9 @@ func (s *Client) GitlabResync(uri string, token string) (int, error) {
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) HarborResync(uri string, token string) (int, error) {
+func (s *Client) HarborResync(uri string, token string, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 
@@ -3578,8 +3872,9 @@ func (s *Client) HarborResync(uri string, token string) (int, error) {
 
 // Generating group ResTagTable
 
-func (s *Client) CreateResTagTable(uri string, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
+func (s *Client) CreateResTagTable(uri string, token string, in *ormapi.RegionResTagTable, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3594,8 +3889,9 @@ func (s *Client) CreateResTagTable(uri string, token string, in *ormapi.RegionRe
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteResTagTable(uri string, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
+func (s *Client) DeleteResTagTable(uri string, token string, in *ormapi.RegionResTagTable, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3610,8 +3906,9 @@ func (s *Client) DeleteResTagTable(uri string, token string, in *ormapi.RegionRe
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateResTagTable(uri string, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
+func (s *Client) UpdateResTagTable(uri string, token string, in *ormapi.RegionResTagTable, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -3630,8 +3927,9 @@ func (s *Client) UpdateResTagTable(uri string, token string, in *ormapi.RegionRe
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowResTagTable(uri string, token string, in *ormapi.RegionResTagTable) ([]edgeproto.ResTagTable, int, error) {
+func (s *Client) ShowResTagTable(uri string, token string, in *ormapi.RegionResTagTable, ops ...Op) ([]edgeproto.ResTagTable, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3646,8 +3944,9 @@ func (s *Client) ShowResTagTable(uri string, token string, in *ormapi.RegionResT
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AddResTag(uri string, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
+func (s *Client) AddResTag(uri string, token string, in *ormapi.RegionResTagTable, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3662,8 +3961,9 @@ func (s *Client) AddResTag(uri string, token string, in *ormapi.RegionResTagTabl
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RemoveResTag(uri string, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
+func (s *Client) RemoveResTag(uri string, token string, in *ormapi.RegionResTagTable, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3678,8 +3978,9 @@ func (s *Client) RemoveResTag(uri string, token string, in *ormapi.RegionResTagT
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) GetResTagTable(uri string, token string, in *ormapi.RegionResTagTableKey) (*edgeproto.ResTagTable, int, error) {
+func (s *Client) GetResTagTable(uri string, token string, in *ormapi.RegionResTagTableKey, ops ...Op) (*edgeproto.ResTagTable, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3696,8 +3997,9 @@ func (s *Client) GetResTagTable(uri string, token string, in *ormapi.RegionResTa
 
 // Generating group Role
 
-func (s *Client) ShowRoleNames(uri string, token string) ([]string, int, error) {
+func (s *Client) ShowRoleNames(uri string, token string, ops ...Op) ([]string, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	var out []string
@@ -3711,8 +4013,9 @@ func (s *Client) ShowRoleNames(uri string, token string) ([]string, int, error) 
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AddUserRole(uri string, token string, in *ormapi.Role) (int, error) {
+func (s *Client) AddUserRole(uri string, token string, in *ormapi.Role, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3722,8 +4025,9 @@ func (s *Client) AddUserRole(uri string, token string, in *ormapi.Role) (int, er
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RemoveUserRole(uri string, token string, in *ormapi.Role) (int, error) {
+func (s *Client) RemoveUserRole(uri string, token string, in *ormapi.Role, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3733,8 +4037,9 @@ func (s *Client) RemoveUserRole(uri string, token string, in *ormapi.Role) (int,
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowUserRole(uri string, token string, in *cli.MapData) ([]ormapi.Role, int, error) {
+func (s *Client) ShowUserRole(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.Role, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3749,8 +4054,9 @@ func (s *Client) ShowUserRole(uri string, token string, in *cli.MapData) ([]orma
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowRoleAssignment(uri string, token string, in *cli.MapData) ([]ormapi.Role, int, error) {
+func (s *Client) ShowRoleAssignment(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.Role, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3765,8 +4071,9 @@ func (s *Client) ShowRoleAssignment(uri string, token string, in *cli.MapData) (
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowRolePerm(uri string, token string, in *cli.MapData) ([]ormapi.RolePerm, int, error) {
+func (s *Client) ShowRolePerm(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.RolePerm, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3783,8 +4090,9 @@ func (s *Client) ShowRolePerm(uri string, token string, in *cli.MapData) ([]orma
 
 // Generating group Settings
 
-func (s *Client) UpdateSettings(uri string, token string, in *ormapi.RegionSettings) (*edgeproto.Result, int, error) {
+func (s *Client) UpdateSettings(uri string, token string, in *ormapi.RegionSettings, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -3803,8 +4111,9 @@ func (s *Client) UpdateSettings(uri string, token string, in *ormapi.RegionSetti
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ResetSettings(uri string, token string, in *ormapi.RegionSettings) (*edgeproto.Result, int, error) {
+func (s *Client) ResetSettings(uri string, token string, in *ormapi.RegionSettings, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3819,8 +4128,9 @@ func (s *Client) ResetSettings(uri string, token string, in *ormapi.RegionSettin
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowSettings(uri string, token string, in *ormapi.RegionSettings) (*edgeproto.Settings, int, error) {
+func (s *Client) ShowSettings(uri string, token string, in *ormapi.RegionSettings, ops ...Op) (*edgeproto.Settings, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3837,8 +4147,9 @@ func (s *Client) ShowSettings(uri string, token string, in *ormapi.RegionSetting
 
 // Generating group Spans
 
-func (s *Client) SpanTerms(uri string, token string, in *node.SpanSearch) (*node.SpanTerms, int, error) {
+func (s *Client) SpanTerms(uri string, token string, in *node.SpanSearch, ops ...Op) (*node.SpanTerms, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3853,8 +4164,9 @@ func (s *Client) SpanTerms(uri string, token string, in *node.SpanSearch) (*node
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowSpans(uri string, token string, in *node.SpanSearch) ([]node.SpanOutCondensed, int, error) {
+func (s *Client) ShowSpans(uri string, token string, in *node.SpanSearch, ops ...Op) ([]node.SpanOutCondensed, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3869,8 +4181,9 @@ func (s *Client) ShowSpans(uri string, token string, in *node.SpanSearch) ([]nod
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowSpansVerbose(uri string, token string, in *node.SpanSearch) ([]dbmodel.Span, int, error) {
+func (s *Client) ShowSpansVerbose(uri string, token string, in *node.SpanSearch, ops ...Op) ([]dbmodel.Span, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3887,8 +4200,9 @@ func (s *Client) ShowSpansVerbose(uri string, token string, in *node.SpanSearch)
 
 // Generating group StreamObj
 
-func (s *Client) StreamAppInst(uri string, token string, in *ormapi.RegionAppInstKey) ([]edgeproto.Result, int, error) {
+func (s *Client) StreamAppInst(uri string, token string, in *ormapi.RegionAppInstKey, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3903,8 +4217,9 @@ func (s *Client) StreamAppInst(uri string, token string, in *ormapi.RegionAppIns
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) StreamClusterInst(uri string, token string, in *ormapi.RegionClusterInstKey) ([]edgeproto.Result, int, error) {
+func (s *Client) StreamClusterInst(uri string, token string, in *ormapi.RegionClusterInstKey, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3919,8 +4234,9 @@ func (s *Client) StreamClusterInst(uri string, token string, in *ormapi.RegionCl
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) StreamCloudlet(uri string, token string, in *ormapi.RegionCloudletKey) ([]edgeproto.Result, int, error) {
+func (s *Client) StreamCloudlet(uri string, token string, in *ormapi.RegionCloudletKey, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3935,8 +4251,9 @@ func (s *Client) StreamCloudlet(uri string, token string, in *ormapi.RegionCloud
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) StreamGPUDriver(uri string, token string, in *ormapi.RegionGPUDriverKey) ([]edgeproto.Result, int, error) {
+func (s *Client) StreamGPUDriver(uri string, token string, in *ormapi.RegionGPUDriverKey, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3953,8 +4270,9 @@ func (s *Client) StreamGPUDriver(uri string, token string, in *ormapi.RegionGPUD
 
 // Generating group TrustPolicy
 
-func (s *Client) CreateTrustPolicy(uri string, token string, in *ormapi.RegionTrustPolicy) ([]edgeproto.Result, int, error) {
+func (s *Client) CreateTrustPolicy(uri string, token string, in *ormapi.RegionTrustPolicy, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3969,8 +4287,9 @@ func (s *Client) CreateTrustPolicy(uri string, token string, in *ormapi.RegionTr
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteTrustPolicy(uri string, token string, in *ormapi.RegionTrustPolicy) ([]edgeproto.Result, int, error) {
+func (s *Client) DeleteTrustPolicy(uri string, token string, in *ormapi.RegionTrustPolicy, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -3985,8 +4304,9 @@ func (s *Client) DeleteTrustPolicy(uri string, token string, in *ormapi.RegionTr
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateTrustPolicy(uri string, token string, in *ormapi.RegionTrustPolicy) ([]edgeproto.Result, int, error) {
+func (s *Client) UpdateTrustPolicy(uri string, token string, in *ormapi.RegionTrustPolicy, ops ...Op) ([]edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -4005,8 +4325,9 @@ func (s *Client) UpdateTrustPolicy(uri string, token string, in *ormapi.RegionTr
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowTrustPolicy(uri string, token string, in *ormapi.RegionTrustPolicy) ([]edgeproto.TrustPolicy, int, error) {
+func (s *Client) ShowTrustPolicy(uri string, token string, in *ormapi.RegionTrustPolicy, ops ...Op) ([]edgeproto.TrustPolicy, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4023,8 +4344,9 @@ func (s *Client) ShowTrustPolicy(uri string, token string, in *ormapi.RegionTrus
 
 // Generating group TrustPolicyException
 
-func (s *Client) CreateTrustPolicyException(uri string, token string, in *ormapi.RegionTrustPolicyException) (*edgeproto.Result, int, error) {
+func (s *Client) CreateTrustPolicyException(uri string, token string, in *ormapi.RegionTrustPolicyException, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4039,8 +4361,9 @@ func (s *Client) CreateTrustPolicyException(uri string, token string, in *ormapi
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateTrustPolicyException(uri string, token string, in *ormapi.RegionTrustPolicyException) (*edgeproto.Result, int, error) {
+func (s *Client) UpdateTrustPolicyException(uri string, token string, in *ormapi.RegionTrustPolicyException, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -4059,8 +4382,9 @@ func (s *Client) UpdateTrustPolicyException(uri string, token string, in *ormapi
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteTrustPolicyException(uri string, token string, in *ormapi.RegionTrustPolicyException) (*edgeproto.Result, int, error) {
+func (s *Client) DeleteTrustPolicyException(uri string, token string, in *ormapi.RegionTrustPolicyException, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4075,8 +4399,9 @@ func (s *Client) DeleteTrustPolicyException(uri string, token string, in *ormapi
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowTrustPolicyException(uri string, token string, in *ormapi.RegionTrustPolicyException) ([]edgeproto.TrustPolicyException, int, error) {
+func (s *Client) ShowTrustPolicyException(uri string, token string, in *ormapi.RegionTrustPolicyException, ops ...Op) ([]edgeproto.TrustPolicyException, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4093,8 +4418,9 @@ func (s *Client) ShowTrustPolicyException(uri string, token string, in *ormapi.R
 
 // Generating group Usage
 
-func (s *Client) ShowAppUsage(uri string, token string, in *ormapi.RegionAppInstUsage) (*ormapi.AllMetrics, int, error) {
+func (s *Client) ShowAppUsage(uri string, token string, in *ormapi.RegionAppInstUsage, ops ...Op) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4109,8 +4435,9 @@ func (s *Client) ShowAppUsage(uri string, token string, in *ormapi.RegionAppInst
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowClusterUsage(uri string, token string, in *ormapi.RegionClusterInstUsage) (*ormapi.AllMetrics, int, error) {
+func (s *Client) ShowClusterUsage(uri string, token string, in *ormapi.RegionClusterInstUsage, ops ...Op) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4125,8 +4452,9 @@ func (s *Client) ShowClusterUsage(uri string, token string, in *ormapi.RegionClu
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudletPoolUsage(uri string, token string, in *ormapi.RegionCloudletPoolUsage) (*ormapi.AllMetrics, int, error) {
+func (s *Client) ShowCloudletPoolUsage(uri string, token string, in *ormapi.RegionCloudletPoolUsage, ops ...Op) (*ormapi.AllMetrics, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4143,8 +4471,9 @@ func (s *Client) ShowCloudletPoolUsage(uri string, token string, in *ormapi.Regi
 
 // Generating group User
 
-func (s *Client) CreateUser(uri string, in *ormapi.CreateUser) (*ormapi.UserResponse, int, error) {
+func (s *Client) CreateUser(uri string, in *ormapi.CreateUser, ops ...Op) (*ormapi.UserResponse, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.In = in
 	var out ormapi.UserResponse
@@ -4158,8 +4487,9 @@ func (s *Client) CreateUser(uri string, in *ormapi.CreateUser) (*ormapi.UserResp
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteUser(uri string, token string, in *ormapi.User) (int, error) {
+func (s *Client) DeleteUser(uri string, token string, in *ormapi.User, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4169,8 +4499,9 @@ func (s *Client) DeleteUser(uri string, token string, in *ormapi.User) (int, err
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteLockedUser(uri string, in *ormapi.User) (int, error) {
+func (s *Client) DeleteLockedUser(uri string, in *ormapi.User, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.In = in
 
@@ -4179,8 +4510,9 @@ func (s *Client) DeleteLockedUser(uri string, in *ormapi.User) (int, error) {
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateUser(uri string, token string, in *cli.MapData) (*ormapi.UserResponse, int, error) {
+func (s *Client) UpdateUser(uri string, token string, in *cli.MapData, ops ...Op) (*ormapi.UserResponse, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4195,8 +4527,9 @@ func (s *Client) UpdateUser(uri string, token string, in *cli.MapData) (*ormapi.
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowUser(uri string, token string, in *cli.MapData) ([]ormapi.User, int, error) {
+func (s *Client) ShowUser(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.User, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4211,8 +4544,9 @@ func (s *Client) ShowUser(uri string, token string, in *cli.MapData) ([]ormapi.U
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) CurrentUser(uri string, token string) (*ormapi.User, int, error) {
+func (s *Client) CurrentUser(uri string, token string, ops ...Op) (*ormapi.User, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	var out ormapi.User
@@ -4226,8 +4560,9 @@ func (s *Client) CurrentUser(uri string, token string) (*ormapi.User, int, error
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) NewPassword(uri string, token string, in *ormapi.NewPassword) (int, error) {
+func (s *Client) NewPassword(uri string, token string, in *ormapi.NewPassword, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4237,8 +4572,9 @@ func (s *Client) NewPassword(uri string, token string, in *ormapi.NewPassword) (
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ResendVerify(uri string, in *ormapi.EmailRequest) (int, error) {
+func (s *Client) ResendVerify(uri string, in *ormapi.EmailRequest, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.In = in
 
@@ -4247,8 +4583,9 @@ func (s *Client) ResendVerify(uri string, in *ormapi.EmailRequest) (int, error) 
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) VerifyEmail(uri string, in *ormapi.Token) (int, error) {
+func (s *Client) VerifyEmail(uri string, in *ormapi.Token, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.In = in
 
@@ -4257,8 +4594,9 @@ func (s *Client) VerifyEmail(uri string, in *ormapi.Token) (int, error) {
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) PasswordResetRequest(uri string, in *ormapi.EmailRequest) (int, error) {
+func (s *Client) PasswordResetRequest(uri string, in *ormapi.EmailRequest, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.In = in
 
@@ -4267,8 +4605,9 @@ func (s *Client) PasswordResetRequest(uri string, in *ormapi.EmailRequest) (int,
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) PasswordReset(uri string, in *ormapi.PasswordReset) (int, error) {
+func (s *Client) PasswordReset(uri string, in *ormapi.PasswordReset, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.In = in
 
@@ -4277,8 +4616,9 @@ func (s *Client) PasswordReset(uri string, in *ormapi.PasswordReset) (int, error
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) CreateUserApiKey(uri string, token string, in *ormapi.CreateUserApiKey) (*ormapi.CreateUserApiKey, int, error) {
+func (s *Client) CreateUserApiKey(uri string, token string, in *ormapi.CreateUserApiKey, ops ...Op) (*ormapi.CreateUserApiKey, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4293,8 +4633,9 @@ func (s *Client) CreateUserApiKey(uri string, token string, in *ormapi.CreateUse
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteUserApiKey(uri string, token string, in *ormapi.CreateUserApiKey) (int, error) {
+func (s *Client) DeleteUserApiKey(uri string, token string, in *ormapi.CreateUserApiKey, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4304,8 +4645,9 @@ func (s *Client) DeleteUserApiKey(uri string, token string, in *ormapi.CreateUse
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowUserApiKey(uri string, token string, in *ormapi.CreateUserApiKey) ([]ormapi.CreateUserApiKey, int, error) {
+func (s *Client) ShowUserApiKey(uri string, token string, in *ormapi.CreateUserApiKey, ops ...Op) ([]ormapi.CreateUserApiKey, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4320,8 +4662,9 @@ func (s *Client) ShowUserApiKey(uri string, token string, in *ormapi.CreateUserA
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UserAuthorized(uri string, token string, in *ormapi.AuthScope) (int, error) {
+func (s *Client) UserAuthorized(uri string, token string, in *ormapi.AuthScope, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4331,8 +4674,9 @@ func (s *Client) UserAuthorized(uri string, token string, in *ormapi.AuthScope) 
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AuthScopes(uri string, token string) ([]ormapi.AuthScope, int, error) {
+func (s *Client) AuthScopes(uri string, token string, ops ...Op) ([]ormapi.AuthScope, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	var out []ormapi.AuthScope
@@ -4348,8 +4692,9 @@ func (s *Client) AuthScopes(uri string, token string) ([]ormapi.AuthScope, int, 
 
 // Generating group VMPool
 
-func (s *Client) CreateVMPool(uri string, token string, in *ormapi.RegionVMPool) (*edgeproto.Result, int, error) {
+func (s *Client) CreateVMPool(uri string, token string, in *ormapi.RegionVMPool, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4364,8 +4709,9 @@ func (s *Client) CreateVMPool(uri string, token string, in *ormapi.RegionVMPool)
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) DeleteVMPool(uri string, token string, in *ormapi.RegionVMPool) (*edgeproto.Result, int, error) {
+func (s *Client) DeleteVMPool(uri string, token string, in *ormapi.RegionVMPool, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4380,8 +4726,9 @@ func (s *Client) DeleteVMPool(uri string, token string, in *ormapi.RegionVMPool)
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) UpdateVMPool(uri string, token string, in *ormapi.RegionVMPool) (*edgeproto.Result, int, error) {
+func (s *Client) UpdateVMPool(uri string, token string, in *ormapi.RegionVMPool, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
@@ -4400,8 +4747,9 @@ func (s *Client) UpdateVMPool(uri string, token string, in *ormapi.RegionVMPool)
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowVMPool(uri string, token string, in *ormapi.RegionVMPool) ([]edgeproto.VMPool, int, error) {
+func (s *Client) ShowVMPool(uri string, token string, in *ormapi.RegionVMPool, ops ...Op) ([]edgeproto.VMPool, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4416,8 +4764,9 @@ func (s *Client) ShowVMPool(uri string, token string, in *ormapi.RegionVMPool) (
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AddVMPoolMember(uri string, token string, in *ormapi.RegionVMPoolMember) (*edgeproto.Result, int, error) {
+func (s *Client) AddVMPoolMember(uri string, token string, in *ormapi.RegionVMPoolMember, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4432,8 +4781,9 @@ func (s *Client) AddVMPoolMember(uri string, token string, in *ormapi.RegionVMPo
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RemoveVMPoolMember(uri string, token string, in *ormapi.RegionVMPoolMember) (*edgeproto.Result, int, error) {
+func (s *Client) RemoveVMPoolMember(uri string, token string, in *ormapi.RegionVMPoolMember, ops ...Op) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4450,8 +4800,9 @@ func (s *Client) RemoveVMPoolMember(uri string, token string, in *ormapi.RegionV
 
 // Generating ungrouped
 
-func (s *Client) AccessCloudletCli(uri string, token string, in *ormapi.RegionExecRequest) (string, int, error) {
+func (s *Client) AccessCloudletCli(uri string, token string, in *ormapi.RegionExecRequest, ops ...Op) (string, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4466,8 +4817,9 @@ func (s *Client) AccessCloudletCli(uri string, token string, in *ormapi.RegionEx
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) Login(uri string, in *ormapi.UserLogin) (map[string]interface{}, int, error) {
+func (s *Client) Login(uri string, in *ormapi.UserLogin, ops ...Op) (map[string]interface{}, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.In = in
 	var out map[string]interface{}
@@ -4481,8 +4833,9 @@ func (s *Client) Login(uri string, in *ormapi.UserLogin) (map[string]interface{}
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RestrictedUpdateOrg(uri string, token string, in *cli.MapData) (int, error) {
+func (s *Client) RestrictedUpdateOrg(uri string, token string, in *cli.MapData, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4492,8 +4845,9 @@ func (s *Client) RestrictedUpdateOrg(uri string, token string, in *cli.MapData) 
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RestrictedUpdateUser(uri string, token string, in *cli.MapData) (int, error) {
+func (s *Client) RestrictedUpdateUser(uri string, token string, in *cli.MapData, ops ...Op) (int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4503,8 +4857,9 @@ func (s *Client) RestrictedUpdateUser(uri string, token string, in *cli.MapData)
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RunCommandCli(uri string, token string, in *ormapi.RegionExecRequest) (string, int, error) {
+func (s *Client) RunCommandCli(uri string, token string, in *ormapi.RegionExecRequest, ops ...Op) (string, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in
@@ -4519,8 +4874,9 @@ func (s *Client) RunCommandCli(uri string, token string, in *ormapi.RegionExecRe
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowLogsCli(uri string, token string, in *ormapi.RegionExecRequest) (string, int, error) {
+func (s *Client) ShowLogsCli(uri string, token string, in *ormapi.RegionExecRequest, ops ...Op) (string, int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 	rundata.Token = token
 	rundata.In = in

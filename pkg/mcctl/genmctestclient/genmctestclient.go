@@ -197,8 +197,9 @@ type funcArgs struct {
 }
 
 var funcT = template.Must(template.New("func").Parse(`
-func (s *Client) {{.Name}}(uri string{{.TokenArg}}{{.InArg}}) ({{.OutArg}}int, error) {
+func (s *Client) {{.Name}}(uri string{{.TokenArg}}{{.InArg}}, ops ...Op) ({{.OutArg}}int, error) {
 	rundata := RunData{}
+	applyOps(&rundata, ops...)
 	rundata.Uri = uri
 {{- if .TokenArg}}
 	rundata.Token = token

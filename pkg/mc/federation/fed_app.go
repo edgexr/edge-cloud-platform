@@ -190,11 +190,16 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 
 func (p *PartnerApi) DeleteApp(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier) error {
 	// lookup federation provider based on claims
-	ctx := ormutil.GetContext(c)
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
 		return err
 	}
+	return p.DeleteAppInternal(c, provider, string(appId))
+}
+
+func (p *PartnerApi) DeleteAppInternal(c echo.Context, provider *ormapi.FederationProvider, appId string) error {
+	ctx := ormutil.GetContext(c)
+	// lookup app
 	provApp, err := p.lookupApp(c, provider, string(appId))
 	if err != nil {
 		return err

@@ -41,12 +41,12 @@ func (s *RootCommand) runLogin(path string) func(c *cli.Command, args []string) 
 			AliasArgs:   []string{"name=username"},
 		}
 		login := ormapi.UserLogin{}
-		_, err := input.ParseArgs(args, &login)
+		mapData, err := input.ParseArgs(args, &login)
 		if err != nil {
 			return err
 		}
 		out := map[string]interface{}{}
-		st, err := s.client.PostJson(s.getUri()+path, "", &login, &out)
+		st, err := s.client.PostJson(s.getUri()+path, "", &login, &out, mapData.QueryParams)
 		if err != nil {
 			return err
 		}

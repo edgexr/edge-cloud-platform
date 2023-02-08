@@ -22,12 +22,13 @@ type ClientRun interface {
 }
 
 type RunData struct {
-	Uri       string
-	Token     string
-	In        interface{}
-	Out       interface{}
-	RetStatus int
-	RetError  error
+	Uri         string
+	Token       string
+	In          interface{}
+	Out         interface{}
+	QueryParams map[string]string
+	RetStatus   int
+	RetError    error
 }
 
 type Client struct {
@@ -38,4 +39,16 @@ func NewClient(clientRun ClientRun) *Client {
 	s := Client{}
 	s.ClientRun = clientRun
 	return &s
+}
+
+type Op func(rd *RunData)
+
+func WithQueryParams(queryParams map[string]string) Op {
+	return func(rd *RunData) { rd.QueryParams = queryParams }
+}
+
+func applyOps(rd *RunData, ops ...Op) {
+	for _, op := range ops {
+		op(rd)
+	}
 }

@@ -316,6 +316,7 @@ func DeboardConsumerApp(c echo.Context) error {
 	if in.FederationName == "" {
 		return fmt.Errorf("Federation name must be specified")
 	}
+	fedQueryParams := federation.GetFedQueryParams(c)
 
 	db := loggedDB(ctx)
 	res := db.Where(&in).First(&in)
@@ -360,28 +361,35 @@ func DeboardConsumerApp(c echo.Context) error {
 		return fmt.Errorf("App still in use by %d AppInsts: %v", len(inUseKeys), strings.Join(inUseKeys, ", "))
 	}
 
-	if err := streamCb(c, 200, "Deleting App"); err != nil {
-		return err
-	}
-	// delete remote app
-	err = deleteApp(ctx, consumer, &in)
-	if err != nil && strings.Contains(strings.ToLower(err.Error()), "not found") {
-		err = nil
-	}
-	if err != nil {
-		return fmt.Errorf("failed to delete app, %s", err)
-	}
+	if fedQueryParams.IgnorePartner {
+		log.SpanLog(ctx, log.DebugLevelApi, "skipping federation api calls to delete app and artefact")
+		if err := streamCb(c, 200, "Skipping partner API calls"); err != nil {
+			return err
+		}
+	} else {
+		if err := streamCb(c, 200, "Deleting App"); err != nil {
+			return err
+		}
+		// delete remote app
+		err = deleteApp(ctx, consumer, &in)
+		if err != nil && strings.Contains(strings.ToLower(err.Error()), "not found") {
+			err = nil
+		}
+		if err != nil {
+			return fmt.Errorf("failed to delete app, %s", err)
+		}
 
-	if err := streamCb(c, 200, "Deleting Artefact"); err != nil {
-		return err
-	}
-	// delete remote artefact
-	err = deleteAppArtefact(ctx, consumer, &in)
-	if err != nil && strings.Contains(strings.ToLower(err.Error()), "not found") {
-		err = nil
-	}
-	if err != nil {
-		return fmt.Errorf("failed to delete artefact for app, %s", err)
+		if err := streamCb(c, 200, "Deleting Artefact"); err != nil {
+			return err
+		}
+		// delete remote artefact
+		err = deleteAppArtefact(ctx, consumer, &in)
+		if err != nil && strings.Contains(strings.ToLower(err.Error()), "not found") {
+			err = nil
+		}
+		if err != nil {
+			return fmt.Errorf("failed to delete artefact for app, %s", err)
+		}
 	}
 
 	// delete consumerapp
@@ -554,4 +562,94 @@ func ShowProviderAppInst(c echo.Context) error {
 		}
 	}
 	return ormutil.SetReply(c, showAppInsts)
+}
+
+func UnsafeDeleteProviderArtefact(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	in := ormapi.ProviderArtefact{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
+	if in.ArtefactID == "" {
+		return fmt.Errorf("ArtefactID must be specified")
+	}
+	if in.FederationName == "" {
+		return fmt.Errorf("Federation name must be specified")
+	}
+
+	provider, err := lookupFederationProvider(ctx, 0, in.FederationName)
+	if err != nil {
+		return err
+	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, provider.GetTags())
+	if err := fedAuthorized(ctx, claims.Username, provider.OperatorId); err != nil {
+		return err
+	}
+
+	return partnerApi.RemoveArtefactInternal(c, provider, in.ArtefactID)
+}
+
+func UnsafeDeleteProviderApp(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	in := ormapi.ProviderApp{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
+	if in.AppID == "" {
+		return fmt.Errorf("AppID must be specified")
+	}
+	if in.FederationName == "" {
+		return fmt.Errorf("Federation name must be specified")
+	}
+
+	provider, err := lookupFederationProvider(ctx, 0, in.FederationName)
+	if err != nil {
+		return err
+	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, provider.GetTags())
+	if err := fedAuthorized(ctx, claims.Username, provider.OperatorId); err != nil {
+		return err
+	}
+
+	return partnerApi.DeleteAppInternal(c, provider, in.AppID)
+}
+
+func UnsafeDeleteProviderAppInst(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	in := ormapi.ProviderAppInst{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
+	if in.AppInstID == "" {
+		return fmt.Errorf("AppInstID must be specified")
+	}
+	if in.FederationName == "" {
+		return fmt.Errorf("Federation name must be specified")
+	}
+
+	provider, err := lookupFederationProvider(ctx, 0, in.FederationName)
+	if err != nil {
+		return err
+	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, provider.GetTags())
+	if err := fedAuthorized(ctx, claims.Username, provider.OperatorId); err != nil {
+		return err
+	}
+
+	return partnerApi.RemoveAppInstInternal(c, provider, in.AppInstID)
 }
