@@ -51,7 +51,6 @@ var ValidConfigKinds = map[string]struct{}{
 	AppConfigHelmYaml:      {},
 	AppAccessCustomization: {},
 	AppConfigEnvYaml:       {},
-	AppConfigPodArgs:       {},
 }
 
 var ReservedPlatformPorts = map[string]string{

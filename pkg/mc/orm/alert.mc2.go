@@ -547,6 +547,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// DefaultFlavorName: 9.1
 	// AuthPublicKey: 12
 	// Command: 13
+	// CommandArgs: 46
 	// Annotations: 14
 	// Deployment: 15
 	// DeploymentManifest: 16

@@ -195,6 +195,7 @@ var AppOptionalArgs = []string{
 	"defaultflavor",
 	"authpublickey",
 	"command",
+	"commandargs",
 	"annotations",
 	"deployment",
 	"deploymentmanifest",
@@ -243,6 +244,7 @@ var AppAliasArgs = []string{
 	"defaultflavor=app.defaultflavor.name",
 	"authpublickey=app.authpublickey",
 	"command=app.command",
+	"commandargs=app.commandargs",
 	"annotations=app.annotations",
 	"deployment=app.deployment",
 	"deploymentmanifest=app.deploymentmanifest",
@@ -296,6 +298,7 @@ var AppComments = map[string]string{
 	"defaultflavor":                          "Flavor name",
 	"authpublickey":                          "Public key used for authentication",
 	"command":                                "Command that the container runs to start service, separate multiple commands by a space",
+	"commandargs":                            "Command args to append to command, on cli specify multiple times in order, specify commandargs:empty=true to clear",
 	"annotations":                            "Annotations is a comma separated map of arbitrary key value pairs, for example: key1=val1,key2=val2,key3=val 3",
 	"deployment":                             "Deployment type (kubernetes, docker, or vm)",
 	"deploymentmanifest":                     "Deployment manifest is the deployment specific manifest file/config. For docker deployment, this can be a docker-compose or docker run file. For kubernetes deployment, this can be a kubernetes yaml or helm chart file.",
@@ -341,6 +344,7 @@ var AppComments = map[string]string{
 var AppSpecialArgs = map[string]string{
 	"app.alertpolicies":    "StringArray",
 	"app.autoprovpolicies": "StringArray",
+	"app.commandargs":      "StringArray",
 	"app.fields":           "StringArray",
 }
 var AppAutoProvPolicyRequiredArgs = []string{
@@ -395,6 +399,7 @@ var DeploymentCloudletRequestOptionalArgs = []string{
 	"app.defaultflavor.name",
 	"app.authpublickey",
 	"app.command",
+	"app.commandargs",
 	"app.annotations",
 	"app.deployment",
 	"app.deploymentmanifest",
@@ -443,6 +448,7 @@ var DeploymentCloudletRequestAliasArgs = []string{
 	"app.defaultflavor.name=deploymentcloudletrequest.app.defaultflavor.name",
 	"app.authpublickey=deploymentcloudletrequest.app.authpublickey",
 	"app.command=deploymentcloudletrequest.app.command",
+	"app.commandargs=deploymentcloudletrequest.app.commandargs",
 	"app.annotations=deploymentcloudletrequest.app.annotations",
 	"app.deployment=deploymentcloudletrequest.app.deployment",
 	"app.deploymentmanifest=deploymentcloudletrequest.app.deploymentmanifest",
@@ -496,6 +502,7 @@ var DeploymentCloudletRequestComments = map[string]string{
 	"app.defaultflavor.name":  "Flavor name",
 	"app.authpublickey":       "Public key used for authentication",
 	"app.command":             "Command that the container runs to start service, separate multiple commands by a space",
+	"app.commandargs":         "Command args to append to command, on cli specify multiple times in order",
 	"app.annotations":         "Annotations is a comma separated map of arbitrary key value pairs, for example: key1=val1,key2=val2,key3=val 3",
 	"app.deployment":          "Deployment type (kubernetes, docker, or vm)",
 	"app.deploymentmanifest":  "Deployment manifest is the deployment specific manifest file/config. For docker deployment, this can be a docker-compose or docker run file. For kubernetes deployment, this can be a kubernetes yaml or helm chart file.",
@@ -541,5 +548,6 @@ var DeploymentCloudletRequestComments = map[string]string{
 var DeploymentCloudletRequestSpecialArgs = map[string]string{
 	"deploymentcloudletrequest.app.alertpolicies":    "StringArray",
 	"deploymentcloudletrequest.app.autoprovpolicies": "StringArray",
+	"deploymentcloudletrequest.app.commandargs":      "StringArray",
 	"deploymentcloudletrequest.app.fields":           "StringArray",
 }

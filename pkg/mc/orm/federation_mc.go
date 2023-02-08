@@ -24,6 +24,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	fedmgmt "github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -244,6 +245,12 @@ func CreateFederationProvider(c echo.Context) (reterr error) {
 	if provider.Name == "" {
 		return fmt.Errorf("Please provide a name for this federation provider")
 	}
+	if provider.DefaultContainerDeployment == "" {
+		provider.DefaultContainerDeployment = cloudcommon.DeploymentTypeDocker
+	} else if provider.DefaultContainerDeployment != cloudcommon.DeploymentTypeDocker && provider.DefaultContainerDeployment != cloudcommon.DeploymentTypeKubernetes {
+		return fmt.Errorf("Default container deployment must be either %s or %s", cloudcommon.DeploymentTypeDocker, cloudcommon.DeploymentTypeKubernetes)
+	}
+
 	span := log.SpanFromContext(ctx)
 	log.SetTags(span, provider.GetTags())
 
@@ -384,14 +391,15 @@ func UpdateFederationProvider(c echo.Context) error {
 	// Ensure only allowed fields were updated
 	// Note these names are the json field names.
 	allowedFields := map[string]struct{}{
-		"Name":                     {}, // for lookup
-		"OperatorId":               {}, // for lookup
-		"MyInfo":                   {},
-		"MyInfo.CountryCode":       {},
-		"MyInfo.MCC":               {},
-		"MyInfo.MNC":               {},
-		"MyInfo.DiscoveryEndPoint": {},
-		"MyInfo.InitialDate":       {},
+		"Name":                       {}, // for lookup
+		"OperatorId":                 {}, // for lookup
+		"MyInfo":                     {},
+		"DefaultContainerDeployment": {},
+		"MyInfo.CountryCode":         {},
+		"MyInfo.MCC":                 {},
+		"MyInfo.MNC":                 {},
+		"MyInfo.DiscoveryEndPoint":   {},
+		"MyInfo.InitialDate":         {},
 	}
 	for _, field := range ormutil.GetMapKeys(inMap) {
 		if _, found := allowedFields[field]; !found {

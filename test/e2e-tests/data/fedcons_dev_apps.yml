@@ -18,10 +18,8 @@ regiondata:
       defaultflavor:
         name: x1.small
       accessports: "tcp:80,tcp:443,udp:10002"
-      configs:
-      - kind: podArgs
-        config: |
-          ["--text=\"hello world\""]
+      commandargs:
+        - -text="hello world"
     - key:
         organization: FedAppCo
         name: dockerapp
@@ -32,7 +30,7 @@ regiondata:
       defaultflavor:
         name: x1.small
       accessports: "tcp:81"
-      command: "-text=\"hello world\""
+      command: -text="hello world"
     - key:
         organization: FedAppCo
         name: vmapp

@@ -557,6 +557,7 @@ var FederationProviderComments = map[string]string{
 	"partnernotifytokenurl":         `Partner Oauth token URI`,
 	"partnernotifyclientid":         `Partner notification client id`,
 	"partnernotifyclientkey":        `Partner notification client key (saved in secret storage)`,
+	"defaultcontainerdeployment":    `Default container deployment type (either docker or kubernetes)`,
 	"status":                        `Status`,
 	"providerclientid":              `Provider client ID for inbound connections`,
 	"createdat":                     `Time created`,
@@ -727,5 +728,6 @@ var ProviderAppInstComments = map[string]string{
 	"cloudlet":            `Cloudlet name for AppInstKey`,
 	"cloudletorg":         `Cloudlet org for AppInstKey`,
 	"cloudletfedorg":      `Cloudlet federation org for AppInstKey (this should always be blank)`,
+	"error":               `Error message if create failed`,
 	"appinstcallbacklink": `AppInst callback link`,
 }

@@ -42,10 +42,6 @@ type Client struct {
 	auditLogCb  AuditLogCb
 }
 
-type ClientConfig struct {
-	IgnorePartner bool
-}
-
 type AuditLogCb func(ctx context.Context, fedKey *FedKey, data *ormclient.AuditLogData)
 
 var ClientSecretFieldClearer = util.NewJsonFieldClearer("clientSecret")

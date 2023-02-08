@@ -294,6 +294,20 @@ func (s *ResTagTableApi) GetVMSpec(ctx context.Context, stm concurrency.STM, nod
 		log.SpanLog(ctx, log.DebugLevelApi, "GetVMSpec platform has no native flavors returning mex flavor for", "platform", cl.PlatformType, "as", spec)
 		return &spec, nil
 	}
+	if cl.PlatformType == edgeproto.PlatformType_PLATFORM_TYPE_FEDERATION {
+		// flavors for federation should already be cloudlet-specific
+		log.SpanLog(ctx, log.DebugLevelApi, "skipping getvmspec for federated cloudlet")
+		spec := vmspec.VMCreationSpec{
+			FlavorName: nodeflavor.Key.Name,
+			FlavorInfo: &edgeproto.FlavorInfo{
+				Ram:   nodeflavor.Ram,
+				Name:  nodeflavor.Key.Name,
+				Disk:  nodeflavor.Disk,
+				Vcpus: nodeflavor.Vcpus,
+			},
+		}
+		return &spec, nil
+	}
 
 	tbls, _ := s.GetResTablesForCloudlet(ctx, stm, &cl)
 	return vmspec.GetVMSpec(ctx, nodeflavor, cli, tbls)

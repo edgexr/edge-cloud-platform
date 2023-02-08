@@ -325,7 +325,8 @@ regiondata:
       accessports: tcp:80,tcp:443,udp:10002
       defaultflavor:
         name: x1.small
-      command: --text="hello world"
+      commandargs:
+      - '"-text=\"hello world\""'
       deployment: docker
       accesstype: LoadBalancer
       serverlessconfig:
@@ -371,6 +372,7 @@ regiondata:
         publicport: 81
       flavor:
         name: x1.small
+      cloudletflavor: x1.small
       state: Ready
       healthcheck: Ok
       powerstate: PowerOn
@@ -407,6 +409,7 @@ regiondata:
         publicport: 10002
       flavor:
         name: x1.small
+      cloudletflavor: x1.small
       state: Ready
       healthcheck: Ok
       powerstate: PowerOn
@@ -437,6 +440,7 @@ regiondata:
         publicport: 81
       flavor:
         name: x1.small
+      cloudletflavor: x1.small
       state: Ready
       healthcheck: Ok
       powerstate: PowerOn
@@ -632,7 +636,8 @@ regiondata:
       accessports: tcp:80,tcp:443,udp:10002
       defaultflavor:
         name: x1.small
-      command: --text="hello world"
+      commandargs:
+      - '"-text=\"hello world\""'
       deployment: docker
       accesstype: LoadBalancer
       serverlessconfig:

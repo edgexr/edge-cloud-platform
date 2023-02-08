@@ -959,17 +959,22 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			}
 		}
 
-		vmspec, verr := s.all.resTagTableApi.GetVMSpec(ctx, stm, vmFlavor, cloudlet, info)
-		if verr != nil {
-			return verr
+		if cloudletPlatformType == edgeproto.PlatformType_PLATFORM_TYPE_FEDERATION && in.CloudletFlavor != "" {
+			// TODO: verify flavor is in cloudletinfo
+			in.VmFlavor = in.CloudletFlavor
+		} else {
+			vmspec, verr := s.all.resTagTableApi.GetVMSpec(ctx, stm, vmFlavor, cloudlet, info)
+			if verr != nil {
+				return verr
+			}
+			// if needed, master node flavor will be looked up from createClusterInst
+			// save original in.Flavor.Name in that case
+			in.VmFlavor = vmspec.FlavorName
+			in.AvailabilityZone = vmspec.AvailabilityZone
+			in.ExternalVolumeSize = vmspec.ExternalVolumeSize
+			log.SpanLog(ctx, log.DebugLevelApi, "Selected AppInst Node Flavor", "vmspec", vmspec.FlavorName)
+			in.OptRes = s.all.resTagTableApi.AddGpuResourceHintIfNeeded(ctx, stm, vmspec, cloudlet)
 		}
-		// if needed, master node flavor will be looked up from createClusterInst
-		// save original in.Flavor.Name in that case
-		in.VmFlavor = vmspec.FlavorName
-		in.AvailabilityZone = vmspec.AvailabilityZone
-		in.ExternalVolumeSize = vmspec.ExternalVolumeSize
-		log.SpanLog(ctx, log.DebugLevelApi, "Selected AppInst Node Flavor", "vmspec", vmspec.FlavorName)
-		in.OptRes = s.all.resTagTableApi.AddGpuResourceHintIfNeeded(ctx, stm, vmspec, cloudlet)
 		in.Revision = app.Revision
 		appDeploymentType = app.Deployment
 		// there may be direct access apps still defined, disallow them from being instantiated.
@@ -1150,7 +1155,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			clusterInst.Deployment = cloudcommon.DeploymentTypeKubernetes
 			clusterInst.NumMasters = 1
 			clusterInst.NumNodes = 1 // TODO support 1 master, zero nodes
-			if cloudletPlatformType == edgeproto.PlatformType_PLATFORM_TYPE_K8S_BARE_METAL {
+			if cloudletPlatformType == edgeproto.PlatformType_PLATFORM_TYPE_K8S_BARE_METAL || cloudletPlatformType == edgeproto.PlatformType_PLATFORM_TYPE_FEDERATION {
 				// bare metal k8s clusters are virtual and have no nodes
 				log.SpanLog(ctx, log.DebugLevelApi, "Setting num nodes to 0 for k8s baremetal virtual cluster")
 				clusterInst.NumNodes = 0
