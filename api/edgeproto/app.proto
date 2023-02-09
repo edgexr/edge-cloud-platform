@@ -179,6 +179,8 @@ message App {
   string auth_public_key = 12;
   // Command that the container runs to start service, separate multiple commands by a space
   string command = 13;
+  // Command args to append to command, on cli specify multiple times in order
+  repeated string command_args = 46;
   // Annotations is a comma separated map of arbitrary key value pairs,
   // for example: key1=val1,key2=val2,key3="val 3"
   string annotations = 14;
