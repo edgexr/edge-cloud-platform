@@ -64,6 +64,7 @@ func loggerCustom(next echo.HandlerFunc, errorHandler echo.MiddlewareFunc) echo.
 			// log events
 		} else if strings.Contains(req.RequestURI, "show") ||
 			edgeproto.IsShow(method) ||
+			// TODO: req.Method == http.MethodGet ||
 			strings.Contains(req.RequestURI, "/auth/user/current") ||
 			strings.Contains(req.RequestURI, "/auth/metrics/") ||
 			strings.Contains(req.RequestURI, "/ctrl/Stream") ||

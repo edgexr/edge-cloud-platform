@@ -202,8 +202,14 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 		if provImage.Type != string(fedewapi.VIRTIMAGETYPE_DOCKER) {
 			return fmt.Errorf("virtType is %s but image %s type is %s, which is inconsistent", provArt.VirtType, provImage.FileID, provImage.Type)
 		}
-		// default deployment type for container is docker for now
-		app.Deployment = cloudcommon.DeploymentTypeDocker
+		if provider.DefaultContainerDeployment == "" {
+			// TODO: remove this later, this is only for
+			// backwards compatability before the
+			// DefaultContainerDeployment field was added.
+			app.Deployment = cloudcommon.DeploymentTypeDocker
+		} else {
+			app.Deployment = provider.DefaultContainerDeployment
+		}
 	}
 	if spec.DeploymentConfig != nil {
 		badConfigErr := func() error {
@@ -241,23 +247,16 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 		if len(spec.CommandLineParams.Command) > 0 {
 			app.Command = strings.Join(spec.CommandLineParams.Command, " ")
 		}
-		if len(spec.CommandLineParams.CommandArgs) > 0 && app.Deployment == cloudcommon.DeploymentTypeKubernetes {
-			dat, err := yaml.Marshal(spec.CommandLineParams.CommandArgs)
-			if err != nil {
-				return fmt.Errorf("failed to marshal command line args %v to yaml ConfigFile for app, %s", spec.CommandLineParams.CommandArgs, err)
-			}
-			cfg := edgeproto.ConfigFile{
-				Kind:   edgeproto.AppConfigPodArgs,
-				Config: string(dat),
-			}
-			app.Configs = append(app.Configs, &cfg)
-		}
+		app.CommandArgs = spec.CommandLineParams.CommandArgs
 	}
 	if spec.CommandLineParams != nil && app.Deployment == cloudcommon.DeploymentTypeDocker {
-		args := []string{}
-		args = append(args, spec.CommandLineParams.Command...)
-		args = append(args, spec.CommandLineParams.CommandArgs...)
-		app.Command = strings.Join(args, " ")
+		if len(spec.CommandLineParams.Command) > 1 {
+			return fmt.Errorf("Only one command supported")
+		}
+		if len(spec.CommandLineParams.Command) == 1 {
+			app.Command = spec.CommandLineParams.Command[0]
+		}
+		app.CommandArgs = spec.CommandLineParams.CommandArgs
 	}
 	envVars := []v1.EnvVar{}
 	for _, param := range spec.CompEnvParams {
@@ -599,6 +598,8 @@ func (p *PartnerApi) GenerateComponentSpec(ctx context.Context, app *edgeproto.A
 	if app.Command != "" {
 		commandLineParams.Command = []string{app.Command}
 	}
+	commandLineParams.CommandArgs = app.CommandArgs
+
 	for _, cfg := range app.Configs {
 		switch cfg.Kind {
 		case edgeproto.AppConfigHelmYaml:
@@ -608,13 +609,6 @@ func (p *PartnerApi) GenerateComponentSpec(ctx context.Context, app *edgeproto.A
 			if err != nil {
 				return nil, fmt.Errorf("Failed to unmarshal ConfigFile for env vars: %s", err)
 			}
-		case edgeproto.AppConfigPodArgs:
-			args := []string{}
-			err := yaml.Unmarshal([]byte(cfg.Config), &args)
-			if err != nil {
-				return nil, err
-			}
-			commandLineParams.CommandArgs = args
 		}
 	}
 	if len(commandLineParams.Command) > 0 || len(commandLineParams.CommandArgs) > 0 {

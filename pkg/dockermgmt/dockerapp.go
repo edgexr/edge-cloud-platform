@@ -17,6 +17,7 @@ package dockermgmt
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
@@ -270,7 +271,7 @@ func CreateAppInstLocal(client ssh.Client, app *edgeproto.App, appInst *edgeprot
 	if app.DeploymentManifest == "" {
 		cmd := fmt.Sprintf("%s -d -l edge-cloud -l cloudlet=%s -l cluster=%s  -l %s=%s -l %s=%s --restart=unless-stopped --name=%s %s %s %s", base_cmd,
 			cloudlet, cluster, cloudcommon.MexAppNameLabel, nameLabelVal, cloudcommon.MexAppVersionLabel, versionLabelVal, name,
-			strings.Join(GetDockerPortString(appInst.MappedPorts, UseInternalPortInContainer, "", cloudcommon.IPAddrAllInterfaces), " "), image, app.Command)
+			strings.Join(GetDockerPortString(appInst.MappedPorts, UseInternalPortInContainer, "", cloudcommon.IPAddrAllInterfaces), " "), image, getCommandString(app))
 		log.DebugLog(log.DebugLevelInfra, "running docker run ", "cmd", cmd)
 
 		out, err := client.Output(cmd)
@@ -295,6 +296,25 @@ func CreateAppInstLocal(client ssh.Client, app *edgeproto.App, appInst *edgeprot
 		}
 	}
 	return nil
+}
+
+func getCommandString(app *edgeproto.App) string {
+	// Make sure to quote user input run on the command line
+	// to avoid command injection attacks
+	args := append([]string{app.Command}, app.CommandArgs...)
+	safeArgs := []string{}
+	for _, arg := range args {
+		arg = strings.TrimSpace(arg)
+		if str, err := strconv.Unquote(arg); err == nil {
+			arg = strings.TrimSpace(str)
+		}
+		if arg == "" {
+			continue
+		}
+		arg = strconv.Quote(arg)
+		safeArgs = append(safeArgs, arg)
+	}
+	return strings.Join(safeArgs, " ")
 }
 
 func CreateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst, opts ...DockerReqOp) error {
@@ -323,7 +343,7 @@ func CreateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 		}
 		cmd := fmt.Sprintf("%s -d -l %s=%s -l %s=%s --restart=unless-stopped --network=host --name=%s %s %s", base_cmd,
 			cloudcommon.MexAppNameLabel, nameLabelVal, cloudcommon.MexAppVersionLabel,
-			versionLabelVal, GetContainerName(&app.Key), image, app.Command)
+			versionLabelVal, GetContainerName(&app.Key), image, getCommandString(app))
 		log.SpanLog(ctx, log.DebugLevelInfra, "running docker run ", "cmd", cmd)
 		out, err := client.Output(cmd)
 		if err != nil {

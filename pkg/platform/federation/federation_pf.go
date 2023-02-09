@@ -228,25 +228,26 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	if os.Getenv("E2ETEST_TLS") != "" {
 		timeout = 3 * time.Second
 	}
-	select {
-	case event := <-eventsCh:
-		if event.State == edgeproto.TrackedState_READY {
-			if event.Message != "" {
+	for {
+		select {
+		case event := <-eventsCh:
+			if event.State == edgeproto.TrackedState_READY {
+				if event.Message != "" {
+					updateCallback(edgeproto.UpdateTask, event.Message)
+				}
+				return nil
+			} else if event.State == edgeproto.TrackedState_CREATE_ERROR {
+				if event.Message == "" {
+					event.Message = "Create failed, no error message"
+				}
+				return errors.New(event.Message)
+			} else {
 				updateCallback(edgeproto.UpdateTask, event.Message)
 			}
-			return nil
-		} else if event.State == edgeproto.TrackedState_CREATE_ERROR {
-			if event.Message == "" {
-				event.Message = "Create failed, no error message"
-			}
-			return errors.New(event.Message)
-		} else {
-			updateCallback(edgeproto.UpdateTask, event.Message)
+		case <-time.After(timeout):
+			return fmt.Errorf("Timed out waiting for callback")
 		}
-	case <-time.After(timeout):
-		return fmt.Errorf("Timed out waiting for callback")
 	}
-	return nil
 }
 
 // Delete an AppInst on a Cluster

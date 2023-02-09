@@ -47,6 +47,8 @@ type FederationProvider struct {
 	PartnerNotifyClientId string
 	// Partner notification client key (saved in secret storage)
 	PartnerNotifyClientKey string
+	// Default container deployment type (either docker or kubernetes)
+	DefaultContainerDeployment string
 	// Status
 	// read only: true
 	Status string
@@ -349,6 +351,8 @@ type ProviderAppInst struct {
 	CloudletOrg string
 	// Cloudlet federation org for AppInstKey (this should always be blank)
 	CloudletFedOrg string
+	// Error message if create failed
+	Error string
 	// AppInst callback link
 	AppInstCallbackLink string
 }

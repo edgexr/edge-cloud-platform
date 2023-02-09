@@ -134,7 +134,9 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 	}
 	db := p.loggedDB(ctx)
 	err = db.Create(&provAppInst).Error
-	if err != nil {
+	if err != nil && strings.Contains(err.Error(), "pq: duplicate key value") {
+		return fmt.Errorf("AppInst with ID %s already exists", in.AppInstanceId)
+	} else if err != nil {
 		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to create new provider AppInst, %s", err.Error()))
 	}
 
@@ -187,10 +189,12 @@ func (s *AppInstWorker) createAppInst(ctx context.Context) (reterr error) {
 		if reterr == nil {
 			return
 		}
+		// log error in providerAppInst
+		s.provAppInst.Error = reterr.Error()
 		db := s.partner.loggedDB(ctx)
-		undoErr := db.Delete(s.provAppInst).Error
-		if undoErr != nil {
-			log.SpanLog(ctx, log.DebugLevelApi, "failed to undo providerAppInst create", "providerAppInst", s.provAppInst, "err", undoErr)
+		intErr := db.Save(&s.provAppInst).Error
+		if intErr != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to save providerAppInst on error", "provAppInst", s.provAppInst, "err", intErr)
 		}
 	}()
 
@@ -205,7 +209,7 @@ func (s *AppInstWorker) createAppInst(ctx context.Context) (reterr error) {
 		Key: s.provAppInst.GetAppInstKey(),
 	}
 	if s.flavor != "NOT_SPECIFIED" {
-		appInstIn.Flavor.Name = s.flavor
+		appInstIn.CloudletFlavor = s.flavor
 	}
 
 	log.SpanLog(ctx, log.DebugLevelApi, "Federation provider create appinst", "appInst", appInstIn)
@@ -281,7 +285,7 @@ func (s *PartnerApi) getAppInstAccessPointInfo(appInst *edgeproto.AppInst) []fed
 			ap := fedewapi.AccessPointInfoInner{}
 			ap.InterfaceId = s.GetInterfaceId(port, portVal)
 			fqdn := appInst.Uri + port.FqdnPrefix
-			ap.AccessPoints.Port = portVal
+			ap.AccessPoints.Port = port.PublicPort
 			ap.AccessPoints.Fqdn = &fqdn
 			accessPoints = append(accessPoints, ap)
 		}
@@ -403,16 +407,20 @@ func (p *PartnerApi) GetAppInstanceDetails(c echo.Context, fedCtxId FederationCo
 		appInstOut = ai
 		return nil
 	})
-	if appInstOut == nil {
-		return fmt.Errorf("Unable to find AppInst %s", filter.Key.GetKeyString())
-	}
-	accessPoints := p.getAppInstAccessPointInfo(appInstOut)
 
-	resp := fedewapi.GetAppInstanceDetails200Response{
-		AppInstanceState: getInstanceState(appInstOut),
+	state := fedewapi.INSTANCESTATE_PENDING
+	if provAppInst.Error != "" {
+		state = fedewapi.INSTANCESTATE_FAILED
 	}
-	if len(accessPoints) > 0 {
-		resp.AccesspointInfo = accessPoints
+	resp := fedewapi.GetAppInstanceDetails200Response{
+		AppInstanceState: &state,
+	}
+	if appInstOut != nil {
+		resp.AppInstanceState = getInstanceState(appInstOut)
+		accessPoints := p.getAppInstAccessPointInfo(appInstOut)
+		if len(accessPoints) > 0 {
+			resp.AccesspointInfo = accessPoints
+		}
 	}
 	return c.JSON(http.StatusOK, &resp)
 }

@@ -15,11 +15,8 @@
 package deploygen
 
 import (
-	"fmt"
-
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
-	"gopkg.in/yaml.v2"
 )
 
 var KubernetesBasic = "kubernetes-basic"
@@ -53,6 +50,7 @@ func NewAppSpec(app *edgeproto.App) (*AppSpec, error) {
 		ImagePath:        app.ImagePath,
 		ImageType:        edgeproto.ImageType_name[int32(app.ImageType)],
 		Command:          app.Command,
+		Args:             app.CommandArgs,
 		Annotations:      app.Annotations,
 		ScaleWithCluster: app.ScaleWithCluster,
 	}
@@ -68,17 +66,6 @@ func NewAppSpec(app *edgeproto.App) (*AppSpec, error) {
 	out.Ports, err = util.ParsePorts(app.AccessPorts)
 	if err != nil {
 		return nil, err
-	}
-
-	for _, cfg := range app.Configs {
-		if cfg.Kind == edgeproto.AppConfigPodArgs {
-			args := []string{}
-			err := yaml.Unmarshal([]byte(cfg.Config), &args)
-			if err != nil {
-				return nil, fmt.Errorf("Expected yaml list for ConfigFile %s: %s", cfg.Kind, err)
-			}
-			out.Args = args
-		}
 	}
 
 	return out, nil

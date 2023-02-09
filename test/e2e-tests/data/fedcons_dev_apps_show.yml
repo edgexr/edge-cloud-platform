@@ -140,6 +140,8 @@ regiondata:
       accessports: tcp:80,tcp:443,udp:10002
       defaultflavor:
         name: x1.small
+      commandargs:
+      - '"-text=\"hello world\""'
       deployment: kubernetes
       deploymentmanifest: |
         apiVersion: v1
@@ -208,12 +210,8 @@ regiondata:
                 - containerPort: 10002
                   protocol: UDP
                 args:
-                - "--text=\"hello world\""
+                - "-text=\"hello world\""
       deploymentgenerator: kubernetes-basic
-      configs:
-      - kind: podArgs
-        config: |
-          ["--text=\"hello world\""]
       accesstype: LoadBalancer
       globalid: pa-k8sapp10fedappco
     - key:
