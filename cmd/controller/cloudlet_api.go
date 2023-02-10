@@ -1954,7 +1954,7 @@ func (s *CloudletApi) FindFlavorMatch(ctx context.Context, in *edgeproto.FlavorM
 			return in.Key.NotFoundError()
 		}
 		var verr error
-		spec, verr = s.all.resTagTableApi.GetVMSpec(ctx, stm, mexFlavor, cl, cli)
+		spec, verr = s.all.resTagTableApi.GetVMSpec(ctx, stm, mexFlavor, "", cl, cli)
 		if verr != nil {
 			return verr
 		}

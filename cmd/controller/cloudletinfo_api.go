@@ -88,6 +88,13 @@ func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo
 		}
 		// Clear fields that are cached in Redis as they should not be stored in DB
 		in.ClearRedisOnlyFields()
+
+		// For federated cloudlets, flavors come from MC using
+		// InjectCloudletInfo. Don't let FRM overwrite them.
+		if in.Key.FederatedOrganization != "" {
+			in.Flavors = info.Flavors
+		}
+
 		fields := make(map[string]struct{})
 		info.DiffFields(in, fields)
 		if len(fields) > 0 {

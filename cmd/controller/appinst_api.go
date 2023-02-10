@@ -959,22 +959,17 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			}
 		}
 
-		if cloudletPlatformType == edgeproto.PlatformType_PLATFORM_TYPE_FEDERATION && in.CloudletFlavor != "" {
-			// TODO: verify flavor is in cloudletinfo
-			in.VmFlavor = in.CloudletFlavor
-		} else {
-			vmspec, verr := s.all.resTagTableApi.GetVMSpec(ctx, stm, vmFlavor, cloudlet, info)
-			if verr != nil {
-				return verr
-			}
-			// if needed, master node flavor will be looked up from createClusterInst
-			// save original in.Flavor.Name in that case
-			in.VmFlavor = vmspec.FlavorName
-			in.AvailabilityZone = vmspec.AvailabilityZone
-			in.ExternalVolumeSize = vmspec.ExternalVolumeSize
-			log.SpanLog(ctx, log.DebugLevelApi, "Selected AppInst Node Flavor", "vmspec", vmspec.FlavorName)
-			in.OptRes = s.all.resTagTableApi.AddGpuResourceHintIfNeeded(ctx, stm, vmspec, cloudlet)
+		vmspec, verr := s.all.resTagTableApi.GetVMSpec(ctx, stm, vmFlavor, in.CloudletFlavor, cloudlet, info)
+		if verr != nil {
+			return verr
 		}
+		// if needed, master node flavor will be looked up from createClusterInst
+		// save original in.Flavor.Name in that case
+		in.VmFlavor = vmspec.FlavorName
+		in.AvailabilityZone = vmspec.AvailabilityZone
+		in.ExternalVolumeSize = vmspec.ExternalVolumeSize
+		log.SpanLog(ctx, log.DebugLevelApi, "Selected AppInst Node Flavor", "vmspec", vmspec.FlavorName)
+		in.OptRes = s.all.resTagTableApi.AddGpuResourceHintIfNeeded(ctx, stm, vmspec, cloudlet)
 		in.Revision = app.Revision
 		appDeploymentType = app.Deployment
 		// there may be direct access apps still defined, disallow them from being instantiated.
@@ -1146,6 +1141,8 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		// To reduce the proliferation of different reservable ClusterInst
 		// configurations, we restrict reservable ClusterInst configs.
 		clusterInst.Flavor.Name = in.Flavor.Name
+		clusterInst.NodeFlavor = in.CloudletFlavor
+		clusterInst.MasterNodeFlavor = in.CloudletFlavor
 		// Prefer IP access shared, but some platforms (gcp, etc) only
 		// support dedicated.
 		clusterInst.IpAccess = edgeproto.IpAccess_IP_ACCESS_UNKNOWN

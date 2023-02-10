@@ -14,8 +14,6 @@ regiondata:
             organization: dmuus-partner1
             name: dmuuscloud1
             federatedorganization: partner1
-      flavor:
-        name: x1.small
     - key:
         appkey:
           organization: FedAppCo
@@ -28,8 +26,7 @@ regiondata:
             organization: dmuus-partner1
             name: dmuuscloud1
             federatedorganization: partner1
-      flavor:
-        name: x1.small
+      cloudletflavor: x1.small
     - key:
         appkey:
           organization: FedAppCo
@@ -41,4 +38,4 @@ regiondata:
             name: dmuuscloud2
             federatedorganization: partner1
       flavor:
-        name: x1.small
+        name: p1.small

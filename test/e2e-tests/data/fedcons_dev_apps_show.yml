@@ -28,17 +28,22 @@ regiondata:
   appdata:
     flavors:
     - key:
-        name: x1.medium
+        name: p1.large
+      ram: 8192
+      vcpus: 8
+      disk: 8
+    - key:
+        name: p1.medium
       ram: 4096
       vcpus: 4
       disk: 4
     - key:
-        name: x1.small
+        name: p1.small
       ram: 2048
       vcpus: 2
       disk: 2
     - key:
-        name: x1.tiny
+        name: p1.tiny
       ram: 1024
       vcpus: 1
       disk: 1
@@ -126,7 +131,7 @@ regiondata:
       imagetype: Docker
       accessports: tcp:81
       defaultflavor:
-        name: x1.small
+        name: p1.tiny
       command: -text="hello world"
       deployment: docker
       accesstype: LoadBalancer
@@ -139,7 +144,7 @@ regiondata:
       imagetype: Docker
       accessports: tcp:80,tcp:443,udp:10002
       defaultflavor:
-        name: x1.small
+        name: p1.tiny
       commandargs:
       - '"-text=\"hello world\""'
       deployment: kubernetes
@@ -213,6 +218,9 @@ regiondata:
                 - "-text=\"hello world\""
       deploymentgenerator: kubernetes-basic
       accesstype: LoadBalancer
+      serverlessconfig:
+        vcpus: "0.5"
+        ram: 20
       globalid: pa-k8sapp10fedappco
     - key:
         organization: FedAppCo
@@ -222,7 +230,7 @@ regiondata:
       imagetype: Qcow
       accessports: tcp:81
       defaultflavor:
-        name: x1.small
+        name: p1.small
       deployment: vm
       accesstype: LoadBalancer
       globalid: pa-vmapp10fedappco

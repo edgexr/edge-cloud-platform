@@ -308,13 +308,13 @@ regiondata:
       imagetype: Docker
       accessports: tcp:81
       defaultflavor:
-        name: x1.small
+        name: x1.tiny
       command: -text="hello world"
       deployment: docker
       accesstype: LoadBalancer
       serverlessconfig:
-        vcpus: 2
-        ram: 2048
+        vcpus: 1
+        ram: 1024
       globalid: local-pa-dockerapp10fedappco10dmuus-partner1
     - key:
         organization: dmuus-partner1
@@ -324,14 +324,14 @@ regiondata:
       imagetype: Docker
       accessports: tcp:80,tcp:443,udp:10002
       defaultflavor:
-        name: x1.small
+        name: x1.tiny
       commandargs:
       - '"-text=\"hello world\""'
       deployment: docker
       accesstype: LoadBalancer
       serverlessconfig:
-        vcpus: 2
-        ram: 2048
+        vcpus: "0.5"
+        ram: 20
       globalid: local-pa-k8sapp10fedappco10dmuus-partner1
     - key:
         organization: dmuus-partner1
@@ -371,7 +371,7 @@ regiondata:
         internalport: 81
         publicport: 81
       flavor:
-        name: x1.small
+        name: x1.tiny
       cloudletflavor: x1.small
       state: Ready
       healthcheck: Ok
@@ -408,12 +408,12 @@ regiondata:
         internalport: 10002
         publicport: 10002
       flavor:
-        name: x1.small
-      cloudletflavor: x1.small
+        name: x1.tiny
+      cloudletflavor: x1.tiny
       state: Ready
       healthcheck: Ok
       powerstate: PowerOn
-      vmflavor: x1.small
+      vmflavor: x1.tiny
       realclustername: reservable0
       uniqueid: dmuus-partner1pa-k8sapp10fedappco10-autoclusterabcdefabcdef-dmuus-cloud-1-dmuus
       dnslabel: pa-k8sapp10fedappco10-dmuus-partner1
@@ -619,13 +619,13 @@ regiondata:
       imagetype: Docker
       accessports: tcp:81
       defaultflavor:
-        name: x1.small
+        name: x1.tiny
       command: -text="hello world"
       deployment: docker
       accesstype: LoadBalancer
       serverlessconfig:
-        vcpus: 2
-        ram: 2048
+        vcpus: 1
+        ram: 1024
       globalid: locala-pa-dockerapp10fedappco10dmuus-partner1
     - key:
         organization: dmuus-partner1
@@ -635,14 +635,14 @@ regiondata:
       imagetype: Docker
       accessports: tcp:80,tcp:443,udp:10002
       defaultflavor:
-        name: x1.small
+        name: x1.tiny
       commandargs:
       - '"-text=\"hello world\""'
       deployment: docker
       accesstype: LoadBalancer
       serverlessconfig:
-        vcpus: 2
-        ram: 2048
+        vcpus: "0.5"
+        ram: 20
       globalid: locala-pa-k8sapp10fedappco10dmuus-partner1
     - key:
         organization: dmuus-partner1

@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
@@ -400,4 +401,120 @@ func GetVMSpec(ctx context.Context, nodeflavor edgeproto.Flavor, cli edgeproto.C
 		return &vmspec, nil
 	}
 	return &vmspec, fmt.Errorf("no suitable platform flavor found for %s, please try a smaller flavor", nodeflavor.Key.Name)
+}
+
+func GetVMSpecCloudletFlavor(ctx context.Context, cloudletFlavorName string, cli edgeproto.CloudletInfo) (*VMCreationSpec, error) {
+	var cloudletFlavor *edgeproto.FlavorInfo
+	for _, cf := range cli.Flavors {
+		if cf.Name == cloudletFlavorName {
+			cloudletFlavor = cf
+			break
+		}
+	}
+	if cloudletFlavor == nil {
+		return nil, fmt.Errorf("Cloudlet flavor %s not found on cloudlet", cloudletFlavorName)
+	}
+	az, _ := findAZmatch("gpu", cli)
+	img, _ := findImagematch("gpu", cli)
+	vmspec := VMCreationSpec{
+		FlavorName:       cloudletFlavorName,
+		AvailabilityZone: az,
+		ImageName:        img,
+		FlavorInfo:       cloudletFlavor,
+	}
+	return &vmspec, nil
+}
+
+func GetFlavorForServerlessConfig(ctx context.Context, flavors []edgeproto.Flavor, sconfig *edgeproto.ServerlessConfig) (*edgeproto.Flavor, error) {
+	if len(flavors) == 0 {
+		return nil, fmt.Errorf("no flavors specified")
+	}
+	sort.Slice(flavors, func(i, j int) bool {
+		if flavors[i].Vcpus < flavors[j].Vcpus {
+			return true
+		}
+		if flavors[i].Vcpus > flavors[j].Vcpus {
+			return false
+		}
+		if flavors[i].Ram < flavors[j].Ram {
+			return true
+		}
+		if flavors[i].Ram > flavors[j].Ram {
+			return false
+		}
+		gpui := flavors[i].OptResMap["gpu"]
+		gpuj := flavors[j].OptResMap["gpu"]
+		if gpui != "" && gpuj != "" {
+			gpuTypei, _, gpuCounti, erri := cloudcommon.ParseGPUResource(gpui)
+			gpuTypej, _, gpuCountj, errj := cloudcommon.ParseGPUResource(gpuj)
+			// shouldn't really get any errors here since
+			// gpu resource string should have already
+			// been validated.
+			if erri == nil && errj == nil {
+				if gpuTypei == "vcpu" && gpuTypej != "vcpu" {
+					return true
+				}
+				if gpuTypej == "vcpu" && gpuTypei != "vcpu" {
+					return false
+				}
+				if gpuCounti != gpuCountj {
+					return gpuCounti < gpuCountj
+				}
+			}
+		}
+		return flavors[i].Disk < flavors[j].Disk
+	})
+	for _, flavor := range flavors {
+		fmt.Printf("Checking flavor %v against %v\n", flavor, sconfig)
+		if sconfig.Vcpus.GreaterThanUint64(uint64(flavor.Vcpus)) {
+			fmt.Printf("  vcpu too low\n")
+			continue
+		}
+		if sconfig.Ram > flavor.Ram {
+			fmt.Printf("  ram too low\n")
+			continue
+		}
+		flavorGpu := flavor.OptResMap["gpu"]
+		fmt.Printf("Checking GPU flavor %s\n", flavorGpu)
+		if sconfig.GpuConfig.Type == edgeproto.GpuType_GPU_TYPE_NONE && flavorGpu == "" {
+			// no gpu requested, no gpu on flavor
+			fmt.Printf("  no gpu matched, ok\n")
+			return &flavor, nil
+		}
+		if sconfig.GpuConfig.Type == edgeproto.GpuType_GPU_TYPE_NONE && flavorGpu != "" {
+			// no gpu requested, but gpu on flavor,
+			// skip because it's wasteful
+			fmt.Printf("  skip gpu flavor\n")
+			continue
+		}
+		if sconfig.GpuConfig.Type != edgeproto.GpuType_GPU_TYPE_NONE && flavorGpu == "" {
+			// gpu requested, but no gpu on flavor
+			fmt.Printf("  gpu required but not on flavor\n")
+			continue
+		}
+		// compare gpu, see restagtable_api.ValidateOptResMapValues for format
+		gpuType, gpuSpec, gpuCount, err := cloudcommon.ParseGPUResource(flavorGpu)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to parse gpu count on flavor, ignoring", "flavor", flavor.Key.Name, "gpu-spec", flavorGpu)
+			continue
+		}
+		switch sconfig.GpuConfig.Type {
+		case edgeproto.GpuType_GPU_TYPE_PCI:
+			if gpuType != "pci" {
+				continue
+			}
+		case edgeproto.GpuType_GPU_TYPE_VGPU:
+			if gpuType != "vgpu" {
+				continue
+			}
+		}
+		if int32(gpuCount) < sconfig.GpuConfig.NumGpu {
+			continue
+		}
+		if gpuSpec != "" && sconfig.GpuConfig.Model != gpuSpec {
+			continue
+		}
+		return &flavor, nil
+	}
+	return nil, fmt.Errorf("no matching flavor found")
 }
