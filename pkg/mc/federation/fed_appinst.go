@@ -456,22 +456,8 @@ func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
 	if info.Message != nil {
 		event.Message = *info.Message
 	}
-	if info.AppInstanceState != nil {
-		switch *info.AppInstanceState {
-		case fedewapi.INSTANCESTATE_PENDING:
-			event.State = edgeproto.TrackedState_CREATING
-		case fedewapi.INSTANCESTATE_READY:
-			event.State = edgeproto.TrackedState_READY
-		case fedewapi.INSTANCESTATE_FAILED:
-			event.State = edgeproto.TrackedState_CREATE_ERROR
-		case fedewapi.INSTANCESTATE_TERMINATING:
-			event.State = edgeproto.TrackedState_CREATE_ERROR
-			event.Message = "Terminating"
-			if info.Message != nil {
-				event.Message += ", " + *info.Message
-			}
-		}
-	}
+	SetFedAppInstEventState(&event, info.AppInstanceState, info.Message)
+
 	if len(info.AccesspointInfo) > 0 {
 		for _, ap := range info.AccesspointInfo {
 			port := dmeproto.AppPort{}
@@ -503,4 +489,24 @@ func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
 		return err
 	}
 	return nil
+}
+
+func SetFedAppInstEventState(event *edgeproto.FedAppInstEvent, instanceState *fedewapi.InstanceState, message *string) {
+	if instanceState == nil {
+		return
+	}
+	switch *instanceState {
+	case fedewapi.INSTANCESTATE_PENDING:
+		event.State = edgeproto.TrackedState_CREATING
+	case fedewapi.INSTANCESTATE_READY:
+		event.State = edgeproto.TrackedState_READY
+	case fedewapi.INSTANCESTATE_FAILED:
+		event.State = edgeproto.TrackedState_CREATE_ERROR
+	case fedewapi.INSTANCESTATE_TERMINATING:
+		event.State = edgeproto.TrackedState_CREATE_ERROR
+		event.Message = "Terminating"
+		if message != nil {
+			event.Message += ", " + *message
+		}
+	}
 }
