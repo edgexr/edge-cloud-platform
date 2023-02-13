@@ -25,7 +25,6 @@ import (
 	"testing"
 	"time"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -37,6 +36,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/require"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	"google.golang.org/grpc"
 )
 
@@ -776,44 +776,44 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 
 	err = apis.cloudletApi.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 
-		spec, vmerr := apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, *cl, cli)
+		spec, vmerr := apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, "", *cl, cli)
 		require.Nil(t, vmerr, "GetVmSpec")
 		require.Equal(t, "flavor.large", spec.FlavorName)
 		require.Equal(t, "AZ1_GPU", spec.AvailabilityZone)
 		require.Equal(t, "gpu_image", spec.ImageName)
 
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorVgpuMatch, *cl, cli)
+		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorVgpuMatch, "", *cl, cli)
 		require.Nil(t, vmerr, "GetVmSpec vgpu request")
 		require.Equal(t, "flavor.large-nvidia", spec.FlavorName)
 
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorPciMatch, *cl, cli)
+		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorPciMatch, "", *cl, cli)
 		require.Nil(t, vmerr, "GetVMSpec")
 		require.Equal(t, "flavor.large", spec.FlavorName)
 
 		// non-nominal, ask for more resources than the would-be match supports.
 		// change testflavor to request 10 gpus of any kind.
 		testflavor.OptResMap["gpu"] = "gpu:10"
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, *cl, cli)
+		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, "", *cl, cli)
 		require.Equal(t, "no suitable platform flavor found for x1.large-mex, please try a smaller flavor", vmerr.Error(), "nil table")
 
 		// specific pci passthrough
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testPciT4flavor, *cl, cli)
+		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testPciT4flavor, "", *cl, cli)
 		require.Nil(t, vmerr, "GetVmSpec")
 		require.Equal(t, "flavor.large", spec.FlavorName)
 
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorVgpuNvidiaMatch, *cl, cli)
+		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorVgpuNvidiaMatch, "", *cl, cli)
 		require.Nil(t, vmerr, "GetVmSpec")
 		require.Equal(t, "flavor.large-nvidia", spec.FlavorName)
 		uses := apis.resTagTableApi.UsesGpu(ctx, stm, *spec.FlavorInfo, *cl)
 		require.Equal(t, true, uses)
 
 		// vmware vio syntax
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorVIOMatch, *cl, cli)
+		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorVIOMatch, "", *cl, cli)
 		require.Nil(t, vmerr, "GetVmSpec")
 		require.Equal(t, "flavor.large-generic-gpu", spec.FlavorName)
 
 		// Now try 2 optional resources requested by one flavor, first non-nominal, no res tag table for nas tags
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor2, *cl, cli)
+		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor2, "", *cl, cli)
 		if vmerr != nil {
 			require.Equal(t, "no suitable platform flavor found for x1.large-2-Resources, please try a smaller flavor", vmerr.Error())
 		}
@@ -825,30 +825,30 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 		_, err := apis.resTagTableApi.CreateResTagTable(ctx, &nastab)
 		require.Nil(t, err)
 
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor2, *cl, cli)
+		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor2, "", *cl, cli)
 		require.Nil(t, vmerr, "GetVMSpec")
 		require.Equal(t, "flavor.large2", spec.FlavorName)
 
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorT4VGPUMatch, *cl, cli)
+		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorT4VGPUMatch, "", *cl, cli)
 		require.Nil(t, vmerr, "GetVMSpec")
 		require.Equal(t, "flavor.m4.large-vgpu", spec.FlavorName)
 
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorT4GPUMatch, *cl, cli)
+		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorT4GPUMatch, "", *cl, cli)
 		require.Nil(t, vmerr, "GetVMSpec")
 		require.Equal(t, "flavor.m4.large-gpu", spec.FlavorName)
 
 		// Non-nominal: ask for nas only, should reject testflavor2 as there are no
 		// os flavors with only a nas resource
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavorNas, *cl, cli)
+		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavorNas, "", *cl, cli)
 		require.Equal(t, "no suitable platform flavor found for x1.large-2-Resources, please try a smaller flavor", vmerr.Error())
 		// Non-nominal: flavor requests optional resource, while cloudlet's OptResMap is nil (cloudlet supports none)
 		cl.ResTagMap = nil
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, *cl, cli)
+		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, "", *cl, cli)
 		require.Equal(t, "Cloudlet San Jose Site doesn't support GPU", vmerr.Error())
 
 		nulCL := edgeproto.Cloudlet{}
 		// and finally, Non-nominal, request a resource, and cloudlet has none to give (nil cloudlet/cloudlet.ResTagMap)
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, nulCL, cli)
+		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, "", nulCL, cli)
 		require.Equal(t, "Cloudlet San Jose Site doesn't support GPU", vmerr.Error(), "nil table")
 		return nil
 	})

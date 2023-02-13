@@ -28,17 +28,22 @@ regiondata:
   appdata:
     flavors:
     - key:
-        name: x1.medium
+        name: p1.large
+      ram: 8192
+      vcpus: 8
+      disk: 8
+    - key:
+        name: p1.medium
       ram: 4096
       vcpus: 4
       disk: 4
     - key:
-        name: x1.small
+        name: p1.small
       ram: 2048
       vcpus: 2
       disk: 2
     - key:
-        name: x1.tiny
+        name: p1.tiny
       ram: 1024
       vcpus: 1
       disk: 1

@@ -15,8 +15,9 @@ regiondata:
       imagepath: registry.edgecloud.net/FedAppCo/k8sapp:1.0
       imagetype: Docker
       deployment: kubernetes
-      defaultflavor:
-        name: x1.small
+      serverlessconfig:
+        vcpus: "0.5"
+        ram: 20
       accessports: "tcp:80,tcp:443,udp:10002"
       commandargs:
         - -text="hello world"
@@ -28,7 +29,7 @@ regiondata:
       imagetype: Docker
       deployment: docker
       defaultflavor:
-        name: x1.small
+        name: p1.tiny
       accessports: "tcp:81"
       command: -text="hello world"
     - key:
@@ -39,7 +40,7 @@ regiondata:
       imagetype: Qcow
       deployment: vm
       defaultflavor:
-        name: x1.small
+        name: p1.small
       accessports: "tcp:81"
 
     autoscalepolicies:
