@@ -370,7 +370,7 @@ func TestFederation(t *testing.T) {
 	// any requests that don't have a registered URL will be fetched normally
 	mockTransport.RegisterNoResponder(http.DefaultTransport.RoundTrip)
 
-	// Setup Operator Platform with both Provider OP and Consumer OP
+	// Setup Operator Platform with both Host OP and Consumer OP
 	op, selfFederators := SetupOperatorPlatform(t, ctx, mockTransport)
 	defer op.CleanupOperatorPlatform(ctx)
 
@@ -390,7 +390,7 @@ func createAndShareProviderZones(t *testing.T, ctx context.Context, mcClient *mc
 			Region:      provAttr.region,
 			Cloudlets:   []string{cloudlet.Key.Name},
 		}
-		_, status, err := mcClient.CreateProviderZoneBase(op.uri, provAttr.tokenOper, fedZone)
+		_, status, err := mcClient.CreateHostZoneBase(op.uri, provAttr.tokenOper, fedZone)
 		require.Nil(t, err, "create provider zone basis")
 		require.Equal(t, http.StatusOK, status)
 		names = append(names, cloudlet.Key.Name)
@@ -399,7 +399,7 @@ func createAndShareProviderZones(t *testing.T, ctx context.Context, mcClient *mc
 		ProviderName: provAttr.fedName,
 		Zones:        names,
 	}
-	_, status, err := mcClient.ShareProviderZone(op.uri, provAttr.tokenOper, zoneShReq)
+	_, status, err := mcClient.ShareHostZone(op.uri, provAttr.tokenOper, zoneShReq)
 	require.Nil(t, err, "share zones")
 	require.Equal(t, http.StatusOK, status)
 
@@ -411,7 +411,7 @@ func createAndShareProviderZones(t *testing.T, ctx context.Context, mcClient *mc
 			"ProviderName": provAttr.fedName,
 		},
 	}
-	sharedZones, status, err := mcClient.ShowProviderZone(op.uri, provAttr.tokenOper, showFedSelfZone)
+	sharedZones, status, err := mcClient.ShowHostZone(op.uri, provAttr.tokenOper, showFedSelfZone)
 	require.Nil(t, err, "show shared self federator zones")
 	require.Equal(t, http.StatusOK, status)
 	idmap := map[string]struct{}{}
@@ -426,7 +426,7 @@ func createAndShareProviderZones(t *testing.T, ctx context.Context, mcClient *mc
 		require.Equal(t, federation.StatusUnregistered, zone.Status)
 		delete(idmap, zone.ZoneId)
 	}
-	require.Equal(t, 0, len(idmap), "missing provider zones: %v", idmap)
+	require.Equal(t, 0, len(idmap), "missing host zones: %v", idmap)
 	return names
 }
 
@@ -438,7 +438,7 @@ func checkConsumerZones(t *testing.T, ctx context.Context, mcClient *mctestclien
 			"ConsumerName": consAttr.fedName,
 		},
 	}
-	consZones, status, err := mcClient.ShowConsumerZone(op.uri, consAttr.tokenOper, showConsZone)
+	consZones, status, err := mcClient.ShowGuestZone(op.uri, consAttr.tokenOper, showConsZone)
 	require.Nil(t, err, "show consumer zones")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(expectedZones), len(consZones))
@@ -450,14 +450,14 @@ func checkConsumerZones(t *testing.T, ctx context.Context, mcClient *mctestclien
 func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mctestclient.ClientRun, op *OPAttr, selfFederators []FederatorAttr) {
 	mcClient := mctestclient.NewClient(clientRun)
 
-	// federation provider operator
+	// federation host operator
 	provAttr := selfFederators[0]
 	// federation consumer operator
 	consAttr := selfFederators[1]
-	log.SpanLog(ctx, log.DebugLevelApi, "Provider", "provAttr", provAttr)
+	log.SpanLog(ctx, log.DebugLevelApi, "Host", "provAttr", provAttr)
 	log.SpanLog(ctx, log.DebugLevelApi, "Consumer", "consAttr", provAttr)
 
-	// Create federation provider
+	// Create federation host
 	// ==========================
 	provReq := &ormapi.FederationProvider{
 		Name:       provAttr.fedName,
@@ -469,7 +469,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 			MNC:         []string{"120", "121", "122"},
 		},
 	}
-	provResp, status, err := mcClient.CreateFederationProvider(op.uri, provAttr.tokenOper, provReq)
+	provResp, status, err := mcClient.CreateFederationHost(op.uri, provAttr.tokenOper, provReq)
 	require.Nil(t, err, "create federation provider")
 	require.Equal(t, http.StatusOK, status)
 	require.NotEmpty(t, provResp.ClientId)
@@ -484,7 +484,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 			"OperatorId": provAttr.operatorId,
 		},
 	}
-	provShowResp, status, err := mcClient.ShowFederationProvider(op.uri, provAttr.tokenOper, showProvFed)
+	provShowResp, status, err := mcClient.ShowFederationHost(op.uri, provAttr.tokenOper, showProvFed)
 	require.Nil(t, err, "show federation provider")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(provShowResp))
@@ -540,14 +540,14 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		},
 	}
 	// This will fail, because auth creds are not present
-	_, status, err = mcClient.CreateFederationConsumer(op.uri, consAttr.tokenOper, consReq)
+	_, status, err = mcClient.CreateFederationGuest(op.uri, consAttr.tokenOper, consReq)
 	require.NotNil(t, err, "create federation consumer no auth")
 	require.Contains(t, err.Error(), "Missing OAuth Client Id")
 
 	// add in auth creds and create
 	consReq.ProviderClientId = provResp.ClientId
 	consReq.ProviderClientKey = provResp.ClientKey
-	_, status, err = mcClient.CreateFederationConsumer(op.uri, consAttr.tokenOper, consReq)
+	_, status, err = mcClient.CreateFederationGuest(op.uri, consAttr.tokenOper, consReq)
 	require.Nil(t, err, "create federation consumer")
 	require.Equal(t, http.StatusOK, status)
 
@@ -559,7 +559,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 			"OperatorId": consAttr.operatorId,
 		},
 	}
-	consShowResp, status, err := mcClient.ShowFederationConsumer(op.uri, consAttr.tokenOper, showConsFed)
+	consShowResp, status, err := mcClient.ShowFederationGuest(op.uri, consAttr.tokenOper, showConsFed)
 	require.Nil(t, err, "show federation consumer")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(consShowResp))
@@ -576,12 +576,12 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Federation creation with same federation provider should fail
 	badConsReq := *consReq
 	badConsReq.Name = "testErr"
-	_, _, err = mcClient.CreateFederationConsumer(op.uri, consAttr.tokenOper, &badConsReq)
+	_, _, err = mcClient.CreateFederationGuest(op.uri, consAttr.tokenOper, &badConsReq)
 	require.NotNil(t, err, "create federation consumer")
 	require.Contains(t, err.Error(), "already in use by another consumer")
 
 	// Show provider to get updated info
-	provShowResp, status, err = mcClient.ShowFederationProvider(op.uri, provAttr.tokenOper, showProvFed)
+	provShowResp, status, err = mcClient.ShowFederationHost(op.uri, provAttr.tokenOper, showProvFed)
 	require.Nil(t, err, "show federation provider")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(provShowResp))
@@ -599,12 +599,12 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Perms test: consOrg and provOrg should not be able to see
 	// each other's federations
 	// =====================================================
-	checkProvFeds, status, err := mcClient.ShowFederationProvider(op.uri, consAttr.tokenOper, showProvFed)
+	checkProvFeds, status, err := mcClient.ShowFederationHost(op.uri, consAttr.tokenOper, showProvFed)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(checkProvFeds))
-	// consumer fed is public, so can be seen, but not all info
-	checkConsFeds, status, err := mcClient.ShowFederationConsumer(op.uri, provAttr.tokenOper, showConsFed)
+	// guest fed is public, so can be seen, but not all info
+	checkConsFeds, status, err := mcClient.ShowFederationGuest(op.uri, provAttr.tokenOper, showConsFed)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(checkConsFeds))
@@ -622,12 +622,12 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		"MCC": "344",
 		"MNC": []string{"123"},
 	}
-	_, status, err = mcClient.UpdateFederationProvider(op.uri, provAttr.tokenOper, updateFed)
+	_, status, err = mcClient.UpdateFederationHost(op.uri, provAttr.tokenOper, updateFed)
 	require.Nil(t, err, "update federation provider")
 	require.Equal(t, http.StatusOK, status)
 
 	// Show federator info
-	fedInfo, status, err := mcClient.ShowFederationProvider(op.uri, provAttr.tokenOper, showProvFed)
+	fedInfo, status, err := mcClient.ShowFederationHost(op.uri, provAttr.tokenOper, showProvFed)
 	require.Nil(t, err, "show federation provider")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(fedInfo), "one entry")
@@ -656,14 +656,14 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// invalid region
 	invalidZone := *testZone
 	invalidZone.Region = "ABCD"
-	_, status, err = mcClient.CreateProviderZoneBase(op.uri, provAttr.tokenOper, &invalidZone)
+	_, status, err = mcClient.CreateHostZoneBase(op.uri, provAttr.tokenOper, &invalidZone)
 	require.NotNil(t, err, "create federation zone fails")
 	require.Contains(t, err.Error(), "Region \"ABCD\" not found")
 
 	// invalid country code
 	invalidZone = *testZone
 	invalidZone.CountryCode = "ABCD"
-	_, status, err = mcClient.CreateProviderZoneBase(op.uri, provAttr.tokenOper, &invalidZone)
+	_, status, err = mcClient.CreateHostZoneBase(op.uri, provAttr.tokenOper, &invalidZone)
 	require.NotNil(t, err, "create federation zone fails")
 	require.Contains(t, err.Error(), "Invalid country code")
 
@@ -681,7 +681,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 			"Region":     provAttr.region,
 		},
 	}
-	selfFedZones, status, err := mcClient.ShowProviderZoneBase(op.uri, provAttr.tokenOper, showZoneBase)
+	selfFedZones, status, err := mcClient.ShowHostZoneBase(op.uri, provAttr.tokenOper, showZoneBase)
 	require.Nil(t, err, "show provider zone bases")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(sharedZones), len(selfFedZones), "provider zone bases match")
@@ -698,14 +698,14 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		Region:       consAttr.region,
 		Zones:        []string{"badzone"},
 	}
-	_, _, err = mcClient.RegisterConsumerZone(op.uri, consAttr.tokenAd, zoneRegReq)
+	_, _, err = mcClient.RegisterGuestZone(op.uri, consAttr.tokenAd, zoneRegReq)
 	require.NotNil(t, err, "Zone not found")
 	require.Contains(t, err.Error(), "Zone not found")
 
 	// Register all the partner zones to be used
 	// =========================================
 	zoneRegReq.Zones = sharedZones
-	_, status, err = mcClient.RegisterConsumerZone(op.uri, consAttr.tokenOper, zoneRegReq)
+	_, status, err = mcClient.RegisterGuestZone(op.uri, consAttr.tokenOper, zoneRegReq)
 	require.Nil(t, err, "register partner federator zone")
 	require.Equal(t, http.StatusOK, status)
 
@@ -748,7 +748,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	}
 
 	// Verify that provider zones are marked as registered
-	provZones, status, err := mcClient.ShowProviderZone(op.uri, provAttr.tokenOper, nil)
+	provZones, status, err := mcClient.ShowHostZone(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err, "show shared self federator zones")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(sharedZones), len(provZones))
@@ -784,7 +784,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// developer create image on federation
 	consImages := getConsImages(consAttr.developerId, consAttr.fedName)
 	for _, consImage := range consImages {
-		_, status, err = mcClient.CreateConsumerImage(op.uri, consAttr.tokenDev, consImage)
+		_, status, err = mcClient.CreateGuestImage(op.uri, consAttr.tokenDev, consImage)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 	}
@@ -792,13 +792,13 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	for _, consImage := range consImages {
 		dup := *consImage
 		// exact dup no error
-		_, status, err = mcClient.CreateConsumerImage(op.uri, consAttr.tokenDev, &dup)
+		_, status, err = mcClient.CreateGuestImage(op.uri, consAttr.tokenDev, &dup)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 		// mismatch duplicate yields error
 		dup = *consImage
 		dup.Checksum = "3209f029"
-		_, status, err = mcClient.CreateConsumerImage(op.uri, consAttr.tokenDev, &dup)
+		_, status, err = mcClient.CreateGuestImage(op.uri, consAttr.tokenDev, &dup)
 		require.NotNil(t, err)
 		require.Equal(t, http.StatusBadRequest, status)
 		require.Contains(t, err.Error(), "please choose a different Name")
@@ -815,7 +815,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		req.AppOrg = app.Key.Organization
 		req.AppVers = app.Key.Version
 		req.FederationName = consAttr.fedName
-		_, status, err = mcClient.OnboardConsumerApp(op.uri, consAttr.tokenDev, &req)
+		_, status, err = mcClient.OnboardGuestApp(op.uri, consAttr.tokenDev, &req)
 		fmt.Printf("***** Onboard consumer app %d, %s\n", status, err)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
@@ -825,7 +825,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	consImagesExp := append(consImages, consAppImages...)
 
 	// developer can see created images
-	consImagesShow, status, err := mcClient.ShowConsumerImage(op.uri, consAttr.tokenDev, nil)
+	consImagesShow, status, err := mcClient.ShowGuestImage(op.uri, consAttr.tokenDev, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(consImagesExp), len(consImagesShow))
@@ -838,7 +838,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Equal(t, federation.ImageStatusReady, act.Status)
 	}
 	// developer can see created apps
-	consAppsShow, status, err := mcClient.ShowConsumerApp(op.uri, consAttr.tokenDev, nil)
+	consAppsShow, status, err := mcClient.ShowGuestApp(op.uri, consAttr.tokenDev, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(consAppsExp), len(consAppsShow))
@@ -853,7 +853,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	}
 
 	// provider can see created images
-	provImagesShow, status, err := mcClient.ShowProviderImage(op.uri, provAttr.tokenOper, nil)
+	provImagesShow, status, err := mcClient.ShowHostImage(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(consImagesExp), len(provImagesShow))
@@ -867,7 +867,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Equal(t, federation.ImageStatusReady, act.Status)
 	}
 	// provider can see created providerArtefacts
-	provArtsShow, status, err := mcClient.ShowProviderArtefact(op.uri, provAttr.tokenOper, nil)
+	provArtsShow, status, err := mcClient.ShowHostArtefact(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(consAppsExp), len(provArtsShow))
@@ -880,7 +880,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Equal(t, util.DNSSanitize(exp.AppOrg), act.AppProviderId)
 	}
 	// provider can see create providerApps
-	provAppsShow, status, err := mcClient.ShowProviderApp(op.uri, provAttr.tokenOper, nil)
+	provAppsShow, status, err := mcClient.ShowHostApp(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(consAppsExp), len(provAppsShow))
@@ -937,23 +937,23 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		req.AppOrg = app.Key.Organization
 		req.AppVers = app.Key.Version
 		req.FederationName = consAttr.fedName
-		_, status, err = mcClient.DeboardConsumerApp(op.uri, consAttr.tokenDev, &req)
+		_, status, err = mcClient.DeboardGuestApp(op.uri, consAttr.tokenDev, &req)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 	}
 
 	// consumer apps should be empty
-	consAppsShow, status, err = mcClient.ShowConsumerApp(op.uri, consAttr.tokenDev, nil)
+	consAppsShow, status, err = mcClient.ShowGuestApp(op.uri, consAttr.tokenDev, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(consAppsShow))
 	// provider artefacts should be empty
-	provArtsShow, status, err = mcClient.ShowProviderArtefact(op.uri, provAttr.tokenOper, nil)
+	provArtsShow, status, err = mcClient.ShowHostArtefact(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(provArtsShow))
 	// provider app should be empty
-	provAppsShow, status, err = mcClient.ShowProviderApp(op.uri, provAttr.tokenOper, nil)
+	provAppsShow, status, err = mcClient.ShowHostApp(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(provAppsShow))
@@ -966,15 +966,15 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Delete images
 	// =============
 	for _, image := range consImagesShow {
-		_, status, err = mcClient.DeleteConsumerImage(op.uri, consAttr.tokenDev, &image)
+		_, status, err = mcClient.DeleteGuestImage(op.uri, consAttr.tokenDev, &image)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 	}
-	consImagesShow, status, err = mcClient.ShowConsumerImage(op.uri, consAttr.tokenDev, nil)
+	consImagesShow, status, err = mcClient.ShowGuestImage(op.uri, consAttr.tokenDev, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(consImagesShow))
-	provImagesShow, status, err = mcClient.ShowProviderImage(op.uri, provAttr.tokenOper, nil)
+	provImagesShow, status, err = mcClient.ShowHostImage(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(provImagesShow))
@@ -997,7 +997,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		OperatorId: provAttr.operatorId,
 		Name:       provAttr.fedName,
 	}
-	_, _, err = mcClient.DeleteFederationProvider(op.uri, provAttr.tokenOper, provDelReq)
+	_, _, err = mcClient.DeleteFederationHost(op.uri, provAttr.tokenOper, provDelReq)
 	require.NotNil(t, err, "delete federation provider")
 	require.Contains(t, err.Error(), "Cannot delete when the following zones are still registered")
 
@@ -1005,7 +1005,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		OperatorId: consAttr.operatorId,
 		Name:       consAttr.fedName,
 	}
-	_, _, err = mcClient.DeleteFederationConsumer(op.uri, consAttr.tokenOper, consDelReq)
+	_, _, err = mcClient.DeleteFederationGuest(op.uri, consAttr.tokenOper, consDelReq)
 	require.NotNil(t, err, "delete federation consumer")
 	require.Contains(t, err.Error(), "Please deregister zones before deregistering federation")
 
@@ -1015,7 +1015,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		ProviderName: provAttr.fedName,
 		Zones:        sharedZones,
 	}
-	_, status, err = mcClient.UnshareProviderZone(op.uri, provAttr.tokenOper, zoneShReq)
+	_, status, err = mcClient.UnshareHostZone(op.uri, provAttr.tokenOper, zoneShReq)
 	require.NotNil(t, err, "unshare zones")
 	require.Contains(t, err.Error(), "Cannot unshare registered zone")
 
@@ -1026,7 +1026,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		Region:       consAttr.region,
 		Zones:        sharedZones,
 	}
-	_, status, err = mcClient.DeregisterConsumerZone(op.uri, consAttr.tokenOper, zoneRegReq)
+	_, status, err = mcClient.DeregisterGuestZone(op.uri, consAttr.tokenOper, zoneRegReq)
 	require.Nil(t, err, "deregister consumer zones")
 	require.Equal(t, http.StatusOK, status)
 
@@ -1060,7 +1060,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	}
 
 	// Check that provider zones are now unregistered
-	provZones, status, err = mcClient.ShowProviderZone(op.uri, provAttr.tokenOper, nil)
+	provZones, status, err = mcClient.ShowHostZone(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err, "show shared provider zones")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(sharedZones), len(provZones))
@@ -1075,18 +1075,18 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// matching consumer zone (tests notify zone remove)
 	// ======================================================
 	zoneShReq.Zones = sharedZones[:1]
-	_, status, err = mcClient.UnshareProviderZone(op.uri, provAttr.tokenOper, zoneShReq)
+	_, status, err = mcClient.UnshareHostZone(op.uri, provAttr.tokenOper, zoneShReq)
 	require.Nil(t, err, "unshare zones")
 	require.Equal(t, http.StatusOK, status)
 
 	// provider zone should be removed
-	provZones, status, err = mcClient.ShowProviderZone(op.uri, provAttr.tokenOper, nil)
+	provZones, status, err = mcClient.ShowHostZone(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(sharedZones[1:]), len(provZones))
 
 	// consumer zone should be removed
-	consZones, status, err := mcClient.ShowConsumerZone(op.uri, consAttr.tokenOper, nil)
+	consZones, status, err := mcClient.ShowGuestZone(op.uri, consAttr.tokenOper, nil)
 	require.Nil(t, err, "show consumer zones")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(sharedZones[1:]), len(consZones))
@@ -1095,43 +1095,43 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// TODO: test delete of provider first, should have same outcome
 	// as long as all zones are unregistered.
 	// ========================================================
-	_, status, err = mcClient.DeleteFederationConsumer(op.uri, consAttr.tokenOper, consDelReq)
-	require.Nil(t, err, "delete federation consumer")
+	_, status, err = mcClient.DeleteFederationGuest(op.uri, consAttr.tokenOper, consDelReq)
+	require.Nil(t, err, "delete federation guest")
 	require.Equal(t, http.StatusOK, status)
 
 	// check consumer is gone
-	checkConsFeds, status, err = mcClient.ShowFederationConsumer(op.uri, provAttr.tokenOper, nil)
+	checkConsFeds, status, err = mcClient.ShowFederationGuest(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(checkConsFeds))
 
 	// check provider is unregistered
-	provShowResp, status, err = mcClient.ShowFederationProvider(op.uri, provAttr.tokenOper, nil)
+	provShowResp, status, err = mcClient.ShowFederationHost(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err, "show federation provider")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(provShowResp))
 	require.Equal(t, provShowResp[0].Status, federation.StatusUnregistered)
 
 	// check that all consumer zones have been removed
-	consZones, status, err = mcClient.ShowConsumerZone(op.uri, consAttr.tokenOper, nil)
+	consZones, status, err = mcClient.ShowGuestZone(op.uri, consAttr.tokenOper, nil)
 	require.Nil(t, err, "show consumer zones")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(consZones))
 
 	// Delete FederationProvider
 	// =========================
-	_, status, err = mcClient.DeleteFederationProvider(op.uri, provAttr.tokenOper, provReq)
+	_, status, err = mcClient.DeleteFederationHost(op.uri, provAttr.tokenOper, provReq)
 	require.Nil(t, err, "delete federation provider")
 	require.Equal(t, http.StatusOK, status)
 
 	// check that federation provider is gone
-	provShowResp, status, err = mcClient.ShowFederationProvider(op.uri, provAttr.tokenOper, nil)
+	provShowResp, status, err = mcClient.ShowFederationHost(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err, "show federation provider")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(provShowResp))
 
 	// check that all provider zones have been removed
-	provZones, status, err = mcClient.ShowProviderZone(op.uri, provAttr.tokenOper, nil)
+	provZones, status, err = mcClient.ShowHostZone(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(provZones))
@@ -1139,7 +1139,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Clean up ProviderZoneBase as they are still present
 	// because they are not associated with any FederationProvider.
 	// ============================================================
-	selfFedZones, status, err = mcClient.ShowProviderZoneBase(op.uri, provAttr.tokenOper, nil)
+	selfFedZones, status, err = mcClient.ShowHostZoneBase(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err, "show provider zone bases")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(sharedZones), len(selfFedZones), "provider zone bases match")
@@ -1153,13 +1153,13 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 			Region:      provAttr.region,
 			Cloudlets:   []string{cloudlet.Key.Name},
 		}
-		_, status, err := mcClient.DeleteProviderZoneBase(op.uri, provAttr.tokenOper, fedZone)
+		_, status, err := mcClient.DeleteHostZoneBase(op.uri, provAttr.tokenOper, fedZone)
 		require.Nil(t, err, "delete provider zone basis")
 		require.Equal(t, http.StatusOK, status)
 	}
 
 	// check that they are gone
-	selfFedZones, status, err = mcClient.ShowProviderZoneBase(op.uri, provAttr.tokenOper, nil)
+	selfFedZones, status, err = mcClient.ShowHostZoneBase(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err, "show provider zone bases")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(selfFedZones), "provider zone bases match")
@@ -1185,7 +1185,7 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 			MNC:         []string{"120", "121", "122"},
 		},
 	}
-	provResp, status, err := mcClient.CreateFederationProvider(op.uri, provAttr.tokenOper, provReq)
+	provResp, status, err := mcClient.CreateFederationHost(op.uri, provAttr.tokenOper, provReq)
 	require.Nil(t, err, "create federation provider")
 	require.Equal(t, http.StatusOK, status)
 
@@ -1226,7 +1226,7 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 		ProviderClientId:  provResp.ClientId,
 		ProviderClientKey: provResp.ClientKey,
 	}
-	_, status, err = mcClient.CreateFederationConsumer(op.uri, consAttr.tokenOper, consReq)
+	_, status, err = mcClient.CreateFederationGuest(op.uri, consAttr.tokenOper, consReq)
 	require.Nil(t, err, "create federation consumer")
 	require.Equal(t, http.StatusOK, status)
 
@@ -1237,7 +1237,7 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 		Region:       consAttr.region,
 		Zones:        sharedZones,
 	}
-	_, status, err = mcClient.RegisterConsumerZone(op.uri, consAttr.tokenOper, zoneRegReq)
+	_, status, err = mcClient.RegisterGuestZone(op.uri, consAttr.tokenOper, zoneRegReq)
 	require.Nil(t, err, "register partner federator zone")
 	require.Equal(t, http.StatusOK, status)
 
@@ -1264,7 +1264,7 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 		req.AppOrg = app.Key.Organization
 		req.AppVers = app.Key.Version
 		req.FederationName = consAttr.fedName
-		_, status, err = mcClient.OnboardConsumerApp(op.uri, consAttr.tokenDev, &req)
+		_, status, err = mcClient.OnboardGuestApp(op.uri, consAttr.tokenDev, &req)
 		fmt.Printf("***** Onboard consumer app %d, %s\n", status, err)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
@@ -1273,45 +1273,45 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 	// Provider unsafe delete all data
 	// ===============================
 	// apps
-	provAppsShow, status, err := mcClient.ShowProviderApp(op.uri, provAttr.tokenOper, nil)
+	provAppsShow, status, err := mcClient.ShowHostApp(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(consApps), len(provAppsShow))
 	for _, app := range provAppsShow {
-		_, status, err = mcClient.UnsafeDeleteProviderApp(op.uri, provAttr.tokenOper, &app)
+		_, status, err = mcClient.UnsafeDeleteHostApp(op.uri, provAttr.tokenOper, &app)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 	}
-	provAppsShow, status, err = mcClient.ShowProviderApp(op.uri, provAttr.tokenOper, nil)
+	provAppsShow, status, err = mcClient.ShowHostApp(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(provAppsShow))
 	// artefacts
-	provArtsShow, status, err := mcClient.ShowProviderArtefact(op.uri, provAttr.tokenOper, nil)
+	provArtsShow, status, err := mcClient.ShowHostArtefact(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(consApps), len(provArtsShow))
 	for _, art := range provArtsShow {
-		_, status, err = mcClient.UnsafeDeleteProviderArtefact(op.uri, provAttr.tokenOper, &art)
+		_, status, err = mcClient.UnsafeDeleteHostArtefact(op.uri, provAttr.tokenOper, &art)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 	}
-	provArtsShow, status, err = mcClient.ShowProviderArtefact(op.uri, provAttr.tokenOper, nil)
+	provArtsShow, status, err = mcClient.ShowHostArtefact(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(provArtsShow))
 	// images
 	consAppImages := getConsAppImages(t, consAttr.developerId, consAttr.fedName)
-	provImagesShow, status, err := mcClient.ShowProviderImage(op.uri, provAttr.tokenOper, nil)
+	provImagesShow, status, err := mcClient.ShowHostImage(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(consAppImages), len(provImagesShow))
 	for _, image := range provImagesShow {
-		_, status, err = mcClient.UnsafeDeleteProviderImage(op.uri, provAttr.tokenOper, &image)
+		_, status, err = mcClient.UnsafeDeleteHostImage(op.uri, provAttr.tokenOper, &image)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 	}
-	provImagesShow, status, err = mcClient.ShowProviderImage(op.uri, provAttr.tokenOper, nil)
+	provImagesShow, status, err = mcClient.ShowHostImage(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(provImagesShow))
@@ -1323,10 +1323,10 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 	queryParams := map[string]string{
 		"ignorepartner": "true",
 	}
-	_, status, err = mcClient.UnshareProviderZone(op.uri, provAttr.tokenOper, zoneShReq, mctestclient.WithQueryParams(queryParams))
+	_, status, err = mcClient.UnshareHostZone(op.uri, provAttr.tokenOper, zoneShReq, mctestclient.WithQueryParams(queryParams))
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	provZones, status, err := mcClient.ShowProviderZone(op.uri, provAttr.tokenOper, nil)
+	provZones, status, err := mcClient.ShowHostZone(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err, "show shared self federator zones")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(provZones))
@@ -1339,16 +1339,16 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 			Region:      provAttr.region,
 			Cloudlets:   []string{cloudlet.Key.Name},
 		}
-		_, status, err := mcClient.DeleteProviderZoneBase(op.uri, provAttr.tokenOper, fedZone)
+		_, status, err := mcClient.DeleteHostZoneBase(op.uri, provAttr.tokenOper, fedZone)
 		require.Nil(t, err, "delete provider zone basis")
 		require.Equal(t, http.StatusOK, status)
 	}
 	// provider
-	_, status, err = mcClient.DeleteFederationProvider(op.uri, provAttr.tokenOper, provReq)
+	_, status, err = mcClient.DeleteFederationHost(op.uri, provAttr.tokenOper, provReq)
 	require.Nil(t, err, "delete federation provider")
 	require.Equal(t, http.StatusOK, status)
 	// check that federation provider is gone
-	provShowResp, status, err := mcClient.ShowFederationProvider(op.uri, provAttr.tokenOper, nil)
+	provShowResp, status, err := mcClient.ShowFederationHost(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err, "show federation provider")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(provShowResp))
@@ -1362,26 +1362,26 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 		req.AppOrg = app.Key.Organization
 		req.AppVers = app.Key.Version
 		req.FederationName = consAttr.fedName
-		_, status, err = mcClient.DeboardConsumerApp(op.uri, consAttr.tokenDev, &req, mctestclient.WithQueryParams(queryParams))
+		_, status, err = mcClient.DeboardGuestApp(op.uri, consAttr.tokenDev, &req, mctestclient.WithQueryParams(queryParams))
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 	}
 	// consumer apps should be empty
-	consAppsShow, status, err := mcClient.ShowConsumerApp(op.uri, consAttr.tokenDev, nil)
+	consAppsShow, status, err := mcClient.ShowGuestApp(op.uri, consAttr.tokenDev, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(consAppsShow))
 	// images
-	consImagesShow, status, err := mcClient.ShowConsumerImage(op.uri, consAttr.tokenDev, nil)
+	consImagesShow, status, err := mcClient.ShowGuestImage(op.uri, consAttr.tokenDev, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(consAppImages), len(consImagesShow))
 	for _, image := range consImagesShow {
-		_, status, err = mcClient.DeleteConsumerImage(op.uri, consAttr.tokenDev, &image, mctestclient.WithQueryParams(queryParams))
+		_, status, err = mcClient.DeleteGuestImage(op.uri, consAttr.tokenDev, &image, mctestclient.WithQueryParams(queryParams))
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 	}
-	consImagesShow, status, err = mcClient.ShowConsumerImage(op.uri, consAttr.tokenDev, nil)
+	consImagesShow, status, err = mcClient.ShowGuestImage(op.uri, consAttr.tokenDev, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(consImagesShow))
@@ -1401,7 +1401,7 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 		Region:       consAttr.region,
 		Zones:        sharedZones,
 	}
-	_, status, err = mcClient.DeregisterConsumerZone(op.uri, consAttr.tokenOper, zoneRegReq, mctestclient.WithQueryParams(queryParams))
+	_, status, err = mcClient.DeregisterGuestZone(op.uri, consAttr.tokenOper, zoneRegReq, mctestclient.WithQueryParams(queryParams))
 	require.Nil(t, err, "deregister consumer zones")
 	require.Equal(t, http.StatusOK, status)
 	// consumer
@@ -1409,11 +1409,11 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 		OperatorId: consAttr.operatorId,
 		Name:       consAttr.fedName,
 	}
-	_, status, err = mcClient.DeleteFederationConsumer(op.uri, consAttr.tokenOper, consDelReq, mctestclient.WithQueryParams(queryParams))
+	_, status, err = mcClient.DeleteFederationGuest(op.uri, consAttr.tokenOper, consDelReq, mctestclient.WithQueryParams(queryParams))
 	require.Nil(t, err, "delete federation consumer")
 	require.Equal(t, http.StatusOK, status)
 	// check consumer is gone
-	checkConsFeds, status, err := mcClient.ShowFederationConsumer(op.uri, provAttr.tokenOper, nil)
+	checkConsFeds, status, err := mcClient.ShowFederationGuest(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(checkConsFeds))

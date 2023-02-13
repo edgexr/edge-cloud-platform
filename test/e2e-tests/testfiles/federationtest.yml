@@ -15,12 +15,12 @@
 description: Federation tests
 
 # Unidirectional federation test.
-# Main MC is the provider.
-# Partner1 MC is the consumer.
+# Main MC is the host.
+# Partner1 MC is the guest.
 
 tests:
 ###############################################################
-# Setup provider operator platform (main MC)
+# Setup host operator platform (main MC)
 ###############################################################
 - includefile: mc_setup_users.yml
 
@@ -34,7 +34,7 @@ tests:
     filetype: mcdata
 
 ###############################################################
-# Setup consumer operator platform (partner1 MC)
+# Setup guest operator platform (partner1 MC)
 ###############################################################
 - name: partner1 admin disable verify email so users can be created
   actions: [mcapi-configupdate=mc-partner1,mcapi-configshow=mc-partner1]
@@ -64,7 +64,7 @@ tests:
   actions: [mcapi-createusers=mc-partner1]
   apifile: '{{datadir2}}/mc_user_fedop.yml,{{datadir2}}/mc_user_feddev.yml'
 
-- name: setup federation consumer (partner1) operator regional data
+- name: setup federation guest (partner1) operator regional data
   actions: [mcapi-create=mc-partner1, mcapi-show=mc-partner1]
   apifile: '{{datadir2}}/fedcons_op_data.yml'
   apifilevars:
@@ -77,48 +77,48 @@ tests:
     filetype: mcdata
 
 ###############################################################
-# Create provider zone bases to map cloudlets to zones
+# Create host zone bases to map cloudlets to zones
 ###############################################################
-- name: create provider zone bases
-  actions: [mcapi-create,mcapi-showproviderzonebases]
-  apifile: '{{datadir2}}/federation_providerzonebases.yml'
+- name: create host zone bases
+  actions: [mcapi-create,mcapi-showhostzonebases]
+  apifile: '{{datadir2}}/federation_hostzonebases.yml'
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_providerzonebases.yml'
+    yaml2: '{{datadir2}}/federation_hostzonebases.yml'
     filetype: mcdata
 
 ###############################################################
-# Create federation provider
+# Create federation host
 ###############################################################
-- name: create federation provider
-  actions: [mcapi-create,mcapi-showfederationproviders]
-  apifile: '{{datadir2}}/federation_provider.yml'
+- name: create federation host
+  actions: [mcapi-create,mcapi-showfederationhosts]
+  apifile: '{{datadir2}}/federation_host.yml'
   apifilevars:
     partnertag: "partner1"
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_provider_show.yml'
+    yaml2: '{{datadir2}}/federation_host_show.yml'
     filetype: mcdata
 
-- name: share provider zones
-  actions: [mcapi-share,mcapi-showproviderzones]
-  apifile: '{{datadir2}}/federation_providerzones.yml'
+- name: share host zones
+  actions: [mcapi-share,mcapi-showhostzones]
+  apifile: '{{datadir2}}/federation_hostzones.yml'
   apifilevars:
     partnertag: "partner1"
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_providerzones_show.yml'
+    yaml2: '{{datadir2}}/federation_hostzones_show.yml'
     filetype: mcdata
 
 ###############################################################
-# Create federation consumer, link to provider
+# Create federation guest, link to host
 ###############################################################
-- name: create federation consumer
-  actions: [mcapi-create=mc-partner1,mcapi-showfederationconsumers=mc-partner1]
-  apifile: '{{datadir2}}/federation_consumers.yml'
+- name: create federation guest
+  actions: [mcapi-create=mc-partner1,mcapi-showfederationguests=mc-partner1]
+  apifile: '{{datadir2}}/federation_guests.yml'
   apifilevars:
     partnertag: "partner1"
     region: "PA"
@@ -127,15 +127,15 @@ tests:
   curuserfile: '{{datadir2}}/mc_user_fedop.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_consumers_show.yml'
+    yaml2: '{{datadir2}}/federation_guests_show.yml'
     filetype: mcdata
 
-- name: show consumer zones
-  actions: [mcapi-showconsumerzones=mc-partner1]
+- name: show guest zones
+  actions: [mcapi-showguestzones=mc-partner1]
   curuserfile: '{{datadir2}}/mc_user_fedop.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_consumerzones_show.yml'
+    yaml2: '{{datadir2}}/federation_guestzones_show.yml'
     filetype: mcdata
 
 - name: verify that partner zones are added as cloudlets
@@ -147,9 +147,9 @@ tests:
     filetype: mcdata
 
 ###############################################################
-# consumer onboard apps
+# guest onboard apps
 ###############################################################
-- name: consumer create dev regional data (apps)
+- name: guest create dev regional data (apps)
   actions: [mcapi-create=mc-partner1, mcapi-show=mc-partner1]
   apifile: '{{datadir2}}/fedcons_dev_apps.yml'
   apifilevars:
@@ -161,8 +161,8 @@ tests:
     yaml2: '{{datadir2}}/fedcons_dev_apps_show.yml'
     filetype: mcdata
 
-- name: consumer dev onboard apps
-  actions: [mcapi-create=mc-partner1,mcapi-showconsumerappdata=mc-partner1]
+- name: guest dev onboard apps
+  actions: [mcapi-create=mc-partner1,mcapi-showguestappdata=mc-partner1]
   apifile: '{{datadir2}}/fedcons_dev_consapps.yml'
   apifilevars:
     partnertag: "partner1"
@@ -173,8 +173,8 @@ tests:
     yaml2: '{{datadir2}}/fedcons_dev_consapps_show.yml'
     filetype: mcdata
 
-- name: provider show onboarded apps
-  actions: [mcapi-showproviderappdata]
+- name: host show onboarded apps
+  actions: [mcapi-showhostappdata]
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
@@ -182,9 +182,9 @@ tests:
     filetype: mcdata
 
 ###############################################################
-# consumer create appinsts on provider cloudlets
+# guest create appinsts on host cloudlets
 ###############################################################
-- name: consumer create appinsts on provider cloudlets
+- name: guest create appinsts on host cloudlets
   actions: [mcapi-create=mc-partner1,mcapi-show=mc-partner1]
   apifile: '{{datadir2}}/fedcons_dev_appinsts.yml'
   apifilevars:
@@ -196,7 +196,7 @@ tests:
     yaml2: '{{datadir2}}/fedcons_dev_appinsts_show.yml'
     filetype: mcdata
 
-- name: check provider created appinsts
+- name: check host created appinsts
   actions: [mcapi-show]
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
@@ -204,8 +204,8 @@ tests:
     yaml2: '{{datadir2}}/fedprov_appinsts_show.yml'
     filetype: mcdata
 
-- name: check provider MC appinst data
-  actions: [mcapi-showproviderappdata]
+- name: check host MC appinst data
+  actions: [mcapi-showhostappdata]
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
@@ -224,9 +224,9 @@ tests:
     yaml2: '{{datadir2}}/fed_direct_get_show.yml'
     
 ###############################################################
-# consumer clean up
+# guest clean up
 ###############################################################
-- name: consumer delete appinsts
+- name: guest delete appinsts
   actions: [mcapi-delete=mc-partner1,mcapi-show=mc-partner1]
   apifile: '{{datadir2}}/fedcons_dev_appinsts.yml'
   apifilevars:
@@ -238,8 +238,8 @@ tests:
     yaml2: '{{datadir2}}/fedcons_dev_apps_show.yml'
     filetype: mcdata
 
-- name: consumer deboard apps
-  actions: [mcapi-delete=mc-partner1,mcapi-showconsumerappdata=mc-partner1]
+- name: guest deboard apps
+  actions: [mcapi-delete=mc-partner1,mcapi-showguestappdata=mc-partner1]
   apifile: '{{datadir2}}/fedcons_dev_consapps.yml'
   apifilevars:
     partnertag: "partner1"
@@ -250,8 +250,8 @@ tests:
     yaml2: '{{datadir2}}/fedcons_dev_images_show.yml'
     filetype: mcdata
 
-- name: consumer delete images
-  actions: [mcapi-delete=mc-partner1,mcapi-showconsumerappdata=mc-partner1]
+- name: guest delete images
+  actions: [mcapi-delete=mc-partner1,mcapi-showguestappdata=mc-partner1]
   apifile: '{{datadir2}}/fedcons_dev_images.yml'
   apifilevars:
     partnertag: "partner1"
@@ -262,15 +262,15 @@ tests:
     yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
-- name: provider check no more provider app data
-  actions: [mcapi-showproviderappdata]
+- name: host check no more host app data
+  actions: [mcapi-showhostappdata]
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
     yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
-- name: consumer delete dev regional data (apps)
+- name: guest delete dev regional data (apps)
   actions: [mcapi-delete=mc-partner1, mcapi-show=mc-partner1]
   apifile: '{{datadir2}}/fedcons_dev_apps.yml'
   apifilevars:
@@ -282,16 +282,16 @@ tests:
     yaml2: '{{datadir2}}/fedcons_dev_region_empty.yml'
     filetype: mcdata
     
-- name: deregister consumer zones
-  actions: [mcapi-deregister=mc-partner1,mcapi-showconsumerzones=mc-partner1]
-  apifile: '{{datadir2}}/federation_consumerzones_show.yml'
+- name: deregister guest zones
+  actions: [mcapi-deregister=mc-partner1,mcapi-showguestzones=mc-partner1]
+  apifile: '{{datadir2}}/federation_guestzones_show.yml'
   apifilevars:
     partnertag: "partner1"
     region: "PA"
   curuserfile: '{{datadir2}}/mc_user_fedop.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
-    yaml2: '{{datadir2}}/federation_consumerzones_unreg_show.yml'
+    yaml2: '{{datadir2}}/federation_guestzones_unreg_show.yml'
     filetype: mcdata
 
 - name: verify that partner zones are removed as cloudlets
@@ -302,9 +302,9 @@ tests:
     yaml2: '{{datadir2}}/federation_show_partner1_fedorgs.yml'
     filetype: mcdata
 
-- name: delete federation consumers
-  actions: [mcapi-delete=mc-partner1,mcapi-showfederationconsumers=mc-partner1]
-  apifile: '{{datadir2}}/federation_consumers.yml'
+- name: delete federation guests
+  actions: [mcapi-delete=mc-partner1,mcapi-showfederationguests=mc-partner1]
+  apifile: '{{datadir2}}/federation_guests.yml'
   apifilevars:
     partnertag: "partner1"
     region: "PA"
@@ -317,11 +317,11 @@ tests:
     filetype: mcdata
 
 ###############################################################
-# provider clean up
+# host clean up
 ###############################################################
-- name: unshares provider zones
-  actions: [mcapi-unshare,mcapi-showproviderzones]
-  apifile: '{{datadir2}}/federation_providerzones.yml'
+- name: unshares host zones
+  actions: [mcapi-unshare,mcapi-showhostzones]
+  apifile: '{{datadir2}}/federation_hostzones.yml'
   apifilevars:
     partnertag: "partner1"
   curuserfile: '{{datadir2}}/mc_user1.yml'
@@ -330,9 +330,9 @@ tests:
     yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
 
-- name: delete federation provider
-  actions: [mcapi-delete,mcapi-showfederationproviders]
-  apifile: '{{datadir2}}/federation_provider.yml'
+- name: delete federation host
+  actions: [mcapi-delete,mcapi-showfederationhosts]
+  apifile: '{{datadir2}}/federation_host.yml'
   apifilevars:
     partnertag: "partner1"
   curuserfile: '{{datadir2}}/mc_user1.yml'
@@ -341,9 +341,9 @@ tests:
     yaml2: '{{datadir2}}/mc_empty_object.yml'
     filetype: mcdata
     
-- name: delete provider zone bases
-  actions: [mcapi-delete,mcapi-showproviderzonebases]
-  apifile: '{{datadir2}}/federation_providerzonebases.yml'
+- name: delete host zone bases
+  actions: [mcapi-delete,mcapi-showhostzonebases]
+  apifile: '{{datadir2}}/federation_hostzonebases.yml'
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
@@ -353,7 +353,7 @@ tests:
 ###############################################################
 # Delete partner1 data
 ###############################################################
-- name: delete consumer operator data
+- name: delete guest operator data
   actions: [mcapi-delete=mc-partner1]
   apifile: '{{datadir2}}/fedcons_op_data.yml'
   apifilevars:
@@ -361,7 +361,7 @@ tests:
     region: "PA"
   curuserfile: '{{datadir2}}/mc_user_fedop.yml'
 
-- name: delete consumer platform users
+- name: delete guest platform users
   actions: [mcapi-deleteusers=mc-partner1]
   apifile: '{{datadir2}}/mc_user_fedop.yml,{{datadir2}}/mc_user_feddev.yml'
   curuserfile: '{{datadir2}}/mc_admin.yml'    
@@ -382,7 +382,7 @@ tests:
     filetype: mcdata
 
 ###############################################################
-# Delete provider platform data
+# Delete host platform data
 ###############################################################
 - name: user1 deletes operators and cloudlets
   actions: [mcapi-delete,mcapi-show]
