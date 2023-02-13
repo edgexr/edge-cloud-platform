@@ -82,7 +82,7 @@ func testMasterFlavor(t *testing.T, ctx context.Context, apis *AllApis) {
 			require.Nil(t, err, "Create Master Node Flavor")
 		}
 
-		vmspec, err := apis.resTagTableApi.GetVMSpec(ctx, stm, masterFlavor, cl, cli)
+		vmspec, err := apis.resTagTableApi.GetVMSpec(ctx, stm, masterFlavor, "", cl, cli)
 		require.Nil(t, err, "GetVmSpec masterNodeFlavor")
 		require.Equal(t, "flavor.medium", vmspec.FlavorName)
 

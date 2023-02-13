@@ -444,7 +444,7 @@ func (s *ClusterInstApi) GetRootLBFlavorInfo(ctx context.Context, stm concurrenc
 	}
 	lbFlavor := &edgeproto.FlavorInfo{}
 	if rootlbFlavor != nil {
-		vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, stm, *rootlbFlavor, *cloudlet, *cloudletInfo)
+		vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, stm, *rootlbFlavor, "", *cloudlet, *cloudletInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -984,15 +984,15 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 			return fmt.Errorf("Cloudlet does not support multi-tenant Clusters")
 		}
 
-		nodeFlavor := edgeproto.Flavor{}
-		if !s.all.flavorApi.store.STMGet(stm, &in.Flavor, &nodeFlavor) {
+		platformFlavor := edgeproto.Flavor{}
+		if !s.all.flavorApi.store.STMGet(stm, &in.Flavor, &platformFlavor) {
 			return fmt.Errorf("flavor %s not found", in.Flavor.Name)
 		}
-		if nodeFlavor.DeletePrepare {
+		if platformFlavor.DeletePrepare {
 			return in.Flavor.BeingDeletedError()
 		}
-		log.SpanLog(ctx, log.DebugLevelApi, "nodeFlavor found find match", "nodeFlavor", nodeFlavor)
-		vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, stm, nodeFlavor, cloudlet, info)
+		log.SpanLog(ctx, log.DebugLevelApi, "platformFlavor found find match", "platformFlavor", platformFlavor)
+		vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, stm, platformFlavor, in.NodeFlavor, cloudlet, info)
 		if err != nil {
 			return err
 		}
@@ -1021,7 +1021,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 
 				if s.all.flavorApi.store.STMGet(stm, &masterFlavorKey, &masterFlavor) {
 					log.SpanLog(ctx, log.DebugLevelApi, "MasterNodeFlavor found ", "MasterNodeFlavor", settings.MasterNodeFlavor)
-					vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, stm, masterFlavor, cloudlet, info)
+					vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, stm, masterFlavor, in.MasterNodeFlavor, cloudlet, info)
 					if err != nil {
 						// Unlikely with reasonably modest settings.MasterNodeFlavor sized flavor
 						log.SpanLog(ctx, log.DebugLevelApi, "Error K8s Master Node Flavor matches no eixsting OS flavor", "nodeFlavor", in.NodeFlavor)
