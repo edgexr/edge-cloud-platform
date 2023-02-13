@@ -540,28 +540,28 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		return rc
 	}
 
-	if api == "showfederationproviders" {
+	if api == "showfederationhosts" {
 		showFilter := &cli.MapData{
 			Namespace: cli.StructNamespace,
 			Data:      map[string]interface{}{},
 		}
-		providers, status, err := mcClient.ShowFederationProvider(uri, token, showFilter)
-		checkMcErr("ShowFederationProvider", status, err, &rc)
+		hosts, status, err := mcClient.ShowFederationHost(uri, token, showFilter)
+		checkMcErr("ShowFederationHost", status, err, &rc)
 		showData := ormapi.AllData{
-			FederationProviders: providers,
+			FederationProviders: hosts,
 		}
 		cmpFilterAllData(&showData)
 		PrintToYamlFile("show-commands.yml", outputDir, &showData, true)
 		*retry = true
 		return rc
 	}
-	if api == "showproviderzonebases" {
+	if api == "showhostzonebases" {
 		showFilter := &cli.MapData{
 			Namespace: cli.StructNamespace,
 			Data:      map[string]interface{}{},
 		}
-		zones, status, err := mcClient.ShowProviderZoneBase(uri, token, showFilter)
-		checkMcErr("ShowProviderZoneBase", status, err, &rc)
+		zones, status, err := mcClient.ShowHostZoneBase(uri, token, showFilter)
+		checkMcErr("ShowHostZoneBase", status, err, &rc)
 		showData := ormapi.AllData{
 			ProviderZoneBases: zones,
 		}
@@ -570,13 +570,13 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		*retry = true
 		return rc
 	}
-	if api == "showproviderzones" {
+	if api == "showhostzones" {
 		showFilter := &cli.MapData{
 			Namespace: cli.StructNamespace,
 			Data:      map[string]interface{}{},
 		}
-		zones, status, err := mcClient.ShowProviderZone(uri, token, showFilter)
-		checkMcErr("ShowProviderZone", status, err, &rc)
+		zones, status, err := mcClient.ShowHostZone(uri, token, showFilter)
+		checkMcErr("ShowHostZone", status, err, &rc)
 		showData := ormapi.AllData{
 			ProviderZones: zones,
 		}
@@ -585,13 +585,13 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		*retry = true
 		return rc
 	}
-	if api == "showfederationconsumers" {
+	if api == "showfederationguests" {
 		showFilter := &cli.MapData{
 			Namespace: cli.StructNamespace,
 			Data:      map[string]interface{}{},
 		}
-		federations, status, err := mcClient.ShowFederationConsumer(uri, token, showFilter)
-		checkMcErr("ShowFederationConsumer", status, err, &rc)
+		federations, status, err := mcClient.ShowFederationGuest(uri, token, showFilter)
+		checkMcErr("ShowFederationGuest", status, err, &rc)
 		showData := ormapi.AllData{
 			FederationConsumers: federations,
 		}
@@ -600,13 +600,13 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		*retry = true
 		return rc
 	}
-	if api == "showconsumerzones" {
+	if api == "showguestzones" {
 		showFilter := &cli.MapData{
 			Namespace: cli.StructNamespace,
 			Data:      map[string]interface{}{},
 		}
-		zones, status, err := mcClient.ShowConsumerZone(uri, token, showFilter)
-		checkMcErr("ShowConsumerZone", status, err, &rc)
+		zones, status, err := mcClient.ShowGuestZone(uri, token, showFilter)
+		checkMcErr("ShowGuestZone", status, err, &rc)
 		showData := ormapi.AllData{
 			ConsumerZones: zones,
 		}
@@ -615,19 +615,19 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		*retry = true
 		return rc
 	}
-	if api == "showproviderappdata" {
+	if api == "showhostappdata" {
 		showFilter := &cli.MapData{
 			Namespace: cli.StructNamespace,
 			Data:      map[string]interface{}{},
 		}
-		images, status, err := mcClient.ShowProviderImage(uri, token, showFilter)
-		checkMcErr("ShowProviderImage", status, err, &rc)
-		artefacts, status, err := mcClient.ShowProviderArtefact(uri, token, showFilter)
-		checkMcErr("ShowProviderArtefact", status, err, &rc)
-		apps, status, err := mcClient.ShowProviderApp(uri, token, showFilter)
-		checkMcErr("ShowProviderApp", status, err, &rc)
-		appInsts, status, err := mcClient.ShowProviderAppInst(uri, token, showFilter)
-		checkMcErr("ShowProviderAppInst", status, err, &rc)
+		images, status, err := mcClient.ShowHostImage(uri, token, showFilter)
+		checkMcErr("ShowHostImage", status, err, &rc)
+		artefacts, status, err := mcClient.ShowHostArtefact(uri, token, showFilter)
+		checkMcErr("ShowHostArtefact", status, err, &rc)
+		apps, status, err := mcClient.ShowHostApp(uri, token, showFilter)
+		checkMcErr("ShowHostApp", status, err, &rc)
+		appInsts, status, err := mcClient.ShowHostAppInst(uri, token, showFilter)
+		checkMcErr("ShowHostAppInst", status, err, &rc)
 
 		showData := ormapi.AllData{
 			ProviderImages:    images,
@@ -640,15 +640,15 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		*retry = true
 		return rc
 	}
-	if api == "showconsumerappdata" {
+	if api == "showguestappdata" {
 		showFilter := &cli.MapData{
 			Namespace: cli.StructNamespace,
 			Data:      map[string]interface{}{},
 		}
-		images, status, err := mcClient.ShowConsumerImage(uri, token, showFilter)
-		checkMcErr("ShowConsumerImage", status, err, &rc)
-		apps, status, err := mcClient.ShowConsumerApp(uri, token, showFilter)
-		checkMcErr("ShowConsumerApp", status, err, &rc)
+		images, status, err := mcClient.ShowGuestImage(uri, token, showFilter)
+		checkMcErr("ShowGuestImage", status, err, &rc)
+		apps, status, err := mcClient.ShowGuestApp(uri, token, showFilter)
+		checkMcErr("ShowGuestApp", status, err, &rc)
 
 		showData := ormapi.AllData{
 			ConsumerImages: images,
@@ -737,7 +737,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 
 	var errs []Err
 	switch api {
-	case "setfederationconsumerapikey":
+	case "setfederationguestapikey":
 		/* TODO: fix me, this is wrong for now
 		output := &AllDataOut{}
 		for ii, fd := range data.FederationConsumers {
@@ -1217,16 +1217,16 @@ func createMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 		outMcErr(output, fmt.Sprintf("CreateAlertReceiver[%d]", ii), st, err)
 	}
 	for ii, fd := range data.FederationProviders {
-		fedOut, st, err := mcClient.CreateFederationProvider(uri, token, &fd)
+		fedOut, st, err := mcClient.CreateFederationHost(uri, token, &fd)
 		if err == nil {
 			sharedData[fd.Name+"-id"] = fedOut.ClientId
 			sharedData[fd.Name+"-key"] = fedOut.ClientKey
 		}
-		outMcErr(output, fmt.Sprintf("CreateFederationProvider[%d]", ii), st, err)
+		outMcErr(output, fmt.Sprintf("CreateFederationHost[%d]", ii), st, err)
 	}
 	for ii, fd := range data.ProviderZoneBases {
-		_, st, err := mcClient.CreateProviderZoneBase(uri, token, &fd)
-		outMcErr(output, fmt.Sprintf("CreateProviderZoneBase[%d]", ii), st, err)
+		_, st, err := mcClient.CreateHostZoneBase(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("CreateHostZoneBase[%d]", ii), st, err)
 	}
 	for ii, fd := range data.FederationConsumers {
 		if partnerApiId, found := sharedData[fd.Name+"-id"]; found {
@@ -1235,16 +1235,16 @@ func createMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 		if partnerApiKey, found := sharedData[fd.Name+"-key"]; found {
 			fd.ProviderClientKey = partnerApiKey
 		}
-		_, st, err := mcClient.CreateFederationConsumer(uri, token, &fd)
-		outMcErr(output, fmt.Sprintf("CreateFederationConsumer[%d]", ii), st, err)
+		_, st, err := mcClient.CreateFederationGuest(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("CreateFederationGuest[%d]", ii), st, err)
 	}
 	for ii, fd := range data.ConsumerImages {
-		_, st, err := mcClient.CreateConsumerImage(uri, token, &fd)
-		outMcErr(output, fmt.Sprintf("CreateConsumerImage[%d]", ii), st, err)
+		_, st, err := mcClient.CreateGuestImage(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("CreateGuestImage[%d]", ii), st, err)
 	}
 	for ii, fd := range data.ConsumerApps {
-		_, st, err := mcClient.OnboardConsumerApp(uri, token, &fd)
-		outMcErr(output, fmt.Sprintf("OnboardConsumerApp[%d]", ii), st, err)
+		_, st, err := mcClient.OnboardGuestApp(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("OnboardGuestApp[%d]", ii), st, err)
 	}
 }
 
@@ -1288,28 +1288,28 @@ func deleteMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 		apiRegionCb("cloudletpools", region)
 	}
 	for ii, fd := range data.ConsumerApps {
-		_, st, err := mcClient.DeboardConsumerApp(uri, token, &fd)
-		outMcErr(output, fmt.Sprintf("DeboardConsumerApp[%d]", ii), st, err)
+		_, st, err := mcClient.DeboardGuestApp(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("DeboardGuestApp[%d]", ii), st, err)
 	}
 	for ii, fd := range data.ConsumerImages {
-		_, st, err := mcClient.DeleteConsumerImage(uri, token, &fd)
-		outMcErr(output, fmt.Sprintf("DeleteConsumerImage[%d]", ii), st, err)
+		_, st, err := mcClient.DeleteGuestImage(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("DeleteGuestImage[%d]", ii), st, err)
 	}
 	for ii, fd := range data.FederationConsumers {
-		_, st, err := mcClient.DeleteFederationConsumer(uri, token, &fd)
-		outMcErr(output, fmt.Sprintf("DeleteFederationConsumer[%d]", ii), st, err)
+		_, st, err := mcClient.DeleteFederationGuest(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("DeleteFederationGuest[%d]", ii), st, err)
 	}
 	for ii, fd := range data.ProviderZoneBases {
-		_, st, err := mcClient.DeleteProviderZoneBase(uri, token, &fd)
-		outMcErr(output, fmt.Sprintf("DeleteProviderZoneBase[%d]", ii), st, err)
+		_, st, err := mcClient.DeleteHostZoneBase(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("DeleteHostZoneBase[%d]", ii), st, err)
 	}
 	for ii, fd := range data.FederationProviders {
-		_, st, err := mcClient.DeleteFederationProvider(uri, token, &fd)
+		_, st, err := mcClient.DeleteFederationHost(uri, token, &fd)
 		if err == nil {
 			delete(sharedData, fd.Name+"-id")
 			delete(sharedData, fd.Name+"-key")
 		}
-		outMcErr(output, fmt.Sprintf("DeleteFederationProvider[%d]", ii), st, err)
+		outMcErr(output, fmt.Sprintf("DeleteFederationHost[%d]", ii), st, err)
 	}
 	for ii, bOrg := range data.BillingOrgs {
 		st, err := mcClient.DeleteBillingOrg(uri, token, &bOrg)
@@ -1337,8 +1337,8 @@ func manageFederatorZoneData(mode, uri, token, tag string, data *ormapi.AllData,
 				ProviderName: fd.ProviderName,
 				Zones:        []string{fd.ZoneId},
 			}
-			_, st, err := mcClient.ShareProviderZone(uri, token, &share)
-			outMcErr(output, fmt.Sprintf("ShareProviderZone[%d]", ii), st, err)
+			_, st, err := mcClient.ShareHostZone(uri, token, &share)
+			outMcErr(output, fmt.Sprintf("ShareHostZone[%d]", ii), st, err)
 		}
 	case "unshare":
 		for ii, fd := range data.ProviderZones {
@@ -1346,8 +1346,8 @@ func manageFederatorZoneData(mode, uri, token, tag string, data *ormapi.AllData,
 				ProviderName: fd.ProviderName,
 				Zones:        []string{fd.ZoneId},
 			}
-			_, st, err := mcClient.UnshareProviderZone(uri, token, &share)
-			outMcErr(output, fmt.Sprintf("UnshareProviderZone[%d]", ii), st, err)
+			_, st, err := mcClient.UnshareHostZone(uri, token, &share)
+			outMcErr(output, fmt.Sprintf("UnshareHostZone[%d]", ii), st, err)
 		}
 	case "register":
 		for ii, fd := range data.ConsumerZones {
@@ -1355,8 +1355,8 @@ func manageFederatorZoneData(mode, uri, token, tag string, data *ormapi.AllData,
 				ConsumerName: fd.ConsumerName,
 				Zones:        []string{fd.ZoneId},
 			}
-			_, st, err := mcClient.RegisterConsumerZone(uri, token, &req)
-			outMcErr(output, fmt.Sprintf("RegisterConsumerZone[%d]", ii), st, err)
+			_, st, err := mcClient.RegisterGuestZone(uri, token, &req)
+			outMcErr(output, fmt.Sprintf("RegisterGuestZone[%d]", ii), st, err)
 		}
 	case "deregister":
 		for ii, fd := range data.ConsumerZones {
@@ -1364,8 +1364,8 @@ func manageFederatorZoneData(mode, uri, token, tag string, data *ormapi.AllData,
 				ConsumerName: fd.ConsumerName,
 				Zones:        []string{fd.ZoneId},
 			}
-			_, st, err := mcClient.DeregisterConsumerZone(uri, token, &req)
-			outMcErr(output, fmt.Sprintf("DeregisterConsumerZone[%d]", ii), st, err)
+			_, st, err := mcClient.DeregisterGuestZone(uri, token, &req)
+			outMcErr(output, fmt.Sprintf("DeregisterGuestZone[%d]", ii), st, err)
 		}
 	}
 }

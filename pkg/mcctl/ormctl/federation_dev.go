@@ -23,7 +23,7 @@ func init() {
 		Path:         "/auth/federation/consumer/show",
 		ShowFilter:   true,
 	}, {
-		Name:                 "OnboardConsumerApp",
+		Name:                 "OnboardGuestApp",
 		Use:                  "onboardapp",
 		Short:                "Onboard existing App to partner federation",
 		RequiredArgs:         "region federationname appname apporg appvers",
@@ -35,7 +35,7 @@ func init() {
 		StreamOut:            true,
 		StreamOutIncremental: true,
 	}, {
-		Name:                 "DeboardConsumerApp",
+		Name:                 "DeboardGuestApp",
 		Use:                  "deboardapp",
 		Short:                "Remove App from partner federation",
 		RequiredArgs:         "federationname appname apporg appvers",
@@ -49,7 +49,7 @@ func init() {
 		StreamOut:            true,
 		StreamOutIncremental: true,
 	}, {
-		Name:         "ShowConsumerApp",
+		Name:         "ShowGuestApp",
 		Use:          "showapps",
 		Short:        "Show Apps onboarded to partner federation",
 		OptionalArgs: "id region federationname appname apporg appvers status",
@@ -60,7 +60,7 @@ func init() {
 		Path:         "/auth/federation/consumer/app/show",
 		ShowFilter:   true,
 	}, {
-		Name:         "CreateConsumerImage",
+		Name:         "CreateGuestImage",
 		Use:          "createimage",
 		Short:        "Create image on partner federation",
 		RequiredArgs: strings.Join(ConsumerImageRequiredArgs, " "),
@@ -70,7 +70,7 @@ func init() {
 		ReplyData:    &ormapi.Result{},
 		Path:         "/auth/federation/consumer/image/create",
 	}, {
-		Name:          "DeleteConsumerImage",
+		Name:          "DeleteGuestImage",
 		Use:           "deleteimage",
 		Short:         "Delete image from partner federation",
 		OptionalArgs:  "id organization federationname name",
@@ -81,7 +81,7 @@ func init() {
 		ReplyData:     &ormapi.Result{},
 		Path:          "/auth/federation/consumer/image/delete",
 	}, {
-		Name:         "ShowConsumerImage",
+		Name:         "ShowGuestImage",
 		Use:          "showimages",
 		Short:        "Show images on partner federation",
 		OptionalArgs: strings.Join(ConsumerImageShowArgs, " "),

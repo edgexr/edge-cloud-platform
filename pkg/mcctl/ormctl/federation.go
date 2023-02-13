@@ -21,16 +21,16 @@ import (
 )
 
 const (
-	FederationProviderGroup = "FederationProvider"
-	FederationConsumerGroup = "FederationConsumer"
+	FederationHostGroup  = "FederationHost"
+	FederationGuestGroup = "FederationGuest"
 )
 
 func init() {
 	cmds := []*ApiCommand{
 		&ApiCommand{
-			Name:         "CreateFederationProvider",
+			Name:         "CreateFederationHost",
 			Use:          "create",
-			Short:        "Create Federation Provider",
+			Short:        "Create Federation Host",
 			SpecialArgs:  &FederationProviderSpecialArgs,
 			RequiredArgs: strings.Join(FederationProviderRequiredArgs, " "),
 			OptionalArgs: strings.Join(FederationProviderOptionalArgs, " "),
@@ -40,9 +40,9 @@ func init() {
 			Path:         "/auth/federation/provider/create",
 		},
 		&ApiCommand{
-			Name:         "UpdateFederationProvider",
+			Name:         "UpdateFederationHost",
 			Use:          "update",
-			Short:        "Update Federation Provider",
+			Short:        "Update Federation Host",
 			SpecialArgs:  &FederationProviderSpecialArgs,
 			RequiredArgs: "name operatorid",
 			OptionalArgs: strings.Join(FederationProviderOptionalArgs, " "),
@@ -52,9 +52,9 @@ func init() {
 			Path:         "/auth/federation/provider/update",
 		},
 		&ApiCommand{
-			Name:         "DeleteFederationProvider",
+			Name:         "DeleteFederationHost",
 			Use:          "delete",
-			Short:        "Delete Federation Provider",
+			Short:        "Delete Federation Host",
 			RequiredArgs: "name",
 			Comments:     ormapi.FederationProviderComments,
 			ReqData:      &ormapi.FederationProvider{},
@@ -62,9 +62,9 @@ func init() {
 			Path:         "/auth/federation/provider/delete",
 		},
 		&ApiCommand{
-			Name:         "ShowFederationProvider",
+			Name:         "ShowFederationHost",
 			Use:          "show",
-			Short:        "Show Federation Provider",
+			Short:        "Show Federation Host",
 			SpecialArgs:  &FederationProviderSpecialArgs,
 			OptionalArgs: strings.Join(FederationProviderShowArgs, " "),
 			Comments:     ormapi.FederationProviderComments,
@@ -74,9 +74,9 @@ func init() {
 			ShowFilter:   true,
 		},
 		&ApiCommand{
-			Name:         "GenerateFederationProviderAPIKey",
+			Name:         "GenerateFederationHostAPIKey",
 			Use:          "generateapikey",
-			Short:        "Generate Federation Provider API Key to share with Consumer",
+			Short:        "Generate Federation Host API Key to share with Guest",
 			RequiredArgs: "name operatorid",
 			Comments:     ormapi.FederationProviderComments,
 			ReqData:      &ormapi.FederationProvider{},
@@ -84,9 +84,9 @@ func init() {
 			Path:         "/auth/federation/provider/generateapikey",
 		},
 		&ApiCommand{
-			Name:         "SetFederationProviderNotifyKey",
+			Name:         "SetFederationHostNotifyKey",
 			Use:          "setnotifykey",
-			Short:        "Set Federation Provider notify key for notify connections",
+			Short:        "Set Federation Host notify key for notify connections",
 			RequiredArgs: "name operatorid partnernotifyclientid partnernotifyclientkey",
 			Comments:     ormapi.FederationProviderComments,
 			ReqData:      &ormapi.FederationProvider{},
@@ -94,9 +94,9 @@ func init() {
 			Path:         "/auth/federation/provider/setnotifykey",
 		},
 		&ApiCommand{
-			Name:         "CreateProviderZoneBase",
+			Name:         "CreateHostZoneBase",
 			Use:          "createzonebase",
-			Short:        "Create Provider Zone Base to package cloudlets into a zone",
+			Short:        "Create Host Zone Base to package cloudlets into a zone",
 			SpecialArgs:  &ProviderZoneBaseSpecialArgs,
 			RequiredArgs: strings.Join(ProviderZoneBaseRequiredArgs, " "),
 			OptionalArgs: strings.Join(ProviderZoneBaseOptionalArgs, " "),
@@ -106,9 +106,9 @@ func init() {
 			Path:         "/auth/federation/provider/zonebase/create",
 		},
 		&ApiCommand{
-			Name:         "DeleteProviderZoneBase",
+			Name:         "DeleteHostZoneBase",
 			Use:          "deletezonebase",
-			Short:        "Delete Provider Zone Base",
+			Short:        "Delete Host Zone Base",
 			RequiredArgs: "zoneid operatorid",
 			Comments:     ormapi.ProviderZoneBaseComments,
 			ReqData:      &ormapi.ProviderZoneBase{},
@@ -116,9 +116,9 @@ func init() {
 			Path:         "/auth/federation/provider/zonebase/delete",
 		},
 		&ApiCommand{
-			Name:         "ShowProviderZoneBase",
+			Name:         "ShowHostZoneBase",
 			Use:          "showzonebase",
-			Short:        "Show Provider Zone Bases",
+			Short:        "Show Host Zone Bases",
 			OptionalArgs: "zoneid operatorid countrycode geolocation geographydetails region cloudlets",
 			Comments:     ormapi.ProviderZoneBaseComments,
 			ReqData:      &ormapi.ProviderZoneBase{},
@@ -127,9 +127,9 @@ func init() {
 			ShowFilter:   true,
 		},
 		&ApiCommand{
-			Name:          "ShareProviderZone",
+			Name:          "ShareHostZone",
 			Use:           "sharezone",
-			Short:         "Share Provider Zone with Partner OP",
+			Short:         "Share Host Zone with Partner OP",
 			RequiredArgs:  strings.Join(ShareZoneRequiredArgs, " "),
 			SpecialArgs:   &ShareZoneSpecialArgs,
 			Comments:      ormapi.FederatedZoneShareRequestComments,
@@ -140,9 +140,9 @@ func init() {
 			Path:          "/auth/federation/provider/zone/share",
 		},
 		&ApiCommand{
-			Name:          "UnshareProviderZone",
+			Name:          "UnshareHostZone",
 			Use:           "unsharezone",
-			Short:         "Unshare Provider Zone with Partner OP",
+			Short:         "Unshare Host Zone with Partner OP",
 			RequiredArgs:  strings.Join(ShareZoneRequiredArgs, " "),
 			SpecialArgs:   &ShareZoneSpecialArgs,
 			Comments:      ormapi.FederatedZoneShareRequestComments,
@@ -153,9 +153,9 @@ func init() {
 			Path:          "/auth/federation/provider/zone/unshare",
 		},
 		&ApiCommand{
-			Name:         "ShowProviderZone",
+			Name:         "ShowHostZone",
 			Use:          "showsharedzones",
-			Short:        "Show Shared Provider Zones",
+			Short:        "Show Shared Host Zones",
 			OptionalArgs: strings.Join(ProviderZoneShowArgs, " "),
 			Comments:     ormapi.ProviderZoneComments,
 			ReqData:      &ormapi.ProviderZone{},
@@ -163,7 +163,7 @@ func init() {
 			Path:         "/auth/federation/provider/zone/show",
 			ShowFilter:   true,
 		}, {
-			Name:         "ShowProviderImage",
+			Name:         "ShowHostImage",
 			Use:          "showimages",
 			Short:        "Show Images uploaded by partner",
 			OptionalArgs: strings.Join(ProviderImageShowArgs, " "),
@@ -173,7 +173,7 @@ func init() {
 			Path:         "/auth/federation/provider/image/show",
 			ShowFilter:   true,
 		}, {
-			Name:         "ShowProviderArtefact",
+			Name:         "ShowHostArtefact",
 			Use:          "showartefacts",
 			Short:        "Show Artefacts created by partner",
 			OptionalArgs: strings.Join(ProviderArtefactShowArgs, " "),
@@ -183,7 +183,7 @@ func init() {
 			Path:         "/auth/federation/provider/artefact/show",
 			ShowFilter:   true,
 		}, {
-			Name:         "ShowProviderApp",
+			Name:         "ShowHostApp",
 			Use:          "showapps",
 			Short:        "Show Apps onboarded by partner",
 			OptionalArgs: strings.Join(ProviderAppShowArgs, " "),
@@ -194,7 +194,7 @@ func init() {
 			Path:         "/auth/federation/provider/app/show",
 			ShowFilter:   true,
 		}, {
-			Name:         "ShowProviderAppInst",
+			Name:         "ShowHostAppInst",
 			Use:          "showappinsts",
 			Short:        "Show AppInsts onboarded by partner",
 			OptionalArgs: strings.Join(ProviderAppInstShowArgs, " "),
@@ -204,7 +204,7 @@ func init() {
 			Path:         "/auth/federation/provider/appinst/show",
 			ShowFilter:   true,
 		}, {
-			Name:         "UnsafeDeleteProviderImage",
+			Name:         "UnsafeDeleteHostImage",
 			Use:          "unsafedeleteimage",
 			Short:        "Delete Image onboarded by partner, use only if partner cannot trigger delete themselves",
 			Comments:     ormapi.ProviderImageComments,
@@ -213,7 +213,7 @@ func init() {
 			ReplyData:    &ormapi.Result{},
 			Path:         "/auth/federation/provider/image/unsafedelete",
 		}, {
-			Name:         "UnsafeDeleteProviderArtefact",
+			Name:         "UnsafeDeleteHostArtefact",
 			Use:          "unsafedeleteartefact",
 			Short:        "Delete Artefact onboarded by partner, use only if partner cannot trigger delete themselves",
 			RequiredArgs: "federationname artefactid",
@@ -222,7 +222,7 @@ func init() {
 			ReplyData:    &ormapi.Result{},
 			Path:         "/auth/federation/provider/artefact/unsafedelete",
 		}, {
-			Name:         "UnsafeDeleteProviderApp",
+			Name:         "UnsafeDeleteHostApp",
 			Use:          "unsafedeleteapp",
 			Short:        "Delete App onboarded by partner, use only if partner cannot trigger delete themselves",
 			RequiredArgs: "federationname appid",
@@ -232,7 +232,7 @@ func init() {
 			ReplyData:    &ormapi.Result{},
 			Path:         "/auth/federation/provider/app/unsafedelete",
 		}, {
-			Name:         "UnsafeDeleteProviderAppInst",
+			Name:         "UnsafeDeleteHostAppInst",
 			Use:          "unsafedeleteappinst",
 			Short:        "Delete AppInst created by partner, use only if partner cannot trigger delete themselves",
 			RequiredArgs: "federationname appinstid",
@@ -242,12 +242,12 @@ func init() {
 			Path:         "/auth/federation/provider/appinst/unsafedelete",
 		},
 	}
-	AllApis.AddGroup(FederationProviderGroup, "Manage Federation Provider and Zones", cmds)
+	AllApis.AddGroup(FederationHostGroup, "Manage Federation Host and Zones", cmds)
 	cmds = []*ApiCommand{
 		&ApiCommand{
-			Name:         "CreateFederationConsumer",
+			Name:         "CreateFederationGuest",
 			Use:          "create",
-			Short:        "Create Federation Consumer",
+			Short:        "Create Federation Guest",
 			SpecialArgs:  &FederationConsumerSpecialArgs,
 			RequiredArgs: strings.Join(FederationConsumerRequiredArgs, " "),
 			OptionalArgs: strings.Join(FederationConsumerOptionalArgs, " "),
@@ -257,9 +257,9 @@ func init() {
 			Path:         "/auth/federation/consumer/create",
 		},
 		&ApiCommand{
-			Name:         "UpdateFederationConsumer",
+			Name:         "UpdateFederationGuest",
 			Use:          "update",
-			Short:        "Update Federation Consumer",
+			Short:        "Update Federation Guest",
 			SpecialArgs:  &FederationConsumerSpecialArgs,
 			RequiredArgs: "name operatorid",
 			OptionalArgs: "public",
@@ -269,9 +269,9 @@ func init() {
 			Path:         "/auth/federation/consumer/update",
 		},
 		&ApiCommand{
-			Name:          "DeleteFederationConsumer",
+			Name:          "DeleteFederationGuest",
 			Use:           "delete",
-			Short:         "Delete Federation Consumer",
+			Short:         "Delete Federation Guest",
 			SpecialArgs:   &FederationConsumerSpecialArgs,
 			OptionalArgs:  "id name operatorid",
 			Comments:      ormapi.FederationConsumerComments,
@@ -282,9 +282,9 @@ func init() {
 			Path:          "/auth/federation/consumer/delete",
 		},
 		&ApiCommand{
-			Name:         "ShowFederationConsumer",
+			Name:         "ShowFederationGuest",
 			Use:          "show",
-			Short:        "Show Federation Consumer",
+			Short:        "Show Federation Guest",
 			SpecialArgs:  &FederationConsumerSpecialArgs,
 			OptionalArgs: strings.Join(FederationConsumerShowArgs, " "),
 			Comments:     ormapi.FederationConsumerComments,
@@ -294,7 +294,7 @@ func init() {
 			ShowFilter:   true,
 		},
 		&ApiCommand{
-			Name:         "SetFederationConsumerAPIKey",
+			Name:         "SetFederationGuestAPIKey",
 			Use:          "setpartnerapikey",
 			Short:        "Set Partner Federation API Key",
 			RequiredArgs: "name operatorid providerclientid providerclientkey",
@@ -305,7 +305,7 @@ func init() {
 			Path:         "/auth/federation/consumer/setapikey",
 		},
 		&ApiCommand{
-			Name:         "GenerateFederationConsumerNotifyKey",
+			Name:         "GenerateFederationGuestNotifyKey",
 			Use:          "generatenotifykey",
 			Short:        "Set Partner Federation API Key",
 			RequiredArgs: "name operatorid",
@@ -316,7 +316,7 @@ func init() {
 			Path:         "/auth/federation/consumer/gennotifykey",
 		},
 		&ApiCommand{
-			Name:         "RegisterConsumerZone",
+			Name:         "RegisterGuestZone",
 			Use:          "register",
 			Short:        "Register Partner Federator Zone",
 			SpecialArgs:  &RegisterZoneSpecialArgs,
@@ -327,7 +327,7 @@ func init() {
 			Path:         "/auth/federation/consumer/zone/register",
 		},
 		&ApiCommand{
-			Name:          "DeregisterConsumerZone",
+			Name:          "DeregisterGuestZone",
 			Use:           "deregister",
 			Short:         "DeRegister Partner Federator Zone",
 			SpecialArgs:   &RegisterZoneSpecialArgs,
@@ -340,7 +340,7 @@ func init() {
 			Path:          "/auth/federation/consumer/zone/deregister",
 		},
 		&ApiCommand{
-			Name:         "ShowConsumerZone",
+			Name:         "ShowGuestZone",
 			Use:          "showzones",
 			Short:        "Show Federated Partner Zones",
 			OptionalArgs: strings.Join(ConsumerZoneShowArgs, " "),
@@ -350,7 +350,7 @@ func init() {
 			Path:         "/auth/federation/consumer/zone/show",
 			ShowFilter:   true,
 		}, {
-			Name:         "ShowFedConsumerImage",
+			Name:         "ShowFedGuestImage",
 			Use:          "showimages",
 			Short:        "Show Images onboarded by developers",
 			OptionalArgs: strings.Join(ConsumerImageRedactedShowArgs, " "),
@@ -361,7 +361,7 @@ func init() {
 			ShowFilter:   true,
 		},
 	}
-	AllApis.AddGroup(FederationConsumerGroup, "Manage Federation Consumer and Zones", cmds)
+	AllApis.AddGroup(FederationGuestGroup, "Manage Federation Guest and Zones", cmds)
 }
 
 var FederationQueryParams = "ignorepartner"
@@ -370,7 +370,7 @@ var FederationQueryComments = map[string]string{
 	"ignorepartner": "ignore partner federation and skip any API calls to them",
 }
 
-// Federation Provider
+// Federation Host
 // ===================
 
 var FederationProviderRequiredArgs = []string{
@@ -479,7 +479,7 @@ var ProviderAppSpecialArgs = map[string]string{
 	"deploymentzones": "StringArray",
 }
 
-// Federation Consumer
+// Federation Guest
 // ===================
 
 var FederationConsumerRequiredArgs = []string{
