@@ -16,6 +16,7 @@ tests:
   - includefile: {{edge-cloud-testfiles}}/stop_cleanup.yml
   - includefile: deploy_start.yml
   - includefile: admin_setup_platform.yml
+  - includefile: federationtest.yml
   - includefile: mc_add_delete.yml
   - includefile: mc_add_delete.yml
     extratest: true

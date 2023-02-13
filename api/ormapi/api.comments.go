@@ -703,6 +703,7 @@ var ProviderArtefactComments = map[string]string{
 	"appproviderid":   `App provider ID`,
 	"virttype":        `Virtualization Type`,
 	"desctype":        `Descriptor Type`,
+	"fileids":         `File IDs used by Artefact`,
 }
 
 var ProviderAppComments = map[string]string{

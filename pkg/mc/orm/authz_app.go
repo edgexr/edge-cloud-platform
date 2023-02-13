@@ -40,6 +40,17 @@ func authzUpdateApp(ctx context.Context, region, username string, obj *edgeproto
 	return authorized(ctx, username, obj.Key.Organization, resource, action)
 }
 
+func authzDeleteApp(ctx context.Context, region, username string, obj *edgeproto.App, resource, action string) error {
+	fedApp, err := isProviderApp(ctx, obj)
+	if err != nil {
+		return err
+	}
+	if fedApp {
+		return fmt.Errorf("Cannot delete provider app created via federation, use unsafe federation app delete instead")
+	}
+	return authorized(ctx, username, obj.Key.Organization, resource, action)
+}
+
 // checkImagePath checks that for a Edge Cloud image path, the App's org matches
 // the image path's org. This assumes someone cannot spoof the DNS
 // address.
@@ -134,4 +145,15 @@ func checkImagePathStrings(ctx context.Context, org, imagePath string) error {
 		return fmt.Errorf("ImagePath %s for Edge Cloud hosted registry using organization '%s' does not match organization name '%s', must match", imagePath, targetOrg, org)
 	}
 	return nil
+}
+
+func authzDeleteAppInst(ctx context.Context, region, username string, obj *edgeproto.AppInst, resource, action string) error {
+	fedAppInst, err := isProviderAppInst(ctx, obj)
+	if err != nil {
+		return err
+	}
+	if fedAppInst {
+		return fmt.Errorf("Cannot delete provider appInst created via federation, use unsafe federation appInst delete instead")
+	}
+	return authorized(ctx, username, obj.Key.AppKey.Organization, resource, action)
 }

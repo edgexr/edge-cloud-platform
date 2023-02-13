@@ -164,6 +164,10 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 	if len(spec.Images) != 1 {
 		return fmt.Errorf("only one image is supported for ComponentSpec, but it has %d", len(spec.Images))
 	}
+	provArt.FileIds = spec.Images
+	// TODO: parse any docker compose/kubernetes manifest and
+	// verify the specified images' paths are in them.
+
 	// look up image
 	log.SpanLog(ctx, log.DebugLevelApi, "lookup image", "fileID", spec.Images[0])
 	provImage := ormapi.ProviderImage{
