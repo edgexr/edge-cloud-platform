@@ -340,6 +340,24 @@ func (p *PartnerApi) RemoveFileInternal(c echo.Context, provider *ormapi.Federat
 		return fedError(http.StatusInternalServerError, res.Error)
 	}
 
+	// check if any artefacts are using the file
+	arts := []ormapi.ProviderArtefact{}
+	artLookup := ormapi.ProviderArtefact{
+		FederationName: provider.Name,
+	}
+	res = db.Find(&artLookup).Find(&arts)
+	if !res.RecordNotFound() && res.Error != nil {
+		return fedError(http.StatusInternalServerError, res.Error)
+	}
+	for _, art := range arts {
+		for _, id := range art.FileIds {
+			if id == fileId {
+				return fmt.Errorf("Cannot delete fileId %s in use by artefact %s", id, art.ArtefactID)
+			}
+		}
+	}
+
+	// delete image
 	if p.vmRegistryAddr != "" && strings.Contains(image.Path, p.vmRegistryAddr) {
 		log.SpanLog(ctx, log.DebugLevelApi, "delete image from vm-registry", "image", image)
 		// delete from vm-registry

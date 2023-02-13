@@ -226,6 +226,7 @@ service AppInstApi {
     option (protogen.stream_out_incremental) = true;
     option (protogen.mc2_api) = "ResourceAppInsts,ActionManage,Key.AppKey.Organization";
     option (protogen.method_noconfig) = "PowerState";
+    option (protogen.mc2_custom_authz) = true;
   }
   // Refresh Application Instance. Restarts an App instance with new App settings or image.
   rpc RefreshAppInst(AppInst) returns (stream Result) {

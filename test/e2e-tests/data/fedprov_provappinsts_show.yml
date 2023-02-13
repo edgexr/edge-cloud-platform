@@ -50,6 +50,8 @@ providerartefacts:
   appproviderid: fedappco
   virttype: CONTAINER_TYPE
   desctype: COMPONENTSPEC
+  fileids:
+  - e2e-test-file-id-1
 - federationname: dmuus-partner1
   artefactid: pa-dockerapp10fedappco
   artefactname: dockerapp
@@ -59,6 +61,8 @@ providerartefacts:
   appproviderid: fedappco
   virttype: CONTAINER_TYPE
   desctype: COMPONENTSPEC
+  fileids:
+  - e2e-test-file-id-2
 - federationname: dmuus-partner1
   artefactid: pa-vmapp10fedappco
   artefactname: vmapp
@@ -68,6 +72,8 @@ providerartefacts:
   appproviderid: fedappco
   virttype: VM_TYPE
   desctype: COMPONENTSPEC
+  fileids:
+  - e2e-test-file-id-3
 providerapps:
 - federationname: dmuus-partner1
   appid: pa-k8sapp10fedappco

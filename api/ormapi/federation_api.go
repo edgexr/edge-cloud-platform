@@ -306,6 +306,8 @@ type ProviderArtefact struct {
 	VirtType string
 	// Descriptor Type
 	DescType string
+	// File IDs used by Artefact
+	FileIds pq.StringArray `gorm:"type:text[]"`
 }
 
 type ProviderApp struct {
@@ -423,6 +425,12 @@ func (s *ProviderArtefact) GetAppKey() edgeproto.AppKey {
 	}
 }
 
+func (s *ProviderArtefact) SetAppKey(key *edgeproto.AppKey) {
+	s.AppName = key.Name
+	s.AppVers = key.Version
+	s.FederationName = key.Organization
+}
+
 func (s *ProviderAppInst) GetAppInstKey() edgeproto.AppInstKey {
 	return edgeproto.AppInstKey{
 		AppKey: edgeproto.AppKey{
@@ -441,4 +449,14 @@ func (s *ProviderAppInst) GetAppInstKey() edgeproto.AppInstKey {
 			Organization: s.ClusterOrg,
 		},
 	}
+}
+
+func (s *ProviderAppInst) SetAppInstKey(key *edgeproto.AppInstKey) {
+	s.AppName = key.AppKey.Name
+	s.AppVers = key.AppKey.Version
+	s.FederationName = key.AppKey.Organization
+	s.Cluster = key.ClusterInstKey.ClusterKey.Name
+	s.ClusterOrg = key.ClusterInstKey.Organization
+	s.Cloudlet = key.ClusterInstKey.CloudletKey.Name
+	s.CloudletOrg = key.ClusterInstKey.CloudletKey.Organization
 }

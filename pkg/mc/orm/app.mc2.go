@@ -97,7 +97,7 @@ func DeleteApp(c echo.Context) error {
 		return err
 	}
 	if !rc.SkipAuthz {
-		if err := authorized(ctx, rc.Username, obj.Key.Organization,
+		if err := authzDeleteApp(ctx, rc.Region, rc.Username, obj,
 			ResourceApps, ActionManage); err != nil {
 			return err
 		}

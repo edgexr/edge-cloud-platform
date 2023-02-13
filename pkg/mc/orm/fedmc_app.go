@@ -564,6 +564,34 @@ func ShowProviderAppInst(c echo.Context) error {
 	return ormutil.SetReply(c, showAppInsts)
 }
 
+func isProviderApp(ctx context.Context, app *edgeproto.App) (bool, error) {
+	art := ormapi.ProviderArtefact{}
+	art.SetAppKey(&app.Key)
+	db := loggedDB(ctx)
+	res := db.Where(&art).First(&art)
+	if res.RecordNotFound() {
+		return false, nil
+	}
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return true, nil
+}
+
+func isProviderAppInst(ctx context.Context, appInst *edgeproto.AppInst) (bool, error) {
+	ai := ormapi.ProviderAppInst{}
+	ai.SetAppInstKey(&appInst.Key)
+	db := loggedDB(ctx)
+	res := db.Where(&ai).First(&ai)
+	if res.RecordNotFound() {
+		return false, nil
+	}
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return true, nil
+}
+
 func UnsafeDeleteProviderArtefact(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
