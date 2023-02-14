@@ -640,7 +640,7 @@ func (p *PartnerApi) GenerateComponentSpec(ctx context.Context, app *edgeproto.A
 		}
 		for portVal := portStart; portVal <= portEnd; portVal++ {
 			intf := fedewapi.InterfaceDetails{}
-			intf.InterfaceId = p.GetInterfaceId(port, portVal)
+			intf.InterfaceId = GetInterfaceId(port.Proto, portVal)
 			if port.Proto == dmeproto.LProto_L_PROTO_UDP {
 				intf.CommProtocol = CommProtoUDP
 			} else {

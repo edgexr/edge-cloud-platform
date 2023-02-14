@@ -30,7 +30,7 @@ regiondata:
       deployment: docker
       defaultflavor:
         name: p1.tiny
-      accessports: "tcp:81"
+      accessports: "tcp:81,tcp:443,udp:10002"
       command: -text="hello world"
     - key:
         organization: FedAppCo

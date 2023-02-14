@@ -29,6 +29,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
@@ -228,9 +229,28 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	if os.Getenv("E2ETEST_TLS") != "" {
 		timeout = 3 * time.Second
 	}
+
+	// Set up polling in case callbacks are lost
+	pollApiPath := fmt.Sprintf("/%s/%s/application/lcm/app/%s/instance/%s/zone/%s", federationmgmt.ApiRoot, fedConfig.FederationContextId, app.GlobalId, req.AppInstanceId, cloudletKey.Name)
+	doneChan := make(chan struct{})
+	go createAppInstPoller(ctx, fedClient, pollApiPath, eventsCh, doneChan)
+	defer close(doneChan)
+
 	for {
 		select {
 		case event := <-eventsCh:
+			if len(event.Ports) > 0 {
+				f.caches.AppInstInfoCache.UpdateModFunc(ctx, &appInst.Key, 0, func(old *edgeproto.AppInstInfo) (*edgeproto.AppInstInfo, bool) {
+					info := &edgeproto.AppInstInfo{}
+					if old == nil {
+						info.Key = appInst.Key
+					} else {
+						*info = *old
+					}
+					info.FedPorts = event.Ports
+					return info, true
+				})
+			}
 			if event.State == edgeproto.TrackedState_READY {
 				if event.Message != "" {
 					updateCallback(edgeproto.UpdateTask, event.Message)
@@ -246,6 +266,34 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 			}
 		case <-time.After(timeout):
 			return fmt.Errorf("Timed out waiting for callback")
+		}
+	}
+}
+
+// Polling on create is only needed against partners that haven't
+// implemented callbacks, or perhaps in the case that callbacks may have
+// been lost/missed.
+var CreatePollingRetryDelay = 20 * time.Second
+
+func createAppInstPoller(ctx context.Context, fedClient *federationmgmt.Client, apiPath string, eventsCh chan edgeproto.FedAppInstEvent, doneChan chan struct{}) {
+	retryDelay := time.Duration(0)
+	for {
+		select {
+		case <-time.After(retryDelay):
+			log.SpanLog(ctx, log.DebugLevelApi, "frm polling create appinst state", "apiPath", apiPath)
+			out := fedewapi.GetAppInstanceDetails200Response{}
+			_, _, err := fedClient.SendRequest(ctx, "GET", apiPath, nil, &out, nil)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "frm poll create appinst failed", "err", err)
+			} else {
+				event := edgeproto.FedAppInstEvent{}
+				// TODO: add message once it's added to GET response
+				federation.SetFedAppInstEvent(&event, out.AppInstanceState, nil, out.AccesspointInfo)
+				eventsCh <- event
+			}
+			retryDelay = CreatePollingRetryDelay
+		case <-doneChan:
+			return
 		}
 	}
 }

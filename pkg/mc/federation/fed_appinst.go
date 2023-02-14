@@ -283,7 +283,7 @@ func (s *PartnerApi) getAppInstAccessPointInfo(appInst *edgeproto.AppInst) []fed
 		}
 		for portVal := portStart; portVal <= portEnd; portVal++ {
 			ap := fedewapi.AccessPointInfoInner{}
-			ap.InterfaceId = s.GetInterfaceId(port, portVal)
+			ap.InterfaceId = GetInterfaceId(port.Proto, portVal)
 			fqdn := appInst.Uri + port.FqdnPrefix
 			ap.AccessPoints.Port = port.PublicPort
 			ap.AccessPoints.Fqdn = &fqdn
@@ -456,8 +456,27 @@ func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
 	if info.Message != nil {
 		event.Message = *info.Message
 	}
-	if info.AppInstanceState != nil {
-		switch *info.AppInstanceState {
+	err = SetFedAppInstEvent(&event, info.AppInstanceState, info.Message, info.AccesspointInfo)
+	if err != nil {
+		return err
+	}
+
+	// make call to Controller
+	rc := ormutil.RegionContext{
+		Region:    app.Region,
+		SkipAuthz: true,
+		Database:  p.database,
+	}
+	_, err = ctrlclient.HandleFedAppInstEventObj(ctx, &rc, &event, p.connCache)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func SetFedAppInstEvent(event *edgeproto.FedAppInstEvent, instanceState *fedewapi.InstanceState, message *string, accessPointInfo []fedewapi.AccessPointInfoInner) error {
+	if instanceState != nil {
+		switch *instanceState {
 		case fedewapi.INSTANCESTATE_PENDING:
 			event.State = edgeproto.TrackedState_CREATING
 		case fedewapi.INSTANCESTATE_READY:
@@ -467,15 +486,21 @@ func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
 		case fedewapi.INSTANCESTATE_TERMINATING:
 			event.State = edgeproto.TrackedState_CREATE_ERROR
 			event.Message = "Terminating"
-			if info.Message != nil {
-				event.Message += ", " + *info.Message
+			if message != nil {
+				event.Message += ", " + *message
 			}
 		}
 	}
-	if len(info.AccesspointInfo) > 0 {
-		for _, ap := range info.AccesspointInfo {
+	if len(accessPointInfo) > 0 {
+		for _, ap := range accessPointInfo {
 			port := dmeproto.AppPort{}
-			port.InternalPort = int32(ap.AccessPoints.Port)
+			proto, internalPort, err := ParseInterfaceId(ap.InterfaceId)
+			if err != nil {
+				return err
+			}
+			port.Proto = proto
+			port.InternalPort = internalPort
+			port.PublicPort = int32(ap.AccessPoints.Port)
 			// Note that baseURL will be empty, so FqdnPrefix
 			// will be used as the whole Fqdn.
 			// Note we do not support multiple IP addresses.
@@ -490,17 +515,6 @@ func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
 			}
 			event.Ports = append(event.Ports, port)
 		}
-	}
-
-	// make call to Controller
-	rc := ormutil.RegionContext{
-		Region:    app.Region,
-		SkipAuthz: true,
-		Database:  p.database,
-	}
-	_, err = ctrlclient.HandleFedAppInstEventObj(ctx, &rc, &event, p.connCache)
-	if err != nil {
-		return err
 	}
 	return nil
 }
