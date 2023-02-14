@@ -3,9 +3,11 @@ package federation
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
@@ -377,6 +379,24 @@ func (p *PartnerApi) PartnerAppOnboardStatusEvent(c echo.Context) error {
 	return nil
 }
 
-func (p *PartnerApi) GetInterfaceId(port dme.AppPort, portVal int32) string {
-	return fmt.Sprintf("port%d", portVal)
+func GetInterfaceId(proto dmeproto.LProto, internalPort int32) string {
+	protoStr, _ := edgeproto.LProtoStr(proto)
+	return fmt.Sprintf("%s-%d", protoStr, internalPort)
+}
+
+func ParseInterfaceId(id string) (dmeproto.LProto, int32, error) {
+	protoNone := dmeproto.LProto_L_PROTO_UNKNOWN
+	parts := strings.Split(id, "-")
+	if len(parts) != 2 {
+		return protoNone, 0, fmt.Errorf("Invalid interface id %s, expected proto-port format", id)
+	}
+	proto, err := edgeproto.GetLProto(parts[0])
+	if err != nil {
+		return protoNone, 0, fmt.Errorf("Failed to parse proto %s in interface id %s, %s", parts[0], id, err)
+	}
+	port, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return protoNone, 0, fmt.Errorf("Failed to parse port value %s in interface id %s, %s", parts[1], id, err)
+	}
+	return proto, int32(port), nil
 }

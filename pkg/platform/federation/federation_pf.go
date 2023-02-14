@@ -239,6 +239,18 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	for {
 		select {
 		case event := <-eventsCh:
+			if len(event.Ports) > 0 {
+				f.caches.AppInstInfoCache.UpdateModFunc(ctx, &appInst.Key, 0, func(old *edgeproto.AppInstInfo) (*edgeproto.AppInstInfo, bool) {
+					info := &edgeproto.AppInstInfo{}
+					if old == nil {
+						info.Key = appInst.Key
+					} else {
+						*info = *old
+					}
+					info.FedPorts = event.Ports
+					return info, true
+				})
+			}
 			if event.State == edgeproto.TrackedState_READY {
 				if event.Message != "" {
 					updateCallback(edgeproto.UpdateTask, event.Message)
@@ -276,7 +288,7 @@ func createAppInstPoller(ctx context.Context, fedClient *federationmgmt.Client, 
 			} else {
 				event := edgeproto.FedAppInstEvent{}
 				// TODO: add message once it's added to GET response
-				federation.SetFedAppInstEventState(&event, out.AppInstanceState, nil)
+				federation.SetFedAppInstEvent(&event, out.AppInstanceState, nil, out.AccesspointInfo)
 				eventsCh <- event
 			}
 			retryDelay = CreatePollingRetryDelay

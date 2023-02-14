@@ -289,6 +289,8 @@ message AppInstInfo {
   string uri = 9 [(protogen.backend) = true];
   // Federation AppInst Key, if any
   FedAppInstKey fed_key = 10 [(protogen.backend) = true, (gogoproto.nullable) = false];
+  // Federation Port info if any
+  repeated distributed_match_engine.AppPort fed_ports = 11 [(gogoproto.nullable) = false];
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cache) = true;

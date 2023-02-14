@@ -2065,6 +2065,32 @@ func (s *AppInstApi) UpdateFromInfo(ctx context.Context, in *edgeproto.AppInstIn
 			s.fedStore.STMPut(stm, &fedAppInst)
 			applyUpdate = true
 		}
+		if len(in.FedPorts) > 0 {
+			log.SpanLog(ctx, log.DebugLevelApi, "Updating ports on federated appinst", "key", in.Key, "ports", in.FedPorts)
+			fedPortLookup := map[string]*dme.AppPort{}
+			for ii := range in.FedPorts {
+				key := edgeproto.AppPortLookupKey(&in.FedPorts[ii])
+				fedPortLookup[key] = &in.FedPorts[ii]
+			}
+			for ii, port := range inst.MappedPorts {
+				key := edgeproto.AppPortLookupKey(&port)
+				fedPort, ok := fedPortLookup[key]
+				if !ok {
+					continue
+				}
+				if inst.MappedPorts[ii].FqdnPrefix == fedPort.FqdnPrefix && inst.MappedPorts[ii].PublicPort == fedPort.PublicPort {
+					continue
+				}
+				inst.MappedPorts[ii].FqdnPrefix = fedPort.FqdnPrefix
+				inst.MappedPorts[ii].PublicPort = fedPort.PublicPort
+				applyUpdate = true
+			}
+			// clear URI, as full path to port is in FqdnPrefix
+			if inst.Uri != "" {
+				inst.Uri = ""
+				applyUpdate = true
+			}
+		}
 
 		if inst.State == in.State {
 			// already in that state
@@ -2162,57 +2188,8 @@ func (s *AppInstApi) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.Fe
 	// list of messages, which requires appending the current message to
 	// AppInstInfo in the cache. And only the FRM keeps that cached.
 	// So we still need to send it to the FRM.
-	// Also, we update AppPorts here since AppInstInfo doesn't carry port info.
-
-	// FRM needs to see the event
 	log.SpanLog(ctx, log.DebugLevelApi, "Forwarding FedAppInstEvent via notify")
 	s.fedAppInstEventSendMany.Update(ctx, in)
-
-	// Look up the AppInstKey from the unique id in the event.
-	appInstKey := edgeproto.AppInstKey{}
-	if !s.idStore.Get(ctx, in.UniqueId, &appInstKey) {
-		return &edgeproto.Result{}, fmt.Errorf("No appinstkey found for unique id %s", in.UniqueId)
-	}
-
-	// If ports are set, update ports on AppInst
-	portFqdns := map[int32]string{}
-	for _, port := range in.Ports {
-		portFqdns[port.InternalPort] = port.FqdnPrefix
-	}
-	if len(portFqdns) > 0 {
-		log.SpanLog(ctx, log.DebugLevelApi, "Updating ports on federated appinst", "key", appInstKey, "ports", portFqdns)
-		err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-			// update port FQDNs on AppInst
-			inst := edgeproto.AppInst{}
-			if !s.store.STMGet(stm, &appInstKey, &inst) {
-				return fmt.Errorf("Unable to update FedAppInst ports, %s", appInstKey.NotFoundError())
-			}
-			applyUpdate := false
-			for ii, port := range inst.MappedPorts {
-				fqdn, ok := portFqdns[port.InternalPort]
-				if !ok {
-					continue
-				}
-				if inst.MappedPorts[ii].FqdnPrefix == fqdn {
-					continue
-				}
-				inst.MappedPorts[ii].FqdnPrefix = fqdn
-				applyUpdate = true
-			}
-			// clear URI, as full path to port is in FqdnPrefix
-			if inst.Uri != "" {
-				inst.Uri = ""
-				applyUpdate = true
-			}
-			if applyUpdate {
-				s.store.STMPut(stm, &inst)
-			}
-			return nil
-		})
-		if err != nil {
-			return &edgeproto.Result{}, err
-		}
-	}
 	return &edgeproto.Result{}, nil
 }
 

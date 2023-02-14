@@ -283,7 +283,7 @@ func (s *PartnerApi) getAppInstAccessPointInfo(appInst *edgeproto.AppInst) []fed
 		}
 		for portVal := portStart; portVal <= portEnd; portVal++ {
 			ap := fedewapi.AccessPointInfoInner{}
-			ap.InterfaceId = s.GetInterfaceId(port, portVal)
+			ap.InterfaceId = GetInterfaceId(port.Proto, portVal)
 			fqdn := appInst.Uri + port.FqdnPrefix
 			ap.AccessPoints.Port = port.PublicPort
 			ap.AccessPoints.Fqdn = &fqdn
@@ -456,26 +456,9 @@ func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
 	if info.Message != nil {
 		event.Message = *info.Message
 	}
-	SetFedAppInstEventState(&event, info.AppInstanceState, info.Message)
-
-	if len(info.AccesspointInfo) > 0 {
-		for _, ap := range info.AccesspointInfo {
-			port := dmeproto.AppPort{}
-			port.InternalPort = int32(ap.AccessPoints.Port)
-			// Note that baseURL will be empty, so FqdnPrefix
-			// will be used as the whole Fqdn.
-			// Note we do not support multiple IP addresses.
-			if ap.AccessPoints.Fqdn != nil {
-				port.FqdnPrefix = *ap.AccessPoints.Fqdn
-			} else if len(ap.AccessPoints.Ipv4Addresses) > 0 {
-				port.FqdnPrefix = ap.AccessPoints.Ipv4Addresses[0]
-			} else if len(ap.AccessPoints.Ipv6Addresses) > 0 {
-				port.FqdnPrefix = ap.AccessPoints.Ipv6Addresses[0]
-			} else {
-				return fmt.Errorf("No valid fqdn or ip address for interfaceId %s", ap.InterfaceId)
-			}
-			event.Ports = append(event.Ports, port)
-		}
+	err = SetFedAppInstEvent(&event, info.AppInstanceState, info.Message, info.AccesspointInfo)
+	if err != nil {
+		return err
 	}
 
 	// make call to Controller
@@ -491,22 +474,47 @@ func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
 	return nil
 }
 
-func SetFedAppInstEventState(event *edgeproto.FedAppInstEvent, instanceState *fedewapi.InstanceState, message *string) {
-	if instanceState == nil {
-		return
-	}
-	switch *instanceState {
-	case fedewapi.INSTANCESTATE_PENDING:
-		event.State = edgeproto.TrackedState_CREATING
-	case fedewapi.INSTANCESTATE_READY:
-		event.State = edgeproto.TrackedState_READY
-	case fedewapi.INSTANCESTATE_FAILED:
-		event.State = edgeproto.TrackedState_CREATE_ERROR
-	case fedewapi.INSTANCESTATE_TERMINATING:
-		event.State = edgeproto.TrackedState_CREATE_ERROR
-		event.Message = "Terminating"
-		if message != nil {
-			event.Message += ", " + *message
+func SetFedAppInstEvent(event *edgeproto.FedAppInstEvent, instanceState *fedewapi.InstanceState, message *string, accessPointInfo []fedewapi.AccessPointInfoInner) error {
+	if instanceState != nil {
+		switch *instanceState {
+		case fedewapi.INSTANCESTATE_PENDING:
+			event.State = edgeproto.TrackedState_CREATING
+		case fedewapi.INSTANCESTATE_READY:
+			event.State = edgeproto.TrackedState_READY
+		case fedewapi.INSTANCESTATE_FAILED:
+			event.State = edgeproto.TrackedState_CREATE_ERROR
+		case fedewapi.INSTANCESTATE_TERMINATING:
+			event.State = edgeproto.TrackedState_CREATE_ERROR
+			event.Message = "Terminating"
+			if message != nil {
+				event.Message += ", " + *message
+			}
 		}
 	}
+	if len(accessPointInfo) > 0 {
+		for _, ap := range accessPointInfo {
+			port := dmeproto.AppPort{}
+			proto, internalPort, err := ParseInterfaceId(ap.InterfaceId)
+			if err != nil {
+				return err
+			}
+			port.Proto = proto
+			port.InternalPort = internalPort
+			port.PublicPort = int32(ap.AccessPoints.Port)
+			// Note that baseURL will be empty, so FqdnPrefix
+			// will be used as the whole Fqdn.
+			// Note we do not support multiple IP addresses.
+			if ap.AccessPoints.Fqdn != nil {
+				port.FqdnPrefix = *ap.AccessPoints.Fqdn
+			} else if len(ap.AccessPoints.Ipv4Addresses) > 0 {
+				port.FqdnPrefix = ap.AccessPoints.Ipv4Addresses[0]
+			} else if len(ap.AccessPoints.Ipv6Addresses) > 0 {
+				port.FqdnPrefix = ap.AccessPoints.Ipv6Addresses[0]
+			} else {
+				return fmt.Errorf("No valid fqdn or ip address for interfaceId %s", ap.InterfaceId)
+			}
+			event.Ports = append(event.Ports, port)
+		}
+	}
+	return nil
 }

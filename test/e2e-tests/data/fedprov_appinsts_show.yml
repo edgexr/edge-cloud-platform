@@ -306,7 +306,7 @@ regiondata:
         version: "1.0"
       imagepath: registry.edgecloud.net/FedAppCo/dockerapp:1.0
       imagetype: Docker
-      accessports: tcp:81
+      accessports: tcp:81,tcp:443,udp:10002
       defaultflavor:
         name: x1.tiny
       command: -text="hello world"
@@ -370,6 +370,12 @@ regiondata:
       - proto: Tcp
         internalport: 81
         publicport: 81
+      - proto: Tcp
+        internalport: 443
+        publicport: 10000
+      - proto: Udp
+        internalport: 10002
+        publicport: 10000
       flavor:
         name: x1.tiny
       cloudletflavor: x1.small
@@ -617,7 +623,7 @@ regiondata:
         version: "1.0"
       imagepath: registry.edgecloud.net/FedAppCo/dockerapp:1.0
       imagetype: Docker
-      accessports: tcp:81
+      accessports: tcp:81,tcp:443,udp:10002
       defaultflavor:
         name: x1.tiny
       command: -text="hello world"
