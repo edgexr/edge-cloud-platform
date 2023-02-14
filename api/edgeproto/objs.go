@@ -947,6 +947,11 @@ func L4ProtoStr(proto dme.LProto) (string, error) {
 	return "", fmt.Errorf("Invalid proto %d", proto)
 }
 
+func AppPortLookupKey(ap *dme.AppPort) string {
+	protoStr, _ := LProtoStr(ap.Proto)
+	return fmt.Sprintf("%s%d", protoStr, ap.InternalPort)
+}
+
 // ProtoPortToString ensures consistent formatting
 func ProtoPortToString(proto string, port int32) string {
 	return fmt.Sprintf("%s:%d", strings.ToLower(proto), port)

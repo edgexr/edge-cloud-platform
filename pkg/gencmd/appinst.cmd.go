@@ -67,6 +67,8 @@ func AppInstInfoHideTags(in *edgeproto.AppInstInfo) {
 	if _, found := tags["nocmp"]; found {
 		in.NotifyId = 0
 	}
+	for i0 := 0; i0 < len(in.FedPorts); i0++ {
+	}
 }
 
 var AppInstApiCmd edgeproto.AppInstApiClient
@@ -942,6 +944,14 @@ var AppInstInfoOptionalArgs = []string{
 	"uri",
 	"fedkey.federationname",
 	"fedkey.appinstid",
+	"fedports:#.proto",
+	"fedports:#.internalport",
+	"fedports:#.publicport",
+	"fedports:#.fqdnprefix",
+	"fedports:#.endport",
+	"fedports:#.tls",
+	"fedports:#.nginx",
+	"fedports:#.maxpktsize",
 }
 var AppInstInfoAliasArgs = []string{}
 var AppInstInfoComments = map[string]string{
@@ -968,6 +978,14 @@ var AppInstInfoComments = map[string]string{
 	"uri":                                                  "Base FQDN for the App based on the cloudlet platform",
 	"fedkey.federationname":                                "Federation name",
 	"fedkey.appinstid":                                     "Federated AppInst ID",
+	"fedports:#.proto":                                     "TCP (L4) or UDP (L4) protocol, one of Unknown, Tcp, Udp",
+	"fedports:#.internalport":                              "Container port",
+	"fedports:#.publicport":                                "Public facing port for TCP/UDP (may be mapped on shared LB reverse proxy)",
+	"fedports:#.fqdnprefix":                                "FQDN prefix to append to base FQDN in FindCloudlet response. May be empty.",
+	"fedports:#.endport":                                   "A non-zero end port indicates a port range from internal port to end port, inclusive.",
+	"fedports:#.tls":                                       "TLS termination for this port",
+	"fedports:#.nginx":                                     "Use nginx proxy for this port if you really need a transparent proxy (udp only)",
+	"fedports:#.maxpktsize":                                "Maximum datagram size (udp only)",
 }
 var AppInstInfoSpecialArgs = map[string]string{
 	"errors":                   "StringArray",
