@@ -175,12 +175,31 @@ func (s *ApiCommand) Validate() error {
 	if str := strings.TrimSpace(s.OptionalArgs); str != "" {
 		args = append(args, strings.Split(str, " ")...)
 	}
+	unalias := make(map[string]string)
+	for _, alias := range strings.Fields(s.AliasArgs) {
+		kv := strings.SplitN(alias, "=", 2)
+		if len(kv) != 2 {
+			continue
+		}
+		unalias[kv[0]] = kv[1]
+	}
+	// comments may be reference by aliased (edgeproto) or
+	// non-aliased (ormapi) values.
 	missingComments := []string{}
 	for _, arg := range args {
+		// edgeproto
 		_, found := s.Comments[arg]
-		if !found {
-			missingComments = append(missingComments, arg)
+		if found {
+			continue
 		}
+		if str, ok := unalias[arg]; ok {
+			// ormapi
+			_, found := s.Comments[str]
+			if found {
+				continue
+			}
+		}
+		missingComments = append(missingComments, arg)
 	}
 	if len(missingComments) > 0 {
 		return fmt.Errorf("Error, no comment found for command %s args %v, comments are %v, aliases are %v", s.Name, missingComments, s.Comments, s.AliasArgs)

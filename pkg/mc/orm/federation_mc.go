@@ -440,7 +440,7 @@ func UpdateFederationProvider(c echo.Context) error {
 		*/
 	}
 
-	return ormutil.SetReply(c, ormutil.Msg("Updated federation provider"))
+	return ormutil.SetReply(c, ormutil.Msg("Updated Federation Host"))
 }
 
 // Delete FederationProvider
@@ -543,7 +543,7 @@ func DeleteFederationProvider(c echo.Context) error {
 	}
 	err = DeleteOrgObj(ctx, claims, &devOrg)
 	log.SpanLog(ctx, log.DebugLevelApi, "delete provider's dev org", "name", devOrg.Name, "err", err)
-	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("FederationProvider %s deleted", provider.Name)))
+	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation Host %s deleted", provider.Name)))
 }
 
 // Fields to ignore for ShowFederation filtering. Names are in database format.
@@ -769,7 +769,7 @@ func CreateFederationConsumer(c echo.Context) (reterr error) {
 		return err
 	}
 
-	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation consumer %s created", consumer.Name)))
+	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation Guest %s created", consumer.Name)))
 }
 
 func DeleteFederationConsumer(c echo.Context) error {
@@ -830,7 +830,7 @@ func DeleteFederationConsumer(c echo.Context) error {
 	err = DeleteOrgObj(ctx, claims, &operOrg)
 	log.SpanLog(ctx, log.DebugLevelApi, "delete consumer's operator org", "name", operOrg.Name, "err", err)
 
-	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation consumer %s deleted", consumer.Name)))
+	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation Guest %s deleted", consumer.Name)))
 }
 
 func UpdateFederationConsumer(c echo.Context) error {
@@ -887,7 +887,7 @@ func UpdateFederationConsumer(c echo.Context) error {
 	if err != nil {
 		return ormutil.DbErr(err)
 	}
-	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation consumer %s updated", consumer.Name)))
+	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation Guest %s updated", consumer.Name)))
 }
 
 // Update consumer's client key for provider in case provider regenerated it.
@@ -921,7 +921,7 @@ func SetFederationConsumerAPIKey(c echo.Context) error {
 	if err != nil {
 		return ormutil.DbErr(err)
 	}
-	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation consumer %s api key set", consumer.Name)))
+	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation Guest %s api key set", consumer.Name)))
 }
 
 // Generate a notify key to allow provider to callback to consumer
@@ -1117,7 +1117,7 @@ func DeleteProviderZoneBase(c echo.Context) error {
 		return ormutil.DbErr(err)
 	}
 
-	return ormutil.SetReply(c, ormutil.Msg("Deleted federator zone successfully"))
+	return ormutil.SetReply(c, ormutil.Msg("Deleted federation zone successfully"))
 }
 
 // Fields to ignore for ShowProviderZoneBase
@@ -1174,7 +1174,7 @@ func ShareProviderZone(c echo.Context) (reterr error) {
 	if len(share.Zones) == 0 {
 		return fmt.Errorf("Must specify the zones to be shared")
 	}
-	provider, err := lookupFederationProvider(ctx, 0, share.ProviderName)
+	provider, err := lookupFederationProvider(ctx, 0, share.FedHost)
 	if err != nil {
 		return err
 	}
@@ -1292,7 +1292,7 @@ func UnshareProviderZone(c echo.Context) error {
 	if len(share.Zones) == 0 {
 		return fmt.Errorf("Must specify the zones to be unshared")
 	}
-	provider, err := lookupFederationProvider(ctx, 0, share.ProviderName)
+	provider, err := lookupFederationProvider(ctx, 0, share.FedHost)
 	if err != nil {
 		return err
 	}
@@ -1454,7 +1454,7 @@ func RegisterConsumerZone(c echo.Context) error {
 	if _, err := getControllerObj(ctx, reg.Region); err != nil {
 		return err
 	}
-	consumer, err := lookupFederationConsumer(ctx, 0, reg.ConsumerName)
+	consumer, err := lookupFederationConsumer(ctx, 0, reg.FedGuest)
 	if err != nil {
 		return err
 	}
@@ -1487,7 +1487,7 @@ func DeregisterConsumerZone(c echo.Context) error {
 	if len(reg.Zones) == 0 {
 		return fmt.Errorf("Must specify zones to be deregistered")
 	}
-	consumer, err := lookupFederationConsumer(ctx, 0, reg.ConsumerName)
+	consumer, err := lookupFederationConsumer(ctx, 0, reg.FedGuest)
 	if err != nil {
 		return err
 	}

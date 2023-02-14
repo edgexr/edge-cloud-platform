@@ -68,7 +68,7 @@ func (p *PartnerApi) lookupArtefact(c echo.Context, provider *ormapi.FederationP
 	provArt.ArtefactID = artefactId
 	res := db.Where(&provArt).First(&provArt)
 	if res.RecordNotFound() {
-		return nil, fmt.Errorf("Artefact %s not found", artefactId)
+		return nil, fedError(http.StatusNotFound, fmt.Errorf("Artefact %s not found", artefactId))
 	}
 	if res.Error != nil {
 		return nil, fedError(http.StatusInternalServerError, fmt.Errorf("Failed to look up artefact, %s", res.Error.Error()))

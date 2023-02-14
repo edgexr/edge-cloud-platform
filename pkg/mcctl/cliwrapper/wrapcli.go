@@ -225,7 +225,8 @@ func injectRequiredArgs(args []string, apiCmd *ormctl.ApiCommand) []string {
 		}
 		specifiedArgs[kv[0]] = struct{}{}
 	}
-	// build unalias map
+	// build alias and unalias map
+	aliases := make(map[string]string)
 	unalias := make(map[string]string)
 	for _, alias := range strings.Fields(apiCmd.AliasArgs) {
 		kv := strings.SplitN(alias, "=", 2)
@@ -233,14 +234,20 @@ func injectRequiredArgs(args []string, apiCmd *ormctl.ApiCommand) []string {
 			continue
 		}
 		unalias[kv[0]] = kv[1]
+		aliases[kv[1]] = kv[0]
 	}
+
 	inType := reflect.TypeOf(apiCmd.ReqData)
 	if inType.Kind() == reflect.Ptr {
 		inType = inType.Elem()
 	}
 	for _, req := range strings.Fields(apiCmd.RequiredArgs) {
 		if _, found := specifiedArgs[req]; found {
-			// already present
+			// already present, unaliased value
+			continue
+		}
+		if _, found := specifiedArgs[aliases[req]]; found {
+			// already present, aliased value
 			continue
 		}
 		// To figure out what value to specify, we need to

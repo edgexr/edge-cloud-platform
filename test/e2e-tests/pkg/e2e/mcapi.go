@@ -1334,8 +1334,8 @@ func manageFederatorZoneData(mode, uri, token, tag string, data *ormapi.AllData,
 	case "share":
 		for ii, fd := range data.ProviderZones {
 			share := ormapi.FederatedZoneShareRequest{
-				ProviderName: fd.ProviderName,
-				Zones:        []string{fd.ZoneId},
+				FedHost: fd.ProviderName,
+				Zones:   []string{fd.ZoneId},
 			}
 			_, st, err := mcClient.ShareHostZone(uri, token, &share)
 			outMcErr(output, fmt.Sprintf("ShareHostZone[%d]", ii), st, err)
@@ -1343,8 +1343,8 @@ func manageFederatorZoneData(mode, uri, token, tag string, data *ormapi.AllData,
 	case "unshare":
 		for ii, fd := range data.ProviderZones {
 			share := ormapi.FederatedZoneShareRequest{
-				ProviderName: fd.ProviderName,
-				Zones:        []string{fd.ZoneId},
+				FedHost: fd.ProviderName,
+				Zones:   []string{fd.ZoneId},
 			}
 			_, st, err := mcClient.UnshareHostZone(uri, token, &share)
 			outMcErr(output, fmt.Sprintf("UnshareHostZone[%d]", ii), st, err)
@@ -1352,8 +1352,8 @@ func manageFederatorZoneData(mode, uri, token, tag string, data *ormapi.AllData,
 	case "register":
 		for ii, fd := range data.ConsumerZones {
 			req := ormapi.FederatedZoneRegRequest{
-				ConsumerName: fd.ConsumerName,
-				Zones:        []string{fd.ZoneId},
+				FedGuest: fd.ConsumerName,
+				Zones:    []string{fd.ZoneId},
 			}
 			_, st, err := mcClient.RegisterGuestZone(uri, token, &req)
 			outMcErr(output, fmt.Sprintf("RegisterGuestZone[%d]", ii), st, err)
@@ -1361,8 +1361,8 @@ func manageFederatorZoneData(mode, uri, token, tag string, data *ormapi.AllData,
 	case "deregister":
 		for ii, fd := range data.ConsumerZones {
 			req := ormapi.FederatedZoneRegRequest{
-				ConsumerName: fd.ConsumerName,
-				Zones:        []string{fd.ZoneId},
+				FedGuest: fd.ConsumerName,
+				Zones:    []string{fd.ZoneId},
 			}
 			_, st, err := mcClient.DeregisterGuestZone(uri, token, &req)
 			outMcErr(output, fmt.Sprintf("DeregisterGuestZone[%d]", ii), st, err)

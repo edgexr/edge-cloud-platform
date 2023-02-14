@@ -17,6 +17,7 @@ func init() {
 		Short:        "Show federations for App deployment",
 		SpecialArgs:  &FederationConsumerSpecialArgs,
 		OptionalArgs: strings.Join(FederationConsumerShowArgs, " "),
+		AliasArgs:    strings.Join(FederationConsumerAliasArgs, " "),
 		Comments:     ormapi.FederationConsumerComments,
 		ReqData:      &ormapi.FederationConsumer{},
 		ReplyData:    &[]ormapi.FederationConsumer{},

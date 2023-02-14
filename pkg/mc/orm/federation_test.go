@@ -396,8 +396,8 @@ func createAndShareProviderZones(t *testing.T, ctx context.Context, mcClient *mc
 		names = append(names, cloudlet.Key.Name)
 	}
 	zoneShReq := &ormapi.FederatedZoneShareRequest{
-		ProviderName: provAttr.fedName,
-		Zones:        names,
+		FedHost: provAttr.fedName,
+		Zones:   names,
 	}
 	_, status, err := mcClient.ShareHostZone(op.uri, provAttr.tokenOper, zoneShReq)
 	require.Nil(t, err, "share zones")
@@ -694,9 +694,9 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Register consumer zone should fail if zoneid is invalid
 	// ==================================================================
 	zoneRegReq := &ormapi.FederatedZoneRegRequest{
-		ConsumerName: consAttr.fedName,
-		Region:       consAttr.region,
-		Zones:        []string{"badzone"},
+		FedGuest: consAttr.fedName,
+		Region:   consAttr.region,
+		Zones:    []string{"badzone"},
 	}
 	_, _, err = mcClient.RegisterGuestZone(op.uri, consAttr.tokenAd, zoneRegReq)
 	require.NotNil(t, err, "Zone not found")
@@ -1012,8 +1012,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Unshare provider zone should fail if it's still in use
 	// ======================================================
 	zoneShReq := &ormapi.FederatedZoneShareRequest{
-		ProviderName: provAttr.fedName,
-		Zones:        sharedZones,
+		FedHost: provAttr.fedName,
+		Zones:   sharedZones,
 	}
 	_, status, err = mcClient.UnshareHostZone(op.uri, provAttr.tokenOper, zoneShReq)
 	require.NotNil(t, err, "unshare zones")
@@ -1022,9 +1022,9 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Deregister all the partner zones
 	// ================================
 	zoneRegReq = &ormapi.FederatedZoneRegRequest{
-		ConsumerName: consAttr.fedName,
-		Region:       consAttr.region,
-		Zones:        sharedZones,
+		FedGuest: consAttr.fedName,
+		Region:   consAttr.region,
+		Zones:    sharedZones,
 	}
 	_, status, err = mcClient.DeregisterGuestZone(op.uri, consAttr.tokenOper, zoneRegReq)
 	require.Nil(t, err, "deregister consumer zones")
@@ -1233,9 +1233,9 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 	// Register all the partner zones to be used
 	// =========================================
 	zoneRegReq := &ormapi.FederatedZoneRegRequest{
-		ConsumerName: consAttr.fedName,
-		Region:       consAttr.region,
-		Zones:        sharedZones,
+		FedGuest: consAttr.fedName,
+		Region:   consAttr.region,
+		Zones:    sharedZones,
 	}
 	_, status, err = mcClient.RegisterGuestZone(op.uri, consAttr.tokenOper, zoneRegReq)
 	require.Nil(t, err, "register partner federator zone")
@@ -1317,8 +1317,8 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 	require.Equal(t, 0, len(provImagesShow))
 	// zones
 	zoneShReq := &ormapi.FederatedZoneShareRequest{
-		ProviderName: provAttr.fedName,
-		Zones:        sharedZones,
+		FedHost: provAttr.fedName,
+		Zones:   sharedZones,
 	}
 	queryParams := map[string]string{
 		"ignorepartner": "true",
@@ -1397,9 +1397,9 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 	}
 	// zones
 	zoneRegReq = &ormapi.FederatedZoneRegRequest{
-		ConsumerName: consAttr.fedName,
-		Region:       consAttr.region,
-		Zones:        sharedZones,
+		FedGuest: consAttr.fedName,
+		Region:   consAttr.region,
+		Zones:    sharedZones,
 	}
 	_, status, err = mcClient.DeregisterGuestZone(op.uri, consAttr.tokenOper, zoneRegReq, mctestclient.WithQueryParams(queryParams))
 	require.Nil(t, err, "deregister consumer zones")
