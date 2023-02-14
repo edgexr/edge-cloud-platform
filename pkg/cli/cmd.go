@@ -97,6 +97,7 @@ type Command struct {
 	UsageIsHelp          bool
 	Annotations          map[string]string
 	AddFlagsFunc         func(*pflag.FlagSet)
+	unalias              map[string]string
 }
 
 func (c *Command) GenCmd() *cobra.Command {
@@ -167,6 +168,20 @@ func usageArgs(str string) []string {
 	return args
 }
 
+func (c *Command) genUnalias() {
+	if c.unalias != nil {
+		return
+	}
+	c.unalias = make(map[string]string)
+	for _, alias := range strings.Fields(c.AliasArgs) {
+		kv := strings.SplitN(alias, "=", 2)
+		if len(kv) != 2 {
+			continue
+		}
+		c.unalias[kv[0]] = kv[1]
+	}
+}
+
 func (c *Command) requiredArgsHelp(pad int) string {
 	if strings.TrimSpace(c.RequiredArgs) == "" {
 		return ""
@@ -203,6 +218,14 @@ func (c *Command) argsHelp(pad int, args []string) string {
 		comment := ""
 		if c.Comments != nil {
 			comment = c.Comments[str]
+			if comment == "" {
+				// for ormapi, the comments use the
+				// unaliased field names.
+				c.genUnalias()
+				if un, ok := c.unalias[str]; ok {
+					comment = c.Comments[un]
+				}
+			}
 		}
 		if comment == "" && c.QueryComments != nil {
 			comment = c.QueryComments[str]
