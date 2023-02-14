@@ -535,7 +535,7 @@ var GenerateReportComments = map[string]string{
 
 var FederationProviderComments = map[string]string{
 	"id":                            `Unique ID`,
-	"name":                          `Unique name of this provider, will be used as a developer org name for consumer's images and apps`,
+	"name":                          `Unique name of this federation Host, will be used as a developer org name for Guest OP's images and apps`,
 	"operatorid":                    `Operator Organization that provides the resources`,
 	"regions":                       `Regions from which to provide resources`,
 	"federationcontextid":           `The federation context id we generated for this federation`,
@@ -559,7 +559,7 @@ var FederationProviderComments = map[string]string{
 	"partnernotifyclientkey":        `Partner notification client key (saved in secret storage)`,
 	"defaultcontainerdeployment":    `Default container deployment type (either docker or kubernetes)`,
 	"status":                        `Status`,
-	"providerclientid":              `Provider client ID for inbound connections`,
+	"providerclientid":              `Host client ID for inbound connections`,
 	"createdat":                     `Time created`,
 	"updatedat":                     `Time updated`,
 }
@@ -573,8 +573,8 @@ var FederationProviderInfoComments = map[string]string{
 
 var FederationConsumerComments = map[string]string{
 	"id":                            `Unique ID`,
-	"name":                          `Unique name of this consumer, will be used as an operator org for provider's zones`,
-	"operatorid":                    `Operator Organization that establishes the federation with a provider`,
+	"name":                          `Unique name of this Federation Guest, will be used as an operator org for host's zones`,
+	"operatorid":                    `Operator Organization that establishes the federation with a Host OP`,
 	"public":                        `Public means any developer will be able to use the cloudlets, otherwise (TODO) allowed developers will need to be added explicitly`,
 	"partneraddr":                   `Partner Address`,
 	"partnertokenurl":               `Partner token URL`,
@@ -596,9 +596,9 @@ var FederationConsumerComments = map[string]string{
 	"autoregisterzones":             `Automatically register any zone shared with me`,
 	"autoregisterregion":            `Region used for automatically registered zones`,
 	"status":                        `Status`,
-	"providerclientid":              `Auth ClientId for connecting to provider`,
-	"providerclientkey":             `Auth ClientKey for connection to provider (stored in secret storage)`,
-	"notifyclientid":                `Auth ClientId for notify callbacks to this consumer`,
+	"providerclientid":              `Auth ClientId for connecting to the Host OP`,
+	"providerclientkey":             `Auth ClientKey for connection to the Host OP (stored in secret storage)`,
+	"notifyclientid":                `Auth ClientId for notify callbacks to this Guest OP`,
 	"createdat":                     `Time created`,
 	"updatedat":                     `Time updated`,
 }
@@ -630,16 +630,16 @@ var ProviderZoneBaseComments = map[string]string{
 
 var ProviderZoneComments = map[string]string{
 	"zoneid":               `Globally unique identifier of the federator zone`,
-	"providername":         `Name of the Federation Provider`,
-	"operatorid":           `Provider operator organization`,
+	"providername":         `Name of the Federation Host OP`,
+	"operatorid":           `Host operator organization`,
 	"status":               `Zone status`,
 	"partnernotifyzoneuri": `Partner notify zone URI`,
 }
 
 var ConsumerZoneComments = map[string]string{
 	"zoneid":           `Zone unique name`,
-	"consumername":     `Name of the Federation consumer`,
-	"operatorid":       `Consumer operator organization`,
+	"consumername":     `Name of the Federation Guest`,
+	"operatorid":       `Guest operator organization`,
 	"region":           `Region in which zone is instantiated`,
 	"geolocation":      `GPS co-ordinates associated with the zone (in decimal format)`,
 	"geographydetails": `Geography details`,
@@ -647,20 +647,20 @@ var ConsumerZoneComments = map[string]string{
 }
 
 var FederatedZoneRegRequestComments = map[string]string{
-	"consumername": `Federation consumer name`,
-	"region":       `Region to create local cloudlet versions of provider zones`,
-	"zones":        `Partner federator zones to be registered/deregistered`,
+	"fedguest": `Federation Guest name`,
+	"region":   `Region to create local cloudlet versions of Host zones`,
+	"zones":    `Partner federator zones to be registered/deregistered`,
 }
 
 var FederatedZoneShareRequestComments = map[string]string{
-	"providername": `Federation provider name`,
-	"zones":        `Self federator zones to be shared/unshared`,
+	"fedhost": `Federation Host name`,
+	"zones":   `Self federator zones to be shared/unshared`,
 }
 
 var ConsumerImageComments = map[string]string{
 	"id":             `ID`,
 	"organization":   `Developer organization that owns the image`,
-	"federationname": `Federation the image is copied to (ConsumerFederation)`,
+	"federationname": `Federation the image is copied to (FederationGuest)`,
 	"name":           `Image name`,
 	"version":        `Image version`,
 	"sourcepath":     `Full path to source image as used in App, i.e. https://vm-registry.domain/org/image.img`,
@@ -670,7 +670,7 @@ var ConsumerImageComments = map[string]string{
 }
 
 var ProviderImageComments = map[string]string{
-	"federationname": `Federation Provider name`,
+	"federationname": `Host federation name`,
 	"fileid":         `File ID sent by partner`,
 	"path":           `Image path`,
 	"name":           `Image name`,
@@ -684,7 +684,7 @@ var ProviderImageComments = map[string]string{
 
 var ConsumerAppComments = map[string]string{
 	"id":             `Unique ID, acts as both the App and Artefact IDs`,
-	"federationname": `Target federation consumer name`,
+	"federationname": `Target Guest Federation name`,
 	"region":         `Region name`,
 	"appname":        `App name in region`,
 	"apporg":         `App org in region`,
@@ -694,7 +694,7 @@ var ConsumerAppComments = map[string]string{
 }
 
 var ProviderArtefactComments = map[string]string{
-	"federationname":  `Federation Provider name`,
+	"federationname":  `Host Federation name`,
 	"artefactid":      `Artefact ID send by partner`,
 	"artefactname":    `Artefact name`,
 	"artefactversion": `Artefact version`,
@@ -707,7 +707,7 @@ var ProviderArtefactComments = map[string]string{
 }
 
 var ProviderAppComments = map[string]string{
-	"federationname":        `Federation Provider name`,
+	"federationname":        `Host Federation name`,
 	"appid":                 `App ID send by partner`,
 	"appname":               `App name of federation app (not region app)`,
 	"appvers":               `App version  of federation app (not region app)`,
@@ -718,7 +718,7 @@ var ProviderAppComments = map[string]string{
 }
 
 var ProviderAppInstComments = map[string]string{
-	"federationname":      `Federation Provider name`,
+	"federationname":      `Host Federation name`,
 	"appinstid":           `AppInst unique ID`,
 	"appid":               `AppID for ProviderApp`,
 	"region":              `Region for AppInst`,

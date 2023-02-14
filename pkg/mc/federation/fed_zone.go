@@ -38,7 +38,7 @@ func (p *PartnerApi) LookupProviderZone(ctx context.Context, providerName, zoneI
 	db := p.loggedDB(ctx)
 	res := db.Where(&lookup).First(&lookup)
 	if res.RecordNotFound() {
-		return nil, fmt.Errorf("Zone not found")
+		return nil, fedError(http.StatusNotFound, fmt.Errorf("Zone %s not found", zoneId))
 	}
 	if res.Error != nil {
 		return nil, ormutil.DbErr(res.Error)

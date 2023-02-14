@@ -34,6 +34,7 @@ func init() {
 			SpecialArgs:  &FederationProviderSpecialArgs,
 			RequiredArgs: strings.Join(FederationProviderRequiredArgs, " "),
 			OptionalArgs: strings.Join(FederationProviderOptionalArgs, " "),
+			AliasArgs:    strings.Join(FederationProviderAliasArgs, " "),
 			Comments:     ormapi.FederationProviderComments,
 			ReqData:      &ormapi.FederationProvider{},
 			ReplyData:    &ormapi.FederationProviderInfo{},
@@ -46,6 +47,7 @@ func init() {
 			SpecialArgs:  &FederationProviderSpecialArgs,
 			RequiredArgs: "name operatorid",
 			OptionalArgs: strings.Join(FederationProviderOptionalArgs, " "),
+			AliasArgs:    strings.Join(FederationProviderAliasArgs, " "),
 			Comments:     ormapi.FederationProviderComments,
 			ReqData:      &ormapi.FederationProvider{},
 			ReplyData:    &ormapi.Result{},
@@ -67,6 +69,7 @@ func init() {
 			Short:        "Show Federation Host",
 			SpecialArgs:  &FederationProviderSpecialArgs,
 			OptionalArgs: strings.Join(FederationProviderShowArgs, " "),
+			AliasArgs:    strings.Join(FederationProviderAliasArgs, " "),
 			Comments:     ormapi.FederationProviderComments,
 			ReqData:      &ormapi.FederationProvider{},
 			ReplyData:    &[]ormapi.FederationProvider{},
@@ -157,6 +160,7 @@ func init() {
 			Use:          "showsharedzones",
 			Short:        "Show Shared Host Zones",
 			OptionalArgs: strings.Join(ProviderZoneShowArgs, " "),
+			AliasArgs:    strings.Join(ProviderZoneAliasArgs, " "),
 			Comments:     ormapi.ProviderZoneComments,
 			ReqData:      &ormapi.ProviderZone{},
 			ReplyData:    &[]ormapi.ProviderZone{},
@@ -251,6 +255,7 @@ func init() {
 			SpecialArgs:  &FederationConsumerSpecialArgs,
 			RequiredArgs: strings.Join(FederationConsumerRequiredArgs, " "),
 			OptionalArgs: strings.Join(FederationConsumerOptionalArgs, " "),
+			AliasArgs:    strings.Join(FederationConsumerAliasArgs, " "),
 			Comments:     ormapi.FederationConsumerComments,
 			ReqData:      &ormapi.FederationConsumer{},
 			ReplyData:    &ormapi.Result{},
@@ -263,6 +268,7 @@ func init() {
 			SpecialArgs:  &FederationConsumerSpecialArgs,
 			RequiredArgs: "name operatorid",
 			OptionalArgs: "public",
+			AliasArgs:    strings.Join(FederationConsumerAliasArgs, " "),
 			Comments:     ormapi.FederationConsumerComments,
 			ReqData:      &ormapi.FederationConsumer{},
 			ReplyData:    &ormapi.Result{},
@@ -287,6 +293,7 @@ func init() {
 			Short:        "Show Federation Guest",
 			SpecialArgs:  &FederationConsumerSpecialArgs,
 			OptionalArgs: strings.Join(FederationConsumerShowArgs, " "),
+			AliasArgs:    strings.Join(FederationConsumerAliasArgs, " "),
 			Comments:     ormapi.FederationConsumerComments,
 			ReqData:      &ormapi.FederationConsumer{},
 			ReplyData:    &[]ormapi.FederationConsumer{},
@@ -297,8 +304,9 @@ func init() {
 			Name:         "SetFederationGuestAPIKey",
 			Use:          "setpartnerapikey",
 			Short:        "Set Partner Federation API Key",
-			RequiredArgs: "name operatorid providerclientid providerclientkey",
+			RequiredArgs: "name operatorid hostclientid hostclientkey",
 			SpecialArgs:  &FederationConsumerSpecialArgs,
+			AliasArgs:    strings.Join(FederationConsumerAliasArgs, " "),
 			Comments:     ormapi.FederationConsumerComments,
 			ReqData:      &ormapi.FederationConsumer{},
 			ReplyData:    &ormapi.Result{},
@@ -310,6 +318,7 @@ func init() {
 			Short:        "Set Partner Federation API Key",
 			RequiredArgs: "name operatorid",
 			SpecialArgs:  &FederationConsumerSpecialArgs,
+			AliasArgs:    strings.Join(FederationConsumerAliasArgs, " "),
 			Comments:     ormapi.FederationConsumerComments,
 			ReqData:      &ormapi.FederationConsumer{},
 			ReplyData:    &ormapi.Result{},
@@ -344,6 +353,7 @@ func init() {
 			Use:          "showzones",
 			Short:        "Show Federated Partner Zones",
 			OptionalArgs: strings.Join(ConsumerZoneShowArgs, " "),
+			AliasArgs:    strings.Join(ConsumerZoneAliasArgs, " "),
 			Comments:     ormapi.ConsumerZoneComments,
 			ReqData:      &ormapi.ConsumerZone{},
 			ReplyData:    &[]ormapi.ConsumerZone{},
@@ -394,6 +404,10 @@ var FederationProviderSpecialArgs = map[string]string{
 	"partnerinfo.fixednetworkids": "StringArray",
 }
 
+var FederationProviderAliasArgs = []string{
+	"hostclientid=providerclientid",
+}
+
 var FederationProviderShowArgs = []string{
 	"id",
 	"name",
@@ -413,7 +427,7 @@ var FederationProviderShowArgs = []string{
 	"partnerinfo.fixednetworkids",
 	"partnerinfo.discoveryendpoint",
 	"status",
-	"providerclientid",
+	"hostclientid",
 }
 
 var ProviderZoneBaseRequiredArgs = []string{
@@ -434,19 +448,23 @@ var ProviderZoneBaseSpecialArgs = map[string]string{
 }
 
 var ShareZoneRequiredArgs = []string{
-	"providername",
+	"fedhost",
 	"zones",
 }
 
 var ProviderZoneShowArgs = []string{
 	"zoneid",
 	"operatorid",
-	"providername",
+	"fedhost",
 	"status",
 }
 
 var ShareZoneSpecialArgs = map[string]string{
 	"zones": "StringArray",
+}
+
+var ProviderZoneAliasArgs = []string{
+	"fedhost=providername",
 }
 
 var ProviderArtefactShowArgs = []string{
@@ -486,8 +504,8 @@ var FederationConsumerRequiredArgs = []string{
 	"name",
 	"operatorid",
 	"partneraddr",
-	"providerclientid",
-	"providerclientkey",
+	"hostclientid",
+	"hostclientkey",
 }
 
 var FederationConsumerOptionalArgs = []string{
@@ -527,18 +545,23 @@ var FederationConsumerShowArgs = []string{
 	"partnerinfo.fixednetworkids",
 	"partnerinfo.discoveryendpoint",
 	"status",
-	"providerclientid",
+	"hostclientid",
 	"notifyclientid",
 }
 
+var FederationConsumerAliasArgs = []string{
+	"hostclientid=providerclientid",
+	"hostclientkey=providerclientkey",
+}
+
 var RegisterZoneRequiredArgs = []string{
-	"consumername",
+	"fedguest",
 	"region",
 	"zones",
 }
 
 var DeregisterZoneRequiredArgs = []string{
-	"consumername",
+	"fedguest",
 	"zones",
 }
 
@@ -548,11 +571,15 @@ var RegisterZoneSpecialArgs = map[string]string{
 
 var ConsumerZoneShowArgs = []string{
 	"zoneid",
-	"consumername",
+	"fedguest",
 	"operatorid",
 	"geolocation",
 	"geographydetails",
 	"status",
+}
+
+var ConsumerZoneAliasArgs = []string{
+	"fedguest=consumername",
 }
 
 var ProviderImageShowArgs = []string{

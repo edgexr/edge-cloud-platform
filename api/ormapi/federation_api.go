@@ -27,7 +27,7 @@ import (
 type FederationProvider struct {
 	// Unique ID
 	ID uint `gorm:"primary_key"`
-	// Unique name of this provider, will be used as a developer org name for consumer's images and apps
+	// Unique name of this federation Host, will be used as a developer org name for Guest OP's images and apps
 	Name string `gorm:"type:citext REFERENCES organizations(name);unique;not null"`
 	// Operator Organization that provides the resources
 	OperatorId string `gorm:"type:citext REFERENCES organizations(name);not null"`
@@ -52,7 +52,7 @@ type FederationProvider struct {
 	// Status
 	// read only: true
 	Status string
-	// Provider client ID for inbound connections
+	// Host client ID for inbound connections
 	ProviderClientId string
 	// Time created
 	// read only: true
@@ -62,7 +62,7 @@ type FederationProvider struct {
 	UpdatedAt time.Time `json:",omitempty"`
 }
 
-// Returned from creating a FederationProvider, give this to partner Operator.
+// Returned from creating a FederationHost, give this to partner Operator.
 type FederationProviderInfo struct {
 	// Client ID for Oauth
 	ClientId string
@@ -74,15 +74,15 @@ type FederationProviderInfo struct {
 	TokenUrl string
 }
 
-// Federation consumer is a Federation where I consume resources
+// Federation Guest is a Federation where I use resources
 // given by the partner OP, and I can deploy my applications on
 // their infrastructure. This relationship is initiated by me.
 type FederationConsumer struct {
 	// Unique ID
 	ID uint `gorm:"primary_key"`
-	// Unique name of this consumer, will be used as an operator org for provider's zones
+	// Unique name of this Federation Guest, will be used as an operator org for host's zones
 	Name string `gorm:"type:citext REFERENCES organizations(name);unique;not null"`
-	// Operator Organization that establishes the federation with a provider
+	// Operator Organization that establishes the federation with a Host OP
 	OperatorId string `gorm:"type:citext REFERENCES organizations(name);not null"`
 	// Public means any developer will be able to use the cloudlets, otherwise (TODO) allowed developers will need to be added explicitly
 	Public bool
@@ -103,11 +103,11 @@ type FederationConsumer struct {
 	// Status
 	// read only: true
 	Status string
-	// Auth ClientId for connecting to provider
+	// Auth ClientId for connecting to the Host OP
 	ProviderClientId string
-	// Auth ClientKey for connection to provider (stored in secret storage)
+	// Auth ClientKey for connection to the Host OP (stored in secret storage)
 	ProviderClientKey string
-	// Auth ClientId for notify callbacks to this consumer
+	// Auth ClientId for notify callbacks to this Guest OP
 	NotifyClientId string
 	// Time created
 	// read only: true
@@ -117,7 +117,7 @@ type FederationConsumer struct {
 	UpdatedAt time.Time `json:",omitempty"`
 }
 
-// Federation Consumer auth credentials for callbacks. Give these to the provider.
+// Federation Guest auth credentials for callbacks. Give these to the Host OP.
 type FederationConsumerAuth struct {
 	// Client ID for Oauth
 	ClientId string
@@ -164,13 +164,13 @@ type ProviderZoneBase struct {
 	Cloudlets pq.StringArray `gorm:"type:text[]"`
 }
 
-// Local Zone shared via FederationProvider
+// Local Zone shared via FederationHost
 type ProviderZone struct {
 	// Globally unique identifier of the federator zone
 	ZoneId string `gorm:"primary_key"`
-	// Name of the Federation Provider
+	// Name of the Federation Host OP
 	ProviderName string `gorm:"primary_key;type:citext"`
-	// Provider operator organization
+	// Host operator organization
 	OperatorId string `gorm:"type:citext"`
 	// Zone status
 	// read only: true
@@ -179,13 +179,13 @@ type ProviderZone struct {
 	PartnerNotifyZoneURI string
 }
 
-// Remote zone shared with us via FederationConsumer
+// Remote zone shared with us via FederationGuest
 type ConsumerZone struct {
 	// Zone unique name
 	ZoneId string `gorm:"primary_key"`
-	// Name of the Federation consumer
+	// Name of the Federation Guest
 	ConsumerName string `gorm:"primary_key;type:citext"`
-	// Consumer operator organization
+	// Guest operator organization
 	OperatorId string `gorm:"type:citext REFERENCES organizations(name)"`
 	// Region in which zone is instantiated
 	Region string
@@ -200,9 +200,9 @@ type ConsumerZone struct {
 
 // Register/Deregister partner zones shared as part of federation
 type FederatedZoneRegRequest struct {
-	// Federation consumer name
-	ConsumerName string
-	// Region to create local cloudlet versions of provider zones
+	// Federation Guest name
+	FedGuest string
+	// Region to create local cloudlet versions of Host zones
 	Region string
 	// Partner federator zones to be registered/deregistered
 	Zones []string
@@ -210,19 +210,19 @@ type FederatedZoneRegRequest struct {
 
 // Share/Unshare self zones shared as part of federation
 type FederatedZoneShareRequest struct {
-	// Federation provider name
-	ProviderName string
+	// Federation Host name
+	FedHost string
 	// Self federator zones to be shared/unshared
 	Zones []string
 }
 
-// Consumer images are local images copied to a provider
+// Guest images are local images copied to a Host operator
 type ConsumerImage struct {
 	// ID
 	ID string `gorm:"primary_key"`
 	// Developer organization that owns the image
 	Organization string `gorm:"unique_index:consumerimageindex;type:citext;not null"`
-	// Federation the image is copied to (ConsumerFederation)
+	// Federation the image is copied to (FederationGuest)
 	FederationName string `gorm:"unique_index:consumerimageindex;type:citext;not null"`
 	// Image name
 	Name string `gorm:"unique_index:consumerimageindex;type:text;not null"`
@@ -239,9 +239,9 @@ type ConsumerImage struct {
 	Status string
 }
 
-// Provider images are images copied from the consumer
+// Host images are images copied from the Guest
 type ProviderImage struct {
-	// Federation Provider name
+	// Host federation name
 	FederationName string `gorm:"primary_key;type:citext;not null"`
 	// File ID sent by partner
 	FileID string `gorm:"primary_key;type:citext;not null"`
@@ -263,12 +263,12 @@ type ProviderImage struct {
 	Status string
 }
 
-// ConsumerApp tracks an App that has been onboarded to the partner.
+// GuestApp tracks an App that has been onboarded to the partner.
 // The same App in different regions must be onboarded per region.
 type ConsumerApp struct {
 	// Unique ID, acts as both the App and Artefact IDs
 	ID string `gorm:"primary_key"`
-	// Target federation consumer name
+	// Target Guest Federation name
 	FederationName string `gorm:"primary_key;type:citext;not null"`
 	// Region name
 	// required: true
@@ -286,9 +286,9 @@ type ConsumerApp struct {
 	Status string
 }
 
-// Tracks an App created in the Provider's regions for an Artefact
+// Tracks an App created in the Host OP's regions for an Artefact
 type ProviderArtefact struct {
-	// Federation Provider name
+	// Host Federation name
 	FederationName string `gorm:"primary_key;type:citext;not null"`
 	// Artefact ID send by partner
 	ArtefactID string `gorm:"primary_key;type:text;not null"`
@@ -311,7 +311,7 @@ type ProviderArtefact struct {
 }
 
 type ProviderApp struct {
-	// Federation Provider name
+	// Host Federation name
 	FederationName string `gorm:"primary_key;type:citext;not null"`
 	// App ID send by partner
 	AppID string `gorm:"primary_key;type:text;not null"`
@@ -329,9 +329,9 @@ type ProviderApp struct {
 	AppStatusCallbackLink string
 }
 
-// Track AppInst created on behalf of consumer
+// Track AppInst created on behalf of Federation Guest
 type ProviderAppInst struct {
-	// Federation Provider name
+	// Host Federation name
 	FederationName string `gorm:"primary_key;type:citext;not null"`
 	// AppInst unique ID
 	AppInstID string `gorm:"primary_key;type:text;not null"`
@@ -382,14 +382,14 @@ func (f *ConsumerZone) GetSortString() string {
 func (f *FederationProvider) GetTags() map[string]string {
 	tags := make(map[string]string)
 	tags["org"] = f.OperatorId
-	tags["federationprovidername"] = f.Name
+	tags["hostfederationname"] = f.Name
 	return tags
 }
 
 func (f *FederationConsumer) GetTags() map[string]string {
 	tags := make(map[string]string)
 	tags["org"] = f.OperatorId
-	tags["federationconsumername"] = f.Name
+	tags["guestfederationname"] = f.Name
 	return tags
 }
 

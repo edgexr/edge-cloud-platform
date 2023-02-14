@@ -42,7 +42,7 @@ import (
 )
 
 const (
-	AppInstDeploymentTimeout = 20 * time.Minute
+	AppInstDeploymentTimeout = 10 * time.Minute
 )
 
 // NOTE: This object is shared by all FRM-based cloudlets and hence it can't
@@ -229,6 +229,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	if os.Getenv("E2ETEST_TLS") != "" {
 		timeout = 3 * time.Second
 	}
+	timeoutChan := time.After(timeout)
 
 	// Set up polling in case callbacks are lost
 	pollApiPath := fmt.Sprintf("/%s/%s/application/lcm/app/%s/instance/%s/zone/%s", federationmgmt.ApiRoot, fedConfig.FederationContextId, app.GlobalId, req.AppInstanceId, cloudletKey.Name)
@@ -264,7 +265,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 			} else {
 				updateCallback(edgeproto.UpdateTask, event.Message)
 			}
-		case <-time.After(timeout):
+		case <-timeoutChan:
 			return fmt.Errorf("Timed out waiting for callback")
 		}
 	}

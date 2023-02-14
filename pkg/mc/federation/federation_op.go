@@ -135,7 +135,7 @@ func (p *PartnerApi) lookupProvider(c echo.Context, federationContextId Federati
 	}
 	res := db.Where(&provider).First(&provider)
 	if res.RecordNotFound() {
-		return nil, fmt.Errorf("federation provider %q not found", claims.ApiKeyUsername)
+		return nil, fedError(http.StatusNotFound, fmt.Errorf("federation %q not found", claims.ApiKeyUsername))
 	}
 	if res.Error != nil {
 		return nil, ormutil.DbErr(res.Error)
