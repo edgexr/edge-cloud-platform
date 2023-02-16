@@ -313,13 +313,10 @@ func (p *PartnerApi) getZoneResources(ctx context.Context, base *ormapi.Provider
 
 	flavorsSupported := []fedewapi.Flavour{}
 
-	// TODO: decide if we should send platform flavors or cloudlet
-	// specific flavors. Federation only uses flavors for AppInsts,
-	// so we could use cloudlet-specific flavors. However, our
-	// AppInst api doesn't support it yet (our AppInst expects a
-	// common platform flavor).
-	/* Cloudlet-specific flavors. Note that some platforms like VCD
-	   don't actually have flavors.
+	// Send Cloudlet-specific flavors if they exist.
+	// If there are no flavors, then use the platform flavors.
+	// On the Host side, if there are no cloudlet-specific flavors
+	// we anyway create a dummy FlavorInfo based on the platform flavor.
 	log.SpanLog(ctx, log.DebugLevelApi, "getZoneResources", "first cloudletinfo", firstCloudletInfo)
 	if firstCloudletInfo != nil {
 		for _, flavor := range firstCloudletInfo.Flavors {
@@ -336,36 +333,38 @@ func (p *PartnerApi) getZoneResources(ctx context.Context, base *ormapi.Provider
 			}
 			flavorsSupported = append(flavorsSupported, outFlavor)
 		}
-	}*/
-	platformFlavors, ok := flavorsByRegionCache[base.Region]
-	if !ok {
-		// grab platform flavors
-		platformFlavors = []*edgeproto.Flavor{}
-		err := ctrlclient.ShowFlavorStream(ctx, &rc, &edgeproto.Flavor{}, p.connCache, func(flavor *edgeproto.Flavor) error {
-			platformFlavors = append(platformFlavors, flavor)
-			return nil
-		})
-		if err != nil {
-			return nil, fmt.Errorf("Failed to get platform flavors, %s", err)
-		}
-		flavorsByRegionCache[base.Region] = platformFlavors
-	}
-	for _, flavor := range platformFlavors {
-		outFlavor := fedewapi.Flavour{
-			CpuArchType:      fedewapi.CPUARCHTYPE_X86_64,
-			FlavourId:        flavor.Key.Name,
-			Gpu:              nil, // TODO,
-			MemorySize:       int32(flavor.Ram),
-			NumCPU:           int32(flavor.Vcpus),
-			StorageSize:      int32(flavor.Disk),
-			SupportedOSTypes: []fedewapi.OSType{
-				// TODO, not sure it's needed, maybe arch
-			},
-		}
-		flavorsSupported = append(flavorsSupported, outFlavor)
 	}
 	if len(flavorsSupported) == 0 {
-		return nil, fmt.Errorf("No flavors available for region %s, please contact support", base.Region)
+		platformFlavors, ok := flavorsByRegionCache[base.Region]
+		if !ok {
+			// grab platform flavors
+			platformFlavors = []*edgeproto.Flavor{}
+			err := ctrlclient.ShowFlavorStream(ctx, &rc, &edgeproto.Flavor{}, p.connCache, func(flavor *edgeproto.Flavor) error {
+				platformFlavors = append(platformFlavors, flavor)
+				return nil
+			})
+			if err != nil {
+				return nil, fmt.Errorf("Failed to get platform flavors, %s", err)
+			}
+			flavorsByRegionCache[base.Region] = platformFlavors
+		}
+		for _, flavor := range platformFlavors {
+			outFlavor := fedewapi.Flavour{
+				CpuArchType:      fedewapi.CPUARCHTYPE_X86_64,
+				FlavourId:        flavor.Key.Name,
+				Gpu:              nil, // TODO,
+				MemorySize:       int32(flavor.Ram),
+				NumCPU:           int32(flavor.Vcpus),
+				StorageSize:      int32(flavor.Disk),
+				SupportedOSTypes: []fedewapi.OSType{
+					// TODO, not sure it's needed, maybe arch
+				},
+			}
+			flavorsSupported = append(flavorsSupported, outFlavor)
+		}
+	}
+	if len(flavorsSupported) == 0 {
+		return nil, fmt.Errorf("No flavors available for region %s or zone %s, please contact support", base.Region, base.ZoneId)
 	}
 	sort.Slice(flavorsSupported[:], func(i, j int) bool {
 		return flavorsSupported[i].FlavourId < flavorsSupported[j].FlavourId
@@ -468,6 +467,16 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 		if err != nil {
 			return err
 		}
+		flavors := []*edgeproto.FlavorInfo{}
+		for _, flavor := range zoneInfo.FlavoursSupported {
+			flavorInfo := edgeproto.FlavorInfo{
+				Name:  flavor.FlavourId,
+				Vcpus: uint64(flavor.NumCPU),
+				Ram:   uint64(flavor.MemorySize),
+				Disk:  uint64(flavor.StorageSize),
+			}
+			flavors = append(flavors, &flavorInfo)
+		}
 		fedCloudlet := edgeproto.Cloudlet{
 			Key: edgeproto.CloudletKey{
 				Name:                  zone.ZoneId,
@@ -487,6 +496,7 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 				FederationDbId:        uint64(consumer.ID),
 				FederationName:        consumer.Name,
 			},
+			InfraFlavors: flavors,
 		}
 		var quotaLimit *fedewapi.ComputeResourceInfo
 		if zoneInfo.ComputeResourceQuotaLimits != nil {
@@ -535,15 +545,7 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 			Key:                  fedCloudlet.Key,
 			State:                dme_proto.CloudletState_CLOUDLET_STATE_READY,
 			CompatibilityVersion: cloudcommon.GetCRMCompatibilityVersion(),
-		}
-		for _, flavor := range zoneInfo.FlavoursSupported {
-			flavorInfo := edgeproto.FlavorInfo{
-				Name:  flavor.FlavourId,
-				Vcpus: uint64(flavor.NumCPU),
-				Ram:   uint64(flavor.MemorySize),
-				Disk:  uint64(flavor.StorageSize),
-			}
-			fedCloudletInfo.Flavors = append(fedCloudletInfo.Flavors, &flavorInfo)
+			Flavors:              flavors,
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "add partner zone cloudlet info", "key", fedCloudlet.Key)
 		_, err = ctrlclient.InjectCloudletInfoObj(ctx, rc, &fedCloudletInfo, p.connCache)

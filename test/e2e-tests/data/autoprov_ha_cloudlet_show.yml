@@ -51,3 +51,12 @@ regiondata:
       dnslabel: dmuus-cloud-1-dmuus
       rootlbfqdn: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
       licenseconfigstoragepath: local/dmuus/gpu-driver-dmuus-1/cloudlet/licenseconfig/dmuus-cloud-1/license.conf
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40

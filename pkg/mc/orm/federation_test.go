@@ -990,8 +990,8 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Equal(t, http.StatusOK, status)
 	}
 
-	// Delete of either Provider or Consumer should fail if there
-	// are registered zones.
+	// Delete of either Provider should fail if there
+	// are registered zones. Consumer will automatically deregister zones.
 	// =================================================================
 	provDelReq := &ormapi.FederationProvider{
 		OperatorId: provAttr.operatorId,
@@ -1000,14 +1000,6 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	_, _, err = mcClient.DeleteFederationHost(op.uri, provAttr.tokenOper, provDelReq)
 	require.NotNil(t, err, "delete federation provider")
 	require.Contains(t, err.Error(), "Cannot delete when the following zones are still registered")
-
-	consDelReq := &ormapi.FederationConsumer{
-		OperatorId: consAttr.operatorId,
-		Name:       consAttr.fedName,
-	}
-	_, _, err = mcClient.DeleteFederationGuest(op.uri, consAttr.tokenOper, consDelReq)
-	require.NotNil(t, err, "delete federation consumer")
-	require.Contains(t, err.Error(), "Please deregister zones before deregistering federation")
 
 	// Unshare provider zone should fail if it's still in use
 	// ======================================================
@@ -1095,6 +1087,10 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// TODO: test delete of provider first, should have same outcome
 	// as long as all zones are unregistered.
 	// ========================================================
+	consDelReq := &ormapi.FederationConsumer{
+		OperatorId: consAttr.operatorId,
+		Name:       consAttr.fedName,
+	}
 	_, status, err = mcClient.DeleteFederationGuest(op.uri, consAttr.tokenOper, consDelReq)
 	require.Nil(t, err, "delete federation guest")
 	require.Equal(t, http.StatusOK, status)

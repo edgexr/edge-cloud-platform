@@ -170,6 +170,17 @@ func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo
 			newCloudlet.ContainerVersion = in.ContainerVersion
 			updateObj = true
 		}
+		if newCloudlet.Key.FederatedOrganization == "" && len(newCloudlet.InfraFlavors) != len(in.Flavors) {
+			// Copy CloudletInfo.Flavors to Cloudlet.InfraFlavors so
+			// that developers can see and use cloudlet-specific
+			// flavors. Don't do this for federated cloudlets
+			// because flavors are injected manually during
+			// zone registration, and we don't want the FRM to
+			// overwrite them.
+			// TODO: compare each flavor to see if update is needed
+			newCloudlet.InfraFlavors = in.Flavors
+			updateObj = true
+		}
 		if updateObj {
 			s.all.cloudletApi.store.STMPut(stm, &newCloudlet)
 		}

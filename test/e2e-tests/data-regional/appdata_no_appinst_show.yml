@@ -97,6 +97,15 @@ cloudlets:
   defaultresourcealertthreshold: 80
   dnslabel: att-cloud-1-att
   rootlbfqdn: shared.att-cloud-1-att.local.edgecloude2e.net
+  infraflavors:
+  - name: x1.tiny
+    vcpus: 1
+    ram: 1024
+    disk: 20
+  - name: x1.small
+    vcpus: 2
+    ram: 4096
+    disk: 40
 - key:
     organization: azure
     name: azure-cloud-4
@@ -115,6 +124,15 @@ cloudlets:
   defaultresourcealertthreshold: 80
   dnslabel: azure-cloud-4-azure
   rootlbfqdn: shared.azure-cloud-4-azure.local.edgecloude2e.net
+  infraflavors:
+  - name: x1.tiny
+    vcpus: 1
+    ram: 1024
+    disk: 20
+  - name: x1.small
+    vcpus: 2
+    ram: 4096
+    disk: 40
 - key:
     organization: dmuus
     name: dmuus-cloud-1
@@ -133,6 +151,15 @@ cloudlets:
   defaultresourcealertthreshold: 80
   dnslabel: dmuus-cloud-1-dmuus
   rootlbfqdn: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+  infraflavors:
+  - name: x1.tiny
+    vcpus: 1
+    ram: 1024
+    disk: 20
+  - name: x1.small
+    vcpus: 2
+    ram: 4096
+    disk: 40
 - key:
     organization: dmuus
     name: dmuus-cloud-2
@@ -151,6 +178,15 @@ cloudlets:
   defaultresourcealertthreshold: 80
   dnslabel: dmuus-cloud-2-dmuus
   rootlbfqdn: shared.dmuus-cloud-2-dmuus.local.edgecloude2e.net
+  infraflavors:
+  - name: x1.tiny
+    vcpus: 1
+    ram: 1024
+    disk: 20
+  - name: x1.small
+    vcpus: 2
+    ram: 4096
+    disk: 40
 - key:
     organization: gcp
     name: gcp-cloud-5
@@ -169,6 +205,15 @@ cloudlets:
   defaultresourcealertthreshold: 80
   dnslabel: gcp-cloud-5-gcp
   rootlbfqdn: shared.gcp-cloud-5-gcp.local.edgecloude2e.net
+  infraflavors:
+  - name: x1.tiny
+    vcpus: 1
+    ram: 1024
+    disk: 20
+  - name: x1.small
+    vcpus: 2
+    ram: 4096
+    disk: 40
 cloudletinfos:
 - key:
     organization: att
@@ -633,7 +678,7 @@ apps:
   officialfqdn: autoprovapp.acmeappco.com
   autoprovpolicy: autoprov1
   accesstype: LoadBalancer
-  globalid: local-autoprovapp10acmeappco1
+  globalid: local-autoprovapp10acmeappco
 - key:
     organization: AcmeAppCo
     name: autoprovapp2
@@ -781,7 +826,7 @@ apps:
   androidpackagename: com.acme.someapplication1
   officialfqdn: someapplication1.acmeappco.com
   accesstype: LoadBalancer
-  globalid: local-someapplication110acmeappco1
+  globalid: local-someapplication110acmeappco
 - key:
     organization: edgecloudorg
     name: MEXPrometheusAppName
@@ -894,7 +939,7 @@ apps:
               protocol: TCP
   deploymentgenerator: kubernetes-basic
   accesstype: LoadBalancer
-  globalid: local-platosenablinglayer10platos1
+  globalid: local-platosenablinglayer10platos
 appinstances:
 - key:
     appkey:

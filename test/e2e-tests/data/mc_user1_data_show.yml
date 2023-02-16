@@ -96,6 +96,15 @@ regiondata:
       dnslabel: azure-cloud-4-azure
       rootlbfqdn: shared.azure-cloud-4-azure.local.edgecloude2e.net
       licenseconfigstoragepath: local/edgecloudorg/gpu-driver-global/cloudlet/licenseconfig/azure/azure-cloud-4/license.conf
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
     - key:
         organization: dmuus
         name: dmuus-cloud-1
@@ -132,6 +141,15 @@ regiondata:
       dnslabel: dmuus-cloud-1-dmuus
       rootlbfqdn: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
       licenseconfigstoragepath: local/dmuus/gpu-driver-dmuus-1/cloudlet/licenseconfig/dmuus-cloud-1/license.conf
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
     - key:
         organization: dmuus
         name: dmuus-cloud-2
@@ -150,6 +168,15 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: dmuus-cloud-2-dmuus
       rootlbfqdn: shared.dmuus-cloud-2-dmuus.local.edgecloude2e.net
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
     - key:
         organization: enterprise
         name: enterprise-1
@@ -168,6 +195,15 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: enterprise-1-enterprise
       rootlbfqdn: shared.enterprise-1-enterprise.local.edgecloude2e.net
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
     - key:
         organization: gcp
         name: gcp-cloud-5
@@ -186,6 +222,15 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: gcp-cloud-5-gcp
       rootlbfqdn: shared.gcp-cloud-5-gcp.local.edgecloude2e.net
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
     cloudletinfos:
     - key:
         organization: azure
@@ -329,6 +374,15 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: dmuus-cloud-3-dmuus
       rootlbfqdn: shared.dmuus-cloud-3-dmuus.locala.edgecloude2e.net
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
     - key:
         organization: dmuus
         name: dmuus-cloud-4
@@ -347,6 +401,15 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: dmuus-cloud-4-dmuus
       rootlbfqdn: shared.dmuus-cloud-4-dmuus.locala.edgecloude2e.net
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
     - key:
         organization: enterprise
         name: enterprise-2
@@ -365,6 +428,15 @@ regiondata:
       defaultresourcealertthreshold: 80
       dnslabel: enterprise-2-enterprise
       rootlbfqdn: shared.enterprise-2-enterprise.locala.edgecloude2e.net
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
     cloudletinfos:
     - key:
         organization: dmuus

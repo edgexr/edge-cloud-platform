@@ -600,6 +600,8 @@ message Cloudlet {
   FederationConfig federation_config = 56 [(gogoproto.nullable) = false, (protogen.backend) = true];
   // GPU driver license config storage path
   string license_config_storage_path = 57 [(protogen.backend) = true];
+  // Cloudlet-specific flavors
+  repeated FlavorInfo infra_flavors = 58 [(protogen.backend) = true];
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;

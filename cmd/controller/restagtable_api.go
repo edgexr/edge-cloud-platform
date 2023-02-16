@@ -279,10 +279,12 @@ func (s *ResTagTableApi) UsesGpu(ctx context.Context, stm concurrency.STM, flavo
 
 // GetVMSpec returns the VMCreationAttributes including flavor name and the size of the external volume which is required, if any
 func (s *ResTagTableApi) GetVMSpec(ctx context.Context, stm concurrency.STM, nodeflavor edgeproto.Flavor, cloudletFlavorName string, cl edgeproto.Cloudlet, cli edgeproto.CloudletInfo) (*vmspec.VMCreationSpec, error) {
-	// cloudlet-specific flavor explicitly specified
-	if cloudletFlavorName != "" {
-		return vmspec.GetVMSpecCloudletFlavor(ctx, cloudletFlavorName, cli)
+	if cl.Key.FederatedOrganization != "" && cloudletFlavorName == "" && len(cli.Flavors) > 0 {
+		// TODO: remove this after PoC demo
+		cloudletFlavorName = cli.Flavors[0].Name
+		log.SpanLog(ctx, log.DebugLevelApi, "PoC demo use default cloudlet flavor", "flavor", cloudletFlavorName)
 	}
+
 	// for those platforms with no concept of a quantized set of resources (flavors)
 	// return a VMCreationSpec  based on the our meta-flavor resource request.
 	if len(cli.Flavors) == 0 {
@@ -297,6 +299,9 @@ func (s *ResTagTableApi) GetVMSpec(ctx context.Context, stm concurrency.STM, nod
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "GetVMSpec platform has no native flavors returning mex flavor for", "platform", cl.PlatformType, "as", spec)
 		return &spec, nil
+	} else if cloudletFlavorName != "" {
+		// look up cloudlet-specific flavor from list on CloudletInfo
+		return vmspec.GetVMSpecCloudletFlavor(ctx, cloudletFlavorName, cli)
 	}
 
 	tbls, _ := s.GetResTablesForCloudlet(ctx, stm, &cl)

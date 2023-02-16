@@ -91,6 +91,8 @@ func AllDataHideTags(in *edgeproto.AllData) {
 		if _, found := tags["nocmp"]; found {
 			in.Cloudlets[i0].SecondaryNotifySrvAddr = ""
 		}
+		for i1 := 0; i1 < len(in.Cloudlets[i0].InfraFlavors); i1++ {
+		}
 	}
 	for i0 := 0; i0 < len(in.CloudletInfos); i0++ {
 		if _, found := tags["nocmp"]; found {
@@ -424,6 +426,11 @@ var AllDataOptionalArgs = []string{
 	"cloudlets:#.federationconfig.federationdbid",
 	"cloudlets:#.federationconfig.federationname",
 	"cloudlets:#.licenseconfigstoragepath",
+	"cloudlets:#.infraflavors:#.name",
+	"cloudlets:#.infraflavors:#.vcpus",
+	"cloudlets:#.infraflavors:#.ram",
+	"cloudlets:#.infraflavors:#.disk",
+	"cloudlets:#.infraflavors:#.propmap",
 	"cloudletinfos:#.fields",
 	"cloudletinfos:#.key.organization",
 	"cloudletinfos:#.key.name",
@@ -958,6 +965,11 @@ var AllDataComments = map[string]string{
 	"cloudlets:#.federationconfig.federationdbid":                                    "Federation database id",
 	"cloudlets:#.federationconfig.federationname":                                    "Federation Name",
 	"cloudlets:#.licenseconfigstoragepath":                                           "GPU driver license config storage path",
+	"cloudlets:#.infraflavors:#.name":                                                "Name of the flavor on the Cloudlet",
+	"cloudlets:#.infraflavors:#.vcpus":                                               "Number of VCPU cores on the Cloudlet",
+	"cloudlets:#.infraflavors:#.ram":                                                 "Ram in MB on the Cloudlet",
+	"cloudlets:#.infraflavors:#.disk":                                                "Amount of disk in GB on the Cloudlet",
+	"cloudlets:#.infraflavors:#.propmap":                                             "OS Flavor Properties, if any",
 	"cloudletinfos:#.fields":                                                         "Fields are used for the Update API to specify which fields to apply",
 	"cloudletinfos:#.key.organization":                                               "Organization of the cloudlet site",
 	"cloudletinfos:#.key.name":                                                       "Name of the cloudlet",
@@ -1336,6 +1348,7 @@ var AllDataSpecialArgs = map[string]string{
 	"cloudlets:#.errors":                      "StringArray",
 	"cloudlets:#.fields":                      "StringArray",
 	"cloudlets:#.gpuconfig.properties":        "StringToString",
+	"cloudlets:#.infraflavors:#.propmap":      "StringToString",
 	"clusterinsts:#.errors":                   "StringArray",
 	"clusterinsts:#.fields":                   "StringArray",
 	"clusterinsts:#.networks":                 "StringArray",

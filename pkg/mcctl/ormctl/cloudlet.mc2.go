@@ -604,6 +604,11 @@ var CreateCloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"infraflavors:#.name",
+	"infraflavors:#.vcpus",
+	"infraflavors:#.ram",
+	"infraflavors:#.disk",
+	"infraflavors:#.propmap",
 }
 var DeleteCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -657,6 +662,11 @@ var DeleteCloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"infraflavors:#.name",
+	"infraflavors:#.vcpus",
+	"infraflavors:#.ram",
+	"infraflavors:#.disk",
+	"infraflavors:#.propmap",
 }
 var UpdateCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -699,6 +709,12 @@ var UpdateCloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"infraflavors:empty",
+	"infraflavors:#.name",
+	"infraflavors:#.vcpus",
+	"infraflavors:#.ram",
+	"infraflavors:#.disk",
+	"infraflavors:#.propmap",
 }
 var ShowCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -752,6 +768,11 @@ var ShowCloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"infraflavors:#.name",
+	"infraflavors:#.vcpus",
+	"infraflavors:#.ram",
+	"infraflavors:#.disk",
+	"infraflavors:#.propmap",
 }
 var GetCloudletPropsRequiredArgs = []string{
 	"platformtype",
@@ -1103,6 +1124,12 @@ var CloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"infraflavors:empty",
+	"infraflavors:#.name",
+	"infraflavors:#.vcpus",
+	"infraflavors:#.ram",
+	"infraflavors:#.disk",
+	"infraflavors:#.propmap",
 }
 var CloudletAliasArgs = []string{
 	"fields=cloudlet.fields",
@@ -1204,6 +1231,12 @@ var CloudletAliasArgs = []string{
 	"federationconfig.federationdbid=cloudlet.federationconfig.federationdbid",
 	"federationconfig.federationname=cloudlet.federationconfig.federationname",
 	"licenseconfigstoragepath=cloudlet.licenseconfigstoragepath",
+	"infraflavors:empty=cloudlet.infraflavors:empty",
+	"infraflavors:#.name=cloudlet.infraflavors:#.name",
+	"infraflavors:#.vcpus=cloudlet.infraflavors:#.vcpus",
+	"infraflavors:#.ram=cloudlet.infraflavors:#.ram",
+	"infraflavors:#.disk=cloudlet.infraflavors:#.disk",
+	"infraflavors:#.propmap=cloudlet.infraflavors:#.propmap",
 }
 var CloudletComments = map[string]string{
 	"fields":                                 "Fields are used for the Update API to specify which fields to apply",
@@ -1305,16 +1338,23 @@ var CloudletComments = map[string]string{
 	"federationconfig.federationdbid":        "Federation database id",
 	"federationconfig.federationname":        "Federation Name",
 	"licenseconfigstoragepath":               "GPU driver license config storage path",
+	"infraflavors:empty":                     "Cloudlet-specific flavors, specify infraflavors:empty=true to clear",
+	"infraflavors:#.name":                    "Name of the flavor on the Cloudlet",
+	"infraflavors:#.vcpus":                   "Number of VCPU cores on the Cloudlet",
+	"infraflavors:#.ram":                     "Ram in MB on the Cloudlet",
+	"infraflavors:#.disk":                    "Amount of disk in GB on the Cloudlet",
+	"infraflavors:#.propmap":                 "OS Flavor Properties, if any, specify infraflavors:#.propmap:empty=true to clear",
 }
 var CloudletSpecialArgs = map[string]string{
-	"cloudlet.accessvars":           "StringToString",
-	"cloudlet.allianceorgs":         "StringArray",
-	"cloudlet.chefclientkey":        "StringToString",
-	"cloudlet.config.envvar":        "StringToString",
-	"cloudlet.envvar":               "StringToString",
-	"cloudlet.errors":               "StringArray",
-	"cloudlet.fields":               "StringArray",
-	"cloudlet.gpuconfig.properties": "StringToString",
+	"cloudlet.accessvars":             "StringToString",
+	"cloudlet.allianceorgs":           "StringArray",
+	"cloudlet.chefclientkey":          "StringToString",
+	"cloudlet.config.envvar":          "StringToString",
+	"cloudlet.envvar":                 "StringToString",
+	"cloudlet.errors":                 "StringArray",
+	"cloudlet.fields":                 "StringArray",
+	"cloudlet.gpuconfig.properties":   "StringToString",
+	"cloudlet.infraflavors:#.propmap": "StringToString",
 }
 var FlavorMatchRequiredArgs = []string{
 	"cloudletorg",

@@ -1,0 +1,76 @@
+consumers:
+  - name: dmuus-{{partnertag}}
+  - name: enterprise-{{partnertag}}
+zones:
+  - consumername: dmuus-{{partnertag}}
+    zoneid: dmuuscloud1
+  - consumername: dmuus-{{partnertag}}
+    zoneid: dmuuscloud2
+  - consumername: dmuus-{{partnertag}}
+    zoneid: dmuuscloud3
+  - consumername: dmuus-{{partnertag}}
+    zoneid: dmuuscloud4
+  - consumername: enterprise-{{partnertag}}
+    zoneid: enterprise1
+  - consumername: enterprise-{{partnertag}}
+    zoneid: enterprise2
+artefacts:
+  - federationname: dmuus-{{partnertag}}
+    id: pa-dockerapp10fedappco
+  - federationname: dmuus-{{partnertag}}
+    id: pa-k8sapp10fedappco
+  - federationname: dmuus-{{partnertag}}
+    id: pa-vmapp10fedappco
+apps:
+  - federationname: dmuus-{{partnertag}}
+    id: pa-dockerapp10fedappco
+  - federationname: dmuus-{{partnertag}}
+    id: pa-k8sapp10fedappco
+  - federationname: dmuus-{{partnertag}}
+    id: pa-vmapp10fedappco
+appinsts:
+  - region: PA
+    appinst:
+      key:
+        appkey:
+          organization: FedAppCo
+          name: dockerapp
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: autoclusterdocker
+          cloudletkey:
+            organization: dmuus-partner1
+            name: dmuuscloud1
+            federatedorganization: partner1
+          organization: edgecloudorg
+  - region: PA
+    appinst:
+      key:
+        appkey:
+          organization: FedAppCo
+          name: k8sapp
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: autoclusterk8s
+          cloudletkey:
+            organization: dmuus-partner1
+            name: dmuuscloud1
+            federatedorganization: partner1
+          organization: edgecloudorg
+  - region: PA
+    appinst:
+      key:
+        appkey:
+          organization: FedAppCo
+          name: vmapp
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: defaultclust
+          cloudletkey:
+            organization: dmuus-partner1
+            name: dmuuscloud2
+            federatedorganization: partner1
+          organization: FedAppCo
