@@ -59,6 +59,15 @@ regiondata:
       numdynamicips: 10
       state: Ready
       platformtype: Federation
+      infraflavors:
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
     - key:
         organization: dmuus-partner1
         name: dmuuscloud2
@@ -70,6 +79,15 @@ regiondata:
       numdynamicips: 10
       state: Ready
       platformtype: Federation
+      infraflavors:
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
     - key:
         organization: dmuus-partner1
         name: dmuuscloud3
@@ -81,6 +99,15 @@ regiondata:
       numdynamicips: 10
       state: Ready
       platformtype: Federation
+      infraflavors:
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
     - key:
         organization: dmuus-partner1
         name: dmuuscloud4
@@ -92,6 +119,15 @@ regiondata:
       numdynamicips: 10
       state: Ready
       platformtype: Federation
+      infraflavors:
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
     - key:
         organization: enterprise-partner1
         name: enterprise1
@@ -103,6 +139,15 @@ regiondata:
       numdynamicips: 10
       state: Ready
       platformtype: Federation
+      infraflavors:
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
     - key:
         organization: enterprise-partner1
         name: enterprise2
@@ -114,6 +159,15 @@ regiondata:
       numdynamicips: 10
       state: Ready
       platformtype: Federation
+      infraflavors:
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
     autoscalepolicies:
     - key:
         organization: FedAppCo

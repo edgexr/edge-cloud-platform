@@ -1611,8 +1611,13 @@ func deregisterFederationConsumer(ctx context.Context, consumer *ormapi.Federati
 			registeredZones = append(registeredZones, pZone.ZoneId)
 		}
 	}
+	// automatically deregister zones
 	if len(registeredZones) > 0 {
-		return fmt.Errorf("Cannot deregister federation %q as partner zones %s are registered locally. Please deregister zones before deregistering federation", consumer.Name, strings.Join(registeredZones, ", "))
+		log.SpanLog(ctx, log.DebugLevelApi, "automatically deregistering zones", "zones", registeredZones)
+		err = partnerApi.DeregisterConsumerZones(ctx, consumer, registeredZones, fedQueryParams)
+		if err != nil {
+			return err
+		}
 	}
 
 	apiPath := fmt.Sprintf("/%s/%s/partner", fedmgmt.ApiRoot, consumer.FederationContextId)

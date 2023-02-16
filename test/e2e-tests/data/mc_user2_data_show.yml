@@ -81,6 +81,15 @@ regiondata:
       gpuconfig:
         driver:
           name: gpu-driver-global
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
     - key:
         organization: dmuus
         name: dmuus-cloud-1
@@ -96,6 +105,15 @@ regiondata:
         driver:
           name: gpu-driver-dmuus-1
           organization: dmuus
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
     - key:
         organization: dmuus
         name: dmuus-cloud-2
@@ -106,6 +124,15 @@ regiondata:
       numdynamicips: 254
       state: Ready
       trustpolicystate: NotPresent
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
     - key:
         organization: gcp
         name: gcp-cloud-5
@@ -116,6 +143,15 @@ regiondata:
       numdynamicips: 254
       state: Ready
       trustpolicystate: NotPresent
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
     autoprovpolicies:
     - key:
         organization: AcmeAppCo
@@ -632,6 +668,15 @@ regiondata:
       numdynamicips: 254
       state: Ready
       trustpolicystate: NotPresent
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
     - key:
         organization: dmuus
         name: dmuus-cloud-4
@@ -642,6 +687,15 @@ regiondata:
       numdynamicips: 254
       state: Ready
       trustpolicystate: NotPresent
+      infraflavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
+      - name: x1.small
+        vcpus: 2
+        ram: 4096
+        disk: 40
     autoprovpolicies:
     - key:
         organization: AcmeAppCo

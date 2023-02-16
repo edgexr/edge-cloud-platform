@@ -233,6 +233,7 @@ func (s *AuthzCloudlet) Filter(obj *edgeproto.Cloudlet) {
 	obj.TrustPolicy = output.TrustPolicy
 	obj.TrustPolicyState = output.TrustPolicyState
 	obj.GpuConfig = output.GpuConfig
+	obj.InfraFlavors = output.InfraFlavors
 }
 
 // Satisfy interface for ShowCloudletsForAppDeploymentAuthz which uses CloudletKey

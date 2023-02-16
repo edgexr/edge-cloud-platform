@@ -1,0 +1,323 @@
+# Copyright 2022 MobiledgeX, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+partners:
+- allowedmobilenetworkids:
+    mcc: "123"
+    mncs:
+    - "111"
+    - "222"
+    - "333"
+  allowedfixednetworkids:
+  - foo
+  - bar
+  - foobar
+  offeredavailabilityzones:
+  - zoneid: dmuuscloud1
+    geolocation: 31,-91
+    geographydetails: None
+  - zoneid: dmuuscloud2
+    geolocation: 35,-95
+    geographydetails: None
+  - zoneid: dmuuscloud3
+    geolocation: 32,-92
+    geographydetails: None
+  - zoneid: dmuuscloud4
+    geolocation: 36,-96
+    geographydetails: None
+- allowedmobilenetworkids:
+    mcc: "123"
+    mncs:
+    - "111"
+    - "222"
+    - "333"
+  allowedfixednetworkids:
+  - foo
+  - bar
+  - foobar
+  offeredavailabilityzones:
+  - zoneid: enterprise1
+    geolocation: 31,-91
+    geographydetails: None
+  - zoneid: enterprise2
+    geolocation: 31,-91
+    geographydetails: None
+zones:
+- zoneid: dmuuscloud1
+  reservedcomputeresources:
+  - cpuarchtype: ISA_X86_64
+    numcpu: "0"
+    diskstorage: 0
+  computeresourcequotalimits:
+  - cpuarchtype: ISA_X86_64
+    numcpu: "20"
+    memory: 409600
+  flavourssupported:
+  - flavourid: x1.small
+    cpuarchtype: ISA_X86_64
+    numcpu: 2
+    memorysize: 4096
+    storagesize: 40
+  - flavourid: x1.tiny
+    cpuarchtype: ISA_X86_64
+    numcpu: 1
+    memorysize: 1024
+    storagesize: 20
+- zoneid: dmuuscloud2
+  reservedcomputeresources:
+  - cpuarchtype: ISA_X86_64
+    numcpu: "0"
+    diskstorage: 0
+  computeresourcequotalimits:
+  - cpuarchtype: ISA_X86_64
+    numcpu: "50"
+    memory: 40960
+  flavourssupported:
+  - flavourid: x1.small
+    cpuarchtype: ISA_X86_64
+    numcpu: 2
+    memorysize: 4096
+    storagesize: 40
+  - flavourid: x1.tiny
+    cpuarchtype: ISA_X86_64
+    numcpu: 1
+    memorysize: 1024
+    storagesize: 20
+- zoneid: dmuuscloud3
+  reservedcomputeresources:
+  - cpuarchtype: ISA_X86_64
+    numcpu: "0"
+    diskstorage: 0
+  computeresourcequotalimits:
+  - cpuarchtype: ISA_X86_64
+    numcpu: "50"
+    memory: 40960
+  flavourssupported:
+  - flavourid: x1.small
+    cpuarchtype: ISA_X86_64
+    numcpu: 2
+    memorysize: 4096
+    storagesize: 40
+  - flavourid: x1.tiny
+    cpuarchtype: ISA_X86_64
+    numcpu: 1
+    memorysize: 1024
+    storagesize: 20
+- zoneid: dmuuscloud4
+  reservedcomputeresources:
+  - cpuarchtype: ISA_X86_64
+    numcpu: "0"
+    diskstorage: 0
+  computeresourcequotalimits:
+  - cpuarchtype: ISA_X86_64
+    numcpu: "50"
+    memory: 40960
+  flavourssupported:
+  - flavourid: x1.small
+    cpuarchtype: ISA_X86_64
+    numcpu: 2
+    memorysize: 4096
+    storagesize: 40
+  - flavourid: x1.tiny
+    cpuarchtype: ISA_X86_64
+    numcpu: 1
+    memorysize: 1024
+    storagesize: 20
+- zoneid: enterprise1
+  reservedcomputeresources:
+  - cpuarchtype: ISA_X86_64
+    numcpu: "0"
+    diskstorage: 0
+  computeresourcequotalimits:
+  - cpuarchtype: ISA_X86_64
+    numcpu: "50"
+    memory: 40960
+  flavourssupported:
+  - flavourid: x1.small
+    cpuarchtype: ISA_X86_64
+    numcpu: 2
+    memorysize: 4096
+    storagesize: 40
+  - flavourid: x1.tiny
+    cpuarchtype: ISA_X86_64
+    numcpu: 1
+    memorysize: 1024
+    storagesize: 20
+- zoneid: enterprise2
+  reservedcomputeresources:
+  - cpuarchtype: ISA_X86_64
+    numcpu: "0"
+    diskstorage: 0
+  computeresourcequotalimits:
+  - cpuarchtype: ISA_X86_64
+    numcpu: "50"
+    memory: 40960
+  flavourssupported:
+  - flavourid: x1.small
+    cpuarchtype: ISA_X86_64
+    numcpu: 2
+    memorysize: 4096
+    storagesize: 40
+  - flavourid: x1.tiny
+    cpuarchtype: ISA_X86_64
+    numcpu: 1
+    memorysize: 1024
+    storagesize: 20
+artefacts:
+- artefactid: pa-dockerapp10fedappco
+  appproviderid: fedappco
+  artefactname: dockerapp
+  artefactversioninfo: "1.0"
+  artefactvirttype: CONTAINER_TYPE
+  artefactdescriptortype: COMPONENTSPEC
+  componentspec:
+  - componentname: pa-dockerapp10fedappco
+    images:
+    - e2e-test-file-id-2
+    numofinstances: 1
+    restartpolicy: RESTART_POLICY_ALWAYS
+    commandlineparams:
+      command:
+      - -text="hello world"
+    exposedinterfaces:
+    - interfaceid: tcp-81
+      commprotocol: TCP
+      commport: 81
+      visibilitytype: VISIBILITY_EXTERNAL
+    - interfaceid: tcp-443
+      commprotocol: TCP
+      commport: 443
+      visibilitytype: VISIBILITY_EXTERNAL
+    - interfaceid: udp-10002
+      commprotocol: UDP
+      commport: 10002
+      visibilitytype: VISIBILITY_EXTERNAL
+    computeresourceprofile:
+      cpuarchtype: ISA_X86_64
+      numcpu: "1"
+      memory: 1024
+- artefactid: pa-k8sapp10fedappco
+  appproviderid: fedappco
+  artefactname: k8sapp
+  artefactversioninfo: "1.0"
+  artefactvirttype: CONTAINER_TYPE
+  artefactdescriptortype: COMPONENTSPEC
+  componentspec:
+  - componentname: pa-k8sapp10fedappco
+    images:
+    - e2e-test-file-id-1
+    numofinstances: 1
+    restartpolicy: RESTART_POLICY_ALWAYS
+    commandlineparams:
+      commandargs:
+      - '"-text=\"hello world\""'
+    exposedinterfaces:
+    - interfaceid: tcp-80
+      commprotocol: TCP
+      commport: 80
+      visibilitytype: VISIBILITY_EXTERNAL
+    - interfaceid: tcp-443
+      commprotocol: TCP
+      commport: 443
+      visibilitytype: VISIBILITY_EXTERNAL
+    - interfaceid: udp-10002
+      commprotocol: UDP
+      commport: 10002
+      visibilitytype: VISIBILITY_EXTERNAL
+    computeresourceprofile:
+      cpuarchtype: ISA_X86_64
+      numcpu: "0.5"
+      memory: 20
+- artefactid: pa-vmapp10fedappco
+  appproviderid: fedappco
+  artefactname: vmapp
+  artefactversioninfo: "1.0"
+  artefactvirttype: VM_TYPE
+  artefactdescriptortype: COMPONENTSPEC
+  componentspec:
+  - componentname: pa-vmapp10fedappco
+    numofinstances: 1
+    restartpolicy: RESTART_POLICY_ALWAYS
+    exposedinterfaces:
+    - interfaceid: tcp-81
+      commprotocol: TCP
+      commport: 81
+      visibilitytype: VISIBILITY_EXTERNAL
+    computeresourceprofile:
+      cpuarchtype: ISA_X86_64
+      numcpu: "2"
+      memory: 2048
+apps:
+- appid: pa-dockerapp10fedappco
+  appproviderid: fedappco
+  appmetadata:
+    appname: dockerapp
+    version: "1.0"
+  appqosprofile:
+    latencyconstraints: NONE
+  appcomponentspecs:
+  - artefactid: pa-dockerapp10fedappco
+- appid: pa-k8sapp10fedappco
+  appproviderid: fedappco
+  appmetadata:
+    appname: k8sapp
+    version: "1.0"
+  appqosprofile:
+    latencyconstraints: NONE
+  appcomponentspecs:
+  - artefactid: pa-k8sapp10fedappco
+- appid: pa-vmapp10fedappco
+  appproviderid: fedappco
+  appmetadata:
+    appname: vmapp
+    version: "1.0"
+  appqosprofile:
+    latencyconstraints: NONE
+  appcomponentspecs:
+  - artefactid: pa-vmapp10fedappco
+appinsts:
+- appinstancestate: READY
+  accesspointinfo:
+  - interfaceid: tcp-81
+    accesspoints:
+      port: 81
+      fqdn: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+  - interfaceid: tcp-443
+    accesspoints:
+      port: 10000
+      fqdn: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+  - interfaceid: udp-10002
+    accesspoints:
+      port: 10000
+      fqdn: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+- appinstancestate: READY
+  accesspointinfo:
+  - interfaceid: tcp-80
+    accesspoints:
+      port: 80
+      fqdn: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+  - interfaceid: tcp-443
+    accesspoints:
+      port: 443
+      fqdn: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+  - interfaceid: udp-10002
+    accesspoints:
+      port: 10002
+      fqdn: shared.dmuus-cloud-1-dmuus.local.edgecloude2e.net
+- appinstancestate: READY
+  accesspointinfo:
+  - interfaceid: tcp-81
+    accesspoints:
+      port: 81
+      fqdn: pa-vmapp10fedappco10-dmuus-partner1.dmuus-cloud-2-dmuus.local.edgecloude2e.net

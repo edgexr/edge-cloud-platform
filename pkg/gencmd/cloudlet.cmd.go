@@ -107,6 +107,8 @@ func CloudletHideTags(in *edgeproto.Cloudlet) {
 	if _, found := tags["nocmp"]; found {
 		in.SecondaryNotifySrvAddr = ""
 	}
+	for i0 := 0; i0 < len(in.InfraFlavors); i0++ {
+	}
 }
 
 func CloudletInfoHideTags(in *edgeproto.CloudletInfo) {
@@ -2788,6 +2790,12 @@ var CloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"infraflavors:empty",
+	"infraflavors:#.name",
+	"infraflavors:#.vcpus",
+	"infraflavors:#.ram",
+	"infraflavors:#.disk",
+	"infraflavors:#.propmap",
 }
 var CloudletAliasArgs = []string{
 	"cloudletorg=key.organization",
@@ -2894,16 +2902,23 @@ var CloudletComments = map[string]string{
 	"federationconfig.federationdbid":        "Federation database id",
 	"federationconfig.federationname":        "Federation Name",
 	"licenseconfigstoragepath":               "GPU driver license config storage path",
+	"infraflavors:empty":                     "Cloudlet-specific flavors, specify infraflavors:empty=true to clear",
+	"infraflavors:#.name":                    "Name of the flavor on the Cloudlet",
+	"infraflavors:#.vcpus":                   "Number of VCPU cores on the Cloudlet",
+	"infraflavors:#.ram":                     "Ram in MB on the Cloudlet",
+	"infraflavors:#.disk":                    "Amount of disk in GB on the Cloudlet",
+	"infraflavors:#.propmap":                 "OS Flavor Properties, if any, specify infraflavors:#.propmap:empty=true to clear",
 }
 var CloudletSpecialArgs = map[string]string{
-	"accessvars":           "StringToString",
-	"allianceorgs":         "StringArray",
-	"chefclientkey":        "StringToString",
-	"config.envvar":        "StringToString",
-	"envvar":               "StringToString",
-	"errors":               "StringArray",
-	"fields":               "StringArray",
-	"gpuconfig.properties": "StringToString",
+	"accessvars":             "StringToString",
+	"allianceorgs":           "StringArray",
+	"chefclientkey":          "StringToString",
+	"config.envvar":          "StringToString",
+	"envvar":                 "StringToString",
+	"errors":                 "StringArray",
+	"fields":                 "StringArray",
+	"gpuconfig.properties":   "StringToString",
+	"infraflavors:#.propmap": "StringToString",
 }
 var FlavorMatchRequiredArgs = []string{
 	"cloudletorg",
@@ -3342,6 +3357,11 @@ var CreateCloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"infraflavors:#.name",
+	"infraflavors:#.vcpus",
+	"infraflavors:#.ram",
+	"infraflavors:#.disk",
+	"infraflavors:#.propmap",
 }
 var DeleteCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -3395,6 +3415,11 @@ var DeleteCloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"infraflavors:#.name",
+	"infraflavors:#.vcpus",
+	"infraflavors:#.ram",
+	"infraflavors:#.disk",
+	"infraflavors:#.propmap",
 }
 var UpdateCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -3437,6 +3462,12 @@ var UpdateCloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"infraflavors:empty",
+	"infraflavors:#.name",
+	"infraflavors:#.vcpus",
+	"infraflavors:#.ram",
+	"infraflavors:#.disk",
+	"infraflavors:#.propmap",
 }
 var ShowCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -3490,6 +3521,11 @@ var ShowCloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"infraflavors:#.name",
+	"infraflavors:#.vcpus",
+	"infraflavors:#.ram",
+	"infraflavors:#.disk",
+	"infraflavors:#.propmap",
 }
 var GetCloudletPropsRequiredArgs = []string{
 	"platformtype",

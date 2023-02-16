@@ -936,6 +936,14 @@ func addControllerApis(method string, group *echo.Group) {
 	// FederationConfigFederationDbId: 56.3
 	// FederationConfigFederationName: 56.4
 	// LicenseConfigStoragePath: 57
+	// InfraFlavors: 58
+	// InfraFlavorsName: 58.1
+	// InfraFlavorsVcpus: 58.2
+	// InfraFlavorsRam: 58.3
+	// InfraFlavorsDisk: 58.4
+	// InfraFlavorsPropMap: 58.5
+	// InfraFlavorsPropMapKey: 58.5.1
+	// InfraFlavorsPropMapValue: 58.5.2
 	// ```
 	// Security:
 	//   Bearer:
