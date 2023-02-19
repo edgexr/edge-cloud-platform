@@ -545,6 +545,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 
 	// +1 count for Cloudlets because of extra one above
 	ccount := count + 1
+	org3cnt := dcnt + 1
 
 	require.Equal(t, dcnt, len(ds.FlavorCache.Objs))
 
@@ -624,15 +625,16 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	_, status, err = ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenDev, ctrl.Region, &org3Cloudlet.Key)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	// cloudlets are currently all public and can be seen by all
+	// public cloudlets can be seen by developers,
+	// but operators can only see their own cloudlets.
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, "", ccount)
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev2, ctrl.Region, "", ccount)
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev3, ctrl.Region, "", ccount)
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev4, ctrl.Region, "", ccount)
-	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper, ctrl.Region, "", ccount)
-	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper2, ctrl.Region, "", ccount)
-	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, "", ccount)
-	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper4, ctrl.Region, "", ccount)
+	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper, ctrl.Region, "", org3cnt)
+	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper2, ctrl.Region, "", dcnt)
+	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, "", org3cnt)
+	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper4, ctrl.Region, "", org3cnt)
 
 	// Test billing org related developer access to cloudlets
 	{
@@ -650,10 +652,10 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		goodPermTestShowCloudlet(t, mcClient, uri, tokenDev2, ctrl.Region, "", ccount)
 		goodPermTestShowCloudlet(t, mcClient, uri, tokenDev3, ctrl.Region, "", ccount)
 		goodPermTestShowCloudlet(t, mcClient, uri, tokenDev4, ctrl.Region, "", ccount)
-		goodPermTestShowCloudlet(t, mcClient, uri, tokenOper, ctrl.Region, "", ccount)
-		goodPermTestShowCloudlet(t, mcClient, uri, tokenOper2, ctrl.Region, "", ccount)
-		goodPermTestShowCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, "", ccount)
-		goodPermTestShowCloudlet(t, mcClient, uri, tokenOper4, ctrl.Region, "", ccount)
+		goodPermTestShowCloudlet(t, mcClient, uri, tokenOper, ctrl.Region, "", org3cnt)
+		goodPermTestShowCloudlet(t, mcClient, uri, tokenOper2, ctrl.Region, "", dcnt)
+		goodPermTestShowCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, "", org3cnt)
+		goodPermTestShowCloudlet(t, mcClient, uri, tokenOper4, ctrl.Region, "", org3cnt)
 		org1CloudletCnt := dcnt
 		// For dev to access any cloudlet without being part of billing org.
 		// Add dev user as part of operator org
@@ -715,10 +717,10 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	testShowOrgCloudlet(t, mcClient, uri, tokenAd, OrgTypeAdmin, ctrl.Region, org2, ccount, "")
 	testShowOrgCloudlet(t, mcClient, uri, tokenDev, OrgTypeDeveloper, ctrl.Region, org1, ccount, "")
 	testShowOrgCloudlet(t, mcClient, uri, tokenDev2, OrgTypeDeveloper, ctrl.Region, org2, ccount, "")
-	testShowOrgCloudlet(t, mcClient, uri, tokenOper, OrgTypeOperator, ctrl.Region, org3, ccount, "")
-	testShowOrgCloudlet(t, mcClient, uri, tokenOper2, OrgTypeOperator, ctrl.Region, org4, ccount, "")
+	testShowOrgCloudlet(t, mcClient, uri, tokenOper, OrgTypeOperator, ctrl.Region, org3, org3cnt, "")
+	testShowOrgCloudlet(t, mcClient, uri, tokenOper2, OrgTypeOperator, ctrl.Region, org4, dcnt, "")
 	// validate that only operator and admin user is able to see additional cloudlet details
-	testShowOrgCloudlet(t, mcClient, uri, tokenOper, OrgTypeOperator, ctrl.Region, org3, ccount, org3)
+	testShowOrgCloudlet(t, mcClient, uri, tokenOper, OrgTypeOperator, ctrl.Region, org3, org3cnt, org3)
 	testShowOrgCloudlet(t, mcClient, uri, tokenDev, OrgTypeDeveloper, ctrl.Region, org1, ccount, org3)
 	testShowOrgCloudlet(t, mcClient, uri, tokenAd, OrgTypeAdmin, ctrl.Region, org3, ccount, org3)
 	// validate that cloudlet info is filtered based on user role
@@ -846,7 +848,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	adminPermTestCustomMetrics(t, mcClient, uri, tokenAd, ctrl.Region, org3)
 
 	// test users with different roles
-	goodPermTestCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, org3, nil, ccount)
+	goodPermTestCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, org3, nil, org3cnt)
 	goodPermTestCloudletAllianceOrg(t, mcClient, uri, tokenOper3, ctrl.Region, org3, ccount)
 	goodPermTestClusterInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3, dcnt)
 	badPermTestClusterInst(t, mcClient, uri, tokenDev2, ctrl.Region, org1, tc3)
@@ -1174,8 +1176,8 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	// tc3 should not be visible by other orgs
 	// (note count here is without tc3, except for org3 to which it belongs)
 	testShowOrgCloudlet(t, mcClient, uri, tokenDev2, OrgTypeDeveloper, ctrl.Region, org2, count, "")
-	testShowOrgCloudlet(t, mcClient, uri, tokenOper, OrgTypeOperator, ctrl.Region, org3, ccount, "")
-	testShowOrgCloudlet(t, mcClient, uri, tokenOper2, OrgTypeOperator, ctrl.Region, org4, count, "")
+	testShowOrgCloudlet(t, mcClient, uri, tokenOper, OrgTypeOperator, ctrl.Region, org3, org3cnt, "")
+	testShowOrgCloudlet(t, mcClient, uri, tokenOper2, OrgTypeOperator, ctrl.Region, org4, dcnt, "")
 
 	// tc3 should now be usable for org1
 	goodPermTestClusterInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3, dcnt)
@@ -1193,8 +1195,8 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	// show cloudlet will not show tc3 since it's now part of a pool
 	// (except for operator who owns tc3).
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev2, ctrl.Region, "", count)
-	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper, ctrl.Region, "", ccount)
-	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper2, ctrl.Region, "", count)
+	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper, ctrl.Region, "", org3cnt)
+	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper2, ctrl.Region, "", dcnt)
 
 	// developer is able to create appinst/appinst on tc3 part of pool1
 	goodPermCreateAppInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3)
@@ -2975,9 +2977,9 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 		ds.SetDummyObjs(ctx, testutil.Delete, tag, dcnt)
 		ds.SetDummyOrgObjs(ctx, testutil.Delete, operOrg.Name, dcnt)
 	}()
-	goodPermTestCloudlet(t, mcClient, uri, apiKeyLoginToken, ctrl.Region, operOrg.Name, nil, count+2)
-	goodPermTestCloudletAllianceOrg(t, mcClient, uri, apiKeyLoginToken, ctrl.Region, operOrg.Name, count+2)
-	goodPermTestShowCloudlet(t, mcClient, uri, apiKeyLoginToken, ctrl.Region, operOrg.Name, count+2)
+	goodPermTestCloudlet(t, mcClient, uri, apiKeyLoginToken, ctrl.Region, operOrg.Name, nil, 2)
+	goodPermTestCloudletAllianceOrg(t, mcClient, uri, apiKeyLoginToken, ctrl.Region, operOrg.Name, 2)
+	goodPermTestShowCloudlet(t, mcClient, uri, apiKeyLoginToken, ctrl.Region, operOrg.Name, 2)
 	tc := edgeproto.CloudletKey{
 		Organization: operOrg.Name,
 		Name:         "0",

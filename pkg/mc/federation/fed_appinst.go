@@ -122,6 +122,7 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 	appKey := provArt.GetAppKey()
 	provAppInst := ormapi.ProviderAppInst{
 		FederationName:      provider.Name,
+		AppID:               in.AppId,
 		AppInstID:           in.AppInstanceId,
 		AppInstCallbackLink: in.AppInstCallbackLink,
 		Region:              base.Region,

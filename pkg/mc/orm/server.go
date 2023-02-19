@@ -978,6 +978,9 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	ws.GET("/metrics/clientappusage", GetMetricsCommon)
 	ws.GET("/metrics/clientcloudletusage", GetMetricsCommon)
 
+	ws.GET("/federation/consumer/app/onboard", OnboardConsumerApp)
+	ws.GET("/federation/consumer/app/deboard", DeboardConsumerApp)
+
 	if config.NotifySrvAddr != "" {
 		server.notifyServer = &notify.ServerMgr{}
 		nodeMgr.RegisterServer(server.notifyServer)

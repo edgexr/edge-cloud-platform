@@ -20,6 +20,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/labstack/echo/v4"
@@ -31,6 +32,7 @@ import (
 type AuthzCloudlet struct {
 	orgs             map[string]struct{}
 	operOrgs         map[string]struct{}
+	devOrgs          map[string]struct{}
 	cloudletPoolSide map[edgeproto.CloudletKey]int
 	allowAll         bool
 	admin            bool
@@ -58,6 +60,13 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 		return err
 	}
 	s.operOrgs = operOrgs
+
+	// Get all developer orgs user has access to
+	devOrgs, err := enforcer.GetAuthorizedOrgs(ctx, username, ResourceApps, ActionView)
+	if err != nil {
+		return err
+	}
+	s.devOrgs = devOrgs
 
 	// special cases
 	if _, found := orgs[""]; found {
@@ -198,6 +207,21 @@ func (s *AuthzCloudlet) Ok(obj *edgeproto.Cloudlet) (bool, bool) {
 		// can access those cloudlets
 		return true, filterOutput
 	}
+	// for federation, check if the user has permissions on the
+	// federated organization as well
+	if _, found := s.orgs[obj.Key.FederatedOrganization]; found {
+		return true, filterOutput
+	}
+	if _, found := s.operOrgs[obj.Key.FederatedOrganization]; found {
+		return true, filterOutput
+	}
+
+	if len(s.devOrgs) == 0 {
+		// user has no developer access, so is an operator only.
+		// prevent operators from seeing other operator's cloudlets,
+		// even if they are public.
+		return false, filterOutput
+	}
 
 	// if user doesn't belong to operator role for this cloudlet and is not admin,
 	// then set filterOutput to true, so that operator data which is meant to be hidden
@@ -336,6 +360,20 @@ func authzCreateAppInst(ctx context.Context, region, username string, obj *edgep
 		// So one of the orgs must be EdgeCloud to pass RBAC.
 		if !edgeproto.IsEdgeCloudOrg(obj.Key.AppKey.Organization) && !edgeproto.IsEdgeCloudOrg(obj.Key.ClusterInstKey.Organization) {
 			return echo.ErrForbidden
+		}
+	}
+	if obj.Key.ClusterInstKey.CloudletKey.FederatedOrganization != "" {
+		// deploying to a federated cloudlet requires that the
+		// app has been onboarded to that federation.
+		fedName := obj.Key.ClusterInstKey.CloudletKey.Organization
+		ok, err := guestAppOnboarded(ctx, fedName, region, obj.Key.AppKey)
+		if err != nil {
+			// unable to determine, let the call through and if
+			// app is not onboarded, then host OP will return
+			// an error.
+			log.SpanLog(ctx, log.DebugLevelApi, "authzCreateAppInst failed to check if app onboarded for deployment to federated cloudlet", "appInst", obj.Key, "fedName", fedName, "err", err)
+		} else if !ok {
+			return fmt.Errorf("App must be onboarded to federation %q before it can be deployed to federated cloudlet %q", fedName, obj.Key.ClusterInstKey.CloudletKey.Name)
 		}
 	}
 	return nil
