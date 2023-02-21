@@ -208,6 +208,10 @@ func (s *AppInstWorker) createAppInst(ctx context.Context) (reterr error) {
 
 	appInstIn := edgeproto.AppInst{
 		Key: s.provAppInst.GetAppInstKey(),
+		FedKey: edgeproto.FedAppInstKey{
+			FederationName: s.provider.Name,
+			AppInstId:      s.provAppInst.AppInstID,
+		},
 	}
 	if s.flavor != "NOT_SPECIFIED" {
 		appInstIn.CloudletFlavor = s.flavor

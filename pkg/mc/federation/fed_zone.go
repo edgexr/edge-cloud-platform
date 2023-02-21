@@ -642,6 +642,7 @@ func (p *PartnerApi) DeregisterConsumerZones(ctx context.Context, consumer *orma
 		}
 		// update status
 		zone.Status = StatusUnregistered
+		zone.Region = ""
 		err = db.Save(zone).Error
 		if err != nil {
 			return ormutil.DbErr(err)

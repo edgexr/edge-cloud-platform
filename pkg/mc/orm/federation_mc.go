@@ -710,6 +710,11 @@ func CreateFederationConsumer(c echo.Context) (reterr error) {
 	}
 	setMyFedId(&consumer.MyInfo, consumer.Name)
 
+	// TODO: implement the equivalent of inviting developers
+	// to cloudletpools for private federations. For now all
+	// federations are always public.
+	consumer.Public = true
+
 	if consumer.PartnerTokenUrl == "" {
 		consumer.PartnerTokenUrl = consumer.PartnerAddr + "/" + federation.TokenUrl
 	}
