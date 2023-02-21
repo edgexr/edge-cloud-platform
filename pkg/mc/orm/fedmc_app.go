@@ -30,11 +30,10 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 		return err
 	}
 	// Mark stream API
-	c.Set(StreamAPITag, true)
-
 	in := ormapi.ConsumerApp{}
-	if err := c.Bind(&in); err != nil {
-		return ormutil.BindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	if in.Region == "" {
 		return fmt.Errorf("Missing region")
@@ -93,7 +92,7 @@ func OnboardConsumerApp(c echo.Context) (reterr error) {
 	if err != nil {
 		if strings.Contains(err.Error(), `duplicate key value`) {
 			log.SpanLog(ctx, log.DebugLevelApi, "duplicate key value", "err", err)
-			return fmt.Errorf("ConsumerApp already %s exists", in.ID)
+			return fmt.Errorf("ConsumerApp %s already exists", in.ID)
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "failed create consumer app", "app", in, "err", err)
 		return err
@@ -304,11 +303,10 @@ func DeboardConsumerApp(c echo.Context) error {
 		return err
 	}
 	// Mark stream API
-	c.Set(StreamAPITag, true)
-
 	in := ormapi.ConsumerApp{}
-	if err := c.Bind(&in); err != nil {
-		return ormutil.BindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	if in.ID == "" && (in.AppName == "" || in.AppOrg == "" || in.AppVers == "") {
 		return fmt.Errorf("Either appname, apporg, and appvers must be specified, or ID must be specified")
@@ -427,6 +425,25 @@ func deleteAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 		return err
 	}
 	return nil
+}
+
+func guestAppOnboarded(ctx context.Context, fedName, region string, key edgeproto.AppKey) (bool, error) {
+	db := loggedDB(ctx)
+	app := ormapi.ConsumerApp{
+		FederationName: fedName,
+		Region:         region,
+		AppName:        key.Name,
+		AppVers:        key.Version,
+		AppOrg:         key.Organization,
+	}
+	res := db.Where(&app).First(&app)
+	if res.RecordNotFound() {
+		return false, nil
+	}
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return true, nil
 }
 
 func ShowConsumerApp(c echo.Context) error {
