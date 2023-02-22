@@ -245,6 +245,20 @@ func CreateFederationProvider(c echo.Context) (reterr error) {
 	if provider.Name == "" {
 		return fmt.Errorf("Please provide a name for this federation provider")
 	}
+	if provider.MyInfo.MCC == "" {
+		return fmt.Errorf("MCC must be specified")
+	}
+	if len(provider.MyInfo.MNC) == 0 {
+		return fmt.Errorf("At least one MNC must be specified")
+	}
+	// check MNC/MCC validity
+	mnids := fedewapi.MobileNetworkIds{
+		Mcc:  &provider.MyInfo.MCC,
+		Mncs: provider.MyInfo.MNC,
+	}
+	if err := mnids.Validate(); err != nil {
+		return err
+	}
 	if provider.DefaultContainerDeployment == "" {
 		provider.DefaultContainerDeployment = cloudcommon.DeploymentTypeDocker
 	} else if provider.DefaultContainerDeployment != cloudcommon.DeploymentTypeDocker && provider.DefaultContainerDeployment != cloudcommon.DeploymentTypeKubernetes {
@@ -270,6 +284,7 @@ func CreateFederationProvider(c echo.Context) (reterr error) {
 			return err
 		}
 	}
+
 	setMyFedId(&provider.MyInfo, provider.Name)
 	// allocate a federation context id here, so that when we
 	// write to the database it will guarantee it is unique.
@@ -399,6 +414,7 @@ func UpdateFederationProvider(c echo.Context) error {
 		"MyInfo.MCC":                 {},
 		"MyInfo.MNC":                 {},
 		"MyInfo.DiscoveryEndPoint":   {},
+		"MyInfo.FixedNetworkIds":     {},
 		"MyInfo.InitialDate":         {},
 	}
 	for _, field := range ormutil.GetMapKeys(inMap) {
@@ -700,6 +716,20 @@ func CreateFederationConsumer(c echo.Context) (reterr error) {
 			return err
 		}
 	}
+	if consumer.MyInfo.MCC == "" {
+		return fmt.Errorf("MCC must be specified")
+	}
+	if len(consumer.MyInfo.MNC) == 0 {
+		return fmt.Errorf("At least one MNC must be specified")
+	}
+	// check MNC/MCC validity
+	mnids := fedewapi.MobileNetworkIds{
+		Mcc:  &consumer.MyInfo.MCC,
+		Mncs: consumer.MyInfo.MNC,
+	}
+	if err := mnids.Validate(); err != nil {
+		return err
+	}
 	if consumer.AutoRegisterZones {
 		if consumer.AutoRegisterRegion == "" {
 			return fmt.Errorf("please specify auto register region to use with auto register zones")
@@ -872,9 +902,20 @@ func UpdateFederationConsumer(c echo.Context) error {
 	// Ensure only allowed fields were updated
 	// Note these names are the json field names.
 	allowedFields := map[string]struct{}{
-		"Name":       {}, // for lookup
-		"OperatorId": {}, // for lookup
-		"Public":     {},
+		"Name":                     {}, // for lookup
+		"OperatorId":               {}, // for lookup
+		"Public":                   {},
+		"PartnerAddr":              {},
+		"PartnerTokenUrl":          {},
+		"MyInfo":                   {},
+		"MyInfo.CountryCode":       {},
+		"MyInfo.MCC":               {},
+		"MyInfo.MNC":               {},
+		"MyInfo.DiscoveryEndPoint": {},
+		"MyInfo.FixedNetworkIds":   {},
+		"MyInfo.InitialDate":       {},
+		"AutoRegisterZones":        {},
+		"AutoRegisterRegion":       {},
 	}
 	for _, field := range ormutil.GetMapKeys(inMap) {
 		if _, found := allowedFields[field]; !found {

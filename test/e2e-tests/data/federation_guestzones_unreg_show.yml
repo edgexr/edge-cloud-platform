@@ -16,42 +16,36 @@ consumerzones:
 - zoneid: dmuuscloud1
   consumername: dmuus-partner1
   operatorid: partner1
-  region: PA
   geolocation: 31,-91
   geographydetails: None
   status: Unregistered
 - zoneid: dmuuscloud2
   consumername: dmuus-partner1
   operatorid: partner1
-  region: PA
   geolocation: 35,-95
   geographydetails: None
   status: Unregistered
 - zoneid: dmuuscloud3
   consumername: dmuus-partner1
   operatorid: partner1
-  region: PA
   geolocation: 32,-92
   geographydetails: None
   status: Unregistered
 - zoneid: dmuuscloud4
   consumername: dmuus-partner1
   operatorid: partner1
-  region: PA
   geolocation: 36,-96
   geographydetails: None
   status: Unregistered
 - zoneid: enterprise1
   consumername: enterprise-partner1
   operatorid: partner1
-  region: PA
   geolocation: 31,-91
   geographydetails: None
   status: Unregistered
 - zoneid: enterprise2
   consumername: enterprise-partner1
   operatorid: partner1
-  region: PA
   geolocation: 31,-91
   geographydetails: None
   status: Unregistered

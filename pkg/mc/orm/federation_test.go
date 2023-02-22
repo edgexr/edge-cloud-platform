@@ -536,6 +536,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		PartnerTokenUrl: "http://" + op.tokenAddr + "/" + federation.TokenUrl,
 		MyInfo: ormapi.Federator{
 			CountryCode: consAttr.countryCode,
+			MCC:         "123",
 			MNC:         []string{"123", "345"},
 		},
 	}
@@ -1217,6 +1218,7 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 		PartnerTokenUrl: "http://" + op.tokenAddr + "/" + federation.TokenUrl,
 		MyInfo: ormapi.Federator{
 			CountryCode: consAttr.countryCode,
+			MCC:         "123",
 			MNC:         []string{"123", "345"},
 		},
 		ProviderClientId:  provResp.ClientId,
