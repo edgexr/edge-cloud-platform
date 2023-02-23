@@ -16,6 +16,7 @@ federationconsumers:
 - id: 1
   name: dmuus-partner1
   operatorid: partner1
+  public: true
   partneraddr: https://127.0.0.1:9801
   partnertokenurl: https://127.0.0.1:9900/oauth2/token
   federationcontextid: '***replaced***'
@@ -51,6 +52,7 @@ federationconsumers:
 - id: 2
   name: enterprise-partner1
   operatorid: partner1
+  public: true
   partneraddr: https://127.0.0.1:9801
   partnertokenurl: https://127.0.0.1:9900/oauth2/token
   federationcontextid: '***replaced***'
