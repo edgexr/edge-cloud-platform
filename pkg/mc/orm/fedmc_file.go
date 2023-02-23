@@ -332,8 +332,11 @@ func DeleteConsumerImage(c echo.Context) error {
 			return err
 		}
 		_, _, err = fedClient.SendRequest(ctx, http.MethodDelete, apiPath, nil, nil, nil)
+		if err != nil && strings.Contains(strings.ToLower(err.Error()), "not found") {
+			err = nil
+		}
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to delete remote image %s", err)
 		}
 	}
 	err = db.Delete(&image).Error

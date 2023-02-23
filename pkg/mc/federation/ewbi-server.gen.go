@@ -49,7 +49,7 @@ type ServerInterface interface {
 	// Forbid/allow application instantiation on a partner zone
 	// (POST /{federationContextId}/application/onboarding/app/{appId}/zoneForbid)
 	LockUnlockApplicationZone(ctx echo.Context, federationContextId FederationContextId, appId AppIdentifier) error
-	// Uploads application artefact on partner OP. Artefact is a zip file containing scripts and/or packaging files like Terraform or Helm which are required to create an instance of an application.
+	// Uploads application artefact on partner OP. Artefact is a zip file containing scripts and/or packaging files like Helm which are required to create an instance of an application.
 	// (POST /{federationContextId}/artefact)
 	UploadArtefact(ctx echo.Context, federationContextId FederationContextId) error
 	// Removes an artefact from partner OP.

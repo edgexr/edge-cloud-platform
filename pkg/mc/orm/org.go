@@ -47,6 +47,16 @@ const (
 	AdminUpdate
 )
 
+type createOrgOptions struct {
+	noEdgeboxOnly bool
+}
+
+type createOrgOp func(opts *createOrgOptions)
+
+func withNoEdgeboxOnlyOrg() createOrgOp {
+	return func(opts *createOrgOptions) { opts.noEdgeboxOnly = true }
+}
+
 func CreateOrg(c echo.Context) error {
 	claims, err := getClaims(c)
 	if err != nil {
@@ -70,7 +80,12 @@ func CreateOrg(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Organization created"))
 }
 
-func CreateOrgObj(ctx context.Context, claims *ormutil.UserClaims, org *ormapi.Organization) error {
+func CreateOrgObj(ctx context.Context, claims *ormutil.UserClaims, org *ormapi.Organization, ops ...createOrgOp) error {
+	opts := &createOrgOptions{}
+	for _, op := range ops {
+		op(opts)
+	}
+
 	if org.Name == "" {
 		return fmt.Errorf("Name not specified")
 	}
@@ -88,7 +103,7 @@ func CreateOrgObj(ctx context.Context, claims *ormutil.UserClaims, org *ormapi.O
 		role = RoleDeveloperManager
 	} else if org.Type == OrgTypeOperator {
 		role = RoleOperatorManager
-		if os.Getenv("E2ETEST_SKIPEDGEBOXONLY") == "" {
+		if os.Getenv("E2ETEST_SKIPEDGEBOXONLY") == "" && !opts.noEdgeboxOnly {
 			org.EdgeboxOnly = true
 		}
 	} else {

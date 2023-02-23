@@ -414,11 +414,13 @@ func (p *PartnerApi) GetAppInstanceDetails(c echo.Context, fedCtxId FederationCo
 	})
 
 	state := fedewapi.INSTANCESTATE_PENDING
-	if provAppInst.Error != "" {
-		state = fedewapi.INSTANCESTATE_FAILED
-	}
 	resp := fedewapi.GetAppInstanceDetails200Response{
 		AppInstanceState: &state,
+	}
+	if provAppInst.Error != "" {
+		state = fedewapi.INSTANCESTATE_FAILED
+		resp.AppInstanceState = &state
+		resp.StateDescription = &provAppInst.Error
 	}
 	if appInstOut != nil {
 		resp.AppInstanceState = getInstanceState(appInstOut)

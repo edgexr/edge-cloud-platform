@@ -585,28 +585,30 @@ func isProviderApp(ctx context.Context, app *edgeproto.App) (bool, error) {
 	art := ormapi.ProviderArtefact{}
 	art.SetAppKey(&app.Key)
 	db := loggedDB(ctx)
-	res := db.Where(&art).First(&art)
-	if res.RecordNotFound() {
-		return false, nil
+	find := []ormapi.ProviderArtefact{}
+	err := db.Where(&art).First(&find).Error
+	if err != nil {
+		return false, err
 	}
-	if res.Error != nil {
-		return false, res.Error
+	if len(find) > 0 {
+		return true, nil
 	}
-	return true, nil
+	return false, nil
 }
 
 func isProviderAppInst(ctx context.Context, appInst *edgeproto.AppInst) (bool, error) {
 	ai := ormapi.ProviderAppInst{}
 	ai.SetAppInstKey(&appInst.Key)
 	db := loggedDB(ctx)
-	res := db.Where(&ai).First(&ai)
-	if res.RecordNotFound() {
-		return false, nil
+	find := []ormapi.ProviderAppInst{}
+	err := db.Where(&ai).First(&find).Error
+	if err != nil {
+		return false, err
 	}
-	if res.Error != nil {
-		return false, res.Error
+	if len(find) > 0 {
+		return true, nil
 	}
-	return true, nil
+	return false, nil
 }
 
 func UnsafeDeleteProviderArtefact(c echo.Context) error {

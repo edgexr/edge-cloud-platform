@@ -36,14 +36,14 @@ type UploadArtefactRequest struct {
 	ArtefactVirtType    string  `json:"artefactVirtType"`
 	// Name of the file.
 	ArtefactFileName *string `json:"artefactFileName,omitempty"`
-	// Artefacts like Helm charts or Terraform scripts may need compressed format.
+	// Artefacts like Helm charts may need compressed format.
 	ArtefactFileFormat *string `json:"artefactFileFormat,omitempty"`
-	// Type of descriptor present in the artefact. App provider can either define either a Helm chart or a Terraform script or container spec.
+	// Type of descriptor present in the artefact. App provider can either define either a Helm chart or container spec.
 	ArtefactDescriptorType string `json:"artefactDescriptorType"`
 	// Artefact or file repository location. PUBLICREPO is used of public URLs like GitHub, Helm repo, docker registry etc., PRIVATEREPO is used for private repo managed by the application developer, UPLOAD is for the case when artefact/file is uploaded from MEC web portal. OP should pull the image from ‘repoUrl' immediately after receiving the request and then send back the response. In case the repoURL corresponds to a docker registry, use docker v2 http api to do the pull.
 	RepoType             *string             `json:"repoType,omitempty"`
 	ArtefactRepoLocation *ObjectRepoLocation `json:"artefactRepoLocation,omitempty"`
-	// Helm archive/Terraform archive/container spec file or Binary image associated with an application component.
+	// Helm archive/container spec file or Binary image associated with an application component.
 	ArtefactFile **os.File `json:"artefactFile,omitempty"`
 	// Details about compute, networking and storage requirements for each component of the application. App provider should define all information needed to instantiate the component. If artefact is being defined at component level this section should have information just about the component. In case the artefact is being defined at application level the section should provide details about all the components.
 	ComponentSpec []ComponentSpec `json:"componentSpec"`
