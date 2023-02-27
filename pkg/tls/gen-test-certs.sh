@@ -18,7 +18,7 @@ echo "generating CA..."
 certstrap init --common-name ${CANAME} --passphrase ""
 
 echo "generating server cert"
-certstrap request-cert --domain ${SERVERNAME} --passphrase ""
+certstrap request-cert --domain ${SERVERNAME},localhost --ip 127.0.0.1 --passphrase ""
 
 echo "signing server cert"
 certstrap sign --CA ${CANAME} ${SERVERNAME}
