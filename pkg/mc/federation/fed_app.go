@@ -218,8 +218,22 @@ func (p *PartnerApi) DeleteAppInternal(c echo.Context, provider *ormapi.Federati
 	if err != nil {
 		return err
 	}
-	if len(insts) > 0 {
-		return fmt.Errorf("Cannot delete app as it in use by app instances")
+	instIds := []string{}
+	for _, inst := range insts {
+		if inst.Error != "" {
+			// failed to create AppInst, the provAppInst
+			// is just kept around to show Error state.
+			// Remove it automatically.
+			delErr := db.Delete(&inst).Error
+			if delErr != nil {
+				return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to clean up error'd AppInst ID %s: %s", inst.AppInstID, delErr))
+			}
+		} else {
+			instIds = append(instIds, inst.AppInstID)
+		}
+	}
+	if len(instIds) > 0 {
+		return fmt.Errorf("Cannot delete app as it in use by app instances %s", strings.Join(instIds, ", "))
 	}
 
 	// Note that edgeproto.App object is tied to the ProviderArtefact,

@@ -228,6 +228,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	timeout := AppInstDeploymentTimeout
 	if os.Getenv("E2ETEST_TLS") != "" {
 		timeout = 3 * time.Second
+		CreatePollingRetryDelay = 1 * time.Second
 	}
 	timeoutChan := time.After(timeout)
 

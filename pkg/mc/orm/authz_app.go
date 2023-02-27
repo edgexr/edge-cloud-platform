@@ -46,7 +46,7 @@ func authzDeleteApp(ctx context.Context, region, username string, obj *edgeproto
 		return err
 	}
 	if fedApp {
-		return fmt.Errorf("Cannot delete provider app created via federation, use unsafe federation app delete instead")
+		return fmt.Errorf("Cannot delete App created via federation, use unsafe federation app delete instead")
 	}
 	return authorized(ctx, username, obj.Key.Organization, resource, action)
 }
@@ -153,7 +153,7 @@ func authzDeleteAppInst(ctx context.Context, region, username string, obj *edgep
 		return err
 	}
 	if fedAppInst {
-		return fmt.Errorf("Cannot delete provider appInst created via federation, use unsafe federation appInst delete instead")
+		return fmt.Errorf("Cannot delete AppInst created via federation, use unsafe federation appInst delete instead")
 	}
 	return authorized(ctx, username, obj.Key.AppKey.Organization, resource, action)
 }

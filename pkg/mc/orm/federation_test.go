@@ -880,7 +880,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 		require.Equal(t, exp.AppVers, act.AppVers)
 		require.Equal(t, util.DNSSanitize(exp.AppOrg), act.AppProviderId)
 	}
-	// provider can see create providerApps
+	// provider can see created providerApps
 	provAppsShow, status, err := mcClient.ShowHostApp(op.uri, provAttr.tokenOper, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -897,6 +897,16 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, len(consAppsExp), len(appsShow))
+	// app cannot be deleted via DeleteApp, must be via EWBI
+	for _, app := range appsShow {
+		rapp := ormapi.RegionApp{
+			Region: provAttr.region,
+			App:    app,
+		}
+		_, status, err = mcClient.DeleteApp(op.uri, provAttr.tokenAd, &rapp)
+		require.NotNil(t, err)
+		require.Contains(t, err.Error(), "Cannot delete App created via federation")
+	}
 
 	// check direct get file funcs
 	for _, image := range provImagesShow {
@@ -1000,7 +1010,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	}
 	_, _, err = mcClient.DeleteFederationHost(op.uri, provAttr.tokenOper, provDelReq)
 	require.NotNil(t, err, "delete federation provider")
-	require.Contains(t, err.Error(), "Cannot delete when the following zones are still registered")
+	require.Contains(t, err.Error(), "Cannot delete Host when the following zones are still registered")
 
 	// Unshare provider zone should fail if it's still in use
 	// ======================================================
@@ -1342,7 +1352,7 @@ func testFederationIgnorePartner(t *testing.T, ctx context.Context, clientRun mc
 		require.Equal(t, http.StatusOK, status)
 	}
 	// provider
-	_, status, err = mcClient.DeleteFederationHost(op.uri, provAttr.tokenOper, provReq)
+	_, status, err = mcClient.DeleteFederationHost(op.uri, provAttr.tokenOper, provReq, mctestclient.WithQueryParams(queryParams))
 	require.Nil(t, err, "delete federation provider")
 	require.Equal(t, http.StatusOK, status)
 	// check that federation provider is gone

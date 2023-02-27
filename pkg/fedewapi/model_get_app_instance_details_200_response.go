@@ -20,6 +20,8 @@ var _ MappedNullable = &GetAppInstanceDetails200Response{}
 // GetAppInstanceDetails200Response struct for GetAppInstanceDetails200Response
 type GetAppInstanceDetails200Response struct {
 	AppInstanceState *InstanceState `json:"appInstanceState,omitempty"`
+	// Description of current state or, if state is FAILED, the specific failure message.
+	StateDescription *string `json:"stateDescription,omitempty"`
 	// Information about the IP and Port exposed by the OP. Application clients shall use these access points to reach this application instance.
 	AccesspointInfo []AccessPointInfoInner `json:"accesspointInfo,omitempty"`
 }
@@ -82,6 +84,38 @@ func (o *GetAppInstanceDetails200Response) SetAppInstanceState(v InstanceState) 
 	o.AppInstanceState = &v
 }
 
+// GetStateDescription returns the StateDescription field value if set, zero value otherwise.
+func (o *GetAppInstanceDetails200Response) GetStateDescription() string {
+	if o == nil || isNil(o.StateDescription) {
+		var ret string
+		return ret
+	}
+	return *o.StateDescription
+}
+
+// GetStateDescriptionOk returns a tuple with the StateDescription field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetAppInstanceDetails200Response) GetStateDescriptionOk() (*string, bool) {
+	if o == nil || isNil(o.StateDescription) {
+		return nil, false
+	}
+	return o.StateDescription, true
+}
+
+// HasStateDescription returns a boolean if a field has been set.
+func (o *GetAppInstanceDetails200Response) HasStateDescription() bool {
+	if o != nil && !isNil(o.StateDescription) {
+		return true
+	}
+
+	return false
+}
+
+// SetStateDescription gets a reference to the given string and assigns it to the StateDescription field.
+func (o *GetAppInstanceDetails200Response) SetStateDescription(v string) {
+	o.StateDescription = &v
+}
+
 // GetAccesspointInfo returns the AccesspointInfo field value if set, zero value otherwise.
 func (o *GetAppInstanceDetails200Response) GetAccesspointInfo() []AccessPointInfoInner {
 	if o == nil || isNil(o.AccesspointInfo) {
@@ -126,6 +160,9 @@ func (o GetAppInstanceDetails200Response) ToMap() (map[string]interface{}, error
 	toSerialize := map[string]interface{}{}
 	if !isNil(o.AppInstanceState) {
 		toSerialize["appInstanceState"] = o.AppInstanceState
+	}
+	if !isNil(o.StateDescription) {
+		toSerialize["stateDescription"] = o.StateDescription
 	}
 	if !isNil(o.AccesspointInfo) {
 		toSerialize["accesspointInfo"] = o.AccesspointInfo

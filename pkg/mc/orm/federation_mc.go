@@ -474,6 +474,8 @@ func DeleteFederationProvider(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	fedQueryParams := federation.GetFedQueryParams(c)
+
 	span := log.SpanFromContext(ctx)
 	log.SetTags(span, provider.GetTags())
 	if err := fedAuthorized(ctx, claims.Username, provider.OperatorId); err != nil {
@@ -491,7 +493,7 @@ func DeleteFederationProvider(c echo.Context) error {
 		return ormutil.DbErr(err)
 	}
 	if len(images) > 0 {
-		return fmt.Errorf("Cannot delete provider when there are files (images) still present")
+		return fmt.Errorf("Cannot delete Host when there are files (images) still present")
 	}
 
 	// check if artefacts exist
@@ -504,7 +506,7 @@ func DeleteFederationProvider(c echo.Context) error {
 		return ormutil.DbErr(err)
 	}
 	if len(arts) > 0 {
-		return fmt.Errorf("Cannot delete provider when artefacts are still present")
+		return fmt.Errorf("Cannot delete Host when artefacts are still present")
 	}
 
 	// check if apps exist
@@ -517,7 +519,7 @@ func DeleteFederationProvider(c echo.Context) error {
 		return ormutil.DbErr(err)
 	}
 	if len(arts) > 0 {
-		return fmt.Errorf("Cannot delete provider when apps are still present")
+		return fmt.Errorf("Cannot delete Host when apps are still present")
 	}
 
 	// Ensure no zones are shared.
@@ -537,13 +539,19 @@ func DeleteFederationProvider(c echo.Context) error {
 		}
 	}
 	if len(registeredZones) > 0 {
-		return fmt.Errorf("Cannot delete when the following zones are still registered: %s", strings.Join(registeredZones, ", "))
+		return fmt.Errorf("Cannot delete Host when the following zones are still registered: %s", strings.Join(registeredZones, ", "))
 	}
+
+	// check if still registered by partner
+	if provider.Status == federation.StatusRegistered && !fedQueryParams.IgnorePartner {
+		return fmt.Errorf("Cannot delete Host when it is still registered by Guest")
+	}
+
 	// delete up the shared zones
 	for _, zone := range zones {
 		err = db.Delete(zone).Error
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelApi, "delete provider zone as part of delete federation provider failed", "zone", zone.ZoneId, "err", err)
+			log.SpanLog(ctx, log.DebugLevelApi, "delete Host zone as part of delete Federation Host failed", "zone", zone.ZoneId, "err", err)
 		}
 	}
 	// delete provider
@@ -754,7 +762,7 @@ func CreateFederationConsumer(c echo.Context) (reterr error) {
 		Name: consumer.Name,
 		Type: OrgTypeOperator,
 	}
-	err = CreateOrgObj(ctx, claims, &operOrg)
+	err = CreateOrgObj(ctx, claims, &operOrg, withNoEdgeboxOnlyOrg())
 	if err != nil {
 		return fmt.Errorf("failed to create operator org %q base on consumer name to house partner zones: %s", operOrg.Name, err)
 	}
@@ -839,7 +847,7 @@ func DeleteFederationConsumer(c echo.Context) error {
 		return ormutil.DbErr(err)
 	}
 	if len(images) > 0 {
-		return fmt.Errorf("Cannot delete consumer when there are files (images) still present")
+		return fmt.Errorf("Cannot delete Guest when there are files (images) still present")
 	}
 
 	// check if federation with partner federator exists
@@ -1367,7 +1375,7 @@ func UnshareProviderZone(c echo.Context) error {
 			return ormutil.DbErr(res.Error)
 		}
 		if res.RecordNotFound() {
-			return fmt.Errorf("ProviderZone %s not found", zoneId)
+			return fmt.Errorf("Host Zone %s not found", zoneId)
 		}
 		if existingZone.Status == federation.StatusRegistered {
 			registeredZones = append(registeredZones, zoneId)

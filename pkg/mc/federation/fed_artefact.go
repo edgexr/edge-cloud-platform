@@ -363,6 +363,9 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 	log.SpanLog(ctx, log.DebugLevelApi, "save providerArtefact", "provArt", provArt)
 	err = db.Create(&provArt).Error
 	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key value") {
+			return fmt.Errorf("Artefact with ID %s already exists", provArt.ArtefactID)
+		}
 		return fedError(http.StatusInternalServerError, fmt.Errorf("Failed to save artefact, %s", err.Error()))
 	}
 	defer func() {
