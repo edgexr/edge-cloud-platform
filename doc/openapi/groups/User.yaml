@@ -11,6 +11,39 @@ servers:
 - description: localhost server
   url: http://localhost:9900
 paths:
+  /api/v1/auth/user/authorized:
+    post:
+      description: Check if user is authorized
+      operationId: UserAuthorized
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiAuthScope'
+            x-required-fields:
+            - org
+            - resource
+            - action
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UserAuthorized
+      tags:
+      - User
   /api/v1/auth/user/create/apikey:
     post:
       description: Create an API key for reduced access, typically for automation
@@ -156,6 +189,32 @@ paths:
       security:
       - bearerAuth: []
       summary: NewPassword
+      tags:
+      - User
+  /api/v1/auth/user/scopes:
+    post:
+      description: Show authorized permissions
+      operationId: AuthScopes
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiAuthScope'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: AuthScopes
       tags:
       - User
   /api/v1/auth/user/show:
@@ -358,6 +417,33 @@ paths:
       summary: CreateUser
       tags:
       - User
+  /api/v1/userdelete:
+    post:
+      description: Delete a locked user by supplying the password
+      operationId: DeleteLockedUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiUser'
+            x-required-fields:
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+      summary: DeleteLockedUser
+      tags:
+      - User
   /api/v1/verifyemail:
     post:
       description: Verify a user's email account from the token in the email
@@ -387,6 +473,21 @@ paths:
       - User
 components:
   schemas:
+    OrmapiAuthScope:
+      properties:
+        action:
+          description: Action defines what type of action can be performed on a resource
+          type: string
+        object:
+          description: Optional object to act upon if auth claims has restriction
+          type: string
+        org:
+          description: Organization name
+          type: string
+        resource:
+          description: Resource defines a resource to act upon
+          type: string
+      type: object
     OrmapiCreateUser:
       properties:
         CreatedAt:

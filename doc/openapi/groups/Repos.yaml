@@ -59,6 +59,30 @@ paths:
       summary: GitlabResync
       tags:
       - Repos
+  /api/v1/auth/harbor/resync:
+    post:
+      description: Resync MC and Harbor data
+      operationId: HarborResync
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: HarborResync
+      tags:
+      - Repos
 components:
   schemas:
     OrmapiResult:

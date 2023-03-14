@@ -229,6 +229,9 @@ components:
         buildmaster:
           description: Master build version
           type: string
+        buildtag:
+          description: Build tag
+          type: string
         hostname:
           description: Hostname that performed build
           type: string

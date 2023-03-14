@@ -174,6 +174,11 @@ components:
           type: string
         infra_config:
           $ref: '#/components/schemas/EdgeprotoInfraConfig'
+        infra_flavors:
+          description: Cloudlet-specific flavors
+          items:
+            $ref: '#/components/schemas/EdgeprotoFlavorInfo'
+          type: array
         ip_support:
           description: Type of IP support provided by Cloudlet (see IpSupport), valid
             values are one of Unknown, Static, Dynamic, or 0, 1, 2
@@ -217,7 +222,8 @@ components:
           description: Platform type, valid values are one of Fake, Dind, Openstack,
             Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
             K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
-            or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
+            K8SOperator, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+            16, 17, 18
           type: string
         res_tag_map:
           additionalProperties:
@@ -293,21 +299,42 @@ components:
       type: object
     EdgeprotoFederationConfig:
       properties:
+        federation_context_id:
+          description: Federation context id
+          type: string
+        federation_db_id:
+          description: Federation database id
+          minimum: 0
+          type: integer
         federation_name:
-          description: Federation name
+          description: Federation Name
           type: string
         partner_federation_addr:
           description: Partner federation address
           type: string
-        partner_federation_id:
-          description: Partner federation ID
+      type: object
+    EdgeprotoFlavorInfo:
+      properties:
+        disk:
+          description: Amount of disk in GB on the Cloudlet
+          minimum: 0
+          type: integer
+        name:
+          description: Name of the flavor on the Cloudlet
           type: string
-        self_federation_id:
-          description: Self federation ID
-          type: string
-        zone_country_code:
-          description: Cloudlet zone country code
-          type: string
+        prop_map:
+          additionalProperties:
+            type: string
+          description: OS Flavor Properties, if any
+          type: object
+        ram:
+          description: Ram in MB on the Cloudlet
+          minimum: 0
+          type: integer
+        vcpus:
+          description: Number of VCPU cores on the Cloudlet
+          minimum: 0
+          type: integer
       type: object
     EdgeprotoFlavorKey:
       properties:
