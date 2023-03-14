@@ -93,6 +93,26 @@ tags:
 - description: Manage additional networks which can be added to Cluster Instances.
   name: Network
 paths:
+  /api/v1:
+    post:
+      description: Upload an artifact (img, iso, ova, tar, etc)
+      operationId: UploadArtifact
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+      summary: UploadArtifact
+      tags:
+      - Artifact
   /api/v1/auth/alertreceiver/create:
     post:
       description: Create an alert receiver
@@ -4121,6 +4141,37 @@ paths:
       summary: ShowCloudletInfo
       tags:
       - CloudletInfo
+  /api/v1/auth/ctrl/ShowCloudletPlatformFeatures:
+    post:
+      description: Show Cloudlet Platform Features. Shows platform specific features
+      operationId: ShowCloudletPlatformFeatures
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionPlatformFeatures'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoPlatformFeatures'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowCloudletPlatformFeatures
+      tags:
+      - Cloudlet
   /api/v1/auth/ctrl/ShowCloudletPool:
     post:
       description: Show CloudletPools
@@ -5760,24 +5811,20 @@ paths:
       summary: EventTerms
       tags:
       - Events
-  /api/v1/auth/federation/create:
+  /api/v1/auth/federation/consumer/app/deboard:
     post:
-      description: Create Federation
-      operationId: CreateFederation
+      description: Remove App from partner federation
+      operationId: DeboardGuestApp
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrmapiFederation'
+              $ref: '#/components/schemas/OrmapiConsumerApp'
             x-required-fields:
-            - selfoperatorid
-            - selffederationid
-            - name
-            - federator.operatorid
-            - federator.countrycode
-            - federator.federationid
-            - federator.federationaddr
-            - federator.apikey
+            - federationname
+            - appname
+            - apporg
+            - appvers
       responses:
         "200":
           content:
@@ -5795,21 +5842,24 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: CreateFederation
+      summary: DeboardGuestApp
       tags:
       - Federation
-  /api/v1/auth/federation/delete:
+  /api/v1/auth/federation/consumer/app/onboard:
     post:
-      description: Delete Federation
-      operationId: DeleteFederation
+      description: Onboard existing App to partner federation
+      operationId: OnboardGuestApp
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrmapiFederation'
+              $ref: '#/components/schemas/OrmapiConsumerApp'
             x-required-fields:
-            - selfoperatorid
-            - name
+            - region
+            - federationname
+            - appname
+            - apporg
+            - appvers
       responses:
         "200":
           content:
@@ -5827,21 +5877,55 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: DeleteFederation
+      summary: OnboardGuestApp
       tags:
       - Federation
-  /api/v1/auth/federation/deregister:
+  /api/v1/auth/federation/consumer/app/show:
     post:
-      description: Deregister Federation
-      operationId: DeregisterFederation
+      description: Show Apps onboarded to partner federation
+      operationId: ShowGuestApp
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrmapiFederation'
+              $ref: '#/components/schemas/OrmapiConsumerApp'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiConsumerApp'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowGuestApp
+      tags:
+      - Federation
+  /api/v1/auth/federation/consumer/create:
+    post:
+      description: Create Federation Guest
+      operationId: CreateFederationGuest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederationConsumer'
             x-required-fields:
-            - selfoperatorid
             - name
+            - operatorid
+            - partneraddr
+            - providerclientid
+            - providerclientkey
       responses:
         "200":
           content:
@@ -5859,22 +5943,50 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: DeregisterFederation
+      summary: CreateFederationGuest
       tags:
-      - Federation
-  /api/v1/auth/federation/partner/setapikey:
+      - FederationGuest
+  /api/v1/auth/federation/consumer/delete:
+    post:
+      description: Delete Federation Guest
+      operationId: DeleteFederationGuest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederationConsumer'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteFederationGuest
+      tags:
+      - FederationGuest
+  /api/v1/auth/federation/consumer/gennotifykey:
     post:
       description: Set Partner Federation API Key
-      operationId: SetPartnerFederationAPIKey
+      operationId: GenerateFederationGuestNotifyKey
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrmapiFederation'
+              $ref: '#/components/schemas/OrmapiFederationConsumer'
             x-required-fields:
-            - selfoperatorid
             - name
-            - federator.apikey
+            - operatorid
       responses:
         "200":
           content:
@@ -5892,52 +6004,117 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: SetPartnerFederationAPIKey
+      summary: GenerateFederationGuestNotifyKey
       tags:
-      - Federation
-  /api/v1/auth/federation/partner/zone/show:
+      - FederationGuest
+  /api/v1/auth/federation/consumer/image/create:
     post:
-      description: Show Federated Partner Zones
-      operationId: ShowFederatedPartnerZone
+      description: Create image on partner federation
+      operationId: CreateGuestImage
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrmapiFederatedPartnerZone'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/OrmapiFederatedPartnerZone'
-                type: array
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: Bad Request
-        "403":
-          description: Forbidden
-      security:
-      - bearerAuth: []
-      summary: ShowFederatedPartnerZone
-      tags:
-      - FederatorZone
-  /api/v1/auth/federation/register:
-    post:
-      description: Register Federation
-      operationId: RegisterFederation
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OrmapiFederation'
+              $ref: '#/components/schemas/OrmapiConsumerImage'
             x-required-fields:
-            - selfoperatorid
+            - organization
+            - federationname
+            - sourcepath
+            - type
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateGuestImage
+      tags:
+      - Federation
+  /api/v1/auth/federation/consumer/image/delete:
+    post:
+      description: Delete image from partner federation
+      operationId: DeleteGuestImage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiConsumerImage'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteGuestImage
+      tags:
+      - Federation
+  /api/v1/auth/federation/consumer/image/show:
+    post:
+      description: Show Images onboarded by developers
+      operationId: ShowFedGuestImage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiConsumerImage'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiConsumerImage'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowFedGuestImage
+      tags:
+      - FederationGuest
+  /api/v1/auth/federation/consumer/setapikey:
+    post:
+      description: Set Partner Federation API Key
+      operationId: SetFederationGuestAPIKey
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederationConsumer'
+            x-required-fields:
             - name
+            - operatorid
+            - providerclientid
+            - providerclientkey
       responses:
         "200":
           content:
@@ -5955,25 +6132,25 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: RegisterFederation
+      summary: SetFederationGuestAPIKey
       tags:
-      - Federation
-  /api/v1/auth/federation/self/zone/show:
+      - FederationGuest
+  /api/v1/auth/federation/consumer/show:
     post:
-      description: Show Federated Self Zones
-      operationId: ShowFederatedSelfZone
+      description: Show Federation Guest
+      operationId: ShowFederationGuest
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrmapiFederatedSelfZone'
+              $ref: '#/components/schemas/OrmapiFederationConsumer'
       responses:
         "200":
           content:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/OrmapiFederatedSelfZone'
+                  $ref: '#/components/schemas/OrmapiFederationConsumer'
                 type: array
           description: OK
         "400":
@@ -5986,26 +6163,27 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: ShowFederatedSelfZone
+      summary: ShowFederationGuest
       tags:
-      - FederatorZone
-  /api/v1/auth/federation/show:
+      - FederationGuest
+  /api/v1/auth/federation/consumer/update:
     post:
-      description: Show Federation
-      operationId: ShowFederation
+      description: Update Federation Guest
+      operationId: UpdateFederationGuest
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrmapiFederation'
+              $ref: '#/components/schemas/OrmapiFederationConsumer'
+            x-required-fields:
+            - name
+            - operatorid
       responses:
         "200":
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/OrmapiFederation'
-                type: array
+                $ref: '#/components/schemas/OrmapiResult'
           description: OK
         "400":
           content:
@@ -6017,21 +6195,20 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: ShowFederation
+      summary: UpdateFederationGuest
       tags:
-      - Federation
-  /api/v1/auth/federator/partner/zone/deregister:
+      - FederationGuest
+  /api/v1/auth/federation/consumer/zone/deregister:
     post:
       description: DeRegister Partner Federator Zone
-      operationId: DeRegisterPartnerFederatorZone
+      operationId: DeregisterGuestZone
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/OrmapiFederatedZoneRegRequest'
             x-required-fields:
-            - selfoperatorid
-            - federationname
+            - fedguest
             - zones
       responses:
         "200":
@@ -6050,21 +6227,21 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: DeRegisterPartnerFederatorZone
+      summary: DeregisterGuestZone
       tags:
-      - FederatorZone
-  /api/v1/auth/federator/partner/zone/register:
+      - FederationGuest
+  /api/v1/auth/federation/consumer/zone/register:
     post:
       description: Register Partner Federator Zone
-      operationId: RegisterPartnerFederatorZone
+      operationId: RegisterGuestZone
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/OrmapiFederatedZoneRegRequest'
             x-required-fields:
-            - selfoperatorid
-            - federationname
+            - fedguest
+            - region
             - zones
       responses:
         "200":
@@ -6083,124 +6260,25 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: RegisterPartnerFederatorZone
+      summary: RegisterGuestZone
       tags:
-      - FederatorZone
-  /api/v1/auth/federator/self/create:
+      - FederationGuest
+  /api/v1/auth/federation/consumer/zone/show:
     post:
-      description: Create Self Federator
-      operationId: CreateSelfFederator
+      description: Show Federated Partner Zones
+      operationId: ShowGuestZone
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrmapiFederator'
-            x-required-fields:
-            - operatorid
-            - countrycode
-            - region
-            - mcc
-            - mnc
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiFederator'
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: Bad Request
-        "403":
-          description: Forbidden
-      security:
-      - bearerAuth: []
-      summary: CreateSelfFederator
-      tags:
-      - Federator
-  /api/v1/auth/federator/self/delete:
-    post:
-      description: Delete Self Federator
-      operationId: DeleteSelfFederator
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OrmapiFederator'
-            x-required-fields:
-            - operatorid
-            - federationid
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: Bad Request
-        "403":
-          description: Forbidden
-      security:
-      - bearerAuth: []
-      summary: DeleteSelfFederator
-      tags:
-      - Federator
-  /api/v1/auth/federator/self/generateapikey:
-    post:
-      description: Generate Self Federator API Key
-      operationId: GenerateSelfFederatorAPIKey
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OrmapiFederator'
-            x-required-fields:
-            - operatorid
-            - federationid
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiFederator'
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: Bad Request
-        "403":
-          description: Forbidden
-      security:
-      - bearerAuth: []
-      summary: GenerateSelfFederatorAPIKey
-      tags:
-      - Federator
-  /api/v1/auth/federator/self/show:
-    post:
-      description: Show Self Federator
-      operationId: ShowSelfFederator
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OrmapiFederator'
+              $ref: '#/components/schemas/OrmapiConsumerZone'
       responses:
         "200":
           content:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/OrmapiFederator'
+                  $ref: '#/components/schemas/OrmapiConsumerZone'
                 type: array
           description: OK
         "400":
@@ -6213,21 +6291,245 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: ShowSelfFederator
+      summary: ShowGuestZone
       tags:
-      - Federator
-  /api/v1/auth/federator/self/update:
+      - FederationGuest
+  /api/v1/auth/federation/direct/app/get:
     post:
-      description: Update Self Federator
-      operationId: UpdateSelfFederator
+      description: Direct get app EWBI API
+      operationId: GetFederationApp
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrmapiFederator'
+              $ref: '#/components/schemas/OrmapiConsumerApp'
             x-required-fields:
-            - operatorid
-            - federationid
+            - federationname
+            - id
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FedewapiViewApplication200Response'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetFederationApp
+      tags:
+      - FederationDirect
+  /api/v1/auth/federation/direct/appinst/get:
+    post:
+      description: Direct get appinst EWBI API
+      operationId: GetFederationAppInsts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionAppInst'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/FedewapiGetAppInstanceDetails200Response'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetFederationAppInsts
+      tags:
+      - FederationDirect
+  /api/v1/auth/federation/direct/artefact/get:
+    post:
+      description: Direct get artefact EWBI API
+      operationId: GetFederationArtefact
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiConsumerApp'
+            x-required-fields:
+            - federationname
+            - id
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FedewapiGetArtefact200Response'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetFederationArtefact
+      tags:
+      - FederationDirect
+  /api/v1/auth/federation/direct/file/get:
+    post:
+      description: Direct get file EWBI API
+      operationId: GetFederationFile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiConsumerImage'
+            x-required-fields:
+            - federationname
+            - id
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FedewapiViewFile200Response'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetFederationFile
+      tags:
+      - FederationDirect
+  /api/v1/auth/federation/direct/partner/get:
+    post:
+      description: Direct get partner EWBI API
+      operationId: GetFederationPartner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederationConsumer'
+            x-required-fields:
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FedewapiGetFederationDetails200Response'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetFederationPartner
+      tags:
+      - FederationDirect
+  /api/v1/auth/federation/direct/zone/get:
+    post:
+      description: Direct get zone EWBI API
+      operationId: GetFederationZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiConsumerZone'
+            x-required-fields:
+            - consumername
+            - zoneid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FedewapiZoneRegisteredData'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetFederationZone
+      tags:
+      - FederationDirect
+  /api/v1/auth/federation/provider/app/show:
+    post:
+      description: Show Apps onboarded by partner
+      operationId: ShowHostApp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiProviderApp'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiProviderApp'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowHostApp
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/app/unsafedelete:
+    post:
+      description: Delete App onboarded by partner, use only if partner cannot trigger
+        delete themselves
+      operationId: UnsafeDeleteHostApp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiProviderApp'
+            x-required-fields:
+            - federationname
+            - appid
       responses:
         "200":
           content:
@@ -6245,25 +6547,503 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: UpdateSelfFederator
+      summary: UnsafeDeleteHostApp
       tags:
-      - Federator
-  /api/v1/auth/federator/self/zone/create:
+      - FederationHost
+  /api/v1/auth/federation/provider/appinst/show:
     post:
-      description: Create Self Federator Zone
-      operationId: CreateSelfFederatorZone
+      description: Show AppInsts onboarded by partner
+      operationId: ShowHostAppInst
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrmapiFederatorZone'
+              $ref: '#/components/schemas/OrmapiProviderAppInst'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiProviderAppInst'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowHostAppInst
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/appinst/unsafedelete:
+    post:
+      description: Delete AppInst created by partner, use only if partner cannot trigger
+        delete themselves
+      operationId: UnsafeDeleteHostAppInst
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiProviderAppInst'
+            x-required-fields:
+            - federationname
+            - appinstid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UnsafeDeleteHostAppInst
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/artefact/show:
+    post:
+      description: Show Artefacts created by partner
+      operationId: ShowHostArtefact
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiProviderArtefact'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiProviderArtefact'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowHostArtefact
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/artefact/unsafedelete:
+    post:
+      description: Delete Artefact onboarded by partner, use only if partner cannot
+        trigger delete themselves
+      operationId: UnsafeDeleteHostArtefact
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiProviderArtefact'
+            x-required-fields:
+            - federationname
+            - artefactid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UnsafeDeleteHostArtefact
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/create:
+    post:
+      description: Create Federation Host
+      operationId: CreateFederationHost
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederationProvider'
+            x-required-fields:
+            - name
+            - operatorid
+            - regions
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiFederationProviderInfo'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: CreateFederationHost
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/delete:
+    post:
+      description: Delete Federation Host
+      operationId: DeleteFederationHost
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederationProvider'
+            x-required-fields:
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteFederationHost
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/generateapikey:
+    post:
+      description: Generate Federation Host API Key to share with Guest
+      operationId: GenerateFederationHostAPIKey
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederationProvider'
+            x-required-fields:
+            - name
+            - operatorid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiFederationProviderInfo'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GenerateFederationHostAPIKey
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/image/show:
+    post:
+      description: Show Images uploaded by partner
+      operationId: ShowHostImage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiProviderImage'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiProviderImage'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowHostImage
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/image/unsafedelete:
+    post:
+      description: Delete Image onboarded by partner, use only if partner cannot trigger
+        delete themselves
+      operationId: UnsafeDeleteHostImage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiProviderImage'
+            x-required-fields:
+            - federationname
+            - fileid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UnsafeDeleteHostImage
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/setnotifykey:
+    post:
+      description: Set Federation Host notify key for notify connections
+      operationId: SetFederationHostNotifyKey
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederationProvider'
+            x-required-fields:
+            - name
+            - operatorid
+            - partnernotifyclientid
+            - partnernotifyclientkey
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: SetFederationHostNotifyKey
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/show:
+    post:
+      description: Show Federation Host
+      operationId: ShowFederationHost
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederationProvider'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiFederationProvider'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowFederationHost
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/update:
+    post:
+      description: Update Federation Host
+      operationId: UpdateFederationHost
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederationProvider'
+            x-required-fields:
+            - name
+            - operatorid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateFederationHost
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/zone/share:
+    post:
+      description: Share Host Zone with Partner OP
+      operationId: ShareHostZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederatedZoneShareRequest'
+            x-required-fields:
+            - fedhost
+            - zones
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShareHostZone
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/zone/show:
+    post:
+      description: Show Shared Host Zones
+      operationId: ShowHostZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiProviderZone'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiProviderZone'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowHostZone
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/zone/unshare:
+    post:
+      description: Unshare Host Zone with Partner OP
+      operationId: UnshareHostZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederatedZoneShareRequest'
+            x-required-fields:
+            - fedhost
+            - zones
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UnshareHostZone
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/zonebase/create:
+    post:
+      description: Create Host Zone Base to package cloudlets into a zone
+      operationId: CreateHostZoneBase
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiProviderZoneBase'
             x-required-fields:
             - zoneid
             - operatorid
-            - countrycode
+            - region
             - cloudlets
-            - geolocation
-            - region
       responses:
         "200":
           content:
@@ -6281,22 +7061,21 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: CreateSelfFederatorZone
+      summary: CreateHostZoneBase
       tags:
-      - FederatorZone
-  /api/v1/auth/federator/self/zone/delete:
+      - FederationHost
+  /api/v1/auth/federation/provider/zonebase/delete:
     post:
-      description: Delete Self Federator Zone
-      operationId: DeleteSelfFederatorZone
+      description: Delete Host Zone Base
+      operationId: DeleteHostZoneBase
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrmapiFederatorZone'
+              $ref: '#/components/schemas/OrmapiProviderZoneBase'
             x-required-fields:
             - zoneid
             - operatorid
-            - countrycode
       responses:
         "200":
           content:
@@ -6314,58 +7093,25 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: DeleteSelfFederatorZone
+      summary: DeleteHostZoneBase
       tags:
-      - FederatorZone
-  /api/v1/auth/federator/self/zone/share:
+      - FederationHost
+  /api/v1/auth/federation/provider/zonebase/show:
     post:
-      description: Share Self Federator Zone
-      operationId: ShareSelfFederatorZone
+      description: Show Host Zone Bases
+      operationId: ShowHostZoneBase
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrmapiFederatedSelfZone'
-            x-required-fields:
-            - zoneid
-            - selfoperatorid
-            - federationname
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: Bad Request
-        "403":
-          description: Forbidden
-      security:
-      - bearerAuth: []
-      summary: ShareSelfFederatorZone
-      tags:
-      - FederatorZone
-  /api/v1/auth/federator/self/zone/show:
-    post:
-      description: Show Self Federator Zone
-      operationId: ShowSelfFederatorZone
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OrmapiFederatorZone'
+              $ref: '#/components/schemas/OrmapiProviderZoneBase'
       responses:
         "200":
           content:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/OrmapiFederatorZone'
+                  $ref: '#/components/schemas/OrmapiProviderZoneBase'
                 type: array
           description: OK
         "400":
@@ -6378,42 +7124,9 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: ShowSelfFederatorZone
+      summary: ShowHostZoneBase
       tags:
-      - FederatorZone
-  /api/v1/auth/federator/self/zone/unshare:
-    post:
-      description: Unshare Self Federator Zone
-      operationId: UnshareSelfFederatorZone
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OrmapiFederatedSelfZone'
-            x-required-fields:
-            - zoneid
-            - selfoperatorid
-            - federationname
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: Bad Request
-        "403":
-          description: Forbidden
-      security:
-      - bearerAuth: []
-      summary: UnshareSelfFederatorZone
-      tags:
-      - FederatorZone
+      - FederationHost
   /api/v1/auth/gitlab/resync:
     post:
       description: Resync MC and Gitlab data
@@ -6436,6 +7149,30 @@ paths:
       security:
       - bearerAuth: []
       summary: GitlabResync
+      tags:
+      - Repos
+  /api/v1/auth/harbor/resync:
+    post:
+      description: Resync MC and Harbor data
+      operationId: HarborResync
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: HarborResync
       tags:
       - Repos
   /api/v1/auth/metrics/app:
@@ -7877,6 +8614,39 @@ paths:
       summary: ShowClusterUsage
       tags:
       - Usage
+  /api/v1/auth/user/authorized:
+    post:
+      description: Check if user is authorized
+      operationId: UserAuthorized
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiAuthScope'
+            x-required-fields:
+            - org
+            - resource
+            - action
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UserAuthorized
+      tags:
+      - User
   /api/v1/auth/user/create/apikey:
     post:
       description: Create an API key for reduced access, typically for automation
@@ -8022,6 +8792,32 @@ paths:
       security:
       - bearerAuth: []
       summary: NewPassword
+      tags:
+      - User
+  /api/v1/auth/user/scopes:
+    post:
+      description: Show authorized permissions
+      operationId: AuthScopes
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiAuthScope'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: AuthScopes
       tags:
       - User
   /api/v1/auth/user/show:
@@ -8266,6 +9062,33 @@ paths:
                 $ref: '#/components/schemas/OrmapiResult'
           description: Bad Request
       summary: CreateUser
+      tags:
+      - User
+  /api/v1/userdelete:
+    post:
+      description: Delete a locked user by supplying the password
+      operationId: DeleteLockedUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiUser'
+            x-required-fields:
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+      summary: DeleteLockedUser
       tags:
       - User
   /api/v1/verifyemail:
@@ -8900,8 +9723,15 @@ components:
           description: (_deprecated_) Auto provisioning policy name
           type: string
         command:
-          description: Command that the container runs to start service
+          description: Command that the container runs to start service, separate
+            multiple commands by a space
           type: string
+        command_args:
+          description: Command args to append to command, on cli specify multiple
+            times in order
+          items:
+            type: string
+          type: array
         configs:
           description: Customization files passed through to implementing services
           items:
@@ -8932,16 +9762,19 @@ components:
             For kubernetes deployment, this can be a kubernetes yaml or helm chart
             file.
           type: string
+        global_id:
+          description: A globally unique id for the App to be used with federation
+          type: string
         image_path:
           description: URI of where image resides
           type: string
         image_type:
           description: Image type, valid values are one of Unknown, Docker, Qcow,
-            Helm, Ovf, or 0, 1, 2, 3, 4
+            Helm, Ovf, Ova, or 0, 1, 2, 3, 4, 5
           type: string
         internal_ports:
-          description: Set true to indicate App is used internally with other Apps
-            only, and no ports are exposed externally
+          description: True indicates App is used internally with other Apps only,
+            and no ports are exposed externally
           type: boolean
         key:
           $ref: '#/components/schemas/EdgeprotoAppKey'
@@ -8972,7 +9805,7 @@ components:
             when app is updated
           type: string
         scale_with_cluster:
-          description: Set true to run App on all nodes of the cluster
+          description: True indicates App runs on all nodes of the cluster as it scales
           type: boolean
         serverless_config:
           $ref: '#/components/schemas/EdgeprotoServerlessConfig'
@@ -9023,6 +9856,9 @@ components:
         availability_zone:
           description: Optional Availability Zone if any
           type: string
+        cloudlet_flavor:
+          description: Cloudlet-specific flavor instead of regional flavor
+          type: string
         cloudlet_loc:
           $ref: '#/components/schemas/DmeProtoLoc'
         configs:
@@ -9057,6 +9893,8 @@ components:
             the root partition
           minimum: 0
           type: integer
+        fed_key:
+          $ref: '#/components/schemas/EdgeprotoFedAppInstKey'
         flavor:
           $ref: '#/components/schemas/EdgeprotoFlavorKey'
         force_update:
@@ -9397,6 +10235,11 @@ components:
           type: string
         infra_config:
           $ref: '#/components/schemas/EdgeprotoInfraConfig'
+        infra_flavors:
+          description: Cloudlet-specific flavors
+          items:
+            $ref: '#/components/schemas/EdgeprotoFlavorInfo'
+          type: array
         ip_support:
           description: Type of IP support provided by Cloudlet (see IpSupport), valid
             values are one of Unknown, Static, Dynamic, or 0, 1, 2
@@ -9440,7 +10283,8 @@ components:
           description: Platform type, valid values are one of Fake, Dind, Openstack,
             Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
             K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
-            or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
+            K8SOperator, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+            16, 17, 18
           type: string
         res_tag_map:
           additionalProperties:
@@ -9668,7 +10512,8 @@ components:
           description: Platform type, valid values are one of Fake, Dind, Openstack,
             Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
             K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
-            or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
+            K8SOperator, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+            16, 17, 18
           type: string
         properties:
           additionalProperties:
@@ -9740,7 +10585,8 @@ components:
           description: Platform type, valid values are one of Fake, Dind, Openstack,
             Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
             K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
-            or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
+            K8SOperator, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+            16, 17, 18
           type: string
         properties:
           description: Cloudlet resource properties
@@ -10061,6 +10907,9 @@ components:
         edge_turn_addr:
           description: EdgeTurn Server Address
           type: string
+        edge_turn_proxy_addr:
+          description: EdgeTurn Proxy Address
+          type: string
         err:
           description: Any error message
           type: string
@@ -10073,22 +10922,29 @@ components:
           description: Timeout
           type: string
       type: object
-    EdgeprotoFederationConfig:
+    EdgeprotoFedAppInstKey:
       properties:
+        app_inst_id:
+          description: Federated AppInst ID
+          type: string
         federation_name:
           description: Federation name
           type: string
+      type: object
+    EdgeprotoFederationConfig:
+      properties:
+        federation_context_id:
+          description: Federation context id
+          type: string
+        federation_db_id:
+          description: Federation database id
+          minimum: 0
+          type: integer
+        federation_name:
+          description: Federation Name
+          type: string
         partner_federation_addr:
           description: Partner federation address
-          type: string
-        partner_federation_id:
-          description: Partner federation ID
-          type: string
-        self_federation_id:
-          description: Self federation ID
-          type: string
-        zone_country_code:
-          description: Cloudlet zone country code
           type: string
       type: object
     EdgeprotoFlavor:
@@ -10300,6 +11156,23 @@ components:
           type: string
         organization:
           description: Organization to which the driver belongs to
+          type: string
+      type: object
+    EdgeprotoGpuConfig:
+      properties:
+        model:
+          description: Model name or vgpu type
+          type: string
+        num_gpu:
+          description: Number of instances
+          type: integer
+        ram:
+          description: required memory in megabytes
+          minimum: 0
+          type: integer
+        type:
+          description: GPU Type, valid values are one of None, Any, Vgpu, Pci, or
+            0, 1, 2, 3
           type: string
       type: object
     EdgeprotoIdleReservableClusterInsts:
@@ -10651,6 +11524,71 @@ components:
           description: Use Vault certs and CAs for internal TLS communication
           type: boolean
       type: object
+    EdgeprotoPlatformFeatures:
+      properties:
+        cloudlet_services_local:
+          description: Cloudlet servicess run local to the controller
+          type: boolean
+        ip_allocated_per_service:
+          description: Every kubernetes services gets a public IP (public cloud)
+          type: boolean
+        is_fake:
+          description: Platform is a fake platform for unit/e2e testing
+          type: boolean
+        is_prebuilt_kubernetes_cluster:
+          description: Kubernetes cluster is created externally and already exists
+          type: boolean
+        is_single_kubernetes_cluster:
+          description: The entire platform is a single kubernetes cluster
+          type: boolean
+        is_vm_pool:
+          description: Platform is a a pool of pre-existing virtual machines
+          type: boolean
+        kubernetes_requires_worker_nodes:
+          description: Kubernetes clusters requires worker nodes and cannot be master
+            only
+          type: boolean
+        no_kubernetes_cluster_auto_scale:
+          description: No support for kubernetes cluster auto-scale
+          type: boolean
+        platform_type:
+          description: Platform type, valid values are one of Fake, Dind, Openstack,
+            Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
+            K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
+            K8SOperator, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+            16, 17, 18
+          type: string
+        supports_additional_networks:
+          description: Platform supports adding networks
+          type: boolean
+        supports_app_inst_dedicated_ip:
+          description: Platform supports per AppInst dedicated IPs
+          type: boolean
+        supports_image_type_ova:
+          description: Platform supports OVA images for VM deployments
+          type: boolean
+        supports_image_type_ovf:
+          description: Platform supports OVF images for VM deployments
+          type: boolean
+        supports_kubernetes_only:
+          description: Platform only supports kubernetes deployments
+          type: boolean
+        supports_multi_tenant_cluster:
+          description: Platform supports multi tenant kubernetes clusters
+          type: boolean
+        supports_platform_high_availability_on_docker:
+          description: Supports high availability with two CRMs on docker
+          type: boolean
+        supports_platform_high_availability_on_k8s:
+          description: Supports high availability with two CRMs on kubernetes
+          type: boolean
+        supports_shared_volume:
+          description: Platform supports shared volumes
+          type: boolean
+        supports_trust_policy:
+          description: Platform supports trust policies
+          type: boolean
+      type: object
     EdgeprotoPolicyKey:
       properties:
         name:
@@ -10803,6 +11741,8 @@ components:
       type: object
     EdgeprotoServerlessConfig:
       properties:
+        gpu_config:
+          $ref: '#/components/schemas/EdgeprotoGpuConfig'
         min_replicas:
           description: Minimum number of replicas when serverless
           minimum: 0
@@ -11182,6 +12122,455 @@ components:
             cluster-k8s-node, cluster-docker-node, appvm
           type: string
       type: object
+    FedewapiAccessPointInfoInner:
+      properties:
+        accessPoints:
+          $ref: '#/components/schemas/FedewapiServiceEndpoint'
+        interfaceId:
+          type: string
+      type: object
+    FedewapiAppComponentSpecsInner:
+      properties:
+        artefactId:
+          type: string
+        componentName:
+          nullable: true
+          type: string
+        serviceNameEW:
+          nullable: true
+          type: string
+        serviceNameNB:
+          nullable: true
+          type: string
+      type: object
+    FedewapiAppMetaData:
+      properties:
+        accessToken:
+          type: string
+        appDescription:
+          nullable: true
+          type: string
+        appName:
+          type: string
+        category:
+          nullable: true
+          type: string
+        mobilitySupport:
+          nullable: true
+          type: boolean
+        version:
+          type: string
+      type: object
+    FedewapiAppQoSProfile:
+      properties:
+        appProvisioning:
+          nullable: true
+          type: boolean
+        bandwidthRequired:
+          nullable: true
+          type: integer
+        latencyConstraints:
+          type: string
+        multiUserClients:
+          nullable: true
+          type: string
+        noOfUsersPerAppInst:
+          nullable: true
+          type: integer
+      type: object
+    FedewapiCPUArchType:
+      type: string
+    FedewapiCommandLineParams:
+      properties:
+        command:
+          items:
+            type: string
+          nullable: true
+          type: array
+        commandArgs:
+          items:
+            type: string
+          type: array
+      type: object
+    FedewapiCompEnvParams:
+      properties:
+        envValueType:
+          type: string
+        envVarName:
+          type: string
+        envVarSrc:
+          nullable: true
+          type: string
+        envVarValue:
+          nullable: true
+          type: string
+      type: object
+    FedewapiComponentSpec:
+      properties:
+        commandLineParams:
+          $ref: '#/components/schemas/FedewapiCommandLineParams'
+        compEnvParams:
+          items:
+            $ref: '#/components/schemas/FedewapiCompEnvParams'
+          type: array
+        componentName:
+          type: string
+        computeResourceProfile:
+          $ref: '#/components/schemas/FedewapiComputeResourceInfo'
+        deploymentConfig:
+          $ref: '#/components/schemas/FedewapiDeploymentConfig'
+        exposedInterfaces:
+          items:
+            $ref: '#/components/schemas/FedewapiInterfaceDetails'
+          type: array
+        images:
+          items:
+            type: string
+          nullable: true
+          type: array
+        numOfInstances:
+          type: integer
+        persistentVolumes:
+          items:
+            $ref: '#/components/schemas/FedewapiPersistentVolumeDetails'
+          type: array
+        restartPolicy:
+          type: string
+      type: object
+    FedewapiComputeResourceInfo:
+      properties:
+        cpuArchType:
+          type: string
+        cpuExclusivity:
+          nullable: true
+          type: boolean
+        diskStorage:
+          nullable: true
+          type: integer
+        fpga:
+          nullable: true
+          type: integer
+        gpu:
+          items:
+            $ref: '#/components/schemas/FedewapiGpuInfo'
+          type: array
+        hugepages:
+          items:
+            $ref: '#/components/schemas/FedewapiHugePage'
+          type: array
+        memory:
+          type: integer
+        numCPU:
+          type: string
+        vpu:
+          nullable: true
+          type: integer
+      type: object
+    FedewapiDeploymentConfig:
+      properties:
+        configType:
+          type: string
+        contents:
+          type: string
+      type: object
+    FedewapiFlavour:
+      properties:
+        cpuArchType:
+          $ref: '#/components/schemas/FedewapiCPUArchType'
+        cpuExclusivity:
+          nullable: true
+          type: boolean
+        flavourId:
+          type: string
+        fpga:
+          nullable: true
+          type: integer
+        gpu:
+          items:
+            $ref: '#/components/schemas/FedewapiGpuInfo'
+          type: array
+        hugepages:
+          items:
+            $ref: '#/components/schemas/FedewapiHugePage'
+          type: array
+        memorySize:
+          type: integer
+        numCPU:
+          type: integer
+        storageSize:
+          type: integer
+        supportedOSTypes:
+          items:
+            $ref: '#/components/schemas/FedewapiOSType'
+          nullable: true
+          type: array
+        vpu:
+          nullable: true
+          type: integer
+      type: object
+    FedewapiGetAppInstanceDetails200Response:
+      properties:
+        accesspointInfo:
+          items:
+            $ref: '#/components/schemas/FedewapiAccessPointInfoInner'
+          type: array
+        appInstanceState:
+          $ref: '#/components/schemas/FedewapiInstanceState'
+        stateDescription:
+          nullable: true
+          type: string
+      type: object
+    FedewapiGetArtefact200Response:
+      properties:
+        appProviderId:
+          type: string
+        artefactDescription:
+          nullable: true
+          type: string
+        artefactDescriptorType:
+          type: string
+        artefactFileFormat:
+          nullable: true
+          type: string
+        artefactFileName:
+          nullable: true
+          type: string
+        artefactId:
+          type: string
+        artefactName:
+          type: string
+        artefactRepoLocation:
+          $ref: '#/components/schemas/FedewapiObjectRepoLocation'
+        artefactVersionInfo:
+          type: string
+        artefactVirtType:
+          type: string
+        componentSpec:
+          items:
+            $ref: '#/components/schemas/FedewapiComponentSpec'
+          type: array
+        repoType:
+          nullable: true
+          type: string
+      type: object
+    FedewapiGetFederationDetails200Response:
+      properties:
+        allowedFixedNetworkIds:
+          items:
+            type: string
+          type: array
+        allowedMobileNetworkIds:
+          $ref: '#/components/schemas/FedewapiMobileNetworkIds'
+        edgeDiscoveryServiceEndPoint:
+          $ref: '#/components/schemas/FedewapiServiceEndpoint'
+        lcmServiceEndPoint:
+          $ref: '#/components/schemas/FedewapiServiceEndpoint'
+        offeredAvailabilityZones:
+          items:
+            $ref: '#/components/schemas/FedewapiZoneDetails'
+          type: array
+      type: object
+    FedewapiGpuInfo:
+      properties:
+        gpuMemory:
+          type: integer
+        gpuModeName:
+          type: string
+        gpuVendorType:
+          type: string
+        numGPU:
+          type: integer
+      type: object
+    FedewapiHugePage:
+      properties:
+        number:
+          type: integer
+        pageSize:
+          type: string
+      type: object
+    FedewapiInstanceState:
+      nullable: true
+      type: string
+    FedewapiInterfaceDetails:
+      properties:
+        InterfaceName:
+          nullable: true
+          type: string
+        commPort:
+          type: integer
+        commProtocol:
+          type: string
+        interfaceId:
+          type: string
+        network:
+          nullable: true
+          type: string
+        visibilityType:
+          type: string
+      type: object
+    FedewapiMobileNetworkIds:
+      properties:
+        mcc:
+          nullable: true
+          type: string
+        mncs:
+          items:
+            type: string
+          type: array
+      type: object
+    FedewapiOSType:
+      properties:
+        architecture:
+          type: string
+        distribution:
+          type: string
+        license:
+          type: string
+        version:
+          type: string
+      type: object
+    FedewapiObjectRepoLocation:
+      properties:
+        password:
+          nullable: true
+          type: string
+        repoURL:
+          nullable: true
+          type: string
+        token:
+          nullable: true
+          type: string
+        userName:
+          nullable: true
+          type: string
+      type: object
+    FedewapiPersistentVolumeDetails:
+      properties:
+        accessMode:
+          nullable: true
+          type: string
+        ephemeralType:
+          nullable: true
+          type: boolean
+        sharingPolicy:
+          nullable: true
+          type: string
+        volumeMountPath:
+          type: string
+        volumeName:
+          type: string
+        volumeSize:
+          type: string
+      type: object
+    FedewapiServiceEndpoint:
+      properties:
+        fqdn:
+          nullable: true
+          type: string
+        ipv4Addresses:
+          items:
+            type: string
+          type: array
+        ipv6Addresses:
+          items:
+            type: string
+          type: array
+        port:
+          type: integer
+      type: object
+    FedewapiViewApplication200Response:
+      properties:
+        appComponentSpecs:
+          items:
+            $ref: '#/components/schemas/FedewapiAppComponentSpecsInner'
+          nullable: true
+          type: array
+        appDeploymentZones:
+          items:
+            type: string
+          nullable: true
+          type: array
+        appId:
+          type: string
+        appMetaData:
+          $ref: '#/components/schemas/FedewapiAppMetaData'
+        appProviderId:
+          type: string
+        appQoSProfile:
+          $ref: '#/components/schemas/FedewapiAppQoSProfile'
+      type: object
+    FedewapiViewFile200Response:
+      properties:
+        appProviderId:
+          type: string
+        checksum:
+          nullable: true
+          type: string
+        fileDescription:
+          nullable: true
+          type: string
+        fileId:
+          type: string
+        fileName:
+          type: string
+        fileRepoLocation:
+          $ref: '#/components/schemas/FedewapiObjectRepoLocation'
+        fileType:
+          $ref: '#/components/schemas/FedewapiVirtImageType'
+        fileVersionInfo:
+          type: string
+        imgInsSetArch:
+          $ref: '#/components/schemas/FedewapiCPUArchType'
+        imgOSType:
+          $ref: '#/components/schemas/FedewapiOSType'
+        repoType:
+          nullable: true
+          type: string
+      type: object
+    FedewapiVirtImageType:
+      type: string
+    FedewapiZoneDetails:
+      properties:
+        geographyDetails:
+          type: string
+        geolocation:
+          type: string
+        zoneId:
+          type: string
+      type: object
+    FedewapiZoneRegisteredData:
+      properties:
+        computeResourceQuotaLimits:
+          items:
+            $ref: '#/components/schemas/FedewapiComputeResourceInfo'
+          nullable: true
+          type: array
+        flavoursSupported:
+          items:
+            $ref: '#/components/schemas/FedewapiFlavour'
+          nullable: true
+          type: array
+        networkResources:
+          $ref: '#/components/schemas/FedewapiZoneRegisteredDataNetworkResources'
+        reservedComputeResources:
+          items:
+            $ref: '#/components/schemas/FedewapiComputeResourceInfo'
+          nullable: true
+          type: array
+        zoneId:
+          type: string
+      type: object
+    FedewapiZoneRegisteredDataNetworkResources:
+      properties:
+        dedicatedNIC:
+          type: integer
+        egressBandWidth:
+          type: integer
+        supportDPDK:
+          type: boolean
+        supportSriov:
+          type: boolean
+      type: object
     NodeAggrVal:
       properties:
         count:
@@ -11533,6 +12922,21 @@ components:
           nullable: true
           type: array
       type: object
+    OrmapiAuthScope:
+      properties:
+        action:
+          description: Action defines what type of action can be performed on a resource
+          type: string
+        object:
+          description: Optional object to act upon if auth claims has restriction
+          type: string
+        org:
+          description: Organization name
+          type: string
+        resource:
+          description: Resource defines a resource to act upon
+          type: string
+      type: object
     OrmapiBillingOrganization:
       properties:
         Address:
@@ -11664,6 +13068,90 @@ components:
         WebsocketTokenValidDuration:
           description: Websocket auth token valid duration (in format 2h30m10s, default
             2m)
+          type: string
+      type: object
+    OrmapiConsumerApp:
+      properties:
+        AppName:
+          description: App name in region
+          type: string
+        AppOrg:
+          description: App org in region
+          type: string
+        AppVers:
+          description: App version in region
+          type: string
+        FederationName:
+          description: Target Guest Federation name
+          type: string
+        ID:
+          description: Unique ID, acts as both the App and Artefact IDs
+          type: string
+        ImageIds:
+          $ref: '#/components/schemas/PqStringArray'
+        Region:
+          description: Region name
+          type: string
+        Status:
+          description: Status
+          readOnly: true
+          type: string
+      type: object
+    OrmapiConsumerImage:
+      properties:
+        Checksum:
+          description: MD5 checksum for VM and file-based image types, sha256 digest
+            for containers and Helm charts
+          type: string
+        FederationName:
+          description: Federation the image is copied to (FederationGuest)
+          type: string
+        ID:
+          description: ID
+          type: string
+        Name:
+          description: Image name
+          type: string
+        Organization:
+          description: Developer organization that owns the image
+          type: string
+        SourcePath:
+          description: Full path to source image as used in App, i.e. https://vm-registry.domain/org/image.img
+          type: string
+        Status:
+          description: Image status
+          readOnly: true
+          type: string
+        Type:
+          description: Image type (DOCKER, HELM, QCOW2, or OVA)
+          type: string
+        Version:
+          description: Image version
+          type: string
+      type: object
+    OrmapiConsumerZone:
+      properties:
+        ConsumerName:
+          description: Name of the Federation Guest
+          type: string
+        GeoLocation:
+          description: GPS co-ordinates associated with the zone (in decimal format)
+          type: string
+        GeographyDetails:
+          description: Geography details
+          type: string
+        OperatorId:
+          description: Guest operator organization
+          type: string
+        Region:
+          description: Region in which zone is instantiated
+          type: string
+        Status:
+          description: Zone status
+          readOnly: true
+          type: string
+        ZoneId:
+          description: Zone unique name
           type: string
       type: object
     OrmapiController:
@@ -11810,213 +13298,189 @@ components:
           readOnly: true
           type: string
       type: object
-    OrmapiFederatedPartnerZone:
-      properties:
-        Registered:
-          description: Zone registered by self federator
-          readOnly: true
-          type: boolean
-        city:
-          description: Comma seperated list of cities under this zone
-          type: string
-        cloudlets:
-          $ref: '#/components/schemas/PqStringArray'
-        countrycode:
-          description: ISO 3166-1 Alpha-2 code for the country where operator platform
-            is located
-          type: string
-        federationname:
-          description: Name of the Federation
-          type: string
-        geolocation:
-          description: GPS co-ordinates associated with the zone (in decimal format)
-          type: string
-        locality:
-          description: Type of locality eg rural, urban etc.
-          type: string
-        operatorid:
-          description: Globally unique string to identify an operator platform
-          type: string
-        region:
-          description: Region in which cloudlets reside
-          type: string
-        revision:
-          description: Revision ID to track object changes. We use jaeger traceID
-            for easy debugging but this can differ with what partner federator uses
-          readOnly: true
-          type: string
-        selfoperatorid:
-          description: Self operator ID
-          type: string
-        state:
-          description: Comma seperated list of states under this zone
-          type: string
-        zoneid:
-          description: Globally unique string used to authenticate operations over
-            federation interface
-          type: string
-      type: object
-    OrmapiFederatedSelfZone:
-      properties:
-        Registered:
-          description: Zone registered by partner federator
-          readOnly: true
-          type: boolean
-        federationname:
-          description: Name of the Federation
-          type: string
-        revision:
-          description: Revision ID to track object changes. We use jaeger traceID
-            for easy debugging but this can differ with what partner federator uses
-          readOnly: true
-          type: string
-        selfoperatorid:
-          description: Self operator ID
-          type: string
-        zoneid:
-          description: Globally unique identifier of the federator zone
-          type: string
-      type: object
     OrmapiFederatedZoneRegRequest:
       properties:
-        federationname:
-          description: Name of the Federation
+        FedGuest:
+          description: Federation Guest name
           type: string
-        selfoperatorid:
-          description: Self operator ID
+        Region:
+          description: Region to create local cloudlet versions of Host zones
           type: string
-        zones:
+        Zones:
           description: Partner federator zones to be registered/deregistered
           items:
             type: string
           nullable: true
           type: array
       type: object
-    OrmapiFederation:
+    OrmapiFederatedZoneShareRequest:
       properties:
-        PartnerRoleAccessToSelfZones:
-          description: Partner is allowed access to self federator zones as part of
-            federation
-          readOnly: true
+        FedHost:
+          description: Federation Host name
+          type: string
+        Zones:
+          description: Self federator zones to be shared/unshared
+          items:
+            type: string
+          nullable: true
+          type: array
+      type: object
+    OrmapiFederationConsumer:
+      properties:
+        AutoRegisterRegion:
+          description: Region used for automatically registered zones
+          type: string
+        AutoRegisterZones:
+          description: Automatically register any zone shared with me
           type: boolean
-        PartnerRoleShareZonesWithSelf:
-          description: Partner shares its zones with self federator as part of federation
+        CreatedAt:
+          description: Time created
+          format: date-time
           readOnly: true
+          type: string
+        FederationContextId:
+          description: Federation context id returned by partner
+          type: string
+        ID:
+          description: Unique ID
+          minimum: 0
+          type: integer
+        MyInfo:
+          $ref: '#/components/schemas/OrmapiFederator'
+        Name:
+          description: Unique name of this Federation Guest, will be used as an operator
+            org for host's zones
+          type: string
+        NotifyClientId:
+          description: Auth ClientId for notify callbacks to this Guest OP
+          type: string
+        OperatorId:
+          description: Operator Organization that establishes the federation with
+            a Host OP
+          type: string
+        PartnerAddr:
+          description: Partner Address
+          type: string
+        PartnerInfo:
+          $ref: '#/components/schemas/OrmapiFederator'
+        PartnerTokenUrl:
+          description: Partner token URL
+          type: string
+        ProviderClientId:
+          description: Auth ClientId for connecting to the Host OP
+          type: string
+        ProviderClientKey:
+          description: Auth ClientKey for connection to the Host OP (stored in secret
+            storage)
+          type: string
+        Public:
+          description: Public means any developer will be able to use the cloudlets,
+            otherwise (TODO) allowed developers will need to be added explicitly
           type: boolean
-        apikey:
-          description: API Key used for authentication (stored in secure storage)
+        Status:
+          description: Status
+          readOnly: true
           type: string
-        countrycode:
-          description: ISO 3166-1 Alpha-2 code for the country where operator platform
-            is located
+        UpdatedAt:
+          description: Time updated
+          format: date-time
+          readOnly: true
           type: string
-        federationaddr:
-          description: Federation access point address
+      type: object
+    OrmapiFederationProvider:
+      properties:
+        CreatedAt:
+          description: Time created
+          format: date-time
+          readOnly: true
           type: string
-        federationid:
-          description: Globally unique string used to indentify a federation with
-            partner federation
+        DefaultContainerDeployment:
+          description: Default container deployment type (either docker or kubernetes)
           type: string
-        locatorendpoint:
-          description: IP and Port of discovery service URL of operator platform
+        FederationContextId:
+          description: The federation context id we generated for this federation
           type: string
-        mcc:
-          description: Mobile country code of operator sending the request
+        ID:
+          description: Unique ID
+          minimum: 0
+          type: integer
+        MyInfo:
+          $ref: '#/components/schemas/OrmapiFederator'
+        Name:
+          description: Unique name of this federation Host, will be used as a developer
+            org name for Guest OP's images and apps
           type: string
-        mnc:
+        OperatorId:
+          description: Operator Organization that provides the resources
+          type: string
+        PartnerInfo:
+          $ref: '#/components/schemas/OrmapiFederator'
+        PartnerNotifyClientId:
+          description: Partner notification client id
+          type: string
+        PartnerNotifyClientKey:
+          description: Partner notification client key (saved in secret storage)
+          type: string
+        PartnerNotifyDest:
+          description: Partner notification URI
+          type: string
+        PartnerNotifyTokenUrl:
+          description: Partner Oauth token URI
+          type: string
+        ProviderClientId:
+          description: Host client ID for inbound connections
+          type: string
+        Regions:
           $ref: '#/components/schemas/PqStringArray'
-        name:
-          description: Name to uniquely identify a federation
-          type: string
-        operatorid:
-          description: Globally unique string to identify an operator platform
-          type: string
-        region:
-          description: Region to which this federator is associated with
-          type: string
-        revision:
-          description: Revision ID to track object changes. We use jaeger traceID
-            for easy debugging but this can differ with what partner federator uses
+        Status:
+          description: Status
           readOnly: true
           type: string
-        selffederationid:
-          description: Self federation ID
+        UpdatedAt:
+          description: Time updated
+          format: date-time
+          readOnly: true
           type: string
-        selfoperatorid:
-          description: Self operator ID
+      type: object
+    OrmapiFederationProviderInfo:
+      properties:
+        ClientId:
+          description: Client ID for Oauth
+          type: string
+        ClientKey:
+          description: Client Key for Oauth. Save this, as it the system cannot retrieve
+            it.
+          type: string
+        TargetAddr:
+          description: Target Address for EWBI create
+          type: string
+        TokenUrl:
+          description: Oauth2 token URL
           type: string
       type: object
     OrmapiFederator:
       properties:
-        apikey:
-          description: API Key used for authentication (stored in secure storage)
-          type: string
-        countrycode:
+        CountryCode:
           description: ISO 3166-1 Alpha-2 code for the country where operator platform
             is located
           type: string
-        federationaddr:
-          description: Federation access point address
-          type: string
-        federationid:
-          description: Globally unique string used to indentify a federation with
-            partner federation
-          type: string
-        locatorendpoint:
+        DiscoveryEndPoint:
           description: IP and Port of discovery service URL of operator platform
           type: string
-        mcc:
+        FederationId:
+          description: Globally unique string used to indentify a federation operator
+          type: string
+        FixedNetworkIds:
+          $ref: '#/components/schemas/PqStringArray'
+        InitialDate:
+          description: Initial create time to denote time zone
+          format: date-time
+          type: string
+        MCC:
           description: Mobile country code of operator sending the request
           type: string
-        mnc:
+        MNC:
           $ref: '#/components/schemas/PqStringArray'
-        operatorid:
-          description: Globally unique string to identify an operator platform
-          type: string
-        region:
-          description: Region to which this federator is associated with
-          type: string
-        revision:
-          description: Revision ID to track object changes. We use jaeger traceID
-            for easy debugging but this can differ with what partner federator uses
-          readOnly: true
-          type: string
-      type: object
-    OrmapiFederatorZone:
-      properties:
-        city:
-          description: Comma seperated list of cities under this zone
-          type: string
-        cloudlets:
-          $ref: '#/components/schemas/PqStringArray'
-        countrycode:
-          description: ISO 3166-1 Alpha-2 code for the country where operator platform
-            is located
-          type: string
-        geolocation:
-          description: GPS co-ordinates associated with the zone (in decimal format)
-          type: string
-        locality:
-          description: Type of locality eg rural, urban etc.
-          type: string
-        operatorid:
-          description: Globally unique string to identify an operator platform
-          type: string
-        region:
-          description: Region in which cloudlets reside
-          type: string
-        revision:
-          description: Revision ID to track object changes. We use jaeger traceID
-            for easy debugging but this can differ with what partner federator uses
-          readOnly: true
-          type: string
-        state:
-          description: Comma seperated list of states under this zone
-          type: string
-        zoneid:
-          description: Globally unique string used to authenticate operations over
-            federation interface
-          type: string
       type: object
     OrmapiGenerateReport:
       properties:
@@ -12255,6 +13719,183 @@ components:
           type: integer
         Org:
           description: Billing Organization Name associated with the payment profile
+          type: string
+      type: object
+    OrmapiProviderApp:
+      properties:
+        AppID:
+          description: App ID send by partner
+          type: string
+        AppName:
+          description: App name of federation app (not region app)
+          type: string
+        AppProviderId:
+          description: App provider ID
+          type: string
+        AppStatusCallbackLink:
+          description: App status callback link
+          type: string
+        AppVers:
+          description: App version  of federation app (not region app)
+          type: string
+        ArtefactIds:
+          $ref: '#/components/schemas/PqStringArray'
+        DeploymentZones:
+          $ref: '#/components/schemas/PqStringArray'
+        FederationName:
+          description: Host Federation name
+          type: string
+      type: object
+    OrmapiProviderAppInst:
+      properties:
+        AppID:
+          description: AppID for ProviderApp
+          type: string
+        AppInstCallbackLink:
+          description: AppInst callback link
+          type: string
+        AppInstID:
+          description: AppInst unique ID
+          type: string
+        AppName:
+          description: App name for AppInstKey
+          type: string
+        AppVers:
+          description: App version for AppInstKey
+          type: string
+        Cloudlet:
+          description: Cloudlet name for AppInstKey
+          type: string
+        CloudletFedOrg:
+          description: Cloudlet federation org for AppInstKey (this should always
+            be blank)
+          type: string
+        CloudletOrg:
+          description: Cloudlet org for AppInstKey
+          type: string
+        Cluster:
+          description: Cluster name for AppInstKey
+          type: string
+        ClusterOrg:
+          description: Cluster org for AppInstKey
+          type: string
+        Error:
+          description: Error message if create failed
+          type: string
+        FederationName:
+          description: Host Federation name
+          type: string
+        Region:
+          description: Region for AppInst
+          type: string
+      type: object
+    OrmapiProviderArtefact:
+      properties:
+        AppName:
+          description: App name in region
+          type: string
+        AppProviderId:
+          description: App provider ID
+          type: string
+        AppVers:
+          description: App version in region
+          type: string
+        ArtefactID:
+          description: Artefact ID send by partner
+          type: string
+        ArtefactName:
+          description: Artefact name
+          type: string
+        ArtefactVersion:
+          description: Artefact version
+          type: string
+        DescType:
+          description: Descriptor Type
+          type: string
+        FederationName:
+          description: Host Federation name
+          type: string
+        FileIds:
+          $ref: '#/components/schemas/PqStringArray'
+        VirtType:
+          description: Virtualization Type
+          type: string
+      type: object
+    OrmapiProviderImage:
+      properties:
+        AppProviderId:
+          description: Partner app provider organization
+          type: string
+        Checksum:
+          description: MD5 checksum for VM and file-based image types, sha256 digest
+            for containers and Helm charts
+          type: string
+        Description:
+          description: Image description
+          type: string
+        FederationName:
+          description: Host federation name
+          type: string
+        FileID:
+          description: File ID sent by partner
+          type: string
+        Name:
+          description: Image name
+          type: string
+        Path:
+          description: Image path
+          type: string
+        Status:
+          description: Image status
+          type: string
+        Type:
+          description: Image type (DOCKER, HELM, QCOW2, or OVA)
+          type: string
+        Version:
+          description: Image version
+          type: string
+      type: object
+    OrmapiProviderZone:
+      properties:
+        OperatorId:
+          description: Host operator organization
+          type: string
+        PartnerNotifyZoneURI:
+          description: Partner notify zone URI
+          type: string
+        ProviderName:
+          description: Name of the Federation Host OP
+          type: string
+        Status:
+          description: Zone status
+          readOnly: true
+          type: string
+        ZoneId:
+          description: Globally unique identifier of the federator zone
+          type: string
+      type: object
+    OrmapiProviderZoneBase:
+      properties:
+        Cloudlets:
+          $ref: '#/components/schemas/PqStringArray'
+        CountryCode:
+          description: ISO 3166-1 Alpha-2 code for the country where operator platform
+            is located
+          type: string
+        GeoLocation:
+          description: GPS co-ordinates associated with the zone (in decimal format)
+          type: string
+        GeographyDetails:
+          description: Geography details
+          type: string
+        OperatorId:
+          description: Operator organization
+          type: string
+        Region:
+          description: Region in which cloudlets reside
+          type: string
+        ZoneId:
+          description: Unique name for zone
           type: string
       type: object
     OrmapiRegionAlert:
@@ -13041,6 +14682,14 @@ components:
           description: Region name
           type: string
       type: object
+    OrmapiRegionPlatformFeatures:
+      properties:
+        PlatformFeatures:
+          $ref: '#/components/schemas/EdgeprotoPlatformFeatures'
+        Region:
+          description: Region name
+          type: string
+      type: object
     OrmapiRegionRateLimitSettings:
       properties:
         RateLimitSettings:
@@ -13321,10 +14970,10 @@ components:
     OrmapiUserLogin:
       properties:
         apikey:
-          description: API key if logging in using API key
+          description: (deprecated) Use password field for ApiKey
           type: string
         apikeyid:
-          description: API key ID if logging in using API key
+          description: (deprecated) Use username field for ApiKeyId
           type: string
         password:
           description: User's password
@@ -13362,6 +15011,9 @@ components:
           type: string
         buildmaster:
           description: Master build version
+          type: string
+        buildtag:
+          description: Build tag
           type: string
         hostname:
           description: Hostname that performed build

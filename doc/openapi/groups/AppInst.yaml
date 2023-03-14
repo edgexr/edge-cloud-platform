@@ -273,6 +273,9 @@ components:
         availability_zone:
           description: Optional Availability Zone if any
           type: string
+        cloudlet_flavor:
+          description: Cloudlet-specific flavor instead of regional flavor
+          type: string
         cloudlet_loc:
           $ref: '#/components/schemas/DmeProtoLoc'
         configs:
@@ -307,6 +310,8 @@ components:
             the root partition
           minimum: 0
           type: integer
+        fed_key:
+          $ref: '#/components/schemas/EdgeprotoFedAppInstKey'
         flavor:
           $ref: '#/components/schemas/EdgeprotoFlavorKey'
         force_update:
@@ -429,6 +434,15 @@ components:
           type: string
         kind:
           description: Kind (type) of config, i.e. envVarsYaml, helmCustomizationYaml
+          type: string
+      type: object
+    EdgeprotoFedAppInstKey:
+      properties:
+        app_inst_id:
+          description: Federated AppInst ID
+          type: string
+        federation_name:
+          description: Federation name
           type: string
       type: object
     EdgeprotoFlavorKey:

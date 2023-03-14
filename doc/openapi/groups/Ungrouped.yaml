@@ -212,10 +212,10 @@ components:
     OrmapiUserLogin:
       properties:
         apikey:
-          description: API key if logging in using API key
+          description: (deprecated) Use password field for ApiKey
           type: string
         apikeyid:
-          description: API key ID if logging in using API key
+          description: (deprecated) Use username field for ApiKeyId
           type: string
         password:
           description: User's password

@@ -551,6 +551,37 @@ paths:
       summary: ShowCloudlet
       tags:
       - Cloudlet
+  /api/v1/auth/ctrl/ShowCloudletPlatformFeatures:
+    post:
+      description: Show Cloudlet Platform Features. Shows platform specific features
+      operationId: ShowCloudletPlatformFeatures
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionPlatformFeatures'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeprotoPlatformFeatures'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowCloudletPlatformFeatures
+      tags:
+      - Cloudlet
   /api/v1/auth/ctrl/ShowFlavorsForCloudlet:
     post:
       description: Find all meta flavors viable on cloudlet
@@ -739,6 +770,11 @@ components:
           type: string
         infra_config:
           $ref: '#/components/schemas/EdgeprotoInfraConfig'
+        infra_flavors:
+          description: Cloudlet-specific flavors
+          items:
+            $ref: '#/components/schemas/EdgeprotoFlavorInfo'
+          type: array
         ip_support:
           description: Type of IP support provided by Cloudlet (see IpSupport), valid
             values are one of Unknown, Static, Dynamic, or 0, 1, 2
@@ -782,7 +818,8 @@ components:
           description: Platform type, valid values are one of Fake, Dind, Openstack,
             Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
             K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
-            or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
+            K8SOperator, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+            16, 17, 18
           type: string
         res_tag_map:
           additionalProperties:
@@ -879,7 +916,8 @@ components:
           description: Platform type, valid values are one of Fake, Dind, Openstack,
             Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
             K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
-            or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
+            K8SOperator, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+            16, 17, 18
           type: string
         properties:
           additionalProperties:
@@ -906,7 +944,8 @@ components:
           description: Platform type, valid values are one of Fake, Dind, Openstack,
             Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
             K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
-            or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
+            K8SOperator, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+            16, 17, 18
           type: string
         properties:
           description: Cloudlet resource properties
@@ -931,21 +970,42 @@ components:
       type: object
     EdgeprotoFederationConfig:
       properties:
+        federation_context_id:
+          description: Federation context id
+          type: string
+        federation_db_id:
+          description: Federation database id
+          minimum: 0
+          type: integer
         federation_name:
-          description: Federation name
+          description: Federation Name
           type: string
         partner_federation_addr:
           description: Partner federation address
           type: string
-        partner_federation_id:
-          description: Partner federation ID
+      type: object
+    EdgeprotoFlavorInfo:
+      properties:
+        disk:
+          description: Amount of disk in GB on the Cloudlet
+          minimum: 0
+          type: integer
+        name:
+          description: Name of the flavor on the Cloudlet
           type: string
-        self_federation_id:
-          description: Self federation ID
-          type: string
-        zone_country_code:
-          description: Cloudlet zone country code
-          type: string
+        prop_map:
+          additionalProperties:
+            type: string
+          description: OS Flavor Properties, if any
+          type: object
+        ram:
+          description: Ram in MB on the Cloudlet
+          minimum: 0
+          type: integer
+        vcpus:
+          description: Number of VCPU cores on the Cloudlet
+          minimum: 0
+          type: integer
       type: object
     EdgeprotoFlavorKey:
       properties:
@@ -1130,6 +1190,71 @@ components:
           description: Use Vault certs and CAs for internal TLS communication
           type: boolean
       type: object
+    EdgeprotoPlatformFeatures:
+      properties:
+        cloudlet_services_local:
+          description: Cloudlet servicess run local to the controller
+          type: boolean
+        ip_allocated_per_service:
+          description: Every kubernetes services gets a public IP (public cloud)
+          type: boolean
+        is_fake:
+          description: Platform is a fake platform for unit/e2e testing
+          type: boolean
+        is_prebuilt_kubernetes_cluster:
+          description: Kubernetes cluster is created externally and already exists
+          type: boolean
+        is_single_kubernetes_cluster:
+          description: The entire platform is a single kubernetes cluster
+          type: boolean
+        is_vm_pool:
+          description: Platform is a a pool of pre-existing virtual machines
+          type: boolean
+        kubernetes_requires_worker_nodes:
+          description: Kubernetes clusters requires worker nodes and cannot be master
+            only
+          type: boolean
+        no_kubernetes_cluster_auto_scale:
+          description: No support for kubernetes cluster auto-scale
+          type: boolean
+        platform_type:
+          description: Platform type, valid values are one of Fake, Dind, Openstack,
+            Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd,
+            K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool,
+            K8SOperator, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+            16, 17, 18
+          type: string
+        supports_additional_networks:
+          description: Platform supports adding networks
+          type: boolean
+        supports_app_inst_dedicated_ip:
+          description: Platform supports per AppInst dedicated IPs
+          type: boolean
+        supports_image_type_ova:
+          description: Platform supports OVA images for VM deployments
+          type: boolean
+        supports_image_type_ovf:
+          description: Platform supports OVF images for VM deployments
+          type: boolean
+        supports_kubernetes_only:
+          description: Platform only supports kubernetes deployments
+          type: boolean
+        supports_multi_tenant_cluster:
+          description: Platform supports multi tenant kubernetes clusters
+          type: boolean
+        supports_platform_high_availability_on_docker:
+          description: Supports high availability with two CRMs on docker
+          type: boolean
+        supports_platform_high_availability_on_k8s:
+          description: Supports high availability with two CRMs on kubernetes
+          type: boolean
+        supports_shared_volume:
+          description: Platform supports shared volumes
+          type: boolean
+        supports_trust_policy:
+          description: Platform supports trust policies
+          type: boolean
+      type: object
     EdgeprotoPropertyInfo:
       properties:
         description:
@@ -1244,6 +1369,14 @@ components:
       properties:
         FlavorMatch:
           $ref: '#/components/schemas/EdgeprotoFlavorMatch'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiRegionPlatformFeatures:
+      properties:
+        PlatformFeatures:
+          $ref: '#/components/schemas/EdgeprotoPlatformFeatures'
         Region:
           description: Region name
           type: string

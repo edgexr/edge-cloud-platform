@@ -363,8 +363,15 @@ components:
           description: (_deprecated_) Auto provisioning policy name
           type: string
         command:
-          description: Command that the container runs to start service
+          description: Command that the container runs to start service, separate
+            multiple commands by a space
           type: string
+        command_args:
+          description: Command args to append to command, on cli specify multiple
+            times in order
+          items:
+            type: string
+          type: array
         configs:
           description: Customization files passed through to implementing services
           items:
@@ -395,16 +402,19 @@ components:
             For kubernetes deployment, this can be a kubernetes yaml or helm chart
             file.
           type: string
+        global_id:
+          description: A globally unique id for the App to be used with federation
+          type: string
         image_path:
           description: URI of where image resides
           type: string
         image_type:
           description: Image type, valid values are one of Unknown, Docker, Qcow,
-            Helm, Ovf, or 0, 1, 2, 3, 4
+            Helm, Ovf, Ova, or 0, 1, 2, 3, 4, 5
           type: string
         internal_ports:
-          description: Set true to indicate App is used internally with other Apps
-            only, and no ports are exposed externally
+          description: True indicates App is used internally with other Apps only,
+            and no ports are exposed externally
           type: boolean
         key:
           $ref: '#/components/schemas/EdgeprotoAppKey'
@@ -435,7 +445,7 @@ components:
             when app is updated
           type: string
         scale_with_cluster:
-          description: Set true to run App on all nodes of the cluster
+          description: True indicates App runs on all nodes of the cluster as it scales
           type: boolean
         serverless_config:
           $ref: '#/components/schemas/EdgeprotoServerlessConfig'
@@ -529,6 +539,23 @@ components:
           description: Flavor name
           type: string
       type: object
+    EdgeprotoGpuConfig:
+      properties:
+        model:
+          description: Model name or vgpu type
+          type: string
+        num_gpu:
+          description: Number of instances
+          type: integer
+        ram:
+          description: required memory in megabytes
+          minimum: 0
+          type: integer
+        type:
+          description: GPU Type, valid values are one of None, Any, Vgpu, Pci, or
+            0, 1, 2, 3
+          type: string
+      type: object
     EdgeprotoResult:
       properties:
         code:
@@ -558,6 +585,8 @@ components:
       type: object
     EdgeprotoServerlessConfig:
       properties:
+        gpu_config:
+          $ref: '#/components/schemas/EdgeprotoGpuConfig'
         min_replicas:
           description: Minimum number of replicas when serverless
           minimum: 0

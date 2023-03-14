@@ -223,6 +223,9 @@ components:
         edge_turn_addr:
           description: EdgeTurn Server Address
           type: string
+        edge_turn_proxy_addr:
+          description: EdgeTurn Proxy Address
+          type: string
         err:
           description: Any error message
           type: string

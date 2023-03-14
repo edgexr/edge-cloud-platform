@@ -1,30 +1,31 @@
 # Auto-generated doc: DO NOT EDIT
 openapi: 3.0.3
 info:
-  description: Master Controller APIs for Federations
+  description: Master Controller APIs for FederationGuests
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-  title: Federation APIs
+  title: FederationGuest APIs
   version: "2.0"
 servers:
 - description: localhost server
   url: http://localhost:9900
 paths:
-  /api/v1/auth/federation/consumer/app/deboard:
+  /api/v1/auth/federation/consumer/create:
     post:
-      description: Remove App from partner federation
-      operationId: DeboardGuestApp
+      description: Create Federation Guest
+      operationId: CreateFederationGuest
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrmapiConsumerApp'
+              $ref: '#/components/schemas/OrmapiFederationConsumer'
             x-required-fields:
-            - federationname
-            - appname
-            - apporg
-            - appvers
+            - name
+            - operatorid
+            - partneraddr
+            - providerclientid
+            - providerclientkey
       responses:
         "200":
           content:
@@ -42,24 +43,50 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: DeboardGuestApp
+      summary: CreateFederationGuest
       tags:
-      - Federation
-  /api/v1/auth/federation/consumer/app/onboard:
+      - FederationGuest
+  /api/v1/auth/federation/consumer/delete:
     post:
-      description: Onboard existing App to partner federation
-      operationId: OnboardGuestApp
+      description: Delete Federation Guest
+      operationId: DeleteFederationGuest
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrmapiConsumerApp'
+              $ref: '#/components/schemas/OrmapiFederationConsumer'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeleteFederationGuest
+      tags:
+      - FederationGuest
+  /api/v1/auth/federation/consumer/gennotifykey:
+    post:
+      description: Set Partner Federation API Key
+      operationId: GenerateFederationGuestNotifyKey
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederationConsumer'
             x-required-fields:
-            - region
-            - federationname
-            - appname
-            - apporg
-            - appvers
+            - name
+            - operatorid
       responses:
         "200":
           content:
@@ -77,107 +104,13 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: OnboardGuestApp
+      summary: GenerateFederationGuestNotifyKey
       tags:
-      - Federation
-  /api/v1/auth/federation/consumer/app/show:
-    post:
-      description: Show Apps onboarded to partner federation
-      operationId: ShowGuestApp
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OrmapiConsumerApp'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/OrmapiConsumerApp'
-                type: array
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: Bad Request
-        "403":
-          description: Forbidden
-      security:
-      - bearerAuth: []
-      summary: ShowGuestApp
-      tags:
-      - Federation
-  /api/v1/auth/federation/consumer/image/create:
-    post:
-      description: Create image on partner federation
-      operationId: CreateGuestImage
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OrmapiConsumerImage'
-            x-required-fields:
-            - organization
-            - federationname
-            - sourcepath
-            - type
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: Bad Request
-        "403":
-          description: Forbidden
-      security:
-      - bearerAuth: []
-      summary: CreateGuestImage
-      tags:
-      - Federation
-  /api/v1/auth/federation/consumer/image/delete:
-    post:
-      description: Delete image from partner federation
-      operationId: DeleteGuestImage
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OrmapiConsumerImage'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: Bad Request
-        "403":
-          description: Forbidden
-      security:
-      - bearerAuth: []
-      summary: DeleteGuestImage
-      tags:
-      - Federation
+      - FederationGuest
   /api/v1/auth/federation/consumer/image/show:
     post:
-      description: Show images on partner federation
-      operationId: ShowGuestImage
+      description: Show Images onboarded by developers
+      operationId: ShowFedGuestImage
       requestBody:
         content:
           application/json:
@@ -202,13 +135,47 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: ShowGuestImage
+      summary: ShowFedGuestImage
       tags:
-      - Federation
+      - FederationGuest
+  /api/v1/auth/federation/consumer/setapikey:
+    post:
+      description: Set Partner Federation API Key
+      operationId: SetFederationGuestAPIKey
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederationConsumer'
+            x-required-fields:
+            - name
+            - operatorid
+            - providerclientid
+            - providerclientkey
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: SetFederationGuestAPIKey
+      tags:
+      - FederationGuest
   /api/v1/auth/federation/consumer/show:
     post:
-      description: Show federations for App deployment
-      operationId: ShowFederation
+      description: Show Federation Guest
+      operationId: ShowFederationGuest
       requestBody:
         content:
           application/json:
@@ -233,38 +200,139 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: ShowFederation
+      summary: ShowFederationGuest
       tags:
-      - Federation
+      - FederationGuest
+  /api/v1/auth/federation/consumer/update:
+    post:
+      description: Update Federation Guest
+      operationId: UpdateFederationGuest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederationConsumer'
+            x-required-fields:
+            - name
+            - operatorid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateFederationGuest
+      tags:
+      - FederationGuest
+  /api/v1/auth/federation/consumer/zone/deregister:
+    post:
+      description: DeRegister Partner Federator Zone
+      operationId: DeregisterGuestZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederatedZoneRegRequest'
+            x-required-fields:
+            - fedguest
+            - zones
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: DeregisterGuestZone
+      tags:
+      - FederationGuest
+  /api/v1/auth/federation/consumer/zone/register:
+    post:
+      description: Register Partner Federator Zone
+      operationId: RegisterGuestZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederatedZoneRegRequest'
+            x-required-fields:
+            - fedguest
+            - region
+            - zones
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: RegisterGuestZone
+      tags:
+      - FederationGuest
+  /api/v1/auth/federation/consumer/zone/show:
+    post:
+      description: Show Federated Partner Zones
+      operationId: ShowGuestZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiConsumerZone'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrmapiConsumerZone'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: ShowGuestZone
+      tags:
+      - FederationGuest
 components:
   schemas:
-    OrmapiConsumerApp:
-      properties:
-        AppName:
-          description: App name in region
-          type: string
-        AppOrg:
-          description: App org in region
-          type: string
-        AppVers:
-          description: App version in region
-          type: string
-        FederationName:
-          description: Target Guest Federation name
-          type: string
-        ID:
-          description: Unique ID, acts as both the App and Artefact IDs
-          type: string
-        ImageIds:
-          $ref: '#/components/schemas/PqStringArray'
-        Region:
-          description: Region name
-          type: string
-        Status:
-          description: Status
-          readOnly: true
-          type: string
-      type: object
     OrmapiConsumerImage:
       properties:
         Checksum:
@@ -296,6 +364,46 @@ components:
         Version:
           description: Image version
           type: string
+      type: object
+    OrmapiConsumerZone:
+      properties:
+        ConsumerName:
+          description: Name of the Federation Guest
+          type: string
+        GeoLocation:
+          description: GPS co-ordinates associated with the zone (in decimal format)
+          type: string
+        GeographyDetails:
+          description: Geography details
+          type: string
+        OperatorId:
+          description: Guest operator organization
+          type: string
+        Region:
+          description: Region in which zone is instantiated
+          type: string
+        Status:
+          description: Zone status
+          readOnly: true
+          type: string
+        ZoneId:
+          description: Zone unique name
+          type: string
+      type: object
+    OrmapiFederatedZoneRegRequest:
+      properties:
+        FedGuest:
+          description: Federation Guest name
+          type: string
+        Region:
+          description: Region to create local cloudlet versions of Host zones
+          type: string
+        Zones:
+          description: Partner federator zones to be registered/deregistered
+          items:
+            type: string
+          nullable: true
+          type: array
       type: object
     OrmapiFederationConsumer:
       properties:

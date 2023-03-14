@@ -1,0 +1,1129 @@
+# Auto-generated doc: DO NOT EDIT
+openapi: 3.0.3
+info:
+  description: Master Controller APIs for FederationDirects
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: FederationDirect APIs
+  version: "2.0"
+servers:
+- description: localhost server
+  url: http://localhost:9900
+paths:
+  /api/v1/auth/federation/direct/app/get:
+    post:
+      description: Direct get app EWBI API
+      operationId: GetFederationApp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiConsumerApp'
+            x-required-fields:
+            - federationname
+            - id
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FedewapiViewApplication200Response'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetFederationApp
+      tags:
+      - FederationDirect
+  /api/v1/auth/federation/direct/appinst/get:
+    post:
+      description: Direct get appinst EWBI API
+      operationId: GetFederationAppInsts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiRegionAppInst'
+            x-required-fields:
+            - region
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/FedewapiGetAppInstanceDetails200Response'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetFederationAppInsts
+      tags:
+      - FederationDirect
+  /api/v1/auth/federation/direct/artefact/get:
+    post:
+      description: Direct get artefact EWBI API
+      operationId: GetFederationArtefact
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiConsumerApp'
+            x-required-fields:
+            - federationname
+            - id
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FedewapiGetArtefact200Response'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetFederationArtefact
+      tags:
+      - FederationDirect
+  /api/v1/auth/federation/direct/file/get:
+    post:
+      description: Direct get file EWBI API
+      operationId: GetFederationFile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiConsumerImage'
+            x-required-fields:
+            - federationname
+            - id
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FedewapiViewFile200Response'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetFederationFile
+      tags:
+      - FederationDirect
+  /api/v1/auth/federation/direct/partner/get:
+    post:
+      description: Direct get partner EWBI API
+      operationId: GetFederationPartner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiFederationConsumer'
+            x-required-fields:
+            - name
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FedewapiGetFederationDetails200Response'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetFederationPartner
+      tags:
+      - FederationDirect
+  /api/v1/auth/federation/direct/zone/get:
+    post:
+      description: Direct get zone EWBI API
+      operationId: GetFederationZone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiConsumerZone'
+            x-required-fields:
+            - consumername
+            - zoneid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FedewapiZoneRegisteredData'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GetFederationZone
+      tags:
+      - FederationDirect
+components:
+  schemas:
+    DmeProtoAppPort:
+      properties:
+        end_port:
+          description: A non-zero end port indicates a port range from internal port
+            to end port, inclusive.
+          type: integer
+        fqdn_prefix:
+          description: FQDN prefix to append to base FQDN in FindCloudlet response.
+            May be empty.
+          type: string
+        internal_port:
+          description: Container port
+          type: integer
+        max_pkt_size:
+          description: Maximum datagram size (udp only)
+          type: integer
+        nginx:
+          description: Use nginx proxy for this port if you really need a transparent
+            proxy (udp only)
+          type: boolean
+        proto:
+          $ref: '#/components/schemas/DmeProtoLProto'
+        public_port:
+          description: Public facing port for TCP/UDP (may be mapped on shared LB
+            reverse proxy)
+          type: integer
+        tls:
+          description: TLS termination for this port
+          type: boolean
+      type: object
+    DmeProtoHealthCheck:
+      type: integer
+    DmeProtoLProto:
+      type: integer
+    DmeProtoLoc:
+      properties:
+        altitude:
+          description: On android only lat and long are guaranteed to be supplied
+            Altitude in meters
+          type: number
+        course:
+          description: Course (IOS) / bearing (Android) (degrees east relative to
+            true north)
+          type: number
+        horizontal_accuracy:
+          description: Horizontal accuracy (radius in meters)
+          type: number
+        latitude:
+          description: Latitude in WGS 84 coordinates
+          type: number
+        longitude:
+          description: Longitude in WGS 84 coordinates
+          type: number
+        speed:
+          description: Speed (IOS) / velocity (Android) (meters/sec)
+          type: number
+        timestamp:
+          $ref: '#/components/schemas/DmeProtoTimestamp'
+        vertical_accuracy:
+          description: Vertical accuracy (meters)
+          type: number
+      type: object
+    DmeProtoTimestamp:
+      properties:
+        nanos:
+          description: Added non-negative sub-second time in nanoseconds
+          type: integer
+        seconds:
+          description: Time in seconds since epoch
+          type: integer
+      type: object
+    EdgeprotoAppInst:
+      properties:
+        auto_cluster_ip_access:
+          description: (Deprecated) IpAccess for auto-clusters. Ignored otherwise.,
+            valid values are one of Unknown, Dedicated, Shared, or 0, 1, 3
+          type: string
+        availability_zone:
+          description: Optional Availability Zone if any
+          type: string
+        cloudlet_flavor:
+          description: Cloudlet-specific flavor instead of regional flavor
+          type: string
+        cloudlet_loc:
+          $ref: '#/components/schemas/DmeProtoLoc'
+        configs:
+          description: Customization files passed through to implementing services
+          items:
+            $ref: '#/components/schemas/EdgeprotoConfigFile'
+          type: array
+        created_at:
+          description: Created at time
+          type: string
+        crm_override:
+          description: Override actions to CRM, valid values are one of NoOverride,
+            IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState,
+            or 0, 1, 2, 3, 4
+          type: string
+        dedicated_ip:
+          description: Dedicated IP assigns an IP for this AppInst but requires platform
+            support
+          type: boolean
+        dns_label:
+          description: DNS label that is unique within the cloudlet and among other
+            AppInsts/ClusterInsts
+          type: string
+        errors:
+          description: Any errors trying to create, update, or delete the AppInst
+            on the Cloudlet
+          items:
+            type: string
+          type: array
+        external_volume_size:
+          description: Size of external volume to be attached to nodes.  This is for
+            the root partition
+          minimum: 0
+          type: integer
+        fed_key:
+          $ref: '#/components/schemas/EdgeprotoFedAppInstKey'
+        fields:
+          description: Fields are used for the Update API to specify which fields
+            to apply
+          items:
+            type: string
+          type: array
+        flavor:
+          $ref: '#/components/schemas/EdgeprotoFlavorKey'
+        force_update:
+          description: Force Appinst refresh even if revision number matches App revision
+            number.
+          type: boolean
+        health_check:
+          $ref: '#/components/schemas/DmeProtoHealthCheck'
+        internal_port_to_lb_ip:
+          additionalProperties:
+            type: string
+          description: mapping of ports to load balancer IPs
+          type: object
+        key:
+          $ref: '#/components/schemas/EdgeprotoAppInstKey'
+        liveness:
+          description: Liveness of instance (see Liveness), valid values are one of
+            Unknown, Static, Dynamic, Autoprov, or 0, 1, 2, 3
+          type: string
+        mapped_ports:
+          description: For instances accessible via a shared load balancer, defines
+            the external ports on the shared load balancer that map to the internal
+            ports External ports should be appended to the Uri for L4 access.
+          items:
+            $ref: '#/components/schemas/DmeProtoAppPort'
+          nullable: true
+          type: array
+        opt_res:
+          description: Optional Resources required by OS flavor if any
+          type: string
+        power_state:
+          description: Power State of the AppInst, valid values are one of PowerStateUnknown,
+            PowerOnRequested, PoweringOn, PowerOn, PowerOffRequested, PoweringOff,
+            PowerOff, RebootRequested, Rebooting, Reboot, PowerStateError, or 0, 1,
+            2, 3, 4, 5, 6, 7, 8, 9, 10
+          type: string
+        real_cluster_name:
+          description: Real ClusterInst name
+          type: string
+        revision:
+          description: Revision changes each time the App is updated.  Refreshing
+            the App Instance will sync the revision with that of the App
+          type: string
+        runtime_info:
+          $ref: '#/components/schemas/EdgeprotoAppInstRuntime'
+        state:
+          description: Current state of the AppInst on the Cloudlet, valid values
+            are one of TrackedStateUnknown, NotPresent, CreateRequested, Creating,
+            CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested,
+            Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies,
+            DeleteDone, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+          type: string
+        unique_id:
+          description: A unique id for the AppInst within the region to be used by
+            platforms
+          type: string
+        update_multiple:
+          description: Allow multiple instances to be updated at once
+          type: boolean
+        updated_at:
+          description: Updated at time
+          type: string
+        uri:
+          description: Base FQDN (not really URI) for the App. See Service FQDN for
+            endpoint access.
+          type: string
+        vm_flavor:
+          description: OS node flavor to use
+          type: string
+      type: object
+    EdgeprotoAppInstKey:
+      properties:
+        app_key:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
+        cluster_inst_key:
+          $ref: '#/components/schemas/EdgeprotoVirtualClusterInstKey'
+      type: object
+    EdgeprotoAppInstRuntime:
+      properties:
+        container_ids:
+          description: List of container names
+          items:
+            type: string
+          type: array
+      type: object
+    EdgeprotoAppKey:
+      properties:
+        name:
+          description: App name
+          type: string
+        organization:
+          description: App developer organization
+          type: string
+        version:
+          description: App version
+          type: string
+      type: object
+    EdgeprotoCloudletKey:
+      properties:
+        federated_organization:
+          description: Federated operator organization who shared this cloudlet
+          type: string
+        name:
+          description: Name of the cloudlet
+          type: string
+        organization:
+          description: Organization of the cloudlet site
+          type: string
+      type: object
+    EdgeprotoClusterKey:
+      properties:
+        name:
+          description: Cluster name
+          type: string
+      type: object
+    EdgeprotoConfigFile:
+      properties:
+        config:
+          description: Config file contents or URI reference
+          type: string
+        kind:
+          description: Kind (type) of config, i.e. envVarsYaml, helmCustomizationYaml
+          type: string
+      type: object
+    EdgeprotoFedAppInstKey:
+      properties:
+        app_inst_id:
+          description: Federated AppInst ID
+          type: string
+        federation_name:
+          description: Federation name
+          type: string
+      type: object
+    EdgeprotoFlavorKey:
+      properties:
+        name:
+          description: Flavor name
+          type: string
+      type: object
+    EdgeprotoVirtualClusterInstKey:
+      properties:
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        cluster_key:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
+        organization:
+          description: Name of Developer organization that this cluster belongs to
+          type: string
+      type: object
+    FedewapiAccessPointInfoInner:
+      properties:
+        accessPoints:
+          $ref: '#/components/schemas/FedewapiServiceEndpoint'
+        interfaceId:
+          type: string
+      type: object
+    FedewapiAppComponentSpecsInner:
+      properties:
+        artefactId:
+          type: string
+        componentName:
+          nullable: true
+          type: string
+        serviceNameEW:
+          nullable: true
+          type: string
+        serviceNameNB:
+          nullable: true
+          type: string
+      type: object
+    FedewapiAppMetaData:
+      properties:
+        accessToken:
+          type: string
+        appDescription:
+          nullable: true
+          type: string
+        appName:
+          type: string
+        category:
+          nullable: true
+          type: string
+        mobilitySupport:
+          nullable: true
+          type: boolean
+        version:
+          type: string
+      type: object
+    FedewapiAppQoSProfile:
+      properties:
+        appProvisioning:
+          nullable: true
+          type: boolean
+        bandwidthRequired:
+          nullable: true
+          type: integer
+        latencyConstraints:
+          type: string
+        multiUserClients:
+          nullable: true
+          type: string
+        noOfUsersPerAppInst:
+          nullable: true
+          type: integer
+      type: object
+    FedewapiCPUArchType:
+      type: string
+    FedewapiCommandLineParams:
+      properties:
+        command:
+          items:
+            type: string
+          nullable: true
+          type: array
+        commandArgs:
+          items:
+            type: string
+          type: array
+      type: object
+    FedewapiCompEnvParams:
+      properties:
+        envValueType:
+          type: string
+        envVarName:
+          type: string
+        envVarSrc:
+          nullable: true
+          type: string
+        envVarValue:
+          nullable: true
+          type: string
+      type: object
+    FedewapiComponentSpec:
+      properties:
+        commandLineParams:
+          $ref: '#/components/schemas/FedewapiCommandLineParams'
+        compEnvParams:
+          items:
+            $ref: '#/components/schemas/FedewapiCompEnvParams'
+          type: array
+        componentName:
+          type: string
+        computeResourceProfile:
+          $ref: '#/components/schemas/FedewapiComputeResourceInfo'
+        deploymentConfig:
+          $ref: '#/components/schemas/FedewapiDeploymentConfig'
+        exposedInterfaces:
+          items:
+            $ref: '#/components/schemas/FedewapiInterfaceDetails'
+          type: array
+        images:
+          items:
+            type: string
+          nullable: true
+          type: array
+        numOfInstances:
+          type: integer
+        persistentVolumes:
+          items:
+            $ref: '#/components/schemas/FedewapiPersistentVolumeDetails'
+          type: array
+        restartPolicy:
+          type: string
+      type: object
+    FedewapiComputeResourceInfo:
+      properties:
+        cpuArchType:
+          type: string
+        cpuExclusivity:
+          nullable: true
+          type: boolean
+        diskStorage:
+          nullable: true
+          type: integer
+        fpga:
+          nullable: true
+          type: integer
+        gpu:
+          items:
+            $ref: '#/components/schemas/FedewapiGpuInfo'
+          type: array
+        hugepages:
+          items:
+            $ref: '#/components/schemas/FedewapiHugePage'
+          type: array
+        memory:
+          type: integer
+        numCPU:
+          type: string
+        vpu:
+          nullable: true
+          type: integer
+      type: object
+    FedewapiDeploymentConfig:
+      properties:
+        configType:
+          type: string
+        contents:
+          type: string
+      type: object
+    FedewapiFlavour:
+      properties:
+        cpuArchType:
+          $ref: '#/components/schemas/FedewapiCPUArchType'
+        cpuExclusivity:
+          nullable: true
+          type: boolean
+        flavourId:
+          type: string
+        fpga:
+          nullable: true
+          type: integer
+        gpu:
+          items:
+            $ref: '#/components/schemas/FedewapiGpuInfo'
+          type: array
+        hugepages:
+          items:
+            $ref: '#/components/schemas/FedewapiHugePage'
+          type: array
+        memorySize:
+          type: integer
+        numCPU:
+          type: integer
+        storageSize:
+          type: integer
+        supportedOSTypes:
+          items:
+            $ref: '#/components/schemas/FedewapiOSType'
+          nullable: true
+          type: array
+        vpu:
+          nullable: true
+          type: integer
+      type: object
+    FedewapiGetAppInstanceDetails200Response:
+      properties:
+        accesspointInfo:
+          items:
+            $ref: '#/components/schemas/FedewapiAccessPointInfoInner'
+          type: array
+        appInstanceState:
+          $ref: '#/components/schemas/FedewapiInstanceState'
+        stateDescription:
+          nullable: true
+          type: string
+      type: object
+    FedewapiGetArtefact200Response:
+      properties:
+        appProviderId:
+          type: string
+        artefactDescription:
+          nullable: true
+          type: string
+        artefactDescriptorType:
+          type: string
+        artefactFileFormat:
+          nullable: true
+          type: string
+        artefactFileName:
+          nullable: true
+          type: string
+        artefactId:
+          type: string
+        artefactName:
+          type: string
+        artefactRepoLocation:
+          $ref: '#/components/schemas/FedewapiObjectRepoLocation'
+        artefactVersionInfo:
+          type: string
+        artefactVirtType:
+          type: string
+        componentSpec:
+          items:
+            $ref: '#/components/schemas/FedewapiComponentSpec'
+          type: array
+        repoType:
+          nullable: true
+          type: string
+      type: object
+    FedewapiGetFederationDetails200Response:
+      properties:
+        allowedFixedNetworkIds:
+          items:
+            type: string
+          type: array
+        allowedMobileNetworkIds:
+          $ref: '#/components/schemas/FedewapiMobileNetworkIds'
+        edgeDiscoveryServiceEndPoint:
+          $ref: '#/components/schemas/FedewapiServiceEndpoint'
+        lcmServiceEndPoint:
+          $ref: '#/components/schemas/FedewapiServiceEndpoint'
+        offeredAvailabilityZones:
+          items:
+            $ref: '#/components/schemas/FedewapiZoneDetails'
+          type: array
+      type: object
+    FedewapiGpuInfo:
+      properties:
+        gpuMemory:
+          type: integer
+        gpuModeName:
+          type: string
+        gpuVendorType:
+          type: string
+        numGPU:
+          type: integer
+      type: object
+    FedewapiHugePage:
+      properties:
+        number:
+          type: integer
+        pageSize:
+          type: string
+      type: object
+    FedewapiInstanceState:
+      nullable: true
+      type: string
+    FedewapiInterfaceDetails:
+      properties:
+        InterfaceName:
+          nullable: true
+          type: string
+        commPort:
+          type: integer
+        commProtocol:
+          type: string
+        interfaceId:
+          type: string
+        network:
+          nullable: true
+          type: string
+        visibilityType:
+          type: string
+      type: object
+    FedewapiMobileNetworkIds:
+      properties:
+        mcc:
+          nullable: true
+          type: string
+        mncs:
+          items:
+            type: string
+          type: array
+      type: object
+    FedewapiOSType:
+      properties:
+        architecture:
+          type: string
+        distribution:
+          type: string
+        license:
+          type: string
+        version:
+          type: string
+      type: object
+    FedewapiObjectRepoLocation:
+      properties:
+        password:
+          nullable: true
+          type: string
+        repoURL:
+          nullable: true
+          type: string
+        token:
+          nullable: true
+          type: string
+        userName:
+          nullable: true
+          type: string
+      type: object
+    FedewapiPersistentVolumeDetails:
+      properties:
+        accessMode:
+          nullable: true
+          type: string
+        ephemeralType:
+          nullable: true
+          type: boolean
+        sharingPolicy:
+          nullable: true
+          type: string
+        volumeMountPath:
+          type: string
+        volumeName:
+          type: string
+        volumeSize:
+          type: string
+      type: object
+    FedewapiServiceEndpoint:
+      properties:
+        fqdn:
+          nullable: true
+          type: string
+        ipv4Addresses:
+          items:
+            type: string
+          type: array
+        ipv6Addresses:
+          items:
+            type: string
+          type: array
+        port:
+          type: integer
+      type: object
+    FedewapiViewApplication200Response:
+      properties:
+        appComponentSpecs:
+          items:
+            $ref: '#/components/schemas/FedewapiAppComponentSpecsInner'
+          nullable: true
+          type: array
+        appDeploymentZones:
+          items:
+            type: string
+          nullable: true
+          type: array
+        appId:
+          type: string
+        appMetaData:
+          $ref: '#/components/schemas/FedewapiAppMetaData'
+        appProviderId:
+          type: string
+        appQoSProfile:
+          $ref: '#/components/schemas/FedewapiAppQoSProfile'
+      type: object
+    FedewapiViewFile200Response:
+      properties:
+        appProviderId:
+          type: string
+        checksum:
+          nullable: true
+          type: string
+        fileDescription:
+          nullable: true
+          type: string
+        fileId:
+          type: string
+        fileName:
+          type: string
+        fileRepoLocation:
+          $ref: '#/components/schemas/FedewapiObjectRepoLocation'
+        fileType:
+          $ref: '#/components/schemas/FedewapiVirtImageType'
+        fileVersionInfo:
+          type: string
+        imgInsSetArch:
+          $ref: '#/components/schemas/FedewapiCPUArchType'
+        imgOSType:
+          $ref: '#/components/schemas/FedewapiOSType'
+        repoType:
+          nullable: true
+          type: string
+      type: object
+    FedewapiVirtImageType:
+      type: string
+    FedewapiZoneDetails:
+      properties:
+        geographyDetails:
+          type: string
+        geolocation:
+          type: string
+        zoneId:
+          type: string
+      type: object
+    FedewapiZoneRegisteredData:
+      properties:
+        computeResourceQuotaLimits:
+          items:
+            $ref: '#/components/schemas/FedewapiComputeResourceInfo'
+          nullable: true
+          type: array
+        flavoursSupported:
+          items:
+            $ref: '#/components/schemas/FedewapiFlavour'
+          nullable: true
+          type: array
+        networkResources:
+          $ref: '#/components/schemas/FedewapiZoneRegisteredDataNetworkResources'
+        reservedComputeResources:
+          items:
+            $ref: '#/components/schemas/FedewapiComputeResourceInfo'
+          nullable: true
+          type: array
+        zoneId:
+          type: string
+      type: object
+    FedewapiZoneRegisteredDataNetworkResources:
+      properties:
+        dedicatedNIC:
+          type: integer
+        egressBandWidth:
+          type: integer
+        supportDPDK:
+          type: boolean
+        supportSriov:
+          type: boolean
+      type: object
+    OrmapiConsumerApp:
+      properties:
+        AppName:
+          description: App name in region
+          type: string
+        AppOrg:
+          description: App org in region
+          type: string
+        AppVers:
+          description: App version in region
+          type: string
+        FederationName:
+          description: Target Guest Federation name
+          type: string
+        ID:
+          description: Unique ID, acts as both the App and Artefact IDs
+          type: string
+        ImageIds:
+          $ref: '#/components/schemas/PqStringArray'
+        Region:
+          description: Region name
+          type: string
+        Status:
+          description: Status
+          readOnly: true
+          type: string
+      type: object
+    OrmapiConsumerImage:
+      properties:
+        Checksum:
+          description: MD5 checksum for VM and file-based image types, sha256 digest
+            for containers and Helm charts
+          type: string
+        FederationName:
+          description: Federation the image is copied to (FederationGuest)
+          type: string
+        ID:
+          description: ID
+          type: string
+        Name:
+          description: Image name
+          type: string
+        Organization:
+          description: Developer organization that owns the image
+          type: string
+        SourcePath:
+          description: Full path to source image as used in App, i.e. https://vm-registry.domain/org/image.img
+          type: string
+        Status:
+          description: Image status
+          readOnly: true
+          type: string
+        Type:
+          description: Image type (DOCKER, HELM, QCOW2, or OVA)
+          type: string
+        Version:
+          description: Image version
+          type: string
+      type: object
+    OrmapiConsumerZone:
+      properties:
+        ConsumerName:
+          description: Name of the Federation Guest
+          type: string
+        GeoLocation:
+          description: GPS co-ordinates associated with the zone (in decimal format)
+          type: string
+        GeographyDetails:
+          description: Geography details
+          type: string
+        OperatorId:
+          description: Guest operator organization
+          type: string
+        Region:
+          description: Region in which zone is instantiated
+          type: string
+        Status:
+          description: Zone status
+          readOnly: true
+          type: string
+        ZoneId:
+          description: Zone unique name
+          type: string
+      type: object
+    OrmapiFederationConsumer:
+      properties:
+        AutoRegisterRegion:
+          description: Region used for automatically registered zones
+          type: string
+        AutoRegisterZones:
+          description: Automatically register any zone shared with me
+          type: boolean
+        CreatedAt:
+          description: Time created
+          format: date-time
+          readOnly: true
+          type: string
+        FederationContextId:
+          description: Federation context id returned by partner
+          type: string
+        ID:
+          description: Unique ID
+          minimum: 0
+          type: integer
+        MyInfo:
+          $ref: '#/components/schemas/OrmapiFederator'
+        Name:
+          description: Unique name of this Federation Guest, will be used as an operator
+            org for host's zones
+          type: string
+        NotifyClientId:
+          description: Auth ClientId for notify callbacks to this Guest OP
+          type: string
+        OperatorId:
+          description: Operator Organization that establishes the federation with
+            a Host OP
+          type: string
+        PartnerAddr:
+          description: Partner Address
+          type: string
+        PartnerInfo:
+          $ref: '#/components/schemas/OrmapiFederator'
+        PartnerTokenUrl:
+          description: Partner token URL
+          type: string
+        ProviderClientId:
+          description: Auth ClientId for connecting to the Host OP
+          type: string
+        ProviderClientKey:
+          description: Auth ClientKey for connection to the Host OP (stored in secret
+            storage)
+          type: string
+        Public:
+          description: Public means any developer will be able to use the cloudlets,
+            otherwise (TODO) allowed developers will need to be added explicitly
+          type: boolean
+        Status:
+          description: Status
+          readOnly: true
+          type: string
+        UpdatedAt:
+          description: Time updated
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    OrmapiFederator:
+      properties:
+        CountryCode:
+          description: ISO 3166-1 Alpha-2 code for the country where operator platform
+            is located
+          type: string
+        DiscoveryEndPoint:
+          description: IP and Port of discovery service URL of operator platform
+          type: string
+        FederationId:
+          description: Globally unique string used to indentify a federation operator
+          type: string
+        FixedNetworkIds:
+          $ref: '#/components/schemas/PqStringArray'
+        InitialDate:
+          description: Initial create time to denote time zone
+          format: date-time
+          type: string
+        MCC:
+          description: Mobile country code of operator sending the request
+          type: string
+        MNC:
+          $ref: '#/components/schemas/PqStringArray'
+      type: object
+    OrmapiRegionAppInst:
+      properties:
+        AppInst:
+          $ref: '#/components/schemas/EdgeprotoAppInst'
+        Region:
+          description: Region name
+          type: string
+      type: object
+    OrmapiResult:
+      properties:
+        code:
+          description: Error code
+          type: integer
+        message:
+          description: Informational message
+          type: string
+      type: object
+    PqStringArray:
+      items:
+        type: string
+      nullable: true
+      type: array
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: JWT token generated by the login API to be included in the http
+        header
+      scheme: bearer
+      type: http
