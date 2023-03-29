@@ -143,6 +143,13 @@ func (p *PartnerApi) lookupProvider(c echo.Context, federationContextId Federati
 	if federationContextId != "" && string(federationContextId) != provider.FederationContextId {
 		return nil, fmt.Errorf("mismatch between access token and federation context id")
 	}
+	tags := map[string]string{
+		"org":        provider.Name,
+		"hostfed":    provider.Name,
+		"operatorid": provider.OperatorId,
+	}
+	log.SetContextTags(ctx, tags)
+
 	return &provider, nil
 }
 
@@ -175,12 +182,20 @@ func (p *PartnerApi) lookupConsumer(c echo.Context, federationContextId string) 
 	if federationContextId != "" && string(federationContextId) != consumer.FederationContextId {
 		return nil, fmt.Errorf("mismatch between access token and federation context id")
 	}
+	tags := map[string]string{
+		"org":        consumer.Name,
+		"guestfed":   consumer.Name,
+		"operatorid": consumer.OperatorId,
+	}
+	log.SetContextTags(ctx, tags)
+
 	return &consumer, nil
 }
 
-func (p *PartnerApi) auditCb(ctx context.Context, fedKey *federationmgmt.FedKey, data *ormclient.AuditLogData) {
+func (p *PartnerApi) auditCb(ctx context.Context, eventName string, fedKey *federationmgmt.FedKey, data *ormclient.AuditLogData) {
 	eventTags := data.GetEventTags()
-	p.nodeMgr.TimedEvent(ctx, "federation client api", fedKey.Name, node.EventType, eventTags, data.Err, data.Start, data.End)
+	eventTags["fedname"] = fedKey.Name
+	p.nodeMgr.TimedEvent(ctx, eventName, fedKey.Name, node.AuditType, eventTags, data.Err, data.Start, data.End)
 }
 
 func (p *PartnerApi) GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error) {

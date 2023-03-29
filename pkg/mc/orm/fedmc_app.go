@@ -255,7 +255,7 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 		return err
 	}
 	apiPath := fmt.Sprintf("/%s/%s/artefact", federationmgmt.ApiRoot, consumer.FederationContextId)
-	_, _, err = fedClient.SendRequest(ctx, http.MethodPost, apiPath, data, nil, nil)
+	_, _, err = fedClient.SendRequest(ctx, "CreateArtefact", http.MethodPost, apiPath, data, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -289,7 +289,7 @@ func createConsumerApp(ctx context.Context, consumer *ormapi.FederationConsumer,
 		return err
 	}
 	apiPath := fmt.Sprintf("/%s/%s/application/onboarding", federationmgmt.ApiRoot, consumer.FederationContextId)
-	_, _, err = fedClient.SendRequest(ctx, http.MethodPost, apiPath, appReq, nil, nil)
+	_, _, err = fedClient.SendRequest(ctx, "OnboardApp", http.MethodPost, apiPath, appReq, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -407,7 +407,7 @@ func deleteApp(ctx context.Context, consumer *ormapi.FederationConsumer, cApp *o
 		return err
 	}
 	apiPath := fmt.Sprintf("/%s/%s/application/onboarding/app/%s", federationmgmt.ApiRoot, consumer.FederationContextId, cApp.ID)
-	_, _, err = fedClient.SendRequest(ctx, http.MethodDelete, apiPath, nil, nil, nil)
+	_, _, err = fedClient.SendRequest(ctx, "DeleteApp", http.MethodDelete, apiPath, nil, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -420,7 +420,7 @@ func deleteAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 		return err
 	}
 	apiPath := fmt.Sprintf("/%s/%s/artefact/%s", federationmgmt.ApiRoot, consumer.FederationContextId, cApp.ID)
-	_, _, err = fedClient.SendRequest(ctx, http.MethodDelete, apiPath, nil, nil, nil)
+	_, _, err = fedClient.SendRequest(ctx, "DeleteArtefact", http.MethodDelete, apiPath, nil, nil, nil)
 	if err != nil {
 		return err
 	}

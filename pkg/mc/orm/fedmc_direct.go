@@ -14,7 +14,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func federationGetPartner(c echo.Context, consumerName, reqPath string, respObj interface{}) error {
+func federationGetPartner(c echo.Context, eventName, consumerName, reqPath string, respObj interface{}) error {
 	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
@@ -29,7 +29,7 @@ func federationGetPartner(c echo.Context, consumerName, reqPath string, respObj 
 	}
 	apiPath := fmt.Sprintf("/%s/%s/%s", federationmgmt.ApiRoot, consumer.FederationContextId, reqPath)
 	fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)
-	_, _, err = fedClient.SendRequest(ctx, "GET", apiPath, nil, respObj, nil)
+	_, _, err = fedClient.SendRequest(ctx, eventName, "GET", apiPath, nil, respObj, nil)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func FederationGetPartner(c echo.Context) error {
 	}
 	reqPath := "partner"
 	resp := fedewapi.GetFederationDetails200Response{}
-	return federationGetPartner(c, in.Name, reqPath, &resp)
+	return federationGetPartner(c, "Direct GetPartner", in.Name, reqPath, &resp)
 }
 
 func FederationGetZone(c echo.Context) error {
@@ -53,7 +53,7 @@ func FederationGetZone(c echo.Context) error {
 	}
 	reqPath := "zones/" + in.ZoneId
 	resp := fedewapi.ZoneRegisteredData{}
-	return federationGetPartner(c, in.ConsumerName, reqPath, &resp)
+	return federationGetPartner(c, "Direct GetZone", in.ConsumerName, reqPath, &resp)
 }
 
 func FederationGetArtefact(c echo.Context) error {
@@ -63,7 +63,7 @@ func FederationGetArtefact(c echo.Context) error {
 	}
 	reqPath := "artefact/" + in.ID
 	resp := fedewapi.GetArtefact200Response{}
-	return federationGetPartner(c, in.FederationName, reqPath, &resp)
+	return federationGetPartner(c, "Direct GetArtefact", in.FederationName, reqPath, &resp)
 }
 
 func FederationGetFile(c echo.Context) error {
@@ -73,7 +73,7 @@ func FederationGetFile(c echo.Context) error {
 	}
 	reqPath := "files/" + in.ID
 	resp := fedewapi.ViewFile200Response{}
-	return federationGetPartner(c, in.FederationName, reqPath, &resp)
+	return federationGetPartner(c, "Direct GetFile", in.FederationName, reqPath, &resp)
 }
 
 func FederationGetApp(c echo.Context) error {
@@ -83,7 +83,7 @@ func FederationGetApp(c echo.Context) error {
 	}
 	reqPath := "application/onboarding/app/" + in.ID
 	resp := fedewapi.ViewApplication200Response{}
-	return federationGetPartner(c, in.FederationName, reqPath, &resp)
+	return federationGetPartner(c, "Direct GetApp", in.FederationName, reqPath, &resp)
 }
 
 func FederationGetAppInst(c echo.Context) error {
@@ -138,7 +138,7 @@ func FederationGetAppInst(c echo.Context) error {
 		apiPath := fmt.Sprintf("/%s/%s/application/lcm/app/%s/instance/%s/zone/%s", federationmgmt.ApiRoot, consumer.FederationContextId, app.GlobalId, ai.FedKey.AppInstId, ai.Key.ClusterInstKey.CloudletKey.Name)
 		out := fedewapi.GetAppInstanceDetails200Response{}
 		fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)
-		_, _, err = fedClient.SendRequest(ctx, "GET", apiPath, nil, &out, nil)
+		_, _, err = fedClient.SendRequest(ctx, "Direct GetFedAppInst", "GET", apiPath, nil, &out, nil)
 		if err != nil {
 			return err
 		}

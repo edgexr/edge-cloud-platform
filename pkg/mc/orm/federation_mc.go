@@ -1322,7 +1322,7 @@ func ShareProviderZone(c echo.Context) (reterr error) {
 			OperationType:       "ADD_ZONES",
 			AddZones:            zoneDetails,
 		}
-		_, _, err = fedClient.SendRequest(ctx, "POST", "", &req, nil, nil)
+		_, _, err = fedClient.SendRequest(ctx, "ShareZone Callback", "POST", "", &req, nil, nil)
 		if err != nil {
 			return fmt.Errorf("failed to notify partner: %s", err)
 		}
@@ -1402,7 +1402,7 @@ func UnshareProviderZone(c echo.Context) error {
 			OperationType:       "REMOVE_ZONES",
 			RemoveZones:         rmZones,
 		}
-		_, _, err = fedClient.SendRequest(ctx, "POST", "", &req, nil, nil)
+		_, _, err = fedClient.SendRequest(ctx, "UnshareZone Callback", "POST", "", &req, nil, nil)
 		if err != nil {
 			return fmt.Errorf("failed to notify partner: %s", err)
 		}
@@ -1613,7 +1613,7 @@ func registerFederationConsumer(ctx context.Context, consumer *ormapi.Federation
 		ClientSecret: notifyKey,
 	}
 	req.PartnerCallbackCredentials = &ccreds
-	_, _, err = fedClient.SendRequest(ctx, "POST", "/"+fedmgmt.ApiRoot+"/partner", &req, &res, nil)
+	_, _, err = fedClient.SendRequest(ctx, "RegisterFedGuest", "POST", "/"+fedmgmt.ApiRoot+"/partner", &req, &res, nil)
 	if err != nil {
 		return err
 	}
@@ -1678,7 +1678,7 @@ func deregisterFederationConsumer(ctx context.Context, consumer *ormapi.Federati
 	if fedQueryParams.IgnorePartner {
 		log.SpanLog(ctx, log.DebugLevelApi, "skipping federation api call", "method", "DELETE", "api", apiPath)
 	} else {
-		_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
+		_, _, err = fedClient.SendRequest(ctx, "DeregisterFedGuest", "DELETE", apiPath, nil, nil, nil)
 		if err != nil {
 			return err
 		}

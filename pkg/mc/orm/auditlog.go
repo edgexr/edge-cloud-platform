@@ -36,18 +36,28 @@ import (
 var AuditId uint64
 
 var TokenFieldClearer = util.NewJsonFieldClearer("token")
+var AccessTokenFieldClearer = util.NewJsonFieldClearer("access_token")
 var ClientSecretFieldClearer = util.NewJsonFieldClearer("clientSecret")
 var PasswordFieldClearer = util.NewJsonFieldClearer("password")
 
-func logger(next echo.HandlerFunc) echo.HandlerFunc {
-	return loggerCustom(next, resultErrorHandler)
+type AuditNameLookupKey struct {
+	method string
+	path   string
 }
 
-func fedLogger(next echo.HandlerFunc) echo.HandlerFunc {
-	return loggerCustom(next, fedErrorHandler)
+type AuditLogger struct {
+	lookup       map[AuditNameLookupKey]string
+	errorHandler echo.MiddlewareFunc
 }
 
-func loggerCustom(next echo.HandlerFunc, errorHandler echo.MiddlewareFunc) echo.HandlerFunc {
+func NewAuditLogger(errorHandler echo.MiddlewareFunc) *AuditLogger {
+	return &AuditLogger{
+		lookup:       make(map[AuditNameLookupKey]string),
+		errorHandler: errorHandler,
+	}
+}
+
+func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		eventStart := time.Now()
 		logaudit := true
@@ -64,9 +74,10 @@ func loggerCustom(next echo.HandlerFunc, errorHandler echo.MiddlewareFunc) echo.
 			// log events
 		} else if strings.Contains(req.RequestURI, "show") ||
 			edgeproto.IsShow(method) ||
-			// TODO: req.Method == http.MethodGet ||
+			(strings.Contains(req.RequestURI, "operatorplatform") && req.Method == http.MethodGet) ||
 			strings.Contains(req.RequestURI, "/auth/user/current") ||
 			strings.Contains(req.RequestURI, "/auth/metrics/") ||
+			strings.Contains(req.RequestURI, "/oauth2/token/") ||
 			strings.Contains(req.RequestURI, "/ctrl/Stream") ||
 			strings.Contains(req.RequestURI, "/auth/audit/") ||
 			strings.Contains(req.RequestURI, "/auth/events/") ||
@@ -100,7 +111,7 @@ func loggerCustom(next echo.HandlerFunc, errorHandler echo.MiddlewareFunc) echo.
 		// the response, so echo doesn't need to see it.
 		// Error handler must come before body dump, so that body
 		// dump captures the changes to the response.
-		next = errorHandler(next)
+		next = s.errorHandler(next)
 
 		reqBody := []byte{}
 		resBody := []byte{}
@@ -268,6 +279,7 @@ func loggerCustom(next echo.HandlerFunc, errorHandler echo.MiddlewareFunc) echo.
 			// for all responses, if it has a jwt token
 			// remove it before logging
 			resBody = TokenFieldClearer.Clear(resBody)
+			resBody = AccessTokenFieldClearer.Clear(resBody)
 			resBody = ClientSecretFieldClearer.Clear(resBody)
 			if strings.Contains(string(resBody), "TOTP") {
 				resp := ormapi.UserResponse{}
@@ -347,6 +359,7 @@ func loggerCustom(next echo.HandlerFunc, errorHandler echo.MiddlewareFunc) echo.
 			}
 			eventTags["status"] = fmt.Sprintf("%d", code)
 			eventOrg := ""
+			eventTags["localuri"] = req.RequestURI
 			for k, v := range log.GetTags(span) {
 				if k == "level" || k == "error" || log.IgnoreSpanTag(k) {
 					continue
@@ -362,7 +375,8 @@ func loggerCustom(next echo.HandlerFunc, errorHandler echo.MiddlewareFunc) echo.
 				}
 				eventTags[k] = str
 			}
-			nodeMgr.TimedEvent(ctx, req.RequestURI, eventOrg, node.AuditType, eventTags, eventErr, eventStart, time.Now())
+			auditName := s.getAuditName(c)
+			nodeMgr.TimedEvent(ctx, auditName, eventOrg, node.AuditType, eventTags, eventErr, eventStart, time.Now())
 		}
 		// do not pass error up, as it's already been handled by the handler
 		return nil
@@ -452,4 +466,40 @@ func fedErrorHandler(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 		return err
 	}
+}
+
+type AuditNameLookup struct {
+	lookup map[AuditNameLookupKey]string
+}
+
+func (s *AuditLogger) initAuditNames(e *echo.Echo) {
+	// Map should only be written to during init
+	// for thread safety.
+	for _, r := range e.Routes() {
+		path := r.Path
+		if path[0] != '/' {
+			path = "/" + path
+		}
+		key := AuditNameLookupKey{
+			method: r.Method,
+			path:   path,
+		}
+		// get last part of fully qualified path to function name
+		names := strings.Split(r.Name, ".")
+		name := names[len(names)-1]
+		// Federation functions have -fm suffix
+		s.lookup[key] = strings.TrimSuffix(name, "-fm")
+	}
+}
+
+func (s *AuditLogger) getAuditName(c echo.Context) string {
+	key := AuditNameLookupKey{
+		method: c.Request().Method,
+		path:   c.Path(),
+	}
+	name, found := s.lookup[key]
+	if found {
+		return name
+	}
+	return c.Path()
 }

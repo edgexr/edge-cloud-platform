@@ -81,13 +81,15 @@ func BodyDumpWithConfig(config BodyDumpConfig) echo.MiddlewareFunc {
 			// Request
 			reqBody := []byte{}
 			reqContentType := c.Request().Header.Get("Content-Type")
-			if strings.Contains(reqContentType, "application/json") {
-				if c.Request().Body != nil { // Read
-					reqBody, _ = ioutil.ReadAll(c.Request().Body)
+			if c.Request().Method != http.MethodGet {
+				if strings.Contains(reqContentType, "application/json") {
+					if c.Request().Body != nil { // Read
+						reqBody, _ = ioutil.ReadAll(c.Request().Body)
+					}
+					c.Request().Body = ioutil.NopCloser(bytes.NewBuffer(reqBody)) // Reset
+				} else {
+					reqBody = []byte(reqContentType + " data omitted")
 				}
-				c.Request().Body = ioutil.NopCloser(bytes.NewBuffer(reqBody)) // Reset
-			} else {
-				reqBody = []byte(reqContentType + " data omitted")
 			}
 			// Response
 			resBody := new(bytes.Buffer)

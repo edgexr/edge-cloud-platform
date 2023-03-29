@@ -117,11 +117,11 @@
       - audit
     notmatch:
       names:
-      - /api/v1/auth/events/show
-      - /api/v1/auth/events/terms
+      - ShowEvents
+      - EventTerms
     limit: 5
   results:
-  - name: /api/v1/auth/ctrl/DeleteAutoProvPolicy
+  - name: DeleteAutoProvPolicy
     org:
     - AcmeAppCo
     type: audit
@@ -130,6 +130,7 @@
       email: user2@email.com
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/ctrl/DeleteAutoProvPolicy
       method: POST
       org: AcmeAppCo
       policy: autoprovHA
@@ -142,7 +143,7 @@
       status: "200"
       traceid: ""
       username: user2
-  - name: /api/v1/auth/ctrl/DeleteApp
+  - name: DeleteApp
     org:
     - AcmeAppCo
     type: audit
@@ -154,6 +155,7 @@
       email: user2@email.com
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/ctrl/DeleteApp
       method: POST
       org: AcmeAppCo
       region: local
@@ -164,7 +166,7 @@
       status: "200"
       traceid: ""
       username: user2
-  - name: /api/v1/auth/ctrl/UpdateCloudlet
+  - name: UpdateCloudlet
     org:
     - dmuus
     type: audit
@@ -176,6 +178,7 @@
       federatedorg: ""
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/ctrl/UpdateCloudlet
       method: POST
       org: dmuus
       region: local
@@ -187,7 +190,7 @@
       status: "200"
       traceid: ""
       username: user1
-  - name: /api/v1/auth/ctrl/RemoveAutoProvPolicyCloudlet
+  - name: RemoveAutoProvPolicyCloudlet
     org:
     - AcmeAppCo
     type: audit
@@ -196,6 +199,7 @@
       email: user2@email.com
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/ctrl/RemoveAutoProvPolicyCloudlet
       method: POST
       org: AcmeAppCo
       policy: autoprovHA
@@ -208,7 +212,7 @@
       status: "200"
       traceid: ""
       username: user2
-  - name: /api/v1/auth/ctrl/UpdateCloudlet
+  - name: UpdateCloudlet
     org:
     - dmuus
     type: audit
@@ -220,6 +224,7 @@
       federatedorg: ""
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/ctrl/UpdateCloudlet
       method: POST
       org: dmuus
       region: local
@@ -241,7 +246,7 @@
       failed: true
     limit: 3
   results:
-  - name: /api/v1/auth/org/delete
+  - name: DeleteOrg
     org:
     - platos
     type: audit
@@ -250,6 +255,7 @@
       email: mexadmin-email-not-specified
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/org/delete
       method: POST
       org: platos
       remote-ip: 127.0.0.1
@@ -260,7 +266,7 @@
       status: "400"
       traceid: ""
       username: mexadmin
-  - name: /api/v1/auth/org/delete
+  - name: DeleteOrg
     org:
     - gcp
     type: audit
@@ -269,6 +275,7 @@
       email: mexadmin-email-not-specified
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/org/delete
       method: POST
       org: gcp
       remote-ip: 127.0.0.1
@@ -279,7 +286,7 @@
       status: "400"
       traceid: ""
       username: mexadmin
-  - name: /api/v1/auth/org/delete
+  - name: DeleteOrg
     org:
     - azure
     type: audit
@@ -288,6 +295,7 @@
       email: mexadmin-email-not-specified
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/org/delete
       method: POST
       org: azure
       remote-ip: 127.0.0.1
@@ -304,7 +312,7 @@
       - AcmeAppCo
     limit: 3
   results:
-  - name: /api/v1/auth/ctrl/DeleteAutoProvPolicy
+  - name: DeleteAutoProvPolicy
     org:
     - AcmeAppCo
     type: audit
@@ -313,6 +321,7 @@
       email: user2@email.com
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/ctrl/DeleteAutoProvPolicy
       method: POST
       org: AcmeAppCo
       policy: autoprovHA
@@ -369,7 +378,7 @@
         app: someapplication1
     limit: 3
   results:
-  - name: /api/v1/auth/ctrl/CreateAppInst
+  - name: CreateAppInst
     org:
     - AcmeAppCo
     type: audit
@@ -386,6 +395,7 @@
       federatedorg: ""
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/ctrl/CreateAppInst
       method: POST
       org: AcmeAppCo
       region: locala
@@ -400,7 +410,7 @@
       status: "200"
       traceid: ""
       username: user2
-  - name: /api/v1/auth/ctrl/CreateAppInst
+  - name: CreateAppInst
     org:
     - AcmeAppCo
     type: audit
@@ -417,6 +427,7 @@
       federatedorg: ""
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/ctrl/CreateAppInst
       method: POST
       org: AcmeAppCo
       region: locala
@@ -431,7 +442,7 @@
       status: "200"
       traceid: ""
       username: user2
-  - name: /api/v1/auth/ctrl/CreateApp
+  - name: CreateApp
     org:
     - AcmeAppCo
     type: audit
@@ -443,6 +454,7 @@
       email: user2@email.com
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/ctrl/CreateApp
       method: POST
       org: AcmeAppCo
       region: locala
@@ -458,10 +470,10 @@
 - search:
     match:
       names:
-      - /api/v1/auth/ctrl/CreateApp
+      - CreateApp
     limit: 3
   results:
-  - name: /api/v1/auth/ctrl/CreateApp
+  - name: CreateApp
     org:
     - AcmeAppCo
     type: audit
@@ -473,6 +485,7 @@
       email: user2@email.com
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/ctrl/CreateApp
       method: POST
       org: AcmeAppCo
       region: local
@@ -483,7 +496,7 @@
       status: "200"
       traceid: ""
       username: user2
-  - name: /api/v1/auth/ctrl/CreateApp
+  - name: CreateApp
     org:
     - user3org
     type: audit
@@ -495,6 +508,7 @@
       email: user3@enterprise.com
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/ctrl/CreateApp
       method: POST
       org: user3org
       region: local
@@ -505,7 +519,7 @@
       status: "200"
       traceid: ""
       username: user3
-  - name: /api/v1/auth/ctrl/CreateApp
+  - name: CreateApp
     org:
     - platos
     type: audit
@@ -517,6 +531,7 @@
       email: user2@email.com
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/ctrl/CreateApp
       method: POST
       org: platos
       region: locala

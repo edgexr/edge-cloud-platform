@@ -22,8 +22,8 @@
     failed: true
   notmatch:
     names:
-    - "*/auth/ctrl/RunCommand"
-    - "*/auth/ctrl/ShowLogs"
+    - RunCommand
+    - ShowLogs
 - limit: 3
   match:
     orgs:
@@ -40,7 +40,7 @@
 - limit: 3
   match:
     names:
-    - /api/v1/auth/ctrl/CreateApp
+    - CreateApp
 - limit: 3
   match:
     tags:
@@ -75,4 +75,4 @@
 - limit: 3
   match:
     names:
-    - /api/v1/auth/org/create
+    - CreateOrg

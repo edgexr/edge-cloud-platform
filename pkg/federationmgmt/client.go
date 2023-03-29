@@ -42,7 +42,7 @@ type Client struct {
 	auditLogCb  AuditLogCb
 }
 
-type AuditLogCb func(ctx context.Context, fedKey *FedKey, data *ormclient.AuditLogData)
+type AuditLogCb func(ctx context.Context, eventName string, fedKey *FedKey, data *ormclient.AuditLogData)
 
 var ClientSecretFieldClearer = util.NewJsonFieldClearer("clientSecret")
 
@@ -154,7 +154,7 @@ var okStatuses = map[int]struct{}{
 	http.StatusAccepted: struct{}{},
 }
 
-func (c *Client) SendRequest(ctx context.Context, method, endpoint string, reqData, replyData interface{}, headerVals http.Header) (int, http.Header, error) {
+func (c *Client) SendRequest(ctx context.Context, eventName, method, endpoint string, reqData, replyData interface{}, headerVals http.Header) (int, http.Header, error) {
 	if c.addr == "" {
 		return 0, nil, fmt.Errorf("Missing federation address")
 	}
@@ -168,7 +168,7 @@ func (c *Client) SendRequest(ctx context.Context, method, endpoint string, reqDa
 		TokenType: token.TokenType,
 		Timeout:   60 * time.Minute,
 		AuditLogFunc: func(data *ormclient.AuditLogData) {
-			c.audit(ctx, c.fedKey, data)
+			c.audit(ctx, eventName, c.fedKey, data)
 		},
 		ParseErrorFunc: c.parseFedError,
 	}
@@ -176,7 +176,7 @@ func (c *Client) SendRequest(ctx context.Context, method, endpoint string, reqDa
 		restClient.SkipVerify = true
 	}
 	requestUrl := fmt.Sprintf("%s%s", c.addr, endpoint)
-	log.SpanLog(ctx, log.DebugLevelApi, "federation send request", "method", method, "url", requestUrl)
+	log.SpanLog(ctx, log.DebugLevelApi, "federation send request", "method", method, "remoteurl", requestUrl)
 	status, respHeader, err := restClient.HttpJsonSend(method, requestUrl, token.AccessToken, reqData, replyData, headerVals, nil, okStatuses)
 	if err != nil {
 		return status, nil, fmt.Errorf("%s %s failed: %s", method, requestUrl, err)
@@ -187,12 +187,12 @@ func (c *Client) SendRequest(ctx context.Context, method, endpoint string, reqDa
 	return status, respHeader, nil
 }
 
-func (c *Client) audit(ctx context.Context, fedKey *FedKey, data *ormclient.AuditLogData) {
+func (c *Client) audit(ctx context.Context, eventName string, fedKey *FedKey, data *ormclient.AuditLogData) {
 	data.RespBody = ClientSecretFieldClearer.Clear(data.RespBody)
 
-	log.SpanLog(ctx, log.DebugLevelApi, "federation client api", "method", data.Method, "url", data.Url.String(), "reqContentType", data.ReqContentType, "req", string(data.ReqBody), "status", data.Status, "respContentType", data.RespContentType, "resp", string(data.RespBody), "err", data.Err, "took", data.End.Sub(data.Start).String())
+	log.SpanLog(ctx, log.DebugLevelApi, eventName, "method", data.Method, "remoteurl", data.Url.String(), "reqContentType", data.ReqContentType, "req", string(data.ReqBody), "status", data.Status, "respContentType", data.RespContentType, "resp", string(data.RespBody), "err", data.Err, "took", data.End.Sub(data.Start).String())
 	if c.auditLogCb != nil {
-		c.auditLogCb(ctx, fedKey, data)
+		c.auditLogCb(ctx, eventName, fedKey, data)
 	}
 }
 

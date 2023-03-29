@@ -162,10 +162,10 @@ func (f *FederationPlatform) fedClient(ctx context.Context, cloudletKey *edgepro
 	return f.tokenSources.Client(ctx, fedConfig.PartnerFederationAddr, &fedKey, f.auditCb)
 }
 
-func (f *FederationPlatform) auditCb(ctx context.Context, fedKey *federationmgmt.FedKey, data *ormclient.AuditLogData) {
+func (f *FederationPlatform) auditCb(ctx context.Context, eventName string, fedKey *federationmgmt.FedKey, data *ormclient.AuditLogData) {
 	nodeMgr := f.commonPf.PlatformConfig.NodeMgr
 	eventTags := data.GetEventTags()
-	nodeMgr.TimedEvent(ctx, "federation client api", fedKey.Name, node.EventType, eventTags, data.Err, data.Start, data.End)
+	nodeMgr.TimedEvent(ctx, eventName, fedKey.Name, node.AuditType, eventTags, data.Err, data.Start, data.End)
 }
 
 // Create an appInst. This runs on the Consumer.
@@ -212,7 +212,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	f.caches.AppInstInfoCache.SetFedAppInstKey(ctx, &appInst.Key, fedKey)
 
 	apiPath := fmt.Sprintf("/%s/%s/application/lcm", federationmgmt.ApiRoot, fedConfig.FederationContextId)
-	_, _, err = fedClient.SendRequest(ctx, "POST", apiPath, &req, nil, nil)
+	_, _, err = fedClient.SendRequest(ctx, "FedLcmAppInst", "POST", apiPath, &req, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -284,7 +284,7 @@ func createAppInstPoller(ctx context.Context, fedClient *federationmgmt.Client, 
 		case <-time.After(retryDelay):
 			log.SpanLog(ctx, log.DebugLevelApi, "frm polling create appinst state", "apiPath", apiPath)
 			out := fedewapi.GetAppInstanceDetails200Response{}
-			_, _, err := fedClient.SendRequest(ctx, "GET", apiPath, nil, &out, nil)
+			_, _, err := fedClient.SendRequest(ctx, "Get FedAppInst Poll", "GET", apiPath, nil, &out, nil)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelApi, "frm poll create appinst failed", "err", err)
 			} else {
@@ -318,7 +318,7 @@ func (f *FederationPlatform) DeleteAppInst(ctx context.Context, clusterInst *edg
 		log.SpanLog(ctx, log.DebugLevelApi, "delete appinst but id missing", "appInst", appInst.Key, "apiPath", apiPath)
 		return fmt.Errorf("Cannot delete AppInst with no federated appInstId")
 	}
-	_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
+	_, _, err = fedClient.SendRequest(ctx, "Delete FedAppInst", "DELETE", apiPath, nil, nil, nil)
 	if err != nil {
 		return err
 	}

@@ -130,8 +130,15 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 		FileType:         fedewapi.VirtImageType(image.Type),
 		ImgOSType:        osType,
 		ImgInsSetArch:    fedewapi.CPUArchType(archTypeStr),
+		RepoType:         &repoType,
 		FileRepoLocation: src,
+		FileDescription:  &image.Description,
+		Checksum:         &image.Checksum,
 	}
+	requestData, _ := json.Marshal(fileReq)
+	log.SetContextTags(ctx, map[string]string{
+		"request": string(requestData),
+	})
 	if err := fileReq.Validate(); err != nil {
 		return err
 	}
