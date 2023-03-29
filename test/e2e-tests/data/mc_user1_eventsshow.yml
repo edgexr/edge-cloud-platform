@@ -15,7 +15,7 @@
 - limit: 3
   match:
     names:
-    - /api/v1/auth/ctrl/CreateAppInst
+    - CreateAppInst
 - limit: 3
   match:
     tags:

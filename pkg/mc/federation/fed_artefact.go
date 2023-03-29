@@ -117,6 +117,10 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 		ArtefactVirtType:       provArt.VirtType,
 		ArtefactDescriptorType: provArt.DescType,
 	}
+	requestData, _ := json.Marshal(artReq)
+	log.SetContextTags(ctx, map[string]string{
+		"request": string(requestData),
+	})
 	if err := artReq.Validate(); err != nil {
 		return err
 	}

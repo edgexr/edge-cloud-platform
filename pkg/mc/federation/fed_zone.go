@@ -426,7 +426,7 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 	}
 	opZoneRes := fedewapi.ZoneRegistrationResponseData{}
 	apiPath := fmt.Sprintf("/%s/%s/zones", federationmgmt.ApiRoot, consumer.FederationContextId)
-	_, _, err = fedClient.SendRequest(ctx, "POST", apiPath, &opZoneReg, &opZoneRes, nil)
+	_, _, err = fedClient.SendRequest(ctx, "ZoneSubscribe", "POST", apiPath, &opZoneReg, &opZoneRes, nil)
 	if err != nil {
 		return err
 	}
@@ -635,7 +635,7 @@ func (p *PartnerApi) DeregisterConsumerZones(ctx context.Context, consumer *orma
 		if fedQueryParams.IgnorePartner {
 			log.SpanLog(ctx, log.DebugLevelApi, "skipping partner call", "method", "DELETE", "api", apiPath)
 		} else {
-			_, _, err = fedClient.SendRequest(ctx, "DELETE", apiPath, nil, nil, nil)
+			_, _, err = fedClient.SendRequest(ctx, "ZoneUnsubscribe", "DELETE", apiPath, nil, nil, nil)
 			if err != nil {
 				return err
 			}

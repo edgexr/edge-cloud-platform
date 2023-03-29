@@ -134,6 +134,8 @@ var DefaultSuperuser = "mexadmin"
 var DefaultSuperpass = "mexadminfastedgecloudinfra"
 var Superuser string
 
+const ApiRoot = "api/v1"
+
 var database *gorm.DB
 
 //go:embed resources
@@ -396,12 +398,13 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 
 	// AuthCookie needs to be done here at the root so it can run before RateLimit and extract the user information needed by the RateLimit middleware.
 	// AuthCookie will only run for the /auth path.
-	e.Use(logger, AuthCookie, RateLimit)
+	auditLogger := NewAuditLogger(resultErrorHandler)
+	e.Use(auditLogger.echoHandler, AuthCookie, RateLimit)
 
 	e.POST("/oauth2/token", Oauth2Token)
 
 	// login route
-	root := "api/v1"
+	root := ApiRoot
 	// accessible routes
 
 	// swagger:route POST /login Security Login
@@ -981,6 +984,8 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	ws.GET("/federation/consumer/app/onboard", OnboardConsumerApp)
 	ws.GET("/federation/consumer/app/deboard", DeboardConsumerApp)
 
+	auditLogger.initAuditNames(e)
+
 	if config.NotifySrvAddr != "" {
 		server.notifyServer = &notify.ServerMgr{}
 		nodeMgr.RegisterServer(server.notifyServer)
@@ -1055,11 +1060,13 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		federationEcho.Binder = &CustomBinder{}
 
 		// RateLimit based on auth
-		federationEcho.Use(fedLogger, AuthCookie, FederationRateLimit)
+		auditLogger := NewAuditLogger(fedErrorHandler)
+		federationEcho.Use(auditLogger.echoHandler, AuthCookie, FederationRateLimit)
 		server.federationEcho = federationEcho
 
 		partnerApi = federation.NewPartnerApi(database, connCache, nodeMgr, config.vaultConfig, config.FederationExternalAddr, config.VmRegistryAddr, config.HarborAddr)
 		partnerApi.InitAPIs(federationEcho)
+		auditLogger.initAuditNames(federationEcho)
 
 		go func() {
 			if config.ApiTlsCertFile != "" {

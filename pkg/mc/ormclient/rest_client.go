@@ -304,7 +304,10 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{},
 			reqBody, _ = ioutil.ReadAll(req.Body)
 		}
 		req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBody))
+	} else if mpfd, ok := reqData.(*MultiPartFormData); ok && s.AuditLogFunc != nil {
+		reqBody, _ = json.Marshal(mpfd.fields)
 	}
+
 	// send request
 	resp, err := client.Do(req)
 
@@ -574,7 +577,7 @@ func (s *Client) EnablePrintTransformations() {
 func (s *AuditLogData) GetEventTags() map[string]string {
 	return map[string]string{
 		"method":            s.Method,
-		"url":               s.Url.String(),
+		"remoteurl":         s.Url.String(),
 		"req-content-type":  s.ReqContentType,
 		"request":           string(s.ReqBody),
 		"status":            fmt.Sprintf("%d", s.Status),

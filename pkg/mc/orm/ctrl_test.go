@@ -1482,7 +1482,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		matches := de.WaitLastEventMatches(numEvents, func(event *node.EventData) bool {
 			log.DebugLog(log.DebugLevelInfo, "Check event", "event", *event)
 			lastEvent = event
-			if event.Name != apiUri {
+			if event.Name != api {
 				return false
 			}
 			if event.Type != "audit" {

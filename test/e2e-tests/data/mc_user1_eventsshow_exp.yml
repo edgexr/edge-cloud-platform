@@ -15,10 +15,10 @@
 - search:
     match:
       names:
-      - /api/v1/auth/ctrl/CreateAppInst
+      - CreateAppInst
     limit: 3
   results:
-  - name: /api/v1/auth/ctrl/CreateAppInst
+  - name: CreateAppInst
     org:
     - user3org
     - enterprise
@@ -36,6 +36,7 @@
       federatedorg: ""
       hostname: ""
       lineno: ""
+      localuri: /api/v1/auth/ctrl/CreateAppInst
       method: POST
       org: user3org
       region: local

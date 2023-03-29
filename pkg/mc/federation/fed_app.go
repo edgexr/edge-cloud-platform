@@ -184,7 +184,7 @@ func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationConte
 			log.SpanLog(ctx, log.DebugLevelApi, "failed to send app create callback", "url", req.AppStatusCallbackLink, "err", err)
 			return
 		}
-		_, _, err = fedClient.SendRequest(ctx, "POST", "", &cb, nil, nil)
+		_, _, err = fedClient.SendRequest(ctx, "FedAppCreate Callback", "POST", "", &cb, nil, nil)
 		log.SpanLog(ctx, log.DebugLevelApi, "sent app create callback", "url", req.AppStatusCallbackLink, "err", err)
 	})
 	return nil

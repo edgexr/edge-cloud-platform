@@ -325,7 +325,7 @@ func (s *AppInstWorker) sendCallback(ctx context.Context, state *fedewapi.Instan
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "appInstWorker sendCallback get fedClient failed", "err", err)
 	}
-	_, _, err = fedClient.SendRequest(ctx, "POST", "", &req, nil, nil)
+	_, _, err = fedClient.SendRequest(ctx, "FedAppInstCreate Callback", "POST", "", &req, nil, nil)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "appInstWorker sendCallback failed", "err", err)
 	}
