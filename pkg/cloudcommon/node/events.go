@@ -106,7 +106,7 @@ type EventData struct {
 	// Name of event
 	Name string `json:"name"`
 	// Organizations that scan see event
-	Org []string `json:"org"`
+	Org []string `json:"org,omitempty"`
 	// Type of event, audit or event
 	Type string `json:"type"`
 	// Region in which event happened
@@ -123,7 +123,7 @@ type EventData struct {
 
 type EventDataOld struct {
 	Name      string            `json:"name"`
-	Org       string            `json:"org"`
+	Org       string            `json:"org,omitempty"`
 	Type      string            `json:"type"`
 	Region    string            `json:"region,omitempty"`
 	Timestamp time.Time         `json:"timestamp"`
