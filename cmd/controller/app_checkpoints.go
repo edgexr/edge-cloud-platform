@@ -20,10 +20,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/gogo/protobuf/types"
 )
 
 type AppCheckpoint struct {
@@ -33,28 +33,39 @@ type AppCheckpoint struct {
 	Status    []string // either cloudcommon.InstanceUp or cloudcommon.InstanceDown
 }
 
-var AppUsageInfluxQueryTemplate = `SELECT %s from "%s" WHERE "apporg"='%s' AND "app"='%s' AND "ver"='%s' AND "cluster"='%s' AND "clusterorg"='%s' AND "cloudlet"='%s' AND "cloudletorg"='%s' AND time >= '%s' AND time < '%s' order by time desc`
+// Returns a string of format `"selector"='%s' AND ...`
+func getInfluxQueryWhere(selectors []string) string {
+	qs := []string{}
+	for _, selector := range selectors {
+		q := `"` + selector + `"='%s'`
+		qs = append(qs, q)
+	}
+	return strings.Join(qs, " AND ")
+}
 
-func (s *AppApi) CreateAppUsageRecord(ctx context.Context, app *edgeproto.AppInst, endTime time.Time) error {
+var AppUsageInfluxQueryTemplate = `SELECT %s from "%s" WHERE ` + getInfluxQueryWhere(cloudcommon.AppInstEventSelectors) + ` AND time >= '%s' AND time < '%s' order by time desc`
+
+func (s *AppApi) CreateAppUsageRecord(ctx context.Context, appInst *edgeproto.AppInst, endTime time.Time) error {
 	var metric *edgeproto.Metric
 	// query from the checkpoint up to the event
-	selectors := []string{"\"event\"", "\"status\""}
-	org := app.Key.AppKey.Organization
+	selectors := []string{
+		cloudcommon.MetricTagEvent,
+		cloudcommon.MetricTagStatus,
+	}
+	org := appInst.Key.Organization
 
 	checkpoint, err := GetAppCheckpoint(ctx, org, endTime)
 	if err != nil {
 		return fmt.Errorf("unable to retrieve Checkpoint: %v", err)
 	}
 	influxLogQuery := fmt.Sprintf(AppUsageInfluxQueryTemplate,
-		strings.Join(selectors, ","),
+		cloudcommon.GetInfluxSelectFields(selectors),
 		cloudcommon.AppInstEvent,
-		app.Key.AppKey.Organization,
-		app.Key.AppKey.Name,
-		app.Key.AppKey.Version,
-		app.Key.ClusterInstKey.ClusterKey.Name,
-		app.Key.ClusterInstKey.Organization,
-		app.Key.ClusterInstKey.CloudletKey.Name,
-		app.Key.ClusterInstKey.CloudletKey.Organization,
+		appInst.Key.Name,
+		appInst.Key.Organization,
+		appInst.Key.CloudletKey.Name,
+		appInst.Key.CloudletKey.Organization,
+		appInst.Key.CloudletKey.FederatedOrganization,
 		checkpoint.Timestamp.Format(time.RFC3339),
 		endTime.Format(time.RFC3339))
 	logs, err := services.events.QueryDB(influxLogQuery)
@@ -65,17 +76,17 @@ func (s *AppApi) CreateAppUsageRecord(ctx context.Context, app *edgeproto.AppIns
 	stats := RunTimeStats{
 		end: endTime,
 	}
-	err = GetRunTimeStats(usageTypeVmApp, *checkpoint, app.Key, logs, &stats)
+	err = GetRunTimeStats(usageTypeVmApp, *checkpoint, appInst.Key, logs, &stats)
 	if err != nil {
 		return err
 	}
 
 	// write the usage record to influx
 	appInfo := edgeproto.App{}
-	if !s.cache.Get(&app.Key.AppKey, &appInfo) {
-		return fmt.Errorf("Could not find appinst even though event log indicates it is up. App: %v", app.Key.AppKey)
+	if !s.cache.Get(&appInst.AppKey, &appInfo) {
+		return fmt.Errorf("Could not find appinst even though event log indicates it is up. App: %v", appInst.AppKey)
 	}
-	metric = createAppUsageMetric(app, &appInfo, stats.start, stats.end, stats.upTime, stats.status)
+	metric = createAppUsageMetric(appInst, &appInfo, stats.start, stats.end, stats.upTime, stats.status)
 
 	services.events.AddMetric(metric)
 	return nil
@@ -91,25 +102,38 @@ func createAppUsageMetric(appInst *edgeproto.AppInst, appInfo *edgeproto.App, st
 	startUTC := startTime.In(utc)
 	endUTC := endTime.In(utc)
 
-	// influx requires that at least one field must be specified when querying so these cant be all tags
-	metric.AddStringVal("cloudletorg", appInst.Key.ClusterInstKey.CloudletKey.Organization)
-	metric.AddTag("cloudlet", appInst.Key.ClusterInstKey.CloudletKey.Name)
-	metric.AddTag("cluster", appInst.Key.ClusterInstKey.ClusterKey.Name)
-	metric.AddTag("clusterorg", appInst.Key.ClusterInstKey.Organization)
-	metric.AddTag("org", appInst.Key.AppKey.Organization)
-	metric.AddTag("app", appInst.Key.AppKey.Name)
-	metric.AddTag("ver", appInst.Key.AppKey.Version)
-	metric.AddStringVal("deployment", appInfo.Deployment)
-	metric.AddStringVal("start", startUTC.Format(time.RFC3339))
-	metric.AddStringVal("end", endUTC.Format(time.RFC3339))
-	metric.AddDoubleVal("uptime", runTime.Seconds())
-	metric.AddStringVal("status", status)
+	metric.AddKeyTags(&appInst.Key)
+	metric.AddKeyTags(&appInst.ClusterKey)
+	metric.AddKeyTags(&appInst.AppKey)
+	metric.AddStringVal(cloudcommon.MetricTagDeployment, appInfo.Deployment)
+	metric.AddStringVal(cloudcommon.MetricTagStart, startUTC.Format(time.RFC3339))
+	metric.AddStringVal(cloudcommon.MetricTagEnd, endUTC.Format(time.RFC3339))
+	metric.AddDoubleVal(cloudcommon.MetricTagUptime, runTime.Seconds())
+	metric.AddStringVal(cloudcommon.MetricTagStatus, status)
 
 	if appInfo.Deployment == cloudcommon.DeploymentTypeVM {
-		metric.AddStringVal("flavor", appInst.Flavor.Name)
+		metric.AddStringVal(cloudcommon.MetricTagFlavor, appInst.Flavor.Name)
 	}
 
 	return &metric
+}
+
+func appInstKeyFromMetricValues(values []interface{}) edgeproto.AppInstKey {
+	appinst := fmt.Sprintf("%v", values[1])
+	appinstorg := fmt.Sprintf("%v", values[2])
+	cloudlet := fmt.Sprintf("%v", values[3])
+	cloudletorg := fmt.Sprintf("%v", values[4])
+	cloudletfedorg := fmt.Sprintf("%v", values[5])
+	key := edgeproto.AppInstKey{
+		Name:         appinst,
+		Organization: appinstorg,
+		CloudletKey: edgeproto.CloudletKey{
+			Name:                  cloudlet,
+			Organization:          cloudletorg,
+			FederatedOrganization: cloudletfedorg,
+		},
+	}
+	return key
 }
 
 // This is checkpointing for all appinsts
@@ -120,9 +144,9 @@ func (s *AppApi) CreateAppCheckpoint(ctx context.Context, timestamp time.Time) e
 	defer services.events.DoPush() // flush these right away for subsequent calls to GetAppCheckpoint
 	// get all running appinsts and create a usage record of them
 
-	selectors := []string{"\"app\"", "\"apporg\"", "\"ver\"", "\"cluster\"", "\"clusterorg\"", "\"cloudlet\"", "\"cloudletorg\"", "\"event\""}
+	selectors := append(cloudcommon.AppInstEventSelectors, cloudcommon.MetricTagEvent)
 	influxLogQuery := fmt.Sprintf(CreateCheckpointInfluxQueryTemplate,
-		strings.Join(selectors, ","),
+		cloudcommon.GetInfluxSelectFields(selectors),
 		cloudcommon.AppInstEvent,
 		PrevCheckpoint.Format(time.RFC3339),
 		timestamp.Format(time.RFC3339))
@@ -147,26 +171,8 @@ func (s *AppApi) CreateAppCheckpoint(ctx context.Context, timestamp time.Time) e
 			if len(values) != len(selectors)+1 {
 				return fmt.Errorf("Error parsing influx response")
 			}
-			app := fmt.Sprintf("%v", values[1])
-			apporg := fmt.Sprintf("%v", values[2])
-			ver := fmt.Sprintf("%v", values[3])
-			cluster := fmt.Sprintf("%v", values[4])
-			clusterorg := fmt.Sprintf("%v", values[5])
-			cloudlet := fmt.Sprintf("%v", values[6])
-			cloudletorg := fmt.Sprintf("%v", values[7])
-			event := cloudcommon.InstanceEvent(fmt.Sprintf("%v", values[8]))
-			key := edgeproto.AppInstKey{
-				AppKey: edgeproto.AppKey{
-					Organization: apporg,
-					Name:         app,
-					Version:      ver,
-				},
-				ClusterInstKey: edgeproto.VirtualClusterInstKey{
-					ClusterKey:   edgeproto.ClusterKey{Name: cluster},
-					Organization: clusterorg,
-					CloudletKey:  edgeproto.CloudletKey{Name: cloudlet, Organization: cloudletorg},
-				},
-			}
+			key := appInstKeyFromMetricValues(values)
+			event := cloudcommon.InstanceEvent(fmt.Sprintf("%v", values[6]))
 			// only care about each appinsts most recent log
 			if _, exists := seenApps[key]; exists {
 				continue
@@ -174,13 +180,13 @@ func (s *AppApi) CreateAppCheckpoint(ctx context.Context, timestamp time.Time) e
 			seenApps[key] = true
 			// if its still up, record it
 			if event != cloudcommon.DELETED {
-				info := edgeproto.AppInst{}
-				if !s.all.appInstApi.cache.Get(&key, &info) {
+				appInst := edgeproto.AppInst{}
+				if !s.all.appInstApi.cache.Get(&key, &appInst) {
 					log.SpanLog(ctx, log.DebugLevelMetrics, "Could not find appinst even though event log indicates it is up", "app", key)
 					continue
 				}
 				//record the usage up to this point
-				err = s.CreateAppUsageRecord(ctx, &info, timestamp)
+				err = s.CreateAppUsageRecord(ctx, &appInst, timestamp)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to create app usage record of checkpointed app", "app", key, "err", err)
 				}
@@ -189,9 +195,9 @@ func (s *AppApi) CreateAppCheckpoint(ctx context.Context, timestamp time.Time) e
 	}
 
 	// check for apps that got checkpointed but did not have any log events between PrevCheckpoint and this one
-	selectors = []string{"\"app\"", "\"org\"", "\"ver\"", "\"cluster\"", "\"clusterorg\"", "\"cloudlet\"", "\"cloudletorg\""}
+	selectors = cloudcommon.AppInstEventSelectors
 	influxCheckpointQuery := fmt.Sprintf(CreateCheckpointInfluxQueryTemplate,
-		strings.Join(selectors, ","),
+		cloudcommon.GetInfluxSelectFields(selectors),
 		cloudcommon.AppInstCheckpoints,
 		PrevCheckpoint.Add(-1*time.Minute).Format(time.RFC3339), //small delta to account for conversion rounding inconsistencies
 		PrevCheckpoint.Add(time.Minute).Format(time.RFC3339))
@@ -213,25 +219,7 @@ func (s *AppApi) CreateAppCheckpoint(ctx context.Context, timestamp time.Time) e
 		if len(values) != len(selectors)+1 {
 			return fmt.Errorf("Error parsing influx response")
 		}
-		app := fmt.Sprintf("%v", values[1])
-		org := fmt.Sprintf("%v", values[2])
-		ver := fmt.Sprintf("%v", values[3])
-		cluster := fmt.Sprintf("%v", values[4])
-		clusterorg := fmt.Sprintf("%v", values[5])
-		cloudlet := fmt.Sprintf("%v", values[6])
-		cloudletorg := fmt.Sprintf("%v", values[7])
-		key := edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Organization: org,
-				Name:         app,
-				Version:      ver,
-			},
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				ClusterKey:   edgeproto.ClusterKey{Name: cluster},
-				Organization: clusterorg,
-				CloudletKey:  edgeproto.CloudletKey{Name: cloudlet, Organization: cloudletorg},
-			},
-		}
+		key := appInstKeyFromMetricValues(values)
 		if _, exists := seenApps[key]; exists {
 			continue
 		}
@@ -258,9 +246,12 @@ func GetAppCheckpoint(ctx context.Context, org string, timestamp time.Time) (*Ap
 		time.Sleep(time.Second)
 	}
 	// query from the checkpoint up to the delete
-	selectors := []string{"\"app\"", "\"ver\"", "\"cluster\"", "\"clusterorg\"", "\"cloudlet\"", "\"cloudletorg\"", "\"status\"", "\"end\""}
+	selectors := append(cloudcommon.AppInstEventSelectors,
+		cloudcommon.MetricTagStatus,
+		cloudcommon.MetricTagEnd,
+	)
 	influxCheckpointQuery := fmt.Sprintf(GetCheckpointInfluxQueryTemplate,
-		strings.Join(selectors, ","),
+		cloudcommon.GetInfluxSelectFields(selectors),
 		cloudcommon.AppInstCheckpoints,
 		org,
 		timestamp.Format(time.RFC3339))
@@ -287,29 +278,12 @@ func GetAppCheckpoint(ctx context.Context, org string, timestamp time.Time) (*Ap
 		if len(values) != len(selectors)+1 {
 			return nil, fmt.Errorf("Error parsing influx response")
 		}
-		appname := fmt.Sprintf("%v", values[1])
-		version := fmt.Sprintf("%v", values[2])
-		cluster := fmt.Sprintf("%v", values[3])
-		clusterorg := fmt.Sprintf("%v", values[4])
-		cloudlet := fmt.Sprintf("%v", values[5])
-		cloudletorg := fmt.Sprintf("%v", values[6])
-		status := fmt.Sprintf("%v", values[7])
-		key := edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Organization: org,
-				Name:         appname,
-				Version:      version,
-			},
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				ClusterKey:   edgeproto.ClusterKey{Name: cluster},
-				Organization: clusterorg,
-				CloudletKey:  edgeproto.CloudletKey{Name: cloudlet, Organization: cloudletorg},
-			},
-		}
+		key := appInstKeyFromMetricValues(values)
+		status := fmt.Sprintf("%v", values[6])
 		result.Keys = append(result.Keys, &key)
 		result.Status = append(result.Status, status)
 
-		measurementTime, err := time.Parse(time.RFC3339, fmt.Sprintf("%v", values[8]))
+		measurementTime, err := time.Parse(time.RFC3339, fmt.Sprintf("%v", values[7]))
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse timestamp of checkpoint: %v", err)
 		}

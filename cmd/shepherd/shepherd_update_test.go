@@ -148,7 +148,7 @@ scrape_configs:
 
 	// check alerts based on appinsts and policy
 
-	rulesFile := getAppInstRulesFileName(shepherd_test.TestAppInstKey)
+	rulesFile := getAppInstRulesFileName(&shepherd_test.TestAppInst)
 	fileContents, err = ioutil.ReadFile(rulesFile)
 	require.Nil(t, err)
 	expected = `groups:

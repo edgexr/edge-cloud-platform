@@ -104,26 +104,16 @@ message NodeInfo {
   map<string, Udec64> capacity = 3;
 }
 
-// ClusterInst Ref Key
-//
-// ClusterInstRefKey is cluster instance key without cloudlet key.
-message ClusterInstRefKey {
-  // Name of Cluster
-  ClusterKey cluster_key = 1 [(gogoproto.nullable) = false];
-  // Name of Developer organization that this cluster belongs to
-  string organization = 2 [(protogen.keytag) = "clusterreforg"];
-  option (protogen.obj_key) = true;
-}
-
 // AppInst Ref Key
 //
 // AppInstRefKey is app instance key without cloudlet key.
 message AppInstRefKey {
-  // App key
-  AppKey app_key = 1 [(gogoproto.nullable) = false];
-  // Cluster instance on which this is instantiated
-  ClusterInstRefKey cluster_inst_key = 2 [(gogoproto.nullable) = false];
+  // AppInst name
+  string name = 1 [(protogen.keytag) = "appinstrefname"];
+  // AppInst organization
+  string organization = 2 [(protogen.keytag) = "appinstreforg"];
   option (protogen.obj_key) = true;
+  option (protogen.generate_matches) = true;
 }
 
 // InfraResources
@@ -144,7 +134,7 @@ message InfraResourcesSnapshot {
   // Infra Resource information
   repeated InfraResource info = 2 [(gogoproto.nullable) = false];
   // List of clusterinsts this resources snapshot represent
-  repeated ClusterInstRefKey cluster_insts = 3 [(gogoproto.nullable) = false];
+  repeated ClusterKey cluster_insts = 3 [(gogoproto.nullable) = false];
   // List of vm appinsts this resources snapshot represent
   repeated AppInstRefKey vm_app_insts = 4 [(gogoproto.nullable) = false];
   // List of k8s appinsts this resources snapshot represent

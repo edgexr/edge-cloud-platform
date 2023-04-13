@@ -31,49 +31,49 @@ var NoForceDelete = false
 // cloudletkey via CloudletInfo. Then further updates (sends) are
 // filtered by cloudletkey(s).
 
-func (s *AppSend) UpdateOk(ctx context.Context, key *edgeproto.AppKey) bool {
+func (s *AppSend) UpdateOk(ctx context.Context, app *edgeproto.App) bool {
 	// Always send Apps to allow for App changes to reach cloudlet-filtered CRMs.
 	// Otherwise, we would need to check every AppInst to see if it applies to
 	// in the case of filterCloudletKeys.
 	return true
 }
 
-func (s *AppInstSend) UpdateOk(ctx context.Context, key *edgeproto.AppInstKey) bool {
+func (s *AppInstSend) UpdateOk(ctx context.Context, appInst *edgeproto.AppInst) bool {
 	triggerSend := false
 	if s.sendrecv.filterCloudletKeys {
 		if !s.sendrecv.cloudletReady {
 			return false
 		}
-		if !s.sendrecv.hasCloudletKey(&key.ClusterInstKey.CloudletKey) {
+		if !s.sendrecv.hasCloudletKey(&appInst.Key.CloudletKey) {
 			return false
 		}
 		triggerSend = true
 	}
 	if s.sendrecv.filterFederatedCloudlet {
 		// Federated cloudlets are ignored by CRMs and are handled by FRMs
-		if key.ClusterInstKey.CloudletKey.FederatedOrganization == "" {
+		if appInst.Key.CloudletKey.FederatedOrganization == "" {
 			return false
 		}
 		triggerSend = true
 	}
 	// also trigger sending app
 	if triggerSend && s.sendrecv.appSend != nil {
-		s.sendrecv.appSend.updateInternal(ctx, &key.AppKey, 0, NoForceDelete)
+		s.sendrecv.appSend.updateInternal(ctx, &appInst.AppKey, 0, NoForceDelete)
 	}
 	return true
 }
 
-func (s *CloudletSend) UpdateOk(ctx context.Context, key *edgeproto.CloudletKey) bool {
+func (s *CloudletSend) UpdateOk(ctx context.Context, cloudlet *edgeproto.Cloudlet) bool {
 	triggerSend := false
 	if s.sendrecv.filterCloudletKeys {
-		if !s.sendrecv.hasCloudletKey(key) {
+		if !s.sendrecv.hasCloudletKey(&cloudlet.Key) {
 			return false
 		}
 		triggerSend = true
 	}
 	if s.sendrecv.filterFederatedCloudlet {
 		// Federated cloudlets are ignored by CRMs and are handled by FRMs
-		if key.FederatedOrganization == "" {
+		if cloudlet.Key.FederatedOrganization == "" {
 			return false
 		}
 		// trigger send of VMPool and GPUDrivers is not needed because they
@@ -84,36 +84,33 @@ func (s *CloudletSend) UpdateOk(ctx context.Context, key *edgeproto.CloudletKey)
 		// GPUDrivers if cloudlet now refers to a new one that was never
 		// sent before.
 		cloudlet := edgeproto.Cloudlet{}
-		var modRev int64
-		if s.handler.GetWithRev(key, &cloudlet, &modRev) {
-			if cloudlet.VmPool != "" {
-				// also trigger send of vmpool object
-				s.sendrecv.vmPoolSend.updateInternal(ctx, &edgeproto.VMPoolKey{
-					Name:         cloudlet.VmPool,
-					Organization: key.Organization,
-				}, 0, NoForceDelete)
-			}
-			if s.sendrecv.gpuDriverSend != nil && cloudlet.GpuConfig.Driver.Name != "" {
-				// also trigger send of GPU driver object
-				s.sendrecv.gpuDriverSend.updateInternal(ctx, &cloudlet.GpuConfig.Driver, 0, NoForceDelete)
-			}
+		if cloudlet.VmPool != "" {
+			// also trigger send of vmpool object
+			s.sendrecv.vmPoolSend.updateInternal(ctx, &edgeproto.VMPoolKey{
+				Name:         cloudlet.VmPool,
+				Organization: cloudlet.Key.Organization,
+			}, 0, NoForceDelete)
+		}
+		if s.sendrecv.gpuDriverSend != nil && cloudlet.GpuConfig.Driver.Name != "" {
+			// also trigger send of GPU driver object
+			s.sendrecv.gpuDriverSend.updateInternal(ctx, &cloudlet.GpuConfig.Driver, 0, NoForceDelete)
 		}
 	}
 	return true
 }
 
-func (s *ClusterInstSend) UpdateOk(ctx context.Context, key *edgeproto.ClusterInstKey) bool {
+func (s *ClusterInstSend) UpdateOk(ctx context.Context, clusterInst *edgeproto.ClusterInst) bool {
 	if s.sendrecv.filterCloudletKeys {
 		if !s.sendrecv.cloudletReady {
 			return false
 		}
-		if !s.sendrecv.hasCloudletKey(&key.CloudletKey) {
+		if !s.sendrecv.hasCloudletKey(&clusterInst.Key.CloudletKey) {
 			return false
 		}
 	}
 	if s.sendrecv.filterFederatedCloudlet {
 		// Federated cloudlets are ignored by CRMs and are handled by FRMs
-		if key.CloudletKey.FederatedOrganization == "" {
+		if clusterInst.Key.CloudletKey.FederatedOrganization == "" {
 			return false
 		}
 	}
@@ -125,29 +122,29 @@ func (s *ExecRequestSend) UpdateOk(ctx context.Context, msg *edgeproto.ExecReque
 		if !s.sendrecv.cloudletReady {
 			return false
 		}
-		if !s.sendrecv.hasCloudletKey(&msg.AppInstKey.ClusterInstKey.CloudletKey) {
+		if !s.sendrecv.hasCloudletKey(&msg.AppInstKey.CloudletKey) {
 			return false
 		}
 	}
 	if s.sendrecv.filterFederatedCloudlet {
 		// Federated cloudlets are ignored by CRMs and are handled by FRMs
-		if msg.AppInstKey.ClusterInstKey.CloudletKey.FederatedOrganization == "" {
+		if msg.AppInstKey.CloudletKey.FederatedOrganization == "" {
 			return false
 		}
 	}
 	return true
 }
 
-func (s *VMPoolSend) UpdateOk(ctx context.Context, key *edgeproto.VMPoolKey) bool {
+func (s *VMPoolSend) UpdateOk(ctx context.Context, vmpool *edgeproto.VMPool) bool {
 	if s.sendrecv.filterCloudletKeys {
 		for cKey, _ := range s.sendrecv.cloudletKeys {
 			cloudlet := edgeproto.Cloudlet{}
 			var modRev int64
-			if cKey.Organization != key.Organization {
+			if cKey.Organization != vmpool.Key.Organization {
 				continue
 			}
 			if s.sendrecv.cloudletSend.handler.GetWithRev(&cKey, &cloudlet, &modRev) {
-				if cloudlet.VmPool != key.Name {
+				if cloudlet.VmPool != vmpool.Key.Name {
 					continue
 				}
 				return true
@@ -158,13 +155,13 @@ func (s *VMPoolSend) UpdateOk(ctx context.Context, key *edgeproto.VMPoolKey) boo
 	return true
 }
 
-func (s *GPUDriverSend) UpdateOk(ctx context.Context, key *edgeproto.GPUDriverKey) bool {
+func (s *GPUDriverSend) UpdateOk(ctx context.Context, gpuDriver *edgeproto.GPUDriver) bool {
 	if s.sendrecv.filterCloudletKeys {
 		for cKey, _ := range s.sendrecv.cloudletKeys {
 			cloudlet := edgeproto.Cloudlet{}
 			var modRev int64
 			if s.sendrecv.cloudletSend.handler.GetWithRev(&cKey, &cloudlet, &modRev) {
-				if cloudlet.GpuConfig.Driver.Matches(key) {
+				if cloudlet.GpuConfig.Driver.Matches(&gpuDriver.Key) {
 					return true
 				}
 			}
@@ -174,10 +171,10 @@ func (s *GPUDriverSend) UpdateOk(ctx context.Context, key *edgeproto.GPUDriverKe
 	return true
 }
 
-func (s *TrustPolicyExceptionSend) UpdateOk(ctx context.Context, key *edgeproto.TrustPolicyExceptionKey) bool {
+func (s *TrustPolicyExceptionSend) UpdateOk(ctx context.Context, tpe *edgeproto.TrustPolicyException) bool {
 	if s.sendrecv.filterCloudletKeys {
 		for cKey, _ := range s.sendrecv.cloudletKeys {
-			if cKey.Organization != key.CloudletPoolKey.Organization {
+			if cKey.Organization != tpe.Key.CloudletPoolKey.Organization {
 				continue
 			}
 			return true
@@ -187,55 +184,55 @@ func (s *TrustPolicyExceptionSend) UpdateOk(ctx context.Context, key *edgeproto.
 	return true
 }
 
-func (s *AppSend) UpdateAllOkLocked(key *edgeproto.AppKey) bool {
+func (s *AppSend) UpdateAllOkLocked(app *edgeproto.App) bool {
 	return true
 }
 
-func (s *AppInstSend) UpdateAllOkLocked(key *edgeproto.AppInstKey) bool {
+func (s *AppInstSend) UpdateAllOkLocked(appInst *edgeproto.AppInst) bool {
 	if s.sendrecv.filterCloudletKeys {
 		return false
 	}
 	if s.sendrecv.filterFederatedCloudlet {
-		if key.ClusterInstKey.CloudletKey.FederatedOrganization == "" {
+		if appInst.Key.CloudletKey.FederatedOrganization == "" {
 			return false
 		}
 	}
 	return true
 }
 
-func (s *CloudletSend) UpdateAllOkLocked(key *edgeproto.CloudletKey) bool {
+func (s *CloudletSend) UpdateAllOkLocked(cloudlet *edgeproto.Cloudlet) bool {
 	if s.sendrecv.filterCloudletKeys {
 		return false
 	}
 	if s.sendrecv.filterFederatedCloudlet {
-		if key.FederatedOrganization == "" {
+		if cloudlet.Key.FederatedOrganization == "" {
 			return false
 		}
 	}
 	return true
 }
 
-func (s *ClusterInstSend) UpdateAllOkLocked(key *edgeproto.ClusterInstKey) bool {
+func (s *ClusterInstSend) UpdateAllOkLocked(clusterInst *edgeproto.ClusterInst) bool {
 	if s.sendrecv.filterCloudletKeys {
 		return false
 	}
 	if s.sendrecv.filterFederatedCloudlet {
-		if key.CloudletKey.FederatedOrganization == "" {
+		if clusterInst.Key.CloudletKey.FederatedOrganization == "" {
 			return false
 		}
 	}
 	return true
 }
 
-func (s *VMPoolSend) UpdateAllOkLocked(key *edgeproto.VMPoolKey) bool {
+func (s *VMPoolSend) UpdateAllOkLocked(vmpool *edgeproto.VMPool) bool {
 	return !s.sendrecv.filterCloudletKeys
 }
 
-func (s *GPUDriverSend) UpdateAllOkLocked(key *edgeproto.GPUDriverKey) bool {
+func (s *GPUDriverSend) UpdateAllOkLocked(gpuDriver *edgeproto.GPUDriver) bool {
 	return !s.sendrecv.filterCloudletKeys
 }
 
-func (s *TrustPolicyExceptionSend) UpdateAllOkLocked(key *edgeproto.TrustPolicyExceptionKey) bool {
+func (s *TrustPolicyExceptionSend) UpdateAllOkLocked(tpe *edgeproto.TrustPolicyException) bool {
 	return !s.sendrecv.filterCloudletKeys
 }
 
@@ -262,7 +259,7 @@ func (s *CloudletInfoRecv) RecvHook(ctx context.Context, notice *edgeproto.Notic
 			// trigger send of cloudlet details to cloudlet
 			if s.sendrecv.cloudletSend != nil {
 				log.SpanLog(ctx, log.DebugLevelNotify, "CloudletInfo recv hook, send Cloudlet update", "key", buf.Key, "state", buf.State)
-				s.sendrecv.cloudletSend.Update(ctx, &buf.Key, nil, 0)
+				s.sendrecv.cloudletSend.Update(ctx, &cloudlet, 0)
 			}
 		}
 		if buf.State == dmeproto.CloudletState_CLOUDLET_STATE_READY || buf.State == dmeproto.CloudletState_CLOUDLET_STATE_NEED_SYNC && !buf.ControllerCacheReceived {

@@ -269,7 +269,9 @@ func (s *CloudletInfoApi) clearCloudletDownAlert(ctx context.Context, in *edgepr
 
 func (s *CloudletInfoApi) clearCloudletDownAppInstAlerts(ctx context.Context, in *edgeproto.CloudletInfo) {
 	appInstFilter := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{ClusterInstKey: edgeproto.VirtualClusterInstKey{CloudletKey: in.Key}},
+		Key: edgeproto.AppInstKey{
+			CloudletKey: in.Key,
+		},
 	}
 	appInstKeys := make([]edgeproto.AppInstKey, 0)
 	s.all.appInstApi.cache.Show(&appInstFilter, func(obj *edgeproto.AppInst) error {
@@ -284,14 +286,6 @@ func (s *CloudletInfoApi) clearCloudletDownAppInstAlerts(ctx context.Context, in
 }
 
 func (s *CloudletInfoApi) fireCloudletDownAppInstAlerts(ctx context.Context, in *edgeproto.CloudletInfo) {
-	appInstFilter := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{ClusterInstKey: edgeproto.VirtualClusterInstKey{CloudletKey: in.Key}},
-	}
-	appInstKeys := make([]edgeproto.AppInstKey, 0)
-	s.all.appInstApi.cache.Show(&appInstFilter, func(obj *edgeproto.AppInst) error {
-		appInstKeys = append(appInstKeys, obj.Key)
-		return nil
-	})
 	// exclude SideCar apps which are auto-deployed as part of the cluster
 	excludedAppFilter := cloudcommon.GetSideCarAppFilter()
 	excludedAppKeys := make(map[edgeproto.AppKey]bool, 0)
@@ -299,10 +293,21 @@ func (s *CloudletInfoApi) fireCloudletDownAppInstAlerts(ctx context.Context, in 
 		excludedAppKeys[obj.Key] = true
 		return nil
 	})
-	for _, k := range appInstKeys {
-		if excluded := excludedAppKeys[k.AppKey]; excluded {
-			continue
+
+	appInstFilter := edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			CloudletKey: in.Key,
+		},
+	}
+	appInstKeys := make([]edgeproto.AppInstKey, 0)
+	s.all.appInstApi.cache.Show(&appInstFilter, func(obj *edgeproto.AppInst) error {
+		if excluded := excludedAppKeys[obj.AppKey]; excluded {
+			return nil
 		}
+		appInstKeys = append(appInstKeys, obj.Key)
+		return nil
+	})
+	for _, k := range appInstKeys {
 		alert := edgeproto.Alert{}
 		alert.State = "firing"
 		alert.ActiveAt = dme.Timestamp{}

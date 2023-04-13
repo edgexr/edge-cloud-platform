@@ -46,6 +46,8 @@ type CloudletInfo struct {
 type AppInstInfo struct {
 	// unique key
 	appInstKey edgeproto.AppInstKey
+	// app key
+	appKey edgeproto.AppKey
 	// carrier associated with appinst
 	carrier string
 	// DmeAppInst struct used to pass into SearchAppInsts function
@@ -71,7 +73,7 @@ func (e *EdgeEventsHandlerPlugin) AddClient(ctx context.Context, appInstKey edge
 	e.Lock()
 	defer e.Unlock()
 	// Get cloudletinfo for specified cloudlet
-	cloudletKey := appInstKey.ClusterInstKey.CloudletKey
+	cloudletKey := appInstKey.CloudletKey
 	cloudletinfo, ok := e.Cloudlets[cloudletKey]
 	if !ok {
 		// this should have been added by SendAvailableAppInst
@@ -99,7 +101,7 @@ func (e *EdgeEventsHandlerPlugin) SendAvailableAppInst(ctx context.Context, app 
 	e.Lock()
 	defer e.Unlock()
 	// Get cloudletinfo for specified cloudlet or create entry if needed
-	cloudletKey := newAppInstKey.ClusterInstKey.CloudletKey
+	cloudletKey := newAppInstKey.CloudletKey
 	cloudletinfo, ok := e.Cloudlets[cloudletKey]
 	if !ok {
 		cloudletinfo = new(CloudletInfo)
@@ -112,6 +114,7 @@ func (e *EdgeEventsHandlerPlugin) SendAvailableAppInst(ctx context.Context, app 
 		appinstinfo = new(AppInstInfo)
 		appinstinfo.Clients = make(map[Client]*ClientInfo)
 		appinstinfo.appInstKey = newAppInstKey
+		appinstinfo.appKey = app.AppKey
 		appinstinfo.carrier = newAppInstCarrier
 		appinstinfo.dmeAppInst = newAppInst
 		cloudletinfo.AppInsts[newAppInstKey] = appinstinfo
@@ -120,18 +123,18 @@ func (e *EdgeEventsHandlerPlugin) SendAvailableAppInst(ctx context.Context, app 
 	// notify clients on app that there is a new appinst if closer
 	// iterate through cloudlets, appinsts, and clients
 	for cloudletKey, _ := range e.Cloudlets {
-		for appinstkey, appinstinfo := range e.Cloudlets[cloudletKey].AppInsts {
-			if appinstkey.AppKey == newAppInstKey.AppKey {
+		for _, appinstinfo := range e.Cloudlets[cloudletKey].AppInsts {
+			if appinstinfo.appKey == app.AppKey {
 				for _, clientinfo := range appinstinfo.Clients {
 					// construct carrierData map with the two appinsts to compare
 					carrierData := map[string]*dmecommon.DmeAppInsts{
 						newAppInstCarrier: &dmecommon.DmeAppInsts{ // newly available appinst
-							Insts: map[edgeproto.VirtualClusterInstKey]*dmecommon.DmeAppInst{
-								newAppInstKey.ClusterInstKey: newAppInst,
+							Insts: map[edgeproto.AppInstKey]*dmecommon.DmeAppInst{
+								newAppInstKey: newAppInst,
 							},
 						}, appinstinfo.carrier: &dmecommon.DmeAppInsts{ // current appinst
-							Insts: map[edgeproto.VirtualClusterInstKey]*dmecommon.DmeAppInst{
-								appinstinfo.appInstKey.ClusterInstKey: appinstinfo.dmeAppInst,
+							Insts: map[edgeproto.AppInstKey]*dmecommon.DmeAppInst{
+								appinstinfo.appInstKey: appinstinfo.dmeAppInst,
 							},
 						},
 					}
@@ -248,7 +251,7 @@ func (e *EdgeEventsHandlerPlugin) SendLatencyRequestEdgeEvent(ctx context.Contex
 }
 
 // Send a AppInstState EdgeEvent with specified Event to all clients connected to specified AppInst (and also have initiated persistent connection)
-func (e *EdgeEventsHandlerPlugin) SendAppInstStateEdgeEvent(ctx context.Context, appinstState *dmecommon.DmeAppInstState, appInstKey edgeproto.AppInstKey, eventType dme.ServerEdgeEvent_ServerEventType) {
+func (e *EdgeEventsHandlerPlugin) SendAppInstStateEdgeEvent(ctx context.Context, appinstState *dmecommon.DmeAppInstState, appInstKey edgeproto.AppInstKey, appKey *edgeproto.AppKey, eventType dme.ServerEdgeEvent_ServerEventType) {
 	e.Lock()
 	defer e.Unlock()
 	// Get appinstinfo for specified appinst
@@ -262,7 +265,7 @@ func (e *EdgeEventsHandlerPlugin) SendAppInstStateEdgeEvent(ctx context.Context,
 	// Build map of AppInstStateEdgeEvents mapped to the sendFunc that will send the event to the correct client
 	m := make(map[*dme.ServerEdgeEvent]func(event *dme.ServerEdgeEvent))
 	for _, clientinfo := range appinstinfo.Clients {
-		appInstStateEdgeEvent := e.createAppInstStateEdgeEvent(ctx, appinstState, appInstKey, clientinfo, eventType, usability)
+		appInstStateEdgeEvent := e.createAppInstStateEdgeEvent(ctx, appinstState, appInstKey, appKey, clientinfo, eventType, usability)
 		m[appInstStateEdgeEvent] = clientinfo.sendFunc
 	}
 	// Send appinst state event to each client on affected appinst
@@ -286,7 +289,7 @@ func (e *EdgeEventsHandlerPlugin) SendCloudletStateEdgeEvent(ctx context.Context
 	m := make(map[*dme.ServerEdgeEvent]func(event *dme.ServerEdgeEvent))
 	for appinstkey, appinstinfo := range cloudletinfo.AppInsts {
 		for _, clientinfo := range appinstinfo.Clients {
-			cloudletStateEdgeEvent := e.createCloudletStateEdgeEvent(ctx, appinstState, appinstkey, clientinfo, usability)
+			cloudletStateEdgeEvent := e.createCloudletStateEdgeEvent(ctx, appinstState, appinstkey, &appinstinfo.appKey, clientinfo, usability)
 			m[cloudletStateEdgeEvent] = clientinfo.sendFunc
 		}
 	}
@@ -311,7 +314,7 @@ func (e *EdgeEventsHandlerPlugin) SendCloudletMaintenanceStateEdgeEvent(ctx cont
 	m := make(map[*dme.ServerEdgeEvent]func(event *dme.ServerEdgeEvent))
 	for appinstkey, appinstinfo := range cloudletinfo.AppInsts {
 		for _, clientinfo := range appinstinfo.Clients {
-			cloudletMaintenanceStateEdgeEvent := e.createCloudletMaintenanceStateEdgeEvent(ctx, appinstState, appinstkey, clientinfo, usability)
+			cloudletMaintenanceStateEdgeEvent := e.createCloudletMaintenanceStateEdgeEvent(ctx, appinstState, appinstkey, &appinstinfo.appKey, clientinfo, usability)
 			m[cloudletMaintenanceStateEdgeEvent] = clientinfo.sendFunc
 		}
 	}

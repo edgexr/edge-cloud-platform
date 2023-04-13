@@ -87,7 +87,7 @@ func testAutoScale(t *testing.T, ctx context.Context, ds *testutil.DummyServer, 
 
 	// alert labels for ClusterInst
 	keys := make(map[string]string)
-	keys[edgeproto.ClusterInstKeyTagOrganization] = cinst.Key.Organization
+	keys[edgeproto.ClusterKeyTagOrganization] = cinst.Key.ClusterKey.Organization
 	keys[edgeproto.CloudletKeyTagOrganization] = cinst.Key.CloudletKey.Organization
 	keys[edgeproto.CloudletKeyTagName] = cinst.Key.CloudletKey.Name
 	keys[edgeproto.ClusterKeyTagName] = cinst.Key.ClusterKey.Name
@@ -239,10 +239,7 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 
 	// expected AppInst key
 	appInst := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			AppKey:         app.Key,
-			ClusterInstKey: *rcinst.Key.Virtual(cloudcommon.AutoProvClusterName),
-		},
+		AppKey: app.Key,
 	}
 
 	// init first iter
@@ -275,8 +272,16 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 
 	// check that auto-prov AppInst was created
 	notify.WaitFor(&ds.AppInstCache, 1)
-	found = ds.AppInstCache.Get(&appInst.Key, &edgeproto.AppInst{})
-	require.True(t, found, "found auto-provisioned AppInst")
+	requireAppInstCount := func(filter *edgeproto.AppInst, expCount int) {
+		foundCount := 0
+		err = ds.AppInstCache.Show(filter, func(ai *edgeproto.AppInst) error {
+			foundCount++
+			return nil
+		})
+		require.Nil(t, err)
+		require.Equal(t, expCount, foundCount, "found auto-provisioned AppInst")
+	}
+	requireAppInstCount(&appInst, 1)
 
 	// manually delete AppInst (auto-unprovision not supported yet)
 	ds.AppInstCache.Delete(ctx, &appInst, 0)
@@ -335,8 +340,7 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 
 	// check that auto-prov AppInst was created
 	notify.WaitFor(&ds.AppInstCache, 1)
-	found = ds.AppInstCache.Get(&appInst.Key, &edgeproto.AppInst{})
-	require.True(t, found, "found auto-provisioned AppInst")
+	requireAppInstCount(&appInst, 1)
 
 	// manually delete AppInst (auto-unprovision not supported yet)
 	ds.AppInstCache.Delete(ctx, &appInst, 0)

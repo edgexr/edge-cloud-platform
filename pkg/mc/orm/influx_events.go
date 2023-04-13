@@ -18,13 +18,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/labstack/echo/v4"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/labstack/echo/v4"
 )
 
 var clusterEventFields = []string{
@@ -42,20 +42,14 @@ var eventLogSelectors = []string{
 	"status",
 }
 
-const (
-	EVENT_APPINST     = "appinst"
-	EVENT_CLUSTERINST = "clusterinst"
-	EVENT_CLOUDLET    = "cloudlet"
-)
-
 func getEventFields(eventType string) string {
 	var selectors []string
 	switch eventType {
-	case EVENT_APPINST:
-		selectors = AppFields
-	case EVENT_CLUSTERINST:
-		selectors = append(ClusterFields, clusterEventFields...)
-	case EVENT_CLOUDLET:
+	case cloudcommon.AppInstEvent:
+		selectors = AppInstFields
+	case cloudcommon.ClusterInstEvent:
+		selectors = append(ClusterInstFields, clusterEventFields...)
+	case cloudcommon.CloudletEvent:
 		selectors = CloudletFields
 	default:
 		return "*"
@@ -66,20 +60,19 @@ func getEventFields(eventType string) string {
 // Query is a template with a specific set of if/else
 func AppInstEventsQuery(obj *ormapi.RegionAppInstEvents, cloudletList []string) string {
 	arg := influxQueryArgs{
-		Selector:     getEventFields(EVENT_APPINST),
-		Measurement:  EVENT_APPINST,
-		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
-		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
+		Selector:     getEventFields(cloudcommon.AppInstEvent),
+		Measurement:  cloudcommon.AppInstEvent,
+		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.Name),
 		CloudletList: generateCloudletList(cloudletList),
 	}
-	if obj.AppInst.AppKey.Organization != "" {
-		arg.OrgField = "apporg"
-		arg.ApiCallerOrg = obj.AppInst.AppKey.Organization
-		arg.CloudletOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
+	if obj.AppInst.Organization != "" {
+		arg.OrgField = edgeproto.AppInstKeyTagOrganization
+		arg.ApiCallerOrg = obj.AppInst.Organization
+		arg.CloudletOrg = obj.AppInst.CloudletKey.Organization
 	} else {
-		arg.OrgField = "cloudletorg"
-		arg.ApiCallerOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
-		arg.AppOrg = obj.AppInst.AppKey.Organization
+		arg.OrgField = edgeproto.CloudletKeyTagOrganization
+		arg.ApiCallerOrg = obj.AppInst.CloudletKey.Organization
+		arg.AppInstOrg = obj.AppInst.Organization
 	}
 	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, "", 0)
 	return getInfluxMetricsQueryCmd(&arg, devInfluxDBTemplate)
@@ -88,19 +81,19 @@ func AppInstEventsQuery(obj *ormapi.RegionAppInstEvents, cloudletList []string) 
 // Query is a template with a specific set of if/else
 func ClusterEventsQuery(obj *ormapi.RegionClusterInstEvents, cloudletList []string) string {
 	arg := influxQueryArgs{
-		Selector:     getEventFields(EVENT_CLUSTERINST),
-		Measurement:  EVENT_CLUSTERINST,
+		Selector:     getEventFields(cloudcommon.ClusterInstEvent),
+		Measurement:  cloudcommon.ClusterInstEvent,
 		ClusterName:  obj.ClusterInst.ClusterKey.Name,
 		CloudletList: generateCloudletList(cloudletList),
 	}
-	if obj.ClusterInst.Organization != "" {
-		arg.OrgField = "clusterorg"
-		arg.ApiCallerOrg = obj.ClusterInst.Organization
+	if obj.ClusterInst.ClusterKey.Organization != "" {
+		arg.OrgField = edgeproto.ClusterKeyTagOrganization
+		arg.ApiCallerOrg = obj.ClusterInst.ClusterKey.Organization
 		arg.CloudletOrg = obj.ClusterInst.CloudletKey.Organization
 	} else {
-		arg.OrgField = "cloudletorg"
+		arg.OrgField = edgeproto.CloudletKeyTagOrganization
 		arg.ApiCallerOrg = obj.ClusterInst.CloudletKey.Organization
-		arg.ClusterOrg = obj.ClusterInst.Organization
+		arg.ClusterOrg = obj.ClusterInst.ClusterKey.Organization
 	}
 	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, "", 0)
 	return getInfluxMetricsQueryCmd(&arg, devInfluxDBTemplate)
@@ -109,8 +102,8 @@ func ClusterEventsQuery(obj *ormapi.RegionClusterInstEvents, cloudletList []stri
 // Query is a template with a specific set of if/else
 func CloudletEventsQuery(obj *ormapi.RegionCloudletEvents) string {
 	arg := influxQueryArgs{
-		Selector:     getEventFields(EVENT_CLOUDLET),
-		Measurement:  EVENT_CLOUDLET,
+		Selector:     getEventFields(cloudcommon.CloudletEvent),
+		Measurement:  cloudcommon.CloudletEvent,
 		OrgField:     "cloudletorg",
 		ApiCallerOrg: obj.Cloudlet.Organization,
 		CloudletName: obj.Cloudlet.Name,
@@ -138,8 +131,8 @@ func GetEventsCommon(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.AppKey.Organization},
-			ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.ClusterInstKey.CloudletKey})
+		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.Organization},
+			ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.CloudletKey})
 		if err != nil {
 			return err
 		}
@@ -162,7 +155,7 @@ func GetEventsCommon(c echo.Context) error {
 			return err
 		}
 
-		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.ClusterInst.Organization},
+		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.ClusterInst.ClusterKey.Organization},
 			ResourceClusterAnalytics, []edgeproto.CloudletKey{in.ClusterInst.CloudletKey})
 		if err != nil {
 			return err

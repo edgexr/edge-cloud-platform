@@ -404,13 +404,10 @@ var ShowLogComments = map[string]string{
 }
 var ShowLogSpecialArgs = map[string]string{}
 var ExecRequestRequiredArgs = []string{
-	"apporg",
-	"appname",
-	"appvers",
-	"cluster",
+	"appinstname",
+	"appinstorg",
 	"cloudletorg",
 	"cloudlet",
-	"clusterorg",
 }
 var ExecRequestOptionalArgs = []string{
 	"federatedorg",
@@ -425,14 +422,11 @@ var ExecRequestOptionalArgs = []string{
 	"edgeturnproxyaddr",
 }
 var ExecRequestAliasArgs = []string{
-	"apporg=appinstkey.appkey.organization",
-	"appname=appinstkey.appkey.name",
-	"appvers=appinstkey.appkey.version",
-	"cluster=appinstkey.clusterinstkey.clusterkey.name",
-	"cloudletorg=appinstkey.clusterinstkey.cloudletkey.organization",
-	"cloudlet=appinstkey.clusterinstkey.cloudletkey.name",
-	"federatedorg=appinstkey.clusterinstkey.cloudletkey.federatedorganization",
-	"clusterorg=appinstkey.clusterinstkey.organization",
+	"appinstname=appinstkey.name",
+	"appinstorg=appinstkey.organization",
+	"cloudletorg=appinstkey.cloudletkey.organization",
+	"cloudlet=appinstkey.cloudletkey.name",
+	"federatedorg=appinstkey.cloudletkey.federatedorganization",
 	"command=cmd.command",
 	"nodetype=cmd.cloudletmgmtnode.type",
 	"nodename=cmd.cloudletmgmtnode.name",
@@ -442,14 +436,11 @@ var ExecRequestAliasArgs = []string{
 	"follow=log.follow",
 }
 var ExecRequestComments = map[string]string{
-	"apporg":            "App developer organization",
-	"appname":           "App name",
-	"appvers":           "App version",
-	"cluster":           "Cluster name",
+	"appinstname":       "App Instance name",
+	"appinstorg":        "App Instance organization",
 	"cloudletorg":       "Organization of the cloudlet site",
 	"cloudlet":          "Name of the cloudlet",
 	"federatedorg":      "Federated operator organization who shared this cloudlet",
-	"clusterorg":        "Name of Developer organization that this cluster belongs to",
 	"containerid":       "ContainerId is the name or ID of the target container, if applicable",
 	"offer":             "Offer",
 	"answer":            "Answer",
@@ -469,44 +460,35 @@ var ExecRequestComments = map[string]string{
 }
 var ExecRequestSpecialArgs = map[string]string{}
 var RunCommandRequiredArgs = []string{
-	"apporg",
-	"appname",
-	"appvers",
-	"cluster",
+	"appinstname",
+	"appinstorg",
 	"cloudletorg",
 	"cloudlet",
 	"command",
 }
 var RunCommandOptionalArgs = []string{
 	"federatedorg",
-	"clusterorg",
 	"containerid",
 	"edgeturnproxyaddr",
 }
 var RunConsoleRequiredArgs = []string{
-	"apporg",
-	"appname",
-	"appvers",
+	"appinstname",
+	"appinstorg",
 	"cloudletorg",
 	"cloudlet",
 }
 var RunConsoleOptionalArgs = []string{
-	"cluster",
 	"federatedorg",
-	"clusterorg",
 	"edgeturnproxyaddr",
 }
 var ShowLogsRequiredArgs = []string{
-	"apporg",
-	"appname",
-	"appvers",
-	"cluster",
+	"appinstname",
+	"appinstorg",
 	"cloudletorg",
 	"cloudlet",
 }
 var ShowLogsOptionalArgs = []string{
 	"federatedorg",
-	"clusterorg",
 	"containerid",
 	"since",
 	"tail",
@@ -519,6 +501,8 @@ var AccessCloudletRequiredArgs = []string{
 	"cloudlet",
 }
 var AccessCloudletOptionalArgs = []string{
+	"appinstname",
+	"appinstorg",
 	"federatedorg",
 	"command",
 	"nodetype",

@@ -4,24 +4,19 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/labstack/echo/v4"
-	gonanoid "github.com/matoous/go-nanoid/v2"
 )
-
-const clusterSuffixAlphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 func (p *PartnerApi) lookupAppInst(c echo.Context, provider *ormapi.FederationProvider, appInstanceId string) (*ormapi.ProviderAppInst, error) {
 	ctx := ormutil.GetContext(c)
@@ -97,26 +92,6 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 		return err
 	}
 
-	// Set AppInst key. Make sure to set all fields to defaults
-	// so that CreateAppInst function doesn't need to change the key.
-	var clusterName, clusterOrg string
-	if provArt.VirtType == ArtefactVirtTypeVM {
-		clusterName = cloudcommon.DefaultClust
-		clusterOrg = provider.Name
-	} else {
-		// Generate random suffixes to append to autocluster names.
-		// This just needs to be random enough to avoid collisions within
-		// a cloudlet for that organization.
-		// See https://zelark.github.io/nano-id-cc/
-		suffix := gonanoid.MustGenerate(clusterSuffixAlphabet, 12)
-		if os.Getenv("E2ETEST_FED") != "" {
-			// allow for deterministic test output
-			suffix = "abcdefABCDEF"
-		}
-		clusterName = cloudcommon.AutoClusterPrefix + suffix
-		clusterOrg = edgeproto.OrganizationEdgeCloud
-	}
-
 	// we'll update the AppInstKey once the AppInst is created,
 	// in case it updates some of the optional fields.
 	appKey := provArt.GetAppKey()
@@ -128,8 +103,6 @@ func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (r
 		Region:              base.Region,
 		AppName:             appKey.Name,
 		AppVers:             appKey.Version,
-		Cluster:             clusterName,
-		ClusterOrg:          clusterOrg,
 		Cloudlet:            base.Cloudlets[0],
 		CloudletOrg:         provider.OperatorId,
 	}

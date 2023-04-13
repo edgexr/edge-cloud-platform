@@ -1352,11 +1352,11 @@ func addControllerApis(method string, group *echo.Group) {
 	// Key: 2
 	// KeyClusterKey: 2.1
 	// KeyClusterKeyName: 2.1.1
+	// KeyClusterKeyOrganization: 2.1.2
 	// KeyCloudletKey: 2.2
 	// KeyCloudletKeyOrganization: 2.2.1
 	// KeyCloudletKeyName: 2.2.2
 	// KeyCloudletKeyFederatedOrganization: 2.2.3
-	// KeyOrganization: 2.3
 	// Flavor: 3
 	// FlavorName: 3.1
 	// Liveness: 9
@@ -1683,18 +1683,19 @@ func addControllerApis(method string, group *echo.Group) {
 	// The following values should be added to `AppInst.fields` field array to specify which fields will be updated.
 	// ```
 	// Key: 2
-	// KeyAppKey: 2.1
-	// KeyAppKeyOrganization: 2.1.1
-	// KeyAppKeyName: 2.1.2
-	// KeyAppKeyVersion: 2.1.3
-	// KeyClusterInstKey: 2.4
-	// KeyClusterInstKeyClusterKey: 2.4.1
-	// KeyClusterInstKeyClusterKeyName: 2.4.1.1
-	// KeyClusterInstKeyCloudletKey: 2.4.2
-	// KeyClusterInstKeyCloudletKeyOrganization: 2.4.2.1
-	// KeyClusterInstKeyCloudletKeyName: 2.4.2.2
-	// KeyClusterInstKeyCloudletKeyFederatedOrganization: 2.4.2.3
-	// KeyClusterInstKeyOrganization: 2.4.3
+	// KeyName: 2.1
+	// KeyOrganization: 2.2
+	// KeyCloudletKey: 2.3
+	// KeyCloudletKeyOrganization: 2.3.1
+	// KeyCloudletKeyName: 2.3.2
+	// KeyCloudletKeyFederatedOrganization: 2.3.3
+	// AppKey: 44
+	// AppKeyOrganization: 44.1
+	// AppKeyName: 44.2
+	// AppKeyVersion: 44.3
+	// ClusterKey: 45
+	// ClusterKeyName: 45.1
+	// ClusterKeyOrganization: 45.2
 	// CloudletLoc: 3
 	// CloudletLocLatitude: 3.1
 	// CloudletLocLongitude: 3.2
@@ -1754,6 +1755,10 @@ func addControllerApis(method string, group *echo.Group) {
 	// FedKey: 43
 	// FedKeyFederationName: 43.1
 	// FedKeyAppInstId: 43.2
+	// CompatibilityVersion: 46
+	// VirtualClusterKey: 47
+	// VirtualClusterKeyName: 47.1
+	// VirtualClusterKeyOrganization: 47.2
 	// ```
 	// Security:
 	//   Bearer:

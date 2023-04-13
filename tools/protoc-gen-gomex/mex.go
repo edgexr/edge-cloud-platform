@@ -1136,6 +1136,7 @@ type {{.Name}}Store interface {
 	STMGet(stm concurrency.STM, key *{{.KeyType}}, buf *{{.Name}}) bool
 	STMPut(stm concurrency.STM, obj *{{.Name}}, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *{{.KeyType}})
+	STMHas(stm concurrency.STM, key *{{.KeyType}}) bool
 }
 
 type {{.Name}}StoreImpl struct {
@@ -1263,6 +1264,11 @@ func (s *{{.Name}}StoreImpl) STMGet(stm concurrency.STM, key *{{.KeyType}}, buf 
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *{{.Name}}StoreImpl) STMHas(stm concurrency.STM, key *{{.KeyType}}) bool {
+	keystr := objstore.DbKeyString("{{.Name}}", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *{{.Name}}StoreImpl) parseGetData(val []byte, buf *{{.Name}}) bool {
 	if len(val) == 0 {
 		return false
@@ -1320,6 +1326,16 @@ type {{.Name}}CacheData struct {
 	ModRev int64
 }
 
+func (s *{{.Name}}CacheData) Clone() *{{.Name}}CacheData {
+	cp := {{.Name}}CacheData{}
+	if s.Obj != nil {
+		cp.Obj = &{{.Name}}{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // {{.Name}}Cache caches {{.Name}} objects in memory in a hash table
 // and keeps them in sync with the database.
 type {{.Name}}Cache struct {
@@ -1327,7 +1343,7 @@ type {{.Name}}Cache struct {
 	Mux util.Mutex
 	List map[{{.KeyType}}]struct{}
 	FlushAll bool
-	NotifyCbs []func(ctx context.Context, obj *{{.KeyType}}, old *{{.Name}}, modRev int64)
+	NotifyCbs []func(ctx context.Context, obj *{{.Name}}, modRev int64)
 	UpdatedCbs []func(ctx context.Context, old *{{.Name}}, new *{{.Name}})
 	DeletedCbs []func(ctx context.Context, old *{{.Name}})
 	KeyWatchers map[{{.KeyType}}][]*{{.Name}}KeyWatcher
@@ -1386,6 +1402,14 @@ func (c *{{.Name}}Cache) GetAllKeys(ctx context.Context, cb func(key *{{.KeyType
 	}
 }
 
+func (c *{{.Name}}Cache) GetAllLocked(ctx context.Context, cb func(obj *{{.Name}}, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *{{.Name}}Cache) Update(ctx context.Context, in *{{.Name}}, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *{{.Name}}) (*{{.Name}}, bool) {
 		return in, true
@@ -1403,14 +1427,16 @@ func (c *{{.Name}}Cache) UpdateModFunc(ctx context.Context, key *{{.KeyType}}, m
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &{{.Name}}{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -1447,9 +1473,13 @@ func (c *{{.Name}}Cache) DeleteCondFunc(ctx context.Context, in *{{.Name}}, modR
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -1477,9 +1507,14 @@ func (c *{{.Name}}Cache) Prune(ctx context.Context, validKeys map[{{.KeyType}}]s
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &{{.Name}}{}
+			obj.SetKey(&key)
+		}
 	        for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -1516,9 +1551,14 @@ func (c *{{.Name}}Cache) Flush(ctx context.Context, notifyId int64) {
 	c.Mux.Unlock()
 	if len(flushed) > 0 {
 		for key, old := range flushed {
+			obj := old.Obj
+			if obj == nil {
+				obj = &{{.Name}}{}
+				obj.SetKey(&key)
+			}
 		        for _, cb := range c.NotifyCbs {
 				if cb != nil {
-					cb(ctx, &key, old.Obj, old.ModRev)
+					cb(ctx, obj, old.ModRev)
 				}
 			}
 			for _, cb := range c.DeletedKeyCbs {
@@ -1559,8 +1599,8 @@ func {{.Name}}GenericNotifyCb(fn func(key *{{.KeyType}}, old *{{.Name}})) func(o
 }
 
 
-func (c *{{.Name}}Cache) SetNotifyCb(fn func(ctx context.Context, obj *{{.KeyType}}, old *{{.Name}}, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *{{.KeyType}}, old *{{.Name}}, modRev int64){fn}
+func (c *{{.Name}}Cache) SetNotifyCb(fn func(ctx context.Context, obj *{{.Name}}, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *{{.Name}}, modRev int64){fn}
 }
 
 func (c *{{.Name}}Cache) SetUpdatedCb(fn func(ctx context.Context, old *{{.Name}}, new *{{.Name}})) {
@@ -1587,7 +1627,7 @@ func (c *{{.Name}}Cache) AddDeletedCb(fn func(ctx context.Context, old *{{.Name}
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *{{.Name}}Cache) AddNotifyCb(fn func(ctx context.Context, obj *{{.KeyType}}, old *{{.Name}}, modRev int64)) {
+func (c *{{.Name}}Cache) AddNotifyCb(fn func(ctx context.Context, obj *{{.Name}}, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -1696,9 +1736,14 @@ func (c *{{.Name}}Cache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &{{.Name}}{}
+			obj.SetKey(&key)
+		}
 	        for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -2320,8 +2365,13 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 		}
 		m.P("func (m *", message.Name, ") GetTags() map[string]string {")
 		m.P("tags := make(map[string]string)")
-		m.setKeyTags([]string{}, desc, []*generator.Descriptor{})
+		m.P("m.AddTags(tags)")
 		m.P("return tags")
+		m.P("}")
+		m.P()
+
+		m.P("func (m *", message.Name, ") AddTags(tags map[string]string) {")
+		m.setKeyTags([]string{}, desc, []*generator.Descriptor{})
 		m.P("}")
 		m.P()
 
@@ -2739,7 +2789,9 @@ func (m *mex) setKeyTags(parents []string, desc *generator.Descriptor, visited [
 		if *field.Type == descriptor.FieldDescriptorProto_TYPE_ENUM {
 			val = m.support.GoType(m.gen, field) + "_name[int32(" + val + ")]"
 		}
+		m.P("if ", val, " != \"\" {")
 		m.P("tags[\"", tag, "\"] = ", val)
+		m.P("}")
 	}
 }
 

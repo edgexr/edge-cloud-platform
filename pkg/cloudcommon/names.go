@@ -98,7 +98,8 @@ func (n NodeType) String() string {
 // resource types
 var ResourceTypeK8sLBSvc = "k8s-lb-svc"
 
-const AutoClusterPrefix = "autocluster"
+//const AutoClusterPrefix = "autocluster"
+const AutoProvPrefix = "autoprov"
 const ReservableClusterPrefix = "reservable"
 const ReserveClusterEvent = "Reserve ClusterInst"
 const FreeClusterEvent = "Free ClusterInst reservation"
@@ -116,6 +117,8 @@ var ProxyMetricsPort = int32(65121)
 var ProxyMetricsDefaultListenIP = "127.0.0.1"
 var ProxyMetricsListenUDS = "MetricsUDS" // Unix Domain Socket
 
+const NameSuffixAlphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 var AutoProvMeasurement = "auto-prov-counts"
 
 // AppLabels for the application containers
@@ -131,6 +134,45 @@ var ClusterInstCheckpoints = "clusterinst-checkpoints"
 var AppInstEvent = "appinst"
 var AppInstCheckpoints = "appinst-checkpoints"
 var MonthlyInterval = "MONTH"
+
+// Influx metrics selectors
+var AppInstEventSelectors = []string{
+	edgeproto.AppInstKeyTagName,
+	edgeproto.AppInstKeyTagOrganization,
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization,
+}
+var ClusterInstEventSelectors = []string{
+	edgeproto.ClusterKeyTagName,
+	edgeproto.ClusterKeyTagOrganization,
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization,
+}
+
+const (
+	MetricTagRegion     = "region"
+	MetricTagOrg        = "org"
+	MetricTagEvent      = "event"
+	MetricTagStatus     = "status"
+	MetricTagStart      = "start"
+	MetricTagEnd        = "end"
+	MetricTagStartTime  = "startime" // starttime?
+	MetricTagEndTime    = "endtime"
+	MetricTagDuration   = "duration"
+	MetricTagUptime     = "uptime"
+	MetricTagFlavor     = "flavor"
+	MetricTagDeployment = "deployment"
+	MetricTagRAM        = "ram"
+	MetricTagVCPU       = "vcpu"
+	MetricTagDisk       = "disk"
+	MetricTagNodeCount  = "nodecount"
+	MetricTagNumNodes   = "numnodes"
+	MetricTagOther      = "other"
+	MetricTagNote       = "note"
+	MetricTagIpAccess   = "ipaccess"
+)
 
 // Cloudlet resource usage
 var CloudletResourceUsageDbName = "cloudlet_resource_usage"
@@ -208,6 +250,8 @@ func IsPlatformApp(devname string, appname string) bool {
 var AllocatedIpDynamic = "dynamic"
 
 var RootLBHostname = "shared"
+
+const IdAlphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 // Fully Qualified Domain Names (FQDNs) primarily come in the
 // the following format of 4 "labels" (where domain can actually

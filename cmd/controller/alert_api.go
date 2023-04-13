@@ -18,12 +18,12 @@ import (
 	"context"
 	"strconv"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type AlertApi struct {
@@ -51,7 +51,12 @@ func NewAlertApi(sync *Sync, all *AllApis) *AlertApi {
 
 // AppInstDown alert needs to set the HealthCheck in AppInst
 func (s *AlertApi) appInstSetStateFromHealthCheckAlert(ctx context.Context, alert *edgeproto.Alert, state dme.HealthCheck) {
-	appOrg, ok := alert.Labels[edgeproto.AppKeyTagOrganization]
+	appInstName, ok := alert.Labels[edgeproto.AppInstKeyTagName]
+	if !ok {
+		log.SpanLog(ctx, log.DebugLevelNotify, "Could not find AppInst Name label in Alert", "alert", alert)
+		return
+	}
+	appInstOrg, ok := alert.Labels[edgeproto.AppInstKeyTagOrganization]
 	if !ok {
 		log.SpanLog(ctx, log.DebugLevelNotify, "Could not find AppInst Org label in Alert", "alert", alert)
 		return
@@ -66,46 +71,15 @@ func (s *AlertApi) appInstSetStateFromHealthCheckAlert(ctx context.Context, aler
 		log.SpanLog(ctx, log.DebugLevelNotify, "Could not find Cloudlet label in Alert", "alert", alert)
 		return
 	}
-	cluster, ok := alert.Labels[edgeproto.ClusterKeyTagName]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelNotify, "Could not find Cluster label in Alert", "alert", alert)
-		return
-	}
-	clusterOrg, ok := alert.Labels[edgeproto.ClusterInstKeyTagOrganization]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelNotify, "Could not find Cluster Org label in Alert", "alert", alert)
-		return
-	}
-	appName, ok := alert.Labels[edgeproto.AppKeyTagName]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelNotify, "Could not find App Name label in Alert", "alert", alert)
-		return
-	}
-	appVer, ok := alert.Labels[edgeproto.AppKeyTagVersion]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelNotify, "Could not find App Version label in Alert", "alert", alert)
-		return
-	}
-	appInst := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Organization: appOrg,
-				Name:         appName,
-				Version:      appVer,
-			},
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name: cluster,
-				},
-				CloudletKey: edgeproto.CloudletKey{
-					Organization: clorg,
-					Name:         cloudlet,
-				},
-				Organization: clusterOrg,
-			},
+	appInstKey := edgeproto.AppInstKey{
+		Name:         appInstName,
+		Organization: appInstOrg,
+		CloudletKey: edgeproto.CloudletKey{
+			Organization: clorg,
+			Name:         cloudlet,
 		},
 	}
-	s.all.appInstApi.HealthCheckUpdate(ctx, &appInst, state)
+	s.all.appInstApi.HealthCheckUpdate(ctx, &appInstKey, state)
 
 }
 
@@ -303,8 +277,8 @@ func (s *AlertApi) CleanupClusterInstAlerts(ctx context.Context, key *edgeproto.
 			clusterName != key.ClusterKey.Name {
 			continue
 		}
-		if clusterOrg, found := val.Labels[edgeproto.ClusterInstKeyTagOrganization]; !found ||
-			clusterOrg != key.Organization {
+		if clusterOrg, found := val.Labels[edgeproto.ClusterKeyTagOrganization]; !found ||
+			clusterOrg != key.ClusterKey.Organization {
 			continue
 		}
 		matches = append(matches, val)

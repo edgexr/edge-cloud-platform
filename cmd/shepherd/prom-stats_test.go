@@ -22,12 +22,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/stretchr/testify/require"
 )
 
@@ -184,11 +184,13 @@ var (
 		Organization: "testoper",
 		Name:         "testcloudlet",
 	}
-	testClusterKey     = edgeproto.ClusterKey{Name: "testcluster"}
-	testClusterInstKey = edgeproto.ClusterInstKey{
-		ClusterKey:   testClusterKey,
-		CloudletKey:  testCloudletKey,
+	testClusterKey = edgeproto.ClusterKey{
+		Name:         "testcluster",
 		Organization: "MobiledgeX",
+	}
+	testClusterInstKey = edgeproto.ClusterInstKey{
+		ClusterKey:  testClusterKey,
+		CloudletKey: testCloudletKey,
 	}
 	testClusterInst = edgeproto.ClusterInst{
 		Key:        testClusterInstKey,
@@ -206,11 +208,11 @@ var (
 	}
 	testPrometheusAppInst = edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
-			AppKey: testPrometheusApp.Key,
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				CloudletKey: testClusterInstKey.CloudletKey,
-			},
+			Name:         "testprominst",
+			Organization: testPrometheusApp.Key.Organization,
+			CloudletKey:  testClusterInstKey.CloudletKey,
 		},
+		AppKey: testPrometheusApp.Key,
 	}
 	testClusterInstUnsupported = edgeproto.ClusterInst{
 		Key:        testClusterInstKey,

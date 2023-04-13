@@ -272,10 +272,10 @@ var AppInstRefsApiCmds = []*cobra.Command{
 
 var VMResourceRequiredArgs = []string{
 	"key.clusterkey.name",
+	"key.clusterkey.organization",
 	"key.cloudletkey.organization",
 	"key.cloudletkey.name",
 	"key.cloudletkey.federatedorganization",
-	"key.organization",
 }
 var VMResourceOptionalArgs = []string{
 	"vmflavor.name",
@@ -289,10 +289,10 @@ var VMResourceOptionalArgs = []string{
 var VMResourceAliasArgs = []string{}
 var VMResourceComments = map[string]string{
 	"key.clusterkey.name":                   "Cluster name",
+	"key.clusterkey.organization":           "Name of the organization that this cluster belongs to",
 	"key.cloudletkey.organization":          "Organization of the cloudlet site",
 	"key.cloudletkey.name":                  "Name of the cloudlet",
 	"key.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
-	"key.organization":                      "Name of Developer organization that this cluster belongs to",
 	"vmflavor.name":                         "Name of the flavor on the Cloudlet",
 	"vmflavor.vcpus":                        "Number of VCPU cores on the Cloudlet",
 	"vmflavor.ram":                          "Ram in MB on the Cloudlet",
@@ -313,80 +313,49 @@ var CloudletRefsOptionalArgs = []string{
 	"useddynamicips",
 	"usedstaticips",
 	"reservedautoclusterids",
-	"clusterinsts:#.clusterkey.name",
+	"clusterinsts:#.name",
 	"clusterinsts:#.organization",
-	"vmappinsts:#.appkey.organization",
-	"vmappinsts:#.appkey.name",
-	"vmappinsts:#.appkey.version",
-	"vmappinsts:#.clusterinstkey.clusterkey.name",
-	"vmappinsts:#.clusterinstkey.organization",
-	"k8sappinsts:#.appkey.organization",
-	"k8sappinsts:#.appkey.name",
-	"k8sappinsts:#.appkey.version",
-	"k8sappinsts:#.clusterinstkey.clusterkey.name",
-	"k8sappinsts:#.clusterinstkey.organization",
+	"vmappinsts:#.name",
+	"vmappinsts:#.organization",
+	"k8sappinsts:#.name",
+	"k8sappinsts:#.organization",
 }
 var CloudletRefsAliasArgs = []string{}
 var CloudletRefsComments = map[string]string{
-	"key.organization":                             "Organization of the cloudlet site",
-	"key.name":                                     "Name of the cloudlet",
-	"key.federatedorganization":                    "Federated operator organization who shared this cloudlet",
-	"useddynamicips":                               "Used dynamic IPs",
-	"usedstaticips":                                "Used static IPs",
-	"reservedautoclusterids":                       "Track reservable autoclusterinsts ids in use. This is a bitmap.",
-	"clusterinsts:#.clusterkey.name":               "Cluster name",
-	"clusterinsts:#.organization":                  "Name of Developer organization that this cluster belongs to",
-	"vmappinsts:#.appkey.organization":             "App developer organization",
-	"vmappinsts:#.appkey.name":                     "App name",
-	"vmappinsts:#.appkey.version":                  "App version",
-	"vmappinsts:#.clusterinstkey.clusterkey.name":  "Cluster name",
-	"vmappinsts:#.clusterinstkey.organization":     "Name of Developer organization that this cluster belongs to",
-	"k8sappinsts:#.appkey.organization":            "App developer organization",
-	"k8sappinsts:#.appkey.name":                    "App name",
-	"k8sappinsts:#.appkey.version":                 "App version",
-	"k8sappinsts:#.clusterinstkey.clusterkey.name": "Cluster name",
-	"k8sappinsts:#.clusterinstkey.organization":    "Name of Developer organization that this cluster belongs to",
+	"key.organization":            "Organization of the cloudlet site",
+	"key.name":                    "Name of the cloudlet",
+	"key.federatedorganization":   "Federated operator organization who shared this cloudlet",
+	"useddynamicips":              "Used dynamic IPs",
+	"usedstaticips":               "Used static IPs",
+	"reservedautoclusterids":      "Track reservable autoclusterinsts ids in use. This is a bitmap.",
+	"clusterinsts:#.name":         "Cluster name",
+	"clusterinsts:#.organization": "Name of the organization that this cluster belongs to",
+	"vmappinsts:#.name":           "AppInst name",
+	"vmappinsts:#.organization":   "AppInst organization",
+	"k8sappinsts:#.name":          "AppInst name",
+	"k8sappinsts:#.organization":  "AppInst organization",
 }
 var CloudletRefsSpecialArgs = map[string]string{}
-var ClusterRefsAppInstKeyRequiredArgs = []string{}
-var ClusterRefsAppInstKeyOptionalArgs = []string{
-	"appkey.organization",
-	"appkey.name",
-	"appkey.version",
-	"vclustername",
-}
-var ClusterRefsAppInstKeyAliasArgs = []string{}
-var ClusterRefsAppInstKeyComments = map[string]string{
-	"appkey.organization": "App developer organization",
-	"appkey.name":         "App name",
-	"appkey.version":      "App version",
-	"vclustername":        "Virtual cluster name",
-}
-var ClusterRefsAppInstKeySpecialArgs = map[string]string{}
 var ClusterRefsRequiredArgs = []string{
 	"key.clusterkey.name",
+	"key.clusterkey.organization",
 	"key.cloudletkey.organization",
 	"key.cloudletkey.name",
 	"key.cloudletkey.federatedorganization",
-	"key.organization",
 }
 var ClusterRefsOptionalArgs = []string{
-	"apps:#.appkey.organization",
-	"apps:#.appkey.name",
-	"apps:#.appkey.version",
-	"apps:#.vclustername",
+	"apps:#.name",
+	"apps:#.organization",
 }
 var ClusterRefsAliasArgs = []string{}
 var ClusterRefsComments = map[string]string{
 	"key.clusterkey.name":                   "Cluster name",
+	"key.clusterkey.organization":           "Name of the organization that this cluster belongs to",
 	"key.cloudletkey.organization":          "Organization of the cloudlet site",
 	"key.cloudletkey.name":                  "Name of the cloudlet",
 	"key.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
-	"key.organization":                      "Name of Developer organization that this cluster belongs to",
-	"apps:#.appkey.organization":            "App developer organization",
-	"apps:#.appkey.name":                    "App name",
-	"apps:#.appkey.version":                 "App version",
-	"apps:#.vclustername":                   "Virtual cluster name",
+	"apps:#.name":                           "AppInst name",
+	"apps:#.organization":                   "AppInst organization",
 }
 var ClusterRefsSpecialArgs = map[string]string{}
 var AppInstRefsRequiredArgs = []string{

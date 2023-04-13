@@ -23,12 +23,12 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/proxy"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -201,7 +201,7 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 		ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
 		// Clean up security rules add proxy if app is external
 		secGrp := infracommon.GetServerSecurityGroupName(rootLBName)
-		containerName := k8smgmt.GetKconfName(clusterInst) + "-" + dockermgmt.GetContainerName(&app.Key)
+		containerName := k8smgmt.GetKconfName(clusterInst) + "-" + dockermgmt.GetContainerName(appInst)
 		wlParams := infracommon.WhiteListParams{
 			ServerName:  rootLBName,
 			SecGrpName:  secGrp,

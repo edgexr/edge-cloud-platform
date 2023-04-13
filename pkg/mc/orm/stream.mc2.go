@@ -43,12 +43,12 @@ func StreamAppInst(c echo.Context) error {
 	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
-	span.SetTag("org", in.AppInstKey.AppKey.Organization)
+	span.SetTag("org", in.AppInstKey.Organization)
 
 	obj := &in.AppInstKey
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.SkipAuthz {
-		if err := authorized(ctx, rc.Username, obj.AppKey.Organization,
+		if err := authorized(ctx, rc.Username, obj.Organization,
 			ResourceAppInsts, ActionView); err != nil {
 			return err
 		}
@@ -84,12 +84,12 @@ func StreamClusterInst(c echo.Context) error {
 	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
-	span.SetTag("org", in.ClusterInstKey.Organization)
+	span.SetTag("org", in.ClusterInstKey.ClusterKey.Organization)
 
 	obj := &in.ClusterInstKey
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.SkipAuthz {
-		if err := authorized(ctx, rc.Username, obj.Organization,
+		if err := authorized(ctx, rc.Username, obj.ClusterKey.Organization,
 			ResourceClusterInsts, ActionView); err != nil {
 			return err
 		}

@@ -46,7 +46,7 @@ func CreateAppInst(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInst.GetKey().GetTags())
-	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
+	span.SetTag("org", in.AppInst.Key.Organization)
 
 	obj := &in.AppInst
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
@@ -93,7 +93,7 @@ func DeleteAppInst(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInst.GetKey().GetTags())
-	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
+	span.SetTag("org", in.AppInst.Key.Organization)
 
 	obj := &in.AppInst
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
@@ -140,7 +140,7 @@ func RefreshAppInst(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInst.GetKey().GetTags())
-	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
+	span.SetTag("org", in.AppInst.Key.Organization)
 
 	obj := &in.AppInst
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
@@ -148,7 +148,7 @@ func RefreshAppInst(c echo.Context) error {
 		return err
 	}
 	if !rc.SkipAuthz {
-		if err := authorized(ctx, rc.Username, obj.Key.AppKey.Organization,
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
 			ResourceAppInsts, ActionManage); err != nil {
 			return err
 		}
@@ -187,7 +187,7 @@ func UpdateAppInst(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInst.GetKey().GetTags())
-	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
+	span.SetTag("org", in.AppInst.Key.Organization)
 	err = ormutil.SetRegionObjFields(dat, &in)
 	if err != nil {
 		return err
@@ -199,7 +199,7 @@ func UpdateAppInst(c echo.Context) error {
 		return err
 	}
 	if !rc.SkipAuthz {
-		if err := authorized(ctx, rc.Username, obj.Key.AppKey.Organization,
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
 			ResourceAppInsts, ActionManage); err != nil {
 			return err
 		}
@@ -238,7 +238,7 @@ func ShowAppInst(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInst.GetKey().GetTags())
-	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
+	span.SetTag("org", in.AppInst.Key.Organization)
 
 	obj := &in.AppInst
 	var authz ctrlclient.ShowAppInstAuthz
@@ -280,7 +280,7 @@ func RequestAppInstLatency(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInstLatency.GetKey().GetTags())
-	span.SetTag("org", in.AppInstLatency.Key.AppKey.Organization)
+	span.SetTag("org", in.AppInstLatency.Key.Organization)
 
 	obj := &in.AppInstLatency
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
@@ -288,7 +288,7 @@ func RequestAppInstLatency(c echo.Context) error {
 		return err
 	}
 	if !rc.SkipAuthz {
-		if err := authorized(ctx, rc.Username, obj.Key.AppKey.Organization,
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
 			ResourceAppInsts, ActionManage); err != nil {
 			return err
 		}

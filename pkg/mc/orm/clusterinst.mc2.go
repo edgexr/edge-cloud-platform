@@ -46,7 +46,7 @@ func CreateClusterInst(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
-	span.SetTag("org", in.ClusterInst.Key.Organization)
+	span.SetTag("org", in.ClusterInst.Key.ClusterKey.Organization)
 
 	obj := &in.ClusterInst
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
@@ -93,7 +93,7 @@ func DeleteClusterInst(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
-	span.SetTag("org", in.ClusterInst.Key.Organization)
+	span.SetTag("org", in.ClusterInst.Key.ClusterKey.Organization)
 
 	obj := &in.ClusterInst
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
@@ -101,7 +101,7 @@ func DeleteClusterInst(c echo.Context) error {
 		return err
 	}
 	if !rc.SkipAuthz {
-		if err := authorized(ctx, rc.Username, obj.Key.Organization,
+		if err := authorized(ctx, rc.Username, obj.Key.ClusterKey.Organization,
 			ResourceClusterInsts, ActionManage); err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func UpdateClusterInst(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
-	span.SetTag("org", in.ClusterInst.Key.Organization)
+	span.SetTag("org", in.ClusterInst.Key.ClusterKey.Organization)
 	err = ormutil.SetRegionObjFields(dat, &in)
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func UpdateClusterInst(c echo.Context) error {
 		return err
 	}
 	if !rc.SkipAuthz {
-		if err := authorized(ctx, rc.Username, obj.Key.Organization,
+		if err := authorized(ctx, rc.Username, obj.Key.ClusterKey.Organization,
 			ResourceClusterInsts, ActionManage); err != nil {
 			return err
 		}
@@ -191,7 +191,7 @@ func ShowClusterInst(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
-	span.SetTag("org", in.ClusterInst.Key.Organization)
+	span.SetTag("org", in.ClusterInst.Key.ClusterKey.Organization)
 
 	obj := &in.ClusterInst
 	var authz ctrlclient.ShowClusterInstAuthz

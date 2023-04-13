@@ -34,13 +34,14 @@ var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
       for: 30s
       labels:
         app: "Pillimo Go!"
+        appinst: "Pillimo Go!1"
+        appinstorg: "AtlanticInc"
         apporg: "AtlanticInc"
         appver: "1.0.0"
         cloudlet: "San Jose Site"
         cloudletorg: "UFGT Inc."
         cluster: "Pillimos"
         clusterorg: "AtlanticInc"
-        federatedorg: ""
         scope: "Application"
         severity: "warning"
         type: "UserDefined"
@@ -52,13 +53,14 @@ var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
       for: 30s
       labels:
         app: "Pillimo Go!"
+        appinst: "Pillimo Go!1"
+        appinstorg: "AtlanticInc"
         apporg: "AtlanticInc"
         appver: "1.0.0"
         cloudlet: "San Jose Site"
         cloudletorg: "UFGT Inc."
         cluster: "Pillimos"
         clusterorg: "AtlanticInc"
-        federatedorg: ""
         scope: "Application"
         severity: "error"
         testLabel1: "testValue1"
@@ -74,13 +76,14 @@ var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
       for: 30s
       labels:
         app: "Pillimo Go!"
+        appinst: "Pillimo Go!1"
+        appinstorg: "AtlanticInc"
         apporg: "AtlanticInc"
         appver: "1.0.0"
         cloudlet: "San Jose Site"
         cloudletorg: "UFGT Inc."
         cluster: "Pillimos"
         clusterorg: "AtlanticInc"
-        federatedorg: ""
         scope: "Application"
         severity: "warning"
         type: "UserDefined"
@@ -92,13 +95,14 @@ var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
       for: 30s
       labels:
         app: "Pillimo Go!"
+        appinst: "Pillimo Go!1"
+        appinstorg: "AtlanticInc"
         apporg: "AtlanticInc"
         appver: "1.0.0"
         cloudlet: "San Jose Site"
         cloudletorg: "UFGT Inc."
         cluster: "Pillimos"
         clusterorg: "AtlanticInc"
-        federatedorg: ""
         scope: "Application"
         severity: "warning"
         type: "UserDefined"
@@ -117,7 +121,7 @@ func TestAutoScaleT(t *testing.T) {
 	clusterInst := testutil.ClusterInstData()[0]
 
 	policy := edgeproto.AutoScalePolicy{}
-	policy.Key.Organization = clusterInst.Key.Organization
+	policy.Key.Organization = clusterInst.Key.ClusterKey.Organization
 	policy.Key.Name = "test-policy"
 	policy.TriggerTimeSec = 120
 

@@ -20,10 +20,10 @@ import (
 	"math"
 	"sync"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 )
 
@@ -95,7 +95,7 @@ func checkClusterAutoScale(ctx context.Context, k interface{}) {
 	// Lookup the policy
 	policy := edgeproto.AutoScalePolicy{}
 	policy.Key.Name = autoScaler.policyName
-	policy.Key.Organization = key.Organization
+	policy.Key.Organization = key.ClusterKey.Organization
 	found := AutoScalePoliciesCache.Get(&policy.Key, &policy)
 	if !found {
 		log.SpanLog(ctx, log.DebugLevelApi, "checkClusterAutoScale policy not found", "policyKey", policy.Key)

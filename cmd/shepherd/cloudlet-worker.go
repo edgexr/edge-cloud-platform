@@ -22,12 +22,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -134,7 +134,7 @@ func getCloudletPrometheusStats(ctx context.Context, addr string, client ssh.Cli
 	for key, autoScaler := range autoScalers {
 		policy := edgeproto.AutoScalePolicy{}
 		policy.Key.Name = autoScaler.policyName
-		policy.Key.Organization = key.Organization
+		policy.Key.Organization = key.ClusterKey.Organization
 		found := AutoScalePoliciesCache.Get(&policy.Key, &policy)
 		if !found {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "cloudlet-worker autoscale policy not found", "policyKey", policy.Key)

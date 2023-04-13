@@ -1488,8 +1488,9 @@ func showMcClientApiMetrics(uri, token string, targets *MetricTargets, rc *bool)
 	for _, method := range ApiMethods {
 		clientApiUsageQuery := ormapi.RegionClientApiUsageMetrics{
 			Region: "local",
+			// TODO: fix me
 			AppInst: edgeproto.AppInstKey{
-				AppKey: targets.AppInstKey.AppKey,
+				//Key: targets.AppInstKey.AppKey,
 			},
 			Method: method,
 			MetricsCommon: ormapi.MetricsCommon{

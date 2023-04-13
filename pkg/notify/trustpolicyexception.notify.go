@@ -26,9 +26,9 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type SendTrustPolicyExceptionHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.TrustPolicyExceptionKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.TrustPolicyException, modRev int64))
 	GetWithRev(key *edgeproto.TrustPolicyExceptionKey, buf *edgeproto.TrustPolicyException, modRev *int64) bool
-	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(key *edgeproto.TrustPolicyExceptionKey, modRev int64))
+	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(data *edgeproto.TrustPolicyExceptionCacheData))
 }
 
 type RecvTrustPolicyExceptionHandler interface {
@@ -41,7 +41,7 @@ type RecvTrustPolicyExceptionHandler interface {
 type TrustPolicyExceptionCacheHandler interface {
 	SendTrustPolicyExceptionHandler
 	RecvTrustPolicyExceptionHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.TrustPolicyExceptionKey, old *edgeproto.TrustPolicyException, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.TrustPolicyException, modRev int64))
 }
 
 type TrustPolicyExceptionSend struct {
@@ -96,11 +96,11 @@ func (s *TrustPolicyExceptionSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.TrustPolicyExceptionKey, modRev int64) {
-		if !s.UpdateAllOkLocked(key) { // to be implemented by hand
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.TrustPolicyException, modRev int64) {
+		if !s.UpdateAllOkLocked(obj) { // to be implemented by hand
 			return
 		}
-		s.Keys[*key] = TrustPolicyExceptionSendContext{
+		s.Keys[*obj.GetKey()] = TrustPolicyExceptionSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -108,15 +108,15 @@ func (s *TrustPolicyExceptionSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *TrustPolicyExceptionSend) Update(ctx context.Context, key *edgeproto.TrustPolicyExceptionKey, old *edgeproto.TrustPolicyException, modRev int64) {
+func (s *TrustPolicyExceptionSend) Update(ctx context.Context, obj *edgeproto.TrustPolicyException, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	if !s.UpdateOk(ctx, key) { // to be implemented by hand
+	if !s.UpdateOk(ctx, obj) { // to be implemented by hand
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *TrustPolicyExceptionSend) ForceDelete(ctx context.Context, key *edgeproto.TrustPolicyExceptionKey, modRev int64) {
@@ -137,15 +137,18 @@ func (s *TrustPolicyExceptionSend) updateInternal(ctx context.Context, key *edge
 }
 
 func (s *TrustPolicyExceptionSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
-	keys := make(map[edgeproto.TrustPolicyExceptionKey]int64)
-	s.handler.GetForCloudlet(cloudlet, func(objKey *edgeproto.TrustPolicyExceptionKey, modRev int64) {
-		keys[*objKey] = modRev
+	keys := make(map[edgeproto.TrustPolicyExceptionKey]*edgeproto.TrustPolicyExceptionCacheData)
+	s.handler.GetForCloudlet(cloudlet, func(data *edgeproto.TrustPolicyExceptionCacheData) {
+		if data.Obj == nil {
+			return
+		}
+		keys[*data.Obj.GetKey()] = data
 	})
-	for k, modRev := range keys {
+	for k, data := range keys {
 		if action == edgeproto.NoticeAction_UPDATE {
-			s.Update(ctx, &k, nil, modRev)
+			s.Update(ctx, data.Obj, data.ModRev)
 		} else if action == edgeproto.NoticeAction_DELETE {
-			s.ForceDelete(ctx, &k, modRev)
+			s.ForceDelete(ctx, &k, data.ModRev)
 		}
 	}
 }
@@ -242,11 +245,11 @@ func (s *TrustPolicyExceptionSendMany) DoneSend(peerAddr string, send NotifySend
 	}
 	s.Mux.Unlock()
 }
-func (s *TrustPolicyExceptionSendMany) Update(ctx context.Context, key *edgeproto.TrustPolicyExceptionKey, old *edgeproto.TrustPolicyException, modRev int64) {
+func (s *TrustPolicyExceptionSendMany) Update(ctx context.Context, obj *edgeproto.TrustPolicyException, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 

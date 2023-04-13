@@ -22,14 +22,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/types"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	platform "github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
+	"github.com/gogo/protobuf/types"
 )
 
 // For each cluster the notify worker is created
@@ -244,14 +244,14 @@ func newMetric(clusterInstKey edgeproto.ClusterInstKey, reservedBy string, name 
 		if reservedBy != "" {
 			metric.AddTag("apporg", reservedBy)
 		} else {
-			metric.AddTag("apporg", clusterInstKey.Organization)
+			metric.AddTag("apporg", clusterInstKey.ClusterKey.Organization)
 		}
-		metric.AddTag("clusterorg", clusterInstKey.Organization)
+		metric.AddTag("clusterorg", clusterInstKey.ClusterKey.Organization)
 	} else {
 		if reservedBy != "" {
 			metric.AddTag("clusterorg", reservedBy)
 		} else {
-			metric.AddTag("clusterorg", clusterInstKey.Organization)
+			metric.AddTag("clusterorg", clusterInstKey.ClusterKey.Organization)
 		}
 	}
 	return &metric

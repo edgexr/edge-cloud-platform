@@ -23,8 +23,8 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/Shopify/sarama/mocks"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/mobiledgex/yaml/v2"
 	"github.com/stretchr/testify/require"
 )
@@ -85,7 +85,7 @@ func TestEvents(t *testing.T) {
 		edgeproto.CloudletKeyTagOrganization:          operOrg,
 		edgeproto.CloudletKeyTagFederatedOrganization: operOrg,
 		edgeproto.ClusterKeyTagName:                   "testclust",
-		edgeproto.ClusterInstKeyTagOrganization:       "MobiledgeX",
+		edgeproto.ClusterKeyTagOrganization:           "testorg",
 	}
 	keyTags2 := map[string]string{
 		edgeproto.CloudletKeyTagName:                  cloudlet1Name,
@@ -264,14 +264,14 @@ func TestEvents(t *testing.T) {
 			aggr("lineno", 7),
 			aggr("spanid", 7),
 			aggr("traceid", 7),
-			aggr(edgeproto.CloudletKeyTagName, 6),
-			aggr(edgeproto.CloudletKeyTagOrganization, 6),
-			aggr(edgeproto.CloudletKeyTagFederatedOrganization, 6),
+			aggr(edgeproto.CloudletKeyTagName, 5),
+			aggr(edgeproto.CloudletKeyTagFederatedOrganization, 5),
+			aggr(edgeproto.CloudletKeyTagOrganization, 5),
 			aggr(edgeproto.AppKeyTagName, 4),
 			aggr(edgeproto.AppKeyTagOrganization, 4),
 			aggr(edgeproto.AppKeyTagVersion, 4),
 			aggr(edgeproto.ClusterKeyTagName, 4),
-			aggr(edgeproto.ClusterInstKeyTagOrganization, 4),
+			aggr(edgeproto.ClusterKeyTagOrganization, 4),
 			aggr("the reason", 2),
 			aggr("node", 1),
 			aggr("noderegion", 1),
@@ -302,10 +302,10 @@ func TestEvents(t *testing.T) {
 			aggr(edgeproto.AppKeyTagOrganization, 4),
 			aggr(edgeproto.AppKeyTagVersion, 4),
 			aggr(edgeproto.CloudletKeyTagName, 4),
+			aggr(edgeproto.CloudletKeyTagFederatedOrganization, 4),
 			aggr(edgeproto.CloudletKeyTagOrganization, 4),
 			aggr(edgeproto.ClusterKeyTagName, 4),
-			aggr(edgeproto.ClusterInstKeyTagOrganization, 4),
-			aggr(edgeproto.CloudletKeyTagFederatedOrganization, 4),
+			aggr(edgeproto.ClusterKeyTagOrganization, 4),
 			aggr("hostname", 4),
 			aggr("lineno", 4),
 			aggr("spanid", 4),
@@ -333,8 +333,8 @@ func TestEvents(t *testing.T) {
 		Regions: []AggrVal{aggr(region, 2)},
 		TagKeys: []AggrVal{
 			aggr(edgeproto.CloudletKeyTagName, 2),
-			aggr(edgeproto.CloudletKeyTagOrganization, 2),
 			aggr(edgeproto.CloudletKeyTagFederatedOrganization, 2),
+			aggr(edgeproto.CloudletKeyTagOrganization, 2),
 			aggr("hostname", 2),
 			aggr("lineno", 2),
 			aggr("spanid", 2),
@@ -343,7 +343,7 @@ func TestEvents(t *testing.T) {
 			aggr(edgeproto.AppKeyTagOrganization, 1),
 			aggr(edgeproto.AppKeyTagVersion, 1),
 			aggr(edgeproto.ClusterKeyTagName, 1),
-			aggr(edgeproto.ClusterInstKeyTagOrganization, 1),
+			aggr(edgeproto.ClusterKeyTagOrganization, 1),
 		},
 	}
 	require.Equal(t, expectedTerms, *terms)

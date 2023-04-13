@@ -699,9 +699,17 @@ var AlertPolicyKeyTagName = "alert"
 
 func (m *AlertPolicyKey) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["alertorg"] = m.Organization
-	tags["alert"] = m.Name
+	m.AddTags(tags)
 	return tags
+}
+
+func (m *AlertPolicyKey) AddTags(tags map[string]string) {
+	if m.Organization != "" {
+		tags["alertorg"] = m.Organization
+	}
+	if m.Name != "" {
+		tags["alert"] = m.Name
+	}
 }
 
 // Helper method to check that enums have valid values
@@ -1122,6 +1130,7 @@ type AlertPolicyStore interface {
 	STMGet(stm concurrency.STM, key *AlertPolicyKey, buf *AlertPolicy) bool
 	STMPut(stm concurrency.STM, obj *AlertPolicy, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *AlertPolicyKey)
+	STMHas(stm concurrency.STM, key *AlertPolicyKey) bool
 }
 
 type AlertPolicyStoreImpl struct {
@@ -1253,6 +1262,11 @@ func (s *AlertPolicyStoreImpl) STMGet(stm concurrency.STM, key *AlertPolicyKey, 
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *AlertPolicyStoreImpl) STMHas(stm concurrency.STM, key *AlertPolicyKey) bool {
+	keystr := objstore.DbKeyString("AlertPolicy", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *AlertPolicyStoreImpl) parseGetData(val []byte, buf *AlertPolicy) bool {
 	if len(val) == 0 {
 		return false
@@ -1294,6 +1308,16 @@ type AlertPolicyCacheData struct {
 	ModRev int64
 }
 
+func (s *AlertPolicyCacheData) Clone() *AlertPolicyCacheData {
+	cp := AlertPolicyCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &AlertPolicy{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // AlertPolicyCache caches AlertPolicy objects in memory in a hash table
 // and keeps them in sync with the database.
 type AlertPolicyCache struct {
@@ -1301,7 +1325,7 @@ type AlertPolicyCache struct {
 	Mux           util.Mutex
 	List          map[AlertPolicyKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *AlertPolicyKey, old *AlertPolicy, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *AlertPolicy, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *AlertPolicy, new *AlertPolicy)
 	DeletedCbs    []func(ctx context.Context, old *AlertPolicy)
 	KeyWatchers   map[AlertPolicyKey][]*AlertPolicyKeyWatcher
@@ -1360,6 +1384,14 @@ func (c *AlertPolicyCache) GetAllKeys(ctx context.Context, cb func(key *AlertPol
 	}
 }
 
+func (c *AlertPolicyCache) GetAllLocked(ctx context.Context, cb func(obj *AlertPolicy, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *AlertPolicyCache) Update(ctx context.Context, in *AlertPolicy, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *AlertPolicy) (*AlertPolicy, bool) {
 		return in, true
@@ -1377,14 +1409,16 @@ func (c *AlertPolicyCache) UpdateModFunc(ctx context.Context, key *AlertPolicyKe
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &AlertPolicy{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -1421,9 +1455,13 @@ func (c *AlertPolicyCache) DeleteCondFunc(ctx context.Context, in *AlertPolicy, 
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -1451,9 +1489,14 @@ func (c *AlertPolicyCache) Prune(ctx context.Context, validKeys map[AlertPolicyK
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &AlertPolicy{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -1498,8 +1541,8 @@ func AlertPolicyGenericNotifyCb(fn func(key *AlertPolicyKey, old *AlertPolicy)) 
 	}
 }
 
-func (c *AlertPolicyCache) SetNotifyCb(fn func(ctx context.Context, obj *AlertPolicyKey, old *AlertPolicy, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *AlertPolicyKey, old *AlertPolicy, modRev int64){fn}
+func (c *AlertPolicyCache) SetNotifyCb(fn func(ctx context.Context, obj *AlertPolicy, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *AlertPolicy, modRev int64){fn}
 }
 
 func (c *AlertPolicyCache) SetUpdatedCb(fn func(ctx context.Context, old *AlertPolicy, new *AlertPolicy)) {
@@ -1526,7 +1569,7 @@ func (c *AlertPolicyCache) AddDeletedCb(fn func(ctx context.Context, old *AlertP
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *AlertPolicyCache) AddNotifyCb(fn func(ctx context.Context, obj *AlertPolicyKey, old *AlertPolicy, modRev int64)) {
+func (c *AlertPolicyCache) AddNotifyCb(fn func(ctx context.Context, obj *AlertPolicy, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -1631,9 +1674,14 @@ func (c *AlertPolicyCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &AlertPolicy{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {

@@ -23,12 +23,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_unittest"
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -106,13 +106,13 @@ func TestDockerStats(t *testing.T) {
 	testAppKey := shepherd_common.MetricAppInstKey{
 		ClusterInstKey: edgeproto.ClusterInstKey{
 			ClusterKey: edgeproto.ClusterKey{
-				Name: "testcluster",
+				Name:         "testcluster",
+				Organization: "",
 			},
 			CloudletKey: edgeproto.CloudletKey{
 				Organization: "testoperator",
 				Name:         "testcloudlet",
 			},
-			Organization: "",
 		},
 	}
 
@@ -121,11 +121,13 @@ func TestDockerStats(t *testing.T) {
 		Organization: testOperator,
 		Name:         "testcloudlet",
 	}
-	testClusterKey := edgeproto.ClusterKey{Name: "testcluster"}
-	testClusterInstKey := edgeproto.ClusterInstKey{
-		ClusterKey:   testClusterKey,
-		CloudletKey:  testCloudletKey,
+	testClusterKey := edgeproto.ClusterKey{
+		Name:         "testcluster",
 		Organization: "",
+	}
+	testClusterInstKey := edgeproto.ClusterInstKey{
+		ClusterKey:  testClusterKey,
+		CloudletKey: testCloudletKey,
 	}
 	testClusterInst := edgeproto.ClusterInst{
 		Key:        testClusterInstKey,
@@ -138,12 +140,14 @@ func TestDockerStats(t *testing.T) {
 	}
 	testAppInstDocker2 := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Name:    "DockerApp2",
-				Version: "10",
-			},
-			ClusterInstKey: *testClusterInstKey.Virtual(""),
+			Name:        "testAppInst",
+			CloudletKey: testCloudletKey,
 		},
+		AppKey: edgeproto.AppKey{
+			Name:    "DockerApp2",
+			Version: "10",
+		},
+		ClusterKey: testClusterKey,
 		RuntimeInfo: edgeproto.AppInstRuntime{
 			ContainerIds: []string{"DockerApp2Container1", "DockerApp2Container2"},
 		},

@@ -24,9 +24,9 @@ import (
 
 	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
 
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
@@ -39,6 +39,7 @@ type influxClientMetricsQueryArgs struct {
 	Selector     string
 	Measurement  string
 	AppInstName  string
+	AppInstOrg   string
 	AppVersion   string
 	ClusterName  string
 	CloudletName string
@@ -157,7 +158,8 @@ const (
 
 var devInfluxClientMetricsDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
 	` WHERE "{{.OrgField}}"='{{.ApiCallerOrg}}'` +
-	`{{if .AppInstName}} AND "app"='{{.AppInstName}}'{{end}}` +
+	`{{if .AppInstName}} AND "appinst"='{{.AppInstName}}'{{end}}` +
+	`{{if .AppInstOrg}} AND "appinstorg"='{{.AppInstOrg}}'{{end}}` +
 	`{{if .AppOrg}} AND "apporg"='{{.AppOrg}}'{{end}}` +
 	`{{if .ClusterName}} AND "cluster"='{{.ClusterName}}'{{end}}` +
 	`{{if .AppVersion}} AND "ver"='{{.AppVersion}}'{{end}}` +
@@ -213,8 +215,8 @@ func validateMethodString(obj *ormapi.RegionClientApiUsageMetrics) error {
 	case "RegisterClient":
 		fallthrough
 	case "VerifyLocation":
-		if obj.AppInst.ClusterInstKey.CloudletKey.Name != "" ||
-			obj.AppInst.ClusterInstKey.CloudletKey.Organization != "" {
+		if obj.AppInst.CloudletKey.Name != "" ||
+			obj.AppInst.CloudletKey.Organization != "" {
 			return fmt.Errorf("Cloudlet and Cloudlet org can be specified only for FindCloudlet or PlatformFindCloudlet")
 		}
 		return nil
@@ -238,23 +240,23 @@ func ClientApiUsageMetricsQuery(obj *ormapi.RegionClientApiUsageMetrics, cloudle
 	arg := influxClientMetricsQueryArgs{
 		Selector:         getClientMetricsSelector(obj.Selector, CLIENT_APIUSAGE, definition, ClientApiAggregationFunctions),
 		Measurement:      fmt.Sprintf("%q", getMeasurementString(obj.Selector, CLIENT_APIUSAGE)),
-		AppInstName:      obj.AppInst.AppKey.Name,
-		AppVersion:       obj.AppInst.AppKey.Version,
-		ApiCallerOrg:     obj.AppInst.AppKey.Organization,
+		AppInstName:      obj.AppInst.Name,
+		AppInstOrg:       obj.AppInst.Organization,
+		ApiCallerOrg:     obj.AppInst.Organization,
 		CloudletList:     generateDmeApiUsageCloudletList(cloudletList),
 		CloudletName:     obj.DmeCloudlet,
 		CloudletOrg:      obj.DmeCloudletOrg,
-		FoundCloudlet:    obj.AppInst.ClusterInstKey.CloudletKey.Name,
-		FoundCloudletOrg: obj.AppInst.ClusterInstKey.CloudletKey.Organization,
+		FoundCloudlet:    obj.AppInst.CloudletKey.Name,
+		FoundCloudletOrg: obj.AppInst.CloudletKey.Organization,
 		Method:           obj.Method,
 		TagSet:           getTagSet(CLIENT_APIUSAGE, obj.Selector),
 	}
-	if obj.AppInst.AppKey.Organization != "" {
+	if obj.AppInst.Organization != "" {
 		arg.OrgField = CLIENT_APP_ORG_FIELD
-		arg.ApiCallerOrg = obj.AppInst.AppKey.Organization
+		arg.ApiCallerOrg = obj.AppInst.Organization
 	} else {
 		arg.OrgField = CLIENT_FOUND_CLOUDLET_ORG_FIELD
-		arg.ApiCallerOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
+		arg.ApiCallerOrg = obj.AppInst.CloudletKey.Organization
 	}
 	// set MetricsCommonQueryArgs
 	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, definition.String(), 0) // TODO: PULL MIN from settings
@@ -275,12 +277,10 @@ func ClientAppUsageMetricsQuery(obj *ormapi.RegionClientAppUsageMetrics, cloudle
 	arg := influxClientMetricsQueryArgs{
 		Selector:        getClientMetricsSelector(obj.Selector, CLIENT_APPUSAGE, definition, functionMap),
 		Measurement:     measurement,
-		AppInstName:     obj.AppInst.AppKey.Name,
-		AppVersion:      obj.AppInst.AppKey.Version,
-		ApiCallerOrg:    obj.AppInst.AppKey.Organization,
-		ClusterOrg:      obj.AppInst.ClusterInstKey.Organization,
+		AppInstName:     obj.AppInst.Name,
+		AppInstOrg:      obj.AppInst.Organization,
+		ApiCallerOrg:    obj.AppInst.Organization,
 		CloudletList:    generateCloudletList(cloudletList),
-		ClusterName:     obj.AppInst.ClusterInstKey.ClusterKey.Name,
 		DeviceCarrier:   obj.DeviceCarrier,
 		DataNetworkType: obj.DataNetworkType,
 		DeviceOs:        obj.DeviceOs,
@@ -288,14 +288,14 @@ func ClientAppUsageMetricsQuery(obj *ormapi.RegionClientAppUsageMetrics, cloudle
 		LocationTile:    obj.LocationTile,
 		TagSet:          getTagSet(CLIENT_APPUSAGE, obj.Selector),
 	}
-	if obj.AppInst.AppKey.Organization != "" {
+	if obj.AppInst.Organization != "" {
 		arg.OrgField = CLIENT_APP_ORG_FIELD
-		arg.ApiCallerOrg = obj.AppInst.AppKey.Organization
-		arg.CloudletOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
+		arg.ApiCallerOrg = obj.AppInst.Organization
+		arg.CloudletOrg = obj.AppInst.CloudletKey.Organization
 	} else {
 		arg.OrgField = CLIENT_CLOUDLET_ORG_FIELD
-		arg.ApiCallerOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
-		arg.AppOrg = obj.AppInst.AppKey.Organization
+		arg.ApiCallerOrg = obj.AppInst.CloudletKey.Organization
+		arg.AppOrg = obj.AppInst.Organization
 	}
 	// set MetricsCommonQueryArgs
 	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, definition.String(), 0) // TODO: PULL MIN from settings

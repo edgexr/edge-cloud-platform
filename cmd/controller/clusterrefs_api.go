@@ -15,8 +15,8 @@
 package main
 
 import (
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type ClusterRefsApi struct {
@@ -49,13 +49,12 @@ func (s *ClusterRefsApi) deleteRef(stm concurrency.STM, key *edgeproto.ClusterIn
 }
 
 func (s *ClusterRefsApi) addRef(stm concurrency.STM, appInst *edgeproto.AppInst) {
-	// note the ClusterInst key is the real cluster key, not the virtual
 	key := appInst.ClusterInstKey()
 	refs := edgeproto.ClusterRefs{}
 	if !s.store.STMGet(stm, key, &refs) {
 		refs.Key = *key
 	}
-	refs.Apps = append(refs.Apps, *appInst.Key.ClusterRefsAppInstKey())
+	refs.Apps = append(refs.Apps, *appInst.Key.GetRefKey())
 	s.store.STMPut(stm, &refs)
 }
 
@@ -66,7 +65,7 @@ func (s *ClusterRefsApi) removeRef(stm concurrency.STM, appInst *edgeproto.AppIn
 		return
 	}
 	changed := false
-	refKey := appInst.Key.ClusterRefsAppInstKey()
+	refKey := appInst.Key.GetRefKey()
 	for ii := range refs.Apps {
 		if refKey.Matches(&refs.Apps[ii]) {
 			refs.Apps = append(refs.Apps[:ii], refs.Apps[ii+1:]...)

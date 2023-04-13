@@ -810,9 +810,11 @@ type AlertReceiver struct {
 	// PagerDuty API version
 	PagerDutyApiVersion string `json:",omitempty"`
 	// Cloudlet spec for alerts
-	Cloudlet edgeproto.CloudletKey `json:",omitempty"`
+	CloudletKey edgeproto.CloudletKey `json:",omitempty"`
 	// AppInst spec for alerts
-	AppInst edgeproto.AppInstKey `json:",omitempty"`
+	AppInstKey edgeproto.AppInstKey `json:",omitempty"`
+	// ClusterInst spec for alerts
+	ClusterInstKey edgeproto.ClusterInstKey `json:",omitempty"`
 }
 
 // Reporter to generate period reports

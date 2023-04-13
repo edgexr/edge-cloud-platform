@@ -22,14 +22,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	proxycerts "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	proxycerts "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -394,7 +394,7 @@ func (v *VMPlatform) cleanupClusterInst(ctx context.Context, clusterInst *edgepr
 			updateCallback(edgeproto.UpdateTask, "Retrying cleanup")
 		}
 	}
-	v.VMProperties.CommonPf.PlatformConfig.NodeMgr.Event(ctx, "Failed to clean up cluster", clusterInst.Key.Organization, clusterInst.Key.GetTags(), err)
+	v.VMProperties.CommonPf.PlatformConfig.NodeMgr.Event(ctx, "Failed to clean up cluster", clusterInst.Key.ClusterKey.Organization, clusterInst.Key.GetTags(), err)
 	return fmt.Errorf("Failed to cleanup cluster - %v", err)
 }
 
@@ -723,7 +723,7 @@ func (v *VMPlatform) GetChefClusterTags(key *edgeproto.ClusterInstKey, nodeType 
 	return []string{
 		"deploytag/" + deploymentTag,
 		"cluster/" + key.ClusterKey.Name,
-		"clusterorg/" + key.Organization,
+		"clusterorg/" + key.ClusterKey.Organization,
 		"cloudlet/" + key.CloudletKey.Name,
 		"cloudletorg/" + key.CloudletKey.Organization,
 		"region/" + region,

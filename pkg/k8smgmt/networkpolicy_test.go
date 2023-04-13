@@ -18,9 +18,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/stretchr/testify/require"
 )
@@ -38,12 +38,15 @@ func TestGetNetworkPolicy(t *testing.T) {
 	app.AllowServerless = true
 	ci := edgeproto.ClusterInst{}
 	ci.Key.ClusterKey.Name = cloudcommon.DefaultMultiTenantCluster
-	ci.Key.Organization = edgeproto.OrganizationEdgeCloud
+	ci.Key.ClusterKey.Organization = edgeproto.OrganizationEdgeCloud
 	ci.Key.CloudletKey.Name = "cloudlet1"
 	ci.Key.CloudletKey.Organization = "operorg"
 	appInst := edgeproto.AppInst{}
-	appInst.Key.AppKey = app.Key
-	appInst.Key.ClusterInstKey = *ci.Key.Virtual("autocluster1")
+	appInst.Key.Name = "appInst1"
+	appInst.Key.Organization = app.Key.Organization
+	appInst.AppKey = app.Key
+	appInst.ClusterKey = ci.Key.ClusterKey
+	appInst.CompatibilityVersion = cloudcommon.GetAppInstCompatibilityVersion()
 
 	// Non-multi-tenant cluster does not need a network policy
 	ci.MultiTenant = false
@@ -54,8 +57,8 @@ func TestGetNetworkPolicy(t *testing.T) {
 	testGetNetworkPolicy(t, ctx, &app, &ci, &appInst, "", `apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: networkpolicy-devorg-myapp-10-autocluster1
-  namespace: devorg-myapp-10-autocluster1
+  name: networkpolicy-appinst1-devorg
+  namespace: appinst1-devorg
 spec:
   podSelector:
     matchLabels:
@@ -63,7 +66,7 @@ spec:
   - from:
     - namespaceSelector:
         matchLabels:
-          name: devorg-myapp-10-autocluster1
+          name: appinst1-devorg
 `)
 
 	// Network policy, with ports
@@ -91,7 +94,12 @@ spec:
 			PublicPort:   61000,
 		},
 	}
-	testGetNetworkPolicy(t, ctx, &app, &ci, &appInst, "", `apiVersion: networking.k8s.io/v1
+	// backwards compatibility test
+	oldAppInst := appInst
+	oldAppInst.VirtualClusterKey.Name = "autocluster1"
+	oldAppInst.VirtualClusterKey.Organization = edgeproto.OrganizationEdgeCloud
+	oldAppInst.CompatibilityVersion = 0
+	testGetNetworkPolicy(t, ctx, &app, &ci, &oldAppInst, "", `apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: networkpolicy-devorg-myapp-10-autocluster1
@@ -135,7 +143,50 @@ spec:
     - protocol: TCP
       port: 51009
 `)
-
+	testGetNetworkPolicy(t, ctx, &app, &ci, &appInst, "", `apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: networkpolicy-appinst1-devorg
+  namespace: appinst1-devorg
+spec:
+  podSelector:
+    matchLabels:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: appinst1-devorg
+  - from:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 888
+    - protocol: UDP
+      port: 10101
+    - protocol: TCP
+      port: 51000
+    - protocol: TCP
+      port: 51001
+    - protocol: TCP
+      port: 51002
+    - protocol: TCP
+      port: 51003
+    - protocol: TCP
+      port: 51004
+    - protocol: TCP
+      port: 51005
+    - protocol: TCP
+      port: 51006
+    - protocol: TCP
+      port: 51007
+    - protocol: TCP
+      port: 51008
+    - protocol: TCP
+      port: 51009
+`)
 }
 
 func testGetNetworkPolicy(t *testing.T, ctx context.Context, app *edgeproto.App, clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst, expectedErr string, expectedMF string) {

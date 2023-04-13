@@ -19,11 +19,12 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/influxdata/influxdb/models"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -299,14 +300,14 @@ func testMultipleOrgsForCloudletUsage(t *testing.T, mcClient *mctestclient.Clien
 
 func TestIsMeasurementOutputEmpty(t *testing.T) {
 	// check for nil
-	empty, err := isMeasurementOutputEmpty(nil, EVENT_CLUSTERINST)
+	empty, err := isMeasurementOutputEmpty(nil, cloudcommon.ClusterInstEvent)
 	require.NotNil(t, err, "Null response is an error")
 	require.Contains(t, err.Error(), "Error processing nil response")
 	require.False(t, empty)
 
 	// check empty result
 	resp := client.Response{}
-	empty, err = isMeasurementOutputEmpty(&resp, EVENT_CLUSTERINST)
+	empty, err = isMeasurementOutputEmpty(&resp, cloudcommon.ClusterInstEvent)
 	require.Nil(t, err, "Empty response should not trigger an error")
 	require.True(t, empty)
 
@@ -329,7 +330,7 @@ func TestIsMeasurementOutputEmpty(t *testing.T) {
 			},
 		},
 	}
-	testInvalidMeasurementData(t, &resp, EVENT_CLUSTERINST)
+	testInvalidMeasurementData(t, &resp, cloudcommon.ClusterInstEvent)
 
 	// check invalid series data - series value should not be empty
 	resp = client.Response{
@@ -337,14 +338,14 @@ func TestIsMeasurementOutputEmpty(t *testing.T) {
 			client.Result{
 				Series: []models.Row{
 					models.Row{
-						Name:   EVENT_CLUSTERINST,
+						Name:   cloudcommon.ClusterInstEvent,
 						Values: [][]interface{}{},
 					},
 				},
 			},
 		},
 	}
-	testInvalidMeasurementData(t, &resp, EVENT_CLUSTERINST)
+	testInvalidMeasurementData(t, &resp, cloudcommon.ClusterInstEvent)
 
 	// check invalid series data - series value[0] should not be empty
 	vals := [][]uint8{{}}
@@ -361,14 +362,14 @@ func TestIsMeasurementOutputEmpty(t *testing.T) {
 			client.Result{
 				Series: []models.Row{
 					models.Row{
-						Name:   EVENT_CLUSTERINST,
+						Name:   cloudcommon.ClusterInstEvent,
 						Values: valIf,
 					},
 				},
 			},
 		},
 	}
-	testInvalidMeasurementData(t, &resp, EVENT_CLUSTERINST)
+	testInvalidMeasurementData(t, &resp, cloudcommon.ClusterInstEvent)
 
 	// check invalid series data - series name should match
 	vals = [][]uint8{{0, 1, 2, 3}, {0, 1, 2, 3}}
@@ -392,7 +393,7 @@ func TestIsMeasurementOutputEmpty(t *testing.T) {
 			},
 		},
 	}
-	testInvalidMeasurementData(t, &resp, EVENT_CLUSTERINST)
+	testInvalidMeasurementData(t, &resp, cloudcommon.ClusterInstEvent)
 
 	// check valid series data
 	vals = [][]uint8{{0, 1, 2, 3}, {0, 1, 2, 3}}
@@ -409,14 +410,14 @@ func TestIsMeasurementOutputEmpty(t *testing.T) {
 			client.Result{
 				Series: []models.Row{
 					models.Row{
-						Name:   EVENT_CLUSTERINST,
+						Name:   cloudcommon.ClusterInstEvent,
 						Values: valIf,
 					},
 				},
 			},
 		},
 	}
-	empty, err = isMeasurementOutputEmpty(&resp, EVENT_CLUSTERINST)
+	empty, err = isMeasurementOutputEmpty(&resp, cloudcommon.ClusterInstEvent)
 	require.Nil(t, err)
 	require.False(t, empty)
 }

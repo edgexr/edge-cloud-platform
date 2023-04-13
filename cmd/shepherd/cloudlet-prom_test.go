@@ -24,9 +24,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_unittest"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_unittest"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -54,6 +54,7 @@ func testUpdateAndWrite(ctx context.Context, inst *edgeproto.AppInst, t *testing
 	}
 }
 func TestCloudletPrometheusFuncs(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelApi | log.DebugLevelMetrics)
 	ctx := setupLog()
 	defer log.FinishTracer()
 	targetFileWorkers.Init("targets", writePrometheusTargetsFile)
@@ -79,6 +80,7 @@ func TestCloudletPrometheusFuncs(t *testing.T) {
 	targetFileWorkers.WaitIdle()
 	// verify they all are here
 	content, err := ioutil.ReadFile(*promTargetsFile)
+	fmt.Print(content)
 	assert.Nil(t, err)
 	targets := TestJsonTargets{}
 	err = json.Unmarshal(content, &targets)
@@ -121,13 +123,13 @@ func genClusters(ctx context.Context, cnt int) {
 		cluster := edgeproto.ClusterInst{
 			Key: edgeproto.ClusterInstKey{
 				ClusterKey: edgeproto.ClusterKey{
-					Name: fmt.Sprintf("Cluster-%d", ii),
+					Name:         fmt.Sprintf("Cluster-%d", ii),
+					Organization: fmt.Sprintf("Clusterorg-%d", ii),
 				},
 				CloudletKey: edgeproto.CloudletKey{
 					Organization: fmt.Sprintf("Cloudletorg-%d", ii),
 					Name:         fmt.Sprintf("Cloudlet-%d", ii),
 				},
-				Organization: fmt.Sprintf("Clusterorg-%d", ii),
 			},
 		}
 		ClusterInstCache.Update(ctx, &cluster, 0)
@@ -143,26 +145,26 @@ func genAppInstances(ctx context.Context, cnt int) ([]edgeproto.AppInst, map[str
 		ports, _ := edgeproto.ParseAppPorts(fmt.Sprintf("tcp:%d", 1000+ii))
 		inst := edgeproto.AppInst{
 			Key: edgeproto.AppInstKey{
-				AppKey: edgeproto.AppKey{
-					Name:         fmt.Sprintf("App-%d", ii),
-					Organization: fmt.Sprintf("AppOrg-%d", ii),
+				Name:         fmt.Sprintf("AppInst-%d", ii),
+				Organization: fmt.Sprintf("AppOrg-%d", ii),
+				CloudletKey: edgeproto.CloudletKey{
+					Organization: fmt.Sprintf("Cloudletorg-%d", ii),
+					Name:         fmt.Sprintf("Cloudlet-%d", ii),
 				},
-				ClusterInstKey: edgeproto.VirtualClusterInstKey{
-					ClusterKey: edgeproto.ClusterKey{
-						Name: fmt.Sprintf("Cluster-%d", ii),
-					},
-					CloudletKey: edgeproto.CloudletKey{
-						Organization: fmt.Sprintf("Cloudletorg-%d", ii),
-						Name:         fmt.Sprintf("Cloudlet-%d", ii),
-					},
-					Organization: fmt.Sprintf("Clusterorg-%d", ii),
-				},
+			},
+			AppKey: edgeproto.AppKey{
+				Name:         fmt.Sprintf("App-%d", ii),
+				Organization: fmt.Sprintf("AppOrg-%d", ii),
+			},
+			ClusterKey: edgeproto.ClusterKey{
+				Name:         fmt.Sprintf("Cluster-%d", ii),
+				Organization: fmt.Sprintf("Clusterorg-%d", ii),
 			},
 			MappedPorts: ports,
 			State:       edgeproto.TrackedState_READY,
 		}
 		list = append(list, inst)
-		keys[inst.Key.AppKey.Name] = struct{}{}
+		keys[inst.AppKey.Name] = struct{}{}
 		AppInstCache.Update(ctx, &inst, 0)
 	}
 	return list, keys

@@ -80,10 +80,10 @@ func TestAutoProvStats(t *testing.T) {
 		ci := edgeproto.ClusterInst{
 			Key: edgeproto.ClusterInstKey{
 				ClusterKey: edgeproto.ClusterKey{
-					Name: "clust",
+					Name:         "clust",
+					Organization: edgeproto.OrganizationEdgeCloud,
 				},
-				CloudletKey:  cl.Key,
-				Organization: edgeproto.OrganizationEdgeCloud,
+				CloudletKey: cl.Key,
 			},
 			Reservable: true,
 		}

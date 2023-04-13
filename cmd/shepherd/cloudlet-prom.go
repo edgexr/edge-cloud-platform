@@ -29,17 +29,17 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/alerts"
-	"github.com/edgexr/edge-cloud-platform/pkg/autorules"
-	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/prommgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/alerts"
+	"github.com/edgexr/edge-cloud-platform/pkg/autorules"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/prommgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	"gopkg.in/yaml.v2"
 )
 
@@ -59,7 +59,7 @@ var promTargetT = `
 		"` + edgeproto.AppKeyTagVersion + `": "{{.Key.AppKey.Version}}",
 		"` + edgeproto.AppKeyTagOrganization + `": "{{.Key.AppKey.Organization}}",
 		"` + edgeproto.ClusterKeyTagName + `": "{{.Key.ClusterInstKey.ClusterKey.Name}}",
-		"` + edgeproto.ClusterInstKeyTagOrganization + `": "{{.Key.ClusterInstKey.Organization}}",
+		"` + edgeproto.ClusterKeyTagOrganization + `": "{{.Key.ClusterInstKey.Organization}}",
 		"` + edgeproto.CloudletKeyTagName + `": "{{.Key.ClusterInstKey.CloudletKey.Name}}",
 		"` + edgeproto.CloudletKeyTagOrganization + `": "{{.Key.ClusterInstKey.CloudletKey.Organization}}",
 		"__metrics_path__":"{{.EnvoyMetricsPath}}"
@@ -91,7 +91,7 @@ var promHealthCheckAlerts = `groups:
 		edgeproto.AppKeyTagVersion,
 		edgeproto.AppKeyTagOrganization,
 		edgeproto.ClusterKeyTagName,
-		edgeproto.ClusterInstKeyTagOrganization,
+		edgeproto.ClusterKeyTagOrganization,
 		edgeproto.CloudletKeyTagName,
 		edgeproto.CloudletKeyTagOrganization}, ",") +
 	`) (envoy_cluster_upstream_cx_active)
@@ -289,8 +289,8 @@ func metricsProxy(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getAppInstRulesFileName(key edgeproto.AppInstKey) string {
-	name := k8smgmt.NormalizeName(key.AppKey.Name)
+func getAppInstRulesFileName(ai *edgeproto.AppInst) string {
+	name := k8smgmt.NormalizeName(ai.AppKey.Name)
 	return getPrometheusFileName(name)
 }
 
@@ -376,7 +376,7 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "delete rules for AppInst", "AppInst", key)
 		untrackAppInstByPolicy(key)
 		// AppInst is being deleted - delete rules
-		fileName := getAppInstRulesFileName(key)
+		fileName := getAppInstRulesFileName(&appInst)
 		if err := deleteCloudletPrometheusAlertFile(ctx, fileName); err != nil {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to delete prometheus rules", "file", fileName, "err", err)
 		}
@@ -384,9 +384,9 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 	}
 	// check cluster name if this is a VM App
 	app := edgeproto.App{}
-	found = AppCache.Get(&appInst.Key.AppKey, &app)
+	found = AppCache.Get(&appInst.AppKey, &app)
 	if !found {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find app", "app", appInst.Key.AppKey.Name)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find app", "app", appInst.AppKey.Name)
 		return
 	}
 
@@ -399,9 +399,9 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 		// auto-provisioned AppInst, check policy.
 		policy, found := getAutoProvPolicy(ctx, &appInst, &app)
 		if !found {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "No AutoProvPolicy found", "app", app.Key, "cloudlet", appInst.Key.ClusterInstKey.CloudletKey)
+			log.SpanLog(ctx, log.DebugLevelMetrics, "No AutoProvPolicy found", "app", app.Key, "cloudlet", appInst.Key.CloudletKey)
 		} else {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Apply AutoProvPolicy", "app", app.Key, "cloudlet", appInst.Key.ClusterInstKey.CloudletKey, "policy", policy.Key)
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Apply AutoProvPolicy", "app", app.Key, "cloudlet", appInst.Key.CloudletKey, "policy", policy.Key)
 			ruleGrp := autorules.GetAutoUndeployRules(ctx, settings, &app.Key, policy)
 			if ruleGrp != nil {
 				grps.Groups = append(grps.Groups, *ruleGrp)
@@ -433,7 +433,7 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 	}
 	if len(grps.Groups) == 0 {
 		// no rules - rulefile should not exist for this
-		fileName := getAppInstRulesFileName(key)
+		fileName := getAppInstRulesFileName(&appInst)
 		if err := deleteCloudletPrometheusAlertFile(ctx, fileName); err != nil {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to delete prometheus rules", "file", fileName, "err", err)
 		}
@@ -445,7 +445,7 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 		return
 	}
 
-	fileName := getAppInstRulesFileName(appInst.Key)
+	fileName := getAppInstRulesFileName(&appInst)
 	err = writeCloudletPrometheusAlerts(ctx, fileName, byt)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to write prometheus rules", "file", fileName, "err", err)

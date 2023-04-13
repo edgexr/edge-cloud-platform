@@ -26,7 +26,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type SendNodeHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.NodeKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.Node, modRev int64))
 	GetWithRev(key *edgeproto.NodeKey, buf *edgeproto.Node, modRev *int64) bool
 }
 
@@ -40,7 +40,7 @@ type RecvNodeHandler interface {
 type NodeCacheHandler interface {
 	SendNodeHandler
 	RecvNodeHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.NodeKey, old *edgeproto.Node, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.Node, modRev int64))
 }
 
 type NodeSend struct {
@@ -95,8 +95,8 @@ func (s *NodeSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.NodeKey, modRev int64) {
-		s.Keys[*key] = NodeSendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.Node, modRev int64) {
+		s.Keys[*obj.GetKey()] = NodeSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -104,12 +104,12 @@ func (s *NodeSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *NodeSend) Update(ctx context.Context, key *edgeproto.NodeKey, old *edgeproto.Node, modRev int64) {
+func (s *NodeSend) Update(ctx context.Context, obj *edgeproto.Node, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *NodeSend) ForceDelete(ctx context.Context, key *edgeproto.NodeKey, modRev int64) {
@@ -224,11 +224,11 @@ func (s *NodeSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *NodeSendMany) Update(ctx context.Context, key *edgeproto.NodeKey, old *edgeproto.Node, modRev int64) {
+func (s *NodeSendMany) Update(ctx context.Context, obj *edgeproto.Node, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 

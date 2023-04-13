@@ -327,7 +327,7 @@ func updateClusterResCount(clusterInst *edgeproto.ClusterInst) {
 func updateVmAppResCount(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) {
 	if app.Deployment == cloudcommon.DeploymentTypeVM {
 		appFQN := appInst.DnsLabel
-		clusterInst.Key.ClusterKey.Name = appFQN + "-" + appInst.Key.ClusterInstKey.ClusterKey.Name
+		clusterInst.Key.ClusterKey.Name = appFQN + "-" + appInst.ClusterKey.Name
 		if len(FakeClusterVMs) == 0 {
 			FakeClusterVMs = make(map[edgeproto.ClusterInstKey][]edgeproto.VmInfo)
 		}
@@ -513,7 +513,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake AppInst deleted")
 	if app.Deployment == cloudcommon.DeploymentTypeVM {
 		appFQN := appInst.DnsLabel
-		clusterInst.Key.ClusterKey.Name = appFQN + "-" + appInst.Key.ClusterInstKey.ClusterKey.Name
+		clusterInst.Key.ClusterKey.Name = appFQN + "-" + appInst.ClusterKey.Name
 		UpdateCommonResourcesUsed(appInst.VmFlavor, ResourceRemove)
 		if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_DIRECT {
 			FakeExternalIpsUsed -= 1
@@ -764,7 +764,7 @@ func (s *Platform) updateResourceCounts(ctx context.Context) error {
 		var appInst edgeproto.AppInst
 		if s.caches.AppInstCache.Get(&k, &appInst) {
 			var app edgeproto.App
-			if s.caches.AppCache.Get(&k.AppKey, &app) {
+			if s.caches.AppCache.Get(&appInst.AppKey, &app) {
 				if app.Deployment == cloudcommon.DeploymentTypeVM {
 					var clusterInst = edgeproto.ClusterInst{
 						Key: *appInst.ClusterInstKey(),

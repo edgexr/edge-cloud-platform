@@ -20,13 +20,13 @@ import (
 	"sync"
 	"time"
 
-	influxdb "github.com/influxdata/influxdb/client/v2"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/influxsup"
-	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	influxdb "github.com/influxdata/influxdb/client/v2"
 )
 
 // AutoProvAggr aggregates auto-provisioning stats pulled from influxdb,
@@ -295,11 +295,10 @@ func (s *AutoProvAggr) deploy(ctx context.Context, app *edgeproto.App, cloudletK
 	log.SpanLog(ctx, log.DebugLevelApi, "auto-prov deploy App", "app", app.Key, "cloudlet", *cloudletKey)
 
 	inst := edgeproto.AppInst{}
-	inst.Key.AppKey = app.Key
+	inst.Key = cloudcommon.GetAutoProvAppInstKey(&app.Key, cloudletKey)
+	inst.AppKey = app.Key
+	inst.Key.CloudletKey = *cloudletKey
 	// let Controller pick or create a reservable ClusterInst.
-	inst.Key.ClusterInstKey.CloudletKey = *cloudletKey
-	inst.Key.ClusterInstKey.ClusterKey.Name = cloudcommon.AutoProvClusterName
-	inst.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
 
 	go goAppInstApi(ctx, &inst, cloudcommon.Create, cloudcommon.AutoProvReasonDemand, "")
 }

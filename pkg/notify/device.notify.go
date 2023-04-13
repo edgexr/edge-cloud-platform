@@ -27,7 +27,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type SendDeviceHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.DeviceKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.Device, modRev int64))
 	GetWithRev(key *edgeproto.DeviceKey, buf *edgeproto.Device, modRev *int64) bool
 }
 
@@ -41,7 +41,7 @@ type RecvDeviceHandler interface {
 type DeviceCacheHandler interface {
 	SendDeviceHandler
 	RecvDeviceHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.DeviceKey, old *edgeproto.Device, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.Device, modRev int64))
 }
 
 type DeviceSend struct {
@@ -96,8 +96,8 @@ func (s *DeviceSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.DeviceKey, modRev int64) {
-		s.Keys[*key] = DeviceSendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.Device, modRev int64) {
+		s.Keys[*obj.GetKey()] = DeviceSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -105,12 +105,12 @@ func (s *DeviceSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *DeviceSend) Update(ctx context.Context, key *edgeproto.DeviceKey, old *edgeproto.Device, modRev int64) {
+func (s *DeviceSend) Update(ctx context.Context, obj *edgeproto.Device, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *DeviceSend) ForceDelete(ctx context.Context, key *edgeproto.DeviceKey, modRev int64) {
@@ -225,11 +225,11 @@ func (s *DeviceSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *DeviceSendMany) Update(ctx context.Context, key *edgeproto.DeviceKey, old *edgeproto.Device, modRev int64) {
+func (s *DeviceSendMany) Update(ctx context.Context, obj *edgeproto.Device, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 

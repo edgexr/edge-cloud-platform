@@ -26,7 +26,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type SendSettingsHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.SettingsKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.Settings, modRev int64))
 	GetWithRev(key *edgeproto.SettingsKey, buf *edgeproto.Settings, modRev *int64) bool
 }
 
@@ -40,7 +40,7 @@ type RecvSettingsHandler interface {
 type SettingsCacheHandler interface {
 	SendSettingsHandler
 	RecvSettingsHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.SettingsKey, old *edgeproto.Settings, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.Settings, modRev int64))
 }
 
 type SettingsSend struct {
@@ -95,8 +95,8 @@ func (s *SettingsSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.SettingsKey, modRev int64) {
-		s.Keys[*key] = SettingsSendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.Settings, modRev int64) {
+		s.Keys[*obj.GetKey()] = SettingsSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -104,12 +104,12 @@ func (s *SettingsSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *SettingsSend) Update(ctx context.Context, key *edgeproto.SettingsKey, old *edgeproto.Settings, modRev int64) {
+func (s *SettingsSend) Update(ctx context.Context, obj *edgeproto.Settings, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *SettingsSend) ForceDelete(ctx context.Context, key *edgeproto.SettingsKey, modRev int64) {
@@ -224,11 +224,11 @@ func (s *SettingsSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *SettingsSendMany) Update(ctx context.Context, key *edgeproto.SettingsKey, old *edgeproto.Settings, modRev int64) {
+func (s *SettingsSendMany) Update(ctx context.Context, obj *edgeproto.Settings, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 

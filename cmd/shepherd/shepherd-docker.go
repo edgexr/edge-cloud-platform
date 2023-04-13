@@ -23,13 +23,13 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	ssh "github.com/edgexr/golang-ssh"
+	"github.com/gogo/protobuf/types"
 )
 
 var dockerStatsFormat = `"{\"container\":\"{{.Name}}\",\"id\":\"{{.ID}}\",\"memory\":{\"raw\":\"{{.MemUsage}}\",\"percent\":\"{{.MemPerc}}\"},\"cpu\":\"{{.CPUPerc}}\",\"io\":{\"network\":\"{{.NetIO}}\",\"block\":\"{{.BlockIO}}\"}}"`
@@ -144,8 +144,8 @@ func (c *DockerClusterStats) GetContainerStats(ctx context.Context) (*DockerStat
 			cData, found = containers[cID]
 
 			if found {
-				cData.App = util.DNSSanitize(obj.Key.AppKey.Name)
-				cData.Version = util.DNSSanitize(obj.Key.AppKey.Version)
+				cData.App = util.DNSSanitize(obj.AppKey.Name)
+				cData.Version = util.DNSSanitize(obj.AppKey.Version)
 				dockerResp.Containers = append(dockerResp.Containers, *cData)
 			}
 		}

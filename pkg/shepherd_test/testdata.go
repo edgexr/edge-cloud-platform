@@ -15,9 +15,9 @@
 package shepherd_test
 
 import (
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 )
 
 var (
@@ -29,11 +29,13 @@ var (
 	TestCloudlet = edgeproto.Cloudlet{
 		Key: TestCloudletKey,
 	}
-	TestClusterKey     = edgeproto.ClusterKey{Name: "testcluster"}
-	TestClusterInstKey = edgeproto.ClusterInstKey{
-		ClusterKey:   TestClusterKey,
-		CloudletKey:  TestCloudletKey,
+	TestClusterKey = edgeproto.ClusterKey{
+		Name:         "testcluster",
 		Organization: "",
+	}
+	TestClusterInstKey = edgeproto.ClusterInstKey{
+		ClusterKey:  TestClusterKey,
+		CloudletKey: TestCloudletKey,
 	}
 	TestClusterInst = edgeproto.ClusterInst{
 		Key:        TestClusterInstKey,
@@ -64,8 +66,8 @@ var (
 		},
 	}
 	TestAppInstKey = edgeproto.AppInstKey{
-		AppKey:         TestAppKey,
-		ClusterInstKey: *TestClusterInstKey.Virtual(""),
+		Name:         "AppInstTest",
+		Organization: TestAppKey.Organization,
 	}
 	TestAppInst = edgeproto.AppInst{
 		Key:         TestAppInstKey,

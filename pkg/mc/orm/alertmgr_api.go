@@ -18,14 +18,14 @@ import (
 	fmt "fmt"
 	"strings"
 
-	"github.com/labstack/echo/v4"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/labstack/echo/v4"
 )
 
 type AlertManagerContext struct {
@@ -62,34 +62,41 @@ func CreateAlertReceiver(c echo.Context) error {
 		return fmt.Errorf("User is not specifiable, current logged in user will be used")
 	}
 	in.User = claims.Username
-	if in.Cloudlet.Organization == "" &&
-		in.AppInst.AppKey.Organization == "" &&
-		in.AppInst.ClusterInstKey.Organization == "" &&
+	// at least one key must be specified
+	if in.CloudletKey.Organization == "" &&
+		in.AppInstKey.Organization == "" &&
+		in.ClusterInstKey.ClusterKey.Organization == "" &&
 		!isAdmin(ctx, claims.Username) {
-		return fmt.Errorf("Either cloudlet, cluster or app instance details have to be specified")
+		return fmt.Errorf("Either cloudlet, cluster or app instance details must be specified")
 	}
-	if in.Cloudlet.Organization != "" {
+	// make sure at most one set is specified
+	specified := 0
+	if !in.AppInstKey.Matches(&edgeproto.AppInstKey{}) {
+		specified++
+	}
+	if !in.ClusterInstKey.Matches(&edgeproto.ClusterInstKey{}) {
+		specified++
+	}
+	if !in.CloudletKey.Matches(&edgeproto.CloudletKey{}) {
+		specified++
+	}
+	if specified > 1 {
+		return fmt.Errorf("Only one set of cloudlet, cluster, or appinst details may be specified")
+	}
+	if in.CloudletKey.Organization != "" {
 		// Check that user is allowed to access either of the orgs
-		if err := authorized(ctx, claims.Username, in.Cloudlet.Organization,
+		if err := authorized(ctx, claims.Username, in.CloudletKey.Organization,
 			ResourceAlert, ActionView); err != nil {
 			return err
 		}
-		if !in.AppInst.Matches(&edgeproto.AppInstKey{}) {
-			return fmt.Errorf("AppInst details cannot be specified if this receiver is for cloudlet alerts")
-		}
-	} else {
-		if !in.Cloudlet.Matches(&edgeproto.CloudletKey{}) {
-			return fmt.Errorf("Cloudlet details cannot be specified if this receiver is for appInst or cluster alerts")
-		}
-	}
-	if in.AppInst.AppKey.Organization != "" {
-		if err := authorized(ctx, claims.Username, in.AppInst.AppKey.Organization,
+	} else if in.AppInstKey.Organization != "" {
+		if err := authorized(ctx, claims.Username, in.AppInstKey.Organization,
 			ResourceAlert, ActionView); err != nil {
 			return err
 		}
-	} else if in.AppInst.ClusterInstKey.Organization != "" {
+	} else if in.ClusterInstKey.ClusterKey.Organization != "" {
 		// It could be just a cluster-based alert receiver
-		if err := authorized(ctx, claims.Username, in.AppInst.ClusterInstKey.Organization,
+		if err := authorized(ctx, claims.Username, in.ClusterInstKey.ClusterKey.Organization,
 			ResourceAlert, ActionView); err != nil {
 			return err
 		}
@@ -142,12 +149,12 @@ func getOrgForReceiver(in *ormapi.AlertReceiver) string {
 	}
 	org := ""
 
-	if in.Cloudlet.Organization != "" {
-		org = in.Cloudlet.Organization
-	} else if in.AppInst.AppKey.Organization != "" {
-		org = in.AppInst.AppKey.Organization
-	} else if in.AppInst.ClusterInstKey.Organization != "" {
-		org = in.AppInst.ClusterInstKey.Organization
+	if in.CloudletKey.Organization != "" {
+		org = in.CloudletKey.Organization
+	} else if in.AppInstKey.Organization != "" {
+		org = in.AppInstKey.Organization
+	} else if in.ClusterInstKey.ClusterKey.Organization != "" {
+		org = in.ClusterInstKey.ClusterKey.Organization
 	}
 	return org
 }

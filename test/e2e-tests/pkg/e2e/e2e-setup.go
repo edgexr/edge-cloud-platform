@@ -52,6 +52,7 @@ type OptimizedMetricsCompare struct {
 }
 
 type MetricTargets struct {
+	AppKey                 edgeproto.AppKey
 	AppInstKey             edgeproto.AppInstKey
 	ClusterInstKey         edgeproto.ClusterInstKey
 	CloudletKey            edgeproto.CloudletKey

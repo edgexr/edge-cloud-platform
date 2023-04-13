@@ -17,9 +17,24 @@ package cloudcommon
 const (
 	CRMCompatibilityAutoReservableCluster uint32 = 1
 	CRMCompatibilitySharedRootLBFQDN      uint32 = 2
+	CRMCompatibilityNewAppInstKey         uint32 = 3
 )
 
 // This should always return the highest compatibility version
 func GetCRMCompatibilityVersion() uint32 {
-	return CRMCompatibilitySharedRootLBFQDN
+	return CRMCompatibilityNewAppInstKey
+}
+
+// AppInsts created before certain upgrades have generated names
+// (like namespaces, infra-specific objects etc) that are based on
+// the older version of the AppInst. To maintain backwards
+// compatibility even after upgrading the AppInst object, these
+// dynamically generated names must be generated the same way as before.
+const (
+	AppInstCompatibilityInitial       uint32 = 0
+	AppInstCompatibilityUniqueNameKey uint32 = 1
+)
+
+func GetAppInstCompatibilityVersion() uint32 {
+	return AppInstCompatibilityUniqueNameKey
 }

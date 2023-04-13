@@ -25,7 +25,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type SendClusterRefsHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.ClusterInstKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.ClusterRefs, modRev int64))
 	GetWithRev(key *edgeproto.ClusterInstKey, buf *edgeproto.ClusterRefs, modRev *int64) bool
 }
 
@@ -39,7 +39,7 @@ type RecvClusterRefsHandler interface {
 type ClusterRefsCacheHandler interface {
 	SendClusterRefsHandler
 	RecvClusterRefsHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.ClusterInstKey, old *edgeproto.ClusterRefs, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.ClusterRefs, modRev int64))
 }
 
 type ClusterRefsSend struct {
@@ -94,8 +94,8 @@ func (s *ClusterRefsSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.ClusterInstKey, modRev int64) {
-		s.Keys[*key] = ClusterRefsSendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.ClusterRefs, modRev int64) {
+		s.Keys[*obj.GetKey()] = ClusterRefsSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -103,12 +103,12 @@ func (s *ClusterRefsSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *ClusterRefsSend) Update(ctx context.Context, key *edgeproto.ClusterInstKey, old *edgeproto.ClusterRefs, modRev int64) {
+func (s *ClusterRefsSend) Update(ctx context.Context, obj *edgeproto.ClusterRefs, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *ClusterRefsSend) ForceDelete(ctx context.Context, key *edgeproto.ClusterInstKey, modRev int64) {
@@ -223,11 +223,11 @@ func (s *ClusterRefsSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *ClusterRefsSendMany) Update(ctx context.Context, key *edgeproto.ClusterInstKey, old *edgeproto.ClusterRefs, modRev int64) {
+func (s *ClusterRefsSendMany) Update(ctx context.Context, obj *edgeproto.ClusterRefs, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 
@@ -369,7 +369,7 @@ func (s *Client) RegisterRecvClusterRefsCache(cache ClusterRefsCacheHandler) {
 }
 
 type SendAppInstRefsHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.AppKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.AppInstRefs, modRev int64))
 	GetWithRev(key *edgeproto.AppKey, buf *edgeproto.AppInstRefs, modRev *int64) bool
 }
 
@@ -383,7 +383,7 @@ type RecvAppInstRefsHandler interface {
 type AppInstRefsCacheHandler interface {
 	SendAppInstRefsHandler
 	RecvAppInstRefsHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.AppKey, old *edgeproto.AppInstRefs, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.AppInstRefs, modRev int64))
 }
 
 type AppInstRefsSend struct {
@@ -438,8 +438,8 @@ func (s *AppInstRefsSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.AppKey, modRev int64) {
-		s.Keys[*key] = AppInstRefsSendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.AppInstRefs, modRev int64) {
+		s.Keys[*obj.GetKey()] = AppInstRefsSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -447,12 +447,12 @@ func (s *AppInstRefsSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *AppInstRefsSend) Update(ctx context.Context, key *edgeproto.AppKey, old *edgeproto.AppInstRefs, modRev int64) {
+func (s *AppInstRefsSend) Update(ctx context.Context, obj *edgeproto.AppInstRefs, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *AppInstRefsSend) ForceDelete(ctx context.Context, key *edgeproto.AppKey, modRev int64) {
@@ -567,11 +567,11 @@ func (s *AppInstRefsSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *AppInstRefsSendMany) Update(ctx context.Context, key *edgeproto.AppKey, old *edgeproto.AppInstRefs, modRev int64) {
+func (s *AppInstRefsSendMany) Update(ctx context.Context, obj *edgeproto.AppInstRefs, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 

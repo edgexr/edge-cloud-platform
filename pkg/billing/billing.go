@@ -51,6 +51,8 @@ type UsageRecord struct {
 	NodeCount   int
 	ClusterInst *edgeproto.ClusterInstKey
 	AppInst     *edgeproto.AppInstKey
+	AppKey      *edgeproto.AppKey
+	ClusterKey  *edgeproto.ClusterKey
 	StartTime   time.Time
 	EndTime     time.Time
 	IpAccess    string

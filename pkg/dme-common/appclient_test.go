@@ -51,21 +51,21 @@ func TestAddClients(t *testing.T) {
 
 	UpdateClientsBuffer(ctx, &dmetest.AppInstClientData[0])
 	// check that this client is added correctly
-	list, found := clientsByApp(dmetest.AppInstClientData[0].ClientKey.AppInstKey.AppKey)
+	list, found := clientsByApp(dmetest.AppInstClientData[0].ClientKey.AppKey)
 	require.True(t, found)
 	require.Equal(t, 1, len(list))
 	require.Equal(t, dmetest.AppInstClientData[0], list[0])
 
 	UpdateClientsBuffer(ctx, &dmetest.AppInstClientData[1])
 	// check that this client is added correctly
-	list, found = clientsByApp(dmetest.AppInstClientData[1].ClientKey.AppInstKey.AppKey)
+	list, found = clientsByApp(dmetest.AppInstClientData[1].ClientKey.AppKey)
 	require.True(t, found)
 	require.Equal(t, 1, len(list))
 	require.Equal(t, dmetest.AppInstClientData[1], list[0])
 
 	UpdateClientsBuffer(ctx, &dmetest.AppInstClientData[2])
 	// check that this client is added correctly and replaced the original one that was there
-	list, found = clientsByApp(dmetest.AppInstClientData[0].ClientKey.AppInstKey.AppKey)
+	list, found = clientsByApp(dmetest.AppInstClientData[0].ClientKey.AppKey)
 	require.True(t, found)
 	require.Equal(t, 1, len(list))
 	require.Equal(t, dmetest.AppInstClientData[2], list[0])
@@ -74,7 +74,7 @@ func TestAddClients(t *testing.T) {
 	UpdateClientsBuffer(ctx, &dmetest.AppInstClientData[3])
 	UpdateClientsBuffer(ctx, &dmetest.AppInstClientData[4])
 	// check that this client is added correctly and replaced the original one that was there
-	list, found = clientsByApp(dmetest.AppInstClientData[0].ClientKey.AppInstKey.AppKey)
+	list, found = clientsByApp(dmetest.AppInstClientData[0].ClientKey.AppKey)
 	require.True(t, found)
 	require.Equal(t, 2, len(list))
 	for _, c := range list {
@@ -84,13 +84,15 @@ func TestAddClients(t *testing.T) {
 	require.Equal(t, 2, len(clientsMap.clientsByApp))
 
 	// test deletion of AppInstances
-	PurgeAppInstClients(ctx, &dmetest.AppInstClientData[1].ClientKey.AppInstKey)
-	list, found = clientsByApp(dmetest.AppInstClientData[1].ClientKey.AppInstKey.AppKey)
+	clientKey := &dmetest.AppInstClientData[1].ClientKey
+	PurgeAppInstClients(ctx, &clientKey.AppInstKey, &clientKey.AppKey)
+	list, found = clientsByApp(clientKey.AppKey)
 	require.True(t, found)
 	require.Equal(t, 0, len(list))
 
-	PurgeAppInstClients(ctx, &dmetest.AppInstClientData[0].ClientKey.AppInstKey)
-	list, found = clientsByApp(dmetest.AppInstClientData[0].ClientKey.AppInstKey.AppKey)
+	clientKey = &dmetest.AppInstClientData[0].ClientKey
+	PurgeAppInstClients(ctx, &clientKey.AppInstKey, &clientKey.AppKey)
+	list, found = clientsByApp(clientKey.AppKey)
 	require.True(t, found)
 	require.Equal(t, 0, len(list))
 
@@ -103,7 +105,7 @@ func TestAddClients(t *testing.T) {
 	data = dmetest.AppInstClientData[4]
 	data.Location.Timestamp = &tsFuture
 	UpdateClientsBuffer(ctx, &data)
-	list, found = clientsByApp(dmetest.AppInstClientData[4].ClientKey.AppInstKey.AppKey)
+	list, found = clientsByApp(dmetest.AppInstClientData[4].ClientKey.AppKey)
 	require.True(t, found)
 	require.Equal(t, 2, len(list))
 	// set quick timeout
@@ -112,7 +114,7 @@ func TestAddClients(t *testing.T) {
 	// give the thread a bit of time to run
 	time.Sleep(2 * time.Second)
 	// Check to see that one of them got deleted
-	list, found = clientsByApp(dmetest.AppInstClientData[4].ClientKey.AppInstKey.AppKey)
+	list, found = clientsByApp(dmetest.AppInstClientData[4].ClientKey.AppKey)
 	require.True(t, found)
 	require.Equal(t, 1, len(list))
 	require.Equal(t, data, list[0])

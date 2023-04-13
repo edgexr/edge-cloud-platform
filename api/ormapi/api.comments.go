@@ -308,8 +308,9 @@ var AllDataComments = map[string]string{
 	"alertreceivers:#.slackwebhook":                   `Custom slack webhook`,
 	"alertreceivers:#.pagerdutyintegrationkey":        `PagerDuty integration key`,
 	"alertreceivers:#.pagerdutyapiversion":            `PagerDuty API version`,
-	"alertreceivers:#.cloudlet":                       `Cloudlet spec for alerts`,
-	"alertreceivers:#.appinst":                        `AppInst spec for alerts`,
+	"alertreceivers:#.cloudletkey":                    `Cloudlet spec for alerts`,
+	"alertreceivers:#.appinstkey":                     `AppInst spec for alerts`,
+	"alertreceivers:#.clusterinstkey":                 `ClusterInst spec for alerts`,
 	"orgs:#.name":                                     `Organization name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
 	"orgs:#.type":                                     `Organization type: "developer" or "operator"`,
 	"orgs:#.address":                                  `Organization address`,
@@ -503,8 +504,9 @@ var AlertReceiverComments = map[string]string{
 	"slackwebhook":            `Custom slack webhook`,
 	"pagerdutyintegrationkey": `PagerDuty integration key`,
 	"pagerdutyapiversion":     `PagerDuty API version`,
-	"cloudlet":                `Cloudlet spec for alerts`,
-	"appinst":                 `AppInst spec for alerts`,
+	"cloudletkey":             `Cloudlet spec for alerts`,
+	"appinstkey":              `AppInst spec for alerts`,
+	"clusterinstkey":          `ClusterInst spec for alerts`,
 }
 
 var ReporterComments = map[string]string{
@@ -720,12 +722,11 @@ var ProviderAppComments = map[string]string{
 var ProviderAppInstComments = map[string]string{
 	"federationname":      `Host Federation name`,
 	"appinstid":           `AppInst unique ID`,
+	"appinstorg":          `AppInst organization`,
 	"appid":               `AppID for ProviderApp`,
 	"region":              `Region for AppInst`,
 	"appname":             `App name for AppInstKey`,
 	"appvers":             `App version for AppInstKey`,
-	"cluster":             `Cluster name for AppInstKey`,
-	"clusterorg":          `Cluster org for AppInstKey`,
 	"cloudlet":            `Cloudlet name for AppInstKey`,
 	"cloudletorg":         `Cloudlet org for AppInstKey`,
 	"cloudletfedorg":      `Cloudlet federation org for AppInstKey (this should always be blank)`,

@@ -45,12 +45,12 @@ func ShowAppInstClient(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInstClientKey.GetKey().GetTags())
-	span.SetTag("org", in.AppInstClientKey.AppInstKey.AppKey.Organization)
+	span.SetTag("org", in.AppInstClientKey.AppInstKey.Organization)
 
 	obj := &in.AppInstClientKey
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.SkipAuthz {
-		if err := authorized(ctx, rc.Username, obj.AppInstKey.AppKey.Organization,
+		if err := authorized(ctx, rc.Username, obj.AppInstKey.Organization,
 			ResourceAppAnalytics, ActionView); err != nil {
 			return err
 		}

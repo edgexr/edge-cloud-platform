@@ -20,9 +20,9 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 )
@@ -30,8 +30,8 @@ import (
 // MinMaxChecker maintains the minimum and maximum number of
 // AppInsts if specified in the policy.
 type MinMaxChecker struct {
-	caches           *CacheData
-	needsCheck       map[edgeproto.AppKey]struct{}
+	caches *CacheData
+	//needsCheck       map[edgeproto.AppKey]struct{}
 	failoverRequests map[edgeproto.CloudletKey]*failoverReq
 	mux              sync.Mutex
 	// maintain reverse relationships to be able to look up
@@ -150,7 +150,11 @@ func (s *MinMaxChecker) cloudletNeedsCheck(key edgeproto.CloudletKey) map[edgepr
 	// them via the policies. So they are tracked in here so they can
 	// be cleaned up later when the Cloudlet comes back online.
 	for _, appInstKey := range s.autoprovInstsByCloudlet.Find(key) {
-		appsToCheck[appInstKey.AppKey] = struct{}{}
+		appInst := edgeproto.AppInst{}
+		if !s.caches.appInstCache.Get(&appInstKey, &appInst) {
+			continue
+		}
+		appsToCheck[appInst.AppKey] = struct{}{}
 	}
 
 	return appsToCheck
@@ -212,26 +216,26 @@ func (s *MinMaxChecker) UpdatedAppInst(ctx context.Context, old *edgeproto.AppIn
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	if !s.isAutoProvApp(&new.Key.AppKey) {
+	if !s.isAutoProvApp(&new.AppKey) {
 		return
 	}
 
 	lookup := edgeproto.AppInstLookup2{
 		Key:         new.Key,
-		CloudletKey: new.Key.ClusterInstKey.CloudletKey,
+		CloudletKey: new.Key.CloudletKey,
 	}
 	s.autoprovInstsByCloudlet.Updated(&lookup)
 
 	// recheck if online state changed
 	if old != nil {
 		cloudletInfo := edgeproto.CloudletInfo{}
-		if !s.caches.cloudletInfoCache.Get(&new.Key.ClusterInstKey.CloudletKey, &cloudletInfo) {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "UpdatedAppInst cloudletInfo not found", "app", new.Key, "cloudlet", new.Key.ClusterInstKey.CloudletKey)
+		if !s.caches.cloudletInfoCache.Get(&new.Key.CloudletKey, &cloudletInfo) {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "UpdatedAppInst cloudletInfo not found", "app", new.Key, "cloudlet", new.Key.CloudletKey)
 			return
 		}
 		cloudlet := edgeproto.Cloudlet{}
-		if !s.caches.cloudletCache.Get(&new.Key.ClusterInstKey.CloudletKey, &cloudlet) {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "UpdatedAppInst cloudlet not found", "app", new.Key, "cloudlet", new.Key.ClusterInstKey.CloudletKey)
+		if !s.caches.cloudletCache.Get(&new.Key.CloudletKey, &cloudlet) {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "UpdatedAppInst cloudlet not found", "app", new.Key, "cloudlet", new.Key.CloudletKey)
 			return
 		}
 		if cloudcommon.AutoProvAppInstOnline(old, &cloudletInfo, &cloudlet) ==
@@ -240,23 +244,27 @@ func (s *MinMaxChecker) UpdatedAppInst(ctx context.Context, old *edgeproto.AppIn
 			return
 		}
 	}
-	s.workers.NeedsWork(ctx, new.Key.AppKey)
+	s.workers.NeedsWork(ctx, new.AppKey)
 }
 
 func (s *MinMaxChecker) DeletedAppInst(ctx context.Context, key *edgeproto.AppInstKey) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	if !s.isAutoProvApp(&key.AppKey) {
+	inst := edgeproto.AppInst{}
+	if !s.caches.appInstCache.Get(key, &inst) {
+		return
+	}
+	if !s.isAutoProvApp(&inst.AppKey) {
 		return
 	}
 	lookup := edgeproto.AppInstLookup2{
 		Key:         *key,
-		CloudletKey: key.ClusterInstKey.CloudletKey,
+		CloudletKey: inst.Key.CloudletKey,
 	}
 	s.autoprovInstsByCloudlet.Deleted(&lookup)
 
-	s.workers.NeedsWork(ctx, key.AppKey)
+	s.workers.NeedsWork(ctx, inst.AppKey)
 }
 
 func (s *MinMaxChecker) UpdatedAppInstRefs(ctx context.Context, old *edgeproto.AppInstRefs, new *edgeproto.AppInstRefs) {
@@ -378,12 +386,14 @@ func (s *AppChecker) Check(ctx context.Context) {
 	for keyStr, _ := range refs.Insts {
 		key := edgeproto.AppInstKey{}
 		edgeproto.AppInstKeyStringParse(keyStr, &key)
-
-		cloudletKey := &key.ClusterInstKey.CloudletKey
-		insts, found := s.cloudletInsts[*cloudletKey]
+		cloudletKey, found := s.appInstCloudletKey(&key)
+		if !found {
+			continue
+		}
+		insts, found := s.cloudletInsts[cloudletKey]
 		if !found {
 			insts = make(map[edgeproto.AppInstKey]struct{})
-			s.cloudletInsts[*cloudletKey] = insts
+			s.cloudletInsts[cloudletKey] = insts
 		}
 		insts[key] = struct{}{}
 	}
@@ -405,7 +415,8 @@ func (s *AppChecker) Check(ctx context.Context) {
 				continue
 			}
 			inst := edgeproto.AppInst{
-				Key: appInstKey,
+				Key:    appInstKey,
+				AppKey: app.Key,
 			}
 			go goAppInstApi(ctx, &inst, cloudcommon.Delete, cloudcommon.AutoProvReasonOrphaned, "")
 		}
@@ -504,7 +515,8 @@ func (s *AppChecker) checkPolicy(ctx context.Context, app *edgeproto.App, pname 
 		deleteKeys := s.chooseDelete(ctx, potentialDelete, totalCount-int(policy.MaxInstances))
 		for _, key := range deleteKeys {
 			inst := edgeproto.AppInst{
-				Key: key,
+				Key:    key,
+				AppKey: app.Key,
 			}
 			go goAppInstApi(ctx, &inst, cloudcommon.Delete, cloudcommon.AutoProvReasonMinMax, pname)
 		}
@@ -551,17 +563,17 @@ func (s *AppChecker) checkPolicy(ctx context.Context, app *edgeproto.App, pname 
 				}
 				log.SpanLog(ctx, log.DebugLevelMetrics, "auto-prov create min worker", "workerNum", workerNum, "attempt", attempt)
 				inst := edgeproto.AppInst{}
-				inst.Key.AppKey = app.Key
-				inst.Key.ClusterInstKey.CloudletKey = site.cloudletKey
-				inst.Key.ClusterInstKey.ClusterKey.Name = cloudcommon.AutoProvClusterName
-				inst.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
+				inst.Key = cloudcommon.GetAutoProvAppInstKey(&app.Key, &site.cloudletKey)
+				inst.AppKey = app.Key
+				inst.Key.CloudletKey = site.cloudletKey
+
 				err := goAppInstApi(ctx, &inst, cloudcommon.Create, cloudcommon.AutoProvReasonMinMax, pname)
 				if err == nil {
 					str := fmt.Sprintf("Created AppInst %s to meet policy %s min constraint %d", inst.Key.GetKeyString(), pname, policy.MinActiveInstances)
 					for _, req := range s.failoverReqs {
 						req.addCompleted(str)
 					}
-				} else if ignoreDeployError(inst.Key, err) {
+				} else if ignoreDeployError(&inst, err) {
 					log.SpanLog(ctx, log.DebugLevelMetrics, "auto-prov ignore deploy error", "workerNum", workerNum, "attempt", attempt, "err", err)
 					err = nil
 				} else {
@@ -642,22 +654,26 @@ func (s *AppChecker) appInstOnlineOrGoingOnline(ctx context.Context, key *edgepr
 	cloudletInfo := edgeproto.CloudletInfo{}
 	cloudlet := edgeproto.Cloudlet{}
 	appInst := edgeproto.AppInst{}
+	online := false
+	goingOnline := false
 	defer func() {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline", "cloudletInfo.State", cloudletInfo.State, "cloudlet.State", cloudlet.State, "appInst.State", appInst.State, "retval", retval)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline", "cloudletInfo.State", cloudletInfo.State, "cloudlet.State", cloudlet.State, "cloudlet.MaintenanceState", cloudlet.MaintenanceState, "appInst.State", appInst.State, "appInst.HealthCheck", appInst.HealthCheck, "online", online, "goingOnline", goingOnline, "retval", retval)
 	}()
-	if !s.caches.cloudletInfoCache.Get(&key.ClusterInstKey.CloudletKey, &cloudletInfo) {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline CloudletInfo not found", "key", key.ClusterInstKey.CloudletKey)
-		return false
-	}
-	if !s.caches.cloudletCache.Get(&key.ClusterInstKey.CloudletKey, &cloudlet) {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline Cloudlet not found", "key", key.ClusterInstKey.CloudletKey)
-		return false
-	}
 	if !s.caches.appInstCache.Get(key, &appInst) {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline AppInst not found", "key", key)
 		return false
 	}
-	return cloudcommon.AutoProvAppInstOnline(&appInst, &cloudletInfo, &cloudlet) || cloudcommon.AutoProvAppInstGoingOnline(&appInst, &cloudletInfo, &cloudlet)
+	if !s.caches.cloudletInfoCache.Get(&appInst.Key.CloudletKey, &cloudletInfo) {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline CloudletInfo not found", "key", appInst.Key.CloudletKey)
+		return false
+	}
+	if !s.caches.cloudletCache.Get(&appInst.Key.CloudletKey, &cloudlet) {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline Cloudlet not found", "key", appInst.Key.CloudletKey)
+		return false
+	}
+	online = cloudcommon.AutoProvAppInstOnline(&appInst, &cloudletInfo, &cloudlet)
+	goingOnline = cloudcommon.AutoProvAppInstGoingOnline(&appInst, &cloudletInfo, &cloudlet)
+	return online || goingOnline
 }
 
 func (s *AppChecker) cloudletOnline(key *edgeproto.CloudletKey) bool {
@@ -682,4 +698,16 @@ func (s *AppChecker) isAutoProvInst(key *edgeproto.AppInstKey) bool {
 		return true
 	}
 	return false
+}
+
+func (s *AppChecker) appInstCloudletKey(key *edgeproto.AppInstKey) (edgeproto.CloudletKey, bool) {
+	// direct lookup to avoid copy
+	s.caches.appInstCache.Mux.Lock()
+	defer s.caches.appInstCache.Mux.Unlock()
+
+	data, found := s.caches.appInstCache.Objs[*key]
+	if !found {
+		return edgeproto.CloudletKey{}, false
+	}
+	return data.Obj.Key.CloudletKey, true
 }

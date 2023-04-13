@@ -57,8 +57,12 @@ func WithForceImagePull(force bool) DockerReqOp {
 var EnvoyProxy = "envoy"
 var NginxProxy = "nginx"
 
-func GetContainerName(appKey *edgeproto.AppKey) string {
-	return util.DNSSanitize(appKey.Name + appKey.Version)
+func GetContainerName(appInst *edgeproto.AppInst) string {
+	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityUniqueNameKey {
+		return util.DNSSanitize(appInst.Key.Name + appInst.Key.Organization)
+	} else {
+		return util.DNSSanitize(appInst.AppKey.Name + appInst.AppKey.Version)
+	}
 }
 
 // Helper function that generates the ports string for docker command
@@ -260,9 +264,9 @@ func CreateAppInstLocal(client ssh.Client, app *edgeproto.App, appInst *edgeprot
 	image := app.ImagePath
 	nameLabelVal := util.DNSSanitize(app.Key.Name)
 	versionLabelVal := util.DNSSanitize(app.Key.Version)
-	name := GetContainerName(&app.Key)
-	cloudlet := util.DockerSanitize(appInst.ClusterInstKey().CloudletKey.Name)
-	cluster := util.DockerSanitize(appInst.ClusterInstKey().Organization + "-" + appInst.ClusterInstKey().ClusterKey.Name)
+	name := GetContainerName(appInst)
+	cloudlet := util.DockerSanitize(appInst.Key.CloudletKey.Name)
+	cluster := util.DockerSanitize(appInst.ClusterKey.Organization + "-" + appInst.ClusterKey.Name)
 	base_cmd := "docker run "
 	if appInst.OptRes == "gpu" {
 		base_cmd += "--gpus all"
@@ -343,7 +347,7 @@ func CreateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 		}
 		cmd := fmt.Sprintf("%s -d -l %s=%s -l %s=%s --restart=unless-stopped --network=host --name=%s %s %s", base_cmd,
 			cloudcommon.MexAppNameLabel, nameLabelVal, cloudcommon.MexAppVersionLabel,
-			versionLabelVal, GetContainerName(&app.Key), image, getCommandString(app))
+			versionLabelVal, GetContainerName(appInst), image, getCommandString(app))
 		log.SpanLog(ctx, log.DebugLevelInfra, "running docker run ", "cmd", cmd)
 		out, err := client.Output(cmd)
 		if err != nil {
@@ -383,7 +387,7 @@ func CreateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 func DeleteAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 
 	if app.DeploymentManifest == "" {
-		name := GetContainerName(&app.Key)
+		name := GetContainerName(appInst)
 		cmd := fmt.Sprintf("docker stop %s", name)
 
 		log.SpanLog(ctx, log.DebugLevelInfra, "running docker stop ", "cmd", cmd)
@@ -478,7 +482,7 @@ func GetAppInstRuntime(ctx context.Context, client ssh.Client, app *edgeproto.Ap
 	// get the expected names if couldn't get it from the runtime
 	if app.DeploymentManifest == "" {
 		//  just one container identified by the appinst uri
-		name := GetContainerName(&app.Key)
+		name := GetContainerName(appInst)
 		rt.ContainerIds = append(rt.ContainerIds, name)
 	} else {
 		if strings.HasSuffix(app.DeploymentManifest, ".zip") {

@@ -178,7 +178,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 		return fmt.Errorf("Error, AppInst already has a federation AppInstId set")
 	}
 
-	cloudletKey := &appInst.Key.ClusterInstKey.CloudletKey
+	cloudletKey := &appInst.Key.CloudletKey
 	fedConfig, err := f.GetFederationConfig(ctx, cloudletKey)
 	if err != nil {
 		return err
@@ -302,7 +302,7 @@ func createAppInstPoller(ctx context.Context, fedClient *federationmgmt.Client, 
 
 // Delete an AppInst on a Cluster
 func (f *FederationPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	cloudletKey := &appInst.Key.ClusterInstKey.CloudletKey
+	cloudletKey := &appInst.Key.CloudletKey
 	fedConfig, err := f.GetFederationConfig(ctx, cloudletKey)
 	if err != nil {
 		return err

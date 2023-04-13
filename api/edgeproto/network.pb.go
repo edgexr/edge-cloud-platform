@@ -859,11 +859,23 @@ var NetworkKeyTagName = "network"
 
 func (m *NetworkKey) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["cloudletorg"] = m.CloudletKey.Organization
-	tags["cloudlet"] = m.CloudletKey.Name
-	tags["federatedorg"] = m.CloudletKey.FederatedOrganization
-	tags["network"] = m.Name
+	m.AddTags(tags)
 	return tags
+}
+
+func (m *NetworkKey) AddTags(tags map[string]string) {
+	if m.CloudletKey.Organization != "" {
+		tags["cloudletorg"] = m.CloudletKey.Organization
+	}
+	if m.CloudletKey.Name != "" {
+		tags["cloudlet"] = m.CloudletKey.Name
+	}
+	if m.CloudletKey.FederatedOrganization != "" {
+		tags["cloudletfedorg"] = m.CloudletKey.FederatedOrganization
+	}
+	if m.Name != "" {
+		tags["network"] = m.Name
+	}
 }
 
 // Helper method to check that enums have valid values
@@ -1118,6 +1130,7 @@ type NetworkStore interface {
 	STMGet(stm concurrency.STM, key *NetworkKey, buf *Network) bool
 	STMPut(stm concurrency.STM, obj *Network, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *NetworkKey)
+	STMHas(stm concurrency.STM, key *NetworkKey) bool
 }
 
 type NetworkStoreImpl struct {
@@ -1249,6 +1262,11 @@ func (s *NetworkStoreImpl) STMGet(stm concurrency.STM, key *NetworkKey, buf *Net
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *NetworkStoreImpl) STMHas(stm concurrency.STM, key *NetworkKey) bool {
+	keystr := objstore.DbKeyString("Network", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *NetworkStoreImpl) parseGetData(val []byte, buf *Network) bool {
 	if len(val) == 0 {
 		return false
@@ -1290,6 +1308,16 @@ type NetworkCacheData struct {
 	ModRev int64
 }
 
+func (s *NetworkCacheData) Clone() *NetworkCacheData {
+	cp := NetworkCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &Network{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // NetworkCache caches Network objects in memory in a hash table
 // and keeps them in sync with the database.
 type NetworkCache struct {
@@ -1297,7 +1325,7 @@ type NetworkCache struct {
 	Mux           util.Mutex
 	List          map[NetworkKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *NetworkKey, old *Network, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *Network, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *Network, new *Network)
 	DeletedCbs    []func(ctx context.Context, old *Network)
 	KeyWatchers   map[NetworkKey][]*NetworkKeyWatcher
@@ -1356,6 +1384,14 @@ func (c *NetworkCache) GetAllKeys(ctx context.Context, cb func(key *NetworkKey, 
 	}
 }
 
+func (c *NetworkCache) GetAllLocked(ctx context.Context, cb func(obj *Network, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *NetworkCache) Update(ctx context.Context, in *Network, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *Network) (*Network, bool) {
 		return in, true
@@ -1373,14 +1409,16 @@ func (c *NetworkCache) UpdateModFunc(ctx context.Context, key *NetworkKey, modRe
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &Network{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -1417,9 +1455,13 @@ func (c *NetworkCache) DeleteCondFunc(ctx context.Context, in *Network, modRev i
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -1447,9 +1489,14 @@ func (c *NetworkCache) Prune(ctx context.Context, validKeys map[NetworkKey]struc
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &Network{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -1494,8 +1541,8 @@ func NetworkGenericNotifyCb(fn func(key *NetworkKey, old *Network)) func(objstor
 	}
 }
 
-func (c *NetworkCache) SetNotifyCb(fn func(ctx context.Context, obj *NetworkKey, old *Network, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *NetworkKey, old *Network, modRev int64){fn}
+func (c *NetworkCache) SetNotifyCb(fn func(ctx context.Context, obj *Network, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *Network, modRev int64){fn}
 }
 
 func (c *NetworkCache) SetUpdatedCb(fn func(ctx context.Context, old *Network, new *Network)) {
@@ -1522,7 +1569,7 @@ func (c *NetworkCache) AddDeletedCb(fn func(ctx context.Context, old *Network)) 
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *NetworkCache) AddNotifyCb(fn func(ctx context.Context, obj *NetworkKey, old *Network, modRev int64)) {
+func (c *NetworkCache) AddNotifyCb(fn func(ctx context.Context, obj *Network, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -1627,9 +1674,14 @@ func (c *NetworkCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &Network{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {

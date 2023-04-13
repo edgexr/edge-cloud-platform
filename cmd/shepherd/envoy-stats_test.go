@@ -22,9 +22,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_unittest"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_unittest"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,9 +73,13 @@ func startServer() *httptest.Server {
 func TestEnvoyStats(t *testing.T) {
 
 	testScrapePoint := ProxyScrapePoint{
-		App:            "UnitTestApp",
-		Cluster:        "UnitTestCluster",
-		ClusterOrg:     "UnitTestDev",
+		App: "UnitTestApp",
+		ClusterInstKey: edgeproto.ClusterInstKey{
+			ClusterKey: edgeproto.ClusterKey{
+				Name:         "UnitTestCluster",
+				Organization: "UnitTestDev",
+			},
+		},
 		TcpPorts:       []int32{1234, 4321},
 		UdpPorts:       []int32{5678, 8765},
 		Client:         &shepherd_unittest.UTClient{},

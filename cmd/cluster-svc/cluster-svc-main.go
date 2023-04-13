@@ -212,7 +212,7 @@ func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgepro
 	// Need to create a connection to server, as passed to us by commands
 	if new.State == edgeproto.TrackedState_READY {
 		// Create Prometheus on the cluster after creation
-		if err = createMEXPromInst(ctx, dialOpts, new, nil); err != nil {
+		if err = createMEXPromInst(ctx, dialOpts, new, nil, nil); err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "Prometheus-operator inst create failed", "cluster",
 				new.Key.ClusterKey.Name, "error", err.Error())
 			if strings.Contains(err.Error(), isUpgradingErrorString) {
@@ -263,14 +263,14 @@ func autoScalePolicyCb(ctx context.Context, old *edgeproto.AutoScalePolicy, new 
 	insts := []edgeproto.ClusterInst{}
 	ClusterInstCache.Mux.Lock()
 	for k, v := range ClusterInstCache.Objs {
-		if new.Key.Organization == k.Organization && new.Key.Name == v.Obj.AutoScalePolicy {
+		if new.Key.Organization == k.ClusterKey.Organization && new.Key.Name == v.Obj.AutoScalePolicy {
 			insts = append(insts, *v.Obj)
 		}
 	}
 	ClusterInstCache.Mux.Unlock()
 
 	for _, inst := range insts {
-		err := createMEXPromInst(ctx, dialOpts, &inst, nil)
+		err := createMEXPromInst(ctx, dialOpts, &inst, nil, nil)
 		log.SpanLog(ctx, log.DebugLevelApi, "Updated policy for Prometheus", "ClusterInst", inst.Key, "AutoScalePolicy", new.Key.Name, "err", err)
 	}
 }
@@ -285,9 +285,9 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 	if new.State == edgeproto.TrackedState_READY {
 		log.SpanLog(ctx, log.DebugLevelNotify, "appinst update", "new", new, "old", old)
 		app := edgeproto.App{}
-		found := AppCache.Get(&new.Key.AppKey, &app)
+		found := AppCache.Get(&new.AppKey, &app)
 		if !found {
-			log.SpanLog(ctx, log.DebugLevelNotify, "Unable to find app", "app", new.Key.AppKey.Name)
+			log.SpanLog(ctx, log.DebugLevelNotify, "Unable to find app", "app", new.AppKey.Name)
 			return
 		}
 		if app.Deployment != cloudcommon.DeploymentTypeKubernetes {
@@ -303,7 +303,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		cluster := edgeproto.ClusterInst{}
 		found = ClusterInstCache.Get(new.ClusterInstKey(), &cluster)
 		if !found {
-			log.SpanLog(ctx, log.DebugLevelNotify, "Unable to find cluster", "app", new.Key.AppKey.Name,
+			log.SpanLog(ctx, log.DebugLevelNotify, "Unable to find cluster", "app", new.AppKey.Name,
 				"cluster", new.ClusterInstKey())
 			return
 		}
@@ -311,7 +311,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 			log.SpanLog(ctx, log.DebugLevelNotify, "Alert Policies on multi-tenant clusters are not yet supported")
 			return
 		}
-		if err := createMEXPromInst(ctx, dialOpts, &cluster, &app); err != nil {
+		if err := createMEXPromInst(ctx, dialOpts, &cluster, &app, new); err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "Prometheus-operator inst create failed", "cluster",
 				cluster, "error", err.Error())
 		}
@@ -322,8 +322,8 @@ func updateAllPromInstsForApp(ctx context.Context, app *edgeproto.App) {
 	// walk appInst cache and update those cluster insts
 	insts := []edgeproto.ClusterInst{}
 	AppInstCache.Mux.Lock()
-	for k, v := range AppInstCache.Objs {
-		if k.AppKey == app.Key {
+	for _, v := range AppInstCache.Objs {
+		if v.Obj.AppKey == app.Key {
 			cluster := edgeproto.ClusterInst{}
 			found := ClusterInstCache.Get(v.Obj.ClusterInstKey(), &cluster)
 			if !found {
@@ -338,7 +338,7 @@ func updateAllPromInstsForApp(ctx context.Context, app *edgeproto.App) {
 
 	// Now walk all the clusterInstances and update Prometheus instance
 	for ii := range insts {
-		err := createMEXPromInst(ctx, dialOpts, &insts[ii], app)
+		err := createMEXPromInst(ctx, dialOpts, &insts[ii], nil, nil)
 		log.SpanLog(ctx, log.DebugLevelApi, "Updated user alerts for Prometheus", "ClusterInst", insts[ii].Key,
 			"app", app.Key, "err", err)
 	}
@@ -504,8 +504,17 @@ func isClusterPrometheusAlert(alert *edgeproto.AlertPolicy) bool {
 	return true
 }
 
+// Get a unique AppInstKey for the sidecar app
+func getSidecarAppInstKey(platformApp *edgeproto.App, cikey *edgeproto.ClusterInstKey) edgeproto.AppInstKey {
+	return edgeproto.AppInstKey{
+		Name:         platformApp.Key.Name + "-" + cikey.ClusterKey.Name + "-" + cikey.ClusterKey.Organization,
+		Organization: platformApp.Key.Organization,
+		CloudletKey:  cikey.CloudletKey,
+	}
+}
+
 // create an appInst as a cluster-svc
-func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, platformApp *edgeproto.App) error {
+func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterInst *edgeproto.ClusterInst, userApp *edgeproto.App, userAppInst *edgeproto.AppInst, platformApp *edgeproto.App) error {
 	//update flavor
 	platformApp.DefaultFlavor = edgeproto.FlavorKey{Name: clusterInst.Flavor.Name}
 	conn, err := grpc.Dial(*ctrlAddr, dialOpts, grpc.WithBlock(), grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc), grpc.WithStreamInterceptor(log.StreamClientTraceGrpc), grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})))
@@ -516,11 +525,10 @@ func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterI
 	apiClient := edgeproto.NewAppInstApiClient(conn)
 
 	platformAppInst := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			AppKey:         platformApp.Key,
-			ClusterInstKey: *clusterInst.Key.Virtual(""),
-		},
-		Flavor: clusterInst.Flavor,
+		Key:        getSidecarAppInstKey(platformApp, &clusterInst.Key),
+		AppKey:     platformApp.Key,
+		ClusterKey: clusterInst.Key.ClusterKey,
+		Flavor:     clusterInst.Flavor,
 	}
 	if clusterSvcPlugin != nil {
 		var policy *edgeproto.AutoScalePolicy
@@ -529,26 +537,20 @@ func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterI
 		if clusterInst.AutoScalePolicy != "" {
 			policy = &edgeproto.AutoScalePolicy{}
 			policyKey := edgeproto.PolicyKey{}
-			policyKey.Organization = clusterInst.Key.Organization
+			policyKey.Organization = clusterInst.Key.ClusterKey.Organization
 			policyKey.Name = clusterInst.AutoScalePolicy
 			if !AutoScalePolicyCache.Get(&policyKey, policy) {
 				return fmt.Errorf("Auto scale policy %s not found for ClusterInst %s", clusterInst.AutoScalePolicy, clusterInst.Key.GetKeyString())
 			}
 		}
 		// Check if we need to collect alerts
-		if app != nil && len(app.AlertPolicies) > 0 {
+		if userApp != nil && userAppInst != nil && len(userApp.AlertPolicies) > 0 {
 			userAlerts = []edgeproto.AlertPolicy{}
-			userAppInst = &edgeproto.AppInst{
-				Key: edgeproto.AppInstKey{
-					AppKey:         app.Key,
-					ClusterInstKey: *clusterInst.Key.Virtual(""),
-				},
-			}
-			for _, alertName := range app.AlertPolicies {
+			for _, alertName := range userApp.AlertPolicies {
 				userAlert := edgeproto.AlertPolicy{
 					Key: edgeproto.AlertPolicyKey{
 						Name:         alertName,
-						Organization: app.Key.Organization,
+						Organization: userAppInst.Key.Organization,
 					},
 				}
 				found := AlertPolicyCache.Get(&userAlert.Key, &userAlert)
@@ -573,13 +575,13 @@ func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterI
 	if err != nil {
 		// Handle non-fatal errors
 		if strings.Contains(err.Error(), platformAppInst.Key.ExistsError().Error()) {
-			log.SpanLog(ctx, log.DebugLevelApi, "appinst already exists", "platformApp", platformApp.String(), "app", app, "cluster", clusterInst.Key.String())
+			log.SpanLog(ctx, log.DebugLevelApi, "appinst already exists", "platformApp", platformApp.String(), "userApp", userApp, "cluster", clusterInst.Key.String())
 			updateExistingAppInst(ctx, apiClient, &platformAppInst)
 			err = nil
 		} else if cloudcommon.IsAppInstBeingCreatedError(err) {
 			// If multiple cluster-svcs' are running in HA cluster, then creation might
 			// have already been started by another instance and hence ignore such appinst errors
-			log.SpanLog(ctx, log.DebugLevelApi, "an action is already in progress for appinst", "platformApp", platformApp.String(), "app", app, "cluster", clusterInst.Key.String())
+			log.SpanLog(ctx, log.DebugLevelApi, "an action is already in progress for appinst", "platformApp", platformApp.String(), "userApp", userApp, "cluster", clusterInst.Key.String())
 			err = nil
 		} else if strings.Contains(err.Error(), "not found") {
 			log.SpanLog(ctx, log.DebugLevelApi, "app doesn't exist, create it first", "app", platformApp.String())
@@ -594,7 +596,7 @@ func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterI
 					// One of them will succeed and create prometheus appInstance.
 					// Suppress the AlertClusterSvcAppInstFailure alert for the other cluster-svc instance in such a case by setting err to nil.
 
-					log.SpanLog(ctx, log.DebugLevelApi, "appinst now exists", "platformApp", platformApp.String(), "app", app, "cluster", clusterInst.Key.String(), "err", err)
+					log.SpanLog(ctx, log.DebugLevelApi, "appinst now exists", "platformApp", platformApp.String(), "userApp", userApp, "cluster", clusterInst.Key.String(), "err", err)
 					err = nil
 				}
 			}
@@ -619,8 +621,8 @@ func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterI
 
 }
 
-func createMEXPromInst(ctx context.Context, dialOpts grpc.DialOption, inst *edgeproto.ClusterInst, app *edgeproto.App) error {
-	return createAppInstCommon(ctx, dialOpts, inst, app, &MEXPrometheusApp)
+func createMEXPromInst(ctx context.Context, dialOpts grpc.DialOption, inst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+	return createAppInstCommon(ctx, dialOpts, inst, app, appInst, &MEXPrometheusApp)
 }
 
 func createAlertAppInst(ctx context.Context, in *edgeproto.AppInst, errStr string) {
@@ -659,7 +661,7 @@ func appInstToAlertLabels(appInst *edgeproto.AppInst) map[string]string {
 
 func createNFSAutoProvAppInstIfRequired(ctx context.Context, dialOpts grpc.DialOption, inst *edgeproto.ClusterInst) error {
 	if inst.SharedVolumeSize != 0 {
-		return createAppInstCommon(ctx, dialOpts, inst, nil, &NFSAutoProvisionApp)
+		return createAppInstCommon(ctx, dialOpts, inst, nil, nil, &NFSAutoProvisionApp)
 	}
 	return nil
 }
@@ -807,8 +809,9 @@ func updateAppInsts(ctx context.Context, appkey *edgeproto.AppKey) {
 		apiClient := edgeproto.NewAppInstApiClient(conn)
 		appInst := edgeproto.AppInst{
 			Key: edgeproto.AppInstKey{
-				AppKey: *appkey,
+				Organization: edgeproto.OrganizationEdgeCloud,
 			},
+			AppKey:         *appkey,
 			UpdateMultiple: true,
 		}
 		eventStart := time.Now()
@@ -935,7 +938,7 @@ func retryCreateClusterServices(ctx context.Context, createTypeStr string, cloud
 		var err error
 		err = nil
 		if createTypeStr == retryCreateMexPromStr {
-			err = createMEXPromInst(ctx, dialOpts, &cluster, nil)
+			err = createMEXPromInst(ctx, dialOpts, &cluster, nil, nil)
 		} else if createTypeStr == retryCreateNFSAutoProvAppInstStr {
 			err = createNFSAutoProvAppInstIfRequired(ctx, dialOpts, &cluster)
 		}

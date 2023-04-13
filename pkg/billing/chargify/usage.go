@@ -21,10 +21,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 var dedicatedLB = "dedicatedLB"
@@ -44,7 +44,7 @@ func (bs *BillingService) RecordUsage(ctx context.Context, region string, accoun
 			clusterStr := replacer.Replace(record.ClusterInst.String())
 			memo = fmt.Sprintf("{%s}, Flavor: %s, NumNodes %d, start: %s, end %s", clusterStr, record.FlavorName, record.NodeCount, record.StartTime.UTC().Format(time.RFC3339), record.EndTime.UTC().Format(time.RFC3339))
 		} else { //record.ClusterInst == nil
-			cloudlet = &record.AppInst.ClusterInstKey.CloudletKey
+			cloudlet = &record.AppInst.CloudletKey
 			appStr := replacer.Replace(record.AppInst.String())
 			memo = fmt.Sprintf("{%s}, Flavor: %s, start: %s, end %s", appStr, record.FlavorName, record.StartTime.UTC().Format(time.RFC3339), record.EndTime.UTC().Format(time.RFC3339))
 		}

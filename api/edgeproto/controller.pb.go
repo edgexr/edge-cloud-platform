@@ -465,8 +465,14 @@ var ControllerKeyTagAddr = "controlleraddr"
 
 func (m *ControllerKey) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["controlleraddr"] = m.Addr
+	m.AddTags(tags)
 	return tags
+}
+
+func (m *ControllerKey) AddTags(tags map[string]string) {
+	if m.Addr != "" {
+		tags["controlleraddr"] = m.Addr
+	}
 }
 
 // Helper method to check that enums have valid values
@@ -634,6 +640,7 @@ type ControllerStore interface {
 	STMGet(stm concurrency.STM, key *ControllerKey, buf *Controller) bool
 	STMPut(stm concurrency.STM, obj *Controller, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *ControllerKey)
+	STMHas(stm concurrency.STM, key *ControllerKey) bool
 }
 
 type ControllerStoreImpl struct {
@@ -765,6 +772,11 @@ func (s *ControllerStoreImpl) STMGet(stm concurrency.STM, key *ControllerKey, bu
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *ControllerStoreImpl) STMHas(stm concurrency.STM, key *ControllerKey) bool {
+	keystr := objstore.DbKeyString("Controller", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *ControllerStoreImpl) parseGetData(val []byte, buf *Controller) bool {
 	if len(val) == 0 {
 		return false
@@ -806,6 +818,16 @@ type ControllerCacheData struct {
 	ModRev int64
 }
 
+func (s *ControllerCacheData) Clone() *ControllerCacheData {
+	cp := ControllerCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &Controller{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // ControllerCache caches Controller objects in memory in a hash table
 // and keeps them in sync with the database.
 type ControllerCache struct {
@@ -813,7 +835,7 @@ type ControllerCache struct {
 	Mux           util.Mutex
 	List          map[ControllerKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *ControllerKey, old *Controller, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *Controller, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *Controller, new *Controller)
 	DeletedCbs    []func(ctx context.Context, old *Controller)
 	KeyWatchers   map[ControllerKey][]*ControllerKeyWatcher
@@ -872,6 +894,14 @@ func (c *ControllerCache) GetAllKeys(ctx context.Context, cb func(key *Controlle
 	}
 }
 
+func (c *ControllerCache) GetAllLocked(ctx context.Context, cb func(obj *Controller, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *ControllerCache) Update(ctx context.Context, in *Controller, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *Controller) (*Controller, bool) {
 		return in, true
@@ -889,14 +919,16 @@ func (c *ControllerCache) UpdateModFunc(ctx context.Context, key *ControllerKey,
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &Controller{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -933,9 +965,13 @@ func (c *ControllerCache) DeleteCondFunc(ctx context.Context, in *Controller, mo
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -963,9 +999,14 @@ func (c *ControllerCache) Prune(ctx context.Context, validKeys map[ControllerKey
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &Controller{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -1010,8 +1051,8 @@ func ControllerGenericNotifyCb(fn func(key *ControllerKey, old *Controller)) fun
 	}
 }
 
-func (c *ControllerCache) SetNotifyCb(fn func(ctx context.Context, obj *ControllerKey, old *Controller, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *ControllerKey, old *Controller, modRev int64){fn}
+func (c *ControllerCache) SetNotifyCb(fn func(ctx context.Context, obj *Controller, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *Controller, modRev int64){fn}
 }
 
 func (c *ControllerCache) SetUpdatedCb(fn func(ctx context.Context, old *Controller, new *Controller)) {
@@ -1038,7 +1079,7 @@ func (c *ControllerCache) AddDeletedCb(fn func(ctx context.Context, old *Control
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *ControllerCache) AddNotifyCb(fn func(ctx context.Context, obj *ControllerKey, old *Controller, modRev int64)) {
+func (c *ControllerCache) AddNotifyCb(fn func(ctx context.Context, obj *Controller, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -1143,9 +1184,14 @@ func (c *ControllerCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &Controller{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {

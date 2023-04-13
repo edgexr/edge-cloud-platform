@@ -27,9 +27,9 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type SendClusterInstHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.ClusterInstKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.ClusterInst, modRev int64))
 	GetWithRev(key *edgeproto.ClusterInstKey, buf *edgeproto.ClusterInst, modRev *int64) bool
-	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(key *edgeproto.ClusterInstKey, modRev int64))
+	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(data *edgeproto.ClusterInstCacheData))
 }
 
 type RecvClusterInstHandler interface {
@@ -42,7 +42,7 @@ type RecvClusterInstHandler interface {
 type ClusterInstCacheHandler interface {
 	SendClusterInstHandler
 	RecvClusterInstHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.ClusterInstKey, old *edgeproto.ClusterInst, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.ClusterInst, modRev int64))
 }
 
 type ClusterInstSend struct {
@@ -97,11 +97,11 @@ func (s *ClusterInstSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.ClusterInstKey, modRev int64) {
-		if !s.UpdateAllOkLocked(key) { // to be implemented by hand
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.ClusterInst, modRev int64) {
+		if !s.UpdateAllOkLocked(obj) { // to be implemented by hand
 			return
 		}
-		s.Keys[*key] = ClusterInstSendContext{
+		s.Keys[*obj.GetKey()] = ClusterInstSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -109,15 +109,15 @@ func (s *ClusterInstSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *ClusterInstSend) Update(ctx context.Context, key *edgeproto.ClusterInstKey, old *edgeproto.ClusterInst, modRev int64) {
+func (s *ClusterInstSend) Update(ctx context.Context, obj *edgeproto.ClusterInst, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	if !s.UpdateOk(ctx, key) { // to be implemented by hand
+	if !s.UpdateOk(ctx, obj) { // to be implemented by hand
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *ClusterInstSend) ForceDelete(ctx context.Context, key *edgeproto.ClusterInstKey, modRev int64) {
@@ -138,15 +138,18 @@ func (s *ClusterInstSend) updateInternal(ctx context.Context, key *edgeproto.Clu
 }
 
 func (s *ClusterInstSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
-	keys := make(map[edgeproto.ClusterInstKey]int64)
-	s.handler.GetForCloudlet(cloudlet, func(objKey *edgeproto.ClusterInstKey, modRev int64) {
-		keys[*objKey] = modRev
+	keys := make(map[edgeproto.ClusterInstKey]*edgeproto.ClusterInstCacheData)
+	s.handler.GetForCloudlet(cloudlet, func(data *edgeproto.ClusterInstCacheData) {
+		if data.Obj == nil {
+			return
+		}
+		keys[*data.Obj.GetKey()] = data
 	})
-	for k, modRev := range keys {
+	for k, data := range keys {
 		if action == edgeproto.NoticeAction_UPDATE {
-			s.Update(ctx, &k, nil, modRev)
+			s.Update(ctx, data.Obj, data.ModRev)
 		} else if action == edgeproto.NoticeAction_DELETE {
-			s.ForceDelete(ctx, &k, modRev)
+			s.ForceDelete(ctx, &k, data.ModRev)
 		}
 	}
 }
@@ -243,11 +246,11 @@ func (s *ClusterInstSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *ClusterInstSendMany) Update(ctx context.Context, key *edgeproto.ClusterInstKey, old *edgeproto.ClusterInst, modRev int64) {
+func (s *ClusterInstSendMany) Update(ctx context.Context, obj *edgeproto.ClusterInst, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 
@@ -389,7 +392,7 @@ func (s *Client) RegisterRecvClusterInstCache(cache ClusterInstCacheHandler) {
 }
 
 type SendClusterInstInfoHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.ClusterInstKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.ClusterInstInfo, modRev int64))
 	GetWithRev(key *edgeproto.ClusterInstKey, buf *edgeproto.ClusterInstInfo, modRev *int64) bool
 }
 
@@ -403,7 +406,7 @@ type RecvClusterInstInfoHandler interface {
 type ClusterInstInfoCacheHandler interface {
 	SendClusterInstInfoHandler
 	RecvClusterInstInfoHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.ClusterInstKey, old *edgeproto.ClusterInstInfo, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.ClusterInstInfo, modRev int64))
 }
 
 type ClusterInstInfoSend struct {
@@ -458,8 +461,8 @@ func (s *ClusterInstInfoSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.ClusterInstKey, modRev int64) {
-		s.Keys[*key] = ClusterInstInfoSendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.ClusterInstInfo, modRev int64) {
+		s.Keys[*obj.GetKey()] = ClusterInstInfoSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -467,12 +470,12 @@ func (s *ClusterInstInfoSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *ClusterInstInfoSend) Update(ctx context.Context, key *edgeproto.ClusterInstKey, old *edgeproto.ClusterInstInfo, modRev int64) {
+func (s *ClusterInstInfoSend) Update(ctx context.Context, obj *edgeproto.ClusterInstInfo, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *ClusterInstInfoSend) ForceDelete(ctx context.Context, key *edgeproto.ClusterInstKey, modRev int64) {
@@ -587,11 +590,11 @@ func (s *ClusterInstInfoSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *ClusterInstInfoSendMany) Update(ctx context.Context, key *edgeproto.ClusterInstKey, old *edgeproto.ClusterInstInfo, modRev int64) {
+func (s *ClusterInstInfoSendMany) Update(ctx context.Context, obj *edgeproto.ClusterInstInfo, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 

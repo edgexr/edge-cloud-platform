@@ -513,6 +513,7 @@ type AlertStore interface {
 	STMGet(stm concurrency.STM, key *AlertKey, buf *Alert) bool
 	STMPut(stm concurrency.STM, obj *Alert, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *AlertKey)
+	STMHas(stm concurrency.STM, key *AlertKey) bool
 }
 
 type AlertStoreImpl struct {
@@ -630,6 +631,11 @@ func (s *AlertStoreImpl) STMGet(stm concurrency.STM, key *AlertKey, buf *Alert) 
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *AlertStoreImpl) STMHas(stm concurrency.STM, key *AlertKey) bool {
+	keystr := objstore.DbKeyString("Alert", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *AlertStoreImpl) parseGetData(val []byte, buf *Alert) bool {
 	if len(val) == 0 {
 		return false
@@ -671,6 +677,16 @@ type AlertCacheData struct {
 	ModRev int64
 }
 
+func (s *AlertCacheData) Clone() *AlertCacheData {
+	cp := AlertCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &Alert{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // AlertCache caches Alert objects in memory in a hash table
 // and keeps them in sync with the database.
 type AlertCache struct {
@@ -678,7 +694,7 @@ type AlertCache struct {
 	Mux           util.Mutex
 	List          map[AlertKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *AlertKey, old *Alert, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *Alert, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *Alert, new *Alert)
 	DeletedCbs    []func(ctx context.Context, old *Alert)
 	KeyWatchers   map[AlertKey][]*AlertKeyWatcher
@@ -737,6 +753,14 @@ func (c *AlertCache) GetAllKeys(ctx context.Context, cb func(key *AlertKey, modR
 	}
 }
 
+func (c *AlertCache) GetAllLocked(ctx context.Context, cb func(obj *Alert, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *AlertCache) Update(ctx context.Context, in *Alert, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *Alert) (*Alert, bool) {
 		return in, true
@@ -754,14 +778,16 @@ func (c *AlertCache) UpdateModFunc(ctx context.Context, key *AlertKey, modRev in
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &Alert{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -798,9 +824,13 @@ func (c *AlertCache) DeleteCondFunc(ctx context.Context, in *Alert, modRev int64
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -828,9 +858,14 @@ func (c *AlertCache) Prune(ctx context.Context, validKeys map[AlertKey]struct{})
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &Alert{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -866,9 +901,14 @@ func (c *AlertCache) Flush(ctx context.Context, notifyId int64) {
 	c.Mux.Unlock()
 	if len(flushed) > 0 {
 		for key, old := range flushed {
+			obj := old.Obj
+			if obj == nil {
+				obj = &Alert{}
+				obj.SetKey(&key)
+			}
 			for _, cb := range c.NotifyCbs {
 				if cb != nil {
-					cb(ctx, &key, old.Obj, old.ModRev)
+					cb(ctx, obj, old.ModRev)
 				}
 			}
 			for _, cb := range c.DeletedKeyCbs {
@@ -905,8 +945,8 @@ func AlertGenericNotifyCb(fn func(key *AlertKey, old *Alert)) func(objstore.ObjK
 	}
 }
 
-func (c *AlertCache) SetNotifyCb(fn func(ctx context.Context, obj *AlertKey, old *Alert, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *AlertKey, old *Alert, modRev int64){fn}
+func (c *AlertCache) SetNotifyCb(fn func(ctx context.Context, obj *Alert, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *Alert, modRev int64){fn}
 }
 
 func (c *AlertCache) SetUpdatedCb(fn func(ctx context.Context, old *Alert, new *Alert)) {
@@ -933,7 +973,7 @@ func (c *AlertCache) AddDeletedCb(fn func(ctx context.Context, old *Alert)) {
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *AlertCache) AddNotifyCb(fn func(ctx context.Context, obj *AlertKey, old *Alert, modRev int64)) {
+func (c *AlertCache) AddNotifyCb(fn func(ctx context.Context, obj *Alert, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -1038,9 +1078,14 @@ func (c *AlertCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &Alert{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -1256,7 +1301,7 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 	case reflect.TypeOf(StreamState(0)):
 		return "StreamState", ", valid values are one of Unknown, Start, Stop, Error, or 0, 1, 2, 3", true
 	case reflect.TypeOf(VersionHash(0)):
-		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, D4Ca5418A77D22D968Ce7A2Afc549Dfe, 7848D42E3A2Eaf36E53Bbd3Af581B13A, F31B7A9D7E06F72107E0Ab13C708704E, 03Fad51F0343D41F617329151F474D2B, 7D32A983Fafc3Da768E045B1Dc4D5F50, 747C14Bdfe2043F09D251568E4A722C6, C7Fb20F545A5Bc9869B00Bb770753C31, 83Cd5C44B5C7387Ebf7D055E7345Ab42, D8A4E697D0D693479Cfd9C1C523D7E06, E8360Aa30F234Ecefdfdb9Fb2Dc79C20, C53C7840D242Efc7209549A36Fcf9E04, 1A57396698C4Ade15F0579C9F5714Cd6, 71C580746Ee2A6B7D1A4182B3A54407A, A18636Af1F4272C38Ca72881B2A8Bcea, Efbddcee4Ba444E3656F64E430A5E3Be, C2C322505017054033953F6104002Bf5, Facc3C3C9C76463C8D8B3C874Ce43487, 8Ba950479A03Ab77Edfad426Ea53C173, F4Eb139F7A8373A484Ab9749Eadc31F5, 09Fae4D440Aa06Acb9664167D2E1F036, 8C5A9C29Caff4Ace0A23A9Dab9A15Bf7, B7C6A74Ce2F30B3Bda179E00617459Cf, 911D86A4Eb2Bbfbff1173Ffbdd197A8C, 99349A696D0B5872542F81B4B0B4788E, 264850A5C1F7A054B4De1A87E5D28Dcc, 748B47Eaf414B0F2C15E4C6A9298B5F1, 1480647750F7638Ff5494C0E715Bb98C, 208A22352E46F6Bbe34F3B72Aaf99Ee5, 6F8F268D3945699608651E1A8Bb38E5E, 2Dfdb2Ed2Cf52241B2B3Db1D39E11Bc6, 6585Ad5E26Ee92A955Abd26C38067065, 4Ddeb801651B2Acb84F5D182E445Fce1, 156Def83Eec72A44248Fabd79199Efbe, 636A7D17Efd0532933313E27E6De0A5B, 0A418578Eee77Cabd2B8E1Dd1Fa64Dbe, 93E8B0C0Bb73Ce790Ebcd69D8437539C, 29Fb22509Ab88F8106C5B27F147A8Aaa, 44E6191740Bcaa95237C2F3E1Ba13D3C, 611B28894B117C2Aaa22C12Adcd81F74, or 0, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47", true
+		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, 611B28894B117C2Aaa22C12Adcd81F74, 37Dea30756Fed2B0C0Ecbc3E7B084855, or 0, 47, 48", true
 	}
 	return "", "", false
 }
@@ -1310,19 +1355,22 @@ var AllKeyTags = []string{
 	"apiendpointtype",
 	"apiname",
 	"app",
+	"appinst",
+	"appinstorg",
+	"appinstrefname",
+	"appinstreforg",
 	"apporg",
 	"appver",
 	"cloudlet",
+	"cloudletfedorg",
 	"cloudletorg",
 	"cloudletpool",
 	"cloudletpoolorg",
 	"cluster",
 	"clusterorg",
-	"clusterreforg",
 	"controlleraddr",
 	"deviceid",
 	"deviceidtype",
-	"federatedorg",
 	"flavor",
 	"flowsettingsname",
 	"gpudriver",
@@ -1340,7 +1388,6 @@ var AllKeyTags = []string{
 	"restagtableorg",
 	"uniqueid",
 	"uniqueidtype",
-	"vcluster",
 	"vmpool",
 	"vmpoolorg",
 }
@@ -1351,19 +1398,22 @@ var AllKeyTagsMap = map[string]struct{}{
 	"apiendpointtype":     struct{}{},
 	"apiname":             struct{}{},
 	"app":                 struct{}{},
+	"appinst":             struct{}{},
+	"appinstorg":          struct{}{},
+	"appinstrefname":      struct{}{},
+	"appinstreforg":       struct{}{},
 	"apporg":              struct{}{},
 	"appver":              struct{}{},
 	"cloudlet":            struct{}{},
+	"cloudletfedorg":      struct{}{},
 	"cloudletorg":         struct{}{},
 	"cloudletpool":        struct{}{},
 	"cloudletpoolorg":     struct{}{},
 	"cluster":             struct{}{},
 	"clusterorg":          struct{}{},
-	"clusterreforg":       struct{}{},
 	"controlleraddr":      struct{}{},
 	"deviceid":            struct{}{},
 	"deviceidtype":        struct{}{},
-	"federatedorg":        struct{}{},
 	"flavor":              struct{}{},
 	"flowsettingsname":    struct{}{},
 	"gpudriver":           struct{}{},
@@ -1381,7 +1431,6 @@ var AllKeyTagsMap = map[string]struct{}{
 	"restagtableorg":      struct{}{},
 	"uniqueid":            struct{}{},
 	"uniqueidtype":        struct{}{},
-	"vcluster":            struct{}{},
 	"vmpool":              struct{}{},
 	"vmpoolorg":           struct{}{},
 }
@@ -1393,15 +1442,14 @@ func GetReferencesMap() map[string][]string {
 	refs["App"] = []string{"AlertPolicy", "AutoProvPolicy", "Flavor"}
 	refs["AppAlertPolicy"] = []string{"AlertPolicy", "App"}
 	refs["AppAutoProvPolicy"] = []string{"App", "AutoProvPolicy"}
-	refs["AppInst"] = []string{"ClusterInst", "Flavor"}
-	refs["AppInstClient"] = []string{"ClusterInst"}
-	refs["AppInstKey"] = []string{"ClusterInst"}
-	refs["AppInstLatency"] = []string{"ClusterInst"}
-	refs["AppInstLookup"] = []string{"ClusterInst"}
-	refs["AppInstLookup2"] = []string{"ClusterInst"}
+	refs["AppInst"] = []string{"Cloudlet", "Flavor"}
+	refs["AppInstClient"] = []string{"Cloudlet"}
+	refs["AppInstKey"] = []string{"Cloudlet"}
+	refs["AppInstKeyV1"] = []string{"ClusterInst"}
+	refs["AppInstLatency"] = []string{"Cloudlet"}
+	refs["AppInstLookup"] = []string{"Cloudlet"}
+	refs["AppInstLookup2"] = []string{"Cloudlet"}
 	refs["AppInstRefs"] = []string{"AppInst"}
-	refs["AutoProvCount"] = []string{"Cloudlet"}
-	refs["AutoProvCounts"] = []string{"Cloudlet"}
 	refs["AutoProvPolicy"] = []string{"Cloudlet"}
 	refs["AutoProvPolicyCloudlet"] = []string{"AutoProvPolicy", "Cloudlet"}
 	refs["Cloudlet"] = []string{"Flavor", "GPUDriver", "ResTagTable", "TrustPolicy", "VMPool"}
@@ -1411,9 +1459,10 @@ func GetReferencesMap() map[string][]string {
 	refs["CloudletResMap"] = []string{"Cloudlet", "ResTagTable"}
 	refs["ClusterInst"] = []string{"AutoScalePolicy", "Cloudlet", "Flavor", "Network"}
 	refs["ClusterInstKey"] = []string{"Cloudlet"}
+	refs["ClusterInstKeyV1"] = []string{"Cloudlet"}
 	refs["ClusterRefs"] = []string{"AppInst"}
 	refs["DeploymentCloudletRequest"] = []string{"AlertPolicy", "AutoProvPolicy", "Flavor"}
-	refs["ExecRequest"] = []string{"ClusterInst"}
+	refs["ExecRequest"] = []string{"Cloudlet"}
 	refs["GPUConfig"] = []string{"GPUDriver"}
 	refs["Network"] = []string{"Cloudlet"}
 	refs["NetworkKey"] = []string{"Cloudlet"}

@@ -328,7 +328,7 @@ func authzCreateClusterInst(ctx context.Context, region, username string, obj *e
 	cloudlet := edgeproto.Cloudlet{
 		Key: obj.Key.CloudletKey,
 	}
-	err := authzCloudlet.populate(ctx, region, username, obj.Key.Organization, resource, action, withRequiresOrg(obj.Key.Organization), withRequiresBillingOrg(obj.Key.Organization, &cloudlet))
+	err := authzCloudlet.populate(ctx, region, username, obj.Key.ClusterKey.Organization, resource, action, withRequiresOrg(obj.Key.ClusterKey.Organization), withRequiresBillingOrg(obj.Key.ClusterKey.Organization, &cloudlet))
 	if err != nil {
 		return err
 	}
@@ -341,9 +341,9 @@ func authzCreateClusterInst(ctx context.Context, region, username string, obj *e
 func authzCreateAppInst(ctx context.Context, region, username string, obj *edgeproto.AppInst, resource, action string) error {
 	authzCloudlet := AuthzCloudlet{}
 	cloudlet := edgeproto.Cloudlet{
-		Key: obj.Key.ClusterInstKey.CloudletKey,
+		Key: obj.Key.CloudletKey,
 	}
-	err := authzCloudlet.populate(ctx, region, username, obj.Key.AppKey.Organization, resource, action, withRequiresOrg(obj.Key.AppKey.Organization), withRequiresBillingOrg(obj.Key.AppKey.Organization, &cloudlet))
+	err := authzCloudlet.populate(ctx, region, username, obj.Key.Organization, resource, action, withRequiresOrg(obj.Key.Organization), withRequiresBillingOrg(obj.Key.Organization, &cloudlet))
 	if err != nil {
 		return err
 	}
@@ -354,26 +354,26 @@ func authzCreateAppInst(ctx context.Context, region, username string, obj *edgep
 	// so these checks are left to the Controller. The MC is only
 	// concerned about RBAC permissions, so only ensures that different
 	// organizations are not encroaching on each other.
-	if obj.Key.AppKey.Organization != obj.Key.ClusterInstKey.Organization && obj.Key.ClusterInstKey.Organization != "" {
+	if obj.Key.Organization != obj.ClusterKey.Organization && obj.ClusterKey.Organization != "" {
 		// Sidecar apps may have EdgeCloud organization, or
 		// target ClusterInst may be EdgeCloud reservable/multitenant.
 		// So one of the orgs must be EdgeCloud to pass RBAC.
-		if !edgeproto.IsEdgeCloudOrg(obj.Key.AppKey.Organization) && !edgeproto.IsEdgeCloudOrg(obj.Key.ClusterInstKey.Organization) {
+		if !edgeproto.IsEdgeCloudOrg(obj.Key.Organization) && !edgeproto.IsEdgeCloudOrg(obj.ClusterKey.Organization) {
 			return echo.ErrForbidden
 		}
 	}
-	if obj.Key.ClusterInstKey.CloudletKey.FederatedOrganization != "" {
+	if obj.Key.CloudletKey.FederatedOrganization != "" {
 		// deploying to a federated cloudlet requires that the
 		// app has been onboarded to that federation.
-		fedName := obj.Key.ClusterInstKey.CloudletKey.Organization
-		ok, err := guestAppOnboarded(ctx, fedName, region, obj.Key.AppKey)
+		fedName := obj.Key.CloudletKey.Organization
+		ok, err := guestAppOnboarded(ctx, fedName, region, obj.AppKey)
 		if err != nil {
 			// unable to determine, let the call through and if
 			// app is not onboarded, then host OP will return
 			// an error.
 			log.SpanLog(ctx, log.DebugLevelApi, "authzCreateAppInst failed to check if app onboarded for deployment to federated cloudlet", "appInst", obj.Key, "fedName", fedName, "err", err)
 		} else if !ok {
-			return fmt.Errorf("App must be onboarded to federation %q before it can be deployed to federated cloudlet %q", fedName, obj.Key.ClusterInstKey.CloudletKey.Name)
+			return fmt.Errorf("App must be onboarded to federation %q before it can be deployed to federated cloudlet %q", fedName, obj.Key.CloudletKey.Name)
 		}
 	}
 	return nil
