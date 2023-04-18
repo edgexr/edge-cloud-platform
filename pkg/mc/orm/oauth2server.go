@@ -3,6 +3,7 @@ package orm
 import (
 	"context"
 	fmt "fmt"
+	"net/http"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
@@ -41,7 +42,19 @@ func InitOauth2() *server.Server {
 			oauth2.ClientCredentials,
 		},
 	}
-	return server.NewServer(cfg, manager)
+	srv := server.NewServer(cfg, manager)
+	srv.ClientInfoHandler = clientCredsHandler
+	return srv
+}
+
+// Custom client creds handler to allow for creds either in
+// header or in body.
+func clientCredsHandler(r *http.Request) (string, string, error) {
+	clientID, clientSecret, err := server.ClientBasicHandler(r)
+	if err == nil {
+		return clientID, clientSecret, nil
+	}
+	return server.ClientFormHandler(r)
 }
 
 // ClientStore handles client lookup

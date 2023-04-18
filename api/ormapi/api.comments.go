@@ -128,6 +128,8 @@ var ConfigComments = map[string]string{
 	"websockettokenvalidduration":   `Websocket auth token valid duration (in format 2h30m10s, default 2m)`,
 	"supportemail":                  `Support email address shown to users, i.e. support@edgecloud.net`,
 	"slackiconurl":                  `Slack icon URL used for alert manager slack receivers`,
+	"logallshowapis":                `Log all show/GET APIs`,
+	"logshowurl":                    `Log specific API url (may be substring of entire URL)`,
 }
 
 var McRateLimitFlowSettingsComments = map[string]string{

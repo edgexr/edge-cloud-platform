@@ -18,6 +18,7 @@ import (
 	"context"
 	fmt "fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -48,6 +49,9 @@ var defaultConfig = ormapi.Config{
 	ApiKeyLoginTokenValidDuration: edgeproto.Duration(4 * time.Hour),
 	WebsocketTokenValidDuration:   edgeproto.Duration(2 * time.Minute),
 }
+
+var curConfig ormapi.Config
+var curConfigMux sync.Mutex
 
 func InitConfig(ctx context.Context) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "init config")
@@ -127,6 +131,7 @@ func InitConfig(ctx context.Context) error {
 			return err
 		}
 	}
+	setConfig(&config)
 
 	log.SpanLog(ctx, log.DebugLevelApi, "using config", "config", config)
 	return nil
@@ -208,6 +213,7 @@ func UpdateConfig(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	setConfig(config)
 	return nil
 }
 
@@ -257,13 +263,30 @@ func ShowConfig(c echo.Context) error {
 	return c.JSON(http.StatusOK, config)
 }
 
-func getConfig(ctx context.Context) (*ormapi.Config, error) {
+func getConfigFromDB(ctx context.Context) (*ormapi.Config, error) {
 	config := ormapi.Config{}
 	config.ID = defaultConfig.ID
 	db := loggedDB(ctx)
 	err := db.First(&config).Error
 	// note: should always exist
 	return &config, err
+}
+
+func setConfig(config *ormapi.Config) {
+	curConfigMux.Lock()
+	defer curConfigMux.Unlock()
+	curConfig = *config
+}
+
+func getConfig(ctx context.Context) (*ormapi.Config, error) {
+	return getCachedConfig(), nil
+}
+
+func getCachedConfig() *ormapi.Config {
+	curConfigMux.Lock()
+	defer curConfigMux.Unlock()
+	cfgOut := curConfig
+	return &cfgOut
 }
 
 // this should be called if the password crack time configuration changed
