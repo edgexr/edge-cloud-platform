@@ -38,13 +38,10 @@ type TestJsonTargets []struct {
 	Targets []string `json:"targets"`
 	Labels  struct {
 		MetricsPath string `json:"__metrics_path__"`
-		App         string `json:"app"`
-		Apporg      string `json:"apporg"`
-		Appver      string `json:"appver"`
+		Appinst     string `json:"appinst"`
+		Apporg      string `json:"appinstorg"`
 		Cloudlet    string `json:"cloudlet"`
 		Cloudletorg string `json:"cloudletorg"`
-		Cluster     string `json:"cluster"`
-		Clusterorg  string `json:"clusterorg"`
 	} `json:"labels"`
 }
 
@@ -87,7 +84,7 @@ func TestCloudletPrometheusFuncs(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Len(t, targets, testInstCount)
 	for _, target := range targets {
-		key := target.Labels.App
+		key := target.Labels.Appinst
 		if _, found := targetKeys[key]; !found {
 			assert.Fail(t, "Unable to find target", target)
 		} else {
@@ -164,7 +161,7 @@ func genAppInstances(ctx context.Context, cnt int) ([]edgeproto.AppInst, map[str
 			State:       edgeproto.TrackedState_READY,
 		}
 		list = append(list, inst)
-		keys[inst.AppKey.Name] = struct{}{}
+		keys[inst.Key.Name] = struct{}{}
 		AppInstCache.Update(ctx, &inst, 0)
 	}
 	return list, keys
