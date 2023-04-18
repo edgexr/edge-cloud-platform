@@ -55,13 +55,10 @@ var promTargetT = `
 {
 	"targets": ["{{.MetricsProxyAddr}}"],
 	"labels": {
-		"` + edgeproto.AppKeyTagName + `": "{{.Key.AppKey.Name}}",
-		"` + edgeproto.AppKeyTagVersion + `": "{{.Key.AppKey.Version}}",
-		"` + edgeproto.AppKeyTagOrganization + `": "{{.Key.AppKey.Organization}}",
-		"` + edgeproto.ClusterKeyTagName + `": "{{.Key.ClusterInstKey.ClusterKey.Name}}",
-		"` + edgeproto.ClusterKeyTagOrganization + `": "{{.Key.ClusterInstKey.Organization}}",
-		"` + edgeproto.CloudletKeyTagName + `": "{{.Key.ClusterInstKey.CloudletKey.Name}}",
-		"` + edgeproto.CloudletKeyTagOrganization + `": "{{.Key.ClusterInstKey.CloudletKey.Organization}}",
+		"` + edgeproto.AppInstKeyTagName + `": "{{.Key.Name}}",
+		"` + edgeproto.AppInstKeyTagOrganization + `": "{{.Key.Organization}}",
+		"` + edgeproto.CloudletKeyTagName + `": "{{.Key.CloudletKey.Name}}",
+		"` + edgeproto.CloudletKeyTagOrganization + `": "{{.Key.CloudletKey.Organization}}",
 		"__metrics_path__":"{{.EnvoyMetricsPath}}"
 	}
 }`
