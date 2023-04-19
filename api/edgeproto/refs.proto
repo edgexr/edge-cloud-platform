@@ -71,9 +71,9 @@ message CloudletRefs {
   // Clusters instantiated on the Cloudlet
   repeated ClusterKey cluster_insts = 13 [(gogoproto.nullable) = false, (protogen.tracks_refs_by) = "ClusterInst"];
   // VM apps instantiated on the Cloudlet
-  repeated AppInstRefKey vm_app_insts = 14 [(gogoproto.nullable) = false];
+  repeated AppInstRefKey vm_app_insts = 14 [(gogoproto.nullable) = false, (protogen.tracks_refs_by) = "AppInst"];
   // K8s apps instantiated on the Cloudlet
-  repeated AppInstRefKey k8s_app_insts = 15 [(gogoproto.nullable) = false];
+  repeated AppInstRefKey k8s_app_insts = 15 [(gogoproto.nullable) = false]; // no tracks_refs_by as it is handled by ClusterInst refs
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cache) = true;

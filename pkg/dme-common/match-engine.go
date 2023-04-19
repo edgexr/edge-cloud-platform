@@ -111,6 +111,7 @@ type AutoProvPolicy struct {
 type DmeApps struct {
 	sync.RWMutex
 	Apps                       map[edgeproto.AppKey]*DmeApp
+	AppInstApps                map[edgeproto.AppInstKey]edgeproto.AppKey // for delete
 	Cloudlets                  map[edgeproto.CloudletKey]*DmeCloudlet
 	AutoProvPolicies           map[edgeproto.PolicyKey]*AutoProvPolicy
 	FreeReservableClusterInsts edgeproto.FreeReservableClusterInstCache
@@ -149,6 +150,7 @@ var RateLimitMgr *ratelimit.RateLimitManager
 func SetupMatchEngine(eehandler EdgeEventsHandler) {
 	DmeAppTbl = new(DmeApps)
 	DmeAppTbl.Apps = make(map[edgeproto.AppKey]*DmeApp)
+	DmeAppTbl.AppInstApps = make(map[edgeproto.AppInstKey]edgeproto.AppKey)
 	DmeAppTbl.Cloudlets = make(map[edgeproto.CloudletKey]*DmeCloudlet)
 	DmeAppTbl.AutoProvPolicies = make(map[edgeproto.PolicyKey]*AutoProvPolicy)
 	DmeAppTbl.FreeReservableClusterInsts.Init()
@@ -260,6 +262,9 @@ func AddAppInst(ctx context.Context, appInst *edgeproto.AppInst) {
 		log.SpanLog(ctx, log.DebugLevelDmedb, "addAppInst: app not found", "key", appInst.Key)
 		return
 	}
+	// for deletes, add lookup for AppKey from AppInstKey
+	tbl.AppInstApps[appInst.Key] = appInst.AppKey
+
 	app.Lock()
 	defer app.Unlock()
 	insts, foundCarrier := app.Carriers[carrierName]
@@ -378,18 +383,21 @@ func RemoveApp(ctx context.Context, in *edgeproto.App) {
 }
 
 func RemoveAppInst(ctx context.Context, appInst *edgeproto.AppInst) {
-	var app *DmeApp
 	var tbl *DmeApps
 
 	tbl = DmeAppTbl
-	appkey := appInst.AppKey
 	carrierName := appInst.Key.CloudletKey.Organization
 	tbl.Lock()
 	defer tbl.Unlock()
+	appkey, ok := tbl.AppInstApps[appInst.Key]
+	if !ok {
+		return
+	}
 	app, ok := tbl.Apps[appkey]
 	if !ok {
 		return
 	}
+	delete(tbl.AppInstApps, appInst.Key)
 	app.Lock()
 	defer app.Unlock()
 	if c, foundCarrier := app.Carriers[carrierName]; foundCarrier {

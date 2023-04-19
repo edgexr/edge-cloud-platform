@@ -1,7 +1,6 @@
 package orm
 
 import (
-	fmt "fmt"
 	"testing"
 
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -82,6 +81,7 @@ type FrmData struct {
 	provAppInst     edgeproto.AppInst
 }
 
+/*REMOVE
 func getFrmData(consAttr, provAttr *FederatorAttr, zones []string) []FrmData {
 	apps := getConsApps(consAttr.developerId)
 
@@ -118,3 +118,4 @@ func getFrmData(consAttr, provAttr *FederatorAttr, zones []string) []FrmData {
 	}
 	return frmData
 }
+*/

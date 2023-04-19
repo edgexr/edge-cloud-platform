@@ -18,11 +18,14 @@ import (
 	"encoding/json"
 	fmt "fmt"
 	"reflect"
+	"sort"
 	"strconv"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	context "golang.org/x/net/context"
 )
@@ -35,6 +38,14 @@ func getDbObjectKeys(objStore objstore.KVStore, dbPrefix string) (map[string]str
 		return nil
 	})
 	return keys, err
+}
+
+func removeKeyDbPrefix(key, dbPrefix string) string {
+	pre := objstore.DbKeyPrefixString(dbPrefix)
+	if len(key) > len(pre)+1 {
+		return key[len(pre)+1:]
+	}
+	return key
 }
 
 func unmarshalUpgradeObj(ctx context.Context, str string, obj interface{}) error {
@@ -112,8 +123,10 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 	}
 
 	// Track key refs so we can upgrade references
-	appInstKeyRefs := make(map[AppInstRefKeyV1]edgeproto.AppInstRefKey)
-	appInstKeyJsonRefs := make(map[string]string)
+	appInstKeyRefsUpgrade := make(map[AppInstRefKeyV1]edgeproto.AppInstRefKey)
+	appInstKeyRefsCurrent := make(map[edgeproto.AppInstRefKey]struct{})
+	appInstKeyJsonRefsUpgrade := make(map[string]string)
+	appInstKeyJsonRefsCurrent := make(map[string]struct{})
 	type AppInstV1 struct {
 		Key             edgeproto.AppInstKeyV1 `json:"key"`
 		RealClusterName string                 `json:"real_cluster_name"`
@@ -123,7 +136,15 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 	if err != nil {
 		return err
 	}
+	appInstKeysOrdered := []string{}
 	for appInstKey, _ := range appInstKeys {
+		// in order to have consistent results of unique name
+		// generation for unit tests, the order the instances
+		// are processed in must be consistent, so we sort them.
+		appInstKeysOrdered = append(appInstKeysOrdered, appInstKey)
+	}
+	sort.Strings(appInstKeysOrdered)
+	for _, appInstKey := range appInstKeysOrdered {
 		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
 			appInstStr := stm.Get(appInstKey)
 			if appInstStr == "" {
@@ -134,6 +155,7 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 			if err2 := unmarshalUpgradeObj(ctx, appInstStr, &appInst); err2 != nil {
 				return err2
 			}
+			appInstKeyNoPrefix := removeKeyDbPrefix(appInstKey, "AppInst")
 			if appInst.Key.Name == "" {
 				// upgrade to new key. first load old version.
 				v1 := AppInstV1{}
@@ -156,14 +178,24 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 				} else {
 					appInst.ClusterKey.Name = v1.Key.ClusterInstKey.ClusterKey.Name
 				}
+				clusterName := appInst.VirtualClusterKey.Name
+				if clusterName == "" {
+					clusterName = appInst.ClusterKey.Name
+				}
 				// generate a new name for the AppInst
 				// number of iterations must be low to avoid
 				// STM limits.
-				baseName := appInst.Key.Name
+				baseName := appInst.AppKey.Name
 				for ii := 0; ii < 10; ii++ {
 					appInst.Key.Name = baseName
-					if ii > 0 {
+					if ii > 0 && ii < 7 {
 						appInst.Key.Name += strconv.Itoa(ii)
+					} else if ii == 7 {
+						appInst.Key.Name += "-" + clusterName
+					} else if ii > 7 {
+						// use random suffix
+						suffix := gonanoid.MustGenerate(cloudcommon.IdAlphabetLC, 3)
+						appInst.Key.Name += suffix
 					}
 					if allApis.appInstApi.store.STMHas(stm, &appInst.Key) {
 						// conflict, can't use
@@ -177,36 +209,50 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 				}
 				allApis.appInstApi.store.STMPut(stm, &appInst)
 				stm.Del(appInstKey)
+
+				// fix AppInstRefs, map old to new
+				oldRef := AppInstRefKeyV1{}
+				oldRef.AppKey = appInst.AppKey
+				oldRef.ClusterInstKey.ClusterKey.Name = appInst.ClusterKey.Name
+				oldRef.ClusterInstKey.Organization = appInst.ClusterKey.Organization
+				appInstKeyRefsUpgrade[oldRef] = *appInst.Key.GetRefKey()
+				// fix AppInstRefs json, map old to new
+				keyJson, err := json.Marshal(appInst.Key)
+				if err != nil {
+					return err
+				}
+				appInstKeyJsonRefsUpgrade[appInstKeyNoPrefix] = string(keyJson)
+			} else {
+				// register current for AppInstRefs
+				appInstKeyRefsCurrent[*appInst.Key.GetRefKey()] = struct{}{}
+				appInstKeyJsonRefsCurrent[appInstKeyNoPrefix] = struct{}{}
 			}
-			// mapping to fix AppInstRefs
-			v1Key := edgeproto.AppInstKeyV1{}
-			v1Key.AppKey = appInst.AppKey
-			v1Key.ClusterInstKey.CloudletKey = appInst.Key.CloudletKey
-			v1Key.ClusterInstKey.ClusterKey.Name = appInst.ClusterKey.Name
-			v1Key.ClusterInstKey.Organization = appInst.ClusterKey.Organization
-			v1KeyJson, err := json.Marshal(v1Key)
-			if err != nil {
-				return err
-			}
-			keyJson, err := json.Marshal(appInst.Key)
-			if err != nil {
-				return err
-			}
-			appInstKeyJsonRefs[string(v1KeyJson)] = string(keyJson)
-			// mapping to fix other refs
-			oldRef := AppInstRefKeyV1{}
-			oldRef.AppKey = appInst.AppKey
-			oldRef.ClusterInstKey.ClusterKey.Name = appInst.ClusterKey.Name
-			oldRef.ClusterInstKey.Organization = appInst.ClusterKey.Organization
-			newRef := edgeproto.AppInstRefKey{}
-			newRef.Name = appInst.Key.Name
-			newRef.Organization = appInst.Key.Organization
-			appInstKeyRefs[oldRef] = newRef
 			return nil
 		})
 		if err != nil {
 			return err
 		}
+	}
+
+	fixAppInstRefs := func(refKey, refType string, refs []edgeproto.AppInstRefKey, refsV1 []AppInstRefKeyV1, updated *bool) error {
+		if len(refs) != len(refsV1) {
+			return fmt.Errorf("%s unexpected %s refs count difference between parsing as new (%d) vs old (%d) format", refKey, refType, len(refs), len(refsV1))
+		}
+		for ii := 0; ii < len(refs); ii++ {
+			oldRef := refsV1[ii]
+			newRef, found := appInstKeyRefsUpgrade[oldRef]
+			if found {
+				refs[ii] = newRef
+				*updated = true
+				continue
+			}
+			curRef := refs[ii]
+			_, found = appInstKeyRefsCurrent[curRef]
+			if !found {
+				return fmt.Errorf("%s %s ref %v not found for either new or old AppInstKeyName versions", refKey, refType, curRef)
+			}
+		}
+		return nil
 	}
 
 	// Fix cloudlet refs
@@ -236,25 +282,11 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 					}
 				}
 			}
-			if len(refs.VmAppInsts) == len(refsV1.VmAppInsts) {
-				for ii := 0; ii < len(refs.VmAppInsts); ii++ {
-					oldRef := refsV1.VmAppInsts[ii]
-					newRef, found := appInstKeyRefs[oldRef]
-					if found {
-						refs.VmAppInsts[ii] = newRef
-						updated = true
-					}
-				}
+			if err2 := fixAppInstRefs(refsKey, "VmAppInsts", refs.VmAppInsts, refsV1.VmAppInsts, &updated); err != nil {
+				return err2
 			}
-			if len(refs.K8SAppInsts) == len(refsV1.K8SAppInsts) {
-				for ii := 0; ii < len(refs.K8SAppInsts); ii++ {
-					oldRef := refsV1.K8SAppInsts[ii]
-					newRef, found := appInstKeyRefs[oldRef]
-					if found {
-						refs.K8SAppInsts[ii] = newRef
-						updated = true
-					}
-				}
+			if err2 := fixAppInstRefs(refsKey, "K8SAppInsts", refs.K8SAppInsts, refsV1.K8SAppInsts, &updated); err != nil {
+				return err2
 			}
 			if updated {
 				allApis.cloudletRefsApi.store.STMPut(stm, &refs)
@@ -283,15 +315,8 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 				return err2
 			}
 			updated := false
-			if len(refs.Apps) == len(refsV1.Apps) {
-				for ii := 0; ii < len(refs.Apps); ii++ {
-					oldRef := refsV1.Apps[ii]
-					newRef, found := appInstKeyRefs[oldRef]
-					if found {
-						refs.Apps[ii] = newRef
-						updated = true
-					}
-				}
+			if err2 := fixAppInstRefs(refsKey, "Apps", refs.Apps, refsV1.Apps, &updated); err != nil {
+				return err2
 			}
 			if updated {
 				allApis.clusterRefsApi.store.STMPut(stm, &refs)
@@ -308,6 +333,22 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 	if err != nil {
 		return err
 	}
+	fixRefs := func(refsKey string, insts map[string]uint32, updated *bool) error {
+		for k, v := range insts {
+			if _, found := appInstKeyJsonRefsCurrent[k]; found {
+				// already current
+				continue
+			}
+			if newKey, found := appInstKeyJsonRefsUpgrade[k]; found {
+				delete(insts, k)
+				insts[newKey] = v
+				*updated = true
+				continue
+			}
+			return fmt.Errorf("%s unknown AppInstRef %s", refsKey, k)
+		}
+		return nil
+	}
 	for refsKey, _ := range appInstRefsKeys {
 		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
 			refsStr := stm.Get(refsKey)
@@ -316,21 +357,13 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 				return err2
 			}
 			updated := false
-			for k, v := range refs.Insts {
-				newKey, found := appInstKeyJsonRefs[k]
-				if found {
-					delete(refs.Insts, k)
-					refs.Insts[newKey] = v
-					updated = true
-				}
+			err := fixRefs(refsKey, refs.Insts, &updated)
+			if err != nil {
+				return err
 			}
-			for k, v := range refs.DeleteRequestedInsts {
-				newKey, found := appInstKeyJsonRefs[k]
-				if found {
-					delete(refs.Insts, k)
-					refs.DeleteRequestedInsts[newKey] = v
-					updated = true
-				}
+			err = fixRefs(refsKey, refs.DeleteRequestedInsts, &updated)
+			if err != nil {
+				return err
 			}
 			if updated {
 				allApis.appInstRefsApi.store.STMPut(stm, &refs)

@@ -358,12 +358,8 @@ func (s *AutoProvPolicyApi) appInstCheck(ctx context.Context, stm concurrency.ST
 		for k, _ := range refs.Insts {
 			instKey := edgeproto.AppInstKey{}
 			edgeproto.AppInstKeyStringParse(k, &instKey)
-			refInst := edgeproto.AppInst{}
-			if !s.all.appInstApi.store.STMGet(stm, &instKey, &refInst) {
-				continue
-			}
-			if instKey.CloudletKey.Matches(&refInst.Key.CloudletKey) {
-				return fmt.Errorf("already an AppInst on Cloudlet %s", instKey.CloudletKey.GetKeyString())
+			if inst.Key.CloudletKey.Matches(&instKey.CloudletKey) {
+				return fmt.Errorf("already an AppInst on Cloudlet %s", inst.Key.CloudletKey.GetKeyString())
 			}
 		}
 	}

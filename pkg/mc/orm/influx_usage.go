@@ -205,8 +205,9 @@ func GetClusterUsage(ctx context.Context, event *client.Response, checkpoint *cl
 	if !emptyCheckpoints {
 		for _, values := range checkpoint.Results[0].Series[0].Values {
 			// format [timestamp cluster clusterorg cloudlet cloudletorg flavor status nodecount ipaccess]
-			if len(values) != 9 {
-				return nil, fmt.Errorf("Error parsing influx response")
+			expectedNumVals := 10
+			if len(values) != expectedNumVals {
+				return nil, fmt.Errorf("Error parsing influx response, expected %d values but was %d (%v)", expectedNumVals, len(values), checkpoint.Results[0].Series[0].Columns)
 			}
 			timestamp, err := time.Parse(time.RFC3339, fmt.Sprintf("%v", values[0]))
 			if err != nil {
@@ -216,19 +217,22 @@ func GetClusterUsage(ctx context.Context, event *client.Response, checkpoint *cl
 			clusterorg := fmt.Sprintf("%v", values[2])
 			cloudlet := fmt.Sprintf("%v", values[3])
 			cloudletorg := fmt.Sprintf("%v", values[4])
-			flavor := fmt.Sprintf("%v", values[5])
-			status := fmt.Sprintf("%v", values[6])
+			cloudletfedorg := fmt.Sprintf("%v", values[5])
+			flavor := fmt.Sprintf("%v", values[6])
+			status := fmt.Sprintf("%v", values[7])
 			var nodecount int64
-			if values[7] == nil {
+			if values[8] == nil {
 				log.SpanLog(ctx, log.DebugLevelInfo, "Invalid data entry - nodecount is nil", "values", values)
 				nodecount = 0
+			} else if _, ok := values[8].(json.Number); !ok {
+				return nil, fmt.Errorf("Expected json number for cluster checkpoints metric column %q but was %s", cloudcommon.MetricTagNodeCount, values[8])
 			} else {
-				nodecount, err = values[7].(json.Number).Int64()
+				nodecount, err = values[8].(json.Number).Int64()
 			}
 			if err != nil {
 				return nil, fmt.Errorf("Error trying to convert nodecount to int: %s", err)
 			}
-			ipaccess := fmt.Sprintf("%v", values[8])
+			ipaccess := fmt.Sprintf("%v", values[9])
 
 			if status == cloudcommon.InstanceUp {
 				newTracker := edgeproto.ClusterInstKey{
@@ -237,8 +241,9 @@ func GetClusterUsage(ctx context.Context, event *client.Response, checkpoint *cl
 						Organization: clusterorg,
 					},
 					CloudletKey: edgeproto.CloudletKey{
-						Organization: cloudletorg,
-						Name:         cloudlet,
+						Organization:          cloudletorg,
+						Name:                  cloudlet,
+						FederatedOrganization: cloudletfedorg,
 					},
 				}
 				clusterTracker[newTracker] = usageTracker{
@@ -256,8 +261,9 @@ func GetClusterUsage(ctx context.Context, event *client.Response, checkpoint *cl
 		for i := len(event.Results[0].Series[0].Values) - 1; i >= 0; i-- {
 			values := event.Results[0].Series[0].Values[i]
 			// value should be of the format [timestamp cluster clusterorg cloudlet cloudletorg flavor event status nodecount ipaccess]
-			if len(values) != 10 {
-				return nil, fmt.Errorf("Error parsing influx response")
+			expectedNumVals := 11
+			if len(values) != expectedNumVals {
+				return nil, fmt.Errorf("Error parsing influx response, expected %d values but was %d (%v)", expectedNumVals, len(values), checkpoint.Results[0].Series[0].Columns)
 			}
 			timestamp, err := time.Parse(time.RFC3339, fmt.Sprintf("%v", values[0]))
 			if err != nil {
@@ -273,11 +279,13 @@ func GetClusterUsage(ctx context.Context, event *client.Response, checkpoint *cl
 			event := fmt.Sprintf("%v", values[7])
 			status := fmt.Sprintf("%v", values[8])
 			var nodecount int64
-			if values[8] == nil {
+			if values[9] == nil {
 				log.SpanLog(ctx, log.DebugLevelInfo, "Invalid data entry - nodecount is nil", "values", values)
 				nodecount = 0
+			} else if _, ok := values[9].(json.Number); !ok {
+				return nil, fmt.Errorf("Expected json number for cluster events metric column %q but was %s", cloudcommon.MetricTagNodeCount, values[9])
 			} else {
-				nodecount, err = values[8].(json.Number).Int64()
+				nodecount, err = values[9].(json.Number).Int64()
 			}
 			if err != nil {
 				return nil, fmt.Errorf("Error trying to convert nodecount to int: %s", err)
@@ -401,9 +409,9 @@ func GetAppUsage(event *client.Response, checkpoint *client.Response, start, end
 	// grab the checkpoints of appinsts that are up
 	if !emptyCheckpoints {
 		for _, values := range checkpoint.Results[0].Series[0].Values {
-			// format [timestamp app ver cluster clusterorg cloudlet cloudletorg org deployment flavor status]
-			if len(values) != 11 {
-				return nil, fmt.Errorf("Error parsing influx response")
+			expectedNumVals := 9
+			if len(values) != expectedNumVals {
+				return nil, fmt.Errorf("Error parsing influx response, expected %d values but was %d (%v)", expectedNumVals, len(values), checkpoint.Results[0].Series[0].Columns)
 			}
 			timestamp, err := time.Parse(time.RFC3339, fmt.Sprintf("%v", values[0]))
 			if err != nil {
@@ -441,9 +449,9 @@ func GetAppUsage(event *client.Response, checkpoint *client.Response, start, end
 	if !emptyEvents {
 		for i := len(event.Results[0].Series[0].Values) - 1; i >= 0; i-- {
 			values := event.Results[0].Series[0].Values[i]
-			// value should be of the format [timestamp app ver cluster clusterorg cloudlet cloudletorg apporg flavor deployment event status]
-			if len(values) != 12 {
-				return nil, fmt.Errorf("Error parsing influx response")
+			expectedNumVals := 10
+			if len(values) != expectedNumVals {
+				return nil, fmt.Errorf("Error parsing influx response, expected %d values but was %d (%v)", expectedNumVals, len(values), checkpoint.Results[0].Series[0].Columns)
 			}
 			timestamp, err := time.Parse(time.RFC3339, fmt.Sprintf("%v", values[0]))
 			if err != nil {

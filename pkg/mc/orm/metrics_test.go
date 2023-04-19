@@ -19,108 +19,85 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	testSingleAppFilter       = "(\"apporg\"='testOrg1' AND \"app\"='testapp1' AND \"ver\"='10' AND \"cloudlet\"='testCloudlet1') AND (cloudlet='testCloudlet1')"
+	testSingleAppFilter       = "(\"appinstorg\"='testOrg1' AND \"appinst\"='testapp1' AND \"cloudlet\"='testCloudlet1') AND (cloudlet='testCloudlet1')"
 	testSingleAppQueryDefTime = "SELECT mean(cpu) as cpu FROM \"appinst-cpu\" WHERE (" +
 		testSingleAppFilter + ") " +
 		"AND time >= '2019-12-31T13:01:00Z' AND time <= '2020-01-01T01:01:00Z' " +
-		"group by time(7m12s),app,apporg,cluster,clusterorg,ver,cloudlet,cloudletorg fill(previous) order by time desc " +
+		"group by time(7m12s),appinst,appinstorg,cloudlet,cloudletorg fill(previous) order by time desc " +
 		"limit 100"
 	testSingleAppQueryLastPoint = "SELECT cpu FROM \"appinst-cpu\" WHERE (" +
 		testSingleAppFilter + ") " +
-		"group by app,apporg,cluster,clusterorg,ver,cloudlet,cloudletorg fill(previous) order by time desc " +
+		"group by appinst,appinstorg,cloudlet,cloudletorg fill(previous) order by time desc " +
 		"limit 1"
 	testSingleAppWildcardSelector = "SELECT cpu FROM \"appinst-cpu\" WHERE (" +
 		testSingleAppFilter + ") " +
-		"group by app,apporg,cluster,clusterorg,ver,cloudlet,cloudletorg fill(previous) order by time desc limit 1;" +
+		"group by appinst,appinstorg,cloudlet,cloudletorg fill(previous) order by time desc limit 1;" +
 		"SELECT mem FROM \"appinst-mem\" WHERE (" +
 		testSingleAppFilter + ") " +
-		"group by app,apporg,cluster,clusterorg,ver,cloudlet,cloudletorg fill(previous) order by time desc limit 1;" +
+		"group by appinst,appinstorg,cloudlet,cloudletorg fill(previous) order by time desc limit 1;" +
 		"SELECT disk FROM \"appinst-disk\" WHERE (" +
 		testSingleAppFilter + ") " +
-		"group by app,apporg,cluster,clusterorg,ver,cloudlet,cloudletorg fill(previous) order by time desc limit 1;" +
+		"group by appinst,appinstorg,cloudlet,cloudletorg fill(previous) order by time desc limit 1;" +
 		"SELECT sendBytes,recvBytes FROM \"appinst-network\" WHERE (" +
 		testSingleAppFilter + ") " +
-		"group by app,apporg,cluster,clusterorg,ver,cloudlet,cloudletorg fill(previous) order by time desc limit 1;" +
+		"group by appinst,appinstorg,cloudlet,cloudletorg fill(previous) order by time desc limit 1;" +
 		"SELECT port,active,handled,accepts,bytesSent,bytesRecvd,P0,P25,P50,P75,P90,P95,P99,\"P99.5\",\"P99.9\",P100 FROM \"appinst-connections\" WHERE (" +
 		testSingleAppFilter + ") " +
-		"group by app,apporg,cluster,clusterorg,ver,cloudlet,cloudletorg fill(previous) order by time desc limit 1;" +
+		"group by appinst,appinstorg,cloudlet,cloudletorg fill(previous) order by time desc limit 1;" +
 		"SELECT port,bytesSent,bytesRecvd,datagramsSent,datagramsRecvd,sentErrs,recvErrs,overflow,missed FROM \"appinst-udp\" WHERE (" +
 		testSingleAppFilter + ") " +
-		"group by app,apporg,cluster,clusterorg,ver,cloudlet,cloudletorg fill(previous) order by time desc limit 1"
+		"group by appinst,appinstorg,cloudlet,cloudletorg fill(previous) order by time desc limit 1"
 
 	testSingleApp = appInstMetrics{
 		RegionAppInstMetrics: &ormapi.RegionAppInstMetrics{
 			Region: "test",
 			AppInsts: []edgeproto.AppInstKey{
 				edgeproto.AppInstKey{
-					AppKey: edgeproto.AppKey{
-						Organization: "testOrg1",
-						Name:         "testApp1",
-						Version:      "1.0",
-					},
-					ClusterInstKey: edgeproto.VirtualClusterInstKey{
-						CloudletKey: edgeproto.CloudletKey{
-							Name: "testCloudlet1",
-						},
+					Organization: "testOrg1",
+					Name:         "testApp1",
+					CloudletKey: edgeproto.CloudletKey{
+						Name: "testCloudlet1",
 					},
 				},
 			},
 		},
 	}
-	testAppsFilter = "(\"apporg\"='testOrg1' AND \"app\"='testapp1' AND \"ver\"='10' AND \"clusterorg\"='testOrg1' AND \"cluster\"='testCluster1' AND \"cloudlet\"='testCloudlet1' AND \"cloudletorg\"='testCloudletOrg1') OR " +
-		"(\"apporg\"='testOrg1' AND \"app\"='testapp2' AND \"ver\"='20' AND \"clusterorg\"='testOrg1' AND \"cluster\"='testCluster2' AND \"cloudlet\"='testCloudlet2' AND \"cloudletorg\"='testCloudletOrg2') " +
+	testAppsFilter = "(\"appinstorg\"='testOrg1' AND \"appinst\"='testapp1' AND \"cloudlet\"='testCloudlet1' AND \"cloudletorg\"='testCloudletOrg1') OR " +
+		"(\"appinstorg\"='testOrg1' AND \"appinst\"='testapp2' AND \"cloudlet\"='testCloudlet2' AND \"cloudletorg\"='testCloudletOrg2') " +
 		"AND (cloudlet='testCloudlet1' OR cloudlet='testCloudlet2')"
 	testAppsQueryDefTime = "SELECT last(sendBytes) as sendBytes,last(recvBytes) as recvBytes FROM \"appinst-network\" WHERE (" +
 		testAppsFilter + ") " +
 		"AND time >= '2019-12-31T13:01:00Z' AND time <= '2020-01-01T01:01:00Z' " +
-		"group by time(7m12s),app,apporg,cluster,clusterorg,ver,cloudlet,cloudletorg fill(previous) order by time desc " +
+		"group by time(7m12s),appinst,appinstorg,cloudlet,cloudletorg fill(previous) order by time desc " +
 		"limit 100"
 	testAppsQueryLastPoint = "SELECT sendBytes,recvBytes FROM \"appinst-network\" WHERE (" +
 		testAppsFilter + ") " +
-		"group by app,apporg,cluster,clusterorg,ver,cloudlet,cloudletorg fill(previous) order by time desc " +
+		"group by appinst,appinstorg,cloudlet,cloudletorg fill(previous) order by time desc " +
 		"limit 1"
 	testApps = appInstMetrics{
 		RegionAppInstMetrics: &ormapi.RegionAppInstMetrics{
 			Region: "test",
 			AppInsts: []edgeproto.AppInstKey{
 				edgeproto.AppInstKey{ // 0
-					AppKey: edgeproto.AppKey{
-						Organization: "testOrg1",
-						Name:         "testApp1",
-						Version:      "1.0",
-					},
-					ClusterInstKey: edgeproto.VirtualClusterInstKey{
-						Organization: "testOrg1",
-						CloudletKey: edgeproto.CloudletKey{
-							Name:         "testCloudlet1",
-							Organization: "testCloudletOrg1",
-						},
-						ClusterKey: edgeproto.ClusterKey{
-							Name: "testCluster1",
-						},
+					Organization: "testOrg1",
+					Name:         "testApp1",
+					CloudletKey: edgeproto.CloudletKey{
+						Name:         "testCloudlet1",
+						Organization: "testCloudletOrg1",
 					},
 				},
 				edgeproto.AppInstKey{ // 1
-					AppKey: edgeproto.AppKey{
-						Organization: "testOrg1",
-						Name:         "testApp2",
-						Version:      "2.0",
-					},
-					ClusterInstKey: edgeproto.VirtualClusterInstKey{
-						Organization: "testOrg1",
-						CloudletKey: edgeproto.CloudletKey{
-							Name:         "testCloudlet2",
-							Organization: "testCloudletOrg2",
-						},
-						ClusterKey: edgeproto.ClusterKey{
-							Name: "testCluster2",
-						},
+					Organization: "testOrg1",
+					Name:         "testApp2",
+					CloudletKey: edgeproto.CloudletKey{
+						Name:         "testCloudlet2",
+						Organization: "testCloudletOrg2",
 					},
 				},
 			},
@@ -164,7 +141,9 @@ var (
 					CloudletKey: edgeproto.CloudletKey{
 						Name: "testCloudlet1",
 					},
-					Organization: "testOrg1",
+					ClusterKey: edgeproto.ClusterKey{
+						Organization: "testOrg1",
+					},
 				},
 			},
 		},
@@ -186,23 +165,23 @@ var (
 			Region: "test",
 			ClusterInsts: []edgeproto.ClusterInstKey{
 				edgeproto.ClusterInstKey{
-					Organization: "testOrg1",
 					CloudletKey: edgeproto.CloudletKey{
 						Name:         "testCloudlet1",
 						Organization: "testCloudletOrg1",
 					},
 					ClusterKey: edgeproto.ClusterKey{
-						Name: "testCluster1",
+						Name:         "testCluster1",
+						Organization: "testOrg1",
 					},
 				},
 				edgeproto.ClusterInstKey{
-					Organization: "testOrg2",
 					CloudletKey: edgeproto.CloudletKey{
 						Name:         "testCloudlet2",
 						Organization: "testCloudletOrg2",
 					},
 					ClusterKey: edgeproto.ClusterKey{
-						Name: "testCluster2",
+						Name:         "testCluster2",
+						Organization: "testOrg2",
 					},
 				},
 			},
@@ -340,7 +319,7 @@ var (
 func getCloudletsFromAppInsts(apps *ormapi.RegionAppInstMetrics) []string {
 	cloudlets := []string{}
 	for _, app := range apps.AppInsts {
-		cloudlets = append(cloudlets, app.ClusterInstKey.CloudletKey.Name)
+		cloudlets = append(cloudlets, app.CloudletKey.Name)
 	}
 	return cloudlets
 }

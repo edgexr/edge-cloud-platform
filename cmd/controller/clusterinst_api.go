@@ -971,6 +971,11 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		if !s.all.cloudletInfoApi.store.STMGet(stm, &in.Key.CloudletKey, &info) {
 			return fmt.Errorf("No resource information found for Cloudlet %s", in.Key.CloudletKey)
 		}
+		if info.CompatibilityVersion < cloudcommon.CRMCompatibilityNewAppInstKey {
+			// not backwards compatible
+			return fmt.Errorf("Cloudlet %s CRM compatibility version is too old (%d), controller requires at least version %d, please upgrade Cloudlet CRM", in.Key.CloudletKey.Name, info.CompatibilityVersion, cloudcommon.CRMCompatibilityNewAppInstKey)
+		}
+
 		refs := edgeproto.CloudletRefs{}
 		if !s.all.cloudletRefsApi.store.STMGet(stm, &in.Key.CloudletKey, &refs) {
 			initCloudletRefs(&refs, &in.Key.CloudletKey)

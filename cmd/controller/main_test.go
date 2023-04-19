@@ -198,7 +198,7 @@ func testC(t *testing.T) {
 	require.NotNil(t, err)
 	// test that delete works after removing dependencies
 	for _, inst := range testutil.AppInstData() {
-		if testutil.IsAutoClusterAutoDeleteApp(&inst.Key) {
+		if testutil.IsAutoClusterAutoDeleteApp(&inst) {
 			continue
 		}
 		stream, err := appInstClient.DeleteAppInst(ctx, &inst)
@@ -423,12 +423,16 @@ func testClusterInstDeleteChecks(t *testing.T, ctx context.Context, apis1, apis2
 	insertCloudletInfo(ctx, apis2, testutil.CloudletInfoData())
 	ci := testutil.ClusterInstData()[0]
 
+	appKey := testutil.AppData()[9].Key // auto-delete app
 	ai := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
-			AppKey:         testutil.AppData()[9].Key, // auto-delete app
-			ClusterInstKey: *ci.Key.Virtual(""),
+			Name:         "autodel",
+			Organization: appKey.Organization,
+			CloudletKey:  ci.Key.CloudletKey,
 		},
-		Liveness: edgeproto.Liveness_LIVENESS_DYNAMIC,
+		AppKey:     appKey,
+		ClusterKey: ci.Key.ClusterKey,
+		Liveness:   edgeproto.Liveness_LIVENESS_DYNAMIC,
 	}
 
 	validTries := 0
@@ -445,7 +449,8 @@ func testClusterInstDeleteChecks(t *testing.T, ctx context.Context, apis1, apis2
 		for ii := 0; ii < numApps; ii++ {
 			go func(num int) {
 				aiRun := ai
-				aiRun.Key.AppKey.Name += fmt.Sprintf("%d", num)
+				aiRun.Key.Name = fmt.Sprintf("%d", num)
+				aiRun.AppKey.Name += fmt.Sprintf("%d", num)
 				err := apis2.appInstApi.CreateAppInst(&aiRun, testutil.NewCudStreamoutAppInst(ctx))
 				if err == nil {
 					atomic.AddInt32(&numOk, 1)
@@ -477,7 +482,7 @@ func testClusterInstDeleteChecks(t *testing.T, ctx context.Context, apis1, apis2
 		}
 		for ii := 0; ii < numApps; ii++ {
 			aiRun := ai
-			aiRun.Key.AppKey.Name += fmt.Sprintf("%d", ii)
+			aiRun.Key.Name = fmt.Sprintf("%d", ii)
 			apis1.appInstApi.DeleteAppInst(&aiRun, testutil.NewCudStreamoutAppInst(ctx))
 		}
 	}

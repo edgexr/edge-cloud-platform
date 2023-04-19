@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"testing"
 	"time"
 
@@ -52,7 +53,7 @@ func buildDbFromTestData(objStore objstore.KVStore, funcName string) error {
 		}
 		key = scanner.Text()
 		if !scanner.Scan() {
-			return fmt.Errorf("Improper formatted preupgrade .etcd file - Unmatched key, without a value.")
+			return fmt.Errorf("Improper formatted preupgrade .etcd file - Unmatched key without a value.")
 		}
 		val = scanner.Text()
 		if _, err := objStore.Put(ctx, key, val); err != nil {
@@ -80,8 +81,10 @@ func compareDbToExpected(objStore objstore.KVStore, funcName string) error {
 		return err
 	}
 	defer fileExpected.Close()
-	writtenKeys := make(map[string]struct{})
-
+	type kv struct {
+		key string
+		val string
+	}
 	var compareErr error
 	scanner := bufio.NewScanner(file)
 	for {
@@ -106,21 +109,21 @@ func compareDbToExpected(objStore objstore.KVStore, funcName string) error {
 			// continue writing to expected file
 			compareErr = err
 		}
-		fileExpected.WriteString(string(key) + "\n")
-		fileExpected.WriteString(string(dbVal) + "\n")
-		writtenKeys[string(key)] = struct{}{}
-		dbObjCount++
 		fileObjCount++
 	}
+	kvs := []kv{}
 	err = objStore.List("", func(key, val []byte, rev, modRev int64) error {
-		if _, found := writtenKeys[string(key)]; found {
-			return nil
-		}
-		fileExpected.WriteString(string(key) + "\n")
-		fileExpected.WriteString(string(val) + "\n")
-		dbObjCount++
+		kvs = append(kvs, kv{string(key), string(val)})
 		return nil
 	})
+	sort.Slice(kvs, func(i, j int) bool {
+		return kvs[i].key < kvs[j].key
+	})
+	for _, obj := range kvs {
+		fileExpected.WriteString(obj.key + "\n")
+		fileExpected.WriteString(obj.val + "\n")
+		dbObjCount++
+	}
 	if compareErr != nil {
 		return compareErr
 	}
@@ -212,11 +215,4 @@ func TestAllUpgradeFuncs(t *testing.T) {
 		// Stop it, so it's re-created again
 		objStore.Stop()
 	}
-	//manually test a failure of checkHttpPorts upgrade
-	objStore.Start()
-	err := buildDbFromTestData(&objStore, "CheckForHttpPortsFail")
-	require.Nil(t, err, "Unable to build db from testData")
-	err = RunSingleUpgrade(ctx, &objStore, apis, CheckForHttpPorts)
-	require.NotNil(t, err, "Upgrade did not fail")
-	objStore.Stop()
 }

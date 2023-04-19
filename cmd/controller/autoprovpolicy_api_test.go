@@ -21,9 +21,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
@@ -371,6 +371,7 @@ type autoProvPolicyTest struct {
 	policy        edgeproto.AutoProvPolicy
 	cloudlets     []edgeproto.Cloudlet
 	cloudletInfos []edgeproto.CloudletInfo
+	cloudletKeys  map[edgeproto.CloudletKey]int
 }
 
 // AutoProvPolicy and supporting data for test
@@ -381,6 +382,7 @@ func newAutoProvPolicyTest(name, org string, count int, flavor *edgeproto.Flavor
 	s.policy.Key.Organization = org
 	s.cloudlets = make([]edgeproto.Cloudlet, count, count)
 	s.cloudletInfos = make([]edgeproto.CloudletInfo, count, count)
+	s.cloudletKeys = make(map[edgeproto.CloudletKey]int)
 	for ii, _ := range s.cloudlets {
 		s.cloudlets[ii].Key.Name = fmt.Sprintf("%s-%d", name, ii)
 		s.cloudlets[ii].Key.Organization = "op"
@@ -391,6 +393,7 @@ func newAutoProvPolicyTest(name, org string, count int, flavor *edgeproto.Flavor
 		s.cloudlets[ii].PlatformType = edgeproto.PlatformType_PLATFORM_TYPE_FAKE
 		s.policy.Cloudlets = append(s.policy.Cloudlets,
 			&edgeproto.AutoProvCloudlet{Key: s.cloudlets[ii].Key})
+		s.cloudletKeys[s.cloudlets[ii].Key] = ii
 	}
 	for ii, _ := range s.cloudletInfos {
 		s.cloudletInfos[ii].Key = s.cloudlets[ii].Key
@@ -470,10 +473,10 @@ func (s *autoProvPolicyTest) goDoAppInsts(t *testing.T, ctx context.Context, app
 		wg.Add(1)
 		go func(ii int) {
 			inst := edgeproto.AppInst{}
-			inst.Key.AppKey = app.Key
-			inst.Key.ClusterInstKey.CloudletKey = s.cloudlets[ii].Key
-			inst.Key.ClusterInstKey.ClusterKey.Name = cloudcommon.AutoClusterPrefix + strconv.Itoa(ii)
-			inst.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
+			inst.Key.Name = "inst" + strconv.Itoa(ii)
+			inst.Key.Organization = app.Key.Organization
+			inst.Key.CloudletKey = s.cloudlets[ii].Key
+			inst.AppKey = app.Key
 			var err error
 			if action == cloudcommon.Create {
 				err = s.apis.appInstApi.CreateAppInst(&inst, testutil.NewCudStreamoutAppInst(ctx))
@@ -490,15 +493,14 @@ func (s *autoProvPolicyTest) goDoAppInsts(t *testing.T, ctx context.Context, app
 func (s *autoProvPolicyTest) expectAppInsts(t *testing.T, ctx context.Context, app *edgeproto.App, expected int) {
 	// Count the number of AppInsts on Cloudlets for this policy.
 	actual := 0
-	for ii, _ := range s.cloudlets {
-		instKey := edgeproto.AppInstKey{}
-		instKey.AppKey = app.Key
-		instKey.ClusterInstKey.CloudletKey = s.cloudlets[ii].Key
-		instKey.ClusterInstKey.ClusterKey.Name = cloudcommon.AutoClusterPrefix + strconv.Itoa(ii)
-		instKey.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
-		if s.apis.appInstApi.cache.HasKey(&instKey) {
+	filter := edgeproto.AppInst{
+		AppKey: app.Key,
+	}
+	s.apis.appInstApi.cache.Show(&filter, func(ai *edgeproto.AppInst) error {
+		if _, found := s.cloudletKeys[ai.Key.CloudletKey]; found {
 			actual++
 		}
-	}
+		return nil
+	})
 	require.Equal(t, expected, actual, "expected %d insts for policy %s but found %d", expected, s.policy.Key.Name, actual)
 }

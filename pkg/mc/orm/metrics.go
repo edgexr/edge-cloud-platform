@@ -42,7 +42,7 @@ var (
 		` fill(previous)` +
 		` order by time desc {{if ne .Limit 0}}limit {{.Limit}}{{end}}`
 
-	AppInstGroupFields     = "app,apporg,cluster,clusterorg,ver,cloudlet,cloudletorg"
+	AppInstGroupFields     = "appinst,appinstorg,cloudlet,cloudletorg"
 	ClusterInstGroupFields = "cluster,clusterorg,cloudlet,cloudletorg"
 	CloudletGroupFields    = "cloudlet,cloudletorg"
 )

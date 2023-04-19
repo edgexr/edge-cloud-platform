@@ -252,6 +252,7 @@ var AllocatedIpDynamic = "dynamic"
 var RootLBHostname = "shared"
 
 const IdAlphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const IdAlphabetLC = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 // Fully Qualified Domain Names (FQDNs) primarily come in the
 // the following format of 4 "labels" (where domain can actually

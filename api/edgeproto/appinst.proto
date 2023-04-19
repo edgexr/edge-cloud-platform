@@ -127,9 +127,9 @@ message AppInst {
   // required: true
   AppInstKey key = 2 [(gogoproto.nullable) = false];
   // App key
-  AppKey app_key = 44 [(gogoproto.nullable) = false];
+  AppKey app_key = 44 [(gogoproto.nullable) = false, (protogen.refers_to) = "App"];
   // Cluster on which to deploy App Instance, may be left blank for auto-placement
-  ClusterKey cluster_key = 45 [(gogoproto.nullable) = false];
+  ClusterKey cluster_key = 45 [(gogoproto.nullable) = false, (protogen.refers_to) = "ClusterInst"];
   // Cached location of the cloudlet
   distributed_match_engine.Loc cloudlet_loc = 3 [(gogoproto.nullable) = false];
   // Base FQDN (not really URI) for the App. See Service FQDN for endpoint access.

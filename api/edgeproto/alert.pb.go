@@ -1442,7 +1442,7 @@ func GetReferencesMap() map[string][]string {
 	refs["App"] = []string{"AlertPolicy", "AutoProvPolicy", "Flavor"}
 	refs["AppAlertPolicy"] = []string{"AlertPolicy", "App"}
 	refs["AppAutoProvPolicy"] = []string{"App", "AutoProvPolicy"}
-	refs["AppInst"] = []string{"Cloudlet", "Flavor"}
+	refs["AppInst"] = []string{"App", "Cloudlet", "ClusterInst", "Flavor"}
 	refs["AppInstClient"] = []string{"Cloudlet"}
 	refs["AppInstKey"] = []string{"Cloudlet"}
 	refs["AppInstKeyV1"] = []string{"ClusterInst"}
@@ -1455,7 +1455,7 @@ func GetReferencesMap() map[string][]string {
 	refs["Cloudlet"] = []string{"Flavor", "GPUDriver", "ResTagTable", "TrustPolicy", "VMPool"}
 	refs["CloudletPool"] = []string{"Cloudlet"}
 	refs["CloudletPoolMember"] = []string{"Cloudlet", "CloudletPool"}
-	refs["CloudletRefs"] = []string{"ClusterInst"}
+	refs["CloudletRefs"] = []string{"AppInst", "ClusterInst"}
 	refs["CloudletResMap"] = []string{"Cloudlet", "ResTagTable"}
 	refs["ClusterInst"] = []string{"AutoScalePolicy", "Cloudlet", "Flavor", "Network"}
 	refs["ClusterInstKey"] = []string{"Cloudlet"}

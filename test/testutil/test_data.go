@@ -744,16 +744,17 @@ func AppInstData() []edgeproto.AppInst {
 			Organization: appData[0].Key.Organization,
 			CloudletKey:  clusterInstData[8].Key.CloudletKey, // multi-tenant
 		},
-		AppKey:      appData[0].Key,
+		AppKey: appData[0].Key,
+		// No ClusterKey, autocluster should choose MT first
 		CloudletLoc: cloudletData[0].Location,
 	}, { // edgeproto.AppInst // 14
 		Key: edgeproto.AppInstKey{
-			Name:         appData[9].Key.Name + "1",
+			Name:         appData[9].Key.Name + "3",
 			Organization: appData[9].Key.Organization,
 			CloudletKey:  clusterInstData[8].Key.CloudletKey,
 		},
-		AppKey:      appData[9].Key, // sidecar app
-		ClusterKey:  clusterInstData[8].Key.ClusterKey,
+		AppKey:      appData[9].Key,                    // sidecar app
+		ClusterKey:  clusterInstData[8].Key.ClusterKey, // sidecar requires cluster key
 		CloudletLoc: cloudletData[0].Location,
 	}, { // edgeproto.AppInst // 15
 		Key: edgeproto.AppInstKey{
@@ -761,7 +762,8 @@ func AppInstData() []edgeproto.AppInst {
 			Organization: appData[13].Key.Organization,
 			CloudletKey:  clusterInstData[8].Key.CloudletKey,
 		},
-		AppKey:      appData[13].Key,
+		AppKey: appData[13].Key,
+		// No ClusterKey, autocluster should choose MT first
 		CloudletLoc: cloudletData[0].Location,
 	}, { // edgeproto.AppInst // 16
 		Key: edgeproto.AppInstKey{
@@ -769,7 +771,8 @@ func AppInstData() []edgeproto.AppInst {
 			Organization: appData[14].Key.Organization,
 			CloudletKey:  clusterInstData[8].Key.CloudletKey,
 		},
-		AppKey:      appData[14].Key,
+		AppKey: appData[14].Key,
+		// No ClusterKey, autocluster should choose MT first
 		CloudletLoc: cloudletData[0].Location,
 	}, { // edgeproto.AppInst // 17
 		Key: edgeproto.AppInstKey{
@@ -1351,7 +1354,7 @@ func AlertData() []edgeproto.Alert {
 	}, { // edgeproto.Alert
 		Labels: map[string]string{
 			"alertname":   "AppInstDown",
-			"appinst":     appInstData[0].Key.Name,
+			"appinst":     "alertAppInst",
 			"appinstorg":  appInstData[0].Key.Organization,
 			"app":         appInstData[0].AppKey.Name,
 			"appver":      appInstData[0].AppKey.Version,
@@ -2127,6 +2130,7 @@ func IsAutoClusterAutoDeleteApp(inst *edgeproto.AppInst) bool {
 // created and processed by the Controller, given that the controller
 // may modify certain fields during create.
 func CreatedAppInstData() []edgeproto.AppInst {
+	clusterInstData := ClusterInstData()
 	clusterInstAutoData := ClusterInstAutoData()
 	insts := []edgeproto.AppInst{}
 	for ii, appInst := range AppInstData() {
@@ -2138,6 +2142,15 @@ func CreatedAppInstData() []edgeproto.AppInst {
 			appInst.ClusterKey = clusterInstAutoData[1].Key.ClusterKey
 		case 6:
 			appInst.ClusterKey = clusterInstAutoData[2].Key.ClusterKey
+		case 12:
+			appInst.ClusterKey = clusterInstAutoData[3].Key.ClusterKey
+		case 13:
+			fallthrough
+		case 15:
+			fallthrough
+		case 16:
+			// auto cluster chooses MT cluster
+			appInst.ClusterKey = clusterInstData[8].Key.ClusterKey
 		}
 		insts = append(insts, appInst)
 	}

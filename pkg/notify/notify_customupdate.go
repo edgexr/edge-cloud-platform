@@ -42,11 +42,14 @@ func (s *AppInstSend) UpdateOk(ctx context.Context, appInst *edgeproto.AppInst) 
 	triggerSend := false
 	if s.sendrecv.filterCloudletKeys {
 		if !s.sendrecv.cloudletReady {
+			log.SpanLog(ctx, log.DebugLevelApi, "appinstsend updateok cloudlet not ready", "key", appInst.Key)
 			return false
 		}
 		if !s.sendrecv.hasCloudletKey(&appInst.Key.CloudletKey) {
+			log.SpanLog(ctx, log.DebugLevelApi, "appinstsend updateok no cloudlet", "key", appInst.Key)
 			return false
 		}
+		log.SpanLog(ctx, log.DebugLevelApi, "appinstsend updateok", "key", appInst.Key)
 		triggerSend = true
 	}
 	if s.sendrecv.filterFederatedCloudlet {
@@ -102,18 +105,22 @@ func (s *CloudletSend) UpdateOk(ctx context.Context, cloudlet *edgeproto.Cloudle
 func (s *ClusterInstSend) UpdateOk(ctx context.Context, clusterInst *edgeproto.ClusterInst) bool {
 	if s.sendrecv.filterCloudletKeys {
 		if !s.sendrecv.cloudletReady {
+			log.SpanLog(ctx, log.DebugLevelApi, "clusterinstsend updateok cloudlet not ready", "key", clusterInst.Key)
 			return false
 		}
 		if !s.sendrecv.hasCloudletKey(&clusterInst.Key.CloudletKey) {
+			log.SpanLog(ctx, log.DebugLevelApi, "clusterinstsend updateok no cloudlet key", "key", clusterInst.Key)
 			return false
 		}
 	}
 	if s.sendrecv.filterFederatedCloudlet {
 		// Federated cloudlets are ignored by CRMs and are handled by FRMs
 		if clusterInst.Key.CloudletKey.FederatedOrganization == "" {
+			log.SpanLog(ctx, log.DebugLevelApi, "clusterinstsend updateok ignore federated", "key", clusterInst.Key)
 			return false
 		}
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "clusterinstsend updateok", "key", clusterInst.Key)
 	return true
 }
 
@@ -137,19 +144,23 @@ func (s *ExecRequestSend) UpdateOk(ctx context.Context, msg *edgeproto.ExecReque
 
 func (s *VMPoolSend) UpdateOk(ctx context.Context, vmpool *edgeproto.VMPool) bool {
 	if s.sendrecv.filterCloudletKeys {
+		log.SpanLog(ctx, log.DebugLevelApi, "vmpool updateok", "key", vmpool.Key)
 		for cKey, _ := range s.sendrecv.cloudletKeys {
 			cloudlet := edgeproto.Cloudlet{}
 			var modRev int64
 			if cKey.Organization != vmpool.Key.Organization {
+				log.SpanLog(ctx, log.DebugLevelApi, "vmpool updateok mismatch orgs", "key", vmpool.Key, "ckey", cKey)
 				continue
 			}
 			if s.sendrecv.cloudletSend.handler.GetWithRev(&cKey, &cloudlet, &modRev) {
+				log.SpanLog(ctx, log.DebugLevelApi, "vmpool updateok cloudlet get", "key", vmpool.Key, "cloudlet", cloudlet)
 				if cloudlet.VmPool != vmpool.Key.Name {
 					continue
 				}
 				return true
 			}
 		}
+		log.SpanLog(ctx, log.DebugLevelApi, "vmpool updateok no send", "key", vmpool.Key)
 		return false
 	}
 	return true
@@ -270,21 +281,24 @@ func (s *CloudletInfoRecv) RecvHook(ctx context.Context, notice *edgeproto.Notic
 			// trigger send of all objects related to cloudlet
 			// In case of cloudlet upgrade, Check if READY is
 			// received from the appropriate cloudlet
-			if buf.ContainerVersion != "" && s.sendrecv.cloudletSend != nil {
-				if s.sendrecv.cloudletSend.handler.GetWithRev(&buf.Key, &cloudlet, &modRev) &&
-					(cloudlet.State == edgeproto.TrackedState_UPDATE_REQUESTED ||
-						cloudlet.State == edgeproto.TrackedState_UPDATING) &&
-					cloudlet.ContainerVersion != buf.ContainerVersion {
-					return
+			if !s.sendrecv.cloudletSend.handler.GetWithRev(&buf.Key, &cloudlet, &modRev) {
+				log.SpanLog(ctx, log.DebugLevelNotify, "Lookup of cloudlet failed", "key", buf.Key)
+			} else {
+				if buf.ContainerVersion != "" && s.sendrecv.cloudletSend != nil {
+					if s.sendrecv.cloudletSend.handler.GetWithRev(&buf.Key, &cloudlet, &modRev) &&
+						(cloudlet.State == edgeproto.TrackedState_UPDATE_REQUESTED ||
+							cloudlet.State == edgeproto.TrackedState_UPDATING) &&
+						cloudlet.ContainerVersion != buf.ContainerVersion {
+						return
+					}
 				}
+				// Post cloudlet upgrade, when CLOUDLET_STATE_READY state
+				// is seen from upgraded CRM, then following will trigger
+				// send of all objects (which includes objects missed
+				// during upgrade)
+				s.sendrecv.sendForCloudlet(ctx, notice.Action, &cloudlet)
+				s.sendrecv.triggerSendAllEnd()
 			}
-
-			// Post cloudlet upgrade, when CLOUDLET_STATE_READY state
-			// is seen from upgraded CRM, then following will trigger
-			// send of all objects (which includes objects missed
-			// during upgrade)
-			s.sendrecv.sendForCloudlet(ctx, notice.Action, &cloudlet)
-			s.sendrecv.triggerSendAllEnd()
 		}
 	}
 	if notice.Action == edgeproto.NoticeAction_DELETE {

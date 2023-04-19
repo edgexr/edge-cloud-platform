@@ -156,7 +156,7 @@ func TestAppInstApi(t *testing.T) {
 	RequireAppInstPortConsistency = false
 	for ii, data := range testutil.AppInstData() {
 		obj := data // make new copy since range variable gets reused each iter
-		if testutil.IsAutoClusterAutoDeleteApp(&obj.Key) {
+		if testutil.IsAutoClusterAutoDeleteApp(&obj) {
 			continue
 		}
 		err := apis.appInstApi.CreateAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
@@ -312,15 +312,15 @@ func TestAppInstApi(t *testing.T) {
 	// Test Fqdn prefix
 	for _, data := range apis.appInstApi.cache.Objs {
 		obj := data.Obj
-		app_name := util.K8SSanitize(obj.Key.AppKey.Name + obj.Key.AppKey.Version)
-		if obj.Key.AppKey.Name == "helmApp" || obj.Key.AppKey.Name == "vm lb" {
+		app_name := util.K8SSanitize(obj.AppKey.Name + obj.AppKey.Version)
+		if obj.AppKey.Name == "helmApp" || obj.AppKey.Name == "vm lb" {
 			continue
 		}
 		cloudlet := edgeproto.Cloudlet{}
-		found := apis.cloudletApi.cache.Get(&obj.Key.ClusterInstKey.CloudletKey, &cloudlet)
+		found := apis.cloudletApi.cache.Get(&obj.Key.CloudletKey, &cloudlet)
 		require.True(t, found)
 		features := edgeproto.PlatformFeatures{}
-		operator := obj.Key.ClusterInstKey.CloudletKey.Organization
+		operator := obj.Key.CloudletKey.Organization
 
 		for _, port := range obj.MappedPorts {
 			lproto, err := edgeproto.LProtoStr(port.Proto)
@@ -340,7 +340,7 @@ func TestAppInstApi(t *testing.T) {
 
 	// test appint create with overlapping ports
 	obj = testutil.AppInstData()[0]
-	obj.Key.AppKey = testutil.AppData()[1].Key
+	obj.AppKey = testutil.AppData()[1].Key
 	err = apis.appInstApi.CreateAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
 	require.NotNil(t, err, "Overlapping ports would trigger an app inst create failure")
 	require.Contains(t, err.Error(), "port 80 is already in use")
@@ -352,7 +352,7 @@ func TestAppInstApi(t *testing.T) {
 			// skip AppInst[0], it was deleted earlier in the test
 			continue
 		}
-		if testutil.IsAutoClusterAutoDeleteApp(&obj.Key) {
+		if testutil.IsAutoClusterAutoDeleteApp(&obj) {
 			continue
 		}
 		err := apis.appInstApi.DeleteAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
@@ -361,7 +361,6 @@ func TestAppInstApi(t *testing.T) {
 
 	testAppInstId(t, ctx, apis)
 	testAppFlavorRequest(t, ctx, commonApi, responder, apis)
-	testDeprecatedSharedRootLBFQDN(t, ctx, apis)
 	testSingleKubernetesCloudlet(t, ctx, apis, appDnsRoot)
 
 	// cleanup unused reservable auto clusters
@@ -396,7 +395,7 @@ func appInstCachedFieldsTest(t *testing.T, ctx context.Context, cAppApi *testuti
 	show := testutil.ShowAppInst{}
 	show.Init()
 	filter := edgeproto.AppInst{}
-	filter.Key.AppKey = testutil.AppData()[0].Key
+	filter.AppKey = testutil.AppData()[0].Key
 	err = cAppInstApi.ShowAppInst(ctx, &filter, &show)
 	require.Nil(t, err, "show app inst data")
 	require.True(t, len(show.Data) > 0, "number of matching app insts")
@@ -413,7 +412,7 @@ func appInstCachedFieldsTest(t *testing.T, ctx context.Context, cAppApi *testuti
 
 	show.Init()
 	filter = edgeproto.AppInst{}
-	filter.Key.ClusterInstKey.CloudletKey = testutil.CloudletData()[0].Key
+	filter.Key.CloudletKey = testutil.CloudletData()[0].Key
 	err = cAppInstApi.ShowAppInst(ctx, &filter, &show)
 	require.Nil(t, err, "show app inst data")
 	for _, inst := range show.Data {
@@ -475,7 +474,7 @@ func TestAutoClusterInst(t *testing.T) {
 	// negative tests
 	// bad Organization
 	mtBad := mt
-	mtBad.Key.Organization = "foo"
+	mtBad.Key.ClusterKey.Organization = "foo"
 	err := apis.clusterInstApi.CreateClusterInst(&mtBad, testutil.NewCudStreamoutClusterInst(ctx))
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Only edgecloudorg ClusterInsts may be multi-tenant")
@@ -496,7 +495,7 @@ func TestAutoClusterInst(t *testing.T) {
 		key := &edgeproto.ClusterInstKey{}
 		key.ClusterKey.Name = cloudcommon.ReservableClusterPrefix + id
 		key.CloudletKey = cloudletKey
-		key.Organization = edgeproto.OrganizationEdgeCloud
+		key.ClusterKey.Organization = edgeproto.OrganizationEdgeCloud
 		// look up reserved ClusterInst
 		clusterInst := edgeproto.ClusterInst{}
 		actualFound := apis.clusterInstApi.Get(key, &clusterInst)
@@ -512,28 +511,23 @@ func TestAutoClusterInst(t *testing.T) {
 		require.Greater(t, len(msgs), 0, "some progress messages")
 	}
 	createAutoClusterAppInst := func(copy edgeproto.AppInst, expectedId string) {
-		// since cluster inst does not exist, it will be auto-created
-		copy.Key.ClusterInstKey.ClusterKey.Name = cloudcommon.AutoClusterPrefix + expectedId
-		// make sure cluster org can be left blank
-		copy.Key.ClusterInstKey.Organization = ""
-
+		copy.Key.Name += expectedId
 		err := apis.appInstApi.CreateAppInst(&copy, testutil.NewCudStreamoutAppInst(ctx))
 		require.Nil(t, err, "create app inst")
 		// As there was some progress, there should be some messages in stream
 		msgs := GetAppInstStreamMsgs(t, ctx, &copy.Key, apis, Pass)
 		require.Greater(t, len(msgs), 0, "some progress messages")
 		// Check that reserved ClusterInst was created
-		checkReserved(copy.Key.ClusterInstKey.CloudletKey, true, expectedId, copy.Key.AppKey.Organization)
+		checkReserved(copy.Key.CloudletKey, true, expectedId, copy.Key.Organization)
 		// check for expected cluster name.
-		require.Equal(t, cloudcommon.AutoClusterPrefix+expectedId, copy.Key.ClusterInstKey.ClusterKey.Name)
+		require.Equal(t, cloudcommon.ReservableClusterPrefix+expectedId, copy.ClusterKey.Name)
 	}
 	deleteAutoClusterAppInst := func(copy edgeproto.AppInst, id string) {
 		// delete appinst
-		copy.Key.ClusterInstKey.ClusterKey.Name = cloudcommon.AutoClusterPrefix + id
-		copy.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
+		copy.Key.Name += id
 		err := apis.appInstApi.DeleteAppInst(&copy, testutil.NewCudStreamoutAppInst(ctx))
 		require.Nil(t, err, "delete app inst")
-		checkReserved(copy.Key.ClusterInstKey.CloudletKey, true, id, "")
+		checkReserved(copy.Key.CloudletKey, true, id, "")
 	}
 	checkReservedIds := func(key edgeproto.CloudletKey, expected uint64) {
 		refs := edgeproto.CloudletRefs{}
@@ -544,8 +538,9 @@ func TestAutoClusterInst(t *testing.T) {
 
 	// create auto-cluster AppInsts
 	appInst := testutil.AppInstData()[0]
-	appInst.Key.AppKey = testutil.AppData()[1].Key // does not support multi-tenant
-	cloudletKey := appInst.Key.ClusterInstKey.CloudletKey
+	appInst.AppKey = testutil.AppData()[1].Key // does not support multi-tenant
+	appInst.ClusterKey = edgeproto.ClusterKey{}
+	cloudletKey := appInst.Key.CloudletKey
 	createAutoClusterAppInst(appInst, "0")
 	checkReservedIds(cloudletKey, 1)
 	createAutoClusterAppInst(appInst, "1")
@@ -584,11 +579,10 @@ func TestAutoClusterInst(t *testing.T) {
 
 	// Autocluster AppInst with AutoDelete delete option should fail
 	autoDeleteAppInst := testutil.AppInstData()[10]
-	autoDeleteAppInst.RealClusterName = ""
-	autoDeleteAppInst.Key.ClusterInstKey.ClusterKey.Name = cloudcommon.AutoClusterPrefix + "foo"
+	autoDeleteAppInst.ClusterKey.Name = ""
 	err = apis.appInstApi.CreateAppInst(&autoDeleteAppInst, testutil.NewCudStreamoutAppInst(ctx))
 	require.NotNil(t, err, "create autodelete appInst")
-	require.Contains(t, err.Error(), "Sidecar AppInst (AutoDelete App) must specify the RealClusterName field to deploy to the virtual cluster")
+	require.Contains(t, err.Error(), "Sidecar AppInst (AutoDelete App) must specify the Cluster name and organization to deploy to")
 	// Verify that on error, undo deleted the appInst object from etcd
 	show := testutil.ShowAppInst{}
 	show.Init()
@@ -601,135 +595,7 @@ func TestAutoClusterInst(t *testing.T) {
 	err = apis.clusterInstApi.DeleteClusterInst(&mt, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err)
 
-	testDeprecatedAutoCluster(t, ctx, apis)
 	dummy.Stop()
-}
-
-func testDeprecatedAutoCluster(t *testing.T, ctx context.Context, apis *AllApis) {
-	// downgrade cloudlets to older crm compatibility version
-	cloudletInfos := []edgeproto.CloudletInfo{}
-	for _, info := range testutil.CloudletInfoData() {
-		info.CompatibilityVersion = 0
-		cloudletInfos = append(cloudletInfos, info)
-	}
-	insertCloudletInfo(ctx, apis, cloudletInfos)
-
-	// existing AppInst creates should fail because the ClusterInst org
-	// must match the AppInst org.
-	for ii, data := range testutil.AppInstData() {
-		obj := data
-		if !strings.HasPrefix(obj.Key.ClusterInstKey.ClusterKey.Name, cloudcommon.AutoClusterPrefix) {
-			continue
-		}
-		// there is one App that has dev org as edgecloudorg, which matches
-		// the Reservable auto-cluster's org, so skip it.
-		if obj.Key.AppKey.Organization == obj.Key.ClusterInstKey.Organization {
-			continue
-		}
-		err := apis.appInstApi.CreateAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
-		require.NotNil(t, err, "Create autocluster appinst[%d]: %v", ii, obj.Key)
-		require.Contains(t, err.Error(), "Developer name mismatch")
-	}
-
-	appInsts := []edgeproto.AppInst{}
-	clusterInsts := []edgeproto.ClusterInst{}
-	for ii, data := range testutil.AppInstData() {
-		obj := data
-		if !strings.HasPrefix(obj.Key.ClusterInstKey.ClusterKey.Name, cloudcommon.AutoClusterPrefix) {
-			continue
-		}
-		// make sure cluster org can be left blank
-		obj.Key.ClusterInstKey.Organization = ""
-		appInsts = append(appInsts, obj)
-
-		err := apis.appInstApi.CreateAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
-		require.Nil(t, err, "Create autocluster appinst[%d]: %v", ii, obj.Key)
-		// find app for AppInst
-		var app *edgeproto.App
-		for _, a := range testutil.AppData() {
-			if a.Key.Matches(&obj.Key.AppKey) {
-				app = &a
-				break
-			}
-		}
-		require.NotNil(t, app, "find App for AppInst")
-		// build expected ClusterInst
-		cinst := edgeproto.ClusterInst{}
-		cinst.Key = *obj.Key.ClusterInstKey.Real("")
-		cinst.Flavor = app.DefaultFlavor
-		cinst.NumMasters = 1
-		cinst.NumNodes = 1
-		cinst.Auto = true
-		cinst.State = edgeproto.TrackedState_READY
-		clusterInsts = append(clusterInsts, cinst)
-	}
-	testutil.InternalClusterInstTest(t, "show", apis.clusterInstApi, clusterInsts)
-	// delete AppInsts should delete ClusterInsts
-	for _, obj := range appInsts {
-		err := apis.appInstApi.DeleteAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
-		require.Nil(t, err, "Delete autocluster appinst %v", obj.Key)
-	}
-	testutil.InternalClusterInstTest(t, "show", apis.clusterInstApi, []edgeproto.ClusterInst{})
-	// restore CRM version
-	for ii := range cloudletInfos {
-		cloudletInfos[ii].CompatibilityVersion = cloudcommon.GetCRMCompatibilityVersion()
-	}
-	insertCloudletInfo(ctx, apis, cloudletInfos)
-}
-
-func testDeprecatedSharedRootLBFQDN(t *testing.T, ctx context.Context, apis *AllApis) {
-	// downgrade cloudlets to older crm compatibility version
-	cloudletInfos := []edgeproto.CloudletInfo{}
-	for _, info := range testutil.CloudletInfoData() {
-		info.CompatibilityVersion = 0
-		cloudletInfos = append(cloudletInfos, info)
-	}
-	insertCloudletInfo(ctx, apis, cloudletInfos)
-
-	// create appInst with internalports set to true, this means
-	// that this appInst will not need access from external network
-	appInstData := testutil.AppInstData()[9]
-	err := apis.appInstApi.CreateAppInst(&appInstData, testutil.NewCudStreamoutAppInst(ctx))
-	require.Nil(t, err, "Create appinst: %v", appInstData.Key)
-
-	show := testutil.ShowAppInst{}
-	show.Init()
-	filter := edgeproto.AppInst{}
-	filter.Key = appInstData.Key
-
-	// For older version of CRM, URI should exist
-	err = apis.appInstApi.ShowAppInst(&filter, &show)
-	require.Nil(t, err, "show app inst data")
-	require.True(t, len(show.Data) == 1, "matches app inst")
-	for _, appInstOut := range show.Data {
-		require.True(t, appInstOut.Uri != "", "app URI exists")
-	}
-
-	// delete appinst
-	err = apis.appInstApi.DeleteAppInst(&appInstData, testutil.NewCudStreamoutAppInst(ctx))
-	require.Nil(t, err, "Delete appinst: %v", appInstData.Key)
-
-	// restore CRM version
-	for ii := range cloudletInfos {
-		cloudletInfos[ii].CompatibilityVersion = cloudcommon.GetCRMCompatibilityVersion()
-	}
-	insertCloudletInfo(ctx, apis, cloudletInfos)
-
-	// create appinst again
-	err = apis.appInstApi.CreateAppInst(&appInstData, testutil.NewCudStreamoutAppInst(ctx))
-	require.Nil(t, err, "Create appinst: %v", appInstData.Key)
-
-	// For newer version of CRM, URI should not exist
-	err = apis.appInstApi.ShowAppInst(&filter, &show)
-	require.Nil(t, err, "show app inst data")
-	require.True(t, len(show.Data) == 1, "matches app inst")
-	for _, appInstOut := range show.Data {
-		require.True(t, appInstOut.Uri == "", "app URI doesn't exist")
-	}
-
-	// final cleanup: delete appinst
-	err = apis.appInstApi.DeleteAppInst(&appInstData, testutil.NewCudStreamoutAppInst(ctx))
-	require.Nil(t, err, "Delete appinst: %v", appInstData.Key)
 }
 
 func checkAppInstState(t *testing.T, ctx context.Context, api *testutil.AppInstCommonApi, in *edgeproto.AppInst, state edgeproto.TrackedState) {
@@ -788,25 +654,25 @@ func testAppFlavorRequest(t *testing.T, ctx context.Context, api *testutil.AppIn
 // on both side-car auto-apps and an underlying auto-cluster.
 func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *testutil.AppInstCommonApi, responder *DummyInfoResponder, apis *AllApis) {
 	// autocluster app
+	appKey := testutil.AppData()[0].Key
 	ai := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
-			AppKey: testutil.AppData()[0].Key,
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name: util.K8SSanitize(cloudcommon.AutoClusterPrefix + "override-clust"),
-				},
-				CloudletKey:  testutil.CloudletData()[1].Key,
-				Organization: edgeproto.OrganizationEdgeCloud,
-			},
+			Name:         "testApp",
+			Organization: appKey.Organization,
+			CloudletKey:  testutil.CloudletData()[1].Key,
 		},
+		AppKey: appKey,
 	}
 	// autoapp
 	require.Equal(t, edgeproto.DeleteType_AUTO_DELETE, testutil.AppData()[9].DelOpt)
+	aiautoAppKey := testutil.AppData()[9].Key // auto-delete app
 	aiauto := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
-			AppKey:         testutil.AppData()[9].Key, // auto-delete app
-			ClusterInstKey: ai.Key.ClusterInstKey,
+			Name:         "autoDeleteInst",
+			Organization: aiautoAppKey.Organization,
+			CloudletKey:  ai.Key.CloudletKey,
 		},
+		AppKey: aiautoAppKey,
 	}
 	var err error
 	var obj edgeproto.AppInst
@@ -831,10 +697,10 @@ func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *
 		// set aiauto cluster name from real cluster name of create autocluster
 		clKey := obj.ClusterInstKey()
 		obj = aiauto
-		obj.Key.ClusterInstKey = *clKey.Virtual("")
+		obj.ClusterKey = clKey.ClusterKey
 		// create auto app
 		err = apis.appInstApi.CreateAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
-		require.Nil(t, err, "create AppInst on cluster %v", obj.Key.ClusterInstKey)
+		require.Nil(t, err, "create AppInst on cluster %v", obj.ClusterKey)
 		err = forceAppInstState(ctx, &obj, state, responder, apis)
 		require.Nil(t, err, "force state")
 		checkAppInstState(t, ctx, api, &obj, state)
@@ -892,10 +758,14 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 	cloudletMTInfo := edgeproto.CloudletInfo{
 		Key:                  cloudletMT.Key,
 		State:                dme.CloudletState_CLOUDLET_STATE_READY,
-		CompatibilityVersion: 2, // cloudcommon.GetCRMCompatibilityVersion()
+		CompatibilityVersion: cloudcommon.GetCRMCompatibilityVersion(),
 	}
 	mtOrg := edgeproto.OrganizationEdgeCloud
-	stOrg := testutil.AppInstData()[0].Key.AppKey.Organization
+	stOrg := testutil.AppInstData()[0].Key.Organization
+	// Note: cloudcommon.DefaultMultiTenantCluster is for the MT cluster
+	// on cloudlets with multiple k8s clusters and VMs.
+	mtClust := cloudcommon.DefaultClust
+	stClust := cloudcommon.DefaultClust
 
 	cloudletST := cloudletMT
 	cloudletST.Key.Name = "singlek8sST"
@@ -929,9 +799,9 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 		tryClusterInst := edgeproto.ClusterInst{
 			Key: edgeproto.ClusterInstKey{
 				ClusterKey: edgeproto.ClusterKey{
-					Name: "someclust",
+					Name:         "someclust",
+					Organization: "foo",
 				},
-				Organization: "foo",
 			},
 			Flavor:     testutil.FlavorData()[0].Key,
 			NumMasters: 1,
@@ -949,106 +819,80 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 	dedicatedIp := true
 	notDedicatedIp := false
 	appInstCreateTests := []struct {
-		desc            string
-		aiIdx           int
-		cloudlet        *edgeproto.Cloudlet
-		clusterName     string
-		clusterOrg      string
-		realClusterName string
-		dedicatedIp     bool
-		uri             string
-		errStr          string
+		desc        string
+		aiIdx       int
+		cloudlet    *edgeproto.Cloudlet
+		clusterOrg  string
+		clusterName string
+		dedicatedIp bool
+		uri         string
+		errStr      string
 	}{{
 		"MT non-serverless app",
-		3, &cloudletMT, "clust", mtOrg, "", notDedicatedIp, "",
+		3, &cloudletMT, mtOrg, "", notDedicatedIp, "",
 		"Target cloudlet platform only supports serverless Apps",
 	}, {
 		"MT bad cluster org",
-		0, &cloudletMT, "clust", "foo", "", notDedicatedIp, "",
-		"ClusterInst organization must be set to edgecloudorg",
+		0, &cloudletMT, "foo", "", notDedicatedIp, "",
+		"Cluster organization must be set to " + mtOrg + " or left blank",
 	}, {
-		"MT bad real cluster name",
-		0, &cloudletMT, "autocluster", mtOrg, "foo", notDedicatedIp, "",
-		"Invalid RealClusterName for single kubernetes cluster cloudlet, should be left blank",
+		"MT bad cluster name",
+		0, &cloudletMT, mtOrg, "foo", notDedicatedIp, "",
+		"Cluster name for single kubernetes cluster cloudlet must be set to " + mtClust + " or left blank",
 	}, {
 		"ST bad cluster org", 0,
-		&cloudletST, "clust", "foo", "", notDedicatedIp, "",
-		"ClusterInst organization must be set to " + stOrg,
+		&cloudletST, "foo", "", notDedicatedIp, "",
+		"Cluster organization must be set to " + stOrg + " or left blank",
 	}, {
-		"ST bad real cluster name",
-		0, &cloudletST, "autocluster", stOrg, "foo", notDedicatedIp, "",
-		"Invalid RealClusterName for single kubernetes cluster cloudlet, should be left blank",
+		"ST bad cluster name", 0,
+		&cloudletST, stOrg, "foo", notDedicatedIp, "",
+		"Cluster name for single kubernetes cluster cloudlet must be set to " + stClust + " or left blank",
 	}, {
-		"MT any clust name",
-		0, &cloudletMT, "clust", mtOrg, "", notDedicatedIp,
-		"shared.singlek8smt-unittest.local." + appDnsRoot, PASS,
-	}, {
-		"MT auto clust name",
-		0, &cloudletMT, "autocluster", mtOrg, "", notDedicatedIp,
-		"shared.singlek8smt-unittest.local." + appDnsRoot, PASS,
-	}, {
-		"MT auto clust name blank org",
-		0, &cloudletMT, "autocluster", "", "", notDedicatedIp,
+		"MT specified correct cluster",
+		0, &cloudletMT, mtOrg, mtClust, notDedicatedIp,
 		"shared.singlek8smt-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"MT any clust name blank org",
-		0, &cloudletMT, "clust", "", "", notDedicatedIp,
+		0, &cloudletMT, "", "", notDedicatedIp,
 		"shared.singlek8smt-unittest.local." + appDnsRoot, PASS,
 	}, {
-		"ST any clust name",
-		0, &cloudletST, "clust", stOrg, "", notDedicatedIp,
+		"ST specified correct cluster",
+		0, &cloudletST, stOrg, stClust, notDedicatedIp,
 		"shared.singlek8sst-unittest.local." + appDnsRoot, PASS,
 	}, {
-		"ST auto clust name",
-		0, &cloudletST, "autocluster", stOrg, "", notDedicatedIp,
+		"ST blank clust name blank org",
+		0, &cloudletST, "", "", notDedicatedIp,
 		"shared.singlek8sst-unittest.local." + appDnsRoot, PASS,
 	}, {
-		"ST auto clust name blank org",
-		0, &cloudletST, "autocluster", "", "", notDedicatedIp,
-		"shared.singlek8sst-unittest.local." + appDnsRoot, PASS,
+		"MT blank clust name dedicated",
+		0, &cloudletMT, mtOrg, "", dedicatedIp,
+		"pillimogo1-atlanticinc.singlek8smt-unittest.local." + appDnsRoot, PASS,
 	}, {
-		"ST any clust name blank org",
-		0, &cloudletST, "clust", "", "", notDedicatedIp,
-		"shared.singlek8sst-unittest.local." + appDnsRoot, PASS,
-	}, {
-		"MT any clust name dedicated",
-		0, &cloudletMT, "clust", mtOrg, "", dedicatedIp,
-		"pillimogo100-atlanticinc.singlek8smt-unittest.local." + appDnsRoot, PASS,
-	}, {
-		"MT auto clust name dedicated",
-		0, &cloudletMT, "autocluster", mtOrg, "", dedicatedIp,
-		"pillimogo100-atlanticinc.singlek8smt-unittest.local." + appDnsRoot, PASS,
-	}, {
-		"ST any clust name dedicated",
-		0, &cloudletST, "clust", stOrg, "", dedicatedIp,
-		"pillimogo100-atlanticinc.singlek8sst-unittest.local." + appDnsRoot, PASS,
-	}, {
-		"ST auto clust name dedicated",
-		0, &cloudletST, "autocluster", stOrg, "", dedicatedIp,
-		"pillimogo100-atlanticinc.singlek8sst-unittest.local." + appDnsRoot, PASS,
+		"ST blank clust name dedicated",
+		0, &cloudletST, stOrg, "", dedicatedIp,
+		"pillimogo1-atlanticinc.singlek8sst-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"VM App",
-		11, &cloudletST, "clust", stOrg, "", notDedicatedIp, "",
+		11, &cloudletST, "", "", notDedicatedIp, "",
 		"Cannot deploy vm app to single kubernetes cloudlet",
 	}, {
 		"VM App",
-		11, &cloudletMT, "clust", mtOrg, "", notDedicatedIp, "",
+		11, &cloudletMT, "", "", notDedicatedIp, "",
 		"Cannot deploy vm app to single kubernetes cloudlet",
 	}, {
 		"Docker App",
-		17, &cloudletST, "clust", stOrg, "", notDedicatedIp, "",
+		17, &cloudletST, "", "", notDedicatedIp, "",
 		"Cannot deploy docker app to single kubernetes cloudlet",
 	}, {
 		"Docker App",
-		17, &cloudletMT, "clust", mtOrg, "", notDedicatedIp, "",
+		17, &cloudletMT, "", "", notDedicatedIp, "",
 		"Cannot deploy docker app to single kubernetes cloudlet",
 	}}
 	for _, test := range appInstCreateTests {
 		ai := testutil.AppInstData()[test.aiIdx]
-		ai.Key.ClusterInstKey.CloudletKey = test.cloudlet.Key
-		ai.Key.ClusterInstKey.ClusterKey.Name = test.clusterName
-		ai.Key.ClusterInstKey.Organization = test.clusterOrg
-		ai.RealClusterName = test.realClusterName
+		ai.Key.CloudletKey = test.cloudlet.Key
+		ai.ClusterKey.Name = test.clusterName
+		ai.ClusterKey.Organization = test.clusterOrg
 		ai.DedicatedIp = test.dedicatedIp
 		err = apis.appInstApi.CreateAppInst(&ai, testutil.NewCudStreamoutAppInst(ctx))
 		if test.errStr == PASS {
@@ -1078,10 +922,10 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 		clusterInstKey := getDefaultClustKey(test.cloudlet.Key, test.ownerOrg)
 		// Create AppInst
 		ai := testutil.AppInstData()[0]
-		ai.Key.ClusterInstKey.CloudletKey = test.cloudlet.Key
-		ai.Key.ClusterInstKey.ClusterKey.Name = "blocker"
-		ai.Key.ClusterInstKey.Organization = clusterInstKey.Organization
-		ai.RealClusterName = ""
+		ai.Key.Name = "blocker"
+		ai.Key.CloudletKey = test.cloudlet.Key
+		ai.ClusterKey.Name = ""
+		ai.ClusterKey.Organization = ""
 		err = apis.appInstApi.CreateAppInst(&ai, testutil.NewCudStreamoutAppInst(ctx))
 		require.Nil(t, err, test.desc)
 
@@ -1090,9 +934,8 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 		found = apis.clusterRefsApi.cache.Get(clusterInstKey, &refs)
 		require.True(t, found, test.desc)
 		require.Equal(t, 1, len(refs.Apps), test.desc)
-		refAiKey := edgeproto.AppInstKey{}
-		refAiKey.FromClusterRefsAppInstKey(&refs.Apps[0], clusterInstKey)
-		require.Equal(t, ai.Key, refAiKey, test.desc)
+		refAiKey := ai.Key.GetRefKey()
+		require.Equal(t, refAiKey, &refs.Apps[0], test.desc)
 
 		// Test that delete cloudlet fails if AppInst exists
 		test.cloudlet.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
@@ -1124,7 +967,7 @@ func testAppInstId(t *testing.T, ctx context.Context, apis *AllApis) {
 	// Check that unique ids for AppInsts are unique.
 	// In this case, we purposely name the Apps so that the generated
 	// ids will conflict.
-	// Both app Keys should dns sanitize to "app110"
+	// Both app Keys should dns sanitize to "ai1"
 	app0 := testutil.AppData()[0]
 	app0.Key.Name = "app"
 	app0.Key.Version = "1.1.0"
@@ -1136,29 +979,31 @@ func testAppInstId(t *testing.T, ctx context.Context, apis *AllApis) {
 	app0.AccessPorts = "tcp:82"
 
 	appInst0 := testutil.AppInstData()[0]
-	appInst0.Key.AppKey = app0.Key
+	appInst0.Key.Name = "ai1"
+	appInst0.AppKey = app0.Key
 
 	appInst1 := appInst0
-	appInst1.Key.AppKey = app1.Key
+	appInst0.Key.Name = "ai.1"
+	appInst1.AppKey = app1.Key
 
 	// also create ClusterInsts because they share the same dns id
 	// namespace as AppInsts
 	cl0 := testutil.ClusterInstData()[0]
-	cl0.Key.ClusterKey.Name = app0.Key.Name + app0.Key.Version
-	cl0.Key.Organization = app0.Key.Organization
+	cl0.Key.ClusterKey.Name = appInst0.Key.Name
+	cl0.Key.ClusterKey.Organization = app0.Key.Organization
 
 	cl1 := cl0
-	cl1.Key.ClusterKey.Name = app1.Key.Name + app1.Key.Version
-	cl1.Key.Organization = app1.Key.Organization
+	cl1.Key.ClusterKey.Name = appInst1.Key.Name
+	cl1.Key.ClusterKey.Organization = app1.Key.Organization
 
-	expId0 := "atlanticincapp110-pillimos-sanjosesite-ufgtinc"
-	expId1 := "atlanticincapp110-pillimos-sanjosesite-ufgtinc-1"
+	expId0 := "atlanticinc-ai1-sanjosesite-ufgtinc"
+	expId1 := "atlanticinc-ai1-sanjosesite-ufgtinc-1"
 
-	dnsLabel0 := "app110-atlanticinc"
-	dnsLabel1 := "app110-atlanticinc1"
+	dnsLabel0 := "ai1-atlanticinc"
+	dnsLabel1 := "ai1-atlanticinc1"
 
-	clDnsLabel0 := "app110-atlanticinc2"
-	clDnsLabel1 := "app110-atlanticinc3"
+	clDnsLabel0 := "ai1-atlanticinc2"
+	clDnsLabel1 := "ai1-atlanticinc3"
 
 	_, err = apis.appApi.CreateApp(ctx, &app0)
 	require.Nil(t, err)
@@ -1206,7 +1051,7 @@ func testAppInstId(t *testing.T, ctx context.Context, apis *AllApis) {
 	hasDnsLabels := func(hasIds bool, ids ...string) {
 		for _, id := range ids {
 			// note that all objects are on the same cloudlet
-			found := testHasAppInstDnsLabel(apis.appInstApi.sync.store, &appInst0.Key.ClusterInstKey.CloudletKey, id)
+			found := testHasAppInstDnsLabel(apis.appInstApi.sync.store, &appInst0.Key.CloudletKey, id)
 			require.Equal(t, hasIds, found, "has id %s", id)
 		}
 	}
@@ -1274,7 +1119,7 @@ func TestAppInstIdDelimiter(t *testing.T) {
 	for _, ai := range testutil.AppInstData() {
 		// need the app definition as well
 		for _, app := range testutil.AppData() {
-			if app.Key.Matches(&ai.Key.AppKey) {
+			if app.Key.Matches(&ai.AppKey) {
 				id, _ := pfutils.GetAppInstId(ctx, &ai, &app, "", edgeproto.PlatformType_PLATFORM_TYPE_FAKE)
 				require.NotContains(t, id, ".", "id must not contain '.'")
 			}
@@ -1285,11 +1130,11 @@ func TestAppInstIdDelimiter(t *testing.T) {
 	app.Key.Organization += "."
 	app.Key.Version += "."
 	appInst := testutil.AppInstData()[0]
-	appInst.Key.AppKey = app.Key
-	appInst.Key.ClusterInstKey.ClusterKey.Name += "."
-	appInst.Key.ClusterInstKey.Organization += "."
-	appInst.Key.ClusterInstKey.CloudletKey.Name += "."
-	appInst.Key.ClusterInstKey.CloudletKey.Organization += "."
+	appInst.AppKey = app.Key
+	appInst.ClusterKey.Name += "."
+	appInst.ClusterKey.Organization += "."
+	appInst.Key.CloudletKey.Name += "."
+	appInst.Key.CloudletKey.Organization += "."
 	id, _ := pfutils.GetAppInstId(ctx, &appInst, &app, ".", edgeproto.PlatformType_PLATFORM_TYPE_FAKE)
 	require.NotContains(t, id, ".", "id must not contain '.'")
 
@@ -1304,16 +1149,11 @@ func TestAppInstIdDelimiter(t *testing.T) {
 	}
 	appInstOrgStartWithNumber := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
-			AppKey: appOrgStartWithNumber.Key,
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name: "cluster1",
-				},
-				CloudletKey: edgeproto.CloudletKey{
-					Organization: "GDDT",
-					Name:         "CloudletA",
-				},
-				Organization: appOrgStartWithNumber.Key.Organization,
+			Name:         "111",
+			Organization: appOrgStartWithNumber.Key.Organization,
+			CloudletKey: edgeproto.CloudletKey{
+				Organization: "GDDT",
+				Name:         "CloudletA",
 			},
 		},
 	}
@@ -1348,7 +1188,7 @@ func testBeingErrors(t *testing.T, ctx context.Context, responder *DummyInfoResp
 	// Error messages may vary based on autocluster/no-autocluster
 	for ii := 0; ii < len(testutil.AppInstData()); ii++ {
 		ai := testutil.AppInstData()[ii]
-		if strings.HasPrefix(ai.Key.ClusterInstKey.ClusterKey.Name, cloudcommon.AutoClusterPrefix) {
+		if ai.ClusterKey.Name == "" {
 			testedAutoCluster = true
 		}
 

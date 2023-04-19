@@ -397,7 +397,7 @@ func (g *GPUDriver) Validate(fields map[string]struct{}) error {
 
 func (key *CloudletKey) ValidateKey() error {
 	if !util.ValidName(key.Organization) {
-		return errors.New("Invalid organization name")
+		return fmt.Errorf("Invalid cloudlet organization name %s", key.Organization)
 	}
 	if !util.ValidName(key.Name) {
 		return errors.New("Invalid cloudlet name")

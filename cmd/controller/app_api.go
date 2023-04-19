@@ -920,21 +920,6 @@ func validateAutoDeployApp(stm concurrency.STM, app *edgeproto.App) error {
 	if app.DefaultFlavor.Name == "" {
 		return fmt.Errorf("For auto-provisioning or auto-clusters (no cluster specified), App must have default flavor defined")
 	}
-	validDeployments := []string{
-		cloudcommon.DeploymentTypeKubernetes,
-		cloudcommon.DeploymentTypeHelm,
-		cloudcommon.DeploymentTypeDocker,
-	}
-	validDep := false
-	for _, dep := range validDeployments {
-		if app.Deployment == dep {
-			validDep = true
-			break
-		}
-	}
-	if !validDep {
-		return fmt.Errorf("For auto-provisioning or auto-clusters, App deployment types are limited to %s", strings.Join(validDeployments, ", "))
-	}
 	return nil
 }
 

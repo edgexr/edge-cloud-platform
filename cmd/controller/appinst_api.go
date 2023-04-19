@@ -31,7 +31,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
-	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/gogo/protobuf/types"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	v1 "k8s.io/api/core/v1"
@@ -349,27 +348,6 @@ func (s *StreamObjApi) StreamAppInst(key *edgeproto.AppInstKey, cb edgeproto.Str
 	return s.StreamMsgs(cb.Context(), key.StreamKey(), cb)
 }
 
-func (s *AppInstApi) checkForAppinstCollisions(ctx context.Context, key *edgeproto.AppInstKey) error {
-	// To avoid name collisions in the CRM after sanitizing the app name, validate that there is not
-	// another app running which will have the same name after sanitizing.   DNSSanitize is used here because
-	// it is the most stringent special character replacement
-	keyString := key.String()
-	sanitizedKey := util.DNSSanitize(keyString)
-	s.cache.Mux.Lock()
-	defer s.cache.Mux.Unlock()
-
-	for _, data := range s.cache.Objs {
-		val := data.Obj
-		existingKeyString := val.Key.String()
-		existingSanitizedKey := util.DNSSanitize(existingKeyString)
-		if sanitizedKey == existingSanitizedKey && keyString != existingKeyString {
-			log.SpanLog(ctx, log.DebugLevelApi, "AppInst collision", "keyString", keyString, "existingKeyString", existingKeyString, "sanitizedKey", sanitizedKey)
-			return fmt.Errorf("Cannot deploy AppInst due to DNS name collision with existing instance %s - %s", existingKeyString, sanitizedKey)
-		}
-	}
-	return nil
-}
-
 type AutoClusterType int
 
 const (
@@ -494,10 +472,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	createCluster := false
 	autoClusterType := NoAutoCluster
 	sidecarApp := false
-	err = s.checkForAppinstCollisions(ctx, &in.Key)
-	if err != nil {
-		return err
-	}
 	appDeploymentType := ""
 	reservedAutoClusterId := -1
 	var reservedClusterInstKey *edgeproto.ClusterInstKey
@@ -535,16 +509,21 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if app.DeletePrepare {
 			return in.AppKey.BeingDeletedError()
 		}
+		if !cloudcommon.IsClusterInstReqd(&app) {
+			if in.ClusterKey.Name != "" {
+				return fmt.Errorf("Cluster name must be blank for App deployment type %s", app.Deployment)
+			}
+			if in.ClusterKey.Organization != "" {
+				return fmt.Errorf("Cluster organization must be blank for App deployment type %s", app.Deployment)
+			}
+		}
 		if clusterSpecified {
 			autoClusterType = NoAutoCluster
-			if !cloudcommon.IsClusterInstReqd(&app) {
-				return fmt.Errorf("App deployment type %s does not require a cluster but a cluster name was specified, please leave cluster name blank", app.Deployment)
-			}
 			if in.ClusterKey.Organization == "" {
 				return fmt.Errorf("Must specify cluster organization if cluster name is specified")
 			}
 		}
-		if !clusterSpecified {
+		if !clusterSpecified && cloudcommon.IsClusterInstReqd(&app) {
 			// we'll look for the best fit autocluster
 			autoClusterType = ChooseAutoCluster
 			if err := validateAutoDeployApp(stm, &app); err != nil {
@@ -557,7 +536,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 		sidecarApp = cloudcommon.IsSideCarApp(&app)
 		if sidecarApp && (in.ClusterKey.Name == "" || in.ClusterKey.Organization == "") {
-			return fmt.Errorf("Sidecar AppInst (AutoDelete App) must specify the ClusterKey fields to deploy to")
+			return fmt.Errorf("Sidecar AppInst (AutoDelete App) must specify the Cluster name and organization to deploy to")
 		}
 		// make sure cloudlet exists so we don't create refs for missing cloudlet
 		cloudlet := edgeproto.Cloudlet{}
@@ -612,7 +591,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				// doesn't need to be specified, but if it is,
 				// it better be the one and only cluster name.
 				if in.ClusterKey.Name != cloudcommon.DefaultClust {
-					return fmt.Errorf("Invalid Cluster Name for single kubernetes cluster cloudlet, should be left blank")
+					return fmt.Errorf("Cluster name for single kubernetes cluster cloudlet must be set to %s or left blank", cloudcommon.DefaultClust)
 				}
 			}
 			// set cluster name
@@ -620,7 +599,13 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			// set cluster org based on single cluster type
 			if cloudlet.SingleKubernetesClusterOwner != "" {
 				// ST cluster
-				in.ClusterKey.Organization = cloudlet.SingleKubernetesClusterOwner
+				if in.ClusterKey.Organization == "" {
+					in.ClusterKey.Organization = cloudlet.SingleKubernetesClusterOwner
+				}
+				if in.ClusterKey.Organization != cloudlet.SingleKubernetesClusterOwner {
+					return fmt.Errorf("Cluster organization must be set to %s or left blank", cloudlet.SingleKubernetesClusterOwner)
+				}
+
 				autoClusterType = NoAutoCluster
 			} else {
 				// MT cluster
@@ -631,7 +616,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 					in.ClusterKey.Organization = edgeproto.OrganizationEdgeCloud
 				}
 				if !edgeproto.IsEdgeCloudOrg(in.ClusterKey.Organization) {
-					return fmt.Errorf("ClusterInst organization must be set to %s", edgeproto.OrganizationEdgeCloud)
+					return fmt.Errorf("Cluster organization must be set to %s or left blank", edgeproto.OrganizationEdgeCloud)
 				}
 				key := in.ClusterInstKey()
 				clusterInst := edgeproto.ClusterInst{}

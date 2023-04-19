@@ -18,9 +18,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,7 +31,7 @@ func testPermShowClusterEvents(mcClient *mctestclient.Client, uri, token, region
 	} else {
 		in.ClusterKey.Name = "testcluster"
 	}
-	in.Organization = org
+	in.ClusterKey.Organization = org
 	dat := &ormapi.RegionClusterInstEvents{}
 	dat.Region = region
 	dat.ClusterInst = *in
@@ -43,9 +43,9 @@ func testPermShowAppInstEvents(mcClient *mctestclient.Client, uri, token, region
 	if data != nil {
 		in = data
 	} else {
-		in.ClusterInstKey.ClusterKey.Name = "testcluster"
+		in.Name = "testinst"
 	}
-	in.AppKey.Organization = org
+	in.Organization = org
 	dat := &ormapi.RegionAppInstEvents{}
 	dat.Region = region
 	dat.AppInst = *in
@@ -120,9 +120,7 @@ func goodPermTestEvents(t *testing.T, mcClient *mctestclient.Client, uri, devTok
 
 	// invalid input check
 	appInst := edgeproto.AppInstKey{
-		AppKey: edgeproto.AppKey{
-			Name: "drop measurements \\",
-		},
+		Name: "drop measurements \\",
 	}
 	list, status, err = testPermShowAppInstEvents(mcClient, uri, devToken, region, devOrg, &appInst)
 	require.NotNil(t, err)

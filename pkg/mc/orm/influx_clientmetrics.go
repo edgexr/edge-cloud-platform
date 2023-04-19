@@ -36,19 +36,18 @@ var operatorInfluxClientMetricsDBTemplate *template.Template
 type influxClientMetricsQueryArgs struct {
 	// Query args
 	metricsCommonQueryArgs
-	Selector     string
-	Measurement  string
-	AppInstName  string
-	AppInstOrg   string
-	AppVersion   string
-	ClusterName  string
-	CloudletName string
-	CloudletList string
-	OrgField     string
-	ApiCallerOrg string
-	CloudletOrg  string
-	ClusterOrg   string
-	AppOrg       string
+	Selector       string
+	Measurement    string
+	AppInstName    string
+	AppVersion     string
+	ClusterName    string
+	CloudletName   string
+	CloudletList   string
+	OrgField       string
+	ApiCallerOrg   string
+	CloudletOrg    string
+	CloudletFedOrg string
+	ClusterOrg     string
 	// ClientApi metric query args
 	Method           string
 	FoundCloudlet    string
@@ -64,9 +63,8 @@ type influxClientMetricsQueryArgs struct {
 
 // ClientApiUsageTags is DME metrics
 var ClientApiUsageTags = []string{
-	"\"apporg\"",
-	"\"app\"",
-	"\"ver\"",
+	"\"appinstorg\"",
+	"\"appinst\"",
 	"\"cloudletorg\"",
 	"\"cloudlet\"",
 	"\"dmeId\"",
@@ -88,9 +86,8 @@ var ClientApiAggregationFunctions = map[string]string{
 }
 
 var ClientAppUsageTags = []string{
-	"\"app\"",
-	"\"apporg\"",
-	"\"ver\"",
+	"\"appinst\"",
+	"\"appinstorg\"",
 	"\"cluster\"",
 	"\"clusterorg\"",
 	"\"cloudlet\"",
@@ -151,7 +148,7 @@ const (
 	CLIENT_APIUSAGE                 = "dme"
 	CLIENT_APPUSAGE                 = "clientappusage"
 	CLIENT_CLOUDLETUSAGE            = "clientcloudletusage"
-	CLIENT_APP_ORG_FIELD            = "apporg"
+	CLIENT_APP_ORG_FIELD            = "appinstorg"
 	CLIENT_CLOUDLET_ORG_FIELD       = "cloudletorg"
 	CLIENT_FOUND_CLOUDLET_ORG_FIELD = "foundOperator"
 )
@@ -159,13 +156,12 @@ const (
 var devInfluxClientMetricsDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
 	` WHERE "{{.OrgField}}"='{{.ApiCallerOrg}}'` +
 	`{{if .AppInstName}} AND "appinst"='{{.AppInstName}}'{{end}}` +
-	`{{if .AppInstOrg}} AND "appinstorg"='{{.AppInstOrg}}'{{end}}` +
-	`{{if .AppOrg}} AND "apporg"='{{.AppOrg}}'{{end}}` +
 	`{{if .ClusterName}} AND "cluster"='{{.ClusterName}}'{{end}}` +
 	`{{if .AppVersion}} AND "ver"='{{.AppVersion}}'{{end}}` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
 	`{{if .CloudletList}} AND ({{.CloudletList}}){{end}}` +
 	`{{if .CloudletOrg}} AND "cloudletorg"='{{.CloudletOrg}}'{{end}}` +
+	`{{if .CloudletFedOrg}} AND "cloudletfedorg"='{{.CloudletFedOrg}}'{{end}}` +
 	`{{if .Method}} AND "method"='{{.Method}}'{{end}}` +
 	`{{if .DeviceCarrier}} AND "devicecarrier"='{{.DeviceCarrier}}'{{end}}` +
 	`{{if .DataNetworkType}} AND "datanetworktype"='{{.DataNetworkType}}'{{end}}` +
@@ -183,6 +179,7 @@ var devInfluxClientMetricsDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
 var operatorInfluxClientMetricsDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
 	` WHERE "cloudletorg"='{{.CloudletOrg}}'` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
+	`{{if .CloudletFedOrg}} AND "cloudletfedorg"='{{.CloudletFedOrg}}'{{end}}` +
 	`{{if .DeviceCarrier}} AND "devicecarrier"='{{.DeviceCarrier}}'{{end}}` +
 	`{{if .DataNetworkType}} AND "datanetworktype"='{{.DataNetworkType}}'{{end}}` +
 	`{{if .DeviceOs}} AND "deviceos"='{{.DeviceOs}}'{{end}}` +
@@ -241,7 +238,6 @@ func ClientApiUsageMetricsQuery(obj *ormapi.RegionClientApiUsageMetrics, cloudle
 		Selector:         getClientMetricsSelector(obj.Selector, CLIENT_APIUSAGE, definition, ClientApiAggregationFunctions),
 		Measurement:      fmt.Sprintf("%q", getMeasurementString(obj.Selector, CLIENT_APIUSAGE)),
 		AppInstName:      obj.AppInst.Name,
-		AppInstOrg:       obj.AppInst.Organization,
 		ApiCallerOrg:     obj.AppInst.Organization,
 		CloudletList:     generateDmeApiUsageCloudletList(cloudletList),
 		CloudletName:     obj.DmeCloudlet,
@@ -278,7 +274,6 @@ func ClientAppUsageMetricsQuery(obj *ormapi.RegionClientAppUsageMetrics, cloudle
 		Selector:        getClientMetricsSelector(obj.Selector, CLIENT_APPUSAGE, definition, functionMap),
 		Measurement:     measurement,
 		AppInstName:     obj.AppInst.Name,
-		AppInstOrg:      obj.AppInst.Organization,
 		ApiCallerOrg:    obj.AppInst.Organization,
 		CloudletList:    generateCloudletList(cloudletList),
 		DeviceCarrier:   obj.DeviceCarrier,
@@ -295,7 +290,6 @@ func ClientAppUsageMetricsQuery(obj *ormapi.RegionClientAppUsageMetrics, cloudle
 	} else {
 		arg.OrgField = CLIENT_CLOUDLET_ORG_FIELD
 		arg.ApiCallerOrg = obj.AppInst.CloudletKey.Organization
-		arg.AppOrg = obj.AppInst.Organization
 	}
 	// set MetricsCommonQueryArgs
 	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, definition.String(), 0) // TODO: PULL MIN from settings

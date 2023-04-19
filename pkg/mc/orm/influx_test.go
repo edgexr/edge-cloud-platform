@@ -35,7 +35,7 @@ func testPermShowClusterMetrics(mcClient *mctestclient.Client, uri, token, regio
 	} else {
 		in.ClusterKey.Name = "testcluster"
 	}
-	in.Organization = org
+	in.ClusterKey.Organization = org
 	dat := &ormapi.RegionClusterInstMetrics{}
 	dat.Region = region
 	dat.Selector = selector
@@ -48,9 +48,9 @@ func testPermShowAppInstMetrics(mcClient *mctestclient.Client, uri, token, regio
 	if data != nil {
 		in = data
 	} else {
-		in.ClusterInstKey.ClusterKey.Name = "testcluster"
+		in.Name = "testinst"
 	}
-	in.AppKey.Organization = org
+	in.Organization = org
 	dat := &ormapi.RegionAppInstMetrics{}
 	dat.Region = region
 	dat.Selector = selector
@@ -74,12 +74,13 @@ func testPermShowCloudletMetrics(mcClient *mctestclient.Client, uri, token, regi
 }
 
 func testPermShowClientMetrics(mcClient *mctestclient.Client, uri, token, region, org, selector string, data *edgeproto.AppInstKey) (*ormapi.AllMetrics, int, error) {
-	in := &edgeproto.AppInstKey{}
+	in := &edgeproto.AppInstKey{
+		Name: "testinst",
+	}
 	if data != nil {
 		in = data
 	}
-	in.AppKey.Organization = org
-	in.ClusterInstKey.ClusterKey.Name = "testcluster"
+	in.Organization = org
 	dat := &ormapi.RegionClientApiUsageMetrics{}
 	dat.Region = region
 	dat.Selector = selector
@@ -253,13 +254,11 @@ func goodPermTestMetrics(t *testing.T, mcClient *mctestclient.Client, uri, devTo
 
 	// invalid input check
 	appInst := edgeproto.AppInstKey{
-		AppKey: edgeproto.AppKey{
-			Name: "drop measurements \\",
-		},
+		Name: "drop measurements \\",
 	}
 	list, status, err = testPermShowClientMetrics(mcClient, uri, devToken, region, devOrg, "cpu", &appInst)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Invalid app")
+	require.Contains(t, err.Error(), "Invalid appinst")
 	require.Equal(t, http.StatusBadRequest, status)
 	cloudlet := edgeproto.CloudletKey{
 		Name: "select * from api",
@@ -433,11 +432,9 @@ func TestValidateMethod(t *testing.T) {
 	obj := ormapi.RegionClientApiUsageMetrics{
 		Region: "test",
 		AppInst: edgeproto.AppInstKey{
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         "testCloudlet",
-					Organization: "testOperator",
-				},
+			CloudletKey: edgeproto.CloudletKey{
+				Name:         "testCloudlet",
+				Organization: "testOperator",
 			},
 		},
 	}

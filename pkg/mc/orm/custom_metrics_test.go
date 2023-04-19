@@ -23,17 +23,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	testSumByExpr     = "sum by(app,appver,apporg,cluster,clusterorg,cloudlet,cloudletorg,region)(envoy_cluster_upstream_cx_active)"
+	testSumByExpr     = "sum by(appinst,appinstorg,cloudlet,cloudletorg,cloudletfedorg,region)(envoy_cluster_upstream_cx_active)"
 	testPromTimeRange = v1.Range{
 		Start: (time.Date(2020, 1, 1, 1, 1, 0, 0, time.UTC)).Add(-1 * FallbackTimeRange),
 		End:   time.Date(2020, 1, 1, 1, 1, 0, 0, time.UTC),
@@ -49,13 +49,10 @@ var (
 			{
 			  "metric": {
 				"__name__": "envoy_cluster_upstream_cx_active",
-				"app": "DevOrg SDK Demo",
-				"apporg": "DevOrg",
-				"appver": "1.0",
+				"appinst": "DevOrg SDK Demo",
+				"appinstorg": "DevOrg",
 				"cloudlet": "localtest",
 				"cloudletorg": "mexdev",
-				"cluster": "AppCluster",
-				"clusterorg": "DevOrg",
 				"job": "MobiledgeX Monitoring",
 				"port": "5656",
 				"region": "local",
@@ -69,13 +66,10 @@ var (
 			{
 			  "metric": {
 				"__name__": "envoy_cluster_upstream_cx_active",
-				"app": "Face Detection Demo",
-				"apporg": "DevOrg",
-				"appver": "1.0",
+				"appinst": "Face Detection Demo",
+				"appinstorg": "DevOrg",
 				"cloudlet": "localtest",
 				"cloudletorg": "mexdev",
-				"cluster": "AppCluster",
-				"clusterorg": "DevOrg",
 				"job": "MobiledgeX Monitoring",
 				"port": "8008",
 				"region": "local",
@@ -97,11 +91,8 @@ var (
 						Name: "connections",
 						Tags: map[string]string{
 							"region":      "local",
-							"app":         "DevOrg SDK Demo",
-							"apporg":      "DevOrg",
-							"appver":      "1.0",
-							"cluster":     "AppCluster",
-							"clusterorg":  "DevOrg",
+							"appinst":     "DevOrg SDK Demo",
+							"appinstorg":  "DevOrg",
 							"cloudlet":    "localtest",
 							"cloudletorg": "mexdev",
 							"port":        "5656",
@@ -117,11 +108,8 @@ var (
 						Name: "connections",
 						Tags: map[string]string{
 							"region":      "local",
-							"app":         "Face Detection Demo",
-							"apporg":      "DevOrg",
-							"appver":      "1.0",
-							"cluster":     "AppCluster",
-							"clusterorg":  "DevOrg",
+							"appinst":     "Face Detection Demo",
+							"appinstorg":  "DevOrg",
 							"cloudlet":    "localtest",
 							"cloudletorg": "mexdev",
 							"port":        "8008",
@@ -145,13 +133,10 @@ var (
 			{
 			  "metric": {
 				"__name__": "envoy_cluster_upstream_cx_active",
-				"app": "DevOrg SDK Demo",
-				"apporg": "DevOrg",
-				"appver": "1.0",
+				"appinst": "DevOrg SDK Demo",
+				"appinstorg": "DevOrg",
 				"cloudlet": "localtest",
 				"cloudletorg": "mexdev",
-				"cluster": "AppCluster",
-				"clusterorg": "DevOrg",
 				"job": "MobiledgeX Monitoring",
 				"port": "5656",
 				"region": "local",
@@ -171,13 +156,10 @@ var (
 			{
 			  "metric": {
 				"__name__": "envoy_cluster_upstream_cx_active",
-				"app": "Face Detection Demo",
-				"apporg": "DevOrg",
-				"appver": "1.0",
+				"appinst": "Face Detection Demo",
+				"appinstorg": "DevOrg",
 				"cloudlet": "localtest",
 				"cloudletorg": "mexdev",
-				"cluster": "AppCluster",
-				"clusterorg": "DevOrg",
 				"job": "MobiledgeX Monitoring",
 				"port": "8008",
 				"region": "local",
@@ -205,11 +187,8 @@ var (
 						Name: "connections",
 						Tags: map[string]string{
 							"region":      "local",
-							"app":         "DevOrg SDK Demo",
-							"apporg":      "DevOrg",
-							"appver":      "1.0",
-							"cluster":     "AppCluster",
-							"clusterorg":  "DevOrg",
+							"appinst":     "DevOrg SDK Demo",
+							"appinstorg":  "DevOrg",
 							"cloudlet":    "localtest",
 							"cloudletorg": "mexdev",
 							"port":        "5656",
@@ -229,11 +208,8 @@ var (
 						Name: "connections",
 						Tags: map[string]string{
 							"region":      "local",
-							"app":         "Face Detection Demo",
-							"apporg":      "DevOrg",
-							"appver":      "1.0",
-							"cluster":     "AppCluster",
-							"clusterorg":  "DevOrg",
+							"appinst":     "Face Detection Demo",
+							"appinstorg":  "DevOrg",
 							"cloudlet":    "localtest",
 							"cloudletorg": "mexdev",
 							"port":        "8008",
@@ -312,8 +288,8 @@ func testPermShowAppCustomMetrics(mcClient *mctestclient.Client, uri, token, reg
 		dat = data
 	} else {
 		in := edgeproto.AppInstKey{}
-		in.ClusterInstKey.ClusterKey.Name = "testcluster"
-		in.AppKey.Organization = org
+		in.Name = "testapp"
+		in.Organization = org
 		dat.Region = region
 		dat.Measurement = measurement
 		dat.AppInst = in
@@ -356,7 +332,7 @@ func goodPermTestCustomMetrics(t *testing.T, mcClient *mctestclient.Client, uri,
 	// check valid timestamps
 	arg := ormapi.RegionCustomAppMetrics{}
 	arg.MetricsCommon.EndTime = time.Date(2020, 1, 1, 1, 1, 0, 0, time.UTC)
-	arg.AppInst.AppKey.Organization = devOrg
+	arg.AppInst.Organization = devOrg
 	arg.Region = region
 	arg.Measurement = "connections"
 	list, status, err = testPermShowAppCustomMetrics(mcClient, uri, devToken, region, devOrg, "connections", &arg)
@@ -399,7 +375,7 @@ func adminPermTestCustomMetrics(t *testing.T, mcClient *mctestclient.Client, uri
 
 	// No port is allowed to be specified
 	arg := ormapi.RegionCustomAppMetrics{}
-	arg.AppInst.AppKey.Organization = adminOrg
+	arg.AppInst.Organization = adminOrg
 	arg.Region = region
 	arg.Measurement = promutils.PromQConnections
 	arg.Port = "123"
@@ -418,64 +394,55 @@ func adminPermTestCustomMetrics(t *testing.T, mcClient *mctestclient.Client, uri
 func TestGetPromAppQuery(t *testing.T) {
 	// simple query test
 	arg := ormapi.RegionCustomAppMetrics{}
-	arg.AppInst.AppKey.Organization = "testorg"
+	arg.AppInst.Organization = "testorg"
 	arg.Measurement = "connections"
-	require.Equal(t, `envoy_cluster_upstream_cx_active{apporg="testorg"}`, getPromAppQuery(&arg, []string{}), "Connections with only org sepcified")
+	require.Equal(t, `envoy_cluster_upstream_cx_active{appinstorg="testorg"}`, getPromAppQuery(&arg, []string{}), "Connections with only org sepcified")
 
 	// test with all fields
 	arg = ormapi.RegionCustomAppMetrics{
 		AppInst: edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Name:         "testapp",
-				Organization: "testorg",
-				Version:      "1.0",
-			},
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				Organization: "testorg",
-				ClusterKey: edgeproto.ClusterKey{
-					Name: "testcluster",
-				},
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         "testcloudlet",
-					Organization: "testoperator",
-				},
+			Name:         "testapp",
+			Organization: "testorg",
+			CloudletKey: edgeproto.CloudletKey{
+				Name:         "testcloudlet",
+				Organization: "testoperator",
 			},
 		},
 		Measurement: "connections",
 	}
-	expectedQuery := `envoy_cluster_upstream_cx_active{app="testapp",apporg="testorg",appver="1.0",cluster="testcluster",clusterorg="testorg",cloudlet="testcloudlet",cloudletorg="testoperator"}`
+	expectedQuery := `envoy_cluster_upstream_cx_active{appinst="testapp",appinstorg="testorg",cloudlet="testcloudlet",cloudletorg="testoperator"}`
 	require.Equal(t, expectedQuery, getPromAppQuery(&arg, []string{}), "Connections a full app definition")
 
 	// Add port to above
 	arg.Port = "1234"
-	expectedQuery = `envoy_cluster_upstream_cx_active{app="testapp",apporg="testorg",appver="1.0",cluster="testcluster",clusterorg="testorg",cloudlet="testcloudlet",cloudletorg="testoperator",port="1234"}`
+	expectedQuery = `envoy_cluster_upstream_cx_active{appinst="testapp",appinstorg="testorg",cloudlet="testcloudlet",cloudletorg="testoperator",port="1234"}`
 	require.Equal(t, expectedQuery, getPromAppQuery(&arg, []string{}), "Connections with port")
 	arg.Port = ""
 
 	// Test sum aggr func
 	arg.AggrFunction = "sum"
-	expectedQuery = `sum by(app,appver,apporg,cluster,clusterorg,cloudlet,cloudletorg,region)(envoy_cluster_upstream_cx_active{app="testapp",apporg="testorg",appver="1.0",cluster="testcluster",clusterorg="testorg",cloudlet="testcloudlet",cloudletorg="testoperator"})`
+	expectedQuery = `sum by(appinst,appinstorg,cloudlet,cloudletorg,cloudletfedorg,region)(envoy_cluster_upstream_cx_active{appinst="testapp",appinstorg="testorg",cloudlet="testcloudlet",cloudletorg="testoperator"})`
 	require.Equal(t, expectedQuery, getPromAppQuery(&arg, []string{}), "Connections aggregated for all ports")
 
 	// Test free form query - simple
 	arg.AggrFunction = ""
 	arg.Port = ""
 	arg.Measurement = `simple_query`
-	expectedQuery = `simple_query{app="testapp",apporg="testorg",appver="1.0",cluster="testcluster",clusterorg="testorg",cloudlet="testcloudlet",cloudletorg="testoperator"}`
+	expectedQuery = `simple_query{appinst="testapp",appinstorg="testorg",cloudlet="testcloudlet",cloudletorg="testoperator"}`
 	require.Equal(t, expectedQuery, getPromAppQuery(&arg, []string{}), "Simple free-form query")
 
 	// Test free form query - single filter
 	arg.AggrFunction = ""
 	arg.Port = ""
 	arg.Measurement = `simple_query{instance="testinstance"}`
-	expectedQuery = `simple_query{app="testapp",apporg="testorg",appver="1.0",cluster="testcluster",clusterorg="testorg",cloudlet="testcloudlet",cloudletorg="testoperator",instance="testinstance"}`
+	expectedQuery = `simple_query{appinst="testapp",appinstorg="testorg",cloudlet="testcloudlet",cloudletorg="testoperator",instance="testinstance"}`
 	require.Equal(t, expectedQuery, getPromAppQuery(&arg, []string{}), "Simple free-form query")
 
 	// Test nested `{` `}` to prevent getting unintended results
 	arg.AggrFunction = ""
 	arg.Port = ""
 	arg.Measurement = `complex_query{instance="testinstance"} * on (kube_label) group_right(testlabel)(label_set{instance="testinstance"})`
-	expectedQuery = `complex_query{app="testapp",apporg="testorg",appver="1.0",cluster="testcluster",clusterorg="testorg",cloudlet="testcloudlet",cloudletorg="testoperator",instance="testinstance"} * on (kube_label) group_right(testlabel)(label_set{app="testapp",apporg="testorg",appver="1.0",cluster="testcluster",clusterorg="testorg",cloudlet="testcloudlet",cloudletorg="testoperator",instance="testinstance"})`
+	expectedQuery = `complex_query{appinst="testapp",appinstorg="testorg",cloudlet="testcloudlet",cloudletorg="testoperator",instance="testinstance"} * on (kube_label) group_right(testlabel)(label_set{appinst="testapp",appinstorg="testorg",cloudlet="testcloudlet",cloudletorg="testoperator",instance="testinstance"})`
 	require.Equal(t, expectedQuery, getPromAppQuery(&arg, []string{}), "Complex query with several nested filters")
 
 }

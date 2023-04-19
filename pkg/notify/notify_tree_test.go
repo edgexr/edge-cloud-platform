@@ -80,6 +80,12 @@ func TestNotifyTree(t *testing.T) {
 		require.Nil(t, n.client.WaitForConnect(1))
 	}
 
+	// Cloudlet data must be present before CloudletInfo is received,
+	// for code in notify_customupdate.go.
+	cloudletData := testutil.CloudletData()
+	top.handler.CloudletCache.Update(ctx, &cloudletData[0], 0)
+	top.handler.CloudletCache.Update(ctx, &cloudletData[1], 0)
+
 	// crms need to send cloudletInfo up to trigger sending of
 	// data down.
 	low21.handler.CloudletInfoCache.Update(ctx, &testutil.CloudletInfoData()[0], 0)
@@ -102,9 +108,6 @@ func TestNotifyTree(t *testing.T) {
 		top.handler.AppInstCache.Update(ctx, &obj, 0)
 		numAppInstData++
 	}
-	cloudletData := testutil.CloudletData()
-	top.handler.CloudletCache.Update(ctx, &cloudletData[0], 0)
-	top.handler.CloudletCache.Update(ctx, &cloudletData[1], 0)
 	// dmes should get all app insts but no cloudlets
 	for _, n := range dmes {
 		checkClientCache(t, n, 0, 0, numAppInstData, 0)
