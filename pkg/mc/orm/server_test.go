@@ -1520,6 +1520,7 @@ func testFailedLoginLockout(t *testing.T, ctx context.Context, uri, superTok str
 	db := loggedDB(ctx)
 	err = db.Save(config).Error
 	require.Nil(t, err)
+	setConfig(config)
 	// get new token
 	token = expectLoginOk()
 	// token should be expired already

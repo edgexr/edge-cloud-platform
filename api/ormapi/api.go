@@ -290,6 +290,10 @@ type Config struct {
 	SupportEmail string
 	// Slack icon URL used for alert manager slack receivers
 	SlackIconURL string
+	// Log all show/GET APIs
+	LogAllShowApis bool
+	// Log specific API url (may be substring of entire URL)
+	LogShowUrl string
 }
 
 type McRateLimitFlowSettings struct {

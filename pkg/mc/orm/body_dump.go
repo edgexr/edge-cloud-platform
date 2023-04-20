@@ -82,7 +82,7 @@ func BodyDumpWithConfig(config BodyDumpConfig) echo.MiddlewareFunc {
 			reqBody := []byte{}
 			reqContentType := c.Request().Header.Get("Content-Type")
 			if c.Request().Method != http.MethodGet {
-				if strings.Contains(reqContentType, "application/json") {
+				if strings.Contains(reqContentType, "application/json") || strings.Contains(reqContentType, "application/x-www-form-urlencoded") {
 					if c.Request().Body != nil { // Read
 						reqBody, _ = ioutil.ReadAll(c.Request().Body)
 					}
