@@ -286,8 +286,8 @@ func metricsProxy(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getAppInstRulesFileName(ai *edgeproto.AppInst) string {
-	name := k8smgmt.NormalizeName(ai.AppKey.Name)
+func getAppInstRulesFileName(ai *edgeproto.AppInstKey) string {
+	name := k8smgmt.NormalizeName(ai.Name)
 	return getPrometheusFileName(name)
 }
 
@@ -370,10 +370,10 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 	appInst := edgeproto.AppInst{}
 	found := AppInstCache.Get(&key, &appInst)
 	if !found || appInst.State != edgeproto.TrackedState_READY {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "delete rules for AppInst", "AppInst", key)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "delete rules for AppInst", "AppInstKey", key)
 		untrackAppInstByPolicy(key)
 		// AppInst is being deleted - delete rules
-		fileName := getAppInstRulesFileName(&appInst)
+		fileName := getAppInstRulesFileName(&key)
 		if err := deleteCloudletPrometheusAlertFile(ctx, fileName); err != nil {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to delete prometheus rules", "file", fileName, "err", err)
 		}
@@ -430,7 +430,7 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 	}
 	if len(grps.Groups) == 0 {
 		// no rules - rulefile should not exist for this
-		fileName := getAppInstRulesFileName(&appInst)
+		fileName := getAppInstRulesFileName(&appInst.Key)
 		if err := deleteCloudletPrometheusAlertFile(ctx, fileName); err != nil {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to delete prometheus rules", "file", fileName, "err", err)
 		}
@@ -442,7 +442,7 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 		return
 	}
 
-	fileName := getAppInstRulesFileName(&appInst)
+	fileName := getAppInstRulesFileName(&appInst.Key)
 	err = writeCloudletPrometheusAlerts(ctx, fileName, byt)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to write prometheus rules", "file", fileName, "err", err)

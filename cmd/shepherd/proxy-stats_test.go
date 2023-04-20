@@ -120,7 +120,7 @@ func TestCollectProxyStats(t *testing.T) {
 
 		// For each appInst in testutil.AppInstData() the result might differ
 		switch ii {
-		case 0, 1, 3, 4, 6, 7:
+		case 0, 1, 2, 4, 6, 7:
 			// tcp,udp,http ports, load-balancer access
 			// dedicated access k8s
 			// We should write a targets file and get a scrape point
@@ -130,7 +130,7 @@ func TestCollectProxyStats(t *testing.T) {
 			// object that we already have
 			target = CollectProxyStats(ctx, &obj)
 			require.Empty(t, target)
-		case 2:
+		case 3:
 			// Same app, but different cloudlets - map entry is the same
 			target := CollectProxyStats(ctx, &obj)
 			require.Empty(t, target)
@@ -164,7 +164,7 @@ func TestCollectProxyStats(t *testing.T) {
 
 		// For each appInst in testutil.AppInstData() the result might differ
 		switch ii {
-		case 0, 1, 3, 4, 6, 7:
+		case 0, 1, 2, 4, 6, 7:
 			// tcp,udp,http ports, load-balancer access
 			// dedicated access k8s
 			// We should write a targets file and get a scrape point
@@ -174,7 +174,7 @@ func TestCollectProxyStats(t *testing.T) {
 			// object that we already have
 			target = CollectProxyStats(ctx, &obj)
 			require.Empty(t, target)
-		case 2:
+		case 3:
 			// Same app, but different cloudlets - map entry is the same
 			target := CollectProxyStats(ctx, &obj)
 			require.Empty(t, target)
@@ -254,12 +254,12 @@ func testProxyScraper(ctx context.Context, db *testProxyMetricsdb, t *testing.T)
 	// Verify collected stats
 	require.Equal(t, 2, len(db.appStats))
 	for k, v := range db.appStats {
-		if k == testutil.AppInstData()[7].Key {
-			require.Equal(t, 3050, v.NetSent)
-			require.Equal(t, 400, v.NetRecv)
-		} else if k == testutil.AppInstData()[0].Key {
-			require.Equal(t, 7002, v.NetSent)
-			require.Equal(t, 701, v.NetRecv)
+		if k == testutil.AppInstData()[0].Key {
+			require.Equal(t, uint64(3050), v.NetSent)
+			require.Equal(t, uint64(400), v.NetRecv)
+		} else if k == testutil.AppInstData()[7].Key {
+			require.Equal(t, uint64(7002), v.NetSent)
+			require.Equal(t, uint64(701), v.NetRecv)
 		}
 	}
 	require.Equal(t, 1, len(db.clusterStats))

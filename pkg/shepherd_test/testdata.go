@@ -68,9 +68,12 @@ var (
 	TestAppInstKey = edgeproto.AppInstKey{
 		Name:         "AppInstTest",
 		Organization: TestAppKey.Organization,
+		CloudletKey:  TestCloudletKey,
 	}
 	TestAppInst = edgeproto.AppInst{
 		Key:         TestAppInstKey,
+		AppKey:      TestApp.Key,
+		ClusterKey:  TestClusterKey,
 		State:       edgeproto.TrackedState_READY,
 		HealthCheck: dme.HealthCheck_HEALTH_CHECK_OK,
 		Liveness:    edgeproto.Liveness_LIVENESS_AUTOPROV,

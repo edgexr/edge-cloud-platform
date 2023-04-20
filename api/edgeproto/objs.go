@@ -890,7 +890,7 @@ func (m *Metric) AddTag(name string, val string) {
 
 func (m *Metric) AddKeyTags(key objstore.ObjKey) {
 	for name, val := range key.GetTags() {
-		m.AddTag(name, util.DNSSanitize(val))
+		m.AddTag(name, val)
 	}
 }
 

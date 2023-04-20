@@ -134,21 +134,18 @@ scrape_configs:
 {
 	"targets": ["host.docker.internal:9091"],
 	"labels": {
-		"app": "App",
-		"appver": "",
-		"apporg": "",
-		"cluster": "testcluster",
-		"clusterorg": "",
+		"appinst": "AppInstTest",
+		"appinstorg": "",
 		"cloudlet": "testcloudlet",
 		"cloudletorg": "testoperator",
-		"__metrics_path__":"/metrics/App-testcluster--"
+		"__metrics_path__":"/metrics/AppInstTest-"
 	}
 }]`
 	require.Equal(t, expected, string(fileContents))
 
 	// check alerts based on appinsts and policy
 
-	rulesFile := getAppInstRulesFileName(&shepherd_test.TestAppInst)
+	rulesFile := getAppInstRulesFileName(&shepherd_test.TestAppInst.Key)
 	fileContents, err = ioutil.ReadFile(rulesFile)
 	require.Nil(t, err)
 	expected = `groups:
