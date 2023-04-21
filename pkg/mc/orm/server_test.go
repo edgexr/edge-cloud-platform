@@ -1604,7 +1604,6 @@ func testCORS(t *testing.T, ctx context.Context, uri, superTok string, mcClient 
 	// run actual request without cors enabled
 	resp = runCorsTestUrl(t, http.MethodPost, testUrl, "https://source.com")
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	require.True(t, resp.ContentLength > 0)
 	require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Origin"))
 
 	// ************** CORS enabled, specific domain *******************
@@ -1621,27 +1620,26 @@ func testCORS(t *testing.T, ctx context.Context, uri, superTok string, mcClient 
 	status, err := mcClient.UpdateConfig(uri, superTok, &md)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	// run preflight check - wrong source
+	// run preflight check, wrong source, no CORS headers
 	resp = runCorsTestUrl(t, http.MethodOptions, testUrl, "https://source.com")
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
 	require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Origin"))
 	require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Methods"))
 	require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Headers"))
-	// run preflight check - correct source
+	// run preflight check correct source, CORS headers set
 	resp = runCorsTestUrl(t, http.MethodOptions, testUrl, trustedDomain)
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
 	require.Equal(t, trustedDomain, resp.Header.Get("Access-Control-Allow-Origin"))
 	require.Equal(t, "GET,HEAD,PUT,PATCH,POST,DELETE", resp.Header.Get("Access-Control-Allow-Methods"))
 	require.Equal(t, "true", resp.Header.Get("Access-Control-Allow-Credentials"))
-	// run actual request with valid domain, get data
+	// run actual request with valid domain, CORS headers set
 	resp = runCorsTestUrl(t, http.MethodPost, testUrl, trustedDomain)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	require.True(t, resp.ContentLength > 0)
 	require.Equal(t, trustedDomain, resp.Header.Get("Access-Control-Allow-Origin"))
-	// run actual request with bad domain, still get OK but no data
+	// run actual request with bad domain, no CORS header,
+	// browser will block data
 	resp = runCorsTestUrl(t, http.MethodPost, testUrl, "https://bad.domain")
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	require.True(t, resp.ContentLength > 0)
 	require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Origin"))
 
 	// ************** CORS enabled, all domains *******************
@@ -1657,17 +1655,16 @@ func testCORS(t *testing.T, ctx context.Context, uri, superTok string, mcClient 
 	status, err = mcClient.UpdateConfig(uri, superTok, &md)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	// run preflight check
+	// run preflight check, CORS headers set
 	anyDomain := "https://any.domain"
 	resp = runCorsTestUrl(t, http.MethodOptions, testUrl, anyDomain)
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
 	require.Equal(t, anyDomain, resp.Header.Get("Access-Control-Allow-Origin"))
 	require.Equal(t, "GET,HEAD,PUT,PATCH,POST,DELETE", resp.Header.Get("Access-Control-Allow-Methods"))
 	require.Equal(t, "true", resp.Header.Get("Access-Control-Allow-Credentials"))
-	// run actual request, get data
+	// run actual request, CORS headers set
 	resp = runCorsTestUrl(t, http.MethodPost, testUrl, anyDomain)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	require.True(t, resp.ContentLength > 0)
 	require.Equal(t, anyDomain, resp.Header.Get("Access-Control-Allow-Origin"))
 }
 

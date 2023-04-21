@@ -17,7 +17,7 @@ func corsDisabledHandler(next echo.HandlerFunc) echo.HandlerFunc {
 	return next
 }
 
-// Wrap the cors middlware handler in our own so that we
+// Wrap the cors middleware handler in our own so that we
 // can update the config dynamically.
 func CorsHandler(next echo.HandlerFunc) echo.HandlerFunc {
 	CorsHandlerMux.Lock()
