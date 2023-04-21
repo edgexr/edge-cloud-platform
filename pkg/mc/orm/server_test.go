@@ -870,6 +870,7 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	testPasswordStrength(t, ctx, mcClient, uri, token)
 	testEdgeboxOnlyOrgs(t, uri, mcClient)
 	testConfigUpgrade(t, ctx)
+	testCORS(t, ctx, uri, token, mcClient)
 }
 
 func waitServerOnline(addr string) error {
@@ -1576,4 +1577,107 @@ func testConfigUpgrade(t *testing.T, ctx context.Context) {
 	// but the upgrade will not set the default value for it
 	config.DisableRateLimit = defaultConfig.DisableRateLimit
 	require.Equal(t, defaultConfig, *config)
+}
+
+func testCORS(t *testing.T, ctx context.Context, uri, superTok string, mcClient *mctestclient.Client) {
+	// Cross-origin resource sharing is a web browser-only feature.
+	// It is enforced at the browser by the browser, protecting the
+	// data from one website from access by java-script running in
+	// the browser on another website.
+	// It is based on the returned headers. If the returned headers
+	// do not contain the correct Access-Control values, the browser
+	// will prevent the requested data from reaching the calling
+	// java-script code. This is only required if the calling origin
+	// is different from the requested origin.
+
+	testUrl := uri + "/publicconfig"
+	// ************** CORS disabled *******************
+	// No CORS means no CORS headers on responses. Browser will block
+	// any cross-site sharing.
+
+	// run preflight check request without cors
+	resp := runCorsTestUrl(t, http.MethodOptions, testUrl, "https://source.com")
+	require.Equal(t, http.StatusNoContent, resp.StatusCode)
+	require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Origin"))
+	require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Methods"))
+	require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Headers"))
+	// run actual request without cors enabled
+	resp = runCorsTestUrl(t, http.MethodPost, testUrl, "https://source.com")
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.True(t, resp.ContentLength > 0)
+	require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Origin"))
+
+	// ************** CORS enabled, specific domain *******************
+	// CORS headers will only be set on responses from allowed domains.
+	trustedDomain := "https://foo.com"
+	md := cli.MapData{
+		Namespace: cli.ArgsNamespace,
+		Data: map[string]interface{}{
+			"corsenable":           true,
+			"corsallowedorigins":   []string{trustedDomain},
+			"corsallowcredentials": true,
+		},
+	}
+	status, err := mcClient.UpdateConfig(uri, superTok, &md)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// run preflight check - wrong source
+	resp = runCorsTestUrl(t, http.MethodOptions, testUrl, "https://source.com")
+	require.Equal(t, http.StatusNoContent, resp.StatusCode)
+	require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Origin"))
+	require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Methods"))
+	require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Headers"))
+	// run preflight check - correct source
+	resp = runCorsTestUrl(t, http.MethodOptions, testUrl, trustedDomain)
+	require.Equal(t, http.StatusNoContent, resp.StatusCode)
+	require.Equal(t, trustedDomain, resp.Header.Get("Access-Control-Allow-Origin"))
+	require.Equal(t, "GET,HEAD,PUT,PATCH,POST,DELETE", resp.Header.Get("Access-Control-Allow-Methods"))
+	require.Equal(t, "true", resp.Header.Get("Access-Control-Allow-Credentials"))
+	// run actual request with valid domain, get data
+	resp = runCorsTestUrl(t, http.MethodPost, testUrl, trustedDomain)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.True(t, resp.ContentLength > 0)
+	require.Equal(t, trustedDomain, resp.Header.Get("Access-Control-Allow-Origin"))
+	// run actual request with bad domain, still get OK but no data
+	resp = runCorsTestUrl(t, http.MethodPost, testUrl, "https://bad.domain")
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.True(t, resp.ContentLength > 0)
+	require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Origin"))
+
+	// ************** CORS enabled, all domains *******************
+	// CORS headers will be set on all responses.
+	md = cli.MapData{
+		Namespace: cli.ArgsNamespace,
+		Data: map[string]interface{}{
+			"corsenable":           true,
+			"corsallowedorigins":   []string{"*"},
+			"corsallowcredentials": true,
+		},
+	}
+	status, err = mcClient.UpdateConfig(uri, superTok, &md)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// run preflight check
+	anyDomain := "https://any.domain"
+	resp = runCorsTestUrl(t, http.MethodOptions, testUrl, anyDomain)
+	require.Equal(t, http.StatusNoContent, resp.StatusCode)
+	require.Equal(t, anyDomain, resp.Header.Get("Access-Control-Allow-Origin"))
+	require.Equal(t, "GET,HEAD,PUT,PATCH,POST,DELETE", resp.Header.Get("Access-Control-Allow-Methods"))
+	require.Equal(t, "true", resp.Header.Get("Access-Control-Allow-Credentials"))
+	// run actual request, get data
+	resp = runCorsTestUrl(t, http.MethodPost, testUrl, anyDomain)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.True(t, resp.ContentLength > 0)
+	require.Equal(t, anyDomain, resp.Header.Get("Access-Control-Allow-Origin"))
+}
+
+func runCorsTestUrl(t *testing.T, method, testUrl, origin string) *http.Response {
+	client := http.Client{}
+	req, err := http.NewRequest(method, testUrl, nil)
+	require.Nil(t, err)
+	req.Header.Add("Origin", origin)
+	req.Header.Add("Access-Control-Request-Method", "POST")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	return resp
 }

@@ -25,8 +25,9 @@ func init() {
 		Name:         "UpdateConfig",
 		Use:          "update",
 		Short:        "Update master controller global configuration",
-		OptionalArgs: "locknewaccounts notifyemailaddress skipverifyemail maxmetricsdatapoints passwordmincracktimesec adminpasswordmincracktimesec userapikeycreatelimit billingenable disableratelimit ratelimitmaxtrackedips ratelimitmaxtrackedusers failedloginlockoutthreshold1 failedloginlockouttimesec1 failedloginlockoutthreshold2 failedloginlockouttimesec2 logallshowapis logshowurl",
+		OptionalArgs: "locknewaccounts notifyemailaddress skipverifyemail maxmetricsdatapoints passwordmincracktimesec adminpasswordmincracktimesec userapikeycreatelimit billingenable disableratelimit ratelimitmaxtrackedips ratelimitmaxtrackedusers failedloginlockoutthreshold1 failedloginlockouttimesec1 failedloginlockoutthreshold2 failedloginlockouttimesec2 logallshowapis logshowurl corsenable corsallowedorigins corsallowedheaders corsallowcredentials",
 		Comments:     ormapi.ConfigComments,
+		SpecialArgs:  &ConfigSpecialArgs,
 		ReqData:      &ormapi.Config{},
 		Path:         "/auth/config/update",
 	}, &ApiCommand{
@@ -54,4 +55,9 @@ func init() {
 		Path:      "/auth/config/version",
 	}}
 	AllApis.AddGroup(ConfigGroup, "Manage global configuration", cmds)
+}
+
+var ConfigSpecialArgs = map[string]string{
+	"corsallowedorigins": "StringArray",
+	"corsallowedheaders": "StringArray",
 }

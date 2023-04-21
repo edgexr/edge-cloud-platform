@@ -399,7 +399,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	// AuthCookie needs to be done here at the root so it can run before RateLimit and extract the user information needed by the RateLimit middleware.
 	// AuthCookie will only run for the /auth path.
 	auditLogger := NewAuditLogger(resultErrorHandler)
-	e.Use(auditLogger.echoHandler, AuthCookie, RateLimit)
+	e.Use(auditLogger.echoHandler, CorsHandler, AuthCookie, RateLimit)
 
 	e.POST("/oauth2/token", Oauth2Token)
 

@@ -25,6 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/labstack/echo/v4"
 )
 
@@ -132,6 +133,7 @@ func InitConfig(ctx context.Context) error {
 		}
 	}
 	setConfig(&config)
+	UpdateCorsConfig(ctx, &config)
 
 	log.SpanLog(ctx, log.DebugLevelApi, "using config", "config", config)
 	return nil
@@ -150,7 +152,7 @@ func UpdateConfig(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	oldConfig := *config
+	oldConfig := copyConfig(config)
 	// calling bind after doing lookup will overwrite only the
 	// fields specified in the request body, keeping existing fields intact.
 	if err := c.Bind(&config); err != nil {
@@ -206,6 +208,19 @@ func UpdateConfig(c echo.Context) error {
 	}
 	if config.RateLimitMaxTrackedUsers != oldConfig.RateLimitMaxTrackedUsers {
 		rateLimitMgr.UpdateMaxTrackedUsers(config.RateLimitMaxTrackedUsers)
+	}
+
+	// Validate CORS settings
+	if config.CorsEnable {
+		if len(config.CorsAllowedOrigins) == 0 {
+			return fmt.Errorf("Allowed origins must be specified when enabling CORS. Use \"*\" to allow all (be sure to understand the security implications of doing so)")
+		}
+	}
+	if config.CorsEnable != oldConfig.CorsEnable ||
+		!util.StringSliceEqual(config.CorsAllowedOrigins, oldConfig.CorsAllowedOrigins) ||
+		!util.StringSliceEqual(config.CorsAllowedHeaders, oldConfig.CorsAllowedHeaders) ||
+		config.CorsAllowCredentials != oldConfig.CorsAllowCredentials {
+		UpdateCorsConfig(ctx, config)
 	}
 
 	db := loggedDB(ctx)
@@ -272,10 +287,18 @@ func getConfigFromDB(ctx context.Context) (*ormapi.Config, error) {
 	return &config, err
 }
 
+func copyConfig(config *ormapi.Config) ormapi.Config {
+	cp := *config
+	// copy slices
+	cp.CorsAllowedOrigins = util.StringSliceCopy(config.CorsAllowedOrigins)
+	cp.CorsAllowedHeaders = util.StringSliceCopy(config.CorsAllowedHeaders)
+	return cp
+}
+
 func setConfig(config *ormapi.Config) {
 	curConfigMux.Lock()
 	defer curConfigMux.Unlock()
-	curConfig = *config
+	curConfig = copyConfig(config)
 }
 
 func getConfig(ctx context.Context) (*ormapi.Config, error) {
@@ -285,7 +308,7 @@ func getConfig(ctx context.Context) (*ormapi.Config, error) {
 func getCachedConfig() *ormapi.Config {
 	curConfigMux.Lock()
 	defer curConfigMux.Unlock()
-	cfgOut := curConfig
+	cfgOut := copyConfig(&curConfig)
 	return &cfgOut
 }
 

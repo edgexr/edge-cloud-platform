@@ -307,52 +307,47 @@ func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 				} else {
 					response = string(resBody)
 				}
-			} else if strings.Contains(string(resBody), "ApiKey") {
-				if strings.Contains(req.RequestURI, "/user/create/apikey") {
-					resp := ormapi.CreateUserApiKey{}
-					err := json.Unmarshal(resBody, &resp)
+			} else if strings.Contains(req.RequestURI, "/user/create/apikey") && strings.Contains(string(resBody), "ApiKey") {
+				resp := ormapi.CreateUserApiKey{}
+				err := json.Unmarshal(resBody, &resp)
+				if err == nil {
+					resp.ApiKey = ""
+					updatedResp, err := json.Marshal(&resp)
 					if err == nil {
-						resp.ApiKey = ""
-						updatedResp, err := json.Marshal(&resp)
-						if err == nil {
-							response = string(updatedResp)
-						} else {
-							response = string(resBody)
-						}
+						response = string(updatedResp)
 					} else {
 						response = string(resBody)
 					}
+				} else {
+					response = string(resBody)
 				}
-			} else if strings.Contains(string(resBody), "ClientKey") {
-				if strings.Contains(req.RequestURI, "/federation/provider/generateapikey") {
-					resp := ormapi.FederationProviderInfo{}
-					err := json.Unmarshal(resBody, &resp)
+			} else if strings.Contains(req.RequestURI, "/federation/provider/generateapikey") && strings.Contains(string(resBody), "ClientKey") {
+				resp := ormapi.FederationProviderInfo{}
+				err := json.Unmarshal(resBody, &resp)
+				if err == nil {
+					resp.ClientKey = ""
+					updatedResp, err := json.Marshal(&resp)
 					if err == nil {
-						resp.ClientKey = ""
-						updatedResp, err := json.Marshal(&resp)
-						if err == nil {
-							response = string(updatedResp)
-						} else {
-							response = string(resBody)
-						}
+						response = string(updatedResp)
 					} else {
 						response = string(resBody)
 					}
+				} else {
+					response = string(resBody)
 				}
-				if strings.Contains(req.RequestURI, "/federation/consumer/generatenotifykey") {
-					resp := ormapi.FederationConsumerAuth{}
-					err := json.Unmarshal(resBody, &resp)
+			} else if strings.Contains(req.RequestURI, "/federation/consumer/generatenotifykey") && strings.Contains(string(resBody), "ClientKey") {
+				resp := ormapi.FederationConsumerAuth{}
+				err := json.Unmarshal(resBody, &resp)
+				if err == nil {
+					resp.ClientKey = ""
+					updatedResp, err := json.Marshal(&resp)
 					if err == nil {
-						resp.ClientKey = ""
-						updatedResp, err := json.Marshal(&resp)
-						if err == nil {
-							response = string(updatedResp)
-						} else {
-							response = string(resBody)
-						}
+						response = string(updatedResp)
 					} else {
 						response = string(resBody)
 					}
+				} else {
+					response = string(resBody)
 				}
 			} else {
 				response = string(resBody)

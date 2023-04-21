@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/lib/pq"
 )
 
 // Data saved to persistent sql db, also used for API calls
@@ -294,6 +295,14 @@ type Config struct {
 	LogAllShowApis bool
 	// Log specific API url (may be substring of entire URL)
 	LogShowUrl string
+	// Enable CORS (cross origin resource sharing)
+	CorsEnable bool
+	// CORS allowed origins
+	CorsAllowedOrigins pq.StringArray `gorm:"type:text[]"`
+	// CORS allowed headers
+	CorsAllowedHeaders pq.StringArray `gorm:"type:text[]"`
+	// CORS allow credentials
+	CorsAllowCredentials bool
 }
 
 type McRateLimitFlowSettings struct {
