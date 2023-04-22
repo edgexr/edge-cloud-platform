@@ -84,11 +84,8 @@ var promHealthCheckAlerts = `groups:
       ` + cloudcommon.AlertAnnotationTitle + ": " + cloudcommon.AlertAppInstDown + `
       ` + cloudcommon.AlertAnnotationDescription + ": Application server port is not responding" + `
   - expr: sum by (` + // basically sum over all ports
-	strings.Join([]string{edgeproto.AppKeyTagName,
-		edgeproto.AppKeyTagVersion,
-		edgeproto.AppKeyTagOrganization,
-		edgeproto.ClusterKeyTagName,
-		edgeproto.ClusterKeyTagOrganization,
+	strings.Join([]string{edgeproto.AppInstKeyTagName,
+		edgeproto.AppInstKeyTagOrganization,
 		edgeproto.CloudletKeyTagName,
 		edgeproto.CloudletKeyTagOrganization}, ",") +
 	`) (envoy_cluster_upstream_cx_active)
