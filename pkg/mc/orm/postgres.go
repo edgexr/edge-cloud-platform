@@ -439,6 +439,7 @@ var postgresNumericTypes = []string{"bigint", "int8", "bigserial", "serial8",
 	"smallserial", "serial2", "serial", "serial4", "money"}
 var postgresStringTypes = []string{"bit", "bit varying", "varbit", "char",
 	"varchar", "json", "text", "citext"}
+var postgresArrayTypes = []string{"ARRAY"}
 
 func getPostgresEmptyVal(dataType string) (string, error) {
 	if strings.HasPrefix(dataType, "boolean") {
@@ -455,6 +456,11 @@ func getPostgresEmptyVal(dataType string) (string, error) {
 	for _, t := range postgresStringTypes {
 		if strings.HasPrefix(dataType, t) {
 			return `''`, nil
+		}
+	}
+	for _, t := range postgresArrayTypes {
+		if strings.HasPrefix(dataType, t) {
+			return `'{}'`, nil
 		}
 	}
 	return "", fmt.Errorf("unrecognized type %s", dataType)

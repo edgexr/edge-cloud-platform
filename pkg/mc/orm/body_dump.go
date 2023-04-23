@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	fmt "fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -87,8 +88,8 @@ func BodyDumpWithConfig(config BodyDumpConfig) echo.MiddlewareFunc {
 						reqBody, _ = ioutil.ReadAll(c.Request().Body)
 					}
 					c.Request().Body = ioutil.NopCloser(bytes.NewBuffer(reqBody)) // Reset
-				} else {
-					reqBody = []byte(reqContentType + " data omitted")
+				} else if c.Request().ContentLength > 0 {
+					reqBody = []byte(reqContentType + fmt.Sprintf(" data length %d omitted", c.Request().ContentLength))
 				}
 			}
 			// Response

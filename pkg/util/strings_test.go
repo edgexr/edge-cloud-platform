@@ -145,3 +145,40 @@ func TestQuoteArgs(t *testing.T) {
 		}
 	}
 }
+
+func TestStringSliceEqual(t *testing.T) {
+	type testDat struct {
+		a   []string
+		b   []string
+		exp bool
+	}
+	tests := []testDat{{
+		nil,
+		nil,
+		true,
+	}, {
+		nil,
+		[]string{},
+		false,
+	}, {
+		[]string{},
+		[]string{},
+		true,
+	}, {
+		[]string{"a"},
+		[]string{"b"},
+		false,
+	}, {
+		[]string{"a", "bbb", "c"},
+		[]string{"a", "bbb", "c"},
+		true,
+	}, {
+		[]string{"a", "b", "c"},
+		[]string{"a", "c", "b"},
+		false,
+	}}
+	for _, test := range tests {
+		val := StringSliceEqual(test.a, test.b)
+		require.Equal(t, test.exp, val)
+	}
+}
