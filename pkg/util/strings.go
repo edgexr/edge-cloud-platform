@@ -199,3 +199,30 @@ func (s *FormUrlEncodedClearer) Clear(data []byte) []byte {
 	}
 	return data
 }
+
+func StringSliceEqual(a, b []string) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for ii := range a {
+		if a[ii] != b[ii] {
+			return false
+		}
+	}
+	return true
+}
+
+func StringSliceCopy(a []string) []string {
+	if a == nil {
+		return nil
+	}
+	b := make([]string, len(a))
+	copy(b, a)
+	return b
+}
