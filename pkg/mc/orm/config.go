@@ -18,12 +18,14 @@ import (
 	"context"
 	fmt "fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/labstack/echo/v4"
 )
 
@@ -48,6 +50,9 @@ var defaultConfig = ormapi.Config{
 	ApiKeyLoginTokenValidDuration: edgeproto.Duration(4 * time.Hour),
 	WebsocketTokenValidDuration:   edgeproto.Duration(2 * time.Minute),
 }
+
+var curConfig ormapi.Config
+var curConfigMux sync.Mutex
 
 func InitConfig(ctx context.Context) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "init config")
@@ -127,6 +132,8 @@ func InitConfig(ctx context.Context) error {
 			return err
 		}
 	}
+	setConfig(&config)
+	UpdateCorsConfig(ctx, &config)
 
 	log.SpanLog(ctx, log.DebugLevelApi, "using config", "config", config)
 	return nil
@@ -145,7 +152,7 @@ func UpdateConfig(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	oldConfig := *config
+	oldConfig := copyConfig(config)
 	// calling bind after doing lookup will overwrite only the
 	// fields specified in the request body, keeping existing fields intact.
 	if err := c.Bind(&config); err != nil {
@@ -203,11 +210,25 @@ func UpdateConfig(c echo.Context) error {
 		rateLimitMgr.UpdateMaxTrackedUsers(config.RateLimitMaxTrackedUsers)
 	}
 
+	// Validate CORS settings
+	if config.CorsEnable {
+		if len(config.CorsAllowedOrigins) == 0 {
+			return fmt.Errorf("Allowed origins must be specified when enabling CORS. Use \"*\" to allow all (be sure to understand the security implications of doing so)")
+		}
+	}
+	if config.CorsEnable != oldConfig.CorsEnable ||
+		!util.StringSliceEqual(config.CorsAllowedOrigins, oldConfig.CorsAllowedOrigins) ||
+		!util.StringSliceEqual(config.CorsAllowedHeaders, oldConfig.CorsAllowedHeaders) ||
+		config.CorsAllowCredentials != oldConfig.CorsAllowCredentials {
+		UpdateCorsConfig(ctx, config)
+	}
+
 	db := loggedDB(ctx)
 	err = db.Save(&config).Error
 	if err != nil {
 		return err
 	}
+	setConfig(config)
 	return nil
 }
 
@@ -257,13 +278,38 @@ func ShowConfig(c echo.Context) error {
 	return c.JSON(http.StatusOK, config)
 }
 
-func getConfig(ctx context.Context) (*ormapi.Config, error) {
+func getConfigFromDB(ctx context.Context) (*ormapi.Config, error) {
 	config := ormapi.Config{}
 	config.ID = defaultConfig.ID
 	db := loggedDB(ctx)
 	err := db.First(&config).Error
 	// note: should always exist
 	return &config, err
+}
+
+func copyConfig(config *ormapi.Config) ormapi.Config {
+	cp := *config
+	// copy slices
+	cp.CorsAllowedOrigins = util.StringSliceCopy(config.CorsAllowedOrigins)
+	cp.CorsAllowedHeaders = util.StringSliceCopy(config.CorsAllowedHeaders)
+	return cp
+}
+
+func setConfig(config *ormapi.Config) {
+	curConfigMux.Lock()
+	defer curConfigMux.Unlock()
+	curConfig = copyConfig(config)
+}
+
+func getConfig(ctx context.Context) (*ormapi.Config, error) {
+	return getCachedConfig(), nil
+}
+
+func getCachedConfig() *ormapi.Config {
+	curConfigMux.Lock()
+	defer curConfigMux.Unlock()
+	cfgOut := copyConfig(&curConfig)
+	return &cfgOut
 }
 
 // this should be called if the password crack time configuration changed

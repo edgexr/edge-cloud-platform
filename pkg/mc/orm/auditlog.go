@@ -39,6 +39,7 @@ var TokenFieldClearer = util.NewJsonFieldClearer("token")
 var AccessTokenFieldClearer = util.NewJsonFieldClearer("access_token")
 var ClientSecretFieldClearer = util.NewJsonFieldClearer("clientSecret")
 var PasswordFieldClearer = util.NewJsonFieldClearer("password")
+var ReqUrlEncodedClearer = util.NewFormUrlEncodedClearer("client_id", "client_secret")
 
 type AuditNameLookupKey struct {
 	method string
@@ -68,6 +69,7 @@ func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 
 		path := strings.Split(req.RequestURI, "/")
 		method := path[len(path)-1]
+		contentType := req.Header.Get("Content-Type")
 		isShow := false
 		debugEvents := log.GetDebugLevel()&log.DebugLevelEvents != 0
 		if strings.Contains(req.RequestURI, "/auth/events/") && debugEvents {
@@ -77,17 +79,22 @@ func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 			(strings.Contains(req.RequestURI, "operatorplatform") && req.Method == http.MethodGet) ||
 			strings.Contains(req.RequestURI, "/auth/user/current") ||
 			strings.Contains(req.RequestURI, "/auth/metrics/") ||
-			strings.Contains(req.RequestURI, "/oauth2/token/") ||
+			strings.Contains(req.RequestURI, "/oauth2/token") ||
 			strings.Contains(req.RequestURI, "/ctrl/Stream") ||
 			strings.Contains(req.RequestURI, "/auth/audit/") ||
 			strings.Contains(req.RequestURI, "/auth/events/") ||
 			strings.Contains(req.RequestURI, "/auth/report/generate") ||
 			strings.Contains(req.RequestURI, "/auth/report/download") ||
 			strings.Contains(req.RequestURI, "/api/v1/httpauth") {
-			// don't log (fills up Audit logs)
-			lvl = log.SuppressLvl
-			logaudit = false
-			isShow = true
+			config := getCachedConfig()
+			if config.LogAllShowApis || (len(config.LogShowUrl) > 0 && strings.Contains(req.RequestURI, config.LogShowUrl)) {
+				// for debugging, log show api
+			} else {
+				// don't log (fills up Audit logs)
+				lvl = log.SuppressLvl
+				logaudit = false
+				isShow = true
+			}
 		}
 
 		// All Tags on this span will be exposed to the end-user in
@@ -157,8 +164,12 @@ func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		// remove passwords from requests so they aren't logged
-		reqBody = TokenFieldClearer.Clear(reqBody)
-		reqBody = PasswordFieldClearer.Clear(reqBody)
+		if strings.Contains(contentType, "application/json") {
+			reqBody = TokenFieldClearer.Clear(reqBody)
+			reqBody = PasswordFieldClearer.Clear(reqBody)
+		} else if strings.Contains(contentType, "application/x-www-form-urlencoded") {
+			reqBody = ReqUrlEncodedClearer.Clear(reqBody)
+		}
 		if strings.Contains(req.RequestURI, "login") {
 			login := ormapi.UserLogin{}
 			err := json.Unmarshal(reqBody, &login)
@@ -296,52 +307,47 @@ func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 				} else {
 					response = string(resBody)
 				}
-			} else if strings.Contains(string(resBody), "ApiKey") {
-				if strings.Contains(req.RequestURI, "/user/create/apikey") {
-					resp := ormapi.CreateUserApiKey{}
-					err := json.Unmarshal(resBody, &resp)
+			} else if strings.Contains(req.RequestURI, "/user/create/apikey") && strings.Contains(string(resBody), "ApiKey") {
+				resp := ormapi.CreateUserApiKey{}
+				err := json.Unmarshal(resBody, &resp)
+				if err == nil {
+					resp.ApiKey = ""
+					updatedResp, err := json.Marshal(&resp)
 					if err == nil {
-						resp.ApiKey = ""
-						updatedResp, err := json.Marshal(&resp)
-						if err == nil {
-							response = string(updatedResp)
-						} else {
-							response = string(resBody)
-						}
+						response = string(updatedResp)
 					} else {
 						response = string(resBody)
 					}
+				} else {
+					response = string(resBody)
 				}
-			} else if strings.Contains(string(resBody), "ClientKey") {
-				if strings.Contains(req.RequestURI, "/federation/provider/generateapikey") {
-					resp := ormapi.FederationProviderInfo{}
-					err := json.Unmarshal(resBody, &resp)
+			} else if strings.Contains(req.RequestURI, "/federation/provider/generateapikey") && strings.Contains(string(resBody), "ClientKey") {
+				resp := ormapi.FederationProviderInfo{}
+				err := json.Unmarshal(resBody, &resp)
+				if err == nil {
+					resp.ClientKey = ""
+					updatedResp, err := json.Marshal(&resp)
 					if err == nil {
-						resp.ClientKey = ""
-						updatedResp, err := json.Marshal(&resp)
-						if err == nil {
-							response = string(updatedResp)
-						} else {
-							response = string(resBody)
-						}
+						response = string(updatedResp)
 					} else {
 						response = string(resBody)
 					}
+				} else {
+					response = string(resBody)
 				}
-				if strings.Contains(req.RequestURI, "/federation/consumer/generatenotifykey") {
-					resp := ormapi.FederationConsumerAuth{}
-					err := json.Unmarshal(resBody, &resp)
+			} else if strings.Contains(req.RequestURI, "/federation/consumer/generatenotifykey") && strings.Contains(string(resBody), "ClientKey") {
+				resp := ormapi.FederationConsumerAuth{}
+				err := json.Unmarshal(resBody, &resp)
+				if err == nil {
+					resp.ClientKey = ""
+					updatedResp, err := json.Marshal(&resp)
 					if err == nil {
-						resp.ClientKey = ""
-						updatedResp, err := json.Marshal(&resp)
-						if err == nil {
-							response = string(updatedResp)
-						} else {
-							response = string(resBody)
-						}
+						response = string(updatedResp)
 					} else {
 						response = string(resBody)
 					}
+				} else {
+					response = string(resBody)
 				}
 			} else {
 				response = string(resBody)
