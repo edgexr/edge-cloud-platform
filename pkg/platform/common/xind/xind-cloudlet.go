@@ -77,6 +77,11 @@ func (s *Xind) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.C
 	return nil
 }
 
+func (s *Xind) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "Updating cloudlet access vars", "cloudletName", cloudlet.Key.Name)
+	return nil
+}
+
 func (s *Xind) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Deleting cloudlet access vars", "cloudletName", cloudlet.Key.Name)
 	return nil

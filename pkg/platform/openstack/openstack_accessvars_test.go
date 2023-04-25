@@ -18,9 +18,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/stretchr/testify/require"
 )
@@ -60,6 +60,9 @@ func TestAccessVars(t *testing.T) {
 	accessVarsTestNoAuthURL["OPENRC_DATA"] = "OS_PROJECT_ID=12345\nOS_PROJECT_NAME=\"mex\"\nOS_USER_DOMAIN_NAME=\"Default\"\nOS_PROJECT_DOMAIN_ID=\"default\"\nOS_USERNAME=\"mexadmin\"\nOS_PASSWORD=password123\nOS_REGION_NAME=\"RegionOne\"\nOS_INTERFACE=public\nOS_IDENTITY_API_VERSION=3"
 	accessVarsTestNoAuthURL["CACERT_DATA"] = "XXXXXXXX"
 
+	accessVarsTestCertOnly := make(map[string]string)
+	accessVarsTestCertOnly["CACERT_DATA"] = "YYYYYYYY"
+
 	var envvars = make(map[string]string)
 	envvars["VAULT_TOKEN"] = "dummy"
 	pc := edgeproto.PlatformConfig{
@@ -73,6 +76,8 @@ func TestAccessVars(t *testing.T) {
 	var cloudlet = edgeproto.Cloudlet{
 		Key: ckey,
 	}
+
+	// save tests
 	err := o.SaveCloudletAccessVars(ctx, &cloudlet, accessVarsTestGood, &pc, vaultConfig, edgeproto.DummyUpdateCallback)
 	log.SpanLog(ctx, log.DebugLevelInfra, "accessVarsTestGood result", "err", err)
 	require.Nil(t, err)
@@ -99,4 +104,66 @@ func TestAccessVars(t *testing.T) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "accessVarsTestNoAuthURL result", "err", err)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "missing OS_AUTH_URL")
+
+	err = o.SaveCloudletAccessVars(ctx, &cloudlet, accessVarsTestCertOnly, &pc, vaultConfig, edgeproto.DummyUpdateCallback)
+	log.SpanLog(ctx, log.DebugLevelInfra, "accessVarsTestCertOnly result", "err", err)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "missing OPENRC_DATA")
+
+	// update tests
+	err = o.UpdateCloudletAccessVars(ctx, &cloudlet, accessVarsTestCertOnly, &pc, vaultConfig, edgeproto.DummyUpdateCallback)
+	log.SpanLog(ctx, log.DebugLevelInfra, "update with accessVarsTestCertOnly result", "err", err)
+	require.Nil(t, err)
+
+	err = o.UpdateCloudletAccessVars(ctx, &cloudlet, accessVarsTestNoCert, &pc, vaultConfig, edgeproto.DummyUpdateCallback)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Update accessVarsTestNoCert result", "err", err)
+	require.Nil(t, err)
+
+	err = o.UpdateCloudletAccessVars(ctx, &cloudlet, accessVarsTestBadOSVar, &pc, vaultConfig, edgeproto.DummyUpdateCallback)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Update accessVarsTestBadOSVar result", "err", err)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "must start with 'OS_' prefix")
+
+	err = o.UpdateCloudletAccessVars(ctx, &cloudlet, accessVarsTestBlankLines, &pc, vaultConfig, edgeproto.DummyUpdateCallback)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Update accessVarsTestBlankLines result", "err", err)
+	require.Nil(t, err)
+
+	err = o.UpdateCloudletAccessVars(ctx, &cloudlet, accessVarsTestBlankVars, &pc, vaultConfig, edgeproto.DummyUpdateCallback)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Update accessVarsTestBlankVars result", "err", err)
+	require.Nil(t, err)
+
+	err = o.UpdateCloudletAccessVars(ctx, &cloudlet, accessVarsTestNoAuthURL, &pc, vaultConfig, edgeproto.DummyUpdateCallback)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Update accessVarsTestNoAuthURL result", "err", err)
+	require.Nil(t, err)
+
+	// accessVarsFromOpenrcData tests
+	vars, err := accessVarsFromOpenrcData(accessVarsTestGood["OPENRC_DATA"])
+	require.Nil(t, err)
+	require.Equal(t, 10, len(vars))
+	for k, v := range vars {
+		switch k {
+		case "OS_AUTH_URL":
+			require.Equal(t, "https://openstacktest.mobiledgex.net:5000/v3", v)
+		case "OS_PROJECT_ID":
+			require.Equal(t, "12345", v)
+		case "OS_PROJECT_NAME":
+			require.Equal(t, "mex", v)
+		case "OS_USER_DOMAIN_NAME":
+			require.Equal(t, "Default", v)
+		case "OS_PROJECT_DOMAIN_ID":
+			require.Equal(t, "default", v)
+		case "OS_USERNAME":
+			require.Equal(t, "mexadmin", v)
+		case "OS_PASSWORD":
+			require.Equal(t, "password123", v)
+		case "OS_REGION_NAME":
+			require.Equal(t, "RegionOne", v)
+		case "OS_INTERFACE":
+			require.Equal(t, "public", v)
+		case "OS_IDENTITY_API_VERSION":
+			require.Equal(t, "3", v)
+		default:
+			require.Fail(t, "unexpected key", k, v)
+		}
+	}
 }

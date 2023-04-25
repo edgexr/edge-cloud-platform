@@ -21,11 +21,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
@@ -35,15 +35,11 @@ type OpenstackResources struct {
 	FloatingIPsUsed uint64
 }
 
-func (o *OpenstackPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "Saving cloudlet access vars to vault", "cloudletName", cloudlet.Key.Name)
-	openrcData, ok := accessVarsIn["OPENRC_DATA"]
-	if !ok {
-		return fmt.Errorf("Invalid accessvars, missing OPENRC_DATA")
-	}
+// openrc data is a string, but we need to make a map out of it
+func accessVarsFromOpenrcData(openrcData string) (map[string]string, error) {
 	out := strings.Split(openrcData, "\n")
 	if len(out) <= 1 {
-		return fmt.Errorf("Invalid accessvars, as OPENRC_DATA is invalid: %v", out)
+		return nil, fmt.Errorf("Invalid accessvars, as OPENRC_DATA is invalid: %v", out)
 	}
 	accessVars := make(map[string]string)
 	for _, v := range out {
@@ -53,7 +49,7 @@ func (o *OpenstackPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet
 		}
 		out1 := strings.Split(v, "=")
 		if len(out1) != 2 {
-			return fmt.Errorf("Invalid separator for key-value pair: %v", out1)
+			return nil, fmt.Errorf("Invalid separator for key-value pair: %v", out1)
 		}
 		key := strings.TrimSpace(out1[0])
 		value := strings.TrimSpace(out1[1])
@@ -67,9 +63,88 @@ func (o *OpenstackPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet
 			continue
 		}
 		if !strings.HasPrefix(key, "OS_") {
-			return fmt.Errorf("Invalid accessvars: %s, must start with 'OS_' prefix", key)
+			return nil, fmt.Errorf("Invalid accessvars: %s, must start with 'OS_' prefix", key)
 		}
 		accessVars[key] = value
+	}
+	return accessVars, nil
+}
+
+func buildVaultDataFromAccessVars(accessVars map[string]string) map[string]interface{} {
+	var varList infracommon.VaultEnvData
+	for key, value := range accessVars {
+		if key == "OS_CACERT" {
+			continue
+		}
+		varList.Env = append(varList.Env, infracommon.EnvData{
+			Name:  key,
+			Value: value,
+		})
+	}
+	data := map[string]interface{}{
+		"data": varList,
+	}
+	return data
+}
+
+func (o *OpenstackPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
+	var err error
+
+	log.SpanLog(ctx, log.DebugLevelInfra, "Update cloudlet access vars in vault", "cloudletName", cloudlet.Key.Name)
+
+	updateVars := map[string]string{}
+	openrcData, ok := accessVarsIn["OPENRC_DATA"]
+	if ok {
+		updateVars, err = accessVarsFromOpenrcData(openrcData)
+		if err != nil {
+			return err
+		}
+	}
+	certData, ok := accessVarsIn["CACERT_DATA"]
+	if ok {
+		certFile := vmlayer.GetCertFilePath(&cloudlet.Key)
+		err := ioutil.WriteFile(certFile, []byte(certData), 0644)
+		if err != nil {
+			return err
+		}
+		updateVars["CACERT_DATA"] = certData
+	}
+	// 1. get stored vars
+	path := o.GetVaultCloudletAccessPath(&cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName)
+	accessVars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, path)
+	if err != nil {
+		updateCallback(edgeproto.UpdateTask, "Failed to get access vars from vault")
+		log.SpanLog(ctx, log.DebugLevelInfra, err.Error(), "cloudletName", cloudlet.Key.Name)
+		return fmt.Errorf("Failed to update access vars in vault: %v", err)
+	}
+	// 3. update map
+	for k, v := range updateVars {
+		if _, ok := accessVars[k]; ok {
+			accessVars[k] = v
+		}
+	}
+	updateCallback(edgeproto.UpdateTask, "Saving access vars to secure secrets storage (Vault)")
+	data := buildVaultDataFromAccessVars(accessVars)
+
+	// 4. save it back to vault
+	err = infracommon.PutDataToVault(vaultConfig, path, data)
+	if err != nil {
+		updateCallback(edgeproto.UpdateTask, "Failed to save access vars to vault")
+		log.SpanLog(ctx, log.DebugLevelInfra, err.Error(), "cloudletName", cloudlet.Key.Name)
+		return fmt.Errorf("Failed to save access vars to vault: %v", err)
+	}
+	return nil
+}
+
+func (o *OpenstackPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "Saving cloudlet access vars to vault", "cloudletName", cloudlet.Key.Name)
+	openrcData, ok := accessVarsIn["OPENRC_DATA"]
+	if !ok {
+		return fmt.Errorf("Invalid accessvars, missing OPENRC_DATA")
+	}
+	accessVars, err := accessVarsFromOpenrcData(openrcData)
+	if err != nil {
+		return err
 	}
 	authURL, ok := accessVars["OS_AUTH_URL"]
 	if !ok {
@@ -89,22 +164,10 @@ func (o *OpenstackPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet
 		accessVars["OS_CACERT_DATA"] = certData
 	}
 	updateCallback(edgeproto.UpdateTask, "Saving access vars to secure secrets storage (Vault)")
-	var varList infracommon.VaultEnvData
-	for key, value := range accessVars {
-		if key == "OS_CACERT" {
-			continue
-		}
-		varList.Env = append(varList.Env, infracommon.EnvData{
-			Name:  key,
-			Value: value,
-		})
-	}
-	data := map[string]interface{}{
-		"data": varList,
-	}
+	data := buildVaultDataFromAccessVars(accessVars)
 
 	path := o.GetVaultCloudletAccessPath(&cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName)
-	err := infracommon.PutDataToVault(vaultConfig, path, data)
+	err = infracommon.PutDataToVault(vaultConfig, path, data)
 	if err != nil {
 		updateCallback(edgeproto.UpdateTask, "Failed to save access vars to vault")
 		log.SpanLog(ctx, log.DebugLevelInfra, err.Error(), "cloudletName", cloudlet.Key.Name)

@@ -17,6 +17,11 @@ func (s *K8sOperator) SaveCloudletAccessVars(ctx context.Context, cloudlet *edge
 	return nil
 }
 
+func (s *K8sOperator) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateCloudletAccessVars", "cloudletName", cloudlet.Key.Name)
+	return nil
+}
+
 func (s *K8sOperator) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteCloudletAccessVars", "cloudletName", cloudlet.Key.Name)
 	return nil
