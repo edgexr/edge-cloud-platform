@@ -65,7 +65,9 @@
     - key: reason
     - key: region
     - key: remote-ip
+    - key: reqheaders
     - key: request
+    - key: respheaders
     - key: response
     - key: spanid
     - key: status

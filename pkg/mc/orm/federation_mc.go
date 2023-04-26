@@ -25,6 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	fedmgmt "github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -382,6 +383,9 @@ func UpdateFederationProvider(c echo.Context) error {
 	// First time is to do lookup, second time is to apply
 	// modified fields.
 	body, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
+		return err
+	}
 	in := ormapi.FederationProvider{}
 	err = BindJson(body, &in)
 	if err != nil {
@@ -394,6 +398,8 @@ func UpdateFederationProvider(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	fedQueryParams := federation.GetFedQueryParams(c)
+
 	if err := fedAuthorized(ctx, claims.Username, provider.OperatorId); err != nil {
 		return err
 	}
@@ -416,6 +422,7 @@ func UpdateFederationProvider(c echo.Context) error {
 		"MyInfo.DiscoveryEndPoint":   {},
 		"MyInfo.FixedNetworkIds":     {},
 		"MyInfo.InitialDate":         {},
+		"PartnerNotifyDest":          {},
 	}
 	for _, field := range ormutil.GetMapKeys(inMap) {
 		if _, found := allowedFields[field]; !found {
@@ -435,25 +442,25 @@ func UpdateFederationProvider(c echo.Context) error {
 	}
 
 	// Notify partner federator
-	if provider.PartnerNotifyDest != fedmgmt.CallbackNotSupported {
-		// TODO: callback update
-		/*
-			opConf := fedapi.UpdateMECNetConf{
-				RequestId:        selfFed.Revision,
-				OrigFederationId: selfFed.FederationId,
-				DestFederationId: partnerFed.FederationId,
-				Operator:         selfFed.OperatorId,
-				Country:          selfFed.CountryCode,
-				MCC:              selfFed.MCC,
-				MNC:              selfFed.MNC,
-				LocatorEndPoint:  selfFed.LocatorEndPoint,
-			}
-			err = fedClient.SendRequest(ctx, "PUT", partnerFed.FederationAddr, partnerFed.Name, federation.APIKeyFromVault, federation.OperatorPartnerAPI, &opConf, nil)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelApi, "Failed to update partner federator", "federation name", partnerFed.Name, "error", err)
-				errOut = fmt.Sprintf(". But failed to update partner federation %q, err: %v", partnerFed.Name, err)
-			}
-		*/
+	if provider.Status == federation.StatusRegistered && provider.PartnerNotifyDest != fedmgmt.CallbackNotSupported && !fedQueryParams.IgnorePartner {
+		/* TODO: callback does not support updating MCC/MNC.
+		 * It also does not support a single update of NetworkIDs
+		 * (Only add/remove)
+		fedclient, err := partnerApi.ProviderPartnerClient(ctx, provider, provider.PartnerNotifyDest)
+		if err != nil {
+			return err
+		}
+		req := fedewapi.PartnerPostRequest{
+			FederationContextId: provider.FederationContextId,
+			ObjectType: "FEDERATION",
+			OperationType: "UPDATE",
+
+		}
+		err = fedClient.SendRequest(ctx, "PUT", partnerFed.FederationAddr, partnerFed.Name, federation.APIKeyFromVault, federation.OperatorPartnerAPI, &opConf, nil)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "Failed to update partner federator", "federation name", partnerFed.Name, "error", err)
+			errOut = fmt.Sprintf(". But failed to update partner federation %q, err: %v", partnerFed.Name, err)
+		}*/
 	}
 
 	return ormutil.SetReply(c, ormutil.Msg("Updated Federation Host"))
@@ -681,8 +688,51 @@ func GenerateFederationProviderAPIKey(c echo.Context) error {
 
 // Set provider notify auth creds for callbacks
 func SetFederationProviderNotifyKey(c echo.Context) error {
-	// TODO
-	// requires id, key, and tokenUrl
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	in := ormapi.FederationProvider{}
+	if err := c.Bind(&in); err != nil {
+		return ormutil.BindErr(err)
+	}
+	if in.PartnerNotifyClientId == "" {
+		return fmt.Errorf("Must specify partner client id")
+	}
+	if in.PartnerNotifyClientKey == "" {
+		return fmt.Errorf("Must specify partner client key")
+	}
+	provider, err := lookupFederationProvider(ctx, in.ID, in.Name)
+	if err != nil {
+		return err
+	}
+	if err := fedAuthorized(ctx, claims.Username, provider.OperatorId); err != nil {
+		return err
+	}
+
+	apiKey := &federationmgmt.ApiKey{
+		TokenUrl: provider.PartnerNotifyTokenUrl,
+		Id:       in.PartnerNotifyClientId,
+		Key:      in.PartnerNotifyClientKey,
+	}
+	if in.PartnerNotifyTokenUrl != "" {
+		apiKey.TokenUrl = in.PartnerNotifyTokenUrl
+		provider.PartnerNotifyTokenUrl = in.PartnerNotifyTokenUrl
+	}
+	if apiKey.TokenUrl == "" {
+		return fmt.Errorf("Must specify notify token url")
+	}
+	fedKey := federation.ProviderFedKey(provider)
+	err = federationmgmt.PutAPIKeyToVault(ctx, serverConfig.vaultConfig, fedKey, apiKey)
+	if err != nil {
+		return err
+	}
+	provider.PartnerNotifyClientId = "***"
+	db := loggedDB(ctx)
+	if err := db.Save(provider).Error; err != nil {
+		return ormutil.DbErr(err)
+	}
 	return nil
 }
 
