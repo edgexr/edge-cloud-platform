@@ -255,6 +255,11 @@ func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{},
 			req.Header.Add(k, v)
 		}
 	}
+	if req.Header.Get("accept") == "" {
+		// some APIs require that we specify the accept header;
+		// since none set by caller, assume we accept json
+		req.Header.Set("accept", "application/json")
+	}
 	if queryParams != nil {
 		vals := req.URL.Query()
 		for k, v := range queryParams {

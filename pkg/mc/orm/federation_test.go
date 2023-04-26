@@ -155,6 +155,10 @@ func SetupControllerService(t *testing.T, ctx context.Context, operatorIds []str
 					Value: ResourceValue,
 				},
 			}
+			// test that geo location is generated with
+			// correctly truncated precision
+			clObj.Location.Latitude = 1.1392349083
+			clObj.Location.Longitude = 2.3409209843
 			ds.CloudletCache.Update(ctx, &clObj, 0)
 		} else {
 			clObj := edgeproto.CloudletInfo{}

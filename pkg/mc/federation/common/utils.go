@@ -53,10 +53,51 @@ func ParseGeoLocation(geoLoc string) (float64, float64, error) {
 	return lat, long, nil
 }
 
+// Removes trailing zeros from string.
+// If a decimal point exists and everything after it is zeros,
+// the decimal point is also removed.
+func RemoveTrailingZeros(val string) string {
+	if len(val) == 0 {
+		return val
+	}
+	decIdx := -1
+	countTrailingZeros := true
+	trailingZeros := 0
+	for ii := len(val) - 1; ii >= 0; ii-- {
+		if countTrailingZeros {
+			if val[ii] == '0' {
+				trailingZeros++
+			} else if val[ii] == '.' {
+				trailingZeros++
+				countTrailingZeros = false
+			} else {
+				countTrailingZeros = false
+			}
+		}
+		if val[ii] == '.' {
+			decIdx = ii
+		}
+	}
+	if decIdx == -1 || trailingZeros == 0 {
+		// not a decimal or no trailing zeros to strip
+		return val
+	}
+	return val[:len(val)-trailingZeros]
+}
+
 // Generate a geo location string.
+// Note that this is used for federation which has restrictions
+// on the precision produced.
 func GenGeoLocation(latitude, longitude float64) string {
-	lat := strconv.FormatFloat(latitude, 'g', -1, 64)
-	long := strconv.FormatFloat(longitude, 'g', -1, 64)
+	// Use 'f' since federation precision is the number
+	// of decimal places, not the entire number.
+	// Can't use 'g' because precision applies the number
+	// of non-zero digits, regardless of decimal place.
+	lat := strconv.FormatFloat(latitude, 'f', 4, 64)
+	long := strconv.FormatFloat(longitude, 'f', 4, 64)
+	// make it pretty
+	lat = RemoveTrailingZeros(lat)
+	long = RemoveTrailingZeros(long)
 	return lat + "," + long
 }
 
