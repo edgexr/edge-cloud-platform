@@ -18,7 +18,9 @@ const (
 
 	PathVarAppInstUniqueId = "appInstUniqueId"
 
-	CallbackNotSupported = "NOT_SUPPORTED"
+	CallbackNotSupported  = "NOT_SUPPORTED"
+	NoCallbackApiKey      = "NO_CALLBACK_API_KEY"
+	NoCallbackApiKeyError = "no callback API key"
 )
 
 func PathCreateAppInst(fedCtxId string) (string, string) {
