@@ -15,7 +15,9 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -225,4 +227,32 @@ func StringSliceCopy(a []string) []string {
 	b := make([]string, len(a))
 	copy(b, a)
 	return b
+}
+
+var redactHeaders = map[string]struct{}{
+	"Authorization": {},
+	"Set-Cookie":    {},
+	"X-Api-Key":     {},
+}
+
+func GetHeadersString(header http.Header) string {
+	// reformat header map into mix of single values
+	// and lists, to avoid having lots of single values
+	// shown as lists in logs.
+	hout := make(map[string]interface{})
+	for key, val := range header {
+		if _, found := redactHeaders[key]; found {
+			hout[key] = "****"
+			continue
+		}
+		if len(val) == 0 {
+			continue
+		} else if len(val) == 1 {
+			hout[key] = val[0]
+		} else {
+			hout[key] = val
+		}
+	}
+	out, _ := json.Marshal(hout)
+	return string(out)
 }
