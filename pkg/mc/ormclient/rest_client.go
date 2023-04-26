@@ -37,6 +37,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/gorilla/websocket"
 	"github.com/mitchellh/mapstructure"
 )
@@ -581,12 +582,12 @@ func (s *Client) EnablePrintTransformations() {
 
 func (s *AuditLogData) GetEventTags() map[string]string {
 	return map[string]string{
-		"method":            s.Method,
-		"remoteurl":         s.Url.String(),
-		"req-content-type":  s.ReqContentType,
-		"request":           string(s.ReqBody),
-		"status":            fmt.Sprintf("%d", s.Status),
-		"resp-content-type": s.RespContentType,
-		"response":          string(s.RespBody),
+		"method":      s.Method,
+		"remoteurl":   s.Url.String(),
+		"reqheaders":  util.GetHeadersString(s.ReqHeader),
+		"request":     string(s.ReqBody),
+		"status":      fmt.Sprintf("%d", s.Status),
+		"response":    string(s.RespBody),
+		"respheaders": util.GetHeadersString(s.RespHeader),
 	}
 }
