@@ -16,6 +16,7 @@ package federationmgmt
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -78,6 +79,9 @@ func GetFederationAPIKey(ctx context.Context, vaultConfig *vault.Config, fedKey 
 	}
 	if apiKey.Key == "" {
 		return nil, fmt.Errorf("Unable to find federation API key from vault path %s", vaultPath)
+	}
+	if apiKey.Id == NoCallbackApiKey {
+		return nil, errors.New(NoCallbackApiKeyError)
 	}
 	return apiKey, nil
 }

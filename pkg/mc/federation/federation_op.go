@@ -306,7 +306,11 @@ func (p *PartnerApi) CreateFederation(c echo.Context) (reterr error) {
 		out.OfferedAvailabilityZones = zones
 	}
 
-	var apiKey *federationmgmt.ApiKey
+	apiKey := &federationmgmt.ApiKey{
+		TokenUrl: federationmgmt.CallbackNotSupported,
+		Id:       federationmgmt.NoCallbackApiKey,
+		Key:      "none",
+	}
 	if req.PartnerCallbackCredentials != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "got callback credentials in body")
 		apiKey = &federationmgmt.ApiKey{
@@ -315,25 +319,23 @@ func (p *PartnerApi) CreateFederation(c echo.Context) (reterr error) {
 			Key:      req.PartnerCallbackCredentials.ClientSecret,
 		}
 	}
-	if apiKey != nil {
-		fedKey := ProviderFedKey(provider)
-		err := federationmgmt.PutAPIKeyToVault(ctx, p.vaultConfig, fedKey, apiKey)
-		if err != nil {
-			return err
-		}
-		provider.PartnerNotifyClientId = "***"
-		provider.PartnerNotifyTokenUrl = apiKey.TokenUrl
-
-		defer func() {
-			if reterr == nil {
-				return
-			}
-			undoErr := federationmgmt.DeleteAPIKeyFromVault(ctx, p.vaultConfig, fedKey)
-			if undoErr != nil {
-				log.SpanLog(ctx, log.DebugLevelApi, "undo: delete apikey failed", "err", undoErr)
-			}
-		}()
+	fedKey := ProviderFedKey(provider)
+	err = federationmgmt.PutAPIKeyToVault(ctx, p.vaultConfig, fedKey, apiKey)
+	if err != nil {
+		return err
 	}
+	provider.PartnerNotifyClientId = "***"
+	provider.PartnerNotifyTokenUrl = apiKey.TokenUrl
+
+	defer func() {
+		if reterr == nil {
+			return
+		}
+		undoErr := federationmgmt.DeleteAPIKeyFromVault(ctx, p.vaultConfig, fedKey)
+		if undoErr != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "undo: delete apikey failed", "err", undoErr)
+		}
+	}()
 
 	// Add federation with partner federator
 	db := p.loggedDB(ctx)
