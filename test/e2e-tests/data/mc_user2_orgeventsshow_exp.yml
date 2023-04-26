@@ -34,7 +34,9 @@
       policyorg: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"405","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"AutoProvPolicy":{"cloudlets":[{"key":{"name":"dmuus-cloud-1","organization":"dmuus"}},{"key":{"name":"dmuus-cloud-2","organization":"dmuus"}},{"key":{"name":"azure-cloud-4","organization":"azure"}},{"key":{"name":"gcp-cloud-5","organization":"gcp"}}],"key":{"name":"autoprovHA","organization":"AcmeAppCo"},"max_instances":4,"min_active_instances":2},"Region":"local"}'
+      respheaders: '{"Content-Type":"application/json; charset=UTF-8"}'
       response: '{}'
       spanid: ""
       status: "200"

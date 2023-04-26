@@ -122,6 +122,7 @@ func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 
 		reqBody := []byte{}
 		resBody := []byte{}
+		reqHeaders := util.GetHeadersString(req.Header)
 		if strings.HasPrefix(req.RequestURI, "/ws/") {
 			// can't use bodydump on websocket-upgraded connection,
 			// as it tries to write the response back in the body
@@ -153,6 +154,7 @@ func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		response := ""
+		resHeaders := util.GetHeadersString(res.Header())
 		if ws := ormutil.GetWs(ec); ws != nil {
 			wsRequest, wsResponse := ormutil.GetWsLogData(ec)
 			if len(wsRequest) > 0 {
@@ -366,6 +368,8 @@ func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 			eventTags["status"] = fmt.Sprintf("%d", code)
 			eventOrg := ""
 			eventTags["localuri"] = req.RequestURI
+			eventTags["reqheaders"] = reqHeaders
+			eventTags["respheaders"] = resHeaders
 			for k, v := range log.GetTags(span) {
 				if k == "level" || k == "error" || log.IgnoreSpanTag(k) {
 					continue

@@ -41,7 +41,9 @@
       org: user3org
       region: local
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"387","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"ep1","organization":"user3org","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"enterprise-1","organization":"enterprise"},"cluster_key":{"name":"SmallCluster"},"organization":"user3org"}}},"Region":"local"}'
+      respheaders: '{"Content-Type":"application/json"}'
       response: |
         {"data":{"message":"Creating"}}
         {"data":{"message":"Creating App Inst"}}
