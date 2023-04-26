@@ -119,9 +119,7 @@ func (o *OpenstackPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudl
 	}
 	// 3. update map
 	for k, v := range updateVars {
-		if _, ok := accessVars[k]; ok {
-			accessVars[k] = v
-		}
+		accessVars[k] = v
 	}
 	updateCallback(edgeproto.UpdateTask, "Saving access vars to secure secrets storage (Vault)")
 	data := buildVaultDataFromAccessVars(accessVars)
