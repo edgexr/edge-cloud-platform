@@ -1882,6 +1882,7 @@ var UpdateVMPoolFieldsMap = map[string]struct{}{
 	VMPoolFieldVmsFlavorRam:          struct{}{},
 	VMPoolFieldVmsFlavorDisk:         struct{}{},
 	VMPoolFieldVmsFlavorPropMap:      struct{}{},
+	VMPoolFieldVmsFlavorPropMapKey:   struct{}{},
 	VMPoolFieldVmsFlavorPropMapValue: struct{}{},
 	VMPoolFieldCrmOverride:           struct{}{},
 	VMPoolFieldDeletePrepare:         struct{}{},

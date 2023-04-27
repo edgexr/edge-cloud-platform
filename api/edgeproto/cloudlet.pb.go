@@ -8268,6 +8268,7 @@ func (m *GPUDriver) DiffFields(o *GPUDriver, fields map[string]struct{}) {
 var UpdateGPUDriverFieldsMap = map[string]struct{}{
 	GPUDriverFieldLicenseConfig:   struct{}{},
 	GPUDriverFieldProperties:      struct{}{},
+	GPUDriverFieldPropertiesKey:   struct{}{},
 	GPUDriverFieldPropertiesValue: struct{}{},
 }
 
@@ -10491,8 +10492,10 @@ var UpdateCloudletFieldsMap = map[string]struct{}{
 	CloudletFieldCrmOverride:                        struct{}{},
 	CloudletFieldNotifySrvAddr:                      struct{}{},
 	CloudletFieldEnvVar:                             struct{}{},
+	CloudletFieldEnvVarKey:                          struct{}{},
 	CloudletFieldEnvVarValue:                        struct{}{},
 	CloudletFieldAccessVars:                         struct{}{},
+	CloudletFieldAccessVarsKey:                      struct{}{},
 	CloudletFieldAccessVarsValue:                    struct{}{},
 	CloudletFieldMaintenanceState:                   struct{}{},
 	CloudletFieldTrustPolicy:                        struct{}{},
@@ -10509,6 +10512,7 @@ var UpdateCloudletFieldsMap = map[string]struct{}{
 	CloudletFieldGpuConfigDriverName:                struct{}{},
 	CloudletFieldGpuConfigDriverOrganization:        struct{}{},
 	CloudletFieldGpuConfigProperties:                struct{}{},
+	CloudletFieldGpuConfigPropertiesKey:             struct{}{},
 	CloudletFieldGpuConfigPropertiesValue:           struct{}{},
 	CloudletFieldGpuConfigLicenseConfig:             struct{}{},
 	CloudletFieldEnableDefaultServerlessCluster:     struct{}{},
@@ -10522,6 +10526,7 @@ var UpdateCloudletFieldsMap = map[string]struct{}{
 	CloudletFieldInfraFlavorsRam:                    struct{}{},
 	CloudletFieldInfraFlavorsDisk:                   struct{}{},
 	CloudletFieldInfraFlavorsPropMap:                struct{}{},
+	CloudletFieldInfraFlavorsPropMapKey:             struct{}{},
 	CloudletFieldInfraFlavorsPropMapValue:           struct{}{},
 }
 

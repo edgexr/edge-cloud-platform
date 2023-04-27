@@ -847,6 +847,7 @@ var UpdateFlavorFieldsMap = map[string]struct{}{
 	FlavorFieldVcpus:          struct{}{},
 	FlavorFieldDisk:           struct{}{},
 	FlavorFieldOptResMap:      struct{}{},
+	FlavorFieldOptResMapKey:   struct{}{},
 	FlavorFieldOptResMapValue: struct{}{},
 }
 
