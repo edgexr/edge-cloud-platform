@@ -418,6 +418,11 @@ func (f *FederationPlatform) SaveCloudletAccessVars(ctx context.Context, cloudle
 	return nil
 }
 
+// Save Cloudlet AccessVars
+func (f *FederationPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
+	return nil
+}
+
 // Delete Cloudlet AccessVars
 func (f *FederationPlatform) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
