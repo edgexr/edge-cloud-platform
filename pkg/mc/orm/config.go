@@ -256,6 +256,7 @@ func ResetConfig(c echo.Context) error {
 	rateLimitMgr.UpdateDisableRateLimit(defaultConfig.DisableRateLimit)
 	rateLimitMgr.UpdateMaxTrackedIps(defaultConfig.RateLimitMaxTrackedIps)
 	rateLimitMgr.UpdateMaxTrackedUsers(defaultConfig.RateLimitMaxTrackedUsers)
+	setConfig(&config)
 
 	return nil
 }
