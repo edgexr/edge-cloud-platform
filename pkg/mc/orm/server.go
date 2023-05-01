@@ -1061,7 +1061,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 
 		// RateLimit based on auth
 		auditLogger := NewAuditLogger(fedErrorHandler)
-		federationEcho.Use(auditLogger.echoHandler, AuthCookie, FederationRateLimit)
+		federationEcho.Use(auditLogger.echoHandler, CorsHandler, AuthCookie, FederationRateLimit)
 		server.federationEcho = federationEcho
 
 		partnerApi = federation.NewPartnerApi(database, connCache, nodeMgr, config.vaultConfig, config.FederationExternalAddr, config.VmRegistryAddr, config.HarborAddr)
