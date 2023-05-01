@@ -221,9 +221,9 @@ func setMyFedId(fed *ormapi.Federator, name string) {
 	// Federation ID is supposed to be a globally unique identifier
 	// allocated to an operator platform. Not sure who decides what
 	// these are or manages global uniqueness. For now just hard code
-	// to name plus a random UUID.
+	// to a fixed UUID. Note that this can be overridden by user input.
 	if fed.FederationId == "" {
-		fed.FederationId = util.DNSSanitize(name) + "085d364c07fb4fe0b09979127f7c3d68"
+		fed.FederationId = "085d364c07fb4fe0b09979127f7c3d68"
 	}
 }
 

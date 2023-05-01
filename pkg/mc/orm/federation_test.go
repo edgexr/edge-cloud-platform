@@ -581,6 +581,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	// Federation creation with same federation provider should fail
 	badConsReq := *consReq
 	badConsReq.Name = "testErr"
+	badConsReq.MyInfo.FederationId = "085d364cd"
 	_, _, err = mcClient.CreateFederationGuest(op.uri, consAttr.tokenOper, &badConsReq)
 	require.NotNil(t, err, "create federation consumer")
 	require.Contains(t, err.Error(), "already in use by another consumer")
