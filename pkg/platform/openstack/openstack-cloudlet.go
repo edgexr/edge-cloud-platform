@@ -90,7 +90,7 @@ func buildVaultDataFromAccessVars(accessVars map[string]string) map[string]inter
 func (o *OpenstackPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
 	var err error
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "Update cloudlet access vars in vault", "cloudletName", cloudlet.Key.Name)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Update cloudlet access vars in vault", "cloudletName", cloudlet.Key.Name, "cloudlet", cloudlet)
 
 	updateVars := map[string]string{}
 	openrcData, ok := accessVarsIn["OPENRC_DATA"]
@@ -107,7 +107,7 @@ func (o *OpenstackPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudl
 		if err != nil {
 			return err
 		}
-		updateVars["CACERT_DATA"] = certData
+		updateVars["OS_CACERT_DATA"] = certData
 	}
 	// 1. get stored vars
 	path := o.GetVaultCloudletAccessPath(&cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName)
@@ -117,6 +117,7 @@ func (o *OpenstackPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudl
 		log.SpanLog(ctx, log.DebugLevelInfra, err.Error(), "cloudletName", cloudlet.Key.Name)
 		return fmt.Errorf("Failed to update access vars in vault: %v", err)
 	}
+
 	// 3. update map
 	for k, v := range updateVars {
 		accessVars[k] = v
