@@ -66,11 +66,21 @@ zones:
   flavourssupported:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
+    supportedostypes:
+    - architecture: ANY
+      distribution: ANY
+      version: ANY
+      license: ANY
     numcpu: 2
     memorysize: 4096
     storagesize: 40
   - flavourid: x1.tiny
     cpuarchtype: ISA_X86_64
+    supportedostypes:
+    - architecture: ANY
+      distribution: ANY
+      version: ANY
+      license: ANY
     numcpu: 1
     memorysize: 1024
     storagesize: 20
@@ -86,11 +96,21 @@ zones:
   flavourssupported:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
+    supportedostypes:
+    - architecture: ANY
+      distribution: ANY
+      version: ANY
+      license: ANY
     numcpu: 2
     memorysize: 4096
     storagesize: 40
   - flavourid: x1.tiny
     cpuarchtype: ISA_X86_64
+    supportedostypes:
+    - architecture: ANY
+      distribution: ANY
+      version: ANY
+      license: ANY
     numcpu: 1
     memorysize: 1024
     storagesize: 20
@@ -106,11 +126,21 @@ zones:
   flavourssupported:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
+    supportedostypes:
+    - architecture: ANY
+      distribution: ANY
+      version: ANY
+      license: ANY
     numcpu: 2
     memorysize: 4096
     storagesize: 40
   - flavourid: x1.tiny
     cpuarchtype: ISA_X86_64
+    supportedostypes:
+    - architecture: ANY
+      distribution: ANY
+      version: ANY
+      license: ANY
     numcpu: 1
     memorysize: 1024
     storagesize: 20
@@ -126,11 +156,21 @@ zones:
   flavourssupported:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
+    supportedostypes:
+    - architecture: ANY
+      distribution: ANY
+      version: ANY
+      license: ANY
     numcpu: 2
     memorysize: 4096
     storagesize: 40
   - flavourid: x1.tiny
     cpuarchtype: ISA_X86_64
+    supportedostypes:
+    - architecture: ANY
+      distribution: ANY
+      version: ANY
+      license: ANY
     numcpu: 1
     memorysize: 1024
     storagesize: 20
@@ -146,11 +186,21 @@ zones:
   flavourssupported:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
+    supportedostypes:
+    - architecture: ANY
+      distribution: ANY
+      version: ANY
+      license: ANY
     numcpu: 2
     memorysize: 4096
     storagesize: 40
   - flavourid: x1.tiny
     cpuarchtype: ISA_X86_64
+    supportedostypes:
+    - architecture: ANY
+      distribution: ANY
+      version: ANY
+      license: ANY
     numcpu: 1
     memorysize: 1024
     storagesize: 20
@@ -166,11 +216,21 @@ zones:
   flavourssupported:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
+    supportedostypes:
+    - architecture: ANY
+      distribution: ANY
+      version: ANY
+      license: ANY
     numcpu: 2
     memorysize: 4096
     storagesize: 40
   - flavourid: x1.tiny
     cpuarchtype: ISA_X86_64
+    supportedostypes:
+    - architecture: ANY
+      distribution: ANY
+      version: ANY
+      license: ANY
     numcpu: 1
     memorysize: 1024
     storagesize: 20

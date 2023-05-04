@@ -321,15 +321,18 @@ func (p *PartnerApi) getZoneResources(ctx context.Context, base *ormapi.Provider
 	if firstCloudletInfo != nil {
 		for _, flavor := range firstCloudletInfo.Flavors {
 			outFlavor := fedewapi.Flavour{
-				CpuArchType:      fedewapi.CPUARCHTYPE_X86_64,
-				FlavourId:        flavor.Name,
-				Gpu:              nil, // TODO,
-				MemorySize:       int32(flavor.Ram),
-				NumCPU:           int32(flavor.Vcpus),
-				StorageSize:      int32(flavor.Disk),
-				SupportedOSTypes: []fedewapi.OSType{
-					// TODO, not sure it's needed, maybe arch
-				},
+				CpuArchType: fedewapi.CPUARCHTYPE_X86_64,
+				FlavourId:   flavor.Name,
+				Gpu:         nil, // TODO,
+				MemorySize:  int32(flavor.Ram),
+				NumCPU:      int32(flavor.Vcpus),
+				StorageSize: int32(flavor.Disk),
+				SupportedOSTypes: []fedewapi.OSType{{
+					Architecture: "ANY",
+					Distribution: "ANY",
+					Version:      "ANY",
+					License:      "ANY",
+				}},
 			}
 			flavorsSupported = append(flavorsSupported, outFlavor)
 		}
