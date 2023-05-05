@@ -2592,6 +2592,23 @@ func (s *Client) DeleteHostZoneBase(uri string, token string, in *ormapi.Provide
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
+func (s *Client) UpdateHostZoneBase(uri string, token string, in *cli.MapData, ops ...Op) (*ormapi.Result, int, error) {
+	rundata := RunData{}
+	applyOps(&rundata, ops...)
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out ormapi.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("UpdateHostZoneBase")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
 func (s *Client) ShowHostZoneBase(uri string, token string, in *cli.MapData, ops ...Op) ([]ormapi.ProviderZoneBase, int, error) {
 	rundata := RunData{}
 	applyOps(&rundata, ops...)

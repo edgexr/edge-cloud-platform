@@ -1190,9 +1190,8 @@ func DeleteProviderZoneBase(c echo.Context) error {
 	}
 	db := loggedDB(ctx)
 	lookup := ormapi.ProviderZoneBase{
-		ZoneId:      opZone.ZoneId,
-		OperatorId:  opZone.OperatorId,
-		CountryCode: opZone.CountryCode,
+		ZoneId:     opZone.ZoneId,
+		OperatorId: opZone.OperatorId,
 	}
 	existingZone := ormapi.ProviderZoneBase{}
 	res := db.Where(&lookup).First(&existingZone)
@@ -1222,6 +1221,81 @@ func DeleteProviderZoneBase(c echo.Context) error {
 	}
 
 	return ormutil.SetReply(c, ormutil.Msg("Deleted federation zone successfully"))
+}
+
+func UpdateProviderZoneBase(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	body, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
+		return err
+	}
+	opZone := ormapi.ProviderZoneBase{}
+	if err := BindJson(body, &opZone); err != nil {
+		return ormutil.BindErr(err)
+	}
+
+	// sanity check
+	if opZone.ZoneId == "" {
+		return fmt.Errorf("Missing zone ID")
+	}
+	if opZone.OperatorId == "" {
+		return fmt.Errorf("Missing operator ID")
+	}
+	span := log.SpanFromContext(ctx)
+	log.SetTags(span, opZone.GetTags())
+
+	if err := fedAuthorized(ctx, claims.Username, opZone.OperatorId); err != nil {
+		return err
+	}
+
+	db := loggedDB(ctx)
+	lookup := ormapi.ProviderZoneBase{
+		ZoneId:     opZone.ZoneId,
+		OperatorId: opZone.OperatorId,
+	}
+	res := db.Where(&lookup).First(&opZone)
+	if !res.RecordNotFound() && res.Error != nil {
+		return ormutil.DbErr(res.Error)
+	}
+	if res.RecordNotFound() {
+		return fmt.Errorf("Zone %s does not exist", lookup.ZoneId)
+	}
+
+	// Umarshal to map to know what was specified
+	inMap := make(map[string]interface{})
+	err = BindJson(body, &inMap)
+	if err != nil {
+		return err
+	}
+	// Ensure only allowed fields were updated
+	// Note these names are the json field names.
+	allowedFields := map[string]struct{}{
+		"ZoneId":           {}, // for lookup
+		"OperatorId":       {}, // for lookup
+		"GeographyDetails": {},
+		"CountryCode":      {},
+		"GeoLocation":      {},
+	}
+	for _, field := range ormutil.GetMapKeys(inMap) {
+		if _, found := allowedFields[field]; !found {
+			return fmt.Errorf("Update %s not allowed", field)
+		}
+	}
+	// Update via json unmarshal
+	err = BindJson(body, &opZone)
+	if err != nil {
+		return err
+	}
+	if err := db.Save(&opZone).Error; err != nil {
+		return ormutil.DbErr(err)
+	}
+	// XXX there's no EWBI callback that allows for updating the
+	// Guest with new Geography/CountryCode/GeoLocation details.
+	return ormutil.SetReply(c, ormutil.Msg("Updated Host Zone Base"))
 }
 
 // Fields to ignore for ShowProviderZoneBase
