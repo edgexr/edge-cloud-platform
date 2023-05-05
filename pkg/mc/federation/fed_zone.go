@@ -312,6 +312,12 @@ func (p *PartnerApi) getZoneResources(ctx context.Context, base *ormapi.Provider
 	}}
 
 	flavorsSupported := []fedewapi.Flavour{}
+	supportedOSTypes := []fedewapi.OSType{{
+		Architecture: "x86",
+		Distribution: "OTHER",
+		Version:      "OTHER",
+		License:      "NOT_SPECIFIED",
+	}}
 
 	// Send Cloudlet-specific flavors if they exist.
 	// If there are no flavors, then use the platform flavors.
@@ -321,18 +327,13 @@ func (p *PartnerApi) getZoneResources(ctx context.Context, base *ormapi.Provider
 	if firstCloudletInfo != nil {
 		for _, flavor := range firstCloudletInfo.Flavors {
 			outFlavor := fedewapi.Flavour{
-				CpuArchType: fedewapi.CPUARCHTYPE_X86_64,
-				FlavourId:   flavor.Name,
-				Gpu:         nil, // TODO,
-				MemorySize:  int32(flavor.Ram),
-				NumCPU:      int32(flavor.Vcpus),
-				StorageSize: int32(flavor.Disk),
-				SupportedOSTypes: []fedewapi.OSType{{
-					Architecture: "ANY",
-					Distribution: "ANY",
-					Version:      "ANY",
-					License:      "ANY",
-				}},
+				CpuArchType:      fedewapi.CPUARCHTYPE_X86_64,
+				FlavourId:        flavor.Name,
+				Gpu:              nil, // TODO,
+				MemorySize:       int32(flavor.Ram),
+				NumCPU:           int32(flavor.Vcpus),
+				StorageSize:      int32(flavor.Disk),
+				SupportedOSTypes: supportedOSTypes,
 			}
 			flavorsSupported = append(flavorsSupported, outFlavor)
 		}
@@ -359,9 +360,7 @@ func (p *PartnerApi) getZoneResources(ctx context.Context, base *ormapi.Provider
 				MemorySize:       int32(flavor.Ram),
 				NumCPU:           int32(flavor.Vcpus),
 				StorageSize:      int32(flavor.Disk),
-				SupportedOSTypes: []fedewapi.OSType{
-					// TODO, not sure it's needed, maybe arch
-				},
+				SupportedOSTypes: supportedOSTypes,
 			}
 			flavorsSupported = append(flavorsSupported, outFlavor)
 		}

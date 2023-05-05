@@ -67,20 +67,20 @@ zones:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
     supportedostypes:
-    - architecture: ANY
-      distribution: ANY
-      version: ANY
-      license: ANY
+    - architecture: x86
+      distribution: OTHER
+      version: OTHER
+      license: NOT_SPECIFIED
     numcpu: 2
     memorysize: 4096
     storagesize: 40
   - flavourid: x1.tiny
     cpuarchtype: ISA_X86_64
     supportedostypes:
-    - architecture: ANY
-      distribution: ANY
-      version: ANY
-      license: ANY
+    - architecture: x86
+      distribution: OTHER
+      version: OTHER
+      license: NOT_SPECIFIED
     numcpu: 1
     memorysize: 1024
     storagesize: 20
@@ -97,20 +97,20 @@ zones:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
     supportedostypes:
-    - architecture: ANY
-      distribution: ANY
-      version: ANY
-      license: ANY
+    - architecture: x86
+      distribution: OTHER
+      version: OTHER
+      license: NOT_SPECIFIED
     numcpu: 2
     memorysize: 4096
     storagesize: 40
   - flavourid: x1.tiny
     cpuarchtype: ISA_X86_64
     supportedostypes:
-    - architecture: ANY
-      distribution: ANY
-      version: ANY
-      license: ANY
+    - architecture: x86
+      distribution: OTHER
+      version: OTHER
+      license: NOT_SPECIFIED
     numcpu: 1
     memorysize: 1024
     storagesize: 20
@@ -127,20 +127,20 @@ zones:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
     supportedostypes:
-    - architecture: ANY
-      distribution: ANY
-      version: ANY
-      license: ANY
+    - architecture: x86
+      distribution: OTHER
+      version: OTHER
+      license: NOT_SPECIFIED
     numcpu: 2
     memorysize: 4096
     storagesize: 40
   - flavourid: x1.tiny
     cpuarchtype: ISA_X86_64
     supportedostypes:
-    - architecture: ANY
-      distribution: ANY
-      version: ANY
-      license: ANY
+    - architecture: x86
+      distribution: OTHER
+      version: OTHER
+      license: NOT_SPECIFIED
     numcpu: 1
     memorysize: 1024
     storagesize: 20
@@ -157,20 +157,20 @@ zones:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
     supportedostypes:
-    - architecture: ANY
-      distribution: ANY
-      version: ANY
-      license: ANY
+    - architecture: x86
+      distribution: OTHER
+      version: OTHER
+      license: NOT_SPECIFIED
     numcpu: 2
     memorysize: 4096
     storagesize: 40
   - flavourid: x1.tiny
     cpuarchtype: ISA_X86_64
     supportedostypes:
-    - architecture: ANY
-      distribution: ANY
-      version: ANY
-      license: ANY
+    - architecture: x86
+      distribution: OTHER
+      version: OTHER
+      license: NOT_SPECIFIED
     numcpu: 1
     memorysize: 1024
     storagesize: 20
@@ -187,20 +187,20 @@ zones:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
     supportedostypes:
-    - architecture: ANY
-      distribution: ANY
-      version: ANY
-      license: ANY
+    - architecture: x86
+      distribution: OTHER
+      version: OTHER
+      license: NOT_SPECIFIED
     numcpu: 2
     memorysize: 4096
     storagesize: 40
   - flavourid: x1.tiny
     cpuarchtype: ISA_X86_64
     supportedostypes:
-    - architecture: ANY
-      distribution: ANY
-      version: ANY
-      license: ANY
+    - architecture: x86
+      distribution: OTHER
+      version: OTHER
+      license: NOT_SPECIFIED
     numcpu: 1
     memorysize: 1024
     storagesize: 20
@@ -217,20 +217,20 @@ zones:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
     supportedostypes:
-    - architecture: ANY
-      distribution: ANY
-      version: ANY
-      license: ANY
+    - architecture: x86
+      distribution: OTHER
+      version: OTHER
+      license: NOT_SPECIFIED
     numcpu: 2
     memorysize: 4096
     storagesize: 40
   - flavourid: x1.tiny
     cpuarchtype: ISA_X86_64
     supportedostypes:
-    - architecture: ANY
-      distribution: ANY
-      version: ANY
-      license: ANY
+    - architecture: x86
+      distribution: OTHER
+      version: OTHER
+      license: NOT_SPECIFIED
     numcpu: 1
     memorysize: 1024
     storagesize: 20
