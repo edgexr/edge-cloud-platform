@@ -919,6 +919,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/federation/provider/setnotifykey", SetFederationProviderNotifyKey)
 	auth.POST("/federation/provider/zonebase/create", CreateProviderZoneBase)
 	auth.POST("/federation/provider/zonebase/delete", DeleteProviderZoneBase)
+	auth.POST("/federation/provider/zonebase/update", UpdateProviderZoneBase)
 	auth.POST("/federation/provider/zonebase/show", ShowProviderZoneBase)
 	auth.POST("/federation/provider/zone/share", ShareProviderZone)
 	auth.POST("/federation/provider/zone/unshare", UnshareProviderZone)

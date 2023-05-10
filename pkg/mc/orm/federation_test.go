@@ -664,6 +664,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	invalidZone.Region = "ABCD"
 	_, status, err = mcClient.CreateHostZoneBase(op.uri, provAttr.tokenOper, &invalidZone)
 	require.NotNil(t, err, "create federation zone fails")
+	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "Region \"ABCD\" not found")
 
 	// invalid country code
@@ -671,6 +672,7 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	invalidZone.CountryCode = "ABCD"
 	_, status, err = mcClient.CreateHostZoneBase(op.uri, provAttr.tokenOper, &invalidZone)
 	require.NotNil(t, err, "create federation zone fails")
+	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "Invalid country code")
 
 	// Create the rest of the federation provider zones
@@ -761,6 +763,33 @@ func testFederationInterconnect(t *testing.T, ctx context.Context, clientRun mct
 	for _, zone := range provZones {
 		require.Equal(t, federation.StatusRegistered, zone.Status)
 	}
+
+	// Update ZoneBase
+	updateZoneBase := &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"ZoneId":           clList[1].Key.Name,
+			"OperatorId":       provAttr.operatorId,
+			"GeographyDetails": "some geography details",
+			"GeoLocation":      "some geolocation",
+		},
+	}
+	_, status, err = mcClient.UpdateHostZoneBase(op.uri, provAttr.tokenOper, updateZoneBase)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	selfFedZones, status, err = mcClient.ShowHostZoneBase(op.uri, provAttr.tokenOper, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	fmt.Printf("selfFedZones are %v\n", selfFedZones)
+	found := false
+	for _, baseZone := range selfFedZones {
+		if baseZone.ZoneId == updateZoneBase.Data["ZoneId"] {
+			found = true
+			require.Equal(t, updateZoneBase.Data["GeoLocation"], baseZone.GeoLocation)
+			require.Equal(t, updateZoneBase.Data["GeographyDetails"], baseZone.GeographyDetails)
+		}
+	}
+	require.True(t, found)
 
 	// Consumer developer create Apps
 	// ==============================

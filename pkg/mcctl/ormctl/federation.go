@@ -124,6 +124,17 @@ func init() {
 			Path:         "/auth/federation/provider/zonebase/delete",
 		},
 		&ApiCommand{
+			Name:         "UpdateHostZoneBase",
+			Use:          "updatezonebase",
+			Short:        "Update Host Zone Base",
+			RequiredArgs: "zoneid operatorid",
+			OptionalArgs: "countrycode geolocation geographydetails",
+			Comments:     ormapi.ProviderZoneBaseComments,
+			ReqData:      &ormapi.ProviderZoneBase{},
+			ReplyData:    &ormapi.Result{},
+			Path:         "/auth/federation/provider/zonebase/update",
+		},
+		&ApiCommand{
 			Name:         "ShowHostZoneBase",
 			Use:          "showzonebase",
 			Short:        "Show Host Zone Bases",
