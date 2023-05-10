@@ -968,8 +968,10 @@ var UpdateAlertPolicyFieldsMap = map[string]struct{}{
 	AlertPolicyFieldSeverity:             struct{}{},
 	AlertPolicyFieldTriggerTime:          struct{}{},
 	AlertPolicyFieldLabels:               struct{}{},
+	AlertPolicyFieldLabelsKey:            struct{}{},
 	AlertPolicyFieldLabelsValue:          struct{}{},
 	AlertPolicyFieldAnnotations:          struct{}{},
+	AlertPolicyFieldAnnotationsKey:       struct{}{},
 	AlertPolicyFieldAnnotationsValue:     struct{}{},
 	AlertPolicyFieldDescription:          struct{}{},
 }

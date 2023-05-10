@@ -298,6 +298,7 @@ func (s *AppInstWorker) sendCallback(ctx context.Context, state *fedewapi.Instan
 	fedClient, err := s.partner.ProviderPartnerClient(ctx, s.provider, s.callbackUrl)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "appInstWorker sendCallback get fedClient failed", "err", err)
+		return
 	}
 	_, _, err = fedClient.SendRequest(ctx, "FedAppInstCreate Callback", "POST", "", &req, nil, nil)
 	if err != nil {

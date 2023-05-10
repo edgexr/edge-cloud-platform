@@ -241,6 +241,10 @@ func initSqlListener(ctx context.Context, done chan struct{}) (*pq.Listener, err
 	if err != nil {
 		return nil, err
 	}
+	err = setSqlTrigger(ctx, &ormapi.Config{})
+	if err != nil {
+		return nil, err
+	}
 	// set up listener
 	minReconnectInterval := 5 * time.Second
 	maxReconnectInterval := 60 * time.Second
@@ -314,6 +318,14 @@ func sqlListenerWorkFunc(ctx context.Context, k interface{}) {
 		err := allRegionCaches.refreshRegions(ctx)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "failed to refresh controller clients", "err", err)
+		}
+	} else if key == "configs" {
+		config, err := getConfigFromDB(ctx)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to refresh config", "err", err)
+		} else {
+			setConfig(config)
+			log.SpanLog(ctx, log.DebugLevelApi, "refreshed config", "config", *config)
 		}
 	}
 }
@@ -427,6 +439,7 @@ var postgresNumericTypes = []string{"bigint", "int8", "bigserial", "serial8",
 	"smallserial", "serial2", "serial", "serial4", "money"}
 var postgresStringTypes = []string{"bit", "bit varying", "varbit", "char",
 	"varchar", "json", "text", "citext"}
+var postgresArrayTypes = []string{"ARRAY"}
 
 func getPostgresEmptyVal(dataType string) (string, error) {
 	if strings.HasPrefix(dataType, "boolean") {
@@ -443,6 +456,11 @@ func getPostgresEmptyVal(dataType string) (string, error) {
 	for _, t := range postgresStringTypes {
 		if strings.HasPrefix(dataType, t) {
 			return `''`, nil
+		}
+	}
+	for _, t := range postgresArrayTypes {
+		if strings.HasPrefix(dataType, t) {
+			return `'{}'`, nil
 		}
 	}
 	return "", fmt.Errorf("unrecognized type %s", dataType)

@@ -1043,7 +1043,7 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 			return err
 		}
 		if len(accessVars) > 0 {
-			err = cloudletPlatform.SaveCloudletAccessVars(ctx, in, accessVars, pfConfig, nodeMgr.VaultConfig, updatecb.cb)
+			err = cloudletPlatform.UpdateCloudletAccessVars(ctx, cur, accessVars, pfConfig, nodeMgr.VaultConfig, updatecb.cb)
 			if err != nil {
 				return err
 			}

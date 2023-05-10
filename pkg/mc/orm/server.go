@@ -399,7 +399,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	// AuthCookie needs to be done here at the root so it can run before RateLimit and extract the user information needed by the RateLimit middleware.
 	// AuthCookie will only run for the /auth path.
 	auditLogger := NewAuditLogger(resultErrorHandler)
-	e.Use(auditLogger.echoHandler, AuthCookie, RateLimit)
+	e.Use(auditLogger.echoHandler, CorsHandler, AuthCookie, RateLimit)
 
 	e.POST("/oauth2/token", Oauth2Token)
 
@@ -919,6 +919,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/federation/provider/setnotifykey", SetFederationProviderNotifyKey)
 	auth.POST("/federation/provider/zonebase/create", CreateProviderZoneBase)
 	auth.POST("/federation/provider/zonebase/delete", DeleteProviderZoneBase)
+	auth.POST("/federation/provider/zonebase/update", UpdateProviderZoneBase)
 	auth.POST("/federation/provider/zonebase/show", ShowProviderZoneBase)
 	auth.POST("/federation/provider/zone/share", ShareProviderZone)
 	auth.POST("/federation/provider/zone/unshare", UnshareProviderZone)
@@ -1061,7 +1062,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 
 		// RateLimit based on auth
 		auditLogger := NewAuditLogger(fedErrorHandler)
-		federationEcho.Use(auditLogger.echoHandler, AuthCookie, FederationRateLimit)
+		federationEcho.Use(auditLogger.echoHandler, CorsHandler, AuthCookie, FederationRateLimit)
 		server.federationEcho = federationEcho
 
 		partnerApi = federation.NewPartnerApi(database, connCache, nodeMgr, config.vaultConfig, config.FederationExternalAddr, config.VmRegistryAddr, config.HarborAddr)

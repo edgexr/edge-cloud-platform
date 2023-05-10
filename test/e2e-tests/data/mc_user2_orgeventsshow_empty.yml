@@ -31,7 +31,9 @@
       method: POST
       org: AcmeAppCo
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"184","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"Address":"123 Maple Street, Gainesville, FL 32604","Name":"AcmeAppCo","Phone":"123-123-1234","Type":"developer"}'
+      respheaders: '{"Content-Type":"application/json; charset=UTF-8"}'
       response: '{"message":"Organization created"}'
       spanid: ""
       status: "200"

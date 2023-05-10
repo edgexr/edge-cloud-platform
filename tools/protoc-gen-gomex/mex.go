@@ -811,7 +811,8 @@ func (m *mex) generateMethodFields(fieldPrefix string, names []string, noconfigM
 			continue
 		}
 		if keyField := gensupport.GetMessageKey(message); keyField != nil {
-			if *keyField.Name == *field.Name {
+			// only skip key for the top-level message
+			if *keyField.Name == *field.Name && len(names) == 1 {
 				continue
 			}
 		}

@@ -15,7 +15,9 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -141,18 +143,18 @@ func QuoteArgs(cmd string) (string, error) {
 	return strings.Join(args, " "), nil
 }
 
-// Clears the value of a JSON field to avoid leaking
+// Clears the value of a request body field to avoid leaking
 // sensitive data in logs, etc.
-type JsonFieldClearer struct {
+type FieldClearer struct {
 	field   string
 	search  string
 	replace []byte
 	re      *regexp.Regexp
 }
 
-func NewJsonFieldClearer(field string) *JsonFieldClearer {
+func NewJsonFieldClearer(field string) *FieldClearer {
 	re := regexp.MustCompile(fmt.Sprintf(`"%s":"(.+?)"`, field))
-	return &JsonFieldClearer{
+	return &FieldClearer{
 		field:   field,
 		search:  fmt.Sprintf(`"%s":`, field),
 		replace: []byte(fmt.Sprintf(`"%s":""`, field)),
@@ -160,9 +162,97 @@ func NewJsonFieldClearer(field string) *JsonFieldClearer {
 	}
 }
 
-func (s *JsonFieldClearer) Clear(data []byte) []byte {
+func (s *FieldClearer) Clear(data []byte) []byte {
 	if strings.Contains(string(data), s.search) {
 		return s.re.ReplaceAll(data, s.replace)
 	}
 	return data
+}
+
+type FormUrlEncodedClearer struct {
+	fields map[string]struct{}
+}
+
+func NewFormUrlEncodedClearer(fields ...string) *FormUrlEncodedClearer {
+	clearer := &FormUrlEncodedClearer{
+		fields: make(map[string]struct{}),
+	}
+	for _, f := range fields {
+		clearer.fields[f] = struct{}{}
+	}
+	return clearer
+}
+
+func (s *FormUrlEncodedClearer) Clear(data []byte) []byte {
+	body := strings.Split(string(data), "&")
+	updated := false
+	for ii, pair := range body {
+		kv := strings.SplitN(pair, "=", 2)
+		if len(kv) != 2 {
+			continue
+		}
+		if _, found := s.fields[kv[0]]; found {
+			body[ii] = kv[0] + "=***"
+			updated = true
+		}
+	}
+	if updated {
+		return []byte(strings.Join(body, "&"))
+	}
+	return data
+}
+
+func StringSliceEqual(a, b []string) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for ii := range a {
+		if a[ii] != b[ii] {
+			return false
+		}
+	}
+	return true
+}
+
+func StringSliceCopy(a []string) []string {
+	if a == nil {
+		return nil
+	}
+	b := make([]string, len(a))
+	copy(b, a)
+	return b
+}
+
+var redactHeaders = map[string]struct{}{
+	"Authorization": {},
+	"Set-Cookie":    {},
+	"X-Api-Key":     {},
+}
+
+func GetHeadersString(header http.Header) string {
+	// reformat header map into mix of single values
+	// and lists, to avoid having lots of single values
+	// shown as lists in logs.
+	hout := make(map[string]interface{})
+	for key, val := range header {
+		if _, found := redactHeaders[key]; found {
+			hout[key] = "****"
+			continue
+		}
+		if len(val) == 0 {
+			continue
+		} else if len(val) == 1 {
+			hout[key] = val[0]
+		} else {
+			hout[key] = val
+		}
+	}
+	out, _ := json.Marshal(hout)
+	return string(out)
 }

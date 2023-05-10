@@ -190,7 +190,7 @@ func (c *Client) SendRequest(ctx context.Context, eventName, method, endpoint st
 func (c *Client) audit(ctx context.Context, eventName string, fedKey *FedKey, data *ormclient.AuditLogData) {
 	data.RespBody = ClientSecretFieldClearer.Clear(data.RespBody)
 
-	log.SpanLog(ctx, log.DebugLevelApi, eventName, "method", data.Method, "remoteurl", data.Url.String(), "reqContentType", data.ReqContentType, "req", string(data.ReqBody), "status", data.Status, "respContentType", data.RespContentType, "resp", string(data.RespBody), "err", data.Err, "took", data.End.Sub(data.Start).String())
+	log.SpanLog(ctx, log.DebugLevelApi, eventName, "method", data.Method, "remoteurl", data.Url.String(), "reqContentType", data.ReqContentType, "req", string(data.ReqBody), "reqheaders", util.GetHeadersString(data.ReqHeader), "status", data.Status, "respContentType", data.RespContentType, "respheaders", util.GetHeadersString(data.RespHeader), "resp", string(data.RespBody), "err", data.Err, "took", data.End.Sub(data.Start).String())
 	if c.auditLogCb != nil {
 		c.auditLogCb(ctx, eventName, fedKey, data)
 	}

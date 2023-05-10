@@ -141,7 +141,9 @@
       policyorg: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"405","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"AutoProvPolicy":{"cloudlets":[{"key":{"name":"dmuus-cloud-1","organization":"dmuus"}},{"key":{"name":"dmuus-cloud-2","organization":"dmuus"}},{"key":{"name":"azure-cloud-4","organization":"azure"}},{"key":{"name":"gcp-cloud-5","organization":"gcp"}}],"key":{"name":"autoprovHA","organization":"AcmeAppCo"},"max_instances":4,"min_active_instances":2},"Region":"local"}'
+      respheaders: '{"Content-Type":"application/json; charset=UTF-8"}'
       response: '{}'
       spanid: ""
       status: "200"
@@ -164,7 +166,9 @@
       org: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"381","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"App":{"access_ports":"tcp:82","auto_prov_policies":["autoprovHA"],"default_flavor":{"name":"x1.small"},"deployment":"kubernetes","image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","key":{"name":"autoprovHA","organization":"AcmeAppCo","version":"1.0"}},"Region":"local"}'
+      respheaders: '{"Content-Type":"application/json; charset=UTF-8"}'
       response: '{}'
       spanid: ""
       status: "200"
@@ -187,7 +191,9 @@
       org: dmuus
       region: local
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"123","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"Cloudlet":{"key":{"name":"dmuus-cloud-1","organization":"dmuus"}},"Region":"local"}'
+      respheaders: '{"Content-Type":"application/json"}'
       response: |
         {"data":{"message":"Cloudlet is back to normal operation"}}
       spanid: ""
@@ -210,7 +216,9 @@
       policyorg: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"163","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"AutoProvPolicyCloudlet":{"cloudlet_key":{"name":"dmuus-cloud-2","organization":"dmuus"},"key":{"name":"autoprovHA","organization":"AcmeAppCo"}},"Region":"local"}'
+      respheaders: '{"Content-Type":"application/json; charset=UTF-8"}'
       response: '{}'
       spanid: ""
       status: "200"
@@ -233,7 +241,9 @@
       org: dmuus
       region: local
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"124","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"Cloudlet":{"key":{"name":"dmuus-cloud-1","organization":"dmuus"},"maintenance_state":"MaintenanceStart"},"Region":"local"}'
+      respheaders: '{"Content-Type":"application/json"}'
       response: |
         {"data":{"message":"Starting AutoProv failover"}}
         {"data":{"message":"Created AppInst {\"name\":\"autoprov-autoprovha10\",\"organization\":\"AcmeAppCo\",\"cloudlet_key\":{\"organization\":\"azure\",\"name\":\"azure-cloud-4\"}} to meet policy autoprovHA min constraint 2"}}
@@ -263,7 +273,9 @@
       method: POST
       org: platos
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"97","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"Name":"platos"}'
+      respheaders: '{"Content-Type":"application/json; charset=UTF-8"}'
       response: '{"message":"Organization platos in use or check failed: region local:
         in use by some App; region locala: in use by some App"}'
       spanid: ""
@@ -283,7 +295,9 @@
       method: POST
       org: gcp
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"94","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"Name":"gcp"}'
+      respheaders: '{"Content-Type":"application/json; charset=UTF-8"}'
       response: '{"message":"Organization gcp in use or check failed: region local:
         in use by some AppInst, Cloudlet, ClusterInst"}'
       spanid: ""
@@ -303,7 +317,9 @@
       method: POST
       org: azure
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"96","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"Name":"azure"}'
+      respheaders: '{"Content-Type":"application/json; charset=UTF-8"}'
       response: '{"message":"Organization azure in use or check failed: region local:
         in use by some AppInst, Cloudlet, ClusterInst"}'
       spanid: ""
@@ -332,7 +348,9 @@
       policyorg: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"405","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"AutoProvPolicy":{"cloudlets":[{"key":{"name":"dmuus-cloud-1","organization":"dmuus"}},{"key":{"name":"dmuus-cloud-2","organization":"dmuus"}},{"key":{"name":"azure-cloud-4","organization":"azure"}},{"key":{"name":"gcp-cloud-5","organization":"gcp"}}],"key":{"name":"autoprovHA","organization":"AcmeAppCo"},"max_instances":4,"min_active_instances":2},"Region":"local"}'
+      respheaders: '{"Content-Type":"application/json; charset=UTF-8"}'
       response: '{}'
       spanid: ""
       status: "200"
@@ -401,9 +419,11 @@
       org: AcmeAppCo
       region: locala
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"902","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"App":{"access_ports":"tcp:80,tcp:443,udp:10002","android_package_name":"com.acme.someapplication1","auth_public_key":"-----BEGIN
         PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
         PUBLIC KEY-----\n","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","key":{"name":"someapplication1","organization":"AcmeAppCo","version":"1.0"}},"Region":"locala"}'
+      respheaders: '{"Content-Type":"application/json; charset=UTF-8"}'
       response: '{}'
       spanid: ""
       status: "200"
@@ -473,7 +493,9 @@
       org: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"381","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"App":{"access_ports":"tcp:82","auto_prov_policies":["autoprovHA"],"default_flavor":{"name":"x1.small"},"deployment":"kubernetes","image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","key":{"name":"autoprovHA","organization":"AcmeAppCo","version":"1.0"}},"Region":"local"}'
+      respheaders: '{"Content-Type":"application/json; charset=UTF-8"}'
       response: '{}'
       spanid: ""
       status: "200"
@@ -496,7 +518,9 @@
       org: user3org
       region: local
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"341","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"App":{"access_ports":"tcp:80,tcp:443,udp:10002","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","image_path":"registry.mobiledgex.net/user3org/ep1:1.0","image_type":"Docker","key":{"name":"ep1","organization":"user3org","version":"1.0"}},"Region":"local"}'
+      respheaders: '{"Content-Type":"application/json; charset=UTF-8"}'
       response: '{}'
       spanid: ""
       status: "200"
@@ -519,7 +543,9 @@
       org: platos
       region: locala
       remote-ip: 127.0.0.1
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"342","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
       request: '{"App":{"access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","image_path":"registry.mobiledgex.net/platos/dummyvalue","image_type":"Docker","key":{"name":"platosEnablingLayer","organization":"platos","version":"1.0"}},"Region":"locala"}'
+      respheaders: '{"Content-Type":"application/json; charset=UTF-8"}'
       response: '{}'
       spanid: ""
       status: "200"

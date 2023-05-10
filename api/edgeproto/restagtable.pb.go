@@ -947,6 +947,7 @@ func (m *ResTagTable) DiffFields(o *ResTagTable, fields map[string]struct{}) {
 
 var UpdateResTagTableFieldsMap = map[string]struct{}{
 	ResTagTableFieldTags:      struct{}{},
+	ResTagTableFieldTagsKey:   struct{}{},
 	ResTagTableFieldTagsValue: struct{}{},
 	ResTagTableFieldAzone:     struct{}{},
 }
