@@ -3,11 +3,13 @@ ran: curl -s http://localhost:9092/api/v1/alerts | jq '.data.alerts[] | select(.
   "labels": {
     "alertname": "AutoProvUndeploy",
     "app": "autoprovappd",
+    "appinst": "autoprov-autoprovappd10",
+    "appinstorg": "AcmeAppCo",
     "apporg": "AcmeAppCo",
     "appver": "1.0",
     "cloudlet": "dmuus-cloud-1",
     "cloudletorg": "dmuus",
-    "cluster": "autocluster-autoprov",
+    "cluster": "ReservableD",
     "clusterorg": "edgecloudorg",
     "job": "MobiledgeX Monitoring",
     "port": "81"

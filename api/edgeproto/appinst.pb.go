@@ -2747,22 +2747,17 @@ func (m *VirtualClusterInstKeyV1) GetTags() map[string]string {
 	return tags
 }
 
+func (m *VirtualClusterInstKeyV1) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("cluster", m.ClusterKey.Name)
+	addTag("cloudletorg", m.CloudletKey.Organization)
+	addTag("cloudlet", m.CloudletKey.Name)
+	addTag("cloudletfedorg", m.CloudletKey.FederatedOrganization)
+	addTag("clusterorg", m.Organization)
+}
+
 func (m *VirtualClusterInstKeyV1) AddTags(tags map[string]string) {
-	if m.ClusterKey.Name != "" {
-		tags["cluster"] = m.ClusterKey.Name
-	}
-	if m.CloudletKey.Organization != "" {
-		tags["cloudletorg"] = m.CloudletKey.Organization
-	}
-	if m.CloudletKey.Name != "" {
-		tags["cloudlet"] = m.CloudletKey.Name
-	}
-	if m.CloudletKey.FederatedOrganization != "" {
-		tags["cloudletfedorg"] = m.CloudletKey.FederatedOrganization
-	}
-	if m.Organization != "" {
-		tags["clusterorg"] = m.Organization
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -2876,31 +2871,20 @@ func (m *AppInstKeyV1) GetTags() map[string]string {
 	return tags
 }
 
+func (m *AppInstKeyV1) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("apporg", m.AppKey.Organization)
+	addTag("app", m.AppKey.Name)
+	addTag("appver", m.AppKey.Version)
+	addTag("cluster", m.ClusterInstKey.ClusterKey.Name)
+	addTag("cloudletorg", m.ClusterInstKey.CloudletKey.Organization)
+	addTag("cloudlet", m.ClusterInstKey.CloudletKey.Name)
+	addTag("cloudletfedorg", m.ClusterInstKey.CloudletKey.FederatedOrganization)
+	addTag("clusterorg", m.ClusterInstKey.Organization)
+}
+
 func (m *AppInstKeyV1) AddTags(tags map[string]string) {
-	if m.AppKey.Organization != "" {
-		tags["apporg"] = m.AppKey.Organization
-	}
-	if m.AppKey.Name != "" {
-		tags["app"] = m.AppKey.Name
-	}
-	if m.AppKey.Version != "" {
-		tags["appver"] = m.AppKey.Version
-	}
-	if m.ClusterInstKey.ClusterKey.Name != "" {
-		tags["cluster"] = m.ClusterInstKey.ClusterKey.Name
-	}
-	if m.ClusterInstKey.CloudletKey.Organization != "" {
-		tags["cloudletorg"] = m.ClusterInstKey.CloudletKey.Organization
-	}
-	if m.ClusterInstKey.CloudletKey.Name != "" {
-		tags["cloudlet"] = m.ClusterInstKey.CloudletKey.Name
-	}
-	if m.ClusterInstKey.CloudletKey.FederatedOrganization != "" {
-		tags["cloudletfedorg"] = m.ClusterInstKey.CloudletKey.FederatedOrganization
-	}
-	if m.ClusterInstKey.Organization != "" {
-		tags["clusterorg"] = m.ClusterInstKey.Organization
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -3011,22 +2995,17 @@ func (m *AppInstKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *AppInstKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("appinst", m.Name)
+	addTag("appinstorg", m.Organization)
+	addTag("cloudletorg", m.CloudletKey.Organization)
+	addTag("cloudlet", m.CloudletKey.Name)
+	addTag("cloudletfedorg", m.CloudletKey.FederatedOrganization)
+}
+
 func (m *AppInstKey) AddTags(tags map[string]string) {
-	if m.Name != "" {
-		tags["appinst"] = m.Name
-	}
-	if m.Organization != "" {
-		tags["appinstorg"] = m.Organization
-	}
-	if m.CloudletKey.Organization != "" {
-		tags["cloudletorg"] = m.CloudletKey.Organization
-	}
-	if m.CloudletKey.Name != "" {
-		tags["cloudlet"] = m.CloudletKey.Name
-	}
-	if m.CloudletKey.FederatedOrganization != "" {
-		tags["cloudletfedorg"] = m.CloudletKey.FederatedOrganization
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -6754,13 +6733,14 @@ func (m *FedAppInstKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *FedAppInstKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("federationname", m.FederationName)
+	addTag("appinstid", m.AppInstId)
+}
+
 func (m *FedAppInstKey) AddTags(tags map[string]string) {
-	if m.FederationName != "" {
-		tags["federationname"] = m.FederationName
-	}
-	if m.AppInstId != "" {
-		tags["appinstid"] = m.AppInstId
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

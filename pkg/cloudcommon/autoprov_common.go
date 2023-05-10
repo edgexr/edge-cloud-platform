@@ -20,7 +20,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 const (
@@ -112,14 +112,11 @@ func IsAppInstBeingDeletedError(err error) bool {
 }
 
 // Generate recognizable name for autoprov deployed instances.
-// Only one auto-provisioned instance per app is allowed per cloudlet
-// so this should not need any random characters, but we include some to
-// avoid aliasing.
+// Only one auto-provisioned instance per app is allowed per cloudlet.
 func GetAutoProvAppInstKey(appKey *edgeproto.AppKey, cloudletKey *edgeproto.CloudletKey) edgeproto.AppInstKey {
-	suffix := gonanoid.MustGenerate(IdAlphabet, 6)
-	name := AutoProvPrefix + "-" + appKey.Name + appKey.Version + "-" + suffix
+	name := AutoProvPrefix + "-" + appKey.Name + appKey.Version
 	return edgeproto.AppInstKey{
-		Name:         name,
+		Name:         util.DNSSanitize(name),
 		Organization: appKey.Organization,
 		CloudletKey:  *cloudletKey,
 	}

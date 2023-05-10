@@ -14,26 +14,22 @@
 
 appinstances:
 - key:
-    appkey:
-      organization: AcmeAppCo
-      name: someapplication1
-      version: "1.0"
-    clusterinstkey:
-      clusterkey:
-        name: autoclustersomeapplication1
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-2
-      organization: edgecloudorg
+    name: someapplication1
+    organization: AcmeAppCo
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-2
+  appkey:
+    organization: AcmeAppCo
+    name: someapplication1
+    version: "1.0"
 - key:
-    appkey:
-      organization: AcmeAppCo
-      name: someapplication1
-      version: "1.0"
-    clusterinstkey:
-      clusterkey:
-        name: autoclustersomeapplication1
-      cloudletkey:
-        organization: att
-        name: att-cloud-1
-      organization: edgecloudorg
+    name: someapplication1
+    organization: AcmeAppCo
+    cloudletkey:
+      organization: att
+      name: att-cloud-1
+  appkey:
+    organization: AcmeAppCo
+    name: someapplication1
+    version: "1.0"

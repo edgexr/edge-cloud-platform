@@ -301,11 +301,11 @@ var ClientApiUsageMetricOptionalArgs = []string{
 }
 
 var ClientApiUsageMetricAliasArgs = []string{
-	"apporg=appinst.appkey.organization",
-	"appname=appinst.appkey.name",
-	"appvers=appinst.appkey.version",
-	"cloudletorg=appinst.clusterinstkey.cloudletkey.organization",
-	"cloudlet=appinst.clusterinstkey.cloudletkey.name",
+	"apporg=appkey.organization",
+	"appname=appkey.name",
+	"appvers=appkey.version",
+	"cloudletorg=cloudletkey.organization",
+	"cloudlet=cloudletkey.name",
 	"dmecloudlet=dmecloudlet",
 	"dmeorg=dmecloudletorg",
 }
@@ -322,11 +322,11 @@ var ClientAppUsageMetricRequiredArgs = []string{
 }
 
 var ClientAppUsageMetricOptionalArgs = []string{
+	"appinst",
+	"appinstorg",
 	"appname",
 	"appvers",
 	"apporg",
-	"cluster",
-	"clusterorg",
 	"cloudlet",
 	"cloudletorg",
 	"locationtile",
@@ -337,13 +337,13 @@ var ClientAppUsageMetricOptionalArgs = []string{
 }
 
 var ClientAppUsageMetricAliasArgs = []string{
-	"apporg=appinst.appkey.organization",
-	"appname=appinst.appkey.name",
-	"appvers=appinst.appkey.version",
-	"cluster=appinst.clusterinstkey.clusterkey.name",
-	"clusterorg=appinst.clusterinstkey.organization",
-	"cloudletorg=appinst.clusterinstkey.cloudletkey.organization",
-	"cloudlet=appinst.clusterinstkey.cloudletkey.name",
+	"appinst=appinstkey.name",
+	"appinstorg=appinstkey.organization",
+	"apporg=appkey.organization",
+	"appname=appkey.name",
+	"appvers=appkey.version",
+	"cloudletorg=appinstkey.cloudletkey.organization",
+	"cloudlet=appinstkey.cloudletkey.name",
 }
 
 var ClientCloudletUsageMetricRequiredArgs = []string{
@@ -375,6 +375,8 @@ var MetricsCommonArgs = []string{
 }
 
 var MetricCommentsCommon = map[string]string{
+	"appinst":     "App instance name",
+	"appinstorg":  "App instance organization",
 	"apporg":      "Organization or Company name of the App",
 	"appname":     "App name",
 	"appvers":     "App version",

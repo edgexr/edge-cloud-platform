@@ -16,10 +16,9 @@ request:
   region: local
   execrequest:
     appinstkey:
-      clusterinstkey:
-        cloudletkey:
-          organization: dmuus
-          name: dmuus-cloud-1
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-1
     cmd:
       command: echo foo
       cloudletmgmtnode:

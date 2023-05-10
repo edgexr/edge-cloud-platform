@@ -161,9 +161,7 @@ func getPromAlertFromEdgeprotoAlert(appInst *edgeproto.AppInst, alert *edgeproto
 	rule.Labels[cloudcommon.AlertScopeTypeTag] = cloudcommon.AlertScopeApp
 	rule.Labels[cloudcommon.AlertTypeLabel] = cloudcommon.AlertTypeUserDefined
 	rule.Labels[cloudcommon.AlertSeverityLabel] = alert.Severity
-	rule.Labels = util.AddMaps(rule.Labels, appInst.Key.GetTags())
-	rule.Labels = util.AddMaps(rule.Labels, appInst.AppKey.GetTags())
-	rule.Labels = util.AddMaps(rule.Labels, appInst.ClusterKey.GetTags())
+	rule.Labels = util.AddMaps(rule.Labels, appInst.GetTags())
 	rule.Annotations = util.CopyStringMap(alert.Annotations)
 	// Add title annotation if one doesn't exist - our notification templates rely on it being present
 	if _, found := rule.Annotations[cloudcommon.AlertAnnotationTitle]; !found {

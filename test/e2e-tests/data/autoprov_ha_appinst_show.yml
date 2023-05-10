@@ -17,17 +17,18 @@ regiondata:
   appdata:
     appinstances:
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovHA
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-autoprov
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-1
-          organization: edgecloudorg
+        name: autoprov-autoprovha10
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-1
+      appkey:
+        organization: AcmeAppCo
+        name: autoprovHA
+        version: "1.0"
+      clusterkey:
+        name: Reservable1
+        organization: edgecloudorg
       cloudletloc:
         latitude: 31
         longitude: -91
@@ -46,21 +47,21 @@ regiondata:
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
-      realclustername: Reservable1
-      uniqueid: acmeappcoautoprovha10-autocluster-autoprov-dmuus-cloud-1-dmuus
-      dnslabel: autoprovha10-acmeappco
+      uniqueid: acmeappco-autoprov-autoprovha10-dmuus-cloud-1-dmuus
+      dnslabel: autoprov-autoprovha10-acmeappco
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovHA
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-autoprov
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-2
-          organization: edgecloudorg
+        name: autoprov-autoprovha10
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-2
+      appkey:
+        organization: AcmeAppCo
+        name: autoprovHA
+        version: "1.0"
+      clusterkey:
+        name: Reservable2
+        organization: edgecloudorg
       cloudletloc:
         latitude: 35
         longitude: -95
@@ -79,6 +80,5 @@ regiondata:
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
-      realclustername: Reservable2
-      uniqueid: acmeappcoautoprovha10-autocluster-autoprov-dmuus-cloud-2-dmuus
-      dnslabel: autoprovha10-acmeappco
+      uniqueid: acmeappco-autoprov-autoprovha10-dmuus-cloud-2-dmuus
+      dnslabel: autoprov-autoprovha10-acmeappco

@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
@@ -316,6 +317,9 @@ func (s *AutoProvPolicyApi) appInstCheck(ctx context.Context, stm concurrency.ST
 	if !ok {
 		log.SpanLog(ctx, log.DebugLevelApi, "autoprov check no metadata")
 		// not AutoProv service
+		if strings.HasPrefix(inst.Key.Name, cloudcommon.AutoProvPrefix+"-") {
+			return fmt.Errorf("AppInst name prefix %s is reserved for auto-provisioned instances, please choose a different name", cloudcommon.AutoProvPrefix+"-")
+		}
 		return nil
 	}
 	if _, found := md[cloudcommon.CallerAutoProv]; !found {

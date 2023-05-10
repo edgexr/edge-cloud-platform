@@ -335,8 +335,6 @@ type ProviderAppInst struct {
 	FederationName string `gorm:"primary_key;type:citext;not null"`
 	// AppInst unique ID
 	AppInstID string `gorm:"primary_key;type:text;not null"`
-	// AppInst organization
-	AppInstOrg string
 	// AppID for ProviderApp
 	AppID string
 	// Region for AppInst
@@ -433,10 +431,16 @@ func (s *ProviderAppInst) GetAppInstKey() edgeproto.AppInstKey {
 	return edgeproto.AppInstKey{
 		Name:         s.AppInstID,
 		Organization: s.FederationName,
+		CloudletKey: edgeproto.CloudletKey{
+			Name:         s.Cloudlet,
+			Organization: s.CloudletOrg,
+		},
 	}
 }
 
 func (s *ProviderAppInst) SetAppInstKey(key *edgeproto.AppInstKey) {
 	s.AppInstID = key.Name
 	s.FederationName = key.Organization
+	s.Cloudlet = key.CloudletKey.Name
+	s.CloudletOrg = key.CloudletKey.Organization
 }

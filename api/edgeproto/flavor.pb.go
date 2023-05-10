@@ -697,10 +697,13 @@ func (m *FlavorKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *FlavorKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("flavor", m.Name)
+}
+
 func (m *FlavorKey) AddTags(tags map[string]string) {
-	if m.Name != "" {
-		tags["flavor"] = m.Name
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

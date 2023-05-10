@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/mobiledgex/jaeger/plugin/storage/es/spanstore/dbmodel"
 )
@@ -102,24 +103,8 @@ var E2eClusterSelectors = []string{
 	"udp",
 }
 
-var TagValues = map[string]struct{}{
-	"app":         struct{}{},
-	"cloudlet":    struct{}{},
-	"cluster":     struct{}{},
-	"apporg":      struct{}{},
-	"clusterorg":  struct{}{},
-	"cloudletorg": struct{}{},
-	"method":      struct{}{},
-	// special event tags
-	"event":  struct{}{},
-	"status": struct{}{},
-	"flavor": struct{}{},
-	// edgeevents metrics tags
-	"deviceos":        struct{}{},
-	"devicemodel":     struct{}{},
-	"locationtile":    struct{}{},
-	"devicecarrier":   struct{}{},
-	"datanetworktype": struct{}{},
+var IgnoreTagValues = map[string]struct{}{
+	cloudcommon.MetricTagDmeId: {},
 }
 
 // methods for dme-api metric

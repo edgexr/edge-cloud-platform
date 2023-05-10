@@ -19,10 +19,10 @@ regiondata:
     - key:
         clusterkey:
           name: defaultmtclust
+          organization: edgecloudorg
         cloudletkey:
           organization: dmuus
           name: kind-cloud-1
-        organization: edgecloudorg
       flavor:
         name: x1.medium
       liveness: Static

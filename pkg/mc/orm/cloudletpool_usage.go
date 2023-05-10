@@ -51,8 +51,7 @@ func generateDmeApiUsageCloudletList(cloudletList []string) string {
 
 func cloudletPoolEventsQuery(obj *ormapi.RegionCloudletPoolUsage, cloudletList []string, queryType string) string {
 	arg := influxQueryArgs{
-		OrgField:     "cloudletorg",
-		ApiCallerOrg: obj.CloudletPool.Organization,
+		CloudletOrg:  obj.CloudletPool.Organization,
 		CloudletList: generateCloudletList(cloudletList),
 	}
 	if queryType == CLUSTER {
@@ -73,8 +72,7 @@ func cloudletPoolEventsQuery(obj *ormapi.RegionCloudletPoolUsage, cloudletList [
 
 func cloudletPoolCheckpointsQuery(obj *ormapi.RegionCloudletPoolUsage, cloudletList []string, queryType string) string {
 	arg := influxQueryArgs{
-		OrgField:     "cloudletorg",
-		ApiCallerOrg: obj.CloudletPool.Organization,
+		CloudletOrg:  obj.CloudletPool.Organization,
 		CloudletList: generateCloudletList(cloudletList),
 	}
 	if queryType == CLUSTER {

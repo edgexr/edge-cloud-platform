@@ -103,16 +103,17 @@
     region: local
     mtags:
       app: autoprovHA
+      appinst: autoprov-autoprovha10
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: gcp-cloud-5
+      cloudletfedorg: ""
       cloudletorg: gcp
-      cluster: autocluster-autoprov
+      cluster: Reservable4
       clusterorg: edgecloudorg
-      federatedorg: ""
       hostname: ""
       lineno: ""
-      realcluster: Reservable4
       spanid: ""
       traceid: ""
   - name: Free ClusterInst reservation
@@ -122,16 +123,17 @@
     region: local
     mtags:
       app: autoprovHA
+      appinst: autoprov-autoprovha10
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-1
+      cloudletfedorg: ""
       cloudletorg: dmuus
-      cluster: autocluster-autoprov
+      cluster: Reservable1
       clusterorg: edgecloudorg
-      federatedorg: ""
       hostname: ""
       lineno: ""
-      realcluster: Reservable1
       spanid: ""
       traceid: ""
 - search:
@@ -140,70 +142,6 @@
         app: someapplication1
     limit: 3
   results:
-  - name: CreateAppInst
-    org:
-    - AcmeAppCo
-    type: audit
-    mtags:
-      app: someapplication1
-      apporg: AcmeAppCo
-      appver: "1.0"
-      cloudlet: dmuus-cloud-4
-      cloudletorg: dmuus
-      cluster: SmallCluster
-      clusterorg: AcmeAppCo
-      duration: ""
-      email: user2@email.com
-      federatedorg: ""
-      hostname: ""
-      lineno: ""
-      localuri: /api/v1/auth/ctrl/CreateAppInst
-      method: POST
-      org: AcmeAppCo
-      region: locala
-      remote-ip: 127.0.0.1
-      request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"someapplication1","organization":"AcmeAppCo","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"dmuus-cloud-4","organization":"dmuus"},"cluster_key":{"name":"SmallCluster"},"organization":"AcmeAppCo"}}},"Region":"locala"}'
-      response: |
-        {"data":{"message":"Creating"}}
-        {"data":{"message":"Creating App Inst"}}
-        {"data":{"message":"Ready"}}
-        {"data":{"message":"Created AppInst successfully"}}
-      spanid: ""
-      status: "200"
-      traceid: ""
-      username: user2
-  - name: CreateAppInst
-    org:
-    - AcmeAppCo
-    type: audit
-    mtags:
-      app: someapplication1
-      apporg: AcmeAppCo
-      appver: "1.0"
-      cloudlet: dmuus-cloud-3
-      cloudletorg: dmuus
-      cluster: SmallCluster
-      clusterorg: AcmeAppCo
-      duration: ""
-      email: user2@email.com
-      federatedorg: ""
-      hostname: ""
-      lineno: ""
-      localuri: /api/v1/auth/ctrl/CreateAppInst
-      method: POST
-      org: AcmeAppCo
-      region: locala
-      remote-ip: 127.0.0.1
-      request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"someapplication1","organization":"AcmeAppCo","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"dmuus-cloud-3","organization":"dmuus"},"cluster_key":{"name":"SmallCluster"},"organization":"AcmeAppCo"}}},"Region":"locala"}'
-      response: |
-        {"data":{"message":"Creating"}}
-        {"data":{"message":"Creating App Inst"}}
-        {"data":{"message":"Ready"}}
-        {"data":{"message":"Created AppInst successfully"}}
-      spanid: ""
-      status: "200"
-      traceid: ""
-      username: user2
   - name: CreateApp
     org:
     - AcmeAppCo
@@ -229,6 +167,47 @@
       status: "200"
       traceid: ""
       username: user2
+  - name: Reserve ClusterInst
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    mtags:
+      app: someapplication1
+      appinst: someapplication12
+      appinstorg: AcmeAppCo
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: dmuus-cloud-2
+      cloudletfedorg: ""
+      cloudletorg: dmuus
+      cluster: reservable0
+      clusterorg: edgecloudorg
+      hostname: ""
+      lineno: ""
+      spanid: ""
+      traceid: ""
+  - name: AutoCluster create
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    mtags:
+      app: someapplication1
+      appinst: someapplication12
+      appinstorg: AcmeAppCo
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: dmuus-cloud-2
+      cloudletfedorg: ""
+      cloudletorg: dmuus
+      cluster: reservable0
+      clusterorg: edgecloudorg
+      duration: ""
+      hostname: ""
+      lineno: ""
+      spanid: ""
+      traceid: ""
 - search:
     match:
       names:
@@ -317,16 +296,17 @@
     region: local
     mtags:
       app: autoprovHA
+      appinst: autoprov-autoprovha10
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-1
+      cloudletfedorg: ""
       cloudletorg: dmuus
-      cluster: autocluster-autoprov
+      cluster: Reservable1
       clusterorg: edgecloudorg
-      federatedorg: ""
       hostname: ""
       lineno: ""
-      realcluster: Reservable1
       spanid: ""
       traceid: ""
   - name: Reserve ClusterInst
@@ -336,16 +316,17 @@
     region: local
     mtags:
       app: autoprovHA
+      appinst: autoprov-autoprovha10
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-1
+      cloudletfedorg: ""
       cloudletorg: dmuus
-      cluster: autocluster-autoprov
+      cluster: Reservable1
       clusterorg: edgecloudorg
-      federatedorg: ""
       hostname: ""
       lineno: ""
-      realcluster: Reservable1
       spanid: ""
       traceid: ""
   - name: AutoProv create AppInst
@@ -355,15 +336,17 @@
     region: local
     mtags:
       app: autoprovHA
+      appinst: autoprov-autoprovha10
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       autoprovpolicy: autoprovHA
       cloudlet: dmuus-cloud-1
+      cloudletfedorg: ""
       cloudletorg: dmuus
-      cluster: autocluster-autoprov
-      clusterorg: edgecloudorg
+      cluster: ""
+      clusterorg: ""
       duration: ""
-      federatedorg: ""
       hostname: ""
       lineno: ""
       reason: minmax
@@ -383,16 +366,17 @@
     region: local
     mtags:
       app: autoprovHA
+      appinst: autoprov-autoprovha10
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-1
+      cloudletfedorg: ""
       cloudletorg: dmuus
-      cluster: autocluster-autoprov
+      cluster: Reservable1
       clusterorg: edgecloudorg
-      federatedorg: ""
       hostname: ""
       lineno: ""
-      realcluster: Reservable1
       spanid: ""
       traceid: ""
   - name: Reserve ClusterInst
@@ -402,16 +386,17 @@
     region: local
     mtags:
       app: autoprovHA
+      appinst: autoprov-autoprovha10
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-1
+      cloudletfedorg: ""
       cloudletorg: dmuus
-      cluster: autocluster-autoprov
+      cluster: Reservable1
       clusterorg: edgecloudorg
-      federatedorg: ""
       hostname: ""
       lineno: ""
-      realcluster: Reservable1
       spanid: ""
       traceid: ""
   - name: AutoProv create AppInst
@@ -421,15 +406,17 @@
     region: local
     mtags:
       app: autoprovHA
+      appinst: autoprov-autoprovha10
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       autoprovpolicy: autoprovHA
       cloudlet: dmuus-cloud-1
+      cloudletfedorg: ""
       cloudletorg: dmuus
-      cluster: autocluster-autoprov
-      clusterorg: edgecloudorg
+      cluster: ""
+      clusterorg: ""
       duration: ""
-      federatedorg: ""
       hostname: ""
       lineno: ""
       reason: minmax
@@ -442,70 +429,6 @@
         cloudlet: dmuus cloud
     limit: 4
   results:
-  - name: CreateAppInst
-    org:
-    - AcmeAppCo
-    type: audit
-    mtags:
-      app: someapplication1
-      apporg: AcmeAppCo
-      appver: "1.0"
-      cloudlet: dmuus-cloud-4
-      cloudletorg: dmuus
-      cluster: SmallCluster
-      clusterorg: AcmeAppCo
-      duration: ""
-      email: user2@email.com
-      federatedorg: ""
-      hostname: ""
-      lineno: ""
-      localuri: /api/v1/auth/ctrl/CreateAppInst
-      method: POST
-      org: AcmeAppCo
-      region: locala
-      remote-ip: 127.0.0.1
-      request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"someapplication1","organization":"AcmeAppCo","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"dmuus-cloud-4","organization":"dmuus"},"cluster_key":{"name":"SmallCluster"},"organization":"AcmeAppCo"}}},"Region":"locala"}'
-      response: |
-        {"data":{"message":"Creating"}}
-        {"data":{"message":"Creating App Inst"}}
-        {"data":{"message":"Ready"}}
-        {"data":{"message":"Created AppInst successfully"}}
-      spanid: ""
-      status: "200"
-      traceid: ""
-      username: user2
-  - name: CreateAppInst
-    org:
-    - AcmeAppCo
-    type: audit
-    mtags:
-      app: someapplication1
-      apporg: AcmeAppCo
-      appver: "1.0"
-      cloudlet: dmuus-cloud-3
-      cloudletorg: dmuus
-      cluster: SmallCluster
-      clusterorg: AcmeAppCo
-      duration: ""
-      email: user2@email.com
-      federatedorg: ""
-      hostname: ""
-      lineno: ""
-      localuri: /api/v1/auth/ctrl/CreateAppInst
-      method: POST
-      org: AcmeAppCo
-      region: locala
-      remote-ip: 127.0.0.1
-      request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"someapplication1","organization":"AcmeAppCo","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"dmuus-cloud-3","organization":"dmuus"},"cluster_key":{"name":"SmallCluster"},"organization":"AcmeAppCo"}}},"Region":"locala"}'
-      response: |
-        {"data":{"message":"Creating"}}
-        {"data":{"message":"Creating App Inst"}}
-        {"data":{"message":"Ready"}}
-        {"data":{"message":"Created AppInst successfully"}}
-      spanid: ""
-      status: "200"
-      traceid: ""
-      username: user2
   - name: Reserve ClusterInst
     org:
     - AcmeAppCo
@@ -513,16 +436,17 @@
     region: local
     mtags:
       app: someapplication1
+      appinst: someapplication12
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-2
+      cloudletfedorg: ""
       cloudletorg: dmuus
-      cluster: autoclusterAcme
+      cluster: reservable0
       clusterorg: edgecloudorg
-      federatedorg: ""
       hostname: ""
       lineno: ""
-      realcluster: reservable0
       spanid: ""
       traceid: ""
   - name: AutoCluster create
@@ -532,14 +456,16 @@
     region: local
     mtags:
       app: someapplication1
+      appinst: someapplication12
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-2
+      cloudletfedorg: ""
       cloudletorg: dmuus
-      cluster: autoclusterAcme
+      cluster: reservable0
       clusterorg: edgecloudorg
       duration: ""
-      federatedorg: ""
       hostname: ""
       lineno: ""
       spanid: ""
@@ -558,15 +484,17 @@
     region: local
     mtags:
       app: autoprovHA
+      appinst: autoprov-autoprovha10
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       autoprovpolicy: ""
       cloudlet: dmuus-cloud-2
+      cloudletfedorg: ""
       cloudletorg: dmuus
-      cluster: autocluster-autoprov
-      clusterorg: edgecloudorg
+      cluster: ""
+      clusterorg: ""
       duration: ""
-      federatedorg: ""
       hostname: ""
       lineno: ""
       reason: orphaned
@@ -585,15 +513,17 @@
     region: local
     mtags:
       app: autoprovHA
+      appinst: autoprov-autoprovha10
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       autoprovpolicy: autoprovHA
       cloudlet: gcp-cloud-5
+      cloudletfedorg: ""
       cloudletorg: gcp
-      cluster: autocluster-autoprov
-      clusterorg: edgecloudorg
+      cluster: ""
+      clusterorg: ""
       duration: ""
-      federatedorg: ""
       hostname: ""
       lineno: ""
       reason: minmax
@@ -606,15 +536,17 @@
     region: local
     mtags:
       app: autoprovHA
+      appinst: autoprov-autoprovha10
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       autoprovpolicy: autoprovHA
       cloudlet: azure-cloud-4
+      cloudletfedorg: ""
       cloudletorg: azure
-      cluster: autocluster-autoprov
-      clusterorg: edgecloudorg
+      cluster: ""
+      clusterorg: ""
       duration: ""
-      federatedorg: ""
       hostname: ""
       lineno: ""
       reason: minmax

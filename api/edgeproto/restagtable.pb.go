@@ -806,13 +806,14 @@ func (m *ResTagTableKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *ResTagTableKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("restagtable", m.Name)
+	addTag("restagtableorg", m.Organization)
+}
+
 func (m *ResTagTableKey) AddTags(tags map[string]string) {
-	if m.Name != "" {
-		tags["restagtable"] = m.Name
-	}
-	if m.Organization != "" {
-		tags["restagtableorg"] = m.Organization
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

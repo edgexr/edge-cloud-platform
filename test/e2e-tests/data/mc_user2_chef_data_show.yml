@@ -64,10 +64,10 @@ regiondata:
     - key:
         clusterkey:
           name: AppCluster
+          organization: DevOrg
         cloudletkey:
           organization: mexdev
           name: chef-test-1
-        organization: DevOrg
       flavor:
         name: x1.medium
       liveness: Static
@@ -203,17 +203,18 @@ regiondata:
       skiphcports: tcp:8008
     appinstances:
     - key:
-        appkey:
-          organization: DevOrg
-          name: DevOrg SDK Demo
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: AppCluster
-          cloudletkey:
-            organization: mexdev
-            name: chef-test-1
-          organization: DevOrg
+        name: DevOrg SDK Demo
+        organization: DevOrg
+        cloudletkey:
+          organization: mexdev
+          name: chef-test-1
+      appkey:
+        organization: DevOrg
+        name: DevOrg SDK Demo
+        version: "1.0"
+      clusterkey:
+        name: AppCluster
+        organization: DevOrg
       cloudletloc:
         latitude: 31
         longitude: -91
@@ -234,17 +235,18 @@ regiondata:
         - appOnClusterNode1
         - appOnClusterNode2
     - key:
-        appkey:
-          organization: DevOrg
-          name: Face Detection Demo
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: AppCluster
-          cloudletkey:
-            organization: mexdev
-            name: chef-test-1
-          organization: DevOrg
+        name: Face Detection Demo
+        organization: DevOrg
+        cloudletkey:
+          organization: mexdev
+          name: chef-test-1
+      appkey:
+        organization: DevOrg
+        name: Face Detection Demo
+        version: "1.0"
+      clusterkey:
+        name: AppCluster
+        organization: DevOrg
       cloudletloc:
         latitude: 31
         longitude: -91

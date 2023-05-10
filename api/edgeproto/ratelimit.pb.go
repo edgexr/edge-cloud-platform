@@ -1725,19 +1725,16 @@ func (m *FlowRateLimitSettingsKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *FlowRateLimitSettingsKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("flowsettingsname", m.FlowSettingsName)
+	addTag("apiname", m.RateLimitKey.ApiName)
+	addTag("apiendpointtype", ApiEndpointType_name[int32(m.RateLimitKey.ApiEndpointType)])
+	addTag("ratelimittarget", RateLimitTarget_name[int32(m.RateLimitKey.RateLimitTarget)])
+}
+
 func (m *FlowRateLimitSettingsKey) AddTags(tags map[string]string) {
-	if m.FlowSettingsName != "" {
-		tags["flowsettingsname"] = m.FlowSettingsName
-	}
-	if m.RateLimitKey.ApiName != "" {
-		tags["apiname"] = m.RateLimitKey.ApiName
-	}
-	if ApiEndpointType_name[int32(m.RateLimitKey.ApiEndpointType)] != "" {
-		tags["apiendpointtype"] = ApiEndpointType_name[int32(m.RateLimitKey.ApiEndpointType)]
-	}
-	if RateLimitTarget_name[int32(m.RateLimitKey.RateLimitTarget)] != "" {
-		tags["ratelimittarget"] = RateLimitTarget_name[int32(m.RateLimitKey.RateLimitTarget)]
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -2671,19 +2668,16 @@ func (m *MaxReqsRateLimitSettingsKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *MaxReqsRateLimitSettingsKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("maxreqssettingsname", m.MaxReqsSettingsName)
+	addTag("apiname", m.RateLimitKey.ApiName)
+	addTag("apiendpointtype", ApiEndpointType_name[int32(m.RateLimitKey.ApiEndpointType)])
+	addTag("ratelimittarget", RateLimitTarget_name[int32(m.RateLimitKey.RateLimitTarget)])
+}
+
 func (m *MaxReqsRateLimitSettingsKey) AddTags(tags map[string]string) {
-	if m.MaxReqsSettingsName != "" {
-		tags["maxreqssettingsname"] = m.MaxReqsSettingsName
-	}
-	if m.RateLimitKey.ApiName != "" {
-		tags["apiname"] = m.RateLimitKey.ApiName
-	}
-	if ApiEndpointType_name[int32(m.RateLimitKey.ApiEndpointType)] != "" {
-		tags["apiendpointtype"] = ApiEndpointType_name[int32(m.RateLimitKey.ApiEndpointType)]
-	}
-	if RateLimitTarget_name[int32(m.RateLimitKey.RateLimitTarget)] != "" {
-		tags["ratelimittarget"] = RateLimitTarget_name[int32(m.RateLimitKey.RateLimitTarget)]
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -3562,16 +3556,15 @@ func (m *RateLimitSettingsKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *RateLimitSettingsKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("apiname", m.ApiName)
+	addTag("apiendpointtype", ApiEndpointType_name[int32(m.ApiEndpointType)])
+	addTag("ratelimittarget", RateLimitTarget_name[int32(m.RateLimitTarget)])
+}
+
 func (m *RateLimitSettingsKey) AddTags(tags map[string]string) {
-	if m.ApiName != "" {
-		tags["apiname"] = m.ApiName
-	}
-	if ApiEndpointType_name[int32(m.ApiEndpointType)] != "" {
-		tags["apiendpointtype"] = ApiEndpointType_name[int32(m.ApiEndpointType)]
-	}
-	if RateLimitTarget_name[int32(m.RateLimitTarget)] != "" {
-		tags["ratelimittarget"] = RateLimitTarget_name[int32(m.RateLimitTarget)]
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

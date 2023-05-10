@@ -17,32 +17,30 @@ alertreceivers:
   type: email
   severity: warning
   email: ops@mobiledgex.net
-  appinst:
-    appkey:
-      organization: AcmeAppCo
-      name: someapplication1
-      version: "1.0"
-    clusterinstkey:
-      clusterkey:
-        name: SmallCluster
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-1
-      organization: AcmeAppCo
+  appinstkey:
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-1
+  appkey:
+    organization: AcmeAppCo
+    name: someapplication1
+    version: "1.0"
+  clusterkey:
+    name: SmallCluster
+    organization: AcmeAppCo
 - name: emailSlackReceiver
   type: slack
   severity: info
   slackchannel: "alerts"
   slackwebhook: "http://host.docker.internal:9100/slack/webhook"
-  appinst:
-    appkey:
-      organization: AcmeAppCo
-      name: someapplication1
-      version: "1.0"
-    clusterinstkey:
-      clusterkey:
-        name: SmallCluster
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-1
-      organization: AcmeAppCo
+  appinstkey:
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-1
+  appkey:
+    organization: AcmeAppCo
+    name: someapplication1
+    version: "1.0"
+  clusterkey:
+    name: SmallCluster
+    organization: AcmeAppCo

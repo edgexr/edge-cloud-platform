@@ -75,12 +75,12 @@ func (s *AlertApi) appInstSetStateFromHealthCheckAlert(ctx context.Context, aler
 		Name:         appInstName,
 		Organization: appInstOrg,
 		CloudletKey: edgeproto.CloudletKey{
-			Organization: clorg,
-			Name:         cloudlet,
+			Organization:          clorg,
+			Name:                  cloudlet,
+			FederatedOrganization: alert.Labels[edgeproto.CloudletKeyTagFederatedOrganization],
 		},
 	}
 	s.all.appInstApi.HealthCheckUpdate(ctx, &appInstKey, state)
-
 }
 
 func (s *AlertApi) setAlertMetadata(in *edgeproto.Alert) {

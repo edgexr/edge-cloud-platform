@@ -128,7 +128,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 
 	ChangeSinceLastPlatformStats = true
 	collectInterval := settings.ShepherdMetricsCollectionInterval.TimeDuration()
-	// check cluster name if this is a VM App
+	// check App deployment type
 	app := edgeproto.App{}
 	found := AppCache.Get(&new.AppKey, &app)
 	if !found {
@@ -155,6 +155,25 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 	} else if new.AppKey.Name == MEXPrometheusAppName {
 		// check for prometheus
 		mapKey = k8smgmt.GetK8sNodeNameSuffix(new.ClusterInstKey())
+	} else if app.Deployment == cloudcommon.DeploymentTypeKubernetes {
+		// for backwards compatibility, we need to map App+Version to
+		// AppInstName+AppInstOrg. This is because older kubernetes
+		// deployments will not have mexAppInstName and mexAppInstOrg
+		// labels in their manifests.
+		workerMapMutex.Lock()
+		defer workerMapMutex.Unlock()
+		mapKey := getClusterWorkerMapKey(new.ClusterInstKey())
+		clusterWorker, ok := workerMap[mapKey]
+		if !ok {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to find cluster worker for new AppInst", "mapKey", mapKey, "appInstKey", new.Key)
+			return
+		}
+		if new.State == edgeproto.TrackedState_READY {
+			clusterWorker.clusterStat.TrackAppInst(ctx, new)
+		} else if new.State != edgeproto.TrackedState_READY {
+			clusterWorker.clusterStat.UntrackAppInst(ctx, new)
+		}
+		return
 	} else {
 		return
 	}

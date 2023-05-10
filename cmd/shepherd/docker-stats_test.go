@@ -25,11 +25,11 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_unittest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Sample output of formatted 'docker stats' cmd
@@ -82,9 +82,10 @@ var testNetData = `  ens3: 448842077 3084030    0    0    0     0          0    
 var testDiskInvalidData = "0B (virtual invalid)"
 var testDiskData = "0B (virtual 55.5MB)"
 
+// DockerApp1 uses old label format for backwards compat test
 var testMultiContainerDiskData = `{"container":"DockerApp1","id":"1","disk":"0B (virtual 1KB)","labels":"cluster=testcluster,mexAppName=dockerapp1,mexAppVersion=10"}
-{"container":"DockerApp2Container1","id":"2","disk":"0B (virtual 2.0MB)","labels":"cluster=testcluster,mexAppName=dockerapp2,mexAppVersion=10"}
-{"container":"DockerApp2Container2","id":"3","disk":"0B (virtual 3GB)","labels":"cluster=testcluster,mexAppName=dockerapp2,mexAppVersion=10"}`
+{"container":"DockerApp2Container1","id":"2","disk":"0B (virtual 2.0MB)","labels":"cluster=testcluster,mexAppInstName=testAppInst2,mexAppInstOrg=testdev"}
+{"container":"DockerApp2Container2","id":"3","disk":"0B (virtual 3GB)","labels":"cluster=testcluster,mexAppInstName=testAppInst2,mexAppInstOrg=testdev"}`
 
 // Example output of resource-tracker
 var testDockerClusterData = shepherd_common.ClusterMetrics{
@@ -99,6 +100,7 @@ var testDockerClusterData = shepherd_common.ClusterMetrics{
 }
 
 func TestDockerStats(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelApi | log.DebugLevelMetrics)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
@@ -117,6 +119,7 @@ func TestDockerStats(t *testing.T) {
 	}
 
 	testOperator := "testoperator"
+	testDeveloper := "testdev"
 	testCloudletKey := edgeproto.CloudletKey{
 		Organization: testOperator,
 		Name:         "testcloudlet",
@@ -138,20 +141,39 @@ func TestDockerStats(t *testing.T) {
 		Key:   testFlavorKey1,
 		Vcpus: 2,
 	}
+	testAppInstDocker1 := edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         "testAppInst1",
+			Organization: testDeveloper,
+			CloudletKey:  testCloudletKey,
+		},
+		AppKey: edgeproto.AppKey{
+			Name:    "DockerApp1",
+			Version: "1.0",
+		},
+		ClusterKey: testClusterKey,
+		RuntimeInfo: edgeproto.AppInstRuntime{
+			ContainerIds: []string{"DockerApp1"},
+		},
+		Flavor:               testFlavorKey1,
+		CompatibilityVersion: cloudcommon.AppInstCompatibilityInitial,
+	}
 	testAppInstDocker2 := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
-			Name:        "testAppInst",
-			CloudletKey: testCloudletKey,
+			Name:         "testAppInst2",
+			Organization: testDeveloper,
+			CloudletKey:  testCloudletKey,
 		},
 		AppKey: edgeproto.AppKey{
 			Name:    "DockerApp2",
-			Version: "10",
+			Version: "1.0",
 		},
 		ClusterKey: testClusterKey,
 		RuntimeInfo: edgeproto.AppInstRuntime{
 			ContainerIds: []string{"DockerApp2Container1", "DockerApp2Container2"},
 		},
-		Flavor: testFlavorKey1,
+		Flavor:               testFlavorKey1,
+		CompatibilityVersion: cloudcommon.AppInstCompatibilityUniqueNameKey,
 	}
 
 	// Remove all the empty space from docker test data, as that's how it gets returned by docker stats
@@ -172,19 +194,22 @@ func TestDockerStats(t *testing.T) {
 	edgeproto.InitAppInstCache(&AppInstCache)
 	edgeproto.InitFlavorCache(&FlavorCache)
 	FlavorCache.Update(ctx, &testFlavor1, 0)
+	AppInstCache.Update(ctx, &testAppInstDocker1, 0)
 	AppInstCache.Update(ctx, &testAppInstDocker2, 0)
 	testDockerStats, err := NewClusterWorker(ctx, "", 0, time.Second*1, time.Second*1, nil, &testClusterInst, nil, &platform)
 	assert.Nil(t, err, "Get a patform client for unit test cloudlet")
+	testDockerStats.clusterStat.TrackAppInst(ctx, &testAppInstDocker1)
+	testDockerStats.clusterStat.TrackAppInst(ctx, &testAppInstDocker2)
 	clusterMetrics := testDockerStats.clusterStat.GetClusterStats(ctx)
 	appsMetrics := testDockerStats.clusterStat.GetAppStats(ctx)
 	assert.NotNil(t, clusterMetrics, "Fill stats from json")
 	assert.NotNil(t, appsMetrics, "Fill stats from json")
-	testAppKey.Pod = k8smgmt.NormalizeName("DockerApp1")
-	testAppKey.App = k8smgmt.NormalizeName("DockerApp1")
-	testAppKey.Version = k8smgmt.NormalizeName("10")
+	testAppKey.Pod = testAppInstDocker1.Key.Name
+	testAppKey.AppInstName = testAppInstDocker1.Key.Name
+	testAppKey.AppInstOrg = testAppInstDocker1.Key.Organization
 	stat, found := appsMetrics[testAppKey]
 	// Check PodStats
-	assert.True(t, found, "Container DockerApp1 is not found")
+	require.True(t, found, "Container DockerApp1 key %+v is not found", testAppKey)
 	if found {
 		//divide these cpu numbers by 2 since the flavor has 2 cpus
 		assert.Equal(t, float64(1.11/2), stat.Cpu)
@@ -192,12 +217,12 @@ func TestDockerStats(t *testing.T) {
 		assert.Equal(t, uint64(1*1024), stat.Disk)
 		assert.NotNil(t, stat.CpuTS, "CPU timestamp")
 	}
-	testAppKey.Pod = k8smgmt.NormalizeName("DockerApp2")
-	testAppKey.App = k8smgmt.NormalizeName("DockerApp2")
-	testAppKey.Version = k8smgmt.NormalizeName("10")
+	testAppKey.Pod = testAppInstDocker2.Key.Name
+	testAppKey.AppInstName = testAppInstDocker2.Key.Name
+	testAppKey.AppInstOrg = testAppInstDocker2.Key.Organization
 	stat, found = appsMetrics[testAppKey]
 	// Check PodStats - should be a sum of DockerApp2Container1 and DockerApp2Container2
-	assert.True(t, found, "Container DockerApp2 is not found")
+	require.True(t, found, "Container DockerApp2 key %+v is not found", testAppKey)
 	if found {
 		//divide these cpu numbers by 2 since the flavor has 2 cpus
 		assert.Equal(t, float64(2.1)+float64(2.2), stat.Cpu)

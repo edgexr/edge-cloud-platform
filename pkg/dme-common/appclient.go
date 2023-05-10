@@ -163,7 +163,7 @@ func PurgeAppInstClients(ctx context.Context, appInstKey *edgeproto.AppInstKey, 
 }
 
 func SendCachedClients(ctx context.Context, old *edgeproto.AppInstClientKey, new *edgeproto.AppInstClientKey) {
-	// Check if we have an outstanding streaming request which would be a superset
+	// Check if we have an outstanding streaming request which would be a superset. Only the AppInstKey.Organization is required to be set.
 	err := AppInstClientKeyCache.Show(&edgeproto.AppInstClientKey{}, func(obj *edgeproto.AppInstClientKey) error {
 		// if we found an exact match - it's this clients
 		if new.Matches(obj) {

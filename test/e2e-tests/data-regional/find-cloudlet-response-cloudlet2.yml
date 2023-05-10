@@ -27,3 +27,6 @@ ports:
 cloudletlocation:
   latitude: 35
   longitude: -95
+tags:
+  appinst: someapplication1
+  appinstorg: AcmeAppCo

@@ -883,6 +883,16 @@ func HasField(fmap map[string]struct{}, field string) bool {
 	return ok
 }
 
+// AddTagFunc is used to collect tags and values
+type AddTagFunc = func(key, value string)
+
+// TagMap implements AddTagFunc
+type TagMap map[string]string
+
+func (s TagMap) AddTag(key, value string) {
+	s[key] = value
+}
+
 func (m *Metric) AddTag(name string, val string) {
 	tag := MetricTag{Name: name, Val: val}
 	m.Tags = append(m.Tags, &tag)
@@ -1455,6 +1465,12 @@ func (s *AppInst) AppCloudletKeyPair() *AppCloudletKeyPair {
 		AppKey:      s.AppKey,
 		CloudletKey: s.Key.CloudletKey,
 	}
+}
+
+func (s *AppInst) GetTags() map[string]string {
+	tags := make(map[string]string)
+	s.AddTags(tags)
+	return tags
 }
 
 func (s *AppInst) AddTags(tags map[string]string) {

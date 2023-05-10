@@ -65,15 +65,8 @@ func AppInstEventsQuery(obj *ormapi.RegionAppInstEvents, cloudletList []string) 
 		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.Name),
 		CloudletList: generateCloudletList(cloudletList),
 	}
-	if obj.AppInst.Organization != "" {
-		arg.OrgField = edgeproto.AppInstKeyTagOrganization
-		arg.ApiCallerOrg = obj.AppInst.Organization
-		arg.CloudletOrg = obj.AppInst.CloudletKey.Organization
-	} else {
-		arg.OrgField = edgeproto.CloudletKeyTagOrganization
-		arg.ApiCallerOrg = obj.AppInst.CloudletKey.Organization
-		arg.AppInstOrg = obj.AppInst.Organization
-	}
+	arg.AppInstOrg = obj.AppInst.Organization
+	arg.CloudletOrg = obj.AppInst.CloudletKey.Organization
 	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, "", 0)
 	return getInfluxMetricsQueryCmd(&arg, devInfluxDBTemplate)
 }
@@ -86,15 +79,8 @@ func ClusterEventsQuery(obj *ormapi.RegionClusterInstEvents, cloudletList []stri
 		ClusterName:  obj.ClusterInst.ClusterKey.Name,
 		CloudletList: generateCloudletList(cloudletList),
 	}
-	if obj.ClusterInst.ClusterKey.Organization != "" {
-		arg.OrgField = edgeproto.ClusterKeyTagOrganization
-		arg.ApiCallerOrg = obj.ClusterInst.ClusterKey.Organization
-		arg.CloudletOrg = obj.ClusterInst.CloudletKey.Organization
-	} else {
-		arg.OrgField = edgeproto.CloudletKeyTagOrganization
-		arg.ApiCallerOrg = obj.ClusterInst.CloudletKey.Organization
-		arg.ClusterOrg = obj.ClusterInst.ClusterKey.Organization
-	}
+	arg.ClusterOrg = obj.ClusterInst.ClusterKey.Organization
+	arg.CloudletOrg = obj.ClusterInst.CloudletKey.Organization
 	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, "", 0)
 	return getInfluxMetricsQueryCmd(&arg, devInfluxDBTemplate)
 }
@@ -104,10 +90,8 @@ func CloudletEventsQuery(obj *ormapi.RegionCloudletEvents) string {
 	arg := influxQueryArgs{
 		Selector:     getEventFields(cloudcommon.CloudletEvent),
 		Measurement:  cloudcommon.CloudletEvent,
-		OrgField:     "cloudletorg",
-		ApiCallerOrg: obj.Cloudlet.Organization,
-		CloudletName: obj.Cloudlet.Name,
 		CloudletOrg:  obj.Cloudlet.Organization,
+		CloudletName: obj.Cloudlet.Name,
 	}
 	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, "", 0)
 	return getInfluxMetricsQueryCmd(&arg, operatorInfluxDBTemplate)

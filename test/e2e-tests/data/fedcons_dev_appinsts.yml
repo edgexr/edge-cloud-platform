@@ -3,39 +3,38 @@ regiondata:
   appdata:
     appinstances:
     - key:
-        appkey:
-          organization: FedAppCo
-          name: k8sapp
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autoclusterk8s
-          cloudletkey:
-            organization: dmuus-partner1
-            name: dmuuscloud1
-            federatedorganization: partner1
+        name: k8sapp
+        organization: FedAppCo
+        cloudletkey:
+          organization: dmuus-partner1
+          name: dmuuscloud1
+          federatedorganization: partner1
+      appkey:
+        organization: FedAppCo
+        name: k8sapp
+        version: "1.0"
     - key:
-        appkey:
-          organization: FedAppCo
-          name: dockerapp
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autoclusterdocker
-          cloudletkey:
-            organization: dmuus-partner1
-            name: dmuuscloud1
-            federatedorganization: partner1
+        name: dockerapp
+        organization: FedAppCo
+        cloudletkey:
+          organization: dmuus-partner1
+          name: dmuuscloud1
+          federatedorganization: partner1
+      appkey:
+        organization: FedAppCo
+        name: dockerapp
+        version: "1.0"
       cloudletflavor: x1.small
     - key:
-        appkey:
-          organization: FedAppCo
-          name: vmapp
-          version: "1.0"
-        clusterinstkey:
-          cloudletkey:
-            organization: dmuus-partner1
-            name: dmuuscloud2
-            federatedorganization: partner1
+        name: vmapp
+        organization: FedAppCo
+        cloudletkey:
+          organization: dmuus-partner1
+          name: dmuuscloud2
+          federatedorganization: partner1
+      appkey:
+        organization: FedAppCo
+        name: vmapp
+        version: "1.0"
       flavor:
         name: p1.small

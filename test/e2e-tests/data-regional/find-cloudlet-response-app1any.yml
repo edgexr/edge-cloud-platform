@@ -13,7 +13,7 @@
 # limitations under the License.
 
 - status: Found
-  fqdn: someapplication110-acmeappco.azure-cloud-4-azure.local.edgecloude2e.net
+  fqdn: someapplication1-acmeappco.azure-cloud-4-azure.local.edgecloude2e.net
   ports:
   - proto: Tcp
     internalport: 80
@@ -30,6 +30,9 @@
   cloudletlocation:
     latitude: 32
     longitude: -91
+  tags:
+    appinst: someapplication1
+    appinstorg: AcmeAppCo
 - status: Found
   fqdn: reservablecluster2-edgecloudorg.dmuus-cloud-2-dmuus.local.edgecloude2e.net
   ports:
@@ -45,6 +48,9 @@
   cloudletlocation:
     latitude: 35
     longitude: -95
+  tags:
+    appinst: someapplication1
+    appinstorg: AcmeAppCo
 - status: Found
   fqdn: shared.att-cloud-1-att.local.edgecloude2e.net
   ports:
@@ -60,3 +66,6 @@
   cloudletlocation:
     latitude: 37
     longitude: -99
+  tags:
+    appinst: someapplication1
+    appinstorg: AcmeAppCo

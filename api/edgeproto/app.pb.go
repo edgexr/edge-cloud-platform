@@ -2136,16 +2136,15 @@ func (m *AppKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *AppKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("apporg", m.Organization)
+	addTag("app", m.Name)
+	addTag("appver", m.Version)
+}
+
 func (m *AppKey) AddTags(tags map[string]string) {
-	if m.Organization != "" {
-		tags["apporg"] = m.Organization
-	}
-	if m.Name != "" {
-		tags["app"] = m.Name
-	}
-	if m.Version != "" {
-		tags["appver"] = m.Version
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

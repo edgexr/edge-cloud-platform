@@ -233,25 +233,32 @@ func newMetric(clusterInstKey edgeproto.ClusterInstKey, reservedBy string, name 
 	metric := edgeproto.Metric{}
 	metric.Name = name
 	metric.Timestamp = *ts
-	metric.AddTag("cloudletorg", clusterInstKey.CloudletKey.Organization)
-	metric.AddTag("cloudlet", clusterInstKey.CloudletKey.Name)
-	metric.AddTag("cluster", clusterInstKey.ClusterKey.Name)
+	metric.AddTag(edgeproto.CloudletKeyTagOrganization, clusterInstKey.CloudletKey.Organization)
+	metric.AddTag(edgeproto.CloudletKeyTagFederatedOrganization, clusterInstKey.CloudletKey.FederatedOrganization)
+	metric.AddTag(edgeproto.CloudletKeyTagName, clusterInstKey.CloudletKey.Name)
+	metric.AddTag(edgeproto.ClusterKeyTagName, clusterInstKey.ClusterKey.Name)
+	// TODO: general comment for the below XXX, perhaps we should have a
+	// reservedby tag that would be better than overridding the other org tags.
 	if key != nil {
 		metric.AddStringVal("pod", key.Pod)
-		metric.AddTag("app", key.App)
-		metric.AddTag("ver", key.Version)
-		//TODO: this should be changed when we have the actual app key
+		metric.AddTag(edgeproto.AppInstKeyTagName, key.AppInstName)
+		// XXX we know the appinst org, why are setting it to reservedBy
+		// field (which, if set, should always equal the appinst org)?
+		// XXX why do we set the appinst org to the cluster org?
+		// those may be different orgs.
 		if reservedBy != "" {
-			metric.AddTag("apporg", reservedBy)
+			metric.AddTag(edgeproto.AppInstKeyTagOrganization, reservedBy)
 		} else {
-			metric.AddTag("apporg", clusterInstKey.ClusterKey.Organization)
+			metric.AddTag(edgeproto.AppInstKeyTagOrganization, clusterInstKey.ClusterKey.Organization)
 		}
-		metric.AddTag("clusterorg", clusterInstKey.ClusterKey.Organization)
+		metric.AddTag(edgeproto.ClusterKeyTagOrganization, clusterInstKey.ClusterKey.Organization)
 	} else {
+		// XXX why do we override the clusterorg with the reservedBy field,
+		// which is the appinst org?
 		if reservedBy != "" {
-			metric.AddTag("clusterorg", reservedBy)
+			metric.AddTag(edgeproto.ClusterKeyTagOrganization, reservedBy)
 		} else {
-			metric.AddTag("clusterorg", clusterInstKey.ClusterKey.Organization)
+			metric.AddTag(edgeproto.ClusterKeyTagOrganization, clusterInstKey.ClusterKey.Organization)
 		}
 	}
 	return &metric

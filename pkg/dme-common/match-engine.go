@@ -384,13 +384,23 @@ func RemoveApp(ctx context.Context, in *edgeproto.App) {
 
 func RemoveAppInst(ctx context.Context, appInst *edgeproto.AppInst) {
 	var tbl *DmeApps
+	var appkey edgeproto.AppKey
+	var appkeyOk bool
 
 	tbl = DmeAppTbl
 	carrierName := appInst.Key.CloudletKey.Organization
+	// this defer is defined before "defer tbl.Unlock()"
+	// so that it runs after the tbl lock is released, to
+	// avoid overlapping locks.
+	defer func() {
+		if appkeyOk {
+			PurgeAppInstClients(ctx, &appInst.Key, &appkey)
+		}
+	}()
 	tbl.Lock()
 	defer tbl.Unlock()
-	appkey, ok := tbl.AppInstApps[appInst.Key]
-	if !ok {
+	appkey, appkeyOk = tbl.AppInstApps[appInst.Key]
+	if !appkeyOk {
 		return
 	}
 	app, ok := tbl.Apps[appkey]
@@ -1133,6 +1143,12 @@ func ConstructFindCloudletReplyFromDmeAppInst(ctx context.Context, appinst *DmeA
 	ctx = NewEdgeEventsCookieContext(ctx, key)
 	eecookie, _ := GenerateEdgeEventsCookie(key, ctx, edgeEventsCookieExpiration)
 	mreply.EdgeEventsCookie = eecookie
+	if mreply.Tags == nil {
+		mreply.Tags = make(map[string]string)
+	}
+	// for api stats
+	mreply.Tags[edgeproto.AppInstKeyTagName] = appinst.key.Name
+	mreply.Tags[edgeproto.AppInstKeyTagOrganization] = appinst.key.Organization
 }
 
 func FindCloudlet(ctx context.Context, appkey *edgeproto.AppKey, carrier string, loc *dme.Loc, mreply *dme.FindCloudletReply, edgeEventsCookieExpiration time.Duration) (error, *DmeApp) {

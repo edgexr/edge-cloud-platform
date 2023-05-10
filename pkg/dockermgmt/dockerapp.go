@@ -59,7 +59,7 @@ var NginxProxy = "nginx"
 
 func GetContainerName(appInst *edgeproto.AppInst) string {
 	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityUniqueNameKey {
-		return util.DNSSanitize(appInst.Key.Name + appInst.Key.Organization)
+		return util.DNSSanitize(appInst.Key.Name)
 	} else {
 		return util.DNSSanitize(appInst.AppKey.Name + appInst.AppKey.Version)
 	}
@@ -105,7 +105,11 @@ func GetDockerPortString(ports []dme.AppPort, containerPortType string, proxyMat
 }
 
 func getDockerComposeFileName(client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst) string {
-	return util.DNSSanitize("docker-compose-"+app.Key.Name+app.Key.Version) + ".yml"
+	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityUniqueNameKey {
+		return util.DNSSanitize("docker-compose-" + appInst.Key.Name)
+	} else {
+		return util.DNSSanitize("docker-compose-"+app.Key.Name+app.Key.Version) + ".yml"
+	}
 }
 
 func parseDockerComposeManifest(client ssh.Client, dir string, dm *cloudcommon.DockerManifest) error {
@@ -262,8 +266,6 @@ func createDockerComposeFile(client ssh.Client, app *edgeproto.App, appInst *edg
 // As a result we have a separate function specifically for a docker app creation on a MacOS laptop
 func CreateAppInstLocal(client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	image := app.ImagePath
-	nameLabelVal := util.DNSSanitize(app.Key.Name)
-	versionLabelVal := util.DNSSanitize(app.Key.Version)
 	name := GetContainerName(appInst)
 	cloudlet := util.DockerSanitize(appInst.Key.CloudletKey.Name)
 	cluster := util.DockerSanitize(appInst.ClusterKey.Organization + "-" + appInst.ClusterKey.Name)
@@ -271,10 +273,14 @@ func CreateAppInstLocal(client ssh.Client, app *edgeproto.App, appInst *edgeprot
 	if appInst.OptRes == "gpu" {
 		base_cmd += "--gpus all"
 	}
-
+	labels := cloudcommon.GetAppInstLabels(appInst)
+	labelsStr := ""
+	for k, v := range labels.Map() {
+		labelsStr += fmt.Sprintf(" -l %s=%s", k, v)
+	}
 	if app.DeploymentManifest == "" {
-		cmd := fmt.Sprintf("%s -d -l edge-cloud -l cloudlet=%s -l cluster=%s  -l %s=%s -l %s=%s --restart=unless-stopped --name=%s %s %s %s", base_cmd,
-			cloudlet, cluster, cloudcommon.MexAppNameLabel, nameLabelVal, cloudcommon.MexAppVersionLabel, versionLabelVal, name,
+		cmd := fmt.Sprintf("%s -d -l edge-cloud -l cloudlet=%s -l cluster=%s %s --restart=unless-stopped --name=%s %s %s %s", base_cmd,
+			cloudlet, cluster, labelsStr, name,
 			strings.Join(GetDockerPortString(appInst.MappedPorts, UseInternalPortInContainer, "", cloudcommon.IPAddrAllInterfaces), " "), image, getCommandString(app))
 		log.DebugLog(log.DebugLevelInfra, "running docker run ", "cmd", cmd)
 
@@ -329,8 +335,7 @@ func CreateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 		}
 	}
 	image := app.ImagePath
-	nameLabelVal := util.DNSSanitize(app.Key.Name)
-	versionLabelVal := util.DNSSanitize(app.Key.Version)
+	nameLabelVal := util.DNSSanitize(appInst.Key.Name)
 	base_cmd := "docker run "
 	if appInst.OptRes == "gpu" {
 		base_cmd += "--gpus all"
@@ -345,9 +350,8 @@ func CreateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 				return fmt.Errorf("error pulling docker image: %s, %s, %v", image, out, err)
 			}
 		}
-		cmd := fmt.Sprintf("%s -d -l %s=%s -l %s=%s --restart=unless-stopped --network=host --name=%s %s %s", base_cmd,
-			cloudcommon.MexAppNameLabel, nameLabelVal, cloudcommon.MexAppVersionLabel,
-			versionLabelVal, GetContainerName(appInst), image, getCommandString(app))
+		cmd := fmt.Sprintf("%s -d -l %s=%s --restart=unless-stopped --network=host --name=%s %s %s", base_cmd,
+			cloudcommon.MexAppInstNameLabel, nameLabelVal, GetContainerName(appInst), image, getCommandString(app))
 		log.SpanLog(ctx, log.DebugLevelInfra, "running docker run ", "cmd", cmd)
 		out, err := client.Output(cmd)
 		if err != nil {
@@ -464,19 +468,24 @@ func GetAppInstRuntime(ctx context.Context, client ssh.Client, app *edgeproto.Ap
 	rt.ContainerIds = make([]string, 0)
 
 	// try to get the container names from the runtime environment
-	nameLabelVal := util.DNSSanitize(app.Key.Name)
-	versionLabelVal := util.DNSSanitize(app.Key.Version)
-	cmd := fmt.Sprintf(`docker ps --format "{{.Names}}" --filter "label=%s=%s" --filter "label=%s=%s"`,
-		cloudcommon.MexAppNameLabel, nameLabelVal, cloudcommon.MexAppVersionLabel, versionLabelVal)
-	out, err := client.Output(cmd)
-	if err == nil && len(out) > 0 {
-		for _, name := range strings.Split(out, "\n") {
-			name = strings.TrimSpace(name)
-			rt.ContainerIds = append(rt.ContainerIds, name)
+	labels := cloudcommon.GetAppInstLabels(appInst)
+	filterStr := ""
+	for k, v := range labels.Map() {
+		// filter on first label
+		filterStr += fmt.Sprintf(` --filter "label=%s=%s"`, k, v)
+	}
+	if filterStr != "" {
+		cmd := fmt.Sprintf(`docker ps --format "{{.Names}}" %s`, filterStr)
+		out, err := client.Output(cmd)
+		if err == nil && len(out) > 0 {
+			for _, name := range strings.Split(out, "\n") {
+				name = strings.TrimSpace(name)
+				rt.ContainerIds = append(rt.ContainerIds, name)
+			}
+			return rt, nil
+		} else {
+			log.SpanLog(ctx, log.DebugLevelInfo, "GetAppInstRuntime cmd failed", "cmd", cmd, "out", out, "err", err)
 		}
-		return rt, nil
-	} else {
-		log.SpanLog(ctx, log.DebugLevelInfo, "GetAppInstRuntime cmd failed", "cmd", cmd, "out", out, "err", err)
 	}
 
 	// get the expected names if couldn't get it from the runtime

@@ -30,10 +30,10 @@ regiondata:
     - key:
         clusterkey:
           name: SmallCluster
+          organization: user3org
         cloudletkey:
           organization: enterprise
           name: enterprise-1
-        organization: user3org
       flavor:
         name: x1.small
       ipaccess: Dedicated
@@ -52,16 +52,17 @@ regiondata:
       accessports: "tcp:80,tcp:443,udp:10002"
     appinstances:
     - key:
-        appkey:
-          organization: user3org
-          name: ep1
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: SmallCluster
-          cloudletkey:
-            organization: enterprise
-            name: enterprise-1
-          organization: user3org
+        name: ep1
+        organization: user3org
+        cloudletkey:
+          organization: enterprise
+          name: enterprise-1
+      appkey:
+        organization: user3org
+        name: ep1
+        version: "1.0"
+      clusterkey:
+        name: SmallCluster
+        organization: user3org
       flavor:
         name: x1.small

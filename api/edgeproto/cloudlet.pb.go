@@ -7855,13 +7855,14 @@ func (m *GPUDriverKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *GPUDriverKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("gpudriver", m.Name)
+	addTag("gpudriverorg", m.Organization)
+}
+
 func (m *GPUDriverKey) AddTags(tags map[string]string) {
-	if m.Name != "" {
-		tags["gpudriver"] = m.Name
-	}
-	if m.Organization != "" {
-		tags["gpudriverorg"] = m.Organization
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

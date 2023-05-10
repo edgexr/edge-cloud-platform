@@ -17,17 +17,18 @@ regiondata:
   appdata:
     appinstances:
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovapp
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-autoprov
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-2
-          organization: edgecloudorg
+        name: autoprov-autoprovapp10
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-2
+      appkey:
+        organization: AcmeAppCo
+        name: autoprovapp
+        version: "1.0"
+      clusterkey:
+        name: Reservable2
+        organization: edgecloudorg
       cloudletloc:
         latitude: 35
         longitude: -95
@@ -46,21 +47,21 @@ regiondata:
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
-      realclustername: Reservable2
-      uniqueid: acmeappcoautoprovapp10-autocluster-autoprov-dmuus-cloud-2-dmuus
-      dnslabel: autoprovapp10-acmeappco
+      uniqueid: acmeappco-autoprov-autoprovapp10-dmuus-cloud-2-dmuus
+      dnslabel: autoprov-autoprovapp10-acmeappco
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovappd
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-autoprov
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-1
-          organization: edgecloudorg
+        name: autoprov-autoprovappd10
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-1
+      appkey:
+        organization: AcmeAppCo
+        name: autoprovappd
+        version: "1.0"
+      clusterkey:
+        name: ReservableD
+        organization: edgecloudorg
       cloudletloc:
         latitude: 31
         longitude: -91
@@ -76,6 +77,5 @@ regiondata:
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
-      realclustername: ReservableD
-      uniqueid: acmeappcoautoprovappd10-autocluster-autoprov-dmuus-cloud-1-dmuus
-      dnslabel: autoprovappd10-acmeappco
+      uniqueid: acmeappco-autoprov-autoprovappd10-dmuus-cloud-1-dmuus
+      dnslabel: autoprov-autoprovappd10-acmeappco

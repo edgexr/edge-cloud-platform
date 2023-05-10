@@ -1565,13 +1565,14 @@ func (m *VMPoolKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *VMPoolKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("vmpoolorg", m.Organization)
+	addTag("vmpool", m.Name)
+}
+
 func (m *VMPoolKey) AddTags(tags map[string]string) {
-	if m.Organization != "" {
-		tags["vmpoolorg"] = m.Organization
-	}
-	if m.Name != "" {
-		tags["vmpool"] = m.Name
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

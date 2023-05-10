@@ -172,8 +172,9 @@ func MarshalCloudletMetrics(data *shepherd_common.CloudletMetrics) []*edgeproto.
 	if data.CollectTime != nil {
 		cMetric.Name = "cloudlet-utilization"
 		cMetric.Timestamp = *data.CollectTime
-		cMetric.AddTag("cloudletorg", cloudletKey.Organization)
-		cMetric.AddTag("cloudlet", cloudletKey.Name)
+		cMetric.AddTag(edgeproto.CloudletKeyTagOrganization, cloudletKey.Organization)
+		cMetric.AddTag(edgeproto.CloudletKeyTagName, cloudletKey.Name)
+		cMetric.AddTag(edgeproto.CloudletKeyTagFederatedOrganization, cloudletKey.FederatedOrganization)
 		cMetric.AddIntVal("vCpuUsed", data.VCpuUsed)
 		cMetric.AddIntVal("vCpuMax", data.VCpuMax)
 		cMetric.AddIntVal("memUsed", data.MemUsed)
@@ -184,16 +185,18 @@ func MarshalCloudletMetrics(data *shepherd_common.CloudletMetrics) []*edgeproto.
 
 		nMetric.Name = "cloudlet-network"
 		nMetric.Timestamp = *data.CollectTime
-		nMetric.AddTag("cloudletorg", cloudletKey.Organization)
-		nMetric.AddTag("cloudlet", cloudletKey.Name)
+		nMetric.AddTag(edgeproto.CloudletKeyTagOrganization, cloudletKey.Organization)
+		nMetric.AddTag(edgeproto.CloudletKeyTagName, cloudletKey.Name)
+		nMetric.AddTag(edgeproto.CloudletKeyTagFederatedOrganization, cloudletKey.FederatedOrganization)
 		nMetric.AddIntVal("netSent", data.NetSent)
 		nMetric.AddIntVal("netRecv", data.NetRecv)
 		metrics = append(metrics, &nMetric)
 
 		iMetric.Name = "cloudlet-ipusage"
 		iMetric.Timestamp = *data.CollectTime
-		iMetric.AddTag("cloudletorg", cloudletKey.Organization)
-		iMetric.AddTag("cloudlet", cloudletKey.Name)
+		iMetric.AddTag(edgeproto.CloudletKeyTagOrganization, cloudletKey.Organization)
+		iMetric.AddTag(edgeproto.CloudletKeyTagName, cloudletKey.Name)
+		iMetric.AddTag(edgeproto.CloudletKeyTagFederatedOrganization, cloudletKey.FederatedOrganization)
 		iMetric.AddIntVal("ipv4Max", data.Ipv4Max)
 		iMetric.AddIntVal("ipv4Used", data.Ipv4Used)
 		iMetric.AddIntVal("floatingIpsMax", data.FloatingIpsMax)

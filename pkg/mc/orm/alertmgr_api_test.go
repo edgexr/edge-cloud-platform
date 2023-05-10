@@ -63,8 +63,8 @@ func testShowAlertReceiver(mcClient *mctestclient.Client, uri, token, region, or
 	return recs, status, err
 }
 
-func testCreateAlertReceiver(mcClient *mctestclient.Client, uri, token, region, org, name, rType, severity, username, email string, appInstKey *edgeproto.AppInstKey, cloudlet *edgeproto.CloudletKey, clusterInstKey *edgeproto.ClusterInstKey) (int, error) {
-	if appInstKey == nil && cloudlet == nil && clusterInstKey == nil {
+func testCreateAlertReceiver(mcClient *mctestclient.Client, uri, token, region, org, name, rType, severity, username, email string, appInstKey *edgeproto.AppInstKey, appKey *edgeproto.AppKey, clusterKey *edgeproto.ClusterKey) (int, error) {
+	if appInstKey == nil && appKey == nil && clusterKey == nil {
 		appInstKey = &edgeproto.AppInstKey{}
 		appInstKey.Organization = org
 	}
@@ -75,11 +75,11 @@ func testCreateAlertReceiver(mcClient *mctestclient.Client, uri, token, region, 
 	if appInstKey != nil {
 		dat.AppInstKey = *appInstKey
 	}
-	if cloudlet != nil {
-		dat.CloudletKey = *cloudlet
+	if appKey != nil {
+		dat.AppKey = *appKey
 	}
-	if clusterInstKey != nil {
-		dat.ClusterInstKey = *clusterInstKey
+	if clusterKey != nil {
+		dat.ClusterKey = *clusterKey
 	}
 	dat.User = username
 	dat.Email = email
@@ -94,8 +94,8 @@ func testDeleteAlertReceiver(mcClient *mctestclient.Client, uri, token, region, 
 	dat.Type = rType
 	dat.Name = name
 	dat.AppInstKey.Organization = appInstOrg
-	dat.CloudletKey.Organization = cloudletOrg
-	dat.ClusterInstKey.ClusterKey.Organization = clusterInstOrg
+	dat.AppInstKey.CloudletKey.Organization = cloudletOrg
+	dat.ClusterKey.Organization = clusterInstOrg
 	dat.User = username
 
 	status, err := mcClient.DeleteAlertReceiver(uri, token, dat)
@@ -108,7 +108,7 @@ func testDeleteAlertReceiverWithClusterOrg(mcClient *mctestclient.Client, uri, t
 	dat.Severity = severity
 	dat.Type = rType
 	dat.Name = name
-	dat.ClusterInstKey.ClusterKey.Organization = org
+	dat.ClusterKey.Organization = org
 	dat.User = username
 
 	status, err := mcClient.DeleteAlertReceiver(uri, token, dat)
@@ -201,15 +201,13 @@ func goodPermTestAlertReceivers(t *testing.T, mcClient *mctestclient.Client, uri
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	// test with cluster org only
-	clusterInst := edgeproto.ClusterInstKey{
-		ClusterKey: edgeproto.ClusterKey{
-			Organization: devOrg,
-		},
+	clusterKey := edgeproto.ClusterKey{
+		Organization: devOrg,
 	}
 	status, err = testDeleteAlertReceiver(mcClient, uri, devToken, region, devOrg, "", "", "testAlert", "email", "error", "")
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "email", "error", "", "", nil, nil, &clusterInst)
+	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "email", "error", "", "", nil, nil, &clusterKey)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	list, status, err := testShowAlertReceiver(mcClient, uri, devToken, region, "", "testAlert", "")
@@ -219,51 +217,71 @@ func goodPermTestAlertReceivers(t *testing.T, mcClient *mctestclient.Client, uri
 	status, err = testDeleteAlertReceiver(mcClient, uri, devToken, region, "", "", devOrg, "testAlert", "email", "error", "")
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+	// should fail for operator
+	status, err = testCreateAlertReceiver(mcClient, uri, operToken, region, "", "testAlert", "email", "error", "", "", nil, nil, &clusterKey)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
 
 	// missing name check
 	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "", "email", "error", "", "", nil, nil, nil)
 	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "Receiver name has to be specified")
 	// invalid receiver name
 	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "%alertreceiver", "email", "error", "", "", nil, nil, nil)
 	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "Receiver name is invalid")
 	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "al\\!ertreceiver", "email", "error", "", "", nil, nil, nil)
 	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "Receiver name is invalid")
 	// invalid receiver type check
 	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "invalid", "error", "", "", nil, nil, nil)
 	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "Receiver type invalid")
 	// invalid severity check
 	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "slack", "invalid", "", "", nil, nil, nil)
 	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "Alert severity has to be one of")
 	// specifying a user in the call - disallowed
 	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "slack", "error", "user1", "", nil, nil, nil)
 	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "User is not specifiable")
 	// invalid receiver email format
 	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "email", "error", "", "xx.com", nil, nil, nil)
 	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "Receiver email is invalid")
-	// test combination of both appInst and cloudlet
+	// AppInst name cannot be specified for cloudlet-scoped query
+	// (this would require the AppInstOrg to make it into a app-scoped query)
 	appInst := edgeproto.AppInstKey{
-		Organization: devOrg,
+		Name: "test",
+		CloudletKey: edgeproto.CloudletKey{
+			Organization: operOrg,
+		},
 	}
-	cloudlet := edgeproto.CloudletKey{
-		Organization: operOrg,
-	}
-	status, err = testCreateAlertReceiver(mcClient, uri, operToken, region, devOrg, "testAlert", "email", "error", "", "", &appInst, &cloudlet, nil)
+	status, err = testCreateAlertReceiver(mcClient, uri, operToken, region, "", "testAlert", "email", "error", "", "", &appInst, nil, nil)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Only one set of cloudlet, cluster, or appinst details may be specified")
-	// Check where app org is used
-	cloudlet = edgeproto.CloudletKey{
-		Name: "Operator",
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Contains(t, err.Error(), "AppInst details cannot be specified without AppInst, App, or Cluster organization")
+	// ClusterInst name cannot be specified for cloudlet-scoped query
+	// (this would require the ClusterInstOrg to make it into a app-scoped query)
+	clusterKey = edgeproto.ClusterKey{
+		Name: "cluster",
 	}
-	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "email", "error", "", "", &appInst, &cloudlet, nil)
+	appInst = edgeproto.AppInstKey{
+		CloudletKey: edgeproto.CloudletKey{
+			Organization: operOrg,
+		},
+	}
+	status, err = testCreateAlertReceiver(mcClient, uri, operToken, region, "", "testAlert", "email", "error", "", "", &appInst, nil, &clusterKey)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Only one set of cloudlet, cluster, or appinst details may be specified")
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Contains(t, err.Error(), "ClusterInst details cannot be specified without AppInst, App, or Cluster organization")
 
 	// Clean up last receiver
 	list, status, err = testShowAlertReceiver(mcClient, uri, devToken, region, "", "testAlert", "")

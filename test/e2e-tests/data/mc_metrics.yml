@@ -38,6 +38,9 @@ prometheus:
   #appinst/cluster-network, no matter what value you put here it will be 0, since these are rates
   netSend: 11
   netRecv: 12
+  # retain appName and appVersion for backwards compatibility
   appName: someapplication1
   #appversion is 1.0, but DNSSanitized version is "10"
   appVersion: "10"
+  #appInstName: someapplication1
+  #appInstOrg: AcmeAppCo

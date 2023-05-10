@@ -686,25 +686,18 @@ func (m *TrustPolicyExceptionKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *TrustPolicyExceptionKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("apporg", m.AppKey.Organization)
+	addTag("app", m.AppKey.Name)
+	addTag("appver", m.AppKey.Version)
+	addTag("cloudletpoolorg", m.CloudletPoolKey.Organization)
+	addTag("cloudletpool", m.CloudletPoolKey.Name)
+	addTag("name", m.Name)
+}
+
 func (m *TrustPolicyExceptionKey) AddTags(tags map[string]string) {
-	if m.AppKey.Organization != "" {
-		tags["apporg"] = m.AppKey.Organization
-	}
-	if m.AppKey.Name != "" {
-		tags["app"] = m.AppKey.Name
-	}
-	if m.AppKey.Version != "" {
-		tags["appver"] = m.AppKey.Version
-	}
-	if m.CloudletPoolKey.Organization != "" {
-		tags["cloudletpoolorg"] = m.CloudletPoolKey.Organization
-	}
-	if m.CloudletPoolKey.Name != "" {
-		tags["cloudletpool"] = m.CloudletPoolKey.Name
-	}
-	if m.Name != "" {
-		tags["name"] = m.Name
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

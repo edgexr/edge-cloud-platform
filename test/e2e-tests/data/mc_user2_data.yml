@@ -42,10 +42,10 @@ regiondata:
     - key:
         clusterkey:
           name: SmallCluster
+          organization: AcmeAppCo
         cloudletkey:
           organization: dmuus
           name: dmuus-cloud-1
-        organization: AcmeAppCo
       flavor:
         name: x1.small
       ipaccess: Dedicated
@@ -55,10 +55,10 @@ regiondata:
     - key:
         clusterkey:
           name: SmallCluster
+          organization: AcmeAppCo
         cloudletkey:
           organization: dmuus
           name: dmuus-cloud-2
-        organization: AcmeAppCo
       flavor:
         name: x1.small
       ipaccess: Shared
@@ -115,45 +115,45 @@ regiondata:
 
     appinstances:
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: someapplication1
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: SmallCluster
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-1
-          organization: AcmeAppCo
+        name: someapplication1
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-1
+      appkey:
+        organization: AcmeAppCo
+        name: someapplication1
+        version: "1.0"
+      clusterkey:
+        name: SmallCluster
+        organization: AcmeAppCo
       flavor:
         name: x1.small
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: someapplication1
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: SmallCluster
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-2
-          organization: AcmeAppCo
+        name: someapplication1
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-2
+      appkey:
+        organization: AcmeAppCo
+        name: someapplication1
+        version: "1.0"
+      clusterkey:
+        name: SmallCluster
+        organization: AcmeAppCo
       flavor:
         name: x1.small
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: someapplication1
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autoclusterAcme
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-2
-          organization: edgecloudorg
+        name: someapplication12
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-2
+      appkey:
+        organization: AcmeAppCo
+        name: someapplication1
+        version: "1.0"
       flavor:
         name: x1.small
 
@@ -190,10 +190,10 @@ regiondata:
     - key:
         clusterkey:
           name: SmallCluster
+          organization: AcmeAppCo
         cloudletkey:
           organization: dmuus
           name: dmuus-cloud-3
-        organization: AcmeAppCo
       flavor:
         name: x1.small
       ipaccess: Dedicated
@@ -203,10 +203,10 @@ regiondata:
     - key:
         clusterkey:
           name: SmallCluster
+          organization: AcmeAppCo
         cloudletkey:
           organization: dmuus
           name: dmuus-cloud-4
-        organization: AcmeAppCo
       flavor:
         name: x1.small
       ipaccess: Shared
@@ -251,31 +251,33 @@ regiondata:
 
     appinstances:
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: someapplication1
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: SmallCluster
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-3
-          organization: AcmeAppCo
+        name: someapplication1
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-3
+      appkey:
+        organization: AcmeAppCo
+        name: someapplication1
+        version: "1.0"
+      clusterkey:
+        name: SmallCluster
+        organization: AcmeAppCo
       flavor:
         name: x1.small
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: someapplication1
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: SmallCluster
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-4
-          organization: AcmeAppCo
+        name: someapplication1
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-4
+      appkey:
+        organization: AcmeAppCo
+        name: someapplication1
+        version: "1.0"
+      clusterkey:
+        name: SmallCluster
+        organization: AcmeAppCo
       flavor:
         name: x1.small
 

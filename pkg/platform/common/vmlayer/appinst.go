@@ -537,7 +537,7 @@ func (v *VMPlatform) cleanupAppInst(ctx context.Context, clusterInst *edgeproto.
 			updateCallback(edgeproto.UpdateTask, "Retrying cleanup")
 		}
 	}
-	v.VMProperties.CommonPf.PlatformConfig.NodeMgr.Event(ctx, "Failed to clean up appInst", app.Key.Organization, appInst.Key.GetTags(), err)
+	v.VMProperties.CommonPf.PlatformConfig.NodeMgr.Event(ctx, "Failed to clean up appInst", app.Key.Organization, appInst.GetTags(), err)
 	return fmt.Errorf("Failed to cleanup appinst - %v", err)
 }
 

@@ -25,22 +25,23 @@ import (
 
 var (
 	testApiUsageQuerySampled = `SELECT last("reqs") AS "reqs",last("errs") AS "errs",last("foundCloudlet") AS "foundCloudlet",last("foundOperator") AS "foundOperator" from "dme-api" WHERE ` +
-		`"appinstorg"='testOrg1' AND "appinst"='testAppInst1' AND "method"='RegisterClient' AND "foundCloudlet"='testCloudlet1' ` +
+		`"app"='testApp1' AND "apporg"='testOrg1' AND "appver"='1.0' AND "method"='RegisterClient' AND "foundCloudlet"='testCloudlet1' ` +
 		`AND time >= '2019-12-31T13:01:00Z' AND time <= '2020-01-01T01:01:00Z' ` +
-		`group by time(12h0m0s),"appinstorg","appinst","cloudletorg","cloudlet","dmeId","method" order by time desc ` +
+		`group by time(12h0m0s),"app","apporg","appver","cloudlet","cloudletorg","dmeId","method" order by time desc ` +
 		`limit 1`
 	testApiUsageQuerNonSampledLast = `SELECT "reqs","errs","foundCloudlet","foundOperator" from "dme-api" ` +
-		`WHERE "appinstorg"='testOrg1' AND "appinst"='testAppInst1' AND "method"='RegisterClient' AND "foundCloudlet"='testCloudlet1' ` +
-		`group by "appinstorg","appinst","cloudletorg","cloudlet","dmeId","method" order by time desc ` +
+		`WHERE "app"='testApp1' AND "apporg"='testOrg1' AND "appver"='1.0' AND "method"='RegisterClient' AND "foundCloudlet"='testCloudlet1' ` +
+		`group by "app","apporg","appver","cloudlet","cloudletorg","dmeId","method" order by time desc ` +
 		`limit 1`
 	testRegionClientApiUsage = ormapi.RegionClientApiUsageMetrics{
 		Region: "test",
-		AppInst: edgeproto.AppInstKey{
-			Name:         "testAppInst1",
+		AppKey: edgeproto.AppKey{
 			Organization: "testOrg1",
-			CloudletKey: edgeproto.CloudletKey{
-				Name: "testCloudlet1",
-			},
+			Name:         "testApp1",
+			Version:      "1.0",
+		},
+		CloudletKey: edgeproto.CloudletKey{
+			Name: "testCloudlet1",
 		},
 		Method:   "RegisterClient",
 		Selector: "api",

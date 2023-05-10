@@ -73,10 +73,8 @@ func testPermShowCloudletMetrics(mcClient *mctestclient.Client, uri, token, regi
 	return mcClient.ShowCloudletMetrics(uri, token, dat)
 }
 
-func testPermShowClientMetrics(mcClient *mctestclient.Client, uri, token, region, org, selector string, data *edgeproto.AppInstKey) (*ormapi.AllMetrics, int, error) {
-	in := &edgeproto.AppInstKey{
-		Name: "testinst",
-	}
+func testPermShowClientMetrics(mcClient *mctestclient.Client, uri, token, region, org, selector string, data *edgeproto.AppKey) (*ormapi.AllMetrics, int, error) {
+	in := &edgeproto.AppKey{}
 	if data != nil {
 		in = data
 	}
@@ -84,7 +82,7 @@ func testPermShowClientMetrics(mcClient *mctestclient.Client, uri, token, region
 	dat := &ormapi.RegionClientApiUsageMetrics{}
 	dat.Region = region
 	dat.Selector = selector
-	dat.AppInst = *in
+	dat.AppKey = *in
 	return mcClient.ShowClientApiUsageMetrics(uri, token, dat)
 }
 
@@ -253,12 +251,12 @@ func goodPermTestMetrics(t *testing.T, mcClient *mctestclient.Client, uri, devTo
 	require.Equal(t, http.StatusBadRequest, status)
 
 	// invalid input check
-	appInst := edgeproto.AppInstKey{
+	appKey := edgeproto.AppKey{
 		Name: "drop measurements \\",
 	}
-	list, status, err = testPermShowClientMetrics(mcClient, uri, devToken, region, devOrg, "cpu", &appInst)
+	list, status, err = testPermShowClientMetrics(mcClient, uri, devToken, region, devOrg, "cpu", &appKey)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Invalid appinst")
+	require.Contains(t, err.Error(), "Invalid app")
 	require.Equal(t, http.StatusBadRequest, status)
 	cloudlet := edgeproto.CloudletKey{
 		Name: "select * from api",
@@ -431,11 +429,9 @@ func testInvalidMeasurementData(t *testing.T, resp *client.Response, measurement
 func TestValidateMethod(t *testing.T) {
 	obj := ormapi.RegionClientApiUsageMetrics{
 		Region: "test",
-		AppInst: edgeproto.AppInstKey{
-			CloudletKey: edgeproto.CloudletKey{
-				Name:         "testCloudlet",
-				Organization: "testOperator",
-			},
+		CloudletKey: edgeproto.CloudletKey{
+			Name:         "testCloudlet",
+			Organization: "testOperator",
 		},
 	}
 	obj.Method = "RegisterClient"
@@ -459,14 +455,16 @@ func TestValidateMethod(t *testing.T) {
 	require.Nil(t, err, "with no method specified cloudlet/cloudlet-org is allowed")
 
 	obj.Method = "RegisterClient"
-	// zero out appInst details
-	obj.AppInst = edgeproto.AppInstKey{}
+	// zero out key details
+	obj.AppKey = edgeproto.AppKey{}
+	obj.CloudletKey = edgeproto.CloudletKey{}
 	err = validateMethodString(&obj)
 	require.Nil(t, err, "RegisterClient should work without cloudlet name/org")
 
 	obj.Method = "VerifyLocation"
-	// zero out appInst details
-	obj.AppInst = edgeproto.AppInstKey{}
+	// zero out key details
+	obj.AppKey = edgeproto.AppKey{}
+	obj.CloudletKey = edgeproto.CloudletKey{}
 	err = validateMethodString(&obj)
 	require.Nil(t, err, "VerifyLocation should work without cloudlet name/org")
 

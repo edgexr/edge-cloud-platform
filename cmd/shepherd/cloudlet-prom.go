@@ -57,8 +57,14 @@ var promTargetT = `
 	"labels": {
 		"` + edgeproto.AppInstKeyTagName + `": "{{.Key.Name}}",
 		"` + edgeproto.AppInstKeyTagOrganization + `": "{{.Key.Organization}}",
+		"` + edgeproto.AppKeyTagName + `": "{{.AppKey.Name}}",
+		"` + edgeproto.AppKeyTagVersion + `": "{{.AppKey.Version}}",
+		"` + edgeproto.AppKeyTagOrganization + `": "{{.AppKey.Organization}}",
+		"` + edgeproto.ClusterKeyTagName + `": "{{.ClusterKey.Name}}",
+		"` + edgeproto.ClusterKeyTagOrganization + `": "{{.ClusterKey.Organization}}",
 		"` + edgeproto.CloudletKeyTagName + `": "{{.Key.CloudletKey.Name}}",
 		"` + edgeproto.CloudletKeyTagOrganization + `": "{{.Key.CloudletKey.Organization}}",
+		"` + edgeproto.CloudletKeyTagFederatedOrganization + `": "{{.Key.CloudletKey.FederatedOrganization}}",
 		"__metrics_path__":"{{.EnvoyMetricsPath}}"
 	}
 }`
@@ -86,8 +92,16 @@ var promHealthCheckAlerts = `groups:
   - expr: sum by (` + // basically sum over all ports
 	strings.Join([]string{edgeproto.AppInstKeyTagName,
 		edgeproto.AppInstKeyTagOrganization,
+		// non-key fields for App and Cluster are used to populate
+		// tags in events for easier searching.
+		edgeproto.AppKeyTagName,
+		edgeproto.AppKeyTagVersion,
+		edgeproto.AppKeyTagOrganization,
+		edgeproto.ClusterKeyTagName,
+		edgeproto.ClusterKeyTagOrganization,
 		edgeproto.CloudletKeyTagName,
-		edgeproto.CloudletKeyTagOrganization}, ",") +
+		edgeproto.CloudletKeyTagOrganization,
+		edgeproto.CloudletKeyTagFederatedOrganization}, ",") +
 	`) (envoy_cluster_upstream_cx_active)
     record: envoy_cluster_upstream_cx_active_total
   - expr: avg_over_time(envoy_cluster_upstream_cx_active_total[%ds])
@@ -97,6 +111,8 @@ var promHealthCheckAlerts = `groups:
 type targetData struct {
 	MetricsProxyAddr string
 	Key              edgeproto.AppInstKey
+	ClusterKey       edgeproto.ClusterKey
+	AppKey           edgeproto.AppKey
 	EnvoyMetricsPath string
 }
 
@@ -113,7 +129,7 @@ func updateCloudletPrometheusConfig(ctx context.Context, promScrapeInterval *tim
 	reloadCloudletProm(ctx)
 	return nil
 }
-func getAppInstPrometheusTargetString(appInstKey *edgeproto.AppInstKey) (string, error) {
+func getAppInstPrometheusTargetString(proxyScrapePoint *ProxyScrapePoint) (string, error) {
 	host := *metricsAddr
 	switch *platformName {
 	case "PLATFORM_TYPE_EDGEBOX":
@@ -125,8 +141,10 @@ func getAppInstPrometheusTargetString(appInstKey *edgeproto.AppInstKey) (string,
 	}
 	target := targetData{
 		MetricsProxyAddr: host,
-		Key:              *appInstKey,
-		EnvoyMetricsPath: "/metrics/" + shepherd_common.GetProxyKey(appInstKey),
+		Key:              proxyScrapePoint.Key,
+		AppKey:           proxyScrapePoint.AppKey,
+		ClusterKey:       proxyScrapePoint.ClusterInstKey.ClusterKey,
+		EnvoyMetricsPath: "/metrics/" + shepherd_common.GetProxyKey(&proxyScrapePoint.Key),
 	}
 	buf := bytes.Buffer{}
 	if err := promTargetTemplate.Execute(&buf, target); err != nil {
@@ -147,7 +165,7 @@ func writePrometheusTargetsFile(ctx context.Context, key interface{}) {
 		if targets != "[" {
 			targets += ","
 		}
-		promTargetJson, err := getAppInstPrometheusTargetString(&val.Key)
+		promTargetJson, err := getAppInstPrometheusTargetString(&val)
 		if err == nil {
 			targets += promTargetJson
 		}
@@ -396,7 +414,7 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "No AutoProvPolicy found", "app", app.Key, "cloudlet", appInst.Key.CloudletKey)
 		} else {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Apply AutoProvPolicy", "app", app.Key, "cloudlet", appInst.Key.CloudletKey, "policy", policy.Key)
-			ruleGrp := autorules.GetAutoUndeployRules(ctx, settings, &app.Key, policy)
+			ruleGrp := autorules.GetAutoUndeployRules(ctx, settings, &appInst.Key, policy)
 			if ruleGrp != nil {
 				grps.Groups = append(grps.Groups, *ruleGrp)
 			}

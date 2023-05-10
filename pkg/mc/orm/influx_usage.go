@@ -98,18 +98,26 @@ var appInstDataColumns = []string{
 	cloudcommon.MetricTagNote,
 }
 
-var usageInfluxDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
-	` WHERE time >='{{.StartTime}}'` +
-	` AND time <= '{{.EndTime}}'` +
-	`{{if .AppInstName}} AND "app"='{{.AppInstName}}'{{end}}` +
-	`{{if .ClusterName}} AND "cluster"='{{.ClusterName}}'{{end}}` +
-	`{{if .ApiCallerOrg}} AND "{{.OrgField}}"='{{.ApiCallerOrg}}'{{end}}` +
-	`{{if .AppVersion}} AND "ver"='{{.AppVersion}}'{{end}}` +
-	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
-	`{{if .CloudletOrg}} AND "cloudletorg"='{{.CloudletOrg}}'{{end}}` +
-	`{{if .DeploymentType}} AND deployment = '{{.DeploymentType}}'{{end}}` +
-	`{{if .CloudletList}} AND ({{.CloudletList}}){{end}}` +
-	` order by time desc`
+var usageInfluxDBT = fmt.Sprintf(`SELECT {{.Selector}} from {{.Measurement}}`+
+	` WHERE time >='{{.StartTime}}'`+
+	` AND time <= '{{.EndTime}}'`+
+	`{{if .AppInstName}} AND "%s"='{{.AppInstName}}'{{end}}`+
+	`{{if .AppInstOrg}} AND "%s"='{{.AppInstOrg}}'{{end}}`+
+	`{{if .ClusterName}} AND "%s"='{{.ClusterName}}'{{end}}`+
+	`{{if .ClusterOrg}} AND "%s"='{{.ClusterOrg}}'{{end}}`+
+	`{{if .CloudletName}} AND "%s"='{{.CloudletName}}'{{end}}`+
+	`{{if .CloudletOrg}} AND "%s"='{{.CloudletOrg}}'{{end}}`+
+	`{{if .CloudletFedOrg}} AND "%s"='{{.CloudletFedOrg}}'{{end}}`+
+	`{{if .DeploymentType}} AND deployment = '{{.DeploymentType}}'{{end}}`+
+	`{{if .CloudletList}} AND ({{.CloudletList}}){{end}}`+
+	` order by time desc`,
+	edgeproto.AppInstKeyTagName,
+	edgeproto.AppInstKeyTagOrganization,
+	edgeproto.ClusterKeyTagName,
+	edgeproto.ClusterKeyTagOrganization,
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization)
 
 var usageInfluxDBTemplate *template.Template
 
@@ -562,15 +570,8 @@ func ClusterCheckpointsQuery(obj *ormapi.RegionClusterInstUsage, cloudletList []
 		CloudletList: generateCloudletList(cloudletList),
 		ClusterName:  obj.ClusterInst.ClusterKey.Name,
 	}
-	if obj.ClusterInst.ClusterKey.Organization != "" {
-		arg.OrgField = edgeproto.ClusterKeyTagOrganization
-		arg.ApiCallerOrg = obj.ClusterInst.ClusterKey.Organization
-		arg.CloudletOrg = obj.ClusterInst.CloudletKey.Organization
-	} else {
-		arg.OrgField = edgeproto.CloudletKeyTagOrganization
-		arg.ApiCallerOrg = obj.ClusterInst.CloudletKey.Organization
-		arg.ClusterOrg = obj.ClusterInst.ClusterKey.Organization
-	}
+	arg.ClusterOrg = obj.ClusterInst.ClusterKey.Organization
+	arg.CloudletOrg = obj.ClusterInst.CloudletKey.Organization
 	// set endtime to start and back up starttime by a checkpoint interval to hit the most recent
 	// checkpoint that occurred before startTime
 	checkpointTime := prevCheckpoint(obj.StartTime)
@@ -584,15 +585,8 @@ func ClusterUsageEventsQuery(obj *ormapi.RegionClusterInstUsage, cloudletList []
 		CloudletList: generateCloudletList(cloudletList),
 		ClusterName:  obj.ClusterInst.ClusterKey.Name,
 	}
-	if obj.ClusterInst.ClusterKey.Organization != "" {
-		arg.OrgField = edgeproto.ClusterKeyTagOrganization
-		arg.ApiCallerOrg = obj.ClusterInst.ClusterKey.Organization
-		arg.CloudletOrg = obj.ClusterInst.CloudletKey.Organization
-	} else {
-		arg.OrgField = edgeproto.CloudletKeyTagOrganization
-		arg.ApiCallerOrg = obj.ClusterInst.CloudletKey.Organization
-		arg.ClusterOrg = obj.ClusterInst.ClusterKey.Organization
-	}
+	arg.ClusterOrg = obj.ClusterInst.ClusterKey.Organization
+	arg.CloudletOrg = obj.ClusterInst.CloudletKey.Organization
 	queryStart := prevCheckpoint(obj.StartTime)
 	return fillUsageTimeAndGetCmd(&arg, usageInfluxDBTemplate, &queryStart, &obj.EndTime)
 }
@@ -604,15 +598,8 @@ func AppInstCheckpointsQuery(obj *ormapi.RegionAppInstUsage, cloudletList []stri
 		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.Name),
 		CloudletList: generateCloudletList(cloudletList),
 	}
-	if obj.AppInst.Organization != "" {
-		arg.OrgField = edgeproto.AppInstKeyTagOrganization
-		arg.ApiCallerOrg = obj.AppInst.Organization
-		arg.CloudletOrg = obj.AppInst.CloudletKey.Organization
-	} else {
-		arg.OrgField = edgeproto.CloudletKeyTagOrganization
-		arg.ApiCallerOrg = obj.AppInst.CloudletKey.Organization
-		arg.AppInstOrg = obj.AppInst.Organization
-	}
+	arg.AppInstOrg = obj.AppInst.Organization
+	arg.CloudletOrg = obj.AppInst.CloudletKey.Organization
 	if obj.VmOnly {
 		arg.DeploymentType = cloudcommon.DeploymentTypeVM
 	}
@@ -629,14 +616,8 @@ func AppInstUsageEventsQuery(obj *ormapi.RegionAppInstUsage, cloudletList []stri
 		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.Name),
 		CloudletList: generateCloudletList(cloudletList),
 	}
-	if obj.AppInst.Organization != "" {
-		arg.OrgField = edgeproto.AppInstKeyTagOrganization
-		arg.ApiCallerOrg = obj.AppInst.Organization
-		arg.CloudletOrg = obj.AppInst.CloudletKey.Organization
-	} else {
-		arg.OrgField = edgeproto.CloudletKeyTagOrganization
-		arg.ApiCallerOrg = obj.AppInst.CloudletKey.Organization
-	}
+	arg.AppInstOrg = obj.AppInst.Organization
+	arg.CloudletOrg = obj.AppInst.CloudletKey.Organization
 	if obj.VmOnly {
 		arg.DeploymentType = cloudcommon.DeploymentTypeVM
 	}

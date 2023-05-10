@@ -17,21 +17,22 @@ regiondata:
   appdata:
     appinstances:
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovHA
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-autoprov
-          cloudletkey:
-            organization: azure
-            name: azure-cloud-4
-          organization: edgecloudorg
+        name: autoprov-autoprovha10
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: azure
+          name: azure-cloud-4
+      appkey:
+        organization: AcmeAppCo
+        name: autoprovHA
+        version: "1.0"
+      clusterkey:
+        name: Reservable3
+        organization: edgecloudorg
       cloudletloc:
         latitude: 32
         longitude: -91
-      uri: autoprovha10-acmeappco.azure-cloud-4-azure.local.edgecloude2e.net
+      uri: autoprov-autoprovha10-acmeappco.azure-cloud-4-azure.local.edgecloude2e.net
       liveness: Autoprov
       mappedports:
       - proto: Tcp
@@ -47,21 +48,21 @@ regiondata:
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
-      realclustername: Reservable3
-      uniqueid: acmeappcoautoprovha10-autocluster-autoprov-azure-cloud-4-azure
-      dnslabel: autoprovha10-acmeappco
+      uniqueid: acmeappco-autoprov-autoprovha10-azure-cloud-4-azure
+      dnslabel: autoprov-autoprovha10-acmeappco
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovHA
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-autoprov
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-1
-          organization: edgecloudorg
+        name: autoprov-autoprovha10
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-1
+      appkey:
+        organization: AcmeAppCo
+        name: autoprovHA
+        version: "1.0"
+      clusterkey:
+        name: Reservable1
+        organization: edgecloudorg
       cloudletloc:
         latitude: 31
         longitude: -91
@@ -80,25 +81,25 @@ regiondata:
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
-      realclustername: Reservable1
-      uniqueid: acmeappcoautoprovha10-autocluster-autoprov-dmuus-cloud-1-dmuus
-      dnslabel: autoprovha10-acmeappco
+      uniqueid: acmeappco-autoprov-autoprovha10-dmuus-cloud-1-dmuus
+      dnslabel: autoprov-autoprovha10-acmeappco
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovHA
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-autoprov
-          cloudletkey:
-            organization: gcp
-            name: gcp-cloud-5
-          organization: edgecloudorg
+        name: autoprov-autoprovha10
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: gcp
+          name: gcp-cloud-5
+      appkey:
+        organization: AcmeAppCo
+        name: autoprovHA
+        version: "1.0"
+      clusterkey:
+        name: Reservable4
+        organization: edgecloudorg
       cloudletloc:
         latitude: 36
         longitude: -95
-      uri: autoprovha10-acmeappco.gcp-cloud-5-gcp.local.edgecloude2e.net
+      uri: autoprov-autoprovha10-acmeappco.gcp-cloud-5-gcp.local.edgecloude2e.net
       liveness: Autoprov
       mappedports:
       - proto: Tcp
@@ -114,6 +115,5 @@ regiondata:
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
-      realclustername: Reservable4
-      uniqueid: acmeappcoautoprovha10-autocluster-autoprov-gcp-cloud-5-gcp
-      dnslabel: autoprovha10-acmeappco
+      uniqueid: acmeappco-autoprov-autoprovha10-gcp-cloud-5-gcp
+      dnslabel: autoprov-autoprovha10-acmeappco

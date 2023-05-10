@@ -180,7 +180,8 @@ func (s *AppInstWorker) createAppInst(ctx context.Context) (reterr error) {
 	}
 
 	appInstIn := edgeproto.AppInst{
-		Key: s.provAppInst.GetAppInstKey(),
+		Key:    s.provAppInst.GetAppInstKey(),
+		AppKey: s.provArt.GetAppKey(),
 		FedKey: edgeproto.FedAppInstKey{
 			FederationName: s.provider.Name,
 			AppInstId:      s.provAppInst.AppInstID,
@@ -463,6 +464,9 @@ func SetFedAppInstEvent(event *edgeproto.FedAppInstEvent, instanceState *fedewap
 			event.State = edgeproto.TrackedState_READY
 		case fedewapi.INSTANCESTATE_FAILED:
 			event.State = edgeproto.TrackedState_CREATE_ERROR
+			if message != nil {
+				event.Message = *message
+			}
 		case fedewapi.INSTANCESTATE_TERMINATING:
 			event.State = edgeproto.TrackedState_CREATE_ERROR
 			event.Message = "Terminating"

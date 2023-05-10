@@ -16,6 +16,7 @@
   tags:
     app: someapplication1
     apporg: AcmeAppCo
+    appver: "1.0"
     cloudlet: dmuus-cloud-1
     cloudletorg: dmuus
     method: FindCloudlet
@@ -33,6 +34,7 @@
   tags:
     app: someapplication1
     apporg: AcmeAppCo
+    appver: "1.0"
     cloudlet: dmuus-cloud-1
     cloudletorg: dmuus
     method: RegisterClient

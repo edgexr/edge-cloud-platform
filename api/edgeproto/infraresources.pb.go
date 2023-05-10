@@ -1324,13 +1324,14 @@ func (m *AppInstRefKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *AppInstRefKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("appinstrefname", m.Name)
+	addTag("appinstreforg", m.Organization)
+}
+
 func (m *AppInstRefKey) AddTags(tags map[string]string) {
-	if m.Name != "" {
-		tags["appinstrefname"] = m.Name
-	}
-	if m.Organization != "" {
-		tags["appinstreforg"] = m.Organization
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

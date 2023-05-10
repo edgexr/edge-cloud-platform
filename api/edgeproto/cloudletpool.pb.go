@@ -814,13 +814,14 @@ func (m *CloudletPoolKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *CloudletPoolKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("cloudletpoolorg", m.Organization)
+	addTag("cloudletpool", m.Name)
+}
+
 func (m *CloudletPoolKey) AddTags(tags map[string]string) {
-	if m.Organization != "" {
-		tags["cloudletpoolorg"] = m.Organization
-	}
-	if m.Name != "" {
-		tags["cloudletpool"] = m.Name
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

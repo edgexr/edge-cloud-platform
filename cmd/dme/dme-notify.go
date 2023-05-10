@@ -65,7 +65,6 @@ func (s *AppInstHandler) Update(ctx context.Context, in *edgeproto.AppInst, rev 
 
 func (s *AppInstHandler) Delete(ctx context.Context, in *edgeproto.AppInst, rev int64) {
 	dmecommon.RemoveAppInst(ctx, in)
-	dmecommon.PurgeAppInstClients(ctx, &in.Key, &in.AppKey)
 }
 
 func (s *AppInstHandler) Prune(ctx context.Context, keys map[edgeproto.AppInstKey]struct{}) {

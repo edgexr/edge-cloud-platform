@@ -32,45 +32,27 @@ appinsts:
   - region: PA
     appinst:
       key:
-        appkey:
-          organization: FedAppCo
-          name: dockerapp
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autoclusterdocker
-          cloudletkey:
-            organization: dmuus-partner1
-            name: dmuuscloud1
-            federatedorganization: partner1
-          organization: edgecloudorg
+        name: dockerapp
+        organization: FedAppCo
+        cloudletkey:
+          organization: dmuus-partner1
+          name: dmuuscloud1
+          federatedorganization: partner1
   - region: PA
     appinst:
       key:
-        appkey:
-          organization: FedAppCo
-          name: k8sapp
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autoclusterk8s
-          cloudletkey:
-            organization: dmuus-partner1
-            name: dmuuscloud1
-            federatedorganization: partner1
-          organization: edgecloudorg
+        name: k8sapp
+        organization: FedAppCo
+        cloudletkey:
+          organization: dmuus-partner1
+          name: dmuuscloud1
+          federatedorganization: partner1
   - region: PA
     appinst:
       key:
-        appkey:
-          organization: FedAppCo
-          name: vmapp
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: defaultclust
-          cloudletkey:
-            organization: dmuus-partner1
-            name: dmuuscloud2
-            federatedorganization: partner1
-          organization: FedAppCo
+        name: vmapp
+        organization: FedAppCo
+        cloudletkey:
+          organization: dmuus-partner1
+          name: dmuuscloud2
+          federatedorganization: partner1

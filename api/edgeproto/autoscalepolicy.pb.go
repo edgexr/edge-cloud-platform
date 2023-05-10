@@ -665,13 +665,14 @@ func (m *PolicyKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *PolicyKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("policyorg", m.Organization)
+	addTag("policy", m.Name)
+}
+
 func (m *PolicyKey) AddTags(tags map[string]string) {
-	if m.Organization != "" {
-		tags["policyorg"] = m.Organization
-	}
-	if m.Name != "" {
-		tags["policy"] = m.Name
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

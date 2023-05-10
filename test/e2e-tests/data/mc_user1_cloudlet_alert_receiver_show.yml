@@ -18,6 +18,7 @@ alertreceivers:
   severity: warning
   user: user1
   email: ops@mobiledgex.net
-  cloudlet:
-    organization: dmuus
-    name: dmuus-cloud-1
+  appinstkey:
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-1

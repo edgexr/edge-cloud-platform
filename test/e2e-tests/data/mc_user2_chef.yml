@@ -38,10 +38,10 @@ regiondata:
     - key:
         clusterkey:
           name: AppCluster
+          organization: DevOrg
         cloudletkey:
           organization: mexdev
           name: chef-test-1
-        organization: DevOrg
       flavor:
         name: x1.medium
       nummasters: 1
@@ -85,24 +85,26 @@ regiondata:
                 optional: true
     appinstances:
     - key:
-        appkey:
-          organization: DevOrg
-          name: DevOrg SDK Demo
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: AppCluster
-          cloudletkey:
-            organization: mexdev
-            name: chef-test-1
+        name: DevOrg SDK Demo
+        organization: DevOrg
+        cloudletkey:
+          organization: mexdev
+          name: chef-test-1
+      appkey:
+        organization: DevOrg
+        name: DevOrg SDK Demo
+        version: "1.0"
+      clusterkey:
+        name: AppCluster
     - key:
-        appkey:
-          organization: DevOrg
-          name: Face Detection Demo
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: AppCluster
-          cloudletkey:
-            organization: mexdev
-            name: chef-test-1
+        name: Face Detection Demo
+        organization: DevOrg
+        cloudletkey:
+          organization: mexdev
+          name: chef-test-1
+      appkey:
+        organization: DevOrg
+        name: Face Detection Demo
+        version: "1.0"
+      clusterkey:
+        name: AppCluster

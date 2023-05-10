@@ -264,16 +264,15 @@ func (m *CloudletKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *CloudletKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("cloudletorg", m.Organization)
+	addTag("cloudlet", m.Name)
+	addTag("cloudletfedorg", m.FederatedOrganization)
+}
+
 func (m *CloudletKey) AddTags(tags map[string]string) {
-	if m.Organization != "" {
-		tags["cloudletorg"] = m.Organization
-	}
-	if m.Name != "" {
-		tags["cloudlet"] = m.Name
-	}
-	if m.FederatedOrganization != "" {
-		tags["cloudletfedorg"] = m.FederatedOrganization
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

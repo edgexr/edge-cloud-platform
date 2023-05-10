@@ -25,10 +25,10 @@ clusterinsts:
 - key:
     clusterkey:
       name: jlmcluster
+      organization: edgecloudorg
     cloudletkey:
       organization: GDDT
       name: jlmcloudlet
-    organization: edgecloudorg
   flavor:
     name: x1.medium
   nummasters: 1 

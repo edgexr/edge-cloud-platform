@@ -14,17 +14,18 @@
 
 appinstances:
 - key:
-    appkey:
-      organization: AcmeAppCo
-      name: someapplication1
-      version: "1.0"
-    clusterinstkey:
-      clusterkey:
-        name: SmallCluster
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-1
-      organization: AcmeAppCo
+    name: someapplication1
+    organization: AcmeAppCo
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-1
+  appkey:
+    organization: AcmeAppCo
+    name: someapplication1
+    version: "1.0"
+  clusterkey:
+    name: SmallCluster
+    organization: AcmeAppCo
   cloudletloc:
     latitude: 31
     longitude: -91

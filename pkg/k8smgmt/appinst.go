@@ -358,7 +358,7 @@ func createOrUpdateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuth
 		}
 		mf = AddManifest(mf, np)
 	}
-	mf, err = MergeEnvVars(ctx, authApi, app, mf, names.ImagePullSecrets, names, appInstFlavor)
+	mf, err = MergeEnvVars(ctx, authApi, app, appInst, mf, names.ImagePullSecrets, names, appInstFlavor)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to merge env vars", "error", err)
 		return fmt.Errorf("error merging environment variables config file: %s", err)

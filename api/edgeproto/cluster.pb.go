@@ -307,10 +307,13 @@ func (m *ClusterKeyV1) GetTags() map[string]string {
 	return tags
 }
 
+func (m *ClusterKeyV1) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("cluster", m.Name)
+}
+
 func (m *ClusterKeyV1) AddTags(tags map[string]string) {
-	if m.Name != "" {
-		tags["cluster"] = m.Name
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -397,13 +400,14 @@ func (m *ClusterKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *ClusterKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("cluster", m.Name)
+	addTag("clusterorg", m.Organization)
+}
+
 func (m *ClusterKey) AddTags(tags map[string]string) {
-	if m.Name != "" {
-		tags["cluster"] = m.Name
-	}
-	if m.Organization != "" {
-		tags["clusterorg"] = m.Organization
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

@@ -43,16 +43,18 @@
     - key: local
     tagkeys:
     - key: app
+    - key: appinst
+    - key: appinstorg
     - key: apporg
     - key: appver
     - key: autoprovpolicy
     - key: cloudlet
+    - key: cloudletfedorg
     - key: cloudletorg
     - key: cluster
     - key: clusterorg
     - key: duration
     - key: email
-    - key: federatedorg
     - key: hostname
     - key: lineno
     - key: localuri
@@ -61,7 +63,6 @@
     - key: org
     - key: policy
     - key: policyorg
-    - key: realcluster
     - key: reason
     - key: region
     - key: remote-ip

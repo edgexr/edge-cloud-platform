@@ -54,14 +54,12 @@ regiondata:
 
     appinstances:
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: someapplication1
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-someapp1
-          cloudletkey:
-            organization: dmuus
-            name: kind-cloud-1
-          organization: edgecloudorg
+        name: someapplication1
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: dmuus
+          name: kind-cloud-1
+      appkey:
+        organization: AcmeAppCo
+        name: someapplication1
+        version: "1.0"

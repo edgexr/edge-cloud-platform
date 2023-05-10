@@ -992,7 +992,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		createStart := time.Now()
 		cctxauto := cctx.WithAutoCluster()
 		err := s.all.clusterInstApi.createClusterInstInternal(cctxauto, &clusterInst, cb)
-		nodeMgr.TimedEvent(ctx, "AutoCluster create", in.Key.Organization, node.EventType, in.Key.GetTags(), err, createStart, time.Now())
+		nodeMgr.TimedEvent(ctx, "AutoCluster create", in.Key.Organization, node.EventType, in.GetTags(), err, createStart, time.Now())
 		clusterInstReservationEvent(ctx, cloudcommon.ReserveClusterEvent, in)
 		if err != nil {
 			return err
@@ -1239,7 +1239,6 @@ func (s *AppInstApi) useReservableClusterInst(stm concurrency.STM, ctx context.C
 	log.SpanLog(ctx, log.DebugLevelApi, "reserving ClusterInst", "cluster", cibuf.Key.ClusterKey.Name, "AppInst", in.Key)
 	cibuf.ReservedBy = in.Key.Organization
 	s.all.clusterInstApi.store.STMPut(stm, cibuf)
-	in.RealClusterName = cibuf.Key.ClusterKey.Name
 	return nil
 }
 
@@ -1832,11 +1831,11 @@ func (s *AppInstApi) HealthCheckUpdate(ctx context.Context, key *edgeproto.AppIn
 		if inst.HealthCheck == dme.HealthCheck_HEALTH_CHECK_OK && state != dme.HealthCheck_HEALTH_CHECK_OK {
 			// healthy -> not healthy
 			s.RecordAppInstEvent(ctx, &inst, cloudcommon.HEALTH_CHECK_FAIL, cloudcommon.InstanceDown)
-			nodeMgr.Event(ctx, "AppInst offline", key.Organization, key.GetTags(), nil, "state", state.String())
+			nodeMgr.Event(ctx, "AppInst offline", key.Organization, inst.GetTags(), nil, "state", state.String())
 		} else if inst.HealthCheck != dme.HealthCheck_HEALTH_CHECK_OK && state == dme.HealthCheck_HEALTH_CHECK_OK {
 			// not healthy -> healthy
 			s.RecordAppInstEvent(ctx, &inst, cloudcommon.HEALTH_CHECK_OK, cloudcommon.InstanceUp)
-			nodeMgr.Event(ctx, "AppInst online", key.Organization, key.GetTags(), nil, "state", state.String())
+			nodeMgr.Event(ctx, "AppInst online", key.Organization, inst.GetTags(), nil, "state", state.String())
 		}
 		inst.HealthCheck = state
 		s.store.STMPut(stm, &inst)
@@ -2187,5 +2186,5 @@ func (s *AppInstApi) RecordAppInstEvent(ctx context.Context, appInst *edgeproto.
 }
 
 func clusterInstReservationEvent(ctx context.Context, eventName string, appInst *edgeproto.AppInst) {
-	nodeMgr.Event(ctx, eventName, appInst.Key.Organization, appInst.Key.GetTags(), nil, edgeproto.ClusterKeyTagName, appInst.ClusterKey.Name, edgeproto.ClusterKeyTagOrganization, appInst.ClusterKey.Organization)
+	nodeMgr.Event(ctx, eventName, appInst.Key.Organization, appInst.GetTags(), nil, edgeproto.ClusterKeyTagName, appInst.ClusterKey.Name, edgeproto.ClusterKeyTagOrganization, appInst.ClusterKey.Organization)
 }

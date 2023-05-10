@@ -38,7 +38,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
-	"github.com/google/uuid"
 )
 
 const (
@@ -189,7 +188,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	}
 
 	req := fedewapi.InstallAppRequest{
-		AppInstanceId: uuid.New().String(), // TODO: no uniqueness check
+		AppInstanceId: appInst.Key.Name,
 		AppId:         app.GlobalId,
 		AppVersion:    app.Key.Version,
 		AppProviderId: util.DNSSanitize(app.Key.Organization),
@@ -290,7 +289,7 @@ func createAppInstPoller(ctx context.Context, fedClient *federationmgmt.Client, 
 			} else {
 				event := edgeproto.FedAppInstEvent{}
 				// TODO: add message once it's added to GET response
-				federation.SetFedAppInstEvent(&event, out.AppInstanceState, nil, out.AccesspointInfo)
+				federation.SetFedAppInstEvent(&event, out.AppInstanceState, out.StateDescription, out.AccesspointInfo)
 				eventsCh <- event
 			}
 			retryDelay = CreatePollingRetryDelay

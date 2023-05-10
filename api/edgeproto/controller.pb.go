@@ -469,10 +469,13 @@ func (m *ControllerKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *ControllerKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("controlleraddr", m.Addr)
+}
+
 func (m *ControllerKey) AddTags(tags map[string]string) {
-	if m.Addr != "" {
-		tags["controlleraddr"] = m.Addr
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

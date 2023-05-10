@@ -23,7 +23,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	platform "github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 // For each cluster the notify worker is created
@@ -77,9 +76,9 @@ func (p *AppInstWorker) sendMetrics() {
 			ClusterKey:  p.clusterKey,
 			CloudletKey: p.appInstKey.CloudletKey,
 		},
-		Pod:     p.appInstKey.Name,
-		App:     util.DNSSanitize(p.appKey.Name),
-		Version: util.DNSSanitize(p.appKey.Version),
+		Pod:         p.appInstKey.Name,
+		AppInstName: p.appInstKey.Name,
+		AppInstOrg:  p.appInstKey.Organization,
 	}
 	log.SpanLog(ctx, log.DebugLevelMetrics, "Collecting metrics for app", "key", key)
 	stat, err := p.pf.GetVmStats(ctx, &p.appInstKey)

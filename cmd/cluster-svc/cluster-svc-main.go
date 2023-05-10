@@ -611,7 +611,7 @@ func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterI
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "create appinst", "appinst", platformAppInst.String(), "result", res.String(), "err", err)
 	if err == nil {
-		nodeMgr.TimedEvent(ctx, "cluster-svc create AppInst", platformApp.Key.Organization, node.EventType, platformAppInst.Key.GetTags(), err, eventStart, time.Now())
+		nodeMgr.TimedEvent(ctx, "cluster-svc create AppInst", platformApp.Key.Organization, node.EventType, platformAppInst.GetTags(), err, eventStart, time.Now())
 		clearAlertAppInst(ctx, &platformAppInst)
 	} else {
 		// Generate an alert
@@ -654,7 +654,7 @@ func appInstToAlertLabels(appInst *edgeproto.AppInst) map[string]string {
 	labels["alertname"] = cloudcommon.AlertClusterSvcAppInstFailure
 	labels[cloudcommon.AlertScopeTypeTag] = cloudcommon.AlertScopePlatform
 
-	labels = util.AddMaps(labels, appInst.Key.GetTags())
+	labels = util.AddMaps(labels, appInst.GetTags())
 
 	return labels
 }
@@ -820,7 +820,7 @@ func updateAppInsts(ctx context.Context, appkey *edgeproto.AppKey) {
 			log.SpanLog(ctx, log.DebugLevelApi, "Unable to update appinst",
 				"appinst", appInst, "error", err.Error())
 		} else {
-			nodeMgr.TimedEvent(ctx, "cluster-svc refresh AppInsts", appkey.Organization, node.EventType, appInst.Key.GetTags(), nil, eventStart, time.Now())
+			nodeMgr.TimedEvent(ctx, "cluster-svc refresh AppInsts", appkey.Organization, node.EventType, appInst.GetTags(), nil, eventStart, time.Now())
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "update appinst", "appinst", appInst.String(), "result", res.String())
 	}

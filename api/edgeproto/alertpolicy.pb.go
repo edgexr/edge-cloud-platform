@@ -703,13 +703,14 @@ func (m *AlertPolicyKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *AlertPolicyKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("alertorg", m.Organization)
+	addTag("alert", m.Name)
+}
+
 func (m *AlertPolicyKey) AddTags(tags map[string]string) {
-	if m.Organization != "" {
-		tags["alertorg"] = m.Organization
-	}
-	if m.Name != "" {
-		tags["alert"] = m.Name
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

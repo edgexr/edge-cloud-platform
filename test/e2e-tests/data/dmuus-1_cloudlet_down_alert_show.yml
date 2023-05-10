@@ -14,14 +14,11 @@
 
 - labels:
     alertname: AppInstDown
-    app: someapplication1
-    apporg: AcmeAppCo
-    appver: "1.0"
+    appinst: someapplication1
+    appinstorg: AcmeAppCo
     cloudlet: dmuus-cloud-1
+    cloudletfedorg: ""
     cloudletorg: dmuus
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
-    federatedorg: ""
     region: local
     scope: Application
     status: HealthCheckCloudletOffline

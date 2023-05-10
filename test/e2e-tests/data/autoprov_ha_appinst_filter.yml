@@ -17,7 +17,8 @@ regiondata:
   appdata:
     appinstances:
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovHA
-          version: "1.0"
+        organization: AcmeAppCo
+      appkey:
+        organization: AcmeAppCo
+        name: autoprovHA
+        version: "1.0"

@@ -18,7 +18,6 @@ import (
 	fmt "fmt"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -62,43 +61,28 @@ func CreateAlertReceiver(c echo.Context) error {
 		return fmt.Errorf("User is not specifiable, current logged in user will be used")
 	}
 	in.User = claims.Username
-	// at least one key must be specified
-	if in.CloudletKey.Organization == "" &&
+	// at least one org must be specified
+	if in.AppInstKey.CloudletKey.Organization == "" &&
 		in.AppInstKey.Organization == "" &&
-		in.ClusterInstKey.ClusterKey.Organization == "" &&
+		in.AppKey.Organization == "" &&
+		in.ClusterKey.Organization == "" &&
 		!isAdmin(ctx, claims.Username) {
-		return fmt.Errorf("Either cloudlet, cluster or app instance details must be specified")
+		return fmt.Errorf("Either cloudlet, cluster, app, or app instance organization must be specified")
 	}
-	// make sure at most one set is specified
-	specified := 0
-	if !in.AppInstKey.Matches(&edgeproto.AppInstKey{}) {
-		specified++
+	org, scope := ormutil.GetOrgAndScopeForReceiver(&in)
+	if err := authorized(ctx, claims.Username, org, ResourceAlert, ActionView); err != nil {
+		return err
 	}
-	if !in.ClusterInstKey.Matches(&edgeproto.ClusterInstKey{}) {
-		specified++
-	}
-	if !in.CloudletKey.Matches(&edgeproto.CloudletKey{}) {
-		specified++
-	}
-	if specified > 1 {
-		return fmt.Errorf("Only one set of cloudlet, cluster, or appinst details may be specified")
-	}
-	if in.CloudletKey.Organization != "" {
-		// Check that user is allowed to access either of the orgs
-		if err := authorized(ctx, claims.Username, in.CloudletKey.Organization,
-			ResourceAlert, ActionView); err != nil {
-			return err
+	if scope == cloudcommon.AlertScopeCloudlet {
+		// cloudlet scoped alert cannot specify appinst/clusterinst
+		if in.AppInstKey.Name != "" {
+			return fmt.Errorf("AppInst details cannot be specified without AppInst, App, or Cluster organization")
 		}
-	} else if in.AppInstKey.Organization != "" {
-		if err := authorized(ctx, claims.Username, in.AppInstKey.Organization,
-			ResourceAlert, ActionView); err != nil {
-			return err
+		if in.AppKey.Name != "" || in.AppKey.Version != "" {
+			return fmt.Errorf("App details cannot be specified without AppInst, App, or Cluster organization")
 		}
-	} else if in.ClusterInstKey.ClusterKey.Organization != "" {
-		// It could be just a cluster-based alert receiver
-		if err := authorized(ctx, claims.Username, in.ClusterInstKey.ClusterKey.Organization,
-			ResourceAlert, ActionView); err != nil {
-			return err
+		if in.ClusterKey.Name != "" {
+			return fmt.Errorf("ClusterInst details cannot be specified without AppInst, App, or Cluster organization")
 		}
 	}
 
@@ -143,22 +127,6 @@ func CreateAlertReceiver(c echo.Context) error {
 	return ormutil.SetReply(c, ormutil.Msg("Alert receiver created successfully"))
 }
 
-func getOrgForReceiver(in *ormapi.AlertReceiver) string {
-	if in == nil {
-		return ""
-	}
-	org := ""
-
-	if in.CloudletKey.Organization != "" {
-		org = in.CloudletKey.Organization
-	} else if in.AppInstKey.Organization != "" {
-		org = in.AppInstKey.Organization
-	} else if in.ClusterInstKey.ClusterKey.Organization != "" {
-		org = in.ClusterInstKey.ClusterKey.Organization
-	}
-	return org
-}
-
 // Delete alert receiver api handler
 func DeleteAlertReceiver(c echo.Context) error {
 	claims, err := getClaims(c)
@@ -173,7 +141,7 @@ func DeleteAlertReceiver(c echo.Context) error {
 		return err
 	}
 
-	org := getOrgForReceiver(&in)
+	org, _ := ormutil.GetOrgAndScopeForReceiver(&in)
 	// if a user is specified we need to make sure this user has permissions to manage the users in the org
 	if in.User != "" && in.User != claims.Username {
 		if org == "" {
@@ -247,7 +215,7 @@ func ShowAlertReceiver(c echo.Context) error {
 	if !isAdmin {
 		// If a user is a user-management role for the org in the filter allow user to be specified
 		if filter.User != "" && filter.User != claims.Username {
-			filterOrg := getOrgForReceiver(&filter)
+			filterOrg, _ := ormutil.GetOrgAndScopeForReceiver(&filter)
 			if filterOrg == "" {
 				return fmt.Errorf("Org details must be present to see receivers")
 			}
@@ -264,7 +232,7 @@ func ShowAlertReceiver(c echo.Context) error {
 		return err
 	}
 	for ii := range receivers {
-		org := getOrgForReceiver(&receivers[ii])
+		org, _ := ormutil.GetOrgAndScopeForReceiver(&receivers[ii])
 		if _, found := allowedOrgs[org]; found || isAdmin {
 			alertRecs = append(alertRecs, receivers[ii])
 		}

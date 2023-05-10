@@ -1092,13 +1092,14 @@ func (m *DeviceKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *DeviceKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("deviceidtype", m.UniqueIdType)
+	addTag("deviceid", m.UniqueId)
+}
+
 func (m *DeviceKey) AddTags(tags map[string]string) {
-	if m.UniqueIdType != "" {
-		tags["deviceidtype"] = m.UniqueIdType
-	}
-	if m.UniqueId != "" {
-		tags["deviceid"] = m.UniqueId
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

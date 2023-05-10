@@ -344,16 +344,16 @@ func TestAlertMgrServer(t *testing.T) {
 	require.NotNil(t, route)
 	routeLblVal, found = route.Match[edgeproto.ClusterKeyTagOrganization]
 	require.True(t, found)
-	require.Equal(t, routeLblVal, testAlertReceivers[4].ClusterInstKey.ClusterKey.Organization)
+	require.Equal(t, routeLblVal, testAlertReceivers[4].ClusterKey.Organization)
 	routeLblVal, found = route.Match[edgeproto.ClusterKeyTagName]
 	require.True(t, found)
-	require.Equal(t, routeLblVal, testAlertReceivers[4].ClusterInstKey.ClusterKey.Name)
+	require.Equal(t, routeLblVal, testAlertReceivers[4].ClusterKey.Name)
 	routeLblVal, found = route.Match[edgeproto.CloudletKeyTagName]
 	require.True(t, found)
-	require.Equal(t, routeLblVal, testAlertReceivers[4].ClusterInstKey.CloudletKey.Name)
+	require.Equal(t, routeLblVal, testAlertReceivers[4].AppInstKey.CloudletKey.Name)
 	routeLblVal, found = route.Match[edgeproto.CloudletKeyTagOrganization]
 	require.True(t, found)
-	require.Equal(t, routeLblVal, testAlertReceivers[4].ClusterInstKey.CloudletKey.Organization)
+	require.Equal(t, routeLblVal, testAlertReceivers[4].AppInstKey.CloudletKey.Organization)
 
 	// Verify ShowReceivers
 	receivers, err = testAlertMgrServer.ShowReceivers(ctx, nil)

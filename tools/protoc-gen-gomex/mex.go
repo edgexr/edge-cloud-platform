@@ -2370,8 +2370,14 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 		m.P("}")
 		m.P()
 
-		m.P("func (m *", message.Name, ") AddTags(tags map[string]string) {")
+		m.P("func (m *", message.Name, ") AddTagsByFunc(addTag AddTagFunc) {")
 		m.setKeyTags([]string{}, desc, []*generator.Descriptor{})
+		m.P("}")
+		m.P()
+
+		m.P("func (m *", message.Name, ") AddTags(tags map[string]string) {")
+		m.P("tagMap := TagMap(tags)")
+		m.P("m.AddTagsByFunc(tagMap.AddTag)")
 		m.P("}")
 		m.P()
 
@@ -2789,9 +2795,7 @@ func (m *mex) setKeyTags(parents []string, desc *generator.Descriptor, visited [
 		if *field.Type == descriptor.FieldDescriptorProto_TYPE_ENUM {
 			val = m.support.GoType(m.gen, field) + "_name[int32(" + val + ")]"
 		}
-		m.P("if ", val, " != \"\" {")
-		m.P("tags[\"", tag, "\"] = ", val)
-		m.P("}")
+		m.P("addTag(\"", tag, "\",", val, ")")
 	}
 }
 

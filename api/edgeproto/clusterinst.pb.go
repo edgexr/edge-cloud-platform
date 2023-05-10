@@ -1551,22 +1551,17 @@ func (m *ClusterInstKeyV1) GetTags() map[string]string {
 	return tags
 }
 
+func (m *ClusterInstKeyV1) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("cluster", m.ClusterKey.Name)
+	addTag("cloudletorg", m.CloudletKey.Organization)
+	addTag("cloudlet", m.CloudletKey.Name)
+	addTag("cloudletfedorg", m.CloudletKey.FederatedOrganization)
+	addTag("clusterorg", m.Organization)
+}
+
 func (m *ClusterInstKeyV1) AddTags(tags map[string]string) {
-	if m.ClusterKey.Name != "" {
-		tags["cluster"] = m.ClusterKey.Name
-	}
-	if m.CloudletKey.Organization != "" {
-		tags["cloudletorg"] = m.CloudletKey.Organization
-	}
-	if m.CloudletKey.Name != "" {
-		tags["cloudlet"] = m.CloudletKey.Name
-	}
-	if m.CloudletKey.FederatedOrganization != "" {
-		tags["cloudletfedorg"] = m.CloudletKey.FederatedOrganization
-	}
-	if m.Organization != "" {
-		tags["clusterorg"] = m.Organization
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -1666,22 +1661,17 @@ func (m *ClusterInstKey) GetTags() map[string]string {
 	return tags
 }
 
+func (m *ClusterInstKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("cluster", m.ClusterKey.Name)
+	addTag("clusterorg", m.ClusterKey.Organization)
+	addTag("cloudletorg", m.CloudletKey.Organization)
+	addTag("cloudlet", m.CloudletKey.Name)
+	addTag("cloudletfedorg", m.CloudletKey.FederatedOrganization)
+}
+
 func (m *ClusterInstKey) AddTags(tags map[string]string) {
-	if m.ClusterKey.Name != "" {
-		tags["cluster"] = m.ClusterKey.Name
-	}
-	if m.ClusterKey.Organization != "" {
-		tags["clusterorg"] = m.ClusterKey.Organization
-	}
-	if m.CloudletKey.Organization != "" {
-		tags["cloudletorg"] = m.CloudletKey.Organization
-	}
-	if m.CloudletKey.Name != "" {
-		tags["cloudlet"] = m.CloudletKey.Name
-	}
-	if m.CloudletKey.FederatedOrganization != "" {
-		tags["cloudletfedorg"] = m.CloudletKey.FederatedOrganization
-	}
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values

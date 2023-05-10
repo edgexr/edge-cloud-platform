@@ -232,11 +232,35 @@ func initAppInstTestData() {
 			{
 			  "metric": {
                 "pod": "testPod1",
-                "label_mexAppName": "testPod1",
+                "label_mexAppName": "testpod1",
                 "label_mexAppVersion": "10"
 			  },
 			  "value": [
 				1549491454.802,
+				"5.0"
+			  ]
+			},
+			{
+			  "metric": {
+			    "pod": "testPod2",
+				"label_mexAppInstName": "testAi2",
+				"label_mexAppInstOrg": "testOrg"
+			  },
+			  "value": [
+			    1549491454.802,
+				"5.0"
+			  ]
+			},
+			{
+			  "metric": {
+			    "pod": "testPod3",
+				"label_mexAppInstName": "testAi3",
+				"label_mexAppInstOrg": "testOrg",
+                "label_mexAppName": "testapp3",
+                "label_mexAppVersion": "10"
+			  },
+			  "value": [
+			    1549491454.802,
 				"5.0"
 			  ]
 			}
@@ -251,7 +275,7 @@ func initAppInstTestData() {
 			{
 	  		"metric": {
               "pod": "testPod1",
-              "label_mexAppName": "testPod1",
+              "label_mexAppName": "testpod1",
               "label_mexAppVersion": "10"
 	  	    },
 	  		"value": [
@@ -270,7 +294,7 @@ func initAppInstTestData() {
 			{
 			  "metric": {
 				"pod": "testPod1",
-				"label_mexAppName": "testPod1",
+				"label_mexAppName": "testpod1",
 				"label_mexAppVersion": "10"
 			},
 			"value": [
@@ -289,7 +313,7 @@ func initAppInstTestData() {
 			{
 	  		"metric": {
 				"pod": "testPod1",
-				"label_mexAppName": "testPod1",
+				"label_mexAppName": "testpod1",
 				"label_mexAppVersion": "10"
 	  		},
 	  		"value": [
@@ -308,7 +332,7 @@ func initAppInstTestData() {
 			{
 	  		"metric": {
 				"pod": "testPod1",
-				"label_mexAppName": "testPod1",
+				"label_mexAppName": "testpod1",
 				"label_mexAppVersion": "10"
 	  		},
 	  		"value": [
@@ -370,10 +394,54 @@ func TestProxyScraperTimers(t *testing.T) {
 }
 
 func TestPromStats(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelApi | log.DebugLevelMetrics)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 	initAppInstTestData()
+	edgeproto.InitAppInstCache(&AppInstCache)
+	appInst := edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         "testAi1",
+			Organization: "testOrg",
+			CloudletKey:  testClusterInstKey.CloudletKey,
+		},
+		AppKey: edgeproto.AppKey{
+			Name:         "testPod1",
+			Version:      "1.0",
+			Organization: "testOrg",
+		},
+		// backwards compatibility test, uses old app name labels
+	}
+	appInst2 := edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         "testAi2",
+			Organization: "testOrg",
+			CloudletKey:  testClusterInstKey.CloudletKey,
+		},
+		AppKey: edgeproto.AppKey{
+			Name:         "testApp2",
+			Version:      "1.0",
+			Organization: "testOrg",
+		},
+		CompatibilityVersion: cloudcommon.AppInstCompatibilityUniqueNameKey,
+	}
+	appInst3 := edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         "testAi3",
+			Organization: "testOrg",
+			CloudletKey:  testClusterInstKey.CloudletKey,
+		},
+		AppKey: edgeproto.AppKey{
+			Name:         "testApp3",
+			Version:      "1.0",
+			Organization: "testOrg",
+		},
+		CompatibilityVersion: cloudcommon.AppInstCompatibilityUniqueNameKey,
+	}
+	AppInstCache.Update(ctx, &appInst, 0)
+	AppInstCache.Update(ctx, &appInst2, 0)
+	AppInstCache.Update(ctx, &appInst3, 0)
 
 	*platformName = "PLATFORM_TYPE_FAKEINFRA"
 	testPlatform, _ := getPlatform()
@@ -402,6 +470,9 @@ func TestPromStats(t *testing.T) {
 	require.Nil(t, err, "Got kubeNames")
 	testPromStats, err = NewClusterWorker(ctx, tsProm.URL[7:], 0, time.Second*1, time.Second*1, testMetricSend, &testClusterInst, kubeNames, testPlatform)
 	require.Nil(t, err, "Get a platform client for fake cloudlet")
+	testPromStats.clusterStat.TrackAppInst(ctx, &appInst)
+	testPromStats.clusterStat.TrackAppInst(ctx, &appInst2)
+	testPromStats.clusterStat.TrackAppInst(ctx, &appInst3)
 	clusterMetrics := testPromStats.clusterStat.GetClusterStats(ctx)
 	appsMetrics := testPromStats.clusterStat.GetAppStats(ctx)
 	alerts := testPromStats.clusterStat.GetAlerts(ctx)
@@ -409,8 +480,8 @@ func TestPromStats(t *testing.T) {
 	require.NotNil(t, appsMetrics, "Fill stats from json")
 	require.NotNil(t, alerts, "Fill metrics from json")
 	testAppKey.Pod = "testPod1"
-	testAppKey.App = "testPod1"
-	testAppKey.Version = "10"
+	testAppKey.AppInstName = appInst.Key.Name
+	testAppKey.AppInstOrg = appInst.Key.Organization
 	stat, found := appsMetrics[testAppKey]
 	// Check PodStats
 	require.True(t, found, "Pod testPod1 is not found")
@@ -449,4 +520,16 @@ func TestPromStats(t *testing.T) {
 	// Check null handling for Marshal functions
 	require.Nil(t, testPromStats.MarshalClusterMetrics(nil), "Nil metrics should marshal into a nil")
 	require.Nil(t, MarshalAppMetrics(&testAppKey, nil, ""), "Nil metrics should marshal into a nil")
+
+	testAppKey.Pod = "testPod2"
+	testAppKey.AppInstName = appInst2.Key.Name
+	testAppKey.AppInstOrg = appInst2.Key.Organization
+	_, found = appsMetrics[testAppKey]
+	require.True(t, found, "Stats for testPod2 is not found")
+
+	testAppKey.Pod = "testPod3"
+	testAppKey.AppInstName = appInst3.Key.Name
+	testAppKey.AppInstOrg = appInst3.Key.Organization
+	_, found = appsMetrics[testAppKey]
+	require.True(t, found, "Stats for testPod3 is not found")
 }

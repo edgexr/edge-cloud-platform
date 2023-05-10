@@ -78,6 +78,14 @@ func autoUndeploy(ctx context.Context, name string, alert *edgeproto.Alert) erro
 	inst := edgeproto.AppInst{}
 	inst.Key.Organization = alert.Labels[edgeproto.AppInstKeyTagOrganization]
 	inst.Key.Name = alert.Labels[edgeproto.AppInstKeyTagName]
+	inst.Key.CloudletKey.Name = alert.Labels[edgeproto.CloudletKeyTagName]
+	inst.Key.CloudletKey.Organization = alert.Labels[edgeproto.CloudletKeyTagOrganization]
+	inst.Key.CloudletKey.FederatedOrganization = alert.Labels[edgeproto.CloudletKeyTagFederatedOrganization]
+	inst.AppKey.Name = alert.Labels[edgeproto.AppKeyTagName]
+	inst.AppKey.Version = alert.Labels[edgeproto.AppKeyTagVersion]
+	inst.AppKey.Organization = alert.Labels[edgeproto.AppKeyTagOrganization]
+	inst.ClusterKey.Name = alert.Labels[edgeproto.ClusterKeyTagName]
+	inst.ClusterKey.Organization = alert.Labels[edgeproto.ClusterKeyTagOrganization]
 
 	// we're already in a separate go thread so don't need another one here
 	goAppInstApi(ctx, &inst, cloudcommon.Delete, cloudcommon.AutoProvReasonDemand, "")
