@@ -111,7 +111,7 @@ func IsAppInstBeingDeletedError(err error) bool {
 	return false
 }
 
-// Generate recognizable name for autoprov deployed instances.
+// Generate unique and recognizable name for autoprov deployed instances.
 // Only one auto-provisioned instance per app is allowed per cloudlet.
 func GetAutoProvAppInstKey(appKey *edgeproto.AppKey, cloudletKey *edgeproto.CloudletKey) edgeproto.AppInstKey {
 	name := AutoProvPrefix + "-" + appKey.Name + appKey.Version

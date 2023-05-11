@@ -42,9 +42,19 @@ var (
 		` fill(previous)` +
 		` order by time desc {{if ne .Limit 0}}limit {{.Limit}}{{end}}`
 
-	AppInstGroupFields     = "appinst,appinstorg,cloudlet,cloudletorg"
-	ClusterInstGroupFields = "cluster,clusterorg,cloudlet,cloudletorg"
-	CloudletGroupFields    = "cloudlet,cloudletorg"
+	AppInstGroupFields = strings.Join([]string{
+		edgeproto.AppInstKeyTagName,
+		edgeproto.AppInstKeyTagOrganization,
+		edgeproto.CloudletKeyTagName,
+		edgeproto.CloudletKeyTagOrganization}, ",")
+	ClusterInstGroupFields = strings.Join([]string{
+		edgeproto.ClusterKeyTagName,
+		edgeproto.ClusterKeyTagOrganization,
+		edgeproto.CloudletKeyTagName,
+		edgeproto.CloudletKeyTagOrganization}, ",")
+	CloudletGroupFields = strings.Join([]string{
+		edgeproto.CloudletKeyTagName,
+		edgeproto.CloudletKeyTagOrganization}, ",")
 )
 
 type MetricsObject interface {
@@ -160,7 +170,7 @@ func (m *appInstMetrics) GetQueryFilter(cloudletList []string) string {
 	for ii, app := range m.AppInsts {
 		filterStr += `("appinstorg"='` + app.Organization + `'`
 		if app.Name != "" {
-			filterStr += ` AND "appinst"='` + util.DNSSanitize(app.Name) + `'`
+			filterStr += ` AND "appinst"='` + app.Name + `'`
 		}
 		if app.CloudletKey.Name != "" {
 			filterStr += ` AND "cloudlet"='` + app.CloudletKey.Name + `'`

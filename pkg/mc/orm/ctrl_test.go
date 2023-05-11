@@ -170,7 +170,6 @@ func TestController(t *testing.T) {
 		cols = append(cols, colsSplit...)
 		colValMap := make(map[string]string)
 		colValMap[`"time"`] = fmt.Sprintf(`"%s"`, time.Now().Format(time.RFC3339Nano))
-		fmt.Printf("ctrl_test serving influx data for request selectors %v\n", cols)
 		for ii, _ := range cols {
 			// add quotes if missing
 			if !strings.Contains(cols[ii], `"`) {

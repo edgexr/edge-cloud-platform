@@ -1075,21 +1075,24 @@ var AppInstLookup2SpecialArgs = map[string]string{}
 var AppInstLatencyRequiredArgs = []string{
 	"appinstname",
 	"appinstorg",
-	"key.cloudletkey.organization",
-	"key.cloudletkey.name",
-	"key.cloudletkey.federatedorganization",
+	"cloudletorg",
+	"cloudlet",
+	"cloudletfedorg",
 }
 var AppInstLatencyOptionalArgs = []string{}
 var AppInstLatencyAliasArgs = []string{
 	"appinstname=key.name",
 	"appinstorg=key.organization",
+	"cloudletorg=key.cloudletkey.organization",
+	"cloudlet=key.cloudletkey.name",
+	"cloudletfedorg=key.cloudletkey.federatedorganization",
 }
 var AppInstLatencyComments = map[string]string{
-	"appinstname":                           "App Instance name",
-	"appinstorg":                            "App Instance organization",
-	"key.cloudletkey.organization":          "Organization of the cloudlet site",
-	"key.cloudletkey.name":                  "Name of the cloudlet",
-	"key.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
+	"appinstname":    "App Instance name",
+	"appinstorg":     "App Instance organization",
+	"cloudletorg":    "Organization of the cloudlet site",
+	"cloudlet":       "Name of the cloudlet",
+	"cloudletfedorg": "Federated operator organization who shared this cloudlet",
 }
 var AppInstLatencySpecialArgs = map[string]string{}
 var FedAppInstKeyRequiredArgs = []string{}

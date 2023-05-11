@@ -733,7 +733,7 @@ func (s *policyTest) count() int {
 }
 
 func (s *policyTest) getAppInsts(key *edgeproto.AppKey, dc *DummyController) []edgeproto.AppInst {
-	// Since name is random we need to look up created ones
+	// Get AppInsts for the App
 	insts := []edgeproto.AppInst{}
 	filter := edgeproto.AppInst{
 		AppKey: *key,

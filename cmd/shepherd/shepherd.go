@@ -170,7 +170,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		}
 		if new.State == edgeproto.TrackedState_READY {
 			clusterWorker.clusterStat.TrackAppInst(ctx, new)
-		} else if new.State != edgeproto.TrackedState_READY {
+		} else {
 			clusterWorker.clusterStat.UntrackAppInst(ctx, new)
 		}
 		return

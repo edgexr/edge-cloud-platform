@@ -215,8 +215,8 @@ func (s *AppInstApi) AutoDeleteAppInsts(ctx context.Context, dynInsts map[edgepr
 		if !s.cache.Get(&key, val) {
 			continue
 		}
-		log.SpanLog(ctx, log.DebugLevelApi, "Auto-deleting AppInst ", "appinst", val.AppKey.Name)
-		cb.Send(&edgeproto.Result{Message: "Autodeleting AppInst " + val.AppKey.Name})
+		log.SpanLog(ctx, log.DebugLevelApi, "Auto-deleting AppInst", "appinst", val.Key.Name)
+		cb.Send(&edgeproto.Result{Message: "Autodeleting AppInst " + val.Key.Name})
 		for {
 			// ignore CRM errors when deleting dynamic apps as we will be deleting the cluster anyway
 			cctx := DefCallContext()
@@ -237,10 +237,10 @@ func (s *AppInstApi) AutoDeleteAppInsts(ctx context.Context, dynInsts map[edgepr
 				strings.Contains(err.Error(), ActionInProgressMsg)) {
 				spinTime = time.Since(start)
 				if spinTime > s.all.settingsApi.Get().DeleteAppInstTimeout.TimeDuration() {
-					log.SpanLog(ctx, log.DebugLevelApi, "Timeout while waiting for App", "appName", val.AppKey.Name)
+					log.SpanLog(ctx, log.DebugLevelApi, "Timeout while waiting for AppInst", "appInstName", val.Key.Name)
 					return err
 				}
-				log.SpanLog(ctx, log.DebugLevelApi, "AppInst busy, retrying in 0.5s...", "appName", val.AppKey.Name)
+				log.SpanLog(ctx, log.DebugLevelApi, "AppInst busy, retrying in 0.5s...", "AppInst Name", val.Key.Name)
 				time.Sleep(500 * time.Millisecond)
 			} else { //if its anything other than an appinst busy error, break out of the spin
 				break
@@ -714,9 +714,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 
 		if autoClusterType == NoAutoCluster && cloudcommon.IsClusterInstReqd(&app) {
-			if in.ClusterKey.Organization == "" {
-				return fmt.Errorf("Cluster organization must be specified if Cluster name is specified")
-			}
 			// Specified ClusterInst must exist
 			var clusterInst edgeproto.ClusterInst
 			if !s.all.clusterInstApi.store.STMGet(stm, in.ClusterInstKey(), &clusterInst) {
@@ -1250,7 +1247,7 @@ func useMultiTenantClusterInst(stm concurrency.STM, ctx context.Context, in *edg
 		// no restrictions, no resource check
 	}
 	if !app.AllowServerless {
-		return fmt.Errorf("App must allow serverless deployment to deploy to multi-tenant cluster %s", in.RealClusterName)
+		return fmt.Errorf("App must allow serverless deployment to deploy to multi-tenant cluster %s", cibuf.Key.ClusterKey.Name)
 	}
 	if app.Deployment != cloudcommon.DeploymentTypeKubernetes {
 		return fmt.Errorf("Deployment type must be kubernetes for multi-tenant ClusterInst")

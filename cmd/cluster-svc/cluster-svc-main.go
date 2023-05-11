@@ -544,6 +544,8 @@ func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterI
 			}
 		}
 		// Check if we need to collect alerts
+		// XXX Doesn't this need to collect alerts from all userapps in
+		// the cluster?
 		if userApp != nil && userAppInst != nil && len(userApp.AlertPolicies) > 0 {
 			userAlerts = []edgeproto.AlertPolicy{}
 			for _, alertName := range userApp.AlertPolicies {

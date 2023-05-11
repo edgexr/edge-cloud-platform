@@ -501,6 +501,18 @@ func PruneAppInsts(ctx context.Context, appInsts map[edgeproto.AppInstKey]struct
 		}
 		app.Unlock()
 	}
+	for _, dmeCloudlet := range tbl.Cloudlets {
+		for key := range dmeCloudlet.AppInstKeys {
+			if _, found := appInsts[key]; !found {
+				delete(dmeCloudlet.AppInstKeys, key)
+			}
+		}
+	}
+	for key := range tbl.AppInstApps {
+		if _, found := appInsts[key]; !found {
+			delete(tbl.AppInstApps, key)
+		}
+	}
 }
 
 func DeleteCloudletInfo(ctx context.Context, cloudletKey *edgeproto.CloudletKey) {
@@ -776,20 +788,6 @@ func getTableAppInstAndLock(appKey *edgeproto.AppKey, appInstKey *edgeproto.AppI
 	return app, insts, appinst, nil
 }
 
-/* REMOVE
-// Given an AppInstKey, return the corresponding DmeCloudlet
-func findDmeCloudlet(appInstKey *edgeproto.AppInstKey) DmeCloudlet {
-	tbl := DmeAppTbl
-
-	tbl.RLock()
-	defer tbl.RUnlock()
-	dmecloudlet, ok := tbl.Cloudlets[appInstKey.ClusterInstKey.CloudletKey]
-	if !ok {
-		return DmeCloudlet{}
-	}
-	return *dmecloudlet
-}
-*/
 func (s *DmeCloudlet) addAppInstRef(appInst *edgeproto.AppInst) {
 	s.AppInstKeys[appInst.Key] = &appInst.AppKey
 }

@@ -375,7 +375,7 @@ message AppInstLookup2 {
 message AppInstLatency {
   // Unique identifier key
   AppInstKey key = 1 [(gogoproto.nullable) = false];
-  option (protogen.alias) = "appinstname=Key.Name,appinstorg=Key.Organization";
+  option (protogen.alias) = "appinstname=Key.Name,appinstorg=Key.Organization,cloudlet=Key.CloudletKey.Name,cloudletorg=Key.CloudletKey.Organization,cloudletfedorg=Key.CloudletKey.FederatedOrganization";
 }
 
 service AppInstLatencyApi {

@@ -98,7 +98,6 @@ func (n NodeType) String() string {
 // resource types
 var ResourceTypeK8sLBSvc = "k8s-lb-svc"
 
-//const AutoClusterPrefix = "autocluster"
 const AutoProvPrefix = "autoprov"
 const ReservableClusterPrefix = "reservable"
 const ReserveClusterEvent = "Reserve ClusterInst"
@@ -116,8 +115,6 @@ var NFSAutoProvisionAppName = "NFSAutoProvision"
 var ProxyMetricsPort = int32(65121)
 var ProxyMetricsDefaultListenIP = "127.0.0.1"
 var ProxyMetricsListenUDS = "MetricsUDS" // Unix Domain Socket
-
-const NameSuffixAlphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 var AutoProvMeasurement = "auto-prov-counts"
 
@@ -175,6 +172,7 @@ const (
 	MetricTagOther           = "other"
 	MetricTagNote            = "note"
 	MetricTagIpAccess        = "ipaccess"
+	MetricTagPort            = "port"
 	MetricTagDmeId           = "dmeId"
 	MetricTagMethod          = "method"
 	MetricTagLocationTile    = "locationtile"
@@ -266,6 +264,7 @@ var AllocatedIpDynamic = "dynamic"
 
 var RootLBHostname = "shared"
 
+// These alphabets are used for generating random strings with gonanoid.
 const IdAlphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const IdAlphabetLC = "0123456789abcdefghijklmnopqrstuvwxyz"
 
@@ -528,7 +527,7 @@ func GetArtifactPullPath(addr, org, path string) string {
 }
 
 // AppInstLabels are for labeling objects to track that they
-// belong to an AppInst. They cloudlet key information is omitted
+// belong to an AppInst. The cloudlet key information is omitted
 // because objects to track are on a particular cloudlet, so the
 // cloudlet info is fixed.
 type AppInstLabels struct {

@@ -9,7 +9,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
-// AppInstLabels tracks the mapping from labels put on
+// AppInstLabels manages lookup tables that map the labels placed on
 // infra objects to the AppInst keys that the objects belong to.
 // Labels often have formatting requirements, so the values of
 // the labels may not be exactly the same as the AppInst key values.
@@ -22,14 +22,6 @@ type AppInstLabels struct {
 type AppInstLabelInfo struct {
 	AppInstKey edgeproto.AppInstKey
 	AppKey     edgeproto.AppKey
-}
-
-func getAppInstLabelKeys(labels map[string]string) (cloudcommon.AppInstLabels, cloudcommon.AppInstLabelsOld) {
-	labelKey := cloudcommon.AppInstLabels{}
-	labelKeyOld := cloudcommon.AppInstLabelsOld{}
-	labelKey.FromMap(labels)
-	labelKeyOld.FromMap(labels)
-	return labelKey, labelKeyOld
 }
 
 func (s *AppInstLabels) TrackAppInst(ctx context.Context, appInst *edgeproto.AppInst) {
@@ -84,4 +76,12 @@ func (s *AppInstLabels) getAppInstInfo(labelKey cloudcommon.AppInstLabels, label
 		}
 	}
 	return AppInstLabelInfo{}, false
+}
+
+func getAppInstLabelKeys(labels map[string]string) (cloudcommon.AppInstLabels, cloudcommon.AppInstLabelsOld) {
+	labelKey := cloudcommon.AppInstLabels{}
+	labelKeyOld := cloudcommon.AppInstLabelsOld{}
+	labelKey.FromMap(labels)
+	labelKeyOld.FromMap(labels)
+	return labelKey, labelKeyOld
 }

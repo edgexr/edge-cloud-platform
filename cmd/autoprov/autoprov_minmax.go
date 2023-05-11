@@ -30,8 +30,7 @@ import (
 // MinMaxChecker maintains the minimum and maximum number of
 // AppInsts if specified in the policy.
 type MinMaxChecker struct {
-	caches *CacheData
-	//needsCheck       map[edgeproto.AppKey]struct{}
+	caches           *CacheData
 	failoverRequests map[edgeproto.CloudletKey]*failoverReq
 	mux              sync.Mutex
 	// maintain reverse relationships to be able to look up
@@ -54,7 +53,7 @@ func newMinMaxChecker(caches *CacheData) *MinMaxChecker {
 	caches.appCache.AddUpdatedCb(s.UpdatedApp)
 	caches.appCache.AddDeletedCb(s.DeletedApp)
 	caches.appInstCache.AddUpdatedCb(s.UpdatedAppInst)
-	caches.appInstCache.AddDeletedKeyCb(s.DeletedAppInst)
+	caches.appInstCache.AddDeletedCb(s.DeletedAppInst)
 	caches.autoProvPolicyCache.AddUpdatedCb(s.UpdatedPolicy)
 	caches.autoProvPolicyCache.AddDeletedCb(s.DeletedPolicy)
 	caches.cloudletCache.AddUpdatedCb(s.UpdatedCloudlet)
@@ -247,19 +246,15 @@ func (s *MinMaxChecker) UpdatedAppInst(ctx context.Context, old *edgeproto.AppIn
 	s.workers.NeedsWork(ctx, new.AppKey)
 }
 
-func (s *MinMaxChecker) DeletedAppInst(ctx context.Context, key *edgeproto.AppInstKey) {
+func (s *MinMaxChecker) DeletedAppInst(ctx context.Context, inst *edgeproto.AppInst) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	inst := edgeproto.AppInst{}
-	if !s.caches.appInstCache.Get(key, &inst) {
-		return
-	}
-	if !s.isAutoProvApp(&inst.AppKey) {
+	if inst == nil || !s.isAutoProvApp(&inst.AppKey) {
 		return
 	}
 	lookup := edgeproto.AppInstLookup2{
-		Key:         *key,
+		Key:         inst.Key,
 		CloudletKey: inst.Key.CloudletKey,
 	}
 	s.autoprovInstsByCloudlet.Deleted(&lookup)
@@ -386,14 +381,10 @@ func (s *AppChecker) Check(ctx context.Context) {
 	for keyStr, _ := range refs.Insts {
 		key := edgeproto.AppInstKey{}
 		edgeproto.AppInstKeyStringParse(keyStr, &key)
-		cloudletKey, found := s.appInstCloudletKey(&key)
-		if !found {
-			continue
-		}
-		insts, found := s.cloudletInsts[cloudletKey]
+		insts, found := s.cloudletInsts[key.CloudletKey]
 		if !found {
 			insts = make(map[edgeproto.AppInstKey]struct{})
-			s.cloudletInsts[cloudletKey] = insts
+			s.cloudletInsts[key.CloudletKey] = insts
 		}
 		insts[key] = struct{}{}
 	}
@@ -698,16 +689,4 @@ func (s *AppChecker) isAutoProvInst(key *edgeproto.AppInstKey) bool {
 		return true
 	}
 	return false
-}
-
-func (s *AppChecker) appInstCloudletKey(key *edgeproto.AppInstKey) (edgeproto.CloudletKey, bool) {
-	// direct lookup to avoid copy
-	s.caches.appInstCache.Mux.Lock()
-	defer s.caches.appInstCache.Mux.Unlock()
-
-	data, found := s.caches.appInstCache.Objs[*key]
-	if !found {
-		return edgeproto.CloudletKey{}, false
-	}
-	return data.Obj.Key.CloudletKey, true
 }

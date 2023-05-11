@@ -188,7 +188,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	}
 
 	req := fedewapi.InstallAppRequest{
-		AppInstanceId: appInst.Key.Name,
+		AppInstanceId: util.DNSSanitize(appInst.Key.Name),
 		AppId:         app.GlobalId,
 		AppVersion:    app.Key.Version,
 		AppProviderId: util.DNSSanitize(app.Key.Organization),

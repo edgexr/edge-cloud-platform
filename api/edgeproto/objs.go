@@ -1253,18 +1253,6 @@ func (s *AppInst) VClusterKey() ClusterKey {
 	return s.ClusterKey
 }
 
-/* REMOVE
-func (s *ClusterInstRefKey) FromClusterInstKey(key *ClusterInstKey) {
-	s.ClusterKey = key.ClusterKey
-	s.Organization = key.Organization
-}
-
-func (s *ClusterInstKey) FromClusterInstRefKey(key *ClusterInstRefKey, clKey *CloudletKey) {
-	s.ClusterKey = key.ClusterKey
-	s.Organization = key.Organization
-	s.CloudletKey = *clKey
-}
-*/
 func (s *AppInstRefKey) FromAppInstKey(key *AppInstKey) {
 	s.Name = key.Name
 	s.Organization = key.Organization
@@ -1282,21 +1270,6 @@ func (s *AppInstKey) FromAppInstRefKey(key *AppInstRefKey, clKey *CloudletKey) {
 	s.CloudletKey = *clKey
 }
 
-/* REMOVE
-func (s *AppInstKey) ClusterRefsAppInstKey() *ClusterRefsAppInstKey {
-	return &ClusterRefsAppInstKey{
-		AppKey:       s.AppKey,
-		VClusterName: s.ClusterInstKey.ClusterKey.Name,
-	}
-}
-
-func (s *AppInstKey) FromClusterRefsAppInstKey(key *ClusterRefsAppInstKey, cKey *ClusterInstKey) {
-	s.AppKey = key.AppKey
-	s.ClusterInstKey.ClusterKey.Name = key.VClusterName
-	s.ClusterInstKey.Organization = cKey.Organization
-	s.ClusterInstKey.CloudletKey = cKey.CloudletKey
-}
-*/
 func (r *InfraResources) UpdateResources(inRes *InfraResources) (updated bool) {
 	if inRes == nil || len(inRes.Vms) == 0 {
 		return false

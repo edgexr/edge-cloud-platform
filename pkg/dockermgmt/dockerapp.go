@@ -106,7 +106,7 @@ func GetDockerPortString(ports []dme.AppPort, containerPortType string, proxyMat
 
 func getDockerComposeFileName(client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst) string {
 	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityUniqueNameKey {
-		return util.DNSSanitize("docker-compose-" + appInst.Key.Name)
+		return util.DNSSanitize("docker-compose-"+appInst.Key.Name) + ".yml"
 	} else {
 		return util.DNSSanitize("docker-compose-"+app.Key.Name+app.Key.Version) + ".yml"
 	}
@@ -261,6 +261,15 @@ func createDockerComposeFile(client ssh.Client, app *edgeproto.App, appInst *edg
 	return filename, nil
 }
 
+func getLabelsStr(appInst *edgeproto.AppInst) string {
+	labels := cloudcommon.GetAppInstLabels(appInst)
+	labelsStr := ""
+	for k, v := range labels.Map() {
+		labelsStr += fmt.Sprintf(" -l %s=%s", k, v)
+	}
+	return labelsStr
+}
+
 // Local Docker AppInst create is different due to fact that MacOS doesn't like '--network=host' option.
 // Instead on MacOS docker needs to have port mapping  explicity specified with '-p' option.
 // As a result we have a separate function specifically for a docker app creation on a MacOS laptop
@@ -273,11 +282,7 @@ func CreateAppInstLocal(client ssh.Client, app *edgeproto.App, appInst *edgeprot
 	if appInst.OptRes == "gpu" {
 		base_cmd += "--gpus all"
 	}
-	labels := cloudcommon.GetAppInstLabels(appInst)
-	labelsStr := ""
-	for k, v := range labels.Map() {
-		labelsStr += fmt.Sprintf(" -l %s=%s", k, v)
-	}
+	labelsStr := getLabelsStr(appInst)
 	if app.DeploymentManifest == "" {
 		cmd := fmt.Sprintf("%s -d -l edge-cloud -l cloudlet=%s -l cluster=%s %s --restart=unless-stopped --name=%s %s %s %s", base_cmd,
 			cloudlet, cluster, labelsStr, name,
@@ -335,7 +340,7 @@ func CreateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 		}
 	}
 	image := app.ImagePath
-	nameLabelVal := util.DNSSanitize(appInst.Key.Name)
+	labelsStr := getLabelsStr(appInst)
 	base_cmd := "docker run "
 	if appInst.OptRes == "gpu" {
 		base_cmd += "--gpus all"
@@ -350,8 +355,7 @@ func CreateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 				return fmt.Errorf("error pulling docker image: %s, %s, %v", image, out, err)
 			}
 		}
-		cmd := fmt.Sprintf("%s -d -l %s=%s --restart=unless-stopped --network=host --name=%s %s %s", base_cmd,
-			cloudcommon.MexAppInstNameLabel, nameLabelVal, GetContainerName(appInst), image, getCommandString(app))
+		cmd := fmt.Sprintf("%s -d %s --restart=unless-stopped --network=host --name=%s %s %s", base_cmd, labelsStr, GetContainerName(appInst), image, getCommandString(app))
 		log.SpanLog(ctx, log.DebugLevelInfra, "running docker run ", "cmd", cmd)
 		out, err := client.Output(cmd)
 		if err != nil {

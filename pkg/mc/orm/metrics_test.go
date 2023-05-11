@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	testSingleAppFilter       = "(\"appinstorg\"='testOrg1' AND \"appinst\"='testapp1' AND \"cloudlet\"='testCloudlet1') AND (cloudlet='testCloudlet1')"
+	testSingleAppFilter       = "(\"appinstorg\"='testOrg1' AND \"appinst\"='testApp1' AND \"cloudlet\"='testCloudlet1') AND (cloudlet='testCloudlet1')"
 	testSingleAppQueryDefTime = "SELECT mean(cpu) as cpu FROM \"appinst-cpu\" WHERE (" +
 		testSingleAppFilter + ") " +
 		"AND time >= '2019-12-31T13:01:00Z' AND time <= '2020-01-01T01:01:00Z' " +
@@ -68,8 +68,8 @@ var (
 			},
 		},
 	}
-	testAppsFilter = "(\"appinstorg\"='testOrg1' AND \"appinst\"='testapp1' AND \"cloudlet\"='testCloudlet1' AND \"cloudletorg\"='testCloudletOrg1') OR " +
-		"(\"appinstorg\"='testOrg1' AND \"appinst\"='testapp2' AND \"cloudlet\"='testCloudlet2' AND \"cloudletorg\"='testCloudletOrg2') " +
+	testAppsFilter = "(\"appinstorg\"='testOrg1' AND \"appinst\"='testApp1' AND \"cloudlet\"='testCloudlet1' AND \"cloudletorg\"='testCloudletOrg1') OR " +
+		"(\"appinstorg\"='testOrg1' AND \"appinst\"='testApp2' AND \"cloudlet\"='testCloudlet2' AND \"cloudletorg\"='testCloudletOrg2') " +
 		"AND (cloudlet='testCloudlet1' OR cloudlet='testCloudlet2')"
 	testAppsQueryDefTime = "SELECT last(sendBytes) as sendBytes,last(recvBytes) as recvBytes FROM \"appinst-network\" WHERE (" +
 		testAppsFilter + ") " +

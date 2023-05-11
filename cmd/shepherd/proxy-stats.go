@@ -874,7 +874,7 @@ func MarshallNginxMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.Pro
 	metric.AddKeyTags(&scrapePoint.Key)
 	metric.AddKeyTags(&scrapePoint.ClusterInstKey.ClusterKey)
 	metric.AddKeyTags(&scrapePoint.AppKey)
-	metric.AddTag("port", "")
+	metric.AddTag(cloudcommon.MetricTagPort, "")
 
 	metric.AddIntVal("active", data.ActiveConn)
 	metric.AddIntVal("accepts", data.Accepts)

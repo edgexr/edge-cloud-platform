@@ -48,8 +48,8 @@ var (
 		edgeproto.CloudletKeyTagName:                  {},
 		edgeproto.CloudletKeyTagOrganization:          {},
 		edgeproto.CloudletKeyTagFederatedOrganization: {},
-		"port":                      {},
-		cloudcommon.MetricTagRegion: {},
+		cloudcommon.MetricTagPort:                     {},
+		cloudcommon.MetricTagRegion:                   {},
 	}
 
 	AggrFuncLabelSet = []string{

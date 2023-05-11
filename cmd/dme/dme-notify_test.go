@@ -38,7 +38,6 @@ var (
 
 func TestNotify(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelNotify | log.DebugLevelDmereq | log.DebugLevelDmedb | log.DebugLevelApi)
-	//log.SetDebugLevel(log.DebugLevelNotify)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
@@ -84,7 +83,6 @@ func TestNotify(t *testing.T) {
 
 	// remove one appinst
 	remaining := appInsts[:last]
-	fmt.Printf("len appInsts is %d, len remaining is %d, remaining is %v\n", len(appInsts), len(remaining), remaining)
 	serverHandler.AppInstCache.Delete(ctx, appInsts[last], 0)
 	// wait for it to be gone locally
 	waitForNoAppInst(appInsts[last])
