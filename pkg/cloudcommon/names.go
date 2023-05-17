@@ -158,7 +158,7 @@ const (
 	MetricTagStatus          = "status"
 	MetricTagStart           = "start"
 	MetricTagEnd             = "end"
-	MetricTagStartTime       = "startime" // starttime?
+	MetricTagStartTime       = "starttime"
 	MetricTagEndTime         = "endtime"
 	MetricTagDuration        = "duration"
 	MetricTagUptime          = "uptime"

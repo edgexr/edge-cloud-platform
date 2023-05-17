@@ -169,8 +169,8 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 				// The "real" cluster name becomes the cluster.
 				// The "virtual" cluster name is no longer
 				// needed because uniqueness is provided by the
-				// AppInst Name. We need to keep it for
-				// backwards compatibility, however.
+				// AppInst Name. We need to keep the virtual cluster
+				// name around for backwards compatibility, however.
 				if v1.RealClusterName != "" {
 					appInst.ClusterKey.Name = v1.RealClusterName
 					appInst.VirtualClusterKey.Name = v1.Key.ClusterInstKey.ClusterKey.Name

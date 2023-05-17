@@ -123,11 +123,8 @@ func init() {
 }
 
 var AppMetricV2OptionalArgs = []string{
-	"appname",
-	"apporg",
-	"appvers",
-	"cluster",
-	"clusterorg",
+	"appinst",
+	"appinstorg",
 	"cloudlet",
 	"cloudletorg",
 	"port",
@@ -135,13 +132,10 @@ var AppMetricV2OptionalArgs = []string{
 }
 
 var AppMetricV2Comments = map[string]string{
-	"apporg":       "Organization or Company name of the App(Deprecated)",
-	"appname":      "App name",
-	"appvers":      "App version",
-	"cluster":      "Cluster name",
+	"appinstorg":   "Organization or Company name of the AppInst",
+	"appinst":      "AppInst name",
 	"cloudletorg":  "Company or Organization name of the cloudlet",
 	"cloudlet":     "Name of the cloudlet",
-	"clusterorg":   "Organization or Company Name that a Cluster is used by",
 	"measurement":  "Measurement to view. Available measurements: \"connections\"",
 	"port":         "Port for which to show the data(valid for \"connections\" measurement)",
 	"aggrfunction": "Aggregate function. \"sum\" - will add all connections together across all ports",
@@ -164,52 +158,35 @@ var AppMetricRequiredArgs = []string{
 }
 
 var AppMetricOptionalArgs = []string{
-	"appname",
-	"apporg",
-	"appvers",
-	"cluster",
-	"clusterorg",
+	"appinst",
+	"appinstorg",
 	"cloudlet",
 	"cloudletorg",
-	"appinsts:#.apporg",
-	"appinsts:#.appname",
-	"appinsts:#.appvers",
-	"appinsts:#.cluster",
-	"appinsts:#.clusterorg",
+	"appinsts:#.appinst",
+	"appinsts:#.appinstorg",
 	"appinsts:#.cloudletorg",
 	"appinsts:#.cloudlet",
 }
 
 var AppMetricAliasArgs = []string{
-	"apporg=appinst.appkey.organization",
-	"appname=appinst.appkey.name",
-	"appvers=appinst.appkey.version",
-	"cluster=appinst.clusterinstkey.clusterkey.name",
-	"clusterorg=appinst.clusterinstkey.organization",
-	"cloudletorg=appinst.clusterinstkey.cloudletkey.organization",
-	"cloudlet=appinst.clusterinstkey.cloudletkey.name",
-	"appinsts:#.apporg=appinsts:#.appkey.organization",
-	"appinsts:#.appname=appinsts:#.appkey.name",
-	"appinsts:#.appvers=appinsts:.appkey.version",
-	"appinsts:#.cluster=appinsts:#.clusterinstkey.clusterkey.name",
-	"appinsts:#.clusterorg=appinsts:#.clusterinstkey.organization",
-	"appinsts:#.cloudletorg=appinsts:#.clusterinstkey.cloudletkey.organization",
-	"appinsts:#.cloudlet=appinsts:#.clusterinstkey.cloudletkey.name",
+	"appinst=appinst.name",
+	"appinstorg=appinst.organization",
+	"cloudletorg=appinst.cloudletkey.organization",
+	"cloudlet=appinst.cloudletkey.name",
+	"appinsts:#.appinst=appinsts:#.name",
+	"appinsts:#.appinstorg=appinsts:#.organization",
+	"appinsts:#.cloudletorg=appinsts:#.cloudletkey.organization",
+	"appinsts:#.cloudlet=appinsts:#.cloudletkey.name",
 	"aggrfunction=aggrfunction",
 }
 
 var AppMetricComments = map[string]string{
-	"apporg":                 "Organization or Company name of the App(Deprecated)",
-	"appname":                "App name(Deprecated)",
-	"appvers":                "App version(Deprecated)",
-	"cluster":                "Cluster name(Deprecated)",
+	"appinstorg":             "Organization or Company name of the AppInst(Deprecated)",
+	"appinst":                "AppInst name(Deprecated)",
 	"cloudletorg":            "Company or Organization name of the cloudlet(Deprecated)",
 	"cloudlet":               "Name of the cloudlet(Deprecated)",
-	"clusterorg":             "Organization or Company Name that a Cluster is used by(Deprecated)",
-	"appinsts:#.apporg":      "Organization or Company name of the App",
-	"appinsts:#.appname":     "App name",
-	"appinsts:#.appvers":     "App version",
-	"appinsts:#.cluster":     "Cluster name",
+	"appinsts:#.appinstorg":  "Organization or Company name of the AppInst",
+	"appinsts:#.appinst":     "AppInst name",
 	"appinsts:#.clusterorg":  "Organization or Company Name that a Cluster is used by",
 	"appinsts:#.cloudletorg": "Company or Organization name of the cloudlet",
 	"appinsts:#.cloudlet":    "Name of the cloudlet",
@@ -232,12 +209,12 @@ var ClusterMetricOptionalArgs = []string{
 }
 
 var ClusterMetricAliasArgs = []string{
-	"clusterorg=clusterinst.organization",
+	"clusterorg=clusterinst.clusterkey.organization",
 	"cluster=clusterinst.clusterkey.name",
 	"cloudletorg=clusterinst.cloudletkey.organization",
 	"cloudlet=clusterinst.cloudletkey.name",
 	"clusterinsts:#.cluster=clusterinsts:#.clusterkey.name",
-	"clusterinsts:#.clusterorg=clusterinsts:#.organization",
+	"clusterinsts:#.clusterorg=clusterinsts:#.clusterkey.organization",
 	"clusterinsts:#.cloudletorg=clusterinsts:#.cloudletkey.organization",
 	"clusterinsts:#.cloudlet=clusterinsts:#.cloudletkey.name",
 }

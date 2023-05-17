@@ -134,7 +134,7 @@ func (m *appInstMetrics) ValidateObjects() error {
 		org := app.Organization
 		// Developer name has to be specified
 		if org == "" {
-			return fmt.Errorf("App org must be present")
+			return fmt.Errorf("AppInst org must be present")
 		}
 		// validate input
 		if err := util.ValidateNames(app.GetTags()); err != nil {
