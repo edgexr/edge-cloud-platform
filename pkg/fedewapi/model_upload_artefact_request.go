@@ -81,8 +81,22 @@ func (s *UploadArtefactRequest) Validate() error {
 	if s.ArtefactVirtType == "" {
 		return errors.New("artefactVirtType is required")
 	}
+	ArtefactVirtTypeEnumVals := map[string]struct{}{
+		"VM_TYPE":        {},
+		"CONTAINER_TYPE": {},
+	}
+	if _, found := ArtefactVirtTypeEnumVals[s.ArtefactVirtType]; !found {
+		return errors.New("UploadArtefactRequest artefactVirtType value \"" + s.ArtefactVirtType + "\" is not a valid enum value")
+	}
 	if s.ArtefactDescriptorType == "" {
 		return errors.New("artefactDescriptorType is required")
+	}
+	ArtefactDescriptorTypeEnumVals := map[string]struct{}{
+		"HELM":          {},
+		"COMPONENTSPEC": {},
+	}
+	if _, found := ArtefactDescriptorTypeEnumVals[s.ArtefactDescriptorType]; !found {
+		return errors.New("UploadArtefactRequest artefactDescriptorType value \"" + s.ArtefactDescriptorType + "\" is not a valid enum value")
 	}
 	if s.ArtefactRepoLocation != nil {
 		if err := s.ArtefactRepoLocation.Validate(); err != nil {

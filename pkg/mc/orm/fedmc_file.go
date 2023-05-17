@@ -201,7 +201,7 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 		}
 	}()
 	osType := fedewapi.OSType{
-		Architecture: federation.CPUArchTypeX8664,
+		Architecture: "x86_64",
 		Distribution: "OTHER",
 		Version:      "OTHER",
 		License:      "NOT_SPECIFIED",

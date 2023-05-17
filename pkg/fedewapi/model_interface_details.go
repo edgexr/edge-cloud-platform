@@ -53,8 +53,23 @@ func (s *InterfaceDetails) Validate() error {
 	if s.CommProtocol == "" {
 		return errors.New("commProtocol is required")
 	}
+	CommProtocolEnumVals := map[string]struct{}{
+		"TCP":        {},
+		"UDP":        {},
+		"HTTP_HTTPS": {},
+	}
+	if _, found := CommProtocolEnumVals[s.CommProtocol]; !found {
+		return errors.New("InterfaceDetails commProtocol value \"" + s.CommProtocol + "\" is not a valid enum value")
+	}
 	if s.VisibilityType == "" {
 		return errors.New("visibilityType is required")
+	}
+	VisibilityTypeEnumVals := map[string]struct{}{
+		"VISIBILITY_EXTERNAL": {},
+		"VISIBILITY_INTERNAL": {},
+	}
+	if _, found := VisibilityTypeEnumVals[s.VisibilityType]; !found {
+		return errors.New("InterfaceDetails visibilityType value \"" + s.VisibilityType + "\" is not a valid enum value")
 	}
 	if s.Network != nil && !InterfaceDetailsNetworkRE.MatchString(*s.Network) {
 		return errors.New("network " + *s.Network + " does not match format " + InterfaceDetailsNetworkPattern)

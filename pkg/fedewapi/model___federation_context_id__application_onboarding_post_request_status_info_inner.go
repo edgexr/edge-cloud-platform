@@ -41,6 +41,16 @@ func (s *FederationContextIdApplicationOnboardingPostRequestStatusInfoInner) Val
 	if s.OnboardStatusInfo == "" {
 		return errors.New("onboardStatusInfo is required")
 	}
+	OnboardStatusInfoEnumVals := map[string]struct{}{
+		"PENDING":    {},
+		"ONBOARDED":  {},
+		"DEBOARDING": {},
+		"REMOVED":    {},
+		"FAILED":     {},
+	}
+	if _, found := OnboardStatusInfoEnumVals[s.OnboardStatusInfo]; !found {
+		return errors.New("FederationContextIdApplicationOnboardingPostRequestStatusInfoInner onboardStatusInfo value \"" + s.OnboardStatusInfo + "\" is not a valid enum value")
+	}
 	return nil
 }
 

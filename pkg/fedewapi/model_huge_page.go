@@ -30,6 +30,14 @@ func (s *HugePage) Validate() error {
 	if s.PageSize == "" {
 		return errors.New("pageSize is required")
 	}
+	PageSizeEnumVals := map[string]struct{}{
+		"2MB": {},
+		"4MB": {},
+		"1GB": {},
+	}
+	if _, found := PageSizeEnumVals[s.PageSize]; !found {
+		return errors.New("HugePage pageSize value \"" + s.PageSize + "\" is not a valid enum value")
+	}
 	return nil
 }
 

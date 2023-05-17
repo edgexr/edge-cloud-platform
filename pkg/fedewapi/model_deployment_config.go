@@ -30,6 +30,15 @@ func (s *DeploymentConfig) Validate() error {
 	if s.ConfigType == "" {
 		return errors.New("configType is required")
 	}
+	ConfigTypeEnumVals := map[string]struct{}{
+		"DOCKER_COMPOSE":      {},
+		"KUBERNETES_MANIFEST": {},
+		"CLOUD_INIT":          {},
+		"HELM_VALUES":         {},
+	}
+	if _, found := ConfigTypeEnumVals[s.ConfigType]; !found {
+		return errors.New("DeploymentConfig configType value \"" + s.ConfigType + "\" is not a valid enum value")
+	}
 	if s.Contents == "" {
 		return errors.New("contents is required")
 	}

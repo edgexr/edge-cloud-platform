@@ -47,6 +47,13 @@ func (s *ComputeResourceInfo) Validate() error {
 	if s.CpuArchType == "" {
 		return errors.New("cpuArchType is required")
 	}
+	CpuArchTypeEnumVals := map[string]struct{}{
+		"ISA_X86_64": {},
+		"ISA_ARM_64": {},
+	}
+	if _, found := CpuArchTypeEnumVals[s.CpuArchType]; !found {
+		return errors.New("ComputeResourceInfo cpuArchType value \"" + s.CpuArchType + "\" is not a valid enum value")
+	}
 	if s.NumCPU == "" {
 		return errors.New("numCPU is required")
 	}

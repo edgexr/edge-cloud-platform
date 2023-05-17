@@ -53,6 +53,13 @@ func (s *ComponentSpec) Validate() error {
 	if s.RestartPolicy == "" {
 		return errors.New("restartPolicy is required")
 	}
+	RestartPolicyEnumVals := map[string]struct{}{
+		"RESTART_POLICY_ALWAYS": {},
+		"RESTART_POLICY_NEVER":  {},
+	}
+	if _, found := RestartPolicyEnumVals[s.RestartPolicy]; !found {
+		return errors.New("ComponentSpec restartPolicy value \"" + s.RestartPolicy + "\" is not a valid enum value")
+	}
 	if s.CommandLineParams != nil {
 		if err := s.CommandLineParams.Validate(); err != nil {
 			return err
