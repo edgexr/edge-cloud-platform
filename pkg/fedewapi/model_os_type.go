@@ -30,14 +30,52 @@ func (s *OSType) Validate() error {
 	if s.Architecture == "" {
 		return errors.New("architecture is required")
 	}
+	ArchitectureEnumVals := map[string]struct{}{
+		"x86_64": {},
+		"x86":    {},
+	}
+	if _, found := ArchitectureEnumVals[s.Architecture]; !found {
+		return errors.New("OSType architecture value \"" + s.Architecture + "\" is not a valid enum value")
+	}
 	if s.Distribution == "" {
 		return errors.New("distribution is required")
+	}
+	DistributionEnumVals := map[string]struct{}{
+		"RHEL":    {},
+		"UBUNTU":  {},
+		"COREOS":  {},
+		"FEDORA":  {},
+		"WINDOWS": {},
+		"OTHER":   {},
+	}
+	if _, found := DistributionEnumVals[s.Distribution]; !found {
+		return errors.New("OSType distribution value \"" + s.Distribution + "\" is not a valid enum value")
 	}
 	if s.Version == "" {
 		return errors.New("version is required")
 	}
+	VersionEnumVals := map[string]struct{}{
+		"OS_VERSION_UBUNTU_2204_LTS": {},
+		"OS_VERSION_RHEL_8":          {},
+		"OS_VERSION_RHEL_7":          {},
+		"OS_VERSION_DEBIAN_11":       {},
+		"OS_VERSION_COREOS_STABLE":   {},
+		"OS_MS_WINDOWS_2012_R2":      {},
+		"OTHER":                      {},
+	}
+	if _, found := VersionEnumVals[s.Version]; !found {
+		return errors.New("OSType version value \"" + s.Version + "\" is not a valid enum value")
+	}
 	if s.License == "" {
 		return errors.New("license is required")
+	}
+	LicenseEnumVals := map[string]struct{}{
+		"OS_LICENSE_TYPE_FREE":      {},
+		"OS_LICENSE_TYPE_ON_DEMAND": {},
+		"NOT_SPECIFIED":             {},
+	}
+	if _, found := LicenseEnumVals[s.License]; !found {
+		return errors.New("OSType license value \"" + s.License + "\" is not a valid enum value")
 	}
 	return nil
 }

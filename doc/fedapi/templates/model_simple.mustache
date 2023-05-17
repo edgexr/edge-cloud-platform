@@ -50,6 +50,18 @@ func (s *{{classname}}) Validate() error {
 	if s.{{name}} == "" {
 		return errors.New("{{baseName}} is required")
 	}
+{{#isEnum}}
+	{{name}}EnumVals := map[string]struct{}{
+		{{#allowableValues}}
+		{{#enumVars}}
+		{{{value}}}: {},
+		{{/enumVars}}
+		{{/allowableValues}}
+	}
+	if _, found := {{name}}EnumVals[s.{{name}}]; !found {
+		return errors.New("{{classname}} {{baseName}} value \""+s.{{name}}+"\" is not a valid enum value")
+	}
+{{/isEnum}}
 {{/isString}}
 {{/required}}
 {{! check if field matches specified pattern}}

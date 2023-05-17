@@ -46,6 +46,15 @@ func (s *CompEnvParams) Validate() error {
 	if s.EnvValueType == "" {
 		return errors.New("envValueType is required")
 	}
+	EnvValueTypeEnumVals := map[string]struct{}{
+		"USER_DEFINED":                  {},
+		"PLATFORM_DEFINED_DYNAMIC_PORT": {},
+		"PLATFORM_DEFINED_DNS":          {},
+		"PLATFORM_DEFINED_IP":           {},
+	}
+	if _, found := EnvValueTypeEnumVals[s.EnvValueType]; !found {
+		return errors.New("CompEnvParams envValueType value \"" + s.EnvValueType + "\" is not a valid enum value")
+	}
 	if s.EnvVarValue != nil && !CompEnvParamsEnvVarValueRE.MatchString(*s.EnvVarValue) {
 		return errors.New("envVarValue " + *s.EnvVarValue + " does not match format " + CompEnvParamsEnvVarValuePattern)
 	}
