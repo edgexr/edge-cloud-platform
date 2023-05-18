@@ -125,6 +125,14 @@ func (s *TokenSourceCache) Get(ctx context.Context, fedKey *FedKey) (oauth2.Toke
 	return tokenSource, nil
 }
 
+// Clear will remove the cached token source. This is needed
+// if the credentials have been changed.
+func (s *TokenSourceCache) Clear(ctx context.Context, fedKey *FedKey) {
+	s.Lock()
+	defer s.Unlock()
+	delete(s.sources, *fedKey)
+}
+
 func (s *TokenSourceCache) Client(ctx context.Context, addr string, fedKey *FedKey, auditLogCb AuditLogCb) (*Client, error) {
 	tokenSource, err := s.Get(ctx, fedKey)
 	if err != nil {

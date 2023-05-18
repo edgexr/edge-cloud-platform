@@ -1025,6 +1025,8 @@ func SetFederationConsumerAPIKey(c echo.Context) error {
 	if err != nil {
 		return ormutil.DbErr(err)
 	}
+	partnerApi.ConsumerPartnerClearCredentialsCache(ctx, consumer)
+
 	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation Guest %s api key set", consumer.Name)))
 }
 

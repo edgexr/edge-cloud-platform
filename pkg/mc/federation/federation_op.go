@@ -212,6 +212,11 @@ func (p *PartnerApi) ConsumerPartnerClient(ctx context.Context, consumer *ormapi
 	return p.tokenSources.Client(ctx, consumer.PartnerAddr, fedKey, p.auditCb)
 }
 
+func (p *PartnerApi) ConsumerPartnerClearCredentialsCache(ctx context.Context, consumer *ormapi.FederationConsumer) {
+	fedKey := ConsumerFedKey(consumer)
+	p.tokenSources.Clear(ctx, fedKey)
+}
+
 func (p *PartnerApi) validateCallbackLink(link string) error {
 	if link == "" || link == federationmgmt.CallbackNotSupported {
 		return nil
