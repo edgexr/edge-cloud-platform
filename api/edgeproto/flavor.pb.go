@@ -693,8 +693,17 @@ var FlavorKeyTagName = "flavor"
 
 func (m *FlavorKey) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["flavor"] = m.Name
+	m.AddTags(tags)
 	return tags
+}
+
+func (m *FlavorKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("flavor", m.Name)
+}
+
+func (m *FlavorKey) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -954,6 +963,7 @@ type FlavorStore interface {
 	STMGet(stm concurrency.STM, key *FlavorKey, buf *Flavor) bool
 	STMPut(stm concurrency.STM, obj *Flavor, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *FlavorKey)
+	STMHas(stm concurrency.STM, key *FlavorKey) bool
 }
 
 type FlavorStoreImpl struct {
@@ -1085,6 +1095,11 @@ func (s *FlavorStoreImpl) STMGet(stm concurrency.STM, key *FlavorKey, buf *Flavo
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *FlavorStoreImpl) STMHas(stm concurrency.STM, key *FlavorKey) bool {
+	keystr := objstore.DbKeyString("Flavor", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *FlavorStoreImpl) parseGetData(val []byte, buf *Flavor) bool {
 	if len(val) == 0 {
 		return false
@@ -1126,6 +1141,16 @@ type FlavorCacheData struct {
 	ModRev int64
 }
 
+func (s *FlavorCacheData) Clone() *FlavorCacheData {
+	cp := FlavorCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &Flavor{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // FlavorCache caches Flavor objects in memory in a hash table
 // and keeps them in sync with the database.
 type FlavorCache struct {
@@ -1133,7 +1158,7 @@ type FlavorCache struct {
 	Mux           util.Mutex
 	List          map[FlavorKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *FlavorKey, old *Flavor, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *Flavor, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *Flavor, new *Flavor)
 	DeletedCbs    []func(ctx context.Context, old *Flavor)
 	KeyWatchers   map[FlavorKey][]*FlavorKeyWatcher
@@ -1192,6 +1217,14 @@ func (c *FlavorCache) GetAllKeys(ctx context.Context, cb func(key *FlavorKey, mo
 	}
 }
 
+func (c *FlavorCache) GetAllLocked(ctx context.Context, cb func(obj *Flavor, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *FlavorCache) Update(ctx context.Context, in *Flavor, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *Flavor) (*Flavor, bool) {
 		return in, true
@@ -1209,14 +1242,16 @@ func (c *FlavorCache) UpdateModFunc(ctx context.Context, key *FlavorKey, modRev 
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &Flavor{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -1253,9 +1288,13 @@ func (c *FlavorCache) DeleteCondFunc(ctx context.Context, in *Flavor, modRev int
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -1283,9 +1322,14 @@ func (c *FlavorCache) Prune(ctx context.Context, validKeys map[FlavorKey]struct{
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &Flavor{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -1330,8 +1374,8 @@ func FlavorGenericNotifyCb(fn func(key *FlavorKey, old *Flavor)) func(objstore.O
 	}
 }
 
-func (c *FlavorCache) SetNotifyCb(fn func(ctx context.Context, obj *FlavorKey, old *Flavor, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *FlavorKey, old *Flavor, modRev int64){fn}
+func (c *FlavorCache) SetNotifyCb(fn func(ctx context.Context, obj *Flavor, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *Flavor, modRev int64){fn}
 }
 
 func (c *FlavorCache) SetUpdatedCb(fn func(ctx context.Context, old *Flavor, new *Flavor)) {
@@ -1358,7 +1402,7 @@ func (c *FlavorCache) AddDeletedCb(fn func(ctx context.Context, old *Flavor)) {
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *FlavorCache) AddNotifyCb(fn func(ctx context.Context, obj *FlavorKey, old *Flavor, modRev int64)) {
+func (c *FlavorCache) AddNotifyCb(fn func(ctx context.Context, obj *Flavor, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -1463,9 +1507,14 @@ func (c *FlavorCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &Flavor{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {

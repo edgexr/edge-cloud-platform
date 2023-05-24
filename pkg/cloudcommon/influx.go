@@ -16,6 +16,7 @@ package cloudcommon
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -39,4 +40,14 @@ func GetInfluxDataAuth(vaultConfig *vault.Config, region string) (*InfluxCreds, 
 		return nil, fmt.Errorf("failed to get influxDB credentials for %s, %v", vaultPath, err)
 	}
 	return creds, nil
+}
+
+// Returns a string of format `"selector","selector",...`
+func GetInfluxSelectFields(selectors []string) string {
+	qs := []string{}
+	for _, selector := range selectors {
+		q := `"` + selector + `"`
+		qs = append(qs, q)
+	}
+	return strings.Join(qs, ",")
 }

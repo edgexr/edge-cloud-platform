@@ -299,11 +299,9 @@ func (cd *ControllerData) CaptureResourcesSnapshot(ctx context.Context, cloudlet
 	log.SpanLog(ctx, log.DebugLevelInfra, "update cloudlet resources snapshot", "key", cloudletKey)
 
 	// get all the cluster instances deployed on this cloudlet
-	deployedClusters := make(map[edgeproto.ClusterInstRefKey]struct{})
+	deployedClusters := make(map[edgeproto.ClusterKey]struct{})
 	cd.ClusterInstInfoCache.Show(&edgeproto.ClusterInstInfo{State: edgeproto.TrackedState_READY}, func(clusterInstInfo *edgeproto.ClusterInstInfo) error {
-		refKey := edgeproto.ClusterInstRefKey{}
-		refKey.FromClusterInstKey(&clusterInstInfo.Key)
-		deployedClusters[refKey] = struct{}{}
+		deployedClusters[clusterInstInfo.Key.ClusterKey] = struct{}{}
 		return nil
 	})
 
@@ -311,8 +309,12 @@ func (cd *ControllerData) CaptureResourcesSnapshot(ctx context.Context, cloudlet
 	deployedVMAppInsts := make(map[edgeproto.AppInstRefKey]struct{})
 	deployedK8sAppInsts := make(map[edgeproto.AppInstRefKey]struct{})
 	cd.AppInstInfoCache.Show(&edgeproto.AppInstInfo{State: edgeproto.TrackedState_READY}, func(appInstInfo *edgeproto.AppInstInfo) error {
+		var appInst edgeproto.AppInst
+		if !cd.AppInstCache.Get(&appInstInfo.Key, &appInst) {
+			return nil
+		}
 		var app edgeproto.App
-		if !cd.AppCache.Get(&appInstInfo.Key.AppKey, &app) {
+		if !cd.AppCache.Get(&appInst.AppKey, &app) {
 			return nil
 		}
 		refKey := edgeproto.AppInstRefKey{}
@@ -337,7 +339,7 @@ func (cd *ControllerData) CaptureResourcesSnapshot(ctx context.Context, cloudlet
 	if resources == nil {
 		return nil
 	}
-	deployedClusterKeys := []edgeproto.ClusterInstRefKey{}
+	deployedClusterKeys := []edgeproto.ClusterKey{}
 	for k, _ := range deployedClusters {
 		deployedClusterKeys = append(deployedClusterKeys, k)
 	}
@@ -506,7 +508,7 @@ func (cd *ControllerData) clusterInstChanged(ctx context.Context, old *edgeproto
 		log.SpanLog(ctx, log.DebugLevelInfra, "update appinst runtime info", "clusterkey", new.Key)
 		var app edgeproto.App
 		cd.AppInstCache.Show(&edgeproto.AppInst{}, func(obj *edgeproto.AppInst) error {
-			if obj.ClusterInstKey().Matches(&new.Key) && cd.AppCache.Get(&obj.Key.AppKey, &app) {
+			if obj.ClusterInstKey().Matches(&new.Key) && cd.AppCache.Get(&obj.AppKey, &app) {
 				if obj.State != edgeproto.TrackedState_READY {
 					return nil
 				}
@@ -603,7 +605,7 @@ func (cd *ControllerData) handleTrustPolicyExceptionRuleForCloudletPoolKey(ctx c
 
 	// Find TrustPolicyException for this appInst and this cloudletKey
 	tpeKey := edgeproto.TrustPolicyExceptionKey{
-		AppKey:          appInst.Key.AppKey,
+		AppKey:          appInst.AppKey,
 		CloudletPoolKey: cloudletPoolKey,
 	}
 	var ckey edgeproto.ClusterInstKey
@@ -661,7 +663,7 @@ func (cd *ControllerData) CloudletHasTrustPolicy(ctx context.Context, cloudletKe
 
 func (cd *ControllerData) handleTrustPolicyExceptionRules(ctx context.Context, appInst *edgeproto.AppInst, clusterInstKey *edgeproto.ClusterInstKey, action cloudcommon.Action) error {
 
-	cloudletKey := appInst.Key.ClusterInstKey.CloudletKey
+	cloudletKey := appInst.Key.CloudletKey
 
 	hasTrustPolicy, tpErr := cd.CloudletHasTrustPolicy(ctx, &cloudletKey)
 	if tpErr != nil {
@@ -713,7 +715,7 @@ func (cd *ControllerData) appInstChanged(ctx context.Context, old *edgeproto.App
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "app inst changed", "key", new.Key)
 	app := edgeproto.App{}
-	found := cd.AppCache.Get(&new.Key.AppKey, &app)
+	found := cd.AppCache.Get(&new.AppKey, &app)
 	if !found {
 		log.SpanLog(ctx, log.DebugLevelInfra, "App not found for AppInst", "key", new.Key)
 		return
@@ -758,7 +760,7 @@ func (cd *ControllerData) appInstChanged(ctx context.Context, old *edgeproto.App
 			cd.appInstInfoError(ctx, &new.Key, edgeproto.TrackedState_CREATE_ERROR, str, updateAppCacheCallback)
 			// Marks end of appinst change and hence reduces ref count
 			if trackAppResource {
-				cd.vmResourceActionEnd(ctx, &new.Key.ClusterInstKey.CloudletKey)
+				cd.vmResourceActionEnd(ctx, &new.Key.CloudletKey)
 			}
 			return
 		}
@@ -771,7 +773,7 @@ func (cd *ControllerData) appInstChanged(ctx context.Context, old *edgeproto.App
 				cd.appInstInfoError(ctx, &new.Key, edgeproto.TrackedState_CREATE_ERROR, str, updateAppCacheCallback)
 				// Marks end of appinst change and hence reduces ref count
 				if trackAppResource {
-					cd.vmResourceActionEnd(ctx, &new.Key.ClusterInstKey.CloudletKey)
+					cd.vmResourceActionEnd(ctx, &new.Key.CloudletKey)
 				}
 				return
 			}
@@ -781,7 +783,7 @@ func (cd *ControllerData) appInstChanged(ctx context.Context, old *edgeproto.App
 		if err != nil {
 			// Marks end of appinst change and hence reduces ref count
 			if trackAppResource {
-				cd.vmResourceActionEnd(ctx, &new.Key.ClusterInstKey.CloudletKey)
+				cd.vmResourceActionEnd(ctx, &new.Key.CloudletKey)
 			}
 			return
 		}
@@ -793,7 +795,7 @@ func (cd *ControllerData) appInstChanged(ctx context.Context, old *edgeproto.App
 
 			if trackAppResource {
 				// Marks end of appinst change and hence reduces ref count
-				defer cd.vmResourceActionEnd(ctx, &new.Key.ClusterInstKey.CloudletKey)
+				defer cd.vmResourceActionEnd(ctx, &new.Key.CloudletKey)
 			}
 			oldUri := new.Uri
 			err = cd.platform.CreateAppInst(ctx, &clusterInst, &app, new, &flavor, updateAppCacheCallback)
@@ -827,7 +829,7 @@ func (cd *ControllerData) appInstChanged(ctx context.Context, old *edgeproto.App
 			// Marks start of appinst change and hence increases ref count
 			cd.vmResourceActionBegin()
 			// Marks end of appinst change and hence reduces ref count
-			defer cd.vmResourceActionEnd(ctx, &new.Key.ClusterInstKey.CloudletKey)
+			defer cd.vmResourceActionEnd(ctx, &new.Key.CloudletKey)
 		}
 		// reset status messages
 		resetStatus = edgeproto.ResetStatus
@@ -901,7 +903,7 @@ func (cd *ControllerData) appInstChanged(ctx context.Context, old *edgeproto.App
 				cd.appInstInfoError(ctx, &new.Key, edgeproto.TrackedState_DELETE_ERROR, str, updateAppCacheCallback)
 				if trackAppResource {
 					// Marks end of appinst change and hence reduces ref count
-					cd.vmResourceActionEnd(ctx, &new.Key.ClusterInstKey.CloudletKey)
+					cd.vmResourceActionEnd(ctx, &new.Key.CloudletKey)
 				}
 				return
 			}
@@ -911,7 +913,7 @@ func (cd *ControllerData) appInstChanged(ctx context.Context, old *edgeproto.App
 		if err != nil {
 			if trackAppResource {
 				// Marks end of appinst change and hence reduces ref count
-				cd.vmResourceActionEnd(ctx, &new.Key.ClusterInstKey.CloudletKey)
+				cd.vmResourceActionEnd(ctx, &new.Key.CloudletKey)
 			}
 			return
 		}
@@ -923,7 +925,7 @@ func (cd *ControllerData) appInstChanged(ctx context.Context, old *edgeproto.App
 
 			if trackAppResource {
 				// Marks end of appinst change and hence reduces ref count
-				defer cd.vmResourceActionEnd(ctx, &new.Key.ClusterInstKey.CloudletKey)
+				defer cd.vmResourceActionEnd(ctx, &new.Key.CloudletKey)
 			}
 
 			err = cd.platform.DeleteAppInst(ctx, &clusterInst, &app, new, updateAppCacheCallback)
@@ -969,7 +971,7 @@ func (cd *ControllerData) appInstChanged(ctx context.Context, old *edgeproto.App
 func (cd *ControllerData) handleTrustPolicyExceptionForAppInst(ctx context.Context, appInst *edgeproto.AppInst, action cloudcommon.Action) {
 
 	app := edgeproto.App{}
-	found := cd.AppCache.Get(&appInst.Key.AppKey, &app)
+	found := cd.AppCache.Get(&appInst.AppKey, &app)
 	if !found {
 		log.SpanLog(ctx, log.DebugLevelInfra, "App not found for AppInst", "key", appInst.Key)
 		return
@@ -1177,9 +1179,7 @@ func (cd *ControllerData) getClusterInstsFromTrustPolicyExceptionKeyHelper(ctx c
 	clusterInst := edgeproto.ClusterInst{}
 
 	appInstFilter := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			AppKey: tpeKey.AppKey,
-		},
+		AppKey: tpeKey.AppKey,
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "In getClusterInstsFromTrustPolicyExceptionKeyForCloudletKey()", "tpeKey:", tpeKey)
 
@@ -1206,7 +1206,7 @@ func (cd *ControllerData) getClusterInstsFromTrustPolicyExceptionKeyHelper(ctx c
 			continue
 		}
 
-		cloudletKey := appInst.Key.ClusterInstKey.CloudletKey
+		cloudletKey := appInst.Key.CloudletKey
 		if cloudletKeyIn != nil {
 			// Check only for specified cloudletKey
 			log.SpanLog(ctx, log.DebugLevelInfra, "Checking only for specified cloudletKey", "cloudletKeyIn", cloudletKeyIn)
@@ -1913,7 +1913,7 @@ func (cd *ControllerData) RefreshAppInstRuntime(ctx context.Context) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "unable to get runtime info, as AppInst is not in Ready state", "key", obj.Key, "state", obj.State)
 			return nil
 		}
-		if !cd.AppCache.Get(&obj.Key.AppKey, &app) {
+		if !cd.AppCache.Get(&obj.AppKey, &app) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "unable to get runtime info, as app definition is missing", "key", obj.Key)
 			return nil
 		}
@@ -2132,9 +2132,7 @@ func (cd *ControllerData) clusterInstExists(ctx context.Context, clusterInstKey 
 func (cd *ControllerData) appInstExistsForTpe(ctx context.Context, appKey *edgeproto.AppKey, clusterInstKey *edgeproto.ClusterInstKey) bool {
 
 	lookupKey := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			AppKey: *appKey,
-		},
+		AppKey: *appKey,
 	}
 	appInstFound := false
 	cd.AppInstCache.Show(&lookupKey, func(appInst *edgeproto.AppInst) error {

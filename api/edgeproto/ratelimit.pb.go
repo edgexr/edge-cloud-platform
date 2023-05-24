@@ -1721,11 +1721,20 @@ var FlowRateLimitSettingsKeyTagFlowSettingsName = "flowsettingsname"
 
 func (m *FlowRateLimitSettingsKey) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["flowsettingsname"] = m.FlowSettingsName
-	tags["apiname"] = m.RateLimitKey.ApiName
-	tags["apiendpointtype"] = ApiEndpointType_name[int32(m.RateLimitKey.ApiEndpointType)]
-	tags["ratelimittarget"] = RateLimitTarget_name[int32(m.RateLimitKey.RateLimitTarget)]
+	m.AddTags(tags)
 	return tags
+}
+
+func (m *FlowRateLimitSettingsKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("flowsettingsname", m.FlowSettingsName)
+	addTag("apiname", m.RateLimitKey.ApiName)
+	addTag("apiendpointtype", ApiEndpointType_name[int32(m.RateLimitKey.ApiEndpointType)])
+	addTag("ratelimittarget", RateLimitTarget_name[int32(m.RateLimitKey.RateLimitTarget)])
+}
+
+func (m *FlowRateLimitSettingsKey) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -1910,6 +1919,7 @@ type FlowRateLimitSettingsStore interface {
 	STMGet(stm concurrency.STM, key *FlowRateLimitSettingsKey, buf *FlowRateLimitSettings) bool
 	STMPut(stm concurrency.STM, obj *FlowRateLimitSettings, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *FlowRateLimitSettingsKey)
+	STMHas(stm concurrency.STM, key *FlowRateLimitSettingsKey) bool
 }
 
 type FlowRateLimitSettingsStoreImpl struct {
@@ -2041,6 +2051,11 @@ func (s *FlowRateLimitSettingsStoreImpl) STMGet(stm concurrency.STM, key *FlowRa
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *FlowRateLimitSettingsStoreImpl) STMHas(stm concurrency.STM, key *FlowRateLimitSettingsKey) bool {
+	keystr := objstore.DbKeyString("FlowRateLimitSettings", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *FlowRateLimitSettingsStoreImpl) parseGetData(val []byte, buf *FlowRateLimitSettings) bool {
 	if len(val) == 0 {
 		return false
@@ -2082,6 +2097,16 @@ type FlowRateLimitSettingsCacheData struct {
 	ModRev int64
 }
 
+func (s *FlowRateLimitSettingsCacheData) Clone() *FlowRateLimitSettingsCacheData {
+	cp := FlowRateLimitSettingsCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &FlowRateLimitSettings{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // FlowRateLimitSettingsCache caches FlowRateLimitSettings objects in memory in a hash table
 // and keeps them in sync with the database.
 type FlowRateLimitSettingsCache struct {
@@ -2089,7 +2114,7 @@ type FlowRateLimitSettingsCache struct {
 	Mux           util.Mutex
 	List          map[FlowRateLimitSettingsKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *FlowRateLimitSettingsKey, old *FlowRateLimitSettings, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *FlowRateLimitSettings, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *FlowRateLimitSettings, new *FlowRateLimitSettings)
 	DeletedCbs    []func(ctx context.Context, old *FlowRateLimitSettings)
 	KeyWatchers   map[FlowRateLimitSettingsKey][]*FlowRateLimitSettingsKeyWatcher
@@ -2148,6 +2173,14 @@ func (c *FlowRateLimitSettingsCache) GetAllKeys(ctx context.Context, cb func(key
 	}
 }
 
+func (c *FlowRateLimitSettingsCache) GetAllLocked(ctx context.Context, cb func(obj *FlowRateLimitSettings, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *FlowRateLimitSettingsCache) Update(ctx context.Context, in *FlowRateLimitSettings, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *FlowRateLimitSettings) (*FlowRateLimitSettings, bool) {
 		return in, true
@@ -2165,14 +2198,16 @@ func (c *FlowRateLimitSettingsCache) UpdateModFunc(ctx context.Context, key *Flo
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &FlowRateLimitSettings{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -2209,9 +2244,13 @@ func (c *FlowRateLimitSettingsCache) DeleteCondFunc(ctx context.Context, in *Flo
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -2239,9 +2278,14 @@ func (c *FlowRateLimitSettingsCache) Prune(ctx context.Context, validKeys map[Fl
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &FlowRateLimitSettings{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -2286,8 +2330,8 @@ func FlowRateLimitSettingsGenericNotifyCb(fn func(key *FlowRateLimitSettingsKey,
 	}
 }
 
-func (c *FlowRateLimitSettingsCache) SetNotifyCb(fn func(ctx context.Context, obj *FlowRateLimitSettingsKey, old *FlowRateLimitSettings, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *FlowRateLimitSettingsKey, old *FlowRateLimitSettings, modRev int64){fn}
+func (c *FlowRateLimitSettingsCache) SetNotifyCb(fn func(ctx context.Context, obj *FlowRateLimitSettings, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *FlowRateLimitSettings, modRev int64){fn}
 }
 
 func (c *FlowRateLimitSettingsCache) SetUpdatedCb(fn func(ctx context.Context, old *FlowRateLimitSettings, new *FlowRateLimitSettings)) {
@@ -2314,7 +2358,7 @@ func (c *FlowRateLimitSettingsCache) AddDeletedCb(fn func(ctx context.Context, o
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *FlowRateLimitSettingsCache) AddNotifyCb(fn func(ctx context.Context, obj *FlowRateLimitSettingsKey, old *FlowRateLimitSettings, modRev int64)) {
+func (c *FlowRateLimitSettingsCache) AddNotifyCb(fn func(ctx context.Context, obj *FlowRateLimitSettings, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -2419,9 +2463,14 @@ func (c *FlowRateLimitSettingsCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &FlowRateLimitSettings{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -2615,11 +2664,20 @@ var MaxReqsRateLimitSettingsKeyTagMaxReqsSettingsName = "maxreqssettingsname"
 
 func (m *MaxReqsRateLimitSettingsKey) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["maxreqssettingsname"] = m.MaxReqsSettingsName
-	tags["apiname"] = m.RateLimitKey.ApiName
-	tags["apiendpointtype"] = ApiEndpointType_name[int32(m.RateLimitKey.ApiEndpointType)]
-	tags["ratelimittarget"] = RateLimitTarget_name[int32(m.RateLimitKey.RateLimitTarget)]
+	m.AddTags(tags)
 	return tags
+}
+
+func (m *MaxReqsRateLimitSettingsKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("maxreqssettingsname", m.MaxReqsSettingsName)
+	addTag("apiname", m.RateLimitKey.ApiName)
+	addTag("apiendpointtype", ApiEndpointType_name[int32(m.RateLimitKey.ApiEndpointType)])
+	addTag("ratelimittarget", RateLimitTarget_name[int32(m.RateLimitKey.RateLimitTarget)])
+}
+
+func (m *MaxReqsRateLimitSettingsKey) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -2804,6 +2862,7 @@ type MaxReqsRateLimitSettingsStore interface {
 	STMGet(stm concurrency.STM, key *MaxReqsRateLimitSettingsKey, buf *MaxReqsRateLimitSettings) bool
 	STMPut(stm concurrency.STM, obj *MaxReqsRateLimitSettings, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *MaxReqsRateLimitSettingsKey)
+	STMHas(stm concurrency.STM, key *MaxReqsRateLimitSettingsKey) bool
 }
 
 type MaxReqsRateLimitSettingsStoreImpl struct {
@@ -2935,6 +2994,11 @@ func (s *MaxReqsRateLimitSettingsStoreImpl) STMGet(stm concurrency.STM, key *Max
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *MaxReqsRateLimitSettingsStoreImpl) STMHas(stm concurrency.STM, key *MaxReqsRateLimitSettingsKey) bool {
+	keystr := objstore.DbKeyString("MaxReqsRateLimitSettings", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *MaxReqsRateLimitSettingsStoreImpl) parseGetData(val []byte, buf *MaxReqsRateLimitSettings) bool {
 	if len(val) == 0 {
 		return false
@@ -2976,6 +3040,16 @@ type MaxReqsRateLimitSettingsCacheData struct {
 	ModRev int64
 }
 
+func (s *MaxReqsRateLimitSettingsCacheData) Clone() *MaxReqsRateLimitSettingsCacheData {
+	cp := MaxReqsRateLimitSettingsCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &MaxReqsRateLimitSettings{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // MaxReqsRateLimitSettingsCache caches MaxReqsRateLimitSettings objects in memory in a hash table
 // and keeps them in sync with the database.
 type MaxReqsRateLimitSettingsCache struct {
@@ -2983,7 +3057,7 @@ type MaxReqsRateLimitSettingsCache struct {
 	Mux           util.Mutex
 	List          map[MaxReqsRateLimitSettingsKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *MaxReqsRateLimitSettingsKey, old *MaxReqsRateLimitSettings, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *MaxReqsRateLimitSettings, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *MaxReqsRateLimitSettings, new *MaxReqsRateLimitSettings)
 	DeletedCbs    []func(ctx context.Context, old *MaxReqsRateLimitSettings)
 	KeyWatchers   map[MaxReqsRateLimitSettingsKey][]*MaxReqsRateLimitSettingsKeyWatcher
@@ -3042,6 +3116,14 @@ func (c *MaxReqsRateLimitSettingsCache) GetAllKeys(ctx context.Context, cb func(
 	}
 }
 
+func (c *MaxReqsRateLimitSettingsCache) GetAllLocked(ctx context.Context, cb func(obj *MaxReqsRateLimitSettings, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *MaxReqsRateLimitSettingsCache) Update(ctx context.Context, in *MaxReqsRateLimitSettings, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *MaxReqsRateLimitSettings) (*MaxReqsRateLimitSettings, bool) {
 		return in, true
@@ -3059,14 +3141,16 @@ func (c *MaxReqsRateLimitSettingsCache) UpdateModFunc(ctx context.Context, key *
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &MaxReqsRateLimitSettings{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -3103,9 +3187,13 @@ func (c *MaxReqsRateLimitSettingsCache) DeleteCondFunc(ctx context.Context, in *
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -3133,9 +3221,14 @@ func (c *MaxReqsRateLimitSettingsCache) Prune(ctx context.Context, validKeys map
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &MaxReqsRateLimitSettings{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -3180,8 +3273,8 @@ func MaxReqsRateLimitSettingsGenericNotifyCb(fn func(key *MaxReqsRateLimitSettin
 	}
 }
 
-func (c *MaxReqsRateLimitSettingsCache) SetNotifyCb(fn func(ctx context.Context, obj *MaxReqsRateLimitSettingsKey, old *MaxReqsRateLimitSettings, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *MaxReqsRateLimitSettingsKey, old *MaxReqsRateLimitSettings, modRev int64){fn}
+func (c *MaxReqsRateLimitSettingsCache) SetNotifyCb(fn func(ctx context.Context, obj *MaxReqsRateLimitSettings, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *MaxReqsRateLimitSettings, modRev int64){fn}
 }
 
 func (c *MaxReqsRateLimitSettingsCache) SetUpdatedCb(fn func(ctx context.Context, old *MaxReqsRateLimitSettings, new *MaxReqsRateLimitSettings)) {
@@ -3208,7 +3301,7 @@ func (c *MaxReqsRateLimitSettingsCache) AddDeletedCb(fn func(ctx context.Context
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *MaxReqsRateLimitSettingsCache) AddNotifyCb(fn func(ctx context.Context, obj *MaxReqsRateLimitSettingsKey, old *MaxReqsRateLimitSettings, modRev int64)) {
+func (c *MaxReqsRateLimitSettingsCache) AddNotifyCb(fn func(ctx context.Context, obj *MaxReqsRateLimitSettings, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -3313,9 +3406,14 @@ func (c *MaxReqsRateLimitSettingsCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &MaxReqsRateLimitSettings{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -3454,10 +3552,19 @@ var RateLimitSettingsKeyTagRateLimitTarget = "ratelimittarget"
 
 func (m *RateLimitSettingsKey) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["apiname"] = m.ApiName
-	tags["apiendpointtype"] = ApiEndpointType_name[int32(m.ApiEndpointType)]
-	tags["ratelimittarget"] = RateLimitTarget_name[int32(m.RateLimitTarget)]
+	m.AddTags(tags)
 	return tags
+}
+
+func (m *RateLimitSettingsKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("apiname", m.ApiName)
+	addTag("apiendpointtype", ApiEndpointType_name[int32(m.ApiEndpointType)])
+	addTag("ratelimittarget", RateLimitTarget_name[int32(m.RateLimitTarget)])
+}
+
+func (m *RateLimitSettingsKey) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -3622,6 +3729,7 @@ type RateLimitSettingsStore interface {
 	STMGet(stm concurrency.STM, key *RateLimitSettingsKey, buf *RateLimitSettings) bool
 	STMPut(stm concurrency.STM, obj *RateLimitSettings, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *RateLimitSettingsKey)
+	STMHas(stm concurrency.STM, key *RateLimitSettingsKey) bool
 }
 
 type RateLimitSettingsStoreImpl struct {
@@ -3737,6 +3845,11 @@ func (s *RateLimitSettingsStoreImpl) STMGet(stm concurrency.STM, key *RateLimitS
 	keystr := objstore.DbKeyString("RateLimitSettings", key)
 	valstr := stm.Get(keystr)
 	return s.parseGetData([]byte(valstr), buf)
+}
+
+func (s *RateLimitSettingsStoreImpl) STMHas(stm concurrency.STM, key *RateLimitSettingsKey) bool {
+	keystr := objstore.DbKeyString("RateLimitSettings", key)
+	return stm.Get(keystr) != ""
 }
 
 func (s *RateLimitSettingsStoreImpl) parseGetData(val []byte, buf *RateLimitSettings) bool {

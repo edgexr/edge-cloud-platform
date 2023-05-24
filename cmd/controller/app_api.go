@@ -915,25 +915,10 @@ func validateAutoDeployApp(stm concurrency.STM, app *edgeproto.App) error {
 	// configurations, we only support a subset of all features
 	// for autoclusters and auto-provisioning.
 	if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_DIRECT {
-		return fmt.Errorf("For auto-provisioning or auto-clusters, App access type direct is not supported")
+		return fmt.Errorf("For auto-provisioning or auto-clusters (no cluster specified), App access type direct is not supported")
 	}
 	if app.DefaultFlavor.Name == "" {
-		return fmt.Errorf("For auto-provisioning or auto-clusters, App must have default flavor defined")
-	}
-	validDeployments := []string{
-		cloudcommon.DeploymentTypeKubernetes,
-		cloudcommon.DeploymentTypeHelm,
-		cloudcommon.DeploymentTypeDocker,
-	}
-	validDep := false
-	for _, dep := range validDeployments {
-		if app.Deployment == dep {
-			validDep = true
-			break
-		}
-	}
-	if !validDep {
-		return fmt.Errorf("For auto-provisioning or auto-clusters, App deployment types are limited to %s", strings.Join(validDeployments, ", "))
+		return fmt.Errorf("For auto-provisioning or auto-clusters (no cluster specified), App must have default flavor defined")
 	}
 	return nil
 }

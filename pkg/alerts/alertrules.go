@@ -21,11 +21,11 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
-	"github.com/edgexr/edge-cloud-platform/pkg/prommgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/prommgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/prometheus/common/model"
 )
@@ -67,8 +67,8 @@ func getAlertRulesArgs(ctx context.Context, appInst *edgeproto.AppInst, alerts [
 	alertArgs := AlertArgs{ClusterAlerts: []*PrometheusClusterAlert{}}
 
 	// filter the prom query to only include mexAppName
-	labelFilter := `{label_mexAppName="` + util.DNSSanitize(appInst.Key.AppKey.Name) +
-		`",label_mexAppVersion="` + util.DNSSanitize(appInst.Key.AppKey.Version) + `"}`
+	labelFilter := `{label_mexAppName="` + util.DNSSanitize(appInst.AppKey.Name) +
+		`",label_mexAppVersion="` + util.DNSSanitize(appInst.AppKey.Version) + `"}`
 
 	for ii := range alerts {
 		// if this is an envoy-based alert, skip it
@@ -127,7 +127,7 @@ func GetAlertRules(ctx context.Context, appInst *edgeproto.AppInst, alerts []edg
 
 // Get a set of cloudlet prometheus alerts for user-defined alerts on a given appInst
 func GetCloudletAlertRules(ctx context.Context, appInst *edgeproto.AppInst, alerts []edgeproto.AlertPolicy) *prommgmt.RuleGroup {
-	grp := prommgmt.NewRuleGroup("user-alerts", appInst.Key.AppKey.Organization)
+	grp := prommgmt.NewRuleGroup("user-alerts", appInst.AppKey.Organization)
 
 	for ii, _ := range alerts {
 		if alerts[ii].ActiveConnLimit == 0 {
@@ -135,9 +135,9 @@ func GetCloudletAlertRules(ctx context.Context, appInst *edgeproto.AppInst, aler
 		}
 		rule := getPromAlertFromEdgeprotoAlert(appInst, &alerts[ii])
 		rule.Expr = `envoy_cluster_upstream_cx_active{` +
-			edgeproto.AppKeyTagName + `="` + appInst.Key.AppKey.Name + `",` +
-			edgeproto.AppKeyTagVersion + `="` + appInst.Key.AppKey.Version + `",` +
-			edgeproto.AppKeyTagOrganization + `="` + appInst.Key.AppKey.Organization +
+			edgeproto.AppKeyTagName + `="` + appInst.AppKey.Name + `",` +
+			edgeproto.AppKeyTagVersion + `="` + appInst.AppKey.Version + `",` +
+			edgeproto.AppKeyTagOrganization + `="` + appInst.AppKey.Organization +
 			`"} > ` + fmt.Sprintf("%d", alerts[ii].ActiveConnLimit)
 
 		log.SpanLog(ctx, log.DebugLevelInfo, "Adding Cloudlet Prometheus user alert rule", "appInst", appInst,
@@ -161,7 +161,7 @@ func getPromAlertFromEdgeprotoAlert(appInst *edgeproto.AppInst, alert *edgeproto
 	rule.Labels[cloudcommon.AlertScopeTypeTag] = cloudcommon.AlertScopeApp
 	rule.Labels[cloudcommon.AlertTypeLabel] = cloudcommon.AlertTypeUserDefined
 	rule.Labels[cloudcommon.AlertSeverityLabel] = alert.Severity
-	rule.Labels = util.AddMaps(rule.Labels, appInst.Key.GetTags())
+	rule.Labels = util.AddMaps(rule.Labels, appInst.GetTags())
 	rule.Annotations = util.CopyStringMap(alert.Annotations)
 	// Add title annotation if one doesn't exist - our notification templates rely on it being present
 	if _, found := rule.Annotations[cloudcommon.AlertAnnotationTitle]; !found {

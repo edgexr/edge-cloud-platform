@@ -211,20 +211,13 @@ func (key *ClusterKey) ValidateKey() error {
 	if !util.ValidKubernetesName(key.Name) {
 		return errors.New("Invalid cluster name")
 	}
+	if !util.ValidName(key.Organization) {
+		return errors.New("Invalid cluster organization")
+	}
 	return nil
 }
 
 func (key *ClusterInstKey) ValidateKey() error {
-	if err := key.ClusterKey.ValidateKey(); err != nil {
-		return err
-	}
-	if err := key.CloudletKey.ValidateKey(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (key *VirtualClusterInstKey) ValidateKey() error {
 	if err := key.ClusterKey.ValidateKey(); err != nil {
 		return err
 	}
@@ -404,7 +397,7 @@ func (g *GPUDriver) Validate(fields map[string]struct{}) error {
 
 func (key *CloudletKey) ValidateKey() error {
 	if !util.ValidName(key.Organization) {
-		return errors.New("Invalid organization name")
+		return fmt.Errorf("Invalid cloudlet organization name %s", key.Organization)
 	}
 	if !util.ValidName(key.Name) {
 		return errors.New("Invalid cloudlet name")
@@ -592,10 +585,13 @@ func (s *ResTagTable) Validate(fields map[string]struct{}) error {
 }
 
 func (key *AppInstKey) ValidateKey() error {
-	if err := key.AppKey.ValidateKey(); err != nil {
-		return err
+	if !util.ValidName(key.Name) {
+		return errors.New("Invalid app instance name")
 	}
-	if err := key.ClusterInstKey.ValidateKey(); err != nil {
+	if !util.ValidName(key.Organization) {
+		return errors.New("Invalid app instance organization")
+	}
+	if err := key.CloudletKey.ValidateKey(); err != nil {
 		return err
 	}
 	return nil
@@ -887,9 +883,25 @@ func HasField(fmap map[string]struct{}, field string) bool {
 	return ok
 }
 
+// AddTagFunc is used to collect tags and values
+type AddTagFunc = func(key, value string)
+
+// TagMap implements AddTagFunc
+type TagMap map[string]string
+
+func (s TagMap) AddTag(key, value string) {
+	s[key] = value
+}
+
 func (m *Metric) AddTag(name string, val string) {
 	tag := MetricTag{Name: name, Val: val}
 	m.Tags = append(m.Tags, &tag)
+}
+
+func (m *Metric) AddKeyTags(key objstore.ObjKey) {
+	for name, val := range key.GetTags() {
+		m.AddTag(name, val)
+	}
 }
 
 func (m *Metric) AddDoubleVal(name string, dval float64) {
@@ -1112,11 +1124,11 @@ func GetOrg(obj interface{}) string {
 	case *Cloudlet:
 		return v.Key.Organization
 	case *ClusterInst:
-		return v.Key.Organization
+		return v.Key.ClusterKey.Organization
 	case *App:
 		return v.Key.Organization
 	case *AppInst:
-		return v.Key.AppKey.Organization
+		return v.Key.Organization
 	default:
 		return OrganizationEdgeCloud
 	}
@@ -1138,7 +1150,7 @@ func (c *ClusterInstCache) UsesOrg(org string) bool {
 	defer c.Mux.Unlock()
 	for _, cd := range c.Objs {
 		val := cd.Obj
-		if val.Key.Organization == org || val.Key.CloudletKey.Organization == org || (val.Reservable && val.ReservedBy == org) {
+		if val.Key.ClusterKey.Organization == org || val.Key.CloudletKey.Organization == org || (val.Reservable && val.ReservedBy == org) {
 			return true
 		}
 	}
@@ -1224,83 +1236,38 @@ func (s *CloudletPool) GetCloudletKeys() map[CloudletKey]struct{} {
 	return keys
 }
 
-func (s *AppInst) GetRealClusterName() string {
-	if s.RealClusterName != "" {
-		return s.RealClusterName
-	}
-	return s.Key.ClusterInstKey.ClusterKey.Name
-}
-
-// For vanity naming of reservable ClusterInsts, the actual ClusterInst
-// name may be on the AppInst object.
 func (s *AppInst) ClusterInstKey() *ClusterInstKey {
-	return s.Key.ClusterInstKey.Real(s.GetRealClusterName())
+	return &ClusterInstKey{
+		ClusterKey:  s.ClusterKey,
+		CloudletKey: s.Key.CloudletKey,
+	}
 }
 
-// Convert VirtualClusterInstKey to a real ClusterInstKey,
-// given the real cluster name (may be blank for no aliasing).
-func (s *VirtualClusterInstKey) Real(realClusterName string) *ClusterInstKey {
-	key := ClusterInstKey{
-		ClusterKey:   s.ClusterKey,
-		CloudletKey:  s.CloudletKey,
-		Organization: s.Organization,
+// For backwards compatibility with the old virtual cluster name,
+// gets the virtual cluster if it's an older AppInst, or the real
+// cluster if no virtual or newer AppInst
+func (s *AppInst) VClusterKey() ClusterKey {
+	if s.VirtualClusterKey.Name != "" {
+		return s.VirtualClusterKey
 	}
-	if realClusterName != "" {
-		key.ClusterKey.Name = realClusterName
-	}
-	return &key
-}
-
-// Convert real ClusterInstKey to a VirtualClusterInstKey,
-// give the virtual cluster name (may be blank for no aliasing).
-func (s *ClusterInstKey) Virtual(virtualName string) *VirtualClusterInstKey {
-	key := VirtualClusterInstKey{
-		ClusterKey:   s.ClusterKey,
-		CloudletKey:  s.CloudletKey,
-		Organization: s.Organization,
-	}
-	if virtualName != "" {
-		key.ClusterKey.Name = virtualName
-	}
-	return &key
-}
-
-func (s *ClusterInstRefKey) FromClusterInstKey(key *ClusterInstKey) {
-	s.ClusterKey = key.ClusterKey
-	s.Organization = key.Organization
-}
-
-func (s *ClusterInstKey) FromClusterInstRefKey(key *ClusterInstRefKey, clKey *CloudletKey) {
-	s.ClusterKey = key.ClusterKey
-	s.Organization = key.Organization
-	s.CloudletKey = *clKey
+	return s.ClusterKey
 }
 
 func (s *AppInstRefKey) FromAppInstKey(key *AppInstKey) {
-	s.AppKey = key.AppKey
-	s.ClusterInstKey.ClusterKey = key.ClusterInstKey.ClusterKey
-	s.ClusterInstKey.Organization = key.ClusterInstKey.Organization
+	s.Name = key.Name
+	s.Organization = key.Organization
+}
+
+func (s *AppInstKey) GetRefKey() *AppInstRefKey {
+	refKey := AppInstRefKey{}
+	refKey.FromAppInstKey(s)
+	return &refKey
 }
 
 func (s *AppInstKey) FromAppInstRefKey(key *AppInstRefKey, clKey *CloudletKey) {
-	s.AppKey = key.AppKey
-	s.ClusterInstKey.ClusterKey = key.ClusterInstKey.ClusterKey
-	s.ClusterInstKey.Organization = key.ClusterInstKey.Organization
-	s.ClusterInstKey.CloudletKey = *clKey
-}
-
-func (s *AppInstKey) ClusterRefsAppInstKey() *ClusterRefsAppInstKey {
-	return &ClusterRefsAppInstKey{
-		AppKey:       s.AppKey,
-		VClusterName: s.ClusterInstKey.ClusterKey.Name,
-	}
-}
-
-func (s *AppInstKey) FromClusterRefsAppInstKey(key *ClusterRefsAppInstKey, cKey *ClusterInstKey) {
-	s.AppKey = key.AppKey
-	s.ClusterInstKey.ClusterKey.Name = key.VClusterName
-	s.ClusterInstKey.Organization = cKey.Organization
-	s.ClusterInstKey.CloudletKey = cKey.CloudletKey
+	s.Name = key.Name
+	s.Organization = key.Organization
+	s.CloudletKey = *clKey
 }
 
 func (r *InfraResources) UpdateResources(inRes *InfraResources) (updated bool) {
@@ -1458,4 +1425,29 @@ func (s AllSelector) Has(str string) bool {
 	}
 	_, found := s[str]
 	return found
+}
+
+// For tracking App + Cloudlet
+type AppCloudletKeyPair struct {
+	AppKey      AppKey
+	CloudletKey CloudletKey
+}
+
+func (s *AppInst) AppCloudletKeyPair() *AppCloudletKeyPair {
+	return &AppCloudletKeyPair{
+		AppKey:      s.AppKey,
+		CloudletKey: s.Key.CloudletKey,
+	}
+}
+
+func (s *AppInst) GetTags() map[string]string {
+	tags := make(map[string]string)
+	s.AddTags(tags)
+	return tags
+}
+
+func (s *AppInst) AddTags(tags map[string]string) {
+	s.Key.AddTags(tags)
+	s.AppKey.AddTags(tags)
+	s.ClusterKey.AddTags(tags)
 }

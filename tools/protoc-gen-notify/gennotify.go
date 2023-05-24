@@ -144,10 +144,10 @@ type tmplArgs struct {
 var tmpl = `
 {{- if .Cache}}
 type Send{{.Name}}Handler interface {
-	GetAllKeys(ctx context.Context, cb func(key *{{.KeyType}}, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *{{.NameType}}, modRev int64))
 	GetWithRev(key *{{.KeyType}}, buf *{{.NameType}}, modRev *int64) bool
 {{- if .FilterCloudletKey}}
-	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(key *{{.KeyType}}, modRev int64))
+	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(data *{{.NameType}}CacheData))
 {{- end}}
 }
 
@@ -161,7 +161,7 @@ type Recv{{.Name}}Handler interface {
 type {{.Name}}CacheHandler interface {
 	Send{{.Name}}Handler
 	Recv{{.Name}}Handler
-	AddNotifyCb(fn func(ctx context.Context, obj *{{.KeyType}}, old *{{.NameType}}, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *{{.NameType}}, modRev int64))
 }
 
 {{- else}}
@@ -239,13 +239,13 @@ func (s *{{.Name}}Send) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *{{.KeyType}}, modRev int64) {
+	s.handler.GetAllLocked(ctx, func(obj *{{.NameType}}, modRev int64) {
 {{- if .CustomUpdate}}
-		if !s.UpdateAllOkLocked(key) { // to be implemented by hand
+		if !s.UpdateAllOkLocked(obj) { // to be implemented by hand
 			return
 		}
 {{- end}}
-		s.Keys[*key] = {{.Name}}SendContext{
+		s.Keys[*obj.GetKey()] = {{.Name}}SendContext{
 			ctx: ctx,
 			modRev: modRev,
 		}
@@ -253,17 +253,17 @@ func (s *{{.Name}}Send) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *{{.Name}}Send) Update(ctx context.Context, key *{{.KeyType}}, old *{{.NameType}}, modRev int64) {
+func (s *{{.Name}}Send) Update(ctx context.Context, obj *{{.NameType}}, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 {{- if .CustomUpdate}}
-	if !s.UpdateOk(ctx, key) { // to be implemented by hand
+	if !s.UpdateOk(ctx, obj) { // to be implemented by hand
 		return
 	}
 {{- end}}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *{{.Name}}Send) ForceDelete(ctx context.Context, key *{{.KeyType}}, modRev int64) {
@@ -308,15 +308,18 @@ func (s *{{.Name}}Send) Update(ctx context.Context, msg *{{.NameType}}) bool {
 
 func (s *{{.Name}}Send) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
 {{- if and .FilterCloudletKey .Cache}}
-	keys := make(map[{{.KeyType}}]int64)
-	s.handler.GetForCloudlet(cloudlet, func(objKey *{{.KeyType}}, modRev int64) {
-		keys[*objKey] = modRev
+	keys := make(map[{{.KeyType}}]*{{.NameType}}CacheData)
+	s.handler.GetForCloudlet(cloudlet, func(data *{{.NameType}}CacheData) {
+		if data.Obj == nil {
+			return
+		}
+		keys[*data.Obj.GetKey()] = data
 	})
-	for k, modRev := range keys {
+	for k, data := range keys {
 		if action == edgeproto.NoticeAction_UPDATE {
-			s.Update(ctx, &k, nil, modRev)
+			s.Update(ctx, data.Obj, data.ModRev)
 		} else if action == edgeproto.NoticeAction_DELETE {
-			s.ForceDelete(ctx, &k, modRev)
+			s.ForceDelete(ctx, &k, data.ModRev)
 		}
 	}
 {{- end}}
@@ -458,11 +461,11 @@ func (s *{{.Name}}SendMany) DoneSend(peerAddr string, send NotifySend) {
 }
 
 {{- if .Cache}}
-func (s *{{.Name}}SendMany) Update(ctx context.Context, key *{{.KeyType}}, old *{{.NameType}}, modRev int64) {
+func (s *{{.Name}}SendMany) Update(ctx context.Context, obj *{{.NameType}}, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 {{- else}}

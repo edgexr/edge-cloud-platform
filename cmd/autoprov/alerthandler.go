@@ -17,8 +17,8 @@ package main
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/opentracing/opentracing-go"
 )
@@ -76,13 +76,16 @@ func autoUndeploy(ctx context.Context, name string, alert *edgeproto.Alert) erro
 		return nil
 	}
 	inst := edgeproto.AppInst{}
-	inst.Key.AppKey.Organization = alert.Labels[edgeproto.AppKeyTagOrganization]
-	inst.Key.AppKey.Name = alert.Labels[edgeproto.AppKeyTagName]
-	inst.Key.AppKey.Version = alert.Labels[edgeproto.AppKeyTagVersion]
-	inst.Key.ClusterInstKey.ClusterKey.Name = alert.Labels[edgeproto.ClusterKeyTagName]
-	inst.Key.ClusterInstKey.Organization = alert.Labels[edgeproto.ClusterInstKeyTagOrganization]
-	inst.Key.ClusterInstKey.CloudletKey.Name = alert.Labels[edgeproto.CloudletKeyTagName]
-	inst.Key.ClusterInstKey.CloudletKey.Organization = alert.Labels[edgeproto.CloudletKeyTagOrganization]
+	inst.Key.Organization = alert.Labels[edgeproto.AppInstKeyTagOrganization]
+	inst.Key.Name = alert.Labels[edgeproto.AppInstKeyTagName]
+	inst.Key.CloudletKey.Name = alert.Labels[edgeproto.CloudletKeyTagName]
+	inst.Key.CloudletKey.Organization = alert.Labels[edgeproto.CloudletKeyTagOrganization]
+	inst.Key.CloudletKey.FederatedOrganization = alert.Labels[edgeproto.CloudletKeyTagFederatedOrganization]
+	inst.AppKey.Name = alert.Labels[edgeproto.AppKeyTagName]
+	inst.AppKey.Version = alert.Labels[edgeproto.AppKeyTagVersion]
+	inst.AppKey.Organization = alert.Labels[edgeproto.AppKeyTagOrganization]
+	inst.ClusterKey.Name = alert.Labels[edgeproto.ClusterKeyTagName]
+	inst.ClusterKey.Organization = alert.Labels[edgeproto.ClusterKeyTagOrganization]
 
 	// we're already in a separate go thread so don't need another one here
 	goAppInstApi(ctx, &inst, cloudcommon.Delete, cloudcommon.AutoProvReasonDemand, "")

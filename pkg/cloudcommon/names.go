@@ -98,7 +98,7 @@ func (n NodeType) String() string {
 // resource types
 var ResourceTypeK8sLBSvc = "k8s-lb-svc"
 
-const AutoClusterPrefix = "autocluster"
+const AutoProvPrefix = "autoprov"
 const ReservableClusterPrefix = "reservable"
 const ReserveClusterEvent = "Reserve ClusterInst"
 const FreeClusterEvent = "Free ClusterInst reservation"
@@ -119,6 +119,8 @@ var ProxyMetricsListenUDS = "MetricsUDS" // Unix Domain Socket
 var AutoProvMeasurement = "auto-prov-counts"
 
 // AppLabels for the application containers
+var MexAppInstNameLabel = "mexAppInstName"
+var MexAppInstOrgLabel = "mexAppInstOrg"
 var MexAppNameLabel = "mexAppName"
 var MexAppVersionLabel = "mexAppVersion"
 var MexMetricEndpoint = "mexMetricsEndpoint"
@@ -131,6 +133,59 @@ var ClusterInstCheckpoints = "clusterinst-checkpoints"
 var AppInstEvent = "appinst"
 var AppInstCheckpoints = "appinst-checkpoints"
 var MonthlyInterval = "MONTH"
+var DmeApiMeasurement = "dme-api"
+
+// Influx metrics selectors
+var AppInstEventSelectors = []string{
+	edgeproto.AppInstKeyTagName,
+	edgeproto.AppInstKeyTagOrganization,
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization,
+}
+var ClusterInstEventSelectors = []string{
+	edgeproto.ClusterKeyTagName,
+	edgeproto.ClusterKeyTagOrganization,
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization,
+}
+
+const (
+	MetricTagRegion          = "region"
+	MetricTagOrg             = "org"
+	MetricTagEvent           = "event"
+	MetricTagStatus          = "status"
+	MetricTagStart           = "start"
+	MetricTagEnd             = "end"
+	MetricTagStartTime       = "starttime"
+	MetricTagEndTime         = "endtime"
+	MetricTagDuration        = "duration"
+	MetricTagUptime          = "uptime"
+	MetricTagFlavor          = "flavor"
+	MetricTagDeployment      = "deployment"
+	MetricTagRAM             = "ram"
+	MetricTagVCPU            = "vcpu"
+	MetricTagDisk            = "disk"
+	MetricTagNodeCount       = "nodecount"
+	MetricTagNumNodes        = "numnodes"
+	MetricTagOther           = "other"
+	MetricTagNote            = "note"
+	MetricTagIpAccess        = "ipaccess"
+	MetricTagPort            = "port"
+	MetricTagDmeId           = "dmeId"
+	MetricTagMethod          = "method"
+	MetricTagLocationTile    = "locationtile"
+	MetricTagDataNetworkType = "datanetworktype"
+	MetricTagDeviceCarrier   = "devicecarrier"
+	MetricTagDeviceOS        = "deviceos"
+	MetricTagDeviceModel     = "devicemodel"
+	MetricTagFoundCloudlet   = "foundCloudlet"
+	MetricTagFoundOperator   = "foundOperator"
+	MetricTagDmeCloudlet     = "dmecloudlet"
+	MetricTagDmeCloudletOrg  = "dmecloudletorg"
+	MetricTagStatName        = "statname"
+)
 
 // Cloudlet resource usage
 var CloudletResourceUsageDbName = "cloudlet_resource_usage"
@@ -208,6 +263,10 @@ func IsPlatformApp(devname string, appname string) bool {
 var AllocatedIpDynamic = "dynamic"
 
 var RootLBHostname = "shared"
+
+// These alphabets are used for generating random strings with gonanoid.
+const IdAlphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const IdAlphabetLC = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 // Fully Qualified Domain Names (FQDNs) primarily come in the
 // the following format of 4 "labels" (where domain can actually
@@ -465,4 +524,58 @@ func GetArtifactStoragePath(addr, org, path string) string {
 func GetArtifactPullPath(addr, org, path string) string {
 	addr = strings.TrimRight(addr, "/")
 	return addr + VmRegPullPath + GetArtifactOrgPath(org, path)
+}
+
+// AppInstLabels are for labeling objects to track that they
+// belong to an AppInst. The cloudlet key information is omitted
+// because objects to track are on a particular cloudlet, so the
+// cloudlet info is fixed.
+type AppInstLabels struct {
+	AppInstNameLabel string
+	AppInstOrgLabel  string
+}
+
+func GetAppInstLabels(appInst *edgeproto.AppInst) AppInstLabels {
+	return AppInstLabels{
+		AppInstNameLabel: util.K8SLabelValueSanitize(appInst.Key.Name),
+		AppInstOrgLabel:  util.K8SLabelValueSanitize(appInst.Key.Organization),
+	}
+}
+
+func (s *AppInstLabels) Map() map[string]string {
+	return map[string]string{
+		MexAppInstNameLabel: s.AppInstNameLabel,
+		MexAppInstOrgLabel:  s.AppInstOrgLabel,
+	}
+}
+
+func (s *AppInstLabels) FromMap(labels map[string]string) {
+	s.AppInstNameLabel = labels[MexAppInstNameLabel]
+	s.AppInstOrgLabel = labels[MexAppInstOrgLabel]
+}
+
+// AppInstLabelsOld are the version of AppInstLabels before the
+// AppInstUniqueNameKey upgrade.
+type AppInstLabelsOld struct {
+	AppNameLabel    string
+	AppVersionLabel string
+}
+
+func GetAppInstLabelsOld(appInst *edgeproto.AppInst) AppInstLabelsOld {
+	return AppInstLabelsOld{
+		AppNameLabel:    util.DNSSanitize(appInst.AppKey.Name),
+		AppVersionLabel: util.DNSSanitize(appInst.AppKey.Version),
+	}
+}
+
+func (s *AppInstLabelsOld) Map() map[string]string {
+	return map[string]string{
+		MexAppNameLabel:    s.AppNameLabel,
+		MexAppVersionLabel: s.AppVersionLabel,
+	}
+}
+
+func (s *AppInstLabelsOld) FromMap(labels map[string]string) {
+	s.AppNameLabel = labels[MexAppNameLabel]
+	s.AppVersionLabel = labels[MexAppVersionLabel]
 }

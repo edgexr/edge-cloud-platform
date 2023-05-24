@@ -26,9 +26,10 @@ type DeviceInfo struct {
 	DeviceInfoDynamic *dme.DeviceInfoDynamic
 }
 
-func GetDeviceStatKey(appInstKey edgeproto.AppInstKey, deviceInfo *DeviceInfo, loc *dme.Loc, tileLength int) DeviceStatKey {
+func GetDeviceStatKey(appInst *edgeproto.AppInst, deviceInfo *DeviceInfo, loc *dme.Loc, tileLength int) DeviceStatKey {
 	statKey := DeviceStatKey{
-		AppInstKey:   appInstKey,
+		AppInstKey:   appInst.Key,
+		AppKey:       appInst.AppKey,
 		LocationTile: GetLocationTileFromGpsLocation(loc, tileLength),
 	}
 	if deviceInfo.DeviceInfoStatic != nil {
@@ -47,6 +48,7 @@ func GetDeviceStatKey(appInstKey edgeproto.AppInstKey, deviceInfo *DeviceInfo, l
 // Created using CustomStatInfo
 type DeviceStatKey struct {
 	AppInstKey      edgeproto.AppInstKey
+	AppKey          edgeproto.AppKey
 	DeviceCarrier   string
 	LocationTile    string
 	DataNetworkType string

@@ -31,7 +31,7 @@ message CloudletKey {
   // Name of the cloudlet
   string name = 2 [(protogen.keytag) = "cloudlet"];
   // Federated operator organization who shared this cloudlet
-  string federated_organization = 3 [(protogen.keytag) = "federatedorg"];
+  string federated_organization = 3 [(protogen.keytag) = "cloudletfedorg"];
 
   option (protogen.generate_matches) = true;
   option (protogen.obj_key) = true;

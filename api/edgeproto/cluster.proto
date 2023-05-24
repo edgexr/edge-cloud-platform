@@ -25,10 +25,21 @@ option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
 option (gogoproto.goproto_sizecache_all) = false;
 
+// (_deprecated_) ClusterKeyV1 uniquely identifies a Cluster.
+message ClusterKeyV1 {
+  // Cluster name
+  string name = 1 [(protogen.keytag) = "cluster", (protogen.skip_keytag_conflict_check) = true];
+  option (protogen.generate_matches) = true;
+  option (protogen.obj_key) = true;
+  option (gogoproto.gostring) = true;
+}
+
 // ClusterKey uniquely identifies a Cluster.
 message ClusterKey {
   // Cluster name
   string name = 1 [(protogen.keytag) = "cluster"];
+  // Name of the organization that this cluster belongs to
+  string organization = 2 [(protogen.keytag) = "clusterorg"];
   option (protogen.generate_matches) = true;
   option (protogen.obj_key) = true;
   option (gogoproto.gostring) = true;

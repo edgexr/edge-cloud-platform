@@ -37,7 +37,7 @@ var (
 )
 
 func TestNotify(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelNotify)
+	log.SetDebugLevel(log.DebugLevelNotify | log.DebugLevelDmereq | log.DebugLevelDmedb | log.DebugLevelApi)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
@@ -208,11 +208,11 @@ func waitAndCheckCloudletforApps(t *testing.T, key *edgeproto.CloudletKey, isApp
 func waitForAppInst(appInst *edgeproto.AppInst) {
 	tbl := dmecommon.DmeAppTbl
 
-	appkey := appInst.Key.AppKey
+	appkey := appInst.AppKey
 	for i := 0; i < 10; i++ {
 		if app, found := tbl.Apps[appkey]; found {
 			for _, c := range app.Carriers {
-				if _, found := c.Insts[appInst.Key.ClusterInstKey]; found {
+				if _, found := c.Insts[appInst.Key]; found {
 					break
 				}
 			}
@@ -224,14 +224,14 @@ func waitForAppInst(appInst *edgeproto.AppInst) {
 func waitForNoAppInst(appInst *edgeproto.AppInst) {
 	tbl := dmecommon.DmeAppTbl
 
-	appkey := appInst.Key.AppKey
+	appkey := appInst.AppKey
 	for i := 0; i < 10; i++ {
 		app, found := tbl.Apps[appkey]
 		if !found {
 			break
 		}
 		for _, c := range app.Carriers {
-			if _, found := c.Insts[appInst.Key.ClusterInstKey]; !found {
+			if _, found := c.Insts[appInst.Key]; !found {
 				break
 			}
 		}

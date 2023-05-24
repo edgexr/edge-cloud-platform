@@ -682,13 +682,22 @@ var TrustPolicyExceptionKeyTagName = "name"
 
 func (m *TrustPolicyExceptionKey) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["apporg"] = m.AppKey.Organization
-	tags["app"] = m.AppKey.Name
-	tags["appver"] = m.AppKey.Version
-	tags["cloudletpoolorg"] = m.CloudletPoolKey.Organization
-	tags["cloudletpool"] = m.CloudletPoolKey.Name
-	tags["name"] = m.Name
+	m.AddTags(tags)
 	return tags
+}
+
+func (m *TrustPolicyExceptionKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("apporg", m.AppKey.Organization)
+	addTag("app", m.AppKey.Name)
+	addTag("appver", m.AppKey.Version)
+	addTag("cloudletpoolorg", m.CloudletPoolKey.Organization)
+	addTag("cloudletpool", m.CloudletPoolKey.Name)
+	addTag("name", m.Name)
+}
+
+func (m *TrustPolicyExceptionKey) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -977,6 +986,7 @@ type TrustPolicyExceptionStore interface {
 	STMGet(stm concurrency.STM, key *TrustPolicyExceptionKey, buf *TrustPolicyException) bool
 	STMPut(stm concurrency.STM, obj *TrustPolicyException, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *TrustPolicyExceptionKey)
+	STMHas(stm concurrency.STM, key *TrustPolicyExceptionKey) bool
 }
 
 type TrustPolicyExceptionStoreImpl struct {
@@ -1108,6 +1118,11 @@ func (s *TrustPolicyExceptionStoreImpl) STMGet(stm concurrency.STM, key *TrustPo
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *TrustPolicyExceptionStoreImpl) STMHas(stm concurrency.STM, key *TrustPolicyExceptionKey) bool {
+	keystr := objstore.DbKeyString("TrustPolicyException", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *TrustPolicyExceptionStoreImpl) parseGetData(val []byte, buf *TrustPolicyException) bool {
 	if len(val) == 0 {
 		return false
@@ -1149,6 +1164,16 @@ type TrustPolicyExceptionCacheData struct {
 	ModRev int64
 }
 
+func (s *TrustPolicyExceptionCacheData) Clone() *TrustPolicyExceptionCacheData {
+	cp := TrustPolicyExceptionCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &TrustPolicyException{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // TrustPolicyExceptionCache caches TrustPolicyException objects in memory in a hash table
 // and keeps them in sync with the database.
 type TrustPolicyExceptionCache struct {
@@ -1156,7 +1181,7 @@ type TrustPolicyExceptionCache struct {
 	Mux           util.Mutex
 	List          map[TrustPolicyExceptionKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *TrustPolicyExceptionKey, old *TrustPolicyException, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *TrustPolicyException, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *TrustPolicyException, new *TrustPolicyException)
 	DeletedCbs    []func(ctx context.Context, old *TrustPolicyException)
 	KeyWatchers   map[TrustPolicyExceptionKey][]*TrustPolicyExceptionKeyWatcher
@@ -1215,6 +1240,14 @@ func (c *TrustPolicyExceptionCache) GetAllKeys(ctx context.Context, cb func(key 
 	}
 }
 
+func (c *TrustPolicyExceptionCache) GetAllLocked(ctx context.Context, cb func(obj *TrustPolicyException, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *TrustPolicyExceptionCache) Update(ctx context.Context, in *TrustPolicyException, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *TrustPolicyException) (*TrustPolicyException, bool) {
 		return in, true
@@ -1232,14 +1265,16 @@ func (c *TrustPolicyExceptionCache) UpdateModFunc(ctx context.Context, key *Trus
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &TrustPolicyException{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -1276,9 +1311,13 @@ func (c *TrustPolicyExceptionCache) DeleteCondFunc(ctx context.Context, in *Trus
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -1306,9 +1345,14 @@ func (c *TrustPolicyExceptionCache) Prune(ctx context.Context, validKeys map[Tru
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &TrustPolicyException{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -1353,8 +1397,8 @@ func TrustPolicyExceptionGenericNotifyCb(fn func(key *TrustPolicyExceptionKey, o
 	}
 }
 
-func (c *TrustPolicyExceptionCache) SetNotifyCb(fn func(ctx context.Context, obj *TrustPolicyExceptionKey, old *TrustPolicyException, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *TrustPolicyExceptionKey, old *TrustPolicyException, modRev int64){fn}
+func (c *TrustPolicyExceptionCache) SetNotifyCb(fn func(ctx context.Context, obj *TrustPolicyException, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *TrustPolicyException, modRev int64){fn}
 }
 
 func (c *TrustPolicyExceptionCache) SetUpdatedCb(fn func(ctx context.Context, old *TrustPolicyException, new *TrustPolicyException)) {
@@ -1381,7 +1425,7 @@ func (c *TrustPolicyExceptionCache) AddDeletedCb(fn func(ctx context.Context, ol
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *TrustPolicyExceptionCache) AddNotifyCb(fn func(ctx context.Context, obj *TrustPolicyExceptionKey, old *TrustPolicyException, modRev int64)) {
+func (c *TrustPolicyExceptionCache) AddNotifyCb(fn func(ctx context.Context, obj *TrustPolicyException, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -1486,9 +1530,14 @@ func (c *TrustPolicyExceptionCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &TrustPolicyException{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {

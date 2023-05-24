@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -80,7 +80,7 @@ func upgradeVersionSingleClusterConfigDir(ctx context.Context, caches *platform.
 	for _, appInst := range appInsts {
 		log.SpanLog(ctx, log.DebugLevelInfra, "upgrade version single cluster config dir", "AppInst", appInst.Key)
 		app := edgeproto.App{}
-		if !caches.AppCache.Get(&appInst.Key.AppKey, &app) {
+		if !caches.AppCache.Get(&appInst.AppKey, &app) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "upgrade version single cluster config dir, App not found", "AppInst", appInst.Key)
 			continue
 		}

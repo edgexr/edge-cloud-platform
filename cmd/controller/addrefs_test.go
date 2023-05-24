@@ -18,8 +18,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 )
@@ -152,8 +152,10 @@ func (s *AddRefsDataGen) GetCreateAppInstTestObj() (*edgeproto.AppInst, *testSup
 	flavor := testutil.FlavorData()[0]
 
 	appInst := testutil.AppInstData()[0]
-	appInst.Key.AppKey = app.Key
-	appInst.Key.ClusterInstKey = *clusterInst.Key.Virtual("")
+	appInst.Key.Organization = app.Key.Organization
+	appInst.Key.CloudletKey = cloudlet.Key
+	appInst.AppKey = app.Key
+	appInst.ClusterKey = clusterInst.Key.ClusterKey
 	appInst.Flavor = flavor.Key
 	appInst.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
 

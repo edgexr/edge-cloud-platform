@@ -32,6 +32,7 @@ type deleteArgs struct {
 	Streamout          bool
 	RefBys             []refByArgs
 	TrackedBys         []trackedByArgs
+	TrackedByTypes     []trackedByArgsType
 }
 
 type refByArgs struct {
@@ -44,6 +45,11 @@ type trackedByArgs struct {
 	Type    string
 	RefName string
 	ApiObj  string
+}
+
+type trackedByArgsType struct {
+	Type   string
+	ApiObj string
 }
 
 var dataGenTmpl = `
@@ -150,12 +156,12 @@ func delete{{.Type}}Checks(t *testing.T, ctx context.Context, all *AllApis, data
 		allApis: all,
 	}
 	api.store = deleteStore
-{{- range .TrackedBys}}
+{{- range .TrackedByTypes}}
 	{{.ApiObj}}Store, {{.ApiObj}}Unwrap := wrap{{.Type}}TrackerStore(all.{{.ApiObj}})
 {{- end}}
 	defer func() {
 		api.store = origStore
-{{- range .TrackedBys}}
+{{- range .TrackedByTypes}}
 		{{.ApiObj}}Unwrap()
 {{- end}}
 	}()
@@ -277,6 +283,7 @@ func (s *ControllerTest) generateDeleteTest(desc *generator.Descriptor) {
 	}
 	// for tracked refs, we inject a refs object into the db
 	tracked := map[string]struct{}{}
+	trackedByTypes := map[trackedByArgsType]struct{}{}
 	for _, tracker := range s.refData.Trackers {
 		if tracker.To.Type != refToGroup.To.Type {
 			continue
@@ -288,6 +295,14 @@ func (s *ControllerTest) generateDeleteTest(desc *generator.Descriptor) {
 			byArgs.ApiObj = getApiObj(tracker.TypeDesc)
 			tracked[byObjField.By.Type] = struct{}{}
 			args.TrackedBys = append(args.TrackedBys, byArgs)
+			trackedByType := trackedByArgsType{
+				Type:   byArgs.Type,
+				ApiObj: byArgs.ApiObj,
+			}
+			if _, found := trackedByTypes[trackedByType]; !found {
+				args.TrackedByTypes = append(args.TrackedByTypes, trackedByType)
+				trackedByTypes[trackedByType] = struct{}{}
+			}
 		}
 	}
 	sort.Slice(args.TrackedBys, func(i, j int) bool {

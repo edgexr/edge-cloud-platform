@@ -31,12 +31,14 @@ type CustomStatInfo struct {
 // Created using CustomStatInfo
 type CustomStatKey struct {
 	AppInstKey edgeproto.AppInstKey
+	AppKey     edgeproto.AppKey
 	Name       string
 }
 
-func GetCustomStatKey(appInstKey edgeproto.AppInstKey, statName string) CustomStatKey {
+func GetCustomStatKey(appInst *edgeproto.AppInst, statName string) CustomStatKey {
 	return CustomStatKey{
-		AppInstKey: appInstKey,
+		AppInstKey: appInst.Key,
+		AppKey:     appInst.AppKey,
 		Name:       statName,
 	}
 }

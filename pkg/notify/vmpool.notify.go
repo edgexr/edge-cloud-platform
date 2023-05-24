@@ -27,9 +27,9 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type SendVMPoolHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.VMPoolKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.VMPool, modRev int64))
 	GetWithRev(key *edgeproto.VMPoolKey, buf *edgeproto.VMPool, modRev *int64) bool
-	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(key *edgeproto.VMPoolKey, modRev int64))
+	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(data *edgeproto.VMPoolCacheData))
 }
 
 type RecvVMPoolHandler interface {
@@ -42,7 +42,7 @@ type RecvVMPoolHandler interface {
 type VMPoolCacheHandler interface {
 	SendVMPoolHandler
 	RecvVMPoolHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.VMPoolKey, old *edgeproto.VMPool, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.VMPool, modRev int64))
 }
 
 type VMPoolSend struct {
@@ -97,11 +97,11 @@ func (s *VMPoolSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.VMPoolKey, modRev int64) {
-		if !s.UpdateAllOkLocked(key) { // to be implemented by hand
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.VMPool, modRev int64) {
+		if !s.UpdateAllOkLocked(obj) { // to be implemented by hand
 			return
 		}
-		s.Keys[*key] = VMPoolSendContext{
+		s.Keys[*obj.GetKey()] = VMPoolSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -109,15 +109,15 @@ func (s *VMPoolSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *VMPoolSend) Update(ctx context.Context, key *edgeproto.VMPoolKey, old *edgeproto.VMPool, modRev int64) {
+func (s *VMPoolSend) Update(ctx context.Context, obj *edgeproto.VMPool, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	if !s.UpdateOk(ctx, key) { // to be implemented by hand
+	if !s.UpdateOk(ctx, obj) { // to be implemented by hand
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *VMPoolSend) ForceDelete(ctx context.Context, key *edgeproto.VMPoolKey, modRev int64) {
@@ -138,15 +138,18 @@ func (s *VMPoolSend) updateInternal(ctx context.Context, key *edgeproto.VMPoolKe
 }
 
 func (s *VMPoolSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
-	keys := make(map[edgeproto.VMPoolKey]int64)
-	s.handler.GetForCloudlet(cloudlet, func(objKey *edgeproto.VMPoolKey, modRev int64) {
-		keys[*objKey] = modRev
+	keys := make(map[edgeproto.VMPoolKey]*edgeproto.VMPoolCacheData)
+	s.handler.GetForCloudlet(cloudlet, func(data *edgeproto.VMPoolCacheData) {
+		if data.Obj == nil {
+			return
+		}
+		keys[*data.Obj.GetKey()] = data
 	})
-	for k, modRev := range keys {
+	for k, data := range keys {
 		if action == edgeproto.NoticeAction_UPDATE {
-			s.Update(ctx, &k, nil, modRev)
+			s.Update(ctx, data.Obj, data.ModRev)
 		} else if action == edgeproto.NoticeAction_DELETE {
-			s.ForceDelete(ctx, &k, modRev)
+			s.ForceDelete(ctx, &k, data.ModRev)
 		}
 	}
 }
@@ -243,11 +246,11 @@ func (s *VMPoolSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *VMPoolSendMany) Update(ctx context.Context, key *edgeproto.VMPoolKey, old *edgeproto.VMPool, modRev int64) {
+func (s *VMPoolSendMany) Update(ctx context.Context, obj *edgeproto.VMPool, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 
@@ -389,7 +392,7 @@ func (s *Client) RegisterRecvVMPoolCache(cache VMPoolCacheHandler) {
 }
 
 type SendVMPoolInfoHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.VMPoolKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.VMPoolInfo, modRev int64))
 	GetWithRev(key *edgeproto.VMPoolKey, buf *edgeproto.VMPoolInfo, modRev *int64) bool
 }
 
@@ -403,7 +406,7 @@ type RecvVMPoolInfoHandler interface {
 type VMPoolInfoCacheHandler interface {
 	SendVMPoolInfoHandler
 	RecvVMPoolInfoHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.VMPoolKey, old *edgeproto.VMPoolInfo, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.VMPoolInfo, modRev int64))
 }
 
 type VMPoolInfoSend struct {
@@ -458,8 +461,8 @@ func (s *VMPoolInfoSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.VMPoolKey, modRev int64) {
-		s.Keys[*key] = VMPoolInfoSendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.VMPoolInfo, modRev int64) {
+		s.Keys[*obj.GetKey()] = VMPoolInfoSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -467,12 +470,12 @@ func (s *VMPoolInfoSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *VMPoolInfoSend) Update(ctx context.Context, key *edgeproto.VMPoolKey, old *edgeproto.VMPoolInfo, modRev int64) {
+func (s *VMPoolInfoSend) Update(ctx context.Context, obj *edgeproto.VMPoolInfo, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *VMPoolInfoSend) ForceDelete(ctx context.Context, key *edgeproto.VMPoolKey, modRev int64) {
@@ -587,11 +590,11 @@ func (s *VMPoolInfoSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *VMPoolInfoSendMany) Update(ctx context.Context, key *edgeproto.VMPoolKey, old *edgeproto.VMPoolInfo, modRev int64) {
+func (s *VMPoolInfoSendMany) Update(ctx context.Context, obj *edgeproto.VMPoolInfo, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 

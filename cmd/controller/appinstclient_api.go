@@ -182,13 +182,9 @@ func (s *AppInstClientApi) ShowAppInstClient(in *edgeproto.AppInstClientKey, cb 
 	var ctrlConns []*grpc.ClientConn
 
 	// Check that the appinst org is specified
-	if in.AppInstKey.AppKey.Organization == "" {
+	if in.AppInstKey.Organization == "" {
 		return fmt.Errorf("Organization must be specified")
 	}
-
-	// Since we don't care about the cluster developer and name set them to ""
-	in.AppInstKey.ClusterInstKey.ClusterKey.Name = ""
-	in.AppInstKey.ClusterInstKey.Organization = ""
 
 	ctrlConns = make([]*grpc.ClientConn, 0)
 	done := false

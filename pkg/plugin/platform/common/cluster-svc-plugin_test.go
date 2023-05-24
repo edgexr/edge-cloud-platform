@@ -30,17 +30,19 @@ var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
   - name: useralerts.rules
     rules:
     - alert: testAlert1
-      expr: max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(rate(container_cpu_usage_seconds_total{image!=""}[1m])) by (pod) / ignoring (pod) group_left sum(machine_cpu_cores) * 100 ) > 80 and max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(container_memory_working_set_bytes{image!=""})by(pod) / ignoring (pod) group_left sum( machine_memory_bytes{}) * 100) > 70 and max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(container_fs_usage_bytes{image!=""})by(pod) / ignoring (pod) group_left sum(container_fs_limit_bytes{device=~"^/dev/[sv]d[a-z][1-9]$",id="/"})*100) > 70
+      expr: max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg)(sum(rate(container_cpu_usage_seconds_total{image!=""}[1m])) by (pod) / ignoring (pod) group_left sum(machine_cpu_cores) * 100 ) > 80 and max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg)(sum(container_memory_working_set_bytes{image!=""})by(pod) / ignoring (pod) group_left sum( machine_memory_bytes{}) * 100) > 70 and max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg)(sum(container_fs_usage_bytes{image!=""})by(pod) / ignoring (pod) group_left sum(container_fs_limit_bytes{device=~"^/dev/[sv]d[a-z][1-9]$",id="/"})*100) > 70
       for: 30s
       labels:
         app: "Pillimo Go!"
+        appinst: "Pillimo Go!1"
+        appinstorg: "AtlanticInc"
         apporg: "AtlanticInc"
         appver: "1.0.0"
         cloudlet: "San Jose Site"
+        cloudletfedorg: ""
         cloudletorg: "UFGT Inc."
         cluster: "Pillimos"
         clusterorg: "AtlanticInc"
-        federatedorg: ""
         scope: "Application"
         severity: "warning"
         type: "UserDefined"
@@ -48,17 +50,19 @@ var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
         description: "Sample description"
         title: "testAlert1"
     - alert: testAlert3
-      expr: max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(rate(container_cpu_usage_seconds_total{image!=""}[1m])) by (pod) / ignoring (pod) group_left sum(machine_cpu_cores) * 100 ) > 100
+      expr: max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg)(sum(rate(container_cpu_usage_seconds_total{image!=""}[1m])) by (pod) / ignoring (pod) group_left sum(machine_cpu_cores) * 100 ) > 100
       for: 30s
       labels:
         app: "Pillimo Go!"
+        appinst: "Pillimo Go!1"
+        appinstorg: "AtlanticInc"
         apporg: "AtlanticInc"
         appver: "1.0.0"
         cloudlet: "San Jose Site"
+        cloudletfedorg: ""
         cloudletorg: "UFGT Inc."
         cluster: "Pillimos"
         clusterorg: "AtlanticInc"
-        federatedorg: ""
         scope: "Application"
         severity: "error"
         testLabel1: "testValue1"
@@ -70,17 +74,19 @@ var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
         testAnnotation2: "description2"
         title: "testAlert3"
     - alert: testAlert4
-      expr: max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(rate(container_cpu_usage_seconds_total{image!=""}[1m])) by (pod) / ignoring (pod) group_left sum(machine_cpu_cores) * 100 ) > 80 and max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(container_memory_working_set_bytes{image!=""})by(pod) / ignoring (pod) group_left sum( machine_memory_bytes{}) * 100) > 80
+      expr: max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg)(sum(rate(container_cpu_usage_seconds_total{image!=""}[1m])) by (pod) / ignoring (pod) group_left sum(machine_cpu_cores) * 100 ) > 80 and max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg)(sum(container_memory_working_set_bytes{image!=""})by(pod) / ignoring (pod) group_left sum( machine_memory_bytes{}) * 100) > 80
       for: 30s
       labels:
         app: "Pillimo Go!"
+        appinst: "Pillimo Go!1"
+        appinstorg: "AtlanticInc"
         apporg: "AtlanticInc"
         appver: "1.0.0"
         cloudlet: "San Jose Site"
+        cloudletfedorg: ""
         cloudletorg: "UFGT Inc."
         cluster: "Pillimos"
         clusterorg: "AtlanticInc"
-        federatedorg: ""
         scope: "Application"
         severity: "warning"
         type: "UserDefined"
@@ -88,17 +94,19 @@ var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
         description: "CPU Utilization > 80% and Memory Utilization > 80%"
         title: "testAlert4"
     - alert: testAlert5
-      expr: max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(rate(container_cpu_usage_seconds_total{image!=""}[1m])) by (pod) / ignoring (pod) group_left sum(machine_cpu_cores) * 100 ) > 80 and max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(container_memory_working_set_bytes{image!=""})by(pod) / ignoring (pod) group_left sum( machine_memory_bytes{}) * 100) > 80
+      expr: max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg)(sum(rate(container_cpu_usage_seconds_total{image!=""}[1m])) by (pod) / ignoring (pod) group_left sum(machine_cpu_cores) * 100 ) > 80 and max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg)(sum(container_memory_working_set_bytes{image!=""})by(pod) / ignoring (pod) group_left sum( machine_memory_bytes{}) * 100) > 80
       for: 30s
       labels:
         app: "Pillimo Go!"
+        appinst: "Pillimo Go!1"
+        appinstorg: "AtlanticInc"
         apporg: "AtlanticInc"
         appver: "1.0.0"
         cloudlet: "San Jose Site"
+        cloudletfedorg: ""
         cloudletorg: "UFGT Inc."
         cluster: "Pillimos"
         clusterorg: "AtlanticInc"
-        federatedorg: ""
         scope: "Application"
         severity: "warning"
         type: "UserDefined"
@@ -117,7 +125,7 @@ func TestAutoScaleT(t *testing.T) {
 	clusterInst := testutil.ClusterInstData()[0]
 
 	policy := edgeproto.AutoScalePolicy{}
-	policy.Key.Organization = clusterInst.Key.Organization
+	policy.Key.Organization = clusterInst.Key.ClusterKey.Organization
 	policy.Key.Name = "test-policy"
 	policy.TriggerTimeSec = 120
 

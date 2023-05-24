@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -33,6 +33,7 @@ type K8sClusterStats struct {
 	client   ssh.Client
 	shepherd_common.ClusterMetrics
 	kubeNames *k8smgmt.KubeNames
+	AppInstLabels
 }
 
 func (c *K8sClusterStats) GetClusterStats(ctx context.Context, ops ...shepherd_common.StatsOp) *shepherd_common.ClusterMetrics {

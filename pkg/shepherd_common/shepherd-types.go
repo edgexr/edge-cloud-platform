@@ -18,8 +18,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/gogo/protobuf/types"
 )
 
 const ShepherdSshConnectTimeout = time.Second * 3
@@ -40,6 +40,10 @@ type ClusterStats interface {
 	GetClusterStats(ctx context.Context, ops ...StatsOp) *ClusterMetrics
 	GetAppStats(ctx context.Context) map[MetricAppInstKey]*AppMetrics
 	GetAlerts(ctx context.Context) []edgeproto.Alert
+	// Track a new AppInst in the cluster. Must be idempotent
+	TrackAppInst(ctx context.Context, appInst *edgeproto.AppInst)
+	// Untrack an AppInst from the cluster. Must be idempotent
+	UntrackAppInst(ctx context.Context, appInst *edgeproto.AppInst)
 }
 
 type AppMetrics struct {
@@ -153,8 +157,8 @@ type TcpConnectionsMetric struct {
 type MetricAppInstKey struct {
 	ClusterInstKey edgeproto.ClusterInstKey
 	Pod            string
-	App            string
-	Version        string
+	AppInstName    string
+	AppInstOrg     string
 }
 
 type StatsOptions struct {

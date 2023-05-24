@@ -6702,6 +6702,7 @@ type CloudletInternalStore interface {
 	STMGet(stm concurrency.STM, key *CloudletKey, buf *CloudletInternal) bool
 	STMPut(stm concurrency.STM, obj *CloudletInternal, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *CloudletKey)
+	STMHas(stm concurrency.STM, key *CloudletKey) bool
 }
 
 type CloudletInternalStoreImpl struct {
@@ -6833,6 +6834,11 @@ func (s *CloudletInternalStoreImpl) STMGet(stm concurrency.STM, key *CloudletKey
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *CloudletInternalStoreImpl) STMHas(stm concurrency.STM, key *CloudletKey) bool {
+	keystr := objstore.DbKeyString("CloudletInternal", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *CloudletInternalStoreImpl) parseGetData(val []byte, buf *CloudletInternal) bool {
 	if len(val) == 0 {
 		return false
@@ -6874,6 +6880,16 @@ type CloudletInternalCacheData struct {
 	ModRev int64
 }
 
+func (s *CloudletInternalCacheData) Clone() *CloudletInternalCacheData {
+	cp := CloudletInternalCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &CloudletInternal{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // CloudletInternalCache caches CloudletInternal objects in memory in a hash table
 // and keeps them in sync with the database.
 type CloudletInternalCache struct {
@@ -6881,7 +6897,7 @@ type CloudletInternalCache struct {
 	Mux           util.Mutex
 	List          map[CloudletKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *CloudletKey, old *CloudletInternal, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *CloudletInternal, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *CloudletInternal, new *CloudletInternal)
 	DeletedCbs    []func(ctx context.Context, old *CloudletInternal)
 	KeyWatchers   map[CloudletKey][]*CloudletInternalKeyWatcher
@@ -6940,6 +6956,14 @@ func (c *CloudletInternalCache) GetAllKeys(ctx context.Context, cb func(key *Clo
 	}
 }
 
+func (c *CloudletInternalCache) GetAllLocked(ctx context.Context, cb func(obj *CloudletInternal, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *CloudletInternalCache) Update(ctx context.Context, in *CloudletInternal, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *CloudletInternal) (*CloudletInternal, bool) {
 		return in, true
@@ -6957,14 +6981,16 @@ func (c *CloudletInternalCache) UpdateModFunc(ctx context.Context, key *Cloudlet
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &CloudletInternal{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -7001,9 +7027,13 @@ func (c *CloudletInternalCache) DeleteCondFunc(ctx context.Context, in *Cloudlet
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -7031,9 +7061,14 @@ func (c *CloudletInternalCache) Prune(ctx context.Context, validKeys map[Cloudle
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &CloudletInternal{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -7078,8 +7113,8 @@ func CloudletInternalGenericNotifyCb(fn func(key *CloudletKey, old *CloudletInte
 	}
 }
 
-func (c *CloudletInternalCache) SetNotifyCb(fn func(ctx context.Context, obj *CloudletKey, old *CloudletInternal, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *CloudletKey, old *CloudletInternal, modRev int64){fn}
+func (c *CloudletInternalCache) SetNotifyCb(fn func(ctx context.Context, obj *CloudletInternal, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *CloudletInternal, modRev int64){fn}
 }
 
 func (c *CloudletInternalCache) SetUpdatedCb(fn func(ctx context.Context, old *CloudletInternal, new *CloudletInternal)) {
@@ -7106,7 +7141,7 @@ func (c *CloudletInternalCache) AddDeletedCb(fn func(ctx context.Context, old *C
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *CloudletInternalCache) AddNotifyCb(fn func(ctx context.Context, obj *CloudletKey, old *CloudletInternal, modRev int64)) {
+func (c *CloudletInternalCache) AddNotifyCb(fn func(ctx context.Context, obj *CloudletInternal, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -7211,9 +7246,14 @@ func (c *CloudletInternalCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &CloudletInternal{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -7811,9 +7851,18 @@ var GPUDriverKeyTagOrganization = "gpudriverorg"
 
 func (m *GPUDriverKey) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["gpudriver"] = m.Name
-	tags["gpudriverorg"] = m.Organization
+	m.AddTags(tags)
 	return tags
+}
+
+func (m *GPUDriverKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("gpudriver", m.Name)
+	addTag("gpudriverorg", m.Organization)
+}
+
+func (m *GPUDriverKey) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -8419,6 +8468,7 @@ type GPUDriverStore interface {
 	STMGet(stm concurrency.STM, key *GPUDriverKey, buf *GPUDriver) bool
 	STMPut(stm concurrency.STM, obj *GPUDriver, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *GPUDriverKey)
+	STMHas(stm concurrency.STM, key *GPUDriverKey) bool
 }
 
 type GPUDriverStoreImpl struct {
@@ -8550,6 +8600,11 @@ func (s *GPUDriverStoreImpl) STMGet(stm concurrency.STM, key *GPUDriverKey, buf 
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *GPUDriverStoreImpl) STMHas(stm concurrency.STM, key *GPUDriverKey) bool {
+	keystr := objstore.DbKeyString("GPUDriver", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *GPUDriverStoreImpl) parseGetData(val []byte, buf *GPUDriver) bool {
 	if len(val) == 0 {
 		return false
@@ -8591,6 +8646,16 @@ type GPUDriverCacheData struct {
 	ModRev int64
 }
 
+func (s *GPUDriverCacheData) Clone() *GPUDriverCacheData {
+	cp := GPUDriverCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &GPUDriver{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // GPUDriverCache caches GPUDriver objects in memory in a hash table
 // and keeps them in sync with the database.
 type GPUDriverCache struct {
@@ -8598,7 +8663,7 @@ type GPUDriverCache struct {
 	Mux           util.Mutex
 	List          map[GPUDriverKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *GPUDriverKey, old *GPUDriver, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *GPUDriver, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *GPUDriver, new *GPUDriver)
 	DeletedCbs    []func(ctx context.Context, old *GPUDriver)
 	KeyWatchers   map[GPUDriverKey][]*GPUDriverKeyWatcher
@@ -8657,6 +8722,14 @@ func (c *GPUDriverCache) GetAllKeys(ctx context.Context, cb func(key *GPUDriverK
 	}
 }
 
+func (c *GPUDriverCache) GetAllLocked(ctx context.Context, cb func(obj *GPUDriver, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *GPUDriverCache) Update(ctx context.Context, in *GPUDriver, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *GPUDriver) (*GPUDriver, bool) {
 		return in, true
@@ -8674,14 +8747,16 @@ func (c *GPUDriverCache) UpdateModFunc(ctx context.Context, key *GPUDriverKey, m
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &GPUDriver{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -8718,9 +8793,13 @@ func (c *GPUDriverCache) DeleteCondFunc(ctx context.Context, in *GPUDriver, modR
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -8748,9 +8827,14 @@ func (c *GPUDriverCache) Prune(ctx context.Context, validKeys map[GPUDriverKey]s
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &GPUDriver{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -8795,8 +8879,8 @@ func GPUDriverGenericNotifyCb(fn func(key *GPUDriverKey, old *GPUDriver)) func(o
 	}
 }
 
-func (c *GPUDriverCache) SetNotifyCb(fn func(ctx context.Context, obj *GPUDriverKey, old *GPUDriver, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *GPUDriverKey, old *GPUDriver, modRev int64){fn}
+func (c *GPUDriverCache) SetNotifyCb(fn func(ctx context.Context, obj *GPUDriver, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *GPUDriver, modRev int64){fn}
 }
 
 func (c *GPUDriverCache) SetUpdatedCb(fn func(ctx context.Context, old *GPUDriver, new *GPUDriver)) {
@@ -8823,7 +8907,7 @@ func (c *GPUDriverCache) AddDeletedCb(fn func(ctx context.Context, old *GPUDrive
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *GPUDriverCache) AddNotifyCb(fn func(ctx context.Context, obj *GPUDriverKey, old *GPUDriver, modRev int64)) {
+func (c *GPUDriverCache) AddNotifyCb(fn func(ctx context.Context, obj *GPUDriver, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -8928,9 +9012,14 @@ func (c *GPUDriverCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &GPUDriver{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -11380,6 +11469,7 @@ type CloudletStore interface {
 	STMGet(stm concurrency.STM, key *CloudletKey, buf *Cloudlet) bool
 	STMPut(stm concurrency.STM, obj *Cloudlet, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *CloudletKey)
+	STMHas(stm concurrency.STM, key *CloudletKey) bool
 }
 
 type CloudletStoreImpl struct {
@@ -11511,6 +11601,11 @@ func (s *CloudletStoreImpl) STMGet(stm concurrency.STM, key *CloudletKey, buf *C
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *CloudletStoreImpl) STMHas(stm concurrency.STM, key *CloudletKey) bool {
+	keystr := objstore.DbKeyString("Cloudlet", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *CloudletStoreImpl) parseGetData(val []byte, buf *Cloudlet) bool {
 	if len(val) == 0 {
 		return false
@@ -11552,6 +11647,16 @@ type CloudletCacheData struct {
 	ModRev int64
 }
 
+func (s *CloudletCacheData) Clone() *CloudletCacheData {
+	cp := CloudletCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &Cloudlet{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // CloudletCache caches Cloudlet objects in memory in a hash table
 // and keeps them in sync with the database.
 type CloudletCache struct {
@@ -11559,7 +11664,7 @@ type CloudletCache struct {
 	Mux           util.Mutex
 	List          map[CloudletKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *CloudletKey, old *Cloudlet, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *Cloudlet, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *Cloudlet, new *Cloudlet)
 	DeletedCbs    []func(ctx context.Context, old *Cloudlet)
 	KeyWatchers   map[CloudletKey][]*CloudletKeyWatcher
@@ -11618,6 +11723,14 @@ func (c *CloudletCache) GetAllKeys(ctx context.Context, cb func(key *CloudletKey
 	}
 }
 
+func (c *CloudletCache) GetAllLocked(ctx context.Context, cb func(obj *Cloudlet, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *CloudletCache) Update(ctx context.Context, in *Cloudlet, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *Cloudlet) (*Cloudlet, bool) {
 		return in, true
@@ -11635,14 +11748,16 @@ func (c *CloudletCache) UpdateModFunc(ctx context.Context, key *CloudletKey, mod
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &Cloudlet{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -11679,9 +11794,13 @@ func (c *CloudletCache) DeleteCondFunc(ctx context.Context, in *Cloudlet, modRev
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -11709,9 +11828,14 @@ func (c *CloudletCache) Prune(ctx context.Context, validKeys map[CloudletKey]str
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &Cloudlet{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -11756,8 +11880,8 @@ func CloudletGenericNotifyCb(fn func(key *CloudletKey, old *Cloudlet)) func(objs
 	}
 }
 
-func (c *CloudletCache) SetNotifyCb(fn func(ctx context.Context, obj *CloudletKey, old *Cloudlet, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *CloudletKey, old *Cloudlet, modRev int64){fn}
+func (c *CloudletCache) SetNotifyCb(fn func(ctx context.Context, obj *Cloudlet, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *Cloudlet, modRev int64){fn}
 }
 
 func (c *CloudletCache) SetUpdatedCb(fn func(ctx context.Context, old *Cloudlet, new *Cloudlet)) {
@@ -11784,7 +11908,7 @@ func (c *CloudletCache) AddDeletedCb(fn func(ctx context.Context, old *Cloudlet)
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *CloudletCache) AddNotifyCb(fn func(ctx context.Context, obj *CloudletKey, old *Cloudlet, modRev int64)) {
+func (c *CloudletCache) AddNotifyCb(fn func(ctx context.Context, obj *Cloudlet, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -11889,9 +12013,14 @@ func (c *CloudletCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &Cloudlet{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -12829,27 +12958,14 @@ const CloudletInfoFieldResourcesSnapshotInfoDescription = "17.2.5"
 const CloudletInfoFieldResourcesSnapshotInfoUnits = "17.2.6"
 const CloudletInfoFieldResourcesSnapshotInfoAlertThreshold = "17.2.7"
 const CloudletInfoFieldResourcesSnapshotClusterInsts = "17.3"
-const CloudletInfoFieldResourcesSnapshotClusterInstsClusterKey = "17.3.1"
-const CloudletInfoFieldResourcesSnapshotClusterInstsClusterKeyName = "17.3.1.1"
+const CloudletInfoFieldResourcesSnapshotClusterInstsName = "17.3.1"
 const CloudletInfoFieldResourcesSnapshotClusterInstsOrganization = "17.3.2"
 const CloudletInfoFieldResourcesSnapshotVmAppInsts = "17.4"
-const CloudletInfoFieldResourcesSnapshotVmAppInstsAppKey = "17.4.1"
-const CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyOrganization = "17.4.1.1"
-const CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyName = "17.4.1.2"
-const CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyVersion = "17.4.1.3"
-const CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKey = "17.4.2"
-const CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKeyClusterKey = "17.4.2.1"
-const CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKeyClusterKeyName = "17.4.2.1.1"
-const CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKeyOrganization = "17.4.2.2"
+const CloudletInfoFieldResourcesSnapshotVmAppInstsName = "17.4.1"
+const CloudletInfoFieldResourcesSnapshotVmAppInstsOrganization = "17.4.2"
 const CloudletInfoFieldResourcesSnapshotK8SAppInsts = "17.5"
-const CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKey = "17.5.1"
-const CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyOrganization = "17.5.1.1"
-const CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyName = "17.5.1.2"
-const CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyVersion = "17.5.1.3"
-const CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKey = "17.5.2"
-const CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKeyClusterKey = "17.5.2.1"
-const CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKeyClusterKeyName = "17.5.2.1.1"
-const CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKeyOrganization = "17.5.2.2"
+const CloudletInfoFieldResourcesSnapshotK8SAppInstsName = "17.5.1"
+const CloudletInfoFieldResourcesSnapshotK8SAppInstsOrganization = "17.5.2"
 const CloudletInfoFieldTrustPolicyState = "18"
 const CloudletInfoFieldCompatibilityVersion = "19"
 const CloudletInfoFieldProperties = "20"
@@ -12921,18 +13037,12 @@ var CloudletInfoAllFields = []string{
 	CloudletInfoFieldResourcesSnapshotInfoDescription,
 	CloudletInfoFieldResourcesSnapshotInfoUnits,
 	CloudletInfoFieldResourcesSnapshotInfoAlertThreshold,
-	CloudletInfoFieldResourcesSnapshotClusterInstsClusterKeyName,
+	CloudletInfoFieldResourcesSnapshotClusterInstsName,
 	CloudletInfoFieldResourcesSnapshotClusterInstsOrganization,
-	CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyOrganization,
-	CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyName,
-	CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyVersion,
-	CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKeyClusterKeyName,
-	CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKeyOrganization,
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyOrganization,
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyName,
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyVersion,
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKeyClusterKeyName,
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKeyOrganization,
+	CloudletInfoFieldResourcesSnapshotVmAppInstsName,
+	CloudletInfoFieldResourcesSnapshotVmAppInstsOrganization,
+	CloudletInfoFieldResourcesSnapshotK8SAppInstsName,
+	CloudletInfoFieldResourcesSnapshotK8SAppInstsOrganization,
 	CloudletInfoFieldTrustPolicyState,
 	CloudletInfoFieldCompatibilityVersion,
 	CloudletInfoFieldPropertiesKey,
@@ -12950,159 +13060,147 @@ var CloudletInfoAllFields = []string{
 }
 
 var CloudletInfoAllFieldsMap = map[string]struct{}{
-	CloudletInfoFieldKeyOrganization:                                          struct{}{},
-	CloudletInfoFieldKeyName:                                                  struct{}{},
-	CloudletInfoFieldKeyFederatedOrganization:                                 struct{}{},
-	CloudletInfoFieldState:                                                    struct{}{},
-	CloudletInfoFieldNotifyId:                                                 struct{}{},
-	CloudletInfoFieldController:                                               struct{}{},
-	CloudletInfoFieldOsMaxRam:                                                 struct{}{},
-	CloudletInfoFieldOsMaxVcores:                                              struct{}{},
-	CloudletInfoFieldOsMaxVolGb:                                               struct{}{},
-	CloudletInfoFieldErrors:                                                   struct{}{},
-	CloudletInfoFieldFlavorsName:                                              struct{}{},
-	CloudletInfoFieldFlavorsVcpus:                                             struct{}{},
-	CloudletInfoFieldFlavorsRam:                                               struct{}{},
-	CloudletInfoFieldFlavorsDisk:                                              struct{}{},
-	CloudletInfoFieldFlavorsPropMapKey:                                        struct{}{},
-	CloudletInfoFieldFlavorsPropMapValue:                                      struct{}{},
-	CloudletInfoFieldStatusTaskNumber:                                         struct{}{},
-	CloudletInfoFieldStatusMaxTasks:                                           struct{}{},
-	CloudletInfoFieldStatusTaskName:                                           struct{}{},
-	CloudletInfoFieldStatusStepName:                                           struct{}{},
-	CloudletInfoFieldStatusMsgCount:                                           struct{}{},
-	CloudletInfoFieldStatusMsgs:                                               struct{}{},
-	CloudletInfoFieldContainerVersion:                                         struct{}{},
-	CloudletInfoFieldAvailabilityZonesName:                                    struct{}{},
-	CloudletInfoFieldAvailabilityZonesStatus:                                  struct{}{},
-	CloudletInfoFieldOsImagesName:                                             struct{}{},
-	CloudletInfoFieldOsImagesTags:                                             struct{}{},
-	CloudletInfoFieldOsImagesProperties:                                       struct{}{},
-	CloudletInfoFieldOsImagesDiskFormat:                                       struct{}{},
-	CloudletInfoFieldControllerCacheReceived:                                  struct{}{},
-	CloudletInfoFieldMaintenanceState:                                         struct{}{},
-	CloudletInfoFieldResourcesSnapshotPlatformVmsName:                         struct{}{},
-	CloudletInfoFieldResourcesSnapshotPlatformVmsType:                         struct{}{},
-	CloudletInfoFieldResourcesSnapshotPlatformVmsStatus:                       struct{}{},
-	CloudletInfoFieldResourcesSnapshotPlatformVmsInfraFlavor:                  struct{}{},
-	CloudletInfoFieldResourcesSnapshotPlatformVmsIpaddressesExternalIp:        struct{}{},
-	CloudletInfoFieldResourcesSnapshotPlatformVmsIpaddressesInternalIp:        struct{}{},
-	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersName:               struct{}{},
-	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersType:               struct{}{},
-	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersStatus:             struct{}{},
-	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersClusterip:          struct{}{},
-	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersRestarts:           struct{}{},
-	CloudletInfoFieldResourcesSnapshotInfoName:                                struct{}{},
-	CloudletInfoFieldResourcesSnapshotInfoValue:                               struct{}{},
-	CloudletInfoFieldResourcesSnapshotInfoInfraMaxValue:                       struct{}{},
-	CloudletInfoFieldResourcesSnapshotInfoQuotaMaxValue:                       struct{}{},
-	CloudletInfoFieldResourcesSnapshotInfoDescription:                         struct{}{},
-	CloudletInfoFieldResourcesSnapshotInfoUnits:                               struct{}{},
-	CloudletInfoFieldResourcesSnapshotInfoAlertThreshold:                      struct{}{},
-	CloudletInfoFieldResourcesSnapshotClusterInstsClusterKeyName:              struct{}{},
-	CloudletInfoFieldResourcesSnapshotClusterInstsOrganization:                struct{}{},
-	CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyOrganization:            struct{}{},
-	CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyName:                    struct{}{},
-	CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyVersion:                 struct{}{},
-	CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKeyClusterKeyName:  struct{}{},
-	CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKeyOrganization:    struct{}{},
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyOrganization:           struct{}{},
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyName:                   struct{}{},
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyVersion:                struct{}{},
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKeyClusterKeyName: struct{}{},
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKeyOrganization:   struct{}{},
-	CloudletInfoFieldTrustPolicyState:                                         struct{}{},
-	CloudletInfoFieldCompatibilityVersion:                                     struct{}{},
-	CloudletInfoFieldPropertiesKey:                                            struct{}{},
-	CloudletInfoFieldPropertiesValue:                                          struct{}{},
-	CloudletInfoFieldNodeInfosName:                                            struct{}{},
-	CloudletInfoFieldNodeInfosAllocatableKey:                                  struct{}{},
-	CloudletInfoFieldNodeInfosAllocatableValueWhole:                           struct{}{},
-	CloudletInfoFieldNodeInfosAllocatableValueNanos:                           struct{}{},
-	CloudletInfoFieldNodeInfosCapacityKey:                                     struct{}{},
-	CloudletInfoFieldNodeInfosCapacityValueWhole:                              struct{}{},
-	CloudletInfoFieldNodeInfosCapacityValueNanos:                              struct{}{},
-	CloudletInfoFieldActiveCrmInstance:                                        struct{}{},
-	CloudletInfoFieldStandbyCrm:                                               struct{}{},
-	CloudletInfoFieldReleaseVersion:                                           struct{}{},
+	CloudletInfoFieldKeyOrganization:                                   struct{}{},
+	CloudletInfoFieldKeyName:                                           struct{}{},
+	CloudletInfoFieldKeyFederatedOrganization:                          struct{}{},
+	CloudletInfoFieldState:                                             struct{}{},
+	CloudletInfoFieldNotifyId:                                          struct{}{},
+	CloudletInfoFieldController:                                        struct{}{},
+	CloudletInfoFieldOsMaxRam:                                          struct{}{},
+	CloudletInfoFieldOsMaxVcores:                                       struct{}{},
+	CloudletInfoFieldOsMaxVolGb:                                        struct{}{},
+	CloudletInfoFieldErrors:                                            struct{}{},
+	CloudletInfoFieldFlavorsName:                                       struct{}{},
+	CloudletInfoFieldFlavorsVcpus:                                      struct{}{},
+	CloudletInfoFieldFlavorsRam:                                        struct{}{},
+	CloudletInfoFieldFlavorsDisk:                                       struct{}{},
+	CloudletInfoFieldFlavorsPropMapKey:                                 struct{}{},
+	CloudletInfoFieldFlavorsPropMapValue:                               struct{}{},
+	CloudletInfoFieldStatusTaskNumber:                                  struct{}{},
+	CloudletInfoFieldStatusMaxTasks:                                    struct{}{},
+	CloudletInfoFieldStatusTaskName:                                    struct{}{},
+	CloudletInfoFieldStatusStepName:                                    struct{}{},
+	CloudletInfoFieldStatusMsgCount:                                    struct{}{},
+	CloudletInfoFieldStatusMsgs:                                        struct{}{},
+	CloudletInfoFieldContainerVersion:                                  struct{}{},
+	CloudletInfoFieldAvailabilityZonesName:                             struct{}{},
+	CloudletInfoFieldAvailabilityZonesStatus:                           struct{}{},
+	CloudletInfoFieldOsImagesName:                                      struct{}{},
+	CloudletInfoFieldOsImagesTags:                                      struct{}{},
+	CloudletInfoFieldOsImagesProperties:                                struct{}{},
+	CloudletInfoFieldOsImagesDiskFormat:                                struct{}{},
+	CloudletInfoFieldControllerCacheReceived:                           struct{}{},
+	CloudletInfoFieldMaintenanceState:                                  struct{}{},
+	CloudletInfoFieldResourcesSnapshotPlatformVmsName:                  struct{}{},
+	CloudletInfoFieldResourcesSnapshotPlatformVmsType:                  struct{}{},
+	CloudletInfoFieldResourcesSnapshotPlatformVmsStatus:                struct{}{},
+	CloudletInfoFieldResourcesSnapshotPlatformVmsInfraFlavor:           struct{}{},
+	CloudletInfoFieldResourcesSnapshotPlatformVmsIpaddressesExternalIp: struct{}{},
+	CloudletInfoFieldResourcesSnapshotPlatformVmsIpaddressesInternalIp: struct{}{},
+	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersName:        struct{}{},
+	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersType:        struct{}{},
+	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersStatus:      struct{}{},
+	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersClusterip:   struct{}{},
+	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersRestarts:    struct{}{},
+	CloudletInfoFieldResourcesSnapshotInfoName:                         struct{}{},
+	CloudletInfoFieldResourcesSnapshotInfoValue:                        struct{}{},
+	CloudletInfoFieldResourcesSnapshotInfoInfraMaxValue:                struct{}{},
+	CloudletInfoFieldResourcesSnapshotInfoQuotaMaxValue:                struct{}{},
+	CloudletInfoFieldResourcesSnapshotInfoDescription:                  struct{}{},
+	CloudletInfoFieldResourcesSnapshotInfoUnits:                        struct{}{},
+	CloudletInfoFieldResourcesSnapshotInfoAlertThreshold:               struct{}{},
+	CloudletInfoFieldResourcesSnapshotClusterInstsName:                 struct{}{},
+	CloudletInfoFieldResourcesSnapshotClusterInstsOrganization:         struct{}{},
+	CloudletInfoFieldResourcesSnapshotVmAppInstsName:                   struct{}{},
+	CloudletInfoFieldResourcesSnapshotVmAppInstsOrganization:           struct{}{},
+	CloudletInfoFieldResourcesSnapshotK8SAppInstsName:                  struct{}{},
+	CloudletInfoFieldResourcesSnapshotK8SAppInstsOrganization:          struct{}{},
+	CloudletInfoFieldTrustPolicyState:                                  struct{}{},
+	CloudletInfoFieldCompatibilityVersion:                              struct{}{},
+	CloudletInfoFieldPropertiesKey:                                     struct{}{},
+	CloudletInfoFieldPropertiesValue:                                   struct{}{},
+	CloudletInfoFieldNodeInfosName:                                     struct{}{},
+	CloudletInfoFieldNodeInfosAllocatableKey:                           struct{}{},
+	CloudletInfoFieldNodeInfosAllocatableValueWhole:                    struct{}{},
+	CloudletInfoFieldNodeInfosAllocatableValueNanos:                    struct{}{},
+	CloudletInfoFieldNodeInfosCapacityKey:                              struct{}{},
+	CloudletInfoFieldNodeInfosCapacityValueWhole:                       struct{}{},
+	CloudletInfoFieldNodeInfosCapacityValueNanos:                       struct{}{},
+	CloudletInfoFieldActiveCrmInstance:                                 struct{}{},
+	CloudletInfoFieldStandbyCrm:                                        struct{}{},
+	CloudletInfoFieldReleaseVersion:                                    struct{}{},
 }
 
 var CloudletInfoAllFieldsStringMap = map[string]string{
-	CloudletInfoFieldKeyOrganization:                                          "Key Organization",
-	CloudletInfoFieldKeyName:                                                  "Key Name",
-	CloudletInfoFieldKeyFederatedOrganization:                                 "Key Federated Organization",
-	CloudletInfoFieldState:                                                    "State",
-	CloudletInfoFieldNotifyId:                                                 "Notify Id",
-	CloudletInfoFieldController:                                               "Controller",
-	CloudletInfoFieldOsMaxRam:                                                 "Os Max Ram",
-	CloudletInfoFieldOsMaxVcores:                                              "Os Max Vcores",
-	CloudletInfoFieldOsMaxVolGb:                                               "Os Max Vol Gb",
-	CloudletInfoFieldErrors:                                                   "Errors",
-	CloudletInfoFieldFlavorsName:                                              "Flavors Name",
-	CloudletInfoFieldFlavorsVcpus:                                             "Flavors Vcpus",
-	CloudletInfoFieldFlavorsRam:                                               "Flavors Ram",
-	CloudletInfoFieldFlavorsDisk:                                              "Flavors Disk",
-	CloudletInfoFieldFlavorsPropMapKey:                                        "Flavors Prop Map Key",
-	CloudletInfoFieldFlavorsPropMapValue:                                      "Flavors Prop Map Value",
-	CloudletInfoFieldStatusTaskNumber:                                         "Status Task Number",
-	CloudletInfoFieldStatusMaxTasks:                                           "Status Max Tasks",
-	CloudletInfoFieldStatusTaskName:                                           "Status Task Name",
-	CloudletInfoFieldStatusStepName:                                           "Status Step Name",
-	CloudletInfoFieldStatusMsgCount:                                           "Status Msg Count",
-	CloudletInfoFieldStatusMsgs:                                               "Status Msgs",
-	CloudletInfoFieldContainerVersion:                                         "Container Version",
-	CloudletInfoFieldAvailabilityZonesName:                                    "Availability Zones Name",
-	CloudletInfoFieldAvailabilityZonesStatus:                                  "Availability Zones Status",
-	CloudletInfoFieldOsImagesName:                                             "Os Images Name",
-	CloudletInfoFieldOsImagesTags:                                             "Os Images Tags",
-	CloudletInfoFieldOsImagesProperties:                                       "Os Images Properties",
-	CloudletInfoFieldOsImagesDiskFormat:                                       "Os Images Disk Format",
-	CloudletInfoFieldControllerCacheReceived:                                  "Controller Cache Received",
-	CloudletInfoFieldMaintenanceState:                                         "Maintenance State",
-	CloudletInfoFieldResourcesSnapshotPlatformVmsName:                         "Resources Snapshot Platform Vms Name",
-	CloudletInfoFieldResourcesSnapshotPlatformVmsType:                         "Resources Snapshot Platform Vms Type",
-	CloudletInfoFieldResourcesSnapshotPlatformVmsStatus:                       "Resources Snapshot Platform Vms Status",
-	CloudletInfoFieldResourcesSnapshotPlatformVmsInfraFlavor:                  "Resources Snapshot Platform Vms Infra Flavor",
-	CloudletInfoFieldResourcesSnapshotPlatformVmsIpaddressesExternalIp:        "Resources Snapshot Platform Vms Ipaddresses External Ip",
-	CloudletInfoFieldResourcesSnapshotPlatformVmsIpaddressesInternalIp:        "Resources Snapshot Platform Vms Ipaddresses Internal Ip",
-	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersName:               "Resources Snapshot Platform Vms Containers Name",
-	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersType:               "Resources Snapshot Platform Vms Containers Type",
-	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersStatus:             "Resources Snapshot Platform Vms Containers Status",
-	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersClusterip:          "Resources Snapshot Platform Vms Containers Clusterip",
-	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersRestarts:           "Resources Snapshot Platform Vms Containers Restarts",
-	CloudletInfoFieldResourcesSnapshotInfoName:                                "Resources Snapshot Info Name",
-	CloudletInfoFieldResourcesSnapshotInfoValue:                               "Resources Snapshot Info Value",
-	CloudletInfoFieldResourcesSnapshotInfoInfraMaxValue:                       "Resources Snapshot Info Infra Max Value",
-	CloudletInfoFieldResourcesSnapshotInfoQuotaMaxValue:                       "Resources Snapshot Info Quota Max Value",
-	CloudletInfoFieldResourcesSnapshotInfoDescription:                         "Resources Snapshot Info Description",
-	CloudletInfoFieldResourcesSnapshotInfoUnits:                               "Resources Snapshot Info Units",
-	CloudletInfoFieldResourcesSnapshotInfoAlertThreshold:                      "Resources Snapshot Info Alert Threshold",
-	CloudletInfoFieldResourcesSnapshotClusterInstsClusterKeyName:              "Resources Snapshot Cluster Insts Cluster Key Name",
-	CloudletInfoFieldResourcesSnapshotClusterInstsOrganization:                "Resources Snapshot Cluster Insts Organization",
-	CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyOrganization:            "Resources Snapshot Vm App Insts App Key Organization",
-	CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyName:                    "Resources Snapshot Vm App Insts App Key Name",
-	CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyVersion:                 "Resources Snapshot Vm App Insts App Key Version",
-	CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKeyClusterKeyName:  "Resources Snapshot Vm App Insts Cluster Inst Key Cluster Key Name",
-	CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKeyOrganization:    "Resources Snapshot Vm App Insts Cluster Inst Key Organization",
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyOrganization:           "Resources Snapshot K8 S App Insts App Key Organization",
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyName:                   "Resources Snapshot K8 S App Insts App Key Name",
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyVersion:                "Resources Snapshot K8 S App Insts App Key Version",
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKeyClusterKeyName: "Resources Snapshot K8 S App Insts Cluster Inst Key Cluster Key Name",
-	CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKeyOrganization:   "Resources Snapshot K8 S App Insts Cluster Inst Key Organization",
-	CloudletInfoFieldTrustPolicyState:                                         "Trust Policy State",
-	CloudletInfoFieldCompatibilityVersion:                                     "Compatibility Version",
-	CloudletInfoFieldPropertiesKey:                                            "Properties Key",
-	CloudletInfoFieldPropertiesValue:                                          "Properties Value",
-	CloudletInfoFieldNodeInfosName:                                            "Node Infos Name",
-	CloudletInfoFieldNodeInfosAllocatableKey:                                  "Node Infos Allocatable Key",
-	CloudletInfoFieldNodeInfosAllocatableValueWhole:                           "Node Infos Allocatable Value Whole",
-	CloudletInfoFieldNodeInfosAllocatableValueNanos:                           "Node Infos Allocatable Value Nanos",
-	CloudletInfoFieldNodeInfosCapacityKey:                                     "Node Infos Capacity Key",
-	CloudletInfoFieldNodeInfosCapacityValueWhole:                              "Node Infos Capacity Value Whole",
-	CloudletInfoFieldNodeInfosCapacityValueNanos:                              "Node Infos Capacity Value Nanos",
-	CloudletInfoFieldActiveCrmInstance:                                        "Active Crm Instance",
-	CloudletInfoFieldStandbyCrm:                                               "Standby Crm",
-	CloudletInfoFieldReleaseVersion:                                           "Release Version",
+	CloudletInfoFieldKeyOrganization:                                   "Key Organization",
+	CloudletInfoFieldKeyName:                                           "Key Name",
+	CloudletInfoFieldKeyFederatedOrganization:                          "Key Federated Organization",
+	CloudletInfoFieldState:                                             "State",
+	CloudletInfoFieldNotifyId:                                          "Notify Id",
+	CloudletInfoFieldController:                                        "Controller",
+	CloudletInfoFieldOsMaxRam:                                          "Os Max Ram",
+	CloudletInfoFieldOsMaxVcores:                                       "Os Max Vcores",
+	CloudletInfoFieldOsMaxVolGb:                                        "Os Max Vol Gb",
+	CloudletInfoFieldErrors:                                            "Errors",
+	CloudletInfoFieldFlavorsName:                                       "Flavors Name",
+	CloudletInfoFieldFlavorsVcpus:                                      "Flavors Vcpus",
+	CloudletInfoFieldFlavorsRam:                                        "Flavors Ram",
+	CloudletInfoFieldFlavorsDisk:                                       "Flavors Disk",
+	CloudletInfoFieldFlavorsPropMapKey:                                 "Flavors Prop Map Key",
+	CloudletInfoFieldFlavorsPropMapValue:                               "Flavors Prop Map Value",
+	CloudletInfoFieldStatusTaskNumber:                                  "Status Task Number",
+	CloudletInfoFieldStatusMaxTasks:                                    "Status Max Tasks",
+	CloudletInfoFieldStatusTaskName:                                    "Status Task Name",
+	CloudletInfoFieldStatusStepName:                                    "Status Step Name",
+	CloudletInfoFieldStatusMsgCount:                                    "Status Msg Count",
+	CloudletInfoFieldStatusMsgs:                                        "Status Msgs",
+	CloudletInfoFieldContainerVersion:                                  "Container Version",
+	CloudletInfoFieldAvailabilityZonesName:                             "Availability Zones Name",
+	CloudletInfoFieldAvailabilityZonesStatus:                           "Availability Zones Status",
+	CloudletInfoFieldOsImagesName:                                      "Os Images Name",
+	CloudletInfoFieldOsImagesTags:                                      "Os Images Tags",
+	CloudletInfoFieldOsImagesProperties:                                "Os Images Properties",
+	CloudletInfoFieldOsImagesDiskFormat:                                "Os Images Disk Format",
+	CloudletInfoFieldControllerCacheReceived:                           "Controller Cache Received",
+	CloudletInfoFieldMaintenanceState:                                  "Maintenance State",
+	CloudletInfoFieldResourcesSnapshotPlatformVmsName:                  "Resources Snapshot Platform Vms Name",
+	CloudletInfoFieldResourcesSnapshotPlatformVmsType:                  "Resources Snapshot Platform Vms Type",
+	CloudletInfoFieldResourcesSnapshotPlatformVmsStatus:                "Resources Snapshot Platform Vms Status",
+	CloudletInfoFieldResourcesSnapshotPlatformVmsInfraFlavor:           "Resources Snapshot Platform Vms Infra Flavor",
+	CloudletInfoFieldResourcesSnapshotPlatformVmsIpaddressesExternalIp: "Resources Snapshot Platform Vms Ipaddresses External Ip",
+	CloudletInfoFieldResourcesSnapshotPlatformVmsIpaddressesInternalIp: "Resources Snapshot Platform Vms Ipaddresses Internal Ip",
+	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersName:        "Resources Snapshot Platform Vms Containers Name",
+	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersType:        "Resources Snapshot Platform Vms Containers Type",
+	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersStatus:      "Resources Snapshot Platform Vms Containers Status",
+	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersClusterip:   "Resources Snapshot Platform Vms Containers Clusterip",
+	CloudletInfoFieldResourcesSnapshotPlatformVmsContainersRestarts:    "Resources Snapshot Platform Vms Containers Restarts",
+	CloudletInfoFieldResourcesSnapshotInfoName:                         "Resources Snapshot Info Name",
+	CloudletInfoFieldResourcesSnapshotInfoValue:                        "Resources Snapshot Info Value",
+	CloudletInfoFieldResourcesSnapshotInfoInfraMaxValue:                "Resources Snapshot Info Infra Max Value",
+	CloudletInfoFieldResourcesSnapshotInfoQuotaMaxValue:                "Resources Snapshot Info Quota Max Value",
+	CloudletInfoFieldResourcesSnapshotInfoDescription:                  "Resources Snapshot Info Description",
+	CloudletInfoFieldResourcesSnapshotInfoUnits:                        "Resources Snapshot Info Units",
+	CloudletInfoFieldResourcesSnapshotInfoAlertThreshold:               "Resources Snapshot Info Alert Threshold",
+	CloudletInfoFieldResourcesSnapshotClusterInstsName:                 "Resources Snapshot Cluster Insts Name",
+	CloudletInfoFieldResourcesSnapshotClusterInstsOrganization:         "Resources Snapshot Cluster Insts Organization",
+	CloudletInfoFieldResourcesSnapshotVmAppInstsName:                   "Resources Snapshot Vm App Insts Name",
+	CloudletInfoFieldResourcesSnapshotVmAppInstsOrganization:           "Resources Snapshot Vm App Insts Organization",
+	CloudletInfoFieldResourcesSnapshotK8SAppInstsName:                  "Resources Snapshot K8 S App Insts Name",
+	CloudletInfoFieldResourcesSnapshotK8SAppInstsOrganization:          "Resources Snapshot K8 S App Insts Organization",
+	CloudletInfoFieldTrustPolicyState:                                  "Trust Policy State",
+	CloudletInfoFieldCompatibilityVersion:                              "Compatibility Version",
+	CloudletInfoFieldPropertiesKey:                                     "Properties Key",
+	CloudletInfoFieldPropertiesValue:                                   "Properties Value",
+	CloudletInfoFieldNodeInfosName:                                     "Node Infos Name",
+	CloudletInfoFieldNodeInfosAllocatableKey:                           "Node Infos Allocatable Key",
+	CloudletInfoFieldNodeInfosAllocatableValueWhole:                    "Node Infos Allocatable Value Whole",
+	CloudletInfoFieldNodeInfosAllocatableValueNanos:                    "Node Infos Allocatable Value Nanos",
+	CloudletInfoFieldNodeInfosCapacityKey:                              "Node Infos Capacity Key",
+	CloudletInfoFieldNodeInfosCapacityValueWhole:                       "Node Infos Capacity Value Whole",
+	CloudletInfoFieldNodeInfosCapacityValueNanos:                       "Node Infos Capacity Value Nanos",
+	CloudletInfoFieldActiveCrmInstance:                                 "Active Crm Instance",
+	CloudletInfoFieldStandbyCrm:                                        "Standby Crm",
+	CloudletInfoFieldReleaseVersion:                                    "Release Version",
 }
 
 func (m *CloudletInfo) IsKeyField(s string) bool {
@@ -13422,9 +13520,8 @@ func (m *CloudletInfo) DiffFields(o *CloudletInfo, fields map[string]struct{}) {
 		fields[CloudletInfoFieldResourcesSnapshot] = struct{}{}
 	} else {
 		for i1 := 0; i1 < len(m.ResourcesSnapshot.ClusterInsts); i1++ {
-			if m.ResourcesSnapshot.ClusterInsts[i1].ClusterKey.Name != o.ResourcesSnapshot.ClusterInsts[i1].ClusterKey.Name {
-				fields[CloudletInfoFieldResourcesSnapshotClusterInstsClusterKeyName] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotClusterInstsClusterKey] = struct{}{}
+			if m.ResourcesSnapshot.ClusterInsts[i1].Name != o.ResourcesSnapshot.ClusterInsts[i1].Name {
+				fields[CloudletInfoFieldResourcesSnapshotClusterInstsName] = struct{}{}
 				fields[CloudletInfoFieldResourcesSnapshotClusterInsts] = struct{}{}
 				fields[CloudletInfoFieldResourcesSnapshot] = struct{}{}
 			}
@@ -13440,34 +13537,13 @@ func (m *CloudletInfo) DiffFields(o *CloudletInfo, fields map[string]struct{}) {
 		fields[CloudletInfoFieldResourcesSnapshot] = struct{}{}
 	} else {
 		for i1 := 0; i1 < len(m.ResourcesSnapshot.VmAppInsts); i1++ {
-			if m.ResourcesSnapshot.VmAppInsts[i1].AppKey.Organization != o.ResourcesSnapshot.VmAppInsts[i1].AppKey.Organization {
-				fields[CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyOrganization] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotVmAppInstsAppKey] = struct{}{}
+			if m.ResourcesSnapshot.VmAppInsts[i1].Name != o.ResourcesSnapshot.VmAppInsts[i1].Name {
+				fields[CloudletInfoFieldResourcesSnapshotVmAppInstsName] = struct{}{}
 				fields[CloudletInfoFieldResourcesSnapshotVmAppInsts] = struct{}{}
 				fields[CloudletInfoFieldResourcesSnapshot] = struct{}{}
 			}
-			if m.ResourcesSnapshot.VmAppInsts[i1].AppKey.Name != o.ResourcesSnapshot.VmAppInsts[i1].AppKey.Name {
-				fields[CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyName] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotVmAppInstsAppKey] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotVmAppInsts] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshot] = struct{}{}
-			}
-			if m.ResourcesSnapshot.VmAppInsts[i1].AppKey.Version != o.ResourcesSnapshot.VmAppInsts[i1].AppKey.Version {
-				fields[CloudletInfoFieldResourcesSnapshotVmAppInstsAppKeyVersion] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotVmAppInstsAppKey] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotVmAppInsts] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshot] = struct{}{}
-			}
-			if m.ResourcesSnapshot.VmAppInsts[i1].ClusterInstKey.ClusterKey.Name != o.ResourcesSnapshot.VmAppInsts[i1].ClusterInstKey.ClusterKey.Name {
-				fields[CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKeyClusterKeyName] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKeyClusterKey] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKey] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotVmAppInsts] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshot] = struct{}{}
-			}
-			if m.ResourcesSnapshot.VmAppInsts[i1].ClusterInstKey.Organization != o.ResourcesSnapshot.VmAppInsts[i1].ClusterInstKey.Organization {
-				fields[CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKeyOrganization] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotVmAppInstsClusterInstKey] = struct{}{}
+			if m.ResourcesSnapshot.VmAppInsts[i1].Organization != o.ResourcesSnapshot.VmAppInsts[i1].Organization {
+				fields[CloudletInfoFieldResourcesSnapshotVmAppInstsOrganization] = struct{}{}
 				fields[CloudletInfoFieldResourcesSnapshotVmAppInsts] = struct{}{}
 				fields[CloudletInfoFieldResourcesSnapshot] = struct{}{}
 			}
@@ -13478,34 +13554,13 @@ func (m *CloudletInfo) DiffFields(o *CloudletInfo, fields map[string]struct{}) {
 		fields[CloudletInfoFieldResourcesSnapshot] = struct{}{}
 	} else {
 		for i1 := 0; i1 < len(m.ResourcesSnapshot.K8SAppInsts); i1++ {
-			if m.ResourcesSnapshot.K8SAppInsts[i1].AppKey.Organization != o.ResourcesSnapshot.K8SAppInsts[i1].AppKey.Organization {
-				fields[CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyOrganization] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKey] = struct{}{}
+			if m.ResourcesSnapshot.K8SAppInsts[i1].Name != o.ResourcesSnapshot.K8SAppInsts[i1].Name {
+				fields[CloudletInfoFieldResourcesSnapshotK8SAppInstsName] = struct{}{}
 				fields[CloudletInfoFieldResourcesSnapshotK8SAppInsts] = struct{}{}
 				fields[CloudletInfoFieldResourcesSnapshot] = struct{}{}
 			}
-			if m.ResourcesSnapshot.K8SAppInsts[i1].AppKey.Name != o.ResourcesSnapshot.K8SAppInsts[i1].AppKey.Name {
-				fields[CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyName] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKey] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotK8SAppInsts] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshot] = struct{}{}
-			}
-			if m.ResourcesSnapshot.K8SAppInsts[i1].AppKey.Version != o.ResourcesSnapshot.K8SAppInsts[i1].AppKey.Version {
-				fields[CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKeyVersion] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotK8SAppInstsAppKey] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotK8SAppInsts] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshot] = struct{}{}
-			}
-			if m.ResourcesSnapshot.K8SAppInsts[i1].ClusterInstKey.ClusterKey.Name != o.ResourcesSnapshot.K8SAppInsts[i1].ClusterInstKey.ClusterKey.Name {
-				fields[CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKeyClusterKeyName] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKeyClusterKey] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKey] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotK8SAppInsts] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshot] = struct{}{}
-			}
-			if m.ResourcesSnapshot.K8SAppInsts[i1].ClusterInstKey.Organization != o.ResourcesSnapshot.K8SAppInsts[i1].ClusterInstKey.Organization {
-				fields[CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKeyOrganization] = struct{}{}
-				fields[CloudletInfoFieldResourcesSnapshotK8SAppInstsClusterInstKey] = struct{}{}
+			if m.ResourcesSnapshot.K8SAppInsts[i1].Organization != o.ResourcesSnapshot.K8SAppInsts[i1].Organization {
+				fields[CloudletInfoFieldResourcesSnapshotK8SAppInstsOrganization] = struct{}{}
 				fields[CloudletInfoFieldResourcesSnapshotK8SAppInsts] = struct{}{}
 				fields[CloudletInfoFieldResourcesSnapshot] = struct{}{}
 			}
@@ -13966,6 +14021,7 @@ type CloudletInfoStore interface {
 	STMGet(stm concurrency.STM, key *CloudletKey, buf *CloudletInfo) bool
 	STMPut(stm concurrency.STM, obj *CloudletInfo, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *CloudletKey)
+	STMHas(stm concurrency.STM, key *CloudletKey) bool
 }
 
 type CloudletInfoStoreImpl struct {
@@ -14097,6 +14153,11 @@ func (s *CloudletInfoStoreImpl) STMGet(stm concurrency.STM, key *CloudletKey, bu
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *CloudletInfoStoreImpl) STMHas(stm concurrency.STM, key *CloudletKey) bool {
+	keystr := objstore.DbKeyString("CloudletInfo", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *CloudletInfoStoreImpl) parseGetData(val []byte, buf *CloudletInfo) bool {
 	if len(val) == 0 {
 		return false
@@ -14138,6 +14199,16 @@ type CloudletInfoCacheData struct {
 	ModRev int64
 }
 
+func (s *CloudletInfoCacheData) Clone() *CloudletInfoCacheData {
+	cp := CloudletInfoCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &CloudletInfo{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // CloudletInfoCache caches CloudletInfo objects in memory in a hash table
 // and keeps them in sync with the database.
 type CloudletInfoCache struct {
@@ -14145,7 +14216,7 @@ type CloudletInfoCache struct {
 	Mux           util.Mutex
 	List          map[CloudletKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *CloudletKey, old *CloudletInfo, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *CloudletInfo, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *CloudletInfo, new *CloudletInfo)
 	DeletedCbs    []func(ctx context.Context, old *CloudletInfo)
 	KeyWatchers   map[CloudletKey][]*CloudletInfoKeyWatcher
@@ -14204,6 +14275,14 @@ func (c *CloudletInfoCache) GetAllKeys(ctx context.Context, cb func(key *Cloudle
 	}
 }
 
+func (c *CloudletInfoCache) GetAllLocked(ctx context.Context, cb func(obj *CloudletInfo, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *CloudletInfoCache) Update(ctx context.Context, in *CloudletInfo, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *CloudletInfo) (*CloudletInfo, bool) {
 		return in, true
@@ -14221,14 +14300,16 @@ func (c *CloudletInfoCache) UpdateModFunc(ctx context.Context, key *CloudletKey,
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &CloudletInfo{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -14265,9 +14346,13 @@ func (c *CloudletInfoCache) DeleteCondFunc(ctx context.Context, in *CloudletInfo
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -14295,9 +14380,14 @@ func (c *CloudletInfoCache) Prune(ctx context.Context, validKeys map[CloudletKey
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &CloudletInfo{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -14333,9 +14423,14 @@ func (c *CloudletInfoCache) Flush(ctx context.Context, notifyId int64) {
 	c.Mux.Unlock()
 	if len(flushed) > 0 {
 		for key, old := range flushed {
+			obj := old.Obj
+			if obj == nil {
+				obj = &CloudletInfo{}
+				obj.SetKey(&key)
+			}
 			for _, cb := range c.NotifyCbs {
 				if cb != nil {
-					cb(ctx, &key, old.Obj, old.ModRev)
+					cb(ctx, obj, old.ModRev)
 				}
 			}
 			for _, cb := range c.DeletedKeyCbs {
@@ -14372,8 +14467,8 @@ func CloudletInfoGenericNotifyCb(fn func(key *CloudletKey, old *CloudletInfo)) f
 	}
 }
 
-func (c *CloudletInfoCache) SetNotifyCb(fn func(ctx context.Context, obj *CloudletKey, old *CloudletInfo, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *CloudletKey, old *CloudletInfo, modRev int64){fn}
+func (c *CloudletInfoCache) SetNotifyCb(fn func(ctx context.Context, obj *CloudletInfo, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *CloudletInfo, modRev int64){fn}
 }
 
 func (c *CloudletInfoCache) SetUpdatedCb(fn func(ctx context.Context, old *CloudletInfo, new *CloudletInfo)) {
@@ -14400,7 +14495,7 @@ func (c *CloudletInfoCache) AddDeletedCb(fn func(ctx context.Context, old *Cloud
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *CloudletInfoCache) AddNotifyCb(fn func(ctx context.Context, obj *CloudletKey, old *CloudletInfo, modRev int64)) {
+func (c *CloudletInfoCache) AddNotifyCb(fn func(ctx context.Context, obj *CloudletInfo, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -14505,9 +14600,14 @@ func (c *CloudletInfoCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &CloudletInfo{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {

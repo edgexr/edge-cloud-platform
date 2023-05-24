@@ -241,3 +241,24 @@ func TestDNSSanitize(t *testing.T) {
 		}
 	}
 }
+
+func TestK8SLabelValueSanitize(t *testing.T) {
+	tests := []struct {
+		in  string
+		out string
+	}{
+		{"foo-BAR.123_FOO", "foo-BAR.123_FOO"},
+		{"z_y_x_X.Y-Z", "z_y_x_X.Y-Z"},
+		{".foo_bar-", "foo_bar"},
+		{"._-_.foo_bar-._.-", "foo_bar"},
+		{"", ""},
+		{"._--_.--", ""},
+		{"_123.BAR_", "123.BAR"},
+		{"1234567890.1234567890.1234567890.1234567890.1234567890.1234567890", "1234567890.1234567890.1234567890.1234567890.1234567890.12345678"},
+		{".1234567890.1234567890.1234567890.1234567890.1234567890.1234567-Z", "1234567890.1234567890.1234567890.1234567890.1234567890.1234567Z"},
+	}
+	for ii, test := range tests {
+		val := K8SLabelValueSanitize(test.in)
+		require.Equal(t, test.out, val, "[%d] expected %s -> %s", ii, test.in, test.out)
+	}
+}

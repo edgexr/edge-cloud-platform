@@ -27,7 +27,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type SendAppHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.AppKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.App, modRev int64))
 	GetWithRev(key *edgeproto.AppKey, buf *edgeproto.App, modRev *int64) bool
 }
 
@@ -41,7 +41,7 @@ type RecvAppHandler interface {
 type AppCacheHandler interface {
 	SendAppHandler
 	RecvAppHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.AppKey, old *edgeproto.App, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.App, modRev int64))
 }
 
 type AppSend struct {
@@ -96,11 +96,11 @@ func (s *AppSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.AppKey, modRev int64) {
-		if !s.UpdateAllOkLocked(key) { // to be implemented by hand
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.App, modRev int64) {
+		if !s.UpdateAllOkLocked(obj) { // to be implemented by hand
 			return
 		}
-		s.Keys[*key] = AppSendContext{
+		s.Keys[*obj.GetKey()] = AppSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -108,15 +108,15 @@ func (s *AppSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *AppSend) Update(ctx context.Context, key *edgeproto.AppKey, old *edgeproto.App, modRev int64) {
+func (s *AppSend) Update(ctx context.Context, obj *edgeproto.App, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	if !s.UpdateOk(ctx, key) { // to be implemented by hand
+	if !s.UpdateOk(ctx, obj) { // to be implemented by hand
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *AppSend) ForceDelete(ctx context.Context, key *edgeproto.AppKey, modRev int64) {
@@ -231,11 +231,11 @@ func (s *AppSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *AppSendMany) Update(ctx context.Context, key *edgeproto.AppKey, old *edgeproto.App, modRev int64) {
+func (s *AppSendMany) Update(ctx context.Context, obj *edgeproto.App, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 

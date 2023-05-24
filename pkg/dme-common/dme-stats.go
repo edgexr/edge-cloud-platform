@@ -20,12 +20,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	grpcstats "github.com/edgexr/edge-cloud-platform/pkg/metrics/grpc"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/gogo/protobuf/types"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -185,14 +185,11 @@ func (s *DmeStats) RunNotify() {
 func ApiStatToMetric(ts *types.Timestamp, key *StatKey, stat *ApiStat) *edgeproto.Metric {
 	metric := edgeproto.Metric{}
 	metric.Timestamp = *ts
-	metric.Name = "dme-api"
-	metric.AddTag("apporg", key.AppKey.Organization)
-	metric.AddTag("app", key.AppKey.Name)
-	metric.AddTag("ver", key.AppKey.Version)
-	metric.AddTag("cloudletorg", MyCloudletKey.Organization)
-	metric.AddTag("cloudlet", MyCloudletKey.Name)
-	metric.AddTag("dmeId", *ScaleID)
-	metric.AddTag("method", key.Method)
+	metric.Name = cloudcommon.DmeApiMeasurement
+	metric.AddKeyTags(&key.AppKey)
+	metric.AddKeyTags(&MyCloudletKey)
+	metric.AddTag(cloudcommon.MetricTagDmeId, *ScaleID)
+	metric.AddTag(cloudcommon.MetricTagMethod, key.Method)
 	metric.AddIntVal("reqs", stat.reqs)
 	metric.AddIntVal("errs", stat.errs)
 	metric.AddStringVal("foundCloudlet", key.CloudletFound.Name)
@@ -206,13 +203,13 @@ func MetricToStat(metric *edgeproto.Metric) (*StatKey, *ApiStat) {
 	stat := &ApiStat{}
 	for _, tag := range metric.Tags {
 		switch tag.Name {
-		case "apporg":
+		case edgeproto.AppKeyTagOrganization:
 			key.AppKey.Organization = tag.Val
-		case "app":
+		case edgeproto.AppKeyTagName:
 			key.AppKey.Name = tag.Val
-		case "ver":
+		case edgeproto.AppKeyTagVersion:
 			key.AppKey.Version = tag.Val
-		case "method":
+		case cloudcommon.MetricTagMethod:
 			key.Method = tag.Val
 		}
 	}
@@ -226,21 +223,6 @@ func MetricToStat(metric *edgeproto.Metric) (*StatKey, *ApiStat) {
 	}
 	stat.latency.FromMetric(metric)
 	return key, stat
-}
-
-func getAppInstClient(appname, appver, apporg string, loc *dme.Loc) *edgeproto.AppInstClient {
-	return &edgeproto.AppInstClient{
-		ClientKey: edgeproto.AppInstClientKey{
-			AppInstKey: edgeproto.AppInstKey{
-				AppKey: edgeproto.AppKey{
-					Organization: apporg,
-					Name:         appname,
-					Version:      appver,
-				},
-			},
-		},
-		Location: *loc,
-	}
 }
 
 func getResultFromFindCloudletReply(mreq *dme.FindCloudletReply) dme.FindCloudletReply_FindStatus {
@@ -325,7 +307,6 @@ func (s *DmeStats) UnaryStatsInterceptor(ctx context.Context, req interface{}, i
 		call.Key.AppKey.Version = ckey.AppVers
 		loc = req.(*dme.FindCloudletRequest).GpsLocation
 		updateClient = true
-
 	default:
 		// All other API calls besides RegisterClient
 		// have the app info in the session cookie key.
@@ -349,27 +330,32 @@ func (s *DmeStats) UnaryStatsInterceptor(ctx context.Context, req interface{}, i
 		}
 		// skip platform monitoring FindCloudletCalls, or if we didn't find the cloudlet
 		createClient := true
+		fcResp := resp.(*dme.FindCloudletReply)
 		if err != nil ||
 			ckey.UniqueIdType == *monitorUuidType ||
-			getResultFromFindCloudletReply(resp.(*dme.FindCloudletReply)) != dme.FindCloudletReply_FIND_FOUND {
+			getResultFromFindCloudletReply(fcResp) != dme.FindCloudletReply_FIND_FOUND {
 			createClient = false
 		}
 
 		// Update clients cache if we found the cloudlet
 		if createClient {
-			client := getAppInstClient(call.Key.AppKey.Name, call.Key.AppKey.Version, call.Key.AppKey.Organization, loc)
-			if client != nil {
-				client.ClientKey.AppInstKey.ClusterInstKey.CloudletKey = call.Key.CloudletFound
-				client.ClientKey.UniqueId = ckey.UniqueId
-				client.ClientKey.UniqueIdType = ckey.UniqueIdType
-				// GpsLocation timestamp can carry an arbitrary system time instead of a timestamp
-				client.Location.Timestamp = &dme.Timestamp{}
-				ts := time.Now()
-				client.Location.Timestamp.Seconds = ts.Unix()
-				client.Location.Timestamp.Nanos = int32(ts.Nanosecond())
-				// Update list of clients on the side and if there is a listener, send it
-				go UpdateClientsBuffer(ctx, client)
+			client := &edgeproto.AppInstClient{}
+			client.ClientKey.AppInstKey = edgeproto.AppInstKey{
+				Name:         fcResp.Tags[edgeproto.AppInstKeyTagName],
+				Organization: fcResp.Tags[edgeproto.AppInstKeyTagOrganization],
+				CloudletKey:  call.Key.CloudletFound,
 			}
+			client.ClientKey.AppKey = call.Key.AppKey
+			client.Location = *loc
+			client.ClientKey.UniqueId = ckey.UniqueId
+			client.ClientKey.UniqueIdType = ckey.UniqueIdType
+			// GpsLocation timestamp can carry an arbitrary system time instead of a timestamp
+			client.Location.Timestamp = &dme.Timestamp{}
+			ts := time.Now()
+			client.Location.Timestamp.Seconds = ts.Unix()
+			client.Location.Timestamp.Nanos = int32(ts.Nanosecond())
+			// Update list of clients on the side and if there is a listener, send it
+			go UpdateClientsBuffer(ctx, client)
 		}
 	}
 

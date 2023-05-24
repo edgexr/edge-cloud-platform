@@ -17,11 +17,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -59,8 +59,9 @@ func TestChoose(t *testing.T) {
 				Loc: cloudlet.Location,
 			})
 		aiKey := edgeproto.AppInstKey{}
-		aiKey.AppKey = app.Key
-		aiKey.ClusterInstKey.CloudletKey = cloudlet.Key
+		aiKey.Name = app.Key.Name
+		aiKey.Organization = app.Key.Organization
+		aiKey.CloudletKey = cloudlet.Key
 		potentialAppInsts = append(potentialAppInsts, aiKey)
 		pc := &potentialCreateSite{
 			cloudletKey: cloudlet.Key,
@@ -301,7 +302,7 @@ func TestAppChecker(t *testing.T) {
 
 	// simulate AppInst health check failure,
 	// this should create another inst
-	insts := pt1.getAppInsts(&app.Key)
+	insts := pt1.getAppInsts(&app.Key, dc)
 	insts[0].HealthCheck = dme.HealthCheck_HEALTH_CHECK_SERVER_FAIL
 	dc.updateAppInst(ctx, &insts[0])
 	minmax.CheckApp(ctx, app.Key)
@@ -470,10 +471,10 @@ func TestAppChecker(t *testing.T) {
 	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
 
-	// create a manually create AppInst
-	insts = pt1.getAppInsts(&app.Key)
-	insts[0].Key.ClusterInstKey.ClusterKey.Name = "manual"
-	dc.updateAppInst(ctx, &insts[0])
+	// create a manually created AppInst
+	fmt.Print("**********************************Manual Check*******\n")
+	manualInsts := pt1.getManualAppInsts(&app.Key)
+	dc.updateAppInst(ctx, &manualInsts[0])
 
 	// set to reasonable settings - this will only create
 	// one AppInst to meet min
@@ -486,7 +487,7 @@ func TestAppChecker(t *testing.T) {
 
 	// delete manually created AppInst - will then create another
 	// to meet min
-	dc.deleteAppInst(ctx, &insts[0])
+	dc.deleteAppInst(ctx, &manualInsts[0])
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances))
 	require.Nil(t, err)
@@ -560,9 +561,8 @@ func TestAppChecker(t *testing.T) {
 	refs2.Insts = make(map[string]uint32)
 	cacheData.appInstRefsCache.Update(ctx, &refs2, 0)
 
-	insts = pt1.getAppInsts(&app2.Key)
+	insts = pt1.getManualAppInsts(&app2.Key)
 	for _, inst := range insts {
-		inst.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
 		dc.updateAppInst(ctx, &inst)
 	}
 	minmax.CheckApp(ctx, app.Key)
@@ -625,44 +625,48 @@ func TestAppChecker(t *testing.T) {
 	// no AppInsts to start
 	require.Equal(t, 0, dc.appInstCache.GetCount())
 	// test blacklisting by causing inst[0] create to fail
-	insts = pt3.getAppInsts(&appRetry.Key)
-	dc.failCreateInsts[insts[0].Key] = struct{}{}
+	failCreateKey := edgeproto.AppCloudletKeyPair{
+		AppKey:      appRetry.Key,
+		CloudletKey: pt3.cloudlets[0].Key,
+	}
+	insts = pt3.getAppInsts(&appRetry.Key, dc)
+	dc.failCreateInsts[failCreateKey] = struct{}{}
 	pt3.policy.MinActiveInstances = 1
 	pt3.policy.MaxInstances = 1
 	pt3.updatePolicy(ctx)
 	minmax.CheckApp(ctx, appRetry.Key)
 	// appinst create should fail on first cloudlet, and it should be marked,
 	// but minmax will run create on next best potential cloudlet (inst[1])
-	err = waitForRetryAppInsts(ctx, insts[0].Key, true)
+	err = waitForRetryAppInsts(ctx, failCreateKey.AppKey, failCreateKey.CloudletKey, true)
 	require.Nil(t, err)
 	err = dc.waitForAppInsts(ctx, 1)
 	require.Nil(t, err)
-	require.True(t, dc.appInstCache.HasKey(&insts[1].Key))
+	require.True(t, pt3.hasAppInst(&appRetry.Key, dc, 1))
 	// delete all instances
 	pt3.deleteAppInsts(ctx, dc, &appRetry.Key)
 	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
 	// clear artificial failure mode
-	delete(dc.failCreateInsts, insts[0].Key)
+	delete(dc.failCreateInsts, failCreateKey)
 	// re-run, cloudlet[0] is blacklisted so will not be used
 	// even though we've removed the artificial failure.
 	minmax.CheckApp(ctx, appRetry.Key)
 	err = dc.waitForAppInsts(ctx, 1)
 	require.Nil(t, err)
-	require.True(t, dc.appInstCache.HasKey(&insts[1].Key))
+	require.True(t, pt3.hasAppInst(&appRetry.Key, dc, 1))
 	// delete all instances
 	pt3.deleteAppInsts(ctx, dc, &appRetry.Key)
 	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
 	// clear out retry
 	retryTracker.doRetry(ctx, minmax)
-	err = waitForRetryAppInsts(ctx, insts[0].Key, false)
+	err = waitForRetryAppInsts(ctx, failCreateKey.AppKey, failCreateKey.CloudletKey, false)
 	require.Nil(t, err)
 	// with retry cleared, minmax will attempt to create on inst[0] again
 	minmax.CheckApp(ctx, appRetry.Key)
 	err = dc.waitForAppInsts(ctx, 1)
 	require.Nil(t, err)
-	require.True(t, dc.appInstCache.HasKey(&insts[0].Key))
+	require.True(t, pt3.hasAppInst(&appRetry.Key, dc, 0))
 
 	// reset back to 0
 	pt3.policy.MinActiveInstances = 0
@@ -695,7 +699,7 @@ func makePolicyTest(name string, count uint32, caches *CacheData) *policyTest {
 		s.cloudletInfos[ii].State = dme.CloudletState_CLOUDLET_STATE_READY
 		s.clusterInsts[ii].Key.CloudletKey = s.cloudlets[ii].Key
 		s.clusterInsts[ii].Reservable = true
-		s.clusterInsts[ii].Key.Organization = edgeproto.OrganizationEdgeCloud
+		s.clusterInsts[ii].Key.ClusterKey.Organization = edgeproto.OrganizationEdgeCloud
 		s.policy.Cloudlets = append(s.policy.Cloudlets,
 			&edgeproto.AutoProvCloudlet{Key: s.cloudlets[ii].Key})
 	}
@@ -728,19 +732,55 @@ func (s *policyTest) count() int {
 	return len(s.cloudlets)
 }
 
-func (s *policyTest) getAppInsts(key *edgeproto.AppKey) []edgeproto.AppInst {
+func (s *policyTest) getAppInsts(key *edgeproto.AppKey, dc *DummyController) []edgeproto.AppInst {
+	// Get AppInsts for the App
 	insts := []edgeproto.AppInst{}
-	for ii, _ := range s.clusterInsts {
-		inst := edgeproto.AppInst{}
-		inst.Key.AppKey = *key
-		inst.Key.ClusterInstKey = *s.clusterInsts[ii].Key.Virtual(cloudcommon.AutoProvClusterName)
+	filter := edgeproto.AppInst{
+		AppKey: *key,
+	}
+	_ = dc.appInstCache.Show(&filter, func(ai *edgeproto.AppInst) error {
+		insts = append(insts, *ai)
+		return nil
+	})
+	sort.Slice(insts, func(i, j int) bool {
+		return insts[i].Key.CloudletKey.Name < insts[j].Key.CloudletKey.Name
+	})
+	return insts
+}
+
+func (s *policyTest) hasAppInst(key *edgeproto.AppKey, dc *DummyController, cloudletIndex int) bool {
+	filter := edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			CloudletKey: s.cloudlets[cloudletIndex].Key,
+		},
+		AppKey: *key,
+	}
+	found := false
+	_ = dc.appInstCache.Show(&filter, func(ai *edgeproto.AppInst) error {
+		found = true
+		return nil
+	})
+	return found
+}
+
+func (s *policyTest) getManualAppInsts(key *edgeproto.AppKey) []edgeproto.AppInst {
+	insts := []edgeproto.AppInst{}
+	for idx := range s.cloudlets {
+		inst := edgeproto.AppInst{
+			Key: edgeproto.AppInstKey{
+				Name:         "manual",
+				Organization: key.Organization,
+				CloudletKey:  s.cloudlets[idx].Key,
+			},
+			AppKey: *key,
+		}
 		insts = append(insts, inst)
 	}
 	return insts
 }
 
 func (s *policyTest) deleteAppInsts(ctx context.Context, dc *DummyController, key *edgeproto.AppKey) {
-	for _, inst := range s.getAppInsts(key) {
+	for _, inst := range s.getAppInsts(key, dc) {
 		dc.deleteAppInst(ctx, &inst)
 	}
 }

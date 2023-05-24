@@ -32,6 +32,21 @@ option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
 option (gogoproto.goproto_sizecache_all) = false;
 
+// (_deprecated_) Cluster Instance V1 unique key
+//
+// ClusterInstKeyV1 uniquely identifies a Cluster Instance (ClusterInst) or Cluster Instance state (ClusterInstInfo).
+message ClusterInstKeyV1 {
+  // Name of Cluster
+  ClusterKeyV1 cluster_key = 1 [(gogoproto.nullable) = false];
+  // Name of Cloudlet on which the Cluster is instantiated
+  CloudletKey cloudlet_key = 2 [(gogoproto.nullable) = false, (protogen.refers_to) = "Cloudlet"];
+  // Name of Developer organization that this cluster belongs to
+  string organization = 3 [(protogen.keytag) = "clusterorg", (protogen.skip_keytag_conflict_check) = true];
+  option (protogen.generate_matches) = true;
+  option (protogen.obj_key) = true;
+  option (gogoproto.gostring) = true;
+}
+
 // Cluster Instance unique key
 //
 // ClusterInstKey uniquely identifies a Cluster Instance (ClusterInst) or Cluster Instance state (ClusterInstInfo).
@@ -40,8 +55,6 @@ message ClusterInstKey {
   ClusterKey cluster_key = 1 [(gogoproto.nullable) = false];
   // Name of Cloudlet on which the Cluster is instantiated
   CloudletKey cloudlet_key = 2 [(gogoproto.nullable) = false, (protogen.refers_to) = "Cloudlet"];
-  // Name of Developer organization that this cluster belongs to
-  string organization = 3 [(protogen.keytag) = "clusterorg"];
   option (protogen.generate_matches) = true;
   option (protogen.obj_key) = true;
   option (gogoproto.gostring) = true;
@@ -155,7 +168,7 @@ service ClusterInstApi {
       body: "*"
     };
     option (protogen.stream_out_incremental) = true;
-    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.Organization";
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.ClusterKey.Organization";
     option (protogen.mc2_custom_authz) = true;
   }
   // Delete Cluster Instance. Deletes an instance of a Cluster deployed on a Cloudlet.
@@ -165,7 +178,7 @@ service ClusterInstApi {
       body: "*"
     };
     option (protogen.stream_out_incremental) = true;
-    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.Organization";
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.ClusterKey.Organization";
   }
   // Update Cluster Instance. Updates an instance of a Cluster deployed on a Cloudlet.
   rpc UpdateClusterInst(ClusterInst) returns (stream Result) {
@@ -174,7 +187,7 @@ service ClusterInstApi {
       body: "*"
     };
     option (protogen.stream_out_incremental) = true;
-    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.Organization";
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.ClusterKey.Organization";
     option (protogen.method_noconfig) = "Flavor,NumMasters,AvailabilityZone,Reservable,SharedVolumeSize,IpAccess,Deployment,ImageName,Networks";
   }
   // Show Cluster Instances. Lists all the cluster instances managed by Edge Controller.
@@ -183,7 +196,7 @@ service ClusterInstApi {
       post: "/show/clusterinst"
       body: "*"
     };
-    option (protogen.mc2_api) = "ResourceClusterInsts,ActionView,Key.Organization";
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionView,Key.ClusterKey.Organization";
     option (protogen.mc2_custom_authz) = true;
   }
   // Cleanup Reservable Cluster Instances. Deletes reservable cluster instances that are not in use.

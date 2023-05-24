@@ -20,6 +20,7 @@ package edgeproto;
 import "google/api/annotations.proto";
 import "github.com/edgexr/edge-cloud-platform/tools/protogen/protogen.proto";
 import "github.com/edgexr/edge-cloud-platform/api/dme-proto/loc.proto";
+import "app.proto";
 import "appinst.proto";
 import "gogoproto/gogo.proto";
 
@@ -34,8 +35,8 @@ message AppInstClientKey {
   string unique_id = 2 [(protogen.keytag) = "uniqueid"];
   // AppInstClient Unique Id Type
   string unique_id_type = 3 [(protogen.keytag) = "uniqueidtype"];
-
-//  AppInstClientLookupKey key = 1 [(gogoproto.nullable) = false];
+  // Client App Key
+  AppKey app_key = 4 [(protogen.keytag) = "appkey", (gogoproto.nullable) = false];
 
   option (protogen.obj_and_key) = true;
   option (protogen.notify_message) = true;
@@ -43,8 +44,8 @@ message AppInstClientKey {
   option (protogen.generate_cud) = true;
   option (protogen.generate_cache) = true;
   option (protogen.notify_cache) = true;
-  option (protogen.not_required) = "AppInstKey.AppKey.Name,AppInstKey.AppKey.Version,AppInstKey.ClusterInstKey.ClusterKey.Name,AppInstKey.ClusterInstKey.Organization,AppInstKey.ClusterInstKey.CloudletKey.Name,AppInstKey.ClusterInstKey.CloudletKey.Organization,AppInstKey.ClusterInstKey.CloudletKey.FederatedOrganization,UniqueId,UniqueIdType";
-  option (protogen.alias) = "uniqueid=UniqueId,uniqueidtype=UniqueIdType,appname=AppInstKey.AppKey.Name,appvers=AppInstKey.AppKey.Version,apporg=AppInstKey.AppKey.Organization,cluster=AppInstKey.ClusterInstKey.ClusterKey.Name,clusterorg=AppInstKey.ClusterInstKey.Organization,cloudlet=AppInstKey.ClusterInstKey.CloudletKey.Name,cloudletorg=AppInstKey.ClusterInstKey.CloudletKey.Organization,federatedorg=AppInstKey.ClusterInstKey.CloudletKey.FederatedOrganization";
+  option (protogen.not_required) = "AppInstKey.Name,AppInstKey.CloudletKey.Name,AppInstKey.CloudletKey.Organization,AppInstKey.CloudletKey.FederatedOrganization,AppKey.Name,AppKey.Version,AppKey.Organization,UniqueId,UniqueIdType";
+  option (protogen.alias) = "uniqueid=UniqueId,uniqueidtype=UniqueIdType,appinst=AppInstKey.Name,appinstorg=AppInstKey.Organization,cloudlet=AppInstKey.CloudletKey.Name,cloudletorg=AppInstKey.CloudletKey.Organization,cloudletfedorg=AppInstKey.CloudletKey.FederatedOrganization,appname=AppKey.Name,appvers=AppKey.Version,apporg=AppKey.Organization";
   option (protogen.uses_org) = "none";
   option (gogoproto.gostring) = true;
   option (protogen.ignore_refers_to) = true;
@@ -74,7 +75,7 @@ service AppInstClientApi {
       body: "*"
     };
     option (protogen.stream_out_incremental) = true;
-    option (protogen.mc2_api) = "ResourceAppAnalytics,ActionView,AppInstKey.AppKey.Organization";
+    option (protogen.mc2_api) = "ResourceAppAnalytics,ActionView,AppInstKey.Organization";
     option (protogen.non_standard_show) = true;
   }
   // This is used unternally to forward AppInstClients to other Controllers

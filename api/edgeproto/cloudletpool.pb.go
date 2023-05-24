@@ -810,9 +810,18 @@ var CloudletPoolKeyTagName = "cloudletpool"
 
 func (m *CloudletPoolKey) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["cloudletpoolorg"] = m.Organization
-	tags["cloudletpool"] = m.Name
+	m.AddTags(tags)
 	return tags
+}
+
+func (m *CloudletPoolKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("cloudletpoolorg", m.Organization)
+	addTag("cloudletpool", m.Name)
+}
+
+func (m *CloudletPoolKey) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -1106,6 +1115,7 @@ type CloudletPoolStore interface {
 	STMGet(stm concurrency.STM, key *CloudletPoolKey, buf *CloudletPool) bool
 	STMPut(stm concurrency.STM, obj *CloudletPool, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *CloudletPoolKey)
+	STMHas(stm concurrency.STM, key *CloudletPoolKey) bool
 }
 
 type CloudletPoolStoreImpl struct {
@@ -1237,6 +1247,11 @@ func (s *CloudletPoolStoreImpl) STMGet(stm concurrency.STM, key *CloudletPoolKey
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *CloudletPoolStoreImpl) STMHas(stm concurrency.STM, key *CloudletPoolKey) bool {
+	keystr := objstore.DbKeyString("CloudletPool", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *CloudletPoolStoreImpl) parseGetData(val []byte, buf *CloudletPool) bool {
 	if len(val) == 0 {
 		return false
@@ -1278,6 +1293,16 @@ type CloudletPoolCacheData struct {
 	ModRev int64
 }
 
+func (s *CloudletPoolCacheData) Clone() *CloudletPoolCacheData {
+	cp := CloudletPoolCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &CloudletPool{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // CloudletPoolCache caches CloudletPool objects in memory in a hash table
 // and keeps them in sync with the database.
 type CloudletPoolCache struct {
@@ -1285,7 +1310,7 @@ type CloudletPoolCache struct {
 	Mux           util.Mutex
 	List          map[CloudletPoolKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *CloudletPoolKey, old *CloudletPool, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *CloudletPool, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *CloudletPool, new *CloudletPool)
 	DeletedCbs    []func(ctx context.Context, old *CloudletPool)
 	KeyWatchers   map[CloudletPoolKey][]*CloudletPoolKeyWatcher
@@ -1344,6 +1369,14 @@ func (c *CloudletPoolCache) GetAllKeys(ctx context.Context, cb func(key *Cloudle
 	}
 }
 
+func (c *CloudletPoolCache) GetAllLocked(ctx context.Context, cb func(obj *CloudletPool, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *CloudletPoolCache) Update(ctx context.Context, in *CloudletPool, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *CloudletPool) (*CloudletPool, bool) {
 		return in, true
@@ -1361,14 +1394,16 @@ func (c *CloudletPoolCache) UpdateModFunc(ctx context.Context, key *CloudletPool
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &CloudletPool{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -1405,9 +1440,13 @@ func (c *CloudletPoolCache) DeleteCondFunc(ctx context.Context, in *CloudletPool
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -1435,9 +1474,14 @@ func (c *CloudletPoolCache) Prune(ctx context.Context, validKeys map[CloudletPoo
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &CloudletPool{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -1482,8 +1526,8 @@ func CloudletPoolGenericNotifyCb(fn func(key *CloudletPoolKey, old *CloudletPool
 	}
 }
 
-func (c *CloudletPoolCache) SetNotifyCb(fn func(ctx context.Context, obj *CloudletPoolKey, old *CloudletPool, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *CloudletPoolKey, old *CloudletPool, modRev int64){fn}
+func (c *CloudletPoolCache) SetNotifyCb(fn func(ctx context.Context, obj *CloudletPool, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *CloudletPool, modRev int64){fn}
 }
 
 func (c *CloudletPoolCache) SetUpdatedCb(fn func(ctx context.Context, old *CloudletPool, new *CloudletPool)) {
@@ -1510,7 +1554,7 @@ func (c *CloudletPoolCache) AddDeletedCb(fn func(ctx context.Context, old *Cloud
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *CloudletPoolCache) AddNotifyCb(fn func(ctx context.Context, obj *CloudletPoolKey, old *CloudletPool, modRev int64)) {
+func (c *CloudletPoolCache) AddNotifyCb(fn func(ctx context.Context, obj *CloudletPool, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -1615,9 +1659,14 @@ func (c *CloudletPoolCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &CloudletPool{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {

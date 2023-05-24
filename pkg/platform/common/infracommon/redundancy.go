@@ -20,8 +20,8 @@ import (
 
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
@@ -112,10 +112,14 @@ func handleTransientClusterInsts(ctx context.Context, caches *pf.Caches, cleanup
 func handleTransientAppInsts(ctx context.Context, caches *pf.Caches, cleanupFunc func(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "handleTransientAppInsts")
 
+	type AppInstData struct {
+		state  edgeproto.TrackedState
+		appKey edgeproto.AppKey
+	}
 	// Retrieve the set of app instances in the current thread which is blocking the completion of transitoning to active. We want
 	// to block the transition until we have the list
 	appInstKeys := []edgeproto.AppInstKey{}
-	appInstsToCleanup := make(map[edgeproto.AppInstKey]edgeproto.TrackedState)
+	appInstsToCleanup := make(map[edgeproto.AppInstKey]*AppInstData)
 
 	caches.AppInstCache.GetAllKeys(ctx, func(k *edgeproto.AppInstKey, modRev int64) {
 		appInstKeys = append(appInstKeys, *k)
@@ -128,7 +132,11 @@ func handleTransientAppInsts(ctx context.Context, caches *pf.Caches, cleanupFunc
 			if generateError {
 				if needsCleanup {
 					// cleanup and then error
-					appInstsToCleanup[k] = errorState
+					data := AppInstData{
+						state:  errorState,
+						appKey: appInst.AppKey,
+					}
+					appInstsToCleanup[k] = &data
 				} else {
 					// send an error right away
 					caches.AppInstInfoCache.SetError(ctx, &k, immediateErrorState, "CRM switched over while App Instance in transient state")
@@ -138,11 +146,11 @@ func handleTransientAppInsts(ctx context.Context, caches *pf.Caches, cleanupFunc
 	}
 	// do the actual cleanup in a new thread because this can take a while and we do not want to block the transition too long
 	go func() {
-		for k, e := range appInstsToCleanup {
+		for k, data := range appInstsToCleanup {
 			app := edgeproto.App{}
-			if !caches.AppCache.Get(&k.AppKey, &app) {
-				log.SpanLog(ctx, log.DebugLevelInfra, "failed to find app in cache", "appkey", k.AppKey)
-				caches.AppInstInfoCache.SetError(ctx, &k, e, "CRM switched over while App Instance in transient state, unable to cleanup")
+			if !caches.AppCache.Get(&data.appKey, &app) {
+				log.SpanLog(ctx, log.DebugLevelInfra, "failed to find app in cache", "appkey", data.appKey)
+				caches.AppInstInfoCache.SetError(ctx, &k, data.state, "CRM switched over while App Instance in transient state, unable to cleanup")
 				continue
 			}
 			var appInst edgeproto.AppInst
@@ -151,17 +159,17 @@ func handleTransientAppInsts(ctx context.Context, caches *pf.Caches, cleanupFunc
 				if cloudcommon.IsClusterInstReqd(&app) {
 					clusterInstFound := caches.ClusterInstCache.Get((*edgeproto.ClusterInstKey)(appInst.ClusterInstKey()), &clusterInst)
 					if !clusterInstFound {
-						log.SpanLog(ctx, log.DebugLevelInfra, "failed to find clusterinst in cache", "clusterkey", k.ClusterInstKey)
-						caches.AppInstInfoCache.SetError(ctx, &k, e, "CRM switched over while App Instance in transient state, unable to cleanup")
+						log.SpanLog(ctx, log.DebugLevelInfra, "failed to find clusterinst in cache", "clusterkey", appInst.ClusterInstKey())
+						caches.AppInstInfoCache.SetError(ctx, &k, data.state, "CRM switched over while App Instance in transient state, unable to cleanup")
 					}
 				}
 				log.SpanLog(ctx, log.DebugLevelInfra, "cleaning up appinst", "key", k)
 				err := cleanupFunc(ctx, &clusterInst, &app, &appInst, edgeproto.DummyUpdateCallback)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "error cleaning up appinst", "key", k, "error", err)
-					caches.AppInstInfoCache.SetError(ctx, &k, e, "CRM switched over while App Instance in transient state, cleanup failed")
+					caches.AppInstInfoCache.SetError(ctx, &k, data.state, "CRM switched over while App Instance in transient state, cleanup failed")
 				} else {
-					caches.AppInstInfoCache.SetError(ctx, &k, e, "CRM switched over while App Instance in transient state")
+					caches.AppInstInfoCache.SetError(ctx, &k, data.state, "CRM switched over while App Instance in transient state")
 				}
 			}
 		}

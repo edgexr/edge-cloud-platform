@@ -18,9 +18,9 @@ import (
 	"context"
 	"strings"
 
-	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"google.golang.org/grpc"
@@ -65,7 +65,6 @@ func (s *AppInstHandler) Update(ctx context.Context, in *edgeproto.AppInst, rev 
 
 func (s *AppInstHandler) Delete(ctx context.Context, in *edgeproto.AppInst, rev int64) {
 	dmecommon.RemoveAppInst(ctx, in)
-	dmecommon.PurgeAppInstClients(ctx, &in.Key)
 }
 
 func (s *AppInstHandler) Prune(ctx context.Context, keys map[edgeproto.AppInstKey]struct{}) {

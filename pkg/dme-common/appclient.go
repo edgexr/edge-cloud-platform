@@ -110,7 +110,7 @@ func (m *ClientsMap) timeoutAppInstClients() {
 func UpdateClientsBuffer(ctx context.Context, msg *edgeproto.AppInstClient) {
 	clientsMap.Lock()
 	defer clientsMap.Unlock()
-	mapKey := msg.ClientKey.AppInstKey.AppKey
+	mapKey := msg.ClientKey.AppKey
 	_, found := clientsMap.clientsByApp[mapKey]
 	if !found {
 		clientsMap.clientsByApp[mapKey] = []edgeproto.AppInstClient{*msg}
@@ -142,29 +142,28 @@ func UpdateClientsBuffer(ctx context.Context, msg *edgeproto.AppInstClient) {
 }
 
 // If an AppInst is deleted, clean up all the clients from it
-func PurgeAppInstClients(ctx context.Context, msg *edgeproto.AppInstKey) {
+func PurgeAppInstClients(ctx context.Context, appInstKey *edgeproto.AppInstKey, appKey *edgeproto.AppKey) {
 	clientsMap.Lock()
 	defer clientsMap.Unlock()
-	_, found := clientsMap.clientsByApp[msg.AppKey]
+	clients, found := clientsMap.clientsByApp[*appKey]
 	if found {
 		// walk the list and keep only the clients that don't match the filter
 		jj := 0
-		for _, c := range clientsMap.clientsByApp[msg.AppKey] {
+		for _, c := range clients {
 			// Remove matching clients
-			if msg.AppKey.Matches(&c.ClientKey.AppInstKey.AppKey) &&
-				msg.ClusterInstKey.CloudletKey.Matches(&c.ClientKey.AppInstKey.ClusterInstKey.CloudletKey) {
+			if appInstKey.CloudletKey.Matches(&c.ClientKey.AppInstKey.CloudletKey) {
 				continue
 			}
-			clientsMap.clientsByApp[msg.AppKey][jj] = c
+			clientsMap.clientsByApp[*appKey][jj] = c
 			jj++
 		}
 		// truncate the list
-		clientsMap.clientsByApp[msg.AppKey] = clientsMap.clientsByApp[msg.AppKey][:jj]
+		clientsMap.clientsByApp[*appKey] = clientsMap.clientsByApp[*appKey][:jj]
 	}
 }
 
 func SendCachedClients(ctx context.Context, old *edgeproto.AppInstClientKey, new *edgeproto.AppInstClientKey) {
-	// Check if we have an outstanding streaming request which would be a superset
+	// Check if we have an outstanding streaming request which would be a superset. Only the AppInstKey.Organization is required to be set.
 	err := AppInstClientKeyCache.Show(&edgeproto.AppInstClientKey{}, func(obj *edgeproto.AppInstClientKey) error {
 		// if we found an exact match - it's this clients
 		if new.Matches(obj) {
@@ -180,7 +179,7 @@ func SendCachedClients(ctx context.Context, old *edgeproto.AppInstClientKey, new
 	}
 	clientsMap.RLock()
 	defer clientsMap.RUnlock()
-	list, found := clientsMap.clientsByApp[new.AppInstKey.AppKey]
+	list, found := clientsMap.clientsByApp[new.AppKey]
 	// Possible exact match for the map
 	if found {
 		for ii := range list {

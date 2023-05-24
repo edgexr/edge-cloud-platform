@@ -26,7 +26,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type SendFlowRateLimitSettingsHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.FlowRateLimitSettingsKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.FlowRateLimitSettings, modRev int64))
 	GetWithRev(key *edgeproto.FlowRateLimitSettingsKey, buf *edgeproto.FlowRateLimitSettings, modRev *int64) bool
 }
 
@@ -40,7 +40,7 @@ type RecvFlowRateLimitSettingsHandler interface {
 type FlowRateLimitSettingsCacheHandler interface {
 	SendFlowRateLimitSettingsHandler
 	RecvFlowRateLimitSettingsHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.FlowRateLimitSettingsKey, old *edgeproto.FlowRateLimitSettings, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.FlowRateLimitSettings, modRev int64))
 }
 
 type FlowRateLimitSettingsSend struct {
@@ -95,8 +95,8 @@ func (s *FlowRateLimitSettingsSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.FlowRateLimitSettingsKey, modRev int64) {
-		s.Keys[*key] = FlowRateLimitSettingsSendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.FlowRateLimitSettings, modRev int64) {
+		s.Keys[*obj.GetKey()] = FlowRateLimitSettingsSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -104,12 +104,12 @@ func (s *FlowRateLimitSettingsSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *FlowRateLimitSettingsSend) Update(ctx context.Context, key *edgeproto.FlowRateLimitSettingsKey, old *edgeproto.FlowRateLimitSettings, modRev int64) {
+func (s *FlowRateLimitSettingsSend) Update(ctx context.Context, obj *edgeproto.FlowRateLimitSettings, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *FlowRateLimitSettingsSend) ForceDelete(ctx context.Context, key *edgeproto.FlowRateLimitSettingsKey, modRev int64) {
@@ -224,11 +224,11 @@ func (s *FlowRateLimitSettingsSendMany) DoneSend(peerAddr string, send NotifySen
 	}
 	s.Mux.Unlock()
 }
-func (s *FlowRateLimitSettingsSendMany) Update(ctx context.Context, key *edgeproto.FlowRateLimitSettingsKey, old *edgeproto.FlowRateLimitSettings, modRev int64) {
+func (s *FlowRateLimitSettingsSendMany) Update(ctx context.Context, obj *edgeproto.FlowRateLimitSettings, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 
@@ -370,7 +370,7 @@ func (s *Client) RegisterRecvFlowRateLimitSettingsCache(cache FlowRateLimitSetti
 }
 
 type SendMaxReqsRateLimitSettingsHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.MaxReqsRateLimitSettingsKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.MaxReqsRateLimitSettings, modRev int64))
 	GetWithRev(key *edgeproto.MaxReqsRateLimitSettingsKey, buf *edgeproto.MaxReqsRateLimitSettings, modRev *int64) bool
 }
 
@@ -384,7 +384,7 @@ type RecvMaxReqsRateLimitSettingsHandler interface {
 type MaxReqsRateLimitSettingsCacheHandler interface {
 	SendMaxReqsRateLimitSettingsHandler
 	RecvMaxReqsRateLimitSettingsHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.MaxReqsRateLimitSettingsKey, old *edgeproto.MaxReqsRateLimitSettings, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.MaxReqsRateLimitSettings, modRev int64))
 }
 
 type MaxReqsRateLimitSettingsSend struct {
@@ -439,8 +439,8 @@ func (s *MaxReqsRateLimitSettingsSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.MaxReqsRateLimitSettingsKey, modRev int64) {
-		s.Keys[*key] = MaxReqsRateLimitSettingsSendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.MaxReqsRateLimitSettings, modRev int64) {
+		s.Keys[*obj.GetKey()] = MaxReqsRateLimitSettingsSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -448,12 +448,12 @@ func (s *MaxReqsRateLimitSettingsSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *MaxReqsRateLimitSettingsSend) Update(ctx context.Context, key *edgeproto.MaxReqsRateLimitSettingsKey, old *edgeproto.MaxReqsRateLimitSettings, modRev int64) {
+func (s *MaxReqsRateLimitSettingsSend) Update(ctx context.Context, obj *edgeproto.MaxReqsRateLimitSettings, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *MaxReqsRateLimitSettingsSend) ForceDelete(ctx context.Context, key *edgeproto.MaxReqsRateLimitSettingsKey, modRev int64) {
@@ -568,11 +568,11 @@ func (s *MaxReqsRateLimitSettingsSendMany) DoneSend(peerAddr string, send Notify
 	}
 	s.Mux.Unlock()
 }
-func (s *MaxReqsRateLimitSettingsSendMany) Update(ctx context.Context, key *edgeproto.MaxReqsRateLimitSettingsKey, old *edgeproto.MaxReqsRateLimitSettings, modRev int64) {
+func (s *MaxReqsRateLimitSettingsSendMany) Update(ctx context.Context, obj *edgeproto.MaxReqsRateLimitSettings, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 

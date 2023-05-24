@@ -15,8 +15,8 @@
 package main
 
 import (
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type AppInstRefsApi struct {
@@ -56,10 +56,10 @@ func (s *AppInstRefsApi) deleteRef(stm concurrency.STM, key *edgeproto.AppKey) {
 	s.store.STMDel(stm, key)
 }
 
-func (s *AppInstRefsApi) addRef(stm concurrency.STM, key *edgeproto.AppInstKey) {
+func (s *AppInstRefsApi) addRef(stm concurrency.STM, appKey *edgeproto.AppKey, key *edgeproto.AppInstKey) {
 	refs := edgeproto.AppInstRefs{}
-	if !s.store.STMGet(stm, &key.AppKey, &refs) {
-		refs.Key = key.AppKey
+	if !s.store.STMGet(stm, appKey, &refs) {
+		refs.Key = *appKey
 		refs.Insts = make(map[string]uint32)
 		refs.DeleteRequestedInsts = make(map[string]uint32)
 	}
@@ -67,9 +67,9 @@ func (s *AppInstRefsApi) addRef(stm concurrency.STM, key *edgeproto.AppInstKey) 
 	s.store.STMPut(stm, &refs)
 }
 
-func (s *AppInstRefsApi) removeRef(stm concurrency.STM, key *edgeproto.AppInstKey) {
+func (s *AppInstRefsApi) removeRef(stm concurrency.STM, appKey *edgeproto.AppKey, key *edgeproto.AppInstKey) {
 	refs := edgeproto.AppInstRefs{}
-	if !s.store.STMGet(stm, &key.AppKey, &refs) {
+	if !s.store.STMGet(stm, appKey, &refs) {
 		return
 	}
 	delete(refs.Insts, key.GetKeyString())
@@ -77,10 +77,10 @@ func (s *AppInstRefsApi) removeRef(stm concurrency.STM, key *edgeproto.AppInstKe
 	s.store.STMPut(stm, &refs)
 }
 
-func (s *AppInstRefsApi) addDeleteRequestedRef(stm concurrency.STM, key *edgeproto.AppInstKey) {
+func (s *AppInstRefsApi) addDeleteRequestedRef(stm concurrency.STM, appKey *edgeproto.AppKey, key *edgeproto.AppInstKey) {
 	refs := edgeproto.AppInstRefs{}
-	if !s.store.STMGet(stm, &key.AppKey, &refs) {
-		refs.Key = key.AppKey
+	if !s.store.STMGet(stm, appKey, &refs) {
+		refs.Key = *appKey
 		refs.Insts = make(map[string]uint32)
 		refs.DeleteRequestedInsts = make(map[string]uint32)
 	}
@@ -88,9 +88,9 @@ func (s *AppInstRefsApi) addDeleteRequestedRef(stm concurrency.STM, key *edgepro
 	s.store.STMPut(stm, &refs)
 }
 
-func (s *AppInstRefsApi) removeDeleteRequestedRef(stm concurrency.STM, key *edgeproto.AppInstKey) {
+func (s *AppInstRefsApi) removeDeleteRequestedRef(stm concurrency.STM, appKey *edgeproto.AppKey, key *edgeproto.AppInstKey) {
 	refs := edgeproto.AppInstRefs{}
-	if !s.store.STMGet(stm, &key.AppKey, &refs) {
+	if !s.store.STMGet(stm, appKey, &refs) {
 		return
 	}
 	delete(refs.DeleteRequestedInsts, key.GetKeyString())

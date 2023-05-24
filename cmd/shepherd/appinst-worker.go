@@ -19,17 +19,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	platform "github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
+	platform "github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform"
 )
 
 // For each cluster the notify worker is created
 type AppInstWorker struct {
 	pf         platform.Platform
 	appInstKey edgeproto.AppInstKey
+	appKey     edgeproto.AppKey
+	clusterKey edgeproto.ClusterKey
 	interval   time.Duration
 	send       func(ctx context.Context, metric *edgeproto.Metric) bool
 	waitGrp    sync.WaitGroup
@@ -46,6 +47,8 @@ func NewAppInstWorker(ctx context.Context, interval time.Duration, send func(ctx
 	}
 	p.send = send
 	p.appInstKey = appinst.Key
+	p.appKey = appinst.AppKey
+	p.clusterKey = appinst.ClusterKey
 	log.SpanLog(ctx, log.DebugLevelMetrics, "NewAppInstWorker", "app", appinst)
 	return &p
 }
@@ -69,11 +72,13 @@ func (p *AppInstWorker) sendMetrics() {
 	ctx := log.ContextWithSpan(context.Background(), span)
 	defer span.Finish()
 	key := shepherd_common.MetricAppInstKey{
-		// no real cluster name since these are VM apps
-		ClusterInstKey: *p.appInstKey.ClusterInstKey.Real(""),
-		Pod:            p.appInstKey.AppKey.Name,
-		App:            util.DNSSanitize(p.appInstKey.AppKey.Name),
-		Version:        util.DNSSanitize(p.appInstKey.AppKey.Version),
+		ClusterInstKey: edgeproto.ClusterInstKey{
+			ClusterKey:  p.clusterKey,
+			CloudletKey: p.appInstKey.CloudletKey,
+		},
+		Pod:         p.appInstKey.Name,
+		AppInstName: p.appInstKey.Name,
+		AppInstOrg:  p.appInstKey.Organization,
 	}
 	log.SpanLog(ctx, log.DebugLevelMetrics, "Collecting metrics for app", "key", key)
 	stat, err := p.pf.GetVmStats(ctx, &p.appInstKey)

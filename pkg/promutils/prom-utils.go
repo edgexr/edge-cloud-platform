@@ -23,15 +23,19 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
+	"github.com/gogo/protobuf/types"
 )
 
+var ClusterPrometheusAppInstLabel = "label_" + cloudcommon.MexAppInstNameLabel
+var ClusterPrometheusAppInstOrgLabel = "label_" + cloudcommon.MexAppInstOrgLabel
 var ClusterPrometheusAppLabel = "label_" + cloudcommon.MexAppNameLabel
 var ClusterPrometheusAppVersionLabel = "label_" + cloudcommon.MexAppVersionLabel
 
+// Going forward, this should use ClusterPrometheusAppInstLabel, but
+// for backwards compatibility we leave it as AppLabel.
 var PromLabelsAllMobiledgeXApps = `{` + ClusterPrometheusAppLabel + `!=""}`
 
 const (
@@ -53,7 +57,7 @@ const (
 	PromQCloudletDiskTotal = `sum(container_fs_limit_bytes{device=~"^/dev/[sv]d[a-z][1-9]$",id="/"})`
 
 	// This is a template which takes a pod query and adds instance label to it
-	PromQAppLabelsWrapperFmt = "max(kube_pod_labels%s)by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(%s)"
+	PromQAppLabelsWrapperFmt = "max(kube_pod_labels%s)by(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion,label_mexAppInstName,label_mexAppInstOrg)(%s)"
 
 	PromQCpuPod         = `sum(rate(container_cpu_usage_seconds_total{image!=""}[1m])) by (pod) / ignoring (pod) group_left sum(machine_cpu_cores) * 100 `
 	PromQMemPod         = `sum(container_memory_working_set_bytes{image!=""})by(pod)`
@@ -115,9 +119,11 @@ type PromMetric struct {
 	Values []interface{} `json:"value,omitempty"`
 }
 type PromLabels struct {
-	PodName string `json:"pod,omitempty"`
-	App     string `json:"label_mexAppName,omitempty"`
-	Version string `json:"label_mexAppVersion,omitempty"`
+	PodName     string `json:"pod,omitempty"`
+	AppName     string `json:"label_mexAppName,omitempty"`
+	AppVersion  string `json:"label_mexAppVersion,omitempty"`
+	AppInstName string `json:"label_mexAppInstName,omitempty"`
+	AppInstOrg  string `json:"label_mexAppInstOrg,omitempty"`
 }
 type PromAlert struct {
 	Labels      map[string]string

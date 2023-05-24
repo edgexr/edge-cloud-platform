@@ -28,7 +28,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type SendAutoProvPolicyHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.PolicyKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.AutoProvPolicy, modRev int64))
 	GetWithRev(key *edgeproto.PolicyKey, buf *edgeproto.AutoProvPolicy, modRev *int64) bool
 }
 
@@ -42,7 +42,7 @@ type RecvAutoProvPolicyHandler interface {
 type AutoProvPolicyCacheHandler interface {
 	SendAutoProvPolicyHandler
 	RecvAutoProvPolicyHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.PolicyKey, old *edgeproto.AutoProvPolicy, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.AutoProvPolicy, modRev int64))
 }
 
 type AutoProvPolicySend struct {
@@ -97,8 +97,8 @@ func (s *AutoProvPolicySend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.PolicyKey, modRev int64) {
-		s.Keys[*key] = AutoProvPolicySendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.AutoProvPolicy, modRev int64) {
+		s.Keys[*obj.GetKey()] = AutoProvPolicySendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -106,12 +106,12 @@ func (s *AutoProvPolicySend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *AutoProvPolicySend) Update(ctx context.Context, key *edgeproto.PolicyKey, old *edgeproto.AutoProvPolicy, modRev int64) {
+func (s *AutoProvPolicySend) Update(ctx context.Context, obj *edgeproto.AutoProvPolicy, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *AutoProvPolicySend) ForceDelete(ctx context.Context, key *edgeproto.PolicyKey, modRev int64) {
@@ -226,11 +226,11 @@ func (s *AutoProvPolicySendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *AutoProvPolicySendMany) Update(ctx context.Context, key *edgeproto.PolicyKey, old *edgeproto.AutoProvPolicy, modRev int64) {
+func (s *AutoProvPolicySendMany) Update(ctx context.Context, obj *edgeproto.AutoProvPolicy, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 
@@ -620,7 +620,7 @@ func (s *AutoProvCountsRecvMany) Flush(ctx context.Context, notifyId int64) {
 }
 
 type SendAutoProvInfoHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.CloudletKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.AutoProvInfo, modRev int64))
 	GetWithRev(key *edgeproto.CloudletKey, buf *edgeproto.AutoProvInfo, modRev *int64) bool
 }
 
@@ -634,7 +634,7 @@ type RecvAutoProvInfoHandler interface {
 type AutoProvInfoCacheHandler interface {
 	SendAutoProvInfoHandler
 	RecvAutoProvInfoHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.CloudletKey, old *edgeproto.AutoProvInfo, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.AutoProvInfo, modRev int64))
 }
 
 type AutoProvInfoSend struct {
@@ -689,8 +689,8 @@ func (s *AutoProvInfoSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.CloudletKey, modRev int64) {
-		s.Keys[*key] = AutoProvInfoSendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.AutoProvInfo, modRev int64) {
+		s.Keys[*obj.GetKey()] = AutoProvInfoSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -698,12 +698,12 @@ func (s *AutoProvInfoSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *AutoProvInfoSend) Update(ctx context.Context, key *edgeproto.CloudletKey, old *edgeproto.AutoProvInfo, modRev int64) {
+func (s *AutoProvInfoSend) Update(ctx context.Context, obj *edgeproto.AutoProvInfo, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *AutoProvInfoSend) ForceDelete(ctx context.Context, key *edgeproto.CloudletKey, modRev int64) {
@@ -818,11 +818,11 @@ func (s *AutoProvInfoSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *AutoProvInfoSendMany) Update(ctx context.Context, key *edgeproto.CloudletKey, old *edgeproto.AutoProvInfo, modRev int64) {
+func (s *AutoProvInfoSendMany) Update(ctx context.Context, obj *edgeproto.AutoProvInfo, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 

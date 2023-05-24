@@ -23,12 +23,12 @@ import (
 	"strings"
 	"time"
 
-	prototypes "github.com/gogo/protobuf/types"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
+	prototypes "github.com/gogo/protobuf/types"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
@@ -271,7 +271,7 @@ func (v *VcdPlatform) VmAppChangedCallback(ctx context.Context, appInst *edgepro
 		vmName := appInst.Uri
 		v.DeleteVmHrefFromCache(ctx, vmName)
 		// delete using old format also
-		altVmName := oldGetAppFQN(&appInst.Key.AppKey)
+		altVmName := oldGetAppFQN(&appInst.AppKey)
 		v.DeleteVmHrefFromCache(ctx, altVmName)
 	}
 }

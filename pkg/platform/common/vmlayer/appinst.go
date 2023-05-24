@@ -112,8 +112,8 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	}
 	deploymentVars := crmutil.DeploymentReplaceVars{
 		Deployment: crmutil.CrmReplaceVars{
-			CloudletName: k8smgmt.NormalizeName(appInst.Key.ClusterInstKey.CloudletKey.Name),
-			CloudletOrg:  k8smgmt.NormalizeName(appInst.Key.ClusterInstKey.CloudletKey.Organization),
+			CloudletName: k8smgmt.NormalizeName(appInst.Key.CloudletKey.Name),
+			CloudletOrg:  k8smgmt.NormalizeName(appInst.Key.CloudletKey.Organization),
 			AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
 			DnsZone:      v.VMProperties.CommonPf.GetCloudletDNSZone(),
 		},
@@ -373,7 +373,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if err != nil {
 			return err
 		}
-		proxycerts.SetupTLSCerts(ctx, &appInst.Key.ClusterInstKey.CloudletKey, orchVals.lbName, client, v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
+		proxycerts.SetupTLSCerts(ctx, &appInst.Key.CloudletKey, orchVals.lbName, client, v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
 		// clusterInst is empty but that is ok here
 		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 		if err != nil {
@@ -537,7 +537,7 @@ func (v *VMPlatform) cleanupAppInst(ctx context.Context, clusterInst *edgeproto.
 			updateCallback(edgeproto.UpdateTask, "Retrying cleanup")
 		}
 	}
-	v.VMProperties.CommonPf.PlatformConfig.NodeMgr.Event(ctx, "Failed to clean up appInst", app.Key.Organization, appInst.Key.GetTags(), err)
+	v.VMProperties.CommonPf.PlatformConfig.NodeMgr.Event(ctx, "Failed to clean up appInst", app.Key.Organization, appInst.GetTags(), err)
 	return fmt.Errorf("Failed to cleanup appinst - %v", err)
 }
 
@@ -593,7 +593,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 					Ports:       appInst.MappedPorts,
 					DestIP:      infracommon.DestIPUnspecified,
 				}
-				v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, client, dockermgmt.GetContainerName(&app.Key), v.VMProvider.RemoveWhitelistSecurityRules, &wlParams)
+				v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, client, dockermgmt.GetContainerName(appInst), v.VMProvider.RemoveWhitelistSecurityRules, &wlParams)
 				return nil
 			}
 			return err
@@ -620,7 +620,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 			Ports:       appInst.MappedPorts,
 			DestIP:      infracommon.DestIPUnspecified,
 		}
-		if err := v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, client, dockermgmt.GetContainerName(&app.Key), v.VMProvider.RemoveWhitelistSecurityRules, &wlParams); err != nil {
+		if err := v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, client, dockermgmt.GetContainerName(appInst), v.VMProvider.RemoveWhitelistSecurityRules, &wlParams); err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete security rules", "name", names.AppName, "rootlb", rootLBName, "error", err)
 		}
 		if !app.InternalPorts {
@@ -710,7 +710,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 					Ports:       appInst.MappedPorts,
 					DestIP:      infracommon.DestIPUnspecified,
 				}
-				v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, rootLBClient, dockermgmt.GetContainerName(&app.Key), v.VMProvider.RemoveWhitelistSecurityRules, &wlParams)
+				v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, rootLBClient, dockermgmt.GetContainerName(appInst), v.VMProvider.RemoveWhitelistSecurityRules, &wlParams)
 				return nil
 			}
 			return err
@@ -723,7 +723,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 			}
 			return err
 		}
-		name := dockermgmt.GetContainerName(&app.Key)
+		name := dockermgmt.GetContainerName(appInst)
 		if !app.InternalPorts {
 			//  the proxy does not yet exist for docker, but it eventually will.  Secgrp rules should be deleted in either case
 			wlParams := infracommon.WhiteListParams{

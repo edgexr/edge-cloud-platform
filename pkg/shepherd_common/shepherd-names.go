@@ -15,14 +15,13 @@
 package shepherd_common
 
 import (
-	"github.com/edgexr/edge-cloud-platform/pkg/proxy"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/proxy"
 )
 
 func GetProxyKey(appInstKey *edgeproto.AppInstKey) string {
-	return appInstKey.AppKey.Name + "-" + appInstKey.ClusterInstKey.ClusterKey.Name + "-" +
-		appInstKey.AppKey.Organization + "-" + appInstKey.AppKey.Version
+	return appInstKey.Name + "-" + appInstKey.Organization
 }
 
 func ShouldRunEnvoy(app *edgeproto.App, appInst *edgeproto.AppInst) bool {

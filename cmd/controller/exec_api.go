@@ -57,12 +57,12 @@ func NewExecApi(all *AllApis) *ExecApi {
 }
 
 func (s *ExecApi) getApp(ctx context.Context, req *edgeproto.ExecRequest, app *edgeproto.App) error {
-	SetAppInstKeyDefaults(ctx, &req.AppInstKey, s.all)
-	if !s.all.appApi.Get(&req.AppInstKey.AppKey, app) {
-		return req.AppInstKey.AppKey.NotFoundError()
-	}
-	if !s.all.appInstApi.HasKey(&req.AppInstKey) {
+	appInst := edgeproto.AppInst{}
+	if !s.all.appInstApi.Get(&req.AppInstKey, &appInst) {
 		return req.AppInstKey.NotFoundError()
+	}
+	if !s.all.appApi.Get(&appInst.AppKey, app) {
+		return appInst.AppKey.NotFoundError()
 	}
 	return nil
 }

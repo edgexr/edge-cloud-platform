@@ -36,15 +36,15 @@ func TestEdgeEventsCookie(t *testing.T) {
 	setupJwks()
 	// Init variables to be put into cookie
 	dmeAppInst := &DmeAppInst{
-		virtualClusterInstKey: edgeproto.VirtualClusterInstKey{
-			Organization: "testcluster-org",
-			ClusterKey: edgeproto.ClusterKey{
-				Name: "testcluster",
-			},
+		key: edgeproto.AppInstKey{
 			CloudletKey: edgeproto.CloudletKey{
 				Organization: "testcloudlet-org",
 				Name:         "testcloudlet",
 			},
+		},
+		clusterKey: edgeproto.ClusterKey{
+			Name:         "testcluster",
+			Organization: "testcluster-org",
 		},
 	}
 	location := dme.Loc{

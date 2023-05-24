@@ -18,13 +18,13 @@ import (
 	"context"
 	"fmt"
 
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/pkg/access"
 	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/proxy"
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
@@ -88,7 +88,7 @@ func (c *CommonPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, c
 			/*if aac.LbTlsCertCommonName != "" {
 			        ... get cert here
 			}*/
-			containerName := ops.ProxyNamePrefix + dockermgmt.GetContainerName(&app.Key)
+			containerName := ops.ProxyNamePrefix + dockermgmt.GetContainerName(appInst)
 			proxyerr := proxy.CreateNginxProxy(ctx, client, containerName, listenIP, backendIP, appInst, app.SkipHcPorts, proxyops...)
 			if proxyerr == nil {
 				proxychan <- ""

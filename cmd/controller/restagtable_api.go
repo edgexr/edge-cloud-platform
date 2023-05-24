@@ -279,12 +279,6 @@ func (s *ResTagTableApi) UsesGpu(ctx context.Context, stm concurrency.STM, flavo
 
 // GetVMSpec returns the VMCreationAttributes including flavor name and the size of the external volume which is required, if any
 func (s *ResTagTableApi) GetVMSpec(ctx context.Context, stm concurrency.STM, nodeflavor edgeproto.Flavor, cloudletFlavorName string, cl edgeproto.Cloudlet, cli edgeproto.CloudletInfo) (*vmspec.VMCreationSpec, error) {
-	if cl.Key.FederatedOrganization != "" && cloudletFlavorName == "" && len(cli.Flavors) > 0 {
-		// TODO: remove this after PoC demo
-		cloudletFlavorName = cli.Flavors[0].Name
-		log.SpanLog(ctx, log.DebugLevelApi, "PoC demo use default cloudlet flavor", "flavor", cloudletFlavorName)
-	}
-
 	// for those platforms with no concept of a quantized set of resources (flavors)
 	// return a VMCreationSpec  based on the our meta-flavor resource request.
 	if len(cli.Flavors) == 0 {
