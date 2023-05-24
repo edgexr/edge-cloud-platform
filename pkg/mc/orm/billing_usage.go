@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/billing"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 )
 
 var retryMax = 3
@@ -145,22 +145,17 @@ func recordAppUsages(ctx context.Context, usage *ormapi.MetricData, cloudletPool
 	for _, value := range usage.Series[0].Values {
 		// ordering is from appInstDataColumns
 		newAppInst := edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Name:         fmt.Sprintf("%v", value[1]),
-				Organization: fmt.Sprintf("%v", value[2]),
-				Version:      fmt.Sprintf("%v", value[3]),
-			},
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				Organization: fmt.Sprintf("%v", value[5]),
-				ClusterKey:   edgeproto.ClusterKey{Name: fmt.Sprintf("%v", value[4])},
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         fmt.Sprintf("%v", value[6]),
-					Organization: fmt.Sprintf("%v", value[7]),
-				},
+			Name:         fmt.Sprintf("%v", value[1]),
+			Organization: fmt.Sprintf("%v", value[2]),
+			CloudletKey: edgeproto.CloudletKey{
+				Name:                  fmt.Sprintf("%v", value[3]),
+				Organization:          fmt.Sprintf("%v", value[4]),
+				FederatedOrganization: fmt.Sprintf("%v", value[5]),
 			},
 		}
-		checkOrg := cloudletPoolMap[newAppInst.ClusterInstKey.CloudletKey.Name]
-		if checkOrg == newAppInst.ClusterInstKey.CloudletKey.Organization {
+
+		checkOrg := cloudletPoolMap[newAppInst.CloudletKey.Name]
+		if checkOrg == newAppInst.CloudletKey.Organization {
 			continue // ignore non public cloudlets
 		}
 		startTime, ok := value[10].(time.Time)
@@ -174,15 +169,15 @@ func recordAppUsages(ctx context.Context, usage *ormapi.MetricData, cloudletPool
 			continue
 		}
 		newRecord := billing.UsageRecord{
-			FlavorName: fmt.Sprintf("%v", value[8]),
+			FlavorName: fmt.Sprintf("%v", value[6]),
 			NodeCount:  1,
 			AppInst:    &newAppInst,
 			StartTime:  startTime,
 			EndTime:    endTime,
 			Region:     region,
 		}
-		records, _ := orgTracker[newAppInst.AppKey.Organization]
-		orgTracker[newAppInst.AppKey.Organization] = append(records, newRecord)
+		records, _ := orgTracker[newAppInst.Organization]
+		orgTracker[newAppInst.Organization] = append(records, newRecord)
 	}
 	for org, record := range orgTracker {
 		var accountInfo *ormapi.AccountInfo
@@ -212,43 +207,46 @@ func recordClusterUsages(ctx context.Context, usage *ormapi.MetricData, cloudlet
 		}
 		// ordering is from clusterInstDataColumns
 		newClusterInst := edgeproto.ClusterInstKey{
-			Organization: fmt.Sprintf("%v", value[2]),
-			ClusterKey:   edgeproto.ClusterKey{Name: fmt.Sprintf("%v", value[1])},
+			ClusterKey: edgeproto.ClusterKey{
+				Name:         fmt.Sprintf("%v", value[1]),
+				Organization: fmt.Sprintf("%v", value[2]),
+			},
 			CloudletKey: edgeproto.CloudletKey{
-				Name:         fmt.Sprintf("%v", value[3]),
-				Organization: fmt.Sprintf("%v", value[4]),
+				Name:                  fmt.Sprintf("%v", value[3]),
+				Organization:          fmt.Sprintf("%v", value[4]),
+				FederatedOrganization: fmt.Sprintf("%v", value[5]),
 			},
 		}
 		checkOrg := cloudletPoolMap[newClusterInst.CloudletKey.Name]
 		if checkOrg == newClusterInst.CloudletKey.Organization {
 			continue // ignore non public cloudlets
 		}
-		startTime, ok := value[8].(time.Time)
+		startTime, ok := value[9].(time.Time)
 		if !ok {
-			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to parse time", "starttime", value[8])
+			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to parse time", "starttime", value[9])
 			continue
 		}
-		endTime, ok := value[9].(time.Time)
+		endTime, ok := value[10].(time.Time)
 		if !ok {
-			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to parse time", "endtime", value[9])
+			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to parse time", "endtime", value[10])
 			continue
 		}
-		nodeCount, ok := value[6].(int64)
+		nodeCount, ok := value[7].(int64)
 		if !ok {
-			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to parse nodecount", "nodecount", value[6])
+			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to parse nodecount", "nodecount", value[7])
 			continue
 		}
 		newRecord := billing.UsageRecord{
-			FlavorName:  fmt.Sprintf("%v", value[5]),
+			FlavorName:  fmt.Sprintf("%v", value[6]),
 			NodeCount:   int(nodeCount),
 			ClusterInst: &newClusterInst,
 			StartTime:   startTime,
 			EndTime:     endTime,
-			IpAccess:    fmt.Sprintf("%v", value[7]),
+			IpAccess:    fmt.Sprintf("%v", value[8]),
 			Region:      region,
 		}
-		records, _ := orgTracker[newClusterInst.Organization]
-		orgTracker[newClusterInst.Organization] = append(records, newRecord)
+		records, _ := orgTracker[newClusterInst.ClusterKey.Organization]
+		orgTracker[newClusterInst.ClusterKey.Organization] = append(records, newRecord)
 	}
 	for org, record := range orgTracker {
 		var accountInfo *ormapi.AccountInfo

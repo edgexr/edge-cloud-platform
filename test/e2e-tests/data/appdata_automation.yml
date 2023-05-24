@@ -112,16 +112,15 @@ apps:
 
 appinstances:
 - key:
-    appkey:
-      organization: automation_api
-      name: automation_api_app
-      version: "1.0"
-    clusterinstkey:
-      clusterkey:
-        name: autocluster1
-      cloudletkey:
-        organization: dmuus
-        name: tmocloud-1
+    name: automation_api_app
+    organization: automation_api
+    cloudletkey:
+      organization: dmuus
+      name: tmocloud-1
+  appkey:
+    organization: automation_api
+    name: automation_api_app
+    version: "1.0"
   cloudletloc:
     latitude: 31
     longitude: -91

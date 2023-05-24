@@ -95,33 +95,36 @@ clusterinsts:
 - key:
     clusterkey:
       name: pillimo_cluster
+      organization: Untomt
     cloudletkey:
       organization: DMUUS
       name: cloud2
   flavor:
     name: x1.tiny
-  nodes: 3
+  numnodes: 3
   liveness: LivenessStatic
 - key:
     clusterkey:
       name: Untomt_cluster
+      organization: Untomt
     cloudletkey:
       organization: DMUUS
       name: cloud2
   flavor:
     name: x1.small
-  nodes: 3
+  numnodes: 3
   liveness: LivenessDynamic
   ipaccess: Dedicated
 - key:
     clusterkey:
       name: Untomt_cluster_22
+      organization: Untomt
     cloudletkey:
       organization: DMUUS
       name: cloud2
   flavor:
     name: x1.small
-  nodes: 3
+  numnodes: 3
   liveness: LivenessDynamic
   ipaccess: Dedicated
 apps:
@@ -135,17 +138,18 @@ apps:
     version: 1.0.0
 appinstances:
 - key:
-    appkey:
-      organization: Atlantic
-      name: Pillimo Go
-      version: 1.0.0
-    clusterinstkey:
-      clusterkey:
-        name: pillimo_cluster
-      cloudletkey:
-        organization: DMUUS
-        name: cloud2
-      developer: Atlantic
+    organization: Atlantic
+    name: Pillimo Go
+    cloudletkey:
+      organization: DMUUS
+      name: cloud2
+  appkey:
+    organization: Atlantic
+    name: Pillimo Go
+    version: 1.0.0
+  clusterkey:
+    name: pillimo_cluster
+    organization: Atlantic
   cloudletloc:
     latitude: 31
     longitude: -91
@@ -153,17 +157,18 @@ appinstances:
   flavor:
     name: x1.tiny
 - key:
-    appkey:
-      organization: Untomt
-      name: VRmax
-      version: 1.0.0
-    clusterinstkey:
-      clusterkey:
-        name: Untomt_cluster
-      cloudletkey:
-        organization: DMUUS
-        name: cloud2
-      developer: Untomt
+    organization: Untomt
+    name: VRmax
+    cloudletkey:
+      organization: DMUUS
+      name: cloud2
+  appkey:
+    organization: Untomt
+    name: VRmax
+    version: 1.0.0
+  clusterkey:
+    name: Untomt_cluster
+    organization: Untomt
   cloudletloc:
     latitude: 31
     longitude: -91
@@ -171,22 +176,22 @@ appinstances:
   flavor:
     name: x1.small
 - key:
-    appkey:
-      organization: Untomt
-      name: VRmax
-      version: 1.0.0
-    clusterinstkey:
-      clusterkey:
-        name: Untomt_cluster_22
-      cloudletkey:
-        organization: DMUUS
-        name: cloud2
-      developer: Untomt
+    organization: Untomt
+    name: VRmax2
+    cloudletkey:
+      organization: DMUUS
+      name: cloud2
+  appkey:
+    organization: Untomt
+    name: VRmax
+    version: 1.0.0
+  clusterkey:
+    name: Untomt_cluster_22
+    organization: Untomt
   cloudletloc:
     latitude: 310
     longitude: -910
   liveness: LivenessDynamic
-  trusted: true
   flavor:
     name: x1.medium
 
@@ -222,14 +227,11 @@ gpudrivers:
 - key:
     organization: DMUUS
     name: gpudriver1
-  type: GpuTypePassthrough
 - key:
     organization: DMUUS
     name: gpudriver2
-  type: GpuTypeVgpu
 - key:
     name: gpudriver2
-  type: GpuTypeVgpu
 
 cloudletpools:
 - key:
@@ -242,8 +244,8 @@ cloudletpools:
 networks:
 - key:
     cloudletkey:
-       organization: dmuus
-       cloudlet: cloud2
+      organization: dmuus
+      name: cloud2
     name: net1
   routes:
   - destinationcidr: 10.200.10.0/24
@@ -255,32 +257,32 @@ networks:
 trustpolicyexceptions:
 - key:
     appkey:
-        organization: Untomt
-        name: VRmax
-        version: 1.0.0
+      organization: Untomt
+      name: VRmax
+      version: 1.0.0
     cloudletpoolkey:
-        organization: DMUUS
-        name: cloud2-pool
+      organization: DMUUS
+      name: cloud2-pool
     name: tpe1
-    requiredoutboundconnections:
-    - protocol: tcp
-      remotecidr: "1.1.1.1/32"
-      portrangemin: 1
-      portrangemax: 111
+  outboundsecurityrules:
+  - protocol: tcp
+    remotecidr: "1.1.1.1/32"
+    portrangemin: 1
+    portrangemax: 111
 - key:
     appkey:
-        organization: Untomt
-        name: VRmax
-        version: 1.0.0
+      organization: Untomt
+      name: VRmax
+      version: 1.0.0
     cloudletpoolkey:
-        organization: DMUUS
-        name: cloud2-pool
+      organization: DMUUS
+      name: cloud2-pool
     name: tpe2
-    requiredoutboundconnections:
-    - protocol: udp
-      remotecidr: "2.2.2.2/24"
-      portrangemin: 22
-      portrangemax: 222
+  outboundsecurityrules:
+  - protocol: udp
+    remotecidr: "2.2.2.2/24"
+    portrangemin: 22
+    portrangemax: 222
 `
 
 func startMain(t *testing.T) (chan struct{}, error) {
@@ -310,7 +312,7 @@ func TestCRM(t *testing.T) {
 	notifyAddr := "127.0.0.1:61245"
 
 	data := edgeproto.AllData{}
-	err = yaml.Unmarshal([]byte(yamlData), &data)
+	err = yaml.UnmarshalStrict([]byte(yamlData), &data)
 	require.Nil(t, err, "unmarshal yaml data")
 
 	bytes, _ := json.Marshal(&data.Cloudlets[0].Key)
@@ -398,6 +400,7 @@ func TestCRM(t *testing.T) {
 	}
 	for ii := range data.AppInstances {
 		data.AppInstances[ii].State = edgeproto.TrackedState_READY
+		log.SpanLog(ctx, log.DebugLevelApi, "update AppInst", "ai", data.AppInstances[ii])
 		ctrlHandler.AppInstCache.Update(ctx, &data.AppInstances[ii], 0)
 	}
 	for ii := range data.CloudletPools {

@@ -27,7 +27,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type SendCloudletPoolHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.CloudletPoolKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.CloudletPool, modRev int64))
 	GetWithRev(key *edgeproto.CloudletPoolKey, buf *edgeproto.CloudletPool, modRev *int64) bool
 }
 
@@ -41,7 +41,7 @@ type RecvCloudletPoolHandler interface {
 type CloudletPoolCacheHandler interface {
 	SendCloudletPoolHandler
 	RecvCloudletPoolHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.CloudletPoolKey, old *edgeproto.CloudletPool, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.CloudletPool, modRev int64))
 }
 
 type CloudletPoolSend struct {
@@ -96,8 +96,8 @@ func (s *CloudletPoolSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.CloudletPoolKey, modRev int64) {
-		s.Keys[*key] = CloudletPoolSendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.CloudletPool, modRev int64) {
+		s.Keys[*obj.GetKey()] = CloudletPoolSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -105,12 +105,12 @@ func (s *CloudletPoolSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *CloudletPoolSend) Update(ctx context.Context, key *edgeproto.CloudletPoolKey, old *edgeproto.CloudletPool, modRev int64) {
+func (s *CloudletPoolSend) Update(ctx context.Context, obj *edgeproto.CloudletPool, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *CloudletPoolSend) ForceDelete(ctx context.Context, key *edgeproto.CloudletPoolKey, modRev int64) {
@@ -225,11 +225,11 @@ func (s *CloudletPoolSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *CloudletPoolSendMany) Update(ctx context.Context, key *edgeproto.CloudletPoolKey, old *edgeproto.CloudletPool, modRev int64) {
+func (s *CloudletPoolSendMany) Update(ctx context.Context, obj *edgeproto.CloudletPool, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 

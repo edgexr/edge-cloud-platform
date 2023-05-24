@@ -14,13 +14,10 @@
 
 - name: connections
   tags:
-    app: someapplication1
-    apporg: AcmeAppCo
-    appver: "1.0"
+    appinst: someapplication1
+    appinstorg: AcmeAppCo
     cloudlet: dmuus-cloud-1
     cloudletorg: dmuus
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
     port: "80"
     region: local
   values:

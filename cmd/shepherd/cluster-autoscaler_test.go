@@ -17,10 +17,10 @@ package main
 import (
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -33,7 +33,7 @@ func TestClusterAutoScaler(t *testing.T) {
 	cluster := testutil.ClusterInstData()[2]
 	policy := edgeproto.AutoScalePolicy{}
 	policy.Key.Name = "test-policy"
-	policy.Key.Organization = cluster.Key.Organization
+	policy.Key.Organization = cluster.Key.ClusterKey.Organization
 	policy.MinNodes = 1
 	policy.MaxNodes = 4
 	policy.StabilizationWindowSec = 20

@@ -84,8 +84,6 @@ message AutoProvCount {
   uint64 count = 3;
   // Process count immediately
   bool process_now = 4;
-  // Immediately deploy to clusterinst
-  ClusterInstKey deploy_now_key = 5 [(gogoproto.nullable) = false];
 }
 
 // AutoProvCounts is used to send potential cloudlet and location counts from DME to Controller

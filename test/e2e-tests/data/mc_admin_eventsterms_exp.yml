@@ -77,11 +77,14 @@
     - key: locala
     tagkeys:
     - key: app
+    - key: appinst
+    - key: appinstorg
     - key: apporg
     - key: appver
     - key: autoprovpolicy
     - key: billing org
     - key: cloudlet
+    - key: cloudletfedorg
     - key: cloudletorg
     - key: cloudletpool
     - key: cloudletpoolorg
@@ -89,7 +92,6 @@
     - key: clusterorg
     - key: duration
     - key: email
-    - key: federatedorg
     - key: gpudriver
     - key: gpudriverorg
     - key: hostname
@@ -105,7 +107,6 @@
     - key: org
     - key: policy
     - key: policyorg
-    - key: realcluster
     - key: reason
     - key: region
     - key: remote-ip

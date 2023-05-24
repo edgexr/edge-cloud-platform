@@ -18,33 +18,31 @@ alertreceivers:
   severity: warning
   user: user2
   email: ops@mobiledgex.net
-  appinst:
-    appkey:
-      organization: AcmeAppCo
-      name: someapplication1
-      version: "1.0"
-    clusterinstkey:
-      clusterkey:
-        name: SmallCluster
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-1
-      organization: AcmeAppCo
+  appinstkey:
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-1
+  appkey:
+    organization: AcmeAppCo
+    name: someapplication1
+    version: "1.0"
+  clusterkey:
+    name: SmallCluster
+    organization: AcmeAppCo
 - name: emailSlackReceiver
   type: slack
   severity: info
   user: user2
   slackchannel: '#alerts'
   slackwebhook: <hidden>
-  appinst:
-    appkey:
-      organization: AcmeAppCo
-      name: someapplication1
-      version: "1.0"
-    clusterinstkey:
-      clusterkey:
-        name: SmallCluster
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-1
-      organization: AcmeAppCo
+  appinstkey:
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-1
+  appkey:
+    organization: AcmeAppCo
+    name: someapplication1
+    version: "1.0"
+  clusterkey:
+    name: SmallCluster
+    organization: AcmeAppCo

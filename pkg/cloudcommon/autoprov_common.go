@@ -20,6 +20,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 const (
@@ -110,13 +111,13 @@ func IsAppInstBeingDeletedError(err error) bool {
 	return false
 }
 
-// Cluster name to trigger using an existing free reservable ClusterInst
-// or creating a new one automatically.
-// Because this name is always part of the AppInstKey in etcd,
-// and because AutoProv will only ever instantiate once instance
-// of an App per cloudlet, there are really no uniqueness requirements
-// on this name.
-// Additionally any objects instantiated at the infra level that
-// are independent of the AppInst key should be using the
-// real cluster name from the ClusterInst object.
-var AutoProvClusterName = AutoClusterPrefix + "-autoprov"
+// Generate unique and recognizable name for autoprov deployed instances.
+// Only one auto-provisioned instance per app is allowed per cloudlet.
+func GetAutoProvAppInstKey(appKey *edgeproto.AppKey, cloudletKey *edgeproto.CloudletKey) edgeproto.AppInstKey {
+	name := AutoProvPrefix + "-" + appKey.Name + appKey.Version
+	return edgeproto.AppInstKey{
+		Name:         util.DNSSanitize(name),
+		Organization: appKey.Organization,
+		CloudletKey:  *cloudletKey,
+	}
+}

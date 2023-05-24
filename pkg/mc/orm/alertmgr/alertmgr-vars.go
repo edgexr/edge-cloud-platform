@@ -50,12 +50,12 @@ receivers:
 	AlertReceiverTypePagerDuty = "pagerduty"
 	AlertMgrDisplayHidden      = "<hidden>"
 
-	AlertApi               = "/api/v2/alerts"
-	ReceiverApi            = "/api/v2/receivers"
-	SilenceApi             = "/api/v2/silences"
-	ReloadConfigApi        = "/-/reload"
-	mobiledgeXReceiversApi = "/api/v3/receivers"
-	mobiledgeXReceiverApi  = "/api/v3/receiver"
+	AlertApi              = "/api/v2/alerts"
+	ReceiverApi           = "/api/v2/receivers"
+	SilenceApi            = "/api/v2/silences"
+	ReloadConfigApi       = "/-/reload"
+	edgecloudReceiversApi = "/api/v3/receivers"
+	edgecloudReceiverApi  = "/api/v3/receiver"
 )
 
 var (

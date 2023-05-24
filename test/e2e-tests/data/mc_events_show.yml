@@ -14,12 +14,10 @@
 
 - name: appinst
   tags:
-    app: someapplication1
-    apporg: AcmeAppCo
+    appinst: someapplication1
+    appinstorg: AcmeAppCo
     cloudlet: dmuus-cloud-1
     cloudletorg: dmuus
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
     event: CREATED
     status: UP
 - name: clusterinst

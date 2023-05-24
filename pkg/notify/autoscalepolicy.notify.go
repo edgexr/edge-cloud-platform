@@ -26,7 +26,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type SendAutoScalePolicyHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.PolicyKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.AutoScalePolicy, modRev int64))
 	GetWithRev(key *edgeproto.PolicyKey, buf *edgeproto.AutoScalePolicy, modRev *int64) bool
 }
 
@@ -40,7 +40,7 @@ type RecvAutoScalePolicyHandler interface {
 type AutoScalePolicyCacheHandler interface {
 	SendAutoScalePolicyHandler
 	RecvAutoScalePolicyHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.PolicyKey, old *edgeproto.AutoScalePolicy, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.AutoScalePolicy, modRev int64))
 }
 
 type AutoScalePolicySend struct {
@@ -95,8 +95,8 @@ func (s *AutoScalePolicySend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.PolicyKey, modRev int64) {
-		s.Keys[*key] = AutoScalePolicySendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.AutoScalePolicy, modRev int64) {
+		s.Keys[*obj.GetKey()] = AutoScalePolicySendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -104,12 +104,12 @@ func (s *AutoScalePolicySend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *AutoScalePolicySend) Update(ctx context.Context, key *edgeproto.PolicyKey, old *edgeproto.AutoScalePolicy, modRev int64) {
+func (s *AutoScalePolicySend) Update(ctx context.Context, obj *edgeproto.AutoScalePolicy, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *AutoScalePolicySend) ForceDelete(ctx context.Context, key *edgeproto.PolicyKey, modRev int64) {
@@ -224,11 +224,11 @@ func (s *AutoScalePolicySendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *AutoScalePolicySendMany) Update(ctx context.Context, key *edgeproto.PolicyKey, old *edgeproto.AutoScalePolicy, modRev int64) {
+func (s *AutoScalePolicySendMany) Update(ctx context.Context, obj *edgeproto.AutoScalePolicy, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 

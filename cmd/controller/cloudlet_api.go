@@ -832,13 +832,13 @@ func (s *CloudletApi) VerifyTrustPoliciesForAppInsts(ctx context.Context, app *e
 	}
 	s.cache.Mux.Unlock()
 	for akey := range appInsts {
-		pkey, cloudletFound := trustedCloudlets[akey.ClusterInstKey.CloudletKey]
+		pkey, cloudletFound := trustedCloudlets[akey.CloudletKey]
 		if cloudletFound {
 			policy, policyFound := TrustPolicies[*pkey]
 			if !policyFound {
 				return fmt.Errorf("Unable to find trust policy in cache: %s", pkey.String())
 			}
-			err := s.all.appApi.CheckAppCompatibleWithTrustPolicy(ctx, &akey.ClusterInstKey.CloudletKey, app, policy)
+			err := s.all.appApi.CheckAppCompatibleWithTrustPolicy(ctx, &akey.CloudletKey, app, policy)
 			if err != nil {
 				return err
 			}
@@ -1826,7 +1826,7 @@ func (s *CloudletApi) UpdateAppInstLocations(ctx context.Context, in *edgeproto.
 	s.all.appInstApi.cache.Mux.Lock()
 	for _, data := range s.all.appInstApi.cache.Objs {
 		inst := data.Obj
-		if inst.Key.ClusterInstKey.CloudletKey.Matches(&in.Key) {
+		if inst.Key.CloudletKey.Matches(&in.Key) {
 			keys = append(keys, inst.Key)
 		}
 	}
@@ -2622,16 +2622,15 @@ func (s *CloudletApi) ShowFlavorsForCloudlet(in *edgeproto.CloudletKey, cb edgep
 func (s *CloudletApi) GetOrganizationsOnCloudlet(in *edgeproto.CloudletKey, cb edgeproto.CloudletApi_GetOrganizationsOnCloudletServer) error {
 	orgs := make(map[string]struct{})
 	aiFilter := edgeproto.AppInst{}
-	aiFilter.Key.ClusterInstKey.CloudletKey = *in
+	aiFilter.Key.CloudletKey = *in
 	s.all.appInstApi.cache.Show(&aiFilter, func(appInst *edgeproto.AppInst) error {
-		orgs[appInst.Key.AppKey.Organization] = struct{}{}
-		orgs[appInst.Key.ClusterInstKey.Organization] = struct{}{}
+		orgs[appInst.Key.Organization] = struct{}{}
 		return nil
 	})
 	ciFilter := edgeproto.ClusterInst{}
 	ciFilter.Key.CloudletKey = *in
 	s.all.clusterInstApi.cache.Show(&ciFilter, func(clusterInst *edgeproto.ClusterInst) error {
-		orgs[clusterInst.Key.Organization] = struct{}{}
+		orgs[clusterInst.Key.ClusterKey.Organization] = struct{}{}
 		return nil
 	})
 	for name, _ := range orgs {

@@ -17,14 +17,8 @@ regiondata:
   appdata:
     appinstances:
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovapp
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-autoprov
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-2
-          organization: edgecloudorg
+        name: autoprov-autoprovapp10
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-2

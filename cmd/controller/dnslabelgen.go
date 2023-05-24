@@ -61,7 +61,7 @@ func (s *ClusterInstApi) setDnsLabel(stm concurrency.STM, ci *edgeproto.ClusterI
 	// More likely unique names should come first
 	// to avoid being truncated.
 	name := dnsSanitizeTrunc(ci.Key.ClusterKey.Name, 40)
-	org := dnsSanitizeTrunc(ci.Key.Organization, 20)
+	org := dnsSanitizeTrunc(ci.Key.ClusterKey.Organization, 20)
 	baseLabel := name + "-" + org
 
 	// Number of iterations must be fairly low to avoid STM limits
@@ -82,23 +82,21 @@ func (s *AppInstApi) setDnsLabel(stm concurrency.STM, ai *edgeproto.AppInst) err
 	// to avoid being truncated. Truncate fields separately
 	// to avoid the last field from being completely truncated
 	// if other fields are too long.
-	app := dnsSanitizeTrunc(ai.Key.AppKey.Name, 60)
-	ver := dnsSanitizeTrunc(ai.Key.AppKey.Version, 60)
-	org := dnsSanitizeTrunc(ai.Key.AppKey.Organization, 60)
-	baseLabel := app + ver + "-" + org
+	name := dnsSanitizeTrunc(ai.Key.Name, 60)
+	org := dnsSanitizeTrunc(ai.Key.Organization, 60)
+	baseLabel := name + "-" + org
 
 	if len(baseLabel) > cloudcommon.DnsCloudletObjectLabelMaxLen {
-		// prioritize truncation of appname+version
-		app = dnsSanitizeTrunc(app, 40)
-		ver = dnsSanitizeTrunc(ver, 10)
-		baseLabel = app + ver + "-" + org
+		// give more room for org
+		name = dnsSanitizeTrunc(name, 32)
+		baseLabel = name + "-" + org
 	}
 
 	// Number of iterations must be fairly low to avoid STM limits
 	ai.DnsLabel = ""
 	for ii := 0; ii < 10; ii++ {
 		label := genNextDnsLabel(baseLabel, cloudcommon.DnsCloudletObjectLabelMaxLen, ii)
-		if isReservedCloudletObjectDnsLabel(label) || s.dnsLabelStore.STMHas(stm, &ai.Key.ClusterInstKey.CloudletKey, label) {
+		if isReservedCloudletObjectDnsLabel(label) || s.dnsLabelStore.STMHas(stm, &ai.Key.CloudletKey, label) {
 			continue
 		}
 		ai.DnsLabel = label

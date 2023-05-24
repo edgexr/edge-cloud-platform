@@ -22,12 +22,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/gcs"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -354,8 +354,8 @@ var NvidiaGPUOperatorApp = edgeproto.App{
 
 func (v *VMPlatform) manageGPUOperator(ctx context.Context, rootLBClient ssh.Client, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, action ActionType) error {
 	appInst := edgeproto.AppInst{}
-	appInst.Key.AppKey = NvidiaGPUOperatorApp.Key
-	appInst.Key.ClusterInstKey = *clusterInst.Key.Virtual("")
+	appInst.AppKey = NvidiaGPUOperatorApp.Key
+	appInst.ClusterKey = clusterInst.Key.ClusterKey
 	appInst.Flavor = clusterInst.Flavor
 
 	kubeNames, err := k8smgmt.GetKubeNames(clusterInst, &NvidiaGPUOperatorApp, &appInst)

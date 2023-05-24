@@ -339,12 +339,10 @@ func DeboardConsumerApp(c echo.Context) error {
 		Database:  database,
 	}
 	appInstFilter := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Name:         in.AppName,
-				Organization: in.AppOrg,
-				Version:      in.AppVers,
-			},
+		AppKey: edgeproto.AppKey{
+			Name:         in.AppName,
+			Organization: in.AppOrg,
+			Version:      in.AppVers,
 		},
 	}
 	inUseKeys := []string{}

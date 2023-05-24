@@ -39,6 +39,7 @@ import (
 	//"github.com/prometheus/alertmanager/api/v2/models"
 	// TODO - below is to replace the above for right now - once we update go and modules we can use prometheus directly
 	models "github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr/prometheus_structs/models"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 
 	//	alertmanager_config "github.com/prometheus/alertmanager/config"
 	// TODO - below is to replace the above for right now - once we update go and modules we can use prometheus directly
@@ -130,13 +131,12 @@ func (s *AlertMgrServer) runServer() {
 		case <-time.After(s.AlertRefreshInterval):
 			span := log.StartSpan(log.DebugLevelInfo, "alert-mgr")
 			ctx := log.ContextWithSpan(context.Background(), span)
-			log.SpanLog(ctx, log.DebugLevelInfo, "Sending Alerts to AlertMgr", "AlertMrgAddr",
-				s.AlertMrgAddr)
 			curAlerts := []*edgeproto.Alert{}
 			s.AlertCache.Show(&edgeproto.Alert{}, func(obj *edgeproto.Alert) error {
 				curAlerts = append(curAlerts, obj)
 				return nil
 			})
+			log.SpanLog(ctx, log.DebugLevelInfo, "Sending Alerts to AlertMgr", "AlertMrgAddr", s.AlertMrgAddr, "count", len(curAlerts))
 			// Send out alerts if any alerts need updating
 			if len(curAlerts) > 0 {
 				err := s.AddAlerts(ctx, curAlerts...)
@@ -263,53 +263,20 @@ func getRouteMatchLabelsFromAlertReceiver(in *ormapi.AlertReceiver) map[string]s
 	if in.Region != "" {
 		labels["region"] = in.Region
 	}
-	if in.Cloudlet.Organization != "" {
-		// add labels for the cloudlet
-		labels[cloudcommon.AlertScopeTypeTag] = cloudcommon.AlertScopeCloudlet
-		labels[edgeproto.CloudletKeyTagOrganization] = in.Cloudlet.Organization
-		if in.Cloudlet.Name != "" {
-			labels[edgeproto.CloudletKeyTagName] = in.Cloudlet.Name
-		}
-	} else if in.AppInst.AppKey.Organization != "" {
-		// add labels for app instance
-		labels[cloudcommon.AlertScopeTypeTag] = cloudcommon.AlertScopeApp
-		labels[edgeproto.AppKeyTagOrganization] = in.AppInst.AppKey.Organization
-		if in.AppInst.AppKey.Name != "" {
-			labels[edgeproto.AppKeyTagName] = in.AppInst.AppKey.Name
-		}
-		if in.AppInst.AppKey.Version != "" {
-			labels[edgeproto.AppKeyTagVersion] = in.AppInst.AppKey.Version
-		}
-		if in.AppInst.ClusterInstKey.CloudletKey.Name != "" {
-			labels[edgeproto.CloudletKeyTagName] = in.AppInst.ClusterInstKey.CloudletKey.Name
-		}
-		if in.AppInst.ClusterInstKey.CloudletKey.Organization != "" {
-			labels[edgeproto.CloudletKeyTagOrganization] = in.AppInst.ClusterInstKey.CloudletKey.Organization
-		}
-		if in.AppInst.ClusterInstKey.ClusterKey.Name != "" {
-			labels[edgeproto.ClusterKeyTagName] = in.AppInst.ClusterInstKey.ClusterKey.Name
-		}
-		if in.AppInst.ClusterInstKey.Organization != "" {
-			labels[edgeproto.ClusterInstKeyTagOrganization] = in.AppInst.ClusterInstKey.Organization
-		}
-	} else if in.AppInst.ClusterInstKey.Organization != "" {
-		// add labels for cluster instance
-		labels[cloudcommon.AlertScopeTypeTag] = cloudcommon.AlertScopeApp
-		labels[edgeproto.ClusterInstKeyTagOrganization] = in.AppInst.ClusterInstKey.Organization
-		if in.AppInst.ClusterInstKey.CloudletKey.Name != "" {
-			labels[edgeproto.CloudletKeyTagName] = in.AppInst.ClusterInstKey.CloudletKey.Name
-		}
-		if in.AppInst.ClusterInstKey.CloudletKey.Organization != "" {
-			labels[edgeproto.CloudletKeyTagOrganization] = in.AppInst.ClusterInstKey.CloudletKey.Organization
-		}
-		if in.AppInst.ClusterInstKey.ClusterKey.Name != "" {
-			labels[edgeproto.ClusterKeyTagName] = in.AppInst.ClusterInstKey.ClusterKey.Name
-		}
-	} else {
-		// Default to Platform scope when no org (from cloudlet/appkey/clusterinstkey) is specified
-		// Only admin can see platform scope alerts.
-		labels[cloudcommon.AlertScopeTypeTag] = cloudcommon.AlertScopePlatform
+	_, scope := ormutil.GetOrgAndScopeForReceiver(in)
+	if scope != "" {
+		labels[cloudcommon.AlertScopeTypeTag] = scope
 	}
+	addNonEmptyTags := func(key, value string) {
+		if value != "" {
+			labels[key] = value
+		}
+	}
+	// Add all tags, as they have already been checked to be
+	// valid for the scope
+	in.AppInstKey.AddTagsByFunc(addNonEmptyTags)
+	in.AppKey.AddTagsByFunc(addNonEmptyTags)
+	in.ClusterKey.AddTagsByFunc(addNonEmptyTags)
 	return labels
 }
 
@@ -457,7 +424,7 @@ func (s *AlertMgrServer) CreateReceiver(ctx context.Context, receiver *ormapi.Al
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to get marshal sidecar Receiver Config info", "err", err, "cfg", sidecarRec)
 		return err
 	}
-	res, err := s.client.alertMgrApi(ctx, "POST", mobiledgeXReceiverApi, "", data)
+	res, err := s.client.alertMgrApi(ctx, "POST", edgecloudReceiverApi, "", data)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to create alertmanager receiver", "err", err, "res", res)
 		return err
@@ -473,7 +440,7 @@ func (s *AlertMgrServer) DeleteReceiver(ctx context.Context, receiver *ormapi.Al
 
 	// We create one entry per receiver, to make it simpler
 	receiverName := getAlertmgrReceiverName(receiver)
-	res, err := s.client.alertMgrApi(ctx, "DELETE", mobiledgeXReceiverApi+"/"+receiverName, "", nil)
+	res, err := s.client.alertMgrApi(ctx, "DELETE", edgecloudReceiverApi+"/"+receiverName, "", nil)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to delete alertmanager receiver", "err", err, "res", res)
 		return err
@@ -503,35 +470,21 @@ func alertReceiverMatchesFilter(receiver *ormapi.AlertReceiver, filter *ormapi.A
 			filter.User != "" && filter.User != receiver.User ||
 			filter.Region != "" && filter.Region != receiver.Region ||
 			filter.SlackChannel != "" && filter.SlackChannel != receiver.SlackChannel ||
-			!receiver.Cloudlet.Matches(&filter.Cloudlet, edgeproto.MatchFilter()) ||
-			!receiver.AppInst.Matches(&filter.AppInst, edgeproto.MatchFilter()) {
+			!receiver.AppInstKey.Matches(&filter.AppInstKey, edgeproto.MatchFilter()) ||
+			!receiver.AppKey.Matches(&filter.AppKey, edgeproto.MatchFilter()) ||
+			!receiver.ClusterKey.Matches(&filter.ClusterKey, edgeproto.MatchFilter()) {
 			return false
 		}
 	}
 	return true
 }
 
-func fillClusterDetails(receiver *ormapi.AlertReceiver, route alertmanager_config.Route) {
-	if cluster, ok := route.Match[edgeproto.ClusterKeyTagName]; ok {
-		receiver.AppInst.ClusterInstKey.ClusterKey.Name = cluster
-	}
-	if clusterorg, ok := route.Match[edgeproto.ClusterInstKeyTagOrganization]; ok {
-		receiver.AppInst.ClusterInstKey.Organization = clusterorg
-	}
-	if cloudlet, ok := route.Match[edgeproto.CloudletKeyTagName]; ok {
-		receiver.AppInst.ClusterInstKey.CloudletKey.Name = cloudlet
-	}
-	if cloudletorg, ok := route.Match[edgeproto.CloudletKeyTagOrganization]; ok {
-		receiver.AppInst.ClusterInstKey.CloudletKey.Organization = cloudletorg
-	}
-}
-
 func (s *AlertMgrServer) ShowReceivers(ctx context.Context, filter *ormapi.AlertReceiver) ([]ormapi.AlertReceiver, error) {
 	alertReceivers := []ormapi.AlertReceiver{}
-	apiUrl := mobiledgeXReceiversApi
+	apiUrl := edgecloudReceiversApi
 	if filter != nil && filter.Name != "" {
 		// Add Filter with a name
-		apiUrl = mobiledgeXReceiverApi + "/" + filter.Name
+		apiUrl = edgecloudReceiverApi + "/" + filter.Name
 	}
 	data, err := s.client.alertMgrApi(ctx, "GET", apiUrl, "", nil)
 	if err != nil {
@@ -574,27 +527,19 @@ func (s *AlertMgrServer) ShowReceivers(ctx context.Context, filter *ormapi.Alert
 			log.SpanLog(ctx, log.DebugLevelApi, "Unknown receiver type", "type", receiver.Type)
 		}
 		route := rec.Route
-		// Based on the labels it's either cloudlet, or appInst
-		if apporg, ok := route.Match[edgeproto.AppKeyTagOrganization]; ok {
-			// appinst
-			receiver.AppInst.AppKey.Organization = apporg
-			if appname, ok := route.Match[edgeproto.AppKeyTagName]; ok {
-				receiver.AppInst.AppKey.Name = appname
-			}
-			if ver, ok := route.Match[edgeproto.AppKeyTagVersion]; ok {
-				receiver.AppInst.AppKey.Version = ver
-			}
-			fillClusterDetails(receiver, route)
-		} else if _, ok := route.Match[edgeproto.ClusterInstKeyTagOrganization]; ok {
-			// cluster inst
-			fillClusterDetails(receiver, route)
-		} else if cloudletorg, ok := route.Match[edgeproto.CloudletKeyTagOrganization]; ok {
-			// cloudlet
-			receiver.Cloudlet.Organization = cloudletorg
-			if cloudlet, ok := route.Match[edgeproto.CloudletKeyTagName]; ok {
-				receiver.Cloudlet.Name = cloudlet
-			}
-		}
+		// Fill in values based on route.Match. If route.Match label is missing,
+		// value will remain unset.
+		receiver.AppInstKey.Name = route.Match[edgeproto.AppInstKeyTagName]
+		receiver.AppInstKey.Organization = route.Match[edgeproto.AppInstKeyTagOrganization]
+		receiver.AppInstKey.CloudletKey.Name = route.Match[edgeproto.CloudletKeyTagName]
+		receiver.AppInstKey.CloudletKey.Organization = route.Match[edgeproto.CloudletKeyTagOrganization]
+		receiver.AppInstKey.CloudletKey.FederatedOrganization = route.Match[edgeproto.CloudletKeyTagFederatedOrganization]
+		receiver.AppKey.Name = route.Match[edgeproto.AppKeyTagName]
+		receiver.AppKey.Version = route.Match[edgeproto.AppKeyTagVersion]
+		receiver.AppKey.Organization = route.Match[edgeproto.AppKeyTagOrganization]
+		receiver.ClusterKey.Name = route.Match[edgeproto.ClusterKeyTagName]
+		receiver.ClusterKey.Organization = route.Match[edgeproto.ClusterKeyTagOrganization]
+
 		// get the region if it was configured
 		if region, ok := route.Match["region"]; ok {
 			receiver.Region = region

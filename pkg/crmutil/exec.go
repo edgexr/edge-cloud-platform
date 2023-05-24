@@ -155,10 +155,10 @@ func (cd *ControllerData) ProcessExecReq(ctx context.Context, req *edgeproto.Exe
 			return fmt.Errorf("app inst %s not found",
 				req.AppInstKey.GetKeyString())
 		}
-		found = cd.AppCache.Get(&req.AppInstKey.AppKey, &app)
+		found = cd.AppCache.Get(&appInst.AppKey, &app)
 		if !found {
 			return fmt.Errorf("app %s not found",
-				req.AppInstKey.AppKey.GetKeyString())
+				appInst.AppKey.GetKeyString())
 		}
 	}
 
@@ -186,7 +186,7 @@ func (cd *ControllerData) ProcessExecReq(ctx context.Context, req *edgeproto.Exe
 		cd.AppInstCache.Mux.Lock()
 		for _, v := range cd.AppInstCache.Objs {
 			appObj := edgeproto.App{}
-			found := cd.AppCache.Get(&v.Obj.Key.AppKey, &appObj)
+			found := cd.AppCache.Get(&v.Obj.AppKey, &appObj)
 			if found && appObj.Deployment == cloudcommon.DeploymentTypeVM {
 				vmAppInsts = append(vmAppInsts, *v.Obj)
 			}

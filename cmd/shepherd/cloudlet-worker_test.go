@@ -25,15 +25,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_unittest"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_test"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -67,7 +67,7 @@ var failAlerts = `{
 			"` + edgeproto.CloudletKeyTagName + `": "` + shepherd_test.TestCloudletKey.Name + `",
 			"` + edgeproto.CloudletKeyTagOrganization + `": "` + shepherd_test.TestCloudletKey.Organization + `",
 			"` + edgeproto.ClusterKeyTagName + `": "` + shepherd_test.TestClusterKey.Name + `",
-			"` + edgeproto.ClusterInstKeyTagOrganization + `": "` + shepherd_test.TestClusterInstKey.Organization + `",
+			"` + edgeproto.ClusterKeyTagOrganization + `": "` + shepherd_test.TestClusterInstKey.ClusterKey.Organization + `",
 			"` + cloudcommon.AlertHealthCheckStatus + `": "` + strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_ROOTLB_OFFLINE)) + `",
 			"instance": "host.docker.internal:9091",
 			"job": "envoy_targets"
@@ -85,7 +85,7 @@ var failAlerts = `{
 			"` + edgeproto.CloudletKeyTagName + `": "` + shepherd_test.TestCloudletKey.Name + `",
 			"` + edgeproto.CloudletKeyTagOrganization + `": "` + shepherd_test.TestCloudletKey.Organization + `",
 			"` + edgeproto.ClusterKeyTagName + `": "` + shepherd_test.TestClusterKey.Name + `",
-			"` + edgeproto.ClusterInstKeyTagOrganization + `": "` + shepherd_test.TestClusterInstKey.Organization + `",
+			"` + edgeproto.ClusterKeyTagOrganization + `": "` + shepherd_test.TestClusterInstKey.ClusterKey.Organization + `",
 			"` + cloudcommon.AlertHealthCheckStatus + `": "` + strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_SERVER_FAIL)) + `",
 			"envoy_cluster_name": "backend7777",
 			"instance": "host.docker.internal:9091",
@@ -163,7 +163,7 @@ func TestCloudletAlerts(t *testing.T) {
 		assert.Equal(t, shepherd_test.TestCloudletKey.Name, alert.Obj.Labels[edgeproto.CloudletKeyTagName])
 		assert.Equal(t, shepherd_test.TestCloudletKey.Organization, alert.Obj.Labels[edgeproto.CloudletKeyTagOrganization])
 		assert.Equal(t, shepherd_test.TestClusterKey.Name, alert.Obj.Labels[edgeproto.ClusterKeyTagName])
-		assert.Equal(t, shepherd_test.TestClusterInstKey.Organization, alert.Obj.Labels[edgeproto.ClusterInstKeyTagOrganization])
+		assert.Equal(t, shepherd_test.TestClusterInstKey.ClusterKey.Organization, alert.Obj.Labels[edgeproto.ClusterKeyTagOrganization])
 		// make sure the alert status is not OK, or UNKNOWN
 		assert.NotEqual(t, strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_OK)), alert.Obj.Labels[cloudcommon.AlertHealthCheckStatus])
 		assert.NotEqual(t, strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_UNKNOWN)), alert.Obj.Labels[cloudcommon.AlertHealthCheckStatus])

@@ -108,13 +108,13 @@ func (d *DummyInfoResponder) SetPause(enable bool) {
 	}
 }
 
-func (d *DummyInfoResponder) runClusterInstChanged(ctx context.Context, key *edgeproto.ClusterInstKey, old *edgeproto.ClusterInst, modRev int64) {
+func (d *DummyInfoResponder) runClusterInstChanged(ctx context.Context, obj *edgeproto.ClusterInst, modRev int64) {
 	if !d.enable {
 		return
 	}
 	// copy out from cache since data may change while thread runs
 	inst := edgeproto.ClusterInst{}
-	found := d.ClusterInstCache.Get(key, &inst)
+	found := d.ClusterInstCache.Get(&obj.Key, &inst)
 	if !found {
 		return
 	}
@@ -130,13 +130,13 @@ func (d *DummyInfoResponder) runClusterInstDeleted(ctx context.Context, old *edg
 	go d.clusterInstDeleted(ctx, copy)
 }
 
-func (d *DummyInfoResponder) runAppInstChanged(ctx context.Context, key *edgeproto.AppInstKey, old *edgeproto.AppInst, modRev int64) {
+func (d *DummyInfoResponder) runAppInstChanged(ctx context.Context, obj *edgeproto.AppInst, modRev int64) {
 	if !d.enable {
 		return
 	}
 	// copy out from cache since data may change while thread runs
 	inst := edgeproto.AppInst{}
-	found := d.AppInstCache.Get(key, &inst)
+	found := d.AppInstCache.Get(&obj.Key, &inst)
 	if !found {
 		return
 	}
@@ -152,13 +152,13 @@ func (d *DummyInfoResponder) runAppInstDeleted(ctx context.Context, old *edgepro
 	go d.appInstDeleted(ctx, copy)
 }
 
-func (d *DummyInfoResponder) runVMPoolChanged(ctx context.Context, key *edgeproto.VMPoolKey, old *edgeproto.VMPool, modRev int64) {
+func (d *DummyInfoResponder) runVMPoolChanged(ctx context.Context, obj *edgeproto.VMPool, modRev int64) {
 	if !d.enable {
 		return
 	}
 	// copy out from cache since data may change while thread runs
 	inst := edgeproto.VMPool{}
-	found := d.VMPoolCache.Get(key, &inst)
+	found := d.VMPoolCache.Get(&obj.Key, &inst)
 	if !found {
 		return
 	}
@@ -272,32 +272,32 @@ func (d *DummyInfoResponder) appInstDeleted(ctx context.Context, old *edgeproto.
 	d.AppInstInfoCache.Delete(ctx, &info, 0)
 }
 
-func (d *DummyInfoResponder) clusterInstInfoCb(ctx context.Context, key *edgeproto.ClusterInstKey, old *edgeproto.ClusterInstInfo, modRev int64) {
+func (d *DummyInfoResponder) clusterInstInfoCb(ctx context.Context, obj *edgeproto.ClusterInstInfo, modRev int64) {
 	inst := edgeproto.ClusterInstInfo{}
-	if d.ClusterInstInfoCache.Get(key, &inst) {
+	if d.ClusterInstInfoCache.Get(&obj.Key, &inst) {
 		d.RecvClusterInstInfo.Update(ctx, &inst, modRev)
 	} else {
-		inst.Key = *key
+		inst.Key = obj.Key
 		d.RecvClusterInstInfo.Delete(ctx, &inst, modRev)
 	}
 }
 
-func (d *DummyInfoResponder) appInstInfoCb(ctx context.Context, key *edgeproto.AppInstKey, old *edgeproto.AppInstInfo, modRev int64) {
+func (d *DummyInfoResponder) appInstInfoCb(ctx context.Context, info *edgeproto.AppInstInfo, modRev int64) {
 	inst := edgeproto.AppInstInfo{}
-	if d.AppInstInfoCache.Get(key, &inst) {
+	if d.AppInstInfoCache.Get(&info.Key, &inst) {
 		d.RecvAppInstInfo.Update(ctx, &inst, modRev)
 	} else {
-		inst.Key = *key
+		inst.Key = info.Key
 		d.RecvAppInstInfo.Delete(ctx, &inst, modRev)
 	}
 }
 
-func (d *DummyInfoResponder) vmPoolInfoCb(ctx context.Context, key *edgeproto.VMPoolKey, old *edgeproto.VMPoolInfo, modRev int64) {
+func (d *DummyInfoResponder) vmPoolInfoCb(ctx context.Context, obj *edgeproto.VMPoolInfo, modRev int64) {
 	info := edgeproto.VMPoolInfo{}
-	if d.VMPoolInfoCache.Get(key, &info) {
+	if d.VMPoolInfoCache.Get(&obj.Key, &info) {
 		d.RecvVMPoolInfo.Update(ctx, &info, modRev)
 	} else {
-		info.Key = *key
+		info.Key = obj.Key
 		d.RecvVMPoolInfo.Delete(ctx, &info, modRev)
 	}
 }

@@ -59,10 +59,8 @@ cloudletinfos:
     - name: Instances
       value: 7
     clusterinsts:
-    - clusterkey:
-        name: ReservableCluster2
+    - name: ReservableCluster2
       organization: edgecloudorg
-    - clusterkey:
-        name: SmallCluster
+    - name: SmallCluster
       organization: AcmeAppCo
   trustpolicystate: NotPresent

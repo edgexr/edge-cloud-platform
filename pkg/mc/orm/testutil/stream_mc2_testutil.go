@@ -34,7 +34,7 @@ func TestStreamAppInst(mcClient *mctestclient.Client, uri, token, region string,
 }
 func TestPermStreamAppInst(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstKey)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.AppInstKey{}
-	in.AppKey.Organization = org
+	in.Organization = org
 	return TestStreamAppInst(mcClient, uri, token, region, in, modFuncs...)
 }
 
@@ -49,7 +49,7 @@ func TestStreamClusterInst(mcClient *mctestclient.Client, uri, token, region str
 }
 func TestPermStreamClusterInst(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterInstKey)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.ClusterInstKey{}
-	in.Organization = org
+	in.ClusterKey.Organization = org
 	return TestStreamClusterInst(mcClient, uri, token, region, in, modFuncs...)
 }
 

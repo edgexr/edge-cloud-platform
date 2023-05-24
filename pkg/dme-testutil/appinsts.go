@@ -127,12 +127,14 @@ var Cloudlets = []Cloudlet{
 
 func MakeAppInst(a *App, c *Cloudlet) *edgeproto.AppInst {
 	inst := edgeproto.AppInst{}
-	inst.Key.AppKey.Organization = a.Organization
-	inst.Key.AppKey.Name = a.Name
-	inst.Key.AppKey.Version = a.Vers
-	inst.Key.ClusterInstKey.CloudletKey.Organization = c.CarrierName
-	inst.Key.ClusterInstKey.CloudletKey.Name = c.Name
-	inst.Key.ClusterInstKey.ClusterKey.Name = "testcluster" //TODO - change the testdata to also have clusterInst information
+	inst.Key.Name = a.Name
+	inst.Key.Organization = a.Organization
+	inst.AppKey.Organization = a.Organization
+	inst.AppKey.Name = a.Name
+	inst.AppKey.Version = a.Vers
+	inst.Key.CloudletKey.Organization = c.CarrierName
+	inst.Key.CloudletKey.Name = c.Name
+	inst.ClusterKey.Name = "testcluster" //TODO - change the testdata to also have clusterInst information
 	inst.CloudletLoc = c.Location
 	inst.Uri = c.Uri
 	inst.State = edgeproto.TrackedState_READY

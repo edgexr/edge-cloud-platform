@@ -23,96 +23,101 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	client "github.com/influxdata/influxdb/client/v2"
 	"github.com/labstack/echo/v4"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
-var AppCheckpointFields = []string{
-	"\"app\"",
-	"\"ver\"",
-	"\"cluster\"",
-	"\"clusterorg\"",
-	"\"cloudlet\"",
-	"\"cloudletorg\"",
-	"\"org\"",
-	"\"deployment\"",
-	"\"flavor\"",
-	"\"status\"",
+var AppInstCheckpointFields = []string{
+	edgeproto.AppInstKeyTagName,
+	edgeproto.AppInstKeyTagOrganization,
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization,
+	cloudcommon.MetricTagDeployment,
+	cloudcommon.MetricTagFlavor,
+	cloudcommon.MetricTagStatus,
 }
 
 var appUsageEventFields = []string{
-	"\"flavor\"",
-	"\"deployment\"",
-	"\"event\"",
-	"\"status\"",
+	cloudcommon.MetricTagFlavor,
+	cloudcommon.MetricTagDeployment,
+	cloudcommon.MetricTagEvent,
+	cloudcommon.MetricTagStatus,
 }
 
 var clusterCheckpointFields = []string{
-	"\"flavor\"",
-	"\"status\"",
-	"\"nodecount\"",
-	"\"ipaccess\"",
+	cloudcommon.MetricTagFlavor,
+	cloudcommon.MetricTagStatus,
+	cloudcommon.MetricTagNodeCount,
+	cloudcommon.MetricTagIpAccess,
 }
 
 var clusterUsageEventFields = []string{
-	"\"flavor\"",
-	"\"event\"",
-	"\"status\"",
-	"\"nodecount\"",
-	"\"ipaccess\"",
+	cloudcommon.MetricTagFlavor,
+	cloudcommon.MetricTagEvent,
+	cloudcommon.MetricTagStatus,
+	cloudcommon.MetricTagNodeCount,
+	cloudcommon.MetricTagIpAccess,
 }
 
 var clusterDataColumns = []string{
-	"region",
-	"cluster",
-	"clusterorg",
-	"cloudlet",
-	"cloudletorg",
-	"flavor",
-	"numnodes",
-	"ipaccess",
-	"startime",
-	"endtime",
-	"duration",
-	"note",
+	cloudcommon.MetricTagRegion,
+	edgeproto.ClusterKeyTagName,
+	edgeproto.ClusterKeyTagOrganization,
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization,
+	cloudcommon.MetricTagFlavor,
+	cloudcommon.MetricTagNumNodes,
+	cloudcommon.MetricTagIpAccess,
+	cloudcommon.MetricTagStartTime,
+	cloudcommon.MetricTagEndTime,
+	cloudcommon.MetricTagDuration,
+	cloudcommon.MetricTagNote,
 }
 
 var appInstDataColumns = []string{
-	"region",
-	"app",
-	"apporg",
-	"version",
-	"cluster",
-	"clusterorg",
-	"cloudlet",
-	"cloudletorg",
-	"flavor",
-	"deployment",
-	"startime",
-	"endtime",
-	"duration",
-	"note",
+	cloudcommon.MetricTagRegion,
+	edgeproto.AppInstKeyTagName,
+	edgeproto.AppInstKeyTagOrganization,
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization,
+	cloudcommon.MetricTagFlavor,
+	cloudcommon.MetricTagDeployment,
+	cloudcommon.MetricTagStartTime,
+	cloudcommon.MetricTagEndTime,
+	cloudcommon.MetricTagDuration,
+	cloudcommon.MetricTagNote,
 }
 
-var usageInfluxDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
-	` WHERE time >='{{.StartTime}}'` +
-	` AND time <= '{{.EndTime}}'` +
-	`{{if .AppInstName}} AND "app"='{{.AppInstName}}'{{end}}` +
-	`{{if .ClusterName}} AND "cluster"='{{.ClusterName}}'{{end}}` +
-	`{{if .ApiCallerOrg}} AND "{{.OrgField}}"='{{.ApiCallerOrg}}'{{end}}` +
-	`{{if .AppVersion}} AND "ver"='{{.AppVersion}}'{{end}}` +
-	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
-	`{{if .CloudletOrg}} AND "cloudletorg"='{{.CloudletOrg}}'{{end}}` +
-	`{{if .DeploymentType}} AND deployment = '{{.DeploymentType}}'{{end}}` +
-	`{{if .CloudletList}} AND ({{.CloudletList}}){{end}}` +
-	` order by time desc`
+var usageInfluxDBT = fmt.Sprintf(`SELECT {{.Selector}} from {{.Measurement}}`+
+	` WHERE time >='{{.StartTime}}'`+
+	` AND time <= '{{.EndTime}}'`+
+	`{{if .AppInstName}} AND "%s"='{{.AppInstName}}'{{end}}`+
+	`{{if .AppInstOrg}} AND "%s"='{{.AppInstOrg}}'{{end}}`+
+	`{{if .ClusterName}} AND "%s"='{{.ClusterName}}'{{end}}`+
+	`{{if .ClusterOrg}} AND "%s"='{{.ClusterOrg}}'{{end}}`+
+	`{{if .CloudletName}} AND "%s"='{{.CloudletName}}'{{end}}`+
+	`{{if .CloudletOrg}} AND "%s"='{{.CloudletOrg}}'{{end}}`+
+	`{{if .CloudletFedOrg}} AND "%s"='{{.CloudletFedOrg}}'{{end}}`+
+	`{{if .DeploymentType}} AND deployment = '{{.DeploymentType}}'{{end}}`+
+	`{{if .CloudletList}} AND ({{.CloudletList}}){{end}}`+
+	` order by time desc`,
+	edgeproto.AppInstKeyTagName,
+	edgeproto.AppInstKeyTagOrganization,
+	edgeproto.ClusterKeyTagName,
+	edgeproto.ClusterKeyTagOrganization,
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization)
 
 var usageInfluxDBTemplate *template.Template
 
@@ -192,7 +197,7 @@ func GetClusterUsage(ctx context.Context, event *client.Response, checkpoint *cl
 	clusterTracker := make(map[edgeproto.ClusterInstKey]usageTracker)
 
 	// check to see if the influx output is empty or invalid
-	emptyEvents, err := isMeasurementOutputEmpty(event, EVENT_CLUSTERINST)
+	emptyEvents, err := isMeasurementOutputEmpty(event, cloudcommon.ClusterInstEvent)
 	if err != nil {
 		return nil, err
 	}
@@ -208,8 +213,9 @@ func GetClusterUsage(ctx context.Context, event *client.Response, checkpoint *cl
 	if !emptyCheckpoints {
 		for _, values := range checkpoint.Results[0].Series[0].Values {
 			// format [timestamp cluster clusterorg cloudlet cloudletorg flavor status nodecount ipaccess]
-			if len(values) != 9 {
-				return nil, fmt.Errorf("Error parsing influx response")
+			expectedNumVals := 10
+			if len(values) != expectedNumVals {
+				return nil, fmt.Errorf("Error parsing influx response, expected %d values but was %d (%v)", expectedNumVals, len(values), checkpoint.Results[0].Series[0].Columns)
 			}
 			timestamp, err := time.Parse(time.RFC3339, fmt.Sprintf("%v", values[0]))
 			if err != nil {
@@ -219,28 +225,34 @@ func GetClusterUsage(ctx context.Context, event *client.Response, checkpoint *cl
 			clusterorg := fmt.Sprintf("%v", values[2])
 			cloudlet := fmt.Sprintf("%v", values[3])
 			cloudletorg := fmt.Sprintf("%v", values[4])
-			flavor := fmt.Sprintf("%v", values[5])
-			status := fmt.Sprintf("%v", values[6])
+			cloudletfedorg := fmt.Sprintf("%v", values[5])
+			flavor := fmt.Sprintf("%v", values[6])
+			status := fmt.Sprintf("%v", values[7])
 			var nodecount int64
-			if values[7] == nil {
+			if values[8] == nil {
 				log.SpanLog(ctx, log.DebugLevelInfo, "Invalid data entry - nodecount is nil", "values", values)
 				nodecount = 0
+			} else if _, ok := values[8].(json.Number); !ok {
+				return nil, fmt.Errorf("Expected json number for cluster checkpoints metric column %q but was %s", cloudcommon.MetricTagNodeCount, values[8])
 			} else {
-				nodecount, err = values[7].(json.Number).Int64()
+				nodecount, err = values[8].(json.Number).Int64()
 			}
 			if err != nil {
 				return nil, fmt.Errorf("Error trying to convert nodecount to int: %s", err)
 			}
-			ipaccess := fmt.Sprintf("%v", values[8])
+			ipaccess := fmt.Sprintf("%v", values[9])
 
 			if status == cloudcommon.InstanceUp {
 				newTracker := edgeproto.ClusterInstKey{
-					ClusterKey: edgeproto.ClusterKey{Name: cluster},
-					CloudletKey: edgeproto.CloudletKey{
-						Organization: cloudletorg,
-						Name:         cloudlet,
+					ClusterKey: edgeproto.ClusterKey{
+						Name:         cluster,
+						Organization: clusterorg,
 					},
-					Organization: clusterorg,
+					CloudletKey: edgeproto.CloudletKey{
+						Organization:          cloudletorg,
+						Name:                  cloudlet,
+						FederatedOrganization: cloudletfedorg,
+					},
 				}
 				clusterTracker[newTracker] = usageTracker{
 					flavor:    flavor,
@@ -257,8 +269,9 @@ func GetClusterUsage(ctx context.Context, event *client.Response, checkpoint *cl
 		for i := len(event.Results[0].Series[0].Values) - 1; i >= 0; i-- {
 			values := event.Results[0].Series[0].Values[i]
 			// value should be of the format [timestamp cluster clusterorg cloudlet cloudletorg flavor event status nodecount ipaccess]
-			if len(values) != 10 {
-				return nil, fmt.Errorf("Error parsing influx response")
+			expectedNumVals := 11
+			if len(values) != expectedNumVals {
+				return nil, fmt.Errorf("Error parsing influx response, expected %d values but was %d (%v)", expectedNumVals, len(values), checkpoint.Results[0].Series[0].Columns)
 			}
 			timestamp, err := time.Parse(time.RFC3339, fmt.Sprintf("%v", values[0]))
 			if err != nil {
@@ -269,15 +282,18 @@ func GetClusterUsage(ctx context.Context, event *client.Response, checkpoint *cl
 			clusterorg := fmt.Sprintf("%v", values[2])
 			cloudlet := fmt.Sprintf("%v", values[3])
 			cloudletorg := fmt.Sprintf("%v", values[4])
-			flavor := fmt.Sprintf("%v", values[5])
-			event := fmt.Sprintf("%v", values[6])
-			status := fmt.Sprintf("%v", values[7])
+			cloudletfedorg := fmt.Sprintf("%v", values[5])
+			flavor := fmt.Sprintf("%v", values[6])
+			event := fmt.Sprintf("%v", values[7])
+			status := fmt.Sprintf("%v", values[8])
 			var nodecount int64
-			if values[8] == nil {
+			if values[9] == nil {
 				log.SpanLog(ctx, log.DebugLevelInfo, "Invalid data entry - nodecount is nil", "values", values)
 				nodecount = 0
+			} else if _, ok := values[9].(json.Number); !ok {
+				return nil, fmt.Errorf("Expected json number for cluster events metric column %q but was %s", cloudcommon.MetricTagNodeCount, values[9])
 			} else {
-				nodecount, err = values[8].(json.Number).Int64()
+				nodecount, err = values[9].(json.Number).Int64()
 			}
 			if err != nil {
 				return nil, fmt.Errorf("Error trying to convert nodecount to int: %s", err)
@@ -287,12 +303,15 @@ func GetClusterUsage(ctx context.Context, event *client.Response, checkpoint *cl
 			//if the timestamp is before start and its a down, then get rid of it in the cluster tracker
 			//otherwise put it in the cluster tracker
 			newKey := edgeproto.ClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{Name: cluster},
-				CloudletKey: edgeproto.CloudletKey{
-					Organization: cloudletorg,
-					Name:         cloudlet,
+				ClusterKey: edgeproto.ClusterKey{
+					Name:         cluster,
+					Organization: clusterorg,
 				},
-				Organization: clusterorg,
+				CloudletKey: edgeproto.CloudletKey{
+					Name:                  cloudlet,
+					Organization:          cloudletorg,
+					FederatedOrganization: cloudletfedorg,
+				},
 			}
 			tracker, ok := clusterTracker[newKey]
 			if status == cloudcommon.InstanceUp {
@@ -321,6 +340,7 @@ func GetClusterUsage(ctx context.Context, event *client.Response, checkpoint *cl
 							clusterorg,
 							cloudlet,
 							cloudletorg,
+							cloudletfedorg,
 							flavor,
 							nodecount,
 							ipaccess,
@@ -352,9 +372,10 @@ func GetClusterUsage(ctx context.Context, event *client.Response, checkpoint *cl
 		newRecord := []interface{}{
 			region,
 			k.ClusterKey.Name,
-			k.Organization,
+			k.ClusterKey.Organization,
 			k.CloudletKey.Name,
 			k.CloudletKey.Organization,
+			k.CloudletKey.FederatedOrganization,
 			v.flavor,
 			v.nodecount,
 			v.ipaccess,
@@ -381,7 +402,7 @@ func GetAppUsage(event *client.Response, checkpoint *client.Response, start, end
 	appTracker := make(map[edgeproto.AppInstKey]usageTracker)
 
 	// check to see if the influx output is empty or invalid
-	emptyEvents, err := isMeasurementOutputEmpty(event, EVENT_APPINST)
+	emptyEvents, err := isMeasurementOutputEmpty(event, cloudcommon.AppInstEvent)
 	if err != nil {
 		return nil, err
 	}
@@ -396,39 +417,31 @@ func GetAppUsage(event *client.Response, checkpoint *client.Response, start, end
 	// grab the checkpoints of appinsts that are up
 	if !emptyCheckpoints {
 		for _, values := range checkpoint.Results[0].Series[0].Values {
-			// format [timestamp app ver cluster clusterorg cloudlet cloudletorg org deployment flavor status]
-			if len(values) != 11 {
-				return nil, fmt.Errorf("Error parsing influx response")
+			expectedNumVals := 9
+			if len(values) != expectedNumVals {
+				return nil, fmt.Errorf("Error parsing influx response, expected %d values but was %d (%v)", expectedNumVals, len(values), checkpoint.Results[0].Series[0].Columns)
 			}
 			timestamp, err := time.Parse(time.RFC3339, fmt.Sprintf("%v", values[0]))
 			if err != nil {
 				return nil, fmt.Errorf("Unable to parse timestamp: %v", err)
 			}
-			app := fmt.Sprintf("%v", values[1])
-			ver := fmt.Sprintf("%v", values[2])
-			cluster := fmt.Sprintf("%v", values[3])
-			clusterorg := fmt.Sprintf("%v", values[4])
-			cloudlet := fmt.Sprintf("%v", values[5])
-			cloudletorg := fmt.Sprintf("%v", values[6])
-			org := fmt.Sprintf("%v", values[7])
-			deployment := fmt.Sprintf("%v", values[8])
-			flavor := fmt.Sprintf("%v", values[9])
-			status := fmt.Sprintf("%v", values[10])
+			appinstname := fmt.Sprintf("%v", values[1])
+			appinstorg := fmt.Sprintf("%v", values[2])
+			cloudlet := fmt.Sprintf("%v", values[3])
+			cloudletorg := fmt.Sprintf("%v", values[4])
+			cloudletfedorg := fmt.Sprintf("%v", values[5])
+			deployment := fmt.Sprintf("%v", values[6])
+			flavor := fmt.Sprintf("%v", values[7])
+			status := fmt.Sprintf("%v", values[8])
 
 			if status == cloudcommon.InstanceUp {
 				newTracker := edgeproto.AppInstKey{
-					AppKey: edgeproto.AppKey{
-						Name:         app,
-						Version:      ver,
-						Organization: org,
-					},
-					ClusterInstKey: edgeproto.VirtualClusterInstKey{
-						ClusterKey: edgeproto.ClusterKey{Name: cluster},
-						CloudletKey: edgeproto.CloudletKey{
-							Organization: cloudletorg,
-							Name:         cloudlet,
-						},
-						Organization: clusterorg,
+					Name:         appinstname,
+					Organization: appinstorg,
+					CloudletKey: edgeproto.CloudletKey{
+						Name:                  cloudlet,
+						Organization:          cloudletorg,
+						FederatedOrganization: cloudletfedorg,
 					},
 				}
 				appTracker[newTracker] = usageTracker{
@@ -444,42 +457,34 @@ func GetAppUsage(event *client.Response, checkpoint *client.Response, start, end
 	if !emptyEvents {
 		for i := len(event.Results[0].Series[0].Values) - 1; i >= 0; i-- {
 			values := event.Results[0].Series[0].Values[i]
-			// value should be of the format [timestamp app ver cluster clusterorg cloudlet cloudletorg apporg flavor deployment event status]
-			if len(values) != 12 {
-				return nil, fmt.Errorf("Error parsing influx response")
+			expectedNumVals := 10
+			if len(values) != expectedNumVals {
+				return nil, fmt.Errorf("Error parsing influx response, expected %d values but was %d (%v)", expectedNumVals, len(values), checkpoint.Results[0].Series[0].Columns)
 			}
 			timestamp, err := time.Parse(time.RFC3339, fmt.Sprintf("%v", values[0]))
 			if err != nil {
 				return nil, fmt.Errorf("Unable to parse timestamp: %v", err)
 			}
 
-			app := fmt.Sprintf("%v", values[1])
-			ver := fmt.Sprintf("%v", values[2])
-			cluster := fmt.Sprintf("%v", values[3])
-			clusterorg := fmt.Sprintf("%v", values[4])
-			cloudlet := fmt.Sprintf("%v", values[5])
-			cloudletorg := fmt.Sprintf("%v", values[6])
-			apporg := fmt.Sprintf("%v", values[7])
-			flavor := fmt.Sprintf("%v", values[8])
-			deployment := fmt.Sprintf("%v", values[9])
-			event := fmt.Sprintf("%v", values[10])
-			status := fmt.Sprintf("%v", values[11])
+			appinstname := fmt.Sprintf("%v", values[1])
+			appinstorg := fmt.Sprintf("%v", values[2])
+			cloudlet := fmt.Sprintf("%v", values[3])
+			cloudletorg := fmt.Sprintf("%v", values[4])
+			cloudletfedorg := fmt.Sprintf("%v", values[5])
+			flavor := fmt.Sprintf("%v", values[6])
+			deployment := fmt.Sprintf("%v", values[7])
+			event := fmt.Sprintf("%v", values[8])
+			status := fmt.Sprintf("%v", values[9])
 
 			//if the timestamp is before start and its a down, then get rid of it in the cluster tracker
 			//otherwise put it in the cluster tracker
 			newKey := edgeproto.AppInstKey{
-				AppKey: edgeproto.AppKey{
-					Name:         app,
-					Version:      ver,
-					Organization: apporg,
-				},
-				ClusterInstKey: edgeproto.VirtualClusterInstKey{
-					ClusterKey: edgeproto.ClusterKey{Name: cluster},
-					CloudletKey: edgeproto.CloudletKey{
-						Organization: cloudletorg,
-						Name:         cloudlet,
-					},
-					Organization: clusterorg,
+				Name:         appinstname,
+				Organization: appinstorg,
+				CloudletKey: edgeproto.CloudletKey{
+					Name:                  cloudlet,
+					Organization:          cloudletorg,
+					FederatedOrganization: cloudletfedorg,
 				},
 			}
 			tracker, ok := appTracker[newKey]
@@ -505,13 +510,11 @@ func GetAppUsage(event *client.Response, checkpoint *client.Response, start, end
 
 						newRecord := []interface{}{
 							region,
-							app,
-							apporg,
-							ver,
-							cluster,
-							clusterorg,
+							appinstname,
+							appinstorg,
 							cloudlet,
 							cloudletorg,
+							cloudletfedorg,
 							flavor,
 							deployment,
 							starttime,
@@ -541,13 +544,11 @@ func GetAppUsage(event *client.Response, checkpoint *client.Response, start, end
 
 		newRecord := []interface{}{
 			region,
-			k.AppKey.Name,
-			k.AppKey.Organization,
-			k.AppKey.Version,
-			k.ClusterInstKey.ClusterKey.Name,
-			k.ClusterInstKey.Organization,
-			k.ClusterInstKey.CloudletKey.Name,
-			k.ClusterInstKey.CloudletKey.Organization,
+			k.Name,
+			k.Organization,
+			k.CloudletKey.Name,
+			k.CloudletKey.Organization,
+			k.CloudletKey.FederatedOrganization,
 			v.flavor,
 			v.deployment,
 			starttime,
@@ -564,20 +565,13 @@ func GetAppUsage(event *client.Response, checkpoint *client.Response, start, end
 // Query is a template with a specific set of if/else
 func ClusterCheckpointsQuery(obj *ormapi.RegionClusterInstUsage, cloudletList []string) string {
 	arg := influxQueryArgs{
-		Selector:     strings.Join(append(ClusterFields, clusterCheckpointFields...), ","),
+		Selector:     cloudcommon.GetInfluxSelectFields(append(ClusterInstFields, clusterCheckpointFields...)),
 		Measurement:  cloudcommon.ClusterInstCheckpoints,
 		CloudletList: generateCloudletList(cloudletList),
 		ClusterName:  obj.ClusterInst.ClusterKey.Name,
 	}
-	if obj.ClusterInst.Organization != "" {
-		arg.OrgField = "clusterorg"
-		arg.ApiCallerOrg = obj.ClusterInst.Organization
-		arg.CloudletOrg = obj.ClusterInst.CloudletKey.Organization
-	} else {
-		arg.OrgField = "cloudletorg"
-		arg.ApiCallerOrg = obj.ClusterInst.CloudletKey.Organization
-		arg.ClusterOrg = obj.ClusterInst.Organization
-	}
+	arg.ClusterOrg = obj.ClusterInst.ClusterKey.Organization
+	arg.CloudletOrg = obj.ClusterInst.CloudletKey.Organization
 	// set endtime to start and back up starttime by a checkpoint interval to hit the most recent
 	// checkpoint that occurred before startTime
 	checkpointTime := prevCheckpoint(obj.StartTime)
@@ -586,43 +580,26 @@ func ClusterCheckpointsQuery(obj *ormapi.RegionClusterInstUsage, cloudletList []
 
 func ClusterUsageEventsQuery(obj *ormapi.RegionClusterInstUsage, cloudletList []string) string {
 	arg := influxQueryArgs{
-		Selector:     strings.Join(append(ClusterFields, clusterUsageEventFields...), ","),
-		Measurement:  EVENT_CLUSTERINST,
+		Selector:     cloudcommon.GetInfluxSelectFields(append(ClusterInstFields, clusterUsageEventFields...)),
+		Measurement:  cloudcommon.ClusterInstEvent,
 		CloudletList: generateCloudletList(cloudletList),
 		ClusterName:  obj.ClusterInst.ClusterKey.Name,
 	}
-	if obj.ClusterInst.Organization != "" {
-		arg.OrgField = "clusterorg"
-		arg.ApiCallerOrg = obj.ClusterInst.Organization
-		arg.CloudletOrg = obj.ClusterInst.CloudletKey.Organization
-	} else {
-		arg.OrgField = "cloudletorg"
-		arg.ApiCallerOrg = obj.ClusterInst.CloudletKey.Organization
-		arg.ClusterOrg = obj.ClusterInst.Organization
-	}
+	arg.ClusterOrg = obj.ClusterInst.ClusterKey.Organization
+	arg.CloudletOrg = obj.ClusterInst.CloudletKey.Organization
 	queryStart := prevCheckpoint(obj.StartTime)
 	return fillUsageTimeAndGetCmd(&arg, usageInfluxDBTemplate, &queryStart, &obj.EndTime)
 }
 
 func AppInstCheckpointsQuery(obj *ormapi.RegionAppInstUsage, cloudletList []string) string {
 	arg := influxQueryArgs{
-		Selector:     strings.Join(AppCheckpointFields, ","),
+		Selector:     cloudcommon.GetInfluxSelectFields(AppInstCheckpointFields),
 		Measurement:  cloudcommon.AppInstCheckpoints,
-		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
-		AppVersion:   obj.AppInst.AppKey.Version,
+		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.Name),
 		CloudletList: generateCloudletList(cloudletList),
-		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
-		ClusterOrg:   obj.AppInst.ClusterInstKey.Organization,
 	}
-	if obj.AppInst.AppKey.Organization != "" {
-		arg.OrgField = "apporg"
-		arg.ApiCallerOrg = obj.AppInst.AppKey.Organization
-		arg.CloudletOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
-	} else {
-		arg.OrgField = "cloudletorg"
-		arg.ApiCallerOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
-		arg.AppOrg = obj.AppInst.AppKey.Organization
-	}
+	arg.AppInstOrg = obj.AppInst.Organization
+	arg.CloudletOrg = obj.AppInst.CloudletKey.Organization
 	if obj.VmOnly {
 		arg.DeploymentType = cloudcommon.DeploymentTypeVM
 	}
@@ -634,23 +611,13 @@ func AppInstCheckpointsQuery(obj *ormapi.RegionAppInstUsage, cloudletList []stri
 
 func AppInstUsageEventsQuery(obj *ormapi.RegionAppInstUsage, cloudletList []string) string {
 	arg := influxQueryArgs{
-		Selector:     strings.Join(append(AppFields, appUsageEventFields...), ","),
-		Measurement:  EVENT_APPINST,
-		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
-		AppVersion:   obj.AppInst.AppKey.Version,
+		Selector:     cloudcommon.GetInfluxSelectFields(append(AppInstFields, appUsageEventFields...)),
+		Measurement:  cloudcommon.AppInstEvent,
+		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.Name),
 		CloudletList: generateCloudletList(cloudletList),
-		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
-		ClusterOrg:   obj.AppInst.ClusterInstKey.Organization,
 	}
-	if obj.AppInst.AppKey.Organization != "" {
-		arg.OrgField = "apporg"
-		arg.ApiCallerOrg = obj.AppInst.AppKey.Organization
-		arg.CloudletOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
-	} else {
-		arg.OrgField = "cloudletorg"
-		arg.ApiCallerOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
-		arg.AppOrg = obj.AppInst.AppKey.Organization
-	}
+	arg.AppInstOrg = obj.AppInst.Organization
+	arg.CloudletOrg = obj.AppInst.CloudletKey.Organization
 	if obj.VmOnly {
 		arg.DeploymentType = cloudcommon.DeploymentTypeVM
 	}
@@ -737,8 +704,8 @@ func GetUsageCommon(c echo.Context) error {
 			return fmt.Errorf("Both start and end times must be specified")
 		}
 
-		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.AppKey.Organization},
-			ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.ClusterInstKey.CloudletKey})
+		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.Organization},
+			ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.CloudletKey})
 		if err != nil {
 			return err
 		}
@@ -772,7 +739,7 @@ func GetUsageCommon(c echo.Context) error {
 			return fmt.Errorf("Both start and end times must be specified")
 		}
 
-		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.ClusterInst.Organization},
+		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.ClusterInst.ClusterKey.Organization},
 			ResourceClusterAnalytics, []edgeproto.CloudletKey{in.ClusterInst.CloudletKey})
 		if err != nil {
 			return err

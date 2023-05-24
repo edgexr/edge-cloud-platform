@@ -45,11 +45,13 @@ func TestDeploy(t *testing.T) {
 	testDialOpt = grpc.WithInsecure()
 
 	inst := edgeproto.AppInst{}
-	inst.Key.AppKey.Name = "foo"
+	inst.Key.Name = "foo"
+	inst.AppKey.Name = "foo"
 	go goAppInstApi(ctx, &inst, cloudcommon.Create, "test", "")
 
 	inst2 := edgeproto.AppInst{}
-	inst2.Key.AppKey.Name = "foo2"
+	inst2.Key.Name = "foo2"
+	inst2.AppKey.Name = "foo2"
 	go goAppInstApi(ctx, &inst2, cloudcommon.Create, "test", "")
 
 	err := dc.waitForAppInsts(ctx, 2)
@@ -71,16 +73,16 @@ type DummyController struct {
 	lis              *bufconn.Listener
 	failCreate       bool
 	failDelete       bool
-	failCreateInsts  map[edgeproto.AppInstKey]struct{}
-	failDeleteInsts  map[edgeproto.AppInstKey]struct{}
+	failCreateInsts  map[edgeproto.AppCloudletKeyPair]struct{}
+	failDeleteInsts  map[edgeproto.AppCloudletKeyPair]struct{}
 }
 
 func newDummyController(appInstCache *edgeproto.AppInstCache, appInstRefsCache *edgeproto.AppInstRefsCache) *DummyController {
 	d := DummyController{}
 	d.appInstCache = appInstCache
 	d.appInstRefsCache = appInstRefsCache
-	d.failCreateInsts = make(map[edgeproto.AppInstKey]struct{})
-	d.failDeleteInsts = make(map[edgeproto.AppInstKey]struct{})
+	d.failCreateInsts = make(map[edgeproto.AppCloudletKeyPair]struct{})
+	d.failDeleteInsts = make(map[edgeproto.AppCloudletKeyPair]struct{})
 	d.serv = grpc.NewServer(
 		grpc.UnaryInterceptor(cloudcommon.AuditUnaryInterceptor),
 		grpc.StreamInterceptor(cloudcommon.AuditStreamInterceptor),
@@ -125,7 +127,11 @@ func (s *DummyController) CreateAppInst(in *edgeproto.AppInst, server edgeproto.
 	if s.failCreate {
 		return fmt.Errorf("Some error")
 	}
-	if _, found := s.failCreateInsts[in.Key]; found {
+	failKey := edgeproto.AppCloudletKeyPair{
+		AppKey:      in.AppKey,
+		CloudletKey: in.Key.CloudletKey,
+	}
+	if _, found := s.failCreateInsts[failKey]; found {
 		return fmt.Errorf("Some error")
 	}
 	s.updateAppInst(server.Context(), in)
@@ -141,7 +147,11 @@ func (s *DummyController) DeleteAppInst(in *edgeproto.AppInst, server edgeproto.
 	if s.failDelete {
 		return fmt.Errorf("Some error")
 	}
-	if _, found := s.failDeleteInsts[in.Key]; found {
+	failKey := edgeproto.AppCloudletKeyPair{
+		AppKey:      in.AppKey,
+		CloudletKey: in.Key.CloudletKey,
+	}
+	if _, found := s.failDeleteInsts[failKey]; found {
 		return fmt.Errorf("Some error")
 	}
 	s.deleteAppInst(server.Context(), in)
@@ -169,7 +179,7 @@ func (s *DummyController) updateAppInst(ctx context.Context, in *edgeproto.AppIn
 	if s.appInstRefsCache != nil {
 		// also update refs
 		s.appInstRefsCache.Mux.Lock()
-		cd := s.appInstRefsCache.Objs[in.Key.AppKey]
+		cd := s.appInstRefsCache.Objs[in.AppKey]
 		cd.Obj.Insts[in.Key.GetKeyString()] = 1
 		s.appInstRefsCache.Mux.Unlock()
 	}
@@ -181,11 +191,35 @@ func (s *DummyController) deleteAppInst(ctx context.Context, in *edgeproto.AppIn
 	if s.appInstRefsCache != nil {
 		// also update refs
 		s.appInstRefsCache.Mux.Lock()
-		cd := s.appInstRefsCache.Objs[in.Key.AppKey]
+		cd := s.appInstRefsCache.Objs[in.AppKey]
 		delete(cd.Obj.Insts, in.Key.GetKeyString())
 		s.appInstRefsCache.Mux.Unlock()
 	}
 	s.appInstCache.Delete(ctx, in, 0)
+}
+
+func (s *DummyController) deleteAppInstFor(ctx context.Context, appKey *edgeproto.AppKey, cloudletKey *edgeproto.CloudletKey) {
+	log.SpanLog(ctx, log.DebugLevelApi, "DeleteAppInstFor", "appKey", *appKey, "cloudletKey", *cloudletKey)
+	deleted := []edgeproto.AppInstKey{}
+	s.appInstCache.Mux.Lock()
+	for k, data := range s.appInstCache.Objs {
+		if data.Obj.AppKey.Matches(appKey) && data.Obj.Key.CloudletKey.Matches(cloudletKey) {
+			delete(s.appInstCache.Objs, k)
+			deleted = append(deleted, data.Obj.Key)
+		}
+	}
+	s.appInstCache.Mux.Unlock()
+	if s.appInstRefsCache != nil {
+		// also update refs
+		for _, key := range deleted {
+			s.appInstRefsCache.Mux.Lock()
+			cd := s.appInstRefsCache.Objs[*appKey]
+			if cd != nil {
+				delete(cd.Obj.Insts, key.GetKeyString())
+			}
+			s.appInstRefsCache.Mux.Unlock()
+		}
+	}
 }
 
 func (s *DummyController) dump() {
@@ -207,9 +241,9 @@ func (s *DummyController) dump() {
 	s.appInstRefsCache.Mux.Unlock()
 }
 
-func waitForRetryAppInsts(ctx context.Context, appInstKey edgeproto.AppInstKey, checkFound bool) error {
+func waitForRetryAppInsts(ctx context.Context, appKey edgeproto.AppKey, cloudletKey edgeproto.CloudletKey, checkFound bool) error {
 	for i := 0; i < 50; i++ {
-		found := retryTracker.hasFailure(ctx, appInstKey.AppKey, appInstKey.ClusterInstKey.CloudletKey)
+		found := retryTracker.hasFailure(ctx, appKey, cloudletKey)
 		if checkFound == found {
 			log.SpanLog(ctx, log.DebugLevelInfo, "waitForRetryAppInsts: retry appInst found", "found", checkFound)
 			return nil
@@ -217,5 +251,5 @@ func waitForRetryAppInsts(ctx context.Context, appInstKey edgeproto.AppInstKey, 
 		time.Sleep(20 * time.Millisecond)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfo, "Timed out waiting for retryTracker to find appInstKey", "found", checkFound)
-	return fmt.Errorf("Timed out waiting for AppInst %v, %v to be found(%v) by retryTracker", appInstKey.AppKey, appInstKey.ClusterInstKey.CloudletKey, checkFound)
+	return fmt.Errorf("Timed out waiting for AppInst %v, %v to be found(%v) by retryTracker", appKey, cloudletKey, checkFound)
 }

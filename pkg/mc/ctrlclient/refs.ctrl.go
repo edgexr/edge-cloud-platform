@@ -82,7 +82,7 @@ func ShowClusterRefsStream(ctx context.Context, rc *ormutil.RegionContext, obj *
 		}
 		if !rc.SkipAuthz {
 			if authz != nil {
-				if !authz.Ok(res.Key.Organization) {
+				if !authz.Ok(res.Key.ClusterKey.Organization) {
 					continue
 				}
 			}

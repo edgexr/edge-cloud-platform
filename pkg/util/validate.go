@@ -181,6 +181,28 @@ func K8SServiceSanitize(name string) string {
 	return str
 }
 
+// K8SLabelValueSanitize sanitizes a string to use as a metadata label value
+// Label values must be 63 chars or less (can be empty),
+// must begin and end with alphanumerics [a-z0-9A-Z], and may contain dashes,
+// underscores, dots, and alphanumerics.
+func K8SLabelValueSanitize(label string) string {
+	s := ""
+	for i := 0; i < len(label); i++ {
+		if len(s) == 63 {
+			break
+		}
+		c := label[i]
+		if (len(s) == 0 || len(s) == 62) && !isASCIILower(c) && !isASCIIUpper(c) && !isASCIIDigit(c) {
+			continue
+		}
+		if isASCIILower(c) || isASCIIUpper(c) || isASCIIDigit(c) || c == '-' || c == '_' || c == '.' {
+			s += string(c)
+		}
+	}
+	// removing trailing invalid chars
+	return strings.TrimRight(s, "._-")
+}
+
 // Namespaces are limited to 63 characters and cannot end in "-"
 func NamespaceSanitize(name string) string {
 	r := DNSSanitize(name)

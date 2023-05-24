@@ -17,16 +17,16 @@ package main
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 )
 
 func addClusterDetailsToAlerts(alerts []edgeproto.Alert, clusterInstKey *edgeproto.ClusterInstKey) []edgeproto.Alert {
 	for ii := range alerts {
 		alert := &alerts[ii]
-		alert.Labels[edgeproto.ClusterInstKeyTagOrganization] = clusterInstKey.Organization
+		alert.Labels[edgeproto.ClusterKeyTagOrganization] = clusterInstKey.ClusterKey.Organization
 		alert.Labels[edgeproto.CloudletKeyTagOrganization] = clusterInstKey.CloudletKey.Organization
 		alert.Labels[edgeproto.CloudletKeyTagName] = clusterInstKey.CloudletKey.Name
 		alert.Labels[edgeproto.ClusterKeyTagName] = clusterInstKey.ClusterKey.Name
@@ -50,7 +50,7 @@ func pruneClusterForeignAlerts(key interface{}, keys map[edgeproto.AlertKey]stru
 		}
 		// Skip health-check alerts here - envoy adds "job" label
 		if _, found := alertFromKey.Labels["job"]; found ||
-			alertFromKey.Labels[edgeproto.ClusterInstKeyTagOrganization] != clusterInstKey.Organization ||
+			alertFromKey.Labels[edgeproto.ClusterKeyTagOrganization] != clusterInstKey.ClusterKey.Organization ||
 			alertFromKey.Labels[edgeproto.CloudletKeyTagOrganization] != clusterInstKey.CloudletKey.Organization ||
 			alertFromKey.Labels[edgeproto.CloudletKeyTagName] != clusterInstKey.CloudletKey.Name ||
 			alertFromKey.Labels[edgeproto.ClusterKeyTagName] != clusterInstKey.ClusterKey.Name {
@@ -153,7 +153,7 @@ func flushAlerts(ctx context.Context, key *edgeproto.ClusterInstKey) {
 	AlertCache.Mux.Lock()
 	for k, data := range AlertCache.Objs {
 		v := data.Obj
-		if v.Labels[edgeproto.ClusterInstKeyTagOrganization] == key.Organization &&
+		if v.Labels[edgeproto.ClusterKeyTagOrganization] == key.ClusterKey.Organization &&
 			v.Labels[edgeproto.CloudletKeyTagOrganization] == key.CloudletKey.Organization &&
 			v.Labels[edgeproto.CloudletKeyTagName] == key.CloudletKey.Name &&
 			v.Labels[edgeproto.ClusterKeyTagName] == key.ClusterKey.Name {

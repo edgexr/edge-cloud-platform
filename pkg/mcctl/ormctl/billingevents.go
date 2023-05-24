@@ -71,21 +71,18 @@ var BillingEventsCommonArgs = []string{
 var AppEventRequiredArgs = []string{}
 
 var AppEventOptionalArgs = []string{
-	"appname",
-	"apporg",
-	"appvers",
-	"cluster",
+	"appinstname",
+	"appinstorg",
 	"cloudlet",
 	"cloudletorg",
 }
 
 var AppEventAliasArgs = []string{
-	"apporg=appinst.appkey.organization",
-	"appname=appinst.appkey.name",
-	"appvers=appinst.appkey.version",
-	"cluster=appinst.clusterinstkey.clusterkey.name",
-	"cloudletorg=appinst.clusterinstkey.cloudletkey.organization",
-	"cloudlet=appinst.clusterinstkey.cloudletkey.name",
+	"appinstorg=appinst.organization",
+	"appinstname=appinst.name",
+	"cloudletorg=appinst.cloudletkey.organization",
+	"cloudlet=appinst.cloudletkey.name",
+	"cloudletfedorg=appinst.cloudletkey.federatedorganization",
 }
 
 var ClusterEventRequiredArgs = []string{}
@@ -98,10 +95,11 @@ var ClusterEventOptionalArgs = []string{
 }
 
 var ClusterEventAliasArgs = []string{
-	"clusterorg=clusterinst.organization",
+	"clusterorg=clusterinst.clusterkey.organization",
 	"cluster=clusterinst.clusterkey.name",
 	"cloudletorg=clusterinst.cloudletkey.organization",
 	"cloudlet=clusterinst.cloudletkey.name",
+	"cloudletfedorg=clusterinst.cloudletkey.federatedorganization",
 }
 
 var CloudletEventRequiredArgs = []string{
@@ -115,19 +113,20 @@ var CloudletEventOptionalArgs = []string{
 var CloudletEventAliasArgs = []string{
 	"cloudletorg=cloudlet.organization",
 	"cloudlet=cloudlet.name",
+	"cloudletfedorg=cloudlet.federatedorganization",
 }
 
 var EventComments = map[string]string{
-	"apporg":      "Organization or Company Name that a Developer is part of",
-	"appname":     "App name",
-	"appvers":     "App version",
-	"cluster":     "Cluster name",
-	"clusterorg":  "Organization or Company Name that a Cluster is used by",
-	"cloudletorg": "Organization name owning of the cloudlet",
-	"cloudlet":    "Name of the cloudlet",
-	"limit":       "Display the last X events",
-	"starttime":   "Time to start displaying stats from in RFC3339 format (ex. 2002-12-31T15:00:00Z)",
-	"endtime":     "Time up to which to display stats in RFC3339 format (ex. 2002-12-31T10:00:00-05:00)",
-	"startage":    "Relative age from now of search range start (default 48h)",
-	"endage":      "Relative age from now of search range end (default 0)",
+	"appinstorg":     "Organization or Company Name that a Developer is part of",
+	"appinstname":    "App Instance name",
+	"cluster":        "Cluster name",
+	"clusterorg":     "Organization or Company Name that a Cluster is used by",
+	"cloudletorg":    "Organization name owning the cloudlet",
+	"cloudletfedorg": "Fedreated Organization name owning the cloudlet",
+	"cloudlet":       "Name of the cloudlet",
+	"limit":          "Display the last X events",
+	"starttime":      "Time to start displaying stats from in RFC3339 format (ex. 2002-12-31T15:00:00Z)",
+	"endtime":        "Time up to which to display stats in RFC3339 format (ex. 2002-12-31T10:00:00-05:00)",
+	"startage":       "Relative age from now of search range start (default 48h)",
+	"endage":         "Relative age from now of search range end (default 0)",
 }

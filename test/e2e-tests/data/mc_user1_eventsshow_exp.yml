@@ -24,16 +24,13 @@
     - enterprise
     type: audit
     mtags:
-      app: ep1
-      apporg: user3org
-      appver: "1.0"
+      appinst: ep1
+      appinstorg: user3org
       cloudlet: enterprise-1
+      cloudletfedorg: ""
       cloudletorg: enterprise
-      cluster: SmallCluster
-      clusterorg: user3org
       duration: ""
       email: user3@enterprise.com
-      federatedorg: ""
       hostname: ""
       lineno: ""
       localuri: /api/v1/auth/ctrl/CreateAppInst
@@ -41,8 +38,8 @@
       org: user3org
       region: local
       remote-ip: 127.0.0.1
-      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"387","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
-      request: '{"AppInst":{"flavor":{"name":"x1.small"},"key":{"app_key":{"name":"ep1","organization":"user3org","version":"1.0"},"cluster_inst_key":{"cloudlet_key":{"name":"enterprise-1","organization":"enterprise"},"cluster_key":{"name":"SmallCluster"},"organization":"user3org"}}},"Region":"local"}'
+      reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"430","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
+      request: '{"AppInst":{"app_key":{"name":"ep1","organization":"user3org","version":"1.0"},"cluster_key":{"name":"SmallCluster","organization":"user3org"},"flavor":{"name":"x1.small"},"key":{"cloudlet_key":{"name":"enterprise-1","organization":"enterprise"},"name":"ep1","organization":"user3org"}},"Region":"local"}'
       respheaders: '{"Content-Type":"application/json"}'
       response: |
         {"data":{"message":"Creating"}}

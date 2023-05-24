@@ -18,13 +18,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/proxy"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/proxy"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -62,7 +62,7 @@ func (s *Xind) CreateAppInstNoPatch(ctx context.Context, clusterInst *edgeproto.
 	}
 
 	if len(appInst.MappedPorts) > 0 {
-		proxyName := dockermgmt.GetContainerName(&app.Key)
+		proxyName := dockermgmt.GetContainerName(appInst)
 		log.SpanLog(ctx, log.DebugLevelInfra, "Add Proxy", "ports", appInst.MappedPorts, "masterIP", masterIP, "network", network)
 		err = proxy.CreateNginxProxy(ctx, client,
 			proxyName,
@@ -173,7 +173,7 @@ func (s *Xind) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Cluster
 
 	if len(appInst.MappedPorts) > 0 {
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteNginxProxy for xind")
-		if err = proxy.DeleteNginxProxy(ctx, client, dockermgmt.GetContainerName(&app.Key)); err != nil {
+		if err = proxy.DeleteNginxProxy(ctx, client, dockermgmt.GetContainerName(appInst)); err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete proxy", "name", names.AppName)
 			return err
 		}

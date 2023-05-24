@@ -662,11 +662,14 @@ type RegionCloudletMetrics struct {
 	MetricsCommon
 }
 
+// RegionClientApiUsageMetrics looks up client API metrics for Apps or Cloudlets
 type RegionClientApiUsageMetrics struct {
 	// Region name
 	Region string
-	// Application instance key for usage
-	AppInst edgeproto.AppInstKey
+	// Application key for app usage
+	AppKey edgeproto.AppKey
+	// Cloudlet key for cloudlet usage
+	CloudletKey edgeproto.CloudletKey
 	// API call method, one of: FindCloudlet, PlatformFindCloudlet, RegisterClient, VerifyLocation
 	Method string `json:",omitempty"`
 	// Cloudlet name where DME is running
@@ -681,8 +684,10 @@ type RegionClientApiUsageMetrics struct {
 type RegionClientAppUsageMetrics struct {
 	// Region name
 	Region string
-	// Application instance key for usage
-	AppInst edgeproto.AppInstKey
+	// Application instance key for appinst usage (also includes CloudletKey for cloudlet usage)
+	AppInstKey edgeproto.AppInstKey
+	// App key for app usage
+	AppKey edgeproto.AppKey
 	// Comma separated list of metrics to view. Available metrics: utilization, network, ipusage
 	Selector string
 	// Device carrier. Can be used for selectors: latency, deviceinfo
@@ -822,10 +827,12 @@ type AlertReceiver struct {
 	PagerDutyIntegrationKey string `json:",omitempty"`
 	// PagerDuty API version
 	PagerDutyApiVersion string `json:",omitempty"`
-	// Cloudlet spec for alerts
-	Cloudlet edgeproto.CloudletKey `json:",omitempty"`
-	// AppInst spec for alerts
-	AppInst edgeproto.AppInstKey `json:",omitempty"`
+	// AppInstKey spec for alerts (includes CloudletKey)
+	AppInstKey edgeproto.AppInstKey `json:",omitempty"`
+	// AppKey spec for alerts
+	AppKey edgeproto.AppKey `json:",omitempty"`
+	// ClusterKey spec for alerts
+	ClusterKey edgeproto.ClusterKey `json:",omitempty"`
 }
 
 // Reporter to generate period reports

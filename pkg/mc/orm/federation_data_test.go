@@ -1,7 +1,6 @@
 package orm
 
 import (
-	fmt "fmt"
 	"testing"
 
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -73,48 +72,4 @@ func getConsAppImages(t *testing.T, org, fedName string) []*ormapi.ConsumerImage
 		images = append(images, forapp...)
 	}
 	return images
-}
-
-type FrmData struct {
-	consApp         edgeproto.App
-	consClusterInst edgeproto.ClusterInst
-	consAppInst     edgeproto.AppInst
-	provAppInst     edgeproto.AppInst
-}
-
-func getFrmData(consAttr, provAttr *FederatorAttr, zones []string) []FrmData {
-	apps := getConsApps(consAttr.developerId)
-
-	frmData := []FrmData{}
-	for ii, zone := range zones {
-		for _, app := range apps {
-			consCloudletKey := edgeproto.CloudletKey{
-				Name:                  zone,
-				Organization:          consAttr.fedName,
-				FederatedOrganization: consAttr.operatorId,
-			}
-			consClust := edgeproto.ClusterInst{}
-			consClust.Key.ClusterKey.Name = fmt.Sprintf("reservable%d", ii)
-			consClust.Key.CloudletKey = consCloudletKey
-			consClust.Key.Organization = edgeproto.OrganizationEdgeCloud
-
-			consAi := edgeproto.AppInst{}
-			consAi.Key.AppKey.Name = app.Key.Name
-			consAi.Key.AppKey.Organization = app.Key.Organization
-			consAi.Key.AppKey.Version = app.Key.Version
-			consAi.Key.ClusterInstKey = *consClust.Key.Virtual(fmt.Sprintf("autocluster%d", ii))
-
-			provAi := edgeproto.AppInst{}
-
-			data := FrmData{
-				consApp:         app,
-				consClusterInst: consClust,
-				consAppInst:     consAi,
-				provAppInst:     provAi,
-			}
-			frmData = append(frmData, data)
-		}
-
-	}
-	return frmData
 }

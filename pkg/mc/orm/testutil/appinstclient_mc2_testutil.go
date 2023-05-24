@@ -35,7 +35,7 @@ func TestShowAppInstClient(mcClient *mctestclient.Client, uri, token, region str
 }
 func TestPermShowAppInstClient(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstClientKey)) ([]edgeproto.AppInstClient, int, error) {
 	in := &edgeproto.AppInstClientKey{}
-	in.AppInstKey.AppKey.Organization = org
+	in.AppInstKey.Organization = org
 	return TestShowAppInstClient(mcClient, uri, token, region, in, modFuncs...)
 }
 

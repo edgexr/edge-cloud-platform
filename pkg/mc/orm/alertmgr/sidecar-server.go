@@ -115,10 +115,10 @@ func (s *SidecarServer) Run() error {
 	// http.HandleFunc(ReloadConfigApi, proxyHandler) - this should not be externally exposed
 	rtrMux.HandleFunc(SilenceApi, s.proxyHandler)
 	rtrMux.HandleFunc(ReceiverApi, s.proxyHandler)
-	rtrMux.HandleFunc(mobiledgeXReceiversApi, s.alertReceiver).Methods("GET")
-	rtrMux.HandleFunc(mobiledgeXReceiverApi, s.alertReceiver)
-	rtrMux.HandleFunc(mobiledgeXReceiverApi+"/{"+receiverUrlVar+"}", s.alertReceiver).Methods("GET")
-	rtrMux.HandleFunc(mobiledgeXReceiverApi+"/{"+receiverUrlVar+"}", s.alertReceiver).Methods("DELETE")
+	rtrMux.HandleFunc(edgecloudReceiversApi, s.alertReceiver).Methods("GET")
+	rtrMux.HandleFunc(edgecloudReceiverApi, s.alertReceiver)
+	rtrMux.HandleFunc(edgecloudReceiverApi+"/{"+receiverUrlVar+"}", s.alertReceiver).Methods("GET")
+	rtrMux.HandleFunc(edgecloudReceiverApi+"/{"+receiverUrlVar+"}", s.alertReceiver).Methods("DELETE")
 
 	listener, err := net.Listen("tcp4", s.httpApiAddr)
 	if err != nil {

@@ -28,9 +28,10 @@ type LatencyStatInfo struct {
 	Samples []*dme.Sample
 }
 
-func GetLatencyStatKey(appInstKey edgeproto.AppInstKey, deviceInfo *DeviceInfo, loc *dme.Loc, tileLength int) LatencyStatKey {
+func GetLatencyStatKey(appInst *edgeproto.AppInst, deviceInfo *DeviceInfo, loc *dme.Loc, tileLength int) LatencyStatKey {
 	statKey := LatencyStatKey{
-		AppInstKey:   appInstKey,
+		AppInstKey:   appInst.Key,
+		AppKey:       appInst.AppKey,
 		LocationTile: GetLocationTileFromGpsLocation(loc, tileLength),
 	}
 
@@ -50,6 +51,7 @@ func GetLatencyStatKey(appInstKey edgeproto.AppInstKey, deviceInfo *DeviceInfo, 
 // Created from LatencyInfo fields
 type LatencyStatKey struct {
 	AppInstKey      edgeproto.AppInstKey
+	AppKey          edgeproto.AppKey
 	DeviceCarrier   string
 	LocationTile    string
 	DataNetworkType string

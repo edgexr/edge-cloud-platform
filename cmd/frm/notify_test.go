@@ -77,49 +77,58 @@ var testClusterInsts = []edgeproto.ClusterInst{
 	{
 		Key: edgeproto.ClusterInstKey{
 			ClusterKey: edgeproto.ClusterKey{
-				Name: "cluster1",
+				Name:         "cluster1",
+				Organization: "dev1",
 			},
-			CloudletKey:  testCloudlets[0].Key,
-			Organization: "dev1",
+			CloudletKey: testCloudlets[0].Key,
 		},
 	},
 	{
 		Key: edgeproto.ClusterInstKey{
 			ClusterKey: edgeproto.ClusterKey{
-				Name: "cluster2",
+				Name:         "cluster2",
+				Organization: "dev1",
 			},
-			CloudletKey:  testCloudlets[1].Key,
-			Organization: "dev1",
+			CloudletKey: testCloudlets[1].Key,
 		},
 	},
 	{
 		Key: edgeproto.ClusterInstKey{
 			ClusterKey: edgeproto.ClusterKey{
-				Name: "cluster3",
+				Name:         "cluster3",
+				Organization: "dev1",
 			},
-			CloudletKey:  testCloudlets[2].Key,
-			Organization: "dev1",
+			CloudletKey: testCloudlets[2].Key,
 		},
 	},
 }
 var testAppInstances = []edgeproto.AppInst{
 	{
 		Key: edgeproto.AppInstKey{
-			AppKey:         testApps[0].Key,
-			ClusterInstKey: *testClusterInsts[0].Key.Virtual(""),
+			Name:         "appinst1",
+			Organization: testApps[0].Key.Organization,
+			CloudletKey:  testCloudlets[0].Key,
 		},
+		AppKey:     testApps[0].Key,
+		ClusterKey: testClusterInsts[0].Key.ClusterKey,
 	},
 	{
 		Key: edgeproto.AppInstKey{
-			AppKey:         testApps[0].Key,
-			ClusterInstKey: *testClusterInsts[1].Key.Virtual(""),
+			Name:         "appinst2",
+			Organization: testApps[0].Key.Organization,
+			CloudletKey:  testCloudlets[1].Key,
 		},
+		AppKey:     testApps[0].Key,
+		ClusterKey: testClusterInsts[1].Key.ClusterKey,
 	},
 	{
 		Key: edgeproto.AppInstKey{
-			AppKey:         testApps[0].Key,
-			ClusterInstKey: *testClusterInsts[2].Key.Virtual(""),
+			Name:         "appinst3",
+			Organization: testApps[0].Key.Organization,
+			CloudletKey:  testCloudlets[2].Key,
 		},
+		AppKey:     testApps[0].Key,
+		ClusterKey: testClusterInsts[2].Key.ClusterKey,
 	},
 }
 
@@ -191,7 +200,7 @@ func TestFRMNotify(t *testing.T) {
 	}
 
 	for key, _ := range controllerData.AppInstCache.Objs {
-		require.NotEmpty(t, key.ClusterInstKey.CloudletKey.FederatedOrganization, "recvd federated cloudlet app instance")
+		require.NotEmpty(t, key.CloudletKey.FederatedOrganization, "recvd federated cloudlet app instance")
 	}
 
 	// Delete and verify data is deleted while connected.

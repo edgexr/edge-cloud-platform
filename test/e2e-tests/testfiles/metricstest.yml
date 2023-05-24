@@ -88,7 +88,7 @@ tests:
   actions: [mcapi-showcustommetrics]
   apifile: '{{datadir2}}/mc_appv2_metrics_target.yml'
   apifilevars:
-    measurement: "sum by(app,appver,apporg,cluster,clusterorg,cloudlet,cloudletorg,region)(envoy_cluster_upstream_cx_active{})"
+    measurement: "sum by(appinst,appinstorg,cloudlet,cloudletorg,region)(envoy_cluster_upstream_cx_active{})"
     aggr-function: ""
     port: ""
   curuserfile: '{{datadir2}}/mc_admin.yml'

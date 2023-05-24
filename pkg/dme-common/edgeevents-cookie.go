@@ -20,12 +20,13 @@ import (
 	"fmt"
 	"time"
 
-	jwt "github.com/golang-jwt/jwt/v4"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	jwt "github.com/golang-jwt/jwt/v4"
 )
 
 type EdgeEventsCookieKey struct {
+	AppInstName  string  `json:"appinstname,omitempty"`
 	ClusterOrg   string  `json:"clusterorg,omitempty"`
 	ClusterName  string  `json:"clustername,omitempty"`
 	CloudletOrg  string  `json:"cloudletorg,omitempty"`
@@ -54,10 +55,11 @@ func (e *edgeEventsClaims) SetKid(kid int) {
 
 func CreateEdgeEventsCookieKey(appInst *DmeAppInst, loc dme.Loc) *EdgeEventsCookieKey {
 	key := &EdgeEventsCookieKey{
-		ClusterOrg:   appInst.virtualClusterInstKey.Organization,
-		ClusterName:  appInst.virtualClusterInstKey.ClusterKey.Name,
-		CloudletOrg:  appInst.virtualClusterInstKey.CloudletKey.Organization,
-		CloudletName: appInst.virtualClusterInstKey.CloudletKey.Name,
+		AppInstName:  appInst.key.Name,
+		ClusterOrg:   appInst.clusterKey.Organization,
+		ClusterName:  appInst.clusterKey.Name,
+		CloudletOrg:  appInst.key.CloudletKey.Organization,
+		CloudletName: appInst.key.CloudletKey.Name,
 		Location:     loc,
 	}
 	return key

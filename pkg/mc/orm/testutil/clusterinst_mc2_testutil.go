@@ -38,7 +38,7 @@ func TestPermCreateClusterInst(mcClient *mctestclient.Client, uri, token, region
 	if targetCloudlet != nil {
 		in.Key.CloudletKey = *targetCloudlet
 	}
-	in.Key.Organization = org
+	in.Key.ClusterKey.Organization = org
 	return TestCreateClusterInst(mcClient, uri, token, region, in, modFuncs...)
 }
 
@@ -56,7 +56,7 @@ func TestPermDeleteClusterInst(mcClient *mctestclient.Client, uri, token, region
 	if targetCloudlet != nil {
 		in.Key.CloudletKey = *targetCloudlet
 	}
-	in.Key.Organization = org
+	in.Key.ClusterKey.Organization = org
 	return TestDeleteClusterInst(mcClient, uri, token, region, in, modFuncs...)
 }
 
@@ -78,8 +78,8 @@ func TestPermUpdateClusterInst(mcClient *mctestclient.Client, uri, token, region
 			edgeproto.ClusterInstFieldKeyCloudletKeyOrganization,
 		)
 	}
-	in.Key.Organization = org
-	in.Fields = append(in.Fields, edgeproto.ClusterInstFieldKeyOrganization)
+	in.Key.ClusterKey.Organization = org
+	in.Fields = append(in.Fields, edgeproto.ClusterInstFieldKeyClusterKeyOrganization)
 	return TestUpdateClusterInst(mcClient, uri, token, region, in, modFuncs...)
 }
 
@@ -94,7 +94,7 @@ func TestShowClusterInst(mcClient *mctestclient.Client, uri, token, region strin
 }
 func TestPermShowClusterInst(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterInst)) ([]edgeproto.ClusterInst, int, error) {
 	in := &edgeproto.ClusterInst{}
-	in.Key.Organization = org
+	in.Key.ClusterKey.Organization = org
 	return TestShowClusterInst(mcClient, uri, token, region, in, modFuncs...)
 }
 

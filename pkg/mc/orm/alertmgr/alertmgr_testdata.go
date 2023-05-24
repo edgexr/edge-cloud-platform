@@ -84,21 +84,12 @@ var testAlertReceivers = []ormapi.AlertReceiver{
 		Severity: cloudcommon.AlertSeverityError,
 		User:     testUsers[0],
 		Email:    "testuser1@testorg.net",
-		AppInst: edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Name:         "testApp",
-				Organization: "testAppOrg",
-				Version:      "v1.0",
-			},
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name: "testCluster",
-				},
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         "testCloudlet",
-					Organization: "testCloudletOrg",
-				},
-				Organization: "testClusterOrg",
+		AppInstKey: edgeproto.AppInstKey{
+			Name:         "testAppInst",
+			Organization: "testAppOrg",
+			CloudletKey: edgeproto.CloudletKey{
+				Name:         "testCloudlet",
+				Organization: "testCloudletOrg",
 			},
 		},
 	},
@@ -109,21 +100,12 @@ var testAlertReceivers = []ormapi.AlertReceiver{
 		User:         testUsers[0],
 		SlackChannel: "#alerts",
 		SlackWebhook: "invalidURL",
-		AppInst: edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Name:         "testApp",
-				Organization: "testAppOrg",
-				Version:      "v1.0",
-			},
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name: "testCluster",
-				},
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         "testCloudlet",
-					Organization: "testCloudletOrg",
-				},
-				Organization: "testClusterOrg",
+		AppInstKey: edgeproto.AppInstKey{
+			Name:         "testAppInst",
+			Organization: "testAppOrg",
+			CloudletKey: edgeproto.CloudletKey{
+				Name:         "testCloudlet",
+				Organization: "testCloudletOrg",
 			},
 		},
 	},
@@ -134,21 +116,12 @@ var testAlertReceivers = []ormapi.AlertReceiver{
 		User:         testUsers[1],
 		SlackChannel: "#alerts",
 		SlackWebhook: "https://hooks.slack.com/foo",
-		AppInst: edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Name:         "testApp",
-				Organization: "testAppOrg",
-				Version:      "v1.0",
-			},
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name: "testCluster",
-				},
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         "testCloudlet",
-					Organization: "testCloudletOrg",
-				},
-				Organization: "testClusterOrg",
+		AppInstKey: edgeproto.AppInstKey{
+			Name:         "testAppInst",
+			Organization: "testAppOrg",
+			CloudletKey: edgeproto.CloudletKey{
+				Name:         "testCloudlet",
+				Organization: "testCloudletOrg",
 			},
 		},
 	},
@@ -158,16 +131,14 @@ var testAlertReceivers = []ormapi.AlertReceiver{
 		Severity: cloudcommon.AlertSeverityError,
 		User:     testUsers[0],
 		Email:    "testuser1@testorg.net",
-		AppInst: edgeproto.AppInstKey{
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name: "testCluster",
-				},
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         "testCloudlet",
-					Organization: "testCloudletOrg",
-				},
-				Organization: "testClusterOrg",
+		ClusterKey: edgeproto.ClusterKey{
+			Name:         "testCluster",
+			Organization: "testClusterOrg",
+		},
+		AppInstKey: edgeproto.AppInstKey{
+			CloudletKey: edgeproto.CloudletKey{
+				Name:         "testCloudlet",
+				Organization: "testCloudletOrg",
 			},
 		},
 	},

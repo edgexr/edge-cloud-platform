@@ -740,11 +740,11 @@ func (v *VMPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Clien
 		appInstKeys = append(appInstKeys, *k)
 	})
 	for _, k := range appInstKeys {
-		if _, ok := apps[k.AppKey]; !ok {
-			continue
-		}
 		appInst := edgeproto.AppInst{}
 		if !v.Caches.AppInstCache.Get(&k, &appInst) {
+			continue
+		}
+		if _, ok := apps[appInst.AppKey]; !ok {
 			continue
 		}
 		lbName := appInst.Uri

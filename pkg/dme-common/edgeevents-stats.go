@@ -18,11 +18,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/gogo/protobuf/types"
 	"golang.org/x/net/context"
 )
 
@@ -206,13 +206,13 @@ func (e *EdgeEventStats) RunNotify() {
 }
 
 func LatencyStatToMetric(ts *types.Timestamp, key LatencyStatKey, stat *LatencyStat) *edgeproto.Metric {
-	metric := initMetric(cloudcommon.LatencyMetric, *ts, key.AppInstKey)
+	metric := initMetric(cloudcommon.LatencyMetric, *ts, &key.AppInstKey, &key.AppKey)
 	// Add tags (independent variables)
-	metric.AddTag("locationtile", key.LocationTile)
-	metric.AddTag("devicecarrier", key.DeviceCarrier)
-	metric.AddTag("datanetworktype", key.DataNetworkType)
-	metric.AddTag("deviceos", key.DeviceOs)
-	metric.AddTag("devicemodel", key.DeviceModel)
+	metric.AddTag(cloudcommon.MetricTagLocationTile, key.LocationTile)
+	metric.AddTag(cloudcommon.MetricTagDeviceCarrier, key.DeviceCarrier)
+	metric.AddTag(cloudcommon.MetricTagDataNetworkType, key.DataNetworkType)
+	metric.AddTag(cloudcommon.MetricTagDeviceOS, key.DeviceOs)
+	metric.AddTag(cloudcommon.MetricTagDeviceModel, key.DeviceModel)
 	metric.AddIntVal("signalstrength", key.SignalStrength)
 	// Latency information
 	metric.AddDoubleVal("avg", stat.RollingStatistics.Statistics.Avg)
@@ -228,13 +228,13 @@ func LatencyStatToMetric(ts *types.Timestamp, key LatencyStatKey, stat *LatencyS
 }
 
 func DeviceStatToMetric(ts *types.Timestamp, key DeviceStatKey, stat *DeviceStat) *edgeproto.Metric {
-	metric := initMetric(cloudcommon.DeviceMetric, *ts, key.AppInstKey)
+	metric := initMetric(cloudcommon.DeviceMetric, *ts, &key.AppInstKey, &key.AppKey)
 	// Add tags (independent variables)
-	metric.AddTag("locationtile", key.LocationTile)
-	metric.AddTag("devicecarrier", key.DeviceCarrier)
-	metric.AddTag("datanetworktype", key.DataNetworkType)
-	metric.AddTag("deviceos", key.DeviceOs)
-	metric.AddTag("devicemodel", key.DeviceModel)
+	metric.AddTag(cloudcommon.MetricTagLocationTile, key.LocationTile)
+	metric.AddTag(cloudcommon.MetricTagDeviceCarrier, key.DeviceCarrier)
+	metric.AddTag(cloudcommon.MetricTagDataNetworkType, key.DataNetworkType)
+	metric.AddTag(cloudcommon.MetricTagDeviceOS, key.DeviceOs)
+	metric.AddTag(cloudcommon.MetricTagDeviceModel, key.DeviceModel)
 	metric.AddIntVal("signalstrength", key.SignalStrength)
 	// Num session information
 	metric.AddIntVal("numsessions", stat.NumSessions)
@@ -242,9 +242,9 @@ func DeviceStatToMetric(ts *types.Timestamp, key DeviceStatKey, stat *DeviceStat
 }
 
 func CustomStatToMetric(ts *types.Timestamp, key CustomStatKey, stat *CustomStat) *edgeproto.Metric {
-	metric := initMetric(cloudcommon.CustomMetric, *ts, key.AppInstKey)
+	metric := initMetric(cloudcommon.CustomMetric, *ts, &key.AppInstKey, &key.AppKey)
 	// Custom Stats info
-	metric.AddTag("statname", key.Name)
+	metric.AddTag(cloudcommon.MetricTagStatName, key.Name)
 	metric.AddIntVal("count", stat.Count)
 	metric.AddDoubleVal("avg", stat.RollingStatistics.Statistics.Avg)
 	metric.AddDoubleVal("variance", stat.RollingStatistics.Statistics.Variance)
@@ -256,19 +256,20 @@ func CustomStatToMetric(ts *types.Timestamp, key CustomStatKey, stat *CustomStat
 }
 
 // Helper function that adds in appinst info, metric name, metric timestamp, and dme cloudlet info
-func initMetric(metricName string, ts types.Timestamp, appInstKey edgeproto.AppInstKey) *edgeproto.Metric {
+func initMetric(metricName string, ts types.Timestamp, appInstKey *edgeproto.AppInstKey, appKey *edgeproto.AppKey) *edgeproto.Metric {
 	metric := &edgeproto.Metric{}
 	metric.Timestamp = ts
 	metric.Name = metricName
-	metric.AddTag("dmecloudlet", MyCloudletKey.Name)
-	metric.AddTag("dmecloudletorg", MyCloudletKey.Organization)
+	metric.AddTag(cloudcommon.MetricTagDmeCloudlet, MyCloudletKey.Name)
+	metric.AddTag(cloudcommon.MetricTagDmeCloudletOrg, MyCloudletKey.Organization)
 	// AppInst information
-	metric.AddTag("app", appInstKey.AppKey.Name)
-	metric.AddTag("apporg", appInstKey.AppKey.Organization)
-	metric.AddTag("ver", appInstKey.AppKey.Version)
-	metric.AddTag("cloudlet", appInstKey.ClusterInstKey.CloudletKey.Name)
-	metric.AddTag("cloudletorg", appInstKey.ClusterInstKey.CloudletKey.Organization)
-	metric.AddTag("cluster", appInstKey.ClusterInstKey.ClusterKey.Name)
-	metric.AddTag("clusterorg", appInstKey.ClusterInstKey.Organization)
+	metric.AddTag(edgeproto.AppInstKeyTagName, appInstKey.Name)
+	metric.AddTag(edgeproto.AppInstKeyTagOrganization, appInstKey.Organization)
+	metric.AddTag(edgeproto.AppKeyTagName, appKey.Name)
+	metric.AddTag(edgeproto.AppKeyTagOrganization, appKey.Organization)
+	metric.AddTag(edgeproto.AppKeyTagVersion, appKey.Version)
+	metric.AddTag(edgeproto.CloudletKeyTagName, appInstKey.CloudletKey.Name)
+	metric.AddTag(edgeproto.CloudletKeyTagOrganization, appInstKey.CloudletKey.Organization)
+	metric.AddTag(edgeproto.CloudletKeyTagFederatedOrganization, appInstKey.CloudletKey.FederatedOrganization)
 	return metric
 }

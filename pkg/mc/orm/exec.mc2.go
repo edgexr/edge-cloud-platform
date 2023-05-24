@@ -43,7 +43,7 @@ func RunCommand(c echo.Context) error {
 	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
-	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.Organization)
+	span.SetTag("org", in.ExecRequest.AppInstKey.Organization)
 
 	obj := &in.ExecRequest
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
@@ -51,7 +51,7 @@ func RunCommand(c echo.Context) error {
 		return err
 	}
 	if !rc.SkipAuthz {
-		if err := authorized(ctx, rc.Username, obj.AppInstKey.AppKey.Organization,
+		if err := authorized(ctx, rc.Username, obj.AppInstKey.Organization,
 			ResourceAppInsts, ActionManage); err != nil {
 			return err
 		}
@@ -85,7 +85,7 @@ func RunConsole(c echo.Context) error {
 	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
-	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.Organization)
+	span.SetTag("org", in.ExecRequest.AppInstKey.Organization)
 
 	obj := &in.ExecRequest
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
@@ -93,7 +93,7 @@ func RunConsole(c echo.Context) error {
 		return err
 	}
 	if !rc.SkipAuthz {
-		if err := authorized(ctx, rc.Username, obj.AppInstKey.AppKey.Organization,
+		if err := authorized(ctx, rc.Username, obj.AppInstKey.Organization,
 			ResourceAppInsts, ActionManage); err != nil {
 			return err
 		}
@@ -127,12 +127,12 @@ func ShowLogs(c echo.Context) error {
 	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
-	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.Organization)
+	span.SetTag("org", in.ExecRequest.AppInstKey.Organization)
 
 	obj := &in.ExecRequest
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.SkipAuthz {
-		if err := authorized(ctx, rc.Username, obj.AppInstKey.AppKey.Organization,
+		if err := authorized(ctx, rc.Username, obj.AppInstKey.Organization,
 			ResourceAppInsts, ActionView); err != nil {
 			return err
 		}

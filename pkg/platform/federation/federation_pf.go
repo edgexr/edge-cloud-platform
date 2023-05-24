@@ -38,7 +38,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
-	"github.com/google/uuid"
 )
 
 const (
@@ -178,7 +177,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 		return fmt.Errorf("Error, AppInst already has a federation AppInstId set")
 	}
 
-	cloudletKey := &appInst.Key.ClusterInstKey.CloudletKey
+	cloudletKey := &appInst.Key.CloudletKey
 	fedConfig, err := f.GetFederationConfig(ctx, cloudletKey)
 	if err != nil {
 		return err
@@ -189,7 +188,7 @@ func (f *FederationPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	}
 
 	req := fedewapi.InstallAppRequest{
-		AppInstanceId: uuid.New().String(), // TODO: no uniqueness check
+		AppInstanceId: util.DNSSanitize(appInst.Key.Name),
 		AppId:         app.GlobalId,
 		AppVersion:    app.Key.Version,
 		AppProviderId: util.DNSSanitize(app.Key.Organization),
@@ -290,7 +289,7 @@ func createAppInstPoller(ctx context.Context, fedClient *federationmgmt.Client, 
 			} else {
 				event := edgeproto.FedAppInstEvent{}
 				// TODO: add message once it's added to GET response
-				federation.SetFedAppInstEvent(&event, out.AppInstanceState, nil, out.AccesspointInfo)
+				federation.SetFedAppInstEvent(&event, out.AppInstanceState, out.StateDescription, out.AccesspointInfo)
 				eventsCh <- event
 			}
 			retryDelay = CreatePollingRetryDelay
@@ -302,7 +301,7 @@ func createAppInstPoller(ctx context.Context, fedClient *federationmgmt.Client, 
 
 // Delete an AppInst on a Cluster
 func (f *FederationPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	cloudletKey := &appInst.Key.ClusterInstKey.CloudletKey
+	cloudletKey := &appInst.Key.CloudletKey
 	fedConfig, err := f.GetFederationConfig(ctx, cloudletKey)
 	if err != nil {
 		return err

@@ -290,18 +290,19 @@ regiondata:
       globalid: pa-vmapp10fedappco
     appinstances:
     - key:
-        appkey:
-          organization: FedAppCo
-          name: dockerapp
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autoclusterdocker
-          cloudletkey:
-            organization: dmuus-partner1
-            name: dmuuscloud1
-            federatedorganization: partner1
-          organization: edgecloudorg
+        name: dockerapp
+        organization: FedAppCo
+        cloudletkey:
+          organization: dmuus-partner1
+          name: dmuuscloud1
+          federatedorganization: partner1
+      appkey:
+        organization: FedAppCo
+        name: dockerapp
+        version: "1.0"
+      clusterkey:
+        name: reservable1
+        organization: edgecloudorg
       cloudletloc:
         latitude: 31
         longitude: -91
@@ -326,25 +327,25 @@ regiondata:
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
-      realclustername: reservable1
-      uniqueid: fedappcodockerapp10-autoclusterdocker-dmuuscloud1-dmuus-partner1
-      dnslabel: dockerapp10-fedappco
+      uniqueid: fedappco-dockerapp-dmuuscloud1-dmuus-partner1
+      dnslabel: dockerapp-fedappco
       fedkey:
         federationname: dmuus-partner1
         appinstid: '***replaced***'
     - key:
-        appkey:
-          organization: FedAppCo
-          name: k8sapp
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autoclusterk8s
-          cloudletkey:
-            organization: dmuus-partner1
-            name: dmuuscloud1
-            federatedorganization: partner1
-          organization: edgecloudorg
+        name: k8sapp
+        organization: FedAppCo
+        cloudletkey:
+          organization: dmuus-partner1
+          name: dmuuscloud1
+          federatedorganization: partner1
+      appkey:
+        organization: FedAppCo
+        name: k8sapp
+        version: "1.0"
+      clusterkey:
+        name: reservable0
+        organization: edgecloudorg
       cloudletloc:
         latitude: 31
         longitude: -91
@@ -367,26 +368,23 @@ regiondata:
       state: Ready
       healthcheck: Ok
       powerstate: PowerOn
-      vmflavor: x1.small
-      realclustername: reservable0
-      uniqueid: fedappcok8sapp10-autoclusterk8s-dmuuscloud1-dmuus-partner1
-      dnslabel: k8sapp10-fedappco
+      vmflavor: x1.tiny
+      uniqueid: fedappco-k8sapp-dmuuscloud1-dmuus-partner1
+      dnslabel: k8sapp-fedappco
       fedkey:
         federationname: dmuus-partner1
         appinstid: '***replaced***'
     - key:
-        appkey:
-          organization: FedAppCo
-          name: vmapp
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: defaultclust
-          cloudletkey:
-            organization: dmuus-partner1
-            name: dmuuscloud2
-            federatedorganization: partner1
-          organization: FedAppCo
+        name: vmapp
+        organization: FedAppCo
+        cloudletkey:
+          organization: dmuus-partner1
+          name: dmuuscloud2
+          federatedorganization: partner1
+      appkey:
+        organization: FedAppCo
+        name: vmapp
+        version: "1.0"
       cloudletloc:
         latitude: 35
         longitude: -95
@@ -395,15 +393,15 @@ regiondata:
       - proto: Tcp
         internalport: 81
         publicport: 81
-        fqdnprefix: pa-vmapp10fedappco10-dmuus-partner1.dmuus-cloud-2-dmuus.local.edgecloude2e.net
+        fqdnprefix: vmapp-dmuus-partner1.dmuus-cloud-2-dmuus.local.edgecloude2e.net
       flavor:
         name: p1.small
       state: Ready
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
-      uniqueid: fedappcovmapp10-dmuuscloud2-dmuus-partner1
-      dnslabel: vmapp10-fedappco
+      uniqueid: fedappco-vmapp-dmuuscloud2-dmuus-partner1
+      dnslabel: vmapp-fedappco
       fedkey:
         federationname: dmuus-partner1
         appinstid: '***replaced***'
@@ -413,19 +411,19 @@ regiondata:
         name: dockerapp
         version: "1.0"
       insts:
-        ? '{"app_key":{"organization":"FedAppCo","name":"dockerapp","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autoclusterdocker"},"cloudlet_key":{"organization":"dmuus-partner1","name":"dmuuscloud1","federated_organization":"partner1"},"organization":"edgecloudorg"}}'
+        ? '{"name":"dockerapp","organization":"FedAppCo","cloudlet_key":{"organization":"dmuus-partner1","name":"dmuuscloud1","federated_organization":"partner1"}}'
         : 1
     - key:
         organization: FedAppCo
         name: k8sapp
         version: "1.0"
       insts:
-        ? '{"app_key":{"organization":"FedAppCo","name":"k8sapp","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autoclusterk8s"},"cloudlet_key":{"organization":"dmuus-partner1","name":"dmuuscloud1","federated_organization":"partner1"},"organization":"edgecloudorg"}}'
+        ? '{"name":"k8sapp","organization":"FedAppCo","cloudlet_key":{"organization":"dmuus-partner1","name":"dmuuscloud1","federated_organization":"partner1"}}'
         : 1
     - key:
         organization: FedAppCo
         name: vmapp
         version: "1.0"
       insts:
-        ? '{"app_key":{"organization":"FedAppCo","name":"vmapp","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"defaultclust"},"cloudlet_key":{"organization":"dmuus-partner1","name":"dmuuscloud2","federated_organization":"partner1"},"organization":"FedAppCo"}}'
+        ? '{"name":"vmapp","organization":"FedAppCo","cloudlet_key":{"organization":"dmuus-partner1","name":"dmuuscloud2","federated_organization":"partner1"}}'
         : 1

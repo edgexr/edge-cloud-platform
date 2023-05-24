@@ -802,9 +802,18 @@ var ResTagTableKeyTagOrganization = "restagtableorg"
 
 func (m *ResTagTableKey) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["restagtable"] = m.Name
-	tags["restagtableorg"] = m.Organization
+	m.AddTags(tags)
 	return tags
+}
+
+func (m *ResTagTableKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("restagtable", m.Name)
+	addTag("restagtableorg", m.Organization)
+}
+
+func (m *ResTagTableKey) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -1038,6 +1047,7 @@ type ResTagTableStore interface {
 	STMGet(stm concurrency.STM, key *ResTagTableKey, buf *ResTagTable) bool
 	STMPut(stm concurrency.STM, obj *ResTagTable, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *ResTagTableKey)
+	STMHas(stm concurrency.STM, key *ResTagTableKey) bool
 }
 
 type ResTagTableStoreImpl struct {
@@ -1169,6 +1179,11 @@ func (s *ResTagTableStoreImpl) STMGet(stm concurrency.STM, key *ResTagTableKey, 
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *ResTagTableStoreImpl) STMHas(stm concurrency.STM, key *ResTagTableKey) bool {
+	keystr := objstore.DbKeyString("ResTagTable", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *ResTagTableStoreImpl) parseGetData(val []byte, buf *ResTagTable) bool {
 	if len(val) == 0 {
 		return false
@@ -1210,6 +1225,16 @@ type ResTagTableCacheData struct {
 	ModRev int64
 }
 
+func (s *ResTagTableCacheData) Clone() *ResTagTableCacheData {
+	cp := ResTagTableCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &ResTagTable{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // ResTagTableCache caches ResTagTable objects in memory in a hash table
 // and keeps them in sync with the database.
 type ResTagTableCache struct {
@@ -1217,7 +1242,7 @@ type ResTagTableCache struct {
 	Mux           util.Mutex
 	List          map[ResTagTableKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *ResTagTableKey, old *ResTagTable, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *ResTagTable, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *ResTagTable, new *ResTagTable)
 	DeletedCbs    []func(ctx context.Context, old *ResTagTable)
 	KeyWatchers   map[ResTagTableKey][]*ResTagTableKeyWatcher
@@ -1276,6 +1301,14 @@ func (c *ResTagTableCache) GetAllKeys(ctx context.Context, cb func(key *ResTagTa
 	}
 }
 
+func (c *ResTagTableCache) GetAllLocked(ctx context.Context, cb func(obj *ResTagTable, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *ResTagTableCache) Update(ctx context.Context, in *ResTagTable, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *ResTagTable) (*ResTagTable, bool) {
 		return in, true
@@ -1293,14 +1326,16 @@ func (c *ResTagTableCache) UpdateModFunc(ctx context.Context, key *ResTagTableKe
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &ResTagTable{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -1337,9 +1372,13 @@ func (c *ResTagTableCache) DeleteCondFunc(ctx context.Context, in *ResTagTable, 
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -1367,9 +1406,14 @@ func (c *ResTagTableCache) Prune(ctx context.Context, validKeys map[ResTagTableK
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &ResTagTable{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -1414,8 +1458,8 @@ func ResTagTableGenericNotifyCb(fn func(key *ResTagTableKey, old *ResTagTable)) 
 	}
 }
 
-func (c *ResTagTableCache) SetNotifyCb(fn func(ctx context.Context, obj *ResTagTableKey, old *ResTagTable, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *ResTagTableKey, old *ResTagTable, modRev int64){fn}
+func (c *ResTagTableCache) SetNotifyCb(fn func(ctx context.Context, obj *ResTagTable, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *ResTagTable, modRev int64){fn}
 }
 
 func (c *ResTagTableCache) SetUpdatedCb(fn func(ctx context.Context, old *ResTagTable, new *ResTagTable)) {
@@ -1442,7 +1486,7 @@ func (c *ResTagTableCache) AddDeletedCb(fn func(ctx context.Context, old *ResTag
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *ResTagTableCache) AddNotifyCb(fn func(ctx context.Context, obj *ResTagTableKey, old *ResTagTable, modRev int64)) {
+func (c *ResTagTableCache) AddNotifyCb(fn func(ctx context.Context, obj *ResTagTable, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -1547,9 +1591,14 @@ func (c *ResTagTableCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &ResTagTable{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {

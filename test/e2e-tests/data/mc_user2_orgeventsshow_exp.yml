@@ -49,16 +49,17 @@
     region: local
     mtags:
       app: autoprovHA
+      appinst: autoprov-autoprovha10
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: gcp-cloud-5
+      cloudletfedorg: ""
       cloudletorg: gcp
-      cluster: autocluster-autoprov
+      cluster: Reservable4
       clusterorg: edgecloudorg
-      federatedorg: ""
       hostname: ""
       lineno: ""
-      realcluster: Reservable4
       spanid: ""
       traceid: ""
   - name: Free ClusterInst reservation
@@ -68,15 +69,16 @@
     region: local
     mtags:
       app: autoprovHA
+      appinst: autoprov-autoprovha10
+      appinstorg: AcmeAppCo
       apporg: AcmeAppCo
       appver: "1.0"
       cloudlet: dmuus-cloud-1
+      cloudletfedorg: ""
       cloudletorg: dmuus
-      cluster: autocluster-autoprov
+      cluster: Reservable1
       clusterorg: edgecloudorg
-      federatedorg: ""
       hostname: ""
       lineno: ""
-      realcluster: Reservable1
       spanid: ""
       traceid: ""

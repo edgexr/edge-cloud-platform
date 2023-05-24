@@ -17,12 +17,23 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
+var ClusterKeyV1RequiredArgs = []string{}
+var ClusterKeyV1OptionalArgs = []string{
+	"name",
+}
+var ClusterKeyV1AliasArgs = []string{}
+var ClusterKeyV1Comments = map[string]string{
+	"name": "Cluster name",
+}
+var ClusterKeyV1SpecialArgs = map[string]string{}
 var ClusterKeyRequiredArgs = []string{}
 var ClusterKeyOptionalArgs = []string{
 	"name",
+	"organization",
 }
 var ClusterKeyAliasArgs = []string{}
 var ClusterKeyComments = map[string]string{
-	"name": "Cluster name",
+	"name":         "Cluster name",
+	"organization": "Name of the organization that this cluster belongs to",
 }
 var ClusterKeySpecialArgs = map[string]string{}

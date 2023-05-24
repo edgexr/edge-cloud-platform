@@ -243,13 +243,13 @@ func checkAllData(t *testing.T, appInsts []*edgeproto.AppInst) {
 
 	appsCheck := make(map[edgeproto.AppKey]*dummyDmeApp)
 	for _, inst := range appInsts {
-		app, found := appsCheck[inst.Key.AppKey]
+		app, found := appsCheck[inst.AppKey]
 		if !found {
 			app = &dummyDmeApp{}
 			app.insts = make(map[edgeproto.CloudletKey]struct{})
-			appsCheck[inst.Key.AppKey] = app
+			appsCheck[inst.AppKey] = app
 		}
-		app.insts[inst.Key.ClusterInstKey.CloudletKey] = struct{}{}
+		app.insts[inst.Key.CloudletKey] = struct{}{}
 	}
 	assert.Equal(t, len(appsCheck), len(tbl.Apps), "Number of apps")
 	totalInstances := 0
@@ -263,7 +263,7 @@ func checkAllData(t *testing.T, appInsts []*edgeproto.AppInst) {
 			totalInstances += len(app.Carriers[cname].Insts)
 		}
 	}
-	assert.Equal(t, totalInstances, len(appInsts), "Number of appInstances")
+	require.Equal(t, len(appInsts), totalInstances, "Number of appInstances")
 }
 
 func checkAllianceInsts(t *testing.T, expectedCount int) {

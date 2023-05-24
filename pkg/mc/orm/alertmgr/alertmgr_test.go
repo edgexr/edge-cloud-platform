@@ -190,12 +190,12 @@ func TestAlertMgrServer(t *testing.T) {
 	// check route and labels
 	route := fakeAlertmanager.findRouteByReceiver(&testAlertReceivers[1])
 	require.NotNil(t, route)
-	routeLblVal, found := route.Match[edgeproto.AppKeyTagName]
+	routeLblVal, found := route.Match[edgeproto.AppInstKeyTagName]
 	require.True(t, found)
-	require.Equal(t, routeLblVal, testAlertReceivers[1].AppInst.AppKey.Name)
-	routeLblVal, found = route.Match[edgeproto.AppKeyTagOrganization]
+	require.Equal(t, routeLblVal, testAlertReceivers[1].AppInstKey.Name)
+	routeLblVal, found = route.Match[edgeproto.AppInstKeyTagOrganization]
 	require.True(t, found)
-	require.Equal(t, routeLblVal, testAlertReceivers[1].AppInst.AppKey.Organization)
+	require.Equal(t, routeLblVal, testAlertReceivers[1].AppInstKey.Organization)
 
 	// Verify ShowReceivers
 	receivers, err := testAlertMgrServer.ShowReceivers(ctx, nil)
@@ -225,10 +225,8 @@ func TestAlertMgrServer(t *testing.T) {
 	require.Len(t, receivers, 0)
 	// Non-existent receiver by appname
 	filter = ormapi.AlertReceiver{
-		AppInst: edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Name: "invalidAppName",
-			},
+		AppInstKey: edgeproto.AppInstKey{
+			Name: "invalidAppName",
 		},
 	}
 	receivers, err = testAlertMgrServer.ShowReceivers(ctx, &filter)
@@ -238,10 +236,8 @@ func TestAlertMgrServer(t *testing.T) {
 	// filter by type and appInst name
 	filter = ormapi.AlertReceiver{
 		Type: AlertReceiverTypeEmail,
-		AppInst: edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Name: "testApp",
-			},
+		AppInstKey: edgeproto.AppInstKey{
+			Name: "testAppInst",
 		},
 	}
 	receivers, err = testAlertMgrServer.ShowReceivers(ctx, &filter)
@@ -296,12 +292,12 @@ func TestAlertMgrServer(t *testing.T) {
 	// check route and labels
 	route = fakeAlertmanager.findRouteByReceiver(&testAlertReceivers[3])
 	require.NotNil(t, route)
-	routeLblVal, found = route.Match[edgeproto.AppKeyTagName]
+	routeLblVal, found = route.Match[edgeproto.AppInstKeyTagName]
 	require.True(t, found)
-	require.Equal(t, routeLblVal, testAlertReceivers[3].AppInst.AppKey.Name)
-	routeLblVal, found = route.Match[edgeproto.AppKeyTagOrganization]
+	require.Equal(t, routeLblVal, testAlertReceivers[3].AppInstKey.Name)
+	routeLblVal, found = route.Match[edgeproto.AppInstKeyTagOrganization]
 	require.True(t, found)
-	require.Equal(t, routeLblVal, testAlertReceivers[3].AppInst.AppKey.Organization)
+	require.Equal(t, routeLblVal, testAlertReceivers[3].AppInstKey.Organization)
 
 	// Verify ShowReceivers
 	receivers, err = testAlertMgrServer.ShowReceivers(ctx, nil)
@@ -346,18 +342,18 @@ func TestAlertMgrServer(t *testing.T) {
 	// check route and labels
 	route = fakeAlertmanager.findRouteByReceiver(&testAlertReceivers[4])
 	require.NotNil(t, route)
-	routeLblVal, found = route.Match[edgeproto.ClusterInstKeyTagOrganization]
+	routeLblVal, found = route.Match[edgeproto.ClusterKeyTagOrganization]
 	require.True(t, found)
-	require.Equal(t, routeLblVal, testAlertReceivers[4].AppInst.ClusterInstKey.Organization)
+	require.Equal(t, routeLblVal, testAlertReceivers[4].ClusterKey.Organization)
 	routeLblVal, found = route.Match[edgeproto.ClusterKeyTagName]
 	require.True(t, found)
-	require.Equal(t, routeLblVal, testAlertReceivers[4].AppInst.ClusterInstKey.ClusterKey.Name)
+	require.Equal(t, routeLblVal, testAlertReceivers[4].ClusterKey.Name)
 	routeLblVal, found = route.Match[edgeproto.CloudletKeyTagName]
 	require.True(t, found)
-	require.Equal(t, routeLblVal, testAlertReceivers[4].AppInst.ClusterInstKey.CloudletKey.Name)
+	require.Equal(t, routeLblVal, testAlertReceivers[4].AppInstKey.CloudletKey.Name)
 	routeLblVal, found = route.Match[edgeproto.CloudletKeyTagOrganization]
 	require.True(t, found)
-	require.Equal(t, routeLblVal, testAlertReceivers[4].AppInst.ClusterInstKey.CloudletKey.Organization)
+	require.Equal(t, routeLblVal, testAlertReceivers[4].AppInstKey.CloudletKey.Organization)
 
 	// Verify ShowReceivers
 	receivers, err = testAlertMgrServer.ShowReceivers(ctx, nil)

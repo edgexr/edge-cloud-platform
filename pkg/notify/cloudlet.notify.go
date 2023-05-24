@@ -27,7 +27,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type SendCloudletInternalHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.CloudletKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.CloudletInternal, modRev int64))
 	GetWithRev(key *edgeproto.CloudletKey, buf *edgeproto.CloudletInternal, modRev *int64) bool
 }
 
@@ -41,7 +41,7 @@ type RecvCloudletInternalHandler interface {
 type CloudletInternalCacheHandler interface {
 	SendCloudletInternalHandler
 	RecvCloudletInternalHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.CloudletKey, old *edgeproto.CloudletInternal, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.CloudletInternal, modRev int64))
 }
 
 type CloudletInternalSend struct {
@@ -96,8 +96,8 @@ func (s *CloudletInternalSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.CloudletKey, modRev int64) {
-		s.Keys[*key] = CloudletInternalSendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.CloudletInternal, modRev int64) {
+		s.Keys[*obj.GetKey()] = CloudletInternalSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -105,12 +105,12 @@ func (s *CloudletInternalSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *CloudletInternalSend) Update(ctx context.Context, key *edgeproto.CloudletKey, old *edgeproto.CloudletInternal, modRev int64) {
+func (s *CloudletInternalSend) Update(ctx context.Context, obj *edgeproto.CloudletInternal, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *CloudletInternalSend) ForceDelete(ctx context.Context, key *edgeproto.CloudletKey, modRev int64) {
@@ -225,11 +225,11 @@ func (s *CloudletInternalSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *CloudletInternalSendMany) Update(ctx context.Context, key *edgeproto.CloudletKey, old *edgeproto.CloudletInternal, modRev int64) {
+func (s *CloudletInternalSendMany) Update(ctx context.Context, obj *edgeproto.CloudletInternal, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 
@@ -371,9 +371,9 @@ func (s *Client) RegisterRecvCloudletInternalCache(cache CloudletInternalCacheHa
 }
 
 type SendGPUDriverHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.GPUDriverKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.GPUDriver, modRev int64))
 	GetWithRev(key *edgeproto.GPUDriverKey, buf *edgeproto.GPUDriver, modRev *int64) bool
-	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(key *edgeproto.GPUDriverKey, modRev int64))
+	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(data *edgeproto.GPUDriverCacheData))
 }
 
 type RecvGPUDriverHandler interface {
@@ -386,7 +386,7 @@ type RecvGPUDriverHandler interface {
 type GPUDriverCacheHandler interface {
 	SendGPUDriverHandler
 	RecvGPUDriverHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.GPUDriverKey, old *edgeproto.GPUDriver, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.GPUDriver, modRev int64))
 }
 
 type GPUDriverSend struct {
@@ -441,11 +441,11 @@ func (s *GPUDriverSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.GPUDriverKey, modRev int64) {
-		if !s.UpdateAllOkLocked(key) { // to be implemented by hand
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.GPUDriver, modRev int64) {
+		if !s.UpdateAllOkLocked(obj) { // to be implemented by hand
 			return
 		}
-		s.Keys[*key] = GPUDriverSendContext{
+		s.Keys[*obj.GetKey()] = GPUDriverSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -453,15 +453,15 @@ func (s *GPUDriverSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *GPUDriverSend) Update(ctx context.Context, key *edgeproto.GPUDriverKey, old *edgeproto.GPUDriver, modRev int64) {
+func (s *GPUDriverSend) Update(ctx context.Context, obj *edgeproto.GPUDriver, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	if !s.UpdateOk(ctx, key) { // to be implemented by hand
+	if !s.UpdateOk(ctx, obj) { // to be implemented by hand
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *GPUDriverSend) ForceDelete(ctx context.Context, key *edgeproto.GPUDriverKey, modRev int64) {
@@ -482,15 +482,18 @@ func (s *GPUDriverSend) updateInternal(ctx context.Context, key *edgeproto.GPUDr
 }
 
 func (s *GPUDriverSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
-	keys := make(map[edgeproto.GPUDriverKey]int64)
-	s.handler.GetForCloudlet(cloudlet, func(objKey *edgeproto.GPUDriverKey, modRev int64) {
-		keys[*objKey] = modRev
+	keys := make(map[edgeproto.GPUDriverKey]*edgeproto.GPUDriverCacheData)
+	s.handler.GetForCloudlet(cloudlet, func(data *edgeproto.GPUDriverCacheData) {
+		if data.Obj == nil {
+			return
+		}
+		keys[*data.Obj.GetKey()] = data
 	})
-	for k, modRev := range keys {
+	for k, data := range keys {
 		if action == edgeproto.NoticeAction_UPDATE {
-			s.Update(ctx, &k, nil, modRev)
+			s.Update(ctx, data.Obj, data.ModRev)
 		} else if action == edgeproto.NoticeAction_DELETE {
-			s.ForceDelete(ctx, &k, modRev)
+			s.ForceDelete(ctx, &k, data.ModRev)
 		}
 	}
 }
@@ -587,11 +590,11 @@ func (s *GPUDriverSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *GPUDriverSendMany) Update(ctx context.Context, key *edgeproto.GPUDriverKey, old *edgeproto.GPUDriver, modRev int64) {
+func (s *GPUDriverSendMany) Update(ctx context.Context, obj *edgeproto.GPUDriver, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 
@@ -733,7 +736,7 @@ func (s *Client) RegisterRecvGPUDriverCache(cache GPUDriverCacheHandler) {
 }
 
 type SendCloudletHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.CloudletKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.Cloudlet, modRev int64))
 	GetWithRev(key *edgeproto.CloudletKey, buf *edgeproto.Cloudlet, modRev *int64) bool
 }
 
@@ -747,7 +750,7 @@ type RecvCloudletHandler interface {
 type CloudletCacheHandler interface {
 	SendCloudletHandler
 	RecvCloudletHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.CloudletKey, old *edgeproto.Cloudlet, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.Cloudlet, modRev int64))
 }
 
 type CloudletSend struct {
@@ -802,11 +805,11 @@ func (s *CloudletSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.CloudletKey, modRev int64) {
-		if !s.UpdateAllOkLocked(key) { // to be implemented by hand
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.Cloudlet, modRev int64) {
+		if !s.UpdateAllOkLocked(obj) { // to be implemented by hand
 			return
 		}
-		s.Keys[*key] = CloudletSendContext{
+		s.Keys[*obj.GetKey()] = CloudletSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -814,15 +817,15 @@ func (s *CloudletSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *CloudletSend) Update(ctx context.Context, key *edgeproto.CloudletKey, old *edgeproto.Cloudlet, modRev int64) {
+func (s *CloudletSend) Update(ctx context.Context, obj *edgeproto.Cloudlet, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	if !s.UpdateOk(ctx, key) { // to be implemented by hand
+	if !s.UpdateOk(ctx, obj) { // to be implemented by hand
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *CloudletSend) ForceDelete(ctx context.Context, key *edgeproto.CloudletKey, modRev int64) {
@@ -937,11 +940,11 @@ func (s *CloudletSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *CloudletSendMany) Update(ctx context.Context, key *edgeproto.CloudletKey, old *edgeproto.Cloudlet, modRev int64) {
+func (s *CloudletSendMany) Update(ctx context.Context, obj *edgeproto.Cloudlet, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 
@@ -1084,7 +1087,7 @@ func (s *Client) RegisterRecvCloudletCache(cache CloudletCacheHandler) {
 }
 
 type SendCloudletInfoHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.CloudletKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.CloudletInfo, modRev int64))
 	GetWithRev(key *edgeproto.CloudletKey, buf *edgeproto.CloudletInfo, modRev *int64) bool
 }
 
@@ -1098,7 +1101,7 @@ type RecvCloudletInfoHandler interface {
 type CloudletInfoCacheHandler interface {
 	SendCloudletInfoHandler
 	RecvCloudletInfoHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.CloudletKey, old *edgeproto.CloudletInfo, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.CloudletInfo, modRev int64))
 }
 
 type CloudletInfoSend struct {
@@ -1153,8 +1156,8 @@ func (s *CloudletInfoSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.CloudletKey, modRev int64) {
-		s.Keys[*key] = CloudletInfoSendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.CloudletInfo, modRev int64) {
+		s.Keys[*obj.GetKey()] = CloudletInfoSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -1162,12 +1165,12 @@ func (s *CloudletInfoSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *CloudletInfoSend) Update(ctx context.Context, key *edgeproto.CloudletKey, old *edgeproto.CloudletInfo, modRev int64) {
+func (s *CloudletInfoSend) Update(ctx context.Context, obj *edgeproto.CloudletInfo, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *CloudletInfoSend) ForceDelete(ctx context.Context, key *edgeproto.CloudletKey, modRev int64) {
@@ -1282,11 +1285,11 @@ func (s *CloudletInfoSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *CloudletInfoSendMany) Update(ctx context.Context, key *edgeproto.CloudletKey, old *edgeproto.CloudletInfo, modRev int64) {
+func (s *CloudletInfoSendMany) Update(ctx context.Context, obj *edgeproto.CloudletInfo, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 

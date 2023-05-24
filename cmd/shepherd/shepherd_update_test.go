@@ -134,6 +134,8 @@ scrape_configs:
 {
 	"targets": ["host.docker.internal:9091"],
 	"labels": {
+		"appinst": "AppInstTest",
+		"appinstorg": "",
 		"app": "App",
 		"appver": "",
 		"apporg": "",
@@ -141,21 +143,23 @@ scrape_configs:
 		"clusterorg": "",
 		"cloudlet": "testcloudlet",
 		"cloudletorg": "testoperator",
-		"__metrics_path__":"/metrics/App-testcluster--"
+		"cloudletfedorg": "",
+		"__metrics_path__":"/metrics/AppInstTest-"
 	}
 }]`
 	require.Equal(t, expected, string(fileContents))
 
 	// check alerts based on appinsts and policy
 
-	rulesFile := getAppInstRulesFileName(shepherd_test.TestAppInstKey)
+	rulesFile := getAppInstRulesFileName(&shepherd_test.TestAppInst.Key)
 	fileContents, err = ioutil.ReadFile(rulesFile)
 	require.Nil(t, err)
 	expected = `groups:
 - name: autoprov-feature
   rules:
   - alert: AutoProvUndeploy
-    expr: envoy_cluster_upstream_cx_active{app="App",appver="",apporg=""} < 3
+    expr: envoy_cluster_upstream_cx_active{appinst="AppInstTest",appinstorg=""} <
+      3
     for: 15m
 `
 	require.Equal(t, expected, string(fileContents))
@@ -201,7 +205,8 @@ scrape_configs:
 - name: autoprov-feature
   rules:
   - alert: AutoProvUndeploy
-    expr: envoy_cluster_upstream_cx_active{app="App",appver="",apporg=""} < 3
+    expr: envoy_cluster_upstream_cx_active{appinst="AppInstTest",appinstorg=""} <
+      3
     for: 45s
 `
 	require.Equal(t, expected, string(fileContents))
@@ -226,7 +231,8 @@ scrape_configs:
 - name: autoprov-feature
   rules:
   - alert: AutoProvUndeploy
-    expr: envoy_cluster_upstream_cx_active{app="App",appver="",apporg=""} < 5
+    expr: envoy_cluster_upstream_cx_active{appinst="AppInstTest",appinstorg=""} <
+      5
     for: 45s
 `
 	require.Equal(t, expected, string(fileContents))

@@ -20,10 +20,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_unittest"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_unittest"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,19 +44,14 @@ func TestVmStats(t *testing.T) {
 		Organization: testOperatorOrg,
 		Name:         "testcloudlet",
 	}
-	testClusterInstKey := edgeproto.ClusterInstKey{
-		ClusterKey: edgeproto.ClusterKey{
-			Name: "",
-		},
-		CloudletKey:  testCloudletKey,
-		Organization: "",
-	}
 	testAppInstVm := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
-			AppKey: edgeproto.AppKey{
-				Name: "TestVM",
-			},
-			ClusterInstKey: *testClusterInstKey.Virtual(""),
+			Name:         "testvminst",
+			Organization: "",
+			CloudletKey:  testCloudletKey,
+		},
+		AppKey: edgeproto.AppKey{
+			Name: "TestVM",
 		},
 	}
 

@@ -122,27 +122,27 @@ func (PowerState) EnumDescriptor() ([]byte, []int) {
 }
 
 // Virtual ClusterInstKey
-type VirtualClusterInstKey struct {
+type VirtualClusterInstKeyV1 struct {
 	// Name of Cluster
-	ClusterKey ClusterKey `protobuf:"bytes,1,opt,name=cluster_key,json=clusterKey,proto3" json:"cluster_key"`
+	ClusterKey ClusterKeyV1 `protobuf:"bytes,1,opt,name=cluster_key,json=clusterKey,proto3" json:"cluster_key"`
 	// Name of Cloudlet on which the Cluster is instantiated
 	CloudletKey CloudletKey `protobuf:"bytes,2,opt,name=cloudlet_key,json=cloudletKey,proto3" json:"cloudlet_key"`
 	// Name of Developer organization that this cluster belongs to
 	Organization string `protobuf:"bytes,3,opt,name=organization,proto3" json:"organization,omitempty"`
 }
 
-func (m *VirtualClusterInstKey) Reset()         { *m = VirtualClusterInstKey{} }
-func (m *VirtualClusterInstKey) String() string { return proto.CompactTextString(m) }
-func (*VirtualClusterInstKey) ProtoMessage()    {}
-func (*VirtualClusterInstKey) Descriptor() ([]byte, []int) {
+func (m *VirtualClusterInstKeyV1) Reset()         { *m = VirtualClusterInstKeyV1{} }
+func (m *VirtualClusterInstKeyV1) String() string { return proto.CompactTextString(m) }
+func (*VirtualClusterInstKeyV1) ProtoMessage()    {}
+func (*VirtualClusterInstKeyV1) Descriptor() ([]byte, []int) {
 	return fileDescriptor_94c89dd623ab567d, []int{0}
 }
-func (m *VirtualClusterInstKey) XXX_Unmarshal(b []byte) error {
+func (m *VirtualClusterInstKeyV1) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VirtualClusterInstKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *VirtualClusterInstKeyV1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_VirtualClusterInstKey.Marshal(b, m, deterministic)
+		return xxx_messageInfo_VirtualClusterInstKeyV1.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -152,33 +152,78 @@ func (m *VirtualClusterInstKey) XXX_Marshal(b []byte, deterministic bool) ([]byt
 		return b[:n], nil
 	}
 }
-func (m *VirtualClusterInstKey) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VirtualClusterInstKey.Merge(m, src)
+func (m *VirtualClusterInstKeyV1) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VirtualClusterInstKeyV1.Merge(m, src)
 }
-func (m *VirtualClusterInstKey) XXX_Size() int {
+func (m *VirtualClusterInstKeyV1) XXX_Size() int {
 	return m.Size()
 }
-func (m *VirtualClusterInstKey) XXX_DiscardUnknown() {
-	xxx_messageInfo_VirtualClusterInstKey.DiscardUnknown(m)
+func (m *VirtualClusterInstKeyV1) XXX_DiscardUnknown() {
+	xxx_messageInfo_VirtualClusterInstKeyV1.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_VirtualClusterInstKey proto.InternalMessageInfo
+var xxx_messageInfo_VirtualClusterInstKeyV1 proto.InternalMessageInfo
+
+// (_deprecated_) App Instance Unique Key V1
+//
+// AppInstKey uniquely identifies an Application Instance (AppInst) or Application Instance state (AppInstInfo).
+type AppInstKeyV1 struct {
+	// App key
+	AppKey AppKey `protobuf:"bytes,1,opt,name=app_key,json=appKey,proto3" json:"app_key"`
+	// Cluster instance on which this is instantiated
+	ClusterInstKey VirtualClusterInstKeyV1 `protobuf:"bytes,4,opt,name=cluster_inst_key,json=clusterInstKey,proto3" json:"cluster_inst_key"`
+}
+
+func (m *AppInstKeyV1) Reset()         { *m = AppInstKeyV1{} }
+func (m *AppInstKeyV1) String() string { return proto.CompactTextString(m) }
+func (*AppInstKeyV1) ProtoMessage()    {}
+func (*AppInstKeyV1) Descriptor() ([]byte, []int) {
+	return fileDescriptor_94c89dd623ab567d, []int{1}
+}
+func (m *AppInstKeyV1) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AppInstKeyV1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AppInstKeyV1.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AppInstKeyV1) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AppInstKeyV1.Merge(m, src)
+}
+func (m *AppInstKeyV1) XXX_Size() int {
+	return m.Size()
+}
+func (m *AppInstKeyV1) XXX_DiscardUnknown() {
+	xxx_messageInfo_AppInstKeyV1.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AppInstKeyV1 proto.InternalMessageInfo
 
 // App Instance Unique Key
 //
 // AppInstKey uniquely identifies an Application Instance (AppInst) or Application Instance state (AppInstInfo).
 type AppInstKey struct {
-	// App key
-	AppKey AppKey `protobuf:"bytes,1,opt,name=app_key,json=appKey,proto3" json:"app_key"`
-	// Cluster instance on which this is instantiated
-	ClusterInstKey VirtualClusterInstKey `protobuf:"bytes,4,opt,name=cluster_inst_key,json=clusterInstKey,proto3" json:"cluster_inst_key"`
+	// App Instance name
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// App Instance organization
+	Organization string `protobuf:"bytes,2,opt,name=organization,proto3" json:"organization,omitempty"`
+	// Name of Cloudlet on which to deploy the App Instance
+	CloudletKey CloudletKey `protobuf:"bytes,3,opt,name=cloudlet_key,json=cloudletKey,proto3" json:"cloudlet_key"`
 }
 
 func (m *AppInstKey) Reset()         { *m = AppInstKey{} }
 func (m *AppInstKey) String() string { return proto.CompactTextString(m) }
 func (*AppInstKey) ProtoMessage()    {}
 func (*AppInstKey) Descriptor() ([]byte, []int) {
-	return fileDescriptor_94c89dd623ab567d, []int{1}
+	return fileDescriptor_94c89dd623ab567d, []int{2}
 }
 func (m *AppInstKey) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -217,6 +262,10 @@ type AppInst struct {
 	// Unique identifier key
 	// required: true
 	Key AppInstKey `protobuf:"bytes,2,opt,name=key,proto3" json:"key"`
+	// App key
+	AppKey AppKey `protobuf:"bytes,44,opt,name=app_key,json=appKey,proto3" json:"app_key"`
+	// Cluster on which to deploy App Instance, may be left blank for auto-placement
+	ClusterKey ClusterKey `protobuf:"bytes,45,opt,name=cluster_key,json=clusterKey,proto3" json:"cluster_key"`
 	// Cached location of the cloudlet
 	CloudletLoc dme_proto.Loc `protobuf:"bytes,3,opt,name=cloudlet_loc,json=cloudletLoc,proto3" json:"cloudlet_loc"`
 	// Base FQDN (not really URI) for the App. See Service FQDN for endpoint access.
@@ -265,7 +314,7 @@ type AppInst struct {
 	OptRes string `protobuf:"bytes,35,opt,name=opt_res,json=optRes,proto3" json:"opt_res,omitempty"`
 	// Updated at time
 	UpdatedAt dme_proto.Timestamp `protobuf:"bytes,36,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at"`
-	// Real ClusterInst name
+	// (_deprecated_) Real ClusterInst name
 	RealClusterName string `protobuf:"bytes,37,opt,name=real_cluster_name,json=realClusterName,proto3" json:"real_cluster_name,omitempty"`
 	// mapping of ports to load balancer IPs
 	InternalPortToLbIp map[string]string `protobuf:"bytes,38,rep,name=internal_port_to_lb_ip,json=internalPortToLbIp,proto3" json:"internal_port_to_lb_ip,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
@@ -277,13 +326,17 @@ type AppInst struct {
 	DnsLabel string `protobuf:"bytes,41,opt,name=dns_label,json=dnsLabel,proto3" json:"dns_label,omitempty"`
 	// Federated ID if federated AppInst
 	FedKey FedAppInstKey `protobuf:"bytes,43,opt,name=fed_key,json=fedKey,proto3" json:"fed_key"`
+	// Internal compatibility version
+	CompatibilityVersion uint32 `protobuf:"varint,46,opt,name=compatibility_version,json=compatibilityVersion,proto3" json:"compatibility_version,omitempty"`
+	// Older deprecated virtual cluster
+	VirtualClusterKey ClusterKey `protobuf:"bytes,47,opt,name=virtual_cluster_key,json=virtualClusterKey,proto3" json:"virtual_cluster_key"`
 }
 
 func (m *AppInst) Reset()         { *m = AppInst{} }
 func (m *AppInst) String() string { return proto.CompactTextString(m) }
 func (*AppInst) ProtoMessage()    {}
 func (*AppInst) Descriptor() ([]byte, []int) {
-	return fileDescriptor_94c89dd623ab567d, []int{2}
+	return fileDescriptor_94c89dd623ab567d, []int{3}
 }
 func (m *AppInst) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -324,7 +377,7 @@ func (m *AppInstRuntime) Reset()         { *m = AppInstRuntime{} }
 func (m *AppInstRuntime) String() string { return proto.CompactTextString(m) }
 func (*AppInstRuntime) ProtoMessage()    {}
 func (*AppInstRuntime) Descriptor() ([]byte, []int) {
-	return fileDescriptor_94c89dd623ab567d, []int{3}
+	return fileDescriptor_94c89dd623ab567d, []int{4}
 }
 func (m *AppInstRuntime) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -383,7 +436,7 @@ func (m *AppInstInfo) Reset()         { *m = AppInstInfo{} }
 func (m *AppInstInfo) String() string { return proto.CompactTextString(m) }
 func (*AppInstInfo) ProtoMessage()    {}
 func (*AppInstInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_94c89dd623ab567d, []int{4}
+	return fileDescriptor_94c89dd623ab567d, []int{5}
 }
 func (m *AppInstInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -425,7 +478,7 @@ func (m *AppInstMetrics) Reset()         { *m = AppInstMetrics{} }
 func (m *AppInstMetrics) String() string { return proto.CompactTextString(m) }
 func (*AppInstMetrics) ProtoMessage()    {}
 func (*AppInstMetrics) Descriptor() ([]byte, []int) {
-	return fileDescriptor_94c89dd623ab567d, []int{5}
+	return fileDescriptor_94c89dd623ab567d, []int{6}
 }
 func (m *AppInstMetrics) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -466,7 +519,7 @@ func (m *AppInstLookup) Reset()         { *m = AppInstLookup{} }
 func (m *AppInstLookup) String() string { return proto.CompactTextString(m) }
 func (*AppInstLookup) ProtoMessage()    {}
 func (*AppInstLookup) Descriptor() ([]byte, []int) {
-	return fileDescriptor_94c89dd623ab567d, []int{6}
+	return fileDescriptor_94c89dd623ab567d, []int{7}
 }
 func (m *AppInstLookup) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -507,7 +560,7 @@ func (m *AppInstLookup2) Reset()         { *m = AppInstLookup2{} }
 func (m *AppInstLookup2) String() string { return proto.CompactTextString(m) }
 func (*AppInstLookup2) ProtoMessage()    {}
 func (*AppInstLookup2) Descriptor() ([]byte, []int) {
-	return fileDescriptor_94c89dd623ab567d, []int{7}
+	return fileDescriptor_94c89dd623ab567d, []int{8}
 }
 func (m *AppInstLookup2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -545,7 +598,7 @@ func (m *AppInstLatency) Reset()         { *m = AppInstLatency{} }
 func (m *AppInstLatency) String() string { return proto.CompactTextString(m) }
 func (*AppInstLatency) ProtoMessage()    {}
 func (*AppInstLatency) Descriptor() ([]byte, []int) {
-	return fileDescriptor_94c89dd623ab567d, []int{8}
+	return fileDescriptor_94c89dd623ab567d, []int{9}
 }
 func (m *AppInstLatency) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -586,7 +639,7 @@ func (m *FedAppInstKey) Reset()         { *m = FedAppInstKey{} }
 func (m *FedAppInstKey) String() string { return proto.CompactTextString(m) }
 func (*FedAppInstKey) ProtoMessage()    {}
 func (*FedAppInstKey) Descriptor() ([]byte, []int) {
-	return fileDescriptor_94c89dd623ab567d, []int{9}
+	return fileDescriptor_94c89dd623ab567d, []int{10}
 }
 func (m *FedAppInstKey) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -627,7 +680,7 @@ func (m *FedAppInst) Reset()         { *m = FedAppInst{} }
 func (m *FedAppInst) String() string { return proto.CompactTextString(m) }
 func (*FedAppInst) ProtoMessage()    {}
 func (*FedAppInst) Descriptor() ([]byte, []int) {
-	return fileDescriptor_94c89dd623ab567d, []int{10}
+	return fileDescriptor_94c89dd623ab567d, []int{11}
 }
 func (m *FedAppInst) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -674,7 +727,7 @@ func (m *FedAppInstEvent) Reset()         { *m = FedAppInstEvent{} }
 func (m *FedAppInstEvent) String() string { return proto.CompactTextString(m) }
 func (*FedAppInstEvent) ProtoMessage()    {}
 func (*FedAppInstEvent) Descriptor() ([]byte, []int) {
-	return fileDescriptor_94c89dd623ab567d, []int{11}
+	return fileDescriptor_94c89dd623ab567d, []int{12}
 }
 func (m *FedAppInstEvent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -705,7 +758,8 @@ var xxx_messageInfo_FedAppInstEvent proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterEnum("edgeproto.PowerState", PowerState_name, PowerState_value)
-	proto.RegisterType((*VirtualClusterInstKey)(nil), "edgeproto.VirtualClusterInstKey")
+	proto.RegisterType((*VirtualClusterInstKeyV1)(nil), "edgeproto.VirtualClusterInstKeyV1")
+	proto.RegisterType((*AppInstKeyV1)(nil), "edgeproto.AppInstKeyV1")
 	proto.RegisterType((*AppInstKey)(nil), "edgeproto.AppInstKey")
 	proto.RegisterType((*AppInst)(nil), "edgeproto.AppInst")
 	proto.RegisterMapType((map[string]string)(nil), "edgeproto.AppInst.InternalPortToLbIpEntry")
@@ -723,179 +777,198 @@ func init() {
 func init() { proto.RegisterFile("appinst.proto", fileDescriptor_94c89dd623ab567d) }
 
 var fileDescriptor_94c89dd623ab567d = []byte{
-	// 2564 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x58, 0x4b, 0x6c, 0x1b, 0xc7,
-	0xf9, 0xf7, 0x48, 0x14, 0x25, 0x0e, 0x29, 0x89, 0x1a, 0x8b, 0xf2, 0x98, 0x91, 0x65, 0x99, 0xf9,
-	0x3b, 0x51, 0xfc, 0x5f, 0x8b, 0x8e, 0x82, 0xa4, 0x0d, 0x53, 0x23, 0x95, 0x6c, 0x2a, 0x51, 0x6c,
-	0x4b, 0xe9, 0x4a, 0x72, 0xd0, 0xe6, 0xb0, 0x58, 0xed, 0x0e, 0xc9, 0x85, 0x97, 0x3b, 0x9b, 0xdd,
-	0x25, 0x1d, 0xfa, 0xd4, 0x06, 0x3d, 0xf4, 0x50, 0x14, 0x69, 0x72, 0x68, 0xd1, 0x53, 0x90, 0x5c,
-	0x72, 0x4c, 0x7d, 0x28, 0x0a, 0x5f, 0xda, 0x4b, 0x81, 0x20, 0x27, 0x03, 0xed, 0x21, 0x08, 0x8a,
-	0x36, 0x8f, 0x16, 0x28, 0x7c, 0x28, 0xd2, 0x5a, 0x52, 0x7a, 0x2c, 0xe6, 0xb1, 0xcb, 0x5d, 0x91,
-	0x52, 0x25, 0x3b, 0xa7, 0xa2, 0x27, 0x72, 0xbf, 0xd7, 0xfc, 0xbe, 0xc7, 0x7c, 0xf3, 0xcd, 0xc0,
-	0x51, 0xdd, 0x75, 0x2d, 0xc7, 0x0f, 0xe6, 0x5d, 0x8f, 0x06, 0x14, 0x65, 0x88, 0x59, 0x27, 0xfc,
-	0x6f, 0x71, 0xba, 0x4e, 0x69, 0xdd, 0x26, 0x65, 0xdd, 0xb5, 0xca, 0xba, 0xe3, 0xd0, 0x40, 0x0f,
-	0x2c, 0xea, 0xf8, 0x42, 0xb0, 0x98, 0xf3, 0x88, 0xdf, 0xb2, 0xa5, 0x5a, 0xf1, 0x52, 0xdd, 0x0a,
-	0x1a, 0xad, 0xad, 0x79, 0x83, 0x36, 0xcb, 0xcc, 0xc2, 0xeb, 0x1e, 0xff, 0x39, 0x6f, 0xd8, 0xb4,
-	0x65, 0x9e, 0x77, 0x6d, 0x3d, 0xa8, 0x51, 0xaf, 0x59, 0x0e, 0x28, 0xb5, 0xfd, 0x32, 0x57, 0xa9,
-	0x13, 0x27, 0xfa, 0x23, 0x8d, 0x64, 0x74, 0xd7, 0x0d, 0xad, 0xd7, 0x6c, 0xbd, 0x4d, 0xbd, 0xf0,
-	0xcb, 0xa0, 0xcd, 0x26, 0x0d, 0xc5, 0x26, 0xb8, 0x51, 0x9b, 0x04, 0x37, 0x48, 0x47, 0x92, 0x0a,
-	0x7a, 0x2b, 0xa0, 0xbe, 0xa1, 0xdb, 0xc4, 0xa5, 0xb6, 0x65, 0x84, 0xe4, 0x51, 0xc3, 0x6e, 0xf9,
-	0x01, 0x09, 0xcd, 0x5c, 0x3c, 0x1c, 0x48, 0xe6, 0xaf, 0xd9, 0x24, 0xe7, 0xb9, 0x52, 0xd9, 0xa6,
-	0xc6, 0xd1, 0x7c, 0x4c, 0xaa, 0xeb, 0xae, 0x9b, 0x00, 0x3f, 0x59, 0xa7, 0x75, 0x2a, 0x58, 0xec,
-	0x9f, 0xa4, 0xa2, 0x28, 0xea, 0x51, 0x34, 0x4a, 0x7f, 0x04, 0xb0, 0x70, 0xdd, 0xf2, 0x82, 0x96,
-	0x6e, 0x5f, 0x12, 0x6e, 0xac, 0x38, 0x7e, 0x70, 0x85, 0x74, 0xd0, 0xb7, 0x60, 0x56, 0x3a, 0xa6,
-	0xdd, 0x20, 0x1d, 0x0c, 0x66, 0xc1, 0x5c, 0x76, 0xa1, 0x30, 0x1f, 0xd9, 0x98, 0x97, 0xf2, 0x57,
-	0x48, 0x67, 0x29, 0xf5, 0xe1, 0x9f, 0x4e, 0x1f, 0x53, 0xa1, 0x11, 0x51, 0xd0, 0xf3, 0x30, 0x17,
-	0x06, 0x90, 0xab, 0x0f, 0x70, 0xf5, 0xa9, 0x84, 0xba, 0x60, 0x77, 0xf5, 0xb3, 0x46, 0x97, 0x84,
-	0x9e, 0x81, 0x39, 0xea, 0xd5, 0x75, 0xc7, 0xba, 0xc5, 0x0b, 0x02, 0x0f, 0xce, 0x82, 0xb9, 0xcc,
-	0x12, 0xba, 0xb3, 0x8b, 0xc3, 0x65, 0xa8, 0x57, 0xbf, 0xbb, 0x8b, 0x81, 0x9a, 0x90, 0xab, 0xe4,
-	0xfe, 0x76, 0x1f, 0x83, 0x7f, 0xdd, 0xc7, 0xe0, 0x83, 0x77, 0x4e, 0x83, 0xd2, 0x2f, 0x01, 0x84,
-	0x8b, 0xae, 0x1b, 0xfa, 0x74, 0x01, 0x0e, 0xeb, 0xae, 0x1b, 0xf3, 0x67, 0x22, 0x06, 0x68, 0xd1,
-	0x75, 0xbb, 0x58, 0xd2, 0x3a, 0xff, 0x42, 0x06, 0xcc, 0x87, 0x51, 0x60, 0xf5, 0xcb, 0x55, 0x53,
-	0x5c, 0x75, 0x36, 0xa6, 0xda, 0x37, 0x82, 0x4b, 0x27, 0xde, 0xdf, 0xc6, 0xe0, 0xde, 0x2e, 0xce,
-	0xc6, 0xe8, 0xdc, 0xf8, 0x98, 0x91, 0x10, 0xdc, 0x83, 0xf9, 0xed, 0x02, 0x1c, 0x96, 0x98, 0xd1,
-	0x14, 0x4c, 0xd7, 0x2c, 0x62, 0x9b, 0x3e, 0x06, 0xb3, 0x83, 0x73, 0x19, 0x55, 0x7e, 0xa1, 0xf3,
-	0x70, 0xb0, 0x1b, 0xd5, 0x42, 0xd2, 0x89, 0x70, 0x79, 0xe1, 0x08, 0x93, 0x43, 0xcb, 0xb1, 0x6c,
-	0xd8, 0xd4, 0xe0, 0xc1, 0xcc, 0x2e, 0x9c, 0x9a, 0x37, 0x2d, 0x3f, 0xf0, 0xac, 0xad, 0x56, 0x40,
-	0x4c, 0xad, 0xa9, 0x07, 0x46, 0x43, 0x23, 0x4e, 0xdd, 0x72, 0xc8, 0xfc, 0x55, 0x6a, 0xec, 0x4d,
-	0xca, 0x55, 0x6a, 0xa0, 0x29, 0x38, 0xd8, 0xf2, 0x2c, 0x1e, 0x80, 0xcc, 0x52, 0x8a, 0xb9, 0xa7,
-	0x32, 0x02, 0x7a, 0x1a, 0x8e, 0xd8, 0x56, 0x9b, 0x38, 0xc4, 0xf7, 0x71, 0x7a, 0x16, 0xcc, 0x8d,
-	0x2d, 0x1c, 0x8f, 0x61, 0xba, 0x2a, 0x59, 0x52, 0x23, 0x12, 0x45, 0xab, 0x30, 0xd7, 0xd4, 0x5d,
-	0x97, 0x98, 0x9a, 0x4b, 0xbd, 0xc0, 0xc7, 0x99, 0xd9, 0xc1, 0xb9, 0xec, 0xc2, 0x99, 0xfd, 0x61,
-	0x2d, 0xba, 0xee, 0xcb, 0xd4, 0x0b, 0x96, 0x46, 0x98, 0x21, 0x01, 0x4f, 0x18, 0x60, 0x54, 0x1f,
-	0x7d, 0x1b, 0xa6, 0xc5, 0x8e, 0xc6, 0x39, 0xee, 0xe0, 0x64, 0x0c, 0xc4, 0x32, 0x67, 0xb0, 0xb8,
-	0x20, 0x99, 0x96, 0xb4, 0x20, 0x89, 0x74, 0x0b, 0x3d, 0xf4, 0x38, 0x1c, 0x8f, 0x02, 0x25, 0x4d,
-	0x9d, 0x63, 0xce, 0xb2, 0x94, 0x09, 0xb2, 0x50, 0x42, 0x4f, 0xc1, 0x21, 0x3f, 0xd0, 0x03, 0x82,
-	0xc7, 0xb8, 0xbb, 0x27, 0x62, 0x2b, 0x6d, 0x78, 0xba, 0x71, 0x83, 0x98, 0xeb, 0x8c, 0x2d, 0x5d,
-	0x16, 0xb2, 0x68, 0x1a, 0xa6, 0x89, 0xe7, 0x51, 0xcf, 0xc7, 0xe3, 0x2c, 0x9b, 0x92, 0x29, 0x69,
-	0xe8, 0x59, 0x98, 0x33, 0xbc, 0xa6, 0x46, 0xdb, 0xc4, 0xf3, 0x2c, 0x93, 0xe0, 0x3c, 0xb7, 0x9c,
-	0xd8, 0x32, 0xea, 0xb5, 0x35, 0xc9, 0x55, 0xb3, 0x86, 0xd7, 0x0c, 0x3f, 0xd0, 0x12, 0xcc, 0x79,
-	0x2d, 0x27, 0xb0, 0x9a, 0x44, 0xb3, 0x9c, 0x1a, 0xc5, 0x13, 0xdc, 0xfd, 0x93, 0xbd, 0x75, 0xa1,
-	0x0a, 0xa9, 0x30, 0xb7, 0x52, 0x69, 0xc5, 0xa9, 0x51, 0xf4, 0x5d, 0x08, 0x0d, 0x8f, 0xe8, 0x2c,
-	0xe6, 0x7a, 0x80, 0x0b, 0xdc, 0xc2, 0xa3, 0xfb, 0xa7, 0x62, 0xc3, 0x6a, 0x12, 0x3f, 0xd0, 0x9b,
-	0xee, 0x52, 0x81, 0x79, 0xf1, 0xd6, 0xed, 0x93, 0x99, 0x20, 0x24, 0x71, 0xe3, 0x19, 0x69, 0x6d,
-	0x31, 0x40, 0xab, 0x70, 0x8a, 0xb5, 0x4e, 0x2d, 0xda, 0x49, 0xae, 0xa6, 0x1b, 0x06, 0x2b, 0x96,
-	0xa9, 0x9e, 0x62, 0x59, 0x71, 0x17, 0x39, 0x4b, 0x06, 0xe7, 0x38, 0x53, 0x0c, 0xf7, 0x8f, 0x64,
-	0xa1, 0xb3, 0x70, 0xc4, 0x23, 0x6d, 0xcb, 0x67, 0x7d, 0x01, 0xf3, 0x5a, 0xcc, 0xbc, 0x75, 0xfb,
-	0xe4, 0x90, 0x43, 0x8d, 0xa6, 0xab, 0x46, 0x2c, 0xa4, 0xc0, 0x5c, 0x8d, 0x7a, 0x06, 0xd1, 0x5a,
-	0xae, 0xc9, 0x52, 0x75, 0x72, 0x16, 0xcc, 0x8d, 0xc4, 0x45, 0xb3, 0x9c, 0xbd, 0xc9, 0xb9, 0x68,
-	0x01, 0x8e, 0x0b, 0x39, 0xad, 0xd9, 0xb2, 0x03, 0xcb, 0xb5, 0x09, 0x2e, 0xee, 0x55, 0x18, 0x13,
-	0x12, 0xd7, 0xa4, 0x00, 0x2a, 0xc3, 0x61, 0x83, 0x3a, 0x35, 0xab, 0xee, 0xe3, 0x47, 0x78, 0xed,
-	0x26, 0xfa, 0x23, 0xe7, 0x2c, 0x5b, 0x36, 0x51, 0x43, 0x29, 0x56, 0xf1, 0x0d, 0xa2, 0xdb, 0x41,
-	0x43, 0x33, 0x1a, 0xc4, 0xb8, 0x81, 0x4f, 0x71, 0xff, 0xcf, 0xee, 0x1f, 0xe6, 0x17, 0xb9, 0xf4,
-	0x25, 0x26, 0x2c, 0x23, 0x92, 0x6d, 0x74, 0x49, 0xe8, 0x19, 0x98, 0x75, 0xe9, 0x4d, 0xe2, 0x69,
-	0xa2, 0x18, 0x4f, 0x73, 0x73, 0x71, 0x10, 0x2f, 0x33, 0x2e, 0x2f, 0x45, 0x15, 0xba, 0xd1, 0x7f,
-	0xf4, 0x0c, 0x9c, 0x24, 0xaf, 0x07, 0xc4, 0x73, 0x74, 0x5b, 0x6b, 0x53, 0xbb, 0xd5, 0x24, 0x9a,
-	0x6f, 0xdd, 0x22, 0x78, 0x76, 0x16, 0xcc, 0xa5, 0xe4, 0x42, 0x28, 0x94, 0xb8, 0xce, 0x05, 0xd6,
-	0xad, 0x5b, 0x04, 0x3d, 0x09, 0x27, 0xf4, 0xb6, 0x6e, 0xd9, 0xfa, 0x96, 0x65, 0x5b, 0x41, 0x47,
-	0xbb, 0x45, 0x1d, 0x82, 0xcf, 0xc4, 0xda, 0x41, 0x3e, 0xce, 0xfe, 0x1e, 0x75, 0x08, 0x3a, 0x03,
-	0x33, 0xed, 0x66, 0xb8, 0x99, 0x4a, 0x31, 0xd1, 0x91, 0x76, 0x53, 0x6e, 0xa6, 0x53, 0x70, 0x98,
-	0xba, 0x81, 0xe6, 0x11, 0x1f, 0x3f, 0x1a, 0x13, 0x48, 0x53, 0x37, 0x50, 0x89, 0xcf, 0x2a, 0x53,
-	0xc4, 0x9d, 0x57, 0xe6, 0xff, 0x3d, 0x7c, 0x65, 0x4a, 0x6b, 0x8b, 0x01, 0xba, 0x00, 0x27, 0x3c,
-	0xa2, 0xdb, 0x51, 0x65, 0x3a, 0x7a, 0x93, 0xe0, 0xb3, 0x31, 0x0c, 0xe3, 0x8c, 0x2d, 0xeb, 0x6f,
-	0x55, 0x6f, 0x12, 0x64, 0xc2, 0x29, 0xcb, 0x91, 0x91, 0x63, 0x5d, 0x4b, 0x0b, 0xa8, 0x66, 0x6f,
-	0x69, 0x96, 0x8b, 0x1f, 0xe3, 0x15, 0x70, 0xae, 0x77, 0xd3, 0xcd, 0xaf, 0x48, 0x05, 0xd6, 0xa5,
-	0x36, 0xe8, 0xd5, 0xad, 0x15, 0xb7, 0xea, 0x04, 0x5e, 0x27, 0x8c, 0xb3, 0xd5, 0xc3, 0x46, 0x67,
-	0x60, 0xce, 0x24, 0xa6, 0x65, 0x70, 0xa7, 0x2d, 0x17, 0x3f, 0xce, 0x2a, 0x51, 0xcd, 0x46, 0x34,
-	0x2e, 0x92, 0x69, 0x39, 0xd6, 0x6b, 0x2d, 0xa2, 0x59, 0x26, 0x9e, 0x8b, 0xc7, 0x55, 0x90, 0x57,
-	0x4c, 0x26, 0x62, 0x3a, 0xbe, 0x66, 0xeb, 0x5b, 0xc4, 0xc6, 0x4f, 0xc4, 0x45, 0x4c, 0xc7, 0xbf,
-	0xca, 0xa8, 0xe8, 0x39, 0x38, 0x5c, 0x23, 0x26, 0x3f, 0xd6, 0xfe, 0x9f, 0x07, 0x16, 0xc7, 0x7b,
-	0x26, 0x31, 0x63, 0xe7, 0x49, 0xb7, 0xe9, 0xa6, 0x6b, 0xc4, 0xbc, 0x42, 0x3a, 0xc5, 0x2a, 0x3c,
-	0xb1, 0x8f, 0x6b, 0x28, 0x2f, 0x0e, 0x28, 0xc0, 0x9b, 0x27, 0x3f, 0x83, 0x26, 0xe1, 0x50, 0x5b,
-	0xb7, 0x5b, 0x84, 0x1f, 0x5a, 0x19, 0x55, 0x7c, 0x54, 0x06, 0xbe, 0x09, 0x2a, 0xff, 0x4c, 0xb3,
-	0xf3, 0xef, 0xcb, 0xfb, 0x18, 0x7c, 0x7f, 0x1b, 0x83, 0x37, 0xb7, 0x31, 0xf8, 0xf9, 0x36, 0x06,
-	0x1f, 0xb0, 0xd5, 0xb6, 0x31, 0xf8, 0x98, 0xe5, 0x70, 0x07, 0xff, 0x19, 0x5c, 0xea, 0x1e, 0x44,
-	0xca, 0xa6, 0x67, 0x29, 0xd7, 0xba, 0x9d, 0x5f, 0x09, 0x8f, 0x18, 0xe5, 0x52, 0xd8, 0x74, 0x14,
-	0x55, 0xb6, 0x01, 0xa5, 0xca, 0xdb, 0xab, 0xa2, 0x76, 0x7b, 0x9d, 0x72, 0x5d, 0x56, 0x9e, 0x52,
-	0xed, 0x29, 0x71, 0x65, 0x71, 0x4f, 0x01, 0x2b, 0x7c, 0xc7, 0x28, 0x9b, 0x61, 0xcd, 0x28, 0x6b,
-	0xbc, 0x2a, 0x95, 0xf5, 0x86, 0xee, 0x11, 0x33, 0xae, 0xd8, 0xdb, 0xa9, 0x94, 0xde, 0xf0, 0x28,
-	0x9b, 0x32, 0x3b, 0xca, 0x65, 0x99, 0x03, 0x65, 0x99, 0x47, 0xf3, 0x17, 0x3b, 0xf8, 0xb3, 0x01,
-	0xdd, 0x75, 0x59, 0x09, 0x5e, 0xbc, 0x42, 0x3a, 0x72, 0x1e, 0x99, 0x67, 0x55, 0xa7, 0xe8, 0xae,
-	0xdb, 0x26, 0x9e, 0x1f, 0xa7, 0x5f, 0x27, 0x1e, 0x77, 0x4f, 0x77, 0x5d, 0xea, 0xd5, 0xe3, 0x9c,
-	0xb5, 0xd8, 0x3c, 0xa4, 0xc8, 0xca, 0xe6, 0xfc, 0xe4, 0x7c, 0x12, 0x1b, 0xe0, 0xc4, 0x22, 0xdd,
-	0xb9, 0xaa, 0x9f, 0xf4, 0x1e, 0xab, 0x22, 0x17, 0xfd, 0xcd, 0x46, 0x53, 0x5c, 0x68, 0x57, 0x10,
-	0xf6, 0x31, 0x1c, 0x97, 0x4f, 0x2c, 0x52, 0x23, 0x26, 0xf1, 0x58, 0xd0, 0x0f, 0xa1, 0xb8, 0x1c,
-	0xca, 0x26, 0x2d, 0xf0, 0x2c, 0x5f, 0x14, 0xc9, 0xe6, 0x60, 0xde, 0xdd, 0xc1, 0x37, 0xff, 0x93,
-	0x73, 0x87, 0x08, 0xd5, 0x83, 0xa0, 0xf9, 0x64, 0x07, 0xcf, 0x1c, 0xac, 0x77, 0x7b, 0x17, 0x1b,
-	0x37, 0x48, 0xe7, 0x62, 0xbf, 0x3c, 0x32, 0xfa, 0x41, 0xa0, 0xfb, 0xf0, 0xf7, 0x0b, 0xec, 0x3b,
-	0x5f, 0x61, 0xf0, 0x52, 0x6a, 0x64, 0x3a, 0x7f, 0xea, 0xa5, 0xd4, 0xc8, 0x4c, 0xfe, 0xb4, 0x8a,
-	0x7c, 0x5e, 0xcb, 0xf1, 0x93, 0x40, 0x1d, 0x73, 0x3d, 0xab, 0xad, 0x1b, 0x1d, 0x4d, 0xdc, 0x75,
-	0x4a, 0xcf, 0xc1, 0xb1, 0xe4, 0x0c, 0x81, 0x9e, 0x80, 0xa3, 0x06, 0x75, 0x02, 0xdd, 0x72, 0xd8,
-	0x91, 0x1e, 0x8e, 0xa8, 0xb2, 0xc3, 0xe4, 0x22, 0xd6, 0x8a, 0xe9, 0x97, 0xfe, 0x90, 0x82, 0x59,
-	0xa9, 0xcd, 0x67, 0x8d, 0xaf, 0x69, 0xac, 0x7d, 0x0c, 0x66, 0x1c, 0x1a, 0x58, 0xb5, 0x0e, 0x6b,
-	0x81, 0x6c, 0xa6, 0x1d, 0x4c, 0x0c, 0x02, 0x82, 0xb7, 0x62, 0xa2, 0xf3, 0xe1, 0xb0, 0x96, 0x3a,
-	0x70, 0x58, 0x0b, 0xc7, 0xb4, 0xa9, 0x68, 0x4c, 0x1b, 0x12, 0xe8, 0xe4, 0x80, 0xb6, 0x77, 0xca,
-	0x4a, 0x3f, 0xc0, 0x94, 0xf5, 0x0d, 0x98, 0x66, 0x8b, 0xb4, 0x7c, 0x3c, 0xdc, 0xe3, 0xe4, 0x3a,
-	0x67, 0x30, 0xb1, 0x78, 0xaf, 0x15, 0xe2, 0x7b, 0x4f, 0xfa, 0x91, 0xc3, 0x9e, 0xf4, 0x72, 0x64,
-	0xcf, 0xec, 0x1d, 0xd9, 0x63, 0x8d, 0x1f, 0x1e, 0xb5, 0xf1, 0xa3, 0xcb, 0x30, 0x53, 0x8b, 0xa6,
-	0xf6, 0xec, 0x61, 0xa7, 0x76, 0x11, 0x8e, 0x91, 0x9a, 0x6c, 0xda, 0x95, 0xe7, 0xf7, 0xb6, 0xfd,
-	0x77, 0xb6, 0x31, 0xb8, 0xb3, 0x8d, 0x73, 0xf1, 0xa4, 0x7c, 0xba, 0x8d, 0xc1, 0xed, 0x5d, 0x9c,
-	0x72, 0xa8, 0x43, 0xbe, 0xdc, 0xc5, 0xe0, 0xf6, 0x57, 0x38, 0xbc, 0x1d, 0x95, 0xe6, 0xa3, 0x9a,
-	0xbc, 0x46, 0x02, 0xcf, 0x32, 0x7c, 0x34, 0x0d, 0x33, 0x3e, 0x6d, 0x92, 0xa0, 0x61, 0x39, 0x75,
-	0x3c, 0xc4, 0x86, 0x19, 0xb5, 0x4b, 0x28, 0xfd, 0x08, 0xc0, 0x51, 0xa9, 0x70, 0x95, 0xd2, 0x1b,
-	0x2d, 0x37, 0x2c, 0x38, 0x70, 0xc8, 0x82, 0x7b, 0x16, 0x42, 0xb1, 0x1d, 0x62, 0x77, 0xda, 0xc9,
-	0x44, 0x0e, 0x18, 0xb3, 0xab, 0x94, 0x71, 0x43, 0x42, 0x65, 0xf4, 0xa3, 0x5d, 0x9c, 0x89, 0xf8,
-	0xa5, 0x9f, 0x82, 0x08, 0xbb, 0x80, 0xb2, 0x70, 0x54, 0x2c, 0x0f, 0x7b, 0xc3, 0xae, 0x8c, 0x7f,
-	0xc4, 0xaf, 0xa6, 0x11, 0xa1, 0xf4, 0x5e, 0xaa, 0x8b, 0x49, 0x0f, 0x88, 0x63, 0x74, 0x8e, 0x88,
-	0xa9, 0xf2, 0xd9, 0xe0, 0xff, 0x4e, 0xb1, 0xff, 0xf2, 0x53, 0x8c, 0x55, 0xee, 0x68, 0xa2, 0x3f,
-	0xa0, 0xe7, 0xe1, 0xb8, 0x74, 0xd2, 0xa2, 0x8e, 0x18, 0xa1, 0xf9, 0xdc, 0xb7, 0x34, 0x75, 0x67,
-	0x17, 0x8f, 0x75, 0x59, 0x8c, 0xc3, 0x5f, 0x6c, 0x62, 0x34, 0x3e, 0x53, 0x3f, 0x09, 0xb3, 0xba,
-	0xeb, 0x8a, 0x07, 0x16, 0xcb, 0x14, 0x03, 0xe2, 0xd2, 0xc4, 0x9d, 0x5d, 0x9c, 0x91, 0xcf, 0x86,
-	0x96, 0xc9, 0xf5, 0xd8, 0x27, 0x3f, 0x43, 0xcc, 0x3d, 0x4f, 0x26, 0x3f, 0x03, 0x10, 0x76, 0x31,
-	0xa1, 0x0b, 0xf1, 0xaa, 0xdd, 0xbf, 0xaf, 0xc5, 0x36, 0xd3, 0x45, 0x98, 0x8b, 0x10, 0x1c, 0xf2,
-	0x04, 0x82, 0x7a, 0x44, 0xa9, 0xe0, 0x78, 0x27, 0x8b, 0x77, 0xab, 0xd2, 0xdf, 0x01, 0x1c, 0xef,
-	0xae, 0x5a, 0x6d, 0x13, 0xe7, 0x41, 0xe0, 0x45, 0x07, 0xd8, 0xc0, 0xa1, 0x0e, 0x30, 0x0c, 0x87,
-	0x9b, 0xc4, 0xf7, 0xf5, 0x3a, 0x11, 0xcf, 0x66, 0x6a, 0xf8, 0x89, 0x2e, 0xc2, 0x21, 0xd1, 0xb4,
-	0x53, 0x47, 0x6b, 0xda, 0x42, 0x0b, 0x3d, 0x12, 0xbf, 0x73, 0x0c, 0x71, 0xd3, 0xd1, 0x6d, 0xa3,
-	0x92, 0xfa, 0xed, 0x36, 0x06, 0xe7, 0x7e, 0x32, 0x00, 0x61, 0xf7, 0x28, 0x42, 0xa7, 0xe0, 0xf1,
-	0x97, 0xd7, 0x5e, 0xa9, 0xaa, 0xda, 0xfa, 0xc6, 0xe2, 0x46, 0x55, 0xdb, 0x5c, 0xbd, 0xb2, 0xba,
-	0xf6, 0xca, 0x6a, 0xfe, 0x58, 0x31, 0xf5, 0xe6, 0x2e, 0x06, 0x68, 0x1a, 0x22, 0xc1, 0x5e, 0x5b,
-	0xd5, 0xd4, 0xea, 0x77, 0x36, 0xab, 0xeb, 0x1b, 0xd5, 0xcb, 0x79, 0x20, 0xb9, 0x05, 0x98, 0xe5,
-	0xdc, 0x95, 0xd5, 0x17, 0xb4, 0xb5, 0xd5, 0xfc, 0x80, 0x24, 0xe7, 0xe0, 0x48, 0xa8, 0x94, 0x1f,
-	0xec, 0xae, 0xb0, 0xb6, 0xbc, 0x1c, 0xb3, 0x91, 0x92, 0xc2, 0x53, 0x30, 0xd7, 0xb5, 0xb1, 0xbc,
-	0x9c, 0x1f, 0x92, 0xf4, 0x51, 0x98, 0x89, 0xd4, 0xf2, 0x69, 0x54, 0x84, 0x79, 0xb5, 0xba, 0xb4,
-	0xb6, 0xb6, 0x11, 0x33, 0x31, 0x2c, 0x45, 0x8f, 0xc3, 0x8c, 0xe0, 0xad, 0xac, 0xbe, 0x90, 0x1f,
-	0x91, 0x44, 0x08, 0xd3, 0x82, 0x98, 0xcf, 0xa0, 0x47, 0xe0, 0x44, 0xdc, 0xc9, 0xaa, 0xaa, 0xae,
-	0xa9, 0x79, 0x28, 0x04, 0x17, 0xfe, 0x3a, 0x12, 0x3d, 0x41, 0x2e, 0xba, 0x16, 0xfa, 0x0d, 0x80,
-	0xa3, 0xe2, 0x92, 0x12, 0x56, 0x2b, 0xea, 0xad, 0xb2, 0x62, 0xfc, 0x5d, 0x52, 0xe5, 0x4f, 0xe0,
-	0xa5, 0x1f, 0x82, 0x7b, 0xdb, 0xf8, 0x69, 0x95, 0xf8, 0xb4, 0xe5, 0x19, 0xa1, 0xb2, 0xaf, 0x2c,
-	0x1a, 0x6c, 0x1b, 0x5d, 0xd3, 0x1d, 0xbd, 0x2e, 0x36, 0x74, 0x9f, 0xf6, 0xf9, 0xfe, 0x0e, 0x06,
-	0x77, 0x77, 0x30, 0xf8, 0x64, 0x07, 0x9f, 0xdd, 0x4c, 0xbc, 0x60, 0x28, 0xcb, 0xdd, 0x17, 0x10,
-	0xa5, 0x9b, 0xb6, 0x37, 0x7e, 0xff, 0x97, 0xb7, 0x07, 0x26, 0x4b, 0xe3, 0x65, 0xf1, 0x86, 0x53,
-	0x96, 0xdb, 0xb0, 0x02, 0xce, 0x5d, 0x00, 0xe8, 0x3d, 0x00, 0x47, 0x2f, 0x13, 0x9b, 0x1c, 0xd9,
-	0x03, 0xeb, 0xeb, 0x70, 0x00, 0xf6, 0x41, 0x69, 0x72, 0x34, 0x49, 0x94, 0x3f, 0x18, 0x80, 0x63,
-	0x2a, 0xa9, 0x79, 0xc4, 0x6f, 0x1c, 0x11, 0xe6, 0xef, 0x1e, 0x2e, 0xd0, 0x9f, 0xec, 0xe0, 0x75,
-	0x79, 0xbb, 0xec, 0x77, 0x23, 0x14, 0xaf, 0x42, 0x7e, 0x2c, 0xd8, 0x4a, 0xec, 0x8d, 0xa7, 0xf7,
-	0x56, 0x19, 0x5e, 0x55, 0xef, 0xed, 0x60, 0xd4, 0xdb, 0xaf, 0x79, 0x08, 0x0a, 0xa5, 0x7c, 0xd9,
-	0x13, 0xae, 0x26, 0x63, 0xf0, 0x0f, 0x00, 0x47, 0x45, 0x6e, 0x8f, 0x18, 0x82, 0x5f, 0x3d, 0x74,
-	0x08, 0x5e, 0x3d, 0x20, 0x04, 0x07, 0x94, 0xe0, 0xa1, 0x42, 0x11, 0xe5, 0x5d, 0xbc, 0xe3, 0x24,
-	0x7d, 0xfe, 0x31, 0x80, 0xd9, 0xf5, 0x06, 0xbd, 0x79, 0x90, 0xc7, 0x7d, 0x68, 0xa5, 0xf5, 0x7b,
-	0xdb, 0xf8, 0xa9, 0x7d, 0x3c, 0xbe, 0x6e, 0x91, 0x9b, 0xfb, 0xf9, 0xcb, 0xca, 0x92, 0x03, 0x42,
-	0xa5, 0xd1, 0xb2, 0xdf, 0xa0, 0x37, 0x93, 0x70, 0x1a, 0xb0, 0xf0, 0xa2, 0xee, 0x98, 0x36, 0xd9,
-	0x7b, 0x08, 0x14, 0xfb, 0xf6, 0x7d, 0xce, 0xeb, 0x97, 0x91, 0x59, 0xbe, 0x46, 0xb1, 0x54, 0x28,
-	0xb3, 0xb3, 0x93, 0x49, 0x85, 0xeb, 0xb0, 0xab, 0x48, 0x05, 0x9c, 0x5b, 0xf0, 0xa3, 0xe1, 0x8d,
-	0xdd, 0x20, 0x58, 0xab, 0xd1, 0xe1, 0x78, 0x2c, 0x12, 0xe2, 0xe2, 0xd5, 0xeb, 0x39, 0xa3, 0x17,
-	0xf7, 0xa1, 0x97, 0xa6, 0xf9, 0xb2, 0x53, 0xa5, 0x89, 0x84, 0x6b, 0x72, 0xc9, 0x0b, 0x60, 0xe1,
-	0x0d, 0x00, 0x27, 0x92, 0x23, 0x38, 0x5b, 0xb8, 0x09, 0x51, 0x6c, 0xe1, 0x70, 0x36, 0xef, 0x73,
-	0x51, 0x92, 0xac, 0xe2, 0xfe, 0xac, 0xd2, 0x69, 0x8e, 0xe0, 0x64, 0x69, 0x32, 0x81, 0xa0, 0x29,
-	0xb8, 0x02, 0xc4, 0xaf, 0xbb, 0x20, 0xe4, 0xdc, 0xca, 0x40, 0xbc, 0x0b, 0x60, 0x41, 0x25, 0xaf,
-	0xb5, 0x08, 0xeb, 0xbb, 0x89, 0xa1, 0xb6, 0xcf, 0x6a, 0x92, 0xd5, 0x2f, 0xf2, 0xaf, 0x3e, 0xf0,
-	0x56, 0xe0, 0xc8, 0xa7, 0x4b, 0x27, 0xca, 0x9e, 0x80, 0x11, 0x82, 0xb7, 0xc5, 0x62, 0x15, 0x70,
-	0x6e, 0x69, 0xfa, 0xc3, 0xcf, 0x66, 0x8e, 0x7d, 0xf8, 0xf9, 0x0c, 0xb8, 0xfb, 0xf9, 0x0c, 0xf8,
-	0xf4, 0xf3, 0x19, 0xf0, 0xe6, 0x17, 0x33, 0xc7, 0xee, 0x7e, 0x31, 0x73, 0xec, 0xe3, 0x2f, 0x66,
-	0x8e, 0x6d, 0xa5, 0x39, 0x90, 0xa7, 0xfe, 0x1d, 0x00, 0x00, 0xff, 0xff, 0xf5, 0x15, 0xf3, 0x33,
-	0x3e, 0x1d, 0x00, 0x00,
+	// 2703 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x58, 0x4b, 0x6c, 0x1b, 0xc7,
+	0x19, 0xf6, 0x48, 0x94, 0x44, 0x0e, 0x49, 0x89, 0x1a, 0x4b, 0xf2, 0x58, 0x91, 0x65, 0x99, 0xa9,
+	0x13, 0xc5, 0x5d, 0x89, 0x8e, 0x82, 0x26, 0x8d, 0x02, 0x35, 0x15, 0x6d, 0x29, 0x51, 0x2c, 0x4b,
+	0xe9, 0xea, 0x91, 0xb6, 0x97, 0xc5, 0x6a, 0x77, 0x48, 0x2d, 0xbc, 0xdc, 0xd9, 0xec, 0x2e, 0xe9,
+	0xc8, 0x40, 0x81, 0x22, 0x40, 0x81, 0x9e, 0x8a, 0x34, 0x3d, 0xb4, 0x48, 0x7b, 0x08, 0xd0, 0x4b,
+	0x0e, 0x05, 0x9a, 0x18, 0x28, 0x0a, 0x18, 0x45, 0xd1, 0xde, 0x82, 0x9c, 0x0c, 0xa4, 0x87, 0x20,
+	0x87, 0x22, 0x4d, 0x7a, 0x28, 0x7c, 0x28, 0x02, 0x58, 0x62, 0x8a, 0xa2, 0x87, 0x62, 0x1e, 0xfb,
+	0x22, 0x25, 0x43, 0xb2, 0x73, 0x22, 0xf7, 0x7f, 0xcd, 0xff, 0xf8, 0xe6, 0x9f, 0x7f, 0x06, 0x16,
+	0x75, 0xd7, 0xb5, 0x1c, 0x3f, 0x98, 0x75, 0x3d, 0x1a, 0x50, 0x94, 0x23, 0x66, 0x9d, 0xf0, 0xbf,
+	0xe3, 0x13, 0x75, 0x4a, 0xeb, 0x36, 0xa9, 0xe8, 0xae, 0x55, 0xd1, 0x1d, 0x87, 0x06, 0x7a, 0x60,
+	0x51, 0xc7, 0x17, 0x82, 0xe3, 0x05, 0x8f, 0xf8, 0x4d, 0x5b, 0xaa, 0x8d, 0x5f, 0xa9, 0x5b, 0xc1,
+	0x6e, 0x73, 0x67, 0xd6, 0xa0, 0x8d, 0x0a, 0xb3, 0xf0, 0x86, 0xc7, 0x7f, 0x66, 0x0c, 0x9b, 0x36,
+	0xcd, 0x19, 0xd7, 0xd6, 0x83, 0x1a, 0xf5, 0x1a, 0x95, 0x80, 0x52, 0xdb, 0xaf, 0x70, 0x95, 0x3a,
+	0x71, 0xa2, 0x3f, 0xd2, 0x48, 0x4e, 0x77, 0xdd, 0xd0, 0x7a, 0xcd, 0xd6, 0x5b, 0xd4, 0x0b, 0xbf,
+	0x0c, 0xda, 0x68, 0xd0, 0x50, 0x6c, 0x98, 0x1b, 0xb5, 0x49, 0x70, 0x83, 0xec, 0x49, 0xd2, 0xa8,
+	0xde, 0x0c, 0xa8, 0x6f, 0xe8, 0x36, 0x71, 0xa9, 0x6d, 0x19, 0x21, 0xb9, 0x68, 0xd8, 0x4d, 0x3f,
+	0x20, 0xa1, 0x99, 0x85, 0xe3, 0x39, 0xc9, 0xe2, 0x35, 0x1b, 0x64, 0x86, 0x2b, 0x55, 0x6c, 0x6a,
+	0x9c, 0x2c, 0xc6, 0xb4, 0xba, 0xee, 0xba, 0x29, 0xe7, 0x47, 0xea, 0xb4, 0x4e, 0x05, 0x8b, 0xfd,
+	0x93, 0x54, 0x14, 0x65, 0x3d, 0xca, 0x46, 0xf9, 0x33, 0x00, 0xcf, 0x6c, 0x5b, 0x5e, 0xd0, 0xd4,
+	0xed, 0x2b, 0x22, 0x8c, 0x15, 0xc7, 0x0f, 0xae, 0x91, 0xbd, 0xed, 0xa7, 0xd1, 0x77, 0x60, 0x5e,
+	0x86, 0xa6, 0xdd, 0x20, 0x7b, 0x18, 0x4c, 0x81, 0xe9, 0xfc, 0xdc, 0x99, 0xd9, 0xc8, 0xca, 0xac,
+	0xd4, 0xe0, 0xd2, 0xd5, 0xcc, 0x87, 0x7f, 0x3f, 0x7f, 0x4a, 0x85, 0x46, 0x44, 0x43, 0x2f, 0xc2,
+	0x42, 0x98, 0x44, 0x6e, 0xa0, 0x87, 0x1b, 0x18, 0x4b, 0x19, 0x10, 0xec, 0x6b, 0x64, 0x4f, 0xea,
+	0xe7, 0x8d, 0x98, 0x84, 0x9e, 0x85, 0x05, 0xea, 0xd5, 0x75, 0xc7, 0xba, 0xc5, 0x41, 0x81, 0x7b,
+	0xa7, 0xc0, 0x74, 0xae, 0x8a, 0xee, 0xb4, 0x71, 0xb8, 0x0c, 0xf5, 0xea, 0x77, 0xdb, 0x18, 0xa8,
+	0x29, 0xb9, 0xf9, 0xc2, 0xbf, 0xee, 0x63, 0xf0, 0x9f, 0xfb, 0x18, 0xbc, 0xff, 0xee, 0x79, 0x50,
+	0xfe, 0x03, 0x80, 0x85, 0x45, 0xd7, 0x8d, 0xe3, 0xba, 0x0c, 0x07, 0x74, 0xd7, 0x4d, 0xc4, 0x34,
+	0x9c, 0x70, 0x69, 0xd1, 0x75, 0x63, 0x6f, 0xfa, 0x75, 0xfe, 0x85, 0x08, 0x2c, 0x85, 0x99, 0x60,
+	0x28, 0xe6, 0xaa, 0x19, 0xae, 0x5a, 0x4e, 0xa8, 0x1e, 0x91, 0xc7, 0xea, 0x99, 0xf7, 0xf6, 0x31,
+	0xb8, 0xd7, 0xc6, 0xf9, 0x04, 0x87, 0x9b, 0x1f, 0x34, 0x52, 0xa2, 0x1d, 0x7e, 0xff, 0x09, 0x40,
+	0x18, 0xfb, 0x8d, 0xce, 0xc3, 0x8c, 0xa3, 0x37, 0x08, 0x77, 0x39, 0x57, 0xcd, 0xdf, 0x69, 0xe3,
+	0x01, 0xb9, 0xa9, 0x54, 0xce, 0x40, 0x73, 0x1d, 0xd9, 0xea, 0xe1, 0x82, 0x83, 0x2c, 0x5b, 0x52,
+	0x90, 0x7a, 0xf5, 0x74, 0xa6, 0xd0, 0xb5, 0x8e, 0x12, 0xf5, 0x3e, 0xb0, 0x44, 0xa5, 0x7b, 0x6d,
+	0x9c, 0x0d, 0x09, 0x5d, 0xe5, 0xea, 0x70, 0x7f, 0x7f, 0x14, 0x0e, 0x48, 0xf7, 0xd1, 0x18, 0xec,
+	0xaf, 0x59, 0xc4, 0x36, 0x7d, 0x0c, 0xa6, 0x7a, 0xa7, 0x73, 0xaa, 0xfc, 0x42, 0x33, 0xb0, 0x37,
+	0x06, 0xc6, 0x68, 0xba, 0x0a, 0x32, 0x6e, 0x59, 0x09, 0x26, 0x87, 0x9e, 0x8b, 0x0b, 0xa7, 0x1c,
+	0x55, 0xb8, 0xfc, 0xbd, 0x36, 0xee, 0x5d, 0x74, 0xdd, 0x54, 0xfd, 0xae, 0xa5, 0x91, 0x3c, 0xd3,
+	0xb5, 0x5e, 0x8c, 0xe4, 0xea, 0xe9, 0xc3, 0x2a, 0x95, 0x84, 0xf5, 0x72, 0x22, 0x67, 0x36, 0x35,
+	0x64, 0xce, 0xce, 0xcd, 0x9a, 0x96, 0x1f, 0x78, 0xd6, 0x4e, 0x33, 0x20, 0xa6, 0xd6, 0xd0, 0x03,
+	0x63, 0x57, 0x23, 0x4e, 0xdd, 0x72, 0xc8, 0xec, 0x2a, 0x35, 0x3a, 0xd1, 0xbd, 0x4a, 0x0d, 0x34,
+	0x06, 0x7b, 0x9b, 0x9e, 0xc5, 0x71, 0x94, 0xab, 0x66, 0x18, 0x46, 0x54, 0x46, 0x40, 0xdf, 0x82,
+	0x59, 0xdb, 0x6a, 0x11, 0x87, 0xf8, 0x3e, 0xee, 0x9f, 0x02, 0xd3, 0x83, 0x73, 0xa7, 0x13, 0x9e,
+	0xae, 0x4a, 0x96, 0xd4, 0x88, 0x44, 0xd1, 0x1a, 0x2c, 0x34, 0x74, 0xd7, 0x25, 0xa6, 0xe6, 0x52,
+	0x2f, 0xf0, 0x71, 0x6e, 0xaa, 0x77, 0x3a, 0x3f, 0x77, 0xe1, 0x68, 0xb7, 0x16, 0x5d, 0xf7, 0x55,
+	0xea, 0x05, 0xd5, 0x2c, 0x33, 0x24, 0xdc, 0x13, 0x06, 0x18, 0xd5, 0x47, 0xdf, 0x85, 0xfd, 0xa2,
+	0x3d, 0xe2, 0x02, 0x0f, 0x70, 0x24, 0xe1, 0xc4, 0x32, 0x67, 0xb0, 0x6c, 0x21, 0x89, 0xed, 0x7e,
+	0x41, 0x12, 0x59, 0x17, 0x7a, 0xe8, 0x49, 0x38, 0x14, 0x25, 0x4a, 0x9a, 0xba, 0xc4, 0x82, 0x65,
+	0xb8, 0x17, 0x64, 0xa1, 0x84, 0x9e, 0x81, 0x7d, 0x7e, 0xa0, 0x07, 0x04, 0x0f, 0xf2, 0x70, 0x93,
+	0x2d, 0x66, 0xd3, 0xd3, 0x8d, 0x1b, 0xc4, 0xdc, 0x60, 0x6c, 0x19, 0xb2, 0x90, 0x45, 0x13, 0xb0,
+	0x9f, 0x78, 0x1e, 0xf5, 0x7c, 0x3c, 0xc4, 0x30, 0x25, 0x99, 0x92, 0x86, 0x9e, 0x87, 0x05, 0xc3,
+	0x6b, 0x68, 0xb4, 0x45, 0x3c, 0xcf, 0x32, 0x09, 0x2e, 0x71, 0xcb, 0x29, 0x60, 0xab, 0xd7, 0xd7,
+	0x25, 0x57, 0xcd, 0x1b, 0x5e, 0x23, 0xfc, 0x40, 0x55, 0x58, 0xf0, 0x9a, 0x4e, 0x60, 0x35, 0x88,
+	0x66, 0x39, 0x35, 0x8a, 0x87, 0x79, 0xf8, 0x67, 0xbb, 0xd1, 0xa9, 0x0a, 0xa9, 0xb0, 0xb6, 0x52,
+	0x69, 0xc5, 0xa9, 0x51, 0xf4, 0x03, 0x08, 0x0d, 0x8f, 0xe8, 0x2c, 0xe7, 0x7a, 0x80, 0x47, 0xb9,
+	0x85, 0xc7, 0x8f, 0x2e, 0xc5, 0xa6, 0xd5, 0x20, 0x7e, 0xa0, 0x37, 0xdc, 0xea, 0x28, 0x8b, 0xe2,
+	0xed, 0xdb, 0x67, 0x73, 0x41, 0x48, 0xe2, 0xc6, 0x73, 0xd2, 0xda, 0x62, 0x80, 0xd6, 0xe0, 0x18,
+	0x3b, 0x87, 0xb4, 0xa8, 0x21, 0xb9, 0x9a, 0x6e, 0x18, 0x0c, 0x2c, 0x63, 0x5d, 0x60, 0x59, 0x71,
+	0x17, 0x39, 0x4b, 0x26, 0xe7, 0x34, 0x53, 0x0c, 0xa1, 0x2d, 0x59, 0xe8, 0x22, 0xcc, 0x7a, 0xa4,
+	0x65, 0xf9, 0xac, 0x65, 0x60, 0x8e, 0xc5, 0xdc, 0xdb, 0xb7, 0xcf, 0xf6, 0x39, 0xd4, 0x68, 0xb8,
+	0x6a, 0xc4, 0x42, 0x0a, 0x2c, 0xd4, 0xa8, 0x67, 0x10, 0xad, 0xe9, 0x9a, 0xac, 0x54, 0x67, 0xa7,
+	0xc0, 0x74, 0x36, 0x29, 0x9a, 0xe7, 0xec, 0x2d, 0xce, 0x45, 0x73, 0x70, 0x48, 0xc8, 0x69, 0x8d,
+	0xa6, 0x1d, 0x58, 0xae, 0x4d, 0xf0, 0x78, 0xa7, 0xc2, 0xa0, 0x90, 0xb8, 0x2e, 0x05, 0x50, 0x05,
+	0x0e, 0x18, 0xd4, 0xa9, 0x59, 0x75, 0x1f, 0x3f, 0xc6, 0xb1, 0x9b, 0xda, 0xa0, 0x9c, 0xb3, 0x6c,
+	0xd9, 0x44, 0x0d, 0xa5, 0x18, 0xe2, 0x77, 0x89, 0x6e, 0x07, 0xbb, 0x9a, 0xb1, 0x4b, 0x8c, 0x1b,
+	0xf8, 0x1c, 0x8f, 0xff, 0xe2, 0xd1, 0x69, 0x7e, 0x99, 0x4b, 0x5f, 0x61, 0xc2, 0x32, 0x23, 0xf9,
+	0xdd, 0x98, 0x84, 0x9e, 0x85, 0x79, 0x97, 0xde, 0x24, 0x9e, 0x26, 0xc0, 0x78, 0x9e, 0x9b, 0x4b,
+	0x3a, 0xf1, 0x2a, 0xe3, 0x72, 0x28, 0xaa, 0xd0, 0x8d, 0xfe, 0xa3, 0x67, 0xe1, 0x08, 0x79, 0x23,
+	0x20, 0x9e, 0xa3, 0xdb, 0x5a, 0x8b, 0xda, 0xcd, 0x06, 0xd1, 0x7c, 0xeb, 0x16, 0xc1, 0x53, 0x53,
+	0x60, 0x3a, 0x23, 0x17, 0x42, 0xa1, 0xc4, 0x36, 0x17, 0xd8, 0xb0, 0x6e, 0x11, 0xf4, 0x34, 0x1c,
+	0xd6, 0x5b, 0xba, 0x65, 0xeb, 0x3b, 0x96, 0x6d, 0x05, 0x7b, 0xda, 0x2d, 0xea, 0x10, 0x7c, 0x21,
+	0xd1, 0x0e, 0x4a, 0x49, 0xf6, 0x0f, 0xa9, 0x43, 0xd0, 0x05, 0x98, 0x6b, 0x35, 0xc2, 0xcd, 0x54,
+	0x4e, 0x88, 0x66, 0x5b, 0x0d, 0xb9, 0x99, 0xce, 0xc1, 0x01, 0xea, 0x06, 0x9a, 0x47, 0x7c, 0xfc,
+	0x78, 0x42, 0xa0, 0x9f, 0xba, 0x81, 0x4a, 0x7c, 0x86, 0x4c, 0x91, 0x77, 0x8e, 0xcc, 0x6f, 0x3c,
+	0x3a, 0x32, 0xa5, 0xb5, 0xc5, 0x00, 0x5d, 0x86, 0xc3, 0x1e, 0xd1, 0xed, 0x08, 0x99, 0xfc, 0xb8,
+	0xba, 0x98, 0xf0, 0x61, 0x88, 0xb1, 0x25, 0xfe, 0xd6, 0xd8, 0x91, 0x65, 0xc2, 0x31, 0xcb, 0x91,
+	0x99, 0x63, 0x5d, 0x4b, 0x0b, 0xa8, 0x66, 0xef, 0x68, 0x96, 0x8b, 0x9f, 0xe0, 0x08, 0xb8, 0xd4,
+	0xbd, 0xe9, 0x66, 0x57, 0xa4, 0x02, 0xeb, 0x52, 0x9b, 0x74, 0x75, 0x67, 0xc5, 0x5d, 0x72, 0x02,
+	0x6f, 0x2f, 0xcc, 0xb3, 0xd5, 0xc5, 0x46, 0x17, 0x60, 0xc1, 0x24, 0xa6, 0x65, 0xf0, 0xa0, 0x2d,
+	0x17, 0x3f, 0xc9, 0x90, 0xa8, 0xe6, 0x23, 0x1a, 0x17, 0xc9, 0x35, 0x1d, 0xeb, 0xf5, 0x26, 0xd1,
+	0x2c, 0x13, 0x4f, 0x27, 0xf3, 0x2a, 0xc8, 0x2b, 0x26, 0x13, 0x31, 0x1d, 0x5f, 0xb3, 0xf5, 0x1d,
+	0x62, 0xe3, 0xa7, 0x92, 0x22, 0xa6, 0xe3, 0xaf, 0x32, 0x2a, 0x7a, 0x01, 0x0e, 0xd4, 0x88, 0xc9,
+	0x8f, 0x98, 0x6f, 0xf2, 0xc4, 0xe2, 0x64, 0xcf, 0x24, 0x66, 0xe2, 0x54, 0x8b, 0x9b, 0x6e, 0x7f,
+	0x8d, 0x98, 0xec, 0x58, 0xa9, 0xc2, 0x51, 0x83, 0x36, 0x5c, 0x3d, 0xb0, 0x24, 0x1c, 0x5a, 0xc4,
+	0xe3, 0x9b, 0x72, 0x76, 0x0a, 0x4c, 0x17, 0xab, 0x45, 0x99, 0x7e, 0xb9, 0x79, 0x46, 0x52, 0xb2,
+	0xdb, 0x42, 0x14, 0x7d, 0x1f, 0x9e, 0x6e, 0x89, 0x21, 0x44, 0x4b, 0x9e, 0x77, 0x95, 0x07, 0x9d,
+	0x77, 0xc3, 0x29, 0xc3, 0xdc, 0xa5, 0xe1, 0x56, 0x6a, 0x92, 0xb9, 0x46, 0xf6, 0xc6, 0x97, 0xe0,
+	0x99, 0x23, 0x12, 0x8f, 0x4a, 0xe2, 0x10, 0xe7, 0x73, 0x89, 0x38, 0xa7, 0x47, 0x60, 0x5f, 0x4b,
+	0xb7, 0x9b, 0x44, 0x8c, 0x20, 0xaa, 0xf8, 0x98, 0xef, 0xf9, 0x36, 0x98, 0xff, 0x7d, 0x1f, 0x9b,
+	0x11, 0xbe, 0xbc, 0x8f, 0xc1, 0x8f, 0xf7, 0x31, 0x78, 0x6b, 0x1f, 0x83, 0x5f, 0xed, 0x63, 0xf0,
+	0x3e, 0xcb, 0xc5, 0x3e, 0x06, 0x9f, 0x30, 0x4f, 0x0e, 0xf0, 0x3b, 0x3d, 0x57, 0xe2, 0x63, 0x52,
+	0xd9, 0xf2, 0x2c, 0xe5, 0x7a, 0x7c, 0x2e, 0x29, 0xe1, 0x01, 0xa8, 0x5c, 0x09, 0x5b, 0xa2, 0xa2,
+	0xca, 0x26, 0xa5, 0x2c, 0xf1, 0xe6, 0xaf, 0xa8, 0x71, 0x27, 0x56, 0xb6, 0xe5, 0xbe, 0x50, 0x96,
+	0xba, 0x36, 0xa0, 0xb2, 0xd8, 0xb1, 0xbd, 0x14, 0xbe, 0x9f, 0x95, 0xad, 0x10, 0xd1, 0xca, 0x3a,
+	0xdf, 0x33, 0xca, 0xc6, 0xae, 0xee, 0x11, 0x33, 0xa9, 0xd8, 0xdd, 0x47, 0x95, 0xee, 0xf4, 0x28,
+	0x5b, 0x12, 0x3b, 0xca, 0x55, 0x89, 0x10, 0x65, 0x99, 0xd7, 0x5a, 0x11, 0xb3, 0xca, 0xec, 0x7a,
+	0x62, 0x14, 0x53, 0xae, 0x1c, 0x52, 0x50, 0x65, 0xbb, 0xb3, 0x10, 0xef, 0x1c, 0xe0, 0xdf, 0xf6,
+	0xc8, 0x71, 0x8e, 0xed, 0xaf, 0x05, 0x66, 0x87, 0xed, 0x25, 0x25, 0x9e, 0xf1, 0x16, 0xba, 0x6c,
+	0xeb, 0xae, 0xcb, 0x85, 0xe5, 0xba, 0xa1, 0x3c, 0x43, 0x58, 0x48, 0x0b, 0x57, 0x0c, 0x8f, 0x66,
+	0x6e, 0x24, 0x31, 0xfc, 0x09, 0xa5, 0x90, 0x1b, 0xae, 0x92, 0x14, 0x48, 0xad, 0x58, 0x23, 0x26,
+	0xf1, 0x58, 0x16, 0x0f, 0x93, 0x5c, 0x0e, 0x99, 0x29, 0x15, 0x89, 0xd8, 0x85, 0x38, 0xd8, 0x70,
+	0xcd, 0x70, 0xd4, 0x4f, 0xb2, 0xd2, 0xab, 0xf1, 0x12, 0x2f, 0x88, 0x4a, 0x73, 0xad, 0x4f, 0x0f,
+	0xf0, 0x50, 0xc7, 0xb2, 0xb7, 0xdb, 0x78, 0xe6, 0x06, 0xd9, 0x5b, 0x48, 0x69, 0x32, 0xc2, 0x51,
+	0x41, 0xbc, 0xfb, 0x15, 0x06, 0xaf, 0x64, 0xb2, 0x13, 0xa5, 0x73, 0xaf, 0x64, 0xb2, 0x93, 0xa5,
+	0xf3, 0x2a, 0xf2, 0x39, 0x10, 0x92, 0x4d, 0x5e, 0x1d, 0x74, 0x3d, 0xab, 0xa5, 0x1b, 0x7b, 0x9a,
+	0xb8, 0x13, 0x96, 0x5f, 0x80, 0x83, 0xe9, 0xf1, 0x00, 0x3d, 0x05, 0x8b, 0x06, 0x75, 0x02, 0xdd,
+	0x72, 0xd8, 0x69, 0x1d, 0xce, 0xc0, 0xb2, 0x79, 0x14, 0x22, 0xd6, 0x8a, 0xe9, 0x97, 0xff, 0x96,
+	0x81, 0x79, 0xa9, 0xcd, 0xc7, 0x88, 0xaf, 0x69, 0x6e, 0x7e, 0x02, 0xe6, 0x1c, 0x1a, 0x58, 0xb5,
+	0x3d, 0xd6, 0xdd, 0xd8, 0xb8, 0xda, 0x9b, 0x3a, 0xe3, 0x05, 0x6f, 0xc5, 0x44, 0x33, 0xe1, 0x1c,
+	0x96, 0x79, 0xe0, 0x1c, 0x16, 0x4e, 0x60, 0x63, 0xd1, 0x04, 0xd6, 0x27, 0xbc, 0x93, 0xb3, 0x57,
+	0xe7, 0x00, 0xd5, 0xff, 0x10, 0x03, 0xd4, 0x73, 0xb0, 0x9f, 0x2d, 0xd2, 0xf4, 0xf1, 0x40, 0x57,
+	0x90, 0x1b, 0x9c, 0xc1, 0xc4, 0x92, 0x6d, 0x54, 0x88, 0x77, 0x1e, 0xe2, 0xd9, 0xe3, 0x1e, 0xe2,
+	0x72, 0x1a, 0xcf, 0x75, 0x4e, 0xe3, 0x89, 0x9e, 0x0e, 0x4f, 0xdc, 0xd3, 0xaf, 0xc2, 0x5c, 0x2d,
+	0x1a, 0xc8, 0xf3, 0xc7, 0x1d, 0xc8, 0x45, 0x3a, 0xb2, 0x35, 0xd9, 0xf1, 0xe6, 0x5f, 0xec, 0xec,
+	0x99, 0xef, 0xee, 0x63, 0x70, 0x67, 0x1f, 0x17, 0x92, 0x45, 0xf9, 0x6c, 0x1f, 0x83, 0xdb, 0x6d,
+	0x9c, 0x71, 0xa8, 0x43, 0xbe, 0x6c, 0x63, 0x70, 0xfb, 0x2b, 0x1c, 0x5e, 0xbf, 0xca, 0xb3, 0x11,
+	0x26, 0xaf, 0x93, 0xc0, 0xb3, 0x0c, 0x1f, 0x4d, 0xc0, 0x9c, 0x4f, 0x1b, 0x24, 0xd8, 0xb5, 0x9c,
+	0x3a, 0xee, 0x63, 0x73, 0x8a, 0x1a, 0x13, 0xca, 0x3f, 0x05, 0xb0, 0x28, 0x15, 0x56, 0x29, 0xbd,
+	0xd1, 0x74, 0x43, 0xc0, 0x81, 0x63, 0x02, 0xee, 0x79, 0x08, 0xc5, 0x76, 0x48, 0xdc, 0xfb, 0x47,
+	0x52, 0x35, 0x60, 0xcc, 0x58, 0x29, 0xe7, 0x86, 0x84, 0xf9, 0xe2, 0x47, 0x6d, 0x9c, 0x8b, 0xf8,
+	0xe5, 0x9f, 0x83, 0xc8, 0x77, 0xe1, 0xca, 0xdc, 0x49, 0x7d, 0x79, 0xd4, 0x57, 0x88, 0xf9, 0xa1,
+	0x8f, 0xf8, 0x85, 0x30, 0x22, 0x94, 0xef, 0x27, 0x7c, 0xd2, 0x03, 0xe2, 0x18, 0x7b, 0x27, 0xf4,
+	0x69, 0xfe, 0x03, 0xf0, 0xce, 0x01, 0xfe, 0x1d, 0x38, 0x71, 0x1f, 0xff, 0x9a, 0x9a, 0x73, 0x28,
+	0x58, 0x3b, 0x41, 0x7b, 0x66, 0x95, 0x28, 0xa6, 0xf0, 0x8e, 0x5e, 0x84, 0x43, 0xb2, 0xcd, 0x5b,
+	0xd4, 0xd1, 0x12, 0x8f, 0x13, 0x63, 0x77, 0xda, 0x78, 0x30, 0x66, 0x31, 0x0e, 0x7f, 0xa5, 0x49,
+	0xd0, 0xf8, 0xf8, 0xf7, 0x34, 0xcc, 0xb3, 0xfb, 0x3c, 0x7f, 0x52, 0xb1, 0x4c, 0xf9, 0x60, 0x31,
+	0x7c, 0xa7, 0x8d, 0x73, 0x32, 0x09, 0x96, 0xc9, 0xf5, 0xd8, 0x27, 0xef, 0x89, 0x66, 0xc7, 0x1b,
+	0xc3, 0x2f, 0x01, 0x84, 0xb1, 0x4f, 0xe8, 0x72, 0xb2, 0x0a, 0x47, 0xef, 0xd3, 0x04, 0x38, 0x16,
+	0x60, 0x21, 0xf2, 0xe0, 0x98, 0x1d, 0x15, 0xea, 0x11, 0x65, 0x1e, 0x27, 0x77, 0x66, 0x72, 0xf7,
+	0x95, 0xff, 0x0d, 0xe0, 0x50, 0xbc, 0xea, 0x52, 0x8b, 0x38, 0x0f, 0xe3, 0x5e, 0xd4, 0x90, 0x7b,
+	0x8e, 0xd5, 0x90, 0x31, 0x1c, 0x68, 0x10, 0xdf, 0xd7, 0xeb, 0x44, 0x3c, 0x95, 0xa9, 0xe1, 0x27,
+	0x5a, 0x80, 0x7d, 0xa2, 0x09, 0x65, 0x4e, 0xd6, 0x84, 0x84, 0x16, 0x7a, 0x2c, 0x39, 0x1e, 0xf7,
+	0x71, 0xd3, 0xd1, 0x60, 0x3c, 0x9f, 0xf9, 0xcb, 0x3e, 0x06, 0x97, 0x7e, 0xd6, 0x03, 0x61, 0xdc,
+	0x5a, 0xd1, 0x39, 0x78, 0xfa, 0xd5, 0xf5, 0xd7, 0x96, 0x54, 0x6d, 0x63, 0x73, 0x71, 0x73, 0x49,
+	0xdb, 0x5a, 0xbb, 0xb6, 0xb6, 0xfe, 0xda, 0x5a, 0xe9, 0xd4, 0x78, 0xe6, 0xad, 0x36, 0x06, 0x68,
+	0x02, 0x22, 0xc1, 0x5e, 0x5f, 0xd3, 0xd4, 0xa5, 0xef, 0x6d, 0x2d, 0x6d, 0x6c, 0x2e, 0x5d, 0x2d,
+	0x01, 0xc9, 0x1d, 0x85, 0x79, 0xce, 0x5d, 0x59, 0x7b, 0x49, 0x5b, 0x5f, 0x2b, 0xf5, 0x48, 0x72,
+	0x01, 0x66, 0x43, 0xa5, 0x52, 0x6f, 0xbc, 0xc2, 0xfa, 0xf2, 0x72, 0xc2, 0x46, 0x46, 0x0a, 0x8f,
+	0xc1, 0x42, 0x6c, 0x63, 0x79, 0xb9, 0xd4, 0x27, 0xe9, 0x45, 0x98, 0x8b, 0xd4, 0x4a, 0xfd, 0x68,
+	0x1c, 0x96, 0xd4, 0xa5, 0xea, 0xfa, 0xfa, 0x66, 0xc2, 0xc4, 0x80, 0x14, 0x3d, 0x0d, 0x73, 0x82,
+	0xb7, 0xb2, 0xf6, 0x52, 0x29, 0x2b, 0x89, 0x10, 0xf6, 0x0b, 0x62, 0x29, 0x87, 0x1e, 0x83, 0xc3,
+	0xc9, 0x20, 0x97, 0x54, 0x75, 0x5d, 0x2d, 0x41, 0x21, 0x38, 0xf7, 0x71, 0x36, 0x7a, 0xbe, 0x5b,
+	0x74, 0x2d, 0xf4, 0x47, 0x00, 0x8b, 0x62, 0x62, 0x0d, 0xd1, 0x8a, 0xba, 0x51, 0x36, 0x9e, 0x7c,
+	0xd0, 0x52, 0xf9, 0xd3, 0x77, 0xf9, 0x47, 0xf7, 0xf6, 0x31, 0xfb, 0x4f, 0x9b, 0x9e, 0x11, 0xea,
+	0xfa, 0xca, 0xa2, 0xc1, 0x76, 0xd1, 0x75, 0xdd, 0xd1, 0xeb, 0x44, 0xe9, 0xdc, 0xe0, 0xef, 0x1d,
+	0x60, 0x70, 0xf7, 0x00, 0x83, 0x4f, 0x0f, 0xf0, 0xc5, 0xad, 0xd4, 0x25, 0x5b, 0x59, 0x8e, 0x2f,
+	0xe9, 0x4a, 0x5c, 0xae, 0x37, 0x3f, 0xfe, 0xe7, 0x2f, 0x7a, 0x46, 0xca, 0x43, 0x15, 0xf1, 0xcc,
+	0x50, 0x91, 0xdb, 0x6f, 0x1e, 0x5c, 0xba, 0x0c, 0xd0, 0x6f, 0x00, 0x2c, 0x5e, 0x25, 0x36, 0x39,
+	0xb1, 0xe7, 0x3b, 0x8f, 0xe4, 0x39, 0x3c, 0xc4, 0x3d, 0x93, 0xbb, 0x91, 0x76, 0xef, 0xbf, 0x00,
+	0x0e, 0xaa, 0xa4, 0xe6, 0x11, 0x7f, 0xf7, 0x84, 0xfe, 0xfd, 0x19, 0x3c, 0x9c, 0x83, 0x9f, 0x1e,
+	0xe0, 0x0d, 0x79, 0xa9, 0x38, 0xec, 0x22, 0x20, 0x9e, 0x2a, 0xfc, 0x44, 0x7a, 0x95, 0xc4, 0xc3,
+	0x43, 0xf7, 0x65, 0x22, 0xbc, 0xa1, 0xdc, 0x3b, 0xc0, 0x48, 0xb4, 0xe2, 0xe4, 0xa3, 0x30, 0x8f,
+	0x7d, 0xb4, 0x5c, 0xaa, 0x78, 0x22, 0xc6, 0x74, 0xf0, 0xff, 0x03, 0xb0, 0x28, 0xaa, 0x79, 0xc2,
+	0xd8, 0xff, 0xfa, 0xf0, 0xb1, 0x37, 0x1e, 0x10, 0xfb, 0x03, 0xd0, 0x76, 0xac, 0x1c, 0xc8, 0x9b,
+	0x91, 0x12, 0x0f, 0xfa, 0x51, 0xed, 0xc5, 0x3b, 0x43, 0x3a, 0xfc, 0x9f, 0x00, 0x98, 0xdf, 0xd8,
+	0xa5, 0x37, 0x1f, 0x14, 0xfc, 0x21, 0xb4, 0xf2, 0xea, 0xbd, 0x7d, 0xac, 0x1c, 0x11, 0xfc, 0xb6,
+	0x45, 0x6e, 0x76, 0x85, 0xce, 0x30, 0xc9, 0x3d, 0x41, 0xe5, 0x62, 0xc5, 0xdf, 0xa5, 0x37, 0xd3,
+	0x7e, 0xec, 0xc2, 0xd1, 0x97, 0x75, 0xc7, 0xb4, 0x49, 0x67, 0xcb, 0x1f, 0x3f, 0xb4, 0xcb, 0x73,
+	0xde, 0x61, 0x55, 0x99, 0xe2, 0x6b, 0x8c, 0x97, 0x47, 0x2b, 0xec, 0xa4, 0x64, 0x52, 0xe1, 0x3a,
+	0x6c, 0x90, 0x9e, 0x07, 0x97, 0xe6, 0xfc, 0x68, 0xf4, 0x60, 0xf3, 0x2f, 0x6b, 0x2c, 0x3a, 0x1c,
+	0x4a, 0xa4, 0x40, 0x5c, 0x1b, 0xba, 0x43, 0x66, 0xf4, 0xf1, 0x23, 0xe8, 0xe5, 0x09, 0xbe, 0xec,
+	0x58, 0x79, 0x38, 0x15, 0x9a, 0x5c, 0xf2, 0x32, 0x98, 0x7b, 0x13, 0xc0, 0xe1, 0xf4, 0x00, 0xc9,
+	0x16, 0x6e, 0x40, 0x94, 0x58, 0x38, 0x9c, 0x2c, 0x0f, 0x19, 0xf3, 0x25, 0x6b, 0xfc, 0x68, 0x56,
+	0xf9, 0x3c, 0xf7, 0xe0, 0x6c, 0x79, 0x24, 0xe5, 0x41, 0x43, 0x70, 0x85, 0x13, 0x1f, 0xc4, 0x4e,
+	0xc8, 0xa9, 0x8b, 0x39, 0xf1, 0x6b, 0x00, 0x47, 0x55, 0xf2, 0x7a, 0x93, 0xb0, 0x2e, 0x9b, 0x1a,
+	0xc9, 0x0e, 0x59, 0x4d, 0xb2, 0x0e, 0xcb, 0xfc, 0xe6, 0xc9, 0xb7, 0x03, 0x77, 0x79, 0xa2, 0x7c,
+	0xa6, 0xe2, 0x89, 0xf5, 0x43, 0xaf, 0x6d, 0xb1, 0xca, 0x3c, 0xb8, 0x54, 0x9d, 0xf8, 0xf0, 0x1f,
+	0x93, 0xa7, 0x3e, 0xfc, 0x7c, 0x12, 0xdc, 0xfd, 0x7c, 0x12, 0x7c, 0xf6, 0xf9, 0x24, 0x78, 0xeb,
+	0x8b, 0xc9, 0x53, 0x77, 0xbf, 0x98, 0x3c, 0xf5, 0xc9, 0x17, 0x93, 0xa7, 0x76, 0xfa, 0xb9, 0x07,
+	0xcf, 0xfc, 0x3f, 0x00, 0x00, 0xff, 0xff, 0x00, 0xc3, 0xb0, 0xc5, 0x1d, 0x1d, 0x00, 0x00,
 }
 
-func (this *VirtualClusterInstKey) GoString() string {
+func (this *VirtualClusterInstKeyV1) GoString() string {
 	if this == nil {
 		return "nil"
 	}
 	s := make([]string, 0, 7)
-	s = append(s, "&edgeproto.VirtualClusterInstKey{")
+	s = append(s, "&edgeproto.VirtualClusterInstKeyV1{")
 	s = append(s, "ClusterKey: "+strings.Replace(this.ClusterKey.GoString(), `&`, ``, 1)+",\n")
 	s = append(s, "CloudletKey: "+strings.Replace(this.CloudletKey.GoString(), `&`, ``, 1)+",\n")
 	s = append(s, "Organization: "+fmt.Sprintf("%#v", this.Organization)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *AppInstKeyV1) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 6)
+	s = append(s, "&edgeproto.AppInstKeyV1{")
+	s = append(s, "AppKey: "+strings.Replace(this.AppKey.GoString(), `&`, ``, 1)+",\n")
+	s = append(s, "ClusterInstKey: "+strings.Replace(this.ClusterInstKey.GoString(), `&`, ``, 1)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -903,10 +976,11 @@ func (this *AppInstKey) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 6)
+	s := make([]string, 0, 7)
 	s = append(s, "&edgeproto.AppInstKey{")
-	s = append(s, "AppKey: "+strings.Replace(this.AppKey.GoString(), `&`, ``, 1)+",\n")
-	s = append(s, "ClusterInstKey: "+strings.Replace(this.ClusterInstKey.GoString(), `&`, ``, 1)+",\n")
+	s = append(s, "Name: "+fmt.Sprintf("%#v", this.Name)+",\n")
+	s = append(s, "Organization: "+fmt.Sprintf("%#v", this.Organization)+",\n")
+	s = append(s, "CloudletKey: "+strings.Replace(this.CloudletKey.GoString(), `&`, ``, 1)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -1618,7 +1692,7 @@ var _AppInstLatencyApi_serviceDesc = grpc.ServiceDesc{
 	Metadata: "appinst.proto",
 }
 
-func (m *VirtualClusterInstKey) Marshal() (dAtA []byte, err error) {
+func (m *VirtualClusterInstKeyV1) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1628,12 +1702,12 @@ func (m *VirtualClusterInstKey) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *VirtualClusterInstKey) MarshalTo(dAtA []byte) (int, error) {
+func (m *VirtualClusterInstKeyV1) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *VirtualClusterInstKey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VirtualClusterInstKeyV1) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1668,7 +1742,7 @@ func (m *VirtualClusterInstKey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AppInstKey) Marshal() (dAtA []byte, err error) {
+func (m *AppInstKeyV1) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1678,12 +1752,12 @@ func (m *AppInstKey) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AppInstKey) MarshalTo(dAtA []byte) (int, error) {
+func (m *AppInstKeyV1) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *AppInstKey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *AppInstKeyV1) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1711,6 +1785,53 @@ func (m *AppInstKey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *AppInstKey) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AppInstKey) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AppInstKey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.CloudletKey.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintAppinst(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	if len(m.Organization) > 0 {
+		i -= len(m.Organization)
+		copy(dAtA[i:], m.Organization)
+		i = encodeVarintAppinst(dAtA, i, uint64(len(m.Organization)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintAppinst(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *AppInst) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1731,6 +1852,49 @@ func (m *AppInst) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	{
+		size, err := m.VirtualClusterKey.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintAppinst(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xfa
+	if m.CompatibilityVersion != 0 {
+		i = encodeVarintAppinst(dAtA, i, uint64(m.CompatibilityVersion))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xf0
+	}
+	{
+		size, err := m.ClusterKey.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintAppinst(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xea
+	{
+		size, err := m.AppKey.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintAppinst(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xe2
 	{
 		size, err := m.FedKey.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
@@ -2494,7 +2658,7 @@ func encodeVarintAppinst(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *VirtualClusterInstKey) Matches(o *VirtualClusterInstKey, fopts ...MatchOpt) bool {
+func (m *VirtualClusterInstKeyV1) Matches(o *VirtualClusterInstKeyV1, fopts ...MatchOpt) bool {
 	opts := MatchOptions{}
 	applyMatchOptions(&opts, fopts...)
 	if o == nil {
@@ -2517,7 +2681,7 @@ func (m *VirtualClusterInstKey) Matches(o *VirtualClusterInstKey, fopts ...Match
 	return true
 }
 
-func (m *VirtualClusterInstKey) CopyInFields(src *VirtualClusterInstKey) int {
+func (m *VirtualClusterInstKeyV1) CopyInFields(src *VirtualClusterInstKeyV1) int {
 	changed := 0
 	if m.ClusterKey.Name != src.ClusterKey.Name {
 		m.ClusterKey.Name = src.ClusterKey.Name
@@ -2542,53 +2706,62 @@ func (m *VirtualClusterInstKey) CopyInFields(src *VirtualClusterInstKey) int {
 	return changed
 }
 
-func (m *VirtualClusterInstKey) DeepCopyIn(src *VirtualClusterInstKey) {
+func (m *VirtualClusterInstKeyV1) DeepCopyIn(src *VirtualClusterInstKeyV1) {
 	m.ClusterKey.DeepCopyIn(&src.ClusterKey)
 	m.CloudletKey.DeepCopyIn(&src.CloudletKey)
 	m.Organization = src.Organization
 }
 
-func (m *VirtualClusterInstKey) GetKeyString() string {
+func (m *VirtualClusterInstKeyV1) GetKeyString() string {
 	key, err := json.Marshal(m)
 	if err != nil {
-		log.FatalLog("Failed to marshal VirtualClusterInstKey key string", "obj", m)
+		log.FatalLog("Failed to marshal VirtualClusterInstKeyV1 key string", "obj", m)
 	}
 	return string(key)
 }
 
-func VirtualClusterInstKeyStringParse(str string, key *VirtualClusterInstKey) {
+func VirtualClusterInstKeyV1StringParse(str string, key *VirtualClusterInstKeyV1) {
 	err := json.Unmarshal([]byte(str), key)
 	if err != nil {
-		log.FatalLog("Failed to unmarshal VirtualClusterInstKey key string", "str", str)
+		log.FatalLog("Failed to unmarshal VirtualClusterInstKeyV1 key string", "str", str)
 	}
 }
 
-func (m *VirtualClusterInstKey) NotFoundError() error {
-	return fmt.Errorf("VirtualClusterInst key %s not found", m.GetKeyString())
+func (m *VirtualClusterInstKeyV1) NotFoundError() error {
+	return fmt.Errorf("VirtualClusterInstKeyV1 key %s not found", m.GetKeyString())
 }
 
-func (m *VirtualClusterInstKey) ExistsError() error {
-	return fmt.Errorf("VirtualClusterInst key %s already exists", m.GetKeyString())
+func (m *VirtualClusterInstKeyV1) ExistsError() error {
+	return fmt.Errorf("VirtualClusterInstKeyV1 key %s already exists", m.GetKeyString())
 }
 
-func (m *VirtualClusterInstKey) BeingDeletedError() error {
-	return fmt.Errorf("VirtualClusterInst %s is being deleted", m.GetKeyString())
+func (m *VirtualClusterInstKeyV1) BeingDeletedError() error {
+	return fmt.Errorf("VirtualClusterInstKeyV1 %s is being deleted", m.GetKeyString())
 }
 
-var VirtualClusterInstKeyTagOrganization = "clusterorg"
+var VirtualClusterInstKeyV1TagOrganization = "clusterorg"
 
-func (m *VirtualClusterInstKey) GetTags() map[string]string {
+func (m *VirtualClusterInstKeyV1) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["cluster"] = m.ClusterKey.Name
-	tags["cloudletorg"] = m.CloudletKey.Organization
-	tags["cloudlet"] = m.CloudletKey.Name
-	tags["federatedorg"] = m.CloudletKey.FederatedOrganization
-	tags["clusterorg"] = m.Organization
+	m.AddTags(tags)
 	return tags
 }
 
+func (m *VirtualClusterInstKeyV1) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("cluster", m.ClusterKey.Name)
+	addTag("cloudletorg", m.CloudletKey.Organization)
+	addTag("cloudlet", m.CloudletKey.Name)
+	addTag("cloudletfedorg", m.CloudletKey.FederatedOrganization)
+	addTag("clusterorg", m.Organization)
+}
+
+func (m *VirtualClusterInstKeyV1) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
+}
+
 // Helper method to check that enums have valid values
-func (m *VirtualClusterInstKey) ValidateEnums() error {
+func (m *VirtualClusterInstKeyV1) ValidateEnums() error {
 	if err := m.ClusterKey.ValidateEnums(); err != nil {
 		return err
 	}
@@ -2598,12 +2771,12 @@ func (m *VirtualClusterInstKey) ValidateEnums() error {
 	return nil
 }
 
-func (s *VirtualClusterInstKey) ClearTagged(tags map[string]struct{}) {
+func (s *VirtualClusterInstKeyV1) ClearTagged(tags map[string]struct{}) {
 	s.ClusterKey.ClearTagged(tags)
 	s.CloudletKey.ClearTagged(tags)
 }
 
-func (m *AppInstKey) Matches(o *AppInstKey, fopts ...MatchOpt) bool {
+func (m *AppInstKeyV1) Matches(o *AppInstKeyV1, fopts ...MatchOpt) bool {
 	opts := MatchOptions{}
 	applyMatchOptions(&opts, fopts...)
 	if o == nil {
@@ -2623,7 +2796,7 @@ func (m *AppInstKey) Matches(o *AppInstKey, fopts ...MatchOpt) bool {
 	return true
 }
 
-func (m *AppInstKey) CopyInFields(src *AppInstKey) int {
+func (m *AppInstKeyV1) CopyInFields(src *AppInstKeyV1) int {
 	changed := 0
 	if m.AppKey.Organization != src.AppKey.Organization {
 		m.AppKey.Organization = src.AppKey.Organization
@@ -2660,9 +2833,130 @@ func (m *AppInstKey) CopyInFields(src *AppInstKey) int {
 	return changed
 }
 
-func (m *AppInstKey) DeepCopyIn(src *AppInstKey) {
+func (m *AppInstKeyV1) DeepCopyIn(src *AppInstKeyV1) {
 	m.AppKey.DeepCopyIn(&src.AppKey)
 	m.ClusterInstKey.DeepCopyIn(&src.ClusterInstKey)
+}
+
+func (m *AppInstKeyV1) GetKeyString() string {
+	key, err := json.Marshal(m)
+	if err != nil {
+		log.FatalLog("Failed to marshal AppInstKeyV1 key string", "obj", m)
+	}
+	return string(key)
+}
+
+func AppInstKeyV1StringParse(str string, key *AppInstKeyV1) {
+	err := json.Unmarshal([]byte(str), key)
+	if err != nil {
+		log.FatalLog("Failed to unmarshal AppInstKeyV1 key string", "str", str)
+	}
+}
+
+func (m *AppInstKeyV1) NotFoundError() error {
+	return fmt.Errorf("AppInstKeyV1 key %s not found", m.GetKeyString())
+}
+
+func (m *AppInstKeyV1) ExistsError() error {
+	return fmt.Errorf("AppInstKeyV1 key %s already exists", m.GetKeyString())
+}
+
+func (m *AppInstKeyV1) BeingDeletedError() error {
+	return fmt.Errorf("AppInstKeyV1 %s is being deleted", m.GetKeyString())
+}
+
+func (m *AppInstKeyV1) GetTags() map[string]string {
+	tags := make(map[string]string)
+	m.AddTags(tags)
+	return tags
+}
+
+func (m *AppInstKeyV1) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("apporg", m.AppKey.Organization)
+	addTag("app", m.AppKey.Name)
+	addTag("appver", m.AppKey.Version)
+	addTag("cluster", m.ClusterInstKey.ClusterKey.Name)
+	addTag("cloudletorg", m.ClusterInstKey.CloudletKey.Organization)
+	addTag("cloudlet", m.ClusterInstKey.CloudletKey.Name)
+	addTag("cloudletfedorg", m.ClusterInstKey.CloudletKey.FederatedOrganization)
+	addTag("clusterorg", m.ClusterInstKey.Organization)
+}
+
+func (m *AppInstKeyV1) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
+}
+
+// Helper method to check that enums have valid values
+func (m *AppInstKeyV1) ValidateEnums() error {
+	if err := m.AppKey.ValidateEnums(); err != nil {
+		return err
+	}
+	if err := m.ClusterInstKey.ValidateEnums(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AppInstKeyV1) ClearTagged(tags map[string]struct{}) {
+	s.AppKey.ClearTagged(tags)
+	s.ClusterInstKey.ClearTagged(tags)
+}
+
+func (m *AppInstKey) Matches(o *AppInstKey, fopts ...MatchOpt) bool {
+	opts := MatchOptions{}
+	applyMatchOptions(&opts, fopts...)
+	if o == nil {
+		if opts.Filter {
+			return true
+		}
+		return false
+	}
+	if !opts.Filter || o.Name != "" {
+		if o.Name != m.Name {
+			return false
+		}
+	}
+	if !opts.Filter || o.Organization != "" {
+		if o.Organization != m.Organization {
+			return false
+		}
+	}
+	if !m.CloudletKey.Matches(&o.CloudletKey, fopts...) {
+		return false
+	}
+	return true
+}
+
+func (m *AppInstKey) CopyInFields(src *AppInstKey) int {
+	changed := 0
+	if m.Name != src.Name {
+		m.Name = src.Name
+		changed++
+	}
+	if m.Organization != src.Organization {
+		m.Organization = src.Organization
+		changed++
+	}
+	if m.CloudletKey.Organization != src.CloudletKey.Organization {
+		m.CloudletKey.Organization = src.CloudletKey.Organization
+		changed++
+	}
+	if m.CloudletKey.Name != src.CloudletKey.Name {
+		m.CloudletKey.Name = src.CloudletKey.Name
+		changed++
+	}
+	if m.CloudletKey.FederatedOrganization != src.CloudletKey.FederatedOrganization {
+		m.CloudletKey.FederatedOrganization = src.CloudletKey.FederatedOrganization
+		changed++
+	}
+	return changed
+}
+
+func (m *AppInstKey) DeepCopyIn(src *AppInstKey) {
+	m.Name = src.Name
+	m.Organization = src.Organization
+	m.CloudletKey.DeepCopyIn(&src.CloudletKey)
 }
 
 func (m *AppInstKey) GetKeyString() string {
@@ -2692,33 +2986,38 @@ func (m *AppInstKey) BeingDeletedError() error {
 	return fmt.Errorf("AppInst %s is being deleted", m.GetKeyString())
 }
 
+var AppInstKeyTagName = "appinst"
+var AppInstKeyTagOrganization = "appinstorg"
+
 func (m *AppInstKey) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["apporg"] = m.AppKey.Organization
-	tags["app"] = m.AppKey.Name
-	tags["appver"] = m.AppKey.Version
-	tags["cluster"] = m.ClusterInstKey.ClusterKey.Name
-	tags["cloudletorg"] = m.ClusterInstKey.CloudletKey.Organization
-	tags["cloudlet"] = m.ClusterInstKey.CloudletKey.Name
-	tags["federatedorg"] = m.ClusterInstKey.CloudletKey.FederatedOrganization
-	tags["clusterorg"] = m.ClusterInstKey.Organization
+	m.AddTags(tags)
 	return tags
+}
+
+func (m *AppInstKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("appinst", m.Name)
+	addTag("appinstorg", m.Organization)
+	addTag("cloudletorg", m.CloudletKey.Organization)
+	addTag("cloudlet", m.CloudletKey.Name)
+	addTag("cloudletfedorg", m.CloudletKey.FederatedOrganization)
+}
+
+func (m *AppInstKey) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
 func (m *AppInstKey) ValidateEnums() error {
-	if err := m.AppKey.ValidateEnums(); err != nil {
-		return err
-	}
-	if err := m.ClusterInstKey.ValidateEnums(); err != nil {
+	if err := m.CloudletKey.ValidateEnums(); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *AppInstKey) ClearTagged(tags map[string]struct{}) {
-	s.AppKey.ClearTagged(tags)
-	s.ClusterInstKey.ClearTagged(tags)
+	s.CloudletKey.ClearTagged(tags)
 }
 
 func (m *AppInst) Matches(o *AppInst, fopts ...MatchOpt) bool {
@@ -2929,22 +3228,34 @@ func (m *AppInst) Matches(o *AppInst, fopts ...MatchOpt) bool {
 			return false
 		}
 	}
+	if !m.AppKey.Matches(&o.AppKey, fopts...) {
+		return false
+	}
+	if !m.ClusterKey.Matches(&o.ClusterKey, fopts...) {
+		return false
+	}
+	if !opts.IgnoreBackend {
+		if !opts.Filter || o.CompatibilityVersion != 0 {
+			if o.CompatibilityVersion != m.CompatibilityVersion {
+				return false
+			}
+		}
+	}
+	if !opts.IgnoreBackend {
+		if !m.VirtualClusterKey.Matches(&o.VirtualClusterKey, fopts...) {
+			return false
+		}
+	}
 	return true
 }
 
 const AppInstFieldKey = "2"
-const AppInstFieldKeyAppKey = "2.1"
-const AppInstFieldKeyAppKeyOrganization = "2.1.1"
-const AppInstFieldKeyAppKeyName = "2.1.2"
-const AppInstFieldKeyAppKeyVersion = "2.1.3"
-const AppInstFieldKeyClusterInstKey = "2.4"
-const AppInstFieldKeyClusterInstKeyClusterKey = "2.4.1"
-const AppInstFieldKeyClusterInstKeyClusterKeyName = "2.4.1.1"
-const AppInstFieldKeyClusterInstKeyCloudletKey = "2.4.2"
-const AppInstFieldKeyClusterInstKeyCloudletKeyOrganization = "2.4.2.1"
-const AppInstFieldKeyClusterInstKeyCloudletKeyName = "2.4.2.2"
-const AppInstFieldKeyClusterInstKeyCloudletKeyFederatedOrganization = "2.4.2.3"
-const AppInstFieldKeyClusterInstKeyOrganization = "2.4.3"
+const AppInstFieldKeyName = "2.1"
+const AppInstFieldKeyOrganization = "2.2"
+const AppInstFieldKeyCloudletKey = "2.3"
+const AppInstFieldKeyCloudletKeyOrganization = "2.3.1"
+const AppInstFieldKeyCloudletKeyName = "2.3.2"
+const AppInstFieldKeyCloudletKeyFederatedOrganization = "2.3.3"
 const AppInstFieldCloudletLoc = "3"
 const AppInstFieldCloudletLocLatitude = "3.1"
 const AppInstFieldCloudletLocLongitude = "3.2"
@@ -3004,16 +3315,24 @@ const AppInstFieldCloudletFlavor = "42"
 const AppInstFieldFedKey = "43"
 const AppInstFieldFedKeyFederationName = "43.1"
 const AppInstFieldFedKeyAppInstId = "43.2"
+const AppInstFieldAppKey = "44"
+const AppInstFieldAppKeyOrganization = "44.1"
+const AppInstFieldAppKeyName = "44.2"
+const AppInstFieldAppKeyVersion = "44.3"
+const AppInstFieldClusterKey = "45"
+const AppInstFieldClusterKeyName = "45.1"
+const AppInstFieldClusterKeyOrganization = "45.2"
+const AppInstFieldCompatibilityVersion = "46"
+const AppInstFieldVirtualClusterKey = "47"
+const AppInstFieldVirtualClusterKeyName = "47.1"
+const AppInstFieldVirtualClusterKeyOrganization = "47.2"
 
 var AppInstAllFields = []string{
-	AppInstFieldKeyAppKeyOrganization,
-	AppInstFieldKeyAppKeyName,
-	AppInstFieldKeyAppKeyVersion,
-	AppInstFieldKeyClusterInstKeyClusterKeyName,
-	AppInstFieldKeyClusterInstKeyCloudletKeyOrganization,
-	AppInstFieldKeyClusterInstKeyCloudletKeyName,
-	AppInstFieldKeyClusterInstKeyCloudletKeyFederatedOrganization,
-	AppInstFieldKeyClusterInstKeyOrganization,
+	AppInstFieldKeyName,
+	AppInstFieldKeyOrganization,
+	AppInstFieldKeyCloudletKeyOrganization,
+	AppInstFieldKeyCloudletKeyName,
+	AppInstFieldKeyCloudletKeyFederatedOrganization,
 	AppInstFieldCloudletLocLatitude,
 	AppInstFieldCloudletLocLongitude,
 	AppInstFieldCloudletLocHorizontalAccuracy,
@@ -3063,126 +3382,144 @@ var AppInstAllFields = []string{
 	AppInstFieldCloudletFlavor,
 	AppInstFieldFedKeyFederationName,
 	AppInstFieldFedKeyAppInstId,
+	AppInstFieldAppKeyOrganization,
+	AppInstFieldAppKeyName,
+	AppInstFieldAppKeyVersion,
+	AppInstFieldClusterKeyName,
+	AppInstFieldClusterKeyOrganization,
+	AppInstFieldCompatibilityVersion,
+	AppInstFieldVirtualClusterKeyName,
+	AppInstFieldVirtualClusterKeyOrganization,
 }
 
 var AppInstAllFieldsMap = map[string]struct{}{
-	AppInstFieldKeyAppKeyOrganization:                             struct{}{},
-	AppInstFieldKeyAppKeyName:                                     struct{}{},
-	AppInstFieldKeyAppKeyVersion:                                  struct{}{},
-	AppInstFieldKeyClusterInstKeyClusterKeyName:                   struct{}{},
-	AppInstFieldKeyClusterInstKeyCloudletKeyOrganization:          struct{}{},
-	AppInstFieldKeyClusterInstKeyCloudletKeyName:                  struct{}{},
-	AppInstFieldKeyClusterInstKeyCloudletKeyFederatedOrganization: struct{}{},
-	AppInstFieldKeyClusterInstKeyOrganization:                     struct{}{},
-	AppInstFieldCloudletLocLatitude:                               struct{}{},
-	AppInstFieldCloudletLocLongitude:                              struct{}{},
-	AppInstFieldCloudletLocHorizontalAccuracy:                     struct{}{},
-	AppInstFieldCloudletLocVerticalAccuracy:                       struct{}{},
-	AppInstFieldCloudletLocAltitude:                               struct{}{},
-	AppInstFieldCloudletLocCourse:                                 struct{}{},
-	AppInstFieldCloudletLocSpeed:                                  struct{}{},
-	AppInstFieldCloudletLocTimestampSeconds:                       struct{}{},
-	AppInstFieldCloudletLocTimestampNanos:                         struct{}{},
-	AppInstFieldUri:                                               struct{}{},
-	AppInstFieldLiveness:                                          struct{}{},
-	AppInstFieldMappedPortsProto:                                  struct{}{},
-	AppInstFieldMappedPortsInternalPort:                           struct{}{},
-	AppInstFieldMappedPortsPublicPort:                             struct{}{},
-	AppInstFieldMappedPortsFqdnPrefix:                             struct{}{},
-	AppInstFieldMappedPortsEndPort:                                struct{}{},
-	AppInstFieldMappedPortsTls:                                    struct{}{},
-	AppInstFieldMappedPortsNginx:                                  struct{}{},
-	AppInstFieldMappedPortsMaxPktSize:                             struct{}{},
-	AppInstFieldFlavorName:                                        struct{}{},
-	AppInstFieldState:                                             struct{}{},
-	AppInstFieldErrors:                                            struct{}{},
-	AppInstFieldCrmOverride:                                       struct{}{},
-	AppInstFieldRuntimeInfoContainerIds:                           struct{}{},
-	AppInstFieldCreatedAtSeconds:                                  struct{}{},
-	AppInstFieldCreatedAtNanos:                                    struct{}{},
-	AppInstFieldAutoClusterIpAccess:                               struct{}{},
-	AppInstFieldRevision:                                          struct{}{},
-	AppInstFieldForceUpdate:                                       struct{}{},
-	AppInstFieldUpdateMultiple:                                    struct{}{},
-	AppInstFieldConfigsKind:                                       struct{}{},
-	AppInstFieldConfigsConfig:                                     struct{}{},
-	AppInstFieldHealthCheck:                                       struct{}{},
-	AppInstFieldPowerState:                                        struct{}{},
-	AppInstFieldExternalVolumeSize:                                struct{}{},
-	AppInstFieldAvailabilityZone:                                  struct{}{},
-	AppInstFieldVmFlavor:                                          struct{}{},
-	AppInstFieldOptRes:                                            struct{}{},
-	AppInstFieldUpdatedAtSeconds:                                  struct{}{},
-	AppInstFieldUpdatedAtNanos:                                    struct{}{},
-	AppInstFieldRealClusterName:                                   struct{}{},
-	AppInstFieldInternalPortToLbIpKey:                             struct{}{},
-	AppInstFieldInternalPortToLbIpValue:                           struct{}{},
-	AppInstFieldDedicatedIp:                                       struct{}{},
-	AppInstFieldUniqueId:                                          struct{}{},
-	AppInstFieldDnsLabel:                                          struct{}{},
-	AppInstFieldCloudletFlavor:                                    struct{}{},
-	AppInstFieldFedKeyFederationName:                              struct{}{},
-	AppInstFieldFedKeyAppInstId:                                   struct{}{},
+	AppInstFieldKeyName:                             struct{}{},
+	AppInstFieldKeyOrganization:                     struct{}{},
+	AppInstFieldKeyCloudletKeyOrganization:          struct{}{},
+	AppInstFieldKeyCloudletKeyName:                  struct{}{},
+	AppInstFieldKeyCloudletKeyFederatedOrganization: struct{}{},
+	AppInstFieldCloudletLocLatitude:                 struct{}{},
+	AppInstFieldCloudletLocLongitude:                struct{}{},
+	AppInstFieldCloudletLocHorizontalAccuracy:       struct{}{},
+	AppInstFieldCloudletLocVerticalAccuracy:         struct{}{},
+	AppInstFieldCloudletLocAltitude:                 struct{}{},
+	AppInstFieldCloudletLocCourse:                   struct{}{},
+	AppInstFieldCloudletLocSpeed:                    struct{}{},
+	AppInstFieldCloudletLocTimestampSeconds:         struct{}{},
+	AppInstFieldCloudletLocTimestampNanos:           struct{}{},
+	AppInstFieldUri:                                 struct{}{},
+	AppInstFieldLiveness:                            struct{}{},
+	AppInstFieldMappedPortsProto:                    struct{}{},
+	AppInstFieldMappedPortsInternalPort:             struct{}{},
+	AppInstFieldMappedPortsPublicPort:               struct{}{},
+	AppInstFieldMappedPortsFqdnPrefix:               struct{}{},
+	AppInstFieldMappedPortsEndPort:                  struct{}{},
+	AppInstFieldMappedPortsTls:                      struct{}{},
+	AppInstFieldMappedPortsNginx:                    struct{}{},
+	AppInstFieldMappedPortsMaxPktSize:               struct{}{},
+	AppInstFieldFlavorName:                          struct{}{},
+	AppInstFieldState:                               struct{}{},
+	AppInstFieldErrors:                              struct{}{},
+	AppInstFieldCrmOverride:                         struct{}{},
+	AppInstFieldRuntimeInfoContainerIds:             struct{}{},
+	AppInstFieldCreatedAtSeconds:                    struct{}{},
+	AppInstFieldCreatedAtNanos:                      struct{}{},
+	AppInstFieldAutoClusterIpAccess:                 struct{}{},
+	AppInstFieldRevision:                            struct{}{},
+	AppInstFieldForceUpdate:                         struct{}{},
+	AppInstFieldUpdateMultiple:                      struct{}{},
+	AppInstFieldConfigsKind:                         struct{}{},
+	AppInstFieldConfigsConfig:                       struct{}{},
+	AppInstFieldHealthCheck:                         struct{}{},
+	AppInstFieldPowerState:                          struct{}{},
+	AppInstFieldExternalVolumeSize:                  struct{}{},
+	AppInstFieldAvailabilityZone:                    struct{}{},
+	AppInstFieldVmFlavor:                            struct{}{},
+	AppInstFieldOptRes:                              struct{}{},
+	AppInstFieldUpdatedAtSeconds:                    struct{}{},
+	AppInstFieldUpdatedAtNanos:                      struct{}{},
+	AppInstFieldRealClusterName:                     struct{}{},
+	AppInstFieldInternalPortToLbIpKey:               struct{}{},
+	AppInstFieldInternalPortToLbIpValue:             struct{}{},
+	AppInstFieldDedicatedIp:                         struct{}{},
+	AppInstFieldUniqueId:                            struct{}{},
+	AppInstFieldDnsLabel:                            struct{}{},
+	AppInstFieldCloudletFlavor:                      struct{}{},
+	AppInstFieldFedKeyFederationName:                struct{}{},
+	AppInstFieldFedKeyAppInstId:                     struct{}{},
+	AppInstFieldAppKeyOrganization:                  struct{}{},
+	AppInstFieldAppKeyName:                          struct{}{},
+	AppInstFieldAppKeyVersion:                       struct{}{},
+	AppInstFieldClusterKeyName:                      struct{}{},
+	AppInstFieldClusterKeyOrganization:              struct{}{},
+	AppInstFieldCompatibilityVersion:                struct{}{},
+	AppInstFieldVirtualClusterKeyName:               struct{}{},
+	AppInstFieldVirtualClusterKeyOrganization:       struct{}{},
 }
 
 var AppInstAllFieldsStringMap = map[string]string{
-	AppInstFieldKeyAppKeyOrganization:                             "Key App Key Organization",
-	AppInstFieldKeyAppKeyName:                                     "Key App Key Name",
-	AppInstFieldKeyAppKeyVersion:                                  "Key App Key Version",
-	AppInstFieldKeyClusterInstKeyClusterKeyName:                   "Key Cluster Inst Key Cluster Key Name",
-	AppInstFieldKeyClusterInstKeyCloudletKeyOrganization:          "Key Cluster Inst Key Cloudlet Key Organization",
-	AppInstFieldKeyClusterInstKeyCloudletKeyName:                  "Key Cluster Inst Key Cloudlet Key Name",
-	AppInstFieldKeyClusterInstKeyCloudletKeyFederatedOrganization: "Key Cluster Inst Key Cloudlet Key Federated Organization",
-	AppInstFieldKeyClusterInstKeyOrganization:                     "Key Cluster Inst Key Organization",
-	AppInstFieldCloudletLocLatitude:                               "Cloudlet Loc Latitude",
-	AppInstFieldCloudletLocLongitude:                              "Cloudlet Loc Longitude",
-	AppInstFieldCloudletLocHorizontalAccuracy:                     "Cloudlet Loc Horizontal Accuracy",
-	AppInstFieldCloudletLocVerticalAccuracy:                       "Cloudlet Loc Vertical Accuracy",
-	AppInstFieldCloudletLocAltitude:                               "Cloudlet Loc Altitude",
-	AppInstFieldCloudletLocCourse:                                 "Cloudlet Loc Course",
-	AppInstFieldCloudletLocSpeed:                                  "Cloudlet Loc Speed",
-	AppInstFieldCloudletLocTimestampSeconds:                       "Cloudlet Loc Timestamp Seconds",
-	AppInstFieldCloudletLocTimestampNanos:                         "Cloudlet Loc Timestamp Nanos",
-	AppInstFieldUri:                                               "Uri",
-	AppInstFieldLiveness:                                          "Liveness",
-	AppInstFieldMappedPortsProto:                                  "Mapped Ports Proto",
-	AppInstFieldMappedPortsInternalPort:                           "Mapped Ports Internal Port",
-	AppInstFieldMappedPortsPublicPort:                             "Mapped Ports Public Port",
-	AppInstFieldMappedPortsFqdnPrefix:                             "Mapped Ports Fqdn Prefix",
-	AppInstFieldMappedPortsEndPort:                                "Mapped Ports End Port",
-	AppInstFieldMappedPortsTls:                                    "Mapped Ports Tls",
-	AppInstFieldMappedPortsNginx:                                  "Mapped Ports Nginx",
-	AppInstFieldMappedPortsMaxPktSize:                             "Mapped Ports Max Pkt Size",
-	AppInstFieldFlavorName:                                        "Flavor Name",
-	AppInstFieldState:                                             "State",
-	AppInstFieldErrors:                                            "Errors",
-	AppInstFieldCrmOverride:                                       "Crm Override",
-	AppInstFieldRuntimeInfoContainerIds:                           "Runtime Info Container Ids",
-	AppInstFieldCreatedAtSeconds:                                  "Created At Seconds",
-	AppInstFieldCreatedAtNanos:                                    "Created At Nanos",
-	AppInstFieldAutoClusterIpAccess:                               "Auto Cluster Ip Access",
-	AppInstFieldRevision:                                          "Revision",
-	AppInstFieldForceUpdate:                                       "Force Update",
-	AppInstFieldUpdateMultiple:                                    "Update Multiple",
-	AppInstFieldConfigsKind:                                       "Configs Kind",
-	AppInstFieldConfigsConfig:                                     "Configs Config",
-	AppInstFieldHealthCheck:                                       "Health Check",
-	AppInstFieldPowerState:                                        "Power State",
-	AppInstFieldExternalVolumeSize:                                "External Volume Size",
-	AppInstFieldAvailabilityZone:                                  "Availability Zone",
-	AppInstFieldVmFlavor:                                          "Vm Flavor",
-	AppInstFieldOptRes:                                            "Opt Res",
-	AppInstFieldUpdatedAtSeconds:                                  "Updated At Seconds",
-	AppInstFieldUpdatedAtNanos:                                    "Updated At Nanos",
-	AppInstFieldRealClusterName:                                   "Real Cluster Name",
-	AppInstFieldInternalPortToLbIpKey:                             "Internal Port To Lb Ip Key",
-	AppInstFieldInternalPortToLbIpValue:                           "Internal Port To Lb Ip Value",
-	AppInstFieldDedicatedIp:                                       "Dedicated Ip",
-	AppInstFieldUniqueId:                                          "Unique Id",
-	AppInstFieldDnsLabel:                                          "Dns Label",
-	AppInstFieldCloudletFlavor:                                    "Cloudlet Flavor",
-	AppInstFieldFedKeyFederationName:                              "Fed Key Federation Name",
-	AppInstFieldFedKeyAppInstId:                                   "Fed Key App Inst Id",
+	AppInstFieldKeyName:                             "Key Name",
+	AppInstFieldKeyOrganization:                     "Key Organization",
+	AppInstFieldKeyCloudletKeyOrganization:          "Key Cloudlet Key Organization",
+	AppInstFieldKeyCloudletKeyName:                  "Key Cloudlet Key Name",
+	AppInstFieldKeyCloudletKeyFederatedOrganization: "Key Cloudlet Key Federated Organization",
+	AppInstFieldCloudletLocLatitude:                 "Cloudlet Loc Latitude",
+	AppInstFieldCloudletLocLongitude:                "Cloudlet Loc Longitude",
+	AppInstFieldCloudletLocHorizontalAccuracy:       "Cloudlet Loc Horizontal Accuracy",
+	AppInstFieldCloudletLocVerticalAccuracy:         "Cloudlet Loc Vertical Accuracy",
+	AppInstFieldCloudletLocAltitude:                 "Cloudlet Loc Altitude",
+	AppInstFieldCloudletLocCourse:                   "Cloudlet Loc Course",
+	AppInstFieldCloudletLocSpeed:                    "Cloudlet Loc Speed",
+	AppInstFieldCloudletLocTimestampSeconds:         "Cloudlet Loc Timestamp Seconds",
+	AppInstFieldCloudletLocTimestampNanos:           "Cloudlet Loc Timestamp Nanos",
+	AppInstFieldUri:                                 "Uri",
+	AppInstFieldLiveness:                            "Liveness",
+	AppInstFieldMappedPortsProto:                    "Mapped Ports Proto",
+	AppInstFieldMappedPortsInternalPort:             "Mapped Ports Internal Port",
+	AppInstFieldMappedPortsPublicPort:               "Mapped Ports Public Port",
+	AppInstFieldMappedPortsFqdnPrefix:               "Mapped Ports Fqdn Prefix",
+	AppInstFieldMappedPortsEndPort:                  "Mapped Ports End Port",
+	AppInstFieldMappedPortsTls:                      "Mapped Ports Tls",
+	AppInstFieldMappedPortsNginx:                    "Mapped Ports Nginx",
+	AppInstFieldMappedPortsMaxPktSize:               "Mapped Ports Max Pkt Size",
+	AppInstFieldFlavorName:                          "Flavor Name",
+	AppInstFieldState:                               "State",
+	AppInstFieldErrors:                              "Errors",
+	AppInstFieldCrmOverride:                         "Crm Override",
+	AppInstFieldRuntimeInfoContainerIds:             "Runtime Info Container Ids",
+	AppInstFieldCreatedAtSeconds:                    "Created At Seconds",
+	AppInstFieldCreatedAtNanos:                      "Created At Nanos",
+	AppInstFieldAutoClusterIpAccess:                 "Auto Cluster Ip Access",
+	AppInstFieldRevision:                            "Revision",
+	AppInstFieldForceUpdate:                         "Force Update",
+	AppInstFieldUpdateMultiple:                      "Update Multiple",
+	AppInstFieldConfigsKind:                         "Configs Kind",
+	AppInstFieldConfigsConfig:                       "Configs Config",
+	AppInstFieldHealthCheck:                         "Health Check",
+	AppInstFieldPowerState:                          "Power State",
+	AppInstFieldExternalVolumeSize:                  "External Volume Size",
+	AppInstFieldAvailabilityZone:                    "Availability Zone",
+	AppInstFieldVmFlavor:                            "Vm Flavor",
+	AppInstFieldOptRes:                              "Opt Res",
+	AppInstFieldUpdatedAtSeconds:                    "Updated At Seconds",
+	AppInstFieldUpdatedAtNanos:                      "Updated At Nanos",
+	AppInstFieldRealClusterName:                     "Real Cluster Name",
+	AppInstFieldInternalPortToLbIpKey:               "Internal Port To Lb Ip Key",
+	AppInstFieldInternalPortToLbIpValue:             "Internal Port To Lb Ip Value",
+	AppInstFieldDedicatedIp:                         "Dedicated Ip",
+	AppInstFieldUniqueId:                            "Unique Id",
+	AppInstFieldDnsLabel:                            "Dns Label",
+	AppInstFieldCloudletFlavor:                      "Cloudlet Flavor",
+	AppInstFieldFedKeyFederationName:                "Fed Key Federation Name",
+	AppInstFieldFedKeyAppInstId:                     "Fed Key App Inst Id",
+	AppInstFieldAppKeyOrganization:                  "App Key Organization",
+	AppInstFieldAppKeyName:                          "App Key Name",
+	AppInstFieldAppKeyVersion:                       "App Key Version",
+	AppInstFieldClusterKeyName:                      "Cluster Key Name",
+	AppInstFieldClusterKeyOrganization:              "Cluster Key Organization",
+	AppInstFieldCompatibilityVersion:                "Compatibility Version",
+	AppInstFieldVirtualClusterKeyName:               "Virtual Cluster Key Name",
+	AppInstFieldVirtualClusterKeyOrganization:       "Virtual Cluster Key Organization",
 }
 
 func (m *AppInst) IsKeyField(s string) bool {
@@ -3190,48 +3527,27 @@ func (m *AppInst) IsKeyField(s string) bool {
 }
 
 func (m *AppInst) DiffFields(o *AppInst, fields map[string]struct{}) {
-	if m.Key.AppKey.Organization != o.Key.AppKey.Organization {
-		fields[AppInstFieldKeyAppKeyOrganization] = struct{}{}
-		fields[AppInstFieldKeyAppKey] = struct{}{}
+	if m.Key.Name != o.Key.Name {
+		fields[AppInstFieldKeyName] = struct{}{}
 		fields[AppInstFieldKey] = struct{}{}
 	}
-	if m.Key.AppKey.Name != o.Key.AppKey.Name {
-		fields[AppInstFieldKeyAppKeyName] = struct{}{}
-		fields[AppInstFieldKeyAppKey] = struct{}{}
+	if m.Key.Organization != o.Key.Organization {
+		fields[AppInstFieldKeyOrganization] = struct{}{}
 		fields[AppInstFieldKey] = struct{}{}
 	}
-	if m.Key.AppKey.Version != o.Key.AppKey.Version {
-		fields[AppInstFieldKeyAppKeyVersion] = struct{}{}
-		fields[AppInstFieldKeyAppKey] = struct{}{}
+	if m.Key.CloudletKey.Organization != o.Key.CloudletKey.Organization {
+		fields[AppInstFieldKeyCloudletKeyOrganization] = struct{}{}
+		fields[AppInstFieldKeyCloudletKey] = struct{}{}
 		fields[AppInstFieldKey] = struct{}{}
 	}
-	if m.Key.ClusterInstKey.ClusterKey.Name != o.Key.ClusterInstKey.ClusterKey.Name {
-		fields[AppInstFieldKeyClusterInstKeyClusterKeyName] = struct{}{}
-		fields[AppInstFieldKeyClusterInstKeyClusterKey] = struct{}{}
-		fields[AppInstFieldKeyClusterInstKey] = struct{}{}
+	if m.Key.CloudletKey.Name != o.Key.CloudletKey.Name {
+		fields[AppInstFieldKeyCloudletKeyName] = struct{}{}
+		fields[AppInstFieldKeyCloudletKey] = struct{}{}
 		fields[AppInstFieldKey] = struct{}{}
 	}
-	if m.Key.ClusterInstKey.CloudletKey.Organization != o.Key.ClusterInstKey.CloudletKey.Organization {
-		fields[AppInstFieldKeyClusterInstKeyCloudletKeyOrganization] = struct{}{}
-		fields[AppInstFieldKeyClusterInstKeyCloudletKey] = struct{}{}
-		fields[AppInstFieldKeyClusterInstKey] = struct{}{}
-		fields[AppInstFieldKey] = struct{}{}
-	}
-	if m.Key.ClusterInstKey.CloudletKey.Name != o.Key.ClusterInstKey.CloudletKey.Name {
-		fields[AppInstFieldKeyClusterInstKeyCloudletKeyName] = struct{}{}
-		fields[AppInstFieldKeyClusterInstKeyCloudletKey] = struct{}{}
-		fields[AppInstFieldKeyClusterInstKey] = struct{}{}
-		fields[AppInstFieldKey] = struct{}{}
-	}
-	if m.Key.ClusterInstKey.CloudletKey.FederatedOrganization != o.Key.ClusterInstKey.CloudletKey.FederatedOrganization {
-		fields[AppInstFieldKeyClusterInstKeyCloudletKeyFederatedOrganization] = struct{}{}
-		fields[AppInstFieldKeyClusterInstKeyCloudletKey] = struct{}{}
-		fields[AppInstFieldKeyClusterInstKey] = struct{}{}
-		fields[AppInstFieldKey] = struct{}{}
-	}
-	if m.Key.ClusterInstKey.Organization != o.Key.ClusterInstKey.Organization {
-		fields[AppInstFieldKeyClusterInstKeyOrganization] = struct{}{}
-		fields[AppInstFieldKeyClusterInstKey] = struct{}{}
+	if m.Key.CloudletKey.FederatedOrganization != o.Key.CloudletKey.FederatedOrganization {
+		fields[AppInstFieldKeyCloudletKeyFederatedOrganization] = struct{}{}
+		fields[AppInstFieldKeyCloudletKey] = struct{}{}
 		fields[AppInstFieldKey] = struct{}{}
 	}
 	if m.CloudletLoc.Latitude != o.CloudletLoc.Latitude {
@@ -3459,6 +3775,37 @@ func (m *AppInst) DiffFields(o *AppInst, fields map[string]struct{}) {
 		fields[AppInstFieldFedKeyAppInstId] = struct{}{}
 		fields[AppInstFieldFedKey] = struct{}{}
 	}
+	if m.AppKey.Organization != o.AppKey.Organization {
+		fields[AppInstFieldAppKeyOrganization] = struct{}{}
+		fields[AppInstFieldAppKey] = struct{}{}
+	}
+	if m.AppKey.Name != o.AppKey.Name {
+		fields[AppInstFieldAppKeyName] = struct{}{}
+		fields[AppInstFieldAppKey] = struct{}{}
+	}
+	if m.AppKey.Version != o.AppKey.Version {
+		fields[AppInstFieldAppKeyVersion] = struct{}{}
+		fields[AppInstFieldAppKey] = struct{}{}
+	}
+	if m.ClusterKey.Name != o.ClusterKey.Name {
+		fields[AppInstFieldClusterKeyName] = struct{}{}
+		fields[AppInstFieldClusterKey] = struct{}{}
+	}
+	if m.ClusterKey.Organization != o.ClusterKey.Organization {
+		fields[AppInstFieldClusterKeyOrganization] = struct{}{}
+		fields[AppInstFieldClusterKey] = struct{}{}
+	}
+	if m.CompatibilityVersion != o.CompatibilityVersion {
+		fields[AppInstFieldCompatibilityVersion] = struct{}{}
+	}
+	if m.VirtualClusterKey.Name != o.VirtualClusterKey.Name {
+		fields[AppInstFieldVirtualClusterKeyName] = struct{}{}
+		fields[AppInstFieldVirtualClusterKey] = struct{}{}
+	}
+	if m.VirtualClusterKey.Organization != o.VirtualClusterKey.Organization {
+		fields[AppInstFieldVirtualClusterKeyOrganization] = struct{}{}
+		fields[AppInstFieldVirtualClusterKey] = struct{}{}
+	}
 }
 
 var UpdateAppInstFieldsMap = map[string]struct{}{
@@ -3500,57 +3847,33 @@ func (m *AppInst) CopyInFields(src *AppInst) int {
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
 		if _, set := fmap["2.1"]; set {
-			if _, set := fmap["2.1.1"]; set {
-				if m.Key.AppKey.Organization != src.Key.AppKey.Organization {
-					m.Key.AppKey.Organization = src.Key.AppKey.Organization
-					changed++
-				}
-			}
-			if _, set := fmap["2.1.2"]; set {
-				if m.Key.AppKey.Name != src.Key.AppKey.Name {
-					m.Key.AppKey.Name = src.Key.AppKey.Name
-					changed++
-				}
-			}
-			if _, set := fmap["2.1.3"]; set {
-				if m.Key.AppKey.Version != src.Key.AppKey.Version {
-					m.Key.AppKey.Version = src.Key.AppKey.Version
-					changed++
-				}
+			if m.Key.Name != src.Key.Name {
+				m.Key.Name = src.Key.Name
+				changed++
 			}
 		}
-		if _, set := fmap["2.4"]; set {
-			if _, set := fmap["2.4.1"]; set {
-				if _, set := fmap["2.4.1.1"]; set {
-					if m.Key.ClusterInstKey.ClusterKey.Name != src.Key.ClusterInstKey.ClusterKey.Name {
-						m.Key.ClusterInstKey.ClusterKey.Name = src.Key.ClusterInstKey.ClusterKey.Name
-						changed++
-					}
+		if _, set := fmap["2.2"]; set {
+			if m.Key.Organization != src.Key.Organization {
+				m.Key.Organization = src.Key.Organization
+				changed++
+			}
+		}
+		if _, set := fmap["2.3"]; set {
+			if _, set := fmap["2.3.1"]; set {
+				if m.Key.CloudletKey.Organization != src.Key.CloudletKey.Organization {
+					m.Key.CloudletKey.Organization = src.Key.CloudletKey.Organization
+					changed++
 				}
 			}
-			if _, set := fmap["2.4.2"]; set {
-				if _, set := fmap["2.4.2.1"]; set {
-					if m.Key.ClusterInstKey.CloudletKey.Organization != src.Key.ClusterInstKey.CloudletKey.Organization {
-						m.Key.ClusterInstKey.CloudletKey.Organization = src.Key.ClusterInstKey.CloudletKey.Organization
-						changed++
-					}
-				}
-				if _, set := fmap["2.4.2.2"]; set {
-					if m.Key.ClusterInstKey.CloudletKey.Name != src.Key.ClusterInstKey.CloudletKey.Name {
-						m.Key.ClusterInstKey.CloudletKey.Name = src.Key.ClusterInstKey.CloudletKey.Name
-						changed++
-					}
-				}
-				if _, set := fmap["2.4.2.3"]; set {
-					if m.Key.ClusterInstKey.CloudletKey.FederatedOrganization != src.Key.ClusterInstKey.CloudletKey.FederatedOrganization {
-						m.Key.ClusterInstKey.CloudletKey.FederatedOrganization = src.Key.ClusterInstKey.CloudletKey.FederatedOrganization
-						changed++
-					}
+			if _, set := fmap["2.3.2"]; set {
+				if m.Key.CloudletKey.Name != src.Key.CloudletKey.Name {
+					m.Key.CloudletKey.Name = src.Key.CloudletKey.Name
+					changed++
 				}
 			}
-			if _, set := fmap["2.4.3"]; set {
-				if m.Key.ClusterInstKey.Organization != src.Key.ClusterInstKey.Organization {
-					m.Key.ClusterInstKey.Organization = src.Key.ClusterInstKey.Organization
+			if _, set := fmap["2.3.3"]; set {
+				if m.Key.CloudletKey.FederatedOrganization != src.Key.CloudletKey.FederatedOrganization {
+					m.Key.CloudletKey.FederatedOrganization = src.Key.CloudletKey.FederatedOrganization
 					changed++
 				}
 			}
@@ -3836,6 +4159,60 @@ func (m *AppInst) CopyInFields(src *AppInst) int {
 			}
 		}
 	}
+	if _, set := fmap["44"]; set {
+		if _, set := fmap["44.1"]; set {
+			if m.AppKey.Organization != src.AppKey.Organization {
+				m.AppKey.Organization = src.AppKey.Organization
+				changed++
+			}
+		}
+		if _, set := fmap["44.2"]; set {
+			if m.AppKey.Name != src.AppKey.Name {
+				m.AppKey.Name = src.AppKey.Name
+				changed++
+			}
+		}
+		if _, set := fmap["44.3"]; set {
+			if m.AppKey.Version != src.AppKey.Version {
+				m.AppKey.Version = src.AppKey.Version
+				changed++
+			}
+		}
+	}
+	if _, set := fmap["45"]; set {
+		if _, set := fmap["45.1"]; set {
+			if m.ClusterKey.Name != src.ClusterKey.Name {
+				m.ClusterKey.Name = src.ClusterKey.Name
+				changed++
+			}
+		}
+		if _, set := fmap["45.2"]; set {
+			if m.ClusterKey.Organization != src.ClusterKey.Organization {
+				m.ClusterKey.Organization = src.ClusterKey.Organization
+				changed++
+			}
+		}
+	}
+	if _, set := fmap["46"]; set {
+		if m.CompatibilityVersion != src.CompatibilityVersion {
+			m.CompatibilityVersion = src.CompatibilityVersion
+			changed++
+		}
+	}
+	if _, set := fmap["47"]; set {
+		if _, set := fmap["47.1"]; set {
+			if m.VirtualClusterKey.Name != src.VirtualClusterKey.Name {
+				m.VirtualClusterKey.Name = src.VirtualClusterKey.Name
+				changed++
+			}
+		}
+		if _, set := fmap["47.2"]; set {
+			if m.VirtualClusterKey.Organization != src.VirtualClusterKey.Organization {
+				m.VirtualClusterKey.Organization = src.VirtualClusterKey.Organization
+				changed++
+			}
+		}
+	}
 	return changed
 }
 
@@ -3900,6 +4277,10 @@ func (m *AppInst) DeepCopyIn(src *AppInst) {
 	m.DnsLabel = src.DnsLabel
 	m.CloudletFlavor = src.CloudletFlavor
 	m.FedKey.DeepCopyIn(&src.FedKey)
+	m.AppKey.DeepCopyIn(&src.AppKey)
+	m.ClusterKey.DeepCopyIn(&src.ClusterKey)
+	m.CompatibilityVersion = src.CompatibilityVersion
+	m.VirtualClusterKey.DeepCopyIn(&src.VirtualClusterKey)
 }
 
 func (s *AppInst) HasFields() bool {
@@ -3916,6 +4297,7 @@ type AppInstStore interface {
 	STMGet(stm concurrency.STM, key *AppInstKey, buf *AppInst) bool
 	STMPut(stm concurrency.STM, obj *AppInst, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *AppInstKey)
+	STMHas(stm concurrency.STM, key *AppInstKey) bool
 }
 
 type AppInstStoreImpl struct {
@@ -4047,6 +4429,11 @@ func (s *AppInstStoreImpl) STMGet(stm concurrency.STM, key *AppInstKey, buf *App
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *AppInstStoreImpl) STMHas(stm concurrency.STM, key *AppInstKey) bool {
+	keystr := objstore.DbKeyString("AppInst", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *AppInstStoreImpl) parseGetData(val []byte, buf *AppInst) bool {
 	if len(val) == 0 {
 		return false
@@ -4088,6 +4475,16 @@ type AppInstCacheData struct {
 	ModRev int64
 }
 
+func (s *AppInstCacheData) Clone() *AppInstCacheData {
+	cp := AppInstCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &AppInst{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // AppInstCache caches AppInst objects in memory in a hash table
 // and keeps them in sync with the database.
 type AppInstCache struct {
@@ -4095,7 +4492,7 @@ type AppInstCache struct {
 	Mux           util.Mutex
 	List          map[AppInstKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *AppInstKey, old *AppInst, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *AppInst, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *AppInst, new *AppInst)
 	DeletedCbs    []func(ctx context.Context, old *AppInst)
 	KeyWatchers   map[AppInstKey][]*AppInstKeyWatcher
@@ -4154,6 +4551,14 @@ func (c *AppInstCache) GetAllKeys(ctx context.Context, cb func(key *AppInstKey, 
 	}
 }
 
+func (c *AppInstCache) GetAllLocked(ctx context.Context, cb func(obj *AppInst, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *AppInstCache) Update(ctx context.Context, in *AppInst, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *AppInst) (*AppInst, bool) {
 		return in, true
@@ -4171,14 +4576,16 @@ func (c *AppInstCache) UpdateModFunc(ctx context.Context, key *AppInstKey, modRe
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &AppInst{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -4215,9 +4622,13 @@ func (c *AppInstCache) DeleteCondFunc(ctx context.Context, in *AppInst, modRev i
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -4245,9 +4656,14 @@ func (c *AppInstCache) Prune(ctx context.Context, validKeys map[AppInstKey]struc
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &AppInst{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -4292,8 +4708,8 @@ func AppInstGenericNotifyCb(fn func(key *AppInstKey, old *AppInst)) func(objstor
 	}
 }
 
-func (c *AppInstCache) SetNotifyCb(fn func(ctx context.Context, obj *AppInstKey, old *AppInst, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *AppInstKey, old *AppInst, modRev int64){fn}
+func (c *AppInstCache) SetNotifyCb(fn func(ctx context.Context, obj *AppInst, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *AppInst, modRev int64){fn}
 }
 
 func (c *AppInstCache) SetUpdatedCb(fn func(ctx context.Context, old *AppInst, new *AppInst)) {
@@ -4320,7 +4736,7 @@ func (c *AppInstCache) AddDeletedCb(fn func(ctx context.Context, old *AppInst)) 
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *AppInstCache) AddNotifyCb(fn func(ctx context.Context, obj *AppInstKey, old *AppInst, modRev int64)) {
+func (c *AppInstCache) AddNotifyCb(fn func(ctx context.Context, obj *AppInst, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -4425,9 +4841,14 @@ func (c *AppInstCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &AppInst{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -4446,13 +4867,10 @@ func (c *AppInstCache) UsesOrg(org string) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
 	for key, _ := range c.Objs {
-		if key.AppKey.Organization == org {
+		if key.Organization == org {
 			return true
 		}
-		if key.ClusterInstKey.Organization == org {
-			return true
-		}
-		if key.ClusterInstKey.CloudletKey.Organization == org {
+		if key.CloudletKey.Organization == org {
 			return true
 		}
 	}
@@ -4520,6 +4938,15 @@ func (m *AppInst) ValidateEnums() error {
 	if err := m.FedKey.ValidateEnums(); err != nil {
 		return err
 	}
+	if err := m.AppKey.ValidateEnums(); err != nil {
+		return err
+	}
+	if err := m.ClusterKey.ValidateEnums(); err != nil {
+		return err
+	}
+	if err := m.VirtualClusterKey.ValidateEnums(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -4548,6 +4975,14 @@ func (s *AppInst) ClearTagged(tags map[string]struct{}) {
 		s.UpdatedAt = distributed_match_engine.Timestamp{}
 	}
 	s.FedKey.ClearTagged(tags)
+	s.AppKey.ClearTagged(tags)
+	s.ClusterKey.ClearTagged(tags)
+	if _, found := tags["nocmp"]; found {
+		s.CompatibilityVersion = 0
+	}
+	if _, found := tags["nocmp"]; found {
+		s.VirtualClusterKey = ClusterKey{}
+	}
 }
 
 func IgnoreAppInstFields(taglist string) cmp.Option {
@@ -4570,6 +5005,12 @@ func IgnoreAppInstFields(taglist string) cmp.Option {
 	}
 	if _, found := tags["timestamp"]; found {
 		names = append(names, "UpdatedAt")
+	}
+	if _, found := tags["nocmp"]; found {
+		names = append(names, "CompatibilityVersion")
+	}
+	if _, found := tags["nocmp"]; found {
+		names = append(names, "VirtualClusterKey")
 	}
 	return cmpopts.IgnoreFields(AppInst{}, names...)
 }
@@ -4680,18 +5121,12 @@ func (m *AppInstInfo) Matches(o *AppInstInfo, fopts ...MatchOpt) bool {
 }
 
 const AppInstInfoFieldKey = "2"
-const AppInstInfoFieldKeyAppKey = "2.1"
-const AppInstInfoFieldKeyAppKeyOrganization = "2.1.1"
-const AppInstInfoFieldKeyAppKeyName = "2.1.2"
-const AppInstInfoFieldKeyAppKeyVersion = "2.1.3"
-const AppInstInfoFieldKeyClusterInstKey = "2.4"
-const AppInstInfoFieldKeyClusterInstKeyClusterKey = "2.4.1"
-const AppInstInfoFieldKeyClusterInstKeyClusterKeyName = "2.4.1.1"
-const AppInstInfoFieldKeyClusterInstKeyCloudletKey = "2.4.2"
-const AppInstInfoFieldKeyClusterInstKeyCloudletKeyOrganization = "2.4.2.1"
-const AppInstInfoFieldKeyClusterInstKeyCloudletKeyName = "2.4.2.2"
-const AppInstInfoFieldKeyClusterInstKeyCloudletKeyFederatedOrganization = "2.4.2.3"
-const AppInstInfoFieldKeyClusterInstKeyOrganization = "2.4.3"
+const AppInstInfoFieldKeyName = "2.1"
+const AppInstInfoFieldKeyOrganization = "2.2"
+const AppInstInfoFieldKeyCloudletKey = "2.3"
+const AppInstInfoFieldKeyCloudletKeyOrganization = "2.3.1"
+const AppInstInfoFieldKeyCloudletKeyName = "2.3.2"
+const AppInstInfoFieldKeyCloudletKeyFederatedOrganization = "2.3.3"
 const AppInstInfoFieldNotifyId = "3"
 const AppInstInfoFieldState = "4"
 const AppInstInfoFieldErrors = "5"
@@ -4720,14 +5155,11 @@ const AppInstInfoFieldFedPortsNginx = "11.8"
 const AppInstInfoFieldFedPortsMaxPktSize = "11.9"
 
 var AppInstInfoAllFields = []string{
-	AppInstInfoFieldKeyAppKeyOrganization,
-	AppInstInfoFieldKeyAppKeyName,
-	AppInstInfoFieldKeyAppKeyVersion,
-	AppInstInfoFieldKeyClusterInstKeyClusterKeyName,
-	AppInstInfoFieldKeyClusterInstKeyCloudletKeyOrganization,
-	AppInstInfoFieldKeyClusterInstKeyCloudletKeyName,
-	AppInstInfoFieldKeyClusterInstKeyCloudletKeyFederatedOrganization,
-	AppInstInfoFieldKeyClusterInstKeyOrganization,
+	AppInstInfoFieldKeyName,
+	AppInstInfoFieldKeyOrganization,
+	AppInstInfoFieldKeyCloudletKeyOrganization,
+	AppInstInfoFieldKeyCloudletKeyName,
+	AppInstInfoFieldKeyCloudletKeyFederatedOrganization,
 	AppInstInfoFieldNotifyId,
 	AppInstInfoFieldState,
 	AppInstInfoFieldErrors,
@@ -4753,69 +5185,63 @@ var AppInstInfoAllFields = []string{
 }
 
 var AppInstInfoAllFieldsMap = map[string]struct{}{
-	AppInstInfoFieldKeyAppKeyOrganization:                             struct{}{},
-	AppInstInfoFieldKeyAppKeyName:                                     struct{}{},
-	AppInstInfoFieldKeyAppKeyVersion:                                  struct{}{},
-	AppInstInfoFieldKeyClusterInstKeyClusterKeyName:                   struct{}{},
-	AppInstInfoFieldKeyClusterInstKeyCloudletKeyOrganization:          struct{}{},
-	AppInstInfoFieldKeyClusterInstKeyCloudletKeyName:                  struct{}{},
-	AppInstInfoFieldKeyClusterInstKeyCloudletKeyFederatedOrganization: struct{}{},
-	AppInstInfoFieldKeyClusterInstKeyOrganization:                     struct{}{},
-	AppInstInfoFieldNotifyId:                                          struct{}{},
-	AppInstInfoFieldState:                                             struct{}{},
-	AppInstInfoFieldErrors:                                            struct{}{},
-	AppInstInfoFieldRuntimeInfoContainerIds:                           struct{}{},
-	AppInstInfoFieldStatusTaskNumber:                                  struct{}{},
-	AppInstInfoFieldStatusMaxTasks:                                    struct{}{},
-	AppInstInfoFieldStatusTaskName:                                    struct{}{},
-	AppInstInfoFieldStatusStepName:                                    struct{}{},
-	AppInstInfoFieldStatusMsgCount:                                    struct{}{},
-	AppInstInfoFieldStatusMsgs:                                        struct{}{},
-	AppInstInfoFieldPowerState:                                        struct{}{},
-	AppInstInfoFieldUri:                                               struct{}{},
-	AppInstInfoFieldFedKeyFederationName:                              struct{}{},
-	AppInstInfoFieldFedKeyAppInstId:                                   struct{}{},
-	AppInstInfoFieldFedPortsProto:                                     struct{}{},
-	AppInstInfoFieldFedPortsInternalPort:                              struct{}{},
-	AppInstInfoFieldFedPortsPublicPort:                                struct{}{},
-	AppInstInfoFieldFedPortsFqdnPrefix:                                struct{}{},
-	AppInstInfoFieldFedPortsEndPort:                                   struct{}{},
-	AppInstInfoFieldFedPortsTls:                                       struct{}{},
-	AppInstInfoFieldFedPortsNginx:                                     struct{}{},
-	AppInstInfoFieldFedPortsMaxPktSize:                                struct{}{},
+	AppInstInfoFieldKeyName:                             struct{}{},
+	AppInstInfoFieldKeyOrganization:                     struct{}{},
+	AppInstInfoFieldKeyCloudletKeyOrganization:          struct{}{},
+	AppInstInfoFieldKeyCloudletKeyName:                  struct{}{},
+	AppInstInfoFieldKeyCloudletKeyFederatedOrganization: struct{}{},
+	AppInstInfoFieldNotifyId:                            struct{}{},
+	AppInstInfoFieldState:                               struct{}{},
+	AppInstInfoFieldErrors:                              struct{}{},
+	AppInstInfoFieldRuntimeInfoContainerIds:             struct{}{},
+	AppInstInfoFieldStatusTaskNumber:                    struct{}{},
+	AppInstInfoFieldStatusMaxTasks:                      struct{}{},
+	AppInstInfoFieldStatusTaskName:                      struct{}{},
+	AppInstInfoFieldStatusStepName:                      struct{}{},
+	AppInstInfoFieldStatusMsgCount:                      struct{}{},
+	AppInstInfoFieldStatusMsgs:                          struct{}{},
+	AppInstInfoFieldPowerState:                          struct{}{},
+	AppInstInfoFieldUri:                                 struct{}{},
+	AppInstInfoFieldFedKeyFederationName:                struct{}{},
+	AppInstInfoFieldFedKeyAppInstId:                     struct{}{},
+	AppInstInfoFieldFedPortsProto:                       struct{}{},
+	AppInstInfoFieldFedPortsInternalPort:                struct{}{},
+	AppInstInfoFieldFedPortsPublicPort:                  struct{}{},
+	AppInstInfoFieldFedPortsFqdnPrefix:                  struct{}{},
+	AppInstInfoFieldFedPortsEndPort:                     struct{}{},
+	AppInstInfoFieldFedPortsTls:                         struct{}{},
+	AppInstInfoFieldFedPortsNginx:                       struct{}{},
+	AppInstInfoFieldFedPortsMaxPktSize:                  struct{}{},
 }
 
 var AppInstInfoAllFieldsStringMap = map[string]string{
-	AppInstInfoFieldKeyAppKeyOrganization:                             "Key App Key Organization",
-	AppInstInfoFieldKeyAppKeyName:                                     "Key App Key Name",
-	AppInstInfoFieldKeyAppKeyVersion:                                  "Key App Key Version",
-	AppInstInfoFieldKeyClusterInstKeyClusterKeyName:                   "Key Cluster Inst Key Cluster Key Name",
-	AppInstInfoFieldKeyClusterInstKeyCloudletKeyOrganization:          "Key Cluster Inst Key Cloudlet Key Organization",
-	AppInstInfoFieldKeyClusterInstKeyCloudletKeyName:                  "Key Cluster Inst Key Cloudlet Key Name",
-	AppInstInfoFieldKeyClusterInstKeyCloudletKeyFederatedOrganization: "Key Cluster Inst Key Cloudlet Key Federated Organization",
-	AppInstInfoFieldKeyClusterInstKeyOrganization:                     "Key Cluster Inst Key Organization",
-	AppInstInfoFieldNotifyId:                                          "Notify Id",
-	AppInstInfoFieldState:                                             "State",
-	AppInstInfoFieldErrors:                                            "Errors",
-	AppInstInfoFieldRuntimeInfoContainerIds:                           "Runtime Info Container Ids",
-	AppInstInfoFieldStatusTaskNumber:                                  "Status Task Number",
-	AppInstInfoFieldStatusMaxTasks:                                    "Status Max Tasks",
-	AppInstInfoFieldStatusTaskName:                                    "Status Task Name",
-	AppInstInfoFieldStatusStepName:                                    "Status Step Name",
-	AppInstInfoFieldStatusMsgCount:                                    "Status Msg Count",
-	AppInstInfoFieldStatusMsgs:                                        "Status Msgs",
-	AppInstInfoFieldPowerState:                                        "Power State",
-	AppInstInfoFieldUri:                                               "Uri",
-	AppInstInfoFieldFedKeyFederationName:                              "Fed Key Federation Name",
-	AppInstInfoFieldFedKeyAppInstId:                                   "Fed Key App Inst Id",
-	AppInstInfoFieldFedPortsProto:                                     "Fed Ports Proto",
-	AppInstInfoFieldFedPortsInternalPort:                              "Fed Ports Internal Port",
-	AppInstInfoFieldFedPortsPublicPort:                                "Fed Ports Public Port",
-	AppInstInfoFieldFedPortsFqdnPrefix:                                "Fed Ports Fqdn Prefix",
-	AppInstInfoFieldFedPortsEndPort:                                   "Fed Ports End Port",
-	AppInstInfoFieldFedPortsTls:                                       "Fed Ports Tls",
-	AppInstInfoFieldFedPortsNginx:                                     "Fed Ports Nginx",
-	AppInstInfoFieldFedPortsMaxPktSize:                                "Fed Ports Max Pkt Size",
+	AppInstInfoFieldKeyName:                             "Key Name",
+	AppInstInfoFieldKeyOrganization:                     "Key Organization",
+	AppInstInfoFieldKeyCloudletKeyOrganization:          "Key Cloudlet Key Organization",
+	AppInstInfoFieldKeyCloudletKeyName:                  "Key Cloudlet Key Name",
+	AppInstInfoFieldKeyCloudletKeyFederatedOrganization: "Key Cloudlet Key Federated Organization",
+	AppInstInfoFieldNotifyId:                            "Notify Id",
+	AppInstInfoFieldState:                               "State",
+	AppInstInfoFieldErrors:                              "Errors",
+	AppInstInfoFieldRuntimeInfoContainerIds:             "Runtime Info Container Ids",
+	AppInstInfoFieldStatusTaskNumber:                    "Status Task Number",
+	AppInstInfoFieldStatusMaxTasks:                      "Status Max Tasks",
+	AppInstInfoFieldStatusTaskName:                      "Status Task Name",
+	AppInstInfoFieldStatusStepName:                      "Status Step Name",
+	AppInstInfoFieldStatusMsgCount:                      "Status Msg Count",
+	AppInstInfoFieldStatusMsgs:                          "Status Msgs",
+	AppInstInfoFieldPowerState:                          "Power State",
+	AppInstInfoFieldUri:                                 "Uri",
+	AppInstInfoFieldFedKeyFederationName:                "Fed Key Federation Name",
+	AppInstInfoFieldFedKeyAppInstId:                     "Fed Key App Inst Id",
+	AppInstInfoFieldFedPortsProto:                       "Fed Ports Proto",
+	AppInstInfoFieldFedPortsInternalPort:                "Fed Ports Internal Port",
+	AppInstInfoFieldFedPortsPublicPort:                  "Fed Ports Public Port",
+	AppInstInfoFieldFedPortsFqdnPrefix:                  "Fed Ports Fqdn Prefix",
+	AppInstInfoFieldFedPortsEndPort:                     "Fed Ports End Port",
+	AppInstInfoFieldFedPortsTls:                         "Fed Ports Tls",
+	AppInstInfoFieldFedPortsNginx:                       "Fed Ports Nginx",
+	AppInstInfoFieldFedPortsMaxPktSize:                  "Fed Ports Max Pkt Size",
 }
 
 func (m *AppInstInfo) IsKeyField(s string) bool {
@@ -4823,48 +5249,27 @@ func (m *AppInstInfo) IsKeyField(s string) bool {
 }
 
 func (m *AppInstInfo) DiffFields(o *AppInstInfo, fields map[string]struct{}) {
-	if m.Key.AppKey.Organization != o.Key.AppKey.Organization {
-		fields[AppInstInfoFieldKeyAppKeyOrganization] = struct{}{}
-		fields[AppInstInfoFieldKeyAppKey] = struct{}{}
+	if m.Key.Name != o.Key.Name {
+		fields[AppInstInfoFieldKeyName] = struct{}{}
 		fields[AppInstInfoFieldKey] = struct{}{}
 	}
-	if m.Key.AppKey.Name != o.Key.AppKey.Name {
-		fields[AppInstInfoFieldKeyAppKeyName] = struct{}{}
-		fields[AppInstInfoFieldKeyAppKey] = struct{}{}
+	if m.Key.Organization != o.Key.Organization {
+		fields[AppInstInfoFieldKeyOrganization] = struct{}{}
 		fields[AppInstInfoFieldKey] = struct{}{}
 	}
-	if m.Key.AppKey.Version != o.Key.AppKey.Version {
-		fields[AppInstInfoFieldKeyAppKeyVersion] = struct{}{}
-		fields[AppInstInfoFieldKeyAppKey] = struct{}{}
+	if m.Key.CloudletKey.Organization != o.Key.CloudletKey.Organization {
+		fields[AppInstInfoFieldKeyCloudletKeyOrganization] = struct{}{}
+		fields[AppInstInfoFieldKeyCloudletKey] = struct{}{}
 		fields[AppInstInfoFieldKey] = struct{}{}
 	}
-	if m.Key.ClusterInstKey.ClusterKey.Name != o.Key.ClusterInstKey.ClusterKey.Name {
-		fields[AppInstInfoFieldKeyClusterInstKeyClusterKeyName] = struct{}{}
-		fields[AppInstInfoFieldKeyClusterInstKeyClusterKey] = struct{}{}
-		fields[AppInstInfoFieldKeyClusterInstKey] = struct{}{}
+	if m.Key.CloudletKey.Name != o.Key.CloudletKey.Name {
+		fields[AppInstInfoFieldKeyCloudletKeyName] = struct{}{}
+		fields[AppInstInfoFieldKeyCloudletKey] = struct{}{}
 		fields[AppInstInfoFieldKey] = struct{}{}
 	}
-	if m.Key.ClusterInstKey.CloudletKey.Organization != o.Key.ClusterInstKey.CloudletKey.Organization {
-		fields[AppInstInfoFieldKeyClusterInstKeyCloudletKeyOrganization] = struct{}{}
-		fields[AppInstInfoFieldKeyClusterInstKeyCloudletKey] = struct{}{}
-		fields[AppInstInfoFieldKeyClusterInstKey] = struct{}{}
-		fields[AppInstInfoFieldKey] = struct{}{}
-	}
-	if m.Key.ClusterInstKey.CloudletKey.Name != o.Key.ClusterInstKey.CloudletKey.Name {
-		fields[AppInstInfoFieldKeyClusterInstKeyCloudletKeyName] = struct{}{}
-		fields[AppInstInfoFieldKeyClusterInstKeyCloudletKey] = struct{}{}
-		fields[AppInstInfoFieldKeyClusterInstKey] = struct{}{}
-		fields[AppInstInfoFieldKey] = struct{}{}
-	}
-	if m.Key.ClusterInstKey.CloudletKey.FederatedOrganization != o.Key.ClusterInstKey.CloudletKey.FederatedOrganization {
-		fields[AppInstInfoFieldKeyClusterInstKeyCloudletKeyFederatedOrganization] = struct{}{}
-		fields[AppInstInfoFieldKeyClusterInstKeyCloudletKey] = struct{}{}
-		fields[AppInstInfoFieldKeyClusterInstKey] = struct{}{}
-		fields[AppInstInfoFieldKey] = struct{}{}
-	}
-	if m.Key.ClusterInstKey.Organization != o.Key.ClusterInstKey.Organization {
-		fields[AppInstInfoFieldKeyClusterInstKeyOrganization] = struct{}{}
-		fields[AppInstInfoFieldKeyClusterInstKey] = struct{}{}
+	if m.Key.CloudletKey.FederatedOrganization != o.Key.CloudletKey.FederatedOrganization {
+		fields[AppInstInfoFieldKeyCloudletKeyFederatedOrganization] = struct{}{}
+		fields[AppInstInfoFieldKeyCloudletKey] = struct{}{}
 		fields[AppInstInfoFieldKey] = struct{}{}
 	}
 	if m.NotifyId != o.NotifyId {
@@ -4986,57 +5391,33 @@ func (m *AppInstInfo) CopyInFields(src *AppInstInfo) int {
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
 		if _, set := fmap["2.1"]; set {
-			if _, set := fmap["2.1.1"]; set {
-				if m.Key.AppKey.Organization != src.Key.AppKey.Organization {
-					m.Key.AppKey.Organization = src.Key.AppKey.Organization
-					changed++
-				}
-			}
-			if _, set := fmap["2.1.2"]; set {
-				if m.Key.AppKey.Name != src.Key.AppKey.Name {
-					m.Key.AppKey.Name = src.Key.AppKey.Name
-					changed++
-				}
-			}
-			if _, set := fmap["2.1.3"]; set {
-				if m.Key.AppKey.Version != src.Key.AppKey.Version {
-					m.Key.AppKey.Version = src.Key.AppKey.Version
-					changed++
-				}
+			if m.Key.Name != src.Key.Name {
+				m.Key.Name = src.Key.Name
+				changed++
 			}
 		}
-		if _, set := fmap["2.4"]; set {
-			if _, set := fmap["2.4.1"]; set {
-				if _, set := fmap["2.4.1.1"]; set {
-					if m.Key.ClusterInstKey.ClusterKey.Name != src.Key.ClusterInstKey.ClusterKey.Name {
-						m.Key.ClusterInstKey.ClusterKey.Name = src.Key.ClusterInstKey.ClusterKey.Name
-						changed++
-					}
+		if _, set := fmap["2.2"]; set {
+			if m.Key.Organization != src.Key.Organization {
+				m.Key.Organization = src.Key.Organization
+				changed++
+			}
+		}
+		if _, set := fmap["2.3"]; set {
+			if _, set := fmap["2.3.1"]; set {
+				if m.Key.CloudletKey.Organization != src.Key.CloudletKey.Organization {
+					m.Key.CloudletKey.Organization = src.Key.CloudletKey.Organization
+					changed++
 				}
 			}
-			if _, set := fmap["2.4.2"]; set {
-				if _, set := fmap["2.4.2.1"]; set {
-					if m.Key.ClusterInstKey.CloudletKey.Organization != src.Key.ClusterInstKey.CloudletKey.Organization {
-						m.Key.ClusterInstKey.CloudletKey.Organization = src.Key.ClusterInstKey.CloudletKey.Organization
-						changed++
-					}
-				}
-				if _, set := fmap["2.4.2.2"]; set {
-					if m.Key.ClusterInstKey.CloudletKey.Name != src.Key.ClusterInstKey.CloudletKey.Name {
-						m.Key.ClusterInstKey.CloudletKey.Name = src.Key.ClusterInstKey.CloudletKey.Name
-						changed++
-					}
-				}
-				if _, set := fmap["2.4.2.3"]; set {
-					if m.Key.ClusterInstKey.CloudletKey.FederatedOrganization != src.Key.ClusterInstKey.CloudletKey.FederatedOrganization {
-						m.Key.ClusterInstKey.CloudletKey.FederatedOrganization = src.Key.ClusterInstKey.CloudletKey.FederatedOrganization
-						changed++
-					}
+			if _, set := fmap["2.3.2"]; set {
+				if m.Key.CloudletKey.Name != src.Key.CloudletKey.Name {
+					m.Key.CloudletKey.Name = src.Key.CloudletKey.Name
+					changed++
 				}
 			}
-			if _, set := fmap["2.4.3"]; set {
-				if m.Key.ClusterInstKey.Organization != src.Key.ClusterInstKey.Organization {
-					m.Key.ClusterInstKey.Organization = src.Key.ClusterInstKey.Organization
+			if _, set := fmap["2.3.3"]; set {
+				if m.Key.CloudletKey.FederatedOrganization != src.Key.CloudletKey.FederatedOrganization {
+					m.Key.CloudletKey.FederatedOrganization = src.Key.CloudletKey.FederatedOrganization
 					changed++
 				}
 			}
@@ -5194,6 +5575,7 @@ type AppInstInfoStore interface {
 	STMGet(stm concurrency.STM, key *AppInstKey, buf *AppInstInfo) bool
 	STMPut(stm concurrency.STM, obj *AppInstInfo, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *AppInstKey)
+	STMHas(stm concurrency.STM, key *AppInstKey) bool
 }
 
 type AppInstInfoStoreImpl struct {
@@ -5325,6 +5707,11 @@ func (s *AppInstInfoStoreImpl) STMGet(stm concurrency.STM, key *AppInstKey, buf 
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *AppInstInfoStoreImpl) STMHas(stm concurrency.STM, key *AppInstKey) bool {
+	keystr := objstore.DbKeyString("AppInstInfo", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *AppInstInfoStoreImpl) parseGetData(val []byte, buf *AppInstInfo) bool {
 	if len(val) == 0 {
 		return false
@@ -5366,6 +5753,16 @@ type AppInstInfoCacheData struct {
 	ModRev int64
 }
 
+func (s *AppInstInfoCacheData) Clone() *AppInstInfoCacheData {
+	cp := AppInstInfoCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &AppInstInfo{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // AppInstInfoCache caches AppInstInfo objects in memory in a hash table
 // and keeps them in sync with the database.
 type AppInstInfoCache struct {
@@ -5373,7 +5770,7 @@ type AppInstInfoCache struct {
 	Mux           util.Mutex
 	List          map[AppInstKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *AppInstKey, old *AppInstInfo, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *AppInstInfo, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *AppInstInfo, new *AppInstInfo)
 	DeletedCbs    []func(ctx context.Context, old *AppInstInfo)
 	KeyWatchers   map[AppInstKey][]*AppInstInfoKeyWatcher
@@ -5432,6 +5829,14 @@ func (c *AppInstInfoCache) GetAllKeys(ctx context.Context, cb func(key *AppInstK
 	}
 }
 
+func (c *AppInstInfoCache) GetAllLocked(ctx context.Context, cb func(obj *AppInstInfo, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *AppInstInfoCache) Update(ctx context.Context, in *AppInstInfo, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *AppInstInfo) (*AppInstInfo, bool) {
 		return in, true
@@ -5449,14 +5854,16 @@ func (c *AppInstInfoCache) UpdateModFunc(ctx context.Context, key *AppInstKey, m
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &AppInstInfo{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -5493,9 +5900,13 @@ func (c *AppInstInfoCache) DeleteCondFunc(ctx context.Context, in *AppInstInfo, 
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -5523,9 +5934,14 @@ func (c *AppInstInfoCache) Prune(ctx context.Context, validKeys map[AppInstKey]s
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &AppInstInfo{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -5561,9 +5977,14 @@ func (c *AppInstInfoCache) Flush(ctx context.Context, notifyId int64) {
 	c.Mux.Unlock()
 	if len(flushed) > 0 {
 		for key, old := range flushed {
+			obj := old.Obj
+			if obj == nil {
+				obj = &AppInstInfo{}
+				obj.SetKey(&key)
+			}
 			for _, cb := range c.NotifyCbs {
 				if cb != nil {
-					cb(ctx, &key, old.Obj, old.ModRev)
+					cb(ctx, obj, old.ModRev)
 				}
 			}
 			for _, cb := range c.DeletedKeyCbs {
@@ -5600,8 +6021,8 @@ func AppInstInfoGenericNotifyCb(fn func(key *AppInstKey, old *AppInstInfo)) func
 	}
 }
 
-func (c *AppInstInfoCache) SetNotifyCb(fn func(ctx context.Context, obj *AppInstKey, old *AppInstInfo, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *AppInstKey, old *AppInstInfo, modRev int64){fn}
+func (c *AppInstInfoCache) SetNotifyCb(fn func(ctx context.Context, obj *AppInstInfo, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *AppInstInfo, modRev int64){fn}
 }
 
 func (c *AppInstInfoCache) SetUpdatedCb(fn func(ctx context.Context, old *AppInstInfo, new *AppInstInfo)) {
@@ -5628,7 +6049,7 @@ func (c *AppInstInfoCache) AddDeletedCb(fn func(ctx context.Context, old *AppIns
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *AppInstInfoCache) AddNotifyCb(fn func(ctx context.Context, obj *AppInstKey, old *AppInstInfo, modRev int64)) {
+func (c *AppInstInfoCache) AddNotifyCb(fn func(ctx context.Context, obj *AppInstInfo, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -5733,9 +6154,14 @@ func (c *AppInstInfoCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &AppInstInfo{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -5922,36 +6348,24 @@ func (s *AppInstMetrics) ClearTagged(tags map[string]struct{}) {
 
 func (m *AppInstLookup) CopyInFields(src *AppInstLookup) int {
 	changed := 0
-	if m.Key.AppKey.Organization != src.Key.AppKey.Organization {
-		m.Key.AppKey.Organization = src.Key.AppKey.Organization
+	if m.Key.Name != src.Key.Name {
+		m.Key.Name = src.Key.Name
 		changed++
 	}
-	if m.Key.AppKey.Name != src.Key.AppKey.Name {
-		m.Key.AppKey.Name = src.Key.AppKey.Name
+	if m.Key.Organization != src.Key.Organization {
+		m.Key.Organization = src.Key.Organization
 		changed++
 	}
-	if m.Key.AppKey.Version != src.Key.AppKey.Version {
-		m.Key.AppKey.Version = src.Key.AppKey.Version
+	if m.Key.CloudletKey.Organization != src.Key.CloudletKey.Organization {
+		m.Key.CloudletKey.Organization = src.Key.CloudletKey.Organization
 		changed++
 	}
-	if m.Key.ClusterInstKey.ClusterKey.Name != src.Key.ClusterInstKey.ClusterKey.Name {
-		m.Key.ClusterInstKey.ClusterKey.Name = src.Key.ClusterInstKey.ClusterKey.Name
+	if m.Key.CloudletKey.Name != src.Key.CloudletKey.Name {
+		m.Key.CloudletKey.Name = src.Key.CloudletKey.Name
 		changed++
 	}
-	if m.Key.ClusterInstKey.CloudletKey.Organization != src.Key.ClusterInstKey.CloudletKey.Organization {
-		m.Key.ClusterInstKey.CloudletKey.Organization = src.Key.ClusterInstKey.CloudletKey.Organization
-		changed++
-	}
-	if m.Key.ClusterInstKey.CloudletKey.Name != src.Key.ClusterInstKey.CloudletKey.Name {
-		m.Key.ClusterInstKey.CloudletKey.Name = src.Key.ClusterInstKey.CloudletKey.Name
-		changed++
-	}
-	if m.Key.ClusterInstKey.CloudletKey.FederatedOrganization != src.Key.ClusterInstKey.CloudletKey.FederatedOrganization {
-		m.Key.ClusterInstKey.CloudletKey.FederatedOrganization = src.Key.ClusterInstKey.CloudletKey.FederatedOrganization
-		changed++
-	}
-	if m.Key.ClusterInstKey.Organization != src.Key.ClusterInstKey.Organization {
-		m.Key.ClusterInstKey.Organization = src.Key.ClusterInstKey.Organization
+	if m.Key.CloudletKey.FederatedOrganization != src.Key.CloudletKey.FederatedOrganization {
+		m.Key.CloudletKey.FederatedOrganization = src.Key.CloudletKey.FederatedOrganization
 		changed++
 	}
 	if m.PolicyKey.Organization != src.PolicyKey.Organization {
@@ -6057,36 +6471,24 @@ func (s *AppInstLookup) ClearTagged(tags map[string]struct{}) {
 
 func (m *AppInstLookup2) CopyInFields(src *AppInstLookup2) int {
 	changed := 0
-	if m.Key.AppKey.Organization != src.Key.AppKey.Organization {
-		m.Key.AppKey.Organization = src.Key.AppKey.Organization
+	if m.Key.Name != src.Key.Name {
+		m.Key.Name = src.Key.Name
 		changed++
 	}
-	if m.Key.AppKey.Name != src.Key.AppKey.Name {
-		m.Key.AppKey.Name = src.Key.AppKey.Name
+	if m.Key.Organization != src.Key.Organization {
+		m.Key.Organization = src.Key.Organization
 		changed++
 	}
-	if m.Key.AppKey.Version != src.Key.AppKey.Version {
-		m.Key.AppKey.Version = src.Key.AppKey.Version
+	if m.Key.CloudletKey.Organization != src.Key.CloudletKey.Organization {
+		m.Key.CloudletKey.Organization = src.Key.CloudletKey.Organization
 		changed++
 	}
-	if m.Key.ClusterInstKey.ClusterKey.Name != src.Key.ClusterInstKey.ClusterKey.Name {
-		m.Key.ClusterInstKey.ClusterKey.Name = src.Key.ClusterInstKey.ClusterKey.Name
+	if m.Key.CloudletKey.Name != src.Key.CloudletKey.Name {
+		m.Key.CloudletKey.Name = src.Key.CloudletKey.Name
 		changed++
 	}
-	if m.Key.ClusterInstKey.CloudletKey.Organization != src.Key.ClusterInstKey.CloudletKey.Organization {
-		m.Key.ClusterInstKey.CloudletKey.Organization = src.Key.ClusterInstKey.CloudletKey.Organization
-		changed++
-	}
-	if m.Key.ClusterInstKey.CloudletKey.Name != src.Key.ClusterInstKey.CloudletKey.Name {
-		m.Key.ClusterInstKey.CloudletKey.Name = src.Key.ClusterInstKey.CloudletKey.Name
-		changed++
-	}
-	if m.Key.ClusterInstKey.CloudletKey.FederatedOrganization != src.Key.ClusterInstKey.CloudletKey.FederatedOrganization {
-		m.Key.ClusterInstKey.CloudletKey.FederatedOrganization = src.Key.ClusterInstKey.CloudletKey.FederatedOrganization
-		changed++
-	}
-	if m.Key.ClusterInstKey.Organization != src.Key.ClusterInstKey.Organization {
-		m.Key.ClusterInstKey.Organization = src.Key.ClusterInstKey.Organization
+	if m.Key.CloudletKey.FederatedOrganization != src.Key.CloudletKey.FederatedOrganization {
+		m.Key.CloudletKey.FederatedOrganization = src.Key.CloudletKey.FederatedOrganization
 		changed++
 	}
 	if m.CloudletKey.Organization != src.CloudletKey.Organization {
@@ -6196,36 +6598,24 @@ func (s *AppInstLookup2) ClearTagged(tags map[string]struct{}) {
 
 func (m *AppInstLatency) CopyInFields(src *AppInstLatency) int {
 	changed := 0
-	if m.Key.AppKey.Organization != src.Key.AppKey.Organization {
-		m.Key.AppKey.Organization = src.Key.AppKey.Organization
+	if m.Key.Name != src.Key.Name {
+		m.Key.Name = src.Key.Name
 		changed++
 	}
-	if m.Key.AppKey.Name != src.Key.AppKey.Name {
-		m.Key.AppKey.Name = src.Key.AppKey.Name
+	if m.Key.Organization != src.Key.Organization {
+		m.Key.Organization = src.Key.Organization
 		changed++
 	}
-	if m.Key.AppKey.Version != src.Key.AppKey.Version {
-		m.Key.AppKey.Version = src.Key.AppKey.Version
+	if m.Key.CloudletKey.Organization != src.Key.CloudletKey.Organization {
+		m.Key.CloudletKey.Organization = src.Key.CloudletKey.Organization
 		changed++
 	}
-	if m.Key.ClusterInstKey.ClusterKey.Name != src.Key.ClusterInstKey.ClusterKey.Name {
-		m.Key.ClusterInstKey.ClusterKey.Name = src.Key.ClusterInstKey.ClusterKey.Name
+	if m.Key.CloudletKey.Name != src.Key.CloudletKey.Name {
+		m.Key.CloudletKey.Name = src.Key.CloudletKey.Name
 		changed++
 	}
-	if m.Key.ClusterInstKey.CloudletKey.Organization != src.Key.ClusterInstKey.CloudletKey.Organization {
-		m.Key.ClusterInstKey.CloudletKey.Organization = src.Key.ClusterInstKey.CloudletKey.Organization
-		changed++
-	}
-	if m.Key.ClusterInstKey.CloudletKey.Name != src.Key.ClusterInstKey.CloudletKey.Name {
-		m.Key.ClusterInstKey.CloudletKey.Name = src.Key.ClusterInstKey.CloudletKey.Name
-		changed++
-	}
-	if m.Key.ClusterInstKey.CloudletKey.FederatedOrganization != src.Key.ClusterInstKey.CloudletKey.FederatedOrganization {
-		m.Key.ClusterInstKey.CloudletKey.FederatedOrganization = src.Key.ClusterInstKey.CloudletKey.FederatedOrganization
-		changed++
-	}
-	if m.Key.ClusterInstKey.Organization != src.Key.ClusterInstKey.Organization {
-		m.Key.ClusterInstKey.Organization = src.Key.ClusterInstKey.Organization
+	if m.Key.CloudletKey.FederatedOrganization != src.Key.CloudletKey.FederatedOrganization {
+		m.Key.CloudletKey.FederatedOrganization = src.Key.CloudletKey.FederatedOrganization
 		changed++
 	}
 	return changed
@@ -6339,9 +6729,18 @@ var FedAppInstKeyTagAppInstId = "appinstid"
 
 func (m *FedAppInstKey) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["federationname"] = m.FederationName
-	tags["appinstid"] = m.AppInstId
+	m.AddTags(tags)
 	return tags
+}
+
+func (m *FedAppInstKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("federationname", m.FederationName)
+	addTag("appinstid", m.AppInstId)
+}
+
+func (m *FedAppInstKey) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -6380,36 +6779,24 @@ func (m *FedAppInst) CopyInFields(src *FedAppInst) int {
 		m.Key.AppInstId = src.Key.AppInstId
 		changed++
 	}
-	if m.AppInstKey.AppKey.Organization != src.AppInstKey.AppKey.Organization {
-		m.AppInstKey.AppKey.Organization = src.AppInstKey.AppKey.Organization
+	if m.AppInstKey.Name != src.AppInstKey.Name {
+		m.AppInstKey.Name = src.AppInstKey.Name
 		changed++
 	}
-	if m.AppInstKey.AppKey.Name != src.AppInstKey.AppKey.Name {
-		m.AppInstKey.AppKey.Name = src.AppInstKey.AppKey.Name
+	if m.AppInstKey.Organization != src.AppInstKey.Organization {
+		m.AppInstKey.Organization = src.AppInstKey.Organization
 		changed++
 	}
-	if m.AppInstKey.AppKey.Version != src.AppInstKey.AppKey.Version {
-		m.AppInstKey.AppKey.Version = src.AppInstKey.AppKey.Version
+	if m.AppInstKey.CloudletKey.Organization != src.AppInstKey.CloudletKey.Organization {
+		m.AppInstKey.CloudletKey.Organization = src.AppInstKey.CloudletKey.Organization
 		changed++
 	}
-	if m.AppInstKey.ClusterInstKey.ClusterKey.Name != src.AppInstKey.ClusterInstKey.ClusterKey.Name {
-		m.AppInstKey.ClusterInstKey.ClusterKey.Name = src.AppInstKey.ClusterInstKey.ClusterKey.Name
+	if m.AppInstKey.CloudletKey.Name != src.AppInstKey.CloudletKey.Name {
+		m.AppInstKey.CloudletKey.Name = src.AppInstKey.CloudletKey.Name
 		changed++
 	}
-	if m.AppInstKey.ClusterInstKey.CloudletKey.Organization != src.AppInstKey.ClusterInstKey.CloudletKey.Organization {
-		m.AppInstKey.ClusterInstKey.CloudletKey.Organization = src.AppInstKey.ClusterInstKey.CloudletKey.Organization
-		changed++
-	}
-	if m.AppInstKey.ClusterInstKey.CloudletKey.Name != src.AppInstKey.ClusterInstKey.CloudletKey.Name {
-		m.AppInstKey.ClusterInstKey.CloudletKey.Name = src.AppInstKey.ClusterInstKey.CloudletKey.Name
-		changed++
-	}
-	if m.AppInstKey.ClusterInstKey.CloudletKey.FederatedOrganization != src.AppInstKey.ClusterInstKey.CloudletKey.FederatedOrganization {
-		m.AppInstKey.ClusterInstKey.CloudletKey.FederatedOrganization = src.AppInstKey.ClusterInstKey.CloudletKey.FederatedOrganization
-		changed++
-	}
-	if m.AppInstKey.ClusterInstKey.Organization != src.AppInstKey.ClusterInstKey.Organization {
-		m.AppInstKey.ClusterInstKey.Organization = src.AppInstKey.ClusterInstKey.Organization
+	if m.AppInstKey.CloudletKey.FederatedOrganization != src.AppInstKey.CloudletKey.FederatedOrganization {
+		m.AppInstKey.CloudletKey.FederatedOrganization = src.AppInstKey.CloudletKey.FederatedOrganization
 		changed++
 	}
 	return changed
@@ -6434,6 +6821,7 @@ type FedAppInstStore interface {
 	STMGet(stm concurrency.STM, key *FedAppInstKey, buf *FedAppInst) bool
 	STMPut(stm concurrency.STM, obj *FedAppInst, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *FedAppInstKey)
+	STMHas(stm concurrency.STM, key *FedAppInstKey) bool
 }
 
 type FedAppInstStoreImpl struct {
@@ -6551,6 +6939,11 @@ func (s *FedAppInstStoreImpl) STMGet(stm concurrency.STM, key *FedAppInstKey, bu
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *FedAppInstStoreImpl) STMHas(stm concurrency.STM, key *FedAppInstKey) bool {
+	keystr := objstore.DbKeyString("FedAppInst", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *FedAppInstStoreImpl) parseGetData(val []byte, buf *FedAppInst) bool {
 	if len(val) == 0 {
 		return false
@@ -6592,6 +6985,16 @@ type FedAppInstCacheData struct {
 	ModRev int64
 }
 
+func (s *FedAppInstCacheData) Clone() *FedAppInstCacheData {
+	cp := FedAppInstCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &FedAppInst{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // FedAppInstCache caches FedAppInst objects in memory in a hash table
 // and keeps them in sync with the database.
 type FedAppInstCache struct {
@@ -6599,7 +7002,7 @@ type FedAppInstCache struct {
 	Mux           util.Mutex
 	List          map[FedAppInstKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *FedAppInstKey, old *FedAppInst, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *FedAppInst, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *FedAppInst, new *FedAppInst)
 	DeletedCbs    []func(ctx context.Context, old *FedAppInst)
 	KeyWatchers   map[FedAppInstKey][]*FedAppInstKeyWatcher
@@ -6658,6 +7061,14 @@ func (c *FedAppInstCache) GetAllKeys(ctx context.Context, cb func(key *FedAppIns
 	}
 }
 
+func (c *FedAppInstCache) GetAllLocked(ctx context.Context, cb func(obj *FedAppInst, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *FedAppInstCache) Update(ctx context.Context, in *FedAppInst, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *FedAppInst) (*FedAppInst, bool) {
 		return in, true
@@ -6675,14 +7086,16 @@ func (c *FedAppInstCache) UpdateModFunc(ctx context.Context, key *FedAppInstKey,
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &FedAppInst{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -6719,9 +7132,13 @@ func (c *FedAppInstCache) DeleteCondFunc(ctx context.Context, in *FedAppInst, mo
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -6749,9 +7166,14 @@ func (c *FedAppInstCache) Prune(ctx context.Context, validKeys map[FedAppInstKey
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &FedAppInst{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -6796,8 +7218,8 @@ func FedAppInstGenericNotifyCb(fn func(key *FedAppInstKey, old *FedAppInst)) fun
 	}
 }
 
-func (c *FedAppInstCache) SetNotifyCb(fn func(ctx context.Context, obj *FedAppInstKey, old *FedAppInst, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *FedAppInstKey, old *FedAppInst, modRev int64){fn}
+func (c *FedAppInstCache) SetNotifyCb(fn func(ctx context.Context, obj *FedAppInst, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *FedAppInst, modRev int64){fn}
 }
 
 func (c *FedAppInstCache) SetUpdatedCb(fn func(ctx context.Context, old *FedAppInst, new *FedAppInst)) {
@@ -6824,7 +7246,7 @@ func (c *FedAppInstCache) AddDeletedCb(fn func(ctx context.Context, old *FedAppI
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *FedAppInstCache) AddNotifyCb(fn func(ctx context.Context, obj *FedAppInstKey, old *FedAppInst, modRev int64)) {
+func (c *FedAppInstCache) AddNotifyCb(fn func(ctx context.Context, obj *FedAppInst, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -6929,9 +7351,14 @@ func (c *FedAppInstCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &FedAppInst{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -7311,6 +7738,15 @@ func (m *AppInst) IsValidArgsForCreateAppInst() error {
 	if m.FedKey.AppInstId != "" {
 		return fmt.Errorf("Invalid field specified: FedKey.AppInstId, this field is only for internal use")
 	}
+	if m.CompatibilityVersion != 0 {
+		return fmt.Errorf("Invalid field specified: CompatibilityVersion, this field is only for internal use")
+	}
+	if m.VirtualClusterKey.Name != "" {
+		return fmt.Errorf("Invalid field specified: VirtualClusterKey.Name, this field is only for internal use")
+	}
+	if m.VirtualClusterKey.Organization != "" {
+		return fmt.Errorf("Invalid field specified: VirtualClusterKey.Organization, this field is only for internal use")
+	}
 	return nil
 }
 
@@ -7404,6 +7840,15 @@ func (m *AppInst) IsValidArgsForDeleteAppInst() error {
 	}
 	if m.FedKey.AppInstId != "" {
 		return fmt.Errorf("Invalid field specified: FedKey.AppInstId, this field is only for internal use")
+	}
+	if m.CompatibilityVersion != 0 {
+		return fmt.Errorf("Invalid field specified: CompatibilityVersion, this field is only for internal use")
+	}
+	if m.VirtualClusterKey.Name != "" {
+		return fmt.Errorf("Invalid field specified: VirtualClusterKey.Name, this field is only for internal use")
+	}
+	if m.VirtualClusterKey.Organization != "" {
+		return fmt.Errorf("Invalid field specified: VirtualClusterKey.Organization, this field is only for internal use")
 	}
 	return nil
 }
@@ -7508,6 +7953,15 @@ func (m *AppInst) IsValidArgsForRefreshAppInst() error {
 	if m.FedKey.AppInstId != "" {
 		return fmt.Errorf("Invalid field specified: FedKey.AppInstId, this field is only for internal use")
 	}
+	if m.CompatibilityVersion != 0 {
+		return fmt.Errorf("Invalid field specified: CompatibilityVersion, this field is only for internal use")
+	}
+	if m.VirtualClusterKey.Name != "" {
+		return fmt.Errorf("Invalid field specified: VirtualClusterKey.Name, this field is only for internal use")
+	}
+	if m.VirtualClusterKey.Organization != "" {
+		return fmt.Errorf("Invalid field specified: VirtualClusterKey.Organization, this field is only for internal use")
+	}
 	return nil
 }
 
@@ -7611,6 +8065,30 @@ func (m *AppInst) IsValidArgsForUpdateAppInst() error {
 	if m.FedKey.AppInstId != "" {
 		return fmt.Errorf("Invalid field specified: FedKey.AppInstId, this field is only for internal use")
 	}
+	if m.AppKey.Organization != "" {
+		return fmt.Errorf("Invalid field specified: AppKey.Organization, this field is only for internal use")
+	}
+	if m.AppKey.Name != "" {
+		return fmt.Errorf("Invalid field specified: AppKey.Name, this field is only for internal use")
+	}
+	if m.AppKey.Version != "" {
+		return fmt.Errorf("Invalid field specified: AppKey.Version, this field is only for internal use")
+	}
+	if m.ClusterKey.Name != "" {
+		return fmt.Errorf("Invalid field specified: ClusterKey.Name, this field is only for internal use")
+	}
+	if m.ClusterKey.Organization != "" {
+		return fmt.Errorf("Invalid field specified: ClusterKey.Organization, this field is only for internal use")
+	}
+	if m.CompatibilityVersion != 0 {
+		return fmt.Errorf("Invalid field specified: CompatibilityVersion, this field is only for internal use")
+	}
+	if m.VirtualClusterKey.Name != "" {
+		return fmt.Errorf("Invalid field specified: VirtualClusterKey.Name, this field is only for internal use")
+	}
+	if m.VirtualClusterKey.Organization != "" {
+		return fmt.Errorf("Invalid field specified: VirtualClusterKey.Organization, this field is only for internal use")
+	}
 	return nil
 }
 
@@ -7622,7 +8100,7 @@ func (m *AppInstLatency) IsValidArgsForRequestAppInstLatency() error {
 	return nil
 }
 
-func (m *VirtualClusterInstKey) Size() (n int) {
+func (m *VirtualClusterInstKeyV1) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -7639,7 +8117,7 @@ func (m *VirtualClusterInstKey) Size() (n int) {
 	return n
 }
 
-func (m *AppInstKey) Size() (n int) {
+func (m *AppInstKeyV1) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -7648,6 +8126,25 @@ func (m *AppInstKey) Size() (n int) {
 	l = m.AppKey.Size()
 	n += 1 + l + sovAppinst(uint64(l))
 	l = m.ClusterInstKey.Size()
+	n += 1 + l + sovAppinst(uint64(l))
+	return n
+}
+
+func (m *AppInstKey) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovAppinst(uint64(l))
+	}
+	l = len(m.Organization)
+	if l > 0 {
+		n += 1 + l + sovAppinst(uint64(l))
+	}
+	l = m.CloudletKey.Size()
 	n += 1 + l + sovAppinst(uint64(l))
 	return n
 }
@@ -7769,6 +8266,15 @@ func (m *AppInst) Size() (n int) {
 		n += 2 + l + sovAppinst(uint64(l))
 	}
 	l = m.FedKey.Size()
+	n += 2 + l + sovAppinst(uint64(l))
+	l = m.AppKey.Size()
+	n += 2 + l + sovAppinst(uint64(l))
+	l = m.ClusterKey.Size()
+	n += 2 + l + sovAppinst(uint64(l))
+	if m.CompatibilityVersion != 0 {
+		n += 2 + sovAppinst(uint64(m.CompatibilityVersion))
+	}
+	l = m.VirtualClusterKey.Size()
 	n += 2 + l + sovAppinst(uint64(l))
 	return n
 }
@@ -7949,7 +8455,7 @@ func sovAppinst(x uint64) (n int) {
 func sozAppinst(x uint64) (n int) {
 	return sovAppinst(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *VirtualClusterInstKey) Unmarshal(dAtA []byte) error {
+func (m *VirtualClusterInstKeyV1) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7972,10 +8478,10 @@ func (m *VirtualClusterInstKey) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: VirtualClusterInstKey: wiretype end group for non-group")
+			return fmt.Errorf("proto: VirtualClusterInstKeyV1: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: VirtualClusterInstKey: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: VirtualClusterInstKeyV1: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -8097,7 +8603,7 @@ func (m *VirtualClusterInstKey) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AppInstKey) Unmarshal(dAtA []byte) error {
+func (m *AppInstKeyV1) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8120,10 +8626,10 @@ func (m *AppInstKey) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: AppInstKey: wiretype end group for non-group")
+			return fmt.Errorf("proto: AppInstKeyV1: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AppInstKey: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: AppInstKeyV1: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -8189,6 +8695,153 @@ func (m *AppInstKey) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.ClusterInstKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAppinst(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAppinst
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AppInstKey) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAppinst
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AppInstKey: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AppInstKey: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAppinst
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAppinst
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAppinst
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Organization", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAppinst
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAppinst
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAppinst
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Organization = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CloudletKey", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAppinst
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAppinst
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAppinst
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.CloudletKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -9210,6 +9863,124 @@ func (m *AppInst) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.FedKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 44:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppKey", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAppinst
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAppinst
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAppinst
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.AppKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 45:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterKey", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAppinst
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAppinst
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAppinst
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ClusterKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 46:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CompatibilityVersion", wireType)
+			}
+			m.CompatibilityVersion = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAppinst
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CompatibilityVersion |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 47:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VirtualClusterKey", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAppinst
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAppinst
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAppinst
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.VirtualClusterKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

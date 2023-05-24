@@ -106,30 +106,24 @@ providerappinsts:
   region: local
   appname: pa-k8sapp10fedappco
   appvers: "1.0"
-  cluster: autoclusterabcdefABCDEF
-  clusterorg: edgecloudorg
   cloudlet: dmuus-cloud-1
   cloudletorg: dmuus
-  appinstcallbacklink: https://127.0.0.1:9808/operatorplatform/fedcallbacks/v1/onInstanceStatusEvent/fedappcok8sapp10-autoclusterk8s-dmuuscloud1-dmuus-partner1
+  appinstcallbacklink: https://127.0.0.1:9808/operatorplatform/fedcallbacks/v1/onInstanceStatusEvent/fedappco-k8sapp-dmuuscloud1-dmuus-partner1
 - federationname: dmuus-partner1
   appinstid: '***replaced***'
   appid: pa-dockerapp10fedappco
   region: local
   appname: pa-dockerapp10fedappco
   appvers: "1.0"
-  cluster: autoclusterabcdefABCDEF
-  clusterorg: edgecloudorg
   cloudlet: dmuus-cloud-1
   cloudletorg: dmuus
-  appinstcallbacklink: https://127.0.0.1:9808/operatorplatform/fedcallbacks/v1/onInstanceStatusEvent/fedappcodockerapp10-autoclusterdocker-dmuuscloud1-dmuus-partner1
+  appinstcallbacklink: https://127.0.0.1:9808/operatorplatform/fedcallbacks/v1/onInstanceStatusEvent/fedappco-dockerapp-dmuuscloud1-dmuus-partner1
 - federationname: dmuus-partner1
   appinstid: '***replaced***'
   appid: pa-vmapp10fedappco
   region: local
   appname: pa-vmapp10fedappco
   appvers: "1.0"
-  cluster: defaultclust
-  clusterorg: dmuus-partner1
   cloudlet: dmuus-cloud-2
   cloudletorg: dmuus
-  appinstcallbacklink: https://127.0.0.1:9808/operatorplatform/fedcallbacks/v1/onInstanceStatusEvent/fedappcovmapp10-dmuuscloud2-dmuus-partner1
+  appinstcallbacklink: https://127.0.0.1:9808/operatorplatform/fedcallbacks/v1/onInstanceStatusEvent/fedappco-vmapp-dmuuscloud2-dmuus-partner1

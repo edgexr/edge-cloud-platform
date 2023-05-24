@@ -18,11 +18,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -179,16 +179,16 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 	for k := range appInstKeys {
 		var appinst edgeproto.AppInst
 		var app edgeproto.App
-		if !caches.AppCache.Get(&k.AppKey, &app) {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get appInst from cache", "appkey", k.AppKey)
+		if !caches.AppInstCache.Get(&k, &appinst) {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get appInst from cache", "key", k)
+			continue
+		}
+		if !caches.AppCache.Get(&appinst.AppKey, &app) {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get appInst from cache", "appkey", appinst.AppKey)
 			continue
 		}
 		if app.Deployment != cloudcommon.DeploymentTypeVM || app.AccessType != edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
 			// only vm with load balancers need to be handled
-			continue
-		}
-		if !caches.AppInstCache.Get(&k, &appinst) {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get appInst from cache", "key", k)
 			continue
 		}
 		appLbName := appinst.Uri

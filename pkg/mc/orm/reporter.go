@@ -1161,10 +1161,8 @@ func GetCloudletAppUsageData(ctx context.Context, username string, report *ormap
 	}
 	obj := &edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				CloudletKey: edgeproto.CloudletKey{
-					Organization: report.Org,
-				},
+			CloudletKey: edgeproto.CloudletKey{
+				Organization: report.Org,
 			},
 		},
 		State:    edgeproto.TrackedState_READY,
@@ -1172,8 +1170,8 @@ func GetCloudletAppUsageData(ctx context.Context, username string, report *ormap
 	}
 	appsCount := make(map[string]PieChartDataMap)
 	err := ctrlclient.ShowAppInstStream(ctx, rc, obj, connCache, nil, func(appInst *edgeproto.AppInst) error {
-		cloudletName := appInst.Key.ClusterInstKey.CloudletKey.Name
-		appOrg := appInst.Key.AppKey.Organization
+		cloudletName := appInst.Key.CloudletKey.Name
+		appOrg := appInst.AppKey.Organization
 		if _, ok := appsCount[cloudletName]; !ok {
 			appsCount[cloudletName] = make(PieChartDataMap)
 		}
@@ -1196,10 +1194,8 @@ func GetAppResourceUsageData(ctx context.Context, username string, report *ormap
 	in := ormapi.RegionAppInstMetrics{
 		Region: report.Region,
 		AppInst: edgeproto.AppInstKey{
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				CloudletKey: edgeproto.CloudletKey{
-					Organization: report.Org,
-				},
+			CloudletKey: edgeproto.CloudletKey{
+				Organization: report.Org,
 			},
 		},
 		Selector: "cpu,mem,disk,network",
@@ -1212,8 +1208,8 @@ func GetAppResourceUsageData(ctx context.Context, username string, report *ormap
 	}
 	rc.region = in.Region
 	claims := &ormutil.UserClaims{Username: username}
-	cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.AppKey.Organization},
-		ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.ClusterInstKey.CloudletKey})
+	cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.Organization},
+		ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.CloudletKey})
 	if err != nil {
 		return nil, err
 	}
@@ -1249,15 +1245,13 @@ func GetAppResourceUsageData(ctx context.Context, username string, report *ormap
 			for _, row := range result.Series {
 				/*
 					columns[0] -> time
-					columns[1] -> appname
-					columns[2] -> appvers
-					columns[3] -> clustername
-					columns[4] -> clusterorg
-					columns[5] -> cloudlet
-					columns[6] -> cloudletorg
-					columns[7] -> apporg
-					columns[8] -> pod
-					columns[9:] -> cpu,mem,disk,sendBytes,recvBytes
+					columns[1] -> appinstname
+					columns[2] -> appinstorg
+					columns[3] -> cloudlet
+					columns[4] -> cloudletorg
+					columns[5] -> cloudletfedorg
+					columns[6] -> pod
+					columns[7:] -> cpu,mem,disk,sendBytes,recvBytes
 				*/
 				for _, val := range row.Values {
 					if len(val) < 10 {
@@ -1273,48 +1267,27 @@ func GetAppResourceUsageData(ctx context.Context, username string, report *ormap
 						log.SpanLog(ctx, log.DebugLevelInfo, "failed to parse resource time", "time", timeStr)
 						continue
 					}
-					appname, ok := val[1].(string)
+					appinstname, ok := val[1].(string)
 					if !ok {
-						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch app name", "app", val[1])
+						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch appinst name", "val", val[1])
 					}
-					appvers, ok := val[2].(string)
+					appinstorg, ok := val[2].(string)
 					if !ok {
-						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch app version", "appvers", val[2])
+						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch appinst org", "val", val[2])
 					}
-					apporg, ok := val[7].(string)
-					if !ok {
-						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch app org", "apporg", val[7])
-					}
-					clustername, ok := val[3].(string)
-					if !ok {
-						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch cluster name", "clustername", val[3])
-					}
-					clusterorg, ok := val[4].(string)
-					if !ok {
-						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch cluster org", "clusterorg", val[4])
-					}
-					cloudlet, ok := val[5].(string)
+					cloudlet, ok := val[3].(string)
 					if !ok {
 						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch cloudlet name", "cloudlet", val[5])
 					}
 					appInstKey := edgeproto.AppInstKey{
-						AppKey: edgeproto.AppKey{
-							Name:         appname,
-							Organization: apporg,
-							Version:      appvers,
-						},
-						ClusterInstKey: edgeproto.VirtualClusterInstKey{
-							ClusterKey: edgeproto.ClusterKey{
-								Name: clustername,
-							},
-							Organization: clusterorg,
-							CloudletKey: edgeproto.CloudletKey{
-								Name:         cloudlet,
-								Organization: report.Org,
-							},
+						Name:         appinstname,
+						Organization: appinstorg,
+						CloudletKey: edgeproto.CloudletKey{
+							Name:         cloudlet,
+							Organization: report.Org,
 						},
 					}
-					appId := fmt.Sprintf("%s|%s|%s|%s", appname, appvers, clustername, clusterorg)
+					appId := fmt.Sprintf("%s|%s", appinstname, appinstorg)
 					if _, ok := appMap[appInstKey]; !ok {
 						appMap[appInstKey] = make(map[string]TimeChartData)
 						for resName, _ := range resIndexMap {
@@ -1350,8 +1323,8 @@ func GetAppResourceUsageData(ctx context.Context, username string, report *ormap
 	chartMap := make(map[string]map[string]TimeChartDataMap)
 
 	for appInstKey, resChartData := range appMap {
-		cloudlet := appInstKey.ClusterInstKey.CloudletKey.Name
-		apporg := appInstKey.AppKey.Organization
+		cloudlet := appInstKey.CloudletKey.Name
+		apporg := appInstKey.Organization
 		for resName, resData := range resChartData {
 			if _, ok := chartMap[cloudlet]; !ok {
 				chartMap[cloudlet] = make(map[string]TimeChartDataMap)

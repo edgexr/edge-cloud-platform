@@ -15,6 +15,8 @@
 - labels:
     alertname: AppInstDown
     app: someapplication1
+    appinst: someapplication1
+    appinstorg: AcmeAppCo
     apporg: AcmeAppCo
     appver: "1.0"
     cloudlet: dmuus-cloud-1

@@ -18,14 +18,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/labstack/echo/v4"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/labstack/echo/v4"
 )
 
 func generateCloudletList(cloudletList []string) string {
@@ -51,16 +51,15 @@ func generateDmeApiUsageCloudletList(cloudletList []string) string {
 
 func cloudletPoolEventsQuery(obj *ormapi.RegionCloudletPoolUsage, cloudletList []string, queryType string) string {
 	arg := influxQueryArgs{
-		OrgField:     "cloudletorg",
-		ApiCallerOrg: obj.CloudletPool.Organization,
+		CloudletOrg:  obj.CloudletPool.Organization,
 		CloudletList: generateCloudletList(cloudletList),
 	}
 	if queryType == CLUSTER {
-		arg.Measurement = EVENT_CLUSTERINST
-		arg.Selector = strings.Join(append(ClusterFields, clusterUsageEventFields...), ",")
+		arg.Measurement = cloudcommon.ClusterInstEvent
+		arg.Selector = cloudcommon.GetInfluxSelectFields(append(ClusterInstFields, clusterUsageEventFields...))
 	} else if queryType == APPINST {
-		arg.Measurement = EVENT_APPINST
-		arg.Selector = strings.Join(append(AppFields, appUsageEventFields...), ",")
+		arg.Measurement = cloudcommon.AppInstEvent
+		arg.Selector = cloudcommon.GetInfluxSelectFields(append(AppInstFields, appUsageEventFields...))
 		if obj.ShowVmAppsOnly {
 			arg.DeploymentType = cloudcommon.DeploymentTypeVM
 		}
@@ -73,16 +72,15 @@ func cloudletPoolEventsQuery(obj *ormapi.RegionCloudletPoolUsage, cloudletList [
 
 func cloudletPoolCheckpointsQuery(obj *ormapi.RegionCloudletPoolUsage, cloudletList []string, queryType string) string {
 	arg := influxQueryArgs{
-		OrgField:     "cloudletorg",
-		ApiCallerOrg: obj.CloudletPool.Organization,
+		CloudletOrg:  obj.CloudletPool.Organization,
 		CloudletList: generateCloudletList(cloudletList),
 	}
 	if queryType == CLUSTER {
 		arg.Measurement = cloudcommon.ClusterInstCheckpoints
-		arg.Selector = strings.Join(append(ClusterFields, clusterCheckpointFields...), ",")
+		arg.Selector = cloudcommon.GetInfluxSelectFields(append(ClusterInstFields, clusterCheckpointFields...))
 	} else if queryType == APPINST {
 		arg.Measurement = cloudcommon.AppInstCheckpoints
-		arg.Selector = strings.Join(AppCheckpointFields, ",")
+		arg.Selector = cloudcommon.GetInfluxSelectFields(AppInstCheckpointFields)
 		if !obj.ShowVmAppsOnly {
 			arg.DeploymentType = cloudcommon.DeploymentTypeVM
 		}

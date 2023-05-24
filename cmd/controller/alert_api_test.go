@@ -136,9 +136,10 @@ func TestAppInstDownAlert(t *testing.T) {
 	// Create a reservable clusterInst
 	cinst := testutil.ClusterInstData()[7]
 	streamOut := testutil.NewCudStreamoutAppInst(ctx)
-	appinst := edgeproto.AppInst{}
-	appinst.Key.AppKey = testutil.AppData()[0].Key
-	appinst.Key.ClusterInstKey = *cinst.Key.Virtual("")
+	appinst := testutil.AppInstData()[0]
+	appinst.Key.Name = testutil.AlertData()[3].Labels[edgeproto.AppInstKeyTagName]
+	appinst.Key.CloudletKey = cinst.Key.CloudletKey
+	appinst.ClusterKey = cinst.Key.ClusterKey
 	err := apis.appInstApi.CreateAppInst(&appinst, streamOut)
 	require.Nil(t, err, "create AppInst")
 	// Inject AppInst info check that all appInsts are Healthy

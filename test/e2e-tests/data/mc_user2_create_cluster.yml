@@ -19,10 +19,10 @@ regiondata:
     - key:
         clusterkey:
           name: {{cluster_name}}
+          organization: {{cluster_org}}
         cloudletkey:
           organization: {{cloudlet_org}}
           name: {{cloudlet_name}}
-        organization: {{cluster_org}}
       flavor:
         name: x1.small
       ipaccess: IpAccessShared

@@ -27,9 +27,9 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type SendAppInstHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.AppInstKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.AppInst, modRev int64))
 	GetWithRev(key *edgeproto.AppInstKey, buf *edgeproto.AppInst, modRev *int64) bool
-	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(key *edgeproto.AppInstKey, modRev int64))
+	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(data *edgeproto.AppInstCacheData))
 }
 
 type RecvAppInstHandler interface {
@@ -42,7 +42,7 @@ type RecvAppInstHandler interface {
 type AppInstCacheHandler interface {
 	SendAppInstHandler
 	RecvAppInstHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.AppInstKey, old *edgeproto.AppInst, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.AppInst, modRev int64))
 }
 
 type AppInstSend struct {
@@ -97,11 +97,11 @@ func (s *AppInstSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.AppInstKey, modRev int64) {
-		if !s.UpdateAllOkLocked(key) { // to be implemented by hand
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.AppInst, modRev int64) {
+		if !s.UpdateAllOkLocked(obj) { // to be implemented by hand
 			return
 		}
-		s.Keys[*key] = AppInstSendContext{
+		s.Keys[*obj.GetKey()] = AppInstSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -109,15 +109,15 @@ func (s *AppInstSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *AppInstSend) Update(ctx context.Context, key *edgeproto.AppInstKey, old *edgeproto.AppInst, modRev int64) {
+func (s *AppInstSend) Update(ctx context.Context, obj *edgeproto.AppInst, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
-	if !s.UpdateOk(ctx, key) { // to be implemented by hand
+	if !s.UpdateOk(ctx, obj) { // to be implemented by hand
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *AppInstSend) ForceDelete(ctx context.Context, key *edgeproto.AppInstKey, modRev int64) {
@@ -138,15 +138,18 @@ func (s *AppInstSend) updateInternal(ctx context.Context, key *edgeproto.AppInst
 }
 
 func (s *AppInstSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
-	keys := make(map[edgeproto.AppInstKey]int64)
-	s.handler.GetForCloudlet(cloudlet, func(objKey *edgeproto.AppInstKey, modRev int64) {
-		keys[*objKey] = modRev
+	keys := make(map[edgeproto.AppInstKey]*edgeproto.AppInstCacheData)
+	s.handler.GetForCloudlet(cloudlet, func(data *edgeproto.AppInstCacheData) {
+		if data.Obj == nil {
+			return
+		}
+		keys[*data.Obj.GetKey()] = data
 	})
-	for k, modRev := range keys {
+	for k, data := range keys {
 		if action == edgeproto.NoticeAction_UPDATE {
-			s.Update(ctx, &k, nil, modRev)
+			s.Update(ctx, data.Obj, data.ModRev)
 		} else if action == edgeproto.NoticeAction_DELETE {
-			s.ForceDelete(ctx, &k, modRev)
+			s.ForceDelete(ctx, &k, data.ModRev)
 		}
 	}
 }
@@ -243,11 +246,11 @@ func (s *AppInstSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *AppInstSendMany) Update(ctx context.Context, key *edgeproto.AppInstKey, old *edgeproto.AppInst, modRev int64) {
+func (s *AppInstSendMany) Update(ctx context.Context, obj *edgeproto.AppInst, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 
@@ -389,7 +392,7 @@ func (s *Client) RegisterRecvAppInstCache(cache AppInstCacheHandler) {
 }
 
 type SendAppInstInfoHandler interface {
-	GetAllKeys(ctx context.Context, cb func(key *edgeproto.AppInstKey, modRev int64))
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.AppInstInfo, modRev int64))
 	GetWithRev(key *edgeproto.AppInstKey, buf *edgeproto.AppInstInfo, modRev *int64) bool
 }
 
@@ -403,7 +406,7 @@ type RecvAppInstInfoHandler interface {
 type AppInstInfoCacheHandler interface {
 	SendAppInstInfoHandler
 	RecvAppInstInfoHandler
-	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.AppInstKey, old *edgeproto.AppInstInfo, modRev int64))
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.AppInstInfo, modRev int64))
 }
 
 type AppInstInfoSend struct {
@@ -458,8 +461,8 @@ func (s *AppInstInfoSend) UpdateAll(ctx context.Context) {
 		return
 	}
 	s.Mux.Lock()
-	s.handler.GetAllKeys(ctx, func(key *edgeproto.AppInstKey, modRev int64) {
-		s.Keys[*key] = AppInstInfoSendContext{
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.AppInstInfo, modRev int64) {
+		s.Keys[*obj.GetKey()] = AppInstInfoSendContext{
 			ctx:    ctx,
 			modRev: modRev,
 		}
@@ -467,12 +470,12 @@ func (s *AppInstInfoSend) UpdateAll(ctx context.Context) {
 	s.Mux.Unlock()
 }
 
-func (s *AppInstInfoSend) Update(ctx context.Context, key *edgeproto.AppInstKey, old *edgeproto.AppInstInfo, modRev int64) {
+func (s *AppInstInfoSend) Update(ctx context.Context, obj *edgeproto.AppInstInfo, modRev int64) {
 	if !s.sendrecv.isRemoteWanted(s.MessageName) {
 		return
 	}
 	forceDelete := false
-	s.updateInternal(ctx, key, modRev, forceDelete)
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
 func (s *AppInstInfoSend) ForceDelete(ctx context.Context, key *edgeproto.AppInstKey, modRev int64) {
@@ -587,11 +590,11 @@ func (s *AppInstInfoSendMany) DoneSend(peerAddr string, send NotifySend) {
 	}
 	s.Mux.Unlock()
 }
-func (s *AppInstInfoSendMany) Update(ctx context.Context, key *edgeproto.AppInstKey, old *edgeproto.AppInstInfo, modRev int64) {
+func (s *AppInstInfoSendMany) Update(ctx context.Context, obj *edgeproto.AppInstInfo, modRev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, send := range s.sends {
-		send.Update(ctx, key, old, modRev)
+		send.Update(ctx, obj, modRev)
 	}
 }
 

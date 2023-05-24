@@ -137,7 +137,7 @@ func newShowClusterInstAuthz(ctx context.Context, region, username string, resou
 }
 
 func (s *AuthzClusterInstShow) Ok(obj *edgeproto.ClusterInst) (bool, bool) {
-	return s.AuthzShow.OkCloudlet(obj.Key.Organization, obj.Key.CloudletKey)
+	return s.AuthzShow.OkCloudlet(obj.Key.ClusterKey.Organization, obj.Key.CloudletKey)
 }
 
 func (s *AuthzClusterInstShow) Filter(obj *edgeproto.ClusterInst) {
@@ -157,7 +157,7 @@ func newShowAppInstAuthz(ctx context.Context, region, username string, resource,
 }
 
 func (s *AuthzAppInstShow) Ok(obj *edgeproto.AppInst) (bool, bool) {
-	return s.AuthzShow.OkCloudlet(obj.Key.AppKey.Organization, obj.Key.ClusterInstKey.CloudletKey)
+	return s.AuthzShow.OkCloudlet(obj.Key.Organization, obj.Key.CloudletKey)
 }
 
 func (s *AuthzAppInstShow) Filter(obj *edgeproto.AppInst) {

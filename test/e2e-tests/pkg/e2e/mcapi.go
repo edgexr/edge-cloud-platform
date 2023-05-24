@@ -455,8 +455,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 
 	if api == "show" {
 		objTypes := getVarsObjTypes(actionVars)
-		var showData *ormapi.AllData
-		showData = showMcData(uri, token, tag, objTypes, &rc)
+		showData := showMcData(uri, token, tag, objTypes, &rc)
 		if tag == "" {
 			cmpFilterAllData(showData)
 		} else if tag == "noignore" {
@@ -470,10 +469,9 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	if api == "showevents" {
 		var showEvents *ormapi.AllMetrics
 		targets := readMCMetricTargetsFile(apiFile, vars)
-		var parsedMetrics *[]MetricsCompare
 		showEvents = showMcEvents(uri, token, targets, &rc)
 		// convert showMetrics into something yml compatible
-		parsedMetrics = parseMetrics(showEvents)
+		parsedMetrics := parseMetrics(showEvents)
 		PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
 		*retry = true
 		return rc
@@ -1399,6 +1397,9 @@ func showMcMetricsAll(uri, token string, targets *MetricTargets, rc *bool) *orma
 		},
 	}
 	appMetrics, status, err := mcClient.ShowAppMetrics(uri, token, &appQuery)
+	if err != nil {
+		appMetrics = &ormapi.AllMetrics{}
+	}
 	checkMcErr("ShowAppMetrics", status, err, rc)
 	clusterQuery := ormapi.RegionClusterInstMetrics{
 		Region:      "local",
@@ -1411,7 +1412,9 @@ func showMcMetricsAll(uri, token string, targets *MetricTargets, rc *bool) *orma
 	clusterMetrics, status, err := mcClient.ShowClusterMetrics(uri, token, &clusterQuery)
 	checkMcErr("ShowClusterMetrics", status, err, rc)
 	// combine them into one AllMetrics
-	appMetrics.Data = append(appMetrics.Data, clusterMetrics.Data...)
+	if err == nil {
+		appMetrics.Data = append(appMetrics.Data, clusterMetrics.Data...)
+	}
 	return appMetrics
 }
 
@@ -1425,6 +1428,9 @@ func showMcEvents(uri, token string, targets *MetricTargets, rc *bool) *ormapi.A
 	}
 	appMetrics, status, err := mcClient.ShowAppEvents(uri, token, &appQuery)
 	checkMcErr("ShowAppEvents", status, err, rc)
+	if err != nil {
+		appMetrics = &ormapi.AllMetrics{}
+	}
 	clusterQuery := ormapi.RegionClusterInstEvents{
 		Region:      "local",
 		ClusterInst: targets.ClusterInstKey,
@@ -1434,6 +1440,9 @@ func showMcEvents(uri, token string, targets *MetricTargets, rc *bool) *ormapi.A
 	}
 	clusterMetrics, status, err := mcClient.ShowClusterEvents(uri, token, &clusterQuery)
 	checkMcErr("ShowClusterEvents", status, err, rc)
+	if err == nil {
+		appMetrics.Data = append(appMetrics.Data, clusterMetrics.Data...)
+	}
 	cloudletQuery := ormapi.RegionCloudletEvents{
 		Region:   "local",
 		Cloudlet: targets.CloudletKey,
@@ -1443,10 +1452,9 @@ func showMcEvents(uri, token string, targets *MetricTargets, rc *bool) *ormapi.A
 	}
 	cloudletMetrics, status, err := mcClient.ShowCloudletEvents(uri, token, &cloudletQuery)
 	checkMcErr("ShowCloudletEvents", status, err, rc)
-
-	// combine them into one AllMetrics
-	appMetrics.Data = append(appMetrics.Data, clusterMetrics.Data...)
-	appMetrics.Data = append(appMetrics.Data, cloudletMetrics.Data...)
+	if err == nil {
+		appMetrics.Data = append(appMetrics.Data, cloudletMetrics.Data...)
+	}
 	return appMetrics
 }
 
@@ -1464,7 +1472,9 @@ func showMcMetricsSep(uri, token string, targets *MetricTargets, rc *bool) *orma
 		appQuery.Selector = selector
 		appMetric, status, err := mcClient.ShowAppMetrics(uri, token, &appQuery)
 		checkMcErr("ShowApp"+strings.Title(selector), status, err, rc)
-		allMetrics.Data = append(allMetrics.Data, appMetric.Data...)
+		if err == nil {
+			allMetrics.Data = append(allMetrics.Data, appMetric.Data...)
+		}
 	}
 
 	clusterQuery := ormapi.RegionClusterInstMetrics{
@@ -1478,7 +1488,9 @@ func showMcMetricsSep(uri, token string, targets *MetricTargets, rc *bool) *orma
 		clusterQuery.Selector = selector
 		clusterMetric, status, err := mcClient.ShowClusterMetrics(uri, token, &clusterQuery)
 		checkMcErr("ShowCluster"+strings.Title(selector), status, err, rc)
-		allMetrics.Data = append(allMetrics.Data, clusterMetric.Data...)
+		if err == nil {
+			allMetrics.Data = append(allMetrics.Data, clusterMetric.Data...)
+		}
 	}
 	return &allMetrics
 }
@@ -1488,9 +1500,7 @@ func showMcClientApiMetrics(uri, token string, targets *MetricTargets, rc *bool)
 	for _, method := range ApiMethods {
 		clientApiUsageQuery := ormapi.RegionClientApiUsageMetrics{
 			Region: "local",
-			AppInst: edgeproto.AppInstKey{
-				AppKey: targets.AppInstKey.AppKey,
-			},
+			AppKey: targets.AppKey,
 			Method: method,
 			MetricsCommon: ormapi.MetricsCommon{
 				Limit: 1,
@@ -1500,7 +1510,9 @@ func showMcClientApiMetrics(uri, token string, targets *MetricTargets, rc *bool)
 			clientApiUsageQuery.Selector = selector
 			clientApiUsageMetric, status, err := mcClient.ShowClientApiUsageMetrics(uri, token, &clientApiUsageQuery)
 			checkMcErr("ShowClientApiUsage"+strings.Title(selector), status, err, rc)
-			allMetrics.Data = append(allMetrics.Data, clientApiUsageMetric.Data...)
+			if err == nil {
+				allMetrics.Data = append(allMetrics.Data, clientApiUsageMetric.Data...)
+			}
 		}
 	}
 	return &allMetrics
@@ -1509,8 +1521,8 @@ func showMcClientApiMetrics(uri, token string, targets *MetricTargets, rc *bool)
 func showMcClientAppMetrics(uri, token string, targets *MetricTargets, rc *bool) *ormapi.AllMetrics {
 	allMetrics := ormapi.AllMetrics{Data: make([]ormapi.MetricData, 0)}
 	clientAppUsageQuery := ormapi.RegionClientAppUsageMetrics{
-		Region:  "local",
-		AppInst: targets.AppInstKey,
+		Region:     "local",
+		AppInstKey: targets.AppInstKey,
 		MetricsCommon: ormapi.MetricsCommon{
 			Limit: 1,
 		},
@@ -1524,7 +1536,9 @@ func showMcClientAppMetrics(uri, token string, targets *MetricTargets, rc *bool)
 		clientAppUsageQuery.Selector = selector
 		clientAppUsageMetric, status, err := mcClient.ShowClientAppUsageMetrics(uri, token, &clientAppUsageQuery)
 		checkMcErr("ShowClientAppUsage"+strings.Title(selector), status, err, rc)
-		allMetrics.Data = append(allMetrics.Data, clientAppUsageMetric.Data...)
+		if err == nil {
+			allMetrics.Data = append(allMetrics.Data, clientAppUsageMetric.Data...)
+		}
 	}
 	return &allMetrics
 }
@@ -1547,7 +1561,9 @@ func showMcClientCloudletMetrics(uri, token string, targets *MetricTargets, rc *
 		clientCloudletUsageQuery.Selector = selector
 		clientCloudletUsageMetric, status, err := mcClient.ShowClientCloudletUsageMetrics(uri, token, &clientCloudletUsageQuery)
 		checkMcErr("ShowClientCloudletUsage"+strings.Title(selector), status, err, rc)
-		allMetrics.Data = append(allMetrics.Data, clientCloudletUsageMetric.Data...)
+		if err == nil {
+			allMetrics.Data = append(allMetrics.Data, clientCloudletUsageMetric.Data...)
+		}
 	}
 	return &allMetrics
 }
@@ -1885,12 +1901,9 @@ func parseMetrics(allMetrics *ormapi.AllMetrics) *[]MetricsCompare {
 				if series.Columns[i] == "time" || series.Columns[i] == "metadata" || series.Columns[i] == "other" {
 					continue
 				}
-				// put non measurement info separate
-				_, isTag := TagValues[series.Columns[i]]
-				if str, ok := val.(string); ok && isTag {
+				if str, ok := val.(string); ok {
 					measurement.Tags[series.Columns[i]] = str
-				}
-				if floatVal, ok := val.(float64); ok {
+				} else if floatVal, ok := val.(float64); ok {
 					measurement.Values[series.Columns[i]] = floatVal
 					// if its an int cast it to a float to make comparing easier
 				} else if intVal, ok := val.(int); ok {
@@ -1914,13 +1927,12 @@ func parseOptimizedMetrics(allMetrics *ormapi.AllMetrics) *[]OptimizedMetricsCom
 				return nil
 			}
 
-			// add tags
+			// add tags, ignore non-deterministic tags
 			for tag, val := range series.Tags {
-				// only add tags that are in TagValues
-				_, isTag := TagValues[tag]
-				if isTag {
-					measurement.Tags[tag] = val
+				if _, ignore := IgnoreTagValues[tag]; ignore {
+					continue
 				}
+				measurement.Tags[tag] = val
 			}
 
 			// add values

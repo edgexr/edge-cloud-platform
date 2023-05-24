@@ -16,10 +16,10 @@ clusterinsts:
 - key:
     clusterkey:
       name: SmallCluster
+      organization: AcmeAppCo
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
-    organization: AcmeAppCo
   flavor:
     name: x1.small
   liveness: Static
@@ -29,10 +29,10 @@ clusterinsts:
 - key:
     clusterkey:
       name: SmallCluster
+      organization: AcmeAppCo
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-2
-    organization: AcmeAppCo
   flavor:
     name: x1.small
   liveness: Static
@@ -42,10 +42,10 @@ clusterinsts:
 - key:
     clusterkey:
       name: ReservableCluster
+      organization: edgecloudorg
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
-    organization: edgecloudorg
   flavor:
     name: x1.small
   liveness: Static
@@ -56,10 +56,10 @@ clusterinsts:
 - key:
     clusterkey:
       name: ReservableCluster2
+      organization: edgecloudorg
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-2
-    organization: edgecloudorg
   flavor:
     name: x1.small
   liveness: Static

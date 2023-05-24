@@ -18,15 +18,16 @@ import (
 	"bytes"
 	fmt "fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
 	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
 
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
@@ -36,18 +37,19 @@ var operatorInfluxClientMetricsDBTemplate *template.Template
 type influxClientMetricsQueryArgs struct {
 	// Query args
 	metricsCommonQueryArgs
-	Selector     string
-	Measurement  string
-	AppInstName  string
-	AppVersion   string
-	ClusterName  string
-	CloudletName string
-	CloudletList string
-	OrgField     string
-	ApiCallerOrg string
-	CloudletOrg  string
-	ClusterOrg   string
-	AppOrg       string
+	Selector       string
+	Measurement    string
+	AppInstName    string
+	AppInstOrg     string
+	AppName        string
+	AppOrg         string
+	AppVersion     string
+	ClusterName    string
+	ClusterOrg     string
+	CloudletName   string
+	CloudletList   string
+	CloudletOrg    string
+	CloudletFedOrg string
 	// ClientApi metric query args
 	Method           string
 	FoundCloudlet    string
@@ -63,13 +65,13 @@ type influxClientMetricsQueryArgs struct {
 
 // ClientApiUsageTags is DME metrics
 var ClientApiUsageTags = []string{
-	"\"apporg\"",
-	"\"app\"",
-	"\"ver\"",
-	"\"cloudletorg\"",
-	"\"cloudlet\"",
-	"\"dmeId\"",
-	"\"method\"",
+	strconv.Quote(edgeproto.AppKeyTagName),
+	strconv.Quote(edgeproto.AppKeyTagOrganization),
+	strconv.Quote(edgeproto.AppKeyTagVersion),
+	strconv.Quote(edgeproto.CloudletKeyTagName),
+	strconv.Quote(edgeproto.CloudletKeyTagOrganization),
+	strconv.Quote(cloudcommon.MetricTagDmeId),
+	strconv.Quote(cloudcommon.MetricTagMethod),
 }
 
 var ApiFields = []string{
@@ -86,44 +88,46 @@ var ClientApiAggregationFunctions = map[string]string{
 	"foundOperator": "last(\"foundOperator\")",
 }
 
+// Common key tags for DME Device and Latency measurements
 var ClientAppUsageTags = []string{
-	"\"app\"",
-	"\"apporg\"",
-	"\"ver\"",
-	"\"cluster\"",
-	"\"clusterorg\"",
-	"\"cloudlet\"",
-	"\"cloudletorg\"",
+	strconv.Quote(edgeproto.AppInstKeyTagName),
+	strconv.Quote(edgeproto.AppInstKeyTagOrganization),
+	strconv.Quote(edgeproto.AppKeyTagName),
+	strconv.Quote(edgeproto.AppKeyTagVersion),
+	strconv.Quote(edgeproto.AppKeyTagOrganization),
+	strconv.Quote(edgeproto.CloudletKeyTagName),
+	strconv.Quote(edgeproto.CloudletKeyTagOrganization),
+	strconv.Quote(edgeproto.CloudletKeyTagFederatedOrganization),
 }
 
 var ClientCloudletUsageTags = []string{
-	"\"cloudlet\"",
-	"\"cloudletorg\"",
+	strconv.Quote(edgeproto.CloudletKeyTagName),
+	strconv.Quote(edgeproto.CloudletKeyTagOrganization),
 }
 
 var ClientAppUsageLatencyTags = []string{
-	"\"locationtile\"",
-	"\"datanetworktype\"",
+	strconv.Quote(cloudcommon.MetricTagLocationTile),
+	strconv.Quote(cloudcommon.MetricTagDataNetworkType),
 }
 
 var ClientCloudletUsageLatencyTags = []string{
-	"\"locationtile\"",
-	"\"devicecarrier\"",
-	"\"datanetworktype\"",
+	strconv.Quote(cloudcommon.MetricTagLocationTile),
+	strconv.Quote(cloudcommon.MetricTagDeviceCarrier),
+	strconv.Quote(cloudcommon.MetricTagDataNetworkType),
 }
 
 var ClientAppUsageDeviceInfoTags = []string{
-	"\"deviceos\"",
-	"\"devicemodel\"",
-	"\"devicecarrier\"",
-	"\"datanetworktype\"",
+	strconv.Quote(cloudcommon.MetricTagDeviceOS),
+	strconv.Quote(cloudcommon.MetricTagDeviceModel),
+	strconv.Quote(cloudcommon.MetricTagDeviceCarrier),
+	strconv.Quote(cloudcommon.MetricTagDataNetworkType),
 }
 
 var ClientCloudletUsageDeviceInfoTags = []string{
-	"\"deviceos\"",
-	"\"devicemodel\"",
-	"\"devicecarrier\"",
-	"\"locationtile\"",
+	strconv.Quote(cloudcommon.MetricTagDeviceOS),
+	strconv.Quote(cloudcommon.MetricTagDeviceModel),
+	strconv.Quote(cloudcommon.MetricTagDeviceCarrier),
+	strconv.Quote(cloudcommon.MetricTagLocationTile),
 }
 
 var LatencyFields = []string{
@@ -147,50 +151,79 @@ var DeviceInfoFields = []string{
 }
 
 const (
-	CLIENT_APIUSAGE                 = "dme"
-	CLIENT_APPUSAGE                 = "clientappusage"
-	CLIENT_CLOUDLETUSAGE            = "clientcloudletusage"
-	CLIENT_APP_ORG_FIELD            = "apporg"
-	CLIENT_CLOUDLET_ORG_FIELD       = "cloudletorg"
-	CLIENT_FOUND_CLOUDLET_ORG_FIELD = "foundOperator"
+	CLIENT_APIUSAGE      = "dme"
+	CLIENT_APPUSAGE      = "clientappusage"
+	CLIENT_CLOUDLETUSAGE = "clientcloudletusage"
 )
 
-var devInfluxClientMetricsDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
-	` WHERE "{{.OrgField}}"='{{.ApiCallerOrg}}'` +
-	`{{if .AppInstName}} AND "app"='{{.AppInstName}}'{{end}}` +
-	`{{if .AppOrg}} AND "apporg"='{{.AppOrg}}'{{end}}` +
-	`{{if .ClusterName}} AND "cluster"='{{.ClusterName}}'{{end}}` +
-	`{{if .AppVersion}} AND "ver"='{{.AppVersion}}'{{end}}` +
-	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
-	`{{if .CloudletList}} AND ({{.CloudletList}}){{end}}` +
-	`{{if .CloudletOrg}} AND "cloudletorg"='{{.CloudletOrg}}'{{end}}` +
-	`{{if .Method}} AND "method"='{{.Method}}'{{end}}` +
-	`{{if .DeviceCarrier}} AND "devicecarrier"='{{.DeviceCarrier}}'{{end}}` +
-	`{{if .DataNetworkType}} AND "datanetworktype"='{{.DataNetworkType}}'{{end}}` +
-	`{{if .DeviceOs}} AND "deviceos"='{{.DeviceOs}}'{{end}}` +
-	`{{if .DeviceModel}} AND "devicemodel"='{{.DeviceModel}}'{{end}}` +
-	`{{if .LocationTile}} AND "locationtile"='{{.LocationTile}}'{{end}}` +
-	`{{if .FoundCloudlet}} AND "foundCloudlet"='{{.FoundCloudlet}}'{{end}}` +
-	`{{if .FoundCloudletOrg}} AND "foundOperator"='{{.FoundCloudletOrg}}'{{end}}` +
-	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
-	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
-	`{{if or .TimeDefinition .TagSet}} group by {{end}}` +
-	`{{if .TimeDefinition}}time({{.TimeDefinition}}),{{end}}{{.TagSet}}` +
-	` order by time desc{{if ne .Limit 0}} limit {{.Limit}}{{end}}`
+var devInfluxClientMetricsDBT = fmt.Sprintf(`SELECT {{.Selector}} `+
+	`from {{.Measurement}} WHERE`+
+	`{{if .AppInstName}}{{.And}} "%s"='{{.AppInstName}}'{{end}}`+
+	`{{if .AppInstOrg}}{{.And}} "%s"='{{.AppInstOrg}}'{{end}}`+
+	`{{if .AppName}}{{.And}} "%s"='{{.AppName}}'{{end}}`+
+	`{{if .AppOrg}}{{.And}} "%s"='{{.AppOrg}}'{{end}}`+
+	`{{if .AppVersion}}{{.And}} "%s"='{{.AppVersion}}'{{end}}`+
+	`{{if .ClusterName}}{{.And}} "%s"='{{.ClusterName}}'{{end}}`+
+	`{{if .ClusterOrg}}{{.And}} "%s"='{{.ClusterOrg}}'{{end}}`+
+	`{{if .CloudletName}}{{.And}} "%s"='{{.CloudletName}}'{{end}}`+
+	`{{if .CloudletOrg}}{{.And}} "%s"='{{.CloudletOrg}}'{{end}}`+
+	`{{if .CloudletFedOrg}}{{.And}} "%s"='{{.CloudletFedOrg}}'{{end}}`+
+	`{{if .CloudletList}}{{.And}} ({{.CloudletList}}){{end}}`+
+	`{{if .Method}}{{.And}} "%s"='{{.Method}}'{{end}}`+
+	`{{if .DeviceCarrier}}{{.And}} "%s"='{{.DeviceCarrier}}'{{end}}`+
+	`{{if .DataNetworkType}}{{.And}} "%s"='{{.DataNetworkType}}'{{end}}`+
+	`{{if .DeviceOs}}{{.And}} "%s"='{{.DeviceOs}}'{{end}}`+
+	`{{if .DeviceModel}}{{.And}} "%s"='{{.DeviceModel}}'{{end}}`+
+	`{{if .LocationTile}}{{.And}} "%s"='{{.LocationTile}}'{{end}}`+
+	`{{if .FoundCloudlet}}{{.And}} "%s"='{{.FoundCloudlet}}'{{end}}`+
+	`{{if .FoundCloudletOrg}}{{.And}} "%s"='{{.FoundCloudletOrg}}'{{end}}`+
+	`{{if .StartTime}}{{.And}} time >= '{{.StartTime}}'{{end}}`+
+	`{{if .EndTime}}{{.And}} time <= '{{.EndTime}}'{{end}}`+
+	`{{if or .TimeDefinition .TagSet}} group by {{end}}`+
+	`{{if .TimeDefinition}}time({{.TimeDefinition}}),{{end}}{{.TagSet}}`+
+	` order by time desc{{if ne .Limit 0}} limit {{.Limit}}{{end}}`,
+	edgeproto.AppInstKeyTagName,
+	edgeproto.AppInstKeyTagOrganization,
+	edgeproto.AppKeyTagName,
+	edgeproto.AppKeyTagOrganization,
+	edgeproto.AppKeyTagVersion,
+	edgeproto.ClusterKeyTagName,
+	edgeproto.ClusterKeyTagOrganization,
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization,
+	cloudcommon.MetricTagMethod,
+	cloudcommon.MetricTagDeviceCarrier,
+	cloudcommon.MetricTagDataNetworkType,
+	cloudcommon.MetricTagDeviceOS,
+	cloudcommon.MetricTagDeviceModel,
+	cloudcommon.MetricTagLocationTile,
+	cloudcommon.MetricTagFoundCloudlet,
+	cloudcommon.MetricTagFoundOperator)
 
-var operatorInfluxClientMetricsDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
-	` WHERE "cloudletorg"='{{.CloudletOrg}}'` +
-	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
-	`{{if .DeviceCarrier}} AND "devicecarrier"='{{.DeviceCarrier}}'{{end}}` +
-	`{{if .DataNetworkType}} AND "datanetworktype"='{{.DataNetworkType}}'{{end}}` +
-	`{{if .DeviceOs}} AND "deviceos"='{{.DeviceOs}}'{{end}}` +
-	`{{if .DeviceModel}} AND "devicemodel"='{{.DeviceModel}}'{{end}}` +
-	`{{if .LocationTile}} AND "locationtile"='{{.LocationTile}}'{{end}}` +
-	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
-	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
-	`{{if or .TimeDefinition .TagSet}} group by {{end}}` +
-	`{{if .TimeDefinition}}time({{.TimeDefinition}}),{{end}}{{.TagSet}}` +
-	` order by time desc{{if ne .Limit 0}} limit {{.Limit}}{{end}}`
+var operatorInfluxClientMetricsDBT = fmt.Sprintf(`SELECT {{.Selector}} `+
+	`from {{.Measurement}} WHERE`+
+	`{{if .CloudletName}}{{.And}} "%s"='{{.CloudletName}}'{{end}}`+
+	`{{if .CloudletOrg}}{{.And}} "%s"='{{.CloudletOrg}}'{{end}}`+
+	`{{if .CloudletFedOrg}}{{.And}} "%s"='{{.CloudletFedOrg}}'{{end}}`+
+	`{{if .DeviceCarrier}}{{.And}} "%s"='{{.DeviceCarrier}}'{{end}}`+
+	`{{if .DataNetworkType}}{{.And}} "%s"='{{.DataNetworkType}}'{{end}}`+
+	`{{if .DeviceOs}}{{.And}} "%s"='{{.DeviceOs}}'{{end}}`+
+	`{{if .DeviceModel}}{{.And}} "%s"='{{.DeviceModel}}'{{end}}`+
+	`{{if .LocationTile}}{{.And}} "%s"='{{.LocationTile}}'{{end}}`+
+	`{{if .StartTime}}{{.And}} time >= '{{.StartTime}}'{{end}}`+
+	`{{if .EndTime}}{{.And}} time <= '{{.EndTime}}'{{end}}`+
+	`{{if or .TimeDefinition .TagSet}} group by {{end}}`+
+	`{{if .TimeDefinition}}time({{.TimeDefinition}}),{{end}}{{.TagSet}}`+
+	` order by time desc{{if ne .Limit 0}} limit {{.Limit}}{{end}}`,
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization,
+	cloudcommon.MetricTagDeviceCarrier,
+	cloudcommon.MetricTagDataNetworkType,
+	cloudcommon.MetricTagDeviceOS,
+	cloudcommon.MetricTagDeviceModel,
+	cloudcommon.MetricTagLocationTile)
 
 var locationTileFormatMatch = regexp.MustCompile(`^[0-9-][0-9_.,-]+$`)
 
@@ -213,8 +246,8 @@ func validateMethodString(obj *ormapi.RegionClientApiUsageMetrics) error {
 	case "RegisterClient":
 		fallthrough
 	case "VerifyLocation":
-		if obj.AppInst.ClusterInstKey.CloudletKey.Name != "" ||
-			obj.AppInst.ClusterInstKey.CloudletKey.Organization != "" {
+		if obj.CloudletKey.Name != "" ||
+			obj.CloudletKey.Organization != "" {
 			return fmt.Errorf("Cloudlet and Cloudlet org can be specified only for FindCloudlet or PlatformFindCloudlet")
 		}
 		return nil
@@ -238,23 +271,16 @@ func ClientApiUsageMetricsQuery(obj *ormapi.RegionClientApiUsageMetrics, cloudle
 	arg := influxClientMetricsQueryArgs{
 		Selector:         getClientMetricsSelector(obj.Selector, CLIENT_APIUSAGE, definition, ClientApiAggregationFunctions),
 		Measurement:      fmt.Sprintf("%q", getMeasurementString(obj.Selector, CLIENT_APIUSAGE)),
-		AppInstName:      obj.AppInst.AppKey.Name,
-		AppVersion:       obj.AppInst.AppKey.Version,
-		ApiCallerOrg:     obj.AppInst.AppKey.Organization,
+		AppName:          obj.AppKey.Name,
+		AppOrg:           obj.AppKey.Organization,
+		AppVersion:       obj.AppKey.Version,
 		CloudletList:     generateDmeApiUsageCloudletList(cloudletList),
 		CloudletName:     obj.DmeCloudlet,
 		CloudletOrg:      obj.DmeCloudletOrg,
-		FoundCloudlet:    obj.AppInst.ClusterInstKey.CloudletKey.Name,
-		FoundCloudletOrg: obj.AppInst.ClusterInstKey.CloudletKey.Organization,
+		FoundCloudlet:    obj.CloudletKey.Name,
+		FoundCloudletOrg: obj.CloudletKey.Organization,
 		Method:           obj.Method,
 		TagSet:           getTagSet(CLIENT_APIUSAGE, obj.Selector),
-	}
-	if obj.AppInst.AppKey.Organization != "" {
-		arg.OrgField = CLIENT_APP_ORG_FIELD
-		arg.ApiCallerOrg = obj.AppInst.AppKey.Organization
-	} else {
-		arg.OrgField = CLIENT_FOUND_CLOUDLET_ORG_FIELD
-		arg.ApiCallerOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
 	}
 	// set MetricsCommonQueryArgs
 	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, definition.String(), 0) // TODO: PULL MIN from settings
@@ -275,27 +301,18 @@ func ClientAppUsageMetricsQuery(obj *ormapi.RegionClientAppUsageMetrics, cloudle
 	arg := influxClientMetricsQueryArgs{
 		Selector:        getClientMetricsSelector(obj.Selector, CLIENT_APPUSAGE, definition, functionMap),
 		Measurement:     measurement,
-		AppInstName:     obj.AppInst.AppKey.Name,
-		AppVersion:      obj.AppInst.AppKey.Version,
-		ApiCallerOrg:    obj.AppInst.AppKey.Organization,
-		ClusterOrg:      obj.AppInst.ClusterInstKey.Organization,
+		AppInstName:     obj.AppInstKey.Name,
+		AppInstOrg:      obj.AppInstKey.Organization,
+		AppName:         obj.AppKey.Name,
+		AppOrg:          obj.AppKey.Organization,
+		AppVersion:      obj.AppKey.Version,
 		CloudletList:    generateCloudletList(cloudletList),
-		ClusterName:     obj.AppInst.ClusterInstKey.ClusterKey.Name,
 		DeviceCarrier:   obj.DeviceCarrier,
 		DataNetworkType: obj.DataNetworkType,
 		DeviceOs:        obj.DeviceOs,
 		DeviceModel:     obj.DeviceModel,
 		LocationTile:    obj.LocationTile,
 		TagSet:          getTagSet(CLIENT_APPUSAGE, obj.Selector),
-	}
-	if obj.AppInst.AppKey.Organization != "" {
-		arg.OrgField = CLIENT_APP_ORG_FIELD
-		arg.ApiCallerOrg = obj.AppInst.AppKey.Organization
-		arg.CloudletOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
-	} else {
-		arg.OrgField = CLIENT_CLOUDLET_ORG_FIELD
-		arg.ApiCallerOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
-		arg.AppOrg = obj.AppInst.AppKey.Organization
 	}
 	// set MetricsCommonQueryArgs
 	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, definition.String(), 0) // TODO: PULL MIN from settings

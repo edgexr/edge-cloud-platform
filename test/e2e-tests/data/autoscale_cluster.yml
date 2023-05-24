@@ -19,7 +19,7 @@ regiondata:
     - key:
         clusterkey:
           name: SmallCluster
+          organization: AcmeAppCo
         cloudletkey:
           organization: dmuus
           name: dmuus-cloud-1
-        organization: AcmeAppCo

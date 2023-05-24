@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/dind"
@@ -71,21 +70,14 @@ func GetAppInstId(ctx context.Context, appInst *edgeproto.AppInst, app *edgeprot
 	if err != nil {
 		return "", err
 	}
-	appName := util.DNSSanitize(appInst.Key.AppKey.Name)
-	dev := util.DNSSanitize(appInst.Key.AppKey.Organization)
-	ver := util.DNSSanitize(appInst.Key.AppKey.Version)
-	appId := fmt.Sprintf("%s%s%s", dev, appName, ver)
-	fields = append(fields, appId)
+	name := util.DNSSanitize(appInst.Key.Name)
+	dev := util.DNSSanitize(appInst.Key.Organization)
+	fields = append(fields, dev, name)
 
-	if cloudcommon.IsClusterInstReqd(app) {
-		cluster := util.DNSSanitize(appInst.Key.ClusterInstKey.ClusterKey.Name)
-		fields = append(fields, cluster)
-	}
-
-	loc := util.DNSSanitize(appInst.Key.ClusterInstKey.CloudletKey.Name)
+	loc := util.DNSSanitize(appInst.Key.CloudletKey.Name)
 	fields = append(fields, loc)
 
-	oper := util.DNSSanitize(appInst.Key.ClusterInstKey.CloudletKey.Organization)
+	oper := util.DNSSanitize(appInst.Key.CloudletKey.Organization)
 	fields = append(fields, oper)
 
 	if salt != "" {

@@ -104,32 +104,15 @@ var NodeInfoComments = map[string]string{
 	"name": "Node name",
 }
 var NodeInfoSpecialArgs = map[string]string{}
-var ClusterInstRefKeyRequiredArgs = []string{}
-var ClusterInstRefKeyOptionalArgs = []string{
-	"clusterkey.name",
-	"organization",
-}
-var ClusterInstRefKeyAliasArgs = []string{}
-var ClusterInstRefKeyComments = map[string]string{
-	"clusterkey.name": "Cluster name",
-	"organization":    "Name of Developer organization that this cluster belongs to",
-}
-var ClusterInstRefKeySpecialArgs = map[string]string{}
 var AppInstRefKeyRequiredArgs = []string{}
 var AppInstRefKeyOptionalArgs = []string{
-	"appkey.organization",
-	"appkey.name",
-	"appkey.version",
-	"clusterinstkey.clusterkey.name",
-	"clusterinstkey.organization",
+	"name",
+	"organization",
 }
 var AppInstRefKeyAliasArgs = []string{}
 var AppInstRefKeyComments = map[string]string{
-	"appkey.organization":            "App developer organization",
-	"appkey.name":                    "App name",
-	"appkey.version":                 "App version",
-	"clusterinstkey.clusterkey.name": "Cluster name",
-	"clusterinstkey.organization":    "Name of Developer organization that this cluster belongs to",
+	"name":         "AppInst name",
+	"organization": "AppInst organization",
 }
 var AppInstRefKeySpecialArgs = map[string]string{}
 var InfraResourcesRequiredArgs = []string{}
@@ -181,50 +164,38 @@ var InfraResourcesSnapshotOptionalArgs = []string{
 	"info:#.description",
 	"info:#.units",
 	"info:#.alertthreshold",
-	"clusterinsts:#.clusterkey.name",
+	"clusterinsts:#.name",
 	"clusterinsts:#.organization",
-	"vmappinsts:#.appkey.organization",
-	"vmappinsts:#.appkey.name",
-	"vmappinsts:#.appkey.version",
-	"vmappinsts:#.clusterinstkey.clusterkey.name",
-	"vmappinsts:#.clusterinstkey.organization",
-	"k8sappinsts:#.appkey.organization",
-	"k8sappinsts:#.appkey.name",
-	"k8sappinsts:#.appkey.version",
-	"k8sappinsts:#.clusterinstkey.clusterkey.name",
-	"k8sappinsts:#.clusterinstkey.organization",
+	"vmappinsts:#.name",
+	"vmappinsts:#.organization",
+	"k8sappinsts:#.name",
+	"k8sappinsts:#.organization",
 }
 var InfraResourcesSnapshotAliasArgs = []string{}
 var InfraResourcesSnapshotComments = map[string]string{
-	"platformvms:#.name":                           "Virtual machine name",
-	"platformvms:#.type":                           "Type can be platformvm, platform-cluster-master, platform-cluster-primary-node, platform-cluster-secondary-node, sharedrootlb, dedicatedrootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm",
-	"platformvms:#.status":                         "Runtime status of the VM",
-	"platformvms:#.infraflavor":                    "Flavor allocated within the cloudlet infrastructure, distinct from the control plane flavor",
-	"platformvms:#.ipaddresses:#.externalip":       "External IP address",
-	"platformvms:#.ipaddresses:#.internalip":       "Internal IP address",
-	"platformvms:#.containers:#.name":              "Name of the container",
-	"platformvms:#.containers:#.type":              "Type can be docker or kubernetes",
-	"platformvms:#.containers:#.status":            "Runtime status of the container",
-	"platformvms:#.containers:#.clusterip":         "IP within the CNI and is applicable to kubernetes only",
-	"platformvms:#.containers:#.restarts":          "Restart count, applicable to kubernetes only",
-	"info:#.name":                                  "Resource name",
-	"info:#.value":                                 "Resource value",
-	"info:#.inframaxvalue":                         "Resource infra max value",
-	"info:#.quotamaxvalue":                         "Resource quota max value",
-	"info:#.description":                           "Resource description",
-	"info:#.units":                                 "Resource units",
-	"info:#.alertthreshold":                        "Generate alert when more than threshold percentage of resource is used",
-	"clusterinsts:#.clusterkey.name":               "Cluster name",
-	"clusterinsts:#.organization":                  "Name of Developer organization that this cluster belongs to",
-	"vmappinsts:#.appkey.organization":             "App developer organization",
-	"vmappinsts:#.appkey.name":                     "App name",
-	"vmappinsts:#.appkey.version":                  "App version",
-	"vmappinsts:#.clusterinstkey.clusterkey.name":  "Cluster name",
-	"vmappinsts:#.clusterinstkey.organization":     "Name of Developer organization that this cluster belongs to",
-	"k8sappinsts:#.appkey.organization":            "App developer organization",
-	"k8sappinsts:#.appkey.name":                    "App name",
-	"k8sappinsts:#.appkey.version":                 "App version",
-	"k8sappinsts:#.clusterinstkey.clusterkey.name": "Cluster name",
-	"k8sappinsts:#.clusterinstkey.organization":    "Name of Developer organization that this cluster belongs to",
+	"platformvms:#.name":                     "Virtual machine name",
+	"platformvms:#.type":                     "Type can be platformvm, platform-cluster-master, platform-cluster-primary-node, platform-cluster-secondary-node, sharedrootlb, dedicatedrootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm",
+	"platformvms:#.status":                   "Runtime status of the VM",
+	"platformvms:#.infraflavor":              "Flavor allocated within the cloudlet infrastructure, distinct from the control plane flavor",
+	"platformvms:#.ipaddresses:#.externalip": "External IP address",
+	"platformvms:#.ipaddresses:#.internalip": "Internal IP address",
+	"platformvms:#.containers:#.name":        "Name of the container",
+	"platformvms:#.containers:#.type":        "Type can be docker or kubernetes",
+	"platformvms:#.containers:#.status":      "Runtime status of the container",
+	"platformvms:#.containers:#.clusterip":   "IP within the CNI and is applicable to kubernetes only",
+	"platformvms:#.containers:#.restarts":    "Restart count, applicable to kubernetes only",
+	"info:#.name":                            "Resource name",
+	"info:#.value":                           "Resource value",
+	"info:#.inframaxvalue":                   "Resource infra max value",
+	"info:#.quotamaxvalue":                   "Resource quota max value",
+	"info:#.description":                     "Resource description",
+	"info:#.units":                           "Resource units",
+	"info:#.alertthreshold":                  "Generate alert when more than threshold percentage of resource is used",
+	"clusterinsts:#.name":                    "Cluster name",
+	"clusterinsts:#.organization":            "Name of the organization that this cluster belongs to",
+	"vmappinsts:#.name":                      "AppInst name",
+	"vmappinsts:#.organization":              "AppInst organization",
+	"k8sappinsts:#.name":                     "AppInst name",
+	"k8sappinsts:#.organization":             "AppInst organization",
 }
 var InfraResourcesSnapshotSpecialArgs = map[string]string{}

@@ -23,15 +23,14 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	ssh "github.com/edgexr/golang-ssh"
+	"github.com/gogo/protobuf/types"
 )
 
+// Docker stats format option does not support labels.
 var dockerStatsFormat = `"{\"container\":\"{{.Name}}\",\"id\":\"{{.ID}}\",\"memory\":{\"raw\":\"{{.MemUsage}}\",\"percent\":\"{{.MemPerc}}\"},\"cpu\":\"{{.CPUPerc}}\",\"io\":{\"network\":\"{{.NetIO}}\",\"block\":\"{{.BlockIO}}\"}}"`
 var dockerStatsCmd = "docker stats --no-stream --format " + dockerStatsFormat
 
@@ -47,13 +46,13 @@ type ContainerIO struct {
 	Block   string
 }
 type ContainerStats struct {
-	App       string `json:"app,omitempty"`
-	Id        string `json:"id,omitempty"`
-	Version   string `json:"version,omitempty"`
-	Container string
-	Memory    ContainerMem
-	Cpu       string
-	IO        ContainerIO
+	Id          string `json:"id,omitempty"`
+	AppInstName string `json:"appinstname,omitempty"`
+	AppInstOrg  string `json:"appinstorg,omitempty"`
+	Container   string
+	Memory      ContainerMem
+	Cpu         string
+	IO          ContainerIO
 }
 
 type DockerStats struct {
@@ -61,9 +60,9 @@ type DockerStats struct {
 }
 
 type ContainerDiskAndLabels struct {
-	Disk    uint64
-	AppName string
-	AppVer  string
+	Disk        uint64
+	AppInstName string
+	AppInstOrg  string
 }
 
 type ContainerSize struct {
@@ -80,6 +79,7 @@ type DockerClusterStats struct {
 	client        ssh.Client
 	clusterClient ssh.Client
 	shepherd_common.ClusterMetrics
+	AppInstLabels
 }
 
 func (c *DockerClusterStats) GetClusterStats(ctx context.Context, ops ...shepherd_common.StatsOp) *shepherd_common.ClusterMetrics {
@@ -144,8 +144,8 @@ func (c *DockerClusterStats) GetContainerStats(ctx context.Context) (*DockerStat
 			cData, found = containers[cID]
 
 			if found {
-				cData.App = util.DNSSanitize(obj.Key.AppKey.Name)
-				cData.Version = util.DNSSanitize(obj.Key.AppKey.Version)
+				cData.AppInstName = obj.Key.Name
+				cData.AppInstOrg = obj.Key.Organization
 				dockerResp.Containers = append(dockerResp.Containers, *cData)
 			}
 		}
@@ -153,9 +153,9 @@ func (c *DockerClusterStats) GetContainerStats(ctx context.Context) (*DockerStat
 	// Keep track of those containers not associated with any App, just in case
 	// Also avg out the cpu based on how many cores, since docker stats just returns a sum %
 	for _, container := range containers {
-		if container.App == "" {
+		if container.AppInstName == "" {
 			// container and app are the same here
-			container.App = util.DNSSanitize(container.Container)
+			container.AppInstName = container.Container
 			dockerResp.Containers = append(dockerResp.Containers, *container)
 		}
 	}
@@ -269,25 +269,17 @@ func parseContainerDiskUsage(ctx context.Context, diskStr string) (uint64, error
 }
 
 // Example format: "cluster=DevOrg-AppCluster,edge-cloud=,mexAppName=devorgsdkdemo,mexAppVersion=10,cloudlet=localtest"
-func getAppVerLabels(ctx context.Context, labelStr string) (string, string, error) {
-	var app, ver string
+func (c *DockerClusterStats) getAppInstLabel(ctx context.Context, labelStr string) (AppInstLabelInfo, bool) {
+	labelMap := make(map[string]string)
 	labels := strings.Split(labelStr, ",")
 	for _, label := range labels {
 		keyVal := strings.SplitN(label, "=", 2)
 		if len(keyVal) != 2 {
 			continue
 		}
-		if keyVal[0] == cloudcommon.MexAppNameLabel {
-			app = keyVal[1]
-		}
-		if keyVal[0] == cloudcommon.MexAppVersionLabel {
-			ver = keyVal[1]
-		}
-		if app != "" && ver != "" {
-			return app, ver, nil
-		}
+		labelMap[keyVal[0]] = keyVal[1]
 	}
-	return "", "", fmt.Errorf("Unable to find App name and version")
+	return c.getAppInstInfoFromLabels(labelMap)
 }
 
 // get disk stats from containers and convert them into a readable format
@@ -321,12 +313,12 @@ func (c *DockerClusterStats) GetContainerDiskUsage(ctx context.Context) (map[str
 		}
 
 		diskAndLabels := ContainerDiskAndLabels{}
-		if app, ver, err := getAppVerLabels(ctx, containerDisk.Labels); err == nil {
-			diskAndLabels.AppName = app
-			diskAndLabels.AppVer = ver
+		if appInstInfo, found := c.getAppInstLabel(ctx, containerDisk.Labels); found {
+			diskAndLabels.AppInstName = appInstInfo.AppInstKey.Name
+			diskAndLabels.AppInstOrg = appInstInfo.AppInstKey.Organization
 		} else {
 			// no point in processing disk if we don't know what app it's for
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Could not extract app name and version", "labels", containerDisk.Labels, "err", err)
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Could not extract appInstKey from disk labels", "labels", containerDisk.Labels, "cluster", c.key)
 			continue
 		}
 
@@ -375,15 +367,16 @@ func (c *DockerClusterStats) collectDockerAppMetrics(ctx context.Context, p *Doc
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Docker stats - container", "container", containerStats)
 		// TODO EDGECLOUD-1316 - set pod to the container
 		// appKey.Pod = containerStats.Container
-		appKey.Pod = containerStats.App
-		appKey.App = containerStats.App
-		appKey.Version = containerStats.Version
+		appKey.Pod = containerStats.AppInstName
+		appKey.AppInstName = containerStats.AppInstName
+		appKey.AppInstOrg = containerStats.AppInstOrg
 		containerDiskAndLabels, diskAndLabelsFound := diskUsageMap[containerStats.Id]
-		if diskAndLabelsFound {
-			// if we have disk stats also use labels to identify app/version
-			appKey.App = containerDiskAndLabels.AppName
-			appKey.Version = containerDiskAndLabels.AppVer
-
+		if diskAndLabelsFound && containerDiskAndLabels.AppInstName != "" {
+			// if we have disk stats also use labels to identify app/version.
+			// containers deployed before appinst name change will not
+			// have appinst name label.
+			appKey.AppInstName = containerDiskAndLabels.AppInstName
+			appKey.AppInstOrg = containerDiskAndLabels.AppInstOrg
 		}
 		stat, found := appStatsMap[appKey]
 		if !found {

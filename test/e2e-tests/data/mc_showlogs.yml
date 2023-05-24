@@ -16,15 +16,9 @@ request:
   region: local
   execrequest:
     appinstkey:
-      appkey:
-        organization: AcmeAppCo
-        name: someapplication1
-        version: "1.0"
-      clusterinstkey:
-        clusterkey:
-          name: SmallCluster
-        cloudletkey:
-          organization: dmuus
-          name: dmuus-cloud-1
-        organization: AcmeAppCo
+      name: someapplication1
+      organization: AcmeAppCo
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-1
 expectedoutput: here's some logs

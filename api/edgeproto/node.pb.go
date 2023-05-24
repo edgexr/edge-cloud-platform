@@ -689,13 +689,22 @@ var NodeKeyTagRegion = "noderegion"
 
 func (m *NodeKey) GetTags() map[string]string {
 	tags := make(map[string]string)
-	tags["node"] = m.Name
-	tags["cloudletorg"] = m.CloudletKey.Organization
-	tags["cloudlet"] = m.CloudletKey.Name
-	tags["federatedorg"] = m.CloudletKey.FederatedOrganization
-	tags["nodetype"] = m.Type
-	tags["noderegion"] = m.Region
+	m.AddTags(tags)
 	return tags
+}
+
+func (m *NodeKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("node", m.Name)
+	addTag("cloudletorg", m.CloudletKey.Organization)
+	addTag("cloudlet", m.CloudletKey.Name)
+	addTag("cloudletfedorg", m.CloudletKey.FederatedOrganization)
+	addTag("nodetype", m.Type)
+	addTag("noderegion", m.Region)
+}
+
+func (m *NodeKey) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
 }
 
 // Helper method to check that enums have valid values
@@ -1108,6 +1117,7 @@ type NodeStore interface {
 	STMGet(stm concurrency.STM, key *NodeKey, buf *Node) bool
 	STMPut(stm concurrency.STM, obj *Node, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *NodeKey)
+	STMHas(stm concurrency.STM, key *NodeKey) bool
 }
 
 type NodeStoreImpl struct {
@@ -1239,6 +1249,11 @@ func (s *NodeStoreImpl) STMGet(stm concurrency.STM, key *NodeKey, buf *Node) boo
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *NodeStoreImpl) STMHas(stm concurrency.STM, key *NodeKey) bool {
+	keystr := objstore.DbKeyString("Node", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *NodeStoreImpl) parseGetData(val []byte, buf *Node) bool {
 	if len(val) == 0 {
 		return false
@@ -1280,6 +1295,16 @@ type NodeCacheData struct {
 	ModRev int64
 }
 
+func (s *NodeCacheData) Clone() *NodeCacheData {
+	cp := NodeCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &Node{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // NodeCache caches Node objects in memory in a hash table
 // and keeps them in sync with the database.
 type NodeCache struct {
@@ -1287,7 +1312,7 @@ type NodeCache struct {
 	Mux           util.Mutex
 	List          map[NodeKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *NodeKey, old *Node, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *Node, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *Node, new *Node)
 	DeletedCbs    []func(ctx context.Context, old *Node)
 	KeyWatchers   map[NodeKey][]*NodeKeyWatcher
@@ -1346,6 +1371,14 @@ func (c *NodeCache) GetAllKeys(ctx context.Context, cb func(key *NodeKey, modRev
 	}
 }
 
+func (c *NodeCache) GetAllLocked(ctx context.Context, cb func(obj *Node, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *NodeCache) Update(ctx context.Context, in *Node, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *Node) (*Node, bool) {
 		return in, true
@@ -1363,14 +1396,16 @@ func (c *NodeCache) UpdateModFunc(ctx context.Context, key *NodeKey, modRev int6
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &Node{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -1407,9 +1442,13 @@ func (c *NodeCache) DeleteCondFunc(ctx context.Context, in *Node, modRev int64, 
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -1437,9 +1476,14 @@ func (c *NodeCache) Prune(ctx context.Context, validKeys map[NodeKey]struct{}) {
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &Node{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -1475,9 +1519,14 @@ func (c *NodeCache) Flush(ctx context.Context, notifyId int64) {
 	c.Mux.Unlock()
 	if len(flushed) > 0 {
 		for key, old := range flushed {
+			obj := old.Obj
+			if obj == nil {
+				obj = &Node{}
+				obj.SetKey(&key)
+			}
 			for _, cb := range c.NotifyCbs {
 				if cb != nil {
-					cb(ctx, &key, old.Obj, old.ModRev)
+					cb(ctx, obj, old.ModRev)
 				}
 			}
 			for _, cb := range c.DeletedKeyCbs {
@@ -1514,8 +1563,8 @@ func NodeGenericNotifyCb(fn func(key *NodeKey, old *Node)) func(objstore.ObjKey,
 	}
 }
 
-func (c *NodeCache) SetNotifyCb(fn func(ctx context.Context, obj *NodeKey, old *Node, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *NodeKey, old *Node, modRev int64){fn}
+func (c *NodeCache) SetNotifyCb(fn func(ctx context.Context, obj *Node, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *Node, modRev int64){fn}
 }
 
 func (c *NodeCache) SetUpdatedCb(fn func(ctx context.Context, old *Node, new *Node)) {
@@ -1542,7 +1591,7 @@ func (c *NodeCache) AddDeletedCb(fn func(ctx context.Context, old *Node)) {
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *NodeCache) AddNotifyCb(fn func(ctx context.Context, obj *NodeKey, old *Node, modRev int64)) {
+func (c *NodeCache) AddNotifyCb(fn func(ctx context.Context, obj *Node, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -1647,9 +1696,14 @@ func (c *NodeCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &Node{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {

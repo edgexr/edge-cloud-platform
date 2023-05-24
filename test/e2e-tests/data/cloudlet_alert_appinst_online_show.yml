@@ -17,17 +17,18 @@ regiondata:
   appdata:
     appinstances:
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: someapplication1
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: SmallCluster
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-1
-          organization: AcmeAppCo
+        name: someapplication1
+        organization: AcmeAppCo
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-1
+      appkey:
+        organization: AcmeAppCo
+        name: someapplication1
+        version: "1.0"
+      clusterkey:
+        name: SmallCluster
+        organization: AcmeAppCo
       cloudletloc:
         latitude: 31
         longitude: -91
@@ -49,5 +50,6 @@ regiondata:
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
-      uniqueid: acmeappcosomeapplication110-smallcluster-dmuus-cloud-1-dmuus
-      dnslabel: someapplication110-acmeappco
+      uniqueid: acmeappco-someapplication1-dmuus-cloud-1-dmuus
+      dnslabel: someapplication1-acmeappco
+      compatibilityversion: 1

@@ -38,10 +38,10 @@ regiondata:
     - key:
         clusterkey:
           name: AppCluster
+          organization: DevOrg
         cloudletkey:
           organization: mexdev
           name: localtest
-        organization: DevOrg
       deployment: docker
       ipaccess: Shared
       flavor:
@@ -89,24 +89,28 @@ regiondata:
                 optional: true
     appinstances:
     - key:
-        appkey:
-          organization: DevOrg
-          name: DevOrg SDK Demo
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: AppCluster
-          cloudletkey:
-            organization: mexdev
-            name: localtest
+        name: DevOrg SDK Demo
+        organization: DevOrg
+        cloudletkey:
+          organization: mexdev
+          name: localtest
+      appkey:
+        organization: DevOrg
+        name: DevOrg SDK Demo
+        version: "1.0"
+      clusterkey:
+        name: AppCluster
+        organization: DevOrg
     - key:
-        appkey:
-          organization: DevOrg
-          name: Face Detection Demo
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: AppCluster
-          cloudletkey:
-            organization: mexdev
-            name: localtest
+        name: Face Detection Demo
+        organization: DevOrg
+        cloudletkey:
+          organization: mexdev
+          name: localtest
+      appkey:
+        organization: DevOrg
+        name: Face Detection Demo
+        version: "1.0"
+      clusterkey:
+        name: AppCluster
+        organization: DevOrg

@@ -17,18 +17,16 @@ regiondata:
   appdata:
     appinstances:
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovapp
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-autoprov
+        name: autoprov-autoprovapp10
+        organization: AcmeAppCo
+      appkey:
+        organization: AcmeAppCo
+        name: autoprovapp
+        version: "1.0"
     - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovappd
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: autocluster-autoprov
+        name: autoprov-autoprovappd10
+        organization: AcmeAppCo
+      appkey:
+        organization: AcmeAppCo
+        name: autoprovappd
+        version: "1.0"

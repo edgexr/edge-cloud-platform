@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
@@ -61,7 +61,7 @@ func GetKconfName(clusterInst *edgeproto.ClusterInst) string {
 func GetK8sNodeNameSuffix(clusterInstKey *edgeproto.ClusterInstKey) string {
 	cloudletName := clusterInstKey.CloudletKey.Name
 	clusterName := clusterInstKey.ClusterKey.Name
-	devName := clusterInstKey.Organization
+	devName := clusterInstKey.ClusterKey.Organization
 	if devName != "" {
 		return NormalizeName(cloudletName + "-" + clusterName + "-" + devName)
 	}
@@ -73,9 +73,14 @@ func GetCloudletClusterName(clusterKey *edgeproto.ClusterInstKey) string {
 	return GetK8sNodeNameSuffix(clusterKey)
 }
 
-func GetNamespace(appInstKey *edgeproto.AppInstKey) string {
-	// Note that we use the virtual cluster name, not the real cluster name
-	return util.NamespaceSanitize(fmt.Sprintf("%s-%s-%s-%s", appInstKey.AppKey.Organization, appInstKey.AppKey.Name, appInstKey.AppKey.Version, appInstKey.ClusterInstKey.ClusterKey.Name))
+func GetNamespace(appInst *edgeproto.AppInst) string {
+	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityUniqueNameKey {
+		return util.NamespaceSanitize(fmt.Sprintf("%s-%s", appInst.Key.Name, appInst.Key.Organization))
+	} else {
+		// Note that we use the virtual cluster name, not the real cluster name
+		vclust := appInst.VClusterKey()
+		return util.NamespaceSanitize(fmt.Sprintf("%s-%s-%s-%s", appInst.AppKey.Organization, appInst.AppKey.Name, appInst.AppKey.Version, vclust.Name))
+	}
 }
 
 func NormalizeName(name string) string {
@@ -99,7 +104,7 @@ func FixImagePath(origImagePath string) string {
 }
 
 func GetNormalizedClusterName(clusterInst *edgeproto.ClusterInst) string {
-	return NormalizeName(clusterInst.Key.ClusterKey.Name + clusterInst.Key.Organization)
+	return NormalizeName(clusterInst.Key.ClusterKey.Name + clusterInst.Key.ClusterKey.Organization)
 }
 
 // GetKubeNames udpates kubeNames with normalized strings for the included clusterinst, app, and appisnt
@@ -133,8 +138,8 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 	kubeNames.OperatorName = NormalizeName(clusterInst.Key.CloudletKey.Organization)
 	kubeNames.KconfName = GetKconfName(clusterInst)
 	// if clusterInst is multi-tenant and AppInst is specified, use namespaced config
-	if clusterInst.MultiTenant && appInst.Key.AppKey.Name != "" && !cloudcommon.IsSideCarApp(app) {
-		kubeNames.MultitenantNamespace = GetNamespace(&appInst.Key)
+	if clusterInst.MultiTenant && appInst.Key.Name != "" && !cloudcommon.IsSideCarApp(app) {
+		kubeNames.MultitenantNamespace = GetNamespace(appInst)
 		kubeNames.BaseKconfName = kubeNames.KconfName
 		baseName := strings.TrimSuffix(kubeNames.KconfName, ".kubeconfig")
 		kubeNames.KconfName = fmt.Sprintf("%s.%s.kubeconfig", baseName, kubeNames.MultitenantNamespace)

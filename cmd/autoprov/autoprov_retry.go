@@ -19,40 +19,38 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 type RetryTracker struct {
-	allFailures map[edgeproto.AppInstKey]struct{}
+	allFailures map[edgeproto.AppCloudletKeyPair]struct{}
 	mux         sync.Mutex
 }
 
 func newRetryTracker() *RetryTracker {
 	s := RetryTracker{}
-	s.allFailures = make(map[edgeproto.AppInstKey]struct{})
+	s.allFailures = make(map[edgeproto.AppCloudletKeyPair]struct{})
 	return &s
 }
 
-func (s *RetryTracker) registerDeployResult(ctx context.Context, key edgeproto.AppInstKey, err error) {
-	lookup := key
+func (s *RetryTracker) registerDeployResult(ctx context.Context, inst *edgeproto.AppInst, err error) {
 	// tracking is cluster agnostic. We assume any failures are
 	// caused by the App config, or an issue with the Cloudlet, and
 	// nothing specific to autoclusters, whose configuration is
 	// derived from the App.
-	lookup.ClusterInstKey.Organization = ""
-	lookup.ClusterInstKey.ClusterKey.Name = ""
+	lookup := *inst.AppCloudletKeyPair()
 
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	if ignoreDeployError(key, err) {
+	if ignoreDeployError(inst, err) {
 		// remove any existing failure status
 		delete(s.allFailures, lookup)
 		return
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "Failed to deploy appInst, track it as part of retryTracker", "key", key, "err", err)
+	log.SpanLog(ctx, log.DebugLevelApi, "Failed to deploy appInst, track it as part of retryTracker", "key", lookup, "err", err)
 	// track new failure
 	s.allFailures[lookup] = struct{}{}
 	// Because the retry interval (the aggr thread interval) is so long
@@ -78,9 +76,9 @@ func (s *RetryTracker) doRetry(ctx context.Context, minmax *MinMaxChecker) {
 }
 
 func (s *RetryTracker) hasFailure(ctx context.Context, appKey edgeproto.AppKey, cloudletKey edgeproto.CloudletKey) bool {
-	key := edgeproto.AppInstKey{}
+	key := edgeproto.AppCloudletKeyPair{}
 	key.AppKey = appKey
-	key.ClusterInstKey.CloudletKey = cloudletKey
+	key.CloudletKey = cloudletKey
 
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -88,14 +86,14 @@ func (s *RetryTracker) hasFailure(ctx context.Context, appKey edgeproto.AppKey, 
 	return found
 }
 
-func ignoreDeployError(key edgeproto.AppInstKey, err error) bool {
+func ignoreDeployError(inst *edgeproto.AppInst, err error) bool {
 	if err == nil {
 		return true
 	}
 	if cloudcommon.IsAppInstBeingCreatedError(err) || cloudcommon.IsAppInstBeingDeletedError(err) {
 		return true
 	}
-	if strings.Contains(err.Error(), key.ExistsError().Error()) ||
+	if strings.Contains(err.Error(), inst.Key.ExistsError().Error()) ||
 		strings.Contains(err.Error(), cloudcommon.AutoProvMinAlreadyMetError.Error()) ||
 		strings.Contains(err.Error(), "AppInst against App which is being deleted") {
 		return true

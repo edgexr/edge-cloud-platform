@@ -188,10 +188,10 @@ regiondata:
     - key:
         clusterkey:
           name: SmallCluster
+          organization: user3org
         cloudletkey:
           organization: enterprise
           name: enterprise-1
-        organization: user3org
       flavor:
         name: x1.small
       liveness: Static
@@ -300,17 +300,18 @@ regiondata:
       globalid: local-ep110user3org
     appinstances:
     - key:
-        appkey:
-          organization: user3org
-          name: ep1
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: SmallCluster
-          cloudletkey:
-            organization: enterprise
-            name: enterprise-1
-          organization: user3org
+        name: ep1
+        organization: user3org
+        cloudletkey:
+          organization: enterprise
+          name: enterprise-1
+      appkey:
+        organization: user3org
+        name: ep1
+        version: "1.0"
+      clusterkey:
+        name: SmallCluster
+        organization: user3org
       cloudletloc:
         latitude: 31
         longitude: -91
@@ -335,35 +336,28 @@ regiondata:
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
-      uniqueid: user3orgep110-smallcluster-enterprise-1-enterprise
-      dnslabel: ep110-user3org
+      uniqueid: user3org-ep1-enterprise-1-enterprise
+      dnslabel: ep1-user3org
     appinstrefs:
     - key:
         organization: user3org
         name: ep1
         version: "1.0"
       insts:
-        ? '{"app_key":{"organization":"user3org","name":"ep1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"enterprise","name":"enterprise-1"},"organization":"user3org"}}'
-        : 1
+        '{"name":"ep1","organization":"user3org","cloudlet_key":{"organization":"enterprise","name":"enterprise-1"}}': 1
     clusterrefs:
     - key:
         clusterkey:
           name: SmallCluster
+          organization: user3org
         cloudletkey:
           organization: enterprise
           name: enterprise-1
-        organization: user3org
       apps:
-      - appkey:
-          organization: edgecloudorg
-          name: MEXPrometheusAppName
-          version: "1.0"
-        vclustername: SmallCluster
-      - appkey:
-          organization: user3org
-          name: ep1
-          version: "1.0"
-        vclustername: SmallCluster
+      - name: MEXPrometheusAppName-SmallCluster-user3org
+        organization: edgecloudorg
+      - name: ep1
+        organization: user3org
 - region: locala
   appdata:
     flavors:

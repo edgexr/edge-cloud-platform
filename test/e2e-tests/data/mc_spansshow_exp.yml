@@ -28,8 +28,8 @@
       action: DELETE
       cliserv: client
       cloudlet: dmuus-cloud-1
+      cloudletfedorg: ""
       cloudletorg: dmuus
-      federatedorg: ""
       lineno: null
       objtype: CloudletInfo
       peer: null

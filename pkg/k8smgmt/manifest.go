@@ -20,12 +20,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/deploygen"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/deploygen"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	yaml "github.com/mobiledgex/yaml/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -81,10 +80,12 @@ func addMexLabel(meta *metav1.ObjectMeta, label string) {
 }
 
 // Add app details to the deployment as labels
-// these labels will be picked up by Pormetheus and added to the metrics
-func addAppInstLabels(meta *metav1.ObjectMeta, app *edgeproto.App) {
-	meta.Labels[cloudcommon.MexAppNameLabel] = util.DNSSanitize(app.Key.Name)
-	meta.Labels[cloudcommon.MexAppVersionLabel] = util.DNSSanitize(app.Key.Version)
+// these labels will be picked up by Prometheus and added to the metrics
+func addAppInstLabels(meta *metav1.ObjectMeta, appInst *edgeproto.AppInst) {
+	labels := cloudcommon.GetAppInstLabels(appInst)
+	for k, v := range labels.Map() {
+		meta.Labels[k] = v
+	}
 }
 
 // The config label marks all objects that are part of config files in the
@@ -156,7 +157,7 @@ func GetAppEnvVars(ctx context.Context, app *edgeproto.App, authApi cloudcommon.
 }
 
 // Merge in all the environment variables into
-func MergeEnvVars(ctx context.Context, authApi cloudcommon.RegistryAuthApi, app *edgeproto.App, kubeManifest string, imagePullSecrets []string, names *KubeNames, appInstFlavor *edgeproto.Flavor) (string, error) {
+func MergeEnvVars(ctx context.Context, authApi cloudcommon.RegistryAuthApi, app *edgeproto.App, appInst *edgeproto.AppInst, kubeManifest string, imagePullSecrets []string, names *KubeNames, appInstFlavor *edgeproto.Flavor) (string, error) {
 	var files []string
 	log.SpanLog(ctx, log.DebugLevelInfra, "MergeEnvVars", "kubeManifest", kubeManifest)
 
@@ -231,7 +232,7 @@ func MergeEnvVars(ctx context.Context, authApi cloudcommon.RegistryAuthApi, app 
 		addEnvVars(ctx, template, *envVars)
 		addMexLabel(&template.ObjectMeta, name)
 		// Add labels for all the appKey data
-		addAppInstLabels(&template.ObjectMeta, app)
+		addAppInstLabels(&template.ObjectMeta, appInst)
 		if imagePullSecrets != nil {
 			addImagePullSecret(ctx, template, imagePullSecrets)
 		}

@@ -380,4 +380,4 @@ appinsts:
   - interfaceid: tcp-81
     accesspoints:
       port: 81
-      fqdn: pa-vmapp10fedappco10-dmuus-partner1.dmuus-cloud-2-dmuus.local.edgecloude2e.net
+      fqdn: vmapp-dmuus-partner1.dmuus-cloud-2-dmuus.local.edgecloude2e.net

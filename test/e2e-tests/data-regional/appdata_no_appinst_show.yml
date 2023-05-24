@@ -353,11 +353,9 @@ cloudletinfos:
     - name: Instances
       value: 8
     clusterinsts:
-    - clusterkey:
-        name: ReservableCluster
+    - name: ReservableCluster
       organization: edgecloudorg
-    - clusterkey:
-        name: SmallCluster
+    - name: SmallCluster
       organization: AcmeAppCo
   trustpolicystate: NotPresent
 - key:
@@ -406,11 +404,9 @@ cloudletinfos:
     - name: Instances
       value: 7
     clusterinsts:
-    - clusterkey:
-        name: ReservableCluster2
+    - name: ReservableCluster2
       organization: edgecloudorg
-    - clusterkey:
-        name: SmallCluster
+    - name: SmallCluster
       organization: AcmeAppCo
   trustpolicystate: NotPresent
 - key:
@@ -494,10 +490,10 @@ clusterinsts:
 - key:
     clusterkey:
       name: ReservableCluster
+      organization: edgecloudorg
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
-    organization: edgecloudorg
   flavor:
     name: x1.small
   liveness: Static
@@ -528,10 +524,10 @@ clusterinsts:
 - key:
     clusterkey:
       name: ReservableCluster2
+      organization: edgecloudorg
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-2
-    organization: edgecloudorg
   flavor:
     name: x1.small
   liveness: Static
@@ -562,10 +558,10 @@ clusterinsts:
 - key:
     clusterkey:
       name: SmallCluster
+      organization: AcmeAppCo
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
-    organization: AcmeAppCo
   flavor:
     name: x1.small
   liveness: Static
@@ -595,10 +591,10 @@ clusterinsts:
 - key:
     clusterkey:
       name: SmallCluster
+      organization: AcmeAppCo
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-2
-    organization: AcmeAppCo
   flavor:
     name: x1.small
   liveness: Static
@@ -942,17 +938,18 @@ apps:
   globalid: local-platosenablinglayer10platos
 appinstances:
 - key:
-    appkey:
-      organization: edgecloudorg
-      name: MEXPrometheusAppName
-      version: "1.0"
-    clusterinstkey:
-      clusterkey:
-        name: ReservableCluster
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-1
-      organization: edgecloudorg
+    name: MEXPrometheusAppName-ReservableCluster-edgecloudorg
+    organization: edgecloudorg
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-1
+  appkey:
+    organization: edgecloudorg
+    name: MEXPrometheusAppName
+    version: "1.0"
+  clusterkey:
+    name: ReservableCluster
+    organization: edgecloudorg
   cloudletloc:
     latitude: 31
     longitude: -91
@@ -967,20 +964,21 @@ appinstances:
   healthcheck: Ok
   powerstate: PowerOn
   vmflavor: x1.small
-  uniqueid: edgecloudorgmexprometheusappname10-reservablecluster-dmuus-cloud-1-dmuus
-  dnslabel: mexprometheusappname10-edgecloudorg1
+  uniqueid: edgecloudorg-mexprometheusappname-reservablecluster-edgecloudorg-dmuus-cloud-1-dmuus
+  dnslabel: mexprometheusappname-reservablec-edgecloudorg
 - key:
-    appkey:
-      organization: edgecloudorg
-      name: MEXPrometheusAppName
-      version: "1.0"
-    clusterinstkey:
-      clusterkey:
-        name: ReservableCluster2
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-2
-      organization: edgecloudorg
+    name: MEXPrometheusAppName-ReservableCluster2-edgecloudorg
+    organization: edgecloudorg
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-2
+  appkey:
+    organization: edgecloudorg
+    name: MEXPrometheusAppName
+    version: "1.0"
+  clusterkey:
+    name: ReservableCluster2
+    organization: edgecloudorg
   cloudletloc:
     latitude: 35
     longitude: -95
@@ -995,20 +993,21 @@ appinstances:
   healthcheck: Ok
   powerstate: PowerOn
   vmflavor: x1.small
-  uniqueid: edgecloudorgmexprometheusappname10-reservablecluster2-dmuus-cloud-2-dmuus
-  dnslabel: mexprometheusappname10-edgecloudorg1
+  uniqueid: edgecloudorg-mexprometheusappname-reservablecluster2-edgecloudorg-dmuus-cloud-2-dmuus
+  dnslabel: mexprometheusappname-reservablec-edgecloudorg
 - key:
-    appkey:
-      organization: edgecloudorg
-      name: MEXPrometheusAppName
-      version: "1.0"
-    clusterinstkey:
-      clusterkey:
-        name: SmallCluster
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-1
-      organization: AcmeAppCo
+    name: MEXPrometheusAppName-SmallCluster-AcmeAppCo
+    organization: edgecloudorg
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-1
+  appkey:
+    organization: edgecloudorg
+    name: MEXPrometheusAppName
+    version: "1.0"
+  clusterkey:
+    name: SmallCluster
+    organization: AcmeAppCo
   cloudletloc:
     latitude: 31
     longitude: -91
@@ -1023,20 +1022,21 @@ appinstances:
   healthcheck: Ok
   powerstate: PowerOn
   vmflavor: x1.small
-  uniqueid: edgecloudorgmexprometheusappname10-smallcluster-dmuus-cloud-1-dmuus
-  dnslabel: mexprometheusappname10-edgecloudorg
+  uniqueid: edgecloudorg-mexprometheusappname-smallcluster-acmeappco-dmuus-cloud-1-dmuus
+  dnslabel: mexprometheusappname-smallcluster-acmeappco-edgecloudorg
 - key:
-    appkey:
-      organization: edgecloudorg
-      name: MEXPrometheusAppName
-      version: "1.0"
-    clusterinstkey:
-      clusterkey:
-        name: SmallCluster
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-2
-      organization: AcmeAppCo
+    name: MEXPrometheusAppName-SmallCluster-AcmeAppCo
+    organization: edgecloudorg
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-2
+  appkey:
+    organization: edgecloudorg
+    name: MEXPrometheusAppName
+    version: "1.0"
+  clusterkey:
+    name: SmallCluster
+    organization: AcmeAppCo
   cloudletloc:
     latitude: 35
     longitude: -95
@@ -1051,8 +1051,8 @@ appinstances:
   healthcheck: Ok
   powerstate: PowerOn
   vmflavor: x1.small
-  uniqueid: edgecloudorgmexprometheusappname10-smallcluster-dmuus-cloud-2-dmuus
-  dnslabel: mexprometheusappname10-edgecloudorg
+  uniqueid: edgecloudorg-mexprometheusappname-smallcluster-acmeappco-dmuus-cloud-2-dmuus
+  dnslabel: mexprometheusappname-smallcluster-acmeappco-edgecloudorg
 appinstrefs:
 - key:
     organization: AcmeAppCo
@@ -1071,13 +1071,13 @@ appinstrefs:
     name: MEXPrometheusAppName
     version: "1.0"
   insts:
-    ? '{"app_key":{"organization":"edgecloudorg","name":"MEXPrometheusAppName","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"ReservableCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"},"organization":"edgecloudorg"}}'
+    ? '{"name":"MEXPrometheusAppName-ReservableCluster-edgecloudorg","organization":"edgecloudorg","cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"}}'
     : 1
-    ? '{"app_key":{"organization":"edgecloudorg","name":"MEXPrometheusAppName","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"ReservableCluster2"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"edgecloudorg"}}'
+    ? '{"name":"MEXPrometheusAppName-ReservableCluster2-edgecloudorg","organization":"edgecloudorg","cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"}}'
     : 1
-    ? '{"app_key":{"organization":"edgecloudorg","name":"MEXPrometheusAppName","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"},"organization":"AcmeAppCo"}}'
+    ? '{"name":"MEXPrometheusAppName-SmallCluster-AcmeAppCo","organization":"edgecloudorg","cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"}}'
     : 1
-    ? '{"app_key":{"organization":"edgecloudorg","name":"MEXPrometheusAppName","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}}'
+    ? '{"name":"MEXPrometheusAppName-SmallCluster-AcmeAppCo","organization":"edgecloudorg","cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"}}'
     : 1
 - key:
     organization: platos
@@ -1087,52 +1087,40 @@ clusterrefs:
 - key:
     clusterkey:
       name: ReservableCluster
+      organization: edgecloudorg
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
-    organization: edgecloudorg
   apps:
-  - appkey:
-      organization: edgecloudorg
-      name: MEXPrometheusAppName
-      version: "1.0"
-    vclustername: ReservableCluster
+  - name: MEXPrometheusAppName-ReservableCluster-edgecloudorg
+    organization: edgecloudorg
 - key:
     clusterkey:
       name: ReservableCluster2
+      organization: edgecloudorg
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-2
-    organization: edgecloudorg
   apps:
-  - appkey:
-      organization: edgecloudorg
-      name: MEXPrometheusAppName
-      version: "1.0"
-    vclustername: ReservableCluster2
+  - name: MEXPrometheusAppName-ReservableCluster2-edgecloudorg
+    organization: edgecloudorg
 - key:
     clusterkey:
       name: SmallCluster
+      organization: AcmeAppCo
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
-    organization: AcmeAppCo
   apps:
-  - appkey:
-      organization: edgecloudorg
-      name: MEXPrometheusAppName
-      version: "1.0"
-    vclustername: SmallCluster
+  - name: MEXPrometheusAppName-SmallCluster-AcmeAppCo
+    organization: edgecloudorg
 - key:
     clusterkey:
       name: SmallCluster
+      organization: AcmeAppCo
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-2
-    organization: AcmeAppCo
   apps:
-  - appkey:
-      organization: edgecloudorg
-      name: MEXPrometheusAppName
-      version: "1.0"
-    vclustername: SmallCluster
+  - name: MEXPrometheusAppName-SmallCluster-AcmeAppCo
+    organization: edgecloudorg

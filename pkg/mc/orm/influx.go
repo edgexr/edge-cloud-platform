@@ -56,14 +56,15 @@ type influxQueryArgs struct {
 	Selector       string
 	Measurement    string
 	AppInstName    string
+	AppInstOrg     string
+	AppName        string
+	AppOrg         string
 	AppVersion     string
 	ClusterName    string
-	CloudletName   string
-	OrgField       string
-	ApiCallerOrg   string
-	CloudletOrg    string
 	ClusterOrg     string
-	AppOrg         string
+	CloudletName   string
+	CloudletOrg    string
+	CloudletFedOrg string
 	DeploymentType string
 	CloudletList   string
 	QueryFilter    string
@@ -75,29 +76,39 @@ type metricsCommonQueryArgs struct {
 	EndTime        string
 	Limit          int
 	TimeDefinition string
+	whereCount     int
+}
+
+func (s *metricsCommonQueryArgs) And() string {
+	and := ""
+	if s.whereCount > 0 {
+		and = " AND"
+	}
+	s.whereCount++
+	return and
 }
 
 // AppFields are the field names used to query the DB
-var AppFields = []string{
-	"\"app\"",
-	"\"ver\"",
-	"\"cluster\"",
-	"\"clusterorg\"",
-	"\"cloudlet\"",
-	"\"cloudletorg\"",
-	"\"apporg\"",
+var AppInstFields = []string{
+	edgeproto.AppInstKeyTagName,
+	edgeproto.AppInstKeyTagOrganization,
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization,
 }
 
-var ClusterFields = []string{
-	"\"cluster\"",
-	"\"clusterorg\"",
-	"\"cloudlet\"",
-	"\"cloudletorg\"",
+var ClusterInstFields = []string{
+	edgeproto.ClusterKeyTagName,
+	edgeproto.ClusterKeyTagOrganization,
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization,
 }
 
 var CloudletFields = []string{
-	"\"cloudlet\"",
-	"\"cloudletorg\"",
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization,
 }
 
 var PodFields = []string{
@@ -205,27 +216,42 @@ const (
 	CLOUDLETUSAGE = "cloudletusage"
 )
 
-var devInfluxDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
-	` WHERE "{{.OrgField}}"='{{.ApiCallerOrg}}'` +
-	`{{if .AppInstName}} AND "app"='{{.AppInstName}}'{{end}}` +
-	`{{if .AppOrg}} AND "apporg"='{{.AppOrg}}'{{end}}` +
-	`{{if .ClusterName}} AND "cluster"='{{.ClusterName}}'{{end}}` +
-	`{{if .ClusterOrg}} AND "clusterorg"='{{.ClusterOrg}}'{{end}}` +
-	`{{if .AppVersion}} AND "ver"='{{.AppVersion}}'{{end}}` +
-	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
-	`{{if .CloudletOrg}} AND "cloudletorg"='{{.CloudletOrg}}'{{end}}` +
-	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
-	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
-	`{{if .DeploymentType}} AND deployment = '{{.DeploymentType}}'{{end}}` +
-	`{{if .CloudletList}} AND ({{.CloudletList}}){{end}}` +
-	` order by time desc{{if ne .Limit 0}} limit {{.Limit}}{{end}}`
+var devInfluxDBT = fmt.Sprintf(`SELECT {{.Selector}} `+
+	`from {{.Measurement}} WHERE `+
+	`{{if .AppInstName}}{{.And}} "%s"='{{.AppInstName}}'{{end}}`+
+	`{{if .AppInstOrg}}{{.And}} "%s"='{{.AppInstOrg}}'{{end}}`+
+	`{{if .AppName}}{{.And}} "%s"='{{.AppName}}'{{end}}`+
+	`{{if .AppOrg}}{{.And}} "%s"='{{.AppOrg}}'{{end}}`+
+	`{{if .AppVersion}}{{.And}} "%s"='{{.AppVersion}}'{{end}}`+
+	`{{if .ClusterName}}{{.And}} "%s"='{{.ClusterName}}'{{end}}`+
+	`{{if .ClusterOrg}}{{.And}} "%s"='{{.ClusterOrg}}'{{end}}`+
+	`{{if .CloudletName}}{{.And}} "%s"='{{.CloudletName}}'{{end}}`+
+	`{{if .CloudletOrg}}{{.And}} "%s"='{{.CloudletOrg}}'{{end}}`+
+	`{{if .CloudletFedOrg}}{{.And}} "%s"='{{.CloudletFedOrg}}'{{end}}`+
+	`{{if .StartTime}}{{.And}} time >= '{{.StartTime}}'{{end}}`+
+	`{{if .EndTime}}{{.And}} time <= '{{.EndTime}}'{{end}}`+
+	`{{if .DeploymentType}}{{.And}} deployment = '{{.DeploymentType}}'{{end}}`+
+	`{{if .CloudletList}}{{.And}} ({{.CloudletList}}){{end}}`+
+	` order by time desc{{if ne .Limit 0}} limit {{.Limit}}{{end}}`,
+	edgeproto.AppInstKeyTagName,
+	edgeproto.AppInstKeyTagOrganization,
+	edgeproto.AppKeyTagName,
+	edgeproto.AppKeyTagOrganization,
+	edgeproto.AppKeyTagVersion,
+	edgeproto.ClusterKeyTagName,
+	edgeproto.ClusterKeyTagOrganization,
+	edgeproto.CloudletKeyTagName,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagFederatedOrganization)
 
-var operatorInfluxDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
-	` WHERE "cloudletorg"='{{.CloudletOrg}}'` +
-	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
-	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
-	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
-	` order by time desc{{if ne .Limit 0}} limit {{.Limit}}{{end}}`
+var operatorInfluxDBT = fmt.Sprintf(`SELECT {{.Selector}} from {{.Measurement}}`+
+	` WHERE "%s"='{{.CloudletOrg}}'`+
+	`{{if .CloudletName}} AND "%s"='{{.CloudletName}}'{{end}}`+
+	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}`+
+	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}`+
+	` order by time desc{{if ne .Limit 0}} limit {{.Limit}}{{end}}`,
+	edgeproto.CloudletKeyTagOrganization,
+	edgeproto.CloudletKeyTagName)
 
 type InfluxDbConnCache struct {
 	sync.RWMutex
@@ -375,20 +401,9 @@ func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics, cloudletList []string
 	arg := influxQueryArgs{
 		Selector:     getFields(obj.Selector, APPINST),
 		Measurement:  getMeasurementString(obj.Selector, APPINST),
-		AppInstName:  util.DNSSanitize(obj.AppInst.AppKey.Name),
-		AppVersion:   util.DNSSanitize(obj.AppInst.AppKey.Version),
-		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
-		ClusterOrg:   obj.AppInst.ClusterInstKey.Organization,
+		AppInstName:  obj.AppInst.Name,
+		AppInstOrg:   obj.AppInst.Organization,
 		CloudletList: generateCloudletList(cloudletList),
-	}
-	if obj.AppInst.AppKey.Organization != "" {
-		arg.OrgField = "apporg"
-		arg.ApiCallerOrg = obj.AppInst.AppKey.Organization
-		arg.CloudletOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
-	} else {
-		arg.OrgField = "cloudletorg"
-		arg.ApiCallerOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
-		arg.AppOrg = obj.AppInst.AppKey.Organization
 	}
 	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, "", 0)
 	return getInfluxMetricsQueryCmd(&arg, devInfluxDBTemplate)
@@ -401,15 +416,6 @@ func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics, cloudletList []st
 		Measurement:  getMeasurementString(obj.Selector, CLUSTER),
 		ClusterName:  obj.ClusterInst.ClusterKey.Name,
 		CloudletList: generateCloudletList(cloudletList),
-	}
-	if obj.ClusterInst.Organization != "" {
-		arg.OrgField = "clusterorg"
-		arg.ApiCallerOrg = obj.ClusterInst.Organization
-		arg.CloudletOrg = obj.ClusterInst.CloudletKey.Organization
-	} else {
-		arg.OrgField = "cloudletorg"
-		arg.ApiCallerOrg = obj.ClusterInst.CloudletKey.Organization
-		arg.ClusterOrg = obj.ClusterInst.Organization
 	}
 	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, &obj.MetricsCommon, "", 0)
 	return getInfluxMetricsQueryCmd(&arg, devInfluxDBTemplate)
@@ -442,7 +448,7 @@ func CloudletUsageMetricsQuery(obj *ormapi.RegionCloudletMetrics, platformTypes 
 // TODO: This function should be a streaming function, but currently client library for influxDB
 // doesn't implement it in a way could really be using it
 func influxStream(ctx context.Context, rc *InfluxDBContext, databases []string, dbQuery string, cb func(Data interface{}) error) error {
-	log.SpanLog(ctx, log.DebugLevelApi, "start influxDB api", "region", rc.region)
+	log.SpanLog(ctx, log.DebugLevelApi, "start influxDB api", "region", rc.region, "databases", databases, "query", dbQuery)
 	defer log.SpanLog(ctx, log.DebugLevelApi, "finish influxDB api")
 
 	if rc.conn == nil {
@@ -574,14 +580,14 @@ func getFieldsSlice(selector, measurementType string) []string {
 	var fields, selectors []string
 	switch measurementType {
 	case APPINST:
-		fields = AppFields
+		fields = AppInstFields
 		// If this is not connections selector add pod field
 		if selector != "connections" {
 			fields = append(fields, PodFields...)
 		}
 		selectors = ormapi.AppSelectors
 	case CLUSTER:
-		fields = ClusterFields
+		fields = ClusterInstFields
 		selectors = ormapi.ClusterSelectors
 	case CLOUDLET:
 		fields = CloudletFields
@@ -679,7 +685,8 @@ func getCloudletPlatformTypes(ctx context.Context, username, region string, keys
 }
 
 func getClientApiUsageMetricsArgs(in *ormapi.RegionClientApiUsageMetrics) map[string]string {
-	args := in.AppInst.GetTags()
+	args := in.AppKey.GetTags()
+	in.CloudletKey.AddTags(args)
 	args["method"] = in.Method
 	args["dme cloudlet"] = in.DmeCloudlet
 	args["dme cloudlet org"] = in.DmeCloudletOrg
@@ -687,7 +694,8 @@ func getClientApiUsageMetricsArgs(in *ormapi.RegionClientApiUsageMetrics) map[st
 }
 
 func getClientAppUsageMetricsArgs(in *ormapi.RegionClientAppUsageMetrics) map[string]string {
-	args := in.AppInst.GetTags()
+	args := in.AppInstKey.GetTags()
+	in.AppKey.AddTags(args)
 	args["device carrier"] = in.DeviceCarrier
 	args["data network type"] = in.DataNetworkType
 	args["device model"] = in.DeviceModel
@@ -744,8 +752,8 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 		dbNames = append(dbNames, cloudcommon.DeveloperMetricsDbName)
 		rc.region = in.Region
-		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.AppKey.Organization},
-			ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.ClusterInstKey.CloudletKey})
+		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.Organization},
+			ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.CloudletKey})
 		if err != nil {
 			return err
 		}
@@ -775,7 +783,7 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 
 		rc.region = in.Region
-		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.ClusterInst.Organization},
+		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.ClusterInst.ClusterKey.Organization},
 			ResourceClusterAnalytics, []edgeproto.CloudletKey{in.ClusterInst.CloudletKey})
 		if err != nil {
 			return err
@@ -836,8 +844,8 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 
 		rc.region = in.Region
-		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.AppKey.Organization},
-			ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.ClusterInstKey.CloudletKey})
+		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppKey.Organization},
+			ResourceAppAnalytics, []edgeproto.CloudletKey{in.CloudletKey})
 		if err != nil {
 			return err
 		}
@@ -913,8 +921,8 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 
 		rc.region = in.Region
-		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.AppKey.Organization},
-			ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.ClusterInstKey.CloudletKey})
+		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInstKey.Organization, in.AppKey.Organization},
+			ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInstKey.CloudletKey})
 		if err != nil {
 			return err
 		}

@@ -13,11 +13,8 @@
 # limitations under the License.
 
 appinstkey:
-  appkey:
-    organization: AcmeAppCo
-    name: someapplication1
-    version: "1.0"
-  clusterinstkey:
-    cloudletkey:
-      organization: dmuus
-      name: dmuus-cloud-2
+  name: someapplication1
+  organization: AcmeAppCo
+  cloudletkey:
+    organization: dmuus
+    name: dmuus-cloud-2

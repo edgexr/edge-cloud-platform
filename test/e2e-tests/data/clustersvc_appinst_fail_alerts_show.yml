@@ -15,13 +15,15 @@
 - labels:
     alertname: ClusterSvcAppInstFailure
     app: MEXPrometheusAppName
+    appinst: MEXPrometheusAppName-dmuusSmallCluster-AcmeAppCo
+    appinstorg: edgecloudorg
     apporg: edgecloudorg
     appver: "1.0"
     cloudlet: dmuus-cloud-13
+    cloudletfedorg: ""
     cloudletorg: dmuus
     cluster: dmuusSmallCluster
     clusterorg: AcmeAppCo
-    federatedorg: ""
     region: local
     scope: Platform
   annotations:

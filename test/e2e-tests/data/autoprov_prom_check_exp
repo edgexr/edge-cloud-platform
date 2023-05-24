@@ -5,12 +5,12 @@ ran: curl -s http://127.0.0.1:9092/api/v1/rules | jq . | grep -v valuation
     "groups": [
       {
         "name": "autoprov-feature",
-        "file": "/var/tmp/rulefile_autoprovappd.yml",
+        "file": "/var/tmp/rulefile_autoprov-autoprovappd10.yml",
         "rules": [
           {
             "state": "inactive",
             "name": "AutoProvUndeploy",
-            "query": "envoy_cluster_upstream_cx_active{app=\"autoprovappd\",apporg=\"AcmeAppCo\",appver=\"1.0\"} < 1",
+            "query": "envoy_cluster_upstream_cx_active{appinst=\"autoprov-autoprovappd10\",appinstorg=\"AcmeAppCo\"} < 1",
             "duration": 3,
             "labels": {},
             "annotations": {},
@@ -61,7 +61,7 @@ ran: curl -s http://127.0.0.1:9092/api/v1/rules | jq . | grep -v valuation
           },
           {
             "name": "envoy_cluster_upstream_cx_active_total",
-            "query": "sum by(app, appver, apporg, cluster, clusterorg, cloudlet, cloudletorg) (envoy_cluster_upstream_cx_active)",
+            "query": "sum by(appinst, appinstorg, app, appver, apporg, cluster, clusterorg, cloudlet, cloudletorg, cloudletfedorg) (envoy_cluster_upstream_cx_active)",
             "health": "ok",
             "type": "recording"
           },
@@ -78,36 +78,40 @@ ran: curl -s http://127.0.0.1:9092/api/v1/rules | jq . | grep -v valuation
   }
 }
 
-ran: curl -s http://127.0.0.1:9092/api/v1/targets | jq '.data.activeTargets[] | select(.labels.app == "autoprovappd" and .labels.apporg == "AcmeAppCo" and .labels.appver == "1.0" and .labels.cloudlet == "dmuus-cloud-1") | del(.lastScrape) | del(.lastScrapeDuration) | del(.health)'
+ran: curl -s http://127.0.0.1:9092/api/v1/targets | jq '.data.activeTargets[] | select(.labels.appinst == "autoprov-autoprovappd10" and .labels.appinstorg == "AcmeAppCo" and .labels.cloudlet == "dmuus-cloud-1") | del(.lastScrape) | del(.lastScrapeDuration) | del(.health)'
 {
   "discoveredLabels": {
     "__address__": "host.docker.internal:9091",
     "__meta_filepath": "/var/tmp/prom_targets.json",
-    "__metrics_path__": "/metrics/autoprovappd-autocluster-autoprov-AcmeAppCo-1.0",
+    "__metrics_path__": "/metrics/autoprov-autoprovappd10-AcmeAppCo",
     "__scheme__": "http",
     "app": "autoprovappd",
+    "appinst": "autoprov-autoprovappd10",
+    "appinstorg": "AcmeAppCo",
     "apporg": "AcmeAppCo",
     "appver": "1.0",
     "cloudlet": "dmuus-cloud-1",
     "cloudletorg": "dmuus",
-    "cluster": "autocluster-autoprov",
+    "cluster": "ReservableD",
     "clusterorg": "edgecloudorg",
     "job": "MobiledgeX Monitoring"
   },
   "labels": {
     "app": "autoprovappd",
+    "appinst": "autoprov-autoprovappd10",
+    "appinstorg": "AcmeAppCo",
     "apporg": "AcmeAppCo",
     "appver": "1.0",
     "cloudlet": "dmuus-cloud-1",
     "cloudletorg": "dmuus",
-    "cluster": "autocluster-autoprov",
+    "cluster": "ReservableD",
     "clusterorg": "edgecloudorg",
     "instance": "host.docker.internal:9091",
     "job": "MobiledgeX Monitoring"
   },
   "scrapePool": "MobiledgeX Monitoring",
-  "scrapeUrl": "http://host.docker.internal:9091/metrics/autoprovappd-autocluster-autoprov-AcmeAppCo-1.0",
-  "globalUrl": "http://host.docker.internal:9091/metrics/autoprovappd-autocluster-autoprov-AcmeAppCo-1.0",
+  "scrapeUrl": "http://host.docker.internal:9091/metrics/autoprov-autoprovappd10-AcmeAppCo",
+  "globalUrl": "http://host.docker.internal:9091/metrics/autoprov-autoprovappd10-AcmeAppCo",
   "lastError": ""
 }
 

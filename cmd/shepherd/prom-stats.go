@@ -20,11 +20,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -66,12 +67,24 @@ func getPromAlerts(ctx context.Context, addr string, client ssh.Client) ([]edgep
 	return alerts, nil
 }
 
-func getAppMetricFromPrometheusData(p *K8sClusterStats, appStatsMap map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics, metric *promutils.PromMetric) *shepherd_common.AppMetrics {
+func getAppMetricFromPrometheusData(ctx context.Context, p *K8sClusterStats, appStatsMap map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics, metric *promutils.PromMetric) *shepherd_common.AppMetrics {
+	labelKey := cloudcommon.AppInstLabels{
+		AppInstNameLabel: metric.Labels.AppInstName,
+		AppInstOrgLabel:  metric.Labels.AppInstOrg,
+	}
+	labelKeyOld := cloudcommon.AppInstLabelsOld{
+		AppNameLabel:    metric.Labels.AppName,
+		AppVersionLabel: metric.Labels.AppVersion,
+	}
+	appInstInfo, found := p.getAppInstInfo(labelKey, labelKeyOld)
+	if !found {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to find appInstKey for cluster from labels", "labels", metric.Labels, "labelKey", labelKey, "labelKeyOld", labelKeyOld, "cluster", p.key)
+	}
 	appKey := shepherd_common.MetricAppInstKey{
 		ClusterInstKey: p.key,
 		Pod:            metric.Labels.PodName,
-		App:            metric.Labels.App,
-		Version:        metric.Labels.Version,
+		AppInstName:    appInstInfo.AppInstKey.Name,
+		AppInstOrg:     appInstInfo.AppInstKey.Organization,
 	}
 	stat, found := appStatsMap[appKey]
 	if !found {
@@ -90,10 +103,10 @@ func collectAppPrometheusMetrics(ctx context.Context, p *K8sClusterStats) map[sh
 	if err == nil && resp.Status == "success" {
 		for _, metric := range resp.Data.Result {
 			// skip system pods
-			if metric.Labels.App == "" {
+			if metric.Labels.AppName == "" && metric.Labels.AppInstName == "" {
 				continue
 			}
-			stat := getAppMetricFromPrometheusData(p, appStatsMap, &metric)
+			stat := getAppMetricFromPrometheusData(ctx, p, appStatsMap, &metric)
 			stat.CpuTS = promutils.ParseTime(metric.Values[0].(float64))
 			//copy only if we can parse the value
 			if val, err := strconv.ParseFloat(metric.Values[1].(string), 64); err == nil {
@@ -106,10 +119,10 @@ func collectAppPrometheusMetrics(ctx context.Context, p *K8sClusterStats) map[sh
 	if err == nil && resp.Status == "success" {
 		for _, metric := range resp.Data.Result {
 			// skip system pods
-			if metric.Labels.App == "" {
+			if metric.Labels.AppName == "" && metric.Labels.AppInstName == "" {
 				continue
 			}
-			stat := getAppMetricFromPrometheusData(p, appStatsMap, &metric)
+			stat := getAppMetricFromPrometheusData(ctx, p, appStatsMap, &metric)
 			stat.MemTS = promutils.ParseTime(metric.Values[0].(float64))
 			//copy only if we can parse the value
 			if val, err := strconv.ParseUint(metric.Values[1].(string), 10, 64); err == nil {
@@ -122,10 +135,10 @@ func collectAppPrometheusMetrics(ctx context.Context, p *K8sClusterStats) map[sh
 	if err == nil && resp.Status == "success" {
 		for _, metric := range resp.Data.Result {
 			// skip system pods
-			if metric.Labels.App == "" {
+			if metric.Labels.AppName == "" && metric.Labels.AppInstName == "" {
 				continue
 			}
-			stat := getAppMetricFromPrometheusData(p, appStatsMap, &metric)
+			stat := getAppMetricFromPrometheusData(ctx, p, appStatsMap, &metric)
 			stat.DiskTS = promutils.ParseTime(metric.Values[0].(float64))
 			//copy only if we can parse the value
 			if val, err := strconv.ParseUint(metric.Values[1].(string), 10, 64); err == nil {

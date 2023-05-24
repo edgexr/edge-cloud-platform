@@ -19,10 +19,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/gogo/protobuf/types"
 )
 
 var autoProvStats *AutoProvStats
@@ -106,7 +106,7 @@ func (s *AutoProvStats) UpdateSettings(intervalSec float64) {
 	}
 }
 
-func (s *AutoProvStats) Increment(ctx context.Context, appKey *edgeproto.AppKey, cloudletKey *edgeproto.CloudletKey, deployNowKey *edgeproto.ClusterInstKey, policy *AutoProvPolicy) {
+func (s *AutoProvStats) Increment(ctx context.Context, appKey *edgeproto.AppKey, cloudletKey *edgeproto.CloudletKey, policy *AutoProvPolicy) {
 	key := edgeproto.AppCloudletKey{
 		AppKey:      *appKey,
 		CloudletKey: *cloudletKey,
@@ -130,11 +130,10 @@ func (s *AutoProvStats) Increment(ctx context.Context, appKey *edgeproto.AppKey,
 			DmeNodeName: s.nodeKey.Name,
 			Counts: []*edgeproto.AutoProvCount{
 				{
-					AppKey:       *appKey,
-					CloudletKey:  *cloudletKey,
-					Count:        stats.count,
-					ProcessNow:   true,
-					DeployNowKey: *deployNowKey,
+					AppKey:      *appKey,
+					CloudletKey: *cloudletKey,
+					Count:       stats.count,
+					ProcessNow:  true,
 				},
 			},
 		}

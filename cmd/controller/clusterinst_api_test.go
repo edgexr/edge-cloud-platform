@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
@@ -32,6 +31,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 func TestClusterInstApi(t *testing.T) {
@@ -126,7 +126,7 @@ func TestClusterInstApi(t *testing.T) {
 
 	// test update of autoscale policy
 	obj = testutil.ClusterInstData()[0]
-	obj.Key.Organization = testutil.AutoScalePolicyData()[1].Key.Organization
+	obj.Key.ClusterKey.Organization = testutil.AutoScalePolicyData()[1].Key.Organization
 	err = apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err, "create ClusterInst")
 	check := edgeproto.ClusterInst{}
@@ -210,10 +210,12 @@ func TestClusterInstApi(t *testing.T) {
 	_, err = apis.appApi.CreateApp(ctx, &targetApp)
 	require.Nil(t, err, "create App")
 	appinstTest := edgeproto.AppInst{}
-	appinstTest.Key.AppKey = targetApp.Key
-	appinstTest.Key.ClusterInstKey.CloudletKey = targetCloudletKey
-	appinstTest.Key.ClusterInstKey.ClusterKey.Name = "autoclustertest"
-	appinstTest.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
+	appinstTest.Key.Name = "testinst"
+	appinstTest.Key.Organization = targetApp.Key.Organization
+	appinstTest.AppKey = targetApp.Key
+	appinstTest.Key.CloudletKey = targetCloudletKey
+	appinstTest.ClusterKey.Name = "autoclustertest"
+	appinstTest.ClusterKey.Organization = edgeproto.OrganizationEdgeCloud
 	err = apis.appInstApi.CreateAppInst(&appinstTest, testutil.NewCudStreamoutAppInst(ctx))
 	require.NotNil(t, err)
 	// 3. Ensure no reservable clusterinst exist on the target cloudlet
@@ -314,31 +316,43 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 
 	// Should be able to create a developer AppInst on the ClusterInst
 	streamOut := testutil.NewCudStreamoutAppInst(ctx)
+	appKey := testutil.AppData()[0].Key
 	appinst := edgeproto.AppInst{}
-	appinst.Key.AppKey = testutil.AppData()[0].Key
-	appinst.Key.ClusterInstKey = *cinst.Key.Virtual("")
+	appinst.Key.Name = "appinst1"
+	appinst.Key.Organization = appKey.Organization
+	appinst.Key.CloudletKey = cinst.Key.CloudletKey
+	appinst.AppKey = appKey
+	appinst.ClusterKey = cinst.Key.ClusterKey
 	err := apis.appInstApi.CreateAppInst(&appinst, streamOut)
 	require.Nil(t, err, "create AppInst")
-	checkReservedBy(t, ctx, api, &cinst.Key, appinst.Key.AppKey.Organization)
+	checkReservedBy(t, ctx, api, &cinst.Key, appinst.Key.Organization)
 
 	// Cannot create another AppInst on it from different developer
+	appKey2 := testutil.AppData()[10].Key
 	appinst2 := edgeproto.AppInst{}
-	appinst2.Key.AppKey = testutil.AppData()[10].Key
-	appinst2.Key.ClusterInstKey = *cinst.Key.Virtual("")
+	appinst2.Key.Name = "appinst2"
+	appinst2.Key.Organization = appKey2.Organization
+	appinst2.Key.CloudletKey = cinst.Key.CloudletKey
+	appinst2.AppKey = appKey2
+	appinst2.ClusterKey = cinst.Key.ClusterKey
 	appinst2.Flavor = appinst.Flavor
-	require.NotEqual(t, appinst.Key.AppKey.Organization, appinst2.Key.AppKey.Organization)
+	require.NotEqual(t, appinst.Key.Organization, appinst2.Key.Organization)
 	err = apis.appInstApi.CreateAppInst(&appinst2, streamOut)
 	require.NotNil(t, err, "create AppInst on already reserved ClusterInst")
 	// Cannot create another AppInst on it from the same developer
+	appKey3 := testutil.AppData()[1].Key
 	appinst3 := edgeproto.AppInst{}
-	appinst3.Key.AppKey = testutil.AppData()[1].Key
-	appinst3.Key.ClusterInstKey = *cinst.Key.Virtual("")
-	require.Equal(t, appinst.Key.AppKey.Organization, appinst3.Key.AppKey.Organization)
+	appinst3.Key.Name = "appinst3"
+	appinst3.Key.Organization = appKey3.Organization
+	appinst3.Key.CloudletKey = cinst.Key.CloudletKey
+	appinst3.AppKey = appKey3
+	appinst3.ClusterKey = cinst.Key.ClusterKey
+	require.Equal(t, appinst.Key.Organization, appinst3.Key.Organization)
 	err = apis.appInstApi.CreateAppInst(&appinst3, streamOut)
 	require.NotNil(t, err, "create AppInst on already reserved ClusterInst")
 
 	// Make sure above changes have not affected ReservedBy setting
-	checkReservedBy(t, ctx, api, &cinst.Key, appinst.Key.AppKey.Organization)
+	checkReservedBy(t, ctx, api, &cinst.Key, appinst.Key.Organization)
 
 	// Deleting AppInst should removed ReservedBy
 	err = apis.appInstApi.DeleteAppInst(&appinst, streamOut)
@@ -348,28 +362,24 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 	// Can now create AppInst from different developer
 	err = apis.appInstApi.CreateAppInst(&appinst2, streamOut)
 	require.Nil(t, err, "create AppInst on reservable ClusterInst")
-	checkReservedBy(t, ctx, api, &cinst.Key, appinst2.Key.AppKey.Organization)
+	checkReservedBy(t, ctx, api, &cinst.Key, appinst2.Key.Organization)
 
 	// Delete AppInst
 	err = apis.appInstApi.DeleteAppInst(&appinst2, streamOut)
 	require.Nil(t, err, "delete AppInst on reservable ClusterInst")
 	checkReservedBy(t, ctx, api, &cinst.Key, "")
 
-	// Cannot create VM with autocluster
+	// Cannot create VM with cluster specified
+	appBadKey := testutil.AppData()[12].Key
 	appinstBad := edgeproto.AppInst{}
-	appinstBad.Key.AppKey = testutil.AppData()[12].Key
-	appinstBad.Key.ClusterInstKey.CloudletKey = testutil.CloudletData()[0].Key
-	appinstBad.Key.ClusterInstKey.ClusterKey.Name = "autoclusterBad"
-	appinstBad.Key.ClusterInstKey.Organization = edgeproto.OrganizationEdgeCloud
+	appinstBad.Key.Name = "vmappinst"
+	appinstBad.Key.Organization = appBadKey.Organization
+	appinstBad.Key.CloudletKey = testutil.CloudletData()[0].Key
+	appinstBad.AppKey = appBadKey
+	appinstBad.ClusterKey = cinst.Key.ClusterKey
 	err = apis.appInstApi.CreateAppInst(&appinstBad, streamOut)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "No cluster required for App deployment type vm")
-
-	// Cannot create VM with autocluster and realclustername
-	appinstBad.RealClusterName = cinst.Key.ClusterKey.Name
-	err = apis.appInstApi.CreateAppInst(&appinstBad, streamOut)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "No cluster required for App deployment type vm")
+	require.Contains(t, err.Error(), "Cluster name must be blank for App deployment type vm")
 
 	// Delete App
 	for _, app := range testutil.AppData() {
@@ -385,7 +395,7 @@ func checkReservedBy(t *testing.T, ctx context.Context, api *testutil.ClusterIns
 	require.True(t, found, "get ClusterInst")
 	require.True(t, cinst.Reservable)
 	require.Equal(t, expected, cinst.ReservedBy)
-	require.Equal(t, edgeproto.OrganizationEdgeCloud, cinst.Key.Organization)
+	require.Equal(t, edgeproto.OrganizationEdgeCloud, cinst.Key.ClusterKey.Organization)
 }
 
 // Test that Crm Override for Delete ClusterInst overrides any failures
@@ -402,9 +412,12 @@ func testClusterInstOverrideTransientDelete(t *testing.T, ctx context.Context, a
 
 	aiauto := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
-			AppKey:         app.Key,
-			ClusterInstKey: *clust.Key.Virtual(""),
+			Name:         "aiauto",
+			Organization: app.Key.Organization,
+			CloudletKey:  clust.Key.CloudletKey,
 		},
+		AppKey:     app.Key,
+		ClusterKey: clust.Key.ClusterKey,
 	}
 
 	var obj edgeproto.ClusterInst
@@ -713,7 +726,8 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 	validateClusterInstMetrics(t, ctx, &cloudletData[0], &clusterInstObj2, oldResUsage, apis)
 
 	appInstObj := testutil.AppInstData()[0]
-	appInstObj.Key.ClusterInstKey = *clusterInstObj.Key.Virtual("")
+	appInstObj.Key.CloudletKey = clusterInstObj.Key.CloudletKey
+	appInstObj.ClusterKey = clusterInstObj.Key.ClusterKey
 	testutil.InternalAppInstCreate(t, apis.appInstApi, []edgeproto.AppInst{
 		appInstObj, testutil.AppInstData()[11],
 	})
@@ -737,20 +751,22 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		require.Equal(t, len(allRes), len(diffRes), "should match as crm resource snapshot doesn't have any tracked resources")
 		clusters := make(map[edgeproto.ClusterInstKey]struct{})
 		resTypeVMAppCount := 0
-		for _, res := range allRes {
-			if res.Key.ClusterKey.Name == cloudcommon.DefaultClust {
+		for ii, res := range allRes {
+			if res.Key.ClusterKey.Name == "" {
 				resTypeVMAppCount++
 				continue
 			}
 			existingCl := edgeproto.ClusterInst{}
 			found = apis.clusterInstApi.store.STMGet(stm, &res.Key, &existingCl)
-			require.True(t, found, "cluster inst from resources exists")
+			require.True(t, found, "cluster inst %s from resources[%d] must exist", res.Key.GetKeyString(), ii)
 			clusters[res.Key] = struct{}{}
 		}
 		require.Equal(t, resTypeVMAppCount, 2, "two vm appinst resource exists")
 		for _, ciRefKey := range cloudletRefs.ClusterInsts {
-			ciKey := edgeproto.ClusterInstKey{}
-			ciKey.FromClusterInstRefKey(&ciRefKey, &cloudletRefs.Key)
+			ciKey := edgeproto.ClusterInstKey{
+				CloudletKey: cloudletRefs.Key,
+				ClusterKey:  ciRefKey,
+			}
 			existingCl := edgeproto.ClusterInst{}
 			if apis.clusterInstApi.store.STMGet(stm, &ciKey, &existingCl) {
 				_, found = clusters[ciKey]

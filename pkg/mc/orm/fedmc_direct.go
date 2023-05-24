@@ -130,12 +130,12 @@ func FederationGetAppInst(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		app, ok := apps[ai.Key.AppKey]
+		app, ok := apps[ai.AppKey]
 		if !ok {
 			log.SpanLog(ctx, log.DebugLevelApi, "No app found for instance", "inst", ai.Key)
 			continue
 		}
-		apiPath := fmt.Sprintf("/%s/%s/application/lcm/app/%s/instance/%s/zone/%s", federationmgmt.ApiRoot, consumer.FederationContextId, app.GlobalId, ai.FedKey.AppInstId, ai.Key.ClusterInstKey.CloudletKey.Name)
+		apiPath := fmt.Sprintf("/%s/%s/application/lcm/app/%s/instance/%s/zone/%s", federationmgmt.ApiRoot, consumer.FederationContextId, app.GlobalId, ai.FedKey.AppInstId, ai.Key.CloudletKey.Name)
 		out := fedewapi.GetAppInstanceDetails200Response{}
 		fedClient, err := partnerApi.ConsumerPartnerClient(ctx, consumer)
 		_, _, err = fedClient.SendRequest(ctx, "Direct GetFedAppInst", "GET", apiPath, nil, &out, nil)

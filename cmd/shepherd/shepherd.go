@@ -128,11 +128,11 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 
 	ChangeSinceLastPlatformStats = true
 	collectInterval := settings.ShepherdMetricsCollectionInterval.TimeDuration()
-	// check cluster name if this is a VM App
+	// check App deployment type
 	app := edgeproto.App{}
-	found := AppCache.Get(&new.Key.AppKey, &app)
+	found := AppCache.Get(&new.AppKey, &app)
 	if !found {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find app", "app", new.Key.AppKey.Name)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find app", "app", new.AppKey.Name)
 		return
 	}
 	if app.Deployment == cloudcommon.DeploymentTypeVM {
@@ -152,9 +152,28 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		}
 		// Done for VM Apps
 		return
-	} else if new.Key.AppKey.Name == MEXPrometheusAppName {
+	} else if new.AppKey.Name == MEXPrometheusAppName {
 		// check for prometheus
 		mapKey = k8smgmt.GetK8sNodeNameSuffix(new.ClusterInstKey())
+	} else if app.Deployment == cloudcommon.DeploymentTypeKubernetes {
+		// for backwards compatibility, we need to map App+Version to
+		// AppInstName+AppInstOrg. This is because older kubernetes
+		// deployments will not have mexAppInstName and mexAppInstOrg
+		// labels in their manifests.
+		workerMapMutex.Lock()
+		defer workerMapMutex.Unlock()
+		mapKey := getClusterWorkerMapKey(new.ClusterInstKey())
+		clusterWorker, ok := workerMap[mapKey]
+		if !ok {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to find cluster worker for new AppInst", "mapKey", mapKey, "appInstKey", new.Key)
+			return
+		}
+		if new.State == edgeproto.TrackedState_READY {
+			clusterWorker.clusterStat.TrackAppInst(ctx, new)
+		} else {
+			clusterWorker.clusterStat.UntrackAppInst(ctx, new)
+		}
+		return
 	} else {
 		return
 	}
@@ -172,7 +191,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		}
 		kubeNames, err := k8smgmt.GetKubeNames(&clusterInst, &app, new)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to get kubeNames", "app", new.Key.AppKey.Name, "err", err)
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to get kubeNames", "app", new.AppKey.Name, "err", err)
 		}
 		// We don't actually expose prometheus ports - we should default to 9090
 		if len(new.MappedPorts) > 0 {
@@ -706,12 +725,10 @@ func alertPolicyCb(ctx context.Context, old *edgeproto.AlertPolicy, new *edgepro
 		return nil
 	})
 	appInstFilter := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			AppKey: appKeyFilter,
-		},
+		AppKey: appKeyFilter,
 	}
 	AppInstCache.Show(&appInstFilter, func(obj *edgeproto.AppInst) error {
-		if _, found := apps[obj.Key.AppKey]; found {
+		if _, found := apps[obj.AppKey]; found {
 			appInstAlertWorkers.NeedsWork(ctx, obj.Key)
 		}
 		return nil
@@ -732,9 +749,7 @@ func appUpdateCb(ctx context.Context, old *edgeproto.App, new *edgeproto.App) {
 	}
 
 	appInstFilter := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			AppKey: new.Key,
-		},
+		AppKey: new.Key,
 	}
 	// Update AppInst associated with this App
 	AppInstCache.Show(&appInstFilter, func(obj *edgeproto.AppInst) error {

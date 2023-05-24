@@ -39,10 +39,10 @@ regiondata:
     - key:
         clusterkey:
           name: SmallCluster
+          organization: qos-prio-dev
         cloudletkey:
           organization: qos-prio-oper
           name: qos-prio-oper-cloud-2
-        organization: qos-prio-dev
       flavor:
         name: x1.small
       ipaccess: Dedicated
@@ -96,17 +96,18 @@ regiondata:
 
     appinstances:
     - key:
-        appkey:
-          organization: qos-prio-dev
-          name: qosapplication
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: SmallCluster
-          cloudletkey:
-            organization: qos-prio-oper
-            name: qos-prio-oper-cloud-2
-          organization: qos-prio-dev
+        name: qosapplication
+        organization: qos-prio-dev
+        cloudletkey:
+          organization: qos-prio-oper
+          name: qos-prio-oper-cloud-2
+      appkey:
+        organization: qos-prio-dev
+        name: qosapplication
+        version: "1.0"
+      clusterkey:
+        name: SmallCluster
+        organization: qos-prio-dev
       flavor:
         name: x1.small
 

@@ -343,10 +343,6 @@ type ProviderAppInst struct {
 	AppName string
 	// App version for AppInstKey
 	AppVers string
-	// Cluster name for AppInstKey
-	Cluster string
-	// Cluster org for AppInstKey
-	ClusterOrg string
 	// Cloudlet name for AppInstKey
 	Cloudlet string
 	// Cloudlet org for AppInstKey
@@ -433,30 +429,18 @@ func (s *ProviderArtefact) SetAppKey(key *edgeproto.AppKey) {
 
 func (s *ProviderAppInst) GetAppInstKey() edgeproto.AppInstKey {
 	return edgeproto.AppInstKey{
-		AppKey: edgeproto.AppKey{
-			Name:         s.AppName,
-			Version:      s.AppVers,
-			Organization: s.FederationName,
-		},
-		ClusterInstKey: edgeproto.VirtualClusterInstKey{
-			ClusterKey: edgeproto.ClusterKey{
-				Name: s.Cluster,
-			},
-			CloudletKey: edgeproto.CloudletKey{
-				Name:         s.Cloudlet,
-				Organization: s.CloudletOrg,
-			},
-			Organization: s.ClusterOrg,
+		Name:         s.AppInstID,
+		Organization: s.FederationName,
+		CloudletKey: edgeproto.CloudletKey{
+			Name:         s.Cloudlet,
+			Organization: s.CloudletOrg,
 		},
 	}
 }
 
 func (s *ProviderAppInst) SetAppInstKey(key *edgeproto.AppInstKey) {
-	s.AppName = key.AppKey.Name
-	s.AppVers = key.AppKey.Version
-	s.FederationName = key.AppKey.Organization
-	s.Cluster = key.ClusterInstKey.ClusterKey.Name
-	s.ClusterOrg = key.ClusterInstKey.Organization
-	s.Cloudlet = key.ClusterInstKey.CloudletKey.Name
-	s.CloudletOrg = key.ClusterInstKey.CloudletKey.Organization
+	s.AppInstID = key.Name
+	s.FederationName = key.Organization
+	s.Cloudlet = key.CloudletKey.Name
+	s.CloudletOrg = key.CloudletKey.Organization
 }

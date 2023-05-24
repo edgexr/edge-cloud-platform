@@ -18,28 +18,26 @@ alertreceivers:
   severity: info
   region: local
   email: cluster-ops@mobiledgex.net
-  appinst:
-    clusterinstkey:
-      clusterkey:
-        name: SmallCluster
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-1
-      organization: AcmeAppCo
+  appinstkey:
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-1
+  clusterkey:
+    name: SmallCluster
+    organization: AcmeAppCo
 - name: pagerdutyAppAlertReceiver
   type: pagerduty
   severity: error
   region: local
   pagerdutyintegrationkey: "01234567890123456789012345678901"
-  appinst:
-    appkey:
-      organization: AcmeAppCo
-      name: someapplication1
-      version: "1.0"
-    clusterinstkey:
-      clusterkey:
-        name: SmallCluster
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-1
-      organization: AcmeAppCo
+  appinstkey:
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-1
+  appkey:
+    organization: AcmeAppCo
+    name: someapplication1
+    version: "1.0"
+  clusterkey:
+    name: SmallCluster
+    organization: AcmeAppCo

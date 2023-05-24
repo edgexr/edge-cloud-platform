@@ -59,10 +59,10 @@ regiondata:
     - key:
         clusterkey:
           name: SmallCluster
+          organization: qos-prio-dev
         cloudletkey:
           organization: qos-prio-oper
           name: qos-prio-oper-cloud-2
-        organization: qos-prio-dev
       flavor:
         name: x1.small
       liveness: Static
@@ -203,17 +203,18 @@ regiondata:
       globalid: local-qosapplication10qos-prio-dev
     appinstances:
     - key:
-        appkey:
-          organization: edgecloudorg
-          name: MEXPrometheusAppName
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: SmallCluster
-          cloudletkey:
-            organization: qos-prio-oper
-            name: qos-prio-oper-cloud-2
-          organization: qos-prio-dev
+        name: MEXPrometheusAppName-SmallCluster-qos-prio-dev
+        organization: edgecloudorg
+        cloudletkey:
+          organization: qos-prio-oper
+          name: qos-prio-oper-cloud-2
+      appkey:
+        organization: edgecloudorg
+        name: MEXPrometheusAppName
+        version: "1.0"
+      clusterkey:
+        name: SmallCluster
+        organization: qos-prio-dev
       cloudletloc:
         latitude: 35
         longitude: -95
@@ -228,20 +229,21 @@ regiondata:
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
-      uniqueid: edgecloudorgmexprometheusappname10-smallcluster-qos-prio-oper-cloud-2-qos-prio-oper
-      dnslabel: mexprometheusappname10-edgecloudorg
+      uniqueid: edgecloudorg-mexprometheusappname-smallcluster-qos-prio-dev-qos-prio-oper-cloud-2-qos-prio-oper
+      dnslabel: mexprometheusappname-smallcluster-qos-prio-dev-edgecloudorg
     - key:
-        appkey:
-          organization: qos-prio-dev
-          name: qosapplication
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: SmallCluster
-          cloudletkey:
-            organization: qos-prio-oper
-            name: qos-prio-oper-cloud-2
-          organization: qos-prio-dev
+        name: qosapplication
+        organization: qos-prio-dev
+        cloudletkey:
+          organization: qos-prio-oper
+          name: qos-prio-oper-cloud-2
+      appkey:
+        organization: qos-prio-dev
+        name: qosapplication
+        version: "1.0"
+      clusterkey:
+        name: SmallCluster
+        organization: qos-prio-dev
       cloudletloc:
         latitude: 35
         longitude: -95
@@ -275,32 +277,26 @@ regiondata:
       healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.small
-      uniqueid: qos-prio-devqosapplication10-smallcluster-qos-prio-oper-cloud-2-qos-prio-oper
-      dnslabel: qosapplication10-qos-prio-dev
+      uniqueid: qos-prio-dev-qosapplication-qos-prio-oper-cloud-2-qos-prio-oper
+      dnslabel: qosapplication-qos-prio-dev
     appinstrefs:
     - key:
         organization: qos-prio-dev
         name: qosapplication
         version: "1.0"
       insts:
-        ? '{"app_key":{"organization":"qos-prio-dev","name":"qosapplication","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"qos-prio-oper","name":"qos-prio-oper-cloud-2"},"organization":"qos-prio-dev"}}'
+        ? '{"name":"qosapplication","organization":"qos-prio-dev","cloudlet_key":{"organization":"qos-prio-oper","name":"qos-prio-oper-cloud-2"}}'
         : 1
     clusterrefs:
     - key:
         clusterkey:
           name: SmallCluster
+          organization: qos-prio-dev
         cloudletkey:
           organization: qos-prio-oper
           name: qos-prio-oper-cloud-2
-        organization: qos-prio-dev
       apps:
-      - appkey:
-          organization: edgecloudorg
-          name: MEXPrometheusAppName
-          version: "1.0"
-        vclustername: SmallCluster
-      - appkey:
-          organization: qos-prio-dev
-          name: qosapplication
-          version: "1.0"
-        vclustername: SmallCluster
+      - name: MEXPrometheusAppName-SmallCluster-qos-prio-dev
+        organization: edgecloudorg
+      - name: qosapplication
+        organization: qos-prio-dev

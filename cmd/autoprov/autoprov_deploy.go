@@ -33,7 +33,7 @@ var testDialOpt grpc.DialOption
 
 func goAppInstApi(ctx context.Context, inst *edgeproto.AppInst, action cloudcommon.Action, reason, policyName string) error {
 	span := log.StartSpan(log.DebugLevelApi, "auto-prov deploy "+action.String(), opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
-	log.SetTags(span, inst.Key.GetTags())
+	log.SetTags(span, inst.GetTags())
 	span.SetTag("reason", reason)
 	defer span.Finish()
 	ctx = log.ContextWithSpan(context.Background(), span)
@@ -55,10 +55,10 @@ func goAppInstApi(ctx context.Context, inst *edgeproto.AppInst, action cloudcomm
 		// Many calls fail because of checks done on the controller side.
 		// These are not real failures. Only log an event if api call
 		// was successful.
-		nodeMgr.TimedEvent(ctx, eventName, inst.Key.AppKey.Organization, node.EventType, inst.Key.GetTags(), err, eventStart, time.Now(), "reason", reason, "autoprovpolicy", policyName)
+		nodeMgr.TimedEvent(ctx, eventName, inst.Key.Organization, node.EventType, inst.GetTags(), err, eventStart, time.Now(), "reason", reason, "autoprovpolicy", policyName)
 	}
 	if reason == cloudcommon.AutoProvReasonMinMax {
-		retryTracker.registerDeployResult(ctx, inst.Key, err)
+		retryTracker.registerDeployResult(ctx, inst, err)
 	}
 	return err
 }

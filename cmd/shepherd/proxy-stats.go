@@ -23,19 +23,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/proxy"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/proxy"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	ssh "github.com/edgexr/golang-ssh"
+	"github.com/gogo/protobuf/types"
 )
 
 const (
@@ -80,10 +79,10 @@ const (
 type ProxyScrapePoint struct {
 	Key                edgeproto.AppInstKey
 	ClusterInstKey     edgeproto.ClusterInstKey
+	AppKey             edgeproto.AppKey
 	FailedChecksCount  int
 	App                string
-	Cluster            string
-	ClusterOrg         string
+	ContainerName      string
 	TcpPorts           []int32
 	UdpPorts           []int32
 	LastConnectAttempt time.Time
@@ -145,13 +144,13 @@ func getProxyContainerAndMetricEndpoint(ctx context.Context, appInst *edgeproto.
 	if pfType == "k8sbaremetal" {
 		container += k8smgmt.GetKconfName(&edgeproto.ClusterInst{Key: scrapePoint.ClusterInstKey})
 	}
-	container += "-" + dockermgmt.GetContainerName(&scrapePoint.Key.AppKey)
+	container += "-" + scrapePoint.ContainerName
 	container = proxy.GetEnvoyContainerName(container)
 	request := fmt.Sprintf("docker exec %s echo hello", container)
 	resp, err := scrapePoint.Client.Output(request)
 	if err != nil && strings.Contains(resp, "No such container") {
 		// try the docker name if it fails
-		container = proxy.GetEnvoyContainerName(dockermgmt.GetContainerName(&scrapePoint.Key.AppKey))
+		container = proxy.GetEnvoyContainerName(scrapePoint.ContainerName)
 		request := fmt.Sprintf("docker exec %s echo hello", container)
 		resp, err = scrapePoint.Client.Output(request)
 		// Perhaps this is nginx
@@ -237,9 +236,9 @@ func initClient(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppI
 func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 	// ignore apps not exposed to the outside world as they don't have a envoy/nginx proxy
 	app := edgeproto.App{}
-	found := AppCache.Get(&appInst.Key.AppKey, &app)
+	found := AppCache.Get(&appInst.AppKey, &app)
 	if !found {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find app", "app", appInst.Key.AppKey.Name)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find app", "app", appInst.AppKey.Name)
 		return ""
 	}
 	if !shepherd_common.ShouldRunEnvoy(&app, appInst) {
@@ -266,13 +265,16 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 		scrapePoint := ProxyScrapePoint{
 			Key:            appInst.Key,
 			ClusterInstKey: *appInst.ClusterInstKey(),
-			App:            k8smgmt.NormalizeName(appInst.Key.AppKey.Name),
-			Cluster:        appInst.ClusterInstKey().ClusterKey.Name,
-			ClusterOrg:     appInst.Key.ClusterInstKey.Organization,
+			AppKey:         appInst.AppKey,
+			App:            k8smgmt.NormalizeName(appInst.Key.Name),
+			ContainerName:  dockermgmt.GetContainerName(appInst),
 			TcpPorts:       make([]int32, 0),
 			UdpPorts:       make([]int32, 0),
 		}
-
+		if appInst.CompatibilityVersion < cloudcommon.AppInstCompatibilityUniqueNameKey {
+			// for backwards compatibility
+			scrapePoint.App = k8smgmt.NormalizeName(appInst.AppKey.Name)
+		}
 		for _, p := range appInst.MappedPorts {
 			if p.Proto == dme.LProto_L_PROTO_TCP {
 				scrapePoint.TcpPorts = append(scrapePoint.TcpPorts, p.InternalPort)
@@ -350,13 +352,13 @@ func getProxyScrapePoint(key string) *ProxyScrapePoint {
 	return &scrapePoint
 }
 
-func updateProxyScrapeClient(key edgeproto.AppInstKey) {
+func updateProxyScrapeClient(key edgeproto.AppInstKey, clusterInstKey edgeproto.ClusterInstKey, appKey edgeproto.AppKey) {
 	span := log.StartSpan(log.DebugLevelMetrics, "update-proxyClient")
 	defer span.Finish()
 	log.SetTags(span, cloudletKey.GetTags())
-	span.SetTag("app", key.AppKey.Name)
-	span.SetTag("cluster", key.ClusterInstKey.ClusterKey.Name)
-	span.SetTag("cloudlet", key.ClusterInstKey.CloudletKey.Name)
+	span.SetTag("app", appKey.Name)
+	span.SetTag("cluster", clusterInstKey.ClusterKey.Name)
+	span.SetTag("cloudlet", clusterInstKey.CloudletKey.Name)
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	// find appInst in the cache
@@ -424,14 +426,14 @@ func ProxyScraper(done chan bool) {
 					if !clientReady(v) {
 						if shouldUpdateFailedClient(&v) {
 							// Update this in the background
-							go updateProxyScrapeClient(v.Key)
+							go updateProxyScrapeClient(v.Key, v.ClusterInstKey, v.AppKey)
 						}
 						// no need to actually collect metrics
 						continue
 					}
 					span := log.StartSpan(log.DebugLevelSampled, "send-metric")
 					log.SetTags(span, cloudletKey.GetTags())
-					span.SetTag("cluster", v.Cluster)
+					span.SetTag("cluster", v.ClusterInstKey.ClusterKey.Name)
 					ctx := log.ContextWithSpan(context.Background(), span)
 
 					metrics, err := QueryProxy(ctx, &v)
@@ -776,10 +778,7 @@ func getNetClusterMetric(key *edgeproto.ClusterInstKey, stat shepherd_common.Clu
 	metric := edgeproto.Metric{}
 	metric.Name = "cluster-network"
 	metric.Timestamp = *stat.NetTS
-	metric.AddTag("cloudletorg", key.CloudletKey.Organization)
-	metric.AddTag("cloudlet", key.CloudletKey.Name)
-	metric.AddTag("cluster", key.ClusterKey.Name)
-	metric.AddTag("clusterorg", key.Organization)
+	metric.AddKeyTags(key)
 
 	// add values
 	metric.AddIntVal("sendBytes", stat.NetSent)
@@ -799,13 +798,9 @@ func getAppMetricFromTags(scrapePoint ProxyScrapePoint, name string, ts *types.T
 		}
 	}
 	metric.Timestamp = *ts
-	metric.AddTag("cloudletorg", cloudletKey.Organization)
-	metric.AddTag("cloudlet", cloudletKey.Name)
-	metric.AddTag("cluster", scrapePoint.Cluster)
-	metric.AddTag("clusterorg", scrapePoint.ClusterOrg)
-	metric.AddTag("apporg", scrapePoint.Key.AppKey.Organization)
-	metric.AddTag("app", util.DNSSanitize(scrapePoint.Key.AppKey.Name))
-	metric.AddTag("ver", util.DNSSanitize(scrapePoint.Key.AppKey.Version))
+	metric.AddKeyTags(&scrapePoint.Key)
+	metric.AddKeyTags(&scrapePoint.ClusterInstKey.ClusterKey)
+	metric.AddKeyTags(&scrapePoint.AppKey)
 	return &metric
 }
 
@@ -876,14 +871,10 @@ func MarshallNginxMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.Pro
 	metric := edgeproto.Metric{}
 	metric.Name = "appinst-connections"
 	metric.Timestamp = *data.Ts
-	metric.AddTag("cloudletorg", cloudletKey.Organization)
-	metric.AddTag("cloudlet", cloudletKey.Name)
-	metric.AddTag("cluster", scrapePoint.Cluster)
-	metric.AddTag("clusterorg", scrapePoint.ClusterOrg)
-	metric.AddTag("apporg", scrapePoint.Key.AppKey.Organization)
-	metric.AddTag("app", util.DNSSanitize(scrapePoint.Key.AppKey.Name))
-	metric.AddTag("ver", util.DNSSanitize(scrapePoint.Key.AppKey.Version))
-	metric.AddTag("port", "")
+	metric.AddKeyTags(&scrapePoint.Key)
+	metric.AddKeyTags(&scrapePoint.ClusterInstKey.ClusterKey)
+	metric.AddKeyTags(&scrapePoint.AppKey)
+	metric.AddTag(cloudcommon.MetricTagPort, "")
 
 	metric.AddIntVal("active", data.ActiveConn)
 	metric.AddIntVal("accepts", data.Accepts)
@@ -902,20 +893,16 @@ func ProxyAppInstNetMeticToStat(metric *edgeproto.Metric) (*edgeproto.AppInstKey
 	stat := shepherd_common.ClusterNetMetrics{}
 	for _, tag := range metric.Tags {
 		switch tag.Name {
-		case "apporg":
-			key.AppKey.Organization = tag.Val
-		case "app":
-			key.AppKey.Name = tag.Val
-		case "ver":
-			key.AppKey.Version = tag.Val
-		case "cluster":
-			key.ClusterInstKey.CloudletKey.Name = tag.Val
-		case "clusterorg":
-			key.ClusterInstKey.Organization = tag.Val
-		case "cloudlet":
-			key.ClusterInstKey.CloudletKey.Name = tag.Val
-		case "cloudletorg":
-			key.ClusterInstKey.CloudletKey.Organization = tag.Val
+		case edgeproto.AppInstKeyTagOrganization:
+			key.Organization = tag.Val
+		case edgeproto.AppInstKeyTagName:
+			key.Name = tag.Val
+		case edgeproto.CloudletKeyTagName:
+			key.CloudletKey.Name = tag.Val
+		case edgeproto.CloudletKeyTagOrganization:
+			key.CloudletKey.Organization = tag.Val
+		case edgeproto.CloudletKeyTagFederatedOrganization:
+			key.CloudletKey.FederatedOrganization = tag.Val
 		}
 	}
 	for _, val := range metric.Vals {
@@ -934,14 +921,16 @@ func ProxyClusterNetMeticToStat(metric *edgeproto.Metric) (*edgeproto.ClusterIns
 	stat := shepherd_common.ClusterNetMetrics{}
 	for _, tag := range metric.Tags {
 		switch tag.Name {
-		case "cluster":
+		case edgeproto.ClusterKeyTagName:
 			key.ClusterKey.Name = tag.Val
-		case "clusterorg":
-			key.Organization = tag.Val
-		case "cloudlet":
+		case edgeproto.ClusterKeyTagOrganization:
+			key.ClusterKey.Organization = tag.Val
+		case edgeproto.CloudletKeyTagName:
 			key.CloudletKey.Name = tag.Val
-		case "cloudletorg":
+		case edgeproto.CloudletKeyTagOrganization:
 			key.CloudletKey.Organization = tag.Val
+		case edgeproto.CloudletKeyTagFederatedOrganization:
+			key.CloudletKey.FederatedOrganization = tag.Val
 		}
 	}
 	for _, val := range metric.Vals {

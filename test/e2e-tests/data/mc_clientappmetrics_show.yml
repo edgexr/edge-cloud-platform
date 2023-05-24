@@ -15,11 +15,13 @@
 - name: device-metric
   tags:
     app: someapplication1
+    appinst: someapplication1
+    appinstorg: AcmeAppCo
     apporg: AcmeAppCo
+    appver: "1.0"
     cloudlet: dmuus-cloud-1
+    cloudletfedorg: ""
     cloudletorg: dmuus
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
     datanetworktype: 5G
     devicecarrier: dmuus
     devicemodel: SM-G920F
@@ -31,11 +33,13 @@
 - name: latency-metric
   tags:
     app: someapplication1
+    appinst: someapplication1
+    appinstorg: AcmeAppCo
     apporg: AcmeAppCo
+    appver: "1.0"
     cloudlet: dmuus-cloud-1
+    cloudletfedorg: ""
     cloudletorg: dmuus
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo
     datanetworktype: 5G
     locationtile: -90.998922,30.984896_-91.016888,31.002985_2
   values:

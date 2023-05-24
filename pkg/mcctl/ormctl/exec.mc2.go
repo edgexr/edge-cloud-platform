@@ -78,7 +78,7 @@ var AccessCloudletCmd = &ApiCommand{
 	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
 	SpecialArgs:  &ExecRequestSpecialArgs,
 	Comments:     addRegionComment(ExecRequestComments),
-	NoConfig:     "Offer,Answer,Err,Console.Url,Timeout,AccessUrl,EdgeTurnAddr,Offer,Answer,Err,Timeout,Log,Console,ContainerId,AccessUrl,EdgeTurnAddr,AppInstKey.AppKey.Name,AppInstKey.AppKey.Version,AppInstKey.AppKey.Organization,AppInstKey.ClusterInstKey.ClusterKey.Name,AppInstKey.ClusterInstKey.Organization",
+	NoConfig:     "Offer,Answer,Err,Console.Url,Timeout,AccessUrl,EdgeTurnAddr,Offer,Answer,Err,Timeout,Log,Console,ContainerId,AccessUrl,EdgeTurnAddr",
 	ReqData:      &ormapi.RegionExecRequest{},
 	ReplyData:    &edgeproto.ExecRequest{},
 	Path:         "/auth/ctrl/AccessCloudlet",
@@ -98,44 +98,35 @@ func init() {
 }
 
 var RunCommandRequiredArgs = []string{
-	"apporg",
-	"appname",
-	"appvers",
-	"cluster",
+	"appinstname",
+	"appinstorg",
 	"cloudletorg",
 	"cloudlet",
 	"command",
 }
 var RunCommandOptionalArgs = []string{
 	"federatedorg",
-	"clusterorg",
 	"containerid",
 	"edgeturnproxyaddr",
 }
 var RunConsoleRequiredArgs = []string{
-	"apporg",
-	"appname",
-	"appvers",
+	"appinstname",
+	"appinstorg",
 	"cloudletorg",
 	"cloudlet",
 }
 var RunConsoleOptionalArgs = []string{
-	"cluster",
 	"federatedorg",
-	"clusterorg",
 	"edgeturnproxyaddr",
 }
 var ShowLogsRequiredArgs = []string{
-	"apporg",
-	"appname",
-	"appvers",
-	"cluster",
+	"appinstname",
+	"appinstorg",
 	"cloudletorg",
 	"cloudlet",
 }
 var ShowLogsOptionalArgs = []string{
 	"federatedorg",
-	"clusterorg",
 	"containerid",
 	"since",
 	"tail",
@@ -148,6 +139,8 @@ var AccessCloudletRequiredArgs = []string{
 	"cloudlet",
 }
 var AccessCloudletOptionalArgs = []string{
+	"appinstname",
+	"appinstorg",
 	"federatedorg",
 	"command",
 	"nodetype",
@@ -155,13 +148,10 @@ var AccessCloudletOptionalArgs = []string{
 	"edgeturnproxyaddr",
 }
 var ExecRequestRequiredArgs = []string{
-	"apporg",
-	"appname",
-	"appvers",
-	"cluster",
+	"appinstname",
+	"appinstorg",
 	"cloudletorg",
 	"cloudlet",
-	"clusterorg",
 }
 var ExecRequestOptionalArgs = []string{
 	"federatedorg",
@@ -176,14 +166,11 @@ var ExecRequestOptionalArgs = []string{
 	"edgeturnproxyaddr",
 }
 var ExecRequestAliasArgs = []string{
-	"apporg=execrequest.appinstkey.appkey.organization",
-	"appname=execrequest.appinstkey.appkey.name",
-	"appvers=execrequest.appinstkey.appkey.version",
-	"cluster=execrequest.appinstkey.clusterinstkey.clusterkey.name",
-	"cloudletorg=execrequest.appinstkey.clusterinstkey.cloudletkey.organization",
-	"cloudlet=execrequest.appinstkey.clusterinstkey.cloudletkey.name",
-	"federatedorg=execrequest.appinstkey.clusterinstkey.cloudletkey.federatedorganization",
-	"clusterorg=execrequest.appinstkey.clusterinstkey.organization",
+	"appinstname=execrequest.appinstkey.name",
+	"appinstorg=execrequest.appinstkey.organization",
+	"cloudletorg=execrequest.appinstkey.cloudletkey.organization",
+	"cloudlet=execrequest.appinstkey.cloudletkey.name",
+	"federatedorg=execrequest.appinstkey.cloudletkey.federatedorganization",
 	"containerid=execrequest.containerid",
 	"offer=execrequest.offer",
 	"answer=execrequest.answer",
@@ -202,14 +189,11 @@ var ExecRequestAliasArgs = []string{
 	"edgeturnproxyaddr=execrequest.edgeturnproxyaddr",
 }
 var ExecRequestComments = map[string]string{
-	"apporg":            "App developer organization",
-	"appname":           "App name",
-	"appvers":           "App version",
-	"cluster":           "Cluster name",
+	"appinstname":       "App Instance name",
+	"appinstorg":        "App Instance organization",
 	"cloudletorg":       "Organization of the cloudlet site",
 	"cloudlet":          "Name of the cloudlet",
 	"federatedorg":      "Federated operator organization who shared this cloudlet",
-	"clusterorg":        "Name of Developer organization that this cluster belongs to",
 	"containerid":       "ContainerId is the name or ID of the target container, if applicable",
 	"offer":             "Offer",
 	"answer":            "Answer",

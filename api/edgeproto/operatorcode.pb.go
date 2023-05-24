@@ -401,6 +401,7 @@ type OperatorCodeStore interface {
 	STMGet(stm concurrency.STM, key *OperatorCodeKey, buf *OperatorCode) bool
 	STMPut(stm concurrency.STM, obj *OperatorCode, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *OperatorCodeKey)
+	STMHas(stm concurrency.STM, key *OperatorCodeKey) bool
 }
 
 type OperatorCodeStoreImpl struct {
@@ -518,6 +519,11 @@ func (s *OperatorCodeStoreImpl) STMGet(stm concurrency.STM, key *OperatorCodeKey
 	return s.parseGetData([]byte(valstr), buf)
 }
 
+func (s *OperatorCodeStoreImpl) STMHas(stm concurrency.STM, key *OperatorCodeKey) bool {
+	keystr := objstore.DbKeyString("OperatorCode", key)
+	return stm.Get(keystr) != ""
+}
+
 func (s *OperatorCodeStoreImpl) parseGetData(val []byte, buf *OperatorCode) bool {
 	if len(val) == 0 {
 		return false
@@ -559,6 +565,16 @@ type OperatorCodeCacheData struct {
 	ModRev int64
 }
 
+func (s *OperatorCodeCacheData) Clone() *OperatorCodeCacheData {
+	cp := OperatorCodeCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &OperatorCode{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
 // OperatorCodeCache caches OperatorCode objects in memory in a hash table
 // and keeps them in sync with the database.
 type OperatorCodeCache struct {
@@ -566,7 +582,7 @@ type OperatorCodeCache struct {
 	Mux           util.Mutex
 	List          map[OperatorCodeKey]struct{}
 	FlushAll      bool
-	NotifyCbs     []func(ctx context.Context, obj *OperatorCodeKey, old *OperatorCode, modRev int64)
+	NotifyCbs     []func(ctx context.Context, obj *OperatorCode, modRev int64)
 	UpdatedCbs    []func(ctx context.Context, old *OperatorCode, new *OperatorCode)
 	DeletedCbs    []func(ctx context.Context, old *OperatorCode)
 	KeyWatchers   map[OperatorCodeKey][]*OperatorCodeKeyWatcher
@@ -625,6 +641,14 @@ func (c *OperatorCodeCache) GetAllKeys(ctx context.Context, cb func(key *Operato
 	}
 }
 
+func (c *OperatorCodeCache) GetAllLocked(ctx context.Context, cb func(obj *OperatorCode, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
 func (c *OperatorCodeCache) Update(ctx context.Context, in *OperatorCode, modRev int64) {
 	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *OperatorCode) (*OperatorCode, bool) {
 		return in, true
@@ -642,14 +666,16 @@ func (c *OperatorCodeCache) UpdateModFunc(ctx context.Context, key *OperatorCode
 		c.Mux.Unlock()
 		return
 	}
-	for _, cb := range c.UpdatedCbs {
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
 		newCopy := &OperatorCode{}
 		newCopy.DeepCopyIn(new)
-		defer cb(ctx, old, newCopy)
-	}
-	for _, cb := range c.NotifyCbs {
-		if cb != nil {
-			defer cb(ctx, new.GetKey(), old, modRev)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
 		}
 	}
 	for _, cb := range c.UpdatedKeyCbs {
@@ -686,9 +712,13 @@ func (c *OperatorCodeCache) DeleteCondFunc(ctx context.Context, in *OperatorCode
 	delete(c.Objs, in.GetKeyVal())
 	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
 	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
 	for _, cb := range c.NotifyCbs {
 		if cb != nil {
-			cb(ctx, in.GetKey(), old, modRev)
+			cb(ctx, obj, modRev)
 		}
 	}
 	if old != nil {
@@ -716,9 +746,14 @@ func (c *OperatorCodeCache) Prune(ctx context.Context, validKeys map[OperatorCod
 	}
 	c.Mux.Unlock()
 	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &OperatorCode{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, old.Obj, old.ModRev)
+				cb(ctx, obj, old.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {
@@ -763,8 +798,8 @@ func OperatorCodeGenericNotifyCb(fn func(key *OperatorCodeKey, old *OperatorCode
 	}
 }
 
-func (c *OperatorCodeCache) SetNotifyCb(fn func(ctx context.Context, obj *OperatorCodeKey, old *OperatorCode, modRev int64)) {
-	c.NotifyCbs = []func(ctx context.Context, obj *OperatorCodeKey, old *OperatorCode, modRev int64){fn}
+func (c *OperatorCodeCache) SetNotifyCb(fn func(ctx context.Context, obj *OperatorCode, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *OperatorCode, modRev int64){fn}
 }
 
 func (c *OperatorCodeCache) SetUpdatedCb(fn func(ctx context.Context, old *OperatorCode, new *OperatorCode)) {
@@ -791,7 +826,7 @@ func (c *OperatorCodeCache) AddDeletedCb(fn func(ctx context.Context, old *Opera
 	c.DeletedCbs = append(c.DeletedCbs, fn)
 }
 
-func (c *OperatorCodeCache) AddNotifyCb(fn func(ctx context.Context, obj *OperatorCodeKey, old *OperatorCode, modRev int64)) {
+func (c *OperatorCodeCache) AddNotifyCb(fn func(ctx context.Context, obj *OperatorCode, modRev int64)) {
 	c.NotifyCbs = append(c.NotifyCbs, fn)
 }
 
@@ -896,9 +931,14 @@ func (c *OperatorCodeCache) SyncListEnd(ctx context.Context) {
 	c.List = nil
 	c.Mux.Unlock()
 	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &OperatorCode{}
+			obj.SetKey(&key)
+		}
 		for _, cb := range c.NotifyCbs {
 			if cb != nil {
-				cb(ctx, &key, val.Obj, val.ModRev)
+				cb(ctx, obj, val.ModRev)
 			}
 		}
 		for _, cb := range c.DeletedKeyCbs {

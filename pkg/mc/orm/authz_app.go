@@ -155,5 +155,5 @@ func authzDeleteAppInst(ctx context.Context, region, username string, obj *edgep
 	if fedAppInst {
 		return fmt.Errorf("Cannot delete AppInst created via federation, use unsafe federation appInst delete instead")
 	}
-	return authorized(ctx, username, obj.Key.AppKey.Organization, resource, action)
+	return authorized(ctx, username, obj.Key.Organization, resource, action)
 }

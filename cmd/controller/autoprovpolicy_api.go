@@ -17,13 +17,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -35,6 +36,11 @@ type AutoProvPolicyApi struct {
 	cache            edgeproto.AutoProvPolicyCache
 	influxQ          *influxq.InfluxQ
 	deployImmWorkers tasks.KeyWorkers
+}
+
+type deployNowKey struct {
+	AppKey      edgeproto.AppKey
+	CloudletKey edgeproto.CloudletKey
 }
 
 func NewAutoProvPolicyApi(sync *Sync, all *AllApis) *AutoProvPolicyApi {
@@ -206,11 +212,11 @@ func (s *AutoProvPolicyApi) RecvAutoProvCounts(ctx context.Context, msg *edgepro
 	if len(msg.Counts) == 1 && msg.Counts[0].ProcessNow {
 		target := msg.Counts[0]
 		log.SpanLog(ctx, log.DebugLevelMetrics, "auto-prov count recv immedate", "target", target)
-		appInstKey := edgeproto.AppInstKey{
-			AppKey:         target.AppKey,
-			ClusterInstKey: *target.DeployNowKey.Virtual(""),
+		deployNow := deployNowKey{
+			AppKey:      target.AppKey,
+			CloudletKey: target.CloudletKey,
 		}
-		s.deployImmWorkers.NeedsWork(ctx, appInstKey)
+		s.deployImmWorkers.NeedsWork(ctx, deployNow)
 		return
 	}
 	// push stats to influxdb
@@ -222,12 +228,13 @@ func (s *AutoProvPolicyApi) RecvAutoProvCounts(ctx context.Context, msg *edgepro
 }
 
 func (s *AutoProvPolicyApi) deployImmediate(ctx context.Context, k interface{}) {
-	key, ok := k.(edgeproto.AppInstKey)
+	key, ok := k.(deployNowKey)
 	if !ok {
-		log.SpanLog(ctx, log.DebugLevelApi, "Unexpected failure, key not AppInstKey", "key", k)
+		log.SpanLog(ctx, log.DebugLevelApi, "Unexpected failure, key not deployNowKey", "key", k)
 		return
 	}
-	log.SetContextTags(ctx, key.GetTags())
+	log.SetContextTags(ctx, key.AppKey.GetTags())
+	log.SetContextTags(ctx, key.CloudletKey.GetTags())
 	log.SpanLog(ctx, log.DebugLevelApi, "deploy immediate", "key", key)
 	md := metadata.Pairs(
 		cloudcommon.CallerAutoProv, "",
@@ -235,8 +242,10 @@ func (s *AutoProvPolicyApi) deployImmediate(ctx context.Context, k interface{}) 
 		cloudcommon.AutoProvReasonDemand,
 		cloudcommon.AutoProvPolicyName, "dme-process-now")
 	ctx = metadata.NewIncomingContext(ctx, md)
-	appInst := edgeproto.AppInst{}
-	appInst.Key = key
+	appInst := edgeproto.AppInst{
+		Key:    cloudcommon.GetAutoProvAppInstKey(&key.AppKey, &key.CloudletKey),
+		AppKey: key.AppKey,
+	}
 	stream := streamoutAppInst{
 		ctx:      ctx,
 		debugLvl: log.DebugLevelApi,
@@ -308,6 +317,9 @@ func (s *AutoProvPolicyApi) appInstCheck(ctx context.Context, stm concurrency.ST
 	if !ok {
 		log.SpanLog(ctx, log.DebugLevelApi, "autoprov check no metadata")
 		// not AutoProv service
+		if strings.HasPrefix(inst.Key.Name, cloudcommon.AutoProvPrefix+"-") {
+			return fmt.Errorf("AppInst name prefix %s is reserved for auto-provisioned instances, please choose a different name", cloudcommon.AutoProvPrefix+"-")
+		}
 		return nil
 	}
 	if _, found := md[cloudcommon.CallerAutoProv]; !found {
@@ -350,8 +362,8 @@ func (s *AutoProvPolicyApi) appInstCheck(ctx context.Context, stm concurrency.ST
 		for k, _ := range refs.Insts {
 			instKey := edgeproto.AppInstKey{}
 			edgeproto.AppInstKeyStringParse(k, &instKey)
-			if inst.Key.ClusterInstKey.CloudletKey.Matches(&instKey.ClusterInstKey.CloudletKey) {
-				return fmt.Errorf("already an AppInst on ClusterInst %v on the Cloudlet", inst.Key.ClusterInstKey.GetKeyString())
+			if inst.Key.CloudletKey.Matches(&instKey.CloudletKey) {
+				return fmt.Errorf("already an AppInst on Cloudlet %s", inst.Key.CloudletKey.GetKeyString())
 			}
 		}
 	}
@@ -411,7 +423,7 @@ func (s *AutoProvPolicyApi) checkDemand(ctx context.Context, stm concurrency.STM
 		withinPolicy := false
 		count := 0
 		for _, apCloudlet := range policy.Cloudlets {
-			if apCloudlet.Key.Matches(&inst.Key.ClusterInstKey.CloudletKey) {
+			if apCloudlet.Key.Matches(&inst.Key.CloudletKey) {
 				withinPolicy = true
 			}
 			count += countsByCloudlet[apCloudlet.Key]
@@ -494,7 +506,7 @@ func (s *AutoProvPolicyApi) checkOrphaned(ctx context.Context, stm concurrency.S
 			continue
 		}
 		for _, apCloudlet := range policy.Cloudlets {
-			if apCloudlet.Key.Matches(&inst.Key.ClusterInstKey.CloudletKey) {
+			if apCloudlet.Key.Matches(&inst.Key.CloudletKey) {
 				return fmt.Errorf("AppInst %s on Cloudlet in policy %s on App, not orphaned", inst.Key.GetKeyString(), pname)
 			}
 		}
@@ -526,7 +538,7 @@ func (s *AutoProvPolicyApi) getAppInstCountsForAutoProv(ctx context.Context, stm
 				continue
 			}
 		}
-		countsByCloudlet[instKey.ClusterInstKey.CloudletKey]++
+		countsByCloudlet[inst.Key.CloudletKey]++
 	}
 	return countsByCloudlet, nil
 }
@@ -537,12 +549,12 @@ func (s *AutoProvPolicyApi) autoProvAppInstOnline(ctx context.Context, stm concu
 		return false, key.NotFoundError()
 	}
 	cloudletInfo := edgeproto.CloudletInfo{}
-	if !s.all.cloudletInfoApi.store.STMGet(stm, &key.ClusterInstKey.CloudletKey, &cloudletInfo) {
-		return false, key.ClusterInstKey.CloudletKey.NotFoundError()
+	if !s.all.cloudletInfoApi.store.STMGet(stm, &appInst.Key.CloudletKey, &cloudletInfo) {
+		return false, appInst.Key.CloudletKey.NotFoundError()
 	}
 	cloudlet := edgeproto.Cloudlet{}
-	if !s.all.cloudletApi.store.STMGet(stm, &key.ClusterInstKey.CloudletKey, &cloudlet) {
-		return false, key.ClusterInstKey.CloudletKey.NotFoundError()
+	if !s.all.cloudletApi.store.STMGet(stm, &appInst.Key.CloudletKey, &cloudlet) {
+		return false, appInst.Key.CloudletKey.NotFoundError()
 	}
 	return cloudcommon.AutoProvAppInstOnline(&appInst, &cloudletInfo, &cloudlet), nil
 }

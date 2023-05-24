@@ -22,13 +22,13 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/labstack/echo/v4"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/labstack/echo/v4"
 )
 
 // select mean(cpu) from \"appinst-cpu\" where (apporg='DevOrg') and time >=now() -20m group by time(2m), app fill(previous)"
@@ -42,9 +42,19 @@ var (
 		` fill(previous)` +
 		` order by time desc {{if ne .Limit 0}}limit {{.Limit}}{{end}}`
 
-	AppInstGroupFields     = "app,apporg,cluster,clusterorg,ver,cloudlet,cloudletorg"
-	ClusterInstGroupFields = "cluster,clusterorg,cloudlet,cloudletorg"
-	CloudletGroupFields    = "cloudlet,cloudletorg"
+	AppInstGroupFields = strings.Join([]string{
+		edgeproto.AppInstKeyTagName,
+		edgeproto.AppInstKeyTagOrganization,
+		edgeproto.CloudletKeyTagName,
+		edgeproto.CloudletKeyTagOrganization}, ",")
+	ClusterInstGroupFields = strings.Join([]string{
+		edgeproto.ClusterKeyTagName,
+		edgeproto.ClusterKeyTagOrganization,
+		edgeproto.CloudletKeyTagName,
+		edgeproto.CloudletKeyTagOrganization}, ",")
+	CloudletGroupFields = strings.Join([]string{
+		edgeproto.CloudletKeyTagName,
+		edgeproto.CloudletKeyTagOrganization}, ",")
 )
 
 type MetricsObject interface {
@@ -121,10 +131,10 @@ func (m *appInstMetrics) ValidateSelector() error {
 
 func (m *appInstMetrics) ValidateObjects() error {
 	for _, app := range m.AppInsts {
-		org := app.AppKey.Organization
+		org := app.Organization
 		// Developer name has to be specified
 		if org == "" {
-			return fmt.Errorf("App org must be present")
+			return fmt.Errorf("AppInst org must be present")
 		}
 		// validate input
 		if err := util.ValidateNames(app.GetTags()); err != nil {
@@ -138,9 +148,9 @@ func (m *appInstMetrics) CheckPermissionsAndGetCloudletList(ctx context.Context,
 	orgsToCheck := []string{}
 	cloudletsToCheck := []edgeproto.CloudletKey{}
 	for _, app := range m.AppInsts {
-		org := app.AppKey.Organization
+		org := app.Organization
 		orgsToCheck = append(orgsToCheck, org)
-		cloudletsToCheck = append(cloudletsToCheck, app.ClusterInstKey.CloudletKey)
+		cloudletsToCheck = append(cloudletsToCheck, app.CloudletKey)
 	}
 	cloudletList, err := checkPermissionsAndGetCloudletList(ctx, username, m.GetRegion(), orgsToCheck,
 		ResourceAppAnalytics, cloudletsToCheck)
@@ -158,26 +168,19 @@ func (m *appInstMetrics) CheckPermissionsAndGetCloudletList(ctx context.Context,
 func (m *appInstMetrics) GetQueryFilter(cloudletList []string) string {
 	filterStr := ``
 	for ii, app := range m.AppInsts {
-		filterStr += `("apporg"='` + app.AppKey.Organization + `'`
-		if app.AppKey.Name != "" {
-			filterStr += ` AND "app"='` + util.DNSSanitize(app.AppKey.Name) + `'`
+		filterStr += `("appinstorg"='` + app.Organization + `'`
+		if app.Name != "" {
+			filterStr += ` AND "appinst"='` + app.Name + `'`
 		}
-		if app.AppKey.Version != "" {
-			filterStr += ` AND "ver"='` + util.DNSSanitize(app.AppKey.Version) + `'`
+		if app.CloudletKey.Name != "" {
+			filterStr += ` AND "cloudlet"='` + app.CloudletKey.Name + `'`
 		}
-		if app.ClusterInstKey.Organization != "" {
-			filterStr += ` AND "clusterorg"='` + app.ClusterInstKey.Organization + `'`
+		if app.CloudletKey.Organization != "" {
+			filterStr += ` AND "cloudletorg"='` + app.CloudletKey.Organization + `'`
 		}
-		if app.ClusterInstKey.ClusterKey.Name != "" {
-			filterStr += ` AND "cluster"='` + app.ClusterInstKey.ClusterKey.Name + `'`
+		if app.CloudletKey.FederatedOrganization != "" {
+			filterStr += ` AND "cloudletfedorg"='` + app.CloudletKey.FederatedOrganization + `'`
 		}
-		if app.ClusterInstKey.CloudletKey.Name != "" {
-			filterStr += ` AND "cloudlet"='` + app.ClusterInstKey.CloudletKey.Name + `'`
-		}
-		if app.ClusterInstKey.CloudletKey.Organization != "" {
-			filterStr += ` AND "cloudletorg"='` + app.ClusterInstKey.CloudletKey.Organization + `'`
-		}
-
 		filterStr += `)`
 		// last element
 		if len(m.AppInsts) != ii+1 {
@@ -249,7 +252,7 @@ func (m *clusterInstMetrics) GetMeasurementString(selector string) string {
 
 func (m *clusterInstMetrics) ValidateObjects() error {
 	for _, cluster := range m.ClusterInsts {
-		org := cluster.Organization
+		org := cluster.ClusterKey.Organization
 		// Developer name has to be specified
 		if org == "" {
 			return fmt.Errorf("Cluster org must be present")
@@ -270,7 +273,7 @@ func (m *clusterInstMetrics) CheckPermissionsAndGetCloudletList(ctx context.Cont
 	orgsToCheck := []string{}
 	cloudletsToCheck := []edgeproto.CloudletKey{}
 	for _, cluster := range m.ClusterInsts {
-		org := cluster.Organization
+		org := cluster.ClusterKey.Organization
 		orgsToCheck = append(orgsToCheck, org)
 		cloudletsToCheck = append(cloudletsToCheck, cluster.CloudletKey)
 	}
@@ -291,7 +294,7 @@ func (m *clusterInstMetrics) CheckPermissionsAndGetCloudletList(ctx context.Cont
 func (m *clusterInstMetrics) GetQueryFilter(cloudletList []string) string {
 	filterStr := ``
 	for ii, cluster := range m.ClusterInsts {
-		filterStr += `("clusterorg"='` + cluster.Organization + `'`
+		filterStr += `("clusterorg"='` + cluster.ClusterKey.Organization + `'`
 		if cluster.ClusterKey.Name != "" {
 			filterStr += ` AND "cluster"='` + cluster.ClusterKey.Name + `'`
 		}

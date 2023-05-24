@@ -19,11 +19,12 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/influxdata/influxdb/models"
-	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,7 +35,7 @@ func testPermShowClusterMetrics(mcClient *mctestclient.Client, uri, token, regio
 	} else {
 		in.ClusterKey.Name = "testcluster"
 	}
-	in.Organization = org
+	in.ClusterKey.Organization = org
 	dat := &ormapi.RegionClusterInstMetrics{}
 	dat.Region = region
 	dat.Selector = selector
@@ -47,9 +48,9 @@ func testPermShowAppInstMetrics(mcClient *mctestclient.Client, uri, token, regio
 	if data != nil {
 		in = data
 	} else {
-		in.ClusterInstKey.ClusterKey.Name = "testcluster"
+		in.Name = "testinst"
 	}
-	in.AppKey.Organization = org
+	in.Organization = org
 	dat := &ormapi.RegionAppInstMetrics{}
 	dat.Region = region
 	dat.Selector = selector
@@ -72,17 +73,16 @@ func testPermShowCloudletMetrics(mcClient *mctestclient.Client, uri, token, regi
 	return mcClient.ShowCloudletMetrics(uri, token, dat)
 }
 
-func testPermShowClientMetrics(mcClient *mctestclient.Client, uri, token, region, org, selector string, data *edgeproto.AppInstKey) (*ormapi.AllMetrics, int, error) {
-	in := &edgeproto.AppInstKey{}
+func testPermShowClientMetrics(mcClient *mctestclient.Client, uri, token, region, org, selector string, data *edgeproto.AppKey) (*ormapi.AllMetrics, int, error) {
+	in := &edgeproto.AppKey{}
 	if data != nil {
 		in = data
 	}
-	in.AppKey.Organization = org
-	in.ClusterInstKey.ClusterKey.Name = "testcluster"
+	in.Organization = org
 	dat := &ormapi.RegionClientApiUsageMetrics{}
 	dat.Region = region
 	dat.Selector = selector
-	dat.AppInst = *in
+	dat.AppKey = *in
 	return mcClient.ShowClientApiUsageMetrics(uri, token, dat)
 }
 
@@ -251,12 +251,10 @@ func goodPermTestMetrics(t *testing.T, mcClient *mctestclient.Client, uri, devTo
 	require.Equal(t, http.StatusBadRequest, status)
 
 	// invalid input check
-	appInst := edgeproto.AppInstKey{
-		AppKey: edgeproto.AppKey{
-			Name: "drop measurements \\",
-		},
+	appKey := edgeproto.AppKey{
+		Name: "drop measurements \\",
 	}
-	list, status, err = testPermShowClientMetrics(mcClient, uri, devToken, region, devOrg, "cpu", &appInst)
+	list, status, err = testPermShowClientMetrics(mcClient, uri, devToken, region, devOrg, "cpu", &appKey)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Invalid app")
 	require.Equal(t, http.StatusBadRequest, status)
@@ -299,14 +297,14 @@ func testMultipleOrgsForCloudletUsage(t *testing.T, mcClient *mctestclient.Clien
 
 func TestIsMeasurementOutputEmpty(t *testing.T) {
 	// check for nil
-	empty, err := isMeasurementOutputEmpty(nil, EVENT_CLUSTERINST)
+	empty, err := isMeasurementOutputEmpty(nil, cloudcommon.ClusterInstEvent)
 	require.NotNil(t, err, "Null response is an error")
 	require.Contains(t, err.Error(), "Error processing nil response")
 	require.False(t, empty)
 
 	// check empty result
 	resp := client.Response{}
-	empty, err = isMeasurementOutputEmpty(&resp, EVENT_CLUSTERINST)
+	empty, err = isMeasurementOutputEmpty(&resp, cloudcommon.ClusterInstEvent)
 	require.Nil(t, err, "Empty response should not trigger an error")
 	require.True(t, empty)
 
@@ -329,7 +327,7 @@ func TestIsMeasurementOutputEmpty(t *testing.T) {
 			},
 		},
 	}
-	testInvalidMeasurementData(t, &resp, EVENT_CLUSTERINST)
+	testInvalidMeasurementData(t, &resp, cloudcommon.ClusterInstEvent)
 
 	// check invalid series data - series value should not be empty
 	resp = client.Response{
@@ -337,14 +335,14 @@ func TestIsMeasurementOutputEmpty(t *testing.T) {
 			client.Result{
 				Series: []models.Row{
 					models.Row{
-						Name:   EVENT_CLUSTERINST,
+						Name:   cloudcommon.ClusterInstEvent,
 						Values: [][]interface{}{},
 					},
 				},
 			},
 		},
 	}
-	testInvalidMeasurementData(t, &resp, EVENT_CLUSTERINST)
+	testInvalidMeasurementData(t, &resp, cloudcommon.ClusterInstEvent)
 
 	// check invalid series data - series value[0] should not be empty
 	vals := [][]uint8{{}}
@@ -361,14 +359,14 @@ func TestIsMeasurementOutputEmpty(t *testing.T) {
 			client.Result{
 				Series: []models.Row{
 					models.Row{
-						Name:   EVENT_CLUSTERINST,
+						Name:   cloudcommon.ClusterInstEvent,
 						Values: valIf,
 					},
 				},
 			},
 		},
 	}
-	testInvalidMeasurementData(t, &resp, EVENT_CLUSTERINST)
+	testInvalidMeasurementData(t, &resp, cloudcommon.ClusterInstEvent)
 
 	// check invalid series data - series name should match
 	vals = [][]uint8{{0, 1, 2, 3}, {0, 1, 2, 3}}
@@ -392,7 +390,7 @@ func TestIsMeasurementOutputEmpty(t *testing.T) {
 			},
 		},
 	}
-	testInvalidMeasurementData(t, &resp, EVENT_CLUSTERINST)
+	testInvalidMeasurementData(t, &resp, cloudcommon.ClusterInstEvent)
 
 	// check valid series data
 	vals = [][]uint8{{0, 1, 2, 3}, {0, 1, 2, 3}}
@@ -409,14 +407,14 @@ func TestIsMeasurementOutputEmpty(t *testing.T) {
 			client.Result{
 				Series: []models.Row{
 					models.Row{
-						Name:   EVENT_CLUSTERINST,
+						Name:   cloudcommon.ClusterInstEvent,
 						Values: valIf,
 					},
 				},
 			},
 		},
 	}
-	empty, err = isMeasurementOutputEmpty(&resp, EVENT_CLUSTERINST)
+	empty, err = isMeasurementOutputEmpty(&resp, cloudcommon.ClusterInstEvent)
 	require.Nil(t, err)
 	require.False(t, empty)
 }
@@ -431,13 +429,9 @@ func testInvalidMeasurementData(t *testing.T, resp *client.Response, measurement
 func TestValidateMethod(t *testing.T) {
 	obj := ormapi.RegionClientApiUsageMetrics{
 		Region: "test",
-		AppInst: edgeproto.AppInstKey{
-			ClusterInstKey: edgeproto.VirtualClusterInstKey{
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         "testCloudlet",
-					Organization: "testOperator",
-				},
-			},
+		CloudletKey: edgeproto.CloudletKey{
+			Name:         "testCloudlet",
+			Organization: "testOperator",
 		},
 	}
 	obj.Method = "RegisterClient"
@@ -461,14 +455,16 @@ func TestValidateMethod(t *testing.T) {
 	require.Nil(t, err, "with no method specified cloudlet/cloudlet-org is allowed")
 
 	obj.Method = "RegisterClient"
-	// zero out appInst details
-	obj.AppInst = edgeproto.AppInstKey{}
+	// zero out key details
+	obj.AppKey = edgeproto.AppKey{}
+	obj.CloudletKey = edgeproto.CloudletKey{}
 	err = validateMethodString(&obj)
 	require.Nil(t, err, "RegisterClient should work without cloudlet name/org")
 
 	obj.Method = "VerifyLocation"
-	// zero out appInst details
-	obj.AppInst = edgeproto.AppInstKey{}
+	// zero out key details
+	obj.AppKey = edgeproto.AppKey{}
+	obj.CloudletKey = edgeproto.CloudletKey{}
 	err = validateMethodString(&obj)
 	require.Nil(t, err, "VerifyLocation should work without cloudlet name/org")
 

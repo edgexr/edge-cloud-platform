@@ -26,13 +26,14 @@ import (
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 
-	"github.com/labstack/echo/v4"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/labstack/echo/v4"
 )
 
 const (
@@ -42,18 +43,23 @@ const (
 var (
 	// Anonymous appinst, just to get a list of tags
 	validAppinstTags = map[string]struct{}{
-		"app":         {},
-		"apporg":      {},
-		"appver":      {},
-		"cluster":     {},
-		"clusterorg":  {},
-		"cloudlet":    {},
-		"cloudletorg": {},
-		"port":        {},
-		"region":      {},
+		edgeproto.AppInstKeyTagName:                   {},
+		edgeproto.AppInstKeyTagOrganization:           {},
+		edgeproto.CloudletKeyTagName:                  {},
+		edgeproto.CloudletKeyTagOrganization:          {},
+		edgeproto.CloudletKeyTagFederatedOrganization: {},
+		cloudcommon.MetricTagPort:                     {},
+		cloudcommon.MetricTagRegion:                   {},
 	}
 
-	AggrFuncLabelSet = []string{"app", "appver", "apporg", "cluster", "clusterorg", "cloudlet", "cloudletorg", "region"}
+	AggrFuncLabelSet = []string{
+		edgeproto.AppInstKeyTagName,
+		edgeproto.AppInstKeyTagOrganization,
+		edgeproto.CloudletKeyTagName,
+		edgeproto.CloudletKeyTagOrganization,
+		edgeproto.CloudletKeyTagFederatedOrganization,
+		cloudcommon.MetricTagRegion,
+	}
 )
 
 func GetAppMetricsV2(c echo.Context) error {
@@ -71,8 +77,8 @@ func GetAppMetricsV2(c echo.Context) error {
 		return err
 	}
 
-	cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.AppKey.Organization},
-		ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.ClusterInstKey.CloudletKey})
+	cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.Organization},
+		ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.CloudletKey})
 	if err != nil {
 		return err
 	}
@@ -177,26 +183,20 @@ func getPromLabelsFromAppInstKey(appInstKey *edgeproto.AppInstKey) []string {
 	if appInstKey == nil {
 		return labelFilters
 	}
-	if appInstKey.AppKey.Name != "" {
-		labelFilters = append(labelFilters, `app="`+appInstKey.AppKey.Name+`"`)
+	if appInstKey.Name != "" {
+		labelFilters = append(labelFilters, edgeproto.AppInstKeyTagName+`="`+appInstKey.Name+`"`)
 	}
-	if appInstKey.AppKey.Organization != "" {
-		labelFilters = append(labelFilters, `apporg="`+appInstKey.AppKey.Organization+`"`)
+	if appInstKey.Organization != "" {
+		labelFilters = append(labelFilters, edgeproto.AppInstKeyTagOrganization+`="`+appInstKey.Organization+`"`)
 	}
-	if appInstKey.AppKey.Version != "" {
-		labelFilters = append(labelFilters, `appver="`+appInstKey.AppKey.Version+`"`)
+	if appInstKey.CloudletKey.Name != "" {
+		labelFilters = append(labelFilters, edgeproto.CloudletKeyTagName+`="`+appInstKey.CloudletKey.Name+`"`)
 	}
-	if appInstKey.ClusterInstKey.ClusterKey.Name != "" {
-		labelFilters = append(labelFilters, `cluster="`+appInstKey.ClusterInstKey.ClusterKey.Name+`"`)
+	if appInstKey.CloudletKey.Organization != "" {
+		labelFilters = append(labelFilters, edgeproto.CloudletKeyTagOrganization+`="`+appInstKey.CloudletKey.Organization+`"`)
 	}
-	if appInstKey.ClusterInstKey.Organization != "" {
-		labelFilters = append(labelFilters, `clusterorg="`+appInstKey.ClusterInstKey.Organization+`"`)
-	}
-	if appInstKey.ClusterInstKey.CloudletKey.Name != "" {
-		labelFilters = append(labelFilters, `cloudlet="`+appInstKey.ClusterInstKey.CloudletKey.Name+`"`)
-	}
-	if appInstKey.ClusterInstKey.CloudletKey.Organization != "" {
-		labelFilters = append(labelFilters, `cloudletorg="`+appInstKey.ClusterInstKey.CloudletKey.Organization+`"`)
+	if appInstKey.CloudletKey.FederatedOrganization != "" {
+		labelFilters = append(labelFilters, edgeproto.CloudletKeyTagFederatedOrganization+`="`+appInstKey.CloudletKey.FederatedOrganization+`"`)
 	}
 	return labelFilters
 }
