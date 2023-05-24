@@ -37,8 +37,23 @@ func (s *UpdateFederationRequest) Validate() error {
 	if s.ObjectType == "" {
 		return errors.New("objectType is required")
 	}
+	ObjectTypeEnumVals := map[string]struct{}{
+		"MOBILE_NETWORK_CODES": {},
+		"FIXED_NETWORK_CODES":  {},
+	}
+	if _, found := ObjectTypeEnumVals[s.ObjectType]; !found {
+		return errors.New("UpdateFederationRequest objectType value \"" + s.ObjectType + "\" is not a valid enum value")
+	}
 	if s.OperationType == "" {
 		return errors.New("operationType is required")
+	}
+	OperationTypeEnumVals := map[string]struct{}{
+		"ADD_CODES":    {},
+		"REMOVE_CODES": {},
+		"UPDATE_CODES": {},
+	}
+	if _, found := OperationTypeEnumVals[s.OperationType]; !found {
+		return errors.New("UpdateFederationRequest operationType value \"" + s.OperationType + "\" is not a valid enum value")
 	}
 	if s.AddMobileNetworkIds != nil {
 		if err := s.AddMobileNetworkIds.Validate(); err != nil {

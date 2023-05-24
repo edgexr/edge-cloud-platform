@@ -38,6 +38,15 @@ func (s *PersistentVolumeDetails) Validate() error {
 	if s.VolumeSize == "" {
 		return errors.New("volumeSize is required")
 	}
+	VolumeSizeEnumVals := map[string]struct{}{
+		"10Gi":  {},
+		"20Gi":  {},
+		"50Gi":  {},
+		"100Gi": {},
+	}
+	if _, found := VolumeSizeEnumVals[s.VolumeSize]; !found {
+		return errors.New("PersistentVolumeDetails volumeSize value \"" + s.VolumeSize + "\" is not a valid enum value")
+	}
 	if s.VolumeMountPath == "" {
 		return errors.New("volumeMountPath is required")
 	}

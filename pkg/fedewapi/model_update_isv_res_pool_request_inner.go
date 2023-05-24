@@ -33,6 +33,14 @@ func (s *UpdateISVResPoolRequestInner) Validate() error {
 	if s.UpdateType == "" {
 		return errors.New("updateType is required")
 	}
+	UpdateTypeEnumVals := map[string]struct{}{
+		"ADD":      {},
+		"REMOVE":   {},
+		"DURATION": {},
+	}
+	if _, found := UpdateTypeEnumVals[s.UpdateType]; !found {
+		return errors.New("UpdateISVResPoolRequestInner updateType value \"" + s.UpdateType + "\" is not a valid enum value")
+	}
 	if s.FlavourId == "" {
 		return errors.New("flavourId is required")
 	}

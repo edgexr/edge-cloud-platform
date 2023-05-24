@@ -212,6 +212,11 @@ func (p *PartnerApi) ConsumerPartnerClient(ctx context.Context, consumer *ormapi
 	return p.tokenSources.Client(ctx, consumer.PartnerAddr, fedKey, p.auditCb)
 }
 
+func (p *PartnerApi) ConsumerPartnerClearCredentialsCache(ctx context.Context, consumer *ormapi.FederationConsumer) {
+	fedKey := ConsumerFedKey(consumer)
+	p.tokenSources.Clear(ctx, fedKey)
+}
+
 func (p *PartnerApi) validateCallbackLink(link string) error {
 	if link == "" || link == federationmgmt.CallbackNotSupported {
 		return nil
@@ -733,11 +738,11 @@ func (p *PartnerApi) PartnerStatusEvent(c echo.Context) error {
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "partner notify", "consumer", consumer.Name, "operatorid", consumer.OperatorId)
 	switch in.OperationType {
-	case "ADD_ZONES":
+	case "ADD":
 		err = p.AddConsumerZones(ctx, consumer, in.AddZones)
-	case "REMOVE_ZONES":
+	case "REMOVE":
 		err = p.RemoveConsumerZones(ctx, consumer, in.RemoveZones)
-	case "UPDATE_ZONES":
+	case "UPDATE":
 		err = p.SetConsumerZones(ctx, consumer, in.AddZones)
 	default:
 		err = fmt.Errorf("Unsupported operationtype %q", in.OperationType)

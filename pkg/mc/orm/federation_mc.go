@@ -1025,6 +1025,8 @@ func SetFederationConsumerAPIKey(c echo.Context) error {
 	if err != nil {
 		return ormutil.DbErr(err)
 	}
+	partnerApi.ConsumerPartnerClearCredentialsCache(ctx, consumer)
+
 	return ormutil.SetReply(c, ormutil.Msg(fmt.Sprintf("Federation Guest %s api key set", consumer.Name)))
 }
 
@@ -1443,7 +1445,7 @@ func ShareProviderZone(c echo.Context) (reterr error) {
 		req := fedewapi.PartnerPostRequest{
 			FederationContextId: provider.FederationContextId,
 			ObjectType:          "ZONES",
-			OperationType:       "ADD_ZONES",
+			OperationType:       "ADD",
 			AddZones:            zoneDetails,
 		}
 		_, _, err = fedClient.SendRequest(ctx, "ShareZone Callback", "POST", "", &req, nil, nil)
@@ -1523,7 +1525,7 @@ func UnshareProviderZone(c echo.Context) error {
 		req := fedewapi.PartnerPostRequest{
 			FederationContextId: provider.FederationContextId,
 			ObjectType:          "ZONES",
-			OperationType:       "REMOVE_ZONES",
+			OperationType:       "REMOVE",
 			RemoveZones:         rmZones,
 		}
 		_, _, err = fedClient.SendRequest(ctx, "UnshareZone Callback", "POST", "", &req, nil, nil)

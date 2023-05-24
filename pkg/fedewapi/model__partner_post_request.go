@@ -60,8 +60,28 @@ func (s *PartnerPostRequest) Validate() error {
 	if s.ObjectType == "" {
 		return errors.New("objectType is required")
 	}
+	ObjectTypeEnumVals := map[string]struct{}{
+		"FEDERATION":             {},
+		"ZONES":                  {},
+		"EDGE_DISCOVERY_SERVICE": {},
+		"LCM_SERVICE":            {},
+		"MOBILE_NETWORK_CODES":   {},
+		"FIXED_NETWORK_CODES":    {},
+	}
+	if _, found := ObjectTypeEnumVals[s.ObjectType]; !found {
+		return errors.New("PartnerPostRequest objectType value \"" + s.ObjectType + "\" is not a valid enum value")
+	}
 	if s.OperationType == "" {
 		return errors.New("operationType is required")
+	}
+	OperationTypeEnumVals := map[string]struct{}{
+		"STATUS": {},
+		"UPDATE": {},
+		"ADD":    {},
+		"REMOVE": {},
+	}
+	if _, found := OperationTypeEnumVals[s.OperationType]; !found {
+		return errors.New("PartnerPostRequest operationType value \"" + s.OperationType + "\" is not a valid enum value")
 	}
 	if s.EdgeDiscoverySvcEndPoint != nil {
 		if err := s.EdgeDiscoverySvcEndPoint.Validate(); err != nil {

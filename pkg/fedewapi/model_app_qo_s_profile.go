@@ -36,6 +36,14 @@ func (s *AppQoSProfile) Validate() error {
 	if s.LatencyConstraints == "" {
 		return errors.New("latencyConstraints is required")
 	}
+	LatencyConstraintsEnumVals := map[string]struct{}{
+		"NONE":     {},
+		"LOW":      {},
+		"ULTRALOW": {},
+	}
+	if _, found := LatencyConstraintsEnumVals[s.LatencyConstraints]; !found {
+		return errors.New("AppQoSProfile latencyConstraints value \"" + s.LatencyConstraints + "\" is not a valid enum value")
+	}
 	return nil
 }
 

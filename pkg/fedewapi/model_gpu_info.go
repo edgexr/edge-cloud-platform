@@ -34,6 +34,13 @@ func (s *GpuInfo) Validate() error {
 	if s.GpuVendorType == "" {
 		return errors.New("gpuVendorType is required")
 	}
+	GpuVendorTypeEnumVals := map[string]struct{}{
+		"GPU_PROVIDER_NVIDIA": {},
+		"GPU_PROVIDER_AMD":    {},
+	}
+	if _, found := GpuVendorTypeEnumVals[s.GpuVendorType]; !found {
+		return errors.New("GpuInfo gpuVendorType value \"" + s.GpuVendorType + "\" is not a valid enum value")
+	}
 	if s.GpuModeName == "" {
 		return errors.New("gpuModeName is required")
 	}

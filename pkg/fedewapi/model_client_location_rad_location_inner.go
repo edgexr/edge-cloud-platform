@@ -35,6 +35,13 @@ func (s *ClientLocationRadLocationInner) Validate() error {
 	if s.Carrier == "" {
 		return errors.New("carrier is required")
 	}
+	CarrierEnumVals := map[string]struct{}{
+		"5G":  {},
+		"LTE": {},
+	}
+	if _, found := CarrierEnumVals[s.Carrier]; !found {
+		return errors.New("ClientLocationRadLocationInner carrier value \"" + s.Carrier + "\" is not a valid enum value")
+	}
 	return nil
 }
 

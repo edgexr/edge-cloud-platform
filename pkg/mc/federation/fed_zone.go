@@ -500,6 +500,15 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 			},
 			InfraFlavors: flavors,
 		}
+		var reserved *fedewapi.ComputeResourceInfo
+		if zoneInfo.ReservedComputeResources != nil {
+			for _, res := range zoneInfo.ReservedComputeResources {
+				if res.CpuArchType == string(fedewapi.CPUARCHTYPE_X86_64) {
+					reserved = &res
+					break
+				}
+			}
+		}
 		var quotaLimit *fedewapi.ComputeResourceInfo
 		if zoneInfo.ComputeResourceQuotaLimits != nil {
 			for _, quota := range zoneInfo.ComputeResourceQuotaLimits {
@@ -509,32 +518,51 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 				}
 			}
 		}
+		// we don't have a concept of reserved resources yet,
+		// so lump everything together in the quota
+		cpus := uint64(0)
+		mem := uint64(0)
+		disk := uint64(0)
+		if reserved != nil {
+			vcpus, err := edgeproto.ParseUdec64(reserved.NumCPU)
+			if err != nil {
+				return fmt.Errorf("Failed to parse reservedComputeResources NumCPU %s, %s", reserved.NumCPU, err)
+			}
+			// quotas are whole cpus only
+			cpus += vcpus.Uint64()
+			mem += uint64(reserved.Memory)
+			if reserved.DiskStorage != nil {
+				disk += uint64(*reserved.DiskStorage)
+			}
+		}
 		if quotaLimit != nil {
 			vcpus, err := edgeproto.ParseUdec64(quotaLimit.NumCPU)
 			if err != nil {
 				return fmt.Errorf("Failed to parse QuotaLimit NumCPU %s, %s", quotaLimit.NumCPU, err)
 			}
-			// quotas are whole cpus only
-			cpus := vcpus.Uint64()
-
-			if cpus > 0 {
-				fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
-					Name:  cloudcommon.ResourceVcpus,
-					Value: cpus,
-				})
+			cpus += vcpus.Uint64()
+			mem += uint64(quotaLimit.Memory)
+			if quotaLimit.DiskStorage != nil {
+				disk += uint64(*quotaLimit.DiskStorage)
 			}
-			if quotaLimit.Memory > 0 {
-				fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
-					Name:  cloudcommon.ResourceRamMb,
-					Value: uint64(quotaLimit.Memory),
-				})
-			}
-			if quotaLimit.DiskStorage != nil && *quotaLimit.DiskStorage > 0 {
-				fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
-					Name:  cloudcommon.ResourceDiskGb,
-					Value: uint64(*quotaLimit.DiskStorage),
-				})
-			}
+		}
+		if cpus > 0 {
+			fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
+				Name:  cloudcommon.ResourceVcpus,
+				Value: cpus,
+			})
+		}
+		if mem > 0 {
+			fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
+				Name:  cloudcommon.ResourceRamMb,
+				Value: mem,
+			})
+		}
+		if disk > 0 {
+			fedCloudlet.ResourceQuotas = append(fedCloudlet.ResourceQuotas, edgeproto.ResourceQuota{
+				Name:  cloudcommon.ResourceDiskGb,
+				Value: disk,
+			})
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "add partner zone as cloudlet", "cloudlet", fedCloudlet)
 		err = ctrlclient.CreateCloudletStream(ctx, rc, &fedCloudlet, p.connCache, cb)
