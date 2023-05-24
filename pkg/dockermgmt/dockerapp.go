@@ -276,7 +276,6 @@ func getLabelsStr(appInst *edgeproto.AppInst) string {
 func CreateAppInstLocal(client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	image := app.ImagePath
 	name := GetContainerName(appInst)
-	cloudlet := util.DockerSanitize(appInst.Key.CloudletKey.Name)
 	cluster := util.DockerSanitize(appInst.ClusterKey.Organization + "-" + appInst.ClusterKey.Name)
 	base_cmd := "docker run "
 	if appInst.OptRes == "gpu" {
@@ -284,8 +283,8 @@ func CreateAppInstLocal(client ssh.Client, app *edgeproto.App, appInst *edgeprot
 	}
 	labelsStr := getLabelsStr(appInst)
 	if app.DeploymentManifest == "" {
-		cmd := fmt.Sprintf("%s -d -l edge-cloud -l cloudlet=%s -l cluster=%s %s --restart=unless-stopped --name=%s %s %s %s", base_cmd,
-			cloudlet, cluster, labelsStr, name,
+		cmd := fmt.Sprintf("%s -d -l edge-cloud -l cluster=%s %s --restart=unless-stopped --name=%s %s %s %s", base_cmd,
+			cluster, labelsStr, name,
 			strings.Join(GetDockerPortString(appInst.MappedPorts, UseInternalPortInContainer, "", cloudcommon.IPAddrAllInterfaces), " "), image, getCommandString(app))
 		log.DebugLog(log.DebugLevelInfra, "running docker run ", "cmd", cmd)
 

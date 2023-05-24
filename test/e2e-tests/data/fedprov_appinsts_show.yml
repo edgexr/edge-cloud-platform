@@ -464,11 +464,11 @@ regiondata:
         publicport: 10002
       flavor:
         name: x1.tiny
-      cloudletflavor: x1.small
+      cloudletflavor: x1.tiny
       state: Ready
       healthcheck: Ok
       powerstate: PowerOn
-      vmflavor: x1.small
+      vmflavor: x1.tiny
       uniqueid: dmuus-partner1-k8sapp-dmuus-cloud-1-dmuus
       dnslabel: k8sapp-dmuus-partner1
       fedkey:

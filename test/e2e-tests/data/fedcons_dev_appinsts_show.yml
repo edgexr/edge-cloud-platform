@@ -368,7 +368,7 @@ regiondata:
       state: Ready
       healthcheck: Ok
       powerstate: PowerOn
-      vmflavor: x1.small
+      vmflavor: x1.tiny
       uniqueid: fedappco-k8sapp-dmuuscloud1-dmuus-partner1
       dnslabel: k8sapp-fedappco
       fedkey:
