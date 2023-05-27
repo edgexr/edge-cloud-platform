@@ -6077,8 +6077,8 @@ paths:
       - Federation
   /api/v1/auth/federation/consumer/image/show:
     post:
-      description: Show Images onboarded by developers
-      operationId: ShowFedGuestImage
+      description: Show images on partner federation
+      operationId: ShowGuestImage
       requestBody:
         content:
           application/json:
@@ -6103,9 +6103,9 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: ShowFedGuestImage
+      summary: ShowGuestImage
       tags:
-      - FederationGuest
+      - Federation
   /api/v1/auth/federation/consumer/setapikey:
     post:
       description: Set Partner Federation API Key
@@ -6142,8 +6142,8 @@ paths:
       - FederationGuest
   /api/v1/auth/federation/consumer/show:
     post:
-      description: Show Federation Guest
-      operationId: ShowFederationGuest
+      description: Show federations for App deployment
+      operationId: ShowFederation
       requestBody:
         content:
           application/json:
@@ -6168,9 +6168,9 @@ paths:
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: ShowFederationGuest
+      summary: ShowFederation
       tags:
-      - FederationGuest
+      - Federation
   /api/v1/auth/federation/consumer/update:
     post:
       description: Update Federation Guest
@@ -9940,6 +9940,12 @@ components:
           type: integer
         fed_key:
           $ref: '#/components/schemas/EdgeprotoFedAppInstKey'
+        fields:
+          description: Fields are used for the Update API to specify which fields
+            to apply
+          items:
+            type: string
+          type: array
         flavor:
           $ref: '#/components/schemas/EdgeprotoFlavorKey'
         force_update:
@@ -10273,6 +10279,12 @@ components:
           type: array
         federation_config:
           $ref: '#/components/schemas/EdgeprotoFederationConfig'
+        fields:
+          description: Fields are used for the Update API to specify which fields
+            to apply
+          items:
+            type: string
+          type: array
         flavor:
           $ref: '#/components/schemas/EdgeprotoFlavorKey'
         gpu_config:
@@ -15105,6 +15117,8 @@ x-tagGroups:
   - OperatorUsage
   - AlertReceiver
   - Network
+  - FederationGuest
+  - FederationHost
 - name: Developer API
   tags:
   - ClusterInst
@@ -15121,8 +15135,4 @@ x-tagGroups:
   - Events
   - DeveloperUsage
   - AlertReceiver
-- name: Federation API
-  tags:
   - Federation
-  - FederationGuest
-  - FederationHost

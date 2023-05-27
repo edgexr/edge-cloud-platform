@@ -35,6 +35,8 @@ x-tagGroups:
   - OperatorUsage
   - AlertReceiver
   - Network
+  - FederationGuest
+  - FederationHost
 - name: Developer API
   tags:
   - ClusterInst
@@ -51,11 +53,7 @@ x-tagGroups:
   - Events
   - DeveloperUsage
   - AlertReceiver
-- name: Federation API
-  tags:
   - Federation
-  - FederationGuest
-  - FederationHost
 tags:
 - name: Security
   description: Authentication is done by a user name or email plus a password. The
