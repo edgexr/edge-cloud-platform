@@ -22,11 +22,11 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionAppInstLatency'
             x-required-fields:
             - region
-            - appinstlatency.key.appkey.organization
-            - appinstlatency.key.appkey.name
-            - appinstlatency.key.appkey.version
-            - appinstlatency.key.clusterinstkey.cloudletkey.organization
-            - appinstlatency.key.clusterinstkey.cloudletkey.name
+            - appinstlatency.key.name
+            - appinstlatency.key.organization
+            - appinstlatency.key.cloudletkey.organization
+            - appinstlatency.key.cloudletkey.name
+            - appinstlatency.key.cloudletkey.federatedorganization
       responses:
         "200":
           content:
@@ -51,27 +51,19 @@ components:
   schemas:
     EdgeprotoAppInstKey:
       properties:
-        app_key:
-          $ref: '#/components/schemas/EdgeprotoAppKey'
-        cluster_inst_key:
-          $ref: '#/components/schemas/EdgeprotoVirtualClusterInstKey'
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        name:
+          description: App Instance name
+          type: string
+        organization:
+          description: App Instance organization
+          type: string
       type: object
     EdgeprotoAppInstLatency:
       properties:
         key:
           $ref: '#/components/schemas/EdgeprotoAppInstKey'
-      type: object
-    EdgeprotoAppKey:
-      properties:
-        name:
-          description: App name
-          type: string
-        organization:
-          description: App developer organization
-          type: string
-        version:
-          description: App version
-          type: string
       type: object
     EdgeprotoCloudletKey:
       properties:
@@ -85,12 +77,6 @@ components:
           description: Organization of the cloudlet site
           type: string
       type: object
-    EdgeprotoClusterKey:
-      properties:
-        name:
-          description: Cluster name
-          type: string
-      type: object
     EdgeprotoResult:
       properties:
         code:
@@ -99,16 +85,6 @@ components:
           type: integer
         message:
           description: Message, may be success or failure message
-          type: string
-      type: object
-    EdgeprotoVirtualClusterInstKey:
-      properties:
-        cloudlet_key:
-          $ref: '#/components/schemas/EdgeprotoCloudletKey'
-        cluster_key:
-          $ref: '#/components/schemas/EdgeprotoClusterKey'
-        organization:
-          description: Name of Developer organization that this cluster belongs to
           type: string
       type: object
     OrmapiRegionAppInstLatency:

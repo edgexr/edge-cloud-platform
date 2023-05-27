@@ -652,6 +652,38 @@ paths:
       summary: ShowHostZoneBase
       tags:
       - FederationHost
+  /api/v1/auth/federation/provider/zonebase/update:
+    post:
+      description: Update Host Zone Base
+      operationId: UpdateHostZoneBase
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiProviderZoneBase'
+            x-required-fields:
+            - zoneid
+            - operatorid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateHostZoneBase
+      tags:
+      - FederationHost
 components:
   schemas:
     OrmapiFederatedZoneShareRequest:
@@ -812,12 +844,6 @@ components:
           type: string
         CloudletOrg:
           description: Cloudlet org for AppInstKey
-          type: string
-        Cluster:
-          description: Cluster name for AppInstKey
-          type: string
-        ClusterOrg:
-          description: Cluster org for AppInstKey
           type: string
         Error:
           description: Error message if create failed

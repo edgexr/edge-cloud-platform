@@ -44,16 +44,13 @@ paths:
       - ClusterRefs
 components:
   schemas:
-    EdgeprotoAppKey:
+    EdgeprotoAppInstRefKey:
       properties:
         name:
-          description: App name
+          description: AppInst name
           type: string
         organization:
-          description: App developer organization
-          type: string
-        version:
-          description: App version
+          description: AppInst organization
           type: string
       type: object
     EdgeprotoCloudletKey:
@@ -74,14 +71,14 @@ components:
           $ref: '#/components/schemas/EdgeprotoCloudletKey'
         cluster_key:
           $ref: '#/components/schemas/EdgeprotoClusterKey'
-        organization:
-          description: Name of Developer organization that this cluster belongs to
-          type: string
       type: object
     EdgeprotoClusterKey:
       properties:
         name:
           description: Cluster name
+          type: string
+        organization:
+          description: Name of the organization that this cluster belongs to
           type: string
       type: object
     EdgeprotoClusterRefs:
@@ -89,19 +86,11 @@ components:
         apps:
           description: App instances in the Cluster Instance
           items:
-            $ref: '#/components/schemas/EdgeprotoClusterRefsAppInstKey'
+            $ref: '#/components/schemas/EdgeprotoAppInstRefKey'
           nullable: true
           type: array
         key:
           $ref: '#/components/schemas/EdgeprotoClusterInstKey'
-      type: object
-    EdgeprotoClusterRefsAppInstKey:
-      properties:
-        app_key:
-          $ref: '#/components/schemas/EdgeprotoAppKey'
-        v_cluster_name:
-          description: Virtual cluster name
-          type: string
       type: object
     OrmapiRegionClusterRefs:
       properties:

@@ -92,6 +92,14 @@ tags:
   name: AlertReceiver
 - description: Manage additional networks which can be added to Cluster Instances.
   name: Network
+- description: Manage Federation Applications and Images
+  name: Federation
+- description: Manage Federation Consumer. Federation Consumer is where this platform
+    consumes resources on another Federation partner.
+  name: FederationGuest
+- description: Manage Federation Provider. Federation Provider is where this platform
+    hosts the applications being onboarded by another federation partner.
+  name: FederationHost
 paths:
   /api/v1:
     post:
@@ -1048,8 +1056,8 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionExecRequest'
             x-required-fields:
             - region
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.organization
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.name
+            - execrequest.appinstkey.cloudletkey.organization
+            - execrequest.appinstkey.cloudletkey.name
       responses:
         "200":
           content:
@@ -1495,11 +1503,11 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionAppInst'
             x-required-fields:
             - region
-            - appinst.key.appkey.organization
-            - appinst.key.appkey.name
-            - appinst.key.appkey.version
-            - appinst.key.clusterinstkey.cloudletkey.organization
-            - appinst.key.clusterinstkey.cloudletkey.name
+            - appinst.key.name
+            - appinst.key.organization
+            - appinst.key.cloudletkey.organization
+            - appinst.key.cloudletkey.name
+            - appinst.key.cloudletkey.federatedorganization
       responses:
         "200":
           content:
@@ -1673,9 +1681,9 @@ paths:
             x-required-fields:
             - region
             - clusterinst.key.clusterkey.name
+            - clusterinst.key.clusterkey.organization
             - clusterinst.key.cloudletkey.organization
             - clusterinst.key.cloudletkey.name
-            - clusterinst.key.organization
       responses:
         "200":
           content:
@@ -2121,11 +2129,11 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionAppInst'
             x-required-fields:
             - region
-            - appinst.key.appkey.organization
-            - appinst.key.appkey.name
-            - appinst.key.appkey.version
-            - appinst.key.clusterinstkey.cloudletkey.organization
-            - appinst.key.clusterinstkey.cloudletkey.name
+            - appinst.key.name
+            - appinst.key.organization
+            - appinst.key.cloudletkey.organization
+            - appinst.key.cloudletkey.name
+            - appinst.key.cloudletkey.federatedorganization
       responses:
         "200":
           content:
@@ -2292,9 +2300,9 @@ paths:
             x-required-fields:
             - region
             - clusterinst.key.clusterkey.name
+            - clusterinst.key.clusterkey.organization
             - clusterinst.key.cloudletkey.organization
             - clusterinst.key.cloudletkey.name
-            - clusterinst.key.organization
       responses:
         "200":
           content:
@@ -3257,9 +3265,11 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionAppInst'
             x-required-fields:
             - region
-            - appinst.key.appkey.organization
-            - appinst.key.appkey.name
-            - appinst.key.appkey.version
+            - appinst.key.name
+            - appinst.key.organization
+            - appinst.key.cloudletkey.organization
+            - appinst.key.cloudletkey.name
+            - appinst.key.cloudletkey.federatedorganization
       responses:
         "200":
           content:
@@ -3630,11 +3640,11 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionAppInstLatency'
             x-required-fields:
             - region
-            - appinstlatency.key.appkey.organization
-            - appinstlatency.key.appkey.name
-            - appinstlatency.key.appkey.version
-            - appinstlatency.key.clusterinstkey.cloudletkey.organization
-            - appinstlatency.key.clusterinstkey.cloudletkey.name
+            - appinstlatency.key.name
+            - appinstlatency.key.organization
+            - appinstlatency.key.cloudletkey.organization
+            - appinstlatency.key.cloudletkey.name
+            - appinstlatency.key.cloudletkey.federatedorganization
       responses:
         "200":
           content:
@@ -3730,12 +3740,10 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionExecRequest'
             x-required-fields:
             - region
-            - execrequest.appinstkey.appkey.organization
-            - execrequest.appinstkey.appkey.name
-            - execrequest.appinstkey.appkey.version
-            - execrequest.appinstkey.clusterinstkey.clusterkey.name
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.organization
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.name
+            - execrequest.appinstkey.name
+            - execrequest.appinstkey.organization
+            - execrequest.appinstkey.cloudletkey.organization
+            - execrequest.appinstkey.cloudletkey.name
             - execrequest.cmd.command
       responses:
         "200":
@@ -3768,11 +3776,10 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionExecRequest'
             x-required-fields:
             - region
-            - execrequest.appinstkey.appkey.organization
-            - execrequest.appinstkey.appkey.name
-            - execrequest.appinstkey.appkey.version
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.organization
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.name
+            - execrequest.appinstkey.name
+            - execrequest.appinstkey.organization
+            - execrequest.appinstkey.cloudletkey.organization
+            - execrequest.appinstkey.cloudletkey.name
       responses:
         "200":
           content:
@@ -3963,7 +3970,7 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionAppInstClientKey'
             x-required-fields:
             - region
-            - appinstclientkey.appinstkey.appkey.organization
+            - appinstclientkey.appinstkey.organization
       responses:
         "200":
           content:
@@ -4555,12 +4562,10 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionExecRequest'
             x-required-fields:
             - region
-            - execrequest.appinstkey.appkey.organization
-            - execrequest.appinstkey.appkey.name
-            - execrequest.appinstkey.appkey.version
-            - execrequest.appinstkey.clusterinstkey.clusterkey.name
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.organization
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.name
+            - execrequest.appinstkey.name
+            - execrequest.appinstkey.organization
+            - execrequest.appinstkey.cloudletkey.organization
+            - execrequest.appinstkey.cloudletkey.name
       responses:
         "200":
           content:
@@ -5096,11 +5101,11 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionAppInst'
             x-required-fields:
             - region
-            - appinst.key.appkey.organization
-            - appinst.key.appkey.name
-            - appinst.key.appkey.version
-            - appinst.key.clusterinstkey.cloudletkey.organization
-            - appinst.key.clusterinstkey.cloudletkey.name
+            - appinst.key.name
+            - appinst.key.organization
+            - appinst.key.cloudletkey.organization
+            - appinst.key.cloudletkey.name
+            - appinst.key.cloudletkey.federatedorganization
       responses:
         "200":
           content:
@@ -5267,9 +5272,9 @@ paths:
             x-required-fields:
             - region
             - clusterinst.key.clusterkey.name
+            - clusterinst.key.clusterkey.organization
             - clusterinst.key.cloudletkey.organization
             - clusterinst.key.cloudletkey.name
-            - clusterinst.key.organization
       responses:
         "200":
           content:
@@ -7125,6 +7130,38 @@ paths:
       security:
       - bearerAuth: []
       summary: ShowHostZoneBase
+      tags:
+      - FederationHost
+  /api/v1/auth/federation/provider/zonebase/update:
+    post:
+      description: Update Host Zone Base
+      operationId: UpdateHostZoneBase
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrmapiProviderZoneBase'
+            x-required-fields:
+            - zoneid
+            - operatorid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrmapiResult'
+          description: Bad Request
+        "403":
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: UpdateHostZoneBase
       tags:
       - FederationHost
   /api/v1/auth/gitlab/resync:
@@ -9849,6 +9886,8 @@ components:
       type: object
     EdgeprotoAppInst:
       properties:
+        app_key:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
         auto_cluster_ip_access:
           description: (Deprecated) IpAccess for auto-clusters. Ignored otherwise.,
             valid values are one of Unknown, Dedicated, Shared, or 0, 1, 3
@@ -9861,6 +9900,12 @@ components:
           type: string
         cloudlet_loc:
           $ref: '#/components/schemas/DmeProtoLoc'
+        cluster_key:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
+        compatibility_version:
+          description: Internal compatibility version
+          minimum: 0
+          type: integer
         configs:
           description: Customization files passed through to implementing services
           items:
@@ -9932,7 +9977,7 @@ components:
             2, 3, 4, 5, 6, 7, 8, 9, 10
           type: string
         real_cluster_name:
-          description: Real ClusterInst name
+          description: (_deprecated_) Real ClusterInst name
           type: string
         revision:
           description: Revision changes each time the App is updated.  Refreshing
@@ -9961,6 +10006,8 @@ components:
           description: Base FQDN (not really URI) for the App. See Service FQDN for
             endpoint access.
           type: string
+        virtual_cluster_key:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
         vm_flavor:
           description: OS node flavor to use
           type: string
@@ -9979,6 +10026,8 @@ components:
       properties:
         app_inst_key:
           $ref: '#/components/schemas/EdgeprotoAppInstKey'
+        app_key:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
         unique_id:
           description: AppInstClient Unique Id
           type: string
@@ -9988,10 +10037,14 @@ components:
       type: object
     EdgeprotoAppInstKey:
       properties:
-        app_key:
-          $ref: '#/components/schemas/EdgeprotoAppKey'
-        cluster_inst_key:
-          $ref: '#/components/schemas/EdgeprotoVirtualClusterInstKey'
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        name:
+          description: App Instance name
+          type: string
+        organization:
+          description: App Instance organization
+          type: string
       type: object
     EdgeprotoAppInstLatency:
       properties:
@@ -10000,10 +10053,12 @@ components:
       type: object
     EdgeprotoAppInstRefKey:
       properties:
-        app_key:
-          $ref: '#/components/schemas/EdgeprotoAppKey'
-        cluster_inst_key:
-          $ref: '#/components/schemas/EdgeprotoClusterInstRefKey'
+        name:
+          description: AppInst name
+          type: string
+        organization:
+          description: AppInst organization
+          type: string
       type: object
     EdgeprotoAppInstRefs:
       properties:
@@ -10218,12 +10273,6 @@ components:
           type: array
         federation_config:
           $ref: '#/components/schemas/EdgeprotoFederationConfig'
-        fields:
-          description: Fields are used for the Update API to specify which fields
-            to apply
-          items:
-            type: string
-          type: array
         flavor:
           $ref: '#/components/schemas/EdgeprotoFlavorKey'
         gpu_config:
@@ -10526,7 +10575,7 @@ components:
         cluster_insts:
           description: Clusters instantiated on the Cloudlet
           items:
-            $ref: '#/components/schemas/EdgeprotoClusterInstRefKey'
+            $ref: '#/components/schemas/EdgeprotoClusterKey'
           nullable: true
           type: array
         k8s_app_insts:
@@ -10735,22 +10784,14 @@ components:
           $ref: '#/components/schemas/EdgeprotoCloudletKey'
         cluster_key:
           $ref: '#/components/schemas/EdgeprotoClusterKey'
-        organization:
-          description: Name of Developer organization that this cluster belongs to
-          type: string
-      type: object
-    EdgeprotoClusterInstRefKey:
-      properties:
-        cluster_key:
-          $ref: '#/components/schemas/EdgeprotoClusterKey'
-        organization:
-          description: Name of Developer organization that this cluster belongs to
-          type: string
       type: object
     EdgeprotoClusterKey:
       properties:
         name:
           description: Cluster name
+          type: string
+        organization:
+          description: Name of the organization that this cluster belongs to
           type: string
       type: object
     EdgeprotoClusterRefs:
@@ -10758,19 +10799,11 @@ components:
         apps:
           description: App instances in the Cluster Instance
           items:
-            $ref: '#/components/schemas/EdgeprotoClusterRefsAppInstKey'
+            $ref: '#/components/schemas/EdgeprotoAppInstRefKey'
           nullable: true
           type: array
         key:
           $ref: '#/components/schemas/EdgeprotoClusterInstKey'
-      type: object
-    EdgeprotoClusterRefsAppInstKey:
-      properties:
-        app_key:
-          $ref: '#/components/schemas/EdgeprotoAppKey'
-        v_cluster_name:
-          description: Virtual cluster name
-          type: string
       type: object
     EdgeprotoCollectionInterval:
       properties:
@@ -11232,7 +11265,7 @@ components:
         cluster_insts:
           description: List of clusterinsts this resources snapshot represent
           items:
-            $ref: '#/components/schemas/EdgeprotoClusterInstRefKey'
+            $ref: '#/components/schemas/EdgeprotoClusterKey'
           nullable: true
           type: array
         info:
@@ -12083,16 +12116,6 @@ components:
         vm:
           $ref: '#/components/schemas/EdgeprotoVM'
       type: object
-    EdgeprotoVirtualClusterInstKey:
-      properties:
-        cloudlet_key:
-          $ref: '#/components/schemas/EdgeprotoCloudletKey'
-        cluster_key:
-          $ref: '#/components/schemas/EdgeprotoClusterKey'
-        organization:
-          description: Name of Developer organization that this cluster belongs to
-          type: string
-      type: object
     EdgeprotoVmInfo:
       properties:
         containers:
@@ -12597,7 +12620,6 @@ components:
           description: Organizations that scan see event
           items:
             type: string
-          nullable: true
           type: array
         region:
           description: Region in which event happened
@@ -12878,10 +12900,12 @@ components:
       type: object
     OrmapiAlertReceiver:
       properties:
-        AppInst:
+        AppInstKey:
           $ref: '#/components/schemas/EdgeprotoAppInstKey'
-        Cloudlet:
-          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        AppKey:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
+        ClusterKey:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
         Email:
           description: Custom receiving email
           type: string
@@ -13008,6 +13032,16 @@ components:
         BillingEnable:
           description: Toggle for enabling billing (primarily for testing purposes)
           type: boolean
+        CorsAllowCredentials:
+          description: CORS allow credentials
+          type: boolean
+        CorsAllowedHeaders:
+          $ref: '#/components/schemas/PqStringArray'
+        CorsAllowedOrigins:
+          $ref: '#/components/schemas/PqStringArray'
+        CorsEnable:
+          description: Enable CORS (cross origin resource sharing)
+          type: boolean
         DisableRateLimit:
           description: Toggle to enable and disable MC API rate limiting
           type: boolean
@@ -13030,6 +13064,12 @@ components:
         LockNewAccounts:
           description: Lock new accounts (must be unlocked by admin)
           type: boolean
+        LogAllShowApis:
+          description: Log all show/GET APIs
+          type: boolean
+        LogShowUrl:
+          description: Log specific API url (may be substring of entire URL)
+          type: string
         MaxMetricsDataPoints:
           description: InfluxDB max number of data points returned
           type: integer
@@ -13773,12 +13813,6 @@ components:
         CloudletOrg:
           description: Cloudlet org for AppInstKey
           type: string
-        Cluster:
-          description: Cluster name for AppInstKey
-          type: string
-        ClusterOrg:
-          description: Cluster org for AppInstKey
-          type: string
         Error:
           description: Error message if create failed
           type: string
@@ -14088,8 +14122,10 @@ components:
       type: object
     OrmapiRegionClientApiUsageMetrics:
       properties:
-        AppInst:
-          $ref: '#/components/schemas/EdgeprotoAppInstKey'
+        AppKey:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
+        CloudletKey:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
         DmeCloudlet:
           description: Cloudlet name where DME is running
           type: string
@@ -14130,8 +14166,10 @@ components:
       type: object
     OrmapiRegionClientAppUsageMetrics:
       properties:
-        AppInst:
+        AppInstKey:
           $ref: '#/components/schemas/EdgeprotoAppInstKey'
+        AppKey:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
         DataNetworkType:
           description: 'Data network type used by client device. Can be used for selectors:
             latency'
@@ -15083,3 +15121,8 @@ x-tagGroups:
   - Events
   - DeveloperUsage
   - AlertReceiver
+- name: Federation API
+  tags:
+  - Federation
+  - FederationGuest
+  - FederationHost

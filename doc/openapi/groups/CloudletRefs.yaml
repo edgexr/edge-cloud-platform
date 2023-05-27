@@ -46,21 +46,11 @@ components:
   schemas:
     EdgeprotoAppInstRefKey:
       properties:
-        app_key:
-          $ref: '#/components/schemas/EdgeprotoAppKey'
-        cluster_inst_key:
-          $ref: '#/components/schemas/EdgeprotoClusterInstRefKey'
-      type: object
-    EdgeprotoAppKey:
-      properties:
         name:
-          description: App name
+          description: AppInst name
           type: string
         organization:
-          description: App developer organization
-          type: string
-        version:
-          description: App version
+          description: AppInst organization
           type: string
       type: object
     EdgeprotoCloudletKey:
@@ -80,7 +70,7 @@ components:
         cluster_insts:
           description: Clusters instantiated on the Cloudlet
           items:
-            $ref: '#/components/schemas/EdgeprotoClusterInstRefKey'
+            $ref: '#/components/schemas/EdgeprotoClusterKey'
           nullable: true
           type: array
         k8s_app_insts:
@@ -120,18 +110,13 @@ components:
           nullable: true
           type: array
       type: object
-    EdgeprotoClusterInstRefKey:
-      properties:
-        cluster_key:
-          $ref: '#/components/schemas/EdgeprotoClusterKey'
-        organization:
-          description: Name of Developer organization that this cluster belongs to
-          type: string
-      type: object
     EdgeprotoClusterKey:
       properties:
         name:
           description: Cluster name
+          type: string
+        organization:
+          description: Name of the organization that this cluster belongs to
           type: string
       type: object
     OrmapiRegionCloudletRefs:

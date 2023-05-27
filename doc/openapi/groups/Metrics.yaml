@@ -240,10 +240,14 @@ components:
   schemas:
     EdgeprotoAppInstKey:
       properties:
-        app_key:
-          $ref: '#/components/schemas/EdgeprotoAppKey'
-        cluster_inst_key:
-          $ref: '#/components/schemas/EdgeprotoVirtualClusterInstKey'
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        name:
+          description: App Instance name
+          type: string
+        organization:
+          description: App Instance organization
+          type: string
       type: object
     EdgeprotoAppKey:
       properties:
@@ -275,24 +279,14 @@ components:
           $ref: '#/components/schemas/EdgeprotoCloudletKey'
         cluster_key:
           $ref: '#/components/schemas/EdgeprotoClusterKey'
-        organization:
-          description: Name of Developer organization that this cluster belongs to
-          type: string
       type: object
     EdgeprotoClusterKey:
       properties:
         name:
           description: Cluster name
           type: string
-      type: object
-    EdgeprotoVirtualClusterInstKey:
-      properties:
-        cloudlet_key:
-          $ref: '#/components/schemas/EdgeprotoCloudletKey'
-        cluster_key:
-          $ref: '#/components/schemas/EdgeprotoClusterKey'
         organization:
-          description: Name of Developer organization that this cluster belongs to
+          description: Name of the organization that this cluster belongs to
           type: string
       type: object
     OrmapiAllMetrics:
@@ -377,8 +371,10 @@ components:
       type: object
     OrmapiRegionClientApiUsageMetrics:
       properties:
-        AppInst:
-          $ref: '#/components/schemas/EdgeprotoAppInstKey'
+        AppKey:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
+        CloudletKey:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
         DmeCloudlet:
           description: Cloudlet name where DME is running
           type: string
@@ -419,8 +415,10 @@ components:
       type: object
     OrmapiRegionClientAppUsageMetrics:
       properties:
-        AppInst:
+        AppInstKey:
           $ref: '#/components/schemas/EdgeprotoAppInstKey'
+        AppKey:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
         DataNetworkType:
           description: 'Data network type used by client device. Can be used for selectors:
             latency'

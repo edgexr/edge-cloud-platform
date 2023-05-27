@@ -109,21 +109,13 @@ components:
   schemas:
     EdgeprotoAppInstKey:
       properties:
-        app_key:
-          $ref: '#/components/schemas/EdgeprotoAppKey'
-        cluster_inst_key:
-          $ref: '#/components/schemas/EdgeprotoVirtualClusterInstKey'
-      type: object
-    EdgeprotoAppKey:
-      properties:
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
         name:
-          description: App name
+          description: App Instance name
           type: string
         organization:
-          description: App developer organization
-          type: string
-        version:
-          description: App version
+          description: App Instance organization
           type: string
       type: object
     EdgeprotoCloudletKey:
@@ -144,24 +136,14 @@ components:
           $ref: '#/components/schemas/EdgeprotoCloudletKey'
         cluster_key:
           $ref: '#/components/schemas/EdgeprotoClusterKey'
-        organization:
-          description: Name of Developer organization that this cluster belongs to
-          type: string
       type: object
     EdgeprotoClusterKey:
       properties:
         name:
           description: Cluster name
           type: string
-      type: object
-    EdgeprotoVirtualClusterInstKey:
-      properties:
-        cloudlet_key:
-          $ref: '#/components/schemas/EdgeprotoCloudletKey'
-        cluster_key:
-          $ref: '#/components/schemas/EdgeprotoClusterKey'
         organization:
-          description: Name of Developer organization that this cluster belongs to
+          description: Name of the organization that this cluster belongs to
           type: string
       type: object
     OrmapiAllMetrics:

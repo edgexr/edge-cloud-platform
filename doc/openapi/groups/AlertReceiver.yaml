@@ -112,10 +112,14 @@ components:
   schemas:
     EdgeprotoAppInstKey:
       properties:
-        app_key:
-          $ref: '#/components/schemas/EdgeprotoAppKey'
-        cluster_inst_key:
-          $ref: '#/components/schemas/EdgeprotoVirtualClusterInstKey'
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        name:
+          description: App Instance name
+          type: string
+        organization:
+          description: App Instance organization
+          type: string
       type: object
     EdgeprotoAppKey:
       properties:
@@ -146,23 +150,18 @@ components:
         name:
           description: Cluster name
           type: string
-      type: object
-    EdgeprotoVirtualClusterInstKey:
-      properties:
-        cloudlet_key:
-          $ref: '#/components/schemas/EdgeprotoCloudletKey'
-        cluster_key:
-          $ref: '#/components/schemas/EdgeprotoClusterKey'
         organization:
-          description: Name of Developer organization that this cluster belongs to
+          description: Name of the organization that this cluster belongs to
           type: string
       type: object
     OrmapiAlertReceiver:
       properties:
-        AppInst:
+        AppInstKey:
           $ref: '#/components/schemas/EdgeprotoAppInstKey'
-        Cloudlet:
-          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        AppKey:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
+        ClusterKey:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
         Email:
           description: Custom receiving email
           type: string
