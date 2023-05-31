@@ -44,7 +44,6 @@ generate: check-go-vers $(APICOMMENTS) gen-vers
 	make -C api/dme-proto
 	make -C api/edgeproto
 	make -C test/testgen
-	make -C pkg/vault/letsencrypt-plugin letsencrypt/version.go
 	go install $(GO_BUILD_FLAGS) ./pkg/mcctl/genmctestclient
 	genmctestclient > ./pkg/mcctl/mctestclient/mctestclient_generatedfuncs.go
 
