@@ -58,6 +58,30 @@ func NewAuditLogger(errorHandler echo.MiddlewareFunc) *AuditLogger {
 	}
 }
 
+// These are show commands that the UI calls without the user's
+// knowledge, and are likely not what is needed to see for debugging.
+var excludeLogShowApis = map[string]struct{}{
+	"/" + ApiRoot + "/":                          {},
+	"/" + ApiRoot + "/auth/ctrl/ShowAlert":       {},
+	"/" + ApiRoot + "/auth/events/terms":         {},
+	"/" + ApiRoot + "/auth/events/show":          {},
+	"/" + ApiRoot + "/auth/config/show":          {},
+	"/" + ApiRoot + "/auth/user/current":         {},
+	"/" + ApiRoot + "/auth/org/show":             {},
+	"/" + ApiRoot + "/auth/role/showuser":        {},
+	"/" + ApiRoot + "/publicconfig":              {},
+	"/" + ApiRoot + "/auth/role/assignment/show": {},
+	"/" + ApiRoot + "/auth/controller/show":      {},
+	"/" + ApiRoot + "/login":                     {},
+}
+
+func includeLogShowAPI(uri string) bool {
+	if _, found := excludeLogShowApis[uri]; found {
+		return false
+	}
+	return true
+}
+
 func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		eventStart := time.Now()
@@ -88,6 +112,8 @@ func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 			strings.Contains(req.RequestURI, "/api/v1/httpauth") {
 			config := getCachedConfig()
 			if config.LogAllShowApis || (len(config.LogShowUrl) > 0 && strings.Contains(req.RequestURI, config.LogShowUrl)) {
+				// for debugging, log show api
+			} else if config.LogShowApis && includeLogShowAPI(req.RequestURI) {
 				// for debugging, log show api
 			} else {
 				// don't log (fills up Audit logs)

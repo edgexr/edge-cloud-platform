@@ -291,7 +291,9 @@ type Config struct {
 	SupportEmail string
 	// Slack icon URL used for alert manager slack receivers
 	SlackIconURL string
-	// Log all show/GET APIs
+	// Log most show/GET APIs for debugging
+	LogShowApis bool
+	// Log all show/GET APIs, including noisy ones you likely don't need to see, like Login, audit/event/terms show, ShowAlerts, etc.
 	LogAllShowApis bool
 	// Log specific API url (may be substring of entire URL)
 	LogShowUrl string
