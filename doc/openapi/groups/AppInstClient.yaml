@@ -22,7 +22,7 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionAppInstClientKey'
             x-required-fields:
             - region
-            - appinstclientkey.appinstkey.appkey.organization
+            - appinstclientkey.appinstkey.organization
       responses:
         "200":
           content:
@@ -96,6 +96,8 @@ components:
       properties:
         app_inst_key:
           $ref: '#/components/schemas/EdgeprotoAppInstKey'
+        app_key:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
         unique_id:
           description: AppInstClient Unique Id
           type: string
@@ -105,10 +107,14 @@ components:
       type: object
     EdgeprotoAppInstKey:
       properties:
-        app_key:
-          $ref: '#/components/schemas/EdgeprotoAppKey'
-        cluster_inst_key:
-          $ref: '#/components/schemas/EdgeprotoVirtualClusterInstKey'
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        name:
+          description: App Instance name
+          type: string
+        organization:
+          description: App Instance organization
+          type: string
       type: object
     EdgeprotoAppKey:
       properties:
@@ -132,22 +138,6 @@ components:
           type: string
         organization:
           description: Organization of the cloudlet site
-          type: string
-      type: object
-    EdgeprotoClusterKey:
-      properties:
-        name:
-          description: Cluster name
-          type: string
-      type: object
-    EdgeprotoVirtualClusterInstKey:
-      properties:
-        cloudlet_key:
-          $ref: '#/components/schemas/EdgeprotoCloudletKey'
-        cluster_key:
-          $ref: '#/components/schemas/EdgeprotoClusterKey'
-        organization:
-          description: Name of Developer organization that this cluster belongs to
           type: string
       type: object
     OrmapiRegionAppInstClientKey:

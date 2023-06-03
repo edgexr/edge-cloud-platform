@@ -147,6 +147,16 @@ components:
         BillingEnable:
           description: Toggle for enabling billing (primarily for testing purposes)
           type: boolean
+        CorsAllowCredentials:
+          description: CORS allow credentials
+          type: boolean
+        CorsAllowedHeaders:
+          $ref: '#/components/schemas/PqStringArray'
+        CorsAllowedOrigins:
+          $ref: '#/components/schemas/PqStringArray'
+        CorsEnable:
+          description: Enable CORS (cross origin resource sharing)
+          type: boolean
         DisableRateLimit:
           description: Toggle to enable and disable MC API rate limiting
           type: boolean
@@ -169,6 +179,12 @@ components:
         LockNewAccounts:
           description: Lock new accounts (must be unlocked by admin)
           type: boolean
+        LogAllShowApis:
+          description: Log all show/GET APIs
+          type: boolean
+        LogShowUrl:
+          description: Log specific API url (may be substring of entire URL)
+          type: string
         MaxMetricsDataPoints:
           description: InfluxDB max number of data points returned
           type: integer
@@ -236,6 +252,11 @@ components:
           description: Hostname that performed build
           type: string
       type: object
+    PqStringArray:
+      items:
+        type: string
+      nullable: true
+      type: array
   securitySchemes:
     bearerAuth:
       bearerFormat: JWT

@@ -22,8 +22,8 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionExecRequest'
             x-required-fields:
             - region
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.organization
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.name
+            - execrequest.appinstkey.cloudletkey.organization
+            - execrequest.appinstkey.cloudletkey.name
       responses:
         "200":
           content:
@@ -55,12 +55,10 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionExecRequest'
             x-required-fields:
             - region
-            - execrequest.appinstkey.appkey.organization
-            - execrequest.appinstkey.appkey.name
-            - execrequest.appinstkey.appkey.version
-            - execrequest.appinstkey.clusterinstkey.clusterkey.name
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.organization
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.name
+            - execrequest.appinstkey.name
+            - execrequest.appinstkey.organization
+            - execrequest.appinstkey.cloudletkey.organization
+            - execrequest.appinstkey.cloudletkey.name
             - execrequest.cmd.command
       responses:
         "200":
@@ -93,11 +91,10 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionExecRequest'
             x-required-fields:
             - region
-            - execrequest.appinstkey.appkey.organization
-            - execrequest.appinstkey.appkey.name
-            - execrequest.appinstkey.appkey.version
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.organization
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.name
+            - execrequest.appinstkey.name
+            - execrequest.appinstkey.organization
+            - execrequest.appinstkey.cloudletkey.organization
+            - execrequest.appinstkey.cloudletkey.name
       responses:
         "200":
           content:
@@ -129,12 +126,10 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionExecRequest'
             x-required-fields:
             - region
-            - execrequest.appinstkey.appkey.organization
-            - execrequest.appinstkey.appkey.name
-            - execrequest.appinstkey.appkey.version
-            - execrequest.appinstkey.clusterinstkey.clusterkey.name
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.organization
-            - execrequest.appinstkey.clusterinstkey.cloudletkey.name
+            - execrequest.appinstkey.name
+            - execrequest.appinstkey.organization
+            - execrequest.appinstkey.cloudletkey.organization
+            - execrequest.appinstkey.cloudletkey.name
       responses:
         "200":
           content:
@@ -159,21 +154,13 @@ components:
   schemas:
     EdgeprotoAppInstKey:
       properties:
-        app_key:
-          $ref: '#/components/schemas/EdgeprotoAppKey'
-        cluster_inst_key:
-          $ref: '#/components/schemas/EdgeprotoVirtualClusterInstKey'
-      type: object
-    EdgeprotoAppKey:
-      properties:
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
         name:
-          description: App name
+          description: App Instance name
           type: string
         organization:
-          description: App developer organization
-          type: string
-        version:
-          description: App version
+          description: App Instance organization
           type: string
       type: object
     EdgeprotoCloudletKey:
@@ -195,12 +182,6 @@ components:
           type: string
         type:
           description: Type of Cloudlet Mgmt Node
-          type: string
-      type: object
-    EdgeprotoClusterKey:
-      properties:
-        name:
-          description: Cluster name
           type: string
       type: object
     EdgeprotoExecRequest:
@@ -267,16 +248,6 @@ components:
         timestamps:
           description: Show timestamps
           type: boolean
-      type: object
-    EdgeprotoVirtualClusterInstKey:
-      properties:
-        cloudlet_key:
-          $ref: '#/components/schemas/EdgeprotoCloudletKey'
-        cluster_key:
-          $ref: '#/components/schemas/EdgeprotoClusterKey'
-        organization:
-          description: Name of Developer organization that this cluster belongs to
-          type: string
       type: object
     OrmapiRegionExecRequest:
       properties:

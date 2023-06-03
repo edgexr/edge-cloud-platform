@@ -35,6 +35,8 @@ x-tagGroups:
   - OperatorUsage
   - AlertReceiver
   - Network
+  - FederationGuest
+  - FederationHost
 - name: Developer API
   tags:
   - ClusterInst
@@ -51,6 +53,7 @@ x-tagGroups:
   - Events
   - DeveloperUsage
   - AlertReceiver
+  - Federation
 tags:
 - name: Security
   description: Authentication is done by a user name or email plus a password. The
@@ -129,3 +132,11 @@ tags:
   description: Manage receiver for alerts from edge services.
 - name: Network
   description: Manage additional networks which can be added to Cluster Instances.
+- name: Federation
+  description: Manage Federation Applications and Images
+- name: FederationGuest
+  description: Manage Federation Consumer. Federation Consumer is where this platform
+    consumes resources on another Federation partner.
+- name: FederationHost
+  description: Manage Federation Provider. Federation Provider is where this platform
+    hosts the applications being onboarded by another federation partner.

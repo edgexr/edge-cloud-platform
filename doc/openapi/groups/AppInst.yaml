@@ -24,11 +24,11 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionAppInst'
             x-required-fields:
             - region
-            - appinst.key.appkey.organization
-            - appinst.key.appkey.name
-            - appinst.key.appkey.version
-            - appinst.key.clusterinstkey.cloudletkey.organization
-            - appinst.key.clusterinstkey.cloudletkey.name
+            - appinst.key.name
+            - appinst.key.organization
+            - appinst.key.cloudletkey.organization
+            - appinst.key.cloudletkey.name
+            - appinst.key.cloudletkey.federatedorganization
       responses:
         "200":
           content:
@@ -61,11 +61,11 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionAppInst'
             x-required-fields:
             - region
-            - appinst.key.appkey.organization
-            - appinst.key.appkey.name
-            - appinst.key.appkey.version
-            - appinst.key.clusterinstkey.cloudletkey.organization
-            - appinst.key.clusterinstkey.cloudletkey.name
+            - appinst.key.name
+            - appinst.key.organization
+            - appinst.key.cloudletkey.organization
+            - appinst.key.cloudletkey.name
+            - appinst.key.cloudletkey.federatedorganization
       responses:
         "200":
           content:
@@ -98,9 +98,11 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionAppInst'
             x-required-fields:
             - region
-            - appinst.key.appkey.organization
-            - appinst.key.appkey.name
-            - appinst.key.appkey.version
+            - appinst.key.name
+            - appinst.key.organization
+            - appinst.key.cloudletkey.organization
+            - appinst.key.cloudletkey.name
+            - appinst.key.cloudletkey.federatedorganization
       responses:
         "200":
           content:
@@ -166,11 +168,11 @@ paths:
               $ref: '#/components/schemas/OrmapiRegionAppInst'
             x-required-fields:
             - region
-            - appinst.key.appkey.organization
-            - appinst.key.appkey.name
-            - appinst.key.appkey.version
-            - appinst.key.clusterinstkey.cloudletkey.organization
-            - appinst.key.clusterinstkey.cloudletkey.name
+            - appinst.key.name
+            - appinst.key.organization
+            - appinst.key.cloudletkey.organization
+            - appinst.key.cloudletkey.name
+            - appinst.key.cloudletkey.federatedorganization
       responses:
         "200":
           content:
@@ -266,6 +268,8 @@ components:
       type: object
     EdgeprotoAppInst:
       properties:
+        app_key:
+          $ref: '#/components/schemas/EdgeprotoAppKey'
         auto_cluster_ip_access:
           description: (Deprecated) IpAccess for auto-clusters. Ignored otherwise.,
             valid values are one of Unknown, Dedicated, Shared, or 0, 1, 3
@@ -278,6 +282,12 @@ components:
           type: string
         cloudlet_loc:
           $ref: '#/components/schemas/DmeProtoLoc'
+        cluster_key:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
+        compatibility_version:
+          description: Internal compatibility version
+          minimum: 0
+          type: integer
         configs:
           description: Customization files passed through to implementing services
           items:
@@ -349,7 +359,7 @@ components:
             2, 3, 4, 5, 6, 7, 8, 9, 10
           type: string
         real_cluster_name:
-          description: Real ClusterInst name
+          description: (_deprecated_) Real ClusterInst name
           type: string
         revision:
           description: Revision changes each time the App is updated.  Refreshing
@@ -378,16 +388,22 @@ components:
           description: Base FQDN (not really URI) for the App. See Service FQDN for
             endpoint access.
           type: string
+        virtual_cluster_key:
+          $ref: '#/components/schemas/EdgeprotoClusterKey'
         vm_flavor:
           description: OS node flavor to use
           type: string
       type: object
     EdgeprotoAppInstKey:
       properties:
-        app_key:
-          $ref: '#/components/schemas/EdgeprotoAppKey'
-        cluster_inst_key:
-          $ref: '#/components/schemas/EdgeprotoVirtualClusterInstKey'
+        cloudlet_key:
+          $ref: '#/components/schemas/EdgeprotoCloudletKey'
+        name:
+          description: App Instance name
+          type: string
+        organization:
+          description: App Instance organization
+          type: string
       type: object
     EdgeprotoAppInstRuntime:
       properties:
@@ -426,6 +442,9 @@ components:
         name:
           description: Cluster name
           type: string
+        organization:
+          description: Name of the organization that this cluster belongs to
+          type: string
       type: object
     EdgeprotoConfigFile:
       properties:
@@ -459,16 +478,6 @@ components:
           type: integer
         message:
           description: Message, may be success or failure message
-          type: string
-      type: object
-    EdgeprotoVirtualClusterInstKey:
-      properties:
-        cloudlet_key:
-          $ref: '#/components/schemas/EdgeprotoCloudletKey'
-        cluster_key:
-          $ref: '#/components/schemas/EdgeprotoClusterKey'
-        organization:
-          description: Name of Developer organization that this cluster belongs to
           type: string
       type: object
     OrmapiRegionAppInst:

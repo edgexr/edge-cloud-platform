@@ -130,7 +130,6 @@ components:
           description: Organizations that scan see event
           items:
             type: string
-          nullable: true
           type: array
         region:
           description: Region in which event happened

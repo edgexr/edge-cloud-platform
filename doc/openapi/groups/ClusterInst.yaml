@@ -25,9 +25,9 @@ paths:
             x-required-fields:
             - region
             - clusterinst.key.clusterkey.name
+            - clusterinst.key.clusterkey.organization
             - clusterinst.key.cloudletkey.organization
             - clusterinst.key.cloudletkey.name
-            - clusterinst.key.organization
       responses:
         "200":
           content:
@@ -61,9 +61,9 @@ paths:
             x-required-fields:
             - region
             - clusterinst.key.clusterkey.name
+            - clusterinst.key.clusterkey.organization
             - clusterinst.key.cloudletkey.organization
             - clusterinst.key.cloudletkey.name
-            - clusterinst.key.organization
       responses:
         "200":
           content:
@@ -161,9 +161,9 @@ paths:
             x-required-fields:
             - region
             - clusterinst.key.clusterkey.name
+            - clusterinst.key.clusterkey.organization
             - clusterinst.key.cloudletkey.organization
             - clusterinst.key.cloudletkey.name
-            - clusterinst.key.organization
       responses:
         "200":
           content:
@@ -324,14 +324,14 @@ components:
           $ref: '#/components/schemas/EdgeprotoCloudletKey'
         cluster_key:
           $ref: '#/components/schemas/EdgeprotoClusterKey'
-        organization:
-          description: Name of Developer organization that this cluster belongs to
-          type: string
       type: object
     EdgeprotoClusterKey:
       properties:
         name:
           description: Cluster name
+          type: string
+        organization:
+          description: Name of the organization that this cluster belongs to
           type: string
       type: object
     EdgeprotoContainerInfo:
