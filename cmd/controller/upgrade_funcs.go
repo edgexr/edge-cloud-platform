@@ -216,6 +216,7 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 				oldRef.ClusterInstKey.ClusterKey.Name = appInst.ClusterKey.Name
 				oldRef.ClusterInstKey.Organization = appInst.ClusterKey.Organization
 				appInstKeyRefsUpgrade[oldRef] = *appInst.Key.GetRefKey()
+				appInstKeyRefsCurrent[*appInst.Key.GetRefKey()] = struct{}{}
 				// fix AppInstRefs json, map old to new
 				keyJson, err := json.Marshal(appInst.Key)
 				if err != nil {
@@ -223,9 +224,24 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 				}
 				appInstKeyJsonRefsUpgrade[appInstKeyNoPrefix] = string(keyJson)
 			} else {
-				// register current for AppInstRefs
+				oldRef := AppInstRefKeyV1{}
+				oldRef.AppKey = appInst.AppKey
+				oldRef.ClusterInstKey.ClusterKey.Name = appInst.ClusterKey.Name
+				oldRef.ClusterInstKey.Organization = appInst.ClusterKey.Organization
+				appInstKeyRefsUpgrade[oldRef] = *appInst.Key.GetRefKey()
 				appInstKeyRefsCurrent[*appInst.Key.GetRefKey()] = struct{}{}
+
 				appInstKeyJsonRefsCurrent[appInstKeyNoPrefix] = struct{}{}
+				oldKey := edgeproto.AppInstKeyV1{}
+				oldKey.AppKey = appInst.AppKey
+				oldKey.ClusterInstKey.Organization = appInst.ClusterKey.Organization
+				oldKey.ClusterInstKey.ClusterKey.Name = appInst.VClusterKey().Name
+				oldKey.ClusterInstKey.CloudletKey = appInst.Key.CloudletKey
+				oldKeyJSON, err := json.Marshal(oldKey)
+				if err != nil {
+					return err
+				}
+				appInstKeyJsonRefsUpgrade[string(oldKeyJSON)] = appInstKeyNoPrefix
 			}
 			return nil
 		})
@@ -345,6 +361,8 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 				*updated = true
 				continue
 			}
+			log.SpanLog(ctx, log.DebugLevelUpgrade, "appInstKeyJsonRefsCurrent", "map", appInstKeyJsonRefsCurrent)
+			log.SpanLog(ctx, log.DebugLevelUpgrade, "appInstKeyJsonRefsUpgrade", "map", appInstKeyJsonRefsUpgrade)
 			return fmt.Errorf("%s unknown AppInstRef %s", refsKey, k)
 		}
 		return nil
