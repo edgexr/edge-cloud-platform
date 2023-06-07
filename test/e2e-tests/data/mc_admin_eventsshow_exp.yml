@@ -192,7 +192,7 @@
       region: local
       remote-ip: 127.0.0.1
       reqheaders: '{"Accept":"application/json","Accept-Encoding":"gzip","Authorization":"****","Connection":"close","Content-Length":"123","Content-Type":"application/json","User-Agent":"Go-http-client/1.1","X-Api-Key":"****"}'
-      request: '{"Cloudlet":{"key":{"name":"dmuus-cloud-1","organization":"dmuus"}},"Region":"local"}'
+      request: '{"Cloudlet":{"key":{"name":"dmuus-cloud-1","organization":"dmuus"},"maintenance_state":"NormalOperation"},"Region":"local"}'
       respheaders: '{"Content-Type":"application/json"}'
       response: |
         {"data":{"message":"Cloudlet is back to normal operation"}}
