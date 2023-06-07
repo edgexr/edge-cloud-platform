@@ -39,6 +39,8 @@ var redactor *util.JSONRedactor
 var ReqUrlEncodedClearer = util.NewFormUrlEncodedClearer("client_id", "client_secret")
 
 func init() {
+	// Note that keys are treated case-insensitively, so case
+	// does not matter here.
 	redactor = util.NewJSONRedactor("***")
 	redactor.AddKey("token")
 	redactor.AddKey("access_token")
