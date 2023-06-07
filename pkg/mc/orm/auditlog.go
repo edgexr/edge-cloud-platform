@@ -35,11 +35,27 @@ import (
 
 var AuditId uint64
 
-var TokenFieldClearer = util.NewJsonFieldClearer("token")
-var AccessTokenFieldClearer = util.NewJsonFieldClearer("access_token")
-var ClientSecretFieldClearer = util.NewJsonFieldClearer("clientSecret")
-var PasswordFieldClearer = util.NewJsonFieldClearer("password")
+var redactor *util.JSONRedactor
 var ReqUrlEncodedClearer = util.NewFormUrlEncodedClearer("client_id", "client_secret")
+
+func init() {
+	redactor = util.NewJSONRedactor("***")
+	redactor.AddKey("token")
+	redactor.AddKey("access_token")
+	redactor.AddKey("clientSecret")
+	redactor.AddKey("password")
+	redactor.AddKey("passhash")
+	redactor.AddKey("totp")
+	redactor.AddKey("apikey")
+	// from edgeproto.Cloudlet
+	redactor.AddKey("access_vars")
+	redactor.AddKey("license_config")
+	redactor.AddKey("driver_path_creds")
+	// federation related
+	redactor.AddKey("ClientKey")
+	redactor.AddKey("PartnerNotifyClientKey")
+	redactor.AddKey("ProviderClientKey")
+}
 
 type AuditNameLookupKey struct {
 	method string
@@ -193,113 +209,16 @@ func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// remove passwords from requests so they aren't logged
 		if strings.Contains(contentType, "application/json") {
-			reqBody = TokenFieldClearer.Clear(reqBody)
-			reqBody = PasswordFieldClearer.Clear(reqBody)
+			newReqBody, err := redactor.Redact(reqBody)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "failed to redact json request", "jsonData", reqBody, "err", err)
+			} else {
+				reqBody = newReqBody
+			}
 		} else if strings.Contains(contentType, "application/x-www-form-urlencoded") {
 			reqBody = ReqUrlEncodedClearer.Clear(reqBody)
 		}
-		if strings.Contains(req.RequestURI, "login") {
-			login := ormapi.UserLogin{}
-			err := json.Unmarshal(reqBody, &login)
-			if err == nil {
-				login.Password = ""
-				login.TOTP = ""
-				login.ApiKey = ""
-				reqBody, err = json.Marshal(login)
-			}
-			if err != nil {
-				reqBody = []byte{}
-			}
-		} else if strings.Contains(req.RequestURI, "usercreate") {
-			user := ormapi.CreateUser{}
-			err := json.Unmarshal(reqBody, &user)
-			if err == nil {
-				user.Passhash = ""
-				reqBody, err = json.Marshal(user)
-			}
-			if err != nil {
-				reqBody = []byte{}
-			}
-		} else if strings.Contains(req.RequestURI, "passwordreset") {
-			reset := ormapi.PasswordReset{}
-			err := json.Unmarshal(reqBody, &reset)
-			if err == nil {
-				reset.Password = ""
-				reqBody, err = json.Marshal(reset)
-			}
-			if err != nil {
-				reqBody = []byte{}
-			}
-		} else if strings.Contains(req.RequestURI, "user/newpass") {
-			newpass := ormapi.NewPassword{}
-			err := json.Unmarshal(reqBody, &newpass)
-			if err == nil {
-				newpass.Password = ""
-				reqBody, err = json.Marshal(newpass)
-			}
-			if err != nil {
-				reqBody = []byte{}
-			}
-		} else if strings.Contains(req.RequestURI, "/auth/ctrl/CreateCloudlet") ||
-			strings.Contains(req.RequestURI, "/auth/ctrl/UpdateCloudlet") {
-			regionCloudlet := ormapi.RegionCloudlet{}
-			err := json.Unmarshal(reqBody, &regionCloudlet)
-			if err == nil {
-				regionCloudlet.Cloudlet.AccessVars = nil
-				reqBody, err = json.Marshal(regionCloudlet)
-			}
-			if err != nil {
-				reqBody = []byte{}
-			}
-		} else if strings.Contains(req.RequestURI, "/auth/ctrl/CreateGPUDriver") ||
-			strings.Contains(req.RequestURI, "/auth/ctrl/UpdateGPUDriver") {
-			regionGPUDriver := ormapi.RegionGPUDriver{}
-			err := json.Unmarshal(reqBody, &regionGPUDriver)
-			if err == nil {
-				regionGPUDriver.GPUDriver.LicenseConfig = ""
-				for ii, _ := range regionGPUDriver.GPUDriver.Builds {
-					regionGPUDriver.GPUDriver.Builds[ii].DriverPathCreds = ""
-				}
-				reqBody, err = json.Marshal(regionGPUDriver)
-			}
-			if err != nil {
-				reqBody = []byte{}
-			}
-		} else if strings.Contains(req.RequestURI, "/auth/ctrl/AddGPUDriverBuild") {
-			regionMember := ormapi.RegionGPUDriverBuildMember{}
-			err := json.Unmarshal(reqBody, &regionMember)
-			if err == nil {
-				regionMember.GPUDriverBuildMember.Build.DriverPathCreds = ""
-				reqBody, err = json.Marshal(regionMember)
-			}
-			if err != nil {
-				reqBody = []byte{}
-			}
-		} else if strings.Contains(req.RequestURI, "/auth/federation/provider/create") ||
-			strings.Contains(req.RequestURI, "/auth/federation/provider/setnotifykey") {
-			fedReq := ormapi.FederationProvider{}
-			err := json.Unmarshal(reqBody, &fedReq)
-			if err == nil {
-				// do not log partner federator's API key
-				fedReq.PartnerNotifyClientKey = ""
-				reqBody, err = json.Marshal(fedReq)
-			}
-			if err != nil {
-				reqBody = []byte{}
-			}
-		} else if strings.Contains(req.RequestURI, "/auth/federation/consumer/create") ||
-			strings.Contains(req.RequestURI, "/auth/federation/consumer/setapikey") {
-			fedReq := ormapi.FederationConsumer{}
-			err := json.Unmarshal(reqBody, &fedReq)
-			if err == nil {
-				// do not log partner federator's API key
-				fedReq.ProviderClientKey = ""
-				reqBody, err = json.Marshal(fedReq)
-			}
-			if err != nil {
-				reqBody = []byte{}
-			}
-		}
+
 		span.SetTag("request", string(reqBody))
 		eventErr := nexterr
 		if nexterr != nil {
@@ -315,71 +234,17 @@ func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 			// and may also contain sensitive data.
 			response = ""
 		} else if len(resBody) > 0 {
-			// for all responses, if it has a jwt token
-			// remove it before logging
-			resBody = TokenFieldClearer.Clear(resBody)
-			resBody = AccessTokenFieldClearer.Clear(resBody)
-			resBody = ClientSecretFieldClearer.Clear(resBody)
-			if strings.Contains(string(resBody), "TOTP") {
-				resp := ormapi.UserResponse{}
-				err := json.Unmarshal(resBody, &resp)
-				if err == nil {
-					resp.TOTPSharedKey = ""
-					resp.TOTPQRImage = nil
-					updatedResp, err := json.Marshal(&resp)
-					if err == nil {
-						response = string(updatedResp)
-					} else {
-						response = string(resBody)
-					}
-				} else {
-					response = string(resBody)
-				}
-			} else if strings.Contains(req.RequestURI, "/user/create/apikey") && strings.Contains(string(resBody), "ApiKey") {
-				resp := ormapi.CreateUserApiKey{}
-				err := json.Unmarshal(resBody, &resp)
-				if err == nil {
-					resp.ApiKey = ""
-					updatedResp, err := json.Marshal(&resp)
-					if err == nil {
-						response = string(updatedResp)
-					} else {
-						response = string(resBody)
-					}
-				} else {
-					response = string(resBody)
-				}
-			} else if strings.Contains(req.RequestURI, "/federation/provider/generateapikey") && strings.Contains(string(resBody), "ClientKey") {
-				resp := ormapi.FederationProviderInfo{}
-				err := json.Unmarshal(resBody, &resp)
-				if err == nil {
-					resp.ClientKey = ""
-					updatedResp, err := json.Marshal(&resp)
-					if err == nil {
-						response = string(updatedResp)
-					} else {
-						response = string(resBody)
-					}
-				} else {
-					response = string(resBody)
-				}
-			} else if strings.Contains(req.RequestURI, "/federation/consumer/generatenotifykey") && strings.Contains(string(resBody), "ClientKey") {
-				resp := ormapi.FederationConsumerAuth{}
-				err := json.Unmarshal(resBody, &resp)
-				if err == nil {
-					resp.ClientKey = ""
-					updatedResp, err := json.Marshal(&resp)
-					if err == nil {
-						response = string(updatedResp)
-					} else {
-						response = string(resBody)
-					}
-				} else {
-					response = string(resBody)
-				}
+			if strings.Contains(req.RequestURI, "/metrics/") || strings.Contains(req.RequestURI, "/events/") || strings.Contains(req.RequestURI, "/spans") {
+				// assume no secrets to filter, avoid parsing large data
 			} else {
-				response = string(resBody)
+				newResBody, err := redactor.Redact(resBody)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelApi, "failed to redact json response", "jsonData", resBody, "err", err)
+				} else {
+					resBody = newResBody
+				}
 			}
+			response = string(resBody)
 		}
 		span.SetTag("response", response)
 		if logaudit {
