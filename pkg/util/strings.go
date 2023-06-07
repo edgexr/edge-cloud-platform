@@ -16,12 +16,11 @@ package util
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/edgexr/jsonparser"
 	"github.com/kballard/go-shellquote"
 )
 
@@ -143,30 +142,33 @@ func QuoteArgs(cmd string) (string, error) {
 	return strings.Join(args, " "), nil
 }
 
-// Clears the value of a request body field to avoid leaking
-// sensitive data in logs, etc.
-type FieldClearer struct {
-	field   string
-	search  string
-	replace []byte
-	re      *regexp.Regexp
+type JSONRedactor struct {
+	keys        map[string]struct{}
+	redactedVal string
 }
 
-func NewJsonFieldClearer(field string) *FieldClearer {
-	re := regexp.MustCompile(fmt.Sprintf(`"%s":"(.+?)"`, field))
-	return &FieldClearer{
-		field:   field,
-		search:  fmt.Sprintf(`"%s":`, field),
-		replace: []byte(fmt.Sprintf(`"%s":""`, field)),
-		re:      re,
+func NewJSONRedactor(redactedVal string) *JSONRedactor {
+	red := JSONRedactor{
+		keys:        make(map[string]struct{}),
+		redactedVal: redactedVal,
 	}
+	return &red
 }
 
-func (s *FieldClearer) Clear(data []byte) []byte {
-	if strings.Contains(string(data), s.search) {
-		return s.re.ReplaceAll(data, s.replace)
-	}
-	return data
+func (s *JSONRedactor) AddKey(key string) *JSONRedactor {
+	// golang json unmarshal will do case insensitive matching of keys,
+	// so we need to match keys in a case-insensitive way.
+	s.keys[strings.ToLower(key)] = struct{}{}
+	return s
+}
+
+func (s *JSONRedactor) Redact(jsonData []byte) ([]byte, error) {
+	return jsonparser.Replacer(jsonData, func(key string) (string, bool) {
+		if _, found := s.keys[strings.ToLower(key)]; found {
+			return s.redactedVal, true
+		}
+		return "", false
+	})
 }
 
 type FormUrlEncodedClearer struct {
