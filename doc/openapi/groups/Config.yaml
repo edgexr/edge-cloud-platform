@@ -180,7 +180,11 @@ components:
           description: Lock new accounts (must be unlocked by admin)
           type: boolean
         LogAllShowApis:
-          description: Log all show/GET APIs
+          description: Log all show/GET APIs, including noisy ones you likely don't
+            need to see, like Login, audit/event/terms show, ShowAlerts, etc.
+          type: boolean
+        LogShowApis:
+          description: Log most show/GET APIs for debugging
           type: boolean
         LogShowUrl:
           description: Log specific API url (may be substring of entire URL)

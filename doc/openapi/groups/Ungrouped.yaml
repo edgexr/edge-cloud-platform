@@ -67,30 +67,6 @@ paths:
       security:
       - bearerAuth: []
       summary: RestrictedUpdateUser
-  /api/v1/login:
-    post:
-      description: Login using account credentials
-      operationId: Login
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OrmapiUserLogin'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: string
-          description: Map with key "token" whose value is the JWT key to be used
-            in subsequent API calls, and "admin" to indicate if the user is an admin
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrmapiResult'
-          description: Bad Request
-      summary: Login
 components:
   schemas:
     OrmapiOrganization:
@@ -207,24 +183,6 @@ components:
           description: Time last updated
           format: date-time
           readOnly: true
-          type: string
-      type: object
-    OrmapiUserLogin:
-      properties:
-        apikey:
-          description: (deprecated) Use password field for ApiKey
-          type: string
-        apikeyid:
-          description: (deprecated) Use username field for ApiKeyId
-          type: string
-        password:
-          description: User's password
-          type: string
-        totp:
-          description: Temporary one-time password if 2-factor authentication is enabled
-          type: string
-        username:
-          description: User's name or email address
           type: string
       type: object
   securitySchemes:
