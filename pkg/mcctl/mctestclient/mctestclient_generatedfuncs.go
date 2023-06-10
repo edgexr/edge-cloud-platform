@@ -4105,6 +4105,24 @@ func (s *Client) ShowRolePerm(uri string, token string, in *cli.MapData, ops ...
 	return out, rundata.RetStatus, rundata.RetError
 }
 
+// Generating group Security
+
+func (s *Client) Login(uri string, in *ormapi.UserLogin, ops ...Op) (map[string]interface{}, int, error) {
+	rundata := RunData{}
+	applyOps(&rundata, ops...)
+	rundata.Uri = uri
+	rundata.In = in
+	var out map[string]interface{}
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("Login")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
 // Generating group Settings
 
 func (s *Client) UpdateSettings(uri string, token string, in *ormapi.RegionSettings, ops ...Op) (*edgeproto.Result, int, error) {
@@ -4830,22 +4848,6 @@ func (s *Client) AccessCloudletCli(uri string, token string, in *ormapi.RegionEx
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return "", rundata.RetStatus, rundata.RetError
-	}
-	return out, rundata.RetStatus, rundata.RetError
-}
-
-func (s *Client) Login(uri string, in *ormapi.UserLogin, ops ...Op) (map[string]interface{}, int, error) {
-	rundata := RunData{}
-	applyOps(&rundata, ops...)
-	rundata.Uri = uri
-	rundata.In = in
-	var out map[string]interface{}
-	rundata.Out = &out
-
-	apiCmd := ormctl.MustGetCommand("Login")
-	s.ClientRun.Run(apiCmd, &rundata)
-	if rundata.RetError != nil {
-		return nil, rundata.RetStatus, rundata.RetError
 	}
 	return out, rundata.RetStatus, rundata.RetError
 }

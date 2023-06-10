@@ -23,6 +23,7 @@ import (
 )
 
 const UserGroup = "User"
+const SecurityGroup = "Security"
 
 func init() {
 	cmds := []*ApiCommand{&ApiCommand{
@@ -189,7 +190,7 @@ func init() {
 		ReplyDescription: `Map with key "token" whose value is the JWT key to be used in subsequent API calls, and "admin" to indicate if the user is an admin`,
 		Path:             "/login",
 	}
-	AllApis.AddCommand(cmd)
+	AllApis.AddGroup(SecurityGroup, "Authentication to the api.", []*ApiCommand{cmd})
 }
 
 var LoginComments = map[string]string{
