@@ -25,6 +25,6 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       crmoverride: IgnoreCrmAndTransientState
-      platformtype: Edgebox
+      platformtype: edgebox
       flavor:
         name: x1.medium

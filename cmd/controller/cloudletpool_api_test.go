@@ -21,6 +21,7 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -60,7 +61,8 @@ func TestCloudletPoolApi(t *testing.T) {
 			Latitude:  40.712776,
 			Longitude: -74.005974,
 		},
-		CrmOverride: edgeproto.CRMOverride_IGNORE_CRM,
+		PlatformType: platform.PlatformTypeFake,
+		CrmOverride:  edgeproto.CRMOverride_IGNORE_CRM,
 	}
 	err := apis.cloudletApi.CreateCloudlet(&testcloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
@@ -75,7 +77,8 @@ func TestCloudletPoolApi(t *testing.T) {
 			Latitude:  40.712776,
 			Longitude: -74.005974,
 		},
-		CrmOverride: edgeproto.CRMOverride_IGNORE_CRM,
+		PlatformType: platform.PlatformTypeFake,
+		CrmOverride:  edgeproto.CRMOverride_IGNORE_CRM,
 	}
 	err = apis.cloudletApi.CreateCloudlet(&fedcloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)

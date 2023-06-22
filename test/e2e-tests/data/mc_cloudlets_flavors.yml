@@ -30,7 +30,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: Fakeinfra
+      platformtype: fakeinfra
       deploymentlocal: false
       flavor:
         name: DefaultPlatformFlavor

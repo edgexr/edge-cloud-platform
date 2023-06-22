@@ -944,6 +944,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// InfraFlavorsPropMap: 58.5
 	// InfraFlavorsPropMapKey: 58.5.1
 	// InfraFlavorsPropMapValue: 58.5.2
+	// EdgeboxOnly: 59
 	// ```
 	// Security:
 	//   Bearer:
@@ -975,9 +976,9 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/GetCloudletManifest", GetCloudletManifest)
-	// swagger:route POST /auth/ctrl/ShowCloudletPlatformFeatures PlatformFeatures ShowCloudletPlatformFeatures
-	// Show Cloudlet Platform Features.
-	//  Shows platform specific features
+	// swagger:route POST /auth/ctrl/ShowPlatformsFeatures PlatformFeatures ShowPlatformsFeatures
+	// Shows all supported cloudlet platforms and their features.
+	//
 	// Security:
 	//   Bearer:
 	// responses:
@@ -985,7 +986,7 @@ func addControllerApis(method string, group *echo.Group) {
 	//   400: badRequest
 	//   403: forbidden
 	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowCloudletPlatformFeatures", ShowCloudletPlatformFeatures)
+	group.Match([]string{method}, "/ctrl/ShowPlatformsFeatures", ShowPlatformsFeatures)
 	// swagger:route POST /auth/ctrl/GetCloudletProps CloudletProps GetCloudletProps
 	// Get Cloudlet Properties.
 	//  Shows all the infra properties used to setup cloudlet

@@ -69,7 +69,7 @@ cloudlets:
     longitude: -95
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
 
 clusterinsts:
 - key:

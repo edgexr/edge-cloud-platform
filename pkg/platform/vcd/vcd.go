@@ -85,6 +85,12 @@ type VAppMap map[string]*govcd.VApp
 type VMMap map[string]*govcd.VM
 type NetMap map[string]*govcd.OrgVDCNetwork
 
+func NewPlatform() platform.Platform {
+	return &vmlayer.VMPlatform{
+		VMProvider: &VcdPlatform{},
+	}
+}
+
 func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider for Vcd", "stage", stage)
@@ -160,6 +166,7 @@ func (v *VcdPlatform) InitData(ctx context.Context, caches *platform.Caches) {
 
 func (o *VcdPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:                          platform.PlatformTypeVCD,
 		SupportsMultiTenantCluster:            true,
 		SupportsSharedVolume:                  true,
 		SupportsTrustPolicy:                   true,

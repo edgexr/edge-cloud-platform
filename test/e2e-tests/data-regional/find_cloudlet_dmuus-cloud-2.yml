@@ -21,7 +21,7 @@ cloudlets:
     longitude: -95
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:21102
   flavor:
     name: x1.small

@@ -25,6 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
@@ -390,7 +391,7 @@ func newAutoProvPolicyTest(name, org string, count int, flavor *edgeproto.Flavor
 		s.cloudlets[ii].Location.Latitude = 1
 		s.cloudlets[ii].Location.Longitude = 1
 		s.cloudlets[ii].CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
-		s.cloudlets[ii].PlatformType = edgeproto.PlatformType_PLATFORM_TYPE_FAKE
+		s.cloudlets[ii].PlatformType = platform.PlatformTypeFake
 		s.policy.Cloudlets = append(s.policy.Cloudlets,
 			&edgeproto.AutoProvCloudlet{Key: s.cloudlets[ii].Key})
 		s.cloudletKeys[s.cloudlets[ii].Key] = ii

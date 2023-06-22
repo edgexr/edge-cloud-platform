@@ -38,6 +38,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	k8sbm "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-baremetal"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/openstack"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/platforms"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vcd"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vmpool"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vsphere"
@@ -58,6 +59,7 @@ import (
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
 var notifyAddrs = flag.String("notifyAddrs", "127.0.0.1:51001", "CRM notify listener addresses")
 var metricsAddr = flag.String("metricsAddr", "0.0.0.0:9091", "Metrics Proxy Address")
+var promTargetAddr = flag.String("promTargetAddr", "0.0.0.0:9091", "Prometheus target address to reach Shepherd's metricsAddr")
 var platformName = flag.String("platform", "", "Platform type of Cloudlet")
 var physicalName = flag.String("physicalName", "", "Physical infrastructure cloudlet name, defaults to cloudlet name in cloudletKey")
 var cloudletKeyStr = flag.String("cloudletKey", "", "Json or Yaml formatted cloudletKey for the cloudlet in which this CRM is instantiated; e.g. '{\"operator_key\":{\"name\":\"DMUUS\"},\"name\":\"tmocloud1\"}'")
@@ -99,6 +101,7 @@ var settings edgeproto.Settings
 var AppInstByAutoProvPolicy edgeproto.AppInstLookupByPolicyKey
 var targetFileWorkers tasks.KeyWorkers
 var appInstAlertWorkers tasks.KeyWorkers
+var cloudletFeatures edgeproto.PlatformFeatures
 
 var cloudletKey edgeproto.CloudletKey
 var myPlatform platform.Platform
@@ -381,11 +384,11 @@ func cloudletInternalCb(ctx context.Context, old *edgeproto.CloudletInternal, ne
 func getPlatform() (platform.Platform, error) {
 	var plat platform.Platform
 	var err error
-	pfType := pf.GetType(*platformName)
-	switch *platformName {
-	case "PLATFORM_TYPE_EDGEBOX":
+	pfType := pf.GetTypeBC(*platformName)
+	switch pfType {
+	case pf.PlatformTypeEdgebox:
 		plat = &shepherd_xind.Platform{}
-	case "PLATFORM_TYPE_OPENSTACK":
+	case pf.PlatformTypeOpenstack:
 		osProvider := openstack.OpenstackPlatform{}
 		vmPlatform := vmlayer.VMPlatform{
 			Type:       pfType,
@@ -394,7 +397,7 @@ func getPlatform() (platform.Platform, error) {
 		plat = &shepherd_vmprovider.ShepherdPlatform{
 			VMPlatform: &vmPlatform,
 		}
-	case "PLATFORM_TYPE_VSPHERE":
+	case pf.PlatformTypeVSphere:
 		vsphereProvider := vsphere.VSpherePlatform{}
 		vmPlatform := vmlayer.VMPlatform{
 			Type:       pfType,
@@ -403,7 +406,7 @@ func getPlatform() (platform.Platform, error) {
 		plat = &shepherd_vmprovider.ShepherdPlatform{
 			VMPlatform: &vmPlatform,
 		}
-	case "PLATFORM_TYPE_VCD":
+	case pf.PlatformTypeVCD:
 		vcdProvider := vcd.VcdPlatform{}
 		vmPlatform := vmlayer.VMPlatform{
 			Type:       pfType,
@@ -412,7 +415,7 @@ func getPlatform() (platform.Platform, error) {
 		plat = &shepherd_vmprovider.ShepherdPlatform{
 			VMPlatform: &vmPlatform,
 		}
-	case "PLATFORM_TYPE_AWS_EC2":
+	case pf.PlatformTypeAWSEC2:
 		awsEc2Provider := awsec2.AwsEc2Platform{}
 		vmPlatform := vmlayer.VMPlatform{
 			Type:       pfType,
@@ -421,7 +424,7 @@ func getPlatform() (platform.Platform, error) {
 		plat = &shepherd_vmprovider.ShepherdPlatform{
 			VMPlatform: &vmPlatform,
 		}
-	case "PLATFORM_TYPE_VM_POOL":
+	case pf.PlatformTypeVMPool:
 		vmpoolProvider := vmpool.VMPoolPlatform{}
 		vmPlatform := vmlayer.VMPlatform{
 			Type:       pfType,
@@ -430,13 +433,13 @@ func getPlatform() (platform.Platform, error) {
 		plat = &shepherd_vmprovider.ShepherdPlatform{
 			VMPlatform: &vmPlatform,
 		}
-	case "PLATFORM_TYPE_K8S_BARE_METAL":
+	case pf.PlatformTypeK8SBareMetal:
 		plat = &shepherd_k8sbm.ShepherdPlatform{
 			Pf: &k8sbm.K8sBareMetalPlatform{},
 		}
-	case "PLATFORM_TYPE_FAKEINFRA":
+	case pf.PlatformTypeFakeInfra:
 		plat = &shepherd_fake.Platform{}
-	case "PLATFORM_TYPE_KINDINFRA":
+	case pf.PlatformTypeKindInfra:
 		plat = &shepherd_xind.Platform{}
 	default:
 		err = fmt.Errorf("Platform %s not supported", *platformName)
@@ -499,10 +502,17 @@ func start() {
 		log.FatalLog("Failed to get internal pki tls config", "err", err)
 	}
 
+	// Convert old platform names for backwards compatibility
+	*platformName = pf.GetTypeBC(*platformName)
 	myPlatform, err = getPlatform()
 	if err != nil {
 		log.FatalLog("Failed to get platform", "platformName", platformName, "err", err)
 	}
+	features, err := platforms.GetPlatformFeatures(pf.GetTypeBC(*platformName))
+	if err != nil {
+		log.FatalLog("Failed to get features for platform", "platformName", platformName, "err", err)
+	}
+	cloudletFeatures = *features
 
 	// Init cloudlet Prometheus config file
 	err = updateCloudletPrometheusConfig(ctx, &metricsScrapingInterval, &settings.ShepherdAlertEvaluationInterval)
@@ -606,7 +616,7 @@ func start() {
 		log.FatalLog("Timed out waiting for cloudlet cache from controller")
 	}
 	log.SpanLog(ctx, log.DebugLevelInfo, "fetched cloudlet cache from CRM", "cloudlet", cloudlet)
-	if cloudlet.PlatformType == edgeproto.PlatformType_PLATFORM_TYPE_VM_POOL {
+	if cloudlet.PlatformType == pf.PlatformTypeVMPool {
 		if cloudlet.VmPool == "" {
 			log.FatalLog("Cloudlet is missing VM pool name")
 		}
@@ -648,7 +658,7 @@ func start() {
 	}
 	// LB metrics are not supported in fake mode
 	InitProxyScraper(metricsScrapingInterval, settings.ShepherdMetricsCollectionInterval.TimeDuration(), MetricSender.Update)
-	if pf.GetType(*platformName) != "fake" {
+	if !cloudletFeatures.IsFake {
 		StartProxyScraper(stopCh)
 	}
 	InitPlatformMetrics(stopCh)

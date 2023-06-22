@@ -17,18 +17,28 @@ package kindinfra
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/fakeinfra"
-	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/fakeinfra"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/kind"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 )
 
 // Kind platform with multi-tenant cluster support.
 // We may also want to add shepherd/envoy to test metrics.
 type Platform struct {
 	kind.Platform
+}
+
+func NewPlatform() platform.Platform {
+	return &Platform{}
+}
+
+func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
+	features := s.Platform.GetFeatures()
+	features.PlatformType = platform.PlatformTypeKindInfra
+	return features
 }
 
 func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {

@@ -25,7 +25,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: Fakeinfra
+      platformtype: fakeinfra
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-1

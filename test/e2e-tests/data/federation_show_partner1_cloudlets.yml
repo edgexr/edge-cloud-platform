@@ -68,7 +68,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuuscloud1
@@ -106,7 +106,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuuscloud2
@@ -144,7 +144,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuuscloud3
@@ -182,7 +182,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuuscloud4
@@ -220,7 +220,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: enterprise1
@@ -258,7 +258,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: enterprise2

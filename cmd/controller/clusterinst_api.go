@@ -27,7 +27,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/gogo/protobuf/types"
@@ -161,9 +160,9 @@ func (s *ClusterInstApi) UsesNetwork(networkKey *edgeproto.NetworkKey) *edgeprot
 
 // validateAndDefaultIPAccess checks that the IP access type is valid if it is set.  If it is not set
 // it returns the new value based on the other parameters
-func validateAndDefaultIPAccess(ctx context.Context, clusterInst *edgeproto.ClusterInst, platformType edgeproto.PlatformType, features *edgeproto.PlatformFeatures, cb edgeproto.ClusterInstApi_CreateClusterInstServer) (edgeproto.IpAccess, error) {
+func validateAndDefaultIPAccess(ctx context.Context, clusterInst *edgeproto.ClusterInst, platformType string, features *edgeproto.PlatformFeatures, cb edgeproto.ClusterInstApi_CreateClusterInstServer) (edgeproto.IpAccess, error) {
 
-	platName := edgeproto.PlatformType_name[int32(platformType)]
+	platName := platformType
 
 	// Operators such as GCP and Azure must be dedicated as they allocate a new IP per service
 	if isIPAllocatedPerService(ctx, platformType, features, clusterInst.Key.CloudletKey.Organization) {
@@ -203,9 +202,9 @@ func validateAndDefaultIPAccess(ctx context.Context, clusterInst *edgeproto.Clus
 	return clusterInst.IpAccess, nil
 }
 
-func validateNumNodesForKubernetes(ctx context.Context, platformType edgeproto.PlatformType, features *edgeproto.PlatformFeatures, numnodes uint32) error {
-	log.SpanLog(ctx, log.DebugLevelApi, "validateNumNodesForKubernetes", "platformType", platformType.String(), "numnodes", numnodes)
-	if platformType == edgeproto.PlatformType_PLATFORM_TYPE_K8S_BARE_METAL {
+func validateNumNodesForKubernetes(ctx context.Context, platformType string, features *edgeproto.PlatformFeatures, numnodes uint32) error {
+	log.SpanLog(ctx, log.DebugLevelApi, "validateNumNodesForKubernetes", "platformType", platformType, "numnodes", numnodes)
+	if features.NoClusterSupport {
 		// Special case for k8s baremetal because multi-tenanancy is
 		// managed by the platform, not the Controller. There is no
 		// real cluster, just pods, so numnodes is not used. Once we
@@ -213,11 +212,11 @@ func validateNumNodesForKubernetes(ctx context.Context, platformType edgeproto.P
 		// then there will no longer be any ClusterInst object created
 		// (it will be AppInst only), so this check can be removed.
 		if numnodes != 0 {
-			return fmt.Errorf("NumNodes must be 0 for %s", platformType.String())
+			return fmt.Errorf("NumNodes must be 0 for %s", platformType)
 		}
 	}
 	if numnodes == 0 && features.KubernetesRequiresWorkerNodes {
-		return fmt.Errorf("NumNodes cannot be 0 for %s", platformType.String())
+		return fmt.Errorf("NumNodes cannot be 0 for %s", platformType)
 	}
 	return nil
 }
@@ -436,7 +435,7 @@ func (s *ClusterInstApi) getClusterFlavorInfo(ctx context.Context, stm concurren
 }
 
 func (s *ClusterInstApi) GetRootLBFlavorInfo(ctx context.Context, stm concurrency.STM, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo) (*edgeproto.FlavorInfo, error) {
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, cloudlet.PlatformType.String(), nodeMgr.UpdateNodeProps)
+	cloudletPlatform, err := pfutils.GetPlatform(ctx, cloudlet.PlatformType, nodeMgr.UpdateNodeProps)
 	if err != nil {
 		return nil, err
 	}
@@ -748,11 +747,11 @@ func (s *ClusterInstApi) getCloudletResourceMetric(ctx context.Context, stm conc
 	}
 	cloudletRefs := edgeproto.CloudletRefs{}
 	s.all.cloudletRefsApi.store.STMGet(stm, key, &cloudletRefs)
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, cloudlet.PlatformType.String(), nodeMgr.UpdateNodeProps)
+	cloudletPlatform, err := pfutils.GetPlatform(ctx, cloudlet.PlatformType, nodeMgr.UpdateNodeProps)
 	if err != nil {
 		return nil, err
 	}
-	pfType := pf.GetType(cloudlet.PlatformType.String())
+	pfType := cloudlet.PlatformType
 
 	// get all cloudlet resources (platformVM, sharedRootLB, clusterVms, AppVMs, etc)
 	allResources, _, _, err := s.all.clusterInstApi.getAllCloudletResources(ctx, stm, &cloudlet, &cloudletInfo, &cloudletRefs)
@@ -946,17 +945,16 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 			return fmt.Errorf("Failed to get features for platform: %s", err)
 		}
 		if features.IsSingleKubernetesCluster {
-			return fmt.Errorf("Single kubernetes cluster platform %s only supports AppInst creates", cloudlet.PlatformType.String())
+			return fmt.Errorf("Single kubernetes cluster platform %s only supports AppInst creates", cloudlet.PlatformType)
 		}
 		if len(in.Key.ClusterKey.Name) > cloudcommon.MaxClusterNameLength {
 			return fmt.Errorf("Cluster name limited to %d characters", cloudcommon.MaxClusterNameLength)
 		}
 		if features.SupportsKubernetesOnly && in.Deployment != cloudcommon.DeploymentTypeKubernetes {
-			return fmt.Errorf("Platform %s only supports kubernetes-based deployments", cloudlet.PlatformType.String())
+			return fmt.Errorf("Platform %s only supports kubernetes-based deployments", cloudlet.PlatformType)
 		}
-		platName := edgeproto.PlatformType_name[int32(cloudlet.PlatformType)]
 		if in.SharedVolumeSize != 0 && !features.SupportsSharedVolume {
-			return fmt.Errorf("Shared volumes not supported on %s", platName)
+			return fmt.Errorf("Shared volumes not supported on %s", cloudlet.PlatformType)
 		}
 		if in.Deployment == cloudcommon.DeploymentTypeKubernetes {
 			err = validateNumNodesForKubernetes(ctx, cloudlet.PlatformType, features, in.NumNodes)
@@ -1049,8 +1047,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		}
 		for _, n := range in.Networks {
 			if !features.SupportsAdditionalNetworks {
-				platName := edgeproto.PlatformType_name[int32(cloudlet.PlatformType)]
-				return fmt.Errorf("Additional cluster networks not supported on platform: %s", platName)
+				return fmt.Errorf("Additional cluster networks not supported on platform: %s", cloudlet.PlatformType)
 			}
 			network := edgeproto.Network{}
 			networkKey := edgeproto.NetworkKey{

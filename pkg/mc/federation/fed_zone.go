@@ -19,6 +19,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	fedcommon "github.com/edgexr/edge-cloud-platform/pkg/mc/federation/common"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/labstack/echo/v4"
 )
 
@@ -489,7 +490,7 @@ func (p *PartnerApi) RegisterConsumerZones(ctx context.Context, consumer *ormapi
 				Latitude:  lat,
 				Longitude: long,
 			},
-			PlatformType: edgeproto.PlatformType_PLATFORM_TYPE_FEDERATION,
+			PlatformType: platform.PlatformTypeFederation,
 			// TODO: This should be removed as a required field
 			NumDynamicIps: int32(10),
 			FederationConfig: edgeproto.FederationConfig{

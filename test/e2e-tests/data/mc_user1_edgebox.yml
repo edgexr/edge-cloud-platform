@@ -30,4 +30,4 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: Edgebox
+      platformtype: edgebox

@@ -40,7 +40,7 @@ cloudlets:
     longitude: -91
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51001
   flavor:
     name: x1.medium
@@ -53,7 +53,7 @@ cloudlets:
     longitude: -95
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51002
   flavor:
     name: x1.medium

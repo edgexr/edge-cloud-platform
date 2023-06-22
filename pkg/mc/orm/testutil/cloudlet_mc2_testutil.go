@@ -329,18 +329,18 @@ func TestPermGetCloudletManifest(mcClient *mctestclient.Client, uri, token, regi
 	return TestGetCloudletManifest(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestShowCloudletPlatformFeatures(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.PlatformFeatures, modFuncs ...func(*edgeproto.PlatformFeatures)) ([]edgeproto.PlatformFeatures, int, error) {
+func TestShowPlatformsFeatures(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.PlatformFeatures, modFuncs ...func(*edgeproto.PlatformFeatures)) ([]edgeproto.PlatformFeatures, int, error) {
 	dat := &ormapi.RegionPlatformFeatures{}
 	dat.Region = region
 	dat.PlatformFeatures = *in
 	for _, fn := range modFuncs {
 		fn(&dat.PlatformFeatures)
 	}
-	return mcClient.ShowCloudletPlatformFeatures(uri, token, dat)
+	return mcClient.ShowPlatformsFeatures(uri, token, dat)
 }
-func TestPermShowCloudletPlatformFeatures(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PlatformFeatures)) ([]edgeproto.PlatformFeatures, int, error) {
+func TestPermShowPlatformsFeatures(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PlatformFeatures)) ([]edgeproto.PlatformFeatures, int, error) {
 	in := &edgeproto.PlatformFeatures{}
-	return TestShowCloudletPlatformFeatures(mcClient, uri, token, region, in, modFuncs...)
+	return TestShowPlatformsFeatures(mcClient, uri, token, region, in, modFuncs...)
 }
 
 func TestGetCloudletProps(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletProps, modFuncs ...func(*edgeproto.CloudletProps)) (*edgeproto.CloudletProps, int, error) {
@@ -757,12 +757,12 @@ func (s *TestClient) FindFlavorMatch(ctx context.Context, in *edgeproto.FlavorMa
 	return out, err
 }
 
-func (s *TestClient) ShowCloudletPlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) ([]edgeproto.PlatformFeatures, error) {
+func (s *TestClient) ShowPlatformsFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) ([]edgeproto.PlatformFeatures, error) {
 	inR := &ormapi.RegionPlatformFeatures{
 		Region:           s.Region,
 		PlatformFeatures: *in,
 	}
-	out, status, err := s.McClient.ShowCloudletPlatformFeatures(s.Uri, s.Token, inR)
+	out, status, err := s.McClient.ShowPlatformsFeatures(s.Uri, s.Token, inR)
 	if err == nil && status != 200 {
 		err = fmt.Errorf("status: %d\n", status)
 	}

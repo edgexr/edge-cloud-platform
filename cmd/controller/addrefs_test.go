@@ -21,6 +21,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 )
 
@@ -203,7 +204,7 @@ func (s *AddRefsDataGen) GetCreateCloudletTestObj() (*edgeproto.Cloudlet, *testS
 	cloudlet.TrustPolicy = trustPolicy.Key.Name
 	cloudlet.GpuConfig.Driver = gpuDriver.Key
 	cloudlet.VmPool = vmpool.Key.Name
-	cloudlet.PlatformType = edgeproto.PlatformType_PLATFORM_TYPE_FAKE_VM_POOL
+	cloudlet.PlatformType = platform.PlatformTypeFakeVMPool
 	cloudlet.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
 
 	supportData := &testSupportData{}

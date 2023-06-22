@@ -134,14 +134,15 @@ func StartProxyScraper(done chan bool) {
 
 // Figure out envoy proxy container name and metrics endpoint which can be an IP address or unix domain socket (UDS)
 func getProxyContainerAndMetricEndpoint(ctx context.Context, appInst *edgeproto.AppInst, scrapePoint ProxyScrapePoint) (string, string, error) {
-	pfType := pf.GetType(*platformName)
+	pfType := pf.GetTypeBC(*platformName)
 	log.SpanLog(ctx, log.DebugLevelMetrics, "getProxyContainerName", "type", pfType)
-	if pfType == "fake" {
+	if cloudletFeatures.IsFake {
+		// For e2e testing
 		return "fakeEnvoy", cloudcommon.ProxyMetricsDefaultListenIP, nil
 	}
 	// for baremetal k8s has a cluster prefix
 	container := ""
-	if pfType == "k8sbaremetal" {
+	if cloudletFeatures.NoClusterSupport {
 		container += k8smgmt.GetKconfName(&edgeproto.ClusterInst{Key: scrapePoint.ClusterInstKey})
 	}
 	container += "-" + scrapePoint.ContainerName

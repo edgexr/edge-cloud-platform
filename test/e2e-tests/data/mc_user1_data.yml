@@ -31,7 +31,7 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: Fakeinfra
+      platformtype: fakeinfra
       notifysrvaddr: 127.0.0.1:51001
       gpuconfig:
         driver:
@@ -57,7 +57,7 @@ regiondata:
         longitude: -95
       ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: Fake
+      platformtype: fake
     - key:
         organization: azure
         name: azure-cloud-4
@@ -66,7 +66,7 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: Fake
+      platformtype: fake
       gpuconfig:
         driver:
           name: gpu-driver-global
@@ -78,7 +78,7 @@ regiondata:
         longitude: -95
       ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: Fake
+      platformtype: fake
     - key:
         organization: enterprise
         name: enterprise-1
@@ -87,7 +87,7 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: Fake
+      platformtype: fake
       flavor:
         name: x1.small
       physicalname: enterprise-1
@@ -130,7 +130,7 @@ regiondata:
         longitude: -92
       ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: Fake
+      platformtype: fake
     - key:
         organization: dmuus
         name: dmuus-cloud-4
@@ -139,7 +139,7 @@ regiondata:
         longitude: -96
       ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: Fake
+      platformtype: fake
     - key:
         organization: enterprise
         name: enterprise-2
@@ -148,7 +148,7 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: Fake
+      platformtype: fake
       flavor:
         name: x1.small
       physicalname: enterprise-2

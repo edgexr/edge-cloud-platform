@@ -1204,8 +1204,6 @@ func EnumDecodeHook(from, to reflect.Type, data interface{}) (interface{}, error
 		return ParseAccessType(data)
 	case reflect.TypeOf(GpuType(0)):
 		return ParseGpuType(data)
-	case reflect.TypeOf(PlatformType(0)):
-		return ParsePlatformType(data)
 	case reflect.TypeOf(InfraApiAccess(0)):
 		return ParseInfraApiAccess(data)
 	case reflect.TypeOf(OSType(0)):
@@ -1270,8 +1268,6 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 		return "AccessType", ", valid values are one of DefaultForDeployment, Direct, LoadBalancer, or 0, 1, 2", true
 	case reflect.TypeOf(GpuType(0)):
 		return "GpuType", ", valid values are one of None, Any, Vgpu, Pci, or 0, 1, 2, 3", true
-	case reflect.TypeOf(PlatformType(0)):
-		return "PlatformType", ", valid values are one of Fake, Dind, Openstack, Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd, K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool, K8SOperator, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18", true
 	case reflect.TypeOf(InfraApiAccess(0)):
 		return "InfraApiAccess", ", valid values are one of DirectAccess, RestrictedAccess, or 0, 1", true
 	case reflect.TypeOf(OSType(0)):
@@ -1301,7 +1297,7 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 	case reflect.TypeOf(StreamState(0)):
 		return "StreamState", ", valid values are one of Unknown, Start, Stop, Error, or 0, 1, 2, 3", true
 	case reflect.TypeOf(VersionHash(0)):
-		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, 611B28894B117C2Aaa22C12Adcd81F74, 37Dea30756Fed2B0C0Ecbc3E7B084855, or 0, 47, 48", true
+		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, 611B28894B117C2Aaa22C12Adcd81F74, 37Dea30756Fed2B0C0Ecbc3E7B084855, 1304C4Ec69343Ced28Fd3Ebc85F4A3A9, or 0, 47, 48, 49", true
 	}
 	return "", "", false
 }
@@ -1319,7 +1315,7 @@ var ShowMethodNames = map[string]struct{}{
 	"ShowCloudletsForAppDeployment": struct{}{},
 	"ShowGPUDriver":                 struct{}{},
 	"ShowCloudlet":                  struct{}{},
-	"ShowCloudletPlatformFeatures":  struct{}{},
+	"ShowPlatformsFeatures":         struct{}{},
 	"ShowCloudletInfo":              struct{}{},
 	"ShowCloudletMetrics":           struct{}{},
 	"ShowCloudletPool":              struct{}{},

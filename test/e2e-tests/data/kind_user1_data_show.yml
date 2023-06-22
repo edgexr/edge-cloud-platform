@@ -77,7 +77,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: Kindinfra
+      platformtype: kindinfra
       flavor:
         name: DefaultPlatformFlavor
       physicalname: kind-cloud-1

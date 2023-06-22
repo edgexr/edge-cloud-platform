@@ -30,6 +30,7 @@ enum VersionHash {
   //interim versions deleted
   HASH_611b28894b117c2aaa22c12adcd81f74 = 47; // FedAppInstKey
   HASH_37dea30756fed2b0c0ecbc3e7b084855 = 48 [(protogen.upgrade_func) = "AppInstKeyName"];
+  HASH_1304c4ec69343ced28fd3ebc85f4a3a9 = 49 [(protogen.upgrade_func) = "PlatformType"];
   option (protogen.version_hash) = true;
-  option (protogen.version_hash_salt) = "10";
+  option (protogen.version_hash_salt) = "1";
 }

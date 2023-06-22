@@ -127,8 +127,8 @@ func (s *AccessKeyServer) VerifyAccessKeySig(ctx context.Context, method string)
 		return nil, fmt.Errorf("failed to find cloudlet %s to verify access key", data)
 	}
 
-	if cloudlet.PlatformType == edgeproto.PlatformType_PLATFORM_TYPE_EDGEBOX && method == GetAccessDataMethod {
-		return nil, fmt.Errorf("Not allowed to get access data for EDGEBOX platform")
+	if cloudlet.EdgeboxOnly && method == GetAccessDataMethod {
+		return nil, fmt.Errorf("Not allowed to get access data for Edgebox cloudlet")
 	}
 
 	// look up key signature

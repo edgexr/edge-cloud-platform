@@ -44,6 +44,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/cliwrapper"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mccli"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/jarcoal/httpmock"
@@ -1963,7 +1964,7 @@ func badPermTestReferenceOrg(t *testing.T, mcClient *mctestclient.Client, uri, t
 				Name:         "clx",
 				Organization: operOrg,
 			},
-			PlatformType: edgeproto.PlatformType_PLATFORM_TYPE_FAKE,
+			PlatformType: platform.PlatformTypeFake,
 		},
 	}
 	regCloudlet.Cloudlet.AllianceOrgs = []string{"no-such-org"}
@@ -3172,7 +3173,10 @@ func testEdgeboxOnlyCloudletCreate(t *testing.T, ctx context.Context, mcClient *
 	require.Nil(t, err, "create org")
 	require.Equal(t, http.StatusOK, status, "create org status")
 
-	// cloudlet creation should fail for platforms other than edgebox
+	// Edgebox checks are now done by the controller.
+	// This allows for MC to remain platform-independent.
+	// MC just needs to set Cloudlet.EdgeboxOnly if the operator
+	// organization is edgebox only.
 	regCloudlet := ormapi.RegionCloudlet{
 		Region: region,
 		Cloudlet: edgeproto.Cloudlet{
@@ -3180,30 +3184,41 @@ func testEdgeboxOnlyCloudletCreate(t *testing.T, ctx context.Context, mcClient *
 				Name:         "cl1",
 				Organization: operOrg.Name,
 			},
-			PlatformType: edgeproto.PlatformType_PLATFORM_TYPE_FAKEINFRA,
+			PlatformType: platform.PlatformTypeFakeInfra,
 		},
 	}
 	_, status, err = mcClient.CreateCloudlet(uri, token, &regCloudlet)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Only allowed to create EDGEBOX cloudlet")
-
-	// cloudlet creation should work for edgebox platform
-	regCloudlet.Cloudlet.PlatformType = edgeproto.PlatformType_PLATFORM_TYPE_EDGEBOX
-	_, status, err = mcClient.CreateCloudlet(uri, token, &regCloudlet)
+	require.Nil(t, err)
+	// Cloudlet must have EdgeboxOnly set.
+	showFilter := ormapi.RegionCloudlet{
+		Region: region,
+		Cloudlet: edgeproto.Cloudlet{
+			Key: regCloudlet.Cloudlet.Key,
+		},
+	}
+	cloudlets, status, err := mcClient.ShowCloudlet(uri, token, &showFilter)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 1, len(cloudlets))
+	require.Equal(t, true, cloudlets[0].EdgeboxOnly)
+
 	// cleanup cloudlet
 	_, status, err = mcClient.DeleteCloudlet(uri, token, &regCloudlet)
 	require.Nil(t, err)
 
 	// toggle edgebox org flag for operator org
 	setOperatorOrgNoEdgeboxOnly(t, mcClient, uri, token, operOrg.Name)
+	regCloudlet.Cloudlet.EdgeboxOnly = false
 
-	// cloudlet creation should work for other platforms as edgeboxonly flag is set to false
-	regCloudlet.Cloudlet.PlatformType = edgeproto.PlatformType_PLATFORM_TYPE_FAKE
+	// Created cloudlet must not have edgebox only set.
 	_, status, err = mcClient.CreateCloudlet(uri, token, &regCloudlet)
 	require.Nil(t, err)
+	cloudlets, status, err = mcClient.ShowCloudlet(uri, token, &showFilter)
+	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 1, len(cloudlets))
+	require.Equal(t, false, cloudlets[0].EdgeboxOnly)
+
 	// cleanup cloudlet
 	_, status, err = mcClient.DeleteCloudlet(uri, token, &regCloudlet)
 	require.Nil(t, err)

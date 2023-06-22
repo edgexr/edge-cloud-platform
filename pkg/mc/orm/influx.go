@@ -30,7 +30,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	client "github.com/influxdata/influxdb/client/v2"
 	influxdb "github.com/influxdata/influxdb/client/v2"
@@ -670,7 +669,7 @@ func getCloudletPlatformTypes(ctx context.Context, username, region string, keys
 		if foundMatch == false {
 			return nil
 		}
-		pfType := pf.GetType(res.PlatformType.String())
+		pfType := res.PlatformType
 		platformTypes[pfType] = struct{}{}
 		return nil
 	})

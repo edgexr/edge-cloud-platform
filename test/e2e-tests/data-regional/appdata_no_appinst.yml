@@ -81,7 +81,7 @@ cloudlets:
     longitude: -91
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:21101
   flavor:
     name: x1.small
@@ -93,7 +93,7 @@ cloudlets:
     longitude: -95
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:21102
   flavor:
     name: x1.small
@@ -105,7 +105,7 @@ cloudlets:
     longitude: -99
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:21103
   flavor:
     name: x1.small
@@ -117,7 +117,7 @@ cloudlets:
     longitude: -91
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:21104
   flavor:
     name: x1.small
@@ -129,7 +129,7 @@ cloudlets:
     longitude: -95
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:21105
   flavor:
     name: x1.small

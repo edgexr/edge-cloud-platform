@@ -24,7 +24,7 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: Kindinfra
+      platformtype: kindinfra
       enabledefaultserverlesscluster: true
       envvar:
         foo: bar

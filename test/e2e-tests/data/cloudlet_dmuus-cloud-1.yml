@@ -21,7 +21,7 @@ cloudlets:
     longitude: -91
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fakeinfra
+  platformtype: fakeinfra
   flavor:
     name: DefaultPlatformFlavor
   notifysrvaddr: 127.0.0.1:51001

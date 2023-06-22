@@ -34,8 +34,15 @@ type AwsEc2Platform struct {
 	VpcCidr         string
 }
 
+func NewPlatform() platform.Platform {
+	return &vmlayer.VMPlatform{
+		VMProvider: &AwsEc2Platform{},
+	}
+}
+
 func (o *AwsEc2Platform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:               platform.PlatformTypeAWSEC2,
 		SupportsMultiTenantCluster: true,
 	}
 }

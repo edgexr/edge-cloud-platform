@@ -25,6 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	context "golang.org/x/net/context"
@@ -393,5 +394,73 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 		}
 	}
 
+	return nil
+}
+
+var platformTypeEnums = map[int32]string{
+	0:  platform.PlatformTypeFake,
+	1:  platform.PlatformTypeDind,
+	2:  platform.PlatformTypeOpenstack,
+	3:  platform.PlatformTypeAzure,
+	4:  platform.PlatformTypeGCP,
+	5:  platform.PlatformTypeEdgebox,
+	6:  platform.PlatformTypeFakeInfra,
+	7:  platform.PlatformTypeVSphere,
+	8:  platform.PlatformTypeAWSEKS,
+	9:  platform.PlatformTypeVMPool,
+	10: platform.PlatformTypeAWSEC2,
+	11: platform.PlatformTypeVCD,
+	12: platform.PlatformTypeK8SBareMetal,
+	13: platform.PlatformTypeKind,
+	14: platform.PlatformTypeKindInfra,
+	15: platform.PlatformTypeFakeSingleCluster,
+	16: platform.PlatformTypeFederation,
+	17: platform.PlatformTypeVMPool,
+	18: platform.PlatformTypeK8SOperator,
+}
+
+type CloudletPlatformType struct {
+	PlatformType int32 `protobuf:"varint,15,opt,name=platform_type,json=platformType,proto3,enum=string" json:"platform_type,omitempty"`
+}
+
+func PlatformType(ctx context.Context, objStore objstore.KVStore, allApis *AllApis) error {
+	log.SpanLog(ctx, log.DebugLevelUpgrade, "PlatformType upgrade")
+
+	// Upgrade AppInst keys
+	cloudletKeys, err := getDbObjectKeys(objStore, "Cloudlet")
+	if err != nil {
+		return err
+	}
+	for cloudletKey, _ := range cloudletKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			cloudletStr := stm.Get(cloudletKey)
+			if cloudletStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			var cloudlet edgeproto.Cloudlet
+			if err2 := unmarshalUpgradeObj(ctx, cloudletStr, &cloudlet); err2 != nil {
+				return err2
+			}
+			if cloudlet.PlatformType != "" {
+				// already upgraded
+				return nil
+			}
+			var cloudletOld CloudletPlatformType
+			if err2 := unmarshalUpgradeObj(ctx, cloudletStr, &cloudletOld); err2 != nil {
+				return err2
+			}
+			platString, ok := platformTypeEnums[cloudletOld.PlatformType]
+			if !ok {
+				return fmt.Errorf("PlatformType not found for %d on cloudlet %s", cloudletOld.PlatformType, cloudletKey)
+			}
+			cloudlet.PlatformType = platString
+			allApis.cloudletApi.store.STMPut(stm, &cloudlet)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

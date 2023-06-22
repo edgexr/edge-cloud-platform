@@ -59,6 +59,10 @@ var edgeboxProps = map[string]*edgeproto.PropertyInfo{
 	},
 }
 
+func NewPlatform() platform.Platform {
+	return &EdgeboxPlatform{}
+}
+
 func (e *EdgeboxPlatform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	err := e.generic.InitCommon(ctx, platformConfig, caches, haMgr, updateCallback)
 	// Set the test Mode based on what is in PlatformConfig
@@ -104,8 +108,10 @@ func (e *EdgeboxPlatform) GetEdgeboxDockerCreds() (string, string) {
 
 func (o *EdgeboxPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:               platform.PlatformTypeEdgebox,
 		SupportsMultiTenantCluster: true,
 		CloudletServicesLocal:      true,
+		IsEdgebox:                  true,
 	}
 }
 

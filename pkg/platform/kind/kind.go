@@ -17,14 +17,18 @@ package kind
 import (
 	"context"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/xind"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 type Platform struct {
 	xind.Xind
+}
+
+func NewPlatform() platform.Platform {
+	return &Platform{}
 }
 
 func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -41,6 +45,7 @@ func (s *Platform) GetInitHAConditionalCompatibilityVersion(ctx context.Context)
 
 func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:                 platform.PlatformTypeKind,
 		SupportsMultiTenantCluster:   true,
 		CloudletServicesLocal:        true,
 		NoKubernetesClusterAutoScale: true,
