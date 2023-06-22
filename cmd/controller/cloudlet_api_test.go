@@ -1086,8 +1086,7 @@ func testHasCloudletDnsLabel(kvstore objstore.KVStore, id string) bool {
 }
 
 func testCloudletEdgeboxOnly(t *testing.T, ctx context.Context, cloudlet edgeproto.Cloudlet, apis *AllApis) {
-	// When edgebox only is set (by MC), cannot create non-edgebox
-	// platform.
+	// When edgebox only is set (by MC), cannot create non-edgebox platform.
 	cloudlet.Key.Name = "test-edgebox-only"
 	cloudlet.PlatformType = platform.PlatformTypeFake
 	cloudlet.EdgeboxOnly = true

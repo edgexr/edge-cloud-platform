@@ -419,14 +419,10 @@ var platformTypeEnums = map[int32]string{
 	18: platform.PlatformTypeK8SOperator,
 }
 
-type CloudletPlatformType struct {
-	PlatformType int32 `protobuf:"varint,15,opt,name=platform_type,json=platformType,proto3,enum=string" json:"platform_type,omitempty"`
-}
-
 func PlatformType(ctx context.Context, objStore objstore.KVStore, allApis *AllApis) error {
 	log.SpanLog(ctx, log.DebugLevelUpgrade, "PlatformType upgrade")
 
-	// Upgrade AppInst keys
+	// Convert platformtype from enum to string
 	cloudletKeys, err := getDbObjectKeys(objStore, "Cloudlet")
 	if err != nil {
 		return err
@@ -438,24 +434,42 @@ func PlatformType(ctx context.Context, objStore objstore.KVStore, allApis *AllAp
 				// deleted in the meantime
 				return nil
 			}
-			var cloudlet edgeproto.Cloudlet
-			if err2 := unmarshalUpgradeObj(ctx, cloudletStr, &cloudlet); err2 != nil {
+			// Because platform type could be either an int32 or
+			// a string, we can't really define an object to unmarshal
+			// it into without having to define platformtype as an
+			// object with a custom unmarshaler. Since we don't want
+			// to do that, we unmarshal into a generic map and convert
+			// if needed.
+			cloudletData := map[string]interface{}{}
+			err2 := json.Unmarshal([]byte(cloudletStr), &cloudletData)
+			if err2 != nil {
+				log.SpanLog(ctx, log.DebugLevelUpgrade, "Upgrade unmarshal object failed", "objType", "cloudlet", "val", cloudletStr, "err", err2)
 				return err2
 			}
-			if cloudlet.PlatformType != "" {
+			ptVal, found := cloudletData["platform_type"]
+			if !found {
+				ptVal = float64(0)
+			}
+			var ptStr string
+			switch v := ptVal.(type) {
+			case float64:
+				ptStr, found = platformTypeEnums[int32(v)]
+			case string:
 				// already upgraded
 				return nil
+			default:
+				return fmt.Errorf("Unexpected platform type %T for %s", ptVal, cloudletKey)
 			}
-			var cloudletOld CloudletPlatformType
-			if err2 := unmarshalUpgradeObj(ctx, cloudletStr, &cloudletOld); err2 != nil {
+			if !found {
+				return fmt.Errorf("Invalid platformType %v for cloudlet %s", ptVal, cloudletKey)
+			}
+			cloudletData["platform_type"] = ptStr
+			cloudletOut, err2 := json.Marshal(cloudletData)
+			if err2 != nil {
+				log.SpanLog(ctx, log.DebugLevelUpgrade, "Upgrade marshal object failed", "objType", "cloudlet", "err", err2)
 				return err2
 			}
-			platString, ok := platformTypeEnums[cloudletOld.PlatformType]
-			if !ok {
-				return fmt.Errorf("PlatformType not found for %d on cloudlet %s", cloudletOld.PlatformType, cloudletKey)
-			}
-			cloudlet.PlatformType = platString
-			allApis.cloudletApi.store.STMPut(stm, &cloudlet)
+			stm.Put(cloudletKey, string(cloudletOut))
 			return nil
 		})
 		if err != nil {

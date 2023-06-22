@@ -2132,8 +2132,7 @@ func (s *CloudletApi) GetCloudletProps(ctx context.Context, in *edgeproto.Cloudl
 func (s *CloudletApi) ShowPlatformsFeatures(in *edgeproto.PlatformFeatures, cb edgeproto.CloudletApi_ShowPlatformsFeaturesServer) error {
 	for _, features := range platforms.GetAllPlatformsFeatures() {
 		if features.IsFake {
-			// don't show users fake platforms, they are only for
-			// testing
+			// don't show users fake platforms, they are only for testing
 			continue
 		}
 		err := cb.Send(&features)
