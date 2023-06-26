@@ -64,7 +64,7 @@ func (s *DummyServer) GetCloudletManifest(ctx context.Context, key *edgeproto.Cl
 	return &edgeproto.CloudletManifest{}, nil
 }
 
-func (s *DummyServer) ShowCloudletPlatformFeatures(in *edgeproto.PlatformFeatures, cb edgeproto.CloudletApi_ShowCloudletPlatformFeaturesServer) error {
+func (s *DummyServer) ShowPlatformsFeatures(in *edgeproto.PlatformFeatures, cb edgeproto.CloudletApi_ShowPlatformsFeaturesServer) error {
 	return nil
 }
 

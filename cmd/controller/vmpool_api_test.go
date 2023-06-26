@@ -20,6 +20,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -191,7 +192,7 @@ func testUpdateVMPool(t *testing.T, ctx context.Context, apis *AllApis) {
 	cl := testutil.CloudletData()[1]
 	vmp := testutil.VMPoolData()[0]
 	cl.VmPool = vmp.Key.Name
-	cl.PlatformType = edgeproto.PlatformType_PLATFORM_TYPE_FAKE_VM_POOL
+	cl.PlatformType = platform.PlatformTypeFakeVMPool
 	err := apis.cloudletApi.CreateCloudlet(&cl, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
 

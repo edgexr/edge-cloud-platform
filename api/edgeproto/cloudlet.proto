@@ -132,75 +132,11 @@ message FederationConfig {
   string federation_name = 4;
 }
 
-// Platform Type
-//
-// PlatformType is the supported list of cloudlet types
-//
-// 0: `PLATFORM_TYPE_FAKE`
-// 1: `PLATFORM_TYPE_DIND`
-// 2: `PLATFORM_TYPE_OPENSTACK`
-// 3: `PLATFORM_TYPE_AZURE`
-// 4: `PLATFORM_TYPE_GCP`
-// 5: `PLATFORM_TYPE_EDGEBOX`
-// 6: `PLATFORM_TYPE_FAKEINFRA`
-// 7: `PLATFORM_TYPE_VSPHERE`
-// 8: `PLATFORM_TYPE_AWS_EKS`
-// 9: `PLATFORM_TYPE_VM_POOL`
-// 10: `PLATFORM_TYPE_AWS_EC2`
-// 11: `PLATFORM_TYPE_VCD`
-// 12: `PLATFORM_TYPE_K8S_BARE_METAL`
-// 13: `PLATFORM_TYPE_KIND`
-// 14: `PLATFORM_TYPE_KINDINFRA`
-// 15: `PLATFORM_TYPE_FAKE_SINGLE_CLUSTER`
-// 16: `PLATFORM_TYPE_FEDERATION`
-// 17: `PLATFORM_TYPE_FAKE_VM_POOL`
-// 18: `PLATFORM_TYPE_K8S_OPERATOR`
-enum PlatformType {
-  // Fake Cloudlet
-  PLATFORM_TYPE_FAKE = 0;
-  // DIND Cloudlet
-  PLATFORM_TYPE_DIND = 1;
-  // Openstack Cloudlet
-  PLATFORM_TYPE_OPENSTACK = 2;
-  // Azure Cloudlet
-  PLATFORM_TYPE_AZURE = 3;
-  // GCP Cloudlet
-  PLATFORM_TYPE_GCP = 4;
-  // Edgebox Cloudlet
-  PLATFORM_TYPE_EDGEBOX = 5;
-  // Fake Infra Cloudlet
-  PLATFORM_TYPE_FAKEINFRA = 6;
-  // VMWare VSphere (ESXi)
-  PLATFORM_TYPE_VSPHERE = 7;
-  // AWS EKS Cloudlet
-  PLATFORM_TYPE_AWS_EKS = 8;
-  // VM Pool Cloudlet
-  PLATFORM_TYPE_VM_POOL = 9;
-  // AWS EC2 VM Cloudlet
-  PLATFORM_TYPE_AWS_EC2 = 10;
-  // VMWare vCloud Director Cloudlet
-  PLATFORM_TYPE_VCD = 11;
-  // Kubernetes on bare metal
-  PLATFORM_TYPE_K8S_BARE_METAL = 12;
-  // KIND Cloudlet
-  PLATFORM_TYPE_KIND = 13;
-  // KIND Infra Cloudlet
-  PLATFORM_TYPE_KINDINFRA = 14;
-  // Fake Single Cluster Cloudlet
-  PLATFORM_TYPE_FAKE_SINGLE_CLUSTER = 15;
-  // Cloudlet shared as part of federation
-  PLATFORM_TYPE_FEDERATION  = 16;
-  // Fake VM Pool Cloudlet
-  PLATFORM_TYPE_FAKE_VM_POOL = 17;
-  // Kubernetes via cloudlet operator
-  PLATFORM_TYPE_K8S_OPERATOR = 18;
-}
-
 // PlatformFeatures are characteristics and supported
 // features of a platform type.
 message PlatformFeatures {
   // Platform type
-  PlatformType platform_type = 1;
+  string platform_type = 1;
   // Platform supports multi tenant kubernetes clusters
   bool supports_multi_tenant_cluster = 2;
   // Platform supports shared volumes
@@ -237,6 +173,10 @@ message PlatformFeatures {
   bool no_kubernetes_cluster_auto_scale = 17;
   // Kubernetes cluster is created externally and already exists
   bool is_prebuilt_kubernetes_cluster = 18;
+  // No cluster support. Some platforms, like Federation, do not support clusters.
+  bool no_cluster_support = 20;
+  // Edgebox platforms are for user-hosted cloudlets, and must use public images and do not get DNS mapping, as they do not get access to sensitive data.
+  bool is_edgebox = 21;
 }
 
 // Optional resource input consists of a resource specifier and clouldkey name
@@ -517,7 +457,7 @@ message Cloudlet {
   // Deploy cloudlet services locally
   bool deployment_local = 14 [(protogen.backend) = true];
   // Platform type
-  PlatformType platform_type = 15;
+  string platform_type = 15;
   // Address for the CRM notify listener to run on
   string notify_srv_addr = 16 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   // Min system resource requirements for platform
@@ -602,6 +542,8 @@ message Cloudlet {
   string license_config_storage_path = 57 [(protogen.backend) = true];
   // Cloudlet-specific flavors
   repeated FlavorInfo infra_flavors = 58 [(protogen.backend) = true];
+  // Edgebox only cloudlets allow for developers to set up cloudlets anywhere (laptop, etc) but can only use public images and do not support DNS mapping.
+  bool edgebox_only = 59;
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;
@@ -653,7 +595,7 @@ message PropertyInfo {
 // Infra properties used to set up cloudlet
 message CloudletProps {
   // Platform type
-  PlatformType platform_type = 1;
+  string platform_type = 1;
   // Single Key-Value pair of env var to be passed to CRM
   map<string, PropertyInfo> properties = 2;
   // Organization
@@ -662,7 +604,7 @@ message CloudletProps {
 
 message CloudletResourceQuotaProps {
   // Platform type
-  PlatformType platform_type = 1;
+  string platform_type = 1;
   // Cloudlet resource properties
   repeated InfraResource properties = 2 [(gogoproto.nullable) = false];
   // Organization
@@ -725,7 +667,7 @@ service CloudletApi {
     };
     option (protogen.stream_out_incremental) = true;
     option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
-    option (protogen.method_noconfig) = "PlatformType,DeploymentLocal,Flavor,PhysicalName,ContainerVersion,ResTagMap,VmImageVersion,Deployment,InfraApiAccess,InfraConfig,OverridePolicyContainerVersion,VmPool,ResTagMap";
+    option (protogen.method_noconfig) = "PlatformType,DeploymentLocal,Flavor,PhysicalName,ContainerVersion,ResTagMap,VmImageVersion,Deployment,InfraApiAccess,InfraConfig,OverridePolicyContainerVersion,VmPool,ResTagMap,EdgeboxOnly";
     option (protogen.mc2_custom_authz) = true;
   }
   // Show Cloudlets. Lists all the cloudlets managed from Edge Controller.
@@ -746,10 +688,10 @@ service CloudletApi {
     };
     option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Organization";
   }
-  // Show Cloudlet Platform Features. Shows platform specific features
-  rpc ShowCloudletPlatformFeatures(PlatformFeatures) returns (stream PlatformFeatures) {
+  // Shows all supported cloudlet platforms and their features.
+  rpc ShowPlatformsFeatures(PlatformFeatures) returns (stream PlatformFeatures) {
     option (google.api.http) = {
-      post: "/show/cloudletplatformfeatures"
+      post: "/show/platformsfeatures"
       body: "*"
     };
     option (protogen.mc2_api) = "ResourceCloudlets,ActionView,skipenforce";

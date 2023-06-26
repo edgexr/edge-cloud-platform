@@ -32,6 +32,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/jarcoal/httpmock"
@@ -212,6 +213,7 @@ func TestCloudletApi(t *testing.T) {
 
 	testShowFlavorsForCloudlet(t, ctx, apis)
 	testAllianceOrgs(t, ctx, apis)
+	testCloudletEdgeboxOnly(t, ctx, cloudletData[2], apis)
 }
 
 func testBadLat(t *testing.T, ctx context.Context, clbad *edgeproto.Cloudlet, lats []float64, action string, apis *AllApis) {
@@ -1081,4 +1083,20 @@ func testCloudletDnsLabel(t *testing.T, ctx context.Context, apis *AllApis) {
 
 func testHasCloudletDnsLabel(kvstore objstore.KVStore, id string) bool {
 	return testKVStoreHasKey(kvstore, edgeproto.CloudletDnsLabelDbKey(id))
+}
+
+func testCloudletEdgeboxOnly(t *testing.T, ctx context.Context, cloudlet edgeproto.Cloudlet, apis *AllApis) {
+	// When edgebox only is set (by MC), cannot create non-edgebox platform.
+	cloudlet.Key.Name = "test-edgebox-only"
+	cloudlet.PlatformType = platform.PlatformTypeFake
+	cloudlet.EdgeboxOnly = true
+	err := apis.cloudletApi.CreateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Cloudlet is restricted to edgebox only platforms")
+	// Test can create edgebox platform.
+	cloudlet.PlatformType = platform.PlatformTypeFakeEdgebox
+	err = apis.cloudletApi.CreateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	// clean up
+	err = apis.cloudletApi.DeleteCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 }

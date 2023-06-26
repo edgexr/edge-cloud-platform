@@ -21,12 +21,12 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
+	"github.com/gogo/protobuf/types"
 )
 
 type VSpherePlatform struct {
@@ -36,8 +36,15 @@ type VSpherePlatform struct {
 	caches       *platform.Caches
 }
 
+func NewPlatform() platform.Platform {
+	return &vmlayer.VMPlatform{
+		VMProvider: &VSpherePlatform{},
+	}
+}
+
 func (o *VSpherePlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:               platform.PlatformTypeVSphere,
 		SupportsMultiTenantCluster: true,
 		SupportsSharedVolume:       true,
 	}

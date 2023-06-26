@@ -25,6 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	context "golang.org/x/net/context"
@@ -393,5 +394,87 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 		}
 	}
 
+	return nil
+}
+
+var platformTypeEnums = map[int32]string{
+	0:  platform.PlatformTypeFake,
+	1:  platform.PlatformTypeDind,
+	2:  platform.PlatformTypeOpenstack,
+	3:  platform.PlatformTypeAzure,
+	4:  platform.PlatformTypeGCP,
+	5:  platform.PlatformTypeEdgebox,
+	6:  platform.PlatformTypeFakeInfra,
+	7:  platform.PlatformTypeVSphere,
+	8:  platform.PlatformTypeAWSEKS,
+	9:  platform.PlatformTypeVMPool,
+	10: platform.PlatformTypeAWSEC2,
+	11: platform.PlatformTypeVCD,
+	12: platform.PlatformTypeK8SBareMetal,
+	13: platform.PlatformTypeKind,
+	14: platform.PlatformTypeKindInfra,
+	15: platform.PlatformTypeFakeSingleCluster,
+	16: platform.PlatformTypeFederation,
+	17: platform.PlatformTypeVMPool,
+	18: platform.PlatformTypeK8SOperator,
+}
+
+func PlatformType(ctx context.Context, objStore objstore.KVStore, allApis *AllApis) error {
+	log.SpanLog(ctx, log.DebugLevelUpgrade, "PlatformType upgrade")
+
+	// Convert platformtype from enum to string
+	cloudletKeys, err := getDbObjectKeys(objStore, "Cloudlet")
+	if err != nil {
+		return err
+	}
+	for cloudletKey, _ := range cloudletKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			cloudletStr := stm.Get(cloudletKey)
+			if cloudletStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			// Because platform type could be either an int32 or
+			// a string, we can't really define an object to unmarshal
+			// it into without having to define platformtype as an
+			// object with a custom unmarshaler. Since we don't want
+			// to do that, we unmarshal into a generic map and convert
+			// if needed.
+			cloudletData := map[string]interface{}{}
+			err2 := json.Unmarshal([]byte(cloudletStr), &cloudletData)
+			if err2 != nil {
+				log.SpanLog(ctx, log.DebugLevelUpgrade, "Upgrade unmarshal object failed", "objType", "cloudlet", "val", cloudletStr, "err", err2)
+				return err2
+			}
+			ptVal, found := cloudletData["platform_type"]
+			if !found {
+				ptVal = float64(0)
+			}
+			var ptStr string
+			switch v := ptVal.(type) {
+			case float64:
+				ptStr, found = platformTypeEnums[int32(v)]
+			case string:
+				// already upgraded
+				return nil
+			default:
+				return fmt.Errorf("Unexpected platform type %T for %s", ptVal, cloudletKey)
+			}
+			if !found {
+				return fmt.Errorf("Invalid platformType %v for cloudlet %s", ptVal, cloudletKey)
+			}
+			cloudletData["platform_type"] = ptStr
+			cloudletOut, err2 := json.Marshal(cloudletData)
+			if err2 != nil {
+				log.SpanLog(ctx, log.DebugLevelUpgrade, "Upgrade marshal object failed", "objType", "cloudlet", "err", err2)
+				return err2
+			}
+			stm.Put(cloudletKey, string(cloudletOut))
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

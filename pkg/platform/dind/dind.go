@@ -17,14 +17,20 @@ package dind
 import (
 	"context"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/xind"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 type Platform struct {
 	xind.Xind
+}
+
+func NewPlatform() platform.Platform {
+	p := &Platform{}
+	p.Xind.PlatformType = platform.PlatformTypeDind
+	return p
 }
 
 func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {

@@ -26,6 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	"github.com/stretchr/testify/require"
@@ -443,7 +444,7 @@ func TestPromStats(t *testing.T) {
 	AppInstCache.Update(ctx, &appInst2, 0)
 	AppInstCache.Update(ctx, &appInst3, 0)
 
-	*platformName = "PLATFORM_TYPE_FAKEINFRA"
+	*platformName = pf.PlatformTypeFakeInfra
 	testPlatform, _ := getPlatform()
 
 	// Skip this much of the URL

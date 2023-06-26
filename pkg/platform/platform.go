@@ -232,19 +232,16 @@ type DNSRequest struct {
 	Proxy   bool
 }
 
-var pfMaps = map[string]string{
-	"fakeinfra": "fake",
-	"edgebox":   "dind",
-	"kindinfra": "kind",
-}
-
-func GetType(pfType string) string {
+// GetTypeBC converts the old enum-based name into the
+// standard platform type name, if needed. Otherwise it
+// just returns the standard platform name as is.
+// This is necessary to convert the old platform strings
+// set in Chef as the command line args for existing CRM
+// and Shepherd instances.
+func GetTypeBC(pfType string) string {
 	out := strings.TrimPrefix(pfType, "PLATFORM_TYPE_")
 	out = strings.ToLower(out)
 	out = strings.Replace(out, "_", "", -1)
-	if mapOut, found := pfMaps[out]; found {
-		return mapOut
-	}
 	return out
 }
 

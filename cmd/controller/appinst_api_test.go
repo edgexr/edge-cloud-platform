@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
@@ -752,7 +753,7 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 			Latitude:  37.1231,
 			Longitude: 94.123,
 		},
-		PlatformType: edgeproto.PlatformType_PLATFORM_TYPE_FAKE_SINGLE_CLUSTER,
+		PlatformType: platform.PlatformTypeFakeSingleCluster,
 		CrmOverride:  edgeproto.CRMOverride_IGNORE_CRM,
 	}
 	cloudletMTInfo := edgeproto.CloudletInfo{
@@ -1120,7 +1121,7 @@ func TestAppInstIdDelimiter(t *testing.T) {
 		// need the app definition as well
 		for _, app := range testutil.AppData() {
 			if app.Key.Matches(&ai.AppKey) {
-				id, _ := pfutils.GetAppInstId(ctx, &ai, &app, "", edgeproto.PlatformType_PLATFORM_TYPE_FAKE)
+				id, _ := pfutils.GetAppInstId(ctx, &ai, &app, "", platform.PlatformTypeFake)
 				require.NotContains(t, id, ".", "id must not contain '.'")
 			}
 		}
@@ -1135,7 +1136,7 @@ func TestAppInstIdDelimiter(t *testing.T) {
 	appInst.ClusterKey.Organization += "."
 	appInst.Key.CloudletKey.Name += "."
 	appInst.Key.CloudletKey.Organization += "."
-	id, _ := pfutils.GetAppInstId(ctx, &appInst, &app, ".", edgeproto.PlatformType_PLATFORM_TYPE_FAKE)
+	id, _ := pfutils.GetAppInstId(ctx, &appInst, &app, ".", platform.PlatformTypeFake)
 	require.NotContains(t, id, ".", "id must not contain '.'")
 
 	// test name sanitization
@@ -1158,9 +1159,9 @@ func TestAppInstIdDelimiter(t *testing.T) {
 		},
 	}
 
-	id, _ = pfutils.GetAppInstId(ctx, &appInstOrgStartWithNumber, &appOrgStartWithNumber, ".", edgeproto.PlatformType_PLATFORM_TYPE_FAKE)
+	id, _ = pfutils.GetAppInstId(ctx, &appInstOrgStartWithNumber, &appOrgStartWithNumber, ".", platform.PlatformTypeFake)
 	require.Regexp(t, startWithNumReg, id, "fake id not sanitized")
-	id, _ = pfutils.GetAppInstId(ctx, &appInstOrgStartWithNumber, &appOrgStartWithNumber, ".", edgeproto.PlatformType_PLATFORM_TYPE_OPENSTACK)
+	id, _ = pfutils.GetAppInstId(ctx, &appInstOrgStartWithNumber, &appOrgStartWithNumber, ".", platform.PlatformTypeOpenstack)
 	require.NotRegexp(t, startWithNumReg, id, "openstack id must not start with number")
 }
 
