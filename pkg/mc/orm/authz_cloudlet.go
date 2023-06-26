@@ -98,8 +98,8 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 
 	if opts.requiresOrg != "" {
 		// edgeboxOnly check is not required for Show command
-		noEdgeboxOnly := false
-		if err := checkRequiresOrg(ctx, opts.requiresOrg, resource, s.admin, noEdgeboxOnly); err != nil {
+		edgeboxCheckFunc := EdgeboxCheckFunc(nil)
+		if err := checkRequiresOrg(ctx, opts.requiresOrg, resource, s.admin, edgeboxCheckFunc); err != nil {
 			return err
 		}
 	}
@@ -300,9 +300,14 @@ func authzCreateCloudlet(ctx context.Context, region, username string, obj *edge
 	if obj.SingleKubernetesClusterOwner != "" {
 		ops = append(ops, withReferenceOrg(obj.SingleKubernetesClusterOwner, "single kubernetes cluster owner", OrgTypeDeveloper))
 	}
-	if obj.PlatformType != edgeproto.PlatformType_PLATFORM_TYPE_EDGEBOX && obj.PlatformType != edgeproto.PlatformType_PLATFORM_TYPE_FAKE {
-		ops = append(ops, withNoEdgeboxOnly())
+	checkFunc := func(org *ormapi.Organization) error {
+		if org.EdgeboxOnly {
+			// cloudlet must also be marked edgebox only
+			obj.EdgeboxOnly = true
+		}
+		return nil
 	}
+	ops = append(ops, withCheckEdgeboxOnly(checkFunc))
 	return authorized(ctx, username, obj.Key.Organization, resource, action, ops...)
 }
 

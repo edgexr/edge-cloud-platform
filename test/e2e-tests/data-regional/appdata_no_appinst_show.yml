@@ -88,6 +88,7 @@ cloudlets:
   ipsupport: Dynamic
   numdynamicips: 254
   state: Ready
+  platformtype: fake
   flavor:
     name: x1.small
   physicalname: att-cloud-1
@@ -115,6 +116,7 @@ cloudlets:
   ipsupport: Dynamic
   numdynamicips: 254
   state: Ready
+  platformtype: fake
   flavor:
     name: x1.small
   physicalname: azure-cloud-4
@@ -142,6 +144,7 @@ cloudlets:
   ipsupport: Dynamic
   numdynamicips: 254
   state: Ready
+  platformtype: fake
   flavor:
     name: x1.small
   physicalname: dmuus-cloud-1
@@ -169,6 +172,7 @@ cloudlets:
   ipsupport: Dynamic
   numdynamicips: 254
   state: Ready
+  platformtype: fake
   flavor:
     name: x1.small
   physicalname: dmuus-cloud-2
@@ -196,6 +200,7 @@ cloudlets:
   ipsupport: Dynamic
   numdynamicips: 254
   state: Ready
+  platformtype: fake
   flavor:
     name: x1.small
   physicalname: gcp-cloud-5

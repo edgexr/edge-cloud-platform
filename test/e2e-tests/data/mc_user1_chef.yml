@@ -30,6 +30,6 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: Fakeinfra
+      platformtype: fakeinfra
       crmoverride: IgnoreCrm
 

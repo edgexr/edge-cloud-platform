@@ -24,7 +24,9 @@ import (
 	"github.com/codeskyblue/go-sh"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -55,8 +57,15 @@ type AZFlavor struct {
 	VCPUs int
 }
 
+func NewPlatform() platform.Platform {
+	return &managedk8s.ManagedK8sPlatform{
+		Provider: &AzurePlatform{},
+	}
+}
+
 func (o *AzurePlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:                  platform.PlatformTypeAzure,
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,

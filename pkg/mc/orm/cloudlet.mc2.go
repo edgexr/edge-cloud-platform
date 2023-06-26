@@ -605,7 +605,7 @@ func GetCloudletManifest(c echo.Context) error {
 	return ormutil.SetReply(c, resp)
 }
 
-func ShowCloudletPlatformFeatures(c echo.Context) error {
+func ShowPlatformsFeatures(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
@@ -631,7 +631,7 @@ func ShowCloudletPlatformFeatures(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlclient.ShowCloudletPlatformFeaturesStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.ShowPlatformsFeaturesStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}

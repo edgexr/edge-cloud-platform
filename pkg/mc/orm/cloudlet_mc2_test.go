@@ -563,27 +563,27 @@ func badRegionGetCloudletManifest(t *testing.T, mcClient *mctestclient.Client, u
 
 var _ = edgeproto.GetFields
 
-func badPermShowCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PlatformFeatures)) {
-	_, status, err := testutil.TestPermShowCloudletPlatformFeatures(mcClient, uri, token, region, org, modFuncs...)
+func badPermShowPlatformsFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PlatformFeatures)) {
+	_, status, err := testutil.TestPermShowPlatformsFeatures(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badShowCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.PlatformFeatures)) {
-	_, st, err := testutil.TestPermShowCloudletPlatformFeatures(mcClient, uri, token, region, org, modFuncs...)
+func badShowPlatformsFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.PlatformFeatures)) {
+	_, st, err := testutil.TestPermShowPlatformsFeatures(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermShowCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PlatformFeatures)) {
-	_, status, err := testutil.TestPermShowCloudletPlatformFeatures(mcClient, uri, token, region, org, modFuncs...)
+func goodPermShowPlatformsFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PlatformFeatures)) {
+	_, status, err := testutil.TestPermShowPlatformsFeatures(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
-func badRegionShowCloudletPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.PlatformFeatures)) {
-	out, status, err := testutil.TestPermShowCloudletPlatformFeatures(mcClient, uri, token, "bad region", org, modFuncs...)
+func badRegionShowPlatformsFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.PlatformFeatures)) {
+	out, status, err := testutil.TestPermShowPlatformsFeatures(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	if err.Error() == "Forbidden" {
 		require.Equal(t, http.StatusForbidden, status)
@@ -1268,7 +1268,7 @@ func badPermTestShowPlatformFeatures(t *testing.T, mcClient *mctestclient.Client
 	// show is allowed but won't show anything
 	var status int
 	var err error
-	list0, status, err := testutil.TestPermShowCloudletPlatformFeatures(mcClient, uri, token, region, org)
+	list0, status, err := testutil.TestPermShowPlatformsFeatures(mcClient, uri, token, region, org)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(list0))
@@ -1283,12 +1283,12 @@ func goodPermTestPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, u
 func goodPermTestShowPlatformFeatures(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
 	var status int
 	var err error
-	list0, status, err := testutil.TestPermShowCloudletPlatformFeatures(mcClient, uri, token, region, org)
+	list0, status, err := testutil.TestPermShowPlatformsFeatures(mcClient, uri, token, region, org)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, count, len(list0))
 
-	badRegionShowCloudletPlatformFeatures(t, mcClient, uri, token, org)
+	badRegionShowPlatformsFeatures(t, mcClient, uri, token, org)
 }
 
 // Test permissions for user with token1 who should have permissions for

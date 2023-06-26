@@ -385,7 +385,7 @@ func local_request_CloudletApi_GetCloudletManifest_0(ctx context.Context, marsha
 
 }
 
-func request_CloudletApi_ShowCloudletPlatformFeatures_0(ctx context.Context, marshaler runtime.Marshaler, client CloudletApiClient, req *http.Request, pathParams map[string]string) (CloudletApi_ShowCloudletPlatformFeaturesClient, runtime.ServerMetadata, error) {
+func request_CloudletApi_ShowPlatformsFeatures_0(ctx context.Context, marshaler runtime.Marshaler, client CloudletApiClient, req *http.Request, pathParams map[string]string) (CloudletApi_ShowPlatformsFeaturesClient, runtime.ServerMetadata, error) {
 	var protoReq PlatformFeatures
 	var metadata runtime.ServerMetadata
 
@@ -397,7 +397,7 @@ func request_CloudletApi_ShowCloudletPlatformFeatures_0(ctx context.Context, mar
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	stream, err := client.ShowCloudletPlatformFeatures(ctx, &protoReq)
+	stream, err := client.ShowPlatformsFeatures(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -1038,7 +1038,7 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("POST", pattern_CloudletApi_ShowCloudletPlatformFeatures_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_CloudletApi_ShowPlatformsFeatures_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1722,7 +1722,7 @@ func RegisterCloudletApiHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("POST", pattern_CloudletApi_ShowCloudletPlatformFeatures_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_CloudletApi_ShowPlatformsFeatures_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1731,14 +1731,14 @@ func RegisterCloudletApiHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_CloudletApi_ShowCloudletPlatformFeatures_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_CloudletApi_ShowPlatformsFeatures_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_CloudletApi_ShowCloudletPlatformFeatures_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_CloudletApi_ShowPlatformsFeatures_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -2016,7 +2016,7 @@ var (
 
 	pattern_CloudletApi_GetCloudletManifest_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"get", "cloudlet", "manifest"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_CloudletApi_ShowCloudletPlatformFeatures_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"show", "cloudletplatformfeatures"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_CloudletApi_ShowPlatformsFeatures_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"show", "platformsfeatures"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_CloudletApi_GetCloudletProps_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"get", "cloudlet", "props"}, "", runtime.AssumeColonVerbOpt(true)))
 
@@ -2056,7 +2056,7 @@ var (
 
 	forward_CloudletApi_GetCloudletManifest_0 = runtime.ForwardResponseMessage
 
-	forward_CloudletApi_ShowCloudletPlatformFeatures_0 = runtime.ForwardResponseStream
+	forward_CloudletApi_ShowPlatformsFeatures_0 = runtime.ForwardResponseStream
 
 	forward_CloudletApi_GetCloudletProps_0 = runtime.ForwardResponseMessage
 

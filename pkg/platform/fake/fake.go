@@ -107,6 +107,10 @@ var fakeProps = map[string]*edgeproto.PropertyInfo{
 
 var maxPrimaryCrmStartupWait = 10 * time.Second
 
+func NewPlatform() platform.Platform {
+	return &Platform{}
+}
+
 func UpdateResourcesMax() error {
 	// Make fake resource limits configurable for QA testing
 	ramMax := os.Getenv("FAKE_RAM_MAX")
@@ -178,6 +182,7 @@ func (s *Platform) GetInitHAConditionalCompatibilityVersion(ctx context.Context)
 
 func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:                             platform.PlatformTypeFake,
 		SupportsMultiTenantCluster:               true,
 		SupportsSharedVolume:                     true,
 		SupportsTrustPolicy:                      true,

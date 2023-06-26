@@ -75,7 +75,7 @@ regiondata:
         longitude: -95
       ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: Fake
+      platformtype: fake
 
     apps:
     - key:

@@ -24,10 +24,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/dind"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/fake"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/kind"
-	pplat "github.com/edgexr/edge-cloud-platform/pkg/plugin/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/platforms"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
@@ -35,25 +32,11 @@ var solib = ""
 var GetPlatformFunc func(plat string) (pf.Platform, error)
 
 func GetPlatform(ctx context.Context, plat string, setVersionProps func(context.Context, map[string]string)) (pf.Platform, error) {
-	// Building plugins is slow, so directly importable
-	// platforms are not built as plugins.
-	if plat == "PLATFORM_TYPE_DIND" {
-		return &dind.Platform{}, nil
-	} else if plat == "PLATFORM_TYPE_FAKE" {
-		return &fake.Platform{}, nil
-	} else if plat == "PLATFORM_TYPE_FAKE_SINGLE_CLUSTER" {
-		return &fake.PlatformSingleCluster{}, nil
-	} else if plat == "PLATFORM_TYPE_KIND" {
-		return &kind.Platform{}, nil
-	} else if plat == "PLATFORM_TYPE_FAKE_VM_POOL" {
-		return &fake.PlatformVMPool{}, nil
-	} else {
-		return pplat.GetPlatform(plat)
-	}
+	return platforms.GetPlatform(plat)
 }
 
 func GetClusterSvc(ctx context.Context, pluginRequired bool) (pf.ClusterSvc, error) {
-	return pplat.GetClusterSvc()
+	return platforms.GetClusterSvc()
 }
 
 // GetAppInstId returns a string for this AppInst that is likely to be
@@ -63,10 +46,10 @@ func GetClusterSvc(ctx context.Context, pluginRequired bool) (pf.ClusterSvc, err
 // Salt can be used by the caller to add an extra field if needed
 // to ensure uniqueness. In all cases, any requirements for uniqueness
 // must be guaranteed by the caller. Name sanitization for the platform is performed
-func GetAppInstId(ctx context.Context, appInst *edgeproto.AppInst, app *edgeproto.App, salt string, platformType edgeproto.PlatformType) (string, error) {
+func GetAppInstId(ctx context.Context, appInst *edgeproto.AppInst, app *edgeproto.App, salt string, platformType string) (string, error) {
 	fields := []string{}
 
-	cloudletPlatform, err := GetPlatform(ctx, platformType.String(), nil)
+	cloudletPlatform, err := GetPlatform(ctx, platformType, nil)
 	if err != nil {
 		return "", err
 	}

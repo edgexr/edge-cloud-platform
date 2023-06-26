@@ -40,7 +40,7 @@ cloudlets:
     longitude: 1
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51001
   flavor:
     name: x1.tiny
@@ -54,7 +54,7 @@ cloudlets:
     longitude: 2
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51002
   flavor:
     name: x1.tiny
@@ -68,7 +68,7 @@ cloudlets:
     longitude: 3
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51003
   flavor:
     name: x1.tiny
@@ -82,7 +82,7 @@ cloudlets:
     longitude: 4
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51004
   flavor:
     name: x1.tiny
@@ -96,7 +96,7 @@ cloudlets:
     longitude: 5
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51005
   flavor:
     name: x1.tiny
@@ -110,7 +110,7 @@ cloudlets:
     longitude: 6
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51006
   flavor:
     name: x1.tiny
@@ -124,7 +124,7 @@ cloudlets:
     longitude: 7
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51007
   flavor:
     name: x1.tiny
@@ -138,7 +138,7 @@ cloudlets:
     longitude: 8
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51008
   flavor:
     name: x1.tiny
@@ -152,7 +152,7 @@ cloudlets:
     longitude: 9
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51009
   flavor:
     name: x1.tiny
@@ -166,7 +166,7 @@ cloudlets:
     longitude: 10
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51010
   flavor:
     name: x1.tiny
@@ -180,7 +180,7 @@ cloudlets:
     longitude: 11
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51011
   flavor:
     name: x1.tiny
@@ -194,7 +194,7 @@ cloudlets:
     longitude: 12
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51012
   flavor:
     name: x1.tiny
@@ -208,7 +208,7 @@ cloudlets:
     longitude: 13
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51013
   flavor:
     name: x1.tiny
@@ -222,7 +222,7 @@ cloudlets:
     longitude: 14
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51014
   flavor:
     name: x1.tiny
@@ -236,7 +236,7 @@ cloudlets:
     longitude: 15
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51015
   flavor:
     name: x1.tiny
@@ -250,7 +250,7 @@ cloudlets:
     longitude: 16
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51016
   flavor:
     name: x1.tiny
@@ -264,7 +264,7 @@ cloudlets:
     longitude: 17
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51017
   flavor:
     name: x1.tiny
@@ -278,7 +278,7 @@ cloudlets:
     longitude: 18
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51018
   flavor:
     name: x1.tiny
@@ -292,7 +292,7 @@ cloudlets:
     longitude: 19
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51019
   flavor:
     name: x1.tiny
@@ -306,7 +306,7 @@ cloudlets:
     longitude: 20
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51020
   flavor:
     name: x1.tiny
@@ -320,7 +320,7 @@ cloudlets:
     longitude: 21
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51021
   flavor:
     name: x1.tiny
@@ -334,7 +334,7 @@ cloudlets:
     longitude: 22
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51022
   flavor:
     name: x1.tiny
@@ -348,7 +348,7 @@ cloudlets:
     longitude: 23
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51023
   flavor:
     name: x1.tiny
@@ -362,7 +362,7 @@ cloudlets:
     longitude: 24
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51024
   flavor:
     name: x1.tiny
@@ -376,7 +376,7 @@ cloudlets:
     longitude: 25
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51025
   flavor:
     name: x1.tiny
@@ -390,7 +390,7 @@ cloudlets:
     longitude: 26
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51026
   flavor:
     name: x1.tiny
@@ -404,7 +404,7 @@ cloudlets:
     longitude: 27
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51027
   flavor:
     name: x1.tiny
@@ -418,7 +418,7 @@ cloudlets:
     longitude: 28
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51028
   flavor:
     name: x1.tiny
@@ -432,7 +432,7 @@ cloudlets:
     longitude: 29
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51029
   flavor:
     name: x1.tiny
@@ -446,7 +446,7 @@ cloudlets:
     longitude: 30
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51030
   flavor:
     name: x1.tiny
@@ -460,7 +460,7 @@ cloudlets:
     longitude: 31
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51031
   flavor:
     name: x1.tiny
@@ -474,7 +474,7 @@ cloudlets:
     longitude: 32
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51032
   flavor:
     name: x1.tiny
@@ -488,7 +488,7 @@ cloudlets:
     longitude: 33
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51033
   flavor:
     name: x1.tiny
@@ -502,7 +502,7 @@ cloudlets:
     longitude: 34
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51034
   flavor:
     name: x1.tiny
@@ -516,7 +516,7 @@ cloudlets:
     longitude: 35
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51035
   flavor:
     name: x1.tiny
@@ -530,7 +530,7 @@ cloudlets:
     longitude: 36
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51036
   flavor:
     name: x1.tiny
@@ -544,7 +544,7 @@ cloudlets:
     longitude: 37
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51037
   flavor:
     name: x1.tiny
@@ -558,7 +558,7 @@ cloudlets:
     longitude: 38
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51038
   flavor:
     name: x1.tiny
@@ -572,7 +572,7 @@ cloudlets:
     longitude: 39
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51039
   flavor:
     name: x1.tiny
@@ -586,7 +586,7 @@ cloudlets:
     longitude: 40
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51040
   flavor:
     name: x1.tiny
@@ -600,7 +600,7 @@ cloudlets:
     longitude: 41
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51041
   flavor:
     name: x1.tiny
@@ -614,7 +614,7 @@ cloudlets:
     longitude: 42
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51042
   flavor:
     name: x1.tiny
@@ -628,7 +628,7 @@ cloudlets:
     longitude: 43
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51043
   flavor:
     name: x1.tiny
@@ -642,7 +642,7 @@ cloudlets:
     longitude: 44
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51044
   flavor:
     name: x1.tiny
@@ -656,7 +656,7 @@ cloudlets:
     longitude: 45
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51045
   flavor:
     name: x1.tiny
@@ -670,7 +670,7 @@ cloudlets:
     longitude: 46
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51046
   flavor:
     name: x1.tiny
@@ -684,7 +684,7 @@ cloudlets:
     longitude: 47
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51047
   flavor:
     name: x1.tiny
@@ -698,7 +698,7 @@ cloudlets:
     longitude: 48
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51048
   flavor:
     name: x1.tiny
@@ -712,7 +712,7 @@ cloudlets:
     longitude: 49
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51049
   flavor:
     name: x1.tiny
@@ -726,7 +726,7 @@ cloudlets:
     longitude: 50
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51050
   flavor:
     name: x1.tiny
@@ -740,7 +740,7 @@ cloudlets:
     longitude: 51
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51051
   flavor:
     name: x1.tiny
@@ -754,7 +754,7 @@ cloudlets:
     longitude: 52
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51052
   flavor:
     name: x1.tiny
@@ -768,7 +768,7 @@ cloudlets:
     longitude: 53
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51053
   flavor:
     name: x1.tiny
@@ -782,7 +782,7 @@ cloudlets:
     longitude: 54
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51054
   flavor:
     name: x1.tiny
@@ -796,7 +796,7 @@ cloudlets:
     longitude: 55
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51055
   flavor:
     name: x1.tiny
@@ -810,7 +810,7 @@ cloudlets:
     longitude: 56
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51056
   flavor:
     name: x1.tiny
@@ -824,7 +824,7 @@ cloudlets:
     longitude: 57
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51057
   flavor:
     name: x1.tiny
@@ -838,7 +838,7 @@ cloudlets:
     longitude: 58
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51058
   flavor:
     name: x1.tiny
@@ -852,7 +852,7 @@ cloudlets:
     longitude: 59
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51059
   flavor:
     name: x1.tiny
@@ -866,7 +866,7 @@ cloudlets:
     longitude: 60
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51060
   flavor:
     name: x1.tiny
@@ -880,7 +880,7 @@ cloudlets:
     longitude: 61
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51061
   flavor:
     name: x1.tiny
@@ -894,7 +894,7 @@ cloudlets:
     longitude: 62
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51062
   flavor:
     name: x1.tiny
@@ -908,7 +908,7 @@ cloudlets:
     longitude: 63
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51063
   flavor:
     name: x1.tiny
@@ -922,7 +922,7 @@ cloudlets:
     longitude: 64
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51064
   flavor:
     name: x1.tiny
@@ -936,7 +936,7 @@ cloudlets:
     longitude: 65
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51065
   flavor:
     name: x1.tiny
@@ -950,7 +950,7 @@ cloudlets:
     longitude: 66
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51066
   flavor:
     name: x1.tiny
@@ -964,7 +964,7 @@ cloudlets:
     longitude: 67
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51067
   flavor:
     name: x1.tiny
@@ -978,7 +978,7 @@ cloudlets:
     longitude: 68
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51068
   flavor:
     name: x1.tiny
@@ -992,7 +992,7 @@ cloudlets:
     longitude: 69
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51069
   flavor:
     name: x1.tiny
@@ -1006,7 +1006,7 @@ cloudlets:
     longitude: 70
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51070
   flavor:
     name: x1.tiny
@@ -1020,7 +1020,7 @@ cloudlets:
     longitude: 71
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51071
   flavor:
     name: x1.tiny
@@ -1034,7 +1034,7 @@ cloudlets:
     longitude: 72
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51072
   flavor:
     name: x1.tiny
@@ -1048,7 +1048,7 @@ cloudlets:
     longitude: 73
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51073
   flavor:
     name: x1.tiny
@@ -1062,7 +1062,7 @@ cloudlets:
     longitude: 74
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51074
   flavor:
     name: x1.tiny
@@ -1076,7 +1076,7 @@ cloudlets:
     longitude: 75
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51075
   flavor:
     name: x1.tiny
@@ -1090,7 +1090,7 @@ cloudlets:
     longitude: 76
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51076
   flavor:
     name: x1.tiny
@@ -1104,7 +1104,7 @@ cloudlets:
     longitude: 77
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51077
   flavor:
     name: x1.tiny
@@ -1118,7 +1118,7 @@ cloudlets:
     longitude: 78
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51078
   flavor:
     name: x1.tiny
@@ -1132,7 +1132,7 @@ cloudlets:
     longitude: 79
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51079
   flavor:
     name: x1.tiny
@@ -1146,7 +1146,7 @@ cloudlets:
     longitude: 80
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51080
   flavor:
     name: x1.tiny
@@ -1160,7 +1160,7 @@ cloudlets:
     longitude: 81
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51081
   flavor:
     name: x1.tiny
@@ -1174,7 +1174,7 @@ cloudlets:
     longitude: 82
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51082
   flavor:
     name: x1.tiny
@@ -1188,7 +1188,7 @@ cloudlets:
     longitude: 83
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51083
   flavor:
     name: x1.tiny
@@ -1202,7 +1202,7 @@ cloudlets:
     longitude: 84
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51084
   flavor:
     name: x1.tiny
@@ -1216,7 +1216,7 @@ cloudlets:
     longitude: 85
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51085
   flavor:
     name: x1.tiny
@@ -1230,7 +1230,7 @@ cloudlets:
     longitude: 86
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51086
   flavor:
     name: x1.tiny
@@ -1244,7 +1244,7 @@ cloudlets:
     longitude: 87
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51087
   flavor:
     name: x1.tiny
@@ -1258,7 +1258,7 @@ cloudlets:
     longitude: 88
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51088
   flavor:
     name: x1.tiny
@@ -1272,7 +1272,7 @@ cloudlets:
     longitude: 89
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51089
   flavor:
     name: x1.tiny
@@ -1286,7 +1286,7 @@ cloudlets:
     longitude: 90
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51090
   flavor:
     name: x1.tiny
@@ -1300,7 +1300,7 @@ cloudlets:
     longitude: 91
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51091
   flavor:
     name: x1.tiny
@@ -1314,7 +1314,7 @@ cloudlets:
     longitude: 92
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51092
   flavor:
     name: x1.tiny
@@ -1328,7 +1328,7 @@ cloudlets:
     longitude: 93
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51093
   flavor:
     name: x1.tiny
@@ -1342,7 +1342,7 @@ cloudlets:
     longitude: 94
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51094
   flavor:
     name: x1.tiny
@@ -1356,7 +1356,7 @@ cloudlets:
     longitude: 95
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51095
   flavor:
     name: x1.tiny
@@ -1370,7 +1370,7 @@ cloudlets:
     longitude: 96
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51096
   flavor:
     name: x1.tiny
@@ -1384,7 +1384,7 @@ cloudlets:
     longitude: 97
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51097
   flavor:
     name: x1.tiny
@@ -1398,7 +1398,7 @@ cloudlets:
     longitude: 98
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51098
   flavor:
     name: x1.tiny
@@ -1412,7 +1412,7 @@ cloudlets:
     longitude: 99
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51099
   flavor:
     name: x1.tiny
@@ -1426,7 +1426,7 @@ cloudlets:
     longitude: 100
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Fake
+  platformtype: fake
   notifysrvaddr: 127.0.0.1:51100
   flavor:
     name: x1.tiny

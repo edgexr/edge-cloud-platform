@@ -34,12 +34,19 @@ type OpenstackPlatform struct {
 	caches       *platform.Caches
 }
 
+func NewPlatform() platform.Platform {
+	return &vmlayer.VMPlatform{
+		VMProvider: &OpenstackPlatform{},
+	}
+}
+
 func (o *OpenstackPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 	o.VMProperties = vmProperties
 }
 
 func (o *OpenstackPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:                          platform.PlatformTypeOpenstack,
 		SupportsMultiTenantCluster:            true,
 		SupportsSharedVolume:                  true,
 		SupportsTrustPolicy:                   true,

@@ -105,7 +105,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: Fakeinfra
+      platformtype: fakeinfra
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-1
@@ -160,7 +160,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-1
@@ -190,7 +190,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-2
@@ -220,7 +220,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-1
@@ -250,7 +250,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-2
@@ -298,7 +298,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-1
@@ -328,7 +328,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-2
@@ -358,7 +358,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-1
@@ -388,7 +388,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-2
@@ -637,7 +637,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-1
@@ -667,7 +667,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-2
@@ -697,7 +697,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-1
@@ -727,7 +727,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-2
@@ -775,7 +775,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-1
@@ -805,7 +805,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner1-cloud-2
@@ -835,7 +835,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-1
@@ -865,7 +865,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 10
       state: Ready
-      platformtype: Federation
+      platformtype: federation
       flavor:
         name: DefaultPlatformFlavor
       physicalname: partner2-cloud-2

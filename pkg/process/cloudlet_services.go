@@ -110,7 +110,7 @@ func getCrmProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig
 		NotifyAddrs:   notifyCtrlAddrs,
 		NotifySrvAddr: notifyAddr,
 		CloudletKey:   string(cloudletKeyStr),
-		Platform:      cloudlet.PlatformType.String(),
+		Platform:      cloudlet.PlatformType,
 		Common: Common{
 			Hostname: cloudlet.Key.Name,
 			EnvVars:  envVars,
@@ -428,7 +428,7 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 	return &Shepherd{
 		NotifyAddrs: notifyAddr,
 		CloudletKey: string(cloudletKeyStr),
-		Platform:    cloudlet.PlatformType.String(),
+		Platform:    cloudlet.PlatformType,
 		Common: Common{
 			Hostname: cloudlet.Key.Name,
 			EnvVars:  envVars,
@@ -470,6 +470,11 @@ func StartShepherdService(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfC
 	}
 	// for local testing, include debug notify
 	opts = append(opts, WithDebug("api,notify,infra,metrics"))
+	// for local testing, shepherd runs as a process but
+	// the "cloudlet" prometheus runs in a container, so we need
+	// to specify the prometheus target address to be able to
+	// reach Shepherd.
+	shepherdProc.PromTargetAddr = "host.docker.internal:9091"
 
 	shepherdProc.AccessKeyFile = GetLocalAccessKeyFile(cloudlet.Key.Name, HARolePrimary) // TODO Shepherd HA
 

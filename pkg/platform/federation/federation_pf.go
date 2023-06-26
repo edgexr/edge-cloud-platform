@@ -54,6 +54,10 @@ type FederationPlatform struct {
 	fedAppInstEventsMux   sync.Mutex
 }
 
+func NewPlatform() platform.Platform {
+	return &FederationPlatform{}
+}
+
 // GetVersionProperties returns properties related to the platform version
 func (f *FederationPlatform) GetVersionProperties(ctx context.Context) map[string]string {
 	return map[string]string{}
@@ -62,7 +66,9 @@ func (f *FederationPlatform) GetVersionProperties(ctx context.Context) map[strin
 // Get platform features
 func (f *FederationPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:                 platform.PlatformTypeFederation,
 		NoKubernetesClusterAutoScale: true,
+		NoClusterSupport:             true,
 	}
 }
 

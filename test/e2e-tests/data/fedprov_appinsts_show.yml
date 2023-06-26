@@ -93,6 +93,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      platformtype: fake
       flavor:
         name: DefaultPlatformFlavor
       physicalname: azure-cloud-4
@@ -124,7 +125,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: Fakeinfra
+      platformtype: fakeinfra
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-1
@@ -169,6 +170,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      platformtype: fake
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-2
@@ -196,6 +198,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      platformtype: fake
       flavor:
         name: x1.small
       physicalname: enterprise-1
@@ -223,6 +226,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      platformtype: fake
       flavor:
         name: DefaultPlatformFlavor
       physicalname: gcp-cloud-5
@@ -555,6 +559,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      platformtype: fake
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-3
@@ -582,6 +587,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      platformtype: fake
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-4
@@ -609,6 +615,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      platformtype: fake
       flavor:
         name: x1.small
       physicalname: enterprise-2

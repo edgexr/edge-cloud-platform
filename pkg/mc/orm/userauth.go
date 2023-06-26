@@ -236,7 +236,7 @@ func authorized(ctx context.Context, sub, org, obj, act string, ops ...authOp) e
 	}
 	if !opts.showAudit {
 		if opts.requiresOrg != "" {
-			if err := checkRequiresOrg(ctx, opts.requiresOrg, obj, admin, opts.noEdgeboxOnly); err != nil {
+			if err := checkRequiresOrg(ctx, opts.requiresOrg, obj, admin, opts.edgeboxCheckFunc); err != nil {
 				return err
 			}
 		}
@@ -255,7 +255,7 @@ func authorized(ctx context.Context, sub, org, obj, act string, ops ...authOp) e
 // Returns error if required org is not found or invalid.
 // If not present, hides not found error with Forbidden to prevent
 // fishing for org names.
-func checkRequiresOrg(ctx context.Context, org, resource string, admin, noEdgeboxOnly bool) error {
+func checkRequiresOrg(ctx context.Context, org, resource string, admin bool, edgeboxCheckFunc EdgeboxCheckFunc) error {
 	orgType := OrgTypeAny
 	if _, ok := DeveloperResourcesMap[resource]; ok {
 		orgType = OrgTypeDeveloper
@@ -271,8 +271,11 @@ func checkRequiresOrg(ctx context.Context, org, resource string, admin, noEdgebo
 		return err
 	}
 	// make sure only edgebox cloudlets are created for edgebox org
-	if lookup.EdgeboxOnly && noEdgeboxOnly {
-		return fmt.Errorf("Only allowed to create EDGEBOX cloudlet on org %s", org)
+	if edgeboxCheckFunc != nil {
+		err := edgeboxCheckFunc(lookup)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -318,7 +321,7 @@ func checkReferenceOrg(ctx context.Context, org, orgDesc, orgType string) (*orma
 type authOptions struct {
 	showAudit          bool
 	requiresOrg        string
-	noEdgeboxOnly      bool
+	edgeboxCheckFunc   EdgeboxCheckFunc
 	requiresBillingOrg string
 	targetCloudlet     *edgeproto.Cloudlet
 	refOrgs            []refOrg
@@ -329,6 +332,8 @@ type refOrg struct {
 	orgType string
 	orgDesc string
 }
+
+type EdgeboxCheckFunc func(org *ormapi.Organization) error
 
 type authOp func(opts *authOptions)
 
@@ -351,8 +356,8 @@ func withReferenceOrg(org, orgDesc, orgType string) authOp {
 	}
 }
 
-func withNoEdgeboxOnly() authOp {
-	return func(opts *authOptions) { opts.noEdgeboxOnly = true }
+func withCheckEdgeboxOnly(checkFunc EdgeboxCheckFunc) authOp {
+	return func(opts *authOptions) { opts.edgeboxCheckFunc = checkFunc }
 }
 
 func withRequiresBillingOrg(org string, targetCloudlet *edgeproto.Cloudlet) authOp {

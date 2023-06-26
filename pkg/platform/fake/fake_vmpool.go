@@ -14,14 +14,22 @@
 
 package fake
 
-import "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+import (
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+)
 
 type PlatformVMPool struct {
 	Platform
 }
 
+func NewPlatformVMPool() platform.Platform {
+	return &PlatformVMPool{}
+}
+
 func (s *PlatformVMPool) GetFeatures() *edgeproto.PlatformFeatures {
 	features := s.Platform.GetFeatures()
+	features.PlatformType = platform.PlatformTypeFakeVMPool
 	features.IsVmPool = true
 	return features
 }

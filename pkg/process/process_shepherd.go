@@ -24,6 +24,7 @@ type Shepherd struct {
 	NotifyAddrs    string
 	Platform       string
 	MetricsAddr    string
+	PromTargetAddr string
 	PhysicalName   string
 	CloudletKey    string
 	cmd            *exec.Cmd
@@ -67,6 +68,9 @@ func (p *Shepherd) GetArgs(opts ...StartOp) []string {
 	if p.MetricsAddr != "" {
 		args = append(args, "--metricsAddr")
 		args = append(args, p.MetricsAddr)
+	}
+	if p.PromTargetAddr != "" {
+		args = append(args, "--promTargetAddr", p.PromTargetAddr)
 	}
 	if p.AppDNSRoot != "" {
 		args = append(args, "--appDNSRoot")

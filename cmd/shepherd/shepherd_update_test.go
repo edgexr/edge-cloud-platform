@@ -132,7 +132,7 @@ scrape_configs:
 	require.Nil(t, err)
 	expected = `[
 {
-	"targets": ["host.docker.internal:9091"],
+	"targets": ["0.0.0.0:9091"],
 	"labels": {
 		"appinst": "AppInstTest",
 		"appinstorg": "",

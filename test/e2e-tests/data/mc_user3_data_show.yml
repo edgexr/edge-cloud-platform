@@ -90,6 +90,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      platformtype: fake
       trustpolicystate: NotPresent
       gpuconfig:
         driver:
@@ -112,7 +113,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: Fakeinfra
+      platformtype: fakeinfra
       trustpolicystate: NotPresent
       gpuconfig:
         driver:
@@ -136,6 +137,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      platformtype: fake
       trustpolicystate: NotPresent
       infraflavors:
       - name: x1.tiny
@@ -155,6 +157,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      platformtype: fake
       trustpolicystate: NotPresent
       infraflavors:
       - name: x1.tiny
@@ -174,6 +177,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      platformtype: fake
       trustpolicystate: NotPresent
       infraflavors:
       - name: x1.tiny
@@ -386,6 +390,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      platformtype: fake
       trustpolicystate: NotPresent
       infraflavors:
       - name: x1.tiny
@@ -405,6 +410,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      platformtype: fake
       trustpolicystate: NotPresent
       infraflavors:
       - name: x1.tiny
@@ -424,6 +430,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
+      platformtype: fake
       trustpolicystate: NotPresent
       infraflavors:
       - name: x1.tiny

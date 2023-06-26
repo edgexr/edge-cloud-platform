@@ -1000,7 +1000,7 @@ func (s *Client) GetCloudletManifest(uri string, token string, in *ormapi.Region
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudletPlatformFeatures(uri string, token string, in *ormapi.RegionPlatformFeatures, ops ...Op) ([]edgeproto.PlatformFeatures, int, error) {
+func (s *Client) ShowPlatformsFeatures(uri string, token string, in *ormapi.RegionPlatformFeatures, ops ...Op) ([]edgeproto.PlatformFeatures, int, error) {
 	rundata := RunData{}
 	applyOps(&rundata, ops...)
 	rundata.Uri = uri
@@ -1009,7 +1009,7 @@ func (s *Client) ShowCloudletPlatformFeatures(uri string, token string, in *orma
 	var out []edgeproto.PlatformFeatures
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("ShowCloudletPlatformFeatures")
+	apiCmd := ormctl.MustGetCommand("ShowPlatformsFeatures")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError

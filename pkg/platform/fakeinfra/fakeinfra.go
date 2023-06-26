@@ -40,6 +40,16 @@ type Platform struct {
 	mux    sync.Mutex
 }
 
+func NewPlatform() platform.Platform {
+	return &Platform{}
+}
+
+func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
+	features := s.Platform.GetFeatures()
+	features.PlatformType = platform.PlatformTypeFakeInfra
+	return features
+}
+
 func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	s.envoys = make(map[edgeproto.AppInstKey]*exec.Cmd)
 	return s.Platform.InitCommon(ctx, platformConfig, caches, haMgr, updateCallback)

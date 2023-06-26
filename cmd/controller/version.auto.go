@@ -20,11 +20,13 @@ var VersionHash_UpgradeFuncs = map[int32]VersionUpgradeFunc{
 	0:  nil,
 	47: nil,
 	48: AppInstKeyName,
+	49: PlatformType,
 }
 var VersionHash_UpgradeFuncNames = map[int32]string{
 	0:  "",
 	47: "",
 	48: "AppInstKeyName",
+	49: "PlatformType",
 }
 
 // Auto-generated code: DO NOT EDIT

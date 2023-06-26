@@ -35,6 +35,12 @@ type VMPoolPlatform struct {
 	FlavorList   []*edgeproto.FlavorInfo
 }
 
+func NewPlatform() platform.Platform {
+	return &vmlayer.VMPlatform{
+		VMProvider: &VMPoolPlatform{},
+	}
+}
+
 func (o *VMPoolPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 	o.VMProperties = vmProperties
 }
@@ -45,6 +51,7 @@ func (o *VMPoolPlatform) GetCloudletKey() *edgeproto.CloudletKey {
 
 func (o *VMPoolPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:               platform.PlatformTypeVMPool,
 		SupportsMultiTenantCluster: true,
 		IsVmPool:                   true,
 	}

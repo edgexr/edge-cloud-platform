@@ -134,6 +134,9 @@ func main() {
 	if *physicalName == "" {
 		*physicalName = myCloudletInfo.Key.Name
 	}
+	// Convert old platform names for backwards compatibility
+	*platformName = pf.GetTypeBC(*platformName)
+
 	log.SpanLog(ctx, log.DebugLevelInfo, "Using cloudletKey", "key", myCloudletInfo.Key, "platform", *platformName, "physicalName", physicalName)
 
 	// Load platform implementation.
@@ -142,6 +145,7 @@ func main() {
 		span.Finish()
 		log.FatalLog(err.Error())
 	}
+	features := platform.GetFeatures()
 
 	if !nodeMgr.AccessKeyClient.IsEnabled() {
 		span.Finish()
@@ -236,7 +240,6 @@ func main() {
 
 		caches := controllerData.GetCaches()
 
-		features := platform.GetFeatures()
 		if features.IsVmPool {
 			if cloudlet.VmPool == "" {
 				log.FatalLog("Cloudlet is missing VM pool name")
@@ -374,8 +377,7 @@ func main() {
 		if err == nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Get rootLB certs", "key", myCloudletInfo.Key)
 			proxycerts.Init(ctx, platform, accessapicloudlet.NewControllerClient(nodeMgr.AccessApiClient))
-			pfType := pf.GetType(cloudlet.PlatformType.String())
-			proxycerts.GetRootLbCerts(ctx, &myCloudletInfo.Key, wildcardName, &nodeMgr, pfType, rootlb, *commercialCerts, &highAvailabilityManager)
+			proxycerts.GetRootLbCerts(ctx, &myCloudletInfo.Key, wildcardName, &nodeMgr, features, rootlb, *commercialCerts, &highAvailabilityManager)
 			// setup debug func to trigger refresh of rootlb certs
 			nodeMgr.Debug.AddDebugFunc(crmutil.RefreshRootLBCerts, func(ctx context.Context, req *edgeproto.DebugRequest) string {
 				proxycerts.TriggerRootLBCertsRefresh()
@@ -418,9 +420,8 @@ func initPlatformCommon(ctx context.Context, cloudlet *edgeproto.Cloudlet, cloud
 	if cloudlet.GpuConfig.Driver.Name != "" {
 		platformConfig.GPUConfig = &cloudlet.GpuConfig
 	}
-	pfType := pf.GetType(cloudlet.PlatformType.String())
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "init platform", "location(cloudlet.key.name)", loc, "operator", oper, "Platform type", pfType)
+	log.SpanLog(ctx, log.DebugLevelInfra, "init platform", "location(cloudlet.key.name)", loc, "operator", oper, "Platform type", cloudlet.PlatformType)
 	err := platform.InitCommon(ctx, platformConfig, caches, haMgr, updateCallback)
 	return err
 }

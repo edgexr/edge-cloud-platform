@@ -81,12 +81,6 @@ var certStart = "-----BEGIN CERTIFICATE-----"
 var certEnd = "-----END CERTIFICATE-----"
 
 var sudoType = pc.SudoOn
-var noSudoMap = map[string]int{
-	"fake":      1,
-	"fakeinfra": 1,
-	"edgebox":   1,
-	"dind":      1,
-}
 var fixedCerts = false
 
 var AtomicCertsUpdater = "/usr/local/bin/atomic-certs-update.sh"
@@ -102,10 +96,9 @@ func Init(ctx context.Context, inPlatform pf.Platform, inAccessApi *accessapiclo
 }
 
 // get certs from vault for rootlb, and pull a new one once a month, should only be called once by CRM
-func GetRootLbCerts(ctx context.Context, key *edgeproto.CloudletKey, commonName string, nodeMgr *node.NodeMgr, platformType string, client ssh.Client, commercialCerts bool, haMgr *redundancy.HighAvailabilityManager) {
+func GetRootLbCerts(ctx context.Context, key *edgeproto.CloudletKey, commonName string, nodeMgr *node.NodeMgr, platformFeatures *edgeproto.PlatformFeatures, client ssh.Client, commercialCerts bool, haMgr *redundancy.HighAvailabilityManager) {
 	log.SpanLog(ctx, log.DebugLevelInfo, "GetRootLbCerts", "commonName", commonName)
-	_, found := noSudoMap[platformType]
-	if found {
+	if platformFeatures.IsFake || platformFeatures.IsEdgebox || platformFeatures.CloudletServicesLocal {
 		sudoType = pc.NoSudo
 		if commercialCerts {
 			// for devtest platforms, disable commercial certs
@@ -113,7 +106,7 @@ func GetRootLbCerts(ctx context.Context, key *edgeproto.CloudletKey, commonName 
 			commercialCerts = false
 		}
 	}
-	if strings.Contains(platformType, "fake") {
+	if platformFeatures.IsFake {
 		fixedCerts = true
 	}
 	out, err := client.Output("pwd")

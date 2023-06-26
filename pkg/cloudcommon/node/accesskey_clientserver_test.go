@@ -250,7 +250,7 @@ func TestAccessClientServer(t *testing.T) {
 	client = edgeproto.NewCloudletAccessApiClient(clientConn)
 	_, err = client.GetAccessData(ctx, &edgeproto.AccessDataRequest{})
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Not allowed to get access data for EDGEBOX platform")
+	require.Contains(t, err.Error(), "Not allowed to get access data for Edgebox cloudlet")
 	tc5.Cleanup()
 }
 
@@ -421,7 +421,7 @@ func (s *DummyController) CreateCloudlet(ctx context.Context, name string, edgeb
 	tc.Cloudlet.Key.Name = name
 	tc.Cloudlet.Key.Organization = "testorg"
 	if edgeboxCloudlet {
-		tc.Cloudlet.PlatformType = edgeproto.PlatformType_PLATFORM_TYPE_EDGEBOX
+		tc.Cloudlet.EdgeboxOnly = true
 	}
 	tc.privateKeyFile = "/tmp/accesskey_unittest_" + name
 	s.Cloudlets[tc.Cloudlet.Key] = tc

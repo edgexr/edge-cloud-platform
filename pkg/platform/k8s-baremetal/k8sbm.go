@@ -50,6 +50,10 @@ type K8sBareMetalPlatform struct {
 	externalIps        []string
 }
 
+func NewPlatform() platform.Platform {
+	return &K8sBareMetalPlatform{}
+}
+
 func (k *K8sBareMetalPlatform) GetDefaultCluster(cloudletKey *edgeproto.CloudletKey) *edgeproto.ClusterInst {
 	defCluster := edgeproto.ClusterInst{
 		Key: edgeproto.ClusterInstKey{
@@ -69,9 +73,11 @@ func (k *K8sBareMetalPlatform) GetCloudletKubeConfig(cloudletKey *edgeproto.Clou
 
 func (o *K8sBareMetalPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:               platform.PlatformTypeK8SBareMetal,
 		SupportsKubernetesOnly:     true,
 		IsSingleKubernetesCluster:  true,
 		SupportsAppInstDedicatedIp: true,
+		NoClusterSupport:           true,
 	}
 }
 
@@ -80,7 +86,7 @@ func (k *K8sBareMetalPlatform) IsCloudletServicesLocal() bool {
 }
 
 func platformName() string {
-	return platform.GetType(edgeproto.PlatformType_PLATFORM_TYPE_K8S_BARE_METAL.String())
+	return "platform.PlatformTypeK8SBareMetal"
 }
 
 func UpdateDockerUser(ctx context.Context, client ssh.Client) error {

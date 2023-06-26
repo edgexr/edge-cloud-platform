@@ -33,6 +33,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/platforms"
 	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -244,7 +245,7 @@ func (s *StreamObjApi) StreamCloudlet(key *edgeproto.CloudletKey, cb edgeproto.S
 	if err != nil {
 		return err
 	}
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, cloudlet.PlatformType.String(), nodeMgr.UpdateNodeProps)
+	cloudletPlatform, err := pfutils.GetPlatform(ctx, cloudlet.PlatformType, nodeMgr.UpdateNodeProps)
 	if err != nil {
 		return fmt.Errorf("Failed to get platform: %v", err)
 	}
@@ -426,10 +427,16 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	cctx.SetOverride(&in.CrmOverride)
 	ctx := inCb.Context()
 
-	platName := edgeproto.PlatformType_name[int32(in.PlatformType)]
+	if in.PlatformType == "" {
+		return fmt.Errorf("Cloudlet platform type not specified")
+	}
 	features, err := GetCloudletFeatures(ctx, in.PlatformType)
 	if err != nil {
 		return fmt.Errorf("Failed to get features for platform: %s", err)
+	}
+	// EdgeboxOnly is set at MC for edgebox only operators.
+	if in.EdgeboxOnly && !features.IsEdgebox {
+		return fmt.Errorf("Cloudlet is restricted to edgebox only platforms; %s is not an edgebox platform", in.PlatformType)
 	}
 
 	if in.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS &&
@@ -458,16 +465,16 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		}
 	}
 	if in.EnableDefaultServerlessCluster && !features.SupportsMultiTenantCluster {
-		return fmt.Errorf("Serverless cluster not supported on %s", platName)
+		return fmt.Errorf("Serverless cluster not supported on %s", in.PlatformType)
 	}
 	if in.TrustPolicy != "" && !features.SupportsTrustPolicy {
-		return fmt.Errorf("Trust Policy not supported on %s", platName)
+		return fmt.Errorf("Trust Policy not supported on %s", in.PlatformType)
 	}
 	if in.PlatformHighAvailability {
 		if in.Deployment == cloudcommon.DeploymentTypeDocker && !features.SupportsPlatformHighAvailabilityOnDocker {
-			return fmt.Errorf("Platform High Availability not supported for docker on %s", platName)
+			return fmt.Errorf("Platform High Availability not supported for docker on %s", in.PlatformType)
 		} else if in.Deployment == cloudcommon.DeploymentTypeKubernetes && !features.SupportsPlatformHighAvailabilityOnK8S {
-			return fmt.Errorf("Platform High Availability not supported for k8s on %s", platName)
+			return fmt.Errorf("Platform High Availability not supported for k8s on %s", in.PlatformType)
 		}
 	}
 	if err := validateAllianceOrgs(ctx, in); err != nil {
@@ -549,7 +556,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		}
 	}
 
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, in.PlatformType.String(), nodeMgr.UpdateNodeProps)
+	cloudletPlatform, err := pfutils.GetPlatform(ctx, in.PlatformType, nodeMgr.UpdateNodeProps)
 	if err != nil {
 		return err
 	}
@@ -1029,7 +1036,7 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 		crmUpdateReqd = true
 	}
 
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, cur.PlatformType.String(), nodeMgr.UpdateNodeProps)
+	cloudletPlatform, err := pfutils.GetPlatform(ctx, cur.PlatformType, nodeMgr.UpdateNodeProps)
 	if err != nil {
 		return err
 	}
@@ -1138,7 +1145,6 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 				return fmt.Errorf("Cloudlet must be in NormalOperation before starting maintenance")
 			}
 		}
-		platName := edgeproto.PlatformType_name[int32(cur.PlatformType)]
 		if privPolUpdateRequested {
 			if maintenanceChanged {
 				return fmt.Errorf("Cannot change both maintenance state and trust policy at the same time")
@@ -1150,7 +1156,7 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 			}
 			if in.TrustPolicy != "" {
 				if !features.SupportsTrustPolicy {
-					return fmt.Errorf("Trust Policy not supported on %s", platName)
+					return fmt.Errorf("Trust Policy not supported on %s", cur.PlatformType)
 				}
 				policy := edgeproto.TrustPolicy{}
 				policy.Key.Name = in.TrustPolicy
@@ -1172,7 +1178,7 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 			}
 			if cur.EnableDefaultServerlessCluster {
 				if !features.SupportsMultiTenantCluster {
-					return fmt.Errorf("Serverless cluster not supported on %s", platName)
+					return fmt.Errorf("Serverless cluster not supported on %s", cur.PlatformType)
 				}
 				go s.all.clusterInstApi.createDefaultMultiTenantCluster(ctx, cur.Key, features)
 			} else {
@@ -1447,7 +1453,7 @@ func (s *CloudletApi) PlatformDeleteCloudlet(in *edgeproto.Cloudlet, cb edgeprot
 	ctx := cb.Context()
 	updatecb := updateCloudletCallback{in, cb}
 	var cloudletPlatform pf.Platform
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, in.PlatformType.String(), nodeMgr.UpdateNodeProps)
+	cloudletPlatform, err := pfutils.GetPlatform(ctx, in.PlatformType, nodeMgr.UpdateNodeProps)
 	if err != nil {
 		return err
 	}
@@ -2009,7 +2015,7 @@ func (s *CloudletApi) GetCloudletManifest(ctx context.Context, key *edgeproto.Cl
 		return nil, err
 	}
 	accessApi := accessapi.NewVaultClient(cloudlet, vaultConfig, *region, *dnsZone)
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, cloudlet.PlatformType.String(), nodeMgr.UpdateNodeProps)
+	cloudletPlatform, err := pfutils.GetPlatform(ctx, cloudlet.PlatformType, nodeMgr.UpdateNodeProps)
 	if err != nil {
 		return nil, err
 	}
@@ -2115,7 +2121,7 @@ func (s *CloudletApi) UsesResTagTable(key *edgeproto.ResTagTableKey) *edgeproto.
 
 func (s *CloudletApi) GetCloudletProps(ctx context.Context, in *edgeproto.CloudletProps) (*edgeproto.CloudletProps, error) {
 
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, in.PlatformType.String(), nodeMgr.UpdateNodeProps)
+	cloudletPlatform, err := pfutils.GetPlatform(ctx, in.PlatformType, nodeMgr.UpdateNodeProps)
 	if err != nil {
 		return nil, err
 	}
@@ -2123,37 +2129,13 @@ func (s *CloudletApi) GetCloudletProps(ctx context.Context, in *edgeproto.Cloudl
 	return cloudletPlatform.GetCloudletProps(ctx)
 }
 
-func (s *CloudletApi) ShowCloudletPlatformFeatures(in *edgeproto.PlatformFeatures, cb edgeproto.CloudletApi_ShowCloudletPlatformFeaturesServer) error {
-	ctx := cb.Context()
-	platforms := []edgeproto.PlatformType{}
-	if in.PlatformType != 0 {
-		// unfortunately 0 is fake, so no way to specify
-		// showing only fake platform features.
-		platforms = append(platforms, in.PlatformType)
-	} else {
-		// only show features for registered cloudlets
-		pmap := map[edgeproto.PlatformType]struct{}{}
-		err := s.cache.Show(&edgeproto.Cloudlet{}, func(obj *edgeproto.Cloudlet) error {
-			pmap[obj.PlatformType] = struct{}{}
-			return nil
-		})
-		if err != nil {
-			return err
+func (s *CloudletApi) ShowPlatformsFeatures(in *edgeproto.PlatformFeatures, cb edgeproto.CloudletApi_ShowPlatformsFeaturesServer) error {
+	for _, features := range platforms.GetAllPlatformsFeatures() {
+		if features.IsFake {
+			// don't show users fake platforms, they are only for testing
+			continue
 		}
-		for p, _ := range pmap {
-			platforms = append(platforms, p)
-		}
-		sort.Slice(platforms, func(i, j int) bool {
-			return int(platforms[i]) < int(platforms[j])
-		})
-	}
-	for _, p := range platforms {
-		features, err := GetCloudletFeatures(ctx, p)
-		if err != nil {
-			return err
-		}
-		features.PlatformType = p
-		err = cb.Send(features)
+		err := cb.Send(&features)
 		if err != nil {
 			return err
 		}
@@ -2161,8 +2143,8 @@ func (s *CloudletApi) ShowCloudletPlatformFeatures(in *edgeproto.PlatformFeature
 	return nil
 }
 
-func GetCloudletFeatures(ctx context.Context, platformType edgeproto.PlatformType) (*edgeproto.PlatformFeatures, error) {
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, platformType.String(), nodeMgr.UpdateNodeProps)
+func GetCloudletFeatures(ctx context.Context, platformType string) (*edgeproto.PlatformFeatures, error) {
+	cloudletPlatform, err := pfutils.GetPlatform(ctx, platformType, nodeMgr.UpdateNodeProps)
 	if err != nil {
 		return nil, err
 	}
@@ -2347,7 +2329,7 @@ func (s *CloudletApi) GetCloudletResourceInfo(ctx context.Context, stm concurren
 		}
 	}
 
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, cloudlet.PlatformType.String(), nodeMgr.UpdateNodeProps)
+	cloudletPlatform, err := pfutils.GetPlatform(ctx, cloudlet.PlatformType, nodeMgr.UpdateNodeProps)
 	if err != nil {
 		return nil, err
 	}
@@ -2544,7 +2526,7 @@ func GetPlatformVMsResources(ctx context.Context, cloudletInfo *edgeproto.Cloudl
 
 func (s *CloudletApi) GetCloudletResourceQuotaProps(ctx context.Context, in *edgeproto.CloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "GetCloudletResourceQuotaProps", "platformtype", in.PlatformType)
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, in.PlatformType.String(), nodeMgr.UpdateNodeProps)
+	cloudletPlatform, err := pfutils.GetPlatform(ctx, in.PlatformType, nodeMgr.UpdateNodeProps)
 	if err != nil {
 		return nil, err
 	}

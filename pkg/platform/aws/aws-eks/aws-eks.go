@@ -26,6 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
@@ -40,8 +41,15 @@ type AwsEksResources struct {
 	NetworkLBsUsed            uint64
 }
 
+func NewPlatform() platform.Platform {
+	return &managedk8s.ManagedK8sPlatform{
+		Provider: &AwsEksPlatform{},
+	}
+}
+
 func (o *AwsEksPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:                  platform.PlatformTypeAWSEKS,
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,

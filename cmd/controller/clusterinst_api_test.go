@@ -27,7 +27,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client/influxq_testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
@@ -474,7 +473,7 @@ func getMetricCounts(t *testing.T, ctx context.Context, cloudlet *edgeproto.Clou
 		return nil
 	})
 	require.Nil(t, err)
-	pfType := pf.GetType(cloudlet.PlatformType.String())
+	pfType := cloudlet.PlatformType
 	resMeasurement := cloudcommon.GetCloudletResourceUsageMeasurement(pfType)
 	ramUsed := uint64(0)
 	vcpusUsed := uint64(0)

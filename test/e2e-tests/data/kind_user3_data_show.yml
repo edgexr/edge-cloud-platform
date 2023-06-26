@@ -70,7 +70,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: Kindinfra
+      platformtype: kindinfra
       trustpolicystate: NotPresent
     autoprovpolicies:
     - key:

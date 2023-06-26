@@ -102,7 +102,7 @@ cloudlets:
     longitude: -91
   ipsupport: IpSupportDynamic
   numdynamicips: 254
-  platformtype: PlatformTypeFake
+  platformtype: fake
 - key:
     organization: dmuus
     name: dmuus-cloud-2
@@ -111,7 +111,7 @@ cloudlets:
     longitude: -95
   ipsupport: IpSupportDynamic
   numdynamicips: 254
-  platformtype: PlatformTypeFake
+  platformtype: fake
 - key:
     organization: dmuus
     name: dmuus-cloud-3
@@ -120,7 +120,7 @@ cloudlets:
     longitude: -95
   ipsupport: IpSupportDynamic
   numdynamicips: 254
-  platformtype: PlatformTypeFake
+  platformtype: fake
 - key:
     organization: azure
     name: azure-cloud-4
@@ -129,7 +129,7 @@ cloudlets:
     longitude: -91
   ipsupport: IpSupportDynamic
   numdynamicips: 254
-  platformtype: PlatformTypeFake
+  platformtype: fake
 - key:
     organization: gcp
     name: gcp-cloud-5
@@ -138,7 +138,7 @@ cloudlets:
     longitude: -95
   ipsupport: IpSupportDynamic
   numdynamicips: 254
-  platformtype: PlatformTypeFake
+  platformtype: fake
 
 apps:
 - key:

@@ -31,6 +31,7 @@ type Xind struct {
 	Caches         *platform.Caches
 	remotePassword string
 	clusterManager ClusterManager
+	PlatformType   string
 }
 
 func (s *Xind) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, clusterManager ClusterManager, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -48,6 +49,7 @@ func (s *Xind) GetInitHAConditionalCompatibilityVersion(ctx context.Context) str
 
 func (s *Xind) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:          s.PlatformType,
 		CloudletServicesLocal: true,
 	}
 }

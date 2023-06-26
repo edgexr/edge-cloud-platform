@@ -26,7 +26,9 @@ import (
 	sh "github.com/codeskyblue/go-sh"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -55,8 +57,15 @@ type GCPFlavor struct {
 	Name                         string
 }
 
+func NewPlatform() platform.Platform {
+	return &managedk8s.ManagedK8sPlatform{
+		Provider: &GCPPlatform{},
+	}
+}
+
 func (o *GCPPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:                  platform.PlatformTypeGCP,
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,

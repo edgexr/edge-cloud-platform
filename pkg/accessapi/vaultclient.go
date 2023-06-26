@@ -70,7 +70,7 @@ func (s *VaultClient) GetCloudletAccessVars(ctx context.Context) (map[string]str
 		return nil, fmt.Errorf("Missing cloudlet details")
 	}
 	// Platform-specific implementation.
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, s.cloudlet.PlatformType.String(), nil)
+	cloudletPlatform, err := pfutils.GetPlatform(ctx, s.cloudlet.PlatformType, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (s *VaultClient) DeleteDNSRecord(ctx context.Context, recordID string) erro
 
 func (s *VaultClient) GetSessionTokens(ctx context.Context, arg []byte) (map[string]string, error) {
 	// Platform-specific implementation
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, s.cloudlet.PlatformType.String(), nil)
+	cloudletPlatform, err := pfutils.GetPlatform(ctx, s.cloudlet.PlatformType, nil)
 	if err != nil {
 		return nil, err
 	}

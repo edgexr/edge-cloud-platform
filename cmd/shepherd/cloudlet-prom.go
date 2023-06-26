@@ -36,7 +36,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/prommgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
@@ -130,17 +129,8 @@ func updateCloudletPrometheusConfig(ctx context.Context, promScrapeInterval *tim
 	return nil
 }
 func getAppInstPrometheusTargetString(proxyScrapePoint *ProxyScrapePoint) (string, error) {
-	host := *metricsAddr
-	switch *platformName {
-	case "PLATFORM_TYPE_EDGEBOX":
-		fallthrough
-	case "PLATFORM_TYPE_KINDINFRA":
-		fallthrough
-	case "PLATFORM_TYPE_FAKEINFRA":
-		host = "host.docker.internal:9091"
-	}
 	target := targetData{
-		MetricsProxyAddr: host,
+		MetricsProxyAddr: *promTargetAddr,
 		Key:              proxyScrapePoint.Key,
 		AppKey:           proxyScrapePoint.AppKey,
 		ClusterKey:       proxyScrapePoint.ClusterInstKey.ClusterKey,
@@ -287,7 +277,8 @@ func metricsProxy(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		request := getProxyMetricsRequest(target, "stats/prometheus")
-		if pf.GetType(*platformName) == "fake" {
+		if cloudletFeatures.IsFake {
+			// For e2e testing
 			sock := "/tmp/envoy_" + app + ".sock"
 			request = fmt.Sprintf("curl -s --unix-socket %s http:/sock/stats/prometheus", sock)
 		}

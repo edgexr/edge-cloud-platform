@@ -53,7 +53,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: Fakeinfra
+      platformtype: fakeinfra
       notifysrvaddr: 127.0.0.1:51001
       flavor:
         name: DefaultPlatformFlavor

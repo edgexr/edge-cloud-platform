@@ -266,7 +266,7 @@ var UpdateCloudletCmd = &ApiCommand{
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:          &CloudletSpecialArgs,
 	Comments:             addRegionComment(CloudletComments),
-	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Config,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,SecondaryCrmAccessPublicKey,SecondaryCrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,DeletePrepare,GpuConfig.LicenseConfigMd5Sum,DnsLabel,RootLbFqdn,FederationConfig,LicenseConfigStoragePath,PlatformType,DeploymentLocal,Flavor,PhysicalName,ContainerVersion,ResTagMap,VmImageVersion,Deployment,InfraApiAccess,InfraConfig,OverridePolicyContainerVersion,VmPool,ResTagMap",
+	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Config,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,SecondaryCrmAccessPublicKey,SecondaryCrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,DeletePrepare,GpuConfig.LicenseConfigMd5Sum,DnsLabel,RootLbFqdn,FederationConfig,LicenseConfigStoragePath,PlatformType,DeploymentLocal,Flavor,PhysicalName,ContainerVersion,ResTagMap,VmImageVersion,Deployment,InfraApiAccess,InfraConfig,OverridePolicyContainerVersion,VmPool,ResTagMap,EdgeboxOnly",
 	ReqData:              &ormapi.RegionCloudlet{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateCloudlet",
@@ -307,10 +307,10 @@ var GetCloudletManifestCmd = &ApiCommand{
 	ProtobufApi:  true,
 }
 
-var ShowCloudletPlatformFeaturesCmd = &ApiCommand{
-	Name:         "ShowCloudletPlatformFeatures",
-	Use:          "showplatformfeatures",
-	Short:        "Show Cloudlet Platform Features. Shows platform specific features",
+var ShowPlatformsFeaturesCmd = &ApiCommand{
+	Name:         "ShowPlatformsFeatures",
+	Use:          "showplatformsfeatures",
+	Short:        "Shows all supported cloudlet platforms and their features.",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(PlatformFeaturesRequiredArgs, PlatformFeaturesOptionalArgs...), " "),
 	AliasArgs:    strings.Join(PlatformFeaturesAliasArgs, " "),
@@ -318,7 +318,7 @@ var ShowCloudletPlatformFeaturesCmd = &ApiCommand{
 	Comments:     addRegionComment(PlatformFeaturesComments),
 	ReqData:      &ormapi.RegionPlatformFeatures{},
 	ReplyData:    &edgeproto.PlatformFeatures{},
-	Path:         "/auth/ctrl/ShowCloudletPlatformFeatures",
+	Path:         "/auth/ctrl/ShowPlatformsFeatures",
 	StreamOut:    true,
 	ProtobufApi:  true,
 }
@@ -530,7 +530,7 @@ var CloudletApiCmds = []*ApiCommand{
 	UpdateCloudletCmd,
 	ShowCloudletCmd,
 	GetCloudletManifestCmd,
-	ShowCloudletPlatformFeaturesCmd,
+	ShowPlatformsFeaturesCmd,
 	GetCloudletPropsCmd,
 	GetCloudletResourceQuotaPropsCmd,
 	GetCloudletResourceUsageCmd,
@@ -609,6 +609,7 @@ var CreateCloudletOptionalArgs = []string{
 	"infraflavors:#.ram",
 	"infraflavors:#.disk",
 	"infraflavors:#.propmap",
+	"edgeboxonly",
 }
 var DeleteCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -667,6 +668,7 @@ var DeleteCloudletOptionalArgs = []string{
 	"infraflavors:#.ram",
 	"infraflavors:#.disk",
 	"infraflavors:#.propmap",
+	"edgeboxonly",
 }
 var UpdateCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -773,6 +775,7 @@ var ShowCloudletOptionalArgs = []string{
 	"infraflavors:#.ram",
 	"infraflavors:#.disk",
 	"infraflavors:#.propmap",
+	"edgeboxonly",
 }
 var GetCloudletPropsRequiredArgs = []string{
 	"platformtype",
@@ -882,6 +885,8 @@ var PlatformFeaturesOptionalArgs = []string{
 	"supportsplatformhighavailabilityondocker",
 	"nokubernetesclusterautoscale",
 	"isprebuiltkubernetescluster",
+	"noclustersupport",
+	"isedgebox",
 }
 var PlatformFeaturesAliasArgs = []string{
 	"platformtype=platformfeatures.platformtype",
@@ -903,9 +908,11 @@ var PlatformFeaturesAliasArgs = []string{
 	"supportsplatformhighavailabilityondocker=platformfeatures.supportsplatformhighavailabilityondocker",
 	"nokubernetesclusterautoscale=platformfeatures.nokubernetesclusterautoscale",
 	"isprebuiltkubernetescluster=platformfeatures.isprebuiltkubernetescluster",
+	"noclustersupport=platformfeatures.noclustersupport",
+	"isedgebox=platformfeatures.isedgebox",
 }
 var PlatformFeaturesComments = map[string]string{
-	"platformtype":                             "Platform type, one of Fake, Dind, Openstack, Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd, K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool, K8SOperator",
+	"platformtype":                             "Platform type",
 	"supportsmultitenantcluster":               "Platform supports multi tenant kubernetes clusters",
 	"supportssharedvolume":                     "Platform supports shared volumes",
 	"supportstrustpolicy":                      "Platform supports trust policies",
@@ -924,6 +931,8 @@ var PlatformFeaturesComments = map[string]string{
 	"supportsplatformhighavailabilityondocker": "Supports high availability with two CRMs on docker",
 	"nokubernetesclusterautoscale":             "No support for kubernetes cluster auto-scale",
 	"isprebuiltkubernetescluster":              "Kubernetes cluster is created externally and already exists",
+	"noclustersupport":                         "No cluster support. Some platforms, like Federation, do not support clusters.",
+	"isedgebox":                                "Edgebox platforms are for user-hosted cloudlets, and must use public images and do not get DNS mapping, as they do not get access to sensitive data.",
 }
 var PlatformFeaturesSpecialArgs = map[string]string{}
 var CloudletResMapRequiredArgs = []string{
@@ -1130,6 +1139,7 @@ var CloudletOptionalArgs = []string{
 	"infraflavors:#.ram",
 	"infraflavors:#.disk",
 	"infraflavors:#.propmap",
+	"edgeboxonly",
 }
 var CloudletAliasArgs = []string{
 	"fields=cloudlet.fields",
@@ -1237,6 +1247,7 @@ var CloudletAliasArgs = []string{
 	"infraflavors:#.ram=cloudlet.infraflavors:#.ram",
 	"infraflavors:#.disk=cloudlet.infraflavors:#.disk",
 	"infraflavors:#.propmap=cloudlet.infraflavors:#.propmap",
+	"edgeboxonly=cloudlet.edgeboxonly",
 }
 var CloudletComments = map[string]string{
 	"fields":                                 "Fields are used for the Update API to specify which fields to apply",
@@ -1264,7 +1275,7 @@ var CloudletComments = map[string]string{
 	"state":                                  "Current state of the cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"crmoverride":                            "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
 	"deploymentlocal":                        "Deploy cloudlet services locally",
-	"platformtype":                           "Platform type, one of Fake, Dind, Openstack, Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd, K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool, K8SOperator",
+	"platformtype":                           "Platform type",
 	"notifysrvaddr":                          "Address for the CRM notify listener to run on",
 	"flavor.name":                            "Flavor name",
 	"physicalname":                           "Physical infrastructure cloudlet name",
@@ -1344,6 +1355,7 @@ var CloudletComments = map[string]string{
 	"infraflavors:#.ram":                     "Ram in MB on the Cloudlet",
 	"infraflavors:#.disk":                    "Amount of disk in GB on the Cloudlet",
 	"infraflavors:#.propmap":                 "OS Flavor Properties, if any, specify infraflavors:#.propmap:empty=true to clear",
+	"edgeboxonly":                            "Edgebox only cloudlets allow for developers to set up cloudlets anywhere (laptop, etc) but can only use public images and do not support DNS mapping.",
 }
 var CloudletSpecialArgs = map[string]string{
 	"cloudlet.accessvars":             "StringToString",
@@ -1390,7 +1402,7 @@ var CloudletPropsAliasArgs = []string{
 	"organization=cloudletprops.organization",
 }
 var CloudletPropsComments = map[string]string{
-	"platformtype": "Platform type, one of Fake, Dind, Openstack, Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd, K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool, K8SOperator",
+	"platformtype": "Platform type",
 	"organization": "Organization",
 }
 var CloudletPropsSpecialArgs = map[string]string{}
@@ -1418,7 +1430,7 @@ var CloudletResourceQuotaPropsAliasArgs = []string{
 	"organization=cloudletresourcequotaprops.organization",
 }
 var CloudletResourceQuotaPropsComments = map[string]string{
-	"platformtype":                "Platform type, one of Fake, Dind, Openstack, Azure, Gcp, Edgebox, Fakeinfra, Vsphere, AwsEks, VmPool, AwsEc2, Vcd, K8SBareMetal, Kind, Kindinfra, FakeSingleCluster, Federation, FakeVmPool, K8SOperator",
+	"platformtype":                "Platform type",
 	"properties:#.name":           "Resource name",
 	"properties:#.value":          "Resource value",
 	"properties:#.inframaxvalue":  "Resource infra max value",

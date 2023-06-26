@@ -32,8 +32,13 @@ type K8sOperator struct {
 	infracommon.CommonEmbedded
 }
 
+func NewPlatform() platform.Platform {
+	return &K8sOperator{}
+}
+
 func (s *K8sOperator) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
+		PlatformType:                  platform.PlatformTypeK8SOperator,
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,

@@ -477,7 +477,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	var reservedClusterInstKey *edgeproto.ClusterInstKey
 	var cloudletFeatures *edgeproto.PlatformFeatures
 	cloudletCompatibilityVersion := uint32(0)
-	var cloudletPlatformType edgeproto.PlatformType
+	var cloudletPlatformType string
 	var cloudletLoc dme.Loc
 
 	in.CompatibilityVersion = cloudcommon.GetAppInstCompatibilityVersion()
@@ -979,9 +979,8 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			clusterInst.Deployment = cloudcommon.DeploymentTypeKubernetes
 			clusterInst.NumMasters = 1
 			clusterInst.NumNodes = 1 // TODO support 1 master, zero nodes
-			if cloudletPlatformType == edgeproto.PlatformType_PLATFORM_TYPE_K8S_BARE_METAL || cloudletPlatformType == edgeproto.PlatformType_PLATFORM_TYPE_FEDERATION {
-				// bare metal k8s clusters are virtual and have no nodes
-				log.SpanLog(ctx, log.DebugLevelApi, "Setting num nodes to 0 for k8s baremetal virtual cluster")
+			if cloudletFeatures.NoClusterSupport {
+				log.SpanLog(ctx, log.DebugLevelApi, "Setting num nodes to 0 as platform does not support clusters", "platform", cloudletFeatures.PlatformType)
 				clusterInst.NumNodes = 0
 			}
 		}
@@ -2034,7 +2033,7 @@ func (s *AppInstApi) ReplaceErrorState(ctx context.Context, in *edgeproto.AppIns
 }
 
 // public cloud k8s cluster allocates a separate IP per service.  This is a type of dedicated access
-func isIPAllocatedPerService(ctx context.Context, platformType edgeproto.PlatformType, features *edgeproto.PlatformFeatures, operator string) bool {
+func isIPAllocatedPerService(ctx context.Context, platformType string, features *edgeproto.PlatformFeatures, operator string) bool {
 	log.SpanLog(ctx, log.DebugLevelApi, "isIPAllocatedPerService", "platformType", platformType, "operator", operator)
 
 	if features.IsFake {
@@ -2044,7 +2043,7 @@ func isIPAllocatedPerService(ctx context.Context, platformType edgeproto.Platfor
 	return features.IpAllocatedPerService
 }
 
-func validateImageTypeForPlatform(ctx context.Context, imageType edgeproto.ImageType, platformType edgeproto.PlatformType, features *edgeproto.PlatformFeatures) error {
+func validateImageTypeForPlatform(ctx context.Context, imageType edgeproto.ImageType, platformType string, features *edgeproto.PlatformFeatures) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "validateImageTypeForPlatform", "imageType", imageType, "platformType", platformType)
 	supported := true
 	if imageType == edgeproto.ImageType_IMAGE_TYPE_OVF && !features.SupportsImageTypeOvf {
@@ -2054,13 +2053,12 @@ func validateImageTypeForPlatform(ctx context.Context, imageType edgeproto.Image
 		supported = false
 	}
 	if !supported {
-		platName := edgeproto.PlatformType_name[int32(platformType)]
-		return fmt.Errorf("image type %s is not valid for platform type: %s", imageType.String(), platName)
+		return fmt.Errorf("image type %s is not valid for platform type: %s", imageType.String(), platformType)
 	}
 	return nil
 }
 
-func allocateIP(ctx context.Context, inst *edgeproto.ClusterInst, cloudlet *edgeproto.Cloudlet, platformType edgeproto.PlatformType, features *edgeproto.PlatformFeatures, refs *edgeproto.CloudletRefs) error {
+func allocateIP(ctx context.Context, inst *edgeproto.ClusterInst, cloudlet *edgeproto.Cloudlet, platformType string, features *edgeproto.PlatformFeatures, refs *edgeproto.CloudletRefs) error {
 
 	if isIPAllocatedPerService(ctx, platformType, features, cloudlet.Key.Organization) {
 		// we don't track IPs in managed k8s clouds

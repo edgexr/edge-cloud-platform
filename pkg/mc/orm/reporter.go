@@ -758,10 +758,9 @@ func GetCloudletSummaryData(ctx context.Context, username string, report *ormapi
 	cloudlets := [][]string{}
 	cloudletsPresent := make(map[string]struct{})
 	err := ctrlclient.ShowCloudletStream(ctx, rc, &obj, connCache, nil, func(res *edgeproto.Cloudlet) error {
-		platformTypeStr := edgeproto.PlatformType_CamelName[int32(res.PlatformType)]
-		platformTypeStr = strings.TrimPrefix(platformTypeStr, "PlatformType")
+		platformTypeStr := res.PlatformType
 		// Better to show platform type as "simulated", instead of "fake"
-		platformTypeStr = strings.Replace(platformTypeStr, "Fake", "Simulated", -1)
+		platformTypeStr = strings.Replace(platformTypeStr, "fake", "simulated", -1)
 		stateStr := edgeproto.TrackedState_CamelName[int32(res.State)]
 		cloudletData := []string{res.Key.Name, platformTypeStr, stateStr}
 

@@ -21,7 +21,7 @@ cloudlets:
     longitude: -91
   ipsupport: Dynamic
   numdynamicips: 254
-  platformtype: Dind
+  platformtype: dind
 flavors:
 - key:
     name: x1.tiny
