@@ -185,8 +185,8 @@ for cluster in clusterData:
     lbip = ""
     # Kubeconfig file used by CRM (yes, org here is the cloudlet org).
     # This matches pkg/k8smgmt/kubenames.go:GetKconfName()
-    # we need to make a copy with readable perms since scp can't sudo.
     kubeconfig = f"{clusterName}.{org}.kubeconfig"
+
     for vm in vms:
         vmtype = vm["type"]
         if vmtype == "cluster-master" or vmtype == "k8s-cluster-master":
@@ -243,6 +243,7 @@ for cluster in clusterData:
     runCmd(lbip, masterip, cmd)
 
     # copy new kubeconfig to LB.
+    # we need to make a copy with readable perms since scp can't sudo.
     cmd = f"sudo cp /etc/kubernetes/admin.conf /tmp/{kubeconfig}"
     runCmd(lbip, masterip, cmd)
     cmd = f"sudo chmod a+rw /tmp/{kubeconfig}"
