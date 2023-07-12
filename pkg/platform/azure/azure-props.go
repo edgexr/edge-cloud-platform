@@ -24,6 +24,22 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
+const (
+	AZURE_USER     = "AZURE_USER"
+	AZURE_PASSWORD = "AZURE_PASSWORD"
+)
+
+var AccessVarProps = map[string]*edgeproto.PropertyInfo{
+	AZURE_USER: {
+		Name:      "Azure user name",
+		Mandatory: true,
+	},
+	AZURE_PASSWORD: {
+		Name:      "Azure user password",
+		Mandatory: true,
+	},
+}
+
 var azureProps = map[string]*edgeproto.PropertyInfo{
 	"MEX_AZURE_LOCATION": {
 		Name:        "Azure Location",
@@ -38,12 +54,12 @@ func (a *AzurePlatform) GetAzureLocation() string {
 }
 
 func (a *AzurePlatform) GetAzureUser() string {
-	val, _ := a.accessVars["MEX_AZURE_USER"]
+	val, _ := a.accessVars[AZURE_USER]
 	return val
 }
 
 func (a *AzurePlatform) GetAzurePass() string {
-	val, _ := a.accessVars["MEX_AZURE_PASS"]
+	val, _ := a.accessVars[AZURE_PASSWORD]
 	return val
 }
 

@@ -19,10 +19,44 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 )
+
+const (
+	VCENTER_ADDR             = "VCENTER_ADDR"
+	VCENTER_USER             = "VCENTER_USER"
+	VCENTER_PASSWORD         = "VCENTER_PASSWORD"
+	VCENTER_CONSOLE_USER     = "VCENTER_CONSOLE_USER"
+	VCENTER_CONSOLE_PASSWORD = "VCENTER_CONSOLE_PASSWORD"
+	VCENTER_INSECURE         = "VCENTER_INSECURE"
+)
+
+var AccessVarProps = map[string]*edgeproto.PropertyInfo{
+	VCENTER_ADDR: {
+		Name:      "VCenter API URL",
+		Mandatory: true,
+	},
+	VCENTER_USER: {
+		Name:      "VCenter user name",
+		Mandatory: true,
+	},
+	VCENTER_PASSWORD: {
+		Name:      "VCenter user password",
+		Mandatory: true,
+	},
+	VCENTER_CONSOLE_USER: {
+		Name: "VCenter console user name",
+	},
+	VCENTER_CONSOLE_PASSWORD: {
+		Name: "VCenter console user password",
+	},
+	VCENTER_INSECURE: {
+		Name:        "VCenter insecure mode",
+		Description: "VCenter insecure mode defaults to false, set to \"true\" to disable TLS cert validation",
+	},
+}
 
 var VSphereProps = map[string]*edgeproto.PropertyInfo{
 
@@ -143,35 +177,35 @@ func (v *VSpherePlatform) GetProviderSpecificProps(ctx context.Context) (map[str
 
 // GetVSphereAddress returns host and port for the vcenter server
 func (v *VSpherePlatform) GetVCenterAddress() (string, string, error) {
-	vcaddr := v.vcenterVars["VCENTER_ADDR"]
+	vcaddr := v.vcenterVars[VCENTER_ADDR]
 	if vcaddr == "" {
-		return "", "", fmt.Errorf("VCENTER_ADDR not set")
+		return "", "", fmt.Errorf(VCENTER_ADDR + " not set")
 	}
 	host, portstr, err := net.SplitHostPort(vcaddr)
 	if err != nil {
-		return "", "", fmt.Errorf("Unable to parse VCENTER_ADDR: %s, %v\n", vcaddr, err)
+		return "", "", fmt.Errorf("Unable to parse "+VCENTER_ADDR+": %s, %v\n", vcaddr, err)
 	}
 	return host, portstr, nil
 }
 
 func (v *VSpherePlatform) GetVCenterUser() string {
-	return v.vcenterVars["VCENTER_USER"]
+	return v.vcenterVars[VCENTER_USER]
 }
 
 func (v *VSpherePlatform) GetVCenterPassword() string {
-	return v.vcenterVars["VCENTER_PASSWORD"]
+	return v.vcenterVars[VCENTER_PASSWORD]
 }
 
 func (v *VSpherePlatform) GetVCenterConsoleUser() string {
-	return v.vcenterVars["VCENTER_CONSOLE_USER"]
+	return v.vcenterVars[VCENTER_CONSOLE_USER]
 }
 
 func (v *VSpherePlatform) GetVCenterConsolePassword() string {
-	return v.vcenterVars["VCENTER_CONSOLE_PASSWORD"]
+	return v.vcenterVars[VCENTER_CONSOLE_PASSWORD]
 }
 
 func (v *VSpherePlatform) GetVCenterInsecure() string {
-	val, ok := v.vcenterVars["VCENTER_INSECURE"]
+	val, ok := v.vcenterVars[VCENTER_INSECURE]
 	if !ok {
 		return "false"
 	}

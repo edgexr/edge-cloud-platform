@@ -37,7 +37,7 @@ const (
 	OS_PROJECT_DOMAIN_NAME  = "OS_PROJECT_DOMAIN_NAME"
 )
 
-var AccessVars = map[string]*edgeproto.PropertyInfo{
+var AccessVarProps = map[string]*edgeproto.PropertyInfo{
 	OS_AUTH_URL: {
 		Name:        "Openstack auth URL",
 		Description: "Openstack auth URL",
