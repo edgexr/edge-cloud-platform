@@ -70,6 +70,7 @@ func TestValidateAccessVars(t *testing.T) {
 		}
 	}
 }
+
 func TestSaveAccessVars(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelApi)
 	log.InitTracer(nil)
@@ -145,8 +146,6 @@ func TestSaveAccessVars(t *testing.T) {
 	// Delete vars from Vault.
 	err = DeleteCloudletAccessVars(ctx, region, cloudlet, vaultConfig)
 	require.Nil(t, err, errString(err))
-	// Note that after delete, secret now returns empty map
-	// instead of "no secrets at path" error.
 	check(nil)
 
 	// ListData should be empty
