@@ -25,16 +25,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
-func (o *VMPoolPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SaveCloudletAccessVars not supported")
-	return nil
-}
-
-func (o *VMPoolPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateCloudletAccessVars not supported")
-	return nil
-}
-
 func (o *VMPoolPlatform) GetApiEndpointAddr(ctx context.Context) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetApiEndpointAddr not supported")
 	return "", nil

@@ -405,14 +405,6 @@ func (v *VcdPlatform) GetSessionTokens(ctx context.Context, vaultConfig *vault.C
 	return nil, fmt.Errorf("GetSessionTokens not supported in VcdPlatform")
 }
 
-func (v *VcdPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("SaveCloudletAccessVars not implemented for vcd")
-}
-
-func (v *VcdPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("UpdateCloudletAccessVars not implemented for vcd")
-}
-
 func (v *VcdPlatform) DisableOrgRuntimeLease(ctx context.Context, override bool) error {
 	var err error
 	log.SpanLog(ctx, log.DebugLevelInfra, "DisableOrgRuntimeLease", "override", override)

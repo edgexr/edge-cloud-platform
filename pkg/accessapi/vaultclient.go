@@ -22,6 +22,7 @@ import (
 
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/accessvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/chefauth"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
@@ -69,12 +70,7 @@ func (s *VaultClient) GetCloudletAccessVars(ctx context.Context) (map[string]str
 	if s.cloudlet == nil {
 		return nil, fmt.Errorf("Missing cloudlet details")
 	}
-	// Platform-specific implementation.
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, s.cloudlet.PlatformType, nil)
-	if err != nil {
-		return nil, err
-	}
-	return cloudletPlatform.GetAccessData(ctx, s.cloudlet, s.region, s.vaultConfig, platform.GetCloudletAccessVars, nil)
+	return accessvars.GetCloudletAccessVars(ctx, s.region, s.cloudlet, s.vaultConfig)
 }
 
 func (s *VaultClient) GetRegistryAuth(ctx context.Context, imgUrl string) (*cloudcommon.RegistryAuth, error) {
@@ -129,18 +125,6 @@ func (s *VaultClient) getCloudflareApi() (*cloudflare.API, error) {
 	err := vault.GetData(s.vaultConfig, vaultCloudflareApiPath, 0, &auth)
 	if err == nil {
 		api, err := cloudflare.NewWithAPIToken(auth.Token)
-		if err != nil {
-			return nil, err
-		}
-		cloudflareApi = api
-	} else if err != nil && strings.Contains(err.Error(), "no secrets at path") {
-		// look up in old deprecated path (should not be used for new deployments)
-		vaultPath := "/secret/data/cloudlet/openstack/mexenv.json"
-		vars, err := vault.GetEnvVars(s.vaultConfig, vaultPath)
-		if err != nil {
-			return nil, err
-		}
-		api, err := cloudflare.New(vars["MEX_CF_KEY"], vars["MEX_CF_USER"])
 		if err != nil {
 			return nil, err
 		}

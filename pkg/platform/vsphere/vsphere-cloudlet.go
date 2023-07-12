@@ -34,14 +34,6 @@ var appLock sync.Mutex
 
 const govcLocation = "https://github.com/vmware/govmomi/tree/master/govc"
 
-func (v *VSpherePlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("SaveCloudletAccessVars not implemented for vsphere")
-}
-
-func (v *VSpherePlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("UpdateCloudletAccessVars not implemented for vsphere")
-}
-
 func (v *VSpherePlatform) GetCloudletImageSuffix(ctx context.Context) string {
 	return ".qcow2"
 }

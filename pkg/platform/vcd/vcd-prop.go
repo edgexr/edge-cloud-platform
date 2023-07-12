@@ -90,10 +90,6 @@ var VcdProps = map[string]*edgeproto.PropertyInfo{
 	},
 }
 
-func (v *VcdPlatform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
-	return fmt.Sprintf("/secret/data/%s/cloudlet/vcd/%s/%s/vcd.json", region, key.Organization, physicalName)
-}
-
 func (v *VcdPlatform) GetVcdVars(ctx context.Context, accessApi platform.AccessApi) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "vcd vars")

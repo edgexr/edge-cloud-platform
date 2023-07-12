@@ -1,0 +1,12 @@
+kvs:
+- path: secret/data/local/cloudlet/UFGT Inc./NewYorkSite/accessvars
+  data:
+    OS_AUTH_URL: https://ufgtinc.net/newyorksite:9000
+    OS_PASSWORD: foobar
+    OS_USERNAME: admin
+- path: secret/data/local/cloudlet/Zerilu/HawaiiSite/accessvars
+  data:
+    VCD_NAME: my_vcd
+    VCD_ORG: vcd_org
+    VCD_PASSWORD: zerilu
+    VCD_URL: https://zerilu.com/hawaii:8888

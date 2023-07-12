@@ -58,12 +58,9 @@ type VMProvider interface {
 	WhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error
 	RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error
 	GetResourceID(ctx context.Context, resourceType ResourceType, resourceName string) (string, error)
-	GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string
 	InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error
 	GetApiEndpointAddr(ctx context.Context) (string, error)
 	GetExternalGateway(ctx context.Context, extNetName string) (string, error)
-	SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error
-	UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error
 	SetPowerState(ctx context.Context, serverName, serverAction string) error
 	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
 	GetCloudletManifest(ctx context.Context, name string, cloudletImagePath string, VMGroupOrchestrationParams *VMGroupOrchestrationParams) (string, error)
@@ -632,19 +629,6 @@ func (v *VMPlatform) GetClusterInfraResources(ctx context.Context, clusterKey *e
 func (v *VMPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "VMProvider GetAccessData", "dataType", dataType)
 	switch dataType {
-	case platform.GetCloudletAccessVars:
-		path := v.VMProvider.GetVaultCloudletAccessPath(&cloudlet.Key, region, cloudlet.PhysicalName)
-		if path == "" {
-			log.SpanLog(ctx, log.DebugLevelApi, "No access vars path, returning empty map")
-			vars := make(map[string]string, 1)
-			return vars, nil
-		}
-		vars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, path)
-		log.SpanLog(ctx, log.DebugLevelApi, "VMProvider GetAccessData", "dataType", dataType, "path", path, "err", err)
-		if err != nil {
-			return nil, err
-		}
-		return vars, nil
 	case platform.GetSessionTokens:
 		return v.VMProvider.GetSessionTokens(ctx, vaultConfig, string(arg))
 	}

@@ -25,7 +25,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 
 	ssh "github.com/edgexr/golang-ssh"
@@ -526,29 +525,6 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	// so leaving them in Vault for the time being. We can always delete them manually
 
 	return nil
-}
-
-func (v *VMPlatform) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "Deleting access vars from vault", "cloudletName", cloudlet.Key.Name)
-
-	updateCallback(edgeproto.UpdateTask, "Deleting access vars from secure secrets storage")
-
-	path := v.VMProvider.GetVaultCloudletAccessPath(&cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName)
-	if path != "" {
-		err := infracommon.DeleteDataFromVault(vaultConfig, path)
-		if err != nil {
-			return fmt.Errorf("Failed to delete access vars from vault: %v", err)
-		}
-	}
-	return nil
-}
-
-func (v *VMPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return v.VMProvider.SaveCloudletAccessVars(ctx, cloudlet, accessVarsIn, pfConfig, vaultConfig, updateCallback)
-}
-
-func (v *VMPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return v.VMProvider.UpdateCloudletAccessVars(ctx, cloudlet, accessVarsIn, pfConfig, vaultConfig, updateCallback)
 }
 
 func (v *VMPlatform) GetFeatures() *edgeproto.PlatformFeatures {

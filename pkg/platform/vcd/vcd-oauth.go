@@ -18,7 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/accessvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
@@ -43,12 +44,17 @@ const ContentFormUrlEncoded = "application/x-www-form-urlencoded"
 // GetCredsFromVaultForSimulator is for use by AGW and SGW simulators which do not
 // use the AccessApi functionality from controller
 func (v *VcdPlatform) getVcdVarsFromVaultForSimulator(ctx context.Context, region, orgName, physName, vaultAddr string) error {
-	path := fmt.Sprintf("/secret/data/%s/cloudlet/vcd/%s/%s/vcd.json", region, orgName, physName)
+	cloudlet := edgeproto.Cloudlet{
+		Key: edgeproto.CloudletKey{
+			Name:         physName,
+			Organization: orgName,
+		},
+	}
 	vaultConfig, err := vault.BestConfig(vaultAddr)
 	if err != nil {
-		return fmt.Errorf("Unable to get vault config - %v", err)
+		return err
 	}
-	v.vcdVars, err = infracommon.GetEnvVarsFromVault(ctx, vaultConfig, path)
+	v.vcdVars, err = accessvars.GetCloudletAccessVars(ctx, region, &cloudlet, vaultConfig)
 	if err != nil {
 		return fmt.Errorf("Unable to get vars from vault: %s -  %v", vaultAddr, err)
 	}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	kv "github.com/hashicorp/vault-plugin-secrets-kv"
+	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/audit"
 	"github.com/hashicorp/vault/builtin/audit/file"
 	"github.com/hashicorp/vault/builtin/credential/approle"
@@ -21,17 +22,9 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Start an in-memory test vault. Returns test cluster, vault roles, and cleanup func.
-func NewVaultTestCluster(t *testing.T, p *process.Vault) (*vault.TestCluster, *process.VaultRoles, func()) {
-	t.Helper()
-
-	dir, err := os.Getwd()
-	require.Nil(t, err)
-	if p.CADir == "" {
-		p.CADir = dir + "/vault_pki"
-	}
-	rolesfile := dir + "/roles.yaml"
-
+// NewVaultTestClusterBasic starts a basic in-memory test vault.
+// Returns test cluster and client. Call cluster.Cleanup() when done.
+func NewVaultTestClusterBasic(t *testing.T, listenAddr string) (*vault.TestCluster, *api.Client) {
 	coreConfig := &vault.CoreConfig{
 		LogicalBackends: map[string]logical.Factory{
 			"kv":  kv.Factory,
@@ -46,7 +39,6 @@ func NewVaultTestCluster(t *testing.T, p *process.Vault) (*vault.TestCluster, *p
 		},
 		LogLevel: "debug",
 	}
-	listenAddr := p.ListenAddr
 	listenAddr = strings.TrimPrefix(listenAddr, "https://")
 	listenAddr = strings.TrimPrefix(listenAddr, "http://")
 	options := &vault.TestClusterOptions{
@@ -56,14 +48,37 @@ func NewVaultTestCluster(t *testing.T, p *process.Vault) (*vault.TestCluster, *p
 	}
 	cluster := vault.NewTestCluster(t, coreConfig, options)
 	cluster.Start()
+	vault.TestWaitActive(t, cluster.Cores[0].Core)
 
+	client := cluster.Cores[0].Client
+	// set default /secret kv-store to version 2
+	err := client.Sys().TuneMount("secret", api.MountConfigInput{
+		Options: map[string]string{
+			"version": "2",
+		},
+	})
+	require.Nil(t, err)
+
+	return cluster, client
+}
+
+// Start an in-memory test vault. Returns test cluster, vault roles, and cleanup func.
+func NewVaultTestCluster(t *testing.T, p *process.Vault) (*vault.TestCluster, *process.VaultRoles, func()) {
+	t.Helper()
+
+	dir, err := os.Getwd()
+	require.Nil(t, err)
+	if p.CADir == "" {
+		p.CADir = dir + "/vault_pki"
+	}
+	rolesfile := dir + "/roles.yaml"
+
+	cluster, _ := NewVaultTestClusterBasic(t, p.ListenAddr)
 	defer func() {
 		if err != nil {
 			cluster.Cleanup()
 		}
 	}()
-
-	vault.TestWaitActive(t, cluster.Cores[0].Core)
 
 	// write out server CA cert so client can use https
 	vaultCAFile := "vaultca.pem"

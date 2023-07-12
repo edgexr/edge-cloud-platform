@@ -221,26 +221,6 @@ func (k *K8sBareMetalPlatform) GetConsoleUrl(ctx context.Context, app *edgeproto
 	return "", fmt.Errorf("GetConsoleUrl not supported on BareMetal")
 }
 
-func (k *K8sBareMetalPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SaveCloudletAccessVars", "cloudletName", cloudlet.Key.Name)
-	return nil
-}
-
-func (k *K8sBareMetalPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateCloudletAccessVars", "cloudletName", cloudlet.Key.Name)
-	return nil
-}
-
-func (k *K8sBareMetalPlatform) GetCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config) (map[string]string, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletAccessVars", "cloudletName", cloudlet.Key.Name)
-	return map[string]string{}, nil
-}
-
-func (k *K8sBareMetalPlatform) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteCloudletAccessVars", "cloudletName", cloudlet.Key.Name)
-	return nil
-}
-
 func (k *K8sBareMetalPlatform) SetPowerState(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("SetPowerState not supported on BareMetal")
 }

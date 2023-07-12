@@ -177,6 +177,8 @@ message PlatformFeatures {
   bool no_cluster_support = 20;
   // Edgebox platforms are for user-hosted cloudlets, and must use public images and do not get DNS mapping, as they do not get access to sensitive data.
   bool is_edgebox = 21;
+  // Platform access vars information
+  map<string, PropertyInfo> access_vars = 22;
 }
 
 // Optional resource input consists of a resource specifier and clouldkey name
@@ -472,7 +474,7 @@ message Cloudlet {
   PlatformConfig config = 21 [(gogoproto.nullable) = false, (protogen.backend) = true];
   // Optional resource to restagtbl key map key values = [gpu, nas, nic]
   map<string, edgeproto.ResTagTableKey> res_tag_map = 22 [(protogen.backend) = true, (protogen.refers_to) = "ResTagTable"];
-  // Variables required to access cloudlet
+  // Secrets required to access cloudlet, will be saved in encrypted storage
   map<string, string> access_vars = 23;
   // EdgeCloud baseimage version where CRM services reside
   string vm_image_version = 24;

@@ -23,11 +23,9 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
-const gcpVaultPath string = "/secret/data/cloudlet/gcp/credentials"
 const gcpAuthKeyPath string = "/secret/data/cloudlet/gcp/auth_key.json"
 const gcpAuthKeyName = "auth_key.json"
 
@@ -71,19 +69,6 @@ func (a *GCPPlatform) GetProviderSpecificProps(ctx context.Context) (map[string]
 
 func (m *GCPPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GCPPlatform GetAccessData", "dataType", dataType)
-	switch dataType {
-	case platform.GetCloudletAccessVars:
-		vars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, gcpVaultPath)
-		if err != nil {
-			return nil, err
-		}
-		authKeyJSON, err := infracommon.GetVaultDataString(ctx, vaultConfig, gcpAuthKeyPath)
-		if err != nil {
-			return nil, err
-		}
-		vars[gcpAuthKeyName] = string(authKeyJSON)
-		return vars, nil
-	}
 	return nil, fmt.Errorf("GCP unhandled GetAccessData type %s", dataType)
 }
 

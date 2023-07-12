@@ -59,14 +59,12 @@ func InternEnv(envs map[string]string) error {
 	return nil
 }
 
+// GetEnvVarsFromVault is deprecated, use accessvars.GetCloudletAccessVars instead.
 func GetEnvVarsFromVault(ctx context.Context, config *vault.Config, path string) (map[string]string, error) {
 	envData := &VaultEnvData{}
 	err := vault.GetData(config, path, 0, envData)
 	if err != nil {
-		if strings.Contains(err.Error(), "no secrets") {
-			return nil, fmt.Errorf("Failed to source access variables from '%s', does not exist in secure secrets storage (Vault)", path)
-		}
-		return nil, fmt.Errorf("Failed to source access variables from %s, %s: %v", config.Addr, path, err)
+		return nil, err
 	}
 	vars := make(map[string]string, 1)
 	for _, envData := range envData.Env {

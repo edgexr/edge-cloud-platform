@@ -71,6 +71,9 @@ path "secret/data/registry/*" {
 path "secret/data/$REGION/cloudlet/*" {
   capabilities = [ "create", "update", "delete", "read" ]
 }
+path "secret/metadata/$REGION/cloudlet/*" {
+  capabilities = [ "delete" ]
+}
 path "secret/data/cloudlet/*" {
   capabilities = [ "read" ]
 }

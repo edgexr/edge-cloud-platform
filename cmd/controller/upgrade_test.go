@@ -27,13 +27,20 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/yaml" // used to unmarshal data into map[string]interface{} instead of map[interface{}]interface{} for JSON marshal compatibility
 )
 
 var upgradeTestFileLocation = "./upgrade_testfiles"
 var upgradeTestFilePreSuffix = "_pre.etcd"
 var upgradeTestFilePostSuffix = "_post.etcd"
+var upgradeVaultTestFilePreSuffix = "_pre.vault"
+var upgradeVaultTestFilePostSuffix = "_post.vault"
+var upgradeVaultTestFileExpectedSuffix = "_expected.vault"
 
 // Walk testutils data and populate objStore
 func buildDbFromTestData(objStore objstore.KVStore, funcName string) error {
@@ -167,6 +174,104 @@ func compareString(funcName, key, expected, actual string) error {
 	return nil
 }
 
+type VaultUpgradeData struct {
+	KVs []VaultUpgradeKV
+}
+
+type VaultUpgradeKV struct {
+	Path string
+	Data map[string]interface{}
+}
+
+func loadVaultTestData(ctx context.Context, vaultConfig *vault.Config, funcName string) (*VaultUpgradeData, bool, error) {
+	filename := getTestFileName(funcName, upgradeVaultTestFilePreSuffix)
+	fileData, err := os.ReadFile(filename)
+	if err != nil && os.IsNotExist(err) {
+		// skip vault data for this test
+		return nil, false, nil
+	} else if err != nil {
+		return nil, false, err
+	}
+	data := VaultUpgradeData{}
+	err = yaml.Unmarshal(fileData, &data)
+	if err != nil {
+		return nil, false, fmt.Errorf("Failed to unmarshal %s: %s", filename, err)
+	}
+	for _, kv := range data.KVs {
+		err = vault.PutData(vaultConfig, kv.Path, kv.Data)
+		if err != nil {
+			return nil, false, fmt.Errorf("Failed to write data to vault path %s: %v", kv.Path, err)
+		}
+	}
+	return &data, true, nil
+}
+
+func compareVaultData(ctx context.Context, vaultConfig *vault.Config, funcName, region string, preData *VaultUpgradeData, cleanup bool) error {
+	postFile := getTestFileName(funcName, upgradeVaultTestFilePostSuffix)
+	postFileData, err := os.ReadFile(postFile)
+	if err != nil {
+		return err
+	}
+	postData := VaultUpgradeData{}
+	err = yaml.Unmarshal(postFileData, &postData)
+	if err != nil {
+		return fmt.Errorf("Failed to unmarshal %s: %s", postFile, err)
+	}
+
+	expData := VaultUpgradeData{}
+	failures := 0
+	for _, kv := range postData.KVs {
+		kvData := map[string]interface{}{}
+		err = vault.GetData(vaultConfig, kv.Path, 0, &kvData)
+		if err != nil {
+			if vault.IsErrNoSecretsAtPath(err) {
+				fmt.Printf("[%s] Vault comparison fail for path: %s\n", funcName, kv.Path)
+				fmt.Printf("  Secret not found\n")
+				failures++
+				continue
+			}
+			return fmt.Errorf("Failed to read data from Vault path %s: %s", kv.Path, err)
+		}
+		diff := cmp.Diff(kv.Data, kvData)
+		if diff != "" {
+			fmt.Printf("[%s] Vault comparison fail for path: %s\n", funcName, kv.Path)
+			fmt.Println(diff)
+			failures++
+		}
+		expData.KVs = append(expData.KVs, VaultUpgradeKV{
+			Path: kv.Path,
+			Data: kvData,
+		})
+	}
+	if failures == 0 {
+		// actual matches expected
+		if cleanup {
+			for _, kv := range expData.KVs {
+				vault.DeleteData(vaultConfig, kv.Path)
+			}
+			for _, kv := range preData.KVs {
+				vault.DeleteData(vaultConfig, kv.Path)
+			}
+		}
+		return nil
+	}
+	// write out what was found
+	expFileName := getTestFileName(funcName, upgradeVaultTestFileExpectedSuffix)
+	expOut, err := yaml.Marshal(expData)
+	if err != nil {
+		return fmt.Errorf("Failed to marshal actual vault data, %s", err)
+	}
+	err = os.WriteFile(expFileName, expOut, 0644)
+	if err != nil {
+		return fmt.Errorf("Failed to write file %s: %s", expFileName, err)
+	}
+	return fmt.Errorf("Vault data comparison failure for %s", funcName)
+}
+
+func getTestFileName(funcName, suffix string) string {
+	return upgradeTestFileLocation + "/" + funcName + suffix
+}
+
 // Run each upgrade function after populating dummy etcd with test data.
 // Verify that the resulting content in etcd matches expected
 func TestAllUpgradeFuncs(t *testing.T) {
@@ -195,23 +300,54 @@ func TestAllUpgradeFuncs(t *testing.T) {
 	sync := InitSync(&objStore)
 	apis := NewAllApis(sync)
 
+	// Start in-memory Vault for upgrade funcs that upgrade Vault data
+	region := "local"
+	vp := process.Vault{
+		Common: process.Common{
+			Name: "vault",
+		},
+		ListenAddr: "https://127.0.0.1:8204",
+		PKIDomain:  "edgecloud.net",
+		Regions:    region, // comma separated list
+	}
+	_, vroles, vaultCleanup := testutil.NewVaultTestCluster(t, &vp)
+	defer vaultCleanup()
+	vaultConfig := vault.NewAppRoleConfig(vp.ListenAddr, vroles.RegionRoles[region].CtrlRoleID, vroles.RegionRoles[region].CtrlSecretID)
+	sup := &UpgradeSupport{
+		region:      region,
+		vaultConfig: vaultConfig,
+	}
+
 	ctx := log.StartTestSpan(context.Background())
 	for ii, fn := range VersionHash_UpgradeFuncs {
 		if fn == nil {
 			continue
 		}
 		objStore.Start()
-		err := buildDbFromTestData(&objStore, VersionHash_UpgradeFuncNames[ii])
+		funcName := VersionHash_UpgradeFuncNames[ii]
+		err := buildDbFromTestData(&objStore, funcName)
 		require.Nil(t, err, "Unable to build db from testData")
-		err = RunSingleUpgrade(ctx, &objStore, apis, fn)
+		vaultPreData, vaultDataLoaded, err := loadVaultTestData(ctx, vaultConfig, funcName)
+		require.Nil(t, err, "Load Vault test data")
+		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn)
 		require.Nil(t, err, "Upgrade failed")
-		err = compareDbToExpected(&objStore, VersionHash_UpgradeFuncNames[ii])
-		require.Nil(t, err, "Unexpected result from upgrade function(%s)", VersionHash_UpgradeFuncNames[ii])
+		err = compareDbToExpected(&objStore, funcName)
+		require.Nil(t, err, "Unexpected result from upgrade function(%s)", funcName)
+		if vaultDataLoaded {
+			cleanupVault := false
+			err = compareVaultData(ctx, vaultConfig, funcName, region, vaultPreData, cleanupVault)
+			require.Nil(t, err)
+		}
 		// Run the upgrade again to make sure it's idempotent
-		err = RunSingleUpgrade(ctx, &objStore, apis, fn)
+		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn)
 		require.Nil(t, err, "Upgrade second run failed")
-		err = compareDbToExpected(&objStore, VersionHash_UpgradeFuncNames[ii])
-		require.Nil(t, err, "Unexpected result from upgrade function second run (idempotency check) (%s)", VersionHash_UpgradeFuncNames[ii])
+		err = compareDbToExpected(&objStore, funcName)
+		require.Nil(t, err, "Unexpected result from upgrade function second run (idempotency check) (%s)", funcName)
+		if vaultDataLoaded {
+			cleanupVault := true
+			err = compareVaultData(ctx, vaultConfig, funcName, region, vaultPreData, cleanupVault)
+			require.Nil(t, err)
+		}
 		// Stop it, so it's re-created again
 		objStore.Stop()
 	}

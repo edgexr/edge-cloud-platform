@@ -925,7 +925,7 @@ var AllDataComments = map[string]string{
 	"cloudlets:#.config.cachedir":                                                "cache dir",
 	"cloudlets:#.config.secondarycrmaccessprivatekey":                            "secondary crm access private key",
 	"cloudlets:#.config.thanosrecvaddr":                                          "Thanos Receive remote write address",
-	"cloudlets:#.accessvars":                                                     "Variables required to access cloudlet",
+	"cloudlets:#.accessvars":                                                     "Secrets required to access cloudlet, will be saved in encrypted storage",
 	"cloudlets:#.vmimageversion":                                                 "EdgeCloud baseimage version where CRM services reside",
 	"cloudlets:#.deployment":                                                     "Deployment type to bring up CRM services (docker, kubernetes)",
 	"cloudlets:#.infraapiaccess":                                                 "Infra Access Type is the type of access available to Infra API Endpoint, one of DirectAccess, RestrictedAccess",
