@@ -2966,6 +2966,7 @@ var PropertyInfoOptionalArgs = []string{
 	"secret",
 	"mandatory",
 	"internal",
+	"totpsecret",
 }
 var PropertyInfoAliasArgs = []string{}
 var PropertyInfoComments = map[string]string{
@@ -2975,6 +2976,7 @@ var PropertyInfoComments = map[string]string{
 	"secret":      "Is the property a secret value, will be hidden",
 	"mandatory":   "Is the property mandatory",
 	"internal":    "Is the property internal, not to be set by Operator",
+	"totpsecret":  "The property is a time-based one-time password (TOTP, RFC 6238) secret key that will be used to generate TOTP codes",
 }
 var PropertyInfoSpecialArgs = map[string]string{}
 var CloudletPropsRequiredArgs = []string{}

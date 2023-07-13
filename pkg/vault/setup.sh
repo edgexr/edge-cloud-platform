@@ -27,7 +27,7 @@ echo "Setting up Vault"
 
 TMP=$(mktemp -d -t ci-XXXXXXXX)
 
-vault audit enable file file_path="/tmp/vault.audit"
+# vault audit enable file file_path="/tmp/vault.audit"
 
 # enable approle if not already enabled
 auths=$(vault auth list)

@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 )
 
 var VMPoolProps = map[string]*edgeproto.PropertyInfo{
@@ -38,10 +38,6 @@ func (o *VMPoolPlatform) GetProviderSpecificProps(ctx context.Context) (map[stri
 
 func (o *VMPoolPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {
 	return nil
-}
-
-func (o *VMPoolPlatform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
-	return ""
 }
 
 func (o *VMPoolPlatform) GetExternalGateway(ctx context.Context, extNetName string) (string, error) {

@@ -11,7 +11,6 @@ import (
 	k8scommon "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-common"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -104,10 +103,6 @@ func (s *K8sOperator) NameSanitize(name string) string {
 func (s *K8sOperator) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
 	props := edgeproto.CloudletProps{}
 	return &props, nil
-}
-
-func (k *K8sOperator) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
-	return make(map[string]string), nil
 }
 
 // TODO

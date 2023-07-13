@@ -46,6 +46,7 @@ fi
 vault secrets enable -path=$REGION/jwtkeys kv
 vault kv enable-versioning $REGION/jwtkeys
 vault write $REGION/jwtkeys/config max_versions=2
+vault secrets enable -path=$REGION/totp totp
 
 # set up regional cert issuer role
 vault write pki-regional/roles/$REGION \
@@ -97,6 +98,12 @@ path "ssh/sign/machine" {
 }
 path "secret/data/kafka/$REGION/*" {
   capabilities = [ "create", "update", "delete", "read" ]
+}
+path "$REGION/totp/keys/*" {
+  capabilities = [ "create", "update", "delete", "read" ]
+}
+path "$REGION/totp/code/*" {
+  capabilities = [ "read" ]
 }
 EOF
 vault policy write $REGION.controller $TMP/controller-pol.hcl

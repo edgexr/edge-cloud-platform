@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"context"
 	"encoding/pem"
 	"io/ioutil"
 	"os"
@@ -11,10 +12,10 @@ import (
 	kv "github.com/hashicorp/vault-plugin-secrets-kv"
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/audit"
-	"github.com/hashicorp/vault/builtin/audit/file"
 	"github.com/hashicorp/vault/builtin/credential/approle"
 	"github.com/hashicorp/vault/builtin/logical/pki"
 	"github.com/hashicorp/vault/builtin/logical/ssh"
+	"github.com/hashicorp/vault/builtin/logical/totp"
 	vaulthttp "github.com/hashicorp/vault/http"
 	"github.com/hashicorp/vault/sdk/logical"
 	"github.com/hashicorp/vault/vault"
@@ -27,15 +28,20 @@ import (
 func NewVaultTestClusterBasic(t *testing.T, listenAddr string) (*vault.TestCluster, *api.Client) {
 	coreConfig := &vault.CoreConfig{
 		LogicalBackends: map[string]logical.Factory{
-			"kv":  kv.Factory,
-			"pki": pki.Factory,
-			"ssh": ssh.Factory,
+			"kv":   kv.Factory,
+			"pki":  pki.Factory,
+			"ssh":  ssh.Factory,
+			"totp": totp.Factory,
 		},
 		CredentialBackends: map[string]logical.Factory{
 			"approle": approle.Factory,
 		},
 		AuditBackends: map[string]audit.Factory{
-			"file": file.Factory,
+			"noop": func(ctx context.Context, config *audit.BackendConfig) (audit.Backend, error) {
+				return &vault.NoopAudit{
+					Config: config,
+				}, nil
+			},
 		},
 		LogLevel: "debug",
 	}
@@ -58,8 +64,16 @@ func NewVaultTestClusterBasic(t *testing.T, listenAddr string) (*vault.TestClust
 		},
 	})
 	require.Nil(t, err)
-
 	return cluster, client
+}
+
+// This is separate because the setup-region.sh script does it as well.
+func VaultMountTotp(t *testing.T, client *api.Client, region string) {
+	// enable regional totp mount
+	err := client.Sys().Mount(region+"/totp", &api.MountInput{
+		Type: "totp",
+	})
+	require.Nil(t, err)
 }
 
 // Start an in-memory test vault. Returns test cluster, vault roles, and cleanup func.

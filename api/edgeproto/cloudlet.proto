@@ -592,6 +592,8 @@ message PropertyInfo {
   bool mandatory = 5;
   // Is the property internal, not to be set by Operator
   bool internal = 6;
+  // The property is a time-based one-time password (TOTP, RFC 6238) secret key that will be used to generate TOTP codes, and never leaves Vault.
+  bool totp_secret = 7;
 }
 
 // Infra properties used to set up cloudlet

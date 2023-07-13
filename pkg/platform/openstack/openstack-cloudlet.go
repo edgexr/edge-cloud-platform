@@ -24,7 +24,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 type OpenstackResources struct {
@@ -41,10 +40,6 @@ func (o *OpenstackPlatform) GetApiEndpointAddr(ctx context.Context) (string, err
 		return "", fmt.Errorf("unable to find " + OS_AUTH_URL)
 	}
 	return osAuthUrl, nil
-}
-
-func (o *OpenstackPlatform) GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error) {
-	return nil, fmt.Errorf("GetSessionTokens not supported in OpenStack")
 }
 
 func (o *OpenstackPlatform) GetCloudletManifest(ctx context.Context, name string, cloudletImagePath string, vmgp *vmlayer.VMGroupOrchestrationParams) (string, error) {

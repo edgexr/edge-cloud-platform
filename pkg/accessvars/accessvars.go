@@ -19,10 +19,40 @@ func getCloudletAccessVarsPath(region string, cloudlet *edgeproto.Cloudlet) stri
 	return fmt.Sprintf("secret/data/%s/cloudlet/%s/%s/accessvars", region, cloudlet.Key.Organization, name)
 }
 
-func SaveCloudletAccessVars(ctx context.Context, region string, cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config, accessVars map[string]string) error {
-	path := getCloudletAccessVarsPath(region, cloudlet)
-	log.SpanLog(ctx, log.DebugLevelApi, "SaveCloudletAccessVars", "path", path)
-	return vault.PutData(vaultConfig, path, accessVars)
+func SaveCloudletAccessVars(ctx context.Context, region string, cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config, accessVars map[string]string, props map[string]*edgeproto.PropertyInfo) error {
+	// split vars into regular secrets and totp secrets
+	vars := map[string]string{}
+	totps := map[string]string{}
+	if props == nil {
+		vars = accessVars
+	} else {
+		for k, v := range accessVars {
+			if p, found := props[k]; found && p.TotpSecret {
+				totps[k] = v
+			} else {
+				vars[k] = v
+			}
+		}
+	}
+	if len(vars) > 0 {
+		// save vars
+		path := getCloudletAccessVarsPath(region, cloudlet)
+		log.SpanLog(ctx, log.DebugLevelApi, "SaveCloudletAccessVars", "path", path)
+		err := vault.PutData(vaultConfig, path, vars)
+		if err != nil {
+			return err
+		}
+	}
+	if len(totps) > 0 {
+		// write totp secrets to Vault totp engine
+		for k, v := range totps {
+			err := SaveCloudletTotpSecret(ctx, region, cloudlet, vaultConfig, k, v)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func GetCloudletAccessVars(ctx context.Context, region string, cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config) (map[string]string, error) {
@@ -32,7 +62,7 @@ func GetCloudletAccessVars(ctx context.Context, region string, cloudlet *edgepro
 	return vars, err
 }
 
-func UpdateCloudletAccessVars(ctx context.Context, region string, cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config, accessVars map[string]string) error {
+func UpdateCloudletAccessVars(ctx context.Context, region string, cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config, accessVars map[string]string, props map[string]*edgeproto.PropertyInfo) error {
 	updatedVars, err := GetCloudletAccessVars(ctx, region, cloudlet, vaultConfig)
 	if err != nil {
 		return err
@@ -40,7 +70,7 @@ func UpdateCloudletAccessVars(ctx context.Context, region string, cloudlet *edge
 	for k, v := range accessVars {
 		updatedVars[k] = v
 	}
-	return SaveCloudletAccessVars(ctx, region, cloudlet, vaultConfig, updatedVars)
+	return SaveCloudletAccessVars(ctx, region, cloudlet, vaultConfig, updatedVars, props)
 }
 
 func DeleteCloudletAccessVars(ctx context.Context, region string, cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config) error {

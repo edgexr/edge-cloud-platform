@@ -29,8 +29,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudflaremgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/gcs"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
@@ -162,13 +160,8 @@ func (s *VaultClient) DeleteDNSRecord(ctx context.Context, recordID string) erro
 	return cloudflaremgmt.DeleteDNSRecord(ctx, api, s.dnsZones, recordID)
 }
 
-func (s *VaultClient) GetSessionTokens(ctx context.Context, arg []byte) (map[string]string, error) {
-	// Platform-specific implementation
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, s.cloudlet.PlatformType, nil)
-	if err != nil {
-		return nil, err
-	}
-	return cloudletPlatform.GetAccessData(ctx, s.cloudlet, s.region, s.vaultConfig, platform.GetSessionTokens, arg)
+func (s *VaultClient) GetSessionTokens(ctx context.Context, secretName string) (string, error) {
+	return accessvars.GetCloudletTotpCode(ctx, s.region, s.cloudlet, s.vaultConfig, secretName)
 }
 
 func (s *VaultClient) GetPublicCert(ctx context.Context, commonName string) (*vault.PublicCert, error) {

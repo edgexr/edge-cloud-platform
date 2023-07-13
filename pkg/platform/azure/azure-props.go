@@ -16,12 +16,10 @@ package azure
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 const (
@@ -66,11 +64,6 @@ func (a *AzurePlatform) GetAzurePass() string {
 func (a *AzurePlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetProviderSpecificProps")
 	return azureProps, nil
-}
-
-func (a *AzurePlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AzurePlatform GetAccessData", "dataType", dataType)
-	return nil, fmt.Errorf("Azure unhandled GetAccessData type %s", dataType)
 }
 
 func (a *AzurePlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {

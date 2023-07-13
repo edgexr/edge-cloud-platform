@@ -36,7 +36,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -436,11 +435,6 @@ func (f *FederationPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) 
 // Get Cloudlet Properties
 func (f *FederationPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
 	return &edgeproto.CloudletProps{}, nil
-}
-
-// Platform-sepcific access data lookup (only called from Controller context)
-func (f *FederationPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
-	return nil, nil
 }
 
 // Update the cloudlet's Trust Policy

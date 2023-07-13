@@ -26,7 +26,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -295,14 +294,6 @@ func (a *AwsEc2Platform) GetOutpostFlavorsForCloudletInfo(ctx context.Context, i
 		)
 	}
 	return nil
-}
-
-func (a *AwsEc2Platform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
-	return a.awsGenPf.GetVaultCloudletAccessPath(key, region, physicalName)
-}
-
-func (a *AwsEc2Platform) GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error) {
-	return a.awsGenPf.GetSessionTokens(ctx, vaultConfig, account)
 }
 
 func (a *AwsEc2Platform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {

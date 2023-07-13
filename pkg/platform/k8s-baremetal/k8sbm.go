@@ -29,7 +29,6 @@ import (
 	k8scommon "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-common"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -241,10 +240,6 @@ func (k *K8sBareMetalPlatform) GetCloudletManifest(ctx context.Context, cloudlet
 
 func (k *K8sBareMetalPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
 	return nil
-}
-
-func (k *K8sBareMetalPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
-	return nil, fmt.Errorf("GetAccessData not implemented")
 }
 
 func (k *K8sBareMetalPlatform) GetRestrictedCloudletStatus(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {

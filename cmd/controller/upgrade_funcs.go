@@ -525,7 +525,7 @@ func CloudletAccessVars(ctx context.Context, objStore objstore.KVStore, allApis 
 				return nil
 			}
 			// write to new path
-			err2 = accessvars.SaveCloudletAccessVars(ctx, sup.region, &cloudlet, sup.vaultConfig, vars)
+			err2 = accessvars.SaveCloudletAccessVars(ctx, sup.region, &cloudlet, sup.vaultConfig, vars, nil)
 			if err2 != nil {
 				return err2
 			}

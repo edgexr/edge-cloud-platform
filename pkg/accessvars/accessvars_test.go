@@ -71,7 +71,7 @@ func TestValidateAccessVars(t *testing.T) {
 	}
 }
 
-func TestSaveAccessVars(t *testing.T) {
+func TestAccessVars(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelApi)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
@@ -81,8 +81,17 @@ func TestSaveAccessVars(t *testing.T) {
 	vaultCluster, vaultClient := testutil.NewVaultTestClusterBasic(t, vaultAddr)
 	defer vaultCluster.Cleanup()
 
+	region := "local"
+	testutil.VaultMountTotp(t, vaultClient, region)
+
 	vaultConfig := vault.NewUnitTestConfig(vaultAddr, vaultClient)
 
+	// Run tests against Vault
+	testCloudletAccessVars(t, ctx, vaultConfig)
+	testCloudletTotp(t, ctx, vaultConfig, region)
+}
+
+func testCloudletAccessVars(t *testing.T, ctx context.Context, vaultConfig *vault.Config) {
 	vars := map[string]string{
 		"URL":          "https://foo.net/api/v3",
 		"clientkey":    "abc",
@@ -120,7 +129,7 @@ func TestSaveAccessVars(t *testing.T) {
 	check(nil)
 
 	// Write vars to Vault
-	err := SaveCloudletAccessVars(ctx, region, cloudlet, vaultConfig, vars)
+	err := SaveCloudletAccessVars(ctx, region, cloudlet, vaultConfig, vars, nil)
 	require.Nil(t, err, errString(err))
 	check(vars)
 
@@ -128,7 +137,7 @@ func TestSaveAccessVars(t *testing.T) {
 	updateVars := map[string]string{
 		"clientsecret": "!adf*#*&$3vEF9X93&3",
 	}
-	err = UpdateCloudletAccessVars(ctx, region, cloudlet, vaultConfig, updateVars)
+	err = UpdateCloudletAccessVars(ctx, region, cloudlet, vaultConfig, updateVars, nil)
 	require.Nil(t, err, errString(err))
 	for k, v := range updateVars {
 		vars[k] = v
