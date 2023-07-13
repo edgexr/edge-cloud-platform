@@ -22,9 +22,6 @@ const (
 	TotpCodePath TotpPathType = "code"
 )
 
-// getCloudletTotpPath returns the path for the cloudlet totp key.
-// Note this is the subpath after the key/code, not the full path.
-// It should be pre-pended with the mount and type (keys or code)
 func getCloudletTotpPath(region string, pathType TotpPathType, cloudlet *edgeproto.Cloudlet, secretName string) string {
 	name := cloudlet.PhysicalName
 	if name == "" {
