@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"context"
 	"encoding/pem"
 	"io/ioutil"
 	"os"
@@ -9,17 +10,71 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	kv "github.com/hashicorp/vault-plugin-secrets-kv"
+	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/audit"
-	"github.com/hashicorp/vault/builtin/audit/file"
 	"github.com/hashicorp/vault/builtin/credential/approle"
 	"github.com/hashicorp/vault/builtin/logical/pki"
 	"github.com/hashicorp/vault/builtin/logical/ssh"
+	"github.com/hashicorp/vault/builtin/logical/totp"
 	vaulthttp "github.com/hashicorp/vault/http"
 	"github.com/hashicorp/vault/sdk/logical"
 	"github.com/hashicorp/vault/vault"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 )
+
+// NewVaultTestClusterBasic starts a basic in-memory test vault.
+// Returns test cluster and client. Call cluster.Cleanup() when done.
+func NewVaultTestClusterBasic(t *testing.T, listenAddr string) (*vault.TestCluster, *api.Client) {
+	coreConfig := &vault.CoreConfig{
+		LogicalBackends: map[string]logical.Factory{
+			"kv":   kv.Factory,
+			"pki":  pki.Factory,
+			"ssh":  ssh.Factory,
+			"totp": totp.Factory,
+		},
+		CredentialBackends: map[string]logical.Factory{
+			"approle": approle.Factory,
+		},
+		AuditBackends: map[string]audit.Factory{
+			"noop": func(ctx context.Context, config *audit.BackendConfig) (audit.Backend, error) {
+				return &vault.NoopAudit{
+					Config: config,
+				}, nil
+			},
+		},
+		LogLevel: "debug",
+	}
+	listenAddr = strings.TrimPrefix(listenAddr, "https://")
+	listenAddr = strings.TrimPrefix(listenAddr, "http://")
+	options := &vault.TestClusterOptions{
+		NumCores:          1,
+		BaseListenAddress: listenAddr,
+		HandlerFunc:       vaulthttp.Handler,
+	}
+	cluster := vault.NewTestCluster(t, coreConfig, options)
+	cluster.Start()
+	vault.TestWaitActive(t, cluster.Cores[0].Core)
+
+	client := cluster.Cores[0].Client
+	// set default /secret kv-store to version 2
+	err := client.Sys().TuneMount("secret", api.MountConfigInput{
+		Options: map[string]string{
+			"version": "2",
+		},
+	})
+	require.Nil(t, err)
+	return cluster, client
+}
+
+// This is separate because the setup-region.sh script does it as well.
+func VaultMountTotp(t *testing.T, client *api.Client, region string) {
+	// enable regional totp mount
+	err := client.Sys().Mount(region+"/totp", &api.MountInput{
+		Type: "totp",
+	})
+	require.Nil(t, err)
+}
 
 // Start an in-memory test vault. Returns test cluster, vault roles, and cleanup func.
 func NewVaultTestCluster(t *testing.T, p *process.Vault) (*vault.TestCluster, *process.VaultRoles, func()) {
@@ -32,38 +87,12 @@ func NewVaultTestCluster(t *testing.T, p *process.Vault) (*vault.TestCluster, *p
 	}
 	rolesfile := dir + "/roles.yaml"
 
-	coreConfig := &vault.CoreConfig{
-		LogicalBackends: map[string]logical.Factory{
-			"kv":  kv.Factory,
-			"pki": pki.Factory,
-			"ssh": ssh.Factory,
-		},
-		CredentialBackends: map[string]logical.Factory{
-			"approle": approle.Factory,
-		},
-		AuditBackends: map[string]audit.Factory{
-			"file": file.Factory,
-		},
-		LogLevel: "debug",
-	}
-	listenAddr := p.ListenAddr
-	listenAddr = strings.TrimPrefix(listenAddr, "https://")
-	listenAddr = strings.TrimPrefix(listenAddr, "http://")
-	options := &vault.TestClusterOptions{
-		NumCores:          1,
-		BaseListenAddress: listenAddr,
-		HandlerFunc:       vaulthttp.Handler,
-	}
-	cluster := vault.NewTestCluster(t, coreConfig, options)
-	cluster.Start()
-
+	cluster, _ := NewVaultTestClusterBasic(t, p.ListenAddr)
 	defer func() {
 		if err != nil {
 			cluster.Cleanup()
 		}
 	}()
-
-	vault.TestWaitActive(t, cluster.Cores[0].Core)
 
 	// write out server CA cert so client can use https
 	vaultCAFile := "vaultca.pem"

@@ -2862,7 +2862,7 @@ var CloudletComments = map[string]string{
 	"config.cachedir":                        "cache dir",
 	"config.secondarycrmaccessprivatekey":    "secondary crm access private key",
 	"config.thanosrecvaddr":                  "Thanos Receive remote write address",
-	"accessvars":                             "Variables required to access cloudlet, specify accessvars:empty=true to clear",
+	"accessvars":                             "Secrets required to access cloudlet, will be saved in encrypted storage, specify accessvars:empty=true to clear",
 	"vmimageversion":                         "EdgeCloud baseimage version where CRM services reside",
 	"deployment":                             "Deployment type to bring up CRM services (docker, kubernetes)",
 	"infraapiaccess":                         "Infra Access Type is the type of access available to Infra API Endpoint, one of DirectAccess, RestrictedAccess",
@@ -2966,6 +2966,7 @@ var PropertyInfoOptionalArgs = []string{
 	"secret",
 	"mandatory",
 	"internal",
+	"totpsecret",
 }
 var PropertyInfoAliasArgs = []string{}
 var PropertyInfoComments = map[string]string{
@@ -2975,6 +2976,7 @@ var PropertyInfoComments = map[string]string{
 	"secret":      "Is the property a secret value, will be hidden",
 	"mandatory":   "Is the property mandatory",
 	"internal":    "Is the property internal, not to be set by Operator",
+	"totpsecret":  "The property is a time-based one-time password (TOTP, RFC 6238) secret key that will be used to generate TOTP codes",
 }
 var PropertyInfoSpecialArgs = map[string]string{}
 var CloudletPropsRequiredArgs = []string{}

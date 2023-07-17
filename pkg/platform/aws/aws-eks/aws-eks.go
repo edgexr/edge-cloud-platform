@@ -27,7 +27,6 @@ import (
 	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 type AwsEksPlatform struct {
@@ -120,11 +119,6 @@ func (a *AwsEksPlatform) NameSanitize(clusterName string) string {
 
 func (a *AwsEksPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {
 	return nil
-}
-
-func (a *AwsEksPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
-	log.SpanLog(ctx, log.DebugLevelApi, "AwsEks GetAccessData", "dataType", dataType)
-	return a.awsGenPf.GetAccessData(ctx, cloudlet, region, vaultConfig, dataType, arg)
 }
 
 func (a *AwsEksPlatform) getClusterList(ctx context.Context) ([]awsgen.AWSCluster, error) {

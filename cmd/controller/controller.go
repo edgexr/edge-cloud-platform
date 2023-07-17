@@ -130,6 +130,11 @@ type Services struct {
 	checkpointer               *Checkpointer
 }
 
+type UpgradeSupport struct {
+	region      string
+	vaultConfig *vault.Config
+}
+
 func main() {
 	nodeMgr.InitFlags()
 	redisCfg.InitFlags(rediscache.DefaultCfgRedisHA)
@@ -267,7 +272,11 @@ func startServices() error {
 		// First off - check version of the objectStore we are running
 		version, err := checkVersion(ctx, objStore)
 		if err != nil && strings.Contains(err.Error(), ErrCtrlUpgradeRequired.Error()) && *autoUpgrade {
-			err = UpgradeToLatest(version, objStore, allApis)
+			upgradeSupport := &UpgradeSupport{
+				region:      *region,
+				vaultConfig: vaultConfig,
+			}
+			err = UpgradeToLatest(version, objStore, allApis, upgradeSupport)
 			if err != nil {
 				return fmt.Errorf("Failed to ugprade data model: %v", err)
 			}

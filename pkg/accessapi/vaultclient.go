@@ -22,14 +22,13 @@ import (
 
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/accessvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/chefauth"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudflaremgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/gcs"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
@@ -69,12 +68,7 @@ func (s *VaultClient) GetCloudletAccessVars(ctx context.Context) (map[string]str
 	if s.cloudlet == nil {
 		return nil, fmt.Errorf("Missing cloudlet details")
 	}
-	// Platform-specific implementation.
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, s.cloudlet.PlatformType, nil)
-	if err != nil {
-		return nil, err
-	}
-	return cloudletPlatform.GetAccessData(ctx, s.cloudlet, s.region, s.vaultConfig, platform.GetCloudletAccessVars, nil)
+	return accessvars.GetCloudletAccessVars(ctx, s.region, s.cloudlet, s.vaultConfig)
 }
 
 func (s *VaultClient) GetRegistryAuth(ctx context.Context, imgUrl string) (*cloudcommon.RegistryAuth, error) {
@@ -133,18 +127,6 @@ func (s *VaultClient) getCloudflareApi() (*cloudflare.API, error) {
 			return nil, err
 		}
 		cloudflareApi = api
-	} else if err != nil && strings.Contains(err.Error(), "no secrets at path") {
-		// look up in old deprecated path (should not be used for new deployments)
-		vaultPath := "/secret/data/cloudlet/openstack/mexenv.json"
-		vars, err := vault.GetEnvVars(s.vaultConfig, vaultPath)
-		if err != nil {
-			return nil, err
-		}
-		api, err := cloudflare.New(vars["MEX_CF_KEY"], vars["MEX_CF_USER"])
-		if err != nil {
-			return nil, err
-		}
-		cloudflareApi = api
 	} else if err != nil {
 		return nil, err
 	}
@@ -178,13 +160,8 @@ func (s *VaultClient) DeleteDNSRecord(ctx context.Context, recordID string) erro
 	return cloudflaremgmt.DeleteDNSRecord(ctx, api, s.dnsZones, recordID)
 }
 
-func (s *VaultClient) GetSessionTokens(ctx context.Context, arg []byte) (map[string]string, error) {
-	// Platform-specific implementation
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, s.cloudlet.PlatformType, nil)
-	if err != nil {
-		return nil, err
-	}
-	return cloudletPlatform.GetAccessData(ctx, s.cloudlet, s.region, s.vaultConfig, platform.GetSessionTokens, arg)
+func (s *VaultClient) GetSessionTokens(ctx context.Context, secretName string) (string, error) {
+	return accessvars.GetCloudletTotpCode(ctx, s.region, s.cloudlet, s.vaultConfig, secretName)
 }
 
 func (s *VaultClient) GetPublicCert(ctx context.Context, commonName string) (*vault.PublicCert, error) {

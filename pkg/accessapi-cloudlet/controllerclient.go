@@ -194,21 +194,17 @@ func (s *ControllerClient) DeleteDNSRecord(ctx context.Context, recordID string)
 	return err
 }
 
-func (s *ControllerClient) GetSessionTokens(ctx context.Context, arg []byte) (map[string]string, error) {
+func (s *ControllerClient) GetSessionTokens(ctx context.Context, secretName string) (string, error) {
 	req := &edgeproto.AccessDataRequest{
 		Type: platform.GetSessionTokens,
-		Data: arg,
+		Data: []byte(secretName),
 	}
 	reply, err := s.client.GetAccessData(ctx, req)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	tokens := map[string]string{}
-	err = json.Unmarshal(reply.Data, &tokens)
-	if err != nil {
-		return nil, err
-	}
-	return tokens, nil
+	code := string(reply.Data)
+	return code, nil
 }
 
 func (s *ControllerClient) GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error) {

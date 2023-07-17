@@ -17,11 +17,11 @@ package main
 import (
 	fmt "fmt"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/opentracing/opentracing-go"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	context "golang.org/x/net/context"
 )
 
@@ -29,13 +29,13 @@ var testDataKeyPrefix = "_testdatakey"
 
 // Prototype for the upgrade function - takes an objectstore and stm to ensure
 // automicity of each upgrade function
-type VersionUpgradeFunc func(context.Context, objstore.KVStore, *AllApis) error
+type VersionUpgradeFunc func(context.Context, objstore.KVStore, *AllApis, *UpgradeSupport) error
 
 // Helper function to run a single upgrade function across all the elements of a KVStore
 // fn will be called for each of the entries, and therefore it's up to the
 // fn implementation to filter based on the prefix
-func RunSingleUpgrade(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, fn VersionUpgradeFunc) error {
-	err := fn(ctx, objStore, allApis)
+func RunSingleUpgrade(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, upgradeSupport *UpgradeSupport, fn VersionUpgradeFunc) error {
+	err := fn(ctx, objStore, allApis, upgradeSupport)
 	if err != nil {
 		return fmt.Errorf("Could not upgrade objects store entries, err: %v\n", err)
 	}
@@ -44,7 +44,7 @@ func RunSingleUpgrade(ctx context.Context, objStore objstore.KVStore, allApis *A
 
 // This function walks all upgrade functions from the fromVersion to current
 // and upgrades the KVStore using those functions one-by-one
-func UpgradeToLatest(fromVersion string, objStore objstore.KVStore, allApis *AllApis) error {
+func UpgradeToLatest(fromVersion string, objStore objstore.KVStore, allApis *AllApis, upgradeSupport *UpgradeSupport) error {
 	var fn VersionUpgradeFunc
 	verID, ok := edgeproto.VersionHash_value["HASH_"+fromVersion]
 	if !ok {
@@ -66,7 +66,7 @@ func UpgradeToLatest(fromVersion string, objStore objstore.KVStore, allApis *All
 		uctx := log.ContextWithSpan(context.Background(), uspan)
 		if fn != nil {
 			// Call the upgrade with an appropriate callback
-			if err := RunSingleUpgrade(uctx, objStore, allApis, fn); err != nil {
+			if err := RunSingleUpgrade(uctx, objStore, allApis, upgradeSupport, fn); err != nil {
 				uspan.Finish()
 				return fmt.Errorf("Failed to run %s: %v\n",
 					name, err)

@@ -32,6 +32,7 @@ enum VersionHash {
   HASH_37dea30756fed2b0c0ecbc3e7b084855 = 48 [(protogen.upgrade_func) = "AppInstKeyName"];
   HASH_1304c4ec69343ced28fd3ebc85f4a3a9 = 49; // Bad PlatformType upgrade that was a no-op
   HASH_601fa4f6a8109f39e46adf1ea3b89197 = 50 [(protogen.upgrade_func) = "PlatformType"];
+  HASH_a61a29cd41f6b7459b05b6f7be6be4ce = 51 [(protogen.upgrade_func) = "CloudletAccessVars"];
   option (protogen.version_hash) = true;
-  option (protogen.version_hash_salt) = "2";
+  option (protogen.version_hash_salt) = "3";
 }

@@ -26,21 +26,12 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 var clusterLock sync.Mutex
 var appLock sync.Mutex
 
 const govcLocation = "https://github.com/vmware/govmomi/tree/master/govc"
-
-func (v *VSpherePlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("SaveCloudletAccessVars not implemented for vsphere")
-}
-
-func (v *VSpherePlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("UpdateCloudletAccessVars not implemented for vsphere")
-}
 
 func (v *VSpherePlatform) GetCloudletImageSuffix(ctx context.Context) string {
 	return ".qcow2"
@@ -95,10 +86,6 @@ func (v *VSpherePlatform) GetApiEndpointAddr(ctx context.Context) (string, error
 		return "", fmt.Errorf("unable to find VCENTER_ADDR")
 	}
 	return vcaddr, nil
-}
-
-func (o *VSpherePlatform) GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error) {
-	return nil, fmt.Errorf("GetSessionTokens not supported in VSpherePlatform")
 }
 
 // GetCloudletManifest follows the standard practice for vSphere to use OVF for this purpose.  We store the OVF

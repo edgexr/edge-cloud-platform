@@ -108,11 +108,11 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 			return nil, err
 		}
 	case platform.GetSessionTokens:
-		tokens, err := s.vaultClient.GetSessionTokens(ctx, req.Data)
+		code, err := s.vaultClient.GetSessionTokens(ctx, string(req.Data))
 		if err != nil {
 			return nil, err
 		}
-		out, merr = json.Marshal(tokens)
+		out = []byte(code)
 	case platform.GetPublicCert:
 		publicCert, err := s.vaultClient.GetPublicCert(ctx, string(req.Data))
 		if err != nil {
