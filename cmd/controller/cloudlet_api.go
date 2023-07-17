@@ -29,6 +29,7 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/accessvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -742,7 +743,11 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	}
 
 	if len(accessVars) > 0 {
-		err = cloudletPlatform.SaveCloudletAccessVars(ctx, in, accessVars, pfConfig, nodeMgr.VaultConfig, updatecb.cb)
+		err = accessvars.ValidateAccessVars(accessVars, features.AccessVars)
+		if err != nil {
+			return err
+		}
+		err = accessvars.SaveCloudletAccessVars(ctx, *region, in, nodeMgr.VaultConfig, accessVars, features.AccessVars)
 		if err != nil {
 			return err
 		}
@@ -927,7 +932,7 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 		s.stopCloudletStream(ctx, cctx, &cloudletKey, sendObj, reterr, NoCleanupStream)
 	}()
 
-	updatecb := updateCloudletCallback{in, cb}
+	_ = updateCloudletCallback{in, cb}
 
 	err = in.ValidateUpdateFields()
 	if err != nil {
@@ -1045,12 +1050,8 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 		return err
 	}
 	if !ignoreCRMState(cctx) {
-		pfConfig, err := s.getPlatformConfig(ctx, in)
-		if err != nil {
-			return err
-		}
 		if len(accessVars) > 0 {
-			err = cloudletPlatform.UpdateCloudletAccessVars(ctx, cur, accessVars, pfConfig, nodeMgr.VaultConfig, updatecb.cb)
+			err = accessvars.UpdateCloudletAccessVars(ctx, *region, in, nodeMgr.VaultConfig, accessVars, features.AccessVars)
 			if err != nil {
 				return err
 			}

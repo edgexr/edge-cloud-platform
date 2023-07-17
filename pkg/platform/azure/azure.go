@@ -70,6 +70,7 @@ func (o *AzurePlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,
 		IpAllocatedPerService:         true,
+		AccessVars:                    AccessVarProps,
 	}
 }
 

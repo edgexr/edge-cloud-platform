@@ -52,7 +52,7 @@ func TestNotify(t *testing.T) {
 	appInsts := dmetest.GenerateAppInsts()
 
 	// test dummy server sending notices to dme
-	addr := "127.0.0.1:60001"
+	addr := "127.0.0.1:60002"
 
 	// dummy server side
 	serverHandler := notify.NewDummyHandler()

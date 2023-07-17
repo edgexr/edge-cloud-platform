@@ -29,6 +29,75 @@ import (
 const NSXT = "NSX-T"
 const NSXV = "NSX-V"
 
+const (
+	VCD_USER                    = "VCD_USER"
+	VCD_PASSWORD                = "VCD_PASSWORD"
+	VCD_ORG                     = "VCD_ORG"
+	VCD_URL                     = "VCD_URL"
+	VDC_NAME                    = "VDC_NAME"
+	VCD_OAUTH_SGW_URL           = "VCD_OAUTH_SGW_URL"
+	VCD_OAUTH_AGW_URL           = "VCD_OAUTH_AGW_URL"
+	VCD_OAUTH_CLIENT_ID         = "VCD_OAUTH_CLIENT_ID"
+	VCD_OAUTH_CLIENT_SECRET     = "VCD_OAUTH_CLIENT_SECRET"
+	VCD_CLIENT_TLS_CERT         = "VCD_CLIENT_TLS_CERT"
+	VCD_CLIENT_TLS_KEY          = "VCD_CLIENT_TLS_KEY"
+	VCD_CLIENT_REFRESH_INTERVAL = "VCD_CLIENT_REFRESH_INTERVAL"
+	VCD_INSECURE                = "VCD_INSECURE"
+)
+
+var AccessVarProps = map[string]*edgeproto.PropertyInfo{
+	VCD_USER: {
+		Name:      "VCD user name",
+		Mandatory: true,
+	},
+	VCD_PASSWORD: {
+		Name:      "VCD user password",
+		Mandatory: true,
+	},
+	VCD_ORG: {
+		Name:      "VCD organization name",
+		Mandatory: true,
+	},
+	VCD_URL: {
+		Name:      "VCD API URL",
+		Mandatory: true,
+	},
+	VDC_NAME: {
+		Name:      "VDC name",
+		Mandatory: true,
+	},
+	VCD_OAUTH_SGW_URL: {
+		Name:        "VCD oauth session gateway URL",
+		Description: "VCD oauth session gateway URL. Also requires setting VCD_OAUTH_AGW_URL, VCD_OAUTH_CLIENT_ID, and VCD_OAUTH_CLIENT_SECRET.",
+	},
+	VCD_OAUTH_AGW_URL: {
+		Name: "VCD oauth API gateway URL",
+	},
+	VCD_OAUTH_CLIENT_ID: {
+		Name:        "VCD oauth client id",
+		Description: "Oauth client id if using client credentials flow",
+	},
+	VCD_OAUTH_CLIENT_SECRET: {
+		Name:        "VCD oauth client secret",
+		Description: "Oauth client secret if using client credentials flow",
+	},
+	VCD_CLIENT_TLS_CERT: {
+		Name:        "VCD client public TLS certificate data",
+		Description: "Public TLS certificate to use to authenticate with VCD",
+	},
+	VCD_CLIENT_TLS_KEY: {
+		Name:        "VCD client private TLS certificate data",
+		Description: "Private TLS certificate to use to authenticate with VCD",
+	},
+	VCD_CLIENT_REFRESH_INTERVAL: {
+		Name: "VCD client token refresh interval",
+	},
+	VCD_INSECURE: { // XXX Why does this default to true???
+		Name:        "VCD insecure mode",
+		Description: "Defaults to true, set to \"false\" and configure TLS certificates if needed to authenticate API server certificate",
+	},
+}
+
 // model VcdProps after vsphere to start
 
 // This is now an edgeproto object
@@ -90,10 +159,6 @@ var VcdProps = map[string]*edgeproto.PropertyInfo{
 	},
 }
 
-func (v *VcdPlatform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
-	return fmt.Sprintf("/secret/data/%s/cloudlet/vcd/%s/%s/vcd.json", region, key.Organization, physicalName)
-}
-
 func (v *VcdPlatform) GetVcdVars(ctx context.Context, accessApi platform.AccessApi) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "vcd vars")
@@ -120,52 +185,52 @@ func (v *VcdPlatform) GetVcdVars(ctx context.Context, accessApi platform.AccessA
 // access vars from the vault
 
 func (v *VcdPlatform) GetVcdUrl() string {
-	return v.vcdVars["VCD_URL"]
+	return v.vcdVars[VCD_URL]
 }
 func (v *VcdPlatform) GetVcdOauthSgwUrl() string {
-	return v.vcdVars["VCD_OAUTH_SGW_URL"]
+	return v.vcdVars[VCD_OAUTH_SGW_URL]
 }
 func (v *VcdPlatform) GetVcdOauthAgwUrl() string {
-	return v.vcdVars["VCD_OAUTH_AGW_URL"]
+	return v.vcdVars[VCD_OAUTH_AGW_URL]
 }
 func (v *VcdPlatform) GetVcdOauthClientId() string {
-	return v.vcdVars["VCD_OAUTH_CLIENT_ID"]
+	return v.vcdVars[VCD_OAUTH_CLIENT_ID]
 }
 func (v *VcdPlatform) GetVcdOauthClientSecret() string {
-	return v.vcdVars["VCD_OAUTH_CLIENT_SECRET"]
+	return v.vcdVars[VCD_OAUTH_CLIENT_SECRET]
 }
 func (v *VcdPlatform) GetVcdClientTlsCert() string {
-	return v.vcdVars["VCD_CLIENT_TLS_CERT"]
+	return v.vcdVars[VCD_CLIENT_TLS_CERT]
 }
 func (v *VcdPlatform) GetVcdClientTlsKey() string {
-	return v.vcdVars["VCD_CLIENT_TLS_KEY"]
+	return v.vcdVars[VCD_CLIENT_TLS_KEY]
 }
 func (v *VcdPlatform) GetVCDUser() string {
-	return v.vcdVars["VCD_USER"]
+	return v.vcdVars[VCD_USER]
 }
 func (v *VcdPlatform) GetVCDPassword() string {
-	return v.vcdVars["VCD_PASSWORD"]
+	return v.vcdVars[VCD_PASSWORD]
 }
 func (v *VcdPlatform) GetVCDORG() string {
-	return v.vcdVars["VCD_ORG"]
+	return v.vcdVars[VCD_ORG]
 }
 func (v *VcdPlatform) GetVDCName() string {
 	if v.TestMode {
-		return os.Getenv("VDC_NAME")
+		return os.Getenv(VDC_NAME)
 	}
-	return v.vcdVars["VDC_NAME"]
+	return v.vcdVars[VDC_NAME]
 }
 func (v *VcdPlatform) GetVCDURL() string {
-	return v.vcdVars["VCD_URL"]
+	return v.vcdVars[VCD_URL]
 }
 func (v *VcdPlatform) GetVcdClientRefreshInterval(ctx context.Context) uint64 {
-	intervalStr := v.vcdVars["VCD_CLIENT_REFRESH_INTERVAL"]
+	intervalStr := v.vcdVars[VCD_CLIENT_REFRESH_INTERVAL]
 	if intervalStr == "" {
 		return DefaultClientRefreshInterval
 	}
 	interval, err := strconv.ParseUint(intervalStr, 10, 32)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Warning: unable to parse VCD_CLIENT_REFRESH_INTERVAL %s as int, using default", intervalStr)
+		log.SpanLog(ctx, log.DebugLevelInfra, "Warning: unable to parse "+VCD_CLIENT_REFRESH_INTERVAL+" %s as int, using default", intervalStr)
 		return DefaultClientRefreshInterval
 	}
 	return interval
@@ -173,7 +238,7 @@ func (v *VcdPlatform) GetVcdClientRefreshInterval(ctx context.Context) uint64 {
 
 // GetVcdInsecure defaults to true unless explicitly set to false
 func (v *VcdPlatform) GetVcdInsecure() bool {
-	insecure := v.vcdVars["VCD_INSECURE"]
+	insecure := v.vcdVars[VCD_INSECURE]
 	if strings.ToLower(insecure) == "false" {
 		return false
 	}

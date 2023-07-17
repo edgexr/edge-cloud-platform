@@ -22,7 +22,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -113,10 +112,6 @@ func (s *Xind) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgepro
 
 func (s *Xind) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
 	return &edgeproto.CloudletProps{}, nil
-}
-
-func (s *Xind) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
-	return nil, nil
 }
 
 func (s *Xind) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {

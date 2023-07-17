@@ -16,16 +16,27 @@ package azure
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
-const azureVaultPath string = "/secret/data/cloudlet/azure/credentials"
+const (
+	AZURE_USER     = "AZURE_USER"
+	AZURE_PASSWORD = "AZURE_PASSWORD"
+)
+
+var AccessVarProps = map[string]*edgeproto.PropertyInfo{
+	AZURE_USER: {
+		Name:      "Azure user name",
+		Mandatory: true,
+	},
+	AZURE_PASSWORD: {
+		Name:      "Azure user password",
+		Mandatory: true,
+	},
+}
 
 var azureProps = map[string]*edgeproto.PropertyInfo{
 	"MEX_AZURE_LOCATION": {
@@ -41,31 +52,18 @@ func (a *AzurePlatform) GetAzureLocation() string {
 }
 
 func (a *AzurePlatform) GetAzureUser() string {
-	val, _ := a.accessVars["MEX_AZURE_USER"]
+	val, _ := a.accessVars[AZURE_USER]
 	return val
 }
 
 func (a *AzurePlatform) GetAzurePass() string {
-	val, _ := a.accessVars["MEX_AZURE_PASS"]
+	val, _ := a.accessVars[AZURE_PASSWORD]
 	return val
 }
 
 func (a *AzurePlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetProviderSpecificProps")
 	return azureProps, nil
-}
-
-func (a *AzurePlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AzurePlatform GetAccessData", "dataType", dataType)
-	switch dataType {
-	case platform.GetCloudletAccessVars:
-		vars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, azureVaultPath)
-		if err != nil {
-			return nil, err
-		}
-		return vars, nil
-	}
-	return nil, fmt.Errorf("Azure unhandled GetAccessData type %s", dataType)
 }
 
 func (a *AzurePlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {

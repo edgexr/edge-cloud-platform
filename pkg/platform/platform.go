@@ -143,12 +143,6 @@ type Platform interface {
 	UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error
 	// Delete Cloudlet
 	DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *Caches, accessApi AccessApi, updateCallback edgeproto.CacheUpdateCallback) error
-	// Save Cloudlet AccessVars
-	SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error
-	// Update Cloudlet AccessVars
-	UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error
-	// Delete Cloudlet AccessVars
-	DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error
 	// Performs Upgrades for things like k8s config
 	PerformUpgrades(ctx context.Context, caches *Caches, cloudletState dme.CloudletState) error
 	// Get Cloudlet Manifest Config
@@ -157,8 +151,6 @@ type Platform interface {
 	VerifyVMs(ctx context.Context, vms []edgeproto.VM) error
 	// Get Cloudlet Properties
 	GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error)
-	// Platform-sepcific access data lookup (only called from Controller context)
-	GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error)
 	// Update the cloudlet's Trust Policy
 	UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto.TrustPolicy) error
 	//  Create and Update TrustPolicyException
@@ -200,7 +192,7 @@ type AccessApi interface {
 	CreateOrUpdateDNSRecord(ctx context.Context, name, rtype, content string, ttl int, proxy bool) error
 	GetDNSRecords(ctx context.Context, fqdn string) ([]cloudflare.DNSRecord, error)
 	DeleteDNSRecord(ctx context.Context, recordID string) error
-	GetSessionTokens(ctx context.Context, arg []byte) (map[string]string, error)
+	GetSessionTokens(ctx context.Context, secretName string) (string, error)
 	GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error)
 	GetGCSCreds(ctx context.Context) ([]byte, error)
 	GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error)

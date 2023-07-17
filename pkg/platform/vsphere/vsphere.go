@@ -47,6 +47,7 @@ func (o *VSpherePlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		PlatformType:               platform.PlatformTypeVSphere,
 		SupportsMultiTenantCluster: true,
 		SupportsSharedVolume:       true,
+		AccessVars:                 AccessVarProps,
 	}
 }
 

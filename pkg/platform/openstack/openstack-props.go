@@ -16,14 +16,71 @@ package openstack
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 )
+
+const (
+	OS_AUTH_URL             = "OS_AUTH_URL"
+	OS_USERNAME             = "OS_USERNAME"
+	OS_PASSWORD             = "OS_PASSWORD"
+	OS_CACERT_DATA          = "OS_CACERT_DATA"
+	OS_CACERT               = "OS_CACERT" // file path on disk
+	OS_REGION_NAME          = "OS_REGION_NAME"
+	OS_USER_DOMAIN_NAME     = "OS_USER_DOMAIN_NAME"
+	OS_IDENTITY_API_VERSION = "OS_IDENTITY_API_VERSION"
+	OS_PROJECT_NAME         = "OS_PROJECT_NAME"
+	OS_PROJECT_DOMAIN_NAME  = "OS_PROJECT_DOMAIN_NAME"
+)
+
+var AccessVarProps = map[string]*edgeproto.PropertyInfo{
+	OS_AUTH_URL: {
+		Name:        "Openstack auth URL",
+		Description: "Openstack auth URL",
+		Mandatory:   true,
+	},
+	OS_USERNAME: {
+		Name:        "Openstack user name",
+		Description: "Openstack user name",
+		Mandatory:   true,
+	},
+	OS_PASSWORD: {
+		Name:        "Openstack user password",
+		Description: "Openstack user password",
+		Mandatory:   true,
+	},
+	OS_CACERT_DATA: {
+		Name:        "Certificate authority file data",
+		Description: "If the Auth URL is using https and the API endpoint's certificate is privately issued, this is the issuing authority's cert that can validate the server's public cert. May be multiple certs in PEM format.",
+	},
+	OS_PROJECT_NAME: {
+		Name:        "Openstack project name",
+		Description: "Openstack project name",
+	},
+	OS_REGION_NAME: {
+		Name:        "Openstack region name",
+		Description: "Openstack region name",
+	},
+	OS_USER_DOMAIN_NAME: {
+		Name:        "User domain name",
+		Description: "User domain name",
+		Value:       "default",
+	},
+	OS_IDENTITY_API_VERSION: {
+		Name:        "Openstack server API version",
+		Description: "Openstack server API version",
+		Value:       "3",
+	},
+	OS_PROJECT_DOMAIN_NAME: {
+		Name:        "Openstack project domain name",
+		Description: "Openstack project domain name",
+		Value:       "default",
+	},
+}
 
 var OpenstackProps = map[string]*edgeproto.PropertyInfo{
 	"MEX_CONSOLE_TYPE": {
@@ -39,16 +96,16 @@ func (o *OpenstackPlatform) GetOpenRCVars(ctx context.Context, accessApi platfor
 		return err
 	}
 	o.openRCVars = vars
-	if authURL, ok := o.openRCVars["OS_AUTH_URL"]; ok {
+	if authURL, ok := o.openRCVars[OS_AUTH_URL]; ok {
 		if strings.HasPrefix(authURL, "https") {
-			if certData, ok := o.openRCVars["OS_CACERT_DATA"]; ok {
+			if certData, ok := o.openRCVars[OS_CACERT_DATA]; ok {
 				key := o.VMProperties.CommonPf.PlatformConfig.CloudletKey
 				certFile := vmlayer.GetCertFilePath(key)
 				err = ioutil.WriteFile(certFile, []byte(certData), 0644)
 				if err != nil {
 					return err
 				}
-				o.openRCVars["OS_CACERT"] = certFile
+				o.openRCVars[OS_CACERT] = certFile
 			}
 		}
 	}
@@ -67,12 +124,8 @@ func (o *OpenstackPlatform) InitApiAccessProperties(ctx context.Context, accessA
 	return nil
 }
 
-func (o *OpenstackPlatform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
-	return fmt.Sprintf("/secret/data/%s/cloudlet/openstack/%s/%s/openrc.json", region, key.Organization, physicalName)
-}
-
 func (o *OpenstackPlatform) GetCloudletProjectName() string {
-	val, _ := o.openRCVars["OS_PROJECT_NAME"]
+	val, _ := o.openRCVars[OS_PROJECT_NAME]
 	return val
 }
 

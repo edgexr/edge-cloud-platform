@@ -23,7 +23,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -40,7 +39,6 @@ type ManagedK8sProvider interface {
 	RunClusterCreateCommand(ctx context.Context, clusterName string, numNodes uint32, flavor string) error
 	RunClusterDeleteCommand(ctx context.Context, clusterName string) error
 	InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error
-	GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error)
 	GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error)
 	GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error)
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource
@@ -118,11 +116,6 @@ func (m *ManagedK8sPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.C
 		props.Properties[k] = v
 	}
 	return &props, nil
-}
-
-func (m *ManagedK8sPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
-	log.SpanLog(ctx, log.DebugLevelApi, "ManagedK8sPlatform GetAccessData", "dataType", dataType)
-	return m.Provider.GetAccessData(ctx, cloudlet, region, vaultConfig, dataType, arg)
 }
 
 // called by controller, make sure it doesn't make any calls to infra API
