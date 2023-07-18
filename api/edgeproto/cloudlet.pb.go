@@ -1107,7 +1107,7 @@ type PropertyInfo struct {
 	Mandatory bool `protobuf:"varint,5,opt,name=mandatory,proto3" json:"mandatory,omitempty"`
 	// Is the property internal, not to be set by Operator
 	Internal bool `protobuf:"varint,6,opt,name=internal,proto3" json:"internal,omitempty"`
-	// The property is a time-based one-time password (TOTP, RFC 6238) secret key that will be used to generate TOTP codes
+	// The property is a time-based one-time password (TOTP, RFC 6238) secret key that will be used to generate TOTP codes, and never leaves Vault.
 	TotpSecret bool `protobuf:"varint,7,opt,name=totp_secret,json=totpSecret,proto3" json:"totp_secret,omitempty"`
 }
 
