@@ -250,8 +250,8 @@ func (s *VSpherePlatform) CheckServerReady(ctx context.Context, client ssh.Clien
 	// the VM is up is not sufficient as it may go back down.  Checking that the VM is ready relies on the fact that the
 	// mobiledgex init script will be executed a second time after it has finished its job with the init-done flag set.  When
 	// this happens, the mobiledgex service exits with exitcode = 2
-	out, err := client.Output("systemctl status mobiledgex.service|grep status=2")
-	log.SpanLog(ctx, log.DebugLevelInfra, "CheckServerReady Mobiledgex service status", "serverName", serverName, "out", out, "err", err)
+	out, err := client.Output("systemctl status edgecloud.service|grep status=2")
+	log.SpanLog(ctx, log.DebugLevelInfra, "CheckServerReady Edgecloud service status", "serverName", serverName, "out", out, "err", err)
 	return err
 }
 

@@ -81,7 +81,7 @@ EOF
 	}
 
 	scriptText += fmt.Sprintf(`
-sudo bash /etc/mobiledgex/setup-chef.sh -s "%s" -n "%s"
+sudo bash /etc/edgecloud/setup-chef.sh -s "%s" -n "%s"
 `, cloudConfigParams.ChefParams.ServerPath, cloudConfigParams.ChefParams.NodeName)
 
 	manifest.AddItem("SSH into one of the VMs from the VMPool which has access to controller's notify port", infracommon.ManifestTypeNone, infracommon.ManifestSubTypeNone, "")

@@ -1784,7 +1784,6 @@ func (s *CloudletApi) RemoveCloudletResMapping(ctx context.Context, in *edgeprot
 }
 
 func (s *CloudletApi) AddCloudletResMapping(ctx context.Context, in *edgeproto.CloudletResMap) (*edgeproto.Result, error) {
-
 	var err error
 	cl := edgeproto.Cloudlet{}
 	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {

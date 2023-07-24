@@ -20,9 +20,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -67,7 +67,7 @@ func (s *VMPoolPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Flavor
 		} else {
 			return nil, fmt.Errorf("VM %s is missing network info", vm.Name)
 		}
-		out, err := client.Output("sudo bash /etc/mobiledgex/get-flavor.sh")
+		out, err := client.Output("sudo bash /etc/edgecloud/get-flavor.sh")
 		if err != nil {
 			return nil, fmt.Errorf("failed to get flavor info for %s: %s - %v", vm.Name, out, err)
 		}

@@ -17,7 +17,7 @@ require (
 	github.com/creack/pty v1.1.11
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v0.0.0-20171126034257-17e75f6184bc
-	github.com/elastic/go-elasticsearch/v7 v7.5.0
+	github.com/elastic/go-elasticsearch/v7 v7.17.10
 	github.com/go-chef/chef v0.23.1
 	github.com/go-openapi/errors v0.20.3
 	github.com/go-openapi/loads v0.21.1

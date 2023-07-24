@@ -21,11 +21,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 
 	ssh "github.com/edgexr/golang-ssh"
@@ -197,7 +197,7 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 
 		// Run cleanup script
 		log.SpanLog(ctx, log.DebugLevelInfra, "Cleaning up VM", "vm", vm.Name)
-		cmd := fmt.Sprintf("sudo bash /etc/mobiledgex/cleanup-vm.sh")
+		cmd := fmt.Sprintf("sudo bash /etc/edgecloud/cleanup-vm.sh")
 		out, err := client.Output(cmd)
 		if err != nil {
 			return fmt.Errorf("can't cleanup vm: %s, %v", out, err)
@@ -238,7 +238,7 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 			}
 
 			// Start chef service
-			cmd = fmt.Sprintf("sudo bash /etc/mobiledgex/setup-chef.sh -s %s -n %s", chefParams.ServerPath, chefParams.NodeName)
+			cmd = fmt.Sprintf("sudo bash /etc/edgecloud/setup-chef.sh -s %s -n %s", chefParams.ServerPath, chefParams.NodeName)
 			if out, err := client.Output(cmd); err != nil {
 				return fmt.Errorf("failed to setup chef: %s, %v", out, err)
 			}
@@ -258,7 +258,7 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 		if role == vmlayer.RoleMaster {
 			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Setting up kubernetes master node"))
 			log.SpanLog(ctx, log.DebugLevelInfra, "CreateVMs, setup kubernetes master node", "masterAddr", masterAddr)
-			cmd := fmt.Sprintf("sudo sh -x /etc/mobiledgex/install-k8s-master.sh \"%s\"", masterAddr)
+			cmd := fmt.Sprintf("sudo sh -x /etc/edgecloud/install-k8s-master.sh \"%s\"", masterAddr)
 			out, err := client.Output(cmd)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "failed to setup k8s master", "masterAddr", masterAddr, "nodename", vm.InternalName, "out", out, "err", err)
@@ -301,7 +301,7 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 			wg.Add(1)
 			go func(clientIn ssh.Client, nodeName string, wg *sync.WaitGroup) {
 				log.SpanLog(ctx, log.DebugLevelInfra, "CreateVMs, setup kubernetes worker node", "masterAddr", masterAddr, "nodename", nodeName)
-				cmd := fmt.Sprintf("sudo sh -x /etc/mobiledgex/install-k8s-node.sh \"%s\"", masterAddr)
+				cmd := fmt.Sprintf("sudo sh -x /etc/edgecloud/install-k8s-node.sh \"%s\"", masterAddr)
 				out, err := clientIn.Output(cmd)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "failed to setup k8s node", "masterAddr", masterAddr, "nodename", nodeName, "out", out, "err", err)
@@ -449,7 +449,7 @@ func (o *VMPoolPlatform) deleteVMsInternal(ctx context.Context, markedVMs map[st
 			continue
 		}
 		// Run cleanup script
-		cmd := fmt.Sprintf("sudo bash /etc/mobiledgex/cleanup-vm.sh")
+		cmd := fmt.Sprintf("sudo bash /etc/edgecloud/cleanup-vm.sh")
 		out, err := client.Output(cmd)
 		if err != nil {
 			return fmt.Errorf("can't cleanup vm: %s, %v", out, err)
