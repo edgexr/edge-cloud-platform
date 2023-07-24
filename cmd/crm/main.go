@@ -142,11 +142,9 @@ func main() {
 	// Load platform implementation.
 	platform, err = pfutils.GetPlatform(ctx, *platformName, nodeMgr.UpdateNodeProps)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to get platform", "err", err.Error())
 		span.Finish()
 		log.FatalLog(err.Error())
 	}
-	log.SpanLog(ctx, log.DebugLevelInfo, "Found platform", "key", myCloudletInfo.Key, "platform", platform)
 	features := platform.GetFeatures()
 
 	if !nodeMgr.AccessKeyClient.IsEnabled() {

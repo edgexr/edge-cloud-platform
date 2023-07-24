@@ -70,8 +70,8 @@ func InstallAndConfigMetalLbIfNotInstalled(ctx context.Context, client ssh.Clien
 		if err := VerifyMetalLbRunning(ctx, client, clusterInst, DefaultMetalLbNamespace); err != nil {
 			return err
 		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "Sleeping 10 sec", "clusterInst", clusterInst)
-		time.Sleep(20 * time.Second)
+		log.SpanLog(ctx, log.DebugLevelInfra, "Sleeping 10 sec to let the crds get created", "clusterInst", clusterInst)
+		time.Sleep(10 * time.Second)
 
 		if err := ConfigureMetalLb(ctx, client, clusterInst, addressRanges); err != nil {
 			return err
