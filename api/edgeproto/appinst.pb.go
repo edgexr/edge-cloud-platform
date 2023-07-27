@@ -29,7 +29,6 @@ import (
 	reflect "reflect"
 	"strconv"
 	strings "strings"
-	"time"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -6176,7 +6175,7 @@ func (c *AppInstInfoCache) SyncListEnd(ctx context.Context) {
 	}
 }
 
-func WaitForAppInstInfo(ctx context.Context, key *AppInstKey, targetState TrackedState, transitionStates map[TrackedState]struct{}, errorState TrackedState, timeout time.Duration, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
+func WaitForAppInstInfo(ctx context.Context, key *AppInstKey, targetState TrackedState, transitionStates map[TrackedState]struct{}, errorState TrackedState, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
 	var lastMsgCnt int
 	var err error
 	curState := TrackedState_TRACKED_STATE_UNKNOWN
@@ -6234,7 +6233,7 @@ func WaitForAppInstInfo(ctx context.Context, key *AppInstKey, targetState Tracke
 				}
 				return nil
 			}
-		case <-time.After(timeout):
+		case <-ctx.Done():
 			if _, found := transitionStates[curState]; found {
 				// no success response, but state is a valid transition
 				// state. That means work is still in progress.
@@ -7478,6 +7477,17 @@ func (m *FedAppInstEvent) SetKey(key *FedAppInstKey) {
 
 func CmpSortFedAppInstEvent(a FedAppInstEvent, b FedAppInstEvent) bool {
 	return a.Key.GetKeyString() < b.Key.GetKeyString()
+}
+
+// MessageKey can be used as a channel name which includes the
+// key value for pubsub, to listen for this specific object type
+// plus key value.
+func (m *FedAppInstEvent) MessageKey() string {
+	return fmt.Sprintf("msg/key/FedAppInstEvent/%s", m.GetKey().GetKeyString())
+}
+
+func (m *FedAppInstEvent) MessageTypeKey() string {
+	return "msg/type/FedAppInstEvent"
 }
 
 // Helper method to check that enums have valid values

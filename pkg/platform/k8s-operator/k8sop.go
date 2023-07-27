@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -44,6 +45,7 @@ func (s *K8sOperator) GetFeatures() *edgeproto.PlatformFeatures {
 		IpAllocatedPerService:         true,
 		IsSingleKubernetesCluster:     true,
 		IsPrebuiltKubernetesCluster:   true,
+		ResourceQuotaProperties:       cloudcommon.CommonResourceQuotaProps,
 	}
 }
 
@@ -100,21 +102,10 @@ func (s *K8sOperator) NameSanitize(name string) string {
 	return name
 }
 
-func (s *K8sOperator) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
-	props := edgeproto.CloudletProps{}
-	return &props, nil
-}
-
 // TODO
 func (k *K8sOperator) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {
 	var resources []edgeproto.InfraResource
 	return resources, nil
-}
-
-func (s *K8sOperator) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	return &edgeproto.CloudletResourceQuotaProps{
-		Properties: []edgeproto.InfraResource{},
-	}, nil
 }
 
 // TODO

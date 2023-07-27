@@ -30,7 +30,6 @@ import (
 type ManagedK8sProvider interface {
 	GetFeatures() *edgeproto.PlatformFeatures
 	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
-	GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error)
 	SetProperties(props *infracommon.InfraProperties) error
 	Login(ctx context.Context) error
 	GetCredentials(ctx context.Context, clusterName string) error
@@ -40,7 +39,6 @@ type ManagedK8sProvider interface {
 	RunClusterDeleteCommand(ctx context.Context, clusterName string) error
 	InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error
 	GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error)
-	GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error)
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource
 	GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error
 }
@@ -55,13 +53,11 @@ type ManagedK8sPlatform struct {
 
 func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Init", "type", m.Type)
-	props, err := m.Provider.GetProviderSpecificProps(ctx)
-	if err != nil {
-		return err
-	}
+	features := m.Provider.GetFeatures()
+	props := features.Properties
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "Init provider")
-	err = m.Provider.InitApiAccessProperties(ctx, platformConfig.AccessApi, platformConfig.EnvVars)
+	err := m.Provider.InitApiAccessProperties(ctx, platformConfig.AccessApi, platformConfig.EnvVars)
 	if err != nil {
 		return err
 	}
@@ -105,19 +101,6 @@ func (m *ManagedK8sPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterI
 	return []edgeproto.CloudletMgmtNode{}, nil
 }
 
-func (m *ManagedK8sPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
-	props := edgeproto.CloudletProps{}
-	props.Properties = make(map[string]*edgeproto.PropertyInfo)
-	providerProps, err := m.Provider.GetProviderSpecificProps(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for k, v := range providerProps {
-		props.Properties[k] = v
-	}
-	return &props, nil
-}
-
 // called by controller, make sure it doesn't make any calls to infra API
 func (m *ManagedK8sPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
 	return m.Provider.GetClusterAdditionalResources(ctx, cloudlet, vmResources, infraResMap)
@@ -125,10 +108,6 @@ func (m *ManagedK8sPlatform) GetClusterAdditionalResources(ctx context.Context, 
 
 func (m *ManagedK8sPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
 	return m.Provider.GetClusterAdditionalResourceMetric(ctx, cloudlet, resMetric, resources)
-}
-
-func (m *ManagedK8sPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	return m.Provider.GetCloudletResourceQuotaProps(ctx)
 }
 
 func (m *ManagedK8sPlatform) GetRootLBFlavor(ctx context.Context) (*edgeproto.Flavor, error) {

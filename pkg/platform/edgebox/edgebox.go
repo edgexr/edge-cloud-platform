@@ -111,6 +111,8 @@ func (o *EdgeboxPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsMultiTenantCluster: true,
 		CloudletServicesLocal:      true,
 		IsEdgebox:                  true,
+		Properties:                 edgeboxProps,
+		ResourceQuotaProperties:    cloudcommon.CommonResourceQuotaProps,
 	}
 }
 
@@ -128,10 +130,6 @@ func (s *EdgeboxPlatform) GetNodePlatformClient(ctx context.Context, node *edgep
 
 func (s *EdgeboxPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst, vmAppInsts []edgeproto.AppInst) ([]edgeproto.CloudletMgmtNode, error) {
 	return s.generic.ListCloudletMgmtNodes(ctx, clusterInsts, vmAppInsts)
-}
-
-func (s *EdgeboxPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
-	return &edgeproto.CloudletProps{Properties: edgeboxProps}, nil
 }
 
 func (s *EdgeboxPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {

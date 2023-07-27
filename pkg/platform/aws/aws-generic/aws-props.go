@@ -129,10 +129,6 @@ func (a *AwsGenericPlatform) GetAwsFlavorMatchPattern() string {
 	return val
 }
 
-func (a *AwsGenericPlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
-	return AWSProps, nil
-}
-
 func (a *AwsGenericPlatform) GetUserAccountIdFromArn(ctx context.Context, arn string) (string, error) {
 	arns := strings.Split(arn, ":")
 	if len(arns) <= ArnAccountIdIdx {

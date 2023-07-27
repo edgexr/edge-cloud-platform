@@ -577,6 +577,10 @@ func (m *Metric) DeepCopyIn(src *Metric) {
 	}
 }
 
+func (m *Metric) MessageTypeKey() string {
+	return "msg/type/Metric"
+}
+
 // Helper method to check that enums have valid values
 func (m *Metric) ValidateEnums() error {
 	for _, e := range m.Tags {

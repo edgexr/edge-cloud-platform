@@ -24,6 +24,58 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+func TestShowPlatformFeatures(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.PlatformFeatures, modFuncs ...func(*edgeproto.PlatformFeatures)) ([]edgeproto.PlatformFeatures, int, error) {
+	dat := &ormapi.RegionPlatformFeatures{}
+	dat.Region = region
+	dat.PlatformFeatures = *in
+	for _, fn := range modFuncs {
+		fn(&dat.PlatformFeatures)
+	}
+	return mcClient.ShowPlatformFeatures(uri, token, dat)
+}
+func TestPermShowPlatformFeatures(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PlatformFeatures)) ([]edgeproto.PlatformFeatures, int, error) {
+	in := &edgeproto.PlatformFeatures{}
+	return TestShowPlatformFeatures(mcClient, uri, token, region, in, modFuncs...)
+}
+
+func TestDeletePlatformFeatures(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.PlatformFeatures, modFuncs ...func(*edgeproto.PlatformFeatures)) (*edgeproto.Result, int, error) {
+	dat := &ormapi.RegionPlatformFeatures{}
+	dat.Region = region
+	dat.PlatformFeatures = *in
+	for _, fn := range modFuncs {
+		fn(&dat.PlatformFeatures)
+	}
+	return mcClient.DeletePlatformFeatures(uri, token, dat)
+}
+func TestPermDeletePlatformFeatures(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PlatformFeatures)) (*edgeproto.Result, int, error) {
+	in := &edgeproto.PlatformFeatures{}
+	return TestDeletePlatformFeatures(mcClient, uri, token, region, in, modFuncs...)
+}
+
+func (s *TestClient) ShowPlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) ([]edgeproto.PlatformFeatures, error) {
+	inR := &ormapi.RegionPlatformFeatures{
+		Region:           s.Region,
+		PlatformFeatures: *in,
+	}
+	out, status, err := s.McClient.ShowPlatformFeatures(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) DeletePlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionPlatformFeatures{
+		Region:           s.Region,
+		PlatformFeatures: *in,
+	}
+	out, status, err := s.McClient.DeletePlatformFeatures(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
 func TestCreateGPUDriver(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.GPUDriver, modFuncs ...func(*edgeproto.GPUDriver)) ([]edgeproto.Result, int, error) {
 	dat := &ormapi.RegionGPUDriver{}
 	dat.Region = region
@@ -329,20 +381,6 @@ func TestPermGetCloudletManifest(mcClient *mctestclient.Client, uri, token, regi
 	return TestGetCloudletManifest(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestShowPlatformsFeatures(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.PlatformFeatures, modFuncs ...func(*edgeproto.PlatformFeatures)) ([]edgeproto.PlatformFeatures, int, error) {
-	dat := &ormapi.RegionPlatformFeatures{}
-	dat.Region = region
-	dat.PlatformFeatures = *in
-	for _, fn := range modFuncs {
-		fn(&dat.PlatformFeatures)
-	}
-	return mcClient.ShowPlatformsFeatures(uri, token, dat)
-}
-func TestPermShowPlatformsFeatures(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PlatformFeatures)) ([]edgeproto.PlatformFeatures, int, error) {
-	in := &edgeproto.PlatformFeatures{}
-	return TestShowPlatformsFeatures(mcClient, uri, token, region, in, modFuncs...)
-}
-
 func TestGetCloudletProps(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletProps, modFuncs ...func(*edgeproto.CloudletProps)) (*edgeproto.CloudletProps, int, error) {
 	dat := &ormapi.RegionCloudletProps{}
 	dat.Region = region
@@ -585,10 +623,6 @@ func (s *TestClient) ShowCloudlet(ctx context.Context, in *edgeproto.Cloudlet) (
 	return out, err
 }
 
-func (s *TestClient) PlatformDeleteCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Result, error) {
-	return nil, nil
-}
-
 func (s *TestClient) AddCloudletAllianceOrg(ctx context.Context, in *edgeproto.CloudletAllianceOrg) (*edgeproto.Result, error) {
 	inR := &ormapi.RegionCloudletAllianceOrg{
 		Region:              s.Region,
@@ -751,18 +785,6 @@ func (s *TestClient) FindFlavorMatch(ctx context.Context, in *edgeproto.FlavorMa
 		FlavorMatch: *in,
 	}
 	out, status, err := s.McClient.FindFlavorMatch(s.Uri, s.Token, inR)
-	if err == nil && status != 200 {
-		err = fmt.Errorf("status: %d\n", status)
-	}
-	return out, err
-}
-
-func (s *TestClient) ShowPlatformsFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) ([]edgeproto.PlatformFeatures, error) {
-	inR := &ormapi.RegionPlatformFeatures{
-		Region:           s.Region,
-		PlatformFeatures: *in,
-	}
-	out, status, err := s.McClient.ShowPlatformsFeatures(s.Uri, s.Token, inR)
 	if err == nil && status != 200 {
 		err = fmt.Errorf("status: %d\n", status)
 	}

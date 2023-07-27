@@ -40,7 +40,6 @@ type RefByObj struct {
 	Type        string
 	TypeDesc    *generator.Descriptor
 	KeyType     string
-	KeyDesc     *generator.Descriptor
 	GenerateCud bool
 }
 
@@ -50,7 +49,6 @@ type RefToObj struct {
 	Type        string
 	TypeDesc    *generator.Descriptor
 	KeyType     string
-	KeyDesc     *generator.Descriptor
 	GenerateCud bool
 }
 
@@ -90,7 +88,6 @@ type RefTracker struct {
 	Type     string // object tracking refs
 	TypeDesc *generator.Descriptor
 	KeyType  string
-	KeyDesc  *generator.Descriptor
 	To       RefToObj        // object it's tracking refs for
 	Bys      []RefByObjField // objects that have references
 }
@@ -138,9 +135,7 @@ func (s *RefData) BuildRefData(g *generator.Generator, file *generator.FileDescr
 				GenerateCud: GetGenerateCud(top.DescriptorProto),
 			}
 			if byObj.GenerateCud {
-				keyDesc := GetDescKey(g, top)
-				byObj.KeyType = *keyDesc.Name
-				byObj.KeyDesc = keyDesc
+				byObj.KeyType = GetDescKeyName(g, top)
 			}
 			byField := RefByField{
 				Desc:     field,
@@ -153,8 +148,7 @@ func (s *RefData) BuildRefData(g *generator.Generator, file *generator.FileDescr
 			}
 			toObj.GenerateCud = GetGenerateCud(toObj.TypeDesc.DescriptorProto)
 			if toObj.GenerateCud {
-				toObj.KeyDesc = GetDescKey(g, toObj.TypeDesc)
-				toObj.KeyType = *toObj.KeyDesc.Name
+				toObj.KeyType = GetDescKeyName(g, toObj.TypeDesc)
 			}
 			// allow lookup by refTo
 			toGroup, found := s.RefTos[toObj.Type]
@@ -198,8 +192,7 @@ func (s *RefData) BuildTrackers(g *generator.Generator, file *generator.FileDesc
 	tracker := RefTracker{}
 	tracker.Type = *desc.Name
 	tracker.TypeDesc = desc
-	tracker.KeyDesc = GetDescKey(g, desc)
-	tracker.KeyType = *tracker.KeyDesc.Name
+	tracker.KeyType = GetDescKeyName(g, desc)
 
 	for _, field := range desc.DescriptorProto.Field {
 		if toObj := GetRefersTo(field); toObj != "" {

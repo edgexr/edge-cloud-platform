@@ -145,6 +145,7 @@ func (s *AddRefsDataGen) GetCreateAppTestObj() (*edgeproto.App, *testSupportData
 
 func (s *AddRefsDataGen) GetCreateAppInstTestObj() (*edgeproto.AppInst, *testSupportData) {
 	app := testutil.AppData()[0]
+	features := testutil.PlatformFeaturesData()[0]
 	cloudlet := testutil.CloudletData()[0]
 	cloudletInfo := testutil.CloudletInfoData()[0]
 	clusterInst := testutil.ClusterInstData()[0]
@@ -162,6 +163,7 @@ func (s *AddRefsDataGen) GetCreateAppInstTestObj() (*edgeproto.AppInst, *testSup
 
 	supportData := &testSupportData{}
 	supportData.Apps = []edgeproto.App{app}
+	supportData.PlatformFeatures = []edgeproto.PlatformFeatures{features}
 	supportData.Cloudlets = []edgeproto.Cloudlet{cloudlet}
 	supportData.CloudletInfos = []edgeproto.CloudletInfo{cloudletInfo}
 	supportData.ClusterInsts = []edgeproto.ClusterInst{clusterInst}
@@ -187,6 +189,10 @@ func (s *AddRefsDataGen) GetCreateAutoProvPolicyTestObj() (*edgeproto.AutoProvPo
 func (s *AddRefsDataGen) GetCreateCloudletTestObj() (*edgeproto.Cloudlet, *testSupportData) {
 	// must use Cloudlet[2] because TrustPolicy validation does not
 	// allow special characters in org name.
+	features := testutil.PlatformFeaturesData()[2]
+	if features.PlatformType != platform.PlatformTypeFakeVMPool {
+		panic("features must be for type " + platform.PlatformTypeFakeVMPool)
+	}
 	cloudlet := testutil.CloudletData()[2]
 
 	flavor := testutil.FlavorData()[0]
@@ -213,6 +219,7 @@ func (s *AddRefsDataGen) GetCreateCloudletTestObj() (*edgeproto.Cloudlet, *testS
 	supportData.TrustPolicies = []edgeproto.TrustPolicy{trustPolicy}
 	supportData.GpuDrivers = []edgeproto.GPUDriver{gpuDriver}
 	supportData.VmPools = []edgeproto.VMPool{vmpool}
+	supportData.PlatformFeatures = []edgeproto.PlatformFeatures{features}
 	return &cloudlet, supportData
 }
 

@@ -300,10 +300,6 @@ func (a *AwsEc2Platform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]e
 	return []edgeproto.InfraResource{}, nil
 }
 
-func (a *AwsEc2Platform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	return &edgeproto.CloudletResourceQuotaProps{}, nil
-}
-
 func (a *AwsEc2Platform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
 	resInfo := make(map[string]edgeproto.InfraResource)
 	return resInfo

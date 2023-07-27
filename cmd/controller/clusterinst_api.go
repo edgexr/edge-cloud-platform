@@ -513,7 +513,7 @@ func (s *ClusterInstApi) getAllCloudletResources(ctx context.Context, stm concur
 		if err != nil {
 			return nil, nil, skipInfraCheck, err
 		}
-		features, err := GetCloudletFeatures(ctx, cloudlet.PlatformType)
+		features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 		if err != nil {
 			return nil, nil, skipInfraCheck, fmt.Errorf("Failed to get features for platform: %s", err)
 		}
@@ -682,7 +682,7 @@ func (s *ClusterInstApi) validateResources(ctx context.Context, stm concurrency.
 		if err != nil {
 			return err
 		}
-		features, err := GetCloudletFeatures(ctx, cloudlet.PlatformType)
+		features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 		if err != nil {
 			return fmt.Errorf("Failed to get features for platform: %s", err)
 		}
@@ -940,7 +940,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		if cloudlet.DeletePrepare {
 			return in.Key.CloudletKey.BeingDeletedError()
 		}
-		features, err := GetCloudletFeatures(ctx, cloudlet.PlatformType)
+		features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 		if err != nil {
 			return fmt.Errorf("Failed to get features for platform: %s", err)
 		}
@@ -1099,8 +1099,11 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 	if ignoreCRM(cctx) {
 		return nil
 	}
-	err = edgeproto.WaitForClusterInstInfo(ctx, &in.Key, edgeproto.TrackedState_READY, CreateClusterInstTransitions,
-		edgeproto.TrackedState_CREATE_ERROR, s.all.settingsApi.Get().CreateClusterInstTimeout.TimeDuration(),
+	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CreateClusterInstTimeout.TimeDuration())
+	defer reqCancel()
+
+	err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, edgeproto.TrackedState_READY, CreateClusterInstTransitions,
+		edgeproto.TrackedState_CREATE_ERROR,
 		"Created ClusterInst successfully", cb.Send,
 		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
 	if err != nil && cctx.Override == edgeproto.CRMOverride_IGNORE_CRM_ERRORS {
@@ -1263,9 +1266,11 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 	if ignoreCRM(cctx) {
 		return nil
 	}
-	err = edgeproto.WaitForClusterInstInfo(ctx, &in.Key, edgeproto.TrackedState_READY,
+	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateClusterInstTimeout.TimeDuration())
+	defer reqCancel()
+
+	err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, edgeproto.TrackedState_READY,
 		UpdateClusterInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
-		s.all.settingsApi.Get().UpdateClusterInstTimeout.TimeDuration(),
 		"Updated ClusterInst successfully", cb.Send,
 		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
 	)
@@ -1506,9 +1511,11 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 		s.all.alertApi.CleanupClusterInstAlerts(ctx, &clusterInstKey)
 		return nil
 	}
-	err = edgeproto.WaitForClusterInstInfo(ctx, &in.Key, edgeproto.TrackedState_NOT_PRESENT,
+	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().DeleteClusterInstTimeout.TimeDuration())
+	defer reqCancel()
+
+	err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, edgeproto.TrackedState_NOT_PRESENT,
 		DeleteClusterInstTransitions, edgeproto.TrackedState_DELETE_ERROR,
-		s.all.settingsApi.Get().DeleteClusterInstTimeout.TimeDuration(),
 		"Deleted ClusterInst successfully", cb.Send,
 		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
 	)

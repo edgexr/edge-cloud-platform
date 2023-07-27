@@ -34,6 +34,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/require"
@@ -154,6 +155,12 @@ func TestCloudletApi(t *testing.T) {
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
+	responder := DefaultDummyInfoResponder(apis)
+	responder.InitDummyInfoResponder()
+	ccrmStop := responder.SetupDummyCCRM(ctx)
+	defer ccrmStop()
+
+	reduceInfoTimeouts(t, ctx, apis)
 
 	// mock http to redirect requests
 	mockTransport := httpmock.NewMockTransport()
@@ -165,7 +172,9 @@ func TestCloudletApi(t *testing.T) {
 	eMock.registerResponders(t, mockTransport)
 
 	// setup nodeMgr for events
-	nodeMgr = node.NodeMgr{}
+	nodeMgr = node.NodeMgr{
+		VaultAddr: vault.UnitTestIgnoreVaultAddr,
+	}
 	ctx, _, err := nodeMgr.Init(node.NodeTypeController, "", node.WithRegion("unit-test"),
 		node.WithESUrls(esURL), node.WithTestTransport(mockTransport))
 	require.Nil(t, err)
@@ -173,6 +182,7 @@ func TestCloudletApi(t *testing.T) {
 	defer nodeMgr.Finish()
 
 	// create flavors
+	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 	cloudletData := testutil.CloudletData()
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverTest(t, "cud", apis.gpuDriverApi, testutil.GPUDriverData())
@@ -298,7 +308,8 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 	ctrlHandler := notify.NewDummyHandler()
 	ctrlMgr := notify.ServerMgr{}
 	ctrlHandler.RegisterServer(&ctrlMgr)
-	ctrlMgr.Start("ctrl", "127.0.0.1:50001", nil)
+	ctrlNotifyAddr := "127.0.0.1:50001"
+	ctrlMgr.Start("ctrl", ctrlNotifyAddr, nil)
 	defer ctrlMgr.Stop()
 
 	getPublicCertApi := &cloudcommon.TestPublicCertApi{}
@@ -319,12 +330,22 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 	cloudlet.Key.Name = "testcloudletstates"
 	cloudlet.NotifySrvAddr = crm_notifyaddr
 	cloudlet.CrmOverride = edgeproto.CRMOverride_NO_OVERRIDE
-	pfConfig, err := apis.cloudletApi.getPlatformConfig(ctx, &cloudlet)
+
+	pfConfig := &edgeproto.PlatformConfig{
+		EnvVar:          make(map[string]string),
+		AccessApiAddr:   *accessApiAddr,
+		NotifyCtrlAddrs: ctrlNotifyAddr,
+	}
+	//pfConfig, err := apis.cloudletApi.getPlatformConfig(ctx, &cloudlet)
 	require.Nil(t, err, "get platform config")
 	pfConfig.EnvVar["E2ETEST_TLS"] = "true"
 
 	err = apis.cloudletApi.CreateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err, "create cloudlet")
+	cloudletFound := apis.cloudletApi.cache.Get(&cloudlet.Key, &cloudlet)
+	require.True(t, cloudletFound)
+	require.Equal(t, edgeproto.TrackedState_READY, cloudlet.OnboardingState)
+
 	defer apis.cloudletApi.DeleteCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 	res, err := apis.cloudletApi.GenerateAccessKey(ctx, &cloudlet.Key)
 	require.Nil(t, err, "generate access key")
@@ -352,6 +373,10 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 	err = ctrlHandler.WaitForCloudletState(&cloudlet.Key, dme.CloudletState_CLOUDLET_STATE_INIT)
 	require.Nil(t, err, "cloudlet state transition")
 
+	// For mocked responses, onboarding state must be Ready
+	// or CRM will ignore them.
+	require.Equal(t, edgeproto.TrackedState_READY, cloudlet.OnboardingState)
+
 	cloudlet.State = edgeproto.TrackedState_CRM_INITOK
 	ctrlHandler.CloudletCache.Update(ctx, &cloudlet, 0)
 
@@ -361,7 +386,7 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 	cloudlet.State = edgeproto.TrackedState_READY
 	ctrlHandler.CloudletCache.Update(ctx, &cloudlet, 0)
 
-	require.Equal(t, len(streamCloudlet.Msgs), 5, "progress messages")
+	require.Equal(t, 5, len(streamCloudlet.Msgs), "progress messages")
 	cloudletMsgs := []string{"Setting up cloudlet", "Initializing platform", "Done initializing fake platform", "Gathering Cloudlet Info", "Cloudlet setup successfully"}
 	for ii, msg := range cloudletMsgs {
 		require.Equal(t, streamCloudlet.Msgs[ii].Message, msg, "message matches")
@@ -959,6 +984,10 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
+	responder := DefaultDummyInfoResponder(apis)
+	responder.InitDummyInfoResponder()
+	reduceInfoTimeouts(t, ctx, apis)
+
 	cAppApi := testutil.NewInternalAppApi(apis.appApi)
 
 	show := testutil.ShowCloudletsForAppDeployment{}
@@ -974,6 +1003,7 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 	filter := request
 
 	// test data
+	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
@@ -981,12 +1011,7 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 
 	// without a responder, clusterInst create waits forever
-	dummyResponder := DummyInfoResponder{
-		AppInstCache:        &apis.appInstApi.cache,
-		ClusterInstCache:    &apis.clusterInstApi.cache,
-		RecvAppInstInfo:     apis.appInstInfoApi,
-		RecvClusterInstInfo: apis.clusterInstInfoApi,
-	}
+	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
 
 	reduceInfoTimeouts(t, ctx, apis)

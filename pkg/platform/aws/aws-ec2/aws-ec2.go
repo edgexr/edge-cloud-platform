@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
@@ -44,6 +45,8 @@ func (o *AwsEc2Platform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
 		PlatformType:               platform.PlatformTypeAWSEC2,
 		SupportsMultiTenantCluster: true,
+		Properties:                 awsgen.AWSProps,
+		ResourceQuotaProperties:    cloudcommon.CommonResourceQuotaProps,
 	}
 }
 
@@ -64,10 +67,6 @@ func (a *AwsEc2Platform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 
 func (a *AwsEc2Platform) GetInternalPortPolicy() vmlayer.InternalPortAttachPolicy {
 	return vmlayer.AttachPortAfterCreate
-}
-
-func (a *AwsEc2Platform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
-	return a.awsGenPf.GetProviderSpecificProps(ctx)
 }
 
 func (a *AwsEc2Platform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {

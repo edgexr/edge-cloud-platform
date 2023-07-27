@@ -1234,6 +1234,17 @@ func CmpSortAppInstClientKey(a AppInstClientKey, b AppInstClientKey) bool {
 	return a.GetKeyString() < b.GetKeyString()
 }
 
+// MessageKey can be used as a channel name which includes the
+// key value for pubsub, to listen for this specific object type
+// plus key value.
+func (m *AppInstClientKey) MessageKey() string {
+	return fmt.Sprintf("msg/key/AppInstClientKey/%s", m.GetKey().GetKeyString())
+}
+
+func (m *AppInstClientKey) MessageTypeKey() string {
+	return "msg/type/AppInstClientKey"
+}
+
 // Helper method to check that enums have valid values
 func (m *AppInstClientKey) ValidateEnums() error {
 	if err := m.AppInstKey.ValidateEnums(); err != nil {
@@ -1600,6 +1611,10 @@ func (m *AppInstClient) DeepCopyIn(src *AppInstClient) {
 	m.ClientKey.DeepCopyIn(&src.ClientKey)
 	m.Location = src.Location
 	m.NotifyId = src.NotifyId
+}
+
+func (m *AppInstClient) MessageTypeKey() string {
+	return "msg/type/AppInstClient"
 }
 
 // Helper method to check that enums have valid values

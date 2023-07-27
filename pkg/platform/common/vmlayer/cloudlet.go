@@ -528,7 +528,15 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 }
 
 func (v *VMPlatform) GetFeatures() *edgeproto.PlatformFeatures {
-	return v.VMProvider.GetFeatures()
+	features := v.VMProvider.GetFeatures()
+	// add in vmprovider common properties
+	for k, v := range VMProviderProps {
+		features.Properties[k] = v
+	}
+	for k, v := range infracommon.InfraCommonProps {
+		features.Properties[k] = v
+	}
+	return features
 }
 
 func (v *VMPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
@@ -796,30 +804,6 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 
 func (v *VMPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
 	return v.VMProvider.VerifyVMs(ctx, vms)
-}
-
-func (v *VMPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletProps")
-
-	props := edgeproto.CloudletProps{}
-	props.Properties = make(map[string]*edgeproto.PropertyInfo)
-	for k, v := range VMProviderProps {
-		val := *v
-		props.Properties[k] = &val
-	}
-	for k, v := range infracommon.InfraCommonProps {
-		val := *v
-		props.Properties[k] = &val
-	}
-	providerProps, err := v.VMProvider.GetProviderSpecificProps(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for k, v := range providerProps {
-		val := *v
-		props.Properties[k] = &val
-	}
-	return &props, nil
 }
 
 func (v *VMPlatform) ActiveChanged(ctx context.Context, platformActive bool) error {

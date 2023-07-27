@@ -82,6 +82,7 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
+      onboardingstate: Ready
       state: Ready
       platformtype: fake
       flavor:
@@ -114,6 +115,7 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
+      onboardingstate: Ready
       state: Ready
       platformtype: fakeinfra
       flavor:
@@ -159,6 +161,7 @@ regiondata:
         longitude: -95
       ipsupport: Dynamic
       numdynamicips: 254
+      onboardingstate: Ready
       state: Ready
       platformtype: fake
       flavor:
@@ -187,6 +190,7 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
+      onboardingstate: Ready
       state: Ready
       platformtype: fake
       flavor:
@@ -215,6 +219,7 @@ regiondata:
         longitude: -95
       ipsupport: Dynamic
       numdynamicips: 254
+      onboardingstate: Ready
       state: Ready
       platformtype: fake
       flavor:
@@ -368,6 +373,7 @@ regiondata:
         longitude: -92
       ipsupport: Dynamic
       numdynamicips: 254
+      onboardingstate: Ready
       state: Ready
       platformtype: fake
       flavor:
@@ -396,6 +402,7 @@ regiondata:
         longitude: -96
       ipsupport: Dynamic
       numdynamicips: 254
+      onboardingstate: Ready
       state: Ready
       platformtype: fake
       flavor:
@@ -424,6 +431,7 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
+      onboardingstate: Ready
       state: Ready
       platformtype: fake
       flavor:

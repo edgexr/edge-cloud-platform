@@ -77,6 +77,8 @@ func (o *K8sBareMetalPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		IsSingleKubernetesCluster:  true,
 		SupportsAppInstDedicatedIp: true,
 		NoClusterSupport:           true,
+		Properties:                 k8sbmProps,
+		ResourceQuotaProperties:    quotaProps,
 	}
 }
 

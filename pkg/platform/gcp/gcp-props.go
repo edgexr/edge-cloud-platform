@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 )
 
@@ -59,11 +58,6 @@ func (g *GCPPlatform) GetGcpZone() string {
 func (g *GCPPlatform) GetGcpProject() string {
 	val, _ := g.properties.GetValue("MEX_GCP_PROJECT")
 	return val
-}
-
-func (a *GCPPlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetProviderSpecificProps")
-	return gcpProps, nil
 }
 
 func (m *GCPPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {

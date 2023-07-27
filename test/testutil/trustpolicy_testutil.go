@@ -172,7 +172,7 @@ func (x *TrustPolicyCommonApi) CreateTrustPolicy(ctx context.Context, in *edgepr
 	} else {
 		stream, err := x.client_api.CreateTrustPolicy(ctx, copy)
 		err = TrustPolicyReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -185,7 +185,7 @@ func (x *TrustPolicyCommonApi) DeleteTrustPolicy(ctx context.Context, in *edgepr
 	} else {
 		stream, err := x.client_api.DeleteTrustPolicy(ctx, copy)
 		err = TrustPolicyReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -198,7 +198,7 @@ func (x *TrustPolicyCommonApi) UpdateTrustPolicy(ctx context.Context, in *edgepr
 	} else {
 		stream, err := x.client_api.UpdateTrustPolicy(ctx, copy)
 		err = TrustPolicyReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -209,7 +209,7 @@ func (x *TrustPolicyCommonApi) ShowTrustPolicy(ctx context.Context, filter *edge
 	} else {
 		stream, err := x.client_api.ShowTrustPolicy(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

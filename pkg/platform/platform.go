@@ -87,7 +87,8 @@ var ErrContinueViaController = errors.New("continue operation via controller")
 type Platform interface {
 	// GetVersionProperties returns properties related to the platform version
 	GetVersionProperties(ctx context.Context) map[string]string
-	// Get platform features
+	// GetFeatures returns static features, attributes, and
+	// properties of the platform.
 	GetFeatures() *edgeproto.PlatformFeatures
 	// InitCommon is called once during CRM startup to do steps needed for both active or standby. If the platform does not support
 	// H/A and does not need separate steps for the active unit, then just this func can be implemented and InitHAConditional can be left empty
@@ -112,8 +113,6 @@ type Platform interface {
 	GetCloudletInfraResources(ctx context.Context) (*edgeproto.InfraResourcesSnapshot, error)
 	// Get cluster additional resources used by the vms specific to the platform
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource
-	// Get Cloudlet Resource Properties
-	GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error)
 	// Get cluster additional resource metric
 	GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error
 	// Get resources used by the cluster
@@ -149,8 +148,6 @@ type Platform interface {
 	GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi AccessApi, flavor *edgeproto.Flavor, caches *Caches) (*edgeproto.CloudletManifest, error)
 	// Verify VM
 	VerifyVMs(ctx context.Context, vms []edgeproto.VM) error
-	// Get Cloudlet Properties
-	GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error)
 	// Update the cloudlet's Trust Policy
 	UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto.TrustPolicy) error
 	//  Create and Update TrustPolicyException
@@ -246,3 +243,5 @@ func TrackK8sAppInst(ctx context.Context, app *edgeproto.App, features *edgeprot
 	}
 	return false
 }
+
+type PlatformBuilder func() Platform

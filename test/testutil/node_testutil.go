@@ -133,7 +133,7 @@ func (x *NodeCommonApi) ShowNode(ctx context.Context, filter *edgeproto.Node, sh
 	} else {
 		stream, err := x.client_api.ShowNode(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

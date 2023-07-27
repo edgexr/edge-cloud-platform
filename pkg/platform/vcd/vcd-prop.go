@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 )
@@ -158,6 +159,10 @@ var VcdProps = map[string]*edgeproto.PropertyInfo{
 		Internal:    true,
 	},
 }
+
+var quotaProps = cloudcommon.GetCommonResourceQuotaProps(
+	cloudcommon.ResourceInstances,
+)
 
 func (v *VcdPlatform) GetVcdVars(ctx context.Context, accessApi platform.AccessApi) error {
 
@@ -310,10 +315,6 @@ func (v *VcdPlatform) InitApiAccessProperties(ctx context.Context, accessApi pla
 	}
 
 	return nil
-}
-
-func (v *VcdPlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
-	return VcdProps, nil
 }
 
 func (v *VcdPlatform) GetVcpuSpeedOverride(ctx context.Context) int64 {

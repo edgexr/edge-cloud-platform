@@ -1762,9 +1762,9 @@ func (c *{{.Name}}Cache) SyncListEnd(ctx context.Context) {
 
 {{if ne (.WaitForState) ("")}}
 {{if eq (.WaitForState) ("TrackedState")}}
-func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState {{.WaitForState}}, transitionStates map[{{.WaitForState}}]struct{}, errorState {{.WaitForState}}, timeout time.Duration, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
+func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState {{.WaitForState}}, transitionStates map[{{.WaitForState}}]struct{}, errorState {{.WaitForState}}, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
 {{- else}}
-func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState dme_proto.{{.WaitForState}}, transitionStates map[dme_proto.{{.WaitForState}}]struct{}, errorState dme_proto.{{.WaitForState}}, timeout time.Duration, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
+func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState dme_proto.{{.WaitForState}}, transitionStates map[dme_proto.{{.WaitForState}}]struct{}, errorState dme_proto.{{.WaitForState}}, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
 {{- end}}
 	var lastMsgCnt int
 	var err error
@@ -1782,7 +1782,7 @@ func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState dme_pr
 		}
 	}
 
-        if wSpec.CrmMsgCh == nil {
+    if wSpec.CrmMsgCh == nil {
 		return nil
 	}
 
@@ -1830,7 +1830,7 @@ func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState dme_pr
 				}
 				return nil
 			}
-		case <-time.After(timeout):
+		case <-ctx.Done():
 			if _, found := transitionStates[curState]; found {
 				// no success response, but state is a valid transition
 				// state. That means work is still in progress.
@@ -2041,13 +2041,57 @@ func (s *{{.Name}}By{{.LookupName}}) Find(lookup {{.LookupType}}) []{{.KeyType}}
 `
 
 type keysTemplateArgs struct {
-	Name      string
-	KeyType   string
-	ObjAndKey bool
-	StreamKey bool
+	Name             string
+	KeyType          string
+	ObjAndKey        bool
+	StreamKey        bool
+	StringKeyField   string
+	StringKeyFieldLC string
+	IsMessage        bool
+	HasMessageId     bool
+	HasMoreReplies   bool
 }
 
 var keysTemplateIn = `
+{{- if .StringKeyField}}
+type {{.Name}}Key string
+
+func (k {{.Name}}Key) GetKeyString() string {
+	return string(k)
+}
+
+func {{.Name}}KeyStringParse(str string, key *{{.Name}}Key) {
+	*key = {{.Name}}Key(str)
+}
+
+func (k {{.Name}}Key) NotFoundError() error {
+	return fmt.Errorf("{{.Name}} key %s not found", k.GetKeyString())
+}
+
+func (k {{.Name}}Key) ExistsError() error {
+	return fmt.Errorf("{{.Name}} key %s already exists", k.GetKeyString())
+}
+
+func (k {{.Name}}Key) BeingDeletedError() error {
+	return fmt.Errorf("{{.Name}} key %s is being deleted", k.GetKeyString())
+}
+
+func (k {{.Name}}Key) GetTags() map[string]string {
+	return map[string]string{
+		"{{.StringKeyFieldLC}}": string(k),
+	}
+}
+
+func (k {{.Name}}Key) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("{{.StringKeyFieldLC}}", string(k))
+}
+
+func (k {{.Name}}Key) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	k.AddTagsByFunc(tagMap.AddTag)
+}
+{{- end}}
+
 func (m *{{.Name}}) GetObjKey() objstore.ObjKey {
 	return m.GetKey()
 }
@@ -2055,6 +2099,9 @@ func (m *{{.Name}}) GetObjKey() objstore.ObjKey {
 func (m *{{.Name}}) GetKey() *{{.KeyType}} {
 {{- if .ObjAndKey}}
 	return m
+{{- else if (.StringKeyField)}}
+	key := {{.Name}}Key(m.{{.StringKeyField}})
+	return &key
 {{- else}}
 	return &m.Key
 {{- end}}
@@ -2063,6 +2110,8 @@ func (m *{{.Name}}) GetKey() *{{.KeyType}} {
 func (m *{{.Name}}) GetKeyVal() {{.KeyType}} {
 {{- if .ObjAndKey}}
 	return *m
+{{- else if (.StringKeyField)}}
+	return {{.Name}}Key(m.{{.StringKeyField}})
 {{- else}}
 	return m.Key
 {{- end}}
@@ -2071,6 +2120,8 @@ func (m *{{.Name}}) GetKeyVal() {{.KeyType}} {
 func (m *{{.Name}}) SetKey(key *{{.KeyType}}) {
 {{- if .ObjAndKey}}
 	*m = *key
+{{- else if (.StringKeyField)}}
+	m.{{.StringKeyField}} = string(*key)
 {{- else}}
 	m.Key = *key
 {{- end}}
@@ -2079,6 +2130,8 @@ func (m *{{.Name}}) SetKey(key *{{.KeyType}}) {
 func CmpSort{{.Name}}(a {{.Name}}, b {{.Name}}) bool {
 {{- if .ObjAndKey}}
 	return a.GetKeyString() < b.GetKeyString()
+{{- else if (.StringKeyField)}}
+	return a.{{.StringKeyField}} < b.{{.StringKeyField}}
 {{- else}}
 	return a.Key.GetKeyString() < b.Key.GetKeyString()
 {{- end}}
@@ -2087,6 +2140,15 @@ func CmpSort{{.Name}}(a {{.Name}}, b {{.Name}}) bool {
 {{- if .StreamKey}}
 func (m *{{.KeyType}}) StreamKey() string {
 	return fmt.Sprintf("{{.Name}}StreamKey: %s", m.String())
+}
+{{- end}}
+
+{{- if .IsMessage}}
+// MessageKey can be used as a channel name which includes the
+// key value for pubsub, to listen for this specific object type
+// plus key value.
+func (m *{{.Name}}) MessageKey() string {
+	return fmt.Sprintf("msg/key/{{.Name}}/%s", m.GetKey().GetKeyString())
 }
 {{- end}}
 
@@ -2259,7 +2321,6 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 		m.importLog = true
 		if args.WaitForState != "" {
 			m.importErrors = true
-			m.importTime = true
 			m.importStrings = true
 		}
 		m.generateUsesOrg(message)
@@ -2386,19 +2447,28 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 		m.importLog = true
 	}
 
-	if gensupport.GetMessageKey(message) != nil || gensupport.GetObjAndKey(message) {
+	if gensupport.GetMessageKey(message) != nil || gensupport.GetObjAndKey(message) || gensupport.GetStringKeyField(message) != "" {
 		// this is an object that has a key field
 		keyType, err := m.support.GetMessageKeyType(m.gen, desc)
 		if err != nil {
 			m.gen.Fail(err.Error())
 		}
 		args := keysTemplateArgs{
-			Name:      *message.Name,
-			KeyType:   keyType,
-			ObjAndKey: gensupport.GetObjAndKey(message),
-			StreamKey: GetGenerateStreamKey(message),
+			Name:           *message.Name,
+			KeyType:        keyType,
+			ObjAndKey:      gensupport.GetObjAndKey(message),
+			StreamKey:      GetGenerateStreamKey(message),
+			StringKeyField: gensupport.GetStringKeyField(message),
+			IsMessage:      GetNotifyMessage(message),
 		}
+		args.StringKeyFieldLC = strings.ToLower(args.StringKeyField)
 		m.keysTemplate.Execute(m.gen.Buffer, args)
+	}
+	if GetNotifyMessage(message) {
+		m.P("func (m *", message.Name, ") MessageTypeKey() string {")
+		m.P("return \"msg/type/", message.Name, "\"")
+		m.P("}")
+		m.P()
 	}
 
 	//Generate enum values validation
@@ -2982,6 +3052,9 @@ func (m *mex) generateUsesOrg(message *descriptor.DescriptorProto) {
 
 func (m *mex) generateService(file *generator.FileDescriptor, service *descriptor.ServiceDescriptorProto) {
 	if len(service.Method) != 0 {
+		if gensupport.GetRedisApi(service) {
+			return
+		}
 		for _, method := range service.Method {
 			m.generateMethod(file, service, method)
 		}
@@ -3096,6 +3169,10 @@ func GetGenerateLookupBySubfield(message *descriptor.DescriptorProto) string {
 
 func GetNotifyCache(message *descriptor.DescriptorProto) bool {
 	return proto.GetBoolExtension(message.Options, protogen.E_NotifyCache, false)
+}
+
+func GetNotifyMessage(message *descriptor.DescriptorProto) bool {
+	return proto.GetBoolExtension(message.Options, protogen.E_NotifyMessage, false)
 }
 
 func GetNotifyFlush(message *descriptor.DescriptorProto) bool {

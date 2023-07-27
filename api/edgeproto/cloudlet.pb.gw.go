@@ -33,6 +33,65 @@ var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
 var _ = metadata.Join
 
+func request_PlatformFeaturesApi_ShowPlatformFeatures_0(ctx context.Context, marshaler runtime.Marshaler, client PlatformFeaturesApiClient, req *http.Request, pathParams map[string]string) (PlatformFeaturesApi_ShowPlatformFeaturesClient, runtime.ServerMetadata, error) {
+	var protoReq PlatformFeatures
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	stream, err := client.ShowPlatformFeatures(ctx, &protoReq)
+	if err != nil {
+		return nil, metadata, err
+	}
+	header, err := stream.Header()
+	if err != nil {
+		return nil, metadata, err
+	}
+	metadata.HeaderMD = header
+	return stream, metadata, nil
+
+}
+
+func request_PlatformFeaturesApi_DeletePlatformFeatures_0(ctx context.Context, marshaler runtime.Marshaler, client PlatformFeaturesApiClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq PlatformFeatures
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.DeletePlatformFeatures(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_PlatformFeaturesApi_DeletePlatformFeatures_0(ctx context.Context, marshaler runtime.Marshaler, server PlatformFeaturesApiServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq PlatformFeatures
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.DeletePlatformFeatures(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 func request_GPUDriverApi_CreateGPUDriver_0(ctx context.Context, marshaler runtime.Marshaler, client GPUDriverApiClient, req *http.Request, pathParams map[string]string) (GPUDriverApi_CreateGPUDriverClient, runtime.ServerMetadata, error) {
 	var protoReq GPUDriver
 	var metadata runtime.ServerMetadata
@@ -382,31 +441,6 @@ func local_request_CloudletApi_GetCloudletManifest_0(ctx context.Context, marsha
 
 	msg, err := server.GetCloudletManifest(ctx, &protoReq)
 	return msg, metadata, err
-
-}
-
-func request_CloudletApi_ShowPlatformsFeatures_0(ctx context.Context, marshaler runtime.Marshaler, client CloudletApiClient, req *http.Request, pathParams map[string]string) (CloudletApi_ShowPlatformsFeaturesClient, runtime.ServerMetadata, error) {
-	var protoReq PlatformFeatures
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	stream, err := client.ShowPlatformsFeatures(ctx, &protoReq)
-	if err != nil {
-		return nil, metadata, err
-	}
-	header, err := stream.Header()
-	if err != nil {
-		return nil, metadata, err
-	}
-	metadata.HeaderMD = header
-	return stream, metadata, nil
 
 }
 
@@ -884,6 +918,45 @@ func request_CloudletMetricsApi_ShowCloudletMetrics_0(ctx context.Context, marsh
 
 }
 
+// RegisterPlatformFeaturesApiHandlerServer registers the http handlers for service PlatformFeaturesApi to "mux".
+// UnaryRPC     :call PlatformFeaturesApiServer directly.
+// StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterPlatformFeaturesApiHandlerFromEndpoint instead.
+func RegisterPlatformFeaturesApiHandlerServer(ctx context.Context, mux *runtime.ServeMux, server PlatformFeaturesApiServer) error {
+
+	mux.Handle("POST", pattern_PlatformFeaturesApi_ShowPlatformFeatures_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
+		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+		return
+	})
+
+	mux.Handle("POST", pattern_PlatformFeaturesApi_DeletePlatformFeatures_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_PlatformFeaturesApi_DeletePlatformFeatures_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_PlatformFeaturesApi_DeletePlatformFeatures_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	return nil
+}
+
 // RegisterGPUDriverApiHandlerServer registers the http handlers for service GPUDriverApi to "mux".
 // UnaryRPC     :call GPUDriverApiServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -1036,13 +1109,6 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 
 		forward_CloudletApi_GetCloudletManifest_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
-	})
-
-	mux.Handle("POST", pattern_CloudletApi_ShowPlatformsFeatures_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
-		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-		return
 	})
 
 	mux.Handle("POST", pattern_CloudletApi_GetCloudletProps_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -1346,6 +1412,99 @@ func RegisterCloudletMetricsApiHandlerServer(ctx context.Context, mux *runtime.S
 
 	return nil
 }
+
+// RegisterPlatformFeaturesApiHandlerFromEndpoint is same as RegisterPlatformFeaturesApiHandler but
+// automatically dials to "endpoint" and closes the connection when "ctx" gets done.
+func RegisterPlatformFeaturesApiHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+	conn, err := grpc.Dial(endpoint, opts...)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			if cerr := conn.Close(); cerr != nil {
+				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+			}
+			return
+		}
+		go func() {
+			<-ctx.Done()
+			if cerr := conn.Close(); cerr != nil {
+				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+			}
+		}()
+	}()
+
+	return RegisterPlatformFeaturesApiHandler(ctx, mux, conn)
+}
+
+// RegisterPlatformFeaturesApiHandler registers the http handlers for service PlatformFeaturesApi to "mux".
+// The handlers forward requests to the grpc endpoint over "conn".
+func RegisterPlatformFeaturesApiHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterPlatformFeaturesApiHandlerClient(ctx, mux, NewPlatformFeaturesApiClient(conn))
+}
+
+// RegisterPlatformFeaturesApiHandlerClient registers the http handlers for service PlatformFeaturesApi
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "PlatformFeaturesApiClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "PlatformFeaturesApiClient"
+// doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
+// "PlatformFeaturesApiClient" to call the correct interceptors.
+func RegisterPlatformFeaturesApiHandlerClient(ctx context.Context, mux *runtime.ServeMux, client PlatformFeaturesApiClient) error {
+
+	mux.Handle("POST", pattern_PlatformFeaturesApi_ShowPlatformFeatures_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_PlatformFeaturesApi_ShowPlatformFeatures_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_PlatformFeaturesApi_ShowPlatformFeatures_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("POST", pattern_PlatformFeaturesApi_DeletePlatformFeatures_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_PlatformFeaturesApi_DeletePlatformFeatures_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_PlatformFeaturesApi_DeletePlatformFeatures_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	return nil
+}
+
+var (
+	pattern_PlatformFeaturesApi_ShowPlatformFeatures_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"show", "platformfeatures"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_PlatformFeaturesApi_DeletePlatformFeatures_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"delete", "platformfeatures"}, "", runtime.AssumeColonVerbOpt(true)))
+)
+
+var (
+	forward_PlatformFeaturesApi_ShowPlatformFeatures_0 = runtime.ForwardResponseStream
+
+	forward_PlatformFeaturesApi_DeletePlatformFeatures_0 = runtime.ForwardResponseMessage
+)
 
 // RegisterGPUDriverApiHandlerFromEndpoint is same as RegisterGPUDriverApiHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
@@ -1722,26 +1881,6 @@ func RegisterCloudletApiHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("POST", pattern_CloudletApi_ShowPlatformsFeatures_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_CloudletApi_ShowPlatformsFeatures_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_CloudletApi_ShowPlatformsFeatures_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
-
-	})
-
 	mux.Handle("POST", pattern_CloudletApi_GetCloudletProps_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -2016,8 +2155,6 @@ var (
 
 	pattern_CloudletApi_GetCloudletManifest_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"get", "cloudlet", "manifest"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_CloudletApi_ShowPlatformsFeatures_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"show", "platformsfeatures"}, "", runtime.AssumeColonVerbOpt(true)))
-
 	pattern_CloudletApi_GetCloudletProps_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"get", "cloudlet", "props"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_CloudletApi_GetCloudletResourceQuotaProps_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"get", "cloudlet", "resource", "props"}, "", runtime.AssumeColonVerbOpt(true)))
@@ -2055,8 +2192,6 @@ var (
 	forward_CloudletApi_ShowCloudlet_0 = runtime.ForwardResponseStream
 
 	forward_CloudletApi_GetCloudletManifest_0 = runtime.ForwardResponseMessage
-
-	forward_CloudletApi_ShowPlatformsFeatures_0 = runtime.ForwardResponseStream
 
 	forward_CloudletApi_GetCloudletProps_0 = runtime.ForwardResponseMessage
 

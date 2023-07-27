@@ -602,8 +602,11 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 	for _, p := range Deployment.Controllers {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("etcd,api,notify,metrics,infra,events"))...)
 	}
+	for _, p := range Deployment.CCRMs {
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("api,notify,metrics,infra,events"))...)
+	}
 	for _, p := range Deployment.Dmes {
-		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithRolesFile(rolesfile), process.WithDebug("locapi,dmedb,dmereq,notify,metrics,events"))...)
+		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("locapi,dmedb,dmereq,notify,metrics,events"))...)
 	}
 	for _, p := range Deployment.ClusterSvcs {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("notify,infra,api,events"))...)

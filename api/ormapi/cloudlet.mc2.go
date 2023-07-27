@@ -21,6 +21,40 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for ShowPlatformFeatures
+// swagger:parameters ShowPlatformFeatures
+type swaggerShowPlatformFeatures struct {
+	// in: body
+	Body RegionPlatformFeatures
+}
+
+type RegionPlatformFeatures struct {
+	// Region name
+	// required: true
+	Region string
+	// PlatformFeatures in region
+	PlatformFeatures edgeproto.PlatformFeatures
+}
+
+func (s *RegionPlatformFeatures) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionPlatformFeatures) GetObj() interface{} {
+	return &s.PlatformFeatures
+}
+
+func (s *RegionPlatformFeatures) GetObjName() string {
+	return "PlatformFeatures"
+}
+
+// Request summary for DeletePlatformFeatures
+// swagger:parameters DeletePlatformFeatures
+type swaggerDeletePlatformFeatures struct {
+	// in: body
+	Body RegionPlatformFeatures
+}
+
 // Request summary for CreateGPUDriver
 // swagger:parameters CreateGPUDriver
 type swaggerCreateGPUDriver struct {
@@ -224,33 +258,6 @@ func (s *RegionCloudletKey) GetObj() interface{} {
 
 func (s *RegionCloudletKey) GetObjName() string {
 	return "CloudletKey"
-}
-
-// Request summary for ShowPlatformsFeatures
-// swagger:parameters ShowPlatformsFeatures
-type swaggerShowPlatformsFeatures struct {
-	// in: body
-	Body RegionPlatformFeatures
-}
-
-type RegionPlatformFeatures struct {
-	// Region name
-	// required: true
-	Region string
-	// PlatformFeatures in region
-	PlatformFeatures edgeproto.PlatformFeatures
-}
-
-func (s *RegionPlatformFeatures) GetRegion() string {
-	return s.Region
-}
-
-func (s *RegionPlatformFeatures) GetObj() interface{} {
-	return &s.PlatformFeatures
-}
-
-func (s *RegionPlatformFeatures) GetObjName() string {
-	return "PlatformFeatures"
 }
 
 // Request summary for GetCloudletProps

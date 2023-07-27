@@ -431,10 +431,10 @@ func (s *ControllerTest) generateStoreTracker(desc *generator.Descriptor) {
 	if !GetGenerateCud(desc.DescriptorProto) {
 		return
 	}
-	keyDesc := gensupport.GetDescKey(s.Generator, desc)
+	keyType := gensupport.GetDescKeyName(s.Generator, desc)
 	args := trackerArgs{
 		Type:      name,
-		KeyType:   *keyDesc.Name,
+		KeyType:   keyType,
 		ApiObjDef: getApiObjDef(desc),
 	}
 	s.trackerTmpl.Execute(s.Generator, args)

@@ -36,6 +36,7 @@ import (
 var NodeTypeCRM = "crm"
 var NodeTypeDME = "dme"
 var NodeTypeController = "controller"
+var NodeTypeCCRM = "ccrm"
 var NodeTypeClusterSvc = "cluster-svc"
 var NodeTypeNotifyRoot = "notifyroot"
 var NodeTypeEdgeTurn = "edgeturn"

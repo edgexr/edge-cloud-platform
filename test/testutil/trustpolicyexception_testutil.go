@@ -133,7 +133,8 @@ func (x *TrustPolicyExceptionCommonApi) CreateTrustPolicyException(ctx context.C
 	if x.internal_api != nil {
 		return x.internal_api.CreateTrustPolicyException(ctx, copy)
 	} else {
-		return x.client_api.CreateTrustPolicyException(ctx, copy)
+		res, err := x.client_api.CreateTrustPolicyException(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -143,7 +144,8 @@ func (x *TrustPolicyExceptionCommonApi) DeleteTrustPolicyException(ctx context.C
 	if x.internal_api != nil {
 		return x.internal_api.DeleteTrustPolicyException(ctx, copy)
 	} else {
-		return x.client_api.DeleteTrustPolicyException(ctx, copy)
+		res, err := x.client_api.DeleteTrustPolicyException(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -153,7 +155,8 @@ func (x *TrustPolicyExceptionCommonApi) UpdateTrustPolicyException(ctx context.C
 	if x.internal_api != nil {
 		return x.internal_api.UpdateTrustPolicyException(ctx, copy)
 	} else {
-		return x.client_api.UpdateTrustPolicyException(ctx, copy)
+		res, err := x.client_api.UpdateTrustPolicyException(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -164,7 +167,7 @@ func (x *TrustPolicyExceptionCommonApi) ShowTrustPolicyException(ctx context.Con
 	} else {
 		stream, err := x.client_api.ShowTrustPolicyException(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

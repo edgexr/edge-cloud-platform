@@ -15,14 +15,8 @@
 package k8sbm
 
 import (
-	"context"
-
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
-)
-
-var (
-	ResourceExternalIps = "External IPs"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 )
 
 var k8sbmProps = map[string]*edgeproto.PropertyInfo{
@@ -43,6 +37,10 @@ var k8sbmProps = map[string]*edgeproto.PropertyInfo{
 	},
 }
 
+var quotaProps = cloudcommon.GetCommonResourceQuotaProps(
+	cloudcommon.ResourceExternalIPs,
+)
+
 func (k *K8sBareMetalPlatform) GetControlAccessIp() string {
 	value, _ := k.commonPf.Properties.GetValue("K8S_CONTROL_ACCESS_IP")
 	return value
@@ -56,21 +54,4 @@ func (k *K8sBareMetalPlatform) GetExternalIpRanges() string {
 func (k *K8sBareMetalPlatform) GetExternalEthernetInterface() string {
 	value, _ := k.commonPf.Properties.GetValue("K8S_EXTERNAL_ETH_INTERFACE")
 	return value
-}
-
-func (k *K8sBareMetalPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletProps")
-	return &edgeproto.CloudletProps{Properties: k8sbmProps}, nil
-}
-
-func (k *K8sBareMetalPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletResourceQuotaProps")
-	return &edgeproto.CloudletResourceQuotaProps{
-		Properties: []edgeproto.InfraResource{
-			edgeproto.InfraResource{
-				Name:        ResourceExternalIps,
-				Description: "Limit on external IPs available",
-			},
-		},
-	}, nil
 }

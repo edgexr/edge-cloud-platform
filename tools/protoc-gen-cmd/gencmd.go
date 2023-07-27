@@ -184,6 +184,9 @@ func (g *GenCmd) Generate(file *generator.FileDescriptor) {
 }
 
 func (g *GenCmd) generateServiceVars(file *descriptor.FileDescriptorProto, service *descriptor.ServiceDescriptorProto) {
+	if gensupport.GetRedisApi(service) {
+		return
+	}
 	if len(service.Method) > 0 {
 		g.P("var ", service.Name, "Cmd ", file.Package, ".", *service.Name, "Client")
 		g.support.RegisterUsedPkg(*file.Package, file)
@@ -199,6 +202,9 @@ func (g *GenCmd) generateServiceVars(file *descriptor.FileDescriptorProto, servi
 
 func (g *GenCmd) generateServiceCmd(file *descriptor.FileDescriptorProto, service *descriptor.ServiceDescriptorProto) {
 	if len(service.Method) == 0 {
+		return
+	}
+	if gensupport.GetRedisApi(service) {
 		return
 	}
 	count := 0

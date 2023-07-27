@@ -93,10 +93,6 @@ func (e *EdgeboxPlatform) GetRestrictedCloudletStatus(ctx context.Context, cloud
 	return e.generic.GetRestrictedCloudletStatus(ctx, cloudlet, pfConfig, accessApi, updateCallback)
 }
 
-func (e *EdgeboxPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	return e.generic.GetCloudletResourceQuotaProps(ctx)
-}
-
 func (e *EdgeboxPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
 	return e.generic.GetClusterAdditionalResources(ctx, cloudlet, vmResources, infraResMap)
 }

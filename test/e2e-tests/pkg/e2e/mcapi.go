@@ -1072,6 +1072,9 @@ func showMcData(uri, token, tag string, objTypes edgeproto.AllSelector, rc *bool
 		if appdata.IsEmpty() {
 			continue
 		}
+		// Ignore platform features. There is a lot of platform-specific
+		// info and it may change as we add new platforms.
+		appdata.PlatformFeatures = nil
 		rd := ormapi.RegionData{
 			Region:  ctrl.Region,
 			AppData: *appdata,

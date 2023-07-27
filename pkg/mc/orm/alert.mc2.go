@@ -668,6 +668,28 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowCloudletsForAppDeployment", ShowCloudletsForAppDeployment)
+	// swagger:route POST /auth/ctrl/ShowPlatformFeatures PlatformFeatures ShowPlatformFeatures
+	// Show Platform Features.
+	//  Shows supported cloudlet platform types and their features.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowPlatformFeatures", ShowPlatformFeatures)
+	// swagger:route POST /auth/ctrl/DeletePlatformFeatures PlatformFeatures DeletePlatformFeatures
+	// Delete Platform Features.
+	//  Removes a no-longer supported platform type. Admin only.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/DeletePlatformFeatures", DeletePlatformFeatures)
 	// swagger:route POST /auth/ctrl/CreateGPUDriver GPUDriver CreateGPUDriver
 	// Create GPU Driver.
 	//  Creates GPU driver with all the config required to install it.
@@ -834,6 +856,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// TimeLimitsUpdateAppInstTimeout: 9.5
 	// TimeLimitsDeleteAppInstTimeout: 9.6
 	// Errors: 10
+	// OnboardingState: 60
 	// State: 12
 	// CrmOverride: 13
 	// DeploymentLocal: 14
@@ -976,17 +999,6 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/GetCloudletManifest", GetCloudletManifest)
-	// swagger:route POST /auth/ctrl/ShowPlatformsFeatures PlatformFeatures ShowPlatformsFeatures
-	// Shows all supported cloudlet platforms and their features.
-	//
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowPlatformsFeatures", ShowPlatformsFeatures)
 	// swagger:route POST /auth/ctrl/GetCloudletProps CloudletProps GetCloudletProps
 	// Get Cloudlet Properties.
 	//  Shows all the infra properties used to setup cloudlet

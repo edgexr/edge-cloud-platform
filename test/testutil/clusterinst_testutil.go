@@ -173,7 +173,7 @@ func (x *ClusterInstCommonApi) CreateClusterInst(ctx context.Context, in *edgepr
 	} else {
 		stream, err := x.client_api.CreateClusterInst(ctx, copy)
 		err = ClusterInstReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -186,7 +186,7 @@ func (x *ClusterInstCommonApi) DeleteClusterInst(ctx context.Context, in *edgepr
 	} else {
 		stream, err := x.client_api.DeleteClusterInst(ctx, copy)
 		err = ClusterInstReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -199,7 +199,7 @@ func (x *ClusterInstCommonApi) UpdateClusterInst(ctx context.Context, in *edgepr
 	} else {
 		stream, err := x.client_api.UpdateClusterInst(ctx, copy)
 		err = ClusterInstReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -210,7 +210,7 @@ func (x *ClusterInstCommonApi) ShowClusterInst(ctx context.Context, filter *edge
 	} else {
 		stream, err := x.client_api.ShowClusterInst(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 
@@ -508,7 +508,7 @@ func (x *ClusterInstInfoCommonApi) ShowClusterInstInfo(ctx context.Context, filt
 	} else {
 		stream, err := x.client_api.ShowClusterInstInfo(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

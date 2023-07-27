@@ -373,9 +373,9 @@ tests:
       # mcdata-xind keeps health check status
       filetype: mcdata-xind
 
-  - name: start crm on dmuus-cloud-1 cloudlet(ctrl2)
+  - name: start crm on dmuus-cloud-1 cloudlet(ccrm1)
     apifile: "{{datadir2}}/cloudlet_dmuus-cloud-1.yml"
-    actions: [start-crm=dmuus-cloud-1 ctrl=ctrl2,sleep=1]
+    actions: [start-crm=dmuus-cloud-1 ctrl=ccrm1,sleep=1]
 
   - name: check cloudlet alert was cleared
     actions: [mcapi-showalerts]

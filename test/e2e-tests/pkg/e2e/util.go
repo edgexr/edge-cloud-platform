@@ -123,6 +123,7 @@ type DeploymentData struct {
 	Vaults           []*process.Vault                  `yaml:"vaults"`
 	Etcds            []*process.Etcd                   `yaml:"etcds"`
 	Controllers      []*process.Controller             `yaml:"controllers"`
+	CCRMs            []*process.CCRM                   `yaml:"ccrms"`
 	Dmes             []*process.Dme                    `yaml:"dmes"`
 	SampleApps       []*process.SampleApp              `yaml:"sampleapps"`
 	Influxs          []*process.Influx                 `yaml:"influxs"`
@@ -175,6 +176,9 @@ func GetAllProcesses() []process.Process {
 		all = append(all, p)
 	}
 	for _, p := range Deployment.Controllers {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.CCRMs {
 		all = append(all, p)
 	}
 	for _, p := range Deployment.Dmes {
@@ -319,6 +323,19 @@ func GetController(ctrlname string) *process.Controller {
 		}
 	}
 	log.Fatalf("Error: could not find specified controller: %v\n", ctrlname)
+	return nil //unreachable
+}
+
+func GetCCRM(ccrmName string) *process.CCRM {
+	if ccrmName == "" {
+		return Deployment.CCRMs[0]
+	}
+	for _, ccrm := range Deployment.CCRMs {
+		if ccrm.Name == ccrmName {
+			return ccrm
+		}
+	}
+	log.Fatalf("Error: could not find specified CCRM: %v\n", ccrmName)
 	return nil //unreachable
 }
 

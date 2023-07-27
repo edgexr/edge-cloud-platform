@@ -76,18 +76,13 @@ var shortTimeouts = flag.Bool("shortTimeouts", false, "set timeouts short for si
 var influxAddr = flag.String("influxAddr", "http://127.0.0.1:8086", "InfluxDB listener address")
 var registryFQDN = flag.String("registryFQDN", "", "default docker image registry FQDN")
 var artifactoryFQDN = flag.String("artifactoryFQDN", "", "default VM image registry (artifactory) FQDN")
-var cloudletRegistryPath = flag.String("cloudletRegistryPath", "", "edge-cloud image registry path for deploying cloudlet services")
-var cloudletVMImagePath = flag.String("cloudletVMImagePath", "", "VM image for deploying cloudlet services")
-var chefServerPath = flag.String("chefServerPath", "", "Path to chef server organization")
 var versionTag = flag.String("versionTag", "", "edge-cloud image tag indicating controller version")
 var skipVersionCheck = flag.Bool("skipVersionCheck", false, "Skip etcd version hash verification")
 var autoUpgrade = flag.Bool("autoUpgrade", false, "Automatically upgrade etcd database to the current version")
 var testMode = flag.Bool("testMode", false, "Run controller in test mode")
-var commercialCerts = flag.Bool("commercialCerts", false, "Have CRM grab certs from LetsEncrypt. If false then CRM will generate its onwn self-signed cert")
 var checkpointInterval = flag.String("checkpointInterval", "MONTH", "Interval at which to checkpoint cluster usage")
 var appDNSRoot = flag.String("appDNSRoot", "appdnsroot.net", "App domain name root")
 var requireNotifyAccessKey = flag.Bool("requireNotifyAccessKey", false, "Require AccessKey authentication on notify API")
-var thanosRecvAddr = flag.String("thanosRecvAddr", "", "Address of thanos receive API endpoint including port")
 var dnsZone = flag.String("dnsZone", "", "comma separated list of allowed dns zones for DNS update requests")
 
 var ControllerId = ""
@@ -156,42 +151,6 @@ func main() {
 	fmt.Println(sig)
 }
 
-func validateFields(ctx context.Context) error {
-	if *cloudletRegistryPath != "" {
-		if *versionTag == "" {
-			return fmt.Errorf("Version tag is required")
-		}
-		if *cloudletRegistryPath == "edge-cloud-crm" {
-			// local KIND operators testing, ignore
-			log.SpanLog(ctx, log.DebugLevelInfo, "skipping cloudletRegistryPath validation for local KIND testing", "cloudletRegistryPath", *cloudletRegistryPath)
-			return nil
-		}
-		parts := strings.Split(*cloudletRegistryPath, "/")
-		if len(parts) < 2 || !strings.Contains(parts[0], ".") {
-			return fmt.Errorf("Cloudlet registry path should be full registry URL: <domain-name>/<registry-path>")
-		}
-		urlObj, err := util.ImagePathParse(*cloudletRegistryPath)
-		if err != nil {
-			return fmt.Errorf("Invalid cloudlet registry path: %v", err)
-		}
-		out := strings.Split(urlObj.Path, ":")
-		if len(out) == 2 {
-			return fmt.Errorf("Cloudlet registry path should not have image tag")
-		} else if len(out) != 1 {
-			return fmt.Errorf("Invalid registry path")
-		}
-		platform_registry_path := *cloudletRegistryPath + ":" + strings.TrimSpace(string(*versionTag))
-		authApi := &cloudcommon.VaultRegistryAuthApi{
-			VaultConfig: vaultConfig,
-		}
-		err = cloudcommon.ValidateDockerRegistryPath(ctx, platform_registry_path, authApi)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func startServices() error {
 	var err error
 
@@ -219,7 +178,7 @@ func startServices() error {
 		return fmt.Errorf("appDNSRoot %q must be less than %d characters", *appDNSRoot, cloudcommon.DnsDomainLabelMaxLen)
 	}
 
-	ctx, span, err := nodeMgr.Init(node.NodeTypeController, node.CertIssuerRegional, node.WithName(ControllerId), node.WithContainerVersion(*versionTag), node.WithRegion(*region))
+	ctx, span, err := nodeMgr.Init(node.NodeTypeController, node.CertIssuerRegional, node.WithName(ControllerId), node.WithRegion(*region))
 	if err != nil {
 		return err
 	}
@@ -227,10 +186,6 @@ func startServices() error {
 	vaultConfig = nodeMgr.VaultConfig
 
 	log.SpanLog(ctx, log.DebugLevelInfo, "Start up", "rootDir", *rootDir, "apiAddr", *apiAddr, "externalApiAddr", *externalApiAddr)
-	err = validateFields(ctx)
-	if err != nil {
-		return err
-	}
 
 	if *localEtcd {
 		opts := []process.StartOp{}
@@ -509,6 +464,7 @@ func startServices() error {
 	edgeproto.RegisterGPUDriverApiServer(server, allApis.gpuDriverApi)
 	edgeproto.RegisterAlertPolicyApiServer(server, allApis.alertPolicyApi)
 	edgeproto.RegisterNetworkApiServer(server, allApis.networkApi)
+	edgeproto.RegisterPlatformFeaturesApiServer(server, allApis.platformFeaturesApi)
 
 	go func() {
 		// Serve will block until interrupted and Stop is called
@@ -548,6 +504,7 @@ func startServices() error {
 			edgeproto.RegisterDeviceApiHandler,
 			edgeproto.RegisterOrganizationApiHandler,
 			edgeproto.RegisterAlertPolicyApiHandler,
+			edgeproto.RegisterPlatformFeaturesApiHandler,
 		},
 	}
 	gw, err := cloudcommon.GrpcGateway(gwcfg)
@@ -721,6 +678,7 @@ type AllApis struct {
 	gpuDriverApi                *GPUDriverApi
 	alertPolicyApi              *AlertPolicyApi
 	networkApi                  *NetworkApi
+	platformFeaturesApi         *PlatformFeaturesApi
 	syncLeaseData               *SyncLeaseData
 }
 
@@ -762,6 +720,7 @@ func NewAllApis(sync *Sync) *AllApis {
 	all.gpuDriverApi = NewGPUDriverApi(sync, all)
 	all.alertPolicyApi = NewAlertPolicyApi(sync, all)
 	all.networkApi = NewNetworkApi(sync, all)
+	all.platformFeaturesApi = NewPlatformFeaturesApi(sync, all)
 	all.syncLeaseData = NewSyncLeaseData(sync, all)
 	return all
 }
@@ -808,6 +767,7 @@ func InitNotify(metricsInflux *influxq.InfluxQ, edgeEventsInflux *influxq.Influx
 	notify.ServerMgrOne.RegisterSend(allApis.appInstApi.fedAppInstEventSendMany)
 
 	nodeMgr.RegisterServer(&notify.ServerMgrOne)
+	notify.ServerMgrOne.RegisterRecv(notify.NewPlatformFeaturesRecvMany(allApis.platformFeaturesApi))
 	notify.ServerMgrOne.RegisterRecv(notify.NewCloudletInfoRecvMany(allApis.cloudletInfoApi))
 	notify.ServerMgrOne.RegisterRecv(notify.NewAppInstInfoRecvMany(allApis.appInstInfoApi))
 	notify.ServerMgrOne.RegisterRecv(notify.NewVMPoolInfoRecvMany(allApis.vmPoolInfoApi))
@@ -820,6 +780,7 @@ func InitNotify(metricsInflux *influxq.InfluxQ, edgeEventsInflux *influxq.Influx
 	notify.ServerMgrOne.RegisterRecv(notify.NewDeviceRecvMany(allApis.deviceApi))
 	notify.ServerMgrOne.RegisterRecv(notify.NewAutoProvInfoRecvMany(allApis.autoProvInfoApi))
 	notify.ServerMgrOne.RegisterRecv(notify.NewMetricRecvMany(NewControllerMetricsReceiver(metricsInflux, edgeEventsInflux)))
+	notify.ServerMgrOne.RegisterRecv(notify.NewCloudletOnboardingInfoRecvMany(allApis.cloudletInfoApi))
 }
 
 type ControllerMetricsReceiver struct {

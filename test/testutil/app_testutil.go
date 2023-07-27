@@ -134,7 +134,8 @@ func (x *AppCommonApi) CreateApp(ctx context.Context, in *edgeproto.App) (*edgep
 	if x.internal_api != nil {
 		return x.internal_api.CreateApp(ctx, copy)
 	} else {
-		return x.client_api.CreateApp(ctx, copy)
+		res, err := x.client_api.CreateApp(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -144,7 +145,8 @@ func (x *AppCommonApi) DeleteApp(ctx context.Context, in *edgeproto.App) (*edgep
 	if x.internal_api != nil {
 		return x.internal_api.DeleteApp(ctx, copy)
 	} else {
-		return x.client_api.DeleteApp(ctx, copy)
+		res, err := x.client_api.DeleteApp(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -154,7 +156,8 @@ func (x *AppCommonApi) UpdateApp(ctx context.Context, in *edgeproto.App) (*edgep
 	if x.internal_api != nil {
 		return x.internal_api.UpdateApp(ctx, copy)
 	} else {
-		return x.client_api.UpdateApp(ctx, copy)
+		res, err := x.client_api.UpdateApp(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -165,7 +168,7 @@ func (x *AppCommonApi) ShowApp(ctx context.Context, filter *edgeproto.App, showD
 	} else {
 		stream, err := x.client_api.ShowApp(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

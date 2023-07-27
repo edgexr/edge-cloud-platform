@@ -139,13 +139,6 @@ func (f *FederationPlatform) GetClusterAdditionalResources(ctx context.Context, 
 	return nil
 }
 
-// Get Cloudlet Resource Properties
-func (f *FederationPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletResourceQuotaProps")
-
-	return &edgeproto.CloudletResourceQuotaProps{}, nil
-}
-
 // Get cluster additional resource metric
 func (f *FederationPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
 	return nil
@@ -430,11 +423,6 @@ func (f *FederationPlatform) GetCloudletManifest(ctx context.Context, cloudlet *
 // Verify VM
 func (f *FederationPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
 	return nil
-}
-
-// Get Cloudlet Properties
-func (f *FederationPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
-	return &edgeproto.CloudletProps{}, nil
 }
 
 // Update the cloudlet's Trust Policy

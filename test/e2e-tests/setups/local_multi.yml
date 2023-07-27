@@ -178,7 +178,6 @@ controllers:
   appdnsroot: edgecloude2e.net
   deploymenttag: dev
   accessapiaddr: "127.0.0.1:21001"
-  thanosrecvaddr: "http://host.docker.internal:10908"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -274,6 +273,57 @@ controllers:
     E2ETEST_TLS: true
     E2ETEST_SKIPREGISTRY: true
 
+ccrms:
+- name: ccrm1
+  region: local
+  hostname: "127.0.0.1"
+  appdnsroot: edgecloude2e.net
+  controlleraccessapiaddr: "127.0.0.1:21001"
+  controllernotifyaddr: "127.0.0.1:27001"
+  thanosrecvaddr: "http://host.docker.internal:10908"
+  vaultaddr: "http://127.0.0.1:8200"
+  redissentineladdrs: "127.0.0.1:26379,127.0.0.1:26380,127.0.0.1:26381"
+  usevaultpki: true
+  testmode: true
+  versiontag: "2019-10-24"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+    E2ETEST_SKIPREGISTRY: true
+- name: ccrma1
+  region: locala
+  hostname: "127.0.0.1"
+  appdnsroot: edgecloude2e.net
+  controlleraccessapiaddr: "127.0.0.1:21011"
+  controllernotifyaddr: "127.0.0.1:27011"
+  vaultaddr: "http://127.0.0.1:8200"
+  redisstandaloneaddr: "127.0.0.1:26382"
+  usevaultpki: true
+  testmode: true
+  versiontag: "2019-10-24"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+    E2ETEST_SKIPREGISTRY: true
+- name: ccrm-partner1
+  region: PA
+  hostname: "127.0.0.1"
+  appdnsroot: edgecloude2e.net
+  controlleraccessapiaddr: "127.0.0.1:21081"
+  controllernotifyaddr: "127.0.0.1:27081"
+  vaultaddr: "http://127.0.0.1:8200"
+  redisstandaloneaddr: "127.0.0.1:26383"
+  usevaultpki: true
+  testmode: true
+  versiontag: "2019-10-24"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+    E2ETEST_SKIPREGISTRY: true
+
 frms:
 - name: frm1
   notifyaddrs: "127.0.0.1:27001,127.0.0.1:27002"
@@ -303,7 +353,7 @@ frms:
   notifyaddrs: "127.0.0.1:27081"
   hostname: "127.0.0.1"
   deploymenttag: dev
-  region: locala
+  region: PA
   vaultaddr: "http://127.0.0.1:8200"
   federationexternaladdr: "https://127.0.0.1:9808"
   usevaultpki: true

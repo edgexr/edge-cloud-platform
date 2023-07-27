@@ -256,7 +256,8 @@ func WaitFor(cache WaitForCache, count int) error {
 		if cache.GetCount() == count {
 			return nil
 		}
-		time.Sleep(20 * time.Millisecond)
+		//time.Sleep(20 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 	log.DebugLog(log.DebugLevelInfo, "Timed out waiting for cache", "type", cache.GetTypeString(), "expected", count, "actual", cache.GetCount())
 	DumpStacks()
