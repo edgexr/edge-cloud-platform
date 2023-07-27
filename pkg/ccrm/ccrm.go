@@ -21,12 +21,7 @@ import (
 
 // CCRM handles platform-specific code. It primarily
 // converts notify-based events into platform API calls.
-// CCRM should run alongside the Controller. It can either
-// run as a single service, or to scale horizontally it
-// should be 1-to-1 with the Controller, i.e. same pod
-// if running in kubernetes. This is because notify broadcasts
-// events, and we don't want multiple CCRMs acting upon
-// the same events such as Cloudlet CREATE_REQUESTED.
+// CCRM should run alongside the Controller.
 type CCRM struct {
 	nodeType         string
 	flags            Flags
@@ -111,7 +106,7 @@ func (s *Flags) Init() {
 	flag.BoolVar(&s.TestMode, "testMode", false, "Run CCRM in test mode")
 }
 
-// Run assumes flag.Parse() was called.
+// Start requires that flag.Parse() was called.
 func (s *CCRM) Start() error {
 	log.SetDebugLevelStrs(s.flags.DebugLevels)
 

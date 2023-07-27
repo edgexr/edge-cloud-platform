@@ -92,6 +92,10 @@ func (s *CCRMHandler) createCloudlet(ctx context.Context, in *edgeproto.Cloudlet
 	}
 
 	if in.DeploymentLocal {
+		// TODO: rather than starting up a CRM service per cloudlet
+		// when platforms do not want on-site CRMs, we should instead
+		// allow the CCRM to become a regional CRM that can handle
+		// requests for different cloudlets.
 		cb(edgeproto.UpdateTask, "Starting CRMServer")
 		return process.StartCRMService(ctx, in, pfConfig, process.HARolePrimary, nil)
 	}

@@ -48,7 +48,7 @@ func (s *MessageHandler) Close() {
 	s.pubsub.Close()
 }
 
-// WaitForMessage waits for the desired message to be send.
+// WaitForMessage waits for the desired message to be received.
 // The message when received is copied into the desired Message parameter
 // passed to Subscribe. The isDone callback should check the state of
 // desired and return true if we're done.

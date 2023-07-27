@@ -336,7 +336,6 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 		AccessApiAddr:   *accessApiAddr,
 		NotifyCtrlAddrs: ctrlNotifyAddr,
 	}
-	//pfConfig, err := apis.cloudletApi.getPlatformConfig(ctx, &cloudlet)
 	require.Nil(t, err, "get platform config")
 	pfConfig.EnvVar["E2ETEST_TLS"] = "true"
 
