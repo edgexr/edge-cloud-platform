@@ -70,9 +70,6 @@ func InstallAndConfigMetalLbIfNotInstalled(ctx context.Context, client ssh.Clien
 		if err := VerifyMetalLbRunning(ctx, client, clusterInst, DefaultMetalLbNamespace); err != nil {
 			return err
 		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "Sleeping 10 sec to let the crds get created", "clusterInst", clusterInst)
-		time.Sleep(10 * time.Second)
-
 		if err := ConfigureMetalLb(ctx, client, clusterInst, addressRanges); err != nil {
 			return err
 		}
@@ -101,6 +98,13 @@ func VerifyMetalLbRunning(ctx context.Context, client ssh.Client, clusterInst *e
 			return fmt.Errorf("MetalLB startup wait timed out")
 		}
 		time.Sleep(1 * time.Second)
+	}
+
+	cmd := fmt.Sprintf("%s kubectl -n %s wait --for condition=ready pod --selector=component=controller --timeout=60s", kconfEnv, metalLbNameSpace)
+	out, err := client.Output(cmd)
+	if err != nil {
+		log.InfoLog("error getting controller pod", "err", err, "out", out)
+		return fmt.Errorf("MetalLB controller wait timed out")
 	}
 	return nil
 }
