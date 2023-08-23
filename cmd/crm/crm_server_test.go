@@ -355,6 +355,7 @@ func TestCRM(t *testing.T) {
 
 	// set Cloudlet state to CRM_INIT to allow crm notify exchange to proceed
 	cdata := data.Cloudlets[0]
+	cdata.OnboardingState = edgeproto.TrackedState_READY
 	cdata.State = edgeproto.TrackedState_CRM_INITOK
 	cdata.CrmAccessPublicKey = accessKey.PublicPEM
 	ctrlHandler.CloudletCache.Update(ctx, &cdata, 0)

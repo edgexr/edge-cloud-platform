@@ -31,29 +31,25 @@ import (
 )
 
 type Controller struct {
-	Common               `yaml:",inline"`
-	NodeCommon           `yaml:",inline"`
-	RedisClientCommon    `yaml:",inline"`
-	EtcdAddrs            string
-	ApiAddr              string
-	HttpAddr             string
-	NotifyAddr           string
-	NotifyRootAddrs      string
-	NotifyParentAddrs    string
-	EdgeTurnAddr         string
-	InfluxAddr           string
-	Region               string
-	cmd                  *exec.Cmd
-	TestMode             bool
-	RegistryFQDN         string
-	ArtifactoryFQDN      string
-	CloudletRegistryPath string
-	VersionTag           string
-	CloudletVMImagePath  string
-	CheckpointInterval   string
-	AppDNSRoot           string
-	ChefServerPath       string
-	ThanosRecvAddr       string
+	Common             `yaml:",inline"`
+	NodeCommon         `yaml:",inline"`
+	RedisClientCommon  `yaml:",inline"`
+	EtcdAddrs          string
+	ApiAddr            string
+	HttpAddr           string
+	NotifyAddr         string
+	NotifyRootAddrs    string
+	NotifyParentAddrs  string
+	EdgeTurnAddr       string
+	InfluxAddr         string
+	Region             string
+	cmd                *exec.Cmd
+	TestMode           bool
+	RegistryFQDN       string
+	ArtifactoryFQDN    string
+	VersionTag         string
+	CheckpointInterval string
+	AppDNSRoot         string
 }
 
 func (p *Controller) StartLocal(logfile string, opts ...StartOp) error {
@@ -83,14 +79,6 @@ func (p *Controller) StartLocal(logfile string, opts ...StartOp) error {
 	if p.ArtifactoryFQDN != "" {
 		args = append(args, "--artifactoryFQDN")
 		args = append(args, p.ArtifactoryFQDN)
-	}
-	if p.CloudletRegistryPath != "" {
-		args = append(args, "--cloudletRegistryPath")
-		args = append(args, p.CloudletRegistryPath)
-	}
-	if p.CloudletVMImagePath != "" {
-		args = append(args, "--cloudletVMImagePath")
-		args = append(args, p.CloudletVMImagePath)
 	}
 	if p.NotifyRootAddrs != "" {
 		args = append(args, "--notifyRootAddrs")
@@ -127,14 +115,6 @@ func (p *Controller) StartLocal(logfile string, opts ...StartOp) error {
 	if p.CheckpointInterval != "" {
 		args = append(args, "--checkpointInterval")
 		args = append(args, p.CheckpointInterval)
-	}
-	if p.ChefServerPath != "" {
-		args = append(args, "--chefServerPath")
-		args = append(args, p.ChefServerPath)
-	}
-	if p.ThanosRecvAddr != "" {
-		args = append(args, "--thanosRecvAddr")
-		args = append(args, p.ThanosRecvAddr)
 	}
 
 	envs := p.GetEnv()

@@ -126,6 +126,7 @@ func (s *DeleteDataGen) GetCloudletTestObj() (*edgeproto.Cloudlet, *testSupportD
 	obj := testutil.CloudletData()[0]
 	supportData := &testSupportData{}
 	supportData.GpuDrivers = []edgeproto.GPUDriver{testutil.GPUDriverData()[0]}
+	supportData.PlatformFeatures = []edgeproto.PlatformFeatures{testutil.PlatformFeaturesData()[0]}
 	return &obj, supportData
 }
 func (s *DeleteDataGen) GetAutoProvPolicyCloudletsRef(key *edgeproto.CloudletKey) (*edgeproto.AutoProvPolicy, *testSupportData) {
@@ -267,6 +268,18 @@ func (s *DeleteDataGen) GetClusterInstNetworksRef(key *edgeproto.NetworkKey) (*e
 	ref := testutil.ClusterInstData()[0]
 	ref.Key.CloudletKey = key.CloudletKey
 	ref.Networks = []string{key.Name}
+	return &ref, noSupportData
+}
+
+// PlatformFeatures
+func (s *DeleteDataGen) GetPlatformFeaturesTestObj() (*edgeproto.PlatformFeatures, *testSupportData) {
+	obj := edgeproto.PlatformFeatures{}
+	return &obj, noSupportData
+}
+
+func (s *DeleteDataGen) GetCloudletPlatformTypeRef(key *edgeproto.PlatformFeaturesKey) (*edgeproto.Cloudlet, *testSupportData) {
+	ref := testutil.CloudletData()[0]
+	ref.PlatformType = string(*key)
 	return &ref, noSupportData
 }
 

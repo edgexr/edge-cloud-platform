@@ -21,6 +21,11 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
+const (
+	GetCloudletManifest         = "GetCloudletManifest"
+	GetRestrictedCloudletStatus = "GetRestrictedCloudletStatus"
+)
+
 var streamCleanupInterval = 10 * time.Minute
 var streamExpiration = 10 * time.Minute
 

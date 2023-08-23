@@ -163,21 +163,6 @@ func (o *OpenstackPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) (
 	return resInfo, nil
 }
 
-func (o *OpenstackPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	return &edgeproto.CloudletResourceQuotaProps{
-		Properties: []edgeproto.InfraResource{
-			edgeproto.InfraResource{
-				Name:        cloudcommon.ResourceInstances,
-				Description: cloudcommon.ResourceQuotaDesc[cloudcommon.ResourceInstances],
-			},
-			edgeproto.InfraResource{
-				Name:        cloudcommon.ResourceFloatingIPs,
-				Description: cloudcommon.ResourceQuotaDesc[cloudcommon.ResourceFloatingIPs],
-			},
-		},
-	}, nil
-}
-
 func getOpenstackResources(cloudlet *edgeproto.Cloudlet, resources []edgeproto.VMResource) *OpenstackResources {
 	floatingIp := false
 	if val, ok := cloudlet.EnvVar["MEX_NETWORK_SCHEME"]; ok {

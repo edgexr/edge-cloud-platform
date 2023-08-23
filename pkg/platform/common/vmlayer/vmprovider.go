@@ -38,7 +38,6 @@ import (
 type VMProvider interface {
 	NameSanitize(string) string
 	IdSanitize(string) string
-	GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error)
 	SetVMProperties(vmProperties *VMProperties)
 	GetFeatures() *edgeproto.PlatformFeatures
 	InitData(ctx context.Context, caches *platform.Caches)
@@ -77,7 +76,6 @@ type VMProvider interface {
 	ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]ssh.Client, action ActionType, updateCallback edgeproto.CacheUpdateCallback) error
 	InitOperationContext(ctx context.Context, operationStage OperationInitStage) (context.Context, OperationInitResult, error)
 	GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error)
-	GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error)
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource
 	GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error
 	InternalCloudletUpdatedCallback(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal)
@@ -351,14 +349,11 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 	for k, v := range VMProviderProps {
 		props[k] = v
 	}
-	providerProps, err := v.VMProvider.GetProviderSpecificProps(ctx)
-	if err != nil {
-		return err
-	}
+	providerProps := v.GetFeatures().Properties
 	for k, v := range providerProps {
 		props[k] = v
 	}
-	err = v.VMProperties.CommonPf.InitInfraCommon(ctx, platformConfig, props, ops...)
+	err := v.VMProperties.CommonPf.InitInfraCommon(ctx, platformConfig, props, ops...)
 	if err != nil {
 		return err
 	}
@@ -592,10 +587,6 @@ func (v *VMPlatform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.
 		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get cloudlet infra resources info", "err", err)
 	}
 	return &resources, nil
-}
-
-func (v *VMPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	return v.VMProvider.GetCloudletResourceQuotaProps(ctx)
 }
 
 // called by controller, make sure it doesn't make any calls to infra API

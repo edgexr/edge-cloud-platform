@@ -104,6 +104,10 @@ var fakeProps = map[string]*edgeproto.PropertyInfo{
 	},
 }
 
+var quotaProps = cloudcommon.GetCommonResourceQuotaProps(
+	cloudcommon.ResourceInstances,
+)
+
 var maxPrimaryCrmStartupWait = 10 * time.Second
 
 func NewPlatform() platform.Platform {
@@ -190,6 +194,8 @@ func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsAdditionalNetworks:               true,
 		SupportsPlatformHighAvailabilityOnDocker: true,
 		SupportsPlatformHighAvailabilityOnK8S:    true,
+		Properties:                               fakeProps,
+		ResourceQuotaProperties:                  quotaProps,
 	}
 }
 
@@ -473,17 +479,6 @@ func (s *Platform) GetClusterAdditionalResources(ctx context.Context, cloudlet *
 		resInfo[cloudcommon.ResourceInstances] = out
 	}
 	return resInfo
-}
-
-func (s *Platform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	return &edgeproto.CloudletResourceQuotaProps{
-		Properties: []edgeproto.InfraResource{
-			edgeproto.InfraResource{
-				Name:        cloudcommon.ResourceInstances,
-				Description: cloudcommon.ResourceQuotaDesc[cloudcommon.ResourceInstances],
-			},
-		},
-	}, nil
 }
 
 func (s *Platform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
@@ -779,10 +774,6 @@ func (s *Platform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
 		}
 	}
 	return nil
-}
-
-func (s *Platform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
-	return &edgeproto.CloudletProps{Properties: fakeProps}, nil
 }
 
 func (s *Platform) GetRestrictedCloudletStatus(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {

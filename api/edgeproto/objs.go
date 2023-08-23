@@ -311,6 +311,14 @@ func (s *App) Validate(fields map[string]struct{}) error {
 	return nil
 }
 
+func (key PlatformFeaturesKey) ValidateKey() error {
+	return nil
+}
+
+func (s *PlatformFeatures) Validate(fields map[string]struct{}) error {
+	return nil
+}
+
 func (key *GPUDriverKey) ValidateKey() error {
 	if key.Organization != "" && !util.ValidName(key.Organization) {
 		return errors.New("Invalid organization name")

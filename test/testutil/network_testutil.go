@@ -172,7 +172,7 @@ func (x *NetworkCommonApi) CreateNetwork(ctx context.Context, in *edgeproto.Netw
 	} else {
 		stream, err := x.client_api.CreateNetwork(ctx, copy)
 		err = NetworkReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -185,7 +185,7 @@ func (x *NetworkCommonApi) DeleteNetwork(ctx context.Context, in *edgeproto.Netw
 	} else {
 		stream, err := x.client_api.DeleteNetwork(ctx, copy)
 		err = NetworkReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -198,7 +198,7 @@ func (x *NetworkCommonApi) UpdateNetwork(ctx context.Context, in *edgeproto.Netw
 	} else {
 		stream, err := x.client_api.UpdateNetwork(ctx, copy)
 		err = NetworkReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -209,7 +209,7 @@ func (x *NetworkCommonApi) ShowNetwork(ctx context.Context, filter *edgeproto.Ne
 	} else {
 		stream, err := x.client_api.ShowNetwork(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

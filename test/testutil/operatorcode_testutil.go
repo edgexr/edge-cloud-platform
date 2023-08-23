@@ -132,7 +132,8 @@ func (x *OperatorCodeCommonApi) CreateOperatorCode(ctx context.Context, in *edge
 	if x.internal_api != nil {
 		return x.internal_api.CreateOperatorCode(ctx, copy)
 	} else {
-		return x.client_api.CreateOperatorCode(ctx, copy)
+		res, err := x.client_api.CreateOperatorCode(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -142,7 +143,8 @@ func (x *OperatorCodeCommonApi) DeleteOperatorCode(ctx context.Context, in *edge
 	if x.internal_api != nil {
 		return x.internal_api.DeleteOperatorCode(ctx, copy)
 	} else {
-		return x.client_api.DeleteOperatorCode(ctx, copy)
+		res, err := x.client_api.DeleteOperatorCode(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -153,7 +155,7 @@ func (x *OperatorCodeCommonApi) ShowOperatorCode(ctx context.Context, filter *ed
 	} else {
 		stream, err := x.client_api.ShowOperatorCode(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

@@ -120,10 +120,12 @@ func testC(t *testing.T) {
 	crmClient := notify.NewClient("crm", notifyAddrs, nil)
 	crmNotify.RegisterCRMClient(crmClient)
 	dummyResponder := DummyInfoResponder{
-		AppInstCache:        &crmNotify.AppInstCache,
-		ClusterInstCache:    &crmNotify.ClusterInstCache,
-		RecvAppInstInfo:     &crmNotify.AppInstInfoCache,
-		RecvClusterInstInfo: &crmNotify.ClusterInstInfoCache,
+		CloudletCache:              &crmNotify.CloudletCache,
+		AppInstCache:               &crmNotify.AppInstCache,
+		ClusterInstCache:           &crmNotify.ClusterInstCache,
+		RecvAppInstInfo:            &crmNotify.AppInstInfoCache,
+		RecvClusterInstInfo:        &crmNotify.ClusterInstInfoCache,
+		RecvCloudletOnboardingInfo: apis.cloudletInfoApi,
 	}
 	dummyResponder.InitDummyInfoResponder()
 	for ii, _ := range testutil.CloudletInfoData() {
@@ -154,6 +156,7 @@ func testC(t *testing.T) {
 		err := apis.cloudletInfoApi.cache.WaitForCloudletState(ctx, &testutil.CloudletInfoData()[ii].Key, dme.CloudletState_CLOUDLET_STATE_READY, time.Second)
 		require.Nil(t, err)
 	}
+	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 
 	cloudletData := testutil.CloudletData()
 	testutil.ClientFlavorTest(t, "cud", flavorClient, testutil.FlavorData())

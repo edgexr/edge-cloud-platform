@@ -53,6 +53,8 @@ func (o *OpenstackPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsAdditionalNetworks:            true,
 		SupportsPlatformHighAvailabilityOnK8S: true,
 		AccessVars:                            AccessVarProps,
+		Properties:                            OpenstackProps,
+		ResourceQuotaProperties:               QuotaProps,
 	}
 }
 

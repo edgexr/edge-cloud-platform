@@ -24,6 +24,7 @@ ORMDIR		= ../../pkg/mc/orm
 CTRLCLIENTDIR	= ../../pkg/mc/ctrlclient
 ORMTESTUTILDIR	= ../../pkg/mc/orm/testutil
 MCCTLDIR	= ../../pkg/mcctl/ormctl
+REDISAPIDIR = ../../pkg/rediscache
 
 PROTOS		= *.proto
 
@@ -32,6 +33,7 @@ build:
 	protoc ${INCLUDE} --grpc-gateway_out=${BUILTIN}:. $(PROTOS)
 	protoc ${INCLUDE} --notify_out=${BUILTIN}:${NOTIFYDIR} $(PROTOS)
 	protoc ${INCLUDE} --cmd_out=${BUILTIN}:${CMDDIR} $(PROTOS)
+	protoc ${INCLUDE} --redisapi_out=${BUILTIN}:${REDISAPIDIR} $(PROTOS)
 	protoc ${INCLUDE} --test_out=${BUILTIN}:${TESTDIR} $(PROTOS)
 	protoc ${INCLUDE} --controller-test_out=${BUILTIN}:${CTRLDIR} $(PROTOS)
 	protoc ${INCLUDE} --controller_out=${BUILTIN}:${CTRLDIR} version.proto

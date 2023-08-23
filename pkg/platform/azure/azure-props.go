@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 )
 
@@ -59,11 +58,6 @@ func (a *AzurePlatform) GetAzureUser() string {
 func (a *AzurePlatform) GetAzurePass() string {
 	val, _ := a.accessVars[AZURE_PASSWORD]
 	return val
-}
-
-func (a *AzurePlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetProviderSpecificProps")
-	return azureProps, nil
 }
 
 func (a *AzurePlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {

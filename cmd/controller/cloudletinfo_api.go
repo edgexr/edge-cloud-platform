@@ -25,6 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
@@ -75,6 +76,7 @@ func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo
 		return
 	}
 
+	inCopy := in // save Status to publish to Redis
 	in.Fields = edgeproto.CloudletInfoAllFields
 	in.Controller = ControllerId
 	changedToOnline := false
@@ -105,7 +107,7 @@ func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo
 
 	// publish the received info object on redis
 	// must be done after updating etcd, see AppInst UpdateFromInfo comment
-	s.all.streamObjApi.UpdateStatus(ctx, in, nil, &in.State, in.Key.StreamKey())
+	s.all.streamObjApi.UpdateStatus(ctx, inCopy, nil, &in.State, in.Key.StreamKey())
 
 	cloudlet := edgeproto.Cloudlet{}
 	if !s.all.cloudletApi.cache.Get(&in.Key, &cloudlet) {
@@ -113,7 +115,7 @@ func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo
 	}
 	if changedToOnline {
 		nodeMgr.Event(ctx, "Cloudlet online", in.Key.Organization, in.Key.GetTags(), nil, "state", in.State.String(), "version", in.ContainerVersion)
-		features, err := GetCloudletFeatures(ctx, cloudlet.PlatformType)
+		features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 		if err == nil {
 			if features.SupportsMultiTenantCluster && cloudlet.EnableDefaultServerlessCluster {
 				go s.all.clusterInstApi.createDefaultMultiTenantCluster(ctx, in.Key, features)
@@ -546,4 +548,61 @@ func getCloudletPropertyBool(info *edgeproto.CloudletInfo, prop string, def bool
 		return def
 	}
 	return val
+}
+
+var recvCloudletOnboardingInfoAcceptedStates = map[edgeproto.TrackedState]struct{}{
+	edgeproto.TrackedState_CREATING:     {},
+	edgeproto.TrackedState_CREATE_ERROR: {},
+	edgeproto.TrackedState_READY:        {},
+	edgeproto.TrackedState_DELETING:     {},
+	edgeproto.TrackedState_DELETE_ERROR: {},
+	edgeproto.TrackedState_DELETE_DONE:  {},
+}
+
+func (s *CloudletInfoApi) RecvCloudletOnboardingInfo(ctx context.Context, msg *edgeproto.CloudletOnboardingInfo) {
+	log.SpanLog(ctx, log.DebugLevelNotify, "CloudletOnboardingInfo Update", "msg", msg)
+
+	if _, ok := recvCloudletOnboardingInfoAcceptedStates[msg.OnboardingState]; !ok {
+		log.SpanLog(ctx, log.DebugLevelNotify, "CloudletOnboardingInfo unexpected state", "msg", msg)
+		return
+	}
+
+	info := edgeproto.CloudletInfo{
+		Key: msg.Key,
+	}
+	// Write state to Etcd. This is just for user visibility,
+	// as functionally the Controller waits on the redis message,
+	// not the Etcd state change.
+	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+		cloudlet := edgeproto.Cloudlet{}
+		if !s.all.cloudletApi.store.STMGet(stm, &msg.Key, &cloudlet) {
+			return nil
+		}
+		// ignore error, blank info is ok, just want to get state
+		// if it already has it set
+		s.all.cloudletInfoApi.store.STMGet(stm, &msg.Key, &info)
+
+		if cloudlet.OnboardingState == msg.OnboardingState {
+			return nil
+		}
+		cloudlet.OnboardingState = msg.OnboardingState
+		if len(msg.Errors) > 0 && len(cloudlet.Errors) == 0 {
+			// Errors may also be set by CRM.
+			cloudlet.Errors = msg.Errors
+		}
+		s.all.cloudletApi.store.STMPut(stm, &cloudlet)
+		return nil
+	})
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelNotify, "CloudletOnboardingInfo update cloudlet state failed", "msg", msg, "err", err)
+		// continue to send message
+	}
+
+	// Send to any processes waiting for a state change.
+	rediscache.SendMessage(ctx, redisClient, msg)
+
+	// This updates the progress messages in the same way that
+	// CloudletInfo does.
+	info.Status = msg.Status
+	s.all.streamObjApi.UpdateStatus(ctx, &info, nil, nil, info.Key.StreamKey())
 }

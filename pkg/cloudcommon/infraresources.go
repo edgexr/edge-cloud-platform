@@ -97,6 +97,8 @@ var (
 		ResourceMetricTotalK8sNodes:         "Total K8s Nodes Usage",
 		ResourceMetricNetworkLBs:            "Network Load Balancer Usage",
 	}
+
+	CommonResourceQuotaProps = GetCommonResourceQuotaProps()
 )
 
 // GetClusterInstVMRequirements uses the nodeFlavor and masterNodeFlavor if it cannot find a platform flavor
@@ -240,10 +242,30 @@ func CloudletResourceUsageAlerts(ctx context.Context, key *edgeproto.CloudletKey
 	return alerts
 }
 
-func ValidateCloudletResourceQuotas(ctx context.Context, clSpecificProps *edgeproto.CloudletResourceQuotaProps, curRes map[string]edgeproto.InfraResource, resourceQuotas []edgeproto.ResourceQuota) error {
+// GetCommonResourceQuotaProps returns the common resource quota
+// properties. This is for convenience, it is not required that
+// every platform support these quotas.
+func GetCommonResourceQuotaProps(additionalResources ...string) []edgeproto.InfraResource {
+	props := []edgeproto.InfraResource{}
+	for res, _ := range CommonCloudletResources {
+		props = append(props, edgeproto.InfraResource{
+			Name:        res,
+			Description: ResourceQuotaDesc[res],
+		})
+	}
+	for _, res := range additionalResources {
+		props = append(props, edgeproto.InfraResource{
+			Name:        res,
+			Description: ResourceQuotaDesc[res],
+		})
+	}
+	return props
+}
+
+func ValidateCloudletResourceQuotas(ctx context.Context, quotaProps []edgeproto.InfraResource, curRes map[string]edgeproto.InfraResource, resourceQuotas []edgeproto.ResourceQuota) error {
 	resPropsMap := make(map[string]struct{})
 	resPropsNames := []string{}
-	for _, prop := range clSpecificProps.Properties {
+	for _, prop := range quotaProps {
 		resPropsMap[prop.Name] = struct{}{}
 		resPropsNames = append(resPropsNames, prop.Name)
 	}

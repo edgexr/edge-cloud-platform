@@ -116,12 +116,7 @@ func TestAppInstApi(t *testing.T) {
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
-	responder := &DummyInfoResponder{
-		AppInstCache:        &apis.appInstApi.cache,
-		ClusterInstCache:    &apis.clusterInstApi.cache,
-		RecvAppInstInfo:     apis.appInstInfoApi,
-		RecvClusterInstInfo: apis.clusterInstInfoApi,
-	}
+	responder := DefaultDummyInfoResponder(apis)
 	responder.InitDummyInfoResponder()
 
 	reduceInfoTimeouts(t, ctx, apis)
@@ -136,6 +131,7 @@ func TestAppInstApi(t *testing.T) {
 	}
 
 	// create supporting data
+	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
@@ -451,17 +447,13 @@ func TestAutoClusterInst(t *testing.T) {
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
-	dummyResponder := &DummyInfoResponder{
-		AppInstCache:        &apis.appInstApi.cache,
-		ClusterInstCache:    &apis.clusterInstApi.cache,
-		RecvAppInstInfo:     apis.appInstInfoApi,
-		RecvClusterInstInfo: apis.clusterInstInfoApi,
-	}
+	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
 
 	reduceInfoTimeouts(t, ctx, apis)
 
 	// create supporting data
+	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())

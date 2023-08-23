@@ -49,6 +49,10 @@ func (s *testSupportData) put(t *testing.T, ctx context.Context, all *AllApis) {
 		_, err := all.gpuDriverApi.store.Put(ctx, &obj, all.gpuDriverApi.sync.syncWait)
 		require.Nil(t, err)
 	}
+	for _, obj := range s.PlatformFeatures {
+		_, err := all.platformFeaturesApi.store.Put(ctx, &obj, all.platformFeaturesApi.sync.syncWait)
+		require.Nil(t, err)
+	}
 	for _, obj := range s.Cloudlets {
 		_, err := all.cloudletApi.store.Put(ctx, &obj, all.cloudletApi.sync.syncWait)
 		require.Nil(t, err)
@@ -180,6 +184,10 @@ func (s *testSupportData) delete(t *testing.T, ctx context.Context, all *AllApis
 		_, err := all.cloudletApi.store.Delete(ctx, &obj, all.cloudletApi.sync.syncWait)
 		require.Nil(t, err)
 	}
+	for _, obj := range s.PlatformFeatures {
+		_, err := all.platformFeaturesApi.store.Delete(ctx, &obj, all.platformFeaturesApi.sync.syncWait)
+		require.Nil(t, err)
+	}
 	for _, obj := range s.GpuDrivers {
 		_, err := all.gpuDriverApi.store.Delete(ctx, &obj, all.gpuDriverApi.sync.syncWait)
 		require.Nil(t, err)
@@ -243,6 +251,13 @@ func (s *testSupportData) getOneGPUDriver() *edgeproto.GPUDriver {
 		return nil
 	}
 	return &s.GpuDrivers[0]
+}
+
+func (s *testSupportData) getOnePlatformFeatures() *edgeproto.PlatformFeatures {
+	if len(s.PlatformFeatures) == 0 {
+		return nil
+	}
+	return &s.PlatformFeatures[0]
 }
 
 func (s *testSupportData) getOneCloudlet() *edgeproto.Cloudlet {

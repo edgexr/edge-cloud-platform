@@ -1313,9 +1313,9 @@ var ShowMethodNames = map[string]struct{}{
 	"ShowTrustPolicy":               struct{}{},
 	"ShowApp":                       struct{}{},
 	"ShowCloudletsForAppDeployment": struct{}{},
+	"ShowPlatformFeatures":          struct{}{},
 	"ShowGPUDriver":                 struct{}{},
 	"ShowCloudlet":                  struct{}{},
-	"ShowPlatformsFeatures":         struct{}{},
 	"ShowCloudletInfo":              struct{}{},
 	"ShowCloudletMetrics":           struct{}{},
 	"ShowCloudletPool":              struct{}{},
@@ -1434,7 +1434,7 @@ var AllKeyTagsMap = map[string]struct{}{
 // References generated from the refers_to and tracks_refs_by protogen options
 func GetReferencesMap() map[string][]string {
 	refs := make(map[string][]string)
-	refs["AllData"] = []string{"AlertPolicy", "App", "AutoProvPolicy", "AutoScalePolicy", "Cloudlet", "CloudletPool", "ClusterInst", "Flavor", "GPUDriver", "Network", "ResTagTable", "TrustPolicy", "VMPool"}
+	refs["AllData"] = []string{"AlertPolicy", "App", "AutoProvPolicy", "AutoScalePolicy", "Cloudlet", "CloudletPool", "ClusterInst", "Flavor", "GPUDriver", "Network", "PlatformFeatures", "ResTagTable", "TrustPolicy", "VMPool"}
 	refs["App"] = []string{"AlertPolicy", "AutoProvPolicy", "Flavor"}
 	refs["AppAlertPolicy"] = []string{"AlertPolicy", "App"}
 	refs["AppAutoProvPolicy"] = []string{"App", "AutoProvPolicy"}
@@ -1448,7 +1448,7 @@ func GetReferencesMap() map[string][]string {
 	refs["AppInstRefs"] = []string{"AppInst"}
 	refs["AutoProvPolicy"] = []string{"Cloudlet"}
 	refs["AutoProvPolicyCloudlet"] = []string{"AutoProvPolicy", "Cloudlet"}
-	refs["Cloudlet"] = []string{"Flavor", "GPUDriver", "ResTagTable", "TrustPolicy", "VMPool"}
+	refs["Cloudlet"] = []string{"Flavor", "GPUDriver", "PlatformFeatures", "ResTagTable", "TrustPolicy", "VMPool"}
 	refs["CloudletPool"] = []string{"Cloudlet"}
 	refs["CloudletPoolMember"] = []string{"Cloudlet", "CloudletPool"}
 	refs["CloudletRefs"] = []string{"AppInst", "ClusterInst"}

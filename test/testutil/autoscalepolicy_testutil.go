@@ -133,7 +133,8 @@ func (x *AutoScalePolicyCommonApi) CreateAutoScalePolicy(ctx context.Context, in
 	if x.internal_api != nil {
 		return x.internal_api.CreateAutoScalePolicy(ctx, copy)
 	} else {
-		return x.client_api.CreateAutoScalePolicy(ctx, copy)
+		res, err := x.client_api.CreateAutoScalePolicy(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -143,7 +144,8 @@ func (x *AutoScalePolicyCommonApi) DeleteAutoScalePolicy(ctx context.Context, in
 	if x.internal_api != nil {
 		return x.internal_api.DeleteAutoScalePolicy(ctx, copy)
 	} else {
-		return x.client_api.DeleteAutoScalePolicy(ctx, copy)
+		res, err := x.client_api.DeleteAutoScalePolicy(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -153,7 +155,8 @@ func (x *AutoScalePolicyCommonApi) UpdateAutoScalePolicy(ctx context.Context, in
 	if x.internal_api != nil {
 		return x.internal_api.UpdateAutoScalePolicy(ctx, copy)
 	} else {
-		return x.client_api.UpdateAutoScalePolicy(ctx, copy)
+		res, err := x.client_api.UpdateAutoScalePolicy(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -164,7 +167,7 @@ func (x *AutoScalePolicyCommonApi) ShowAutoScalePolicy(ctx context.Context, filt
 	} else {
 		stream, err := x.client_api.ShowAutoScalePolicy(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

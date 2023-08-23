@@ -42,9 +42,7 @@ import (
 
 // Builder for built-in platforms.
 
-type PlatformBuilder func() platform.Platform
-
-var builders = []PlatformBuilder{
+var builders = []platform.PlatformBuilder{
 	dind.NewPlatform,
 	fake.NewPlatform,
 	fake.NewPlatformSingleCluster,
@@ -68,11 +66,11 @@ var builders = []PlatformBuilder{
 }
 
 var platformsFeatures map[string]edgeproto.PlatformFeatures
-var platformsBuilders map[string]PlatformBuilder
+var platformsBuilders map[string]platform.PlatformBuilder
 
 func init() {
 	platformsFeatures = make(map[string]edgeproto.PlatformFeatures)
-	platformsBuilders = make(map[string]PlatformBuilder)
+	platformsBuilders = make(map[string]platform.PlatformBuilder)
 
 	for _, builder := range builders {
 		plat := builder()
@@ -90,6 +88,10 @@ func init() {
 		// properties of the platform.
 		platformsFeatures[platformType] = *features
 	}
+}
+
+func GetPlatformsBuilders() map[string]platform.PlatformBuilder {
+	return platformsBuilders
 }
 
 // GetAllPlatformsFeatures returns the features for all

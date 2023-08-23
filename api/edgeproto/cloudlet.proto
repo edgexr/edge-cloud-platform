@@ -137,6 +137,8 @@ message FederationConfig {
 message PlatformFeatures {
   // Platform type
   string platform_type = 1;
+  // Node type that supports this platform
+  string node_type = 25;
   // Platform supports multi tenant kubernetes clusters
   bool supports_multi_tenant_cluster = 2;
   // Platform supports shared volumes
@@ -179,6 +181,37 @@ message PlatformFeatures {
   bool is_edgebox = 21;
   // Platform access vars information
   map<string, PropertyInfo> access_vars = 22;
+  // Platform properties
+  map<string, PropertyInfo> properties = 23;
+  // Platform resource quota properties
+  repeated InfraResource resource_quota_properties = 24 [(gogoproto.nullable) = false];
+  // Preparing to be deleted
+  bool delete_prepare = 99 [(protogen.backend) = true]; 
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.generate_matches) = true;
+  option (protogen.notify_cache) = true;
+  option (protogen.uses_org) = "none";
+  option (protogen.string_key_field) = "PlatformType";
+}
+
+service PlatformFeaturesApi {
+  // Show Platform Features. Shows supported cloudlet platform types and their features.
+  rpc ShowPlatformFeatures(PlatformFeatures) returns (stream PlatformFeatures) {
+    option (google.api.http) = {
+      post: "/show/platformfeatures"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,skipenforce";
+  }
+  // Delete Platform Features. Removes a no-longer supported platform type. Admin only.
+  rpc DeletePlatformFeatures(PlatformFeatures) returns (Result) {
+    option (google.api.http) = {
+      post: "/delete/platformfeatures"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,";
+  }
 }
 
 // Optional resource input consists of a resource specifier and clouldkey name
@@ -452,14 +485,16 @@ message Cloudlet {
   repeated string errors = 10 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   // StatusInfo (11) (Deprecated) status is used to reflect progress of creation or other events
 
-  // Current state of the cloudlet
+  // Onboarding state of the cloudlet
+  TrackedState onboarding_state = 60 [(protogen.backend) = true];
+  // Current state of the crm
   TrackedState state = 12 [(protogen.backend) = true];
   // Override actions to CRM
   CRMOverride crm_override = 13 [(protogen.backend) = true];
   // Deploy cloudlet services locally
   bool deployment_local = 14 [(protogen.backend) = true];
   // Platform type
-  string platform_type = 15;
+  string platform_type = 15 [(protogen.refers_to) = "PlatformFeatures"];
   // Address for the CRM notify listener to run on
   string notify_srv_addr = 16 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   // Min system resource requirements for platform
@@ -692,14 +727,6 @@ service CloudletApi {
     };
     option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Organization";
   }
-  // Shows all supported cloudlet platforms and their features.
-  rpc ShowPlatformsFeatures(PlatformFeatures) returns (stream PlatformFeatures) {
-    option (google.api.http) = {
-      post: "/show/platformsfeatures"
-      body: "*"
-    };
-    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,skipenforce";
-  }
   // Get Cloudlet Properties. Shows all the infra properties used to setup cloudlet
   rpc GetCloudletProps(CloudletProps) returns (CloudletProps) {
     option (google.api.http) = {
@@ -820,9 +847,6 @@ service CloudletApi {
     };
     option (protogen.mc2_api) = "ResourceCloudletAnalytics,ActionView,Organization";
   }
-
-  // This is used internally to forward requests to other Controllers
-  rpc PlatformDeleteCloudlet(Cloudlet) returns (stream Result) {}
 }
 
 // Flavor details from the Cloudlet
@@ -855,6 +879,19 @@ message OSImage {
   string properties = 3;
   // format qcow2, img, etc
   string disk_format = 4;
+}
+
+// CloudletOnboardingInfo messages are sent from CCRM to the Controller.
+message CloudletOnboardingInfo {
+  // Unique identifier key
+  CloudletKey key = 1 [(gogoproto.nullable) = false];
+  // Onboarding state of the cloudlet
+  TrackedState onboarding_state = 2;
+  // status is used to reflect progress of creation or other events
+  StatusInfo status = 3 [(gogoproto.nullable) = false];
+  // Any errors encountered while making changes to the Cloudlet
+  repeated string errors = 4;
+  option (protogen.notify_message) = true;
 }
 
 // CloudletInfo provides information from the Cloudlet Resource Manager about the state of the Cloudlet.
@@ -974,5 +1011,20 @@ enum ReportSchedule {
   // (Deprecated) Every 30 Days
   // Every Month
   EveryMonth = 3;
-  option (protogen.common_prefix) = ""; // avoid dropping "Every"
+  // avoid dropping "Every"
+  option (protogen.common_prefix) = "";
+}
+
+message StreamStatus {
+  // Cache update type
+  int32 cache_update_type = 3;
+  // Status value
+  string status = 4;
+  option (protogen.notify_message) = true;
+}
+
+service CCRMAPI {
+  rpc GetCloudletManifest(CloudletKey) returns (CloudletManifest) {}
+  rpc GetRestrictedCloudletStatus(CloudletKey) returns (stream StreamStatus) {}
+  option (protogen.redis_api) = true;
 }

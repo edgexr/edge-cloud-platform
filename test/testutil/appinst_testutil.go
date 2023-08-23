@@ -173,7 +173,7 @@ func (x *AppInstCommonApi) CreateAppInst(ctx context.Context, in *edgeproto.AppI
 	} else {
 		stream, err := x.client_api.CreateAppInst(ctx, copy)
 		err = AppInstReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -186,7 +186,7 @@ func (x *AppInstCommonApi) DeleteAppInst(ctx context.Context, in *edgeproto.AppI
 	} else {
 		stream, err := x.client_api.DeleteAppInst(ctx, copy)
 		err = AppInstReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -199,7 +199,7 @@ func (x *AppInstCommonApi) UpdateAppInst(ctx context.Context, in *edgeproto.AppI
 	} else {
 		stream, err := x.client_api.UpdateAppInst(ctx, copy)
 		err = AppInstReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -210,7 +210,7 @@ func (x *AppInstCommonApi) ShowAppInst(ctx context.Context, filter *edgeproto.Ap
 	} else {
 		stream, err := x.client_api.ShowAppInst(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 
@@ -508,7 +508,7 @@ func (x *AppInstInfoCommonApi) ShowAppInstInfo(ctx context.Context, filter *edge
 	} else {
 		stream, err := x.client_api.ShowAppInstInfo(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 
