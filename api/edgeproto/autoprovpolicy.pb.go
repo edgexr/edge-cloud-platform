@@ -2439,6 +2439,10 @@ func (m *AutoProvCounts) DeepCopyIn(src *AutoProvCounts) {
 	}
 }
 
+func (m *AutoProvCounts) MessageTypeKey() string {
+	return "msg/type/AutoProvCounts"
+}
+
 // Helper method to check that enums have valid values
 func (m *AutoProvCounts) ValidateEnums() error {
 	for _, e := range m.Counts {

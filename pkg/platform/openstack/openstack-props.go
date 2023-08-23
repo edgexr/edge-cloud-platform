@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 )
@@ -90,6 +91,11 @@ var OpenstackProps = map[string]*edgeproto.PropertyInfo{
 	},
 }
 
+var QuotaProps = cloudcommon.GetCommonResourceQuotaProps(
+	cloudcommon.ResourceInstances,
+	cloudcommon.ResourceFloatingIPs,
+)
+
 func (o *OpenstackPlatform) GetOpenRCVars(ctx context.Context, accessApi platform.AccessApi) error {
 	vars, err := accessApi.GetCloudletAccessVars(ctx)
 	if err != nil {
@@ -110,10 +116,6 @@ func (o *OpenstackPlatform) GetOpenRCVars(ctx context.Context, accessApi platfor
 		}
 	}
 	return nil
-}
-
-func (o *OpenstackPlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
-	return OpenstackProps, nil
 }
 
 func (o *OpenstackPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {

@@ -133,7 +133,8 @@ func (x *ResTagTableCommonApi) CreateResTagTable(ctx context.Context, in *edgepr
 	if x.internal_api != nil {
 		return x.internal_api.CreateResTagTable(ctx, copy)
 	} else {
-		return x.client_api.CreateResTagTable(ctx, copy)
+		res, err := x.client_api.CreateResTagTable(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -143,7 +144,8 @@ func (x *ResTagTableCommonApi) DeleteResTagTable(ctx context.Context, in *edgepr
 	if x.internal_api != nil {
 		return x.internal_api.DeleteResTagTable(ctx, copy)
 	} else {
-		return x.client_api.DeleteResTagTable(ctx, copy)
+		res, err := x.client_api.DeleteResTagTable(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -154,7 +156,7 @@ func (x *ResTagTableCommonApi) ShowResTagTable(ctx context.Context, filter *edge
 	} else {
 		stream, err := x.client_api.ShowResTagTable(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

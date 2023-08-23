@@ -134,7 +134,8 @@ func (x *VMPoolCommonApi) CreateVMPool(ctx context.Context, in *edgeproto.VMPool
 	if x.internal_api != nil {
 		return x.internal_api.CreateVMPool(ctx, copy)
 	} else {
-		return x.client_api.CreateVMPool(ctx, copy)
+		res, err := x.client_api.CreateVMPool(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -144,7 +145,8 @@ func (x *VMPoolCommonApi) DeleteVMPool(ctx context.Context, in *edgeproto.VMPool
 	if x.internal_api != nil {
 		return x.internal_api.DeleteVMPool(ctx, copy)
 	} else {
-		return x.client_api.DeleteVMPool(ctx, copy)
+		res, err := x.client_api.DeleteVMPool(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -154,7 +156,8 @@ func (x *VMPoolCommonApi) UpdateVMPool(ctx context.Context, in *edgeproto.VMPool
 	if x.internal_api != nil {
 		return x.internal_api.UpdateVMPool(ctx, copy)
 	} else {
-		return x.client_api.UpdateVMPool(ctx, copy)
+		res, err := x.client_api.UpdateVMPool(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -165,7 +168,7 @@ func (x *VMPoolCommonApi) ShowVMPool(ctx context.Context, filter *edgeproto.VMPo
 	} else {
 		stream, err := x.client_api.ShowVMPool(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

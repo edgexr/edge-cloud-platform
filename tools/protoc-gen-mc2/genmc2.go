@@ -189,6 +189,9 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	for ii, service := range file.FileDescriptorProto.Service {
 		serviceProps := ServiceProps{}
 		serviceProps.Init(ii)
+		if gensupport.GetRedisApi(service) {
+			continue
+		}
 		g.generateService(file, service, &serviceProps)
 		if g.genctl {
 			g.generateCtlGroup(service, methodGroups)

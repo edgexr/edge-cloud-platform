@@ -24,6 +24,7 @@ regiondata:
         longitude: -91
       ipsupport: Dynamic
       numdynamicips: 254
+      onboardingstate: Ready
       state: Ready
       platformtype: fakeinfra
       flavor:

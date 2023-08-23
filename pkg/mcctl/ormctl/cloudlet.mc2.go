@@ -23,6 +23,47 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+var ShowPlatformFeaturesCmd = &ApiCommand{
+	Name:         "ShowPlatformFeatures",
+	Use:          "show",
+	Short:        "Show Platform Features. Shows supported cloudlet platform types and their features.",
+	RequiredArgs: "region",
+	OptionalArgs: strings.Join(append(PlatformFeaturesRequiredArgs, PlatformFeaturesOptionalArgs...), " "),
+	AliasArgs:    strings.Join(PlatformFeaturesAliasArgs, " "),
+	SpecialArgs:  &PlatformFeaturesSpecialArgs,
+	Comments:     addRegionComment(PlatformFeaturesComments),
+	ReqData:      &ormapi.RegionPlatformFeatures{},
+	ReplyData:    &edgeproto.PlatformFeatures{},
+	Path:         "/auth/ctrl/ShowPlatformFeatures",
+	StreamOut:    true,
+	ProtobufApi:  true,
+}
+
+var DeletePlatformFeaturesCmd = &ApiCommand{
+	Name:         "DeletePlatformFeatures",
+	Use:          "delete",
+	Short:        "Delete Platform Features. Removes a no-longer supported platform type. Admin only.",
+	RequiredArgs: "region " + strings.Join(PlatformFeaturesRequiredArgs, " "),
+	OptionalArgs: strings.Join(PlatformFeaturesOptionalArgs, " "),
+	AliasArgs:    strings.Join(PlatformFeaturesAliasArgs, " "),
+	SpecialArgs:  &PlatformFeaturesSpecialArgs,
+	Comments:     addRegionComment(PlatformFeaturesComments),
+	ReqData:      &ormapi.RegionPlatformFeatures{},
+	ReplyData:    &edgeproto.Result{},
+	Path:         "/auth/ctrl/DeletePlatformFeatures",
+	ProtobufApi:  true,
+}
+var PlatformFeaturesApiCmds = []*ApiCommand{
+	ShowPlatformFeaturesCmd,
+	DeletePlatformFeaturesCmd,
+}
+
+const PlatformFeaturesGroup = "PlatformFeatures"
+
+func init() {
+	AllApis.AddGroup(PlatformFeaturesGroup, "Manage PlatformFeatures", PlatformFeaturesApiCmds)
+}
+
 var CreateGPUDriverCmd = &ApiCommand{
 	Name:                 "CreateGPUDriver",
 	Use:                  "create",
@@ -307,22 +348,6 @@ var GetCloudletManifestCmd = &ApiCommand{
 	ProtobufApi:  true,
 }
 
-var ShowPlatformsFeaturesCmd = &ApiCommand{
-	Name:         "ShowPlatformsFeatures",
-	Use:          "showplatformsfeatures",
-	Short:        "Shows all supported cloudlet platforms and their features.",
-	RequiredArgs: "region",
-	OptionalArgs: strings.Join(append(PlatformFeaturesRequiredArgs, PlatformFeaturesOptionalArgs...), " "),
-	AliasArgs:    strings.Join(PlatformFeaturesAliasArgs, " "),
-	SpecialArgs:  &PlatformFeaturesSpecialArgs,
-	Comments:     addRegionComment(PlatformFeaturesComments),
-	ReqData:      &ormapi.RegionPlatformFeatures{},
-	ReplyData:    &edgeproto.PlatformFeatures{},
-	Path:         "/auth/ctrl/ShowPlatformsFeatures",
-	StreamOut:    true,
-	ProtobufApi:  true,
-}
-
 var GetCloudletPropsCmd = &ApiCommand{
 	Name:         "GetCloudletProps",
 	Use:          "getprops",
@@ -530,7 +555,6 @@ var CloudletApiCmds = []*ApiCommand{
 	UpdateCloudletCmd,
 	ShowCloudletCmd,
 	GetCloudletManifestCmd,
-	ShowPlatformsFeaturesCmd,
 	GetCloudletPropsCmd,
 	GetCloudletResourceQuotaPropsCmd,
 	GetCloudletResourceUsageCmd,
@@ -570,6 +594,7 @@ var CreateCloudletOptionalArgs = []string{
 	"timelimits.createappinsttimeout",
 	"timelimits.updateappinsttimeout",
 	"timelimits.deleteappinsttimeout",
+	"onboardingstate",
 	"crmoverride",
 	"deploymentlocal",
 	"platformtype",
@@ -629,6 +654,7 @@ var DeleteCloudletOptionalArgs = []string{
 	"timelimits.createappinsttimeout",
 	"timelimits.updateappinsttimeout",
 	"timelimits.deleteappinsttimeout",
+	"onboardingstate",
 	"crmoverride",
 	"deploymentlocal",
 	"platformtype",
@@ -688,6 +714,7 @@ var UpdateCloudletOptionalArgs = []string{
 	"timelimits.createappinsttimeout",
 	"timelimits.updateappinsttimeout",
 	"timelimits.deleteappinsttimeout",
+	"onboardingstate",
 	"crmoverride",
 	"notifysrvaddr",
 	"envvar",
@@ -736,6 +763,7 @@ var ShowCloudletOptionalArgs = []string{
 	"timelimits.createappinsttimeout",
 	"timelimits.updateappinsttimeout",
 	"timelimits.deleteappinsttimeout",
+	"onboardingstate",
 	"crmoverride",
 	"deploymentlocal",
 	"platformtype",
@@ -867,6 +895,7 @@ func init() {
 var PlatformFeaturesRequiredArgs = []string{}
 var PlatformFeaturesOptionalArgs = []string{
 	"platformtype",
+	"nodetype",
 	"supportsmultitenantcluster",
 	"supportssharedvolume",
 	"supportstrustpolicy",
@@ -887,9 +916,18 @@ var PlatformFeaturesOptionalArgs = []string{
 	"isprebuiltkubernetescluster",
 	"noclustersupport",
 	"isedgebox",
+	"resourcequotaproperties:#.name",
+	"resourcequotaproperties:#.value",
+	"resourcequotaproperties:#.inframaxvalue",
+	"resourcequotaproperties:#.quotamaxvalue",
+	"resourcequotaproperties:#.description",
+	"resourcequotaproperties:#.units",
+	"resourcequotaproperties:#.alertthreshold",
+	"deleteprepare",
 }
 var PlatformFeaturesAliasArgs = []string{
 	"platformtype=platformfeatures.platformtype",
+	"nodetype=platformfeatures.nodetype",
 	"supportsmultitenantcluster=platformfeatures.supportsmultitenantcluster",
 	"supportssharedvolume=platformfeatures.supportssharedvolume",
 	"supportstrustpolicy=platformfeatures.supportstrustpolicy",
@@ -910,9 +948,18 @@ var PlatformFeaturesAliasArgs = []string{
 	"isprebuiltkubernetescluster=platformfeatures.isprebuiltkubernetescluster",
 	"noclustersupport=platformfeatures.noclustersupport",
 	"isedgebox=platformfeatures.isedgebox",
+	"resourcequotaproperties:#.name=platformfeatures.resourcequotaproperties:#.name",
+	"resourcequotaproperties:#.value=platformfeatures.resourcequotaproperties:#.value",
+	"resourcequotaproperties:#.inframaxvalue=platformfeatures.resourcequotaproperties:#.inframaxvalue",
+	"resourcequotaproperties:#.quotamaxvalue=platformfeatures.resourcequotaproperties:#.quotamaxvalue",
+	"resourcequotaproperties:#.description=platformfeatures.resourcequotaproperties:#.description",
+	"resourcequotaproperties:#.units=platformfeatures.resourcequotaproperties:#.units",
+	"resourcequotaproperties:#.alertthreshold=platformfeatures.resourcequotaproperties:#.alertthreshold",
+	"deleteprepare=platformfeatures.deleteprepare",
 }
 var PlatformFeaturesComments = map[string]string{
 	"platformtype":                             "Platform type",
+	"nodetype":                                 "Node type that supports this platform",
 	"supportsmultitenantcluster":               "Platform supports multi tenant kubernetes clusters",
 	"supportssharedvolume":                     "Platform supports shared volumes",
 	"supportstrustpolicy":                      "Platform supports trust policies",
@@ -933,6 +980,14 @@ var PlatformFeaturesComments = map[string]string{
 	"isprebuiltkubernetescluster":              "Kubernetes cluster is created externally and already exists",
 	"noclustersupport":                         "No cluster support. Some platforms, like Federation, do not support clusters.",
 	"isedgebox":                                "Edgebox platforms are for user-hosted cloudlets, and must use public images and do not get DNS mapping, as they do not get access to sensitive data.",
+	"resourcequotaproperties:#.name":           "Resource name",
+	"resourcequotaproperties:#.value":          "Resource value",
+	"resourcequotaproperties:#.inframaxvalue":  "Resource infra max value",
+	"resourcequotaproperties:#.quotamaxvalue":  "Resource quota max value",
+	"resourcequotaproperties:#.description":    "Resource description",
+	"resourcequotaproperties:#.units":          "Resource units",
+	"resourcequotaproperties:#.alertthreshold": "Generate alert when more than threshold percentage of resource is used",
+	"deleteprepare":                            "Preparing to be deleted",
 }
 var PlatformFeaturesSpecialArgs = map[string]string{}
 var CloudletResMapRequiredArgs = []string{
@@ -1098,6 +1153,7 @@ var CloudletOptionalArgs = []string{
 	"timelimits.createappinsttimeout",
 	"timelimits.updateappinsttimeout",
 	"timelimits.deleteappinsttimeout",
+	"onboardingstate",
 	"crmoverride",
 	"deploymentlocal",
 	"platformtype",
@@ -1164,6 +1220,7 @@ var CloudletAliasArgs = []string{
 	"timelimits.updateappinsttimeout=cloudlet.timelimits.updateappinsttimeout",
 	"timelimits.deleteappinsttimeout=cloudlet.timelimits.deleteappinsttimeout",
 	"errors=cloudlet.errors",
+	"onboardingstate=cloudlet.onboardingstate",
 	"state=cloudlet.state",
 	"crmoverride=cloudlet.crmoverride",
 	"deploymentlocal=cloudlet.deploymentlocal",
@@ -1272,7 +1329,8 @@ var CloudletComments = map[string]string{
 	"timelimits.updateappinsttimeout":        "Override default max time to update an app instance (duration)",
 	"timelimits.deleteappinsttimeout":        "Override default max time to delete an app instance (duration)",
 	"errors":                                 "Any errors trying to create, update, or delete the Cloudlet., specify errors:empty=true to clear",
-	"state":                                  "Current state of the cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
+	"onboardingstate":                        "Onboarding state of the cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
+	"state":                                  "Current state of the crm, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"crmoverride":                            "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
 	"deploymentlocal":                        "Deploy cloudlet services locally",
 	"platformtype":                           "Platform type",

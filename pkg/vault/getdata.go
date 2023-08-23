@@ -48,6 +48,9 @@ func GetData(config *Config, path string, version int, data interface{}) error {
 	if config == nil {
 		return fmt.Errorf("no vault Config specified")
 	}
+	if config.Addr == UnitTestIgnoreVaultAddr {
+		return nil
+	}
 	client, err := config.Login()
 	if err != nil {
 		return err
@@ -98,6 +101,9 @@ func DeleteData(config *Config, path string) error {
 	if config == nil {
 		return fmt.Errorf("no vault Config specified")
 	}
+	if config.Addr == UnitTestIgnoreVaultAddr {
+		return nil
+	}
 	client, err := config.Login()
 	if err != nil {
 		return err
@@ -120,6 +126,9 @@ func PutDataCAS(config *Config, path string, data interface{}, checkAndSet int) 
 	client, err := config.Login()
 	if err != nil {
 		return err
+	}
+	if config.Addr == UnitTestIgnoreVaultAddr {
+		return nil
 	}
 	vdata := map[string]interface{}{
 		"data": data,
@@ -155,6 +164,9 @@ func IsCheckAndSetError(err error) bool {
 func ListData(config *Config, mountPath, path string, recurse bool) ([]string, error) {
 	if config == nil {
 		return nil, fmt.Errorf("no vault Config specified")
+	}
+	if config.Addr == UnitTestIgnoreVaultAddr {
+		return []string{}, nil
 	}
 	client, err := config.Login()
 	if err != nil {

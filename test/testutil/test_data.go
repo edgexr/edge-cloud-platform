@@ -345,6 +345,36 @@ func OperatorCodeData() []edgeproto.OperatorCode {
 	}}
 }
 
+func PlatformFeaturesData() []edgeproto.PlatformFeatures {
+	// Note: cannot import platforms due to import cycle
+	features := []edgeproto.PlatformFeatures{{
+		PlatformType: "fake",
+	}, {
+		PlatformType: "fakeedgebox",
+		IsEdgebox:    true,
+	}, {
+		PlatformType: "fakevmpool",
+		IsVmPool:     true,
+	}, {
+		PlatformType:               "fakesinglecluster",
+		IsSingleKubernetesCluster:  true,
+		SupportsAppInstDedicatedIp: true,
+	}}
+	// common to all fake platforms
+	for ii := range features {
+		features[ii].NodeType = "ccrm"
+		features[ii].SupportsMultiTenantCluster = true
+		features[ii].SupportsSharedVolume = true
+		features[ii].SupportsTrustPolicy = true
+		features[ii].CloudletServicesLocal = true
+		features[ii].IsFake = true
+		features[ii].SupportsAdditionalNetworks = true
+		features[ii].SupportsPlatformHighAvailabilityOnDocker = true
+		features[ii].SupportsPlatformHighAvailabilityOnK8S = true
+	}
+	return features
+}
+
 func CloudletData() []edgeproto.Cloudlet {
 	flavorData := FlavorData()
 	operatorData := OperatorData()

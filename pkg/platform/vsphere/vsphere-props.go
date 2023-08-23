@@ -167,10 +167,6 @@ func (v *VSpherePlatform) InitApiAccessProperties(ctx context.Context, accessApi
 	return nil
 }
 
-func (v *VSpherePlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
-	return VSphereProps, nil
-}
-
 // GetVSphereAddress returns host and port for the vcenter server
 func (v *VSpherePlatform) GetVCenterAddress() (string, string, error) {
 	vcaddr := v.vcenterVars[VCENTER_ADDR]

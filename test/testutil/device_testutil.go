@@ -134,7 +134,7 @@ func (x *DeviceCommonApi) ShowDevice(ctx context.Context, filter *edgeproto.Devi
 	} else {
 		stream, err := x.client_api.ShowDevice(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

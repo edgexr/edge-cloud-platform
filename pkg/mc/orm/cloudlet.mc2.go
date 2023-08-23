@@ -27,6 +27,77 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+func ShowPlatformFeatures(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	rc := &ormutil.RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.Username = claims.Username
+
+	in := ormapi.RegionPlatformFeatures{}
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
+	}
+	rc.Region = in.Region
+	rc.Database = database
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+
+	obj := &in.PlatformFeatures
+
+	cb := func(res *edgeproto.PlatformFeatures) error {
+		payload := ormapi.StreamPayload{}
+		payload.Data = res
+		return WriteStream(c, &payload)
+	}
+	err = ctrlclient.ShowPlatformFeaturesStream(ctx, rc, obj, connCache, cb)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeletePlatformFeatures(c echo.Context) error {
+	ctx := ormutil.GetContext(c)
+	rc := &ormutil.RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.Username = claims.Username
+
+	in := ormapi.RegionPlatformFeatures{}
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
+	}
+	rc.Region = in.Region
+	rc.Database = database
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+
+	obj := &in.PlatformFeatures
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, "",
+			ResourceCloudlets, ActionView); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlclient.DeletePlatformFeaturesObj(ctx, rc, obj, connCache)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			err = fmt.Errorf("%s", st.Message())
+		}
+		return err
+	}
+	return ormutil.SetReply(c, resp)
+}
+
 func CreateGPUDriver(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
@@ -603,39 +674,6 @@ func GetCloudletManifest(c echo.Context) error {
 		return err
 	}
 	return ormutil.SetReply(c, resp)
-}
-
-func ShowPlatformsFeatures(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
-	rc := &ormutil.RegionContext{}
-	claims, err := getClaims(c)
-	if err != nil {
-		return err
-	}
-	rc.Username = claims.Username
-
-	in := ormapi.RegionPlatformFeatures{}
-	_, err = ReadConn(c, &in)
-	if err != nil {
-		return err
-	}
-	rc.Region = in.Region
-	rc.Database = database
-	span := log.SpanFromContext(ctx)
-	span.SetTag("region", in.Region)
-
-	obj := &in.PlatformFeatures
-
-	cb := func(res *edgeproto.PlatformFeatures) error {
-		payload := ormapi.StreamPayload{}
-		payload.Data = res
-		return WriteStream(c, &payload)
-	}
-	err = ctrlclient.ShowPlatformsFeaturesStream(ctx, rc, obj, connCache, cb)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func GetCloudletProps(c echo.Context) error {

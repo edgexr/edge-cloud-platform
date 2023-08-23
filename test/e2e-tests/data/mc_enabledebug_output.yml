@@ -22,6 +22,14 @@ requests:
       region: locala
     output: api,notify,metrics,sampled,events
   - node:
+      type: ccrm
+      region: local
+    output: api,notify,infra,metrics,events
+  - node:
+      type: ccrm
+      region: locala
+    output: api,notify,infra,metrics,events
+  - node:
       type: cluster-svc
       region: local
     output: etcd,api,notify,infra,metrics,events

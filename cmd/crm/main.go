@@ -333,7 +333,7 @@ func main() {
 			log.SpanLog(ctx, log.DebugLevelInfo, "ActiveChanged done", "err", err)
 			if err == nil {
 				if conditionalInitRequired {
-					err = initPlatformHAConditional(ctx, &cloudlet, &myCloudletInfo, *physicalName, &pc, caches, nodeMgr.AccessApiClient, &highAvailabilityManager, updateCloudletStatus)
+					err = initPlatformHAConditional(ctx, &cloudlet, &myCloudletInfo, *physicalName, features, &pc, caches, nodeMgr.AccessApiClient, &highAvailabilityManager, updateCloudletStatus)
 				}
 			}
 		}
@@ -449,7 +449,7 @@ func waitControllerSync(ctx context.Context, cloudlet *edgeproto.Cloudlet, cloud
 }
 
 //initPlatformHAConditionalCommon does init functions for first startup, or a switchover which requires full initialization
-func initPlatformHAConditional(ctx context.Context, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, physicalName string, platformConfig *pf.PlatformConfig, caches *pf.Caches, accessClient edgeproto.CloudletAccessApiClient, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
+func initPlatformHAConditional(ctx context.Context, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, physicalName string, features *edgeproto.PlatformFeatures, platformConfig *pf.PlatformConfig, caches *pf.Caches, accessClient edgeproto.CloudletAccessApiClient, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfo, "initPlatformHAConditional")
 
 	err := platform.InitHAConditional(ctx, platformConfig, updateCallback)
@@ -473,7 +473,7 @@ func initPlatformHAConditional(ctx context.Context, cloudlet *edgeproto.Cloudlet
 			for _, resInfo := range resources.Info {
 				resMap[resInfo.Name] = resInfo
 			}
-			quotaProps, err := platform.GetCloudletResourceQuotaProps(ctx)
+			quotaProps := features.ResourceQuotaProperties
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get cloudlet specific resource quota", "cloudlet", cloudlet.Key, "err", err)
 			} else {

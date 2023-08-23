@@ -308,7 +308,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		} else {
 			patchIp = masterIP.ExternalAddr
 		}
-		features := v.VMProvider.GetFeatures()
+		features := v.GetFeatures()
 		// set up DNS
 		var rootLBIPaddr *ServerIP
 		rootLBIPaddr, err = v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", rootLBName, pc.WithCachedIp(true))

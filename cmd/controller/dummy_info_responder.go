@@ -20,8 +20,10 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 )
 
 // Set up dummy responses for info data expected from CRM.
@@ -33,6 +35,8 @@ import (
 const DummyInfoDelay = 10 * time.Millisecond
 
 type DummyInfoResponder struct {
+	CloudletCache                *edgeproto.CloudletCache
+	RecvCloudletOnboardingInfo   notify.RecvCloudletOnboardingInfoHandler
 	AppInstCache                 *edgeproto.AppInstCache
 	AppInstInfoCache             edgeproto.AppInstInfoCache
 	ClusterInstCache             *edgeproto.ClusterInstCache
@@ -53,8 +57,23 @@ type DummyInfoResponder struct {
 	pause                        sync.WaitGroup
 }
 
+func DefaultDummyInfoResponder(apis *AllApis) *DummyInfoResponder {
+	return &DummyInfoResponder{
+		CloudletCache:              apis.cloudletApi.cache,
+		AppInstCache:               &apis.appInstApi.cache,
+		ClusterInstCache:           &apis.clusterInstApi.cache,
+		RecvCloudletOnboardingInfo: apis.cloudletInfoApi,
+		RecvAppInstInfo:            apis.appInstInfoApi,
+		RecvClusterInstInfo:        apis.clusterInstInfoApi,
+	}
+}
+
 func (d *DummyInfoResponder) InitDummyInfoResponder() {
 	d.enable = true
+	// cloudlet onboarding
+	if d.CloudletCache != nil {
+		d.CloudletCache.SetNotifyCb(d.runCloudletChanged)
+	}
 	// init appinst obj
 	if d.AppInstCache != nil {
 		d.AppInstCache.SetNotifyCb(d.runAppInstChanged)
@@ -106,6 +125,26 @@ func (d *DummyInfoResponder) SetPause(enable bool) {
 	} else {
 		d.pause.Done()
 	}
+}
+
+// This mocks the CCRM response to platform-specific Create/DeleteCloudlet.
+func (d *DummyInfoResponder) runCloudletChanged(ctx context.Context, in *edgeproto.Cloudlet, modRev int64) {
+	if !d.enable {
+		return
+	}
+	var newState edgeproto.TrackedState
+	if in.OnboardingState == edgeproto.TrackedState_CREATE_REQUESTED {
+		newState = edgeproto.TrackedState_READY
+	} else if in.OnboardingState == edgeproto.TrackedState_DELETE_REQUESTED {
+		newState = edgeproto.TrackedState_DELETE_DONE
+	} else {
+		return
+	}
+	info := edgeproto.CloudletOnboardingInfo{
+		Key:             in.Key,
+		OnboardingState: newState,
+	}
+	go d.RecvCloudletOnboardingInfo.RecvCloudletOnboardingInfo(ctx, &info)
 }
 
 func (d *DummyInfoResponder) runClusterInstChanged(ctx context.Context, obj *edgeproto.ClusterInst, modRev int64) {
@@ -345,4 +384,26 @@ func (d *DummyInfoResponder) vmPoolChanged(ctx context.Context, inst *edgeproto.
 func (d *DummyInfoResponder) vmPoolDeleted(ctx context.Context, old *edgeproto.VMPool) {
 	info := edgeproto.VMPoolInfo{Key: old.Key}
 	d.VMPoolInfoCache.Delete(ctx, &info, 0)
+}
+
+func (d *DummyInfoResponder) SetupDummyCCRM(ctx context.Context) func() {
+	// ccrm apis
+	hctx, cancel := context.WithCancel(ctx)
+	server := rediscache.GetCCRMAPIServer(redisClient, node.NodeTypeCCRM, d)
+	server.Start(hctx)
+	return cancel
+}
+
+func (d *DummyInfoResponder) GetCloudletManifest(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.CloudletManifest, error) {
+	return &edgeproto.CloudletManifest{
+		Manifest: "foo",
+	}, nil
+}
+
+func (d *DummyInfoResponder) GetRestrictedCloudletStatus(ctx context.Context, in *edgeproto.CloudletKey, send func(*edgeproto.StreamStatus) error) error {
+	reply := &edgeproto.StreamStatus{
+		CacheUpdateType: int32(edgeproto.UpdateTask),
+		Status:          "Setting up cloudlet",
+	}
+	return send(reply)
 }

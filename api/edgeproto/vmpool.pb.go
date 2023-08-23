@@ -29,7 +29,6 @@ import (
 	reflect "reflect"
 	"strconv"
 	strings "strings"
-	"time"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -3930,7 +3929,7 @@ func (c *VMPoolInfoCache) SyncListEnd(ctx context.Context) {
 	}
 }
 
-func WaitForVMPoolInfo(ctx context.Context, key *VMPoolKey, targetState TrackedState, transitionStates map[TrackedState]struct{}, errorState TrackedState, timeout time.Duration, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
+func WaitForVMPoolInfo(ctx context.Context, key *VMPoolKey, targetState TrackedState, transitionStates map[TrackedState]struct{}, errorState TrackedState, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
 	var lastMsgCnt int
 	var err error
 	curState := TrackedState_TRACKED_STATE_UNKNOWN
@@ -3988,7 +3987,7 @@ func WaitForVMPoolInfo(ctx context.Context, key *VMPoolKey, targetState TrackedS
 				}
 				return nil
 			}
-		case <-time.After(timeout):
+		case <-ctx.Done():
 			if _, found := transitionStates[curState]; found {
 				// no success response, but state is a valid transition
 				// state. That means work is still in progress.

@@ -174,6 +174,8 @@ func (o *VcdPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsAdditionalNetworks:            true,
 		SupportsPlatformHighAvailabilityOnK8S: true,
 		AccessVars:                            AccessVarProps,
+		Properties:                            VcdProps,
+		ResourceQuotaProperties:               quotaProps,
 	}
 }
 

@@ -133,7 +133,8 @@ func (x *AlertPolicyCommonApi) CreateAlertPolicy(ctx context.Context, in *edgepr
 	if x.internal_api != nil {
 		return x.internal_api.CreateAlertPolicy(ctx, copy)
 	} else {
-		return x.client_api.CreateAlertPolicy(ctx, copy)
+		res, err := x.client_api.CreateAlertPolicy(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -143,7 +144,8 @@ func (x *AlertPolicyCommonApi) DeleteAlertPolicy(ctx context.Context, in *edgepr
 	if x.internal_api != nil {
 		return x.internal_api.DeleteAlertPolicy(ctx, copy)
 	} else {
-		return x.client_api.DeleteAlertPolicy(ctx, copy)
+		res, err := x.client_api.DeleteAlertPolicy(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -153,7 +155,8 @@ func (x *AlertPolicyCommonApi) UpdateAlertPolicy(ctx context.Context, in *edgepr
 	if x.internal_api != nil {
 		return x.internal_api.UpdateAlertPolicy(ctx, copy)
 	} else {
-		return x.client_api.UpdateAlertPolicy(ctx, copy)
+		res, err := x.client_api.UpdateAlertPolicy(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -164,7 +167,7 @@ func (x *AlertPolicyCommonApi) ShowAlertPolicy(ctx context.Context, filter *edge
 	} else {
 		stream, err := x.client_api.ShowAlertPolicy(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

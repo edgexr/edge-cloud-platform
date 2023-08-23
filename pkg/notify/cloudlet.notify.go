@@ -370,6 +370,350 @@ func (s *Client) RegisterRecvCloudletInternalCache(cache CloudletInternalCacheHa
 	s.RegisterRecv(recv)
 }
 
+type SendPlatformFeaturesHandler interface {
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.PlatformFeatures, modRev int64))
+	GetWithRev(key *edgeproto.PlatformFeaturesKey, buf *edgeproto.PlatformFeatures, modRev *int64) bool
+}
+
+type RecvPlatformFeaturesHandler interface {
+	Update(ctx context.Context, in *edgeproto.PlatformFeatures, rev int64)
+	Delete(ctx context.Context, in *edgeproto.PlatformFeatures, rev int64)
+	Prune(ctx context.Context, keys map[edgeproto.PlatformFeaturesKey]struct{})
+	Flush(ctx context.Context, notifyId int64)
+}
+
+type PlatformFeaturesCacheHandler interface {
+	SendPlatformFeaturesHandler
+	RecvPlatformFeaturesHandler
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.PlatformFeatures, modRev int64))
+}
+
+type PlatformFeaturesSend struct {
+	Name        string
+	MessageName string
+	handler     SendPlatformFeaturesHandler
+	Keys        map[edgeproto.PlatformFeaturesKey]PlatformFeaturesSendContext
+	keysToSend  map[edgeproto.PlatformFeaturesKey]PlatformFeaturesSendContext
+	notifyId    int64
+	Mux         sync.Mutex
+	buf         edgeproto.PlatformFeatures
+	SendCount   uint64
+	sendrecv    *SendRecv
+}
+
+type PlatformFeaturesSendContext struct {
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
+}
+
+func NewPlatformFeaturesSend(handler SendPlatformFeaturesHandler) *PlatformFeaturesSend {
+	send := &PlatformFeaturesSend{}
+	send.Name = "PlatformFeatures"
+	send.MessageName = proto.MessageName((*edgeproto.PlatformFeatures)(nil))
+	send.handler = handler
+	send.Keys = make(map[edgeproto.PlatformFeaturesKey]PlatformFeaturesSendContext)
+	return send
+}
+
+func (s *PlatformFeaturesSend) SetSendRecv(sendrecv *SendRecv) {
+	s.sendrecv = sendrecv
+}
+
+func (s *PlatformFeaturesSend) GetMessageName() string {
+	return s.MessageName
+}
+
+func (s *PlatformFeaturesSend) GetName() string {
+	return s.Name
+}
+
+func (s *PlatformFeaturesSend) GetSendCount() uint64 {
+	return s.SendCount
+}
+
+func (s *PlatformFeaturesSend) GetNotifyId() int64 {
+	return s.notifyId
+}
+func (s *PlatformFeaturesSend) UpdateAll(ctx context.Context) {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return
+	}
+	s.Mux.Lock()
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.PlatformFeatures, modRev int64) {
+		s.Keys[*obj.GetKey()] = PlatformFeaturesSendContext{
+			ctx:    ctx,
+			modRev: modRev,
+		}
+	})
+	s.Mux.Unlock()
+}
+
+func (s *PlatformFeaturesSend) Update(ctx context.Context, obj *edgeproto.PlatformFeatures, modRev int64) {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return
+	}
+	forceDelete := false
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
+}
+
+func (s *PlatformFeaturesSend) ForceDelete(ctx context.Context, key *edgeproto.PlatformFeaturesKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *PlatformFeaturesSend) updateInternal(ctx context.Context, key *edgeproto.PlatformFeaturesKey, modRev int64, forceDelete bool) {
+	s.Mux.Lock()
+	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal PlatformFeatures", "key", key, "modRev", modRev)
+	s.Keys[*key] = PlatformFeaturesSendContext{
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
+	}
+	s.Mux.Unlock()
+	s.sendrecv.wakeup()
+}
+
+func (s *PlatformFeaturesSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+}
+
+func (s *PlatformFeaturesSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
+	s.Mux.Lock()
+	keys := s.keysToSend
+	s.keysToSend = nil
+	s.Mux.Unlock()
+	for key, sendContext := range keys {
+		ctx := sendContext.ctx
+		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
+		if found && !sendContext.forceDelete {
+			notice.Action = edgeproto.NoticeAction_UPDATE
+		} else {
+			notice.Action = edgeproto.NoticeAction_DELETE
+			notice.ModRev = sendContext.modRev
+			s.buf.Reset()
+			s.buf.SetKey(&key)
+		}
+		any, err := types.MarshalAny(&s.buf)
+		if err != nil {
+			s.sendrecv.stats.MarshalErrors++
+			err = nil
+			continue
+		}
+		notice.Any = *any
+		notice.Span = log.SpanToString(ctx)
+		log.SpanLog(ctx, log.DebugLevelNotify,
+			fmt.Sprintf("%s send PlatformFeatures", s.sendrecv.cliserv),
+			"peerAddr", peer,
+			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
+			"action", notice.Action,
+			"key", key,
+			"modRev", notice.ModRev)
+		err = stream.Send(notice)
+		if err != nil {
+			s.sendrecv.stats.SendErrors++
+			return err
+		}
+		s.sendrecv.stats.Send++
+		// object specific counter
+		s.SendCount++
+	}
+	return nil
+}
+
+func (s *PlatformFeaturesSend) PrepData() bool {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	if len(s.Keys) > 0 {
+		s.keysToSend = s.Keys
+		s.Keys = make(map[edgeproto.PlatformFeaturesKey]PlatformFeaturesSendContext)
+		return true
+	}
+	return false
+}
+
+// Server accepts multiple clients so needs to track multiple
+// peers to send to.
+type PlatformFeaturesSendMany struct {
+	handler SendPlatformFeaturesHandler
+	Mux     sync.Mutex
+	sends   map[string]*PlatformFeaturesSend
+}
+
+func NewPlatformFeaturesSendMany(handler SendPlatformFeaturesHandler) *PlatformFeaturesSendMany {
+	s := &PlatformFeaturesSendMany{}
+	s.handler = handler
+	s.sends = make(map[string]*PlatformFeaturesSend)
+	return s
+}
+
+func (s *PlatformFeaturesSendMany) NewSend(peerAddr string, notifyId int64) NotifySend {
+	send := NewPlatformFeaturesSend(s.handler)
+	send.notifyId = notifyId
+	s.Mux.Lock()
+	s.sends[peerAddr] = send
+	s.Mux.Unlock()
+	return send
+}
+
+func (s *PlatformFeaturesSendMany) DoneSend(peerAddr string, send NotifySend) {
+	asend, ok := send.(*PlatformFeaturesSend)
+	if !ok {
+		return
+	}
+	// another connection may come from the same client so remove
+	// only if it matches
+	s.Mux.Lock()
+	if remove, _ := s.sends[peerAddr]; remove == asend {
+		delete(s.sends, peerAddr)
+	}
+	s.Mux.Unlock()
+}
+func (s *PlatformFeaturesSendMany) Update(ctx context.Context, obj *edgeproto.PlatformFeatures, modRev int64) {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	for _, send := range s.sends {
+		send.Update(ctx, obj, modRev)
+	}
+}
+
+func (s *PlatformFeaturesSendMany) GetTypeString() string {
+	return "PlatformFeatures"
+}
+
+type PlatformFeaturesRecv struct {
+	Name        string
+	MessageName string
+	handler     RecvPlatformFeaturesHandler
+	sendAllKeys map[edgeproto.PlatformFeaturesKey]struct{}
+	Mux         sync.Mutex
+	buf         edgeproto.PlatformFeatures
+	RecvCount   uint64
+	sendrecv    *SendRecv
+}
+
+func NewPlatformFeaturesRecv(handler RecvPlatformFeaturesHandler) *PlatformFeaturesRecv {
+	recv := &PlatformFeaturesRecv{}
+	recv.Name = "PlatformFeatures"
+	recv.MessageName = proto.MessageName((*edgeproto.PlatformFeatures)(nil))
+	recv.handler = handler
+	return recv
+}
+
+func (s *PlatformFeaturesRecv) SetSendRecv(sendrecv *SendRecv) {
+	s.sendrecv = sendrecv
+}
+
+func (s *PlatformFeaturesRecv) GetMessageName() string {
+	return s.MessageName
+}
+
+func (s *PlatformFeaturesRecv) GetName() string {
+	return s.Name
+}
+
+func (s *PlatformFeaturesRecv) GetRecvCount() uint64 {
+	return s.RecvCount
+}
+
+func (s *PlatformFeaturesRecv) Recv(ctx context.Context, notice *edgeproto.Notice, notifyId int64, peerAddr string) {
+	span := opentracing.SpanFromContext(ctx)
+	if span != nil {
+		span.SetTag("objtype", "PlatformFeatures")
+	}
+
+	buf := &edgeproto.PlatformFeatures{}
+	err := types.UnmarshalAny(&notice.Any, buf)
+	if err != nil {
+		s.sendrecv.stats.UnmarshalErrors++
+		log.SpanLog(ctx, log.DebugLevelNotify, "Unmarshal Error", "err", err)
+		return
+	}
+	if span != nil {
+		log.SetTags(span, buf.GetKey().GetTags())
+	}
+	log.SpanLog(ctx, log.DebugLevelNotify,
+		fmt.Sprintf("%s recv PlatformFeatures", s.sendrecv.cliserv),
+		"peerAddr", peerAddr,
+		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
+		"action", notice.Action,
+		"key", buf.GetKeyVal(),
+		"modRev", notice.ModRev)
+	if notice.Action == edgeproto.NoticeAction_UPDATE {
+		s.handler.Update(ctx, buf, notice.ModRev)
+		s.Mux.Lock()
+		if s.sendAllKeys != nil {
+			s.sendAllKeys[buf.GetKeyVal()] = struct{}{}
+		}
+		s.Mux.Unlock()
+	} else if notice.Action == edgeproto.NoticeAction_DELETE {
+		s.handler.Delete(ctx, buf, notice.ModRev)
+	}
+	s.sendrecv.stats.Recv++
+	// object specific counter
+	s.RecvCount++
+}
+
+func (s *PlatformFeaturesRecv) RecvAllStart() {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	s.sendAllKeys = make(map[edgeproto.PlatformFeaturesKey]struct{})
+}
+
+func (s *PlatformFeaturesRecv) RecvAllEnd(ctx context.Context, cleanup Cleanup) {
+	s.Mux.Lock()
+	validKeys := s.sendAllKeys
+	s.sendAllKeys = nil
+	s.Mux.Unlock()
+	if cleanup == CleanupPrune {
+		s.handler.Prune(ctx, validKeys)
+	}
+}
+func (s *PlatformFeaturesRecv) Flush(ctx context.Context, notifyId int64) {
+	s.handler.Flush(ctx, notifyId)
+}
+
+type PlatformFeaturesRecvMany struct {
+	handler RecvPlatformFeaturesHandler
+}
+
+func NewPlatformFeaturesRecvMany(handler RecvPlatformFeaturesHandler) *PlatformFeaturesRecvMany {
+	s := &PlatformFeaturesRecvMany{}
+	s.handler = handler
+	return s
+}
+
+func (s *PlatformFeaturesRecvMany) NewRecv() NotifyRecv {
+	recv := NewPlatformFeaturesRecv(s.handler)
+	return recv
+}
+
+func (s *PlatformFeaturesRecvMany) Flush(ctx context.Context, notifyId int64) {
+	s.handler.Flush(ctx, notifyId)
+}
+func (mgr *ServerMgr) RegisterSendPlatformFeaturesCache(cache PlatformFeaturesCacheHandler) {
+	send := NewPlatformFeaturesSendMany(cache)
+	mgr.RegisterSend(send)
+	cache.AddNotifyCb(send.Update)
+}
+
+func (mgr *ServerMgr) RegisterRecvPlatformFeaturesCache(cache PlatformFeaturesCacheHandler) {
+	recv := NewPlatformFeaturesRecvMany(cache)
+	mgr.RegisterRecv(recv)
+}
+
+func (s *Client) RegisterSendPlatformFeaturesCache(cache PlatformFeaturesCacheHandler) {
+	send := NewPlatformFeaturesSend(cache)
+	s.RegisterSend(send)
+	cache.AddNotifyCb(send.Update)
+}
+
+func (s *Client) RegisterRecvPlatformFeaturesCache(cache PlatformFeaturesCacheHandler) {
+	recv := NewPlatformFeaturesRecv(cache)
+	s.RegisterRecv(recv)
+}
+
 type SendGPUDriverHandler interface {
 	GetAllLocked(ctx context.Context, cb func(key *edgeproto.GPUDriver, modRev int64))
 	GetWithRev(key *edgeproto.GPUDriverKey, buf *edgeproto.GPUDriver, modRev *int64) bool
@@ -1086,6 +1430,274 @@ func (s *Client) RegisterRecvCloudletCache(cache CloudletCacheHandler) {
 	s.RegisterRecv(recv)
 }
 
+type RecvCloudletOnboardingInfoHandler interface {
+	RecvCloudletOnboardingInfo(ctx context.Context, msg *edgeproto.CloudletOnboardingInfo)
+}
+
+type CloudletOnboardingInfoSend struct {
+	Name        string
+	MessageName string
+	Data        []*edgeproto.CloudletOnboardingInfo
+	dataToSend  []*edgeproto.CloudletOnboardingInfo
+	Ctxs        []context.Context
+	ctxsToSend  []context.Context
+	notifyId    int64
+	Mux         sync.Mutex
+	buf         edgeproto.CloudletOnboardingInfo
+	SendCount   uint64
+	sendrecv    *SendRecv
+}
+
+type CloudletOnboardingInfoSendContext struct {
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
+}
+
+func NewCloudletOnboardingInfoSend() *CloudletOnboardingInfoSend {
+	send := &CloudletOnboardingInfoSend{}
+	send.Name = "CloudletOnboardingInfo"
+	send.MessageName = proto.MessageName((*edgeproto.CloudletOnboardingInfo)(nil))
+	send.Data = make([]*edgeproto.CloudletOnboardingInfo, 0)
+	return send
+}
+
+func (s *CloudletOnboardingInfoSend) SetSendRecv(sendrecv *SendRecv) {
+	s.sendrecv = sendrecv
+}
+
+func (s *CloudletOnboardingInfoSend) GetMessageName() string {
+	return s.MessageName
+}
+
+func (s *CloudletOnboardingInfoSend) GetName() string {
+	return s.Name
+}
+
+func (s *CloudletOnboardingInfoSend) GetSendCount() uint64 {
+	return s.SendCount
+}
+
+func (s *CloudletOnboardingInfoSend) GetNotifyId() int64 {
+	return s.notifyId
+}
+func (s *CloudletOnboardingInfoSend) UpdateAll(ctx context.Context) {}
+
+func (s *CloudletOnboardingInfoSend) Update(ctx context.Context, msg *edgeproto.CloudletOnboardingInfo) bool {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return false
+	}
+	s.Mux.Lock()
+	s.Data = append(s.Data, msg)
+	s.Ctxs = append(s.Ctxs, ctx)
+	s.Mux.Unlock()
+	s.sendrecv.wakeup()
+	return true
+}
+
+func (s *CloudletOnboardingInfoSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+}
+
+func (s *CloudletOnboardingInfoSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
+	s.Mux.Lock()
+	data := s.dataToSend
+	s.dataToSend = nil
+	ctxs := s.ctxsToSend
+	s.ctxsToSend = nil
+	s.Mux.Unlock()
+	for ii, msg := range data {
+		any, err := types.MarshalAny(msg)
+		ctx := ctxs[ii]
+		if err != nil {
+			s.sendrecv.stats.MarshalErrors++
+			err = nil
+			continue
+		}
+		notice.Any = *any
+		notice.Span = log.SpanToString(ctx)
+		log.SpanLog(ctx, log.DebugLevelNotify,
+			fmt.Sprintf("%s send CloudletOnboardingInfo", s.sendrecv.cliserv),
+			"peerAddr", peer,
+			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
+			"message", msg)
+		err = stream.Send(notice)
+		if err != nil {
+			s.sendrecv.stats.SendErrors++
+			return err
+		}
+		s.sendrecv.stats.Send++
+		// object specific counter
+		s.SendCount++
+	}
+	return nil
+}
+
+func (s *CloudletOnboardingInfoSend) PrepData() bool {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	if len(s.Data) > 0 {
+		s.dataToSend = s.Data
+		s.Data = make([]*edgeproto.CloudletOnboardingInfo, 0)
+		s.ctxsToSend = s.Ctxs
+		s.Ctxs = make([]context.Context, 0)
+		return true
+	}
+	return false
+}
+
+// Server accepts multiple clients so needs to track multiple
+// peers to send to.
+type CloudletOnboardingInfoSendMany struct {
+	Mux   sync.Mutex
+	sends map[string]*CloudletOnboardingInfoSend
+}
+
+func NewCloudletOnboardingInfoSendMany() *CloudletOnboardingInfoSendMany {
+	s := &CloudletOnboardingInfoSendMany{}
+	s.sends = make(map[string]*CloudletOnboardingInfoSend)
+	return s
+}
+
+func (s *CloudletOnboardingInfoSendMany) NewSend(peerAddr string, notifyId int64) NotifySend {
+	send := NewCloudletOnboardingInfoSend()
+	send.notifyId = notifyId
+	s.Mux.Lock()
+	s.sends[peerAddr] = send
+	s.Mux.Unlock()
+	return send
+}
+
+func (s *CloudletOnboardingInfoSendMany) DoneSend(peerAddr string, send NotifySend) {
+	asend, ok := send.(*CloudletOnboardingInfoSend)
+	if !ok {
+		return
+	}
+	// another connection may come from the same client so remove
+	// only if it matches
+	s.Mux.Lock()
+	if remove, _ := s.sends[peerAddr]; remove == asend {
+		delete(s.sends, peerAddr)
+	}
+	s.Mux.Unlock()
+}
+func (s *CloudletOnboardingInfoSendMany) Update(ctx context.Context, msg *edgeproto.CloudletOnboardingInfo) int {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	count := 0
+	for _, send := range s.sends {
+		if send.Update(ctx, msg) {
+			count++
+		}
+	}
+	return count
+}
+
+func (s *CloudletOnboardingInfoSendMany) UpdateFiltered(ctx context.Context, msg *edgeproto.CloudletOnboardingInfo, sendOk func(ctx context.Context, send *CloudletOnboardingInfoSend, msg *edgeproto.CloudletOnboardingInfo) bool) int {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	count := 0
+	for _, send := range s.sends {
+		if !sendOk(ctx, send, msg) {
+			continue
+		}
+		if send.Update(ctx, msg) {
+			count++
+		}
+	}
+	return count
+}
+
+func (s *CloudletOnboardingInfoSendMany) GetTypeString() string {
+	return "CloudletOnboardingInfo"
+}
+
+type CloudletOnboardingInfoRecv struct {
+	Name        string
+	MessageName string
+	handler     RecvCloudletOnboardingInfoHandler
+	Mux         sync.Mutex
+	buf         edgeproto.CloudletOnboardingInfo
+	RecvCount   uint64
+	sendrecv    *SendRecv
+}
+
+func NewCloudletOnboardingInfoRecv(handler RecvCloudletOnboardingInfoHandler) *CloudletOnboardingInfoRecv {
+	recv := &CloudletOnboardingInfoRecv{}
+	recv.Name = "CloudletOnboardingInfo"
+	recv.MessageName = proto.MessageName((*edgeproto.CloudletOnboardingInfo)(nil))
+	recv.handler = handler
+	return recv
+}
+
+func (s *CloudletOnboardingInfoRecv) SetSendRecv(sendrecv *SendRecv) {
+	s.sendrecv = sendrecv
+}
+
+func (s *CloudletOnboardingInfoRecv) GetMessageName() string {
+	return s.MessageName
+}
+
+func (s *CloudletOnboardingInfoRecv) GetName() string {
+	return s.Name
+}
+
+func (s *CloudletOnboardingInfoRecv) GetRecvCount() uint64 {
+	return s.RecvCount
+}
+
+func (s *CloudletOnboardingInfoRecv) Recv(ctx context.Context, notice *edgeproto.Notice, notifyId int64, peerAddr string) {
+	span := opentracing.SpanFromContext(ctx)
+	if span != nil {
+		span.SetTag("objtype", "CloudletOnboardingInfo")
+	}
+
+	buf := &edgeproto.CloudletOnboardingInfo{}
+	err := types.UnmarshalAny(&notice.Any, buf)
+	if err != nil {
+		s.sendrecv.stats.UnmarshalErrors++
+		log.SpanLog(ctx, log.DebugLevelNotify, "Unmarshal Error", "err", err)
+		return
+	}
+	if span != nil {
+		span.SetTag("msg", buf)
+	}
+	log.SpanLog(ctx, log.DebugLevelNotify,
+		fmt.Sprintf("%s recv CloudletOnboardingInfo", s.sendrecv.cliserv),
+		"peerAddr", peerAddr,
+		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
+		"message", buf)
+	s.handler.RecvCloudletOnboardingInfo(ctx, buf)
+	s.sendrecv.stats.Recv++
+	// object specific counter
+	s.RecvCount++
+}
+
+func (s *CloudletOnboardingInfoRecv) RecvAllStart() {
+}
+
+func (s *CloudletOnboardingInfoRecv) RecvAllEnd(ctx context.Context, cleanup Cleanup) {
+}
+
+type CloudletOnboardingInfoRecvMany struct {
+	handler RecvCloudletOnboardingInfoHandler
+}
+
+func NewCloudletOnboardingInfoRecvMany(handler RecvCloudletOnboardingInfoHandler) *CloudletOnboardingInfoRecvMany {
+	s := &CloudletOnboardingInfoRecvMany{}
+	s.handler = handler
+	return s
+}
+
+func (s *CloudletOnboardingInfoRecvMany) NewRecv() NotifyRecv {
+	recv := NewCloudletOnboardingInfoRecv(s.handler)
+	return recv
+}
+
+func (s *CloudletOnboardingInfoRecvMany) Flush(ctx context.Context, notifyId int64) {
+}
+
 type SendCloudletInfoHandler interface {
 	GetAllLocked(ctx context.Context, cb func(key *edgeproto.CloudletInfo, modRev int64))
 	GetWithRev(key *edgeproto.CloudletKey, buf *edgeproto.CloudletInfo, modRev *int64) bool
@@ -1430,4 +2042,272 @@ func (s *Client) RegisterSendCloudletInfoCache(cache CloudletInfoCacheHandler) {
 func (s *Client) RegisterRecvCloudletInfoCache(cache CloudletInfoCacheHandler) {
 	recv := NewCloudletInfoRecv(cache)
 	s.RegisterRecv(recv)
+}
+
+type RecvStreamStatusHandler interface {
+	RecvStreamStatus(ctx context.Context, msg *edgeproto.StreamStatus)
+}
+
+type StreamStatusSend struct {
+	Name        string
+	MessageName string
+	Data        []*edgeproto.StreamStatus
+	dataToSend  []*edgeproto.StreamStatus
+	Ctxs        []context.Context
+	ctxsToSend  []context.Context
+	notifyId    int64
+	Mux         sync.Mutex
+	buf         edgeproto.StreamStatus
+	SendCount   uint64
+	sendrecv    *SendRecv
+}
+
+type StreamStatusSendContext struct {
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
+}
+
+func NewStreamStatusSend() *StreamStatusSend {
+	send := &StreamStatusSend{}
+	send.Name = "StreamStatus"
+	send.MessageName = proto.MessageName((*edgeproto.StreamStatus)(nil))
+	send.Data = make([]*edgeproto.StreamStatus, 0)
+	return send
+}
+
+func (s *StreamStatusSend) SetSendRecv(sendrecv *SendRecv) {
+	s.sendrecv = sendrecv
+}
+
+func (s *StreamStatusSend) GetMessageName() string {
+	return s.MessageName
+}
+
+func (s *StreamStatusSend) GetName() string {
+	return s.Name
+}
+
+func (s *StreamStatusSend) GetSendCount() uint64 {
+	return s.SendCount
+}
+
+func (s *StreamStatusSend) GetNotifyId() int64 {
+	return s.notifyId
+}
+func (s *StreamStatusSend) UpdateAll(ctx context.Context) {}
+
+func (s *StreamStatusSend) Update(ctx context.Context, msg *edgeproto.StreamStatus) bool {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return false
+	}
+	s.Mux.Lock()
+	s.Data = append(s.Data, msg)
+	s.Ctxs = append(s.Ctxs, ctx)
+	s.Mux.Unlock()
+	s.sendrecv.wakeup()
+	return true
+}
+
+func (s *StreamStatusSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+}
+
+func (s *StreamStatusSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
+	s.Mux.Lock()
+	data := s.dataToSend
+	s.dataToSend = nil
+	ctxs := s.ctxsToSend
+	s.ctxsToSend = nil
+	s.Mux.Unlock()
+	for ii, msg := range data {
+		any, err := types.MarshalAny(msg)
+		ctx := ctxs[ii]
+		if err != nil {
+			s.sendrecv.stats.MarshalErrors++
+			err = nil
+			continue
+		}
+		notice.Any = *any
+		notice.Span = log.SpanToString(ctx)
+		log.SpanLog(ctx, log.DebugLevelNotify,
+			fmt.Sprintf("%s send StreamStatus", s.sendrecv.cliserv),
+			"peerAddr", peer,
+			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
+			"message", msg)
+		err = stream.Send(notice)
+		if err != nil {
+			s.sendrecv.stats.SendErrors++
+			return err
+		}
+		s.sendrecv.stats.Send++
+		// object specific counter
+		s.SendCount++
+	}
+	return nil
+}
+
+func (s *StreamStatusSend) PrepData() bool {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	if len(s.Data) > 0 {
+		s.dataToSend = s.Data
+		s.Data = make([]*edgeproto.StreamStatus, 0)
+		s.ctxsToSend = s.Ctxs
+		s.Ctxs = make([]context.Context, 0)
+		return true
+	}
+	return false
+}
+
+// Server accepts multiple clients so needs to track multiple
+// peers to send to.
+type StreamStatusSendMany struct {
+	Mux   sync.Mutex
+	sends map[string]*StreamStatusSend
+}
+
+func NewStreamStatusSendMany() *StreamStatusSendMany {
+	s := &StreamStatusSendMany{}
+	s.sends = make(map[string]*StreamStatusSend)
+	return s
+}
+
+func (s *StreamStatusSendMany) NewSend(peerAddr string, notifyId int64) NotifySend {
+	send := NewStreamStatusSend()
+	send.notifyId = notifyId
+	s.Mux.Lock()
+	s.sends[peerAddr] = send
+	s.Mux.Unlock()
+	return send
+}
+
+func (s *StreamStatusSendMany) DoneSend(peerAddr string, send NotifySend) {
+	asend, ok := send.(*StreamStatusSend)
+	if !ok {
+		return
+	}
+	// another connection may come from the same client so remove
+	// only if it matches
+	s.Mux.Lock()
+	if remove, _ := s.sends[peerAddr]; remove == asend {
+		delete(s.sends, peerAddr)
+	}
+	s.Mux.Unlock()
+}
+func (s *StreamStatusSendMany) Update(ctx context.Context, msg *edgeproto.StreamStatus) int {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	count := 0
+	for _, send := range s.sends {
+		if send.Update(ctx, msg) {
+			count++
+		}
+	}
+	return count
+}
+
+func (s *StreamStatusSendMany) UpdateFiltered(ctx context.Context, msg *edgeproto.StreamStatus, sendOk func(ctx context.Context, send *StreamStatusSend, msg *edgeproto.StreamStatus) bool) int {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	count := 0
+	for _, send := range s.sends {
+		if !sendOk(ctx, send, msg) {
+			continue
+		}
+		if send.Update(ctx, msg) {
+			count++
+		}
+	}
+	return count
+}
+
+func (s *StreamStatusSendMany) GetTypeString() string {
+	return "StreamStatus"
+}
+
+type StreamStatusRecv struct {
+	Name        string
+	MessageName string
+	handler     RecvStreamStatusHandler
+	Mux         sync.Mutex
+	buf         edgeproto.StreamStatus
+	RecvCount   uint64
+	sendrecv    *SendRecv
+}
+
+func NewStreamStatusRecv(handler RecvStreamStatusHandler) *StreamStatusRecv {
+	recv := &StreamStatusRecv{}
+	recv.Name = "StreamStatus"
+	recv.MessageName = proto.MessageName((*edgeproto.StreamStatus)(nil))
+	recv.handler = handler
+	return recv
+}
+
+func (s *StreamStatusRecv) SetSendRecv(sendrecv *SendRecv) {
+	s.sendrecv = sendrecv
+}
+
+func (s *StreamStatusRecv) GetMessageName() string {
+	return s.MessageName
+}
+
+func (s *StreamStatusRecv) GetName() string {
+	return s.Name
+}
+
+func (s *StreamStatusRecv) GetRecvCount() uint64 {
+	return s.RecvCount
+}
+
+func (s *StreamStatusRecv) Recv(ctx context.Context, notice *edgeproto.Notice, notifyId int64, peerAddr string) {
+	span := opentracing.SpanFromContext(ctx)
+	if span != nil {
+		span.SetTag("objtype", "StreamStatus")
+	}
+
+	buf := &edgeproto.StreamStatus{}
+	err := types.UnmarshalAny(&notice.Any, buf)
+	if err != nil {
+		s.sendrecv.stats.UnmarshalErrors++
+		log.SpanLog(ctx, log.DebugLevelNotify, "Unmarshal Error", "err", err)
+		return
+	}
+	if span != nil {
+		span.SetTag("msg", buf)
+	}
+	log.SpanLog(ctx, log.DebugLevelNotify,
+		fmt.Sprintf("%s recv StreamStatus", s.sendrecv.cliserv),
+		"peerAddr", peerAddr,
+		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
+		"message", buf)
+	s.handler.RecvStreamStatus(ctx, buf)
+	s.sendrecv.stats.Recv++
+	// object specific counter
+	s.RecvCount++
+}
+
+func (s *StreamStatusRecv) RecvAllStart() {
+}
+
+func (s *StreamStatusRecv) RecvAllEnd(ctx context.Context, cleanup Cleanup) {
+}
+
+type StreamStatusRecvMany struct {
+	handler RecvStreamStatusHandler
+}
+
+func NewStreamStatusRecvMany(handler RecvStreamStatusHandler) *StreamStatusRecvMany {
+	s := &StreamStatusRecvMany{}
+	s.handler = handler
+	return s
+}
+
+func (s *StreamStatusRecvMany) NewRecv() NotifyRecv {
+	recv := NewStreamStatusRecv(s.handler)
+	return recv
+}
+
+func (s *StreamStatusRecvMany) Flush(ctx context.Context, notifyId int64) {
 }

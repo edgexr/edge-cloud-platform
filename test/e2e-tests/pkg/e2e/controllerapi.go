@@ -137,6 +137,9 @@ func RunControllerAPI(api string, ctrlname string, apiFile string, apiFileVars m
 			FilterCloudletInfoNocmp(output)
 		}
 		output.ClearTagged(clearTags)
+		// Ignore platform features. There is a lot of platform-specific
+		// info and it may change as we add new platforms.
+		output.PlatformFeatures = nil
 		PrintToYamlFile("show-commands.yml", outputDir, output, true)
 		// Some objects are generated asynchronously in response to
 		// other objects being created. For example, Prometheus metric
@@ -314,17 +317,17 @@ func RunCommandAPI(api string, ctrlname string, apiFile string, apiFileVars map[
 	return true
 }
 
-func StartCrmsLocal(ctx context.Context, physicalName string, ctrlName string, apiFile string, apiFileVars map[string]string, outputDir string) error {
+func StartCrmsLocal(ctx context.Context, physicalName string, ccrmName string, apiFile string, apiFileVars map[string]string, outputDir string) error {
 	if apiFile == "" {
 		log.Println("Error: Cannot run RunCommand API without API file")
 		return fmt.Errorf("Error: Cannot run controller APIs without API file")
 	}
 	readAppDataFile(apiFile, apiFileVars)
 
-	ctrl := GetController(ctrlName)
-	if ctrl == nil {
-		log.Printf("Error: Cannot find controller %s", ctrlName)
-		return fmt.Errorf("Error: Cannot find controller %s", ctrlName)
+	ccrm := GetCCRM(ccrmName)
+	if ccrm == nil {
+		log.Printf("Error: Cannot find ccrm %s", ccrmName)
+		return fmt.Errorf("Error: Cannot find ccrm %s", ccrmName)
 	}
 
 	for _, c := range appData.Cloudlets {
@@ -337,10 +340,10 @@ func StartCrmsLocal(ctx context.Context, physicalName string, ctrlName string, a
 		if c.PhysicalName == "" {
 			c.PhysicalName = c.Key.Name
 		}
-		c.ContainerVersion = ctrl.VersionTag
+		c.ContainerVersion = ccrm.VersionTag
 
 		pfConfig := edgeproto.PlatformConfig{}
-		region := ctrl.Region
+		region := ccrm.Region
 		if region == "" {
 			region = "local"
 		}
@@ -348,16 +351,16 @@ func StartCrmsLocal(ctx context.Context, physicalName string, ctrlName string, a
 
 		// Defaults
 		pfConfig.PlatformTag = ""
-		pfConfig.TlsCertFile = ctrl.TLS.ServerCert
-		pfConfig.TlsKeyFile = ctrl.TLS.ServerKey
-		pfConfig.TlsCaFile = ctrl.TLS.CACert
-		pfConfig.UseVaultPki = ctrl.UseVaultPki
-		pfConfig.ContainerRegistryPath = ctrl.CloudletRegistryPath
+		pfConfig.TlsCertFile = ccrm.TLS.ServerCert
+		pfConfig.TlsKeyFile = ccrm.TLS.ServerKey
+		pfConfig.TlsCaFile = ccrm.TLS.CACert
+		pfConfig.UseVaultPki = ccrm.UseVaultPki
+		pfConfig.ContainerRegistryPath = ccrm.CloudletRegistryPath
 		pfConfig.TestMode = true
-		pfConfig.NotifyCtrlAddrs = ctrl.NotifyAddr
-		pfConfig.DeploymentTag = ctrl.DeploymentTag
-		pfConfig.AccessApiAddr = ctrl.AccessApiAddr
-		for k, v := range ctrl.Common.EnvVars {
+		pfConfig.NotifyCtrlAddrs = ccrm.ControllerNotifyAddr
+		pfConfig.DeploymentTag = ccrm.DeploymentTag
+		pfConfig.AccessApiAddr = ccrm.ControllerAccessApiAddr
+		for k, v := range ccrm.Common.EnvVars {
 			pfConfig.EnvVar[k] = v
 		}
 		redisCfg := rediscache.RedisConfig{}

@@ -1171,6 +1171,10 @@ func (m *ExecRequest) DeepCopyIn(src *ExecRequest) {
 	m.EdgeTurnProxyAddr = src.EdgeTurnProxyAddr
 }
 
+func (m *ExecRequest) MessageTypeKey() string {
+	return "msg/type/ExecRequest"
+}
+
 // Helper method to check that enums have valid values
 func (m *ExecRequest) ValidateEnums() error {
 	if err := m.AppInstKey.ValidateEnums(); err != nil {

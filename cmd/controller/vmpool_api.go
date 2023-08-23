@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type VMPoolApi struct {
@@ -347,9 +347,11 @@ func (s *VMPoolApi) updateVMPoolInternal(cctx *CallContext, ctx context.Context,
 	defer func() {
 		s.stopVMPoolStream(ctx, cctx, key, sendObj, reterr, CleanupStream)
 	}()
-	err = edgeproto.WaitForVMPoolInfo(ctx, key, edgeproto.TrackedState_READY,
+	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateVmPoolTimeout.TimeDuration())
+	defer reqCancel()
+
+	err = edgeproto.WaitForVMPoolInfo(reqCtx, key, edgeproto.TrackedState_READY,
 		UpdateVMPoolTransitions, edgeproto.TrackedState_UPDATE_ERROR,
-		s.all.settingsApi.Get().UpdateVmPoolTimeout.TimeDuration(),
 		"Updated VM Pool Successfully", nil,
 		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
 	// State state back to Unknown & Error to nil, as user is notified about the error, if any

@@ -32,6 +32,16 @@ nodes:
     BuildMaster: ""
     BuildTag: ""
 - key:
+    type: ccrm
+    region: local
+  containerversion: "2019-10-24"
+  internalpki: UseVaultPki
+- key:
+    type: ccrm
+    region: locala
+  containerversion: "2019-10-24"
+  internalpki: UseVaultPki
+- key:
     type: cluster-svc
     region: local
   internalpki: UseVaultPki
@@ -70,22 +80,18 @@ nodes:
 - key:
     type: controller
     region: local
-  containerversion: "2019-10-24"
   internalpki: UseVaultPki
 - key:
     type: controller
     region: local
-  containerversion: "2019-10-24"
   internalpki: UseVaultPki
 - key:
     type: controller
     region: locala
-  containerversion: "2019-10-24"
   internalpki: UseVaultPki
 - key:
     type: controller
     region: locala
-  containerversion: "2019-10-24"
   internalpki: UseVaultPki
 - key:
     type: crm

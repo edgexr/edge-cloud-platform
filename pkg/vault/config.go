@@ -21,6 +21,8 @@ import (
 	"github.com/hashicorp/vault/api"
 )
 
+const UnitTestIgnoreVaultAddr = "UnitTestIgnoreVaultAddr"
+
 type Config struct {
 	Addr   string
 	Auth   Auth
@@ -33,7 +35,7 @@ func BestConfig(addr string, ops ...BestOp) (*Config, error) {
 		Addr: addr,
 		Auth: &NoAuth{},
 	}
-	if addr == "" {
+	if addr == "" || addr == UnitTestIgnoreVaultAddr {
 		// no vault specified
 		return cfg, nil
 	}

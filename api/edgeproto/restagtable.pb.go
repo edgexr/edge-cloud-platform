@@ -1644,6 +1644,17 @@ func CmpSortResTagTable(a ResTagTable, b ResTagTable) bool {
 	return a.Key.GetKeyString() < b.Key.GetKeyString()
 }
 
+// MessageKey can be used as a channel name which includes the
+// key value for pubsub, to listen for this specific object type
+// plus key value.
+func (m *ResTagTable) MessageKey() string {
+	return fmt.Sprintf("msg/key/ResTagTable/%s", m.GetKey().GetKeyString())
+}
+
+func (m *ResTagTable) MessageTypeKey() string {
+	return "msg/type/ResTagTable"
+}
+
 // Helper method to check that enums have valid values
 // NOTE: ValidateEnums checks all Fields even if some are not set
 func (m *ResTagTable) ValidateEnums() error {

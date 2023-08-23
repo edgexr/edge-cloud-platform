@@ -134,7 +134,8 @@ func (x *CloudletPoolCommonApi) CreateCloudletPool(ctx context.Context, in *edge
 	if x.internal_api != nil {
 		return x.internal_api.CreateCloudletPool(ctx, copy)
 	} else {
-		return x.client_api.CreateCloudletPool(ctx, copy)
+		res, err := x.client_api.CreateCloudletPool(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -144,7 +145,8 @@ func (x *CloudletPoolCommonApi) DeleteCloudletPool(ctx context.Context, in *edge
 	if x.internal_api != nil {
 		return x.internal_api.DeleteCloudletPool(ctx, copy)
 	} else {
-		return x.client_api.DeleteCloudletPool(ctx, copy)
+		res, err := x.client_api.DeleteCloudletPool(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -155,7 +157,7 @@ func (x *CloudletPoolCommonApi) ShowCloudletPool(ctx context.Context, filter *ed
 	} else {
 		stream, err := x.client_api.ShowCloudletPool(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

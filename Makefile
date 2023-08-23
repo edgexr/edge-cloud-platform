@@ -39,7 +39,8 @@ generate: check-go-vers $(APICOMMENTS) gen-vers
 		./tools/protoc-gen-notify \
 		./tools/protoc-gen-controller \
 		./tools/protoc-gen-controller-test \
-		./tools/protoc-gen-mc2
+		./tools/protoc-gen-mc2 \
+		./tools/protoc-gen-redisapi
 	make -C pkg/log
 	make -C api/dme-proto
 	make -C api/edgeproto

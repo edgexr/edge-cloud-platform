@@ -134,7 +134,7 @@ func (x *AlertCommonApi) ShowAlert(ctx context.Context, filter *edgeproto.Alert,
 	} else {
 		stream, err := x.client_api.ShowAlert(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 
@@ -330,6 +330,7 @@ type DummyServer struct {
 	TrustPolicyCache              edgeproto.TrustPolicyCache
 	AppCache                      edgeproto.AppCache
 	CloudletInternalCache         edgeproto.CloudletInternalCache
+	PlatformFeaturesCache         edgeproto.PlatformFeaturesCache
 	GPUDriverCache                edgeproto.GPUDriverCache
 	CloudletCache                 edgeproto.CloudletCache
 	CloudletInfoCache             edgeproto.CloudletInfoCache
@@ -372,6 +373,7 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.InitTrustPolicyCache(&d.TrustPolicyCache)
 	edgeproto.InitAppCache(&d.AppCache)
 	edgeproto.InitCloudletInternalCache(&d.CloudletInternalCache)
+	edgeproto.InitPlatformFeaturesCache(&d.PlatformFeaturesCache)
 	edgeproto.InitGPUDriverCache(&d.GPUDriverCache)
 	edgeproto.InitCloudletCache(&d.CloudletCache)
 	edgeproto.InitCloudletInfoCache(&d.CloudletInfoCache)
@@ -405,6 +407,7 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.RegisterTrustPolicyApiServer(server, d)
 	edgeproto.RegisterAppApiServer(server, d)
 	edgeproto.RegisterOrganizationApiServer(server, d)
+	edgeproto.RegisterPlatformFeaturesApiServer(server, d)
 	edgeproto.RegisterGPUDriverApiServer(server, d)
 	edgeproto.RegisterCloudletApiServer(server, d)
 	edgeproto.RegisterCloudletInfoApiServer(server, d)
@@ -456,6 +459,7 @@ type Client interface {
 	TrustPolicyApiClient
 	AppApiClient
 	OrganizationApiClient
+	PlatformFeaturesApiClient
 	GPUDriverApiClient
 	CloudletApiClient
 	CloudletInfoApiClient

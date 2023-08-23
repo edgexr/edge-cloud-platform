@@ -39,6 +39,11 @@ func TestNetworkApi(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
+	responder := DefaultDummyInfoResponder(apis)
+	responder.InitDummyInfoResponder()
+	reduceInfoTimeouts(t, ctx, apis)
+
+	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())

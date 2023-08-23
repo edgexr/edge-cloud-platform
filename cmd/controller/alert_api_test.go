@@ -50,12 +50,17 @@ func TestAlertApi(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
+	responder := DefaultDummyInfoResponder(apis)
+	responder.InitDummyInfoResponder()
+	reduceInfoTimeouts(t, ctx, apis)
+
 	alertData := testutil.AlertData()
 	for _, alert := range alertData {
 		apis.alertApi.Update(ctx, &alert, 0)
 	}
 	testutil.InternalAlertTest(t, "show", apis.alertApi, alertData)
 
+	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 	cloudletData := testutil.CloudletData()
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
@@ -114,15 +119,12 @@ func TestAppInstDownAlert(t *testing.T) {
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
-	dummyResponder := DummyInfoResponder{
-		AppInstCache:        &apis.appInstApi.cache,
-		ClusterInstCache:    &apis.clusterInstApi.cache,
-		RecvAppInstInfo:     apis.appInstInfoApi,
-		RecvClusterInstInfo: apis.clusterInstInfoApi,
-	}
+	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
+	reduceInfoTimeouts(t, ctx, apis)
 
 	// create supporting data
+	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
@@ -200,7 +202,9 @@ func testinit(ctx context.Context, t *testing.T, opts ...TestOp) *testServices {
 	testMode = &tMode
 	dockerRegistry := "docker.mobiledgex.net"
 	registryFQDN = &dockerRegistry
-	vaultConfig, _ = vault.BestConfig("")
+	nodeMgr.VaultAddr = vault.UnitTestIgnoreVaultAddr
+	vaultConfig, _ = vault.BestConfig(vault.UnitTestIgnoreVaultAddr)
+	nodeMgr.VaultConfig = vaultConfig
 	services.events = influxq.NewInfluxQ("events", "user", "pass")
 	services.cloudletResourcesInfluxQ = influxq.NewInfluxQ(cloudcommon.CloudletResourceUsageDbName, "user", "pass")
 	cleanupCloudletInfoTimeout = 100 * time.Millisecond

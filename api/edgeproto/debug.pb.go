@@ -751,6 +751,10 @@ func (m *DebugRequest) DeepCopyIn(src *DebugRequest) {
 	m.Timeout = src.Timeout
 }
 
+func (m *DebugRequest) MessageTypeKey() string {
+	return "msg/type/DebugRequest"
+}
+
 // Helper method to check that enums have valid values
 func (m *DebugRequest) ValidateEnums() error {
 	if err := m.Node.ValidateEnums(); err != nil {
@@ -816,6 +820,10 @@ func (m *DebugReply) DeepCopyIn(src *DebugReply) {
 	m.Node.DeepCopyIn(&src.Node)
 	m.Output = src.Output
 	m.Id = src.Id
+}
+
+func (m *DebugReply) MessageTypeKey() string {
+	return "msg/type/DebugReply"
 }
 
 // Helper method to check that enums have valid values

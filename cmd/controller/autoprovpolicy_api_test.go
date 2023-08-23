@@ -48,15 +48,11 @@ func TestAutoProvPolicyApi(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
-	dummyResponder := DummyInfoResponder{
-		AppInstCache:        &apis.appInstApi.cache,
-		ClusterInstCache:    &apis.clusterInstApi.cache,
-		RecvAppInstInfo:     apis.appInstInfoApi,
-		RecvClusterInstInfo: apis.clusterInstInfoApi,
-	}
+	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
 	reduceInfoTimeouts(t, ctx, apis)
 
+	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 	cloudletData := testutil.CloudletData()
 	testutil.InternalAutoProvPolicyTest(t, "cud", apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())

@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 )
 
 // SetProject sets the project in gcloud config
@@ -94,8 +94,4 @@ func (g *GCPPlatform) GetClusterAdditionalResources(ctx context.Context, cloudle
 
 func (g *GCPPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
 	return nil
-}
-
-func (g *GCPPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	return &edgeproto.CloudletResourceQuotaProps{}, nil
 }

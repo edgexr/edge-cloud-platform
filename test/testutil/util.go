@@ -15,11 +15,13 @@
 package testutil
 
 import (
+	"errors"
 	"log"
 	"sort"
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"google.golang.org/grpc/status"
 )
 
 //based on the api some errors will be converted to no error
@@ -37,6 +39,18 @@ func ignoreExpectedErrors(api string, key objstore.ObjKey, err error) error {
 			log.Printf("ignoring error on create : %v\n", err)
 			return nil
 		}
+	}
+	return err
+}
+
+func unwrapGrpcError(err error) error {
+	if err == nil {
+		return nil
+	}
+	// This allows require.Nil(t, err) to actually print
+	// the contents of the error, instead of just the Status type.
+	if st, ok := status.FromError(err); ok {
+		return errors.New(st.String())
 	}
 	return err
 }

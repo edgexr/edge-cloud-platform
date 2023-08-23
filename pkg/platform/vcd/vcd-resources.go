@@ -203,20 +203,6 @@ func (v *VcdPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edge
 	return resInfo, nil
 }
 
-func (v *VcdPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletResourceQuotaProps")
-
-	return &edgeproto.CloudletResourceQuotaProps{
-		Properties: []edgeproto.InfraResource{
-			{
-				Name:        cloudcommon.ResourceInstances,
-				Description: cloudcommon.ResourceQuotaDesc[cloudcommon.ResourceInstances],
-			},
-		},
-	}, nil
-
-}
-
 func getVcdResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, resources []edgeproto.VMResource) *VcdResources {
 	log.SpanLog(ctx, log.DebugLevelInfra, "getVcdResources", "vmRes count", len(resources))
 	var vRes VcdResources
