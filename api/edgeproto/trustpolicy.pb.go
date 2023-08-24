@@ -1169,7 +1169,7 @@ func (c *TrustPolicyCache) DeleteCondFunc(ctx context.Context, in *TrustPolicy, 
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {

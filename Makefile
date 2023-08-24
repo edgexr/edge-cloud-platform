@@ -67,6 +67,8 @@ install-linux:
 GOGOPROTO	= $(shell GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/gogo/protobuf)
 GRPCGATEWAY	= $(shell GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/grpc-ecosystem/grpc-gateway)
 
+.PHONY: tools
+
 tools:
 	make -f Makefile.tools
 
@@ -132,35 +134,36 @@ unit-test: gen-test-certs
 		grep -A2 "FATAL" $(UNIT_TEST_LOG)) && \
 		grep "FAIL\tgithub.com" $(UNIT_TEST_LOG))
 
-E2E_SETUP	= ./test/e2e-tests/setups/local_multi.yml
-E2E_VARS	= ./test/e2e-tests/vars.yml
-E2E_TESTFILE	= ./test/e2e-tests/testfiles/regression_run.yml
-E2E_TESTSTART	= ./test/e2e-tests/testfiles/deploy_start_create.yml
-E2E_TESTRESET	= ./test/test/e2e-tests/testfiles/deploy_reset_create.yml
-E2E_TESTSTOP	= ./test/e2e-tests/testfiles/stop_cleanup.yml
+E2E_BIN		?= e2e-tests
+E2E_SETUP	?= ./test/e2e-tests/setups/local_multi.yml
+E2E_VARS	?= ./test/e2e-tests/vars.yml
+E2E_TESTFILE	?= ./test/e2e-tests/testfiles/regression_run.yml
+E2E_TESTSTART	?= ./test/e2e-tests/testfiles/deploy_start_create.yml
+E2E_TESTRESET	?= ./test/test/e2e-tests/testfiles/deploy_reset_create.yml
+E2E_TESTSTOP	?= ./test/e2e-tests/testfiles/stop_cleanup.yml
 
 test:
-	e2e-tests -testfile $(E2E_TESTFILE) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS)
+	$(E2E_BIN) -testfile $(E2E_TESTFILE) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS)
 
 test-debug:
-	e2e-tests -testfile $(E2E_TESTFILE) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -stop -notimestamp
+	$(E2E_BIN) -testfile $(E2E_TESTFILE) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -stop -notimestamp
 
 test-extra:
-	e2e-tests -testfile $(E2E_TESTFILE) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -runextra
+	$(E2E_BIN) -testfile $(E2E_TESTFILE) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -runextra
 
 test-extra-debug:
-	e2e-tests -testfile $(E2E_TESTFILE) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -runextra -stop -notimestamp
+	$(E2E_BIN) -testfile $(E2E_TESTFILE) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -runextra -stop -notimestamp
 
 # start/restart local processes to run individual python or other tests against
 test-start:
-	e2e-tests -testfile $(E2E_TESTSTART) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -stop -notimestamp
+	$(E2E_BIN) -testfile $(E2E_TESTSTART) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -stop -notimestamp
 
 # restart process, clean data
 test-reset:
-	e2e-tests -testfile $(E2E_TESTRESET) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -stop -notimestamp
+	$(E2E_BIN) -testfile $(E2E_TESTRESET) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -stop -notimestamp
 
 test-stop:
-	e2e-tests -testfile $(E2E_TESTSTOP) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -notimestamp
+	$(E2E_BIN) -testfile $(E2E_TESTSTOP) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -notimestamp
 
 # QA testing - manual
 test-robot-start:

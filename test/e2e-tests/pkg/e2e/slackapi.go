@@ -43,11 +43,11 @@ type TestSlackMsg struct {
 	} `json:"attachments"`
 }
 
-func GetHttpServer(name string) *intprocess.HttpServer {
+func (s *TestSpecRunner) GetHttpServer(name string) *intprocess.HttpServer {
 	if name == "" {
-		return Deployment.HttpServers[0]
+		return s.Deployment.HttpServers[0]
 	}
-	for _, server := range Deployment.HttpServers {
+	for _, server := range s.Deployment.HttpServers {
 		if server.Name == name {
 			return server
 		}
@@ -57,7 +57,7 @@ func GetHttpServer(name string) *intprocess.HttpServer {
 }
 
 // get api
-func RunSlackAPI(api, apiFile, outputDir string) error {
+func (s *TestSpecRunner) RunSlackAPI(api, apiFile, outputDir string) error {
 	servers := make([]E2eServerName, 0)
 	if apiFile != "" {
 		err := ReadYamlFile(apiFile, &servers)
@@ -72,7 +72,7 @@ func RunSlackAPI(api, apiFile, outputDir string) error {
 	switch api {
 	case "check":
 		for ii, sName := range servers {
-			proc := GetHttpServer(sName.Name)
+			proc := s.GetHttpServer(sName.Name)
 			apiUrl := fmt.Sprintf("0.0.0.0:%d%s", proc.Port, ListSlackMessagesApi)
 			cmd := exec.Command("curl", "-s", "-S", apiUrl)
 			out, err := cmd.CombinedOutput()
@@ -102,7 +102,7 @@ func RunSlackAPI(api, apiFile, outputDir string) error {
 		}
 	case "deleteall":
 		for _, sName := range servers {
-			proc := GetHttpServer(sName.Name)
+			proc := s.GetHttpServer(sName.Name)
 			apiUrl := fmt.Sprintf("0.0.0.0:%d%s", proc.Port, DeleteAllSlackMessagesApi)
 			cmd := exec.Command("curl", "-s", "-S", "-X", "DELETE", apiUrl)
 			_, err := cmd.CombinedOutput()

@@ -29,11 +29,11 @@ func getCloudflareUserAndKey() (string, string) {
 	return user, apikey
 }
 
-func CreateCloudflareRecords() error {
+func (s *TestSpecRunner) CreateCloudflareRecords() error {
 	log.Printf("createCloudflareRecords\n")
 
 	ttl := 300
-	if Deployment.Cloudflare.Zone == "" {
+	if s.Deployment.Cloudflare.Zone == "" {
 		return nil
 	}
 	user, apiKey := getCloudflareUserAndKey()
@@ -47,12 +47,12 @@ func CreateCloudflareRecords() error {
 		log.Printf("Error in getting Cloudflare API %v\n", err)
 		return err
 	}
-	zoneID, err := api.ZoneIDByName(Deployment.Cloudflare.Zone)
+	zoneID, err := api.ZoneIDByName(s.Deployment.Cloudflare.Zone)
 	if err != nil {
 		log.Printf("Cloudflare zone error: %v\n", err)
 		return err
 	}
-	for _, r := range Deployment.Cloudflare.Records {
+	for _, r := range s.Deployment.Cloudflare.Records {
 		log.Printf("adding dns entry: %s content: %s \n", r.Name, r.Content)
 
 		addRecord := cloudflare.DNSRecord{
@@ -96,10 +96,10 @@ func CreateCloudflareRecords() error {
 }
 
 //delete provioned records from DNS
-func DeleteCloudfareRecords() error {
+func (s *TestSpecRunner) DeleteCloudfareRecords() error {
 	log.Printf("deleteCloudfareRecords\n")
 
-	if Deployment.Cloudflare.Zone == "" {
+	if s.Deployment.Cloudflare.Zone == "" {
 		return nil
 	}
 	user, apiKey := getCloudflareUserAndKey()
@@ -112,7 +112,7 @@ func DeleteCloudfareRecords() error {
 		log.Printf("Error in getting Cloudflare API %v\n", err)
 		return err
 	}
-	zoneID, err := api.ZoneIDByName(Deployment.Cloudflare.Zone)
+	zoneID, err := api.ZoneIDByName(s.Deployment.Cloudflare.Zone)
 	if err != nil {
 		log.Printf("Cloudflare zone error: %v\n", err)
 		return err
@@ -121,7 +121,7 @@ func DeleteCloudfareRecords() error {
 	//make a hash of the records we are looking for so we don't have to iterate thru the
 	//list many times
 	recordsToClean := make(map[string]bool)
-	for _, d := range Deployment.Cloudflare.Records {
+	for _, d := range s.Deployment.Cloudflare.Records {
 		//	recordsToClean[strings.ToLower(d.Name+d.Type+d.Content)] = true
 		//delete records with the same name even if they point to a different ip
 		recordsToClean[strings.ToLower(d.Name+d.Type)] = true

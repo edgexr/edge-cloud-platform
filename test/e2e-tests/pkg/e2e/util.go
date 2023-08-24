@@ -52,7 +52,6 @@ type CompareYaml struct {
 	FileType string `json:"filetype" yaml:"filetype"`
 }
 
-var Deployment DeploymentData
 var ApiAddrNone = "NONE"
 
 type yamlFileType int
@@ -66,9 +65,6 @@ type SetupVariables struct {
 	Vars     []map[string]string
 	Includes []string
 }
-
-// replacement variables taken from the setup
-var DeploymentReplacementVars map[string]string
 
 type ReturnCodeWithText struct {
 	Success bool
@@ -161,106 +157,106 @@ type errorReply struct {
 	Details []string
 }
 
-func GetAllProcesses() []process.Process {
+func (s *TestSpecRunner) GetAllProcesses() []process.Process {
 	all := make([]process.Process, 0)
-	for _, p := range Deployment.Locsims {
+	for _, p := range s.Deployment.Locsims {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Toksims {
+	for _, p := range s.Deployment.Toksims {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Vaults {
+	for _, p := range s.Deployment.Vaults {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Etcds {
+	for _, p := range s.Deployment.Etcds {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Controllers {
+	for _, p := range s.Deployment.Controllers {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.CCRMs {
+	for _, p := range s.Deployment.CCRMs {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Dmes {
+	for _, p := range s.Deployment.Dmes {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.SampleApps {
+	for _, p := range s.Deployment.SampleApps {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Influxs {
+	for _, p := range s.Deployment.Influxs {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.ClusterSvcs {
+	for _, p := range s.Deployment.ClusterSvcs {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Jaegers {
+	for _, p := range s.Deployment.Jaegers {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.NginxProxys {
+	for _, p := range s.Deployment.NginxProxys {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Traefiks {
+	for _, p := range s.Deployment.Traefiks {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.NotifyRoots {
+	for _, p := range s.Deployment.NotifyRoots {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.EdgeTurns {
+	for _, p := range s.Deployment.EdgeTurns {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.ElasticSearchs {
+	for _, p := range s.Deployment.ElasticSearchs {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.RedisCaches {
+	for _, p := range s.Deployment.RedisCaches {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Sqls {
+	for _, p := range s.Deployment.Sqls {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Alertmanagers {
+	for _, p := range s.Deployment.Alertmanagers {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.AlertmgrSidecars {
+	for _, p := range s.Deployment.AlertmgrSidecars {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Mcs {
+	for _, p := range s.Deployment.Mcs {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Frms {
+	for _, p := range s.Deployment.Frms {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Shepherds {
+	for _, p := range s.Deployment.Shepherds {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.AutoProvs {
+	for _, p := range s.Deployment.AutoProvs {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Prometheus {
+	for _, p := range s.Deployment.Prometheus {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.HttpServers {
+	for _, p := range s.Deployment.HttpServers {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.ChefServers {
+	for _, p := range s.Deployment.ChefServers {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Maildevs {
+	for _, p := range s.Deployment.Maildevs {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.ThanosQueries {
+	for _, p := range s.Deployment.ThanosQueries {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.ThanosReceives {
+	for _, p := range s.Deployment.ThanosReceives {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Qossessims {
+	for _, p := range s.Deployment.Qossessims {
 		all = append(all, p)
 	}
 	return all
 }
 
-func GetProcessByName(processName string) process.Process {
-	for _, p := range GetAllProcesses() {
+func (s *TestSpecRunner) GetProcessByName(processName string) process.Process {
+	for _, p := range s.GetAllProcesses() {
 		if processName == p.GetName() {
 			return p
 		}
@@ -313,11 +309,11 @@ func ConnectController(p *process.Controller, c chan ReturnCodeWithText) {
 }
 
 //default is to connect to the first controller, unless we specified otherwise
-func GetController(ctrlname string) *process.Controller {
+func (s *TestSpecRunner) GetController(ctrlname string) *process.Controller {
 	if ctrlname == "" {
-		return Deployment.Controllers[0]
+		return s.Deployment.Controllers[0]
 	}
-	for _, ctrl := range Deployment.Controllers {
+	for _, ctrl := range s.Deployment.Controllers {
 		if ctrl.Name == ctrlname {
 			return ctrl
 		}
@@ -326,11 +322,11 @@ func GetController(ctrlname string) *process.Controller {
 	return nil //unreachable
 }
 
-func GetCCRM(ccrmName string) *process.CCRM {
+func (s *TestSpecRunner) GetCCRM(ccrmName string) *process.CCRM {
 	if ccrmName == "" {
-		return Deployment.CCRMs[0]
+		return s.Deployment.CCRMs[0]
 	}
-	for _, ccrm := range Deployment.CCRMs {
+	for _, ccrm := range s.Deployment.CCRMs {
 		if ccrm.Name == ccrmName {
 			return ccrm
 		}
@@ -339,11 +335,11 @@ func GetCCRM(ccrmName string) *process.CCRM {
 	return nil //unreachable
 }
 
-func GetDme(dmename string) *process.Dme {
+func (s *TestSpecRunner) GetDme(dmename string) *process.Dme {
 	if dmename == "" {
-		return Deployment.Dmes[0]
+		return s.Deployment.Dmes[0]
 	}
-	for _, dme := range Deployment.Dmes {
+	for _, dme := range s.Deployment.Dmes {
 		if dme.Name == dmename {
 			return dme
 		}
@@ -363,11 +359,11 @@ func ConnectDme(p *process.Dme, c chan ReturnCodeWithText) {
 	}
 }
 
-func GetInflux(name string) *process.Influx {
+func (s *TestSpecRunner) GetInflux(name string) *process.Influx {
 	if name == "" {
-		return Deployment.Influxs[0]
+		return s.Deployment.Influxs[0]
 	}
-	for _, influx := range Deployment.Influxs {
+	for _, influx := range s.Deployment.Influxs {
 		if influx.Name == name {
 			return influx
 		}
@@ -376,14 +372,14 @@ func GetInflux(name string) *process.Influx {
 	return nil // unreachable
 }
 
-func checkCloudletState(p *process.Crm, timeout time.Duration) error {
+func (s *TestSpecRunner) checkCloudletState(p *process.Crm, timeout time.Duration) error {
 	filter := edgeproto.CloudletInfo{}
 	err := json.Unmarshal([]byte(p.CloudletKey), &filter.Key)
 	if err != nil {
 		return fmt.Errorf("unable to parse CloudletKey")
 	}
 
-	conn := connectOnlineController(timeout)
+	conn := s.connectOnlineController(timeout)
 	if conn == nil {
 		return fmt.Errorf("unable to connect to online controller")
 	}
@@ -424,8 +420,8 @@ func checkCloudletState(p *process.Crm, timeout time.Duration) error {
 	return err
 }
 
-func connectOnlineController(delay time.Duration) *grpc.ClientConn {
-	for _, ctrl := range Deployment.Controllers {
+func (s *TestSpecRunner) connectOnlineController(delay time.Duration) *grpc.ClientConn {
+	for _, ctrl := range s.Deployment.Controllers {
 		conn, err := ctrl.ConnectAPI(delay)
 		if err == nil {
 			return conn

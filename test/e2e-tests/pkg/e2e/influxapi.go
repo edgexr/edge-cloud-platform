@@ -28,7 +28,7 @@ type influxData struct {
 	Cmd      string
 }
 
-func RunInfluxAPI(api, influxname, apiFile string, apiFileVars map[string]string, outputDir string) bool {
+func (s *TestSpecRunner) RunInfluxAPI(api, influxname, apiFile string, apiFileVars map[string]string, outputDir string) bool {
 	log.Printf("Running influx APIs for %s\n", apiFile)
 
 	if apiFile == "" {
@@ -43,7 +43,7 @@ func RunInfluxAPI(api, influxname, apiFile string, apiFileVars map[string]string
 		os.Exit(1)
 	}
 
-	proc := GetInflux(influxname)
+	proc := s.GetInflux(influxname)
 	cl, err := proc.GetClient()
 	if err != nil {
 		log.Printf("failed to create new influx client, process %v, %v\n", proc, err)

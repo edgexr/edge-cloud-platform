@@ -1286,7 +1286,7 @@ func (c *FlavorCache) DeleteCondFunc(ctx context.Context, in *Flavor, modRev int
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {

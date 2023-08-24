@@ -2335,7 +2335,7 @@ func (c *VMPoolCache) DeleteCondFunc(ctx context.Context, in *VMPool, modRev int
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {
@@ -3651,7 +3651,7 @@ func (c *VMPoolInfoCache) DeleteCondFunc(ctx context.Context, in *VMPoolInfo, mo
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {

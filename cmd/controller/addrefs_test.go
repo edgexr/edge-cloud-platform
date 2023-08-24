@@ -236,6 +236,7 @@ func (s *AddRefsDataGen) GetCreateCloudletPoolTestObj() (*edgeproto.CloudletPool
 }
 
 func (s *AddRefsDataGen) GetCreateClusterInstTestObj() (*edgeproto.ClusterInst, *testSupportData) {
+	features := testutil.PlatformFeaturesData()[0]
 	cloudlet := testutil.CloudletData()[0]
 	cloudletInfo := testutil.CloudletInfoData()[0]
 	flavor := testutil.FlavorData()[0]
@@ -258,6 +259,7 @@ func (s *AddRefsDataGen) GetCreateClusterInstTestObj() (*edgeproto.ClusterInst, 
 	supportData.Flavors = []edgeproto.Flavor{flavor}
 	supportData.AutoScalePolicies = []edgeproto.AutoScalePolicy{autoScalePolicy}
 	supportData.Networks = []edgeproto.Network{network}
+	supportData.PlatformFeatures = []edgeproto.PlatformFeatures{features}
 	return &clusterInst, supportData
 }
 

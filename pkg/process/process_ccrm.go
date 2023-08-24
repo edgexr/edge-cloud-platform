@@ -72,6 +72,9 @@ func (p *CCRM) StartLocal(logfile string, opts ...StartOp) error {
 		args = append(args, "-d")
 		args = append(args, options.Debug)
 	}
+	if options.ExeName == "" {
+		options.ExeName = p.GetExeName()
+	}
 
 	envs := p.GetEnv()
 	if options.RolesFile != "" {
@@ -92,7 +95,7 @@ func (p *CCRM) StartLocal(logfile string, opts ...StartOp) error {
 	}
 
 	var err error
-	p.cmd, err = StartLocal(p.Name, p.GetExeName(), args, envs, logfile)
+	p.cmd, err = StartLocal(p.Name, options.ExeName, args, envs, logfile)
 	return err
 }
 

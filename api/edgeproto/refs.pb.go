@@ -1634,7 +1634,7 @@ func (c *CloudletRefsCache) DeleteCondFunc(ctx context.Context, in *CloudletRefs
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {
@@ -2354,7 +2354,7 @@ func (c *ClusterRefsCache) DeleteCondFunc(ctx context.Context, in *ClusterRefs, 
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {
@@ -3074,7 +3074,7 @@ func (c *AppInstRefsCache) DeleteCondFunc(ctx context.Context, in *AppInstRefs, 
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {
