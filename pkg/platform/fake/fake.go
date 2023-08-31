@@ -45,6 +45,7 @@ type Platform struct {
 	clusterTPEs   map[cloudcommon.TrustPolicyExceptionKeyClusterInstKey]struct{}
 	mux           sync.Mutex
 	cloudletKey   *edgeproto.CloudletKey
+	crmServiceOps []process.CrmServiceOp
 }
 
 var (
@@ -572,6 +573,10 @@ func (s *Platform) GetConsoleUrl(ctx context.Context, app *edgeproto.App, appIns
 	return "", fmt.Errorf("no console server to fetch URL from")
 }
 
+func (s *Platform) AddCrmServiceOps(ops ...process.CrmServiceOp) {
+	s.crmServiceOps = append(s.crmServiceOps, ops...)
+}
+
 func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "create fake cloudlet", "key", cloudlet.Key)
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
@@ -583,7 +588,7 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	if cloudlet.PlatformHighAvailability {
 		redisCfg.StandaloneAddr = rediscache.DefaultRedisStandaloneAddr
 	}
-	err := process.StartCRMService(ctx, cloudlet, pfConfig, process.HARolePrimary, &redisCfg)
+	err := process.StartCRMService(ctx, cloudlet, pfConfig, process.HARolePrimary, &redisCfg, s.crmServiceOps...)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "fake cloudlet create failed to start CRM", "err", err)
 		return true, err
@@ -609,7 +614,7 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 					log.SpanLog(ctx, log.DebugLevelInfra, "failed to get cloudlet info after starting primary CRM, will retry", "cloudletKey", s.cloudletKey)
 				} else {
 					log.SpanLog(ctx, log.DebugLevelInfra, "got cloudlet info from primary CRM, will start secondary", "cloudletKey", cloudlet.Key, "active", cloudletInfo.ActiveCrmInstance, "ci", cloudletInfo)
-					err = process.StartCRMService(ctx, cloudlet, pfConfig, process.HARoleSecondary, &redisCfg)
+					err = process.StartCRMService(ctx, cloudlet, pfConfig, process.HARoleSecondary, &redisCfg, s.crmServiceOps...)
 					if err != nil {
 						log.SpanLog(ctx, log.DebugLevelInfra, "fake cloudlet create failed to start secondary CRM", "err", err)
 					}
@@ -699,7 +704,7 @@ func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	log.DebugLog(log.DebugLevelInfra, "delete fake Cloudlet", "key", cloudlet.Key)
 	updateCallback(edgeproto.UpdateTask, "Deleting Cloudlet")
 	updateCallback(edgeproto.UpdateTask, "Stopping CRMServer")
-	err := process.StopCRMService(ctx, cloudlet, process.HARoleAll)
+	err := process.StopCRMService(ctx, cloudlet, process.HARoleAll, s.crmServiceOps...)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "fake cloudlet delete failed", "err", err)
 		return err

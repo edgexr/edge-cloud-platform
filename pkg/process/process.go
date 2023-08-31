@@ -76,6 +76,10 @@ func (c *Common) GetHostname() string {
 	return c.Hostname
 }
 
+func (c *Common) GetEnvVarsP() *map[string]string {
+	return &c.EnvVars
+}
+
 func (c *Common) GetEnv() []string {
 	envs := []string{}
 	for k, v := range c.EnvVars {
@@ -143,6 +147,7 @@ type StartOptions struct {
 	CleanStartup bool
 	ExtraArgs    []string
 	NoConfig     bool
+	ExeName      string
 }
 
 type StartOp func(op *StartOptions)
@@ -165,6 +170,10 @@ func WithExtraArgs(params []string) StartOp {
 
 func WithNoConfig() StartOp {
 	return func(op *StartOptions) { op.NoConfig = true }
+}
+
+func WithCustomExeName(exeName string) StartOp {
+	return func(op *StartOptions) { op.ExeName = exeName }
 }
 
 func (s *StartOptions) ApplyStartOptions(opts ...StartOp) {

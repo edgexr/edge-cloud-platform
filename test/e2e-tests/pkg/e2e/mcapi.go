@@ -74,12 +74,13 @@ type FedDataOut struct {
 	AppInsts  []fedewapi.GetAppInstanceDetails200Response
 }
 
-func RunMcAPI(api, mcname, apiFile string, actionVars, apiFileVars map[string]string, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, retry *bool) bool {
-	mc := getMC(mcname)
+func (s *TestSpecRunner) RunMcAPI(api, mcname, apiFile string, actionVars, apiFileVars map[string]string, curUserFile, outputDir string, mods []string, vars map[string]string, retry *bool) bool {
+	mc := s.getMC(mcname)
 	uri := "https://" + mc.Addr + "/api/v1"
 	log.Printf("Using MC %s at %s", mc.Name, uri)
 
 	vars = util.AddMaps(vars, apiFileVars)
+	sharedData := s.SharedData
 
 	var clientRun mctestclient.ClientRun
 	if hasMod("cli", mods) {
@@ -132,11 +133,11 @@ func RunMcAPI(api, mcname, apiFile string, actionVars, apiFileVars map[string]st
 	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, actionVars, vars, sharedData, retry)
 }
 
-func getMC(name string) *process.MC {
+func (s *TestSpecRunner) getMC(name string) *process.MC {
 	if name == "" {
-		return Deployment.Mcs[0]
+		return s.Deployment.Mcs[0]
 	}
-	for _, mc := range Deployment.Mcs {
+	for _, mc := range s.Deployment.Mcs {
 		if mc.Name == name {
 			return mc
 		}
@@ -1074,7 +1075,9 @@ func showMcData(uri, token, tag string, objTypes edgeproto.AllSelector, rc *bool
 		}
 		// Ignore platform features. There is a lot of platform-specific
 		// info and it may change as we add new platforms.
-		appdata.PlatformFeatures = nil
+		if !objTypes.HasExplicit("platformfeatures") {
+			appdata.PlatformFeatures = nil
+		}
 		rd := ormapi.RegionData{
 			Region:  ctrl.Region,
 			AppData: *appdata,

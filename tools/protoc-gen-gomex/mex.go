@@ -1305,16 +1305,17 @@ func (s *{{.Name}}StoreImpl) STMDel(stm concurrency.STM, key *{{.KeyType}}) {
 `
 
 type cacheTemplateArgs struct {
-	Name          string
-	KeyType       string
-	CudCache      bool
-	NotifyCache   bool
-	NotifyFlush   bool
-	ParentObjName string
-	WaitForState  string
-	ObjAndKey     bool
-	CustomKeyType string
-	StreamOut     bool
+	Name           string
+	KeyType        string
+	CudCache       bool
+	NotifyCache    bool
+	NotifyFlush    bool
+	ParentObjName  string
+	WaitForState   string
+	ObjAndKey      bool
+	CustomKeyType  string
+	StreamOut      bool
+	StringKeyField string
 }
 
 var cacheTemplateIn = `
@@ -1472,7 +1473,7 @@ func (c *{{.Name}}Cache) DeleteCondFunc(ctx context.Context, in *{{.Name}}, modR
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {
@@ -1715,6 +1716,8 @@ func (c *{{.Name}}Cache) SyncDelete(ctx context.Context, key []byte, rev, modRev
 	keystr := objstore.DbKeyPrefixRemove(string(key))
 {{- if .CustomKeyType}}
 	{{.KeyType}}StringParse(keystr, &obj)
+{{- else if (.StringKeyField) }}
+    obj.{{.StringKeyField}} = keystr
 {{- else}}
 	{{.KeyType}}StringParse(keystr, obj.GetKey())
 {{- end}}
@@ -2305,16 +2308,17 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 			m.gen.Fail(err.Error())
 		}
 		args := cacheTemplateArgs{
-			Name:          *message.Name,
-			CudCache:      GetGenerateCud(message),
-			NotifyCache:   GetNotifyCache(message),
-			NotifyFlush:   GetNotifyFlush(message),
-			ParentObjName: GetParentObjName(message),
-			WaitForState:  GetGenerateWaitForState(message),
-			ObjAndKey:     gensupport.GetObjAndKey(message),
-			CustomKeyType: gensupport.GetCustomKeyType(message),
-			KeyType:       keyType,
-			StreamOut:     gensupport.GetGenerateCudStreamout(message),
+			Name:           *message.Name,
+			CudCache:       GetGenerateCud(message),
+			NotifyCache:    GetNotifyCache(message),
+			NotifyFlush:    GetNotifyFlush(message),
+			ParentObjName:  GetParentObjName(message),
+			WaitForState:   GetGenerateWaitForState(message),
+			ObjAndKey:      gensupport.GetObjAndKey(message),
+			CustomKeyType:  gensupport.GetCustomKeyType(message),
+			KeyType:        keyType,
+			StreamOut:      gensupport.GetGenerateCudStreamout(message),
+			StringKeyField: gensupport.GetStringKeyField(message),
 		}
 		m.cacheTemplate.Execute(m.gen.Buffer, args)
 		m.importUtil = true

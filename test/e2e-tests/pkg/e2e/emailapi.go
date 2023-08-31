@@ -80,11 +80,11 @@ type MailDevEmail struct {
 	*/
 }
 
-func GetMaildev(name string) *process.Maildev {
+func (s *TestSpecRunner) GetMaildev(name string) *process.Maildev {
 	if name == "" {
-		return Deployment.Maildevs[0]
+		return s.Deployment.Maildevs[0]
 	}
-	for _, maildev := range Deployment.Maildevs {
+	for _, maildev := range s.Deployment.Maildevs {
 		if maildev.Name == name {
 			return maildev
 		}
@@ -94,7 +94,7 @@ func GetMaildev(name string) *process.Maildev {
 }
 
 // get api
-func RunEmailAPI(api, apiFile, outputDir string) error {
+func (s *TestSpecRunner) RunEmailAPI(api, apiFile, outputDir string) error {
 	servers := make([]E2eServerName, 0)
 	if apiFile != "" {
 		err := ReadYamlFile(apiFile, &servers)
@@ -109,7 +109,7 @@ func RunEmailAPI(api, apiFile, outputDir string) error {
 	switch api {
 	case "check":
 		for ii, sName := range servers {
-			proc := GetMaildev(sName.Name)
+			proc := s.GetMaildev(sName.Name)
 			apiUrl := fmt.Sprintf("0.0.0.0:%d/email", proc.UiPort)
 			cmd := exec.Command("curl", "-s", "-S", apiUrl)
 			out, err := cmd.CombinedOutput()
@@ -139,7 +139,7 @@ func RunEmailAPI(api, apiFile, outputDir string) error {
 		}
 	case "deleteall":
 		for _, sName := range servers {
-			proc := GetMaildev(sName.Name)
+			proc := s.GetMaildev(sName.Name)
 			apiUrl := fmt.Sprintf("0.0.0.0:%d/email/all", proc.UiPort)
 			cmd := exec.Command("curl", "-s", "-S", "-X", "DELETE", apiUrl)
 			_, err := cmd.CombinedOutput()

@@ -7,6 +7,6 @@ import (
 )
 
 func main() {
-	c := ccrm.NewCCRM(node.NodeTypeCCRM, platforms.GetPlatformsBuilders())
+	c := ccrm.NewCCRM(node.NodeTypeCCRM, platforms.All.GetBuilders())
 	c.Run()
 }

@@ -63,12 +63,12 @@ func summarizeError(output string) string {
 	return "unknown error - see logs"
 }
 
-func CreateK8sCluster() error {
-	return runCommand("create", "mex", "cluster", "create", "-manifest", Deployment.Cluster.MexManifest)
+func (s *TestSpecRunner) CreateK8sCluster() error {
+	return runCommand("create", "mex", "cluster", "create", "-manifest", s.Deployment.Cluster.MexManifest)
 }
 
-func DeleteK8sCluster() error {
-	return runCommand("delete", "mex", "cluster", "remove", "-manifest", Deployment.Cluster.MexManifest)
+func (s *TestSpecRunner) DeleteK8sCluster() error {
+	return runCommand("delete", "mex", "cluster", "remove", "-manifest", s.Deployment.Cluster.MexManifest)
 }
 
 func runCommand(actionType string, command string, args ...string) error {
@@ -137,12 +137,12 @@ func copyFileToPods(podName string, src string, dest string) error {
 	return nil
 }
 
-func DeployK8sServices(directory string) error {
+func (s *TestSpecRunner) DeployK8sServices(directory string) error {
 	err := getKubeClient()
 	if err != nil {
 		return err
 	}
-	for _, k := range Deployment.K8sDeployment {
+	for _, k := range s.Deployment.K8sDeployment {
 		err := runCommand("create", "kubectl", "create", "-f", directory+"/"+k.File)
 		if err != nil {
 			return err
@@ -166,10 +166,10 @@ func DeployK8sServices(directory string) error {
 	return nil
 }
 
-func DeleteK8sServices(directory string) error {
+func (s *TestSpecRunner) DeleteK8sServices(directory string) error {
 	//go thru in reverse order
-	for i := len(Deployment.K8sDeployment) - 1; i >= 0; i-- {
-		err := runCommand("delete", "kubectl", "delete", "-f", directory+"/"+Deployment.K8sDeployment[i].File)
+	for i := len(s.Deployment.K8sDeployment) - 1; i >= 0; i-- {
+		err := runCommand("delete", "kubectl", "delete", "-f", directory+"/"+s.Deployment.K8sDeployment[i].File)
 		if err != nil {
 			return err
 		}

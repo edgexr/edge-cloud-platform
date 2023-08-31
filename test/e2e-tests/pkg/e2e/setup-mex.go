@@ -18,7 +18,6 @@ package e2e
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -50,8 +49,14 @@ var tlsDir = ""
 //outout TLS cert dir
 var tlsOutDir = ""
 
-// some actions have sub arguments associated after equal sign,
-// e.g.--actions stop=ctrl1
+type TestSpecRunner struct {
+	TestConfig TestConfig
+	Deployment DeploymentData
+	SharedData map[string]string // data shared between subsequent tests
+}
+
+// GetActionParam some actions have sub arguments associated
+// after equal sign, e.g.--actions stop=ctrl1
 func GetActionParam(a string) (string, string) {
 	argslice := strings.SplitN(a, "=", 2)
 	action := argslice[0]
@@ -103,21 +108,21 @@ func IsLocalIP(hostname string) bool {
 	return hostname == "localhost" || hostname == "127.0.0.1"
 }
 
-func WaitForProcesses(processName string, procs []process.Process) bool {
+func (s *TestSpecRunner) WaitForProcesses(processName string, procs []process.Process) bool {
 	if !ensureProcesses(processName, procs) {
 		return false
 	}
 	log.Println("Wait for processes to respond to APIs")
 	c := make(chan ReturnCodeWithText)
 	count := 0
-	for _, ctrl := range Deployment.Controllers {
+	for _, ctrl := range s.Deployment.Controllers {
 		if processName != "" && processName != ctrl.Name {
 			continue
 		}
 		count++
 		go ConnectController(ctrl, c)
 	}
-	for _, dme := range Deployment.Dmes {
+	for _, dme := range s.Deployment.Dmes {
 		if processName != "" && processName != dme.Name {
 			continue
 		}
@@ -168,7 +173,7 @@ func getLogFile(procname string, outputDir string) string {
 	}
 }
 
-func ReadSetupFile(setupfile string, deployment interface{}, vars map[string]string) bool {
+func (s *TestSpecRunner) ReadSetupFile(setupfile string, deployment interface{}, vars map[string]string) bool {
 	//the setup file has a vars section with replacement variables.  ingest the file once
 	//to get these variables, and then ingest again to parse the setup data with the variables
 	var setupVars SetupVariables
@@ -213,8 +218,8 @@ func ReadSetupFile(setupfile string, deployment interface{}, vars map[string]str
 	//equals sign is not well handled in yaml so it is url encoded and changed after loading
 	//for some reason, this only happens when the yaml is read as ProcessData and not
 	//as a generic interface.  TODO: further study on this.
-	for i, _ := range Deployment.Dmes {
-		Deployment.Dmes[i].TokSrvUrl = strings.Replace(Deployment.Dmes[i].TokSrvUrl, "%3D", "=", -1)
+	for i, _ := range s.Deployment.Dmes {
+		s.Deployment.Dmes[i].TokSrvUrl = strings.Replace(s.Deployment.Dmes[i].TokSrvUrl, "%3D", "=", -1)
 	}
 	return true
 }
@@ -351,7 +356,7 @@ func CleanupKIND(ctx context.Context) error {
 	return nil
 }
 
-func StopProcesses(processName string, allprocs []process.Process) bool {
+func (s *TestSpecRunner) StopProcesses(processName string, allprocs []process.Process) bool {
 	PrintStepBanner("stopping processes " + processName)
 	maxWait := time.Second * 15
 	c := make(chan string)
@@ -382,11 +387,11 @@ func StopProcesses(processName string, allprocs []process.Process) bool {
 
 	if processName == "" {
 		// doing full clean up
-		for _, p := range Deployment.Etcds {
+		for _, p := range s.Deployment.Etcds {
 			log.Printf("cleaning etcd %+v", p)
 			p.ResetData()
 		}
-		for _, dn := range Deployment.DockerNetworks {
+		for _, dn := range s.Deployment.DockerNetworks {
 			log.Printf("Removing docker network %+v\n", dn)
 			if err := dn.Delete(); err != nil {
 				log.Printf("%s\n", err)
@@ -430,8 +435,8 @@ func StageLocDbFile(srcFile string, destDir string) {
 }
 
 // CleanupTLSCerts . Deletes certs for a CN
-func CleanupTLSCerts() error {
-	for _, t := range Deployment.TLSCerts {
+func (s *TestSpecRunner) CleanupTLSCerts() error {
+	for _, t := range s.Deployment.TLSCerts {
 		patt := tlsOutDir + "/" + t.CommonName + ".*"
 		log.Printf("Removing [%s]\n", patt)
 
@@ -451,8 +456,8 @@ func CleanupTLSCerts() error {
 // GenerateTLSCerts . create tls certs using certstrap.  This requires certstrap binary to be installed.  We can eventually
 // do this programmatically but certstrap has some dependency problems that require manual package workarounds
 // and so will use the command for now so as not to break builds.
-func GenerateTLSCerts() error {
-	for _, t := range Deployment.TLSCerts {
+func (s *TestSpecRunner) GenerateTLSCerts() error {
+	for _, t := range s.Deployment.TLSCerts {
 
 		var cmdargs = []string{"--depot-path", tlsOutDir, "request-cert", "--passphrase", "", "--common-name", t.CommonName}
 		if len(t.DNSNames) > 0 {
@@ -518,7 +523,7 @@ func StartLocalPar(processName, outputDir string, p process.Process, portsInUse 
 	}()
 }
 
-func StartProcesses(processName string, args []string, outputDir string) bool {
+func (s *TestSpecRunner) StartProcesses(processName string, args []string, outputDir string) bool {
 	if outputDir == "" {
 		outputDir = "."
 	}
@@ -539,7 +544,7 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 		return false
 	}
 
-	for _, dn := range Deployment.DockerNetworks {
+	for _, dn := range s.Deployment.DockerNetworks {
 		if processName != "" && dn.Name != processName {
 			continue
 		}
@@ -553,23 +558,23 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 	}
 	wg := sync.WaitGroup{}
 	failed := false
-	for _, p := range Deployment.Influxs {
+	for _, p := range s.Deployment.Influxs {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	vaultOpts := append(opts, process.WithRolesFile(rolesfile))
-	for _, p := range Deployment.Vaults {
+	for _, p := range s.Deployment.Vaults {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, vaultOpts...)
 	}
-	for _, p := range Deployment.Etcds {
+	for _, p := range s.Deployment.Etcds {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.ElasticSearchs {
+	for _, p := range s.Deployment.ElasticSearchs {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.RedisCaches {
+	for _, p := range s.Deployment.RedisCaches {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.Sqls {
+	for _, p := range s.Deployment.Sqls {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	// wait for databases
@@ -578,7 +583,7 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 		return false
 	}
 	// wait for jaeger which depends on elastic search
-	for _, p := range Deployment.Jaegers {
+	for _, p := range s.Deployment.Jaegers {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	wg.Wait()
@@ -587,79 +592,79 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 	}
 	opts = append(opts, process.WithRolesFile(rolesfile))
 
-	for _, p := range Deployment.Traefiks {
+	for _, p := range s.Deployment.Traefiks {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.NginxProxys {
+	for _, p := range s.Deployment.NginxProxys {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.NotifyRoots {
+	for _, p := range s.Deployment.NotifyRoots {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("api,notify,events"))...)
 	}
-	for _, p := range Deployment.EdgeTurns {
+	for _, p := range s.Deployment.EdgeTurns {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("api,notify"))...)
 	}
-	for _, p := range Deployment.Controllers {
+	for _, p := range s.Deployment.Controllers {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("etcd,api,notify,metrics,infra,events"))...)
 	}
-	for _, p := range Deployment.CCRMs {
+	for _, p := range s.Deployment.CCRMs {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("api,notify,metrics,infra,events"))...)
 	}
-	for _, p := range Deployment.Dmes {
+	for _, p := range s.Deployment.Dmes {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("locapi,dmedb,dmereq,notify,metrics,events"))...)
 	}
-	for _, p := range Deployment.ClusterSvcs {
+	for _, p := range s.Deployment.ClusterSvcs {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("notify,infra,api,events"))...)
 	}
-	for _, p := range Deployment.Crms {
+	for _, p := range s.Deployment.Crms {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("notify,infra,api,events"))...)
 	}
-	for _, p := range Deployment.Locsims {
+	for _, p := range s.Deployment.Locsims {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.Toksims {
+	for _, p := range s.Deployment.Toksims {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.SampleApps {
+	for _, p := range s.Deployment.SampleApps {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.Alertmanagers {
+	for _, p := range s.Deployment.Alertmanagers {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.AlertmgrSidecars {
+	for _, p := range s.Deployment.AlertmgrSidecars {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("api,notify,metrics,events"))...)
 	}
-	for _, p := range Deployment.Mcs {
+	for _, p := range s.Deployment.Mcs {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("api,metrics,events,notify"))...)
 	}
-	for _, p := range Deployment.Frms {
+	for _, p := range s.Deployment.Frms {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("api,infra,notify"))...)
 	}
-	for _, p := range Deployment.Shepherds {
+	for _, p := range s.Deployment.Shepherds {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("metrics,events"))...)
 	}
-	for _, p := range Deployment.AutoProvs {
+	for _, p := range s.Deployment.AutoProvs {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, append(opts, process.WithDebug("api,notify,metrics,events"))...)
 	}
-	for _, p := range Deployment.Prometheus {
+	for _, p := range s.Deployment.Prometheus {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.HttpServers {
+	for _, p := range s.Deployment.HttpServers {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.ChefServers {
+	for _, p := range s.Deployment.ChefServers {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.Maildevs {
+	for _, p := range s.Deployment.Maildevs {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.ThanosQueries {
+	for _, p := range s.Deployment.ThanosQueries {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.ThanosReceives {
+	for _, p := range s.Deployment.ThanosReceives {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
-	for _, p := range Deployment.Qossessims {
+	for _, p := range s.Deployment.Qossessims {
 		StartLocalPar(processName, outputDir, p, portsInUse, &wg, &failed, opts...)
 	}
 	wg.Wait()
@@ -706,41 +711,37 @@ func CleanupTmpFiles(ctx context.Context) error {
 	return nil
 }
 
-func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestConfig, spec *TestSpec, mods []string, vars map[string]string, sharedData map[string]string, retry *bool) []string {
+func (s *TestSpecRunner) RunAction(ctx context.Context, action, actionSubtype, actionParam, outputDir string, spec *TestSpec, specRaw map[string]interface{}, mods []string, vars map[string]string, retry *bool) []string {
 	var actionArgs []string
-
-	act, actionParam := GetActionParam(actionSpec)
-	action, actionSubtype := GetActionSubtype(act)
-	vars = util.AddMaps(vars, spec.ApiFileVars)
 
 	errs := []string{}
 
 	switch action {
 	case "deploy":
-		err := CreateCloudflareRecords()
+		err := s.CreateCloudflareRecords()
 		if err != nil {
 			errs = append(errs, err.Error())
 		}
-		if Deployment.Cluster.MexManifest != "" {
-			dir := path.Dir(config.SetupFile)
-			err := DeployK8sServices(dir)
+		if s.Deployment.Cluster.MexManifest != "" {
+			dir := path.Dir(s.TestConfig.SetupFile)
+			err := s.DeployK8sServices(dir)
 			if err != nil {
 				errs = append(errs, err.Error())
 			}
 		}
 	case "gencerts":
-		err := GenerateTLSCerts()
+		err := s.GenerateTLSCerts()
 		if err != nil {
 			errs = append(errs, err.Error())
 		}
 	case "cleancerts":
-		err := CleanupTLSCerts()
+		err := s.CleanupTLSCerts()
 		if err != nil {
 			errs = append(errs, err.Error())
 		}
 	case "start":
 		startFailed := false
-		allprocs := GetAllProcesses()
+		allprocs := s.GetAllProcesses()
 		if actionSubtype == "argument" {
 			// extract the action param and action args
 			actionArgs = GetActionArgs(actionParam)
@@ -758,28 +759,28 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 			}
 			log.Printf("Starting CRM %s connected to ctrl %s\n", actionParam, ctrlName)
 			// read the apifile and start crm with the details
-			err := StartCrmsLocal(ctx, actionParam, ctrlName, spec.ApiFile, spec.ApiFileVars, outputDir)
+			err := s.StartCrmsLocal(ctx, actionParam, ctrlName, spec.ApiFile, spec.ApiFileVars, outputDir)
 			if err != nil {
 				errs = append(errs, err.Error())
 			}
 			break
 		}
-		if !StartProcesses(actionParam, actionArgs, outputDir) {
+		if !s.StartProcesses(actionParam, actionArgs, outputDir) {
 			startFailed = true
 			errs = append(errs, "start failed")
 		}
 		if startFailed {
-			if !StopProcesses(actionParam, allprocs) {
+			if !s.StopProcesses(actionParam, allprocs) {
 				errs = append(errs, "stop failed")
 			}
 			break
 
 		}
-		if !WaitForProcesses(actionParam, allprocs) {
+		if !s.WaitForProcesses(actionParam, allprocs) {
 			errs = append(errs, "wait for process failed")
 		}
 	case "status":
-		if !WaitForProcesses(actionParam, GetAllProcesses()) {
+		if !s.WaitForProcesses(actionParam, s.GetAllProcesses()) {
 			errs = append(errs, "wait for process failed")
 		}
 	case "stop":
@@ -795,37 +796,37 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 			if rolearg != "" {
 				haRole = process.HARole(rolearg)
 			}
-			if err := StopCrmsLocal(ctx, actionParam, spec.ApiFile, spec.ApiFileVars, haRole); err != nil {
+			if err := s.StopCrmsLocal(ctx, actionParam, spec.ApiFile, spec.ApiFileVars, haRole); err != nil {
 				errs = append(errs, err.Error())
 			}
 		} else {
-			allprocs := GetAllProcesses()
-			if !StopProcesses(actionParam, allprocs) {
+			allprocs := s.GetAllProcesses()
+			if !s.StopProcesses(actionParam, allprocs) {
 				errs = append(errs, "stop failed")
 			}
 		}
 	case "ctrlapi":
-		if !RunControllerAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir, mods, retry) {
+		if !s.RunControllerAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir, mods, retry) {
 			log.Printf("Unable to run api for %s-%s, %v\n", action, actionSubtype, mods)
 			errs = append(errs, "controller api failed")
 		}
 	case "clientshow":
-		if !RunAppInstClientAPI(actionSubtype, actionParam, spec.ApiFile, outputDir) {
+		if !s.RunAppInstClientAPI(actionSubtype, actionParam, spec.ApiFile, outputDir) {
 			log.Printf("Unable to run ShowAppInstClient api for %s, %v\n", action, mods)
 			errs = append(errs, "ShowAppInstClient api failed")
 		}
 	case "exec":
-		if !RunCommandAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir) {
+		if !s.RunCommandAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir) {
 			log.Printf("Unable to run RunCommand api for %s, %v\n", action, mods)
 			errs = append(errs, "controller RunCommand api failed")
 		}
 	case "dmeapi":
-		if !RunDmeAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, spec.ApiType, outputDir, mods) {
+		if !s.RunDmeAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, spec.ApiType, outputDir, mods) {
 			log.Printf("Unable to run api for %s\n", action)
 			errs = append(errs, "dme api failed")
 		}
 	case "influxapi":
-		if !RunInfluxAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir) {
+		if !s.RunInfluxAPI(actionSubtype, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir) {
 			log.Printf("Unable to run influx api for %s\n", action)
 			errs = append(errs, "influx api failed")
 		}
@@ -840,18 +841,18 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 			errs = append(errs, "script failed")
 		}
 	case "mcapi":
-		if !RunMcAPI(actionSubtype, actionParam, spec.ApiFile, spec.ActionVars, spec.ApiFileVars, spec.CurUserFile, outputDir, mods, vars, sharedData, retry) {
+		if !s.RunMcAPI(actionSubtype, actionParam, spec.ApiFile, spec.ActionVars, spec.ApiFileVars, spec.CurUserFile, outputDir, mods, vars, retry) {
 			log.Printf("Unable to run api for %s\n", action)
 			errs = append(errs, "MC api failed")
 		}
 	case "cleanup":
-		err := DeleteCloudfareRecords()
+		err := s.DeleteCloudfareRecords()
 		if err != nil {
 			errs = append(errs, err.Error())
 		}
-		if Deployment.Cluster.MexManifest != "" {
-			dir := path.Dir(config.SetupFile)
-			err := DeleteK8sServices(dir)
+		if s.Deployment.Cluster.MexManifest != "" {
+			dir := path.Dir(s.TestConfig.SetupFile)
+			err := s.DeleteK8sServices(dir)
 			if err != nil {
 				errs = append(errs, err.Error())
 			}
@@ -883,19 +884,19 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *TestCo
 		}
 	case "email":
 		*retry = true
-		err := RunEmailAPI(actionSubtype, spec.ApiFile, outputDir)
+		err := s.RunEmailAPI(actionSubtype, spec.ApiFile, outputDir)
 		if err != nil {
 			errs = append(errs, err.Error())
 		}
 	case "slack":
 		*retry = true
-		err := RunSlackAPI(actionSubtype, spec.ApiFile, outputDir)
+		err := s.RunSlackAPI(actionSubtype, spec.ApiFile, outputDir)
 		if err != nil {
 			errs = append(errs, err.Error())
 		}
 	case "pagerduty":
 		*retry = true
-		err := RunPagerDutyAPI(actionSubtype, spec.ApiFile, outputDir)
+		err := s.RunPagerDutyAPI(actionSubtype, spec.ApiFile, outputDir)
 		if err != nil {
 			errs = append(errs, err.Error())
 		}
@@ -977,34 +978,23 @@ func (r *Retry) Done() bool {
 	return false
 }
 
-func RunTestSpec(ctx context.Context, config *TestConfig, spec *TestSpec, mods []string, stopOnFail bool) error {
-	errs := []string{}
-	outputDir := config.Vars["outputdir"]
-	sharedDataPath := outputDir + "/shared_data.json"
-
+func (s *TestSpecRunner) Init(ctx context.Context, config *TestConfig) error {
+	s.TestConfig = *config
 	if config.SetupFile != "" {
-		if !ReadSetupFile(config.SetupFile, &Deployment, config.Vars) {
+		if !s.ReadSetupFile(config.SetupFile, &s.Deployment, config.Vars) {
 			return fmt.Errorf("Failed to read setup file")
 		}
-		DeploymentReplacementVars = config.Vars
 	}
+	s.SharedData = make(map[string]string)
+	return nil
+}
+
+func (s *Run) RunTestSpec(ctx context.Context, runner TestRunner, spec *TestSpec, specRaw map[string]interface{}, mods []string, stopOnFail bool) error {
+	errs := []string{}
+	outputDir := s.TestConfig.Vars["outputdir"]
 
 	retry := NewRetry(spec.RetryCount, spec.RetryIntervalSec, len(spec.Actions))
 	ranTest := false
-
-	// Load from file
-	sharedData := make(map[string]string)
-	plan, err := ioutil.ReadFile(sharedDataPath)
-	if err != nil {
-		// ignore
-		log.Printf("error reading shared data file %s, err: %v\n", sharedDataPath, err)
-	} else {
-		err = json.Unmarshal(plan, &sharedData)
-		if err != nil {
-			// ignore
-			log.Printf("failed to marshal shared data, err: %v\n", err)
-		}
-	}
 
 	for {
 		tryErrs := []string{}
@@ -1015,7 +1005,11 @@ func RunTestSpec(ctx context.Context, config *TestConfig, spec *TestSpec, mods [
 			PrintStepBanner("name: " + spec.Name)
 			PrintStepBanner("running action: " + a + retry.Tries())
 			actionretry := false
-			runerrs := RunAction(ctx, a, outputDir, config, spec, mods, config.Vars, sharedData, &actionretry)
+			actionType, actionParam := GetActionParam(a)
+			action, actionSubtype := GetActionSubtype(actionType)
+			vars := util.AddMaps(s.TestConfig.Vars, spec.ApiFileVars)
+
+			runerrs := runner.RunAction(ctx, action, actionSubtype, actionParam, outputDir, spec, specRaw, mods, vars, &actionretry)
 			ranTest = true
 			if len(runerrs) > 0 {
 				if actionretry {
@@ -1054,20 +1048,6 @@ func RunTestSpec(ctx context.Context, config *TestConfig, spec *TestSpec, mods [
 	}
 	if !ranTest {
 		errs = append(errs, "no test content")
-	}
-
-	if len(sharedData) > 0 {
-		dataStr, err := json.Marshal(sharedData)
-		if err != nil {
-			// ignore
-			log.Printf("error in json marshal of shared data, err: %v\n", err)
-		} else {
-			err = ioutil.WriteFile(sharedDataPath, []byte(dataStr), 0644)
-			if err != nil {
-				// ignore
-				log.Printf("error writing shared data file, err: %v\n", err)
-			}
-		}
 	}
 
 	log.Printf("\nNum Errs found: %d, Results in: %s\n", len(errs), outputDir)

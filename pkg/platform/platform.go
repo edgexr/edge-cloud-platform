@@ -17,6 +17,8 @@ package platform
 import (
 	"context"
 	"errors"
+	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -245,3 +247,67 @@ func TrackK8sAppInst(ctx context.Context, app *edgeproto.App, features *edgeprot
 }
 
 type PlatformBuilder func() Platform
+
+type PlatformCollection struct {
+	features map[string]edgeproto.PlatformFeatures
+	builders map[string]PlatformBuilder
+}
+
+func NewPlatformCollection(builders []PlatformBuilder) *PlatformCollection {
+	platformsFeatures := make(map[string]edgeproto.PlatformFeatures)
+	platformsBuilders := make(map[string]PlatformBuilder)
+	for _, builder := range builders {
+		plat := builder()
+		features := plat.GetFeatures()
+		platformType := features.PlatformType
+		if platformType == "" {
+			panic(fmt.Errorf("PlatformType string not defined for %T", plat))
+		}
+		if _, found := platformsBuilders[platformType]; found {
+			panic(fmt.Errorf("registerPlatformBuilder: duplicate platform type %s", platformType))
+		}
+		platformsBuilders[platformType] = builder
+		// Cache features so we don't need to build a new platform
+		// each time to get features. Features should be static
+		// properties of the platform.
+		platformsFeatures[platformType] = *features
+	}
+	return &PlatformCollection{
+		features: platformsFeatures,
+		builders: platformsBuilders,
+	}
+}
+
+func (s *PlatformCollection) GetBuilders() map[string]PlatformBuilder {
+	return s.builders
+}
+
+// GetAllPlatformsFeatures returns the features for all
+// supported platforms.
+func (s *PlatformCollection) GetAllPlatformsFeatures() []edgeproto.PlatformFeatures {
+	all := []edgeproto.PlatformFeatures{}
+	for _, features := range s.features {
+		all = append(all, features)
+	}
+	sort.Slice(all, func(i, j int) bool {
+		return all[i].PlatformType < all[j].PlatformType
+	})
+	return all
+}
+
+// GetFeatures returns features for a specific platform type.
+func (s *PlatformCollection) GetFeatures(platformType string) (*edgeproto.PlatformFeatures, error) {
+	features, found := s.features[platformType]
+	if !found {
+		return nil, fmt.Errorf("Platform type %s not found", platformType)
+	}
+	return &features, nil
+}
+
+func (s *PlatformCollection) BuildPlatform(plat string) (Platform, error) {
+	builder, found := s.builders[plat]
+	if !found {
+		return nil, fmt.Errorf("unknown platform %s", plat)
+	}
+	return builder(), nil
+}

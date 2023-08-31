@@ -43,6 +43,11 @@ type Crm struct {
 	HARole              HARole
 }
 
+type CrmProcess interface {
+	Process
+	CrmProc() *Crm
+}
+
 func (p *Crm) GetArgs(opts ...StartOp) []string {
 	args := []string{"--notifyAddrs", p.NotifyAddrs}
 	args = append(args, p.GetNodeMgrArgs()...)
@@ -125,7 +130,12 @@ func (p *Crm) StartLocal(logfile string, opts ...StartOp) error {
 
 	args := p.GetArgs(opts...)
 	args = append(args, p.GetRedisClientArgs()...)
-	p.cmd, err = StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	options := StartOptions{}
+	options.ApplyStartOptions(opts...)
+	if options.ExeName == "" {
+		options.ExeName = "crm"
+	}
+	p.cmd, err = StartLocal(p.Name, options.ExeName, args, p.GetEnv(), logfile)
 	return err
 }
 
@@ -167,4 +177,8 @@ func (p *Crm) String(opts ...StartOp) string {
 
 func (p *Crm) GetBindAddrs() []string {
 	return []string{p.NotifySrvAddr}
+}
+
+func (p *Crm) CrmProc() *Crm {
+	return p
 }

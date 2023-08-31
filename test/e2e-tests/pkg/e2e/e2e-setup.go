@@ -117,8 +117,8 @@ var ApiMethods = []string{
 
 var apiAddrsUpdated = false
 
-func IsK8sDeployment() bool {
-	return Deployment.Cluster.MexManifest != "" //TODO Azure
+func (s *TestSpecRunner) IsK8sDeployment() bool {
+	return s.Deployment.Cluster.MexManifest != "" //TODO Azure
 }
 
 type ChefClient struct {
