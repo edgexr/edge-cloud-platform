@@ -32,7 +32,7 @@ var solib = ""
 var GetPlatformFunc func(plat string) (pf.Platform, error)
 
 func GetPlatform(ctx context.Context, plat string, setVersionProps func(context.Context, map[string]string)) (pf.Platform, error) {
-	return platforms.GetPlatform(plat)
+	return platforms.All.BuildPlatform(plat)
 }
 
 func GetClusterSvc(ctx context.Context, pluginRequired bool) (pf.ClusterSvc, error) {

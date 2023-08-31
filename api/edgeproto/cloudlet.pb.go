@@ -7413,7 +7413,7 @@ func (c *CloudletInternalCache) DeleteCondFunc(ctx context.Context, in *Cloudlet
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {
@@ -8648,7 +8648,7 @@ func (c *PlatformFeaturesCache) DeleteCondFunc(ctx context.Context, in *Platform
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {
@@ -8849,7 +8849,7 @@ func (c *PlatformFeaturesCache) SyncUpdate(ctx context.Context, key, val []byte,
 func (c *PlatformFeaturesCache) SyncDelete(ctx context.Context, key []byte, rev, modRev int64) {
 	obj := PlatformFeatures{}
 	keystr := objstore.DbKeyPrefixRemove(string(key))
-	PlatformFeaturesKeyStringParse(keystr, obj.GetKey())
+	obj.PlatformType = keystr
 	c.Delete(ctx, &obj, modRev)
 }
 
@@ -10111,7 +10111,7 @@ func (c *GPUDriverCache) DeleteCondFunc(ctx context.Context, in *GPUDriver, modR
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {
@@ -13153,7 +13153,7 @@ func (c *CloudletCache) DeleteCondFunc(ctx context.Context, in *Cloudlet, modRev
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {
@@ -15827,7 +15827,7 @@ func (c *CloudletInfoCache) DeleteCondFunc(ctx context.Context, in *CloudletInfo
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {

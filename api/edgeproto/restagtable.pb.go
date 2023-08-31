@@ -1370,7 +1370,7 @@ func (c *ResTagTableCache) DeleteCondFunc(ctx context.Context, in *ResTagTable, 
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {
