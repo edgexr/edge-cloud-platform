@@ -178,7 +178,7 @@ func TestCloudletApi(t *testing.T) {
 	ctx, _, err := nodeMgr.Init(node.NodeTypeController, "", node.WithRegion("unit-test"),
 		node.WithESUrls(esURL), node.WithTestTransport(mockTransport))
 	require.Nil(t, err)
-	require.NotNil(t, nodeMgr.ESClient)
+	require.NotNil(t, nodeMgr.OSClient)
 	defer nodeMgr.Finish()
 
 	// create flavors

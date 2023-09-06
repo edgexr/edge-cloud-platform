@@ -29,9 +29,9 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/elastic/go-elasticsearch/v7"
-	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/mitchellh/mapstructure"
+	opensearch "github.com/opensearch-project/opensearch-go/v2"
+	opensearchapi "github.com/opensearch-project/opensearch-go/v2/opensearchapi"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -240,7 +240,7 @@ func (s *NodeMgr) initEvents(ctx context.Context, opts *NodeOptions) error {
 	}
 
 	log.SpanLog(ctx, log.DebugLevelInfo, "new elastic client", "esurls", opts.esUrls)
-	config := elasticsearch.Config{
+	config := opensearch.Config{
 		Addresses: strings.Split(opts.esUrls, ","),
 	}
 	tlsConfig, err := s.GetPublicClientTlsConfig(ctx)
@@ -270,7 +270,7 @@ func (s *NodeMgr) initEvents(ctx context.Context, opts *NodeOptions) error {
 		config.Transport = s.testTransport
 	}
 
-	s.ESClient, err = elasticsearch.NewClient(config)
+	s.OSClient, err = opensearch.NewClient(config)
 	if err != nil {
 		return err
 	}
@@ -328,11 +328,11 @@ func (s *NodeMgr) writeEvents() {
 			buf.WriteRune('\n')
 		}
 		startT := time.Now()
-		req := esapi.BulkRequest{
+		req := opensearchapi.BulkRequest{
 			Index: esEventLog + "-" + indexTime(startT),
 			Body:  bytes.NewReader(buf.Bytes()),
 		}
-		res, err := req.Do(context.Background(), s.ESClient)
+		res, err := req.Do(context.Background(), s.OSClient)
 		took := time.Since(startT).String()
 		status := 0
 		if res != nil {
@@ -354,11 +354,11 @@ func (s *NodeMgr) writeEvents() {
 
 func (s *NodeMgr) writeIndex(ctx context.Context) error {
 	mapping := fmt.Sprintf(eventMapping, esEventLog)
-	req := esapi.IndicesPutTemplateRequest{
+	req := opensearchapi.IndicesPutTemplateRequest{
 		Name: esEventLog,
 		Body: strings.NewReader(mapping),
 	}
-	res, err := req.Do(ctx, s.ESClient)
+	res, err := req.Do(ctx, s.OSClient)
 	if err != nil {
 		return fmt.Errorf("Error: %v", err)
 	}
@@ -450,7 +450,7 @@ func (s *NodeMgr) event(ctx context.Context, name, org, typ string, keyTags map[
 	event.Tags = append(event.Tags, EventTag{"hostname", s.MyNode.Hostname})
 
 	s.kafkaSend(ctx, event, keyTags, keysAndValues...)
-	if s.ESClient == nil {
+	if s.OSClient == nil {
 		return
 	}
 
@@ -495,7 +495,7 @@ func (s *NodeMgr) searchEvents(ctx context.Context, searchType string, search *E
 	}
 	log.SpanLog(ctx, log.DebugLevelEvents, "event search", "search", string(dat))
 
-	req := esapi.SearchRequest{
+	req := opensearchapi.SearchRequest{
 		Index: []string{esEventLog + "-*"},
 		Body:  strings.NewReader(string(dat)),
 	}
@@ -505,7 +505,7 @@ func (s *NodeMgr) searchEvents(ctx context.Context, searchType string, search *E
 		// This should not be used for production.
 		req.SearchType = "dfs_query_then_fetch"
 	}
-	res, err := req.Do(ctx, s.ESClient)
+	res, err := req.Do(ctx, s.OSClient)
 	if err == nil && res.StatusCode/100 != http.StatusOK/100 {
 		defer res.Body.Close()
 		err = fmt.Errorf("%v", res)
@@ -809,11 +809,11 @@ func (s *NodeMgr) EventTerms(ctx context.Context, search *EventSearch) (*EventTe
 	}
 	log.SpanLog(ctx, log.DebugLevelEvents, "event terms", "query", string(dat))
 
-	req := esapi.SearchRequest{
+	req := opensearchapi.SearchRequest{
 		Index: []string{esEventLog + "-*"},
 		Body:  strings.NewReader(string(dat)),
 	}
-	res, err := req.Do(ctx, s.ESClient)
+	res, err := req.Do(ctx, s.OSClient)
 	if err == nil && res.StatusCode/100 != http.StatusOK/100 {
 		defer res.Body.Close()
 		err = fmt.Errorf("%v", res)
