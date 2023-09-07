@@ -73,7 +73,7 @@ func TestController(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 	addr := "127.0.0.1:9999"
 	uri := "http://" + addr + "/api/v1"
-	mockESUrl := "http://mock.es"
+	mockESUrl := "mock.es"
 
 	vaultServer, vaultConfig := vault.DummyServer()
 	defer vaultServer.Close()

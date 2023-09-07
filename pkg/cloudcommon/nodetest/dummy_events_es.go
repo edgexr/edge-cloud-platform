@@ -44,10 +44,14 @@ func (s *DummyEventsES) InitHttpMock(addr string, mockTransport *httpmock.MockTr
 	s.Events = make([]*node.EventData, 0)
 
 	matchAll := "=~" + addr + `/.*\z`
+	//"mock.es/events-log-*/_search"
+	matchSearch := "=~" + addr + `/.*/_search\z`
+
+	// ignore searches(They are POSTS in opensearch)
+	mockTransport.RegisterResponder("POST", matchSearch, s.HandleIgnore)
 	// regexp match POST events
 	mockTransport.RegisterResponder("POST", matchAll, s.Handle)
-	// ignore searches
-	mockTransport.RegisterResponder("GET", matchAll, s.HandleIgnore)
+	//	mockTransport.RegisterResponder("GET", matchAll, s.HandleIgnore)
 	// ignore PUT index template
 	mockTransport.RegisterResponder("PUT", matchAll, s.HandleIgnore)
 }

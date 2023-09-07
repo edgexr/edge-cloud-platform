@@ -38,23 +38,23 @@ func TestEvents(t *testing.T) {
 	require.Nil(t, err)
 	defer dockNet.Delete()
 
-	// elasticsearch docker takes a while to start up (~20s),
+	// opensearch docker takes a while to start up (~20s),
 	// so make sure to include all unit-testing against it here.
 	esProc := process.ElasticSearch{}
-	esProc.Common.Name = "elasticsearch-unit-test"
+	esProc.Common.Name = "opensearch-unit-test"
 	esProc.DockerNetwork = dockNet.Common.Name
 	err = esProc.StartLocal("")
 	require.Nil(t, err)
 	defer esProc.StopLocal()
 
-	// start Jaeger to test searching spans in elasticsearch
+	// start Jaeger to test searching spans in opensearch
 	jaegerProc := process.Jaeger{}
 	jaegerProc.Common.Name = "jaeger-unit-test"
 	jaegerProc.DockerNetwork = dockNet.Common.Name
 	jaegerProc.DockerEnvVars = make(map[string]string)
-	jaegerProc.DockerEnvVars["ES_SERVER_URLS"] = "http://elasticsearch:9200"
+	jaegerProc.DockerEnvVars["ES_SERVER_URLS"] = "http://opensearch:9200"
 	jaegerProc.DockerEnvVars["SPAN_STORAGE_TYPE"] = "elasticsearch"
-	jaegerProc.Links = []string{"elasticsearch-unit-test:elasticsearch"}
+	jaegerProc.Links = []string{"opensearch-unit-test:opensearch"}
 	err = jaegerProc.StartLocalNoTraefik("")
 	require.Nil(t, err)
 	defer jaegerProc.StopLocal()
