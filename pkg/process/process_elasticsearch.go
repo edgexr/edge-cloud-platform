@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/elastic/go-elasticsearch/v7"
+	opensearch "github.com/opensearch-project/opensearch-go/v2"
 )
 
 type ElasticSearch struct {
@@ -43,24 +43,24 @@ func (p *ElasticSearch) StartElasticSearch(logfile string, opts ...StartOp) erro
 		"-p", "9200:9200",
 		"-p", "9300:9300",
 		"-e", "discovery.type=single-node",
-		"-e", "xpack.security.enabled=false",
-		"docker.elastic.co/elasticsearch/elasticsearch:7.6.2",
+		"-e", "plugins.security.disabled=true",
+		"opensearchproject/opensearch:2.9.0",
 	)
 	var err error
 	p.cmd, err = StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
 	if err == nil {
 		// wait until up
 		addr := "http://127.0.0.1:9200"
-		cfg := elasticsearch.Config{
+		cfg := opensearch.Config{
 			Addresses: []string{addr},
 		}
-		client, perr := elasticsearch.NewClient(cfg)
+		client, perr := opensearch.NewClient(cfg)
 		if perr != nil {
 			return perr
 		}
 		for ii := 0; ii < 30; ii++ {
 			res, perr := client.Info()
-			log.Printf("elasticsearch info %s try %d: res %v, perr %v\n", addr, ii, res, perr)
+			log.Printf("opensearch info %s try %d: res %v, perr %v\n", addr, ii, res, perr)
 			if perr == nil {
 				res.Body.Close()
 			}

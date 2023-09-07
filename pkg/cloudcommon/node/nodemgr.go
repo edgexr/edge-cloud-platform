@@ -28,7 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/pkg/version"
-	"github.com/elastic/go-elasticsearch/v7"
+	opensearch "github.com/opensearch-project/opensearch-go/v2"
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
 )
@@ -59,7 +59,7 @@ type NodeMgr struct {
 	Region             string
 	InternalPki        internalPki
 	InternalDomain     string
-	ESClient           *elasticsearch.Client
+	OSClient           *opensearch.Client
 	esEvents           [][]byte
 	esEventsMux        sync.Mutex
 	esWriteSignal      chan bool
@@ -217,7 +217,7 @@ func (s *NodeMgr) Finish() {
 	if s.accessApiConn != nil {
 		s.accessApiConn.Close()
 	}
-	if s.ESClient != nil {
+	if s.OSClient != nil {
 		close(s.esEventsDone)
 	}
 	s.AccessKeyClient.finish()

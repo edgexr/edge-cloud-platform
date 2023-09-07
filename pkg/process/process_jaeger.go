@@ -53,7 +53,7 @@ func (p *Jaeger) StartLocal(logfile string, opts ...StartOp) error {
 	}
 	// jaeger version should match "jaeger_version" in
 	// ansible/roles/jaeger/defaults/main.yaml
-	args = append(args, "jaegertracing/all-in-one:1.17.1",
+	args = append(args, "jaegertracing/all-in-one:1.45.0",
 		"--collector.num-workers=500",
 		"--collector.queue-size=10000",
 	)
@@ -69,7 +69,7 @@ func (p *Jaeger) StartLocalNoTraefik(logfile string, opts ...StartOp) error {
 	args = append(args,
 		"-p", "16686:16686",
 		"-p", "14268:14268",
-		"jaegertracing/all-in-one:1.17.1")
+		"jaegertracing/all-in-one:1.45.0")
 	var err error
 	p.cmd, err = StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
 	if err == nil {

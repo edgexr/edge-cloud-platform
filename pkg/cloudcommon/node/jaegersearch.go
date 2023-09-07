@@ -22,12 +22,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elastic/go-elasticsearch/v7/esapi"
-	"github.com/jaegertracing/jaeger/plugin/storage/es/spanstore/dbmodel"
-	"github.com/mitchellh/mapstructure"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/jaegertracing/jaeger/plugin/storage/es/spanstore/dbmodel"
+	"github.com/mitchellh/mapstructure"
+	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
 )
 
 type SpanMatch struct {
@@ -157,7 +157,7 @@ func (s *NodeMgr) searchSpans(ctx context.Context, search *SpanSearch) ([]dbmode
 		return nil, err
 	}
 
-	req := esapi.SearchRequest{
+	req := opensearchapi.SearchRequest{
 		Index: []string{"jaeger-span-*"},
 		Body:  strings.NewReader(string(dat)),
 	}
@@ -167,7 +167,7 @@ func (s *NodeMgr) searchSpans(ctx context.Context, search *SpanSearch) ([]dbmode
 		// This should not be used for production.
 		req.SearchType = "dfs_query_then_fetch"
 	}
-	res, err := req.Do(ctx, s.ESClient)
+	res, err := req.Do(ctx, s.OSClient)
 	if err == nil && res.StatusCode/100 != http.StatusOK/100 {
 		defer res.Body.Close()
 		err = fmt.Errorf("%v", res)
@@ -455,11 +455,11 @@ func (s *NodeMgr) SpanTerms(ctx context.Context, search *SpanSearch) (*SpanTerms
 	}
 	log.SpanLog(ctx, log.DebugLevelEvents, "log terms", "query", string(dat))
 
-	req := esapi.SearchRequest{
+	req := opensearchapi.SearchRequest{
 		Index: []string{"jaeger-span-*"},
 		Body:  strings.NewReader(string(dat)),
 	}
-	res, err := req.Do(ctx, s.ESClient)
+	res, err := req.Do(ctx, s.OSClient)
 	if err == nil && res.StatusCode/100 != http.StatusOK/100 {
 		defer res.Body.Close()
 		err = fmt.Errorf("%v", res)
