@@ -63,6 +63,7 @@ zones:
   - cpuarchtype: ISA_X86_64
     numcpu: "20"
     memory: 409600
+    diskstorage: 5000
   flavourssupported:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
@@ -93,6 +94,7 @@ zones:
   - cpuarchtype: ISA_X86_64
     numcpu: "50"
     memory: 40960
+    diskstorage: 5000
   flavourssupported:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
@@ -123,6 +125,7 @@ zones:
   - cpuarchtype: ISA_X86_64
     numcpu: "50"
     memory: 40960
+    diskstorage: 5000
   flavourssupported:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
@@ -153,6 +156,7 @@ zones:
   - cpuarchtype: ISA_X86_64
     numcpu: "50"
     memory: 40960
+    diskstorage: 5000
   flavourssupported:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
@@ -183,6 +187,7 @@ zones:
   - cpuarchtype: ISA_X86_64
     numcpu: "50"
     memory: 40960
+    diskstorage: 5000
   flavourssupported:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64
@@ -213,6 +218,7 @@ zones:
   - cpuarchtype: ISA_X86_64
     numcpu: "50"
     memory: 40960
+    diskstorage: 5000
   flavourssupported:
   - flavourid: x1.small
     cpuarchtype: ISA_X86_64

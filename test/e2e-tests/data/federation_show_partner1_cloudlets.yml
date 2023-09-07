@@ -80,6 +80,8 @@ regiondata:
         value: 20
       - name: RAM
         value: 409600
+      - name: Disk
+        value: 5000
       defaultresourcealertthreshold: 80
       dnslabel: dmuuscloud1-dmuus-partner1
       rootlbfqdn: shared.dmuuscloud1-dmuus-partner1.pa.edgecloude2e.net
@@ -119,6 +121,8 @@ regiondata:
         value: 50
       - name: RAM
         value: 40960
+      - name: Disk
+        value: 5000
       defaultresourcealertthreshold: 80
       dnslabel: dmuuscloud2-dmuus-partner1
       rootlbfqdn: shared.dmuuscloud2-dmuus-partner1.pa.edgecloude2e.net
@@ -158,6 +162,8 @@ regiondata:
         value: 50
       - name: RAM
         value: 40960
+      - name: Disk
+        value: 5000
       defaultresourcealertthreshold: 80
       dnslabel: dmuuscloud3-dmuus-partner1
       rootlbfqdn: shared.dmuuscloud3-dmuus-partner1.pa.edgecloude2e.net
@@ -197,6 +203,8 @@ regiondata:
         value: 50
       - name: RAM
         value: 40960
+      - name: Disk
+        value: 5000
       defaultresourcealertthreshold: 80
       dnslabel: dmuuscloud4-dmuus-partner1
       rootlbfqdn: shared.dmuuscloud4-dmuus-partner1.pa.edgecloude2e.net
@@ -236,6 +244,8 @@ regiondata:
         value: 50
       - name: RAM
         value: 40960
+      - name: Disk
+        value: 5000
       defaultresourcealertthreshold: 80
       dnslabel: enterprise1-enterprise-partner1
       rootlbfqdn: shared.enterprise1-enterprise-partner1.pa.edgecloude2e.net
@@ -275,6 +285,8 @@ regiondata:
         value: 50
       - name: RAM
         value: 40960
+      - name: Disk
+        value: 5000
       defaultresourcealertthreshold: 80
       dnslabel: enterprise2-enterprise-partner1
       rootlbfqdn: shared.enterprise2-enterprise-partner1.pa.edgecloude2e.net
