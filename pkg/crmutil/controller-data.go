@@ -1370,9 +1370,10 @@ func (cd *ControllerData) cloudletPoolDeleted(ctx context.Context, old *edgeprot
 }
 
 func (cd *ControllerData) cloudletChanged(ctx context.Context, old *edgeproto.Cloudlet, new *edgeproto.Cloudlet) {
-	if new.OnboardingState != edgeproto.TrackedState_READY {
+	if new.OnboardingState != edgeproto.TrackedState_READY && new.OnboardingState != edgeproto.TrackedState_TRACKED_STATE_UNKNOWN {
 		// This message is for CCRM. CRM will take over once CCRM has set
 		// onboarding state to READY.
+		// For pre-existing Cloudlets, Onboarding State will be unknown.
 		log.SpanLog(ctx, log.DebugLevelInfra, "cloudletChanged ignoring CCRM state", "cloudlet", new)
 		return
 	}

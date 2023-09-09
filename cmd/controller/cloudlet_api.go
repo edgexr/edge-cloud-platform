@@ -363,8 +363,8 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		return fmt.Errorf("Failed to get features for platform: %s", err)
 	}
 	// EdgeboxOnly is set at MC for edgebox only operators.
-	if in.EdgeboxOnly && !features.IsEdgebox {
-		return fmt.Errorf("Cloudlet is restricted to edgebox only platforms; %s is not an edgebox platform", in.PlatformType)
+	if in.EdgeboxOnly && !features.IsEdgebox && !features.IsMock {
+		return fmt.Errorf("Cloudlet is restricted to edgebox or mock only platforms; %s is not an edgebox or mock platform", in.PlatformType)
 	}
 
 	if in.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS &&
