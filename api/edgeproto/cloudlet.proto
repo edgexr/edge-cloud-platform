@@ -161,6 +161,8 @@ message PlatformFeatures {
   bool is_vm_pool = 10;
   // Platform is a fake platform for unit/e2e testing
   bool is_fake = 11;
+  // Platform is a mock platform for developer/regression testing
+  bool is_mock = 26;
   // Platform supports adding networks
   bool supports_additional_networks = 12;
   // The entire platform is a single kubernetes cluster
