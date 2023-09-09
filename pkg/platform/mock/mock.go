@@ -47,6 +47,7 @@ func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsAdditionalNetworks:               true,
 		SupportsPlatformHighAvailabilityOnDocker: true,
 		SupportsPlatformHighAvailabilityOnK8S:    true,
+		IsMock:                                   true,
 	}
 }
 

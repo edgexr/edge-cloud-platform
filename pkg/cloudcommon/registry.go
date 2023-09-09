@@ -464,7 +464,7 @@ func SendHTTPReq(ctx context.Context, method, regUrl string, authApi RegistryAut
 	}
 }
 
-func ValidateDockerRegistryPath(ctx context.Context, regUrl string, authApi RegistryAuthApi) error {
+func ValidateDockerRegistryPath(ctx context.Context, regUrl, internalRegistryHost string, authApi RegistryAuthApi) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "validate registry path", "path", regUrl)
 
 	if regUrl == "" {
