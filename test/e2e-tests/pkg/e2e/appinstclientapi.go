@@ -27,7 +27,7 @@ import (
 )
 
 // This starts and stops ShowAppInstClient apis
-func RunAppInstClientAPI(api string, workerId string, apiFile string, outputDir string) bool {
+func (s *TestSpecRunner) RunAppInstClientAPI(api string, workerId string, apiFile string, outputDir string) bool {
 	outputFile := outputDir + "/" + "show-appinstclients-" + workerId + ".yml"
 	pidFile := "showAppInstClient" + workerId + ".pid"
 	if api == "start" {
@@ -37,7 +37,7 @@ func RunAppInstClientAPI(api string, workerId string, apiFile string, outputDir 
 			return false
 		}
 
-		ctrl := GetController("")
+		ctrl := s.GetController("")
 		args := []string{"edgectl"}
 		tlsFile := ctrl.GetTlsFile()
 		if tlsFile != "" {

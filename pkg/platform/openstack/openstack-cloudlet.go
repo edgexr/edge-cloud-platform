@@ -17,8 +17,6 @@ package openstack
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"strconv"
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -26,7 +24,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 type OpenstackResources struct {
@@ -35,158 +32,14 @@ type OpenstackResources struct {
 	FloatingIPsUsed uint64
 }
 
-// openrc data is a string, but we need to make a map out of it
-func accessVarsFromOpenrcData(openrcData string) (map[string]string, error) {
-	out := strings.Split(openrcData, "\n")
-	if len(out) <= 1 {
-		return nil, fmt.Errorf("Invalid accessvars, as OPENRC_DATA is invalid: %v", out)
-	}
-	accessVars := make(map[string]string)
-	for _, v := range out {
-		v = strings.TrimSpace(v)
-		if v == "" {
-			continue
-		}
-		out1 := strings.Split(v, "=")
-		if len(out1) != 2 {
-			return nil, fmt.Errorf("Invalid separator for key-value pair: %v", out1)
-		}
-		key := strings.TrimSpace(out1[0])
-		value := strings.TrimSpace(out1[1])
-		origVal := value
-		value, err := strconv.Unquote(value)
-		if err != nil {
-			// Unquote didn't find quotes or had some other complaint so use the original value
-			value = origVal
-		}
-		if value == "" || key == "" {
-			continue
-		}
-		if !strings.HasPrefix(key, "OS_") {
-			return nil, fmt.Errorf("Invalid accessvars: %s, must start with 'OS_' prefix", key)
-		}
-		accessVars[key] = value
-	}
-	return accessVars, nil
-}
-
-func buildVaultDataFromAccessVars(accessVars map[string]string) map[string]interface{} {
-	var varList infracommon.VaultEnvData
-	for key, value := range accessVars {
-		if key == "OS_CACERT" {
-			continue
-		}
-		varList.Env = append(varList.Env, infracommon.EnvData{
-			Name:  key,
-			Value: value,
-		})
-	}
-	data := map[string]interface{}{
-		"data": varList,
-	}
-	return data
-}
-
-func (o *OpenstackPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	var err error
-
-	log.SpanLog(ctx, log.DebugLevelInfra, "Update cloudlet access vars in vault", "cloudletName", cloudlet.Key.Name, "cloudlet", cloudlet)
-
-	updateVars := map[string]string{}
-	openrcData, ok := accessVarsIn["OPENRC_DATA"]
-	if ok {
-		updateVars, err = accessVarsFromOpenrcData(openrcData)
-		if err != nil {
-			return err
-		}
-	}
-	certData, ok := accessVarsIn["CACERT_DATA"]
-	if ok {
-		certFile := vmlayer.GetCertFilePath(&cloudlet.Key)
-		err := ioutil.WriteFile(certFile, []byte(certData), 0644)
-		if err != nil {
-			return err
-		}
-		updateVars["OS_CACERT_DATA"] = certData
-	}
-	// 1. get stored vars
-	path := o.GetVaultCloudletAccessPath(&cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName)
-	accessVars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, path)
-	if err != nil {
-		updateCallback(edgeproto.UpdateTask, "Failed to get access vars from vault")
-		log.SpanLog(ctx, log.DebugLevelInfra, err.Error(), "cloudletName", cloudlet.Key.Name)
-		return fmt.Errorf("Failed to update access vars in vault: %v", err)
-	}
-
-	// 3. update map
-	for k, v := range updateVars {
-		accessVars[k] = v
-	}
-	updateCallback(edgeproto.UpdateTask, "Saving access vars to secure secrets storage (Vault)")
-	data := buildVaultDataFromAccessVars(accessVars)
-
-	// 4. save it back to vault
-	err = infracommon.PutDataToVault(vaultConfig, path, data)
-	if err != nil {
-		updateCallback(edgeproto.UpdateTask, "Failed to save access vars to vault")
-		log.SpanLog(ctx, log.DebugLevelInfra, err.Error(), "cloudletName", cloudlet.Key.Name)
-		return fmt.Errorf("Failed to save access vars to vault: %v", err)
-	}
-	return nil
-}
-
-func (o *OpenstackPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "Saving cloudlet access vars to vault", "cloudletName", cloudlet.Key.Name)
-	openrcData, ok := accessVarsIn["OPENRC_DATA"]
-	if !ok {
-		return fmt.Errorf("Invalid accessvars, missing OPENRC_DATA")
-	}
-	accessVars, err := accessVarsFromOpenrcData(openrcData)
-	if err != nil {
-		return err
-	}
-	authURL, ok := accessVars["OS_AUTH_URL"]
-	if !ok {
-		return fmt.Errorf("Invalid accessvars, missing OS_AUTH_URL")
-	}
-	if strings.HasPrefix(authURL, "https") {
-		certData, ok := accessVarsIn["CACERT_DATA"]
-		if !ok {
-			return fmt.Errorf("Invalid accessvars, missing CACERT_DATA")
-		}
-		certFile := vmlayer.GetCertFilePath(&cloudlet.Key)
-		err := ioutil.WriteFile(certFile, []byte(certData), 0644)
-		if err != nil {
-			return err
-		}
-		accessVars["OS_CACERT"] = certFile
-		accessVars["OS_CACERT_DATA"] = certData
-	}
-	updateCallback(edgeproto.UpdateTask, "Saving access vars to secure secrets storage (Vault)")
-	data := buildVaultDataFromAccessVars(accessVars)
-
-	path := o.GetVaultCloudletAccessPath(&cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName)
-	err = infracommon.PutDataToVault(vaultConfig, path, data)
-	if err != nil {
-		updateCallback(edgeproto.UpdateTask, "Failed to save access vars to vault")
-		log.SpanLog(ctx, log.DebugLevelInfra, err.Error(), "cloudletName", cloudlet.Key.Name)
-		return fmt.Errorf("Failed to save access vars to vault: %v", err)
-	}
-	return nil
-}
-
 func (o *OpenstackPlatform) GetApiEndpointAddr(ctx context.Context) (string, error) {
-	osAuthUrl := o.openRCVars["OS_AUTH_URL"]
+	osAuthUrl := o.openRCVars[OS_AUTH_URL]
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetApiEndpointAddr", "authUrl", osAuthUrl)
 
 	if osAuthUrl == "" {
-		return "", fmt.Errorf("unable to find OS_AUTH_URL")
+		return "", fmt.Errorf("unable to find " + OS_AUTH_URL)
 	}
 	return osAuthUrl, nil
-}
-
-func (o *OpenstackPlatform) GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error) {
-	return nil, fmt.Errorf("GetSessionTokens not supported in OpenStack")
 }
 
 func (o *OpenstackPlatform) GetCloudletManifest(ctx context.Context, name string, cloudletImagePath string, vmgp *vmlayer.VMGroupOrchestrationParams) (string, error) {
@@ -308,21 +161,6 @@ func (o *OpenstackPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) (
 		},
 	}
 	return resInfo, nil
-}
-
-func (o *OpenstackPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	return &edgeproto.CloudletResourceQuotaProps{
-		Properties: []edgeproto.InfraResource{
-			edgeproto.InfraResource{
-				Name:        cloudcommon.ResourceInstances,
-				Description: cloudcommon.ResourceQuotaDesc[cloudcommon.ResourceInstances],
-			},
-			edgeproto.InfraResource{
-				Name:        cloudcommon.ResourceFloatingIPs,
-				Description: cloudcommon.ResourceQuotaDesc[cloudcommon.ResourceFloatingIPs],
-			},
-		},
-	}, nil
 }
 
 func getOpenstackResources(cloudlet *edgeproto.Cloudlet, resources []edgeproto.VMResource) *OpenstackResources {

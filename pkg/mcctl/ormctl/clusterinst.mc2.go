@@ -124,7 +124,7 @@ func init() {
 
 var UpdateClusterInstRequiredArgs = []string{
 	"cluster",
-	"key.clusterkey.organization",
+	"clusterorg",
 	"cloudletorg",
 	"cloudlet",
 }
@@ -161,7 +161,7 @@ var ClusterInstKeyComments = map[string]string{
 var ClusterInstKeySpecialArgs = map[string]string{}
 var ClusterInstRequiredArgs = []string{
 	"cluster",
-	"key.clusterkey.organization",
+	"clusterorg",
 	"cloudletorg",
 	"cloudlet",
 }
@@ -184,7 +184,7 @@ var ClusterInstOptionalArgs = []string{
 var ClusterInstAliasArgs = []string{
 	"fields=clusterinst.fields",
 	"cluster=clusterinst.key.clusterkey.name",
-	"key.clusterkey.organization=clusterinst.key.clusterkey.organization",
+	"clusterorg=clusterinst.key.clusterkey.organization",
 	"cloudletorg=clusterinst.key.cloudletkey.organization",
 	"cloudlet=clusterinst.key.cloudletkey.name",
 	"federatedorg=clusterinst.key.cloudletkey.federatedorganization",
@@ -236,7 +236,7 @@ var ClusterInstAliasArgs = []string{
 var ClusterInstComments = map[string]string{
 	"fields":                            "Fields are used for the Update API to specify which fields to apply",
 	"cluster":                           "Cluster name",
-	"key.clusterkey.organization":       "Name of the organization that this cluster belongs to",
+	"clusterorg":                        "Name of the organization that this cluster belongs to",
 	"cloudletorg":                       "Organization of the cloudlet site",
 	"cloudlet":                          "Name of the cloudlet",
 	"federatedorg":                      "Federated operator organization who shared this cloudlet",

@@ -49,12 +49,7 @@ func TestClusterInstApi(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
-	responder := &DummyInfoResponder{
-		AppInstCache:        &apis.appInstApi.cache,
-		ClusterInstCache:    &apis.clusterInstApi.cache,
-		RecvAppInstInfo:     apis.appInstInfoApi,
-		RecvClusterInstInfo: apis.clusterInstInfoApi,
-	}
+	responder := DefaultDummyInfoResponder(apis)
 	responder.InitDummyInfoResponder()
 
 	reduceInfoTimeouts(t, ctx, apis)
@@ -66,6 +61,7 @@ func TestClusterInstApi(t *testing.T) {
 	}
 
 	// create support data
+	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 	cloudletData := testutil.CloudletData()
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
@@ -241,6 +237,7 @@ func reduceInfoTimeouts(t *testing.T, ctx context.Context, apis *AllApis) {
 	settings, err := apis.settingsApi.ShowSettings(ctx, &edgeproto.Settings{})
 	require.Nil(t, err)
 
+	settings.CreateCloudletTimeout = edgeproto.Duration(1 * time.Second)
 	settings.CreateClusterInstTimeout = edgeproto.Duration(1 * time.Second)
 	settings.UpdateClusterInstTimeout = edgeproto.Duration(1 * time.Second)
 	settings.DeleteClusterInstTimeout = edgeproto.Duration(1 * time.Second)
@@ -251,6 +248,7 @@ func reduceInfoTimeouts(t *testing.T, ctx context.Context, apis *AllApis) {
 	settings.UpdateVmPoolTimeout = edgeproto.Duration(1 * time.Second)
 
 	settings.Fields = []string{
+		edgeproto.SettingsFieldCreateCloudletTimeout,
 		edgeproto.SettingsFieldCreateAppInstTimeout,
 		edgeproto.SettingsFieldUpdateAppInstTimeout,
 		edgeproto.SettingsFieldDeleteAppInstTimeout,
@@ -933,15 +931,11 @@ func TestDefaultMTCluster(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
-	dummyResponder := &DummyInfoResponder{
-		AppInstCache:        &apis.appInstApi.cache,
-		ClusterInstCache:    &apis.clusterInstApi.cache,
-		RecvAppInstInfo:     apis.appInstInfoApi,
-		RecvClusterInstInfo: apis.clusterInstInfoApi,
-	}
+	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
 	reduceInfoTimeouts(t, ctx, apis)
 
+	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 	testutil.InternalFlavorTest(t, "cud", apis.flavorApi, testutil.FlavorData())
 
 	cloudlet := testutil.CloudletData()[0]

@@ -66,6 +66,9 @@ func (t *TestCud) Init(g *generator.Generator) {
 			continue
 		}
 		for _, service := range file.Service {
+			if gensupport.GetRedisApi(service) {
+				continue
+			}
 			groups := gensupport.GetMethodGroups(g, service)
 			for _, group := range groups {
 				if _, found := t.methodGroups[group.InType]; found {
@@ -250,13 +253,14 @@ func (x *{{.Name}}CommonApi) {{.Func}}{{.Name}}(ctx context.Context, in *{{.Pkg}
 	} else {
 		stream, err := x.client_api.{{.Func}}{{.Name}}(ctx, copy)
 		err = {{.Name}}ReadResultStream(stream, err)
-		return &{{.Pkg}}.Result{}, err
+		return &{{.Pkg}}.Result{}, unwrapGrpcError(err)
 	}
 {{- else}}
 	if x.internal_api != nil {
 		return x.internal_api.{{.Func}}{{.Name}}(ctx, copy)
 	} else {
-		return x.client_api.{{.Func}}{{.Name}}(ctx, copy)
+		res, err := x.client_api.{{.Func}}{{.Name}}(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 {{- end}}
 }
@@ -270,7 +274,7 @@ func (x *{{.Name}}CommonApi) Show{{.Name}}(ctx context.Context, filter *{{.Pkg}}
 	} else {
 		stream, err := x.client_api.Show{{.Name}}(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 
@@ -545,6 +549,9 @@ func (t *TestCud) Generate(file *generator.FileDescriptor) {
 	hasMethod := false
 	if len(file.FileDescriptorProto.Service) > 0 {
 		for _, service := range file.FileDescriptorProto.Service {
+			if gensupport.GetRedisApi(service) {
+				continue
+			}
 			if hasSupportedMethod(service) {
 				hasMethod = true
 				break
@@ -576,6 +583,9 @@ func (t *TestCud) Generate(file *generator.FileDescriptor) {
 		if len(service.Method) == 0 {
 			continue
 		}
+		if gensupport.GetRedisApi(service) {
+			continue
+		}
 		if !hasSupportedMethod(service) {
 			continue
 		}
@@ -586,6 +596,9 @@ func (t *TestCud) Generate(file *generator.FileDescriptor) {
 	}
 	for _, service := range file.FileDescriptorProto.Service {
 		if len(service.Method) == 0 {
+			continue
+		}
+		if gensupport.GetRedisApi(service) {
 			continue
 		}
 		t.genClientInterface(service)
@@ -980,6 +993,9 @@ func (t *TestCud) genDummyServer() {
 			if len(service.Method) == 0 {
 				continue
 			}
+			if gensupport.GetRedisApi(service) {
+				continue
+			}
 			if !GetDummyServer(service) {
 				continue
 			}
@@ -1071,6 +1087,10 @@ func (t *TestCud) genClientInterface(service *descriptor.ServiceDescriptorProto)
 	if len(service.Method) == 0 {
 		return
 	}
+	if gensupport.GetRedisApi(service) {
+		return
+	}
+
 	methods := []*methodArgs{}
 
 	for _, method := range service.Method {
@@ -1124,6 +1144,9 @@ func (t *TestCud) genClient() {
 			continue
 		}
 		for _, service := range file.Service {
+			if gensupport.GetRedisApi(service) {
+				continue
+			}
 			if hasSupportedMethod(service) {
 				t.P(service.Name, "Client")
 			}

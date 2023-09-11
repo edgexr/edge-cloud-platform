@@ -37,9 +37,19 @@ type PublicCert struct {
 	TTL  int64  `json:"ttl"` // in seconds
 }
 
+func IsErrNoSecretsAtPath(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "no secrets at path")
+}
+
 func GetData(config *Config, path string, version int, data interface{}) error {
 	if config == nil {
 		return fmt.Errorf("no vault Config specified")
+	}
+	if config.Addr == UnitTestIgnoreVaultAddr {
+		return nil
 	}
 	client, err := config.Login()
 	if err != nil {
@@ -52,10 +62,60 @@ func GetData(config *Config, path string, version int, data interface{}) error {
 	return mapstructure.WeakDecode(vdat["data"], data)
 }
 
+// SplitKVPath splits a full path into it's mount, type, and path
+// components. Type is either "data" or "metadata".
+func SplitKVPath(fullpath string) (mount, typ, path string, err error) {
+	fullpath = strings.TrimPrefix(fullpath, "/")
+	parts := strings.SplitN(fullpath, "/", 3)
+	if len(parts) == 2 {
+		return parts[0], parts[1], "", nil
+	} else if len(parts) == 3 {
+		return parts[0], parts[1], parts[2], nil
+	}
+	return "", "", "", fmt.Errorf("Vault KV path %s cannot be split into mount path, data type, and secret path", fullpath)
+}
+
+func ensureKVDataPath(path string) (string, error) {
+	return ensureKVPath(path, "data")
+}
+
+func ensureKVMetadataPath(path string) (string, error) {
+	return ensureKVPath(path, "metadata")
+}
+
+func ensureKVPath(path, typ string) (string, error) {
+	mount, _, secret, err := SplitKVPath(path)
+	if err != nil {
+		return path, err
+	}
+	return mount + "/" + typ + "/" + secret, nil
+}
+
 const NoCheckAndSet = -1
 
 func PutData(config *Config, path string, data interface{}) error {
 	return PutDataCAS(config, path, data, NoCheckAndSet)
+}
+
+func DeleteData(config *Config, path string) error {
+	if config == nil {
+		return fmt.Errorf("no vault Config specified")
+	}
+	if config.Addr == UnitTestIgnoreVaultAddr {
+		return nil
+	}
+	client, err := config.Login()
+	if err != nil {
+		return err
+	}
+	// For delete, path must be metadata, not data
+	// Note that approle may need explicit perms for the
+	// metadata path.
+	path, err = ensureKVMetadataPath(path)
+	if err != nil {
+		return err
+	}
+	return DeleteKV(client, path)
 }
 
 // Check and set:
@@ -66,6 +126,9 @@ func PutDataCAS(config *Config, path string, data interface{}, checkAndSet int) 
 	client, err := config.Login()
 	if err != nil {
 		return err
+	}
+	if config.Addr == UnitTestIgnoreVaultAddr {
+		return nil
 	}
 	vdata := map[string]interface{}{
 		"data": data,
@@ -93,6 +156,68 @@ func IsCheckAndSetError(err error) bool {
 		return true
 	}
 	return false
+}
+
+// ListData lists which secrets are under the given path directory.
+// NB: None of the services actually have "list" permissions in their
+// approles so this can't be used at the moment.
+func ListData(config *Config, mountPath, path string, recurse bool) ([]string, error) {
+	if config == nil {
+		return nil, fmt.Errorf("no vault Config specified")
+	}
+	if config.Addr == UnitTestIgnoreVaultAddr {
+		return []string{}, nil
+	}
+	client, err := config.Login()
+	if err != nil {
+		return nil, err
+	}
+	if path == "/" {
+		path = ""
+	}
+	// listing is done via the metadata, not the data
+	listPath := mountPath + "/metadata/" + path
+	if !strings.HasSuffix(listPath, "/") {
+		// directories have a trailing slash. If the user
+		// passed this path directly, assume they intended to
+		// specify a directory.
+		listPath += "/"
+	}
+	secret, err := client.Logical().List(listPath)
+	if err != nil {
+		return nil, err
+	}
+	paths := []string{}
+	if secret == nil || secret.Data == nil {
+		return paths, nil
+	}
+	keys, ok := secret.Data["keys"]
+	if !ok {
+		return paths, nil
+	}
+	subpaths, ok := keys.([]interface{})
+	if !ok {
+		return paths, nil
+	}
+	for _, subpath := range subpaths {
+		if subpathStr, ok := subpath.(string); ok {
+			// if it ends with a "/", it's a directory
+			// otherwise, it's a secret.
+			fullPath := path + subpathStr
+			if strings.HasSuffix(subpathStr, "/") {
+				if recurse {
+					sublist, err := ListData(config, mountPath, fullPath, recurse)
+					if err != nil {
+						return paths, err
+					}
+					paths = append(paths, sublist...)
+				}
+			} else {
+				paths = append(paths, fullPath)
+			}
+		}
+	}
+	return paths, nil
 }
 
 func GetEnvVars(config *Config, path string) (map[string]string, error) {

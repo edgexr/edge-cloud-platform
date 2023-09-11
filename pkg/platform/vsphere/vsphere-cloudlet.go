@@ -26,21 +26,12 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 var clusterLock sync.Mutex
 var appLock sync.Mutex
 
 const govcLocation = "https://github.com/vmware/govmomi/tree/master/govc"
-
-func (v *VSpherePlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("SaveCloudletAccessVars not implemented for vsphere")
-}
-
-func (v *VSpherePlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("UpdateCloudletAccessVars not implemented for vsphere")
-}
 
 func (v *VSpherePlatform) GetCloudletImageSuffix(ctx context.Context) string {
 	return ".qcow2"
@@ -97,10 +88,6 @@ func (v *VSpherePlatform) GetApiEndpointAddr(ctx context.Context) (string, error
 	return vcaddr, nil
 }
 
-func (o *VSpherePlatform) GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error) {
-	return nil, fmt.Errorf("GetSessionTokens not supported in VSpherePlatform")
-}
-
 // GetCloudletManifest follows the standard practice for vSphere to use OVF for this purpose.  We store the OVF
 // in artifactory along with with the vmdk formatted disk.  No customization is needed per cloudlet as the OVF
 // import tool will prompt for datastore and portgroup.
@@ -147,10 +134,6 @@ func (s *VSpherePlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) err
 
 func (s *VSpherePlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {
 	return []edgeproto.InfraResource{}, nil
-}
-
-func (s *VSpherePlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	return &edgeproto.CloudletResourceQuotaProps{}, nil
 }
 
 func (s *VSpherePlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {

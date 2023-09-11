@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/xind"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
@@ -49,5 +50,6 @@ func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsMultiTenantCluster:   true,
 		CloudletServicesLocal:        true,
 		NoKubernetesClusterAutoScale: true,
+		ResourceQuotaProperties:      cloudcommon.CommonResourceQuotaProps,
 	}
 }

@@ -1838,7 +1838,7 @@ func (c *AutoProvPolicyCache) DeleteCondFunc(ctx context.Context, in *AutoProvPo
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {
@@ -2437,6 +2437,10 @@ func (m *AutoProvCounts) DeepCopyIn(src *AutoProvCounts) {
 	} else {
 		m.Counts = nil
 	}
+}
+
+func (m *AutoProvCounts) MessageTypeKey() string {
+	return "msg/type/AutoProvCounts"
 }
 
 // Helper method to check that enums have valid values
@@ -3089,7 +3093,7 @@ func (c *AutoProvInfoCache) DeleteCondFunc(ctx context.Context, in *AutoProvInfo
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {

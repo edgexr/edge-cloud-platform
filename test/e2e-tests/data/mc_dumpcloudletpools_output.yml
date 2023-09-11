@@ -22,6 +22,14 @@ requests:
       region: locala
     output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
   - node:
+      type: ccrm
+      region: local
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+  - node:
+      type: ccrm
+      region: locala
+    output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-2\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'
+  - node:
       type: cluster-svc
       region: local
     output: '{"{\"organization\":\"enterprise\",\"name\":\"enterprise-1\"}":{"{\"organization\":\"enterprise\",\"name\":\"enterprise-pool\"}":{}}}'

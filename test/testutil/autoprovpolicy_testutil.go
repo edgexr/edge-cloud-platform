@@ -135,7 +135,8 @@ func (x *AutoProvPolicyCommonApi) CreateAutoProvPolicy(ctx context.Context, in *
 	if x.internal_api != nil {
 		return x.internal_api.CreateAutoProvPolicy(ctx, copy)
 	} else {
-		return x.client_api.CreateAutoProvPolicy(ctx, copy)
+		res, err := x.client_api.CreateAutoProvPolicy(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -145,7 +146,8 @@ func (x *AutoProvPolicyCommonApi) DeleteAutoProvPolicy(ctx context.Context, in *
 	if x.internal_api != nil {
 		return x.internal_api.DeleteAutoProvPolicy(ctx, copy)
 	} else {
-		return x.client_api.DeleteAutoProvPolicy(ctx, copy)
+		res, err := x.client_api.DeleteAutoProvPolicy(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -155,7 +157,8 @@ func (x *AutoProvPolicyCommonApi) UpdateAutoProvPolicy(ctx context.Context, in *
 	if x.internal_api != nil {
 		return x.internal_api.UpdateAutoProvPolicy(ctx, copy)
 	} else {
-		return x.client_api.UpdateAutoProvPolicy(ctx, copy)
+		res, err := x.client_api.UpdateAutoProvPolicy(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -166,7 +169,7 @@ func (x *AutoProvPolicyCommonApi) ShowAutoProvPolicy(ctx context.Context, filter
 	} else {
 		stream, err := x.client_api.ShowAutoProvPolicy(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

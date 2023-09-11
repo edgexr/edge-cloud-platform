@@ -64,6 +64,7 @@ func GetRootCommand() *RootCommand {
 		rc.getCmdGroup(ormctl.BillingOrgGroup),
 	}
 	operatorCommands := []*cobra.Command{
+		rc.getCmdGroup(ormctl.PlatformFeaturesGroup),
 		rc.getCmdGroup(ormctl.CloudletGroup),
 		rc.getCmdGroup(ormctl.CloudletPoolGroup),
 		rc.getCmdGroup(ormctl.CloudletPoolInvitationGroup, ormctl.CloudletPoolAccessGroup),

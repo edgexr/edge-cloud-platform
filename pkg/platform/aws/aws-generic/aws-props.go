@@ -21,14 +21,32 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
-const AwsDefaultVaultPath string = "/secret/data/cloudlet/aws/credentials"
 const ArnAccountIdIdx = 4
+
+const (
+	AWS_ACCESS_KEY_ID     = "AWS_ACCESS_KEY_ID"
+	AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY"
+	AWS_TOTP_SECRET_KEY   = "aws_totp_secret_key"
+)
+
+var AccessVarProps = map[string]*edgeproto.PropertyInfo{
+	AWS_ACCESS_KEY_ID: {
+		Name:      "AWS access key",
+		Mandatory: true,
+	},
+	AWS_SECRET_ACCESS_KEY: {
+		Name:      "AWS secret key associated with the access key",
+		Mandatory: true,
+	},
+	AWS_TOTP_SECRET_KEY: {
+		Name:        "AWS totp secret key",
+		Description: "If MFA is enabled, this is the secret key that will be used to generate RFC 6238 TOTP codes. This is the text equivalent of the TOTP QR code for authentication apps.",
+		TotpSecret:  true,
+	},
+}
 
 var AWSProps = map[string]*edgeproto.PropertyInfo{
 	"AWS_REGION": {
@@ -67,12 +85,12 @@ var AWSProps = map[string]*edgeproto.PropertyInfo{
 }
 
 func (a *AwsGenericPlatform) GetAwsAccessKeyId() string {
-	val, _ := a.Properties.GetValue("AWS_ACCESS_KEY_ID")
+	val, _ := a.AccountAccessVars[AWS_ACCESS_KEY_ID]
 	return val
 }
 
 func (a *AwsGenericPlatform) GetAwsSecretAccessKey() string {
-	val, _ := a.Properties.GetValue("AWS_SECRET_ACCESS_KEY")
+	val, _ := a.AccountAccessVars[AWS_SECRET_ACCESS_KEY]
 	return val
 }
 
@@ -109,38 +127,6 @@ func (a *AwsGenericPlatform) GetAwsUserArn() string {
 func (a *AwsGenericPlatform) GetAwsFlavorMatchPattern() string {
 	val, _ := a.Properties.GetValue("FLAVOR_MATCH_PATTERN")
 	return val
-}
-
-func (a *AwsGenericPlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
-	return AWSProps, nil
-}
-
-func (a *AwsGenericPlatform) GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error) {
-	log.SpanLog(ctx, log.DebugLevelApi, "AwsGenericPlatform GetSessionTokens", "account", account)
-	token, err := a.GetAwsTotpToken(ctx, vaultConfig, account)
-	if err != nil {
-		return nil, err
-	}
-	tokens := map[string]string{
-		TotpTokenName: token,
-	}
-	return tokens, nil
-}
-
-func (a *AwsGenericPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
-	log.SpanLog(ctx, log.DebugLevelApi, "AwsGenericPlatform GetAccessData", "dataType", dataType)
-	switch dataType {
-	case platform.GetCloudletAccessVars:
-		path := a.GetVaultCloudletAccessPath(&cloudlet.Key, region, cloudlet.PhysicalName)
-		vars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, path)
-		if err != nil {
-			return nil, err
-		}
-		return vars, nil
-	case platform.GetSessionTokens:
-		return a.GetSessionTokens(ctx, vaultConfig, string(arg))
-	}
-	return nil, fmt.Errorf("AwsGeneric unhandled GetAccessData type %s", dataType)
 }
 
 func (a *AwsGenericPlatform) GetUserAccountIdFromArn(ctx context.Context, arn string) (string, error) {

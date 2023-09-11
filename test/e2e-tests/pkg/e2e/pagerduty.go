@@ -51,7 +51,7 @@ type TestPagerDutyEvent struct {
 }
 
 // get api
-func RunPagerDutyAPI(api, apiFile, outputDir string) error {
+func (s *TestSpecRunner) RunPagerDutyAPI(api, apiFile, outputDir string) error {
 	servers := make([]E2eServerName, 0)
 	if apiFile != "" {
 		err := ReadYamlFile(apiFile, &servers)
@@ -66,7 +66,7 @@ func RunPagerDutyAPI(api, apiFile, outputDir string) error {
 	switch api {
 	case "check":
 		for ii, sName := range servers {
-			proc := GetHttpServer(sName.Name)
+			proc := s.GetHttpServer(sName.Name)
 			apiUrl := fmt.Sprintf("0.0.0.0:%d%s", proc.Port, ListPagerDutyMessagesApi)
 			cmd := exec.Command("curl", "-s", "-S", apiUrl)
 			out, err := cmd.CombinedOutput()
@@ -97,7 +97,7 @@ func RunPagerDutyAPI(api, apiFile, outputDir string) error {
 		}
 	case "deleteall":
 		for _, sName := range servers {
-			proc := GetHttpServer(sName.Name)
+			proc := s.GetHttpServer(sName.Name)
 			apiUrl := fmt.Sprintf("0.0.0.0:%d%s", proc.Port, DeleteAllPagerDutyEventsApi)
 			cmd := exec.Command("curl", "-s", "-S", "-X", "DELETE", apiUrl)
 			_, err := cmd.CombinedOutput()

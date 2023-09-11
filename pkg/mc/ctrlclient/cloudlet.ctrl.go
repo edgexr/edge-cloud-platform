@@ -25,6 +25,46 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+func ShowPlatformFeaturesStream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.PlatformFeatures, connObj ClientConnMgr, cb func(res *edgeproto.PlatformFeatures) error) error {
+	conn, err := connObj.GetRegionConn(ctx, rc.Region)
+	if err != nil {
+		return err
+	}
+	api := edgeproto.NewPlatformFeaturesApiClient(conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
+	stream, err := api.ShowPlatformFeatures(ctx, obj)
+	if err != nil {
+		return err
+	}
+	for {
+		res, err := stream.Recv()
+		if err == io.EOF {
+			err = nil
+			break
+		}
+		if err != nil {
+			return err
+		}
+		err = cb(res)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func DeletePlatformFeaturesObj(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.PlatformFeatures, connObj ClientConnMgr) (*edgeproto.Result, error) {
+	conn, err := connObj.GetRegionConn(ctx, rc.Region)
+	if err != nil {
+		return nil, err
+	}
+	api := edgeproto.NewPlatformFeaturesApiClient(conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
+	return api.DeletePlatformFeatures(ctx, obj)
+}
+
 func CreateGPUDriverStream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.GPUDriver, connObj ClientConnMgr, cb func(res *edgeproto.Result) error) error {
 	conn, err := connObj.GetRegionConn(ctx, rc.Region)
 	if err != nil {
@@ -378,35 +418,6 @@ func GetCloudletManifestObj(ctx context.Context, rc *ormutil.RegionContext, obj 
 	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
 	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.GetCloudletManifest(ctx, obj)
-}
-
-func ShowPlatformsFeaturesStream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.PlatformFeatures, connObj ClientConnMgr, cb func(res *edgeproto.PlatformFeatures) error) error {
-	conn, err := connObj.GetRegionConn(ctx, rc.Region)
-	if err != nil {
-		return err
-	}
-	api := edgeproto.NewCloudletApiClient(conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.ShowPlatformsFeatures(ctx, obj)
-	if err != nil {
-		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func GetCloudletPropsObj(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.CloudletProps, connObj ClientConnMgr) (*edgeproto.CloudletProps, error) {

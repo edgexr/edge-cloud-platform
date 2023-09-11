@@ -89,12 +89,21 @@ Following is state transition table for cloudlet upgrade:
 |                 | CRMv1      | CRMv2 bringup failed, CRMv1 cleans up CRMv2          | UpdateError                       |
 | UpdateError     | CRMv1      | Continue using CRMv1 (set Ready), resend all data    | UpdateError                       |
 
-For cloudlet creation, we'll have a different table:
+Cloudlet creation is split into two phases, the onboarding phase handled by CCRM,
+and the crm startup phase handled by the CRM.
+
+1. Cloudlet onboarding phase (CCRM):
+
+| OnboardingState   | Actor      | Actions/Comments                                       | Next State                     |
+|-------------------|------------|--------------------------------------------------------|--------------------------------|
+| Unknown           | User       | calls cloudlet create                                  | CreateRequested                |
+| CreateRequested   | CCRM       | ack request                                            | Creating                       |
+
+2. CRM startup (CRM):
 
 | State             | Actor      | Actions/Comments                                       | Next State                                                                                                 |
 |-------------------|------------|--------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| Offline           | User       | Initiates cloudlet create                              | Init                                                                                                       |
-|                   | CRM        | CRM started manually                                   | Init                                                                                                       |
+|                   | CRM        | CRM starts                                             | Init                                                                                                       |
 | Ready/Init/InitOk | CRM        | Start up, must have new notify-id (handles CRM crash)  | Init                                                                                                       |
 | Init              | Controller | Ack cloudlet start                                     | InitOk                                                                                                     |
 | InitOk            | CRM        | Gather cloudlet data                                   | Ready (triggers send of all data)                                                                          |

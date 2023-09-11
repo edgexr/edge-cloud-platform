@@ -173,7 +173,7 @@ func (x *GPUDriverCommonApi) CreateGPUDriver(ctx context.Context, in *edgeproto.
 	} else {
 		stream, err := x.client_api.CreateGPUDriver(ctx, copy)
 		err = GPUDriverReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -186,7 +186,7 @@ func (x *GPUDriverCommonApi) DeleteGPUDriver(ctx context.Context, in *edgeproto.
 	} else {
 		stream, err := x.client_api.DeleteGPUDriver(ctx, copy)
 		err = GPUDriverReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -199,7 +199,7 @@ func (x *GPUDriverCommonApi) UpdateGPUDriver(ctx context.Context, in *edgeproto.
 	} else {
 		stream, err := x.client_api.UpdateGPUDriver(ctx, copy)
 		err = GPUDriverReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -210,7 +210,7 @@ func (x *GPUDriverCommonApi) ShowGPUDriver(ctx context.Context, filter *edgeprot
 	} else {
 		stream, err := x.client_api.ShowGPUDriver(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 
@@ -546,7 +546,7 @@ func (x *CloudletCommonApi) CreateCloudlet(ctx context.Context, in *edgeproto.Cl
 	} else {
 		stream, err := x.client_api.CreateCloudlet(ctx, copy)
 		err = CloudletReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -559,7 +559,7 @@ func (x *CloudletCommonApi) DeleteCloudlet(ctx context.Context, in *edgeproto.Cl
 	} else {
 		stream, err := x.client_api.DeleteCloudlet(ctx, copy)
 		err = CloudletReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -572,7 +572,7 @@ func (x *CloudletCommonApi) UpdateCloudlet(ctx context.Context, in *edgeproto.Cl
 	} else {
 		stream, err := x.client_api.UpdateCloudlet(ctx, copy)
 		err = CloudletReadResultStream(stream, err)
-		return &edgeproto.Result{}, err
+		return &edgeproto.Result{}, unwrapGrpcError(err)
 	}
 }
 
@@ -583,7 +583,7 @@ func (x *CloudletCommonApi) ShowCloudlet(ctx context.Context, filter *edgeproto.
 	} else {
 		stream, err := x.client_api.ShowCloudlet(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 
@@ -881,7 +881,7 @@ func (x *CloudletInfoCommonApi) ShowCloudletInfo(ctx context.Context, filter *ed
 	} else {
 		stream, err := x.client_api.ShowCloudletInfo(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 
@@ -966,6 +966,83 @@ func FindCloudletInfoData(key *edgeproto.CloudletKey, testData []edgeproto.Cloud
 		}
 	}
 	return nil, false
+}
+
+func (r *Run) PlatformFeaturesApi(data *[]edgeproto.PlatformFeatures, dataMap interface{}, dataOut interface{}) {
+	log.DebugLog(log.DebugLevelApi, "API for PlatformFeatures", "mode", r.Mode)
+	if r.Mode == "show" {
+		obj := &edgeproto.PlatformFeatures{}
+		out, err := r.client.ShowPlatformFeatures(r.ctx, obj)
+		if err != nil {
+			r.logErr("PlatformFeaturesApi", err)
+		} else {
+			outp, ok := dataOut.(*[]edgeproto.PlatformFeatures)
+			if !ok {
+				panic(fmt.Sprintf("RunPlatformFeaturesApi expected dataOut type *[]edgeproto.PlatformFeatures, but was %T", dataOut))
+			}
+			*outp = append(*outp, out...)
+		}
+		return
+	}
+	for ii, objD := range *data {
+		obj := &objD
+		switch r.Mode {
+		case "showfiltered":
+			out, err := r.client.ShowPlatformFeatures(r.ctx, obj)
+			if err != nil {
+				r.logErr(fmt.Sprintf("PlatformFeaturesApi[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[]edgeproto.PlatformFeatures)
+				if !ok {
+					panic(fmt.Sprintf("RunPlatformFeaturesApi expected dataOut type *[]edgeproto.PlatformFeatures, but was %T", dataOut))
+				}
+				*outp = append(*outp, out...)
+			}
+		case "delete":
+			out, err := r.client.DeletePlatformFeatures(r.ctx, obj)
+			if err != nil {
+				r.logErr(fmt.Sprintf("PlatformFeaturesApi[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[]edgeproto.Result)
+				if !ok {
+					panic(fmt.Sprintf("RunPlatformFeaturesApi expected dataOut type *[]edgeproto.Result, but was %T", dataOut))
+				}
+				*outp = append(*outp, *out)
+			}
+		}
+	}
+}
+
+func (s *DummyServer) ShowPlatformFeatures(in *edgeproto.PlatformFeatures, server edgeproto.PlatformFeaturesApi_ShowPlatformFeaturesServer) error {
+	var err error
+	obj := &edgeproto.PlatformFeatures{}
+	if obj.Matches(in, edgeproto.MatchFilter()) {
+		for ii := 0; ii < s.ShowDummyCount; ii++ {
+			server.Send(&edgeproto.PlatformFeatures{})
+		}
+		if ch, ok := s.MidstreamFailChs["ShowPlatformFeatures"]; ok {
+			// Wait until client receives the SendMsg, since they
+			// are buffered and dropped once we return err here.
+			select {
+			case <-ch:
+			case <-time.After(5 * time.Second):
+			}
+			return fmt.Errorf("midstream failure!")
+		}
+	}
+	err = s.PlatformFeaturesCache.Show(in, func(obj *edgeproto.PlatformFeatures) error {
+		err := server.Send(obj)
+		return err
+	})
+	return err
+}
+
+func (s *DummyServer) DeletePlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) (*edgeproto.Result, error) {
+	if s.CudNoop {
+		return &edgeproto.Result{}, nil
+	}
+	s.PlatformFeaturesCache.Delete(ctx, in, 0)
+	return &edgeproto.Result{}, nil
 }
 
 func (r *Run) GPUDriverApi(data *[]edgeproto.GPUDriver, dataMap interface{}, dataOut interface{}) {
@@ -1279,18 +1356,6 @@ func (r *Run) CloudletApi(data *[]edgeproto.Cloudlet, dataMap interface{}, dataO
 				}
 				*outp = append(*outp, out...)
 			}
-		case "platformdeletecloudlet":
-			out, err := r.client.PlatformDeleteCloudlet(r.ctx, obj)
-			if err != nil {
-				err = ignoreExpectedErrors(r.Mode, obj.GetKey(), err)
-				r.logErr(fmt.Sprintf("CloudletApi[%d]", ii), err)
-			} else {
-				outp, ok := dataOut.(*[][]edgeproto.Result)
-				if !ok {
-					panic(fmt.Sprintf("RunCloudletApi expected dataOut type *[][]edgeproto.Result, but was %T", dataOut))
-				}
-				*outp = append(*outp, out)
-			}
 		}
 	}
 }
@@ -1518,40 +1583,6 @@ func (r *Run) CloudletApi_FlavorMatch(data *[]edgeproto.FlavorMatch, dataMap int
 	}
 }
 
-func (r *Run) CloudletApi_PlatformFeatures(data *[]edgeproto.PlatformFeatures, dataMap interface{}, dataOut interface{}) {
-	log.DebugLog(log.DebugLevelApi, "API for PlatformFeatures", "mode", r.Mode)
-	if r.Mode == "show" {
-		obj := &edgeproto.PlatformFeatures{}
-		out, err := r.client.ShowPlatformsFeatures(r.ctx, obj)
-		if err != nil {
-			r.logErr("CloudletApi_PlatformFeatures", err)
-		} else {
-			outp, ok := dataOut.(*[]edgeproto.PlatformFeatures)
-			if !ok {
-				panic(fmt.Sprintf("RunCloudletApi_PlatformFeatures expected dataOut type *[]edgeproto.PlatformFeatures, but was %T", dataOut))
-			}
-			*outp = append(*outp, out...)
-		}
-		return
-	}
-	for ii, objD := range *data {
-		obj := &objD
-		switch r.Mode {
-		case "showfiltered":
-			out, err := r.client.ShowPlatformsFeatures(r.ctx, obj)
-			if err != nil {
-				r.logErr(fmt.Sprintf("CloudletApi_PlatformFeatures[%d]", ii), err)
-			} else {
-				outp, ok := dataOut.(*[]edgeproto.PlatformFeatures)
-				if !ok {
-					panic(fmt.Sprintf("RunCloudletApi_PlatformFeatures expected dataOut type *[]edgeproto.PlatformFeatures, but was %T", dataOut))
-				}
-				*outp = append(*outp, out...)
-			}
-		}
-	}
-}
-
 func (s *DummyServer) CreateCloudlet(in *edgeproto.Cloudlet, server edgeproto.CloudletApi_CreateCloudletServer) error {
 	var err error
 	if true {
@@ -1633,25 +1664,6 @@ func (s *DummyServer) ShowCloudlet(in *edgeproto.Cloudlet, server edgeproto.Clou
 		err := server.Send(obj)
 		return err
 	})
-	return err
-}
-
-func (s *DummyServer) PlatformDeleteCloudlet(in *edgeproto.Cloudlet, server edgeproto.CloudletApi_PlatformDeleteCloudletServer) error {
-	var err error
-	if true {
-		for ii := 0; ii < s.ShowDummyCount; ii++ {
-			server.Send(&edgeproto.Result{})
-		}
-		if ch, ok := s.MidstreamFailChs["PlatformDeleteCloudlet"]; ok {
-			// Wait until client receives the SendMsg, since they
-			// are buffered and dropped once we return err here.
-			select {
-			case <-ch:
-			case <-time.After(5 * time.Second):
-			}
-			return fmt.Errorf("midstream failure!")
-		}
-	}
 	return err
 }
 
@@ -1785,6 +1797,58 @@ func (r *Run) CloudletMetricsApi(data *[]edgeproto.CloudletMetrics, dataMap inte
 			}
 		}
 	}
+}
+
+type PlatformFeaturesStream interface {
+	Recv() (*edgeproto.PlatformFeatures, error)
+}
+
+func PlatformFeaturesReadStream(stream PlatformFeaturesStream) ([]edgeproto.PlatformFeatures, error) {
+	output := []edgeproto.PlatformFeatures{}
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return output, fmt.Errorf("read PlatformFeatures stream failed, %v", err)
+		}
+		output = append(output, *obj)
+	}
+	return output, nil
+}
+
+func (s *ApiClient) ShowPlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) ([]edgeproto.PlatformFeatures, error) {
+	api := edgeproto.NewPlatformFeaturesApiClient(s.Conn)
+	stream, err := api.ShowPlatformFeatures(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return PlatformFeaturesReadStream(stream)
+}
+
+func (s *CliClient) ShowPlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) ([]edgeproto.PlatformFeatures, error) {
+	output := []edgeproto.PlatformFeatures{}
+	args := append(s.BaseArgs, "controller", "ShowPlatformFeatures")
+	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
+	return output, err
+}
+
+func (s *ApiClient) DeletePlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) (*edgeproto.Result, error) {
+	api := edgeproto.NewPlatformFeaturesApiClient(s.Conn)
+	return api.DeletePlatformFeatures(ctx, in)
+}
+
+func (s *CliClient) DeletePlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) (*edgeproto.Result, error) {
+	out := edgeproto.Result{}
+	args := append(s.BaseArgs, "controller", "DeletePlatformFeatures")
+	err := wrapper.RunEdgectlObjs(args, in, &out, s.RunOps...)
+	return &out, err
+}
+
+type PlatformFeaturesApiClient interface {
+	ShowPlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) ([]edgeproto.PlatformFeatures, error)
+	DeletePlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) (*edgeproto.Result, error)
 }
 
 func (s *ApiClient) CreateGPUDriver(ctx context.Context, in *edgeproto.GPUDriver) ([]edgeproto.Result, error) {
@@ -2032,41 +2096,6 @@ func (s *CliClient) GetCloudletManifest(ctx context.Context, in *edgeproto.Cloud
 	return &out, err
 }
 
-type PlatformFeaturesStream interface {
-	Recv() (*edgeproto.PlatformFeatures, error)
-}
-
-func PlatformFeaturesReadStream(stream PlatformFeaturesStream) ([]edgeproto.PlatformFeatures, error) {
-	output := []edgeproto.PlatformFeatures{}
-	for {
-		obj, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return output, fmt.Errorf("read PlatformFeatures stream failed, %v", err)
-		}
-		output = append(output, *obj)
-	}
-	return output, nil
-}
-
-func (s *ApiClient) ShowPlatformsFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) ([]edgeproto.PlatformFeatures, error) {
-	api := edgeproto.NewCloudletApiClient(s.Conn)
-	stream, err := api.ShowPlatformsFeatures(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return PlatformFeaturesReadStream(stream)
-}
-
-func (s *CliClient) ShowPlatformsFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) ([]edgeproto.PlatformFeatures, error) {
-	output := []edgeproto.PlatformFeatures{}
-	args := append(s.BaseArgs, "controller", "ShowPlatformsFeatures")
-	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
-	return output, err
-}
-
 func (s *ApiClient) GetCloudletProps(ctx context.Context, in *edgeproto.CloudletProps) (*edgeproto.CloudletProps, error) {
 	api := edgeproto.NewCloudletApiClient(s.Conn)
 	return api.GetCloudletProps(ctx, in)
@@ -2269,29 +2298,12 @@ func (s *CliClient) GetCloudletGPUDriverLicenseConfig(ctx context.Context, in *e
 	return &out, err
 }
 
-func (s *ApiClient) PlatformDeleteCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Result, error) {
-	api := edgeproto.NewCloudletApiClient(s.Conn)
-	stream, err := api.PlatformDeleteCloudlet(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return ResultReadStream(stream)
-}
-
-func (s *CliClient) PlatformDeleteCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Result, error) {
-	output := []edgeproto.Result{}
-	args := append(s.BaseArgs, "controller", "PlatformDeleteCloudlet")
-	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
-	return output, err
-}
-
 type CloudletApiClient interface {
 	CreateCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Result, error)
 	DeleteCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Result, error)
 	UpdateCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Result, error)
 	ShowCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Cloudlet, error)
 	GetCloudletManifest(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.CloudletManifest, error)
-	ShowPlatformsFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) ([]edgeproto.PlatformFeatures, error)
 	GetCloudletProps(ctx context.Context, in *edgeproto.CloudletProps) (*edgeproto.CloudletProps, error)
 	GetCloudletResourceQuotaProps(ctx context.Context, in *edgeproto.CloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, error)
 	GetCloudletResourceUsage(ctx context.Context, in *edgeproto.CloudletResourceUsage) (*edgeproto.CloudletResourceUsage, error)
@@ -2305,7 +2317,6 @@ type CloudletApiClient interface {
 	RevokeAccessKey(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.Result, error)
 	GenerateAccessKey(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.Result, error)
 	GetCloudletGPUDriverLicenseConfig(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.Result, error)
-	PlatformDeleteCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Result, error)
 }
 
 type CloudletInfoStream interface {

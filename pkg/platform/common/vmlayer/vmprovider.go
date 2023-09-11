@@ -29,7 +29,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 	"github.com/gogo/protobuf/types"
 )
@@ -39,7 +38,6 @@ import (
 type VMProvider interface {
 	NameSanitize(string) string
 	IdSanitize(string) string
-	GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error)
 	SetVMProperties(vmProperties *VMProperties)
 	GetFeatures() *edgeproto.PlatformFeatures
 	InitData(ctx context.Context, caches *platform.Caches)
@@ -58,12 +56,9 @@ type VMProvider interface {
 	WhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error
 	RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error
 	GetResourceID(ctx context.Context, resourceType ResourceType, resourceName string) (string, error)
-	GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string
 	InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error
 	GetApiEndpointAddr(ctx context.Context) (string, error)
 	GetExternalGateway(ctx context.Context, extNetName string) (string, error)
-	SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error
-	UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error
 	SetPowerState(ctx context.Context, serverName, serverAction string) error
 	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
 	GetCloudletManifest(ctx context.Context, name string, cloudletImagePath string, VMGroupOrchestrationParams *VMGroupOrchestrationParams) (string, error)
@@ -77,12 +72,10 @@ type VMProvider interface {
 	CheckServerReady(ctx context.Context, client ssh.Client, serverName string) error
 	GetServerGroupResources(ctx context.Context, name string) (*edgeproto.InfraResources, error)
 	ValidateAdditionalNetworks(ctx context.Context, additionalNets map[string]NetworkType) error
-	GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error)
 	ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootlbClients map[string]ssh.Client, action ActionType, updateCallback edgeproto.CacheUpdateCallback) error
 	ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]ssh.Client, action ActionType, updateCallback edgeproto.CacheUpdateCallback) error
 	InitOperationContext(ctx context.Context, operationStage OperationInitStage) (context.Context, OperationInitResult, error)
 	GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error)
-	GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error)
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource
 	GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error
 	InternalCloudletUpdatedCallback(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal)
@@ -356,14 +349,11 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 	for k, v := range VMProviderProps {
 		props[k] = v
 	}
-	providerProps, err := v.VMProvider.GetProviderSpecificProps(ctx)
-	if err != nil {
-		return err
-	}
+	providerProps := v.GetFeatures().Properties
 	for k, v := range providerProps {
 		props[k] = v
 	}
-	err = v.VMProperties.CommonPf.InitInfraCommon(ctx, platformConfig, props, ops...)
+	err := v.VMProperties.CommonPf.InitInfraCommon(ctx, platformConfig, props, ops...)
 	if err != nil {
 		return err
 	}
@@ -599,10 +589,6 @@ func (v *VMPlatform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.
 	return &resources, nil
 }
 
-func (v *VMPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	return v.VMProvider.GetCloudletResourceQuotaProps(ctx)
-}
-
 // called by controller, make sure it doesn't make any calls to infra API
 func (v *VMPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
 	return v.VMProvider.GetClusterAdditionalResources(ctx, cloudlet, vmResources, infraResMap)
@@ -627,26 +613,4 @@ func (v *VMPlatform) GetClusterInfraResources(ctx context.Context, clusterKey *e
 
 	clusterName := v.VMProvider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterKey))
 	return v.VMProvider.GetServerGroupResources(ctx, clusterName)
-}
-
-func (v *VMPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
-	log.SpanLog(ctx, log.DebugLevelApi, "VMProvider GetAccessData", "dataType", dataType)
-	switch dataType {
-	case platform.GetCloudletAccessVars:
-		path := v.VMProvider.GetVaultCloudletAccessPath(&cloudlet.Key, region, cloudlet.PhysicalName)
-		if path == "" {
-			log.SpanLog(ctx, log.DebugLevelApi, "No access vars path, returning empty map")
-			vars := make(map[string]string, 1)
-			return vars, nil
-		}
-		vars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, path)
-		log.SpanLog(ctx, log.DebugLevelApi, "VMProvider GetAccessData", "dataType", dataType, "path", path, "err", err)
-		if err != nil {
-			return nil, err
-		}
-		return vars, nil
-	case platform.GetSessionTokens:
-		return v.VMProvider.GetSessionTokens(ctx, vaultConfig, string(arg))
-	}
-	return nil, fmt.Errorf("VMPlatform unhandled GetAccessData type %s", dataType)
 }

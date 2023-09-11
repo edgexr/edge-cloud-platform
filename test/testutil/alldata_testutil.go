@@ -25,6 +25,7 @@ type AllDataOut struct {
 	ResTagTables               []edgeproto.Result
 	TrustPolicies              [][]edgeproto.Result
 	GpuDrivers                 [][]edgeproto.Result
+	PlatformFeatures           []edgeproto.Result
 	Cloudlets                  [][]edgeproto.Result
 	CloudletInfos              []edgeproto.Result
 	CloudletPools              []edgeproto.Result
@@ -63,6 +64,8 @@ func RunAllDataApis(run *Run, in *edgeproto.AllData, inMap map[string]interface{
 	apicb("trustpolicies")
 	run.GPUDriverApi(&in.GpuDrivers, inMap["gpudrivers"], &out.GpuDrivers)
 	apicb("gpudrivers")
+	run.PlatformFeaturesApi(&in.PlatformFeatures, inMap["platformfeatures"], &out.PlatformFeatures)
+	apicb("platformfeatures")
 	run.CloudletApi(&in.Cloudlets, inMap["cloudlets"], &out.Cloudlets)
 	apicb("cloudlets")
 	run.CloudletInfoApi(&in.CloudletInfos, inMap["cloudletinfos"], &out.CloudletInfos)
@@ -131,6 +134,8 @@ func RunAllDataReverseApis(run *Run, in *edgeproto.AllData, inMap map[string]int
 	run.CloudletInfoApi(&in.CloudletInfos, inMap["cloudletinfos"], &out.CloudletInfos)
 	apicb("cloudlets")
 	run.CloudletApi(&in.Cloudlets, inMap["cloudlets"], &out.Cloudlets)
+	apicb("platformfeatures")
+	run.PlatformFeaturesApi(&in.PlatformFeatures, inMap["platformfeatures"], &out.PlatformFeatures)
 	apicb("gpudrivers")
 	run.GPUDriverApi(&in.GpuDrivers, inMap["gpudrivers"], &out.GpuDrivers)
 	apicb("trustpolicies")
@@ -165,6 +170,9 @@ func RunAllDataShowApis(run *Run, in *edgeproto.AllData, selector edgeproto.AllS
 	}
 	if selector.Has("gpudrivers") {
 		run.GPUDriverApi(&in.GpuDrivers, nil, &out.GpuDrivers)
+	}
+	if selector.Has("platformfeatures") {
+		run.PlatformFeaturesApi(&in.PlatformFeatures, nil, &out.PlatformFeatures)
 	}
 	if selector.Has("cloudlets") {
 		run.CloudletApi(&in.Cloudlets, nil, &out.Cloudlets)

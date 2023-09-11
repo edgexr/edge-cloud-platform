@@ -553,7 +553,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			return fmt.Errorf("No resource information found for Cloudlet %s", in.Key.CloudletKey)
 		}
 		cloudletCompatibilityVersion = info.CompatibilityVersion
-		cloudletFeatures, err = GetCloudletFeatures(ctx, cloudlet.PlatformType)
+		cloudletFeatures, err = s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 		if err != nil {
 			return fmt.Errorf("Failed to get features for platform: %s", err)
 		}
@@ -1182,9 +1182,12 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		cb.Send(&edgeproto.Result{Message: "Created AppInst successfully"})
 		return nil
 	}
-	err = edgeproto.WaitForAppInstInfo(ctx, &in.Key, edgeproto.TrackedState_READY,
+	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CreateAppInstTimeout.TimeDuration())
+	defer reqCancel()
+
+	err = edgeproto.WaitForAppInstInfo(reqCtx, &in.Key,
+		edgeproto.TrackedState_READY,
 		CreateAppInstTransitions, edgeproto.TrackedState_CREATE_ERROR,
-		s.all.settingsApi.Get().CreateAppInstTimeout.TimeDuration(),
 		"Created AppInst successfully", cb.Send,
 		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
 	)
@@ -1276,7 +1279,7 @@ func (s *AppInstApi) updateCloudletResourcesMetric(ctx context.Context, in *edge
 			skipMetric = false
 			return err
 		}
-		cloudletFeatures, err := GetCloudletFeatures(ctx, cloudlet.PlatformType)
+		cloudletFeatures, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 		if err != nil {
 			return fmt.Errorf("Failed to get features for platform: %s", err)
 		}
@@ -1372,11 +1375,12 @@ func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.App
 				s.RecordAppInstEvent(ctx, &curr, cloudcommon.UPDATE_ERROR, cloudcommon.InstanceDown)
 			}
 		}()
-		err = edgeproto.WaitForAppInstInfo(cb.Context(), &key, edgeproto.TrackedState_READY,
+		reqCtx, reqCancel := context.WithTimeout(cb.Context(), s.all.settingsApi.Get().UpdateAppInstTimeout.TimeDuration())
+		defer reqCancel()
+
+		err = edgeproto.WaitForAppInstInfo(reqCtx, &key, edgeproto.TrackedState_READY,
 			UpdateAppInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
-			s.all.settingsApi.Get().UpdateAppInstTimeout.TimeDuration(),
-			"", cb.Send,
-			edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
+			"", cb.Send, edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
 		)
 	}
 	if err != nil {
@@ -1695,7 +1699,7 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				cloudletRefsChanged = true
 			}
 		}
-		cloudletFeatures, err := GetCloudletFeatures(ctx, cloudlet.PlatformType)
+		cloudletFeatures, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 		if err != nil {
 			return fmt.Errorf("Failed to get features for platform: %s", err)
 		}
@@ -1761,9 +1765,11 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	if ignoreCRM(cctx) {
 		cb.Send(&edgeproto.Result{Message: "Deleted AppInst successfully"})
 	} else {
-		err = edgeproto.WaitForAppInstInfo(ctx, &in.Key, edgeproto.TrackedState_NOT_PRESENT,
+		reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().DeleteAppInstTimeout.TimeDuration())
+		defer reqCancel()
+
+		err = edgeproto.WaitForAppInstInfo(reqCtx, &in.Key, edgeproto.TrackedState_NOT_PRESENT,
 			DeleteAppInstTransitions, edgeproto.TrackedState_DELETE_ERROR,
-			s.all.settingsApi.Get().DeleteAppInstTimeout.TimeDuration(),
 			"Deleted AppInst successfully", cb.Send,
 			edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
 		)

@@ -27,6 +27,184 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// PlatformFeaturesStoreTracker wraps around the usual
+// store to track the STM used for gets/puts.
+type PlatformFeaturesStoreTracker struct {
+	edgeproto.PlatformFeaturesStore
+	getSTM concurrency.STM
+	putSTM concurrency.STM
+}
+
+// Wrap the Api's store with a tracker store.
+// Returns the tracker store, and the unwrap function to defer.
+func wrapPlatformFeaturesTrackerStore(api *PlatformFeaturesApi) (*PlatformFeaturesStoreTracker, func()) {
+	orig := api.store
+	tracker := &PlatformFeaturesStoreTracker{
+		PlatformFeaturesStore: api.store,
+	}
+	api.store = tracker
+	unwrap := func() {
+		api.store = orig
+	}
+	return tracker, unwrap
+}
+
+func (s *PlatformFeaturesStoreTracker) STMGet(stm concurrency.STM, key *edgeproto.PlatformFeaturesKey, buf *edgeproto.PlatformFeatures) bool {
+	found := s.PlatformFeaturesStore.STMGet(stm, key, buf)
+	if s.getSTM == nil {
+		s.getSTM = stm
+	}
+	return found
+}
+
+func (s *PlatformFeaturesStoreTracker) STMPut(stm concurrency.STM, obj *edgeproto.PlatformFeatures, ops ...objstore.KVOp) {
+	s.PlatformFeaturesStore.STMPut(stm, obj, ops...)
+	if s.putSTM == nil {
+		s.putSTM = stm
+	}
+}
+
+// Caller must write by hand the test data generator.
+// Each Ref object should only have a single reference to the key,
+// in order to properly test each reference (i.e. don't have a single
+// object that has multiple references).
+type PlatformFeaturesDeleteDataGen interface {
+	GetPlatformFeaturesTestObj() (*edgeproto.PlatformFeatures, *testSupportData)
+	GetCloudletPlatformTypeRef(key *edgeproto.PlatformFeaturesKey) (*edgeproto.Cloudlet, *testSupportData)
+}
+
+// PlatformFeaturesDeleteStore wraps around the usual
+// store to instrument checks and inject data while
+// the delete api code is running.
+type PlatformFeaturesDeleteStore struct {
+	edgeproto.PlatformFeaturesStore
+	t                   *testing.T
+	allApis             *AllApis
+	putDeletePrepare    bool
+	putDeletePrepareCb  func()
+	putDeletePrepareSTM concurrency.STM
+}
+
+func (s *PlatformFeaturesDeleteStore) Put(ctx context.Context, m *edgeproto.PlatformFeatures, wait func(int64), ops ...objstore.KVOp) (*edgeproto.Result, error) {
+	if wait != nil {
+		s.putDeletePrepare = m.DeletePrepare
+	}
+	res, err := s.PlatformFeaturesStore.Put(ctx, m, wait, ops...)
+	if s.putDeletePrepare && s.putDeletePrepareCb != nil {
+		s.putDeletePrepareCb()
+	}
+	return res, err
+}
+
+func (s *PlatformFeaturesDeleteStore) STMPut(stm concurrency.STM, obj *edgeproto.PlatformFeatures, ops ...objstore.KVOp) {
+	// there's an assumption that this is run within an ApplySTMWait,
+	// where we wait for the caches to be updated with the transaction.
+	if obj.DeletePrepare {
+		s.putDeletePrepare = true
+		s.putDeletePrepareSTM = stm
+	} else {
+		s.putDeletePrepare = false
+		s.putDeletePrepareSTM = nil
+	}
+	s.PlatformFeaturesStore.STMPut(stm, obj, ops...)
+	if s.putDeletePrepare && s.putDeletePrepareCb != nil {
+		s.putDeletePrepareCb()
+	}
+}
+
+func (s *PlatformFeaturesDeleteStore) Delete(ctx context.Context, m *edgeproto.PlatformFeatures, wait func(int64)) (*edgeproto.Result, error) {
+	require.True(s.t, s.putDeletePrepare, "DeletePrepare must be comitted to database with a sync.Wait before deleting")
+	return s.PlatformFeaturesStore.Delete(ctx, m, wait)
+}
+
+func (s *PlatformFeaturesDeleteStore) STMDel(stm concurrency.STM, key *edgeproto.PlatformFeaturesKey) {
+	require.True(s.t, s.putDeletePrepare, "DeletePrepare must be comitted to database with a sync.Wait before deleting")
+	s.PlatformFeaturesStore.STMDel(stm, key)
+}
+
+func (s *PlatformFeaturesDeleteStore) requireUndoDeletePrepare(ctx context.Context, obj *edgeproto.PlatformFeatures) {
+	deletePrepare := s.getDeletePrepare(ctx, obj)
+	require.False(s.t, deletePrepare, "must undo delete prepare field on failure")
+}
+
+func (s *PlatformFeaturesDeleteStore) getDeletePrepare(ctx context.Context, obj *edgeproto.PlatformFeatures) bool {
+	buf := edgeproto.PlatformFeatures{}
+	found := s.Get(ctx, obj.GetKey(), &buf)
+	require.True(s.t, found, "expected test object to be found")
+	return buf.DeletePrepare
+}
+
+func deletePlatformFeaturesChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen PlatformFeaturesDeleteDataGen) {
+	var err error
+	// override store so we can inject data and check data
+	api := all.platformFeaturesApi
+	origStore := api.store
+	deleteStore := &PlatformFeaturesDeleteStore{
+		PlatformFeaturesStore: origStore,
+		t:                     t,
+		allApis:               all,
+	}
+	api.store = deleteStore
+	defer func() {
+		api.store = origStore
+	}()
+
+	// inject testObj directly, bypassing create checks/deps
+	testObj, supportData := dataGen.GetPlatformFeaturesTestObj()
+	supportData.put(t, ctx, all)
+	defer supportData.delete(t, ctx, all)
+	origStore.Put(ctx, testObj, api.sync.syncWait)
+
+	// Positive test, delete should succeed without any references.
+	// The overrided store checks that delete prepare was set on the
+	// object in the database before actually doing the delete.
+	testObj, _ = dataGen.GetPlatformFeaturesTestObj()
+	_, err = api.DeletePlatformFeatures(ctx, testObj)
+	require.Nil(t, err, "delete must succeed with no refs")
+
+	// Negative test, inject testObj with delete prepare already set.
+	testObj, _ = dataGen.GetPlatformFeaturesTestObj()
+	testObj.DeletePrepare = true
+	origStore.Put(ctx, testObj, api.sync.syncWait)
+	// delete should fail with already being deleted
+	testObj, _ = dataGen.GetPlatformFeaturesTestObj()
+	_, err = api.DeletePlatformFeatures(ctx, testObj)
+	require.NotNil(t, err, "delete must fail if already being deleted")
+	require.Equal(t, testObj.GetKey().BeingDeletedError().Error(), err.Error())
+	// failed delete must not interfere with existing delete prepare state
+	require.True(t, deleteStore.getDeletePrepare(ctx, testObj), "delete prepare must not be modified by failed delete")
+
+	// inject testObj for ref tests
+	testObj, _ = dataGen.GetPlatformFeaturesTestObj()
+	origStore.Put(ctx, testObj, api.sync.syncWait)
+
+	{
+		// Negative test, Cloudlet refers to PlatformFeatures.
+		// The cb will inject refBy obj after delete prepare has been set.
+		refBy, supportData := dataGen.GetCloudletPlatformTypeRef(testObj.GetKey())
+		supportData.put(t, ctx, all)
+		deleteStore.putDeletePrepareCb = func() {
+			all.cloudletApi.store.Put(ctx, refBy, all.cloudletApi.sync.syncWait)
+		}
+		testObj, _ = dataGen.GetPlatformFeaturesTestObj()
+		_, err = api.DeletePlatformFeatures(ctx, testObj)
+		require.NotNil(t, err, "must fail delete with ref from Cloudlet")
+		require.Contains(t, err.Error(), "in use")
+		// check that delete prepare was reset
+		deleteStore.requireUndoDeletePrepare(ctx, testObj)
+		// remove Cloudlet obj
+		_, err = all.cloudletApi.store.Delete(ctx, refBy, all.cloudletApi.sync.syncWait)
+		require.Nil(t, err, "cleanup ref from Cloudlet must succeed")
+		deleteStore.putDeletePrepareCb = nil
+		supportData.delete(t, ctx, all)
+	}
+
+	// clean up testObj
+	testObj, _ = dataGen.GetPlatformFeaturesTestObj()
+	_, err = api.DeletePlatformFeatures(ctx, testObj)
+	require.Nil(t, err, "cleanup must succeed")
+}
+
 // GPUDriverStoreTracker wraps around the usual
 // store to track the STM used for gets/puts.
 type GPUDriverStoreTracker struct {
@@ -483,6 +661,23 @@ func CreateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 	testObj, supportData := dataGen.GetCreateCloudletTestObj()
 	supportData.put(t, ctx, all)
 	{
+		// set delete_prepare on referenced PlatformFeatures
+		ref := supportData.getOnePlatformFeatures()
+		require.NotNil(t, ref, "support data must include one referenced PlatformFeatures")
+		ref.DeletePrepare = true
+		_, err = all.platformFeaturesApi.store.Put(ctx, ref, all.platformFeaturesApi.sync.syncWait)
+		require.Nil(t, err)
+		// api call must fail with object being deleted
+		testObj, _ = dataGen.GetCreateCloudletTestObj()
+		err = all.cloudletApi.CreateCloudlet(testObj, testutil.NewCudStreamoutCloudlet(ctx))
+		require.NotNil(t, err, "CreateCloudlet must fail with PlatformFeatures.DeletePrepare set")
+		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
+		// reset delete_prepare on referenced PlatformFeatures
+		ref.DeletePrepare = false
+		_, err = all.platformFeaturesApi.store.Put(ctx, ref, all.platformFeaturesApi.sync.syncWait)
+		require.Nil(t, err)
+	}
+	{
 		// set delete_prepare on referenced Flavor
 		ref := supportData.getOneFlavor()
 		require.NotNil(t, ref, "support data must include one referenced Flavor")
@@ -555,6 +750,8 @@ func CreateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 	// happen in the same STM.
 	cloudletApiStore, cloudletApiUnwrap := wrapCloudletTrackerStore(all.cloudletApi)
 	defer cloudletApiUnwrap()
+	platformFeaturesApiStore, platformFeaturesApiUnwrap := wrapPlatformFeaturesTrackerStore(all.platformFeaturesApi)
+	defer platformFeaturesApiUnwrap()
 	flavorApiStore, flavorApiUnwrap := wrapFlavorTrackerStore(all.flavorApi)
 	defer flavorApiUnwrap()
 	vmPoolApiStore, vmPoolApiUnwrap := wrapVMPoolTrackerStore(all.vmPoolApi)
@@ -570,6 +767,8 @@ func CreateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 	require.Nil(t, err, "CreateCloudlet should succeed if no references are in delete prepare")
 	// make sure everything ran in the same STM
 	require.NotNil(t, cloudletApiStore.putSTM, "CreateCloudlet put Cloudlet must be done in STM")
+	require.NotNil(t, platformFeaturesApiStore.getSTM, "CreateCloudlet check PlatformFeatures ref must be done in STM")
+	require.Equal(t, cloudletApiStore.putSTM, platformFeaturesApiStore.getSTM, "CreateCloudlet check PlatformFeatures ref must be done in same STM as Cloudlet put")
 	require.NotNil(t, flavorApiStore.getSTM, "CreateCloudlet check Flavor ref must be done in STM")
 	require.Equal(t, cloudletApiStore.putSTM, flavorApiStore.getSTM, "CreateCloudlet check Flavor ref must be done in same STM as Cloudlet put")
 	require.NotNil(t, vmPoolApiStore.getSTM, "CreateCloudlet check VMPool ref must be done in STM")

@@ -186,6 +186,7 @@ func (cd *ControllerData) GetCaches() *platform.Caches {
 		GPUDriverCache:            &cd.GPUDriverCache,
 		NetworkCache:              &cd.NetworkCache,
 		CloudletInfoCache:         &cd.CloudletInfoCache,
+		SettingsCache:             &cd.SettingsCache,
 	}
 }
 
@@ -1369,19 +1370,28 @@ func (cd *ControllerData) cloudletPoolDeleted(ctx context.Context, old *edgeprot
 }
 
 func (cd *ControllerData) cloudletChanged(ctx context.Context, old *edgeproto.Cloudlet, new *edgeproto.Cloudlet) {
+	if new.OnboardingState != edgeproto.TrackedState_READY && new.OnboardingState != edgeproto.TrackedState_TRACKED_STATE_UNKNOWN {
+		// This message is for CCRM. CRM will take over once CCRM has set
+		// onboarding state to READY.
+		// For pre-existing Cloudlets, Onboarding State will be unknown.
+		log.SpanLog(ctx, log.DebugLevelInfra, "cloudletChanged ignoring CCRM state", "cloudlet", new)
+		return
+	}
 	// do request
 	log.SpanLog(ctx, log.DebugLevelInfra, "cloudletChanged", "cloudlet", new)
 
 	cloudletInfo := edgeproto.CloudletInfo{}
 	// for federated cloudlet, set cloudletinfo object if it is empty
-	if old == nil && new.Key.FederatedOrganization != "" {
+	if new.Key.FederatedOrganization != "" {
 		found := cd.CloudletInfoCache.Get(&new.Key, &cloudletInfo)
 		if !found {
 			cloudletInfo.Key = new.Key
 		}
-		cloudletInfo.State = dme.CloudletState_CLOUDLET_STATE_READY
-		cloudletInfo.CompatibilityVersion = cloudcommon.GetCRMCompatibilityVersion()
-		cd.CloudletInfoCache.Update(ctx, &cloudletInfo, 0)
+		if cloudletInfo.State != dme.CloudletState_CLOUDLET_STATE_READY {
+			cloudletInfo.State = dme.CloudletState_CLOUDLET_STATE_READY
+			cloudletInfo.CompatibilityVersion = cloudcommon.GetCRMCompatibilityVersion()
+			cd.CloudletInfoCache.Update(ctx, &cloudletInfo, 0)
+		}
 	}
 
 	found := cd.CloudletInfoCache.Get(&new.Key, &cloudletInfo)

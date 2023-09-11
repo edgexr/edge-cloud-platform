@@ -1000,23 +1000,6 @@ func (s *Client) GetCloudletManifest(uri string, token string, in *ormapi.Region
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowPlatformsFeatures(uri string, token string, in *ormapi.RegionPlatformFeatures, ops ...Op) ([]edgeproto.PlatformFeatures, int, error) {
-	rundata := RunData{}
-	applyOps(&rundata, ops...)
-	rundata.Uri = uri
-	rundata.Token = token
-	rundata.In = in
-	var out []edgeproto.PlatformFeatures
-	rundata.Out = &out
-
-	apiCmd := ormctl.MustGetCommand("ShowPlatformsFeatures")
-	s.ClientRun.Run(apiCmd, &rundata)
-	if rundata.RetError != nil {
-		return nil, rundata.RetStatus, rundata.RetError
-	}
-	return out, rundata.RetStatus, rundata.RetError
-}
-
 func (s *Client) GetCloudletProps(uri string, token string, in *ormapi.RegionCloudletProps, ops ...Op) (*edgeproto.CloudletProps, int, error) {
 	rundata := RunData{}
 	applyOps(&rundata, ops...)
@@ -3440,6 +3423,42 @@ func (s *Client) ShowOrgCloudletInfo(uri string, token string, in *ormapi.OrgClo
 		return nil, rundata.RetStatus, rundata.RetError
 	}
 	return out, rundata.RetStatus, rundata.RetError
+}
+
+// Generating group PlatformFeatures
+
+func (s *Client) ShowPlatformFeatures(uri string, token string, in *ormapi.RegionPlatformFeatures, ops ...Op) ([]edgeproto.PlatformFeatures, int, error) {
+	rundata := RunData{}
+	applyOps(&rundata, ops...)
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []edgeproto.PlatformFeatures
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowPlatformFeatures")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) DeletePlatformFeatures(uri string, token string, in *ormapi.RegionPlatformFeatures, ops ...Op) (*edgeproto.Result, int, error) {
+	rundata := RunData{}
+	applyOps(&rundata, ops...)
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("DeletePlatformFeatures")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
 }
 
 // Generating group RateLimitSettings

@@ -21,11 +21,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 const SessionTokenDurationSecs = 60 * 60 * 24 // 24 hours
@@ -46,45 +44,11 @@ type AwsSessionData struct {
 // GetAwsSessionToken gets a totp code from the vault and then gets an AWS session token
 func (a *AwsGenericPlatform) GetAwsSessionToken(ctx context.Context, accessApi platform.AccessApi) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetAwsSessionToken")
-
-	arn := a.GetAwsUserArn()
-	if arn == "" {
-		return fmt.Errorf("AWS_USER_ARN must be set to get session token")
-	}
-	user, err := a.GetUserAccountIdFromArn(ctx, arn)
+	code, err := accessApi.GetSessionTokens(ctx, AWS_TOTP_SECRET_KEY)
 	if err != nil {
 		return err
-	}
-	// This calls to Controller which eventually calls GetAwsTotpToken() via GetAccessData
-	tokens, err := accessApi.GetSessionTokens(ctx, []byte(user))
-	if err != nil {
-		return err
-	}
-	code, found := tokens[TotpTokenName]
-	if !found {
-		return fmt.Errorf("token key \"%s\" not found in aws session tokens", TotpTokenName)
 	}
 	return a.GetAwsSessionTokenWithCode(ctx, code)
-}
-
-// GetAwsTotpToken gets a totp token from the vault.
-// Called only from the Controller context.
-func (a *AwsGenericPlatform) GetAwsTotpToken(ctx context.Context, vaultConfig *vault.Config, account string) (string, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetAwsTotpToken", "account", account)
-	path := "totp/code/aws-" + account
-	client, err := vaultConfig.Login()
-	if err != nil {
-		return "", err
-	}
-	vdat, err := vault.GetKV(client, path, 0)
-	if err != nil {
-		return "", err
-	}
-	code, ok := vdat["code"]
-	if !ok {
-		return "", fmt.Errorf("no totp code received from vault")
-	}
-	return code.(string), nil
 }
 
 // GetAwsSessionTokenWithCode uses the provided code to get session token details from AWS
@@ -137,15 +101,6 @@ func (a *AwsGenericPlatform) RefreshAwsSessionToken(pfconfig *pf.PlatformConfig)
 		}
 		span.Finish()
 	}
-}
-
-func (a *AwsGenericPlatform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
-	vaultPath := AwsDefaultVaultPath
-	if key.Organization != "aws" {
-		// this is not a public cloud aws cloudlet, use the operator specific path
-		vaultPath = fmt.Sprintf("/secret/data/%s/cloudlet/aws/%s/%s/aws.json", region, key.Organization, physicalName)
-	}
-	return vaultPath
 }
 
 func (a *AwsGenericPlatform) GetAwsAccountAccessVars(ctx context.Context, accessApi platform.AccessApi) error {

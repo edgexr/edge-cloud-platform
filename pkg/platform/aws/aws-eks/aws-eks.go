@@ -27,7 +27,6 @@ import (
 	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 type AwsEksPlatform struct {
@@ -40,6 +39,13 @@ type AwsEksResources struct {
 	TotalK8sNodesUsed         uint64
 	NetworkLBsUsed            uint64
 }
+
+var quotaProps = cloudcommon.GetCommonResourceQuotaProps(
+	cloudcommon.ResourceK8sClusters,
+	cloudcommon.ResourceMaxK8sNodesPerCluster,
+	cloudcommon.ResourceTotalK8sNodes,
+	cloudcommon.ResourceNetworkLBs,
+)
 
 func NewPlatform() platform.Platform {
 	return &managedk8s.ManagedK8sPlatform{
@@ -54,6 +60,8 @@ func (o *AwsEksPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,
 		IpAllocatedPerService:         true,
+		Properties:                    awsgen.AWSProps,
+		ResourceQuotaProperties:       quotaProps,
 	}
 }
 
@@ -106,10 +114,6 @@ func (a *AwsEksPlatform) SetProperties(props *infracommon.InfraProperties) error
 	return nil
 }
 
-func (a *AwsEksPlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
-	return a.awsGenPf.GetProviderSpecificProps(ctx)
-}
-
 func (a *AwsEksPlatform) Login(ctx context.Context) error {
 	return nil
 }
@@ -120,11 +124,6 @@ func (a *AwsEksPlatform) NameSanitize(clusterName string) string {
 
 func (a *AwsEksPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {
 	return nil
-}
-
-func (a *AwsEksPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
-	log.SpanLog(ctx, log.DebugLevelApi, "AwsEks GetAccessData", "dataType", dataType)
-	return a.awsGenPf.GetAccessData(ctx, cloudlet, region, vaultConfig, dataType, arg)
 }
 
 func (a *AwsEksPlatform) getClusterList(ctx context.Context) ([]awsgen.AWSCluster, error) {
@@ -245,29 +244,6 @@ func (a *AwsEksPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]e
 		},
 	}
 	return resInfo, nil
-}
-
-func (a *AwsEksPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	return &edgeproto.CloudletResourceQuotaProps{
-		Properties: []edgeproto.InfraResource{
-			edgeproto.InfraResource{
-				Name:        cloudcommon.ResourceK8sClusters,
-				Description: cloudcommon.ResourceQuotaDesc[cloudcommon.ResourceK8sClusters],
-			},
-			edgeproto.InfraResource{
-				Name:        cloudcommon.ResourceMaxK8sNodesPerCluster,
-				Description: cloudcommon.ResourceQuotaDesc[cloudcommon.ResourceMaxK8sNodesPerCluster],
-			},
-			edgeproto.InfraResource{
-				Name:        cloudcommon.ResourceTotalK8sNodes,
-				Description: cloudcommon.ResourceQuotaDesc[cloudcommon.ResourceTotalK8sNodes],
-			},
-			edgeproto.InfraResource{
-				Name:        cloudcommon.ResourceNetworkLBs,
-				Description: cloudcommon.ResourceQuotaDesc[cloudcommon.ResourceNetworkLBs],
-			},
-		},
-	}, nil
 }
 
 func getAwsEksResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, resources []edgeproto.VMResource) *AwsEksResources {

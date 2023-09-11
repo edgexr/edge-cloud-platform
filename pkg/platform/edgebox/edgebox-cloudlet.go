@@ -24,7 +24,6 @@ import (
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/fakeinfra"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 func (e *EdgeboxPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
@@ -76,21 +75,6 @@ func (e *EdgeboxPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeprot
 	return intprocess.StopShepherdService(ctx, cloudlet)
 }
 
-func (e *EdgeboxPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "Saving cloudlet access vars", "cloudletName", cloudlet.Key.Name)
-	return nil
-}
-
-func (e *EdgeboxPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "Updating cloudlet access vars", "cloudletName", cloudlet.Key.Name)
-	return nil
-}
-
-func (e *EdgeboxPlatform) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "Deleting cloudlet access vars", "cloudletName", cloudlet.Key.Name)
-	return nil
-}
-
 func (e *EdgeboxPlatform) PerformUpgrades(ctx context.Context, caches *pf.Caches, cloudletState dme.CloudletState) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "PerformUpgrades", "cloudletState", cloudletState)
 	return nil
@@ -107,10 +91,6 @@ func (e *EdgeboxPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) err
 
 func (e *EdgeboxPlatform) GetRestrictedCloudletStatus(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
 	return e.generic.GetRestrictedCloudletStatus(ctx, cloudlet, pfConfig, accessApi, updateCallback)
-}
-
-func (e *EdgeboxPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	return e.generic.GetCloudletResourceQuotaProps(ctx)
 }
 
 func (e *EdgeboxPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {

@@ -21,6 +21,7 @@ import (
 	"unicode"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
@@ -54,6 +55,8 @@ func (o *VMPoolPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		PlatformType:               platform.PlatformTypeVMPool,
 		SupportsMultiTenantCluster: true,
 		IsVmPool:                   true,
+		Properties:                 VMPoolProps,
+		ResourceQuotaProperties:    cloudcommon.CommonResourceQuotaProps,
 	}
 }
 

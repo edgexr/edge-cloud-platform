@@ -132,7 +132,7 @@ func (x *CloudletRefsCommonApi) ShowCloudletRefs(ctx context.Context, filter *ed
 	} else {
 		stream, err := x.client_api.ShowCloudletRefs(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 
@@ -324,7 +324,7 @@ func (x *ClusterRefsCommonApi) ShowClusterRefs(ctx context.Context, filter *edge
 	} else {
 		stream, err := x.client_api.ShowClusterRefs(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 
@@ -516,7 +516,7 @@ func (x *AppInstRefsCommonApi) ShowAppInstRefs(ctx context.Context, filter *edge
 	} else {
 		stream, err := x.client_api.ShowAppInstRefs(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

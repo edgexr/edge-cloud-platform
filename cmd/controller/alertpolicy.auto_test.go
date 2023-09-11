@@ -36,6 +36,7 @@ type AllDeleteDataGen interface {
 	FlavorDeleteDataGen
 	GPUDriverDeleteDataGen
 	NetworkDeleteDataGen
+	PlatformFeaturesDeleteDataGen
 	ResTagTableDeleteDataGen
 	TrustPolicyDeleteDataGen
 	VMPoolDeleteDataGen
@@ -52,6 +53,7 @@ func allDeleteChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen Al
 	deleteFlavorChecks(t, ctx, all, dataGen)
 	deleteGPUDriverChecks(t, ctx, all, dataGen)
 	deleteNetworkChecks(t, ctx, all, dataGen)
+	deletePlatformFeaturesChecks(t, ctx, all, dataGen)
 	deleteResTagTableChecks(t, ctx, all, dataGen)
 	deleteTrustPolicyChecks(t, ctx, all, dataGen)
 	deleteVMPoolChecks(t, ctx, all, dataGen)

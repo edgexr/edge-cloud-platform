@@ -17,13 +17,16 @@ package vault
 import (
 	"fmt"
 
-	"github.com/hashicorp/vault/api"
 	"github.com/edgexr/edge-cloud-platform/pkg/env"
+	"github.com/hashicorp/vault/api"
 )
 
+const UnitTestIgnoreVaultAddr = "UnitTestIgnoreVaultAddr"
+
 type Config struct {
-	Addr string
-	Auth Auth
+	Addr   string
+	Auth   Auth
+	client *api.Client // only used for testing
 }
 
 func BestConfig(addr string, ops ...BestOp) (*Config, error) {
@@ -32,7 +35,7 @@ func BestConfig(addr string, ops ...BestOp) (*Config, error) {
 		Addr: addr,
 		Auth: &NoAuth{},
 	}
-	if addr == "" {
+	if addr == "" || addr == UnitTestIgnoreVaultAddr {
 		// no vault specified
 		return cfg, nil
 	}
@@ -51,11 +54,22 @@ func NewConfig(addr string, auth Auth) *Config {
 	}
 }
 
+func NewUnitTestConfig(addr string, client *api.Client) *Config {
+	return &Config{
+		Addr:   addr,
+		client: client,
+	}
+}
+
 func NewAppRoleConfig(addr, roleID, secretID string) *Config {
 	return NewConfig(addr, NewAppRoleAuth(roleID, secretID))
 }
 
 func (s *Config) Login() (*api.Client, error) {
+	// existing client is for unit testing only
+	if s.client != nil {
+		return s.client, nil
+	}
 	if s.Auth == nil {
 		return nil, fmt.Errorf("No vault Auth specified")
 	}

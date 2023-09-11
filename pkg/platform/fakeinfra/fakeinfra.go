@@ -178,10 +178,6 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 	return nil
 }
 
-func (s *Platform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
-	return s.Platform.GetCloudletProps(ctx)
-}
-
 func (s *Platform) GetVersionProperties(ctx context.Context) map[string]string {
 	return version.BuildProps(ctx, "")
 }

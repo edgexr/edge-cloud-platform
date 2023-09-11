@@ -25,25 +25,9 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 	ssh "github.com/edgexr/golang-ssh"
 )
-
-func (m *ManagedK8sPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SaveCloudletAccessVars", "cloudletName", cloudlet.Key.Name)
-	return nil
-}
-
-func (m *ManagedK8sPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateCloudletAccessVars", "cloudletName", cloudlet.Key.Name)
-	return nil
-}
-
-func (m *ManagedK8sPlatform) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteCloudletAccessVars", "cloudletName", cloudlet.Key.Name)
-	return nil
-}
 
 func (m *ManagedK8sPlatform) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "PerformUpgrades", "cloudletState", cloudletState)
@@ -71,11 +55,8 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 		return cloudletResourcesCreated, fmt.Errorf("Only kubernetes deployment supported for cloudlet platform: %s", m.Type)
 	}
 	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
-	props, err := m.Provider.GetProviderSpecificProps(ctx)
-	if err != nil {
-		return cloudletResourcesCreated, err
-	}
-	err = m.Provider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar)
+	props := m.Provider.GetFeatures().Properties
+	err := m.Provider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar)
 	if err != nil {
 		return cloudletResourcesCreated, err
 	}
@@ -137,11 +118,8 @@ func (m *ManagedK8sPlatform) DeleteTrustPolicyException(ctx context.Context, Tru
 func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteCloudlet", "cloudlet", cloudlet)
 	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
-	props, err := m.Provider.GetProviderSpecificProps(ctx)
-	if err != nil {
-		return err
-	}
-	err = m.Provider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar)
+	props := m.Provider.GetFeatures().Properties
+	err := m.Provider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar)
 	if err != nil {
 		return err
 	}

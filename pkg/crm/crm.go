@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package crm
 
 import (
 	"bufio"
@@ -34,7 +34,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
-	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	proxycerts "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
@@ -71,11 +70,12 @@ var myCloudletInfo edgeproto.CloudletInfo //XXX this effectively makes one CRM p
 var nodeMgr node.NodeMgr
 var highAvailabilityManager redundancy.HighAvailabilityManager
 
-var sigChan chan os.Signal
-var mainStarted chan struct{}
 var controllerData *crmutil.ControllerData
 var notifyClient *notify.Client
+var notifyServer *notify.ServerMgr
 var platform pf.Platform
+var finishInfraResourceThread bool
+var finishUpdateCloudletInfoHAThread bool
 
 const ControllerTimeout = 1 * time.Minute
 
@@ -88,16 +88,29 @@ const (
 // do not change this string as the chef startup recipe looks for it during H/A upgrades
 const waitingForPlatformActiveLog = "waiting for platform to become active"
 
-func main() {
+func Run(builders map[string]pf.PlatformBuilder) {
 	nodeMgr.InitFlags()
 	nodeMgr.AccessKeyClient.InitFlags()
 	highAvailabilityManager.InitFlags()
 	flag.Parse()
 	log.SetDebugLevelStrs(*debugLevels)
 
-	sigChan = make(chan os.Signal, 1)
+	err := Start(builders)
+	if err != nil {
+		Stop()
+		log.FatalLog(err.Error())
+	}
+	defer Stop()
+
+	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
+	// wait until process is killed/interrupted
+	sig := <-sigChan
+	fmt.Println(sig)
+}
+
+func Start(builders map[string]pf.PlatformBuilder) error {
 	standalone := false
 	cloudcommon.ParseMyCloudletKey(standalone, cloudletKeyStr, &myCloudletInfo.Key)
 	myCloudletInfo.CompatibilityVersion = cloudcommon.GetCRMCompatibilityVersion()
@@ -117,9 +130,10 @@ func main() {
 	}
 	ctx, span, err := nodeMgr.Init(nodeType, node.CertIssuerRegionalCloudlet, nodeOps...)
 	if err != nil {
-		log.FatalLog(err.Error())
+		return err
 	}
-	defer nodeMgr.Finish()
+	defer span.Finish()
+
 	log.SetTags(span, myCloudletInfo.Key.GetTags())
 	crmutil.InitDebug(&nodeMgr)
 
@@ -140,16 +154,15 @@ func main() {
 	log.SpanLog(ctx, log.DebugLevelInfo, "Using cloudletKey", "key", myCloudletInfo.Key, "platform", *platformName, "physicalName", physicalName)
 
 	// Load platform implementation.
-	platform, err = pfutils.GetPlatform(ctx, *platformName, nodeMgr.UpdateNodeProps)
-	if err != nil {
-		span.Finish()
-		log.FatalLog(err.Error())
+	builder, ok := builders[*platformName]
+	if !ok {
+		return fmt.Errorf("Unknown CRM platform %s", *platformName)
 	}
+	platform = builder()
 	features := platform.GetFeatures()
 
 	if !nodeMgr.AccessKeyClient.IsEnabled() {
-		span.Finish()
-		log.FatalLog("access key client is not enabled")
+		return fmt.Errorf("access key client is not enabled")
 	}
 	controllerData = crmutil.NewControllerData(platform, &myCloudletInfo.Key, &nodeMgr, &highAvailabilityManager)
 
@@ -170,14 +183,14 @@ func main() {
 		node.CertIssuerRegionalCloudlet,
 		[]node.MatchCA{node.SameRegionalMatchCA()})
 	if err != nil {
-		log.FatalLog(err.Error())
+		return err
 	}
 	notifyServerTls, err := nodeMgr.InternalPki.GetServerTlsConfig(ctx,
 		nodeMgr.CommonName(),
 		node.CertIssuerRegionalCloudlet,
 		[]node.MatchCA{node.SameRegionalCloudletMatchCA()})
 	if err != nil {
-		log.FatalLog(err.Error())
+		return err
 	}
 	dialOption := tls.GetGrpcDialOption(notifyClientTls)
 	notifyClient = notify.NewClient(nodeMgr.Name(), addrs, dialOption,
@@ -187,12 +200,11 @@ func main() {
 	notifyClient.SetFilterByCloudletKey()
 	crmutil.InitClientNotify(notifyClient, &nodeMgr, controllerData)
 	notifyClient.Start()
-	defer notifyClient.Stop()
 
 	haKey := fmt.Sprintf("nodeType: %s cloudlet: %s", "CRM", nodeMgr.MyNode.Key.CloudletKey.String())
 	haEnabled, err := controllerData.InitHAManager(ctx, &highAvailabilityManager, haKey)
 	if err != nil {
-		log.FatalLog(err.Error())
+		return err
 	}
 	if haEnabled {
 		log.SpanLog(ctx, log.DebugLevelInfra, "HA enabled", "role", highAvailabilityManager.HARole)
@@ -333,7 +345,7 @@ func main() {
 			log.SpanLog(ctx, log.DebugLevelInfo, "ActiveChanged done", "err", err)
 			if err == nil {
 				if conditionalInitRequired {
-					err = initPlatformHAConditional(ctx, &cloudlet, &myCloudletInfo, *physicalName, &pc, caches, nodeMgr.AccessApiClient, &highAvailabilityManager, updateCloudletStatus)
+					err = initPlatformHAConditional(ctx, &cloudlet, &myCloudletInfo, *physicalName, features, &pc, caches, nodeMgr.AccessApiClient, &highAvailabilityManager, updateCloudletStatus)
 				}
 			}
 		}
@@ -388,28 +400,42 @@ func main() {
 	}()
 
 	// setup crm notify listener (for shepherd)
-	var notifyServer notify.ServerMgr
-	crmutil.InitSrvNotify(&notifyServer, &nodeMgr, controllerData)
-	notifyServer.Start(nodeMgr.Name(), *notifySrvAddr, notifyServerTls)
-	defer notifyServer.Stop()
+	var notifyServ notify.ServerMgr
+	crmutil.InitSrvNotify(&notifyServ, &nodeMgr, controllerData)
+	notifyServ.Start(nodeMgr.Name(), *notifySrvAddr, notifyServerTls)
+	notifyServer = &notifyServ
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "Starting Cloudlet resource refresh thread", "cloudlet", myCloudletInfo.Key)
 	controllerData.StartInfraResourceRefreshThread(&myCloudletInfo)
-	defer controllerData.FinishInfraResourceRefreshThread()
+	finishInfraResourceThread = true
 
 	if haEnabled {
 		controllerData.StartUpdateCloudletInfoHAThread(ctx)
-		defer controllerData.FinishUpdateCloudletInfoHAThread()
+		finishUpdateCloudletInfoHAThread = true
 	}
 
-	span.Finish()
-	if mainStarted != nil {
-		// for unit testing to detect when main is ready
-		close(mainStarted)
-	}
+	return nil
+}
 
-	sig := <-sigChan
-	fmt.Println(sig)
+func Stop() {
+	if finishInfraResourceThread {
+		controllerData.FinishInfraResourceRefreshThread()
+		finishInfraResourceThread = false
+	}
+	if finishUpdateCloudletInfoHAThread {
+		controllerData.FinishUpdateCloudletInfoHAThread()
+		finishUpdateCloudletInfoHAThread = false
+	}
+	if notifyServer != nil {
+		notifyServer.Stop()
+		notifyServer = nil
+	}
+	if notifyClient != nil {
+		notifyClient.Stop()
+		notifyClient = nil
+	}
+	nodeMgr.Finish()
+	controllerData = nil
 }
 
 //initPlatformCommon does common init functions whether active or standby
@@ -449,7 +475,7 @@ func waitControllerSync(ctx context.Context, cloudlet *edgeproto.Cloudlet, cloud
 }
 
 //initPlatformHAConditionalCommon does init functions for first startup, or a switchover which requires full initialization
-func initPlatformHAConditional(ctx context.Context, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, physicalName string, platformConfig *pf.PlatformConfig, caches *pf.Caches, accessClient edgeproto.CloudletAccessApiClient, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
+func initPlatformHAConditional(ctx context.Context, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, physicalName string, features *edgeproto.PlatformFeatures, platformConfig *pf.PlatformConfig, caches *pf.Caches, accessClient edgeproto.CloudletAccessApiClient, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfo, "initPlatformHAConditional")
 
 	err := platform.InitHAConditional(ctx, platformConfig, updateCallback)
@@ -473,7 +499,7 @@ func initPlatformHAConditional(ctx context.Context, cloudlet *edgeproto.Cloudlet
 			for _, resInfo := range resources.Info {
 				resMap[resInfo.Name] = resInfo
 			}
-			quotaProps, err := platform.GetCloudletResourceQuotaProps(ctx)
+			quotaProps := features.ResourceQuotaProperties
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get cloudlet specific resource quota", "cloudlet", cloudlet.Key, "err", err)
 			} else {

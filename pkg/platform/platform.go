@@ -17,6 +17,8 @@ package platform
 import (
 	"context"
 	"errors"
+	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -87,7 +89,8 @@ var ErrContinueViaController = errors.New("continue operation via controller")
 type Platform interface {
 	// GetVersionProperties returns properties related to the platform version
 	GetVersionProperties(ctx context.Context) map[string]string
-	// Get platform features
+	// GetFeatures returns static features, attributes, and
+	// properties of the platform.
 	GetFeatures() *edgeproto.PlatformFeatures
 	// InitCommon is called once during CRM startup to do steps needed for both active or standby. If the platform does not support
 	// H/A and does not need separate steps for the active unit, then just this func can be implemented and InitHAConditional can be left empty
@@ -112,8 +115,6 @@ type Platform interface {
 	GetCloudletInfraResources(ctx context.Context) (*edgeproto.InfraResourcesSnapshot, error)
 	// Get cluster additional resources used by the vms specific to the platform
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource
-	// Get Cloudlet Resource Properties
-	GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error)
 	// Get cluster additional resource metric
 	GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error
 	// Get resources used by the cluster
@@ -143,22 +144,12 @@ type Platform interface {
 	UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error
 	// Delete Cloudlet
 	DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *Caches, accessApi AccessApi, updateCallback edgeproto.CacheUpdateCallback) error
-	// Save Cloudlet AccessVars
-	SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error
-	// Update Cloudlet AccessVars
-	UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error
-	// Delete Cloudlet AccessVars
-	DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error
 	// Performs Upgrades for things like k8s config
 	PerformUpgrades(ctx context.Context, caches *Caches, cloudletState dme.CloudletState) error
 	// Get Cloudlet Manifest Config
 	GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi AccessApi, flavor *edgeproto.Flavor, caches *Caches) (*edgeproto.CloudletManifest, error)
 	// Verify VM
 	VerifyVMs(ctx context.Context, vms []edgeproto.VM) error
-	// Get Cloudlet Properties
-	GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error)
-	// Platform-sepcific access data lookup (only called from Controller context)
-	GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error)
 	// Update the cloudlet's Trust Policy
 	UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto.TrustPolicy) error
 	//  Create and Update TrustPolicyException
@@ -200,7 +191,7 @@ type AccessApi interface {
 	CreateOrUpdateDNSRecord(ctx context.Context, name, rtype, content string, ttl int, proxy bool) error
 	GetDNSRecords(ctx context.Context, fqdn string) ([]cloudflare.DNSRecord, error)
 	DeleteDNSRecord(ctx context.Context, recordID string) error
-	GetSessionTokens(ctx context.Context, arg []byte) (map[string]string, error)
+	GetSessionTokens(ctx context.Context, secretName string) (string, error)
 	GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error)
 	GetGCSCreds(ctx context.Context) ([]byte, error)
 	GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error)
@@ -253,4 +244,70 @@ func TrackK8sAppInst(ctx context.Context, app *edgeproto.App, features *edgeprot
 		return true
 	}
 	return false
+}
+
+type PlatformBuilder func() Platform
+
+type PlatformCollection struct {
+	features map[string]edgeproto.PlatformFeatures
+	builders map[string]PlatformBuilder
+}
+
+func NewPlatformCollection(builders []PlatformBuilder) *PlatformCollection {
+	platformsFeatures := make(map[string]edgeproto.PlatformFeatures)
+	platformsBuilders := make(map[string]PlatformBuilder)
+	for _, builder := range builders {
+		plat := builder()
+		features := plat.GetFeatures()
+		platformType := features.PlatformType
+		if platformType == "" {
+			panic(fmt.Errorf("PlatformType string not defined for %T", plat))
+		}
+		if _, found := platformsBuilders[platformType]; found {
+			panic(fmt.Errorf("registerPlatformBuilder: duplicate platform type %s", platformType))
+		}
+		platformsBuilders[platformType] = builder
+		// Cache features so we don't need to build a new platform
+		// each time to get features. Features should be static
+		// properties of the platform.
+		platformsFeatures[platformType] = *features
+	}
+	return &PlatformCollection{
+		features: platformsFeatures,
+		builders: platformsBuilders,
+	}
+}
+
+func (s *PlatformCollection) GetBuilders() map[string]PlatformBuilder {
+	return s.builders
+}
+
+// GetAllPlatformsFeatures returns the features for all
+// supported platforms.
+func (s *PlatformCollection) GetAllPlatformsFeatures() []edgeproto.PlatformFeatures {
+	all := []edgeproto.PlatformFeatures{}
+	for _, features := range s.features {
+		all = append(all, features)
+	}
+	sort.Slice(all, func(i, j int) bool {
+		return all[i].PlatformType < all[j].PlatformType
+	})
+	return all
+}
+
+// GetFeatures returns features for a specific platform type.
+func (s *PlatformCollection) GetFeatures(platformType string) (*edgeproto.PlatformFeatures, error) {
+	features, found := s.features[platformType]
+	if !found {
+		return nil, fmt.Errorf("Platform type %s not found", platformType)
+	}
+	return &features, nil
+}
+
+func (s *PlatformCollection) BuildPlatform(plat string) (Platform, error) {
+	builder, found := s.builders[plat]
+	if !found {
+		return nil, fmt.Errorf("unknown platform %s", plat)
+	}
+	return builder(), nil
 }

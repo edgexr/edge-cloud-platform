@@ -261,15 +261,18 @@ func GetDesc(g *generator.Generator, typeName string) *generator.Descriptor {
 	panic(typeName + " is not of type Descriptor")
 }
 
-func GetDescKey(g *generator.Generator, msg *generator.Descriptor) *generator.Descriptor {
+func GetDescKeyName(g *generator.Generator, msg *generator.Descriptor) string {
 	msgProto := msg.DescriptorProto
 	if GetObjAndKey(msgProto) {
-		return msg
+		return *msg.Name
+	} else if keyField := GetStringKeyField(msgProto); keyField != "" {
+		return *msg.Name + "Key"
 	} else if keyField := GetMessageKey(msgProto); keyField != nil {
-		return GetDesc(g, keyField.GetTypeName())
+		keyDesc := GetDesc(g, keyField.GetTypeName())
+		return *keyDesc.Name
 	}
 	g.Fail("Key type not found for message ", *msg.Name)
-	return nil
+	return ""
 }
 
 // GetEnumDesc returns the EnumDescriptor based on the protoc type name
@@ -477,6 +480,10 @@ func GetCustomKeyType(message *descriptor.DescriptorProto) string {
 	return GetStringExtension(message.Options, protogen.E_CustomKeyType, "")
 }
 
+func GetStringKeyField(message *descriptor.DescriptorProto) string {
+	return GetStringExtension(message.Options, protogen.E_StringKeyField, "")
+}
+
 func GetSingularData(message *descriptor.DescriptorProto) bool {
 	return proto.GetBoolExtension(message.Options, protogen.E_SingularData, false)
 }
@@ -525,8 +532,10 @@ func (s *PluginSupport) GetMessageKeyType(g *generator.Generator, desc *generato
 		return pkg + typ, nil
 	} else if GetObjAndKey(message) {
 		return s.FQTypeName(g, desc), nil
+	} else if field := GetStringKeyField(message); field != "" {
+		return s.FQTypeName(g, desc) + "Key", nil
 	}
-	return "", fmt.Errorf("No Key field for %s, use field named Key or protogen.obj_and_key option or protogen.custom_key_type option", *message.Name)
+	return "", fmt.Errorf("No Key field for %s, use field named Key or protogen.obj_and_key option or protogen.custom_key_type option or protogen.string_key_field option", *message.Name)
 }
 
 type MapType struct {
@@ -687,6 +696,10 @@ func GetNonStandardShow(method *descriptor.MethodDescriptorProto) bool {
 
 func GetGenerateCudStreamout(message *descriptor.DescriptorProto) bool {
 	return proto.GetBoolExtension(message.Options, protogen.E_GenerateCudStreamout, false)
+}
+
+func GetRedisApi(service *descriptor.ServiceDescriptorProto) bool {
+	return proto.GetBoolExtension(service.Options, protogen.E_RedisApi, false)
 }
 
 const (

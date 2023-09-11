@@ -36,7 +36,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -138,13 +137,6 @@ func (f *FederationPlatform) GetCloudletInfraResources(ctx context.Context) (*ed
 // Get cluster additional resources used by the vms specific to the platform
 func (f *FederationPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
 	return nil
-}
-
-// Get Cloudlet Resource Properties
-func (f *FederationPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletResourceQuotaProps")
-
-	return &edgeproto.CloudletResourceQuotaProps{}, nil
 }
 
 // Get cluster additional resource metric
@@ -418,21 +410,6 @@ func (f *FederationPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgep
 	return nil
 }
 
-// Save Cloudlet AccessVars
-func (f *FederationPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return nil
-}
-
-// Save Cloudlet AccessVars
-func (f *FederationPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return nil
-}
-
-// Delete Cloudlet AccessVars
-func (f *FederationPlatform) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return nil
-}
-
 // Sync data with controller
 func (f *FederationPlatform) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
 	return nil
@@ -446,16 +423,6 @@ func (f *FederationPlatform) GetCloudletManifest(ctx context.Context, cloudlet *
 // Verify VM
 func (f *FederationPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
 	return nil
-}
-
-// Get Cloudlet Properties
-func (f *FederationPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
-	return &edgeproto.CloudletProps{}, nil
-}
-
-// Platform-sepcific access data lookup (only called from Controller context)
-func (f *FederationPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
-	return nil, nil
 }
 
 // Update the cloudlet's Trust Policy

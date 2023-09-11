@@ -23,6 +23,7 @@ import (
 
 	"github.com/codeskyblue/go-sh"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
@@ -70,6 +71,9 @@ func (o *AzurePlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,
 		IpAllocatedPerService:         true,
+		AccessVars:                    AccessVarProps,
+		Properties:                    azureProps,
+		ResourceQuotaProperties:       cloudcommon.CommonResourceQuotaProps,
 	}
 }
 

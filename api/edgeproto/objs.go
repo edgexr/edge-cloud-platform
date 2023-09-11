@@ -156,6 +156,11 @@ func (a *AllData) Sort() {
 	sort.Slice(a.GpuDrivers[:], func(i, j int) bool {
 		return a.GpuDrivers[i].Key.GetKeyString() < a.GpuDrivers[j].Key.GetKeyString()
 	})
+	for i := range a.PlatformFeatures {
+		sort.Slice(a.PlatformFeatures[i].ResourceQuotaProperties, func(ii, jj int) bool {
+			return a.PlatformFeatures[i].ResourceQuotaProperties[ii].Name < a.PlatformFeatures[i].ResourceQuotaProperties[jj].Name
+		})
+	}
 }
 
 func (a *NodeData) Sort() {
@@ -308,6 +313,14 @@ func (s *App) Validate(fields map[string]struct{}) error {
 	if err = validateCustomizationConfigs(s.Configs); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (key PlatformFeaturesKey) ValidateKey() error {
+	return nil
+}
+
+func (s *PlatformFeatures) Validate(fields map[string]struct{}) error {
 	return nil
 }
 
@@ -1423,6 +1436,11 @@ func (s AllSelector) Has(str string) bool {
 		// none selected, select all
 		return true
 	}
+	_, found := s[str]
+	return found
+}
+
+func (s AllSelector) HasExplicit(str string) bool {
 	_, found := s[str]
 	return found
 }

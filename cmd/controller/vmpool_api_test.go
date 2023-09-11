@@ -41,6 +41,8 @@ func TestVMPoolApi(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
+	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
+
 	testutil.InternalVMPoolTest(t, "cud", apis.vmPoolApi, testutil.VMPoolData())
 
 	testAddRemoveVM(t, ctx, apis)
@@ -180,8 +182,10 @@ func testAddRemoveVM(t *testing.T, ctx context.Context, apis *AllApis) {
 
 func testUpdateVMPool(t *testing.T, ctx context.Context, apis *AllApis) {
 	dummyResponder := DummyInfoResponder{
-		VMPoolCache:    &apis.vmPoolApi.cache,
-		RecvVMPoolInfo: apis.vmPoolInfoApi,
+		CloudletCache:              apis.cloudletApi.cache,
+		VMPoolCache:                &apis.vmPoolApi.cache,
+		RecvVMPoolInfo:             apis.vmPoolInfoApi,
+		RecvCloudletOnboardingInfo: apis.cloudletInfoApi,
 	}
 	dummyResponder.InitDummyInfoResponder()
 	reduceInfoTimeouts(t, ctx, apis)

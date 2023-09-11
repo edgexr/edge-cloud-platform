@@ -291,6 +291,10 @@ const TagPrioritySessionId string = "priority_session_id"
 const TagQosProfileName string = "qos_profile_name"
 const TagIpUserEquipment string = "ip_user_equipment"
 
+var DefaultPlatformFlavorKey = edgeproto.FlavorKey{
+	Name: "DefaultPlatformFlavor",
+}
+
 // Wildcard cert for all LBs both shared and dedicated
 func GetRootLBFQDNWildcard(cloudlet *edgeproto.Cloudlet) string {
 	names := strings.Split(cloudlet.RootLbFqdn, ".")

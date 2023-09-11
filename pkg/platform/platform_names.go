@@ -24,6 +24,7 @@ const (
 	PlatformTypeK8SOperator       = "k8soperator"
 	PlatformTypeKind              = "kind" // kubernetes in docker
 	PlatformTypeKindInfra         = "kindinfra"
+	PlatformTypeMock              = "mock"
 	PlatformTypeOpenstack         = "openstack"
 	PlatformTypeVCD               = "vcd"
 	PlatformTypeVMPool            = "vmpool"

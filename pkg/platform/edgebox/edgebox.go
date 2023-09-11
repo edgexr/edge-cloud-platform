@@ -27,7 +27,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/dind"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -112,6 +111,8 @@ func (o *EdgeboxPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsMultiTenantCluster: true,
 		CloudletServicesLocal:      true,
 		IsEdgebox:                  true,
+		Properties:                 edgeboxProps,
+		ResourceQuotaProperties:    cloudcommon.CommonResourceQuotaProps,
 	}
 }
 
@@ -129,14 +130,6 @@ func (s *EdgeboxPlatform) GetNodePlatformClient(ctx context.Context, node *edgep
 
 func (s *EdgeboxPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst, vmAppInsts []edgeproto.AppInst) ([]edgeproto.CloudletMgmtNode, error) {
 	return s.generic.ListCloudletMgmtNodes(ctx, clusterInsts, vmAppInsts)
-}
-
-func (s *EdgeboxPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
-	return &edgeproto.CloudletProps{Properties: edgeboxProps}, nil
-}
-
-func (s *EdgeboxPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
-	return nil, nil
 }
 
 func (s *EdgeboxPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {

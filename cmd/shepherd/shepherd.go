@@ -508,7 +508,7 @@ func start() {
 	if err != nil {
 		log.FatalLog("Failed to get platform", "platformName", platformName, "err", err)
 	}
-	features, err := platforms.GetPlatformFeatures(pf.GetTypeBC(*platformName))
+	features, err := platforms.All.GetFeatures(pf.GetTypeBC(*platformName))
 	if err != nil {
 		log.FatalLog("Failed to get features for platform", "platformName", platformName, "err", err)
 	}

@@ -43,6 +43,8 @@
         peer: null
         peerAddr: null
     - msg: cache delete
+      keyvalues:
+        key: '{dmuus dmuus-cloud-1 }'
     - msg: CloudletInfo RecvHook
       keyvalues:
         key: '{dmuus dmuus-cloud-1 }'

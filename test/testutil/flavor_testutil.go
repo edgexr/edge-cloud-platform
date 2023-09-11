@@ -133,7 +133,8 @@ func (x *FlavorCommonApi) CreateFlavor(ctx context.Context, in *edgeproto.Flavor
 	if x.internal_api != nil {
 		return x.internal_api.CreateFlavor(ctx, copy)
 	} else {
-		return x.client_api.CreateFlavor(ctx, copy)
+		res, err := x.client_api.CreateFlavor(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -143,7 +144,8 @@ func (x *FlavorCommonApi) DeleteFlavor(ctx context.Context, in *edgeproto.Flavor
 	if x.internal_api != nil {
 		return x.internal_api.DeleteFlavor(ctx, copy)
 	} else {
-		return x.client_api.DeleteFlavor(ctx, copy)
+		res, err := x.client_api.DeleteFlavor(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -153,7 +155,8 @@ func (x *FlavorCommonApi) UpdateFlavor(ctx context.Context, in *edgeproto.Flavor
 	if x.internal_api != nil {
 		return x.internal_api.UpdateFlavor(ctx, copy)
 	} else {
-		return x.client_api.UpdateFlavor(ctx, copy)
+		res, err := x.client_api.UpdateFlavor(ctx, copy)
+		return res, unwrapGrpcError(err)
 	}
 }
 
@@ -164,7 +167,7 @@ func (x *FlavorCommonApi) ShowFlavor(ctx context.Context, filter *edgeproto.Flav
 	} else {
 		stream, err := x.client_api.ShowFlavor(ctx, filter)
 		showData.ReadStream(stream, err)
-		return err
+		return unwrapGrpcError(err)
 	}
 }
 

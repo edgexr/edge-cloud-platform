@@ -15,9 +15,6 @@
 package platforms
 
 import (
-	"fmt"
-	"sort"
-
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	awsec2 "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-ec2"
@@ -33,6 +30,7 @@ import (
 	k8sop "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-operator"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/kind"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/kindinfra"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/mock"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/openstack"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vcd"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vmpool"
@@ -42,9 +40,7 @@ import (
 
 // Builder for built-in platforms.
 
-type PlatformBuilder func() platform.Platform
-
-var builders = []PlatformBuilder{
+var builders = []platform.PlatformBuilder{
 	dind.NewPlatform,
 	fake.NewPlatform,
 	fake.NewPlatformSingleCluster,
@@ -65,62 +61,15 @@ var builders = []PlatformBuilder{
 	k8sop.NewPlatform,
 	kindinfra.NewPlatform,
 	federation.NewPlatform,
+	mock.NewPlatform,
 }
 
-var platformsFeatures map[string]edgeproto.PlatformFeatures
-var platformsBuilders map[string]PlatformBuilder
-
-func init() {
-	platformsFeatures = make(map[string]edgeproto.PlatformFeatures)
-	platformsBuilders = make(map[string]PlatformBuilder)
-
-	for _, builder := range builders {
-		plat := builder()
-		features := plat.GetFeatures()
-		platformType := features.PlatformType
-		if platformType == "" {
-			panic(fmt.Errorf("PlatformType string not defined for %T", plat))
-		}
-		if _, found := platformsBuilders[platformType]; found {
-			panic(fmt.Errorf("registerPlatformBuilder: duplicate platform type %s", platformType))
-		}
-		platformsBuilders[platformType] = builder
-		// Cache features so we don't need to build a new platform
-		// each time to get features. Features should be static
-		// properties of the platform.
-		platformsFeatures[platformType] = *features
-	}
+type PlatformsData struct {
+	PlatformsFeatures map[string]edgeproto.PlatformFeatures
+	PlatformsBuilders map[string]platform.PlatformBuilder
 }
 
-// GetAllPlatformsFeatures returns the features for all
-// supported platforms.
-func GetAllPlatformsFeatures() []edgeproto.PlatformFeatures {
-	all := []edgeproto.PlatformFeatures{}
-	for _, features := range platformsFeatures {
-		all = append(all, features)
-	}
-	sort.Slice(all, func(i, j int) bool {
-		return all[i].PlatformType < all[j].PlatformType
-	})
-	return all
-}
-
-// GetPlatformFeatures returns features for a specific platform type.
-func GetPlatformFeatures(platformType string) (*edgeproto.PlatformFeatures, error) {
-	features, found := platformsFeatures[platformType]
-	if !found {
-		return nil, fmt.Errorf("Platform type %s not found", platformType)
-	}
-	return &features, nil
-}
-
-func GetPlatform(plat string) (platform.Platform, error) {
-	builder, found := platformsBuilders[plat]
-	if !found {
-		return nil, fmt.Errorf("unknown platform %s", plat)
-	}
-	return builder(), nil
-}
+var All = platform.NewPlatformCollection(builders)
 
 func GetClusterSvc() (platform.ClusterSvc, error) {
 	return &common.ClusterSvc{}, nil

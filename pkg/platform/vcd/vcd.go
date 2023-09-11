@@ -27,7 +27,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
@@ -174,6 +173,9 @@ func (o *VcdPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsImageTypeOva:                  true,
 		SupportsAdditionalNetworks:            true,
 		SupportsPlatformHighAvailabilityOnK8S: true,
+		AccessVars:                            AccessVarProps,
+		Properties:                            VcdProps,
+		ResourceQuotaProperties:               quotaProps,
 	}
 }
 
@@ -399,18 +401,6 @@ func (v *VcdPlatform) GetCloudletImageSuffix(ctx context.Context) string {
 func (v *VcdPlatform) GetCloudletManifest(ctx context.Context, name, cloudletImagePath string, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletManifest", "name", name, "imagePath", cloudletImagePath)
 	return "", nil
-}
-
-func (v *VcdPlatform) GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error) {
-	return nil, fmt.Errorf("GetSessionTokens not supported in VcdPlatform")
-}
-
-func (v *VcdPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("SaveCloudletAccessVars not implemented for vcd")
-}
-
-func (v *VcdPlatform) UpdateCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("UpdateCloudletAccessVars not implemented for vcd")
 }
 
 func (v *VcdPlatform) DisableOrgRuntimeLease(ctx context.Context, override bool) error {

@@ -1,0 +1,21 @@
+kvs:
+- path: secret/data/local/cloudlet/openstack/UFGT Inc./NewYorkSite/openrc.json
+  data:
+    env:
+      - name: OS_AUTH_URL
+        value: https://ufgtinc.net/newyorksite:9000
+      - name: OS_USERNAME
+        value: admin
+      - name: OS_PASSWORD
+        value: foobar
+- path: secret/data/local/cloudlet/vcd/Zerilu/HawaiiSite/vcd.json
+  data:
+    env:
+      - name: VCD_URL
+        value: https://zerilu.com/hawaii:8888
+      - name: VCD_ORG
+        value: vcd_org
+      - name: VCD_NAME
+        value: my_vcd
+      - name: VCD_PASSWORD
+        value: zerilu

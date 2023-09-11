@@ -822,7 +822,7 @@ func (c *AlertCache) DeleteCondFunc(ctx context.Context, in *Alert, modRev int64
 		}
 	}
 	delete(c.Objs, in.GetKeyVal())
-	log.SpanLog(ctx, log.DebugLevelApi, "cache delete")
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
 	c.Mux.Unlock()
 	obj := old
 	if obj == nil {
@@ -1297,7 +1297,7 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 	case reflect.TypeOf(StreamState(0)):
 		return "StreamState", ", valid values are one of Unknown, Start, Stop, Error, or 0, 1, 2, 3", true
 	case reflect.TypeOf(VersionHash(0)):
-		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, 611B28894B117C2Aaa22C12Adcd81F74, 37Dea30756Fed2B0C0Ecbc3E7B084855, 1304C4Ec69343Ced28Fd3Ebc85F4A3A9, 601Fa4F6A8109F39E46Adf1Ea3B89197, or 0, 47, 48, 49, 50", true
+		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, 611B28894B117C2Aaa22C12Adcd81F74, 37Dea30756Fed2B0C0Ecbc3E7B084855, 1304C4Ec69343Ced28Fd3Ebc85F4A3A9, 601Fa4F6A8109F39E46Adf1Ea3B89197, A61A29Cd41F6B7459B05B6F7Be6Be4Ce, or 0, 47, 48, 49, 50, 51", true
 	}
 	return "", "", false
 }
@@ -1313,9 +1313,9 @@ var ShowMethodNames = map[string]struct{}{
 	"ShowTrustPolicy":               struct{}{},
 	"ShowApp":                       struct{}{},
 	"ShowCloudletsForAppDeployment": struct{}{},
+	"ShowPlatformFeatures":          struct{}{},
 	"ShowGPUDriver":                 struct{}{},
 	"ShowCloudlet":                  struct{}{},
-	"ShowPlatformsFeatures":         struct{}{},
 	"ShowCloudletInfo":              struct{}{},
 	"ShowCloudletMetrics":           struct{}{},
 	"ShowCloudletPool":              struct{}{},
@@ -1434,7 +1434,7 @@ var AllKeyTagsMap = map[string]struct{}{
 // References generated from the refers_to and tracks_refs_by protogen options
 func GetReferencesMap() map[string][]string {
 	refs := make(map[string][]string)
-	refs["AllData"] = []string{"AlertPolicy", "App", "AutoProvPolicy", "AutoScalePolicy", "Cloudlet", "CloudletPool", "ClusterInst", "Flavor", "GPUDriver", "Network", "ResTagTable", "TrustPolicy", "VMPool"}
+	refs["AllData"] = []string{"AlertPolicy", "App", "AutoProvPolicy", "AutoScalePolicy", "Cloudlet", "CloudletPool", "ClusterInst", "Flavor", "GPUDriver", "Network", "PlatformFeatures", "ResTagTable", "TrustPolicy", "VMPool"}
 	refs["App"] = []string{"AlertPolicy", "AutoProvPolicy", "Flavor"}
 	refs["AppAlertPolicy"] = []string{"AlertPolicy", "App"}
 	refs["AppAutoProvPolicy"] = []string{"App", "AutoProvPolicy"}
@@ -1448,7 +1448,7 @@ func GetReferencesMap() map[string][]string {
 	refs["AppInstRefs"] = []string{"AppInst"}
 	refs["AutoProvPolicy"] = []string{"Cloudlet"}
 	refs["AutoProvPolicyCloudlet"] = []string{"AutoProvPolicy", "Cloudlet"}
-	refs["Cloudlet"] = []string{"Flavor", "GPUDriver", "ResTagTable", "TrustPolicy", "VMPool"}
+	refs["Cloudlet"] = []string{"Flavor", "GPUDriver", "PlatformFeatures", "ResTagTable", "TrustPolicy", "VMPool"}
 	refs["CloudletPool"] = []string{"Cloudlet"}
 	refs["CloudletPoolMember"] = []string{"Cloudlet", "CloudletPool"}
 	refs["CloudletRefs"] = []string{"AppInst", "ClusterInst"}
