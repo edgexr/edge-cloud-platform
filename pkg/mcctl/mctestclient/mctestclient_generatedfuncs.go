@@ -3906,6 +3906,17 @@ func (s *Client) HarborResync(uri string, token string, ops ...Op) (int, error) 
 	return rundata.RetStatus, rundata.RetError
 }
 
+func (s *Client) VmRegistryResync(uri string, token string, ops ...Op) (int, error) {
+	rundata := RunData{}
+	applyOps(&rundata, ops...)
+	rundata.Uri = uri
+	rundata.Token = token
+
+	apiCmd := ormctl.MustGetCommand("VmRegistryResync")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
 // Generating group ResTagTable
 
 func (s *Client) CreateResTagTable(uri string, token string, in *ormapi.RegionResTagTable, ops ...Op) (*edgeproto.Result, int, error) {

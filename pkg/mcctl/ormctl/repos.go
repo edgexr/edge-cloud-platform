@@ -29,6 +29,10 @@ func init() {
 		Name:  "HarborResync",
 		Short: "Resync MC and Harbor data",
 		Path:  "/auth/harbor/resync",
+	}, {
+		Name:  "VmRegistryResync",
+		Short: "Resync MC and VM Registry data",
+		Path:  "/auth/vmregistry/resync",
 	}}
 	AllApis.AddGroup(RepositoryGroup, "Manage respositories", cmds)
 }

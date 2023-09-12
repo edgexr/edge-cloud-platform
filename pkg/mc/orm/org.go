@@ -157,6 +157,8 @@ func CreateOrgObj(ctx context.Context, claims *ormutil.UserClaims, org *ormapi.O
 	harborCreateProject(ctx, org)
 	harborAddProjectMember(ctx, &r, org.Type)
 
+	vmRegistryCreateOrgPullKey(ctx, org.Name, org.Type)
+
 	return nil
 }
 
@@ -265,6 +267,7 @@ func DeleteOrgObj(ctx context.Context, claims *ormutil.UserClaims, org *ormapi.O
 	gitlabDeleteGroup(ctx, org)
 	artifactoryDeleteGroupObjects(ctx, org.Name, "")
 	harborDeleteProject(ctx, org.Name)
+	vmRegistryDeletePullKey(ctx, org.Name, org.Type)
 	return nil
 }
 

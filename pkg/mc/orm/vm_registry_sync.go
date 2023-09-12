@@ -15,6 +15,9 @@ func VmRegistryNewSync() *AppStoreSync {
 }
 
 func (s *AppStoreSync) syncVmRegistry(ctx context.Context) {
+	if serverConfig.VmRegistryAddr == "" {
+		return
+	}
 	log.SpanLog(ctx, log.DebugLevelApi, "vm-registry sync")
 
 	// ensure main admin access api key
@@ -50,6 +53,9 @@ func VmRegistryResync(c echo.Context) error {
 	err := AdminAccessCheck(c)
 	if err != nil {
 		return err
+	}
+	if serverConfig.VmRegistryAddr == "" {
+		return nil
 	}
 	vmRegistrySync.NeedsSync()
 	vmRegistrySync.wakeup()

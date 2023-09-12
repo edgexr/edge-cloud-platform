@@ -75,6 +75,10 @@ func (s *VaultClient) GetRegistryAuth(ctx context.Context, imgUrl string) (*clou
 	return cloudcommon.GetRegistryAuth(ctx, imgUrl, cloudcommon.AllOrgs, s.vaultConfig)
 }
 
+func (s *VaultClient) GetRegistryImageAuth(ctx context.Context, imgUrl string) (*cloudcommon.RegistryAuth, error) {
+	return cloudcommon.GetRegistryImageAuth(ctx, imgUrl, s.vaultConfig)
+}
+
 func (s *VaultClient) SignSSHKey(ctx context.Context, publicKey string) (string, error) {
 	// Signed ssh keys should have a short valid time
 	return vault.SignSSHKey(s.vaultConfig, publicKey)
