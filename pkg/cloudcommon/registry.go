@@ -106,8 +106,7 @@ type RegistryAuthApi interface {
 	GetRegistryAuth(ctx context.Context, imgUrl string) (*RegistryAuth, error)
 }
 
-// return host and org (only valid for internal
-// repositories)
+// return host and org (only valid for internal repositories)
 func parseImageUrl(imgUrl string) (string, string, error) {
 	urlObj, err := util.ImagePathParse(imgUrl)
 	if err != nil {
@@ -155,8 +154,7 @@ func GetAccountAuth(ctx context.Context, name string, vaultConfig *vault.Config)
 	return auth, nil
 }
 
-// GetRegistryImageAuth gets the credentials for
-// pulling the image.
+// GetRegistryImageAuth gets the credentials for pulling the image.
 func GetRegistryImageAuth(ctx context.Context, imgUrl string, vaultConfig *vault.Config) (*RegistryAuth, error) {
 	host, org, err := parseImageUrl(imgUrl)
 	if err != nil {

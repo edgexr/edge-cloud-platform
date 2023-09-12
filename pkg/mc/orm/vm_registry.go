@@ -129,8 +129,7 @@ func vmRegistryCreateOrgPullKey(ctx context.Context, org, orgType string) {
 	}
 }
 
-// Create a JWT token for pulling VM images. It is restricted
-// to the org and has a limited validity time.
+// Create a JWT token for pulling VM images. It is restricted to the org.
 func vmRegistryEnsurePullKey(ctx context.Context, org, username string) error {
 	// Since it's just a JWT token, we don't care if it already
 	// exists, just overwrite it with a new one.
