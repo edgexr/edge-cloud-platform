@@ -1118,7 +1118,7 @@ func testCloudletEdgeboxOnly(t *testing.T, ctx context.Context, cloudlet edgepro
 	cloudlet.EdgeboxOnly = true
 	err := apis.cloudletApi.CreateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Cloudlet is restricted to edgebox only platforms")
+	require.Contains(t, err.Error(), "Cloudlet is restricted to edgebox or mock only platforms")
 	// Test can create edgebox platform.
 	cloudlet.PlatformType = platform.PlatformTypeFakeEdgebox
 	err = apis.cloudletApi.CreateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
