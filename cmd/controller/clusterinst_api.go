@@ -221,13 +221,13 @@ func validateNumNodesForKubernetes(ctx context.Context, platformType string, fea
 	return nil
 }
 
-func (s *ClusterInstApi) startClusterInstStream(ctx context.Context, cctx *CallContext, key *edgeproto.ClusterInstKey, inCb edgeproto.ClusterInstApi_CreateClusterInstServer) (*streamSend, edgeproto.ClusterInstApi_CreateClusterInstServer, error) {
-	streamSendObj, outCb, err := s.all.streamObjApi.startStream(ctx, cctx, key.StreamKey(), inCb)
+func (s *ClusterInstApi) startClusterInstStream(ctx context.Context, cctx *CallContext, streamCb *CbWrapper, modRev int64) (*streamSend, error) {
+	streamSendObj, err := s.all.streamObjApi.startStream(ctx, cctx, streamCb, modRev)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to start ClusterInst stream", "err", err)
-		return nil, inCb, err
+		return nil, err
 	}
-	return streamSendObj, outCb, err
+	return streamSendObj, err
 }
 
 func (s *ClusterInstApi) stopClusterInstStream(ctx context.Context, cctx *CallContext, key *edgeproto.ClusterInstKey, streamSendObj *streamSend, objErr error, cleanupStream CleanupStreamAction) {
@@ -826,23 +826,8 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 	ctx := inCb.Context()
 
 	clusterInstKey := in.Key
-	sendObj, cb, err := s.startClusterInstStream(ctx, cctx, &clusterInstKey, inCb)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		cleanupStream := NoCleanupStream
-		if reterr != nil {
-			// Cleanup stream if object is not present in etcd (due to undo)
-			if !s.store.Get(ctx, &in.Key, nil) {
-				cleanupStream = CleanupStream
-			}
-		}
-		s.stopClusterInstStream(ctx, cctx, &clusterInstKey, sendObj, reterr, cleanupStream)
-		if reterr == nil {
-			s.RecordClusterInstEvent(cb.Context(), &in.Key, cloudcommon.CREATED, cloudcommon.InstanceUp)
-		}
-	}()
+	var err error
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, clusterInstKey.StreamKey(), inCb)
 
 	if in.Key.ClusterKey.Organization == "" {
 		return fmt.Errorf("ClusterInst Organization cannot be empty")
@@ -911,7 +896,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		in.IpAccess = edgeproto.IpAccess_IP_ACCESS_UNKNOWN
 	}
 
-	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		if err := s.all.cloudletInfoApi.checkCloudletReady(cctx, stm, &in.Key.CloudletKey, cloudcommon.Create); err != nil {
 			return err
 		}
@@ -1096,6 +1081,25 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 	if err != nil {
 		return err
 	}
+
+	sendObj, err := s.startClusterInstStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		cleanupStream := NoCleanupStream
+		if reterr != nil {
+			// Cleanup stream if object is not present in etcd (due to undo)
+			if !s.store.Get(ctx, &in.Key, nil) {
+				cleanupStream = CleanupStream
+			}
+		}
+		s.stopClusterInstStream(ctx, cctx, &clusterInstKey, sendObj, reterr, cleanupStream)
+		if reterr == nil {
+			s.RecordClusterInstEvent(cb.Context(), &in.Key, cloudcommon.CREATED, cloudcommon.InstanceUp)
+		}
+	}()
+
 	if ignoreCRM(cctx) {
 		return nil
 	}
@@ -1152,18 +1156,12 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 	cctx.SetOverride(&in.CrmOverride)
 
 	clusterInstKey := in.Key
-	sendObj, cb, err := s.startClusterInstStream(ctx, cctx, &clusterInstKey, inCb)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		s.stopClusterInstStream(ctx, cctx, &clusterInstKey, sendObj, reterr, NoCleanupStream)
-	}()
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, clusterInstKey.StreamKey(), inCb)
 
 	var inbuf edgeproto.ClusterInst
 	var changeCount int
 	retry := false
-	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		changeCount = 0
 		if !s.store.STMGet(stm, &in.Key, &inbuf) {
 			return in.Key.NotFoundError()
@@ -1253,6 +1251,14 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 	if changeCount == 0 && !retry {
 		return nil
 	}
+
+	sendObj, err := s.startClusterInstStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		s.stopClusterInstStream(ctx, cctx, &clusterInstKey, sendObj, reterr, NoCleanupStream)
+	}()
 
 	s.RecordClusterInstEvent(ctx, &in.Key, cloudcommon.UPDATE_START, cloudcommon.InstanceDown)
 	defer func() {
@@ -1345,26 +1351,13 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 	ctx := inCb.Context()
 
 	clusterInstKey := in.Key
-	sendObj, cb, err := s.startClusterInstStream(ctx, cctx, &clusterInstKey, inCb)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		cleanupStream := NoCleanupStream
-		if reterr == nil {
-			// deletion is successful, cleanup stream
-			cleanupStream = CleanupStream
-		}
-		s.stopClusterInstStream(ctx, cctx, &clusterInstKey, sendObj, reterr, cleanupStream)
-		if reterr == nil {
-			s.RecordClusterInstEvent(context.WithValue(ctx, clusterInstKey, *in), &clusterInstKey, cloudcommon.DELETED, cloudcommon.InstanceDown)
-		}
-	}()
+	var err error
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, clusterInstKey.StreamKey(), inCb)
 
 	dynInsts := make(map[edgeproto.AppInstKey]struct{})
 	var prevState edgeproto.TrackedState
 	// Set state to prevent other apps from being created on ClusterInst
-	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		cur := edgeproto.ClusterInst{}
 		if !s.store.STMGet(stm, &in.Key, &cur) {
 			return in.Key.NotFoundError()
@@ -1433,6 +1426,22 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 		})
 		if undoErr != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "Failed to undo delete prepare", "key", in.Key, "err", undoErr)
+		}
+	}()
+
+	sendObj, err := s.startClusterInstStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		cleanupStream := NoCleanupStream
+		if reterr == nil {
+			// deletion is successful, cleanup stream
+			cleanupStream = CleanupStream
+		}
+		s.stopClusterInstStream(ctx, cctx, &clusterInstKey, sendObj, reterr, cleanupStream)
+		if reterr == nil {
+			s.RecordClusterInstEvent(context.WithValue(ctx, clusterInstKey, *in), &clusterInstKey, cloudcommon.DELETED, cloudcommon.InstanceDown)
 		}
 	}()
 

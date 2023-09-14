@@ -22,12 +22,12 @@ import (
 	"strings"
 	"time"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/gcs"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type GPUDriverApi struct {
@@ -145,13 +145,13 @@ func (s *GPUDriverApi) undoStateChange(ctx context.Context, key *edgeproto.GPUDr
 	}
 }
 
-func (s *GPUDriverApi) startGPUDriverStream(ctx context.Context, cctx *CallContext, key *edgeproto.GPUDriverKey, inCb edgeproto.GPUDriverApi_CreateGPUDriverServer) (*streamSend, edgeproto.GPUDriverApi_CreateGPUDriverServer, error) {
-	streamSendObj, outCb, err := s.all.streamObjApi.startStream(ctx, cctx, key.StreamKey(), inCb)
+func (s *GPUDriverApi) startGPUDriverStream(ctx context.Context, cctx *CallContext, streamCb *CbWrapper, modRev int64) (*streamSend, error) {
+	streamSendObj, err := s.all.streamObjApi.startStream(ctx, cctx, streamCb, modRev)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to start GPU driver stream", "err", err)
-		return nil, inCb, err
+		return nil, err
 	}
-	return streamSendObj, outCb, err
+	return streamSendObj, err
 }
 
 func (s *GPUDriverApi) stopGPUDriverStream(ctx context.Context, cctx *CallContext, key *edgeproto.GPUDriverKey, streamSendObj *streamSend, objErr error, cleanupStream CleanupStreamAction) {
@@ -176,20 +176,8 @@ func (s *GPUDriverApi) CreateGPUDriver(in *edgeproto.GPUDriver, cb edgeproto.GPU
 	}
 
 	gpuDriverKey := in.Key
-	sendObj, cb, err := s.startGPUDriverStream(ctx, cctx, &gpuDriverKey, cb)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		cleanupStream := NoCleanupStream
-		if reterr != nil {
-			// Cleanup stream if object is not present in etcd (due to undo)
-			if !s.store.Get(ctx, &in.Key, nil) {
-				cleanupStream = CleanupStream
-			}
-		}
-		s.stopGPUDriverStream(ctx, cctx, &gpuDriverKey, sendObj, reterr, cleanupStream)
-	}()
+	var err error
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, gpuDriverKey.StreamKey(), cb)
 
 	credsMap := make(map[string]string)
 	for ii, build := range in.Builds {
@@ -209,7 +197,7 @@ func (s *GPUDriverApi) CreateGPUDriver(in *edgeproto.GPUDriver, cb edgeproto.GPU
 	// Step-3: And then update build details to reflect GCS URL and update it to etcd
 
 	// Step-1: First commit to etcd
-	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		if s.store.STMGet(stm, &in.Key, nil) {
 			return in.Key.ExistsError()
 		}
@@ -246,6 +234,21 @@ func (s *GPUDriverApi) CreateGPUDriver(in *edgeproto.GPUDriver, cb edgeproto.GPU
 				log.SpanLog(ctx, log.DebugLevelApi, "failed to undo gpu driver create", "key", in.Key, "err", err)
 			}
 		}
+	}()
+
+	sendObj, err := s.startGPUDriverStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		cleanupStream := NoCleanupStream
+		if reterr != nil {
+			// Cleanup stream if object is not present in etcd (due to undo)
+			if !s.store.Get(ctx, &in.Key, nil) {
+				cleanupStream = CleanupStream
+			}
+		}
+		s.stopGPUDriverStream(ctx, cctx, &gpuDriverKey, sendObj, reterr, cleanupStream)
 	}()
 
 	if len(in.Builds) > 0 || licenseConfig != "" {
@@ -306,13 +309,7 @@ func (s *GPUDriverApi) UpdateGPUDriver(in *edgeproto.GPUDriver, cb edgeproto.GPU
 	}
 
 	gpuDriverKey := in.Key
-	sendObj, cb, err := s.startGPUDriverStream(ctx, cctx, &gpuDriverKey, cb)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		s.stopGPUDriverStream(ctx, cctx, &gpuDriverKey, sendObj, reterr, NoCleanupStream)
-	}()
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, gpuDriverKey.StreamKey(), cb)
 
 	ignoreState := in.IgnoreState
 	in.IgnoreState = false
@@ -325,7 +322,7 @@ func (s *GPUDriverApi) UpdateGPUDriver(in *edgeproto.GPUDriver, cb edgeproto.GPU
 	// Step-1: First commit to etcd
 	changed := 0
 	var gpuDriver edgeproto.GPUDriver
-	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		changed = 0
 		if !s.store.STMGet(stm, &in.Key, &gpuDriver) {
 			return in.Key.NotFoundError()
@@ -359,6 +356,14 @@ func (s *GPUDriverApi) UpdateGPUDriver(in *edgeproto.GPUDriver, cb edgeproto.GPU
 		if reterr != nil {
 			s.undoStateChange(ctx, &in.Key)
 		}
+	}()
+
+	sendObj, err := s.startGPUDriverStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		s.stopGPUDriverStream(ctx, cctx, &gpuDriverKey, sendObj, reterr, NoCleanupStream)
 	}()
 
 	// Step-2: Validate and upload the license-config to GCS
@@ -427,18 +432,8 @@ func (s *GPUDriverApi) deleteGPUDriverInternal(cctx *CallContext, in *edgeproto.
 		return err
 	}
 	gpuDriverKey := in.Key
-	sendObj, cb, err := s.startGPUDriverStream(ctx, cctx, &gpuDriverKey, cb)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		cleanupStream := NoCleanupStream
-		if reterr == nil {
-			// deletion is successful, cleanup stream
-			cleanupStream = CleanupStream
-		}
-		s.stopGPUDriverStream(ctx, cctx, &gpuDriverKey, sendObj, reterr, cleanupStream)
-	}()
+	var err error
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, gpuDriverKey.StreamKey(), cb)
 
 	ignoreState := in.IgnoreState
 	in.IgnoreState = false
@@ -452,7 +447,7 @@ func (s *GPUDriverApi) deleteGPUDriverInternal(cctx *CallContext, in *edgeproto.
 	buildFiles := []string{}
 	licenseConfig := ""
 	var gpuDriver edgeproto.GPUDriver
-	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		if !s.store.STMGet(stm, &in.Key, &gpuDriver) {
 			return in.Key.NotFoundError()
 		}
@@ -481,6 +476,19 @@ func (s *GPUDriverApi) deleteGPUDriverInternal(cctx *CallContext, in *edgeproto.
 		if reterr != nil {
 			s.undoStateChange(ctx, &in.Key)
 		}
+	}()
+
+	sendObj, err := s.startGPUDriverStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		cleanupStream := NoCleanupStream
+		if reterr == nil {
+			// deletion is successful, cleanup stream
+			cleanupStream = CleanupStream
+		}
+		s.stopGPUDriverStream(ctx, cctx, &gpuDriverKey, sendObj, reterr, cleanupStream)
 	}()
 
 	// Validate if driver is in use by Cloudlet
@@ -553,13 +561,8 @@ func (s *GPUDriverApi) AddGPUDriverBuild(in *edgeproto.GPUDriverBuildMember, cb 
 	}
 
 	gpuDriverKey := in.Key
-	sendObj, cb, err := s.startGPUDriverStream(ctx, cctx, &gpuDriverKey, cb)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		s.stopGPUDriverStream(ctx, cctx, &gpuDriverKey, sendObj, reterr, NoCleanupStream)
-	}()
+	var err error
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, gpuDriverKey.StreamKey(), cb)
 
 	ignoreState := in.IgnoreState
 	in.IgnoreState = false
@@ -577,7 +580,7 @@ func (s *GPUDriverApi) AddGPUDriverBuild(in *edgeproto.GPUDriverBuildMember, cb 
 
 	// Step-1: First commit to etcd
 	var gpuDriver edgeproto.GPUDriver
-	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		if !s.store.STMGet(stm, &in.Key, &gpuDriver) {
 			return in.Key.NotFoundError()
 		}
@@ -615,6 +618,14 @@ func (s *GPUDriverApi) AddGPUDriverBuild(in *edgeproto.GPUDriverBuildMember, cb 
 				log.SpanLog(ctx, log.DebugLevelApi, "failed to undo gpu driver build", "key", in.Key, "err", err)
 			}
 		}
+	}()
+
+	sendObj, err := s.startGPUDriverStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		s.stopGPUDriverStream(ctx, cctx, &gpuDriverKey, sendObj, reterr, NoCleanupStream)
 	}()
 
 	// Step-2: Validate and upload the build to GCS
@@ -677,13 +688,8 @@ func (s *GPUDriverApi) removeGPUDriverBuildInternal(cctx *CallContext, in *edgep
 	}
 
 	gpuDriverKey := in.Key
-	sendObj, cb, err := s.startGPUDriverStream(ctx, cctx, &gpuDriverKey, cb)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		s.stopGPUDriverStream(ctx, cctx, &gpuDriverKey, sendObj, reterr, NoCleanupStream)
-	}()
+	var err error
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, gpuDriverKey.StreamKey(), cb)
 
 	ignoreState := in.IgnoreState
 	in.IgnoreState = false
@@ -697,7 +703,7 @@ func (s *GPUDriverApi) removeGPUDriverBuildInternal(cctx *CallContext, in *edgep
 	driverURL := ""
 	delBuild := edgeproto.GPUDriverBuild{}
 	var gpuDriver edgeproto.GPUDriver
-	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		if !s.store.STMGet(stm, &in.Key, &gpuDriver) {
 			return in.Key.NotFoundError()
 		}
@@ -730,6 +736,15 @@ func (s *GPUDriverApi) removeGPUDriverBuildInternal(cctx *CallContext, in *edgep
 			s.undoStateChange(ctx, &in.Key)
 		}
 	}()
+
+	sendObj, err := s.startGPUDriverStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		s.stopGPUDriverStream(ctx, cctx, &gpuDriverKey, sendObj, reterr, NoCleanupStream)
+	}()
+
 	if driverURL != "" {
 		// Step-2: Delete build from GCS
 		cb.Send(&edgeproto.Result{Message: "Deleting GPU driver build from secure storage"})

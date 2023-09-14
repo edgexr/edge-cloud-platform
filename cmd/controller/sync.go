@@ -20,11 +20,11 @@ import (
 	"sort"
 	"sync"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type Sync struct {
@@ -184,6 +184,14 @@ func (s *Sync) ApplySTMWait(ctx context.Context, apply func(concurrency.STM) err
 		s.syncWait(rev)
 	}
 	return err
+}
+
+func (s *Sync) ApplySTMWaitRev(ctx context.Context, apply func(concurrency.STM) error) (int64, error) {
+	rev, err := s.store.ApplySTM(ctx, apply)
+	if err == nil {
+		s.syncWait(rev)
+	}
+	return rev, err
 }
 
 func (s *Sync) usesOrg(org string) []string {
