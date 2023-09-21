@@ -278,8 +278,9 @@ ccrms:
   region: local
   hostname: "127.0.0.1"
   appdnsroot: edgecloude2e.net
-  controlleraccessapiaddr: "127.0.0.1:21001"
   controllernotifyaddr: "127.0.0.1:27001"
+  controllerpublicaccessapiaddr: "127.0.0.1:21001"
+  controllerpublicnotifyaddr: "127.0.0.1:27001"
   thanosrecvaddr: "http://host.docker.internal:10908"
   vaultaddr: "http://127.0.0.1:8200"
   redissentineladdrs: "127.0.0.1:26379,127.0.0.1:26380,127.0.0.1:26381"
@@ -295,8 +296,9 @@ ccrms:
   region: locala
   hostname: "127.0.0.1"
   appdnsroot: edgecloude2e.net
-  controlleraccessapiaddr: "127.0.0.1:21011"
   controllernotifyaddr: "127.0.0.1:27011"
+  controllerpublicaccessapiaddr: "127.0.0.1:21011"
+  controllerpublicnotifyaddr: "127.0.0.1:27011"
   vaultaddr: "http://127.0.0.1:8200"
   redisstandaloneaddr: "127.0.0.1:26382"
   usevaultpki: true
@@ -311,8 +313,9 @@ ccrms:
   region: PA
   hostname: "127.0.0.1"
   appdnsroot: edgecloude2e.net
-  controlleraccessapiaddr: "127.0.0.1:21081"
   controllernotifyaddr: "127.0.0.1:27081"
+  controllerpublicaccessapiaddr: "127.0.0.1:21081"
+  controllerpublicnotifyaddr: "127.0.0.1:27081"
   vaultaddr: "http://127.0.0.1:8200"
   redisstandaloneaddr: "127.0.0.1:26383"
   usevaultpki: true

@@ -21,6 +21,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -459,10 +460,14 @@ func (s *internalPki) IssueVaultCertDirect(ctx context.Context, id CertId) (*Vau
 	}
 	path := id.Issuer + "/issue/" + rolename
 
+	envAltNames := strings.TrimSpace(os.Getenv("VAULT_PKI_ALTNAMES"))
+	if envAltNames != "" {
+		envAltNames = "," + envAltNames
+	}
 	data := make(map[string]interface{})
 	data["common_name"] = id.CommonName
 	data["ttl"] = "72h"
-	data["alt_names"] = "*." + id.CommonName + ",localhost"
+	data["alt_names"] = "*." + id.CommonName + ",localhost" + envAltNames
 	data["ip_sans"] = "127.0.0.1,0.0.0.0"
 	data["uri_sans"] = uriSans
 
