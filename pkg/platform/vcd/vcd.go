@@ -219,11 +219,11 @@ func (v VcdPlatform) CheckServerReady(ctx context.Context, client ssh.Client, se
 	}
 	out := ""
 	if detail.Status == vmlayer.ServerActive {
-		out, err = client.Output("systemctl status mobiledgex.service")
-		log.SpanLog(ctx, log.DebugLevelInfra, "CheckServerReady Mobiledgex service status", "serverName", serverName, "out", out, "err", err)
+		out, err = client.Output("systemctl status edgecloud.service")
+		log.SpanLog(ctx, log.DebugLevelInfra, "CheckServerReady Edgecloud service status", "serverName", serverName, "out", out, "err", err)
 		return nil
 	} else {
-		log.SpanLog(ctx, log.DebugLevelInfra, "CheckServerReady Mobiledgex service status (recovered) ", "serverName", serverName, "out", out, "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "CheckServerReady Edgecloud service status (recovered) ", "serverName", serverName, "out", out, "err", err)
 		return fmt.Errorf("Server %s status: %s", serverName, detail.Status)
 	}
 }

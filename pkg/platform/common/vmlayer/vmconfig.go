@@ -34,7 +34,7 @@ chef:
 bootcmd:
  - echo MOBILEDGEX CLOUD CONFIG START
  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
- - apt-get -y purge update-notifier-common ubuntu-release-upgrader-core landscape-common unattended-upgrades
+ - apt-get -y purge update-notifier-common ubuntu-release-upgrader-core landscape-common
  - echo "Removed APT and Ubuntu extra packages" | systemd-cat
  - cloud-init-per once ssh-users-ca echo "TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem" >> /etc/ssh/sshd_config
 {{- range .ExtraBootCommands}}
