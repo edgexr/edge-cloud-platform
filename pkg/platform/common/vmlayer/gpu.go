@@ -315,7 +315,7 @@ func (v *VMPlatform) installGPUDriverBuild(ctx context.Context, storageClient *g
 	// Install GPU driver, setup license and verify it
 	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("%s: Installing GPU driver %s (%s)", nodeName, driver.Key.Name, reqdBuild.Name))
 	cmd := fmt.Sprintf(
-		"sudo bash /etc/mobiledgex/install-gpu-driver.sh -n %s -d %s",
+		"sudo bash /etc/edgecloud/install-gpu-driver.sh -n %s -d %s",
 		driver.Key.Name,
 		outPkgPath,
 	)
@@ -330,6 +330,7 @@ func (v *VMPlatform) installGPUDriverBuild(ctx context.Context, storageClient *g
 	return nil
 }
 
+// helm install --wait gpu-operator nvidia/gpu-operator --version v23.3.2 --set driver.enabled=false
 var NvidiaGPUOperatorApp = edgeproto.App{
 	Key: edgeproto.AppKey{
 		Name:         "nvidia-gpu-operator",
@@ -341,7 +342,7 @@ var NvidiaGPUOperatorApp = edgeproto.App{
 	DelOpt:        edgeproto.DeleteType_AUTO_DELETE,
 	InternalPorts: true,
 	Trusted:       true,
-	Annotations:   "version=v1.7.0,wait=true,timeout=180s",
+	Annotations:   "version=v23.3.2,wait=true,timeout=180s",
 	Configs: []*edgeproto.ConfigFile{
 		&edgeproto.ConfigFile{
 			Kind: edgeproto.AppConfigHelmYaml,

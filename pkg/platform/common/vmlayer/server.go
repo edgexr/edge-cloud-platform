@@ -20,10 +20,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -252,10 +252,13 @@ func WaitServerReady(ctx context.Context, provider VMProvider, client ssh.Client
 	log.SpanLog(ctx, log.DebugLevelInfra, "WaitServerReady", "server", server)
 	start := time.Now()
 	for {
-		out, err := client.Output("sudo grep 'Finished mobiledgex init' /var/log/mobiledgex.log")
-		log.SpanLog(ctx, log.DebugLevelInfra, "grep Finished mobiledgex init result", "out", out, "err", err)
+		out, err := client.Output("sudo grep 'Finished edgecloud init' /var/log/edgecloud.log")
+		if err != nil {
+			out, err = client.Output("sudo grep 'Finished mobiledgex init' /var/log/mobiledgex.log")
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "grep Finished edgecloud init result", "out", out, "err", err)
 		if err == nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Server has completed mobiledgex init", "server", server)
+			log.SpanLog(ctx, log.DebugLevelInfra, "Server has completed edgecloud init", "server", server)
 			// perform any additional checks from the provider
 			err = provider.CheckServerReady(ctx, client, server)
 			log.SpanLog(ctx, log.DebugLevelInfra, "CheckServerReady result", "err", err)

@@ -20,10 +20,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -36,20 +36,25 @@ type MetalConfigmapParams struct {
 	AddressRanges []string
 }
 
-var MetalLbConfigMap = `apiVersion: v1
-kind: ConfigMap
+var MetalLbAddressPool = `apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
 metadata:
+  name: default-pool
   namespace: metallb-system
-  name: config
-data:
-  config: |
-    address-pools:
-    - name: default
-      protocol: layer2
-      addresses:
-      {{- range .AddressRanges}}
-       - {{.}}
-      {{- end}}
+spec:
+  addresses:
+  {{- range .AddressRanges}}
+  - {{.}}
+  {{- end}}
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: example
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - default-pool
 `
 
 func InstallAndConfigMetalLbIfNotInstalled(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, addressRanges []string) error {
@@ -62,12 +67,12 @@ func InstallAndConfigMetalLbIfNotInstalled(ctx context.Context, client ssh.Clien
 		if err := InstallMetalLb(ctx, client, clusterInst); err != nil {
 			return err
 		}
+		if err := VerifyMetalLbRunning(ctx, client, clusterInst, DefaultMetalLbNamespace); err != nil {
+			return err
+		}
 		if err := ConfigureMetalLb(ctx, client, clusterInst, addressRanges); err != nil {
 			return err
 		}
-	}
-	if err := VerifyMetalLbRunning(ctx, client, clusterInst, DefaultMetalLbNamespace); err != nil {
-		return err
 	}
 	return nil
 }
@@ -94,6 +99,13 @@ func VerifyMetalLbRunning(ctx context.Context, client ssh.Client, clusterInst *e
 		}
 		time.Sleep(1 * time.Second)
 	}
+
+	cmd := fmt.Sprintf("%s kubectl -n %s wait --for condition=ready pod --selector=component=controller --timeout=60s", kconfEnv, metalLbNameSpace)
+	out, err := client.Output(cmd)
+	if err != nil {
+		log.InfoLog("error getting controller pod", "err", err, "out", out)
+		return fmt.Errorf("MetalLB controller wait timed out")
+	}
 	return nil
 }
 
@@ -119,8 +131,7 @@ func InstallMetalLb(ctx context.Context, client ssh.Client, clusterInst *edgepro
 	log.SpanLog(ctx, log.DebugLevelInfra, "InstallMetalLb", "clusterInst", clusterInst)
 	kconf := k8smgmt.GetKconfName(clusterInst)
 	cmds := []string{
-		fmt.Sprintf("kubectl create -f https://raw.githubusercontent.com/metallb/metallb/v0.10.2/manifests/namespace.yaml --kubeconfig=%s", kconf),
-		fmt.Sprintf("kubectl create -f https://raw.githubusercontent.com/metallb/metallb/v0.10.2/manifests/metallb.yaml --kubeconfig=%s", kconf),
+		fmt.Sprintf("kubectl create -f https://raw.githubusercontent.com/metallb/metallb/v0.13.10/config/manifests/metallb-native.yaml --kubeconfig=%s", kconf),
 	}
 	for _, cmd := range cmds {
 		log.SpanLog(ctx, log.DebugLevelInfra, "installing metallb", "cmd", cmd)
@@ -138,7 +149,7 @@ func ConfigureMetalLb(ctx context.Context, client ssh.Client, clusterInst *edgep
 	MetalConfigmapParams := MetalConfigmapParams{
 		AddressRanges: addressRanges,
 	}
-	configBuf, err := ExecTemplate("metalLbConfigMap", MetalLbConfigMap, MetalConfigmapParams)
+	configBuf, err := ExecTemplate("MetalLbAddressPool", MetalLbAddressPool, MetalConfigmapParams)
 	if err != nil {
 		return err
 	}
@@ -147,14 +158,14 @@ func ConfigureMetalLb(ctx context.Context, client ssh.Client, clusterInst *edgep
 	if err != nil {
 		return err
 	}
-	fileName := dir + "/metalLbConfigMap.yaml"
+	fileName := dir + "/metalLbPoolConfig.yaml"
 	err = pc.WriteFile(client, fileName, configBuf.String(), "configMap", pc.NoSudo)
 	if err != nil {
 		return fmt.Errorf("WriteTemplateFile failed for metal config map: %s", err)
 	}
 	kconf := k8smgmt.GetKconfName(clusterInst)
 	cmd := fmt.Sprintf("kubectl apply -f %s --kubeconfig=%s", fileName, kconf)
-	log.SpanLog(ctx, log.DebugLevelInfra, "installing metallb config", "cmd", cmd)
+	log.SpanLog(ctx, log.DebugLevelInfra, "installing metallb addr pool config", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("can't add configure metallb %s, %s, %v", cmd, out, err)

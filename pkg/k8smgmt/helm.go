@@ -21,11 +21,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -163,6 +163,9 @@ func CreateHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames,
 	if helmRepo != "" {
 		cmd = fmt.Sprintf("%s helm repo add %s", names.KconfEnv, helmRepo)
 		out, err = client.Output(cmd)
+		if err != nil && strings.Contains(out, "already exists") {
+			err = nil
+		}
 		if err != nil {
 			return fmt.Errorf("error adding helm repo, %s, %s, %v", cmd, out, err)
 		}

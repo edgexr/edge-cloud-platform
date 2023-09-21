@@ -118,7 +118,7 @@ var MEXPrometheusApp = edgeproto.App{
 	DelOpt:        edgeproto.DeleteType_AUTO_DELETE,
 	InternalPorts: true,
 	Trusted:       true,
-	Annotations:   "version=9.4.10",
+	Annotations:   "version=47.5.0",
 }
 
 var dialOpts grpc.DialOption
@@ -158,12 +158,12 @@ var NFSAutoProvAppKey = edgeproto.AppKey{
 
 var NFSAutoProvisionApp = edgeproto.App{
 	Key:           NFSAutoProvAppKey,
-	ImagePath:     "https://charts.helm.sh/stable:stable/nfs-client-provisioner",
+	ImagePath:     "https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner:nfs-subdir-external-provisioner/nfs-subdir-external-provisioner",
 	Deployment:    cloudcommon.DeploymentTypeHelm,
 	DelOpt:        edgeproto.DeleteType_AUTO_DELETE,
 	InternalPorts: true,
 	Trusted:       true,
-	Annotations:   "version=1.2.8",
+	Annotations:   "version=4.0.18",
 }
 
 var NFSAutoProvisionAppTemplate = `nfs:

@@ -41,7 +41,10 @@ func TestVaultSSH(t *testing.T) {
 	}
 	client, err := cp.GetSSHClientFromIPAddr(ctx, addr, pc.WithUser(SSHUser))
 	require.Nil(t, err)
-	out, err := client.Output("sudo grep 'Finished mobiledgex init' /var/log/mobiledgex.log")
+	out, err := client.Output("sudo grep 'Finished edgecloud init' /var/log/edgecloud.log")
+	if err != nil {
+		out, err = client.Output("sudo grep 'Finished mobiledgex init' /var/log/mobiledgex.log")
+	}
 	require.Nil(t, err)
 	fmt.Printf("%s\n", out)
 }
