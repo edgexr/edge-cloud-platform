@@ -226,6 +226,7 @@ func (s *EventData) TagsToMtags() {
 }
 
 func (s *NodeMgr) initEvents(ctx context.Context, opts *NodeOptions) error {
+	var err error
 	s.esEvents = make([][]byte, 0)
 	s.esWriteSignal = make(chan bool, 1)
 	s.esEventsDone = make(chan struct{})
@@ -264,7 +265,6 @@ func (s *NodeMgr) initEvents(ctx context.Context, opts *NodeOptions) error {
 		}
 	} else {
 		// mTLS, server with public cert, client with vault cert.
-		var err error
 		tlsConfig, err = s.GetPublicClientTlsConfig(ctx)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfo, "failed to get elastic search client tls config", "err", err)
@@ -293,7 +293,6 @@ func (s *NodeMgr) initEvents(ctx context.Context, opts *NodeOptions) error {
 		config.Transport = s.testTransport
 	}
 
-	var err error
 	s.OSClient, err = opensearch.NewClient(config)
 	if err != nil {
 		return err
