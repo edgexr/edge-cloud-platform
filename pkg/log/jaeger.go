@@ -56,18 +56,27 @@ func InitTracer(tlsConfig *tls.Config) {
 
 	jaegerEndpoint := os.Getenv("JAEGER_ENDPOINT")
 	if jaegerEndpoint == "" {
-		jaegerEndpoint = "http://localhost:14268/api/traces"
+		scheme := "https://"
+		if tlsConfig == nil {
+			scheme = "http://"
+		}
+		jaegerEndpoint = scheme + "localhost:14268/api/traces"
 	}
 	ur, err := url.Parse(jaegerEndpoint)
 	if err != nil {
 		panic(fmt.Sprintf("ERROR: failed to parse jaeger endpoint %s, %v", jaegerEndpoint, err))
 	}
 
-	// Set up client-side TLS
-	if tlsConfig == nil {
-		ur.Scheme = "http"
-	} else {
-		ur.Scheme = "https"
+	if ur.Scheme == "" {
+		// Set up client-side TLS
+		if tlsConfig == nil {
+			ur.Scheme = "http"
+		} else {
+			ur.Scheme = "https"
+		}
+	} else if ur.Scheme == "http" {
+		// tls handled externally
+		tlsConfig = nil
 	}
 	jaegerEndpoint = ur.String()
 

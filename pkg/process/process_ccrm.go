@@ -9,21 +9,21 @@ import (
 )
 
 type CCRM struct {
-	Common                  `yaml:",inline"`
-	NodeCommon              `yaml:",inline"`
-	RedisClientCommon       `yaml:",inline"`
-	Region                  string
-	AppDNSRoot              string
-	CloudletRegistryPath    string
-	CloudletVMImagePath     string
-	VersionTag              string
-	ControllerAccessApiAddr string
-	ControllerNotifyAddr    string
-	ControllerPublicAddr    string
-	ChefServerPath          string
-	ThanosRecvAddr          string
-	TestMode                bool
-	cmd                     *exec.Cmd
+	Common                        `yaml:",inline"`
+	NodeCommon                    `yaml:",inline"`
+	RedisClientCommon             `yaml:",inline"`
+	Region                        string
+	AppDNSRoot                    string
+	CloudletRegistryPath          string
+	CloudletVMImagePath           string
+	VersionTag                    string
+	ControllerNotifyAddr          string
+	ControllerPublicAccessApiAddr string
+	ControllerPublicNotifyAddr    string
+	ChefServerPath                string
+	ThanosRecvAddr                string
+	TestMode                      bool
+	cmd                           *exec.Cmd
 }
 
 func (p *CCRM) StartLocal(logfile string, opts ...StartOp) error {
@@ -46,14 +46,14 @@ func (p *CCRM) StartLocal(logfile string, opts ...StartOp) error {
 	if p.VersionTag != "" {
 		args = append(args, "--versionTag", p.VersionTag)
 	}
-	if p.ControllerAccessApiAddr != "" {
-		args = append(args, "--controllerAccessApiAddr", p.ControllerAccessApiAddr)
+	if p.ControllerPublicAccessApiAddr != "" {
+		args = append(args, "--controllerPublicAccessApiAddr", p.ControllerPublicAccessApiAddr)
 	}
 	if p.ControllerNotifyAddr != "" {
-		args = append(args, "--controllerNotifyAddr", p.ControllerNotifyAddr)
+		args = append(args, "--controllerPublicNotifyAddr", p.ControllerNotifyAddr)
 	}
-	if p.ControllerPublicAddr != "" {
-		args = append(args, "--controllerPublicAddr", p.ControllerPublicAddr)
+	if p.ControllerPublicNotifyAddr != "" {
+		args = append(args, "--controllerNotifyAddr", p.ControllerNotifyAddr)
 	}
 	if p.ChefServerPath != "" {
 		args = append(args, "--chefServerPath")

@@ -35,20 +35,20 @@ type CCRM struct {
 }
 
 type Flags struct {
-	Region                  string
-	AppDNSRoot              string
-	DnsZone                 string
-	CloudletRegistryPath    string
-	CloudletVMImagePath     string
-	VersionTag              string
-	CommercialCerts         bool
-	ControllerAccessApiAddr string
-	ControllerNotifyAddr    string
-	ControllerPublicAddr    string
-	ChefServerPath          string
-	ThanosRecvAddr          string
-	DebugLevels             string
-	TestMode                bool
+	Region                        string
+	AppDNSRoot                    string
+	DnsZone                       string
+	CloudletRegistryPath          string
+	CloudletVMImagePath           string
+	VersionTag                    string
+	CommercialCerts               bool
+	ControllerNotifyAddr          string
+	ControllerPublicNotifyAddr    string
+	ControllerPublicAccessApiAddr string
+	ChefServerPath                string
+	ThanosRecvAddr                string
+	DebugLevels                   string
+	TestMode                      bool
 }
 
 // NewCCRM creates a new CCRM. The nodeType identifies the service
@@ -96,9 +96,9 @@ func (s *Flags) Init() {
 	flag.StringVar(&s.CloudletVMImagePath, "cloudletVMImagePath", "", "VM image for deploying cloudlet services")
 	flag.StringVar(&s.VersionTag, "versionTag", "", "edge-cloud image tag indicating controller version")
 	flag.BoolVar(&s.CommercialCerts, "commercialCerts", false, "Have CRM grab certs from LetsEncrypt. If false then CRM will generate its onwn self-signed cert")
-	flag.StringVar(&s.ControllerAccessApiAddr, "controllerAccessApiAddr", "127.0.0.1:41001", "Controller's listener address for external services with access key")
 	flag.StringVar(&s.ControllerNotifyAddr, "controllerNotifyAddr", "127.0.0.1:50001", "Controller's Notify listener address")
-	flag.StringVar(&s.ControllerPublicAddr, "controllerPublicAddr", "127.0.0.1", "Controller's Public facing address/hostname")
+	flag.StringVar(&s.ControllerPublicNotifyAddr, "controllerPublicNotifyAddr", "127.0.0.1:50001", "Controller's Public facing notify address passed to CRM")
+	flag.StringVar(&s.ControllerPublicAccessApiAddr, "controllerPublicAccessApiAddr", "127.0.0.1:41001", "Controller's Public facing access api address passed to CRM")
 	flag.StringVar(&s.ChefServerPath, "chefServerPath", "", "Path to chef server organization")
 	flag.StringVar(&s.ThanosRecvAddr, "thanosRecvAddr", "", "Address of thanos receive API endpoint including port")
 

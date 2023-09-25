@@ -20,8 +20,8 @@ import (
 	"sync"
 	"time"
 
-	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -173,6 +173,9 @@ func (s *JWKS) UpdateKeys() error {
 	// is a natural JWT key ID.
 	keys := make(map[int]*JWK)
 	for ii := metadata.CurrentVersion; ii >= metadata.OldestVersion; ii-- {
+		if _, found := metadata.Versions[ii]; !found {
+			continue
+		}
 		kvdata, err := GetKV(client, s.Path, ii)
 		if err != nil {
 			return err
@@ -183,7 +186,8 @@ func (s *JWKS) UpdateKeys() error {
 			return err
 		}
 		if kvjwk.Meta.Version != ii {
-			return fmt.Errorf("requested %s version %d but got version %d", s.Path, ii, kvjwk.Meta.Version)
+			log.InfoLog("got JWT key version different from requested version, likely requested version not available or deleted", "path", s.Path, "requested", ii, "received", kvjwk.Meta.Version)
+			continue
 		}
 		keys[kvjwk.Meta.Version] = &kvjwk.Data
 
