@@ -328,13 +328,13 @@ func removeProtocol(protos int32, protocolToRemove int32) int32 {
 	return protos & (^protocolToRemove)
 }
 
-func (s *AppInstApi) startAppInstStream(ctx context.Context, cctx *CallContext, key *edgeproto.AppInstKey, inCb edgeproto.AppInstApi_CreateAppInstServer) (*streamSend, edgeproto.AppInstApi_CreateAppInstServer, error) {
-	streamSendObj, outCb, err := s.all.streamObjApi.startStream(ctx, cctx, key.StreamKey(), inCb)
+func (s *AppInstApi) startAppInstStream(ctx context.Context, cctx *CallContext, streamCb *CbWrapper, modRev int64) (*streamSend, error) {
+	streamSendObj, err := s.all.streamObjApi.startStream(ctx, cctx, streamCb, modRev)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to start appinst stream", "err", err)
-		return nil, inCb, err
+		return nil, err
 	}
-	return streamSendObj, outCb, err
+	return streamSendObj, err
 }
 
 func (s *AppInstApi) stopAppInstStream(ctx context.Context, cctx *CallContext, key *edgeproto.AppInstKey, streamSendObj *streamSend, objErr error, cleanupStream CleanupStreamAction) {
@@ -413,6 +413,7 @@ func removeAppInstFromRefs(appInstKey *edgeproto.AppInstKey, appInstRefs *[]edge
 // bypassing static assignment.
 func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppInst, inCb edgeproto.AppInstApi_CreateAppInstServer) (reterr error) {
 	var clusterInst edgeproto.ClusterInst
+	var err error
 	ctx := inCb.Context()
 	cctx.SetOverride(&in.CrmOverride)
 
@@ -443,20 +444,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 
 	appInstKey := in.Key
 	// create stream once AppInstKey is formed correctly
-	sendObj, cb, err := s.startAppInstStream(ctx, cctx, &appInstKey, inCb)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		cleanupStream := NoCleanupStream
-		if reterr != nil {
-			// Cleanup stream if object is not present in etcd (due to undo)
-			if !s.store.Get(ctx, &in.Key, nil) {
-				cleanupStream = CleanupStream
-			}
-		}
-		s.stopAppInstStream(ctx, cctx, &appInstKey, sendObj, reterr, cleanupStream)
-	}()
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, appInstKey.StreamKey(), inCb)
 
 	if err := in.Key.ValidateKey(); err != nil {
 		return err
@@ -492,7 +480,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 	}()
 
-	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		// reset modified state in case STM hits conflict and runs again
 		createCluster = false
 		autoClusterType = NoAutoCluster
@@ -950,6 +938,21 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 	}()
 
+	sendObj, err := s.startAppInstStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		cleanupStream := NoCleanupStream
+		if reterr != nil {
+			// Cleanup stream if object is not present in etcd (due to undo)
+			if !s.store.Get(ctx, &in.Key, nil) {
+				cleanupStream = CleanupStream
+			}
+		}
+		s.stopAppInstStream(ctx, cctx, &appInstKey, sendObj, reterr, cleanupStream)
+	}()
+
 	clusterInstKey := *in.ClusterInstKey()
 
 	if createCluster {
@@ -1313,23 +1316,18 @@ func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.App
 	updatedRevision := false
 	crmUpdateRequired := false
 
-	if err := key.ValidateKey(); err != nil {
+	err := key.ValidateKey()
+	if err != nil {
 		return false, err
 	}
 
 	// create stream once AppInstKey is formed correctly
-	sendObj, cb, err := s.startAppInstStream(ctx, cctx, &key, inCb)
-	if err != nil {
-		return false, err
-	}
-	defer func() {
-		s.stopAppInstStream(ctx, cctx, &key, sendObj, reterr, NoCleanupStream)
-	}()
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, key.StreamKey(), inCb)
 
 	var app edgeproto.App
 	var curr edgeproto.AppInst
 
-	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		if !s.all.appApi.store.STMGet(stm, &appKey, &app) {
 			return appKey.NotFoundError()
 		}
@@ -1365,6 +1363,15 @@ func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.App
 	if err != nil {
 		return false, err
 	}
+
+	sendObj, err := s.startAppInstStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return false, err
+	}
+	defer func() {
+		s.stopAppInstStream(ctx, cctx, &key, sendObj, reterr, NoCleanupStream)
+	}()
+
 	if crmUpdateRequired {
 		s.RecordAppInstEvent(ctx, &curr, cloudcommon.UPDATE_START, cloudcommon.InstanceDown)
 
@@ -1579,24 +1586,14 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	var reservationFreed bool
 	clusterInstKey := edgeproto.ClusterInstKey{}
 
-	if err := in.Key.ValidateKey(); err != nil {
+	err := in.Key.ValidateKey()
+	if err != nil {
 		return err
 	}
 
 	appInstKey := in.Key
 	// create stream once AppInstKey is formed correctly
-	sendObj, cb, err := s.startAppInstStream(ctx, cctx, &appInstKey, inCb)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		cleanupStream := NoCleanupStream
-		if reterr == nil {
-			// deletion is successful, cleanup stream
-			cleanupStream = CleanupStream
-		}
-		s.stopAppInstStream(ctx, cctx, &appInstKey, sendObj, reterr, cleanupStream)
-	}()
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, appInstKey.StreamKey(), inCb)
 
 	// get appinst info for flavor
 	appInstInfo := edgeproto.AppInst{}
@@ -1616,7 +1613,7 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 
 	log.SpanLog(ctx, log.DebugLevelApi, "deleteAppInstInternal", "AppInst", in)
 	// populate the clusterinst developer from the app developer if not already present
-	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		// clear change tracking vars in case STM is rerun due to conflict.
 		reservationFreed = false
 
@@ -1760,6 +1757,20 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	if reservationFreed {
 		clusterInstReservationEvent(ctx, cloudcommon.FreeClusterEvent, in)
 	}
+
+	sendObj, err := s.startAppInstStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		cleanupStream := NoCleanupStream
+		if reterr == nil {
+			// deletion is successful, cleanup stream
+			cleanupStream = CleanupStream
+		}
+		s.stopAppInstStream(ctx, cctx, &appInstKey, sendObj, reterr, cleanupStream)
+	}()
+
 	// clear all alerts for this appInst
 	s.all.alertApi.CleanupAppInstAlerts(ctx, &appInstKey)
 	if ignoreCRM(cctx) {
