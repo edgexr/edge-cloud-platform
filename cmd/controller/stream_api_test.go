@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
@@ -25,7 +26,9 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
+	"github.com/opentracing/opentracing-go"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 )
 
 func TestStreamObjs(t *testing.T) {
@@ -48,108 +51,211 @@ func TestStreamObjs(t *testing.T) {
 	})
 }
 
+type ResCb struct {
+	Data []string
+	grpc.ServerStream
+}
+
+func (x *ResCb) Send(m *edgeproto.Result) error {
+	x.Data = append(x.Data, m.Message)
+	return nil
+}
+
 func testStreamObjsWithServer(t *testing.T, ctx context.Context) {
+	// Simulate various API calls that use streams
 	cctx := DefCallContext()
 	streamKey := "testkey"
 	streamObjApi := StreamObjApi{}
+	StreamMsgReadTimeout = time.Second
+	StreamMsgInfoReadTimeout = time.Second
+	// Thread 1
+	span1 := log.StartSpan(log.DebugLevelApi, "span1")
+	ctx1 := log.ContextWithSpan(context.Background(), span1)
+	defer span1.Finish()
+	// Thread 2
+	span2 := log.StartSpan(log.DebugLevelApi, "span2")
+	ctx2 := log.ContextWithSpan(context.Background(), span2)
+	defer span2.Finish()
 
-	for ii := 1; ii <= 500; ii++ {
-		iterMsg := fmt.Sprintf("Iter[%d]", ii)
-
-		sendObj, _, err := streamObjApi.startStream(ctx, cctx, streamKey, testutil.NewCudStreamoutAppInst(ctx))
-		require.Nil(t, err, iterMsg)
-
-		_, _, err = streamObjApi.startStream(ctx, cctx, streamKey, testutil.NewCudStreamoutAppInst(ctx))
-		require.NotNil(t, err, iterMsg)
-		require.Contains(t, err.Error(), "action is already in progress")
-
-		err = streamObjApi.stopStream(ctx, cctx, streamKey, sendObj, nil, NoCleanupStream)
-		require.Nil(t, err, iterMsg)
-
-		// add message to stream to indicate that stream is being used by someother thread
-		addMsgToRedisStream(ctx, streamKey, map[string]interface{}{
-			StreamMsgTypeMessage: "Some message",
-		})
-
-		_, _, err = streamObjApi.startStream(ctx, cctx, streamKey, testutil.NewCudStreamoutAppInst(ctx))
-		require.NotNil(t, err, iterMsg)
-		require.Contains(t, err.Error(), "action is already in progress")
-
-		// With CRM override, startStream should reset the stream
-		cctx.Override = edgeproto.CRMOverride_IGNORE_TRANSIENT_STATE
-		sendObj, _, err = streamObjApi.startStream(ctx, cctx, streamKey, testutil.NewCudStreamoutAppInst(ctx))
-		require.Nil(t, err, iterMsg)
-		cctx.Override = edgeproto.CRMOverride_NO_OVERRIDE
-
-		err = streamObjApi.stopStream(ctx, cctx, streamKey, sendObj, nil, CleanupStream)
-		require.Nil(t, err, iterMsg)
+	// convenience functions
+	startStream := func(ctx context.Context, modRev int64) (*CbWrapper, *streamSend) {
+		streamCb, _ := streamObjApi.newStream(ctx, cctx, streamKey, testutil.NewCudStreamoutAppInst(ctx))
+		sendObj, err := streamObjApi.startStream(ctx, cctx, streamCb, modRev)
+		require.Nil(t, err, modRev)
+		return streamCb, sendObj
 	}
-
-	// Ensure that stream is cleaned up
-	out, err := redisClient.Exists(ctx, streamKey).Result()
-	require.Nil(t, err, "check if stream exists")
-	require.Equal(t, int64(0), out, "stream should not exist")
-
-	// Test for race issues
-	// ====================
-	// * Start multiple threads performing [StartStream + StopStream], if a stream is
-	//   already in progress, then retry.
-	// * Ensure that as part of stream, [SOM & EOM/Error] exists for all the threads in-order
+	writeMsg := func(ctx context.Context, msg string) {
+		addMsgToRedisStream(ctx, streamKey, map[string]interface{}{
+			StreamMsgTypeMessage: msg,
+		})
+	}
+	stop := func(ctx context.Context, sendObj *streamSend, cleanupStream CleanupStreamAction, objErr error) {
+		err := streamObjApi.stopStream(ctx, cctx, streamKey, sendObj, objErr, cleanupStream)
+		require.Nil(t, err)
+	}
+	verifyMsgs := func(expMsgs ...string) {
+		cb := &ResCb{}
+		err := streamObjApi.StreamMsgs(ctx, streamKey, cb)
+		require.Nil(t, err)
+		require.Equal(t, expMsgs, cb.Data)
+	}
+	verifyErr := func(e error) {
+		cb := &ResCb{}
+		err := streamObjApi.StreamMsgs(ctx, streamKey, cb)
+		require.NotNil(t, err)
+		require.Equal(t, e.Error(), err.Error())
+	}
+	verifyExists := func(exists bool) {
+		exp := int64(0)
+		if exists {
+			exp = int64(1)
+		}
+		out, err := redisClient.Exists(ctx, streamKey).Result()
+		require.Nil(t, err)
+		require.Equal(t, exp, out)
+	}
+	var s1, s2 *streamSend
 	wg := sync.WaitGroup{}
-	numThreads := 20
+
+	// ============ Non-overlapping APIs ====================
+
+	// create API
+	_, s1 = startStream(ctx1, 1)
+	writeMsg(ctx1, "createMsg1")
+	writeMsg(ctx1, "createMsg2")
+	stop(ctx1, s1, NoCleanupStream, nil)
+	verifyExists(true)
+	verifyMsgs("createMsg1", "createMsg2")
+
+	// update API
+	_, s1 = startStream(ctx1, 2)
+	writeMsg(ctx1, "updateMsg1")
+	writeMsg(ctx1, "updateMsg2")
+	stop(ctx1, s1, NoCleanupStream, nil)
+	verifyExists(true)
+	verifyMsgs("updateMsg1", "updateMsg2")
+
+	// delete API - stream should be deleted
+	_, s1 = startStream(ctx1, 3)
+	writeMsg(ctx1, "deleteMsg1")
+	writeMsg(ctx1, "deleteMsg2")
+	stop(ctx1, s1, CleanupStream, nil)
+	verifyExists(false)
+
+	// API with error
+	_, s1 = startStream(ctx1, 4)
+	writeMsg(ctx1, "errMsg1")
+	expErr := errors.New("errorMsg1")
+	stop(ctx1, s1, NoCleanupStream, expErr)
+	verifyErr(expErr)
+
+	// first messages should be SOM, but even if not,
+	// start will reset the stream.
+	writeMsg(ctx1, "badMsg1")
+	_, s1 = startStream(ctx1, 5)
+	writeMsg(ctx1, "goodMsg1")
+	stop(ctx1, s1, NoCleanupStream, nil)
+	verifyExists(true)
+	verifyMsgs("goodMsg1")
+
+	// =============== Overlapping APIs ===================
+
+	// highest modRev wins (highest first)
+	_, s1 = startStream(ctx1, 10)
+	_, s2 = startStream(ctx2, 9)
+	wg.Add(1)
+	go func() {
+		// test blocking read
+		verifyMsgs("s1Msg1", "s1Msg2")
+		wg.Done()
+	}()
+	writeMsg(ctx2, "s2Msg1")
+	writeMsg(ctx1, "s1Msg1")
+	writeMsg(ctx1, "s1Msg2")
+	writeMsg(ctx2, "s2Msg2")
+	stop(ctx1, s1, NoCleanupStream, nil)
+	stop(ctx2, s2, NoCleanupStream, nil)
+	verifyMsgs("s1Msg1", "s1Msg2")
+	wg.Wait()
+
+	// highest modRev wins (highest second)
+	_, s1 = startStream(ctx1, 20)
+	_, s2 = startStream(ctx2, 21)
+	wg.Add(1)
+	go func() {
+		// test blocking read
+		verifyMsgs("s2Msg1", "s2Msg2")
+		wg.Done()
+	}()
+	writeMsg(ctx2, "s2Msg1")
+	writeMsg(ctx1, "s1Msg1")
+	writeMsg(ctx1, "s1Msg2")
+	writeMsg(ctx2, "s2Msg2")
+	stop(ctx1, s1, NoCleanupStream, nil)
+	stop(ctx2, s2, NoCleanupStream, nil)
+	verifyMsgs("s2Msg1", "s2Msg2")
+	wg.Wait()
+
+	// ensure non-winning API cannot delete stream
+	_, s1 = startStream(ctx1, 30)
+	_, s2 = startStream(ctx2, 31)
+	wg.Add(1)
+	go func() {
+		// test blocking read
+		verifyMsgs("s2Msg1", "s2Msg2")
+		wg.Done()
+	}()
+	writeMsg(ctx2, "s2Msg1")
+	writeMsg(ctx1, "s1Msg1")
+	writeMsg(ctx1, "s1Msg2")
+	writeMsg(ctx2, "s2Msg2")
+	stop(ctx1, s1, CleanupStream, nil)
+	stop(ctx2, s2, NoCleanupStream, nil)
+	verifyMsgs("s2Msg1", "s2Msg2")
+	wg.Wait()
+
+	// Test Redis transaction code and modRev checks during
+	// race conditions. Only the targetID should be left in the
+	// stream, although other messages from stop may also be
+	// present (but will be ignored during read).
+	numThreads := 100
+	targetModRev := int64(numThreads + 10)
+	// precreate spans
+	spans := []opentracing.Span{}
 	for ii := 0; ii < numThreads; ii++ {
+		spans = append(spans, log.StartSpan(log.DebugLevelApi, "testSpan"))
+	}
+	for ii := 0; ii < numThreads; ii++ {
+		// lower IDs and cleanup should be ignored
+		modRev := int64(ii)
+		cleanup := CleanupStream
+		// put target in the middle of the spawned threads
+		if ii == numThreads/2 {
+			modRev = targetModRev
+			cleanup = NoCleanupStream
+		}
 		wg.Add(1)
-		go func(iter int) {
-			defer wg.Done()
-			var sendObj *streamSend
-			var err error
-			for jj := 0; jj < numThreads; jj++ {
-				sendObj, _, err = streamObjApi.startStream(ctx, cctx, streamKey, testutil.NewCudStreamoutAppInst(ctx), WithNoResetStream())
-				if err != nil {
-					require.Contains(t, err.Error(), "action is already in progress")
-					// retry, it must succeed in at least `numThreads` iterations
-					time.Sleep(100 * time.Millisecond)
-					continue
-				}
-				break
-			}
-			var objErr error
-			// Alternatively introduce errors so that we can test for those as well
-			if iter%2 == 0 {
-				objErr = fmt.Errorf("Some error")
-			}
-			err = streamObjApi.stopStream(ctx, cctx, streamKey, sendObj, objErr, NoCleanupStream)
-			require.Nil(t, err, "stop stream")
-		}(ii)
+		go func(_ii int, _modRev int64, _cleanup CleanupStreamAction) {
+			xctx := log.ContextWithSpan(context.Background(), spans[_ii])
+			defer spans[_ii].Finish()
+			_, streamObj := startStream(xctx, _modRev)
+			writeMsg(xctx, fmt.Sprintf("msg%d", _modRev))
+			stop(xctx, streamObj, _cleanup, nil)
+			wg.Done()
+		}(ii, modRev, cleanup)
 	}
 	wg.Wait()
 
-	out, err = redisClient.Exists(ctx, streamKey).Result()
-	require.Nil(t, err, "check if stream exists")
-	require.Equal(t, int64(1), out, "stream should exist")
-
 	streamMsgs, err := redisClient.XRange(ctx, streamKey, rediscache.RedisSmallestId, rediscache.RedisGreatestId).Result()
 	require.Nil(t, err, "get stream messages")
-	// [SOM + EOM/Error] per thread
-	require.Equal(t, 2*numThreads, len(streamMsgs), "check if correct number of stream messages exists")
-
-	start := true
-	for _, sMsg := range streamMsgs {
-		for k, _ := range sMsg.Values {
-			if start {
-				require.Equal(t, StreamMsgTypeSOM, k, "Start of message")
-				start = false
-			} else {
-				if k != StreamMsgTypeEOM {
-					require.Equal(t, StreamMsgTypeError, k, "Error message")
-				} else {
-					require.Equal(t, StreamMsgTypeEOM, k, "End of message")
-				}
-				start = true
-			}
-		}
+	require.Greater(t, len(streamMsgs), 0)
+	// first entry should be target SOM
+	require.Equal(t, targetModRev, getStreamModRev(streamMsgs[0].Values))
+	// verify that only target ID msgs are read
+	verifyMsgs(fmt.Sprintf("msg%d", targetModRev))
+	for _, sm := range streamMsgs {
+		log.SpanLog(ctx, log.DebugLevelApi, "debug stream", "msg", sm.Values)
 	}
-
 	// Cleanup stream
 	keysRem, err := redisClient.Del(ctx, streamKey).Result()
 	require.Nil(t, err, "delete stream")

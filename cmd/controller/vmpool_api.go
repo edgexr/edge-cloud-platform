@@ -270,8 +270,8 @@ func validateVMNetInfo(vmCur, vmNew *edgeproto.VM) error {
 	return nil
 }
 
-func (s *VMPoolApi) startVMPoolStream(ctx context.Context, cctx *CallContext, key *edgeproto.VMPoolKey) (*streamSend, error) {
-	streamSendObj, _, err := s.all.streamObjApi.startStream(ctx, cctx, key.StreamKey(), nil)
+func (s *VMPoolApi) startVMPoolStream(ctx context.Context, cctx *CallContext, streamCb *CbWrapper, modRev int64) (*streamSend, error) {
+	streamSendObj, err := s.all.streamObjApi.startStream(ctx, cctx, streamCb, modRev)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to start VMPool stream", "err", err)
 		return nil, err
@@ -291,7 +291,7 @@ func (s *VMPoolApi) updateVMPoolInternal(cctx *CallContext, ctx context.Context,
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "UpdateVMPoolInternal", "key", key, "vms", vms)
 
-	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		cur := edgeproto.VMPool{}
 		if !s.store.STMGet(stm, key, &cur) {
 			return key.NotFoundError()
@@ -340,7 +340,8 @@ func (s *VMPoolApi) updateVMPoolInternal(cctx *CallContext, ctx context.Context,
 	if ignoreCRM(cctx) {
 		return nil
 	}
-	sendObj, err := s.startVMPoolStream(ctx, cctx, key)
+	streamCb, _ := s.all.streamObjApi.newStream(ctx, cctx, key.StreamKey(), nil)
+	sendObj, err := s.startVMPoolStream(ctx, cctx, streamCb, modRev)
 	if err != nil {
 		return err
 	}

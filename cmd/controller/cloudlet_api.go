@@ -155,13 +155,13 @@ func getCrmEnv(vars map[string]string) {
 	}
 }
 
-func (s *CloudletApi) startCloudletStream(ctx context.Context, cctx *CallContext, key *edgeproto.CloudletKey, inCb edgeproto.CloudletApi_CreateCloudletServer) (*streamSend, edgeproto.CloudletApi_CreateCloudletServer, error) {
-	streamSendObj, outCb, err := s.all.streamObjApi.startStream(ctx, cctx, key.StreamKey(), inCb)
+func (s *CloudletApi) startCloudletStream(ctx context.Context, cctx *CallContext, streamCb *CbWrapper, modRev int64) (*streamSend, error) {
+	streamSendObj, err := s.all.streamObjApi.startStream(ctx, cctx, streamCb, modRev)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to start Cloudlet stream", "err", err)
-		return nil, inCb, err
+		return nil, err
 	}
-	return streamSendObj, outCb, err
+	return streamSendObj, err
 }
 
 func (s *CloudletApi) stopCloudletStream(ctx context.Context, cctx *CallContext, key *edgeproto.CloudletKey, streamSendObj *streamSend, objErr error, cleanupStream CleanupStreamAction) {
@@ -410,23 +410,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	}
 
 	cloudletKey := in.Key
-	sendObj, cb, err := s.startCloudletStream(ctx, cctx, &cloudletKey, inCb)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		cleanupStream := NoCleanupStream
-		if reterr != nil {
-			// Cleanup stream if object is not present in etcd (due to undo)
-			if !s.store.Get(ctx, &in.Key, nil) {
-				cleanupStream = CleanupStream
-			}
-		}
-		s.stopCloudletStream(ctx, cctx, &cloudletKey, sendObj, reterr, cleanupStream)
-		if reterr == nil {
-			RecordCloudletEvent(ctx, &in.Key, cloudcommon.CREATED, cloudcommon.InstanceUp)
-		}
-	}()
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, cloudletKey.StreamKey(), inCb)
 
 	if in.PhysicalName == "" {
 		in.PhysicalName = in.Key.Name
@@ -532,7 +516,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	defer onboardingSub.Close()
 
 	vmPool := edgeproto.VMPool{}
-	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		if s.store.STMGet(stm, &in.Key, nil) {
 			if !cctx.Undo {
 				if in.State == edgeproto.TrackedState_CREATE_ERROR {
@@ -677,6 +661,24 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	defer func() {
 		if reterr == nil {
 			s.all.clusterInstApi.updateCloudletResourcesMetric(ctx, &in.Key)
+		}
+	}()
+
+	sendObj, err := s.startCloudletStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		cleanupStream := NoCleanupStream
+		if reterr != nil {
+			// Cleanup stream if object is not present in etcd (due to undo)
+			if !s.store.Get(ctx, &in.Key, nil) {
+				cleanupStream = CleanupStream
+			}
+		}
+		s.stopCloudletStream(ctx, cctx, &cloudletKey, sendObj, reterr, cleanupStream)
+		if reterr == nil {
+			RecordCloudletEvent(ctx, &in.Key, cloudcommon.CREATED, cloudcommon.InstanceUp)
 		}
 	}()
 
@@ -873,17 +875,11 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 	}
 
 	cloudletKey := in.Key
-	sendObj, cb, err := s.startCloudletStream(ctx, cctx, &cloudletKey, inCb)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		s.stopCloudletStream(ctx, cctx, &cloudletKey, sendObj, reterr, NoCleanupStream)
-	}()
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, cloudletKey.StreamKey(), inCb)
 
 	_ = updateCloudletCallback{in, cb}
 
-	err = in.ValidateUpdateFields()
+	err := in.ValidateUpdateFields()
 	if err != nil {
 		return err
 	}
@@ -1008,7 +1004,7 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 	_, privPolUpdateRequested := fmap[edgeproto.CloudletFieldTrustPolicy]
 
 	var gpuDriver edgeproto.GPUDriver
-	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		if !s.store.STMGet(stm, &in.Key, cur) {
 			return in.Key.NotFoundError()
 		}
@@ -1170,6 +1166,14 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 				log.SpanLog(ctx, log.DebugLevelInfo, "Undo create cloudlet", "err", dErr)
 			}
 		}
+	}()
+
+	sendObj, err := s.startCloudletStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		s.stopCloudletStream(ctx, cctx, &cloudletKey, sendObj, reterr, NoCleanupStream)
 	}()
 
 	// Since state is set to UPDATE_REQUESTED, it is safe to do the following
@@ -1405,21 +1409,7 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	ctx := inCb.Context()
 
 	cloudletKey := in.Key
-	sendObj, cb, err := s.startCloudletStream(ctx, cctx, &cloudletKey, inCb)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		cleanupStream := NoCleanupStream
-		if reterr == nil {
-			// deletion is successful, cleanup stream
-			cleanupStream = CleanupStream
-		}
-		s.stopCloudletStream(ctx, cctx, &cloudletKey, sendObj, reterr, cleanupStream)
-		if reterr == nil {
-			RecordCloudletEvent(ctx, &in.Key, cloudcommon.DELETED, cloudcommon.InstanceDown)
-		}
-	}()
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, cloudletKey.StreamKey(), inCb)
 
 	var dynInsts map[edgeproto.AppInstKey]struct{}
 	var clDynInsts map[edgeproto.ClusterInstKey]struct{}
@@ -1427,7 +1417,7 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	var features *edgeproto.PlatformFeatures
 	var prevState edgeproto.TrackedState
 	var gpuDriver edgeproto.GPUDriver
-	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		dynInsts = make(map[edgeproto.AppInstKey]struct{})
 		clDynInsts = make(map[edgeproto.ClusterInstKey]struct{})
 		if !s.store.STMGet(stm, &in.Key, in) {
@@ -1436,6 +1426,7 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		if !ignoreCRMTransient(cctx) && in.DeletePrepare {
 			return in.Key.BeingDeletedError()
 		}
+		var err error
 		features, err = s.all.platformFeaturesApi.GetCloudletFeatures(ctx, in.PlatformType)
 		if err != nil {
 			return fmt.Errorf("Failed to get features for platform: %s", err)
@@ -1504,6 +1495,22 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		})
 		if undoErr != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "Failed to undo delete prepare", "key", in.Key, "err", undoErr)
+		}
+	}()
+
+	sendObj, err := s.startCloudletStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		cleanupStream := NoCleanupStream
+		if reterr == nil {
+			// deletion is successful, cleanup stream
+			cleanupStream = CleanupStream
+		}
+		s.stopCloudletStream(ctx, cctx, &cloudletKey, sendObj, reterr, cleanupStream)
+		if reterr == nil {
+			RecordCloudletEvent(ctx, &in.Key, cloudcommon.DELETED, cloudcommon.InstanceDown)
 		}
 	}()
 
