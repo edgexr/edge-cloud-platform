@@ -16,6 +16,7 @@ package orm
 
 import (
 	"bytes"
+	"crypto/tls"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -370,9 +371,13 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		edgeproto.InitAlertCache(config.AlertCache)
 	}
 	if config.AlertMgrAddr != "" {
-		tlsConfig, err := nodeMgr.GetPublicClientTlsConfig(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("Unable to get a client tls config, %s", err.Error())
+		var tlsConfig *tls.Config
+		if strings.HasPrefix(config.AlertMgrAddr, "https://") {
+			var err error
+			tlsConfig, err = nodeMgr.InternalPki.GetClientTlsConfig(ctx, nodeMgr.CommonName(), node.CertIssuerGlobal, []node.MatchCA{node.GlobalMatchCA()})
+			if err != nil {
+				return nil, fmt.Errorf("Unable to get a client tls config, %s", err.Error())
+			}
 		}
 		AlertManagerServer, err = alertmgr.NewAlertMgrServer(config.AlertMgrAddr, tlsConfig,
 			config.AlertCache, config.AlertmgrResolveTimout, config.testTransport)

@@ -17,6 +17,8 @@ package node
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	fmt "fmt"
 	"net"
@@ -224,6 +226,7 @@ func (s *EventData) TagsToMtags() {
 }
 
 func (s *NodeMgr) initEvents(ctx context.Context, opts *NodeOptions) error {
+	var err error
 	s.esEvents = make([][]byte, 0)
 	s.esWriteSignal = make(chan bool, 1)
 	s.esEventsDone = make(chan struct{})
@@ -242,11 +245,31 @@ func (s *NodeMgr) initEvents(ctx context.Context, opts *NodeOptions) error {
 	log.SpanLog(ctx, log.DebugLevelInfo, "new elastic client", "esurls", opts.esUrls)
 	config := opensearch.Config{
 		Addresses: strings.Split(opts.esUrls, ","),
+		Username:  os.Getenv("ES_USERNAME"),
+		Password:  os.Getenv("ES_PASSWORD"),
 	}
-	tlsConfig, err := s.GetPublicClientTlsConfig(ctx)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfo, "failed to get elastic search client tls config", "err", err)
-		return err
+	var tlsConfig *tls.Config
+	if strings.HasPrefix(opts.esUrls, "http://") {
+		// no TLS or handled externally
+	} else if cacert := os.Getenv("ES_CACERT_PEMDATA"); cacert != "" {
+		// internal self signed CA
+		capool := x509.NewCertPool()
+		ok := capool.AppendCertsFromPEM([]byte(cacert))
+		if !ok {
+			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to append ES_CACERT_PEMDATA cert to capool", "cert", cacert)
+		} else {
+			tlsConfig = &tls.Config{
+				MinVersion: tls.VersionTLS12,
+				RootCAs:    capool,
+			}
+		}
+	} else {
+		// mTLS, server with public cert, client with vault cert.
+		tlsConfig, err = s.GetPublicClientTlsConfig(ctx)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfo, "failed to get elastic search client tls config", "err", err)
+			return err
+		}
 	}
 	if tlsConfig != nil {
 		transport := http.Transport{

@@ -2,9 +2,7 @@ package ccrm
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
@@ -176,20 +174,12 @@ func (s *CCRMHandler) getPlatformConfig(ctx context.Context, cloudlet *edgeproto
 	pfConfig.CommercialCerts = s.flags.CommercialCerts
 	pfConfig.AppDnsRoot = s.flags.AppDNSRoot
 	getCrmEnv(pfConfig.EnvVar)
-	addrObjs := strings.Split(s.flags.ControllerNotifyAddr, ":")
-	if len(addrObjs) != 2 {
-		return nil, fmt.Errorf("unable to fetch notify addr of the controller")
-	}
-	accessAddrObjs := strings.Split(s.flags.ControllerAccessApiAddr, ":")
-	if len(accessAddrObjs) != 2 {
-		return nil, fmt.Errorf("unable to parse accessApi addr of the controller")
-	}
 	pfConfig.CrmAccessPrivateKey = accessKeys.PrivatePEM
 	if cloudlet.PlatformHighAvailability {
 		pfConfig.SecondaryCrmAccessPrivateKey = accessKeys.SecondaryPrivatePEM
 	}
-	pfConfig.NotifyCtrlAddrs = s.flags.ControllerPublicAddr + ":" + addrObjs[1]
-	pfConfig.AccessApiAddr = s.flags.ControllerPublicAddr + ":" + accessAddrObjs[1]
+	pfConfig.NotifyCtrlAddrs = s.flags.ControllerPublicNotifyAddr
+	pfConfig.AccessApiAddr = s.flags.ControllerPublicAccessApiAddr
 	pfConfig.Span = log.SpanToString(ctx)
 	pfConfig.ChefServerPath = s.flags.ChefServerPath
 	pfConfig.ChefClientInterval = s.caches.SettingsCache.Singular().ChefClientInterval

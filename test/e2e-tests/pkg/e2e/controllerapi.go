@@ -357,9 +357,9 @@ func (s *TestSpecRunner) StartCrmsLocal(ctx context.Context, physicalName string
 		pfConfig.UseVaultPki = ccrm.UseVaultPki
 		pfConfig.ContainerRegistryPath = ccrm.CloudletRegistryPath
 		pfConfig.TestMode = true
-		pfConfig.NotifyCtrlAddrs = ccrm.ControllerNotifyAddr
+		pfConfig.NotifyCtrlAddrs = ccrm.ControllerPublicNotifyAddr
 		pfConfig.DeploymentTag = ccrm.DeploymentTag
-		pfConfig.AccessApiAddr = ccrm.ControllerAccessApiAddr
+		pfConfig.AccessApiAddr = ccrm.ControllerPublicAccessApiAddr
 		for k, v := range ccrm.Common.EnvVars {
 			pfConfig.EnvVar[k] = v
 		}
