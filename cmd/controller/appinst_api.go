@@ -413,6 +413,7 @@ func removeAppInstFromRefs(appInstKey *edgeproto.AppInstKey, appInstRefs *[]edge
 // bypassing static assignment.
 func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppInst, inCb edgeproto.AppInstApi_CreateAppInstServer) (reterr error) {
 	var clusterInst edgeproto.ClusterInst
+	var err error
 	ctx := inCb.Context()
 	cctx.SetOverride(&in.CrmOverride)
 
@@ -442,7 +443,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	}
 
 	appInstKey := in.Key
-	var err error
 	// create stream once AppInstKey is formed correctly
 	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, appInstKey.StreamKey(), inCb)
 
