@@ -600,9 +600,4 @@ func (s *CloudletInfoApi) RecvCloudletOnboardingInfo(ctx context.Context, msg *e
 
 	// Send to any processes waiting for a state change.
 	rediscache.SendMessage(ctx, redisClient, msg)
-
-	// This updates the progress messages in the same way that
-	// CloudletInfo does.
-	info.Status = msg.Status
-	s.all.streamObjApi.UpdateStatus(ctx, &info, nil, nil, info.Key.StreamKey())
 }

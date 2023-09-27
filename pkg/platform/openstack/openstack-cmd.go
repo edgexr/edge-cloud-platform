@@ -1140,28 +1140,28 @@ func (o *OpenstackPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo 
 		if imageDetail.Status != "active" {
 			return fmt.Errorf("image in store %s is not active", imageInfo.LocalImageName)
 		}
-		if imageDetail.Checksum != imageInfo.Md5sum {
-			if imageInfo.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW && imageDetail.DiskFormat == vmlayer.ImageFormatVmdk {
-				log.SpanLog(ctx, log.DebugLevelInfra, "image was imported as vmdk, checksum match not possible")
-			} else {
-				return fmt.Errorf("mismatch in md5sum for image in glance: %s", imageInfo.LocalImageName)
+		if imageDetail.Checksum == imageInfo.Md5sum {
+			log.SpanLog(ctx, log.DebugLevelInfra, "image found, active, and checksum matches, using existing image", "imageName", imageInfo.LocalImageName)
+			return nil
+		}
+		if imageInfo.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW && imageDetail.DiskFormat == vmlayer.ImageFormatVmdk {
+			log.SpanLog(ctx, log.DebugLevelInfra, "image was imported as vmdk, checksum match not possible")
+			glanceImageTime, err := time.Parse(time.RFC3339, imageDetail.UpdatedAt)
+			if err != nil {
+				return err
+			}
+			if !imageInfo.SourceImageTime.IsZero() && imageInfo.SourceImageTime.Sub(glanceImageTime) <= 0 {
+				log.SpanLog(ctx, log.DebugLevelInfra, "image checksum mismatch but source image time is the same, assume same image")
+				return nil
 			}
 		}
-		glanceImageTime, err := time.Parse(time.RFC3339, imageDetail.UpdatedAt)
+		// Update the image in Glance
+		updateCallback(edgeproto.UpdateTask, "Image in store is outdated, deleting old image")
+		err = o.DeleteImage(ctx, "", imageInfo.LocalImageName)
 		if err != nil {
 			return err
 		}
-		if !imageInfo.SourceImageTime.IsZero() {
-			if imageInfo.SourceImageTime.Sub(glanceImageTime) > 0 {
-				// Update the image in Glance
-				updateCallback(edgeproto.UpdateTask, "Image in store is outdated, deleting old image")
-				err = o.DeleteImage(ctx, "", imageInfo.LocalImageName)
-				if err != nil {
-					return err
-				}
-				createImage = true
-			}
-		}
+		createImage = true
 	}
 	if createImage {
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Creating VM Image from URL: %s", imageInfo.LocalImageName))

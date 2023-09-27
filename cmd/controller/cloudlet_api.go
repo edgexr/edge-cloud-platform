@@ -706,7 +706,13 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	defer reqCancel()
 
 	// Check for any error sent by the platform-specific onboarding.
+	lastMsgCnt := 0
 	err = onboardingSub.WaitForMessage(reqCtx, func() (bool, error) {
+		for ii := lastMsgCnt; ii < len(onboardingInfo.Status.Msgs); ii++ {
+			cb.Send(&edgeproto.Result{Message: onboardingInfo.Status.Msgs[ii]})
+		}
+		lastMsgCnt = len(onboardingInfo.Status.Msgs)
+
 		if onboardingInfo.OnboardingState == edgeproto.TrackedState_READY || onboardingInfo.OnboardingState == edgeproto.TrackedState_CREATE_ERROR {
 			// done
 			return true, nil
@@ -1580,7 +1586,13 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		// Wait for result from CCRM
 		reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateCloudletTimeout.TimeDuration())
 		defer reqCancel()
+		lastMsgCnt := 0
 		err = deboardingSub.WaitForMessage(reqCtx, func() (bool, error) {
+			for ii := lastMsgCnt; ii < len(deboardingInfo.Status.Msgs); ii++ {
+				cb.Send(&edgeproto.Result{Message: deboardingInfo.Status.Msgs[ii]})
+			}
+			lastMsgCnt = len(deboardingInfo.Status.Msgs)
+
 			if deboardingInfo.OnboardingState == edgeproto.TrackedState_DELETE_DONE || deboardingInfo.OnboardingState == edgeproto.TrackedState_DELETE_ERROR {
 				// done
 				return true, nil
