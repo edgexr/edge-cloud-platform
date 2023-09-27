@@ -198,6 +198,12 @@ func getCrmEnv(vars map[string]string) {
 			vars[key] = val
 		}
 	}
+	if val, ok := os.LookupEnv("JAEGER_EXTERNAL_ENDPOINT"); ok {
+		// JAEGER_ENDPOINT may point to internal DNS name in
+		// kubernetes cluster, in which case CRM will need the
+		// external endpoint.
+		vars["JAEGER_ENDPOINT"] = val
+	}
 }
 
 func (s *CCRMHandler) GetCloudletManifest(ctx context.Context, key *edgeproto.CloudletKey) (*edgeproto.CloudletManifest, error) {
