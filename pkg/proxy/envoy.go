@@ -59,7 +59,7 @@ func CreateEnvoyProxy(ctx context.Context, client ssh.Client, name, listenIP, ba
 		return err
 	}
 	accesslogFile := dir + "/access.log"
-	err = pc.Run(client, "touch "+accesslogFile)
+	err = pc.Run(client, "sudo touch "+accesslogFile)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra,
 			"envoy %s can't create file %s", name, accesslogFile)
