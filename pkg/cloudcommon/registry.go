@@ -83,11 +83,21 @@ func getVaultAccountPath(name string) string {
 }
 
 func getVaultRegistryPath(registry, org string) string {
+	// NOTE: we do not store credentials for external registries
+	// provided by the user. Images should always be copied into
+	// internal registries at the time of App creation,
+	// therefore any user-provided credentials are used only
+	// once during App creation and are not needed afterwards.
 	if org == AllOrgs {
 		// registry key granting access to all orgs
+		// these are admin keys for internal use and should not
+		// be exposed externally.
 		return fmt.Sprintf("/secret/data/registry/%s", registry)
 	} else {
-		// registry key granting access only to a specific org
+		// keys for internally managed registries for
+		// image pull access by org. These keys are passed
+		// to the CRM and should have limited access as much
+		// as possible.
 		return fmt.Sprintf("/secret/data/registry/%s-orgs/%s", registry, org)
 	}
 }
@@ -96,7 +106,7 @@ type RegistryAuthApi interface {
 	GetRegistryAuth(ctx context.Context, imgUrl string) (*RegistryAuth, error)
 }
 
-// return hostname and port
+// return host and org (only valid for internal repositories)
 func parseImageUrl(imgUrl string) (string, string, error) {
 	urlObj, err := util.ImagePathParse(imgUrl)
 	if err != nil {
@@ -106,11 +116,24 @@ func parseImageUrl(imgUrl string) (string, string, error) {
 	if len(hostname) < 1 {
 		return "", "", fmt.Errorf("empty hostname")
 	}
-	port := ""
-	if len(hostname) > 1 {
-		port = hostname[1]
+	org := strings.Split(urlObj.Path, "/")[0]
+	return hostname[0], org, nil
+}
+
+// return hostname and port from host string.
+func ParseHost(host string) (string, string) {
+	if strings.Contains(host, "://") {
+		// strip scheme
+		schemeHost := strings.Split(host, "://")
+		host = schemeHost[1]
 	}
-	return hostname[0], port, nil
+	hostport := strings.Split(host, ":")
+	hostname := hostport[0]
+	port := ""
+	if len(hostport) > 1 {
+		port = hostport[1]
+	}
+	return hostname, port
 }
 
 // Same as registry auth, but is always the user/password of an admin
@@ -131,18 +154,27 @@ func GetAccountAuth(ctx context.Context, name string, vaultConfig *vault.Config)
 	return auth, nil
 }
 
-func GetRegistryAuth(ctx context.Context, imgUrl, org string, vaultConfig *vault.Config) (*RegistryAuth, error) {
-	if vaultConfig == nil || vaultConfig.Addr == "" {
-		return nil, fmt.Errorf("no vault specified")
-	}
-	hostname, port, err := parseImageUrl(imgUrl)
+// GetRegistryImageAuth gets the credentials for pulling the image.
+func GetRegistryImageAuth(ctx context.Context, imgUrl string, vaultConfig *vault.Config) (*RegistryAuth, error) {
+	host, org, err := parseImageUrl(imgUrl)
 	if err != nil {
 		return nil, err
 	}
+	return GetRegistryAuth(ctx, host, org, vaultConfig)
+}
+
+// GetRegistryAuth gets the credentials for accessing the
+// image registry. If org is AllOrgs, then admin credentials
+// are returned. Otherwise, credentials are scoped to the org.
+func GetRegistryAuth(ctx context.Context, host, org string, vaultConfig *vault.Config) (*RegistryAuth, error) {
+	if vaultConfig == nil || vaultConfig.Addr == "" {
+		return nil, fmt.Errorf("no vault specified")
+	}
+	hostname, port := ParseHost(host)
 	vaultPath := getVaultRegistryPath(hostname, org)
-	log.SpanLog(ctx, log.DebugLevelApi, "get registry auth", "vault-path", vaultPath)
+	log.SpanLog(ctx, log.DebugLevelApi, "get registry auth", "hostname", hostname, "org", org, "vault-path", vaultPath)
 	auth := &RegistryAuth{}
-	err = vault.GetData(vaultConfig, vaultPath, 0, auth)
+	err := vault.GetData(vaultConfig, vaultPath, 0, auth)
 	if err != nil && strings.Contains(err.Error(), "no secrets") {
 		// no secrets found, assume public registry
 		log.SpanLog(ctx, log.DebugLevelApi, "warning, no registry credentials in vault, assume public registry", "err", err)
@@ -153,7 +185,9 @@ func GetRegistryAuth(ctx context.Context, imgUrl, org string, vaultConfig *vault
 		return nil, err
 	}
 	auth.Hostname = hostname
-	auth.Port = port
+	if auth.Port == "" {
+		auth.Port = port
+	}
 	if auth.Username != "" && auth.Password != "" {
 		auth.AuthType = BasicAuth
 	} else if auth.Token != "" {
@@ -164,23 +198,30 @@ func GetRegistryAuth(ctx context.Context, imgUrl, org string, vaultConfig *vault
 	return auth, nil
 }
 
-func PutRegistryAuth(ctx context.Context, imgUrl, org string, auth *RegistryAuth, vaultConfig *vault.Config, checkAndSet int) error {
+func PutRegistryAuth(ctx context.Context, host, org string, auth *RegistryAuth, vaultConfig *vault.Config, checkAndSet int) error {
 	if vaultConfig == nil || vaultConfig.Addr == "" {
 		return fmt.Errorf("no vault specified")
 	}
-	hostname, port, err := parseImageUrl(imgUrl)
-	if err != nil {
-		return err
-	}
+	hostname, port := ParseHost(host)
 	auth.Hostname = hostname
 	auth.Port = port
 	vaultPath := getVaultRegistryPath(hostname, org)
 	log.SpanLog(ctx, log.DebugLevelApi, "put auth secret", "vault-path", vaultPath)
-	err = vault.PutDataCAS(vaultConfig, vaultPath, auth, checkAndSet)
+	err := vault.PutDataCAS(vaultConfig, vaultPath, auth, checkAndSet)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func DeleteRegistryAuth(ctx context.Context, host, org string, vaultConfig *vault.Config) error {
+	if vaultConfig == nil || vaultConfig.Addr == "" {
+		return fmt.Errorf("no vault specified")
+	}
+	hostname, _ := ParseHost(host)
+	vaultPath := getVaultRegistryPath(hostname, org)
+	log.SpanLog(ctx, log.DebugLevelApi, "delete auth secret", "vault-path", vaultPath)
+	return vault.DeleteData(vaultConfig, vaultPath)
 }
 
 func GetRegistryAuthToken(ctx context.Context, host string, authApi RegistryAuthApi) (string, error) {

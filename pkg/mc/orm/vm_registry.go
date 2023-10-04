@@ -3,7 +3,7 @@ package orm
 import (
 	"context"
 	fmt "fmt"
-	"net/http"
+	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -13,10 +13,14 @@ import (
 	"github.com/google/uuid"
 )
 
-var vmRegCookie *http.Cookie
+const vmRegOrgValidDur = 43800 * time.Hour // 5 years
+
+func getVmRegAdminAuth(ctx context.Context) (*cloudcommon.RegistryAuth, error) {
+	return cloudcommon.GetRegistryAuth(ctx, serverConfig.VmRegistryAddr, cloudcommon.AllOrgs, serverConfig.vaultConfig)
+}
 
 func vmRegistryEnsureApiKey(ctx context.Context, username string) error {
-	auth, err := cloudcommon.GetRegistryAuth(ctx, serverConfig.VmRegistryAddr, cloudcommon.AllOrgs, serverConfig.vaultConfig)
+	auth, err := getVmRegAdminAuth(ctx)
 	if err != nil {
 		return err
 	}
@@ -108,35 +112,56 @@ func vmRegistryEnsureApiKey(ctx context.Context, username string) error {
 	return nil
 }
 
-// Used by federation to interact with vm registry
-func getVmRegistryCookie(ctx context.Context) (*http.Cookie, error) {
-	if vmRegCookie != nil {
-		// verify that it's still valid
-		verifyClaims := ormutil.UserClaims{}
-		token, err := Jwks.VerifyCookie(vmRegCookie.Value, &verifyClaims)
-		if err == nil && token.Valid {
-			return vmRegCookie, nil
-		}
+func vmRegistryCreateOrgPullKey(ctx context.Context, org, orgType string) {
+	if orgType == OrgTypeOperator {
+		return
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "Generating new vm registry cookie")
-	auth, err := cloudcommon.GetRegistryAuth(ctx, serverConfig.VmRegistryAddr, cloudcommon.AllOrgs, serverConfig.vaultConfig)
+	auth, err := getVmRegAdminAuth(ctx)
 	if err != nil {
-		return nil, err
+		log.SpanLog(ctx, log.DebugLevelApi, "vm-registry failed to get admin auth for new org create", "err", err)
+		vmRegistrySync.NeedsSync()
+		return
 	}
-	if auth.Username == "" {
-		return nil, fmt.Errorf("Username not found for VM Registry auth")
+	err = vmRegistryEnsurePullKey(ctx, org, auth.Username)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "vm-registry failed to create org pull key", "org", org, "err", err)
+		vmRegistrySync.NeedsSync()
 	}
+}
+
+// Create a JWT token for pulling VM images. It is restricted to the org.
+func vmRegistryEnsurePullKey(ctx context.Context, org, username string) error {
+	// Since it's just a JWT token, we don't care if it already
+	// exists, just overwrite it with a new one.
 	user := ormapi.User{
-		Name: auth.Username,
+		Name: username,
 	}
-	config, err := getConfig(ctx)
+	// config is only used for durations, which we override
+	config := &ormapi.Config{}
+	cookie, err := GenerateCookie(&user, "", serverConfig.HTTPCookieDomain, config, WithOrgRestriction(org), WithActionRestriction(ActionView), WithValidDuration(vmRegOrgValidDur))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	cookie, err := GenerateCookie(&user, "", serverConfig.HTTPCookieDomain, config)
-	if err != nil {
-		return nil, err
+	auth := cloudcommon.RegistryAuth{
+		AuthType: cloudcommon.TokenAuth,
+		Username: user.Name,
+		Token:    cookie.Value,
 	}
-	vmRegCookie = cookie
-	return vmRegCookie, nil
+	return cloudcommon.PutRegistryAuth(ctx, serverConfig.VmRegistryAddr, org, &auth, serverConfig.vaultConfig, -1)
+}
+
+func vmRegistryGetPullKey(ctx context.Context, org string) (*cloudcommon.RegistryAuth, error) {
+	return cloudcommon.GetRegistryAuth(ctx, serverConfig.VmRegistryAddr, org, serverConfig.vaultConfig)
+}
+
+func vmRegistryDeletePullKey(ctx context.Context, org, orgType string) error {
+	// TODO: MC does not have sufficient vault perms for this
+	// yet, it needs to be able to delete the metadata path.
+	if true {
+		return nil
+	}
+	if orgType == OrgTypeOperator {
+		return nil
+	}
+	return cloudcommon.DeleteRegistryAuth(ctx, serverConfig.VmRegistryAddr, org, serverConfig.vaultConfig)
 }

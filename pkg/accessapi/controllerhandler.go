@@ -47,7 +47,7 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 		}
 		out, merr = json.Marshal(vars)
 	case platform.GetRegistryAuth:
-		auth, err := s.vaultClient.GetRegistryAuth(ctx, string(req.Data))
+		auth, err := s.vaultClient.GetRegistryImageAuth(ctx, string(req.Data))
 		if err != nil {
 			return nil, err
 		}

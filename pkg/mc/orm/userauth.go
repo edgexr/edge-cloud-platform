@@ -85,6 +85,8 @@ func NewHTTPAuthCookie(token string, expires int64, domain string) *http.Cookie 
 
 type CookieOptions struct {
 	ObjectRestriction string
+	OrgRestriction    string
+	ActionRestriction string
 	ValidDuration     time.Duration
 }
 
@@ -92,6 +94,14 @@ type GenCookieOp func(opts *CookieOptions)
 
 func WithObjectRestriction(restriction string) GenCookieOp {
 	return func(opts *CookieOptions) { opts.ObjectRestriction = restriction }
+}
+
+func WithOrgRestriction(restrictedOrg string) GenCookieOp {
+	return func(opts *CookieOptions) { opts.OrgRestriction = restrictedOrg }
+}
+
+func WithActionRestriction(action string) GenCookieOp {
+	return func(opts *CookieOptions) { opts.ActionRestriction = action }
 }
 
 func WithValidDuration(dur time.Duration) GenCookieOp {
@@ -119,6 +129,7 @@ func GenerateCookie(user *ormapi.User, apiKeyId, domain string, config *ormapi.C
 		// using this info we allow refreshing of auth token if the token is valid
 		FirstIssuedAt:     time.Now().Unix(),
 		ObjectRestriction: options.ObjectRestriction,
+		OrgRestriction:    options.OrgRestriction,
 	}
 	if apiKeyId != "" {
 		// Set ApiKeyId as username to ensure that we always enforce RBAC on ApikeyId,

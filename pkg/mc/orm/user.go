@@ -1523,6 +1523,13 @@ func UserAuthorized(c echo.Context) error {
 			return c.String(http.StatusUnauthorized, "Not authorized for object")
 		}
 	}
+	if claims.OrgRestriction != "" {
+		// claims has restricted access to only the specified org
+		if claims.OrgRestriction != in.Org {
+			log.SpanLog(ctx, log.DebugLevelApi, "Unauthorized, org restriction mistmatch", "restriction", claims.OrgRestriction, "auth-req-org", in.Org)
+			return c.String(http.StatusUnauthorized, "Not authorized for org")
+		}
+	}
 	return c.JSON(http.StatusOK, ormutil.Msg("authorized ok"))
 }
 

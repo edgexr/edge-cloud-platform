@@ -73,6 +73,7 @@ type UserClaims struct {
 	AuthType          string `json:"authtype"`
 	ApiKeyUsername    string `json:"apikeyusername"`
 	ObjectRestriction string `json:"objectrestriction"`
+	OrgRestriction    string `json:"orgrestriction"`
 }
 
 func (u *UserClaims) GetKid() (int, error) {

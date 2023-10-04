@@ -148,6 +148,7 @@ var gitlabClient *gitlab.Client
 var harborSync *AppStoreSync
 var gitlabSync *AppStoreSync
 var artifactorySync *AppStoreSync
+var vmRegistrySync *AppStoreSync
 var nodeMgr *node.NodeMgr
 var AlertManagerServer *alertmgr.AlertMgrServer
 var allRegionCaches AllRegionCaches
@@ -677,6 +678,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/artifactory/resync", ArtifactoryResync)
 	auth.POST("/artifactory/summary", ArtifactorySummary)
 	auth.POST("/harbor/resync", HarborResync)
+	auth.POST("/vmregistry/resync", VmRegistryResync)
 	auth.POST("/config/update", UpdateConfig)
 	auth.POST("/config/reset", ResetConfig)
 	auth.POST("/config/show", ShowConfig)
@@ -1105,11 +1107,9 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		harborSync = HarborNewSync()
 		harborSync.Start(server.done)
 	}
+	vmRegistrySync = VmRegistryNewSync()
 	if config.VmRegistryAddr != "" {
-		err = vmRegistryEnsureApiKey(ctx, Superuser)
-		if err != nil {
-			return nil, err
-		}
+		vmRegistrySync.Start(server.done)
 	}
 
 	if AlertManagerServer != nil {

@@ -32,6 +32,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/require"
@@ -156,6 +157,9 @@ func TestAppStoreApi(t *testing.T) {
 	addr := "127.0.0.1:9999"
 	uri := "http://" + addr + "/api/v1"
 
+	// Same as addr for registry.GetRegistryAuthToken() to work.
+	vmRegistryAddr := "https://" + addr
+
 	defaultConfig.DisableRateLimit = true
 
 	vp := process.Vault{
@@ -165,7 +169,7 @@ func TestAppStoreApi(t *testing.T) {
 		ListenAddr: "https://127.0.0.1:8202",
 		PKIDomain:  "edgecloud.net",
 	}
-	_, vroles, vaultCleanup := testutil.NewVaultTestCluster(t, &vp)
+	vaultCluster, vroles, vaultCleanup := testutil.NewVaultTestCluster(t, &vp)
 	os.Setenv("VAULT_ROLE_ID", vroles.MCRoleID)
 	os.Setenv("VAULT_SECRET_ID", vroles.MCSecretID)
 	os.Setenv("E2ETEST_TLS", "true")
@@ -175,6 +179,8 @@ func TestAppStoreApi(t *testing.T) {
 		os.Unsetenv("E2ETEST_TLS")
 		vaultCleanup()
 	}()
+	// vault root config
+	vaultRootConfig := vault.NewConfig(vp.ListenAddr, vault.NewTokenAuth(vaultCluster.RootToken))
 
 	rtfuri, err := url.ParseRequestURI(artifactoryAddr)
 	require.Nil(t, err, "parse artifactory url")
@@ -216,7 +222,7 @@ func TestAppStoreApi(t *testing.T) {
 		VerifyEmailConsolePath:   "#/verify",
 		testTransport:            mockTransport,
 		HTTPCookieDomain:         domain,
-		VmRegistryAddr:           addr,
+		VmRegistryAddr:           vmRegistryAddr,
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
@@ -294,6 +300,7 @@ func TestAppStoreApi(t *testing.T) {
 	rtf.initData()
 	gm.initData()
 	hm.initData()
+	vmRegDeleteTestData(t, ctx, missingEntries, vaultRootConfig)
 
 	// for consistency in counts, make sure edgecloud org project exists
 	harborCreateProject(ctx, &harborEdgeCloudOrg)
@@ -307,6 +314,7 @@ func TestAppStoreApi(t *testing.T) {
 	}
 	rtf.verifyCount(t, testEntries, MCObj)
 	hm.verifyCount(t, testEntries, MCObj)
+	vmRegVerifyTestData(t, ctx, testEntries)
 
 	// Create users & orgs which are not present in MC
 	for _, v := range extraEntries {
@@ -376,10 +384,14 @@ func TestAppStoreApi(t *testing.T) {
 	status, err = mcClient.HarborResync(uri, tokenAdmin)
 	require.Nil(t, err, "harbor resync")
 	require.Equal(t, http.StatusOK, status, "harbor resync status")
+	status, err = mcClient.VmRegistryResync(uri, tokenAdmin)
+	require.Nil(t, err, "vm registry resync")
+	require.Equal(t, http.StatusOK, status, "vm registry resync status")
 
 	waitSyncCount(t, gitlabSync, 2)
 	waitSyncCount(t, artifactorySync, 2)
 	waitSyncCount(t, harborSync, 2)
+	waitSyncCount(t, vmRegistrySync, 2)
 
 	// Verify that only testEntries and missingEntries are present
 	for _, v := range testEntries {
@@ -394,8 +406,11 @@ func TestAppStoreApi(t *testing.T) {
 	}
 	rtf.verifyCount(t, append(testEntries, missingEntries...), MCObj)
 	hm.verifyCount(t, append(testEntries, missingEntries...), MCObj)
+	vmRegVerifyTestData(t, ctx, testEntries)
+	vmRegVerifyTestData(t, ctx, missingEntries)
 
 	verifyVmRegistryApiKey(t, ctx, &config, mcClient, uri)
+	vmRegVerifyPullKeyPerms(t, ctx, testEntries[0].Org, testEntries[1].Org, mcClient, uri)
 
 	// Delete MC created Objects
 	for _, v := range testEntries {
@@ -494,6 +509,9 @@ func verifyVmRegistryApiKey(t *testing.T, ctx context.Context, serverConfig *Ser
 	require.Equal(t, cloudcommon.BasicAuth, auth.AuthType)
 	require.NotEmpty(t, auth.Username)
 	require.NotEmpty(t, auth.Password)
+	vmRegHost, _ := cloudcommon.ParseHost(serverConfig.VmRegistryAddr)
+	require.Equal(t, vmRegHost, auth.Hostname)
+
 	// login
 	token, _, err := mcClient.DoLogin(uri, auth.Username, auth.Password, NoOTP, NoApiKeyId, NoApiKey)
 	require.Nil(t, err)
@@ -537,7 +555,7 @@ func verifyVmRegistryApiKey(t *testing.T, ctx context.Context, serverConfig *Ser
 	authApi := &TestRegistryAuthApi{
 		auth: *auth,
 	}
-	tok, err := cloudcommon.GetRegistryAuthToken(ctx, serverConfig.VmRegistryAddr, authApi)
+	tok, err := cloudcommon.GetRegistryAuthToken(ctx, serverConfig.ServAddr, authApi)
 	require.Nil(t, err)
 	require.NotEmpty(t, tok)
 	// verify authorization
