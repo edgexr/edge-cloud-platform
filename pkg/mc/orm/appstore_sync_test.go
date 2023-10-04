@@ -374,6 +374,15 @@ func TestAppStoreApi(t *testing.T) {
 		hm.verify(t, v, OldOperObj)
 	}
 
+	// Test Registry keys
+	for _, r := range getRegistryTestEntries(harborAddr, vmRegistryAddr) {
+		log.SpanLog(ctx, log.DebugLevelApi, "test GetRegistryAuth", "url", r.url)
+		auth, err := cloudcommon.GetRegistryAuth(ctx, r.url, r.org, vaultRootConfig)
+		require.Nil(t, err, r.comment)
+		require.NotNil(t, auth, r.comment)
+		require.Equal(t, r.expAuth, auth.AuthType, r.comment)
+	}
+
 	// Trigger resync to delete extra objects and create missing ones
 	status, err = mcClient.ArtifactoryResync(uri, tokenAdmin)
 	require.Nil(t, err, "artifactory resync")
@@ -509,7 +518,8 @@ func verifyVmRegistryApiKey(t *testing.T, ctx context.Context, serverConfig *Ser
 	require.Equal(t, cloudcommon.BasicAuth, auth.AuthType)
 	require.NotEmpty(t, auth.Username)
 	require.NotEmpty(t, auth.Password)
-	vmRegHost, _ := cloudcommon.ParseHost(serverConfig.VmRegistryAddr)
+	vmRegHost, _, err := cloudcommon.ParseHost(serverConfig.VmRegistryAddr)
+	require.Nil(t, err)
 	require.Equal(t, vmRegHost, auth.Hostname)
 
 	// login
@@ -582,4 +592,63 @@ type TestRegistryAuthApi struct {
 
 func (s *TestRegistryAuthApi) GetRegistryAuth(ctx context.Context, imgUrl string) (*cloudcommon.RegistryAuth, error) {
 	return &s.auth, nil
+}
+
+type registryEntry struct {
+	url     string
+	org     string
+	expAuth string
+	comment string
+}
+
+func getRegistryTestEntries(harborHostname, vmRegistryHostname string) []registryEntry {
+	// docker image paths should not have scheme
+	harborHostname = strings.TrimPrefix(harborHostname, "http://")
+	harborHostname = strings.TrimPrefix(harborHostname, "https://")
+	return []registryEntry{{
+		comment: "public repo, no creds",
+		url:     "docker.io/foo/bar:latest",
+		org:     "bigorg1",
+		expAuth: cloudcommon.NoAuth,
+	}, {
+		comment: "bigorg1 image",
+		url:     harborHostname + "/bigorg1/echo:0.2.3",
+		org:     "bigorg1",
+		expAuth: cloudcommon.BasicAuth,
+	}, {
+		comment: "bigOrg2 image",
+		url:     harborHostname + "/bigOrg2/theimage:v7.0-amd64",
+		org:     "bigOrg2",
+		expAuth: cloudcommon.BasicAuth,
+	}, {
+		comment: "creds for tags list URL",
+		url:     "https://" + harborHostname + "/v2/bigorg1/image/tags/list",
+		org:     "bigorg1",
+		expAuth: cloudcommon.BasicAuth,
+	}, {
+		comment: "public vm image",
+		url:     "https://cloud-images.ubuntu.com/minimal/releases/jammy/release/ubuntu-22.04-minimal-cloudimg-amd64.img#md5:e83f603fdf7acb8fa86e0dddf37e39c6",
+		org:     "bigOrg2",
+		expAuth: cloudcommon.NoAuth,
+	}, {
+		comment: "local vm image at vmRegistryAddr",
+		url:     vmRegistryHostname + "/storage/v1/artifacts/bigorg1/myimage.img#md5:e83f603fdf7acb8fa86e0dddf37e39c6",
+		org:     "bigorg1",
+		expAuth: cloudcommon.TokenAuth,
+	}, {
+		comment: "bare hostname and port",
+		url:     harborHostname + ":443",
+		org:     "bigorg1",
+		expAuth: cloudcommon.BasicAuth,
+	}, {
+		comment: "bare hostname",
+		url:     harborHostname,
+		org:     "bigorg1",
+		expAuth: cloudcommon.BasicAuth,
+	}, {
+		comment: "bare public hostname",
+		url:     "docker.public.net",
+		org:     "bigorg1",
+		expAuth: cloudcommon.NoAuth,
+	}}
 }
