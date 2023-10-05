@@ -110,12 +110,13 @@ func (s *RootCommand) uploadArtifact(c *cli.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("Remote file %s/%s exists and failed to calculate md5 hash of local file %s: %s", art.Org, art.Path, art.LocalFile, err)
 		}
-		remoteMd5 := resp.Header.Get("md5")
-		if string(hash.Sum(nil)) == remoteMd5 {
+		remoteMd5 := resp.Header.Get("X-Checksum-Md5")
+		localMd5 := fmt.Sprintf("%x", hash.Sum(nil))
+		if localMd5 == remoteMd5 {
 			fmt.Printf("Remote file %s/%s exists and md5 hash matches local file %s\n", art.Org, art.Path, art.LocalFile)
 			return nil
 		}
-		return fmt.Errorf("Remote file %s/%s already exists and hash does not match local, please delete or move first", art.Org, art.Path)
+		return fmt.Errorf("Remote file %s/%s already exists and hash (%s) does not match local (%s), please delete or move first", art.Org, art.Path, remoteMd5, localMd5)
 	}
 
 	bar := pb.Full.Start64(fileInfo.Size())
