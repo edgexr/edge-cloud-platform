@@ -230,20 +230,7 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 		// Setup Chef
 		thisNodeParams, ok := nodeParams[vm.InternalName]
 		if ok && thisNodeParams != nil {
-			/* TODO: replace chef setup with ansible based one
-			// Setup chef client key
-			log.SpanLog(ctx, log.DebugLevelInfra, "Setting up chef-client", "vm", vm.Name)
-			err = pc.WriteFile(client, "/home/ubuntu/client.pem", chefParams.ClientKey, "chefclientkey", pc.SudoOn)
-			if err != nil {
-				return fmt.Errorf("failed to copy chef client key: %v", err)
-			}
-
-			// Start chef service
-			cmd = fmt.Sprintf("sudo bash /etc/edgecloud/setup-chef.sh -s %s -n %s", chefParams.ServerPath, chefParams.NodeName)
-			if out, err := client.Output(cmd); err != nil {
-				return fmt.Errorf("failed to setup chef: %s, %v", out, err)
-			}
-			*/
+			/* TODO: replace chef setup with ansible based one */
 		}
 
 		switch role {

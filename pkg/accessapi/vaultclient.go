@@ -114,6 +114,8 @@ func (s *VaultClient) GetOldSSHKey(ctx context.Context) (*vault.MEXKey, error) {
 	return key, nil
 }
 
+// GetChefAuthKey is deprecated, it is kept for backwards compatibility
+// with old crms
 func (s *VaultClient) GetChefAuthKey(ctx context.Context) (*chefauth.ChefAuthKey, error) {
 	// TODO: maintain a Cloudlet-specific API key
 	auth, err := chefauth.GetChefAuthKeys(ctx, s.vaultConfig)

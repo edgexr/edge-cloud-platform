@@ -262,10 +262,6 @@ const MaxClusterNameLength = 40
 const CertName = "envoyTlsCerts"
 const EnvoyImageDigest = "sha256:46cbbf3e8e8fb37b7080f360d2eedccfd7709ed49468683f7691645226c2ea96"
 
-const ChefNodeManager = "chef"
-const InternalNodeManager = "internal"
-const NoNodeManager = "none"
-
 // PlatformApps is the set of all special "platform" developers.   Key
 // is DeveloperName:AppName.  Currently only platos's Enabling layer is included.
 var platformApps = map[string]bool{

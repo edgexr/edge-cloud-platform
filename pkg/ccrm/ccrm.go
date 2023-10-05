@@ -46,11 +46,11 @@ type Flags struct {
 	CloudletVMImagePath           string
 	VersionTag                    string
 	CommercialCerts               bool
-	ChefServerPath                string // deprecated
 	ControllerAPIAddr             string
 	ControllerNotifyAddr          string
 	ControllerPublicNotifyAddr    string
 	ControllerPublicAccessApiAddr string
+	ChefServerPath                string // deprecated
 	AnsibleListenAddr             string
 	AnsiblePublicAddr             string
 	ThanosRecvAddr                string

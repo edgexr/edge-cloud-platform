@@ -329,7 +329,7 @@ func TestAnsibleServer(t *testing.T) {
 	require.Contains(t, out, "Running update")
 	require.NoFileExists(t, tmpdir+"/ansible_run_ok")
 
-	// Check that ansible will run again
+	// Check that ansible will run again because ansible command failed
 	ansiblePlaybookBin = ""
 	out = runCmd()
 	require.Contains(t, out, "Ansible has not succeeded, will run")
@@ -367,15 +367,3 @@ func TestAnsibleServer(t *testing.T) {
 		require.Contains(t, out, "TASK [common")
 	}
 }
-
-/*
-func TestHash(t *testing.T) {
-	pass := "4yCN0fE#n6zQPim3H\\Botr[`Wv&!J9wTDG{e28h57UO?j1<|"
-	hash := `Z2v4mH7QbPK5lPhxetKw9rSZQKmxjdfSagt21hE2k8k=`
-	salt := `PFwBSCANvXo=`
-	iter := 1000
-	m, err := ormutil.PasswordMatches(pass, hash, salt, iter)
-	require.Nil(t, err)
-	require.True(t, m)
-}
-*/

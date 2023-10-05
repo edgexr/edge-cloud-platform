@@ -72,6 +72,13 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 			return nil, err
 		}
 		out, merr = json.Marshal(mexkey)
+	case platform.GetChefAuthKey:
+		// Deprecated, for backwards compatibility with old CRMs
+		auth, err := s.vaultClient.GetChefAuthKey(ctx)
+		if err != nil {
+			return nil, err
+		}
+		out, merr = json.Marshal(auth)
 	case platform.CreateOrUpdateDNSRecord:
 		dnsReq := platform.DNSRequest{}
 		err := json.Unmarshal(req.Data, &dnsReq)

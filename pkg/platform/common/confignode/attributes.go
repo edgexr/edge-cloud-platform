@@ -29,6 +29,9 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
+// Most of the code here is from the previous Chef-based
+// implementation that was pkg/chefmgmt/chef.go
+
 const (
 	DefaultCacheDir = "/root/crm_cache"
 	// Platform services
@@ -51,30 +54,6 @@ var ValidDockerArgs = map[string]string{
 	"label":   "dict",
 	"publish": "list",
 	"volume":  "list",
-}
-
-type InfraApiAccess struct {
-	ApiEndpoint string
-	ApiGateway  string
-}
-
-func GetCommandArgs(cmdArgs []string) map[string]string {
-	chefArgs := make(map[string]string)
-	ii := 0
-	for ii < len(cmdArgs) {
-		if !strings.HasPrefix(cmdArgs[ii], "-") {
-			continue
-		}
-		argKey := strings.TrimLeft(cmdArgs[ii], "-")
-		argVal := ""
-		ii += 1
-		if ii < len(cmdArgs) && !strings.HasPrefix(cmdArgs[ii], "-") {
-			argVal = cmdArgs[ii]
-			ii += 1
-		}
-		chefArgs[argKey] = argVal
-	}
-	return chefArgs
 }
 
 func GetDockerArgs(cmdArgs []string) map[string]interface{} {

@@ -1,5 +1,4 @@
 ---
-# Run this playbook with -e "nodetype=<nodetype>"
 - hosts: localhost
   roles:
     - "{{ node_role }}"

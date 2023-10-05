@@ -110,7 +110,7 @@ func (s *CloudletNodeApi) CreateCloudletNodeReq(ctx context.Context, node *edgep
 	if err != nil {
 		return "", err
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "created cloudlet node", "cloudlet", node.Key.CloudletKey, "name", node.Key.Name, "type", node.NodeType, "debug", pass[:5])
+	log.SpanLog(ctx, log.DebugLevelApi, "created cloudlet node", "cloudlet", node.Key.CloudletKey, "name", node.Key.Name, "type", node.NodeType)
 	return pass, nil
 }
 
@@ -119,7 +119,7 @@ func (s *CloudletNodeApi) DeleteCloudletNodeReq(ctx context.Context, key *edgepr
 		Key: *key,
 	}
 	_, err := s.DeleteCloudletNode(ctx, node)
-	log.SpanLog(ctx, log.DebugLevelApi, "deleted cloudlet node", "node", key)
+	log.SpanLog(ctx, log.DebugLevelApi, "deleted cloudlet node", "node", key, "err", err)
 	return err
 }
 

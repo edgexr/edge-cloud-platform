@@ -290,25 +290,6 @@ func (s *CCRMHandler) GetRestrictedCloudletStatus(ctx context.Context, key *edge
 	return err
 }
 
-// update node attributes when node changes
-func (s *CCRMHandler) cloudletNodeChanged(ctx context.Context, old *edgeproto.CloudletNode, in *edgeproto.CloudletNode) {
-	baseAttributes := make(map[string]interface{})
-	if in.NodeRole != cloudcommon.NodeRoleBase.String() {
-		cloudlet := edgeproto.Cloudlet{}
-		if !s.caches.CloudletCache.Get(&in.Key.CloudletKey, &cloudlet) {
-			log.SpanLog(ctx, log.DebugLevelApi, "failed to get cloudlet to update cloudlet node", "node", in.Key)
-			return
-		}
-		var err error
-		baseAttributes, err = s.getCloudletPlatformAttributes(ctx, &cloudlet)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelApi, "failed to compute cloudlet attributes for node", "node", in.Key, "err", err)
-			return
-		}
-	}
-	s.updateNodeAttributes(ctx, baseAttributes, in)
-}
-
 func (s *CCRMHandler) CreateCloudletNodeReq(ctx context.Context, node *edgeproto.CloudletNode) (string, error) {
 	client := edgeproto.NewCloudletNodeApiClient(s.ctrlConn)
 	res, err := client.CreateCloudletNode(ctx, node)
@@ -328,6 +309,25 @@ func (s *CCRMHandler) DeleteCloudletNodeReq(ctx context.Context, nodeKey *edgepr
 	_, err := client.DeleteCloudletNode(ctx, &node)
 	log.SpanLog(ctx, log.DebugLevelApi, "delete cloudlet node req", "node", nodeKey, "err", err)
 	return err
+}
+
+// update node attributes when node changes
+func (s *CCRMHandler) cloudletNodeChanged(ctx context.Context, old *edgeproto.CloudletNode, in *edgeproto.CloudletNode) {
+	baseAttributes := make(map[string]interface{})
+	if in.NodeRole != cloudcommon.NodeRoleBase.String() {
+		cloudlet := edgeproto.Cloudlet{}
+		if !s.caches.CloudletCache.Get(&in.Key.CloudletKey, &cloudlet) {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to get cloudlet to update cloudlet node", "node", in.Key)
+			return
+		}
+		var err error
+		baseAttributes, err = s.getCloudletPlatformAttributes(ctx, &cloudlet)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to compute cloudlet attributes for node", "node", in.Key, "err", err)
+			return
+		}
+	}
+	s.updateNodeAttributes(ctx, baseAttributes, in)
 }
 
 // update node attributes when cloudlet changes

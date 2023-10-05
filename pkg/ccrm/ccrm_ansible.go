@@ -28,13 +28,14 @@ var badAuthDelay = 3 * time.Second
 func init() {
 	// get checksum of archive
 	ansibleArchiveChecksum = fmt.Sprintf("%x", md5.Sum(ansibleArchive))
-	fmt.Printf("Archive checksum is %s\n", ansibleArchiveChecksum)
 }
 
 func (s *CCRM) initAnsibleServer(ctx context.Context) {
 	e := echo.New()
 	e.HideBanner = true
 	s.echoServ = e
+
+	log.SpanLog(ctx, log.DebugLevelInfo, "init ansible server", "archive-checksum", ansibleArchiveChecksum)
 
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "OK")

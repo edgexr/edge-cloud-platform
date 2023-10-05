@@ -26,7 +26,6 @@ import (
 	cloudflare "github.com/cloudflare/cloudflare-go"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefauth"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
@@ -187,7 +186,6 @@ type AccessApi interface {
 	SignSSHKey(ctx context.Context, publicKey string) (string, error)
 	GetSSHPublicKey(ctx context.Context) (string, error)
 	GetOldSSHKey(ctx context.Context) (*vault.MEXKey, error)
-	GetChefAuthKey(ctx context.Context) (*chefauth.ChefAuthKey, error)
 	CreateOrUpdateDNSRecord(ctx context.Context, name, rtype, content string, ttl int, proxy bool) error
 	GetDNSRecords(ctx context.Context, fqdn string) ([]cloudflare.DNSRecord, error)
 	DeleteDNSRecord(ctx context.Context, recordID string) error

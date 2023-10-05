@@ -1424,7 +1424,6 @@ func addControllerApis(method string, group *echo.Group) {
 	// DeletePrepare: 34
 	// DnsLabel: 35
 	// Fqdn: 36
-	// CloudletNodeManager: 37
 	// ```
 	// Security:
 	//   Bearer:

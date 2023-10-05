@@ -473,10 +473,16 @@ func (s *CloudletInternal) Validate(fields map[string]struct{}) error {
 
 func (s CloudletNodeKey) ValidateKey() error {
 	// Cloudlet nodes are only created internally
-	return nil
+	if s.Name == "" {
+		return errors.New("Name must not be empty")
+	}
+	return s.CloudletKey.ValidateKey()
 }
 
 func (s *CloudletNode) Validate(fields map[string]struct{}) error {
+	if err := s.Key.ValidateKey(); err != nil {
+		return err
+	}
 	return nil
 }
 
