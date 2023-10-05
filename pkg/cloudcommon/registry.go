@@ -120,20 +120,23 @@ func parseImageUrl(imgUrl string) (string, string, error) {
 	return hostname[0], org, nil
 }
 
-// return hostname and port from host string.
-func ParseHost(host string) (string, string) {
-	if strings.Contains(host, "://") {
-		// strip scheme
-		schemeHost := strings.Split(host, "://")
-		host = schemeHost[1]
+// return hostname and port from hostOrURL string.
+func ParseHost(hostOrURL string) (string, string, error) {
+	if !strings.Contains(hostOrURL, "://") {
+		// add scheme for url.Parse
+		hostOrURL = "https://" + hostOrURL
 	}
-	hostport := strings.Split(host, ":")
+	u, err := url.Parse(hostOrURL)
+	if err != nil {
+		return "", "", err
+	}
+	hostport := strings.Split(u.Host, ":")
 	hostname := hostport[0]
 	port := ""
 	if len(hostport) > 1 {
 		port = hostport[1]
 	}
-	return hostname, port
+	return hostname, port, nil
 }
 
 // Same as registry auth, but is always the user/password of an admin
@@ -166,15 +169,18 @@ func GetRegistryImageAuth(ctx context.Context, imgUrl string, vaultConfig *vault
 // GetRegistryAuth gets the credentials for accessing the
 // image registry. If org is AllOrgs, then admin credentials
 // are returned. Otherwise, credentials are scoped to the org.
-func GetRegistryAuth(ctx context.Context, host, org string, vaultConfig *vault.Config) (*RegistryAuth, error) {
+func GetRegistryAuth(ctx context.Context, hostOrURL, org string, vaultConfig *vault.Config) (*RegistryAuth, error) {
 	if vaultConfig == nil || vaultConfig.Addr == "" {
 		return nil, fmt.Errorf("no vault specified")
 	}
-	hostname, port := ParseHost(host)
+	hostname, port, err := ParseHost(hostOrURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse %q, %s", hostOrURL, err)
+	}
 	vaultPath := getVaultRegistryPath(hostname, org)
 	log.SpanLog(ctx, log.DebugLevelApi, "get registry auth", "hostname", hostname, "org", org, "vault-path", vaultPath)
 	auth := &RegistryAuth{}
-	err := vault.GetData(vaultConfig, vaultPath, 0, auth)
+	err = vault.GetData(vaultConfig, vaultPath, 0, auth)
 	if err != nil && strings.Contains(err.Error(), "no secrets") {
 		// no secrets found, assume public registry
 		log.SpanLog(ctx, log.DebugLevelApi, "warning, no registry credentials in vault, assume public registry", "err", err)
@@ -202,12 +208,15 @@ func PutRegistryAuth(ctx context.Context, host, org string, auth *RegistryAuth, 
 	if vaultConfig == nil || vaultConfig.Addr == "" {
 		return fmt.Errorf("no vault specified")
 	}
-	hostname, port := ParseHost(host)
+	hostname, port, err := ParseHost(host)
+	if err != nil {
+		return err
+	}
 	auth.Hostname = hostname
 	auth.Port = port
 	vaultPath := getVaultRegistryPath(hostname, org)
 	log.SpanLog(ctx, log.DebugLevelApi, "put auth secret", "vault-path", vaultPath)
-	err := vault.PutDataCAS(vaultConfig, vaultPath, auth, checkAndSet)
+	err = vault.PutDataCAS(vaultConfig, vaultPath, auth, checkAndSet)
 	if err != nil {
 		return err
 	}
@@ -218,7 +227,10 @@ func DeleteRegistryAuth(ctx context.Context, host, org string, vaultConfig *vaul
 	if vaultConfig == nil || vaultConfig.Addr == "" {
 		return fmt.Errorf("no vault specified")
 	}
-	hostname, _ := ParseHost(host)
+	hostname, _, err := ParseHost(host)
+	if err != nil {
+		return err
+	}
 	vaultPath := getVaultRegistryPath(hostname, org)
 	log.SpanLog(ctx, log.DebugLevelApi, "delete auth secret", "vault-path", vaultPath)
 	return vault.DeleteData(vaultConfig, vaultPath)
