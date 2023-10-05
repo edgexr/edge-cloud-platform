@@ -25,7 +25,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
 	"github.com/stretchr/testify/require"
@@ -76,7 +75,7 @@ func InitVcdTestEnv() (bool, context.Context, error) {
 				Organization: *orgName,
 			},
 			DeploymentTag: "main",
-		}, infracommon.WithoutChef())
+		})
 		if err != nil {
 			return false, ctx, err
 		}

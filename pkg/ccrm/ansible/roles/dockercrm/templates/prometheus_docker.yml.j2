@@ -1,0 +1,9 @@
+name: cloudletPrometheus
+image: "{{ prometheusImage }}:{{ prometheusVersion }}"
+command: {{ cloudletPrometheus.args }}
+env: {{ cloudletPrometheus.env }}
+volumes: {{ cloudletPrometheus.volume }}
+restart_policy: "unless-stopped"
+network_mode: "host"
+user: nobody
+working_dir: /prometheus

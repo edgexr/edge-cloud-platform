@@ -95,6 +95,20 @@ func (n NodeType) String() string {
 	return "unknown node type"
 }
 
+// NodeRole specifies the role for provisioning a node from ansible
+type NodeRole string
+
+const (
+	NodeRoleBase         NodeRole = "base"
+	NodeRoleDockerCrm    NodeRole = "dockercrm"
+	NodeRoleK8sCrm       NodeRole = "k8scrm"
+	NodeRoleK8sCrmWorker NodeRole = "k8scrmworker"
+)
+
+func (s NodeRole) String() string {
+	return string(s)
+}
+
 // resource types
 var ResourceTypeK8sLBSvc = "k8s-lb-svc"
 
@@ -247,6 +261,10 @@ const MaxClusterNameLength = 40
 // Common cert name. Cannot use common name as filename since envoy doesn't know if the app is dedicated or not
 const CertName = "envoyTlsCerts"
 const EnvoyImageDigest = "sha256:46cbbf3e8e8fb37b7080f360d2eedccfd7709ed49468683f7691645226c2ea96"
+
+const ChefNodeManager = "chef"
+const InternalNodeManager = "internal"
+const NoNodeManager = "none"
 
 // PlatformApps is the set of all special "platform" developers.   Key
 // is DeveloperName:AppName.  Currently only platos's Enabling layer is included.

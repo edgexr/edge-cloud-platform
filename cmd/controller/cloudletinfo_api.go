@@ -76,7 +76,7 @@ func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo
 		return
 	}
 
-	inCopy := in // save Status to publish to Redis
+	inCopy := *in // save Status to publish to Redis
 	in.Fields = edgeproto.CloudletInfoAllFields
 	in.Controller = ControllerId
 	changedToOnline := false

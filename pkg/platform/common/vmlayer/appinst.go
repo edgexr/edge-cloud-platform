@@ -26,7 +26,6 @@ import (
 	"github.com/codeskyblue/go-sh"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/access"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
@@ -126,10 +125,9 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	orchVals.lbName = appInst.Uri
 	orchVals.externalServerName = orchVals.lbName
 	orchVals.newSubnetName = appVmName + "-subnet"
-	tags := v.GetChefClusterTags(appInst.ClusterInstKey(), cloudcommon.NodeTypeDedicatedRootLB)
 	nets := make(map[string]NetworkType)
 	routes := make(map[string][]edgeproto.Route)
-	lbVm, err := v.GetVMSpecForRootLB(ctx, orchVals.lbName, orchVals.newSubnetName, tags, nets, routes, updateCallback)
+	lbVm, err := v.GetVMSpecForRootLB(ctx, orchVals.lbName, orchVals.newSubnetName, &appInst.Key, nets, routes, updateCallback)
 	if err != nil {
 		return &orchVals, err
 	}
@@ -544,10 +542,6 @@ func (v *VMPlatform) cleanupAppInst(ctx context.Context, clusterInst *edgeproto.
 func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "cleanupAppInstInternal", "appinst", appInst)
 
-	chefClient := v.VMProperties.GetChefClient()
-	if chefClient == nil {
-		return fmt.Errorf("Chef client is not initialized")
-	}
 	var err error
 	var result OperationInitResult
 	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
@@ -648,11 +642,15 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 		if err != nil && err.Error() != ServerDoesNotExistError {
 			return fmt.Errorf("DeleteVMAppInst error: %v", err)
 		}
+		accessApi := v.VMProperties.CommonPf.PlatformConfig.AccessApi
 		lbName := appInst.Uri
-		clientName := v.GetChefClientName(lbName)
-		err = chefmgmt.ChefClientDelete(ctx, chefClient, clientName)
+		nodeKey := edgeproto.CloudletNodeKey{
+			Name:        lbName,
+			CloudletKey: clusterInst.Key.CloudletKey,
+		}
+		err = accessApi.DeleteCloudletNode(ctx, &nodeKey)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete client from Chef Server", "clientName", clientName, "err", err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete cloudlet node registration", "lbName", lbName, "err", err)
 		}
 		DeleteServerIpFromCache(ctx, lbName)
 

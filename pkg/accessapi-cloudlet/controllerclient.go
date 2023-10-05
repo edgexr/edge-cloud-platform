@@ -248,3 +248,32 @@ func (s *ControllerClient) GetFederationAPIKey(ctx context.Context, fedKey *fede
 	err = json.Unmarshal(reply.Data, &apiKey)
 	return &apiKey, err
 }
+
+func (s *ControllerClient) CreateCloudletNode(ctx context.Context, cloudletNode *edgeproto.CloudletNode) (string, error) {
+	data, err := json.Marshal(cloudletNode)
+	if err != nil {
+		return "", err
+	}
+	req := &edgeproto.AccessDataRequest{
+		Type: platform.CreateCloudletNode,
+		Data: data,
+	}
+	reply, err := s.client.GetAccessData(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return string(reply.Data), err
+}
+
+func (s *ControllerClient) DeleteCloudletNode(ctx context.Context, key *edgeproto.CloudletNodeKey) error {
+	data, err := json.Marshal(*key)
+	if err != nil {
+		return err
+	}
+	req := &edgeproto.AccessDataRequest{
+		Type: platform.DeleteCloudletNode,
+		Data: data,
+	}
+	_, err = s.client.GetAccessData(ctx, req)
+	return err
+}

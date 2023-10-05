@@ -118,6 +118,7 @@ func GetRootCommand() *RootCommand {
 		rc.getCmdGroup(ormctl.RateLimitSettingsGroup),
 		rc.getCmdGroup(ormctl.RateLimitSettingsMcGroup),
 		rc.getCmdGroup(ormctl.FederationDirectGroup),
+		rc.getCmdGroup(ormctl.CloudletNodeGroup),
 	}
 	logsMetricsCommands := []*cobra.Command{
 		rc.getCmdGroup(ormctl.MetricsGroup),

@@ -600,6 +600,7 @@ var ClusterInstOptionalArgs = []string{
 	"skipcrmcleanuponfailure",
 	"multitenant",
 	"networks",
+	"cloudletnodemanager",
 }
 var ClusterInstAliasArgs = []string{
 	"cluster=key.clusterkey.name",
@@ -660,6 +661,7 @@ var ClusterInstComments = map[string]string{
 	"deleteprepare":                            "Preparing to be deleted",
 	"dnslabel":                                 "DNS label that is unique within the cloudlet and among other AppInsts/ClusterInsts",
 	"fqdn":                                     "FQDN is a globally unique DNS id for the ClusterInst",
+	"cloudletnodemanager":                      "Cloudlet node manager",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"errors":   "StringArray",
@@ -751,4 +753,5 @@ var UpdateClusterInstOptionalArgs = []string{
 	"autoscalepolicy",
 	"skipcrmcleanuponfailure",
 	"multitenant",
+	"cloudletnodemanager",
 }

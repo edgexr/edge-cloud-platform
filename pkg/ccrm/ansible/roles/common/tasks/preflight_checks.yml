@@ -1,0 +1,15 @@
+---
+- name: Set vars for notify endpoint
+  # it is assumed the address does not have a http:// scheme
+  ansible.builtin.set_fact:
+    controller_notify_host: "{{ controller_notify_parts[0] }}"
+    controller_notify_port: "{{ contorller_notify_parts[1] | default(443) }}"
+  vars:
+    controller_notify_parts: "{{ notifyAddrs.split(':') }}"
+
+- name: Verify controller's notify port is reachable
+  shell: "nc {{ controller_notify_host }} {{ controller_notify_port }} -z -w 10"
+  register: nc_result
+  until: nc_result is not failed
+  retries: 3
+  delay: 10

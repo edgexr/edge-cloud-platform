@@ -48,7 +48,7 @@ type PlatformConfig struct {
 	NodeMgr             *node.NodeMgr
 	AppDNSRoot          string
 	RootLBFQDN          string
-	ChefServerPath      string
+	AnsiblePublicAddr   string
 	DeploymentTag       string
 	Upgrade             bool
 	AccessApi           AccessApi
@@ -195,6 +195,8 @@ type AccessApi interface {
 	GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error)
 	GetGCSCreds(ctx context.Context) ([]byte, error)
 	GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error)
+	CreateCloudletNode(ctx context.Context, node *edgeproto.CloudletNode) (string, error)
+	DeleteCloudletNode(ctx context.Context, nodeKey *edgeproto.CloudletNodeKey) error
 }
 
 // AccessData types
@@ -213,6 +215,8 @@ const (
 	GetKafkaCreds           = "get-kafka-creds"
 	GetGCSCreds             = "get-gcs-creds"
 	GetFederationAPIKey     = "get-federation-apikey"
+	CreateCloudletNode      = "create-cloudlet-node"
+	DeleteCloudletNode      = "delete-cloudlet-node"
 )
 
 type DNSRequest struct {

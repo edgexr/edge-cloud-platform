@@ -434,6 +434,7 @@ func startServices() error {
 	edgeproto.RegisterFlavorApiServer(server, allApis.flavorApi)
 	edgeproto.RegisterClusterInstApiServer(server, allApis.clusterInstApi)
 	edgeproto.RegisterCloudletApiServer(server, allApis.cloudletApi)
+	edgeproto.RegisterCloudletNodeApiServer(server, allApis.cloudletNodeApi)
 	edgeproto.RegisterAppInstApiServer(server, allApis.appInstApi)
 	edgeproto.RegisterCloudletInfoApiServer(server, allApis.cloudletInfoApi)
 	edgeproto.RegisterVMPoolApiServer(server, allApis.vmPoolApi)
@@ -483,6 +484,7 @@ func startServices() error {
 			edgeproto.RegisterAppInstApiHandler,
 			edgeproto.RegisterOperatorCodeApiHandler,
 			edgeproto.RegisterCloudletApiHandler,
+			edgeproto.RegisterCloudletNodeApiHandler,
 			edgeproto.RegisterCloudletInfoApiHandler,
 			edgeproto.RegisterVMPoolApiHandler,
 			edgeproto.RegisterGPUDriverApiHandler,
@@ -645,6 +647,7 @@ type AllApis struct {
 	appApi                      *AppApi
 	operatorCodeApi             *OperatorCodeApi
 	cloudletApi                 *CloudletApi
+	cloudletNodeApi             *CloudletNodeApi
 	appInstApi                  *AppInstApi
 	flavorApi                   *FlavorApi
 	streamObjApi                *StreamObjApi
@@ -687,6 +690,7 @@ func NewAllApis(sync *Sync) *AllApis {
 	all.appApi = NewAppApi(sync, all)
 	all.operatorCodeApi = NewOperatorCodeApi(sync, all)
 	all.cloudletApi = NewCloudletApi(sync, all)
+	all.cloudletNodeApi = NewCloudletNodeApi(sync, all)
 	all.appInstApi = NewAppInstApi(sync, all)
 	all.flavorApi = NewFlavorApi(sync, all)
 	all.streamObjApi = NewStreamObjApi(sync, all)
@@ -747,6 +751,7 @@ func InitNotify(metricsInflux *influxq.InfluxQ, edgeEventsInflux *influxq.Influx
 	notify.ServerMgrOne.RegisterSendResTagTableCache(&allApis.resTagTableApi.cache)
 	notify.ServerMgrOne.RegisterSendTrustPolicyCache(&allApis.trustPolicyApi.cache)
 	notify.ServerMgrOne.RegisterSendCloudletCache(allApis.cloudletApi.cache)
+	notify.ServerMgrOne.RegisterSendCloudletNodeCache(&allApis.cloudletNodeApi.cache)
 	// Be careful on dependencies.
 	// CloudletPools must be sent after cloudlets, because they reference cloudlets.
 	notify.ServerMgrOne.RegisterSendCloudletPoolCache(allApis.cloudletPoolApi.cache)

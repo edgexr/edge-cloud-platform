@@ -1,0 +1,99 @@
+syntax = "proto3";
+package edgeproto;
+
+import "google/api/annotations.proto";
+import "github.com/edgexr/edge-cloud-platform/tools/protogen/protogen.proto";
+import "cloudletkey.proto";
+import "result.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// Cloudlet Node unique key
+//
+// CloudletNodeKey uniquely identifies a node (VM or machine) on a cloudlet
+message CloudletNodeKey {
+    // Node name
+    string name = 1 [(protogen.keytag) = "cloudletnode"];
+    // Cloudlet key
+    CloudletKey cloudlet_key = 2 [(gogoproto.nullable) = false];
+    option (protogen.generate_matches) = true;
+    option (protogen.obj_key) = true;
+    option (gogoproto.gostring) = true;
+}
+
+// CloudletNode
+//
+// CloudletNode keeps information about a node (VM or machine) on a cloudlet
+message CloudletNode {
+  // Fields are used for the Update API to specify which fields to apply
+  repeated string fields = 1;
+  // Unique key
+  // required: true
+  CloudletNodeKey key = 2 [(gogoproto.nullable) = false];
+  // Type of node
+  string node_type = 3;
+  // Node role for provisioning
+  string node_role = 4;
+  // Password hash
+  string password_hash = 5;
+  // Salt of password
+  string salt = 6;
+  // Iterations of password
+  int32 iter = 7;
+  // Owner (ClusterInst, etc) tags
+  map<string, string> owner_tags = 8;
+  // Attributes of node set by platform
+  map<string, string> attributes = 9;
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cud_test) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.notify_cache) = true;
+  option (protogen.notify_filter_cloudlet_key) = true;
+  option (protogen.noconfig) = "PasswordHash,Salt,Iter";
+  option (protogen.alias) = "cloudletnode=Key.Name,cloudlet=Key.CloudletKey.Name,cloudletorg=Key.CloudletKey.Organization,federatedorg=Key.CloudletKey.FederatedOrganization";
+  option (protogen.mc2_target_cloudlet) = "Key.CloudletKey";
+  option (protogen.uses_org) = "key=CloudletKey.Organization";
+  option (protogen.not_required) = "Key.CloudletKey.FederatedOrganization";
+  option (protogen.create_overwrites_dups) = true;
+}
+
+service CloudletNodeApi {
+  // Create cloudlet node, should only be used for testing/debug
+  rpc CreateCloudletNode(CloudletNode) returns (Result) {
+    option (google.api.http) = {
+      post: "/create/cloudletnode"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,";
+    option (protogen.mc2_api_requires_org) = "Key.CloudletKey.Organization";
+  }
+  // Update cloudlet node, should only be used for testing/debug
+  rpc UpdateCloudletNode(CloudletNode) returns (Result) {
+    option (google.api.http) = {
+      post: "/update/cloudletnode"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,";
+    option (protogen.mc2_api_requires_org) = "Key.CloudletKey.Organization";
+  }
+  // Show cloudlet nodes
+  rpc ShowCloudletNode(CloudletNode) returns (stream CloudletNode) {
+    option (google.api.http) = {
+      post: "/show/cloudletnode"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.CloudletKey.Organization";
+  }
+  // Delete cloudlet node, in case it was not cleaned up properly
+  rpc DeleteCloudletNode(CloudletNode) returns(Result) {
+    option (google.api.http) = {
+      post: "/delete/cloudetnode"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.CloudletKey.Organization";
+    }
+}

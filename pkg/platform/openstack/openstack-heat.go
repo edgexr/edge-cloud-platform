@@ -536,16 +536,11 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 	}
 
 	// Get chef keys for existing VMs
-	chefClientKeys := make(map[string]string)
 	vmsUserData := make(map[string]string)
 	if action == heatUpdate {
 		stackTemplate, err := o.getHeatStackTemplateDetail(ctx, VMGroupOrchestrationParams.GroupName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch heat stack template for %s: %v", VMGroupOrchestrationParams.GroupName, err)
-		}
-		chefClientKeys, err = GetChefKeysFromOSResource(ctx, stackTemplate)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "failed to fetch chef keys", "err", err)
 		}
 		vmsUserData, err = GetUserDataFromOSResource(ctx, stackTemplate)
 		if err != nil {
@@ -556,19 +551,17 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 	// populate the user data
 	for i, v := range VMGroupOrchestrationParams.VMs {
 		VMGroupOrchestrationParams.VMs[i].MetaData = vmlayer.GetVMMetaData(v.Role, masterIP, reindent16)
-		// Copy client keys from existing template in case of update
-		if v.CloudConfigParams.ChefParams != nil && action == heatUpdate {
-			if v.CloudConfigParams.ChefParams.ClientKey == "" {
-				key, ok := chefClientKeys[v.CloudConfigParams.ChefParams.NodeName]
-				if !ok || key == "" {
-					return nil, fmt.Errorf("missing chef client key for %s", v.CloudConfigParams.ChefParams.NodeName)
-				}
-				v.CloudConfigParams.ChefParams.ClientKey = key
+		var userdata string
+		if ud, ok := vmsUserData[v.Name]; ok && action == heatUpdate {
+			// use previous userdata in case of update to avoid
+			// redeploying existing VM.
+			userdata = ud
+		} else {
+			ud, err := vmlayer.GetVMUserData(v.Name, v.SharedVolume, v.DeploymentManifest, v.Command, &v.CloudConfigParams, reindent16)
+			if err != nil {
+				return nil, err
 			}
-		}
-		userdata, err := vmlayer.GetVMUserData(v.Name, v.SharedVolume, v.DeploymentManifest, v.Command, &v.CloudConfigParams, reindent16)
-		if err != nil {
-			return nil, err
+			userdata = ud
 		}
 
 		if v.Role == vmlayer.RoleMaster && action == heatUpdate {

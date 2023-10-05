@@ -42,19 +42,26 @@ const vaultCloudflareApiPath = "/secret/data/accounts/cloudflareapi"
 // specific plugin.
 // VaultClient should only be used in the context of the Controller.
 type VaultClient struct {
-	cloudlet      *edgeproto.Cloudlet
-	vaultConfig   *vault.Config
-	region        string
-	cloudflareApi *cloudflare.API
-	dnsZones      []string
+	cloudlet            *edgeproto.Cloudlet
+	vaultConfig         *vault.Config
+	region              string
+	cloudflareApi       *cloudflare.API
+	dnsZones            []string
+	cloudletNodeHandler CloudletNodeHandler
 }
 
-func NewVaultClient(cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config, region string, dnsZones string) *VaultClient {
+type CloudletNodeHandler interface {
+	CreateCloudletNodeReq(ctx context.Context, node *edgeproto.CloudletNode) (string, error)
+	DeleteCloudletNodeReq(ctx context.Context, key *edgeproto.CloudletNodeKey) error
+}
+
+func NewVaultClient(cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config, cloudletNodeHandler CloudletNodeHandler, region string, dnsZones string) *VaultClient {
 	return &VaultClient{
-		cloudlet:    cloudlet,
-		vaultConfig: vaultConfig,
-		region:      region,
-		dnsZones:    strings.Split(dnsZones, ","),
+		cloudlet:            cloudlet,
+		vaultConfig:         vaultConfig,
+		region:              region,
+		dnsZones:            strings.Split(dnsZones, ","),
+		cloudletNodeHandler: cloudletNodeHandler,
 	}
 }
 
@@ -200,4 +207,18 @@ func (s *VaultClient) GetFederationAPIKey(ctx context.Context, fedKey *federatio
 		return nil, err
 	}
 	return apiKey, nil
+}
+
+func (s *VaultClient) CreateCloudletNode(ctx context.Context, node *edgeproto.CloudletNode) (string, error) {
+	if s.cloudletNodeHandler == nil {
+		return "", fmt.Errorf("create cloudlet node not supported")
+	}
+	return s.cloudletNodeHandler.CreateCloudletNodeReq(ctx, node)
+}
+
+func (s *VaultClient) DeleteCloudletNode(ctx context.Context, nodeKey *edgeproto.CloudletNodeKey) error {
+	if s.cloudletNodeHandler == nil {
+		return fmt.Errorf("delete cloudlet node not supported")
+	}
+	return s.cloudletNodeHandler.DeleteCloudletNodeReq(ctx, nodeKey)
 }

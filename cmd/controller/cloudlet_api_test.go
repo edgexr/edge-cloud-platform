@@ -385,8 +385,8 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 	cloudlet.State = edgeproto.TrackedState_READY
 	ctrlHandler.CloudletCache.Update(ctx, &cloudlet, 0)
 
-	require.Equal(t, 5, len(streamCloudlet.Msgs), "progress messages")
-	cloudletMsgs := []string{"Setting up cloudlet", "Initializing platform", "Done initializing fake platform", "Gathering Cloudlet Info", "Cloudlet setup successfully"}
+	cloudletMsgs := []string{"Setting up cloudlet", "Initializing controller connection", "Initializing platform", "Done initializing fake platform", "Gathering Cloudlet Info", "Cloudlet setup successfully"}
+	require.Equal(t, len(cloudletMsgs), len(streamCloudlet.Msgs), "progress messages")
 	for ii, msg := range cloudletMsgs {
 		require.Equal(t, streamCloudlet.Msgs[ii].Message, msg, "message matches")
 	}

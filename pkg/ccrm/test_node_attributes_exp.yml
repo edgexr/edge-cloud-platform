@@ -1,0 +1,96 @@
+cloudletPrometheus:
+  args:
+  - --config.file
+  - /etc/prometheus/prometheus.yml
+  - --web.listen-address
+  - :9092
+  - --web.enable-lifecycle
+  - --web.enable-admin-api
+  - --log.level=debug
+  env: {}
+  label:
+    cloudlet: NewYorkSite
+    cloudletorg: testoper
+  publish:
+  - 9092:9092
+  volume:
+  - /var/tmp/prometheus.yml:/etc/prometheus/prometheus.yml
+  - /var/tmp:/var/tmp
+crmserver:
+  args:
+  - crmserver
+  - --notifyAddrs
+  - tr.ctrl.test.domain
+  - --useVaultPki
+  - --deploymentTag
+  - main
+  - --accessApiAddr
+  - tr.ctrl.test.domain:40000
+  - --accessKeyFile
+  - /root/accesskey/accesskey.pem
+  - --notifySrvAddr
+  - 127.0.0.1:51002
+  - --cloudletKey
+  - '{"organization":"testoper","name":"New York Site"}'
+  - --platform
+  - fake
+  - --physicalName
+  - NewYorkSite
+  - --cloudletVMImagePath
+  - https://console.test.domain/storage/v1/artifacts/edgecloudorg
+  - --region
+  - test-region
+  - --appDNSRoot
+  - app.test.domain
+  - --ansiblePublicAddr
+  - https://ansible.test.domain
+  - --cacheDir
+  - /root/crm_cache
+  - --HARole
+  - primary
+  - -d
+  - api,infra,notify,info
+  env:
+    BAR_ONLY: no-bar
+    FOO: foo
+    JAEGER_ENDPOINT: http://jaeger.test.domain:1425
+edgeCloudImage: ghcr.io/company/crm-image
+edgeCloudVersion: 1234-99-XX
+mobiledgeXPackageVersion: 5.0.0
+node_name: mynode
+node_role: dockercrm
+node_type: platformvm
+notifyAddrs: tr.ctrl.test.domain
+prometheusImage: prom/prometheus
+prometheusVersion: v2.19.2
+shepherd:
+  args:
+  - shepherd
+  - --useVaultPki
+  - --deploymentTag
+  - main
+  - --accessApiAddr
+  - tr.ctrl.test.domain:40000
+  - --accessKeyFile
+  - /root/accesskey/accesskey.pem
+  - --notifyAddrs
+  - 127.0.0.1:51002
+  - --platform
+  - fake
+  - --physicalName
+  - NewYorkSite
+  - --cloudletKey
+  - '{"organization":"testoper","name":"New York Site"}'
+  - --region
+  - test-region
+  - --appDNSRoot
+  - app.test.domain
+  - --thanosRecvAddr
+  - thanos-addr
+  - -d
+  - api,infra,metrics
+  env:
+    BAR_ONLY: no-bar
+    FOO: foo
+    JAEGER_ENDPOINT: http://jaeger.test.domain:1425
+thanosRecvAddr: thanos-addr

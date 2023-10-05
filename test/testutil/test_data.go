@@ -478,6 +478,46 @@ func CloudletData() []edgeproto.Cloudlet {
 	}}
 }
 
+func CloudletNodeData() []edgeproto.CloudletNode {
+	cloudletData := CloudletData()
+	return []edgeproto.CloudletNode{{ // 0
+		Key: edgeproto.CloudletNodeKey{
+			Name:        "pf",
+			CloudletKey: cloudletData[0].Key,
+		},
+		NodeType: "platformvm",
+		NodeRole: "dockercrm",
+	}, {
+		Key: edgeproto.CloudletNodeKey{
+			Name:        "lb",
+			CloudletKey: cloudletData[0].Key,
+		},
+		NodeType: "rootlb",
+		NodeRole: "dockercrm",
+	}, {
+		Key: edgeproto.CloudletNodeKey{
+			Name:        "node1",
+			CloudletKey: cloudletData[0].Key,
+		},
+		NodeType: "dockervm",
+		NodeRole: "base",
+	}, {
+		Key: edgeproto.CloudletNodeKey{
+			Name:        "node2",
+			CloudletKey: cloudletData[0].Key,
+		},
+		NodeType: "k8smaster",
+		NodeRole: "base",
+	}, {
+		Key: edgeproto.CloudletNodeKey{
+			Name:        "pf",
+			CloudletKey: cloudletData[1].Key,
+		},
+		NodeType: "platformvm",
+		NodeRole: "dockercrm",
+	}}
+}
+
 func ClusterInstData() []edgeproto.ClusterInst {
 	flavorData := FlavorData()
 	clusterKeys := ClusterKeys()

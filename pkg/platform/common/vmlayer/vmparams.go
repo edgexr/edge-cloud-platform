@@ -28,9 +28,10 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
@@ -148,7 +149,7 @@ type VMRequestSpec struct {
 	ConnectToExternalNet    bool
 	CreatePortsOnly         bool
 	ConnectToSubnet         string
-	ChefParams              *chefmgmt.ServerChefParams
+	ConfigureNodeVars       *confignode.ConfigureNodeVars
 	OptionalResource        string
 	AccessKey               string
 	AdditionalNetworks      map[string]NetworkType
@@ -220,9 +221,16 @@ func WithImageFolder(folder string) VMReqOp {
 		return nil
 	}
 }
-func WithChefParams(chefParams *chefmgmt.ServerChefParams) VMReqOp {
+func WithConfigureNodeVars(v *VMPlatform, nodeRole cloudcommon.NodeRole, ckey *edgeproto.CloudletKey, ownerKey objstore.ObjKey) VMReqOp {
 	return func(s *VMRequestSpec) error {
-		s.ChefParams = chefParams
+		s.ConfigureNodeVars = &confignode.ConfigureNodeVars{
+			Key: edgeproto.CloudletNodeKey{
+				CloudletKey: *ckey,
+			},
+			NodeRole:          nodeRole,
+			OwnerKey:          ownerKey,
+			AnsiblePublicAddr: v.VMProperties.CommonPf.PlatformConfig.AnsiblePublicAddr,
+		}
 		return nil
 	}
 }
@@ -271,7 +279,7 @@ type VMGroupRequestSpec struct {
 	SkipInfraSpecificCheck        bool
 	InitOrchestrator              bool
 	Domain                        string
-	ChefUpdateInfo                map[string]string
+	NodeUpdateActions             map[string]string
 	SkipCleanupOnFailure          bool
 	AntiAffinity                  bool
 	AntiAffinityEnabledInCloudlet bool
@@ -328,9 +336,9 @@ func WithInitOrchestrator(init bool) VMGroupReqOp {
 		return nil
 	}
 }
-func WithChefUpdateInfo(updateInfo map[string]string) VMGroupReqOp {
+func WithNodeUpdateActions(updateActions map[string]string) VMGroupReqOp {
 	return func(s *VMGroupRequestSpec) error {
-		s.ChefUpdateInfo = updateInfo
+		s.NodeUpdateActions = updateActions
 		return nil
 	}
 }
@@ -481,12 +489,14 @@ type TagOrchestrationParams struct {
 
 type VMCloudConfigParams struct {
 	ExtraBootCommands []string
-	ChefParams        *chefmgmt.ServerChefParams
+	ConfigureNodeVars *confignode.ConfigureNodeVars
 	CACert            string
 	AccessKey         string
 	PrimaryDNS        string
 	FallbackDNS       string
 	NtpServers        string
+	AnsiblePkgURL     string
+	CloudletVarsURL   string
 }
 
 // VMOrchestrationParams contains all details  that are needed by the orchestator
@@ -519,30 +529,6 @@ type VMOrchestrationParams struct {
 	ExistingVm              bool
 }
 
-var (
-	ChefClientKeyType     = true
-	ChefValidationKeyType = false
-)
-
-func (v *VMPlatform) GetChefClientName(name string) string {
-	// Prefix with region name
-	return v.VMProperties.GetDeploymentTag() + "-" + v.VMProperties.GetRegion() + "-" + name
-}
-
-func (v *VMPlatform) GetServerChefParams(nodeName, clientKey string, policyName string, attributes map[string]interface{}) *chefmgmt.ServerChefParams {
-	chefServerPath := v.VMProperties.GetChefServerPath()
-	deploymentTag := v.VMProperties.GetDeploymentTag()
-
-	return &chefmgmt.ServerChefParams{
-		NodeName:    nodeName,
-		ServerPath:  chefServerPath,
-		ClientKey:   clientKey,
-		Attributes:  attributes,
-		PolicyName:  policyName,
-		PolicyGroup: deploymentTag,
-	}
-}
-
 // VMGroupOrchestrationParams contains all the details used by the orchestator to create a set of associated VMs
 type VMGroupOrchestrationParams struct {
 	GroupName                     string
@@ -557,7 +543,7 @@ type VMGroupOrchestrationParams struct {
 	SkipInfraSpecificCheck        bool
 	SkipSubnetGateway             bool
 	InitOrchestrator              bool
-	ChefUpdateInfo                map[string]string
+	NodeUpdateActions             map[string]string
 	ConnectsToSharedRootLB        bool
 	SkipCleanupOnFailure          bool
 	AntiAffinitySpecified         bool
@@ -593,6 +579,10 @@ func (v *VMPlatform) GetVMRequestSpec(ctx context.Context, nodeType cloudcommon.
 	vrs.FlavorName = flavorName
 	vrs.ImageName = imageName
 	vrs.ConnectToExternalNet = connectExternal
+	if vrs.ConfigureNodeVars != nil {
+		vrs.ConfigureNodeVars.Key.Name = serverName
+		vrs.ConfigureNodeVars.NodeType = nodeType
+	}
 	return &vrs, nil
 }
 
@@ -678,8 +668,8 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 	if spec.SkipInfraSpecificCheck {
 		vmgp.SkipInfraSpecificCheck = true
 	}
-	if spec.ChefUpdateInfo != nil {
-		vmgp.ChefUpdateInfo = spec.ChefUpdateInfo
+	if spec.NodeUpdateActions != nil {
+		vmgp.NodeUpdateActions = spec.NodeUpdateActions
 	}
 
 	rtrInUse := false
@@ -1015,8 +1005,8 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 			log.SpanLog(ctx, log.DebugLevelInfra, "Defining new VM orch param", "vm.Name", vm.Name, "ports", newPorts)
 			hostName := util.HostnameSanitize(strings.Split(vm.Name, ".")[0])
 			vccp := VMCloudConfigParams{}
-			if vm.ChefParams != nil {
-				vccp.ChefParams = vm.ChefParams
+			if vm.ConfigureNodeVars != nil {
+				vccp.ConfigureNodeVars = vm.ConfigureNodeVars
 			}
 			vccp.CACert = vaultSSHCert
 			vccp.AccessKey = vm.AccessKey
@@ -1094,56 +1084,56 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 // OrchestrateVMsFromVMSpec calls the provider function to do the orchestation of the VMs.  It returns the updated VM group spec
 func (v *VMPlatform) OrchestrateVMsFromVMSpec(ctx context.Context, name string, vms []*VMRequestSpec, action ActionType, updateCallback edgeproto.CacheUpdateCallback, opts ...VMGroupReqOp) (*VMGroupOrchestrationParams, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "OrchestrateVMsFromVMSpec", "name", name)
-	chefClient := v.VMProperties.GetChefClient()
-	if chefClient == nil {
-		return nil, fmt.Errorf("Chef client is not initialzied")
-	}
 	gp, err := v.GetVMGroupOrchestrationParamsFromVMSpec(ctx, name, vms, opts...)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetVMGroupOrchestrationParamsFromVMSpec failed", "error", err)
 		return gp, err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "created vm group spec", "gp", gp)
+	accessApi := v.VMProperties.CommonPf.PlatformConfig.AccessApi
 	switch action {
 	case ActionCreate:
 		for _, vm := range vms {
 			if vm.CreatePortsOnly || vm.Type == cloudcommon.NodeTypeAppVM {
 				continue
 			}
-			if vm.ChefParams == nil {
-				return gp, fmt.Errorf("chef params doesn't exist for %s", vm.Name)
+			if vm.ConfigureNodeVars == nil {
+				return gp, fmt.Errorf("node params don't exist for %s", vm.Name)
 			}
-			clientKey, err := chefmgmt.ChefClientCreate(ctx, chefClient, vm.ChefParams)
+			err := infracommon.CreateCloudletNode(ctx, vm.ConfigureNodeVars, accessApi)
 			if err != nil {
 				return gp, err
 			}
-			vm.ChefParams.ClientKey = clientKey
 		}
 		err = v.VMProvider.CreateVMs(ctx, gp, updateCallback)
 	case ActionUpdate:
-		if gp.ChefUpdateInfo != nil {
+		if gp.NodeUpdateActions != nil {
 			for _, vm := range vms {
 				if vm.CreatePortsOnly || vm.Type == cloudcommon.NodeTypeAppVM {
 					continue
 				}
-				actionType, ok := gp.ChefUpdateInfo[vm.Name]
+				actionType, ok := gp.NodeUpdateActions[vm.Name]
 				if !ok || actionType != ActionAdd {
 					continue
 				}
-				if vm.ChefParams == nil {
-					return gp, fmt.Errorf("chef params doesn't exist for %s", vm.Name)
+				if vm.ConfigureNodeVars == nil {
+					return gp, fmt.Errorf("node params doesn't exist for %s", vm.Name)
 				}
-				clientKey, err := chefmgmt.ChefClientCreate(ctx, chefClient, vm.ChefParams)
+				err := infracommon.CreateCloudletNode(ctx, vm.ConfigureNodeVars, accessApi)
 				if err != nil {
 					return gp, err
 				}
-				vm.ChefParams.ClientKey = clientKey
 			}
-			for vmName, actionType := range gp.ChefUpdateInfo {
+			for vmName, actionType := range gp.NodeUpdateActions {
 				if actionType != ActionRemove {
 					continue
 				}
-				err = chefmgmt.ChefClientDelete(ctx, chefClient, v.GetChefClientName(vmName))
+				cloudletKey := v.VMProperties.CommonPf.PlatformConfig.CloudletKey
+				nodeKey := &edgeproto.CloudletNodeKey{
+					Name:        vmName,
+					CloudletKey: *cloudletKey,
+				}
+				err = accessApi.DeleteCloudletNode(ctx, nodeKey)
 				if err != nil {
 					return gp, err
 				}

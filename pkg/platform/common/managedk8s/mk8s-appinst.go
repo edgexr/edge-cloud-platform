@@ -193,6 +193,6 @@ func (m *ManagedK8sPlatform) SetPowerState(ctx context.Context, app *edgeproto.A
 
 func (m *ManagedK8sPlatform) CreatePlatformApp(ctx context.Context, name string, kconf string, accessApi platform.AccessApi, pfConfig *edgeproto.PlatformConfig) error {
 	// TODO: we can either create the crm app directly here on the cloudlet cluster, or we can create some kind
-	// of chef sidecar app that then runs and creates/maintains the crm pod
+	// of sidecar app that then runs and creates/maintains the crm pod
 	return fmt.Errorf("CreatePlatformApp not yet implemented")
 }

@@ -89,18 +89,19 @@ type cudFunc struct {
 }
 
 type tmplArgs struct {
-	Pkg         string
-	Name        string
-	KeyName     string
-	HasUpdate   bool
-	UpdateField string
-	UpdateValue string
-	ShowOnly    bool
-	Streamout   bool
-	Create      string
-	Delete      string
-	CudFuncs    []cudFunc
-	ObjAndKey   bool
+	Pkg                  string
+	Name                 string
+	KeyName              string
+	HasUpdate            bool
+	UpdateField          string
+	UpdateValue          string
+	ShowOnly             bool
+	Streamout            bool
+	Create               string
+	Delete               string
+	CudFuncs             []cudFunc
+	ObjAndKey            bool
+	CreateOverwritesDups bool
 }
 
 var tmpl = `
@@ -380,9 +381,15 @@ func basic{{.Name}}CudTest(t *testing.T, ctx context.Context, api *{{.Name}}Comm
 	// test create
 	{{.Create}}{{.Name}}Data(t, ctx, api, testData)
 
+{{ if .CreateOverwritesDups }}
+	// test duplicate {{.Create}} - should succeed
+	_, err = api.{{.Create}}{{.Name}}(ctx, &testData[0])
+	require.Nil(t, err, "{{.Create}} duplicate {{.Name}}")
+{{- else}}
 	// test duplicate {{.Create}} - should fail
 	_, err = api.{{.Create}}{{.Name}}(ctx, &testData[0])
 	require.NotNil(t, err, "{{.Create}} duplicate {{.Name}}")
+{{- end}}
 
 	// test show all items
 	basic{{.Name}}ShowTest(t, ctx, api, createdData)
@@ -631,13 +638,14 @@ func (t *TestCud) generateCudTest(desc *generator.Descriptor) {
 		keystr = "key not found"
 	}
 	args := tmplArgs{
-		Pkg:       t.support.GetPackageName(desc),
-		Name:      *message.Name,
-		KeyName:   keystr,
-		ShowOnly:  GetGenerateShowTest(message),
-		Streamout: gensupport.GetGenerateCudStreamout(message),
-		HasUpdate: GetGenerateCudTestUpdate(message),
-		ObjAndKey: gensupport.GetObjAndKey(message),
+		Pkg:                  t.support.GetPackageName(desc),
+		Name:                 *message.Name,
+		KeyName:              keystr,
+		ShowOnly:             GetGenerateShowTest(message),
+		Streamout:            gensupport.GetGenerateCudStreamout(message),
+		HasUpdate:            GetGenerateCudTestUpdate(message),
+		ObjAndKey:            gensupport.GetObjAndKey(message),
+		CreateOverwritesDups: GetCreateOverwritesDups(message),
 	}
 	fncs := []string{}
 	if GetGenerateAddrmTest(message) {
@@ -1272,6 +1280,10 @@ func GetGenerateCudTestUpdate(message *descriptor.DescriptorProto) bool {
 
 func GetGenerateShowTest(message *descriptor.DescriptorProto) bool {
 	return proto.GetBoolExtension(message.Options, protogen.E_GenerateShowTest, false)
+}
+
+func GetCreateOverwritesDups(message *descriptor.DescriptorProto) bool {
+	return proto.GetBoolExtension(message.Options, protogen.E_CreateOverwritesDups, false)
 }
 
 func GetTestUpdate(field *descriptor.FieldDescriptorProto) bool {

@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
@@ -147,7 +146,7 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 	updateCallback(edgeproto.UpdateTask, "Updating Cluster Resources")
 	start := time.Now()
 
-	chefUpdateInfo := make(map[string]string)
+	nodeUpdateAction := make(map[string]string)
 	masterTaintAction := k8smgmt.NoScheduleMasterTaintNone
 	masterNodeName, err := GetClusterMasterNameFromNodeList(ctx, client, clusterInst)
 	if err != nil {
@@ -183,9 +182,9 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 			// heat will remove the higher-numbered nodes
 			if num > clusterInst.NumNodes {
 				toRemove = append(toRemove, n)
-				chefUpdateInfo[nodeName] = ActionRemove
+				nodeUpdateAction[nodeName] = ActionRemove
 			} else {
-				chefUpdateInfo[nodeName] = ActionNone
+				nodeUpdateAction[nodeName] = ActionNone
 			}
 		}
 		if len(toRemove) > 0 {
@@ -204,8 +203,8 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 		}
 		for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
 			nodeName := GetClusterNodeName(ctx, clusterInst, nn)
-			if _, ok := chefUpdateInfo[nodeName]; !ok {
-				chefUpdateInfo[nodeName] = ActionAdd
+			if _, ok := nodeUpdateAction[nodeName]; !ok {
+				nodeUpdateAction[nodeName] = ActionAdd
 			}
 		}
 		if numExistingMaster == clusterInst.NumMasters && numExistingNodes == clusterInst.NumNodes {
@@ -219,7 +218,7 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 			masterTaintAction = k8smgmt.NoScheduleMasterTaintAdd
 		}
 	}
-	vmgp, err := v.PerformOrchestrationForCluster(ctx, imgName, clusterInst, ActionUpdate, chefUpdateInfo, updateCallback)
+	vmgp, err := v.PerformOrchestrationForCluster(ctx, imgName, clusterInst, ActionUpdate, nodeUpdateAction, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -240,11 +239,6 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 //DeleteCluster deletes kubernetes cluster
 func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting kubernetes cluster", "clusterInst", clusterInst)
-
-	chefClient := v.VMProperties.GetChefClient()
-	if chefClient == nil {
-		return fmt.Errorf("Chef client is not initialzied")
-	}
 
 	name := k8smgmt.GetCloudletClusterName(&clusterInst.Key)
 
@@ -301,36 +295,52 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 		}
 	}
 
-	// Delete Chef configs
-	clientName := ""
+	// Delete CloudletNode configs
+	accessApi := v.VMProperties.CommonPf.PlatformConfig.AccessApi
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		// Dedicated RootLB
-		clientName = v.GetChefClientName(v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst))
-		err = chefmgmt.ChefClientDelete(ctx, chefClient, clientName)
+		nodeName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
+		nodeKey := &edgeproto.CloudletNodeKey{
+			Name:        nodeName,
+			CloudletKey: clusterInst.Key.CloudletKey,
+		}
+		err = accessApi.DeleteCloudletNode(ctx, nodeKey)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete client from Chef Server", "clientName", clientName, "err", err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete cloudlet node registration", "name", nodeName, "err", err)
 		}
 	}
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
 		// Docker node
-		clientName = v.GetChefClientName(v.GetDockerNodeName(ctx, clusterInst))
-		err = chefmgmt.ChefClientDelete(ctx, chefClient, clientName)
+		nodeName := v.GetDockerNodeName(ctx, clusterInst)
+		nodeKey := &edgeproto.CloudletNodeKey{
+			Name:        nodeName,
+			CloudletKey: clusterInst.Key.CloudletKey,
+		}
+		err = accessApi.DeleteCloudletNode(ctx, nodeKey)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete client from Chef Server", "clientName", clientName, "err", err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete cloudlet node registration", "name", nodeName, "err", err)
 		}
 	} else {
 		// Master node
-		clientName = v.GetChefClientName(GetClusterMasterName(ctx, clusterInst))
-		err = chefmgmt.ChefClientDelete(ctx, chefClient, clientName)
+		nodeName := GetClusterMasterName(ctx, clusterInst)
+		nodeKey := &edgeproto.CloudletNodeKey{
+			Name:        nodeName,
+			CloudletKey: clusterInst.Key.CloudletKey,
+		}
+		err = accessApi.DeleteCloudletNode(ctx, nodeKey)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete client from Chef Server", "clientName", clientName, "err", err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete cloudlet node registration", "name", nodeName, "err", err)
 		}
 		for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
 			// Worker node
-			clientName = v.GetChefClientName(GetClusterNodeName(ctx, clusterInst, nn))
-			err = chefmgmt.ChefClientDelete(ctx, chefClient, clientName)
+			nodeName := GetClusterNodeName(ctx, clusterInst, nn)
+			nodeKey := &edgeproto.CloudletNodeKey{
+				Name:        nodeName,
+				CloudletKey: clusterInst.Key.CloudletKey,
+			}
+			err = accessApi.DeleteCloudletNode(ctx, nodeKey)
 			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete client from Chef Server", "clientName", clientName, "err", err)
+				log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete cloudlet node registration", "name", nodeName, "err", err)
 			}
 		}
 	}
@@ -717,20 +727,6 @@ func (v *VMPlatform) isClusterReady(ctx context.Context, clusterInst *edgeproto.
 	return true, readyCount, nil
 }
 
-func (v *VMPlatform) GetChefClusterTags(key *edgeproto.ClusterInstKey, nodeType cloudcommon.NodeType) []string {
-	region := v.VMProperties.GetRegion()
-	deploymentTag := v.VMProperties.GetDeploymentTag()
-	return []string{
-		"deploytag/" + deploymentTag,
-		"cluster/" + key.ClusterKey.Name,
-		"clusterorg/" + key.ClusterKey.Organization,
-		"cloudlet/" + key.CloudletKey.Name,
-		"cloudletorg/" + key.CloudletKey.Organization,
-		"region/" + region,
-		"nodetype/" + nodeType.String(),
-	}
-}
-
 func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgName string, clusterInst *edgeproto.ClusterInst, action ActionType, lbNets, nodeNets map[string]NetworkType, lbRoutes, nodeRoutes map[string][]edgeproto.Route, updateCallback edgeproto.CacheUpdateCallback) ([]*VMRequestSpec, string, string, error) {
 
 	log.SpanLog(ctx, log.DebugLevelInfo, "getVMRequestSpecForDockerCluster", "clusterInst", clusterInst)
@@ -741,8 +737,7 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 	newSubnetName := GetClusterSubnetName(ctx, clusterInst)
 
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-		tags := v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeDedicatedRootLB)
-		rootlb, err := v.GetVMSpecForRootLB(ctx, v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst), newSubnetName, tags, lbNets, lbRoutes, updateCallback)
+		rootlb, err := v.GetVMSpecForRootLB(ctx, v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst), newSubnetName, &clusterInst.Key, lbNets, lbRoutes, updateCallback)
 		if err != nil {
 			return vms, newSubnetName, newSecgrpName, err
 		}
@@ -762,10 +757,6 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 			vms = append(vms, rootlb)
 		}
 	}
-	chefAttributes := make(map[string]interface{})
-	chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeDockerClusterNode)
-	clientName := v.GetChefClientName(dockerVmName)
-	chefParams := v.GetServerChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 	dockervm, err := v.GetVMRequestSpec(
 		ctx,
 		cloudcommon.NodeTypeDockerClusterNode,
@@ -775,7 +766,7 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 		false,
 		WithExternalVolume(clusterInst.ExternalVolumeSize),
 		WithSubnetConnection(newSubnetName),
-		WithChefParams(chefParams),
+		WithConfigureNodeVars(v, cloudcommon.NodeRoleBase, &clusterInst.Key.CloudletKey, &clusterInst.Key),
 		WithOptionalResource(clusterInst.OptRes),
 		WithComputeAvailabilityZone(clusterInst.AvailabilityZone),
 		WithAdditionalNetworks(nodeNets),
@@ -835,8 +826,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		var rootlb *VMRequestSpec
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			// dedicated for docker means the docker VM acts as its own rootLB
-			tags := v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeDedicatedRootLB)
-			rootlb, err = v.GetVMSpecForRootLB(ctx, v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst), newSubnetName, tags, lbNets, lbRoutes, updateCallback)
+			rootlb, err = v.GetVMSpecForRootLB(ctx, v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst), newSubnetName, &clusterInst.Key, lbNets, lbRoutes, updateCallback)
 			if err != nil {
 				return nil, err
 			}
@@ -850,12 +840,6 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 			}
 			vms = append(vms, rootlb)
 		}
-
-		chefAttributes := make(map[string]interface{})
-		chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeK8sClusterMaster)
-
-		clientName := v.GetChefClientName(GetClusterMasterName(ctx, clusterInst))
-		chefParams := v.GetServerChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 
 		masterFlavor := clusterInst.MasterNodeFlavor
 		if masterFlavor == "" {
@@ -875,7 +859,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 			WithSharedVolume(clusterInst.SharedVolumeSize),
 			WithExternalVolume(clusterInst.ExternalVolumeSize),
 			WithSubnetConnection(newSubnetName),
-			WithChefParams(chefParams),
+			WithConfigureNodeVars(v, cloudcommon.NodeRoleBase, &clusterInst.Key.CloudletKey, &clusterInst.Key),
 			WithComputeAvailabilityZone(masterAZ),
 		)
 		if err != nil {
@@ -883,11 +867,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		}
 		vms = append(vms, master)
 
-		chefAttributes = make(map[string]interface{})
-		chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, cloudcommon.NodeTypeK8sClusterNode)
 		for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
-			clientName := v.GetChefClientName(GetClusterNodeName(ctx, clusterInst, nn))
-			chefParams := v.GetServerChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 			node, err := v.GetVMRequestSpec(ctx,
 				cloudcommon.NodeTypeK8sClusterNode,
 				GetClusterNodeName(ctx, clusterInst, nn),
@@ -896,7 +876,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 				false, //connect external
 				WithExternalVolume(clusterInst.ExternalVolumeSize),
 				WithSubnetConnection(newSubnetName),
-				WithChefParams(chefParams),
+				WithConfigureNodeVars(v, cloudcommon.NodeRoleBase, &clusterInst.Key.CloudletKey, &clusterInst.Key),
 				WithComputeAvailabilityZone(clusterInst.AvailabilityZone),
 				WithAdditionalNetworks(nodeNets),
 				WithRoutes(nodeRoutes),
@@ -914,7 +894,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		updateCallback,
 		WithNewSubnet(newSubnetName),
 		WithNewSecurityGroup(newSecgrpName),
-		WithChefUpdateInfo(updateInfo),
+		WithNodeUpdateActions(updateInfo),
 		WithSkipCleanupOnFailure(clusterInst.SkipCrmCleanupOnFailure),
 	)
 }

@@ -278,11 +278,14 @@ ccrms:
   region: local
   hostname: "127.0.0.1"
   appdnsroot: edgecloude2e.net
+  controllerapiaddr: "127.0.0.1:5501"
   controllernotifyaddr: "127.0.0.1:27001"
   controllerpublicaccessapiaddr: "127.0.0.1:21001"
   controllerpublicnotifyaddr: "127.0.0.1:27001"
   thanosrecvaddr: "http://host.docker.internal:10908"
   vaultaddr: "http://127.0.0.1:8200"
+  ansiblelistenaddr: "127.0.0.1:48880"
+  ansiblepublicaddr: "http://127.0.0.1:48880"
   redissentineladdrs: "127.0.0.1:26379,127.0.0.1:26380,127.0.0.1:26381"
   usevaultpki: true
   testmode: true
@@ -296,10 +299,13 @@ ccrms:
   region: locala
   hostname: "127.0.0.1"
   appdnsroot: edgecloude2e.net
+  controllerapiaddr: "127.0.0.1:5511"
   controllernotifyaddr: "127.0.0.1:27011"
   controllerpublicaccessapiaddr: "127.0.0.1:21011"
   controllerpublicnotifyaddr: "127.0.0.1:27011"
   vaultaddr: "http://127.0.0.1:8200"
+  ansiblelistenaddr: "127.0.0.1:48881"
+  ansiblepublicaddr: "http://127.0.0.1:48881"
   redisstandaloneaddr: "127.0.0.1:26382"
   usevaultpki: true
   testmode: true
@@ -313,10 +319,13 @@ ccrms:
   region: PA
   hostname: "127.0.0.1"
   appdnsroot: edgecloude2e.net
+  controllerapiaddr: "127.0.0.1:5581"
   controllernotifyaddr: "127.0.0.1:27081"
   controllerpublicaccessapiaddr: "127.0.0.1:21081"
   controllerpublicnotifyaddr: "127.0.0.1:27081"
   vaultaddr: "http://127.0.0.1:8200"
+  ansiblelistenaddr: "127.0.0.1:48882"
+  ansiblepublicaddr: "http://127.0.0.1:48882"
   redisstandaloneaddr: "127.0.0.1:26383"
   usevaultpki: true
   testmode: true

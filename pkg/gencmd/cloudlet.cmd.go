@@ -2443,6 +2443,8 @@ var PlatformConfigOptionalArgs = []string{
 	"cachedir",
 	"secondarycrmaccessprivatekey",
 	"thanosrecvaddr",
+	"ansiblepublicaddr",
+	"internaldomain",
 }
 var PlatformConfigAliasArgs = []string{}
 var PlatformConfigComments = map[string]string{
@@ -2469,6 +2471,8 @@ var PlatformConfigComments = map[string]string{
 	"cachedir":                     "cache dir",
 	"secondarycrmaccessprivatekey": "secondary crm access private key",
 	"thanosrecvaddr":               "Thanos Receive remote write address",
+	"ansiblepublicaddr":            "Ansible public address for CRM to connect to CCRM",
+	"internaldomain":               "Internal domain for Vault internal PKI",
 }
 var PlatformConfigSpecialArgs = map[string]string{
 	"envvar": "StringToString",
@@ -2869,6 +2873,8 @@ var CloudletComments = map[string]string{
 	"config.cachedir":                        "cache dir",
 	"config.secondarycrmaccessprivatekey":    "secondary crm access private key",
 	"config.thanosrecvaddr":                  "Thanos Receive remote write address",
+	"config.ansiblepublicaddr":               "Ansible public address for CRM to connect to CCRM",
+	"config.internaldomain":                  "Internal domain for Vault internal PKI",
 	"accessvars":                             "Secrets required to access cloudlet, will be saved in encrypted storage, specify accessvars:empty=true to clear",
 	"vmimageversion":                         "EdgeCloud baseimage version where CRM services reside",
 	"deployment":                             "Deployment type to bring up CRM services (docker, kubernetes)",
