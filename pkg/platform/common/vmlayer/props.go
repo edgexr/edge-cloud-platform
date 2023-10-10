@@ -25,7 +25,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/go-chef/chef"
 )
 
 type VMProperties struct {
@@ -381,14 +380,6 @@ func (vp *VMProperties) GetVmAppMetricsCollectInterval() (uint64, error) {
 		return 0, fmt.Errorf("Unable to parse value MEX_VM_APP_METRICS_COLLECT_INTERVAL value: %s as integer", value)
 	}
 	return val, nil
-}
-
-func (vp *VMProperties) GetChefClient() *chef.Client {
-	return vp.CommonPf.ChefClient
-}
-
-func (vp *VMProperties) GetChefServerPath() string {
-	return vp.CommonPf.ChefServerPath
 }
 
 func (vp *VMProperties) GetRegion() string {

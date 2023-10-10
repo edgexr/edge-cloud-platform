@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
@@ -165,14 +165,14 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 	}
 
 	vmRoles := make(map[string]vmlayer.VMRole)
-	ServerChefParams := make(map[string]*chefmgmt.ServerChefParams)
+	nodeParams := make(map[string]*confignode.ConfigureNodeVars)
 	vmAccessKeys := make(map[string]string)
 	for _, vm := range orchVMs {
 		vmRoles[vm.Name] = vm.Role
-		ServerChefParams[vm.Name] = vm.CloudConfigParams.ChefParams
+		nodeParams[vm.Name] = vm.CloudConfigParams.ConfigureNodeVars
 		vmAccessKeys[vm.Name] = vm.CloudConfigParams.AccessKey
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "Fetch VM info", "vmRoles", vmRoles, "chefParams", ServerChefParams)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Fetch VM info", "vmRoles", vmRoles, "nodeParams", nodeParams)
 
 	// Setup Cluster Nodes
 	masterAddr := ""
@@ -228,20 +228,9 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 		}
 
 		// Setup Chef
-		chefParams, ok := ServerChefParams[vm.InternalName]
-		if ok && chefParams != nil {
-			// Setup chef client key
-			log.SpanLog(ctx, log.DebugLevelInfra, "Setting up chef-client", "vm", vm.Name)
-			err = pc.WriteFile(client, "/home/ubuntu/client.pem", chefParams.ClientKey, "chefclientkey", pc.SudoOn)
-			if err != nil {
-				return fmt.Errorf("failed to copy chef client key: %v", err)
-			}
-
-			// Start chef service
-			cmd = fmt.Sprintf("sudo bash /etc/edgecloud/setup-chef.sh -s %s -n %s", chefParams.ServerPath, chefParams.NodeName)
-			if out, err := client.Output(cmd); err != nil {
-				return fmt.Errorf("failed to setup chef: %s, %v", out, err)
-			}
+		thisNodeParams, ok := nodeParams[vm.InternalName]
+		if ok && thisNodeParams != nil {
+			/* TODO: replace chef setup with ansible based one */
 		}
 
 		switch role {

@@ -1297,7 +1297,7 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 	case reflect.TypeOf(StreamState(0)):
 		return "StreamState", ", valid values are one of Unknown, Start, Stop, Error, or 0, 1, 2, 3", true
 	case reflect.TypeOf(VersionHash(0)):
-		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, 611B28894B117C2Aaa22C12Adcd81F74, 37Dea30756Fed2B0C0Ecbc3E7B084855, 1304C4Ec69343Ced28Fd3Ebc85F4A3A9, 601Fa4F6A8109F39E46Adf1Ea3B89197, A61A29Cd41F6B7459B05B6F7Be6Be4Ce, or 0, 47, 48, 49, 50, 51", true
+		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, 611B28894B117C2Aaa22C12Adcd81F74, 37Dea30756Fed2B0C0Ecbc3E7B084855, 1304C4Ec69343Ced28Fd3Ebc85F4A3A9, 601Fa4F6A8109F39E46Adf1Ea3B89197, A61A29Cd41F6B7459B05B6F7Be6Be4Ce, C2D882033B0C14F28Cece41Cf4010060, or 0, 47, 48, 49, 50, 51, 52", true
 	}
 	return "", "", false
 }
@@ -1334,6 +1334,7 @@ var ShowMethodNames = map[string]struct{}{
 	"ShowRateLimitSettings":         struct{}{},
 	"ShowFlowRateLimitSettings":     struct{}{},
 	"ShowMaxReqsRateLimitSettings":  struct{}{},
+	"ShowCloudletNode":              struct{}{},
 	"ShowController":                struct{}{},
 	"ShowNode":                      struct{}{},
 	"ShowDevice":                    struct{}{},
@@ -1359,6 +1360,7 @@ var AllKeyTags = []string{
 	"appver",
 	"cloudlet",
 	"cloudletfedorg",
+	"cloudletnode",
 	"cloudletorg",
 	"cloudletpool",
 	"cloudletpoolorg",
@@ -1402,6 +1404,7 @@ var AllKeyTagsMap = map[string]struct{}{
 	"appver":              struct{}{},
 	"cloudlet":            struct{}{},
 	"cloudletfedorg":      struct{}{},
+	"cloudletnode":        struct{}{},
 	"cloudletorg":         struct{}{},
 	"cloudletpool":        struct{}{},
 	"cloudletpoolorg":     struct{}{},

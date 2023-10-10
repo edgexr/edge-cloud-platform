@@ -1,0 +1,14 @@
+---
+- name: Set vars for notify endpoint
+  # it is assumed the address does not have a http:// scheme
+  ansible.builtin.set_fact:
+    controller_notify_host: "{{ controller_notify_parts[0] }}"
+    controller_notify_port: "{{ contorller_notify_parts[1] | default(443) }}"
+  vars:
+    controller_notify_parts: "{{ notifyAddrs.split(':') }}"
+
+- name: Wait for controller's notify port to be reachable
+  wait_for:
+    host: "{{ controller_notify_host }}"
+    port: "{{ controller_notify_port }}"
+    timeout: 10

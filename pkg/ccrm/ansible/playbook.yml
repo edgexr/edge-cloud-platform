@@ -1,0 +1,4 @@
+---
+- hosts: localhost
+  roles:
+    - "{{ node_role }}"

@@ -26,7 +26,6 @@ import (
 	cloudflare "github.com/cloudflare/cloudflare-go"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefauth"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
@@ -48,7 +47,7 @@ type PlatformConfig struct {
 	NodeMgr             *node.NodeMgr
 	AppDNSRoot          string
 	RootLBFQDN          string
-	ChefServerPath      string
+	AnsiblePublicAddr   string
 	DeploymentTag       string
 	Upgrade             bool
 	AccessApi           AccessApi
@@ -187,7 +186,6 @@ type AccessApi interface {
 	SignSSHKey(ctx context.Context, publicKey string) (string, error)
 	GetSSHPublicKey(ctx context.Context) (string, error)
 	GetOldSSHKey(ctx context.Context) (*vault.MEXKey, error)
-	GetChefAuthKey(ctx context.Context) (*chefauth.ChefAuthKey, error)
 	CreateOrUpdateDNSRecord(ctx context.Context, name, rtype, content string, ttl int, proxy bool) error
 	GetDNSRecords(ctx context.Context, fqdn string) ([]cloudflare.DNSRecord, error)
 	DeleteDNSRecord(ctx context.Context, recordID string) error
@@ -195,6 +193,8 @@ type AccessApi interface {
 	GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error)
 	GetGCSCreds(ctx context.Context) ([]byte, error)
 	GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error)
+	CreateCloudletNode(ctx context.Context, node *edgeproto.CloudletNode) (string, error)
+	DeleteCloudletNode(ctx context.Context, nodeKey *edgeproto.CloudletNodeKey) error
 }
 
 // AccessData types
@@ -213,6 +213,8 @@ const (
 	GetKafkaCreds           = "get-kafka-creds"
 	GetGCSCreds             = "get-gcs-creds"
 	GetFederationAPIKey     = "get-federation-apikey"
+	CreateCloudletNode      = "create-cloudlet-node"
+	DeleteCloudletNode      = "delete-cloudlet-node"
 )
 
 type DNSRequest struct {

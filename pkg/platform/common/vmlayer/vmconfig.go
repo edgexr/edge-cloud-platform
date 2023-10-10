@@ -21,18 +21,8 @@ import (
 )
 
 var VmCloudConfig = `#cloud-config
-{{- if .ChefParams}}
-chef:
-  server_url: {{.ChefParams.ServerPath}}
-  node_name: {{.ChefParams.NodeName}}
-  environment: ""
-  validation_name: mobiledgex-validator
-  validation_key: /etc/chef/client.pem
-  validation_cert: |
-{{ Indent .ChefParams.ClientKey 10 }}
-{{- end}}
 bootcmd:
- - echo MOBILEDGEX CLOUD CONFIG START
+ - echo EDGECLOUD CONFIG START
  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
  - apt-get -y purge update-notifier-common ubuntu-release-upgrader-core landscape-common
  - echo "Removed APT and Ubuntu extra packages" | systemd-cat
@@ -51,6 +41,30 @@ write_files:
        {{- if .FallbackDNS}}
        FallbackDNS={{.FallbackDNS}}
        {{- end}}
+{{- if .ConfigureNodeVars }}
+  - path: /root/configure-node.sh
+    owner: root:root
+    permissions: '0700'
+    content: |
+{{ Indent .ConfigureNodeVars.ConfigureNodeScript 10 }}
+  - path: /etc/cron.d/configure-node
+    owner: root:root
+    permissions: '0644'
+    content: |
+      */10 * * * * root /root/configure-node.sh >> /root/configure-node.log 2>&1
+  - path: /etc/logrotate.d/configure-node
+    owner: root:root
+    permissions: '0644'
+    content: |
+      /root/configure-node.log {
+        rotate 4
+        daily
+        compress
+        missingok
+        notifempty
+        size 10M
+      }
+{{- end}}
   {{- if .NtpServers}}
   - path:  /etc/systemd/timesyncd.conf
     content: |
@@ -67,13 +81,22 @@ write_files:
 chpasswd: { expire: False }
 ssh_pwauth: False
 timezone: UTC
+{{- if .ConfigureNodeVars }}
+apt:
+  sources:
+    ansible-ppa:
+      source: ppa:ansible/ansible
+packages:
+- [ansible, 8.4.0-1ppa~jammy]
+{{- end}}
 runcmd:
  - systemctl restart systemd-resolved
  {{- if .NtpServers}}
  - systemctl restart systemd-timesyncd
  {{- end}}
- - echo MOBILEDGEX doing ifconfig
- - ifconfig -a`
+ - echo EDGECLOUD doing ip addr show
+ - ip addr show
+ - /root/configure-node.sh >> /root/configure-node.log 2>&1`
 
 // vmCloudConfigShareMount is appended optionally to vmCloudConfig.   It assumes
 // the end of vmCloudConfig is runcmd
@@ -115,6 +138,12 @@ func GetVMUserData(name string, sharedVolume bool, manifest, command string, clo
 runcmd:
 - ` + command
 	} else {
+		if cloudConfigParams.ConfigureNodeVars != nil {
+			err := cloudConfigParams.ConfigureNodeVars.GenScript()
+			if err != nil {
+				return "", err
+			}
+		}
 		rc = VmCloudConfig
 		buf, err := infracommon.ExecTemplate(name, VmCloudConfig, cloudConfigParams)
 		if err != nil {

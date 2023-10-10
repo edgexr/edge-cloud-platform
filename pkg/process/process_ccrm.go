@@ -17,11 +17,14 @@ type CCRM struct {
 	CloudletRegistryPath          string
 	CloudletVMImagePath           string
 	VersionTag                    string
+	ControllerApiAddr             string
 	ControllerNotifyAddr          string
 	ControllerPublicAccessApiAddr string
 	ControllerPublicNotifyAddr    string
 	ChefServerPath                string
 	ThanosRecvAddr                string
+	AnsibleListenAddr             string
+	AnsiblePublicAddr             string
 	TestMode                      bool
 	cmd                           *exec.Cmd
 }
@@ -46,6 +49,9 @@ func (p *CCRM) StartLocal(logfile string, opts ...StartOp) error {
 	if p.VersionTag != "" {
 		args = append(args, "--versionTag", p.VersionTag)
 	}
+	if p.ControllerApiAddr != "" {
+		args = append(args, "--controllerApiAddr", p.ControllerApiAddr)
+	}
 	if p.ControllerPublicAccessApiAddr != "" {
 		args = append(args, "--controllerPublicAccessApiAddr", p.ControllerPublicAccessApiAddr)
 	}
@@ -55,9 +61,13 @@ func (p *CCRM) StartLocal(logfile string, opts ...StartOp) error {
 	if p.ControllerPublicNotifyAddr != "" {
 		args = append(args, "--controllerNotifyAddr", p.ControllerNotifyAddr)
 	}
-	if p.ChefServerPath != "" {
-		args = append(args, "--chefServerPath")
-		args = append(args, p.ChefServerPath)
+	if p.AnsibleListenAddr != "" {
+		args = append(args, "--ansibleListenAddr")
+		args = append(args, p.AnsibleListenAddr)
+	}
+	if p.AnsiblePublicAddr != "" {
+		args = append(args, "--ansiblePublicAddr")
+		args = append(args, p.AnsiblePublicAddr)
 	}
 	if p.ThanosRecvAddr != "" {
 		args = append(args, "--thanosRecvAddr")

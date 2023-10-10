@@ -2,6 +2,8 @@ package ccrm
 
 import (
 	"context"
+	"crypto/md5"
+	"fmt"
 	"os"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -10,7 +12,9 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -24,7 +28,9 @@ var (
 )
 
 func (s *CCRMHandler) cloudletChanged(ctx context.Context, old *edgeproto.Cloudlet, in *edgeproto.Cloudlet) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "cloudletChanged", "cloudlet", in)
+	log.SpanLog(ctx, log.DebugLevelApi, "cloudletChanged", "cloudlet", in)
+
+	s.updateCloudletNodes(ctx, in)
 
 	var ackState edgeproto.TrackedState
 	var errState edgeproto.TrackedState
@@ -49,7 +55,7 @@ func (s *CCRMHandler) cloudletChanged(ctx context.Context, old *edgeproto.Cloudl
 	cloudletPlatform, found := s.caches.getPlatform(in.PlatformType)
 	if !found {
 		// ignore, some other CCRM should handle it
-		log.SpanLog(ctx, log.DebugLevelInfra, "cloudletChanged ignoring unknown platform", "platform", in.PlatformType)
+		log.SpanLog(ctx, log.DebugLevelApi, "cloudletChanged ignoring unknown platform", "platform", in.PlatformType)
 		return
 	}
 
@@ -108,7 +114,7 @@ func (s *CCRMHandler) createCloudlet(ctx context.Context, in *edgeproto.Cloudlet
 	}
 
 	caches := s.caches.getPlatformCaches()
-	accessApi := accessapi.NewVaultClient(in, s.nodeMgr.VaultConfig, s.flags.Region, s.flags.DnsZone)
+	accessApi := accessapi.NewVaultClient(in, s.nodeMgr.VaultConfig, s, s.flags.Region, s.flags.DnsZone)
 	cloudletResourcesCreated, err := cloudletPlatform.CreateCloudlet(ctx, in, pfConfig, &pfFlavor, caches, accessApi, cb)
 	defer func() {
 		if reterr == nil {
@@ -139,7 +145,7 @@ func (s *CCRMHandler) deleteCloudlet(ctx context.Context, in *edgeproto.Cloudlet
 		return err
 	}
 	caches := s.caches.getPlatformCaches()
-	accessApi := accessapi.NewVaultClient(in, s.nodeMgr.VaultConfig, s.flags.Region, s.flags.DnsZone)
+	accessApi := accessapi.NewVaultClient(in, s.nodeMgr.VaultConfig, s, s.flags.Region, s.flags.DnsZone)
 
 	return cloudletPlatform.DeleteCloudlet(ctx, in, pfConfig, caches, accessApi, cb)
 }
@@ -158,7 +164,7 @@ func (s *CCRMHandler) getCloudletOnboardingInfoCallback(ctx context.Context, msg
 
 func (s *CCRMHandler) getPlatformConfig(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessKeys *accessvars.CRMAccessKeys) (*edgeproto.PlatformConfig, error) {
 	pfConfig := edgeproto.PlatformConfig{}
-	pfConfig.PlatformTag = cloudlet.ContainerVersion
+	pfConfig.PlatformTag = s.flags.VersionTag
 	pfConfig.TlsCertFile = s.nodeMgr.GetInternalTlsCertFile()
 	pfConfig.TlsKeyFile = s.nodeMgr.GetInternalTlsKeyFile()
 	pfConfig.TlsCaFile = s.nodeMgr.GetInternalTlsCAFile()
@@ -181,10 +187,10 @@ func (s *CCRMHandler) getPlatformConfig(ctx context.Context, cloudlet *edgeproto
 	pfConfig.NotifyCtrlAddrs = s.flags.ControllerPublicNotifyAddr
 	pfConfig.AccessApiAddr = s.flags.ControllerPublicAccessApiAddr
 	pfConfig.Span = log.SpanToString(ctx)
-	pfConfig.ChefServerPath = s.flags.ChefServerPath
-	pfConfig.ChefClientInterval = s.caches.SettingsCache.Singular().ChefClientInterval
 	pfConfig.DeploymentTag = s.nodeMgr.DeploymentTag
 	pfConfig.ThanosRecvAddr = s.flags.ThanosRecvAddr
+	pfConfig.AnsiblePublicAddr = s.flags.AnsiblePublicAddr
+	pfConfig.InternalDomain = s.nodeMgr.InternalDomain
 
 	return &pfConfig, nil
 }
@@ -214,7 +220,7 @@ func (s *CCRMHandler) GetCloudletManifest(ctx context.Context, key *edgeproto.Cl
 	cloudletPlatform, found := s.caches.getPlatform(cloudlet.PlatformType)
 	if !found {
 		// ignore, some other CCRM should handle it
-		log.SpanLog(ctx, log.DebugLevelInfra, "cloudletManifest ignoring unknown platform", "platform", cloudlet.PlatformType)
+		log.SpanLog(ctx, log.DebugLevelApi, "cloudletManifest ignoring unknown platform", "platform", cloudlet.PlatformType)
 		return nil, nil
 	}
 	features := cloudletPlatform.GetFeatures()
@@ -236,7 +242,7 @@ func (s *CCRMHandler) GetCloudletManifest(ctx context.Context, key *edgeproto.Cl
 		return nil, err
 	}
 	caches := s.caches.getPlatformCaches()
-	accessApi := accessapi.NewVaultClient(&cloudlet, s.nodeMgr.VaultConfig, s.flags.Region, s.flags.DnsZone)
+	accessApi := accessapi.NewVaultClient(&cloudlet, s.nodeMgr.VaultConfig, s, s.flags.Region, s.flags.DnsZone)
 
 	manifest, err := cloudletPlatform.GetCloudletManifest(ctx, &cloudlet, pfConfig, accessApi, &pfFlavor, caches)
 	if err != nil {
@@ -258,7 +264,7 @@ func (s *CCRMHandler) GetRestrictedCloudletStatus(ctx context.Context, key *edge
 	cloudletPlatform, found := s.caches.getPlatform(cloudlet.PlatformType)
 	if !found {
 		// ignore, some other CCRM should handle it
-		log.SpanLog(ctx, log.DebugLevelInfra, "cloudletManifest ignoring unknown platform", "platform", cloudlet.PlatformType)
+		log.SpanLog(ctx, log.DebugLevelApi, "cloudletManifest ignoring unknown platform", "platform", cloudlet.PlatformType)
 		return nil
 	}
 
@@ -270,7 +276,7 @@ func (s *CCRMHandler) GetRestrictedCloudletStatus(ctx context.Context, key *edge
 	if err != nil {
 		return err
 	}
-	accessApi := accessapi.NewVaultClient(&cloudlet, s.nodeMgr.VaultConfig, s.flags.Region, s.flags.DnsZone)
+	accessApi := accessapi.NewVaultClient(&cloudlet, s.nodeMgr.VaultConfig, s, s.flags.Region, s.flags.DnsZone)
 	err = cloudletPlatform.GetRestrictedCloudletStatus(ctx, &cloudlet, pfConfig, accessApi, func(updateType edgeproto.CacheUpdateType, value string) {
 		reply := &edgeproto.StreamStatus{
 			CacheUpdateType: int32(updateType),
@@ -282,4 +288,99 @@ func (s *CCRMHandler) GetRestrictedCloudletStatus(ctx context.Context, key *edge
 		}
 	})
 	return err
+}
+
+func (s *CCRMHandler) CreateCloudletNodeReq(ctx context.Context, node *edgeproto.CloudletNode) (string, error) {
+	client := edgeproto.NewCloudletNodeApiClient(s.ctrlConn)
+	res, err := client.CreateCloudletNode(ctx, node)
+	log.SpanLog(ctx, log.DebugLevelApi, "create cloudlet node req", "node", node, "err", err)
+	if err != nil {
+		return "", err
+	}
+	// Message is password
+	return res.Message, nil
+}
+
+func (s *CCRMHandler) DeleteCloudletNodeReq(ctx context.Context, nodeKey *edgeproto.CloudletNodeKey) error {
+	client := edgeproto.NewCloudletNodeApiClient(s.ctrlConn)
+	node := edgeproto.CloudletNode{
+		Key: *nodeKey,
+	}
+	_, err := client.DeleteCloudletNode(ctx, &node)
+	log.SpanLog(ctx, log.DebugLevelApi, "delete cloudlet node req", "node", nodeKey, "err", err)
+	return err
+}
+
+// update node attributes when node changes
+func (s *CCRMHandler) cloudletNodeChanged(ctx context.Context, old *edgeproto.CloudletNode, in *edgeproto.CloudletNode) {
+	baseAttributes := make(map[string]interface{})
+	if in.NodeRole != cloudcommon.NodeRoleBase.String() {
+		cloudlet := edgeproto.Cloudlet{}
+		if !s.caches.CloudletCache.Get(&in.Key.CloudletKey, &cloudlet) {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to get cloudlet to update cloudlet node", "node", in.Key)
+			return
+		}
+		var err error
+		baseAttributes, err = s.getCloudletPlatformAttributes(ctx, &cloudlet)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to compute cloudlet attributes for node", "node", in.Key, "err", err)
+			return
+		}
+	}
+	s.updateNodeAttributes(ctx, baseAttributes, in)
+}
+
+// update node attributes when cloudlet changes
+func (s *CCRMHandler) updateCloudletNodes(ctx context.Context, in *edgeproto.Cloudlet) {
+	baseAttributes, err := s.getCloudletPlatformAttributes(ctx, in)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "failed to compute cloudlet platform attributes", "cloudlet", in, "err", err)
+		return
+	}
+	nodeCache := &s.caches.CloudletNodeCache
+	log.SpanLog(ctx, log.DebugLevelApi, "update cloudlet nodes", "cloudlet", in.Key)
+	nodeCache.Mux.Lock()
+	defer nodeCache.Mux.Unlock()
+	for _, data := range nodeCache.Objs {
+		node := data.Obj
+		if node.NodeRole == cloudcommon.NodeRoleBase.String() {
+			// no cloudlet attributes in node attributes
+			continue
+		}
+		if !node.Key.CloudletKey.Matches(&in.Key) {
+			continue
+		}
+		s.updateNodeAttributes(ctx, baseAttributes, node)
+	}
+}
+
+func (s *CCRMHandler) getCloudletPlatformAttributes(ctx context.Context, in *edgeproto.Cloudlet) (map[string]interface{}, error) {
+	pfConfig, err := s.getPlatformConfig(ctx, in, &accessvars.CRMAccessKeys{})
+	if err != nil {
+		return nil, err
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "getPlatformConfig", "pfConfig", *pfConfig)
+	return confignode.GetCloudletAttributes(ctx, in, pfConfig)
+}
+
+func (s *CCRMHandler) updateNodeAttributes(ctx context.Context, baseAttributes map[string]interface{}, node *edgeproto.CloudletNode) {
+	log.SpanLog(ctx, log.DebugLevelApi, "update node attributes cache", "node", node.Key)
+	nodeAttributes := baseAttributes
+	// add in node-specific attributes
+	for k, v := range node.Attributes {
+		nodeAttributes[k] = v
+	}
+	nodeAttributes["node_name"] = node.Key.Name
+	nodeAttributes["node_type"] = node.NodeType
+	nodeAttributes["node_role"] = node.NodeRole
+
+	// record data
+	data, err := yaml.Marshal(nodeAttributes)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "failed to marshal node attributes", "node", node.Key, "err", err)
+		return
+	}
+	checksum := fmt.Sprintf("%x", md5.Sum(data))
+	log.SpanLog(ctx, log.DebugLevelApi, "computed node attributes checksum", "node", node.Key, "checksum", checksum)
+	s.nodeAttributesCache.Update(node.Key, data, checksum)
 }

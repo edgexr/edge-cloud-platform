@@ -17,6 +17,8 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/go-redis/redis/v8"
+	"github.com/labstack/echo/v4"
+	"google.golang.org/grpc"
 )
 
 // CCRM handles platform-specific code. It primarily
@@ -32,6 +34,8 @@ type CCRM struct {
 	handler          CCRMHandler
 	redisCfg         rediscache.RedisConfig
 	redisClient      *redis.Client
+	echoServ         *echo.Echo
+	ctrlConn         *grpc.ClientConn
 }
 
 type Flags struct {
@@ -42,10 +46,13 @@ type Flags struct {
 	CloudletVMImagePath           string
 	VersionTag                    string
 	CommercialCerts               bool
+	ControllerAPIAddr             string
 	ControllerNotifyAddr          string
 	ControllerPublicNotifyAddr    string
 	ControllerPublicAccessApiAddr string
-	ChefServerPath                string
+	ChefServerPath                string // deprecated
+	AnsibleListenAddr             string
+	AnsiblePublicAddr             string
 	ThanosRecvAddr                string
 	DebugLevels                   string
 	TestMode                      bool
@@ -96,11 +103,14 @@ func (s *Flags) Init() {
 	flag.StringVar(&s.CloudletVMImagePath, "cloudletVMImagePath", "", "VM image for deploying cloudlet services")
 	flag.StringVar(&s.VersionTag, "versionTag", "", "edge-cloud image tag indicating controller version")
 	flag.BoolVar(&s.CommercialCerts, "commercialCerts", false, "Have CRM grab certs from LetsEncrypt. If false then CRM will generate its onwn self-signed cert")
+	flag.StringVar(&s.ControllerAPIAddr, "controllerApiAddr", "127.0.0.1:55001", "Controller's API listener address")
 	flag.StringVar(&s.ControllerNotifyAddr, "controllerNotifyAddr", "127.0.0.1:50001", "Controller's Notify listener address")
 	flag.StringVar(&s.ControllerPublicNotifyAddr, "controllerPublicNotifyAddr", "127.0.0.1:50001", "Controller's Public facing notify address passed to CRM")
 	flag.StringVar(&s.ControllerPublicAccessApiAddr, "controllerPublicAccessApiAddr", "127.0.0.1:41001", "Controller's Public facing access api address passed to CRM")
-	flag.StringVar(&s.ChefServerPath, "chefServerPath", "", "Path to chef server organization")
+	flag.StringVar(&s.ChefServerPath, "chefServerPath", "", "(deprecated) Path to chef server organization")
 	flag.StringVar(&s.ThanosRecvAddr, "thanosRecvAddr", "", "Address of thanos receive API endpoint including port")
+	flag.StringVar(&s.AnsibleListenAddr, "ansibleListenAddr", "127.0.0.1:48880", "Address and port to serve ansible files from")
+	flag.StringVar(&s.AnsiblePublicAddr, "ansiblePublicAddr", "http://127.0.0.1:48880", "Scheme, address, and port to pass to the CRM to reach the ansible server externally")
 
 	flag.StringVar(&s.DebugLevels, "d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
 	flag.BoolVar(&s.TestMode, "testMode", false, "Run CCRM in test mode")
@@ -142,13 +152,25 @@ func (s *CCRM) Start() error {
 	}
 	dialOpts := tls.GetGrpcDialOption(clientTlsConfig)
 	addrs := strings.Split(s.flags.ControllerNotifyAddr, ",")
-	s.notifyClient = notify.NewClient(s.nodeMgr.Name(), addrs, dialOpts)
+	notifyClient := notify.NewClient(s.nodeMgr.Name(), addrs, dialOpts)
+
+	clientConn, err := s.controllerConnect(ctx, dialOpts)
+	if err != nil {
+		return err
+	}
+	s.ctrlConn = clientConn
 
 	// initialize and start the notify client
-	s.caches.InitNotify(s.notifyClient, &s.nodeMgr)
-	s.notifyClient.Start()
+	s.caches.InitNotify(notifyClient, &s.nodeMgr)
 
-	s.handler.Init(ctx, s.nodeType, &s.nodeMgr, &s.caches, s.redisClient, &s.flags)
+	s.handler.Init(ctx, s.nodeType, &s.nodeMgr, &s.caches, s.redisClient, s.ctrlConn, &s.flags)
+
+	echoServ := s.initAnsibleServer(ctx)
+
+	notifyClient.Start()
+	s.notifyClient = notifyClient
+
+	s.startAnsibleServer(ctx, echoServ)
 
 	return nil
 }
@@ -161,6 +183,11 @@ func (s *CCRM) Stop() {
 	if s.handler.CancelHandlers != nil {
 		s.handler.CancelHandlers()
 		s.handler.CancelHandlers = nil
+	}
+	s.stopAnsibleServer()
+	if s.ctrlConn != nil {
+		s.ctrlConn.Close()
+		s.ctrlConn = nil
 	}
 	s.nodeMgr.Finish()
 }
@@ -199,4 +226,13 @@ func (s *CCRM) validateRegistries(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func (s *CCRM) controllerConnect(ctx context.Context, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	opts = append(opts,
+		grpc.WithBlock(),
+		grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc),
+		grpc.WithStreamInterceptor(log.StreamClientTraceGrpc),
+		grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})))
+	return grpc.Dial(s.flags.ControllerAPIAddr, opts...)
 }

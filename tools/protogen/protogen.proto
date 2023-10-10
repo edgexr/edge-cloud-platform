@@ -122,6 +122,8 @@ extend google.protobuf.MessageOptions {
   string parent_obj_name = 51062;
   // object key is a string field instead of an object
   string string_key_field = 51064;
+  // Create API overwrites duplicates instead of failing
+  bool create_overwrites_dups = 51066;
 }
 
 extend google.protobuf.EnumOptions {

@@ -471,6 +471,21 @@ func (s *CloudletInternal) Validate(fields map[string]struct{}) error {
 	return nil
 }
 
+func (s CloudletNodeKey) ValidateKey() error {
+	// Cloudlet nodes are only created internally
+	if s.Name == "" {
+		return errors.New("Name must not be empty")
+	}
+	return s.CloudletKey.ValidateKey()
+}
+
+func (s *CloudletNode) Validate(fields map[string]struct{}) error {
+	if err := s.Key.ValidateKey(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (key *CloudletPoolKey) ValidateKey() error {
 	if !util.ValidName(key.Organization) {
 		return errors.New("Invalid cloudlet pool organization")

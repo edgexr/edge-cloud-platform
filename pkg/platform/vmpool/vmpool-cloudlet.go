@@ -40,37 +40,14 @@ func (o *VMPoolPlatform) GetCloudletManifest(ctx context.Context, name string, c
 		return "", fmt.Errorf("invalid number of VMs")
 	}
 	cloudConfigParams := vmgp.VMs[0].CloudConfigParams
-	if cloudConfigParams.ChefParams == nil {
-		return "", fmt.Errorf("missing chef params for %s", name)
+	if cloudConfigParams.ConfigureNodeVars == nil {
+		return "", fmt.Errorf("missing cloudlet node params for %s", name)
 	}
-	if cloudConfigParams.ChefParams.ClientKey == "" {
-		return "", fmt.Errorf("missing chef client key for %s", cloudConfigParams.ChefParams.NodeName)
-	}
-
-	scriptText := fmt.Sprintf(`
-#!/bin/bash
-
-cat > /home/ubuntu/client.pem << EOF
-%s
-EOF
-
-`, cloudConfigParams.ChefParams.ClientKey)
-
-	if cloudConfigParams.AccessKey != "" {
-		scriptText += fmt.Sprintf(`
-cat > /root/accesskey/accesskey.pem << EOF
-%s
-EOF
-
-`, cloudConfigParams.AccessKey)
+	if cloudConfigParams.ConfigureNodeVars.Password == "" {
+		return "", fmt.Errorf("missing cloudlet node key for %s", cloudConfigParams.ConfigureNodeVars.Key.Name)
 	}
 
-	scriptText += fmt.Sprintf(`
-sudo bash /etc/edgecloud/setup-chef.sh -s "%s" -n "%s"
-`, cloudConfigParams.ChefParams.ServerPath, cloudConfigParams.ChefParams.NodeName)
-
-	manifest.AddItem("SSH into one of the VMs from the VMPool which has access to controller's notify port", infracommon.ManifestTypeNone, infracommon.ManifestSubTypeNone, "")
-	manifest.AddItem("Save and execute the following script on the VM", infracommon.ManifestTypeCode, infracommon.ManifestSubTypeBash, scriptText)
+	// TODO: Support for ansible based configuration management
 	return manifest.ToString()
 }
 

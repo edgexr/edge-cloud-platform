@@ -60,7 +60,7 @@ func (s *K8sOperator) InitCommon(ctx context.Context, platformConfig *platform.P
 	log.SpanLog(ctx, log.DebugLevelInfra, "Init", "type", s.Type)
 	s.caches = caches
 
-	if err := s.CommonPf.InitInfraCommon(ctx, platformConfig, map[string]*edgeproto.PropertyInfo{}, infracommon.WithoutChef()); err != nil {
+	if err := s.CommonPf.InitInfraCommon(ctx, platformConfig, map[string]*edgeproto.PropertyInfo{}); err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err")
 		return err
 	}

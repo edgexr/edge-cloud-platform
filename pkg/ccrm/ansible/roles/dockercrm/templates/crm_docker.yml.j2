@@ -1,0 +1,13 @@
+name: crmserver
+image: "{{ edgeCloudImage }}:{{ edgeCloudVersion }}"
+command: {{ crmserver.args }}
+env: {{ crmserver.env }}
+volumes:
+- /var/tmp:/var/tmp
+- /root/accesskey:/root/accesskey
+- /root/crm_cache:/root/crm_cache
+{% if mex_release.stat.exists %}
+- /etc/mex-release:/etc/mex-release
+{% endif %}
+restart_policy: "unless-stopped"
+network_mode: "host"

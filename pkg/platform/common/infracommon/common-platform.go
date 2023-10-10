@@ -25,19 +25,15 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/version"
-	"github.com/go-chef/chef"
 )
 
 type CommonPlatform struct {
 	Properties        InfraProperties
 	PlatformConfig    *pf.PlatformConfig
 	MappedExternalIPs map[string]string
-	ChefClient        *chef.Client
-	ChefServerPath    string
 	DeploymentTag     string
 	SshKey            CloudletSSHKey
 }
@@ -48,9 +44,7 @@ var edgeboxMode = false
 
 func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf.PlatformConfig, platformSpecificProps map[string]*edgeproto.PropertyInfo, ops ...InitOp) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon", "cloudletKey", platformConfig.CloudletKey)
-	opts := &InitOptions{
-		Chef: true,
-	}
+	opts := &InitOptions{}
 	for _, op := range ops {
 		op(opts)
 	}
@@ -83,41 +77,6 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf
 		return fmt.Errorf("missing deployment tag")
 	}
 
-	if opts.Chef {
-		chefAuth, err := platformConfig.AccessApi.GetChefAuthKey(ctx)
-		if err != nil {
-			return err
-		}
-
-		chefServerPath := platformConfig.ChefServerPath
-		if chefServerPath == "" {
-			return fmt.Errorf("chef server path not specified")
-		}
-
-		chefClient, err := chefmgmt.GetChefClient(ctx, chefAuth.ApiKey, chefServerPath)
-		if err != nil {
-			return err
-		}
-		supportedTags, err := chefmgmt.ChefPolicyGroupList(ctx, chefClient)
-		if err != nil {
-			return err
-		}
-		found := false
-		for _, tag := range supportedTags {
-			if tag == platformConfig.DeploymentTag {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return fmt.Errorf("invalid deployment tag %s, supported tags: %v", platformConfig.DeploymentTag, supportedTags)
-		}
-		// Set chef client, note here object is just initialised and
-		// no connection has formed with chef server
-		c.ChefClient = chefClient
-		c.ChefServerPath = chefServerPath
-		c.DeploymentTag = platformConfig.DeploymentTag
-	}
 	return nil
 }
 
@@ -193,7 +152,7 @@ func GetPlatformConfig(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Platfor
 		AppDNSRoot:          pfConfig.AppDnsRoot,
 		DeploymentTag:       pfConfig.DeploymentTag,
 		AccessApi:           accessApi,
-		ChefServerPath:      pfConfig.ChefServerPath,
+		AnsiblePublicAddr:   pfConfig.AnsiblePublicAddr,
 	}
 	return &platCfg
 }
@@ -205,11 +164,6 @@ func (c *CommonEmbedded) GetVersionProperties(ctx context.Context) map[string]st
 }
 
 type InitOptions struct {
-	Chef bool
 }
 
 type InitOp func(opts *InitOptions)
-
-func WithoutChef() InitOp {
-	return func(opts *InitOptions) { opts.Chef = false }
-}

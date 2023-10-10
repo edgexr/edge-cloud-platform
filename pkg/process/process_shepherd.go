@@ -33,6 +33,7 @@ type Shepherd struct {
 	AppDNSRoot     string
 	ChefServerPath string
 	ThanosRecvAddr string
+	InternalDomain string
 }
 
 func (p *Shepherd) GetArgs(opts ...StartOp) []string {
@@ -83,6 +84,9 @@ func (p *Shepherd) GetArgs(opts ...StartOp) []string {
 	if p.ThanosRecvAddr != "" {
 		args = append(args, "--thanosRecvAddr")
 		args = append(args, p.ThanosRecvAddr)
+	}
+	if p.InternalDomain != "" {
+		args = append(args, "--internalDomain", p.InternalDomain)
 	}
 	options := StartOptions{}
 	options.ApplyStartOptions(opts...)

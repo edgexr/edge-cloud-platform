@@ -27,12 +27,14 @@ import (
 // Handles unmarshaling of data from ControllerClient. It then calls
 // to the VaultClient to access data from Vault.
 type ControllerHandler struct {
-	vaultClient *VaultClient
+	cloudletVerified *edgeproto.Cloudlet
+	vaultClient      *VaultClient
 }
 
-func NewControllerHandler(vaultClient *VaultClient) *ControllerHandler {
+func NewControllerHandler(cloudletVerified *edgeproto.Cloudlet, vaultClient *VaultClient) *ControllerHandler {
 	return &ControllerHandler{
-		vaultClient: vaultClient,
+		cloudletVerified: cloudletVerified,
+		vaultClient:      vaultClient,
 	}
 }
 
@@ -71,6 +73,7 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 		}
 		out, merr = json.Marshal(mexkey)
 	case platform.GetChefAuthKey:
+		// Deprecated, for backwards compatibility with old CRMs
 		auth, err := s.vaultClient.GetChefAuthKey(ctx)
 		if err != nil {
 			return nil, err
@@ -142,6 +145,34 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 			return nil, err
 		}
 		out, merr = json.Marshal(apiKey)
+	case platform.CreateCloudletNode:
+		cloudletNode := edgeproto.CloudletNode{}
+		err := json.Unmarshal(req.Data, &cloudletNode)
+		if err != nil {
+			return nil, err
+		}
+		if !s.cloudletVerified.Key.Matches(&cloudletNode.Key.CloudletKey) {
+			return nil, fmt.Errorf("create cloudlet node permission denied for cloudlet " + cloudletNode.Key.CloudletKey.GetKeyString())
+		}
+		cloudletNode.Key.CloudletKey = s.cloudletVerified.Key
+		password, err := s.vaultClient.CreateCloudletNode(ctx, &cloudletNode)
+		if err != nil {
+			return nil, err
+		}
+		out = []byte(password)
+	case platform.DeleteCloudletNode:
+		nodeKey := edgeproto.CloudletNodeKey{}
+		err := json.Unmarshal(req.Data, &nodeKey)
+		if err != nil {
+			return nil, err
+		}
+		if !s.cloudletVerified.Key.Matches(&nodeKey.CloudletKey) {
+			return nil, fmt.Errorf("delete cloudlet node permission denied for cloudlet " + nodeKey.CloudletKey.GetKeyString())
+		}
+		err = s.vaultClient.DeleteCloudletNode(ctx, &nodeKey)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, fmt.Errorf("Unexpected request data type %s", req.Type)
 	}

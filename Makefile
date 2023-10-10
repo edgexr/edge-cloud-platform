@@ -47,6 +47,7 @@ generate: check-go-vers $(APICOMMENTS) gen-vers
 	make -C test/testgen
 	go install $(GO_BUILD_FLAGS) ./pkg/mcctl/genmctestclient
 	genmctestclient > ./pkg/mcctl/mctestclient/mctestclient_generatedfuncs.go
+	make -C pkg/ccrm
 
 gobuild: check-go-vers gen-vers
 	go build $(GO_BUILD_FLAGS) ./...

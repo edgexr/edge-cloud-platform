@@ -631,15 +631,14 @@ func start() {
 	}
 
 	pc := pf.PlatformConfig{
-		CloudletKey:    &cloudletKey,
-		Region:         *region,
-		EnvVars:        cloudlet.EnvVar,
-		DeploymentTag:  nodeMgr.DeploymentTag,
-		PhysicalName:   *physicalName,
-		AppDNSRoot:     *appDNSRoot,
-		ChefServerPath: *chefServerPath,
-		AccessApi:      accessApi,
-		NodeMgr:        &nodeMgr,
+		CloudletKey:   &cloudletKey,
+		Region:        *region,
+		EnvVars:       cloudlet.EnvVar,
+		DeploymentTag: nodeMgr.DeploymentTag,
+		PhysicalName:  *physicalName,
+		AppDNSRoot:    *appDNSRoot,
+		AccessApi:     accessApi,
+		NodeMgr:       &nodeMgr,
 	}
 
 	caches := pf.Caches{

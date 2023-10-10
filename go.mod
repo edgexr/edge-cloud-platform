@@ -102,6 +102,7 @@ require (
 	github.com/labstack/echo/v4 v4.7.2
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/opensearch-project/opensearch-go/v2 v2.3.0
+	github.com/sethvargo/go-password v0.2.0
 	github.com/swaggest/jsonschema-go v0.3.34
 	github.com/swaggest/openapi-go v0.2.18
 	go.etcd.io/etcd/api/v3 v3.5.4

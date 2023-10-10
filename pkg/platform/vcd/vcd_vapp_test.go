@@ -194,7 +194,6 @@ func TestMexVApp(t *testing.T) {
 			Gateway: "172.70.52.1",
 		},
 		)
-		//	cparams := chefmgmt.ServerChefParams{}
 
 		vmgp := vmlayer.VMGroupOrchestrationParams{}
 		vmgp.GroupName = "mex-plat-vapp"
@@ -225,7 +224,6 @@ func TestMexVApp(t *testing.T) {
 			//		Ports:                   ports,
 			FixedIPs:           fixedIps,
 			AttachExternalDisk: false,
-			//		ChefParams:              &cparams,
 		}
 
 		vmgp.VMs = append(vmgp.VMs, vmparams)

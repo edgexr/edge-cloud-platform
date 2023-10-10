@@ -24,6 +24,7 @@ cmd/controller/influxq_client/influxdb.log
 cmd/controller/.influxdb/*
 pkg/tls/out
 pkg/cloudcommon/node/out
+pkg/ccrm/ansible.tar.gz
 
 pkg/mc/orm/dump.sql
 pkg/mc/orm/vault.log
