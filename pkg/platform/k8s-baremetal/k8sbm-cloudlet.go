@@ -21,62 +21,17 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/util"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	ssh "github.com/edgexr/golang-ssh"
 )
-
-type ChefClientConfigParams struct {
-	ServerUrl string
-	NodeName  string
-}
-
-// chefClientConfigTemplate is used to populate /etc/chef/client.rb
-var chefClientConfigTemplate = `
-log_level              :info
-ssl_verify_mode        :verify_none
-log_location           "/var/log/chef/client.log"
-validation_client_name "mobiledgex-validator"
-validation_key         "/etc/chef/client.pem"
-client_key             "/etc/chef/client.pem"
-chef_server_url        "{{.ServerUrl}}"
-node_name              "{{.NodeName}}"
-json_attribs           "/etc/chef/firstboot.json"
-file_cache_path        "/var/cache/chef"
-file_backup_path       "/var/backups/chef"
-pid_file               "/var/run/chef/client.pid"
-Chef::Log::Formatter.show_time = true`
-
-func (k *K8sBareMetalPlatform) GetChefParams(nodeName, clientKey string, policyName string, attributes map[string]interface{}) *chefmgmt.ServerChefParams {
-	chefServerPath := k.commonPf.ChefServerPath
-	return &chefmgmt.ServerChefParams{
-		NodeName:    nodeName,
-		ServerPath:  chefServerPath,
-		ClientKey:   clientKey,
-		Attributes:  attributes,
-		PolicyName:  policyName,
-		PolicyGroup: k.commonPf.DeploymentTag,
-	}
-}
-
-func (k *K8sBareMetalPlatform) GetChefClientName(ckey *edgeproto.CloudletKey) string {
-	// Prefix with region name
-	name := util.K8SSanitize(ckey.Name + "-" + ckey.Organization)
-	return k.commonPf.DeploymentTag + "-" + k.commonPf.PlatformConfig.Region + "-" + name
-}
 
 func (k *K8sBareMetalPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet", "cloudlet", cloudlet)
 
-	if pfConfig.ChefServerPath == "" {
-		return false, fmt.Errorf("chef server path not specified")
-	}
 	if pfConfig.ContainerRegistryPath == "" {
 		return false, fmt.Errorf("container registry path not specified")
 	}
@@ -100,31 +55,11 @@ func (k *K8sBareMetalPlatform) CreateCloudlet(ctx context.Context, cloudlet *edg
 		pfConfig.TlsCertFile = crtFile
 	}
 
-	chefApi := chefmgmt.ChefApiAccess{}
-
-	// TODO, we should switch bare metal k8s to use k8s chef policy
-	nodeInfo := chefmgmt.ChefNodeInfo{
-		NodeName: "baremetal-controller",
-		NodeType: cloudcommon.NodeTypePlatformHost,
-		Policy:   chefmgmt.ChefPolicyDocker,
-	}
-	chefAttributes, err := chefmgmt.GetChefPlatformAttributes(ctx, cloudlet, pfConfig, &nodeInfo, &chefApi, nil)
-	if err != nil {
-		return cloudletResourcesCreated, err
-	}
-	if k.commonPf.ChefClient == nil {
-		return cloudletResourcesCreated, fmt.Errorf("Chef client is not initialized")
-	}
-
-	chefPolicy := chefmgmt.ChefPolicyDocker
-	if cloudlet.Deployment == cloudcommon.DeploymentTypeKubernetes {
-		chefPolicy = chefmgmt.ChefPolicyK8s
-	}
+	// TODO: have cloudlet node ansible support k8sbm
+	// previously used chef with nodeType PlatformHost.
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
 		return cloudletResourcesCreated, fmt.Errorf("Restricted access not yet supported on BareMetal")
 	}
-	clientName := k.GetChefClientName(&cloudlet.Key)
-	chefParams := k.GetChefParams(clientName, "", chefPolicy, chefAttributes)
 
 	sshClient, err := k.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: k.commonPf.PlatformConfig.CloudletKey.String(), Type: k8sControlHostNodeType})
 	if err != nil {
@@ -139,59 +74,8 @@ func (k *K8sBareMetalPlatform) CreateCloudlet(ctx context.Context, cloudlet *edg
 	// once we get here, we require cleanup on failure because we have accessed the control node
 	cloudletResourcesCreated = true
 
-	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Creating Chef Client %s with cloudlet attributes", clientName))
-	clientKey, err := chefmgmt.ChefClientCreate(ctx, k.commonPf.ChefClient, chefParams)
-	if err != nil {
-		return cloudletResourcesCreated, err
-	}
-	// Store client key in cloudlet obj
-	cloudlet.ChefClientKey = make(map[string]string)
-	cloudlet.ChefClientKey[clientName] = clientKey
-
-	// install chef
-	err = k.SetupChefOnServer(ctx, sshClient, clientName, cloudlet, chefParams)
-	if err != nil {
-		return cloudletResourcesCreated, err
-	}
-	return cloudletResourcesCreated, chefmgmt.GetChefRunStatus(ctx, k.commonPf.ChefClient, clientName, cloudlet, pfConfig, accessApi, updateCallback)
-}
-
-func (k *K8sBareMetalPlatform) SetupChefOnServer(ctx context.Context, sshClient ssh.Client, clientName string, cloudlet *edgeproto.Cloudlet, chefParams *chefmgmt.ServerChefParams) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SetupChefOnServer", "clientName", clientName)
-
-	err := pc.WriteFile(sshClient, "/etc/chef/client.pem", cloudlet.ChefClientKey[clientName], "chef-key", pc.SudoOn)
-	if err != nil {
-		return fmt.Errorf("Failed to write chef client key: %v", err)
-	}
-
-	chefClientConfigParams := ChefClientConfigParams{
-		ServerUrl: chefParams.ServerPath,
-		NodeName:  clientName, //client and node name are the same
-	}
-	pBuf, err := infracommon.ExecTemplate("chefClientRb", chefClientConfigTemplate, chefClientConfigParams)
-	if err != nil {
-		return fmt.Errorf("Error in chef rb template: %v", err)
-	}
-	chefConfigFile := "/etc/chef/client.rb"
-	log.SpanLog(ctx, log.DebugLevelInfra, "Creating chef-client config file", "chefConfigFile", chefConfigFile, "chefClientConfigParams", chefClientConfigParams)
-	err = pc.WriteFile(sshClient, "/etc/chef/client.rb", pBuf.String(), "chef clientrb", pc.SudoOn)
-	if err != nil {
-		return fmt.Errorf("unable to chef config file %s: %s", chefConfigFile, err.Error())
-	}
-
-	command := fmt.Sprintf("sudo systemctl enable chef-client")
-	log.SpanLog(ctx, log.DebugLevelInfra, "enable chef-client", "command", command)
-	out, err := sshClient.Output(command)
-	if err != nil {
-		return fmt.Errorf("Failed to enable chef client: %s - %v", out, err)
-	}
-	command = fmt.Sprintf("sudo systemctl start chef-client")
-	log.SpanLog(ctx, log.DebugLevelInfra, "start chef-client", "command", command)
-	out, err = sshClient.Output(command)
-	if err != nil {
-		return fmt.Errorf("Failed to start chef client: %s - %v", out, err)
-	}
-	return nil
+	// TODO: set up ansible cron job on server
+	return cloudletResourcesCreated, nil
 }
 
 func (k *K8sBareMetalPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -245,7 +129,7 @@ func (k *K8sBareMetalPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edg
 	}
 
 	updateCallback(edgeproto.UpdateTask, "Removing platform containers")
-	platContainers := []string{chefmgmt.ServiceTypeCRM, chefmgmt.ServiceTypeShepherd, chefmgmt.ServiceTypeCloudletPrometheus}
+	platContainers := []string{confignode.ServiceTypeCRM, confignode.ServiceTypeShepherd, confignode.ServiceTypeCloudletPrometheus}
 	for _, p := range platContainers {
 		out, err := sshClient.Output(fmt.Sprintf("sudo docker rm -f %s", p))
 		if err != nil {
@@ -256,15 +140,9 @@ func (k *K8sBareMetalPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edg
 			}
 		}
 	}
-	// kill chef add other cleanup
-	out, err := sshClient.Output("sudo systemctl stop chef-client")
-	log.SpanLog(ctx, log.DebugLevelInfra, "chef stop results", "out", out, "err", err)
-	out, err = sshClient.Output("sudo systemctl disable chef-client")
-	log.SpanLog(ctx, log.DebugLevelInfra, "chef disable results", "out", out, "err", err)
-	out, err = sshClient.Output("sudo rm -f /root/accesskey/*")
+	// clean up machine
+	out, err := sshClient.Output("sudo rm -f /root/accesskey/*")
 	log.SpanLog(ctx, log.DebugLevelInfra, "accesskey rm results", "out", out, "err", err)
-	out, err = sshClient.Output("sudo rm -f /etc/chef/client.pem")
-	log.SpanLog(ctx, log.DebugLevelInfra, "chef pem rm results", "out", out, "err", err)
 	return nil
 }
 

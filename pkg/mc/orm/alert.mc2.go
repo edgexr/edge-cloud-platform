@@ -895,6 +895,8 @@ func addControllerApis(method string, group *echo.Group) {
 	// ConfigCacheDir: 21.24
 	// ConfigSecondaryCrmAccessPrivateKey: 21.25
 	// ConfigThanosRecvAddr: 21.26
+	// ConfigAnsiblePublicAddr: 21.27
+	// ConfigInternalDomain: 21.28
 	// ResTagMap: 22
 	// ResTagMapKey: 22.1
 	// ResTagMapValue: 22.2
@@ -1959,6 +1961,66 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowAppInstClient", ShowAppInstClient)
+	// swagger:route POST /auth/ctrl/CreateCloudletNode CloudletNode CreateCloudletNode
+	// Create cloudlet node, should only be used for testing/debug.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/CreateCloudletNode", CreateCloudletNode)
+	// swagger:route POST /auth/ctrl/UpdateCloudletNode CloudletNode UpdateCloudletNode
+	// Update cloudlet node, should only be used for testing/debug.
+	// The following values should be added to `CloudletNode.fields` field array to specify which fields will be updated.
+	// ```
+	// Key: 2
+	// KeyName: 2.1
+	// KeyCloudletKey: 2.2
+	// KeyCloudletKeyOrganization: 2.2.1
+	// KeyCloudletKeyName: 2.2.2
+	// KeyCloudletKeyFederatedOrganization: 2.2.3
+	// NodeType: 3
+	// NodeRole: 4
+	// PasswordHash: 5
+	// Salt: 6
+	// Iter: 7
+	// OwnerTags: 8
+	// OwnerTagsKey: 8.1
+	// OwnerTagsValue: 8.2
+	// Attributes: 9
+	// AttributesKey: 9.1
+	// AttributesValue: 9.2
+	// ```
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/UpdateCloudletNode", UpdateCloudletNode)
+	// swagger:route POST /auth/ctrl/ShowCloudletNode CloudletNode ShowCloudletNode
+	// Show cloudlet nodes.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowCloudletNode", ShowCloudletNode)
+	// swagger:route POST /auth/ctrl/DeleteCloudletNode CloudletNode DeleteCloudletNode
+	// Delete cloudlet node, in case it was not cleaned up properly.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/DeleteCloudletNode", DeleteCloudletNode)
 	// swagger:route POST /auth/ctrl/ShowNode Node ShowNode
 	// Show all Nodes connected to all Controllers.
 	// Security:

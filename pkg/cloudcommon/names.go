@@ -95,6 +95,20 @@ func (n NodeType) String() string {
 	return "unknown node type"
 }
 
+// NodeRole specifies the role for provisioning a node from ansible
+type NodeRole string
+
+const (
+	NodeRoleBase         NodeRole = "base"
+	NodeRoleDockerCrm    NodeRole = "dockercrm"
+	NodeRoleK8sCrm       NodeRole = "k8scrm"
+	NodeRoleK8sCrmWorker NodeRole = "k8scrmworker"
+)
+
+func (s NodeRole) String() string {
+	return string(s)
+}
+
 // resource types
 var ResourceTypeK8sLBSvc = "k8s-lb-svc"
 

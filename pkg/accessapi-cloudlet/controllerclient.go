@@ -20,7 +20,6 @@ import (
 
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefauth"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
@@ -105,19 +104,6 @@ func (s *ControllerClient) GetOldSSHKey(ctx context.Context) (*vault.MEXKey, err
 	mexKey := &vault.MEXKey{}
 	err = json.Unmarshal(reply.Data, mexKey)
 	return mexKey, err
-}
-
-func (s *ControllerClient) GetChefAuthKey(ctx context.Context) (*chefauth.ChefAuthKey, error) {
-	req := &edgeproto.AccessDataRequest{
-		Type: platform.GetChefAuthKey,
-	}
-	reply, err := s.client.GetAccessData(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	auth := &chefauth.ChefAuthKey{}
-	err = json.Unmarshal(reply.Data, auth)
-	return auth, err
 }
 
 func (s *ControllerClient) GetPublicCert(ctx context.Context, commonName string) (*vault.PublicCert, error) {
@@ -247,4 +233,33 @@ func (s *ControllerClient) GetFederationAPIKey(ctx context.Context, fedKey *fede
 	apiKey := federationmgmt.ApiKey{}
 	err = json.Unmarshal(reply.Data, &apiKey)
 	return &apiKey, err
+}
+
+func (s *ControllerClient) CreateCloudletNode(ctx context.Context, cloudletNode *edgeproto.CloudletNode) (string, error) {
+	data, err := json.Marshal(cloudletNode)
+	if err != nil {
+		return "", err
+	}
+	req := &edgeproto.AccessDataRequest{
+		Type: platform.CreateCloudletNode,
+		Data: data,
+	}
+	reply, err := s.client.GetAccessData(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return string(reply.Data), err
+}
+
+func (s *ControllerClient) DeleteCloudletNode(ctx context.Context, key *edgeproto.CloudletNodeKey) error {
+	data, err := json.Marshal(*key)
+	if err != nil {
+		return err
+	}
+	req := &edgeproto.AccessDataRequest{
+		Type: platform.DeleteCloudletNode,
+		Data: data,
+	}
+	_, err = s.client.GetAccessData(ctx, req)
+	return err
 }

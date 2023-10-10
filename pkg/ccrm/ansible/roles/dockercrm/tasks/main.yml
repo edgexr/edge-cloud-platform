@@ -1,0 +1,15 @@
+---
+- name: Run preflight checks
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: preflight_checks
+
+- name: Run docker services
+  ansible.builtin.import_role:
+    name: dockercrm
+    tasks_from: services
+
+- name: Set security policies
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: set_security_policies

@@ -45,6 +45,17 @@ type CacheUpdateCallback func(updateType CacheUpdateType, value string)
 // DummyUpdateCallback is used when we don't want any cache status updates
 func DummyUpdateCallback(updateType CacheUpdateType, value string) {}
 
+// GetForCloudlet gets all cloudlet nodes associated with the given cloudlet
+func (s *CloudletNodeCache) GetForCloudlet(cloudlet *Cloudlet, cb func(cloudletNodeData *CloudletNodeCacheData)) {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	for _, v := range s.Objs {
+		if v.Obj.Key.CloudletKey.Matches(&cloudlet.Key) {
+			cb(v.Clone())
+		}
+	}
+}
+
 // GetAppInstsForCloudlets finds all AppInsts associated with the given cloudlets
 func (s *AppInstCache) GetForCloudlet(cloudlet *Cloudlet, cb func(appInstData *AppInstCacheData)) {
 	s.Mux.Lock()

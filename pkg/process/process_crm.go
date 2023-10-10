@@ -38,8 +38,9 @@ type Crm struct {
 	Region              string
 	CommercialCerts     bool
 	AppDNSRoot          string
-	ChefServerPath      string
+	AnsiblePublicAddr   string
 	CacheDir            string
+	InternalDomain      string
 	HARole              HARole
 }
 
@@ -102,13 +103,16 @@ func (p *Crm) GetArgs(opts ...StartOp) []string {
 		args = append(args, "--appDNSRoot")
 		args = append(args, p.AppDNSRoot)
 	}
-	if p.ChefServerPath != "" {
-		args = append(args, "--chefServerPath")
-		args = append(args, p.ChefServerPath)
+	if p.AnsiblePublicAddr != "" {
+		args = append(args, "--ansiblePublicAddr")
+		args = append(args, p.AnsiblePublicAddr)
 	}
 	if p.CacheDir != "" {
 		args = append(args, "--cacheDir")
 		args = append(args, p.CacheDir)
+	}
+	if p.InternalDomain != "" {
+		args = append(args, "--internalDomain", p.InternalDomain)
 	}
 	args = append(args, "--HARole")
 	args = append(args, string(p.HARole))

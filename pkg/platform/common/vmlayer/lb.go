@@ -22,14 +22,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-
 	valid "github.com/asaskevich/govalidator"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
@@ -343,7 +341,7 @@ func (v *VMPlatform) GetDefaultRootLBFlavor(ctx context.Context) (*edgeproto.Fla
 
 // GetVMSpecForRootLB gets the VM spec for the rootLB when it is not specified within a cluster. This is
 // used for Shared RootLb and for VM app based RootLb
-func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, subnetConnect string, tags []string, addNets map[string]NetworkType, addRoutes map[string][]edgeproto.Route, updateCallback edgeproto.CacheUpdateCallback) (*VMRequestSpec, error) {
+func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, subnetConnect string, ownerKey objstore.ObjKey, addNets map[string]NetworkType, addRoutes map[string][]edgeproto.Route, updateCallback edgeproto.CacheUpdateCallback) (*VMRequestSpec, error) {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMSpecForRootLB", "rootLbName", rootLbName)
 
@@ -380,10 +378,6 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 	if err != nil {
 		return nil, err
 	}
-	chefAttributes := make(map[string]interface{})
-	chefAttributes["tags"] = tags
-	clientName := v.GetChefClientName(rootLbName)
-	chefParams := v.GetServerChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 
 	// append the cloudlet-wide additional rootlb networks to the ones passed in
 	netTypes := []NetworkType{NetworkTypeExternalAdditionalRootLb}
@@ -403,7 +397,7 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 		true,
 		WithExternalVolume(spec.ExternalVolumeSize),
 		WithSubnetConnection(subnetConnect),
-		WithChefParams(chefParams),
+		WithConfigureNodeVars(v, cloudcommon.NodeRoleBase, &cli.Key, ownerKey),
 		WithAdditionalNetworks(addNets),
 		WithRoutes(addRoutes))
 }
@@ -430,7 +424,6 @@ func (v *VMPlatform) CreateRootLB(
 	cloudletKey *edgeproto.CloudletKey,
 	imgPath, imgVersion string,
 	action ActionType,
-	tags []string,
 	updateCallback edgeproto.CacheUpdateCallback,
 ) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "create rootlb", "name", rootLBName, "action", action)
@@ -443,7 +436,7 @@ func (v *VMPlatform) CreateRootLB(
 	}
 	nets := make(map[string]NetworkType)
 	routes := make(map[string][]edgeproto.Route)
-	vmreq, err := v.GetVMSpecForRootLB(ctx, rootLBName, "", tags, nets, routes, updateCallback)
+	vmreq, err := v.GetVMSpecForRootLB(ctx, rootLBName, "", cloudletKey, nets, routes, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -634,16 +627,6 @@ func CopyResourceTracker(client ssh.Client) error {
 	cmd = fmt.Sprintf("sudo chmod a+rx /usr/local/bin/resource-tracker")
 	_, err = client.Output(cmd)
 	return err
-}
-
-func GetChefRootLBTags(platformConfig *platform.PlatformConfig) []string {
-	return []string{
-		"deploytag/" + platformConfig.DeploymentTag,
-		"region/" + platformConfig.Region,
-		"cloudlet/" + platformConfig.CloudletKey.Name,
-		"cloudletorg/" + platformConfig.CloudletKey.Organization,
-		"nodetype/" + cloudcommon.NodeTypeSharedRootLB.String(),
-	}
 }
 
 // GetAllRootLBClients gets rootLb clients for both Shared and Dedicated LBs

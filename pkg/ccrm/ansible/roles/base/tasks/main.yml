@@ -1,0 +1,5 @@
+---
+- name: Set security policies
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: set_security_policies

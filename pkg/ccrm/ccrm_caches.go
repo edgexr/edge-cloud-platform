@@ -16,6 +16,7 @@ import (
 type CCRMCaches struct {
 	PlatformFeaturesCache      edgeproto.PlatformFeaturesCache
 	CloudletCache              *edgeproto.CloudletCache
+	CloudletNodeCache          edgeproto.CloudletNodeCache
 	CloudletInfoCache          edgeproto.CloudletInfoCache
 	FlavorCache                edgeproto.FlavorCache
 	VMPoolCache                edgeproto.VMPoolCache
@@ -42,6 +43,7 @@ func (s *CCRMCaches) Init(ctx context.Context, nodeType string, nodeMgr *node.No
 	edgeproto.InitSettingsCache(&s.SettingsCache)
 	edgeproto.InitResTagTableCache(&s.ResTagTableCache)
 	edgeproto.InitGPUDriverCache(&s.GPUDriverCache)
+	edgeproto.InitCloudletNodeCache(&s.CloudletNodeCache)
 	s.CloudletOnboardingInfoSend = notify.NewCloudletOnboardingInfoSend()
 
 	for _, builder := range platformBuilders {
@@ -54,6 +56,7 @@ func (s *CCRMCaches) Init(ctx context.Context, nodeType string, nodeMgr *node.No
 
 func (s *CCRMCaches) InitNotify(client *notify.Client, nodeMgr *node.NodeMgr) {
 	client.RegisterRecvCloudletCache(s.CloudletCache)
+	client.RegisterRecvCloudletNodeCache(&s.CloudletNodeCache)
 	client.RegisterRecvFlavorCache(&s.FlavorCache)
 	client.RegisterRecvVMPoolCache(&s.VMPoolCache)
 	client.RegisterRecvSettingsCache(&s.SettingsCache)

@@ -618,7 +618,7 @@ func harborEnsureRobotAccount(ctx context.Context, harborHostPort, org string) e
 	}
 	var id int64
 	ensureFailed := false
-	if code == http.StatusOK {
+	if code == http.StatusOK || code == http.StatusCreated {
 		created := models.RobotCreated{}
 		err = json.Unmarshal(resBody, &created)
 		if err != nil {

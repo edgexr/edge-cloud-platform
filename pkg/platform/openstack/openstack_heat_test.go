@@ -25,10 +25,10 @@ import (
 	yaml "github.com/mobiledgex/yaml/v2"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/chefmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/stretchr/testify/require"
@@ -92,6 +92,7 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 	resources, err := op.populateParams(ctx, vmgp, heatTest)
 	log.SpanLog(ctx, log.DebugLevelInfra, "populateParams done", "resources", resources, "err", err)
 
+	require.NotNil(t, resources, err)
 	require.Equal(t, len(resources.Subnets), len(ReservedSubnets)+numReservedSubnetsStart)
 	require.Equal(t, len(resources.FloatingIpIds), len(ReservedFloatingIPs)+numReservedFipsStart)
 
@@ -133,15 +134,6 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 	stackTemplate := &OSHeatStackTemplate{}
 	err = yaml.Unmarshal(stackTemplateData, stackTemplate)
 	require.Nil(t, err)
-
-	keys, err := GetChefKeysFromOSResource(ctx, stackTemplate)
-	require.Nil(t, err)
-	require.Equal(t, 5, len(keys))
-
-	for _, key := range keys {
-		require.True(t, strings.HasPrefix(key, "-----BEGIN RSA PRIVATE KEY-----"))
-		require.True(t, strings.HasSuffix(key, "-----END RSA PRIVATE KEY-----"))
-	}
 
 	genVMsUserData := make(map[string]string)
 	for _, v := range vmgp.VMs {
@@ -221,7 +213,7 @@ func TestHeatTemplate(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 
 	ckey := edgeproto.CloudletKey{
-		Organization: "MobiledgeX",
+		Organization: "edgecloud",
 		Name:         "unit-test",
 	}
 
@@ -243,10 +235,15 @@ func TestHeatTemplate(t *testing.T) {
 	op.VMProperties.CommonPf.PlatformConfig.TestMode = true
 	// Add chef params
 	for _, vm := range vms {
-		vm.ChefParams = &chefmgmt.ServerChefParams{
-			NodeName:   vm.Name,
-			ServerPath: "cheftestserver.mobiledgex.net/organizations/mobiledgex",
-			ClientKey:  "-----BEGIN RSA PRIVATE KEY-----\nNDFGHJKLJHGHJKJNHJNBHJNBGYUJNBGHJNBGSZiO/8i6ERbmqPopV8GWC5VjxlZm\n-----END RSA PRIVATE KEY-----",
+		vm.ConfigureNodeVars = &confignode.ConfigureNodeVars{
+			Key: edgeproto.CloudletNodeKey{
+				Name:        vm.Name,
+				CloudletKey: ckey,
+			},
+			NodeType:          vm.Type,
+			NodeRole:          cloudcommon.NodeRoleDockerCrm,
+			Password:          "ps123",
+			AnsiblePublicAddr: "http://127.0.0.1:12345",
 		}
 	}
 

@@ -1,0 +1,9 @@
+name: shepherd
+image: "{{ edgeCloudImage }}:{{ edgeCloudVersion }}"
+command: {{ shepherd.args }}
+env: {{ shepherd.env }}
+volumes:
+- /var/tmp:/var/tmp
+- /root/accesskey:/root/accesskey
+restart_policy: "unless-stopped"
+network_mode: "host"

@@ -743,7 +743,7 @@ func main() {
 		cloudlet := &edgeproto.Cloudlet{
 			Key: dmecommon.MyCloudletKey,
 		}
-		accessApi = accessapi.NewVaultClient(cloudlet, nodeMgr.VaultConfig, *region, "")
+		accessApi = accessapi.NewVaultClient(cloudlet, nodeMgr.VaultConfig, nil, *region, "")
 	}
 
 	var getPublicCertApi cloudcommon.GetPublicCertApi

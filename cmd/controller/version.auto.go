@@ -23,6 +23,7 @@ var VersionHash_UpgradeFuncs = map[int32]VersionUpgradeFunc{
 	49: nil,
 	50: PlatformType,
 	51: CloudletAccessVars,
+	52: nil,
 }
 var VersionHash_UpgradeFuncNames = map[int32]string{
 	0:  "",
@@ -31,6 +32,7 @@ var VersionHash_UpgradeFuncNames = map[int32]string{
 	49: "",
 	50: "PlatformType",
 	51: "CloudletAccessVars",
+	52: "",
 }
 
 // Auto-generated code: DO NOT EDIT

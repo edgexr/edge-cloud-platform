@@ -1274,6 +1274,80 @@ func (s *Client) EvictCloudletInfo(uri string, token string, in *ormapi.RegionCl
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
+// Generating group CloudletNode
+
+func (s *Client) CreateCloudletNode(uri string, token string, in *ormapi.RegionCloudletNode, ops ...Op) (*edgeproto.Result, int, error) {
+	rundata := RunData{}
+	applyOps(&rundata, ops...)
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("CreateCloudletNode")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) UpdateCloudletNode(uri string, token string, in *ormapi.RegionCloudletNode, ops ...Op) (*edgeproto.Result, int, error) {
+	rundata := RunData{}
+	applyOps(&rundata, ops...)
+	rundata.Uri = uri
+	rundata.Token = token
+	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
+	if err != nil {
+		return nil, 0, err
+	}
+	rundata.In = mm
+	var out edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("UpdateCloudletNode")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowCloudletNode(uri string, token string, in *ormapi.RegionCloudletNode, ops ...Op) ([]edgeproto.CloudletNode, int, error) {
+	rundata := RunData{}
+	applyOps(&rundata, ops...)
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []edgeproto.CloudletNode
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowCloudletNode")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) DeleteCloudletNode(uri string, token string, in *ormapi.RegionCloudletNode, ops ...Op) (*edgeproto.Result, int, error) {
+	rundata := RunData{}
+	applyOps(&rundata, ops...)
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("DeleteCloudletNode")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
 // Generating group CloudletPool
 
 func (s *Client) CreateCloudletPool(uri string, token string, in *ormapi.RegionCloudletPool, ops ...Op) (*edgeproto.Result, int, error) {

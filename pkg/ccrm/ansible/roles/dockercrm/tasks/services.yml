@@ -1,0 +1,48 @@
+---
+- name: Ensure accesskeys directory
+  ansible.builtin.file:
+    path: /root/accesskeys
+    state: directory
+    mode: "0700"
+    owner: root
+    group: root
+
+- name: Ensure crm_cache directory
+  ansible.builtin.file:
+    path: /root/crm_cache
+    state: directory
+    mode: "0700"
+    owner: root
+    group: root
+
+- name: Stat mex_release directory
+  stat:
+    path: /etc/mex-release
+  register: mex_release
+
+- name: Deploy crm docker
+  community.docker.docker_container: "{{ lookup('template', 'crm_docker.yml.j2') | from_yaml }}"
+  register: deploy_crm
+
+- name: Deploy shepherd docker
+  community.docker.docker_container: "{{ lookup('template', 'shepherd_docker.yml.j2') | from_yaml }}"
+  register: deploy_shepherd
+
+- name: Write prometheus config file
+  ansible.builtin.template:
+    src: templates/prometheus.yml.j2
+    dest: /var/tmp/prometheus.yml
+    mode: "0644"
+  register: write_prometheus_config
+
+- name: Deploy prometheus docker
+  community.docker.docker_container: "{{ lookup('template', 'prometheus_docker.yml.j2') | from_yaml }}"
+  register: deploy_prometheus
+
+- name: Reload prometheus config if changed and already running
+  shell: "curl -X POST http://0.0.0.0:9092/-/reload"
+  when: (write_prometheus_config.changed) and (not deploy_prometheus.changed)
+
+- name: Prune docker images if new images may have been pulled
+  shell: docker image prune -a --force --filter "until=24h"
+  when: (deploy_crm.changed) or (deploy_shepherd.changed) or (deploy_prometheus.changed)

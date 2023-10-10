@@ -1677,6 +1677,7 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	s.all.cloudletInfoApi.cleanupCloudletInfo(ctx, in)
 	s.all.autoProvInfoApi.Delete(ctx, &edgeproto.AutoProvInfo{Key: in.Key}, 0)
 	s.all.alertApi.CleanupCloudletAlerts(ctx, &in.Key)
+	s.all.cloudletNodeApi.cleanupNodes(ctx, &in.Key)
 	return nil
 }
 
