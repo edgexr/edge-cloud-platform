@@ -600,7 +600,7 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 		return nil, fmt.Errorf("no platform nodes")
 	}
 	for _, node := range nodes {
-		// XXX: is this needed?
+		// TODO: is this needed?
 		if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
 			cloudlet.ChefClientKey[node.NodeName] = ""
 		}

@@ -143,7 +143,7 @@ func TestAnsibleServer(t *testing.T) {
 	ccrmType := "ccrm"
 	ccrm.caches.Init(ctx, ccrmType, &ccrm.nodeMgr, nil)
 	ccrm.handler.Init(ctx, ccrmType, &ccrm.nodeMgr, &ccrm.caches, nil, nil, &ccrm.flags)
-	ccrm.initAnsibleServer(ctx)
+	ccrm.echoServ = ccrm.initAnsibleServer(ctx)
 
 	// test cloudlet
 	cloudlet := getTestCloudlet()

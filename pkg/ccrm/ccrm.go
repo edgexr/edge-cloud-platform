@@ -165,12 +165,12 @@ func (s *CCRM) Start() error {
 
 	s.handler.Init(ctx, s.nodeType, &s.nodeMgr, &s.caches, s.redisClient, s.ctrlConn, &s.flags)
 
-	s.initAnsibleServer(ctx)
+	echoServ := s.initAnsibleServer(ctx)
 
 	notifyClient.Start()
 	s.notifyClient = notifyClient
 
-	s.startAnsibleServer(ctx)
+	s.startAnsibleServer(ctx, echoServ)
 
 	return nil
 }
@@ -184,10 +184,7 @@ func (s *CCRM) Stop() {
 		s.handler.CancelHandlers()
 		s.handler.CancelHandlers = nil
 	}
-	if s.echoServ != nil {
-		s.echoServ.Close()
-		s.echoServ = nil
-	}
+	s.stopAnsibleServer()
 	if s.ctrlConn != nil {
 		s.ctrlConn.Close()
 		s.ctrlConn = nil

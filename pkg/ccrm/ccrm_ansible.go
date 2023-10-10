@@ -30,10 +30,9 @@ func init() {
 	ansibleArchiveChecksum = fmt.Sprintf("%x", md5.Sum(ansibleArchive))
 }
 
-func (s *CCRM) initAnsibleServer(ctx context.Context) {
+func (s *CCRM) initAnsibleServer(ctx context.Context) *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true
-	s.echoServ = e
 
 	log.SpanLog(ctx, log.DebugLevelInfo, "init ansible server", "archive-checksum", ansibleArchiveChecksum)
 
@@ -51,9 +50,11 @@ func (s *CCRM) initAnsibleServer(ctx context.Context) {
 	node.GET("/ansible.tar.gz", s.getAnsibleArchive)
 	node.GET("/vars.yaml.md5", s.getNodeVarsChecksum)
 	node.GET("/vars.yaml", s.getNodeVarsFile)
+	return e
 }
 
-func (s *CCRM) startAnsibleServer(ctx context.Context) {
+func (s *CCRM) startAnsibleServer(ctx context.Context, e *echo.Echo) {
+	s.echoServ = e
 	go func() {
 		// TLS to be handled externally
 		err := s.echoServ.Start(s.flags.AnsibleListenAddr)
@@ -61,6 +62,13 @@ func (s *CCRM) startAnsibleServer(ctx context.Context) {
 			log.FatalLog("failed to serve webserv", "err", err)
 		}
 	}()
+}
+
+func (s *CCRM) stopAnsibleServer() {
+	if s.echoServ != nil {
+		s.echoServ.Close()
+	}
+	s.echoServ = nil
 }
 
 func (s *CCRM) authRequest(next echo.HandlerFunc) echo.HandlerFunc {

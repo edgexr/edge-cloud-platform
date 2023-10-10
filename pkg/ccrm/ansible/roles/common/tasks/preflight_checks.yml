@@ -7,9 +7,8 @@
   vars:
     controller_notify_parts: "{{ notifyAddrs.split(':') }}"
 
-- name: Verify controller's notify port is reachable
-  shell: "nc {{ controller_notify_host }} {{ controller_notify_port }} -z -w 10"
-  register: nc_result
-  until: nc_result is not failed
-  retries: 3
-  delay: 10
+- name: Wait for controller's notify port to be reachable
+  wait_for:
+    host: "{{ controller_notify_host }}"
+    port: "{{ controller_notify_port }}"
+    timeout: 10

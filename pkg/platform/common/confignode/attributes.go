@@ -57,7 +57,7 @@ var ValidDockerArgs = map[string]string{
 }
 
 func GetDockerArgs(cmdArgs []string) map[string]interface{} {
-	chefArgs := make(map[string]interface{})
+	args := make(map[string]interface{})
 	ii := 0
 	for ii < len(cmdArgs) {
 		if !strings.HasPrefix(cmdArgs[ii], "-") {
@@ -78,10 +78,10 @@ func GetDockerArgs(cmdArgs []string) map[string]interface{} {
 		if argKey == "label" {
 			// argVal is format key=value or just key
 			var dict map[string]string
-			di, ok := chefArgs[argKey]
+			di, ok := args[argKey]
 			if !ok {
 				dict = map[string]string{}
-				chefArgs[argKey] = dict
+				args[argKey] = dict
 			} else {
 				dict, _ = di.(map[string]string)
 			}
@@ -94,17 +94,17 @@ func GetDockerArgs(cmdArgs []string) map[string]interface{} {
 			dict[key] = val
 		} else if keyType == "list" {
 			newVal := []string{argVal}
-			if existVal, ok := chefArgs[argKey]; ok {
+			if existVal, ok := args[argKey]; ok {
 				if eVal, ok := existVal.([]string); ok {
 					newVal = append(newVal, eVal...)
 				}
 			}
-			chefArgs[argKey] = newVal
+			args[argKey] = newVal
 		} else {
-			chefArgs[argKey] = argVal
+			args[argKey] = argVal
 		}
 	}
-	return chefArgs
+	return args
 }
 
 func GetCloudletAttributes(ctx context.Context, cl *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig) (map[string]interface{}, error) {
