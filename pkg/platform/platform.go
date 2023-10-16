@@ -23,11 +23,11 @@ import (
 	"sync"
 	"time"
 
-	cloudflare "github.com/cloudflare/cloudflare-go"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt/dnsapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
@@ -187,8 +187,8 @@ type AccessApi interface {
 	GetSSHPublicKey(ctx context.Context) (string, error)
 	GetOldSSHKey(ctx context.Context) (*vault.MEXKey, error)
 	CreateOrUpdateDNSRecord(ctx context.Context, name, rtype, content string, ttl int, proxy bool) error
-	GetDNSRecords(ctx context.Context, fqdn string) ([]cloudflare.DNSRecord, error)
-	DeleteDNSRecord(ctx context.Context, recordID string) error
+	GetDNSRecords(ctx context.Context, fqdn string) ([]dnsapi.Record, error)
+	DeleteDNSRecord(ctx context.Context, fqdn string) error
 	GetSessionTokens(ctx context.Context, secretName string) (string, error)
 	GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error)
 	GetGCSCreds(ctx context.Context) ([]byte, error)

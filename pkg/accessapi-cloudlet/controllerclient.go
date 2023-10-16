@@ -18,10 +18,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/cloudflare/cloudflare-go"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt/dnsapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -140,7 +140,7 @@ func (s *ControllerClient) CreateOrUpdateDNSRecord(ctx context.Context, name, rt
 	return err
 }
 
-func (s *ControllerClient) GetDNSRecords(ctx context.Context, fqdn string) ([]cloudflare.DNSRecord, error) {
+func (s *ControllerClient) GetDNSRecords(ctx context.Context, fqdn string) ([]dnsapi.Record, error) {
 	record := platform.DNSRequest{
 		Name: fqdn,
 	}
@@ -156,7 +156,7 @@ func (s *ControllerClient) GetDNSRecords(ctx context.Context, fqdn string) ([]cl
 	if err != nil {
 		return nil, err
 	}
-	records := make([]cloudflare.DNSRecord, 0)
+	records := make([]dnsapi.Record, 0)
 	err = json.Unmarshal(reply.Data, &records)
 	if err != nil {
 		return nil, err
@@ -164,9 +164,9 @@ func (s *ControllerClient) GetDNSRecords(ctx context.Context, fqdn string) ([]cl
 	return records, nil
 }
 
-func (s *ControllerClient) DeleteDNSRecord(ctx context.Context, recordID string) error {
+func (s *ControllerClient) DeleteDNSRecord(ctx context.Context, name string) error {
 	record := platform.DNSRequest{
-		Name: recordID,
+		Name: name,
 	}
 	data, err := json.Marshal(record)
 	if err != nil {
