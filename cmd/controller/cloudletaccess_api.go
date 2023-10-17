@@ -26,6 +26,15 @@ import (
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
+func (s *CloudletApi) InitVaultClient(ctx context.Context) error {
+	vaultClient, err := accessapi.NewVaultClient(ctx, vaultConfig, s.all.cloudletNodeApi, *region, *dnsZone, *dnsProvider)
+	if err != nil {
+		return err
+	}
+	s.vaultClient = vaultClient
+	return nil
+}
+
 // Issue certificate to RegionalCloudlet service.
 func (s *CloudletApi) IssueCert(ctx context.Context, req *edgeproto.IssueCertRequest) (*edgeproto.IssueCertReply, error) {
 	verified := node.ContextGetAccessKeyVerified(ctx)
@@ -98,7 +107,7 @@ func (s *CloudletApi) GetAccessData(ctx context.Context, req *edgeproto.AccessDa
 	if !s.all.cloudletApi.cache.Get(&verified.Key, cloudlet) {
 		return nil, verified.Key.NotFoundError()
 	}
-	vaultClient := accessapi.NewVaultClient(cloudlet, vaultConfig, s.all.cloudletNodeApi, *region, *dnsZone)
+	vaultClient := s.vaultClient.CloudletContext(cloudlet)
 	handler := accessapi.NewControllerHandler(cloudlet, vaultClient)
 	return handler.GetAccessData(ctx, req)
 }

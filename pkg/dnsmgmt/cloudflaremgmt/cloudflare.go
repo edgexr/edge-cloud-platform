@@ -34,7 +34,7 @@ type CloudflareAPI struct {
 	api *cloudflare.API
 }
 
-func GetProvider(vaultConfig *vault.Config) (dnsapi.Provider, error) {
+func GetProvider(ctx context.Context, vaultConfig *vault.Config) (dnsapi.Provider, error) {
 	// look up cloudflare api token
 	// (path matches where global-operator saves it)
 	auth := cloudcommon.RegistryAuth{}

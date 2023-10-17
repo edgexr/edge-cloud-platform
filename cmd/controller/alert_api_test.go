@@ -24,6 +24,7 @@ import (
 	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
@@ -200,6 +201,8 @@ func testinit(ctx context.Context, t *testing.T, opts ...TestOp) *testServices {
 	objstore.InitRegion(1)
 	tMode := true
 	testMode = &tMode
+	dnsProv := dnsmgmt.NoProvider
+	dnsProvider = &dnsProv
 	dockerRegistry := "docker.mobiledgex.net"
 	registryFQDN = &dockerRegistry
 	nodeMgr.VaultAddr = vault.UnitTestIgnoreVaultAddr

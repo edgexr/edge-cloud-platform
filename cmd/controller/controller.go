@@ -35,6 +35,7 @@ import (
 	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
@@ -84,6 +85,7 @@ var checkpointInterval = flag.String("checkpointInterval", "MONTH", "Interval at
 var appDNSRoot = flag.String("appDNSRoot", "appdnsroot.net", "App domain name root")
 var requireNotifyAccessKey = flag.Bool("requireNotifyAccessKey", false, "Require AccessKey authentication on notify API")
 var dnsZone = flag.String("dnsZone", "", "comma separated list of allowed dns zones for DNS update requests")
+var dnsProvider = flag.String("dnsProvider", "", fmt.Sprintf("DNS service provider name, one of %v", dnsmgmt.GetProviderNames()))
 
 var ControllerId = ""
 var InfluxDBName = cloudcommon.DeveloperMetricsDbName
@@ -221,6 +223,10 @@ func startServices() error {
 	sync := InitSync(objStore)
 	allApis := NewAllApis(sync)
 	services.allApis = allApis
+
+	if err := allApis.cloudletApi.InitVaultClient(ctx); err != nil {
+		return err
+	}
 
 	// We might need to upgrade the stored objects
 	if !*skipVersionCheck {

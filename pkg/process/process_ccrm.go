@@ -25,6 +25,7 @@ type CCRM struct {
 	ThanosRecvAddr                string
 	AnsibleListenAddr             string
 	AnsiblePublicAddr             string
+	DNSProvider                   string
 	TestMode                      bool
 	cmd                           *exec.Cmd
 }
@@ -75,6 +76,9 @@ func (p *CCRM) StartLocal(logfile string, opts ...StartOp) error {
 	}
 	if p.TestMode {
 		args = append(args, "-testMode")
+	}
+	if p.DNSProvider != "" {
+		args = append(args, "--dnsProvider", p.DNSProvider)
 	}
 	options := StartOptions{}
 	options.ApplyStartOptions(opts...)

@@ -10,6 +10,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -42,6 +43,7 @@ type Flags struct {
 	Region                        string
 	AppDNSRoot                    string
 	DnsZone                       string
+	DnsProvider                   string
 	CloudletRegistryPath          string
 	CloudletVMImagePath           string
 	VersionTag                    string
@@ -99,6 +101,7 @@ func (s *Flags) Init() {
 	flag.StringVar(&s.Region, "region", "local", "region name")
 	flag.StringVar(&s.AppDNSRoot, "appDNSRoot", "appdnsroot.net", "App domain name root")
 	flag.StringVar(&s.DnsZone, "dnsZone", "", "comma separated list of allowed dns zones for DNS update requests")
+	flag.StringVar(&s.DnsProvider, "dnsProvider", "", fmt.Sprintf("DNS service provider name, one of %v", dnsmgmt.GetProviderNames()))
 	flag.StringVar(&s.CloudletRegistryPath, "cloudletRegistryPath", "", "edge-cloud image registry path for deploying cloudlet services")
 	flag.StringVar(&s.CloudletVMImagePath, "cloudletVMImagePath", "", "VM image for deploying cloudlet services")
 	flag.StringVar(&s.VersionTag, "versionTag", "", "edge-cloud image tag indicating controller version")
@@ -163,7 +166,10 @@ func (s *CCRM) Start() error {
 	// initialize and start the notify client
 	s.caches.InitNotify(notifyClient, &s.nodeMgr)
 
-	s.handler.Init(ctx, s.nodeType, &s.nodeMgr, &s.caches, s.redisClient, s.ctrlConn, &s.flags)
+	err = s.handler.Init(ctx, s.nodeType, &s.nodeMgr, &s.caches, s.redisClient, s.ctrlConn, &s.flags)
+	if err != nil {
+		return err
+	}
 
 	echoServ := s.initAnsibleServer(ctx)
 

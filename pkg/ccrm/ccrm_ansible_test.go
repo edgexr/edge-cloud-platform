@@ -18,6 +18,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
@@ -28,6 +29,7 @@ var testFlags = Flags{
 	Region:                        "test-region",
 	AppDNSRoot:                    "app.test.domain",
 	DnsZone:                       "test.domain",
+	DnsProvider:                   dnsmgmt.NoProvider,
 	CloudletRegistryPath:          "ghcr.io/company/crm-image",
 	CloudletVMImagePath:           "https://console.test.domain/storage/v1/artifacts/edgecloudorg",
 	VersionTag:                    "1234-99-XX",
@@ -102,7 +104,8 @@ func TestNodeAttributesYaml(t *testing.T) {
 	caches := CCRMCaches{}
 	caches.Init(ctx, "ccrm", &nodeMgr, nil)
 	handler := CCRMHandler{}
-	handler.Init(ctx, "ccrm", &nodeMgr, &caches, nil, nil, &testFlags)
+	err := handler.Init(ctx, "ccrm", &nodeMgr, &caches, nil, nil, &testFlags)
+	require.Nil(t, err)
 
 	cloudlet := getTestCloudlet()
 	baseAttributes, err := handler.getCloudletPlatformAttributes(ctx, &cloudlet)
@@ -142,7 +145,8 @@ func TestAnsibleServer(t *testing.T) {
 
 	ccrmType := "ccrm"
 	ccrm.caches.Init(ctx, ccrmType, &ccrm.nodeMgr, nil)
-	ccrm.handler.Init(ctx, ccrmType, &ccrm.nodeMgr, &ccrm.caches, nil, nil, &ccrm.flags)
+	err := ccrm.handler.Init(ctx, ccrmType, &ccrm.nodeMgr, &ccrm.caches, nil, nil, &ccrm.flags)
+	require.Nil(t, err)
 	ccrm.echoServ = ccrm.initAnsibleServer(ctx)
 
 	// test cloudlet

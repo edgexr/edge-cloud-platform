@@ -3,6 +3,8 @@ package dnsapi
 
 import (
 	"context"
+
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
 const (
@@ -22,6 +24,8 @@ type Provider interface {
 	// DeleteDNSRecord deletes all DNS records for the name.
 	DeleteDNSRecord(ctx context.Context, zone, name string) error
 }
+
+type GetProviderFunc = func(ctx context.Context, vaultConfig *vault.Config) (Provider, error)
 
 // Record represents a DNS record in a zone.
 type Record struct {

@@ -176,6 +176,7 @@ controllers:
   usevaultpki: true
   edgeturnaddr: "127.0.0.1:8081"
   appdnsroot: edgecloude2e.net
+  dnsprovider: none
   deploymenttag: dev
   accessapiaddr: "127.0.0.1:21001"
   envvars:
@@ -198,6 +199,7 @@ controllers:
   usevaultpki: true
   edgeturnaddr: "127.0.0.1:8081"
   appdnsroot: edgecloude2e.net
+  dnsprovider: none
   deploymenttag: dev
   accessapiaddr: "127.0.0.1:21002"
   envvars:
@@ -221,6 +223,7 @@ controllers:
   usevaultpki: true
   edgeturnaddr: "127.0.0.1:8082"
   appdnsroot: edgecloude2e.net
+  dnsprovider: none
   deploymenttag: dev
   influxaddr: "http://127.0.0.1:8087"
   accessapiaddr: "127.0.0.1:21011"
@@ -245,6 +248,7 @@ controllers:
   usevaultpki: true
   edgeturnaddr: "127.0.0.1:8082"
   appdnsroot: edgecloude2e.net
+  dnsprovider: none
   deploymenttag: dev
   influxaddr: "http://127.0.0.1:8087"
   accessapiaddr: "127.0.0.1:21012"
@@ -266,6 +270,7 @@ controllers:
   region: "PA"
   usevaultpki: true
   appdnsroot: edgecloude2e.net
+  dnsprovider: none
   deploymenttag: dev
   accessapiaddr: "127.0.0.1:21081"
   envvars:
@@ -278,6 +283,7 @@ ccrms:
   region: local
   hostname: "127.0.0.1"
   appdnsroot: edgecloude2e.net
+  dnsprovider: none
   controllerapiaddr: "127.0.0.1:5501"
   controllernotifyaddr: "127.0.0.1:27001"
   controllerpublicaccessapiaddr: "127.0.0.1:21001"
@@ -299,6 +305,7 @@ ccrms:
   region: locala
   hostname: "127.0.0.1"
   appdnsroot: edgecloude2e.net
+  dnsprovider: none
   controllerapiaddr: "127.0.0.1:5511"
   controllernotifyaddr: "127.0.0.1:27011"
   controllerpublicaccessapiaddr: "127.0.0.1:21011"
@@ -319,6 +326,7 @@ ccrms:
   region: PA
   hostname: "127.0.0.1"
   appdnsroot: edgecloude2e.net
+  dnsprovider: none
   controllerapiaddr: "127.0.0.1:5581"
   controllernotifyaddr: "127.0.0.1:27081"
   controllerpublicaccessapiaddr: "127.0.0.1:21081"

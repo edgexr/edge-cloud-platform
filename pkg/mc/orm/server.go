@@ -32,7 +32,6 @@ import (
 
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing/chargify"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing/fakebilling"
@@ -46,7 +45,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
@@ -153,7 +151,7 @@ var nodeMgr *node.NodeMgr
 var AlertManagerServer *alertmgr.AlertMgrServer
 var allRegionCaches AllRegionCaches
 var connCache *ConnCache
-var accessApi platform.AccessApi
+
 var partnerApi *federation.PartnerApi
 
 var unitTestNodeMgrOps []node.NodeOp
@@ -362,8 +360,6 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	if err != nil {
 		return nil, fmt.Errorf("enforcer init failed, %v", err)
 	}
-
-	accessApi = accessapi.NewVaultGlobalClient(config.vaultConfig)
 
 	server.initDataDone = make(chan error, 1)
 	go InitData(ctx, Superuser, superpass, config.PingInterval, &server.stopInitData, server.done, server.initDataDone)

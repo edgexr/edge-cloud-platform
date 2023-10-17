@@ -39,6 +39,7 @@ import (
 	op "github.com/edgexr/edge-cloud-platform/pkg/dme-platform"
 	operator "github.com/edgexr/edge-cloud-platform/pkg/dme-platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/dme-platform/defaultoperator"
+	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt"
 	log "github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -743,7 +744,12 @@ func main() {
 		cloudlet := &edgeproto.Cloudlet{
 			Key: dmecommon.MyCloudletKey,
 		}
-		accessApi = accessapi.NewVaultClient(cloudlet, nodeMgr.VaultConfig, nil, *region, "")
+		aa, err := accessapi.NewVaultClient(ctx, nodeMgr.VaultConfig, nil, *region, "", dnsmgmt.NoProvider)
+		if err != nil {
+			span.Finish()
+			log.FatalLog("failed to get vault client", "err", err)
+		}
+		accessApi = aa.CloudletContext(cloudlet)
 	}
 
 	var getPublicCertApi cloudcommon.GetPublicCertApi

@@ -4,7 +4,6 @@ package dnsmgmt
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt/cloudflaremgmt"
@@ -19,47 +18,90 @@ const LocalTestZone = "localtest.net"
 type DNSMgr struct {
 	vaultConfig  *vault.Config
 	allowedZones []string
+	providerName string
 	provider     dnsapi.Provider
+}
+
+// NoProvider can be used to specify that DNS service is not needed.
+const NoProvider = "none"
+
+var providerFuncs = map[string]dnsapi.GetProviderFunc{
+	cloudflaremgmt.ProviderName: cloudflaremgmt.GetProvider,
+	googleclouddns.ProviderName: googleclouddns.GetProvider,
+	NoProvider:                  nil,
+}
+
+func GetProviderNames() []string {
+	names := []string{}
+	for name := range providerFuncs {
+		names = append(names, name)
+	}
+	return names
 }
 
 // NewDNSMgr creates a new DNS manager that will look for DNS API
 // credentials in Vault, and only allow modification of the specified zones.
-func NewDNSMgr(vaultConfig *vault.Config, allowedZones []string) *DNSMgr {
+func NewDNSMgr(vaultConfig *vault.Config, allowedZones []string, providerName string) *DNSMgr {
 	return &DNSMgr{
 		vaultConfig:  vaultConfig,
 		allowedZones: allowedZones,
+		providerName: providerName,
 	}
 }
 
-func (s *DNSMgr) ensureProvider(ctx context.Context) error {
-	if s.provider != nil {
+func (s *DNSMgr) Init(ctx context.Context) error {
+	if s.providerName == NoProvider {
+		log.SpanLog(ctx, log.DebugLevelInfra, "skip DNS provider", "provider", s.providerName)
 		return nil
 	}
-	// prefer provider specified by environment, otherwise look for
-	// providers in the order below.
-	providerName := os.Getenv("DNS_PROVIDER")
 
-	if providerName == "" || providerName == cloudflaremgmt.ProviderName {
-		provider, err := cloudflaremgmt.GetProvider(s.vaultConfig)
-		log.SpanLog(ctx, log.DebugLevelInfra, "get cloudflare DNS provider", "err", err)
+	// Use dns provider if specified
+	if s.providerName != "" {
+		getProvider, ok := providerFuncs[s.providerName]
+		if !ok {
+			return fmt.Errorf("specified dns provider %s is not supported", s.providerName)
+		}
+		provider, err := getProvider(ctx, s.vaultConfig)
+		if err != nil {
+			return fmt.Errorf("error getting DNS provider %s, %s", s.providerName, err)
+		}
+		s.provider = provider
+		return nil
+	}
+
+	// Use provider based on what credentials have been supplied
+	var provider dnsapi.Provider
+	var provName string
+	var errs []string
+	for name, getProvider := range providerFuncs {
+		prov, err := getProvider(ctx, s.vaultConfig)
+		log.SpanLog(ctx, log.DebugLevelInfra, "get DNS provider", "provider", name, "err", err)
 		if err == nil {
-			s.provider = provider
-			return nil
+			if provider != nil {
+				// credentials exist for more than one provider,
+				// require provider to be specified.
+				return fmt.Errorf("found credentials for multiple DNS providers, please specify which provider to use.")
+			}
+			provider = prov
+			provName = name
+		} else {
+			errs = append(errs, name+": "+err.Error())
 		}
 	}
-	if providerName == "" || providerName == googleclouddns.ProviderName {
-		provider, err := googleclouddns.GetProvider(ctx, s.vaultConfig)
-		log.SpanLog(ctx, log.DebugLevelInfra, "get google cloud DNS provider", "err", err)
-		if err == nil {
-			s.provider = provider
-			return nil
-		}
+	if provider == nil {
+		return fmt.Errorf("failed to initialize DNS provider: %s", strings.Join(errs, ", "))
 	}
-	if providerName != "" {
-		return fmt.Errorf("failed to set up DNS provider " + providerName)
-	} else {
-		return fmt.Errorf("no DNS provider configured")
+
+	s.provider = provider
+	s.providerName = provName
+	return nil
+}
+
+func (s *DNSMgr) ensureProvider(ctx context.Context) error {
+	if s.provider == nil {
+		return fmt.Errorf("dns manager not initialized")
 	}
+	return nil
 }
 
 func (s *DNSMgr) GetDNSRecords(ctx context.Context, name string) ([]dnsapi.Record, error) {
@@ -118,4 +160,15 @@ func getAllowedZone(ctx context.Context, name string, zones []string) (string, e
 		}
 	}
 	return "", fmt.Errorf("Zone mismatch between requested DNS record %s and allowed zones %v", name, zones)
+}
+
+// PlatformRecordTypeAllowed restricts the record types that can be
+// created by external platform services (like CRM, etc).
+func PlatformRecordTypeAllowed(rtype string) bool {
+	if rtype == dnsapi.RecordTypeA ||
+		rtype == dnsapi.RecordTypeAAAA ||
+		rtype == dnsapi.RecordTypeCNAME {
+		return true
+	}
+	return false
 }

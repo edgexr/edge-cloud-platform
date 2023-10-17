@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -114,7 +113,7 @@ func (s *CCRMHandler) createCloudlet(ctx context.Context, in *edgeproto.Cloudlet
 	}
 
 	caches := s.caches.getPlatformCaches()
-	accessApi := accessapi.NewVaultClient(in, s.nodeMgr.VaultConfig, s, s.flags.Region, s.flags.DnsZone)
+	accessApi := s.vaultClient.CloudletContext(in)
 	cloudletResourcesCreated, err := cloudletPlatform.CreateCloudlet(ctx, in, pfConfig, &pfFlavor, caches, accessApi, cb)
 	defer func() {
 		if reterr == nil {
@@ -145,7 +144,7 @@ func (s *CCRMHandler) deleteCloudlet(ctx context.Context, in *edgeproto.Cloudlet
 		return err
 	}
 	caches := s.caches.getPlatformCaches()
-	accessApi := accessapi.NewVaultClient(in, s.nodeMgr.VaultConfig, s, s.flags.Region, s.flags.DnsZone)
+	accessApi := s.vaultClient.CloudletContext(in)
 
 	return cloudletPlatform.DeleteCloudlet(ctx, in, pfConfig, caches, accessApi, cb)
 }
@@ -242,7 +241,7 @@ func (s *CCRMHandler) GetCloudletManifest(ctx context.Context, key *edgeproto.Cl
 		return nil, err
 	}
 	caches := s.caches.getPlatformCaches()
-	accessApi := accessapi.NewVaultClient(&cloudlet, s.nodeMgr.VaultConfig, s, s.flags.Region, s.flags.DnsZone)
+	accessApi := s.vaultClient.CloudletContext(&cloudlet)
 
 	manifest, err := cloudletPlatform.GetCloudletManifest(ctx, &cloudlet, pfConfig, accessApi, &pfFlavor, caches)
 	if err != nil {
@@ -276,7 +275,7 @@ func (s *CCRMHandler) GetRestrictedCloudletStatus(ctx context.Context, key *edge
 	if err != nil {
 		return err
 	}
-	accessApi := accessapi.NewVaultClient(&cloudlet, s.nodeMgr.VaultConfig, s, s.flags.Region, s.flags.DnsZone)
+	accessApi := s.vaultClient.CloudletContext(&cloudlet)
 	err = cloudletPlatform.GetRestrictedCloudletStatus(ctx, &cloudlet, pfConfig, accessApi, func(updateType edgeproto.CacheUpdateType, value string) {
 		reply := &edgeproto.StreamStatus{
 			CacheUpdateType: int32(updateType),

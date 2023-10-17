@@ -23,6 +23,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -51,18 +52,22 @@ func InitFRM(ctx context.Context, nodeMgr *node.NodeMgr, haMgr *redundancy.HighA
 	// Load platform implementation.
 	platform := &federation.FederationPlatform{}
 	controllerData := NewControllerData(platform, nodeMgr, haMgr)
+	vaultClient, err := accessapi.NewVaultClient(ctx, nodeMgr.VaultConfig, nil, region, "", dnsmgmt.NoProvider)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	pc := pf.PlatformConfig{
 		Region:          region,
 		NodeMgr:         nodeMgr,
 		DeploymentTag:   nodeMgr.DeploymentTag,
 		AppDNSRoot:      appDNSRoot,
-		AccessApi:       accessapi.NewVaultGlobalClient(nodeMgr.VaultConfig),
+		AccessApi:       vaultClient,
 		FedExternalAddr: fedExtAddr,
 	}
 	caches := controllerData.GetCaches()
 	noopCb := func(updateType edgeproto.CacheUpdateType, value string) {}
-	err := platform.InitCommon(ctx, &pc, caches, haMgr, noopCb)
+	err = platform.InitCommon(ctx, &pc, caches, haMgr, noopCb)
 	if err == nil {
 		err = platform.InitHAConditional(ctx, &pc, noopCb)
 	}

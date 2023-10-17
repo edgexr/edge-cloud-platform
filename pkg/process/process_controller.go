@@ -50,6 +50,7 @@ type Controller struct {
 	VersionTag         string
 	CheckpointInterval string
 	AppDNSRoot         string
+	DNSProvider        string
 }
 
 func (p *Controller) StartLocal(logfile string, opts ...StartOp) error {
@@ -98,6 +99,9 @@ func (p *Controller) StartLocal(logfile string, opts ...StartOp) error {
 	if p.AppDNSRoot != "" {
 		args = append(args, "--appDNSRoot")
 		args = append(args, p.AppDNSRoot)
+	}
+	if p.DNSProvider != "" {
+		args = append(args, "--dnsProvider", p.DNSProvider)
 	}
 	options := StartOptions{}
 	options.ApplyStartOptions(opts...)

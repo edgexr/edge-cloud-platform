@@ -49,20 +49,24 @@ type CloudletNodeHandler interface {
 	DeleteCloudletNodeReq(ctx context.Context, key *edgeproto.CloudletNodeKey) error
 }
 
-func NewVaultClient(cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config, cloudletNodeHandler CloudletNodeHandler, region string, dnsZones string) *VaultClient {
+func NewVaultClient(ctx context.Context, vaultConfig *vault.Config, cloudletNodeHandler CloudletNodeHandler, region string, dnsZones, dnsProviderName string) (*VaultClient, error) {
+	dnsMgr := dnsmgmt.NewDNSMgr(vaultConfig, strings.Split(dnsZones, ","), dnsProviderName)
+	if err := dnsMgr.Init(ctx); err != nil {
+		return nil, err
+	}
+
 	return &VaultClient{
-		cloudlet:            cloudlet,
 		vaultConfig:         vaultConfig,
 		region:              region,
-		dnsMgr:              dnsmgmt.NewDNSMgr(vaultConfig, strings.Split(dnsZones, ",")),
+		dnsMgr:              dnsMgr,
 		cloudletNodeHandler: cloudletNodeHandler,
-	}
+	}, nil
 }
 
-func NewVaultGlobalClient(vaultConfig *vault.Config) *VaultClient {
-	return &VaultClient{
-		vaultConfig: vaultConfig,
-	}
+func (s *VaultClient) CloudletContext(cloudlet *edgeproto.Cloudlet) *VaultClient {
+	vc := *s
+	vc.cloudlet = cloudlet
+	return &vc
 }
 
 func (s *VaultClient) GetCloudletAccessVars(ctx context.Context) (map[string]string, error) {
@@ -121,7 +125,7 @@ func (s *VaultClient) GetChefAuthKey(ctx context.Context) (*chefauth.ChefAuthKey
 
 func (s *VaultClient) CreateOrUpdateDNSRecord(ctx context.Context, name, rtype, content string, ttl int, proxy bool) error {
 	// restrict the record types that CRM can make
-	if rtype != dnsapi.RecordTypeA && rtype != dnsapi.RecordTypeAAAA && rtype != dnsapi.RecordTypeCNAME {
+	if !dnsmgmt.PlatformRecordTypeAllowed(rtype) {
 		return fmt.Errorf("record type %s not allowed", rtype)
 	}
 	// TODO: validate parameters are ok for this cloudlet
@@ -139,6 +143,9 @@ func (s *VaultClient) DeleteDNSRecord(ctx context.Context, recordID string) erro
 }
 
 func (s *VaultClient) GetSessionTokens(ctx context.Context, secretName string) (string, error) {
+	if s.cloudlet == nil {
+		return "", fmt.Errorf("Missing cloudlet details")
+	}
 	return accessvars.GetCloudletTotpCode(ctx, s.region, s.cloudlet, s.vaultConfig, secretName)
 }
 
@@ -151,6 +158,9 @@ func (s *VaultClient) GetPublicCert(ctx context.Context, commonName string) (*va
 }
 
 func (s *VaultClient) GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error) {
+	if s.cloudlet == nil {
+		return nil, fmt.Errorf("Missing cloudlet details")
+	}
 	path := node.GetKafkaVaultPath(s.region, s.cloudlet.Key.Name, s.cloudlet.Key.Organization)
 	creds := node.KafkaCreds{}
 	err := vault.GetData(s.vaultConfig, path, 0, &creds)
