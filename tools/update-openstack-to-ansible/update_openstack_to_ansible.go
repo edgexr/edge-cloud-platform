@@ -31,6 +31,41 @@ var SSHOpts = []string{"StrictHostKeyChecking=no", "UserKnownHostsFile=/dev/null
 
 const sshClientVersion = "SSH-2.0-edgecloud-ssh-client-1.0"
 
+// Note: The ansible scripts we use to deploy the CRM
+// depend on a newer version of ansible that has a recent
+// community.docker module. That in turn depends on
+// python3.9. Ubuntu 18.04 does not have any official or
+// unofficial python3.9 packages, so we install from source.
+const installPython = `#!/bin/bash
+set -e
+if python3.9 --version; then
+  echo "python3.9 already installed"
+  exit 0
+fi
+cd /root
+sudo apt update -y
+sudo apt install build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev wget libbz2-dev -y
+mkdir -p tmp && cd tmp
+rm -Rf Python-3.9.11
+wget https://www.python.org/ftp/python/3.9.11/Python-3.9.11.tgz
+tar -xf Python-3.9.11.tgz
+cd Python-3.9.11
+./configure --enable-optimizations
+make altinstall
+`
+
+const logRotate = `/root/configure-node.log {
+	rotate 4
+	daily
+	compress
+	missingok
+	notifempty
+	size 10M
+}
+`
+
+const cronJob = `*/10 * * * * root /root/configure-node.sh >> /root/configure-node.log 2>&1\n`
+
 func main() {
 	flag.StringVar(&domain, "domain", "", "deployment domain")
 	flag.StringVar(&region, "region", "", "region")
@@ -171,29 +206,6 @@ func setupNode(mcClient *mctestclient.Client, addr, token string, nodeLookup map
 		}
 	}()
 
-	// Note: The ansible scripts we use to deploy the CRM
-	// depend on a newer version of ansible that has a recent
-	// community.docker module. That in turn depends on
-	// python3.9. Ubuntu 18.04 does not have any official or
-	// unofficial python3.9 packages, so we install from source.
-	installPython := `#!/bin/bash
-set -e
-if python3.9 --version; then
-  echo "python3.9 already installed"
-  exit 0
-fi
-cd /root
-sudo apt update -y
-sudo apt install build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev wget libbz2-dev -y
-mkdir -p tmp && cd tmp
-rm -Rf Python-3.9.11
-wget https://www.python.org/ftp/python/3.9.11/Python-3.9.11.tgz
-tar -xf Python-3.9.11.tgz
-cd Python-3.9.11
-./configure --enable-optimizations
-make altinstall
-`
-
 	password := res.Message
 
 	log.Printf("  generating configure-node script\n")
@@ -208,18 +220,6 @@ make altinstall
 	if err != nil {
 		return fmt.Errorf("failed to generate configure-node.sh, %s", err)
 	}
-
-	logRotate := `/root/configure-node.log {
-	rotate 4
-	daily
-	compress
-	missingok
-	notifempty
-	size 10M
-}
-`
-
-	cronJob := `*/10 * * * * root /root/configure-node.sh >> /root/configure-node.log 2>&1\n`
 
 	// write files to machine
 	type File struct {
