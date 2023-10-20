@@ -32,18 +32,7 @@ func GetSSHAuth(domain, vaultAddr, vaultToken string) (*ssh.Auth, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate key pair, %s", err)
 	}
-	/*
-		privKey := os.Getenv("HOME") + "/.ssh/id_rsa"
-		privKeyData, err := os.ReadFile(privKey)
-		if err != nil {
-			return nil, err
-		}
-		pubKey := privKey + ".pub"
-		pubKeyData, err := os.ReadFile(pubKey)
-		if err != nil {
-			return nil, err
-		}
-	*/
+
 	vaultConfig := &vault.Config{
 		Addr: vaultAddr,
 		Auth: vault.NewTokenAuth(vaultToken),
