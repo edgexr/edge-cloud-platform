@@ -269,6 +269,7 @@ func TestAnsibleServer(t *testing.T) {
 
 	// We're going to run the confignode script several times
 	ansiblePlaybookBin := ""
+	ansibleFail := false
 	runCmd := func() string {
 		cmd := exec.Command("bash", "-c", "./confignode.sh")
 		cmd.Dir = tmpdir
@@ -283,7 +284,11 @@ func TestAnsibleServer(t *testing.T) {
 			fmt.Println(string(out))
 			fmt.Println(err.Error())
 		}
-		require.Nil(t, err)
+		if ansibleFail {
+			require.NotNil(t, err)
+		} else {
+			require.Nil(t, err)
+		}
 		return string(out)
 	}
 
@@ -322,6 +327,7 @@ func TestAnsibleServer(t *testing.T) {
 	ansibleArchiveChecksum = "fooooo"
 	// Also set ansible to fail to test rerun
 	ansiblePlaybookBin = "falfa"
+	ansibleFail = true
 	out = runCmd()
 	require.Contains(t, out, "ansible.tar.gz md5 mismatch, will download")
 	require.Contains(t, out, "Downloading ansible.tar.gz")
@@ -331,6 +337,7 @@ func TestAnsibleServer(t *testing.T) {
 
 	// Check that ansible will run again because ansible command failed
 	ansiblePlaybookBin = ""
+	ansibleFail = false
 	out = runCmd()
 	require.Contains(t, out, "Ansible has not succeeded, will run")
 	require.Contains(t, out, "Running update")

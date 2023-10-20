@@ -136,6 +136,7 @@ resources:
                     permissions: '0700'
                     content: |
                           #!/bin/bash
+                          set -e
                           echo $( date ) Running configure node
                           cd $( dirname $0 )
                           wgetargs=(-nv "--header=cloudlet-name: unit-test" "--header=cloudlet-org: edgecloud" "--header=Authorization: Basic cm9vdGxiLXh5ejpwczEyMw==")
@@ -146,12 +147,11 @@ resources:
                           run_ansible=false
                           if [[ -f "ansible.tar.gz" ]]; then
                               echo "Checking md5 for ansible.tar.gz"
-                              md5sum -c ansible.tar.gz.md5
-                              if [[ $? -eq 0 ]]; then
+                              if md5sum -c ansible.tar.gz.md5; then
                                   echo "ansible.tar.gz md5 matches, skipping download"
                                   download=false
                               else
-                          	    echo "ansible.tar.gz md5 mismatch, will download"
+                                  echo "ansible.tar.gz md5 mismatch, will download"
                               fi
                           else
                               echo "No local ansible.tar.gz, will download"
@@ -171,10 +171,9 @@ resources:
                           download=true
                           if [[ -f "vars.yaml" ]]; then
                               echo "Checking md5 for vars.yaml"
-                              md5sum -c vars.yaml.md5
-                              if [[ $? -eq 0 ]]; then
+                              if md5sum -c vars.yaml.md5; then
                                   echo "vars.yaml md5 matches, skipping download"
-                          	    download=false
+                                  download=false
                               else
                                   echo "vars.yaml md5 mismatch, will download"
                               fi
@@ -197,11 +196,11 @@ resources:
                               if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
                                   ANSIBLE_PLAYBOOK_BIN=ansible-playbook
                               fi
-                              ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v
-                              if [[ $? -eq 0 ]]; then
+                              if ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v; then
                                   touch ansible_run_ok
                               else
                                   rm -f ansible_run_ok
+                                  exit 1
                               fi
                           else
                               echo "No update needed"
@@ -232,7 +231,7 @@ resources:
                     ansible-ppa:
                       source: ppa:ansible/ansible
                 packages:
-                - [ansible, 8.4.0-1ppa~jammy]
+                - ansible
                 runcmd:
                  - systemctl restart systemd-resolved
                  - echo EDGECLOUD doing ip addr show
@@ -286,6 +285,7 @@ resources:
                     permissions: '0700'
                     content: |
                           #!/bin/bash
+                          set -e
                           echo $( date ) Running configure node
                           cd $( dirname $0 )
                           wgetargs=(-nv "--header=cloudlet-name: unit-test" "--header=cloudlet-org: edgecloud" "--header=Authorization: Basic bWFzdGVyLXh5ejpwczEyMw==")
@@ -296,12 +296,11 @@ resources:
                           run_ansible=false
                           if [[ -f "ansible.tar.gz" ]]; then
                               echo "Checking md5 for ansible.tar.gz"
-                              md5sum -c ansible.tar.gz.md5
-                              if [[ $? -eq 0 ]]; then
+                              if md5sum -c ansible.tar.gz.md5; then
                                   echo "ansible.tar.gz md5 matches, skipping download"
                                   download=false
                               else
-                          	    echo "ansible.tar.gz md5 mismatch, will download"
+                                  echo "ansible.tar.gz md5 mismatch, will download"
                               fi
                           else
                               echo "No local ansible.tar.gz, will download"
@@ -321,10 +320,9 @@ resources:
                           download=true
                           if [[ -f "vars.yaml" ]]; then
                               echo "Checking md5 for vars.yaml"
-                              md5sum -c vars.yaml.md5
-                              if [[ $? -eq 0 ]]; then
+                              if md5sum -c vars.yaml.md5; then
                                   echo "vars.yaml md5 matches, skipping download"
-                          	    download=false
+                                  download=false
                               else
                                   echo "vars.yaml md5 mismatch, will download"
                               fi
@@ -347,11 +345,11 @@ resources:
                               if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
                                   ANSIBLE_PLAYBOOK_BIN=ansible-playbook
                               fi
-                              ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v
-                              if [[ $? -eq 0 ]]; then
+                              if ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v; then
                                   touch ansible_run_ok
                               else
                                   rm -f ansible_run_ok
+                                  exit 1
                               fi
                           else
                               echo "No update needed"
@@ -382,7 +380,7 @@ resources:
                     ansible-ppa:
                       source: ppa:ansible/ansible
                 packages:
-                - [ansible, 8.4.0-1ppa~jammy]
+                - ansible
                 runcmd:
                  - systemctl restart systemd-resolved
                  - echo EDGECLOUD doing ip addr show
@@ -426,6 +424,7 @@ resources:
                     permissions: '0700'
                     content: |
                           #!/bin/bash
+                          set -e
                           echo $( date ) Running configure node
                           cd $( dirname $0 )
                           wgetargs=(-nv "--header=cloudlet-name: unit-test" "--header=cloudlet-org: edgecloud" "--header=Authorization: Basic bm9kZTEteHl6OnBzMTIz")
@@ -436,12 +435,11 @@ resources:
                           run_ansible=false
                           if [[ -f "ansible.tar.gz" ]]; then
                               echo "Checking md5 for ansible.tar.gz"
-                              md5sum -c ansible.tar.gz.md5
-                              if [[ $? -eq 0 ]]; then
+                              if md5sum -c ansible.tar.gz.md5; then
                                   echo "ansible.tar.gz md5 matches, skipping download"
                                   download=false
                               else
-                          	    echo "ansible.tar.gz md5 mismatch, will download"
+                                  echo "ansible.tar.gz md5 mismatch, will download"
                               fi
                           else
                               echo "No local ansible.tar.gz, will download"
@@ -461,10 +459,9 @@ resources:
                           download=true
                           if [[ -f "vars.yaml" ]]; then
                               echo "Checking md5 for vars.yaml"
-                              md5sum -c vars.yaml.md5
-                              if [[ $? -eq 0 ]]; then
+                              if md5sum -c vars.yaml.md5; then
                                   echo "vars.yaml md5 matches, skipping download"
-                          	    download=false
+                                  download=false
                               else
                                   echo "vars.yaml md5 mismatch, will download"
                               fi
@@ -487,11 +484,11 @@ resources:
                               if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
                                   ANSIBLE_PLAYBOOK_BIN=ansible-playbook
                               fi
-                              ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v
-                              if [[ $? -eq 0 ]]; then
+                              if ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v; then
                                   touch ansible_run_ok
                               else
                                   rm -f ansible_run_ok
+                                  exit 1
                               fi
                           else
                               echo "No update needed"
@@ -522,7 +519,7 @@ resources:
                     ansible-ppa:
                       source: ppa:ansible/ansible
                 packages:
-                - [ansible, 8.4.0-1ppa~jammy]
+                - ansible
                 runcmd:
                  - systemctl restart systemd-resolved
                  - echo EDGECLOUD doing ip addr show
@@ -566,6 +563,7 @@ resources:
                     permissions: '0700'
                     content: |
                           #!/bin/bash
+                          set -e
                           echo $( date ) Running configure node
                           cd $( dirname $0 )
                           wgetargs=(-nv "--header=cloudlet-name: unit-test" "--header=cloudlet-org: edgecloud" "--header=Authorization: Basic bm9kZTIteHl6OnBzMTIz")
@@ -576,12 +574,11 @@ resources:
                           run_ansible=false
                           if [[ -f "ansible.tar.gz" ]]; then
                               echo "Checking md5 for ansible.tar.gz"
-                              md5sum -c ansible.tar.gz.md5
-                              if [[ $? -eq 0 ]]; then
+                              if md5sum -c ansible.tar.gz.md5; then
                                   echo "ansible.tar.gz md5 matches, skipping download"
                                   download=false
                               else
-                          	    echo "ansible.tar.gz md5 mismatch, will download"
+                                  echo "ansible.tar.gz md5 mismatch, will download"
                               fi
                           else
                               echo "No local ansible.tar.gz, will download"
@@ -601,10 +598,9 @@ resources:
                           download=true
                           if [[ -f "vars.yaml" ]]; then
                               echo "Checking md5 for vars.yaml"
-                              md5sum -c vars.yaml.md5
-                              if [[ $? -eq 0 ]]; then
+                              if md5sum -c vars.yaml.md5; then
                                   echo "vars.yaml md5 matches, skipping download"
-                          	    download=false
+                                  download=false
                               else
                                   echo "vars.yaml md5 mismatch, will download"
                               fi
@@ -627,11 +623,11 @@ resources:
                               if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
                                   ANSIBLE_PLAYBOOK_BIN=ansible-playbook
                               fi
-                              ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v
-                              if [[ $? -eq 0 ]]; then
+                              if ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v; then
                                   touch ansible_run_ok
                               else
                                   rm -f ansible_run_ok
+                                  exit 1
                               fi
                           else
                               echo "No update needed"
@@ -662,7 +658,7 @@ resources:
                     ansible-ppa:
                       source: ppa:ansible/ansible
                 packages:
-                - [ansible, 8.4.0-1ppa~jammy]
+                - ansible
                 runcmd:
                  - systemctl restart systemd-resolved
                  - echo EDGECLOUD doing ip addr show
@@ -706,6 +702,7 @@ resources:
                     permissions: '0700'
                     content: |
                           #!/bin/bash
+                          set -e
                           echo $( date ) Running configure node
                           cd $( dirname $0 )
                           wgetargs=(-nv "--header=cloudlet-name: unit-test" "--header=cloudlet-org: edgecloud" "--header=Authorization: Basic YXBwLXZtOnBzMTIz")
@@ -716,12 +713,11 @@ resources:
                           run_ansible=false
                           if [[ -f "ansible.tar.gz" ]]; then
                               echo "Checking md5 for ansible.tar.gz"
-                              md5sum -c ansible.tar.gz.md5
-                              if [[ $? -eq 0 ]]; then
+                              if md5sum -c ansible.tar.gz.md5; then
                                   echo "ansible.tar.gz md5 matches, skipping download"
                                   download=false
                               else
-                          	    echo "ansible.tar.gz md5 mismatch, will download"
+                                  echo "ansible.tar.gz md5 mismatch, will download"
                               fi
                           else
                               echo "No local ansible.tar.gz, will download"
@@ -741,10 +737,9 @@ resources:
                           download=true
                           if [[ -f "vars.yaml" ]]; then
                               echo "Checking md5 for vars.yaml"
-                              md5sum -c vars.yaml.md5
-                              if [[ $? -eq 0 ]]; then
+                              if md5sum -c vars.yaml.md5; then
                                   echo "vars.yaml md5 matches, skipping download"
-                          	    download=false
+                                  download=false
                               else
                                   echo "vars.yaml md5 mismatch, will download"
                               fi
@@ -767,11 +762,11 @@ resources:
                               if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
                                   ANSIBLE_PLAYBOOK_BIN=ansible-playbook
                               fi
-                              ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v
-                              if [[ $? -eq 0 ]]; then
+                              if ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v; then
                                   touch ansible_run_ok
                               else
                                   rm -f ansible_run_ok
+                                  exit 1
                               fi
                           else
                               echo "No update needed"
@@ -802,7 +797,7 @@ resources:
                     ansible-ppa:
                       source: ppa:ansible/ansible
                 packages:
-                - [ansible, 8.4.0-1ppa~jammy]
+                - ansible
                 runcmd:
                  - systemctl restart systemd-resolved
                  - echo EDGECLOUD doing ip addr show

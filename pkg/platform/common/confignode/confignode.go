@@ -25,6 +25,7 @@ type ConfigureNodeVars struct {
 }
 
 var ConfigureNodeScript = `#!/bin/bash
+set -e
 echo $( date ) Running configure node
 cd $( dirname $0 )
 wgetargs=(-nv "--header=` + CloudletNameHeader + `: {{ .Key.CloudletKey.Name }}" "--header=` + CloudletOrgHeader + `: {{ .Key.CloudletKey.Organization }}" "--header=Authorization: {{ .BasicAuth }}")
@@ -35,12 +36,11 @@ download=true
 run_ansible=false
 if [[ -f "ansible.tar.gz" ]]; then
     echo "Checking md5 for ansible.tar.gz"
-    md5sum -c ansible.tar.gz.md5
-    if [[ $? -eq 0 ]]; then
+    if md5sum -c ansible.tar.gz.md5; then
         echo "ansible.tar.gz md5 matches, skipping download"
         download=false
     else
-	    echo "ansible.tar.gz md5 mismatch, will download"
+        echo "ansible.tar.gz md5 mismatch, will download"
     fi
 else
     echo "No local ansible.tar.gz, will download"
@@ -60,10 +60,9 @@ cat vars.yaml.md5
 download=true
 if [[ -f "vars.yaml" ]]; then
     echo "Checking md5 for vars.yaml"
-    md5sum -c vars.yaml.md5
-    if [[ $? -eq 0 ]]; then
+    if md5sum -c vars.yaml.md5; then
         echo "vars.yaml md5 matches, skipping download"
-	    download=false
+        download=false
     else
         echo "vars.yaml md5 mismatch, will download"
     fi
@@ -86,11 +85,11 @@ if [[ ${run_update} == true ]]; then
     if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
         ANSIBLE_PLAYBOOK_BIN=ansible-playbook
     fi
-    ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v
-    if [[ $? -eq 0 ]]; then
+    if ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v; then
         touch ansible_run_ok
     else
         rm -f ansible_run_ok
+        exit 1
     fi
 else
     echo "No update needed"
