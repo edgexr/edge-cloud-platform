@@ -87,7 +87,7 @@ apt:
     ansible-ppa:
       source: ppa:ansible/ansible
 packages:
-- [ansible, 8.4.0-1ppa~jammy]
+- ansible
 {{- end}}
 runcmd:
  - systemctl restart systemd-resolved

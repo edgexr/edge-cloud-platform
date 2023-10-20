@@ -199,6 +199,7 @@ func getCrmEnv(vars map[string]string) {
 	for _, key := range []string{
 		"JAEGER_ENDPOINT",
 		"E2ETEST_TLS",
+		"ES_SERVER_URLS",
 	} {
 		if val, ok := os.LookupEnv(key); ok {
 			vars[key] = val
