@@ -110,6 +110,7 @@ var ControllerComments = map[string]string{
 var ConfigComments = map[string]string{
 	"locknewaccounts":               `Lock new accounts (must be unlocked by admin)`,
 	"notifyemailaddress":            `Email to notify when locked account is created, defaults to SupportEmail`,
+	"legalemail":                    `Email to display in generic acceptable use policy and terms and conditions.`,
 	"skipverifyemail":               `Skip email verification for new accounts (testing only)`,
 	"passwordmincracktimesec":       `User accounts min password crack time seconds (a measure of strength)`,
 	"adminpasswordmincracktimesec":  `Admin accounts min password crack time seconds (a measure of strength)`,

@@ -51,6 +51,11 @@ var defaultConfig = ormapi.Config{
 	WebsocketTokenValidDuration:   edgeproto.Duration(2 * time.Minute),
 }
 
+func setDefaultConfigEmails(domain string) {
+	defaultConfig.SupportEmail = "support@" + serverConfig.Domain
+	defaultConfig.LegalEmail = "legal@" + serverConfig.Domain
+}
+
 var curConfig ormapi.Config
 var curConfigMux sync.Mutex
 
@@ -123,6 +128,14 @@ func InitConfig(ctx context.Context) error {
 	}
 	if config.WebsocketTokenValidDuration == 0 {
 		config.WebsocketTokenValidDuration = defaultConfig.WebsocketTokenValidDuration
+		save = true
+	}
+	if config.SupportEmail == "" {
+		config.SupportEmail = defaultConfig.SupportEmail
+		save = true
+	}
+	if config.LegalEmail == "" {
+		config.LegalEmail = defaultConfig.LegalEmail
 		save = true
 	}
 
@@ -333,5 +346,7 @@ func PublicConfig(c echo.Context) error {
 	}
 	publicConfig := &ormapi.Config{}
 	publicConfig.PasswordMinCrackTimeSec = config.PasswordMinCrackTimeSec
+	publicConfig.SupportEmail = config.SupportEmail
+	publicConfig.LegalEmail = config.LegalEmail
 	return c.JSON(http.StatusOK, publicConfig)
 }

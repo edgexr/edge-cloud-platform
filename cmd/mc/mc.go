@@ -59,6 +59,7 @@ var usageCollectionInterval = flag.Duration("usageCollectionInterval", -1*time.S
 var usageCheckpointInterval = flag.String("usageCheckpointInterval", "MONTH", "Checkpointing interval(must be same as controller's checkpointInterval)")
 var staticDir = flag.String("staticDir", "/", "Path to static data")
 var controllerNotifyPort = flag.String("controllerNotifyPort", "50001", "Controller notify listener port to connect to")
+var domain = flag.String("domain", "", "Domain name of deployment")
 
 // Following URL paths are UI console paths which will be used to send
 // appropriate links to user's email for actions like password-reset, email-verification
@@ -114,6 +115,7 @@ func main() {
 		ConsoleAddr:              *consoleAddr,
 		PasswordResetConsolePath: *passwordResetConsolePath,
 		VerifyEmailConsolePath:   *verifyEmailConsolePath,
+		Domain:                   *domain,
 	}
 	server, err := orm.RunServer(&config)
 	if err != nil {

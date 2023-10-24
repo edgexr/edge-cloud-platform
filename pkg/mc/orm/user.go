@@ -201,7 +201,7 @@ func Login(c echo.Context) error {
 	}
 
 	if user.Locked {
-		return fmt.Errorf("Account is locked, please contact Edge Cloud support")
+		return fmt.Errorf("Account is locked, please contact %s to unlock it", config.SupportEmail)
 	}
 	if !getSkipVerifyEmail(ctx, nil) && !user.EmailVerified {
 		return fmt.Errorf("Email not verified yet")

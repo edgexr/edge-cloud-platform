@@ -124,6 +124,7 @@ type ServerConfig struct {
 	ConsoleAddr              string
 	PasswordResetConsolePath string
 	VerifyEmailConsolePath   string
+	Domain                   string
 	oauth2Server             *oauth2server.Server
 	testTransport            http.RoundTripper // for unit-tests
 }
@@ -196,6 +197,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	if serverConfig.LDAPPassword == "" && !config.IgnoreEnv {
 		serverConfig.LDAPPassword = os.Getenv("LDAP_PASSWORD")
 	}
+	setDefaultConfigEmails(serverConfig.Domain)
 	allRegionCaches.init()
 
 	if config.DeploymentTag == "" {
