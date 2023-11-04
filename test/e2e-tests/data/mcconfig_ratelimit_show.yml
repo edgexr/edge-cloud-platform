@@ -13,6 +13,7 @@
 # limitations under the License.
 
 notifyemailaddress: support@mobiledgex.com
+legalemail: legal@edgecloud.net
 skipverifyemail: true
 passwordmincracktimesec: 2.592e+06
 adminpasswordmincracktimesec: 6.3072e+07
@@ -27,3 +28,4 @@ failedloginlockouttimesec2: 300
 userlogintokenvalidduration: 24h0m0s
 apikeylogintokenvalidduration: 4h0m0s
 websockettokenvalidduration: 2m0s
+supportemail: support@edgecloud.net

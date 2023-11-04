@@ -275,7 +275,9 @@ func sendEmail(from *cloudcommon.EmailAccount, to string, contents *bytes.Buffer
 	tlsconfig := &tls.Config{
 		ServerName: from.Smtp,
 	}
-	client.StartTLS(tlsconfig)
+	if err = client.StartTLS(tlsconfig); err != nil {
+		return err
+	}
 	if err = client.Auth(auth); err != nil {
 		return err
 	}

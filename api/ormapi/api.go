@@ -255,6 +255,8 @@ type Config struct {
 	LockNewAccounts bool
 	// Email to notify when locked account is created, defaults to SupportEmail
 	NotifyEmailAddress string
+	// Email to display in generic acceptable use policy and terms and conditions.
+	LegalEmail string
 	// Skip email verification for new accounts (testing only)
 	SkipVerifyEmail bool
 	// User accounts min password crack time seconds (a measure of strength)

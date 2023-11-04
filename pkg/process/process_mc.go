@@ -46,6 +46,7 @@ type MC struct {
 	ApiTlsCert              string
 	ApiTlsKey               string
 	StaticDir               string
+	Domain                  string
 	TestMode                bool
 	cmd                     *exec.Cmd
 }
@@ -124,6 +125,9 @@ func (p *MC) StartLocal(logfile string, opts ...StartOp) error {
 	}
 	if p.StaticDir != "" {
 		args = append(args, "--staticDir", p.StaticDir)
+	}
+	if p.Domain != "" {
+		args = append(args, "--domain", p.Domain)
 	}
 	if p.TestMode {
 		args = append(args, "--testMode")
