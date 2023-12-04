@@ -97,7 +97,7 @@ func GetDockerPortString(ports []dme.AppPort, containerPortType string, proxyMat
 		}
 		var listenIPs []string
 		// special case for listening on all interfaces
-		if listenIP == "" || listenIP == "0.0.0.0" && listenIPV6 == "::" {
+		if (listenIP == "" || listenIP == "0.0.0.0") && (listenIPV6 == "" || listenIPV6 == "::") {
 			listenIPs = []string{""}
 		} else {
 			listenIPs = []string{
@@ -626,7 +626,6 @@ func ArgsMatchRunning(ctx context.Context, runningData types.ContainerJSON, runA
 				ii++
 			}
 		}
-		fmt.Printf("processing arg %s, opt %s, optval %s\n", arg, opt, optVal)
 		if arg == "-v" {
 			binds = append(binds, optVal)
 		} else if arg == "--network" {

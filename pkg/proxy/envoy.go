@@ -343,9 +343,6 @@ func createEnvoyYaml(ctx context.Context, client ssh.Client, yamldir, name strin
 	if err == nil && strings.TrimSpace(curEnvoyData) == strings.TrimSpace(envoyData) {
 		// no change
 	} else {
-		os.WriteFile("curEnvoyData.yaml", []byte(curEnvoyData), 0644)
-		os.WriteFile("envoyData.yaml", []byte(envoyData), 0644)
-
 		err = pc.WriteFile(client, yamldir+"/envoy.yaml", envoyData, "envoy.yaml", pc.NoSudo)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "write envoy.yaml failed",
@@ -359,9 +356,6 @@ func createEnvoyYaml(ctx context.Context, client ssh.Client, yamldir, name strin
 		if err == nil && strings.TrimSpace(curSdsData) == strings.TrimSpace(sdsData) {
 			// no change
 		} else {
-			os.WriteFile("curSdsData.yaml", []byte(curSdsData), 0644)
-			os.WriteFile("sdsData.yaml", []byte(sdsData), 0644)
-
 			err = pc.WriteFile(client, yamldir+"/sds.yaml", sdsData, "sds.yaml", pc.NoSudo)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "write sds.yaml failed",

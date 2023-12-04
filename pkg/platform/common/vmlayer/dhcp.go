@@ -28,7 +28,7 @@ import (
 // Notes for IPv6:
 // IPv6 DHCP operates differently from IPv4. It does not provide the gateway IP
 // (i.e. default route) option, so there is no way to configure routing via
-// DHCP6. Instead, that functionality has been releated to radvd (router advertisement
+// DHCP6. Instead, that functionality has been relegated to radvd (router advertisement
 // daemon). In addition, SLAAC (stateless address auto-configuration) can be
 // done via just radvd. So either you can run just radvd, or you run radvd with DHCP6.
 // But DHCP6 by itself is not sufficient for auto-configuration, unless routes are

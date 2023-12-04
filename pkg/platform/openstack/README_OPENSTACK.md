@@ -27,7 +27,7 @@ They can find the new configuration by querying from the VM the special endpoint
 Our network topology is to use a single internal network to connect all load balancers
 and tenant VMs. We segment the network by subnets. This is designed to work for IPv4,
 but does not work well in IPv6. In IPv4, network configuration can be set per server
-by DHCP. However, in IPv6, the DHCP procotol no longer specifies the default gateway.
+mac address by DHCP. This can be done as well via DHCP6, except for the gateway IP.
 
 That functionality has been moved to radvd (router advertisement daemon), and this
 daemon is the basis for SLAAC based auto-configuration of network IP, gateway, etc.

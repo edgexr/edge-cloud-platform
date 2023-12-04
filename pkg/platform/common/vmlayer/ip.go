@@ -33,12 +33,14 @@ const NetworkTypeVLAN string = "vlan"
 // CommonInternalCIDRDefault is default if the platform uses a common internal network between the shared LB and all clusters
 const CommonInternalCIDRDefault = "10.201.0.0/16"
 
-// Same as CommonInternalCIDRDefault, but for ipv6 (assumes /64)
+// CommonInternalV6Subnet is the same as CommonInternalCIDRDefault, but for ipv6 (assumes /64)
 const CommonInternalV6Subnet = "fc00:201:ecec:0"
 
-var ListenAllIPs = infracommon.IPs{
-	cloudcommon.IPAddrAllInterfaces,
-	cloudcommon.IPV6AddrAllInterfaces,
+var ListenAllIPs infracommon.IPs
+
+func init() {
+	ListenAllIPs[infracommon.IndexIPV4] = cloudcommon.IPAddrAllInterfaces
+	ListenAllIPs[infracommon.IndexIPV6] = cloudcommon.IPV6AddrAllInterfaces
 }
 
 // ServerIP is an IP address for a given network on a port.  In the case of floating IPs, there are both

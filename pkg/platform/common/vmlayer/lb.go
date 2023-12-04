@@ -187,50 +187,6 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 	if err != nil {
 		return "", fmt.Errorf("failed to configure LB interface, %s", err)
 	}
-	/*
-		filename, fileMatch, contents, err := infracommon.GenerateNetworkFileDetailsForIP(ctx, internalPortName, internalIfname, internalAddrs.IPV4(), 24, internalAddrs.IPV6())
-		if err != nil {
-			return "", err
-		}
-		if action.AddInterface {
-			// cleanup any interfaces files that may be sitting around with our new interface, perhaps from some old failure
-			cmd := fmt.Sprintf("grep -l '%s' %s", internalIfname, fileMatch)
-			out, err := client.Output(cmd)
-			log.SpanLog(ctx, log.DebugLevelInfra, "cleanup old interface files with interface", "internalIfname", internalIfname, "out", out, "err", err)
-			if err == nil {
-				files := strings.Split(out, "\n")
-				for _, f := range files {
-					log.SpanLog(ctx, log.DebugLevelInfra, "cleanup old interfaces file", "file", f)
-					cmd := fmt.Sprintf("sudo rm -f %s", f)
-					out, err := client.Output(cmd)
-					if err != nil {
-						log.SpanLog(ctx, log.DebugLevelInfra, "unable to delete file", "file", f, "out", out, "err", err)
-					}
-				}
-			}
-			err = pc.WriteFile(client, filename, contents, "netconfig", pc.SudoOn)
-			// now create the file
-			if err != nil {
-				return "", fmt.Errorf("unable to write network config file: %s -- %v", filename, err)
-			}
-		} else if action.DeleteInterface {
-			cmd := fmt.Sprintf("sudo rm %s", filename)
-			out, err := client.Output(cmd)
-			if err != nil {
-				if strings.Contains(out, "No such file") {
-					log.SpanLog(ctx, log.DebugLevelInfra, "file already gone", "filename", filename)
-				} else {
-					return "", fmt.Errorf("Unexpected error removing network config file %s, %s -- %v", filename, out, err)
-				}
-			}
-		}
-		// apply changes
-		log.SpanLog(ctx, log.DebugLevelInfra, "bringing up interface", "internalIfname", internalIfname)
-		err = infracommon.ApplyNetplan(ctx, client)
-		if err != nil {
-			return "", err
-		}
-	*/
 
 	// we can get here on some error cases in which the ifname were not found
 	if internalIfname != "" {
@@ -610,13 +566,7 @@ func (v *VMPlatform) SetupRootLB(
 			return fmt.Errorf("cannot copy resource-tracker to rootLb %v", err)
 		}
 	}
-	/*
-		commonSharedAccess := rootLBName == v.VMProperties.SharedRootLBName && v.VMProperties.UsesCommonSharedInternalLBNetwork
-		route, routeIPV6, err := v.VMProperties.GetInternalNetworkRoute(ctx, commonSharedAccess)
-		if err != nil {
-			return err
-		}
-	*/
+
 	ni, err := ParseNetSpec(ctx, v.VMProperties.GetCloudletNetworkScheme())
 	if err != nil {
 		return err

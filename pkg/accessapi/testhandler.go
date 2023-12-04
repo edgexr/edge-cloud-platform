@@ -14,15 +14,11 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
-	"golang.org/x/crypto/ssh"
 )
 
 type TestHandler struct {
-	AccessVars                map[string]string
-	RegistryAuth              cloudcommon.RegistryAuth
-	SSHSigningPublicKeyString string
-	SSHSigningPublicKey       ssh.PublicKey
-	SSHSigner                 ssh.Signer
+	AccessVars   map[string]string
+	RegistryAuth cloudcommon.RegistryAuth
 }
 
 func (s *TestHandler) GetCloudletAccessVars(ctx context.Context) (map[string]string, error) {

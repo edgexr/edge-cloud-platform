@@ -348,15 +348,6 @@ func (v *VMPlatform) GetExternalIPFromServerName(ctx context.Context, serverName
 	return sips, nil
 }
 
-// For cases where only a single IP is needed, get the one that's valid,
-// preferring IPv4.
-func GetPreferredIP(ipv4 *ServerIP, ipv6 *ServerIP) *ServerIP {
-	if ipv4 != nil {
-		return ipv4
-	}
-	return ipv6
-}
-
 // NewProxyConfig creates a proxy config to be passed to the proxy code.
 // Listen addresses will proxy data to the destination addresses.
 func NewProxyConfig(listenIPs infracommon.IPs, destIPs ServerIPs) *proxy.ProxyConfig {
@@ -669,11 +660,11 @@ func (v *VMPlatform) ConfigureNetworkInterfaces(ctx context.Context, client ssh.
 	}
 	// remove any interfaces on the configured networks without addresses
 	for _, planFile := range networkConfig.NetplanFiles {
-		for iface, _ := range planFile.Netplan.Network.Ethernets {
+		for iface, eth := range planFile.Netplan.Network.Ethernets {
 			addrs, ok := addrsByInterface[iface]
-			if !ok || len(addrs) == 0 {
+			if !ok || (len(addrs) == 0 && !eth.DHCP4 && !eth.DHCP6) {
 				// remove from network config
-				log.SpanLog(ctx, log.DebugLevelInfra, "no addresses configured for interface, removing it", "interface", iface)
+				log.SpanLog(ctx, log.DebugLevelInfra, "no addresses or DHCP configured for interface, removing it", "interface", iface)
 				delete(planFile.Netplan.Network.Ethernets, iface)
 				continue
 			}

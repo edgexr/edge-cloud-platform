@@ -85,9 +85,10 @@ func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses map[s
 		return networkDetail, nil
 	}
 
-	// Iterate over fixed IPs on ports. Note that after a heat stack update
-	// that adds a new fixed IP, the IP shows up on the ports immediately, but
-	// not the server addresses. So we register fixed IPs from the ports.
+	// Iterate over fixed IPs on ports. The source of truth for fixed IPs are
+	// the ports, not those reported on the server. In fact, adding a new
+	// fixed IP to a port already attached to the server does not update the
+	// IPs reported on the server with the new IP.
 	fixedIPs := make(map[string]OSPort)
 	for _, port := range ports {
 		for _, ip := range port.FixedIPs {
@@ -130,7 +131,8 @@ func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses map[s
 	}
 
 	// Register floating IPs from the server address list.
-	// Floating IPs do not belong to any subnet or port, but belong to the server.
+	// Unlike fixed IPs which are attached to ports, floating IPs are attached
+	// directly to the server.
 	for network, ips := range addresses {
 		for _, addr := range ips {
 			if _, found := fixedIPs[addr]; found {

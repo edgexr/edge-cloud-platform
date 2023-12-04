@@ -18,12 +18,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// This tests against a real Openstack setup.
+// Your shell must have env vars for:
+// Openstack credentials (openrc.json)
+// Infra-specific env vars (specified during CreateCloudlet)
+// This is for manual testing without having to deploy a CRM,
+// and is not for unit testing. This requires that the Openstack API
+// endpoint is reachable from the test machine.
 func TestOpenstackLive(t *testing.T) {
-	// This tests against a real Openstack setup.
-	// Your shell must have env vars for:
-	// Openstack credentials (openrc.json)
-	// Infra-specific env vars (specified during CreateCloudlet)
-	// This is a functional test, not a unit test.
 	t.Skip("for debugging")
 
 	cloudletVMImagePath := os.Getenv("CLOUDLET_VM_IMAGE_PATH")
@@ -35,7 +37,7 @@ func TestOpenstackLive(t *testing.T) {
 	TESTER_USERNAME := os.Getenv("USER")
 	// hash generated via: echo changeme | mkpasswd --method=SHA-512 --rounds=4096 -s
 	TESTER_PASSWORD_HASH := "$6$rounds=4096$VoKuflEpc3o3md0$4l9BgAHNxAkKbOugOu.G0PKxJB6KxLNOA1tmGjnZmdmrMEbOGk0Q7ws28ucFdrLBZKft2UazlrZ453.EHl1ag/"
-	// Openstack dhcpv6 not working properly w/ Ubuntu 22.04, fails to set default route
+	// if openstack v6 subnet is set to use dhcp, ignore it.
 	//os.Setenv("MEX_SUBNETS_IGNORE_DHCP", "externalIPv6-subnet")
 
 	log.SetDebugLevel(log.DebugLevelInfra)
