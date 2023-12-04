@@ -17,7 +17,6 @@ require (
 	github.com/creack/pty v1.1.11
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v0.0.0-20171126034257-17e75f6184bc
-	github.com/go-chef/chef v0.23.1
 	github.com/go-openapi/errors v0.20.3
 	github.com/go-openapi/loads v0.21.1
 	github.com/go-openapi/spec v0.20.4
@@ -41,7 +40,7 @@ require (
 	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/lib/pq v1.10.2
-	github.com/miekg/dns v1.1.41
+	github.com/miekg/dns v1.1.41 // indirect
 	github.com/mileusna/useragent v1.0.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mobiledgex/jaeger v1.13.1
@@ -78,7 +77,6 @@ require (
 	google.golang.org/grpc v1.48.0
 	gopkg.in/ldap.v3 v3.0.3
 	gopkg.in/yaml.v2 v2.4.0
-	gortc.io/stun v1.21.0
 	//	k8s.io/api v0.0.0-20180516102522-184e700b32b7
 	k8s.io/api v0.22.2
 	k8s.io/apimachinery v0.22.2
@@ -90,9 +88,11 @@ require (
 	cloud.google.com/go/storage v1.22.1
 	github.com/cheggaaa/pb/v3 v3.1.0
 	github.com/deepmap/oapi-codegen v1.11.0
+	github.com/docker/docker v24.0.7+incompatible
 	github.com/edgexr/golang-ssh v0.0.12
 	github.com/edgexr/harbor-api v0.0.1
 	github.com/edgexr/jsonparser v0.0.0-20230606233159-ad7db8cef4c2
+	github.com/glendc/go-external-ip v0.1.0
 	github.com/go-oauth2/oauth2/v4 v4.5.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/golang-jwt/jwt/v4 v4.4.2
@@ -163,6 +163,8 @@ require (
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/dnaeon/go-vcr v1.2.0 // indirect
+	github.com/docker/go-connections v0.4.0 // indirect
+	github.com/docker/go-units v0.4.0 // indirect
 	github.com/duosecurity/duo_api_golang v0.0.0-20190308151101-6c680f768e74 // indirect
 	github.com/eapache/go-resiliency v1.2.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
@@ -194,6 +196,7 @@ require (
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/googleapis/go-type-adapters v1.0.0 // indirect
 	github.com/gophercloud/gophercloud v0.1.0 // indirect
+	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/hashicorp/consul/sdk v0.8.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -266,6 +269,8 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/moby/patternmatcher v0.6.0 // indirect
+	github.com/moby/sys/sequential v0.5.0 // indirect
 	github.com/moby/term v0.0.0-20221105221325-4eb28fa6025c // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -273,6 +278,8 @@ require (
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/okta/okta-sdk-golang/v2 v2.12.1 // indirect
+	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/oracle/oci-go-sdk v13.1.0+incompatible // indirect
 	github.com/packethost/packngo v0.1.1-0.20180711074735-b9cb5096f54c // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
@@ -293,6 +300,7 @@ require (
 	github.com/sasha-s/go-deadlock v0.2.0 // indirect
 	github.com/sethvargo/go-limiter v0.7.1 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
+	github.com/smartystreets/assertions v1.1.0 // indirect
 	github.com/softlayer/softlayer-go v0.0.0-20180806151055-260589d94c7d // indirect
 	github.com/swaggest/refl v1.0.2 // indirect
 	github.com/tencentcloud/tencentcloud-sdk-go v1.0.162 // indirect

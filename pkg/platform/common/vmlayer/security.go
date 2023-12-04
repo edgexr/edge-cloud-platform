@@ -18,11 +18,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 func (v *VMPlatform) ConfigureCloudletSecurityRules(ctx context.Context, action ActionType) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules", "action", action)
 	// update security groups based on a configured privacy policy or none
 	privPolName := v.VMProperties.CommonPf.PlatformConfig.TrustPolicy
 	var privPol *edgeproto.TrustPolicy

@@ -1424,6 +1424,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// DeletePrepare: 34
 	// DnsLabel: 35
 	// Fqdn: 36
+	// EnableIpv6: 37
 	// ```
 	// Security:
 	//   Bearer:
@@ -1774,6 +1775,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// VirtualClusterKey: 47
 	// VirtualClusterKeyName: 47.1
 	// VirtualClusterKeyOrganization: 47.2
+	// EnableIpv6: 48
 	// ```
 	// Security:
 	//   Bearer:

@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	proxycerts "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs"
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -65,8 +66,12 @@ type ClusterFlavor struct {
 
 var MaxDockerVmWait = 2 * time.Minute
 
-func GetClusterSubnetName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
-	return MexSubnetPrefix + k8smgmt.GetCloudletClusterName(&clusterInst.Key)
+func (v *VMPlatform) GetClusterSubnetName(ctx context.Context, clusterInst *edgeproto.ClusterInst) SubnetNames {
+	subnetName := k8smgmt.GetCloudletClusterName(&clusterInst.Key)
+	subnetNames := SubnetNames{}
+	subnetNames[infracommon.IndexIPV4] = subnetName
+	subnetNames[infracommon.IndexIPV6] = subnetName + "-ipv6"
+	return subnetNames
 }
 
 func GetClusterMasterName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
@@ -148,11 +153,14 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 
 	nodeUpdateAction := make(map[string]string)
 	masterTaintAction := k8smgmt.NoScheduleMasterTaintNone
-	masterNodeName, err := GetClusterMasterNameFromNodeList(ctx, client, clusterInst)
-	if err != nil {
-		return err
-	}
+	var masterNodeName string
+
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes {
+		var err error
+		masterNodeName, err = GetClusterMasterNameFromNodeList(ctx, client, clusterInst)
+		if err != nil {
+			return err
+		}
 		// if removing nodes, need to tell kubernetes that nodes are
 		// going away forever so that tolerating pods can be migrated
 		// off immediately.
@@ -226,19 +234,20 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 	if err != nil {
 		return err
 	}
-	// now that all nodes are back, update master taint if needed
-	if masterTaintAction != k8smgmt.NoScheduleMasterTaintNone {
-		err = k8smgmt.SetMasterNoscheduleTaint(ctx, client, masterNodeName, k8smgmt.GetKconfName(clusterInst), masterTaintAction)
-		if err != nil {
-			return err
+	if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes {
+		// now that all nodes are back, update master taint if needed
+		if masterTaintAction != k8smgmt.NoScheduleMasterTaintNone {
+			err = k8smgmt.SetMasterNoscheduleTaint(ctx, client, masterNodeName, k8smgmt.GetKconfName(clusterInst), masterTaintAction)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-//DeleteCluster deletes kubernetes cluster
 func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "deleting kubernetes cluster", "clusterInst", clusterInst)
+	log.SpanLog(ctx, log.DebugLevelInfra, "deleting cluster", "clusterInst", clusterInst)
 
 	name := k8smgmt.GetCloudletClusterName(&clusterInst.Key)
 
@@ -253,12 +262,11 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 		}
 	}
 	if !dedicatedRootLB && client != nil {
-		clusterSnName := GetClusterSubnetName(ctx, clusterInst)
-		ip, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), clusterSnName, rootLBName)
+		clusterSnName := v.GetClusterSubnetName(ctx, clusterInst)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "unable to get ips from server, proceed with VM deletion", "err", err)
 		} else {
-			err = v.DetachAndDisableRootLBInterface(ctx, client, rootLBName, clusterSnName, GetPortName(rootLBName, clusterSnName), ip.InternalAddr)
+			err = v.DetachAndDisableRootLBInterface(ctx, client, rootLBName, clusterSnName, GetPortNameFromSubnet(rootLBName, clusterSnName))
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "unable to detach rootLB interface, proceed with VM deletion", "err", err)
 			}
@@ -437,8 +445,11 @@ func (v *VMPlatform) createClusterInternal(ctx context.Context, rootLBName strin
 	return v.setupClusterRootLBAndNodes(ctx, rootLBName, clusterInst, updateCallback, start, timeout, vmgp, ActionCreate)
 }
 
-func (vp *VMProperties) GetSharedCommonSubnetName() string {
-	return vp.SharedRootLBName + "-common-internal"
+func (vp *VMProperties) GetSharedCommonSubnetName() SubnetNames {
+	names := SubnetNames{}
+	names[infracommon.IndexIPV4] = vp.SharedRootLBName + "-common-internal"
+	names[infracommon.IndexIPV4] = vp.SharedRootLBName + "-common-internal-ipv6"
+	return names
 }
 
 func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, start time.Time, timeout time.Duration, vmgp *VMGroupOrchestrationParams, action ActionType) (reterr error) {
@@ -447,37 +458,36 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 		return fmt.Errorf("can't get rootLB client, %v", err)
 	}
 
-	if action == ActionCreate {
-		if v.VMProperties.GetCloudletExternalRouter() == NoExternalRouter {
-			if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes ||
-				(clusterInst.Deployment == cloudcommon.DeploymentTypeDocker) {
-				log.SpanLog(ctx, log.DebugLevelInfra, "Need to attach internal interface on rootlb", "IpAccess", clusterInst.IpAccess, "deployment", clusterInst.Deployment)
+	var rootLBDetail *ServerDetail
+	if v.VMProperties.GetCloudletExternalRouter() == NoExternalRouter {
+		if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes ||
+			(clusterInst.Deployment == cloudcommon.DeploymentTypeDocker) {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Need to attach internal interface on rootlb", "IpAccess", clusterInst.IpAccess, "deployment", clusterInst.Deployment)
 
-				// after vm creation, the orchestrator will update some fields in the group params including gateway IP.
-				// this IP is used on the rootLB to server as the GW for this new subnet
-				subnetName := GetClusterSubnetName(ctx, clusterInst)
-				gw, err := v.GetSubnetGatewayFromVMGroupParms(ctx, subnetName, vmgp)
-				if err != nil {
-					return err
-				}
-				if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED && v.VMProperties.UsesCommonSharedInternalLBNetwork {
-					subnetName = v.VMProperties.GetSharedCommonSubnetName()
-				}
-				attachPort := true
-				if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED && v.VMProvider.GetInternalPortPolicy() == AttachPortDuringCreate {
-					attachPort = false
-				}
-				_, err = v.AttachAndEnableRootLBInterface(ctx, client, rootLBName, attachPort, subnetName, GetPortName(rootLBName, subnetName), gw, action)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "AttachAndEnableRootLBInterface failed", "err", err)
-					return err
-				}
-			} else {
-				log.SpanLog(ctx, log.DebugLevelInfra, "No internal interface on rootlb", "IpAccess", clusterInst.IpAccess, "deployment", clusterInst.Deployment)
+			// after vm creation, the orchestrator will update some fields in the group params including gateway IP.
+			// this IP is used on the rootLB to server as the GW for this new subnet
+			subnetName := v.GetClusterSubnetName(ctx, clusterInst)
+			gw, err := v.GetSubnetGatewayFromVMGroupParms(ctx, subnetName, vmgp)
+			if err != nil {
+				return err
+			}
+			if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED && v.VMProperties.UsesCommonSharedInternalLBNetwork {
+				subnetName = v.VMProperties.GetSharedCommonSubnetName()
+			}
+			attachPort := true
+			if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED && v.VMProvider.GetInternalPortPolicy() == AttachPortDuringCreate {
+				attachPort = false
+			}
+			rootLBDetail, _, err = v.AttachAndEnableRootLBInterface(ctx, client, rootLBName, attachPort, subnetName, GetPortNameFromSubnet(rootLBName, subnetName), gw, action)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "AttachAndEnableRootLBInterface failed", "err", err)
+				return err
 			}
 		} else {
-			log.SpanLog(ctx, log.DebugLevelInfra, "External router in use, no internal interface for rootlb")
+			log.SpanLog(ctx, log.DebugLevelInfra, "No internal interface on rootlb", "IpAccess", clusterInst.IpAccess, "deployment", clusterInst.Deployment)
 		}
+	} else {
+		log.SpanLog(ctx, log.DebugLevelInfra, "External router in use, no internal interface for rootlb")
 	}
 
 	// the root LB was created as part of cluster creation, but it needs to be prepped
@@ -485,7 +495,13 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 		log.SpanLog(ctx, log.DebugLevelInfra, "new dedicated rootLB", "IpAccess", clusterInst.IpAccess)
 		updateCallback(edgeproto.UpdateTask, "Setting Up Root LB")
 		TrustPolicy := edgeproto.TrustPolicy{}
-		err := v.SetupRootLB(ctx, rootLBName, rootLBName, &clusterInst.Key.CloudletKey, &TrustPolicy, updateCallback)
+		if rootLBDetail == nil {
+			rootLBDetail, err = v.VMProvider.GetServerDetail(ctx, rootLBName)
+			if err != nil {
+				return err
+			}
+		}
+		err := v.SetupRootLB(ctx, rootLBName, rootLBName, &clusterInst.Key.CloudletKey, &TrustPolicy, rootLBDetail, clusterInst.EnableIpv6, updateCallback)
 		if err != nil {
 			return err
 		}
@@ -497,7 +513,7 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 		timeout -= elapsed
 		updateCallback(edgeproto.UpdateTask, "Waiting for Cluster to Initialize")
 		k8sTime := time.Now()
-		masterIP, err := v.waitClusterReady(ctx, clusterInst, rootLBName, updateCallback, timeout)
+		masterIPs, err := v.waitClusterReady(ctx, clusterInst, rootLBName, updateCallback, timeout)
 		if err != nil {
 			return err
 		}
@@ -508,7 +524,7 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 			return err
 		}
 		if v.VMProperties.GetUsesMetalLb() {
-			lbIpRange, err := v.VMProperties.GetMetalLBIp3rdOctetRangeFromMasterIp(ctx, masterIP)
+			lbIpRange, err := v.VMProperties.GetMetalLBAddresses(ctx, masterIPs)
 			if err != nil {
 				return err
 			}
@@ -528,6 +544,11 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 		err = WaitServerReady(ctx, v.VMProvider, nodeClient, vmName, MaxDockerVmWait)
 		if err != nil {
 			return err
+		}
+		if clusterInst.EnableIpv6 {
+			if err := setupDockerIPV6(ctx, nodeClient); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -552,37 +573,38 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 	}
 
 	for _, vmp := range vmgp.VMs {
-		if len(vmp.Routes) == 0 {
-			continue
+		var sd *ServerDetail
+		var err error
+		if vmp.Name == rootLBName {
+			sd = rootLBDetail
+		} else {
+			sd, err = v.VMProvider.GetServerDetail(ctx, vmp.Name)
+			if err != nil {
+				return fmt.Errorf("failed to get server details for %s, %s", vmp.Name, err)
+			}
 		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "Adding additional route", "vm", vmp.Name)
+		configNetworks := map[string]struct{}{
+			v.VMProperties.GetCloudletMexNetwork(): {},
+		}
+		defaultRouteNets := map[string]struct{}{}
+		if vmp.Name != rootLBName {
+			defaultRouteNets[v.VMProperties.GetCloudletMexNetwork()] = struct{}{}
+		}
 		vmClient := client
 		if vmp.Role != RoleAgent {
-			nodeIp, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), vmp.Name)
+			nodeIps, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), v.GetClusterSubnetName(ctx, clusterInst), vmp.Name)
 			if err != nil {
 				return err
 			}
-			vmClient, err = client.AddHop(nodeIp.ExternalAddr, 22)
+			vmClient, err = client.AddHop(nodeIps.IPV4ExternalAddr(), 22)
 			if err != nil {
 				return err
 			}
 		}
-		for netname, rs := range vmp.Routes {
-			routeNetIp, err := v.GetIPFromServerName(ctx, netname, "", vmp.Name)
-			if err != nil {
-				return fmt.Errorf("Unable to find IP for network: %s - %v", netname, err)
-			}
-			for _, r := range rs {
-				interfaceName := v.GetInterfaceNameForMac(ctx, vmClient, routeNetIp.MacAddress)
-				if interfaceName == "" {
-					log.SpanLog(ctx, log.DebugLevelInfra, "Unable to find interface name", "routeNetIp", routeNetIp)
-					return fmt.Errorf("Unable to find interface name for mac - %s", routeNetIp.MacAddress)
-				}
-				err = v.VMProperties.AddRouteToServer(ctx, vmClient, vmp.Name, r.DestinationCidr, r.NextHopIp, interfaceName)
-				if err != nil {
-					return fmt.Errorf("failed to AddRouteToServer for VM: %s network: %s -  %v", vmp.Name, netname, err)
-				}
-			}
+		log.SpanLog(ctx, log.DebugLevelInfra, "Configuring network interfaces", "vm", vmp.Name)
+		err = v.ConfigureNetworkInterfaces(ctx, vmClient, sd, configNetworks, defaultRouteNets, vmp.Routes)
+		if err != nil {
+			return fmt.Errorf("failed to configure network interfaces for vm %s, %s", vmp.Name, err)
 		}
 	}
 
@@ -605,50 +627,43 @@ func (v *VMPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgepro
 	return v.deleteCluster(ctx, lbName, clusterInst, updateCallback)
 }
 
-func (v *VMPlatform) GetClusterAccessIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (string, error) {
-	mip, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
-	if err != nil {
-		return "", err
-	}
-	if mip.ExternalAddr == "" {
-		return "", fmt.Errorf("unable to find master IP")
-	}
-	return mip.ExternalAddr, nil
+func (v *VMPlatform) GetClusterAccessIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ServerIPs, error) {
+	return v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), v.GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
 }
 
-func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBName string, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (string, error) {
+func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBName string, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (ServerIPs, error) {
 	start := time.Now()
 	masterName := ""
-	masterIP := ""
+	var masterIPs ServerIPs
 	var currReadyCount uint32
 	var err error
 	log.SpanLog(ctx, log.DebugLevelInfra, "waitClusterReady", "cluster", clusterInst.Key, "timeout", timeout)
 
 	for {
-		if masterIP == "" {
-			masterIP, err = v.GetClusterAccessIP(ctx, clusterInst)
+		if !masterIPs.IsSet() {
+			masterIPs, err = v.GetClusterAccessIP(ctx, clusterInst)
 			if err == nil {
 				updateCallback(edgeproto.UpdateStep, "Checking Master for Available Nodes")
 			}
 		}
-		if masterIP == "" {
+		if !masterIPs.IsSet() {
 			log.SpanLog(ctx, log.DebugLevelInfra, "master IP not available yet", "err", err)
 		} else {
-			ready, readyCount, err := v.isClusterReady(ctx, clusterInst, masterName, masterIP, rootLBName, updateCallback)
+			ready, readyCount, err := v.isClusterReady(ctx, clusterInst, masterName, masterIPs, rootLBName, updateCallback)
 			if readyCount != currReadyCount {
 				numNodes := readyCount - 1
 				updateCallback(edgeproto.UpdateStep, fmt.Sprintf("%d of %d nodes active", numNodes, clusterInst.NumNodes))
 			}
 			currReadyCount = readyCount
 			if err != nil {
-				return masterIP, err
+				return masterIPs, err
 			}
 			if ready {
 				log.SpanLog(ctx, log.DebugLevelInfra, "kubernetes cluster ready")
-				return masterIP, nil
+				return masterIPs, nil
 			}
 			if time.Since(start) > timeout {
-				return masterIP, fmt.Errorf("cluster not ready (yet)")
+				return masterIPs, fmt.Errorf("cluster not ready (yet)")
 			}
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "waiting for kubernetes cluster to be ready...")
@@ -657,8 +672,8 @@ func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeprot
 }
 
 //IsClusterReady checks to see if cluster is read, i.e. rootLB is running and active.  returns ready,nodecount, error
-func (v *VMPlatform) isClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, masterName, masterIP string, rootLBName string, updateCallback edgeproto.CacheUpdateCallback) (bool, uint32, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "checking if cluster is ready", "masterIP", masterIP)
+func (v *VMPlatform) isClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, masterName string, masterIPs ServerIPs, rootLBName string, updateCallback edgeproto.CacheUpdateCallback) (bool, uint32, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "checking if cluster is ready", "masterIPs", masterIPs)
 
 	// some commands are run on the rootlb and some on the master directly, so we use separate clients
 	rootLBClient, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
@@ -666,11 +681,15 @@ func (v *VMPlatform) isClusterReady(ctx context.Context, clusterInst *edgeproto.
 		return false, 0, fmt.Errorf("can't get rootlb ssh client for cluster ready check, %v", err)
 	}
 	// masterClient is to run commands on the master
-	masterClient, err := rootLBClient.AddHop(masterIP, 22)
+	connectMasterIP := masterIPs.IPV4ExternalAddr()
+	if connectMasterIP == "" {
+		connectMasterIP = masterIPs.IPV6ExternalAddr()
+	}
+	masterClient, err := rootLBClient.AddHop(connectMasterIP, 22)
 	if err != nil {
 		return false, 0, err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "checking master k8s node for available nodes", "ipaddr", masterIP)
+	log.SpanLog(ctx, log.DebugLevelInfra, "checking master k8s node for available nodes", "ipaddr", connectMasterIP)
 	cmd := "kubectl get nodes"
 	out, err := masterClient.Output(cmd)
 	if err != nil {
@@ -712,7 +731,7 @@ func (v *VMPlatform) isClusterReady(ctx context.Context, clusterInst *edgeproto.
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "cluster nodes ready", "numnodes", clusterInst.NumNodes, "nummasters", clusterInst.NumMasters, "readyCount", readyCount, "notReadyCount", notReadyCount)
 
-	if err := infracommon.CopyKubeConfig(ctx, rootLBClient, clusterInst, rootLBName, masterIP); err != nil {
+	if err := infracommon.CopyKubeConfig(ctx, rootLBClient, clusterInst, rootLBName, connectMasterIP); err != nil {
 		return false, 0, fmt.Errorf("kubeconfig copy failed, %v", err)
 	}
 	if clusterInst.NumNodes == 0 {
@@ -727,14 +746,14 @@ func (v *VMPlatform) isClusterReady(ctx context.Context, clusterInst *edgeproto.
 	return true, readyCount, nil
 }
 
-func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgName string, clusterInst *edgeproto.ClusterInst, action ActionType, lbNets, nodeNets map[string]NetworkType, lbRoutes, nodeRoutes map[string][]edgeproto.Route, updateCallback edgeproto.CacheUpdateCallback) ([]*VMRequestSpec, string, string, error) {
+func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgName string, clusterInst *edgeproto.ClusterInst, action ActionType, lbNets, nodeNets map[string]NetworkType, lbRoutes, nodeRoutes map[string][]edgeproto.Route, updateCallback edgeproto.CacheUpdateCallback) ([]*VMRequestSpec, SubnetNames, string, error) {
 
 	log.SpanLog(ctx, log.DebugLevelInfo, "getVMRequestSpecForDockerCluster", "clusterInst", clusterInst)
 
 	var vms []*VMRequestSpec
 	var newSecgrpName string
 	dockerVmName := v.GetDockerNodeName(ctx, clusterInst)
-	newSubnetName := GetClusterSubnetName(ctx, clusterInst)
+	newSubnetName := v.GetClusterSubnetName(ctx, clusterInst)
 
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		rootlb, err := v.GetVMSpecForRootLB(ctx, v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst), newSubnetName, &clusterInst.Key, lbNets, lbRoutes, updateCallback)
@@ -785,7 +804,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 	var vms []*VMRequestSpec
 	var err error
 	vmgroupName := k8smgmt.GetCloudletClusterName(&clusterInst.Key)
-	var newSubnetName string
+	var newSubnetName SubnetNames
 	var newSecgrpName string
 
 	networks, err := crmutil.GetNetworksForClusterInst(ctx, clusterInst, v.Caches.NetworkCache)
@@ -822,7 +841,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		if err != nil {
 			return nil, err
 		}
-		newSubnetName = GetClusterSubnetName(ctx, clusterInst)
+		newSubnetName = v.GetClusterSubnetName(ctx, clusterInst)
 		var rootlb *VMRequestSpec
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			// dedicated for docker means the docker VM acts as its own rootLB
@@ -896,5 +915,38 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		WithNewSecurityGroup(newSecgrpName),
 		WithNodeUpdateActions(updateInfo),
 		WithSkipCleanupOnFailure(clusterInst.SkipCrmCleanupOnFailure),
+		WithEnableIPV6(clusterInst.EnableIpv6),
 	)
+}
+
+var dockerConf = `{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "50m",
+    "max-file": "20"
+  },
+  "ipv6": true,
+  "fixed-cidr-v6": "fc00:dddd:1::/64",
+  "experimental": true,
+  "ip6tables": true
+}
+`
+
+func setupDockerIPV6(ctx context.Context, client ssh.Client) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "setup docker IPv6")
+	// enable ipv6 on docker
+	_, err := client.Output(`grep ipv6 /etc/docker/daemon.json`)
+	if err == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "docker IPv6 already configured")
+		return nil
+	}
+	err = pc.WriteFile(client, "/etc/docker/daemon.json", dockerConf, "dockerconfig", pc.SudoOn)
+	if err != nil {
+		return fmt.Errorf("failed to write docker config for ipv6, %s", err)
+	}
+	out, err := client.Output("sudo systemctl restart docker")
+	if err != nil {
+		return fmt.Errorf("failed to restart docker service for ipv6, %s, %s", out, err)
+	}
+	return nil
 }

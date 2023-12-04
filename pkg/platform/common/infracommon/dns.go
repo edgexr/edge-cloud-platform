@@ -32,6 +32,8 @@ type DnsSvcAction struct {
 	// if non-empty string, DNS entry will be created against this IP
 	// for the service. The DNS name is derived from App parameters.
 	ExternalIP string
+	// IPv6 external IP
+	ExternalIPV6 string
 	// AWS uses hostname for service
 	Hostname string
 	// True to patch the kubernetes service with the Patch IP.
@@ -39,6 +41,9 @@ type DnsSvcAction struct {
 	// IP to patch the kubernetes service with. If empty, will use
 	// ExternalIP instead.
 	PatchIP string
+	// IPv6 to patch the kubernetes service with. If empty, will use
+	// ExternalIPV6 instead.
+	PatchIPV6 string
 	// Should we add DNS, or not
 	AddDNS bool
 }
@@ -88,7 +93,7 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 		if err != nil {
 			return err
 		}
-		if action.Hostname == "" && action.ExternalIP == "" {
+		if action.Hostname == "" && action.ExternalIP == "" && action.ExternalIPV6 == "" {
 			continue
 		}
 		if action.PatchKube {
@@ -96,7 +101,11 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 			if patchIP == "" {
 				patchIP = action.ExternalIP
 			}
-			err = KubePatchServiceIP(ctx, client, kubeNames, sn, patchIP, namespace)
+			patchIPV6 := action.PatchIPV6
+			if patchIPV6 == "" {
+				patchIPV6 = action.ExternalIPV6
+			}
+			err = KubePatchServiceIP(ctx, client, kubeNames, sn, patchIP, patchIPV6, namespace)
 			if err != nil {
 				return err
 			}
@@ -106,24 +115,32 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 				return fmt.Errorf("URI not specified")
 			}
 			fqdnBase := uri2fqdn(kubeNames.AppURI)
-			mappedAddr := c.GetMappedExternalIP(action.ExternalIP)
 			fqdn := cloudcommon.ServiceFQDN(sn, fqdnBase)
 			if overrideDns != "" {
 				fqdn = overrideDns
 			}
-			dnsRecType := "A"
-			if action.Hostname != "" {
-				dnsRecType = "CNAME"
-				mappedAddr = action.Hostname
+			recordUpdates := []struct {
+				ip         string
+				recordType string
+			}{
+				{action.ExternalIP, "A"},
+				{action.ExternalIPV6, "AAAA"},
+				{action.Hostname, "CNAME"},
 			}
-			if err := c.PlatformConfig.AccessApi.CreateOrUpdateDNSRecord(ctx, fqdn, dnsRecType, mappedAddr, 1, false); err != nil {
-				if testMode {
-					log.SpanLog(ctx, log.DebugLevelInfra, "ignoring dns error in testMode", "err", err)
-				} else {
-					return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, mappedAddr, err)
+			for _, record := range recordUpdates {
+				if record.ip == "" {
+					continue
 				}
+				ip := c.GetMappedExternalIP(record.ip)
+				if err := c.PlatformConfig.AccessApi.CreateOrUpdateDNSRecord(ctx, fqdn, record.recordType, ip, 1, false); err != nil {
+					if testMode {
+						log.SpanLog(ctx, log.DebugLevelInfra, "ignoring dns error in testMode", "err", err)
+					} else {
+						return fmt.Errorf("can't create DNS record for %s,%s,%s, %v", fqdn, ip, record.recordType, err)
+					}
+				}
+				log.SpanLog(ctx, log.DebugLevelInfra, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", ip, "recordType", record.recordType)
 			}
-			log.SpanLog(ctx, log.DebugLevelInfra, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", action.ExternalIP)
 		}
 	}
 	return nil
@@ -183,9 +200,10 @@ func (c *CommonPlatform) DeleteDNSRecords(ctx context.Context, fqdn string) erro
 
 // KubePatchServiceIP updates the service to have the given external ip.  This is done locally and not thru
 // an ssh client
-func KubePatchServiceIP(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, servicename, ipaddr, namespace string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "patch service IP", "servicename", servicename, "ipaddr", ipaddr, "namespace", namespace)
+func KubePatchServiceIP(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, servicename, ipaddr, ipv6Addr, namespace string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "patch service IP", "servicename", servicename, "ipaddr", ipaddr, "ipv6Addr", ipv6Addr, "namespace", namespace)
 
+	// TODO: handle ipv6Addr, requires ipv6 enabled on kubernetes
 	cmd := fmt.Sprintf(`%s kubectl patch svc %s -n %s -p '{"spec":{"externalIPs":["%s"]}}'`, kubeNames.KconfEnv, servicename, namespace, ipaddr)
 	out, err := client.Output(cmd)
 	if err != nil {

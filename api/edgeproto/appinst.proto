@@ -201,6 +201,8 @@ message AppInst {
   uint32 compatibility_version = 46 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   // Older deprecated virtual cluster
   ClusterKey virtual_cluster_key = 47 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting for VM Apps and auto-clusters, otherwise defaults to target cluster instance setting.
+  bool enable_ipv6 = 48;
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;

@@ -34,8 +34,8 @@ type WhiteListParams struct {
 	SecGrpName  string
 	ServerName  string
 	Label       string
-	AllowedCIDR string
-	DestIP      string
+	AllowedCIDR IPs
+	DestIP      IPs
 	Ports       []dme.AppPort
 }
 
@@ -49,12 +49,16 @@ type ProxyDnsSecOpts struct {
 }
 
 const RemoteCidrAll = "0.0.0.0/0"
+const RemoteCidrAllIPV6 = "::/0"
 const RemoteCidrNone = "0.0.0.0/32"
 
-const DestIPUnspecified = ""
+var DestIPUnspecified = IPs{}
 
-func GetAllowedClientCIDR() string {
-	return RemoteCidrAll
+func GetAllowedClientCIDR() IPs {
+	ips := IPs{}
+	ips[IndexIPV4] = RemoteCidrAll
+	ips[IndexIPV6] = RemoteCidrAllIPV6
+	return ips
 }
 
 func GetAppWhitelistRulesLabel(app *edgeproto.App) string {
@@ -67,12 +71,12 @@ func GetServerSecurityGroupName(serverName string) string {
 }
 
 // AddProxySecurityRulesAndPatchDNS Adds security rules and dns records in parallel
-func (c *CommonPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, getDnsSvcAction GetDnsSvcActionFunc, whiteListAdd WhiteListFunc, wlParams *WhiteListParams, listenIP, backendIP string, ops ProxyDnsSecOpts, proxyops ...proxy.Op) error {
+func (c *CommonPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, getDnsSvcAction GetDnsSvcActionFunc, whiteListAdd WhiteListFunc, wlParams *WhiteListParams, proxyConfig *proxy.ProxyConfig, ops ProxyDnsSecOpts, proxyops ...proxy.Op) error {
 	secchan := make(chan string)
 	dnschan := make(chan string)
 	proxychan := make(chan string)
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "AddProxySecurityRulesAndPatchDNS", "appname", kubeNames.AppName, "listenIP", listenIP, "backendIP", backendIP, "wlParams", wlParams, "ops", ops)
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddProxySecurityRulesAndPatchDNS", "appname", kubeNames.AppName, "proxyConfig", proxyConfig, "wlParams", wlParams, "ops", ops)
 	if len(wlParams.Ports) == 0 {
 		log.SpanLog(ctx, log.DebugLevelInfra, "no ports specified, no DNS, LB or Security rules needed", "appname", kubeNames.AppName)
 		return nil
@@ -88,8 +92,9 @@ func (c *CommonPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, c
 			/*if aac.LbTlsCertCommonName != "" {
 			        ... get cert here
 			}*/
+			proxyConfig.SkipHCPorts = app.SkipHcPorts
 			containerName := ops.ProxyNamePrefix + dockermgmt.GetContainerName(appInst)
-			proxyerr := proxy.CreateNginxProxy(ctx, client, containerName, listenIP, backendIP, appInst, app.SkipHcPorts, proxyops...)
+			proxyerr := proxy.CreateNginxProxy(ctx, client, containerName, proxyConfig, appInst, proxyops...)
 			if proxyerr == nil {
 				proxychan <- ""
 			} else {

@@ -372,12 +372,13 @@ func (v *VcdPlatform) GetServerDetailWithVdc(ctx context.Context, serverName str
 		detail.Status = vmStatus
 	}
 
-	addresses, err := v.GetVMAddresses(ctx, vm, vcdClient, vdc)
+	addresses, networks, err := v.GetVMAddresses(ctx, vm, vcdClient, vdc)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail err getting VMAddresses for", "vmname", serverName, "err", err)
 		return nil, err
 	}
 	detail.Addresses = addresses
+	detail.Networks = networks
 	return &detail, nil
 }
 

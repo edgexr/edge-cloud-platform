@@ -232,7 +232,7 @@ func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, root
 		return fmt.Errorf(NoVCDClientInContext)
 	}
 	// configure iptables based security
-	sshCidrsAllowed := []string{infracommon.RemoteCidrAll}
+	sshCidrsAllowed := []string{infracommon.RemoteCidrAll, infracommon.RemoteCidrAllIPV6}
 
 	var rules []edgeproto.SecurityRule
 	if tp != nil && tp.Key.Name != "" {
@@ -240,7 +240,8 @@ func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, root
 		rules = trustPolicy.OutboundSecurityRules
 	}
 	commonSharedAccess := rootLBName == v.vmProperties.SharedRootLBName
-	err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, egressRestricted, secGrpName, rules, commonSharedAccess)
+	enableIPV6 := true
+	err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, egressRestricted, secGrpName, rules, commonSharedAccess, enableIPV6)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB SetupIptableRulesForRootLB failed", "rootLBName", rootLBName, "err", err)
 		return err
@@ -500,7 +501,8 @@ func (v *VcdPlatform) configureVCDSecurityRulesCommon(ctx context.Context, egres
 				err = fmt.Errorf("nil ssh client for rootlb: %s", clientName)
 			} else {
 				log.SpanLog(ctx, log.DebugLevelInfra, "configure rules for LB", "clientName", clientName)
-				err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, sshClient, sshCidrsAllowed, egressRestricted, secGrpName, rules, clientName == v.vmProperties.PlatformSecgrpName)
+				enableIPV6 := true
+				err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, sshClient, sshCidrsAllowed, egressRestricted, secGrpName, rules, clientName == v.vmProperties.PlatformSecgrpName, enableIPV6)
 			}
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "configureVCDSecurityRulesCommon failed", "clientName", clientName, "sshClient", sshClient, "error", err)
@@ -550,7 +552,7 @@ func (v *VcdPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egress
 	}
 	secGrpName := infracommon.TrustPolicySecGrpNameLabel
 	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules", "egressRestricted", egressRestricted, "TrustPolicy", TrustPolicy, "action", action, "secGrpName", secGrpName)
-	sshCidrsAllowed := []string{infracommon.RemoteCidrAll}
+	sshCidrsAllowed := []string{infracommon.RemoteCidrAll, infracommon.RemoteCidrAllIPV6}
 	return v.configureVCDSecurityRulesCommon(ctx, egressRestricted, secGrpName, sshCidrsAllowed, rules, rootlbClients, action, updateCallback)
 }
 

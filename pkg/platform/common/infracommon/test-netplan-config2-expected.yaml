@@ -1,0 +1,12 @@
+network:
+  version: 2
+  ethernets:
+    ens4:
+      addresses:
+      - 10.101.18.10/16
+      - 2001:db8::10/64
+      routes:
+      - to: 10.101.18.0/16
+        via: 10.101.18.1
+      - to: 2001:db8::/64
+        via: 2001:db8::1

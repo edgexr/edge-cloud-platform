@@ -18,13 +18,15 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/netip"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
@@ -153,6 +155,69 @@ func (v *VcdPlatform) GetExtNetwork(ctx context.Context, vcdClient *govcd.VCDCli
 	return orgvdcnet, nil
 }
 
+func (v *VcdPlatform) GetNetworkDetail(ctx context.Context, networkName string) (*vmlayer.NetworkDetail, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetNetworkDetail", "networkName", networkName)
+
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return nil, fmt.Errorf(NoVCDClientInContext)
+	}
+	vdc, err := v.GetVdc(ctx, vcdClient)
+	if err != nil {
+		return nil, fmt.Errorf("GetVdcFailed - %v", err)
+	}
+	orgvdcnet, err := vdc.GetOrgVdcNetworkByName(networkName, true)
+	if err != nil {
+		return nil, err
+	}
+	nd := &vmlayer.NetworkDetail{
+		ID:     orgvdcnet.OrgVDCNetwork.ID,
+		Name:   orgvdcnet.OrgVDCNetwork.Name,
+		Status: orgvdcnet.OrgVDCNetwork.Status,
+	}
+	if orgvdcnet.OrgVDCNetwork.Configuration != nil && orgvdcnet.OrgVDCNetwork.Configuration.IPScopes != nil {
+		// static IP ranges
+		for _, ipscope := range orgvdcnet.OrgVDCNetwork.Configuration.IPScopes.IPScope {
+			sd := vmlayer.SubnetDetail{
+				GatewayIP: ipscope.Gateway,
+				IPVersion: infracommon.IPV4, // no support for IPv6 in VDC 10.2
+			}
+			prefixLength := 0
+			if ip := net.ParseIP(ipscope.Netmask); ip != nil {
+				ones, _ := net.IPMask(ip).Size()
+				prefixLength = ones
+			} else {
+				log.SpanLog(ctx, log.DebugLevelInfo, "invalid netmask %q for subnet gw %s, defaulting to 24", ipscope.Netmask, ipscope.Gateway)
+				prefixLength = 24
+			}
+			cidrstr := fmt.Sprintf("%s/%d", ipscope.Gateway, prefixLength)
+			prefix, err := netip.ParsePrefix(cidrstr)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "failed to parse cidr %s, %s", cidrstr, err)
+			}
+			sd.CIDR = prefix
+			if ipscope.DNS1 != "" {
+				sd.DNSServers = append(sd.DNSServers, ipscope.DNS1)
+			}
+			if ipscope.DNS2 != "" {
+				sd.DNSServers = append(sd.DNSServers, ipscope.DNS2)
+			}
+			if ipscope.IPRanges != nil {
+				for _, iprange := range ipscope.IPRanges.IPRange {
+					r := vmlayer.SubnetIPRange{
+						Start: iprange.StartAddress,
+						End:   iprange.EndAddress,
+					}
+					sd.SubnetIPRanges = append(sd.SubnetIPRanges, r)
+				}
+			}
+			nd.Subnets = append(nd.Subnets, sd)
+		}
+	}
+	return nd, nil
+}
+
 // No Router
 func (v *VcdPlatform) GetRouterDetail(ctx context.Context, routerName string) (*vmlayer.RouterDetail, error) {
 	return nil, fmt.Errorf("Router not supported for VCD")
@@ -220,7 +285,7 @@ func (v *VcdPlatform) createCommonSharedLBSubnet(ctx context.Context, vapp *govc
 	log.SpanLog(ctx, log.DebugLevelInfra, "createCommonSharedLBSubnet", "vapp", vapp.VApp.Name, "port.Networkname", port.NetworkName, "subnetName", subnetName)
 	// OrgVDCNetwork LinkType = 2 (isolated)
 	// This seems to be an admin priv operation if using  nsx-t back network pool xxx
-	err := v.AddCommonSharedNetToVapp(ctx, vapp, vcdClient, subnetName)
+	err := v.AddCommonSharedNetToVapp(ctx, vapp, vcdClient, subnetName.IPV4())
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "createCommonSharedLBSubnet  create iso orgvdc internal net failed", "err", err)
 		return err
@@ -258,8 +323,8 @@ func (v *VcdPlatform) getVappNetworkInfoMap(ctx context.Context, vapp *govcd.VAp
 				ExternalNet:    true,
 			}
 		case vmlayer.NetworkTypeInternalPrivate:
-			netMap[port.SubnetId] = networkInfo{
-				VcdNetworkName: port.SubnetId,
+			netMap[port.SubnetIds.IPV4()] = networkInfo{
+				VcdNetworkName: port.SubnetIds.IPV4(),
 				Gateway:        InternalVappDedicatedSubnet,
 				NetworkType:    port.NetType,
 			}
@@ -275,19 +340,19 @@ func (v *VcdPlatform) getVappNetworkInfoMap(ctx context.Context, vapp *govcd.VAp
 				// for the update case it is possible this is an existing vm which is connected to
 				// a legacy iso net. See if we have legacy metadata for it. This is more expensive
 				// in terms of API calls to make so only do this for the update case
-				metaType, legacyNet, err := v.GetNetworkMetadataForInternalSubnet(ctx, port.SubnetId, vcdClient, vdc)
+				metaType, legacyNet, err := v.GetNetworkMetadataForInternalSubnet(ctx, port.SubnetIds.IPV4(), vcdClient, vdc)
 				if err != nil {
 					return nil, err
 				}
 				if metaType == NetworkMetadataLegacyPerClusterIsoNet {
 					// override the network name with the mapped ISO network
 					gateway = legacyNet
-					vcdNetName = legacyNet
+					vcdNetName[0] = legacyNet
 					legacyIsoNet = true
 				}
 			}
-			netMap[port.SubnetId] = networkInfo{
-				VcdNetworkName: vcdNetName,
+			netMap[port.SubnetIds.IPV4()] = networkInfo{
+				VcdNetworkName: vcdNetName.IPV4(),
 				Gateway:        gateway,
 				NetworkType:    port.NetType,
 				LegacyIsoNet:   legacyIsoNet,
@@ -335,7 +400,7 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 			continue
 		}
 		networksAdded[port.NetworkName] = port.NetworkName
-		network, err := v.getNetworkInfo(ctx, port.NetworkName, port.SubnetId, netMap)
+		network, err := v.getNetworkInfo(ctx, port.NetworkName, port.SubnetIds.IPV4(), netMap)
 		if err != nil {
 			return err
 		}
@@ -355,7 +420,7 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 					ipAllocation = VappNetIpAllocationDhcp
 				}
 			}
-			_, err = v.CreateInternalNetworkForNewVm(ctx, vapp, serverName, port.SubnetId, InternalVappDedicatedSubnet, vmgp.Subnets[0].DNSServers, ipAllocation)
+			_, err = v.CreateInternalNetworkForNewVm(ctx, vapp, serverName, port.SubnetIds.IPV4(), InternalVappDedicatedSubnet, vmgp.Subnets[0].DNSServers, ipAllocation)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "create internal net failed", "err", err)
 				return err
@@ -399,9 +464,10 @@ func (v *VcdPlatform) InsertConnectionIntoNcs(ctx context.Context, ncs *types.Ne
 }
 
 // AttachPortToServer
-func (v *VcdPlatform) AttachPortToServer(ctx context.Context, serverName, subnetName, portName, ipaddr string, action vmlayer.ActionType) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer", "subnetName", subnetName, "portName", portName, "ipaddr", ipaddr, "action", action)
-	commonNet := v.vmProperties.GetSharedCommonSubnetName()
+func (v *VcdPlatform) AttachPortToServer(ctx context.Context, serverName string, subnetNames vmlayer.SubnetNames, portName string, ips infracommon.IPs, action vmlayer.ActionType) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer", "subnetNames", subnetNames, "portName", portName, "ipaddrs", ips, "action", action)
+	commonNets := v.vmProperties.GetSharedCommonSubnetName()
+	commonNet := commonNets.IPV4()
 	vappName := serverName + v.GetVappServerSuffix()
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
@@ -428,6 +494,9 @@ func (v *VcdPlatform) AttachPortToServer(ctx context.Context, serverName, subnet
 	if err != nil {
 		return err
 	}
+	subnetName := subnetNames.IPV4()
+	ipaddr := ips.IPV4()
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToserver", "ServerName", serverName, "subnet", subnetName, "InternalSharedCommonSubnetGW", commonGw, "ip", ipaddr, "portName", portName, "action", action)
 	if action == vmlayer.ActionCreate {
 		// first see if the vapp already has this network, which can happen for the common shared net
@@ -495,11 +564,12 @@ func (v *VcdPlatform) AttachPortToServer(ctx context.Context, serverName, subnet
 	return nil
 }
 
-func (v *VcdPlatform) DetachPortFromServer(ctx context.Context, serverName, subnetName, xportName string) error {
+func (v *VcdPlatform) DetachPortFromServer(ctx context.Context, serverName string, subnetNames vmlayer.SubnetNames, xportName string) error {
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer", "ServerName", serverName, "subnet", subnetName, "port", xportName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer", "ServerName", serverName, "subnets", subnetNames, "port", xportName)
 
 	vcdClient := v.GetVcdClientFromContext(ctx)
+	subnetName := subnetNames.IPV4()
 	networkName := subnetName
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
@@ -1305,7 +1375,8 @@ func (v *VcdPlatform) getSubnetLegacyIsoMap(ctx context.Context, vdc *govcd.Vdc,
 	log.SpanLog(ctx, log.DebugLevelInfra, "getSubnetLegacyIsoMap", "SharedRootLBName", v.vmProperties.SharedRootLBName)
 	subnetMap := make(map[string]string)
 	sharedLbVappName := v.getSharedVappName()
-	commonNetName := v.vmProperties.GetSharedCommonSubnetName()
+	commonNetNames := v.vmProperties.GetSharedCommonSubnetName()
+	commonNetName := commonNetNames.IPV4()
 	// For all vapps in vdc
 	for _, r := range vdc.Vdc.ResourceEntities {
 		for _, res := range r.ResourceEntity {

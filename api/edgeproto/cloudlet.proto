@@ -185,6 +185,8 @@ message PlatformFeatures {
   bool no_cluster_support = 20;
   // Edgebox platforms are for user-hosted cloudlets, and must use public images and do not get DNS mapping, as they do not get access to sensitive data.
   bool is_edgebox = 21;
+  // Supports IPv6
+  bool supports_ipv6 = 27;
   // Platform access vars information
   map<string, PropertyInfo> access_vars = 22;
   // Platform properties

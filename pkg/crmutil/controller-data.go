@@ -1483,30 +1483,32 @@ func (cd *ControllerData) cloudletChanged(ctx context.Context, old *edgeproto.Cl
 		cloudletInfo.State = dme.CloudletState_CLOUDLET_STATE_UPGRADE
 		cd.UpdateCloudletInfo(ctx, &cloudletInfo)
 
-		err := cd.platform.UpdateCloudlet(ctx, new, updateCloudletCallback)
-		if err != nil {
-			errstr := fmt.Sprintf("Update Cloudlet failed: %v", err)
-			log.InfoLog("can't update cloudlet", "error", errstr, "key", new.Key)
+		go func() {
+			err := cd.platform.UpdateCloudlet(ctx, new, updateCloudletCallback)
+			if err != nil {
+				errstr := fmt.Sprintf("Update Cloudlet failed: %v", err)
+				log.InfoLog("can't update cloudlet", "error", errstr, "key", new.Key)
 
-			cloudletInfo.Errors = append(cloudletInfo.Errors, errstr)
-			cloudletInfo.State = dme.CloudletState_CLOUDLET_STATE_ERRORS
+				cloudletInfo.Errors = append(cloudletInfo.Errors, errstr)
+				cloudletInfo.State = dme.CloudletState_CLOUDLET_STATE_ERRORS
+				cd.UpdateCloudletInfo(ctx, &cloudletInfo)
+				return
+			}
+			resources, err := cd.platform.GetCloudletInfraResources(ctx)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "Cloudlet resources not found for cloudlet", "key", new.Key, "err", err)
+			}
+			// fetch cloudletInfo again, as status might have changed as part of UpdateCloudlet
+			found = cd.CloudletInfoCache.Get(&new.Key, &cloudletInfo)
+			if !found {
+				log.SpanLog(ctx, log.DebugLevelInfra, "CloudletInfo not found for cloudlet", "key", new.Key)
+				return
+			}
+			cloudletInfo.ResourcesSnapshot.PlatformVms = resources.PlatformVms
+			cloudletInfo.State = dme.CloudletState_CLOUDLET_STATE_READY
+			cloudletInfo.Status.StatusReset()
 			cd.UpdateCloudletInfo(ctx, &cloudletInfo)
-			return
-		}
-		resources, err := cd.platform.GetCloudletInfraResources(ctx)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Cloudlet resources not found for cloudlet", "key", new.Key, "err", err)
-		}
-		// fetch cloudletInfo again, as status might have changed as part of UpdateCloudlet
-		found = cd.CloudletInfoCache.Get(&new.Key, &cloudletInfo)
-		if !found {
-			log.SpanLog(ctx, log.DebugLevelInfra, "CloudletInfo not found for cloudlet", "key", new.Key)
-			return
-		}
-		cloudletInfo.ResourcesSnapshot.PlatformVms = resources.PlatformVms
-		cloudletInfo.State = dme.CloudletState_CLOUDLET_STATE_READY
-		cloudletInfo.Status.StatusReset()
-		cd.UpdateCloudletInfo(ctx, &cloudletInfo)
+		}()
 	}
 }
 

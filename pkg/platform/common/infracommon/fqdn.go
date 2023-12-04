@@ -17,6 +17,8 @@ package infracommon
 import (
 	"context"
 	"strings"
+
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 func isDomainName(s string) bool {
@@ -71,9 +73,13 @@ func uri2fqdn(uri string) string {
 	return fqdn
 }
 
-//ActivateFQDNA updates and ensures Fqdn is registered properly
-func (c *CommonPlatform) ActivateFQDNA(ctx context.Context, fqdn, addr string) error {
-
+// ActivateFQDN updates and ensures Fqdn is registered properly
+func (c *CommonPlatform) ActivateFQDN(ctx context.Context, fqdn, addr string, ipversion IPVersion) error {
 	mappedAddr := c.GetMappedExternalIP(addr)
-	return c.PlatformConfig.AccessApi.CreateOrUpdateDNSRecord(ctx, fqdn, "A", mappedAddr, 1, false)
+	recordType := "A"
+	if ipversion == IPV6 {
+		recordType = "AAAA"
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "ActivateFQDN", "fqdn", fqdn, "addr", mappedAddr, "type", recordType)
+	return c.PlatformConfig.AccessApi.CreateOrUpdateDNSRecord(ctx, fqdn, recordType, mappedAddr, 1, false)
 }

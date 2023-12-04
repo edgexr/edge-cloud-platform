@@ -19,11 +19,13 @@ import (
 	"fmt"
 	"math/big"
 	"net"
+	"net/netip"
 	"strings"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
 	"github.com/gogo/protobuf/types"
@@ -32,6 +34,9 @@ import (
 func (o *OpenstackPlatform) GetServerDetail(ctx context.Context, serverName string) (*vmlayer.ServerDetail, error) {
 	var sd vmlayer.ServerDetail
 	osd, err := o.GetOpenstackServerDetails(ctx, serverName)
+	if err != nil && strings.Contains(err.Error(), "No Server found") {
+		return nil, fmt.Errorf(vmlayer.ServerDoesNotExistError + " for " + serverName)
+	}
 	if err != nil {
 		return &sd, err
 	}
@@ -55,85 +60,110 @@ func (o *OpenstackPlatform) GetServerDetail(ctx context.Context, serverName stri
 func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses map[string][]string, ports []OSPort, serverDetail *vmlayer.ServerDetail) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateServerIPs", "addresses", addresses, "serverDetail", serverDetail, "ports", ports)
 
-	netTypes := []vmlayer.NetworkType{
-		vmlayer.NetworkTypeExternalAdditionalPlatform,
-		vmlayer.NetworkTypeExternalAdditionalRootLb,
-		vmlayer.NetworkTypeExternalAdditionalClusterNode,
-		vmlayer.NetworkTypeExternalPrimary,
-	}
-	externalNetMap := o.VMProperties.GetNetworksByType(ctx, netTypes)
-
-	for network, ips := range addresses {
-		if len(ips) == 0 {
-			continue
+	// cache network lookups
+	networksByName := make(map[string]*vmlayer.NetworkDetail)
+	networksByID := make(map[string]*vmlayer.NetworkDetail)
+	lookupNetwork := func(nameOrID string) (*vmlayer.NetworkDetail, error) {
+		networkDetail, found := networksByID[nameOrID]
+		if !found {
+			networkDetail, found = networksByName[nameOrID]
 		}
-		addr := ips[0]
-		_, isExternal := externalNetMap[network]
-		if isExternal {
-			var serverIP vmlayer.ServerIP
-			serverIP.Network = network
-			// multiple ips for an external network indicates a floating ip on a single port
-			if len(ips) == 2 {
-				serverIP.InternalAddr = strings.TrimSpace(ips[0])
-				serverIP.ExternalAddr = strings.TrimSpace(ips[1])
-				serverIP.ExternalAddrIsFloating = true
-				serverDetail.Addresses = append(serverDetail.Addresses, serverIP)
-			} else {
-				// no floating IP, internal and external are the same
-				addr = strings.TrimSpace(addr)
-				serverIP.InternalAddr = addr
-				serverIP.ExternalAddr = addr
-				serverDetail.Addresses = append(serverDetail.Addresses, serverIP)
-			}
-		} else {
-			// for internal networks we need to find the subnet and there are no floating ips.
-			// There maybe be multiple IPs due to multiple subnets for this network attached to this server
-			subnets, err := o.ListSubnets(ctx, network)
+		if !found {
+			osnd, err := o.GetOSNetworkDetail(ctx, nameOrID)
 			if err != nil {
-				return fmt.Errorf("unable to find subnet for network: %s", network)
+				return nil, fmt.Errorf("failed to look up network detail for network %s, %s", nameOrID, err)
 			}
-			for _, addr := range ips {
-				addr = strings.TrimSpace(addr)
-				ipaddr := net.ParseIP(addr)
-				subnetfound := false
-				for _, s := range subnets {
-					_, ipnet, err := net.ParseCIDR(s.Subnet)
-					if err != nil {
-						return fmt.Errorf("unable to parse subnet cidr %s -- %v", s.Subnet, err)
-					}
-					if ipnet.Contains(ipaddr) {
-						var serverIP vmlayer.ServerIP
-						serverIP.Network = s.Name
-						serverIP.InternalAddr = addr
-						serverIP.ExternalAddr = addr
-						serverDetail.Addresses = append(serverDetail.Addresses, serverIP)
-						subnetfound = true
-						break
-					}
-				}
-				if !subnetfound {
-					log.SpanLog(ctx, log.DebugLevelInfra, "Did not find subnet for address", "addr", addr, "subnets", subnets)
-					return fmt.Errorf("no subnet found for internal addr: %s", addr)
-				}
+			networkDetail = &vmlayer.NetworkDetail{
+				ID:     osnd.ID,
+				Name:   osnd.Name,
+				Status: osnd.Status,
+				MTU:    osnd.MTU,
 			}
+			networksByName[osnd.Name] = networkDetail
+			networksByID[osnd.ID] = networkDetail
 		}
-		// now look through the ports and assign port name and mac addresses
-		for _, port := range ports {
-			for ai, serverAddr := range serverDetail.Addresses {
-				hasIp := false
-				for _, fip := range port.FixedIPs {
-					if strings.Contains(fip.IPAddress, serverAddr.InternalAddr) {
-						hasIp = true
-						break
-					}
+		return networkDetail, nil
+	}
+
+	// Iterate over fixed IPs on ports. Note that after a heat stack update
+	// that adds a new fixed IP, the IP shows up on the ports immediately, but
+	// not the server addresses. So we register fixed IPs from the ports.
+	fixedIPs := make(map[string]OSPort)
+	for _, port := range ports {
+		for _, ip := range port.FixedIPs {
+			fixedIPs[ip.IPAddress] = port
+
+			ipaddr, err := netip.ParseAddr(ip.IPAddress)
+			if err != nil {
+				return fmt.Errorf("failed to parse ip address %s on server %s", ip.IPAddress, serverDetail.Name)
+			}
+			ossd, err := o.GetSubnetDetail(ctx, ip.SubnetID)
+			if err != nil {
+				return fmt.Errorf("failed to look up subnet %s for ip %s, %s", ip.SubnetID, ip.IPAddress, err)
+			}
+			subnetDetail, err := o.GetVMSubnetDetail(ctx, ossd)
+			if err != nil {
+				return err
+			}
+			networkDetail, err := lookupNetwork(ossd.NetworkID)
+			if err != nil {
+				return err
+			}
+			// assume there won't be more than one fixed IP per subnet
+			networkDetail.Subnets = append(networkDetail.Subnets, *subnetDetail)
+
+			var serverIP vmlayer.ServerIP
+			serverIP.Network = networkDetail.Name
+			serverIP.InternalAddr = ip.IPAddress
+			serverIP.ExternalAddr = ip.IPAddress
+			if ipaddr.Is4() {
+				serverIP.IPVersion = infracommon.IPV4
+			} else if ipaddr.Is6() {
+				serverIP.IPVersion = infracommon.IPV6
+			}
+			serverIP.SubnetName = subnetDetail.Name
+			serverIP.MacAddress = port.MACAddress
+			serverIP.PortName = port.Name
+			log.SpanLog(ctx, log.DebugLevelInfra, "updated fixed IP", "serverIP", serverIP)
+			serverDetail.Addresses = append(serverDetail.Addresses, serverIP)
+		}
+	}
+
+	// Register floating IPs from the server address list.
+	// Floating IPs do not belong to any subnet or port, but belong to the server.
+	for network, ips := range addresses {
+		for _, addr := range ips {
+			if _, found := fixedIPs[addr]; found {
+				continue
+			}
+			// must be floating IP
+			addr = strings.TrimSpace(addr)
+			ipaddr, err := netip.ParseAddr(addr)
+			if err != nil {
+				return fmt.Errorf("failed to parse floating ip address %s on server %s", addr, serverDetail.Name)
+			}
+			ipversion := infracommon.IPV4
+			if ipaddr.Is6() {
+				ipversion = infracommon.IPV6
+			}
+
+			// find the internal fixed IP on the same network
+			found := false
+			for ii, sip := range serverDetail.Addresses {
+				if sip.Network == network && ipversion == sip.IPVersion {
+					serverDetail.Addresses[ii].ExternalAddr = addr
+					serverDetail.Addresses[ii].ExternalAddrIsFloating = true
+					found = true
+					log.SpanLog(ctx, log.DebugLevelInfra, "registered floating IP", "serverIP", serverDetail.Addresses[ii])
+					break
 				}
-				if hasIp {
-					serverDetail.Addresses[ai].MacAddress = port.MACAddress
-					serverDetail.Addresses[ai].PortName = port.Name
-				}
+			}
+			if !found {
+				return fmt.Errorf("floating IP %s on network %s, but no private IP on same network found", addr, network)
 			}
 		}
 	}
+	serverDetail.Networks = networksByName
 	log.SpanLog(ctx, log.DebugLevelInfra, "Updated ServerIPs", "serverDetail", serverDetail)
 	return nil
 }
@@ -273,7 +303,7 @@ func getIpCountFromPools(ipPools []OSAllocationPool) (uint64, error) {
 }
 
 func (s *OpenstackPlatform) addIpUsageDetails(ctx context.Context, platformRes *vmlayer.PlatformResources) error {
-	externalNet, err := s.GetNetworkDetail(ctx, s.VMProperties.GetCloudletExternalNetwork())
+	externalNet, err := s.GetOSNetworkDetail(ctx, s.VMProperties.GetCloudletExternalNetwork())
 	if err != nil {
 		return err
 	}

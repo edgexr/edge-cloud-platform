@@ -856,6 +856,7 @@ var AppInstOptionalArgs = []string{
 	"powerstate",
 	"realclustername",
 	"dedicatedip",
+	"enableipv6",
 }
 var AppInstAliasArgs = []string{
 	"appinstname=key.name",
@@ -931,6 +932,7 @@ var AppInstComments = map[string]string{
 	"compatibilityversion":           "Internal compatibility version",
 	"virtualclusterkey.name":         "Cluster name",
 	"virtualclusterkey.organization": "Name of the organization that this cluster belongs to",
+	"enableipv6":                     "Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting for VM Apps and auto-clusters, otherwise defaults to target cluster instance setting.",
 }
 var AppInstSpecialArgs = map[string]string{
 	"errors":                   "StringArray",
@@ -1182,6 +1184,7 @@ var CreateAppInstOptionalArgs = []string{
 	"healthcheck",
 	"realclustername",
 	"dedicatedip",
+	"enableipv6",
 }
 var DeleteAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1205,6 +1208,7 @@ var DeleteAppInstOptionalArgs = []string{
 	"healthcheck",
 	"realclustername",
 	"dedicatedip",
+	"enableipv6",
 }
 var RefreshAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1224,6 +1228,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"updatemultiple",
 	"realclustername",
 	"dedicatedip",
+	"enableipv6",
 }
 var UpdateAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1241,4 +1246,5 @@ var UpdateAppInstOptionalArgs = []string{
 	"powerstate",
 	"realclustername",
 	"dedicatedip",
+	"enableipv6",
 }

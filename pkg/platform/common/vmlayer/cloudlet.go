@@ -62,8 +62,11 @@ func (v *VMPlatform) GetPlatformVMName(key *edgeproto.CloudletKey) string {
 	return v.GetSanitizedCloudletName(key) + "-pf"
 }
 
-func (v *VMPlatform) GetPlatformSubnetName(key *edgeproto.CloudletKey) string {
-	return "mex-k8s-subnet-" + v.GetPlatformVMName(key)
+func (v *VMPlatform) GetPlatformSubnetName(key *edgeproto.CloudletKey) SubnetNames {
+	names := SubnetNames{}
+	names[infracommon.IndexIPV4] = "mex-k8s-subnet-" + v.GetPlatformVMName(key)
+	names[infracommon.IndexIPV6] = "mex-k8s-subnet-" + v.GetPlatformVMName(key) + "-ipv6"
+	return names
 }
 
 func (v *VMPlatform) GetPlatformNodes(cloudlet *edgeproto.Cloudlet) []NodeInfo {
@@ -152,9 +155,10 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, accessApi platform.Acc
 			ActionCreate,
 			updateCallback,
 			WithNewSecurityGroup(infracommon.GetServerSecurityGroupName(platformVmGroupName)),
-			WithAccessPorts("tcp:22", infracommon.RemoteCidrAll),
+			WithAccessPorts("tcp:22"),
 			WithSkipDefaultSecGrp(true),
 			WithInitOrchestrator(true),
+			WithEnableIPV6(v.VMProperties.CloudletEnableIPV6),
 		)
 	} else {
 		updateCallback(edgeproto.UpdateTask, "Deploying Platform Cluster")
@@ -173,13 +177,14 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, accessApi platform.Acc
 			ActionCreate,
 			updateCallback,
 			WithNewSecurityGroup(infracommon.GetServerSecurityGroupName(platformVmGroupName)),
-			WithAccessPorts("tcp:22", infracommon.RemoteCidrAll),
+			WithAccessPorts("tcp:22"),
 			WithSkipDefaultSecGrp(true),
 			WithNewSubnet(subnetName),
 			WithSkipSubnetGateway(true),
 			WithSkipInfraSpecificCheck(skipInfraSpecificCheck),
 			WithInitOrchestrator(true),
 			WithAntiAffinity(cloudlet.PlatformHighAvailability),
+			WithEnableIPV6(v.VMProperties.CloudletEnableIPV6),
 		)
 	}
 	if err != nil {
@@ -696,9 +701,10 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 			platformVmName,
 			platvms,
 			WithNewSecurityGroup(infracommon.GetServerSecurityGroupName(platformVmName)),
-			WithAccessPorts("tcp:22", infracommon.RemoteCidrAll),
+			WithAccessPorts("tcp:22"),
 			WithSkipDefaultSecGrp(true),
 			WithSkipInfraSpecificCheck(skipInfraSpecificCheck),
+			WithEnableIPV6(v.VMProperties.CloudletEnableIPV6),
 		)
 	} else {
 		subnetName := v.GetPlatformSubnetName(&cloudlet.Key)
@@ -707,11 +713,12 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 			platformVmName,
 			platvms,
 			WithNewSecurityGroup(infracommon.GetServerSecurityGroupName(platformVmName)),
-			WithAccessPorts("tcp:22", infracommon.RemoteCidrAll),
+			WithAccessPorts("tcp:22"),
 			WithNewSubnet(subnetName),
 			WithSkipDefaultSecGrp(true),
 			WithSkipSubnetGateway(true),
 			WithSkipInfraSpecificCheck(skipInfraSpecificCheck),
+			WithEnableIPV6(v.VMProperties.CloudletEnableIPV6),
 		)
 	}
 	if err != nil {

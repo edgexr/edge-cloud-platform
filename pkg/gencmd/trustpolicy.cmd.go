@@ -366,7 +366,7 @@ var SecurityRuleComments = map[string]string{
 	"protocol":     "TCP, UDP, ICMP",
 	"portrangemin": "TCP or UDP port range start",
 	"portrangemax": "TCP or UDP port range end",
-	"remotecidr":   "Remote CIDR X.X.X.X/X",
+	"remotecidr":   "Remote CIDR X.X.X.X/X for IPv4 or e.g. XXXX:XXXX::XXXX/XX for IPv6",
 }
 var SecurityRuleSpecialArgs = map[string]string{}
 var TrustPolicyRequiredArgs = []string{
@@ -392,7 +392,7 @@ var TrustPolicyComments = map[string]string{
 	"outboundsecurityrules:#.protocol":     "TCP, UDP, ICMP",
 	"outboundsecurityrules:#.portrangemin": "TCP or UDP port range start",
 	"outboundsecurityrules:#.portrangemax": "TCP or UDP port range end",
-	"outboundsecurityrules:#.remotecidr":   "Remote CIDR X.X.X.X/X",
+	"outboundsecurityrules:#.remotecidr":   "Remote CIDR X.X.X.X/X for IPv4 or e.g. XXXX:XXXX::XXXX/XX for IPv6",
 	"deleteprepare":                        "Preparing to be deleted",
 }
 var TrustPolicySpecialArgs = map[string]string{

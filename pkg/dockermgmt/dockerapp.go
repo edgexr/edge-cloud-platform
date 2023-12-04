@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/docker/docker/api/types"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -67,7 +68,7 @@ func GetContainerName(appInst *edgeproto.AppInst) string {
 
 // Helper function that generates the ports string for docker command
 // Example : "-p 80:80/http -p 7777:7777/tcp"
-func GetDockerPortString(ports []dme.AppPort, containerPortType string, proxyMatch, listenIP string) []string {
+func GetDockerPortString(ports []dme.AppPort, containerPortType string, proxyMatch, listenIP, listenIPV6 string) []string {
 	var cmdArgs []string
 	// ensure envoy and nginx docker commands are only opening the udp ports they are managing, not all of the apps udp ports
 	for _, p := range ports {
@@ -94,12 +95,20 @@ func GetDockerPortString(ports []dme.AppPort, containerPortType string, proxyMat
 		if p.EndPort != 0 && p.EndPort != containerPort {
 			containerPortStr = fmt.Sprintf("%d-%d", containerPort, p.EndPort)
 		}
-		listenIPStr := ""
-		if listenIP != "" {
-			listenIPStr = listenIP + ":"
+		var listenIPs []string
+		// special case for listening on all interfaces
+		if listenIP == "" || listenIP == "0.0.0.0" && listenIPV6 == "::" {
+			listenIPs = []string{""}
+		} else {
+			listenIPs = []string{
+				listenIP + ":",
+				listenIPV6 + ":",
+			}
 		}
-		pstr := fmt.Sprintf("%s%s:%s/%s", listenIPStr, publicPortStr, containerPortStr, proto)
-		cmdArgs = append(cmdArgs, "-p", pstr)
+		for _, listenIPStr := range listenIPs {
+			pstr := fmt.Sprintf("%s%s:%s/%s", listenIPStr, publicPortStr, containerPortStr, proto)
+			cmdArgs = append(cmdArgs, "-p", pstr)
+		}
 	}
 	return cmdArgs
 }
@@ -285,7 +294,7 @@ func CreateAppInstLocal(client ssh.Client, app *edgeproto.App, appInst *edgeprot
 	if app.DeploymentManifest == "" {
 		cmd := fmt.Sprintf("%s -d -l edge-cloud -l cluster=%s %s --restart=unless-stopped --name=%s %s %s %s", base_cmd,
 			cluster, labelsStr, name,
-			strings.Join(GetDockerPortString(appInst.MappedPorts, UseInternalPortInContainer, "", cloudcommon.IPAddrAllInterfaces), " "), image, getCommandString(app))
+			strings.Join(GetDockerPortString(appInst.MappedPorts, UseInternalPortInContainer, "", cloudcommon.IPAddrAllInterfaces, cloudcommon.IPV6AddrAllInterfaces), " "), image, getCommandString(app))
 		log.DebugLog(log.DebugLevelInfra, "running docker run ", "cmd", cmd)
 
 		out, err := client.Output(cmd)
@@ -567,4 +576,115 @@ func GetContainerCommand(clusterInst *edgeproto.ClusterInst, app *edgeproto.App,
 		return cmdStr, nil
 	}
 	return "", fmt.Errorf("no command or log specified with exec request")
+}
+
+// SingleOpts are docker run options that take no option value.
+var SingleOpts = map[string]struct{}{
+	"-d":                      {},
+	"--detach":                {},
+	"--disable-content-trust": {},
+	"--help":                  {},
+	"--init":                  {},
+	"-i":                      {},
+	"--interactive":           {},
+	"--no-healthcheck":        {},
+	"--oom-kill-disable":      {},
+	"--privileged":            {},
+	"-P":                      {},
+	"--publish-all":           {},
+	"--read-only":             {},
+	"--rm":                    {},
+	"--sig-proxy":             {},
+	"-t":                      {},
+	"--tty":                   {},
+}
+
+// Attempt to see if running container matches the desired run state from the
+// args. On updates, this is used to decide if the container needs to be stopped
+// and started to apply new run args.
+// Note: ports are not checked because we use host network mode, and so ports are
+// never specified.
+func ArgsMatchRunning(ctx context.Context, runningData types.ContainerJSON, runArgs []string) bool {
+	binds := []string{}
+	image := ""
+	cmdArgs := []string{}
+	network := ""
+	for ii := 0; ii < len(runArgs); ii++ {
+		arg := runArgs[ii]
+		fmt.Println(arg)
+		if arg == "" || arg == "docker" || arg == "run" {
+			continue
+		}
+		var opt, optVal string
+		if arg[0] == '-' {
+			opt = arg
+			if parts := strings.Split(arg, "="); len(parts) > 1 {
+				opt = parts[0]
+				optVal = parts[1]
+			} else if _, found := SingleOpts[opt]; !found && ii+1 < len(runArgs) {
+				optVal = runArgs[ii+1]
+				ii++
+			}
+		}
+		fmt.Printf("processing arg %s, opt %s, optval %s\n", arg, opt, optVal)
+		if arg == "-v" {
+			binds = append(binds, optVal)
+		} else if arg == "--network" {
+			network = optVal
+		}
+		if opt != "" {
+			continue
+		}
+		// image name
+		image = arg
+		cmdArgs = runArgs[ii+1:]
+		break
+	}
+
+	runningBinds := []string{}
+	if runningData.ContainerJSONBase != nil && runningData.HostConfig != nil && runningData.HostConfig.Binds != nil {
+		runningBinds = runningData.ContainerJSONBase.HostConfig.Binds
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "docker args match check binds", "args", binds, "running", runningBinds)
+	if len(binds) != len(runningBinds) {
+		return false
+	}
+	for ii, bind := range binds {
+		if bind != runningBinds[ii] {
+			return false
+		}
+	}
+
+	runningNetworkMode := ""
+	if runningData.ContainerJSONBase != nil && runningData.HostConfig != nil {
+		runningNetworkMode = string(runningData.ContainerJSONBase.HostConfig.NetworkMode)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "docker args match check host network mode", "args", network, "running", runningNetworkMode)
+	if network == "host" && runningNetworkMode != "host" {
+		return false
+	}
+
+	runningImage := ""
+	if runningData.Config != nil {
+		runningImage = runningData.Config.Image
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "docker args match check image", "args", image, "running", runningImage)
+	if image != runningImage {
+		return false
+	}
+
+	runningArgs := []string{}
+	if runningData.ContainerJSONBase != nil {
+		runningArgs = runningData.ContainerJSONBase.Args
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "docker args match check command args", "args", cmdArgs, "running", runningArgs)
+	if len(cmdArgs) != len(runningArgs) {
+		return false
+	}
+	for ii, arg := range cmdArgs {
+		if arg != runningData.Args[ii] {
+			return false
+		}
+	}
+	return true
 }
