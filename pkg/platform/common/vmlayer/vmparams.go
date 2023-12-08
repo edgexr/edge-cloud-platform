@@ -1105,7 +1105,15 @@ func (v *VMPlatform) GetVMGroupOrchestrationParamsFromVMSpec(ctx context.Context
 				extNets[net] = ntype
 			}
 		}
-		for netName, netType := range extNets {
+		// iterate over array instead of map to assign floating IP IDs
+		// deterministically.
+		extNetsList := []string{}
+		for netName := range extNets {
+			extNetsList = append(extNetsList, netName)
+		}
+		sort.Strings(extNetsList)
+		for _, netName := range extNetsList {
+			netType := extNets[netName]
 			portName := GetPortName(vm.Name, netName)
 			useCloudletSecgrpForExtPort := false
 			if spec.NewSecgrpName == "" {
