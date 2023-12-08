@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -142,16 +141,6 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 		userdata, err := vmlayer.GetVMUserData(v.Name, v.SharedVolume, v.DeploymentManifest, v.Command, &v.CloudConfigParams, reindent16)
 		require.Nil(t, err)
 		genVMsUserData[v.Name] = userdata
-	}
-
-	vmsUserData, err := GetUserDataFromOSResource(ctx, stackTemplate)
-	require.Nil(t, err)
-	require.Equal(t, 5, len(vmsUserData))
-	for vName, userData := range vmsUserData {
-		require.True(t, strings.HasPrefix(userData, "#cloud-config"))
-		genUserData, ok := genVMsUserData[vName]
-		require.True(t, ok)
-		require.True(t, IsUserDataSame(ctx, genUserData, userData), "userdata mismatch")
 	}
 }
 

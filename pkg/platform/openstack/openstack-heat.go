@@ -160,8 +160,11 @@ resources:
             {{- end}}
             {{- end}}
     {{- end}}
-    
+
     {{- range .VMs}}
+    {{- if .ExistingData }}
+{{ .ExistingData }}
+    {{- else }}
     {{- range .Volumes}}
     {{.Name}}:
         type: OS::Cinder::Volume
@@ -213,6 +216,7 @@ resources:
             metadata:
 {{.MetaData}}
             {{- end}}
+    {{- end}}
     {{- end}}
 
     {{- if .SkipInfraSpecificCheck}}
@@ -365,24 +369,18 @@ func (o *OpenstackPlatform) HeatDeleteStack(ctx context.Context, stackName strin
 }
 
 func GetUserDataFromOSResource(ctx context.Context, stackTemplate *OSHeatStackTemplate) (map[string]string, error) {
-	vmsUserData := make(map[string]string)
+	existingVMs := make(map[string]string)
 	for resourceName, resource := range stackTemplate.Resources {
 		if resource.Type != "OS::Nova::Server" {
 			continue
 		}
-		userData, ok := resource.Properties["user_data"]
-		if !ok {
-			log.SpanLog(ctx, log.DebugLevelInfra, "missing user data", "resource", resource)
-			continue
+		out, err := yaml.Marshal(resource)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal existing VM data, %s for %s", err, resource)
 		}
-		userDataStr, ok := userData.(string)
-		if !ok {
-			log.SpanLog(ctx, log.DebugLevelInfra, "invalid user data", "resource", resource)
-			continue
-		}
-		vmsUserData[resourceName] = strings.TrimSpace(userDataStr)
+		existingVMs[resourceName] = "    " + resourceName + ":\n" + reindent(string(out), 8)
 	}
-	return vmsUserData, nil
+	return existingVMs, nil
 }
 
 func IsUserDataSame(ctx context.Context, userdata1, userdata2 string) bool {
@@ -583,7 +581,6 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 			for j, f := range p.FixedIPs {
 				log.SpanLog(ctx, log.DebugLevelInfra, "updating fixed ip", "fixedip", f)
 				if f.Address == vmlayer.NextAvailableResource && f.LastIPOctet != 0 {
-					log.SpanLog(ctx, log.DebugLevelInfra, "populating fixed ip based on subnet", "VMGroupOrchestrationParams", VMGroupOrchestrationParams)
 					found := false
 					for _, s := range VMGroupOrchestrationParams.Subnets {
 						if s.Name == f.Subnet.Name {
@@ -606,42 +603,34 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 	}
 
 	// Get chef keys for existing VMs
-	vmsUserData := make(map[string]string)
+	existingVMs := make(map[string]string)
 	if action == heatUpdate {
 		stackTemplate, err := o.getHeatStackTemplateDetail(ctx, VMGroupOrchestrationParams.GroupName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch heat stack template for %s: %v", VMGroupOrchestrationParams.GroupName, err)
 		}
-		vmsUserData, err = GetUserDataFromOSResource(ctx, stackTemplate)
+		existingVMs, err = GetUserDataFromOSResource(ctx, stackTemplate)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to fetch vms userdata", "err", err)
 		}
 	}
 
-	// populate the user data
+	// populate the user data and/or replace with existing data
 	for i, v := range VMGroupOrchestrationParams.VMs {
+		if action == heatUpdate {
+			// Use existing VM data to ensure we don't trigger rebuilding the VM
+			if data, found := existingVMs[v.Name]; found {
+				log.SpanLog(ctx, log.DebugLevelInfra, "update using existing heat data for VM", "vm", v.Name)
+				VMGroupOrchestrationParams.VMs[i].ExistingData = data
+				continue
+			}
+		}
 		VMGroupOrchestrationParams.VMs[i].MetaData = vmlayer.GetVMMetaData(v.Role, masterIP, masterIPv6, reindent16)
-		var userdata string
-		if ud, ok := vmsUserData[v.Name]; ok && action == heatUpdate {
-			// use previous userdata in case of update to avoid
-			// redeploying existing VM.
-			userdata = reindent16(ud)
-		} else {
-			ud, err := vmlayer.GetVMUserData(v.Name, v.SharedVolume, v.DeploymentManifest, v.Command, &v.CloudConfigParams, reindent16)
-			if err != nil {
-				return nil, err
-			}
-			userdata = ud
+		ud, err := vmlayer.GetVMUserData(v.Name, v.SharedVolume, v.DeploymentManifest, v.Command, &v.CloudConfigParams, reindent16)
+		if err != nil {
+			return nil, err
 		}
-
-		if v.Role == vmlayer.RoleMaster && action == heatUpdate {
-			if masterUserData, ok := vmsUserData[v.Name]; ok {
-				if !IsUserDataSame(ctx, masterUserData, userdata) {
-					return nil, fmt.Errorf("Unable to update cluster instance as it will redeploy master node, hence will affect running app instances. Please delete and recreate the cluster instance")
-				}
-			}
-		}
-		VMGroupOrchestrationParams.VMs[i].UserData = userdata
+		VMGroupOrchestrationParams.VMs[i].UserData = ud
 	}
 
 	// populate the floating ips

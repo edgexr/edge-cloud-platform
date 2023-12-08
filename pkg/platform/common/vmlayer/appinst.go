@@ -182,6 +182,16 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 
 func (v *VMPlatform) setupVMAppRootLBAndNode(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, orchVals *vmAppOrchValues, action ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "setupVMAppRootLBAndNode", "orchVals", orchVals)
+
+	if action == ActionUpdate {
+		// attach any missing external ports to the dedicated rootLB
+		// TODO: remove ports that shouldn't be there anymore.
+		err := v.attachRootLBExternalPorts(ctx, orchVals.lbName, orchVals.vmgp, action)
+		if err != nil {
+			return err
+		}
+	}
+
 	rootLBDetail, err := v.VMProvider.GetServerDetail(ctx, orchVals.lbName)
 	if err != nil {
 		return fmt.Errorf("failed to get server detail for VMApp rootLB %s, %s", orchVals.lbName, err)
@@ -242,7 +252,7 @@ func (v *VMPlatform) setupVMAppRootLBAndNode(ctx context.Context, clusterInst *e
 		Ports:       appInst.MappedPorts,
 		DestIP:      infracommon.DestIPUnspecified,
 	}
-	proxyConfig := NewProxyConfig(ListenAllIPs, vmIPs)
+	proxyConfig := NewProxyConfig(ListenAllIPs, vmIPs, appInst.EnableIpv6)
 	err = v.VMProperties.CommonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, v.VMProvider.WhitelistSecurityRules, &wlParams, proxyConfig, ops, proxyOps...)
 	if err != nil {
 		return fmt.Errorf("AddProxySecurityRulesAndPatchDNS error: %v", err)
@@ -263,6 +273,7 @@ func (v *VMPlatform) setupVMAppRootLBAndNode(ctx context.Context, clusterInst *e
 		if err != nil {
 			return err
 		}
+		// Attach rootLB internal interface
 		attachPort := v.VMProvider.GetInternalPortPolicy() == AttachPortAfterCreate
 		rootLBDetail, internalIfName, err = v.AttachAndEnableRootLBInterface(ctx, client, orchVals.lbName, attachPort, orchVals.newSubnetNames, GetPortNameFromSubnet(orchVals.lbName, orchVals.newSubnetNames), gws, action)
 		if err != nil {
@@ -457,7 +468,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 					Ports:       appInst.MappedPorts,
 					DestIP:      infracommon.DestIPUnspecified,
 				}
-				proxyConfig := NewProxyConfig(ListenAllIPs, masterIPs)
+				proxyConfig := NewProxyConfig(ListenAllIPs, masterIPs, appInst.EnableIpv6)
 
 				err = v.VMProperties.CommonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, v.VMProvider.WhitelistSecurityRules, &wlParams, proxyConfig, ops, proxy.WithDockerNetwork("host"), proxy.WithMetricEndpoint(infracommon.GetUniqueLoopbackIp(ctx, appInst.MappedPorts)))
 			}
@@ -553,7 +564,7 @@ func (v *VMPlatform) setupDockerAppInst(ctx context.Context, clusterInst *edgepr
 		action.ExternalIPV6 = rootLBIPs.IPV6ExternalAddr()
 		return &action, nil
 	}
-	proxyConfig := NewProxyConfig(ListenAllIPs, sips)
+	proxyConfig := NewProxyConfig(ListenAllIPs, sips, appInst.EnableIpv6)
 
 	updateCallback(edgeproto.UpdateTask, "Configuring Firewall Rules and DNS")
 	var proxyOps []proxy.Op

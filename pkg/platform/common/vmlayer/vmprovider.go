@@ -469,14 +469,14 @@ func (v *VMPlatform) InitHAConditional(ctx context.Context, platformConfig *plat
 	action := ActionCreate
 	_, err = v.VMProvider.GetServerDetail(ctx, v.VMProperties.SharedRootLBName)
 	if err == nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "rootlb already exists, updating it")
+		log.SpanLog(ctx, log.DebugLevelInfra, "rootlb already exists, updating ports")
 		action = ActionUpdate
 	}
-	err = v.CreateOrUpdateRootLB(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, action, updateCallback)
+	err = v.CreateRootLB(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, action, updateCallback)
 	if err != nil {
-		return fmt.Errorf("Error creating or updating rootLB: %v", err)
+		return fmt.Errorf("Error creating rootLB: %v", err)
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "created or updated shared rootLB", "name", v.VMProperties.SharedRootLBName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "created rootLB", "name", v.VMProperties.SharedRootLBName)
 
 	if platformConfig.Upgrade {
 		v.VMProperties.Upgrade = true

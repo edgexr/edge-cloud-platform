@@ -611,7 +611,6 @@ func ArgsMatchRunning(ctx context.Context, runningData types.ContainerJSON, runA
 	network := ""
 	for ii := 0; ii < len(runArgs); ii++ {
 		arg := runArgs[ii]
-		fmt.Println(arg)
 		if arg == "" || arg == "docker" || arg == "run" {
 			continue
 		}

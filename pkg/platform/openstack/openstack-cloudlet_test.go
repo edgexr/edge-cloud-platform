@@ -15,6 +15,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
+	yaml "github.com/mobiledgex/yaml/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -59,6 +60,7 @@ func TestOpenstackLive(t *testing.T) {
 	cloudletPoolLookup := &node.CloudletPoolCache{}
 	cloudletPoolLookup.Init()
 	nodeMgr.CloudletPoolLookup = cloudletPoolLookup
+	nodeMgr.MyNode.Key.CloudletKey = cloudlet.Key
 	accessAPI := &accessapi.TestHandler{
 		AccessVars: map[string]string{
 			OS_PROJECT_NAME: os.Getenv(OS_PROJECT_NAME),
@@ -96,6 +98,15 @@ func TestOpenstackLive(t *testing.T) {
 	err = plat.InitHAConditional(ctx, pfConfig, cb)
 	require.Nil(t, err)
 
+	if false {
+		// test GetCloudletResources
+		res, err := plat.GetCloudletInfraResources(ctx)
+		require.Nil(t, err)
+		out, err := yaml.Marshal(res)
+		require.Nil(t, err)
+		fmt.Println(string(out))
+	}
+
 	devOrg := os.Getenv("USER")
 
 	dockerApp := &edgeproto.App{
@@ -121,11 +132,13 @@ func TestOpenstackLive(t *testing.T) {
 			Proto:        distributed_match_engine.LProto_L_PROTO_TCP,
 			InternalPort: 5678,
 			PublicPort:   5678,
+			Tls:          true,
 		}},
-		Uri:        os.Getenv("USER") + "-functest-dockerapp-uri",
-		UniqueId:   os.Getenv("USER") + "-functest-dockerapp-unique-id",
-		VmFlavor:   flavor,
-		EnableIpv6: false,
+		Uri:                  os.Getenv("USER") + "-functest-dockerapp-uri",
+		UniqueId:             os.Getenv("USER") + "-functest-dockerapp-unique-id",
+		VmFlavor:             flavor,
+		EnableIpv6:           false,
+		CompatibilityVersion: cloudcommon.GetAppInstCompatibilityVersion(),
 	}
 
 	if false {
@@ -140,7 +153,7 @@ func TestOpenstackLive(t *testing.T) {
 			Deployment: cloudcommon.DeploymentTypeDocker,
 			NodeFlavor: flavor,
 			IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
-			EnableIpv6: true,
+			EnableIpv6: false,
 		}
 		//err = plat.CreateClusterInst(ctx, dockerClusterInst, cb, 6*time.Minute)
 		//err = plat.UpdateClusterInst(ctx, dockerClusterInst, cb)
@@ -182,6 +195,16 @@ func TestOpenstackLive(t *testing.T) {
 			fmt.Println(err.Error())
 		}
 		require.Nil(t, err)
+
+		if false {
+			// check getting resources for cluster (IPs, etc).
+			res2, err := plat.GetClusterInfraResources(ctx, &k8sClusterInst.Key)
+			require.Nil(t, err)
+			out, err := yaml.Marshal(res2)
+			require.Nil(t, err)
+			fmt.Println(string(out))
+			return
+		}
 	}
 	if false {
 		dockerClusterInstD := &edgeproto.ClusterInst{
@@ -263,7 +286,8 @@ runcmd:
 				InternalPort: 5678,
 				PublicPort:   5678,
 			}},
-			EnableIpv6: true,
+			CompatibilityVersion: cloudcommon.GetAppInstCompatibilityVersion(),
+			EnableIpv6:           true,
 		}
 		vmClusterInst := edgeproto.ClusterInst{}
 		//err = plat.DeleteAppInst(ctx, &vmClusterInst, &vmApp, &appInst, cb)

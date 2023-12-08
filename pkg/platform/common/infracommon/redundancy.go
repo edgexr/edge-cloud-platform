@@ -42,14 +42,12 @@ func mapStateForSwitchover(ctx context.Context, state edgeproto.TrackedState) (e
 	case edgeproto.TrackedState_CREATING:
 		errorState = edgeproto.TrackedState_CREATE_ERROR
 		generateError = true
-		needsCleanup = true
 	case edgeproto.TrackedState_UPDATE_REQUESTED:
 		errorState = edgeproto.TrackedState_UPDATE_ERROR
 		generateError = true
 	case edgeproto.TrackedState_UPDATING:
 		errorState = edgeproto.TrackedState_UPDATE_ERROR
 		generateError = true
-		needsCleanup = true
 	case edgeproto.TrackedState_DELETE_REQUESTED:
 		errorState = edgeproto.TrackedState_DELETE_ERROR
 		generateError = true

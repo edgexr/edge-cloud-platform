@@ -852,6 +852,7 @@ func (s *OpenstackPlatform) SetServerProperty(ctx context.Context, name, propert
 func (s *OpenstackPlatform) createHeatStack(ctx context.Context, templateFile string, stackName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "create heat stack", "template", templateFile, "stackName", stackName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "create", "--template", templateFile, stackName)
+	//out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "create", "--dry-run", "--template", templateFile, stackName)
 	if err != nil {
 		return fmt.Errorf("error creating heat stack: %s, %s -- %v", templateFile, string(out), err)
 	}
@@ -861,6 +862,7 @@ func (s *OpenstackPlatform) createHeatStack(ctx context.Context, templateFile st
 func (s *OpenstackPlatform) updateHeatStack(ctx context.Context, templateFile string, stackName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "update heat stack", "template", templateFile, "stackName", stackName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "update", "--template", templateFile, stackName)
+	//out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "update", "--dry-run", "--template", templateFile, stackName)
 	if err != nil {
 		return fmt.Errorf("error udpating heat stack: %s -- %s, %v", templateFile, out, err)
 	}

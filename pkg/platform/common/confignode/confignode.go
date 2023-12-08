@@ -74,7 +74,7 @@ if [[ $download == true ]]; then
     wget "${wgetargs[@]}" -O vars.yaml {{ .AnsiblePublicAddr }}/confignode/vars.yaml
     run_update=true
     cp vars.yaml ansible/vars.yml
-	cat ansible/vars.yml
+    cat ansible/vars.yml
 fi
 if [[ ! -f ansible_run_ok ]]; then
     echo "Ansible has not succeeded, will run"
@@ -83,7 +83,7 @@ fi
 if [[ ${run_update} == true ]]; then
     echo "Running update"
     if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
-        ANSIBLE_PLAYBOOK_BIN=ansible-playbook
+        ANSIBLE_PLAYBOOK_BIN=/usr/local/bin/ansible-playbook
     fi
     if ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v; then
         touch ansible_run_ok

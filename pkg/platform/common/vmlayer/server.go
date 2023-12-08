@@ -250,7 +250,7 @@ func GetServerIPsByMAC(ctx context.Context, sd *ServerDetail) map[string]ServerI
 // network, it will not report any IPv6 link-local addresses that are
 // automatically assigned by the VM's operating system.
 func GetIPFromServerDetails(ctx context.Context, networkName string, portName string, sd *ServerDetail) (ServerIPs, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetIPFromServerDetails", "server", sd.Name, "networkName", networkName, "portName", portName, "serverDetail", sd)
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetIPFromServerDetails", "server", sd.Name, "networkName", networkName, "portName", portName)
 	var sips ServerIPs
 	netFound := [infracommon.NumIPTypes]bool{}
 	portFound := [infracommon.NumIPTypes]bool{}
@@ -350,12 +350,14 @@ func (v *VMPlatform) GetExternalIPFromServerName(ctx context.Context, serverName
 
 // NewProxyConfig creates a proxy config to be passed to the proxy code.
 // Listen addresses will proxy data to the destination addresses.
-func NewProxyConfig(listenIPs infracommon.IPs, destIPs ServerIPs) *proxy.ProxyConfig {
+func NewProxyConfig(listenIPs infracommon.IPs, destIPs ServerIPs, enableIPV6 bool) *proxy.ProxyConfig {
 	proxyConfig := &proxy.ProxyConfig{
-		ListenIP:   listenIPs.IPV4(),
-		ListenIPV6: listenIPs.IPV6(),
-		DestIP:     destIPs.IPV4ExternalAddr(),
-		DestIPV6:   destIPs.IPV6ExternalAddr(),
+		ListenIP: listenIPs.IPV4(),
+		DestIP:   destIPs.IPV4ExternalAddr(),
+	}
+	if enableIPV6 {
+		proxyConfig.ListenIPV6 = listenIPs.IPV6()
+		proxyConfig.DestIPV6 = destIPs.IPV6ExternalAddr()
 	}
 	return proxyConfig
 }

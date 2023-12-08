@@ -1168,16 +1168,21 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 	cctx.SetOverride(&in.CrmOverride)
 	fmap := edgeproto.MakeFieldMap(in.Fields)
 
+	if _, found := fmap[edgeproto.ClusterInstFieldEnableIpv6]; found && !in.EnableIpv6 {
+		err := s.checkDisableDisableIPV6(ctx, &in.Key)
+		if err != nil {
+			return err
+		}
+	}
+
 	clusterInstKey := in.Key
 	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, clusterInstKey.StreamKey(), inCb)
 
 	var inbuf edgeproto.ClusterInst
 	var changeCount int
-	var enableIPV6Changed bool
 	retry := false
 	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		changeCount = 0
-		enableIPV6Changed = false
 		if !s.store.STMGet(stm, &in.Key, &inbuf) {
 			return in.Key.NotFoundError()
 		}
@@ -1222,7 +1227,6 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 				if inbuf.Deployment == cloudcommon.DeploymentTypeKubernetes {
 					return fmt.Errorf("cannot change IPv6 setting on Kubernetes clusters")
 				}
-				enableIPV6Changed = true
 			}
 		}
 
@@ -1314,12 +1318,6 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 		"Updated ClusterInst successfully", cb.Send,
 		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
 	)
-	if err == nil {
-		s.updateCloudletResourcesMetric(ctx, &in.Key.CloudletKey)
-		if enableIPV6Changed {
-			s.updateAppInstEnableIPV6(ctx, &in.Key)
-		}
-	}
 	return err
 }
 
@@ -1338,30 +1336,34 @@ func (s *ClusterInstApi) updateCloudletResourcesMetric(ctx context.Context, key 
 }
 
 // update AppInst enable ipv6 setting to match clusterInst's setting
-func (s *ClusterInstApi) updateAppInstEnableIPV6(ctx context.Context, key *edgeproto.ClusterInstKey) {
+func (s *ClusterInstApi) checkDisableDisableIPV6(ctx context.Context, key *edgeproto.ClusterInstKey) error {
 	refs := edgeproto.ClusterRefs{}
 	if !s.all.clusterRefsApi.cache.Get(key, &refs) {
-		return
+		return nil
 	}
+	enabledAppInsts := []string{}
+
 	for _, aiRef := range refs.Apps {
 		aiKey := edgeproto.AppInstKey{}
 		aiKey.FromAppInstRefKey(&aiRef, &key.CloudletKey)
-		_ = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-			appInst := edgeproto.AppInst{}
-			if !s.all.appInstApi.store.STMGet(stm, &aiKey, &appInst) {
-				return nil // deleted in the meantime
+		appInst := edgeproto.AppInst{}
+		if s.all.appInstApi.cache.Get(&aiKey, &appInst) {
+			app := edgeproto.App{}
+			if s.all.appApi.cache.Get(&appInst.AppKey, &app) {
+				if len(appInst.MappedPorts) == 0 || app.InternalPorts {
+					// doesn't depend on IPv6 interface
+					continue
+				}
+				if appInst.EnableIpv6 {
+					enabledAppInsts = append(enabledAppInsts, appInst.Key.GetKeyString())
+				}
 			}
-			clusterInst := edgeproto.ClusterInst{}
-			if !s.store.STMGet(stm, key, &clusterInst) {
-				return nil // deleted in the meantime
-			}
-			if appInst.EnableIpv6 != clusterInst.EnableIpv6 {
-				appInst.EnableIpv6 = clusterInst.EnableIpv6
-				s.all.appInstApi.store.STMPut(stm, &appInst)
-			}
-			return nil
-		})
+		}
 	}
+	if len(enabledAppInsts) > 0 {
+		return fmt.Errorf("cannot disable IPv6 on cluster when AppInsts on cluster have it enabled: %s", strings.Join(enabledAppInsts, ", "))
+	}
+	return nil
 }
 
 func (s *ClusterInstApi) validateClusterInstUpdates(ctx context.Context, stm concurrency.STM, in *edgeproto.ClusterInst) error {

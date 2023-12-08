@@ -1332,7 +1332,7 @@ func (s *AppInstApi) updateAppInstStore(ctx context.Context, in *edgeproto.AppIn
 }
 
 // refreshAppInstInternal returns true if the appinst updated, false otherwise.  False value with no error means no update was needed
-func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.AppInstKey, appKey edgeproto.AppKey, inCb edgeproto.AppInstApi_RefreshAppInstServer, forceUpdate bool) (retbool bool, reterr error) {
+func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.AppInstKey, appKey edgeproto.AppKey, inCb edgeproto.AppInstApi_RefreshAppInstServer, forceUpdate, vmAppIpv6Enabled bool) (retbool bool, reterr error) {
 	ctx := inCb.Context()
 	log.SpanLog(ctx, log.DebugLevelApi, "refreshAppInstInternal", "key", key)
 
@@ -1412,6 +1412,9 @@ func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.App
 			UpdateAppInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
 			"", cb.Send, edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
 		)
+		if vmAppIpv6Enabled {
+			cb.Send(&edgeproto.Result{Message: "IPv6 enabled, you may need to manually update the network configuration on your VM"})
+		}
 	}
 	if err != nil {
 		return false, err
@@ -1474,10 +1477,11 @@ func (s *AppInstApi) RefreshAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstA
 		cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Updating: %d AppInsts", len(instances))})
 	}
 
+	vmAppIpv6Enabled := false
 	for instkey, _ := range instances {
 		go func(k edgeproto.AppInstKey) {
 			log.SpanLog(ctx, log.DebugLevelApi, "updating AppInst", "key", k)
-			updated, err := s.refreshAppInstInternal(DefCallContext(), k, appKey, cb, in.ForceUpdate)
+			updated, err := s.refreshAppInstInternal(DefCallContext(), k, appKey, cb, in.ForceUpdate, vmAppIpv6Enabled)
 			if err == nil {
 				instanceUpdateResults[k] <- updateResult{errString: "", revisionUpdated: updated}
 			} else {
@@ -1560,20 +1564,21 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 
 	cur := edgeproto.AppInst{}
 	changeCount := 0
+	vmAppIpv6Enabled := false
 	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		if !s.store.STMGet(stm, &in.Key, &cur) {
 			return in.Key.NotFoundError()
 		}
 		var app edgeproto.App
-		if !s.all.appApi.store.STMGet(stm, &in.AppKey, &app) {
+		if !s.all.appApi.store.STMGet(stm, &cur.AppKey, &app) {
 			return in.AppKey.NotFoundError()
 		}
 		if _, found := fmap[edgeproto.AppInstFieldEnableIpv6]; found {
 			if cloudcommon.IsClusterInstReqd(&app) {
 				// ipv6 setting is based on clusterInst setting
 				clusterInst := edgeproto.ClusterInst{}
-				if !s.all.clusterInstApi.store.STMGet(stm, in.ClusterInstKey(), &clusterInst) {
-					return in.ClusterInstKey().NotFoundError()
+				if !s.all.clusterInstApi.store.STMGet(stm, cur.ClusterInstKey(), &clusterInst) {
+					return cur.ClusterInstKey().NotFoundError()
 				}
 				if in.EnableIpv6 && !clusterInst.EnableIpv6 {
 					return fmt.Errorf("cannot enable IPv6 when cluster does not have it enabled, please enable on cluster first")
@@ -1590,6 +1595,9 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 				}
 				if in.EnableIpv6 && !features.SupportsIpv6 {
 					return fmt.Errorf("cloudlet platform does not support IPv6")
+				}
+				if in.EnableIpv6 && !cur.EnableIpv6 {
+					vmAppIpv6Enabled = true
 				}
 			}
 		}
@@ -1618,7 +1626,7 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 		return nil
 	}
 	forceUpdate := true
-	_, err = s.refreshAppInstInternal(cctx, in.Key, in.AppKey, cb, forceUpdate)
+	_, err = s.refreshAppInstInternal(cctx, in.Key, cur.AppKey, cb, forceUpdate, vmAppIpv6Enabled)
 	return err
 }
 

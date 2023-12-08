@@ -126,12 +126,16 @@ func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client s
 
 	// Allow SSH from provided cidrs
 	for _, netCidr := range sshCidrsAllowed {
+		ipversion, err := infracommon.GetCIDRIPVersion(ctx, netCidr)
+		if err != nil {
+			return err
+		}
 		sshIngress := infracommon.FirewallRule{
 			Protocol:     "tcp",
 			RemoteCidr:   netCidr,
 			PortRange:    "22",
 			PortEndpoint: infracommon.DestPort,
-			IPVersion:    infracommon.GetCIDRIPVersion(ctx, netCidr),
+			IPVersion:    ipversion,
 		}
 		netRules.IngressRules = append(netRules.IngressRules, sshIngress)
 	}
@@ -189,12 +193,16 @@ func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client s
 		if p.PortRangeMax != 0 {
 			portRange += fmt.Sprintf(":%d", p.PortRangeMax)
 		}
+		ipversion, err := infracommon.GetCIDRIPVersion(ctx, p.RemoteCidr)
+		if err != nil {
+			return err
+		}
 		egressRule := infracommon.FirewallRule{
 			Protocol:     p.Protocol,
 			PortRange:    portRange,
 			RemoteCidr:   p.RemoteCidr,
 			PortEndpoint: infracommon.DestPort,
-			IPVersion:    infracommon.GetCIDRIPVersion(ctx, p.RemoteCidr),
+			IPVersion:    ipversion,
 		}
 		ppRules.EgressRules = append(ppRules.EgressRules, egressRule)
 	}

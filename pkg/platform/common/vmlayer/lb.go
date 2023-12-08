@@ -408,7 +408,7 @@ func (v *VMPlatform) GetVMSpecForSharedRootLBPorts(ctx context.Context, rootLbNa
 }
 
 // CreateOrUpdateRootLB creates or updates the rootLB
-func (v *VMPlatform) CreateOrUpdateRootLB(
+func (v *VMPlatform) CreateRootLB(
 	ctx context.Context, rootLBName string,
 	cloudletKey *edgeproto.CloudletKey,
 	imgPath, imgVersion string,
@@ -425,21 +425,62 @@ func (v *VMPlatform) CreateOrUpdateRootLB(
 	}
 	var vms []*VMRequestSpec
 	vms = append(vms, vmreq)
-	_, err = v.OrchestrateVMsFromVMSpec(ctx,
+	gp, err := v.OrchestrateVMsFromVMSpec(ctx,
 		rootLBName,
 		vms,
 		action,
 		updateCallback,
 		WithNewSecurityGroup(infracommon.GetServerSecurityGroupName(rootLBName)),
 		WithEnableIPV6(v.VMProperties.CloudletEnableIPV6),
+		WithUseExistingVMs(true), // avoid destroying the rootLB if it already exists
 	)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "error while creating RootLB VM", "name", rootLBName, "error", err)
 		return err
 	}
+	if action == ActionUpdate {
+		// new ports created due to new networks may not have been added to the
+		// rootLB since we use the existing VMs. Make sure all rootLB ports
+		// are attached here. Note this does not include ports to connect to
+		// ClusterInsts, as those ports as defined as part of the ClusterInst
+		// orchestration group.
+		err = v.attachRootLBExternalPorts(ctx, rootLBName, gp, action)
+		if err != nil {
+			return err
+		}
+	}
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "done creating rootlb", "name", rootLBName)
 	return nil
 
+}
+
+func (v *VMPlatform) attachRootLBExternalPorts(ctx context.Context, rootLBName string, gp *VMGroupOrchestrationParams, action ActionType) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "attachRootLBExternalPorts", "rootLBName", rootLBName)
+	rootLBPorts := make(map[string]struct{})
+	for _, vm := range gp.VMs {
+		if vm.Name != rootLBName {
+			continue
+		}
+		for _, port := range vm.Ports {
+			rootLBPorts[port.Name] = struct{}{}
+		}
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "ensuring ports are attached to rootLB", "server", rootLBName, "ports", rootLBPorts)
+	for _, port := range gp.Ports {
+		if _, found := rootLBPorts[port.Name]; !found {
+			continue
+		}
+		ips := infracommon.IPs{}
+		for _, fixedip := range port.FixedIPs {
+			ips[infracommon.IPIndexOf(fixedip.IPVersion)] = fixedip.Address
+		}
+		err := v.VMProvider.AttachPortToServer(ctx, rootLBName, port.SubnetIds, port.Name, ips, action)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // SetupRootLB prepares the RootLB.
@@ -561,7 +602,7 @@ func (v *VMPlatform) SetupRootLB(
 		log.SpanLog(ctx, log.DebugLevelInfra, "skipping install of resource tracker")
 	} else {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Copy resource-tracker to rootLb", "rootLb", rootLBName)
-		err = CopyResourceTracker(client)
+		err = CopyResourceTracker(ctx, client)
 		if err != nil {
 			return fmt.Errorf("cannot copy resource-tracker to rootLb %v", err)
 		}
@@ -638,10 +679,18 @@ func (v *VMPlatform) SetupRootLB(
 }
 
 // This function copies resource-tracker from crm to rootLb - we need this to provide docker metrics
-func CopyResourceTracker(client ssh.Client) error {
+func CopyResourceTracker(ctx context.Context, client ssh.Client) error {
 	path, err := exec.LookPath("resource-tracker")
 	if err != nil {
 		return err
+	}
+	out, err := client.Output("md5sum /usr/local/bin/resource-tracker")
+	if err == nil {
+		sum, err := cloudcommon.Md5SumFile(path)
+		if err == nil && sum == strings.Fields(out)[0] {
+			log.SpanLog(ctx, log.DebugLevelInfra, "resource-tracker already present on remote", "md5sum", sum)
+			return nil
+		}
 	}
 	err = infracommon.SCPFilePath(client, path, "/tmp/resource-tracker")
 	if err != nil {

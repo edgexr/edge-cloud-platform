@@ -295,6 +295,7 @@ type VMGroupRequestSpec struct {
 	SkipCleanupOnFailure          bool
 	AntiAffinity                  bool
 	AntiAffinityEnabledInCloudlet bool
+	UseExistingVMs                bool
 }
 
 type VMGroupReqOp func(vmp *VMGroupRequestSpec) error
@@ -368,6 +369,12 @@ func WithSkipCleanupOnFailure(skip bool) VMGroupReqOp {
 func WithAntiAffinity(anti bool) VMGroupReqOp {
 	return func(s *VMGroupRequestSpec) error {
 		s.AntiAffinity = anti
+		return nil
+	}
+}
+func WithUseExistingVMs(useExistingVMs bool) VMGroupReqOp {
+	return func(s *VMGroupRequestSpec) error {
+		s.UseExistingVMs = useExistingVMs
 		return nil
 	}
 }
@@ -588,6 +595,7 @@ type VMOrchestrationParams struct {
 	VmAppOsType             edgeproto.VmAppOsType
 	Routes                  map[string][]edgeproto.Route // map of network name to routes
 	ExistingVm              bool
+	ExistingData            interface{}
 }
 
 // VMGroupOrchestrationParams contains all the details used by the orchestator to create a set of associated VMs
@@ -610,6 +618,7 @@ type VMGroupOrchestrationParams struct {
 	AntiAffinitySpecified         bool
 	AntiAffinityEnabledInCloudlet bool
 	EnableIPV6                    bool
+	UseExistingVMs                bool
 }
 
 // connectsToSharedRootLB detects if the request spec is connecting to a shared rootLb.  To determine
@@ -687,6 +696,7 @@ func (v *VMPlatform) GetVMGroupOrchestrationParamsFromVMSpec(ctx context.Context
 		SkipCleanupOnFailure:  spec.SkipCleanupOnFailure,
 		AntiAffinitySpecified: spec.AntiAffinity,
 		EnableIPV6:            spec.EnableIPV6,
+		UseExistingVMs:        spec.UseExistingVMs,
 	}
 	vmgp.AntiAffinityEnabledInCloudlet = v.VMProperties.GetEnableAntiAffinity()
 

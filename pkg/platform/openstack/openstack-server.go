@@ -53,12 +53,23 @@ func (o *OpenstackPlatform) GetServerDetail(ctx context.Context, serverName stri
 		log.SpanLog(ctx, log.DebugLevelInfra, "unable to update server IPs", "sd", sd, "err", err)
 		return &sd, fmt.Errorf("unable to update server IPs -- %v", err)
 	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "got server details", "serverDetails", sd)
 	return &sd, nil
 }
 
 // UpdateServerIPs gets the ServerIPs for the given network from the addresses and ports
 func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses map[string][]string, ports []OSPort, serverDetail *vmlayer.ServerDetail) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateServerIPs", "addresses", addresses, "serverDetail", serverDetail, "ports", ports)
+
+	// get floating IPs
+	floatingIPs, err := o.ListFloatingIPs(ctx, "")
+	if err != nil {
+		return err
+	}
+	floatingIPLookup := make(map[string]OSFloatingIP)
+	for _, fip := range floatingIPs {
+		floatingIPLookup[fip.FloatingIPAddress] = fip
+	}
 
 	// cache network lookups
 	networksByName := make(map[string]*vmlayer.NetworkDetail)
@@ -138,6 +149,13 @@ func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses map[s
 			if _, found := fixedIPs[addr]; found {
 				continue
 			}
+			if _, found := floatingIPLookup[addr]; !found {
+				// this can happen when a port is removed, the fixed IPs
+				// on the port aren't removed from the server addresses.
+				log.SpanLog(ctx, log.DebugLevelInfra, "server address not found on fixed or floating IPs, may be from removed port, ignoring", "addr", addr)
+				continue
+			}
+
 			// must be floating IP
 			addr = strings.TrimSpace(addr)
 			ipaddr, err := netip.ParseAddr(addr)
@@ -166,7 +184,6 @@ func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses map[s
 		}
 	}
 	serverDetail.Networks = networksByName
-	log.SpanLog(ctx, log.DebugLevelInfra, "Updated ServerIPs", "serverDetail", serverDetail)
 	return nil
 }
 
@@ -418,9 +435,7 @@ func (o *OpenstackPlatform) GetServerGroupResources(ctx context.Context, name st
 			log.SpanLog(ctx, log.DebugLevelInfra, "unable to find server name in map", "vmNameStr", vmNameStr)
 			continue
 		}
-		var ports []OSPort
-		var sd vmlayer.ServerDetail
-		err = o.UpdateServerIPs(ctx, svr.Networks, ports, &sd)
+		sd, err := o.GetServerDetail(ctx, vmNameStr)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "fail to get server IPs", "vmNameStr", vmNameStr, "networks", svr.Networks, "err", err)
 			continue
@@ -435,6 +450,7 @@ func (o *OpenstackPlatform) GetServerGroupResources(ctx context.Context, name st
 			vmlayer.NetworkTypeExternalAdditionalRootLb,
 			vmlayer.NetworkTypeExternalAdditionalClusterNode,
 			vmlayer.NetworkTypeExternalPrimary,
+			vmlayer.NetworkTypeExternalSecondary,
 		}
 		externalNetMap := o.VMProperties.GetNetworksByType(ctx, netTypes)
 		for _, sip := range sd.Addresses {

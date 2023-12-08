@@ -67,7 +67,7 @@ type ClusterFlavor struct {
 var MaxDockerVmWait = 2 * time.Minute
 
 func (v *VMPlatform) GetClusterSubnetName(ctx context.Context, clusterInst *edgeproto.ClusterInst) SubnetNames {
-	subnetName := k8smgmt.GetCloudletClusterName(&clusterInst.Key)
+	subnetName := MexSubnetPrefix + k8smgmt.GetCloudletClusterName(&clusterInst.Key)
 	subnetNames := SubnetNames{}
 	subnetNames[infracommon.IndexIPV4] = subnetName
 	subnetNames[infracommon.IndexIPV6] = subnetName + "-ipv6"
@@ -90,7 +90,7 @@ func GetClusterMasterNameFromNodeList(ctx context.Context, client ssh.Client, cl
 	cmd := fmt.Sprintf("KUBECONFIG=%s kubectl get nodes --no-headers -l node-role.kubernetes.io/master -o custom-columns=Name:.metadata.name", kconfName)
 	out, err := client.Output(cmd)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("run kubectl command failed, %q, %s, %s", cmd, out, err)
 	}
 	nodes := strings.Split(strings.TrimSpace(out), "\n")
 	if len(nodes) > 0 {
@@ -154,8 +154,24 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 	nodeUpdateAction := make(map[string]string)
 	masterTaintAction := k8smgmt.NoScheduleMasterTaintNone
 	var masterNodeName string
+	taintKubernetesNodes := false
 
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes {
+		var err error
+		kconfName := k8smgmt.GetKconfName(clusterInst)
+		_, err = client.Output("ls " + kconfName)
+		if err != nil {
+			// kubeconfig is missing, this can happen if the rootLB was rebuilt.
+			// In this case, rootLB is probably also missing the interface to be
+			// able to reach the cluster nodes. Skip tainting so later steps
+			// can restore the state on the rootLB.
+			log.SpanLog(ctx, log.DebugLevelInfra, "kubeconfig on rootLB, skipping kubernetes clusterInst tainting during update", "rootLB", rootLBName, "kubeconfig", kconfName)
+		} else {
+			taintKubernetesNodes = true
+		}
+	}
+	if taintKubernetesNodes {
+		log.SpanLog(ctx, log.DebugLevelInfra, "checking for kubernetes nodes to taint for scale down", "cluster", clusterInst.Key)
 		var err error
 		masterNodeName, err = GetClusterMasterNameFromNodeList(ctx, client, clusterInst)
 		if err != nil {

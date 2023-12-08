@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -32,6 +32,12 @@ func CopyKubeConfig(ctx context.Context, rootLBClient ssh.Client, clusterInst *e
 	client, err := rootLBClient.AddHop(masterIP, 22)
 	if err != nil {
 		return err
+	}
+	_, err = client.Output("ls " + kconfname)
+	if err == nil {
+		// already exists
+		log.SpanLog(ctx, log.DebugLevelInfra, "kubeconfig already exists on rootLB")
+		return nil
 	}
 
 	// fetch kubeconfig from master node
