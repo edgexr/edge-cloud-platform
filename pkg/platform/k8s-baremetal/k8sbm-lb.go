@@ -18,9 +18,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -57,7 +57,7 @@ func (k *K8sBareMetalPlatform) SetupLb(ctx context.Context, client ssh.Client, l
 	if err != nil {
 		return err
 	}
-	if err = k.commonPf.ActivateFQDNA(ctx, lbname, externalIp); err != nil {
+	if err = k.commonPf.ActivateFQDN(ctx, lbname, externalIp, infracommon.IPV4); err != nil {
 		return err
 	}
 	return nil

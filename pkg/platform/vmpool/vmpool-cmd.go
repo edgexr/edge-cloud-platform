@@ -22,6 +22,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -142,12 +143,12 @@ func (s *VMPoolPlatform) DeleteImage(ctx context.Context, folder, imageName stri
 	return nil
 }
 
-func (s *VMPoolPlatform) AttachPortToServer(ctx context.Context, serverName, subnetName, portName, ipaddr string, action vmlayer.ActionType) error {
+func (s *VMPoolPlatform) AttachPortToServer(ctx context.Context, serverName string, subnetNames vmlayer.SubnetNames, portName string, ips infracommon.IPs, action vmlayer.ActionType) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer not supported")
 	return nil
 }
 
-func (s *VMPoolPlatform) DetachPortFromServer(ctx context.Context, serverName, subnetName string, portName string) error {
+func (s *VMPoolPlatform) DetachPortFromServer(ctx context.Context, serverName string, subnetNames vmlayer.SubnetNames, portName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer not supported")
 	return nil
 }

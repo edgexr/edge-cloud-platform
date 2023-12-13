@@ -121,7 +121,7 @@ func (k *K8sBareMetalPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edg
 			return fmt.Errorf("unexpected error getting ip address from netplan for lb: %s - %v", sharedLbName, err)
 		}
 	} else {
-		err = k.RemoveIp(ctx, sshClient, addr, externalDev, sharedLbName)
+		err = k.RemoveIp(ctx, sshClient, addr.IPV4(), externalDev, sharedLbName)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "remove IP failed", "addr", addr, "err", err)
 			return fmt.Errorf("failed to remove shared LB IP: %s - %v", addr, err)

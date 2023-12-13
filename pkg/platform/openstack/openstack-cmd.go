@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/netip"
 	"regexp"
 	"strings"
 	"time"
@@ -363,10 +364,10 @@ func (s *OpenstackPlatform) GetOpenstackServerDetails(ctx context.Context, name 
 	srvDetail := &OSServerDetail{}
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "show", "-f", "json", name)
 	if err != nil {
-		if strings.Contains(string(out), "No server with a name or ID") {
+		if strings.Contains(string(out), "No server with a name or ID") || strings.Contains(string(out), "No Server found for") {
 			err = fmt.Errorf("%s -- can't show server %s, %s, %v", vmlayer.ServerDoesNotExistError, name, out, err)
 		}
-		return nil, err
+		return nil, fmt.Errorf("can't get server detail, %s, %s", string(out), err)
 	}
 	//fmt.Printf("%s\n", out)
 	err = json.Unmarshal(out, srvDetail)
@@ -397,12 +398,9 @@ func (s *OpenstackPlatform) GetPortDetails(ctx context.Context, name string) (*O
 }
 
 // AttachPortToServer attaches a port to a server
-func (s *OpenstackPlatform) AttachPortToServer(ctx context.Context, serverName, subnetName, portName, ipaddr string, action vmlayer.ActionType) error {
+func (s *OpenstackPlatform) AttachPortToServer(ctx context.Context, serverName string, subnetNames vmlayer.SubnetNames, portName string, ips infracommon.IPs, action vmlayer.ActionType) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer", "serverName", serverName, "portName", portName)
 
-	if action != vmlayer.ActionCreate {
-		return nil
-	}
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "add", "port", serverName, portName)
 	if err != nil {
 		if strings.Contains(string(out), "still in use") {
@@ -418,7 +416,7 @@ func (s *OpenstackPlatform) AttachPortToServer(ctx context.Context, serverName, 
 }
 
 // DetachPortFromServer removes a port from a server
-func (s *OpenstackPlatform) DetachPortFromServer(ctx context.Context, serverName, subnetName string, portName string) error {
+func (s *OpenstackPlatform) DetachPortFromServer(ctx context.Context, serverName string, subnetNames vmlayer.SubnetNames, portName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer", "serverName", serverName, "portName", portName)
 
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "remove", "port", serverName, portName)
@@ -759,8 +757,67 @@ func (s *OpenstackPlatform) GetSubnetDetail(ctx context.Context, subnetName stri
 	return subnetDetail, nil
 }
 
+func infracommonIPVersion(osIPVersion int) infracommon.IPVersion {
+	if osIPVersion == 6 {
+		return infracommon.IPV6
+	}
+	return infracommon.IPV4
+}
+
+func (o *OpenstackPlatform) GetNetworkDetail(ctx context.Context, networkName string) (*vmlayer.NetworkDetail, error) {
+	osnd, err := o.GetOSNetworkDetail(ctx, networkName)
+	if err != nil {
+		return nil, err
+	}
+	nd := vmlayer.NetworkDetail{
+		ID:     osnd.ID,
+		Name:   osnd.Name,
+		Status: osnd.Status,
+	}
+	for _, subnetID := range osnd.Subnets {
+		ossd, err := o.GetSubnetDetail(ctx, subnetID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get subnet %s details, %s", subnetID, err)
+		}
+		subnetDetail, err := o.GetVMSubnetDetail(ctx, ossd)
+		if err != nil {
+			return nil, err
+		}
+		nd.Subnets = append(nd.Subnets, *subnetDetail)
+	}
+	return &nd, nil
+}
+
+func (o *OpenstackPlatform) GetVMSubnetDetail(ctx context.Context, ossd *OSSubnetDetail) (*vmlayer.SubnetDetail, error) {
+	prefix, err := netip.ParsePrefix(ossd.CIDR)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse subnet CIDR %s, %s", ossd.CIDR, err)
+	}
+	sd := &vmlayer.SubnetDetail{
+		ID:         ossd.ID,
+		Name:       ossd.Name,
+		IPVersion:  infracommonIPVersion(ossd.IPVersion),
+		DHCP:       ossd.EnableDHCP,
+		CIDR:       prefix,
+		DNSServers: ossd.DNSNameServers,
+		GatewayIP:  ossd.GatewayIP,
+	}
+	if ossd.IPv6AddressMode == "slaac" {
+		sd.DHCP = false
+		sd.SLAAC = true
+	}
+	for _, pool := range ossd.AllocationPools {
+		iprange := vmlayer.SubnetIPRange{
+			Start: pool.Start,
+			End:   pool.End,
+		}
+		sd.SubnetIPRanges = append(sd.SubnetIPRanges, iprange)
+	}
+	return sd, nil
+}
+
 //GetNetworkDetail returns details about a network.  It is used, for example, by GetExternalGateway.
-func (s *OpenstackPlatform) GetNetworkDetail(ctx context.Context, networkName string) (*OSNetworkDetail, error) {
+func (s *OpenstackPlatform) GetOSNetworkDetail(ctx context.Context, networkName string) (*OSNetworkDetail, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "network", "show", "-f", "json", networkName)
 	if err != nil {
 		err = fmt.Errorf("can't get details for network %s, %s, %v", networkName, out, err)
@@ -795,6 +852,7 @@ func (s *OpenstackPlatform) SetServerProperty(ctx context.Context, name, propert
 func (s *OpenstackPlatform) createHeatStack(ctx context.Context, templateFile string, stackName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "create heat stack", "template", templateFile, "stackName", stackName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "create", "--template", templateFile, stackName)
+	//out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "create", "--dry-run", "--template", templateFile, stackName)
 	if err != nil {
 		return fmt.Errorf("error creating heat stack: %s, %s -- %v", templateFile, string(out), err)
 	}
@@ -804,6 +862,7 @@ func (s *OpenstackPlatform) createHeatStack(ctx context.Context, templateFile st
 func (s *OpenstackPlatform) updateHeatStack(ctx context.Context, templateFile string, stackName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "update heat stack", "template", templateFile, "stackName", stackName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "update", "--template", templateFile, stackName)
+	//out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "update", "--dry-run", "--template", templateFile, stackName)
 	if err != nil {
 		return fmt.Errorf("error udpating heat stack: %s -- %s, %v", templateFile, out, err)
 	}

@@ -21,13 +21,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -187,7 +187,11 @@ func (s *ShepherdPlatform) GetClusterIP(ctx context.Context, clusterInst *edgepr
 	if result == vmlayer.OperationNewlyInitialized {
 		defer s.VMPlatform.VMProvider.InitOperationContext(ctx, vmlayer.OperationInitComplete)
 	}
-	return s.VMPlatform.GetClusterAccessIP(ctx, clusterInst)
+	sips, err := s.VMPlatform.GetClusterAccessIP(ctx, clusterInst)
+	if err != nil {
+		return "", err
+	}
+	return sips.IPV4ExternalAddr(), nil
 }
 
 func (s *ShepherdPlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {

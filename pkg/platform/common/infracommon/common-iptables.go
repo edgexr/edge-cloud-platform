@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/netip"
 	"regexp"
 	"strings"
 
@@ -47,7 +48,24 @@ const DestPort PortSourceOrDestChoice = "dport"
 
 const TrustPolicySecGrpNameLabel string = "trust-policy"
 
+const (
+	IPTablesBin         = "iptables"
+	IP6TablesBin        = "ip6tables"
+	IPTablesSaveBin     = "iptables-save"
+	IP6TablesSaveBin    = "ip6tables-save"
+	IPTablesPersistCmd  = "iptables-save > /etc/iptables/rules.v4"
+	IP6TablesPersistCmd = "ip6tables-save > /etc/iptables/rules.v6"
+)
+
+type IPVersion string
+
+const (
+	IPV4 IPVersion = "ipv4"
+	IPV6 IPVersion = "ipv6"
+)
+
 type FirewallRule struct {
+	IPVersion    IPVersion
 	Protocol     string
 	RemoteCidr   string
 	PortRange    string
@@ -58,31 +76,59 @@ type FirewallRule struct {
 	DestIP       string
 }
 
+func GetCIDRIPVersion(ctx context.Context, cidr string) (IPVersion, error) {
+	prefix, err := netip.ParsePrefix(cidr)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to parse cidr, assume ipv4", "cidr", cidr, "err", err)
+		return IPV4, fmt.Errorf("failed to parse cidr %s, %s", cidr, err)
+	}
+	if prefix.Addr().Is6() {
+		return IPV6, nil
+	}
+	return IPV4, nil
+}
+
+func GetAddrIPVersion(ctx context.Context, addr string) (IPVersion, error) {
+	netAddr, err := netip.ParseAddr(addr)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to parse addr, assume ipv4", "addr", addr, "err", err)
+		return IPV4, fmt.Errorf("failed to parse address %s, %s", addr, err)
+	}
+	if netAddr.Is6() {
+		return IPV6, nil
+	}
+	return IPV4, nil
+}
+
 // DoIptablesCommand runs an iptables add or delete conditionally based on whether the entry already exists or not
-func DoIptablesCommand(ctx context.Context, client ssh.Client, rule string, ruleExists bool, action *InterfaceActionsOp) error {
+func DoIptablesCommand(ctx context.Context, client ssh.Client, rule string, ruleExists bool, action *InterfaceActionsOp, ipversion IPVersion) error {
 	runCommand := false
 	if ruleExists {
 		if action.DeleteIptables {
-			log.SpanLog(ctx, log.DebugLevelInfra, "deleting existing iptables rule", "rule", rule)
+			log.SpanLog(ctx, log.DebugLevelInfra, "deleting existing iptables rule", "ipversion", ipversion, "rule", rule)
 			runCommand = true
 		} else {
-			log.SpanLog(ctx, log.DebugLevelInfra, "do not re-add existing iptables rule", "rule", rule)
+			log.SpanLog(ctx, log.DebugLevelInfra, "do not re-add existing iptables rule", "ipversion", ipversion, "rule", rule)
 		}
 	} else {
 		if action.CreateIptables {
-			log.SpanLog(ctx, log.DebugLevelInfra, "adding new iptables rule", "rule", rule)
+			log.SpanLog(ctx, log.DebugLevelInfra, "adding new iptables rule", "ipversion", ipversion, "rule", rule)
 			runCommand = true
 		} else {
-			log.SpanLog(ctx, log.DebugLevelInfra, "do not delete nonexistent iptables rule", "rule", rule)
+			log.SpanLog(ctx, log.DebugLevelInfra, "do not delete nonexistent iptables rule", "ipversion", ipversion, "rule", rule)
 		}
 	}
 
 	if runCommand {
-		log.SpanLog(ctx, log.DebugLevelInfra, "running iptables command", "rule", rule)
-		cmd := fmt.Sprintf("sudo iptables %s", rule)
+		log.SpanLog(ctx, log.DebugLevelInfra, "running iptables command", "ipversion", ipversion, "rule", rule)
+		exe := IPTablesBin
+		if ipversion == IPV6 {
+			exe = IP6TablesBin
+		}
+		cmd := fmt.Sprintf("sudo %s %s", exe, rule)
 		out, err := client.Output(cmd)
 		if err != nil {
-			return fmt.Errorf("unable to modify iptables rule: %s, %s - %v", rule, out, err)
+			return fmt.Errorf("unable to modify iptables rule: %s, %s - %v", cmd, out, err)
 		}
 	}
 	return nil
@@ -114,6 +160,15 @@ func parseFirewallRules(ctx context.Context, ruleString string) ([]FirewallRule,
 			key = strings.TrimSpace(key)
 
 			switch key {
+			case "ipversion":
+				switch val {
+				case string(IPV4):
+					firewallRule.IPVersion = IPV4
+				case string(IPV6):
+					firewallRule.IPVersion = IPV6
+				default:
+					return nil, fmt.Errorf("invalid ipversion %s, must be %s or %s", val, IPV4, IPV6)
+				}
 			case "protocol":
 				firewallRule.Protocol = val
 			case "remotecidr":
@@ -142,6 +197,13 @@ func parseFirewallRules(ctx context.Context, ruleString string) ([]FirewallRule,
 	return firewallRules, nil
 }
 
+func isRemoteCIDRAllIPs(rule *FirewallRule) bool {
+	if rule.RemoteCidr == "0.0.0.0/0" || rule.RemoteCidr == "::/0" {
+		return true
+	}
+	return false
+}
+
 // getIpTablesEntryForRule gets the iptables string for the rule
 func getIpTablesEntriesForRule(ctx context.Context, direction string, label string, rule *FirewallRule) []string {
 	log.SpanLog(ctx, log.DebugLevelInfra, "getIpTablesEntriesForRule", "rule", rule)
@@ -157,12 +219,12 @@ func getIpTablesEntriesForRule(ctx context.Context, direction string, label stri
 	}
 	if direction == "egress" {
 		chains = append(chains, "OUTPUT", "FORWARD")
-		if rule.RemoteCidr != "0.0.0.0/0" {
+		if !isRemoteCIDRAllIPs(rule) {
 			cidrStr = "-d " + rule.RemoteCidr
 		}
 	} else {
 		chains = append(chains, "INPUT")
-		if rule.RemoteCidr != "0.0.0.0/0" {
+		if !isRemoteCIDRAllIPs(rule) {
 			cidrStr = "-s " + rule.RemoteCidr
 		}
 	}
@@ -187,7 +249,11 @@ func getIpTablesEntriesForRule(ctx context.Context, direction string, label stri
 	}
 	destStr := ""
 	if rule.DestIP != "" {
-		destStr = "-d " + rule.DestIP + "/32"
+		if rule.IPVersion == IPV6 {
+			destStr = "-d " + rule.DestIP + "/128"
+		} else {
+			destStr = "-d " + rule.DestIP + "/32"
+		}
 	}
 	conntrackStr := ""
 	if rule.Conntrack != "" {
@@ -228,19 +294,51 @@ func (c *CommonPlatform) DeleteCloudletFirewallRules(ctx context.Context, client
 	return DeleteIptablesRules(ctx, client, "cloudlet-wide", &firewallRules)
 }
 
+type IptablesRules struct {
+	rulesIPV4 map[string]string
+	rulesIPV6 map[string]string
+}
+
+func (s *IptablesRules) forRuleVersion(rule *FirewallRule) map[string]string {
+	switch rule.IPVersion {
+	case IPV4:
+		return s.rulesIPV4
+	case IPV6:
+		return s.rulesIPV6
+	}
+	return nil
+}
+
 // getCurrentIptableRulesForLabel retrieves the current rules matching the label
-func getCurrentIptableRulesForLabel(ctx context.Context, client ssh.Client, label string) (map[string]string, error) {
+func getCurrentIptableRulesForLabel(ctx context.Context, client ssh.Client, label string) (*IptablesRules, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "getCurrentIptableRulesForLabel", "label", label)
 
-	rules := make(map[string]string)
+	currentRules := IptablesRules{}
+	rulesipv4, err := getCurrentIptableRulesForLabelAF(ctx, client, IPV4, label)
+	if err != nil {
+		return nil, err
+	}
+	rulesipv6, err := getCurrentIptableRulesForLabelAF(ctx, client, IPV6, label)
+	if err != nil {
+		return nil, err
+	}
+	currentRules.rulesIPV4 = rulesipv4
+	currentRules.rulesIPV6 = rulesipv6
+	return &currentRules, nil
+}
 
-	cmd := fmt.Sprintf("sudo iptables-save")
+func getCurrentIptableRulesForLabelAF(ctx context.Context, client ssh.Client, ipversion IPVersion, label string) (map[string]string, error) {
+	cmd := "sudo " + IPTablesSaveBin
+	if ipversion == IPV6 {
+		cmd = "sudo " + IP6TablesSaveBin
+	}
 	out, err := client.Output(cmd)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to run iptables-save to get current rules: %s - %v", out, err)
+		return nil, fmt.Errorf("Failed to run %s to get current rules: %s - %v", cmd, out, err)
 	}
 	lines := strings.Split(out, "\n")
 
+	rules := make(map[string]string)
 	for _, line := range lines {
 		if label == "" {
 			if strings.HasPrefix(line, "-A") {
@@ -264,7 +362,7 @@ func addIptablesRule(ctx context.Context, client ssh.Client, direction string, l
 		findCmd := "-A " + entry
 		_, exists := currentRules[findCmd]
 		action := InterfaceActionsOp{CreateIptables: true}
-		err := DoIptablesCommand(ctx, client, addCmd, exists, &action)
+		err := DoIptablesCommand(ctx, client, addCmd, exists, &action, rule.IPVersion)
 		if err != nil {
 			return err
 		}
@@ -281,7 +379,7 @@ func removeIptablesRule(ctx context.Context, client ssh.Client, direction string
 		delCmd := "-D " + entry
 		_, exists := currentRules[findCmd]
 		action := InterfaceActionsOp{DeleteIptables: true}
-		err := DoIptablesCommand(ctx, client, delCmd, exists, &action)
+		err := DoIptablesCommand(ctx, client, delCmd, exists, &action, rule.IPVersion)
 		if err != nil {
 			return err
 		}
@@ -292,74 +390,91 @@ func removeIptablesRule(ctx context.Context, client ssh.Client, direction string
 // AddIptablesRules adds a set of rules
 func AddIptablesRules(ctx context.Context, client ssh.Client, label string, rules *FirewallRules) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddIptablesRules", "rules", rules)
-	currentRules, err := getCurrentIptableRulesForLabel(ctx, client, label)
+	savedRules, err := getCurrentIptableRulesForLabel(ctx, client, label)
 	if err != nil {
 		return err
 	}
+	changes := IptablesChanges{}
 	for _, erule := range rules.EgressRules {
+		currentRules := savedRules.forRuleVersion(&erule)
+		changes.trackChange(&erule)
 		err := addIptablesRule(ctx, client, "egress", label, &erule, currentRules)
 		if err != nil {
 			return err
 		}
 	}
 	for _, irule := range rules.IngressRules {
+		currentRules := savedRules.forRuleVersion(&irule)
+		changes.trackChange(&irule)
 		err := addIptablesRule(ctx, client, "ingress", label, &irule, currentRules)
 		if err != nil {
 			return err
 		}
 	}
-	return PersistIptablesRules(ctx, client)
+	return changes.PersistRules(ctx, client)
 }
 
 // DeleteIptablesRules deletes a set of rules
 func DeleteIptablesRules(ctx context.Context, client ssh.Client, label string, rules *FirewallRules) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteIptablesRules", "rules", rules)
-	currentRules, err := getCurrentIptableRulesForLabel(ctx, client, label)
+	savedRules, err := getCurrentIptableRulesForLabel(ctx, client, label)
 	if err != nil {
 		return err
 	}
+	changes := IptablesChanges{}
 	for _, erule := range rules.EgressRules {
+		currentRules := savedRules.forRuleVersion(&erule)
+		changes.trackChange(&erule)
 		err := removeIptablesRule(ctx, client, "egress", label, &erule, currentRules)
 		if err != nil {
 			return err
 		}
 	}
 	for _, irule := range rules.IngressRules {
+		currentRules := savedRules.forRuleVersion(&irule)
+		changes.trackChange(&irule)
 		err := removeIptablesRule(ctx, client, "ingress", label, &irule, currentRules)
 		if err != nil {
 			return err
 		}
 	}
 	// make this an option?
-	return PersistIptablesRules(ctx, client)
+	return changes.PersistRules(ctx, client)
 }
 
 // AddDefaultIptablesRules adds the default set of rules which are always needed
-func AddDefaultIptablesRules(ctx context.Context, client ssh.Client) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AddDefaultIptablesRules")
+func AddDefaultIptablesRules(ctx context.Context, client ssh.Client, ipversion IPVersion) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddDefaultIptablesRules", "ipversion", ipversion)
+	remoteCIDRAll := "0.0.0.0/0"
+	if ipversion == IPV6 {
+		remoteCIDRAll = "::/0"
+	}
 
 	var rules FirewallRules
 	// local loopback traffic is open
 	loopInRule := FirewallRule{
-		RemoteCidr:  "0.0.0.0/0",
+		RemoteCidr:  remoteCIDRAll,
 		InterfaceIn: "lo",
+		IPVersion:   ipversion,
 	}
 	rules.IngressRules = append(rules.IngressRules, loopInRule)
 	loopOutRule := FirewallRule{
-		RemoteCidr:   "0.0.0.0/0",
+		RemoteCidr:   remoteCIDRAll,
 		InterfaceOut: "lo",
+		IPVersion:    ipversion,
 	}
 	rules.EgressRules = append(rules.EgressRules, loopOutRule)
 
-	// allow established sessions
 	conntrackInRule := FirewallRule{
-		RemoteCidr: "0.0.0.0/0",
+		RemoteCidr: remoteCIDRAll,
 		Conntrack:  "RELATED,ESTABLISHED",
+		IPVersion:  ipversion,
 	}
 	rules.IngressRules = append(rules.IngressRules, conntrackInRule)
 	conntrackOutRule := FirewallRule{
-		RemoteCidr: "0.0.0.0/0",
+		RemoteCidr: remoteCIDRAll,
 		Conntrack:  "RELATED,ESTABLISHED",
+		IPVersion:  ipversion,
 	}
 	rules.EgressRules = append(rules.EgressRules, conntrackOutRule)
 
@@ -373,15 +488,15 @@ func AddDefaultIptablesRules(ctx context.Context, client ssh.Client) error {
 	dropInputPolicy := "-P INPUT DROP"
 	dropOutputPolicy := "-P OUTPUT DROP"
 	action := InterfaceActionsOp{CreateIptables: true}
-	err = DoIptablesCommand(ctx, client, dropInputPolicy, false, &action)
+	err = DoIptablesCommand(ctx, client, dropInputPolicy, false, &action, ipversion)
 	if err != nil {
 		return err
 	}
-	return DoIptablesCommand(ctx, client, dropOutputPolicy, false, &action)
+	return DoIptablesCommand(ctx, client, dropOutputPolicy, false, &action, ipversion)
 }
 
 // GetFirewallRulesFromAppPorts accepts a CIDR and a set of AppPorts and converts to a set of rules
-func GetFirewallRulesFromAppPorts(ctx context.Context, cidr string, destIp string, ports []dme.AppPort) (*FirewallRules, error) {
+func GetFirewallRulesFromAppPorts(ctx context.Context, cidr string, destIp string, ports []dme.AppPort, ipversion IPVersion) (*FirewallRules, error) {
 	var fwRules FirewallRules
 	for _, p := range ports {
 		portStr := fmt.Sprintf("%d", p.PublicPort)
@@ -398,68 +513,125 @@ func GetFirewallRulesFromAppPorts(ctx context.Context, cidr string, destIp strin
 			PortRange:    portStr,
 			PortEndpoint: DestPort,
 			DestIP:       destIp,
+			IPVersion:    ipversion,
 		}
 		fwRules.IngressRules = append(fwRules.IngressRules, fwRuleDest)
 	}
 	return &fwRules, nil
 }
 
-func PersistIptablesRules(ctx context.Context, client ssh.Client) error {
-	cmd := fmt.Sprintf("sudo bash -c 'iptables-save > /etc/iptables/rules.v4'")
+type IptablesChanges struct {
+	countIPV4 int
+	countIPV6 int
+}
+
+func (s *IptablesChanges) trackChange(rule *FirewallRule) {
+	switch rule.IPVersion {
+	case IPV4:
+		s.countIPV4++
+	case IPV6:
+		s.countIPV6++
+	}
+}
+
+func (s *IptablesChanges) PersistRules(ctx context.Context, client ssh.Client) error {
+	if s.countIPV4 > 0 {
+		if err := PersistIptablesRules(ctx, client, IPV4); err != nil {
+			return err
+		}
+	}
+	if s.countIPV6 > 0 {
+		if err := PersistIptablesRules(ctx, client, IPV6); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func PersistIptablesRules(ctx context.Context, client ssh.Client, ipversion IPVersion) error {
+	cmd := fmt.Sprintf("sudo bash -c '%s'", IPTablesPersistCmd)
+	if ipversion == IPV6 {
+		cmd = fmt.Sprintf("sudo bash -c '%s'", IP6TablesPersistCmd)
+	}
 	out, err := client.Output(cmd)
 	if err != nil {
-		return fmt.Errorf("unable to run iptables-save to persistent rules file: %s - %v", out, err)
+		return fmt.Errorf("unable to run %q to save persistent rules file: %s - %v", cmd, out, err)
 	}
 	return nil
 }
 
 // AddIngressIptablesRules adds rules using a CIDR and AppPorts as input
-func AddIngressIptablesRules(ctx context.Context, client ssh.Client, label, cidr, destIp string, ports []dme.AppPort) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AddIngressIptablesRules", "label", label, "cidr", cidr, "ports", ports)
+func AddIngressIptablesRules(ctx context.Context, client ssh.Client, label string, cidrs, destIp IPs, ports []dme.AppPort) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddIngressIptablesRules", "label", label, "cidrs", cidrs, "ports", ports)
 
-	fwRules, err := GetFirewallRulesFromAppPorts(ctx, cidr, destIp, ports)
-	if err != nil {
-		return err
+	for ii, cidr := range cidrs {
+		ipversion, err := GetCIDRIPVersion(ctx, cidr)
+		if err != nil {
+			return err
+		}
+		fwRules, err := GetFirewallRulesFromAppPorts(ctx, cidr, destIp[ii], ports, ipversion)
+		if err != nil {
+			return err
+		}
+		err = AddIptablesRules(ctx, client, label, fwRules)
+		if err != nil {
+			return err
+		}
 	}
-	return AddIptablesRules(ctx, client, label, fwRules)
+	return nil
 }
 
 // RemoveIngressIptablesRules removes rules using a CIDR and AppPorts as input
-func RemoveIngressIptablesRules(ctx context.Context, client ssh.Client, label, cidr, destIP string, ports []dme.AppPort) error {
+func RemoveIngressIptablesRules(ctx context.Context, client ssh.Client, label string, cidrs, destIP IPs, ports []dme.AppPort) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveIngressIptablesRules", "secGrp", label)
 
-	fwRules, err := GetFirewallRulesFromAppPorts(ctx, cidr, destIP, ports)
-	if err != nil {
-		return err
+	for ii, cidr := range cidrs {
+		ipversion, err := GetCIDRIPVersion(ctx, cidr)
+		if err != nil {
+			return err
+		}
+		fwRules, err := GetFirewallRulesFromAppPorts(ctx, cidr, destIP[ii], ports, ipversion)
+		if err != nil {
+			return err
+		}
+		err = DeleteIptablesRules(ctx, client, label, fwRules)
+		if err != nil {
+			return err
+		}
 	}
-	return DeleteIptablesRules(ctx, client, label, fwRules)
+	return nil
 }
 
 func RemoveRulesForLabel(ctx context.Context, client ssh.Client, label string) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveRulesForLabel", "label", label)
 
-	currentRules, err := getCurrentIptableRulesForLabel(ctx, client, label)
-
+	savedRules, err := getCurrentIptableRulesForLabel(ctx, client, label)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "RemoveRulesForLabel getCurrentIptableRulesForLabel failed", "err", err)
 		return err
 	}
-	if len(currentRules) == 0 {
+	if len(savedRules.rulesIPV4) == 0 && len(savedRules.rulesIPV6) == 0 {
 		log.SpanLog(ctx, log.DebugLevelInfra, "RemoveRulesForLabel no rules for", "label", label)
 		return nil
 	}
-	action := InterfaceActionsOp{DeleteIptables: true}
-	for _, rule := range currentRules {
-		delCmd := strings.Replace(rule, "-A", "-D", 1)
-		log.SpanLog(ctx, log.DebugLevelInfra, "RemoveRulesForLabel doIpTblsCmd", "delCmd", delCmd)
-		err := DoIptablesCommand(ctx, client, delCmd, true, &action)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "error deleting rule, continuing", "rule", rule, "error", err)
-			continue // fail one fail all?
-		} else {
-			log.SpanLog(ctx, log.DebugLevelInfra, "removed", "rule", rule)
-		}
+	for _, rule := range savedRules.rulesIPV4 {
+		removeRuleForLabel(ctx, client, rule, IPV4)
+	}
+	for _, rule := range savedRules.rulesIPV6 {
+		removeRuleForLabel(ctx, client, rule, IPV6)
 	}
 	return nil
+}
+
+func removeRuleForLabel(ctx context.Context, client ssh.Client, rule string, ipversion IPVersion) {
+	action := InterfaceActionsOp{DeleteIptables: true}
+	delCmd := strings.Replace(rule, "-A", "-D", 1)
+	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveRulesForLabel doIpTblsCmd", "delCmd", delCmd, "ipversion", ipversion)
+	err := DoIptablesCommand(ctx, client, delCmd, true, &action, ipversion)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "error deleting rule, continuing", "rule", rule, "ipversion", ipversion, "error", err)
+	} else {
+		log.SpanLog(ctx, log.DebugLevelInfra, "removed", "rule", rule, "ipversion", ipversion)
+	}
 }

@@ -64,7 +64,8 @@ const logRotate = `/root/configure-node.log {
 }
 `
 
-const cronJob = `*/10 * * * * root /root/configure-node.sh >> /root/configure-node.log 2>&1\n`
+const cronJob = `*/10 * * * * root /root/configure-node.sh >> /root/configure-node.log 2>&1
+`
 
 func main() {
 	flag.StringVar(&domain, "domain", "", "deployment domain")

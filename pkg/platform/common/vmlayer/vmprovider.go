@@ -50,8 +50,8 @@ type VMProvider interface {
 	GetServerDetail(ctx context.Context, serverName string) (*ServerDetail, error)
 	GetConsoleUrl(ctx context.Context, serverName string) (string, error)
 	GetInternalPortPolicy() InternalPortAttachPolicy
-	AttachPortToServer(ctx context.Context, serverName, subnetName, portName, ipaddr string, action ActionType) error
-	DetachPortFromServer(ctx context.Context, serverName, subnetName, portName string) error
+	AttachPortToServer(ctx context.Context, serverName string, subnetNames SubnetNames, portName string, ips infracommon.IPs, action ActionType) error
+	DetachPortFromServer(ctx context.Context, serverName string, subnetNames SubnetNames, portName string) error
 	PrepareRootLB(ctx context.Context, client ssh.Client, rootLBName string, secGrpName string, TrustPolicy *edgeproto.TrustPolicy, updateCallback edgeproto.CacheUpdateCallback) error
 	WhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error
 	RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error
@@ -228,12 +228,12 @@ func (v *VMPlatform) GetClusterPlatformClientInternal(ctx context.Context, clust
 		return nil, err
 	}
 	if clientType == cloudcommon.ClientTypeClusterVM {
-		vmIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
+		vmIPs, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), v.GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
 		if err != nil {
 			return nil, err
 		}
 
-		client, err = client.AddHop(vmIP.ExternalAddr, 22)
+		client, err = client.AddHop(vmIPs.IPV4ExternalAddr(), 22)
 		if err != nil {
 			return nil, err
 		}
@@ -349,8 +349,8 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 	for k, v := range VMProviderProps {
 		props[k] = v
 	}
-	providerProps := v.GetFeatures().Properties
-	for k, v := range providerProps {
+	features := v.GetFeatures()
+	for k, v := range features.Properties {
 		props[k] = v
 	}
 	err := v.VMProperties.CommonPf.InitInfraCommon(ctx, platformConfig, props, ops...)
@@ -361,6 +361,7 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 	v.VMProperties.SharedRootLBName = v.GetRootLBName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey)
 	v.VMProperties.PlatformSecgrpName = infracommon.GetServerSecurityGroupName(v.GetPlatformVMName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey))
 	v.VMProperties.CloudletSecgrpName = v.getCloudletSecurityGroupName()
+	v.VMProperties.CloudletEnableIPV6 = features.SupportsIpv6
 	return nil
 }
 
@@ -465,11 +466,17 @@ func (v *VMPlatform) InitHAConditional(ctx context.Context, platformConfig *plat
 		}
 	}
 
-	err = v.CreateRootLB(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, ActionCreate, updateCallback)
+	action := ActionCreate
+	_, err = v.VMProvider.GetServerDetail(ctx, v.VMProperties.SharedRootLBName)
+	if err == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "rootlb already exists, updating ports")
+		action = ActionUpdate
+	}
+	err = v.CreateRootLB(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, action, updateCallback)
 	if err != nil {
 		return fmt.Errorf("Error creating rootLB: %v", err)
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "created shared rootLB", "name", v.VMProperties.SharedRootLBName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "created rootLB", "name", v.VMProperties.SharedRootLBName)
 
 	if platformConfig.Upgrade {
 		v.VMProperties.Upgrade = true
@@ -513,7 +520,13 @@ func (v *VMPlatform) InitHAConditional(ctx context.Context, platformConfig *plat
 	log.SpanLog(ctx, log.DebugLevelInfra, "calling SetupRootLB")
 	updateCallback(edgeproto.UpdateTask, "Setting up RootLB")
 	rootLBFQDN := platformConfig.RootLBFQDN
-	err = v.SetupRootLB(ctx, v.VMProperties.SharedRootLBName, rootLBFQDN, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, nil, updateCallback)
+	// get server detail again in case it was changed by CreateOrUpdateRootLB
+	sd, err := v.VMProvider.GetServerDetail(ctx, v.VMProperties.SharedRootLBName)
+	if err == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "rootlb already exists, updating it")
+		action = ActionUpdate
+	}
+	err = v.SetupRootLB(ctx, v.VMProperties.SharedRootLBName, rootLBFQDN, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, nil, sd, v.VMProperties.CloudletEnableIPV6, updateCallback)
 	if err != nil {
 		return err
 	}

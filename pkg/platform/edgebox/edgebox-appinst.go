@@ -20,12 +20,12 @@ import (
 	"net"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/dind"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/dind"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	v1 "k8s.io/api/core/v1"
 )
@@ -208,7 +208,11 @@ func (e *EdgeboxPlatform) GetDINDServiceIP(ctx context.Context) (string, error) 
 	if e.NetworkScheme == cloudcommon.NetworkSchemePrivateIP {
 		return GetLocalAddr()
 	}
-	return infracommon.GetExternalPublicAddr(ctx)
+	ips, err := infracommon.GetExternalPublicAddr(ctx, infracommon.IPV4)
+	if err != nil {
+		return "", err
+	}
+	return ips.IPV4(), nil
 }
 
 // GetLocalAddr gets the IP address the machine uses for outbound comms

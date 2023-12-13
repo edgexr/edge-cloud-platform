@@ -68,7 +68,7 @@ var UpdateClusterInstCmd = &ApiCommand{
 	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
 	SpecialArgs:          &ClusterInstSpecialArgs,
 	Comments:             addRegionComment(ClusterInstComments),
-	NoConfig:             "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes,ReservationEndedAt,DeletePrepare,DnsLabel,Fqdn,Flavor,NumMasters,AvailabilityZone,Reservable,SharedVolumeSize,IpAccess,Deployment,ImageName,Networks",
+	NoConfig:             "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes,ReservationEndedAt,DeletePrepare,DnsLabel,Fqdn,Flavor,NumMasters,AvailabilityZone,Reservable,SharedVolumeSize,IpAccess,Deployment,ImageName,Networks,MultiTenant",
 	ReqData:              &ormapi.RegionClusterInst{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateClusterInst",
@@ -134,7 +134,7 @@ var UpdateClusterInstOptionalArgs = []string{
 	"numnodes",
 	"autoscalepolicy",
 	"skipcrmcleanuponfailure",
-	"multitenant",
+	"enableipv6",
 }
 var ClusterInstKeyRequiredArgs = []string{}
 var ClusterInstKeyOptionalArgs = []string{
@@ -180,6 +180,7 @@ var ClusterInstOptionalArgs = []string{
 	"skipcrmcleanuponfailure",
 	"multitenant",
 	"networks",
+	"enableipv6",
 }
 var ClusterInstAliasArgs = []string{
 	"fields=clusterinst.fields",
@@ -232,6 +233,7 @@ var ClusterInstAliasArgs = []string{
 	"deleteprepare=clusterinst.deleteprepare",
 	"dnslabel=clusterinst.dnslabel",
 	"fqdn=clusterinst.fqdn",
+	"enableipv6=clusterinst.enableipv6",
 }
 var ClusterInstComments = map[string]string{
 	"fields":                            "Fields are used for the Update API to specify which fields to apply",
@@ -284,6 +286,7 @@ var ClusterInstComments = map[string]string{
 	"deleteprepare":                            "Preparing to be deleted",
 	"dnslabel":                                 "DNS label that is unique within the cloudlet and among other AppInsts/ClusterInsts",
 	"fqdn":                                     "FQDN is a globally unique DNS id for the ClusterInst",
+	"enableipv6":                               "Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"clusterinst.errors":   "StringArray",

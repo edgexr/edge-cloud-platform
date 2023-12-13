@@ -15,9 +15,15 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -62,4 +68,38 @@ func TestPortMap(t *testing.T) {
 	testMap, err = buildPortsMapFromString(testPorts)
 	require.NotNil(t, err)
 	require.Nil(t, testMap)
+}
+
+func TestGenerateEnvoyYaml(t *testing.T) {
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	metricIP := cloudcommon.ProxyMetricsDefaultListenIP
+	metricUDS := false
+	config := &ProxyConfig{
+		ListenIP:   "0.0.0.0",
+		ListenIPV6: "::",
+		DestIP:     "10.101.1.101",
+		DestIPV6:   "fc00:101:ecec:1::65",
+	}
+	appInst := &edgeproto.AppInst{
+		MappedPorts: []dme.AppPort{{
+			Proto:        dme.LProto_L_PROTO_TCP,
+			InternalPort: 5677,
+			PublicPort:   5677,
+			Tls:          true,
+		}, {
+			Proto:        dme.LProto_L_PROTO_TCP,
+			InternalPort: 5678,
+			PublicPort:   5678,
+			Tls:          false,
+		}},
+	}
+	envoyData, sdsData, isTLS, err := generateEnvoyYaml(ctx, "test", config, metricIP, metricUDS, appInst)
+	require.Nil(t, err)
+	require.True(t, isTLS)
+
+	testutil.CompareExpectedFileData(t, "test-envoy-config", "yaml", envoyData)
+	testutil.CompareExpectedFileData(t, "test-envoy-sds", "yaml", sdsData)
 }

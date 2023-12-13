@@ -225,6 +225,7 @@ var EdgeEventsMetrics = map[string]struct{}{
 var DownsampledMetricsDbName = "downsampled_metrics"
 
 var IPAddrAllInterfaces = "0.0.0.0"
+var IPV6AddrAllInterfaces = "::"
 var IPAddrLocalHost = "127.0.0.1"
 var RemoteServerNone = ""
 

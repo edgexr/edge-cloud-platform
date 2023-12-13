@@ -459,7 +459,7 @@ func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, 
 	if (vmparams.Role == vmlayer.RoleMaster || vmparams.Role == vmlayer.RoleK8sNode) && masterIP == "" {
 		return nil, fmt.Errorf("empty master IP provided")
 	}
-	mexMetadata := vmlayer.GetVMMetaData(vmparams.Role, masterIP, vcdMetaDataFormatter)
+	mexMetadata := vmlayer.GetVMMetaData(vmparams.Role, masterIP, "", vcdMetaDataFormatter)
 	log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection", "masterIP", masterIP, "vmMetadata", mexMetadata)
 	mdMap := makeMetaMap(ctx, mexMetadata)
 

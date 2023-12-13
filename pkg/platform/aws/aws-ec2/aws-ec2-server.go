@@ -21,11 +21,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -147,10 +147,10 @@ func (a *AwsEc2Platform) GetServerDetail(ctx context.Context, vmname string) (*v
 	return &sd, fmt.Errorf(vmlayer.ServerDoesNotExistError)
 }
 
-func (a *AwsEc2Platform) AttachPortToServer(ctx context.Context, serverName, subnetName, portName, ipaddr string, action vmlayer.ActionType) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer", "serverName", serverName, "subnetName", subnetName, "portName", portName, "ipaddr", ipaddr)
+func (a *AwsEc2Platform) AttachPortToServer(ctx context.Context, serverName string, subnetNames vmlayer.SubnetNames, portName string, ips infracommon.IPs, action vmlayer.ActionType) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer", "serverName", serverName, "subnetNames", subnetNames, "portName", portName, "ipaddrs", ips)
 
-	sn, err := a.GetSubnet(ctx, subnetName)
+	sn, err := a.GetSubnet(ctx, subnetNames.IPV4())
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func (a *AwsEc2Platform) AttachPortToServer(ctx context.Context, serverName, sub
 		"create-network-interface",
 		"--subnet-id", sn.SubnetId,
 		"--description", "port "+portName,
-		"--private-ip-address", ipaddr,
+		"--private-ip-address", ips.IPV4(),
 		"--groups", sgrp.GroupId,
 		"--region", a.awsGenPf.GetAwsRegion())
 	log.SpanLog(ctx, log.DebugLevelInfra, "create-network-interface result", "out", string(out), "err", err)
@@ -394,7 +394,7 @@ func (a *AwsEc2Platform) getEc2Instances(ctx context.Context, vmNameFilter, grou
 	return &ec2insts, nil
 }
 
-func (a *AwsEc2Platform) DetachPortFromServer(ctx context.Context, serverName, subnetName string, portName string) error {
+func (a *AwsEc2Platform) DetachPortFromServer(ctx context.Context, serverName string, subnetNames vmlayer.SubnetNames, portName string) error {
 	return fmt.Errorf("DetachPortFromServer not implemented")
 }
 

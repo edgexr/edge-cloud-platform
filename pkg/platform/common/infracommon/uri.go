@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -27,8 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/miekg/dns"
-	"gortc.io/stun"
+	goexternalip "github.com/glendc/go-external-ip"
 )
 
 type ImageCategoryType string
@@ -104,75 +102,52 @@ func GetUrlInfo(ctx context.Context, accessApi platform.AccessApi, fileUrlPath s
 	return lastMod, md5Sum, err
 }
 
-// Get the externally visible public IP address
-func GetExternalPublicAddr(ctx context.Context) (string, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetExternalPublicAddr")
-	myip, err := stunGetMyIP(ctx)
-	if err == nil {
-		return myip, nil
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get IP from STUN, try DNS", "err", err)
+var extIPV4Lookup *goexternalip.Consensus
+var extIPV6Lookup *goexternalip.Consensus
 
-	// Alternatively use dns resolver to fetch external IP
-	myip, err = dnsGetMyIP()
-	if err == nil {
-		return myip, nil
+func init() {
+	lookupCfg := &goexternalip.ConsensusConfig{
+		Timeout: 3 * time.Second,
 	}
-	return "", err
+	extIPV4Lookup = goexternalip.NewConsensus(lookupCfg, nil)
+	extIPV4Lookup.UseIPProtocol(4)
+	extIPV6Lookup = goexternalip.NewConsensus(lookupCfg, nil)
+	extIPV6Lookup.UseIPProtocol(6)
+
+	for _, lookup := range []*goexternalip.Consensus{extIPV4Lookup, extIPV6Lookup} {
+		lookup.AddVoter(goexternalip.NewHTTPSource("https://ident.me"), 3)
+		lookup.AddVoter(goexternalip.NewHTTPSource("https://api64.ipify.org"), 3)
+		lookup.AddVoter(goexternalip.NewHTTPSource("https://icanhazip.com"), 3)
+	}
 }
 
-func stunGetMyIP(ctx context.Context) (string, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "get ip from stun server")
-	var myip string
+// GetExternalPublicAddr gets the externally visible public IP address
+func GetExternalPublicAddr(ctx context.Context, types ...IPVersion) (IPs, error) {
+	var pubIPs IPs
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetExternalPublicAddr", "types", types)
 
-	// Creating a "connection" to STUN server.
-	c, err := stun.Dial("udp", "stun.edgexr.net:19302")
-	if err != nil {
-		return "", err
-	}
-	// Building binding request with random transaction id.
-	message := stun.MustBuild(stun.TransactionID, stun.BindingRequest)
-	// Sending request to STUN server, waiting for response message.
-	if c_err := c.Do(message, func(res stun.Event) {
-		if res.Error != nil {
-			err = res.Error
-		} else {
-			// Decoding XOR-MAPPED-ADDRESS attribute from message.
-			var xorAddr stun.XORMappedAddress
-			if x_err := xorAddr.GetFrom(res.Message); err != nil {
-				err = x_err
-			}
-			myip = xorAddr.IP.String()
+	for _, typ := range types {
+		var lookup *goexternalip.Consensus
+		var idx int
+		switch typ {
+		case IPV4:
+			lookup = extIPV4Lookup
+			idx = IndexIPV4
+		case IPV6:
+			lookup = extIPV6Lookup
+			idx = IndexIPV6
 		}
-	}); c_err != nil {
-		return "", c_err
-	}
-	if err != nil {
-		return "", err
-	}
-	return myip, nil
-}
-
-func dnsGetMyIP() (string, error) {
-	c := new(dns.Client)
-	m := new(dns.Msg)
-	m.SetQuestion(dns.Fqdn("myip.opendns.com"), dns.TypeA)
-	m.RecursionDesired = true
-
-	r, _, err := c.Exchange(m, net.JoinHostPort("resolver1.opendns.com", "53"))
-	if r == nil {
-		return "", err
-	}
-
-	if r.Rcode != dns.RcodeSuccess {
-		return "", fmt.Errorf("invalid return code %d", r.Rcode)
-	}
-	// Stuff must be in the answer section
-	for _, a := range r.Answer {
-		f, ok := a.(*dns.A)
-		if ok {
-			return f.A.String(), nil
+		if lookup == nil {
+			continue
+		}
+		ip, err := lookup.ExternalIP()
+		log.SpanLog(ctx, log.DebugLevelInfra, "lookup external IP", "type", typ, "ip", ip, "err", err)
+		if err == nil {
+			pubIPs[idx] = ip.String()
 		}
 	}
-	return "", fmt.Errorf("unable to find external IP")
+	if !pubIPs.IsSet() {
+		return pubIPs, fmt.Errorf("external public IPs not found")
+	}
+	return pubIPs, nil
 }

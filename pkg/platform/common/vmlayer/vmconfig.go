@@ -157,7 +157,7 @@ runcmd:
 	return formatter(rc), nil
 }
 
-func GetVMMetaData(role VMRole, masterIP string, formatter VmConfigDataFormatter) string {
+func GetVMMetaData(role VMRole, masterIP, masterIPv6 string, formatter VmConfigDataFormatter) string {
 	var str string
 	if role == RoleVMApplication {
 		return ""

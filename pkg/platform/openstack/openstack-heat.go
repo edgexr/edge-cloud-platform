@@ -63,6 +63,13 @@ resources:
             network: {{.NetworkName}}
             gateway_ip: {{.GatewayIP}}
             enable_dhcp: {{.DHCPEnabled}}
+            {{- if eq .IPVersion "ipv6" }}
+            ip_version: 6
+            {{- if eq .DHCPEnabled "yes" }}
+            ipv6_ra_mode: dhcpv6-stateless
+            ipv6_address_mode: dhcpv6-stateless
+            {{- end}}
+            {{- end}}
             dns_nameservers:
                {{- range .DNSServers}}
                  - {{.}}
@@ -133,18 +140,31 @@ resources:
                   port_range_min: {{.PortRangeMin}}
                   port_range_max: {{.PortRangeMax}}
                 {{- end}}
+                {{- if eq .IPVersion "ipv6" }}
+                  ethertype: IPv6
+                {{- end}}
             {{- end}}
-            {{- $RemoteCidr := .AccessPorts.RemoteCidr}}
             {{- range .AccessPorts.Ports}}
                 - direction: ingress
-                  remote_ip_prefix: {{$RemoteCidr}}
+                  remote_ip_prefix: 0.0.0.0/0
+                  protocol: {{.Proto}}
+                  port_range_min: {{.Port}}
+                  port_range_max: {{.EndPort}}
+            {{- if $.EnableIPV6 }}
+                - direction: ingress
+                  remote_ip_prefix: ::/0
+                  ethertype: IPv6
                   protocol: {{.Proto}}
                   port_range_min: {{.Port}}
                   port_range_max: {{.EndPort}}
             {{- end}}
+            {{- end}}
     {{- end}}
-    
+
     {{- range .VMs}}
+    {{- if .ExistingData }}
+{{ .ExistingData }}
+    {{- else }}
     {{- range .Volumes}}
     {{.Name}}:
         type: OS::Cinder::Volume
@@ -196,6 +216,7 @@ resources:
             metadata:
 {{.MetaData}}
             {{- end}}
+    {{- end}}
     {{- end}}
 
     {{- if .SkipInfraSpecificCheck}}
@@ -348,24 +369,18 @@ func (o *OpenstackPlatform) HeatDeleteStack(ctx context.Context, stackName strin
 }
 
 func GetUserDataFromOSResource(ctx context.Context, stackTemplate *OSHeatStackTemplate) (map[string]string, error) {
-	vmsUserData := make(map[string]string)
+	existingVMs := make(map[string]string)
 	for resourceName, resource := range stackTemplate.Resources {
 		if resource.Type != "OS::Nova::Server" {
 			continue
 		}
-		userData, ok := resource.Properties["user_data"]
-		if !ok {
-			log.SpanLog(ctx, log.DebugLevelInfra, "missing user data", "resource", resource)
-			continue
+		out, err := yaml.Marshal(resource)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal existing VM data, %s for %s", err, resource)
 		}
-		userDataStr, ok := userData.(string)
-		if !ok {
-			log.SpanLog(ctx, log.DebugLevelInfra, "invalid user data", "resource", resource)
-			continue
-		}
-		vmsUserData[resourceName] = strings.TrimSpace(userDataStr)
+		existingVMs[resourceName] = "    " + resourceName + ":\n" + reindent(string(out), 8)
 	}
-	return vmsUserData, nil
+	return existingVMs, nil
 }
 
 func IsUserDataSame(ctx context.Context, userdata1, userdata2 string) bool {
@@ -447,12 +462,10 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 		return nil, fmt.Errorf("Netspec is nil")
 	}
 	masterIP := ""
+	masterIPv6 := ""
 
 	if len(VMGroupOrchestrationParams.Subnets) > 0 {
-		currentSubnetName := ""
-		if action != heatCreate {
-			currentSubnetName = vmlayer.MexSubnetPrefix + VMGroupOrchestrationParams.GroupName
-		}
+		subnetsByName := make(map[string]OSSubnet)
 		if action != heatTest && !VMGroupOrchestrationParams.SkipInfraSpecificCheck {
 			sns, snserr := o.ListSubnets(ctx, o.VMProperties.GetCloudletMexNetwork())
 			if snserr != nil {
@@ -460,6 +473,7 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 			}
 			for _, s := range sns {
 				usedCidrs[s.Subnet] = s.Name
+				subnetsByName[s.Name] = s
 			}
 		}
 
@@ -469,31 +483,81 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 				// no need to compute the CIDR
 				continue
 			}
+			// for update
+			currentSubnetName := s.Name
+			if currentSubnetName == "" {
+				// TODO: this can probably be removed, as it doesn't appear to be used
+				// by Openstack or vmlayer code. Probably something for backwards
+				// compatibility that isn't needed anymore.
+				currentSubnetName = vmlayer.MexSubnetPrefix + VMGroupOrchestrationParams.GroupName
+			}
+			newSubnet := action == heatCreate || action == heatTest
+			if !newSubnet {
+				// subnet should exist. If it doesn't, allow for creating a new one.
+				// This is needed when enabling IPv6 and adding the IPv6 subnet to
+				// the nodes.
+				if _, found := subnetsByName[s.Name]; !found {
+					newSubnet = true
+				}
+			}
+			log.SpanLog(ctx, log.DebugLevelInfra, "populating subnet params", "newSubnet", newSubnet, "subnet", s)
+
 			found := false
-			for octet := 0; octet <= 255; octet++ {
-				subnet := fmt.Sprintf("%s.%s.%d.%d/%s", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet, 0, VMGroupOrchestrationParams.Netspec.NetmaskBits)
-				// either look for an unused one (create) or the current one (update)
-				newSubnet := action == heatCreate || action == heatTest
-				if (newSubnet && usedCidrs[subnet] == "") || (!newSubnet && usedCidrs[subnet] == currentSubnetName) {
-					resby, alreadyReserved := ReservedSubnets[subnet]
-					if alreadyReserved {
-						log.SpanLog(ctx, log.DebugLevelInfra, "subnet already reserved", "subnet", subnet, "resby", resby)
-						continue
+			if s.IPVersion == "" || s.IPVersion == infracommon.IPV4 {
+
+				for octet := 0; octet <= 255; octet++ {
+					subnet := fmt.Sprintf("%s.%s.%d.%d/%s", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet, 0, VMGroupOrchestrationParams.Netspec.NetmaskBits)
+					// either look for an unused one (create) or the current one (update)
+					if (newSubnet && usedCidrs[subnet] == "") || (!newSubnet && usedCidrs[subnet] == currentSubnetName) {
+						resby, alreadyReserved := ReservedSubnets[subnet]
+						if alreadyReserved {
+							log.SpanLog(ctx, log.DebugLevelInfra, "subnet already reserved", "subnet", subnet, "resby", resby)
+							continue
+						}
+						found = true
+						reserved.Subnets = append(reserved.Subnets, subnet)
+						VMGroupOrchestrationParams.Subnets[i].CIDR = subnet
+						if !VMGroupOrchestrationParams.Subnets[i].SkipGateway {
+							VMGroupOrchestrationParams.Subnets[i].GatewayIP = fmt.Sprintf("%s.%s.%d.%d", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet, 1)
+						}
+						VMGroupOrchestrationParams.Subnets[i].NodeIPPrefix = fmt.Sprintf("%s.%s.%d", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet)
+						if masterIP == "" {
+							masterIP = fmt.Sprintf("%s.%s.%d.%d", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet, vmlayer.ClusterMasterIPLastIPOctet)
+						}
+						break
 					}
-					found = true
-					reserved.Subnets = append(reserved.Subnets, subnet)
-					VMGroupOrchestrationParams.Subnets[i].CIDR = subnet
-					if !VMGroupOrchestrationParams.Subnets[i].SkipGateway {
-						VMGroupOrchestrationParams.Subnets[i].GatewayIP = fmt.Sprintf("%s.%s.%d.%d", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet, 1)
+				}
+			} else if s.IPVersion == infracommon.IPV6 {
+				// find ipv6 subnet, start with 1 instead of 0 so we don't have
+				// formatting issues with ipaddress, i.e. ff00:0::1 is not a
+				// standard format.
+				for hextet := 1; hextet < 0xffff; hextet++ {
+					subnet := fmt.Sprintf("%s:%x::/64", VMGroupOrchestrationParams.Netspec.IPV6RoutingPrefix, hextet)
+					// either look for an unused one (create) or the current one (update)
+					if (newSubnet && usedCidrs[subnet] == "") || (!newSubnet && usedCidrs[subnet] == currentSubnetName) {
+						resby, alreadyReserved := ReservedSubnets[subnet]
+						if alreadyReserved {
+							log.SpanLog(ctx, log.DebugLevelInfra, "subnet already reserved", "subnet", subnet, "resby", resby)
+							continue
+						}
+						found = true
+						reserved.Subnets = append(reserved.Subnets, subnet)
+						VMGroupOrchestrationParams.Subnets[i].CIDR = subnet
+						if !VMGroupOrchestrationParams.Subnets[i].SkipGateway {
+							VMGroupOrchestrationParams.Subnets[i].GatewayIP = fmt.Sprintf("%s:%x::1", VMGroupOrchestrationParams.Netspec.IPV6RoutingPrefix, hextet)
+						}
+						VMGroupOrchestrationParams.Subnets[i].NodeIPPrefix = fmt.Sprintf("%s:%x", VMGroupOrchestrationParams.Netspec.IPV6RoutingPrefix, hextet)
+						if masterIPv6 == "" {
+							masterIPv6 = fmt.Sprintf("%s:%x::%x", VMGroupOrchestrationParams.Netspec.IPV6RoutingPrefix, hextet, vmlayer.ClusterMasterIPLastIPOctet)
+						}
+						break
 					}
-					VMGroupOrchestrationParams.Subnets[i].NodeIPPrefix = fmt.Sprintf("%s.%s.%d", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet)
-					masterIP = fmt.Sprintf("%s.%s.%d.%d", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet, 10)
-					break
 				}
 			}
 			if !found {
-				return nil, fmt.Errorf("cannot find subnet cidr")
+				return nil, fmt.Errorf("cannot find subnet cidr for %s", s.Name)
 			}
+			log.SpanLog(ctx, log.DebugLevelInfra, "populated subnet params", "subnet", s)
 		}
 
 		// if there are last octets specified and not full IPs, build the full address
@@ -517,18 +581,21 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 			for j, f := range p.FixedIPs {
 				log.SpanLog(ctx, log.DebugLevelInfra, "updating fixed ip", "fixedip", f)
 				if f.Address == vmlayer.NextAvailableResource && f.LastIPOctet != 0 {
-					log.SpanLog(ctx, log.DebugLevelInfra, "populating fixed ip based on subnet", "VMGroupOrchestrationParams", VMGroupOrchestrationParams)
 					found := false
 					for _, s := range VMGroupOrchestrationParams.Subnets {
 						if s.Name == f.Subnet.Name {
-							VMGroupOrchestrationParams.Ports[i].FixedIPs[j].Address = fmt.Sprintf("%s.%d", s.NodeIPPrefix, f.LastIPOctet)
+							if s.IPVersion == "" || s.IPVersion == infracommon.IPV4 {
+								VMGroupOrchestrationParams.Ports[i].FixedIPs[j].Address = fmt.Sprintf("%s.%d", s.NodeIPPrefix, f.LastIPOctet)
+							} else if s.IPVersion == infracommon.IPV6 {
+								VMGroupOrchestrationParams.Ports[i].FixedIPs[j].Address = fmt.Sprintf("%s::%x", s.NodeIPPrefix, f.LastIPOctet)
+							}
 							log.SpanLog(ctx, log.DebugLevelInfra, "populating fixed ip based on subnet", "port", p.Name, "address", VMGroupOrchestrationParams.Ports[i].FixedIPs[j].Address)
 							found = true
 							break
 						}
 					}
 					if !found {
-						return nil, fmt.Errorf("cannot find matching subnet for port: %s", p.Name)
+						return nil, fmt.Errorf("cannot find subnet %s for port: %s", f.Subnet.Name, p.Name)
 					}
 				}
 			}
@@ -536,42 +603,34 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 	}
 
 	// Get chef keys for existing VMs
-	vmsUserData := make(map[string]string)
+	existingVMs := make(map[string]string)
 	if action == heatUpdate {
 		stackTemplate, err := o.getHeatStackTemplateDetail(ctx, VMGroupOrchestrationParams.GroupName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch heat stack template for %s: %v", VMGroupOrchestrationParams.GroupName, err)
 		}
-		vmsUserData, err = GetUserDataFromOSResource(ctx, stackTemplate)
+		existingVMs, err = GetUserDataFromOSResource(ctx, stackTemplate)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to fetch vms userdata", "err", err)
 		}
 	}
 
-	// populate the user data
+	// populate the user data and/or replace with existing data
 	for i, v := range VMGroupOrchestrationParams.VMs {
-		VMGroupOrchestrationParams.VMs[i].MetaData = vmlayer.GetVMMetaData(v.Role, masterIP, reindent16)
-		var userdata string
-		if ud, ok := vmsUserData[v.Name]; ok && action == heatUpdate {
-			// use previous userdata in case of update to avoid
-			// redeploying existing VM.
-			userdata = ud
-		} else {
-			ud, err := vmlayer.GetVMUserData(v.Name, v.SharedVolume, v.DeploymentManifest, v.Command, &v.CloudConfigParams, reindent16)
-			if err != nil {
-				return nil, err
-			}
-			userdata = ud
-		}
-
-		if v.Role == vmlayer.RoleMaster && action == heatUpdate {
-			if masterUserData, ok := vmsUserData[v.Name]; ok {
-				if !IsUserDataSame(ctx, masterUserData, userdata) {
-					return nil, fmt.Errorf("Unable to update cluster instance as it will redeploy master node, hence will affect running app instances. Please delete and recreate the cluster instance")
-				}
+		if action == heatUpdate {
+			// Use existing VM data to ensure we don't trigger rebuilding the VM
+			if data, found := existingVMs[v.Name]; found {
+				log.SpanLog(ctx, log.DebugLevelInfra, "update using existing heat data for VM", "vm", v.Name)
+				VMGroupOrchestrationParams.VMs[i].ExistingData = data
+				continue
 			}
 		}
-		VMGroupOrchestrationParams.VMs[i].UserData = userdata
+		VMGroupOrchestrationParams.VMs[i].MetaData = vmlayer.GetVMMetaData(v.Role, masterIP, masterIPv6, reindent16)
+		ud, err := vmlayer.GetVMUserData(v.Name, v.SharedVolume, v.DeploymentManifest, v.Command, &v.CloudConfigParams, reindent16)
+		if err != nil {
+			return nil, err
+		}
+		VMGroupOrchestrationParams.VMs[i].UserData = ud
 	}
 
 	// populate the floating ips

@@ -22,9 +22,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 )
 
 var orchVmLock sync.Mutex
@@ -118,6 +119,10 @@ func (a *AwsEc2Platform) getVmGroupResources(ctx context.Context, vmgp *vmlayer.
 	if action == vmlayer.ActionCreate {
 		updateCallback(edgeproto.UpdateTask, "Creating Subnets")
 		for _, sn := range vmgp.Subnets {
+			if sn.IPVersion == infracommon.IPV6 {
+				log.SpanLog(ctx, log.DebugLevelInfra, "ipv6 subnets not supported yet", "subnet", sn)
+				continue
+			}
 			if sn.ReservedName != "" {
 				log.SpanLog(ctx, log.DebugLevelInfra, "assign reserved subnet", "ReservedName", sn.ReservedName)
 				snMap, err := a.GetSubnets(ctx)
@@ -183,6 +188,10 @@ func (a *AwsEc2Platform) populateOrchestrationParams(ctx context.Context, vmgp *
 			// no need to compute the CIDR
 			continue
 		}
+		if s.IPVersion == infracommon.IPV6 {
+			log.SpanLog(ctx, log.DebugLevelInfra, "ipv6 subnets not supported yet", "subnet", s)
+			continue
+		}
 		found := false
 		for octet := 0; octet <= 255; octet++ {
 			subnet := fmt.Sprintf("%s.%s.%d.%d/%s", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet, 0, vmgp.Netspec.NetmaskBits)
@@ -234,7 +243,7 @@ func (a *AwsEc2Platform) populateOrchestrationParams(ctx context.Context, vmgp *
 		}
 
 		// metadata for AWS EC2 is embedded in the user data and then extracted within cloud-init
-		metaData := vmlayer.GetVMMetaData(vm.Role, masterIP, awsMetaDataFormatter)
+		metaData := vmlayer.GetVMMetaData(vm.Role, masterIP, "", awsMetaDataFormatter)
 		vm.CloudConfigParams.ExtraBootCommands = append(vm.CloudConfigParams.ExtraBootCommands, "mkdir -p "+metaDir)
 		vm.CloudConfigParams.ExtraBootCommands = append(vm.CloudConfigParams.ExtraBootCommands,
 			fmt.Sprintf("echo %s |base64 -d|python3 -c \"import sys, yaml, json; json.dump(yaml.load(sys.stdin), sys.stdout)\" > "+metaDir+"meta_data.json", metaData))

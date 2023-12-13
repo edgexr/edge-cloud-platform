@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/netip"
 	"strconv"
 	"strings"
 
@@ -40,6 +41,7 @@ type VMProperties struct {
 	RunLbDhcpServerForVmApps          bool
 	AppendFlavorToVmAppImage          bool
 	ValidateExternalIPMapping         bool
+	CloudletEnableIPV6                bool // enable IPv6 on shared rootLB and shared security groups which may affect all LBs
 	CloudletAccessToken               string
 	NumCleanupRetries                 int
 	UsesCommonSharedInternalLBNetwork bool
@@ -79,6 +81,11 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 		Description: "Name of the external network to be used to reach developer apps",
 		Value:       "external-network-shared",
 	},
+	"MEX_EXT_NETWORK_SECONDARY": {
+		Name:        "Infra Secondary External Network Name",
+		Description: "Name of a secondary external network to be used to reach developer apps if running dual stack and IPv4 and IPv6 subnets are on different networks",
+		Value:       "",
+	},
 	"MEX_NETWORK": {
 		Name:        "Infra Internal Network Name",
 		Description: "Name of the internal network which will be created to be used for cluster communication",
@@ -112,7 +119,7 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 	"MEX_NETWORK_SCHEME": {
 		Name:        "Internal Network Scheme",
 		Description: GetSupportedSchemesStr(),
-		Value:       "cidr=10.101.X.0/24",
+		Value:       "cidr=10.101.X.0/24,ipv6routingprefix=fc00:101:ecec",
 	},
 	"MEX_COMPUTE_AVAILABILITY_ZONE": {
 		Name:        "Compute Availability Zone",
@@ -144,6 +151,11 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 		Name:        "DNS Server(s)",
 		Description: "Override DNS server IP(s), e.g. \"8.8.8.8\" or \"1.1.1.1,8.8.8.8\"",
 		Value:       "1.1.1.1,1.0.0.1",
+	},
+	"MEX_DNS_IPV6": {
+		Name:        "IPv6 DNS Server(s)",
+		Description: "Override IPv6 DNS server IP(s), comma separated list of IPv6 DNS server IPs",
+		Value:       "2606:4700:4700::1111,2606:4700:4700::1001",
 	},
 	"MEX_CLOUDLET_FIREWALL_WHITELIST_EGRESS": {
 		Name:        "Cloudlet Firewall Whitelist Egress",
@@ -186,10 +198,20 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 		Description: "Start and end value of MetalLB IP range third octet, (start-end). Set to NONE to disable MetalLB",
 		Value:       "200-250",
 	},
+	"MEX_METALLB_IPV6_RANGE": {
+		Name:        "MetalLB IPv6 IP range",
+		Description: "Start and end value of MetalLB IP range, last four hextets, (start-end)",
+		Value:       "ffff:ffff:ffff:0-ffff:ffff:ffff:fff0",
+	},
 	"MEX_ENABLE_ANTI_AFFINITY": {
 		Name:        "Enable Anti-Affinity Rules",
 		Description: "Enable Anti-Affinity rules where applicable for H/A (yes or no). Set to \"no\" for environments with limited hosts",
 		Value:       "yes",
+	},
+	"MEX_SUBNETS_IGNORE_DHCP": {
+		Name:        "Subnets to ignore DHCP setting",
+		Description: "Some platform IPv6 DHCP services seems to have problems, use this to specify a comma separated list of subnet names to ignore DHCP when configuring interfaces",
+		Value:       "",
 	},
 }
 
@@ -236,6 +258,11 @@ func (vp *VMProperties) GetCloudletExternalNetwork() string {
 	return value
 }
 
+func (vp *VMProperties) GetCloudletExternalNetworkSecondary() string {
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_EXT_NETWORK_SECONDARY")
+	return value
+}
+
 func (vp *VMProperties) SetCloudletExternalNetwork(name string) {
 	vp.CommonPf.Properties.SetValue("MEX_EXT_NETWORK", name)
 }
@@ -244,6 +271,17 @@ func (vp *VMProperties) SetCloudletExternalNetwork(name string) {
 func (vp *VMProperties) GetCloudletMexNetwork() string {
 	value, _ := vp.CommonPf.Properties.GetValue("MEX_NETWORK")
 	return value
+}
+
+func (vp *VMProperties) GetCloudletExternalNetworks() []string {
+	externalNetworks := []string{}
+	if net := vp.GetCloudletExternalNetwork(); net != "" {
+		externalNetworks = append(externalNetworks, net)
+	}
+	if net := vp.GetCloudletExternalNetworkSecondary(); net != "" {
+		externalNetworks = append(externalNetworks, net)
+	}
+	return externalNetworks
 }
 
 func (vp *VMProperties) GetCloudletAdditionalPlatformNetworks() []string {
@@ -271,7 +309,9 @@ func (vp *VMProperties) GetNetworksByType(ctx context.Context, netTypes []Networ
 	for _, netType := range netTypes {
 		switch netType {
 		case NetworkTypeExternalPrimary:
-			nets[vp.GetCloudletExternalNetwork()] = NetworkTypeExternalPrimary
+			nets[vp.GetCloudletExternalNetwork()] = netType
+		case NetworkTypeExternalSecondary:
+			nets[vp.GetCloudletExternalNetworkSecondary()] = netType
 		case NetworkTypeExternalAdditionalRootLb:
 			for _, n := range vp.GetCloudletAdditionalRootLbNetworks() {
 				nets[n] = NetworkTypeExternalAdditionalRootLb
@@ -350,6 +390,11 @@ func (vp *VMProperties) GetCloudletDNS() string {
 	return value
 }
 
+func (vp *VMProperties) GetCloudletDNSIPV6() string {
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_DNS_IPV6")
+	return value
+}
+
 func (vp *VMProperties) GetSubnetDNS() string {
 	value, _ := vp.CommonPf.Properties.GetValue("MEX_SUBNET_DNS")
 	return value
@@ -380,6 +425,11 @@ func (vp *VMProperties) GetVmAppMetricsCollectInterval() (uint64, error) {
 		return 0, fmt.Errorf("Unable to parse value MEX_VM_APP_METRICS_COLLECT_INTERVAL value: %s as integer", value)
 	}
 	return val, nil
+}
+
+func (vp *VMProperties) GetSubnetsIgnoreDHCP() []string {
+	val, _ := vp.CommonPf.Properties.GetValue("MEX_SUBNETS_IGNORE_DHCP")
+	return strings.Split(val, ",")
 }
 
 func (vp *VMProperties) GetRegion() string {
@@ -419,28 +469,87 @@ func (vp *VMProperties) GetMetalLBIp3rdOctetRange() (uint64, uint64, error) {
 	return start, end, nil
 }
 
+func (vp *VMProperties) GetMetalLBIPV6Range() (string, string, error) {
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_METALLB_IPV6_RANGE")
+	parts := strings.Split(value, "-")
+	if value == "" || len(parts) != 2 {
+		return "", "", fmt.Errorf("No MetalLB range defined in MEX_METALLB_IPV6_RANGE")
+	}
+	return parts[0], parts[1], nil
+}
+
 func (vp *VMProperties) GetEnableAntiAffinity() bool {
 	value, _ := vp.CommonPf.Properties.GetValue("MEX_ENABLE_ANTI_AFFINITY")
 	return value == "yes"
 }
 
 // GetMetalLBIp3rdOctetRangeFromMasterIp gives an IP range on the same subnet as the master IP
-func (vp *VMProperties) GetMetalLBIp3rdOctetRangeFromMasterIp(ctx context.Context, masterIP string) ([]string, error) {
+func (vp *VMProperties) GetMetalLBIp3rdOctetRangeFromMasterIp(ctx context.Context, masterIP string) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetMetalLBIp3rdOctetRangeFromMasterIp", "masterIP", masterIP)
 	mip := net.ParseIP(masterIP)
 	if mip == nil {
-		return nil, fmt.Errorf("unable to parse master ip %s", masterIP)
+		return "", fmt.Errorf("unable to parse master ip %s", masterIP)
 	}
 	start, end, err := vp.GetMetalLBIp3rdOctetRange()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	addr := mip.To4()
 	addr[3] = byte(start)
 	startAddr := addr.String()
 	addr[3] = byte(end)
 	endAddr := addr.String()
-	return []string{fmt.Sprintf("%s-%s", startAddr, endAddr)}, nil
+	return fmt.Sprintf("%s-%s", startAddr, endAddr), nil
+}
+
+func (vp *VMProperties) GetMetalLBIPV6RangeFromMasterIp(ctx context.Context, masterIPV6 string) (string, error) {
+	masterNetIP, err := netip.ParseAddr(masterIPV6)
+	if err != nil {
+		return "", err
+	}
+	start, end, err := vp.GetMetalLBIPV6Range()
+	if err != nil {
+		return "", err
+	}
+	startNetIP, err := netip.ParseAddr("::" + start)
+	if err != nil {
+		return "", err
+	}
+	endNetIP, err := netip.ParseAddr("::" + end)
+	if err != nil {
+		return "", err
+	}
+	// map master IP upper hextets onto start and end
+	masterBytes := masterNetIP.As16()
+	startBytes := startNetIP.As16()
+	endBytes := endNetIP.As16()
+	for i := 0; i < 8; i++ {
+		startBytes[i] = masterBytes[i]
+		endBytes[i] = masterBytes[i]
+	}
+	return netip.AddrFrom16(startBytes).String() + "-" + netip.AddrFrom16(endBytes).String(), nil
+}
+
+func (vp *VMProperties) GetMetalLBAddresses(ctx context.Context, masterIPs ServerIPs) ([]string, error) {
+	ranges := []string{}
+	if masterIPV4 := masterIPs.IPV4ExternalAddr(); masterIPV4 != "" {
+		rng, err := vp.GetMetalLBIp3rdOctetRangeFromMasterIp(ctx, masterIPV4)
+		if err != nil {
+			return nil, err
+		}
+		ranges = append(ranges, rng)
+	}
+	if masterIPV6 := masterIPs.IPV6ExternalAddr(); masterIPV6 != "" {
+		rng, err := vp.GetMetalLBIPV6RangeFromMasterIp(ctx, masterIPV6)
+		if err != nil {
+			return nil, err
+		}
+		ranges = append(ranges, rng)
+	}
+	if len(ranges) == 0 {
+		return nil, fmt.Errorf("no master IPs defined to generate metalLB ranges")
+	}
+	return ranges, nil
 }
 
 // For platforms without native flavor support, just use our meta flavors

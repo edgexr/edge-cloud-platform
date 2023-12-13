@@ -21,9 +21,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -102,7 +102,10 @@ func (k *K8sBareMetalPlatform) AssignFreeLbIp(ctx context.Context, name string, 
 		return "", fmt.Errorf("Error assigning new external IP: %s - %v", out, err)
 	}
 	// persist the ip address
-	filename, _, contents := infracommon.GenerateNetworkFileDetailsForIP(ctx, name, extDevName, freeExternalIp, 32, true)
+	filename, _, contents, err := infracommon.GenerateNetworkFileDetailsForIP(ctx, name, extDevName, freeExternalIp, 32, "")
+	if err != nil {
+		return "", fmt.Errorf("failed to get network file details, %s", err)
+	}
 	err = pc.WriteFile(client, filename, contents, "netconfig", pc.SudoOn)
 	if err != nil {
 		return "", fmt.Errorf("unable to write network config file: %s -- %v", filename, err)
