@@ -92,8 +92,6 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 	log.SpanLog(ctx, log.DebugLevelInfra, "populateParams done", "resources", resources, "err", err)
 
 	require.NotNil(t, resources, err)
-	out, _ := yaml.Marshal(resources.Subnets)
-	fmt.Println(string(out))
 	require.Equal(t, len(resources.Subnets), len(ReservedSubnets)+numReservedSubnetsStart)
 	require.Equal(t, len(resources.FloatingIpIds), len(ReservedFloatingIPs)+numReservedFipsStart)
 
@@ -250,8 +248,6 @@ func TestHeatTemplate(t *testing.T) {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "got VM group params", "vmgp", vmgp1, "err", err)
 	require.Nil(t, err)
-	out, _ := yaml.Marshal(vmgp1)
-	fmt.Println(string(out))
 
 	validateStack(ctx, t, vmgp1, &op)
 
