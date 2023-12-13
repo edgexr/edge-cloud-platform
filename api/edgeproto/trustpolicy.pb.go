@@ -42,7 +42,7 @@ type SecurityRule struct {
 	PortRangeMin uint32 `protobuf:"varint,2,opt,name=port_range_min,json=portRangeMin,proto3" json:"port_range_min,omitempty"`
 	// TCP or UDP port range end
 	PortRangeMax uint32 `protobuf:"varint,3,opt,name=port_range_max,json=portRangeMax,proto3" json:"port_range_max,omitempty"`
-	// Remote CIDR X.X.X.X/X
+	// Remote CIDR X.X.X.X/X for IPv4 or e.g. XXXX:XXXX::XXXX/XX for IPv6
 	RemoteCidr string `protobuf:"bytes,4,opt,name=remote_cidr,json=remoteCidr,proto3" json:"remote_cidr,omitempty"`
 }
 

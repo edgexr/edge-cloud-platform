@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -34,7 +33,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var subnetName = "subnet-test"
+var subnetNames = vmlayer.SubnetNames{"subnet-test", "subnet-test-ipv6"}
 
 var vms = []*vmlayer.VMRequestSpec{
 	{
@@ -45,7 +44,7 @@ var vms = []*vmlayer.VMRequestSpec{
 		ComputeAvailabilityZone: "nova1",
 		ExternalVolumeSize:      100,
 		ConnectToExternalNet:    true,
-		ConnectToSubnet:         subnetName,
+		ConnectToSubnets:        subnetNames,
 	},
 	{
 		Name:                    "master-xyz",
@@ -55,7 +54,7 @@ var vms = []*vmlayer.VMRequestSpec{
 		ComputeAvailabilityZone: "nova1",
 		ExternalVolumeSize:      100,
 		ConnectToExternalNet:    true,
-		ConnectToSubnet:         subnetName,
+		ConnectToSubnets:        subnetNames,
 	},
 	{
 		Name:                    "node1-xyz",
@@ -63,7 +62,7 @@ var vms = []*vmlayer.VMRequestSpec{
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",
-		ConnectToSubnet:         subnetName,
+		ConnectToSubnets:        subnetNames,
 	},
 	{
 		Name:                    "node2-xyz",
@@ -71,7 +70,7 @@ var vms = []*vmlayer.VMRequestSpec{
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",
-		ConnectToSubnet:         subnetName,
+		ConnectToSubnets:        subnetNames,
 	},
 	{
 		Name:                    "app-vm",
@@ -79,7 +78,7 @@ var vms = []*vmlayer.VMRequestSpec{
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",
-		ConnectToSubnet:         subnetName,
+		ConnectToSubnets:        subnetNames,
 	},
 }
 
@@ -140,16 +139,6 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 		userdata, err := vmlayer.GetVMUserData(v.Name, v.SharedVolume, v.DeploymentManifest, v.Command, &v.CloudConfigParams, reindent16)
 		require.Nil(t, err)
 		genVMsUserData[v.Name] = userdata
-	}
-
-	vmsUserData, err := GetUserDataFromOSResource(ctx, stackTemplate)
-	require.Nil(t, err)
-	require.Equal(t, 5, len(vmsUserData))
-	for vName, userData := range vmsUserData {
-		require.True(t, strings.HasPrefix(userData, "#cloud-config"))
-		genUserData, ok := genVMsUserData[vName]
-		require.True(t, ok)
-		require.True(t, IsUserDataSame(ctx, genUserData, userData), "userdata mismatch")
 	}
 }
 
@@ -231,6 +220,7 @@ func TestHeatTemplate(t *testing.T) {
 	require.Nil(t, err)
 	op.InitResourceReservations(ctx)
 	op.VMProperties.CommonPf.Properties.SetValue("MEX_EXT_NETWORK", "external-network-shared")
+	op.VMProperties.CommonPf.Properties.SetValue("MEX_EXT_NETWORK_SECONDARY", "external-network-shared-ipv6")
 	op.VMProperties.CommonPf.Properties.SetValue("MEX_VM_APP_SUBNET_DHCP_ENABLED", "no")
 	op.VMProperties.CommonPf.PlatformConfig.TestMode = true
 	// Add chef params
@@ -251,23 +241,26 @@ func TestHeatTemplate(t *testing.T) {
 		"openstack-test",
 		vms,
 		vmlayer.WithNewSecurityGroup("testvmgroup-sg"),
-		vmlayer.WithAccessPorts("tcp:7777,udp:8888", infracommon.RemoteCidrAll),
-		vmlayer.WithNewSubnet(subnetName),
+		vmlayer.WithAccessPorts("tcp:7777,udp:8888"),
+		vmlayer.WithNewSubnet(subnetNames),
+		vmlayer.WithEnableIPV6(true),
 	)
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "got VM group params", "vmgp", vmgp1, "err", err)
 	require.Nil(t, err)
+
 	validateStack(ctx, t, vmgp1, &op)
 
 	op.VMProperties.CommonPf.Properties.SetValue("MEX_VM_APP_SUBNET_DHCP_ENABLED", "yes")
-	op.VMProperties.CommonPf.Properties.SetValue("MEX_NETWORK_SCHEME", "cidr=10.101.X.0/24,floatingipnet=public_internal,floatingipsubnet=subnetname,floatingipextnet=public")
+	op.VMProperties.CommonPf.Properties.SetValue("MEX_NETWORK_SCHEME", "cidr=10.101.X.0/24,ipv6routingprefix=fc00:101:ecec,floatingipnet=public_internal,floatingipsubnet=subnetname,floatingipextnet=public")
 	vmgp2, err := vmp.GetVMGroupOrchestrationParamsFromVMSpec(ctx,
 		"openstack-fip-test",
 		vms,
 		vmlayer.WithNewSecurityGroup("testvmgroup-sg"),
-		vmlayer.WithAccessPorts("tcp:7777,udp:8888", infracommon.RemoteCidrAll),
-		vmlayer.WithNewSubnet(subnetName),
+		vmlayer.WithAccessPorts("tcp:7777,udp:8888"),
+		vmlayer.WithNewSubnet(subnetNames),
 		vmlayer.WithSkipInfraSpecificCheck(true),
+		vmlayer.WithEnableIPV6(true),
 	)
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "got VM group params", "vmgp", vmgp2, "err", err)

@@ -34,7 +34,7 @@ message SecurityRule {
   uint32 port_range_min = 2;  
   // TCP or UDP port range end
   uint32 port_range_max = 3;
-  // Remote CIDR X.X.X.X/X
+  // Remote CIDR X.X.X.X/X for IPv4 or e.g. XXXX:XXXX::XXXX/XX for IPv6
   string remote_cidr = 4;
 }
 

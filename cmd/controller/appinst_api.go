@@ -467,6 +467,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	cloudletCompatibilityVersion := uint32(0)
 	var cloudletPlatformType string
 	var cloudletLoc dme.Loc
+	var platformSupportsIPV6 bool
 
 	in.CompatibilityVersion = cloudcommon.GetAppInstCompatibilityVersion()
 
@@ -488,6 +489,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		reservedAutoClusterId = -1
 		reservedClusterInstKey = nil
 		cloudletCompatibilityVersion = 0
+		platformSupportsIPV6 = false
 
 		// lookup App so we can get flavor for reservable ClusterInst
 		var app edgeproto.App
@@ -547,6 +549,14 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 		if in.DedicatedIp && !cloudletFeatures.SupportsAppInstDedicatedIp {
 			return fmt.Errorf("Target cloudlet platform does not support a per-AppInst dedicated IP")
+		}
+		platformSupportsIPV6 = cloudletFeatures.SupportsIpv6
+		if in.EnableIpv6 && !cloudletFeatures.SupportsIpv6 {
+			return fmt.Errorf("cloudlet platform does not support IPv6")
+		}
+		if !cloudcommon.IsClusterInstReqd(&app) && !in.EnableIpv6 {
+			// VM Apps default to the platform setting
+			in.EnableIpv6 = cloudletFeatures.SupportsIpv6
 		}
 		if s.store.STMGet(stm, &in.Key, in) {
 			if !cctx.Undo && in.State != edgeproto.TrackedState_DELETE_ERROR && !ignoreTransient(cctx, in.State) {
@@ -642,6 +652,9 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				if err == nil {
 					autoClusterType = MultiTenantAutoCluster
 					in.ClusterKey = key.ClusterKey
+					in.EnableIpv6 = clusterInst.EnableIpv6
+				} else {
+					log.SpanLog(ctx, log.DebugLevelApi, "auto choose cluster not using multi-tenant cluster %s, %s", key.ClusterKey.Name, err)
 				}
 			} else {
 				err = key.NotFoundError()
@@ -665,6 +678,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 					autoClusterType = ReservableAutoCluster
 					reservedClusterInstKey = &key
 					in.ClusterKey = key.ClusterKey
+					in.EnableIpv6 = cibuf.EnableIpv6
 					cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Chose reservable ClusterInst %s to deploy AppInst", cibuf.Key.ClusterKey.Name)})
 					break
 				}
@@ -697,6 +711,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			autoClusterType = ReservableAutoCluster
 			in.ClusterKey.Name = fmt.Sprintf("%s%d", cloudcommon.ReservableClusterPrefix, reservedAutoClusterId)
 			in.ClusterKey.Organization = edgeproto.OrganizationEdgeCloud
+			in.EnableIpv6 = platformSupportsIPV6
 			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Creating new auto-cluster named %s to deploy AppInst", in.ClusterKey.Name)})
 			log.SpanLog(ctx, log.DebugLevelApi, "Creating new auto-cluster", "key", in.ClusterInstKey())
 		}
@@ -725,6 +740,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			if !sidecarApp && !clusterInst.Reservable && in.Key.Organization != in.Key.Organization {
 				return fmt.Errorf("Developer name mismatch between AppInst: %s and ClusterInst: %s", in.Key.Organization, in.ClusterKey.Organization)
 			}
+			in.EnableIpv6 = clusterInst.EnableIpv6
 			// cluster inst exists so we're good.
 		}
 
@@ -977,6 +993,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		// support dedicated.
 		clusterInst.IpAccess = edgeproto.IpAccess_IP_ACCESS_UNKNOWN
 		clusterInst.Deployment = appDeploymentType
+		clusterInst.EnableIpv6 = platformSupportsIPV6
 		if appDeploymentType == cloudcommon.DeploymentTypeKubernetes ||
 			appDeploymentType == cloudcommon.DeploymentTypeHelm {
 			clusterInst.Deployment = cloudcommon.DeploymentTypeKubernetes
@@ -1237,6 +1254,9 @@ func (s *AppInstApi) useReservableClusterInst(stm concurrency.STM, ctx context.C
 	if targetDeployment != cibuf.Deployment {
 		return fmt.Errorf("deployment type mismatch between App and reservable ClusterInst")
 	}
+	if in.EnableIpv6 && !cibuf.EnableIpv6 {
+		return fmt.Errorf("AppInst requests for IPv6 but cluster does not have it enabled")
+	}
 	// reserve it
 	log.SpanLog(ctx, log.DebugLevelApi, "reserving ClusterInst", "cluster", cibuf.Key.ClusterKey.Name, "AppInst", in.Key)
 	cibuf.ReservedBy = in.Key.Organization
@@ -1256,6 +1276,9 @@ func useMultiTenantClusterInst(stm concurrency.STM, ctx context.Context, in *edg
 	}
 	if app.Deployment != cloudcommon.DeploymentTypeKubernetes {
 		return fmt.Errorf("Deployment type must be kubernetes for multi-tenant ClusterInst")
+	}
+	if in.EnableIpv6 && !cibuf.EnableIpv6 {
+		return fmt.Errorf("AppInst requests for IPv6 but cluster does not have it enabled")
 	}
 	// TODO: check and reserve resources.
 	// May need to trigger adding more nodes to multi-tenant
@@ -1309,7 +1332,7 @@ func (s *AppInstApi) updateAppInstStore(ctx context.Context, in *edgeproto.AppIn
 }
 
 // refreshAppInstInternal returns true if the appinst updated, false otherwise.  False value with no error means no update was needed
-func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.AppInstKey, appKey edgeproto.AppKey, inCb edgeproto.AppInstApi_RefreshAppInstServer, forceUpdate bool) (retbool bool, reterr error) {
+func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.AppInstKey, appKey edgeproto.AppKey, inCb edgeproto.AppInstApi_RefreshAppInstServer, forceUpdate, vmAppIpv6Enabled bool) (retbool bool, reterr error) {
 	ctx := inCb.Context()
 	log.SpanLog(ctx, log.DebugLevelApi, "refreshAppInstInternal", "key", key)
 
@@ -1389,6 +1412,9 @@ func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.App
 			UpdateAppInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
 			"", cb.Send, edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
 		)
+		if vmAppIpv6Enabled {
+			cb.Send(&edgeproto.Result{Message: "IPv6 enabled, you may need to manually update the network configuration on your VM"})
+		}
 	}
 	if err != nil {
 		return false, err
@@ -1451,10 +1477,11 @@ func (s *AppInstApi) RefreshAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstA
 		cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Updating: %d AppInsts", len(instances))})
 	}
 
+	vmAppIpv6Enabled := false
 	for instkey, _ := range instances {
 		go func(k edgeproto.AppInstKey) {
 			log.SpanLog(ctx, log.DebugLevelApi, "updating AppInst", "key", k)
-			updated, err := s.refreshAppInstInternal(DefCallContext(), k, appKey, cb, in.ForceUpdate)
+			updated, err := s.refreshAppInstInternal(DefCallContext(), k, appKey, cb, in.ForceUpdate, vmAppIpv6Enabled)
 			if err == nil {
 				instanceUpdateResults[k] <- updateResult{errString: "", revisionUpdated: updated}
 			} else {
@@ -1537,9 +1564,42 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 
 	cur := edgeproto.AppInst{}
 	changeCount := 0
+	vmAppIpv6Enabled := false
 	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		if !s.store.STMGet(stm, &in.Key, &cur) {
 			return in.Key.NotFoundError()
+		}
+		var app edgeproto.App
+		if !s.all.appApi.store.STMGet(stm, &cur.AppKey, &app) {
+			return in.AppKey.NotFoundError()
+		}
+		if _, found := fmap[edgeproto.AppInstFieldEnableIpv6]; found {
+			if cloudcommon.IsClusterInstReqd(&app) {
+				// ipv6 setting is based on clusterInst setting
+				clusterInst := edgeproto.ClusterInst{}
+				if !s.all.clusterInstApi.store.STMGet(stm, cur.ClusterInstKey(), &clusterInst) {
+					return cur.ClusterInstKey().NotFoundError()
+				}
+				if in.EnableIpv6 && !clusterInst.EnableIpv6 {
+					return fmt.Errorf("cannot enable IPv6 when cluster does not have it enabled, please enable on cluster first")
+				}
+			} else {
+				// VM app, can only enable if platform supports it
+				cloudlet := edgeproto.Cloudlet{}
+				if !s.all.cloudletApi.store.STMGet(stm, &in.Key.CloudletKey, &cloudlet) {
+					return in.Key.CloudletKey.NotFoundError()
+				}
+				features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
+				if err != nil {
+					return fmt.Errorf("Failed to get features for platform: %s", err)
+				}
+				if in.EnableIpv6 && !features.SupportsIpv6 {
+					return fmt.Errorf("cloudlet platform does not support IPv6")
+				}
+				if in.EnableIpv6 && !cur.EnableIpv6 {
+					vmAppIpv6Enabled = true
+				}
+			}
 		}
 		changeCount = cur.CopyInFields(in)
 		if changeCount == 0 {
@@ -1547,10 +1607,6 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 			return nil
 		}
 		if !ignoreCRM(cctx) && powerState != edgeproto.PowerState_POWER_STATE_UNKNOWN {
-			var app edgeproto.App
-			if !s.all.appApi.store.STMGet(stm, &in.AppKey, &app) {
-				return in.AppKey.NotFoundError()
-			}
 			if app.Deployment != cloudcommon.DeploymentTypeVM {
 				return fmt.Errorf("Updating powerstate is only supported for VM deployment")
 			}
@@ -1570,7 +1626,7 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 		return nil
 	}
 	forceUpdate := true
-	_, err = s.refreshAppInstInternal(cctx, in.Key, in.AppKey, cb, forceUpdate)
+	_, err = s.refreshAppInstInternal(cctx, in.Key, cur.AppKey, cb, forceUpdate, vmAppIpv6Enabled)
 	return err
 }
 

@@ -183,12 +183,12 @@ func (v *VMPlatform) setupGPUDrivers(ctx context.Context, rootLBClient ssh.Clien
 	wgDone := make(chan bool)
 	var wg sync.WaitGroup
 	for _, node := range targetNodes {
-		vmIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), node)
+		vmIPs, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), v.GetClusterSubnetName(ctx, clusterInst), node)
 		if err != nil {
 			return err
 		}
 
-		client, err := rootLBClient.AddHop(vmIP.ExternalAddr, 22)
+		client, err := rootLBClient.AddHop(vmIPs.IPV4ExternalAddr(), 22)
 		if err != nil {
 			return err
 		}

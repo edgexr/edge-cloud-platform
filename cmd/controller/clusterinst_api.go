@@ -941,6 +941,18 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		if in.SharedVolumeSize != 0 && !features.SupportsSharedVolume {
 			return fmt.Errorf("Shared volumes not supported on %s", cloudlet.PlatformType)
 		}
+		if in.EnableIpv6 && !features.SupportsIpv6 {
+			return fmt.Errorf("cloudlet platform does not support IPv6")
+		}
+		if in.EnableIpv6 && in.Deployment == cloudcommon.DeploymentTypeKubernetes {
+			// TODO: need new base image, IPv6 podCIDR must be specified during
+			// kubeadm init. Apparently no way to convert after init.
+			return fmt.Errorf("no support for IPv6 on Kubernetes yet")
+		}
+		if !in.EnableIpv6 && in.Deployment != cloudcommon.DeploymentTypeKubernetes {
+			// enable by default if supported
+			in.EnableIpv6 = features.SupportsIpv6
+		}
 		if in.Deployment == cloudcommon.DeploymentTypeKubernetes {
 			err = validateNumNodesForKubernetes(ctx, cloudlet.PlatformType, features, in.NumNodes)
 			if err != nil {
@@ -1154,6 +1166,14 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 	}
 
 	cctx.SetOverride(&in.CrmOverride)
+	fmap := edgeproto.MakeFieldMap(in.Fields)
+
+	if _, found := fmap[edgeproto.ClusterInstFieldEnableIpv6]; found && !in.EnableIpv6 {
+		err := s.checkDisableDisableIPV6(ctx, &in.Key)
+		if err != nil {
+			return err
+		}
+	}
 
 	clusterInstKey := in.Key
 	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, clusterInstKey.StreamKey(), inCb)
@@ -1166,12 +1186,15 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 		if !s.store.STMGet(stm, &in.Key, &inbuf) {
 			return in.Key.NotFoundError()
 		}
-		if inbuf.NumMasters == 0 {
-			return fmt.Errorf("cannot modify single node clusters")
-		}
-		if inbuf.AutoScalePolicy == "" && in.AutoScalePolicy != "" {
-			if inbuf.Deployment != cloudcommon.DeploymentTypeKubernetes {
+		if inbuf.Deployment != cloudcommon.DeploymentTypeKubernetes {
+			if inbuf.AutoScalePolicy == "" && in.AutoScalePolicy != "" {
 				return fmt.Errorf("Cannot add auto scale policy to non-kubernetes ClusterInst")
+			}
+			if _, found := fmap[edgeproto.ClusterInstFieldNumMasters]; found && in.NumMasters != 0 {
+				return fmt.Errorf("Cannot update number of master nodes in non-kubernetes cluster")
+			}
+			if _, found := fmap[edgeproto.ClusterInstFieldNumNodes]; found && in.NumNodes != 0 {
+				return fmt.Errorf("Cannot update number of nodes in non-kubernetes cluster")
 			}
 		}
 
@@ -1185,6 +1208,25 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 				retry = true
 			} else {
 				return errors.New("ClusterInst busy, cannot update")
+			}
+		}
+
+		cloudlet := edgeproto.Cloudlet{}
+		if !s.all.cloudletApi.store.STMGet(stm, &in.Key.CloudletKey, &cloudlet) {
+			return in.Key.CloudletKey.NotFoundError()
+		}
+		features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
+		if err != nil {
+			return fmt.Errorf("Failed to get features for platform: %s", err)
+		}
+		if _, found := fmap[edgeproto.ClusterInstFieldEnableIpv6]; found {
+			if in.EnableIpv6 && !features.SupportsIpv6 {
+				return fmt.Errorf("cloudlet platform does not support IPv6")
+			}
+			if in.EnableIpv6 != inbuf.EnableIpv6 {
+				if inbuf.Deployment == cloudcommon.DeploymentTypeKubernetes {
+					return fmt.Errorf("cannot change IPv6 setting on Kubernetes clusters")
+				}
 			}
 		}
 
@@ -1207,10 +1249,6 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 			resClusterInst.NumMasters = 0
 		}
 		if resChanged {
-			cloudlet := edgeproto.Cloudlet{}
-			if !s.all.cloudletApi.store.STMGet(stm, &in.Key.CloudletKey, &cloudlet) {
-				return errors.New("Specified Cloudlet not found")
-			}
 			info := edgeproto.CloudletInfo{}
 			if !s.all.cloudletInfoApi.store.STMGet(stm, &in.Key.CloudletKey, &info) {
 				return fmt.Errorf("No resource information found for Cloudlet %s", in.Key.CloudletKey)
@@ -1280,9 +1318,6 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 		"Updated ClusterInst successfully", cb.Send,
 		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
 	)
-	if err == nil {
-		s.updateCloudletResourcesMetric(ctx, &in.Key.CloudletKey)
-	}
 	return err
 }
 
@@ -1298,6 +1333,37 @@ func (s *ClusterInstApi) updateCloudletResourcesMetric(ctx context.Context, key 
 	} else {
 		log.SpanLog(ctx, log.DebugLevelApi, "Failed to generate cloudlet resource usage metric", "cloudletkey", key, "err", resErr)
 	}
+}
+
+// update AppInst enable ipv6 setting to match clusterInst's setting
+func (s *ClusterInstApi) checkDisableDisableIPV6(ctx context.Context, key *edgeproto.ClusterInstKey) error {
+	refs := edgeproto.ClusterRefs{}
+	if !s.all.clusterRefsApi.cache.Get(key, &refs) {
+		return nil
+	}
+	enabledAppInsts := []string{}
+
+	for _, aiRef := range refs.Apps {
+		aiKey := edgeproto.AppInstKey{}
+		aiKey.FromAppInstRefKey(&aiRef, &key.CloudletKey)
+		appInst := edgeproto.AppInst{}
+		if s.all.appInstApi.cache.Get(&aiKey, &appInst) {
+			app := edgeproto.App{}
+			if s.all.appApi.cache.Get(&appInst.AppKey, &app) {
+				if len(appInst.MappedPorts) == 0 || app.InternalPorts {
+					// doesn't depend on IPv6 interface
+					continue
+				}
+				if appInst.EnableIpv6 {
+					enabledAppInsts = append(enabledAppInsts, appInst.Key.GetKeyString())
+				}
+			}
+		}
+	}
+	if len(enabledAppInsts) > 0 {
+		return fmt.Errorf("cannot disable IPv6 on cluster when AppInsts on cluster have it enabled: %s", strings.Join(enabledAppInsts, ", "))
+	}
+	return nil
 }
 
 func (s *ClusterInstApi) validateClusterInstUpdates(ctx context.Context, stm concurrency.STM, in *edgeproto.ClusterInst) error {

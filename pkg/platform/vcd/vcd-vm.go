@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -117,16 +118,17 @@ func (v *VcdPlatform) getIpFromPortParams(ctx context.Context, vmparams *vmlayer
 	for _, port := range vmparams.Ports {
 		for _, p := range vmgp.Ports {
 			if p.Id == port.Id {
-				log.SpanLog(ctx, log.DebugLevelInfra, "Found Port within orch params", "id", port.Id, "fixedips", p.FixedIPs, "networkInfo", netMap[p.SubnetId])
+				subnetId := p.SubnetIds.IPV4()
+				log.SpanLog(ctx, log.DebugLevelInfra, "Found Port within orch params", "id", port.Id, "fixedips", p.FixedIPs, "networkInfo", netMap[subnetId])
 				if len(p.FixedIPs) == 1 && p.FixedIPs[0].Address == vmlayer.NextAvailableResource {
-					net, ok := netMap[p.SubnetId]
+					net, ok := netMap[subnetId]
 					if !ok {
 						log.SpanLog(ctx, log.DebugLevelInfra, "failed to find subnet in map", "port", port, "netmap", netMap)
-						return "", fmt.Errorf("cannot subnet in netmap for network %s", p.SubnetId)
+						return "", fmt.Errorf("cannot subnet in netmap for network %s", subnetId)
 					}
 					log.SpanLog(ctx, log.DebugLevelInfra, "FixedIPs is next available resource", "net", net)
 					if vmgp.ConnectsToSharedRootLB {
-						if netMap[p.SubnetId].LegacyIsoNet {
+						if netMap[subnetId].LegacyIsoNet {
 							ipRange = net.Gateway
 							log.SpanLog(ctx, log.DebugLevelInfra, "Using legacy net GW as iprange", "ipRange", ipRange)
 						} else if ipRange == "" {
@@ -333,6 +335,8 @@ func (v *VcdPlatform) updateNetworksForVM(ctx context.Context, vcdClient *govcd.
 				})
 		case vmlayer.NetworkTypeExternalPrimary:
 			fallthrough
+		case vmlayer.NetworkTypeExternalSecondary:
+			fallthrough
 		case vmlayer.NetworkTypeExternalAdditionalPlatform:
 			fallthrough
 		case vmlayer.NetworkTypeExternalAdditionalRootLb:
@@ -403,7 +407,7 @@ func (v *VcdPlatform) updateNetworksForVM(ctx context.Context, vcdClient *govcd.
 					if err != nil {
 						return nil, err
 					}
-					cmds, err := vmlayer.GetBootCommandsForInterClusterIptables(ctx, allowedStr, blockedStr, netinfo.Gateway)
+					cmds, err := vmlayer.GetBootCommandsForInterClusterIptables(ctx, allowedStr, blockedStr, netinfo.Gateway, infracommon.IPV4)
 					if err != nil {
 						return nil, err
 					}
@@ -523,7 +527,7 @@ func (v *VcdPlatform) AddVMsToExistingVApp(ctx context.Context, vapp *govcd.VApp
 	}
 	ports := vmgp.Ports
 	numVMs := len(vmgp.VMs)
-	netName := ports[0].SubnetId
+	netName := ports[0].SubnetIds.IPV4()
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVapp", "network", netName, "vms", numVMs, "to existing vms", numExistingVMs)
 
 	masterIP := ""
@@ -939,17 +943,18 @@ func (v *VcdPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
 	return nil
 }
 
-func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM, vcdClient *govcd.VCDClient, vdc *govcd.Vdc) ([]vmlayer.ServerIP, error) {
+func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM, vcdClient *govcd.VCDClient, vdc *govcd.Vdc) ([]vmlayer.ServerIP, map[string]*vmlayer.NetworkDetail, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMAddresses", "vmname", vm.VM.Name)
 
 	var serverIPs []vmlayer.ServerIP
+	networks := make(map[string]*vmlayer.NetworkDetail)
 	if vm == nil || vm.VM == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "nil VM", "vmname", vm.VM.Name)
-		return serverIPs, fmt.Errorf(vmlayer.ServerDoesNotExistError)
+		return serverIPs, networks, fmt.Errorf(vmlayer.ServerDoesNotExistError)
 	}
 	if vm.VM.NetworkConnectionSection == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "nil network section", "vmname", vm.VM.Name)
-		return serverIPs, fmt.Errorf(vmlayer.ServerIPNotFound)
+		return serverIPs, networks, fmt.Errorf(vmlayer.ServerIPNotFound)
 	}
 	vmName := vm.VM.Name
 	connections := vm.VM.NetworkConnectionSection.NetworkConnection
@@ -959,13 +964,14 @@ func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM, vcdClien
 			MacAddress:   connection.MACAddress,
 			ExternalAddr: connection.IPAddress,
 			InternalAddr: connection.IPAddress,
+			IPVersion:    infracommon.IPV4, // VDC 10.2 only supports IPv4
 		}
 		netname := connection.Network
 		portNetName := netname
 		if connection.Network != v.vmProperties.GetCloudletExternalNetwork() {
 			// substitute the VCD network name for the mex nomenclature if this is a shared LB connected node
 			// so that we can find it from vmlayer using the mex net name. This avoids having to lookup metadata
-			if netname == v.vmProperties.GetSharedCommonSubnetName() {
+			if netname == v.vmProperties.GetSharedCommonSubnetName().IPV4() {
 				netname = v.vmProperties.GetCloudletMexNetwork()
 				log.SpanLog(ctx, log.DebugLevelInfra, "using mex internal network for shared subnet", "netname", netname, "connection.Network", connection.Network)
 			} else if strings.HasPrefix(netname, mexInternalNetRange) {
@@ -973,17 +979,26 @@ func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM, vcdClien
 				var err error
 				portNetName, err = v.GetSubnetFromLegacyIsoMetadata(ctx, netname, vcdClient, vdc)
 				if err != nil {
-					return serverIPs, err
+					return serverIPs, networks, err
 				}
 				log.SpanLog(ctx, log.DebugLevelInfra, "converting legacy iso net to mex subnet", "netname", netname, "connection.Network", connection.Network)
 			}
 		}
 		servIP.Network = netname
 		servIP.PortName = vmName + "-" + portNetName + "-port"
-		log.SpanLog(ctx, log.DebugLevelInfra, "GetVMAddresses Added", "vmname", vmName, "portName", servIP.PortName, "network", servIP.Network)
+		nd, found := networks[netname]
+		if !found {
+			var err error
+			nd, err = v.GetNetworkDetail(ctx, netname)
+			if err != nil {
+				return serverIPs, networks, fmt.Errorf("failed to lookup network %s for addr %s, %s", netname, connection.IPAddress, err)
+			}
+			networks[netname] = nd
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetVMAddresses Added", "vmname", vmName, "portName", servIP.PortName, "network", servIP.Network, "servIP", servIP)
 		serverIPs = append(serverIPs, servIP)
 	}
-	return serverIPs, nil
+	return serverIPs, networks, nil
 }
 
 func (v *VcdPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {

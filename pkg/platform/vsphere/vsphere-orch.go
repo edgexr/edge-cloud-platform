@@ -22,9 +22,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 )
 
 var orchVmLock sync.Mutex
@@ -197,6 +198,10 @@ func (v *VSpherePlatform) populateOrchestrationParams(ctx context.Context, vmgp 
 			// no need to compute the CIDR
 			continue
 		}
+		if s.IPVersion == infracommon.IPV6 {
+			log.SpanLog(ctx, log.DebugLevelInfra, "ipv6 subnets not supported yet", "subnet", s)
+			continue
+		}
 		found := false
 		for octet := 0; octet <= 255; octet++ {
 			subnet := fmt.Sprintf("%s.%s.%d.%d/%s", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet, 0, vmgp.Netspec.NetmaskBits)
@@ -225,7 +230,7 @@ func (v *VSpherePlatform) populateOrchestrationParams(ctx context.Context, vmgp 
 	// populate vm fields
 	for vmidx, vm := range vmgp.VMs {
 		vmHasExternalIp := false
-		vmgp.VMs[vmidx].MetaData = vmlayer.GetVMMetaData(vm.Role, masterIP, vmsphereMetaDataFormatter)
+		vmgp.VMs[vmidx].MetaData = vmlayer.GetVMMetaData(vm.Role, masterIP, "", vmsphereMetaDataFormatter)
 		userdata, err := vmlayer.GetVMUserData(vm.Name, vm.SharedVolume, vm.DeploymentManifest, vm.Command, &vm.CloudConfigParams, vmsphereUserDataFormatter)
 		if err != nil {
 			return err
@@ -552,6 +557,10 @@ func (v *VSpherePlatform) CreateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOr
 	}
 	updateCallback(edgeproto.UpdateTask, "Creating Distributed Port Groups")
 	for _, s := range vmgp.Subnets {
+		if s.IPVersion == infracommon.IPV6 {
+			log.SpanLog(ctx, log.DebugLevelInfra, "ipv6 subnets not supported yet", "subnet", s)
+			continue
+		}
 		pgName := getPortGroupNameForVlan(s.Vlan)
 		err := v.CreatePortGroup(ctx, v.GetInternalVSwitch(), pgName, s.Vlan)
 		if err != nil {
@@ -783,10 +792,10 @@ func (v *VSpherePlatform) UpdateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOr
 }
 
 // AttachPortToServer adds a port to the server with the given ipaddr
-func (v *VSpherePlatform) AttachPortToServer(ctx context.Context, serverName, subnetName, portName, ipaddr string, action vmlayer.ActionType) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer", "serverName", serverName, "subnetName", subnetName)
+func (v *VSpherePlatform) AttachPortToServer(ctx context.Context, serverName string, subnetNames vmlayer.SubnetNames, portName string, ips infracommon.IPs, action vmlayer.ActionType) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer", "serverName", serverName, "subnetNames", subnetNames)
 
-	portGrp, err := v.GetPortGroup(ctx, serverName, subnetName)
+	portGrp, err := v.GetPortGroup(ctx, serverName, subnetNames.IPV4())
 	if err != nil {
 		return err
 	}
@@ -805,7 +814,7 @@ func (v *VSpherePlatform) AttachPortToServer(ctx context.Context, serverName, su
 		}
 	}
 	// now create the tag
-	tagName := v.GetVmIpTag(ctx, serverName, serverName, subnetName, ipaddr)
+	tagName := v.GetVmIpTag(ctx, serverName, serverName, subnetNames.IPV4(), ips.IPV4())
 	tagId := v.IdSanitize(tagName)
 	tag := vmlayer.TagOrchestrationParams{
 		Name:     tagName,
@@ -816,8 +825,8 @@ func (v *VSpherePlatform) AttachPortToServer(ctx context.Context, serverName, su
 }
 
 // DetachPortFromServer does not actually detach the port (not supported in govc), but removes the tags
-func (v *VSpherePlatform) DetachPortFromServer(ctx context.Context, serverName, subnetName string, portName string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer", "subnetName", subnetName, "portName", portName)
+func (v *VSpherePlatform) DetachPortFromServer(ctx context.Context, serverName string, subnetNames vmlayer.SubnetNames, portName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer", "subnetNames", subnetNames, "portName", portName)
 	// get all the ip tags for this server
 	tags, err := v.GetTagsMatchingField(ctx, TagFieldVmName, serverName, v.GetVmIpTagCategory(ctx))
 	if err != nil {
@@ -829,7 +838,7 @@ func (v *VSpherePlatform) DetachPortFromServer(ctx context.Context, serverName, 
 		if err != nil {
 			return err
 		}
-		if vmipTagContents.Network == subnetName {
+		if vmipTagContents.Network == subnetNames.IPV4() {
 			return v.DeleteTag(ctx, t.Name)
 		}
 	}

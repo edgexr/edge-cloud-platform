@@ -26,8 +26,10 @@ var DeploymentReplaceVarsKey = "DeploymentReplaceVarsKey"
 
 // These are CRM-specific variables that can be replaced in th Crm service context
 type CrmReplaceVars struct {
-	// ClusterIp of the cluster master
+	// Cluster IPv4 of the cluster master
 	ClusterIp string
+	// Cluster IPv6 of the cluster master
+	ClusterIPV6 string
 	// Cloudlet Name
 	CloudletName string
 	// Cluster Name

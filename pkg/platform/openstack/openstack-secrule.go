@@ -18,13 +18,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/netip"
 	"strings"
 	"sync"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -165,7 +166,23 @@ func (o *OpenstackPlatform) AddSecurityRulesForRemoteGroup(ctx context.Context, 
 }
 
 func (s *OpenstackPlatform) AddSecurityRuleCIDR(ctx context.Context, cidr string, proto string, groupName string, port string) error {
-	out, err := s.TimedOpenStackCommand(ctx, "openstack", "security", "group", "rule", "create", "--remote-ip", cidr, "--proto", proto, "--dst-port", port, "--ingress", groupName)
+	args := []string{"security", "group", "rule", "create", "--ingress", "--remote-ip", cidr}
+	if proto != "" {
+		args = append(args, "--proto", proto)
+	}
+	if port != "" {
+		args = append(args, "--dst-port", port)
+	}
+	prefix, err := netip.ParsePrefix(cidr)
+	if err != nil {
+		return fmt.Errorf("failed to parse CIDR %s for security rule, %s", cidr, err)
+	}
+	if prefix.Addr().Is6() {
+		args = append(args, "--ethertype", "IPv6")
+	}
+	args = append(args, groupName)
+
+	out, err := s.TimedOpenStackCommand(ctx, "openstack", args...)
 	if err != nil {
 		if strings.Contains(string(out), SecgrpRuleAlreadyExists) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "security group rule already exists, proceeding")
@@ -202,7 +219,14 @@ func (o *OpenstackPlatform) RemoveWhitelistSecurityRules(ctx context.Context, cl
 			return err
 		}
 		for _, r := range rules {
-			if r.PortRange == portString && r.Protocol == proto && r.IPRange == allowedClientCIDR {
+			allowed := false
+			for _, cidr := range allowedClientCIDR {
+				if r.IPRange == cidr {
+					allowed = true
+					break
+				}
+			}
+			if r.PortRange == portString && r.Protocol == proto && allowed {
 				if err := o.DeleteSecurityGroupRule(ctx, r.ID); err != nil {
 					return err
 				}
@@ -225,8 +249,13 @@ func (o *OpenstackPlatform) WhitelistSecurityRules(ctx context.Context, client s
 		if err != nil {
 			return err
 		}
-		if err := o.AddSecurityRuleCIDR(ctx, wlParams.AllowedCIDR, proto, wlParams.SecGrpName, portStr); err != nil {
-			return err
+		for _, cidr := range wlParams.AllowedCIDR {
+			if cidr == "" {
+				continue
+			}
+			if err := o.AddSecurityRuleCIDR(ctx, cidr, proto, wlParams.SecGrpName, portStr); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -299,6 +328,13 @@ func (o *OpenstackPlatform) ConfigureCloudletSecurityRules(ctx context.Context, 
 				}
 			}
 		}
+		if o.VMProperties.CloudletEnableIPV6 {
+			// allow for IPv6 ping
+			err := o.AddSecurityRuleCIDR(ctx, "::/0", "ipv6-icmp", cloudletGrpId, "")
+			if err != nil {
+				return err
+			}
+		}
 	} else {
 		return o.DeleteCloudletSecgrpStack(ctx, updateCallback)
 	}
@@ -322,7 +358,7 @@ func (o *OpenstackPlatform) CreateOrUpdateSecgrpStack(ctx context.Context, grpNa
 	} else {
 		grpExists = true
 	}
-	vmgp, err := vmlayer.GetVMGroupOrchestrationParamsFromTrustPolicy(ctx, grpName, rules, egressRestricted, vmlayer.SecGrpWithAccessPorts("tcp:22", infracommon.RemoteCidrAll))
+	vmgp, err := vmlayer.GetVMGroupOrchestrationParamsFromTrustPolicy(ctx, grpName, rules, egressRestricted, o.VMProperties.CloudletEnableIPV6, vmlayer.SecGrpWithAccessPorts("tcp:22"))
 	if err != nil {
 		return err
 	}

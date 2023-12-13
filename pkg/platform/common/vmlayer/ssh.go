@@ -42,11 +42,12 @@ func (v *VMPlatform) GetSSHClientForCluster(ctx context.Context, clusterInst *ed
 
 //GetSSHClient returns ssh client handle for the server
 func (v *VMPlatform) GetSSHClientForServer(ctx context.Context, serverName, networkName string, ops ...pc.SSHClientOp) (ssh.Client, error) {
-	serverIp, err := v.GetIPFromServerName(ctx, networkName, "", serverName, ops...)
+	getIPOPs := GetIPOpsFromSSHOps(ops)
+	serverIp, err := v.GetIPFromServerName(ctx, networkName, NoSubnets, serverName, getIPOPs...)
 	if err != nil {
 		return nil, err
 	}
-	externalAddr := serverIp.ExternalAddr
+	externalAddr := serverIp.IPV4ExternalAddr()
 	return v.VMProperties.CommonPf.GetSSHClientFromIPAddr(ctx, externalAddr, ops...)
 }
 
@@ -108,11 +109,11 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 		case cloudcommon.DeploymentTypeKubernetes:
 			var masterClient ssh.Client
 			masterNode := GetClusterMasterName(ctx, clusterInst)
-			masterIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), masterNode)
+			masterIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), v.GetClusterSubnetName(ctx, clusterInst), masterNode)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "error getting masterIP", "vm", masterNode, "err", err)
 			} else {
-				masterClient, err = lbClient.AddHop(masterIP.ExternalAddr, 22)
+				masterClient, err = lbClient.AddHop(masterIP.IPV4ExternalAddr(), 22)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "Fail to addhop to master", "masterIP", masterIP, "err", err)
 				}
@@ -125,11 +126,11 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 			for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
 				var nodeClient ssh.Client
 				clusterNode := GetClusterNodeName(ctx, clusterInst, nn)
-				nodeIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), clusterNode)
+				nodeIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), v.GetClusterSubnetName(ctx, clusterInst), clusterNode)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "error getting node IP", "vm", clusterNode, "err", err)
 				} else {
-					nodeClient, err = lbClient.AddHop(nodeIP.ExternalAddr, 22)
+					nodeClient, err = lbClient.AddHop(nodeIP.IPV4ExternalAddr(), 22)
 					if err != nil {
 						log.SpanLog(ctx, log.DebugLevelInfra, "Fail to addhop to node", "nodeIP", nodeIP, "err", err)
 					}
@@ -144,11 +145,11 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 		case cloudcommon.DeploymentTypeDocker:
 			var dockerNodeClient ssh.Client
 			dockerNode := v.GetDockerNodeName(ctx, clusterInst)
-			dockerNodeIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), dockerNode)
+			dockerNodeIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), v.GetClusterSubnetName(ctx, clusterInst), dockerNode)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "error getting docker node IP", "vm", dockerNode, "err", err)
 			} else {
-				dockerNodeClient, err = lbClient.AddHop(dockerNodeIP.ExternalAddr, 22)
+				dockerNodeClient, err = lbClient.AddHop(dockerNodeIP.IPV4ExternalAddr(), 22)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "Fail to addhop to docker node", "dockerNodeIP", dockerNodeIP, "err", err)
 				}

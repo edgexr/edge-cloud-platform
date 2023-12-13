@@ -136,7 +136,8 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 				action := infracommon.DnsSvcAction{}
 				action.PatchKube = false
 				action.PatchIP = ""
-				action.ExternalIP = ipaddr
+				action.ExternalIP = ipaddr.IPV4()
+				action.ExternalIPV6 = ipaddr.IPV6()
 				return &action, nil
 			}
 			// If this is all internal ports, all we need is patch of kube service
@@ -152,8 +153,12 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 					Ports:       appInst.MappedPorts,
 					DestIP:      ipaddr,
 				}
+				proxyConfig := &proxy.ProxyConfig{
+					ListenIP:   ipaddr.IPV4(),
+					ListenIPV6: ipaddr.IPV6(),
+				}
 				ops := infracommon.ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true, ProxyNamePrefix: k8smgmt.GetKconfName(clusterInst) + "-"}
-				err = k.commonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, k.WhitelistSecurityRules, &wlParams, ipaddr, "", ops, proxy.WithDockerNetwork("host"), proxy.WithDockerUser(DockerUser), proxy.WithMetricEndpoint(cloudcommon.ProxyMetricsListenUDS))
+				err = k.commonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, k.WhitelistSecurityRules, &wlParams, proxyConfig, ops, proxy.WithDockerNetwork("host"), proxy.WithDockerUser(DockerUser), proxy.WithMetricEndpoint(cloudcommon.ProxyMetricsListenUDS))
 			}
 		}
 
@@ -235,7 +240,7 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 		}
 		if appInst.DedicatedIp {
 			externalDev := k.GetExternalEthernetInterface()
-			err := k.RemoveIp(ctx, client, ipaddr, externalDev, rootLBName)
+			err := k.RemoveIp(ctx, client, ipaddr.IPV4(), externalDev, rootLBName)
 			if err != nil {
 				return err
 			}

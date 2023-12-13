@@ -17,10 +17,13 @@ package proxy
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
-	"html/template"
+	"os"
 	"strings"
+	"text/template"
 
+	"github.com/docker/docker/api/types"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -41,8 +44,8 @@ func init() {
 	sdsYamlT = template.Must(template.New("yaml").Parse(sdsYaml))
 }
 
-func CreateEnvoyProxy(ctx context.Context, client ssh.Client, name, listenIP, backendIP string, appInst *edgeproto.AppInst, skipHcPorts string, ops ...Op) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "create envoy", "name", name, "listenIP", listenIP, "backendIP", backendIP, "appInst", appInst)
+func CreateEnvoyProxy(ctx context.Context, client ssh.Client, name string, config *ProxyConfig, appInst *edgeproto.AppInst, ops ...Op) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "create envoy", "name", name, "config", config, "appInst", appInst)
 	opts := Options{}
 	opts.Apply(ops)
 
@@ -71,19 +74,20 @@ func CreateEnvoyProxy(ctx context.Context, client ssh.Client, name, listenIP, ba
 	if opts.MetricIP != "" {
 		metricIP = opts.MetricIP
 	}
-	isTLS, err := createEnvoyYaml(ctx, client, dir, name, listenIP, backendIP, metricIP, opts.MetricUDS, appInst, skipHcPorts)
+	configUpdated, isTLS, err := createEnvoyYaml(ctx, client, dir, name, config, metricIP, opts.MetricUDS, appInst)
 	if err != nil {
 		return fmt.Errorf("create envoy.yaml failed, %v", err)
 	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "created envoy config", "configUpdated", configUpdated, "isTLS", isTLS)
 
 	metricEndpoint := metricIP
 	if opts.MetricUDS {
 		metricEndpoint = cloudcommon.ProxyMetricsListenUDS
 	}
 	// container name is envoy+name for now to avoid conflicts with the nginx containers
-	cmdArgs := []string{"run", "-d", "-l edge-cloud", "-l", cloudcommon.MexMetricEndpoint + "=" + metricEndpoint, "--restart=unless-stopped", "--name", "envoy" + name}
+	cmdArgs := []string{"run", "-d", "-l", "edge-cloud", "-l", cloudcommon.MexMetricEndpoint + "=" + metricEndpoint, "--restart=unless-stopped", "--name", "envoy" + name}
 	if opts.DockerPublishPorts {
-		cmdArgs = append(cmdArgs, dockermgmt.GetDockerPortString(appInst.MappedPorts, dockermgmt.UsePublicPortInContainer, dockermgmt.EnvoyProxy, listenIP)...)
+		cmdArgs = append(cmdArgs, dockermgmt.GetDockerPortString(appInst.MappedPorts, dockermgmt.UsePublicPortInContainer, dockermgmt.EnvoyProxy, config.ListenIP, config.ListenIPV6)...)
 	}
 	if opts.DockerNetwork != "" {
 		// For dind, we use the network which the dind cluster is on.
@@ -106,7 +110,47 @@ func CreateEnvoyProxy(ctx context.Context, client ssh.Client, name, listenIP, ba
 		cmdArgs = append(cmdArgs, []string{"-u", fmt.Sprintf("%s:%s", opts.DockerUser, opts.DockerUser)}...)
 	}
 	cmdArgs = append(cmdArgs, "ghcr.io/edgexr/envoy-with-curl@"+cloudcommon.EnvoyImageDigest)
-	cmdArgs = append(cmdArgs, []string{"envoy", "-c", "/etc/envoy/envoy.yaml --use-dynamic-base-id"}...)
+	cmdArgs = append(cmdArgs, []string{"envoy", "-c", "/etc/envoy/envoy.yaml", "--use-dynamic-base-id"}...)
+
+	data, err := client.Output("docker inspect envoy" + name)
+	if err == nil {
+		// container already running, determine if we can just restart it
+		// or if we need to stop and start it.
+		log.SpanLog(ctx, log.DebugLevelInfra, "existing envoy instance detected, checking if args match", "args", cmdArgs)
+		os.WriteFile("docker-inspect.json", []byte(data), 0644)
+		argsMatch := false
+		inspectData := []types.ContainerJSON{}
+		err := json.Unmarshal([]byte(data), &inspectData)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "unmarshal docker inspect data failed", "data", inspectData, "err", err)
+		} else if len(inspectData) > 0 {
+			argsMatch = dockermgmt.ArgsMatchRunning(ctx, inspectData[0], cmdArgs)
+			log.SpanLog(ctx, log.DebugLevelInfra, "existing envoy instance args check", "argsMatch", argsMatch)
+		}
+		if !configUpdated && argsMatch {
+			return nil
+		}
+		if argsMatch {
+			// restart container to pick up new config
+			log.SpanLog(ctx, log.DebugLevelInfra, "restarting envoy")
+			out, err := client.Output("docker restart envoy" + name)
+			if err != nil {
+				return fmt.Errorf("failed to restart envoy%s, %s, %s", name, out, err)
+			}
+			return nil
+		}
+		// stop so it can be started again
+		log.SpanLog(ctx, log.DebugLevelInfra, "killing envoy so it can be re-run")
+		out, err := client.Output("docker kill envoy" + name)
+		if err != nil {
+			// maybe it's dead already
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to kill existing envoy", "out", out, "err", err)
+		}
+		out, err = client.Output("docker rm -f envoy" + name)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to remove existing envoy", "out", out, "err", err)
+		}
+	}
 
 	cmd := "docker " + strings.Join(cmdArgs, " ")
 	log.SpanLog(ctx, log.DebugLevelInfra, "envoy docker command", "name", "envoy"+name,
@@ -164,7 +208,9 @@ func getBackendIpToUse(ctx context.Context, appInst *edgeproto.AppInst, port *dm
 	return serviceBackendIP, nil
 }
 
-func createEnvoyYaml(ctx context.Context, client ssh.Client, yamldir, name, listenIP, defaultBackendIP, metricIP string, metricUDS bool, appInst *edgeproto.AppInst, skipHcPorts string) (bool, error) {
+func generateEnvoyYaml(ctx context.Context, name string, config *ProxyConfig, metricIP string, metricUDS bool, appInst *edgeproto.AppInst) (string, string, bool, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "generate envoy yaml", "name", name)
+
 	var skipHcAll = false
 	var skipHcPortsMap map[string]struct{}
 	var err error
@@ -177,104 +223,149 @@ func createEnvoyYaml(ctx context.Context, client ssh.Client, yamldir, name, list
 		CertName:   cloudcommon.CertName,
 	}
 	// check skip health check ports
-	if skipHcPorts == "all" {
+	if config.SkipHCPorts == "all" {
 		skipHcAll = true
 	} else {
-		skipHcPortsMap, err = buildPortsMapFromString(skipHcPorts)
+		skipHcPortsMap, err = buildPortsMapFromString(config.SkipHCPorts)
 		if err != nil {
-			return false, err
+			return "", "", false, err
 		}
 	}
 
 	isTLS := false
-	for _, p := range appInst.MappedPorts {
-		endPort := p.EndPort
-		if endPort == 0 {
-			endPort = p.PublicPort
-		} else {
-			// if we have a port range, the internal ports and external ports must match
-			if p.InternalPort != p.PublicPort {
-				return false, fmt.Errorf("public and internal ports must match when port range in use")
-			}
+	proxyIPPairs := []struct {
+		listenIP string
+		destIP   string
+		IPTag    string
+	}{
+		{config.ListenIP, config.DestIP, ""},
+		{config.ListenIPV6, config.DestIPV6, "ipv6"},
+	}
+	for _, proxyIPPair := range proxyIPPairs {
+		if proxyIPPair.listenIP == "" || proxyIPPair.destIP == "" {
+			continue
 		}
-		// Currently there is no (known) way to put a port range within Envoy.
-		// So we create one spec per port when there is a port range in use
-		internalPort := p.InternalPort
-		for pubPort := p.PublicPort; pubPort <= endPort; pubPort++ {
-			serviceBackendIP, err := getBackendIpToUse(ctx, appInst, &p, defaultBackendIP)
-			if err != nil {
-				return false, err
+		for _, p := range appInst.MappedPorts {
+			endPort := p.EndPort
+			if endPort == 0 {
+				endPort = p.PublicPort
+			} else {
+				// if we have a port range, the internal ports and external ports must match
+				if p.InternalPort != p.PublicPort {
+					return "", "", false, fmt.Errorf("public and internal ports must match when port range in use")
+				}
 			}
-			switch p.Proto {
-			// only support tcp for now
-			case dme.LProto_L_PROTO_TCP:
-				key := fmt.Sprintf("%s:%d", "tcp", internalPort)
-				_, skipHealthCheck := skipHcPortsMap[key]
-				tcpPort := TCPSpecDetail{
-					ListenPort:  pubPort,
-					ListenIP:    listenIP,
-					BackendIP:   serviceBackendIP,
-					BackendPort: internalPort,
-					UseTLS:      p.Tls,
-					HealthCheck: !skipHcAll && !skipHealthCheck,
-				}
-				if p.Tls {
-					isTLS = true
-				}
-				tcpconns, err := getTCPConcurrentConnections()
+			// Currently there is no (known) way to put a port range within Envoy.
+			// So we create one spec per port when there is a port range in use
+			internalPort := p.InternalPort
+			for pubPort := p.PublicPort; pubPort <= endPort; pubPort++ {
+				serviceBackendIP, err := getBackendIpToUse(ctx, appInst, &p, proxyIPPair.destIP)
 				if err != nil {
-					return false, err
+					return "", "", false, err
 				}
-				tcpPort.ConcurrentConns = tcpconns
-				spec.TCPSpec = append(spec.TCPSpec, &tcpPort)
-			case dme.LProto_L_PROTO_UDP:
-				if p.Nginx { // defv specified nginx for this port (range)
-					continue
+				listenIP := proxyIPPair.listenIP
+				// special case, yaml can't handle :: as a value, must be quoted
+				if listenIP == "::" {
+					listenIP = "\"::\""
 				}
-				udpPort := UDPSpecDetail{
-					ListenPort:  pubPort,
-					ListenIP:    listenIP,
-					BackendIP:   serviceBackendIP,
-					BackendPort: internalPort,
-					MaxPktSize:  p.MaxPktSize,
+
+				switch p.Proto {
+				// only support tcp for now
+				case dme.LProto_L_PROTO_TCP:
+					key := fmt.Sprintf("%s:%d", "tcp", internalPort)
+					_, skipHealthCheck := skipHcPortsMap[key]
+					tcpPort := TCPSpecDetail{
+						ListenPort:  pubPort,
+						ListenIP:    listenIP,
+						BackendIP:   serviceBackendIP,
+						BackendPort: internalPort,
+						UseTLS:      p.Tls,
+						HealthCheck: !skipHcAll && !skipHealthCheck,
+						IPTag:       proxyIPPair.IPTag,
+					}
+					if p.Tls {
+						isTLS = true
+					}
+					tcpconns, err := getTCPConcurrentConnections()
+					if err != nil {
+						return "", "", false, err
+					}
+					tcpPort.ConcurrentConns = tcpconns
+					spec.TCPSpec = append(spec.TCPSpec, &tcpPort)
+				case dme.LProto_L_PROTO_UDP:
+					if p.Nginx { // defv specified nginx for this port (range)
+						continue
+					}
+					udpPort := UDPSpecDetail{
+						ListenPort:  pubPort,
+						ListenIP:    listenIP,
+						BackendIP:   serviceBackendIP,
+						BackendPort: internalPort,
+						MaxPktSize:  p.MaxPktSize,
+						IPTag:       proxyIPPair.IPTag,
+					}
+					udpconns, err := getUDPConcurrentConnections()
+					if err != nil {
+						return "", "", false, err
+					}
+					udpPort.ConcurrentConns = udpconns
+					spec.UDPSpec = append(spec.UDPSpec, &udpPort)
 				}
-				udpconns, err := getUDPConcurrentConnections()
-				if err != nil {
-					return false, err
-				}
-				udpPort.ConcurrentConns = udpconns
-				spec.UDPSpec = append(spec.UDPSpec, &udpPort)
+				internalPort++
 			}
-			internalPort++
 		}
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "create envoy yaml", "name", name)
 	buf := bytes.Buffer{}
 	err = envoyYamlT.Execute(&buf, &spec)
 	if err != nil {
-		return isTLS, err
+		return "", "", false, err
 	}
-	err = pc.WriteFile(client, yamldir+"/envoy.yaml", buf.String(), "envoy.yaml", pc.NoSudo)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "write envoy.yaml failed",
-			"name", name, "err", err)
-		return isTLS, err
-	}
+	sdsbuf := bytes.Buffer{}
 	if isTLS {
 		log.SpanLog(ctx, log.DebugLevelInfra, "create sds yaml", "name", name)
-		buf := bytes.Buffer{}
-		err = sdsYamlT.Execute(&buf, &spec)
+		err = sdsYamlT.Execute(&sdsbuf, &spec)
 		if err != nil {
-			return isTLS, err
-		}
-		err = pc.WriteFile(client, yamldir+"/sds.yaml", buf.String(), "sds.yaml", pc.NoSudo)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "write sds.yaml failed",
-				"name", name, "err", err)
-			return isTLS, err
+			return "", "", false, err
 		}
 	}
-	return isTLS, nil
+	return buf.String(), sdsbuf.String(), isTLS, nil
+}
+
+func createEnvoyYaml(ctx context.Context, client ssh.Client, yamldir, name string, config *ProxyConfig, metricIP string, metricUDS bool, appInst *edgeproto.AppInst) (bool, bool, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "create envoy yaml", "name", name)
+	envoyData, sdsData, isTLS, err := generateEnvoyYaml(ctx, name, config, metricIP, metricUDS, appInst)
+	if err != nil {
+		return false, false, err
+	}
+
+	updated := false
+	curEnvoyData, err := client.Output("cat " + yamldir + "/envoy.yaml")
+	if err == nil && strings.TrimSpace(curEnvoyData) == strings.TrimSpace(envoyData) {
+		// no change
+	} else {
+		err = pc.WriteFile(client, yamldir+"/envoy.yaml", envoyData, "envoy.yaml", pc.NoSudo)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "write envoy.yaml failed",
+				"name", name, "err", err)
+			return updated, isTLS, err
+		}
+		updated = true
+	}
+	if isTLS {
+		curSdsData, err := client.Output("cat " + yamldir + "/sds.yaml")
+		if err == nil && strings.TrimSpace(curSdsData) == strings.TrimSpace(sdsData) {
+			// no change
+		} else {
+			err = pc.WriteFile(client, yamldir+"/sds.yaml", sdsData, "sds.yaml", pc.NoSudo)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "write sds.yaml failed",
+					"name", name, "err", err)
+				return updated, isTLS, err
+			}
+		}
+		updated = true
+	}
+	return updated, isTLS, nil
 }
 
 // TODO: Probably should eventually find a better way to uniquely name clusters other than just by the port theyre getting proxied from
@@ -295,7 +386,7 @@ static_resources:
         typed_config:
           '@type': type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
           stat_prefix: ingress_tcp
-          cluster: backend{{.BackendPort}}
+          cluster: backend{{.BackendPort}}{{.IPTag}}
           access_log:
             - name: envoy.access_loggers.file
               typed_config:
@@ -337,8 +428,8 @@ static_resources:
       name: envoy.filters.udp_listener.udp_proxy
       typed_config:
         '@type': type.googleapis.com/envoy.extensions.filters.udp.udp_proxy.v3.UdpProxyConfig
-        stat_prefix: downstream{{.BackendPort}}
-        cluster: udp_backend{{.BackendPort}}
+        stat_prefix: downstream{{.BackendPort}}{{.IPTag}}
+        cluster: udp_backend{{.BackendPort}}{{.IPTag}}
         {{if ne .MaxPktSize 0 -}}
         upstream_socket_config:
           max_rx_datagram_size: {{.MaxPktSize}}
@@ -347,7 +438,7 @@ static_resources:
   {{- end}}
   clusters:
   {{- range .TCPSpec}}
-  - name: backend{{.BackendPort}}
+  - name: backend{{.BackendPort}}{{.IPTag}}
     connect_timeout: 0.25s
     type: strict_dns
     circuit_breakers:
@@ -355,7 +446,7 @@ static_resources:
             max_connections: {{.ConcurrentConns}}
     lb_policy: round_robin
     load_assignment:
-      cluster_name: backend{{.BackendPort}}
+      cluster_name: backend{{.BackendPort}}{{.IPTag}}
       endpoints:
         lb_endpoints:
         - endpoint:
@@ -375,7 +466,7 @@ static_resources:
     {{- end}}
 {{- end}}
 {{- range .UDPSpec}}
-  - name: udp_backend{{.BackendPort}}
+  - name: udp_backend{{.BackendPort}}{{.IPTag}}
     connect_timeout: 0.25s
     type: STRICT_DNS
     circuit_breakers:
@@ -383,7 +474,7 @@ static_resources:
         max_connections: {{.ConcurrentConns}}
     lb_policy: ROUND_ROBIN
     load_assignment:
-      cluster_name: udp_backend{{.BackendPort}}
+      cluster_name: udp_backend{{.BackendPort}}{{.IPTag}}
       endpoints:
       - lb_endpoints:
         - endpoint:

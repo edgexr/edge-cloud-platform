@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"strings"
 
-	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -200,12 +200,12 @@ func (a *AwsEc2Platform) DeleteSecurityGroup(ctx context.Context, groupId, vpcId
 
 func (a *AwsEc2Platform) WhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "WhitelistSecurityRules", "wlParams", wlParams)
-	return a.addOrDeleteSecurityRule(ctx, wlParams.SecGrpName, wlParams.AllowedCIDR, wlParams.Ports, SecurityGroupRuleCreate)
+	return a.addOrDeleteSecurityRule(ctx, wlParams.SecGrpName, wlParams.AllowedCIDR.IPV4(), wlParams.Ports, SecurityGroupRuleCreate)
 }
 
 func (a *AwsEc2Platform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveWhitelistSecurityRules", "client", client)
-	return a.addOrDeleteSecurityRule(ctx, wlParams.SecGrpName, wlParams.AllowedCIDR, wlParams.Ports, SecurityGroupRuleRevoke)
+	return a.addOrDeleteSecurityRule(ctx, wlParams.SecGrpName, wlParams.AllowedCIDR.IPV4(), wlParams.Ports, SecurityGroupRuleRevoke)
 }
 
 // AllowIntraVpcTraffic creates a rule to allow traffic within the VPC

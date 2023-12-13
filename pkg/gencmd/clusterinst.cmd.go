@@ -600,6 +600,7 @@ var ClusterInstOptionalArgs = []string{
 	"skipcrmcleanuponfailure",
 	"multitenant",
 	"networks",
+	"enableipv6",
 }
 var ClusterInstAliasArgs = []string{
 	"cluster=key.clusterkey.name",
@@ -660,6 +661,7 @@ var ClusterInstComments = map[string]string{
 	"deleteprepare":                            "Preparing to be deleted",
 	"dnslabel":                                 "DNS label that is unique within the cloudlet and among other AppInsts/ClusterInsts",
 	"fqdn":                                     "FQDN is a globally unique DNS id for the ClusterInst",
+	"enableipv6":                               "Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"errors":   "StringArray",
@@ -750,5 +752,5 @@ var UpdateClusterInstOptionalArgs = []string{
 	"numnodes",
 	"autoscalepolicy",
 	"skipcrmcleanuponfailure",
-	"multitenant",
+	"enableipv6",
 }

@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -44,7 +44,7 @@ func (v *VSpherePlatform) PrepareRootLB(ctx context.Context, client ssh.Client, 
 	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB", "rootLBName", rootLBName)
 	// configure iptables based security
 	// allow our external vsphere network
-	sshCidrsAllowed := []string{infracommon.RemoteCidrAll}
+	sshCidrsAllowed := []string{infracommon.RemoteCidrAll, infracommon.RemoteCidrAllIPV6}
 	egressRestricted := false
 
 	var rules []edgeproto.SecurityRule
@@ -52,7 +52,8 @@ func (v *VSpherePlatform) PrepareRootLB(ctx context.Context, client ssh.Client, 
 		rules = TrustPolicy.OutboundSecurityRules
 		egressRestricted = true
 	}
-	return v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, egressRestricted, infracommon.TrustPolicySecGrpNameLabel, rules, false)
+	enableIPV6 := true
+	return v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, egressRestricted, infracommon.TrustPolicySecGrpNameLabel, rules, false, enableIPV6)
 }
 
 func (o *VSpherePlatform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {

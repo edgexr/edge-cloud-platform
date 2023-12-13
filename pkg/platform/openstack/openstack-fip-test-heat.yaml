@@ -3,10 +3,16 @@ heat_template_version: 2016-10-14
 description: Create a group of VMs
 
 parameters:
-  floatingIpId1:
+  floatingIpId4:
+    type: string
+    description: ID of the floating ip address
+  floatingIpId3:
     type: string
     description: ID of the floating ip address
   floatingIpId2:
+    type: string
+    description: ID of the floating ip address
+  floatingIpId1:
     type: string
     description: ID of the floating ip address
 
@@ -23,19 +29,42 @@ resources:
                  - 1.0.0.1
             name: 
                 subnet-test
-    rootlb-xyz-subnet-test-port:
+    subnet-test-ipv6:
+        type: OS::Neutron::Subnet
+        properties:
+            cidr: fc00:101:ecec:1::/64
+            network: mex-k8s-net-1
+            gateway_ip: fc00:101:ecec:1::1
+            enable_dhcp: no
+            ip_version: 6
+            dns_nameservers:
+                 - 2606:4700:4700::1111
+                 - 2606:4700:4700::1001
+            name: 
+                subnet-test-ipv6
+    app-vm-subnet-test-port:
         type: OS::Neutron::Port
         properties:
-            name: rootlb-xyz-subnet-test-port
+            name: app-vm-subnet-test-port
             network: mex-k8s-net-1
             fixed_ips:
                 - subnet: { get_resource: subnet-test }
-                  ip_address:  10.101.0.1
+                  ip_address:  10.101.0.103
+                - subnet: { get_resource: subnet-test-ipv6 }
+                  ip_address:  fc00:101:ecec:1::67
             port_security_enabled: false
-    rootlb-xyz-external-network-shared-port:
+    master-xyz-external-network-shared-ipv6-port:
         type: OS::Neutron::Port
         properties:
-            name: rootlb-xyz-external-network-shared-port
+            name: master-xyz-external-network-shared-ipv6-port
+            network: public_internal
+            security_groups:
+                - { get_resource: testvmgroup-sg }
+                - unit-test-edgecloud-cloudlet-sg-testingID
+    master-xyz-external-network-shared-port:
+        type: OS::Neutron::Port
+        properties:
+            name: master-xyz-external-network-shared-port
             network: public_internal
             security_groups:
                 - { get_resource: testvmgroup-sg }
@@ -48,15 +77,9 @@ resources:
             fixed_ips:
                 - subnet: { get_resource: subnet-test }
                   ip_address:  10.101.0.10
+                - subnet: { get_resource: subnet-test-ipv6 }
+                  ip_address:  fc00:101:ecec:1::a
             port_security_enabled: false
-    master-xyz-external-network-shared-port:
-        type: OS::Neutron::Port
-        properties:
-            name: master-xyz-external-network-shared-port
-            network: public_internal
-            security_groups:
-                - { get_resource: testvmgroup-sg }
-                - unit-test-edgecloud-cloudlet-sg-testingID
     node1-xyz-subnet-test-port:
         type: OS::Neutron::Port
         properties:
@@ -65,6 +88,8 @@ resources:
             fixed_ips:
                 - subnet: { get_resource: subnet-test }
                   ip_address:  10.101.0.101
+                - subnet: { get_resource: subnet-test-ipv6 }
+                  ip_address:  fc00:101:ecec:1::65
             port_security_enabled: false
     node2-xyz-subnet-test-port:
         type: OS::Neutron::Port
@@ -74,15 +99,35 @@ resources:
             fixed_ips:
                 - subnet: { get_resource: subnet-test }
                   ip_address:  10.101.0.102
+                - subnet: { get_resource: subnet-test-ipv6 }
+                  ip_address:  fc00:101:ecec:1::66
             port_security_enabled: false
-    app-vm-subnet-test-port:
+    rootlb-xyz-external-network-shared-ipv6-port:
         type: OS::Neutron::Port
         properties:
-            name: app-vm-subnet-test-port
+            name: rootlb-xyz-external-network-shared-ipv6-port
+            network: public_internal
+            security_groups:
+                - { get_resource: testvmgroup-sg }
+                - unit-test-edgecloud-cloudlet-sg-testingID
+    rootlb-xyz-external-network-shared-port:
+        type: OS::Neutron::Port
+        properties:
+            name: rootlb-xyz-external-network-shared-port
+            network: public_internal
+            security_groups:
+                - { get_resource: testvmgroup-sg }
+                - unit-test-edgecloud-cloudlet-sg-testingID
+    rootlb-xyz-subnet-test-port:
+        type: OS::Neutron::Port
+        properties:
+            name: rootlb-xyz-subnet-test-port
             network: mex-k8s-net-1
             fixed_ips:
                 - subnet: { get_resource: subnet-test }
-                  ip_address:  10.101.0.103
+                  ip_address:  10.101.0.1
+                - subnet: { get_resource: subnet-test-ipv6 }
+                  ip_address:  fc00:101:ecec:1::1
             port_security_enabled: false
     testvmgroup-sg:
         type: OS::Neutron::SecurityGroup
@@ -97,7 +142,19 @@ resources:
                   port_range_min: 7777
                   port_range_max: 7777
                 - direction: ingress
+                  remote_ip_prefix: ::/0
+                  ethertype: IPv6
+                  protocol: tcp
+                  port_range_min: 7777
+                  port_range_max: 7777
+                - direction: ingress
                   remote_ip_prefix: 0.0.0.0/0
+                  protocol: udp
+                  port_range_min: 8888
+                  port_range_max: 8888
+                - direction: ingress
+                  remote_ip_prefix: ::/0
+                  ethertype: IPv6
                   protocol: udp
                   port_range_min: 8888
                   port_range_max: 8888
@@ -113,6 +170,7 @@ resources:
         properties:
             name: rootlb-xyz
             networks:
+                - port: { get_resource: rootlb-xyz-external-network-shared-ipv6-port }
                 - port: { get_resource: rootlb-xyz-external-network-shared-port }
             availability_zone: nova1
             block_device_mapping:
@@ -137,8 +195,8 @@ resources:
                   - path:  /etc/systemd/resolved.conf
                     content: |
                        [Resolve]
-                       DNS=1.1.1.1
-                       FallbackDNS=1.0.0.1
+                       DNS=1.1.1.1 2606:4700:4700::1111
+                       FallbackDNS=1.0.0.1 2606:4700:4700::1001
                   - path: /root/configure-node.sh
                     owner: root:root
                     permissions: '0700'
@@ -193,7 +251,7 @@ resources:
                               wget "${wgetargs[@]}" -O vars.yaml http://127.0.0.1:12345/confignode/vars.yaml
                               run_update=true
                               cp vars.yaml ansible/vars.yml
-                          	cat ansible/vars.yml
+                              cat ansible/vars.yml
                           fi
                           if [[ ! -f ansible_run_ok ]]; then
                               echo "Ansible has not succeeded, will run"
@@ -202,7 +260,7 @@ resources:
                           if [[ ${run_update} == true ]]; then
                               echo "Running update"
                               if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
-                                  ANSIBLE_PLAYBOOK_BIN=ansible-playbook
+                                  ANSIBLE_PLAYBOOK_BIN=/usr/local/bin/ansible-playbook
                               fi
                               if ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v; then
                                   touch ansible_run_ok
@@ -261,8 +319,9 @@ resources:
         properties:
             name: master-xyz
             networks:
-                - port: { get_resource: master-xyz-subnet-test-port }
+                - port: { get_resource: master-xyz-external-network-shared-ipv6-port }
                 - port: { get_resource: master-xyz-external-network-shared-port }
+                - port: { get_resource: master-xyz-subnet-test-port }
             availability_zone: nova1
             block_device_mapping:
                 - device_name: vda
@@ -286,8 +345,8 @@ resources:
                   - path:  /etc/systemd/resolved.conf
                     content: |
                        [Resolve]
-                       DNS=1.1.1.1
-                       FallbackDNS=1.0.0.1
+                       DNS=1.1.1.1 2606:4700:4700::1111
+                       FallbackDNS=1.0.0.1 2606:4700:4700::1001
                   - path: /root/configure-node.sh
                     owner: root:root
                     permissions: '0700'
@@ -342,7 +401,7 @@ resources:
                               wget "${wgetargs[@]}" -O vars.yaml http://127.0.0.1:12345/confignode/vars.yaml
                               run_update=true
                               cp vars.yaml ansible/vars.yml
-                          	cat ansible/vars.yml
+                              cat ansible/vars.yml
                           fi
                           if [[ ! -f ansible_run_ok ]]; then
                               echo "Ansible has not succeeded, will run"
@@ -351,7 +410,7 @@ resources:
                           if [[ ${run_update} == true ]]; then
                               echo "Running update"
                               if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
-                                  ANSIBLE_PLAYBOOK_BIN=ansible-playbook
+                                  ANSIBLE_PLAYBOOK_BIN=/usr/local/bin/ansible-playbook
                               fi
                               if ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v; then
                                   touch ansible_run_ok
@@ -425,8 +484,8 @@ resources:
                   - path:  /etc/systemd/resolved.conf
                     content: |
                        [Resolve]
-                       DNS=1.1.1.1
-                       FallbackDNS=1.0.0.1
+                       DNS=1.1.1.1 2606:4700:4700::1111
+                       FallbackDNS=1.0.0.1 2606:4700:4700::1001
                   - path: /root/configure-node.sh
                     owner: root:root
                     permissions: '0700'
@@ -481,7 +540,7 @@ resources:
                               wget "${wgetargs[@]}" -O vars.yaml http://127.0.0.1:12345/confignode/vars.yaml
                               run_update=true
                               cp vars.yaml ansible/vars.yml
-                          	cat ansible/vars.yml
+                              cat ansible/vars.yml
                           fi
                           if [[ ! -f ansible_run_ok ]]; then
                               echo "Ansible has not succeeded, will run"
@@ -490,7 +549,7 @@ resources:
                           if [[ ${run_update} == true ]]; then
                               echo "Running update"
                               if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
-                                  ANSIBLE_PLAYBOOK_BIN=ansible-playbook
+                                  ANSIBLE_PLAYBOOK_BIN=/usr/local/bin/ansible-playbook
                               fi
                               if ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v; then
                                   touch ansible_run_ok
@@ -564,8 +623,8 @@ resources:
                   - path:  /etc/systemd/resolved.conf
                     content: |
                        [Resolve]
-                       DNS=1.1.1.1
-                       FallbackDNS=1.0.0.1
+                       DNS=1.1.1.1 2606:4700:4700::1111
+                       FallbackDNS=1.0.0.1 2606:4700:4700::1001
                   - path: /root/configure-node.sh
                     owner: root:root
                     permissions: '0700'
@@ -620,7 +679,7 @@ resources:
                               wget "${wgetargs[@]}" -O vars.yaml http://127.0.0.1:12345/confignode/vars.yaml
                               run_update=true
                               cp vars.yaml ansible/vars.yml
-                          	cat ansible/vars.yml
+                              cat ansible/vars.yml
                           fi
                           if [[ ! -f ansible_run_ok ]]; then
                               echo "Ansible has not succeeded, will run"
@@ -629,7 +688,7 @@ resources:
                           if [[ ${run_update} == true ]]; then
                               echo "Running update"
                               if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
-                                  ANSIBLE_PLAYBOOK_BIN=ansible-playbook
+                                  ANSIBLE_PLAYBOOK_BIN=/usr/local/bin/ansible-playbook
                               fi
                               if ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v; then
                                   touch ansible_run_ok
@@ -703,8 +762,8 @@ resources:
                   - path:  /etc/systemd/resolved.conf
                     content: |
                        [Resolve]
-                       DNS=1.1.1.1
-                       FallbackDNS=1.0.0.1
+                       DNS=1.1.1.1 2606:4700:4700::1111
+                       FallbackDNS=1.0.0.1 2606:4700:4700::1001
                   - path: /root/configure-node.sh
                     owner: root:root
                     permissions: '0700'
@@ -759,7 +818,7 @@ resources:
                               wget "${wgetargs[@]}" -O vars.yaml http://127.0.0.1:12345/confignode/vars.yaml
                               run_update=true
                               cp vars.yaml ansible/vars.yml
-                          	cat ansible/vars.yml
+                              cat ansible/vars.yml
                           fi
                           if [[ ! -f ansible_run_ok ]]; then
                               echo "Ansible has not succeeded, will run"
@@ -768,7 +827,7 @@ resources:
                           if [[ ${run_update} == true ]]; then
                               echo "Running update"
                               if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
-                                  ANSIBLE_PLAYBOOK_BIN=ansible-playbook
+                                  ANSIBLE_PLAYBOOK_BIN=/usr/local/bin/ansible-playbook
                               fi
                               if ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v; then
                                   touch ansible_run_ok
@@ -811,13 +870,23 @@ resources:
                  - echo EDGECLOUD doing ip addr show
                  - ip addr show
                  - /root/configure-node.sh >> /root/configure-node.log 2>&1
+    master-xyz-external-network-shared-ipv6-port-fip:
+        type: OS::Neutron::FloatingIPAssociation
+        properties:
+            floatingip_id: { get_param: floatingIpId4 }
+            port_id: { get_resource: master-xyz-external-network-shared-ipv6-port }
+    master-xyz-external-network-shared-port-fip:
+        type: OS::Neutron::FloatingIPAssociation
+        properties:
+            floatingip_id: { get_param: floatingIpId3 }
+            port_id: { get_resource: master-xyz-external-network-shared-port }
+    rootlb-xyz-external-network-shared-ipv6-port-fip:
+        type: OS::Neutron::FloatingIPAssociation
+        properties:
+            floatingip_id: { get_param: floatingIpId2 }
+            port_id: { get_resource: rootlb-xyz-external-network-shared-ipv6-port }
     rootlb-xyz-external-network-shared-port-fip:
         type: OS::Neutron::FloatingIPAssociation
         properties:
             floatingip_id: { get_param: floatingIpId1 }
             port_id: { get_resource: rootlb-xyz-external-network-shared-port }
-    master-xyz-external-network-shared-port-fip:
-        type: OS::Neutron::FloatingIPAssociation
-        properties:
-            floatingip_id: { get_param: floatingIpId2 }
-            port_id: { get_resource: master-xyz-external-network-shared-port }

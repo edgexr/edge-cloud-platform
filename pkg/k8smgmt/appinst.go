@@ -66,7 +66,7 @@ func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfEnv, namespace
 	cmd := fmt.Sprintf("%s kubectl get pods --no-headers -n %s --selector=%s -o=custom-columns='Name:metadata.name,Status:status.phase,Reason:status.conditions[].reason,Message:status.conditions[].message'", kConfEnv, namespace, selector)
 	out, err := client.Output(cmd)
 	if err != nil {
-		log.InfoLog("error getting pods", "err", err, "out", out)
+		log.SpanLog(ctx, log.DebugLevelInfra, "error getting pods", "err", err, "out", out)
 		return done, fmt.Errorf("error getting pods: %v", err)
 	}
 	lines := strings.Split(out, "\n")
@@ -140,6 +140,11 @@ func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfEnv, namespace
 			done = true
 		}
 	} else {
+		if podCount == 0 {
+			// race condition, may not find anything if run before pods show up
+			log.SpanLog(ctx, log.DebugLevelInfra, "not delete, but no pods found, assume command run before pods deployed", "selector", selector)
+			return false, nil
+		}
 		if podCount == runningCount {
 			log.SpanLog(ctx, log.DebugLevelInfra, "all pods up", "selector", selector)
 			done = true

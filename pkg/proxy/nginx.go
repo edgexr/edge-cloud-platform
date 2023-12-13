@@ -23,13 +23,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/access"
-	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/access"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -100,15 +100,23 @@ func getNginxContainerName(name string) string {
 	return "nginx" + name
 }
 
-func CreateNginxProxy(ctx context.Context, client ssh.Client, name, listenIP, destIP string, appInst *edgeproto.AppInst, skipHcPorts string, ops ...Op) error {
+type ProxyConfig struct {
+	ListenIP    string
+	DestIP      string
+	ListenIPV6  string
+	DestIPV6    string
+	SkipHCPorts string
+}
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateNginxProxy", "listenIP", listenIP, "destIP", destIP)
+func CreateNginxProxy(ctx context.Context, client ssh.Client, name string, config *ProxyConfig, appInst *edgeproto.AppInst, ops ...Op) error {
+
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateNginxProxy", "name", name, "config", config)
 	containerName := getNginxContainerName(name)
 
 	// check to see whether nginx or envoy is needed (or both)
 	envoyNeeded, nginxNeeded := CheckProtocols(name, appInst.MappedPorts)
 	if envoyNeeded {
-		err := CreateEnvoyProxy(ctx, client, name, listenIP, destIP, appInst, skipHcPorts, ops...)
+		err := CreateEnvoyProxy(ctx, client, name, config, appInst, ops...)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "CreateEnvoyProxy failed ", "err", err)
 			return fmt.Errorf("Create Envoy Proxy failed, %v", err)
@@ -117,7 +125,7 @@ func CreateNginxProxy(ctx context.Context, client ssh.Client, name, listenIP, de
 	if !nginxNeeded {
 		return nil
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "create nginx", "name", name, "listenIP", listenIP, "destIP", destIP, "ports", appInst.MappedPorts)
+	log.SpanLog(ctx, log.DebugLevelInfra, "create nginx", "name", name, "config", config, "ports", appInst.MappedPorts)
 	opts := Options{}
 	opts.Apply(ops)
 
@@ -158,14 +166,14 @@ func CreateNginxProxy(ctx context.Context, client ssh.Client, name, listenIP, de
 		return err
 	}
 	nconfName := dir + "/nginx.conf"
-	err = createNginxConf(ctx, client, nconfName, name, listenIP, destIP, appInst, usesTLS)
+	err = createNginxConf(ctx, client, nconfName, name, config, appInst, usesTLS)
 	if err != nil {
 		return fmt.Errorf("create nginx.conf failed, %v", err)
 	}
 
 	cmdArgs := []string{"run", "-d", "-l edge-cloud", "--restart=unless-stopped", "--name", containerName}
 	if opts.DockerPublishPorts {
-		cmdArgs = append(cmdArgs, dockermgmt.GetDockerPortString(appInst.MappedPorts, dockermgmt.UsePublicPortInContainer, dockermgmt.NginxProxy, listenIP)...)
+		cmdArgs = append(cmdArgs, dockermgmt.GetDockerPortString(appInst.MappedPorts, dockermgmt.UsePublicPortInContainer, dockermgmt.NginxProxy, config.ListenIP, config.ListenIPV6)...)
 	}
 	if opts.DockerNetwork != "" {
 		// For dind, we use the network which the dind cluster is on.
@@ -193,55 +201,71 @@ func CreateNginxProxy(ctx context.Context, client ssh.Client, name, listenIP, de
 	return nil
 }
 
-func createNginxConf(ctx context.Context, client ssh.Client, confname, name, listenIP, defaultBackendIP string, appInst *edgeproto.AppInst, usesTLS bool) error {
+func createNginxConf(ctx context.Context, client ssh.Client, confname, name string, config *ProxyConfig, appInst *edgeproto.AppInst, usesTLS bool) error {
 	spec := ProxySpec{
 		Name:        name,
 		UsesTLS:     usesTLS,
-		MetricIP:    listenIP,
+		MetricIP:    config.ListenIP,
 		MetricPort:  cloudcommon.ProxyMetricsPort,
 		WorkerConns: defaultWorkerConns,
 	}
+	if spec.MetricIP == "" {
+		spec.MetricIP = config.ListenIPV6
+	}
+
 	portCount := 0
 
 	udpconns, err := getUDPConcurrentConnections()
 	if err != nil {
 		return err
 	}
-	for _, p := range appInst.MappedPorts {
-		serviceBackendIP, err := getBackendIpToUse(ctx, appInst, &p, defaultBackendIP)
-		if err != nil {
-			return err
+	proxyIPPairs := []struct {
+		listenIP string
+		destIP   string
+	}{
+		{config.ListenIP, config.DestIP},
+		{config.ListenIPV6, config.DestIPV6},
+	}
+	for _, proxyIPPair := range proxyIPPairs {
+		if proxyIPPair.destIP == "" {
+			continue
 		}
-		if p.Proto == dme.LProto_L_PROTO_UDP {
-			if !p.Nginx { // use envoy
-				continue
+		for _, p := range appInst.MappedPorts {
+			serviceBackendIP, err := getBackendIpToUse(ctx, appInst, &p, proxyIPPair.destIP)
+			if err != nil {
+				return err
 			}
-			udpPort := UDPSpecDetail{
-				ListenIP:        listenIP,
-				BackendIP:       serviceBackendIP,
-				BackendPort:     p.InternalPort,
-				ConcurrentConns: udpconns,
-			}
-			endPort := p.EndPort
-			if endPort == 0 {
-				endPort = p.PublicPort
-				portCount = portCount + 1
-			} else {
-				portCount = int((p.EndPort-p.InternalPort)+1) + portCount
-				// if we have a port range, the internal ports and external ports must match
-				if p.InternalPort != p.PublicPort {
-					return fmt.Errorf("public and internal ports must match when port range in use")
+			if p.Proto == dme.LProto_L_PROTO_UDP {
+				if !p.Nginx { // use envoy
+					continue
 				}
+				udpPort := UDPSpecDetail{
+					ListenIP:        proxyIPPair.listenIP,
+					BackendIP:       serviceBackendIP,
+					BackendPort:     p.InternalPort,
+					ConcurrentConns: udpconns,
+				}
+				endPort := p.EndPort
+				if endPort == 0 {
+					endPort = p.PublicPort
+					portCount = portCount + 1
+				} else {
+					portCount = int((p.EndPort-p.InternalPort)+1) + portCount
+					// if we have a port range, the internal ports and external ports must match
+					if p.InternalPort != p.PublicPort {
+						return fmt.Errorf("public and internal ports must match when port range in use")
+					}
+				}
+				for pnum := p.PublicPort; pnum <= endPort; pnum++ {
+					udpPort.NginxListenPorts = append(udpPort.NginxListenPorts, pnum)
+				}
+				// if there is more than one listen port, we don't use the backend port as the
+				// listen port is used as the backend port in the case of a range
+				if len(udpPort.NginxListenPorts) > 1 {
+					udpPort.BackendPort = 0
+				}
+				spec.UDPSpec = append(spec.UDPSpec, &udpPort)
 			}
-			for pnum := p.PublicPort; pnum <= endPort; pnum++ {
-				udpPort.NginxListenPorts = append(udpPort.NginxListenPorts, pnum)
-			}
-			// if there is more than one listen port, we don't use the backend port as the
-			// listen port is used as the backend port in the case of a range
-			if len(udpPort.NginxListenPorts) > 1 {
-				udpPort.BackendPort = 0
-			}
-			spec.UDPSpec = append(spec.UDPSpec, &udpPort)
 		}
 	}
 	// need to have more worker connections than ports otherwise nginx will crash
@@ -284,6 +308,7 @@ type TCPSpecDetail struct {
 	ConcurrentConns uint64
 	UseTLS          bool // for port specific TLS termination
 	HealthCheck     bool
+	IPTag           string
 }
 
 type UDPSpecDetail struct {
@@ -294,6 +319,7 @@ type UDPSpecDetail struct {
 	BackendPort      int32
 	ConcurrentConns  uint64
 	MaxPktSize       int64
+	IPTag            string
 }
 
 var nginxConf = `

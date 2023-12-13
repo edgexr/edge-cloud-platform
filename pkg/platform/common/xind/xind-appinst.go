@@ -64,12 +64,15 @@ func (s *Xind) CreateAppInstNoPatch(ctx context.Context, clusterInst *edgeproto.
 	if len(appInst.MappedPorts) > 0 {
 		proxyName := dockermgmt.GetContainerName(appInst)
 		log.SpanLog(ctx, log.DebugLevelInfra, "Add Proxy", "ports", appInst.MappedPorts, "masterIP", masterIP, "network", network)
+		proxyConfig := &proxy.ProxyConfig{
+			ListenIP:    cloudcommon.IPAddrAllInterfaces,
+			DestIP:      masterIP,
+			SkipHCPorts: app.SkipHcPorts,
+		}
 		err = proxy.CreateNginxProxy(ctx, client,
 			proxyName,
-			cloudcommon.IPAddrAllInterfaces,
-			masterIP,
+			proxyConfig,
 			appInst,
-			app.SkipHcPorts,
 			proxy.WithDockerNetwork(network),
 			proxy.WithDockerPublishPorts())
 		if err != nil {
