@@ -31,16 +31,17 @@ func TestPublicCertManager(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 
 	api := &cloudcommon.TestPublicCertApi{}
-	mgr, err := NewPublicCertManager("localhost", api, "", "")
+	mgr, err := NewPublicCertManager("localhost", "", api, "", "")
 	require.Nil(t, err)
 	_, err = mgr.GetServerTlsConfig(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 1, api.GetCount)
 
 	// force refresh
-	mgr.expiresAt = time.Now()
-	mgr.refreshThreshold = time.Hour
-	mgr.refreshRetryDelay = time.Millisecond
+	pubcert, ok := mgr.certs["localhost"]
+	require.True(t, ok)
+	pubcert.expiresAt = time.Now()
+	mgr.refreshTrigger <- true
 	mgr.StartRefresh()
 	// wait until refresh done
 	for ii := 0; ii < 10; ii++ {

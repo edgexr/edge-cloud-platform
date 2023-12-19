@@ -129,6 +129,8 @@ var NFSAutoProvisionAppName = "NFSAutoProvision"
 var ProxyMetricsPort = int32(65121)
 var ProxyMetricsDefaultListenIP = "127.0.0.1"
 var ProxyMetricsListenUDS = "MetricsUDS" // Unix Domain Socket
+var InternalDockerRegistry = "internal-docker-registry"
+var InternalVMRegistry = "internal-vm-registry"
 
 var AutoProvMeasurement = "auto-prov-counts"
 

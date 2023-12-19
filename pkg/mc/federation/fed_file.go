@@ -227,7 +227,7 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 			return err
 		}
 
-		auth, err := cloudcommon.GetRegistryAuth(ctx, p.vmRegistryAddr, cloudcommon.AllOrgs, p.vaultConfig)
+		auth, err := p.regAuthMgr.GetRegistryOrgAuth(ctx, p.vmRegistryAddr, cloudcommon.AllOrgs)
 		if err != nil {
 			return err
 		}
@@ -368,7 +368,7 @@ func (p *PartnerApi) RemoveFileInternal(c echo.Context, provider *ormapi.Federat
 	if p.vmRegistryAddr != "" && strings.Contains(image.Path, p.vmRegistryAddr) {
 		log.SpanLog(ctx, log.DebugLevelApi, "delete image from vm-registry", "image", image)
 		// delete from vm-registry
-		auth, err := cloudcommon.GetRegistryAuth(ctx, p.vmRegistryAddr, cloudcommon.AllOrgs, p.vaultConfig)
+		auth, err := p.regAuthMgr.GetRegistryOrgAuth(ctx, p.vmRegistryAddr, cloudcommon.AllOrgs)
 		if err != nil {
 			return err
 		}

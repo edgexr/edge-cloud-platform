@@ -116,14 +116,14 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 	inVmReg := false
 	inHarbor := false
 	if serverConfig.VmRegistryAddr != "" && strings.Contains(image.SourcePath, serverConfig.VmRegistryAddr) {
-		auth, err = cloudcommon.GetRegistryAuth(ctx, serverConfig.VmRegistryAddr, cloudcommon.AllOrgs, serverConfig.vaultConfig)
+		auth, err = serverConfig.regAuthMgr.GetRegistryOrgAuth(ctx, serverConfig.VmRegistryAddr, cloudcommon.AllOrgs)
 		if err != nil {
 			return err
 		}
 		inVmReg = true
 	} else if serverConfig.HarborAddr != "" && strings.Contains(image.SourcePath, util.TrimScheme(serverConfig.HarborAddr)) {
 		// add harbor credentials
-		auth, err = cloudcommon.GetRegistryAuth(ctx, serverConfig.HarborAddr, image.Organization, serverConfig.vaultConfig)
+		auth, err = serverConfig.regAuthMgr.GetRegistryOrgAuth(ctx, serverConfig.HarborAddr, image.Organization)
 		if err != nil {
 			return err
 		}

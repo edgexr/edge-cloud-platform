@@ -26,8 +26,10 @@ option (gogoproto.goproto_sizecache_all) = false;
 
 // IssueCertRequest asks for a TLS certificate from Vault
 message IssueCertRequest {
-  // Certificate common name
+  // (deprecated) Certificate common name
   string common_name = 1;
+  // Certificate common name prefix, i.e. ctrl, dme, etc.
+  string common_name_prefix = 2;
 }
 
 message IssueCertReply {

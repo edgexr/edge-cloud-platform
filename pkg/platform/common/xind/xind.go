@@ -112,7 +112,7 @@ func (s *Xind) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgepro
 	return []edgeproto.CloudletMgmtNode{}, nil
 }
 
-func (s *Xind) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+func (s *Xind) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
 	return nil, nil
 }
 

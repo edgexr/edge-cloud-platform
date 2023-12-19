@@ -146,7 +146,7 @@ func main() {
 
 func setupTurnServer(ctx context.Context) (net.Listener, error) {
 	tlsConfig, err := nodeMgr.InternalPki.GetServerTlsConfig(ctx,
-		nodeMgr.CommonName(),
+		nodeMgr.CommonNamePrefix(),
 		node.CertIssuerRegional,
 		[]node.MatchCA{
 			node.SameRegionalCloudletMatchCA(),

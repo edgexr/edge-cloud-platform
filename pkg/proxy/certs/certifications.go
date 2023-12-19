@@ -16,6 +16,7 @@ package certs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os/exec"
@@ -26,11 +27,10 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/access"
-	accessapicloudlet "github.com/edgexr/edge-cloud-platform/pkg/accessapi-cloudlet"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	ssh "github.com/edgexr/golang-ssh"
@@ -38,9 +38,6 @@ import (
 )
 
 const LETS_ENCRYPT_MAX_DOMAINS_PER_CERT = 100
-
-var DedicatedTls access.TLSCert
-var DedicatedMux sync.Mutex
 
 var selfSignedCmd = `openssl req -new -newkey rsa:2048 -nodes -days 90 -nodes -x509 -config <(
 cat <<-EOF
@@ -80,24 +77,33 @@ var privKeyEnd = "-----END PRIVATE KEY-----"
 var certStart = "-----BEGIN CERTIFICATE-----"
 var certEnd = "-----END CERTIFICATE-----"
 
-var sudoType = pc.SudoOn
-var fixedCerts = false
-
 var AtomicCertsUpdater = "/usr/local/bin/atomic-certs-update.sh"
 
-var accessApi *accessapicloudlet.ControllerClient
-var platform pf.Platform
-var getRootLBCertsTrigger chan bool
+var refreshThreshold = 20 * 24 * time.Hour
 
-func Init(ctx context.Context, inPlatform pf.Platform, inAccessApi *accessapicloudlet.ControllerClient) {
-	accessApi = inAccessApi
-	platform = inPlatform
-	getRootLBCertsTrigger = make(chan bool)
+type RootLBAPI interface {
+	// Get ssh clients of all root LBs
+	GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error)
 }
 
-// get certs from vault for rootlb, and pull a new one once a month, should only be called once by CRM
-func GetRootLbCerts(ctx context.Context, key *edgeproto.CloudletKey, commonName string, nodeMgr *node.NodeMgr, platformFeatures *edgeproto.PlatformFeatures, client ssh.Client, commercialCerts bool, haMgr *redundancy.HighAvailabilityManager) {
-	log.SpanLog(ctx, log.DebugLevelInfo, "GetRootLbCerts", "commonName", commonName)
+type ProxyCerts struct {
+	cloudletKey           *edgeproto.CloudletKey
+	rootLBAPI             RootLBAPI
+	publicCertAPI         cloudcommon.GetPublicCertApi
+	nodeMgr               *node.NodeMgr
+	haMgr                 *redundancy.HighAvailabilityManager
+	getRootLBCertsTrigger chan bool
+	certs                 map[string]access.TLSCert
+	mux                   sync.Mutex
+	fixedCerts            bool
+	commercialCerts       bool
+	sudoType              pc.Sudo
+	done                  bool
+}
+
+func NewProxyCerts(ctx context.Context, key *edgeproto.CloudletKey, rootLBAPI RootLBAPI, publicCertAPI cloudcommon.GetPublicCertApi, nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityManager, platformFeatures *edgeproto.PlatformFeatures, commercialCerts bool) *ProxyCerts {
+	sudoType := pc.SudoOn
+	log.SpanLog(ctx, log.DebugLevelInfo, "ProxyCerts start")
 	if platformFeatures.IsFake || platformFeatures.IsEdgebox || platformFeatures.CloudletServicesLocal {
 		sudoType = pc.NoSudo
 		if commercialCerts {
@@ -106,107 +112,204 @@ func GetRootLbCerts(ctx context.Context, key *edgeproto.CloudletKey, commonName 
 			commercialCerts = false
 		}
 	}
+	fixedCerts := false
 	if platformFeatures.IsFake {
 		fixedCerts = true
 	}
-	out, err := client.Output("pwd")
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfo, "Error: Unable to get pwd", "commonName", commonName, "err", err)
-		return
+	return &ProxyCerts{
+		cloudletKey:           key,
+		rootLBAPI:             rootLBAPI,
+		publicCertAPI:         publicCertAPI,
+		nodeMgr:               nodeMgr,
+		haMgr:                 haMgr,
+		fixedCerts:            fixedCerts,
+		commercialCerts:       commercialCerts,
+		getRootLBCertsTrigger: make(chan bool),
+		certs:                 make(map[string]access.TLSCert),
+		sudoType:              sudoType,
 	}
-	certsDir, certFile, keyFile := cloudcommon.GetCertsDirAndFiles(string(out))
-	lastCertsUsed := getRootLbCertsHelper(ctx, key, commonName, nodeMgr, certsDir, certFile, keyFile, commercialCerts, haMgr, nil)
+}
+
+// Start starts proxy cert refresh thread
+func (s *ProxyCerts) Start(ctx context.Context) {
 	go func() {
-		// load certs and refresh all the rootlb certs only if certs have changed
 		for {
+			lbCertsSpan := log.StartSpan(log.DebugLevelInfo, "get rootlb certs thread", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
+			err := s.refreshCerts(ctx)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "refresh certs failed", "err", err)
+			}
+			s.nodeMgr.Event(ctx, "refresh certs failed", s.cloudletKey.Organization, s.cloudletKey.GetTags(), err)
+			lbCertsSpan.Finish()
 			select {
 			case <-time.After(1 * 24 * time.Hour):
-			case <-getRootLBCertsTrigger:
-				// since it is a force trigger, ignore last certs check
-				lastCertsUsed = nil
+			case <-s.getRootLBCertsTrigger:
 			}
-			lbCertsSpan := log.StartSpan(log.DebugLevelInfo, "get rootlb certs thread", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
-			lastCertsUsed = getRootLbCertsHelper(ctx, key, commonName, nodeMgr, certsDir, certFile, keyFile, commercialCerts, haMgr, lastCertsUsed)
-			lbCertsSpan.Finish()
+			if s.done {
+				return
+			}
 		}
 	}()
 }
 
-func getRootLbCertsHelper(ctx context.Context, key *edgeproto.CloudletKey, commonName string, nodeMgr *node.NodeMgr, certsDir, certFile, keyFile string, commercialCerts bool, haMgr *redundancy.HighAvailabilityManager, lastCertsUsed *access.TLSCert) *access.TLSCert {
+func (s *ProxyCerts) Stop() {
+	s.done = true
+	s.TriggerRootLBCertsRefresh()
+}
+
+func getWildcardName(fqdn string) string {
+	parts := strings.Split(fqdn, ".")
+	parts[0] = "*"
+	return strings.Join(parts, ".")
+}
+
+func (s *ProxyCerts) getCert(ctx context.Context, fqdn string) (access.TLSCert, error) {
+	// Convert fqdn to first label as wildcard. This allows all LBs in
+	// a cloudlet to share the same cert.
+	wildcardName := getWildcardName(fqdn)
+
+	log.SpanLog(ctx, log.DebugLevelInfra, "ProxyCerts get cert", "fqdn", fqdn, "wildcardName", wildcardName)
+
+	// lookup existing cert
+	s.mux.Lock()
+	cert, ok := s.certs[wildcardName]
+	s.mux.Unlock()
+	// note that we shouldn't ever find expired certs as long as the
+	// refresh thread is working.
+	if ok && time.Now().Before(cert.ExpiresAt) {
+		return cert, nil
+	}
+	// create new cert
+	tlscert, err := s.newCert(ctx, wildcardName)
+	if err != nil {
+		return access.TLSCert{}, err
+	}
+	return tlscert, nil
+}
+
+func (s *ProxyCerts) newCert(ctx context.Context, wildcardName string) (access.TLSCert, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ProxyCerts new cert", "wildcardName", wildcardName)
 	var err error
 	tls := access.TLSCert{}
-	if !haMgr.PlatformInstanceActive {
+	if s.commercialCerts {
+		err = s.getCertFromVault(ctx, &tls, wildcardName)
+	} else {
+		err = getSelfSignedCerts(ctx, &tls, wildcardName)
+	}
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get new cert", "wildcardName", wildcardName, "err", err)
+		return access.TLSCert{}, err
+	}
+	s.mux.Lock()
+	s.certs[wildcardName] = tls
+	s.mux.Unlock()
+
+	return tls, nil
+}
+
+func (s *ProxyCerts) refreshCerts(ctx context.Context) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ProxyCerts refresh certs")
+	var err error
+	if !s.haMgr.PlatformInstanceActive {
 		log.SpanLog(ctx, log.DebugLevelInfra, "skipping lb certs update for standby CRM")
 		return nil
 	}
-	if commercialCerts {
-		err = getCertFromVault(ctx, &tls, commonName)
-	} else {
-		err = getSelfSignedCerts(ctx, &tls, commonName)
-	}
+
+	lbClients, err := s.rootLBAPI.GetRootLBClients(ctx)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfo, "Unable to get updated certs, will try again", "err", err)
-		nodeMgr.Event(ctx, "TLS certs error", key.Organization, key.GetTags(), fmt.Errorf("Unable to get certs: %v", err))
-		// on error, return lastCertsUsed as it might just be a temporary glitch
-		// and certs might not have changed
-		return lastCertsUsed
+		return fmt.Errorf("Failed to get dedicated RootLB ssh clients: %v", err)
 	}
-	if lastCertsUsed != nil && *lastCertsUsed == tls {
-		// certs did not change, perform no action
-		log.SpanLog(ctx, log.DebugLevelInfo, "Ignore rootlb certs update as certs have not changed since last update")
-		return lastCertsUsed
+	wcToLBs := make(map[string][]string)
+	for lbname, lbclient := range lbClients {
+		wildcardName := getWildcardName(lbclient.FQDN)
+		wcToLBs[wildcardName] = append(wcToLBs[wildcardName], lbname)
 	}
-	// apply new cert
-	client, err := platform.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Type: cloudcommon.NodeTypeSharedRootLB.String()})
-	if err == nil {
-		err = writeCertToRootLb(ctx, &tls, client, certsDir, certFile, keyFile)
+
+	errs := []string{}
+	refreshed := 0
+	for wildcardName, lbNames := range wcToLBs {
+		needsUpdate := true
+		s.mux.Lock()
+		cert, ok := s.certs[wildcardName]
+		if ok && time.Until(cert.ExpiresAt) > refreshThreshold {
+			needsUpdate = false
+		}
+		s.mux.Unlock()
+
+		log.SpanLog(ctx, log.DebugLevelInfra, "ProxyCerts refresh check update needed", "wildcardName", wildcardName, "lbNames", lbNames, "needsUpdate", needsUpdate)
+		if !needsUpdate {
+			continue
+		}
+
+		cert, err := s.newCert(ctx, wildcardName)
 		if err != nil {
-			err = fmt.Errorf("write cert to rootLB failed: %v", err)
-			nodeMgr.Event(ctx, "TLS certs error", key.Organization, key.GetTags(), err, "rootlb", commonName)
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to create new cert for refresh", "wildcardName", wildcardName, "err", err)
+			errs = append(errs, err.Error())
+			continue
 		}
-	} else {
-		err = fmt.Errorf("Failed to get shared RootLB ssh client: %v", err)
-		nodeMgr.Event(ctx, "TLS certs error", key.Organization, key.GetTags(), err, "rootlb", commonName)
-	}
-	DedicatedMux.Lock()
-	DedicatedTls = tls
-	DedicatedMux.Unlock()
-	// dedicated LBs
-	dedicatedClients, err := platform.GetRootLBClients(ctx)
-	if err == nil {
-		for lbName, client := range dedicatedClients {
-			if client == nil {
-				nodeMgr.Event(ctx, "TLS certs error", key.Organization, key.GetTags(), fmt.Errorf("missing client"), "rootlb", lbName)
-				continue
-			}
-			err = writeCertToRootLb(ctx, &tls, client, certsDir, certFile, keyFile)
+		refreshed++
+
+		// apply new cert
+		for _, lbname := range lbNames {
+			lbClient := lbClients[lbname]
+			err = s.writeCertToRootLb(ctx, &cert, lbClient.Client, lbname)
 			if err != nil {
-				err = fmt.Errorf("write cert to rootLB failed: %v", err)
-				nodeMgr.Event(ctx, "TLS certs error", key.Organization, key.GetTags(), err, "rootlb", lbName)
+				log.SpanLog(ctx, log.DebugLevelInfra, "failed to write cert to lb", "wildcardName", wildcardName, "lbname", lbname, "err", err)
+				errs = append(errs, err.Error())
 			}
 		}
-	} else {
-		err = fmt.Errorf("Failed to get dedicated RootLB ssh clients: %v", err)
-		nodeMgr.Event(ctx, "TLS certs error", key.Organization, key.GetTags(), err, "rootlb", commonName)
 	}
-	return &tls
+
+	// Clean up unused certs. Note there is a race condition here that
+	// after we created wcToLBs another thread created a new LB and added
+	// the cert before we run the clean up below. In that case, the cert will
+	// be removed from the cache, but the next refresh will restore it.
+	// This is not so bad because Vault also is caching certs, so we'll get
+	// back a copy of the same cert as before.
+	s.mux.Lock()
+	removed := 0
+	certsInCache := 0
+	for wildcardName := range s.certs {
+		if _, ok := wcToLBs[wildcardName]; !ok {
+			log.SpanLog(ctx, log.DebugLevelInfra, "ProxyCerts remove unused cert", "wildcardName", wildcardName)
+			delete(s.certs, wildcardName)
+			removed++
+		}
+	}
+	certsInCache = len(s.certs)
+	s.mux.Unlock()
+
+	log.SpanLog(ctx, log.DebugLevelInfra, "ProxyCerts refresh certs done", "refreshed", refreshed, "removed", removed, "certsInCache", certsInCache, "loop-errors", errs)
+
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, ", "))
+	}
+	return nil
 }
 
-func writeCertToRootLb(ctx context.Context, tls *access.TLSCert, client ssh.Client, certsDir, certFile, keyFile string) error {
+func (s *ProxyCerts) writeCertToRootLb(ctx context.Context, tls *access.TLSCert, client ssh.Client, lbname string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "write proxy certs to rootLB", "lbname", lbname)
+	out, err := client.Output("pwd")
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Error: Unable to get pwd", "name", lbname, "err", err)
+		return err
+	}
+	certsDir, certFile, keyFile := cloudcommon.GetCertsDirAndFiles(string(out))
+
 	// write it to rootlb
-	err := pc.Run(client, "mkdir -p "+certsDir)
+	err = pc.Run(client, "mkdir -p "+certsDir)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "can't create cert dir on rootlb", "certDir", certsDir)
 		return fmt.Errorf("failed to create cert dir on rootlb: %s, %v", certsDir, err)
 	} else {
-		if fixedCerts {
+		if s.fixedCerts {
 			// For testing, avoid atomic certs update as it will create timestamp based directories
-			err = pc.WriteFile(client, certFile, tls.CertString, "tls cert", sudoType)
+			err = pc.WriteFile(client, certFile, tls.CertString, "tls cert", s.sudoType)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "unable to write tls cert file to rootlb", "err", err)
 				return fmt.Errorf("failed to write tls cert file to rootlb, %v", err)
 			}
-			err = pc.WriteFile(client, keyFile, tls.KeyString, "tls key", sudoType)
+			err = pc.WriteFile(client, keyFile, tls.KeyString, "tls key", s.sudoType)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "unable to write tls key file to rootlb", "err", err)
 				return fmt.Errorf("failed to write tls cert file to rootlb, %v", err)
@@ -218,23 +321,23 @@ func writeCertToRootLb(ctx context.Context, tls *access.TLSCert, client ssh.Clie
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to read atomic certs updater script", "err", err)
 			return fmt.Errorf("failed to read atomic certs updater script: %v", err)
 		}
-		err = pc.WriteFile(client, AtomicCertsUpdater, string(certsScript), "atomic-certs-updater", sudoType)
+		err = pc.WriteFile(client, AtomicCertsUpdater, string(certsScript), "atomic-certs-updater", s.sudoType)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to copy atomic certs updater script", "err", err)
 			return fmt.Errorf("failed to copy atomic certs updater script: %v", err)
 		}
-		err = pc.WriteFile(client, certFile+".new", tls.CertString, "tls cert", sudoType)
+		err = pc.WriteFile(client, certFile+".new", tls.CertString, "tls cert", s.sudoType)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "unable to write tls cert file to rootlb", "err", err)
 			return fmt.Errorf("failed to write tls cert file to rootlb, %v", err)
 		}
-		err = pc.WriteFile(client, keyFile+".new", tls.KeyString, "tls key", sudoType)
+		err = pc.WriteFile(client, keyFile+".new", tls.KeyString, "tls key", s.sudoType)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "unable to write tls key file to rootlb", "err", err)
 			return fmt.Errorf("failed to write tls cert file to rootlb, %v", err)
 		}
 		sudoString := ""
-		if sudoType == pc.SudoOn {
+		if s.sudoType == pc.SudoOn {
 			sudoString = "sudo "
 		}
 		err = pc.Run(client, fmt.Sprintf("%sbash %s -d %s -c %s -k %s -e %s", sudoString, AtomicCertsUpdater, certsDir, filepath.Base(certFile), filepath.Base(keyFile), cloudcommon.EnvoyImageDigest))
@@ -248,7 +351,7 @@ func writeCertToRootLb(ctx context.Context, tls *access.TLSCert, client ssh.Clie
 
 // GetCertFromVault fills in the cert fields by calling the vault  plugin.  The vault plugin will
 // return a new cert if one is not already available, or a cached copy of an existing cert.
-func getCertFromVault(ctx context.Context, tlsCert *access.TLSCert, commonNames ...string) error {
+func (s *ProxyCerts) getCertFromVault(ctx context.Context, tlsCert *access.TLSCert, commonNames ...string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCertFromVault", "commonNames", commonNames)
 	// needs to have at least one domain name specified, and not more than LetsEncrypt's limit per cert
 	// in reality len(commonNames) should always be 2, one for the sharedLB and a wildcard one for the dedicatedLBs
@@ -256,12 +359,12 @@ func getCertFromVault(ctx context.Context, tlsCert *access.TLSCert, commonNames 
 		return fmt.Errorf("must have between 1 and %d domain names specified", LETS_ENCRYPT_MAX_DOMAINS_PER_CERT)
 	}
 	names := strings.Join(commonNames, ",")
-	if accessApi == nil {
+	if s.publicCertAPI == nil {
 		return fmt.Errorf("Access API is not initialized")
 	}
 	// vault API uses "_" to denote wildcard
 	commonName := strings.Replace(names, "*", "_", 1)
-	pubCert, err := accessApi.GetPublicCert(ctx, commonName)
+	pubCert, err := s.publicCertAPI.GetPublicCert(ctx, commonName)
 	if err != nil {
 		return fmt.Errorf("Failed to get public cert from vault for commonName %s: %v", commonName, err)
 	}
@@ -271,7 +374,9 @@ func getCertFromVault(ctx context.Context, tlsCert *access.TLSCert, commonNames 
 	if pubCert.Key == "" {
 		return fmt.Errorf("No key found in cert from vault")
 	}
+	expiresIn := time.Duration(pubCert.TTL) * time.Second
 
+	tlsCert.ExpiresAt = time.Now().Add(expiresIn)
 	tlsCert.CertString = pubCert.Cert
 	tlsCert.KeyString = pubCert.Key
 	tlsCert.TTL = pubCert.TTL
@@ -300,6 +405,7 @@ func getSelfSignedCerts(ctx context.Context, tlsCert *access.TLSCert, commonName
 		return fmt.Errorf("Error generating cert: %v\n", err)
 	}
 	output := string(out)
+	tlsCert.ExpiresAt = time.Now().Add(90 * 24 * time.Hour)
 
 	// Get the private key
 	start := strings.Index(output, privKeyStart)
@@ -321,25 +427,23 @@ func getSelfSignedCerts(ctx context.Context, tlsCert *access.TLSCert, commonName
 	return nil
 }
 
-func SetupTLSCerts(ctx context.Context, key *edgeproto.CloudletKey, name string, client ssh.Client, nodeMgr *node.NodeMgr) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SetupTLSCerts", "name", name)
-	out, err := client.Output("pwd")
+func (s *ProxyCerts) SetupTLSCerts(ctx context.Context, fqdn, lbname string, client ssh.Client) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "SetupTLSCerts", "fqdn", fqdn, "lbname", lbname)
+
+	cert, err := s.getCert(ctx, fqdn)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfo, "Error: Unable to get pwd", "name", name, "err", err)
-		return
+		return err
 	}
-	certsDir, certFile, keyFile := cloudcommon.GetCertsDirAndFiles(string(out))
-	DedicatedMux.Lock()
-	defer DedicatedMux.Unlock()
-	err = writeCertToRootLb(ctx, &DedicatedTls, client, certsDir, certFile, keyFile)
+	err = s.writeCertToRootLb(ctx, &cert, client, lbname)
 	if err != nil {
-		nodeMgr.Event(ctx, "TLS certs error", key.Organization, key.GetTags(), err, "rootlb", name)
+		return err
 	}
+	return nil
 }
 
-func TriggerRootLBCertsRefresh() {
+func (s *ProxyCerts) TriggerRootLBCertsRefresh() {
 	select {
-	case getRootLBCertsTrigger <- true:
+	case s.getRootLBCertsTrigger <- true:
 	default:
 	}
 }

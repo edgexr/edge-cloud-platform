@@ -3,6 +3,7 @@ package orm
 import (
 	"context"
 
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/labstack/echo/v4"
 )
@@ -46,6 +47,10 @@ func (s *AppStoreSync) syncVmRegistry(ctx context.Context) {
 		if err != nil {
 			s.syncErr(ctx, err)
 		}
+	}
+	err = vmRegistryEnsurePullKey(ctx, edgeproto.OrganizationEdgeCloud, auth.Username)
+	if err != nil {
+		s.syncErr(ctx, err)
 	}
 }
 

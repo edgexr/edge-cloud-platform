@@ -248,7 +248,7 @@ func (k *K8sBareMetalPlatform) GetRestrictedCloudletStatus(ctx context.Context, 
 	return nil
 }
 
-func (k *K8sBareMetalPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+func (k *K8sBareMetalPlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
 	return nil, nil
 }
 

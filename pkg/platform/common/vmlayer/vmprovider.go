@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/proxy/certs"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	ssh "github.com/edgexr/golang-ssh"
 	"github.com/gogo/protobuf/types"
@@ -72,8 +73,8 @@ type VMProvider interface {
 	CheckServerReady(ctx context.Context, client ssh.Client, serverName string) error
 	GetServerGroupResources(ctx context.Context, name string) (*edgeproto.InfraResources, error)
 	ValidateAdditionalNetworks(ctx context.Context, additionalNets map[string]NetworkType) error
-	ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootlbClients map[string]ssh.Client, action ActionType, updateCallback edgeproto.CacheUpdateCallback) error
-	ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]ssh.Client, action ActionType, updateCallback edgeproto.CacheUpdateCallback) error
+	ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootlbClients map[string]platform.RootLBClient, action ActionType, updateCallback edgeproto.CacheUpdateCallback) error
+	ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]platform.RootLBClient, action ActionType, updateCallback edgeproto.CacheUpdateCallback) error
 	InitOperationContext(ctx context.Context, operationStage OperationInitStage) (context.Context, OperationInitResult, error)
 	GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error)
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource
@@ -94,7 +95,8 @@ type VMPlatform struct {
 	GPUConfig    edgeproto.GPUConfig
 	CacheDir     string
 	infracommon.CommonEmbedded
-	HAManager *redundancy.HighAvailabilityManager
+	HAManager  *redundancy.HighAvailabilityManager
+	proxyCerts *certs.ProxyCerts
 }
 
 // VMMetrics contains stats and timestamp
@@ -371,7 +373,10 @@ func (v *VMPlatform) initDebug(nodeMgr *node.NodeMgr) {
 			infracommon.TriggerRefreshCloudletSSHKeys(&v.VMProperties.CommonPf.SshKey)
 			return "triggered refresh"
 		})
-
+	nodeMgr.Debug.AddDebugFunc("refresh-rootlb-certs", func(ctx context.Context, req *edgeproto.DebugRequest) string {
+		v.proxyCerts.TriggerRootLBCertsRefresh()
+		return "triggered refresh of rootlb certs"
+	})
 	nodeMgr.Debug.AddDebugFunc("crmupgradecmd", v.crmUpgradeCmd)
 }
 
@@ -434,6 +439,9 @@ func (v *VMPlatform) InitCommon(ctx context.Context, platformConfig *platform.Pl
 	}
 	v.VMProperties.PlatformExternalNetwork = cloudlet.InfraConfig.ExternalNetworkName
 
+	v.proxyCerts = certs.NewProxyCerts(ctx, platformConfig.CloudletKey, v, platformConfig.AccessApi, platformConfig.NodeMgr, haMgr, v.GetFeatures(), platformConfig.CommerialCerts)
+	v.proxyCerts.Start(ctx)
+
 	if err = v.VMProvider.InitProvider(ctx, caches, ProviderInitPlatformStartCrmCommon, updateCallback); err != nil {
 		return err
 	}
@@ -466,13 +474,31 @@ func (v *VMPlatform) InitHAConditional(ctx context.Context, platformConfig *plat
 		}
 	}
 
-	action := ActionCreate
 	_, err = v.VMProvider.GetServerDetail(ctx, v.VMProperties.SharedRootLBName)
 	if err == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "rootlb already exists, updating ports")
-		action = ActionUpdate
+		// avoid downtime during crm upgrades by running rootLB update in the background. Most of the time nothing will change.
+		go func() {
+			cspan, cctx := log.ChildSpan(ctx, log.DebugLevelInfra, "update rootLB")
+			err := v.initRootLB(cctx, platformConfig, ActionUpdate, updateCallback)
+			log.SpanLog(cctx, log.DebugLevelApi, "update rootLB finished", "err", err)
+			cspan.Finish()
+			if err != nil {
+				log.FatalLog("rootLB update failed", "err", err)
+			}
+		}()
+	} else {
+		err := v.initRootLB(ctx, platformConfig, ActionCreate, updateCallback)
+		if err != nil {
+			return err
+		}
 	}
-	err = v.CreateRootLB(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, action, updateCallback)
+	v.proxyCerts.TriggerRootLBCertsRefresh()
+	return nil
+}
+
+func (v *VMPlatform) initRootLB(ctx context.Context, platformConfig *platform.PlatformConfig, action ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+	err := v.CreateRootLB(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, action, updateCallback)
 	if err != nil {
 		return fmt.Errorf("Error creating rootLB: %v", err)
 	}

@@ -23,11 +23,11 @@ import (
 	"sync"
 	"time"
 
-	cloudflare "github.com/cloudflare/cloudflare-go"
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt/dnsapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
@@ -55,6 +55,7 @@ type PlatformConfig struct {
 	CacheDir            string
 	GPUConfig           *edgeproto.GPUConfig
 	FedExternalAddr     string
+	CommerialCerts      bool
 }
 
 type Caches struct {
@@ -158,7 +159,7 @@ type Platform interface {
 	// Get restricted cloudlet create status
 	GetRestrictedCloudletStatus(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi AccessApi, updateCallback edgeproto.CacheUpdateCallback) error
 	// Get ssh clients of all root LBs
-	GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error)
+	GetRootLBClients(ctx context.Context) (map[string]RootLBClient, error)
 	// Get RootLB Flavor
 	GetRootLBFlavor(ctx context.Context) (*edgeproto.Flavor, error)
 	// Called when the platform instance switches activity. Currently only transition from Standby to Active is allowed.
@@ -187,8 +188,8 @@ type AccessApi interface {
 	GetSSHPublicKey(ctx context.Context) (string, error)
 	GetOldSSHKey(ctx context.Context) (*vault.MEXKey, error)
 	CreateOrUpdateDNSRecord(ctx context.Context, name, rtype, content string, ttl int, proxy bool) error
-	GetDNSRecords(ctx context.Context, fqdn string) ([]cloudflare.DNSRecord, error)
-	DeleteDNSRecord(ctx context.Context, recordID string) error
+	GetDNSRecords(ctx context.Context, fqdn string) ([]dnsapi.Record, error)
+	DeleteDNSRecord(ctx context.Context, fqdn string) error
 	GetSessionTokens(ctx context.Context, secretName string) (string, error)
 	GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error)
 	GetGCSCreds(ctx context.Context) ([]byte, error)
@@ -223,6 +224,11 @@ type DNSRequest struct {
 	Content string
 	TTL     int
 	Proxy   bool
+}
+
+type RootLBClient struct {
+	Client ssh.Client
+	FQDN   string
 }
 
 // GetTypeBC converts the old enum-based name into the

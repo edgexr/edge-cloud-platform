@@ -7,11 +7,11 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/cloudflare/cloudflare-go"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/chefauth"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt/dnsapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
@@ -65,8 +65,8 @@ func (s *TestHandler) CreateOrUpdateDNSRecord(ctx context.Context, name, rtype, 
 	return nil
 }
 
-func (s *TestHandler) GetDNSRecords(ctx context.Context, fqdn string) ([]cloudflare.DNSRecord, error) {
-	return []cloudflare.DNSRecord{}, nil
+func (s *TestHandler) GetDNSRecords(ctx context.Context, fqdn string) ([]dnsapi.Record, error) {
+	return []dnsapi.Record{}, nil
 }
 
 func (s *TestHandler) DeleteDNSRecord(ctx context.Context, recordID string) error {

@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
@@ -73,18 +74,20 @@ type PartnerApi struct {
 	nodeMgr        *node.NodeMgr
 	vaultConfig    *vault.Config
 	tokenSources   *federationmgmt.TokenSourceCache
+	regAuthMgr     *cloudcommon.RegistryAuthMgr
 	fedExtAddr     string
 	vmRegistryAddr string
 	harborAddr     string
 	allowPlainHttp bool // for unit testing
 }
 
-func NewPartnerApi(db *gorm.DB, connCache ctrlclient.ClientConnMgr, nodeMgr *node.NodeMgr, vaultConfig *vault.Config, fedExtAddr, vmRegistryAddr, harborAddr string) *PartnerApi {
+func NewPartnerApi(db *gorm.DB, connCache ctrlclient.ClientConnMgr, nodeMgr *node.NodeMgr, vaultConfig *vault.Config, regAuthMgr *cloudcommon.RegistryAuthMgr, fedExtAddr, vmRegistryAddr, harborAddr string) *PartnerApi {
 	p := &PartnerApi{
 		database:       db,
 		connCache:      connCache,
 		nodeMgr:        nodeMgr,
 		vaultConfig:    vaultConfig,
+		regAuthMgr:     regAuthMgr,
 		fedExtAddr:     fedExtAddr,
 		vmRegistryAddr: vmRegistryAddr,
 		harborAddr:     harborAddr,

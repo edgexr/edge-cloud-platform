@@ -671,7 +671,7 @@ func main() {
 	grpcOpts := make([]grpc.ServerOption, 0)
 
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
-		nodeMgr.CommonName(),
+		nodeMgr.CommonNamePrefix(),
 		myCertIssuer,
 		[]node.MatchCA{node.SameRegionalMatchCA()})
 	if err != nil {
@@ -743,7 +743,8 @@ func main() {
 		cloudlet := &edgeproto.Cloudlet{
 			Key: dmecommon.MyCloudletKey,
 		}
-		accessApi = accessapi.NewVaultClient(cloudlet, nodeMgr.VaultConfig, nil, *region, "")
+		aa := accessapi.NewVaultClient(ctx, nodeMgr.VaultConfig, nil, *region, "", nodeMgr.ValidDomains)
+		accessApi = aa.CloudletContext(cloudlet)
 	}
 
 	var getPublicCertApi cloudcommon.GetPublicCertApi
@@ -755,20 +756,20 @@ func main() {
 		}
 	}
 
-	// Convert common name to _.xyz.net name for cert issuing
+	// Convert common name prefix to _.xyz name for cert issuing
 	// This is because each dme is given a region.dme.edgecloud.net common name,
 	// and we want to issue a single cert for all *.dme.edgecloud.net.
-	certCommonName := nodeMgr.CommonName()
-	commonNameParts := strings.Split(certCommonName, ".")
+	certCommonNamePrefix := nodeMgr.CommonNamePrefix()
+	commonNameParts := strings.Split(certCommonNamePrefix, ".")
 	commonNameParts[0] = "_"
-	certCommonName = strings.Join(commonNameParts, ".")
+	certCommonNamePrefix = strings.Join(commonNameParts, ".")
 
 	// Setup PublicCertManager for dme
 	var publicCertManager *node.PublicCertManager
 	if publicTls := os.Getenv("PUBLIC_ENDPOINT_TLS"); publicTls == "false" {
-		publicCertManager, err = node.NewPublicCertManager(certCommonName, nil, "", "")
+		publicCertManager, err = node.NewPublicCertManager(certCommonNamePrefix, nodeMgr.ValidDomains, nil, "", "")
 	} else {
-		publicCertManager, err = node.NewPublicCertManager(certCommonName, getPublicCertApi, *tlsApiCertFile, *tlsApiKeyFile)
+		publicCertManager, err = node.NewPublicCertManager(certCommonNamePrefix, nodeMgr.ValidDomains, getPublicCertApi, *tlsApiCertFile, *tlsApiKeyFile)
 	}
 	if err != nil {
 		span.Finish()

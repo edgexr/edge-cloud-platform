@@ -446,7 +446,7 @@ func (f *FederationPlatform) GetRestrictedCloudletStatus(ctx context.Context, cl
 }
 
 // Get ssh clients of all root LBs
-func (f *FederationPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+func (f *FederationPlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
 	return nil, nil
 }
 

@@ -8,16 +8,15 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/stretchr/testify/require"
 )
 
-func vmRegDeleteTestData(t *testing.T, ctx context.Context, entries []entry, vaultRootConfig *vault.Config) {
+func vmRegDeleteTestData(t *testing.T, ctx context.Context, entries []entry, regAuthMgr *cloudcommon.RegistryAuthMgr) {
 	for _, v := range entries {
 		if v.OrgType == OrgTypeOperator {
 			continue
 		}
-		err := cloudcommon.DeleteRegistryAuth(ctx, serverConfig.VmRegistryAddr, v.Org, vaultRootConfig)
+		err := regAuthMgr.DeleteRegistryAuth(ctx, serverConfig.VmRegistryAddr, v.Org)
 		require.Nil(t, err)
 
 		auth, err := vmRegistryGetPullKey(ctx, v.Org)

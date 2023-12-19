@@ -896,7 +896,6 @@ func addControllerApis(method string, group *echo.Group) {
 	// ConfigSecondaryCrmAccessPrivateKey: 21.25
 	// ConfigThanosRecvAddr: 21.26
 	// ConfigAnsiblePublicAddr: 21.27
-	// ConfigInternalDomain: 21.28
 	// ResTagMap: 22
 	// ResTagMapKey: 22.1
 	// ResTagMapValue: 22.2

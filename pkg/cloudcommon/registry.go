@@ -78,11 +78,40 @@ type OauthTokenResp struct {
 	AccessToken string `json:"access_token"`
 }
 
+type RegistryAuthMgr struct {
+	vaultConfig  *vault.Config
+	validDomains []string
+}
+
+func NewRegistryAuthMgr(vaultConfig *vault.Config, validDomains string) *RegistryAuthMgr {
+	return &RegistryAuthMgr{
+		vaultConfig:  vaultConfig,
+		validDomains: strings.Split(validDomains, ","),
+	}
+}
+
 func getVaultAccountPath(name string) string {
 	return fmt.Sprintf("/secret/data/accounts/%s", name)
 }
 
-func getVaultRegistryPath(registry, org string) string {
+func (s *RegistryAuthMgr) getVaultRegistryPath(registry, org string) string {
+	for _, domain := range s.validDomains {
+		// When supporting multiple domains, we don't want to have to
+		// duplicate the same credentials for our internal docker/vm
+		// registries under multiple domains. So we map those domains
+		// to a common name.
+		if registry == "docker."+domain {
+			registry = InternalDockerRegistry
+			break
+		} else if registry == "console."+domain {
+			registry = InternalVMRegistry
+			break
+		}
+	}
+	return s.getVaultRegistryPathUnfiltered(registry, org)
+}
+
+func (s *RegistryAuthMgr) getVaultRegistryPathUnfiltered(registry, org string) string {
 	// NOTE: we do not store credentials for external registries
 	// provided by the user. Images should always be copied into
 	// internal registries at the time of App creation,
@@ -116,8 +145,14 @@ func parseImageUrl(imgUrl string) (string, string, error) {
 	if len(hostname) < 1 {
 		return "", "", fmt.Errorf("empty hostname")
 	}
-	org := strings.Split(urlObj.Path, "/")[0]
-	return hostname[0], org, nil
+	path := urlObj.Path
+	path = strings.TrimPrefix(path, VmRegPath) // remove vm-registry path before org if present
+	path = strings.TrimPrefix(path, "/")
+	pathParts := strings.Split(path, "/")
+	if len(pathParts) < 2 {
+		return "", "", fmt.Errorf("parseImageUrl expects a path with org/image, but was %s", path)
+	}
+	return hostname[0], pathParts[0], nil
 }
 
 // return hostname and port from hostOrURL string.
@@ -158,29 +193,29 @@ func GetAccountAuth(ctx context.Context, name string, vaultConfig *vault.Config)
 }
 
 // GetRegistryImageAuth gets the credentials for pulling the image.
-func GetRegistryImageAuth(ctx context.Context, imgUrl string, vaultConfig *vault.Config) (*RegistryAuth, error) {
+func (s *RegistryAuthMgr) GetRegistryImageAuth(ctx context.Context, imgUrl string) (*RegistryAuth, error) {
 	host, org, err := parseImageUrl(imgUrl)
 	if err != nil {
 		return nil, err
 	}
-	return GetRegistryAuth(ctx, host, org, vaultConfig)
+	return s.GetRegistryOrgAuth(ctx, host, org)
 }
 
-// GetRegistryAuth gets the credentials for accessing the
+// GetRegistryOrgAuth gets the credentials for accessing the
 // image registry. If org is AllOrgs, then admin credentials
 // are returned. Otherwise, credentials are scoped to the org.
-func GetRegistryAuth(ctx context.Context, hostOrURL, org string, vaultConfig *vault.Config) (*RegistryAuth, error) {
-	if vaultConfig == nil || vaultConfig.Addr == "" {
+func (s *RegistryAuthMgr) GetRegistryOrgAuth(ctx context.Context, hostOrURL, org string) (*RegistryAuth, error) {
+	if s.vaultConfig == nil || s.vaultConfig.Addr == "" {
 		return nil, fmt.Errorf("no vault specified")
 	}
 	hostname, port, err := ParseHost(hostOrURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse %q, %s", hostOrURL, err)
 	}
-	vaultPath := getVaultRegistryPath(hostname, org)
+	vaultPath := s.getVaultRegistryPath(hostname, org)
 	log.SpanLog(ctx, log.DebugLevelApi, "get registry auth", "hostname", hostname, "org", org, "vault-path", vaultPath)
 	auth := &RegistryAuth{}
-	err = vault.GetData(vaultConfig, vaultPath, 0, auth)
+	err = vault.GetData(s.vaultConfig, vaultPath, 0, auth)
 	if err != nil && strings.Contains(err.Error(), "no secrets") {
 		// no secrets found, assume public registry
 		log.SpanLog(ctx, log.DebugLevelApi, "warning, no registry credentials in vault, assume public registry", "err", err)
@@ -204,8 +239,8 @@ func GetRegistryAuth(ctx context.Context, hostOrURL, org string, vaultConfig *va
 	return auth, nil
 }
 
-func PutRegistryAuth(ctx context.Context, host, org string, auth *RegistryAuth, vaultConfig *vault.Config, checkAndSet int) error {
-	if vaultConfig == nil || vaultConfig.Addr == "" {
+func (s *RegistryAuthMgr) PutRegistryAuth(ctx context.Context, host, org string, auth *RegistryAuth, checkAndSet int) error {
+	if s.vaultConfig == nil || s.vaultConfig.Addr == "" {
 		return fmt.Errorf("no vault specified")
 	}
 	hostname, port, err := ParseHost(host)
@@ -214,26 +249,76 @@ func PutRegistryAuth(ctx context.Context, host, org string, auth *RegistryAuth, 
 	}
 	auth.Hostname = hostname
 	auth.Port = port
-	vaultPath := getVaultRegistryPath(hostname, org)
+	vaultPath := s.getVaultRegistryPath(hostname, org)
 	log.SpanLog(ctx, log.DebugLevelApi, "put auth secret", "vault-path", vaultPath)
-	err = vault.PutDataCAS(vaultConfig, vaultPath, auth, checkAndSet)
+	err = vault.PutDataCAS(s.vaultConfig, vaultPath, auth, checkAndSet)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func DeleteRegistryAuth(ctx context.Context, host, org string, vaultConfig *vault.Config) error {
-	if vaultConfig == nil || vaultConfig.Addr == "" {
+func (s *RegistryAuthMgr) DeleteRegistryAuth(ctx context.Context, host, org string) error {
+	if s.vaultConfig == nil || s.vaultConfig.Addr == "" {
 		return fmt.Errorf("no vault specified")
 	}
 	hostname, _, err := ParseHost(host)
 	if err != nil {
 		return err
 	}
-	vaultPath := getVaultRegistryPath(hostname, org)
+	vaultPath := s.getVaultRegistryPath(hostname, org)
 	log.SpanLog(ctx, log.DebugLevelApi, "delete auth secret", "vault-path", vaultPath)
-	return vault.DeleteData(vaultConfig, vaultPath)
+	return vault.DeleteData(s.vaultConfig, vaultPath)
+}
+
+// UpgradeDockerRegistryAuth copies docker credentials from hostname-specific
+// vault path to common internal vault path.
+func (s *RegistryAuthMgr) UpgradeRegistryAuth(ctx context.Context, internalRegistry, org string) error {
+	log.SpanLog(ctx, log.DebugLevelApi, "upgrade registry auth", "internalRegistry", internalRegistry, "org", org)
+	if s.vaultConfig == nil || s.vaultConfig.Addr == "" {
+		return fmt.Errorf("no vault specified")
+	}
+	prefix := "docker."
+	if internalRegistry == InternalVMRegistry {
+		prefix = "console."
+	}
+	auth := &RegistryAuth{}
+	commonVaultPath := s.getVaultRegistryPathUnfiltered(internalRegistry, org)
+	err := vault.GetData(s.vaultConfig, commonVaultPath, 0, auth)
+	if err == nil {
+		// no upgrade needed
+		return nil
+	}
+	if err != nil && !strings.Contains(err.Error(), "no secrets") {
+		log.SpanLog(ctx, log.DebugLevelApi, "upgrade registry auth read failed", "vaultPath", commonVaultPath, "err", err)
+		return err
+	}
+	// no secrets at common path
+	for _, domain := range s.validDomains {
+		hostname := prefix + domain
+		vaultPath := s.getVaultRegistryPathUnfiltered(hostname, org)
+		err := vault.GetData(s.vaultConfig, vaultPath, 0, auth)
+		if err != nil && strings.Contains(err.Error(), "no secrets") {
+			continue
+		}
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "upgrade registry auth read failed", "vaultPath", vaultPath, "err", err)
+			return err
+		}
+		log.SpanLog(ctx, log.DebugLevelApi, "upgrade registry auth", "from-vaultPath", vaultPath, "to-vaultPath", commonVaultPath)
+		checkAndSet := 0
+		err = vault.PutDataCAS(s.vaultConfig, commonVaultPath, auth, checkAndSet)
+		if err != nil && strings.Contains(err.Error(), "check-and-set parameter did not match") {
+			log.SpanLog(ctx, log.DebugLevelApi, "upgrade registry write failed via check-and-set, ignoring", "err", err)
+			// another MC wrote before us
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		break
+	}
+	return nil
 }
 
 func GetRegistryAuthToken(ctx context.Context, host string, authApi RegistryAuthApi) (string, error) {
@@ -661,11 +746,11 @@ func ValidateOvfRegistryPath(ctx context.Context, imgUrl string, authApi Registr
 }
 
 type VaultRegistryAuthApi struct {
-	VaultConfig *vault.Config
+	RegAuthMgr *RegistryAuthMgr
 }
 
 func (s *VaultRegistryAuthApi) GetRegistryAuth(ctx context.Context, imgUrl string) (*RegistryAuth, error) {
-	return GetRegistryAuth(ctx, imgUrl, AllOrgs, s.VaultConfig)
+	return s.RegAuthMgr.GetRegistryOrgAuth(ctx, imgUrl, AllOrgs)
 }
 
 // For unit tests

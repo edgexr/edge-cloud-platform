@@ -532,7 +532,11 @@ func harborGetPages(ctx context.Context, reqUrl string, queryParams map[string]s
 }
 
 func harborEnsureApiKey(ctx context.Context, harborHostPort, org string) (*cloudcommon.RegistryAuth, error) {
-	auth, err := cloudcommon.GetRegistryAuth(ctx, harborHostPort, org, serverConfig.vaultConfig)
+	err := serverConfig.regAuthMgr.UpgradeRegistryAuth(ctx, cloudcommon.InternalDockerRegistry, org)
+	if err != nil {
+		return nil, err
+	}
+	auth, err := serverConfig.regAuthMgr.GetRegistryOrgAuth(ctx, harborHostPort, org)
 	if err != nil {
 		return nil, err
 	}
@@ -552,7 +556,7 @@ func harborEnsureApiKey(ctx context.Context, harborHostPort, org string) (*cloud
 	}
 	// will not overwrite existing secret, avoids race condition with another
 	// process calling GetHarborApiKey.
-	err = cloudcommon.PutRegistryAuth(ctx, harborHostPort, org, auth, serverConfig.vaultConfig, 0)
+	err = serverConfig.regAuthMgr.PutRegistryAuth(ctx, harborHostPort, org, auth, 0)
 	if vault.IsCheckAndSetError(err) {
 		// already exists
 		err = nil

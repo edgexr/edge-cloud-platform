@@ -13,13 +13,17 @@ import (
 	"github.com/google/uuid"
 )
 
-const vmRegOrgValidDur = 43800 * time.Hour // 5 years
+const vmRegOrgValidDur = 438000 * time.Hour // 50 years
 
 func getVmRegAdminAuth(ctx context.Context) (*cloudcommon.RegistryAuth, error) {
-	return cloudcommon.GetRegistryAuth(ctx, serverConfig.VmRegistryAddr, cloudcommon.AllOrgs, serverConfig.vaultConfig)
+	return serverConfig.regAuthMgr.GetRegistryOrgAuth(ctx, serverConfig.VmRegistryAddr, cloudcommon.AllOrgs)
 }
 
 func vmRegistryEnsureApiKey(ctx context.Context, username string) error {
+	err := serverConfig.regAuthMgr.UpgradeRegistryAuth(ctx, cloudcommon.InternalVMRegistry, cloudcommon.AllOrgs)
+	if err != nil {
+		return err
+	}
 	auth, err := getVmRegAdminAuth(ctx)
 	if err != nil {
 		return err
@@ -84,7 +88,7 @@ func vmRegistryEnsureApiKey(ctx context.Context, username string) error {
 		auth.Username = uuid.New().String()
 		auth.Password = uuid.New().String()
 		// will not overwrite existing secret
-		err = cloudcommon.PutRegistryAuth(ctx, serverConfig.VmRegistryAddr, cloudcommon.AllOrgs, auth, serverConfig.vaultConfig, 0)
+		err = serverConfig.regAuthMgr.PutRegistryAuth(ctx, serverConfig.VmRegistryAddr, cloudcommon.AllOrgs, auth, 0)
 		if vault.IsCheckAndSetError(err) {
 			// the other process will create the apikey
 			log.SpanLog(ctx, log.DebugLevelApi, "conflict creating apikey, allow other process to proceed", "registry", serverConfig.VmRegistryAddr)
@@ -147,11 +151,11 @@ func vmRegistryEnsurePullKey(ctx context.Context, org, username string) error {
 		Username: user.Name,
 		Token:    cookie.Value,
 	}
-	return cloudcommon.PutRegistryAuth(ctx, serverConfig.VmRegistryAddr, org, &auth, serverConfig.vaultConfig, -1)
+	return serverConfig.regAuthMgr.PutRegistryAuth(ctx, serverConfig.VmRegistryAddr, org, &auth, -1)
 }
 
 func vmRegistryGetPullKey(ctx context.Context, org string) (*cloudcommon.RegistryAuth, error) {
-	return cloudcommon.GetRegistryAuth(ctx, serverConfig.VmRegistryAddr, org, serverConfig.vaultConfig)
+	return serverConfig.regAuthMgr.GetRegistryOrgAuth(ctx, serverConfig.VmRegistryAddr, org)
 }
 
 func vmRegistryDeletePullKey(ctx context.Context, org, orgType string) error {
@@ -163,5 +167,5 @@ func vmRegistryDeletePullKey(ctx context.Context, org, orgType string) error {
 	if orgType == OrgTypeOperator {
 		return nil
 	}
-	return cloudcommon.DeleteRegistryAuth(ctx, serverConfig.VmRegistryAddr, org, serverConfig.vaultConfig)
+	return serverConfig.regAuthMgr.DeleteRegistryAuth(ctx, serverConfig.VmRegistryAddr, org)
 }

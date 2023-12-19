@@ -21,13 +21,12 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 )
 
 const (
 	GetEnvoyVersionCmd = "get-cluster-envoy-version"
-	RefreshRootLBCerts = "refresh-rootlb-certs"
 	CRMCmd             = "crmcmd"
 )
 

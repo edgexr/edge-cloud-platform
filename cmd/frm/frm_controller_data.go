@@ -51,13 +51,14 @@ func InitFRM(ctx context.Context, nodeMgr *node.NodeMgr, haMgr *redundancy.HighA
 	// Load platform implementation.
 	platform := &federation.FederationPlatform{}
 	controllerData := NewControllerData(platform, nodeMgr, haMgr)
+	vaultClient := accessapi.NewVaultClient(ctx, nodeMgr.VaultConfig, nil, region, "", nodeMgr.ValidDomains)
 
 	pc := pf.PlatformConfig{
 		Region:          region,
 		NodeMgr:         nodeMgr,
 		DeploymentTag:   nodeMgr.DeploymentTag,
 		AppDNSRoot:      appDNSRoot,
-		AccessApi:       accessapi.NewVaultGlobalClient(nodeMgr.VaultConfig),
+		AccessApi:       vaultClient,
 		FedExternalAddr: fedExtAddr,
 	}
 	caches := controllerData.GetCaches()
@@ -73,7 +74,7 @@ func InitFRM(ctx context.Context, nodeMgr *node.NodeMgr, haMgr *redundancy.HighA
 	// ctrl notify
 	addrs := strings.Split(notifyAddrs, ",")
 	notifyClientTls, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
-		nodeMgr.CommonName(),
+		nodeMgr.CommonNamePrefix(),
 		node.CertIssuerRegional,
 		[]node.MatchCA{node.SameRegionalMatchCA()})
 	if err != nil {

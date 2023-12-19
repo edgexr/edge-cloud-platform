@@ -26,6 +26,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
@@ -47,6 +48,7 @@ type CloudletApi struct {
 	accessKeyServer     *node.AccessKeyServer
 	dnsLabelStore       edgeproto.CloudletDnsLabelStore
 	objectDnsLabelStore edgeproto.CloudletObjectDnsLabelStore
+	vaultClient         *accessapi.VaultClient
 }
 
 // Vault roles for all services

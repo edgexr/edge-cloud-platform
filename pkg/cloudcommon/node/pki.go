@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -59,6 +60,7 @@ type internalPki struct {
 	vaultConfig    *vault.Config
 	localRegion    string
 	refreshTrigger chan bool
+	validDomains   []string
 
 	// Set access key client to use this instead of Vault
 	accessKeyClient *AccessKeyClient
@@ -67,8 +69,9 @@ type internalPki struct {
 }
 
 type CertId struct {
-	CommonName string
-	Issuer     string
+	CommonNamePrefix string
+	CommonName       string // Deprecated, only for older CRMs
+	Issuer           string
 }
 
 func (s *NodeMgr) initInternalPki(ctx context.Context) error {
@@ -113,6 +116,8 @@ func (s *NodeMgr) initInternalPki(ctx context.Context) error {
 	} else {
 		s.MyNode.InternalPki = strings.Join(pkiDesc, ",")
 	}
+	s.InternalPki.validDomains = strings.Split(s.ValidDomains, ",")
+	sort.Strings(s.InternalPki.validDomains)
 	return nil
 }
 
@@ -237,7 +242,7 @@ func certsFromPem(pemCerts []byte) ([]*x509.Certificate, error) {
 // The client issuer specifies where the client issues its cert from.
 // The server issuers specify which CAs are trusted when verifying the
 // remote server's certificate.
-func (s *internalPki) GetClientTlsConfig(ctx context.Context, commonName, clientIssuer string, serverIssuers []MatchCA, ops ...TlsOp) (*tls.Config, error) {
+func (s *internalPki) GetClientTlsConfig(ctx context.Context, commonNamePrefix, clientIssuer string, serverIssuers []MatchCA, ops ...TlsOp) (*tls.Config, error) {
 	if s.tlsMode == mextls.NoTLS {
 		return nil, nil
 	}
@@ -245,10 +250,13 @@ func (s *internalPki) GetClientTlsConfig(ctx context.Context, commonName, client
 	for _, op := range ops {
 		op(opts)
 	}
+	if commonNamePrefix == "" {
+		return nil, fmt.Errorf("commonNamePrefix not specified")
+	}
 
 	id := CertId{
-		CommonName: commonName,
-		Issuer:     clientIssuer,
+		CommonNamePrefix: commonNamePrefix,
+		Issuer:           clientIssuer,
 	}
 
 	err := s.ensureCertInCache(ctx, id)
@@ -285,7 +293,7 @@ func (s *internalPki) GetClientTlsConfig(ctx context.Context, commonName, client
 // The server issuer specifies where the server issues its cert from.
 // The client issuers specify which CAs are trusted when verifying the
 // remote client's certificate.
-func (s *internalPki) GetServerTlsConfig(ctx context.Context, commonName, serverIssuer string, clientIssuers []MatchCA, ops ...TlsOp) (*tls.Config, error) {
+func (s *internalPki) GetServerTlsConfig(ctx context.Context, commonNamePrefix, serverIssuer string, clientIssuers []MatchCA, ops ...TlsOp) (*tls.Config, error) {
 	if s.tlsMode == mextls.NoTLS {
 		return nil, nil
 	}
@@ -293,10 +301,13 @@ func (s *internalPki) GetServerTlsConfig(ctx context.Context, commonName, server
 	for _, op := range ops {
 		op(opts)
 	}
+	if commonNamePrefix == "" {
+		return nil, fmt.Errorf("commonNamePrefix not specified")
+	}
 
 	id := CertId{
-		CommonName: commonName,
-		Issuer:     serverIssuer,
+		CommonNamePrefix: commonNamePrefix,
+		Issuer:           serverIssuer,
 	}
 	err := s.ensureCertInCache(ctx, id)
 	if err != nil {
@@ -460,14 +471,43 @@ func (s *internalPki) IssueVaultCertDirect(ctx context.Context, id CertId) (*Vau
 	}
 	path := id.Issuer + "/issue/" + rolename
 
+	var commonName, altNames string
+	if id.CommonName != "" {
+		// for backwards compatibility of requests from older CRM
+		log.SpanLog(ctx, log.DebugLevelApi, "issuing internal pki cert for deprecated commonName request", "commonName", id.CommonName)
+		commonName = id.CommonName
+		altNames = "*." + id.CommonName + ","
+	} else {
+		// This is our internal PKI, so we can put all different domains as
+		// SANs (subject alternate names) because there's no need to verify
+		// the we own the domain name via a DNS provider.
+		cns := []string{}
+		for _, domain := range s.validDomains {
+			if domain == "" {
+				continue
+			}
+			cn := id.CommonNamePrefix + "." + domain
+			cns = append(cns, cn, "*."+cn)
+		}
+		if len(cns) == 0 {
+			// no domains specified
+			commonName = id.CommonNamePrefix
+			altNames = "*." + commonName + ","
+		} else {
+			commonName = cns[0]
+			if len(cns) > 1 {
+				altNames = strings.Join(cns[1:], ",") + ","
+			}
+		}
+	}
 	envAltNames := strings.TrimSpace(os.Getenv("VAULT_PKI_ALTNAMES"))
 	if envAltNames != "" {
 		envAltNames = "," + envAltNames
 	}
 	data := make(map[string]interface{})
-	data["common_name"] = id.CommonName
+	data["common_name"] = commonName
 	data["ttl"] = "72h"
-	data["alt_names"] = "*." + id.CommonName + ",localhost" + envAltNames
+	data["alt_names"] = altNames + "localhost" + envAltNames
 	data["ip_sans"] = "127.0.0.1,0.0.0.0"
 	data["uri_sans"] = uriSans
 
@@ -514,7 +554,7 @@ func (s *internalPki) issueVaultCertController(ctx context.Context, id CertId) (
 
 	client := edgeproto.NewCloudletAccessApiClient(conn)
 	req := &edgeproto.IssueCertRequest{
-		CommonName: id.CommonName,
+		CommonNamePrefix: id.CommonNamePrefix,
 	}
 	reply, err := client.IssueCert(ctx, req)
 	if err != nil {

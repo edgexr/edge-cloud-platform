@@ -19,12 +19,11 @@ import (
 	"fmt"
 	"net"
 
-	ssh "github.com/edgexr/golang-ssh"
-
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 )
 
 const PortDoesNotExist = "Port does not exist"
@@ -125,6 +124,6 @@ func (v *VSpherePlatform) ValidateAdditionalNetworks(ctx context.Context, additi
 	return fmt.Errorf("Additional networks not supported in vSphere cloudlets")
 }
 
-func (v *VSpherePlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootlbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VSpherePlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootlbClients map[string]platform.RootLBClient, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }

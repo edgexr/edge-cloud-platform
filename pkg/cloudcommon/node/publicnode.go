@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -46,36 +47,46 @@ func (s *NodeMgr) GetPublicClientTlsConfig(ctx context.Context) (*tls.Config, er
 		tlsOpts = append(tlsOpts, WithTlsSkipVerify(true))
 	}
 	return s.InternalPki.GetClientTlsConfig(ctx,
-		s.CommonName(),
+		s.CommonNamePrefix(),
 		s.tlsClientIssuer,
 		[]MatchCA{},
 		tlsOpts...)
 }
 
+var refreshDelay = 2 * time.Hour
+
+type PubCert struct {
+	cert      *tls.Certificate
+	expiresAt time.Time
+}
+
 // PublicCertManager manages refreshing the public cert.
 type PublicCertManager struct {
-	commonName          string
+	commonNamePrefix    string
 	tlsMode             mextls.TLSMode
 	useGetPublicCertApi bool // denotes whether to use GetPublicCertApi to grab certs or use command line provided cert (should be equivalent to useVaultPki flag)
 	getPublicCertApi    cloudcommon.GetPublicCertApi
-	cert                *tls.Certificate
-	expiresAt           time.Time
+	certs               map[string]*PubCert
 	done                bool
 	refreshTrigger      chan bool
 	refreshThreshold    time.Duration
-	refreshRetryDelay   time.Duration
+	validDomains        []string
 	mux                 sync.Mutex
 }
 
-func NewPublicCertManager(commonName string, getPublicCertApi cloudcommon.GetPublicCertApi, tlsCertFile string, tlsKeyFile string) (*PublicCertManager, error) {
+func NewPublicCertManager(commonNamePrefix, validDomains string, getPublicCertApi cloudcommon.GetPublicCertApi, tlsCertFile string, tlsKeyFile string) (*PublicCertManager, error) {
 	// Nominally letsencrypt certs are valid for 90 days
 	// and they recommend refreshing at 30 days to expiration.
 	mgr := &PublicCertManager{
-		commonName:        commonName,
-		refreshTrigger:    make(chan bool, 1),
-		refreshThreshold:  30 * 24 * time.Hour,
-		refreshRetryDelay: 24 * time.Hour,
-		tlsMode:           mextls.ServerAuthTLS,
+		commonNamePrefix: commonNamePrefix,
+		refreshTrigger:   make(chan bool, 1),
+		refreshThreshold: 30 * 24 * time.Hour,
+		tlsMode:          mextls.ServerAuthTLS,
+		validDomains:     strings.Split(validDomains, ","),
+		certs:            make(map[string]*PubCert),
+	}
+	if len(mgr.validDomains) == 0 && commonNamePrefix != "localhost" {
+		return nil, fmt.Errorf("no valid domains specified")
 	}
 
 	if getPublicCertApi != nil {
@@ -86,7 +97,11 @@ func NewPublicCertManager(commonName string, getPublicCertApi cloudcommon.GetPub
 		if err != nil {
 			return nil, err
 		}
-		mgr.cert = &cert
+		for _, cn := range mgr.getCommonNames() {
+			mgr.certs[cn] = &PubCert{
+				cert: &cert,
+			}
+		}
 	} else {
 		// no tls
 		mgr.tlsMode = mextls.NoTLS
@@ -94,30 +109,47 @@ func NewPublicCertManager(commonName string, getPublicCertApi cloudcommon.GetPub
 	return mgr, nil
 }
 
+func (s *PublicCertManager) getCommonNames() []string {
+	if s.commonNamePrefix == "localhost" {
+		// testing only
+		return []string{s.commonNamePrefix}
+	}
+	cns := []string{}
+	for _, domain := range s.validDomains {
+		cns = append(cns, s.commonNamePrefix+"."+domain)
+	}
+	return cns
+}
+
 func (s *PublicCertManager) TLSMode() mextls.TLSMode {
 	return s.tlsMode
 }
 
-func (s *PublicCertManager) updateCert(ctx context.Context) error {
+func (s *PublicCertManager) updateCerts(ctx context.Context) error {
 	if s.tlsMode == mextls.NoTLS || !s.useGetPublicCertApi {
 		// If no tls or using command line certs, do not update
 		return nil
 	}
-	log.SpanLog(ctx, log.DebugLevelInfo, "update public cert", "name", s.commonName)
-	pubCert, err := s.getPublicCertApi.GetPublicCert(ctx, s.commonName)
-	if err != nil {
-		return err
+	log.SpanLog(ctx, log.DebugLevelInfo, "update public certs", "prefix", s.commonNamePrefix, "domains", s.validDomains)
+	for _, commonName := range s.getCommonNames() {
+		vaultCert, err := s.getPublicCertApi.GetPublicCert(ctx, commonName)
+		if err != nil {
+			return err
+		}
+		expiresIn := time.Duration(vaultCert.TTL) * time.Second
+		cert, err := tls.X509KeyPair([]byte(vaultCert.Cert), []byte(vaultCert.Key))
+		if err != nil {
+			return err
+		}
+		s.mux.Lock()
+		pubcert := PubCert{
+			cert:      &cert,
+			expiresAt: time.Now().Add(expiresIn),
+		}
+		s.certs[commonName] = &pubcert
+		log.SpanLog(ctx, log.DebugLevelInfo, "new cert", "name", commonName, "expiresIn", expiresIn, "expiresAt", pubcert.expiresAt)
+		s.mux.Unlock()
 	}
-	cert, err := tls.X509KeyPair([]byte(pubCert.Cert), []byte(pubCert.Key))
-	if err != nil {
-		return err
-	}
-	s.mux.Lock()
-	s.cert = &cert
-	expiresIn := time.Duration(pubCert.TTL) * time.Second
-	s.expiresAt = time.Now().Add(expiresIn)
-	log.SpanLog(ctx, log.DebugLevelInfo, "new cert", "name", s.commonName, "expiresIn", expiresIn, "expiresAt", s.expiresAt)
-	s.mux.Unlock()
 	return nil
 }
 
@@ -127,9 +159,9 @@ func (s *PublicCertManager) GetServerTlsConfig(ctx context.Context) (*tls.Config
 		// No tls
 		return nil, nil
 	}
-	if s.cert == nil {
+	if len(s.certs) == 0 {
 		// make sure we have cert
-		err := s.updateCert(ctx)
+		err := s.updateCerts(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -146,10 +178,33 @@ func (s *PublicCertManager) GetCertificateFunc() func(*tls.ClientHelloInfo) (*tl
 	return func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
 		s.mux.Lock()
 		defer s.mux.Unlock()
-		if s.cert == nil {
-			return nil, fmt.Errorf("No certificate available")
+		if info.ServerName == "" {
+			// no serverName specified, return first cert
+			notFound := []string{}
+			expired := []string{}
+			for _, cn := range s.getCommonNames() {
+				pubcert, ok := s.certs[cn]
+				if !ok {
+					notFound = append(notFound, cn)
+					continue
+				}
+				if time.Now().After(pubcert.expiresAt) {
+					expired = append(expired, cn)
+					continue // expired
+				}
+				return pubcert.cert, nil
+			}
+			log.DebugLog(log.DebugLevelApi, "no valid cert found for tls client without serverName", "validNames", s.getCommonNames(), "notFound", notFound, "expired", expired)
+		} else {
+			// do substring match to allow for wild cards
+			for cn, pubcert := range s.certs {
+				if strings.HasSuffix(info.ServerName, cn) {
+					return pubcert.cert, nil
+				}
+			}
+			log.DebugLog(log.DebugLevelApi, "no cert found for tls client", "serverName", info.ServerName, "validNames", s.getCommonNames())
 		}
-		return s.cert, nil
+		return nil, fmt.Errorf("no certificate found for serverName %q" + info.ServerName)
 	}
 }
 
@@ -157,29 +212,31 @@ func (s *PublicCertManager) StartRefresh() {
 	s.done = false
 	go func() {
 		for {
-			s.mux.Lock()
-			expiresIn := time.Until(s.expiresAt)
-			s.mux.Unlock()
-			var waitTime time.Duration
-			if expiresIn > s.refreshThreshold {
-				waitTime = expiresIn - s.refreshThreshold
-			} else {
-				// Try once a day
-				waitTime = s.refreshRetryDelay
-			}
 			select {
-			case <-time.After(waitTime):
+			case <-time.After(refreshDelay):
 			case <-s.refreshTrigger:
 			}
-			span := log.StartSpan(log.DebugLevelInfo, "refresh public cert")
+			span := log.StartSpan(log.DebugLevelInfo, "check refresh public certs")
 			ctx := log.ContextWithSpan(context.Background(), span)
 			if s.done {
 				log.SpanLog(ctx, log.DebugLevelInfo, "refresh public cert done")
 				span.Finish()
 				break
 			}
-			err := s.updateCert(ctx)
-			log.SpanLog(ctx, log.DebugLevelInfo, "updated cert", "name", s.commonName, "err", err)
+			for _, commonName := range s.getCommonNames() {
+				s.mux.Lock()
+				pubcert, ok := s.certs[commonName]
+				s.mux.Unlock()
+				if !ok {
+					continue
+				}
+				expiresIn := time.Until(pubcert.expiresAt)
+				if expiresIn > s.refreshThreshold {
+					continue
+				}
+				err := s.updateCerts(ctx)
+				log.SpanLog(ctx, log.DebugLevelInfo, "refreshed cert", "commonName", commonName, "err", err)
+			}
 			span.Finish()
 		}
 	}()

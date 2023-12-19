@@ -20,22 +20,17 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/cloudflare/cloudflare-go"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/chefauth"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudflaremgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt/dnsapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/gcs"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
-
-// This is a global in order to cache it across all platforms in the Controller.
-var cloudflareApi *cloudflare.API
-
-const vaultCloudflareApiPath = "/secret/data/accounts/cloudflareapi"
 
 // VaultClient implements platform.AccessApi for access from the Controller
 // directly to Vault. In some cases it may require loading the platform
@@ -45,9 +40,9 @@ type VaultClient struct {
 	cloudlet            *edgeproto.Cloudlet
 	vaultConfig         *vault.Config
 	region              string
-	cloudflareApi       *cloudflare.API
-	dnsZones            []string
+	dnsMgr              *dnsmgmt.DNSMgr
 	cloudletNodeHandler CloudletNodeHandler
+	regAuthMgr          *cloudcommon.RegistryAuthMgr
 }
 
 type CloudletNodeHandler interface {
@@ -55,20 +50,22 @@ type CloudletNodeHandler interface {
 	DeleteCloudletNodeReq(ctx context.Context, key *edgeproto.CloudletNodeKey) error
 }
 
-func NewVaultClient(cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config, cloudletNodeHandler CloudletNodeHandler, region string, dnsZones string) *VaultClient {
+func NewVaultClient(ctx context.Context, vaultConfig *vault.Config, cloudletNodeHandler CloudletNodeHandler, region string, dnsZones string, validDomains string) *VaultClient {
+	dnsMgr := dnsmgmt.NewDNSMgr(vaultConfig, strings.Split(dnsZones, ","))
+	regAuthMgr := cloudcommon.NewRegistryAuthMgr(vaultConfig, validDomains)
 	return &VaultClient{
-		cloudlet:            cloudlet,
 		vaultConfig:         vaultConfig,
 		region:              region,
-		dnsZones:            strings.Split(dnsZones, ","),
+		dnsMgr:              dnsMgr,
 		cloudletNodeHandler: cloudletNodeHandler,
+		regAuthMgr:          regAuthMgr,
 	}
 }
 
-func NewVaultGlobalClient(vaultConfig *vault.Config) *VaultClient {
-	return &VaultClient{
-		vaultConfig: vaultConfig,
-	}
+func (s *VaultClient) CloudletContext(cloudlet *edgeproto.Cloudlet) *VaultClient {
+	vc := *s
+	vc.cloudlet = cloudlet
+	return &vc
 }
 
 func (s *VaultClient) GetCloudletAccessVars(ctx context.Context) (map[string]string, error) {
@@ -78,12 +75,12 @@ func (s *VaultClient) GetCloudletAccessVars(ctx context.Context) (map[string]str
 	return accessvars.GetCloudletAccessVars(ctx, s.region, s.cloudlet, s.vaultConfig)
 }
 
-func (s *VaultClient) GetRegistryAuth(ctx context.Context, imgUrl string) (*cloudcommon.RegistryAuth, error) {
-	return cloudcommon.GetRegistryAuth(ctx, imgUrl, cloudcommon.AllOrgs, s.vaultConfig)
+func (s *VaultClient) GetRegistryAuth(ctx context.Context, hostOrURL string) (*cloudcommon.RegistryAuth, error) {
+	return s.regAuthMgr.GetRegistryOrgAuth(ctx, hostOrURL, cloudcommon.AllOrgs)
 }
 
 func (s *VaultClient) GetRegistryImageAuth(ctx context.Context, imgUrl string) (*cloudcommon.RegistryAuth, error) {
-	return cloudcommon.GetRegistryImageAuth(ctx, imgUrl, s.vaultConfig)
+	return s.regAuthMgr.GetRegistryImageAuth(ctx, imgUrl)
 }
 
 func (s *VaultClient) SignSSHKey(ctx context.Context, publicKey string) (string, error) {
@@ -125,55 +122,29 @@ func (s *VaultClient) GetChefAuthKey(ctx context.Context) (*chefauth.ChefAuthKey
 	return auth, nil
 }
 
-func (s *VaultClient) getCloudflareApi() (*cloudflare.API, error) {
-	if cloudflareApi != nil {
-		return cloudflareApi, nil
-	}
-
-	// look up cloudflare api token
-	// (path matches where global-operator saves it)
-	auth := cloudcommon.RegistryAuth{}
-	err := vault.GetData(s.vaultConfig, vaultCloudflareApiPath, 0, &auth)
-	if err == nil {
-		api, err := cloudflare.NewWithAPIToken(auth.Token)
-		if err != nil {
-			return nil, err
-		}
-		cloudflareApi = api
-	} else if err != nil {
-		return nil, err
-	}
-	return cloudflareApi, nil
-}
-
 func (s *VaultClient) CreateOrUpdateDNSRecord(ctx context.Context, name, rtype, content string, ttl int, proxy bool) error {
-	api, err := s.getCloudflareApi()
-	if err != nil {
-		return err
+	// restrict the record types that CRM can make
+	if !dnsmgmt.PlatformRecordTypeAllowed(rtype) {
+		return fmt.Errorf("record type %s not allowed", rtype)
 	}
 	// TODO: validate parameters are ok for this cloudlet
-	return cloudflaremgmt.CreateOrUpdateDNSRecord(ctx, api, s.dnsZones, name, rtype, content, ttl, proxy)
+	return s.dnsMgr.CreateOrUpdateDNSRecord(ctx, name, rtype, content, ttl, proxy)
 }
 
-func (s *VaultClient) GetDNSRecords(ctx context.Context, fqdn string) ([]cloudflare.DNSRecord, error) {
-	api, err := s.getCloudflareApi()
-	if err != nil {
-		return nil, err
-	}
+func (s *VaultClient) GetDNSRecords(ctx context.Context, fqdn string) ([]dnsapi.Record, error) {
 	// TODO: validate parameters are ok for this cloudlet
-	return cloudflaremgmt.GetDNSRecords(ctx, api, s.dnsZones, fqdn)
+	return s.dnsMgr.GetDNSRecords(ctx, fqdn)
 }
 
 func (s *VaultClient) DeleteDNSRecord(ctx context.Context, recordID string) error {
-	api, err := s.getCloudflareApi()
-	if err != nil {
-		return err
-	}
 	// TODO: validate parameters are ok for this cloudlet
-	return cloudflaremgmt.DeleteDNSRecord(ctx, api, s.dnsZones, recordID)
+	return s.dnsMgr.DeleteDNSRecord(ctx, recordID)
 }
 
 func (s *VaultClient) GetSessionTokens(ctx context.Context, secretName string) (string, error) {
+	if s.cloudlet == nil {
+		return "", fmt.Errorf("Missing cloudlet details")
+	}
 	return accessvars.GetCloudletTotpCode(ctx, s.region, s.cloudlet, s.vaultConfig, secretName)
 }
 
@@ -186,6 +157,9 @@ func (s *VaultClient) GetPublicCert(ctx context.Context, commonName string) (*va
 }
 
 func (s *VaultClient) GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error) {
+	if s.cloudlet == nil {
+		return nil, fmt.Errorf("Missing cloudlet details")
+	}
 	path := node.GetKafkaVaultPath(s.region, s.cloudlet.Key.Name, s.cloudlet.Key.Organization)
 	creds := node.KafkaCreds{}
 	err := vault.GetData(s.vaultConfig, path, 0, &creds)

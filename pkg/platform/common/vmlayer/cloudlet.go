@@ -26,8 +26,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
-
-	ssh "github.com/edgexr/golang-ssh"
 )
 
 // VMDomain is to differentiate platform vs computing VMs and associated resources
@@ -334,7 +332,7 @@ func (v *VMPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgepro
 	if result == OperationNewlyInitialized {
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	}
-	rootlbClients, err := v.GetAllRootLBClients(ctx)
+	rootlbClients, err := v.GetRootLBClients(ctx)
 	if err != nil {
 		return fmt.Errorf("Unable to get rootlb clients - %v", err)
 	}
@@ -426,7 +424,7 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 
 		// as delete cloudlet is called from the controller only, there is no need for
 		// rootlb ssh clients so just pass an empty map.  We have deleted all rootLB VMs anyway.
-		rootlbClients := make(map[string]ssh.Client)
+		rootlbClients := make(map[string]platform.RootLBClient)
 		err = v.VMProvider.ConfigureCloudletSecurityRules(ctx, false, &edgeproto.TrustPolicy{}, rootlbClients, ActionDelete, edgeproto.DummyUpdateCallback)
 		if err != nil {
 			if v.VMProperties.IptablesBasedFirewall {
