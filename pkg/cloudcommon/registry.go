@@ -272,7 +272,8 @@ func (s *RegistryAuthMgr) DeleteRegistryAuth(ctx context.Context, host, org stri
 }
 
 // UpgradeDockerRegistryAuth copies docker credentials from hostname-specific
-// vault path to common internal vault path.
+// vault path to common internal vault path. This is an upgrade function and
+// can be removed once all existing deployments have been upgraded.
 func (s *RegistryAuthMgr) UpgradeRegistryAuth(ctx context.Context, internalRegistry, org string) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "upgrade registry auth", "internalRegistry", internalRegistry, "org", org)
 	if s.vaultConfig == nil || s.vaultConfig.Addr == "" {
