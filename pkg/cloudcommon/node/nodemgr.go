@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -67,6 +68,7 @@ type NodeMgr struct {
 	ESWroteEvents      uint64
 	tlsClientIssuer    string
 	commonName         string
+	commonNamePrefix   string
 	DeploymentName     string
 	DeploymentTag      string
 	AccessKeyClient    AccessKeyClient
@@ -75,6 +77,7 @@ type NodeMgr struct {
 	CloudletPoolLookup CloudletPoolLookup
 	CloudletLookup     CloudletLookup
 	testTransport      http.RoundTripper // for unit tests
+	ValidDomains       string
 
 	unitTestMode bool
 }
@@ -90,10 +93,22 @@ func (s *NodeMgr) InitFlags() {
 	flag.StringVar(&s.iTlsCAFile, "itlsCA", "", "internal mTLS CA file for communication between services")
 	flag.StringVar(&s.VaultAddr, "vaultAddr", "", "Vault address; local vault runs at http://127.0.0.1:8200")
 	flag.BoolVar(&s.InternalPki.UseVaultPki, "useVaultPki", false, "Use Vault Certs and CAs for internal mTLS and public TLS")
-	flag.StringVar(&s.InternalDomain, "internalDomain", "internaldomain.net", "domain name for internal PKI")
-	flag.StringVar(&s.commonName, "commonName", "", "common name to use for vault internal pki issued certificates")
+	flag.StringVar(&s.InternalDomain, "internalDomain", "internaldomain.net", "(deprecated) domain name for internal PKI")
+	flag.StringVar(&s.commonName, "commonName", "", "(deprecated) common name to use for vault internal pki issued certificates")
 	flag.StringVar(&s.DeploymentName, "deploymentName", "edgecloud", "Name of deployment setup, when managing multiple Edge Cloud setups for different customers")
 	flag.StringVar(&s.DeploymentTag, "deploymentTag", "", "Tag to indicate type of deployment setup. Ex: production, staging, etc")
+	// We handle certs internally for GRPC-based APIs. For uptime during
+	// domain name migration, we allow server endpoints to be valid for
+	// multiple domain names.
+	// For certs issued from our internal PKI, all names can be on the same cert.
+	// For certs issued by letsencrypt, via the "cloudcommon.GetPublicCertApi",
+	// we need to issue multiple certs since domains may be validated by different
+	// DNS providers.
+	// Note that internal PKI certs do need real hostnames on them for traffic
+	// going over the public internet (i.e. CRM to Controller) since CRM needs
+	// to use a DNS resolvable hostname to traverse the public internet.
+	flag.StringVar(&s.commonNamePrefix, "commonNamePrefix", "", "prefix to append valid domains to for certification common names")
+	flag.StringVar(&s.ValidDomains, "validDomains", "internaldomain.net", "comma separated list of valid domains for certificates")
 }
 
 func (s *NodeMgr) Init(nodeType, tlsClientIssuer string, ops ...NodeOp) (context.Context, opentracing.Span, error) {
@@ -224,15 +239,35 @@ func (s *NodeMgr) Finish() {
 	log.FinishTracer()
 }
 
-func (s *NodeMgr) CommonName() string {
-	if s.commonName != "" {
-		return s.commonName
+func (s *NodeMgr) CommonNamePrefix() string {
+	cn := s.commonNamePrefix
+	if cn == "" {
+		cn = s.MyNode.Key.Type
+		if cn == NodeTypeController {
+			cn = "ctrl"
+		}
+		if s.Region != "" {
+			cn = strings.ToLower(s.Region) + "." + cn
+		}
 	}
-	cn := s.MyNode.Key.Type
-	if cn == NodeTypeController {
-		cn = "ctrl"
+	return cn
+}
+
+func (s *NodeMgr) CommonNames() []string {
+	cnp := s.CommonNamePrefix()
+	cns := []string{}
+	for _, domain := range strings.Split(s.ValidDomains, ",") {
+		domain = strings.TrimSpace(domain)
+		if domain == "" {
+			continue
+		}
+		cns = append(cns, cnp+"."+domain)
 	}
-	return cn + "." + s.InternalDomain
+	if len(cns) == 0 {
+		// no domains specified
+		cns = []string{cnp}
+	}
+	return cns
 }
 
 func (s *NodeMgr) UpdateNodeProps(ctx context.Context, props map[string]string) {

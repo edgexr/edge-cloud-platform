@@ -32,7 +32,6 @@ import (
 
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing/chargify"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing/fakebilling"
@@ -46,7 +45,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
@@ -127,6 +125,7 @@ type ServerConfig struct {
 	Domain                   string
 	oauth2Server             *oauth2server.Server
 	testTransport            http.RoundTripper // for unit-tests
+	regAuthMgr               *cloudcommon.RegistryAuthMgr
 }
 
 var DefaultDBUser = "mcuser"
@@ -154,7 +153,7 @@ var nodeMgr *node.NodeMgr
 var AlertManagerServer *alertmgr.AlertMgrServer
 var allRegionCaches AllRegionCaches
 var connCache *ConnCache
-var accessApi platform.AccessApi
+
 var partnerApi *federation.PartnerApi
 
 var unitTestNodeMgrOps []node.NodeOp
@@ -290,6 +289,8 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		return nil, err
 	}
 
+	serverConfig.regAuthMgr = cloudcommon.NewRegistryAuthMgr(config.vaultConfig, nodeMgr.ValidDomains)
+
 	serverConfig.oauth2Server = InitOauth2()
 
 	switch serverConfig.BillingPlatform {
@@ -365,8 +366,6 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		return nil, fmt.Errorf("enforcer init failed, %v", err)
 	}
 
-	accessApi = accessapi.NewVaultGlobalClient(config.vaultConfig)
-
 	server.initDataDone = make(chan error, 1)
 	go InitData(ctx, Superuser, superpass, config.PingInterval, &server.stopInitData, server.done, server.initDataDone)
 
@@ -377,7 +376,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		var tlsConfig *tls.Config
 		if strings.HasPrefix(config.AlertMgrAddr, "https://") {
 			var err error
-			tlsConfig, err = nodeMgr.InternalPki.GetClientTlsConfig(ctx, nodeMgr.CommonName(), node.CertIssuerGlobal, []node.MatchCA{node.GlobalMatchCA()})
+			tlsConfig, err = nodeMgr.InternalPki.GetClientTlsConfig(ctx, nodeMgr.CommonNamePrefix(), node.CertIssuerGlobal, []node.MatchCA{node.GlobalMatchCA()})
 			if err != nil {
 				return nil, fmt.Errorf("Unable to get a client tls config, %s", err.Error())
 			}
@@ -1001,7 +1000,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		nodeMgr.RegisterServer(server.notifyServer)
 
 		tlsConfig, err := nodeMgr.InternalPki.GetServerTlsConfig(ctx,
-			nodeMgr.CommonName(),
+			nodeMgr.CommonNamePrefix(),
 			node.CertIssuerGlobal,
 			[]node.MatchCA{node.AnyRegionalMatchCA()})
 		if err != nil {
@@ -1016,7 +1015,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	}
 	if config.NotifyAddrs != "" {
 		tlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
-			nodeMgr.CommonName(),
+			nodeMgr.CommonNamePrefix(),
 			node.CertIssuerGlobal,
 			[]node.MatchCA{node.GlobalMatchCA()})
 		if err != nil {
@@ -1074,7 +1073,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		federationEcho.Use(auditLogger.echoHandler, CorsHandler, AuthCookie, FederationRateLimit)
 		server.federationEcho = federationEcho
 
-		partnerApi = federation.NewPartnerApi(database, connCache, nodeMgr, config.vaultConfig, config.FederationExternalAddr, config.VmRegistryAddr, config.HarborAddr)
+		partnerApi = federation.NewPartnerApi(database, connCache, nodeMgr, config.vaultConfig, config.regAuthMgr, config.FederationExternalAddr, config.VmRegistryAddr, config.HarborAddr)
 		partnerApi.InitAPIs(federationEcho)
 		auditLogger.initAuditNames(federationEcho)
 

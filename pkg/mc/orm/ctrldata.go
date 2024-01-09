@@ -20,8 +20,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
@@ -75,7 +75,7 @@ func (s *AllRegionCaches) refreshRegions(ctx context.Context) error {
 			notifyAddr = addrObjs[0] + ":" + serverConfig.ControllerNotifyPort
 		}
 		tlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
-			nodeMgr.CommonName(),
+			nodeMgr.CommonNamePrefix(),
 			node.CertIssuerGlobal,
 			[]node.MatchCA{node.AnyRegionalMatchCA()})
 		if err != nil {

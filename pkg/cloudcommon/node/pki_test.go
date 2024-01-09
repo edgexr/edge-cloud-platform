@@ -53,7 +53,7 @@ func TestInternalPki(t *testing.T) {
 	// grcp logs not showing up in unit tests for some reason.
 	grpclog.SetLoggerV2(grpclog.NewLoggerV2(ioutil.Discard, ioutil.Discard, os.Stderr))
 	// Generate certs if needed
-	out, err := exec.Command("../../tls/gen-test-certs.sh", "foo-ca", "ctrl.edgecloud.net").CombinedOutput()
+	out, err := exec.Command("../../tls/gen-test-certs.sh", "foo-us-ca", "us.ctrl.edgecloud.net").CombinedOutput()
 	require.Nil(t, err, "%s", string(out))
 
 	// Set up local Vault process.
@@ -392,16 +392,16 @@ func TestInternalPki(t *testing.T) {
 	nodeFileOnly := &PkiConfig{
 		Region:   "us",
 		Type:     node.NodeTypeController,
-		CertFile: "./out/ctrl.edgecloud.net.crt",
-		CertKey:  "./out/ctrl.edgecloud.net.key",
-		CAFile:   "./out/foo-ca.crt",
+		CertFile: "./out/us.ctrl.edgecloud.net.crt",
+		CertKey:  "./out/us.ctrl.edgecloud.net.key",
+		CAFile:   "./out/foo-us-ca.crt",
 	}
 	nodePhase2 := &PkiConfig{
 		Region:      "us",
 		Type:        node.NodeTypeController,
-		CertFile:    "./out/ctrl.edgecloud.net.crt",
-		CertKey:     "./out/ctrl.edgecloud.net.key",
-		CAFile:      "./out/foo-ca.crt",
+		CertFile:    "./out/us.ctrl.edgecloud.net.crt",
+		CertKey:     "./out/us.ctrl.edgecloud.net.key",
+		CAFile:      "./out/foo-us-ca.crt",
 		UseVaultPki: true,
 		LocalIssuer: node.CertIssuerRegional,
 		RemoteCAs: []node.MatchCA{
@@ -536,7 +536,7 @@ func testGetTlsConfig(t *testing.T, ctx context.Context, vaultAddr string, vrole
 	vc := getVaultConfig(cfg.NodeType, cfg.Region, vaultAddr, vroles)
 	mgr := node.NodeMgr{}
 	mgr.InternalPki.UseVaultPki = true
-	mgr.InternalDomain = "edgecloud.net"
+	mgr.ValidDomains = "edgecloud.net"
 	if cfg.AccessKeyFile != "" && cfg.AccessApiAddr != "" {
 		mgr.AccessKeyClient.AccessKeyFile = cfg.AccessKeyFile
 		mgr.AccessKeyClient.AccessApiAddr = cfg.AccessApiAddr
@@ -552,9 +552,13 @@ func testGetTlsConfig(t *testing.T, ctx context.Context, vaultAddr string, vrole
 		opts = append(opts, node.WithCloudletKey(cfg.CloudletKey))
 	}
 	_, _, err := mgr.Init(cfg.NodeType, cfg.LocalIssuer, opts...)
-	require.Nil(t, err, "nodeMgr init %s", cfg.Line)
+	errStr := ""
+	if err != nil {
+		errStr = err.Error()
+	}
+	require.Nil(t, err, "nodeMgr init %s, %s", cfg.Line, errStr)
 	_, err = mgr.InternalPki.GetServerTlsConfig(ctx,
-		mgr.CommonName(),
+		mgr.CommonNamePrefix(),
 		cfg.TestIssuer,
 		cfg.RemoteCAs)
 	if cfg.ExpectErr == "" {
@@ -594,7 +598,7 @@ func (s *PkiConfig) setupNodeMgr(vaultAddr string, vroles *process.VaultRoles) (
 	nodeMgr.SetInternalTlsKeyFile(s.CertKey)
 	nodeMgr.SetInternalTlsCAFile(s.CAFile)
 	nodeMgr.InternalPki.UseVaultPki = s.UseVaultPki
-	nodeMgr.InternalDomain = "edgecloud.net"
+	nodeMgr.ValidDomains = "edgecloud.net"
 	if s.AccessKeyFile != "" && s.AccessApiAddr != "" {
 		nodeMgr.AccessKeyClient.AccessKeyFile = s.AccessKeyFile
 		nodeMgr.AccessKeyClient.AccessApiAddr = s.AccessApiAddr
@@ -624,7 +628,7 @@ func testExchange(t *testing.T, ctx context.Context, vaultAddr string, vroles *p
 	serverNode, err := cs.Server.setupNodeMgr(vaultAddr, vroles)
 	require.Nil(t, err, "serverNode init %s", cs.Line)
 	serverTls, err := serverNode.InternalPki.GetServerTlsConfig(ctx,
-		serverNode.CommonName(),
+		serverNode.CommonNamePrefix(),
 		cs.Server.LocalIssuer,
 		cs.Server.RemoteCAs)
 	require.Nil(t, err, "get server tls config %s", cs.Line)
@@ -635,14 +639,14 @@ func testExchange(t *testing.T, ctx context.Context, vaultAddr string, vroles *p
 	clientNode, err := cs.Client.setupNodeMgr(vaultAddr, vroles)
 	require.Nil(t, err, "clientNode init %s", cs.Line)
 	clientTls, err := clientNode.InternalPki.GetClientTlsConfig(ctx,
-		clientNode.CommonName(),
+		clientNode.CommonNamePrefix(),
 		cs.Client.LocalIssuer,
 		cs.Client.RemoteCAs)
 	require.Nil(t, err, "get client tls config %s", cs.Line)
 	if cs.Client.CertFile != "" || cs.Client.UseVaultPki {
 		require.NotNil(t, clientTls)
 		// must set ServerName due to the way this test is set up
-		clientTls.ServerName = serverNode.CommonName()
+		clientTls.ServerName = serverNode.CommonNames()[0]
 	}
 
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
@@ -722,14 +726,14 @@ func testTlsConnect(t *testing.T, ctx context.Context, cc *ClientController, vau
 	clientNode, err := cc.Client.setupNodeMgr(vaultAddr, cc.Controller.vroles)
 	require.Nil(t, err, "clientNode init %s", cc.Line)
 	clientTls, err := clientNode.InternalPki.GetClientTlsConfig(ctx,
-		clientNode.CommonName(),
+		clientNode.CommonNamePrefix(),
 		cc.Client.LocalIssuer,
 		cc.Client.RemoteCAs)
 	require.Nil(t, err, "get client tls config %s", cc.Line)
 	if cc.Client.CertFile != "" || cc.Client.UseVaultPki {
 		require.NotNil(t, clientTls)
 		// must set ServerName due to the way this test is set up
-		clientTls.ServerName = cc.Controller.nodeMgr.CommonName()
+		clientTls.ServerName = cc.Controller.nodeMgr.CommonNames()[0]
 	}
 	// for negative testing with invalid key
 	if cc.InvalidateClientKey && cc.Client.CloudletKey != nil {
@@ -853,7 +857,7 @@ func (s *DummyController) Init(ctx context.Context, region string, vroles *proce
 
 	vc := getVaultConfig(node.NodeTypeController, region, vaultAddr, vroles)
 	s.nodeMgr.InternalPki.UseVaultPki = true
-	s.nodeMgr.InternalDomain = "edgecloud.net"
+	s.nodeMgr.ValidDomains = "edgecloud.net"
 	_, _, err := s.nodeMgr.Init(node.NodeTypeController, node.NoTlsClientIssuer, node.WithRegion(region), node.WithVaultConfig(vc))
 	return err
 }
@@ -867,7 +871,7 @@ func (s *DummyController) Start(ctx context.Context) {
 	s.TlsLis = lis
 	// same config as Controller's notify server
 	tlsConfig, err := s.nodeMgr.InternalPki.GetServerTlsConfig(ctx,
-		s.nodeMgr.CommonName(),
+		s.nodeMgr.CommonNamePrefix(),
 		node.CertIssuerRegional,
 		[]node.MatchCA{
 			node.SameRegionalMatchCA(),
@@ -915,8 +919,8 @@ func (s *DummyController) IssueCert(ctx context.Context, req *edgeproto.IssueCer
 	log.SpanLog(ctx, log.DebugLevelApi, "dummy controller issue cert", "req", req)
 	reply := &edgeproto.IssueCertReply{}
 	certId := node.CertId{
-		CommonName: req.CommonName,
-		Issuer:     node.CertIssuerRegionalCloudlet,
+		CommonNamePrefix: req.CommonNamePrefix,
+		Issuer:           node.CertIssuerRegionalCloudlet,
 	}
 	vc, err := s.nodeMgr.InternalPki.IssueVaultCertDirect(ctx, certId)
 	if err != nil {

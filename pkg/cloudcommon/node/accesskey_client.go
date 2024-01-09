@@ -217,7 +217,7 @@ func (s *AccessKeyClient) upgradeAccessKey(ctx context.Context, verifyOnly Acces
 	// 2). Upgrade from a one-time access key. One time-access keys are
 	// put in heat stacks or other orchestration configs, and can only
 	// be used once to upgrade to a normal access key.
-	log.SpanLog(ctx, log.DebugLevelInfo, "upgradeAccessKey", "verifyOnly", verifyOnly, "keyType", keyType)
+	log.SpanLog(ctx, log.DebugLevelInfo, "upgradeAccessKey", "verifyOnly", verifyOnly, "keyType", keyType, "accessApiAddr", s.AccessApiAddr)
 	if len(s.accessPrivKey) > 0 {
 		log.SpanLog(ctx, log.DebugLevelInfo, "use access key creds")
 		ctx = s.AddAccessKeySig(ctx)
@@ -233,7 +233,13 @@ func (s *AccessKeyClient) upgradeAccessKey(ctx context.Context, verifyOnly Acces
 		return false, fmt.Errorf("no credentials found")
 	}
 
-	tlsConfig := &tls.Config{}
+	hostname, _, err := cloudcommon.ParseHost(s.AccessApiAddr)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse accessApi address %q, %s", s.AccessApiAddr, err)
+	}
+	tlsConfig := &tls.Config{
+		ServerName: hostname,
+	}
 	if s.TestSkipTlsVerify {
 		// for e2e and unit testing only
 		tlsConfig.InsecureSkipVerify = true

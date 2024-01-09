@@ -58,7 +58,7 @@ func TestShepherdUpdate(t *testing.T) {
 		KeyServer: keyServer,
 	}
 	getPublicCertApi := &cloudcommon.TestPublicCertApi{}
-	publicCertManager, err := node.NewPublicCertManager("localhost", getPublicCertApi, "", "")
+	publicCertManager, err := node.NewPublicCertManager("localhost", "", getPublicCertApi, "", "")
 	require.Nil(t, err)
 	tlsConfig, err := publicCertManager.GetServerTlsConfig(ctx)
 	require.Nil(t, err)

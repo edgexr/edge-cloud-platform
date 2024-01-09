@@ -193,6 +193,8 @@ func TestAppStoreApi(t *testing.T) {
 	out = vp.Run("vault", fmt.Sprintf("kv put %s username=%s password=%s", hpath, harborAdmin, harborPassword), &err)
 	require.Nil(t, err, "added harbor secret to vault %s", out)
 
+	testHarborRegistryUpgrade(t, ctx, &vp, vaultRootConfig)
+
 	// mock artifactory
 	rtf := NewArtifactoryMock(artifactoryAddr, mockTransport)
 	// mock gitlab
@@ -300,7 +302,8 @@ func TestAppStoreApi(t *testing.T) {
 	rtf.initData()
 	gm.initData()
 	hm.initData()
-	vmRegDeleteTestData(t, ctx, missingEntries, vaultRootConfig)
+	config.regAuthMgr = cloudcommon.NewRegistryAuthMgr(vaultRootConfig, domain)
+	vmRegDeleteTestData(t, ctx, missingEntries, config.regAuthMgr)
 
 	// for consistency in counts, make sure edgecloud org project exists
 	harborCreateProject(ctx, &harborEdgeCloudOrg)
@@ -377,7 +380,7 @@ func TestAppStoreApi(t *testing.T) {
 	// Test Registry keys
 	for _, r := range getRegistryTestEntries(harborAddr, vmRegistryAddr) {
 		log.SpanLog(ctx, log.DebugLevelApi, "test GetRegistryAuth", "url", r.url)
-		auth, err := cloudcommon.GetRegistryAuth(ctx, r.url, r.org, vaultRootConfig)
+		auth, err := serverConfig.regAuthMgr.GetRegistryOrgAuth(ctx, r.url, r.org)
 		require.Nil(t, err, r.comment)
 		require.NotNil(t, auth, r.comment)
 		require.Equal(t, r.expAuth, auth.AuthType, r.comment)
@@ -513,7 +516,7 @@ func waitSyncCount(t *testing.T, sync *AppStoreSync, count int64) {
 
 func verifyVmRegistryApiKey(t *testing.T, ctx context.Context, serverConfig *ServerConfig, mcClient *mctestclient.Client, uri string) {
 	// verify vm registry api key
-	auth, err := cloudcommon.GetRegistryAuth(ctx, serverConfig.VmRegistryAddr, cloudcommon.AllOrgs, serverConfig.vaultConfig)
+	auth, err := serverConfig.regAuthMgr.GetRegistryOrgAuth(ctx, serverConfig.VmRegistryAddr, cloudcommon.AllOrgs)
 	require.Nil(t, err)
 	require.Equal(t, cloudcommon.BasicAuth, auth.AuthType)
 	require.NotEmpty(t, auth.Username)

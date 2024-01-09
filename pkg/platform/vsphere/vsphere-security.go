@@ -20,6 +20,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
@@ -56,6 +57,6 @@ func (v *VSpherePlatform) PrepareRootLB(ctx context.Context, client ssh.Client, 
 	return v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, egressRestricted, infracommon.TrustPolicySecGrpNameLabel, rules, false, enableIPV6)
 }
 
-func (o *VSpherePlatform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+func (o *VSpherePlatform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]platform.RootLBClient, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("Platform not supported for TrustPolicyException SecurityRules")
 }

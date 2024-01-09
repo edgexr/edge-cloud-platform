@@ -68,7 +68,7 @@ var notifyAddr = flag.String("notifyAddr", "127.0.0.1:50001", "Notify listener a
 var notifyRootAddrs = flag.String("notifyRootAddrs", "", "Comma separated list of notifyroots")
 var notifyParentAddrs = flag.String("notifyParentAddrs", "", "Comma separated list of notify parents")
 var accessApiAddr = flag.String("accessApiAddr", "127.0.0.1:41001", "listener address for external services with access key")
-var publicAddr = flag.String("publicAddr", "127.0.0.1", "Public facing address/hostname of controller")
+
 var edgeTurnAddr = flag.String("edgeTurnAddr", "127.0.0.1:6080", "Address to EdgeTurn Server")
 var edgeTurnProxyAddr = flag.String("edgeTurnProxyAddr", "127.0.0.1:8443", "Address to EdgeTurn Server")
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
@@ -123,6 +123,7 @@ type Services struct {
 	allApis                    *AllApis
 	periodicClusterInstCleanup *tasks.PeriodicTask
 	checkpointer               *Checkpointer
+	regAuthMgr                 *cloudcommon.RegistryAuthMgr
 }
 
 type UpgradeSupport struct {
@@ -187,6 +188,8 @@ func startServices() error {
 
 	log.SpanLog(ctx, log.DebugLevelInfo, "Start up", "rootDir", *rootDir, "apiAddr", *apiAddr, "externalApiAddr", *externalApiAddr)
 
+	services.regAuthMgr = cloudcommon.NewRegistryAuthMgr(vaultConfig, nodeMgr.ValidDomains)
+
 	if *localEtcd {
 		opts := []process.StartOp{}
 		if *initLocalEtcd {
@@ -221,6 +224,10 @@ func startServices() error {
 	sync := InitSync(objStore)
 	allApis := NewAllApis(sync)
 	services.allApis = allApis
+
+	if err := allApis.cloudletApi.InitVaultClient(ctx); err != nil {
+		return err
+	}
 
 	// We might need to upgrade the stored objects
 	if !*skipVersionCheck {
@@ -341,7 +348,7 @@ func startServices() error {
 	if *notifyParentAddrs != "" {
 		addrs := strings.Split(*notifyParentAddrs, ",")
 		tlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
-			nodeMgr.CommonName(),
+			nodeMgr.CommonNamePrefix(),
 			node.CertIssuerRegional,
 			[]node.MatchCA{node.GlobalMatchCA()})
 		if err != nil {
@@ -355,7 +362,7 @@ func startServices() error {
 		services.notifyClient = notifyClient
 	}
 	notifyServerTls, err := nodeMgr.InternalPki.GetServerTlsConfig(ctx,
-		nodeMgr.CommonName(),
+		nodeMgr.CommonNamePrefix(),
 		node.CertIssuerRegional,
 		[]node.MatchCA{
 			node.SameRegionalMatchCA(),
@@ -391,7 +398,7 @@ func startServices() error {
 			VaultConfig: vaultConfig,
 		}
 	}
-	publicCertManager, err := node.NewPublicCertManager(*publicAddr, getPublicCertApi, "", "")
+	publicCertManager, err := node.NewPublicCertManager(nodeMgr.CommonNamePrefix(), nodeMgr.ValidDomains, getPublicCertApi, "", "")
 	if err != nil {
 		span.Finish()
 		log.FatalLog("unable to get public cert manager", "err", err)
@@ -414,7 +421,7 @@ func startServices() error {
 
 	// External API (for clients or MC).
 	apiTlsConfig, err := nodeMgr.InternalPki.GetServerTlsConfig(ctx,
-		nodeMgr.CommonName(),
+		nodeMgr.CommonNamePrefix(),
 		node.CertIssuerRegional,
 		[]node.MatchCA{
 			node.GlobalMatchCA(),

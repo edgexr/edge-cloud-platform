@@ -132,7 +132,7 @@ func (s *EdgeboxPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInst
 	return s.generic.ListCloudletMgmtNodes(ctx, clusterInsts, vmAppInsts)
 }
 
-func (s *EdgeboxPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+func (s *EdgeboxPlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
 	return s.generic.GetRootLBClients(ctx)
 }
 

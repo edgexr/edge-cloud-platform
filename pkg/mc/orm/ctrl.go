@@ -158,7 +158,7 @@ func connectNotifyRoot(ctx context.Context) (*grpc.ClientConn, error) {
 
 func connectGrpcAddr(ctx context.Context, addr string, serverIssuers []node.MatchCA) (*grpc.ClientConn, error) {
 	tlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
-		nodeMgr.CommonName(),
+		nodeMgr.CommonNamePrefix(),
 		node.CertIssuerGlobal,
 		serverIssuers)
 	if err != nil {

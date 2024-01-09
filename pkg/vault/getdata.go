@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/mitchellh/mapstructure"
 )
@@ -241,6 +242,10 @@ func GetPublicCert(config *Config, commonName string) (*PublicCert, error) {
 	if err != nil {
 		return nil, err
 	}
+	// vault client default timeout is 60 sec, but certgen has a 60 sec
+	// wait for DNS propagation. So increase the timeout.
+	client.SetClientTimeout(2 * time.Minute)
+
 	path := "/certs/cert/" + commonName
 	vdat, err := GetKV(client, path, 0)
 	if err != nil {

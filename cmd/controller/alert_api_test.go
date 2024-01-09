@@ -200,11 +200,12 @@ func testinit(ctx context.Context, t *testing.T, opts ...TestOp) *testServices {
 	objstore.InitRegion(1)
 	tMode := true
 	testMode = &tMode
-	dockerRegistry := "docker.mobiledgex.net"
+	dockerRegistry := "docker.example.ut"
 	registryFQDN = &dockerRegistry
 	nodeMgr.VaultAddr = vault.UnitTestIgnoreVaultAddr
 	vaultConfig, _ = vault.BestConfig(vault.UnitTestIgnoreVaultAddr)
 	nodeMgr.VaultConfig = vaultConfig
+	services.regAuthMgr = cloudcommon.NewRegistryAuthMgr(vaultConfig, "example.ut")
 	services.events = influxq.NewInfluxQ("events", "user", "pass")
 	services.cloudletResourcesInfluxQ = influxq.NewInfluxQ(cloudcommon.CloudletResourceUsageDbName, "user", "pass")
 	cleanupCloudletInfoTimeout = 100 * time.Millisecond

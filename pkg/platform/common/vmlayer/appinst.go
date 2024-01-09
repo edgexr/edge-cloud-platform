@@ -34,7 +34,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/proxy"
-	proxycerts "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	ssh "github.com/edgexr/golang-ssh"
 	v1 "k8s.io/api/core/v1"
@@ -217,7 +216,10 @@ func (v *VMPlatform) setupVMAppRootLBAndNode(ctx context.Context, clusterInst *e
 	if err != nil {
 		return err
 	}
-	proxycerts.SetupTLSCerts(ctx, &appInst.Key.CloudletKey, orchVals.lbName, client, v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
+	err = v.proxyCerts.SetupTLSCerts(ctx, orchVals.lbName, orchVals.lbName, client)
+	if err != nil {
+		return err
+	}
 	// clusterInst is empty but that is ok here
 	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 	if err != nil {

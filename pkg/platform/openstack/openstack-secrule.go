@@ -24,6 +24,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
@@ -290,7 +291,7 @@ func (s *OpenstackPlatform) GetSecurityGroupIDForProject(ctx context.Context, gr
 
 // PrepareCloudletSecurityGroup creates the cloudlet group if it does not exist and ensures
 // that the remote-group rules are present to allow platform components to communicate
-func (o *OpenstackPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootLbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+func (o *OpenstackPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootLbClients map[string]platform.RootLBClient, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	grpName := o.VMProperties.CloudletSecgrpName
 	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules", "CloudletSecgrpName", grpName, "action", action, "egressRestricted", egressRestricted)
 
@@ -425,7 +426,7 @@ func (o *OpenstackPlatform) getTrustPolicyExceptionStackName(tpeKey *edgeproto.T
 }
 
 // Attach or Detach a security group to/from a port of rootLbClients
-func (o *OpenstackPlatform) programSecurityGroupToPort(ctx context.Context, grpName string, rootLbClients map[string]ssh.Client, action vmlayer.ActionType) error {
+func (o *OpenstackPlatform) programSecurityGroupToPort(ctx context.Context, grpName string, rootLbClients map[string]platform.RootLBClient, action vmlayer.ActionType) error {
 	var err error
 	err = nil
 	for keyServerName, _ := range rootLbClients {
@@ -461,7 +462,7 @@ func (o *OpenstackPlatform) programSecurityGroupToPort(ctx context.Context, grpN
 	return err
 }
 
-func (o *OpenstackPlatform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+func (o *OpenstackPlatform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]platform.RootLBClient, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	grpName := o.getTrustPolicyExceptionStackName(&TrustPolicyException.Key)
 	egressRestricted := false
 	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureTrustPolicyExceptionSecurityRules", "TrustPolicyExceptionSecgrpName", grpName, "action", action, "egressRestricted", egressRestricted)

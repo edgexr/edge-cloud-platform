@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"context"
 	"encoding/json"
 	fmt "fmt"
 	"net/http"
@@ -8,7 +9,10 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/harbor-api/models"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/require"
@@ -671,6 +675,38 @@ func (s *HarborMock) getProjectMember(projectID int32, username string) (*models
 		}
 	}
 	return nil, false
+}
+
+func testHarborRegistryUpgrade(t *testing.T, ctx context.Context, vp *process.Vault, vaultConfig *vault.Config) {
+	domain := "test.upgrade.domain"
+	hostname := "docker." + domain
+	dockerTestUsername := "roboto"
+	dockerTestPassword := "roboto-pass"
+	dockerCredsPath := "/secret/registry/" + hostname
+	var err error
+	out := vp.Run("vault", fmt.Sprintf("kv put %s username=%s password=%s", dockerCredsPath, dockerTestUsername, dockerTestPassword), &err)
+	require.Nil(t, err, "added harbor allOrgs registry auth %s", out)
+
+	regAuthMgr := cloudcommon.NewRegistryAuthMgr(vaultConfig, domain)
+	// run twice to ensure idempotency
+	for ii := 0; ii < 2; ii++ {
+		fmt.Printf("==== testHarborRegistryUpgrade run %d\n", ii)
+		err = regAuthMgr.UpgradeRegistryAuth(ctx, cloudcommon.InternalDockerRegistry, cloudcommon.AllOrgs)
+		require.Nil(t, err)
+
+		// check that credentials were migrated
+		auth, err := regAuthMgr.GetRegistryOrgAuth(ctx, hostname, cloudcommon.AllOrgs)
+		require.Nil(t, err)
+		require.Equal(t, dockerTestUsername, auth.Username)
+		require.Equal(t, dockerTestPassword, auth.Password)
+	}
+
+	// clean up
+	out = vp.Run("vault", fmt.Sprintf("kv metadata delete %s", dockerCredsPath), &err)
+	require.Nil(t, err, "removed secret %s, %s", dockerCredsPath, out)
+	internalPath := "/secret/registry/" + cloudcommon.InternalDockerRegistry
+	out = vp.Run("vault", fmt.Sprintf("kv metadata delete %s", internalPath), &err)
+	require.Nil(t, err, "removed secret %s, %s", internalPath, out)
 }
 
 func TestHarborSanitize(t *testing.T) {

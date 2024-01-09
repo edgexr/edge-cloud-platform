@@ -26,7 +26,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
-	ssh "github.com/edgexr/golang-ssh"
 )
 
 func (m *ManagedK8sPlatform) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
@@ -139,7 +138,7 @@ func (v *ManagedK8sPlatform) GetRestrictedCloudletStatus(ctx context.Context, cl
 	return nil
 }
 
-func (v *ManagedK8sPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+func (v *ManagedK8sPlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
 	return nil, nil
 }
 

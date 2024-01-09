@@ -1018,7 +1018,7 @@ func main() {
 	}
 
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
-		nodeMgr.CommonName(),
+		nodeMgr.CommonNamePrefix(),
 		node.CertIssuerRegional,
 		[]node.MatchCA{node.SameRegionalMatchCA()})
 	if err != nil {
