@@ -8,7 +8,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	ssh "github.com/edgexr/golang-ssh"
 )
 
 func (s *K8sOperator) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
@@ -66,7 +65,7 @@ func (s *K8sOperator) GetRestrictedCloudletStatus(ctx context.Context, cloudlet 
 	return nil
 }
 
-func (s *K8sOperator) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+func (s *K8sOperator) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
 	return nil, nil
 }
 

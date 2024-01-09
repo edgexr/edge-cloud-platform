@@ -120,8 +120,8 @@ message PlatformConfig {
   string thanos_recv_addr = 26;
   // Ansible public address for CRM to connect to CCRM
   string ansible_public_addr = 27;
-  // Internal domain for Vault internal PKI
-  string internal_domain = 28;
+  // (removed) Internal domain for Vault internal PKI (28)
+
 }
 
 // Federation config associated with the cloudlet

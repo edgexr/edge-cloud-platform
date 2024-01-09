@@ -40,7 +40,7 @@ func (v *VMPlatform) ConfigureCloudletSecurityRules(ctx context.Context, action 
 		// use an empty policy
 		privPol = &edgeproto.TrustPolicy{}
 	}
-	rootlbClients, err := v.GetAllRootLBClients(ctx)
+	rootlbClients, err := v.GetRootLBClients(ctx)
 	if err != nil {
 		return fmt.Errorf("Unable to get rootlb clients - %v", err)
 	}

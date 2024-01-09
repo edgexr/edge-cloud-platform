@@ -35,7 +35,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	proxycerts "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs"
+	"github.com/edgexr/edge-cloud-platform/pkg/proxy/certs"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
@@ -80,6 +80,7 @@ var notifyServer *notify.ServerMgr
 var platform pf.Platform
 var finishInfraResourceThread bool
 var finishUpdateCloudletInfoHAThread bool
+var proxyCerts *certs.ProxyCerts
 
 const ControllerTimeout = 1 * time.Minute
 
@@ -183,14 +184,14 @@ func Start(builders map[string]pf.PlatformBuilder) error {
 	//ctl notify
 	addrs := strings.Split(*notifyAddrs, ",")
 	notifyClientTls, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
-		nodeMgr.CommonName(),
+		nodeMgr.CommonNamePrefix(),
 		node.CertIssuerRegionalCloudlet,
 		[]node.MatchCA{node.SameRegionalMatchCA()})
 	if err != nil {
 		return err
 	}
 	notifyServerTls, err := nodeMgr.InternalPki.GetServerTlsConfig(ctx,
-		nodeMgr.CommonName(),
+		nodeMgr.CommonNamePrefix(),
 		node.CertIssuerRegionalCloudlet,
 		[]node.MatchCA{node.SameRegionalCloudletMatchCA()})
 	if err != nil {
@@ -297,6 +298,7 @@ func Start(builders map[string]pf.PlatformBuilder) error {
 			TrustPolicy:         cloudlet.TrustPolicy,
 			CacheDir:            *cacheDir,
 			AnsiblePublicAddr:   *ansiblePublicAddr,
+			CommerialCerts:      *commercialCerts,
 		}
 
 		conditionalInitRequired := true
@@ -380,28 +382,6 @@ func Start(builders map[string]pf.PlatformBuilder) error {
 			// die so CRM can restart and try again
 			log.FatalLog("Platform init fail", "err", err)
 		}
-
-		// setup rootlb certs
-		tlsSpan := log.StartSpan(log.DebugLevelInfo, "tls certs thread", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
-		wildcardName := cloudcommon.GetRootLBFQDNWildcard(&cloudlet)
-		rootlb, err := platform.GetClusterPlatformClient(
-			ctx,
-			&edgeproto.ClusterInst{
-				IpAccess: edgeproto.IpAccess_IP_ACCESS_SHARED,
-			},
-			cloudcommon.ClientTypeRootLB,
-		)
-		if err == nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Get rootLB certs", "key", myCloudletInfo.Key)
-			proxycerts.Init(ctx, platform, accessapicloudlet.NewControllerClient(nodeMgr.AccessApiClient))
-			proxycerts.GetRootLbCerts(ctx, &myCloudletInfo.Key, wildcardName, &nodeMgr, features, rootlb, *commercialCerts, &highAvailabilityManager)
-			// setup debug func to trigger refresh of rootlb certs
-			nodeMgr.Debug.AddDebugFunc(crmutil.RefreshRootLBCerts, func(ctx context.Context, req *edgeproto.DebugRequest) string {
-				proxycerts.TriggerRootLBCertsRefresh()
-				return "triggered refresh of rootlb certs"
-			})
-		}
-		tlsSpan.Finish()
 	}()
 
 	// setup crm notify listener (for shepherd)

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt/dnsapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
@@ -123,9 +124,9 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 				ip         string
 				recordType string
 			}{
-				{action.ExternalIP, "A"},
-				{action.ExternalIPV6, "AAAA"},
-				{action.Hostname, "CNAME"},
+				{action.ExternalIP, dnsapi.RecordTypeA},
+				{action.ExternalIPV6, dnsapi.RecordTypeAAAA},
+				{action.Hostname, dnsapi.RecordTypeCNAME},
 			}
 			for _, record := range recordUpdates {
 				if record.ip == "" {
@@ -183,18 +184,10 @@ func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, ku
 
 func (c *CommonPlatform) DeleteDNSRecords(ctx context.Context, fqdn string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteDNSRecords", "fqdn", fqdn)
-	recs, derr := c.PlatformConfig.AccessApi.GetDNSRecords(ctx, fqdn)
-	if derr != nil {
-		return fmt.Errorf("error getting dns records for %s, %v", c.GetCloudletDNSZone(), derr)
+	if err := c.PlatformConfig.AccessApi.DeleteDNSRecord(ctx, fqdn); err != nil {
+		return fmt.Errorf("cannot delete DNS record %v, %v", fqdn, err)
 	}
-	for _, rec := range recs {
-		if (rec.Type == "A" || rec.Type == "CNAME") && rec.Name == fqdn {
-			if err := c.PlatformConfig.AccessApi.DeleteDNSRecord(ctx, rec.ID); err != nil {
-				return fmt.Errorf("cannot delete existing DNS record %v, %v", rec, err)
-			}
-			log.SpanLog(ctx, log.DebugLevelInfra, "deleted DNS record", "name", fqdn)
-		}
-	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "deleted DNS record", "name", fqdn)
 	return nil
 }
 

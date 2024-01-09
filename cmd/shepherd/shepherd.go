@@ -495,7 +495,7 @@ func start() {
 	accessApi := accessapicloudlet.NewControllerClient(nodeMgr.AccessApiClient)
 
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
-		nodeMgr.CommonName(),
+		nodeMgr.CommonNamePrefix(),
 		node.CertIssuerRegionalCloudlet,
 		[]node.MatchCA{node.SameRegionalCloudletMatchCA()})
 	if err != nil {

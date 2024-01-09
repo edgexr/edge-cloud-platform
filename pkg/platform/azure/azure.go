@@ -194,6 +194,6 @@ func (a *AzurePlatform) SetProperties(props *infracommon.InfraProperties) error 
 	return nil
 }
 
-func (a *AzurePlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+func (a *AzurePlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
 	return nil, nil
 }

@@ -17,11 +17,12 @@ package access
 import (
 	"context"
 	"fmt"
+	"time"
 
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
@@ -38,6 +39,7 @@ type TLSCert struct {
 	CertString string
 	KeyString  string
 	TTL        int64
+	ExpiresAt  time.Time
 }
 
 func GetAppAccessConfig(ctx context.Context, configs []*edgeproto.ConfigFile, delims string) (*AppAccessConfig, error) {

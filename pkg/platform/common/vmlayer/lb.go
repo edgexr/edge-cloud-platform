@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
@@ -669,6 +670,10 @@ func (v *VMPlatform) SetupRootLB(
 	if err = v.ActivateFQDNs(ctx, rootLBFQDN, rootLBIPs.IPV4(), rootLBIPs.IPV6()); err != nil {
 		return err
 	}
+	err = v.proxyCerts.SetupTLSCerts(ctx, rootLBFQDN, rootLBName, client)
+	if err != nil {
+		return err
+	}
 	// perform provider specific prep of the rootLB
 	secGrpName := infracommon.GetServerSecurityGroupName(rootLBName)
 	if v.VMProperties.IptablesBasedFirewall {
@@ -708,10 +713,10 @@ func CopyResourceTracker(ctx context.Context, client ssh.Client) error {
 	return err
 }
 
-// GetAllRootLBClients gets rootLb clients for both Shared and Dedicated LBs
-func (v *VMPlatform) GetAllRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+// GetRootLBClients gets rootLb clients for both Shared and Dedicated LBs
+func (v *VMPlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetAllRootLBClients")
-	rootlbClients, err := v.GetRootLBClients(ctx)
+	rootlbClients, err := v.GetDedicatedRootLBClients(ctx)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "error getting dedicated client", "err", err)
 		return nil, fmt.Errorf("Unable to get dedicated rootlb Clients - %v", err)
@@ -727,13 +732,16 @@ func (v *VMPlatform) GetAllRootLBClients(ctx context.Context) (map[string]ssh.Cl
 			return nil, fmt.Errorf("Unable to get shared rootlb Client - %v", err)
 		}
 	} else {
-		rootlbClients[v.VMProperties.SharedRootLBName] = sharedClient
+		rootlbClients[v.VMProperties.SharedRootLBName] = platform.RootLBClient{
+			Client: sharedClient,
+			FQDN:   v.VMProperties.CommonPf.PlatformConfig.RootLBFQDN,
+		}
 	}
 	return rootlbClients, nil
 }
 
-func (v *VMPlatform) GetRootLBClientForClusterInstKey(ctx context.Context, clusterInstKey *edgeproto.ClusterInstKey) (map[string]ssh.Client, error) {
-	rootLBClients := make(map[string]ssh.Client)
+func (v *VMPlatform) GetRootLBClientForClusterInstKey(ctx context.Context, clusterInstKey *edgeproto.ClusterInstKey) (map[string]platform.RootLBClient, error) {
+	rootLBClients := make(map[string]platform.RootLBClient)
 
 	var clusterInst edgeproto.ClusterInst
 	found := v.Caches.ClusterInstCache.Get(clusterInstKey, &clusterInst)
@@ -746,12 +754,16 @@ func (v *VMPlatform) GetRootLBClientForClusterInstKey(ctx context.Context, clust
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get rootLB client for dedicated cluster", "key", clusterInst.Key, "error", err)
 		return nil, fmt.Errorf("Unable to get client from clusterInst %v", clusterInstKey.GetKeyString())
 	}
-	rootLBClients[lbName] = client
+	rootLBClients[lbName] = platform.RootLBClient{
+		Client: client,
+		FQDN:   clusterInst.Fqdn,
+	}
 	return rootLBClients, nil
 }
 
-// GetRootLBClients gets all RootLB Clients for dedicated LBs
-func (v *VMPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+// GetDedicatedRootLBClients gets all RootLB Clients for dedicated LBs and
+// mapping of lbnames to FQDN.
+func (v *VMPlatform) GetDedicatedRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
 	if v.Caches == nil {
 		return nil, fmt.Errorf("caches is nil")
 	}
@@ -762,7 +774,7 @@ func (v *VMPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Clien
 	if result == OperationNewlyInitialized {
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	}
-	rootLBClients := make(map[string]ssh.Client)
+	rootLBClients := make(map[string]platform.RootLBClient)
 	clusterInstKeys := []edgeproto.ClusterInstKey{}
 	v.Caches.ClusterInstCache.GetAllKeys(ctx, func(k *edgeproto.ClusterInstKey, modRev int64) {
 		clusterInstKeys = append(clusterInstKeys, *k)
@@ -778,7 +790,10 @@ func (v *VMPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Clien
 					// set client as nil and continue, caller will generate alert accordingly
 					client = nil
 				}
-				rootLBClients[lbName] = client
+				rootLBClients[lbName] = platform.RootLBClient{
+					Client: client,
+					FQDN:   clusterInst.Fqdn,
+				}
 			}
 		}
 	}
@@ -816,7 +831,10 @@ func (v *VMPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Clien
 			client = nil
 			// set client as nil and continue, caller will generate alert accordingly
 		}
-		rootLBClients[lbName] = client
+		rootLBClients[lbName] = platform.RootLBClient{
+			Client: client,
+			FQDN:   appInst.Uri,
+		}
 	}
 	return rootLBClients, nil
 }

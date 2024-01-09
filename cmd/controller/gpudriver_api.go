@@ -80,7 +80,7 @@ func setupGPUDriver(ctx context.Context, storageClient *gcs.GCSClient, driver *e
 	ext := filepath.Ext(driverFileName)
 	// Download the driver package
 	authApi := &cloudcommon.VaultRegistryAuthApi{
-		VaultConfig: vaultConfig,
+		RegAuthMgr: services.regAuthMgr,
 	}
 	cb.Send(&edgeproto.Result{Message: "Downloading GPU driver build " + build.Name})
 	fileName := build.StoragePath

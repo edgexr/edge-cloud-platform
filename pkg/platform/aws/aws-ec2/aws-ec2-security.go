@@ -23,6 +23,7 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
@@ -254,10 +255,10 @@ func (a *AwsEc2Platform) GetIamAccountForImage(ctx context.Context) (string, err
 	return a.awsGenPf.GetUserAccountIdFromArn(ctx, iamResult.User.Arn)
 }
 
-func (a *AwsEc2Platform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootLbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+func (a *AwsEc2Platform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootLbClients map[string]platform.RootLBClient, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }
 
-func (a *AwsEc2Platform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+func (a *AwsEc2Platform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]platform.RootLBClient, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("Platform not supported for TrustPolicyException SecurityRules")
 }

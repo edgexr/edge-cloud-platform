@@ -32,6 +32,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	ssh "github.com/edgexr/golang-ssh"
@@ -487,15 +488,16 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 }
 
 // Common code to configure security rules for a TrustPolicy or TrustPolicyException
-func (v *VcdPlatform) configureVCDSecurityRulesCommon(ctx context.Context, egressRestricted bool, secGrpName string, sshCidrsAllowed []string, rules []edgeproto.SecurityRule, rootlbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VcdPlatform) configureVCDSecurityRulesCommon(ctx context.Context, egressRestricted bool, secGrpName string, sshCidrsAllowed []string, rules []edgeproto.SecurityRule, rootlbClients map[string]platform.RootLBClient, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 
 	errMap := make(map[string]error)
 	updateCallback(edgeproto.UpdateTask, "Configuring Cloudlet Security Rules")
 	log.SpanLog(ctx, log.DebugLevelInfra, "configureVCDSecurityRulesCommon", "action", action, "egressRestricted", egressRestricted, "Cloudlet secgrp name", secGrpName)
 
 	if action == vmlayer.ActionCreate || action == vmlayer.ActionUpdate {
-		for clientName, sshClient := range rootlbClients {
+		for clientName, rootLBClient := range rootlbClients {
 			var err error
+			sshClient := rootLBClient.Client
 			if sshClient == nil {
 				// in error conditions GetRootLbClients will populate with a nil client
 				err = fmt.Errorf("nil ssh client for rootlb: %s", clientName)
@@ -527,8 +529,9 @@ func (v *VcdPlatform) configureVCDSecurityRulesCommon(ctx context.Context, egres
 		}
 	} else {
 		log.SpanLog(ctx, log.DebugLevelInfra, "configureVCDSecurityRulesCommon action.delete")
-		for clientName, sshClient := range rootlbClients {
+		for clientName, rootLBClient := range rootlbClients {
 			var err error
+			sshClient := rootLBClient.Client
 			if sshClient == nil {
 				// in error conditions GetRootLbClients will populate with a nil client
 				err = fmt.Errorf("nil ssh client for rootlb: %s", clientName)
@@ -544,7 +547,7 @@ func (v *VcdPlatform) configureVCDSecurityRulesCommon(ctx context.Context, egres
 	return nil
 }
 
-func (v *VcdPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootlbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VcdPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootlbClients map[string]platform.RootLBClient, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 
 	var rules []edgeproto.SecurityRule
 	if TrustPolicy != nil {
@@ -561,7 +564,7 @@ func (v *VcdPlatform) getTrustPolicyExceptionSecurityGroupName(tpeKey *edgeproto
 	return grpName
 }
 
-func (v *VcdPlatform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VcdPlatform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]platform.RootLBClient, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	secGrpName := v.getTrustPolicyExceptionSecurityGroupName(&TrustPolicyException.Key)
 	egressRestricted := true
 	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureTrustPolicyExceptionSecurityRules", "egressRestricted", egressRestricted, "TrustPolicyException", TrustPolicyException, "action", action, "secGrpName", secGrpName)

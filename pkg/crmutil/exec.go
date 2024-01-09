@@ -258,7 +258,7 @@ func (cd *ControllerData) ProcessExecReq(ctx context.Context, req *edgeproto.Exe
 	}
 
 	tlsConfig, err := cd.NodeMgr.InternalPki.GetClientTlsConfig(ctx,
-		cd.NodeMgr.CommonName(),
+		cd.NodeMgr.CommonNamePrefix(),
 		node.CertIssuerRegionalCloudlet,
 		[]node.MatchCA{node.SameRegionalMatchCA()})
 	if err != nil {

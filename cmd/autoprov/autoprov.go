@@ -82,7 +82,7 @@ func start() error {
 	nodeMgr.UpdateNodeProps(ctx, version.BuildProps(ctx, ""))
 
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
-		nodeMgr.CommonName(),
+		nodeMgr.CommonNamePrefix(),
 		node.CertIssuerRegional,
 		[]node.MatchCA{node.SameRegionalMatchCA()})
 	if err != nil {

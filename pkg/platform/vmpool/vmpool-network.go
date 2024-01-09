@@ -18,10 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	ssh "github.com/edgexr/golang-ssh"
-
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 )
 
 func (o *VMPoolPlatform) GetRouterDetail(ctx context.Context, routerName string) (*vmlayer.RouterDetail, error) {
@@ -36,10 +35,10 @@ func (o *VMPoolPlatform) ValidateAdditionalNetworks(ctx context.Context, additio
 	return fmt.Errorf("Additional networks not supported in VMPool cloudlets")
 }
 
-func (v *VMPoolPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootlbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VMPoolPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootlbClients map[string]platform.RootLBClient, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }
 
-func (v *VMPoolPlatform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VMPoolPlatform) ConfigureTrustPolicyExceptionSecurityRules(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, rootLbClients map[string]platform.RootLBClient, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("Platform not supported for TrustPolicyException SecurityRules")
 }

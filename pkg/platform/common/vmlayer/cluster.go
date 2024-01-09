@@ -29,7 +29,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	proxycerts "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -585,7 +584,10 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 	}
 
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-		proxycerts.SetupTLSCerts(ctx, &clusterInst.Key.CloudletKey, rootLBName, client, v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
+		err = v.proxyCerts.SetupTLSCerts(ctx, clusterInst.Fqdn, rootLBName, client)
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, vmp := range vmgp.VMs {

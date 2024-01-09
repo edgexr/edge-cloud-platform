@@ -146,7 +146,7 @@ func (s *CCRM) Start() error {
 	}
 
 	// set up notify TLS
-	clientTlsConfig, err := s.nodeMgr.InternalPki.GetClientTlsConfig(ctx, s.nodeMgr.CommonName(), node.CertIssuerRegional, []node.MatchCA{node.SameRegionalMatchCA()})
+	clientTlsConfig, err := s.nodeMgr.InternalPki.GetClientTlsConfig(ctx, s.nodeMgr.CommonNamePrefix(), node.CertIssuerRegional, []node.MatchCA{node.SameRegionalMatchCA()})
 	if err != nil {
 		return err
 	}
@@ -218,7 +218,7 @@ func (s *CCRM) validateRegistries(ctx context.Context) error {
 		}
 		platform_registry_path := s.flags.CloudletRegistryPath + ":" + strings.TrimSpace(s.flags.VersionTag)
 		authApi := &cloudcommon.VaultRegistryAuthApi{
-			VaultConfig: s.nodeMgr.VaultConfig,
+			RegAuthMgr: cloudcommon.NewRegistryAuthMgr(s.nodeMgr.VaultConfig, s.nodeMgr.ValidDomains),
 		}
 		err = cloudcommon.ValidateDockerRegistryPath(ctx, platform_registry_path, authApi)
 		if err != nil {

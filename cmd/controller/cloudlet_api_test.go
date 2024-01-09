@@ -313,7 +313,7 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 	defer ctrlMgr.Stop()
 
 	getPublicCertApi := &cloudcommon.TestPublicCertApi{}
-	publicCertManager, err := node.NewPublicCertManager("localhost", getPublicCertApi, "", "")
+	publicCertManager, err := node.NewPublicCertManager("localhost", "", getPublicCertApi, "", "")
 	require.Nil(t, err)
 	tlsConfig, err := publicCertManager.GetServerTlsConfig(ctx)
 	require.Nil(t, err)

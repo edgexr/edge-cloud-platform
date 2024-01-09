@@ -205,10 +205,12 @@ var CloudletAccessKeyApiCmd edgeproto.CloudletAccessKeyApiClient
 var IssueCertRequestRequiredArgs = []string{}
 var IssueCertRequestOptionalArgs = []string{
 	"commonname",
+	"commonnameprefix",
 }
 var IssueCertRequestAliasArgs = []string{}
 var IssueCertRequestComments = map[string]string{
-	"commonname": "Certificate common name",
+	"commonname":       "(deprecated) Certificate common name",
+	"commonnameprefix": "Certificate common name prefix, i.e. ctrl, dme, etc.",
 }
 var IssueCertRequestSpecialArgs = map[string]string{}
 var IssueCertReplyRequiredArgs = []string{}

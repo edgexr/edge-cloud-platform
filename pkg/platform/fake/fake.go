@@ -538,7 +538,7 @@ func (s *Platform) GetRestrictedCloudletStatus(ctx context.Context, cloudlet *ed
 	return nil
 }
 
-func (s *Platform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+func (s *Platform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
 	return nil, nil
 }
 

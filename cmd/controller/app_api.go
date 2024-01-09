@@ -367,7 +367,7 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	}
 
 	authApi := &cloudcommon.VaultRegistryAuthApi{
-		VaultConfig: vaultConfig,
+		RegAuthMgr: services.regAuthMgr,
 	}
 	if in.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW || in.ImageType == edgeproto.ImageType_IMAGE_TYPE_OVA {
 		if !strings.Contains(in.ImagePath, "://") {
@@ -505,7 +505,7 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 
 	if in.Deployment == cloudcommon.DeploymentTypeKubernetes {
 		authApi := &cloudcommon.VaultRegistryAuthApi{
-			VaultConfig: vaultConfig,
+			RegAuthMgr: services.regAuthMgr,
 		}
 		_, err = k8smgmt.GetAppEnvVars(ctx, in, authApi, &k8smgmt.TestReplacementVars)
 		if err != nil {

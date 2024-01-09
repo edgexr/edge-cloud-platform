@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/go-redis/redis/v8"
@@ -25,6 +26,7 @@ type CCRMHandler struct {
 	ctrlConn            *grpc.ClientConn
 	CancelHandlers      func()
 	nodeAttributesCache NodeAttributesCache
+	vaultClient         *accessapi.VaultClient
 }
 
 type NodeAttributesCache struct {
@@ -58,6 +60,7 @@ func (s *CCRMHandler) Init(ctx context.Context, nodeType string, nodeMgr *node.N
 		server := rediscache.GetCCRMAPIServer(redisClient, nodeType, s)
 		server.Start(hctx)
 	}
+	s.vaultClient = accessapi.NewVaultClient(ctx, nodeMgr.VaultConfig, s, flags.Region, flags.DnsZone, nodeMgr.ValidDomains)
 }
 
 func (s *NodeAttributesCache) Init() {

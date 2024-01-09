@@ -101,7 +101,6 @@ func GetCrmProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig
 	useVaultPki := false
 	appDNSRoot := ""
 	ansiblePublicAddr := ""
-	internalDomain := ""
 	deploymentTag := ""
 	accessApiAddr := ""
 	cacheDir := ""
@@ -124,7 +123,6 @@ func GetCrmProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig
 		deploymentTag = pfConfig.DeploymentTag
 		accessApiAddr = pfConfig.AccessApiAddr
 		cacheDir = pfConfig.CacheDir
-		internalDomain = pfConfig.InternalDomain
 	}
 	for envKey, envVal := range cloudlet.EnvVar {
 		envVars[envKey] = envVal
@@ -166,7 +164,6 @@ func GetCrmProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig
 		CommercialCerts:     commercialCerts,
 		AppDNSRoot:          appDNSRoot,
 		AnsiblePublicAddr:   ansiblePublicAddr,
-		InternalDomain:      internalDomain,
 		CacheDir:            cacheDir,
 		HARole:              HARole,
 	}, opts, nil
@@ -436,7 +433,6 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 	chefServerPath := ""
 	accessApiAddr := ""
 	thanosRecvAddr := ""
-	internalDomain := ""
 	if pfConfig != nil {
 		// Same vault role-id/secret-id as CRM
 		for k, v := range pfConfig.EnvVar {
@@ -454,7 +450,6 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		chefServerPath = pfConfig.ChefServerPath
 		accessApiAddr = pfConfig.AccessApiAddr
 		thanosRecvAddr = pfConfig.ThanosRecvAddr
-		internalDomain = pfConfig.InternalDomain
 	}
 
 	for envKey, envVal := range cloudlet.EnvVar {
@@ -488,7 +483,6 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		AppDNSRoot:     appDNSRoot,
 		ChefServerPath: chefServerPath,
 		ThanosRecvAddr: thanosRecvAddr,
-		InternalDomain: internalDomain,
 	}, opts, nil
 }
 

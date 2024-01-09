@@ -30,7 +30,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
-	ssh "github.com/edgexr/golang-ssh"
 )
 
 const GcpMaxClusterNameLen int = 40
@@ -195,6 +194,6 @@ func (g *GCPPlatform) SetProperties(props *infracommon.InfraProperties) error {
 	return err
 }
 
-func (g *GCPPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+func (g *GCPPlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
 	return nil, nil
 }

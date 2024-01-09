@@ -20,8 +20,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"google.golang.org/grpc"
@@ -53,7 +53,7 @@ func main() {
 	})
 
 	tlsConfig, err := nodeMgr.InternalPki.GetServerTlsConfig(ctx,
-		nodeMgr.CommonName(),
+		nodeMgr.CommonNamePrefix(),
 		node.CertIssuerGlobal,
 		[]node.MatchCA{
 			node.AnyRegionalMatchCA(),
