@@ -117,6 +117,11 @@ func (s *RegistryAuthMgr) getVaultRegistryPathUnfiltered(registry, org string) s
 	// internal registries at the time of App creation,
 	// therefore any user-provided credentials are used only
 	// once during App creation and are not needed afterwards.
+	// Note: registry and org are extracted from image path URL
+	// when seeding secrets, and are case-insensitive, so we
+	// keep them lower case.
+	registry = strings.ToLower(registry)
+	org = strings.ToLower(org)
 	if org == AllOrgs {
 		// registry key granting access to all orgs
 		// these are admin keys for internal use and should not
