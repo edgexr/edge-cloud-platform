@@ -198,6 +198,8 @@ func (s *PublicCertManager) GetCertificateFunc() func(*tls.ClientHelloInfo) (*tl
 		} else {
 			// do substring match to allow for wild cards
 			for cn, pubcert := range s.certs {
+				cn = strings.TrimPrefix(cn, "_")
+				cn = strings.TrimPrefix(cn, "*")
 				if strings.HasSuffix(info.ServerName, cn) {
 					return pubcert.cert, nil
 				}
