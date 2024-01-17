@@ -999,6 +999,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			clusterInst.Deployment = cloudcommon.DeploymentTypeKubernetes
 			clusterInst.NumMasters = 1
 			clusterInst.NumNodes = 1 // TODO support 1 master, zero nodes
+			clusterInst.EnableIpv6 = false
 			if cloudletFeatures.NoClusterSupport {
 				log.SpanLog(ctx, log.DebugLevelApi, "Setting num nodes to 0 as platform does not support clusters", "platform", cloudletFeatures.PlatformType)
 				clusterInst.NumNodes = 0
