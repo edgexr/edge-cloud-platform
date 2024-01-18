@@ -108,7 +108,7 @@ func check(c *cli.Command, status int, err error, reply interface{}) error {
 	wr := c.CobraCmd.OutOrStdout()
 	// all failure cases result in error getting set (by PostJson)
 	if err != nil {
-		if status != 0 {
+		if status != 0 && status != http.StatusOK {
 			if err.Error() == "" {
 				return fmt.Errorf("%s (%d)", http.StatusText(status), status)
 			}
