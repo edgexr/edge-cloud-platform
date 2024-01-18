@@ -30,7 +30,7 @@ type User struct {
 	// required: true
 	Name string `gorm:"primary_key;type:citext"`
 	// User email
-	Email string `gorm:"unique;not null"`
+	Email string `gorm:"unique;type:citext;not null"`
 	// Email address has been verified
 	// read only: true
 	EmailVerified bool
