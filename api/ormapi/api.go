@@ -511,13 +511,6 @@ type Token struct {
 
 // Structs used in replies
 
-type Result struct {
-	// Informational message
-	Message string `json:"message,omitempty"`
-	// Error code
-	Code int `json:"code,omitempty"`
-}
-
 type Version struct {
 	// Build tag
 	BuildTag string `json:"buildtag,omitempty"`
@@ -529,21 +522,6 @@ type Version struct {
 	BuildAuthor string `json:"buildauthor,omitempty"`
 	// Hostname that performed build
 	Hostname string `json:"hostname,omitempty"`
-}
-
-// Data struct sent back for streaming (chunked) commands.
-// Contains a data payload for incremental data, and a result
-// payload for an error result. Only one of the two will be used
-// in each chunk.
-
-type StreamPayload struct {
-	Data   interface{} `json:"data,omitempty"`
-	Result *Result     `json:"result,omitempty"`
-}
-
-type WSStreamPayload struct {
-	Code int         `json:"code"`
-	Data interface{} `json:"data"`
 }
 
 // RegionObj interface is for all protobuf-defined objects that

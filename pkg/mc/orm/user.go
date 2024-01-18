@@ -29,9 +29,11 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
+	"github.com/edgexr/edge-cloud-platform/pkg/passhash"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
@@ -59,7 +61,7 @@ func InitAdmin(ctx context.Context, superuser, superpass string) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "init admin")
 
 	// create superuser if it doesn't exist
-	passhash, salt, iter := ormutil.NewPasshash(superpass)
+	passhash, salt, iter := passhash.NewPasshash(superpass)
 	super := ormapi.User{
 		Name:          superuser,
 		Email:         superuser + "-email-not-specified",
@@ -91,7 +93,7 @@ func GenerateWSAuthToken(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	config, err := getConfig(ctx)
 	if err != nil {
 		return err
@@ -110,7 +112,7 @@ func GenerateWSAuthToken(c echo.Context) error {
 }
 
 func Login(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	login := ormapi.UserLogin{}
 	if err := c.Bind(&login); err != nil {
 		return ormutil.BindErr(err)
@@ -158,7 +160,7 @@ func Login(c echo.Context) error {
 		span.SetTag("username", user.Name)
 		span.SetTag("email", user.Email)
 
-		matches, err := ormutil.PasswordMatches(login.Password, apiKeyObj.ApiKeyHash, apiKeyObj.Salt, apiKeyObj.Iter)
+		matches, err := passhash.PasswordMatches(login.Password, apiKeyObj.ApiKeyHash, apiKeyObj.Salt, apiKeyObj.Iter)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "apiKeyId matches err", "err", err)
 		}
@@ -306,7 +308,7 @@ func checkLoginLocked(user *ormapi.User, config *ormapi.Config) error {
 }
 
 func checkLoginPassword(ctx context.Context, db *gorm.DB, user *ormapi.User, password string) error {
-	matches, err := ormutil.PasswordMatches(password, user.Passhash, user.Salt, user.Iter)
+	matches, err := passhash.PasswordMatches(password, user.Passhash, user.Salt, user.Iter)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "password matches err", "err", err)
 	}
@@ -335,7 +337,7 @@ func RefreshAuthCookie(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	if claims.FirstIssuedAt == 0 {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie as issued time is missing")
 		return fmt.Errorf("Failed to refresh auth cookie")
@@ -382,7 +384,7 @@ func GenerateTOTPQR(accountName string) (string, []byte, error) {
 }
 
 func CreateUser(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	createuser := ormapi.CreateUser{}
 	if err := c.Bind(&createuser); err != nil {
 		return ormutil.BindErr(err)
@@ -453,7 +455,7 @@ func CreateUser(c echo.Context) error {
 	}
 
 	// password should be passed through in Passhash field.
-	user.Passhash, user.Salt, user.Iter = ormutil.NewPasshash(user.Passhash)
+	user.Passhash, user.Salt, user.Iter = passhash.NewPasshash(user.Passhash)
 	db := loggedDB(ctx)
 	if err := db.Create(&user).Error; err != nil {
 		//check specifically for duplicate username and/or emails
@@ -520,7 +522,7 @@ func ResendVerify(c echo.Context) error {
 }
 
 func VerifyEmail(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	tok := ormapi.Token{}
 	if err := c.Bind(&tok); err != nil {
 		return ormutil.BindErr(err)
@@ -555,7 +557,7 @@ func VerifyEmail(c echo.Context) error {
 // they created if it is locked (because they can't login to
 // call the authenticated version of DeleteUser)
 func DeleteLockedUser(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	in := ormapi.User{}
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)
@@ -594,7 +596,7 @@ func DeleteUser(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	user := ormapi.User{}
 	if err := c.Bind(&user); err != nil {
@@ -613,7 +615,7 @@ func DeleteUser(c echo.Context) error {
 }
 
 func DeleteUserCommon(c echo.Context, user *ormapi.User) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	if user.Name == Superuser {
 		return fmt.Errorf("Cannot delete superuser")
 	}
@@ -681,7 +683,7 @@ func DeleteUserCommon(c echo.Context, user *ormapi.User) error {
 
 // Show current user info
 func CurrentUser(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -710,7 +712,7 @@ var UserIgnoreFilterKeys = []string{
 
 // Show users by Organization
 func ShowUser(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -827,7 +829,7 @@ func NewPassword(c echo.Context) error {
 	if in.Password == "" {
 		return fmt.Errorf("Please specify new password")
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	db := loggedDB(ctx)
 	user := ormapi.User{}
 	lookup := ormapi.User{Name: claims.Username}
@@ -843,7 +845,7 @@ func NewPassword(c echo.Context) error {
 	// via password changes by attackers who gain physical control of a workstation with an active session.
 	// When this control is missing, it can also exacerbate the impact of any cross-site request forgery
 	// vulnerabilities by enabling direct account compromise attacks.
-	matches, err := ormutil.PasswordMatches(in.CurrentPassword, user.Passhash, user.Salt, user.Iter)
+	matches, err := passhash.PasswordMatches(in.CurrentPassword, user.Passhash, user.Salt, user.Iter)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "current password matches err", "err", err)
 	}
@@ -856,7 +858,7 @@ func NewPassword(c echo.Context) error {
 }
 
 func setPassword(c echo.Context, username, password string) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	if err := ValidPassword(password); err != nil {
 		return fmt.Errorf("Invalid password, %s", err)
 	}
@@ -878,7 +880,7 @@ func setPassword(c echo.Context, username, password string) error {
 		return err
 	}
 
-	user.Passhash, user.Salt, user.Iter = ormutil.NewPasshash(password)
+	user.Passhash, user.Salt, user.Iter = passhash.NewPasshash(password)
 	if err := db.Model(&user).Updates(&user).Error; err != nil {
 		return ormutil.DbErr(err)
 	}
@@ -930,7 +932,7 @@ func GetClientDetailsFromRequestHeaders(c echo.Context) (string, string, string)
 }
 
 func PasswordResetRequest(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	req := ormapi.EmailRequest{}
 	if err := c.Bind(&req); err != nil {
 		return ormutil.BindErr(err)
@@ -1011,14 +1013,14 @@ func PasswordReset(c echo.Context) error {
 			Internal: err,
 		}
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	span := log.SpanFromContext(ctx)
 	span.SetTag("username", claims.Username)
 	return setPassword(c, claims.Username, pw.Password)
 }
 
 func RestrictedUserUpdate(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1119,7 +1121,7 @@ func isUserAdmin(ctx context.Context, username string) (bool, error) {
 }
 
 func UpdateUser(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1239,7 +1241,7 @@ func UpdateUser(c echo.Context) error {
 }
 
 func CreateUserApiKey(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1366,7 +1368,7 @@ func createUserApiKeyInternal(ctx context.Context, username, apiKeyId, apiKey st
 		return ormutil.DbErr(err)
 	}
 
-	apiKeyHash, apiKeySalt, apiKeyIter := ormutil.NewPasshash(apiKey)
+	apiKeyHash, apiKeySalt, apiKeyIter := passhash.NewPasshash(apiKey)
 	apiKeyObj.ApiKeyHash = apiKeyHash
 	apiKeyObj.Salt = apiKeySalt
 	apiKeyObj.Iter = apiKeyIter
@@ -1381,7 +1383,7 @@ func createUserApiKeyInternal(ctx context.Context, username, apiKeyId, apiKey st
 }
 
 func DeleteUserApiKey(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1436,7 +1438,7 @@ func deleteUserApiKeyInternal(ctx context.Context, username, id string) error {
 }
 
 func ShowUserApiKey(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	db := loggedDB(ctx)
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1503,7 +1505,7 @@ func ShowUserApiKey(c echo.Context) error {
 }
 
 func UserAuthorized(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1642,7 +1644,7 @@ func LoginPage(c echo.Context) error {
 // One gotcha is that browsers do not send the cookie even if domains
 // match on the first request (where user types in the url manually).
 func HttpAuthorize(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	req := c.Request()
 	header := req.Header
 	log.SpanLog(ctx, log.DebugLevelApi, "authorize", "header", header)

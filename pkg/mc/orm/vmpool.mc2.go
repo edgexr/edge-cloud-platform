@@ -7,6 +7,7 @@ import (
 	fmt "fmt"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -28,7 +29,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateVMPool(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -71,7 +72,7 @@ func CreateVMPool(c echo.Context) error {
 }
 
 func DeleteVMPool(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -114,7 +115,7 @@ func DeleteVMPool(c echo.Context) error {
 }
 
 func UpdateVMPool(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -161,7 +162,7 @@ func UpdateVMPool(c echo.Context) error {
 }
 
 func ShowVMPool(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -203,7 +204,7 @@ func ShowVMPool(c echo.Context) error {
 }
 
 func AddVMPoolMember(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -246,7 +247,7 @@ func AddVMPoolMember(c echo.Context) error {
 }
 
 func RemoveVMPoolMember(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {

@@ -23,6 +23,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
@@ -153,7 +154,7 @@ func InitConfig(ctx context.Context) error {
 }
 
 func UpdateConfig(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -246,7 +247,7 @@ func UpdateConfig(c echo.Context) error {
 }
 
 func ResetConfig(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -275,7 +276,7 @@ func ResetConfig(c echo.Context) error {
 }
 
 func ShowConfig(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -339,7 +340,7 @@ func resetUserPasswordCrackTimes(ctx context.Context) error {
 // UI consistent with the behavior of the back-end. This is an un-authenticated
 // API so only that which is needed should be revealed.
 func PublicConfig(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	config, err := getConfig(ctx)
 	if err != nil {
 		return err

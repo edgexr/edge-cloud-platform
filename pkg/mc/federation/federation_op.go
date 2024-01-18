@@ -25,13 +25,14 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/gormlog"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/restclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/jinzhu/gorm"
@@ -122,7 +123,7 @@ func (p *PartnerApi) lookupProvider(c echo.Context, federationContextId Federati
 	if err != nil {
 		return nil, err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	db := p.loggedDB(ctx)
 	// claims.ApiKeyUsername has the info to lookup provider
 	typ, id, err := federationmgmt.ParseFedKeyUser(claims.ApiKeyUsername)
@@ -161,7 +162,7 @@ func (p *PartnerApi) lookupConsumer(c echo.Context, federationContextId string) 
 	if err != nil {
 		return nil, err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	db := p.loggedDB(ctx)
 	// claims.ApiKeyUsername has the info to lookup consumer
 	typ, id, err := federationmgmt.ParseFedKeyUser(claims.ApiKeyUsername)
@@ -195,7 +196,7 @@ func (p *PartnerApi) lookupConsumer(c echo.Context, federationContextId string) 
 	return &consumer, nil
 }
 
-func (p *PartnerApi) auditCb(ctx context.Context, eventName string, fedKey *federationmgmt.FedKey, data *ormclient.AuditLogData) {
+func (p *PartnerApi) auditCb(ctx context.Context, eventName string, fedKey *federationmgmt.FedKey, data *restclient.AuditLogData) {
 	eventTags := data.GetEventTags()
 	eventTags["fedname"] = fedKey.Name
 	p.nodeMgr.TimedEvent(ctx, eventName, fedKey.Name, node.AuditType, eventTags, data.Err, data.Start, data.End)
@@ -251,7 +252,7 @@ func (p *PartnerApi) validateCallbackLink(link string) error {
 // allows its developers and subscribers to run their applications
 // on our cloudlets
 func (p *PartnerApi) CreateFederation(c echo.Context) (reterr error) {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, "")
 	if err != nil {
@@ -395,7 +396,7 @@ func (p *PartnerApi) getAvailabilityZones(ctx context.Context, provider *ormapi.
 // Remote partner federator sends this request to us to notify about
 // the change in its MNC, MCC or locator URL
 func (p *PartnerApi) GetFederationDetails(c echo.Context, fedCtxId FederationContextId) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
@@ -431,7 +432,7 @@ func (p *PartnerApi) getProviderDetails(ctx context.Context, provider *ormapi.Fe
 }
 
 func (p *PartnerApi) UpdateFederation(c echo.Context, fedCtxId FederationContextId) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
@@ -522,7 +523,7 @@ func (p *PartnerApi) UpdateFederation(c echo.Context, fedCtxId FederationContext
 // disallows its developers and subscribers to run their applications
 // on our cloudlets
 func (p *PartnerApi) DeleteFederationDetails(c echo.Context, fedCtxId FederationContextId) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
@@ -725,7 +726,7 @@ func SetMobileNetworkIds(fed *ormapi.Federator, ids *fedewapi.MobileNetworkIds) 
 }
 
 func (p *PartnerApi) PartnerStatusEvent(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	in := fedewapi.PartnerPostRequest{}
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)

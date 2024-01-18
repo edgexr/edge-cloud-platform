@@ -27,6 +27,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/influxsup"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -723,7 +724,7 @@ func GetMetricsCommon(c echo.Context) error {
 		return err
 	}
 	rc.claims = claims
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// Get the current config
 	config, err := getConfig(ctx)
 	if err == nil {

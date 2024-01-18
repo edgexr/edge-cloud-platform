@@ -32,6 +32,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/restclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/jarcoal/httpmock"
@@ -234,7 +235,9 @@ func TestAppStoreApi(t *testing.T) {
 	require.Nil(t, err, "server online")
 
 	mcClient := mctestclient.NewClient(&ormclient.Client{
-		TestTransport: mockTransport,
+		Client: restclient.Client{
+			TestTransport: mockTransport,
+		},
 	})
 
 	// login as super user

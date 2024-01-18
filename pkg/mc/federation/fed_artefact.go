@@ -12,6 +12,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
@@ -61,7 +62,7 @@ const (
 )
 
 func (p *PartnerApi) lookupArtefact(c echo.Context, provider *ormapi.FederationProvider, artefactId string) (*ormapi.ProviderArtefact, error) {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	db := p.loggedDB(ctx)
 	provArt := ormapi.ProviderArtefact{}
 	provArt.FederationName = provider.Name
@@ -77,7 +78,7 @@ func (p *PartnerApi) lookupArtefact(c echo.Context, provider *ormapi.FederationP
 }
 
 func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId) (reterr error) {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	log.SpanLog(ctx, log.DebugLevelApi, "Fed EWBI UploadArtefact", "fedCtxId", fedCtxId)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
@@ -418,7 +419,7 @@ func (p *PartnerApi) UploadArtefact(c echo.Context, fedCtxId FederationContextId
 }
 
 func (p *PartnerApi) RemoveArtefact(c echo.Context, fedCtxId FederationContextId, artefactId ArtefactId) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	log.SpanLog(ctx, log.DebugLevelApi, "Fed EWBI RemoveArtefact", "fedCtxId", fedCtxId, "artefactId", artefactId)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
@@ -429,7 +430,7 @@ func (p *PartnerApi) RemoveArtefact(c echo.Context, fedCtxId FederationContextId
 }
 
 func (p *PartnerApi) RemoveArtefactInternal(c echo.Context, provider *ormapi.FederationProvider, artefactId string) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	provArt, err := p.lookupArtefact(c, provider, string(artefactId))
 	if err != nil {
@@ -484,7 +485,7 @@ func (p *PartnerApi) RemoveArtefactInternal(c echo.Context, provider *ormapi.Fed
 }
 
 func (p *PartnerApi) GetArtefact(c echo.Context, fedCtxId FederationContextId, artefactId ArtefactId) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	log.SpanLog(ctx, log.DebugLevelApi, "Fed EWBI GetArtefact", "fedCtxId", fedCtxId, "artefactId", artefactId)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)

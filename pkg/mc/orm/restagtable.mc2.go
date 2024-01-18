@@ -7,6 +7,7 @@ import (
 	fmt "fmt"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -27,7 +28,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateResTagTable(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -70,7 +71,7 @@ func CreateResTagTable(c echo.Context) error {
 }
 
 func DeleteResTagTable(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -113,7 +114,7 @@ func DeleteResTagTable(c echo.Context) error {
 }
 
 func UpdateResTagTable(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -160,7 +161,7 @@ func UpdateResTagTable(c echo.Context) error {
 }
 
 func ShowResTagTable(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -202,7 +203,7 @@ func ShowResTagTable(c echo.Context) error {
 }
 
 func AddResTag(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -245,7 +246,7 @@ func AddResTag(c echo.Context) error {
 }
 
 func RemoveResTag(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -288,7 +289,7 @@ func RemoveResTag(c echo.Context) error {
 }
 
 func GetResTagTable(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {

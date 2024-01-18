@@ -19,10 +19,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/labstack/echo/v4"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/labstack/echo/v4"
 )
 
 func ShowEvents(c echo.Context) error {
@@ -38,7 +39,7 @@ func searchEvents(c echo.Context, searchFunc func(context.Context, *node.EventSe
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	search := node.EventSearch{}
 	if err := c.Bind(&search); err != nil {
@@ -112,7 +113,7 @@ func EventTerms(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	search := node.EventSearch{}
 	if err := c.Bind(&search); err != nil {
@@ -152,7 +153,7 @@ func SpanTerms(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	out, err := nodeMgr.SpanTerms(ormutil.GetContext(c), params)
+	out, err := nodeMgr.SpanTerms(echoutil.GetContext(c), params)
 	if err != nil {
 		return ormutil.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -164,7 +165,7 @@ func ShowSpans(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	out, err := nodeMgr.ShowSpansCondensed(ormutil.GetContext(c), params)
+	out, err := nodeMgr.ShowSpansCondensed(echoutil.GetContext(c), params)
 	if err != nil {
 		return ormutil.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -176,7 +177,7 @@ func ShowSpansVerbose(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	out, err := nodeMgr.ShowSpans(ormutil.GetContext(c), params)
+	out, err := nodeMgr.ShowSpans(echoutil.GetContext(c), params)
 	if err != nil {
 		return ormutil.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -188,7 +189,7 @@ func getSpanSearchParams(c echo.Context) (*node.SpanSearch, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	search := node.SpanSearch{}
 	if err := c.Bind(&search); err != nil {

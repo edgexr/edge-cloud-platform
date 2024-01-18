@@ -20,6 +20,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -37,7 +38,7 @@ func CreateAlertReceiver(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	log.SpanLog(ctx, log.DebugLevelInfo, "Create Alertmanager Receiver", "context", c, "claims", claims)
 	in := ormapi.AlertReceiver{}
 	_, err = ReadConn(c, &in)
@@ -133,7 +134,7 @@ func DeleteAlertReceiver(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	log.SpanLog(ctx, log.DebugLevelInfo, "Delete Alertmanager Receiver", "context", c, "claims", claims)
 	in := ormapi.AlertReceiver{}
 	_, err = ReadConn(c, &in)
@@ -185,7 +186,7 @@ func ShowAlertReceiver(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	log.SpanLog(ctx, log.DebugLevelApi, "Show Alertmanager Receivers", "context", c, "claims", claims)
 
 	filter := ormapi.AlertReceiver{}

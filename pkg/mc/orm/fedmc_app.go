@@ -10,13 +10,14 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/restclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/labstack/echo/v4"
 )
@@ -24,7 +25,7 @@ import (
 const AppCreateTimeout = 10 * time.Minute
 
 func OnboardConsumerApp(c echo.Context) (reterr error) {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -240,7 +241,7 @@ func createAppArtefact(ctx context.Context, consumer *ormapi.FederationConsumer,
 	}
 
 	// multipart/form-data
-	data := ormclient.NewMultiPartFormData()
+	data := restclient.NewMultiPartFormData()
 	data.AddField(federation.ArtefactFieldId, cApp.ID)
 	data.AddField(federation.ArtefactFieldAppProviderId, util.DNSSanitize(cApp.AppOrg))
 	data.AddField(federation.ArtefactFieldName, cApp.AppName)
@@ -297,7 +298,7 @@ func createConsumerApp(ctx context.Context, consumer *ormapi.FederationConsumer,
 }
 
 func DeboardConsumerApp(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -445,7 +446,7 @@ func guestAppOnboarded(ctx context.Context, fedName, region string, key edgeprot
 }
 
 func ShowConsumerApp(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -475,7 +476,7 @@ func ShowConsumerApp(c echo.Context) error {
 }
 
 func ShowProviderArtefact(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -510,7 +511,7 @@ func ShowProviderArtefact(c echo.Context) error {
 }
 
 func ShowProviderApp(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -545,7 +546,7 @@ func ShowProviderApp(c echo.Context) error {
 }
 
 func ShowProviderAppInst(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -610,7 +611,7 @@ func isProviderAppInst(ctx context.Context, appInst *edgeproto.AppInst) (bool, e
 }
 
 func UnsafeDeleteProviderArtefact(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -640,7 +641,7 @@ func UnsafeDeleteProviderArtefact(c echo.Context) error {
 }
 
 func UnsafeDeleteProviderApp(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -670,7 +671,7 @@ func UnsafeDeleteProviderApp(c echo.Context) error {
 }
 
 func UnsafeDeleteProviderAppInst(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err

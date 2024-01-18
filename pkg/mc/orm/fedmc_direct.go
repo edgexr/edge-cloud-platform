@@ -6,6 +6,7 @@ import (
 
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -15,7 +16,7 @@ import (
 )
 
 func federationGetPartner(c echo.Context, eventName, consumerName, reqPath string, respObj interface{}) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -93,7 +94,7 @@ func FederationGetAppInst(c echo.Context) error {
 	}
 	// TODO: need to change appinst get path to only require appinst id,
 	// then we can just take a edgeproto.FedAppInstKey as input
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err

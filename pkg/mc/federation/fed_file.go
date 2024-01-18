@@ -11,9 +11,9 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/labstack/echo/v4"
 )
@@ -63,7 +63,7 @@ func CheckFileType(fileType string) error {
 }
 
 func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (reterr error) {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	log.SpanLog(ctx, log.DebugLevelApi, "Fed EWBI UploadFile", "fedCtxId", fedCtxId)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
@@ -322,7 +322,7 @@ func (p *PartnerApi) UploadFile(c echo.Context, fedCtxId FederationContextId) (r
 }
 
 func (p *PartnerApi) RemoveFile(c echo.Context, fedCtxId FederationContextId, fileId FileId) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	log.SpanLog(ctx, log.DebugLevelApi, "Fed EWBI RemoveFile", "fedCtxId", fedCtxId, "fileId", fileId)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
@@ -333,7 +333,7 @@ func (p *PartnerApi) RemoveFile(c echo.Context, fedCtxId FederationContextId, fi
 }
 
 func (p *PartnerApi) RemoveFileInternal(c echo.Context, provider *ormapi.FederationProvider, fileId string) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	image := ormapi.ProviderImage{
 		FederationName: provider.Name,
 		FileID:         fileId,
@@ -414,7 +414,7 @@ func (p *PartnerApi) RemoveFileInternal(c echo.Context, provider *ormapi.Federat
 }
 
 func (p *PartnerApi) ViewFile(c echo.Context, fedCtxId FederationContextId, fileId FileId) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	log.SpanLog(ctx, log.DebugLevelApi, "Fed EWBI ViewFile", "fedCtxId", fedCtxId, "fileId", fileId)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)

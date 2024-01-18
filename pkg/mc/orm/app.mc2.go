@@ -8,6 +8,7 @@ import (
 	_ "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -28,7 +29,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateApp(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -71,7 +72,7 @@ func CreateApp(c echo.Context) error {
 }
 
 func DeleteApp(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -114,7 +115,7 @@ func DeleteApp(c echo.Context) error {
 }
 
 func UpdateApp(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -161,7 +162,7 @@ func UpdateApp(c echo.Context) error {
 }
 
 func ShowApp(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -203,7 +204,7 @@ func ShowApp(c echo.Context) error {
 }
 
 func AddAppAutoProvPolicy(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -245,7 +246,7 @@ func AddAppAutoProvPolicy(c echo.Context) error {
 }
 
 func RemoveAppAutoProvPolicy(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -287,7 +288,7 @@ func RemoveAppAutoProvPolicy(c echo.Context) error {
 }
 
 func AddAppAlertPolicy(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -329,7 +330,7 @@ func AddAppAlertPolicy(c echo.Context) error {
 }
 
 func RemoveAppAlertPolicy(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -371,7 +372,7 @@ func RemoveAppAlertPolicy(c echo.Context) error {
 }
 
 func ShowCloudletsForAppDeployment(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {

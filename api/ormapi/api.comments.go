@@ -263,22 +263,12 @@ var TokenComments = map[string]string{
 	"token": `Authentication token`,
 }
 
-var ResultComments = map[string]string{
-	"message": `Informational message`,
-	"code":    `Error code`,
-}
-
 var VersionComments = map[string]string{
 	"buildtag":    `Build tag`,
 	"buildmaster": `Master build version`,
 	"buildhead":   `Head build version`,
 	"buildauthor": `Build author`,
 	"hostname":    `Hostname that performed build`,
-}
-
-var StreamPayloadComments = map[string]string{
-	"result.message": `Informational message`,
-	"result.code":    `Error code`,
 }
 
 var AllDataComments = map[string]string{

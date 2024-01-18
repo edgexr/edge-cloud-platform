@@ -21,6 +21,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -104,7 +105,7 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 	rc.claims = claims
 	regionRc.Username = claims.Username
 	regionRc.Database = database
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	if strings.HasSuffix(c.Path(), "usage/cloudletpool") {
 		in := ormapi.RegionCloudletPoolUsage{}

@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/passhash"
 	"github.com/go-oauth2/oauth2/v4"
 	"github.com/go-oauth2/oauth2/v4/manage"
 	"github.com/go-oauth2/oauth2/v4/server"
@@ -112,7 +113,7 @@ func (s *ClientInfo) VerifyPassword(pass string) bool {
 		time.Sleep(BadAuthDelay)
 		return false
 	}
-	matches, _ := ormutil.PasswordMatches(pass, s.KeyHash, s.Salt, s.Iter)
+	matches, _ := passhash.PasswordMatches(pass, s.KeyHash, s.Salt, s.Iter)
 	if !matches {
 		time.Sleep(BadAuthDelay)
 	}
@@ -168,7 +169,7 @@ func (s *TokenStore) GetByRefresh(ctx context.Context, code string) (oauth2.Toke
 // Authenticate and issue a JWT token.
 // Currently this is only for Api Keys.
 func Oauth2Token(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	req := c.Request().WithContext(ctx)
 	err := serverConfig.oauth2Server.HandleTokenRequest(c.Response(), req)
 	if err != nil {

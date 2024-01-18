@@ -24,6 +24,7 @@ import (
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/billing"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
@@ -39,7 +40,7 @@ func CreateBillingOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	org := ormapi.BillingOrganization{}
 	if err := c.Bind(&org); err != nil {
 		return ormutil.BindErr(err)
@@ -171,7 +172,7 @@ func createBillingAccount(ctx context.Context, info *ormapi.BillingOrganization)
 }
 
 func UpdateBillingOrg(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -233,7 +234,7 @@ func AddChildOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	org := ormapi.BillingOrganization{}
 	if err := c.Bind(&org); err != nil {
 		return ormutil.BindErr(err)
@@ -321,7 +322,7 @@ func RemoveChildOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	org := ormapi.BillingOrganization{}
 	if err := c.Bind(&org); err != nil {
 		return ormutil.BindErr(err)
@@ -415,7 +416,7 @@ func DeleteBillingOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	org := ormapi.BillingOrganization{}
 	if err := c.Bind(&org); err != nil {
 		return ormutil.BindErr(err)
@@ -514,7 +515,7 @@ func DeleteBillingOrgObj(ctx context.Context, claims *ormutil.UserClaims, org *o
 
 // Show BillingOrganizations that current user belongs to.
 func ShowBillingOrg(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -569,7 +570,7 @@ func ShowBillingOrgObj(ctx context.Context, claims *ormutil.UserClaims) ([]ormap
 }
 
 func ShowAccountInfo(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -628,7 +629,7 @@ func ShowPaymentInfo(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	org := ormapi.BillingOrganization{}
 	if err := c.Bind(&org); err != nil {
 		return ormutil.BindErr(err)
@@ -665,7 +666,7 @@ func DeletePaymentInfo(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	profile := ormapi.PaymentProfileDeletion{}
 	if err := c.Bind(&profile); err != nil {
 		return ormutil.BindErr(err)
@@ -943,7 +944,7 @@ func GetInvoice(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	req := ormapi.InvoiceRequest{}
 	if err := c.Bind(&req); err != nil {
 		return ormutil.BindErr(err)

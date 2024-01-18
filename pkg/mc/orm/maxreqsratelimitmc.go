@@ -20,17 +20,18 @@ import (
 	"net/http"
 	"strings"
 
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 // Create MC RateLimit MaxReqs settings
 func CreateMaxReqsRateLimitSettingsMc(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	// Check if rate limiting is disabled
 	if getDisableRateLimit(ctx) {
@@ -69,7 +70,7 @@ func CreateMaxReqsRateLimitSettingsMc(c echo.Context) error {
 
 // Update MC RateLimit maxreqs settings
 func UpdateMaxReqsRateLimitSettingsMc(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// Check if rate limiting is disabled
 	if getDisableRateLimit(ctx) {
 		return fmt.Errorf("DisableRateLimit must be false to delete ratelimitsettingsmc")
@@ -122,7 +123,7 @@ func UpdateMaxReqsRateLimitSettingsMc(c echo.Context) error {
 
 // Delete MC RateLimit maxreqs settings
 func DeleteMaxReqsRateLimitSettingsMc(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// Check if rate limiting is disabled
 	if getDisableRateLimit(ctx) {
 		return fmt.Errorf("DisableRateLimit must be false to delete ratelimitsettingsmc")
@@ -160,7 +161,7 @@ func DeleteMaxReqsRateLimitSettingsMc(c echo.Context) error {
 
 // Show MC RateLimit maxreqs settings
 func ShowMaxReqsRateLimitSettingsMc(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// Check if rate limiting is disabled
 	if getDisableRateLimit(ctx) {
 		return fmt.Errorf("DisableRateLimit must be false to show ratelimitsettingsmc")

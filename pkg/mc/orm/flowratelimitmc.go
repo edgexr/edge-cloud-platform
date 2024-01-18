@@ -20,17 +20,18 @@ import (
 	"net/http"
 	"strings"
 
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 // Create MC RateLimit Flow settings
 func CreateFlowRateLimitSettingsMc(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	// Check if rate limiting is disabled
 	if getDisableRateLimit(ctx) {
@@ -69,7 +70,7 @@ func CreateFlowRateLimitSettingsMc(c echo.Context) error {
 
 // Update MC RateLimit flow settings
 func UpdateFlowRateLimitSettingsMc(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// Check if rate limiting is disabled
 	if getDisableRateLimit(ctx) {
 		return fmt.Errorf("DisableRateLimit must be false to delete ratelimitsettingsmc")
@@ -122,7 +123,7 @@ func UpdateFlowRateLimitSettingsMc(c echo.Context) error {
 
 // Delete MC RateLimit flow settings
 func DeleteFlowRateLimitSettingsMc(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// Check if rate limiting is disabled
 	if getDisableRateLimit(ctx) {
 		return fmt.Errorf("DisableRateLimit must be false to delete ratelimitsettingsmc")
@@ -160,7 +161,7 @@ func DeleteFlowRateLimitSettingsMc(c echo.Context) error {
 
 // Show MC RateLimit flow settings
 func ShowFlowRateLimitSettingsMc(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// Check if rate limiting is disabled
 	if getDisableRateLimit(ctx) {
 		return fmt.Errorf("DisableRateLimit must be false to show flowratelimitsettingsmc")

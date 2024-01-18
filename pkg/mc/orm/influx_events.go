@@ -21,8 +21,8 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/labstack/echo/v4"
 )
@@ -107,7 +107,7 @@ func GetEventsCommon(c echo.Context) error {
 		return err
 	}
 	rc.claims = claims
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	if strings.HasSuffix(c.Path(), "events/app") {
 		in := ormapi.RegionAppInstEvents{}

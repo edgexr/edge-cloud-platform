@@ -25,8 +25,8 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/ormctl"
+	"github.com/edgexr/edge-cloud-platform/pkg/restclient"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -95,7 +95,7 @@ func (s *RootCommand) runRest(path string) func(c *cli.Command, args []string) e
 			return check(c, st, err, nil)
 		} else {
 			if s.clearState {
-				ormclient.ClearObject(c.ReplyData)
+				restclient.ClearObject(c.ReplyData)
 			}
 			st, err := s.client.PostJson(s.getUri()+path, s.token,
 				in, c.ReplyData, mapData.QueryParams)

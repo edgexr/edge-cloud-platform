@@ -26,6 +26,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/edgectl/wrapper"
+	"github.com/edgexr/edge-cloud-platform/pkg/edgeturnclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
@@ -302,7 +303,7 @@ func (s *TestSpecRunner) RunCommandAPI(api string, ctrlname string, apiFile stri
 			return false
 		}
 	} else {
-		content, err := ReadConsoleURL(actual, nil)
+		content, err := edgeturnclient.ReadConsoleURL(actual, nil)
 		if err != nil {
 			log.Printf("Error fetching contents from %s for %s API %v\n", actual, api, err)
 			return false

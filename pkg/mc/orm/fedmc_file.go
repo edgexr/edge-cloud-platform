@@ -11,12 +11,13 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/restclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -26,7 +27,7 @@ var ErrExactDuplicate = errors.New("exact duplicate")
 var e2eTestNextFileId = 1
 
 func CreateConsumerImage(c echo.Context) (reterr error) {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -208,7 +209,7 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 	}
 
 	// multipart/form-data
-	data := ormclient.NewMultiPartFormData()
+	data := restclient.NewMultiPartFormData()
 	data.AddField(federation.FileFieldFileId, image.ID)
 	data.AddField(federation.FileFieldAppProviderId, util.DNSSanitize(image.Organization))
 	data.AddField(federation.FileFieldFileName, image.Name)
@@ -277,7 +278,7 @@ func createFederatedImageObj(ctx context.Context, image *ormapi.ConsumerImage) (
 }
 
 func DeleteConsumerImage(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -347,7 +348,7 @@ func DeleteConsumerImage(c echo.Context) error {
 }
 
 func ShowConsumerImage(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -391,7 +392,7 @@ func ShowConsumerImage(c echo.Context) error {
 }
 
 func ShowProviderImage(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -424,7 +425,7 @@ func ShowProviderImage(c echo.Context) error {
 }
 
 func UnsafeDeleteProviderImage(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err

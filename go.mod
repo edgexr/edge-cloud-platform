@@ -105,6 +105,7 @@ require (
 	github.com/sethvargo/go-password v0.2.0
 	github.com/swaggest/jsonschema-go v0.3.34
 	github.com/swaggest/openapi-go v0.2.18
+	github.com/xdg-go/pbkdf2 v1.0.0
 	go.etcd.io/etcd/api/v3 v3.5.4
 	go.etcd.io/etcd/client/v3 v3.5.4
 	google.golang.org/grpc/examples v0.0.0-20220805221237-6f34b7ad1546

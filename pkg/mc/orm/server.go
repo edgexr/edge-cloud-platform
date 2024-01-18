@@ -39,10 +39,10 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/ratelimit"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/orm/alertmgr"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
@@ -1205,7 +1205,7 @@ func ShowVersion(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	if err := authorized(ctx, claims.Username, "", ResourceConfig, ActionView); err != nil {
 		return err
@@ -1265,7 +1265,7 @@ func (s *Server) websocketUpgrade(next echo.HandlerFunc) echo.HandlerFunc {
 				}
 				writeErr := writeWS(c, ws, &wsPayload)
 				if writeErr != nil {
-					ctx := ormutil.GetContext(c)
+					ctx := echoutil.GetContext(c)
 					log.SpanLog(ctx, log.DebugLevelApi, "Failed to write error to websocket stream", "err", err, "writeErr", writeErr)
 				}
 			}
@@ -1274,7 +1274,7 @@ func (s *Server) websocketUpgrade(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		// Set ws on echo context
-		ormutil.SetWs(c, ws)
+		echoutil.SetWs(c, ws)
 
 		// call next handler
 		err = next(c)
@@ -1290,7 +1290,7 @@ func (s *Server) websocketUpgrade(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 			writeErr := writeWS(c, ws, &wsPayload)
 			if writeErr != nil {
-				ctx := ormutil.GetContext(c)
+				ctx := echoutil.GetContext(c)
 				log.SpanLog(ctx, log.DebugLevelApi, "Failed to write error to websocket stream", "err", err, "writeErr", writeErr)
 			}
 		}
@@ -1310,10 +1310,10 @@ func ReadConn(c echo.Context, in interface{}) ([]byte, error) {
 	// Mark stream API
 	c.Set(StreamAPITag, true)
 
-	if ws := ormutil.GetWs(c); ws != nil {
+	if ws := echoutil.GetWs(c); ws != nil {
 		_, dat, err = ws.ReadMessage()
 		if err == nil {
-			ormutil.LogWsRequest(c, dat)
+			echoutil.LogWsRequest(c, dat)
 		}
 	} else {
 		// This plus json.Umarshal is the equivalent of c.Bind()
@@ -1398,7 +1398,7 @@ func BindJson(js []byte, i interface{}) error {
 }
 
 func WaitForConnClose(c echo.Context, serverClosed chan bool) {
-	if ws := ormutil.GetWs(c); ws != nil {
+	if ws := echoutil.GetWs(c); ws != nil {
 		clientClosed := make(chan error)
 		go func() {
 			// Handling close events from client is different here
@@ -1427,7 +1427,7 @@ func WaitForConnClose(c echo.Context, serverClosed chan bool) {
 func writeWS(c echo.Context, ws *websocket.Conn, wsPayload *ormapi.WSStreamPayload) error {
 	out, err := json.Marshal(wsPayload)
 	if err == nil {
-		ormutil.LogWsResponse(c, string(out))
+		echoutil.LogWsResponse(c, string(out))
 	}
 	return ws.WriteJSON(wsPayload)
 }
@@ -1442,7 +1442,7 @@ func streamCb(c echo.Context, code int32, msg string) error {
 }
 
 func WriteStream(c echo.Context, payload *ormapi.StreamPayload) error {
-	if ws := ormutil.GetWs(c); ws != nil {
+	if ws := echoutil.GetWs(c); ws != nil {
 		wsPayload := ormapi.WSStreamPayload{
 			Code: http.StatusOK,
 			Data: (*payload).Data,

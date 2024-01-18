@@ -7,6 +7,7 @@ import (
 	fmt "fmt"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -26,7 +27,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateTrustPolicy(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -71,7 +72,7 @@ func CreateTrustPolicy(c echo.Context) error {
 }
 
 func DeleteTrustPolicy(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -116,7 +117,7 @@ func DeleteTrustPolicy(c echo.Context) error {
 }
 
 func UpdateTrustPolicy(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -165,7 +166,7 @@ func UpdateTrustPolicy(c echo.Context) error {
 }
 
 func ShowTrustPolicy(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {

@@ -28,8 +28,8 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
@@ -211,7 +211,7 @@ Edge Cloud Team
 `
 
 func sendVerifyEmail(c echo.Context, username string, req *ormapi.EmailRequest) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	if getSkipVerifyEmail(ctx, nil) {
 		return nil
 	}

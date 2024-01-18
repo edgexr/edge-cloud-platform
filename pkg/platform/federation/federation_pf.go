@@ -30,11 +30,11 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
+	"github.com/edgexr/edge-cloud-platform/pkg/restclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -159,7 +159,7 @@ func (f *FederationPlatform) fedClient(ctx context.Context, cloudletKey *edgepro
 	return f.tokenSources.Client(ctx, fedConfig.PartnerFederationAddr, &fedKey, f.auditCb)
 }
 
-func (f *FederationPlatform) auditCb(ctx context.Context, eventName string, fedKey *federationmgmt.FedKey, data *ormclient.AuditLogData) {
+func (f *FederationPlatform) auditCb(ctx context.Context, eventName string, fedKey *federationmgmt.FedKey, data *restclient.AuditLogData) {
 	nodeMgr := f.commonPf.PlatformConfig.NodeMgr
 	eventTags := data.GetEventTags()
 	nodeMgr.TimedEvent(ctx, eventName, fedKey.Name, node.AuditType, eventTags, data.Err, data.Start, data.End)
