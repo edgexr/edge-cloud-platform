@@ -44,7 +44,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Infra API Access
 //
-// InfraApiAccess is the type of access available to Infra API endpoint
+// # InfraApiAccess is the type of access available to Infra API endpoint
 //
 // 0: `DIRECT_ACCESS`
 // 1: `RESTRICTED_ACCESS`
@@ -79,8 +79,9 @@ func (InfraApiAccess) EnumDescriptor() ([]byte, []int) {
 //
 // OSType is the type of the Operator System
 //
-//  0: `Linux`
-//  1: `Windows`
+//	0: `Linux`
+//	1: `Windows`
+//
 // 20: `Others`
 type OSType int32
 
@@ -115,7 +116,7 @@ func (OSType) EnumDescriptor() ([]byte, []int) {
 
 // Report Schedule
 //
-// ReportSchedule is the interval for which report is to be generated
+// # ReportSchedule is the interval for which report is to be generated
 //
 // 0: `EveryWeek`
 // 1: `Every15Days`
@@ -246,7 +247,6 @@ func (m *CloudletInternal) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CloudletInternal proto.InternalMessageInfo
 
-//
 // Platform specific configuration required for Cloudlet management
 type PlatformConfig struct {
 	// Path to Docker registry holding edge-cloud image

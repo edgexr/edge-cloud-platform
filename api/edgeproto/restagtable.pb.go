@@ -40,7 +40,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Optional Resource Names
 //
-// OptResNames indicates optional resource names
+// # OptResNames indicates optional resource names
 //
 // 0: `GPU`
 // 1: `NAS`

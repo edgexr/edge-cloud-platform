@@ -40,7 +40,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Network Connection Type
 //
-// NetworkConnectionType is the supported list of network types to be optionally added to a cluster instance
+// # NetworkConnectionType is the supported list of network types to be optionally added to a cluster instance
 //
 // 0: `UNDEFINED`
 // 1: `CONNECT_TO_LOAD_BALANCER`
