@@ -19,7 +19,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/passhash"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 	"github.com/stretchr/testify/require"
 )
@@ -76,7 +76,7 @@ func getTestCloudletNode(cloudletKey edgeproto.CloudletKey) (edgeproto.CloudletN
 	node.NodeType = cloudcommon.NodeTypePlatformVM.String()
 	node.NodeRole = cloudcommon.NodeRoleDockerCrm.String()
 	password := string(util.RandAscii(12))
-	hash, salt, iter := ormutil.NewPasshash(password)
+	hash, salt, iter := passhash.NewPasshash(password)
 	node.PasswordHash = hash
 	node.Salt = salt
 	node.Iter = int32(iter)
@@ -158,7 +158,7 @@ func TestAnsibleServer(t *testing.T) {
 	setAuth := func(req *http.Request) {
 		req.Header.Set(confignode.CloudletNameHeader, cloudlet.Key.Name)
 		req.Header.Set(confignode.CloudletOrgHeader, cloudlet.Key.Organization)
-		req.Header.Set("Authorization", ormutil.EncodeBasicAuth(node.Key.Name, password))
+		req.Header.Set("Authorization", passhash.EncodeBasicAuth(node.Key.Name, password))
 	}
 
 	// get no auth
@@ -171,7 +171,7 @@ func TestAnsibleServer(t *testing.T) {
 	req = httptest.NewRequest(http.MethodGet, addr+"/ansible.tar", nil)
 	rec = httptest.NewRecorder()
 	setAuth(req)
-	req.Header.Set("Authorization", ormutil.EncodeBasicAuth(node.Key.Name, "foo"))
+	req.Header.Set("Authorization", passhash.EncodeBasicAuth(node.Key.Name, "foo"))
 	ccrm.echoServ.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusUnauthorized, rec.Result().StatusCode)
 
@@ -179,7 +179,7 @@ func TestAnsibleServer(t *testing.T) {
 	req = httptest.NewRequest(http.MethodGet, addr+"/ansible.tar", nil)
 	rec = httptest.NewRecorder()
 	setAuth(req)
-	req.Header.Set("Authorization", ormutil.EncodeBasicAuth("foo", password))
+	req.Header.Set("Authorization", passhash.EncodeBasicAuth("foo", password))
 	ccrm.echoServ.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusUnauthorized, rec.Result().StatusCode)
 
