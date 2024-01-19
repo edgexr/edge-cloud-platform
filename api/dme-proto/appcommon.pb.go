@@ -230,7 +230,6 @@ func (MaintenanceState) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_fdc58d2114e550de, []int{3}
 }
 
-//
 // ReplyStatus
 type ReplyStatus int32
 
@@ -321,7 +320,6 @@ func (m *AppPort) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AppPort proto.InternalMessageInfo
 
-//
 // DeviceInfoStatic
 type DeviceInfoStatic struct {
 	// Android or iOS
@@ -366,7 +364,6 @@ func (m *DeviceInfoStatic) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeviceInfoStatic proto.InternalMessageInfo
 
-//
 // DeviceInfoDynamic
 type DeviceInfoDynamic struct {
 	// LTE, 5G, etc.

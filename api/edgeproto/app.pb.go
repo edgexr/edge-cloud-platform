@@ -172,7 +172,7 @@ func (VmAppOsType) EnumDescriptor() ([]byte, []int) {
 
 // DeleteType
 //
-// DeleteType specifies if AppInst can be auto deleted or not
+// # DeleteType specifies if AppInst can be auto deleted or not
 //
 // 0: `NO_AUTO_DELETE`
 // 1: `AUTO_DELETE`
@@ -205,7 +205,7 @@ func (DeleteType) EnumDescriptor() ([]byte, []int) {
 
 // (Deprecated) AccessType
 //
-// AccessType indicates how to access the app
+// # AccessType indicates how to access the app
 //
 // 0: `ACCESS_TYPE_DEFAULT_FOR_DEPLOYMENT`
 // 1: `ACCESS_TYPE_DIRECT`

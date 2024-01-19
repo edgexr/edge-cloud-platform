@@ -12,7 +12,7 @@ all: build install
 linux: build-linux install-linux
 
 check-go-vers:
-	@if test $(GOVERS) != go1.18; then \
+	@if test $(GOVERS) != go1.21; then \
 		echo "Go version must be $(GOVERS)"; \
 		exit 2; \
 	fi
