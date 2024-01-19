@@ -44,7 +44,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Power State
 //
-// Power State of the AppInst
+// # Power State of the AppInst
 //
 // 0: `POWER_STATE_UNKNOWN`
 // 1: `POWER_ON_REQUESTED`

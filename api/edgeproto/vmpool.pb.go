@@ -44,7 +44,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // VM State
 //
-// VMState is the state of the VM
+// # VMState is the state of the VM
 //
 // 0: `VM_FREE`
 // 1: `VM_IN_PROGRESS`
@@ -102,7 +102,7 @@ func (VMState) EnumDescriptor() ([]byte, []int) {
 
 // VM Action
 //
-// VMAction is the action to be performed on VM Pool
+// # VMAction is the action to be performed on VM Pool
 //
 // 0: `VM_ACTION_DONE`
 // 1: `VM_ACTION_ALLOCATE`

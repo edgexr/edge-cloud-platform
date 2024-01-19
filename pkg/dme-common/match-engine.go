@@ -533,11 +533,10 @@ func DeleteCloudletInfo(ctx context.Context, cloudletKey *edgeproto.CloudletKey)
 					appinstState := &DmeAppInstState{
 						CloudletState: dmeAppInst.CloudletState,
 					}
-					go func(a *DmeAppInstState) {
-						EEHandler.SendAppInstStateEdgeEvent(ctx, a, appInstKey, &app.AppKey, dme.ServerEdgeEvent_EVENT_CLOUDLET_STATE)
-						EEHandler.RemoveCloudlet(ctx, dmeAppInst.key.CloudletKey)
-
-					}(appinstState)
+					go func(a *DmeAppInstState, aikey edgeproto.AppInstKey, clkey edgeproto.CloudletKey) {
+						EEHandler.SendAppInstStateEdgeEvent(ctx, a, aikey, &app.AppKey, dme.ServerEdgeEvent_EVENT_CLOUDLET_STATE)
+						EEHandler.RemoveCloudlet(ctx, clkey)
+					}(appinstState, appInstKey, dmeAppInst.key.CloudletKey)
 				}
 			}
 		}
@@ -566,11 +565,10 @@ func PruneCloudlets(ctx context.Context, cloudlets map[edgeproto.CloudletKey]str
 					appinstState := &DmeAppInstState{
 						CloudletState: dmeAppInst.CloudletState,
 					}
-					go func(a *DmeAppInstState) {
-						EEHandler.SendAppInstStateEdgeEvent(ctx, a, appInstKey, &app.AppKey, dme.ServerEdgeEvent_EVENT_CLOUDLET_STATE)
-						EEHandler.RemoveCloudlet(ctx, dmeAppInst.key.CloudletKey)
-					}(appinstState)
-
+					go func(a *DmeAppInstState, aikey edgeproto.AppInstKey, clkey edgeproto.CloudletKey) {
+						EEHandler.SendAppInstStateEdgeEvent(ctx, a, aikey, &app.AppKey, dme.ServerEdgeEvent_EVENT_CLOUDLET_STATE)
+						EEHandler.RemoveCloudlet(ctx, clkey)
+					}(appinstState, appInstKey, dmeAppInst.key.CloudletKey)
 				}
 			}
 		}

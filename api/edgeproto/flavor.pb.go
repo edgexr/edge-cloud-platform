@@ -77,9 +77,9 @@ func (m *FlavorKey) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_FlavorKey proto.InternalMessageInfo
 
-//Flavors define the compute, memory, and storage capacity of computing instances.
-//To put it simply, a flavor is an available hardware configuration for a server.
-//It defines the size of a virtual server that can be launched.
+// Flavors define the compute, memory, and storage capacity of computing instances.
+// To put it simply, a flavor is an available hardware configuration for a server.
+// It defines the size of a virtual server that can be launched.
 type Flavor struct {
 	// Fields are used for the Update API to specify which fields to apply
 	Fields []string `protobuf:"bytes,1,rep,name=fields,proto3" json:"fields,omitempty"`

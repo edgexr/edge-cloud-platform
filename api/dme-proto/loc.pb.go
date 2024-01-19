@@ -69,7 +69,6 @@ func (m *Timestamp) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Timestamp proto.InternalMessageInfo
 
-//
 // GPS Location
 type Loc struct {
 	// Latitude in WGS 84 coordinates
@@ -127,7 +126,6 @@ func (m *Loc) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Loc proto.InternalMessageInfo
 
-//
 // Sample
 type Sample struct {
 	// Latency value
