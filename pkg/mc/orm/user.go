@@ -397,6 +397,8 @@ func CreateUser(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	// for consistency, emails are stored in lowercase
+	user.Email = strings.ToLower(user.Email)
 	if !util.ValidEmail(user.Email) {
 		return fmt.Errorf("Invalid email address")
 	}
@@ -1141,6 +1143,8 @@ func UpdateUser(c echo.Context) error {
 	if err := c.Bind(&cuser); err != nil {
 		return ormutil.BindErr(err)
 	}
+	// lowercase email that may have been input by user
+	cuser.User.Email = strings.ToLower(cuser.User.Email)
 	// check for fields that are not allowed to change
 	if old.Name != user.Name {
 		return fmt.Errorf("Cannot change username")

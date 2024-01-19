@@ -870,6 +870,7 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	testPasswordStrength(t, ctx, mcClient, uri, token)
 	testEdgeboxOnlyOrgs(t, uri, mcClient)
 	testConfigUpgrade(t, ctx)
+	testPostgresCaseUpgrade(t, ctx)
 	testCORS(t, ctx, uri, token, mcClient)
 }
 
@@ -1577,6 +1578,64 @@ func testConfigUpgrade(t *testing.T, ctx context.Context) {
 	// but the upgrade will not set the default value for it
 	config.DisableRateLimit = defaultConfig.DisableRateLimit
 	require.Equal(t, defaultConfig, *config)
+}
+
+type CaseObj struct {
+	Name  string `gorm:"primary_key;type:citext"`
+	Email string `gorm:"unique;type:citext;not null"`
+}
+
+func testPostgresCaseUpgrade(t *testing.T, ctx context.Context) {
+	db := loggedDB(ctx)
+	log.SpanLog(ctx, log.DebugLevelApi, "creating case_objs")
+	// create test data with case-sensitive email field
+	err := db.Exec(`CREATE TABLE "case_objs" ("name" citext, "email" text NOT NULL UNIQUE, PRIMARY KEY ("name"))`).Error
+	require.Nil(t, err)
+
+	// Note that db.AutoMigrate will not change a column from
+	// text to citext.
+
+	log.SpanLog(ctx, log.DebugLevelApi, "insert case_objs data")
+	co := CaseObj{
+		Name:  "user1",
+		Email: "User@email.com",
+	}
+	err = db.Create(&co).Error
+	require.Nil(t, err)
+
+	// can insert duplicate because case sensitive
+	co2 := CaseObj{
+		Name:  "user2",
+		Email: "USER@email.com",
+	}
+	err = db.Create(&co2).Error
+	require.Nil(t, err)
+
+	// remove duplicate
+	err = db.Delete(&co2).Error
+	require.Nil(t, err)
+
+	// change email column type
+	err = fixColumnType(ctx, db, "case_objs", []ColType{{
+		"email",
+		"citext",
+	}})
+	require.Nil(t, err)
+
+	// now inserting duplicate should fail
+	err = db.Create(&co2).Error
+	require.NotNil(t, err)
+	log.SpanLog(ctx, log.DebugLevelApi, "insert error", "err", err)
+
+	co3 := CaseObj{
+		Name:  "user3",
+		Email: "UserX@email.com",
+	}
+	err = db.Create(&co3).Error
+	require.Nil(t, err)
+
+	err = db.DropTable(&CaseObj{}).Error
+	require.Nil(t, err)
 }
 
 func testCORS(t *testing.T, ctx context.Context, uri, superTok string, mcClient *mctestclient.Client) {

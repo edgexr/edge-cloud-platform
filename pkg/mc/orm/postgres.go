@@ -123,6 +123,20 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 			}
 			continue
 		}
+		// upgrade functions
+		err = fixColumnType(ctx, db, "users", []ColType{{
+			"email",
+			"citext",
+		}})
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "fix users table email column type", "err", err)
+			if unitTest {
+				initDone <- err
+				return
+			}
+			continue
+		}
+
 		// create initial database data
 		err = InitRolePerms(ctx)
 		if err != nil {
