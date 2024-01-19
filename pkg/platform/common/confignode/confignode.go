@@ -6,8 +6,8 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/passhash"
 )
 
 const CloudletNameHeader = "cloudlet-name"
@@ -99,7 +99,7 @@ fi
 var configureNodeScriptT = template.Must(template.New("configureNodeScript").Parse(ConfigureNodeScript))
 
 func (s *ConfigureNodeVars) GenScript() error {
-	s.BasicAuth = ormutil.EncodeBasicAuth(s.Key.Name, s.Password)
+	s.BasicAuth = passhash.EncodeBasicAuth(s.Key.Name, s.Password)
 
 	buf := bytes.Buffer{}
 	err := configureNodeScriptT.Execute(&buf, s)

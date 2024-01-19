@@ -17,14 +17,12 @@ package e2e
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/http/cookiejar"
 	"os"
 	"os/exec"
 	"reflect"
@@ -792,54 +790,6 @@ func ClearMapValues(m map[string]string) {
 	for k, _ := range m {
 		m[k] = ""
 	}
-}
-
-func ReadConsoleURL(consoleUrl string, cookies []*http.Cookie) (string, error) {
-	req, err := http.NewRequest("GET", consoleUrl, nil)
-	if err != nil {
-		return "", err
-	}
-
-	if cookies != nil {
-		for _, cookie := range cookies {
-			req.AddCookie(cookie)
-		}
-	}
-
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-
-	options := cookiejar.Options{}
-
-	jar, err := cookiejar.New(&options)
-	if err != nil {
-		return "", err
-	}
-
-	client := &http.Client{
-		Transport: tr,
-		Jar:       jar,
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	// For some reason this client is not getting 302,
-	// instead it gets 502. It works fine for curl & wget
-	if resp.StatusCode == http.StatusBadGateway {
-		if resp.Request.URL.String() != consoleUrl {
-			return ReadConsoleURL(resp.Request.URL.String(), resp.Cookies())
-		}
-	}
-	return string(contents), nil
 }
 
 // Apply a transform to the value.

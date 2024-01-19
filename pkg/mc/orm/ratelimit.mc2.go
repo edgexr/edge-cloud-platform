@@ -7,6 +7,7 @@ import (
 	fmt "fmt"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -27,7 +28,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func ShowRateLimitSettings(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -68,7 +69,7 @@ func ShowRateLimitSettings(c echo.Context) error {
 }
 
 func CreateFlowRateLimitSettings(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -110,7 +111,7 @@ func CreateFlowRateLimitSettings(c echo.Context) error {
 }
 
 func UpdateFlowRateLimitSettings(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -156,7 +157,7 @@ func UpdateFlowRateLimitSettings(c echo.Context) error {
 }
 
 func DeleteFlowRateLimitSettings(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -198,7 +199,7 @@ func DeleteFlowRateLimitSettings(c echo.Context) error {
 }
 
 func ShowFlowRateLimitSettings(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -239,7 +240,7 @@ func ShowFlowRateLimitSettings(c echo.Context) error {
 }
 
 func CreateMaxReqsRateLimitSettings(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -281,7 +282,7 @@ func CreateMaxReqsRateLimitSettings(c echo.Context) error {
 }
 
 func UpdateMaxReqsRateLimitSettings(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -327,7 +328,7 @@ func UpdateMaxReqsRateLimitSettings(c echo.Context) error {
 }
 
 func DeleteMaxReqsRateLimitSettings(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -369,7 +370,7 @@ func DeleteMaxReqsRateLimitSettings(c echo.Context) error {
 }
 
 func ShowMaxReqsRateLimitSettings(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {

@@ -24,6 +24,7 @@ import (
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/federation"
@@ -154,7 +155,7 @@ func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 		// event filtering by org createdat time, truncate timestamp
 		// to microseconds.
 		eventStart = eventStart.Truncate(time.Microsecond)
-		ec := ormutil.NewEchoContext(c, ctx, eventStart)
+		ec := echoutil.NewEchoContext(c, ctx, eventStart)
 
 		// The error handler injects the error into the response.
 		// This audit log needs the error to log it, but does not
@@ -199,8 +200,8 @@ func (s *AuditLogger) echoHandler(next echo.HandlerFunc) echo.HandlerFunc {
 
 		response := ""
 		resHeaders := util.GetHeadersString(res.Header())
-		if ws := ormutil.GetWs(ec); ws != nil {
-			wsRequest, wsResponse := ormutil.GetWsLogData(ec)
+		if ws := echoutil.GetWs(ec); ws != nil {
+			wsRequest, wsResponse := echoutil.GetWsLogData(ec)
 			if len(wsRequest) > 0 {
 				reqBody = wsRequest
 			}
@@ -329,7 +330,7 @@ func resultErrorHandler(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// write error to response/stream
 		var writeErr error
-		if ws := ormutil.GetWs(c); ws != nil {
+		if ws := echoutil.GetWs(c); ws != nil {
 			// websocket errors must be handled in
 			// websocketUpgrade before the ws is closed.
 		} else if c.Get(StreamAPITag) != nil && c.Response().Committed {
@@ -345,7 +346,7 @@ func resultErrorHandler(next echo.HandlerFunc) echo.HandlerFunc {
 			writeErr = c.JSON(code, res)
 		}
 		if writeErr != nil {
-			ctx := ormutil.GetContext(c)
+			ctx := echoutil.GetContext(c)
 			log.SpanLog(ctx, log.DebugLevelApi, "Failed to write error to response", "err", err, "writeError", writeErr)
 		}
 		return err
@@ -364,7 +365,7 @@ func fedErrorHandler(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 		writeErr := c.JSON(code, &resp)
 		if writeErr != nil {
-			ctx := ormutil.GetContext(c)
+			ctx := echoutil.GetContext(c)
 			log.SpanLog(ctx, log.DebugLevelApi, "Failed to write error to response", "err", err, "writeError", writeErr)
 		}
 		return err

@@ -28,7 +28,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormclient"
+	"github.com/edgexr/edge-cloud-platform/pkg/restclient"
 	pkgtls "github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"golang.org/x/oauth2"
@@ -42,7 +42,7 @@ type Client struct {
 	auditLogCb  AuditLogCb
 }
 
-type AuditLogCb func(ctx context.Context, eventName string, fedKey *FedKey, data *ormclient.AuditLogData)
+type AuditLogCb func(ctx context.Context, eventName string, fedKey *FedKey, data *restclient.AuditLogData)
 
 var auditRedactor = util.NewJSONRedactor("***").AddKey("clientSecret")
 
@@ -172,10 +172,10 @@ func (c *Client) SendRequest(ctx context.Context, eventName, method, endpoint st
 		return 0, nil, fmt.Errorf("failed to get federation token for %s: %s", c.addr, err)
 	}
 
-	restClient := &ormclient.Client{
+	restClient := &restclient.Client{
 		TokenType: token.TokenType,
 		Timeout:   60 * time.Minute,
-		AuditLogFunc: func(data *ormclient.AuditLogData) {
+		AuditLogFunc: func(data *restclient.AuditLogData) {
 			c.audit(ctx, eventName, c.fedKey, data)
 		},
 		ParseErrorFunc: c.parseFedError,
@@ -195,7 +195,7 @@ func (c *Client) SendRequest(ctx context.Context, eventName, method, endpoint st
 	return status, respHeader, nil
 }
 
-func (c *Client) audit(ctx context.Context, eventName string, fedKey *FedKey, data *ormclient.AuditLogData) {
+func (c *Client) audit(ctx context.Context, eventName string, fedKey *FedKey, data *restclient.AuditLogData) {
 	respBody, err := auditRedactor.Redact(data.RespBody)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "json redactor failed", "data", string(data.RespBody), "err", err)

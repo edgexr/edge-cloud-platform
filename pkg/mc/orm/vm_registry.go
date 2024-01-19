@@ -8,7 +8,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/passhash"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/google/uuid"
 )
@@ -40,13 +40,13 @@ func vmRegistryEnsureApiKey(ctx context.Context, username string) error {
 			// fallthrough to create api key
 		} else if err == nil {
 			// verify password
-			matches, err := ormutil.PasswordMatches(auth.Password, apiKey.ApiKeyHash, apiKey.Salt, apiKey.Iter)
+			matches, err := passhash.PasswordMatches(auth.Password, apiKey.ApiKeyHash, apiKey.Salt, apiKey.Iter)
 			if err == nil && matches {
 				log.SpanLog(ctx, log.DebugLevelApi, "vm registry api key verified")
 				return nil
 			}
 			log.SpanLog(ctx, log.DebugLevelApi, "vm registry api key authentication failed, syncing password to Vault's record")
-			hash, salt, iter := ormutil.NewPasshash(auth.Password)
+			hash, salt, iter := passhash.NewPasshash(auth.Password)
 			apiKey.ApiKeyHash = hash
 			apiKey.Salt = salt
 			apiKey.Iter = iter

@@ -49,6 +49,7 @@ type GenMC2 struct {
 	importEcho         bool
 	importHttp         bool
 	importContext      bool
+	importEchoutil     bool
 	importIO           bool
 	importOS           bool
 	importJson         bool
@@ -131,6 +132,9 @@ func (g *GenMC2) GenerateImports(file *generator.FileDescriptor) {
 	}
 	if g.importOrmutil {
 		g.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil")
+	}
+	if g.importEchoutil {
+		g.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/echoutil")
 	}
 	if g.importCtrlClient {
 		g.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient")
@@ -497,6 +501,7 @@ func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, 
 	} else {
 		tmpl = g.tmpl
 		g.importEcho = true
+		g.importEchoutil = true
 		g.importOrmapi = true
 		g.importLog = true
 		g.importOrmutil = true
@@ -593,7 +598,7 @@ func (s *Region{{.InName}}) SetObjFields(fields []string) {
 
 var tmpl = `
 func {{.MethodName}}(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {

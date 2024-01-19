@@ -8,6 +8,7 @@ import (
 	_ "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -28,7 +29,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func ShowPlatformFeatures(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -61,7 +62,7 @@ func ShowPlatformFeatures(c echo.Context) error {
 }
 
 func DeletePlatformFeatures(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -99,7 +100,7 @@ func DeletePlatformFeatures(c echo.Context) error {
 }
 
 func CreateGPUDriver(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -144,7 +145,7 @@ func CreateGPUDriver(c echo.Context) error {
 }
 
 func DeleteGPUDriver(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -189,7 +190,7 @@ func DeleteGPUDriver(c echo.Context) error {
 }
 
 func UpdateGPUDriver(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -238,7 +239,7 @@ func UpdateGPUDriver(c echo.Context) error {
 }
 
 func ShowGPUDriver(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -280,7 +281,7 @@ func ShowGPUDriver(c echo.Context) error {
 }
 
 func AddGPUDriverBuild(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -325,7 +326,7 @@ func AddGPUDriverBuild(c echo.Context) error {
 }
 
 func RemoveGPUDriverBuild(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -370,7 +371,7 @@ func RemoveGPUDriverBuild(c echo.Context) error {
 }
 
 func GetGPUDriverBuildURL(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -410,7 +411,7 @@ func GetGPUDriverBuildURL(c echo.Context) error {
 }
 
 func GetGPUDriverLicenseConfig(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -449,7 +450,7 @@ func GetGPUDriverLicenseConfig(c echo.Context) error {
 }
 
 func CreateCloudlet(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -496,7 +497,7 @@ func CreateCloudlet(c echo.Context) error {
 }
 
 func DeleteCloudlet(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -543,7 +544,7 @@ func DeleteCloudlet(c echo.Context) error {
 }
 
 func UpdateCloudlet(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -594,7 +595,7 @@ func UpdateCloudlet(c echo.Context) error {
 }
 
 func ShowCloudlet(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -635,7 +636,7 @@ func ShowCloudlet(c echo.Context) error {
 }
 
 func GetCloudletManifest(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -677,7 +678,7 @@ func GetCloudletManifest(c echo.Context) error {
 }
 
 func GetCloudletProps(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -716,7 +717,7 @@ func GetCloudletProps(c echo.Context) error {
 }
 
 func GetCloudletResourceQuotaProps(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -755,7 +756,7 @@ func GetCloudletResourceQuotaProps(c echo.Context) error {
 }
 
 func GetCloudletResourceUsage(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -795,7 +796,7 @@ func GetCloudletResourceUsage(c echo.Context) error {
 }
 
 func AddCloudletResMapping(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -838,7 +839,7 @@ func AddCloudletResMapping(c echo.Context) error {
 }
 
 func RemoveCloudletResMapping(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -881,7 +882,7 @@ func RemoveCloudletResMapping(c echo.Context) error {
 }
 
 func AddCloudletAllianceOrg(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -924,7 +925,7 @@ func AddCloudletAllianceOrg(c echo.Context) error {
 }
 
 func RemoveCloudletAllianceOrg(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -967,7 +968,7 @@ func RemoveCloudletAllianceOrg(c echo.Context) error {
 }
 
 func FindFlavorMatch(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1007,7 +1008,7 @@ func FindFlavorMatch(c echo.Context) error {
 }
 
 func ShowFlavorsForCloudlet(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1047,7 +1048,7 @@ func ShowFlavorsForCloudlet(c echo.Context) error {
 }
 
 func GetOrganizationsOnCloudlet(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1088,7 +1089,7 @@ func GetOrganizationsOnCloudlet(c echo.Context) error {
 }
 
 func RevokeAccessKey(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1130,7 +1131,7 @@ func RevokeAccessKey(c echo.Context) error {
 }
 
 func GenerateAccessKey(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1172,7 +1173,7 @@ func GenerateAccessKey(c echo.Context) error {
 }
 
 func GetCloudletGPUDriverLicenseConfig(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1211,7 +1212,7 @@ func GetCloudletGPUDriverLicenseConfig(c echo.Context) error {
 }
 
 func ShowCloudletInfo(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1253,7 +1254,7 @@ func ShowCloudletInfo(c echo.Context) error {
 }
 
 func InjectCloudletInfo(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1296,7 +1297,7 @@ func InjectCloudletInfo(c echo.Context) error {
 }
 
 func EvictCloudletInfo(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {

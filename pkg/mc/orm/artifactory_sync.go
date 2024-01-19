@@ -19,10 +19,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/labstack/echo/v4"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/labstack/echo/v4"
 )
 
 func ArtifactoryNewSync() *AppStoreSync {
@@ -305,7 +305,7 @@ func ArtifactorySummary(c echo.Context) error {
 	var summary AppStoreSummary
 
 	// Get MC users
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	mcUsers, err := getMCUsers(ctx)
 	if err != nil {
 		return err

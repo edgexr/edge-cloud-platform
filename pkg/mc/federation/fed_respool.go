@@ -3,6 +3,7 @@ package federation
 import (
 	"fmt"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -26,7 +27,7 @@ func (p *PartnerApi) ViewISVResPool(c echo.Context, fedCtxId FederationContextId
 }
 
 func (p *PartnerApi) PartnerResourceStatusChange(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	in := fedewapi.FederationContextIdIsvResourceZoneZoneIdAppProviderAppProviderIdGetRequest{}
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)

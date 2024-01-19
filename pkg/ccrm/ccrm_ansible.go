@@ -10,8 +10,9 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/passhash"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 	"github.com/labstack/echo/v4"
 )
@@ -85,7 +86,7 @@ func (s *CCRM) authRequest(next echo.HandlerFunc) echo.HandlerFunc {
 			span.SetTag("err", reterr)
 		}()
 		ctx := log.ContextWithSpan(req.Context(), span)
-		ec := ormutil.NewEchoContext(c, ctx, time.Now())
+		ec := echoutil.NewEchoContext(c, ctx, time.Now())
 
 		// expect basic auth
 		username, password, ok := req.BasicAuth()
@@ -126,7 +127,7 @@ func (s *CCRM) authRequest(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 		}
 		// validate password
-		matches, err := ormutil.PasswordMatches(password, cloudletNode.PasswordHash, cloudletNode.Salt, int(cloudletNode.Iter))
+		matches, err := passhash.PasswordMatches(password, cloudletNode.PasswordHash, cloudletNode.Salt, int(cloudletNode.Iter))
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "password matches func error", "err", err)
 		}
@@ -145,7 +146,7 @@ func (s *CCRM) authRequest(next echo.HandlerFunc) echo.HandlerFunc {
 
 func getCloudletNode(c echo.Context) *edgeproto.CloudletNode {
 	val := c.Get(ecNode)
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	node, ok := val.(*edgeproto.CloudletNode)
 	if !ok {
 		log.SpanLog(ctx, log.DebugLevelApi, "no cloudlet node in context")

@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
@@ -194,7 +195,7 @@ func ShowRolePerms(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// admin user can see all roles
 	isAdmin, err := isUserAdmin(ctx, claims.Username)
 	if err != nil {
@@ -238,7 +239,7 @@ func ShowRoleAssignment(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	filter, err := bindMap(c)
 	if err != nil {
@@ -341,7 +342,7 @@ func ShowRole(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// admin user can see all roles
 	isAdmin, err := isUserAdmin(ctx, claims.Username)
 	if err != nil {
@@ -381,7 +382,7 @@ func AddUserRole(c echo.Context) error {
 	if err := c.Bind(&role); err != nil {
 		return ormutil.BindErr(err)
 	}
-	err = AddUserRoleObj(ormutil.GetContext(c), claims, &role)
+	err = AddUserRoleObj(echoutil.GetContext(c), claims, &role)
 	if err != nil {
 		return err
 	}
@@ -526,7 +527,7 @@ func RemoveUserRole(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	role := ormapi.Role{}
 	if err := c.Bind(&role); err != nil {
@@ -611,7 +612,7 @@ func ShowUserRole(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	filter, err := bindMap(c)
 	if err != nil {
@@ -664,7 +665,7 @@ func AdminAccessCheck(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	if err := authorized(ctx, claims.Username, "", ResourceControllers, ActionManage); err != nil {
 		return err

@@ -37,6 +37,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/cliwrapper"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/restclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	edgetestutil "github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/pquerna/otp/totp"
@@ -91,7 +92,9 @@ func (s *TestSpecRunner) RunMcAPI(api, mcname, apiFile string, actionVars, apiFi
 		clientRun = cliclient
 	} else {
 		clientRun = &ormclient.Client{
-			SkipVerify: true,
+			Client: restclient.Client{
+				SkipVerify: true,
+			},
 		}
 	}
 	mcClient = mctestclient.NewClient(clientRun)

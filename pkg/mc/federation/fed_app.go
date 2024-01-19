@@ -9,6 +9,7 @@ import (
 	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -29,7 +30,7 @@ const (
 )
 
 func (p *PartnerApi) lookupApp(c echo.Context, provider *ormapi.FederationProvider, appId string) (*ormapi.ProviderApp, error) {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	db := p.loggedDB(ctx)
 
 	provApp := ormapi.ProviderApp{
@@ -47,7 +48,7 @@ func (p *PartnerApi) lookupApp(c echo.Context, provider *ormapi.FederationProvid
 }
 
 func (p *PartnerApi) lookupConsumerApp(c echo.Context, consumer *ormapi.FederationConsumer, appId string) (*ormapi.ConsumerApp, error) {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	db := p.loggedDB(ctx)
 
 	consApp := ormapi.ConsumerApp{
@@ -66,7 +67,7 @@ func (p *PartnerApi) lookupConsumerApp(c echo.Context, consumer *ormapi.Federati
 
 // Remote partner federator sends this request to us to onboard an application
 func (p *PartnerApi) OnboardApplication(c echo.Context, fedCtxId FederationContextId) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
@@ -200,7 +201,7 @@ func (p *PartnerApi) DeleteApp(c echo.Context, fedCtxId FederationContextId, app
 }
 
 func (p *PartnerApi) DeleteAppInternal(c echo.Context, provider *ormapi.FederationProvider, appId string) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// lookup app
 	provApp, err := p.lookupApp(c, provider, string(appId))
 	if err != nil {
@@ -284,7 +285,7 @@ func (p *PartnerApi) ViewApplication(c echo.Context, fedCtxId FederationContextI
 
 // Remote partner federator sends this request to us to deboard application
 func (p *PartnerApi) DeboardApplication(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier, zoneId ZoneIdentifier) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
@@ -320,7 +321,7 @@ func (p *PartnerApi) UpdateApplication(c echo.Context, fedCtxId FederationContex
 }
 
 func (p *PartnerApi) OnboardExistingAppNewZones(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
@@ -371,7 +372,7 @@ func (p *PartnerApi) LockUnlockApplicationZone(c echo.Context, fedCtxId Federati
 }
 
 func (p *PartnerApi) PartnerAppOnboardStatusEvent(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	in := fedewapi.FederationContextIdApplicationOnboardingPostRequest{}
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)

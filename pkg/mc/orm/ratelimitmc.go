@@ -23,6 +23,7 @@ import (
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/ratelimit"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -182,7 +183,7 @@ func executeDbOperationOnMcRateLimitSettings(settings *ormapi.McRateLimitSetting
 // Echo middleware function that handles rate limiting for MC APIs
 func RateLimit(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		ctx := ormutil.GetContext(c)
+		ctx := echoutil.GetContext(c)
 
 		// Check if rate limiting is disabled, if disabled continue
 		if getDisableRateLimit(ctx) {
@@ -223,7 +224,7 @@ var fedPathMatch = regexp.MustCompile(federationmgmt.ApiRoot + "/(.*)?/")
 // Echo middleware function that handles rate limiting for federation APIs
 func FederationRateLimit(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		ctx := ormutil.GetContext(c)
+		ctx := echoutil.GetContext(c)
 
 		// Check if rate limiting is disabled, if disabled continue
 		if getDisableRateLimit(ctx) {
@@ -293,7 +294,7 @@ func getRateLimitMaxTrackedUsers(ctx context.Context) int {
 
 // Show MC RateLimit settings
 func ShowRateLimitSettingsMc(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	// Check if rate limiting is disabled
 	if getDisableRateLimit(ctx) {

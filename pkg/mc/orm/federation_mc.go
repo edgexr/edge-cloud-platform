@@ -25,6 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	fedmgmt "github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
@@ -230,7 +231,7 @@ func setMyFedId(fed *ormapi.Federator, name string) {
 // Create federation provider to receive EWBI create request
 // and provide resources to remote Operator platform.
 func CreateFederationProvider(c echo.Context) (reterr error) {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -374,7 +375,7 @@ func CreateFederationProvider(c echo.Context) (reterr error) {
 // Update federation provider and notify associated
 // partner federators
 func UpdateFederationProvider(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -468,7 +469,7 @@ func UpdateFederationProvider(c echo.Context) error {
 
 // Delete FederationProvider
 func DeleteFederationProvider(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -583,7 +584,7 @@ var FederatorIgnoreFilterKeys = []string{
 }
 
 func ShowFederationProvider(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -650,7 +651,7 @@ func orgInUseByFederatorCheck(ctx context.Context, orgName string) error {
 }
 
 func GenerateFederationProviderAPIKey(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -688,7 +689,7 @@ func GenerateFederationProviderAPIKey(c echo.Context) error {
 
 // Set provider notify auth creds for callbacks
 func SetFederationProviderNotifyKey(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -739,7 +740,7 @@ func SetFederationProviderNotifyKey(c echo.Context) error {
 // Create a Federation Consumer to use partner resources.
 // This will attempt to create the connection to the partner.
 func CreateFederationConsumer(c echo.Context) (reterr error) {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -866,7 +867,7 @@ func CreateFederationConsumer(c echo.Context) (reterr error) {
 }
 
 func DeleteFederationConsumer(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -927,7 +928,7 @@ func DeleteFederationConsumer(c echo.Context) error {
 }
 
 func UpdateFederationConsumer(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -996,7 +997,7 @@ func UpdateFederationConsumer(c echo.Context) error {
 
 // Update consumer's client key for provider in case provider regenerated it.
 func SetFederationConsumerAPIKey(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1037,7 +1038,7 @@ func GenerateFederationConsumerNotifyKey(c echo.Context) error {
 }
 
 func CreateProviderZoneBase(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1167,7 +1168,7 @@ func CreateProviderZoneBase(c echo.Context) error {
 }
 
 func DeleteProviderZoneBase(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1226,7 +1227,7 @@ func DeleteProviderZoneBase(c echo.Context) error {
 }
 
 func UpdateProviderZoneBase(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1307,7 +1308,7 @@ var ProviderZoneBaseIgnoreFilterKeys = []string{
 }
 
 func ShowProviderZoneBase(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1342,7 +1343,7 @@ func ShowProviderZoneBase(c echo.Context) error {
 }
 
 func ShareProviderZone(c echo.Context) (reterr error) {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1460,7 +1461,7 @@ func ShareProviderZone(c echo.Context) (reterr error) {
 }
 
 func UnshareProviderZone(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1547,7 +1548,7 @@ func UnshareProviderZone(c echo.Context) error {
 }
 
 func ShowProviderZone(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1578,7 +1579,7 @@ func ShowProviderZone(c echo.Context) error {
 }
 
 func ShowConsumerZone(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1616,7 +1617,7 @@ func ShowConsumerZone(c echo.Context) error {
 // can deploy AppInsts to, which will deploy those AppInsts on the
 // federation partner's zone.
 func RegisterConsumerZone(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1655,7 +1656,7 @@ func RegisterConsumerZone(c echo.Context) error {
 }
 
 func DeregisterConsumerZone(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1830,7 +1831,7 @@ func deregisterFederationConsumer(ctx context.Context, consumer *ormapi.Federati
 }
 
 func ShowFederationConsumer(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err

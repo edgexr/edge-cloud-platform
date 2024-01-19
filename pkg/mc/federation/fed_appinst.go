@@ -10,6 +10,7 @@ import (
 	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -19,7 +20,7 @@ import (
 )
 
 func (p *PartnerApi) lookupAppInst(c echo.Context, provider *ormapi.FederationProvider, appInstanceId string) (*ormapi.ProviderAppInst, error) {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	db := p.loggedDB(ctx)
 
 	provAppInst := ormapi.ProviderAppInst{
@@ -38,7 +39,7 @@ func (p *PartnerApi) lookupAppInst(c echo.Context, provider *ormapi.FederationPr
 }
 
 func (p *PartnerApi) InstallApp(c echo.Context, fedCtxId FederationContextId) (reterr error) {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
@@ -323,7 +324,7 @@ func (p *PartnerApi) RemoveAppInstInternal(c echo.Context, provider *ormapi.Fede
 		return err
 	}
 
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	appInst := edgeproto.AppInst{
 		Key: provAppInst.GetAppInstKey(),
 	}
@@ -361,7 +362,7 @@ func (p *PartnerApi) GetAllAppInstances(c echo.Context, fedCtxId FederationConte
 }
 
 func (p *PartnerApi) GetAppInstanceDetails(c echo.Context, fedCtxId FederationContextId, appId AppIdentifier, appInstId InstanceIdentifier, zoneId ZoneIdentifier) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	log.SpanLog(ctx, log.DebugLevelApi, "Federation get appInstanceDetails", "fedCtxId", fedCtxId, "appInstId", appInstId)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
@@ -408,7 +409,7 @@ func (p *PartnerApi) GetAppInstanceDetails(c echo.Context, fedCtxId FederationCo
 }
 
 func (p *PartnerApi) PartnerInstanceStatusEvent(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	uniqueId := c.Param(federationmgmt.PathVarAppInstUniqueId)
 	in := fedewapi.FederationContextIdApplicationLcmPostRequest{}
 	if err := c.Bind(&in); err != nil {

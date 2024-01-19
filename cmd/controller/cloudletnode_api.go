@@ -6,7 +6,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/passhash"
 	"github.com/sethvargo/go-password/password"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
@@ -88,7 +88,7 @@ func (s *CloudletNodeApi) CreateCloudletNodeReq(ctx context.Context, node *edgep
 	if err != nil {
 		return "", fmt.Errorf("failed to generate password: %s", err)
 	}
-	passhash, salt, iter := ormutil.NewPasshash(pass)
+	passhash, salt, iter := passhash.NewPasshash(pass)
 	node.PasswordHash = passhash
 	node.Salt = salt
 	node.Iter = int32(iter)

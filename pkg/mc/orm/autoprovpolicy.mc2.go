@@ -8,6 +8,7 @@ import (
 	_ "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -29,7 +30,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateAutoProvPolicy(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -72,7 +73,7 @@ func CreateAutoProvPolicy(c echo.Context) error {
 }
 
 func DeleteAutoProvPolicy(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -115,7 +116,7 @@ func DeleteAutoProvPolicy(c echo.Context) error {
 }
 
 func UpdateAutoProvPolicy(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -162,7 +163,7 @@ func UpdateAutoProvPolicy(c echo.Context) error {
 }
 
 func ShowAutoProvPolicy(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -204,7 +205,7 @@ func ShowAutoProvPolicy(c echo.Context) error {
 }
 
 func AddAutoProvPolicyCloudlet(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -247,7 +248,7 @@ func AddAutoProvPolicyCloudlet(c echo.Context) error {
 }
 
 func RemoveAutoProvPolicyCloudlet(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {

@@ -27,6 +27,7 @@ import (
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/rbac"
@@ -62,7 +63,7 @@ func CreateOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	org := ormapi.Organization{}
 	if err := c.Bind(&org); err != nil {
 		return ormutil.BindErr(err)
@@ -71,7 +72,7 @@ func CreateOrg(c echo.Context) error {
 	span.SetTag("org", org.Name)
 	// make sure createdAt is the same as event start, so that
 	// it will show up in event show api.
-	org.CreatedAt = ormutil.GetEventStart(c)
+	org.CreatedAt = echoutil.GetEventStart(c)
 
 	err = CreateOrgObj(ctx, claims, &org)
 	if err != nil {
@@ -167,7 +168,7 @@ func DeleteOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	org := ormapi.Organization{}
 	if err := c.Bind(&org); err != nil {
 		return ormutil.BindErr(err)
@@ -280,7 +281,7 @@ func RestrictedUpdateOrg(c echo.Context) error {
 }
 
 func updateOrg(c echo.Context, updateType UpdateType) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -362,7 +363,7 @@ func updateOrg(c echo.Context, updateType UpdateType) error {
 
 // Show Organizations that current user belongs to.
 func ShowOrg(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err

@@ -25,6 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
@@ -219,7 +220,7 @@ func CreateController(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	ctrl := ormapi.Controller{}
 	if err := c.Bind(&ctrl); err != nil {
@@ -258,7 +259,7 @@ func DeleteController(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	ctrl := ormapi.Controller{}
 	if err := c.Bind(&ctrl); err != nil {
@@ -293,7 +294,7 @@ func UpdateController(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	// modified fields.
 	body, err := ioutil.ReadAll(c.Request().Body)
@@ -350,7 +351,7 @@ func UpdateController(c echo.Context) error {
 }
 
 func ShowController(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err

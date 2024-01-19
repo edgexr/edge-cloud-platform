@@ -16,48 +16,18 @@ package ormutil
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
-	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/passhash"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
-	"golang.org/x/crypto/pbkdf2"
 )
 
 const harborVaultAccount = "/secret/data/accounts/harbor"
-
-// As computing power grows, we should increase iter and salt bytes
-var PasshashIter = 10000
-var PasshashKeyBytes = 32
-var PasshashSaltBytes = 8
-
-func Passhash(pw, salt []byte, iter int) []byte {
-	return pbkdf2.Key(pw, salt, iter, PasshashKeyBytes, sha256.New)
-}
-
-func NewPasshash(password string) (passhash, salt string, iter int) {
-	saltb := make([]byte, PasshashSaltBytes)
-	rand.Read(saltb)
-	pass := Passhash([]byte(password), saltb, PasshashIter)
-	return base64.StdEncoding.EncodeToString(pass),
-		base64.StdEncoding.EncodeToString(saltb), PasshashIter
-}
-
-func PasswordMatches(password, passhash, salt string, iter int) (bool, error) {
-	sa, err := base64.StdEncoding.DecodeString(salt)
-	if err != nil {
-		return false, err
-	}
-	ph := Passhash([]byte(password), sa, iter)
-	phenc := base64.StdEncoding.EncodeToString(ph)
-	return phenc == passhash, nil
-}
 
 const (
 	ApiKeyAuth   string = "apikeyauth"
@@ -86,7 +56,7 @@ func (u *UserClaims) SetKid(kid int) {
 
 func GetClaims(c echo.Context) (*UserClaims, error) {
 	user := c.Get("user")
-	ctx := GetContext(c)
+	ctx := echoutil.GetContext(c)
 	if user == nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "get claims: no user")
 		return nil, echo.ErrUnauthorized
@@ -121,7 +91,7 @@ func GetClaims(c echo.Context) (*UserClaims, error) {
 // Create api key. Returns client id and key.
 func CreateApiKey(ctx context.Context, db *gorm.DB, id, org, username, description string, allowUpdate bool) (*ormapi.UserApiKey, string, error) {
 	key := uuid.New().String()
-	hash, salt, iter := NewPasshash(key)
+	hash, salt, iter := passhash.NewPasshash(key)
 	apiKey := ormapi.UserApiKey{
 		Id:          id,
 		Description: description,
@@ -152,27 +122,4 @@ func DeleteApiKey(ctx context.Context, db *gorm.DB, id string) error {
 		return DbErr(err)
 	}
 	return nil
-}
-
-const BasicPrefix = "Basic "
-
-func EncodeBasicAuth(username, password string) string {
-	auth := username + ":" + password
-	return BasicPrefix + base64.StdEncoding.EncodeToString([]byte(auth))
-}
-
-func DecodeBasicAuth(auth string) (username, password string, ok bool) {
-	if !strings.HasPrefix(auth, BasicPrefix) {
-		return "", "", false
-	}
-	c, err := base64.StdEncoding.DecodeString(auth[len(BasicPrefix):])
-	if err != nil {
-		return "", "", false
-	}
-	cs := string(c)
-	username, password, ok = strings.Cut(cs, ":")
-	if !ok {
-		return "", "", false
-	}
-	return username, password, true
 }

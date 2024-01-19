@@ -32,6 +32,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/gcs"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
@@ -320,7 +321,7 @@ func tzMatch(timezone string, reportTime time.Time) (bool, error) {
 
 // Create reporter to generate usage reports
 func CreateReporter(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -420,7 +421,7 @@ func CreateReporter(c echo.Context) error {
 }
 
 func UpdateReporter(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -559,7 +560,7 @@ func UpdateReporter(c echo.Context) error {
 }
 
 func DeleteReporter(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -606,7 +607,7 @@ func DeleteReporter(c echo.Context) error {
 }
 
 func ShowReporter(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -662,7 +663,7 @@ func GenerateReport(c echo.Context) error {
 }
 
 func GenerateReportObj(c echo.Context, dataOnly bool) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1620,7 +1621,7 @@ func getGCSStorageClient(ctx context.Context) (*gcs.GCSClient, error) {
 
 func ShowReport(c echo.Context) error {
 	// get list of generated reports from cloud
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -1668,7 +1669,7 @@ func ShowReport(c echo.Context) error {
 
 func DownloadReport(c echo.Context) error {
 	// download report from cloud with given filename
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err

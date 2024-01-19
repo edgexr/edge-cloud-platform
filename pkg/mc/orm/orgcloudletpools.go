@@ -23,6 +23,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ctrlclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/mc/ormutil"
@@ -154,7 +155,7 @@ func ShowOrgCloudlet(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	oc := ormapi.OrgCloudlet{}
 	_, err = ReadConn(c, &oc)
 	if err != nil {
@@ -214,7 +215,7 @@ func ShowOrgCloudletInfo(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	oc := ormapi.OrgCloudlet{}
 	_, err = ReadConn(c, &oc)
 	if err != nil {
@@ -332,7 +333,7 @@ func createDeleteCloudletPoolAccess(c echo.Context, action cloudcommon.Action, t
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	in := ormapi.OrgCloudletPool{}
 	if err := c.Bind(&in); err != nil {
@@ -407,7 +408,7 @@ func showCloudletPoolAccess(c echo.Context, typ string) error {
 	if err != nil {
 		return err
 	}
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 
 	filter, err := bindDbFilter(c, &ormapi.OrgCloudletPool{})
 	if err != nil {

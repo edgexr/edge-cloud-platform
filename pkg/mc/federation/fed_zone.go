@@ -13,6 +13,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/echoutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/fedewapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -90,7 +91,7 @@ func (p *PartnerApi) lookupProviderZoneBase(ctx context.Context, zoneId, operato
 // remote partner federator can then make it accessible to its
 // developers or subscribers
 func (p *PartnerApi) ZoneSubscribe(c echo.Context, fedCtxId FederationContextId) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
@@ -145,7 +146,7 @@ func (p *PartnerApi) ZoneSubscribe(c echo.Context, fedCtxId FederationContextId)
 // This will ensure that our cloudlet is no longer accessible
 // to remote partner federator's developers or subscribers
 func (p *PartnerApi) ZoneUnsubscribe(c echo.Context, fedCtxId FederationContextId, zoneId ZoneIdentifier) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
@@ -179,7 +180,7 @@ func (p *PartnerApi) ZoneUnsubscribe(c echo.Context, fedCtxId FederationContextI
 
 // Partner asks for information about a zone we are providing for their use.
 func (p *PartnerApi) GetZoneData(c echo.Context, fedCtxId FederationContextId, zoneId ZoneIdentifier) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	// lookup federation provider based on claims
 	provider, err := p.lookupProvider(c, fedCtxId)
 	if err != nil {
@@ -683,7 +684,7 @@ func (p *PartnerApi) DeregisterConsumerZones(ctx context.Context, consumer *orma
 }
 
 func (p *PartnerApi) PartnerZoneResourceUpdate(c echo.Context) error {
-	ctx := ormutil.GetContext(c)
+	ctx := echoutil.GetContext(c)
 	in := fedewapi.FederationContextIdZonesPostRequest{}
 	if err := c.Bind(&in); err != nil {
 		return ormutil.BindErr(err)
