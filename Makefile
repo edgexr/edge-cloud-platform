@@ -76,8 +76,10 @@ tools:
 external-doc:
 	make -C edgeproto external-doc
 
+CMDS	= ./cmd/alertmgr-sidecar ./cmd/autoprov ./cmd/ccrm ./cmd/cluster-svc ./cmd/controller ./cmd/crm ./cmd/dme ./cmd/edgeturn ./cmd/frm ./cmd/mc ./cmd/mcctl ./cmd/notifyroot ./cmd/shepherd ./pkg/platform/ ./pkg/plugin/edgeevents ./pkg/plugin/platform ./pkg/shepherd_platform
+
 third_party:
-	parsedeps --gennotice ./cmd/crmserver ./cmd/controller ./cmd/dme-server ./cmd/cluster-svc ./cmd/edgeturn ./cmd/notifyroot ./pkg/plugin/platform/ ./pkg/plugin/edgeevents ./cmd/shepherd ./pkg/shepherd_platform ./cmd/mc ./cmd/alertmgr-sidecar ./cmd/autoprov> THIRD-PARTY-NOTICES
+	parsedeps --gennotice ${CMDS} > THIRD-PARTY-NOTICES
 
 $(APICOMMENTS): ./tools/apidoc/apidoc.go ./api/ormapi/api.go ./api/ormapi/federation_api.go
 	go install ./tools/apidoc
