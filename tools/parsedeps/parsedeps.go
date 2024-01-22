@@ -180,7 +180,7 @@ type PkgDep struct {
 }
 
 func getLicensePath(pkgDir string) string {
-	files := []string{"LICENSE", "LICENSE.txt", "LICENSE.md", "NOTICE"}
+	files := []string{"LICENSE", "License", "LICENSE.txt", "LICENSE.md", "license.md", "NOTICE"}
 	for {
 		if len(pkgDir) == 0 || strings.HasSuffix(pkgDir, "go/pkg/mod") {
 			break
