@@ -1,6 +1,6 @@
 module github.com/edgexr/edge-cloud-platform
 
-go 1.18
+go 1.21
 
 require (
 	cloud.google.com/go v0.102.0 // indirect
