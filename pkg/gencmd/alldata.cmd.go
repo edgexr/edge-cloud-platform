@@ -180,6 +180,9 @@ func AllDataHideTags(in *edgeproto.AllData) {
 		}
 	}
 	for i0 := 0; i0 < len(in.Apps); i0++ {
+		if _, found := tags["nocmp"]; found {
+			in.Apps[i0].AuthPublicKey = ""
+		}
 		for i1 := 0; i1 < len(in.Apps[i0].Configs); i1++ {
 		}
 		if _, found := tags["nocmp"]; found {

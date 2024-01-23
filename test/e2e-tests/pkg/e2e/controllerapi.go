@@ -190,6 +190,12 @@ func (s *TestSpecRunner) RunControllerAPI(api string, ctrlname string, apiFile s
 		s.ReadAppDataFile(apiFile, apiFileVars)
 		s.ReadAppDataFileGeneric(apiFile, apiFileVars)
 
+		err := injectAppAuthPublicKey(&appData)
+		if err != nil {
+			log.Println(err.Error())
+			return false
+		}
+
 		switch api {
 		case "delete":
 			fallthrough

@@ -53,7 +53,8 @@ func TestInternalPki(t *testing.T) {
 	// grcp logs not showing up in unit tests for some reason.
 	grpclog.SetLoggerV2(grpclog.NewLoggerV2(ioutil.Discard, ioutil.Discard, os.Stderr))
 	// Generate certs if needed
-	out, err := exec.Command("../../tls/gen-test-certs.sh", "foo-us-ca", "us.ctrl.edgecloud.net").CombinedOutput()
+	certsDir := "/tmp/edge-cloud-pki-test-certs"
+	out, err := exec.Command("../../tls/gen-test-certs.sh", "foo-us-ca", "us.ctrl.edgecloud.net", certsDir).CombinedOutput()
 	require.Nil(t, err, "%s", string(out))
 
 	// Set up local Vault process.
@@ -392,16 +393,16 @@ func TestInternalPki(t *testing.T) {
 	nodeFileOnly := &PkiConfig{
 		Region:   "us",
 		Type:     node.NodeTypeController,
-		CertFile: "./out/us.ctrl.edgecloud.net.crt",
-		CertKey:  "./out/us.ctrl.edgecloud.net.key",
-		CAFile:   "./out/foo-us-ca.crt",
+		CertFile: certsDir + "/out/us.ctrl.edgecloud.net.crt",
+		CertKey:  certsDir + "/out/us.ctrl.edgecloud.net.key",
+		CAFile:   certsDir + "/out/foo-us-ca.crt",
 	}
 	nodePhase2 := &PkiConfig{
 		Region:      "us",
 		Type:        node.NodeTypeController,
-		CertFile:    "./out/us.ctrl.edgecloud.net.crt",
-		CertKey:     "./out/us.ctrl.edgecloud.net.key",
-		CAFile:      "./out/foo-us-ca.crt",
+		CertFile:    certsDir + "/out/us.ctrl.edgecloud.net.crt",
+		CertKey:     certsDir + "/out/us.ctrl.edgecloud.net.key",
+		CAFile:      certsDir + "/out/foo-us-ca.crt",
 		UseVaultPki: true,
 		LocalIssuer: node.CertIssuerRegional,
 		RemoteCAs: []node.MatchCA{

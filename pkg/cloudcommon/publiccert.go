@@ -44,8 +44,12 @@ type TestPublicCertApi struct {
 
 func (s *TestPublicCertApi) GetPublicCert(ctx context.Context, commonName string) (*vault.PublicCert, error) {
 	cert := &vault.PublicCert{}
-	cert.Cert = edgetls.LocalTestCert
-	cert.Key = edgetls.LocalTestKey
+	priv, crt, err := edgetls.GetLocalTLSData()
+	if err != nil {
+		return nil, err
+	}
+	cert.Cert = string(crt)
+	cert.Key = string(priv)
 	// 24 hours in seconds
 	cert.TTL = 24 * 3600
 	s.GetCount++

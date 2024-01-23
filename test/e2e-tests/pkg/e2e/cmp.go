@@ -37,9 +37,9 @@ import (
 	yaml "github.com/mobiledgex/yaml/v2"
 )
 
-//compares two yaml files for equivalence
-//TODO need to handle different types of interfaces besides appdata, currently using
-//that to sort
+// compares two yaml files for equivalence
+// TODO need to handle different types of interfaces besides appdata, currently using
+// that to sort
 func CompareYamlFiles(name string, actions []string, compare *CompareYaml) bool {
 	PrintStepBanner("running compareYamlFiles")
 
@@ -131,6 +131,7 @@ func cmpFilterAllData(data *ormapi.AllData) {
 	tx.AddSetZeroType(time.Time{}, dmeproto.Timestamp{})
 	tx.ReplaceStringField(ormapi.Federator{}, "FederationId")
 	tx.AddSetZeroTypeField(ormapi.Federator{}, "InitialDate")
+	tx.ReplaceStringField(edgeproto.App{}, "AuthPublicKey")
 	tx.ReplaceStringField(ormapi.FederationProvider{}, "FederationContextId")
 	tx.ReplaceStringField(ormapi.FederationProvider{}, "ProviderClientId")
 	tx.ReplaceStringField(ormapi.FederationProvider{}, "PartnerNotifyClientId")
@@ -236,6 +237,7 @@ func cmpFilterEventData(data []EventSearch) {
 					// when building json map from cli args,
 					// so remove any empty fields.
 					omitEmptyJson(m)
+					replaceMapField(m, []string{"App", "auth_public_key"})
 					reqSorted, err := json.Marshal(m)
 					if err == nil {
 						event.Mtags["request"] = string(reqSorted)
@@ -286,6 +288,23 @@ func omitEmptyJson(val interface{}) interface{} {
 			return nil
 		}
 		return val
+	}
+}
+
+func replaceMapField(val map[string]interface{}, path []string) {
+	if val == nil {
+		return
+	}
+	if subval, found := val[path[0]]; found {
+		if len(path) == 1 {
+			val[path[0]] = "***replaced***"
+			return
+		}
+		submap, ok := subval.(map[string]interface{})
+		if !ok {
+			return
+		}
+		replaceMapField(submap, path[1:])
 	}
 }
 
