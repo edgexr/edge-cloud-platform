@@ -145,24 +145,24 @@ E2E_TESTSTART	?= ./test/e2e-tests/testfiles/deploy_start_create.yml
 E2E_TESTRESET	?= ./test/test/e2e-tests/testfiles/deploy_reset_create.yml
 E2E_TESTSTOP	?= ./test/e2e-tests/testfiles/stop_cleanup.yml
 
-test:
+test: gen-test-certs
 	$(E2E_BIN) -testfile $(E2E_TESTFILE) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS)
 
-test-debug:
+test-debug: gen-test-certs
 	$(E2E_BIN) -testfile $(E2E_TESTFILE) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -stop -notimestamp
 
-test-extra:
+test-extra: gen-test-certs
 	$(E2E_BIN) -testfile $(E2E_TESTFILE) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -runextra
 
-test-extra-debug:
+test-extra-debug: gen-test-certs
 	$(E2E_BIN) -testfile $(E2E_TESTFILE) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -runextra -stop -notimestamp
 
 # start/restart local processes to run individual python or other tests against
-test-start:
+test-start: gen-test-certs
 	$(E2E_BIN) -testfile $(E2E_TESTSTART) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -stop -notimestamp
 
 # restart process, clean data
-test-reset:
+test-reset: gen-test-certs
 	$(E2E_BIN) -testfile $(E2E_TESTRESET) -setupfile $(E2E_SETUP) -varsfile $(E2E_VARS) -stop -notimestamp
 
 test-stop:
