@@ -176,7 +176,7 @@ message App {
   // Default flavor for the App, which may be overridden by the AppInst
   FlavorKey default_flavor = 9 [(gogoproto.nullable) = false, (protogen.refers_to) = "Flavor"];
   // Public key used for authentication
-  string auth_public_key = 12;
+  string auth_public_key = 12 [(protogen.hidetag) = "nocmp"];
   // Command that the container runs to start service, separate multiple commands by a space
   string command = 13;
   // Command args to append to command, on cli specify multiple times in order

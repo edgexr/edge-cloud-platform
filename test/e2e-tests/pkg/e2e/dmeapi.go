@@ -30,6 +30,7 @@ import (
 	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
+	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	edgeutil "github.com/edgexr/edge-cloud-platform/pkg/util"
 	yaml "github.com/mobiledgex/yaml/v2"
 	"google.golang.org/grpc"
@@ -646,9 +647,7 @@ func runDmeAPIiter(ctx context.Context, api, apiFile, outputDir string, apiReque
 	case "register":
 		var expirySeconds int64 = 600
 		if strings.Contains(apiRequest.Rcreq.AuthToken, "GENTOKEN:") {
-			goPath := os.Getenv("GOPATH")
-			datadir := goPath + "/" + "src/github.com/edgexr/edge-cloud-platform/test/e2e-tests/data-regional"
-			privKeyFile := datadir + "/" + strings.Split(apiRequest.Rcreq.AuthToken, ":")[1]
+			privKeyFile := tls.LocalTLSCertsDir + "/test-server.key"
 			expTime := time.Now().Add(time.Duration(expirySeconds) * time.Second).Unix()
 			token, err := dmecommon.GenerateAuthToken(privKeyFile, apiRequest.Rcreq.OrgName,
 				apiRequest.Rcreq.AppName, apiRequest.Rcreq.AppVers, expTime)

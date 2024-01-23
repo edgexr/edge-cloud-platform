@@ -38,15 +38,16 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/kind"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	yaml "gopkg.in/yaml.v2"
 )
 
-//root TLS Dir
+// root TLS Dir
 var tlsDir = ""
 
-//outout TLS cert dir
+// outout TLS cert dir
 var tlsOutDir = ""
 
 type TestSpecRunner struct {
@@ -180,15 +181,7 @@ func (s *TestSpecRunner) ReadSetupFile(setupfile string, deployment interface{},
 
 	_, exist := vars["tlsoutdir"]
 	if !exist {
-		//{{tlsoutdir}} is relative to the GO dir.
-		goPath := os.Getenv("GOPATH")
-		if goPath == "" {
-			fmt.Fprintf(os.Stderr, "GOPATH not set, cannot calculate tlsoutdir")
-			return false
-		}
-		tlsDir = goPath + "/src/github.com/edgexr/edge-cloud-platform/pkg/tls"
-		tlsOutDir = tlsDir + "/out"
-		vars["tlsoutdir"] = tlsOutDir
+		vars["tlsoutdir"] = tls.LocalTLSCertsDir
 	}
 
 	setupdir := filepath.Dir(setupfile)

@@ -36,6 +36,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
@@ -262,8 +263,8 @@ func (s *TestSpecRunner) GetProcessByName(processName string) process.Process {
 	return nil
 }
 
-//these are strings which may be present in the yaml but not in the corresponding data structures.
-//These are the only allowed exceptions to the strict yaml unmarshalling
+// these are strings which may be present in the yaml but not in the corresponding data structures.
+// These are the only allowed exceptions to the strict yaml unmarshalling
 var yamlExceptions = map[string]map[string]bool{
 	"setup": {
 		"vars": true,
@@ -306,7 +307,7 @@ func ConnectController(p *process.Controller, c chan ReturnCodeWithText) {
 	}
 }
 
-//default is to connect to the first controller, unless we specified otherwise
+// default is to connect to the first controller, unless we specified otherwise
 func (s *TestSpecRunner) GetController(ctrlname string) *process.Controller {
 	if ctrlname == "" {
 		return s.Deployment.Controllers[0]
@@ -452,8 +453,8 @@ func PrintStepBanner(label string) {
 	log.Printf("  ---  %s\n", label)
 }
 
-//for specific output that we want to put in a separate file.  If no
-//output dir, just  print to the stdout
+// for specific output that we want to put in a separate file.  If no
+// output dir, just  print to the stdout
 func PrintToFile(fname string, outputDir string, out string, truncate bool) {
 	if outputDir == "" {
 		fmt.Print(out)
@@ -501,8 +502,8 @@ func PrintToYamlFile(fname, outputDir string, data interface{}, truncate bool) {
 	PrintToFile(fname, outputDir, PatchLicense(string(out)), truncate)
 }
 
-//creates an output directory with an optional timestamp.  Server log files, output from APIs, and
-//output from the script itself will all go there if specified
+// creates an output directory with an optional timestamp.  Server log files, output from APIs, and
+// output from the script itself will all go there if specified
 func CreateOutputDir(useTimestamp bool, outputDir string, logFileName string) (string, *os.File) {
 	if useTimestamp {
 		startTimestamp := time.Now().Format("2006-01-02T150405")
@@ -609,6 +610,25 @@ func ValidateReplacedVars() ReadYamlOp {
 	return func(opts *ReadYamlOptions) {
 		opts.validateReplacedVars = true
 	}
+}
+
+var authPubKey string
+
+func injectAppAuthPublicKey(data *edgeproto.AllData) error {
+	for ii := range data.Apps {
+		if data.Apps[ii].AuthPublicKey != "" {
+			if authPubKey == "" {
+				pubKeyFile := tls.LocalTLSCertsDir + "/test-server.pub"
+				pubKey, err := os.ReadFile(pubKeyFile)
+				if err != nil {
+					return fmt.Errorf("Error reading %s, was gen-test-certs.sh run? %s\n", pubKeyFile, err)
+				}
+				authPubKey = string(pubKey)
+			}
+			data.Apps[ii].AuthPublicKey = authPubKey
+		}
+	}
+	return nil
 }
 
 func ControllerCLI(ctrl *process.Controller, args ...string) ([]byte, error) {

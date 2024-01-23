@@ -737,6 +737,17 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	data := readMCDataFile(apiFile, vars)
 	dataMap := readMCDataFileMap(apiFile, vars)
 
+	// override authpublickey with test public key that matches
+	// private key used by dmeapi.go.
+	// Note we don't update dataMap as that's only used for updates.
+	for ii := range data.RegionData {
+		err := injectAppAuthPublicKey(&data.RegionData[ii].AppData)
+		if err != nil {
+			log.Println(err.Error())
+			return false
+		}
+	}
+
 	var errs []Err
 	switch api {
 	case "setfederationguestapikey":

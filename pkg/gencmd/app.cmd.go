@@ -35,6 +35,9 @@ func AppHideTags(in *edgeproto.App) {
 	for _, tag := range strings.Split(cli.HideTags, ",") {
 		tags[tag] = struct{}{}
 	}
+	if _, found := tags["nocmp"]; found {
+		in.AuthPublicKey = ""
+	}
 	for i0 := 0; i0 < len(in.Configs); i0++ {
 	}
 	if _, found := tags["nocmp"]; found {
@@ -57,6 +60,9 @@ func DeploymentCloudletRequestHideTags(in *edgeproto.DeploymentCloudletRequest) 
 	tags := make(map[string]struct{})
 	for _, tag := range strings.Split(cli.HideTags, ",") {
 		tags[tag] = struct{}{}
+	}
+	if _, found := tags["nocmp"]; found {
+		in.App.AuthPublicKey = ""
 	}
 	for i1 := 0; i1 < len(in.App.Configs); i1++ {
 	}
