@@ -281,10 +281,7 @@ info:
       ```swift
       ["unique_id": ,
       "status": RS_SUCCESS,
-      "session_cookie": eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODA1MDAxMzIsImlhdCI6MTU4MDQxMzczMiwia2V5Ijp7InBlZXJpcCI6IjE
-      yNy4wLjAuMSIsImRldm5hbWUiOiJNb2JpbGVkZ2VYIiwiYXBwbmFtZSI6Ik1vYmlsZWRnZVggU0RLIERlbW8iLCJhcHB2ZXJzIjoiMS4wIiwidW5pcXVlaWR0eXBlI
-      joiZG1lLWtzdWlkIiwidW5pcXVlaWQiOiIxWDgzOEVNbWJsNjYzSlNnT0dSVHFPYko1M3AiLCJraWQiOjR9fQ.kcrmNOYRLV_irLpYpdN6-oCgj4EakuTgMbIInNs1
-      JvCPm5vCjshO3CCbY_pCbcovUL-EemXZcWXqxYmz_SqIow,
+      "session_cookie": "***",
       "tags": <__NSArray0 0x7fff80615170>(),
       "unique_id_type": ,
       "ver": 0,
