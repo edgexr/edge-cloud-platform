@@ -24,7 +24,7 @@ fi
 mkdir -p $CERTDIR
 cd $CERTDIR
 
-if [ -e out/${CANAME}.crt ]; then
+if [ -e out/${SERVERNAME}.crt ]; then
     echo "certs exist"
     exit 0
 fi
