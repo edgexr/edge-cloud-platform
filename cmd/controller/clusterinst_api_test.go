@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client/influxq_testutil"

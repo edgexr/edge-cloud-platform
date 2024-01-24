@@ -17,7 +17,7 @@ package edgebox
 import (
 	"context"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"

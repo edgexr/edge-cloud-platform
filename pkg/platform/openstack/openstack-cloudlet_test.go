@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	distributed_match_engine "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	distributed_match_engine "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"

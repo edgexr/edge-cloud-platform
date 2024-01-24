@@ -17,7 +17,7 @@ package operalpha
 import (
 	"testing"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	operator "github.com/edgexr/edge-cloud-platform/pkg/dme-platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/test-go/testify/require"

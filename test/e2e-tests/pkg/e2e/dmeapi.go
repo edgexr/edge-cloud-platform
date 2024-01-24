@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dmeproto "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
