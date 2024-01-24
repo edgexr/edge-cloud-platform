@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/AsGz/geo/georeverse"
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	locclient "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/operalpha-loc/locclient"
 	locutil "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha/operalpha-loc/util"

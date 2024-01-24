@@ -22,7 +22,7 @@ import (
 	"reflect"
 	"strings"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	yaml "github.com/mobiledgex/yaml/v2"

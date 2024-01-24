@@ -18,7 +18,7 @@ import (
 	"math"
 	"time"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 )
 
 // Rolling avg, min, max, std dev, and number of clients

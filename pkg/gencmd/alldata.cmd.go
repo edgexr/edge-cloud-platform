@@ -5,7 +5,7 @@ package gencmd
 
 import (
 	fmt "fmt"
-	distributed_match_engine "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	distributed_match_engine "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"

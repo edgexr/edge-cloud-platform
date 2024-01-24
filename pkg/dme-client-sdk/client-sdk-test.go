@@ -19,7 +19,7 @@ import (
 	"log"
 	"time"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	dmetest "github.com/edgexr/edge-cloud-platform/pkg/dme-testutil"
 	"golang.org/x/net/context"
 )

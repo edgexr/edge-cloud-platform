@@ -6,7 +6,7 @@ package testutil
 import (
 	"context"
 	fmt "fmt"
-	_ "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	_ "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/mcctl/mctestclient"

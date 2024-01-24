@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	accessapicloudlet "github.com/edgexr/edge-cloud-platform/pkg/accessapi-cloudlet"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"

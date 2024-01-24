@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 )
 
 func TestEdgeEventsCookie(t *testing.T) {

@@ -1767,7 +1767,7 @@ func (c *{{.Name}}Cache) SyncListEnd(ctx context.Context) {
 {{if eq (.WaitForState) ("TrackedState")}}
 func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState {{.WaitForState}}, transitionStates map[{{.WaitForState}}]struct{}, errorState {{.WaitForState}}, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
 {{- else}}
-func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState dme_proto.{{.WaitForState}}, transitionStates map[dme_proto.{{.WaitForState}}]struct{}, errorState dme_proto.{{.WaitForState}}, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
+func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState distributed_match_engine.{{.WaitForState}}, transitionStates map[distributed_match_engine.{{.WaitForState}}]struct{}, errorState distributed_match_engine.{{.WaitForState}}, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
 {{- end}}
 	var lastMsgCnt int
 	var err error
@@ -1775,7 +1775,7 @@ func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState dme_pr
 	{{- if eq (.WaitForState) ("TrackedState")}}
 	curState := {{.WaitForState}}_TRACKED_STATE_UNKNOWN
 	{{- else}}
-	curState := dme_proto.{{.WaitForState}}_CLOUDLET_STATE_UNKNOWN
+	curState := distributed_match_engine.{{.WaitForState}}_CLOUDLET_STATE_UNKNOWN
 	{{- end}}
 
 	var wSpec WaitStateSpec
@@ -1843,7 +1843,7 @@ func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState dme_pr
 					{{- if eq (.WaitForState) ("TrackedState")}}
 					msg := fmt.Sprintf("Timed out while work still in progress state %s. Please use Show{{.ParentObjName}} to check current status", {{.WaitForState}}_CamelName[int32(curState)])
 					{{- else}}
-					msg := fmt.Sprintf("Timed out while work still in progress state %s. Please use Show{{.ParentObjName}} to check current status", dme_proto.{{.WaitForState}}_CamelName[int32(curState)])
+					msg := fmt.Sprintf("Timed out while work still in progress state %s. Please use Show{{.ParentObjName}} to check current status", distributed_match_engine.{{.WaitForState}}_CamelName[int32(curState)])
 					{{- end}}
 					send(&Result{Message: msg})
 				}
@@ -1854,8 +1854,8 @@ func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState dme_pr
 					{{.WaitForState}}_CamelName[int32(targetState)],
 					{{.WaitForState}}_CamelName[int32(curState)])
 					{{- else}}
-					dme_proto.{{.WaitForState}}_CamelName[int32(targetState)],
-					dme_proto.{{.WaitForState}}_CamelName[int32(curState)])
+					distributed_match_engine.{{.WaitForState}}_CamelName[int32(targetState)],
+					distributed_match_engine.{{.WaitForState}}_CamelName[int32(curState)])
 					{{- end}}
 			}
 			return err

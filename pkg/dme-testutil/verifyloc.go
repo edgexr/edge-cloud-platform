@@ -14,7 +14,7 @@
 
 package dmetest
 
-import dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+import dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 
 type VerifyLocRR struct {
 	Reg   dme.RegisterClientRequest

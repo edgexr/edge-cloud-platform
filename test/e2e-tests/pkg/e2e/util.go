@@ -31,7 +31,7 @@ import (
 	"strings"
 	"time"
 
-	dmeproto "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dmeproto "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"

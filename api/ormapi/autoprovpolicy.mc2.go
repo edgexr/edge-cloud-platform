@@ -5,7 +5,7 @@ package ormapi
 
 import (
 	fmt "fmt"
-	_ "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	_ "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/googleapis/google/api"
