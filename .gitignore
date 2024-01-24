@@ -7,7 +7,7 @@
 link-gogo-protobuf
 link-grpc-gateway
 pkg/version/version.yaml
-api/dme-proto/*.proto
+api/distributed_match_engine/*.proto
 pkg/cloudcommon/node/vault.log
 pkg/cloudcommon/node/vault_pki
 pkg/cloudcommon/node/roles.yaml

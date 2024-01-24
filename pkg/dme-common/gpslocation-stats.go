@@ -19,7 +19,7 @@ import (
 	"math"
 	"strconv"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 )
 
 // These conversions are at equator

@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	operator "github.com/edgexr/edge-cloud-platform/pkg/dme-platform"
 	simulatedloc "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/defaultoperator/simulated-location"
 	simulatedqos "github.com/edgexr/edge-cloud-platform/pkg/dme-platform/defaultoperator/simulated-qos"

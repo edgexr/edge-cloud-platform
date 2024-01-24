@@ -6,7 +6,7 @@ package main
 import (
 	"context"
 	fmt "fmt"
-	_ "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	_ "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"

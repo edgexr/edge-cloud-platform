@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/dme-proto"
+	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	dmetest "github.com/edgexr/edge-cloud-platform/pkg/dme-testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
