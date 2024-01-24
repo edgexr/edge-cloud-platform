@@ -32,7 +32,7 @@ Hi me,
 
 Thanks for creating a MobiledgeX account! You are now one step away from utilizing the power of the edge. Please verify this email account by clicking on the link below. Then you'll be able to login and get started.
 
-Click to verify: http://console.mobiledgex.net/verify?token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NTc0NjIyNDMsImlhdCI6MTU1NzM3NTg0MywidXNlcm5hbWUiOiJqb24iLCJlbWFpbCI6Impvbi5tb2JpbGVkZ2V4QGdtYWlsLmNvbSIsImtpZCI6M30.A5mcwkWlfjBUZ3Tvn0EqD_f0a4iPf7U-eg2aMASnrt7Lzdmp2CAEE5Q69g9HlTzE_oEpM3kOSeGhKYRKksvPTQ
+Click to verify: http://console.mobiledgex.net/verify?token=login-token
 
 For security, this request was received for me@gmail.com from a mac OSX device using httpie with IP 127.0.0.1. If you are not expecting this email, please ignore this email or contact MobiledgeX support for assistance.
 
@@ -57,7 +57,7 @@ Date: Thu, 09 May 2019 04:33:59 GMT
 Run the verify manually, copying the token above.
 
 ```
-http POST 127.0.0.1:9900/api/v1/verifyemail token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NTc0NjIyNDMsImlhdCI6MTU1NzM3NTg0MywidXNlcm5hbWUiOiJqb24iLCJlbWFpbCI6Impvbi5tb2JpbGVkZ2V4QGdtYWlsLmNvbSIsImtpZCI6M30.A5mcwkWlfjBUZ3Tvn0EqD_f0a4iPf7U-eg2aMASnrt7Lzdmp2CAEE5Q69g9HlTzE_oEpM3kOSeGhKYRKksvPTQ
+http POST 127.0.0.1:9900/api/v1/verifyemail token=login-token
 HTTP/1.1 200 OK
 Content-Length: 39
 Content-Type: application/json; charset=UTF-8
@@ -94,7 +94,7 @@ Hi me,
 
 You recently requested to reset your password for your MobiledgeX account. Use the link below to reset it. This password reset is only valid for the next 1 hour.
 
-Reset your password: https://console.mobiledgex.net/passwordreset?token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NTczODAzNDIsImlhdCI6MTU1NzM3Njc0MiwidXNlcm5hbWUiOiJqb24iLCJlbWFpbCI6Impvbi5tb2JpbGVkZ2V4QGdtYWlsLmNvbSIsImtpZCI6M30.SzY9EMRBwVnTnkY3jI-5SXtet4ZmqsDyqstFjhJJPtunHffshM2ADxhPDnELyhr1MvNzAydRzgWQRUPj6MqAOQ
+Reset your password: https://console.mobiledgex.net/passwordreset?token=login-token
 
 For security, this request was received from a mac OSX device using httpie with IP 127.0.0.1. If you did not request this password reset, please ignore this email or contact MobiledgeX support for assistance.
 
@@ -105,7 +105,7 @@ MobiledgeX Team
 Again, that link should go the UI where the user enters their new password. Then the UI will send MC the token and new password. So instead we'll call the API directly here.
 
 ```
-http POST 127.0.0.1:9900/api/v1/passwordreset token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NTczODAzNDIsImlhdCI6MTU1NzM3Njc0MiwidXNlcm5hbWUiOiJqb24iLCJlbWFpbCI6Impvbi5tb2JpbGVkZ2V4QGdtYWlsLmNvbSIsImtpZCI6M30.SzY9EMRBwVnTnkY3jI-5SXtet4ZmqsDyqstFjhJJPtunHffshM2ADxhPDnELyhr1MvNzAydRzgWQRUPj6MqAOQ password=test12345
+http POST 127.0.0.1:9900/api/v1/passwordreset token=login-token
 HTTP/1.1 200 OK
 Content-Length: 30
 Content-Type: application/json; charset=UTF-8
