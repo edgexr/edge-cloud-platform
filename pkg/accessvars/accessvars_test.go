@@ -77,7 +77,7 @@ func TestAccessVars(t *testing.T) {
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
-	vaultAddr := "https://127.0.0.1:8205"
+	vaultAddr := "TestAccessVars"
 	vaultCluster, vaultClient := testutil.NewVaultTestClusterBasic(t, vaultAddr)
 	defer vaultCluster.Cleanup()
 

@@ -230,7 +230,7 @@ func SetupOperatorPlatform(t *testing.T, ctx context.Context, mockTransport *htt
 		Common: process.Common{
 			Name: "vault",
 		},
-		ListenAddr: "https://127.0.0.1:8203",
+		ListenAddr: "SetupOperatorPlatform",
 		PKIDomain:  "edgecloud.net",
 		Regions:    strings.Join(regions, ","),
 	}

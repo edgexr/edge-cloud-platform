@@ -1,69 +1,40 @@
 package testutil
 
 import (
-	"context"
 	"encoding/pem"
 	"io/ioutil"
+	"log"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	kv "github.com/hashicorp/vault-plugin-secrets-kv"
 	"github.com/hashicorp/vault/api"
-	"github.com/hashicorp/vault/audit"
-	"github.com/hashicorp/vault/builtin/credential/approle"
-	"github.com/hashicorp/vault/builtin/logical/pki"
-	"github.com/hashicorp/vault/builtin/logical/ssh"
-	"github.com/hashicorp/vault/builtin/logical/totp"
-	vaulthttp "github.com/hashicorp/vault/http"
-	"github.com/hashicorp/vault/sdk/logical"
-	"github.com/hashicorp/vault/vault"
+	"github.com/hashicorp/vault/sdk/helper/testcluster"
+	"github.com/hashicorp/vault/sdk/helper/testcluster/docker"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 )
 
-// NewVaultTestClusterBasic starts a basic in-memory test vault.
+// NewVaultTestClusterBasic starts a basic in-memory docker test vault.
 // Returns test cluster and client. Call cluster.Cleanup() when done.
-func NewVaultTestClusterBasic(t *testing.T, listenAddr string) (*vault.TestCluster, *api.Client) {
-	coreConfig := &vault.CoreConfig{
-		LogicalBackends: map[string]logical.Factory{
-			"kv":   kv.Factory,
-			"pki":  pki.Factory,
-			"ssh":  ssh.Factory,
-			"totp": totp.Factory,
+func NewVaultTestClusterBasic(t *testing.T, listenAddr string) (*docker.DockerCluster, *api.Client) {
+	opts := &docker.DockerClusterOptions{
+		ClusterOptions: testcluster.ClusterOptions{
+			ClusterName: listenAddr,
+			NumCores:    1,
 		},
-		CredentialBackends: map[string]logical.Factory{
-			"approle": approle.Factory,
-		},
-		AuditBackends: map[string]audit.Factory{
-			"noop": func(ctx context.Context, config *audit.BackendConfig) (audit.Backend, error) {
-				return &vault.NoopAudit{
-					Config: config,
-				}, nil
-			},
-		},
-		LogLevel: "debug",
+		ImageRepo: "hashicorp/vault",
+		ImageTag:  "1.11.11",
 	}
-	listenAddr = strings.TrimPrefix(listenAddr, "https://")
-	listenAddr = strings.TrimPrefix(listenAddr, "http://")
-	options := &vault.TestClusterOptions{
-		NumCores:          1,
-		BaseListenAddress: listenAddr,
-		HandlerFunc:       vaulthttp.Handler,
-	}
-	cluster := vault.NewTestCluster(t, coreConfig, options)
-	cluster.Start()
-	vault.TestWaitActive(t, cluster.Cores[0].Core)
+	cluster := docker.NewTestDockerCluster(t, opts)
 
-	client := cluster.Cores[0].Client
-	// set default /secret kv-store to version 2
-	err := client.Sys().TuneMount("secret", api.MountConfigInput{
-		Options: map[string]string{
-			"version": "2",
-		},
+	client := cluster.Nodes()[0].APIClient()
+
+	err := client.Sys().Mount("secret", &api.MountInput{
+		Type: "kv-v2",
 	})
 	require.Nil(t, err)
+	log.Printf("cluster at address %s\n", client.Address())
 	return cluster, client
 }
 
@@ -76,8 +47,12 @@ func VaultMountTotp(t *testing.T, client *api.Client, region string) {
 	require.Nil(t, err)
 }
 
-// Start an in-memory test vault. Returns test cluster, vault roles, and cleanup func.
-func NewVaultTestCluster(t *testing.T, p *process.Vault) (*vault.TestCluster, *process.VaultRoles, func()) {
+// Start an in-memory docker test vault. Returns test cluster, vault roles, and cleanup func.
+// The input process's ListenAddr should be set to the unit test
+// name, which will be used as the docker cluster's name.
+// The ListenAddr will then be overwritten to whatever local
+// address the cluster is listening on.
+func NewVaultTestCluster(t *testing.T, p *process.Vault) (*docker.DockerCluster, *process.VaultRoles, func()) {
 	t.Helper()
 
 	dir, err := os.Getwd()
@@ -87,12 +62,13 @@ func NewVaultTestCluster(t *testing.T, p *process.Vault) (*vault.TestCluster, *p
 	}
 	rolesfile := dir + "/roles.yaml"
 
-	cluster, _ := NewVaultTestClusterBasic(t, p.ListenAddr)
+	cluster, client := NewVaultTestClusterBasic(t, p.ListenAddr)
 	defer func() {
 		if err != nil {
 			cluster.Cleanup()
 		}
 	}()
+	p.ListenAddr = client.Address()
 
 	// write out server CA cert so client can use https
 	vaultCAFile := "vaultca.pem"
@@ -103,7 +79,7 @@ func NewVaultTestCluster(t *testing.T, p *process.Vault) (*vault.TestCluster, *p
 	err = certOut.Close()
 	require.Nil(t, err)
 	p.RunCACert = vaultCAFile
-	p.RootToken = cluster.RootToken
+	p.RootToken = cluster.GetRootToken()
 	os.Setenv("VAULT_CACERT", vaultCAFile)
 
 	// vault setup
