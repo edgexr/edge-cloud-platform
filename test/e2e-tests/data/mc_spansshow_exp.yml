@@ -128,7 +128,7 @@
     - msg: findCloudlet returning FIND_NOTFOUND
     - msg: FindCloudlet returns
       keyvalues:
-        error: <nil>
+        error: nil
         reply: 'status:FIND_NOTFOUND cloudlet_location:<> '
 - search:
     match:
@@ -162,4 +162,4 @@
         rev: null
     - msg: finished
       keyvalues:
-        err: <nil>
+        err: nil

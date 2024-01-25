@@ -1715,7 +1715,7 @@ func testCORS(t *testing.T, ctx context.Context, uri, superTok string, mcClient 
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	// run preflight check, CORS headers set
-	anyDomain := "https://any.domain"
+	anyDomain := "*"
 	resp = runCorsTestUrl(t, http.MethodOptions, testUrl, anyDomain)
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
 	require.Equal(t, anyDomain, resp.Header.Get("Access-Control-Allow-Origin"))
