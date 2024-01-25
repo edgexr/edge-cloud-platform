@@ -306,7 +306,7 @@ func TestAllUpgradeFuncs(t *testing.T) {
 		Common: process.Common{
 			Name: "vault",
 		},
-		ListenAddr: "https://127.0.0.1:8204",
+		ListenAddr: "TestAllUpgradeFuncs",
 		PKIDomain:  "edgecloud.net",
 		Regions:    region, // comma separated list
 	}
