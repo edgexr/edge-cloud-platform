@@ -215,6 +215,13 @@ func StartTestSpan(ctx context.Context) context.Context {
 	return opentracing.ContextWithSpan(ctx, span)
 }
 
+func (s *Span) Tracer() opentracing.Tracer {
+	if s.noTracing {
+		return nil
+	}
+	return s.Span.Tracer()
+}
+
 func (s *Span) Finish() {
 	if s.suppress || s.noTracing {
 		return
