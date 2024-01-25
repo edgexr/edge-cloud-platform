@@ -66,7 +66,7 @@ func TestInternalPki(t *testing.T) {
 			Name: "vault",
 		},
 		Regions:    "us,eu",
-		ListenAddr: "https://127.0.0.1:8201",
+		ListenAddr: "TestInternalPki",
 		PKIDomain:  "edgecloud.net",
 	}
 	_, vroles, vaultCleanup := testutil.NewVaultTestCluster(t, &vp)

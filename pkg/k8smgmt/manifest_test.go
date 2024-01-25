@@ -436,6 +436,7 @@ spec:
       serviceAccountName: influxdb
   updateStrategy: {}
 status:
+  availableReplicas: 0
   replicas: 0
 `
 

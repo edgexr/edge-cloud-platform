@@ -167,7 +167,7 @@ func TestAppStoreApi(t *testing.T) {
 		Common: process.Common{
 			Name: "vault",
 		},
-		ListenAddr: "https://127.0.0.1:8202",
+		ListenAddr: "TestAppStoreApi",
 		PKIDomain:  "edgecloud.net",
 	}
 	vaultCluster, vroles, vaultCleanup := testutil.NewVaultTestCluster(t, &vp)
@@ -181,7 +181,7 @@ func TestAppStoreApi(t *testing.T) {
 		vaultCleanup()
 	}()
 	// vault root config
-	vaultRootConfig := vault.NewConfig(vp.ListenAddr, vault.NewTokenAuth(vaultCluster.RootToken))
+	vaultRootConfig := vault.NewConfig(vp.ListenAddr, vault.NewTokenAuth(vaultCluster.GetRootToken()))
 
 	rtfuri, err := url.ParseRequestURI(artifactoryAddr)
 	require.Nil(t, err, "parse artifactory url")
@@ -506,7 +506,7 @@ func waitSyncCount(t *testing.T, sync *AppStoreSync, count int64) {
 		if sync.count >= count {
 			break
 		}
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 	if sync.count != count {
 		// print all goroutines in case sync thread is stuck
