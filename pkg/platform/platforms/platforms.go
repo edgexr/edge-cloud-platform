@@ -21,10 +21,8 @@ import (
 	awseks "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-eks"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/azure"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/dind"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/edgebox"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/fake"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/fakeinfra"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/federation"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/gcp"
 	k8sbm "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-baremetal"
 	k8sop "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-operator"
@@ -44,7 +42,6 @@ var builders = []platform.PlatformBuilder{
 	dind.NewPlatform,
 	fake.NewPlatform,
 	fake.NewPlatformSingleCluster,
-	fake.NewPlatformFakeEdgebox,
 	kind.NewPlatform,
 	fake.NewPlatformVMPool,
 	openstack.NewPlatform,
@@ -55,12 +52,10 @@ var builders = []platform.PlatformBuilder{
 	azure.NewPlatform,
 	gcp.NewPlatform,
 	awseks.NewPlatform,
-	edgebox.NewPlatform,
 	fakeinfra.NewPlatform,
 	k8sbm.NewPlatform,
 	k8sop.NewPlatform,
 	kindinfra.NewPlatform,
-	federation.NewPlatform,
 	mock.NewPlatform,
 }
 

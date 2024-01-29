@@ -41,6 +41,8 @@ func (f *arrayFlags) Set(value string) error {
 func main() {
 	var apiFiles arrayFlags
 	var outFile string
+	var pkgName string
+	flag.StringVar(&pkgName, "pkgName", "", "package name (defaults to source dir)")
 	flag.Var(&apiFiles, "apiFile", "package dir of api files to parse")
 	flag.StringVar(&outFile, "outFile", "api.comments.go", "package dir of api files to parse")
 	flag.Parse()
@@ -62,10 +64,13 @@ func main() {
 	if len(pc.Structs) == 0 {
 		log.Fatalf("No structs found")
 	}
+	if pkgName == "" {
+		pkgName = filepath.Base(pc.Structs[0].Pkg)
+	}
 
 	// write comments
 	buf := &bytes.Buffer{}
-	fmt.Fprintf(buf, "package %s", filepath.Base(pc.Structs[0].Pkg))
+	fmt.Fprintf(buf, "package %s", pkgName)
 	fmt.Fprintf(buf, "\n// This is an auto-generated file. DO NOT EDIT directly.\n")
 
 	for _, st := range pc.Structs {

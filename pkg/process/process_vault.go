@@ -183,17 +183,6 @@ func (p *Vault) Setup(opts ...StartOp) error {
 		return err
 	}
 
-	// Set up dummy API key to be used to call the GDDT QOS Priority Sessions API.
-	fileName := gopath + "/src/github.com/edgexr/edge-cloud-platform/test/e2e-tests/data/gddt_qos_session_api_key.txt"
-	// The vault path for "kv put" omits the /data portion.
-	// To read this key with vault.GetData(), use path=/secret/data/accounts/gddt/sessionsapi
-	path := "/secret/accounts/gddt/sessionsapi"
-	p.Run("vault", fmt.Sprintf("kv put %s @%s", path, fileName), &err)
-	log.Printf("PutQosApiKeyToVault at path %s, err=%s", path, err)
-	if err != nil {
-		return err
-	}
-
 	if p.Regions == "" {
 		p.Regions = "local"
 	}
