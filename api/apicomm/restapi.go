@@ -1,4 +1,4 @@
-package ormapi
+package apicomm
 
 type Result struct {
 	// Informational message

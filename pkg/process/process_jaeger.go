@@ -57,8 +57,8 @@ func (p *Jaeger) StartLocal(logfile string, opts ...StartOp) error {
 		"--collector.num-workers=500",
 		"--collector.queue-size=10000",
 	)
-	var err error
-	p.cmd, err = StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	cmd, err := StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	p.SetCmd(cmd)
 	return err
 }
 
@@ -70,8 +70,8 @@ func (p *Jaeger) StartLocalNoTraefik(logfile string, opts ...StartOp) error {
 		"-p", "16686:16686",
 		"-p", "14268:14268",
 		"jaegertracing/all-in-one:1.45.0")
-	var err error
-	p.cmd, err = StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	cmd, err := StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	p.SetCmd(cmd)
 	if err == nil {
 		// wait until up
 		url := "http://127.0.0.1:16686/"

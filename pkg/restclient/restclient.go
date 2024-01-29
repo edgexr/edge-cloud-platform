@@ -31,8 +31,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/apicomm"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/api/ormapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/gorilla/websocket"
@@ -320,7 +320,7 @@ func (s *Client) HttpJsonSend(method, uri, token string, reqData interface{}, re
 		if s.ParseErrorFunc != nil {
 			reterr = s.ParseErrorFunc(body)
 		} else {
-			res := ormapi.Result{}
+			res := apicomm.Result{}
 			err = json.Unmarshal(body, &res)
 			if err != nil {
 				// string error
@@ -354,7 +354,7 @@ func (s *Client) handleHttpStreamOut(uri, token string, reqData, replyData inter
 		if err != nil {
 			return resp.StatusCode, err
 		}
-		res := ormapi.Result{}
+		res := apicomm.Result{}
 		err = json.Unmarshal(body, &res)
 		if err != nil {
 			// string error
@@ -365,7 +365,7 @@ func (s *Client) handleHttpStreamOut(uri, token string, reqData, replyData inter
 	if ch, ok := s.MidstreamFailChs[uri]; ok {
 		ch <- true
 	}
-	payload := ormapi.StreamPayload{}
+	payload := apicomm.StreamPayload{}
 	if replyData != nil {
 		payload.Data = replyData
 	}
@@ -447,7 +447,7 @@ func (s *Client) WebsocketConn(uri, token string, reqData interface{}) (*websock
 }
 
 func (s *Client) HandleWebsocketStreamOut(uri, token string, reader *bufio.Reader, reqData, replyData interface{}, queryParams map[string]string, replyReady func()) (int, error) {
-	wsPayload, ok := replyData.(*ormapi.WSStreamPayload)
+	wsPayload, ok := replyData.(*apicomm.WSStreamPayload)
 	if !ok {
 		return 0, fmt.Errorf("response can only be of type WSStreamPayload")
 	}

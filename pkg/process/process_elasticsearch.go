@@ -46,8 +46,8 @@ func (p *ElasticSearch) StartElasticSearch(logfile string, opts ...StartOp) erro
 		"-e", "plugins.security.disabled=true",
 		"opensearchproject/opensearch:2.9.0",
 	)
-	var err error
-	p.cmd, err = StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	cmd, err := StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	p.SetCmd(cmd)
 	if err == nil {
 		// wait until up
 		addr := "http://127.0.0.1:9200"
@@ -91,7 +91,7 @@ func (p *ElasticSearch) StartKibana(logfile string, opts ...StartOp) error {
 		"-p", "5601:5601",
 		"docker.elastic.co/kibana/kibana:7.6.2",
 	)
-	var err error
-	p.cmd, err = StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	cmd, err := StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	p.SetCmd(cmd)
 	return err
 }

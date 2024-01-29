@@ -21,6 +21,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/passhash"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/stretchr/testify/require"
 )
 
